@@ -41,8 +41,13 @@ export type Tenant = {
   kaution_bank: string | null;
   mietspiegel: number | null;
   flaeche: number | null;
-  mietart: string | null;
+  mietart: string | null;            // z.B. "Standard", "Staffel", "Index"
   notiz: string | null;
+  miethistorie: string | null;
+  letzte_erhoehung: string | null;   // Datum der letzten Mieterhöhung
+  staffel_datum: string | null;      // nächste Staffel-/Anpassungsstufe
+  staffel_betrag: number | null;     // Erhöhungsbetrag je Stufe
+  staffel_intervall: string | null;  // z.B. "12" (Monate) oder "jährlich"
   created_at: string | null;
 };
 
@@ -99,6 +104,21 @@ export type Notiz = {
   kategorie: string | null;
   inhalt: string | null;
   created_at: string | null;
+};
+
+export type VermieterProfil = {
+  id: string;
+  user_id: string;
+  name: string | null;
+  strasse: string | null;
+  plz: string | null;
+  ort: string | null;
+  email: string | null;
+  telefon: string | null;
+  bankname: string | null;
+  iban: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 };
 
 export type Termin = {
