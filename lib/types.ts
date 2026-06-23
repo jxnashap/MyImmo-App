@@ -46,6 +46,69 @@ export type Tenant = {
   created_at: string | null;
 };
 
+export type Einnahme = {
+  id: string;
+  prop_id: string | null;
+  buchungsdatum: string | null;
+  kategorie: string | null;
+  betrag: number | null;
+  beschreibung: string | null;
+  wiederkehrend: boolean | null;
+};
+
+export type Kosten = {
+  id: string;
+  prop_id: string | null;
+  mieter_id: string | null;
+  buchungsdatum: string | null;
+  kategorie: string | null;
+  betrag: number | null;
+  beschreibung: string | null;
+  notiz: string | null;
+  wiederkehrend: boolean | null;
+};
+
+export type Verbrauch = {
+  id: string;
+  prop_id: string | null;
+  buchungsdatum: string | null;
+  art: string | null;
+  menge: number | null;
+  einheit: string | null;
+  verbrauchkosten: number | null;
+};
+
+export type Kredit = {
+  id: string;
+  prop_id: string | null;
+  bezeichnung: string | null;
+  bank: string | null;
+  betrag: number | null;
+  restschuld: number | null;
+  zinssatz: number | null;
+  tilgungssatz: number | null;
+  monatsrate: number | null;
+  zinsbindung: string | null;
+  laufzeit: number | null;
+};
+
+export type Notiz = {
+  id: string;
+  prop_id: string | null;
+  titel: string | null;
+  kategorie: string | null;
+  inhalt: string | null;
+  created_at: string | null;
+};
+
+export type Termin = {
+  id: string;
+  prop_id: string | null;
+  titel: string | null;
+  datum: string | null;
+  notiz: string | null;
+};
+
 // Felder, die im Objekt-Formular bearbeitet werden
 export const PROPERTY_FIELDS = [
   "bezeichnung", "typ", "adresse", "kaufpreis", "wert", "flaeche",
