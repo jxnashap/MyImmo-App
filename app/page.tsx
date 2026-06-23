@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Property } from "@/lib/types";
+import { eur } from "@/lib/format";
+import CashflowChart from "@/components/CashflowChart";
+import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 
-const eur = (n: number | null) =>
-  n == null
-    ? "—"
-    : new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+const MONATE = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -15,68 +14,79 @@ export default async function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="text-center py-20">
-        <h1 className="text-2xl font-semibold mb-2">Willkommen bei MyImmo</h1>
-        <p className="text-white/60 mb-6">Bitte einloggen, um dein Portfolio zu sehen.</p>
-        <Link href="/login" className="rounded-lg bg-gold px-5 py-2 font-medium text-ink">
-          Einloggen
-        </Link>
+      <div className="mx-auto max-w-sm py-24 text-center">
+        <h1 className="text-2xl">Willkommen bei MyImmo</h1>
+        <p className="mt-2 text-white/60">Bitte einloggen, um dein Portfolio zu sehen.</p>
+        <Link href="/login" className="btn-gold mt-6 inline-block">Einloggen</Link>
       </div>
     );
   }
 
-  const { data: properties } = await supabase
-    .from("properties")
-    .select("*")
-    .order("bezeichnung");
+  const year = new Date().getFullYear();
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }] = await Promise.all([
+    supabase.from("properties").select("*"),
+    supabase.from("einnahmen").select("*"),
+    supabase.from("kosten").select("*"),
+    supabase.from("kredite").select("*"),
+  ]);
 
-  const list = (properties ?? []) as Property[];
-  const totalValue = list.reduce((s, p) => s + (p.wert ?? p.kaufpreis ?? 0), 0);
-  const totalRent = list.reduce((s, p) => s + (p.miete ?? 0), 0);
+  const properties = (props ?? []) as Property[];
+  const einnahmen = (einn ?? []) as Einnahme[];
+  const kosten = (kost ?? []) as Kosten[];
+  const kredite = (kred ?? []) as Kredit[];
+
+  const totalValue = properties.reduce((s, p) => s + (p.wert ?? p.kaufpreis ?? 0), 0);
+  const sollMiete = properties.reduce((s, p) => s + (p.miete ?? 0), 0);
+  const rateMo = kredite.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
+
+  const inYear = (d: string | null) => !!d && d.startsWith(String(year));
+  const kostenYear = kosten.filter((k) => inYear(k.buchungsdatum)).reduce((s, k) => s + (k.betrag ?? 0), 0);
+  const kostenMo = kostenYear / 12;
+  const cashflowMo = sollMiete - kostenMo - rateMo;
+
+  // Monatlicher Cashflow für den Graphen
+  const monthSum = (rows: { buchungsdatum: string | null; betrag: number | null }[], m: number) =>
+    rows
+      .filter((r) => r.buchungsdatum && new Date(r.buchungsdatum).getFullYear() === year && new Date(r.buchungsdatum).getMonth() === m)
+      .reduce((s, r) => s + (r.betrag ?? 0), 0);
+
+  const chart = MONATE.map((label, m) => ({
+    label,
+    value: monthSum(einnahmen, m) - monthSum(kosten, m) - rateMo,
+  }));
+
+  const kpis: { label: string; value: string; cls?: string; color?: string }[] = [
+    { label: "Portfolio-Wert", value: eur(totalValue), cls: "gold" },
+    { label: "Einnahmen / Mo.", value: eur(sollMiete) },
+    { label: "Kosten / Mo.", value: eur(kostenMo) },
+    { label: "Cashflow / Mo.", value: eur(cashflowMo), color: cashflowMo >= 0 ? "var(--green)" : "var(--red)" },
+  ];
 
   return (
     <div>
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Portfolio-Überblick</h1>
-          <p className="mt-1 text-white/60">
-            Gesamtwert <span className="font-semibold text-gold">{eur(totalValue)}</span>
-            {"  ·  "}Soll-Miete/Monat <span className="font-semibold">{eur(totalRent)}</span>
-            {"  ·  "}{list.length} {list.length === 1 ? "Objekt" : "Objekte"}
-          </p>
-        </div>
-        <Link href="/properties" className="rounded-lg border border-white/15 px-4 py-2 text-sm hover:bg-white/5">
-          Objekte verwalten
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl">Dashboard</h1>
+        <Link href="/termine" className="rounded-lg border border-white/15 px-4 py-2 text-sm hover:bg-white/5">
+          ◷ Terminkalender
         </Link>
       </div>
 
-      {list.length === 0 ? (
-        <p className="text-white/50">Noch keine Immobilien angelegt.</p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {list.map((p) => (
-            <Link
-              key={p.id}
-              href={`/properties/${p.id}`}
-              className="rounded-xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/25"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="font-medium">{p.bezeichnung}</h2>
-                {p.obj_status && (
-                  <span className="rounded-full border border-white/15 px-2 py-0.5 text-xs text-white/60">
-                    {p.obj_status}
-                  </span>
-                )}
-              </div>
-              <p className="mt-1 text-sm text-white/50">{p.adresse || "Keine Adresse"}</p>
-              <div className="mt-4 flex justify-between text-sm">
-                <span className="text-white/50">Aktueller Wert</span>
-                <span className="font-medium text-gold">{eur(p.wert ?? p.kaufpreis)}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="mb-6 grid gap-3 sm:grid-cols-4">
+        {kpis.map((k) => (
+          <div key={k.label} className="kpi">
+            <div className="kpi-label">{k.label}</div>
+            <div className={`kpi-value ${k.cls ?? ""}`} style={k.color ? { color: k.color } : undefined}>
+              {k.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <CashflowChart data={chart} />
+
+      <p className="mt-3 text-xs text-white/40">
+        Cashflow = Einnahmen − Kosten − Kreditraten ({eur(rateMo)}/Mo.). Werte aus {year}.
+      </p>
     </div>
   );
 }
