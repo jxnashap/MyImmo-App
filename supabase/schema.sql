@@ -1,0 +1,7 @@
+-- ⚠️  Veraltet / NICHT verwenden.
+--
+-- Dieser Entwurf wurde durch das BESTEHENDE produktive Schema ersetzt.
+-- Die Datenbank enthält bereits echte Daten (Objekte, Mieter, Buchungen).
+-- Siehe stattdessen:  schema-reference.sql
+--
+-- NICHT in Supabase ausführen — würde mit bestehenden Tabellen kollidieren.
