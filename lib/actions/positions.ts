@@ -17,11 +17,15 @@ export async function addPosition(mieterId: string, formData: FormData) {
       ? null
       : Number(String(betragRaw).replace(",", "."));
 
+  const jahrRaw = formData.get("jahr");
+  const jahr = jahrRaw ? Number(jahrRaw) : null;
+
   const { error } = await supabase.from("mieter_positionen").insert({
     user_id: user.id,
     mieter_id: mieterId,
     bezeichnung: String(formData.get("bezeichnung") ?? ""),
     betrag: betrag != null && Number.isNaN(betrag) ? null : betrag,
+    jahr: jahr != null && Number.isNaN(jahr) ? null : jahr,
     umlageschluessel: (formData.get("umlageschluessel") as string) || null,
     umlagefaehig: formData.get("umlagefaehig") === "on",
   });
