@@ -1,0 +1,96 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0f0f0e;
+  --bg2: #161614;
+  --bg3: #1e1e1c;
+  --bg4: #282826;
+  --line: rgba(255, 255, 255, 0.07);
+  --line2: rgba(255, 255, 255, 0.13);
+  --text: #f0ede6;
+  --muted: #7a7a72;
+  --gold: #d4a847;
+  --green: #4caf7d;
+  --green-dim: rgba(76, 175, 125, 0.15);
+  --red: #e05c4b;
+  --red-dim: rgba(224, 92, 75, 0.15);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 300;
+}
+
+h1, h2, h3, .serif {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+}
+
+@layer components {
+  .card {
+    @apply rounded-[10px] border p-5;
+    background: var(--bg2);
+    border-color: var(--line);
+  }
+  .kpi {
+    @apply rounded-[10px] border p-4;
+    background: var(--bg2);
+    border-color: var(--line);
+  }
+  .kpi-label {
+    color: var(--muted);
+    @apply text-xs uppercase tracking-wide;
+  }
+  .kpi-value {
+    @apply mt-1 text-2xl;
+    font-family: "Fraunces", serif;
+  }
+  .stat-box {
+    @apply rounded-[10px] border px-4 py-3;
+    background: var(--bg3);
+    border-color: var(--line);
+  }
+  .stat-lbl {
+    color: var(--muted);
+    @apply text-xs;
+  }
+  .stat-val {
+    @apply mt-1 text-lg;
+  }
+  .gold {
+    color: var(--gold);
+  }
+  .badge {
+    @apply inline-block rounded-full px-2 py-0.5 text-xs;
+  }
+  .badge-ja {
+    background: var(--green-dim);
+    color: var(--green);
+  }
+  .badge-nein {
+    background: var(--red-dim);
+    color: var(--red);
+  }
+  .badge-neutral {
+    background: var(--bg4);
+    color: var(--muted);
+  }
+  .btn-gold {
+    @apply rounded-lg px-4 py-2 text-sm font-medium;
+    background: var(--gold);
+    color: var(--bg);
+  }
+  .input {
+    @apply rounded-lg border px-3 py-2 outline-none;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--line2);
+  }
+  .input:focus {
+    border-color: var(--gold);
+  }
+}
