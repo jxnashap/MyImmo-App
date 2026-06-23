@@ -14,6 +14,7 @@ const NAV: { href: string; label: string; icon: string }[] = [
   { href: "/kredite", label: "Kredite", icon: "€" },
   { href: "/notizen", label: "Notizen", icon: "✎" },
   { href: "/jahresbericht", label: "Jahresbericht", icon: "∑" },
+  { href: "/einstellungen", label: "Einstellungen", icon: "⚙" },
 ];
 
 export default function Sidebar() {

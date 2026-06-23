@@ -7,9 +7,12 @@ export type Position = {
   betrag: number | null;
   umlageschluessel: string | null;
   umlagefaehig: boolean | null;
+  jahr: number | null;
 };
 
 const SCHLUESSEL = ["Fläche", "Personen", "Einheit", "Verbrauch", "direkt"];
+const JETZT = new Date().getFullYear();
+const JAHRE = [JETZT, JETZT - 1, JETZT - 2, JETZT - 3];
 
 // Häufige umlagefähige Positionen als Schnellauswahl
 const VORLAGEN = ["Grundsteuer", "Müll", "Abwasser", "Wasser", "Versicherung", "Hausmeister", "Aufzug", "Allgemeinstrom", "Gartenpflege", "Straßenreinigung"];
@@ -43,6 +46,7 @@ export default function PositionsManager({
             <thead className="bg-white/[0.03] text-left text-white/50">
               <tr>
                 <th className="px-3 py-2 font-medium">Position</th>
+                <th className="px-3 py-2 font-medium">Jahr</th>
                 <th className="px-3 py-2 font-medium">Schlüssel</th>
                 <th className="px-3 py-2 font-medium">Umlage</th>
                 <th className="px-3 py-2 text-right font-medium">Betrag</th>
@@ -55,6 +59,7 @@ export default function PositionsManager({
                 return (
                   <tr key={p.id} className="border-t border-white/10">
                     <td className="px-3 py-2">{p.bezeichnung}</td>
+                    <td className="px-3 py-2 text-white/60">{p.jahr ?? "—"}</td>
                     <td className="px-3 py-2 text-white/60">{p.umlageschluessel || "—"}</td>
                     <td className="px-3 py-2">
                       <span className={`badge ${p.umlagefaehig ? "badge-ja" : "badge-nein"}`}>
@@ -89,6 +94,14 @@ export default function PositionsManager({
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-white/60">Betrag (€)</span>
           <input name="betrag" type="number" step="0.01" className="input w-28" />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-white/60">Jahr</span>
+          <select name="jahr" defaultValue={JETZT} className="input">
+            {JAHRE.map((j) => (
+              <option key={j} value={j}>{j}</option>
+            ))}
+          </select>
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-white/60">Umlageschlüssel</span>
