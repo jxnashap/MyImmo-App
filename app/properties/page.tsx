@@ -45,7 +45,7 @@ export default async function PropertiesPage() {
           <div className="topbar-sub">Alle erfassten Objekte</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/properties/new" className="btn btn-ghost">🔗 Importieren</Link>
+          <Link href="/properties/import" className="btn btn-ghost">🔗 Importieren</Link>
           <Link href="/properties/new" className="btn btn-gold">＋ Neu</Link>
         </div>
       </div>
