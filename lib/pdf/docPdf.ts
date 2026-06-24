@@ -10,6 +10,7 @@ import {
   rgb,
   type PDFFont,
 } from "pdf-lib";
+import { adressZeilen } from "@/lib/format";
 
 export type BriefAbsender = {
   name: string;
@@ -133,10 +134,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   const heute = deDate(new Date());
   const ortClean = (d.absender.ort || "").replace(/^\d{4,5}\s*/, "").trim();
   const ortDatum = ortClean ? `${ortClean}, ${heute}` : heute;
-  const empfZeilen = (d.empfaengerAdresse || "")
-    .split(/\r?\n|,\s*/)
-    .map((z) => z.trim())
-    .filter(Boolean);
+  const empfZeilen = adressZeilen(d.empfaengerAdresse);
 
   const kontoLines: { s: string; f: PDFFont; color: typeof INK }[] = [];
   if (d.konto?.iban) {

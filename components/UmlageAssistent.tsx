@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { eur2 } from "@/lib/format";
 import { monateImJahr } from "@/lib/nk";
@@ -72,9 +72,16 @@ export default function UmlageAssistent({
     Object.fromEntries(mieter.map((m) => [m.id, m.flaeche != null ? String(m.flaeche) : ""])),
   );
   const [zeilen, setZeilen] = useState<ZeileUI[]>(DEFAULT_ZEILEN);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [ergebnis, setErgebnis] = useState<VerteilenErgebnis | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
+  const [ocrInfo, setOcrInfo] = useState<string | null>(null);
+
+  // Pointer-basiertes Verschieben (Maus + Finger)
+  const rowsRef = useRef<(HTMLTableRowElement | null)[]>([]);
+  const dragFrom = useRef<number | null>(null);
 
   // belegte Monate je Mieter für das gewählte Jahr
   const monateMap = Object.fromEntries(
@@ -120,6 +127,93 @@ export default function UmlageAssistent({
       return a;
     });
     setStatus("idle");
+  }
+
+  // Greifpunkt: Drag mit Maus oder Finger, Zeilen werden live umsortiert.
+  function onHandleDown(e: React.PointerEvent, i: number) {
+    e.preventDefault();
+    dragFrom.current = i;
+    setDragIdx(i);
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  }
+  function onHandleMove(e: React.PointerEvent) {
+    if (dragFrom.current == null) return;
+    const y = e.clientY;
+    const rows = rowsRef.current;
+    let target = dragFrom.current;
+    for (let k = 0; k < rows.length; k++) {
+      const r = rows[k];
+      if (!r) continue;
+      const rect = r.getBoundingClientRect();
+      if (y >= rect.top && y <= rect.bottom) {
+        target = k;
+        break;
+      }
+    }
+    if (target !== dragFrom.current) {
+      move(dragFrom.current, target);
+      dragFrom.current = target;
+      setDragIdx(target);
+    }
+  }
+  function onHandleUp(e: React.PointerEvent) {
+    dragFrom.current = null;
+    setDragIdx(null);
+    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+  }
+
+  // NK-Abrechnung hochladen → Positionen automatisch in die Tabelle eintragen.
+  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setOcrError(null);
+    setOcrInfo(null);
+    setOcrLoading(true);
+    try {
+      const base64 = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result).split(",")[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const isPdf = file.type === "application/pdf";
+      const resp = await fetch("/api/nk-ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: base64, mediaType: file.type, isPdf }),
+      });
+      const json = await resp.json();
+      if (!resp.ok) {
+        setOcrError(json.error || "Fehler beim Auslesen.");
+        return;
+      }
+      const list = (json.positionen ?? []).filter((p: { name?: string }) => p && p.name) as {
+        name: string;
+        betrag: number;
+      }[];
+      if (list.length === 0) {
+        setOcrError("Keine umlagefähigen Positionen erkannt.");
+        return;
+      }
+      const neue: ZeileUI[] = list.map((p) => ({
+        bezeichnung: p.name.trim(),
+        betrag: Number.isFinite(p.betrag) ? String(p.betrag).replace(".", ",") : "",
+        schluessel: "flaeche",
+      }));
+      setZeilen((zs) => {
+        const behalten = zs.filter((z) => z.bezeichnung.trim() !== "" || z.betrag.trim() !== "");
+        const vorhanden = new Set(behalten.map((z) => z.bezeichnung.trim().toLowerCase()));
+        const ergaenzt = neue.filter((z) => !vorhanden.has(z.bezeichnung.toLowerCase()));
+        return [...behalten, ...ergaenzt];
+      });
+      setOcrInfo(`${list.length} Position(en) übernommen — bitte Beträge & Schlüssel prüfen.`);
+      setStatus("idle");
+    } catch (err) {
+      setOcrError(`Fehler: ${(err as Error).message}`);
+    } finally {
+      setOcrLoading(false);
+    }
   }
 
   async function speichern() {
@@ -251,6 +345,40 @@ export default function UmlageAssistent({
             </div>
           )}
 
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              marginBottom: 12,
+              paddingBottom: 12,
+              borderBottom: "1px solid var(--line)",
+            }}
+          >
+            <label className="btn btn-ghost" style={{ fontSize: 12, cursor: ocrLoading ? "wait" : "pointer", display: "inline-flex" }}>
+              {ocrLoading ? "⏳ Claude liest aus…" : "📄 NK-Abrechnung hochladen (Positionen auslesen)"}
+              <input
+                type="file"
+                accept="application/pdf,image/*"
+                onChange={onUpload}
+                disabled={ocrLoading}
+                style={{ display: "none" }}
+              />
+            </label>
+            <span style={{ fontSize: 11, color: "var(--faint)" }}>
+              PDF/Bild der Hausverwaltung — die erkannten Positionen werden unten eingetragen.
+            </span>
+          </div>
+          {ocrError && (
+            <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+              ⚠️ {ocrError}
+            </div>
+          )}
+          {ocrInfo && (
+            <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>✓ {ocrInfo}</div>
+          )}
+
           <table style={{ fontSize: 13 }}>
             <thead>
               <tr>
@@ -265,20 +393,30 @@ export default function UmlageAssistent({
               {zeilen.map((z, i) => (
                 <tr
                   key={i}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => {
-                    if (dragIndex != null) move(dragIndex, i);
-                    setDragIndex(null);
+                  ref={(el) => {
+                    rowsRef.current[i] = el;
                   }}
-                  style={{ opacity: dragIndex === i ? 0.4 : 1 }}
+                  style={{
+                    opacity: dragIdx === i ? 0.5 : 1,
+                    background: dragIdx === i ? "var(--bg3)" : undefined,
+                  }}
                 >
                   <td>
                     <span
-                      draggable
-                      onDragStart={() => setDragIndex(i)}
-                      onDragEnd={() => setDragIndex(null)}
-                      title="Ziehen zum Umsortieren"
-                      style={{ cursor: "grab", color: "var(--faint)", userSelect: "none", fontSize: 16 }}
+                      onPointerDown={(e) => onHandleDown(e, i)}
+                      onPointerMove={onHandleMove}
+                      onPointerUp={onHandleUp}
+                      onPointerCancel={onHandleUp}
+                      title="Ziehen zum Umsortieren (Maus oder Finger)"
+                      style={{
+                        cursor: "grab",
+                        color: "var(--faint)",
+                        userSelect: "none",
+                        touchAction: "none",
+                        fontSize: 16,
+                        display: "inline-block",
+                        padding: "4px 2px",
+                      }}
                     >
                       ⠿
                     </span>

@@ -12,6 +12,7 @@ import {
   type DocArt,
 } from "@/lib/dokumentVorlagen";
 import { saveDokumentVorlage, resetDokumentVorlage } from "@/lib/actions/dokumentVorlagen";
+import { adressZeilen } from "@/lib/format";
 
 const fmtIban = (s: string) => s.replace(/(.{4})/g, "$1 ").trim();
 const eur = (n: number) =>
@@ -114,10 +115,7 @@ export default function DocGenerator({
   const absName = vName || "–";
   const heute = deDate(new Date().toISOString());
   const ortDatum = (vermieter?.ort ? vermieter.ort.replace(/^\d{4,5}\s*/, "") + ", " : "") + heute;
-  const empfZeilen = (tenant.mieter_adresse || objekt)
-    .split(/\r?\n|,\s*/)
-    .map((z) => z.trim())
-    .filter(Boolean);
+  const empfZeilen = adressZeilen(tenant.mieter_adresse || objekt);
   const titel = TITEL[art];
 
   const muted = "var(--muted)";
