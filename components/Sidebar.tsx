@@ -15,7 +15,8 @@ const VERWALTUNG: { href: string; label: string; icon: string }[] = [
   { href: "/verbrauch", label: "Verbrauch", icon: "⚡" },
   { href: "/kredite", label: "Kredite", icon: "🏦" },
   { href: "/notizen", label: "Notizen", icon: "📁" },
-  { href: "/jahresbericht", label: "Jahresbericht", icon: "📊" },
+  { href: "/dokumente", label: "Dokumente", icon: "📄" },
+  { href: "/jahresbericht", label: "Jahresbericht", icon: "📈" },
 ];
 
 const KALKULATOR: { href: string; label: string; icon: string }[] = [
