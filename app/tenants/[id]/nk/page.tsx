@@ -53,20 +53,20 @@ export default async function NkPage({
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link href={`/tenants/${params.id}/edit`} className="text-sm text-white/40 hover:text-white">
+          <Link href={`/tenants/${params.id}/edit`} className="text-sm text-[var(--muted)] hover:text-[var(--text)]">
             ← {a.mieterName}
           </Link>
           <h1 className="text-2xl">Nebenkostenabrechnung {jahr}</h1>
         </div>
         <div className="flex items-center gap-3">
           <form className="flex items-center gap-2">
-            <span className="text-sm text-white/50">Jahr</span>
+            <span className="text-sm text-[var(--muted)]">Jahr</span>
             <select name="jahr" defaultValue={jahr} className="input">
               {jahre.map((j) => (
                 <option key={j} value={j}>{j}</option>
               ))}
             </select>
-            <button className="rounded-lg border border-white/15 px-3 py-2 text-sm text-white/70 hover:bg-white/5">
+            <button className="rounded-lg border border-[var(--line2)] px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--bg3)]">
               Anzeigen
             </button>
           </form>
@@ -82,7 +82,7 @@ export default async function NkPage({
       </div>
 
       {!profil?.name && (
-        <div className="mb-4 max-w-3xl rounded-[10px] border border-[var(--gold)]/30 bg-[var(--gold)]/[0.06] px-4 py-3 text-sm text-white/70">
+        <div className="mb-4 max-w-3xl rounded-[10px] border border-[var(--gold)]/30 bg-[var(--gold)]/[0.06] px-4 py-3 text-sm text-[var(--text)]">
           Noch kein Absender hinterlegt – im PDF erscheint vorerst nur der Name aus den IBAN-Daten.{" "}
           <Link href="/einstellungen" className="gold hover:underline">
             Vermieter-Profil ausfüllen
@@ -94,18 +94,18 @@ export default async function NkPage({
       <div className="card max-w-3xl">
         <div className="mb-5 grid grid-cols-2 gap-4 text-sm">
           <div>
-            <div className="text-white/40">Mieter</div>
-            <div className="text-white">{a.mieterName}</div>
+            <div className="text-[var(--muted)]">Mieter</div>
+            <div className="text-[var(--text)]">{a.mieterName}</div>
             {a.mieterAdresse && (
-              <div className="mt-0.5 whitespace-pre-line text-white/50">{a.mieterAdresse}</div>
+              <div className="mt-0.5 whitespace-pre-line text-[var(--muted)]">{a.mieterAdresse}</div>
             )}
           </div>
           <div>
-            <div className="text-white/40">Objekt</div>
-            <div className="text-white">{a.objekt}</div>
-            {a.einheit && <div className="text-white/50">Einheit {a.einheit}</div>}
-            <div className="mt-1 text-white/40">Zeitraum</div>
-            <div className="text-white/70">
+            <div className="text-[var(--muted)]">Objekt</div>
+            <div className="text-[var(--text)]">{a.objekt}</div>
+            {a.einheit && <div className="text-[var(--muted)]">Einheit {a.einheit}</div>}
+            <div className="mt-1 text-[var(--muted)]">Zeitraum</div>
+            <div className="text-[var(--text)]">
               {deDatum(a.zeitraumVon)} – {deDatum(a.zeitraumBis)} ({a.monate}{" "}
               {a.monate === 1 ? "Monat" : "Monate"})
             </div>
@@ -113,8 +113,8 @@ export default async function NkPage({
         </div>
 
         <table className="w-full text-sm">
-          <thead className="text-left text-white/40">
-            <tr className="border-b border-white/10">
+          <thead className="text-left text-[var(--muted)]">
+            <tr className="border-b border-[var(--line)]">
               <th className="py-2 font-medium">Umlagefähige Position</th>
               <th className="py-2 font-medium">Schlüssel</th>
               <th className="py-2 text-right font-medium">Betrag</th>
@@ -123,7 +123,7 @@ export default async function NkPage({
           <tbody>
             {a.positionen.length === 0 ? (
               <tr>
-                <td colSpan={3} className="py-3 text-white/40">
+                <td colSpan={3} className="py-3 text-[var(--muted)]">
                   Keine umlagefähigen Positionen für {jahr} hinterlegt.{" "}
                   <Link href={`/tenants/${params.id}/edit`} className="gold hover:underline">
                     Positionen pflegen
@@ -132,9 +132,9 @@ export default async function NkPage({
               </tr>
             ) : (
               a.positionen.map((p, i) => (
-                <tr key={i} className="border-b border-white/5">
+                <tr key={i} className="border-b border-[var(--line)]">
                   <td className="py-2">{p.bezeichnung}</td>
-                  <td className="py-2 text-white/50">{p.umlageschluessel || "—"}</td>
+                  <td className="py-2 text-[var(--muted)]">{p.umlageschluessel || "—"}</td>
                   <td className="py-2 text-right">{eur2(p.betrag)}</td>
                 </tr>
               ))
@@ -144,16 +144,16 @@ export default async function NkPage({
 
         <div className="mt-4 ml-auto max-w-sm space-y-1.5 text-sm">
           <div className="flex justify-between">
-            <span className="text-white/60">Summe umlagefähige Kosten</span>
+            <span className="text-[var(--muted)]">Summe umlagefähige Kosten</span>
             <span>{eur2(a.umlageGesamt)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-white/60">
+            <span className="text-[var(--muted)]">
               Vorauszahlung ({a.monate} × {eur2(a.nkVorauszahlungMonat)})
             </span>
             <span>{eur2(a.vorauszahlungGeleistet)}</span>
           </div>
-          <div className="mt-2 flex justify-between border-t border-white/10 pt-2 text-base">
+          <div className="mt-2 flex justify-between border-t border-[var(--line)] pt-2 text-base">
             <span className={guthaben ? "text-[var(--green)]" : "text-[var(--red)]"}>
               {guthaben ? "Guthaben (Erstattung)" : "Nachzahlung"}
             </span>
@@ -164,13 +164,13 @@ export default async function NkPage({
         </div>
 
         {a.ausgenommen.length > 0 && (
-          <p className="mt-5 text-xs text-white/35">
+          <p className="mt-5 text-xs text-[var(--faint)]">
             Nicht umlagefähig (nicht berechnet): {a.ausgenommen.map((p) => p.bezeichnung).join(", ")}
           </p>
         )}
       </div>
 
-      <p className="mt-3 max-w-3xl text-xs text-white/30">
+      <p className="mt-3 max-w-3xl text-xs text-[var(--faint)]">
         Abrechnung nach §§ 556 ff. BGB i.V.m. BetrKV. Beträge stammen aus den Umlagepositionen des
         Mieters. Ohne Gewähr.
       </p>
