@@ -51,6 +51,7 @@ export default async function DashboardPage() {
     .reduce((s, k) => s + (k.betrag ?? 0), 0);
   const totalKosten = kreditRates + monatKosten;
   const cashflow = totalMiete - totalKosten;
+  const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
 
   // Portfolio-Entwicklung: kumulierter Cashflow letzte 12 Monate
   let kum = 0;
@@ -111,7 +112,7 @@ export default async function DashboardPage() {
         <div className="kpi-card">
           <div className="kpi-label">Einnahmen / Mo.</div>
           <div className="kpi-value">{euro(totalMiete)}</div>
-          <div className="kpi-sub">Kaltmiete gesamt</div>
+          <div className="kpi-sub">{bruttoRendite > 0 ? <span className="badge badge-gold">{bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Brutto-Rendite</span> : "Kaltmiete gesamt"}</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Kosten / Mo.</div>

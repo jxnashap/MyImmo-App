@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import KalkImport from "@/components/kalkulator/KalkImport";
 import { saveKalkulationAlsImmobilie } from "@/lib/actions/kalkulation";
 
 const fmt = (n: number, dec = 0) => n.toLocaleString("de-DE", { minimumFractionDigits: dec, maximumFractionDigits: dec });
@@ -119,6 +120,12 @@ export default function RoterFaden() {
       <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 20 }}>
         Schritt-für-Schritt durch die Kalkulation — gibt dir schnell ein Gefühl für die Zahlen.
       </div>
+
+      <KalkImport onResult={(d) => {
+        if (d.kaufpreis != null) setKaufpreis(String(d.kaufpreis));
+        if (d.flaeche != null) setFlaeche(String(d.flaeche));
+        if (d.miete != null && d.miete > 0) setMiete(String(d.miete));
+      }} />
 
       <div className="grid-2 mb-20">
         {/* Schritt 1 */}

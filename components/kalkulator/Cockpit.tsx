@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import KalkImport from "@/components/kalkulator/KalkImport";
 import { fmt, fmtE, pct, num, calcGrenzsteuer, berechneRestschuld, berechneVolltilgungJahr, BUNDESLAENDER, CP_STORAGE_KEY, type CpData } from "@/lib/kalk";
 
 const JETZT = new Date().getFullYear();
@@ -183,6 +184,12 @@ export default function Cockpit() {
       <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 20 }}>
         Vollständige Profi-Kalkulation mit 2 Darlehen, AfA, Steuerberechnung und 30-Jahres-Verlauf.
       </div>
+
+      <KalkImport onResult={(d) => {
+        if (d.kaufpreis != null) setKaufpreis(String(d.kaufpreis));
+        if (d.flaeche != null) setFlaeche(String(d.flaeche));
+        if (d.miete != null && d.miete > 0) setKaltmiete(String(d.miete));
+      }} />
 
       <div className="subtabs" style={{ marginBottom: 20 }}>
         {SUBTABS.map((s) => (
