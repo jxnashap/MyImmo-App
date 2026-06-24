@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { saveKalkulationAlsImmobilie } from "@/lib/actions/kalkulation";
 
 const fmt = (n: number, dec = 0) => n.toLocaleString("de-DE", { minimumFractionDigits: dec, maximumFractionDigits: dec });
 const fmtE = (n: number) => "€ " + fmt(Math.round(n));
@@ -51,6 +52,8 @@ export default function RoterFaden() {
   const [einkommen, setEinkommen] = useState("40000");
   const [afaSatz, setAfaSatz] = useState("0.02");
   const [gebaeude, setGebaeude] = useState("80");
+  const [saveName, setSaveName] = useState("");
+  const [mitDarlehen, setMitDarlehen] = useState(true);
 
   const kp = num(kaufpreis), fl = num(flaeche), mi = num(miete);
   const gew = num(bundesland);
@@ -232,6 +235,34 @@ export default function RoterFaden() {
               ⚡ Zinsänderungsrisiko nach {bindung} Jahren (bei 5%): Rate würde <strong style={{ color: cfCol(cfZins) }}>{fmtE(rateNeu)}/Mo</strong> → Cashflow: <strong style={{ color: cfCol(cfZins) }}>{fmtE(cfZins)}/Mo</strong>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Ins Portfolio übernehmen */}
+      <div className="card mb-20">
+        <div className="card-header"><div className="card-title">💾 Ergebnis ins Portfolio übernehmen</div></div>
+        <div className="card-body">
+          <form action={saveKalkulationAlsImmobilie} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 12 }}>
+            <input type="hidden" name="kaufpreis" value={kp} />
+            <input type="hidden" name="wert" value={kp} />
+            <input type="hidden" name="flaeche" value={fl} />
+            <input type="hidden" name="miete" value={mi} />
+            <input type="hidden" name="darlehen" value={Math.round(darlehen)} />
+            <input type="hidden" name="monatsrate" value={Math.round(rate)} />
+            <input type="hidden" name="zinssatz" value={zins} />
+            <input type="hidden" name="tilgungssatz" value={tilg} />
+            <input type="hidden" name="mit_darlehen" value={mitDarlehen ? "1" : "0"} />
+            <div className="field" style={{ flex: 1, minWidth: 220, marginBottom: 0 }}>
+              <label>Bezeichnung</label>
+              <input name="name" value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder="z.B. ETW Musterstraße" required />
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--muted)", paddingBottom: 9 }}>
+              <input type="checkbox" checked={mitDarlehen} onChange={(e) => setMitDarlehen(e.target.checked)} style={{ width: "auto" }} />
+              auch als Darlehen anlegen
+            </label>
+            <button type="submit" className="btn btn-gold" disabled={kp <= 0}>＋ Als Immobilie speichern</button>
+          </form>
+          <div className="hint" style={{ marginTop: 8 }}>Legt ein neues Objekt mit Kaufpreis, Wert, Fläche und Miete an{mitDarlehen ? " und verknüpft das Darlehen aus Schritt 3" : ""}.</div>
         </div>
       </div>
     </>
