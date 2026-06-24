@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum, istUmlagefaehig } from "@/lib/format";
-import { deleteKosten } from "@/lib/actions/buchungen";
+import { deleteKosten, deleteRechnung } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import type { Kosten, Property, Tenant } from "@/lib/types";
 
@@ -65,7 +65,7 @@ export default async function KostenPage({
         </div>
         <div className="section-body">
           <table>
-            <thead><tr><th>Datum</th><th>Immobilie</th><th>Mieter</th><th>Kategorie</th><th>Umlage</th><th>Betrag</th><th></th></tr></thead>
+            <thead><tr><th>Datum</th><th>Immobilie</th><th>Mieter</th><th>Kategorie</th><th>Umlage</th><th>Beleg</th><th>Betrag</th><th></th></tr></thead>
             <tbody>
               {list.map((k) => {
                 const u = istUmlagefaehig(k.kategorie);
@@ -76,13 +76,25 @@ export default async function KostenPage({
                     <td style={{ color: "var(--muted)" }}>{k.mieter_id ? mietName.get(k.mieter_id) ?? "–" : "–"}</td>
                     <td>{k.kategorie ? <span className="badge badge-red">{k.kategorie}</span> : "–"}</td>
                     <td><span className={`badge ${u === "ja" ? "badge-green" : u === "nein" ? "badge-red" : "badge-teal"}`}>{u === "ja" ? "umlagefähig" : u === "nein" ? "nicht" : "prüfen"}</span></td>
+                    <td>
+                      {k.rechnung_name ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <a href={`/kosten/${k.id}/rechnung`} target="_blank" rel="noopener noreferrer" title={`${k.rechnung_name}${k.rechnung_size ? " · " + k.rechnung_size : ""}`} style={{ color: "var(--gold)" }}>
+                            {k.rechnung_type === "application/pdf" ? "📄" : k.rechnung_type?.startsWith("image/") ? "🖼️" : "📎"} ansehen
+                          </a>
+                          <DeleteButton action={deleteRechnung.bind(null, k.id)} className="delete-btn" label="✕" confirmText="Beleg entfernen?" />
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--faint)", fontSize: 12 }}>–</span>
+                      )}
+                    </td>
                     <td style={{ fontWeight: 600, color: "var(--red)" }}>{euro(k.betrag)}</td>
                     <td style={{ textAlign: "right" }}><DeleteButton action={deleteKosten.bind(null, k.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></td>
                   </tr>
                 );
               })}
               {list.length === 0 && (
-                <tr><td colSpan={7}><div className="empty"><div className="empty-icon">📋</div>Noch keine Ausgaben</div></td></tr>
+                <tr><td colSpan={8}><div className="empty"><div className="empty-icon">📋</div>Noch keine Ausgaben</div></td></tr>
               )}
             </tbody>
           </table>

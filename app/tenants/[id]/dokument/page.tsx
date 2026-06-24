@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import DocGenerator from "@/components/DocGenerator";
-import type { Tenant, Property, VermieterProfil } from "@/lib/types";
+import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
 
 export default async function DokumentPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -11,9 +11,10 @@ export default async function DokumentPage({ params }: { params: { id: string } 
   if (!m) notFound();
   const tenant = m as Tenant;
 
-  const [{ data: prop }, { data: vp }] = await Promise.all([
+  const [{ data: prop }, { data: vp }, { data: ibanRows }] = await Promise.all([
     tenant.prop_id ? supabase.from("properties").select("*").eq("id", tenant.prop_id).single() : Promise.resolve({ data: null }),
     user ? supabase.from("vermieter_profil").select("*").eq("user_id", user.id).single() : Promise.resolve({ data: null }),
+    supabase.from("ibans").select("*").order("created_at", { ascending: true }),
   ]);
 
   return (
@@ -24,7 +25,7 @@ export default async function DokumentPage({ params }: { params: { id: string } 
           <div><div className="topbar-title">Dokument erstellen</div><div className="topbar-sub">{[tenant.vorname, tenant.nachname].filter(Boolean).join(" ")}</div></div>
         </div>
       </div>
-      <DocGenerator tenant={tenant} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} />
+      <DocGenerator tenant={tenant} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={(ibanRows as Iban[]) ?? []} />
     </div>
   );
 }

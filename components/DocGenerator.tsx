@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { Tenant, Property, VermieterProfil } from "@/lib/types";
+import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
+
+const fmtIban = (s: string) => s.replace(/(.{4})/g, "$1 ").trim();
 
 const ARTEN: { v: string; label: string }[] = [
   { v: "allgemein", label: "Allgemeines Schreiben" },
@@ -24,15 +26,17 @@ const eur = (n: number) => "€ " + (n || 0).toLocaleString("de-DE", { maximumFr
 const deDate = (s: string) => (s ? new Date(s).toLocaleDateString("de-DE") : "");
 const esc = (s: string) => s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]!));
 
-export default function DocGenerator({ tenant, property, vermieter }: { tenant: Tenant; property: Property | null; vermieter: VermieterProfil | null }) {
+export default function DocGenerator({ tenant, property, vermieter, ibans = [] }: { tenant: Tenant; property: Property | null; vermieter: VermieterProfil | null; ibans?: Iban[] }) {
   const [art, setArt] = useState("allgemein");
   const [betrag, setBetrag] = useState("");
   const [datum, setDatum] = useState("");
   const [grund, setGrund] = useState("");
+  const [ibanId, setIbanId] = useState("");
   const [vName, setVName] = useState(vermieter?.name ?? "");
   const [vAdr, setVAdr] = useState([vermieter?.strasse, [vermieter?.plz, vermieter?.ort].filter(Boolean).join(" ")].filter(Boolean).join(", "));
 
   const zeigtBetrag = ["mieterhoehung", "zahlungserinnerung", "mahnung"].includes(art);
+  const selectedIban = ibans.find((x) => x.id === ibanId) ?? null;
   const betragLabel = art === "mieterhoehung" ? "Neue Kaltmiete (€)" : "Offener Betrag (€)";
   const datumLabel = art === "mieterhoehung" ? "Wirksam ab" : art === "kuendigung" ? "Kündigung zum" : art === "reparatur" ? "Termin der Arbeiten" : "Zahlbar bis";
 
@@ -77,6 +81,15 @@ ${grund ? `<p>${esc(grund)}</p>` : ""}
       inhalt = `<p>${esc(grund) || "…"}</p>`;
     }
 
+    const ibanBox = selectedIban && zeigtBetrag
+      ? `<div style="margin-top:18px;background:#f9f7f4;border-left:2px solid #C4A862;padding:10px 14px;border-radius:4px;font-size:12px;">
+<div style="font-weight:bold;">Bitte überweisen Sie auf folgendes Konto:</div>
+<div style="margin-top:4px;font-weight:bold;">${esc(selectedIban.kontoname)}</div>
+${selectedIban.inhaber ? `<div style="color:#555;">${esc(selectedIban.inhaber)}</div>` : ""}
+<div style="font-family:monospace;font-size:13px;letter-spacing:1px;margin-top:4px;font-weight:bold;">${esc(fmtIban(selectedIban.iban))}</div>
+</div>`
+      : "";
+
     const name = vName || "–";
     const adr = vAdr || "–";
     const mieterName = `${m.vorname ?? ""} ${m.nachname ?? ""}`.trim();
@@ -106,6 +119,7 @@ h1{font-size:16px;margin:14px 0 12px;color:#1A1814;}
 <div class="objekt"><strong>Mietobjekt:</strong> ${esc(objekt)}</div>
 <p>Sehr geehrte(r) ${esc(mieterName)},</p>
 ${inhalt}
+${ibanBox}
 <p class="gruss">Mit freundlichen Grüßen</p>
 <div class="unterschrift">${esc(name)}<br>Vermieter</div>
 </div>
@@ -141,6 +155,37 @@ ${inhalt}
       <div className="form-row single">
         <div className="form-group"><label>Begründung / Zusatztext (optional)</label><textarea rows={3} value={grund} onChange={(e) => setGrund(e.target.value)} style={{ resize: "vertical" }} /></div>
       </div>
+
+      {zeigtBetrag && (
+        <>
+          <div className="form-section-label">Zahlungskonto (optional)</div>
+          {ibans.length === 0 ? (
+            <div style={{ fontSize: 12, color: "var(--faint)", padding: "4px 0 8px" }}>
+              Noch keine IBANs — unter <strong>Einstellungen</strong> anlegen, dann erscheinen sie hier.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+              {ibans.map((x) => {
+                const sel = x.id === ibanId;
+                return (
+                  <div
+                    key={x.id}
+                    onClick={() => setIbanId(sel ? "" : x.id)}
+                    style={{ padding: "8px 12px", borderRadius: 7, border: `1px solid ${sel ? "var(--gold)" : "var(--line2)"}`, background: sel ? "var(--gold-pale)" : "var(--bg3)", cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    <div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${sel ? "var(--gold)" : "var(--line2)"}`, background: sel ? "var(--gold)" : "transparent", flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 500 }}>{x.kontoname}{x.inhaber ? " · " + x.inhaber : ""}</div>
+                      <div style={{ fontSize: 11, fontFamily: "monospace", color: "var(--muted)" }}>{fmtIban(x.iban)}</div>
+                    </div>
+                    {sel && <span style={{ color: "var(--gold)" }}>✓</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
 
       <div className="form-section-label">Absender</div>
       <div className="form-row">

@@ -71,6 +71,9 @@ export type Kosten = {
   beschreibung: string | null;
   notiz: string | null;
   wiederkehrend: boolean | null;
+  rechnung_name: string | null;
+  rechnung_type: string | null;
+  rechnung_size: string | null;
 };
 
 export type Verbrauch = {
@@ -119,6 +122,15 @@ export type VermieterProfil = {
   iban: string | null;
   created_at: string | null;
   updated_at: string | null;
+};
+
+export type Iban = {
+  id: string;
+  user_id: string;
+  kontoname: string;
+  inhaber: string | null;
+  iban: string;
+  created_at: string | null;
 };
 
 export type Termin = {

@@ -50,6 +50,28 @@ export async function deleteEinnahme(id: string) {
 }
 
 // ===== KOSTEN =====
+function fmtSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+async function rechnungFelder(fd: FormData) {
+  const f = fd.get("rechnung");
+  if (!f || typeof f === "string" || (f as File).size === 0) return {};
+  const file = f as File;
+  // ~6 MB Limit (base64 bläht ~33% auf; Spalte ist Text)
+  if (file.size > 6 * 1024 * 1024) throw new Error("Rechnung zu groß (max. 6 MB).");
+  const mime = file.type || "application/octet-stream";
+  const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+  return {
+    rechnung_name: file.name || "Rechnung",
+    rechnung_type: mime,
+    rechnung_size: fmtSize(file.size),
+    rechnung_data: `data:${mime};base64,${base64}`,
+  };
+}
+
 export async function createKosten(fd: FormData) {
   const { supabase, userId } = await uid();
   const { error } = await supabase.from("kosten").insert({
@@ -60,6 +82,7 @@ export async function createKosten(fd: FormData) {
     kategorie: str(fd, "kategorie"),
     betrag: num(fd, "betrag"),
     beschreibung: str(fd, "beschreibung"),
+    ...(await rechnungFelder(fd)),
   });
   if (error) throw new Error(error.message);
   done(fd, "/kosten");
@@ -69,6 +92,15 @@ export async function deleteKosten(id: string) {
   const { error } = await supabase.from("kosten").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
+}
+export async function deleteRechnung(id: string) {
+  const { supabase } = await uid();
+  const { error } = await supabase
+    .from("kosten")
+    .update({ rechnung_name: null, rechnung_type: null, rechnung_size: null, rechnung_data: null })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/kosten");
 }
 
 // ===== VERBRAUCH =====

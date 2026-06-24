@@ -1,17 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { saveVermieter } from "@/lib/actions/vermieter";
-import type { VermieterProfil } from "@/lib/types";
+import IbanManager from "@/components/IbanManager";
+import type { VermieterProfil, Iban } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function EinstellungenPage() {
   const supabase = createClient();
-  const { data } = await supabase
-    .from("vermieter_profil")
-    .select("*")
-    .limit(1)
-    .maybeSingle();
+  const [{ data }, { data: ibanRows }] = await Promise.all([
+    supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
+    supabase.from("ibans").select("*").order("created_at", { ascending: true }),
+  ]);
   const p = (data ?? null) as VermieterProfil | null;
+  const ibans = (ibanRows ?? []) as Iban[];
 
   const Field = ({
     name,
@@ -78,6 +79,8 @@ export default async function EinstellungenPage() {
           )}
         </div>
       </form>
+
+      <IbanManager ibans={ibans} />
     </div>
   );
 }
