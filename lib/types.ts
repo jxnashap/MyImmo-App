@@ -91,8 +91,11 @@ export type Kredit = {
   prop_id: string | null;
   bezeichnung: string | null;
   bank: string | null;
+  darlnr: string | null;
   betrag: number | null;
   restschuld: number | null;
+  grundschuld: number | null;
+  beleihung: number | null;
   zinssatz: number | null;
   tilgungssatz: number | null;
   monatsrate: number | null;

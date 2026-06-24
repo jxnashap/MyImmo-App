@@ -48,7 +48,10 @@ export default async function NotizenPage() {
                     </div>
                   )}
                 </div>
-                <DeleteButton action={deleteNotiz.bind(null, n.id)} className="delete-btn" label="✕" confirmText={`„${n.titel || "Notiz"}" löschen?`} />
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Link href={`/notizen/${n.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link>
+                  <DeleteButton action={deleteNotiz.bind(null, n.id)} className="delete-btn" label="✕" confirmText={`„${n.titel || "Notiz"}" löschen?`} />
+                </span>
               </div>
               {n.inhalt && (
                 <div style={{ padding: "10px 14px 14px", fontSize: 12, color: "var(--muted)", borderTop: "1px solid var(--line)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>

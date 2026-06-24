@@ -42,7 +42,7 @@ export default async function VerbrauchPage() {
                   <td>{v.menge ?? "–"}</td>
                   <td style={{ color: "var(--muted)" }}>{v.einheit ?? ""}</td>
                   <td style={{ fontWeight: 600 }}>{euro(v.verbrauchkosten)}</td>
-                  <td style={{ textAlign: "right" }}><DeleteButton action={deleteVerbrauch.bind(null, v.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></td>
+                  <td style={{ textAlign: "right" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}><Link href={`/verbrauch/${v.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link><DeleteButton action={deleteVerbrauch.bind(null, v.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></span></td>
                 </tr>
               ))}
               {list.length === 0 && (

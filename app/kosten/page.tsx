@@ -89,7 +89,7 @@ export default async function KostenPage({
                       )}
                     </td>
                     <td style={{ fontWeight: 600, color: "var(--red)" }}>{euro(k.betrag)}</td>
-                    <td style={{ textAlign: "right" }}><DeleteButton action={deleteKosten.bind(null, k.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></td>
+                    <td style={{ textAlign: "right" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}><Link href={`/kosten/${k.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link><DeleteButton action={deleteKosten.bind(null, k.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></span></td>
                   </tr>
                 );
               })}

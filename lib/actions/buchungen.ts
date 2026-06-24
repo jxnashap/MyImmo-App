@@ -42,6 +42,18 @@ export async function createEinnahme(fd: FormData) {
   if (error) throw new Error(error.message);
   done(fd, "/einnahmen");
 }
+export async function updateEinnahme(id: string, fd: FormData) {
+  const { supabase } = await uid();
+  const { error } = await supabase.from("einnahmen").update({
+    prop_id: str(fd, "prop_id"),
+    buchungsdatum: str(fd, "buchungsdatum"),
+    kategorie: str(fd, "kategorie"),
+    betrag: num(fd, "betrag"),
+    beschreibung: str(fd, "beschreibung"),
+  }).eq("id", id);
+  if (error) throw new Error(error.message);
+  done(fd, "/einnahmen");
+}
 export async function deleteEinnahme(id: string) {
   const { supabase } = await uid();
   const { error } = await supabase.from("einnahmen").delete().eq("id", id);
@@ -87,6 +99,20 @@ export async function createKosten(fd: FormData) {
   if (error) throw new Error(error.message);
   done(fd, "/kosten");
 }
+export async function updateKosten(id: string, fd: FormData) {
+  const { supabase } = await uid();
+  const { error } = await supabase.from("kosten").update({
+    prop_id: str(fd, "prop_id"),
+    mieter_id: str(fd, "mieter_id"),
+    buchungsdatum: str(fd, "buchungsdatum"),
+    kategorie: str(fd, "kategorie"),
+    betrag: num(fd, "betrag"),
+    beschreibung: str(fd, "beschreibung"),
+    ...(await rechnungFelder(fd)),
+  }).eq("id", id);
+  if (error) throw new Error(error.message);
+  done(fd, "/kosten");
+}
 export async function deleteKosten(id: string) {
   const { supabase } = await uid();
   const { error } = await supabase.from("kosten").delete().eq("id", id);
@@ -115,6 +141,19 @@ export async function createVerbrauch(fd: FormData) {
     einheit: str(fd, "einheit"),
     verbrauchkosten: num(fd, "verbrauchkosten"),
   });
+  if (error) throw new Error(error.message);
+  done(fd, "/verbrauch");
+}
+export async function updateVerbrauch(id: string, fd: FormData) {
+  const { supabase } = await uid();
+  const { error } = await supabase.from("verbrauch").update({
+    prop_id: str(fd, "prop_id"),
+    buchungsdatum: str(fd, "buchungsdatum"),
+    art: str(fd, "art"),
+    menge: num(fd, "menge"),
+    einheit: str(fd, "einheit"),
+    verbrauchkosten: num(fd, "verbrauchkosten"),
+  }).eq("id", id);
   if (error) throw new Error(error.message);
   done(fd, "/verbrauch");
 }
@@ -147,6 +186,26 @@ export async function createKredit(fd: FormData) {
   if (error) throw new Error(error.message);
   done(fd, "/kredite");
 }
+export async function updateKredit(id: string, fd: FormData) {
+  const { supabase } = await uid();
+  const { error } = await supabase.from("kredite").update({
+    bezeichnung: str(fd, "bezeichnung"),
+    prop_id: str(fd, "prop_id"),
+    bank: str(fd, "bank"),
+    darlnr: str(fd, "darlnr"),
+    betrag: num(fd, "betrag"),
+    restschuld: num(fd, "restschuld"),
+    grundschuld: num(fd, "grundschuld"),
+    beleihung: num(fd, "beleihung"),
+    zinssatz: num(fd, "zinssatz"),
+    tilgungssatz: num(fd, "tilgungssatz"),
+    monatsrate: num(fd, "monatsrate"),
+    zinsbindung: str(fd, "zinsbindung"),
+    laufzeit: num(fd, "laufzeit"),
+  }).eq("id", id);
+  if (error) throw new Error(error.message);
+  done(fd, "/kredite");
+}
 export async function deleteKredit(id: string) {
   const { supabase } = await uid();
   const { error } = await supabase.from("kredite").delete().eq("id", id);
@@ -164,6 +223,17 @@ export async function createNotiz(fd: FormData) {
     kategorie: str(fd, "kategorie"),
     inhalt: str(fd, "inhalt"),
   });
+  if (error) throw new Error(error.message);
+  done(fd, "/notizen");
+}
+export async function updateNotiz(id: string, fd: FormData) {
+  const { supabase } = await uid();
+  const { error } = await supabase.from("notizen").update({
+    titel: str(fd, "titel"),
+    prop_id: str(fd, "prop_id"),
+    kategorie: str(fd, "kategorie"),
+    inhalt: str(fd, "inhalt"),
+  }).eq("id", id);
   if (error) throw new Error(error.message);
   done(fd, "/notizen");
 }

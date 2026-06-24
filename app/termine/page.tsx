@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
 import { mieterFristen } from "@/lib/fristen";
@@ -133,7 +134,10 @@ export default async function TerminePage() {
                   <span style={{ fontSize: 11, color: farbe, width: 90, textAlign: "right", flexShrink: 0 }}>{tage < 0 ? `vor ${Math.abs(tage)} Tg.` : tage === 0 ? "heute" : `in ${tage} Tg.`}</span>
                   <span className={`badge ${QUELLE_BADGE[e.quelle]}`}>{QUELLE_LABEL[e.quelle]}</span>
                   {e.quelle === "eigen" && e.id ? (
-                    <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label="✕" confirmText="Termin löschen?" />
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Link href={`/termine/${e.id}/edit`} className="delete-btn" title="Termin bearbeiten" style={{ color: "var(--muted)" }}>✎</Link>
+                      <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label="✕" confirmText="Termin löschen?" />
+                    </span>
                   ) : (
                     <span style={{ width: 22 }} />
                   )}

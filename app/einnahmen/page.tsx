@@ -58,7 +58,7 @@ export default async function EinnahmenPage({
                   <td>{e.kategorie ? <span className="badge badge-green">{e.kategorie}</span> : "–"}</td>
                   <td style={{ color: "var(--muted)" }}>{e.beschreibung ?? ""}</td>
                   <td style={{ fontWeight: 600, color: "var(--green)" }}>{euro(e.betrag)}</td>
-                  <td style={{ textAlign: "right" }}><DeleteButton action={deleteEinnahme.bind(null, e.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></td>
+                  <td style={{ textAlign: "right" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}><Link href={`/einnahmen/${e.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link><DeleteButton action={deleteEinnahme.bind(null, e.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></span></td>
                 </tr>
               ))}
               {list.length === 0 && (

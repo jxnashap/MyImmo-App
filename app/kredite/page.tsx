@@ -79,6 +79,7 @@ export default async function KreditePage() {
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}% Zins</span>}
+                  <Link href={`/kredite/${k.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link>
                   <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label="✕" confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
                 </div>
               </div>
