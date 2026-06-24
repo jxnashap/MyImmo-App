@@ -214,6 +214,17 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
 .form-section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 14px 0 8px; }
 
+/* FIELDS (Kalkulator) */
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+.field input, .field select { width: 100%; background: var(--bg3); border: 1px solid var(--line2); border-radius: 7px; padding: 9px 11px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 13px; outline: none; transition: border-color 0.15s; }
+.field input:focus, .field select:focus { border-color: var(--gold-dim); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.range-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.range-row label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; width: 130px; flex-shrink: 0; }
+.range-row input[type=range] { flex: 1; accent-color: var(--gold); height: 4px; background: var(--bg4); border: none; outline: none; }
+.range-val { font-size: 12px; font-weight: 600; color: var(--gold); min-width: 52px; text-align: right; }
+
 /* DIVIDER / HINT */
 .divider { height: 1px; background: var(--line); margin: 16px 0; }
 .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
