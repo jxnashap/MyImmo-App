@@ -1,5 +1,16 @@
 import type { Tenant, Property } from "@/lib/types";
 
+const KAUTION_STATUS = [
+  { v: "nein", label: "⚠️ Ausstehend" },
+  { v: "teilweise", label: "Teilweise" },
+  { v: "ja", label: "✓ Vollständig" },
+];
+const MIETART = [
+  { v: "standard", label: "Standard" },
+  { v: "staffel", label: "Staffelmiete" },
+  { v: "index", label: "Indexmiete" },
+];
+
 export default function TenantForm({
   action,
   tenant,
@@ -11,66 +22,78 @@ export default function TenantForm({
   properties: Pick<Property, "id" | "bezeichnung">[];
   submitLabel: string;
 }) {
-  const val = (k: keyof Tenant) => (tenant?.[k] as string | number | null) ?? "";
-
-  const text: { name: keyof Tenant; label: string; type?: string }[] = [
-    { name: "vorname", label: "Vorname" },
-    { name: "nachname", label: "Nachname" },
-    { name: "email", label: "E-Mail", type: "email" },
-    { name: "telefon", label: "Telefon" },
-    { name: "einheit", label: "Einheit (z.B. EG links)" },
-    { name: "mieter_adresse", label: "Adresse des Mieters" },
-    { name: "mietbeginn", label: "Mietbeginn", type: "date" },
-    { name: "mietende", label: "Mietende", type: "date" },
-    { name: "kaltmiete", label: "Kaltmiete (€)", type: "number" },
-    { name: "nk_vorauszahlung", label: "NK-Vorauszahlung (€)", type: "number" },
-    { name: "kaution", label: "Kaution (€)", type: "number" },
-    { name: "flaeche", label: "Fläche (m²)", type: "number" },
-  ];
+  const v = (k: keyof Tenant) => (tenant?.[k] as string | number | null) ?? "";
 
   return (
-    <form action={action} className="grid gap-4 sm:grid-cols-2">
-      <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-        <span className="text-white/60">Objekt</span>
-        <select
-          name="prop_id"
-          defaultValue={tenant?.prop_id ?? ""}
-          className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 outline-none focus:border-gold"
-        >
-          <option value="">— kein Objekt —</option>
-          {properties.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.bezeichnung}
-            </option>
-          ))}
-        </select>
-      </label>
+    <form action={action} className="form-box" style={{ maxWidth: 640 }}>
+      <h3>👤 {tenant ? "Mieter bearbeiten" : "Mieter erfassen"}</h3>
+      <p>Mietvertrag, Fristen, Kaution und Einheit.</p>
 
-      {text.map((f) => (
-        <label key={f.name} className="flex flex-col gap-1 text-sm">
-          <span className="text-white/60">{f.label}</span>
-          <input
-            name={f.name}
-            type={f.type ?? "text"}
-            step={f.type === "number" ? "0.01" : undefined}
-            defaultValue={val(f.name)}
-            className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 outline-none focus:border-gold"
-          />
-        </label>
-      ))}
+      <div className="form-section-label">Person</div>
+      <div className="form-row">
+        <div className="form-group"><label>Vorname *</label><input name="vorname" required defaultValue={v("vorname")} /></div>
+        <div className="form-group"><label>Nachname *</label><input name="nachname" required defaultValue={v("nachname")} /></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>E-Mail</label><input type="email" name="email" defaultValue={v("email")} /></div>
+        <div className="form-group"><label>Telefon</label><input name="telefon" defaultValue={v("telefon")} /></div>
+      </div>
+      <div className="form-row single">
+        <div className="form-group"><label>Adresse des Mieters</label><input name="mieter_adresse" defaultValue={v("mieter_adresse")} /></div>
+      </div>
 
-      <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-        <span className="text-white/60">Notiz</span>
-        <textarea
-          name="notiz"
-          rows={3}
-          defaultValue={val("notiz")}
-          className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 outline-none focus:border-gold"
-        />
-      </label>
+      <div className="form-section-label">Mietverhältnis</div>
+      <div className="form-row">
+        <div className="form-group"><label>Objekt</label>
+          <select name="prop_id" defaultValue={tenant?.prop_id ?? ""}>
+            <option value="">— kein Objekt —</option>
+            {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
+          </select>
+        </div>
+        <div className="form-group"><label>Einheit (z.B. EG links)</label><input name="einheit" defaultValue={v("einheit")} /></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Mietbeginn</label><input type="date" name="mietbeginn" defaultValue={v("mietbeginn")} /></div>
+        <div className="form-group"><label>Mietende</label><input type="date" name="mietende" defaultValue={v("mietende")} /></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Kündigungsfrist (Monate)</label><input type="number" name="kuendigung" defaultValue={v("kuendigung")} placeholder="3" /></div>
+        <div className="form-group"><label>Wohnfläche (m²)</label><input type="number" step="0.01" name="flaeche" defaultValue={v("flaeche")} /></div>
+      </div>
 
-      <div className="sm:col-span-2">
-        <button className="rounded-lg bg-gold px-5 py-2 font-medium text-ink">{submitLabel}</button>
+      <div className="form-section-label">Miete &amp; Kaution</div>
+      <div className="form-row">
+        <div className="form-group"><label>Kaltmiete (€)</label><input type="number" step="0.01" name="kaltmiete" defaultValue={v("kaltmiete")} /></div>
+        <div className="form-group"><label>NK-Vorauszahlung (€)</label><input type="number" step="0.01" name="nk_vorauszahlung" defaultValue={v("nk_vorauszahlung")} /></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Kaution (€)</label><input type="number" step="0.01" name="kaution" defaultValue={v("kaution")} /></div>
+        <div className="form-group"><label>Kaution-Status</label>
+          <select name="kaution_status" defaultValue={(tenant?.kaution_status as string) || "nein"}>{KAUTION_STATUS.map((k) => <option key={k.v} value={k.v}>{k.label}</option>)}</select>
+        </div>
+      </div>
+
+      <div className="form-section-label">Mieterhöhung</div>
+      <div className="form-row">
+        <div className="form-group"><label>Mietart</label>
+          <select name="mietart" defaultValue={(tenant?.mietart as string) || "standard"}>{MIETART.map((k) => <option key={k.v} value={k.v}>{k.label}</option>)}</select>
+        </div>
+        <div className="form-group"><label>Letzte Mieterhöhung</label><input type="date" name="letzte_erhoehung" defaultValue={v("letzte_erhoehung")} /></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Nächste Erhöhung (Staffel/Index)</label><input type="date" name="staffel_datum" defaultValue={v("staffel_datum")} /></div>
+        <div className="form-group"><label>Erhöhungsbetrag (€)</label><input type="number" step="0.01" name="staffel_betrag" defaultValue={v("staffel_betrag")} /></div>
+      </div>
+      <div className="form-row single">
+        <div className="form-group"><label>Intervall (Monate)</label><input name="staffel_intervall" defaultValue={v("staffel_intervall")} placeholder="12" /></div>
+      </div>
+
+      <div className="form-row single">
+        <div className="form-group"><label>Notiz</label><textarea name="notiz" rows={3} defaultValue={v("notiz")} style={{ resize: "vertical" }} /></div>
+      </div>
+
+      <div className="form-actions">
+        <button type="submit" className="btn btn-gold">{submitLabel}</button>
       </div>
     </form>
   );

@@ -25,12 +25,17 @@ function parse(formData: FormData) {
     einheit: str("einheit"),
     mietbeginn: str("mietbeginn"),
     mietende: str("mietende"),
+    kuendigung: num("kuendigung"),
+    letzte_erhoehung: str("letzte_erhoehung"),
     kaltmiete: num("kaltmiete"),
     nk_vorauszahlung: num("nk_vorauszahlung"),
     kaution: num("kaution"),
     kaution_status: str("kaution_status"),
     flaeche: num("flaeche"),
     mietart: str("mietart"),
+    staffel_datum: str("staffel_datum"),
+    staffel_betrag: num("staffel_betrag"),
+    staffel_intervall: str("staffel_intervall"),
     notiz: str("notiz"),
   };
 }
