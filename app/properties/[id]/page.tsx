@@ -1,35 +1,39 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { eur, eur2, datum } from "@/lib/format";
+import { euro, datum } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
 import DeleteButton from "@/components/DeleteButton";
 import type { Property, Tenant } from "@/lib/types";
 
 type Kredit = {
-  id: string;
-  bezeichnung: string | null;
-  bank: string | null;
-  betrag: number | null;
-  restschuld: number | null;
-  monatsrate: number | null;
-  zinssatz: number | null;
-  tilgungssatz: number | null;
-  zinsbindung: string | null;
+  id: string; bezeichnung: string | null; bank: string | null; betrag: number | null;
+  restschuld: number | null; monatsrate: number | null; zinssatz: number | null;
+  tilgungssatz: number | null; laufzeit: number | null; zinsbindung: string | null;
 };
 type Buchung = { id: string; betrag: number | null; buchungsdatum: string | null; kategorie: string | null };
+type Verbrauch = { id: string; buchungsdatum: string | null; art: string | null; menge: number | null; einheit: string | null; verbrauchkosten: number | null };
+type Notiz = { id: string; titel: string | null; kategorie: string | null; inhalt: string | null };
+
+const ART_ICONS: Record<string, string> = { Strom: "⚡", Gas: "🔥", Wasser: "💧", Heizöl: "🛢", Fernwärme: "♨", Sonstiges: "📦" };
+
+function mkBadge(val: number, gut: number, ok: number) {
+  return val >= gut ? "badge-green" : val >= ok ? "badge-gold" : "badge-red";
+}
 
 export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
   const id = params.id;
 
-  const [{ data: prop }, { data: mieter }, { data: einn }, { data: kost }, { data: kredite }] =
+  const [{ data: prop }, { data: mieter }, { data: einn }, { data: kost }, { data: kredite }, { data: verb }, { data: notiz }] =
     await Promise.all([
       supabase.from("properties").select("*").eq("id", id).single(),
       supabase.from("mieter").select("*").eq("prop_id", id).order("mietbeginn"),
       supabase.from("einnahmen").select("id,betrag,buchungsdatum,kategorie").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
       supabase.from("kosten").select("id,betrag,buchungsdatum,kategorie").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
-      supabase.from("kredite").select("id,bezeichnung,bank,betrag,restschuld,monatsrate,zinssatz,tilgungssatz,zinsbindung").eq("prop_id", id),
+      supabase.from("kredite").select("id,bezeichnung,bank,betrag,restschuld,monatsrate,zinssatz,tilgungssatz,laufzeit,zinsbindung").eq("prop_id", id),
+      supabase.from("verbrauch").select("id,buchungsdatum,art,menge,einheit,verbrauchkosten").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
+      supabase.from("notizen").select("id,titel,kategorie,inhalt").eq("prop_id", id),
     ]);
 
   if (!prop) notFound();
@@ -38,264 +42,305 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const kred = (kredite ?? []) as Kredit[];
   const einnahmen = (einn ?? []) as Buchung[];
   const kosten = (kost ?? []) as Buchung[];
+  const verbrauch = (verb ?? []) as Verbrauch[];
+  const notizen = (notiz ?? []) as Notiz[];
 
-  const wert = p.wert ?? p.kaufpreis ?? 0;
-  const sollMiete = p.miete ?? tenants.reduce((s, t) => s + (t.kaltmiete ?? 0), 0);
-  const rateMo = kred.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
-  const restschuld = kred.reduce((s, k) => s + (k.restschuld ?? 0), 0);
-  const cashflowMo = sollMiete - rateMo;
-  const einnahmenGesamt = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
-  const kostenGesamt = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
-
-  const jahresMiete = sollMiete * 12;
-  const bruttoRendite = wert ? (jahresMiete / wert) * 100 : null;
-  const faktor = jahresMiete && p.kaufpreis ? p.kaufpreis / jahresMiete : null;
+  const wert = p.wert ?? 0;
+  const totalRestschuld = kred.reduce((s, k) => s + (k.restschuld ?? 0), 0);
+  const totalKreditRate = kred.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
+  const jahresEinnahmen = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
+  const jahresKosten = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
+  const miete = p.miete ?? 0;
+  const rendite = miete && wert ? (miete * 12 / wert) * 100 : 0;
+  const faktor = miete && p.kaufpreis ? p.kaufpreis / (miete * 12) : 0;
+  const cashflowMo = miete - totalKreditRate;
+  const cfStr = (cashflowMo >= 0 ? "+ " : "– ") + euro(Math.abs(cashflowMo));
 
   const kpis = [
-    { label: "Aktueller Wert", value: eur(wert), cls: "gold" },
-    { label: "Kaltmiete / Mo.", value: sollMiete ? eur(sollMiete) : "–" },
-    { label: "Restschuld gesamt", value: eur(restschuld) },
-    {
-      label: "Cashflow / Mo.",
-      value: (cashflowMo >= 0 ? "+ " : "") + eur(cashflowMo),
-      color: cashflowMo >= 0 ? "var(--green)" : "var(--red)",
-      sub: cashflowMo >= 0 ? "positiv" : "negativ",
-    },
+    { lbl: "Aktueller Wert", val: euro(wert) },
+    { lbl: "Kaltmiete / Mo.", val: miete ? euro(miete) : "–" },
+    { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–" },
+    { lbl: "Cashflow / Mo.", val: cfStr, sub: cashflowMo >= 0 ? "positiv" : "negativ", col: cashflowMo >= 0 ? "var(--green)" : "var(--red)" },
   ];
 
-  const stamm: [string, React.ReactNode][] = [
+  const stammRows: [string, React.ReactNode][] = [
     ["Typ", p.typ || "–"],
     ["Adresse", p.adresse || "–"],
     ["Wohnfläche", p.flaeche ? `${p.flaeche} m²` : "–"],
     ["Zimmer", p.zimmer ?? "–"],
     ["Baujahr", p.baujahr ?? "–"],
-    ["Kaufpreis", eur(p.kaufpreis)],
-    ["Aktueller Wert", eur(p.wert)],
+    ["Kaufpreis", p.kaufpreis ? euro(p.kaufpreis) : "–"],
+    ["Aktueller Wert", euro(wert)],
     ["Energieklasse", p.energieklasse || "–"],
-    ["Hausgeld / Mo.", p.hausgeld ? `${eur(p.hausgeld)}/Mo` : "–"],
+    ["Hausgeld / Mo.", p.hausgeld ? `${euro(p.hausgeld)}/Mo` : "–"],
     ["Status", p.obj_status || "–"],
     ["Notiz", p.notiz_import || "–"],
   ];
 
-  const kennzahlen: { label: string; sub: string; value: string; pill: string }[] = [
-    { label: "Bruttomietrendite", sub: "Jahreskaltmiete / Wert", value: bruttoRendite != null ? `${bruttoRendite.toFixed(2)}%` : "–", pill: bruttoRendite != null && bruttoRendite >= 4 ? "pill-teal" : "pill-red" },
-    { label: "Kaufpreisfaktor", sub: "Kaufpreis / Jahreskaltmiete", value: faktor != null ? `${faktor.toFixed(1)}x` : "–", pill: "pill-teal" },
-    { label: "Kreditrate / Mo.", sub: "Summe aller Darlehensraten", value: eur(rateMo), pill: "pill-teal" },
-    { label: "Restschuld gesamt", sub: "Summe aller Darlehen", value: eur(restschuld), pill: "pill-teal" },
-    { label: "Cashflow / Mo.", sub: "Miete minus Kreditrate", value: (cashflowMo >= 0 ? "+ " : "") + eur(cashflowMo), pill: cashflowMo >= 0 ? "pill-green" : "pill-red" },
-    { label: "Einnahmen gesamt", sub: "Alle erfassten Einnahmen", value: eur(einnahmenGesamt), pill: "pill-green" },
-    { label: "Kosten gesamt", sub: "Alle erfassten Ausgaben", value: eur(kostenGesamt), pill: "pill-red" },
+  const kennzahlen = [
+    { lbl: "Bruttomietrendite", val: rendite > 0 ? rendite.toFixed(2) + "%" : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-teal", note: "Jahreskaltmiete / Kaufpreis" },
+    { lbl: "Kaufpreisfaktor", val: faktor > 0 ? faktor.toFixed(1) + "x" : "–", badge: faktor > 0 ? (faktor < 25 ? "badge-green" : faktor < 30 ? "badge-gold" : "badge-red") : "badge-teal", note: "Kaufpreis / Jahreskaltmiete" },
+    { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-teal", note: "Summe aller Darlehensraten" },
+    { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–", badge: "badge-teal", note: "Summe aller Darlehen" },
+    { lbl: "Cashflow / Mo.", val: cfStr, badge: cashflowMo >= 0 ? "badge-green" : "badge-red", note: "Miete minus Kreditrate" },
+    { lbl: "Einnahmen gesamt", val: jahresEinnahmen > 0 ? euro(jahresEinnahmen) : "–", badge: "badge-green", note: "Alle erfassten Einnahmen" },
+    { lbl: "Kosten gesamt", val: jahresKosten > 0 ? euro(jahresKosten) : "–", badge: "badge-red", note: "Alle erfassten Ausgaben" },
   ];
 
+  // Cashflow-Übersicht
+  const cfItems = [
+    { lbl: "Kaltmiete", val: miete, col: "var(--green)" },
+    { lbl: "Kreditraten", val: totalKreditRate, col: "var(--red)" },
+    { lbl: "Laufende Kosten", val: jahresKosten / 12, col: "var(--red)" },
+  ].filter((i) => i.val > 0);
+  const cfMax = Math.max(1, ...cfItems.map((i) => i.val));
+
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link href="/properties" className="btn-outline mb-3">← Zurück</Link>
-          <h1 className="text-3xl">{p.bezeichnung}</h1>
-          <p className="mt-1 text-white/40">
-            {p.adresse || "Keine Adresse"}
-            {p.obj_status ? ` · ${p.obj_status}` : ""}
-          </p>
+    <div className="fade-up">
+      <div className="topbar">
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Link href="/properties" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
+          <div>
+            <div className="topbar-title">{p.bezeichnung}</div>
+            <div className="topbar-sub">{(p.adresse || p.typ || "")}{p.obj_status ? ` · ${p.obj_status}` : ""}</div>
+          </div>
         </div>
-        <div className="flex items-center gap-2 pt-1">
-          <Link href={`/properties/${id}/edit`} className="btn-outline">✏️ Bearbeiten</Link>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link href={`/properties/${id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}>✏️ Bearbeiten</Link>
           <DeleteButton
             action={deleteProperty.bind(null, id)}
             confirmText={`„${p.bezeichnung}" wirklich löschen?`}
-            label="🗑️ Löschen"
-            className="btn-red"
+            label="🗑 Löschen"
+            className="btn btn-ghost"
           />
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* KPI-Leiste */}
+      <div className="grid-4 mb-20">
         {kpis.map((k) => (
-          <div key={k.label} className="kpi">
-            <div className="kpi-label">{k.label}</div>
-            <div className={`kpi-value ${k.cls ?? ""}`} style={k.color ? { color: k.color } : undefined}>{k.value}</div>
-            {k.sub && <div className="mt-1 text-xs" style={{ color: k.color }}>{k.sub}</div>}
+          <div key={k.lbl} className="kpi-card">
+            <div className="kpi-label">{k.lbl}</div>
+            <div className="kpi-value" style={k.col ? { color: k.col } : undefined}>{k.val}</div>
+            {k.sub && <div className="kpi-sub" style={{ color: k.col }}>{k.sub}</div>}
           </div>
         ))}
       </div>
 
       {/* Stammdaten + Kennzahlen */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <div className="card">
-          <div className="mb-2 section-title">📋 Stammdaten</div>
-          <div>
-            {stamm.map(([k, v]) => (
-              <div key={k} className="kv-row">
-                <span className="text-sm text-white/50">{k}</span>
-                <span className="text-right text-sm">{v}</span>
-              </div>
-            ))}
+      <div className="grid-2 mb-20">
+        <div className="section" style={{ marginBottom: 0 }}>
+          <div className="section-header"><h3>📋 Stammdaten</h3></div>
+          <div className="section-body">
+            <table style={{ fontSize: 13 }}>
+              <tbody>
+                {stammRows.map(([l, v]) => (
+                  <tr key={l}>
+                    <td style={{ color: "var(--muted)", padding: "7px 12px 7px 0", width: 140, whiteSpace: "nowrap" }}>{l}</td>
+                    <td style={{ padding: "7px 0", fontWeight: 500 }}>{v}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div className="card">
-          <div className="mb-2 section-title">📈 Kennzahlen &amp; Rendite</div>
-          <div>
-            {kennzahlen.map((k) => (
-              <div key={k.label} className="kv-row">
-                <span>
-                  <span className="block text-sm">{k.label}</span>
-                  <span className="block text-xs text-white/40">{k.sub}</span>
-                </span>
-                <span className={`pill ${k.pill}`}>{k.value}</span>
-              </div>
-            ))}
+        <div className="section" style={{ marginBottom: 0 }}>
+          <div className="section-header"><h3>📈 Kennzahlen &amp; Rendite</h3></div>
+          <div className="section-body">
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {kennzahlen.map((k) => (
+                <div key={k.lbl} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{k.lbl}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)" }}>{k.note}</div>
+                  </div>
+                  <span className={`badge ${k.badge}`} style={{ fontSize: 12 }}>{k.val}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Mieter */}
-      <section className="mt-4 card">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="section-title">👤 Mieter dieser Immobilie</div>
-          <Link href="/tenants/new" className="btn-outline">+ Mieter</Link>
+      {/* Mieter dieser Immobilie */}
+      <div className="section mb-20">
+        <div className="section-header">
+          <h3>👤 Mieter dieser Immobilie</h3>
+          <Link href="/tenants/new" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Mieter</Link>
         </div>
-        {tenants.length === 0 ? (
-          <p className="text-white/40">Keine Mieter zugeordnet.</p>
-        ) : (
-          <div className="divide-y divide-white/10">
-            {tenants.map((t) => (
-              <Link key={t.id} href={`/tenants/${t.id}/edit`} className="flex items-center gap-3 py-3 transition hover:opacity-80">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/5 text-sm text-white/50">
-                  {(t.vorname?.[0] ?? t.nachname?.[0] ?? "?").toUpperCase()}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm">
-                    {[t.vorname, t.nachname].filter(Boolean).join(" ") || "—"}
-                    {t.einheit ? <span className="text-white/40"> · {t.einheit}</span> : ""}
+        <div className="section-body">
+          {tenants.length === 0 ? (
+            <div style={{ color: "var(--faint)", fontSize: 12, padding: "8px 0" }}>Noch keine Mieter zugeordnet.</div>
+          ) : (
+            tenants.map((m) => (
+              <Link key={m.id} href={`/tenants/${m.id}/edit`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--line)", textDecoration: "none", color: "var(--text)" }}>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--gold-pale)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>👤</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>
+                    {[m.vorname, m.nachname].filter(Boolean).join(" ") || "—"}
+                    {m.einheit && <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: 11 }}> · {m.einheit}</span>}
                   </div>
-                  <div className="text-xs text-white/40">seit {datum(t.mietbeginn)}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{m.mietbeginn ? "seit " + datum(m.mietbeginn) : ""}</div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm gold">{eur(t.kaltmiete)}</div>
-                  <div className="text-[11px] text-white/35">Kaltmiete / Mo.</div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "var(--green)" }}>{euro(m.kaltmiete)}</div>
+                  <div style={{ fontSize: 10, color: "var(--muted)" }}>Kaltmiete / Mo.</div>
                 </div>
               </Link>
-            ))}
-          </div>
-        )}
-      </section>
+            ))
+          )}
+        </div>
+      </div>
 
       {/* Kredite & Finanzierung */}
-      <section className="mt-4 card">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="section-title">🏦 Kredite &amp; Finanzierung</div>
-          <Link href="/kredite" className="btn-outline">+ Darlehen</Link>
+      <div className="section mb-20">
+        <div className="section-header">
+          <h3>🏦 Kredite &amp; Finanzierung</h3>
+          <Link href="/kredite" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Darlehen</Link>
         </div>
-        {kred.length === 0 ? (
-          <p className="text-white/40">Keine Darlehen erfasst.</p>
-        ) : (
-          <div className="space-y-6">
-            {kred.map((k) => {
-              const getilgt = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, ((k.betrag - (k.restschuld ?? 0)) / k.betrag) * 100)) : null;
+        <div className="section-body">
+          {kred.length === 0 ? (
+            <div className="empty" style={{ padding: 24 }}><div className="empty-icon">🏦</div><p>Noch keine Darlehen</p></div>
+          ) : (
+            kred.map((k) => {
+              const tilgtPct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round((1 - (k.restschuld ?? 0) / k.betrag) * 100))) : 0;
               return (
-                <div key={k.id}>
-                  <div className="font-medium">{k.bezeichnung || "Darlehen"}</div>
-                  <div className="text-sm text-white/40">
-                    {[k.bank, k.zinssatz != null ? `${k.zinssatz}% Zins` : null, k.tilgungssatz != null ? `${k.tilgungssatz}% Tilgung` : null]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
+                <div key={k.id} style={{ padding: "14px 0", borderBottom: "1px solid var(--line)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div>
-                      <div className="text-xs text-white/40">Restschuld</div>
-                      <div className="text-sm" style={{ color: "var(--red)" }}>{eur(k.restschuld)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-white/40">Rate/Mo.</div>
-                      <div className="text-sm">{eur(k.monatsrate)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-white/40">Volltilgung</div>
-                      <div className="text-sm">{k.zinsbindung || "–"}</div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Darlehen"}</div>
+                      <div style={{ fontSize: 11, color: "var(--muted)" }}>{k.bank || "–"} · {k.zinssatz ?? 0}% Zins · {k.tilgungssatz ?? 0}% Tilgung</div>
                     </div>
                   </div>
-                  {getilgt != null && (
-                    <div className="mt-3">
-                      <div className="mb-1 text-xs text-white/40">Getilgt: {Math.round(getilgt)}%</div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
-                        <div className="h-full rounded-full" style={{ width: `${getilgt}%`, background: "var(--green)" }} />
-                      </div>
-                    </div>
-                  )}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 8 }}>
+                    <div><div style={{ fontSize: 10, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
+                    <div><div style={{ fontSize: 10, color: "var(--muted)" }}>Rate/Mo.</div><div style={{ fontWeight: 600, fontSize: 13 }}>{euro(k.monatsrate)}</div></div>
+                    <div><div style={{ fontSize: 10, color: "var(--muted)" }}>Volltilgung</div><div style={{ fontWeight: 600, fontSize: 13 }}>{k.laufzeit ?? "–"}</div></div>
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Getilgt: {tilgtPct}%</div>
+                  <div className="progress-bar"><div className="progress-fill" style={{ width: `${tilgtPct}%`, background: "var(--teal)" }} /></div>
                 </div>
               );
-            })}
-          </div>
-        )}
-      </section>
+            })
+          )}
+        </div>
+      </div>
 
       {/* Einnahmen + Kosten */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <BuchungsListe
-          title="💰 Einnahmen"
-          gesamt={einnahmenGesamt}
-          gesamtColor="var(--green)"
-          rows={einnahmen}
-          addHref={`/einnahmen?prop=${id}`}
-          amountColor="var(--green)"
-        />
-        <BuchungsListe
-          title="📋 Kosten & Ausgaben"
-          gesamt={kostenGesamt}
-          gesamtColor="var(--red)"
-          rows={kosten}
-          addHref={`/kosten?prop=${id}`}
-          amountColor="var(--red)"
-        />
+      <div className="grid-2 mb-20">
+        <BuchungSection title="💰 Einnahmen" rows={einnahmen} gesamtColor="var(--green)" badge="badge-green" addHref={`/einnahmen?prop=${id}`} />
+        <BuchungSection title="📋 Kosten & Ausgaben" rows={kosten} gesamtColor="var(--red)" badge="badge-red" addHref={`/kosten?prop=${id}`} />
+      </div>
+
+      {/* Verbrauch + Notizen */}
+      <div className="grid-2 mb-20">
+        <div className="section" style={{ marginBottom: 0 }}>
+          <div className="section-header"><h3>⚡ Verbrauch &amp; Nebenkosten</h3><Link href="/verbrauch" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
+          <div className="section-body">
+            {verbrauch.length === 0 ? (
+              <div className="empty" style={{ padding: 24 }}><div className="empty-icon">⚡</div><p>Noch kein Verbrauch</p></div>
+            ) : (
+              <>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "var(--amber)", marginBottom: 10 }}>
+                  Gesamt: {euro(verbrauch.reduce((s, v) => s + (v.verbrauchkosten ?? 0), 0))}
+                </div>
+                <table style={{ fontSize: 12 }}>
+                  <thead><tr><th>Datum</th><th>Art</th><th>Menge</th><th>Kosten</th></tr></thead>
+                  <tbody>
+                    {verbrauch.slice(0, 8).map((v) => (
+                      <tr key={v.id}>
+                        <td>{datum(v.buchungsdatum)}</td>
+                        <td>{(v.art && ART_ICONS[v.art]) || ""} {v.art}</td>
+                        <td>{v.menge ?? "–"} {v.einheit}</td>
+                        <td style={{ fontWeight: 600 }}>{euro(v.verbrauchkosten)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="section" style={{ marginBottom: 0 }}>
+          <div className="section-header"><h3>📁 Notizen</h3><Link href="/notizen" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
+          <div className="section-body">
+            {notizen.length === 0 ? (
+              <div className="empty" style={{ padding: 24 }}><div className="empty-icon">📁</div><p>Noch keine Notizen</p></div>
+            ) : (
+              notizen.map((n) => (
+                <div key={n.id} style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{n.titel}</div>
+                    {n.kategorie && <span className="badge badge-teal">{n.kategorie}</span>}
+                  </div>
+                  {n.inhalt && <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>{n.inhalt}</div>}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Cashflow-Übersicht */}
+      <div className="section mb-20">
+        <div className="section-header"><h3>📊 Cashflow-Übersicht (Monat)</h3></div>
+        <div className="section-body">
+          {cfItems.length === 0 ? (
+            <div style={{ color: "var(--faint)", fontSize: 12 }}>Noch keine Daten.</div>
+          ) : (
+            cfItems.map((i) => (
+              <div key={i.lbl} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                <div style={{ fontSize: 12, color: "var(--muted)", width: 130, textAlign: "right", flexShrink: 0 }}>{i.lbl}</div>
+                <div style={{ flex: 1, height: 22, background: "var(--bg4)", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ width: `${(i.val / cfMax) * 100}%`, height: "100%", background: i.col, borderRadius: 4 }} />
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, width: 90, textAlign: "right", flexShrink: 0 }}>{euro(i.val)}</div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function BuchungsListe({
-  title,
-  gesamt,
-  gesamtColor,
-  rows,
-  addHref,
-  amountColor,
+function BuchungSection({
+  title, rows, gesamtColor, badge, addHref,
 }: {
-  title: string;
-  gesamt: number;
-  gesamtColor: string;
-  rows: Buchung[];
-  addHref: string;
-  amountColor: string;
+  title: string; rows: Buchung[]; gesamtColor: string; badge: string; addHref: string;
 }) {
+  const total = rows.reduce((s, r) => s + (r.betrag ?? 0), 0);
+  const isEinnahme = badge === "badge-green";
   return (
-    <div className="card">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="section-title">{title}</div>
-        <Link href={addHref} className="btn-outline">+ Hinzufügen</Link>
+    <div className="section" style={{ marginBottom: 0 }}>
+      <div className="section-header">
+        <h3>{title}</h3>
+        <Link href={addHref} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link>
       </div>
-      <div className="mb-3 text-sm">
-        Gesamt: <span style={{ color: gesamtColor }}>{eur(gesamt)}</span>
+      <div className="section-body">
+        {rows.length === 0 ? (
+          <div className="empty" style={{ padding: 24 }}><div className="empty-icon">{isEinnahme ? "💰" : "📋"}</div><p>Noch keine {isEinnahme ? "Einnahmen" : "Ausgaben"}</p></div>
+        ) : (
+          <>
+            <div style={{ fontSize: 12, fontWeight: 600, color: gesamtColor, marginBottom: 10 }}>Gesamt: {euro(total)}</div>
+            <table style={{ fontSize: 12 }}>
+              <thead><tr><th>Datum</th><th>Kategorie</th><th>Betrag</th></tr></thead>
+              <tbody>
+                {rows.slice(0, 10).map((r) => (
+                  <tr key={r.id}>
+                    <td>{datum(r.buchungsdatum)}</td>
+                    <td>{r.kategorie && <span className={`badge ${badge}`}>{r.kategorie}</span>}</td>
+                    <td style={{ fontWeight: 600, color: gesamtColor }}>{euro(r.betrag)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {rows.length > 10 && <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>+ {rows.length - 10} weitere</div>}
+          </>
+        )}
       </div>
-      {rows.length === 0 ? (
-        <p className="text-white/40">Keine Buchungen.</p>
-      ) : (
-        <div className="divide-y divide-white/10">
-          {rows.slice(0, 12).map((r) => (
-            <div key={r.id} className="flex items-center gap-3 py-2.5 text-sm">
-              <span className="w-20 shrink-0 text-white/50">{datum(r.buchungsdatum)}</span>
-              <span className="flex-1">
-                {r.kategorie ? <span className="pill pill-neutral">{r.kategorie}</span> : ""}
-              </span>
-              <span className="text-right" style={{ color: amountColor }}>{eur2(r.betrag)}</span>
-            </div>
-          ))}
-          {rows.length > 12 && (
-            <div className="pt-2 text-xs text-white/40">… und {rows.length - 12} weitere</div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

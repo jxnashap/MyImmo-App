@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { eur, eur2 } from "@/lib/format";
+import { euro, datum } from "@/lib/format";
 import type { Kredit, Property } from "@/lib/types";
 
 export default async function KreditePage() {
@@ -13,41 +14,52 @@ export default async function KreditePage() {
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
   const list = (kred ?? []) as Kredit[];
 
-  const restSumme = list.reduce((s, k) => s + (k.restschuld ?? 0), 0);
-  const rateSumme = list.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
-
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-3xl">Kredite</h1>
-        <p className="mt-1 text-white/40">
-          Restschuld gesamt <span style={{ color: "var(--red)" }}>{eur(restSumme)}</span>
-          {"  ·  "}Raten/Mo. <span className="gold">{eur2(rateSumme)}</span>
-        </p>
+    <div className="fade-up">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">Kredite &amp; Finanzierung</div>
+          <div className="topbar-sub">Darlehen, Zinsbindung, Tilgungsplan</div>
+        </div>
+        <Link href="/properties" className="btn btn-gold">＋ Darlehen</Link>
       </div>
 
       {list.length === 0 ? (
-        <p className="text-white/40">Keine Kredite erfasst.</p>
+        <div className="empty"><div className="empty-icon">🏦</div><h4>Noch keine Darlehen</h4></div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {list.map((k) => (
-            <div key={k.id} className="card">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{k.bezeichnung || k.bank || "Darlehen"}</span>
-                <span className="text-sm text-white/50">{k.prop_id ? nameOf.get(k.prop_id) ?? "" : ""}</span>
+        list.map((k) => {
+          const pct = k.betrag ? Math.round(((k.restschuld ?? 0) / k.betrag) * 100) : 0;
+          const tilgtPct = 100 - pct;
+          const moZins = k.restschuld ? (k.restschuld * (k.zinssatz ?? 0) / 100) / 12 : 0;
+          const moTilg = (k.monatsrate ?? 0) - moZins;
+          return (
+            <div key={k.id} className="section" style={{ marginBottom: 14 }}>
+              <div className="section-header">
+                <div>
+                  <h3>{k.bezeichnung || k.bank || "Darlehen"}</h3>
+                  <span style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"}{k.bank ? ` · ${k.bank}` : ""}</span>
+                </div>
+                {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}% Zins</span>}
               </div>
-              {k.bank && <div className="text-sm text-white/40">{k.bank}</div>}
-              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                <div className="flex justify-between"><span className="text-white/40">Restschuld</span><span>{eur(k.restschuld)}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Rate/Mo.</span><span className="gold">{eur2(k.monatsrate)}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Zinssatz</span><span>{k.zinssatz != null ? k.zinssatz + " %" : "—"}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Tilgung</span><span>{k.tilgungssatz != null ? k.tilgungssatz + " %" : "—"}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Zinsbindung</span><span>{k.zinsbindung ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Darlehen</span><span>{eur(k.betrag)}</span></div>
+              <div className="section-body">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14 }}>
+                  <div><div className="kredit-field-lbl">Urspr. Darlehen</div><div className="kredit-field-val">{euro(k.betrag)}</div></div>
+                  <div><div className="kredit-field-lbl">Restschuld</div><div className="kredit-field-val" style={{ color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
+                  <div><div className="kredit-field-lbl">Rate / Monat</div><div className="kredit-field-val">{euro(k.monatsrate)}</div></div>
+                  <div><div className="kredit-field-lbl">Laufzeit bis</div><div className="kredit-field-val">{k.laufzeit ?? "–"}</div></div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+                  <div><div className="kredit-field-lbl">Zinsen / Mo.</div><div className="kredit-field-val" style={{ color: "var(--muted)" }}>{euro(moZins)}</div></div>
+                  <div><div className="kredit-field-lbl">Tilgung / Mo.</div><div className="kredit-field-val" style={{ color: "var(--green)" }}>{euro(Math.max(0, moTilg))}</div></div>
+                  <div><div className="kredit-field-lbl">Tilgungssatz</div><div className="kredit-field-val">{k.tilgungssatz ? `${k.tilgungssatz}% p.a.` : "–"}</div></div>
+                  <div><div className="kredit-field-lbl">Zinsbindung</div><div className="kredit-field-val">{k.zinsbindung ? datum(k.zinsbindung) : "–"}</div></div>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Getilgt: <strong style={{ color: "var(--text)" }}>{tilgtPct}%</strong></div>
+                <div className="progress-bar" style={{ height: 8 }}><div className="progress-fill" style={{ width: `${tilgtPct}%`, background: "var(--teal)" }} /></div>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })
       )}
     </div>
   );

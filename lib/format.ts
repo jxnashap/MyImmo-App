@@ -16,6 +16,12 @@ export const eur2 = (n: number | null | undefined) =>
         minimumFractionDigits: 2,
       }).format(n);
 
+// „€ 860.000" — Schreibweise wie in der ursprünglichen App (Symbol vorne, gerundet)
+export const euro = (n: number | null | undefined) =>
+  n == null
+    ? "–"
+    : "€ " + new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(Math.round(n));
+
 // Datum „2008-08-02" -> „2.8.2008" (de-DE, ohne führende Nullen)
 export const datum = (d: string | null | undefined) => {
   if (!d) return "—";

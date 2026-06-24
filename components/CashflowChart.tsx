@@ -1,73 +1,51 @@
-// Portfolio-Entwicklung — kumulierter Cashflow als Flächen-/Liniendiagramm (SVG, ohne Library).
-import { eur } from "@/lib/format";
+// Portfolio-Entwicklung — kumulierter Cashflow (SVG-Liniendiagramm), 1:1 wie Vorlage.
+import { euro } from "@/lib/format";
 
-export default function CashflowChart({
-  data,
-}: {
-  data: { label: string; value: number }[];
-}) {
-  const W = 960;
-  const H = 300;
-  const pad = { top: 24, right: 24, bottom: 36, left: 24 };
-  const innerW = W - pad.left - pad.right;
-  const innerH = H - pad.top - pad.bottom;
+export default function CashflowChart({ data }: { data: { label: string; wert: number }[] }) {
+  if (data.length === 0 || data.every((p) => p.wert === 0)) {
+    return (
+      <div className="empty">
+        <div className="empty-icon">📈</div>
+        <p>Noch keine Buchungen für die Entwicklung</p>
+      </div>
+    );
+  }
 
-  const values = data.map((d) => d.value);
-  const max = Math.max(1, ...values);
-  const min = Math.min(0, ...values);
+  const W = 600, H = 200, padL = 50, padR = 10, padT = 14, padB = 26;
+  const min = Math.min(0, ...data.map((p) => p.wert));
+  const max = Math.max(0, ...data.map((p) => p.wert));
   const span = max - min || 1;
-
-  const x = (i: number) => pad.left + (data.length <= 1 ? 0 : (i / (data.length - 1)) * innerW);
-  const y = (v: number) => pad.top + innerH - ((v - min) / span) * innerH;
-
-  const linePts = data.map((d, i) => `${x(i)},${y(d.value)}`).join(" ");
-  const areaPts = `${pad.left},${pad.top + innerH} ${linePts} ${pad.left + innerW},${pad.top + innerH}`;
-  const last = data[data.length - 1]?.value ?? 0;
+  const x = (i: number) => padL + (i * (W - padL - padR)) / (data.length - 1);
+  const y = (v: number) => padT + ((max - v) * (H - padT - padB)) / span;
+  const pfad = data.map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.wert).toFixed(1)}`).join(" ");
+  const flaeche = `${pfad} L${x(data.length - 1).toFixed(1)},${y(Math.min(0, min)).toFixed(1)} L${x(0).toFixed(1)},${y(Math.min(0, min)).toFixed(1)} Z`;
+  const endWert = data[data.length - 1].wert;
+  const farbe = endWert >= 0 ? "var(--green)" : "var(--red)";
+  const nullY = y(0);
 
   return (
-    <div className="card">
-      <div className="mb-1 section-title">📈 Portfolio-Entwicklung</div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <linearGradient id="cfFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--green)" stopOpacity="0.30" />
-            <stop offset="100%" stopColor="var(--green)" stopOpacity="0.02" />
-          </linearGradient>
-        </defs>
-
-        {/* Nulllinie */}
-        <line x1={pad.left} y1={y(0)} x2={W - pad.right} y2={y(0)} stroke="var(--line2)" strokeWidth="1" strokeDasharray="3 4" />
-
-        {/* Fläche + Linie */}
-        <polygon points={areaPts} fill="url(#cfFill)" />
-        <polyline points={linePts} fill="none" stroke="var(--green)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-
-        {/* Punkte */}
-        {data.map((d, i) => (
-          <circle key={i} cx={x(i)} cy={y(d.value)} r="3.5" fill="var(--green)">
-            <title>{`${d.label}: ${eur(d.value)}`}</title>
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto" }}>
+        <line x1={padL} y1={nullY} x2={W - padR} y2={nullY} stroke="var(--line2)" strokeDasharray="4 4" />
+        <text x={padL - 6} y={y(max) + 4} textAnchor="end" fontSize="10" fill="var(--muted)">{euro(max)}</text>
+        <text x={padL - 6} y={nullY + 4} textAnchor="end" fontSize="10" fill="var(--muted)">€ 0</text>
+        {min < 0 && (
+          <text x={padL - 6} y={y(min) + 4} textAnchor="end" fontSize="10" fill="var(--muted)">−{euro(Math.abs(min))}</text>
+        )}
+        <path d={flaeche} fill={farbe} opacity="0.10" />
+        <path d={pfad} fill="none" stroke={farbe} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        {data.map((p, i) => (
+          <circle key={i} cx={x(i).toFixed(1)} cy={y(p.wert).toFixed(1)} r="3" fill={farbe}>
+            <title>{`${p.label}: ${euro(p.wert)}`}</title>
           </circle>
         ))}
-
-        {/* Höchstwert oben links */}
-        <text x={pad.left} y={pad.top - 6} fontSize="13" fill="var(--muted)">{eur(max)}</text>
-        <text x={pad.left} y={pad.top + innerH + 4} fontSize="13" fill="var(--muted)">{eur(min)}</text>
-
-        {/* X-Achsen-Beschriftung (jedes zweite Label) */}
-        {data.map((d, i) =>
-          i % 2 === 0 ? (
-            <text key={i} x={x(i)} y={H - 10} textAnchor="middle" fontSize="12" fill="var(--muted)">
-              {d.label}
-            </text>
-          ) : null
-        )}
+        {data.map((p, i) => (i % 2 === 0 ? (
+          <text key={`t${i}`} x={x(i).toFixed(1)} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--muted)">{p.label}</text>
+        ) : null))}
       </svg>
-
-      <div className="mt-2 flex items-center justify-between text-sm">
-        <span className="text-white/40">Kumulierter Cashflow — letzte 12 Monate</span>
-        <span style={{ color: last >= 0 ? "var(--green)" : "var(--red)" }}>
-          {last >= 0 ? "+ " : ""}{eur(last)}
-        </span>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "var(--muted)" }}>
+        <span>Kumulierter Cashflow — letzte 12 Monate</span>
+        <span style={{ color: farbe, fontWeight: 600 }}>{endWert >= 0 ? "+ " : "− "}{euro(Math.abs(endWert))}</span>
       </div>
     </div>
   );

@@ -44,11 +44,11 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <div className="flex min-h-screen">
+        <div className="app">
           <Sidebar properties={props ?? []} userEmail={user.email} />
-          <main className="flex-1 px-8 py-8">
-            <div className="mx-auto max-w-6xl">{children}</div>
-          </main>
+          <div className="main-wrap">
+            <main className="main">{children}</main>
+          </div>
         </div>
       </body>
     </html>

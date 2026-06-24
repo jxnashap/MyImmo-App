@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { eur } from "@/lib/format";
+import { euro } from "@/lib/format";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 
 export default async function JahresberichtPage({
@@ -39,54 +39,58 @@ export default async function JahresberichtPage({
   const years = [year + 1, year, year - 1, year - 2];
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl">Jahresbericht {year}</h1>
-        <form method="get" className="flex items-center gap-2 text-sm">
+    <div className="fade-up">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">📊 Jahresbericht &amp; Steuer-Export</div>
+          <div className="topbar-sub">Anlage V · Cashflow-Auswertung · Druckansicht</div>
+        </div>
+        <form method="get" style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <select name="year" defaultValue={String(year)} className="input">
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button className="rounded-lg border border-white/15 px-3 py-2 hover:bg-white/5">Anzeigen</button>
+          <button className="btn btn-ghost">Anzeigen</button>
         </form>
       </div>
 
-      <div className="overflow-hidden rounded-[10px] border border-white/10">
-        <table className="w-full text-sm">
-          <thead className="bg-white/[0.03] text-left text-white/50">
-            <tr>
-              <th className="px-4 py-3 font-medium">Immobilie</th>
-              <th className="px-4 py-3 text-right font-medium">Einnahmen</th>
-              <th className="px-4 py-3 text-right font-medium">Kosten</th>
-              <th className="px-4 py-3 text-right font-medium">Kreditraten</th>
-              <th className="px-4 py-3 text-right font-medium">Netto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={i} className="border-t border-white/10">
-                <td className="px-4 py-3">{r.name}</td>
-                <td className="px-4 py-3 text-right gold">{eur(r.e)}</td>
-                <td className="px-4 py-3 text-right" style={{ color: "var(--red)" }}>{eur(r.k)}</td>
-                <td className="px-4 py-3 text-right" style={{ color: "var(--red)" }}>{eur(r.r)}</td>
-                <td className="px-4 py-3 text-right" style={{ color: r.netto >= 0 ? "var(--green)" : "var(--red)" }}>{eur(r.netto)}</td>
+      <div className="section">
+        <div className="section-header"><h3>Auswertung {year}</h3></div>
+        <div className="section-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Immobilie</th>
+                <th style={{ textAlign: "right" }}>Einnahmen</th>
+                <th style={{ textAlign: "right" }}>Kosten</th>
+                <th style={{ textAlign: "right" }}>Kreditraten</th>
+                <th style={{ textAlign: "right" }}>Netto</th>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="border-t-2 border-white/20 font-medium">
-              <td className="px-4 py-3">Summe</td>
-              <td className="px-4 py-3 text-right gold">{eur(sum.e)}</td>
-              <td className="px-4 py-3 text-right" style={{ color: "var(--red)" }}>{eur(sum.k)}</td>
-              <td className="px-4 py-3 text-right" style={{ color: "var(--red)" }}>{eur(sum.r)}</td>
-              <td className="px-4 py-3 text-right" style={{ color: sum.netto >= 0 ? "var(--green)" : "var(--red)" }}>{eur(sum.netto)}</td>
-            </tr>
-          </tfoot>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td style={{ fontWeight: 500 }}>{r.name}</td>
+                  <td style={{ textAlign: "right", color: "var(--green)" }}>{euro(r.e)}</td>
+                  <td style={{ textAlign: "right", color: "var(--red)" }}>{euro(r.k)}</td>
+                  <td style={{ textAlign: "right", color: "var(--red)" }}>{euro(r.r)}</td>
+                  <td style={{ textAlign: "right", fontWeight: 600, color: r.netto >= 0 ? "var(--green)" : "var(--red)" }}>{euro(r.netto)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ fontWeight: 600 }}>
+                <td style={{ borderTop: "2px solid var(--line2)" }}>Summe</td>
+                <td style={{ textAlign: "right", color: "var(--green)", borderTop: "2px solid var(--line2)" }}>{euro(sum.e)}</td>
+                <td style={{ textAlign: "right", color: "var(--red)", borderTop: "2px solid var(--line2)" }}>{euro(sum.k)}</td>
+                <td style={{ textAlign: "right", color: "var(--red)", borderTop: "2px solid var(--line2)" }}>{euro(sum.r)}</td>
+                <td style={{ textAlign: "right", color: sum.netto >= 0 ? "var(--green)" : "var(--red)", borderTop: "2px solid var(--line2)" }}>{euro(sum.netto)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
 
-      <p className="mt-4 text-xs text-white/40">
-        Tipp: Diese Seite lässt sich per Cmd+P als PDF speichern oder drucken.
-      </p>
+      <p style={{ fontSize: 11, color: "var(--muted)" }}>Tipp: Diese Seite lässt sich per Cmd+P als PDF speichern oder drucken.</p>
     </div>
   );
 }

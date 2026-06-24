@@ -6,7 +6,7 @@ export default function DeleteButton({
   action,
   label = "Löschen",
   confirmText = "Wirklich löschen?",
-  className = "btn-red",
+  className = "btn btn-ghost",
   title,
 }: {
   action: () => void | Promise<void>;

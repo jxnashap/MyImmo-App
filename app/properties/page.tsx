@@ -1,25 +1,24 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { eur } from "@/lib/format";
+import { euro } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
 import DeleteButton from "@/components/DeleteButton";
 import type { Property, Kredit } from "@/lib/types";
 
-// Emoji je Objekttyp — wie in der HTML-Vorlage.
-function objektIcon(typ: string | null, name: string): string {
-  const t = `${typ ?? ""} ${name}`.toLowerCase();
-  if (t.includes("eigentumswohnung") || t.includes("etw") || t.includes("wohnung")) return "🏢";
-  if (t.includes("ferien")) return "⛱️";
-  if (t.includes("einfamilien") || t.includes("efh")) return "🏡";
-  return "🏠";
-}
+// Emoji je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
+const PROP_ICONS: Record<string, string> = {
+  Eigentumswohnung: "🏢",
+  Einfamilienhaus: "🏠",
+  Mehrfamilienhaus: "🏘",
+  Gewerbeimmobilie: "🏪",
+  Ferienimmobilie: "🏖",
+  Grundstück: "🌿",
+};
 
-function statusPill(status: string | null) {
-  const s = (status ?? "").toLowerCase();
-  if (s.includes("vermietet")) return "pill-green";
-  if (s.includes("selbst")) return "pill-teal";
-  if (s.includes("leer")) return "pill-red";
-  return "pill-neutral";
+function statusBadge(status: string | null) {
+  if (status === "Vermietet") return "badge-green";
+  if (status === "Leer") return "badge-red";
+  return "badge-teal";
 }
 
 export default async function PropertiesPage() {
@@ -39,79 +38,78 @@ export default async function PropertiesPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <div className="fade-up">
+      <div className="topbar">
         <div>
-          <h1 className="text-3xl">Immobilien</h1>
-          <p className="mt-1 text-white/40">Alle erfassten Objekte</p>
+          <div className="topbar-title">Immobilien</div>
+          <div className="topbar-sub">Alle erfassten Objekte</div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/properties/new" className="btn-outline">🔗 Importieren</Link>
-          <Link href="/properties/new" className="btn-gold">+ Neu</Link>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link href="/properties/new" className="btn btn-ghost">🔗 Importieren</Link>
+          <Link href="/properties/new" className="btn btn-gold">＋ Neu</Link>
         </div>
       </div>
 
       {list.length === 0 ? (
-        <div className="card text-white/50">Noch keine Objekte. Lege dein erstes an.</div>
+        <div className="prop-grid">
+          <div className="empty" style={{ gridColumn: "1/-1" }}>
+            <div className="empty-icon">🏠</div>
+            <h4>Noch keine Immobilien</h4>
+          </div>
+        </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="prop-grid">
           {list.map((p) => {
-            const wert = p.wert ?? p.kaufpreis;
-            const rendite = wert && p.miete ? ((p.miete * 12) / wert) * 100 : null;
+            const wert = p.wert ?? p.kaufpreis ?? 0;
+            const rendite = p.miete && wert ? ((p.miete * 12) / wert) * 100 : null;
             const rest = restMap.get(p.id) ?? 0;
             return (
-              <div key={p.id} className="card flex flex-col transition hover:border-white/20">
-                <div className="flex items-start gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white/5 text-lg">
-                    {objektIcon(p.typ, p.bezeichnung)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <Link href={`/properties/${p.id}`} className="block truncate font-medium hover:text-gold">
+              <div key={p.id} className="prop-card">
+                <div className="prop-card-header">
+                  <div className="prop-icon">{(p.typ && PROP_ICONS[p.typ]) || "🏠"}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Link href={`/properties/${p.id}`} className="prop-card-name" style={{ color: "var(--text)", textDecoration: "none", display: "block" }}>
                       {p.bezeichnung}
                     </Link>
-                    <div className="truncate text-sm text-white/40">{p.adresse || "Keine Adresse"}</div>
+                    <div className="prop-card-addr">{p.adresse || p.typ || "—"}</div>
+                    {p.obj_status && (
+                      <div style={{ marginTop: 5 }}>
+                        <span className={`badge ${statusBadge(p.obj_status)}`}>{p.obj_status}</span>
+                      </div>
+                    )}
                   </div>
                   <DeleteButton
                     action={deleteProperty.bind(null, p.id)}
                     confirmText={`„${p.bezeichnung}" wirklich löschen?`}
-                    className="grid h-7 w-7 place-items-center rounded-md text-white/30 transition hover:bg-red-500/10 hover:text-red-400"
+                    className="delete-btn"
                     label="✕"
                     title="Löschen"
                   />
                 </div>
-
-                {p.obj_status && (
-                  <div className="mt-3">
-                    <span className={`pill ${statusPill(p.obj_status)}`}>{p.obj_status}</span>
+                <div className="prop-card-stats">
+                  <div className="prop-stat">
+                    <div className="prop-stat-val">{euro(wert)}</div>
+                    <div className="prop-stat-lbl">Wert</div>
                   </div>
-                )}
-
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  <div>
-                    <div className="text-sm">{eur(wert)}</div>
-                    <div className="mt-0.5 text-[10px] uppercase tracking-wide text-white/35">Wert</div>
+                  <div className="prop-stat">
+                    <div className="prop-stat-val">{p.miete ? euro(p.miete) : "–"}</div>
+                    <div className="prop-stat-lbl">Miete/Mo</div>
                   </div>
-                  <div>
-                    <div className="text-sm">{p.miete ? eur(p.miete) : "–"}</div>
-                    <div className="mt-0.5 text-[10px] uppercase tracking-wide text-white/35">Miete/Mo</div>
-                  </div>
-                  <div>
-                    <div className="text-sm gold">{rendite != null ? `${rendite.toFixed(2)}%` : "–"}</div>
-                    <div className="mt-0.5 text-[10px] uppercase tracking-wide text-white/35">Rendite</div>
+                  <div className="prop-stat">
+                    <div className="prop-stat-val" style={{ color: "var(--teal)" }}>{rendite != null ? `${rendite.toFixed(2)}%` : "–"}</div>
+                    <div className="prop-stat-lbl">Rendite</div>
                   </div>
                 </div>
-
                 {rest > 0 && (
-                  <div className="mt-3 border-t border-white/10 pt-3 text-sm text-white/50">
-                    🏦 Restschuld: <span className="text-white/80">{eur(rest)}</span>
+                  <div style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", fontSize: 11, color: "var(--muted)" }}>
+                    🏦 Restschuld: <strong style={{ color: "var(--text)" }}>{euro(rest)}</strong>
                   </div>
                 )}
-
                 <Link
                   href={`/properties/${p.id}`}
-                  className="mt-3 border-t border-white/10 pt-3 text-sm text-gold hover:underline"
+                  style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", fontSize: 11, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4, textDecoration: "none" }}
                 >
-                  → Details anzeigen
+                  <span style={{ color: "var(--gold)" }}>→</span> Details anzeigen
                 </Link>
               </div>
             );

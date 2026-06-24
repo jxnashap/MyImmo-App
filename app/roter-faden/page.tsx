@@ -1,13 +1,20 @@
 export default function RoterFadenPage() {
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-3xl">🧵 Roter Faden</h1>
-        <p className="mt-1 text-white/40">Strategischer Leitfaden für dein Portfolio</p>
+    <div className="fade-up">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">🧵 Roter Faden</div>
+          <div className="topbar-sub">Schnell-Kalkulation Schritt für Schritt</div>
+        </div>
       </div>
-      <div className="card text-white/50">
-        Dieser Bereich ist in Vorbereitung. Hier entsteht der „rote Faden" — eine
-        schrittweise Anleitung von der Objektaufnahme bis zur Jahresabrechnung.
+      <div className="section">
+        <div className="section-body">
+          <div className="empty">
+            <div className="empty-icon">🧵</div>
+            <h4>In Vorbereitung</h4>
+            <p>Hier entsteht der „rote Faden" — eine schrittweise Kalkulation von Kaufpreis &amp; Miete über Kaufnebenkosten bis zur Finanzierung.</p>
+          </div>
+        </div>
       </div>
     </div>
   );
