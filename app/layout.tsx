@@ -22,6 +22,7 @@ export default async function RootLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
+    // ohne Sidebar (Login/Willkommen)
     return (
       <html lang="de" suppressHydrationWarning>
         <head>
@@ -32,6 +33,11 @@ export default async function RootLayout({
     );
   }
 
+  const { data: props } = await supabase
+    .from("properties")
+    .select("id,bezeichnung,typ")
+    .order("bezeichnung");
+
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
@@ -39,9 +45,9 @@ export default async function RootLayout({
       </head>
       <body>
         <div className="flex min-h-screen">
-          <Sidebar />
+          <Sidebar properties={props ?? []} userEmail={user.email} />
           <main className="flex-1 px-8 py-8">
-            <div className="mx-auto max-w-5xl">{children}</div>
+            <div className="mx-auto max-w-6xl">{children}</div>
           </main>
         </div>
       </body>

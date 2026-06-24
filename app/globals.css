@@ -15,6 +15,8 @@
   --gold: #d4a847;
   --green: #4caf7d;
   --green-dim: rgba(76, 175, 125, 0.15);
+  --teal: #46b6a8;
+  --teal-dim: rgba(70, 182, 168, 0.15);
   --red: #e05c4b;
   --red-dim: rgba(224, 92, 75, 0.15);
 }
@@ -93,7 +95,52 @@ h1, h2, h3, .serif {
   .input:focus {
     border-color: var(--gold);
   }
+
+  /* --- Buttons im Stil der HTML-Vorlage --- */
+  .btn-outline {
+    @apply inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition;
+    border-color: var(--line2);
+    color: var(--text);
+  }
+  .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .btn-red {
+    @apply inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm transition;
+    border-color: var(--red-dim);
+    color: var(--red);
+  }
+  .btn-red:hover {
+    background: var(--red-dim);
+  }
+
+  /* --- Pills (farbige Werte in Kennzahlen / Status) --- */
+  .pill {
+    @apply inline-block rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+  .pill-green { background: var(--green-dim); color: var(--green); }
+  .pill-teal { background: var(--teal-dim); color: var(--teal); }
+  .pill-red { background: var(--red-dim); color: var(--red); }
+  .pill-neutral { background: var(--bg4); color: var(--muted); }
+
+  /* --- Überschrift mit Emoji-Icon --- */
+  .section-title {
+    @apply flex items-center gap-2 text-lg;
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+  }
+  .teal { color: var(--teal); }
+
+  /* --- Zeile in Kennzahlen / Datentabellen --- */
+  .kv-row {
+    @apply flex items-center justify-between py-3;
+    border-bottom: 1px solid var(--line);
+  }
+  .kv-row:last-child { border-bottom: 0; }
 }
+
+/* Hover-Helfer (außerhalb @layer, damit Tailwind sie nicht purged) */
+[data-theme="light"] .btn-outline:hover { background: rgba(0, 0, 0, 0.04); }
 
 /* =====================================================================
    Hell-Modus — via [data-theme="light"] auf <html>.

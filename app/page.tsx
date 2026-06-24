@@ -28,7 +28,6 @@ export default async function DashboardPage() {
           }}
         >
           <BrandMark size="lg" />
-
           <Link
             href="/login"
             className="mt-9 block w-full rounded-lg py-2.5 text-[15px] font-semibold transition hover:brightness-95"
@@ -41,7 +40,6 @@ export default async function DashboardPage() {
     );
   }
 
-  const year = new Date().getFullYear();
   const [{ data: props }, { data: einn }, { data: kost }, { data: kred }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
@@ -57,54 +55,137 @@ export default async function DashboardPage() {
   const totalValue = properties.reduce((s, p) => s + (p.wert ?? p.kaufpreis ?? 0), 0);
   const sollMiete = properties.reduce((s, p) => s + (p.miete ?? 0), 0);
   const rateMo = kredite.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
+  const restSumme = kredite.reduce((s, k) => s + (k.restschuld ?? 0), 0);
 
+  const now = new Date();
+  const year = now.getFullYear();
   const inYear = (d: string | null) => !!d && d.startsWith(String(year));
   const kostenYear = kosten.filter((k) => inYear(k.buchungsdatum)).reduce((s, k) => s + (k.betrag ?? 0), 0);
   const kostenMo = kostenYear / 12;
-  const cashflowMo = sollMiete - kostenMo - rateMo;
+  const kostenGesamtMo = kostenMo + rateMo;
+  const cashflowMo = sollMiete - kostenGesamtMo;
 
-  // Monatlicher Cashflow für den Graphen
-  const monthSum = (rows: { buchungsdatum: string | null; betrag: number | null }[], m: number) =>
+  // Rollierende letzte 12 Monate, kumulierter Cashflow
+  const monthSum = (rows: { buchungsdatum: string | null; betrag: number | null }[], y: number, m: number) =>
     rows
-      .filter((r) => r.buchungsdatum && new Date(r.buchungsdatum).getFullYear() === year && new Date(r.buchungsdatum).getMonth() === m)
+      .filter((r) => r.buchungsdatum && new Date(r.buchungsdatum).getFullYear() === y && new Date(r.buchungsdatum).getMonth() === m)
       .reduce((s, r) => s + (r.betrag ?? 0), 0);
 
-  const chart = MONATE.map((label, m) => ({
-    label,
-    value: monthSum(einnahmen, m) - monthSum(kosten, m) - rateMo,
-  }));
+  let kum = 0;
+  const chart = Array.from({ length: 12 }, (_, idx) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (11 - idx), 1);
+    const flow = monthSum(einnahmen, d.getFullYear(), d.getMonth()) - monthSum(kosten, d.getFullYear(), d.getMonth()) - rateMo;
+    kum += flow;
+    return { label: MONATE[d.getMonth()], value: kum };
+  });
 
-  const kpis: { label: string; value: string; cls?: string; color?: string }[] = [
-    { label: "Portfolio-Wert", value: eur(totalValue), cls: "gold" },
-    { label: "Einnahmen / Mo.", value: eur(sollMiete) },
-    { label: "Kosten / Mo.", value: eur(kostenMo) },
-    { label: "Cashflow / Mo.", value: eur(cashflowMo), color: cashflowMo >= 0 ? "var(--green)" : "var(--red)" },
+  const kpis = [
+    { label: "Portfolio-Wert", value: eur(totalValue), valueCls: "gold", badge: `${properties.length} Objekte`, badgeCls: "pill-teal" },
+    { label: "Einnahmen / Mo.", value: eur(sollMiete), sub: "Kaltmiete gesamt" },
+    { label: "Kosten / Mo.", value: eur(kostenGesamtMo), sub: "Kredit + laufend" },
+    {
+      label: "Cashflow / Mo.",
+      value: (cashflowMo >= 0 ? "+ " : "") + eur(cashflowMo),
+      valueColor: cashflowMo >= 0 ? "var(--green)" : "var(--red)",
+      badge: cashflowMo >= 0 ? "Positiver Cashflow" : "Negativer Cashflow",
+      badgeCls: cashflowMo >= 0 ? "pill-green" : "pill-red",
+    },
   ];
+
+  // Einnahmen vs. Ausgaben (Monatswerte)
+  const balken = [
+    { label: "Einnahmen", value: sollMiete, color: "var(--green)" },
+    { label: "Kredit", value: rateMo, color: "var(--gold)" },
+    { label: "Laufende Kosten", value: kostenMo, color: "var(--red)" },
+  ];
+  const balkenMax = Math.max(1, ...balken.map((b) => b.value));
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl">Dashboard</h1>
-        <Link href="/termine" className="rounded-lg border border-white/15 px-4 py-2 text-sm hover:bg-white/5">
-          ◷ Terminkalender
-        </Link>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl">Dashboard</h1>
+          <p className="mt-1 text-white/40">Portfolio-Übersicht</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/termine" className="btn-outline">📅 Terminkalender</Link>
+          <Link href="/properties/new" className="btn-gold">+ Immobilie</Link>
+        </div>
       </div>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-4">
+      {/* KPIs */}
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((k) => (
           <div key={k.label} className="kpi">
             <div className="kpi-label">{k.label}</div>
-            <div className={`kpi-value ${k.cls ?? ""}`} style={k.color ? { color: k.color } : undefined}>
+            <div className={`kpi-value ${k.valueCls ?? ""}`} style={k.valueColor ? { color: k.valueColor } : undefined}>
               {k.value}
             </div>
+            {k.badge ? (
+              <div className="mt-2"><span className={`pill ${k.badgeCls}`}>{k.badge}</span></div>
+            ) : (
+              <div className="mt-2 text-xs text-white/40">{k.sub}</div>
+            )}
           </div>
         ))}
       </div>
 
       <CashflowChart data={chart} />
 
-      <p className="mt-3 text-xs text-white/40">
-        Cashflow = Einnahmen − Kosten − Kreditraten ({eur(rateMo)}/Mo.). Werte aus {year}.
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        {/* Einnahmen vs. Ausgaben */}
+        <div className="card">
+          <div className="mb-4 section-title">⚖️ Einnahmen vs. Ausgaben</div>
+          <div className="space-y-4">
+            {balken.map((b) => (
+              <div key={b.label}>
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="text-white/60">{b.label}</span>
+                  <span>{eur(b.value)}</span>
+                </div>
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
+                  <div className="h-full rounded-full" style={{ width: `${(b.value / balkenMax) * 100}%`, background: b.color }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 border-t border-white/10 pt-3 text-sm">
+            <span className="text-white/40">Cashflow / Mo.</span>{" "}
+            <span style={{ color: cashflowMo >= 0 ? "var(--green)" : "var(--red)" }}>
+              {cashflowMo >= 0 ? "+ " : ""}{eur(cashflowMo)}
+            </span>
+          </div>
+        </div>
+
+        {/* Aktuelle Kredite */}
+        <div className="card">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="section-title">🏦 Aktuelle Kredite</div>
+            <span className="text-sm text-white/40">{eur(restSumme)} Restschuld</span>
+          </div>
+          {kredite.length === 0 ? (
+            <p className="text-white/40">Keine Kredite erfasst.</p>
+          ) : (
+            <div className="space-y-2">
+              {kredite.slice(0, 5).map((k) => (
+                <div key={k.id} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm">{k.bezeichnung || k.bank || "Darlehen"}</div>
+                    <div className="text-xs text-white/40">{k.bank ?? ""}{k.zinssatz != null ? ` · ${k.zinssatz}% Zins` : ""}</div>
+                  </div>
+                  <div className="ml-3 text-right">
+                    <div className="text-sm">{eur(k.restschuld)}</div>
+                    <div className="text-xs text-white/40">{eur(k.monatsrate)}/Mo.</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <p className="mt-4 text-xs text-white/40">
+        Cashflow = Einnahmen − laufende Kosten − Kreditraten ({eur(rateMo)}/Mo.). Laufende Werte aus {year}.
       </p>
     </div>
   );

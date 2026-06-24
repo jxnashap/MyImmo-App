@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 type Theme = "dark" | "light";
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ variant = "full" }: { variant?: "full" | "icon" }) {
   const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
@@ -26,6 +26,19 @@ export default function ThemeToggle() {
       /* ignore */
     }
   };
+
+  if (variant === "icon") {
+    return (
+      <button
+        onClick={toggle}
+        className="grid h-8 w-8 place-items-center rounded-lg text-sm transition hover:bg-white/10"
+        title={theme === "dark" ? "Heller Modus" : "Dunkler Modus"}
+        aria-label="Hell-/Dunkelmodus umschalten"
+      >
+        <span>{theme === "dark" ? "🌙" : "☀️"}</span>
+      </button>
+    );
+  }
 
   return (
     <button

@@ -18,11 +18,13 @@ export default async function KreditePage() {
 
   return (
     <div>
-      <h1 className="mb-2 text-3xl">Kredite</h1>
-      <p className="mb-6 text-sm text-white/50">
-        Restschuld gesamt <span style={{ color: "var(--red)" }}>{eur(restSumme)}</span>
-        {"  ·  "}Raten/Mo. <span className="gold">{eur2(rateSumme)}</span>
-      </p>
+      <div className="mb-6">
+        <h1 className="text-3xl">Kredite</h1>
+        <p className="mt-1 text-white/40">
+          Restschuld gesamt <span style={{ color: "var(--red)" }}>{eur(restSumme)}</span>
+          {"  ·  "}Raten/Mo. <span className="gold">{eur2(rateSumme)}</span>
+        </p>
+      </div>
 
       {list.length === 0 ? (
         <p className="text-white/40">Keine Kredite erfasst.</p>

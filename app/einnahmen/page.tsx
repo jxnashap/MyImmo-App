@@ -23,7 +23,10 @@ export default async function EinnahmenPage({
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl">Einnahmen</h1>
+        <div>
+          <h1 className="text-3xl">Einnahmen</h1>
+          <p className="mt-1 text-white/40">Alle erfassten Einnahmen</p>
+        </div>
         <form method="get" className="flex items-center gap-2 text-sm">
           <select name="prop" defaultValue={searchParams.prop ?? ""} className="input">
             <option value="">Alle Immobilien</option>

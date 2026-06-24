@@ -18,11 +18,12 @@ export default async function TenantsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Mieter</h1>
-        <Link href="/tenants/new" className="rounded-lg bg-gold px-4 py-2 text-sm font-medium text-ink">
-          + Neuer Mieter
-        </Link>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl">Mieter</h1>
+          <p className="mt-1 text-white/40">Alle Mieter im Portfolio</p>
+        </div>
+        <Link href="/tenants/new" className="btn-gold">+ Neuer Mieter</Link>
       </div>
 
       {list.length === 0 ? (
