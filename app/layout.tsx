@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description: "Portfolio, Mieter und Dokumente für Privatvermieter",
 };
 
+// Setzt das gespeicherte Theme vor dem ersten Paint (verhindert Flackern).
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
+
 export default async function RootLayout({
   children,
 }: {
@@ -20,14 +23,20 @@ export default async function RootLayout({
 
   if (!user) {
     return (
-      <html lang="de">
+      <html lang="de" suppressHydrationWarning>
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        </head>
         <body>{children}</body>
       </html>
     );
   }
 
   return (
-    <html lang="de">
+    <html lang="de" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <div className="flex min-h-screen">
           <Sidebar />
