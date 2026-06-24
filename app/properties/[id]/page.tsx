@@ -194,6 +194,21 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
       </div>
 
+      {/* Nebenkosten-Verteiler */}
+      <div className="section mb-20">
+        <div className="section-header">
+          <h3>🧮 Nebenkosten verteilen</h3>
+          <Link href={`/properties/${id}/umlage`} className="btn btn-gold" style={{ fontSize: 11 }}>Verteiler öffnen</Link>
+        </div>
+        <div className="section-body">
+          <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
+            Für Mehrfamilienhäuser: Gesamtkosten (Strom, Wasser, Grundsteuer …) <strong>einmal</strong> eingeben — der
+            Assistent teilt sie automatisch nach <strong>m²-Anteil</strong> auf alle Mieter auf und übernimmt die
+            Beträge direkt in deren einzelne NK-Abrechnung.
+          </div>
+        </div>
+      </div>
+
       {/* Kredite & Finanzierung */}
       <div className="section mb-20">
         <div className="section-header">
