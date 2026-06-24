@@ -46,6 +46,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
         <div style={{ display: "flex", gap: 8 }}>
           <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ fontSize: 12 }}>🧾 NK-Abrechnung</Link>
           <Link href={`/tenants/${m.id}/dokument`} className="btn btn-ghost" style={{ fontSize: 12 }}>📄 Dokument</Link>
+          <Link href={`/tenants/${m.id}/protokoll`} className="btn btn-ghost" style={{ fontSize: 12 }}>🔑 Protokoll</Link>
           <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}>✏️ Bearbeiten</Link>
           <DeleteButton action={deleteTenant.bind(null, m.id)} className="btn btn-ghost" label="🗑 Löschen" confirmText={`„${[m.vorname, m.nachname].filter(Boolean).join(" ")}" wirklich löschen?`} />
         </div>
