@@ -43,6 +43,11 @@
 
 -- ibans (1) — kontoname, inhaber, iban
 
+-- dokument_vorlagen — gespeicherte Standardtexte für den Dokument-Generator
+--   id uuid pk, user_id uuid, art text (Dokumentart-Key), text text (Vorlage
+--   mit {{platzhalter}}), created_at, updated_at; unique(user_id, art),
+--   RLS: auth.uid() = user_id (analog ibans).
+
 -- =====================================================================
 -- Beobachtungen / mögliche Verbesserungen (für später, nicht jetzt):
 --  * kosten.mieter_id ist text, mieter.id ist uuid -> Typ-Mismatch,
