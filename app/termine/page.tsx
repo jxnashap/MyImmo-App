@@ -1,30 +1,73 @@
 import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
+import { mieterFristen } from "@/lib/fristen";
 import { createTermin, deleteTermin } from "@/lib/actions/termine";
-import type { Termin, Property } from "@/lib/types";
+import DeleteButton from "@/components/DeleteButton";
+import type { Termin, Property, Tenant, Kredit } from "@/lib/types";
 
-type Frist = { datum: string; titel: string; typ: string };
+type Eintrag = {
+  datum: string;
+  label: string;
+  wer: string;
+  wo: string;
+  quelle: "mieter" | "kredit" | "eigen";
+  typ: "info" | "warn" | "ok";
+  id?: string;
+};
+
+const QUELLE_BADGE: Record<Eintrag["quelle"], string> = {
+  mieter: "badge-teal",
+  kredit: "badge-gold",
+  eigen: "badge-green",
+};
+const QUELLE_LABEL: Record<Eintrag["quelle"], string> = {
+  mieter: "Mieter",
+  kredit: "Finanzierung",
+  eigen: "Eigen",
+};
 
 export default async function TerminePage() {
   const supabase = createClient();
   const [{ data: term }, { data: props }, { data: miet }, { data: kred }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
-    supabase.from("mieter").select("vorname,nachname,mietende"),
-    supabase.from("kredite").select("bezeichnung,zinsbindung"),
+    supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung"),
+    supabase.from("kredite").select("id,prop_id,bezeichnung,zinsbindung"),
   ]);
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
+  const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
   const termine = (term ?? []) as Termin[];
+  const mieter = (miet ?? []) as Tenant[];
+  const kredite = (kred ?? []) as Kredit[];
 
-  const fristen: Frist[] = [];
-  for (const m of (miet ?? []) as { vorname: string | null; nachname: string | null; mietende: string | null }[]) {
-    if (m.mietende) fristen.push({ datum: m.mietende, titel: `Mietende — ${[m.vorname, m.nachname].filter(Boolean).join(" ")}`, typ: "Mietverhältnis" });
+  const eintraege: Eintrag[] = [];
+
+  for (const m of mieter) {
+    const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
+    const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
+    for (const f of mieterFristen(m)) {
+      if (!f.datum) continue;
+      eintraege.push({ datum: f.datum, label: f.label, wer, wo, quelle: "mieter", typ: f.typ });
+    }
   }
-  for (const k of (kred ?? []) as { bezeichnung: string | null; zinsbindung: string | null }[]) {
-    if (k.zinsbindung) fristen.push({ datum: k.zinsbindung, titel: `Zinsbindung endet — ${k.bezeichnung ?? "Darlehen"}`, typ: "Finanzierung" });
+  for (const k of kredite) {
+    if (!k.zinsbindung) continue;
+    eintraege.push({ datum: k.zinsbindung, label: "Zinsbindung endet", wer: k.bezeichnung ?? "Darlehen", wo: (k.prop_id && nameOf.get(k.prop_id)) || "–", quelle: "kredit", typ: "warn" });
   }
-  fristen.sort((a, b) => a.datum.localeCompare(b.datum));
+  for (const t of termine) {
+    if (!t.datum) continue;
+    eintraege.push({ datum: t.datum, label: t.titel ?? "Termin", wer: t.notiz ?? "", wo: (t.prop_id && nameOf.get(t.prop_id)) || "", quelle: "eigen", typ: "info", id: t.id });
+  }
+
+  eintraege.sort((a, b) => a.datum.localeCompare(b.datum));
+
+  const heute = new Date();
+  const tageBis = (d: string) => Math.ceil((new Date(d).getTime() - heute.getTime()) / 86400000);
+  const anstehend = eintraege.filter((e) => tageBis(e.datum) >= 0);
+  const in30 = anstehend.filter((e) => tageBis(e.datum) <= 30).length;
+  const in90 = anstehend.filter((e) => tageBis(e.datum) <= 90).length;
+  const ueberfaellig = eintraege.filter((e) => tageBis(e.datum) < 0).length;
 
   return (
     <div className="fade-up">
@@ -35,7 +78,13 @@ export default async function TerminePage() {
         </div>
       </div>
 
-      {/* Neuer Termin */}
+      <div className="grid-4 mb-20">
+        <div className="kpi-card"><div className="kpi-label">Anstehend</div><div className="kpi-value">{anstehend.length}</div></div>
+        <div className="kpi-card"><div className="kpi-label">In 30 Tagen</div><div className="kpi-value" style={{ color: in30 > 0 ? "var(--amber)" : "var(--text)" }}>{in30}</div></div>
+        <div className="kpi-card"><div className="kpi-label">In 90 Tagen</div><div className="kpi-value">{in90}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Überfällig</div><div className="kpi-value" style={{ color: ueberfaellig > 0 ? "var(--red)" : "var(--green)" }}>{ueberfaellig}</div></div>
+      </div>
+
       <div className="section">
         <div className="section-header"><h3>＋ Neuer Termin</h3></div>
         <div className="section-body">
@@ -64,52 +113,33 @@ export default async function TerminePage() {
         </div>
       </div>
 
-      {/* Eigene Termine */}
       <div className="section">
-        <div className="section-header"><h3>Eigene Termine</h3></div>
+        <div className="section-header"><h3>Anstehende Termine</h3></div>
         <div className="section-body">
-          {termine.length === 0 ? (
-            <div className="empty"><div className="empty-icon">📅</div><p>Keine eigenen Termine</p></div>
+          {eintraege.length === 0 ? (
+            <div className="empty"><div className="empty-icon">📅</div><p>Keine Termine</p></div>
           ) : (
-            <table>
-              <tbody>
-                {termine.map((t) => {
-                  const del = deleteTermin.bind(null, t.id);
-                  return (
-                    <tr key={t.id}>
-                      <td style={{ color: "var(--muted)", width: 110 }}>{datum(t.datum)}</td>
-                      <td style={{ fontWeight: 500 }}>{t.titel}</td>
-                      <td style={{ color: "var(--muted)" }}>{t.notiz ?? ""}</td>
-                      <td style={{ textAlign: "right" }}>
-                        <form action={del}><button className="delete-btn">✕</button></form>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-
-      {/* Automatische Fristen */}
-      <div className="section">
-        <div className="section-header"><h3>Automatische Fristen</h3></div>
-        <div className="section-body">
-          {fristen.length === 0 ? (
-            <div className="empty"><div className="empty-icon">🗓️</div><p>Keine Fristen aus Mietverhältnissen oder Krediten</p></div>
-          ) : (
-            <table>
-              <tbody>
-                {fristen.map((f, i) => (
-                  <tr key={i}>
-                    <td style={{ color: "var(--muted)", width: 110 }}>{datum(f.datum)}</td>
-                    <td style={{ fontWeight: 500 }}>{f.titel}</td>
-                    <td style={{ textAlign: "right" }}><span className="badge badge-teal">{f.typ}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            eintraege.map((e, i) => {
+              const tage = tageBis(e.datum);
+              const farbe = e.typ === "warn" || tage < 0 ? "var(--red)" : e.typ === "ok" ? "var(--green)" : "var(--muted)";
+              return (
+                <div key={`${e.quelle}-${e.id ?? i}`} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: farbe, flexShrink: 0 }} />
+                  <div style={{ width: 96, flexShrink: 0, fontSize: 12, color: "var(--muted)" }}>{datum(e.datum)}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 500, fontSize: 13 }}>{e.label}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)" }}>{[e.wer, e.wo].filter(Boolean).join(" · ")}</div>
+                  </div>
+                  <span style={{ fontSize: 11, color: farbe, width: 90, textAlign: "right", flexShrink: 0 }}>{tage < 0 ? `vor ${Math.abs(tage)} Tg.` : tage === 0 ? "heute" : `in ${tage} Tg.`}</span>
+                  <span className={`badge ${QUELLE_BADGE[e.quelle]}`}>{QUELLE_LABEL[e.quelle]}</span>
+                  {e.quelle === "eigen" && e.id ? (
+                    <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label="✕" confirmText="Termin löschen?" />
+                  ) : (
+                    <span style={{ width: 22 }} />
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
+import { getRefinanzWarning } from "@/lib/fristen";
 import CashflowChart from "@/components/CashflowChart";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 
@@ -35,6 +36,8 @@ export default async function DashboardPage() {
   const kosten = (kost ?? []) as Kosten[];
   const kredite = (kred ?? []) as Kredit[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
+
+  const refinanz = kredite.map((k) => ({ k, w: getRefinanzWarning(k.zinsbindung) })).filter((x) => x.w);
 
   const now = new Date();
   const mo = now.getMonth();
@@ -87,6 +90,17 @@ export default async function DashboardPage() {
           <Link href="/properties/new" className="btn btn-gold">＋ Immobilie</Link>
         </div>
       </div>
+
+      {refinanz.length > 0 && (
+        <div style={{ marginBottom: 16, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 20 }}>⚠️</span>
+          <div>
+            <div style={{ fontWeight: 600, color: "var(--red)", fontSize: 13 }}>{refinanz.length} Zinsbindung{refinanz.length > 1 ? "en" : ""} läuft bald ab</div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{refinanz.map(({ k }) => `${k.bezeichnung || "Darlehen"} (${datum(k.zinsbindung)})`).join(" · ")}</div>
+          </div>
+          <Link href="/kredite" className="btn btn-ghost" style={{ marginLeft: "auto", fontSize: 11 }}>Ansehen</Link>
+        </div>
+      )}
 
       <div className="grid-4 mb-20">
         <div className="kpi-card">

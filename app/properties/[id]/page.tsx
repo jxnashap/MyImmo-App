@@ -175,7 +175,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
             <div style={{ color: "var(--faint)", fontSize: 12, padding: "8px 0" }}>Noch keine Mieter zugeordnet.</div>
           ) : (
             tenants.map((m) => (
-              <Link key={m.id} href={`/tenants/${m.id}/edit`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--line)", textDecoration: "none", color: "var(--text)" }}>
+              <Link key={m.id} href={`/tenants/${m.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--line)", textDecoration: "none", color: "var(--text)" }}>
                 <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--gold-pale)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>👤</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>

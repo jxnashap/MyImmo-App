@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
+import { getRefinanzWarning } from "@/lib/fristen";
 import { deleteKredit } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import type { Kredit, Property } from "@/lib/types";
+
+type KreditExt = Kredit & { darlnr?: string | null; grundschuld?: number | null; beleihung?: number | null };
 
 export default async function KreditePage() {
   const supabase = createClient();
@@ -14,7 +17,12 @@ export default async function KreditePage() {
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
-  const list = (kred ?? []) as Kredit[];
+  const list = (kred ?? []) as KreditExt[];
+
+  const warnungen = list
+    .map((k) => ({ k, w: getRefinanzWarning(k.zinsbindung) }))
+    .filter((x): x is { k: KreditExt; w: NonNullable<ReturnType<typeof getRefinanzWarning>> } => !!x.w)
+    .sort((a, b) => new Date(a.k.zinsbindung ?? 0).getTime() - new Date(b.k.zinsbindung ?? 0).getTime());
 
   return (
     <div className="fade-up">
@@ -26,6 +34,28 @@ export default async function KreditePage() {
         <Link href="/kredite/new" className="btn btn-gold">＋ Darlehen</Link>
       </div>
 
+      {warnungen.length > 0 && (
+        <div className="section">
+          <div className="section-header"><h3>⚠️ Refinanzierungs-Kalender</h3><span style={{ fontSize: 11, color: "var(--muted)" }}>Zinsbindungen bald ablaufend</span></div>
+          <div className="section-body">
+            {warnungen.map(({ k, w }) => (
+              <div key={k.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: w.color, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Darlehen"}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"} · {k.bank || ""} · {k.zinssatz ?? 0}%</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: w.color }}>{w.label}</div>
+                  <div style={{ fontSize: 10, color: "var(--muted)" }}>bis: {datum(k.zinsbindung)}</div>
+                </div>
+                <span className={`badge ${w.level === "warnung" ? "badge-amber" : "badge-red"}`}>{w.level === "abgelaufen" ? "🚨 Abgelaufen" : w.level === "kritisch" ? "🔴 Dringend" : "🟡 Bald"}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {list.length === 0 ? (
         <div className="empty"><div className="empty-icon">🏦</div><h4>Noch keine Darlehen</h4></div>
       ) : (
@@ -34,12 +64,18 @@ export default async function KreditePage() {
           const tilgtPct = 100 - pct;
           const moZins = k.restschuld ? (k.restschuld * (k.zinssatz ?? 0) / 100) / 12 : 0;
           const moTilg = (k.monatsrate ?? 0) - moZins;
+          const warn = getRefinanzWarning(k.zinsbindung);
           return (
             <div key={k.id} className="section" style={{ marginBottom: 14 }}>
+              {warn && (
+                <div style={{ background: warn.bg, borderLeft: `3px solid ${warn.color}`, padding: "8px 14px", fontSize: 12, color: warn.color, fontWeight: 500 }}>
+                  ⚠️ Zinsbindung läuft ab: <strong>{datum(k.zinsbindung)}</strong>
+                </div>
+              )}
               <div className="section-header">
                 <div>
                   <h3>{k.bezeichnung || k.bank || "Darlehen"}</h3>
-                  <span style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"}{k.bank ? ` · ${k.bank}` : ""}</span>
+                  <span style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"}{k.bank ? ` · ${k.bank}` : ""}{k.darlnr ? ` · Nr. ${k.darlnr}` : ""}</span>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}% Zins</span>}
@@ -57,8 +93,16 @@ export default async function KreditePage() {
                   <div><div className="kredit-field-lbl">Zinsen / Mo.</div><div className="kredit-field-val" style={{ color: "var(--muted)" }}>{euro(moZins)}</div></div>
                   <div><div className="kredit-field-lbl">Tilgung / Mo.</div><div className="kredit-field-val" style={{ color: "var(--green)" }}>{euro(Math.max(0, moTilg))}</div></div>
                   <div><div className="kredit-field-lbl">Tilgungssatz</div><div className="kredit-field-val">{k.tilgungssatz ? `${k.tilgungssatz}% p.a.` : "–"}</div></div>
-                  <div><div className="kredit-field-lbl">Zinsbindung</div><div className="kredit-field-val">{k.zinsbindung ? datum(k.zinsbindung) : "–"}</div></div>
+                  <div><div className="kredit-field-lbl">Zinsbindung</div><div className="kredit-field-val" style={{ color: warn ? warn.color : "inherit" }}>{k.zinsbindung ? datum(k.zinsbindung) : "–"}</div></div>
                 </div>
+                {(k.grundschuld || k.beleihung) && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+                    <div><div className="kredit-field-lbl">Grundschuld</div><div className="kredit-field-val">{k.grundschuld ? euro(k.grundschuld) : "–"}</div></div>
+                    <div><div className="kredit-field-lbl">Beleihungsauslauf</div><div className="kredit-field-val">{k.beleihung ? `${k.beleihung}%` : "–"}</div></div>
+                    <div><div className="kredit-field-lbl">Darlehensnr.</div><div className="kredit-field-val" style={{ fontSize: 11 }}>{k.darlnr || "–"}</div></div>
+                    <div />
+                  </div>
+                )}
                 <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Getilgt: <strong style={{ color: "var(--text)" }}>{tilgtPct}%</strong></div>
                 <div className="progress-bar" style={{ height: 8 }}><div className="progress-fill" style={{ width: `${tilgtPct}%`, background: "var(--teal)" }} /></div>
               </div>

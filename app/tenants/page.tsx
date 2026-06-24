@@ -49,7 +49,7 @@ export default async function TenantsPage() {
             <div key={m.id} className="prop-card">
               <div className="prop-card-header" style={{ gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <Link href={`/tenants/${m.id}/edit`} className="prop-card-name" style={{ color: "var(--text)", textDecoration: "none", display: "block" }}>
+                  <Link href={`/tenants/${m.id}`} className="prop-card-name" style={{ color: "var(--text)", textDecoration: "none", display: "block" }}>
                     {[m.vorname, m.nachname].filter(Boolean).join(" ") || "—"}
                   </Link>
                   <div className="prop-card-addr">{(m.prop_id && nameOf.get(m.prop_id)) || "–"}{m.einheit ? ` · ${m.einheit}` : ""}</div>
@@ -68,8 +68,9 @@ export default async function TenantsPage() {
                 {m.email && <div style={{ overflow: "hidden", textOverflow: "ellipsis" }}><span style={{ color: "var(--muted)" }}>Mail:</span> {m.email}</div>}
               </div>
               <div style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", display: "flex", gap: 6 }}>
-                <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>✏️ Bearbeiten</Link>
-                <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>🧾 NK</Link>
+                <Link href={`/tenants/${m.id}`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>Details</Link>
+                <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>✏️</Link>
+                <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>🧾</Link>
               </div>
             </div>
           ))}
