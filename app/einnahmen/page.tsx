@@ -8,7 +8,7 @@ import type { Einnahme, Property } from "@/lib/types";
 export default async function EinnahmenPage({
   searchParams,
 }: {
-  searchParams: { prop?: string };
+  searchParams: { prop?: string; kategorie?: string };
 }) {
   const supabase = createClient();
   const [{ data: einn }, { data: props }] = await Promise.all([
@@ -19,8 +19,10 @@ export default async function EinnahmenPage({
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
 
+  const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
   let list = (einn ?? []) as Einnahme[];
   if (searchParams.prop) list = list.filter((e) => e.prop_id === searchParams.prop);
+  if (searchParams.kategorie) list = list.filter((e) => (e.kategorie ?? "") === searchParams.kategorie);
   const total = list.reduce((s, e) => s + (e.betrag ?? 0), 0);
 
   return (
@@ -38,6 +40,11 @@ export default async function EinnahmenPage({
         <select name="prop" defaultValue={searchParams.prop ?? ""} className="input" style={{ minWidth: 200 }}>
           <option value="">Alle Immobilien</option>
           {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
+        </select>
+        <label style={{ fontSize: 12, color: "var(--muted)" }}>🏷️ Kategorie:</label>
+        <select name="kategorie" defaultValue={searchParams.kategorie ?? ""} className="input" style={{ minWidth: 170 }}>
+          <option value="">Alle Kategorien</option>
+          {KATEGORIEN.map((k) => <option key={k} value={k}>{k}</option>)}
         </select>
         <button className="btn btn-ghost">Filtern</button>
       </form>

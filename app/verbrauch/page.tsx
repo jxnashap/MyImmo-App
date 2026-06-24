@@ -7,7 +7,7 @@ import type { Verbrauch, Property } from "@/lib/types";
 
 const ART_ICONS: Record<string, string> = { Strom: "⚡", Gas: "🔥", Wasser: "💧", Heizöl: "🛢", Fernwärme: "♨", Heizung: "♨", Sonstiges: "📦" };
 
-export default async function VerbrauchPage() {
+export default async function VerbrauchPage({ searchParams }: { searchParams: { prop?: string; art?: string } }) {
   const supabase = createClient();
   const [{ data: verb }, { data: props }] = await Promise.all([
     supabase.from("verbrauch").select("*").order("buchungsdatum", { ascending: false }),
@@ -16,7 +16,10 @@ export default async function VerbrauchPage() {
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
-  const list = (verb ?? []) as Verbrauch[];
+  let list = (verb ?? []) as Verbrauch[];
+  if (searchParams.prop) list = list.filter((v) => v.prop_id === searchParams.prop);
+  if (searchParams.art) list = list.filter((v) => (v.art ?? "") === searchParams.art);
+  const arten = Array.from(new Set(((verb ?? []) as Verbrauch[]).map((v) => v.art).filter(Boolean))) as string[];
 
   return (
     <div className="fade-up">
@@ -27,6 +30,20 @@ export default async function VerbrauchPage() {
         </div>
         <Link href="/verbrauch/new" className="btn btn-gold">＋ Verbrauch</Link>
       </div>
+
+      <form method="get" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <label style={{ fontSize: 12, color: "var(--muted)" }}>🏠 Immobilie:</label>
+        <select name="prop" defaultValue={searchParams.prop ?? ""} className="input" style={{ minWidth: 200 }}>
+          <option value="">Alle Immobilien</option>
+          {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
+        </select>
+        <label style={{ fontSize: 12, color: "var(--muted)" }}>⚡ Art:</label>
+        <select name="art" defaultValue={searchParams.art ?? ""} className="input" style={{ minWidth: 150 }}>
+          <option value="">Alle Arten</option>
+          {arten.map((a) => <option key={a} value={a}>{(ART_ICONS[a] || "") + " " + a}</option>)}
+        </select>
+        <button className="btn btn-ghost">Filtern</button>
+      </form>
 
       <div className="section">
         <div className="section-header"><h3>Alle Einträge</h3></div>

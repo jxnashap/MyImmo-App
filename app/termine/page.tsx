@@ -27,7 +27,7 @@ const QUELLE_LABEL: Record<Eintrag["quelle"], string> = {
   eigen: "Eigen",
 };
 
-export default async function TerminePage() {
+export default async function TerminePage({ searchParams }: { searchParams: { quelle?: string } }) {
   const supabase = createClient();
   const [{ data: term }, { data: props }, { data: miet }, { data: kred }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
@@ -62,6 +62,9 @@ export default async function TerminePage() {
   }
 
   eintraege.sort((a, b) => a.datum.localeCompare(b.datum));
+
+  const filterQ = searchParams.quelle;
+  const sichtbar = filterQ ? eintraege.filter((e) => e.quelle === filterQ) : eintraege;
 
   const heute = new Date();
   const tageBis = (d: string) => Math.ceil((new Date(d).getTime() - heute.getTime()) / 86400000);
@@ -115,12 +118,22 @@ export default async function TerminePage() {
       </div>
 
       <div className="section">
-        <div className="section-header"><h3>Anstehende Termine</h3></div>
+        <div className="section-header">
+          <h3>Anstehende Termine</h3>
+          <div style={{ display: "flex", gap: 6 }}>
+            {([["", "Alle"], ["mieter", "Mieter"], ["kredit", "Finanzierung"], ["eigen", "Eigene"]] as const).map(([q, label]) => {
+              const active = (filterQ ?? "") === q;
+              return (
+                <Link key={q} href={q ? `/termine?quelle=${q}` : "/termine"} className={`badge ${active ? "badge-gold" : ""}`} style={{ textDecoration: "none", ...(active ? {} : { color: "var(--muted)", border: "1px solid var(--line)" }) }}>{label}</Link>
+              );
+            })}
+          </div>
+        </div>
         <div className="section-body">
-          {eintraege.length === 0 ? (
+          {sichtbar.length === 0 ? (
             <div className="empty"><div className="empty-icon">📅</div><p>Keine Termine</p></div>
           ) : (
-            eintraege.map((e, i) => {
+            sichtbar.map((e, i) => {
               const tage = tageBis(e.datum);
               const farbe = e.typ === "warn" || tage < 0 ? "var(--red)" : e.typ === "ok" ? "var(--green)" : "var(--muted)";
               return (
