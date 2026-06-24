@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import TenantForm from "@/components/TenantForm";
 import PositionsManager, { type Position } from "@/components/PositionsManager";
+import NkOcrUpload from "@/components/NkOcrUpload";
 import { createClient } from "@/lib/supabase/server";
 import { updateTenant, deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
@@ -40,6 +41,7 @@ export default async function EditTenantPage({ params }: { params: { id: string 
 
       <div style={{ marginTop: 24 }}>
         <PositionsManager mieterId={tenant.id} positions={(positions ?? []) as Position[]} />
+        <NkOcrUpload mieterId={tenant.id} />
       </div>
     </div>
   );
