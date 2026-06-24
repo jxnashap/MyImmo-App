@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { eur2 } from "@/lib/format";
+import { monateImJahr } from "@/lib/nk";
 import {
   berechneUmlage,
   type UmlageSchluessel,
@@ -11,22 +12,37 @@ import {
 } from "@/lib/umlage";
 import { verteileNebenkosten } from "@/lib/actions/umlage";
 
-type MieterIn = { id: string; name: string; einheit: string | null; flaeche: number | null };
+type MieterIn = {
+  id: string;
+  name: string;
+  einheit: string | null;
+  flaeche: number | null;
+  mietbeginn: string | null;
+  mietende: string | null;
+};
 type ZeileUI = { bezeichnung: string; betrag: string; schluessel: UmlageSchluessel };
 
 const VORLAGEN = [
   "Grundsteuer",
-  "Müll",
-  "Abwasser",
-  "Wasser",
+  "Müllabfuhr",
+  "Wasser / Abwasser",
+  "Gebäudeversicherung",
   "Allgemeinstrom",
-  "Versicherung",
   "Hausmeister",
   "Aufzug",
   "Gartenpflege",
   "Straßenreinigung",
   "Schornsteinfeger",
   "Heizung",
+];
+
+// Fünf häufigste Betriebskosten als Startvorschlag (nur Werte eintragen).
+const DEFAULT_ZEILEN: ZeileUI[] = [
+  { bezeichnung: "Grundsteuer", betrag: "", schluessel: "flaeche" },
+  { bezeichnung: "Wasser / Abwasser", betrag: "", schluessel: "flaeche" },
+  { bezeichnung: "Müllabfuhr", betrag: "", schluessel: "flaeche" },
+  { bezeichnung: "Gebäudeversicherung", betrag: "", schluessel: "flaeche" },
+  { bezeichnung: "Allgemeinstrom", betrag: "", schluessel: "flaeche" },
 ];
 
 const num = (s: string) => {
@@ -37,11 +53,13 @@ const num = (s: string) => {
 export default function UmlageAssistent({
   propId,
   propName,
+  propFlaeche,
   mieter,
   jahrDefault,
 }: {
   propId: string;
   propName: string;
+  propFlaeche: number | null;
   mieter: MieterIn[];
   jahrDefault: number;
 }) {
@@ -49,26 +67,37 @@ export default function UmlageAssistent({
   const jahre = [aktuell, aktuell - 1, aktuell - 2, aktuell - 3, aktuell - 4];
 
   const [jahr, setJahr] = useState(jahrDefault);
+  const [zeitanteilig, setZeitanteilig] = useState(true);
   const [flaeche, setFlaeche] = useState<Record<string, string>>(
     Object.fromEntries(mieter.map((m) => [m.id, m.flaeche != null ? String(m.flaeche) : ""])),
   );
-  const [zeilen, setZeilen] = useState<ZeileUI[]>([
-    { bezeichnung: "Grundsteuer", betrag: "", schluessel: "flaeche" },
-    { bezeichnung: "Müll", betrag: "", schluessel: "flaeche" },
-    { bezeichnung: "Wasser / Abwasser", betrag: "", schluessel: "flaeche" },
-  ]);
+  const [zeilen, setZeilen] = useState<ZeileUI[]>(DEFAULT_ZEILEN);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [ergebnis, setErgebnis] = useState<VerteilenErgebnis | null>(null);
 
+  // belegte Monate je Mieter für das gewählte Jahr
+  const monateMap = Object.fromEntries(
+    mieter.map((m) => [m.id, monateImJahr(jahr, m.mietbeginn, m.mietende).monate]),
+  );
+
   // --- Live-Berechnung (identisch zur Server-Action) ---
-  const mieterCalc = mieter.map((m) => ({ id: m.id, name: m.name, flaeche: num(flaeche[m.id] ?? "") }));
+  const mieterCalc = mieter.map((m) => ({
+    id: m.id,
+    name: m.name,
+    flaeche: num(flaeche[m.id] ?? ""),
+    monate: monateMap[m.id],
+  }));
   const zeilenCalc: UmlageZeile[] = zeilen.map((z) => ({
     bezeichnung: z.bezeichnung.trim(),
     betrag: num(z.betrag),
     schluessel: z.schluessel,
   }));
   const aktive = zeilenCalc.filter((z) => z.bezeichnung !== "" && z.betrag > 0);
-  const calc = berechneUmlage(aktive, mieterCalc);
+  const calc = berechneUmlage(aktive, mieterCalc, {
+    zeitanteilig,
+    referenzFlaeche: propFlaeche ?? 0,
+  });
   const fehlendeFlaeche = mieterCalc.some((m) => m.flaeche <= 0);
   const gesamtEingabe = aktive.reduce((s, z) => s + z.betrag, 0);
 
@@ -82,6 +111,16 @@ export default function UmlageAssistent({
   function removeZeile(i: number) {
     setZeilen((zs) => zs.filter((_, k) => k !== i));
   }
+  function move(from: number, to: number) {
+    if (to < 0 || to >= zeilen.length || from === to) return;
+    setZeilen((zs) => {
+      const a = zs.slice();
+      const [it] = a.splice(from, 1);
+      a.splice(to, 0, it);
+      return a;
+    });
+    setStatus("idle");
+  }
 
   async function speichern() {
     setStatus("saving");
@@ -89,13 +128,14 @@ export default function UmlageAssistent({
       const res = await verteileNebenkosten({
         propId,
         jahr,
+        zeitanteilig,
         zeilen: zeilenCalc,
         mieter: mieterCalc.map((m) => ({ id: m.id, flaeche: m.flaeche })),
       });
       setErgebnis(res);
       setStatus(res.ok ? "done" : "error");
     } catch (e) {
-      setErgebnis({ ok: false, positionen: 0, mieter: 0, gesamt: 0, fehler: String(e) });
+      setErgebnis({ ok: false, positionen: 0, mieter: 0, gesamt: 0, nichtUmgelegt: 0, fehler: String(e) });
       setStatus("error");
     }
   }
@@ -108,6 +148,7 @@ export default function UmlageAssistent({
           <h3>📐 Wohnfläche je Mieter (m²)</h3>
           <span style={{ fontSize: 11, color: "var(--muted)" }}>
             Gesamt: <strong className="gold">{calc.totalFlaeche.toLocaleString("de-DE")} m²</strong>
+            {propFlaeche ? ` · Objekt: ${propFlaeche.toLocaleString("de-DE")} m²` : ""}
           </span>
         </div>
         <div className="section-body">
@@ -119,6 +160,7 @@ export default function UmlageAssistent({
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
               {mieter.map((m) => {
                 const anteil = calc.perMieter.find((p) => p.id === m.id);
+                const monate = monateMap[m.id];
                 return (
                   <div
                     key={m.id}
@@ -151,6 +193,11 @@ export default function UmlageAssistent({
                         {anteil ? anteil.anteilProzent.toFixed(1) : "0"}%
                       </span>
                     </div>
+                    {zeitanteilig && (
+                      <div style={{ fontSize: 11, color: monate < 12 ? "var(--amber)" : "var(--muted)", marginTop: 4 }}>
+                        {monate}/12 Monate belegt ({jahr})
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -187,18 +234,55 @@ export default function UmlageAssistent({
           </div>
         </div>
         <div className="section-body">
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--muted)", marginBottom: 12, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={zeitanteilig}
+              onChange={(e) => {
+                setZeitanteilig(e.target.checked);
+                setStatus("idle");
+              }}
+            />
+            Zeitanteilig nach belegten Monaten verteilen (für unterjährige Mieterwechsel)
+          </label>
+          {zeitanteilig && !propFlaeche && (
+            <div style={{ fontSize: 11, color: "var(--amber)", marginBottom: 10 }}>
+              Tipp: Hinterlege die <strong>Gesamtwohnfläche des Objekts</strong> (Objekt bearbeiten), damit die zeitanteilige Verteilung bei Mieterwechsel exakt rechnet.
+            </div>
+          )}
+
           <table style={{ fontSize: 13 }}>
             <thead>
               <tr>
-                <th style={{ width: "45%" }}>Position</th>
-                <th style={{ width: "25%" }}>Gesamtbetrag (€)</th>
-                <th style={{ width: "25%" }}>Verteilung</th>
+                <th style={{ width: 24 }}></th>
+                <th style={{ width: "42%" }}>Position</th>
+                <th style={{ width: "22%" }}>Gesamtbetrag (€)</th>
+                <th style={{ width: "24%" }}>Verteilung</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {zeilen.map((z, i) => (
-                <tr key={i}>
+                <tr
+                  key={i}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    if (dragIndex != null) move(dragIndex, i);
+                    setDragIndex(null);
+                  }}
+                  style={{ opacity: dragIndex === i ? 0.4 : 1 }}
+                >
+                  <td>
+                    <span
+                      draggable
+                      onDragStart={() => setDragIndex(i)}
+                      onDragEnd={() => setDragIndex(null)}
+                      title="Ziehen zum Umsortieren"
+                      style={{ cursor: "grab", color: "var(--faint)", userSelect: "none", fontSize: 16 }}
+                    >
+                      ⠿
+                    </span>
+                  </td>
                   <td style={{ paddingRight: 8 }}>
                     <input
                       className="input"
@@ -231,13 +315,14 @@ export default function UmlageAssistent({
                       <option value="gleich">gleichmäßig je Einheit</option>
                     </select>
                   </td>
-                  <td style={{ textAlign: "right" }}>
-                    <button
-                      type="button"
-                      className="delete-btn"
-                      title="Position entfernen"
-                      onClick={() => removeZeile(i)}
-                    >
+                  <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                    <button type="button" className="delete-btn" title="nach oben" onClick={() => move(i, i - 1)} disabled={i === 0}>
+                      ▲
+                    </button>
+                    <button type="button" className="delete-btn" title="nach unten" onClick={() => move(i, i + 1)} disabled={i === zeilen.length - 1}>
+                      ▼
+                    </button>
+                    <button type="button" className="delete-btn" title="Position entfernen" onClick={() => removeZeile(i)}>
                       ✕
                     </button>
                   </td>
@@ -305,7 +390,7 @@ export default function UmlageAssistent({
                         {m.name}
                       </th>
                     ))}
-                    <th style={{ textAlign: "right" }}>Gesamt</th>
+                    <th style={{ textAlign: "right" }}>Umgelegt</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -336,6 +421,12 @@ export default function UmlageAssistent({
               </table>
             </div>
           )}
+          {calc.nichtUmgelegt > 0.005 && (
+            <div style={{ fontSize: 11, color: "var(--amber)", marginTop: 10 }}>
+              Nicht umgelegt (Leerstand / unterjährig): <strong>{eur2(calc.nichtUmgelegt)}</strong> — dieser Anteil
+              entfällt auf nicht belegte Zeiten und wird nicht auf die Mieter verteilt.
+            </div>
+          )}
         </div>
       </div>
 
@@ -364,7 +455,8 @@ export default function UmlageAssistent({
             fontSize: 13,
           }}
         >
-          ✓ {eur2(ergebnis.gesamt)} auf {ergebnis.mieter} Mieter verteilt ({ergebnis.positionen} Positionen für {jahr}).{" "}
+          ✓ {eur2(ergebnis.gesamt)} auf {ergebnis.mieter} Mieter verteilt ({ergebnis.positionen} Positionen für {jahr}).
+          {ergebnis.nichtUmgelegt > 0.005 ? ` ${eur2(ergebnis.nichtUmgelegt)} nicht umgelegt (Leerstand).` : ""}{" "}
           Jede NK-Abrechnung übernimmt die Werte automatisch.{" "}
           <Link href={`/properties/${propId}`} className="gold hover:underline">
             Zurück zum Objekt

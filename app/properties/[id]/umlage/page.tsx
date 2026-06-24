@@ -10,8 +10,12 @@ export default async function UmlagePage({ params }: { params: { id: string } })
   const id = params.id;
 
   const [{ data: prop }, { data: mieter }] = await Promise.all([
-    supabase.from("properties").select("id,bezeichnung").eq("id", id).single(),
-    supabase.from("mieter").select("id,vorname,nachname,einheit,flaeche").eq("prop_id", id).order("mietbeginn"),
+    supabase.from("properties").select("id,bezeichnung,flaeche").eq("id", id).single(),
+    supabase
+      .from("mieter")
+      .select("id,vorname,nachname,einheit,flaeche,mietbeginn,mietende")
+      .eq("prop_id", id)
+      .order("mietbeginn"),
   ]);
 
   if (!prop) notFound();
@@ -21,6 +25,8 @@ export default async function UmlagePage({ params }: { params: { id: string } })
     name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter",
     einheit: m.einheit,
     flaeche: m.flaeche,
+    mietbeginn: m.mietbeginn,
+    mietende: m.mietende,
   }));
 
   return (
@@ -42,6 +48,7 @@ export default async function UmlagePage({ params }: { params: { id: string } })
       <UmlageAssistent
         propId={id}
         propName={prop.bezeichnung}
+        propFlaeche={prop.flaeche}
         mieter={tenants}
         jahrDefault={new Date().getFullYear() - 1}
       />

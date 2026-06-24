@@ -1,7 +1,8 @@
 // Nebenkosten-Verteiler — reine Berechnungslogik (ohne Abhängigkeiten).
 // Verteilt Gesamtkosten je Position nach Flächenanteil (m²) oder zu gleichen
-// Teilen je Einheit auf die Mieter. Geteilt zwischen Live-Vorschau (Client)
-// und Server-Action, damit Anzeige und gespeicherte Werte identisch sind.
+// Teilen je Einheit auf die Mieter. Optional zeitanteilig nach belegten Monaten
+// (für unterjährige Mieterwechsel). Geteilt zwischen Live-Vorschau (Client) und
+// Server-Action, damit Anzeige und gespeicherte Werte identisch sind.
 
 export type UmlageSchluessel = "flaeche" | "gleich";
 
@@ -15,6 +16,12 @@ export type UmlageMieter = {
   id: string;
   name: string;
   flaeche: number; // m²
+  monate?: number; // belegte Monate im Abrechnungsjahr (0..12), Default 12
+};
+
+export type UmlageOptions = {
+  zeitanteilig: boolean;
+  referenzFlaeche?: number; // Gesamtwohnfläche des Objekts (für zeitanteilige Verteilung)
 };
 
 export type UmlageAnteil = {
@@ -27,6 +34,7 @@ export type UmlageErgebnisMieter = {
   id: string;
   name: string;
   flaeche: number;
+  monate: number;
   anteilProzent: number; // Flächenanteil in %
   positionen: UmlageAnteil[];
   summe: number;
@@ -35,8 +43,10 @@ export type UmlageErgebnisMieter = {
 export type UmlageErgebnis = {
   perMieter: UmlageErgebnisMieter[];
   totalFlaeche: number;
-  zeilenSummen: number[]; // Gesamtbetrag je Zeile (zur Kontrolle)
+  zeilenSummen: number[]; // tatsächlich umgelegter Betrag je Zeile
+  zeilenNichtUmgelegt: number[]; // wegen Leerstand nicht umgelegter Betrag je Zeile
   gesamt: number;
+  nichtUmgelegt: number; // Summe nicht umgelegt (Leerstand)
 };
 
 // Ein-/Ausgabe der Server-Action (hier definiert, da "use server"-Dateien
@@ -44,6 +54,7 @@ export type UmlageErgebnis = {
 export type VerteilenInput = {
   propId: string;
   jahr: number;
+  zeitanteilig: boolean;
   zeilen: UmlageZeile[];
   mieter: { id: string; flaeche: number }[];
 };
@@ -53,6 +64,7 @@ export type VerteilenErgebnis = {
   positionen: number; // Anzahl geschriebener Positionen
   mieter: number; // Anzahl belieferter Mieter
   gesamt: number; // verteilte Gesamtsumme
+  nichtUmgelegt: number; // nicht umgelegt (Leerstand)
   fehler?: string;
 };
 
@@ -60,6 +72,10 @@ export type VerteilenErgebnis = {
 export function schluesselLabel(s: UmlageSchluessel): string {
   return s === "gleich" ? "Einheit" : "Fläche";
 }
+
+const r2 = (n: number) => Math.round(n * 100) / 100;
+const monateVon = (m: UmlageMieter) =>
+  m.monate == null ? 12 : Math.max(0, Math.min(12, m.monate));
 
 /**
  * Verteilt einen Betrag cent-genau anhand von Gewichten.
@@ -96,36 +112,59 @@ export function verteileBetrag(betrag: number, gewichte: number[]): number[] {
 export function berechneUmlage(
   zeilen: UmlageZeile[],
   mieter: UmlageMieter[],
+  opts: UmlageOptions = { zeitanteilig: false },
 ): UmlageErgebnis {
-  const totalFlaeche = mieter.reduce((s, m) => s + (m.flaeche > 0 ? m.flaeche : 0), 0);
+  const zeitanteilig = opts.zeitanteilig;
+  const sumFlaeche = mieter.reduce((s, m) => s + (m.flaeche > 0 ? m.flaeche : 0), 0);
+  // Referenzfläche fürs Zeitanteilige: Gesamtwohnfläche des Objekts, sonst Summe.
+  const referenzFlaeche = Math.max(opts.referenzFlaeche ?? 0, sumFlaeche);
+  const anzahl = mieter.length;
 
   const perMieter: UmlageErgebnisMieter[] = mieter.map((m) => ({
     id: m.id,
     name: m.name,
     flaeche: m.flaeche,
-    anteilProzent: totalFlaeche > 0 ? ((m.flaeche > 0 ? m.flaeche : 0) / totalFlaeche) * 100 : 0,
+    monate: monateVon(m),
+    anteilProzent: sumFlaeche > 0 ? ((m.flaeche > 0 ? m.flaeche : 0) / sumFlaeche) * 100 : 0,
     positionen: [],
     summe: 0,
   }));
 
   const zeilenSummen: number[] = [];
+  const zeilenNichtUmgelegt: number[] = [];
 
   for (const z of zeilen) {
-    const gewichte =
-      z.schluessel === "gleich" ? mieter.map(() => 1) : mieter.map((m) => (m.flaeche > 0 ? m.flaeche : 0));
-    const anteile = verteileBetrag(z.betrag, gewichte);
-    zeilenSummen.push(anteile.reduce((a, b) => a + b, 0));
+    const istFlaeche = z.schluessel !== "gleich";
+    const basis = istFlaeche
+      ? mieter.map((m) => (m.flaeche > 0 ? m.flaeche : 0))
+      : mieter.map(() => 1);
+    const gewichte = zeitanteilig ? basis.map((b, i) => b * monateVon(mieter[i])) : basis;
+    const sumGew = gewichte.reduce((a, b) => a + b, 0);
+
+    let allocated: number;
+    if (zeitanteilig) {
+      const referenz = istFlaeche ? referenzFlaeche * 12 : anzahl * 12;
+      const faktor = referenz > 0 ? Math.min(1, sumGew / referenz) : 0;
+      allocated = r2(z.betrag * faktor);
+    } else {
+      allocated = z.betrag;
+    }
+
+    const anteile = verteileBetrag(allocated, gewichte);
+    zeilenSummen.push(r2(anteile.reduce((a, b) => a + b, 0)));
+    zeilenNichtUmgelegt.push(r2(z.betrag - allocated));
     anteile.forEach((a, i) => {
       perMieter[i].positionen.push({
         bezeichnung: z.bezeichnung,
         schluessel: schluesselLabel(z.schluessel),
         betrag: a,
       });
-      perMieter[i].summe = Math.round((perMieter[i].summe + a) * 100) / 100;
+      perMieter[i].summe = r2(perMieter[i].summe + a);
     });
   }
 
-  const gesamt = Math.round(perMieter.reduce((s, m) => s + m.summe, 0) * 100) / 100;
+  const gesamt = r2(perMieter.reduce((s, m) => s + m.summe, 0));
+  const nichtUmgelegt = r2(zeilenNichtUmgelegt.reduce((a, b) => a + b, 0));
 
-  return { perMieter, totalFlaeche, zeilenSummen, gesamt };
+  return { perMieter, totalFlaeche: sumFlaeche, zeilenSummen, zeilenNichtUmgelegt, gesamt, nichtUmgelegt };
 }
