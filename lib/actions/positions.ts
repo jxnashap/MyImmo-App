@@ -34,6 +34,33 @@ export async function addPosition(mieterId: string, formData: FormData) {
   revalidatePath(`/tenants/${mieterId}/edit`);
 }
 
+// Mehrere per OCR erkannte Positionen auf einmal anlegen (umlagefähig, aktuelles Jahr).
+export async function addPositionsBulk(mieterId: string, positionenJson: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  let items: { name?: string; betrag?: number }[] = [];
+  try { items = JSON.parse(positionenJson); } catch { items = []; }
+  const jahr = new Date().getFullYear();
+
+  const rows = items
+    .filter((p) => p && p.name)
+    .map((p) => ({
+      user_id: user.id,
+      mieter_id: mieterId,
+      bezeichnung: String(p.name),
+      betrag: typeof p.betrag === "number" && !Number.isNaN(p.betrag) ? p.betrag : null,
+      jahr,
+      umlagefaehig: true,
+    }));
+  if (rows.length === 0) return;
+
+  const { error } = await supabase.from("mieter_positionen").insert(rows);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/tenants/${mieterId}/edit`);
+}
+
 export async function deletePosition(id: string, mieterId: string) {
   const supabase = createClient();
   const { error } = await supabase.from("mieter_positionen").delete().eq("id", id);

@@ -18,6 +18,9 @@ export type Vermieter = {
   strasse?: string | null;
   ort?: string | null;
   email?: string | null;
+  kontoname?: string | null;
+  kontoinhaber?: string | null;
+  iban?: string | null;
 };
 
 const GOLD = rgb(0.722, 0.565, 0.169); // #b8902b
@@ -55,6 +58,9 @@ function euro(n: number): string {
 
 const tracked = (s: string) => s.split("").join(" ");
 
+const formatIban = (s: string) =>
+  s.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
+
 /** Baut den Vermieterblock aus dem Profil (Fallback: ibans.inhaber → MyImmo). */
 export function vermieterAus(
   profil:
@@ -67,7 +73,7 @@ export function vermieterAus(
       }
     | null
     | undefined,
-  iban?: { inhaber?: string | null } | null,
+  iban?: { kontoname?: string | null; inhaber?: string | null; iban?: string | null } | null,
 ): Vermieter {
   const ort = [profil?.plz, profil?.ort].filter(Boolean).join(" ") || null;
   return {
@@ -75,6 +81,9 @@ export function vermieterAus(
     strasse: profil?.strasse ?? null,
     ort,
     email: profil?.email ?? null,
+    kontoname: iban?.kontoname ?? null,
+    kontoinhaber: iban?.inhaber ?? null,
+    iban: iban?.iban ?? null,
   };
 }
 
@@ -294,12 +303,23 @@ export async function buildNkPdf(
   }
 
   // ---- Schlusstext ----
+  const hatKonto = !guthaben && !!vermieter.iban;
   const schluss = guthaben
     ? "Das Guthaben wird Ihnen innerhalb von 14 Tagen auf das uns bekannte Konto erstattet."
-    : "Bitte überweisen Sie den Nachzahlungsbetrag innerhalb von 14 Tagen auf das Ihnen bekannte Konto.";
+    : hatKonto
+      ? "Bitte überweisen Sie den Nachzahlungsbetrag innerhalb von 14 Tagen auf folgendes Konto:"
+      : "Bitte überweisen Sie den Nachzahlungsbetrag innerhalb von 14 Tagen auf das Ihnen bekannte Konto.";
   for (const ln of wrap(schluss, 10, RIGHT - ML)) {
     text(ML, y, ln, 10, font, INK);
     y -= 15;
+  }
+  if (hatKonto) {
+    y -= 4;
+    const inhaber = vermieter.kontoinhaber || vermieter.name;
+    if (inhaber) { text(ML, y, inhaber, 10, bold, INK); y -= 14; }
+    text(ML, y, `IBAN  ${formatIban(vermieter.iban!)}`, 10, bold, INK);
+    y -= 15;
+    if (vermieter.kontoname) { text(ML, y, vermieter.kontoname, 9, font, MUTED); y -= 14; }
   }
   y -= 16;
   text(ML, y, "Mit freundlichen Grüßen", 10, font, INK);

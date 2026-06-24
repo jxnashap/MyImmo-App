@@ -1,6 +1,12 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { eur, eur2 } from "@/lib/format";
+import { euro, datum } from "@/lib/format";
+import { getRefinanzWarning } from "@/lib/fristen";
+import { deleteKredit } from "@/lib/actions/buchungen";
+import DeleteButton from "@/components/DeleteButton";
 import type { Kredit, Property } from "@/lib/types";
+
+type KreditExt = Kredit & { darlnr?: string | null; grundschuld?: number | null; beleihung?: number | null };
 
 export default async function KreditePage() {
   const supabase = createClient();
@@ -11,41 +17,99 @@ export default async function KreditePage() {
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
-  const list = (kred ?? []) as Kredit[];
+  const list = (kred ?? []) as KreditExt[];
 
-  const restSumme = list.reduce((s, k) => s + (k.restschuld ?? 0), 0);
-  const rateSumme = list.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
+  const warnungen = list
+    .map((k) => ({ k, w: getRefinanzWarning(k.zinsbindung) }))
+    .filter((x): x is { k: KreditExt; w: NonNullable<ReturnType<typeof getRefinanzWarning>> } => !!x.w)
+    .sort((a, b) => new Date(a.k.zinsbindung ?? 0).getTime() - new Date(b.k.zinsbindung ?? 0).getTime());
 
   return (
-    <div>
-      <h1 className="mb-2 text-3xl">Kredite</h1>
-      <p className="mb-6 text-sm text-white/50">
-        Restschuld gesamt <span style={{ color: "var(--red)" }}>{eur(restSumme)}</span>
-        {"  ·  "}Raten/Mo. <span className="gold">{eur2(rateSumme)}</span>
-      </p>
+    <div className="fade-up">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">Kredite &amp; Finanzierung</div>
+          <div className="topbar-sub">Darlehen, Zinsbindung, Tilgungsplan</div>
+        </div>
+        <Link href="/kredite/new" className="btn btn-gold">＋ Darlehen</Link>
+      </div>
+
+      {warnungen.length > 0 && (
+        <div className="section">
+          <div className="section-header"><h3>⚠️ Refinanzierungs-Kalender</h3><span style={{ fontSize: 11, color: "var(--muted)" }}>Zinsbindungen bald ablaufend</span></div>
+          <div className="section-body">
+            {warnungen.map(({ k, w }) => (
+              <div key={k.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: w.color, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Darlehen"}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"} · {k.bank || ""} · {k.zinssatz ?? 0}%</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: w.color }}>{w.label}</div>
+                  <div style={{ fontSize: 10, color: "var(--muted)" }}>bis: {datum(k.zinsbindung)}</div>
+                </div>
+                <span className={`badge ${w.level === "warnung" ? "badge-amber" : "badge-red"}`}>{w.level === "abgelaufen" ? "🚨 Abgelaufen" : w.level === "kritisch" ? "🔴 Dringend" : "🟡 Bald"}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {list.length === 0 ? (
-        <p className="text-white/40">Keine Kredite erfasst.</p>
+        <div className="empty"><div className="empty-icon">🏦</div><h4>Noch keine Darlehen</h4></div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {list.map((k) => (
-            <div key={k.id} className="card">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{k.bezeichnung || k.bank || "Darlehen"}</span>
-                <span className="text-sm text-white/50">{k.prop_id ? nameOf.get(k.prop_id) ?? "" : ""}</span>
+        list.map((k) => {
+          const pct = k.betrag ? Math.round(((k.restschuld ?? 0) / k.betrag) * 100) : 0;
+          const tilgtPct = 100 - pct;
+          const moZins = k.restschuld ? (k.restschuld * (k.zinssatz ?? 0) / 100) / 12 : 0;
+          const moTilg = (k.monatsrate ?? 0) - moZins;
+          const warn = getRefinanzWarning(k.zinsbindung);
+          return (
+            <div key={k.id} className="section" style={{ marginBottom: 14 }}>
+              {warn && (
+                <div style={{ background: warn.bg, borderLeft: `3px solid ${warn.color}`, padding: "8px 14px", fontSize: 12, color: warn.color, fontWeight: 500 }}>
+                  ⚠️ Zinsbindung läuft ab: <strong>{datum(k.zinsbindung)}</strong>
+                </div>
+              )}
+              <div className="section-header">
+                <div>
+                  <h3>{k.bezeichnung || k.bank || "Darlehen"}</h3>
+                  <span style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"}{k.bank ? ` · ${k.bank}` : ""}{k.darlnr ? ` · Nr. ${k.darlnr}` : ""}</span>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}% Zins</span>}
+                  <Link href={`/kredite/${k.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link>
+                  <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label="✕" confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
+                </div>
               </div>
-              {k.bank && <div className="text-sm text-white/40">{k.bank}</div>}
-              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                <div className="flex justify-between"><span className="text-white/40">Restschuld</span><span>{eur(k.restschuld)}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Rate/Mo.</span><span className="gold">{eur2(k.monatsrate)}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Zinssatz</span><span>{k.zinssatz != null ? k.zinssatz + " %" : "—"}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Tilgung</span><span>{k.tilgungssatz != null ? k.tilgungssatz + " %" : "—"}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Zinsbindung</span><span>{k.zinsbindung ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-white/40">Darlehen</span><span>{eur(k.betrag)}</span></div>
+              <div className="section-body">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14 }}>
+                  <div><div className="kredit-field-lbl">Urspr. Darlehen</div><div className="kredit-field-val">{euro(k.betrag)}</div></div>
+                  <div><div className="kredit-field-lbl">Restschuld</div><div className="kredit-field-val" style={{ color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
+                  <div><div className="kredit-field-lbl">Rate / Monat</div><div className="kredit-field-val">{euro(k.monatsrate)}</div></div>
+                  <div><div className="kredit-field-lbl">Laufzeit bis</div><div className="kredit-field-val">{k.laufzeit ?? "–"}</div></div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+                  <div><div className="kredit-field-lbl">Zinsen / Mo.</div><div className="kredit-field-val" style={{ color: "var(--muted)" }}>{euro(moZins)}</div></div>
+                  <div><div className="kredit-field-lbl">Tilgung / Mo.</div><div className="kredit-field-val" style={{ color: "var(--green)" }}>{euro(Math.max(0, moTilg))}</div></div>
+                  <div><div className="kredit-field-lbl">Tilgungssatz</div><div className="kredit-field-val">{k.tilgungssatz ? `${k.tilgungssatz}% p.a.` : "–"}</div></div>
+                  <div><div className="kredit-field-lbl">Zinsbindung</div><div className="kredit-field-val" style={{ color: warn ? warn.color : "inherit" }}>{k.zinsbindung ? datum(k.zinsbindung) : "–"}</div></div>
+                </div>
+                {(k.grundschuld || k.beleihung) && (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+                    <div><div className="kredit-field-lbl">Grundschuld</div><div className="kredit-field-val">{k.grundschuld ? euro(k.grundschuld) : "–"}</div></div>
+                    <div><div className="kredit-field-lbl">Beleihungsauslauf</div><div className="kredit-field-val">{k.beleihung ? `${k.beleihung}%` : "–"}</div></div>
+                    <div><div className="kredit-field-lbl">Darlehensnr.</div><div className="kredit-field-val" style={{ fontSize: 11 }}>{k.darlnr || "–"}</div></div>
+                    <div />
+                  </div>
+                )}
+                <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Getilgt: <strong style={{ color: "var(--text)" }}>{tilgtPct}%</strong></div>
+                <div className="progress-bar" style={{ height: 8 }}><div className="progress-fill" style={{ width: `${tilgtPct}%`, background: "var(--teal)" }} /></div>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })
       )}
     </div>
   );

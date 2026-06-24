@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { euro, datum } from "@/lib/format";
 import type { Tenant, Property } from "@/lib/types";
-
-const eur = (n: number | null) =>
-  n == null ? "—" : new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
 export default async function TenantsPage() {
   const supabase = createClient();
@@ -14,45 +12,68 @@ export default async function TenantsPage() {
 
   const list = (tenants ?? []) as Tenant[];
   const propList = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
-  const propMap = new Map(propList.map((p): [string, string] => [p.id, p.bezeichnung]));
+  const nameOf = new Map(propList.map((p): [string, string] => [p.id, p.bezeichnung]));
+
+  const gesamtMiete = list.reduce((s, m) => s + (m.kaltmiete ?? 0), 0);
+  const gesamtKaution = list.reduce((s, m) => s + (m.kaution ?? 0), 0);
+  const offeneKaution = list.filter((m) => m.kaution_status !== "ja").length;
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Mieter</h1>
-        <Link href="/tenants/new" className="rounded-lg bg-gold px-4 py-2 text-sm font-medium text-ink">
-          + Neuer Mieter
-        </Link>
+    <div className="fade-up">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">👤 Mieter</div>
+          <div className="topbar-sub">Mietverträge, Fristen, Einheiten &amp; Dokumente</div>
+        </div>
+        <Link href="/tenants/new" className="btn btn-gold">＋ Mieter</Link>
+      </div>
+
+      <div className="grid-4 mb-20">
+        <div className="kpi-card"><div className="kpi-label">Mieter gesamt</div><div className="kpi-value">{list.length}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Kaltmiete / Mo.</div><div className="kpi-value" style={{ color: "var(--green)" }}>{euro(gesamtMiete)}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Kautionen</div><div className="kpi-value">{euro(gesamtKaution)}</div></div>
+        <div className="kpi-card"><div className="kpi-label">Kaution offen</div><div className="kpi-value" style={{ color: offeneKaution > 0 ? "var(--amber)" : "var(--green)" }}>{offeneKaution}</div></div>
       </div>
 
       {list.length === 0 ? (
-        <p className="text-white/50">Noch keine Mieter angelegt.</p>
+        <div className="prop-grid">
+          <div className="empty" style={{ gridColumn: "1/-1" }}>
+            <div className="empty-icon">👤</div>
+            <h4>Noch keine Mieter</h4>
+            <p>Füge deinen ersten Mieter hinzu.</p>
+          </div>
+        </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-white/10">
-          <table className="w-full text-sm">
-            <thead className="bg-white/[0.03] text-left text-white/50">
-              <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Objekt</th>
-                <th className="px-4 py-3 font-medium">Einheit</th>
-                <th className="px-4 py-3 text-right font-medium">Kaltmiete</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((t) => (
-                <tr key={t.id} className="border-t border-white/10 hover:bg-white/[0.02]">
-                  <td className="px-4 py-3">
-                    <Link href={`/tenants/${t.id}/edit`} className="text-gold hover:underline">
-                      {[t.vorname, t.nachname].filter(Boolean).join(" ") || "—"}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-white/70">{t.prop_id ? propMap.get(t.prop_id) ?? "—" : "—"}</td>
-                  <td className="px-4 py-3 text-white/70">{t.einheit || "—"}</td>
-                  <td className="px-4 py-3 text-right">{eur(t.kaltmiete)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="prop-grid">
+          {list.map((m) => (
+            <div key={m.id} className="prop-card">
+              <div className="prop-card-header" style={{ gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Link href={`/tenants/${m.id}`} className="prop-card-name" style={{ color: "var(--text)", textDecoration: "none", display: "block" }}>
+                    {[m.vorname, m.nachname].filter(Boolean).join(" ") || "—"}
+                  </Link>
+                  <div className="prop-card-addr">{(m.prop_id && nameOf.get(m.prop_id)) || "–"}{m.einheit ? ` · ${m.einheit}` : ""}</div>
+                  <div style={{ marginTop: 5, display: "flex", gap: 4, flexWrap: "wrap" }}>
+                    <span className="badge badge-green">{euro(m.kaltmiete)} / Mo</span>
+                    {m.kaution_status === "ja"
+                      ? <span className="badge badge-teal">Kaution ✓</span>
+                      : <span className="badge badge-red">Kaution offen</span>}
+                  </div>
+                </div>
+              </div>
+              <div style={{ padding: "10px 14px", borderTop: "1px solid var(--line)", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, fontSize: 11 }}>
+                <div><span style={{ color: "var(--muted)" }}>Beginn:</span> {m.mietbeginn ? datum(m.mietbeginn) : "–"}</div>
+                <div><span style={{ color: "var(--muted)" }}>Ende:</span> {m.mietende ? datum(m.mietende) : "unbefristet"}</div>
+                {m.telefon && <div><span style={{ color: "var(--muted)" }}>Tel:</span> {m.telefon}</div>}
+                {m.email && <div style={{ overflow: "hidden", textOverflow: "ellipsis" }}><span style={{ color: "var(--muted)" }}>Mail:</span> {m.email}</div>}
+              </div>
+              <div style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", display: "flex", gap: 6 }}>
+                <Link href={`/tenants/${m.id}`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>Details</Link>
+                <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>✏️</Link>
+                <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>🧾</Link>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

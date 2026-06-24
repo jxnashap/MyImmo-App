@@ -52,7 +52,7 @@ export async function GET(
         .select("name,strasse,plz,ort,email")
         .limit(1)
         .maybeSingle(),
-      supabase.from("ibans").select("inhaber").limit(1).maybeSingle(),
+      supabase.from("ibans").select("kontoname,inhaber,iban").order("created_at").limit(1).maybeSingle(),
     ]);
 
   const abrechnung = berechneNk(

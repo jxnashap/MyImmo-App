@@ -1,5 +1,13 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { deleteNotiz, deleteNotizDatei } from "@/lib/actions/buchungen";
+import DeleteButton from "@/components/DeleteButton";
 import type { Notiz, Property } from "@/lib/types";
+
+const KAT_COLORS: Record<string, string> = {
+  Allgemein: "badge-teal", Mietvertrag: "badge-gold", Versicherung: "badge-green",
+  Handwerker: "badge-red", Steuer: "badge-teal", Aufgabe: "badge-red",
+};
 
 export default async function NotizenPage() {
   const supabase = createClient();
@@ -13,21 +21,51 @@ export default async function NotizenPage() {
   const list = (not ?? []) as Notiz[];
 
   return (
-    <div>
-      <h1 className="mb-6 text-3xl">Notizen</h1>
+    <div className="fade-up">
+      <div className="topbar">
+        <div>
+          <div className="topbar-title">Dokumente &amp; Notizen</div>
+          <div className="topbar-sub">Wichtige Infos und Merkzettel</div>
+        </div>
+        <Link href="/notizen/new" className="btn btn-gold">＋ Notiz</Link>
+      </div>
+
       {list.length === 0 ? (
-        <p className="text-white/40">Keine Notizen.</p>
+        <div className="prop-grid">
+          <div className="empty" style={{ gridColumn: "1/-1" }}><div className="empty-icon">📁</div><h4>Noch keine Notizen</h4></div>
+        </div>
       ) : (
-        <div className="grid gap-3">
+        <div className="prop-grid">
           {list.map((n) => (
-            <div key={n.id} className="card">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{n.titel || "Ohne Titel"}</span>
-                <span className="text-xs text-white/40">
-                  {n.kategorie ? n.kategorie + " · " : ""}{n.prop_id ? nameOf.get(n.prop_id) ?? "" : ""}
+            <div key={n.id} className="prop-card">
+              <div className="prop-card-header" style={{ gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="prop-card-name">{n.titel || "Ohne Titel"}</div>
+                  <div className="prop-card-addr">{(n.prop_id && nameOf.get(n.prop_id)) || "Allgemein"}</div>
+                  {n.kategorie && (
+                    <div style={{ marginTop: 5 }}>
+                      <span className={`badge ${KAT_COLORS[n.kategorie] || "badge-teal"}`}>{n.kategorie}</span>
+                    </div>
+                  )}
+                </div>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Link href={`/notizen/${n.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link>
+                  <DeleteButton action={deleteNotiz.bind(null, n.id)} className="delete-btn" label="✕" confirmText={`„${n.titel || "Notiz"}" löschen?`} />
                 </span>
               </div>
-              {n.inhalt && <p className="mt-2 whitespace-pre-wrap text-sm text-white/70">{n.inhalt}</p>}
+              {n.inhalt && (
+                <div style={{ padding: "10px 14px 14px", fontSize: 12, color: "var(--muted)", borderTop: "1px solid var(--line)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+                  {n.inhalt}
+                </div>
+              )}
+              {n.datei_name && (
+                <div style={{ padding: "10px 14px", fontSize: 12, borderTop: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <a href={`/notizen/${n.id}/datei`} target="_blank" rel="noopener noreferrer" title={n.datei_name} style={{ color: "var(--gold)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {n.datei_type === "application/pdf" ? "📄" : n.datei_type?.startsWith("image/") ? "🖼️" : "📎"} {n.datei_name}
+                  </a>
+                  <DeleteButton action={deleteNotizDatei.bind(null, n.id)} className="delete-btn" label="✕" confirmText="Anhang entfernen?" />
+                </div>
+              )}
             </div>
           ))}
         </div>

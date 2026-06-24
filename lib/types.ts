@@ -71,6 +71,9 @@ export type Kosten = {
   beschreibung: string | null;
   notiz: string | null;
   wiederkehrend: boolean | null;
+  rechnung_name: string | null;
+  rechnung_type: string | null;
+  rechnung_size: string | null;
 };
 
 export type Verbrauch = {
@@ -88,8 +91,11 @@ export type Kredit = {
   prop_id: string | null;
   bezeichnung: string | null;
   bank: string | null;
+  darlnr: string | null;
   betrag: number | null;
   restschuld: number | null;
+  grundschuld: number | null;
+  beleihung: number | null;
   zinssatz: number | null;
   tilgungssatz: number | null;
   monatsrate: number | null;
@@ -104,6 +110,9 @@ export type Notiz = {
   kategorie: string | null;
   inhalt: string | null;
   created_at: string | null;
+  datei_name: string | null;
+  datei_type: string | null;
+  datei_size: number | null;
 };
 
 export type VermieterProfil = {
@@ -119,6 +128,15 @@ export type VermieterProfil = {
   iban: string | null;
   created_at: string | null;
   updated_at: string | null;
+};
+
+export type Iban = {
+  id: string;
+  user_id: string;
+  kontoname: string;
+  inhaber: string | null;
+  iban: string;
+  created_at: string | null;
 };
 
 export type Termin = {

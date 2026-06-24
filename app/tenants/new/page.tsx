@@ -1,3 +1,4 @@
+import Link from "next/link";
 import TenantForm from "@/components/TenantForm";
 import { createTenant } from "@/lib/actions/tenants";
 import { createClient } from "@/lib/supabase/server";
@@ -7,8 +8,13 @@ export default async function NewTenantPage() {
   const { data: props } = await supabase.from("properties").select("id,bezeichnung").order("bezeichnung");
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-semibold">Neuer Mieter</h1>
+    <div className="fade-up">
+      <div className="topbar">
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Link href="/tenants" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
+          <div><div className="topbar-title">Neuer Mieter</div></div>
+        </div>
+      </div>
       <TenantForm action={createTenant} properties={props ?? []} submitLabel="Anlegen" />
     </div>
   );
