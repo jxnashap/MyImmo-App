@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { eur } from "@/lib/format";
 import CashflowChart from "@/components/CashflowChart";
+import BrandMark from "@/components/BrandMark";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 
 const MONATE = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
@@ -14,10 +15,27 @@ export default async function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-sm py-24 text-center">
-        <h1 className="text-2xl">Willkommen bei MyImmo</h1>
-        <p className="mt-2 text-white/60">Bitte einloggen, um dein Portfolio zu sehen.</p>
-        <Link href="/login" className="btn-gold mt-6 inline-block">Einloggen</Link>
+      <div
+        className="flex min-h-screen w-full items-center justify-center px-4 py-10"
+        style={{ background: "#f5f3ee", color: "#1f1e1b" }}
+      >
+        <div
+          className="w-full max-w-[400px] rounded-2xl border bg-white p-8 text-center sm:p-10"
+          style={{
+            borderColor: "rgba(0,0,0,0.07)",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 18px 50px -20px rgba(0,0,0,0.18)",
+          }}
+        >
+          <BrandMark size="lg" />
+
+          <Link
+            href="/login"
+            className="mt-9 block w-full rounded-lg py-2.5 text-[15px] font-semibold transition hover:brightness-95"
+            style={{ background: "#b8902b", color: "#1a1a17" }}
+          >
+            Einloggen
+          </Link>
+        </div>
       </div>
     );
   }
