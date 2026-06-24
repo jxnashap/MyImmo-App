@@ -1,0 +1,52 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { createEinnahme } from "@/lib/actions/buchungen";
+import type { Property } from "@/lib/types";
+
+const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
+
+export default async function NeueEinnahmePage({ searchParams }: { searchParams: { prop?: string; back?: string } }) {
+  const supabase = createClient();
+  const { data } = await supabase.from("properties").select("id,bezeichnung").order("bezeichnung");
+  const properties = (data ?? []) as Pick<Property, "id" | "bezeichnung">[];
+  const back = searchParams.back || "/einnahmen";
+
+  return (
+    <div className="fade-up">
+      <div className="topbar">
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Link href={back} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
+          <div><div className="topbar-title">Einnahme erfassen</div></div>
+        </div>
+      </div>
+
+      <form action={createEinnahme} className="form-box">
+        <h3>💰 Einnahme erfassen</h3>
+        <p>Mietzahlungen, Kautionen oder sonstige Erträge.</p>
+        <input type="hidden" name="back" value={back} />
+        <div className="form-row">
+          <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" required /></div>
+          <div className="form-group"><label>Immobilie *</label>
+            <select name="prop_id" defaultValue={searchParams.prop ?? ""} required>
+              <option value="">– wählen –</option>
+              {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="form-row">
+          <div className="form-group"><label>Kategorie</label>
+            <select name="kategorie" defaultValue="Miete">{KATEGORIEN.map((k) => <option key={k}>{k}</option>)}</select>
+          </div>
+          <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" name="betrag" placeholder="1200" required /></div>
+        </div>
+        <div className="form-row single">
+          <div className="form-group"><label>Beschreibung</label><input type="text" name="beschreibung" placeholder="z.B. Miete August 2025" /></div>
+        </div>
+        <div className="form-actions">
+          <Link href={back} className="btn btn-ghost">Abbrechen</Link>
+          <button type="submit" className="btn btn-gold">Speichern</button>
+        </div>
+      </form>
+    </div>
+  );
+}

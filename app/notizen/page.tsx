@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { deleteNotiz } from "@/lib/actions/buchungen";
+import DeleteButton from "@/components/DeleteButton";
 import type { Notiz, Property } from "@/lib/types";
 
 const KAT_COLORS: Record<string, string> = {
@@ -25,7 +27,7 @@ export default async function NotizenPage() {
           <div className="topbar-title">Dokumente &amp; Notizen</div>
           <div className="topbar-sub">Wichtige Infos und Merkzettel</div>
         </div>
-        <Link href="/properties" className="btn btn-gold">＋ Notiz</Link>
+        <Link href="/notizen/new" className="btn btn-gold">＋ Notiz</Link>
       </div>
 
       {list.length === 0 ? (
@@ -46,6 +48,7 @@ export default async function NotizenPage() {
                     </div>
                   )}
                 </div>
+                <DeleteButton action={deleteNotiz.bind(null, n.id)} className="delete-btn" label="✕" confirmText={`„${n.titel || "Notiz"}" löschen?`} />
               </div>
               {n.inhalt && (
                 <div style={{ padding: "10px 14px 14px", fontSize: 12, color: "var(--muted)", borderTop: "1px solid var(--line)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>

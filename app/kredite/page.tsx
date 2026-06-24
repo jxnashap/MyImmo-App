@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
+import { deleteKredit } from "@/lib/actions/buchungen";
+import DeleteButton from "@/components/DeleteButton";
 import type { Kredit, Property } from "@/lib/types";
 
 export default async function KreditePage() {
@@ -21,7 +23,7 @@ export default async function KreditePage() {
           <div className="topbar-title">Kredite &amp; Finanzierung</div>
           <div className="topbar-sub">Darlehen, Zinsbindung, Tilgungsplan</div>
         </div>
-        <Link href="/properties" className="btn btn-gold">＋ Darlehen</Link>
+        <Link href="/kredite/new" className="btn btn-gold">＋ Darlehen</Link>
       </div>
 
       {list.length === 0 ? (
@@ -39,7 +41,10 @@ export default async function KreditePage() {
                   <h3>{k.bezeichnung || k.bank || "Darlehen"}</h3>
                   <span style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"}{k.bank ? ` · ${k.bank}` : ""}</span>
                 </div>
-                {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}% Zins</span>}
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}% Zins</span>}
+                  <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label="✕" confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
+                </div>
               </div>
               <div className="section-body">
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14 }}>

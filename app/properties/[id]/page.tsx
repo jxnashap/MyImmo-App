@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
+import { deleteEinnahme, deleteKosten, deleteKredit, deleteVerbrauch, deleteNotiz } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import type { Property, Tenant } from "@/lib/types";
 
@@ -197,7 +198,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       <div className="section mb-20">
         <div className="section-header">
           <h3>🏦 Kredite &amp; Finanzierung</h3>
-          <Link href="/kredite" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Darlehen</Link>
+          <Link href={`/kredite/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Darlehen</Link>
         </div>
         <div className="section-body">
           {kred.length === 0 ? (
@@ -212,6 +213,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Darlehen"}</div>
                       <div style={{ fontSize: 11, color: "var(--muted)" }}>{k.bank || "–"} · {k.zinssatz ?? 0}% Zins · {k.tilgungssatz ?? 0}% Tilgung</div>
                     </div>
+                    <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label="✕" confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 8 }}>
                     <div><div style={{ fontSize: 10, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
@@ -229,14 +231,14 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
       {/* Einnahmen + Kosten */}
       <div className="grid-2 mb-20">
-        <BuchungSection title="💰 Einnahmen" rows={einnahmen} gesamtColor="var(--green)" badge="badge-green" addHref={`/einnahmen?prop=${id}`} />
-        <BuchungSection title="📋 Kosten & Ausgaben" rows={kosten} gesamtColor="var(--red)" badge="badge-red" addHref={`/kosten?prop=${id}`} />
+        <BuchungSection title="💰 Einnahmen" rows={einnahmen} gesamtColor="var(--green)" badge="badge-green" addHref={`/einnahmen/new?prop=${id}&back=/properties/${id}`} kind="einnahme" />
+        <BuchungSection title="📋 Kosten & Ausgaben" rows={kosten} gesamtColor="var(--red)" badge="badge-red" addHref={`/kosten/new?prop=${id}&back=/properties/${id}`} kind="kosten" />
       </div>
 
       {/* Verbrauch + Notizen */}
       <div className="grid-2 mb-20">
         <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>⚡ Verbrauch &amp; Nebenkosten</h3><Link href="/verbrauch" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
+          <div className="section-header"><h3>⚡ Verbrauch &amp; Nebenkosten</h3><Link href={`/verbrauch/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
           <div className="section-body">
             {verbrauch.length === 0 ? (
               <div className="empty" style={{ padding: 24 }}><div className="empty-icon">⚡</div><p>Noch kein Verbrauch</p></div>
@@ -246,7 +248,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   Gesamt: {euro(verbrauch.reduce((s, v) => s + (v.verbrauchkosten ?? 0), 0))}
                 </div>
                 <table style={{ fontSize: 12 }}>
-                  <thead><tr><th>Datum</th><th>Art</th><th>Menge</th><th>Kosten</th></tr></thead>
+                  <thead><tr><th>Datum</th><th>Art</th><th>Menge</th><th>Kosten</th><th></th></tr></thead>
                   <tbody>
                     {verbrauch.slice(0, 8).map((v) => (
                       <tr key={v.id}>
@@ -254,6 +256,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                         <td>{(v.art && ART_ICONS[v.art]) || ""} {v.art}</td>
                         <td>{v.menge ?? "–"} {v.einheit}</td>
                         <td style={{ fontWeight: 600 }}>{euro(v.verbrauchkosten)}</td>
+                        <td style={{ textAlign: "right" }}><DeleteButton action={deleteVerbrauch.bind(null, v.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -264,7 +267,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
 
         <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>📁 Notizen</h3><Link href="/notizen" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
+          <div className="section-header"><h3>📁 Notizen</h3><Link href={`/notizen/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
           <div className="section-body">
             {notizen.length === 0 ? (
               <div className="empty" style={{ padding: 24 }}><div className="empty-icon">📁</div><p>Noch keine Notizen</p></div>
@@ -273,7 +276,10 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                 <div key={n.id} style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                     <div style={{ fontWeight: 600, fontSize: 13 }}>{n.titel}</div>
-                    {n.kategorie && <span className="badge badge-teal">{n.kategorie}</span>}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {n.kategorie && <span className="badge badge-teal">{n.kategorie}</span>}
+                      <DeleteButton action={deleteNotiz.bind(null, n.id)} className="delete-btn" label="✕" confirmText="Notiz löschen?" />
+                    </div>
                   </div>
                   {n.inhalt && <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>{n.inhalt}</div>}
                 </div>
@@ -307,12 +313,13 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 }
 
 function BuchungSection({
-  title, rows, gesamtColor, badge, addHref,
+  title, rows, gesamtColor, badge, addHref, kind,
 }: {
-  title: string; rows: Buchung[]; gesamtColor: string; badge: string; addHref: string;
+  title: string; rows: Buchung[]; gesamtColor: string; badge: string; addHref: string; kind: "einnahme" | "kosten";
 }) {
   const total = rows.reduce((s, r) => s + (r.betrag ?? 0), 0);
-  const isEinnahme = badge === "badge-green";
+  const isEinnahme = kind === "einnahme";
+  const del = isEinnahme ? deleteEinnahme : deleteKosten;
   return (
     <div className="section" style={{ marginBottom: 0 }}>
       <div className="section-header">
@@ -326,13 +333,14 @@ function BuchungSection({
           <>
             <div style={{ fontSize: 12, fontWeight: 600, color: gesamtColor, marginBottom: 10 }}>Gesamt: {euro(total)}</div>
             <table style={{ fontSize: 12 }}>
-              <thead><tr><th>Datum</th><th>Kategorie</th><th>Betrag</th></tr></thead>
+              <thead><tr><th>Datum</th><th>Kategorie</th><th>Betrag</th><th></th></tr></thead>
               <tbody>
                 {rows.slice(0, 10).map((r) => (
                   <tr key={r.id}>
                     <td>{datum(r.buchungsdatum)}</td>
                     <td>{r.kategorie && <span className={`badge ${badge}`}>{r.kategorie}</span>}</td>
                     <td style={{ fontWeight: 600, color: gesamtColor }}>{euro(r.betrag)}</td>
+                    <td style={{ textAlign: "right" }}><DeleteButton action={del.bind(null, r.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></td>
                   </tr>
                 ))}
               </tbody>

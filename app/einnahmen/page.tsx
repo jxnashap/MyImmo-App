@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
+import { deleteEinnahme } from "@/lib/actions/buchungen";
+import DeleteButton from "@/components/DeleteButton";
 import type { Einnahme, Property } from "@/lib/types";
 
 export default async function EinnahmenPage({
@@ -28,7 +30,7 @@ export default async function EinnahmenPage({
           <div className="topbar-title">Einnahmen</div>
           <div className="topbar-sub">Miete und sonstige Erträge</div>
         </div>
-        <Link href="/properties" className="btn btn-gold">＋ Einnahme</Link>
+        <Link href="/einnahmen/new" className="btn btn-gold">＋ Einnahme</Link>
       </div>
 
       <form method="get" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
@@ -47,7 +49,7 @@ export default async function EinnahmenPage({
         </div>
         <div className="section-body">
           <table>
-            <thead><tr><th>Datum</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th></tr></thead>
+            <thead><tr><th>Datum</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th></th></tr></thead>
             <tbody>
               {list.map((e) => (
                 <tr key={e.id}>
@@ -56,10 +58,11 @@ export default async function EinnahmenPage({
                   <td>{e.kategorie ? <span className="badge badge-green">{e.kategorie}</span> : "–"}</td>
                   <td style={{ color: "var(--muted)" }}>{e.beschreibung ?? ""}</td>
                   <td style={{ fontWeight: 600, color: "var(--green)" }}>{euro(e.betrag)}</td>
+                  <td style={{ textAlign: "right" }}><DeleteButton action={deleteEinnahme.bind(null, e.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></td>
                 </tr>
               ))}
               {list.length === 0 && (
-                <tr><td colSpan={5}><div className="empty"><div className="empty-icon">💰</div>Noch keine Einnahmen</div></td></tr>
+                <tr><td colSpan={6}><div className="empty"><div className="empty-icon">💰</div>Noch keine Einnahmen</div></td></tr>
               )}
             </tbody>
           </table>
