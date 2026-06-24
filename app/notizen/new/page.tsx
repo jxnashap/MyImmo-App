@@ -41,6 +41,9 @@ export default async function NeueNotizPage({ searchParams }: { searchParams: { 
         <div className="form-row single">
           <div className="form-group"><label>Inhalt</label><textarea name="inhalt" rows={4} placeholder="Notiz, wichtige Daten, To-Dos..." style={{ resize: "vertical" }} /></div>
         </div>
+        <div className="form-row single">
+          <div className="form-group"><label>Anhang (optional · PDF/Bild · max. 6 MB)</label><input type="file" name="datei" accept="application/pdf,image/*" /></div>
+        </div>
         <div className="form-actions">
           <Link href={back} className="btn btn-ghost">Abbrechen</Link>
           <button type="submit" className="btn btn-gold">Speichern</button>

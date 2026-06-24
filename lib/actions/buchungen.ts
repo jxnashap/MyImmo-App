@@ -214,6 +214,21 @@ export async function deleteKredit(id: string) {
 }
 
 // ===== NOTIZEN =====
+async function dateiFelder(fd: FormData) {
+  const f = fd.get("datei");
+  if (!f || typeof f === "string" || (f as File).size === 0) return {};
+  const file = f as File;
+  if (file.size > 6 * 1024 * 1024) throw new Error("Anhang zu groß (max. 6 MB).");
+  const mime = file.type || "application/octet-stream";
+  const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+  return {
+    datei_name: file.name || "Anhang",
+    datei_type: mime,
+    datei_size: file.size,
+    datei_data: `data:${mime};base64,${base64}`,
+  };
+}
+
 export async function createNotiz(fd: FormData) {
   const { supabase, userId } = await uid();
   const { error } = await supabase.from("notizen").insert({
@@ -222,9 +237,19 @@ export async function createNotiz(fd: FormData) {
     prop_id: str(fd, "prop_id"),
     kategorie: str(fd, "kategorie"),
     inhalt: str(fd, "inhalt"),
+    ...(await dateiFelder(fd)),
   });
   if (error) throw new Error(error.message);
   done(fd, "/notizen");
+}
+export async function deleteNotizDatei(id: string) {
+  const { supabase } = await uid();
+  const { error } = await supabase
+    .from("notizen")
+    .update({ datei_name: null, datei_type: null, datei_size: null, datei_data: null })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/notizen");
 }
 export async function updateNotiz(id: string, fd: FormData) {
   const { supabase } = await uid();
@@ -233,6 +258,7 @@ export async function updateNotiz(id: string, fd: FormData) {
     prop_id: str(fd, "prop_id"),
     kategorie: str(fd, "kategorie"),
     inhalt: str(fd, "inhalt"),
+    ...(await dateiFelder(fd)),
   }).eq("id", id);
   if (error) throw new Error(error.message);
   done(fd, "/notizen");

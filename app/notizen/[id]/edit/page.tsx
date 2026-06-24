@@ -46,6 +46,17 @@ export default async function NotizEditPage({ params, searchParams }: { params: 
         <div className="form-row single">
           <div className="form-group"><label>Inhalt</label><textarea name="inhalt" rows={4} defaultValue={n.inhalt ?? ""} style={{ resize: "vertical" }} /></div>
         </div>
+        <div className="form-row single">
+          <div className="form-group">
+            <label>Anhang {n.datei_name ? "ersetzen" : "(optional · PDF/Bild · max. 6 MB)"}</label>
+            {n.datei_name && (
+              <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>
+                Aktuell: <a href={`/notizen/${n.id}/datei`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)" }}>{n.datei_name}</a> — neue Datei wählen zum Ersetzen.
+              </div>
+            )}
+            <input type="file" name="datei" accept="application/pdf,image/*" />
+          </div>
+        </div>
         <div className="form-actions">
           <Link href={back} className="btn btn-ghost">Abbrechen</Link>
           <button type="submit" className="btn btn-gold">Speichern</button>

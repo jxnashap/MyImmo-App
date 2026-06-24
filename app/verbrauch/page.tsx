@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import { deleteVerbrauch } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
+import VerbrauchChart, { type VPoint } from "@/components/VerbrauchChart";
 import type { Verbrauch, Property } from "@/lib/types";
 
 const ART_ICONS: Record<string, string> = { Strom: "⚡", Gas: "🔥", Wasser: "💧", Heizöl: "🛢", Fernwärme: "♨", Heizung: "♨", Sonstiges: "📦" };
@@ -20,6 +21,18 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
   if (searchParams.prop) list = list.filter((v) => v.prop_id === searchParams.prop);
   if (searchParams.art) list = list.filter((v) => (v.art ?? "") === searchParams.art);
   const arten = Array.from(new Set(((verb ?? []) as Verbrauch[]).map((v) => v.art).filter(Boolean))) as string[];
+
+  // Verlaufs-Charts je Art (aus der gefilterten Liste, chronologisch)
+  const kurzDatum = (d: string | null) => (d ? new Date(d).toLocaleDateString("de-DE", { month: "2-digit", year: "2-digit" }) : "—");
+  const chartGruppen = new Map<string, { einheit: string; points: VPoint[] }>();
+  for (const v of [...list].sort((a, b) => (a.buchungsdatum ?? "").localeCompare(b.buchungsdatum ?? ""))) {
+    if (!v.art || v.menge == null) continue;
+    const g = chartGruppen.get(v.art) ?? { einheit: v.einheit ?? "", points: [] };
+    g.einheit = g.einheit || (v.einheit ?? "");
+    g.points.push({ label: kurzDatum(v.buchungsdatum), menge: v.menge, kosten: v.verbrauchkosten ?? 0 });
+    chartGruppen.set(v.art, g);
+  }
+  const charts = Array.from(chartGruppen.entries()).filter(([, g]) => g.points.length > 0);
 
   return (
     <div className="fade-up">
@@ -44,6 +57,14 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
         </select>
         <button className="btn btn-ghost">Filtern</button>
       </form>
+
+      {charts.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          {charts.map(([art, g]) => (
+            <VerbrauchChart key={art} art={art} einheit={g.einheit} points={g.points} />
+          ))}
+        </div>
+      )}
 
       <div className="section">
         <div className="section-header"><h3>Alle Einträge</h3></div>

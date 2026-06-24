@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { deleteNotiz } from "@/lib/actions/buchungen";
+import { deleteNotiz, deleteNotizDatei } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import type { Notiz, Property } from "@/lib/types";
 
@@ -56,6 +56,14 @@ export default async function NotizenPage() {
               {n.inhalt && (
                 <div style={{ padding: "10px 14px 14px", fontSize: 12, color: "var(--muted)", borderTop: "1px solid var(--line)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                   {n.inhalt}
+                </div>
+              )}
+              {n.datei_name && (
+                <div style={{ padding: "10px 14px", fontSize: 12, borderTop: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <a href={`/notizen/${n.id}/datei`} target="_blank" rel="noopener noreferrer" title={n.datei_name} style={{ color: "var(--gold)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {n.datei_type === "application/pdf" ? "📄" : n.datei_type?.startsWith("image/") ? "🖼️" : "📎"} {n.datei_name}
+                  </a>
+                  <DeleteButton action={deleteNotizDatei.bind(null, n.id)} className="delete-btn" label="✕" confirmText="Anhang entfernen?" />
                 </div>
               )}
             </div>

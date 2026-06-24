@@ -110,6 +110,9 @@ export type Notiz = {
   kategorie: string | null;
   inhalt: string | null;
   created_at: string | null;
+  datei_name: string | null;
+  datei_type: string | null;
+  datei_size: number | null;
 };
 
 export type VermieterProfil = {
