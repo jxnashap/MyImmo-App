@@ -17,13 +17,14 @@ export default async function DashboardPage() {
     return (
       <div
         className="flex min-h-screen w-full items-center justify-center px-4 py-10"
-        style={{ background: "#f5f3ee", color: "#1f1e1b" }}
+        style={{ background: "var(--bg)", color: "var(--text)" }}
       >
         <div
-          className="w-full max-w-[400px] rounded-2xl border bg-white p-8 text-center sm:p-10"
+          className="w-full max-w-[400px] rounded-2xl border p-8 text-center sm:p-10"
           style={{
-            borderColor: "rgba(0,0,0,0.07)",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 18px 50px -20px rgba(0,0,0,0.18)",
+            background: "var(--bg2)",
+            borderColor: "var(--line2)",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 18px 50px -20px rgba(0,0,0,0.28)",
           }}
         >
           <BrandMark size="lg" />
@@ -31,7 +32,7 @@ export default async function DashboardPage() {
           <Link
             href="/login"
             className="mt-9 block w-full rounded-lg py-2.5 text-[15px] font-semibold transition hover:brightness-95"
-            style={{ background: "#b8902b", color: "#1a1a17" }}
+            style={{ background: "var(--gold)", color: "#1a1a17" }}
           >
             Einloggen
           </Link>
