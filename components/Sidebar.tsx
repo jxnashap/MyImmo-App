@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV: { href: string; label: string; icon: string }[] = [
   { href: "/", label: "Dashboard", icon: "▦" },
@@ -48,9 +49,12 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <form action="/auth/signout" method="post" className="mt-auto px-3 pt-6">
-        <button className="text-sm text-white/40 hover:text-white">Abmelden</button>
-      </form>
+      <div className="mt-auto pt-6">
+        <ThemeToggle />
+        <form action="/auth/signout" method="post" className="px-3 pt-2">
+          <button className="text-sm text-white/40 hover:text-white">Abmelden</button>
+        </form>
+      </div>
     </aside>
   );
 }
