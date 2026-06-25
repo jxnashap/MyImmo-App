@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useToast } from "@/components/Toast";
 
 // Generischer Lösch-Button mit Inline-Bestätigung und Lade-Feedback.
 // Erster Klick → Button verwandelt sich in „Wirklich? · Ja / Nein"; während
@@ -21,6 +22,21 @@ export default function DeleteButton({
 }) {
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
+
+  const run = () =>
+    startTransition(async () => {
+      try {
+        await action();
+        toast("Gelöscht.", "success");
+      } catch (e) {
+        // Framework-Navigation (redirect/notFound) durchreichen, nicht als Fehler zeigen.
+        const digest = (e as { digest?: string })?.digest ?? "";
+        if (typeof digest === "string" && digest.startsWith("NEXT_")) throw e;
+        toast(`Löschen fehlgeschlagen: ${(e as Error)?.message ?? "Fehler"}`, "error");
+        setConfirming(false);
+      }
+    });
 
   if (pending) {
     return (
@@ -38,7 +54,7 @@ export default function DeleteButton({
           type="button"
           className="btn btn-ghost"
           style={{ fontSize: 12, padding: "5px 10px", color: "var(--red)", borderColor: "var(--red)" }}
-          onClick={() => startTransition(() => Promise.resolve(action()))}
+          onClick={run}
         >
           Ja, löschen
         </button>

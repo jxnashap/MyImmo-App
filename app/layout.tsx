@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
+import { ToastProvider } from "@/components/Toast";
+import FlashToast from "@/components/FlashToast";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -44,12 +47,17 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <div className="app">
-          <Sidebar properties={props ?? []} userEmail={user.email} />
-          <div className="main-wrap">
-            <main className="main">{children}</main>
+        <ToastProvider>
+          <Suspense fallback={null}>
+            <FlashToast />
+          </Suspense>
+          <div className="app">
+            <Sidebar properties={props ?? []} userEmail={user.email} />
+            <div className="main-wrap">
+              <main className="main">{children}</main>
+            </div>
           </div>
-        </div>
+        </ToastProvider>
       </body>
     </html>
   );

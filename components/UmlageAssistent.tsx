@@ -11,6 +11,7 @@ import {
   type VerteilenErgebnis,
 } from "@/lib/umlage";
 import { verteileNebenkosten } from "@/lib/actions/umlage";
+import { useToast } from "@/components/Toast";
 
 type MieterIn = {
   id: string;
@@ -82,6 +83,7 @@ export default function UmlageAssistent({
   // Pointer-basiertes Verschieben (Maus + Finger)
   const rowsRef = useRef<(HTMLTableRowElement | null)[]>([]);
   const dragFrom = useRef<number | null>(null);
+  const toast = useToast();
 
   // belegte Monate je Mieter für das gewählte Jahr
   const monateMap = Object.fromEntries(
@@ -209,8 +211,10 @@ export default function UmlageAssistent({
       });
       setOcrInfo(`${list.length} Position(en) übernommen — bitte Beträge & Schlüssel prüfen.`);
       setStatus("idle");
+      toast(`${list.length} Position(en) aus der Abrechnung übernommen.`, "success");
     } catch (err) {
       setOcrError(`Fehler: ${(err as Error).message}`);
+      toast("Auslesen fehlgeschlagen.", "error");
     } finally {
       setOcrLoading(false);
     }
@@ -228,9 +232,12 @@ export default function UmlageAssistent({
       });
       setErgebnis(res);
       setStatus(res.ok ? "done" : "error");
+      if (res.ok) toast(`Verteilt: ${res.mieter} Mieter, ${res.positionen} Positionen.`, "success");
+      else toast(`Fehler: ${res.fehler ?? "unbekannt"}`, "error");
     } catch (e) {
       setErgebnis({ ok: false, positionen: 0, mieter: 0, gesamt: 0, nichtUmgelegt: 0, fehler: String(e) });
       setStatus("error");
+      toast("Speichern fehlgeschlagen.", "error");
     }
   }
 
