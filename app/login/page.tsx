@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
 
@@ -28,7 +27,6 @@ function GoogleIcon() {
 }
 
 export default function LoginPage() {
-  const router = useRouter();
   const supabase = createClient();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -45,14 +43,20 @@ export default function LoginPage() {
 
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError(uebersetze(error.message));
-      else router.push("/");
+      if (error) {
+        setError(uebersetze(error.message));
+        setLoading(false);
+      } else {
+        // Harte Navigation: stellt sicher, dass der Server die neue Session-
+        // Cookie sofort sieht — kein manuelles Neuladen mehr nötig.
+        window.location.assign("/");
+      }
     } else {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) setError(uebersetze(error.message));
       else setInfo("Fast geschafft — bitte bestätige die E-Mail in deinem Postfach.");
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function googleLogin() {
@@ -82,13 +86,19 @@ export default function LoginPage() {
     else setInfo("Wir haben dir eine E-Mail zum Zurücksetzen geschickt.");
   }
 
+  const wechsel = (m: "login" | "signup") => {
+    setMode(m);
+    setError(null);
+    setInfo(null);
+  };
+
   return (
     <div
       className="flex min-h-screen w-full items-center justify-center px-4 py-10"
       style={{ background: "var(--bg)", color: "var(--text)" }}
     >
       <div
-        className="w-full max-w-[400px] rounded-2xl border p-8 sm:p-10"
+        className="w-full max-w-[420px] rounded-2xl border p-8 sm:p-10"
         style={{
           background: "var(--bg2)",
           borderColor: "var(--line2)",
@@ -97,65 +107,47 @@ export default function LoginPage() {
       >
         <BrandMark size="lg" />
 
-        <div className="my-7 h-px w-full" style={{ background: "var(--line)" }} />
-
-        {/* Google */}
-        <button
-          type="button"
-          onClick={googleLogin}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border py-2.5 text-[15px] font-medium transition hover:brightness-95"
-          style={{ background: "#ffffff", borderColor: "rgba(0,0,0,0.16)", color: "#1f1f1f" }}
+        {/* Umschalter Anmelden / Registrieren */}
+        <div
+          className="mt-7 mb-6 flex gap-1 rounded-xl p-1"
+          style={{ background: "var(--bg3)", border: "1px solid var(--line)" }}
         >
-          <GoogleIcon />
-          Mit Google einloggen
-        </button>
-
-        <div className="my-5 flex items-center gap-3 text-[12px]" style={{ color: "var(--muted)" }}>
-          <div className="h-px flex-1" style={{ background: "var(--line)" }} />
-          oder
-          <div className="h-px flex-1" style={{ background: "var(--line)" }} />
+          {(["login", "signup"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => wechsel(m)}
+              className="flex-1 rounded-lg py-2 text-[13px] font-medium transition"
+              style={
+                mode === m
+                  ? { background: "var(--bg5)", color: "var(--text)" }
+                  : { background: "transparent", color: "var(--muted)" }
+              }
+            >
+              {m === "login" ? "Anmelden" : "Registrieren"}
+            </button>
+          ))}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
-          <div>
-            <label className="mb-1.5 block text-[12.5px] font-medium" style={{ color: "var(--muted)" }}>
-              E-Mail
-            </label>
-            <input
-              type="email"
-              required
-              placeholder="name@beispiel.de"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input w-full text-[15px]"
-            />
-          </div>
-
-          <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <label className="text-[12.5px] font-medium" style={{ color: "var(--muted)" }}>
-                Passwort
-              </label>
-              {mode === "login" && (
-                <button
-                  type="button"
-                  onClick={resetPassword}
-                  className="text-[12px] transition hover:underline"
-                  style={{ color: "var(--gold)" }}
-                >
-                  Passwort vergessen?
-                </button>
-              )}
-            </div>
-            <input
-              type="password"
-              required
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input w-full text-[15px]"
-            />
-          </div>
+          <input
+            type="email"
+            required
+            placeholder="E-Mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="input w-full text-[15px]"
+            style={{ padding: "12px 14px" }}
+          />
+          <input
+            type="password"
+            required
+            placeholder="Passwort"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="input w-full text-[15px]"
+            style={{ padding: "12px 14px" }}
+          />
 
           {error && (
             <p
@@ -177,34 +169,36 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg py-2.5 text-[15px] font-semibold transition hover:brightness-95 disabled:opacity-60"
+            className="w-full rounded-lg py-3 text-[15px] font-semibold transition hover:brightness-95 disabled:opacity-60"
             style={{ background: "var(--gold)", color: "#1a1a17" }}
           >
-            {loading ? "…" : mode === "login" ? "Einloggen" : "Registrieren"}
+            {loading ? "…" : mode === "login" ? "Anmelden" : "Registrieren"}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => {
-              setMode(mode === "login" ? "signup" : "login");
-              setError(null);
-              setInfo(null);
-            }}
-            className="text-[13px] transition"
-            style={{ color: "var(--muted)" }}
-          >
-            {mode === "login" ? (
-              <>
-                Noch kein Konto? <span style={{ color: "var(--gold)", fontWeight: 600 }}>Registrieren</span>
-              </>
-            ) : (
-              <>
-                Schon registriert? <span style={{ color: "var(--gold)", fontWeight: 600 }}>Einloggen</span>
-              </>
-            )}
-          </button>
-        </div>
+        {/* Mit Google anmelden */}
+        <button
+          type="button"
+          onClick={googleLogin}
+          className="mt-3 flex w-full items-center justify-center gap-3 rounded-lg border py-3 text-[15px] font-medium transition hover:brightness-110"
+          style={{ background: "var(--bg3)", borderColor: "var(--line2)", color: "var(--text)" }}
+        >
+          <GoogleIcon />
+          Mit Google anmelden
+        </button>
+
+        {mode === "login" && (
+          <div className="mt-5 text-center">
+            <button
+              type="button"
+              onClick={resetPassword}
+              className="text-[13px] transition hover:underline"
+              style={{ color: "var(--muted)" }}
+            >
+              Passwort vergessen?
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
