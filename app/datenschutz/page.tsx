@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BackLink from "@/components/BackLink";
 
 export const metadata = { title: "Datenschutzerklärung — MyImmo" };
 
@@ -11,7 +12,7 @@ const H2 = ({ children }: { children: React.ReactNode }) => (
 export default function DatenschutzPage() {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 20px", lineHeight: 1.6 }}>
-      <Link href="/login" style={{ color: "var(--gold)", fontSize: 14 }}>← Zurück</Link>
+      <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
         Stand: [Datum]. Diese Erklärung beschreibt die Verarbeitung personenbezogener Daten
