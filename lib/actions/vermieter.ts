@@ -25,8 +25,6 @@ export async function saveVermieter(formData: FormData) {
     ort: str(formData, "ort"),
     email: str(formData, "email"),
     telefon: str(formData, "telefon"),
-    bankname: str(formData, "bankname"),
-    iban: str(formData, "iban"),
     updated_at: new Date().toISOString(),
   };
 

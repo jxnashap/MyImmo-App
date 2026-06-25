@@ -137,6 +137,7 @@ export type Iban = {
   kontoname: string;
   inhaber: string | null;
   iban: string;
+  standard: boolean | null;
   created_at: string | null;
 };
 
