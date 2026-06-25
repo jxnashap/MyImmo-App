@@ -116,8 +116,13 @@ export function berechneUmlage(
 ): UmlageErgebnis {
   const zeitanteilig = opts.zeitanteilig;
   const sumFlaeche = mieter.reduce((s, m) => s + (m.flaeche > 0 ? m.flaeche : 0), 0);
-  // Referenzfläche fürs Zeitanteilige: Gesamtwohnfläche des Objekts, sonst Summe.
-  const referenzFlaeche = Math.max(opts.referenzFlaeche ?? 0, sumFlaeche);
+  // Referenzfläche fürs Zeitanteilige: die Gesamtwohnfläche des Objekts, wenn
+  // hinterlegt — sie zählt jede Einheit genau EINMAL und ist daher bei einem
+  // Mieterwechsel in derselben Wohnung korrekt (die Summe der Mieterflächen
+  // würde die Wohnung doppelt zählen). Ist keine hinterlegt, dient die Summe
+  // der Mieterflächen als Näherung. Über-Verteilung ist durch die faktor-
+  // Kappung (min(1, …)) ohnehin ausgeschlossen.
+  const referenzFlaeche = (opts.referenzFlaeche ?? 0) > 0 ? (opts.referenzFlaeche as number) : sumFlaeche;
   const anzahl = mieter.length;
 
   const perMieter: UmlageErgebnisMieter[] = mieter.map((m) => ({
