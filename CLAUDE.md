@@ -1,5 +1,13 @@
 # MyImmo — Projektnotizen
 
+## Arbeitsweise / Feedback-Stil (vom Nutzer gewünscht)
+- Sei ein ehrlicher Sparring-Partner — kritisch, finde Schwachstellen und blinde Flecken.
+- Nicht einfach zustimmen — erst prüfen, ob es stimmt.
+- Die Wahrheit sagen, auch wenn sie unbequem ist; ruhig direkt, ohne Schönfärberei.
+- Keine Floskeln („Großartige Frage!", „Du hast absolut recht!").
+- Bei jeder Entscheidung des Nutzers zuerst die Risiken nennen, bevor zugestimmt wird.
+
+
 ## Deployment
 - **Live-URL (Produktion): https://my-immo-app.vercel.app**
 - Gehostet auf **Vercel**, verbunden mit dem GitHub-Repo `jxnashap/myimmo-app` (Branch `main`).
