@@ -128,6 +128,9 @@ export default function AccountManager({ email }: { email?: string | null }) {
           <Link href="/datenschutz" className="hover:underline" style={{ color: "var(--gold)" }}>
             Datenschutzerklärung
           </Link>
+          <Link href="/avv" className="hover:underline" style={{ color: "var(--gold)" }}>
+            Auftragsverarbeitungsvertrag
+          </Link>
           <Link href="/impressum" className="hover:underline" style={{ color: "var(--gold)" }}>
             Impressum
           </Link>

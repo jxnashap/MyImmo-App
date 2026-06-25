@@ -176,8 +176,11 @@ export default function LoginPage() {
                 <Link href="/datenschutz" target="_blank" style={{ color: "var(--gold)" }}>
                   Datenschutzerklärung
                 </Link>{" "}
-                gelesen und willige in die Verarbeitung der von mir eingegebenen Daten
-                (inkl. Mieterdaten im Auftrag) ein.
+                gelesen und akzeptiere den{" "}
+                <Link href="/avv" target="_blank" style={{ color: "var(--gold)" }}>
+                  Auftragsverarbeitungsvertrag
+                </Link>{" "}
+                für die Verarbeitung der von mir eingegebenen Mieterdaten in meinem Auftrag.
               </span>
             </label>
           )}
@@ -238,6 +241,7 @@ export default function LoginPage() {
           style={{ borderColor: "var(--line)", color: "var(--muted)" }}
         >
           <Link href="/datenschutz" className="hover:underline">Datenschutz</Link>
+          <Link href="/avv" className="hover:underline">AVV</Link>
           <Link href="/impressum" className="hover:underline">Impressum</Link>
         </div>
       </div>
