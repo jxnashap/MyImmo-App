@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAuthedUser, callAnthropic } from "@/lib/aiRoute";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,9 @@ Anzeigentext:
 ${text.substring(0, 4000)}`;
 
 export async function POST(req: Request) {
+  const user = await getAuthedUser();
+  if (!user) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
@@ -49,31 +53,36 @@ export async function POST(req: Request) {
   }
 
   try {
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1000,
-        messages: [{ role: "user", content: PROMPT(text) }],
-      }),
+    const resp = await callAnthropic(apiKey, {
+      model: MODEL,
+      max_tokens: 1000,
+      messages: [{ role: "user", content: PROMPT(text) }],
     });
 
     if (!resp.ok) {
-      const detail = await resp.text();
-      return NextResponse.json({ error: `KI-Dienst antwortete mit ${resp.status}.`, detail }, { status: 502 });
+      console.error("import: Anthropic-Fehler", resp.status, await resp.text().catch(() => ""));
+      return NextResponse.json({ error: `KI-Dienst antwortete mit ${resp.status}.` }, { status: 502 });
     }
 
     const data = await resp.json();
     const raw: string = data?.content?.[0]?.text ?? "";
     const clean = raw.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(clean);
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(clean);
+    } catch {
+      return NextResponse.json({ error: "Antwort der KI war nicht lesbar." }, { status: 422 });
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return NextResponse.json({ error: "Antwort der KI hatte ein unerwartetes Format." }, { status: 422 });
+    }
     return NextResponse.json({ data: parsed });
   } catch (err) {
-    return NextResponse.json({ error: `Fehler beim Analysieren: ${(err as Error).message}` }, { status: 500 });
+    if ((err as Error).name === "AbortError") {
+      return NextResponse.json({ error: "Zeitüberschreitung beim KI-Dienst. Bitte erneut versuchen." }, { status: 504 });
+    }
+    console.error("import: unerwarteter Fehler", err);
+    return NextResponse.json({ error: "Fehler beim Analysieren. Bitte später erneut versuchen." }, { status: 500 });
   }
 }
