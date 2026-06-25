@@ -72,7 +72,7 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
         <div className="section-body">
           <table className="list-table">
             <thead><tr><th>Datum</th><th>Immobilie</th><th>Art</th><th>Menge</th><th>Einheit</th><th>Kosten</th><th></th></tr></thead>
-            <ExpandableRows cols={7} limit={25} label="weitere Einträge">
+            <ExpandableRows cols={7} limit={10} label="weitere Einträge">
               {list.map((v) => (
                 <tr key={v.id}>
                   <td>{datum(v.buchungsdatum)}</td>

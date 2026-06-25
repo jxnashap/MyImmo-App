@@ -67,7 +67,7 @@ export default async function KostenPage({
         <div className="section-body">
           <table className="list-table">
             <thead><tr><th>Datum</th><th>Immobilie</th><th>Mieter</th><th>Kategorie</th><th>Umlage</th><th>Beleg</th><th>Betrag</th><th></th></tr></thead>
-            <ExpandableRows cols={8} limit={25} label="weitere Buchungen">
+            <ExpandableRows cols={8} limit={10} label="weitere Buchungen">
               {list.map((k) => {
                 const u = istUmlagefaehig(k.kategorie);
                 return (

@@ -58,7 +58,7 @@ export default async function EinnahmenPage({
         <div className="section-body">
           <table className="list-table">
             <thead><tr><th>Datum</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th></th></tr></thead>
-            <ExpandableRows cols={6} limit={25} label="weitere Buchungen">
+            <ExpandableRows cols={6} limit={10} label="weitere Buchungen">
               {list.map((e) => (
                 <tr key={e.id}>
                   <td>{datum(e.buchungsdatum)}</td>
