@@ -4,6 +4,9 @@ import { euro, datum } from "@/lib/format";
 import { deleteEinnahme } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableRows from "@/components/ExpandableRows";
+import BetragChart from "@/components/BetragChart";
+import ZeitraumControl from "@/components/ZeitraumControl";
+import type { RawPoint } from "@/lib/zeitraum";
 import type { Einnahme, Property } from "@/lib/types";
 
 export default async function EinnahmenPage({
@@ -25,6 +28,7 @@ export default async function EinnahmenPage({
   if (searchParams.prop) list = list.filter((e) => e.prop_id === searchParams.prop);
   if (searchParams.kategorie) list = list.filter((e) => (e.kategorie ?? "") === searchParams.kategorie);
   const total = list.reduce((s, e) => s + (e.betrag ?? 0), 0);
+  const chartPoints: RawPoint[] = list.filter((e) => e.buchungsdatum).map((e) => ({ date: e.buchungsdatum as string, value: e.betrag ?? 0 }));
 
   return (
     <div className="fade-up">
@@ -49,6 +53,16 @@ export default async function EinnahmenPage({
         </select>
         <button className="btn btn-ghost">Filtern</button>
       </form>
+
+      <div className="section mb-20">
+        <div className="section-header">
+          <h3>📈 Einnahmen-Verlauf</h3>
+          <ZeitraumControl />
+        </div>
+        <div className="section-body">
+          <BetragChart points={chartPoints} mode="bars" color="var(--green)" caption="Einnahmen je Periode" />
+        </div>
+      </div>
 
       <div className="section">
         <div className="section-header">
