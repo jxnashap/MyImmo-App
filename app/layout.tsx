@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
 import { ToastProvider } from "@/components/Toast";
 import FlashToast from "@/components/FlashToast";
+import { ZeitraumProvider } from "@/components/ZeitraumProvider";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -54,7 +55,9 @@ export default async function RootLayout({
           <div className="app">
             <Sidebar properties={props ?? []} userEmail={user.email} />
             <div className="main-wrap">
-              <main className="main">{children}</main>
+              <main className="main">
+                <ZeitraumProvider>{children}</ZeitraumProvider>
+              </main>
             </div>
           </div>
         </ToastProvider>
