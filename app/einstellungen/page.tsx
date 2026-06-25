@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { saveVermieter } from "@/lib/actions/vermieter";
 import IbanManager from "@/components/IbanManager";
+import AccountManager from "@/components/AccountManager";
 import type { VermieterProfil, Iban } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,9 @@ export default async function EinstellungenPage() {
   ]);
   const p = (data ?? null) as VermieterProfil | null;
   const ibans = (ibanRows ?? []) as Iban[];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const Field = ({
     name,
@@ -81,6 +85,8 @@ export default async function EinstellungenPage() {
       </form>
 
       <IbanManager ibans={ibans} />
+
+      <AccountManager email={user?.email} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
 
@@ -32,8 +33,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).has("geloescht")
+      ? "Dein Konto und alle Daten wurden gelöscht."
+      : null
+  );
   const [loading, setLoading] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,6 +58,11 @@ export default function LoginPage() {
         window.location.assign("/");
       }
     } else {
+      if (!consent) {
+        setError("Bitte stimme Datenschutz und Auftragsverarbeitung zu.");
+        setLoading(false);
+        return;
+      }
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) setError(uebersetze(error.message));
       else setInfo("Fast geschafft — bitte bestätige die E-Mail in deinem Postfach.");
@@ -149,6 +160,31 @@ export default function LoginPage() {
             style={{ padding: "12px 14px" }}
           />
 
+          {mode === "signup" && (
+            <label className="flex items-start gap-2 text-[13px]" style={{ color: "var(--muted)" }}>
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => {
+                  setConsent(e.target.checked);
+                  error && setError(null);
+                }}
+                style={{ marginTop: 3 }}
+              />
+              <span>
+                Ich habe die{" "}
+                <Link href="/datenschutz" target="_blank" style={{ color: "var(--gold)" }}>
+                  Datenschutzerklärung
+                </Link>{" "}
+                gelesen und akzeptiere den{" "}
+                <Link href="/avv" target="_blank" style={{ color: "var(--gold)" }}>
+                  Auftragsverarbeitungsvertrag
+                </Link>{" "}
+                für die Verarbeitung der von mir eingegebenen Mieterdaten in meinem Auftrag.
+              </span>
+            </label>
+          )}
+
           {error && (
             <p
               className="rounded-lg px-3 py-2 text-[13px]"
@@ -199,6 +235,15 @@ export default function LoginPage() {
             </button>
           </div>
         )}
+
+        <div
+          className="mt-6 flex justify-center gap-4 border-t pt-4 text-[12px]"
+          style={{ borderColor: "var(--line)", color: "var(--muted)" }}
+        >
+          <Link href="/datenschutz" className="hover:underline">Datenschutz</Link>
+          <Link href="/avv" className="hover:underline">AVV</Link>
+          <Link href="/impressum" className="hover:underline">Impressum</Link>
+        </div>
       </div>
     </div>
   );

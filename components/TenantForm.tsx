@@ -90,7 +90,12 @@ export default function TenantForm({
       </div>
 
       <div className="form-row single">
-        <div className="form-group"><label>Notiz</label><textarea name="notiz" rows={3} defaultValue={v("notiz")} style={{ resize: "vertical" }} /></div>
+        <div className="form-group"><label>Notiz</label><textarea name="notiz" rows={3} defaultValue={v("notiz")} style={{ resize: "vertical" }} />
+          <small style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, display: "block" }}>
+            ⚠️ Bitte keine besonderen Kategorien personenbezogener Daten erfassen
+            (z.&nbsp;B. Gesundheit, Religion, Herkunft, Gewerkschaft) — Art.&nbsp;9 DSGVO.
+          </small>
+        </div>
       </div>
 
       <div className="form-actions">
