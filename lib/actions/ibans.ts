@@ -29,16 +29,49 @@ export async function addIban(formData: FormData): Promise<IbanResult> {
     .maybeSingle();
   if (existing) return { ok: false, error: "Diese IBAN ist bereits hinterlegt." };
 
+  // Erstes Konto des Nutzers automatisch als Standard markieren.
+  const { count } = await supabase
+    .from("ibans")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  const istErstes = (count ?? 0) === 0;
+
   const { error } = await supabase.from("ibans").insert({
     user_id: user.id,
     kontoname,
     inhaber: inhaber || null,
     iban,
+    standard: istErstes,
   });
   if (error) {
     if (error.code === "23505") return { ok: false, error: "Diese IBAN ist bereits hinterlegt." };
     return { ok: false, error: "Speichern fehlgeschlagen. Bitte erneut versuchen." };
   }
+  revalidatePath("/einstellungen");
+  return { ok: true };
+}
+
+// Markiert ein Konto als Standard und entfernt die Markierung bei allen anderen.
+export async function setStandardIban(id: string): Promise<IbanResult> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  // Erst alle zurücksetzen (verhindert Verletzung des Unique-Index), dann setzen.
+  const { error: e1 } = await supabase
+    .from("ibans")
+    .update({ standard: false })
+    .eq("user_id", user.id)
+    .eq("standard", true);
+  if (e1) return { ok: false, error: "Konnte Standard nicht setzen." };
+
+  const { error: e2 } = await supabase
+    .from("ibans")
+    .update({ standard: true })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (e2) return { ok: false, error: "Konnte Standard nicht setzen." };
+
   revalidatePath("/einstellungen");
   return { ok: true };
 }
@@ -50,6 +83,17 @@ export async function deleteIban(id: string): Promise<IbanResult> {
 
   const { error } = await supabase.from("ibans").delete().eq("id", id);
   if (error) return { ok: false, error: "Löschen fehlgeschlagen." };
+
+  // Falls dadurch kein Standard mehr existiert: ältestes verbleibendes Konto nachrücken.
+  const { data: rest } = await supabase
+    .from("ibans")
+    .select("id, standard")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true });
+  if (rest && rest.length > 0 && !rest.some((r) => r.standard)) {
+    await supabase.from("ibans").update({ standard: true }).eq("id", rest[0].id);
+  }
+
   revalidatePath("/einstellungen");
   return { ok: true };
 }
