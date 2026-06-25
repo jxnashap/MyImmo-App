@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updateKosten } from "@/lib/actions/buchungen";
@@ -71,7 +72,7 @@ export default async function KostenEditPage({ params, searchParams }: { params:
         </div>
         <div className="form-actions">
           <Link href={back} className="btn btn-ghost">Abbrechen</Link>
-          <button type="submit" className="btn btn-gold">Speichern</button>
+          <SubmitButton>Speichern</SubmitButton>
         </div>
       </form>
     </div>

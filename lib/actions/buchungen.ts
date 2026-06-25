@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { flashUrl } from "@/lib/flash";
 
 // Hilfsfunktionen zum Auslesen von FormData
 function num(fd: FormData, k: string): number | null {
@@ -25,7 +26,7 @@ async function uid() {
 
 function done(fd: FormData, fallback: string): never {
   revalidatePath("/", "layout");
-  redirect(str(fd, "back") || fallback);
+  redirect(flashUrl(str(fd, "back") || fallback, "Gespeichert."));
 }
 
 // ===== EINNAHMEN =====

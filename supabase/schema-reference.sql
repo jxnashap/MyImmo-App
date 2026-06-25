@@ -43,6 +43,17 @@
 
 -- ibans (1) — kontoname, inhaber, iban
 
+-- mieter_positionen — Umlagepositionen je Mieter (Quelle der NK-Beträge)
+--   id, user_id, mieter_id uuid, bezeichnung, betrag numeric,
+--   umlageschluessel text, jahr int, umlagefaehig bool (default true),
+--   quelle text (null=manuell, 'umlage'=vom Nebenkosten-Verteiler erzeugt),
+--   created_at. RLS: auth.uid() = user_id.
+
+-- dokument_vorlagen — gespeicherte Standardtexte für den Dokument-Generator
+--   id uuid pk, user_id uuid, art text (Dokumentart-Key), text text (Vorlage
+--   mit {{platzhalter}}), created_at, updated_at; unique(user_id, art),
+--   RLS: auth.uid() = user_id (analog ibans).
+
 -- =====================================================================
 -- Beobachtungen / mögliche Verbesserungen (für später, nicht jetzt):
 --  * kosten.mieter_id ist text, mieter.id ist uuid -> Typ-Mismatch,

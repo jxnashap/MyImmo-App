@@ -12,6 +12,7 @@ import {
 } from "pdf-lib";
 import type { NkAbrechnung } from "@/lib/nk";
 import { deDatum } from "@/lib/nk";
+import { adressZeilen } from "@/lib/format";
 
 export type Vermieter = {
   name: string;
@@ -197,11 +198,9 @@ export async function buildNkPdf(
   y -= 22;
   text(ML, y, a.mieterName, 10.5, font, INK);
   y -= 15;
-  if (a.mieterAdresse) {
-    for (const zeile of a.mieterAdresse.split(/\r?\n|,\s*/).filter(Boolean)) {
-      text(ML, y, zeile, 10.5, font, INK);
-      y -= 15;
-    }
+  for (const zeile of adressZeilen(a.mieterAdresse)) {
+    text(ML, y, zeile, 10.5, font, INK);
+    y -= 15;
   }
 
   // ---- Ort/Datum + Referenz rechts ----

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { flashUrl } from "@/lib/flash";
 
 // Wandelt FormData in ein typisiertes Objekt um (Zahlen -> number | null)
 function parse(formData: FormData) {
@@ -99,7 +100,7 @@ export async function createProperty(formData: FormData) {
 
   revalidatePath("/properties");
   revalidatePath("/");
-  redirect("/properties");
+  redirect(flashUrl("/properties", "Immobilie angelegt."));
 }
 
 export async function updateProperty(id: string, formData: FormData) {
@@ -117,7 +118,7 @@ export async function updateProperty(id: string, formData: FormData) {
 
   revalidatePath("/properties");
   revalidatePath("/");
-  redirect("/properties");
+  redirect(flashUrl("/properties", "Immobilie gespeichert."));
 }
 
 export async function deleteProperty(id: string) {

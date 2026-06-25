@@ -7,7 +7,7 @@ export default function IbanManager({ ibans }: { ibans: Iban[] }) {
   return (
     <div className="card mt-6">
       <h2 className="mb-1 text-lg">🏦 IBANs / Bankkonten</h2>
-      <p className="mb-4 text-sm text-white/50">
+      <p className="mb-4 text-sm text-[var(--muted)]">
         Hinterlege ein oder mehrere Konten. Beim Erstellen von Mahnungen, Zahlungserinnerungen,
         Mieterhöhungen und NK-Abrechnungen kannst du das passende Konto auswählen – es erscheint
         dann als Zahlungshinweis im Dokument.
@@ -18,17 +18,17 @@ export default function IbanManager({ ibans }: { ibans: Iban[] }) {
           {ibans.map((x) => (
             <li
               key={x.id}
-              className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3"
+              className="flex items-center gap-3 rounded-lg border border-[var(--line)] bg-[var(--bg3)] px-4 py-3"
             >
               <div className="flex-1">
                 <div className="text-sm font-medium">{x.kontoname}</div>
-                {x.inhaber && <div className="text-xs text-white/50">{x.inhaber}</div>}
-                <div className="mt-0.5 font-mono text-sm tracking-wide text-white/80">{fmt(x.iban)}</div>
+                {x.inhaber && <div className="text-xs text-[var(--muted)]">{x.inhaber}</div>}
+                <div className="mt-0.5 font-mono text-sm tracking-wide text-[var(--text)]">{fmt(x.iban)}</div>
               </div>
               <form action={deleteIban.bind(null, x.id)}>
                 <button
                   type="submit"
-                  className="rounded-md border border-white/10 px-2 py-1 text-sm text-red-400 hover:bg-red-500/10"
+                  className="rounded-md border border-[var(--line)] px-2 py-1 text-sm text-[var(--red)] hover:bg-[var(--red-dim)]"
                   title="IBAN entfernen"
                 >
                   🗑
@@ -38,20 +38,20 @@ export default function IbanManager({ ibans }: { ibans: Iban[] }) {
           ))}
         </ul>
       ) : (
-        <p className="mb-5 text-sm text-white/40">Noch keine IBANs gespeichert.</p>
+        <p className="mb-5 text-sm text-[var(--muted)]">Noch keine IBANs gespeichert.</p>
       )}
 
       <form action={addIban} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-white/60">Bezeichnung *</span>
+          <span className="text-[var(--muted)]">Bezeichnung *</span>
           <input name="kontoname" required placeholder="z. B. Mietkonto" className="input" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-white/60">Kontoinhaber</span>
+          <span className="text-[var(--muted)]">Kontoinhaber</span>
           <input name="inhaber" placeholder="Max Mustermann" className="input" />
         </label>
         <label className="flex flex-col gap-1 text-sm sm:col-span-2">
-          <span className="text-white/60">IBAN *</span>
+          <span className="text-[var(--muted)]">IBAN *</span>
           <input
             name="iban"
             required

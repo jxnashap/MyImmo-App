@@ -31,19 +31,19 @@ export default function PositionsManager({
     <div>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-xl">Umlagepositionen</h2>
-        <span className="text-sm text-white/50">
+        <span className="text-sm text-[var(--muted)]">
           Summe <span className="gold">{eur2(total)}</span>
         </span>
       </div>
 
       {positions.length === 0 ? (
-        <p className="mb-4 text-sm text-white/40">
+        <p className="mb-4 text-sm text-[var(--muted)]">
           Noch keine Positionen. Lege z.B. Müll, Abwasser oder Grundsteuer individuell für diesen Mieter an.
         </p>
       ) : (
-        <div className="mb-4 overflow-hidden rounded-[10px] border border-white/10">
+        <div className="mb-4 overflow-hidden rounded-[10px] border border-[var(--line)]">
           <table className="w-full text-sm">
-            <thead className="bg-white/[0.03] text-left text-white/50">
+            <thead className="bg-[var(--bg3)] text-left text-[var(--muted)]">
               <tr>
                 <th className="px-3 py-2 font-medium">Position</th>
                 <th className="px-3 py-2 font-medium">Jahr</th>
@@ -57,10 +57,10 @@ export default function PositionsManager({
               {positions.map((p) => {
                 const del = deletePosition.bind(null, p.id, mieterId);
                 return (
-                  <tr key={p.id} className="border-t border-white/10">
+                  <tr key={p.id} className="border-t border-[var(--line)]">
                     <td className="px-3 py-2">{p.bezeichnung}</td>
-                    <td className="px-3 py-2 text-white/60">{p.jahr ?? "—"}</td>
-                    <td className="px-3 py-2 text-white/60">{p.umlageschluessel || "—"}</td>
+                    <td className="px-3 py-2 text-[var(--muted)]">{p.jahr ?? "—"}</td>
+                    <td className="px-3 py-2 text-[var(--muted)]">{p.umlageschluessel || "—"}</td>
                     <td className="px-3 py-2">
                       <span className={`badge ${p.umlagefaehig ? "badge-ja" : "badge-nein"}`}>
                         {p.umlagefaehig ? "umlagefähig" : "nicht umlagef."}
@@ -69,7 +69,7 @@ export default function PositionsManager({
                     <td className="px-3 py-2 text-right">{eur2(p.betrag)}</td>
                     <td className="px-3 py-2 text-right">
                       <form action={del}>
-                        <button className="text-white/30 hover:text-red-400" title="Löschen">✕</button>
+                        <button className="text-[var(--faint)] hover:text-[var(--red)]" title="Löschen">✕</button>
                       </form>
                     </td>
                   </tr>
@@ -81,9 +81,9 @@ export default function PositionsManager({
       )}
 
       {/* Neue Position */}
-      <form action={add} className="flex flex-wrap items-end gap-3 rounded-[10px] border border-white/10 bg-white/[0.02] p-4">
+      <form action={add} className="flex flex-wrap items-end gap-3 rounded-[10px] border border-[var(--line)] bg-[var(--bg3)] p-4">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-white/60">Bezeichnung</span>
+          <span className="text-[var(--muted)]">Bezeichnung</span>
           <input name="bezeichnung" list="pos-vorlagen" required placeholder="z.B. Müll" className="input" />
           <datalist id="pos-vorlagen">
             {VORLAGEN.map((v) => (
@@ -92,11 +92,11 @@ export default function PositionsManager({
           </datalist>
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-white/60">Betrag (€)</span>
+          <span className="text-[var(--muted)]">Betrag (€)</span>
           <input name="betrag" type="number" step="0.01" className="input w-28" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-white/60">Jahr</span>
+          <span className="text-[var(--muted)]">Jahr</span>
           <select name="jahr" defaultValue={JETZT} className="input">
             {JAHRE.map((j) => (
               <option key={j} value={j}>{j}</option>
@@ -104,7 +104,7 @@ export default function PositionsManager({
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-white/60">Umlageschlüssel</span>
+          <span className="text-[var(--muted)]">Umlageschlüssel</span>
           <select name="umlageschluessel" className="input">
             <option value="">—</option>
             {SCHLUESSEL.map((s) => (
@@ -112,7 +112,7 @@ export default function PositionsManager({
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-2 pb-2 text-sm text-white/70">
+        <label className="flex items-center gap-2 pb-2 text-sm text-[var(--muted)]">
           <input name="umlagefaehig" type="checkbox" defaultChecked /> umlagefähig
         </label>
         <button className="btn-gold mb-0.5">+ Hinzufügen</button>

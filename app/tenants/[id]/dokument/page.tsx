@@ -11,11 +11,16 @@ export default async function DokumentPage({ params }: { params: { id: string } 
   if (!m) notFound();
   const tenant = m as Tenant;
 
-  const [{ data: prop }, { data: vp }, { data: ibanRows }] = await Promise.all([
+  const [{ data: prop }, { data: vp }, { data: ibanRows }, { data: vorlagenRows }] = await Promise.all([
     tenant.prop_id ? supabase.from("properties").select("*").eq("id", tenant.prop_id).single() : Promise.resolve({ data: null }),
-    user ? supabase.from("vermieter_profil").select("*").eq("user_id", user.id).single() : Promise.resolve({ data: null }),
+    user ? supabase.from("vermieter_profil").select("*").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from("ibans").select("*").order("created_at", { ascending: true }),
+    user ? supabase.from("dokument_vorlagen").select("art,text").eq("user_id", user.id) : Promise.resolve({ data: [] }),
   ]);
+
+  const vorlagen = Object.fromEntries(
+    ((vorlagenRows as { art: string; text: string }[]) ?? []).map((r) => [r.art, r.text]),
+  );
 
   return (
     <div className="fade-up">
@@ -25,7 +30,7 @@ export default async function DokumentPage({ params }: { params: { id: string } 
           <div><div className="topbar-title">Dokument erstellen</div><div className="topbar-sub">{[tenant.vorname, tenant.nachname].filter(Boolean).join(" ")}</div></div>
         </div>
       </div>
-      <DocGenerator tenant={tenant} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={(ibanRows as Iban[]) ?? []} />
+      <DocGenerator tenant={tenant} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={(ibanRows as Iban[]) ?? []} vorlagen={vorlagen} />
     </div>
   );
 }

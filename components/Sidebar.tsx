@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -14,8 +15,8 @@ const VERWALTUNG: { href: string; label: string; icon: string }[] = [
   { href: "/kosten", label: "Kosten & Ausgaben", icon: "📋" },
   { href: "/verbrauch", label: "Verbrauch", icon: "⚡" },
   { href: "/kredite", label: "Kredite", icon: "🏦" },
-  { href: "/notizen", label: "Notizen", icon: "📁" },
-  { href: "/dokumente", label: "Dokumente", icon: "📄" },
+  { href: "/steuer", label: "Steuer", icon: "🧾" },
+  { href: "/archiv", label: "Archiv", icon: "🗄" },
   { href: "/jahresbericht", label: "Jahresbericht", icon: "📈" },
 ];
 
@@ -43,6 +44,19 @@ export default function Sidebar({
   userEmail?: string | null;
 }) {
   const path = usePathname();
+  const [open, setOpen] = useState(false);
+  // Drawer bei jedem Seitenwechsel schließen.
+  useEffect(() => {
+    setOpen(false);
+  }, [path]);
+  // Scroll des Hintergrunds sperren, solange der Drawer offen ist.
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
   const isActive = (href: string) =>
     href === "/" ? path === "/" : path.startsWith(href);
 
@@ -53,7 +67,31 @@ export default function Sidebar({
   );
 
   return (
-    <aside className="sidebar">
+    <>
+      {/* Mobile-Kopfleiste mit Hamburger (nur auf schmalen Screens sichtbar) */}
+      <div className="mobile-bar">
+        <button
+          type="button"
+          className="hamburger"
+          aria-label="Menü öffnen"
+          aria-expanded={open}
+          onClick={() => setOpen(true)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <Link href="/" className="mobile-logo">
+          My<span>Immo</span>
+        </Link>
+        <ThemeToggle variant="icon" />
+      </div>
+
+      {open ? (
+        <div className="sidebar-overlay" onClick={() => setOpen(false)} aria-hidden="true" />
+      ) : null}
+
+      <aside className={"sidebar" + (open ? " open" : "")}>
       <div className="sidebar-logo">
         <Link href="/" style={{ textDecoration: "none" }}>
           <h1>My<span>Immo</span></h1>
@@ -131,6 +169,7 @@ export default function Sidebar({
           )}
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

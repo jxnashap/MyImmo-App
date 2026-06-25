@@ -30,6 +30,28 @@ export const datum = (d: string | null | undefined) => {
   return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
 };
 
+// Adresse in Briefzeilen zerlegen: Straße + Hausnummer in eine Zeile,
+// PLZ + Ort in die nächste. Akzeptiert „Str. 1, 23626 Ort", „Str. 1 23626 Ort"
+// oder bereits zeilenweise eingegebene Adressen.
+export function adressZeilen(addr: string | null | undefined): string[] {
+  if (!addr) return [];
+  const segmente = addr
+    .split(/\r?\n|,\s*/)
+    .map((z) => z.trim())
+    .filter(Boolean);
+  const zeilen: string[] = [];
+  for (const seg of segmente) {
+    // PLZ (4–5 Ziffern) gefolgt vom Ort innerhalb desselben Segments abtrennen.
+    const m = seg.match(/^(.*\S)\s+(\d{4,5}\s+\S.*)$/);
+    if (m) {
+      zeilen.push(m[1].trim(), m[2].trim());
+    } else {
+      zeilen.push(seg);
+    }
+  }
+  return zeilen;
+}
+
 // Umlagefähigkeit nach BetrKV §2 — wie in der alten App
 export function istUmlagefaehig(kat: string | null): "ja" | "nein" | "unklar" {
   const ja = ["Grundsteuer", "Versicherung", "Hausgeld / WEG", "Müll", "Abwasser", "Wasser", "Hausmeister", "Aufzug", "Allgemeinstrom", "Gartenpflege", "Straßenreinigung"];

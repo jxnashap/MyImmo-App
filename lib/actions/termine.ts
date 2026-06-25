@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { flashUrl } from "@/lib/flash";
 
 export async function createTermin(formData: FormData) {
   const supabase = createClient();
@@ -45,7 +46,7 @@ export async function updateTermin(id: string, formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/termine");
-  redirect("/termine");
+  redirect(flashUrl("/termine", "Termin gespeichert."));
 }
 
 export async function deleteTermin(id: string) {

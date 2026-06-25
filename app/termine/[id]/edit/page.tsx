@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updateTermin } from "@/lib/actions/termine";
@@ -40,7 +41,7 @@ export default async function TerminEditPage({ params }: { params: { id: string 
         </div>
         <div className="form-actions">
           <Link href="/termine" className="btn btn-ghost">Abbrechen</Link>
-          <button type="submit" className="btn btn-gold">Speichern</button>
+          <SubmitButton>Speichern</SubmitButton>
         </div>
       </form>
     </div>

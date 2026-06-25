@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import { deleteEinnahme } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
+import ExpandableRows from "@/components/ExpandableRows";
 import type { Einnahme, Property } from "@/lib/types";
 
 export default async function EinnahmenPage({
@@ -55,9 +56,9 @@ export default async function EinnahmenPage({
           <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--green)" }}>{euro(total)}</span></span>
         </div>
         <div className="section-body">
-          <table>
+          <table className="list-table">
             <thead><tr><th>Datum</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th></th></tr></thead>
-            <tbody>
+            <ExpandableRows cols={6} limit={25} label="weitere Buchungen">
               {list.map((e) => (
                 <tr key={e.id}>
                   <td>{datum(e.buchungsdatum)}</td>
@@ -69,9 +70,9 @@ export default async function EinnahmenPage({
                 </tr>
               ))}
               {list.length === 0 && (
-                <tr><td colSpan={6}><div className="empty"><div className="empty-icon">💰</div>Noch keine Einnahmen</div></td></tr>
+                <tr><td colSpan={6}><div className="empty"><div className="empty-icon">💰</div><h4>Noch keine Einnahmen</h4><p>Erfasse Mietzahlungen, Kautionen oder sonstige Erträge.</p><Link href="/einnahmen/new" className="btn btn-gold">＋ Einnahme erfassen</Link></div></td></tr>
               )}
-            </tbody>
+            </ExpandableRows>
           </table>
         </div>
       </div>

@@ -30,7 +30,7 @@ export default async function EinstellungenPage() {
     wide?: boolean;
   }) => (
     <label className={`flex flex-col gap-1 text-sm ${wide ? "sm:col-span-2" : ""}`}>
-      <span className="text-white/60">{label}</span>
+      <span className="text-[var(--muted)]">{label}</span>
       <input
         name={name}
         type={type}
@@ -44,7 +44,7 @@ export default async function EinstellungenPage() {
   return (
     <div className="max-w-2xl">
       <h1 className="mb-1 text-2xl">Einstellungen</h1>
-      <p className="mb-6 text-sm text-white/50">
+      <p className="mb-6 text-sm text-[var(--muted)]">
         Diese Absenderdaten erscheinen im Briefkopf und in der Fußzeile deiner Dokumente
         (z.&nbsp;B. NK-Abrechnung, Mahnung, Kündigung).
       </p>
@@ -69,7 +69,7 @@ export default async function EinstellungenPage() {
         <div className="mt-6 flex items-center gap-3">
           <button className="btn-gold">Speichern</button>
           {p?.updated_at && (
-            <span className="text-xs text-white/40">
+            <span className="text-xs text-[var(--muted)]">
               Zuletzt gespeichert:{" "}
               {new Date(p.updated_at).toLocaleString("de-DE", {
                 dateStyle: "medium",

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { flashUrl } from "@/lib/flash";
 
 function parse(formData: FormData) {
   const num = (k: string) => {
@@ -51,7 +52,7 @@ export async function createTenant(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/tenants");
-  redirect("/tenants");
+  redirect(flashUrl("/tenants", "Mieter angelegt."));
 }
 
 export async function updateTenant(id: string, formData: FormData) {
@@ -60,7 +61,7 @@ export async function updateTenant(id: string, formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/tenants");
-  redirect("/tenants");
+  redirect(flashUrl("/tenants", "Mieter gespeichert."));
 }
 
 export async function deleteTenant(id: string) {
