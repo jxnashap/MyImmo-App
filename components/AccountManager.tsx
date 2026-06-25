@@ -5,8 +5,15 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { deleteAccount } from "@/lib/actions/account";
 
-export default function AccountManager({ email }: { email?: string | null }) {
+export default function AccountManager({
+  email,
+  provider,
+}: {
+  email?: string | null;
+  provider?: string | null;
+}) {
   const supabase = createClient();
+  const istGoogle = !!provider && provider !== "email";
 
   // --- Passwort ändern ---
   const [pw1, setPw1] = useState("");
@@ -51,6 +58,14 @@ export default function AccountManager({ email }: { email?: string | null }) {
         <h2 className="mb-1 text-lg">🔒 Passwort ändern</h2>
         <p className="mb-4 text-sm text-[var(--muted)]">
           Ändere das Passwort für dein Konto{email ? ` (${email})` : ""}.
+          {istGoogle && (
+            <>
+              {" "}
+              <br />
+              Du meldest dich aktuell mit Google an. Hier kannst du zusätzlich ein Passwort
+              setzen, um dich auch direkt per E-Mail anzumelden.
+            </>
+          )}
         </p>
         <form onSubmit={changePassword} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">
