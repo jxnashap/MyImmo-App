@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import { deleteVerbrauch } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
+import ExpandableRows from "@/components/ExpandableRows";
 import VerbrauchChart, { type VPoint } from "@/components/VerbrauchChart";
 import type { Verbrauch, Property } from "@/lib/types";
 
@@ -71,7 +72,7 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
         <div className="section-body">
           <table className="list-table">
             <thead><tr><th>Datum</th><th>Immobilie</th><th>Art</th><th>Menge</th><th>Einheit</th><th>Kosten</th><th></th></tr></thead>
-            <tbody>
+            <ExpandableRows cols={7} limit={25} label="weitere Einträge">
               {list.map((v) => (
                 <tr key={v.id}>
                   <td>{datum(v.buchungsdatum)}</td>
@@ -86,7 +87,7 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
               {list.length === 0 && (
                 <tr><td colSpan={7}><div className="empty"><div className="empty-icon">⚡</div>Noch kein Verbrauch</div></td></tr>
               )}
-            </tbody>
+            </ExpandableRows>
           </table>
         </div>
       </div>
