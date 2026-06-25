@@ -1,4 +1,5 @@
 import type { Property } from "@/lib/types";
+import SubmitButton from "@/components/SubmitButton";
 
 const TYPEN = ["Eigentumswohnung", "Einfamilienhaus", "Mehrfamilienhaus", "Gewerbeimmobilie", "Ferienimmobilie", "Grundstück"];
 const STATUS = ["Vermietet", "Selbst bewohnt", "Leer", "Feriennutzung"];
@@ -52,7 +53,7 @@ export default function PropertyForm({
       </div>
 
       <div className="form-actions">
-        <button type="submit" className="btn btn-gold">{submitLabel}</button>
+        <SubmitButton>{submitLabel}</SubmitButton>
       </div>
     </form>
   );

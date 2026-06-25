@@ -55,7 +55,7 @@ export default async function EinnahmenPage({
           <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--green)" }}>{euro(total)}</span></span>
         </div>
         <div className="section-body">
-          <table>
+          <table className="list-table">
             <thead><tr><th>Datum</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th></th></tr></thead>
             <tbody>
               {list.map((e) => (
@@ -69,7 +69,7 @@ export default async function EinnahmenPage({
                 </tr>
               ))}
               {list.length === 0 && (
-                <tr><td colSpan={6}><div className="empty"><div className="empty-icon">💰</div>Noch keine Einnahmen</div></td></tr>
+                <tr><td colSpan={6}><div className="empty"><div className="empty-icon">💰</div><h4>Noch keine Einnahmen</h4><p>Erfasse Mietzahlungen, Kautionen oder sonstige Erträge.</p><Link href="/einnahmen/new" className="btn btn-gold">＋ Einnahme erfassen</Link></div></td></tr>
               )}
             </tbody>
           </table>

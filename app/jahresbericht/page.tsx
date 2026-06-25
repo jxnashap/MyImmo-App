@@ -56,7 +56,7 @@ export default async function JahresberichtPage({
       <div className="section">
         <div className="section-header"><h3>Auswertung {year}</h3></div>
         <div className="section-body">
-          <table>
+          <table className="list-table">
             <thead>
               <tr>
                 <th>Immobilie</th>

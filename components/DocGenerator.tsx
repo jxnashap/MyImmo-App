@@ -1,4 +1,5 @@
 "use client";
+import SubmitButton from "@/components/SubmitButton";
 
 import { useState } from "react";
 import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
@@ -399,9 +400,9 @@ export default function DocGenerator({
           <input type="hidden" name="vName" value={vName} />
           <input type="hidden" name="vAdr" value={vAdr} />
           <input type="hidden" name="text" value={vorlageText} />
-          <button type="submit" className="btn btn-gold">
+          <SubmitButton>
             📄 PDF erstellen
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </div>

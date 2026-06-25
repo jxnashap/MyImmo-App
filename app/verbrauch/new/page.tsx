@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import { createClient } from "@/lib/supabase/server";
 import { createVerbrauch } from "@/lib/actions/buchungen";
 import type { Property } from "@/lib/types";
@@ -44,7 +45,7 @@ export default async function NeuerVerbrauchPage({ searchParams }: { searchParam
         </div>
         <div className="form-actions">
           <Link href={back} className="btn btn-ghost">Abbrechen</Link>
-          <button type="submit" className="btn btn-gold">Speichern</button>
+          <SubmitButton>Speichern</SubmitButton>
         </div>
       </form>
     </div>

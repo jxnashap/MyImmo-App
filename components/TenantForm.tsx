@@ -1,4 +1,5 @@
 import type { Tenant, Property } from "@/lib/types";
+import SubmitButton from "@/components/SubmitButton";
 
 const KAUTION_STATUS = [
   { v: "nein", label: "⚠️ Ausstehend" },
@@ -93,7 +94,7 @@ export default function TenantForm({
       </div>
 
       <div className="form-actions">
-        <button type="submit" className="btn btn-gold">{submitLabel}</button>
+        <SubmitButton>{submitLabel}</SubmitButton>
       </div>
     </form>
   );

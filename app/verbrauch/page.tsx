@@ -69,7 +69,7 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
       <div className="section">
         <div className="section-header"><h3>Alle Einträge</h3></div>
         <div className="section-body">
-          <table>
+          <table className="list-table">
             <thead><tr><th>Datum</th><th>Immobilie</th><th>Art</th><th>Menge</th><th>Einheit</th><th>Kosten</th><th></th></tr></thead>
             <tbody>
               {list.map((v) => (

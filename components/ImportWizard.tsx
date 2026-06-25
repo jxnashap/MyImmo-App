@@ -1,4 +1,5 @@
 "use client";
+import SubmitButton from "@/components/SubmitButton";
 
 import { useState } from "react";
 
@@ -100,7 +101,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
         </div>
         {notiz && <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>📝 {notiz}</div>}
         <div className="form-actions">
-          <button type="submit" className="btn btn-gold">✅ Übernehmen &amp; speichern</button>
+          <SubmitButton>✅ Übernehmen &amp; speichern</SubmitButton>
         </div>
       </form>
     </div>

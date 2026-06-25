@@ -1,4 +1,5 @@
 "use client";
+import SubmitButton from "@/components/SubmitButton";
 
 import { useMemo, useState } from "react";
 import DeleteButton from "@/components/DeleteButton";
@@ -132,7 +133,7 @@ export default function ArchivManager({
           </div>
           <div className="form-actions">
             <button type="button" className="btn btn-ghost" onClick={() => setShowUpload(false)}>Abbrechen</button>
-            <button type="submit" className="btn btn-gold">Im Archiv speichern</button>
+            <SubmitButton>Im Archiv speichern</SubmitButton>
           </div>
         </form>
       )}
