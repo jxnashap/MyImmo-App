@@ -5,9 +5,6 @@ import { deleteKosten, deleteRechnung } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableRows from "@/components/ExpandableRows";
 import YearSelect from "@/components/YearSelect";
-import BetragChart from "@/components/BetragChart";
-import ZeitraumControl from "@/components/ZeitraumControl";
-import type { RawPoint } from "@/lib/zeitraum";
 import type { Kosten, Property, Tenant } from "@/lib/types";
 
 export default async function KostenPage({
@@ -43,7 +40,6 @@ export default async function KostenPage({
   if (jahr !== "alle") list = list.filter((k) => k.buchungsdatum && new Date(k.buchungsdatum).getFullYear() === Number(jahr));
 
   const total = list.reduce((s, k) => s + (k.betrag ?? 0), 0);
-  const chartPoints: RawPoint[] = list.filter((k) => k.buchungsdatum).map((k) => ({ date: k.buchungsdatum as string, value: k.betrag ?? 0 }));
 
   return (
     <div className="fade-up">
@@ -75,16 +71,6 @@ export default async function KostenPage({
         </select>
         <button className="btn btn-ghost">Filtern</button>
       </form>
-
-      <div className="section mb-20">
-        <div className="section-header">
-          <h3>📉 Ausgaben-Verlauf</h3>
-          <ZeitraumControl />
-        </div>
-        <div className="section-body">
-          <BetragChart points={chartPoints} mode="bars" color="var(--red)" caption="Ausgaben je Periode" />
-        </div>
-      </div>
 
       <div className="section">
         <div className="section-header">
