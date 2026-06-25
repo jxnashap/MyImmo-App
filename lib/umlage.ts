@@ -156,8 +156,12 @@ export function berechneUmlage(
     }
 
     const anteile = verteileBetrag(allocated, gewichte);
-    zeilenSummen.push(r2(anteile.reduce((a, b) => a + b, 0)));
-    zeilenNichtUmgelegt.push(r2(z.betrag - allocated));
+    // Tatsächlich verteilte Summe (kann 0 sein, wenn alle Gewichte 0 sind, z.B.
+    // Flächen-Schlüssel ohne hinterlegte Mieterflächen). Der Rest gilt dann als
+    // nicht umgelegt, statt still zu verschwinden.
+    const verteilt = r2(anteile.reduce((a, b) => a + b, 0));
+    zeilenSummen.push(verteilt);
+    zeilenNichtUmgelegt.push(r2(z.betrag - verteilt));
     anteile.forEach((a, i) => {
       perMieter[i].positionen.push({
         bezeichnung: z.bezeichnung,

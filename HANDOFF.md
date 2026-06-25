@@ -22,6 +22,15 @@ Objekte, Mieter, Einnahmen/Kosten/Kredite/Verbrauch, Termine/Fristen + Refinanzi
 5. **Tests:** Vitest, 18 Tests (`tests/umlage.test.ts`, `tests/anlageV.test.ts`). Dabei echten Bug gefixt: bei Mieterwechsel in derselben Wohnung wurde nur die Hälfte umgelegt (Flächen-Doppelzählung in `lib/umlage.ts`).
 6. **CI-Action** eingerichtet.
 
+## Sicherheits-Check (Stand dieser Runde — verifiziert)
+- **RLS ist auf allen 13 Tabellen aktiv**, Policy `auth.uid() = user_id` für ALLE Operationen (USING + WITH CHECK, an der DB geprüft). → Die in Reviews oft gemeldeten „IDOR"-Befunde (fehlende `.eq("user_id")`-Filter in Server-Actions/Datei-Routen) sind **kein ausnutzbares Leck**, nur fehlende Defense-in-Depth. Nicht als „kritisch" behandeln.
+- **PDF-Umlaute** (ä/ö/ü/ß) werden korrekt gerendert — `sanitize()` ersetzt nur Codepoints > 255. Kein Bug.
+- **KI-Routen `/api/import` + `/api/nk-ocr`** sind jetzt auth-geschützt (nur eingeloggte Nutzer), mit Timeout, Upload-Limits (5 MB Bild / 20 MB PDF) und JSON-Validierung.
+
+## Offen / als Option vorgemerkt
+- **Pro-Nutzer-Rate-Limit für die KI-Routen** bewusst NICHT gebaut (spart bis Launch die monatliche Gebühr für Redis/Vercel KV). Der Auth-Check deckt anonymen Missbrauch ab; ein eingeloggter Nutzer kann die KI weiterhin in einer Schleife aufrufen. Wenn mehrere Nutzer aufgeschaltet werden: **DB-Zähler** (kostenlos, etwas Code) statt externem Dienst.
+- **`fristen.ts`** parst Datumswerte als UTC-Mitternacht — für DE-Zeitzone + UTC-Server (Vercel) konsistent, kein Off-by-one. Erst relevant, falls Client-seitig in einer westlichen Zeitzone gerechnet wird.
+
 ## Offene Risiken / unverifiziert (WICHTIG)
 - **UI-Flows nie echt durchgeklickt** (Drag&Drop, OCR, Toasts, Login). Browser-Test aus der Sandbox unmöglich (Egress-Proxy blockt headless Chromium — bestätigt). → Nur der Nutzer kann live klicken.
 - **NK-/Steuer-Fachlogik** ist technisch durch Tests abgesichert, aber die fachlichen Annahmen (Umlagefähigkeit, Leerstand-Behandlung, AfA-Schätzung) **müssen an einer echten Abrechnung gegengerechnet werden**, bevor das produktiv an Mieter/ans Finanzamt geht.

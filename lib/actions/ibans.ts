@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isValidIban, normalizeIban } from "@/lib/iban";
 
 export async function addIban(formData: FormData) {
   const supabase = createClient();
@@ -11,10 +12,10 @@ export async function addIban(formData: FormData) {
 
   const kontoname = String(formData.get("kontoname") ?? "").trim();
   const inhaber = String(formData.get("inhaber") ?? "").trim();
-  const iban = String(formData.get("iban") ?? "").replace(/\s/g, "").toUpperCase();
+  const iban = normalizeIban(String(formData.get("iban") ?? ""));
 
   if (!kontoname || !iban) throw new Error("Bitte Name und IBAN angeben.");
-  if (iban.length < 15) throw new Error("Bitte eine gültige IBAN angeben.");
+  if (!isValidIban(iban)) throw new Error("Die IBAN ist ungültig (Prüfziffer stimmt nicht).");
 
   const { error } = await supabase.from("ibans").insert({
     user_id: user.id,

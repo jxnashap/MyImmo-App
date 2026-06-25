@@ -69,6 +69,14 @@ describe("berechneUmlage — ohne Zeitanteil", () => {
     const r = berechneUmlage(zeilen, [mieter("A", 1), mieter("B", 1), mieter("C", 1)]);
     expect(summe(r.perMieter.map((m) => m.summe))).toBe(100);
   });
+
+  it("Flächen-Schlüssel ohne hinterlegte Flächen → Betrag gilt als nicht umgelegt (verschwindet nicht)", () => {
+    const zeilen: UmlageZeile[] = [{ bezeichnung: "Grundsteuer", betrag: 100, schluessel: "flaeche" }];
+    const r = berechneUmlage(zeilen, [mieter("A", 0), mieter("B", 0)]);
+    expect(r.gesamt).toBe(0);
+    expect(r.nichtUmgelegt).toBe(100);
+    expect(r.zeilenNichtUmgelegt[0]).toBe(100);
+  });
 });
 
 describe("berechneUmlage — zeitanteilig (belegte Monate)", () => {

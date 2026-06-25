@@ -16,6 +16,14 @@ function str(fd: FormData, k: string): string | null {
   const v = fd.get(k);
   return v == null || v === "" ? null : String(v);
 }
+// Pflichtbetrag: muss vorhanden und > 0 sein (negative/0-Buchungen würden
+// die Dashboard- und Steuersummen verfälschen).
+function posNum(fd: FormData, k: string, label: string): number {
+  const n = num(fd, k);
+  if (n == null) throw new Error(`Bitte ${label} angeben.`);
+  if (n <= 0) throw new Error(`${label} muss größer als 0 sein.`);
+  return n;
+}
 
 async function uid() {
   const supabase = createClient();
@@ -37,7 +45,7 @@ export async function createEinnahme(fd: FormData) {
     prop_id: str(fd, "prop_id"),
     buchungsdatum: str(fd, "buchungsdatum"),
     kategorie: str(fd, "kategorie"),
-    betrag: num(fd, "betrag"),
+    betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
   });
   if (error) throw new Error(error.message);
@@ -49,7 +57,7 @@ export async function updateEinnahme(id: string, fd: FormData) {
     prop_id: str(fd, "prop_id"),
     buchungsdatum: str(fd, "buchungsdatum"),
     kategorie: str(fd, "kategorie"),
-    betrag: num(fd, "betrag"),
+    betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
   }).eq("id", id);
   if (error) throw new Error(error.message);
@@ -93,7 +101,7 @@ export async function createKosten(fd: FormData) {
     mieter_id: str(fd, "mieter_id"),
     buchungsdatum: str(fd, "buchungsdatum"),
     kategorie: str(fd, "kategorie"),
-    betrag: num(fd, "betrag"),
+    betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
     ...(await rechnungFelder(fd)),
   });
@@ -107,7 +115,7 @@ export async function updateKosten(id: string, fd: FormData) {
     mieter_id: str(fd, "mieter_id"),
     buchungsdatum: str(fd, "buchungsdatum"),
     kategorie: str(fd, "kategorie"),
-    betrag: num(fd, "betrag"),
+    betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
     ...(await rechnungFelder(fd)),
   }).eq("id", id);
