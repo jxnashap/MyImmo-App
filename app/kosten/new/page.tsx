@@ -42,7 +42,7 @@ export default async function NeueKostenPage({ searchParams }: { searchParams: {
           <div className="form-group"><label>Kategorie</label>
             <select name="kategorie" defaultValue="Reparatur">{KATEGORIEN.map((k) => <option key={k}>{k}</option>)}</select>
           </div>
-          <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" name="betrag" placeholder="350" required /></div>
+          <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" placeholder="350" required /></div>
         </div>
         <div className="form-row single">
           <div className="form-group"><label>Mieter zuordnen (optional)</label>

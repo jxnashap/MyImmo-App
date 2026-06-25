@@ -43,7 +43,7 @@ export default async function EinnahmeEditPage({ params, searchParams }: { param
           <div className="form-group"><label>Kategorie</label>
             <select name="kategorie" defaultValue={e.kategorie ?? "Miete"}>{KATEGORIEN.map((k) => <option key={k}>{k}</option>)}</select>
           </div>
-          <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" name="betrag" defaultValue={e.betrag ?? ""} required /></div>
+          <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" defaultValue={e.betrag ?? ""} required /></div>
         </div>
         <div className="form-row single">
           <div className="form-group"><label>Beschreibung</label><input type="text" name="beschreibung" defaultValue={e.beschreibung ?? ""} /></div>

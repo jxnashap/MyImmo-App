@@ -45,7 +45,7 @@ export default async function KostenEditPage({ params, searchParams }: { params:
           <div className="form-group"><label>Kategorie</label>
             <select name="kategorie" defaultValue={k.kategorie ?? "Reparatur"}>{KATEGORIEN.map((c) => <option key={c}>{c}</option>)}</select>
           </div>
-          <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" name="betrag" defaultValue={k.betrag ?? ""} required /></div>
+          <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" defaultValue={k.betrag ?? ""} required /></div>
         </div>
         <div className="form-row single">
           <div className="form-group"><label>Mieter zuordnen (optional)</label>
