@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
@@ -33,13 +33,17 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).has("geloescht")
-      ? "Dein Konto und alle Daten wurden gelöscht."
-      : null
-  );
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [consent, setConsent] = useState(false);
+
+  // Hinweis nach Kontolöschung erst nach dem Mount setzen (verhindert
+  // Hydration-Mismatch, da window serverseitig nicht existiert).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("geloescht")) {
+      setInfo("Dein Konto und alle Daten wurden gelöscht.");
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

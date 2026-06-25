@@ -86,7 +86,7 @@ export default async function EinstellungenPage() {
 
       <IbanManager ibans={ibans} />
 
-      <AccountManager email={user?.email} />
+      <AccountManager email={user?.email} provider={user?.app_metadata?.provider} />
     </div>
   );
 }

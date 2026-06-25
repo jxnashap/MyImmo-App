@@ -4,6 +4,7 @@ import { euro, datum } from "@/lib/format";
 import { deleteEinnahme } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableRows from "@/components/ExpandableRows";
+import YearSelect from "@/components/YearSelect";
 import BetragChart from "@/components/BetragChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
 import type { RawPoint } from "@/lib/zeitraum";
@@ -12,7 +13,7 @@ import type { Einnahme, Property } from "@/lib/types";
 export default async function EinnahmenPage({
   searchParams,
 }: {
-  searchParams: { prop?: string; kategorie?: string };
+  searchParams: { prop?: string; kategorie?: string; jahr?: string };
 }) {
   const supabase = createClient();
   const [{ data: einn }, { data: props }] = await Promise.all([
@@ -27,6 +28,17 @@ export default async function EinnahmenPage({
   let list = (einn ?? []) as Einnahme[];
   if (searchParams.prop) list = list.filter((e) => e.prop_id === searchParams.prop);
   if (searchParams.kategorie) list = list.filter((e) => (e.kategorie ?? "") === searchParams.kategorie);
+
+  const aktuellesJahr = new Date().getFullYear();
+  const jahr = searchParams.jahr ?? String(aktuellesJahr);
+  const jahre = Array.from(
+    new Set([
+      ...((einn ?? []) as Einnahme[]).map((e) => (e.buchungsdatum ? new Date(e.buchungsdatum).getFullYear() : null)),
+      aktuellesJahr,
+    ].filter((y): y is number => y != null))
+  ).sort((a, b) => b - a);
+  if (jahr !== "alle") list = list.filter((e) => e.buchungsdatum && new Date(e.buchungsdatum).getFullYear() === Number(jahr));
+
   const total = list.reduce((s, e) => s + (e.betrag ?? 0), 0);
   const chartPoints: RawPoint[] = list.filter((e) => e.buchungsdatum).map((e) => ({ date: e.buchungsdatum as string, value: e.betrag ?? 0 }));
 
@@ -41,6 +53,7 @@ export default async function EinnahmenPage({
       </div>
 
       <form method="get" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
+        <input type="hidden" name="jahr" value={jahr} />
         <label style={{ fontSize: 12, color: "var(--muted)" }}>🏠 Immobilie:</label>
         <select name="prop" defaultValue={searchParams.prop ?? ""} className="input" style={{ minWidth: 200 }}>
           <option value="">Alle Immobilien</option>
@@ -67,12 +80,15 @@ export default async function EinnahmenPage({
       <div className="section">
         <div className="section-header">
           <h3>Alle Einnahmen</h3>
-          <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--green)" }}>{euro(total)}</span></span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+            <YearSelect years={jahre} current={jahr} params={searchParams} />
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--green)" }}>{euro(total)}</span></span>
+          </div>
         </div>
         <div className="section-body">
           <table className="list-table">
             <thead><tr><th>Datum</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th></th></tr></thead>
-            <ExpandableRows cols={6} limit={25} label="weitere Buchungen">
+            <ExpandableRows cols={6} limit={10} label="weitere Buchungen">
               {list.map((e) => (
                 <tr key={e.id}>
                   <td>{datum(e.buchungsdatum)}</td>

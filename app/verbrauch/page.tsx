@@ -4,12 +4,13 @@ import { euro, datum } from "@/lib/format";
 import { deleteVerbrauch } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableRows from "@/components/ExpandableRows";
+import YearSelect from "@/components/YearSelect";
 import VerbrauchChart, { type VPoint } from "@/components/VerbrauchChart";
 import type { Verbrauch, Property } from "@/lib/types";
 
 const ART_ICONS: Record<string, string> = { Strom: "⚡", Gas: "🔥", Wasser: "💧", Heizöl: "🛢", Fernwärme: "♨", Heizung: "♨", Sonstiges: "📦" };
 
-export default async function VerbrauchPage({ searchParams }: { searchParams: { prop?: string; art?: string } }) {
+export default async function VerbrauchPage({ searchParams }: { searchParams: { prop?: string; art?: string; jahr?: string } }) {
   const supabase = createClient();
   const [{ data: verb }, { data: props }] = await Promise.all([
     supabase.from("verbrauch").select("*").order("buchungsdatum", { ascending: false }),
@@ -35,6 +36,19 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
   }
   const charts = Array.from(chartGruppen.entries()).filter(([, g]) => g.points.length > 0);
 
+  // Jahresfilter nur für die Tabelle (Charts behalten den Mehrjahres-Verlauf).
+  const aktuellesJahr = new Date().getFullYear();
+  const jahr = searchParams.jahr ?? String(aktuellesJahr);
+  const jahre = Array.from(
+    new Set([
+      ...((verb ?? []) as Verbrauch[]).map((v) => (v.buchungsdatum ? new Date(v.buchungsdatum).getFullYear() : null)),
+      aktuellesJahr,
+    ].filter((y): y is number => y != null))
+  ).sort((a, b) => b - a);
+  const tabelle = jahr !== "alle"
+    ? list.filter((v) => v.buchungsdatum && new Date(v.buchungsdatum).getFullYear() === Number(jahr))
+    : list;
+
   return (
     <div className="fade-up">
       <div className="topbar">
@@ -46,6 +60,7 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
       </div>
 
       <form method="get" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <input type="hidden" name="jahr" value={jahr} />
         <label style={{ fontSize: 12, color: "var(--muted)" }}>🏠 Immobilie:</label>
         <select name="prop" defaultValue={searchParams.prop ?? ""} className="input" style={{ minWidth: 200 }}>
           <option value="">Alle Immobilien</option>
@@ -68,12 +83,15 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
       )}
 
       <div className="section">
-        <div className="section-header"><h3>Alle Einträge</h3></div>
+        <div className="section-header">
+          <h3>Alle Einträge</h3>
+          <YearSelect years={jahre} current={jahr} params={searchParams} />
+        </div>
         <div className="section-body">
           <table className="list-table">
             <thead><tr><th>Datum</th><th>Immobilie</th><th>Art</th><th>Menge</th><th>Einheit</th><th>Kosten</th><th></th></tr></thead>
-            <ExpandableRows cols={7} limit={25} label="weitere Einträge">
-              {list.map((v) => (
+            <ExpandableRows cols={7} limit={10} label="weitere Einträge">
+              {tabelle.map((v) => (
                 <tr key={v.id}>
                   <td>{datum(v.buchungsdatum)}</td>
                   <td style={{ color: "var(--muted)" }}>{v.prop_id ? nameOf.get(v.prop_id) ?? "–" : "–"}</td>
@@ -84,7 +102,7 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
                   <td style={{ textAlign: "right" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}><Link href={`/verbrauch/${v.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link><DeleteButton action={deleteVerbrauch.bind(null, v.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></span></td>
                 </tr>
               ))}
-              {list.length === 0 && (
+              {tabelle.length === 0 && (
                 <tr><td colSpan={7}><div className="empty"><div className="empty-icon">⚡</div>Noch kein Verbrauch</div></td></tr>
               )}
             </ExpandableRows>

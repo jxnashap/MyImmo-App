@@ -4,6 +4,7 @@ import { euro, datum, istUmlagefaehig } from "@/lib/format";
 import { deleteKosten, deleteRechnung } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableRows from "@/components/ExpandableRows";
+import YearSelect from "@/components/YearSelect";
 import BetragChart from "@/components/BetragChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
 import type { RawPoint } from "@/lib/zeitraum";
@@ -12,7 +13,7 @@ import type { Kosten, Property, Tenant } from "@/lib/types";
 export default async function KostenPage({
   searchParams,
 }: {
-  searchParams: { prop?: string; mieter?: string; umlage?: string };
+  searchParams: { prop?: string; mieter?: string; umlage?: string; jahr?: string };
 }) {
   const supabase = createClient();
   const [{ data: kost }, { data: props }, { data: miet }] = await Promise.all([
@@ -30,6 +31,17 @@ export default async function KostenPage({
   if (searchParams.prop) list = list.filter((k) => k.prop_id === searchParams.prop);
   if (searchParams.mieter) list = list.filter((k) => k.mieter_id === searchParams.mieter);
   if (searchParams.umlage) list = list.filter((k) => istUmlagefaehig(k.kategorie) === searchParams.umlage);
+
+  const aktuellesJahr = new Date().getFullYear();
+  const jahr = searchParams.jahr ?? String(aktuellesJahr);
+  const jahre = Array.from(
+    new Set([
+      ...((kost ?? []) as Kosten[]).map((k) => (k.buchungsdatum ? new Date(k.buchungsdatum).getFullYear() : null)),
+      aktuellesJahr,
+    ].filter((y): y is number => y != null))
+  ).sort((a, b) => b - a);
+  if (jahr !== "alle") list = list.filter((k) => k.buchungsdatum && new Date(k.buchungsdatum).getFullYear() === Number(jahr));
+
   const total = list.reduce((s, k) => s + (k.betrag ?? 0), 0);
   const chartPoints: RawPoint[] = list.filter((k) => k.buchungsdatum).map((k) => ({ date: k.buchungsdatum as string, value: k.betrag ?? 0 }));
 
@@ -44,6 +56,7 @@ export default async function KostenPage({
       </div>
 
       <form method="get" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <input type="hidden" name="jahr" value={jahr} />
         <label style={{ fontSize: 12, color: "var(--muted)" }}>🏠 Immobilie:</label>
         <select name="prop" defaultValue={searchParams.prop ?? ""} className="input" style={{ minWidth: 180 }}>
           <option value="">Alle Immobilien</option>
@@ -76,12 +89,15 @@ export default async function KostenPage({
       <div className="section">
         <div className="section-header">
           <h3>Alle Ausgaben</h3>
-          <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--red)" }}>{euro(total)}</span></span>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+            <YearSelect years={jahre} current={jahr} params={searchParams} />
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--red)" }}>{euro(total)}</span></span>
+          </div>
         </div>
         <div className="section-body">
           <table className="list-table">
             <thead><tr><th>Datum</th><th>Immobilie</th><th>Mieter</th><th>Kategorie</th><th>Umlage</th><th>Beleg</th><th>Betrag</th><th></th></tr></thead>
-            <ExpandableRows cols={8} limit={25} label="weitere Buchungen">
+            <ExpandableRows cols={8} limit={10} label="weitere Buchungen">
               {list.map((k) => {
                 const u = istUmlagefaehig(k.kategorie);
                 return (

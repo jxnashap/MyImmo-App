@@ -169,6 +169,22 @@ export default function Sidebar({
           )}
         </div>
       </div>
+
+      <div
+        style={{
+          marginTop: "auto",
+          padding: "12px 8px 4px",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 10,
+          fontSize: 10,
+          color: "var(--faint)",
+        }}
+      >
+        <Link href="/datenschutz" style={{ color: "var(--faint)", textDecoration: "none" }}>Datenschutz</Link>
+        <Link href="/avv" style={{ color: "var(--faint)", textDecoration: "none" }}>AVV</Link>
+        <Link href="/impressum" style={{ color: "var(--faint)", textDecoration: "none" }}>Impressum</Link>
+      </div>
       </aside>
     </>
   );

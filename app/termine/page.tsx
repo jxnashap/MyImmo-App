@@ -4,6 +4,8 @@ import { datum } from "@/lib/format";
 import { mieterFristen } from "@/lib/fristen";
 import { createTermin, deleteTermin } from "@/lib/actions/termine";
 import DeleteButton from "@/components/DeleteButton";
+import YearSelect from "@/components/YearSelect";
+import ExpandableList from "@/components/ExpandableList";
 import type { Termin, Property, Tenant, Kredit } from "@/lib/types";
 
 type Eintrag = {
@@ -27,7 +29,7 @@ const QUELLE_LABEL: Record<Eintrag["quelle"], string> = {
   eigen: "Eigen",
 };
 
-export default async function TerminePage({ searchParams }: { searchParams: { quelle?: string } }) {
+export default async function TerminePage({ searchParams }: { searchParams: { quelle?: string; jahr?: string } }) {
   const supabase = createClient();
   const [{ data: term }, { data: props }, { data: miet }, { data: kred }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
@@ -64,7 +66,14 @@ export default async function TerminePage({ searchParams }: { searchParams: { qu
   eintraege.sort((a, b) => a.datum.localeCompare(b.datum));
 
   const filterQ = searchParams.quelle;
-  const sichtbar = filterQ ? eintraege.filter((e) => e.quelle === filterQ) : eintraege;
+  let sichtbar = filterQ ? eintraege.filter((e) => e.quelle === filterQ) : eintraege;
+
+  const aktuellesJahr = new Date().getFullYear();
+  const jahr = searchParams.jahr ?? String(aktuellesJahr);
+  const jahre = Array.from(
+    new Set([...eintraege.map((e) => new Date(e.datum).getFullYear()), aktuellesJahr])
+  ).sort((a, b) => b - a);
+  if (jahr !== "alle") sichtbar = sichtbar.filter((e) => new Date(e.datum).getFullYear() === Number(jahr));
 
   const heute = new Date();
   const tageBis = (d: string) => Math.ceil((new Date(d).getTime() - heute.getTime()) / 86400000);
@@ -120,20 +129,24 @@ export default async function TerminePage({ searchParams }: { searchParams: { qu
       <div className="section">
         <div className="section-header">
           <h3>Anstehende Termine</h3>
-          <div style={{ display: "flex", gap: 6 }}>
-            {([["", "Alle"], ["mieter", "Mieter"], ["kredit", "Finanzierung"], ["eigen", "Eigene"]] as const).map(([q, label]) => {
-              const active = (filterQ ?? "") === q;
-              return (
-                <Link key={q} href={q ? `/termine?quelle=${q}` : "/termine"} className={`badge ${active ? "badge-gold" : ""}`} style={{ textDecoration: "none", ...(active ? {} : { color: "var(--muted)", border: "1px solid var(--line)" }) }}>{label}</Link>
-              );
-            })}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              {([["", "Alle"], ["mieter", "Mieter"], ["kredit", "Finanzierung"], ["eigen", "Eigene"]] as const).map(([q, label]) => {
+                const active = (filterQ ?? "") === q;
+                return (
+                  <Link key={q} href={q ? `/termine?quelle=${q}${jahr !== "alle" ? `&jahr=${jahr}` : ""}` : `/termine${jahr !== "alle" ? `?jahr=${jahr}` : ""}`} className={`badge ${active ? "badge-gold" : ""}`} style={{ textDecoration: "none", ...(active ? {} : { color: "var(--muted)", border: "1px solid var(--line)" }) }}>{label}</Link>
+                );
+              })}
+            </div>
+            <YearSelect years={jahre} current={jahr} params={searchParams} />
           </div>
         </div>
         <div className="section-body">
           {sichtbar.length === 0 ? (
             <div className="empty"><div className="empty-icon">📅</div><p>Keine Termine</p></div>
           ) : (
-            sichtbar.map((e, i) => {
+            <ExpandableList limit={10} label="weitere Termine">
+            {sichtbar.map((e, i) => {
               const tage = tageBis(e.datum);
               const farbe = e.typ === "warn" || tage < 0 ? "var(--red)" : e.typ === "ok" ? "var(--green)" : "var(--muted)";
               return (
@@ -156,7 +169,8 @@ export default async function TerminePage({ searchParams }: { searchParams: { qu
                   )}
                 </div>
               );
-            })
+            })}
+            </ExpandableList>
           )}
         </div>
       </div>
