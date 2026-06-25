@@ -282,10 +282,10 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
 
         <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>📁 Notizen</h3><Link href={`/notizen/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
+          <div className="section-header"><h3>🗄 Archiv</h3><Link href="/archiv" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
           <div className="section-body">
             {notizen.length === 0 ? (
-              <div className="empty" style={{ padding: 24 }}><div className="empty-icon">📁</div><p>Noch keine Notizen</p></div>
+              <div className="empty" style={{ padding: 24 }}><div className="empty-icon">🗄</div><p>Noch keine Dokumente</p></div>
             ) : (
               notizen.map((n) => (
                 <div key={n.id} style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}>

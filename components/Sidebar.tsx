@@ -14,8 +14,8 @@ const VERWALTUNG: { href: string; label: string; icon: string }[] = [
   { href: "/kosten", label: "Kosten & Ausgaben", icon: "📋" },
   { href: "/verbrauch", label: "Verbrauch", icon: "⚡" },
   { href: "/kredite", label: "Kredite", icon: "🏦" },
-  { href: "/notizen", label: "Notizen", icon: "📁" },
-  { href: "/dokumente", label: "Dokumente", icon: "📄" },
+  { href: "/steuer", label: "Steuer", icon: "🧾" },
+  { href: "/archiv", label: "Archiv", icon: "🗄" },
   { href: "/jahresbericht", label: "Jahresbericht", icon: "📈" },
 ];
 

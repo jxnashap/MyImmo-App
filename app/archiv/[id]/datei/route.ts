@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .eq("id", params.id)
     .single();
 
-  if (!n?.datei_data) return new NextResponse("Kein Anhang hinterlegt", { status: 404 });
+  if (!n?.datei_data) return new NextResponse("Keine Datei hinterlegt", { status: 404 });
 
   const raw = String(n.datei_data);
   const comma = raw.indexOf(",");
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const buf = Buffer.from(base64, "base64");
 
   const type = n.datei_type || "application/octet-stream";
-  const name = (n.datei_name || "Anhang").replace(/[^a-zA-Z0-9._-]+/g, "_");
+  const name = (n.datei_name || "Dokument").replace(/[^a-zA-Z0-9._-]+/g, "_");
   const disposition = req.nextUrl.searchParams.get("download") ? "attachment" : "inline";
 
   return new NextResponse(buf, {

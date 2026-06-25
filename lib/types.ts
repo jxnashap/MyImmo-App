@@ -106,6 +106,7 @@ export type Kredit = {
 export type Notiz = {
   id: string;
   prop_id: string | null;
+  mieter_id: string | null;
   titel: string | null;
   kategorie: string | null;
   inhalt: string | null;
