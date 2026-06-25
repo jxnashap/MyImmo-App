@@ -8,6 +8,16 @@
 - Bei jeder Entscheidung des Nutzers zuerst die Risiken nennen, bevor zugestimmt wird.
 
 
+## Offene Punkte / Merkliste
+- **„Sign in with Apple" nachrüsten, sobald die App in den iOS App Store geht.** Apple verlangt
+  das, sobald ein anderer Social-Login (Google) angeboten wird. Braucht Apple-Developer-Programm
+  (99 $/Jahr), App-ID/Services-ID/Key + Provider-Config in Supabase. Aktuell reine Web-App → noch nicht nötig.
+- **AVV-Verträge (Art. 28 DSGVO)** mit Supabase, Vercel, Anthropic, Google abschließen.
+- **Impressum/Datenschutz**: Platzhalter in `app/impressum` + `app/datenschutz` mit echten Daten
+  (Gewerbeanmeldung) füllen und rechtlich prüfen lassen.
+- **Optional (Härtung):** Spalten-Verschlüsselung für IBAN/Bankdaten (pgcrypto/Vault). At-rest-
+  Verschlüsselung auf Platten-Ebene ist durch Supabase bereits gegeben — kein Launch-Blocker.
+
 ## Deployment
 - **Live-URL (Produktion): https://my-immo-app.vercel.app**
 - Gehostet auf **Vercel**, verbunden mit dem GitHub-Repo `jxnashap/myimmo-app` (Branch `main`).
