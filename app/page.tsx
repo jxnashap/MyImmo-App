@@ -2,10 +2,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
-import CashflowChart from "@/components/CashflowChart";
+import BetragChart from "@/components/BetragChart";
+import ZeitraumControl from "@/components/ZeitraumControl";
+import type { RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
-
-const MONATE = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -53,15 +53,12 @@ export default async function DashboardPage() {
   const cashflow = totalMiete - totalKosten;
   const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
 
-  // Portfolio-Entwicklung: kumulierter Cashflow letzte 12 Monate
-  let kum = 0;
-  const punkte = Array.from({ length: 12 }, (_, idx) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (11 - idx), 1);
-    const ein = einnahmen.filter((e) => { const x = e.buchungsdatum ? new Date(e.buchungsdatum) : null; return x && x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth(); }).reduce((s, e) => s + (e.betrag ?? 0), 0);
-    const kos = kosten.filter((k) => { const x = k.buchungsdatum ? new Date(k.buchungsdatum) : null; return x && x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth(); }).reduce((s, k) => s + (k.betrag ?? 0), 0);
-    kum += ein - kos;
-    return { label: MONATE[d.getMonth()], wert: kum };
-  });
+  // Portfolio-Entwicklung: kumulierter Cashflow (Einnahmen − Ausgaben),
+  // Zeitraum wird clientseitig per Segmented-Control gefiltert.
+  const portfolioPoints: RawPoint[] = [
+    ...einnahmen.filter((e) => e.buchungsdatum).map((e) => ({ date: e.buchungsdatum as string, value: e.betrag ?? 0 })),
+    ...kosten.filter((k) => k.buchungsdatum).map((k) => ({ date: k.buchungsdatum as string, value: -(k.betrag ?? 0) })),
+  ];
 
   // Einnahmen vs. Ausgaben
   const balkenMax = Math.max(totalMiete, totalKosten, 1);
@@ -127,8 +124,13 @@ export default async function DashboardPage() {
       </div>
 
       <div className="section mb-20">
-        <div className="section-header"><h3>📈 Portfolio-Entwicklung</h3></div>
-        <div className="section-body"><CashflowChart data={punkte} /></div>
+        <div className="section-header">
+          <h3>📈 Portfolio-Entwicklung</h3>
+          <ZeitraumControl />
+        </div>
+        <div className="section-body">
+          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" caption="Kumulierter Cashflow (Einnahmen − Ausgaben)" />
+        </div>
       </div>
 
       <div className="grid-2 mb-20">
