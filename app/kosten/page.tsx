@@ -7,10 +7,12 @@ import ExpandableRows from "@/components/ExpandableRows";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import type { Kosten, Property, Tenant } from "@/lib/types";
 
+const KATEGORIEN = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
+
 export default async function KostenPage({
   searchParams,
 }: {
-  searchParams: { prop?: string; mieter?: string; umlage?: string; jahr?: string };
+  searchParams: { prop?: string; mieter?: string; umlage?: string; jahr?: string; kat?: string };
 }) {
   const supabase = createClient();
   const [{ data: kost }, { data: props }, { data: miet }] = await Promise.all([
@@ -27,6 +29,7 @@ export default async function KostenPage({
   let list = (kost ?? []) as Kosten[];
   if (searchParams.prop) list = list.filter((k) => k.prop_id === searchParams.prop);
   if (searchParams.mieter) list = list.filter((k) => k.mieter_id === searchParams.mieter);
+  if (searchParams.kat) list = list.filter((k) => (k.kategorie ?? "") === searchParams.kat);
   if (searchParams.umlage) list = list.filter((k) => istUmlagefaehig(k.kategorie) === searchParams.umlage);
 
   const aktuellesJahr = new Date().getFullYear();
@@ -43,8 +46,9 @@ export default async function KostenPage({
 
   const filters: FilterDef[] = [
     { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
+    { name: "kat", label: "Kategorie", icon: "tag", options: [{ value: "", label: "Alle Kosten" }, ...KATEGORIEN.map((k) => ({ value: k, label: k }))] },
     { name: "mieter", label: "Mieter", icon: "user", options: [{ value: "", label: "Alle Mieter" }, ...tenants.map((t) => ({ value: t.id, label: `${t.vorname ?? ""} ${t.nachname ?? ""}`.trim() || "—" }))] },
-    { name: "umlage", label: "Umlage", icon: "umlage", variant: "segmented", options: [{ value: "", label: "Alle" }, { value: "ja", label: "Umlagefähig" }, { value: "nein", label: "Nicht" }] },
+    { name: "umlage", label: "Umlagefähig", icon: "umlage", variant: "toggle", options: [{ value: "ja", label: "Umlagefähig" }] },
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
   ];
 

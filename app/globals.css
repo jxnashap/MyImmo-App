@@ -460,11 +460,18 @@ tr.no-hover:hover td { background: transparent; }
 .fbseg button[aria-pressed="true"] { background: var(--gold); color: #1a1a17; }
 .fbseg button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
+.fbtgl { display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: 10px; border: 1px solid var(--line2); background: var(--bg3); color: var(--muted); font-size: 13px; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+.fbtgl[aria-pressed="true"] { background: var(--gold-pale); border-color: var(--gold-dim); color: var(--gold); }
+.fbtgl:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.fbtgl .dot { width: 16px; height: 16px; border-radius: 999px; background: var(--line2); display: inline-grid; place-items: center; color: #1a1a17; transition: background .15s; flex-shrink: 0; }
+.fbtgl[aria-pressed="true"] .dot { background: var(--gold); }
+
 @media (max-width: 680px) {
   .fb-toggle { display: inline-flex; }
   .fb-controls { display: none; width: 100%; flex-direction: column; align-items: stretch; }
   .fb-controls.open { display: flex; }
-  .fbsel, .fbsel-btn, .fbseg { width: 100%; }
+  .fbsel, .fbsel-btn, .fbseg, .fbtgl { width: 100%; }
   .fbseg button { flex: 1; justify-content: center; }
+  .fbtgl { justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { .fbsel-pop, .filterbar-loading, .fbsel-btn .chev { animation: none !important; transition: none !important; } }

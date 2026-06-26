@@ -2,7 +2,9 @@
 import SubmitButton from "@/components/SubmitButton";
 
 import { useMemo, useState } from "react";
+import { Building2, User, Tag, X } from "lucide-react";
 import DeleteButton from "@/components/DeleteButton";
+import Select from "@/components/filters/Select";
 import { createDokument, deleteDokument } from "@/lib/actions/archiv";
 import type { ArchivDoc } from "@/app/archiv/page";
 import type { Property, Tenant } from "@/lib/types";
@@ -138,37 +140,37 @@ export default function ArchivManager({
         </form>
       )}
 
-      {/* Filter */}
-      <div className="section">
-        <div className="section-header"><h3>Filter</h3><span style={{ fontSize: 11, color: "var(--muted)" }}>{gefiltert.length} / {docs.length} Dokument(e)</span></div>
-        <div className="section-body" style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end" }}>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Objekt</label>
-            <select className="input" value={fObjekt} onChange={(e) => setFObjekt(e.target.value)} style={{ minWidth: 160 }}>
-              <option value="">Alle Objekte</option>
-              {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
-            </select>
-          </div>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Mieter</label>
-            <select className="input" value={fMieter} onChange={(e) => setFMieter(e.target.value)} style={{ minWidth: 160 }}>
-              <option value="">Alle Mieter</option>
-              {mieter.map((m) => <option key={m.id} value={m.id}>{mieterName.get(m.id)}</option>)}
-            </select>
-          </div>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Art</label>
-            <select className="input" value={fArt} onChange={(e) => setFArt(e.target.value)} style={{ minWidth: 160 }}>
-              <option value="">Alle Arten</option>
-              {ARCHIV_ARTEN.map((a) => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </div>
-          <div className="form-group" style={{ margin: 0, flex: "1 1 160px" }}>
-            <label>Suche</label>
-            <input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Titel, Dateiname…" />
-          </div>
+      {/* Filter — sofort anwendend, gleiches Design wie app-weit */}
+      <div className="filterbar">
+        <div className="fb-controls">
+          <Select
+            value={fObjekt}
+            ariaLabel="Objekt"
+            icon={Building2}
+            onChange={setFObjekt}
+            options={[{ value: "", label: "Alle Objekte" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))]}
+          />
+          <Select
+            value={fMieter}
+            ariaLabel="Mieter"
+            icon={User}
+            onChange={setFMieter}
+            options={[{ value: "", label: "Alle Mieter" }, ...mieter.map((m) => ({ value: m.id, label: mieterName.get(m.id) ?? "Mieter" }))]}
+          />
+          <Select
+            value={fArt}
+            ariaLabel="Art"
+            icon={Tag}
+            onChange={setFArt}
+            options={[{ value: "", label: "Alle Arten" }, ...ARCHIV_ARTEN.map((a) => ({ value: a, label: a }))]}
+          />
+          <input className="set-input" style={{ maxWidth: 200 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Suche: Titel, Dateiname…" aria-label="Suche" />
+        </div>
+        <span className="fb-spacer" />
+        <div className="fb-chips">
+          <span style={{ fontSize: 12, color: "var(--muted)" }}>{gefiltert.length} / {docs.length}</span>
           {aktiveFilter && (
-            <button type="button" className="btn btn-ghost" onClick={reset} style={{ fontSize: 12 }}>× Zurücksetzen</button>
+            <button type="button" className="fb-reset" onClick={reset}>Zurücksetzen</button>
           )}
         </div>
       </div>

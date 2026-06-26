@@ -5,15 +5,16 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { SlidersHorizontal, X } from "lucide-react";
 import Select, { type SelectOption } from "./Select";
 import Segmented from "./Segmented";
+import Toggle from "./Toggle";
 import { FILTER_ICONS, type FilterIcon } from "./icons";
 
 export type FilterDef = {
-  name: string;                       // searchParam-Schlüssel
-  label: string;                      // für aria + Chip
-  icon?: FilterIcon;                  // Icon-Name (serialisierbar)
-  variant?: "select" | "segmented";   // default: select
-  defaultValue?: string;              // Wert, der „kein Filter" bedeutet (default "")
-  options: SelectOption[];            // vollständige Liste inkl. der Default-/Alle-Option
+  name: string;                                   // searchParam-Schlüssel
+  label: string;                                  // für aria + Chip
+  icon?: FilterIcon;                              // Icon-Name (serialisierbar)
+  variant?: "select" | "segmented" | "toggle";    // default: select
+  defaultValue?: string;                          // Wert, der „kein Filter" bedeutet (default "")
+  options: SelectOption[];                        // bei toggle: options[0] = „An"-Zustand
 };
 
 // Einheitliche, sofort anwendende Filterleiste. Schreibt die Auswahl direkt
@@ -53,11 +54,13 @@ export default function FilterBar({ filters }: { filters: FilterDef[] }) {
         {filters.map((f) => {
           const val = currentOf(f);
           const Icon = f.icon ? FILTER_ICONS[f.icon] : undefined;
-          return f.variant === "segmented" ? (
-            <Segmented key={f.name} value={val} options={f.options} icon={Icon} ariaLabel={f.label} onChange={(v) => setValue(f, v)} />
-          ) : (
-            <Select key={f.name} value={val} options={f.options} icon={Icon} ariaLabel={f.label} onChange={(v) => setValue(f, v)} />
-          );
+          if (f.variant === "segmented")
+            return <Segmented key={f.name} value={val} options={f.options} ariaLabel={f.label} onChange={(v) => setValue(f, v)} />;
+          if (f.variant === "toggle") {
+            const on = f.options[0];
+            return <Toggle key={f.name} active={val === on.value} label={on.label} onChange={(next) => setValue(f, next ? on.value : defOf(f))} />;
+          }
+          return <Select key={f.name} value={val} options={f.options} icon={Icon} ariaLabel={f.label} onChange={(v) => setValue(f, v)} />;
         })}
       </div>
 

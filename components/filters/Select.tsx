@@ -38,11 +38,12 @@ export default function Select({
     return () => document.removeEventListener("mousedown", onDown);
   }, [open, options, value]);
 
-  // Aktive Option ins Sichtfeld scrollen.
+  // Aktive Option ins Sichtfeld scrollen (über Index – useId() enthält
+  // Doppelpunkte und wäre als CSS-Selektor ungültig).
   useEffect(() => {
     if (!open) return;
-    listRef.current?.querySelector<HTMLElement>(`#${baseId}-opt-${active}`)?.scrollIntoView({ block: "nearest" });
-  }, [open, active, baseId]);
+    (listRef.current?.children[active] as HTMLElement | undefined)?.scrollIntoView({ block: "nearest" });
+  }, [open, active]);
 
   function choose(v: string) {
     onChange(v);
