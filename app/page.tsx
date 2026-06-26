@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
+import { CalendarDays } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
 import type { RawPoint } from "@/lib/zeitraum";
@@ -84,7 +85,7 @@ export default async function DashboardPage() {
           <div className="topbar-sub">Portfolio-Übersicht</div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-          <Link href="/termine" className="btn btn-ghost">📅 Terminkalender</Link>
+          <Link href="/termine" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CalendarDays size={15} /> Terminkalender</Link>
           <Link href="/properties/new" className="btn btn-gold">＋ Immobilie</Link>
         </div>
       </div>

@@ -2,7 +2,7 @@
 import SubmitButton from "@/components/SubmitButton";
 
 import { useMemo, useState } from "react";
-import { Building2, User, Tag, X } from "lucide-react";
+import { Building2, User, Tag, X, Download, Eye } from "lucide-react";
 import DeleteButton from "@/components/DeleteButton";
 import Select from "@/components/filters/Select";
 import { createDokument, deleteDokument } from "@/lib/actions/archiv";
@@ -202,8 +202,8 @@ export default function ArchivManager({
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                   {d.datei_name && (
                     <>
-                      <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 12 }} title={d.datei_name}>👁 Öffnen</a>
-                      <a href={`/archiv/${d.id}/datei?download=1`} className="delete-btn" title="Herunterladen" style={{ color: "var(--muted)" }}>⬇</a>
+                      <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5 }} title={d.datei_name}><Eye size={13} /> Öffnen</a>
+                      <a href={`/archiv/${d.id}/datei?download=1`} className="delete-btn" title="Herunterladen" style={{ color: "var(--muted)", display: "inline-grid", placeItems: "center" }}><Download size={14} /></a>
                     </>
                   )}
                   <DeleteButton action={deleteDokument.bind(null, d.id)} className="delete-btn" label="✕" confirmText={`„${d.titel || "Dokument"}" aus dem Archiv löschen?`} />

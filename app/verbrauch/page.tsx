@@ -5,7 +5,6 @@ import { deleteVerbrauch } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableRows from "@/components/ExpandableRows";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
-import VerbrauchChart, { type VPoint } from "@/components/VerbrauchChart";
 import type { Verbrauch, Property } from "@/lib/types";
 
 const ART_ICONS: Record<string, string> = { Strom: "⚡", Gas: "🔥", Wasser: "💧", Heizöl: "🛢", Fernwärme: "♨", Heizung: "♨", Sonstiges: "📦" };
@@ -24,19 +23,6 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
   if (searchParams.art) list = list.filter((v) => (v.art ?? "") === searchParams.art);
   const arten = Array.from(new Set(((verb ?? []) as Verbrauch[]).map((v) => v.art).filter(Boolean))) as string[];
 
-  // Verlaufs-Charts je Art (aus der gefilterten Liste, chronologisch)
-  const kurzDatum = (d: string | null) => (d ? new Date(d).toLocaleDateString("de-DE", { month: "2-digit", year: "2-digit" }) : "—");
-  const chartGruppen = new Map<string, { einheit: string; points: VPoint[] }>();
-  for (const v of [...list].sort((a, b) => (a.buchungsdatum ?? "").localeCompare(b.buchungsdatum ?? ""))) {
-    if (!v.art || v.menge == null) continue;
-    const g = chartGruppen.get(v.art) ?? { einheit: v.einheit ?? "", points: [] };
-    g.einheit = g.einheit || (v.einheit ?? "");
-    g.points.push({ label: kurzDatum(v.buchungsdatum), menge: v.menge, kosten: v.verbrauchkosten ?? 0 });
-    chartGruppen.set(v.art, g);
-  }
-  const charts = Array.from(chartGruppen.entries()).filter(([, g]) => g.points.length > 0);
-
-  // Jahresfilter nur für die Tabelle (Charts behalten den Mehrjahres-Verlauf).
   const aktuellesJahr = new Date().getFullYear();
   const jahr = searchParams.jahr ?? String(aktuellesJahr);
   const jahre = Array.from(
@@ -66,14 +52,6 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
       </div>
 
       <FilterBar filters={filters} />
-
-      {charts.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          {charts.map(([art, g]) => (
-            <VerbrauchChart key={art} art={art} einheit={g.einheit} points={g.points} />
-          ))}
-        </div>
-      )}
 
       <div className="section">
         <div className="section-header">
