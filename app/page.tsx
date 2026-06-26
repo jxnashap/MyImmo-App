@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
 import { CalendarDays } from "lucide-react";
+import { generiereBuchungen } from "@/lib/actions/wiederkehr";
 import BetragChart from "@/components/BetragChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
 import type { RawPoint } from "@/lib/zeitraum";
@@ -25,6 +26,7 @@ export default async function DashboardPage() {
     );
   }
 
+  await generiereBuchungen();
   const [{ data: props }, { data: einn }, { data: kost }, { data: kred }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),

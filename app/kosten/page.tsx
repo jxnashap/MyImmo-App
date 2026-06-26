@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { euro, istUmlagefaehig } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import KostenListe from "@/components/lists/KostenListe";
+import { generiereBuchungen } from "@/lib/actions/wiederkehr";
 import type { Kosten, Property, Tenant } from "@/lib/types";
 
 const KATEGORIEN = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
@@ -13,6 +14,7 @@ export default async function KostenPage({
   searchParams: { prop?: string; mieter?: string; umlage?: string; jahr?: string; kat?: string };
 }) {
   const supabase = createClient();
+  await generiereBuchungen();
   const [{ data: kost }, { data: props }, { data: miet }] = await Promise.all([
     supabase.from("kosten").select("*").order("buchungsdatum", { ascending: false }),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),

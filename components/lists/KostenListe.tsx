@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Repeat } from "lucide-react";
 import { euro, datum, istUmlagefaehig } from "@/lib/format";
 import { updateKosten, deleteKosten, deleteRechnung } from "@/lib/actions/buchungen";
 import ExpandableRows from "@/components/ExpandableRows";
@@ -42,7 +43,7 @@ export default function KostenListe({
               onClick={() => setOpenId(k.id)}
               onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setOpenId(k.id); } }}
             >
-              <td>{datum(k.buchungsdatum)}</td>
+              <td><span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>{datum(k.buchungsdatum)}{k.reihe_id && <Repeat size={12} aria-label="wiederkehrend" style={{ color: "var(--gold)" }} />}</span></td>
               <td style={{ color: "var(--muted)" }}>{k.prop_id ? propName.get(k.prop_id) ?? "–" : "–"}</td>
               <td style={{ color: "var(--muted)" }}>{k.mieter_id ? mietName.get(k.mieter_id) ?? "–" : "–"}</td>
               <td>{k.kategorie ? <span className="badge badge-red">{k.kategorie}</span> : "–"}</td>

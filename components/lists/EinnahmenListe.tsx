@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Repeat } from "lucide-react";
 import { euro, datum } from "@/lib/format";
 import { updateEinnahme, deleteEinnahme } from "@/lib/actions/buchungen";
 import ExpandableRows from "@/components/ExpandableRows";
@@ -38,7 +39,7 @@ export default function EinnahmenListe({
             onClick={() => setOpenId(e.id)}
             onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setOpenId(e.id); } }}
           >
-            <td>{datum(e.buchungsdatum)}</td>
+            <td><span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>{datum(e.buchungsdatum)}{e.reihe_id && <Repeat size={12} aria-label="wiederkehrend" style={{ color: "var(--gold)" }} />}</span></td>
             <td style={{ color: "var(--muted)" }}>{e.prop_id ? nameOf.get(e.prop_id) ?? "–" : "–"}</td>
             <td>{e.kategorie ? <span className="badge badge-green">{e.kategorie}</span> : "–"}</td>
             <td style={{ color: "var(--muted)" }}>{e.beschreibung ?? ""}</td>

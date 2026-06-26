@@ -60,6 +60,11 @@ export type Einnahme = {
   betrag: number | null;
   beschreibung: string | null;
   wiederkehrend: boolean | null;
+  zyklus: string | null;
+  start_datum: string | null;
+  end_datum: string | null;
+  aktiv: boolean | null;
+  reihe_id: string | null;
 };
 
 export type Kosten = {
@@ -72,6 +77,11 @@ export type Kosten = {
   beschreibung: string | null;
   notiz: string | null;
   wiederkehrend: boolean | null;
+  zyklus: string | null;
+  start_datum: string | null;
+  end_datum: string | null;
+  aktiv: boolean | null;
+  reihe_id: string | null;
   rechnung_name: string | null;
   rechnung_type: string | null;
   rechnung_size: string | null;

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { euro } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import EinnahmenListe from "@/components/lists/EinnahmenListe";
+import { generiereBuchungen } from "@/lib/actions/wiederkehr";
 import type { Einnahme, Property, Tenant } from "@/lib/types";
 
 export default async function EinnahmenPage({
@@ -11,6 +12,7 @@ export default async function EinnahmenPage({
   searchParams: { prop?: string; kategorie?: string; jahr?: string; mieter?: string };
 }) {
   const supabase = createClient();
+  await generiereBuchungen();
   const [{ data: einn }, { data: props }, { data: miet }] = await Promise.all([
     supabase.from("einnahmen").select("*").order("buchungsdatum", { ascending: false }),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
