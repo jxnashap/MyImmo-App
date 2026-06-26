@@ -246,7 +246,7 @@ export default function UmlageAssistent({
       {/* m² je Mieter */}
       <div className="section" style={{ marginBottom: 0 }}>
         <div className="section-header">
-          <h3>📐 Wohnfläche je Mieter (m²)</h3>
+          <h3>Wohnfläche je Mieter (m²)</h3>
           <span style={{ fontSize: 11, color: "var(--muted)" }}>
             Gesamt: <strong className="gold">{calc.totalFlaeche.toLocaleString("de-DE")} m²</strong>
             {propFlaeche ? ` · Objekt: ${propFlaeche.toLocaleString("de-DE")} m²` : ""}
@@ -315,7 +315,7 @@ export default function UmlageAssistent({
       {/* Kostenpositionen */}
       <div className="section" style={{ marginBottom: 0 }}>
         <div className="section-header">
-          <h3>🧾 Gesamtkosten {propName}</h3>
+          <h3>Gesamtkosten {propName}</h3>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 11, color: "var(--muted)" }}>Abrechnungsjahr</span>
             <select
@@ -511,7 +511,7 @@ export default function UmlageAssistent({
       {/* Vorschau-Matrix */}
       <div className="section" style={{ marginBottom: 0 }}>
         <div className="section-header">
-          <h3>👁 Vorschau der Verteilung</h3>
+          <h3>Vorschau der Verteilung</h3>
           <span style={{ fontSize: 11, color: "var(--muted)" }}>
             Eingabe gesamt: <strong>{eur2(gesamtEingabe)}</strong>
           </span>

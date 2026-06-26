@@ -26,7 +26,7 @@ export default async function NeueKostenPage({ searchParams }: { searchParams: {
       </div>
 
       <form action={createKosten} className="form-box">
-        <h3>📋 Ausgabe erfassen</h3>
+        <h3>Ausgabe erfassen</h3>
         <p>Kosten für Reparaturen, Verwaltung, Versicherungen etc.</p>
         <input type="hidden" name="back" value={back} />
         <div className="form-row">

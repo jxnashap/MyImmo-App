@@ -7,7 +7,7 @@ export default function BankgespraechPage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-title">🏦 Bankgespräch</div>
+          <div className="topbar-title">Bankgespräch</div>
           <div className="topbar-sub">Druckfertige Übersicht für deine Bank</div>
         </div>
         <div style={{ display: "flex", gap: 6 }}>

@@ -4,26 +4,29 @@ import { euro, datum } from "@/lib/format";
 import { deleteEinnahme } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableRows from "@/components/ExpandableRows";
-import YearSelect from "@/components/YearSelect";
-import type { Einnahme, Property } from "@/lib/types";
+import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
+import type { Einnahme, Property, Tenant } from "@/lib/types";
 
 export default async function EinnahmenPage({
   searchParams,
 }: {
-  searchParams: { prop?: string; kategorie?: string; jahr?: string };
+  searchParams: { prop?: string; kategorie?: string; jahr?: string; mieter?: string };
 }) {
   const supabase = createClient();
-  const [{ data: einn }, { data: props }] = await Promise.all([
+  const [{ data: einn }, { data: props }, { data: miet }] = await Promise.all([
     supabase.from("einnahmen").select("*").order("buchungsdatum", { ascending: false }),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
+    supabase.from("mieter").select("id,vorname,nachname").order("nachname"),
   ]);
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
+  const tenants = (miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname">[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
 
   const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
   let list = (einn ?? []) as Einnahme[];
   if (searchParams.prop) list = list.filter((e) => e.prop_id === searchParams.prop);
+  if (searchParams.mieter) list = list.filter((e) => e.mieter_id === searchParams.mieter);
   if (searchParams.kategorie) list = list.filter((e) => (e.kategorie ?? "") === searchParams.kategorie);
 
   const aktuellesJahr = new Date().getFullYear();
@@ -38,6 +41,13 @@ export default async function EinnahmenPage({
 
   const total = list.reduce((s, e) => s + (e.betrag ?? 0), 0);
 
+  const filters: FilterDef[] = [
+    { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
+    { name: "mieter", label: "Mieter", icon: "user", options: [{ value: "", label: "Alle Mieter" }, ...tenants.map((t) => ({ value: t.id, label: `${t.vorname ?? ""} ${t.nachname ?? ""}`.trim() || "—" }))] },
+    { name: "kategorie", label: "Kategorie", icon: "tag", options: [{ value: "", label: "Alle Kategorien" }, ...KATEGORIEN.map((k) => ({ value: k, label: k }))] },
+    { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
+  ];
+
   return (
     <div className="fade-up">
       <div className="topbar">
@@ -48,28 +58,12 @@ export default async function EinnahmenPage({
         <Link href="/einnahmen/new" className="btn btn-gold">＋ Einnahme</Link>
       </div>
 
-      <form method="get" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
-        <input type="hidden" name="jahr" value={jahr} />
-        <label style={{ fontSize: 12, color: "var(--muted)" }}>🏠 Immobilie:</label>
-        <select name="prop" defaultValue={searchParams.prop ?? ""} className="input" style={{ minWidth: 200 }}>
-          <option value="">Alle Immobilien</option>
-          {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
-        </select>
-        <label style={{ fontSize: 12, color: "var(--muted)" }}>🏷️ Kategorie:</label>
-        <select name="kategorie" defaultValue={searchParams.kategorie ?? ""} className="input" style={{ minWidth: 170 }}>
-          <option value="">Alle Kategorien</option>
-          {KATEGORIEN.map((k) => <option key={k} value={k}>{k}</option>)}
-        </select>
-        <button className="btn btn-ghost">Filtern</button>
-      </form>
+      <FilterBar filters={filters} />
 
       <div className="section">
         <div className="section-header">
           <h3>Alle Einnahmen</h3>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-            <YearSelect years={jahre} current={jahr} params={searchParams} />
-            <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--green)" }}>{euro(total)}</span></span>
-          </div>
+          <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--green)" }}>{euro(total)}</span></span>
         </div>
         <div className="section-body">
           <table className="list-table">

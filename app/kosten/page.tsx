@@ -4,13 +4,15 @@ import { euro, datum, istUmlagefaehig } from "@/lib/format";
 import { deleteKosten, deleteRechnung } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableRows from "@/components/ExpandableRows";
-import YearSelect from "@/components/YearSelect";
+import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import type { Kosten, Property, Tenant } from "@/lib/types";
+
+const KATEGORIEN = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
 
 export default async function KostenPage({
   searchParams,
 }: {
-  searchParams: { prop?: string; mieter?: string; umlage?: string; jahr?: string };
+  searchParams: { prop?: string; mieter?: string; umlage?: string; jahr?: string; kat?: string };
 }) {
   const supabase = createClient();
   const [{ data: kost }, { data: props }, { data: miet }] = await Promise.all([
@@ -27,6 +29,7 @@ export default async function KostenPage({
   let list = (kost ?? []) as Kosten[];
   if (searchParams.prop) list = list.filter((k) => k.prop_id === searchParams.prop);
   if (searchParams.mieter) list = list.filter((k) => k.mieter_id === searchParams.mieter);
+  if (searchParams.kat) list = list.filter((k) => (k.kategorie ?? "") === searchParams.kat);
   if (searchParams.umlage) list = list.filter((k) => istUmlagefaehig(k.kategorie) === searchParams.umlage);
 
   const aktuellesJahr = new Date().getFullYear();
@@ -41,6 +44,14 @@ export default async function KostenPage({
 
   const total = list.reduce((s, k) => s + (k.betrag ?? 0), 0);
 
+  const filters: FilterDef[] = [
+    { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
+    { name: "mieter", label: "Mieter", icon: "user", options: [{ value: "", label: "Alle Mieter" }, ...tenants.map((t) => ({ value: t.id, label: `${t.vorname ?? ""} ${t.nachname ?? ""}`.trim() || "—" }))] },
+    { name: "kat", label: "Kategorie", icon: "tag", options: [{ value: "", label: "Alle Kosten" }, ...KATEGORIEN.map((k) => ({ value: k, label: k }))] },
+    { name: "umlage", label: "Umlagefähig", icon: "umlage", variant: "toggle", options: [{ value: "ja", label: "Umlagefähig" }] },
+    { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
+  ];
+
   return (
     <div className="fade-up">
       <div className="topbar">
@@ -51,34 +62,12 @@ export default async function KostenPage({
         <Link href="/kosten/new" className="btn btn-gold">＋ Ausgabe</Link>
       </div>
 
-      <form method="get" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <input type="hidden" name="jahr" value={jahr} />
-        <label style={{ fontSize: 12, color: "var(--muted)" }}>🏠 Immobilie:</label>
-        <select name="prop" defaultValue={searchParams.prop ?? ""} className="input" style={{ minWidth: 180 }}>
-          <option value="">Alle Immobilien</option>
-          {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
-        </select>
-        <label style={{ fontSize: 12, color: "var(--muted)" }}>👤 Mieter:</label>
-        <select name="mieter" defaultValue={searchParams.mieter ?? ""} className="input" style={{ minWidth: 160 }}>
-          <option value="">Alle Mieter</option>
-          {tenants.map((t) => <option key={t.id} value={t.id}>{`${t.vorname ?? ""} ${t.nachname ?? ""}`.trim()}</option>)}
-        </select>
-        <label style={{ fontSize: 12, color: "var(--muted)" }}>📊 Umlage:</label>
-        <select name="umlage" defaultValue={searchParams.umlage ?? ""} className="input" style={{ minWidth: 150 }}>
-          <option value="">Alle</option>
-          <option value="ja">Nur umlagefähig</option>
-          <option value="nein">Nicht umlagefähig</option>
-        </select>
-        <button className="btn btn-ghost">Filtern</button>
-      </form>
+      <FilterBar filters={filters} />
 
       <div className="section">
         <div className="section-header">
           <h3>Alle Ausgaben</h3>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-            <YearSelect years={jahre} current={jahr} params={searchParams} />
-            <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--red)" }}>{euro(total)}</span></span>
-          </div>
+          <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--red)" }}>{euro(total)}</span></span>
         </div>
         <div className="section-body">
           <table className="list-table">

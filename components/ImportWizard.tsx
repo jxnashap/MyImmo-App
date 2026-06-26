@@ -49,7 +49,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
 
   return (
     <div className="form-box" style={{ maxWidth: 680 }}>
-      <h3>🔗 Immobilien-Anzeige importieren</h3>
+      <h3>Immobilien-Anzeige importieren</h3>
       <p>Kopiere den Anzeigentext von ImmoScout24, Immowelt o.ä. — die KI liest die Daten aus. Oder fülle das Schnellformular manuell aus.</p>
 
       <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--line)" }}>

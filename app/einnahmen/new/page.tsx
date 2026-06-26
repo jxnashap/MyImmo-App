@@ -2,14 +2,18 @@ import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
 import { createClient } from "@/lib/supabase/server";
 import { createEinnahme } from "@/lib/actions/buchungen";
-import type { Property } from "@/lib/types";
+import type { Property, Tenant } from "@/lib/types";
 
 const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
 
 export default async function NeueEinnahmePage({ searchParams }: { searchParams: { prop?: string; back?: string } }) {
   const supabase = createClient();
-  const { data } = await supabase.from("properties").select("id,bezeichnung").order("bezeichnung");
+  const [{ data }, { data: miet }] = await Promise.all([
+    supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
+    supabase.from("mieter").select("id,vorname,nachname").order("nachname"),
+  ]);
   const properties = (data ?? []) as Pick<Property, "id" | "bezeichnung">[];
+  const tenants = (miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname">[];
   const back = searchParams.back || "/einnahmen";
 
   return (
@@ -22,7 +26,7 @@ export default async function NeueEinnahmePage({ searchParams }: { searchParams:
       </div>
 
       <form action={createEinnahme} className="form-box">
-        <h3>💰 Einnahme erfassen</h3>
+        <h3>Einnahme erfassen</h3>
         <p>Mietzahlungen, Kautionen oder sonstige Erträge.</p>
         <input type="hidden" name="back" value={back} />
         <div className="form-row">
@@ -39,6 +43,14 @@ export default async function NeueEinnahmePage({ searchParams }: { searchParams:
             <select name="kategorie" defaultValue="Miete">{KATEGORIEN.map((k) => <option key={k}>{k}</option>)}</select>
           </div>
           <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" placeholder="1200" required /></div>
+        </div>
+        <div className="form-row single">
+          <div className="form-group"><label>Mieter zuordnen (optional)</label>
+            <select name="mieter_id" defaultValue="">
+              <option value="">– Kein Mieter –</option>
+              {tenants.map((t) => <option key={t.id} value={t.id}>{`${t.vorname ?? ""} ${t.nachname ?? ""}`.trim() || "—"}</option>)}
+            </select>
+          </div>
         </div>
         <div className="form-row single">
           <div className="form-group"><label>Beschreibung</label><input type="text" name="beschreibung" placeholder="z.B. Miete August 2025" /></div>

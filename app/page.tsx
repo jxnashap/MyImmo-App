@@ -125,7 +125,7 @@ export default async function DashboardPage() {
 
       <div className="section mb-20">
         <div className="section-header">
-          <h3>📈 Portfolio-Entwicklung</h3>
+          <h3>Portfolio-Entwicklung</h3>
           <ZeitraumControl />
         </div>
         <div className="section-body">

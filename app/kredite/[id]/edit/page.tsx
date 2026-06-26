@@ -26,7 +26,7 @@ export default async function KreditEditPage({ params, searchParams }: { params:
       </div>
 
       <form action={updateKredit.bind(null, k.id)} className="form-box" style={{ maxWidth: 640 }}>
-        <h3>🏦 Darlehen bearbeiten</h3>
+        <h3>Darlehen bearbeiten</h3>
         <input type="hidden" name="back" value={back} />
 
         <div className="form-section-label">Grunddaten</div>

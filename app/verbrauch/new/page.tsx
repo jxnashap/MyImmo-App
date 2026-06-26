@@ -23,7 +23,7 @@ export default async function NeuerVerbrauchPage({ searchParams }: { searchParam
       </div>
 
       <form action={createVerbrauch} className="form-box">
-        <h3>⚡ Verbrauch erfassen</h3>
+        <h3>Verbrauch erfassen</h3>
         <p>Strom, Gas, Wasser, Heizöl und andere Energieträger.</p>
         <input type="hidden" name="back" value={back} />
         <div className="form-row">

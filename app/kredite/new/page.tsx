@@ -22,7 +22,7 @@ export default async function NeuerKreditPage({ searchParams }: { searchParams: 
       </div>
 
       <form action={createKredit} className="form-box" style={{ maxWidth: 640 }}>
-        <h3>🏦 Darlehen erfassen</h3>
+        <h3>Darlehen erfassen</h3>
         <p>Immobiliendarlehen mit allen Finanzierungsdetails.</p>
         <input type="hidden" name="back" value={back} />
 

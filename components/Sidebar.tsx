@@ -10,12 +10,12 @@ type SidebarProperty = { id: string; bezeichnung: string; typ: string | null };
 const VERWALTUNG: { href: string; label: string; icon: string }[] = [
   { href: "/", label: "Dashboard", icon: "📊" },
   { href: "/properties", label: "Immobilien", icon: "🏠" },
-  { href: "/einnahmen", label: "Einnahmen", icon: "💰" },
   { href: "/tenants", label: "Mieter", icon: "👤" },
+  { href: "/einnahmen", label: "Einnahmen", icon: "💰" },
   { href: "/kosten", label: "Kosten & Ausgaben", icon: "📋" },
   { href: "/verbrauch", label: "Verbrauch", icon: "⚡" },
   { href: "/kredite", label: "Kredite", icon: "🏦" },
-  { href: "/steuer", label: "Steuer", icon: "🧾" },
+  { href: "/steuer", label: "Steuer", icon: "§" },
   { href: "/archiv", label: "Archiv", icon: "🗄" },
   { href: "/jahresbericht", label: "Jahresbericht", icon: "📈" },
 ];
@@ -62,7 +62,7 @@ export default function Sidebar({
 
   const navLink = (n: { href: string; label: string; icon: string }) => (
     <Link key={n.href} href={n.href} className={`nav-item${isActive(n.href) ? " active" : ""}`}>
-      <span className="icon">{n.icon}</span> {n.label}
+      <span className="icon" style={n.icon === "§" ? { color: "var(--gold)", fontWeight: 700 } : undefined}>{n.icon}</span> {n.label}
     </Link>
   );
 

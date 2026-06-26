@@ -6,7 +6,7 @@ export default function CockpitPage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-title">🧮 Cockpit</div>
+          <div className="topbar-title">Cockpit</div>
           <div className="topbar-sub">Vollständige Profi-Kalkulation</div>
         </div>
         <div style={{ display: "flex", gap: 6 }}>

@@ -53,7 +53,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
       </div>
 
       <div className="section">
-        <div className="section-header"><h3>👤 Mietvertrag &amp; Stammdaten</h3></div>
+        <div className="section-header"><h3>Mietvertrag &amp; Stammdaten</h3></div>
         <div className="section-body">
           <div className="grid-2" style={{ gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             <Kachel label="Kaltmiete / Mo." value={euro(m.kaltmiete)} color="var(--green)" />
@@ -79,7 +79,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
       </div>
 
       <div className="section">
-        <div className="section-header"><h3>📅 Fristen &amp; Termine</h3><Link href="/termine" className="btn btn-ghost" style={{ fontSize: 11 }}>→ Kalender</Link></div>
+        <div className="section-header"><h3>Fristen &amp; Termine</h3><Link href="/termine" className="btn btn-ghost" style={{ fontSize: 11 }}>→ Kalender</Link></div>
         <div className="section-body">
           {fristen.length === 0 ? (
             <div style={{ color: "var(--faint)", fontSize: 12 }}>Keine Fristen.</div>

@@ -76,7 +76,7 @@ th{color:#888;font-size:11px;text-transform:uppercase;}
 
   return (
     <div className="form-box" style={{ maxWidth: 640 }}>
-      <h3>🔑 Übergabeprotokoll</h3>
+      <h3>Übergabeprotokoll</h3>
       <p>Zählerstände, Schlüssel und Raumzustände — öffnet eine druckfertige Ansicht.</p>
 
       <div className="form-row">

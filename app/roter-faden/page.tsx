@@ -6,7 +6,7 @@ export default function RoterFadenPage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-title">🧵 Roter Faden</div>
+          <div className="topbar-title">Roter Faden</div>
           <div className="topbar-sub">Schnell-Kalkulation Schritt für Schritt</div>
         </div>
         <div style={{ display: "flex", gap: 6 }}>

@@ -22,7 +22,7 @@ export default async function TenantsPage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-title">👤 Mieter</div>
+          <div className="topbar-title">Mieter</div>
           <div className="topbar-sub">Mietverträge, Fristen, Einheiten &amp; Dokumente</div>
         </div>
         <Link href="/tenants/new" className="btn btn-gold">＋ Mieter</Link>

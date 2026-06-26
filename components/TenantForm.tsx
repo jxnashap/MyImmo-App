@@ -27,7 +27,7 @@ export default function TenantForm({
 
   return (
     <form action={action} className="form-box" style={{ maxWidth: 640 }}>
-      <h3>👤 {tenant ? "Mieter bearbeiten" : "Mieter erfassen"}</h3>
+      <h3>{tenant ? "Mieter bearbeiten" : "Mieter erfassen"}</h3>
       <p>Mietvertrag, Fristen, Kaution und Einheit.</p>
 
       <div className="form-section-label">Person</div>
