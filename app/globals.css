@@ -475,3 +475,23 @@ tr.no-hover:hover td { background: transparent; }
   .fbtgl { justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { .fbsel-pop, .filterbar-loading, .fbsel-btn .chev { animation: none !important; transition: none !important; } }
+
+/* =====================================================================
+   Native Selects app-weit modernisieren — eigener Chevron statt OS-Doppel-
+   pfeil, dezent im Stil der Filter. Funktioniert mit Formular-Submit.
+   ===================================================================== */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a0a098' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 15px;
+  padding-right: 36px !important;
+  cursor: pointer;
+}
+select::-ms-expand { display: none; }
+[data-theme="light"] select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+}
