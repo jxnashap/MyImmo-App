@@ -125,7 +125,7 @@ export default function DocGenerator({
     <div style={{ display: "flex", gap: 22, alignItems: "flex-start", flexWrap: "wrap" }}>
       {/* ---------- Eingaben + Vorlagen-Editor ---------- */}
       <div className="form-box" style={{ maxWidth: 460, flex: "1 1 420px" }}>
-        <h3>📄 Dokument erstellen</h3>
+        <h3>Dokument erstellen</h3>
         <p>Brief an den Mieter — Vorschau rechts, dann als PDF herunterladen.</p>
 
         {!vermieter && (

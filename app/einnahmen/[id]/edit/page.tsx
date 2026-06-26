@@ -30,7 +30,7 @@ export default async function EinnahmeEditPage({ params, searchParams }: { param
       </div>
 
       <form action={updateEinnahme.bind(null, e.id)} className="form-box">
-        <h3>💰 Einnahme bearbeiten</h3>
+        <h3>Einnahme bearbeiten</h3>
         <input type="hidden" name="back" value={back} />
         <div className="form-row">
           <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" defaultValue={e.buchungsdatum ?? ""} required /></div>

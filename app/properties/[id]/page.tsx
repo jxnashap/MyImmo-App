@@ -131,7 +131,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       {/* Stammdaten + Kennzahlen */}
       <div className="grid-2 mb-20">
         <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>📋 Stammdaten</h3></div>
+          <div className="section-header"><h3>Stammdaten</h3></div>
           <div className="section-body">
             <table style={{ fontSize: 13 }}>
               <tbody>
@@ -147,7 +147,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
 
         <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>📈 Kennzahlen &amp; Rendite</h3></div>
+          <div className="section-header"><h3>Kennzahlen &amp; Rendite</h3></div>
           <div className="section-body">
             <div style={{ display: "flex", flexDirection: "column" }}>
               {kennzahlen.map((k) => (
@@ -167,7 +167,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       {/* Mieter dieser Immobilie */}
       <div className="section mb-20">
         <div className="section-header">
-          <h3>👤 Mieter dieser Immobilie</h3>
+          <h3>Mieter dieser Immobilie</h3>
           <Link href="/tenants/new" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Mieter</Link>
         </div>
         <div className="section-body">
@@ -197,7 +197,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       {/* Nebenkosten-Verteiler */}
       <div className="section mb-20">
         <div className="section-header">
-          <h3>🧮 Nebenkosten verteilen</h3>
+          <h3>Nebenkosten verteilen</h3>
           <Link href={`/properties/${id}/umlage`} className="btn btn-gold" style={{ fontSize: 11 }}>Verteiler öffnen</Link>
         </div>
         <div className="section-body">
@@ -212,7 +212,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       {/* Kredite & Finanzierung */}
       <div className="section mb-20">
         <div className="section-header">
-          <h3>🏦 Kredite &amp; Finanzierung</h3>
+          <h3>Kredite &amp; Finanzierung</h3>
           <Link href={`/kredite/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Darlehen</Link>
         </div>
         <div className="section-body">
@@ -253,7 +253,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       {/* Verbrauch + Notizen */}
       <div className="grid-2 mb-20">
         <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>⚡ Verbrauch &amp; Nebenkosten</h3><Link href={`/verbrauch/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
+          <div className="section-header"><h3>Verbrauch &amp; Nebenkosten</h3><Link href={`/verbrauch/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
           <div className="section-body">
             {verbrauch.length === 0 ? (
               <div className="empty" style={{ padding: 24 }}><div className="empty-icon">⚡</div><p>Noch kein Verbrauch</p></div>
@@ -282,7 +282,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
 
         <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>🗄 Archiv</h3><Link href="/archiv" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
+          <div className="section-header"><h3>Archiv</h3><Link href="/archiv" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
           <div className="section-body">
             {notizen.length === 0 ? (
               <div className="empty" style={{ padding: 24 }}><div className="empty-icon">🗄</div><p>Noch keine Dokumente</p></div>
@@ -306,7 +306,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
       {/* Cashflow-Übersicht */}
       <div className="section mb-20">
-        <div className="section-header"><h3>📊 Cashflow-Übersicht (Monat)</h3></div>
+        <div className="section-header"><h3>Cashflow-Übersicht (Monat)</h3></div>
         <div className="section-body">
           {cfItems.length === 0 ? (
             <div style={{ color: "var(--faint)", fontSize: 12 }}>Noch keine Daten.</div>

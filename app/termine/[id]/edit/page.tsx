@@ -25,7 +25,7 @@ export default async function TerminEditPage({ params }: { params: { id: string 
       </div>
 
       <form action={updateTermin.bind(null, t.id)} className="form-box">
-        <h3>📅 Termin bearbeiten</h3>
+        <h3>Termin bearbeiten</h3>
         <div className="form-row">
           <div className="form-group"><label>Titel *</label><input type="text" name="titel" defaultValue={t.titel ?? ""} required /></div>
           <div className="form-group"><label>Datum *</label><input type="date" name="datum" defaultValue={t.datum ?? ""} required /></div>

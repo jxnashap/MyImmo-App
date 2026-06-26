@@ -26,7 +26,7 @@ export default async function NeueEinnahmePage({ searchParams }: { searchParams:
       </div>
 
       <form action={createEinnahme} className="form-box">
-        <h3>💰 Einnahme erfassen</h3>
+        <h3>Einnahme erfassen</h3>
         <p>Mietzahlungen, Kautionen oder sonstige Erträge.</p>
         <input type="hidden" name="back" value={back} />
         <div className="form-row">

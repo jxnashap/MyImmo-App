@@ -91,7 +91,7 @@ export default async function TerminePage({ searchParams }: { searchParams: { qu
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-title">📅 Termine</div>
+          <div className="topbar-title">Termine</div>
           <div className="topbar-sub">Fristen aus Mietern &amp; Krediten plus eigene Termine</div>
         </div>
       </div>

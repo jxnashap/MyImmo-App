@@ -46,7 +46,7 @@ export default async function JahresberichtPage({
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-title">📊 Jahresbericht &amp; Steuer-Export</div>
+          <div className="topbar-title">Jahresbericht &amp; Steuer-Export</div>
           <div className="topbar-sub">Anlage V · Cashflow-Auswertung · Druckansicht</div>
         </div>
       </div>

@@ -17,7 +17,7 @@ export default function PropertyForm({
 
   return (
     <form action={action} className="form-box" style={{ maxWidth: 640 }}>
-      <h3>🏠 {property ? "Immobilie bearbeiten" : "Immobilie erfassen"}</h3>
+      <h3>{property ? "Immobilie bearbeiten" : "Immobilie erfassen"}</h3>
       <p>{property ? "Objektdaten aktualisieren." : "Neues Objekt zum Portfolio hinzufügen."}</p>
 
       <div className="form-row">

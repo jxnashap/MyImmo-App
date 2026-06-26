@@ -29,7 +29,7 @@ export default async function VerbrauchEditPage({ params, searchParams }: { para
       </div>
 
       <form action={updateVerbrauch.bind(null, v.id)} className="form-box">
-        <h3>⚡ Verbrauch bearbeiten</h3>
+        <h3>Verbrauch bearbeiten</h3>
         <input type="hidden" name="back" value={back} />
         <div className="form-row">
           <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" defaultValue={v.buchungsdatum ?? ""} required /></div>

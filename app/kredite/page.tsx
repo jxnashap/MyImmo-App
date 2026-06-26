@@ -36,7 +36,7 @@ export default async function KreditePage() {
 
       {warnungen.length > 0 && (
         <div className="section">
-          <div className="section-header"><h3>⚠️ Refinanzierungs-Kalender</h3><span style={{ fontSize: 11, color: "var(--muted)" }}>Zinsbindungen bald ablaufend</span></div>
+          <div className="section-header"><h3>Refinanzierungs-Kalender</h3><span style={{ fontSize: 11, color: "var(--muted)" }}>Zinsbindungen bald ablaufend</span></div>
           <div className="section-body">
             {warnungen.map(({ k, w }) => (
               <div key={k.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--line)" }}>

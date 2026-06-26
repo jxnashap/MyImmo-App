@@ -80,7 +80,7 @@ export default function ArchivManager({
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-title">🗄 Archiv</div>
+          <div className="topbar-title">Archiv</div>
           <div className="topbar-sub">Alle Dokumente & Verträge — gefiltert nach Objekt, Mieter und Art</div>
         </div>
         <button type="button" className="btn btn-gold" onClick={() => setShowUpload((s) => !s)}>
@@ -91,7 +91,7 @@ export default function ArchivManager({
       {/* Upload */}
       {showUpload && (
         <form action={createDokument} className="form-box" style={{ marginBottom: 20 }}>
-          <h3>📤 Dokument ablegen</h3>
+          <h3>Dokument ablegen</h3>
           <p>Vertrag, Schreiben, Abrechnung o. ä. — mit Objekt, Mieter und Art ablegen.</p>
           <div className="form-row">
             <div className="form-group">
