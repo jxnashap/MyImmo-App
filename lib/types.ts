@@ -42,6 +42,7 @@ export type Tenant = {
   mietspiegel: number | null;
   flaeche: number | null;
   mietart: string | null;            // z.B. "Standard", "Staffel", "Index"
+  zyklus: string | null;             // Mietzyklus: monatlich | quartalsweise | halbjaehrlich | jaehrlich
   notiz: string | null;
   miethistorie: string | null;
   letzte_erhoehung: string | null;   // Datum der letzten Mieterhöhung

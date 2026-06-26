@@ -4,6 +4,21 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { flashUrl } from "@/lib/flash";
+import { istZyklus } from "@/lib/wiederkehr";
+
+// Wiederkehr-Felder aus dem Formular (Kosten). Leer/„einmalig" → normale
+// Einmalbuchung. Sonst Reihe anlegen: Startdatum = Buchungsdatum.
+function wiederkehrFelder(fd: FormData): Record<string, unknown> {
+  const z = str(fd, "zyklus");
+  if (!z || z === "einmalig" || !istZyklus(z)) return {};
+  return {
+    zyklus: z,
+    start_datum: str(fd, "buchungsdatum"),
+    end_datum: str(fd, "end_datum"),
+    reihe_id: crypto.randomUUID(),
+    aktiv: true,
+  };
+}
 
 // Hilfsfunktionen zum Auslesen von FormData
 function num(fd: FormData, k: string): number | null {
@@ -105,6 +120,7 @@ export async function createKosten(fd: FormData) {
     kategorie: str(fd, "kategorie"),
     betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
+    ...wiederkehrFelder(fd),
     ...(await rechnungFelder(fd)),
   });
   if (error) throw new Error(error.message);

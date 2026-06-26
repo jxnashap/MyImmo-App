@@ -26,6 +26,7 @@ function parse(formData: FormData) {
     einheit: str("einheit"),
     mietbeginn: str("mietbeginn"),
     mietende: str("mietende"),
+    zyklus: str("zyklus") ?? "monatlich",
     kuendigung: num("kuendigung"),
     letzte_erhoehung: str("letzte_erhoehung"),
     kaltmiete: num("kaltmiete"),

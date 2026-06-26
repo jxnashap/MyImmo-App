@@ -67,6 +67,19 @@ export default function TenantForm({
         <div className="form-group"><label>Kaltmiete (€)</label><input type="number" step="0.01" name="kaltmiete" defaultValue={v("kaltmiete")} /></div>
         <div className="form-group"><label>NK-Vorauszahlung (€)</label><input type="number" step="0.01" name="nk_vorauszahlung" defaultValue={v("nk_vorauszahlung")} /></div>
       </div>
+      <div className="form-row single">
+        <div className="form-group"><label>Mietzyklus (automatische Mietbuchung)</label>
+          <select name="zyklus" defaultValue={(tenant?.zyklus as string) || "monatlich"}>
+            <option value="monatlich">Monatlich</option>
+            <option value="quartalsweise">Quartalsweise</option>
+            <option value="halbjaehrlich">Halbjährlich</option>
+            <option value="jaehrlich">Jährlich</option>
+          </select>
+          <small style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, display: "block" }}>
+            Aus Mietbeginn + Warmmiete (Kaltmiete + NK) werden automatisch die Mieteinnahmen erzeugt — rückwirkend ab Mietbeginn (max. 10 Jahre) und laufend weiter.
+          </small>
+        </div>
+      </div>
       <div className="form-row">
         <div className="form-group"><label>Kaution (€)</label><input type="number" step="0.01" name="kaution" defaultValue={v("kaution")} /></div>
         <div className="form-group"><label>Kaution-Status</label>

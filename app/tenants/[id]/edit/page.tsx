@@ -3,14 +3,16 @@ import { notFound } from "next/navigation";
 import TenantForm from "@/components/TenantForm";
 import PositionsManager, { type Position } from "@/components/PositionsManager";
 import NkOcrUpload from "@/components/NkOcrUpload";
+import MietverlaufEditor from "@/components/MietverlaufEditor";
 import { createClient } from "@/lib/supabase/server";
 import { updateTenant, deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
+import type { Periode } from "@/lib/wiederkehr";
 import type { Tenant } from "@/lib/types";
 
 export default async function EditTenantPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-  const [{ data }, { data: props }, { data: positions }] = await Promise.all([
+  const [{ data }, { data: props }, { data: positions }, { data: verlauf }] = await Promise.all([
     supabase.from("mieter").select("*").eq("id", params.id).single(),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
     supabase
@@ -18,6 +20,7 @@ export default async function EditTenantPage({ params }: { params: { id: string 
       .select("id,bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr")
       .eq("mieter_id", params.id)
       .order("created_at"),
+    supabase.from("mietverlauf").select("von,bis,betrag").eq("mieter_id", params.id).order("von"),
   ]);
   if (!data) notFound();
   const tenant = data as Tenant;
@@ -38,6 +41,8 @@ export default async function EditTenantPage({ params }: { params: { id: string 
       </div>
 
       <TenantForm action={update} tenant={tenant} properties={props ?? []} submitLabel="Speichern" />
+
+      <MietverlaufEditor mieterId={tenant.id} initial={(verlauf ?? []) as Periode[]} />
 
       <div style={{ marginTop: 24 }}>
         <PositionsManager mieterId={tenant.id} positions={(positions ?? []) as Position[]} />

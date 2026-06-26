@@ -44,6 +44,23 @@ export default async function NeueKostenPage({ searchParams }: { searchParams: {
           </div>
           <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" placeholder="350" required /></div>
         </div>
+        <div className="form-row">
+          <div className="form-group"><label>Wiederkehr</label>
+            <select name="zyklus" defaultValue="einmalig">
+              <option value="einmalig">Einmalig</option>
+              <option value="monatlich">Monatlich</option>
+              <option value="quartalsweise">Quartalsweise</option>
+              <option value="halbjaehrlich">Halbjährlich</option>
+              <option value="jaehrlich">Jährlich</option>
+            </select>
+          </div>
+          <div className="form-group"><label>Enddatum (optional)</label><input type="date" name="end_datum" /></div>
+        </div>
+        <div className="form-row single">
+          <div className="form-group" style={{ marginTop: -6 }}>
+            <small style={{ color: "var(--muted)", fontSize: 12 }}>Bei Wiederkehr gilt das „Datum" oben als Startdatum; alle fälligen Termine werden automatisch angelegt (z. B. Grundsteuer halbjährlich).</small>
+          </div>
+        </div>
         <div className="form-row single">
           <div className="form-group"><label>Mieter zuordnen (optional)</label>
             <select name="mieter_id" defaultValue="">
