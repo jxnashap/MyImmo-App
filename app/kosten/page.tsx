@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { euro, datum, istUmlagefaehig } from "@/lib/format";
-import { deleteKosten, deleteRechnung } from "@/lib/actions/buchungen";
-import DeleteButton from "@/components/DeleteButton";
-import ExpandableRows from "@/components/ExpandableRows";
+import { euro, istUmlagefaehig } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
+import KostenListe from "@/components/lists/KostenListe";
 import type { Kosten, Property, Tenant } from "@/lib/types";
 
 const KATEGORIEN = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
@@ -23,8 +21,6 @@ export default async function KostenPage({
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const tenants = (miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname">[];
-  const propName = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
-  const mietName = new Map(tenants.map((t): [string, string] => [t.id, `${t.vorname ?? ""} ${t.nachname ?? ""}`.trim()]));
 
   let list = (kost ?? []) as Kosten[];
   if (searchParams.prop) list = list.filter((k) => k.prop_id === searchParams.prop);
@@ -70,40 +66,7 @@ export default async function KostenPage({
           <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--red)" }}>{euro(total)}</span></span>
         </div>
         <div className="section-body">
-          <table className="list-table">
-            <thead><tr><th>Datum</th><th>Immobilie</th><th>Mieter</th><th>Kategorie</th><th>Umlage</th><th>Beleg</th><th>Betrag</th><th></th></tr></thead>
-            <ExpandableRows cols={8} limit={10} label="weitere Buchungen">
-              {list.map((k) => {
-                const u = istUmlagefaehig(k.kategorie);
-                return (
-                  <tr key={k.id}>
-                    <td>{datum(k.buchungsdatum)}</td>
-                    <td style={{ color: "var(--muted)" }}>{k.prop_id ? propName.get(k.prop_id) ?? "–" : "–"}</td>
-                    <td style={{ color: "var(--muted)" }}>{k.mieter_id ? mietName.get(k.mieter_id) ?? "–" : "–"}</td>
-                    <td>{k.kategorie ? <span className="badge badge-red">{k.kategorie}</span> : "–"}</td>
-                    <td><span className={`badge ${u === "ja" ? "badge-green" : u === "nein" ? "badge-red" : "badge-teal"}`}>{u === "ja" ? "umlagefähig" : u === "nein" ? "nicht" : "prüfen"}</span></td>
-                    <td>
-                      {k.rechnung_name ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                          <a href={`/kosten/${k.id}/rechnung`} target="_blank" rel="noopener noreferrer" title={`${k.rechnung_name}${k.rechnung_size ? " · " + k.rechnung_size : ""}`} style={{ color: "var(--gold)" }}>
-                            {k.rechnung_type === "application/pdf" ? "📄" : k.rechnung_type?.startsWith("image/") ? "🖼️" : "📎"} ansehen
-                          </a>
-                          <DeleteButton action={deleteRechnung.bind(null, k.id)} className="delete-btn" label="✕" confirmText="Beleg entfernen?" />
-                        </span>
-                      ) : (
-                        <span style={{ color: "var(--faint)", fontSize: 12 }}>–</span>
-                      )}
-                    </td>
-                    <td style={{ fontWeight: 600, color: "var(--red)" }}>{euro(k.betrag)}</td>
-                    <td style={{ textAlign: "right" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}><Link href={`/kosten/${k.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link><DeleteButton action={deleteKosten.bind(null, k.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></span></td>
-                  </tr>
-                );
-              })}
-              {list.length === 0 && (
-                <tr><td colSpan={8}><div className="empty"><div className="empty-icon">📋</div><h4>Noch keine Ausgaben</h4><p>Erfasse Betriebskosten, Reparaturen oder Verwaltungskosten.</p><Link href="/kosten/new" className="btn btn-gold">＋ Ausgabe erfassen</Link></div></td></tr>
-              )}
-            </ExpandableRows>
-          </table>
+          <KostenListe rows={list} properties={properties} tenants={tenants} />
         </div>
       </div>
     </div>

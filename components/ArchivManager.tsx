@@ -3,9 +3,9 @@ import SubmitButton from "@/components/SubmitButton";
 
 import { useMemo, useState } from "react";
 import { Building2, User, Tag, X, Download, Eye } from "lucide-react";
-import DeleteButton from "@/components/DeleteButton";
 import Select from "@/components/filters/Select";
-import { createDokument, deleteDokument } from "@/lib/actions/archiv";
+import RowDialog from "@/components/RowDialog";
+import { createDokument, updateDokument, deleteDokument } from "@/lib/actions/archiv";
 import type { ArchivDoc } from "@/app/archiv/page";
 import type { Property, Tenant } from "@/lib/types";
 
@@ -59,6 +59,8 @@ export default function ArchivManager({
   const [fArt, setFArt] = useState("");
   const [q, setQ] = useState("");
   const [showUpload, setShowUpload] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const offenDoc = docs.find((d) => d.id === editId) ?? null;
 
   const gefiltert = docs.filter((d) => {
     if (fObjekt && d.prop_id !== fObjekt) return false;
@@ -185,7 +187,16 @@ export default function ArchivManager({
         <div className="section">
           <div className="section-body" style={{ paddingTop: 4 }}>
             {gefiltert.map((d) => (
-              <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--line)" }}>
+              <div
+                key={d.id}
+                className="row-click"
+                tabIndex={0}
+                role="button"
+                aria-label="Dokument bearbeiten"
+                onClick={() => setEditId(d.id)}
+                onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setEditId(d.id); } }}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 8px", borderBottom: "1px solid var(--line)", borderRadius: 8 }}
+              >
                 <div style={{ fontSize: 22 }}>{fileIcon(d.datei_type)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 500, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -199,19 +210,67 @@ export default function ArchivManager({
                   </div>
                   {d.inhalt && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{d.inhalt}</div>}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                  {d.datei_name && (
-                    <>
-                      <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5 }} title={d.datei_name}><Eye size={13} /> Öffnen</a>
-                      <a href={`/archiv/${d.id}/datei?download=1`} className="delete-btn" title="Herunterladen" style={{ color: "var(--muted)", display: "inline-grid", placeItems: "center" }}><Download size={14} /></a>
-                    </>
-                  )}
-                  <DeleteButton action={deleteDokument.bind(null, d.id)} className="delete-btn" label="✕" confirmText={`„${d.titel || "Dokument"}" aus dem Archiv löschen?`} />
-                </div>
+                {d.datei_name && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                    <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5 }} title={d.datei_name}><Eye size={13} /> Öffnen</a>
+                    <a href={`/archiv/${d.id}/datei?download=1`} className="delete-btn" title="Herunterladen" style={{ color: "var(--muted)", display: "inline-grid", placeItems: "center" }}><Download size={14} /></a>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
+      )}
+
+      {offenDoc && (
+        <RowDialog title="Dokument bearbeiten" onClose={() => setEditId(null)}>
+          <form
+            action={async (fd) => { await updateDokument(offenDoc.id, fd); setEditId(null); }}
+            className="form-box"
+            style={{ padding: 0, border: "none", background: "none", maxWidth: "none" }}
+          >
+            <div className="form-row">
+              <div className="form-group"><label>Titel *</label><input name="titel" defaultValue={offenDoc.titel ?? ""} required /></div>
+              <div className="form-group"><label>Art</label>
+                <select name="kategorie" defaultValue={offenDoc.kategorie ?? "Sonstiges"}>{ARCHIV_ARTEN.map((a) => <option key={a}>{a}</option>)}</select>
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group"><label>Objekt</label>
+                <select name="prop_id" defaultValue={offenDoc.prop_id ?? ""}>
+                  <option value="">– keines –</option>
+                  {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label>Mieter</label>
+                <select name="mieter_id" defaultValue={offenDoc.mieter_id ?? ""}>
+                  <option value="">– keiner –</option>
+                  {mieter.map((m) => <option key={m.id} value={m.id}>{mieterName.get(m.id)}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="form-row single">
+              <div className="form-group"><label>Notiz (optional)</label><input name="inhalt" defaultValue={offenDoc.inhalt ?? ""} /></div>
+            </div>
+            <div className="form-row single">
+              <div className="form-group">
+                <label>Datei ersetzen (optional · PDF/Bild · max. 8 MB)</label>
+                {offenDoc.datei_name && <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Aktuell: {offenDoc.datei_name} — neue Datei wählen zum Ersetzen.</div>}
+                <input type="file" name="datei" accept="application/pdf,image/*" />
+              </div>
+            </div>
+            <div className="form-actions" style={{ justifyContent: "space-between" }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={async () => { if (confirm(`„${offenDoc.titel || "Dokument"}" aus dem Archiv löschen?`)) { await deleteDokument(offenDoc.id); setEditId(null); } }}
+              >
+                Löschen
+              </button>
+              <SubmitButton>Speichern</SubmitButton>
+            </div>
+          </form>
+        </RowDialog>
       )}
     </div>
   );

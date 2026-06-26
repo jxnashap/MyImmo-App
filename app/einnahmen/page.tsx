@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { euro, datum } from "@/lib/format";
-import { deleteEinnahme } from "@/lib/actions/buchungen";
-import DeleteButton from "@/components/DeleteButton";
-import ExpandableRows from "@/components/ExpandableRows";
+import { euro } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
+import EinnahmenListe from "@/components/lists/EinnahmenListe";
 import type { Einnahme, Property, Tenant } from "@/lib/types";
 
 export default async function EinnahmenPage({
@@ -21,7 +19,6 @@ export default async function EinnahmenPage({
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const tenants = (miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname">[];
-  const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
 
   const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
   let list = (einn ?? []) as Einnahme[];
@@ -66,24 +63,7 @@ export default async function EinnahmenPage({
           <span style={{ fontSize: 12, color: "var(--muted)" }}>{list.length} Buchungen · <span style={{ color: "var(--green)" }}>{euro(total)}</span></span>
         </div>
         <div className="section-body">
-          <table className="list-table">
-            <thead><tr><th>Datum</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th><th></th></tr></thead>
-            <ExpandableRows cols={6} limit={10} label="weitere Buchungen">
-              {list.map((e) => (
-                <tr key={e.id}>
-                  <td>{datum(e.buchungsdatum)}</td>
-                  <td style={{ color: "var(--muted)" }}>{e.prop_id ? nameOf.get(e.prop_id) ?? "–" : "–"}</td>
-                  <td>{e.kategorie ? <span className="badge badge-green">{e.kategorie}</span> : "–"}</td>
-                  <td style={{ color: "var(--muted)" }}>{e.beschreibung ?? ""}</td>
-                  <td style={{ fontWeight: 600, color: "var(--green)" }}>{euro(e.betrag)}</td>
-                  <td style={{ textAlign: "right" }}><span style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}><Link href={`/einnahmen/${e.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link><DeleteButton action={deleteEinnahme.bind(null, e.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></span></td>
-                </tr>
-              ))}
-              {list.length === 0 && (
-                <tr><td colSpan={6}><div className="empty"><div className="empty-icon">💰</div><h4>Noch keine Einnahmen</h4><p>Erfasse Mietzahlungen, Kautionen oder sonstige Erträge.</p><Link href="/einnahmen/new" className="btn btn-gold">＋ Einnahme erfassen</Link></div></td></tr>
-              )}
-            </ExpandableRows>
-          </table>
+          <EinnahmenListe rows={list} properties={properties} tenants={tenants} />
         </div>
       </div>
     </div>
