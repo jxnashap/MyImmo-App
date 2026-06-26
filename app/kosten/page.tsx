@@ -46,8 +46,8 @@ export default async function KostenPage({
 
   const filters: FilterDef[] = [
     { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
-    { name: "kat", label: "Kategorie", icon: "tag", options: [{ value: "", label: "Alle Kosten" }, ...KATEGORIEN.map((k) => ({ value: k, label: k }))] },
     { name: "mieter", label: "Mieter", icon: "user", options: [{ value: "", label: "Alle Mieter" }, ...tenants.map((t) => ({ value: t.id, label: `${t.vorname ?? ""} ${t.nachname ?? ""}`.trim() || "—" }))] },
+    { name: "kat", label: "Kategorie", icon: "tag", options: [{ value: "", label: "Alle Kosten" }, ...KATEGORIEN.map((k) => ({ value: k, label: k }))] },
     { name: "umlage", label: "Umlagefähig", icon: "umlage", variant: "toggle", options: [{ value: "ja", label: "Umlagefähig" }] },
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
   ];

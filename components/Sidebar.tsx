@@ -10,8 +10,8 @@ type SidebarProperty = { id: string; bezeichnung: string; typ: string | null };
 const VERWALTUNG: { href: string; label: string; icon: string }[] = [
   { href: "/", label: "Dashboard", icon: "📊" },
   { href: "/properties", label: "Immobilien", icon: "🏠" },
-  { href: "/einnahmen", label: "Einnahmen", icon: "💰" },
   { href: "/tenants", label: "Mieter", icon: "👤" },
+  { href: "/einnahmen", label: "Einnahmen", icon: "💰" },
   { href: "/kosten", label: "Kosten & Ausgaben", icon: "📋" },
   { href: "/verbrauch", label: "Verbrauch", icon: "⚡" },
   { href: "/kredite", label: "Kredite", icon: "🏦" },
