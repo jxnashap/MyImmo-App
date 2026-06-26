@@ -4,7 +4,7 @@ import { euro, datum } from "@/lib/format";
 import { deleteVerbrauch } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableRows from "@/components/ExpandableRows";
-import YearSelect from "@/components/YearSelect";
+import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import VerbrauchChart, { type VPoint } from "@/components/VerbrauchChart";
 import type { Verbrauch, Property } from "@/lib/types";
 
@@ -49,6 +49,12 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
     ? list.filter((v) => v.buchungsdatum && new Date(v.buchungsdatum).getFullYear() === Number(jahr))
     : list;
 
+  const filters: FilterDef[] = [
+    { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
+    { name: "art", label: "Art", icon: "art", options: [{ value: "", label: "Alle Arten" }, ...arten.map((a) => ({ value: a, label: a }))] },
+    { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
+  ];
+
   return (
     <div className="fade-up">
       <div className="topbar">
@@ -59,20 +65,7 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
         <Link href="/verbrauch/new" className="btn btn-gold">＋ Verbrauch</Link>
       </div>
 
-      <form method="get" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <input type="hidden" name="jahr" value={jahr} />
-        <label style={{ fontSize: 12, color: "var(--muted)" }}>🏠 Immobilie:</label>
-        <select name="prop" defaultValue={searchParams.prop ?? ""} className="input" style={{ minWidth: 200 }}>
-          <option value="">Alle Immobilien</option>
-          {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
-        </select>
-        <label style={{ fontSize: 12, color: "var(--muted)" }}>⚡ Art:</label>
-        <select name="art" defaultValue={searchParams.art ?? ""} className="input" style={{ minWidth: 150 }}>
-          <option value="">Alle Arten</option>
-          {arten.map((a) => <option key={a} value={a}>{(ART_ICONS[a] || "") + " " + a}</option>)}
-        </select>
-        <button className="btn btn-ghost">Filtern</button>
-      </form>
+      <FilterBar filters={filters} />
 
       {charts.length > 0 && (
         <div style={{ marginBottom: 20 }}>
@@ -85,7 +78,6 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
       <div className="section">
         <div className="section-header">
           <h3>Alle Einträge</h3>
-          <YearSelect years={jahre} current={jahr} params={searchParams} />
         </div>
         <div className="section-body">
           <table className="list-table">

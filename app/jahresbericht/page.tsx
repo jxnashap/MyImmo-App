@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { euro } from "@/lib/format";
+import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 
 export default async function JahresberichtPage({
@@ -37,6 +38,9 @@ export default async function JahresberichtPage({
   );
 
   const years = [year + 1, year, year - 1, year - 2];
+  const filters: FilterDef[] = [
+    { name: "year", label: "Jahr", icon: "jahr", defaultValue: String(new Date().getFullYear()), options: years.map((y) => ({ value: String(y), label: String(y) })) },
+  ];
 
   return (
     <div className="fade-up">
@@ -45,13 +49,9 @@ export default async function JahresberichtPage({
           <div className="topbar-title">📊 Jahresbericht &amp; Steuer-Export</div>
           <div className="topbar-sub">Anlage V · Cashflow-Auswertung · Druckansicht</div>
         </div>
-        <form method="get" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <select name="year" defaultValue={String(year)} className="input">
-            {years.map((y) => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <button className="btn btn-ghost">Anzeigen</button>
-        </form>
       </div>
+
+      <FilterBar filters={filters} />
 
       <div className="section">
         <div className="section-header"><h3>Auswertung {year}</h3></div>

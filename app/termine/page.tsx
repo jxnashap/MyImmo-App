@@ -4,8 +4,8 @@ import { datum } from "@/lib/format";
 import { mieterFristen } from "@/lib/fristen";
 import { createTermin, deleteTermin } from "@/lib/actions/termine";
 import DeleteButton from "@/components/DeleteButton";
-import YearSelect from "@/components/YearSelect";
 import ExpandableList from "@/components/ExpandableList";
+import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import type { Termin, Property, Tenant, Kredit } from "@/lib/types";
 
 type Eintrag = {
@@ -75,6 +75,11 @@ export default async function TerminePage({ searchParams }: { searchParams: { qu
   ).sort((a, b) => b - a);
   if (jahr !== "alle") sichtbar = sichtbar.filter((e) => new Date(e.datum).getFullYear() === Number(jahr));
 
+  const filters: FilterDef[] = [
+    { name: "quelle", label: "Quelle", icon: "quelle", variant: "segmented", options: [{ value: "", label: "Alle" }, { value: "mieter", label: "Mieter" }, { value: "kredit", label: "Finanzierung" }, { value: "eigen", label: "Eigene" }] },
+    { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
+  ];
+
   const heute = new Date();
   const tageBis = (d: string) => Math.ceil((new Date(d).getTime() - heute.getTime()) / 86400000);
   const anstehend = eintraege.filter((e) => tageBis(e.datum) >= 0);
@@ -126,20 +131,11 @@ export default async function TerminePage({ searchParams }: { searchParams: { qu
         </div>
       </div>
 
+      <FilterBar filters={filters} />
+
       <div className="section">
         <div className="section-header">
           <h3>Anstehende Termine</h3>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", gap: 6 }}>
-              {([["", "Alle"], ["mieter", "Mieter"], ["kredit", "Finanzierung"], ["eigen", "Eigene"]] as const).map(([q, label]) => {
-                const active = (filterQ ?? "") === q;
-                return (
-                  <Link key={q} href={q ? `/termine?quelle=${q}${jahr !== "alle" ? `&jahr=${jahr}` : ""}` : `/termine${jahr !== "alle" ? `?jahr=${jahr}` : ""}`} className={`badge ${active ? "badge-gold" : ""}`} style={{ textDecoration: "none", ...(active ? {} : { color: "var(--muted)", border: "1px solid var(--line)" }) }}>{label}</Link>
-                );
-              })}
-            </div>
-            <YearSelect years={jahre} current={jahr} params={searchParams} />
-          </div>
         </div>
         <div className="section-body">
           {sichtbar.length === 0 ? (
