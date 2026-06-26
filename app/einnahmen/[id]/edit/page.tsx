@@ -3,19 +3,21 @@ import SubmitButton from "@/components/SubmitButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updateEinnahme } from "@/lib/actions/buchungen";
-import type { Property, Einnahme } from "@/lib/types";
+import type { Property, Tenant, Einnahme } from "@/lib/types";
 
 const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
 
 export default async function EinnahmeEditPage({ params, searchParams }: { params: { id: string }; searchParams: { back?: string } }) {
   const supabase = createClient();
-  const [{ data: row }, { data: propsData }] = await Promise.all([
+  const [{ data: row }, { data: propsData }, { data: miet }] = await Promise.all([
     supabase.from("einnahmen").select("*").eq("id", params.id).single(),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
+    supabase.from("mieter").select("id,vorname,nachname").order("nachname"),
   ]);
   if (!row) notFound();
   const e = row as Einnahme;
   const properties = (propsData ?? []) as Pick<Property, "id" | "bezeichnung">[];
+  const tenants = (miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname">[];
   const back = searchParams.back || "/einnahmen";
 
   return (
@@ -44,6 +46,14 @@ export default async function EinnahmeEditPage({ params, searchParams }: { param
             <select name="kategorie" defaultValue={e.kategorie ?? "Miete"}>{KATEGORIEN.map((k) => <option key={k}>{k}</option>)}</select>
           </div>
           <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" defaultValue={e.betrag ?? ""} required /></div>
+        </div>
+        <div className="form-row single">
+          <div className="form-group"><label>Mieter zuordnen (optional)</label>
+            <select name="mieter_id" defaultValue={e.mieter_id ?? ""}>
+              <option value="">– Kein Mieter –</option>
+              {tenants.map((t) => <option key={t.id} value={t.id}>{`${t.vorname ?? ""} ${t.nachname ?? ""}`.trim() || "—"}</option>)}
+            </select>
+          </div>
         </div>
         <div className="form-row single">
           <div className="form-group"><label>Beschreibung</label><input type="text" name="beschreibung" defaultValue={e.beschreibung ?? ""} /></div>

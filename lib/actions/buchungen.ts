@@ -43,6 +43,7 @@ export async function createEinnahme(fd: FormData) {
   const { error } = await supabase.from("einnahmen").insert({
     user_id: userId,
     prop_id: str(fd, "prop_id"),
+    mieter_id: str(fd, "mieter_id"),
     buchungsdatum: str(fd, "buchungsdatum"),
     kategorie: str(fd, "kategorie"),
     betrag: posNum(fd, "betrag", "Betrag"),
@@ -55,6 +56,7 @@ export async function updateEinnahme(id: string, fd: FormData) {
   const { supabase } = await uid();
   const { error } = await supabase.from("einnahmen").update({
     prop_id: str(fd, "prop_id"),
+    mieter_id: str(fd, "mieter_id"),
     buchungsdatum: str(fd, "buchungsdatum"),
     kategorie: str(fd, "kategorie"),
     betrag: posNum(fd, "betrag", "Betrag"),

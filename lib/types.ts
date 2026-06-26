@@ -54,6 +54,7 @@ export type Tenant = {
 export type Einnahme = {
   id: string;
   prop_id: string | null;
+  mieter_id: string | null;
   buchungsdatum: string | null;
   kategorie: string | null;
   betrag: number | null;

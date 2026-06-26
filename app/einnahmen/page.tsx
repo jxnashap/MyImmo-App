@@ -5,25 +5,28 @@ import { deleteEinnahme } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableRows from "@/components/ExpandableRows";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
-import type { Einnahme, Property } from "@/lib/types";
+import type { Einnahme, Property, Tenant } from "@/lib/types";
 
 export default async function EinnahmenPage({
   searchParams,
 }: {
-  searchParams: { prop?: string; kategorie?: string; jahr?: string };
+  searchParams: { prop?: string; kategorie?: string; jahr?: string; mieter?: string };
 }) {
   const supabase = createClient();
-  const [{ data: einn }, { data: props }] = await Promise.all([
+  const [{ data: einn }, { data: props }, { data: miet }] = await Promise.all([
     supabase.from("einnahmen").select("*").order("buchungsdatum", { ascending: false }),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
+    supabase.from("mieter").select("id,vorname,nachname").order("nachname"),
   ]);
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
+  const tenants = (miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname">[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
 
   const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
   let list = (einn ?? []) as Einnahme[];
   if (searchParams.prop) list = list.filter((e) => e.prop_id === searchParams.prop);
+  if (searchParams.mieter) list = list.filter((e) => e.mieter_id === searchParams.mieter);
   if (searchParams.kategorie) list = list.filter((e) => (e.kategorie ?? "") === searchParams.kategorie);
 
   const aktuellesJahr = new Date().getFullYear();
@@ -40,6 +43,7 @@ export default async function EinnahmenPage({
 
   const filters: FilterDef[] = [
     { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
+    { name: "mieter", label: "Mieter", icon: "user", options: [{ value: "", label: "Alle Mieter" }, ...tenants.map((t) => ({ value: t.id, label: `${t.vorname ?? ""} ${t.nachname ?? ""}`.trim() || "—" }))] },
     { name: "kategorie", label: "Kategorie", icon: "tag", options: [{ value: "", label: "Alle Kategorien" }, ...KATEGORIEN.map((k) => ({ value: k, label: k }))] },
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
   ];
