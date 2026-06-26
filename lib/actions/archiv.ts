@@ -52,6 +52,24 @@ export async function createDokument(fd: FormData) {
   revalidatePath("/archiv");
 }
 
+export async function updateDokument(id: string, fd: FormData) {
+  const { supabase } = await uid();
+  const datei = await dateiFelder(fd); // nur ersetzen, wenn neue Datei gewählt
+  const { error } = await supabase
+    .from("notizen")
+    .update({
+      prop_id: str(fd, "prop_id"),
+      mieter_id: str(fd, "mieter_id"),
+      titel: str(fd, "titel") ?? "Dokument",
+      kategorie: str(fd, "kategorie") ?? "Sonstiges",
+      inhalt: str(fd, "inhalt"),
+      ...datei,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/archiv");
+}
+
 export async function deleteDokument(id: string) {
   const { supabase } = await uid();
   const { error } = await supabase.from("notizen").delete().eq("id", id);
