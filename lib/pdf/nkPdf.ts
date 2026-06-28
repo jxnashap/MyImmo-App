@@ -12,7 +12,7 @@ import {
 } from "pdf-lib";
 import type { NkAbrechnung } from "@/lib/nk";
 import { deDatum } from "@/lib/nk";
-import { adressZeilen } from "@/lib/format";
+import { adressfeldZeilen, zeichneAdressfeld, ADRESSFELD } from "@/lib/pdf/adressfeld";
 
 export type Vermieter = {
   name: string;
@@ -187,30 +187,24 @@ export async function buildNkPdf(
   // ---- Volle Trennlinie unter dem Kopf ----
   hline(A4.h - 96, ML, RIGHT, GOLD, 0.8);
 
-  // ---- Absenderzeile (Rücksendeangabe) ----
-  y = A4.h - 124;
+  // ---- Festes DIN-5008-Adressfeld (Empfänger, für Fensterumschlag) ----
+  // Zentrale, in jedem Brief-PDF identisch positionierte Empfängeranschrift.
   const senderLine = [vermieter.name, vermieter.strasse, vermieter.ort]
     .filter(Boolean)
     .join(" · ");
-  text(ML, y, senderLine, 7, font, MUTED);
+  const feldBottom = zeichneAdressfeld(page, font, {
+    ruecksende: senderLine,
+    empfaenger: adressfeldZeilen(a.mieterName, a.mieterAdresse),
+  });
 
-  // ---- Empfänger (Mieter) — oben links, wie im klassischen Brief ----
-  y -= 22;
-  text(ML, y, a.mieterName, 10.5, font, INK);
-  y -= 15;
-  for (const zeile of adressZeilen(a.mieterAdresse)) {
-    text(ML, y, zeile, 10.5, font, INK);
-    y -= 15;
-  }
-
-  // ---- Ort/Datum + Referenz rechts ----
+  // ---- Ort/Datum + Referenz rechts (neben dem Adressfeld) ----
   const heute = deDatum(new Date().toISOString());
   const ortDatum = vermieter.ort ? `${vermieter.ort.replace(/^\d{4,5}\s*/, "")}, ${heute}` : heute;
-  right(RIGHT, A4.h - 188, ortDatum, 9.5, font, INK);
-  right(RIGHT, A4.h - 202, `Abrechnung Nr. NK-${a.jahr}`, 9, font, MUTED);
+  right(RIGHT, ADRESSFELD.anschriftTopY - 10, ortDatum, 9.5, font, INK);
+  right(RIGHT, ADRESSFELD.anschriftTopY - 24, `Abrechnung Nr. NK-${a.jahr}`, 9, font, MUTED);
 
-  // ---- Betreff ----
-  y = Math.min(y - 18, A4.h - 228);
+  // ---- Betreff (UNTER dem Adressfeld) ----
+  y = feldBottom - 26;
   text(ML, y, `Nebenkostenabrechnung ${a.jahr}`, 13, bold, INK);
   y -= 15;
   text(
@@ -327,7 +321,7 @@ export async function buildNkPdf(
 
   // ---- Fußzeile ----
   hline(64, ML, RIGHT, LINE, 0.6);
-  text(ML, 52, senderLine, 7.5, font, MUTED);
+  text(ML, 52, "MyImmo", 7.5, font, MUTED);
   const mid = "Seite 1 von 1";
   text(A4.w / 2 - font.widthOfTextAtSize(mid, 7.5) / 2, 52, mid, 7.5, font, MUTED);
   right(RIGHT, 52, heute, 7.5, font, MUTED);
