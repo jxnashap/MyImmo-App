@@ -313,7 +313,7 @@ export async function buildNkPdf(
   }
   y -= 16;
   text(ML, y, "Mit freundlichen Grüßen", 10, font, INK);
-  y -= 34;
+  y -= 48; // extra Zeile Platz für die Unterschrift
   text(ML, y, vermieter.name, 10, font, INK);
 
   // ---- Fußzeile ----

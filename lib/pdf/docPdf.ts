@@ -201,7 +201,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
     // Grußformel + Unterschrift
     y -= 6;
     if (commit) text(ML, y, "Mit freundlichen Grüßen", 10.5, font, INK);
-    y -= 32;
+    y -= 46; // extra Zeile Platz für die Unterschrift
     if (commit) text(ML, y, d.absender.name || "", 10.5, font, INK);
     y -= 14;
 
