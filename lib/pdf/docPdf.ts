@@ -148,7 +148,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   // ---- Festes DIN-5008-Adressfeld (für Fensterumschlag) ----
   // Zentrale, in jedem Brief-PDF identisch positionierte Empfängeranschrift.
   const feldBottom = zeichneAdressfeld(page, font, {
-    vermerk: ["Vertraulich"],
+    vermerk: ["Vertrauliches Dokument"],
     empfaenger: adressfeldZeilen(d.empfaengerName, d.empfaengerAdresse),
   });
 
