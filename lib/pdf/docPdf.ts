@@ -209,13 +209,9 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
     return y;
   };
 
-  // ---- Zwei-Pass: messen, dann vertikal mittig platzieren ----
-  const topLimit = feldBottom - 28; // unter dem festen Adressfeld (kein Überlapp)
-  const bottomLimit = 96; // über der Fußzeile
-  const endMeasured = renderBody(topLimit, false);
-  const bodyHeight = topLimit - endMeasured;
-  const free = topLimit - bottomLimit - bodyHeight;
-  const startY = topLimit - (free > 0 ? free * 0.45 : 0);
+  // ---- Brieftext beginnt direkt unter dem Adressfeld (keine vertikale
+  // Zentrierung — sonst klafft bei kurzen Briefen eine große Lücke). ----
+  const startY = feldBottom - 18; // knapp unter dem festen Adressfeld
   renderBody(startY, true);
 
   // ---- Fußzeile ----
