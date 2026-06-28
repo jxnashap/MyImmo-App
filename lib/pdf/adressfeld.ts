@@ -115,11 +115,11 @@ export function zeichneAdressfeld(
     });
   }
 
-  // Vermerkzone (z. B. "Vertraulich", "Einschreiben") — dunkel/sichtbar.
-  let vy = ADRESSFELD.feldTopY - (ruecksende ? 20 : 10);
+  // Vermerkzone (z. B. "Vertrauliches Dokument", "Einschreiben") — klein/grau.
+  let vy = ADRESSFELD.feldTopY - (ruecksende ? 20 : 9);
   for (const v of vermerk) {
-    page.drawText(sanitize(v), { x, y: vy, size: 9.5, font, color: INK });
-    vy -= 13;
+    page.drawText(sanitize(v), { x, y: vy, size: 7.5, font, color: MUTED });
+    vy -= 11;
   }
 
   // Anschriftzone (Empfänger) — linksbündig, ohne Sperrsatz.
