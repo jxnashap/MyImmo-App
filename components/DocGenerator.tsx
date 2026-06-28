@@ -325,8 +325,8 @@ export default function DocGenerator({
             <div style={{ height: 1, background: "var(--gold)", opacity: 0.6, margin: "12px 0 22px" }} />
 
             {/* Empfänger + Datum */}
-            <div style={{ fontSize: 10, color: muted, marginBottom: 14 }}>
-              {[absName, vAdr].filter(Boolean).join(" · ")}
+            <div style={{ fontSize: 10, color: muted, marginBottom: 10 }}>
+              Vertrauliches Dokument
             </div>
             <div style={{ marginBottom: 4 }}>{mieterName || "–"}</div>
             {empfZeilen.map((z, i) => (
@@ -381,7 +381,7 @@ export default function DocGenerator({
             )}
 
             <p style={{ margin: "30px 0 0" }}>Mit freundlichen Grüßen</p>
-            <div style={{ marginTop: 26 }}>{absName}</div>
+            <div style={{ marginTop: 40 }}>{absName}</div>
           </div>
         </div>
 
