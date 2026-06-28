@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import { ToastProvider } from "@/components/Toast";
 import FlashToast from "@/components/FlashToast";
 import { ZeitraumProvider } from "@/components/ZeitraumProvider";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -20,6 +21,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // CSP-Nonce aus der Middleware (für das Inline-Theme-Script).
+  const nonce = headers().get("x-nonce") ?? undefined;
+
   const supabase = createClient();
   const {
     data: { user },
@@ -30,7 +34,7 @@ export default async function RootLayout({
     return (
       <html lang="de" suppressHydrationWarning>
         <head>
-          <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+          <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
         <body>{children}</body>
       </html>
