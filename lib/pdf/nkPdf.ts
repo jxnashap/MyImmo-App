@@ -189,11 +189,8 @@ export async function buildNkPdf(
 
   // ---- Festes DIN-5008-Adressfeld (Empfänger, für Fensterumschlag) ----
   // Zentrale, in jedem Brief-PDF identisch positionierte Empfängeranschrift.
-  const senderLine = [vermieter.name, vermieter.strasse, vermieter.ort]
-    .filter(Boolean)
-    .join(" · ");
   const feldBottom = zeichneAdressfeld(page, font, {
-    ruecksende: senderLine,
+    vermerk: ["Vertraulich"],
     empfaenger: adressfeldZeilen(a.mieterName, a.mieterAdresse),
   });
 

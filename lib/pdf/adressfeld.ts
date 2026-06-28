@@ -115,11 +115,11 @@ export function zeichneAdressfeld(
     });
   }
 
-  // Vermerkzone unter der Rücksendeangabe.
-  let vy = ADRESSFELD.feldTopY - (ruecksende ? 20 : 9);
+  // Vermerkzone (z. B. "Vertraulich", "Einschreiben") — dunkel/sichtbar.
+  let vy = ADRESSFELD.feldTopY - (ruecksende ? 20 : 10);
   for (const v of vermerk) {
-    page.drawText(sanitize(v), { x, y: vy, size: 9, font, color: MUTED });
-    vy -= 12;
+    page.drawText(sanitize(v), { x, y: vy, size: 9.5, font, color: INK });
+    vy -= 13;
   }
 
   // Anschriftzone (Empfänger) — linksbündig, ohne Sperrsatz.

@@ -130,7 +130,6 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   hline(A4.h - 96, ML, RIGHT, GOLD, 0.8);
 
   // ---- Vorbereitete Werte ----
-  const senderLine = [d.absender.name, d.absender.adresse].filter(Boolean).join(" · ");
   const heute = deDate(new Date());
   const ortClean = (d.absender.ort || "").replace(/^\d{4,5}\s*/, "").trim();
   const ortDatum = ortClean ? `${ortClean}, ${heute}` : heute;
@@ -149,7 +148,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   // ---- Festes DIN-5008-Adressfeld (für Fensterumschlag) ----
   // Zentrale, in jedem Brief-PDF identisch positionierte Empfängeranschrift.
   const feldBottom = zeichneAdressfeld(page, font, {
-    ruecksende: senderLine,
+    vermerk: ["Vertraulich"],
     empfaenger: adressfeldZeilen(d.empfaengerName, d.empfaengerAdresse),
   });
 
