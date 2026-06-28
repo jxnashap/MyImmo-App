@@ -5,7 +5,7 @@ type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
 // CSP zunächst als Report-Only ausrollen (blockt nichts, meldet nur Verstöße).
 // Nach Prüfung im Browser-Log auf "false" setzen → scharf schalten.
-const CSP_REPORT_ONLY = true;
+const CSP_REPORT_ONLY = false;
 
 function buildCsp(nonce: string): string {
   return [
