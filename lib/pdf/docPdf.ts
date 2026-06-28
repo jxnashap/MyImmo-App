@@ -10,7 +10,7 @@ import {
   rgb,
   type PDFFont,
 } from "pdf-lib";
-import { adressZeilen } from "@/lib/format";
+import { adressfeldZeilen, zeichneAdressfeld } from "@/lib/pdf/adressfeld";
 
 export type BriefAbsender = {
   name: string;
@@ -134,7 +134,6 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   const heute = deDate(new Date());
   const ortClean = (d.absender.ort || "").replace(/^\d{4,5}\s*/, "").trim();
   const ortDatum = ortClean ? `${ortClean}, ${heute}` : heute;
-  const empfZeilen = adressZeilen(d.empfaengerAdresse);
 
   const kontoLines: { s: string; f: PDFFont; color: typeof INK }[] = [];
   if (d.konto?.iban) {
@@ -147,24 +146,18 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   const kontoPad = 9;
   const kontoH = kontoLines.length ? kontoPad * 2 + kontoLines.length * LH : 0;
 
-  // ---- Brieftext zeichnen/messen ab startY ----
+  // ---- Festes DIN-5008-Adressfeld (für Fensterumschlag) ----
+  // Zentrale, in jedem Brief-PDF identisch positionierte Empfängeranschrift.
+  const feldBottom = zeichneAdressfeld(page, font, {
+    ruecksende: senderLine,
+    empfaenger: adressfeldZeilen(d.empfaengerName, d.empfaengerAdresse),
+  });
+
+  // ---- Brieftext zeichnen/messen ab startY (UNTER dem Adressfeld) ----
   const renderBody = (startY: number, commit: boolean): number => {
     let y = startY;
 
-    // Rücksende-/Absenderzeile (klein)
-    if (commit) text(ML, y, senderLine, 7, font, MUTED);
-    y -= 20;
-
-    // Empfänger
-    if (commit) text(ML, y, d.empfaengerName, 10.5, font, INK);
-    y -= 15;
-    for (const z of empfZeilen) {
-      if (commit) text(ML, y, z, 10.5, font, INK);
-      y -= 15;
-    }
-
     // Ort / Datum rechts
-    y -= 14;
     if (commit) right(RIGHT, y, ortDatum, 9.5, font, INK);
     y -= 30;
 
@@ -217,7 +210,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   };
 
   // ---- Zwei-Pass: messen, dann vertikal mittig platzieren ----
-  const topLimit = A4.h - 122; // unter dem Kopf
+  const topLimit = feldBottom - 28; // unter dem festen Adressfeld (kein Überlapp)
   const bottomLimit = 96; // über der Fußzeile
   const endMeasured = renderBody(topLimit, false);
   const bodyHeight = topLimit - endMeasured;
@@ -227,7 +220,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
 
   // ---- Fußzeile ----
   hline(64, ML, RIGHT, LINE, 0.6);
-  text(ML, 52, senderLine, 7.5, font, MUTED);
+  text(ML, 52, "MyImmo", 7.5, font, MUTED);
   const mid = "Seite 1 von 1";
   text(A4.w / 2 - font.widthOfTextAtSize(mid, 7.5) / 2, 52, mid, 7.5, font, MUTED);
   right(RIGHT, 52, heute, 7.5, font, MUTED);
