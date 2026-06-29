@@ -314,7 +314,10 @@ tr.no-hover:hover td { background: transparent; }
 }
 
 @media (max-width: 860px) {
-  .app { grid-template-columns: 1fr; }
+  /* Eine Spalte; Zeilen explizit: Kopfleiste natürliche Höhe, Inhalt füllt den
+     Rest. Ohne grid-template-rows streckt min-height:100vh bei wenig Inhalt die
+     erste Zeile → aufgeblähte Mobile-Kopfleiste (uneinheitliche Höhe je Seite). */
+  .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .main { padding: 18px 16px; }
   /* Mobile-Kopfleiste einblenden */
   .mobile-bar { display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 50; background: var(--bg2); border-bottom: 1px solid var(--line); padding: 10px 16px; }
