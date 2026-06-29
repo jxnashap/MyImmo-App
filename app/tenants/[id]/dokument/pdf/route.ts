@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildDocPdf } from "@/lib/pdf/docPdf";
+import { decryptIbanRow } from "@/lib/ibanData";
 import {
   TITEL,
   ART_ZEIGT_BETRAG,
@@ -78,8 +79,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const quelle = vorlageText.trim() ? vorlageText : vorlageFuer(art);
   const absaetze = fuelleVorlage(quelle, werte);
 
+  const ibanData = iban ? decryptIbanRow(iban) : null;
   const zeigtBetrag = ART_ZEIGT_BETRAG.includes(art);
-  const konto = zeigtBetrag && iban?.iban ? iban : null;
+  const konto = zeigtBetrag && ibanData?.iban ? ibanData : null;
 
   const absenderOrt = [profil?.plz, profil?.ort].filter(Boolean).join(" ") || null;
 

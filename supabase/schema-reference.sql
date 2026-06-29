@@ -41,7 +41,11 @@
 
 -- termine (0) — prop_id text, titel, datum date, notiz
 
--- ibans (1) — kontoname, inhaber, iban
+-- ibans — kontoname, inhaber (verschlüsselt), iban (verschlüsselt),
+--   iban_bidx text (Blind-Index = HMAC der normalisierten IBAN, für
+--   Dublettenprüfung/Unique). App-Layer-Verschlüsselung (AES-256-GCM),
+--   Schlüssel: Env DATA_ENCRYPTION_KEY (nicht in der DB!). Siehe
+--   lib/crypto/secure.ts. Unique: (user_id, iban_bidx).
 
 -- mieter_positionen — Umlagepositionen je Mieter (Quelle der NK-Beträge)
 --   id, user_id, mieter_id uuid, bezeichnung, betrag numeric,

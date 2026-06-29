@@ -15,8 +15,12 @@
 - **AVV-Verträge (Art. 28 DSGVO)** mit Supabase, Vercel, Anthropic, Google abschließen.
 - **Impressum/Datenschutz**: Platzhalter in `app/impressum` + `app/datenschutz` mit echten Daten
   (Gewerbeanmeldung) füllen und rechtlich prüfen lassen.
-- **Optional (Härtung):** Spalten-Verschlüsselung für IBAN/Bankdaten (pgcrypto/Vault). At-rest-
-  Verschlüsselung auf Platten-Ebene ist durch Supabase bereits gegeben — kein Launch-Blocker.
+- ~~**Optional (Härtung):** Spalten-Verschlüsselung für IBAN/Bankdaten.~~ ✅ Erledigt:
+  App-Layer-Verschlüsselung (AES-256-GCM) für `ibans.iban`/`ibans.inhaber`, Schlüssel als
+  Vercel-Env `DATA_ENCRYPTION_KEY` (NICHT in der DB → echter Schutz gegen DB-Leak/Insider).
+  Blind-Index (`iban_bidx`) für Dublettenprüfung. `lib/crypto/secure.ts`. **Noch offen:**
+  `kredite.darlnr`/`mieter.kaution_bank` (bewusst zunächst ausgelassen — Banknamen bzw. viele
+  Touch-Points). Nach Deploy einmalig `/api/encrypt-bankdaten` aufrufen (Altzeilen migrieren).
 
 ## Deployment
 - **Live-URL (Produktion): https://my-immo-app.vercel.app**
@@ -27,6 +31,9 @@
 ### Benötigte Environment-Variablen (Vercel)
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `ANTHROPIC_API_KEY` — für OCR / KI-Import (NK-Abrechnung auslesen, Objekt-Import)
+- `DATA_ENCRYPTION_KEY` — 32 Byte base64 (`openssl rand -base64 32`) für die App-Layer-
+  Verschlüsselung der Bankdaten (IBAN/Inhaber, `lib/crypto/secure.ts`). **Schlüsselverlust =
+  Bankdaten unwiederbringlich weg** → sicher sichern (Passwortmanager), nie ins Repo/Logs.
 
 ## Datenbank
 - Supabase-Projekt `kozhxrvyilkchjpcuwcm` (Region eu-central-1).

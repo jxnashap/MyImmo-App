@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import DocGenerator from "@/components/DocGenerator";
+import { decryptIbanRow } from "@/lib/ibanData";
 import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
 
 export default async function DokumentPage({ params }: { params: { id: string } }) {
@@ -30,7 +31,7 @@ export default async function DokumentPage({ params }: { params: { id: string } 
           <div><div className="topbar-title">Dokument erstellen</div><div className="topbar-sub">{[tenant.vorname, tenant.nachname].filter(Boolean).join(" ")}</div></div>
         </div>
       </div>
-      <DocGenerator tenant={tenant} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={(ibanRows as Iban[]) ?? []} vorlagen={vorlagen} />
+      <DocGenerator tenant={tenant} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={((ibanRows as Iban[]) ?? []).map(decryptIbanRow)} vorlagen={vorlagen} />
     </div>
   );
 }

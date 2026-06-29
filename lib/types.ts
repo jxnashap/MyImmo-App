@@ -138,6 +138,7 @@ export type Iban = {
   kontoname: string;
   inhaber: string | null;
   iban: string;
+  iban_bidx?: string | null;
   standard: boolean | null;
   created_at: string | null;
 };

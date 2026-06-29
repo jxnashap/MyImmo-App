@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isValidIban, normalizeIban } from "@/lib/iban";
+import { encrypt, blindIndex } from "@/lib/crypto/secure";
 
 export type IbanResult = { ok: boolean; error?: string };
 
@@ -18,14 +19,19 @@ export async function addIban(formData: FormData): Promise<IbanResult> {
   if (!kontoname || !iban) return { ok: false, error: "Bitte Name und IBAN angeben." };
   if (!isValidIban(iban)) return { ok: false, error: "Die IBAN ist nicht korrekt (Prüfziffer stimmt nicht)." };
 
+  // Die IBAN wird verschlüsselt gespeichert. Für Dublettenprüfung und
+  // Unique-Index brauchen wir trotzdem einen deterministischen Vergleichswert
+  // → Blind-Index (HMAC der normalisierten IBAN).
+  const ibanBidx = blindIndex(iban);
+
   // Duplikat verhindern (gleiche IBAN beim selben Nutzer). Der Unique-Index
-  // in der DB ist die eigentliche Absicherung gegen Doppelklick-Races; diese
-  // Abfrage liefert nur die freundlichere Meldung im Normalfall.
+  // in der DB (user_id, iban_bidx) ist die eigentliche Absicherung gegen
+  // Doppelklick-Races; diese Abfrage liefert nur die freundlichere Meldung.
   const { data: existing } = await supabase
     .from("ibans")
     .select("id")
     .eq("user_id", user.id)
-    .eq("iban", iban)
+    .eq("iban_bidx", ibanBidx)
     .maybeSingle();
   if (existing) return { ok: false, error: "Diese IBAN ist bereits hinterlegt." };
 
@@ -39,8 +45,9 @@ export async function addIban(formData: FormData): Promise<IbanResult> {
   const { error } = await supabase.from("ibans").insert({
     user_id: user.id,
     kontoname,
-    inhaber: inhaber || null,
-    iban,
+    inhaber: inhaber ? encrypt(inhaber) : null,
+    iban: encrypt(iban),
+    iban_bidx: ibanBidx,
     standard: istErstes,
   });
   if (error) {

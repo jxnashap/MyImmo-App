@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import SettingsView from "@/components/SettingsView";
+import { decryptIbanRow } from "@/lib/ibanData";
 import type { VermieterProfil, Iban } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export default async function EinstellungenPage() {
   return (
     <SettingsView
       profil={(data ?? null) as VermieterProfil | null}
-      ibans={(ibanRows ?? []) as Iban[]}
+      ibans={((ibanRows ?? []) as Iban[]).map(decryptIbanRow)}
       email={user?.email}
       provider={user?.app_metadata?.provider}
     />
