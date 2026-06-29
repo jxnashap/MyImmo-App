@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { decryptIbanRow } from "@/lib/ibanData";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,18 @@ export async function GET() {
   const daten: Record<string, unknown> = {};
   for (const table of TABLES) {
     const { data, error } = await supabase.from(table).select("*");
-    daten[table] = error ? { fehler: error.message } : data ?? [];
+    if (error) {
+      daten[table] = { fehler: error.message };
+      continue;
+    }
+    // Bankdaten liegen verschlüsselt in der DB → für den Export (DSGVO-Recht
+    // auf Datenübertragbarkeit muss nutzbar sein) entschlüsseln.
+    daten[table] =
+      table === "ibans"
+        ? (data ?? []).map((r) =>
+            decryptIbanRow(r as { iban?: string | null; inhaber?: string | null; iban_bidx?: string | null }),
+          )
+        : data ?? [];
   }
 
   const payload = {

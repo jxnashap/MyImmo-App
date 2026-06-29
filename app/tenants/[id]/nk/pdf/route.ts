@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { berechneNk, type NkRawPosition } from "@/lib/nk";
 import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
+import { decryptIbanRow } from "@/lib/ibanData";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,7 +63,10 @@ export async function GET(
     (positions ?? []) as NkRawPosition[],
   );
 
-  const pdf = await buildNkPdf(abrechnung, vermieterAus(profil, iban));
+  const pdf = await buildNkPdf(
+    abrechnung,
+    vermieterAus(profil, iban ? decryptIbanRow(iban) : null),
+  );
 
   const safeName = abrechnung.mieterName.replace(/[^a-zA-Z0-9]+/g, "_");
   const filename = `NK-Abrechnung_${jahr}_${safeName}.pdf`;
