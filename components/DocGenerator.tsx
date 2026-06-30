@@ -1,7 +1,7 @@
 "use client";
-import SubmitButton from "@/components/SubmitButton";
+import DokAusgabe from "@/components/DokAusgabe";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
 import {
   ARTEN,
@@ -53,6 +53,7 @@ export default function DocGenerator({
   const [vAdr, setVAdr] = useState(initialAbsAdr);
   const [vorlageText, setVorlageText] = useState(vorlagen["allgemein"] ?? DEFAULT_VORLAGEN.allgemein);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const pdfFormRef = useRef<HTMLFormElement>(null);
 
   const zeigtBetrag = ART_ZEIGT_BETRAG.includes(art);
   const selectedIban = ibans.find((x) => x.id === ibanId) ?? null;
@@ -385,12 +386,12 @@ export default function DocGenerator({
           </div>
         </div>
 
-        {/* PDF-Download (POST an die PDF-Route) */}
+        {/* PDF-Erzeugung (POST an die PDF-Route) — abgesendet via DokAusgabe */}
         <form
+          ref={pdfFormRef}
           action={`/tenants/${tenant.id}/dokument/pdf`}
           method="POST"
           target="_blank"
-          style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}
         >
           <input type="hidden" name="art" value={art} />
           <input type="hidden" name="datum" value={datum} />
@@ -400,10 +401,15 @@ export default function DocGenerator({
           <input type="hidden" name="vName" value={vName} />
           <input type="hidden" name="vAdr" value={vAdr} />
           <input type="hidden" name="text" value={vorlageText} />
-          <SubmitButton>
-            📄 PDF erstellen
-          </SubmitButton>
         </form>
+        <div style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
+          <DokAusgabe
+            onSavePdf={() => pdfFormRef.current?.requestSubmit()}
+            mailTo={tenant.email}
+            betreff={`${titel} – ${mieterName || objekt}`}
+            pdfLabel="PDF erstellen"
+          />
+        </div>
       </div>
     </div>
   );

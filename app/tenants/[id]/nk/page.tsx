@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { berechneNk, deDatum, type NkRawPosition } from "@/lib/nk";
 import { eur2 } from "@/lib/format";
+import DokAusgabe from "@/components/DokAusgabe";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function NkPage({
   const { data: tenant } = await supabase
     .from("mieter")
     .select(
-      "id,prop_id,vorname,nachname,mieter_adresse,einheit,flaeche,mietbeginn,mietende,nk_vorauszahlung",
+      "id,prop_id,vorname,nachname,email,mieter_adresse,einheit,flaeche,mietbeginn,mietende,nk_vorauszahlung",
     )
     .eq("id", params.id)
     .single();
@@ -70,14 +71,11 @@ export default async function NkPage({
               Anzeigen
             </button>
           </form>
-          <a
-            href={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-gold"
-          >
-            PDF herunterladen
-          </a>
+          <DokAusgabe
+            pdfHref={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`}
+            mailTo={tenant.email}
+            betreff={`Nebenkostenabrechnung ${jahr} – ${a.objekt}${a.einheit ? ", " + a.einheit : ""}`}
+          />
         </div>
       </div>
 
