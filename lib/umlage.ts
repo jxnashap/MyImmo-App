@@ -22,6 +22,11 @@ export type UmlageMieter = {
 export type UmlageOptions = {
   zeitanteilig: boolean;
   referenzFlaeche?: number; // Gesamtwohnfläche des Objekts (für zeitanteilige Verteilung)
+  // Zahl der Wohneinheiten (für den "gleich"-Schlüssel beim Zeitanteiligen):
+  // Bei einem Mieterwechsel in derselben Wohnung gibt es MEHR Mieter-Datensätze
+  // als Einheiten — die Referenz muss die Einheiten zählen, sonst gilt eine
+  // ganzjährig belegte Wohnung fälschlich als halb leer.
+  anzahlEinheiten?: number;
 };
 
 export type UmlageAnteil = {
@@ -123,7 +128,7 @@ export function berechneUmlage(
   // der Mieterflächen als Näherung. Über-Verteilung ist durch die faktor-
   // Kappung (min(1, …)) ohnehin ausgeschlossen.
   const referenzFlaeche = (opts.referenzFlaeche ?? 0) > 0 ? (opts.referenzFlaeche as number) : sumFlaeche;
-  const anzahl = mieter.length;
+  const anzahl = (opts.anzahlEinheiten ?? 0) > 0 ? (opts.anzahlEinheiten as number) : mieter.length;
 
   const perMieter: UmlageErgebnisMieter[] = mieter.map((m) => ({
     id: m.id,

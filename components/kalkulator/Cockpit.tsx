@@ -178,7 +178,8 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   useEffect(() => {
     const d: CpData = { kp, qm, flaeche: fl, nk, gesamtInvest, d1Summe: d1S, d2Summe: d2S, eigenkapital, kaltmiete: nettokaltmiete, brutto, faktor, cfOp, cfNetto, gesRate, adresse };
     try { localStorage.setItem(CP_STORAGE_KEY, JSON.stringify(d)); } catch { /* ignore */ }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kp, qm, fl, nk, gesamtInvest, d1S, d2S, eigenkapital, nettokaltmiete, brutto, faktor, cfOp, cfNetto, gesRate, adresse]);
 
   // ===== Speichern / Laden / Löschen =====
   const eingaben: Record<string, string> = {

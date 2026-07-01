@@ -11,6 +11,17 @@ type MieterFristInput = {
 
 const iso = (d: Date) => d.toISOString().split("T")[0];
 
+// Monate addieren OHNE Tag-Rollover: 31.03. − 1 Monat → 28./29.02. (nicht 03.03.).
+function addMonate(d: Date, monate: number): Date {
+  const r = new Date(d);
+  const tag = r.getDate();
+  r.setDate(1);
+  r.setMonth(r.getMonth() + monate);
+  const letzterTag = new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate();
+  r.setDate(Math.min(tag, letzterTag));
+  return r;
+}
+
 // Abgeleitete Fristen eines Mieters (Mietbeginn, -ende, Kündigungsfrist, nächste Erhöhung).
 export function mieterFristen(m: MieterFristInput): Frist[] {
   const fristen: Frist[] = [];
@@ -23,8 +34,7 @@ export function mieterFristen(m: MieterFristInput): Frist[] {
     const tage = Math.ceil((ende.getTime() - heute.getTime()) / 86400000);
     fristen.push({ label: "Mietende", datum: m.mietende, typ: tage < 90 ? "warn" : "info" });
     if (m.kuendigung) {
-      const kFrist = new Date(ende);
-      kFrist.setMonth(kFrist.getMonth() - m.kuendigung);
+      const kFrist = addMonate(ende, -m.kuendigung);
       const kTage = Math.ceil((kFrist.getTime() - heute.getTime()) / 86400000);
       if (kTage > 0) fristen.push({ label: `Kündigungsfrist (${m.kuendigung} Mo. vorher)`, datum: iso(kFrist), typ: kTage < 60 ? "warn" : "info" });
     }
@@ -32,13 +42,11 @@ export function mieterFristen(m: MieterFristInput): Frist[] {
 
   // Nächste mögliche Mieterhöhung: 12 Monate nach letzter (Kappungsgrenze §558)
   if (m.letzte_erhoehung) {
-    const next = new Date(m.letzte_erhoehung);
-    next.setMonth(next.getMonth() + 12);
+    const next = addMonate(new Date(m.letzte_erhoehung), 12);
     const nTage = Math.ceil((next.getTime() - heute.getTime()) / 86400000);
     fristen.push({ label: "Nächste Mieterhöhung möglich", datum: iso(next), typ: nTage <= 0 ? "ok" : "info" });
   } else if (m.mietbeginn) {
-    const next = new Date(m.mietbeginn);
-    next.setMonth(next.getMonth() + 12);
+    const next = addMonate(new Date(m.mietbeginn), 12);
     if (next < heute) fristen.push({ label: "Mieterhöhung möglich (keine bisher)", datum: null, typ: "ok" });
   }
 

@@ -58,7 +58,31 @@ export async function middleware(request: NextRequest) {
       },
     }
   );
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Nicht eingeloggte Nutzer auf /login leiten — außer auf öffentlichen
+  // Seiten (Login/Auth-Callback, Bank-Freigabe, Impressum/Datenschutz).
+  // API-/Datei-Routen prüfen Auth selbst (eigene Redirects/Fehlercodes).
+  const { pathname } = request.nextUrl;
+  const istOeffentlich =
+    pathname === "/" || // eigene Willkommens-Ansicht für Ausgeloggte
+    pathname === "/login" ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/beleihung/") ||
+    pathname === "/impressum" ||
+    pathname === "/datenschutz" ||
+    pathname.startsWith("/api/");
+  if (!user && !istOeffentlich && request.method === "GET") {
+    const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
+    redirectResponse.headers.set(
+      CSP_REPORT_ONLY ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
+      csp
+    );
+    redirectResponse.headers.set("X-Content-Type-Options", "nosniff");
+    return redirectResponse;
+  }
 
   // ---- Security-Header zentral für alle Routen ----
   response.headers.set(

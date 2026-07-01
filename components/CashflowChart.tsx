@@ -15,7 +15,7 @@ export default function CashflowChart({ data }: { data: { label: string; wert: n
   const min = Math.min(0, ...data.map((p) => p.wert));
   const max = Math.max(0, ...data.map((p) => p.wert));
   const span = max - min || 1;
-  const x = (i: number) => padL + (i * (W - padL - padR)) / (data.length - 1);
+  const x = (i: number) => padL + (i * (W - padL - padR)) / Math.max(1, data.length - 1);
   const y = (v: number) => padT + ((max - v) * (H - padT - padB)) / span;
   const pfad = data.map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.wert).toFixed(1)}`).join(" ");
   const flaeche = `${pfad} L${x(data.length - 1).toFixed(1)},${y(Math.min(0, min)).toFixed(1)} L${x(0).toFixed(1)},${y(Math.min(0, min)).toFixed(1)} Z`;

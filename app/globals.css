@@ -506,3 +506,57 @@ tr.row-click, .row-click { cursor: pointer; }
 tr.row-click:focus-visible, .row-click:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
 .modal-sheet { max-height: 90vh; overflow-y: auto; }
 .modal-sheet.wide { max-width: 640px; }
+
+/* ===== Motion & Feinschliff (global) ===== */
+/* Sanftes Scrollen (Anker, scrollIntoView) */
+html { scroll-behavior: smooth; }
+
+/* Native Controls (Checkbox/Radio/Date/Range) im Gold-Thema */
+:root { accent-color: var(--gold); }
+
+/* Sichtbarer Tastatur-Fokus für alle interaktiven Elemente */
+.btn:focus-visible, .tab-btn:focus-visible, .subtab:focus-visible,
+.nav-item:focus-visible, .icon-btn:focus-visible, .delete-btn:focus-visible,
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.field input:focus-visible, .field select:focus-visible,
+.form-group input:focus-visible, .form-group select:focus-visible,
+.form-group textarea:focus-visible { outline: none; } /* haben eigenen Gold-Ring */
+
+/* Taktil: Buttons geben beim Drücken kurz nach */
+.btn:active:not(:disabled) { transform: translateY(0) scale(0.985); }
+.settings-tab:active, .tab-btn:active, .icon-btn:active { transform: scale(0.97); }
+.settings-tab, .tab-btn, .icon-btn { transition: color .15s, background .15s, border-color .15s, transform .1s ease; }
+
+/* Karten heben sanft an (nur interaktive) */
+.prop-card:hover { transform: translateY(-2px); }
+.prop-card { transition: border-color .2s, box-shadow .2s, transform .2s cubic-bezier(.22,.61,.36,1); }
+
+/* Dezente, thematisierte Scrollbars (WebKit + Firefox) */
+* { scrollbar-width: thin; scrollbar-color: var(--line2) transparent; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--faint); border: 2px solid transparent; background-clip: content-box; }
+
+/* Theme-Wechsel: Flächen blenden mit über (statt hart umzuschalten) */
+.section, .card, .kpi-card, .sidebar, .settings-tabs, .form-box, .modal-sheet, .toast, .bank-card {
+  transition-property: background-color, border-color, box-shadow, transform, color;
+  transition-duration: .2s;
+  transition-timing-function: ease;
+}
+
+/* Reduzierte Bewegung: alle dekorativen Animationen aus, Lade-Spinner bleibt */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .fade-up, .toast, .kpi-card, .prop-card, .btn, .bar-fill, .progress-fill,
+  .settings-tab, .tab-btn, .icon-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+  .prop-card:hover, .btn:active:not(:disabled) { transform: none; }
+}

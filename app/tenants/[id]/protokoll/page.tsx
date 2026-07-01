@@ -13,7 +13,7 @@ export default async function ProtokollPage({ params }: { params: { id: string }
 
   const [{ data: prop }, { data: vp }] = await Promise.all([
     tenant.prop_id ? supabase.from("properties").select("*").eq("id", tenant.prop_id).single() : Promise.resolve({ data: null }),
-    user ? supabase.from("vermieter_profil").select("*").eq("user_id", user.id).single() : Promise.resolve({ data: null }),
+    user ? supabase.from("vermieter_profil").select("*").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
 
   return (

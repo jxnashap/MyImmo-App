@@ -27,7 +27,7 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
   // Objekt (Gesamtfläche als Referenz fürs Zeitanteilige) + Mieter laden.
   const [{ data: prop }, { data: dbMieter, error: ladeFehler }] = await Promise.all([
     supabase.from("properties").select("flaeche").eq("id", propId).maybeSingle(),
-    supabase.from("mieter").select("id,vorname,nachname,flaeche,mietbeginn,mietende").eq("prop_id", propId),
+    supabase.from("mieter").select("id,vorname,nachname,einheit,flaeche,mietbeginn,mietende").eq("prop_id", propId),
   ]);
   if (ladeFehler) return fehlerErg(ladeFehler.message);
 
@@ -49,6 +49,9 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
   await Promise.all(
     aktiveMieter
       .filter((m) => {
+        // Nie eine gepflegte Fläche mit 0 überschreiben (leeres Feld im
+        // Assistenten darf keinen Datenverlust auslösen).
+        if (m.flaeche <= 0) return false;
         const alt = erlaubt.get(m.id)?.flaeche ?? null;
         return alt == null || Number(alt) !== m.flaeche;
       })
@@ -59,9 +62,15 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
     .filter((z) => z.bezeichnung.trim() !== "" && z.betrag > 0)
     .map((z) => ({ bezeichnung: z.bezeichnung.trim(), betrag: z.betrag, schluessel: z.schluessel }));
 
+  // Einheiten zählen (distinct einheit); ohne gepflegte Einheiten-Namen
+  // bleibt die Mieterzahl die Näherung.
+  const einheiten = new Set(
+    (dbMieter ?? []).map((m) => (m.einheit ?? "").trim().toLowerCase()).filter(Boolean),
+  );
   const ergebnis = berechneUmlage(gueltigeZeilen, aktiveMieter, {
     zeitanteilig,
     referenzFlaeche: prop?.flaeche ?? 0,
+    anzahlEinheiten: einheiten.size,
   });
 
   // Bestehende Assistenten-Positionen dieses Jahres ersetzen (manuelle bleiben).

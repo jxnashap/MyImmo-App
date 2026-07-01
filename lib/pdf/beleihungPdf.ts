@@ -34,6 +34,14 @@ function euro(n: number): string {
 
 const tracked = (s: string) => s.split("").join(" ");
 
+// Text auf maxW kürzen ("…"), damit Spalten nie ineinanderlaufen.
+function fit(f: PDFFont, s: string, size: number, maxW: number): string {
+  let str = sanitize(s);
+  if (f.widthOfTextAtSize(str, size) <= maxW) return str;
+  while (str.length > 1 && f.widthOfTextAtSize(str + "...", size) > maxW) str = str.slice(0, -1);
+  return str + "...";
+}
+
 function deDate(d: Date): string {
   return d.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
 }
@@ -133,7 +141,7 @@ function fusszeile(c: Ctx, seite: number, gesamt: number) {
 // Zweispaltige Kennzahlen-Zeilen (Label links, Wert rechts fett).
 function kvZeile(c: Ctx, y: number, label: string, wert: string, x0: number, x1: number): number {
   c.text(x0, y, label, 9, c.font, MUTED);
-  c.right(x1, y, wert, 9.5, c.bold, INK);
+  c.right(x1, y, fit(c.bold, wert, 9.5, x1 - x0 - 70), 9.5, c.bold, INK);
   return y - 17;
 }
 
@@ -213,8 +221,8 @@ export async function buildMietaufstellungPdf(
     sumKalt += m.kaltmiete ?? 0;
     sumNk += m.nkVz ?? 0;
     sumFl += m.flaeche ?? 0;
-    c.text(cols.einheit, y, m.einheit || "–", 9, c.font, INK);
-    c.text(cols.name, y, m.name, 9, c.font, INK);
+    c.text(cols.einheit, y, fit(c.font, m.einheit || "–", 9, cols.name - cols.einheit - 8), 9, c.font, INK);
+    c.text(cols.name, y, fit(c.font, m.name, 9, cols.flaeche - cols.name - 44), 9, c.font, INK);
     c.right(cols.flaeche, y, m.flaeche ? `${m.flaeche} m²` : "–", 9, c.font, INK);
     c.right(cols.kalt, y, m.kaltmiete != null ? euro(m.kaltmiete) : "–", 9, c.font, INK);
     c.right(cols.nk, y, m.nkVz != null ? euro(m.nkVz) : "–", 9, c.font, INK);
