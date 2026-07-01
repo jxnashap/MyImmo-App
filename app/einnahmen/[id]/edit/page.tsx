@@ -58,6 +58,13 @@ export default async function EinnahmeEditPage({ params, searchParams }: { param
         <div className="form-row single">
           <div className="form-group"><label>Beschreibung</label><input type="text" name="beschreibung" defaultValue={e.beschreibung ?? ""} /></div>
         </div>
+        <div className="form-row single">
+          <div className="form-group">
+            <label>davon Nebenkosten-Vorauszahlung (€)</label>
+            <input type="number" step="0.01" min="0" name="nk_anteil" defaultValue={e.nk_anteil ?? ""} placeholder="z.B. 160" />
+            <small style={{ color: "var(--muted)" }}>In „Miete“ enthalten – erscheint in der Anlage V als Umlagen (Zeile 13).</small>
+          </div>
+        </div>
         <div className="form-actions">
           <Link href={back} className="btn btn-ghost">Abbrechen</Link>
           <SubmitButton>Speichern</SubmitButton>

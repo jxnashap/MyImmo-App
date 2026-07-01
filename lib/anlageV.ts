@@ -113,8 +113,11 @@ export function berechneAnlageV(
     if (jahrVon(e.buchungsdatum) !== jahr) continue;
     const betrag = Number(e.betrag) || 0;
     const g = hole(e.prop_id);
-    if (e.kategorie === "Miete") g.einnahmen.miete += betrag;
-    else if (e.kategorie === "Nebenkostenabrechnung") g.einnahmen.umlagen += betrag;
+    if (e.kategorie === "Miete") {
+      const nk = Number(e.nk_anteil) || 0;
+      g.einnahmen.miete += betrag - nk;
+      g.einnahmen.umlagen += nk;
+    } else if (e.kategorie === "Nebenkostenabrechnung") g.einnahmen.umlagen += betrag;
     else if (e.kategorie === "Kaution") continue; // durchlaufend, nicht steuerbar
     else g.einnahmen.sonstige += betrag;
   }
