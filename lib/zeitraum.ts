@@ -57,7 +57,11 @@ function startOfDay(d: Date) { return new Date(d.getFullYear(), d.getMonth(), d.
 
 function rangeStart(zeitraum: Zeitraum, now: Date, earliest: Date | null): { start: Date; gran: Granularitaet } {
   switch (zeitraum) {
-    case "1M": return { start: startOfDay(new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())), gran: "day" };
+    case "1M": {
+      // Tag klemmen, damit z. B. 31.03. − 1 Monat nicht in den März zurückrollt.
+      const letzterTagVormonat = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+      return { start: startOfDay(new Date(now.getFullYear(), now.getMonth() - 1, Math.min(now.getDate(), letzterTagVormonat))), gran: "day" };
+    }
     case "1J": return { start: new Date(now.getFullYear(), now.getMonth() - 11, 1), gran: "month" };
     case "5J": return { start: new Date(now.getFullYear(), now.getMonth() - 59, 1), gran: "month" };
     case "Max":

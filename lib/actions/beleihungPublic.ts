@@ -22,7 +22,14 @@ function rateLimited(ip: string): boolean {
   }
   arr.push(now);
   hits.set(ip, arr);
-  if (hits.size > 1000) hits.clear(); // Speicher begrenzen
+  if (hits.size > 1000) {
+    // Nur abgelaufene Einträge entfernen — clear() würde aktive Limits zurücksetzen.
+    for (const [k, v] of hits) {
+      const frisch = v.filter((t) => now - t < FENSTER);
+      if (frisch.length === 0) hits.delete(k);
+      else hits.set(k, frisch);
+    }
+  }
   return false;
 }
 

@@ -200,7 +200,7 @@ export default function UmlageAssistent({
       }
       const neue: ZeileUI[] = list.map((p) => ({
         bezeichnung: p.name.trim(),
-        betrag: Number.isFinite(p.betrag) ? String(p.betrag).replace(".", ",") : "",
+        betrag: Number.isFinite(p.betrag) ? String(p.betrag) : "",
         schluessel: "flaeche",
       }));
       setZeilen((zs) => {

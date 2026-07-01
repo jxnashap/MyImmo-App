@@ -72,7 +72,8 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   doc.setTitle(`${d.titel} – ${d.empfaengerName}`);
   doc.setCreator("MyImmo");
 
-  const page = doc.addPage([A4.w, A4.h]);
+  let page = doc.addPage([A4.w, A4.h]);
+  const seiten = [page];
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const serif = await doc.embedFont(StandardFonts.TimesRoman);
@@ -103,6 +104,14 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
     }
     if (cur) lines.push(cur);
     return lines.length ? lines : [""];
+  };
+
+  // Seitenumbruch: reicht der Platz nicht, neue Seite beginnen (84 = Fußzeile).
+  const neueSeiteWennNoetig = (yAktuell: number, benoetigt: number): number => {
+    if (yAktuell - benoetigt > 84) return yAktuell;
+    page = doc.addPage([A4.w, A4.h]);
+    seiten.push(page);
+    return A4.h - 64;
   };
 
   // ---- Kopf (fix oben, KEIN schwarzer Streifen) ----
@@ -175,6 +184,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
     // Absätze
     for (const para of d.absaetze) {
       for (const ln of wrap(para, 10.5, RIGHT - ML)) {
+        if (commit) y = neueSeiteWennNoetig(y, LH);
         if (commit) text(ML, y, ln, 10.5, font, INK);
         y -= LH;
       }
@@ -183,6 +193,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
 
     // Zahlungskonto-Box
     if (kontoLines.length) {
+      if (commit) y = neueSeiteWennNoetig(y, kontoH + 30);
       y -= 4;
       const boxTop = y + 10;
       const boxBottom = boxTop - kontoH;
@@ -199,6 +210,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
     }
 
     // Grußformel + Unterschrift
+    if (commit) y = neueSeiteWennNoetig(y, 80);
     y -= 6;
     if (commit) text(ML, y, "Mit freundlichen Grüßen", 10.5, font, INK);
     y -= 46; // extra Zeile Platz für die Unterschrift
@@ -213,12 +225,15 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   const startY = feldBottom - 18; // knapp unter dem festen Adressfeld
   renderBody(startY, true);
 
-  // ---- Fußzeile ----
-  hline(64, ML, RIGHT, LINE, 0.6);
-  text(ML, 52, "MyImmo", 7.5, font, MUTED);
-  const mid = "Seite 1 von 1";
-  text(A4.w / 2 - font.widthOfTextAtSize(mid, 7.5) / 2, 52, mid, 7.5, font, MUTED);
-  right(RIGHT, 52, heute, 7.5, font, MUTED);
+  // ---- Fußzeile (auf jeder Seite) ----
+  seiten.forEach((pg, i) => {
+    pg.drawLine({ start: { x: ML, y: 64 }, end: { x: RIGHT, y: 64 }, thickness: 0.6, color: LINE });
+    pg.drawText("MyImmo", { x: ML, y: 52, size: 7.5, font, color: MUTED });
+    const mid = `Seite ${i + 1} von ${seiten.length}`;
+    pg.drawText(mid, { x: A4.w / 2 - font.widthOfTextAtSize(mid, 7.5) / 2, y: 52, size: 7.5, font, color: MUTED });
+    const h = sanitize(heute);
+    pg.drawText(h, { x: RIGHT - font.widthOfTextAtSize(h, 7.5), y: 52, size: 7.5, font, color: MUTED });
+  });
 
   return doc.save();
 }

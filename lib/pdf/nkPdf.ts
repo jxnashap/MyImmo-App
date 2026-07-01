@@ -96,7 +96,8 @@ export async function buildNkPdf(
   doc.setTitle(`Nebenkostenabrechnung ${a.jahr} – ${a.mieterName}`);
   doc.setCreator("MyImmo");
 
-  const page = doc.addPage([A4.w, A4.h]);
+  let page = doc.addPage([A4.w, A4.h]);
+  const seiten: PDFPage[] = [page];
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const serif = await doc.embedFont(StandardFonts.TimesRoman);
@@ -154,6 +155,15 @@ export async function buildNkPdf(
     }
     if (cur) lines.push(cur);
     return lines;
+  };
+
+  // Seitenumbruch: reicht der Platz nicht mehr, neue Seite beginnen.
+  // (y ist im Aufrufkontext deklariert; Helfer arbeitet über Rückgabewert.)
+  const neueSeiteWennNoetig = (yAktuell: number, benoetigt: number): number => {
+    if (yAktuell - benoetigt > 84) return yAktuell; // 84 = Fußzeilen-Zone
+    page = doc.addPage([A4.w, A4.h]);
+    seiten.push(page);
+    return A4.h - 64;
   };
 
   // ---- Top-Streifen ----
@@ -244,6 +254,7 @@ export async function buildNkPdf(
     y -= 16;
   } else {
     for (const p of a.positionen) {
+      y = neueSeiteWennNoetig(y, 15);
       text(ML, y, fit(p.bezeichnung, 10, colSchluessel - ML - 12), 10, font, INK);
       text(colSchluessel, y, p.umlageschluessel || "—", 10, font, MUTED);
       right(RIGHT, y, euro(p.betrag), 10, font, INK);
@@ -253,6 +264,7 @@ export async function buildNkPdf(
   y -= 3;
   hline(y);
   y -= 18;
+  y = neueSeiteWennNoetig(y, 90);
 
   // ---- Summen ----
   const sumLabel = 330;
@@ -293,6 +305,7 @@ export async function buildNkPdf(
   }
 
   // ---- Schlusstext ----
+  y = neueSeiteWennNoetig(y, 160);
   const hatKonto = !guthaben && !!vermieter.iban;
   const schluss = guthaben
     ? "Das Guthaben wird Ihnen innerhalb von 14 Tagen auf das uns bekannte Konto erstattet."
@@ -316,12 +329,15 @@ export async function buildNkPdf(
   y -= 48; // extra Zeile Platz für die Unterschrift
   text(ML, y, vermieter.name, 10, font, INK);
 
-  // ---- Fußzeile ----
-  hline(64, ML, RIGHT, LINE, 0.6);
-  text(ML, 52, "MyImmo", 7.5, font, MUTED);
-  const mid = "Seite 1 von 1";
-  text(A4.w / 2 - font.widthOfTextAtSize(mid, 7.5) / 2, 52, mid, 7.5, font, MUTED);
-  right(RIGHT, 52, heute, 7.5, font, MUTED);
+  // ---- Fußzeile (auf jeder Seite) ----
+  seiten.forEach((pg, i) => {
+    pg.drawLine({ start: { x: ML, y: 64 }, end: { x: RIGHT, y: 64 }, thickness: 0.6, color: LINE });
+    pg.drawText("MyImmo", { x: ML, y: 52, size: 7.5, font, color: MUTED });
+    const mid = `Seite ${i + 1} von ${seiten.length}`;
+    pg.drawText(mid, { x: A4.w / 2 - font.widthOfTextAtSize(mid, 7.5) / 2, y: 52, size: 7.5, font, color: MUTED });
+    const h = sanitize(heute);
+    pg.drawText(h, { x: RIGHT - font.widthOfTextAtSize(h, 7.5), y: 52, size: 7.5, font, color: MUTED });
+  });
 
   return doc.save();
 }

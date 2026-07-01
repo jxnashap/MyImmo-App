@@ -60,7 +60,7 @@ export default async function KreditePage() {
         <div className="empty"><div className="empty-icon">🏦</div><h4>Noch keine Darlehen</h4></div>
       ) : (
         list.map((k) => {
-          const pct = k.betrag ? Math.round(((k.restschuld ?? 0) / k.betrag) * 100) : 0;
+          const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? 0) / k.betrag) * 100))) : 100;
           const tilgtPct = 100 - pct;
           const moZins = k.restschuld ? (k.restschuld * (k.zinssatz ?? 0) / 100) / 12 : 0;
           const moTilg = (k.monatsrate ?? 0) - moZins;

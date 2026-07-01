@@ -161,7 +161,7 @@ export default async function DashboardPage() {
               <div className="empty"><div className="empty-icon">🏦</div><p>Noch keine Kredite</p></div>
             ) : (
               kredite.slice(0, 3).map((k) => {
-                const pct = k.betrag ? Math.round(((k.restschuld ?? 0) / k.betrag) * 100) : 0;
+                const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? 0) / k.betrag) * 100))) : 100;
                 return (
                   <div key={k.id} style={{ borderLeft: "3px solid var(--gold)", padding: "10px 14px", background: "var(--gold-pale)", borderRadius: "0 8px 8px 0", marginBottom: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
