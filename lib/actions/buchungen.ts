@@ -38,6 +38,15 @@ function done(fd: FormData, fallback: string): never {
 }
 
 // ===== EINNAHMEN =====
+// Optionaler NK-Anteil (in „Miete" enthaltene NK-Vorauszahlung): muss, falls
+// gesetzt, zwischen 0 und dem Betrag liegen.
+function nkAnteil(fd: FormData): number | null {
+  const nk = num(fd, "nk_anteil");
+  if (nk != null && (nk < 0 || nk > posNum(fd, "betrag", "Betrag")))
+    throw new Error("NK-Anteil muss zwischen 0 und dem Betrag liegen.");
+  return nk;
+}
+
 export async function createEinnahme(fd: FormData) {
   const { supabase, userId } = await uid();
   const { error } = await supabase.from("einnahmen").insert({
@@ -48,6 +57,7 @@ export async function createEinnahme(fd: FormData) {
     kategorie: str(fd, "kategorie"),
     betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
+    nk_anteil: nkAnteil(fd),
   });
   if (error) throw new Error(error.message);
   done(fd, "/einnahmen");
@@ -61,6 +71,7 @@ export async function updateEinnahme(id: string, fd: FormData) {
     kategorie: str(fd, "kategorie"),
     betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
+    nk_anteil: nkAnteil(fd),
   }).eq("id", id);
   if (error) throw new Error(error.message);
   done(fd, "/einnahmen");
