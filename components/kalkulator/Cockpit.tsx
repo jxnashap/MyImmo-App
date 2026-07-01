@@ -118,7 +118,11 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   const nichtUmlagefaehig = num(hgNichtUmlage) + instandhMo + mietausfallMo;
 
   const afaBasis = kp * (num(gebaeude) / 100) + kuecheV;
-  const afaMo = (afaBasis * num(afaSatz)) / 12;
+  // Degressive AfA (§ 7 Abs. 5a EStG): 5 % p.a. geometrisch-degressiv vom
+  // Restbuchwert — nur neue Wohngebäude, Baubeginn/Kauf 10/2023–09/2029.
+  // Vereinfachung: reine 5 %-Degression, ohne Wechsel zur linearen AfA.
+  const istDegressiv = afaSatz === "degressiv";
+  const afaMo = (istDegressiv ? afaBasis * 0.05 : afaBasis * num(afaSatz)) / 12;
   const grenzsteuer = calcGrenzsteuer(num(einkommen), veranlagung === "2");
 
   const d1S = num(d1Summe), d1Z = num(d1Zins) / 100, d1T = num(d1Tilg) / 100;
@@ -157,7 +161,8 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   const zWarmmiete = zMiete + num(hgUmlage) + num(grundsteuer);
   const zCfOp = zMiete - zBewirt - gesRate;
   const zZinsen = (berechneRestschuld(d1S, d1Z, d1Rate, jahre) * gewZins) / 12;
-  const zZvE = zMiete - num(hgNichtUmlage) - zZinsen - afaMo;
+  const afaMoZukunft = (istDegressiv ? afaBasis * 0.05 * Math.pow(0.95, jahre - 1) : afaBasis * num(afaSatz)) / 12;
+  const zZvE = zMiete - num(hgNichtUmlage) - zZinsen - afaMoZukunft;
   const zSteuern = zZvE * grenzsteuer;
   const zCfNetto = zCfOp - zSteuern;
   const zWert = kp * Math.pow(1 + num(wertsteigerung) / 100, jahre);
@@ -260,7 +265,8 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
       const z2 = rs2 * d2Z; rs2 = Math.max(0, rs2 - Math.min(rs2, d2Rate * 12 - z2));
       const zinsMo = (rs1 * d1Z + rs2 * d2Z) / 12;
       const cf = m - b - gesRate;
-      const st = (m - num(hgNichtUmlage) - zinsMo - afaMo) * grenzsteuer;
+      const afaMoJ = (istDegressiv ? afaBasis * 0.05 * Math.pow(0.95, j - 1) : afaBasis * num(afaSatz)) / 12;
+      const st = (m - num(hgNichtUmlage) - zinsMo - afaMoJ) * grenzsteuer;
       verlauf.push({ yr: JETZT + j, m, wert, rs: rs1 + rs2, cf, cfn: cf - st });
     }
   }
@@ -367,16 +373,21 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
             <div className="card-header"><div className="card-title">AfA &amp; Steuern</div></div>
             <div className="card-body">
               <div className="field-row">
-                <div className="field"><label>AfA-Satz</label><select value={afaSatz} onChange={(e) => setAfaSatz(e.target.value)}><option value="0.02">2% (nach 1924)</option><option value="0.025">2,5% (vor 1925)</option><option value="0.03">3% (Neubau ab 2023)</option></select></div>
+                <div className="field"><label>AfA-Satz</label><select value={afaSatz} onChange={(e) => setAfaSatz(e.target.value)}><option value="0.02">2% (nach 1924)</option><option value="0.025">2,5% (vor 1925)</option><option value="0.03">3% (Neubau ab 2023)</option><option value="degressiv">Degressiv 5 % (Neubau 10/2023–09/2029)</option></select></div>
                 {F("Gebäudeanteil am KP (%)", gebaeude, setGebaeude)}
               </div>
               <div className="field-row">
                 {F("Zu verst. Einkommen (€/Jahr)", einkommen, setEinkommen)}
                 <div className="field"><label>Veranlagung</label><select value={veranlagung} onChange={(e) => setVeranlagung(e.target.value)}><option value="1">Einzel</option><option value="2">Zusammen (Splitting)</option></select></div>
               </div>
+              {istDegressiv && (
+                <div style={{ fontSize: 11, color: "var(--muted)", margin: "6px 0 2px", lineHeight: 1.5 }}>
+                  Degressiv: 5 % vom Restbuchwert (fällt jährlich). Nur Wohngebäude, Baubeginn/Kauf 10/2023–09/2029.
+                </div>
+              )}
               <div className="divider" />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {stat("AfA / Monat", fmtE(afaMo) + "/Mo")}
+                {stat(istDegressiv ? "AfA / Monat (1. Jahr)" : "AfA / Monat", fmtE(afaMo) + "/Mo")}
                 {stat("Grenzsteuersatz", pct(grenzsteuer * 100, 1), "gold")}
               </div>
             </div>
