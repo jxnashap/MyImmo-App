@@ -8,8 +8,8 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        gold: "#D4A847",
-        ink: "#0F0F0E",
+        gold: "var(--gold)", // folgt jetzt dem Theme (dunkel #D4A847 / hell #B8860B)
+        ink: "#0F0F0E",      // bleibt fix = dunkler Text auf Gold, in beiden Themes korrekt
       },
     },
   },
