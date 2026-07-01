@@ -4,6 +4,34 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+// ===== Gespeicherte Kalkulationen (Cockpit) =====
+export async function saveKalkulation(
+  name: string,
+  data: Record<string, string>,
+  summary: Record<string, number>,
+) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const { error } = await supabase.from("kalkulationen").insert({
+    user_id: user.id,
+    name: (name || "").trim() || "Kalkulation",
+    data,
+    summary,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/cockpit");
+}
+
+export async function deleteKalkulation(id: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const { error } = await supabase.from("kalkulationen").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/cockpit");
+}
+
 function num(fd: FormData, k: string): number | null {
   const v = fd.get(k);
   if (v == null || v === "") return null;

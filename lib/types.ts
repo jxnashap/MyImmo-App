@@ -144,6 +144,14 @@ export type Iban = {
   created_at: string | null;
 };
 
+export type Kalkulation = {
+  id: string;
+  name: string;
+  data: Record<string, string>;      // alle Cockpit-Eingaben (zum Wiederladen)
+  summary: Record<string, number>;   // Kennzahlen-Snapshot (für Vergleich)
+  created_at: string;
+};
+
 export type Termin = {
   id: string;
   prop_id: string | null;
