@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
@@ -25,30 +26,45 @@ export default async function JahresberichtPage({
 
   const inYear = (d: string | null) => !!d && d.startsWith(String(year));
 
+  const heute = new Date();
+  const aktuellesJahr = heute.getFullYear();
+  // Raten: vergangene Jahre = 12 Monate, laufendes Jahr = verstrichene Monate, Zukunft = 12 (Projektion)
+  const monate = year < aktuellesJahr ? 12 : year > aktuellesJahr ? 12 : heute.getMonth() + 1;
+
   const rows = properties.map((p) => {
     const e = einnahmen.filter((x) => x.prop_id === p.id && inYear(x.buchungsdatum)).reduce((s, x) => s + (x.betrag ?? 0), 0);
     const k = kosten.filter((x) => x.prop_id === p.id && inYear(x.buchungsdatum)).reduce((s, x) => s + (x.betrag ?? 0), 0);
-    const r = kredite.filter((x) => x.prop_id === p.id).reduce((s, x) => s + (x.monatsrate ?? 0), 0) * 12;
-    return { name: p.bezeichnung, e, k, r, netto: e - k - r };
+    const propKredite = kredite.filter((x) => x.prop_id === p.id);
+    // Zinsanteil aus aktueller Restschuld × Zinssatz (Näherung, wie in /steuer)
+    const zins = propKredite.reduce((s, kr) => s + (((kr.restschuld ?? 0) * (kr.zinssatz ?? 0)) / 100 / 12) * monate, 0);
+    const rate = propKredite.reduce((s, kr) => s + (kr.monatsrate ?? 0) * monate, 0);
+    const tilgung = Math.max(0, rate - zins);
+    const cashflow = e - k - rate;
+    return { name: p.bezeichnung, e, k, zins, tilgung, cashflow };
   });
 
   const sum = rows.reduce(
-    (a, r) => ({ e: a.e + r.e, k: a.k + r.k, r: a.r + r.r, netto: a.netto + r.netto }),
-    { e: 0, k: 0, r: 0, netto: 0 }
+    (a, r) => ({
+      e: a.e + r.e, k: a.k + r.k, zins: a.zins + r.zins, tilgung: a.tilgung + r.tilgung, cashflow: a.cashflow + r.cashflow,
+    }),
+    { e: 0, k: 0, zins: 0, tilgung: 0, cashflow: 0 },
   );
 
-  const years = [year + 1, year, year - 1, year - 2];
+  const years = [aktuellesJahr, aktuellesJahr - 1, aktuellesJahr - 2, aktuellesJahr - 3, aktuellesJahr - 4]; // kein Zukunftsjahr, stabil
   const filters: FilterDef[] = [
-    { name: "year", label: "Jahr", icon: "jahr", defaultValue: String(new Date().getFullYear()), options: years.map((y) => ({ value: String(y), label: String(y) })) },
+    { name: "year", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: years.map((y) => ({ value: String(y), label: String(y) })) },
   ];
+
+  const border = "2px solid var(--line2)";
 
   return (
     <div className="fade-up">
       <div className="topbar">
         <div>
           <div className="topbar-title">Jahresbericht &amp; Steuer-Export</div>
-          <div className="topbar-sub">Anlage V · Cashflow-Auswertung · Druckansicht</div>
+          <div className="topbar-sub">Cashflow-Auswertung · Druckansicht</div>
         </div>
+        <Link href="/steuer" className="btn btn-ghost" style={{ fontSize: 12 }}>Steuerliche Auswertung (Anlage V) →</Link>
       </div>
 
       <FilterBar filters={filters} />
@@ -61,9 +77,10 @@ export default async function JahresberichtPage({
               <tr>
                 <th>Immobilie</th>
                 <th style={{ textAlign: "right" }}>Einnahmen</th>
-                <th style={{ textAlign: "right" }}>Kosten</th>
-                <th style={{ textAlign: "right" }}>Kreditraten</th>
-                <th style={{ textAlign: "right" }}>Netto</th>
+                <th style={{ textAlign: "right" }}>Bewirtschaftung</th>
+                <th style={{ textAlign: "right" }}>Zins</th>
+                <th style={{ textAlign: "right" }}>Tilgung</th>
+                <th style={{ textAlign: "right" }}>Cashflow</th>
               </tr>
             </thead>
             <tbody>
@@ -72,18 +89,20 @@ export default async function JahresberichtPage({
                   <td style={{ fontWeight: 500 }}>{r.name}</td>
                   <td style={{ textAlign: "right", color: "var(--green)" }}>{euro(r.e)}</td>
                   <td style={{ textAlign: "right", color: "var(--red)" }}>{euro(r.k)}</td>
-                  <td style={{ textAlign: "right", color: "var(--red)" }}>{euro(r.r)}</td>
-                  <td style={{ textAlign: "right", fontWeight: 600, color: r.netto >= 0 ? "var(--green)" : "var(--red)" }}>{euro(r.netto)}</td>
+                  <td style={{ textAlign: "right", color: "var(--red)" }}>{euro(r.zins)}</td>
+                  <td style={{ textAlign: "right", color: "var(--muted)" }} title="Tilgung baut Vermögen auf – kein Aufwand">{euro(r.tilgung)}</td>
+                  <td style={{ textAlign: "right", fontWeight: 600, color: r.cashflow >= 0 ? "var(--green)" : "var(--red)" }}>{euro(r.cashflow)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr style={{ fontWeight: 600 }}>
-                <td style={{ borderTop: "2px solid var(--line2)" }}>Summe</td>
-                <td style={{ textAlign: "right", color: "var(--green)", borderTop: "2px solid var(--line2)" }}>{euro(sum.e)}</td>
-                <td style={{ textAlign: "right", color: "var(--red)", borderTop: "2px solid var(--line2)" }}>{euro(sum.k)}</td>
-                <td style={{ textAlign: "right", color: "var(--red)", borderTop: "2px solid var(--line2)" }}>{euro(sum.r)}</td>
-                <td style={{ textAlign: "right", color: sum.netto >= 0 ? "var(--green)" : "var(--red)", borderTop: "2px solid var(--line2)" }}>{euro(sum.netto)}</td>
+                <td style={{ borderTop: border }}>Summe</td>
+                <td style={{ textAlign: "right", color: "var(--green)", borderTop: border }}>{euro(sum.e)}</td>
+                <td style={{ textAlign: "right", color: "var(--red)", borderTop: border }}>{euro(sum.k)}</td>
+                <td style={{ textAlign: "right", color: "var(--red)", borderTop: border }}>{euro(sum.zins)}</td>
+                <td style={{ textAlign: "right", color: "var(--muted)", borderTop: border }} title="Tilgung baut Vermögen auf – kein Aufwand">{euro(sum.tilgung)}</td>
+                <td style={{ textAlign: "right", color: sum.cashflow >= 0 ? "var(--green)" : "var(--red)", borderTop: border }}>{euro(sum.cashflow)}</td>
               </tr>
             </tfoot>
           </table>
