@@ -107,6 +107,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
+          <Link href={`/properties/${id}/beleihung`} className="btn btn-ghost" style={{ fontSize: 12 }}>🏦 Beleihungsordner</Link>
           <Link href={`/properties/${id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}>✏️ Bearbeiten</Link>
           <DeleteButton
             action={deleteProperty.bind(null, id)}
