@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import KalkImport from "@/components/kalkulator/KalkImport";
 import CockpitUeberblick from "@/components/kalkulator/CockpitUeberblick";
 import { useToast } from "@/components/Toast";
@@ -49,8 +48,11 @@ const CMP_METRIKEN: { key: string; label: string; fmt: (v: number) => string; be
 
 export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulation[] }) {
   const [tab, setTab] = useState("ueberblick");
-  const router = useRouter();
   const toast = useToast();
+
+  // Liste lokal führen (aus Prop initialisiert) — kein router.refresh(), sonst
+  // gehen die Eingabe-States beim Speichern verloren.
+  const [gespeichertLocal, setGespeichertLocal] = useState<Kalkulation[]>(gespeichert);
 
   // Headbar-Aktionen
   const [showSave, setShowSave] = useState(false);
@@ -186,9 +188,9 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   async function doSave() {
     setSaving(true);
     try {
-      await saveKalkulation(saveName, eingaben, summary);
+      const neu = await saveKalkulation(saveName, eingaben, summary);
+      setGespeichertLocal((prev) => [neu, ...prev]);
       setShowSave(false);
-      router.refresh();
       toast("Gespeichert.");
     } catch {
       toast("Fehler beim Speichern.");
@@ -209,8 +211,8 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   async function loeschen(id: string) {
     try {
       await deleteKalkulation(id);
+      setGespeichertLocal((prev) => prev.filter((k) => k.id !== id));
       setCompareIds((c) => c.filter((x) => x !== id));
-      router.refresh();
       toast("Gelöscht.");
     } catch {
       toast("Fehler beim Löschen.");
@@ -264,7 +266,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   }
 
   // Vergleich: beste Werte je Zeile bestimmen
-  const cmpSel = compareIds.map((id) => gespeichert.find((k) => k.id === id)).filter(Boolean) as Kalkulation[];
+  const cmpSel = compareIds.map((id) => gespeichertLocal.find((k) => k.id === id)).filter(Boolean) as Kalkulation[];
   const bestValue = (key: string, better: "high" | "low" | "none"): number | null => {
     if (better === "none" || cmpSel.length < 2) return null;
     const vals = cmpSel.map((k) => k.summary?.[key]).filter((v) => typeof v === "number") as number[];
@@ -286,7 +288,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
         <Link href="/bankgespraech" className="settings-tab">🏦 Bankgespräch</Link>
         <div style={{ flex: 1, minWidth: 8 }} />
         <button className="settings-tab" onClick={() => { setSaveName(adresse || "Kalkulation"); setShowSave(true); }}>💾 Speichern</button>
-        <button className="settings-tab" onClick={() => setShowList(true)}>📂 Gespeichert ({gespeichert.length})</button>
+        <button className="settings-tab" onClick={() => setShowList(true)}>📂 Gespeichert ({gespeichertLocal.length})</button>
         <button className="settings-tab" onClick={() => { setCompareIds([]); setShowCompare(true); }}>⚖️ Vergleich</button>
       </div>
 
@@ -554,11 +556,11 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
         <div className="modal-overlay" onClick={() => setShowList(false)}>
           <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginBottom: 14 }}>Gespeicherte Kalkulationen</h3>
-            {gespeichert.length === 0 ? (
+            {gespeichertLocal.length === 0 ? (
               <p style={{ color: "var(--muted)", fontSize: 13 }}>Noch nichts gespeichert. Oben rechts „💾 Speichern".</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "60vh", overflowY: "auto" }}>
-                {gespeichert.map((k) => (
+                {gespeichertLocal.map((k) => (
                   <div key={k.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--line2)", background: "var(--bg3)" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k.name}</div>
@@ -585,12 +587,12 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
           <div className="modal-sheet wide" onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginBottom: 6 }}>Kalkulationen vergleichen</h3>
             <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Bis zu 3 gespeicherte Objekte wählen.</p>
-            {gespeichert.length === 0 ? (
+            {gespeichertLocal.length === 0 ? (
               <p style={{ color: "var(--muted)", fontSize: 13 }}>Noch nichts gespeichert.</p>
             ) : (
               <>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-                  {gespeichert.map((k) => {
+                  {gespeichertLocal.map((k) => {
                     const sel = compareIds.includes(k.id);
                     const disabled = !sel && compareIds.length >= 3;
                     return (
