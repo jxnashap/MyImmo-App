@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Calculator, Save, FolderOpen, Scale, Gauge, Home, Percent, Landmark, Target, TrendingUp } from "lucide-react";
 import KalkImport from "@/components/kalkulator/KalkImport";
 import CockpitUeberblick from "@/components/kalkulator/CockpitUeberblick";
 import { useToast } from "@/components/Toast";
@@ -25,13 +25,13 @@ function CfRows({ rows }: { rows: [string, number, string][] }) {
   );
 }
 
-const SUBTABS: { id: string; label: string }[] = [
-  { id: "ueberblick", label: "Überblick" },
-  { id: "invest", label: "Objekt & Investition" },
-  { id: "miete", label: "Miete & Steuern" },
-  { id: "fin", label: "Finanzierung" },
-  { id: "ergebnis", label: "Cockpit-Ergebnis" },
-  { id: "verlauf", label: "Verlauf 30J." },
+const SUBTABS: { id: string; label: string; Icon: typeof Gauge }[] = [
+  { id: "ueberblick", label: "Überblick", Icon: Gauge },
+  { id: "invest", label: "Objekt & Investition", Icon: Home },
+  { id: "miete", label: "Miete & Steuern", Icon: Percent },
+  { id: "fin", label: "Finanzierung", Icon: Landmark },
+  { id: "ergebnis", label: "Cockpit-Ergebnis", Icon: Target },
+  { id: "verlauf", label: "Verlauf 30J.", Icon: TrendingUp },
 ];
 
 // Vergleich: höher besser (high) / niedriger besser (low) / neutral
@@ -277,19 +277,15 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
 
   return (
     <>
-      {/* GLAS-HEADBAR */}
+      {/* KOPF im Einstellungs-Stil */}
       <div className="settings-head">
-        <div className="settings-avatar">🧮</div>
+        <div className="settings-avatar"><Calculator size={22} /></div>
         <div className="who"><h1>Cockpit</h1><p>Vollständige Profi-Kalkulation</p></div>
-      </div>
-      <div className="settings-tabs">
-        <Link href="/roter-faden" className="settings-tab">🧵 Roter Faden</Link>
-        <span className="settings-tab active">🧮 Cockpit</span>
-        <Link href="/bankgespraech" className="settings-tab">🏦 Bankgespräch</Link>
-        <div style={{ flex: 1, minWidth: 8 }} />
-        <button className="settings-tab" onClick={() => { setSaveName(adresse || "Kalkulation"); setShowSave(true); }}>💾 Speichern</button>
-        <button className="settings-tab" onClick={() => setShowList(true)}>📂 Gespeichert ({gespeichertLocal.length})</button>
-        <button className="settings-tab" onClick={() => { setCompareIds([]); setShowCompare(true); }}>⚖️ Vergleich</button>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <button className="btn btn-ghost" onClick={() => { setSaveName(adresse || "Kalkulation"); setShowSave(true); }}><Save size={15} /> Speichern</button>
+          <button className="btn btn-ghost" onClick={() => setShowList(true)}><FolderOpen size={15} /> Gespeichert ({gespeichertLocal.length})</button>
+          <button className="btn btn-ghost" onClick={() => { setCompareIds([]); setShowCompare(true); }}><Scale size={15} /> Vergleich</button>
+        </div>
       </div>
 
       <KalkImport onResult={(d) => {
@@ -298,9 +294,11 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
         if (d.miete != null && d.miete > 0) setKaltmiete(String(d.miete));
       }} />
 
-      <div className="subtabs" style={{ marginBottom: 20 }}>
+      <div className="settings-tabs" style={{ marginBottom: 20 }}>
         {SUBTABS.map((s) => (
-          <button key={s.id} className={`subtab${tab === s.id ? " active" : ""}`} onClick={() => setTab(s.id)}>{s.label}</button>
+          <button key={s.id} className={`settings-tab${tab === s.id ? " active" : ""}`} onClick={() => setTab(s.id)}>
+            <s.Icon size={15} /> {s.label}
+          </button>
         ))}
       </div>
 
