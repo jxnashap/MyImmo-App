@@ -83,6 +83,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   const [instandh, setInstandh] = useState("10");
   const [hgNichtUmlage, setHgNichtUmlage] = useState("49");
   const [afaSatz, setAfaSatz] = useState("0.02");
+  const [baubeginn, setBaubeginn] = useState(""); // "YYYY-MM" — Pflicht für degressive AfA
   const [gebaeude, setGebaeude] = useState("75");
   const [einkommen, setEinkommen] = useState("40000");
   const [veranlagung, setVeranlagung] = useState("1");
@@ -121,8 +122,14 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   // Degressive AfA (§ 7 Abs. 5a EStG): 5 % p.a. geometrisch-degressiv vom
   // Restbuchwert — nur neue Wohngebäude, Baubeginn/Kauf 10/2023–09/2029.
   // Vereinfachung: reine 5 %-Degression, ohne Wechsel zur linearen AfA.
-  const istDegressiv = afaSatz === "degressiv";
-  const afaMo = (istDegressiv ? afaBasis * 0.05 : afaBasis * num(afaSatz)) / 12;
+  // Sperre: degressiv nur, wenn Baubeginn/Kaufvertrag im Fenster 10/2023–09/2029
+  // liegt (§ 7 Abs. 5a EStG). Sonst Rückfall auf linear 3 % (Neubau) + Warnung.
+  const degressivGewaehlt = afaSatz === "degressiv";
+  const degressivErlaubt =
+    /^\d{4}-\d{2}$/.test(baubeginn) && baubeginn >= "2023-10" && baubeginn <= "2029-09";
+  const istDegressiv = degressivGewaehlt && degressivErlaubt;
+  const linSatz = degressivGewaehlt ? 0.03 : num(afaSatz); // Fallback bei Sperre
+  const afaMo = (istDegressiv ? afaBasis * 0.05 : afaBasis * linSatz) / 12;
   const grenzsteuer = calcGrenzsteuer(num(einkommen), veranlagung === "2");
 
   const d1S = num(d1Summe), d1Z = num(d1Zins) / 100, d1T = num(d1Tilg) / 100;
@@ -161,7 +168,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   const zWarmmiete = zMiete + num(hgUmlage) + num(grundsteuer);
   const zCfOp = zMiete - zBewirt - gesRate;
   const zZinsen = (berechneRestschuld(d1S, d1Z, d1Rate, jahre) * gewZins) / 12;
-  const afaMoZukunft = (istDegressiv ? afaBasis * 0.05 * Math.pow(0.95, jahre - 1) : afaBasis * num(afaSatz)) / 12;
+  const afaMoZukunft = (istDegressiv ? afaBasis * 0.05 * Math.pow(0.95, jahre - 1) : afaBasis * linSatz) / 12;
   const zZvE = zMiete - num(hgNichtUmlage) - zZinsen - afaMoZukunft;
   const zSteuern = zZvE * grenzsteuer;
   const zCfNetto = zCfOp - zSteuern;
@@ -176,7 +183,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   // ===== Speichern / Laden / Löschen =====
   const eingaben: Record<string, string> = {
     adresse, kaufpreis, flaeche, bundesland, makler, notar, grundbuch, sonstigeNk, kueche, sonderumlage, investSonst,
-    kaltmiete, mieteStellplatz, hgUmlage, grundsteuer, mietausfall, instandh, hgNichtUmlage, afaSatz, gebaeude, einkommen, veranlagung,
+    kaltmiete, mieteStellplatz, hgUmlage, grundsteuer, mietausfall, instandh, hgNichtUmlage, afaSatz, baubeginn, gebaeude, einkommen, veranlagung,
     d1Summe, d1Zins, d1Tilg, d1Bindung, d1ZinsNeu, d1TilgNeu, d2Summe, d2Zins, d2Tilg,
     zukunftJahr, kostensteigerung, mietsteigerung, wertsteigerung,
   };
@@ -185,7 +192,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   };
   const SETTER: Record<string, (v: string) => void> = {
     adresse: setAdresse, kaufpreis: setKaufpreis, flaeche: setFlaeche, bundesland: setBundesland, makler: setMakler, notar: setNotar, grundbuch: setGrundbuch, sonstigeNk: setSonstigeNk, kueche: setKueche, sonderumlage: setSonderumlage, investSonst: setInvestSonst,
-    kaltmiete: setKaltmiete, mieteStellplatz: setMieteStellplatz, hgUmlage: setHgUmlage, grundsteuer: setGrundsteuer, mietausfall: setMietausfall, instandh: setInstandh, hgNichtUmlage: setHgNichtUmlage, afaSatz: setAfaSatz, gebaeude: setGebaeude, einkommen: setEinkommen, veranlagung: setVeranlagung,
+    kaltmiete: setKaltmiete, mieteStellplatz: setMieteStellplatz, hgUmlage: setHgUmlage, grundsteuer: setGrundsteuer, mietausfall: setMietausfall, instandh: setInstandh, hgNichtUmlage: setHgNichtUmlage, afaSatz: setAfaSatz, baubeginn: setBaubeginn, gebaeude: setGebaeude, einkommen: setEinkommen, veranlagung: setVeranlagung,
     d1Summe: setD1Summe, d1Zins: setD1Zins, d1Tilg: setD1Tilg, d1Bindung: setD1Bindung, d1ZinsNeu: setD1ZinsNeu, d1TilgNeu: setD1TilgNeu, d2Summe: setD2Summe, d2Zins: setD2Zins, d2Tilg: setD2Tilg,
     zukunftJahr: setZukunftJahr, kostensteigerung: setKostensteigerung, mietsteigerung: setMietsteigerung, wertsteigerung: setWertsteigerung,
   };
@@ -265,7 +272,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
       const z2 = rs2 * d2Z; rs2 = Math.max(0, rs2 - Math.min(rs2, d2Rate * 12 - z2));
       const zinsMo = (rs1 * d1Z + rs2 * d2Z) / 12;
       const cf = m - b - gesRate;
-      const afaMoJ = (istDegressiv ? afaBasis * 0.05 * Math.pow(0.95, j - 1) : afaBasis * num(afaSatz)) / 12;
+      const afaMoJ = (istDegressiv ? afaBasis * 0.05 * Math.pow(0.95, j - 1) : afaBasis * linSatz) / 12;
       const st = (m - num(hgNichtUmlage) - zinsMo - afaMoJ) * grenzsteuer;
       verlauf.push({ yr: JETZT + j, m, wert, rs: rs1 + rs2, cf, cfn: cf - st });
     }
@@ -380,10 +387,25 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
                 {F("Zu verst. Einkommen (€/Jahr)", einkommen, setEinkommen)}
                 <div className="field"><label>Veranlagung</label><select value={veranlagung} onChange={(e) => setVeranlagung(e.target.value)}><option value="1">Einzel</option><option value="2">Zusammen (Splitting)</option></select></div>
               </div>
-              {istDegressiv && (
-                <div style={{ fontSize: 11, color: "var(--muted)", margin: "6px 0 2px", lineHeight: 1.5 }}>
-                  Degressiv: 5 % vom Restbuchwert (fällt jährlich). Nur Wohngebäude, Baubeginn/Kauf 10/2023–09/2029.
-                </div>
+              {degressivGewaehlt && (
+                <>
+                  <div className="field-row">
+                    <div className="field">
+                      <label>Baubeginn / Kaufvertrag (Monat) *</label>
+                      <input type="month" min="2023-10" max="2029-09" value={baubeginn} onChange={(e) => setBaubeginn(e.target.value)} />
+                    </div>
+                    <div />
+                  </div>
+                  {istDegressiv ? (
+                    <div style={{ fontSize: 11, color: "var(--muted)", margin: "6px 0 2px", lineHeight: 1.5 }}>
+                      Degressiv: 5 % vom Restbuchwert (fällt jährlich). Nur Wohngebäude, Baubeginn/Kauf 10/2023–09/2029.
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: "var(--red)", margin: "6px 0 2px", lineHeight: 1.5, fontWeight: 600 }}>
+                      🔒 Degressive AfA gesperrt: {baubeginn ? "Datum liegt außerhalb 10/2023–09/2029." : "Bitte Baubeginn/Kaufvertrag angeben."} Es wird linear 3 % (Neubau) gerechnet.
+                    </div>
+                  )}
+                </>
               )}
               <div className="divider" />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
