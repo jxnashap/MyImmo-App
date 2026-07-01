@@ -46,18 +46,24 @@ export function berechneVolltilgungJahr(darlehen: number, zinsPa: number, rateMo
   return startJahr + j;
 }
 
+// Grunderwerbsteuer je Bundesland, Stand 2026 (offizielle Landesquellen / finanz-tools.de).
 export const BUNDESLAENDER = [
-  { v: 0.035, l: "Bayern (3,5%)" },
-  { v: 0.06, l: "Berlin (6,0%)" },
-  { v: 0.055, l: "Hamburg (5,5%)" },
-  { v: 0.05, l: "Baden-Württemberg (5,0%)" },
-  { v: 0.065, l: "Brandenburg (6,5%)" },
-  { v: 0.05, l: "Bremen (5,0%)" },
-  { v: 0.06, l: "Hessen (6,0%)" },
-  { v: 0.065, l: "NRW (6,5%)" },
-  { v: 0.05, l: "Niedersachsen (5,0%)" },
-  { v: 0.05, l: "Sachsen (3,5%)" },
-  { v: 0.065, l: "Thüringen (6,5%)" },
+  { v: 0.05,  l: "Baden-Württemberg (5,0 %)" },
+  { v: 0.035, l: "Bayern (3,5 %)" },
+  { v: 0.06,  l: "Berlin (6,0 %)" },
+  { v: 0.065, l: "Brandenburg (6,5 %)" },
+  { v: 0.055, l: "Bremen (5,5 %)" },
+  { v: 0.055, l: "Hamburg (5,5 %)" },
+  { v: 0.06,  l: "Hessen (6,0 %)" },
+  { v: 0.06,  l: "Mecklenburg-Vorpommern (6,0 %)" },
+  { v: 0.05,  l: "Niedersachsen (5,0 %)" },
+  { v: 0.065, l: "Nordrhein-Westfalen (6,5 %)" },
+  { v: 0.05,  l: "Rheinland-Pfalz (5,0 %)" },
+  { v: 0.065, l: "Saarland (6,5 %)" },
+  { v: 0.055, l: "Sachsen (5,5 %)" },
+  { v: 0.05,  l: "Sachsen-Anhalt (5,0 %)" },
+  { v: 0.065, l: "Schleswig-Holstein (6,5 %)" },
+  { v: 0.05,  l: "Thüringen (5,0 %)" },
 ];
 
 export const num = (s: string) => parseFloat(s) || 0;
