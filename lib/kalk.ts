@@ -5,14 +5,21 @@ export const fmt = (n: number, dec = 0) =>
 export const fmtE = (n: number) => "€ " + fmt(Math.round(Number.isFinite(n) ? n : 0));
 export const pct = (n: number, dec = 2) => fmt(n, dec) + " %";
 
-// Grenzsteuersatz 2024 (vereinfacht, immocation-Formel)
+// Grenzsteuersatz nach § 32a EStG — Tarif 2026 (marginaler Satz, exakt aus den Tarifformeln).
+// Quelle: BMF Lohn-/Einkommensteuer-Handbuch 2026, § 32a EStG.
 export function calcGrenzsteuer(zvE: number, splitting: boolean): number {
-  const z = splitting ? zvE / 2 : zvE;
-  if (z <= 11604) return 0;
-  if (z <= 17005) return 0.14 + ((z - 11604) / 10000) * 0.1;
-  if (z <= 66760) return 0.24 + ((z - 17005) / 49755) * 0.18;
-  if (z <= 277825) return 0.42;
-  return 0.45;
+  const z = splitting ? zvE / 2 : zvE;          // Ehegattensplitting: Grenzsatz beim halben zvE
+  if (z <= 12348) return 0;                      // Grundfreibetrag 2026
+  if (z <= 17799) {                              // Progressionszone 1  (14 % … 23,97 %)
+    const y = (z - 12348) / 10000;
+    return (2 * 914.51 * y + 1400) / 10000;
+  }
+  if (z <= 69878) {                              // Progressionszone 2  (23,97 % … 42 %)
+    const w = (z - 17799) / 10000;
+    return (2 * 173.10 * w + 2397) / 10000;
+  }
+  if (z <= 277825) return 0.42;                  // Spitzensteuersatz
+  return 0.45;                                   // Reichensteuersatz
 }
 
 // Restschuld nach n Jahren bei konstanter Annuität.
