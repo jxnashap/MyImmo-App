@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import KalkImport from "@/components/kalkulator/KalkImport";
+import CockpitUeberblick from "@/components/kalkulator/CockpitUeberblick";
+import { useToast } from "@/components/Toast";
+import { saveKalkulation, deleteKalkulation } from "@/lib/actions/kalkulation";
+import type { Kalkulation } from "@/lib/types";
 import { fmt, fmtE, pct, num, calcGrenzsteuer, berechneRestschuld, berechneVolltilgungJahr, BUNDESLAENDER, CP_STORAGE_KEY, type CpData } from "@/lib/kalk";
 
 const JETZT = new Date().getFullYear();
@@ -21,6 +27,7 @@ function CfRows({ rows }: { rows: [string, number, string][] }) {
 }
 
 const SUBTABS: { id: string; label: string }[] = [
+  { id: "ueberblick", label: "Überblick" },
   { id: "invest", label: "Objekt & Investition" },
   { id: "miete", label: "Miete & Steuern" },
   { id: "fin", label: "Finanzierung" },
@@ -28,8 +35,30 @@ const SUBTABS: { id: string; label: string }[] = [
   { id: "verlauf", label: "Verlauf 30J." },
 ];
 
-export default function Cockpit() {
-  const [tab, setTab] = useState("invest");
+// Vergleich: höher besser (high) / niedriger besser (low) / neutral
+const CMP_METRIKEN: { key: string; label: string; fmt: (v: number) => string; better: "high" | "low" | "none" }[] = [
+  { key: "kp", label: "Kaufpreis", fmt: fmtE, better: "low" },
+  { key: "gesamtInvest", label: "Gesamtinvestition", fmt: fmtE, better: "low" },
+  { key: "eigenkapital", label: "Eigenkapital", fmt: fmtE, better: "none" },
+  { key: "cfNetto", label: "Cashflow n.St./Mo", fmt: (v) => fmtE(v) + "/Mo", better: "high" },
+  { key: "brutto", label: "Bruttorendite", fmt: (v) => pct(v), better: "high" },
+  { key: "nettomiet", label: "Nettorendite", fmt: (v) => pct(v), better: "high" },
+  { key: "ekRendite", label: "EK-Rendite", fmt: (v) => pct(v), better: "high" },
+  { key: "faktor", label: "Kaufpreisfaktor", fmt: (v) => (v > 0 ? fmt(v, 1) + "x" : "–"), better: "low" },
+];
+
+export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulation[] }) {
+  const [tab, setTab] = useState("ueberblick");
+  const router = useRouter();
+  const toast = useToast();
+
+  // Headbar-Aktionen
+  const [showSave, setShowSave] = useState(false);
+  const [showList, setShowList] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
 
   // Invest
   const [adresse, setAdresse] = useState("");
@@ -137,6 +166,61 @@ export default function Cockpit() {
     try { localStorage.setItem(CP_STORAGE_KEY, JSON.stringify(d)); } catch { /* ignore */ }
   });
 
+  // ===== Speichern / Laden / Löschen =====
+  const eingaben: Record<string, string> = {
+    adresse, kaufpreis, flaeche, bundesland, makler, notar, grundbuch, sonstigeNk, kueche, sonderumlage, investSonst,
+    kaltmiete, mieteStellplatz, hgUmlage, grundsteuer, mietausfall, instandh, hgNichtUmlage, afaSatz, gebaeude, einkommen, veranlagung,
+    d1Summe, d1Zins, d1Tilg, d1Bindung, d1ZinsNeu, d1TilgNeu, d2Summe, d2Zins, d2Tilg,
+    zukunftJahr, kostensteigerung, mietsteigerung, wertsteigerung,
+  };
+  const summary: Record<string, number> = {
+    kp, gesamtInvest, eigenkapital, gesRate, nettokaltmiete, brutto, nettomiet, ekRendite, faktor, cfOp, cfNetto,
+  };
+  const SETTER: Record<string, (v: string) => void> = {
+    adresse: setAdresse, kaufpreis: setKaufpreis, flaeche: setFlaeche, bundesland: setBundesland, makler: setMakler, notar: setNotar, grundbuch: setGrundbuch, sonstigeNk: setSonstigeNk, kueche: setKueche, sonderumlage: setSonderumlage, investSonst: setInvestSonst,
+    kaltmiete: setKaltmiete, mieteStellplatz: setMieteStellplatz, hgUmlage: setHgUmlage, grundsteuer: setGrundsteuer, mietausfall: setMietausfall, instandh: setInstandh, hgNichtUmlage: setHgNichtUmlage, afaSatz: setAfaSatz, gebaeude: setGebaeude, einkommen: setEinkommen, veranlagung: setVeranlagung,
+    d1Summe: setD1Summe, d1Zins: setD1Zins, d1Tilg: setD1Tilg, d1Bindung: setD1Bindung, d1ZinsNeu: setD1ZinsNeu, d1TilgNeu: setD1TilgNeu, d2Summe: setD2Summe, d2Zins: setD2Zins, d2Tilg: setD2Tilg,
+    zukunftJahr: setZukunftJahr, kostensteigerung: setKostensteigerung, mietsteigerung: setMietsteigerung, wertsteigerung: setWertsteigerung,
+  };
+
+  async function doSave() {
+    setSaving(true);
+    try {
+      await saveKalkulation(saveName, eingaben, summary);
+      setShowSave(false);
+      router.refresh();
+      toast("Gespeichert.");
+    } catch {
+      toast("Fehler beim Speichern.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function ladeKalkulation(k: Kalkulation) {
+    for (const key of Object.keys(SETTER)) {
+      const v = k.data?.[key];
+      if (v != null) SETTER[key](String(v));
+    }
+    setTab("ueberblick");
+    setShowList(false);
+  }
+
+  async function loeschen(id: string) {
+    try {
+      await deleteKalkulation(id);
+      setCompareIds((c) => c.filter((x) => x !== id));
+      router.refresh();
+      toast("Gelöscht.");
+    } catch {
+      toast("Fehler beim Löschen.");
+    }
+  }
+
+  function toggleCompare(id: string) {
+    setCompareIds((c) => (c.includes(id) ? c.filter((x) => x !== id) : c.length >= 3 ? c : [...c, id]));
+  }
+
   const F = (label: string, value: string, set: (v: string) => void, step?: string, ph?: string) => (
     <div className="field"><label>{label}</label><input type="number" value={value} step={step} placeholder={ph} onChange={(e) => set(e.target.value)} /></div>
   );
@@ -179,10 +263,31 @@ export default function Cockpit() {
     }
   }
 
+  // Vergleich: beste Werte je Zeile bestimmen
+  const cmpSel = compareIds.map((id) => gespeichert.find((k) => k.id === id)).filter(Boolean) as Kalkulation[];
+  const bestValue = (key: string, better: "high" | "low" | "none"): number | null => {
+    if (better === "none" || cmpSel.length < 2) return null;
+    const vals = cmpSel.map((k) => k.summary?.[key]).filter((v) => typeof v === "number") as number[];
+    if (!vals.length) return null;
+    const best = better === "high" ? Math.max(...vals) : Math.min(...vals);
+    return vals.every((v) => v === best) ? null : best; // kein Highlight, wenn alle gleich
+  };
+
   return (
     <>
-      <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 20 }}>
-        Vollständige Profi-Kalkulation mit 2 Darlehen, AfA, Steuerberechnung und 30-Jahres-Verlauf.
+      {/* GLAS-HEADBAR */}
+      <div className="settings-head">
+        <div className="settings-avatar">🧮</div>
+        <div className="who"><h1>Cockpit</h1><p>Vollständige Profi-Kalkulation</p></div>
+      </div>
+      <div className="settings-tabs">
+        <Link href="/roter-faden" className="settings-tab">🧵 Roter Faden</Link>
+        <span className="settings-tab active">🧮 Cockpit</span>
+        <Link href="/bankgespraech" className="settings-tab">🏦 Bankgespräch</Link>
+        <div style={{ flex: 1, minWidth: 8 }} />
+        <button className="settings-tab" onClick={() => { setSaveName(adresse || "Kalkulation"); setShowSave(true); }}>💾 Speichern</button>
+        <button className="settings-tab" onClick={() => setShowList(true)}>📂 Gespeichert ({gespeichert.length})</button>
+        <button className="settings-tab" onClick={() => { setCompareIds([]); setShowCompare(true); }}>⚖️ Vergleich</button>
       </div>
 
       <KalkImport onResult={(d) => {
@@ -196,6 +301,16 @@ export default function Cockpit() {
           <button key={s.id} className={`subtab${tab === s.id ? " active" : ""}`} onClick={() => setTab(s.id)}>{s.label}</button>
         ))}
       </div>
+
+      {/* ÜBERBLICK */}
+      {tab === "ueberblick" && (
+        <CockpitUeberblick
+          kp={kp} gesamtInvest={gesamtInvest} eigenkapital={eigenkapital} gesRate={gesRate}
+          nettokaltmiete={nettokaltmiete} brutto={brutto} nettomiet={nettomiet} ekRendite={ekRendite}
+          faktor={faktor} cfOp={cfOp} cfNetto={cfNetto}
+          verlauf={verlauf.map((r) => ({ yr: r.yr, wert: r.wert, rs: r.rs }))}
+        />
+      )}
 
       {/* INVEST */}
       {tab === "invest" && (
@@ -414,6 +529,117 @@ export default function Cockpit() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: SPEICHERN */}
+      {showSave && (
+        <div className="modal-overlay" onClick={() => setShowSave(false)}>
+          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginBottom: 14 }}>Kalkulation speichern</h3>
+            <div className="field"><label>Name</label>
+              <input value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder="Kalkulation" autoFocus />
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 18 }}>
+              <button className="btn btn-ghost" onClick={() => setShowSave(false)}>Abbrechen</button>
+              <button className="btn btn-gold" onClick={doSave} disabled={saving}>{saving ? "Speichert…" : "Speichern"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: GESPEICHERTE */}
+      {showList && (
+        <div className="modal-overlay" onClick={() => setShowList(false)}>
+          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginBottom: 14 }}>Gespeicherte Kalkulationen</h3>
+            {gespeichert.length === 0 ? (
+              <p style={{ color: "var(--muted)", fontSize: 13 }}>Noch nichts gespeichert. Oben rechts „💾 Speichern".</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "60vh", overflowY: "auto" }}>
+                {gespeichert.map((k) => (
+                  <div key={k.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--line2)", background: "var(--bg3)" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--muted)" }}>
+                        {new Date(k.created_at).toLocaleDateString("de-DE")} · CF n.St. {typeof k.summary?.cfNetto === "number" ? fmtE(k.summary.cfNetto) + "/Mo" : "–"}
+                      </div>
+                    </div>
+                    <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => ladeKalkulation(k)}>Laden</button>
+                    <button className="btn btn-ghost" style={{ fontSize: 12, color: "var(--red)" }} onClick={() => loeschen(k.id)}>Löschen</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+              <button className="btn btn-ghost" onClick={() => setShowList(false)}>Schließen</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VERGLEICH */}
+      {showCompare && (
+        <div className="modal-overlay" onClick={() => setShowCompare(false)}>
+          <div className="modal-sheet wide" onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginBottom: 6 }}>Kalkulationen vergleichen</h3>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Bis zu 3 gespeicherte Objekte wählen.</p>
+            {gespeichert.length === 0 ? (
+              <p style={{ color: "var(--muted)", fontSize: 13 }}>Noch nichts gespeichert.</p>
+            ) : (
+              <>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                  {gespeichert.map((k) => {
+                    const sel = compareIds.includes(k.id);
+                    const disabled = !sel && compareIds.length >= 3;
+                    return (
+                      <button key={k.id} onClick={() => toggleCompare(k.id)} disabled={disabled}
+                        className="settings-tab"
+                        style={{ border: `1px solid ${sel ? "var(--gold)" : "var(--line2)"}`, background: sel ? "var(--gold-pale)" : "var(--bg3)", color: sel ? "var(--gold)" : "var(--muted)", opacity: disabled ? 0.4 : 1 }}>
+                        {sel ? "✓ " : ""}{k.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {cmpSel.length >= 2 ? (
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="cmp-table">
+                      <thead>
+                        <tr>
+                          <th>Kennzahl</th>
+                          {cmpSel.map((k) => <th key={k.id} style={{ textAlign: "right" }}>{k.name}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {CMP_METRIKEN.map((m) => {
+                          const best = bestValue(m.key, m.better);
+                          return (
+                            <tr key={m.key}>
+                              <td style={{ color: "var(--muted)" }}>{m.label}</td>
+                              {cmpSel.map((k) => {
+                                const v = k.summary?.[m.key];
+                                const isBest = best != null && typeof v === "number" && v === best;
+                                return (
+                                  <td key={k.id} style={{ textAlign: "right", fontWeight: isBest ? 700 : 500, color: isBest ? "var(--green)" : undefined }}>
+                                    {typeof v === "number" ? m.fmt(v) : "–"}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 13, color: "var(--faint)" }}>Mindestens 2 Objekte wählen, um zu vergleichen.</p>
+                )}
+              </>
+            )}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+              <button className="btn btn-ghost" onClick={() => setShowCompare(false)}>Schließen</button>
+            </div>
           </div>
         </div>
       )}
