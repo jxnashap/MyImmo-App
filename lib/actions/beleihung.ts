@@ -269,3 +269,51 @@ export async function generiereBeleihungDokument(propId: string, itemKey: string
   }
   throw new Error(`Keine NK-Positionen für ${jahr} gefunden — erst unter Mieter → NK-Abrechnung Positionen erfassen.`);
 }
+
+// ===== Phase 2: Freigabe-Links für die Bank =====
+
+export type Freigabe = {
+  token: string;
+  item_keys: string[];
+  ablauf: string;
+  aktiv: boolean;
+  created_at: string | null;
+};
+
+// Freigabe erstellen: Eigentümer wählt Dokumente + Ablauf; Angaben (Wunsch-
+// Konditionen) werden mitgespeichert und auf der Bank-Seite angezeigt.
+export async function createFreigabe(
+  propId: string,
+  itemKeys: string[],
+  angaben: Record<string, string>,
+  tageAblauf: number,
+): Promise<Freigabe> {
+  const keys = itemKeys.filter((k) => BELEIHUNG_CHECKLISTE.some((i) => i.key === k));
+  if (!keys.length) throw new Error("Bitte mindestens ein Dokument auswählen.");
+  const tage = [7, 14, 30].includes(tageAblauf) ? tageAblauf : 14;
+
+  const { supabase, userId } = await uid();
+  const { data, error } = await supabase
+    .from("beleihung_freigaben")
+    .insert({
+      user_id: userId,
+      prop_id: propId,
+      item_keys: keys,
+      angaben,
+      ablauf: new Date(Date.now() + tage * 24 * 3600 * 1000).toISOString(),
+    })
+    .select("token,item_keys,ablauf,aktiv,created_at")
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Freigabe;
+}
+
+// Freigabe widerrufen (owner-scoped über RLS).
+export async function widerrufeFreigabe(token: string): Promise<void> {
+  const { supabase } = await uid();
+  const { error } = await supabase
+    .from("beleihung_freigaben")
+    .update({ aktiv: false })
+    .eq("token", token);
+  if (error) throw new Error(error.message);
+}
