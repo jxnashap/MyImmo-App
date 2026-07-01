@@ -4,9 +4,9 @@
 // base64 ≤ 8 MB), Abhaken, Fortschritts-Ring, „Aus MyImmo erzeugen" und
 // Deckblatt-PDF fürs Bankpaket. Design im Einstellungs-Stil der App.
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Landmark, FileText, Upload, Eye, Download, X, Bot, Loader2 } from "lucide-react";
+import { Landmark, FileText, Upload, Eye, Download, X, Bot, Loader2, Share2, Copy, Mail, MessageSquare } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import {
   BELEIHUNG_CHECKLISTE,
@@ -22,7 +22,21 @@ import {
   uploadBeleihungDatei,
   removeBeleihungDatei,
   generiereBeleihungDokument,
+  createFreigabe,
+  widerrufeFreigabe,
+  type Freigabe,
 } from "@/lib/actions/beleihung";
+
+export type Rueckmeldung = {
+  id: string;
+  token: string;
+  name: string | null;
+  bank: string | null;
+  kontakt: string | null;
+  nachricht: string | null;
+  fehlend: string[] | null;
+  created_at: string | null;
+};
 
 type Props = {
   propId: string;
@@ -30,6 +44,8 @@ type Props = {
   istEtw: boolean;
   hatMieter: boolean;
   initialDocs: BelDok[];
+  initialFreigaben: Freigabe[];
+  rueckmeldungen: Rueckmeldung[];
   defaults: { darlehen: string; wunschrate: string; eigenkapital: string };
 };
 
@@ -64,11 +80,18 @@ function Ring({ done, total }: { done: number; total: number }) {
   );
 }
 
-export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter, initialDocs, defaults }: Props) {
+export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter, initialDocs, initialFreigaben, rueckmeldungen, defaults }: Props) {
   const toast = useToast();
   const [docs, setDocs] = useState<Record<string, BelDok>>(
     Object.fromEntries(initialDocs.map((d) => [d.item_key, d])),
   );
+  // Freigaben (Phase 2) lokal führen; Teilen-Modal-Zustand
+  const [freigaben, setFreigaben] = useState<Freigabe[]>(initialFreigaben);
+  const [showShare, setShowShare] = useState(false);
+  const [shareKeys, setShareKeys] = useState<Set<string>>(new Set());
+  const [shareTage, setShareTage] = useState("14");
+  const [shareBusy, setShareBusy] = useState(false);
+  const [neuerLink, setNeuerLink] = useState<string | null>(null);
   const [modusKauf, setModusKauf] = useState(false);
   const [selbst, setSelbst] = useState(false);
   const [busy, setBusy] = useState<string | null>(null); // item_key der laufenden Aktion
@@ -116,6 +139,26 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
     darlehen, zweck, zinsbindung, tilgung, wunschrate, eigenkapital, sondertilgung,
     modus: modusKauf ? "kauf" : "beleihung", selbst: selbst ? "1" : "0",
   }).toString();
+
+  // ===== Freigabe-Link (Phase 2) =====
+  const angabenObjekt = { darlehen, zweck, zinsbindung, tilgung, wunschrate, eigenkapital, sondertilgung };
+  // Teilbar = alles, was eine Datei hat.
+  const teilbareItems = BELEIHUNG_CHECKLISTE.filter((i) => !!dok(i.key).datei_name);
+  const bonitaetGewaehlt = teilbareItems.some((i) => i.gruppe === "bonitaet" && shareKeys.has(i.key));
+
+  function openShare() {
+    // Default: Objekt/Vermietung/ETW AN, Bonität AUS (bewusste Entscheidung).
+    setShareKeys(new Set(teilbareItems.filter((i) => i.gruppe !== "bonitaet").map((i) => i.key)));
+    setNeuerLink(null);
+    setShowShare(true);
+  }
+
+  function kopiereLink(token: string) {
+    navigator.clipboard.writeText(`${window.location.origin}/beleihung/${token}`).then(
+      () => toast("Link kopiert."),
+      () => toast("Kopieren fehlgeschlagen."),
+    );
+  }
 
   function itemZeile(item: BelItem) {
     const d = dok(item.key);
@@ -292,17 +335,170 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
       </div>
 
       {/* Bankpaket-Leiste */}
-      <div className="section" style={{ marginBottom: 24 }}>
+      <div className="section" style={{ marginBottom: 18 }}>
         <div style={{ padding: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <a href={deckblattUrl} target="_blank" rel="noopener noreferrer" className="btn btn-gold" style={{ fontSize: 12 }}>
             <FileText size={14} /> Deckblatt / Übersicht als PDF
           </a>
-          <span className="badge" style={{ background: "var(--bg4)", color: "var(--muted)", border: "1px solid var(--line)" }}>
-            Freigabe-Link für die Bank — folgt (Phase 2)
-          </span>
+          <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={openShare}>
+            <Share2 size={14} /> Freigabe-Link für die Bank
+          </button>
           <Link href={`/properties/${propId}`} className="btn btn-ghost" style={{ fontSize: 12, marginLeft: "auto" }}>← Zum Objekt</Link>
         </div>
       </div>
+
+      {/* Aktive Freigaben */}
+      {freigaben.some((f) => f.aktiv) && (
+        <div className="section" style={{ marginBottom: 18 }}>
+          <div className="section-header"><h3>Aktive Freigaben</h3></div>
+          {freigaben.filter((f) => f.aktiv).map((f) => {
+            const abgelaufen = new Date(f.ablauf) < new Date();
+            const anz = rueckmeldungen.filter((r) => r.token === f.token).length;
+            return (
+              <div key={f.token} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--line)", flexWrap: "wrap" }}>
+                <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    /beleihung/{f.token.slice(0, 8)}… · {f.item_keys.length} Dokument{f.item_keys.length === 1 ? "" : "e"}
+                  </div>
+                  <div style={{ fontSize: 11, color: abgelaufen ? "var(--red)" : "var(--muted)" }}>
+                    {abgelaufen ? "Abgelaufen am " : "Gültig bis "}{new Date(f.ablauf).toLocaleDateString("de-DE")}
+                    {anz > 0 && <> · <span style={{ color: "var(--gold)" }}>{anz} Rückmeldung{anz === 1 ? "" : "en"}</span></>}
+                  </div>
+                </div>
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => kopiereLink(f.token)}><Copy size={12} /> Kopieren</button>
+                <button
+                  type="button" className="btn btn-ghost" style={{ fontSize: 11, color: "var(--red)" }}
+                  onClick={async () => {
+                    try {
+                      await widerrufeFreigabe(f.token);
+                      setFreigaben((prev) => prev.map((x) => (x.token === f.token ? { ...x, aktiv: false } : x)));
+                      toast("Freigabe widerrufen — der Link ist sofort ungültig.");
+                    } catch { toast("Widerrufen fehlgeschlagen."); }
+                  }}
+                >
+                  <X size={12} /> Widerrufen
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Rückmeldungen der Bank */}
+      {rueckmeldungen.length > 0 && (
+        <div className="section" style={{ marginBottom: 24 }}>
+          <div className="section-header">
+            <h3><MessageSquare size={13} style={{ verticalAlign: "-2px" }} /> Rückmeldungen der Bank</h3>
+            <span className="badge badge-gold">{rueckmeldungen.length}</span>
+          </div>
+          {rueckmeldungen.map((r) => (
+            <div key={r.id} style={{ padding: "12px 16px", borderBottom: "1px solid var(--line)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
+                <strong style={{ fontSize: 13 }}>{r.name || "Ohne Name"}{r.bank ? ` · ${r.bank}` : ""}</strong>
+                <span style={{ fontSize: 11, color: "var(--muted)" }}>{r.created_at ? new Date(r.created_at).toLocaleString("de-DE") : ""}</span>
+              </div>
+              {r.kontakt && <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 4 }}>Kontakt: {r.kontakt}</div>}
+              {r.nachricht && <div style={{ fontSize: 12.5, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{r.nachricht}</div>}
+              {!!r.fehlend?.length && (
+                <div style={{ marginTop: 6, fontSize: 11.5 }}>
+                  <span style={{ color: "var(--amber)", fontWeight: 600 }}>Angeforderte Unterlagen:</span>{" "}
+                  {r.fehlend.join(" · ")}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Teilen-Modal */}
+      {showShare && (
+        <div className="modal-overlay" onClick={() => setShowShare(false)}>
+          <div className="modal-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
+            <h3 style={{ marginBottom: 4 }}>Freigabe-Link für die Bank</h3>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
+              Wähle, welche hochgeladenen Dokumente die Bank sehen darf. Der Link läuft automatisch ab und ist jederzeit widerrufbar.
+            </p>
+
+            {neuerLink ? (
+              <>
+                <div style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 10, padding: "10px 12px", fontSize: 12, wordBreak: "break-all", marginBottom: 12 }}>
+                  {neuerLink}
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => { navigator.clipboard.writeText(neuerLink).then(() => toast("Link kopiert.")); }}>
+                    <Copy size={13} /> Kopieren
+                  </button>
+                  <a
+                    className="btn btn-ghost" style={{ fontSize: 12 }}
+                    href={`mailto:?subject=${encodeURIComponent(`Finanzierungsunterlagen ${objektName}`)}&body=${encodeURIComponent(`Guten Tag,\n\nüber folgenden Link finden Sie die Unterlagen zum Objekt ${objektName}:\n${neuerLink}\n\nDer Link ist zeitlich begrenzt gültig. Über das Formular auf der Seite können Sie sich direkt zurückmelden.\n\nMit freundlichen Grüßen`)}`}
+                  >
+                    <Mail size={13} /> Per E-Mail
+                  </a>
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12, marginLeft: "auto" }} onClick={() => setShowShare(false)}>Schließen</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ maxHeight: 260, overflowY: "auto", border: "1px solid var(--line)", borderRadius: 10, marginBottom: 12 }}>
+                  {teilbareItems.length === 0 && (
+                    <div style={{ padding: 14, fontSize: 12.5, color: "var(--muted)" }}>Noch keine Dokumente hochgeladen — erst Dateien ablegen, dann teilen.</div>
+                  )}
+                  {teilbareItems.map((item) => (
+                    <label key={item.key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderBottom: "1px solid var(--line)", cursor: "pointer", fontSize: 12.5 }}>
+                      <input
+                        type="checkbox"
+                        checked={shareKeys.has(item.key)}
+                        onChange={(e) => {
+                          setShareKeys((prev) => {
+                            const n = new Set(prev);
+                            if (e.target.checked) n.add(item.key); else n.delete(item.key);
+                            return n;
+                          });
+                        }}
+                        style={{ accentColor: "var(--gold)" }}
+                      />
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      {item.gruppe === "bonitaet" && <span className="badge badge-amber">Bonität</span>}
+                    </label>
+                  ))}
+                </div>
+                {bonitaetGewaehlt && (
+                  <div style={{ fontSize: 11.5, color: "var(--amber)", fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
+                    ⚠️ Bonitätsunterlagen enthalten persönliche/finanzielle Daten — nur bewusst teilen.
+                  </div>
+                )}
+                <div className="field" style={{ marginBottom: 14 }}>
+                  <label>Link gültig für</label>
+                  <select value={shareTage} onChange={(e) => setShareTage(e.target.value)}>
+                    <option value="7">7 Tage</option>
+                    <option value="14">14 Tage</option>
+                    <option value="30">30 Tage</option>
+                  </select>
+                </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setShowShare(false)}>Abbrechen</button>
+                  <button
+                    type="button" className="btn btn-gold" style={{ fontSize: 12 }}
+                    disabled={shareBusy || shareKeys.size === 0}
+                    onClick={async () => {
+                      setShareBusy(true);
+                      try {
+                        const f = await createFreigabe(propId, Array.from(shareKeys), angabenObjekt, Number(shareTage));
+                        setFreigaben((prev) => [f, ...prev]);
+                        setNeuerLink(`${window.location.origin}/beleihung/${f.token}`);
+                      } catch (e) {
+                        toast(e instanceof Error ? e.message : "Freigabe fehlgeschlagen.");
+                      } finally { setShareBusy(false); }
+                    }}
+                  >
+                    {shareBusy ? "Erzeuge…" : `Link erzeugen (${shareKeys.size})`}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
