@@ -8,10 +8,18 @@ import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
 
 export type AfaParams = {
   gebaeudeAnteil: number; // % des Kaufpreises, der auf das Gebäude entfällt
-  satz: number; // AfA-Satz in % p.a.
+  satz: number | null; // AfA-Satz in % p.a. (null = automatisch je Baujahr)
 };
 
-export const AFA_DEFAULT: AfaParams = { gebaeudeAnteil: 80, satz: 2 };
+export const AFA_DEFAULT: AfaParams = { gebaeudeAnteil: 80, satz: null };
+
+/** AfA-Satz nach Baujahr, § 7 Abs. 4 S. 1 Nr. 2 EStG. */
+export function afaSatzAusBaujahr(baujahr: number | null | undefined): number {
+  if (!baujahr) return 2; // unbekannt → Regelfall 2 %
+  if (baujahr >= 2023) return 3; // Neubau ab 2023
+  if (baujahr < 1925) return 2.5; // vor 1925
+  return 2; // 1925–2022
+}
 
 export type AnlageVEinnahmen = {
   miete: number; // Kaltmiete (Zeile 9)
@@ -39,6 +47,7 @@ export type AnlageVObjekt = {
   werbungskosten: AnlageVWerbungskosten;
   ueberschuss: number; // Einnahmen − Werbungskosten
   afaBasis: number; // Bemessungsgrundlage der AfA (Gebäudewert)
+  afaSatz: number; // verwendeter AfA-Satz in % (für Anzeige)
 };
 
 export type AnlageVErgebnis = {
@@ -90,6 +99,7 @@ export function berechneAnlageV(
         werbungskosten: leereWk(),
         ueberschuss: 0,
         afaBasis: 0,
+        afaSatz: 0,
       });
     }
     return gruppen.get(propId)!;
@@ -123,7 +133,9 @@ export function berechneAnlageV(
     const g = hole(p.id);
     const kaufpreis = Number(p.kaufpreis) || 0;
     g.afaBasis = r2((kaufpreis * afa.gebaeudeAnteil) / 100);
-    g.werbungskosten.afa = r2((g.afaBasis * afa.satz) / 100);
+    const satz = afa.satz ?? afaSatzAusBaujahr(p.baujahr);
+    g.afaSatz = satz;
+    g.werbungskosten.afa = r2((g.afaBasis * satz) / 100);
     // Schuldzinsen geschätzt aus aktueller Restschuld × Zinssatz.
     const propKredite = kredite.filter((kr) => kr.prop_id === p.id);
     g.werbungskosten.schuldzinsen = r2(
@@ -170,6 +182,7 @@ export function berechneAnlageV(
     },
     ueberschuss: r2(sum(sichtbar.map((g) => g.ueberschuss))),
     afaBasis: r2(sum(sichtbar.map((g) => g.afaBasis))),
+    afaSatz: 0,
   };
 
   return { jahr, objekte: sichtbar, gesamt };

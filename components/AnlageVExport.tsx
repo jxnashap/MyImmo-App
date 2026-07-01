@@ -28,13 +28,13 @@ export default function AnlageVExport({
 
   const [jahr, setJahr] = useState(aktuell - 1);
   const [gebaeudeAnteil, setGebaeudeAnteil] = useState(String(AFA_DEFAULT.gebaeudeAnteil));
-  const [satz, setSatz] = useState(String(AFA_DEFAULT.satz));
+  const [satz, setSatz] = useState(""); // leer = automatisch je Baujahr
 
   const erg = useMemo(
     () =>
       berechneAnlageV(jahr, properties, einnahmen, kosten, kredite, {
         gebaeudeAnteil: parseFloat(gebaeudeAnteil.replace(",", ".")) || 0,
-        satz: parseFloat(satz.replace(",", ".")) || 0,
+        satz: satz.trim() === "" ? null : (parseFloat(satz.replace(",", ".")) || 0),
       }),
     [jahr, properties, einnahmen, kosten, kredite, gebaeudeAnteil, satz],
   );
@@ -108,8 +108,8 @@ export default function AnlageVExport({
             <input className="input" type="number" step="1" value={gebaeudeAnteil} onChange={(e) => setGebaeudeAnteil(e.target.value)} style={{ width: 120 }} />
           </div>
           <div className="form-group" style={{ margin: 0 }}>
-            <label>AfA-Satz (% p.a.)</label>
-            <input className="input" type="number" step="0.5" value={satz} onChange={(e) => setSatz(e.target.value)} style={{ width: 120 }} />
+            <label>AfA-Satz (% p.a.) — leer = automatisch je Baujahr</label>
+            <input className="input" type="number" step="0.5" placeholder="auto" value={satz} onChange={(e) => setSatz(e.target.value)} style={{ width: 120 }} />
           </div>
           <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 360, lineHeight: 1.5 }}>
             AfA = Kaufpreis × Gebäudeanteil × Satz. Typisch: 2 % (Baujahr ab 1925), 2,5 % (älter), 3 % (Neubau ab 2023). Anpassen, falls dein Bescheid abweicht.
@@ -146,6 +146,11 @@ export default function AnlageVExport({
                     {spalten.map((o) => (
                       <th key={o.propId ?? "gesamt"} style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                         {o.propId === null && o.name.startsWith("Gesamt") ? "Gesamt" : o.name}
+                        {o.propId && (
+                          <div style={{ fontWeight: 400, fontSize: 10, color: "var(--muted)" }}>
+                            AfA {o.afaSatz.toLocaleString("de-DE")} %
+                          </div>
+                        )}
                       </th>
                     ))}
                   </tr>
