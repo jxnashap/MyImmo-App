@@ -11,11 +11,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const { data: k } = await supabase
     .from("kosten")
-    .select("rechnung_name,rechnung_type,rechnung_data")
+    .select("rechnung_name,rechnung_type,rechnung_path,rechnung_data")
     .eq("id", params.id)
     .single();
 
-  if (!k?.rechnung_data) return new NextResponse("Keine Rechnung hinterlegt", { status: 404 });
+  // Neuer Weg: Beleg liegt im Storage → kurzlebige Signed-URL (60 s).
+  if (k?.rechnung_path) {
+    const dl = req.nextUrl.searchParams.get("download");
+    const { data: signed } = await supabase.storage
+      .from("belege")
+      .createSignedUrl(k.rechnung_path, 60, dl ? { download: k.rechnung_name ?? true } : undefined);
+    if (signed?.signedUrl) return NextResponse.redirect(signed.signedUrl);
+  }
+
+  // Fallback: alte Base64-Belege (rechnung_data) wie bisher ausliefern.
+  if (!k?.rechnung_data) return new NextResponse("Kein Beleg hinterlegt", { status: 404 });
 
   // gespeichert als data-URL: "data:<mime>;base64,<data>"
   const raw = String(k.rechnung_data);

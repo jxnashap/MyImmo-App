@@ -60,7 +60,7 @@ export default async function KostenEditPage({ params, searchParams }: { params:
         </div>
         <div className="form-row single">
           <div className="form-group">
-            <label>Rechnung / Beleg {k.rechnung_name ? "ersetzen" : "(optional · PDF/Bild · max. 6 MB)"}</label>
+            <label>Rechnung / Beleg {k.rechnung_name ? "ersetzen" : "(optional · PDF/Bild · max. 15 MB)"}</label>
             {k.rechnung_name && (
               <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>
                 Aktuell: <a href={`/kosten/${k.id}/rechnung`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)" }}>{k.rechnung_name}</a>
