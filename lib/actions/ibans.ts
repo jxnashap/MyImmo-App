@@ -21,8 +21,19 @@ export async function addIban(formData: FormData): Promise<IbanResult> {
 
   // Die IBAN wird verschlüsselt gespeichert. Für Dublettenprüfung und
   // Unique-Index brauchen wir trotzdem einen deterministischen Vergleichswert
-  // → Blind-Index (HMAC der normalisierten IBAN).
-  const ibanBidx = blindIndex(iban);
+  // → Blind-Index (HMAC der normalisierten IBAN). Alle Krypto-Aufrufe VOR den
+  // DB-Zugriffen: fehlt DATA_ENCRYPTION_KEY, gibt es eine klare Meldung statt
+  // eines stillen Server-Errors.
+  let ibanBidx: string;
+  let ibanEnc: string;
+  let inhaberEnc: string | null;
+  try {
+    ibanBidx = blindIndex(iban);
+    ibanEnc = encrypt(iban);
+    inhaberEnc = inhaber ? encrypt(inhaber) : null;
+  } catch {
+    return { ok: false, error: "Bankdaten-Verschlüsselung ist nicht konfiguriert (DATA_ENCRYPTION_KEY fehlt)." };
+  }
 
   // Duplikat verhindern (gleiche IBAN beim selben Nutzer). Der Unique-Index
   // in der DB (user_id, iban_bidx) ist die eigentliche Absicherung gegen
@@ -45,8 +56,8 @@ export async function addIban(formData: FormData): Promise<IbanResult> {
   const { error } = await supabase.from("ibans").insert({
     user_id: user.id,
     kontoname,
-    inhaber: inhaber ? encrypt(inhaber) : null,
-    iban: encrypt(iban),
+    inhaber: inhaberEnc,
+    iban: ibanEnc,
     iban_bidx: ibanBidx,
     standard: istErstes,
   });
