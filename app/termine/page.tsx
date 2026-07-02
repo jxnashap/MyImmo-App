@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
-import { mieterFristen } from "@/lib/fristen";
-import { createTermin, deleteTermin } from "@/lib/actions/termine";
+import { mieterFristen, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
+import { createTermin, createVorlageTermin, deleteTermin, toggleErledigt } from "@/lib/actions/termine";
 import DeleteButton from "@/components/DeleteButton";
 import ExpandableList from "@/components/ExpandableList";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
+import { KATEGORIE_STIL, TERMIN_KATEGORIEN, WARTUNGS_VORLAGEN, WIEDERKEHRUNG_LABEL } from "@/lib/termine";
 import type { Termin, Property, Tenant, Kredit } from "@/lib/types";
 
 type Eintrag = {
@@ -13,36 +14,34 @@ type Eintrag = {
   label: string;
   wer: string;
   wo: string;
-  quelle: "mieter" | "kredit" | "eigen";
+  quelle: "mieter" | "kredit" | "eigen" | "steuer" | "objekt";
   typ: "info" | "warn" | "ok";
+  kategorie: string;
+  rechtsgrundlage?: string;
+  erledigt?: boolean;
+  wiederkehrung?: string | null;
   id?: string;
 };
 
-const QUELLE_BADGE: Record<Eintrag["quelle"], string> = {
-  mieter: "badge-teal",
-  kredit: "badge-gold",
-  eigen: "badge-green",
-};
-const QUELLE_LABEL: Record<Eintrag["quelle"], string> = {
-  mieter: "Mieter",
-  kredit: "Finanzierung",
-  eigen: "Eigen",
-};
-
-export default async function TerminePage({ searchParams }: { searchParams: { quelle?: string; jahr?: string } }) {
+export default async function TerminePage({
+  searchParams,
+}: {
+  searchParams: { quelle?: string; jahr?: string; kategorie?: string; erledigte?: string; ansicht?: string; monat?: string; tag?: string };
+}) {
   const supabase = createClient();
   const [{ data: term }, { data: props }, { data: miet }, { data: kred }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
-    supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
-    supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung"),
-    supabase.from("kredite").select("id,prop_id,bezeichnung,zinsbindung"),
+    supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum").order("bezeichnung"),
+    supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
+    supabase.from("kredite").select("id,prop_id,bezeichnung,zinsbindung,auszahlung_datum"),
   ]);
 
-  const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
+  const properties = (props ?? []) as (Pick<Property, "id" | "bezeichnung" | "typ"> & { energieausweis_datum: string | null })[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
   const termine = (term ?? []) as Termin[];
   const mieter = (miet ?? []) as Tenant[];
-  const kredite = (kred ?? []) as Kredit[];
+  const kredite = (kred ?? []) as (Kredit & { auszahlung_datum: string | null })[];
+  const mieterName = new Map(mieter.map((m) => [m.id, [m.vorname, m.nachname].filter(Boolean).join(" ")]));
 
   const eintraege: Eintrag[] = [];
 
@@ -51,22 +50,53 @@ export default async function TerminePage({ searchParams }: { searchParams: { qu
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
     for (const f of mieterFristen(m)) {
       if (!f.datum) continue;
-      eintraege.push({ datum: f.datum, label: f.label, wer, wo, quelle: "mieter", typ: f.typ });
+      eintraege.push({ datum: f.datum, label: f.label, wer, wo, quelle: "mieter", typ: f.typ, kategorie: f.kategorie ?? "Miete", rechtsgrundlage: f.rechtsgrundlage });
     }
   }
   for (const k of kredite) {
-    if (!k.zinsbindung) continue;
-    eintraege.push({ datum: k.zinsbindung, label: "Zinsbindung endet", wer: k.bezeichnung ?? "Darlehen", wo: (k.prop_id && nameOf.get(k.prop_id)) || "–", quelle: "kredit", typ: "warn" });
+    const wo = (k.prop_id && nameOf.get(k.prop_id)) || "–";
+    for (const f of kreditFristen(k)) {
+      if (!f.datum) continue;
+      eintraege.push({ datum: f.datum, label: f.label, wer: k.bezeichnung ?? "Darlehen", wo, quelle: "kredit", typ: f.typ, kategorie: f.kategorie ?? "Finanzierung", rechtsgrundlage: f.rechtsgrundlage });
+    }
+  }
+  for (const p of properties) {
+    for (const f of objektFristen(p)) {
+      if (!f.datum) continue;
+      eintraege.push({ datum: f.datum, label: f.label, wer: "", wo: p.bezeichnung, quelle: "objekt", typ: f.typ, kategorie: f.kategorie ?? "Sonstiges", rechtsgrundlage: f.rechtsgrundlage });
+    }
+  }
+  // Globale Steuer-Fristen (Grundsteuer-Raten, ESt-Erklärung)
+  for (const f of globaleFristen()) {
+    if (!f.datum) continue;
+    eintraege.push({ datum: f.datum, label: f.label, wer: "", wo: "Alle Objekte", quelle: "steuer", typ: f.typ, kategorie: f.kategorie ?? "Steuer", rechtsgrundlage: f.rechtsgrundlage });
   }
   for (const t of termine) {
     if (!t.datum) continue;
-    eintraege.push({ datum: t.datum, label: t.titel ?? "Termin", wer: t.notiz ?? "", wo: (t.prop_id && nameOf.get(t.prop_id)) || "", quelle: "eigen", typ: "info", id: t.id });
+    eintraege.push({
+      datum: t.datum,
+      label: t.titel ?? "Termin",
+      wer: [t.mieter_id ? mieterName.get(t.mieter_id) : null, t.notiz].filter(Boolean).join(" · "),
+      wo: (t.prop_id && nameOf.get(t.prop_id)) || "",
+      quelle: "eigen",
+      typ: "info",
+      kategorie: t.kategorie ?? "Sonstiges",
+      erledigt: t.erledigt ?? false,
+      wiederkehrung: t.wiederkehrung,
+      id: t.id,
+    });
   }
 
   eintraege.sort((a, b) => a.datum.localeCompare(b.datum));
 
+  // ---- Filter ----
+  const zeigeErledigte = searchParams.erledigte === "1";
   const filterQ = searchParams.quelle;
-  let sichtbar = filterQ ? eintraege.filter((e) => e.quelle === filterQ) : eintraege;
+  const filterK = searchParams.kategorie;
+  let sichtbar = eintraege;
+  if (!zeigeErledigte) sichtbar = sichtbar.filter((e) => !e.erledigt);
+  if (filterQ) sichtbar = sichtbar.filter((e) => (filterQ === "auto" ? e.quelle !== "eigen" : e.quelle === filterQ));
+  if (filterK) sichtbar = sichtbar.filter((e) => e.kategorie === filterK);
 
   const aktuellesJahr = new Date().getFullYear();
   const jahr = searchParams.jahr ?? String(aktuellesJahr);
@@ -76,23 +106,105 @@ export default async function TerminePage({ searchParams }: { searchParams: { qu
   if (jahr !== "alle") sichtbar = sichtbar.filter((e) => new Date(e.datum).getFullYear() === Number(jahr));
 
   const filters: FilterDef[] = [
-    { name: "quelle", label: "Quelle", icon: "quelle", variant: "segmented", options: [{ value: "", label: "Alle" }, { value: "mieter", label: "Mieter" }, { value: "kredit", label: "Finanzierung" }, { value: "eigen", label: "Eigene" }] },
+    { name: "quelle", label: "Quelle", icon: "quelle", variant: "segmented", options: [{ value: "", label: "Alle" }, { value: "auto", label: "Automatisch" }, { value: "eigen", label: "Eigene" }] },
+    { name: "kategorie", label: "Kategorie", icon: "kategorie", options: [{ value: "", label: "Alle Kategorien" }, ...TERMIN_KATEGORIEN.map((k) => ({ value: k, label: `${KATEGORIE_STIL[k]?.icon ?? ""} ${k}` })), { value: "Betriebskosten", label: "🧾 Betriebskosten" }] },
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
   ];
 
   const heute = new Date();
   const tageBis = (d: string) => Math.ceil((new Date(d).getTime() - heute.getTime()) / 86400000);
-  const anstehend = eintraege.filter((e) => tageBis(e.datum) >= 0);
+  const offen = eintraege.filter((e) => !e.erledigt);
+  const anstehend = offen.filter((e) => tageBis(e.datum) >= 0);
   const in30 = anstehend.filter((e) => tageBis(e.datum) <= 30).length;
   const in90 = anstehend.filter((e) => tageBis(e.datum) <= 90).length;
-  const ueberfaellig = eintraege.filter((e) => tageBis(e.datum) < 0).length;
+  const ueberfaellig = offen.filter((e) => tageBis(e.datum) < 0).length;
+
+  // ---- Monatsansicht ----
+  const ansicht = searchParams.ansicht === "monat" ? "monat" : "liste";
+  const monatParam = /^\d{4}-\d{2}$/.test(searchParams.monat ?? "") ? (searchParams.monat as string) : `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}`;
+  const [mJahr, mMonat] = monatParam.split("-").map(Number);
+  const ersterTag = new Date(mJahr, mMonat - 1, 1);
+  const tageImMonat = new Date(mJahr, mMonat, 0).getDate();
+  const startWochentag = (ersterTag.getDay() + 6) % 7; // Mo=0
+  const vorMonat = `${mMonat === 1 ? mJahr - 1 : mJahr}-${String(mMonat === 1 ? 12 : mMonat - 1).padStart(2, "0")}`;
+  const nachMonat = `${mMonat === 12 ? mJahr + 1 : mJahr}-${String(mMonat === 12 ? 1 : mMonat + 1).padStart(2, "0")}`;
+  const proTag = new Map<string, Eintrag[]>();
+  for (const e of eintraege) {
+    if (!zeigeErledigte && e.erledigt) continue;
+    if (e.datum.startsWith(monatParam)) {
+      const arr = proTag.get(e.datum) ?? [];
+      arr.push(e);
+      proTag.set(e.datum, arr);
+    }
+  }
+  const gewaehlterTag = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.tag ?? "") ? searchParams.tag : null;
+  const monatsName = ersterTag.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  const linkMit = (patch: Record<string, string>) => {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries({ ...searchParams, ...patch })) if (v) q.set(k, String(v));
+    return `/termine?${q.toString()}`;
+  };
+
+  const zeile = (e: Eintrag, i: number) => {
+    const tage = tageBis(e.datum);
+    const stil = KATEGORIE_STIL[e.kategorie] ?? KATEGORIE_STIL.Sonstiges;
+    const farbe = e.erledigt ? "var(--green)" : e.typ === "warn" || tage < 0 ? "var(--red)" : e.typ === "ok" ? "var(--green)" : "var(--muted)";
+    return (
+      <div key={`${e.quelle}-${e.id ?? i}-${e.datum}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--line)", opacity: e.erledigt ? 0.6 : 1 }}>
+        {e.quelle === "eigen" && e.id ? (
+          <form action={toggleErledigt.bind(null, e.id)} style={{ display: "inline-flex" }}>
+            <button
+              type="submit"
+              title={e.erledigt ? "Wieder öffnen" : "Als erledigt abhaken"}
+              style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${e.erledigt ? "var(--green)" : "var(--line2)"}`, background: e.erledigt ? "var(--green-dim)" : "transparent", color: "var(--green)", cursor: "pointer", display: "grid", placeItems: "center", fontSize: 11, lineHeight: 1, padding: 0 }}
+            >
+              {e.erledigt ? "✓" : ""}
+            </button>
+          </form>
+        ) : (
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: stil.punkt, flexShrink: 0, marginLeft: 5, marginRight: 5 }} title={e.kategorie} />
+        )}
+        <div style={{ width: 96, flexShrink: 0, fontSize: 12, color: "var(--muted)" }}>{datum(e.datum)}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 500, fontSize: 13, textDecoration: e.erledigt ? "line-through" : undefined }}>
+            {e.label}
+            {e.wiederkehrung && <span style={{ fontSize: 10.5, color: "var(--muted)", marginLeft: 6 }}>↻ {WIEDERKEHRUNG_LABEL[e.wiederkehrung] ?? e.wiederkehrung}</span>}
+          </div>
+          <div style={{ fontSize: 11, color: "var(--muted)" }} title={e.rechtsgrundlage}>
+            {[e.wer, e.wo].filter(Boolean).join(" · ")}
+            {e.rechtsgrundlage && <span style={{ color: "var(--faint)" }}>{[e.wer, e.wo].some(Boolean) ? " · " : ""}{e.rechtsgrundlage}</span>}
+          </div>
+        </div>
+        <span style={{ fontSize: 11, color: farbe, width: 84, textAlign: "right", flexShrink: 0 }}>
+          {e.erledigt ? "erledigt" : tage < 0 ? `vor ${Math.abs(tage)} Tg.` : tage === 0 ? "heute" : `in ${tage} Tg.`}
+        </span>
+        <span className={`badge ${stil.badge}`} style={{ flexShrink: 0 }}>{stil.icon} {e.kategorie}</span>
+        {e.quelle === "eigen" && e.id ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <Link href={`/termine/${e.id}/edit`} className="delete-btn" title="Termin bearbeiten" style={{ color: "var(--muted)" }}>✎</Link>
+            <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label="✕" confirmText="Termin löschen?" />
+          </span>
+        ) : (
+          <span style={{ width: 22, flexShrink: 0 }} />
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="fade-up">
       <div className="topbar">
         <div>
           <div className="topbar-title">Termine</div>
-          <div className="topbar-sub">Fristen aus Mietern &amp; Krediten plus eigene Termine</div>
+          <div className="topbar-sub">Automatische Fristen aus Mietern, Krediten &amp; Steuer plus eigene Termine · Angaben ohne Gewähr</div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link href={linkMit({ ansicht: ansicht === "monat" ? "" : "monat" })} className="btn btn-ghost" style={{ fontSize: 12 }}>
+            {ansicht === "monat" ? "☰ Liste" : "▦ Monat"}
+          </Link>
+          <a href="/termine/ical" className="btn btn-ghost" style={{ fontSize: 12 }} title="Alle anstehenden Termine als iCal-Datei für deinen Kalender">
+            📆 Kalender-Export (.ics)
+          </a>
         </div>
       </div>
 
@@ -116,60 +228,135 @@ export default async function TerminePage({ searchParams }: { searchParams: { qu
               <input name="datum" type="date" required className="input" />
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
+              <span style={{ color: "var(--muted)" }}>Kategorie</span>
+              <select name="kategorie" className="input">
+                {TERMIN_KATEGORIEN.map((k) => <option key={k} value={k}>{KATEGORIE_STIL[k]?.icon} {k}</option>)}
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
+              <span style={{ color: "var(--muted)" }}>Wiederkehrung</span>
+              <select name="wiederkehrung" className="input">
+                <option value="">einmalig</option>
+                {Object.entries(WIEDERKEHRUNG_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
               <span style={{ color: "var(--muted)" }}>Immobilie</span>
               <select name="prop_id" className="input">
                 <option value="">—</option>
                 {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
               </select>
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, flex: 1, minWidth: 160 }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
+              <span style={{ color: "var(--muted)" }}>Mieter</span>
+              <select name="mieter_id" className="input">
+                <option value="">—</option>
+                {mieter.map((m) => <option key={m.id} value={m.id}>{[m.vorname, m.nachname].filter(Boolean).join(" ")}</option>)}
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, width: 90 }}>
+              <span style={{ color: "var(--muted)" }}>Vorlauf (Tg.)</span>
+              <input name="vorlauf_tage" type="number" min="0" max="365" className="input" placeholder="—" />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, flex: 1, minWidth: 140 }}>
               <span style={{ color: "var(--muted)" }}>Notiz</span>
               <input name="notiz" className="input" />
             </label>
             <button className="btn btn-gold">＋ Termin</button>
           </form>
+
+          {/* Wartungs-Vorlagen: Ein Klick legt den Termin mit Intervall an */}
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Schnell anlegen (Wartung &amp; Pflichtprüfungen)</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {WARTUNGS_VORLAGEN.map((v) => (
+                <form key={v.titel} action={createVorlageTermin.bind(null, v.titel, v.wiederkehrung, v.kategorie, v.notiz, null)} style={{ display: "inline-flex" }}>
+                  <button className="btn btn-ghost" style={{ fontSize: 11.5 }} title={`${v.notiz} · ${WIEDERKEHRUNG_LABEL[v.wiederkehrung]}`}>
+                    {KATEGORIE_STIL[v.kategorie]?.icon} {v.titel} <span style={{ color: "var(--muted)" }}>↻ {WIEDERKEHRUNG_LABEL[v.wiederkehrung]}</span>
+                  </button>
+                </form>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      <FilterBar filters={filters} />
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 260 }}><FilterBar filters={filters} /></div>
+        <Link href={linkMit({ erledigte: zeigeErledigte ? "" : "1" })} className="btn btn-ghost" style={{ fontSize: 11.5, marginBottom: 16 }}>
+          {zeigeErledigte ? "✓ Erledigte ausblenden" : "Erledigte anzeigen"}
+        </Link>
+      </div>
 
-      <div className="section">
-        <div className="section-header">
-          <h3>Anstehende Termine</h3>
-        </div>
-        <div className="section-body">
-          {sichtbar.length === 0 ? (
-            <div className="empty"><div className="empty-icon">📅</div><p>Keine Termine</p></div>
-          ) : (
-            <ExpandableList limit={10} label="weitere Termine">
-            {sichtbar.map((e, i) => {
-              const tage = tageBis(e.datum);
-              const farbe = e.typ === "warn" || tage < 0 ? "var(--red)" : e.typ === "ok" ? "var(--green)" : "var(--muted)";
-              return (
-                <div key={`${e.quelle}-${e.id ?? i}`} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: farbe, flexShrink: 0 }} />
-                  <div style={{ width: 96, flexShrink: 0, fontSize: 12, color: "var(--muted)" }}>{datum(e.datum)}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 500, fontSize: 13 }}>{e.label}</div>
-                    <div style={{ fontSize: 11, color: "var(--muted)" }}>{[e.wer, e.wo].filter(Boolean).join(" · ")}</div>
-                  </div>
-                  <span style={{ fontSize: 11, color: farbe, width: 90, textAlign: "right", flexShrink: 0 }}>{tage < 0 ? `vor ${Math.abs(tage)} Tg.` : tage === 0 ? "heute" : `in ${tage} Tg.`}</span>
-                  <span className={`badge ${QUELLE_BADGE[e.quelle]}`}>{QUELLE_LABEL[e.quelle]}</span>
-                  {e.quelle === "eigen" && e.id ? (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                      <Link href={`/termine/${e.id}/edit`} className="delete-btn" title="Termin bearbeiten" style={{ color: "var(--muted)" }}>✎</Link>
-                      <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label="✕" confirmText="Termin löschen?" />
+      {ansicht === "monat" ? (
+        <div className="section">
+          <div className="section-header">
+            <h3>{monatsName}</h3>
+            <div style={{ display: "flex", gap: 6 }}>
+              <Link href={linkMit({ monat: vorMonat, tag: "" })} className="btn btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}>←</Link>
+              <Link href={linkMit({ monat: `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}`, tag: "" })} className="btn btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}>Heute</Link>
+              <Link href={linkMit({ monat: nachMonat, tag: "" })} className="btn btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}>→</Link>
+            </div>
+          </div>
+          <div className="section-body">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+              {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((w) => (
+                <div key={w} style={{ fontSize: 10.5, color: "var(--muted)", textAlign: "center", padding: "2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>{w}</div>
+              ))}
+              {Array.from({ length: startWochentag }).map((_, i) => <div key={`leer-${i}`} />)}
+              {Array.from({ length: tageImMonat }).map((_, i) => {
+                const tagIso = `${monatParam}-${String(i + 1).padStart(2, "0")}`;
+                const tagesEintraege = proTag.get(tagIso) ?? [];
+                const istHeute = tagIso === `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}-${String(heute.getDate()).padStart(2, "0")}`;
+                const aktiv = gewaehlterTag === tagIso;
+                return (
+                  <Link
+                    key={tagIso}
+                    href={linkMit({ tag: aktiv ? "" : tagIso })}
+                    style={{
+                      minHeight: 56, borderRadius: 8, padding: "5px 7px", textDecoration: "none",
+                      border: `1px solid ${aktiv ? "var(--gold)" : istHeute ? "var(--gold-dim)" : "var(--line)"}`,
+                      background: aktiv ? "var(--gold-pale)" : "var(--bg3)", color: "var(--text)",
+                      display: "flex", flexDirection: "column", gap: 4,
+                    }}
+                  >
+                    <span style={{ fontSize: 11, color: istHeute ? "var(--gold)" : "var(--muted)", fontWeight: istHeute ? 700 : 400 }}>{i + 1}</span>
+                    <span style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                      {tagesEintraege.slice(0, 4).map((e, j) => (
+                        <span key={j} title={e.label} style={{ width: 7, height: 7, borderRadius: "50%", background: (KATEGORIE_STIL[e.kategorie] ?? KATEGORIE_STIL.Sonstiges).punkt }} />
+                      ))}
+                      {tagesEintraege.length > 4 && <span style={{ fontSize: 9, color: "var(--muted)" }}>+{tagesEintraege.length - 4}</span>}
                     </span>
-                  ) : (
-                    <span style={{ width: 22 }} />
-                  )}
-                </div>
-              );
-            })}
-            </ExpandableList>
-          )}
+                  </Link>
+                );
+              })}
+            </div>
+            {gewaehlterTag && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Termine am {datum(gewaehlterTag)}</div>
+                {(proTag.get(gewaehlterTag) ?? []).length === 0
+                  ? <div style={{ fontSize: 12, color: "var(--muted)" }}>Keine Termine an diesem Tag.</div>
+                  : (proTag.get(gewaehlterTag) ?? []).map(zeile)}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="section">
+          <div className="section-header">
+            <h3>Anstehende Termine</h3>
+          </div>
+          <div className="section-body">
+            {sichtbar.length === 0 ? (
+              <div className="empty"><div className="empty-icon">📅</div><p>Keine Termine</p></div>
+            ) : (
+              <ExpandableList limit={12} label="weitere Termine">
+                {sichtbar.map(zeile)}
+              </ExpandableList>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
