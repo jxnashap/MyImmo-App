@@ -53,6 +53,12 @@ export default async function DashboardPage() {
   const totalKosten = kreditRates + monatKosten;
   const cashflow = totalMiete - totalKosten;
   const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
+  // Leerstandsquote: nur vermietbare Objekte (Status "Vermietet"/"Leer");
+  // Benchmark: 2–5 % gesund, >10 % kritisch.
+  const vermietbar = properties.filter((p) => p.obj_status === "Vermietet" || p.obj_status === "Leer");
+  const leerCount = properties.filter((p) => p.obj_status === "Leer").length;
+  const leerstand = vermietbar.length > 0 ? (leerCount / vermietbar.length) * 100 : 0;
+  const leerFarbe = leerstand <= 5 ? "var(--green)" : leerstand <= 10 ? "var(--amber)" : "var(--red)";
 
   // Portfolio-Entwicklung: kumulierter Cashflow (Einnahmen − Ausgaben),
   // Zeitraum wird clientseitig per Segmented-Control gefiltert.
@@ -101,7 +107,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="grid-4 mb-20">
+      <div className="grid-5 mb-20">
         <div className="kpi-card">
           <div className="kpi-label">Portfolio-Wert</div>
           <div className="kpi-value">{euro(totalWert)}</div>
@@ -121,6 +127,13 @@ export default async function DashboardPage() {
           <div className="kpi-label">Cashflow / Mo.</div>
           <div className="kpi-value" style={{ color: cashflow >= 0 ? "var(--green)" : "var(--red)" }}>{cashflow >= 0 ? "+ " : "− "}{euro(Math.abs(cashflow))}</div>
           <div className="kpi-sub"><span className={`badge ${cashflow >= 0 ? "badge-green" : "badge-red"}`}>{cashflow >= 0 ? "Positiver Cashflow" : "Negativer Cashflow"}</span></div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-label">Leerstandsquote</div>
+          <div className="kpi-value" style={{ color: vermietbar.length ? leerFarbe : "var(--muted)" }}>
+            {vermietbar.length ? leerstand.toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " %" : "–"}
+          </div>
+          <div className="kpi-sub"><span className="badge badge-teal">{leerCount} von {vermietbar.length} leer</span></div>
         </div>
       </div>
 

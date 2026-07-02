@@ -54,6 +54,14 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const miete = p.miete ?? 0;
   const rendite = miete && wert ? (miete * 12 / wert) * 100 : 0;
   const faktor = miete && p.kaufpreis ? p.kaufpreis / (miete * 12) : 0;
+  // Empfohlene Instandhaltungsrücklage (Peterssche Formel): 1,5× Herstellungs-
+  // kosten über 80 Jahre. Faustformel ohne Gewähr; als Herstellungskosten dient
+  // der Gebäudeanteil (angenommen 70 %) von Kaufpreis bzw. Wert. Bei ETW ent-
+  // fallen ~65–70 % aufs Gemeinschaftseigentum (läuft über die Hausgeld-Rücklage).
+  const GEBAEUDEANTEIL = 0.70;
+  const petersBasis = (p.kaufpreis ?? wert ?? 0) * GEBAEUDEANTEIL;
+  const petersJahr = petersBasis * 1.5 / 80;
+  const petersM2 = p.flaeche && p.flaeche > 0 ? petersJahr / p.flaeche : 0;
   const cashflowMo = miete - totalKreditRate;
   const cfStr = (cashflowMo >= 0 ? "+ " : "– ") + euro(Math.abs(cashflowMo));
 
@@ -81,6 +89,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const kennzahlen = [
     { lbl: "Bruttomietrendite", val: rendite > 0 ? rendite.toFixed(2) + "%" : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-teal", note: "Jahreskaltmiete / Kaufpreis" },
     { lbl: "Kaufpreisfaktor", val: faktor > 0 ? faktor.toFixed(1) + "x" : "–", badge: faktor > 0 ? (faktor < 25 ? "badge-green" : faktor < 30 ? "badge-gold" : "badge-red") : "badge-teal", note: "Kaufpreis / Jahreskaltmiete" },
+    { lbl: "Instandhaltungsrücklage (empf.)", val: petersJahr > 0 ? euro(petersJahr) + "/Jahr" : "–", badge: "badge-teal", note: petersM2 > 0 ? `Peterssche Formel · ${euro(petersM2)}/m²·Jahr` : "Peterssche Formel (Faustformel)" },
     { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-teal", note: "Summe aller Darlehensraten" },
     { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–", badge: "badge-teal", note: "Summe aller Darlehen" },
     { lbl: "Cashflow / Mo.", val: cfStr, badge: cashflowMo >= 0 ? "badge-green" : "badge-red", note: "Miete minus Kreditrate" },
