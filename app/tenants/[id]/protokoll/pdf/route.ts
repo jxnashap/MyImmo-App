@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { buildProtokollPdf, type ProtokollDaten } from "@/lib/pdf/protokollPdf";
+import { erzeugeProtokollPdf, type ProtokollFields } from "@/lib/pdf/erzeugen";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,13 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!user) return NextResponse.redirect(new URL("/login", req.url));
 
   const form = await req.formData();
-  const typ = String(form.get("typ") ?? "einzug") === "auszug" ? "auszug" : "einzug";
-  const datum = String(form.get("datum") ?? "");
-  const strom = String(form.get("strom") ?? "").trim();
-  const gas = String(form.get("gas") ?? "").trim();
-  const wasser = String(form.get("wasser") ?? "").trim();
-  const schluessel = String(form.get("schluessel") ?? "").trim();
-  let raeume: ProtokollDaten["raeume"] = [];
+  let raeume: ProtokollFields["raeume"] = [];
   try {
     const parsed = JSON.parse(String(form.get("raeume") ?? "[]"));
     if (Array.isArray(parsed)) {
@@ -35,46 +29,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     /* leere Liste, wenn JSON kaputt */
   }
 
-  const { data: tenant } = await supabase
-    .from("mieter")
-    .select("vorname,nachname,einheit,prop_id")
-    .eq("id", params.id)
-    .single();
-  if (!tenant) return new NextResponse("Mieter nicht gefunden", { status: 404 });
-
-  const [{ data: property }, { data: profil }] = await Promise.all([
-    tenant.prop_id
-      ? supabase.from("properties").select("bezeichnung,adresse").eq("id", tenant.prop_id).single()
-      : Promise.resolve({ data: null }),
-    supabase.from("vermieter_profil").select("name").eq("user_id", user.id).maybeSingle(),
-  ]);
-
-  const mieterName = `${tenant.vorname ?? ""} ${tenant.nachname ?? ""}`.trim();
-  const objekt = property
-    ? `${property.bezeichnung}${tenant.einheit ? ", " + tenant.einheit : ""}${property.adresse ? ", " + property.adresse : ""}`
-    : "–";
-
-  const pdf = await buildProtokollPdf({
-    typ,
-    datum,
-    objekt,
-    mieterName: mieterName || "–",
-    vermieterName: profil?.name ?? "",
-    strom,
-    gas,
-    wasser,
-    schluessel,
+  const doc = await erzeugeProtokollPdf(supabase, user.id, params.id, {
+    typ: String(form.get("typ") ?? "einzug"),
+    datum: String(form.get("datum") ?? ""),
+    strom: String(form.get("strom") ?? "").trim(),
+    gas: String(form.get("gas") ?? "").trim(),
+    wasser: String(form.get("wasser") ?? "").trim(),
+    schluessel: String(form.get("schluessel") ?? "").trim(),
     raeume,
   });
+  if (!doc) return new NextResponse("Mieter nicht gefunden", { status: 404 });
 
-  const safeName = (mieterName || "Mieter").replace(/[^a-zA-Z0-9]+/g, "_");
-  const filename = `Uebergabeprotokoll_${safeName}.pdf`;
-
-  return new NextResponse(Buffer.from(pdf), {
+  return new NextResponse(Buffer.from(doc.pdf), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `attachment; filename="${doc.dateiname}"`,
       "Cache-Control": "no-store",
     },
   });
