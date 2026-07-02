@@ -734,7 +734,8 @@ select:focus-visible, textarea:focus-visible {
 /* ---- Druck: nur das Blatt, an Fensterkuvert-Position ---- */
 @page { size: A4; margin: 0; }
 @media print {
-  .no-print, .sidebar, .topbar, .btn, .form-box, .delete-btn { display: none !important; }
+  .no-print, .sidebar, .topbar, .btn, .form-box, .delete-btn,
+  .mobile-bar, .sidebar-overlay, .hamburger { display: none !important; } /* Mobile-Leiste: Papierbreite (~794px) triggert sonst das <860px-Layout */
   html, body { background: #fff !important; }
   .app { display: block !important; }
   .main-wrap { overflow: visible !important; }
