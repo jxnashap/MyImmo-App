@@ -213,6 +213,9 @@ function BankPanel({ ibans }: { ibans: Iban[] }) {
       form.reset();
       toast("Konto hinzugefügt ✓");
       router.refresh();
+    } catch (err) {
+      setError("Speichern fehlgeschlagen. Bitte erneut versuchen.");
+      console.error("addIban:", err);
     } finally {
       setSaving(false);
     }
