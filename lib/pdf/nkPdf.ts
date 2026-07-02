@@ -28,7 +28,6 @@ const GOLD = rgb(0.722, 0.565, 0.169); // #b8902b
 const INK = rgb(0.13, 0.13, 0.12);
 const MUTED = rgb(0.49, 0.49, 0.47);
 const LINE = rgb(0.82, 0.8, 0.76);
-const DARK = rgb(0.11, 0.11, 0.1); // Top-Streifen
 const GREEN = rgb(0.16, 0.5, 0.34);
 const RED = rgb(0.74, 0.26, 0.19);
 
@@ -165,9 +164,6 @@ export async function buildNkPdf(
     seiten.push(page);
     return A4.h - 64;
   };
-
-  // ---- Top-Streifen ----
-  page.drawRectangle({ x: 0, y: A4.h - 10, width: A4.w, height: 10, color: DARK });
 
   // ---- Kopf: Logo links ----
   let y = A4.h - 52;
