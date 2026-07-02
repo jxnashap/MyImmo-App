@@ -9,6 +9,7 @@ import ZeitraumControl from "@/components/ZeitraumControl";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import EinnahmenListe from "@/components/lists/EinnahmenListe";
 import KostenListe from "@/components/lists/KostenListe";
+import CashflowListe from "@/components/lists/CashflowListe";
 import type { RawPoint } from "@/lib/zeitraum";
 import type { Einnahme, Kosten, Property, Tenant } from "@/lib/types";
 
@@ -171,8 +172,20 @@ export default async function CashflowPage({
 
       <FilterBar filters={filters} />
 
-      {/* Buchungsansicht */}
-      {typ !== "ausgabe" && (
+      {/* Buchungsansicht: "Alle" = chronologische Merge-Tabelle; die
+          Einzel-Filter behalten die bestehenden Listen (inkl. Umlage-Spalte). */}
+      {typ === "" && (
+        <div className="section">
+          <div className="section-header">
+            <h3>Alle Buchungen</h3>
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>{einnahmen.length + kosten.length} Buchungen · Netto <span style={{ color: netto >= 0 ? "var(--green)" : "var(--red)" }}>{euro(netto)}</span></span>
+          </div>
+          <div className="section-body">
+            <CashflowListe einnahmen={einnahmen} kosten={kosten} properties={properties} tenants={tenants} />
+          </div>
+        </div>
+      )}
+      {typ === "einnahme" && (
         <div className="section">
           <div className="section-header">
             <h3>💰 Einnahmen</h3>
@@ -183,7 +196,7 @@ export default async function CashflowPage({
           </div>
         </div>
       )}
-      {typ !== "einnahme" && (
+      {typ === "ausgabe" && (
         <div className="section">
           <div className="section-header">
             <h3>📋 Ausgaben</h3>

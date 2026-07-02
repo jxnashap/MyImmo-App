@@ -40,6 +40,7 @@ export default function BuchungForm({
   typInitial = "einnahme",
   propInitial = "",
   row,
+  imDialog = false,
 }: {
   properties: Pick<Property, "id" | "bezeichnung">[];
   tenants: Pick<Tenant, "id" | "vorname" | "nachname">[];
@@ -47,6 +48,8 @@ export default function BuchungForm({
   typInitial?: "einnahme" | "ausgabe";
   propInitial?: string;
   row?: BuchungRow;
+  // Im RowDialog eingebettet: flache Optik, Titel kommt vom Dialog.
+  imDialog?: boolean;
 }) {
   const [typ, setTyp] = useState<"einnahme" | "ausgabe">(typInitial);
   const isEdit = !!row;
@@ -62,9 +65,13 @@ export default function BuchungForm({
   const KAT = typ === "einnahme" ? EIN_KAT : AUS_KAT;
 
   return (
-    <form action={action} className="form-box">
-      <h3>{isEdit ? "Buchung bearbeiten" : "Neue Buchung"}</h3>
-      <p>{typ === "einnahme" ? "Miete und sonstige Erträge" : "Kosten und Ausgaben"}</p>
+    <form action={action} className="form-box" style={imDialog ? { padding: 0, border: "none", background: "none", maxWidth: "none" } : undefined}>
+      {!imDialog && (
+        <>
+          <h3>{isEdit ? "Buchung bearbeiten" : "Neue Buchung"}</h3>
+          <p>{typ === "einnahme" ? "Miete und sonstige Erträge" : "Kosten und Ausgaben"}</p>
+        </>
+      )}
 
       {!isEdit && (
         <div className="settings-tabs" style={{ marginBottom: 14, position: "static" }}>
