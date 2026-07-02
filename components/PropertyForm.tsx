@@ -4,6 +4,12 @@ import SubmitButton from "@/components/SubmitButton";
 const TYPEN = ["Eigentumswohnung", "Einfamilienhaus", "Mehrfamilienhaus", "Gewerbeimmobilie", "Ferienimmobilie", "Grundstück"];
 const STATUS = ["Vermietet", "Selbst bewohnt", "Leer", "Feriennutzung"];
 
+const AFA_METHODEN = [
+  { v: "auto", l: "Automatisch (linear, je Baujahr)" },
+  { v: "degressiv", l: "Degressiv 5 % (Neubau 10/2023–09/2029)" },
+  { v: "manuell", l: "Manueller Betrag (§ 7b / Denkmal)" },
+];
+
 export default function PropertyForm({
   action,
   property,
@@ -56,6 +62,29 @@ export default function PropertyForm({
             10 Jahre gültig (§ 79 GEG) — Erinnerung erscheint automatisch im Kalender.</span>
         </div>
       </div>
+
+      {/* AfA-Einstellung je Objekt (Anlage V) */}
+      <div className="form-row">
+        <div className="form-group"><label>AfA-Methode</label>
+          <select name="afa_methode" defaultValue={(property?.afa_methode as string) || "auto"}>
+            {AFA_METHODEN.map((m) => <option key={m.v} value={m.v}>{m.l}</option>)}
+          </select>
+        </div>
+        <div className="form-group"><label>Gebäudeanteil (%) — optional</label>
+          <input type="number" step="1" name="afa_gebaeudeanteil" defaultValue={v("afa_gebaeudeanteil")} placeholder="Standard 80" />
+        </div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Startjahr (nur degressiv)</label>
+          <input type="number" name="afa_start_jahr" defaultValue={v("afa_start_jahr")} placeholder="= Baujahr" />
+        </div>
+        <div className="form-group"><label>Manueller AfA-Betrag (€/Jahr, nur „manuell")</label>
+          <input type="number" step="0.01" name="afa_betrag" defaultValue={v("afa_betrag")} placeholder="z.B. 7500" />
+        </div>
+      </div>
+      <p style={{ fontSize: 11, color: "var(--muted)", marginTop: -6, marginBottom: 14 }}>
+        Degressiv nur für neue Wohngebäude, Baubeginn/Kauf 10/2023–09/2029. Faustformel ohne Gewähr, keine Steuerberatung.
+      </p>
 
       <div className="form-actions">
         <SubmitButton>{submitLabel}</SubmitButton>
