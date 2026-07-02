@@ -16,6 +16,7 @@ export type Property = {
   obj_status: string | null;  // z.B. "Vermietet", "Leer"
   zimmer: number | null;
   energieklasse: string | null;
+  energieausweis_datum: string | null; // Ausstellungsdatum → § 79 GEG (10 J. gültig)
   notiz_import: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -102,6 +103,7 @@ export type Kredit = {
   tilgungssatz: number | null;
   monatsrate: number | null;
   zinsbindung: string | null;
+  auszahlung_datum: string | null;   // vollständige Auszahlung → § 489 BGB (SKR nach 10 J.)
   laufzeit: number | null;
 };
 

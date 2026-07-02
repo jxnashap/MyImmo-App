@@ -30,6 +30,7 @@ function parse(formData: FormData) {
     obj_status: str("obj_status"),
     zimmer: num("zimmer"),
     energieklasse: str("energieklasse"),
+    energieausweis_datum: str("energieausweis_datum"),
   };
 }
 

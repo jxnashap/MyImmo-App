@@ -203,6 +203,7 @@ export async function createKredit(fd: FormData) {
     tilgungssatz: num(fd, "tilgungssatz"),
     monatsrate: num(fd, "monatsrate"),
     zinsbindung: str(fd, "zinsbindung"),
+    auszahlung_datum: str(fd, "auszahlung_datum"),
     laufzeit: num(fd, "laufzeit"),
   });
   if (error) throw new Error(error.message);
@@ -223,6 +224,7 @@ export async function updateKredit(id: string, fd: FormData) {
     tilgungssatz: num(fd, "tilgungssatz"),
     monatsrate: num(fd, "monatsrate"),
     zinsbindung: str(fd, "zinsbindung"),
+    auszahlung_datum: str(fd, "auszahlung_datum"),
     laufzeit: num(fd, "laufzeit"),
   }).eq("id", id);
   if (error) throw new Error(error.message);
