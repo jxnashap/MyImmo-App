@@ -9,6 +9,7 @@ import {
   Lock, ExternalLink, X, Check, type LucideIcon,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { KEY_MIN, KEY_CLOSE, AUTOLOGOUT_EVENT } from "@/components/AutoLogout";
 import { createClient } from "@/lib/supabase/client";
 import { saveVermieter } from "@/lib/actions/vermieter";
 import { addIban, deleteIban, setStandardIban } from "@/lib/actions/ibans";
@@ -347,6 +348,75 @@ function SicherheitPanel({ email, provider }: { email?: string | null; provider?
             <button className="btn btn-gold" disabled={saving}>{saving ? "Speichern…" : "Passwort ändern"}</button>
           </div>
         </form>
+      </div>
+
+      <AutoLogoutKarte />
+    </div>
+  );
+}
+
+// Automatische Abmeldung (clientseitig, localStorage — wirkt sofort ohne Reload).
+function AutoLogoutKarte() {
+  const toast = useToast();
+  const [minuten, setMinuten] = useState("0");
+  const [beimSchliessen, setBeimSchliessen] = useState(false);
+
+  useEffect(() => {
+    setMinuten(localStorage.getItem(KEY_MIN) || "0");
+    setBeimSchliessen(localStorage.getItem(KEY_CLOSE) === "1");
+  }, []);
+
+  const uebernehmen = () => window.dispatchEvent(new Event(AUTOLOGOUT_EVENT));
+
+  return (
+    <div className="glass-card reveal" style={{ marginTop: 18 }}>
+      <h2><Lock size={16} /> Automatische Abmeldung</h2>
+      <p className="sub">
+        Meldet dich auf diesem Gerät nach Inaktivität automatisch ab — auch wenn der
+        Browser zwischendurch geschlossen oder in den Hintergrund gelegt wurde.
+      </p>
+      <div className="set-grid">
+        <label className="set-field">
+          <span>Nach Inaktivität abmelden</span>
+          <select
+            className="set-input"
+            value={minuten}
+            onChange={(e) => {
+              setMinuten(e.target.value);
+              localStorage.setItem(KEY_MIN, e.target.value);
+              uebernehmen();
+              toast("Gespeichert ✓");
+            }}
+          >
+            <option value="0">Aus</option>
+            <option value="5">5 Minuten</option>
+            <option value="10">10 Minuten</option>
+            <option value="30">30 Minuten</option>
+            <option value="60">60 Minuten</option>
+          </select>
+        </label>
+        <label className="set-field" style={{ justifyContent: "flex-end" }}>
+          <span>Beim Schließen des Browsers</span>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={beimSchliessen}
+              onChange={(e) => {
+                setBeimSchliessen(e.target.checked);
+                localStorage.setItem(KEY_CLOSE, e.target.checked ? "1" : "0");
+                uebernehmen();
+                toast("Gespeichert ✓");
+              }}
+              style={{ width: 16, height: 16, accentColor: "var(--gold)" }}
+            />
+            zusätzlich sofort abmelden (best-effort)
+          </label>
+        </label>
+        <p className="span2" style={{ fontSize: 11.5, color: "var(--muted)", margin: 0, lineHeight: 1.5 }}>
+          Der Timer wirkt auf diesem Gerät und ist die Garantie: Wer länger als die gewählte
+          Zeit weg war, wird beim Zurückkehren sofort abgemeldet. Die Abmeldung direkt beim
+          Schließen ist technisch nur best-effort (v.&nbsp;a. iOS-Safari).
+        </p>
       </div>
     </div>
   );
