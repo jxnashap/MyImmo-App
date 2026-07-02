@@ -409,13 +409,14 @@ function AutoLogoutKarte() {
               }}
               style={{ width: 16, height: 16, accentColor: "var(--gold)" }}
             />
-            zusätzlich sofort abmelden (best-effort)
+            beim nächsten Öffnen abmelden
           </label>
         </label>
         <p className="span2" style={{ fontSize: 11.5, color: "var(--muted)", margin: 0, lineHeight: 1.5 }}>
           Der Timer wirkt auf diesem Gerät und ist die Garantie: Wer länger als die gewählte
-          Zeit weg war, wird beim Zurückkehren sofort abgemeldet. Die Abmeldung direkt beim
-          Schließen ist technisch nur best-effort (v.&nbsp;a. iOS-Safari).
+          Zeit weg war, wird beim Zurückkehren sofort abgemeldet. „Beim Schließen" meldet dich
+          ab, sobald du den Browser nach dem Schließen wieder öffnest — Reloads und normale
+          Navigation bleiben angemeldet.
         </p>
       </div>
     </div>
