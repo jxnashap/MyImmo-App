@@ -1,12 +1,11 @@
 "use client";
 
-// Übergabeprotokoll: Eingabe links (.no-print), daneben/darunter das fertige
-// DIN-A4-Blatt (.brief-sheet). „Als PDF speichern / Drucken" = window.print()
-// — kein Popup-Fenster, kein document.write, keine schwarze Toolbar mehr.
+// Übergabeprotokoll: Eingabe links, daneben die Live-Vorschau (.brief-sheet).
+// „Als PDF herunterladen" = POST an /protokoll/pdf (Server-PDF via pdf-lib,
+// Content-Disposition attachment) — Download ohne neues Fenster/Druckdialog.
 
 import { useState } from "react";
 import type { Tenant, Property, VermieterProfil } from "@/lib/types";
-import PrintButton from "@/components/PrintButton";
 
 const ZUSTAENDE = ["einwandfrei", "leichte Gebrauchsspuren", "Mängel (siehe Notiz)"];
 const START_RAEUME = ["Wohnzimmer", "Schlafzimmer", "Küche", "Bad", "Flur"];
@@ -66,9 +65,17 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
         ))}
         <button type="button" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 4 }} onClick={addRaum}>＋ Raum</button>
 
-        <div className="form-actions">
-          <PrintButton label="Als PDF speichern / Drucken" />
-        </div>
+        {/* PDF-Download: Route liefert attachment → Download ohne neues Fenster */}
+        <form action={`/tenants/${tenant.id}/protokoll/pdf`} method="POST" className="form-actions">
+          <input type="hidden" name="typ" value={typ} />
+          <input type="hidden" name="datum" value={datum} />
+          <input type="hidden" name="strom" value={strom} />
+          <input type="hidden" name="gas" value={gas} />
+          <input type="hidden" name="wasser" value={wasser} />
+          <input type="hidden" name="schluessel" value={schluessel} />
+          <input type="hidden" name="raeume" value={JSON.stringify(gefuellteRaeume)} />
+          <button type="submit" className="btn btn-gold">📄 Als PDF herunterladen</button>
+        </form>
       </div>
 
       {/* ---------- A4-Blatt (Druckvorlage) ---------- */}
@@ -94,7 +101,7 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
             <div><strong>Vermieter:</strong> {vName || "—"}</div>
           </div>
 
-          <h3 style={{ fontSize: 12.5, margin: "16px 0 6px", borderBottom: "1px solid #C4A862", paddingBottom: 3, fontFamily: "inherit" }}>Zählerstände</h3>
+          <h3 style={{ fontSize: 12.5, margin: "16px 0 6px", borderBottom: "1px solid var(--gold)", paddingBottom: 3, fontFamily: "inherit" }}>Zählerstände</h3>
           <table>
             <thead><tr><th>Zähler</th><th>Stand</th></tr></thead>
             <tbody>
@@ -104,10 +111,10 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
             </tbody>
           </table>
 
-          <h3 style={{ fontSize: 12.5, margin: "18px 0 6px", borderBottom: "1px solid #C4A862", paddingBottom: 3, fontFamily: "inherit" }}>Schlüssel</h3>
+          <h3 style={{ fontSize: 12.5, margin: "18px 0 6px", borderBottom: "1px solid var(--gold)", paddingBottom: 3, fontFamily: "inherit" }}>Schlüssel</h3>
           <p style={{ margin: 0 }}>Übergebene Schlüssel: <strong>{schluessel || "—"}</strong></p>
 
-          <h3 style={{ fontSize: 12.5, margin: "18px 0 6px", borderBottom: "1px solid #C4A862", paddingBottom: 3, fontFamily: "inherit" }}>Räume &amp; Zustand</h3>
+          <h3 style={{ fontSize: 12.5, margin: "18px 0 6px", borderBottom: "1px solid var(--gold)", paddingBottom: 3, fontFamily: "inherit" }}>Räume &amp; Zustand</h3>
           <table>
             <thead><tr><th>Raum</th><th>Zustand</th><th>Anmerkung / Mängel</th></tr></thead>
             <tbody>
