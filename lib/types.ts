@@ -77,6 +77,7 @@ export type Kosten = {
   rechnung_name: string | null;
   rechnung_type: string | null;
   rechnung_size: string | null;
+  rechnung_path: string | null;  // Storage-Pfad im Bucket "belege" (user_id/uuid.ext)
 };
 
 export type Verbrauch = {

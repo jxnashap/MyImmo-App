@@ -56,7 +56,7 @@ export default async function NeueKostenPage({ searchParams }: { searchParams: {
           <div className="form-group"><label>Beschreibung</label><input type="text" name="beschreibung" placeholder="z.B. Heizung repariert" /></div>
         </div>
         <div className="form-row single">
-          <div className="form-group"><label>Rechnung / Beleg (optional · PDF/Bild · max. 6 MB)</label><input type="file" name="rechnung" accept="application/pdf,image/*" /></div>
+          <div className="form-group"><label>Rechnung / Beleg (optional · PDF/Bild · max. 15 MB)</label><input type="file" name="rechnung" accept="application/pdf,image/*" /></div>
         </div>
         <div className="form-actions">
           <Link href={back} className="btn btn-ghost">Abbrechen</Link>

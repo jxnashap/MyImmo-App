@@ -90,19 +90,32 @@ function fmtSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-async function rechnungFelder(fd: FormData) {
+// Beleg in den privaten Storage-Bucket "belege" hochladen (Pfad =
+// userId/UUID.ext, RLS je user_id-Ordner). Ersetzt die frühere
+// Base64-in-DB-Ablage; rechnung_data wird beim Neuspeichern genullt
+// (alte Base64-Belege bleiben über den Routen-Fallback lesbar).
+async function rechnungHochladen(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  fd: FormData,
+  altPath?: string | null,
+) {
   const f = fd.get("rechnung");
   if (!f || typeof f === "string" || (f as File).size === 0) return {};
   const file = f as File;
-  // ~6 MB Limit (base64 bläht ~33% auf; Spalte ist Text)
-  if (file.size > 6 * 1024 * 1024) throw new Error("Rechnung zu groß (max. 6 MB).");
+  if (file.size > 15 * 1024 * 1024) throw new Error("Beleg zu groß (max. 15 MB).");
   const mime = file.type || "application/octet-stream";
-  const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+  const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("belege").upload(path, file, { contentType: mime, upsert: false });
+  if (error) throw new Error("Upload fehlgeschlagen: " + error.message);
+  if (altPath) await supabase.storage.from("belege").remove([altPath]); // alten Beleg ersetzen
   return {
-    rechnung_name: file.name || "Rechnung",
+    rechnung_name: file.name || "Beleg",
     rechnung_type: mime,
     rechnung_size: fmtSize(file.size),
-    rechnung_data: `data:${mime};base64,${base64}`,
+    rechnung_path: path,
+    rechnung_data: null,
   };
 }
 
@@ -116,13 +129,14 @@ export async function createKosten(fd: FormData) {
     kategorie: str(fd, "kategorie"),
     betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
-    ...(await rechnungFelder(fd)),
+    ...(await rechnungHochladen(supabase, userId, fd)),
   });
   if (error) throw new Error(error.message);
   done(fd, "/kosten");
 }
 export async function updateKosten(id: string, fd: FormData) {
-  const { supabase } = await uid();
+  const { supabase, userId } = await uid();
+  const { data: alt } = await supabase.from("kosten").select("rechnung_path").eq("id", id).single();
   const { error } = await supabase.from("kosten").update({
     prop_id: str(fd, "prop_id"),
     mieter_id: str(fd, "mieter_id"),
@@ -130,22 +144,27 @@ export async function updateKosten(id: string, fd: FormData) {
     kategorie: str(fd, "kategorie"),
     betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
-    ...(await rechnungFelder(fd)),
+    ...(await rechnungHochladen(supabase, userId, fd, alt?.rechnung_path)),
   }).eq("id", id);
   if (error) throw new Error(error.message);
   done(fd, "/kosten");
 }
 export async function deleteKosten(id: string) {
   const { supabase } = await uid();
+  // Beleg aus dem Storage mitlöschen (Aufräumen)
+  const { data: k } = await supabase.from("kosten").select("rechnung_path").eq("id", id).single();
+  if (k?.rechnung_path) await supabase.storage.from("belege").remove([k.rechnung_path]);
   const { error } = await supabase.from("kosten").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/", "layout");
 }
 export async function deleteRechnung(id: string) {
   const { supabase } = await uid();
+  const { data: k } = await supabase.from("kosten").select("rechnung_path").eq("id", id).single();
+  if (k?.rechnung_path) await supabase.storage.from("belege").remove([k.rechnung_path]);
   const { error } = await supabase
     .from("kosten")
-    .update({ rechnung_name: null, rechnung_type: null, rechnung_size: null, rechnung_data: null })
+    .update({ rechnung_name: null, rechnung_type: null, rechnung_size: null, rechnung_path: null, rechnung_data: null })
     .eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/kosten");

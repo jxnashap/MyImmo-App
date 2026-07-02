@@ -156,7 +156,7 @@ export default function BuchungForm({
       {typ === "ausgabe" && (
         <div className="form-row">
           <div className="form-group">
-            <label>Rechnung / Beleg (PDF/Bild · max. 6 MB)</label>
+            <label>Rechnung / Beleg (PDF/Bild · max. 15 MB)</label>
             {isEdit && row?.rechnung_name && (
               <a
                 href={`/kosten/${row.id}/rechnung`}
