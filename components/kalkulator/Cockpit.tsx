@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Calculator, Save, FolderOpen, Scale, Gauge, Home, Percent, Landmark, Target, TrendingUp } from "lucide-react";
 import KalkImport from "@/components/kalkulator/KalkImport";
 import CockpitUeberblick from "@/components/kalkulator/CockpitUeberblick";
@@ -567,8 +568,8 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
         </div>
       )}
 
-      {/* MODAL: SPEICHERN */}
-      {showSave && (
+      {/* MODAL: SPEICHERN — per Portal an document.body (viewport-fest) */}
+      {showSave && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={() => setShowSave(false)}>
           <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginBottom: 14 }}>Kalkulation speichern</h3>
@@ -580,11 +581,12 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
               <button className="btn btn-gold" onClick={doSave} disabled={saving}>{saving ? "Speichert…" : "Speichern"}</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {/* MODAL: GESPEICHERTE */}
-      {showList && (
+      {/* MODAL: GESPEICHERTE — per Portal an document.body */}
+      {showList && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={() => setShowList(false)}>
           <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginBottom: 14 }}>Gespeicherte Kalkulationen</h3>
@@ -610,11 +612,12 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
               <button className="btn btn-ghost" onClick={() => setShowList(false)}>Schließen</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {/* MODAL: VERGLEICH */}
-      {showCompare && (
+      {/* MODAL: VERGLEICH — per Portal an document.body */}
+      {showCompare && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={() => setShowCompare(false)}>
           <div className="modal-sheet wide" onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginBottom: 6 }}>Kalkulationen vergleichen</h3>
@@ -675,7 +678,8 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
               <button className="btn btn-ghost" onClick={() => setShowCompare(false)}>Schließen</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

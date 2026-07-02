@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -402,7 +403,7 @@ function DangerZone() {
     <div className="danger-zone">
       <button type="button" className="danger-link" onClick={() => setOpen(true)}>Konto löschen</button>
 
-      {open && (
+      {open && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)} role="dialog" aria-modal="true" aria-label="Konto löschen">
           <div className="modal-sheet" style={{ textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
@@ -425,7 +426,8 @@ function DangerZone() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
