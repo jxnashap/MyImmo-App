@@ -76,6 +76,7 @@ export async function middleware(request: NextRequest) {
     pathname === "/avv" || // im Login-Consent verlinkt — muss ohne Login lesbar sein
     pathname === "/datenschutz" ||
     pathname.startsWith("/landing/") || // statische Landingpage-Screenshots (public/)
+    pathname === "/icon.svg" || // Favicon (app/icon.svg)
     pathname.startsWith("/api/");
   if (!user && !istOeffentlich && request.method === "GET") {
     const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
