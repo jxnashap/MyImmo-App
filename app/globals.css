@@ -273,8 +273,15 @@ tr.no-hover:hover td { background: transparent; }
 .link-gold { color: var(--gold); text-decoration: none; }
 .link-gold:hover { text-decoration: underline; }
 
-@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-.fade-up { animation: fadeUp 0.3s ease both; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+/* KEIN animation-fill-mode "both": bei "forwards/both" behält der Browser die
+   animierte transform-Eigenschaft und serialisiert selbst das End-"none" zu
+   matrix(1,0,0,1,0,0). Dieser (nicht-none) Transform erzeugt weiter einen
+   Containing-Block → position:fixed-Kinder (Modals) würden relativ zum
+   .fade-up-Element statt zum Viewport ausgerichtet. Ohne fill-mode fällt das
+   Element nach der Animation auf transform:none zurück; fixed funktioniert
+   dann überall. (Kein Flash, da keine animation-delay genutzt wird.) */
+.fade-up { animation: fadeUp 0.3s ease; }
 
 /* TOASTS */
 .toast-viewport { position: fixed; bottom: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; max-width: min(92vw, 380px); }
