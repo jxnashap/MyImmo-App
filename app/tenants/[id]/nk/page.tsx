@@ -121,7 +121,7 @@ export default async function NkPage({
         absenderName={vermieter.name}
         absenderZeile={absenderZeile}
         ruecksende={ruecksende}
-        vermerk={!ruecksende ? "Vertrauliches Dokument" : null}
+        vermerk="Vertrauliches Dokument"
         empfaenger={[a.mieterName, ...adressZeilen(a.mieterAdresse)]}
         ortDatum={ortDatum}
         referenz={`Abrechnung Nr. NK-${a.jahr}`}

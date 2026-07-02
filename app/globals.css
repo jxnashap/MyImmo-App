@@ -688,50 +688,52 @@ select:focus-visible, textarea:focus-visible {
    Brief-Blatt (DIN A4) — NK-Abrechnung, Dokumente, Übergabeprotokoll
    Bildschirm: kompakte Brief-Vorschau. Druck: exakte DIN-A4-Geometrie
    (Adressfeld bei 45mm für Fensterkuverts) — nur im @media print unten.
-   Feste Farben (Tinte auf Weiß), unabhängig vom App-Theme.
+   Bildschirm theme-treu über var(--*); Papierfarben nur im @media print.
    ===================================================================== */
 .brief-sheet {
   position: relative; display: flex; flex-direction: column;
   width: 100%; max-width: 780px; margin: 0 auto;
-  padding: 34px 38px; background: #fff; color: #1A1814;
+  padding: 34px 38px; background: var(--bg2); color: var(--text);
+  border: 1px solid var(--line);
   border-radius: 10px; box-shadow: 0 14px 44px rgba(0,0,0,0.35);
   font-size: 13px; line-height: 1.6;
 }
 .brief-head-zone { position: relative; }
 .brief-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.brief-logo { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 600; color: #1A1814; }
-.brief-logo span { font-style: italic; font-weight: 300; color: #B8902B; }
-.brief-absender { text-align: right; font-size: 11px; color: #6B6860; line-height: 1.5; }
-.brief-absender strong { display: block; font-size: 12px; color: #1A1814; }
-.brief-goldline { height: 1px; background: #C4A862; margin-top: 10px; }
+.brief-logo { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 600; color: var(--text); }
+.brief-logo span { font-style: italic; font-weight: 300; color: var(--gold); }
+.brief-absender { text-align: right; font-size: 11px; color: var(--muted); line-height: 1.5; }
+.brief-absender strong { display: block; font-size: 12px; color: var(--text); }
+.brief-goldline { height: 1px; background: var(--gold); opacity: 0.7; margin-top: 10px; }
 /* DIN-5008-Adressfeld (Form B, Fensterkuvert): absolut zur Blattkante */
 .brief-adressfeld { margin: 22px 0 0; max-width: 340px; font-size: 12.5px; line-height: 1.5; }
-.brief-adressfeld .ruecksende { font-size: 9px; color: #8A8A82; border-bottom: 1px solid #DDD9D0; padding-bottom: 4px; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.brief-ortdatum { text-align: right; margin-top: 10px; font-size: 12px; color: #1A1814; }
-.brief-ortdatum .ref { font-size: 10.5px; color: #8A8A82; margin-top: 3px; }
+.brief-adressfeld .ruecksende { font-size: 9px; color: var(--faint); border-bottom: 1px solid var(--line); padding-bottom: 4px; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brief-vermerk { font-size: 10px; color: var(--muted); margin: 0 0 10px; }
+.brief-ortdatum { text-align: right; margin-top: 10px; font-size: 12px; color: var(--text); }
+.brief-ortdatum .ref { font-size: 10.5px; color: var(--faint); margin-top: 3px; }
 .brief-betreff { margin-top: 20px; }
-.brief-betreff h2 { font-family: inherit; font-size: 15.5px; font-weight: 700; color: #1A1814; margin: 0; }
-.brief-betreff .unter { font-size: 11px; color: #6B6860; margin-top: 2px; }
-.brief-betreff-linie { height: 2px; width: 200px; background: #C4A862; margin: 8px 0 0; }
+.brief-betreff h2 { font-family: inherit; font-size: 15.5px; font-weight: 700; color: var(--text); margin: 0; }
+.brief-betreff .unter { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.brief-betreff-linie { height: 2px; width: 200px; background: var(--gold); margin: 8px 0 0; }
 .brief-body { margin-top: 22px; }
 .brief-body p { margin: 0 0 12px; }
-.brief-sheet table { width: 100%; border-collapse: collapse; font-size: 12px; color: #1A1814; }
-.brief-sheet th { text-align: left; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: #8A8A82; font-weight: 600; padding: 4px 8px 5px 0; border-bottom: 1px solid #1A1814; }
-.brief-sheet td { padding: 6px 8px 6px 0; border-bottom: 1px solid #E6E3DC; vertical-align: top; }
+.brief-sheet table { width: 100%; border-collapse: collapse; font-size: 12px; color: var(--text); }
+.brief-sheet th { text-align: left; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); font-weight: 600; padding: 4px 8px 5px 0; border-bottom: 1px solid var(--line2); }
+.brief-sheet td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 .brief-sheet .zahl { text-align: right; white-space: nowrap; }
 .brief-sheet th.zahl { padding-right: 0; }
 .brief-sheet td.zahl { padding-right: 0; }
-.brief-muted { color: #6B6860; }
-.brief-gruen { color: #2E7D4F; }
-.brief-rot { color: #C0392B; }
+.brief-muted { color: var(--muted); }
+.brief-gruen { color: var(--green); }
+.brief-rot { color: var(--red); }
 .brief-summen { margin: 14px 0 0 auto; max-width: 320px; font-size: 12px; }
 .brief-summen .zeile { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; }
-.brief-summen .gesamt { border-top: 1px solid #1A1814; margin-top: 6px; padding-top: 8px; font-size: 13.5px; font-weight: 700; }
-.brief-konto { margin-top: 14px; border-left: 2px solid #C4A862; background: #FAF7F0; padding: 10px 14px; font-size: 12px; border-radius: 0 4px 4px 0; }
+.brief-summen .gesamt { border-top: 1px solid var(--line2); margin-top: 6px; padding-top: 8px; font-size: 13.5px; font-weight: 700; }
+.brief-konto { margin-top: 14px; border-left: 2px solid var(--gold); background: var(--gold-pale); padding: 10px 14px; font-size: 12px; border-radius: 0 4px 4px 0; }
 .brief-konto .iban { font-family: ui-monospace, monospace; letter-spacing: 1px; font-weight: 700; }
-.brief-fuss { margin-top: 28px; padding-top: 14px; border-top: 1px solid #E6E3DC; display: flex; justify-content: space-between; font-size: 9.5px; color: #8A8A82; }
+.brief-fuss { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 9.5px; color: var(--faint); }
 .brief-sig { display: flex; gap: 40px; margin-top: 56px; }
-.brief-sig > div { flex: 1; border-top: 1px solid #8A8A82; padding-top: 4px; font-size: 10.5px; color: #6B6860; }
+.brief-sig > div { flex: 1; border-top: 1px solid var(--line2); padding-top: 4px; font-size: 10.5px; color: var(--muted); }
 
 /* ---- Druck: nur das Blatt, an Fensterkuvert-Position ---- */
 @page { size: A4; margin: 0; }
@@ -746,8 +748,28 @@ select:focus-visible, textarea:focus-visible {
   .brief-sheet {
     width: 210mm; max-width: none; min-height: 297mm; margin: 0 auto;
     padding: 20mm 25mm 14mm; box-shadow: none !important; border-radius: 0;
-    background: #fff !important; font-size: 12.5px;
+    background: #fff !important; color: #1A1814 !important; border: none !important;
+    font-size: 12.5px;
   }
+  /* Papierfarben (Tinte auf Weiß) — Screen bleibt theme-treu */
+  .brief-logo, .brief-absender strong, .brief-betreff h2, .brief-ortdatum,
+  .brief-sheet table { color: #1A1814 !important; }
+  .brief-muted, .brief-absender, .brief-vermerk, .brief-betreff .unter,
+  .brief-sig > div { color: #6B6860 !important; }
+  .brief-adressfeld .ruecksende, .brief-fuss, .brief-ortdatum .ref,
+  .brief-sheet th { color: #8A8A82 !important; }
+  .brief-logo span { color: #B8902B !important; }
+  .brief-goldline { background: #C4A862 !important; opacity: 1 !important; }
+  .brief-betreff-linie { background: #C4A862 !important; }
+  .brief-konto { border-left-color: #B8860B !important; background: #FAF7F0 !important; }
+  .brief-gruen { color: #2E7D4F !important; }
+  .brief-rot { color: #C0392B !important; }
+  .brief-sheet th { border-bottom-color: #1A1814 !important; }
+  .brief-sheet td { border-bottom-color: #E6E3DC !important; }
+  .brief-summen .gesamt { border-top-color: #1A1814 !important; }
+  .brief-adressfeld .ruecksende { border-bottom-color: #DDD9D0 !important; }
+  .brief-fuss { border-top-color: #E6E3DC !important; }
+  .brief-sig > div { border-top-color: #8A8A82 !important; }
   .brief-head-zone { height: 80mm; flex-shrink: 0; } /* Betreff beginnt bei 100mm */
   .brief-adressfeld { position: absolute; top: 25mm; left: 0; width: 85mm; margin: 0; max-width: none; font-size: 12px; } /* 20mm Padding + 25mm = 45mm ab Blattkante (DIN 5008) */
   .brief-ortdatum { position: absolute; top: 27mm; right: 0; margin: 0; font-size: 11.5px; }

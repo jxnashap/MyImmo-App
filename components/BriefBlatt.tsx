@@ -51,9 +51,8 @@ export default function BriefBlatt({
         <div className="brief-goldline" />
 
         <div className="brief-adressfeld">
-          {(ruecksende || vermerk) && (
-            <div className="ruecksende">{[ruecksende, vermerk].filter(Boolean).join(" · ")}</div>
-          )}
+          {ruecksende && <div className="ruecksende">{ruecksende}</div>}
+          {vermerk && <div className="brief-vermerk">{vermerk}</div>}
           {empfaenger.map((z, i) => (
             <div key={i}>{z}</div>
           ))}
