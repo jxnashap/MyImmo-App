@@ -17,3 +17,4 @@ npm-debug.log*
 
 # next typings
 /next-env.d.ts
+tsconfig.tsbuildinfo

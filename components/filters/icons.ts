@@ -1,4 +1,4 @@
-import { Building2, User, Tag, Percent, CalendarDays, Zap, Layers, type LucideIcon } from "lucide-react";
+import { Building2, User, Tag, Percent, CalendarDays, Zap, Layers, FolderKanban, type LucideIcon } from "lucide-react";
 
 // String→Icon-Registry: erlaubt es, Filter-Configs aus Server-Komponenten
 // (nur serialisierbare Strings) an die Client-FilterBar zu übergeben.
@@ -10,6 +10,7 @@ export const FILTER_ICONS = {
   jahr: CalendarDays,
   art: Zap,
   quelle: Layers,
+  kategorie: FolderKanban,
 } satisfies Record<string, LucideIcon>;
 
 export type FilterIcon = keyof typeof FILTER_ICONS;

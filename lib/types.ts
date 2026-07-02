@@ -158,6 +158,11 @@ export type Termin = {
   titel: string | null;
   datum: string | null;
   notiz: string | null;
+  kategorie: string | null;      // 'Miete'|'Finanzierung'|'Steuer'|'Wartung'|'WEG'|'Versicherung'|'Sonstiges'
+  erledigt: boolean | null;
+  wiederkehrung: string | null;  // 'monatlich'|'quartalsweise'|'halbjaehrlich'|'jaehrlich'|'alle_2_jahre'|'alle_3_jahre'
+  mieter_id: string | null;
+  vorlauf_tage: number | null;
 };
 
 // Felder, die im Objekt-Formular bearbeitet werden
