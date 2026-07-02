@@ -110,14 +110,11 @@ export default async function CashflowPage({
           <div className="topbar-title">Ein- &amp; Ausgaben</div>
           <div className="topbar-sub">Einnahmen und Kosten im Vergleich</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/einnahmen/new?back=/cashflow" className="btn btn-gold">＋ Einnahme</Link>
-          <Link href="/kosten/new?back=/cashflow" className="btn btn-ghost">＋ Ausgabe</Link>
-        </div>
+        <Link href="/cashflow/neu" className="btn btn-gold">＋ Buchung</Link>
       </div>
 
       {/* KPIs */}
-      <div className="grid-4 mb-20" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+      <div className="grid-3 mb-20" style={{ gap: 14 }}>
         <div className="kpi-card">
           <div className="kpi-label">Einnahmen</div>
           <div className="kpi-value" style={{ color: "var(--green)" }}>{euro(einnahmenTotal)}</div>
