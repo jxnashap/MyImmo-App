@@ -48,6 +48,7 @@ export type AnlageVObjekt = {
   ueberschuss: number; // Einnahmen − Werbungskosten
   afaBasis: number; // Bemessungsgrundlage der AfA (Gebäudewert)
   afaSatz: number; // verwendeter AfA-Satz in % (für Anzeige)
+  afaMethode: "auto" | "degressiv" | "manuell";
 };
 
 export type AnlageVErgebnis = {
@@ -99,6 +100,7 @@ export function berechneAnlageV(
         werbungskosten: leereWk(),
         ueberschuss: 0,
         afaBasis: 0,
+        afaMethode: "auto",
         afaSatz: 0,
       });
     }
@@ -135,10 +137,27 @@ export function berechneAnlageV(
   for (const p of properties) {
     const g = hole(p.id);
     const kaufpreis = Number(p.kaufpreis) || 0;
-    g.afaBasis = r2((kaufpreis * afa.gebaeudeAnteil) / 100);
-    const satz = afa.satz ?? afaSatzAusBaujahr(p.baujahr);
-    g.afaSatz = satz;
-    g.werbungskosten.afa = r2((g.afaBasis * satz) / 100);
+    // Gebäudeanteil: Objekt-Override → globaler Regler
+    const gebAnteil = p.afa_gebaeudeanteil ?? afa.gebaeudeAnteil;
+    g.afaBasis = r2((kaufpreis * gebAnteil) / 100);
+    const methode = (p.afa_methode as "auto" | "degressiv" | "manuell") ?? "auto";
+    g.afaMethode = methode;
+    if (methode === "manuell" && p.afa_betrag != null) {
+      // Fester Jahresbetrag (deckt § 7b Sonder-AfA / Denkmal § 7i/§ 7h ab)
+      g.werbungskosten.afa = r2(Number(p.afa_betrag));
+      g.afaSatz = g.afaBasis > 0 ? r2((g.werbungskosten.afa / g.afaBasis) * 100) : 0;
+    } else if (methode === "degressiv") {
+      // § 7 Abs. 5a EStG: 5 % geometrisch-degressiv vom Restbuchwert.
+      // Vereinfachung: kein Wechsel zu linear, keine Monats-Zeitanteiligkeit im 1. Jahr.
+      const start = p.afa_start_jahr ?? p.baujahr ?? jahr;
+      const n = Math.max(0, jahr - start); // 0 = 1. AfA-Jahr
+      g.werbungskosten.afa = r2(g.afaBasis * 0.05 * Math.pow(0.95, n));
+      g.afaSatz = 5;
+    } else {
+      const satz = afa.satz ?? afaSatzAusBaujahr(p.baujahr); // global-Override nur bei "auto"
+      g.afaSatz = satz;
+      g.werbungskosten.afa = r2((g.afaBasis * satz) / 100);
+    }
     // Schuldzinsen geschätzt aus aktueller Restschuld × Zinssatz.
     const propKredite = kredite.filter((kr) => kr.prop_id === p.id);
     g.werbungskosten.schuldzinsen = r2(
@@ -186,6 +205,7 @@ export function berechneAnlageV(
     ueberschuss: r2(sum(sichtbar.map((g) => g.ueberschuss))),
     afaBasis: r2(sum(sichtbar.map((g) => g.afaBasis))),
     afaSatz: 0,
+    afaMethode: "auto",
   };
 
   return { jahr, objekte: sichtbar, gesamt };

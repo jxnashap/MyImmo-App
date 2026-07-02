@@ -112,7 +112,7 @@ export default function AnlageVExport({
             <input className="input" type="number" step="0.5" placeholder="auto" value={satz} onChange={(e) => setSatz(e.target.value)} style={{ width: 120 }} />
           </div>
           <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 360, lineHeight: 1.5 }}>
-            AfA = Kaufpreis × Gebäudeanteil × Satz. Typisch: 2 % (Baujahr ab 1925), 2,5 % (älter), 3 % (Neubau ab 2023). Anpassen, falls dein Bescheid abweicht.
+            AfA = Kaufpreis × Gebäudeanteil × Satz. Typisch: 2 % (Baujahr ab 1925), 2,5 % (älter), 3 % (Neubau ab 2023). Anpassen, falls dein Bescheid abweicht. AfA-Methode je Objekt im Objekt-Formular einstellbar; die globalen Regler gelten für Objekte auf „automatisch".
           </div>
         </div>
       </div>
@@ -148,7 +148,9 @@ export default function AnlageVExport({
                         {o.propId === null && o.name.startsWith("Gesamt") ? "Gesamt" : o.name}
                         {o.propId && (
                           <div style={{ fontWeight: 400, fontSize: 10, color: "var(--muted)" }}>
-                            AfA {o.afaSatz.toLocaleString("de-DE")} %
+                            {o.afaMethode === "degressiv" ? "AfA degressiv 5 %"
+                              : o.afaMethode === "manuell" ? "AfA manuell"
+                              : `AfA ${o.afaSatz.toLocaleString("de-DE")} %`}
                           </div>
                         )}
                       </th>

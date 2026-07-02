@@ -31,6 +31,10 @@ function parse(formData: FormData) {
     zimmer: num("zimmer"),
     energieklasse: str("energieklasse"),
     energieausweis_datum: str("energieausweis_datum"),
+    afa_methode: str("afa_methode") ?? "auto",
+    afa_start_jahr: num("afa_start_jahr"),
+    afa_betrag: num("afa_betrag"),
+    afa_gebaeudeanteil: num("afa_gebaeudeanteil"),
   };
 }
 
