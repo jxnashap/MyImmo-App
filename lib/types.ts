@@ -99,6 +99,7 @@ export type Kredit = {
   restschuld: number | null;
   grundschuld: number | null;
   beleihung: number | null;
+  sonder: string | null;                // Sondertilgung möglich (z. B. "5% p.a.")
   zinssatz: number | null;
   tilgungssatz: number | null;
   monatsrate: number | null;

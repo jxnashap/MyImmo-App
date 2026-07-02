@@ -204,6 +204,7 @@ export async function createKredit(fd: FormData) {
     monatsrate: num(fd, "monatsrate"),
     zinsbindung: str(fd, "zinsbindung"),
     auszahlung_datum: str(fd, "auszahlung_datum"),
+    sonder: str(fd, "sonder"),
     laufzeit: num(fd, "laufzeit"),
   });
   if (error) throw new Error(error.message);
@@ -225,6 +226,7 @@ export async function updateKredit(id: string, fd: FormData) {
     monatsrate: num(fd, "monatsrate"),
     zinsbindung: str(fd, "zinsbindung"),
     auszahlung_datum: str(fd, "auszahlung_datum"),
+    sonder: str(fd, "sonder"),
     laufzeit: num(fd, "laufzeit"),
   }).eq("id", id);
   if (error) throw new Error(error.message);

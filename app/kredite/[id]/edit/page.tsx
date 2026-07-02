@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { updateKredit } from "@/lib/actions/buchungen";
 import type { Property, Kredit } from "@/lib/types";
 
+const SONDER = ["", "5% p.a.", "10% p.a.", "Nein", "Ja, unbegrenzt"];
+
 export default async function KreditEditPage({ params, searchParams }: { params: { id: string }; searchParams: { back?: string } }) {
   const supabase = createClient();
   const [{ data: row }, { data: propsData }] = await Promise.all([
@@ -61,7 +63,11 @@ export default async function KreditEditPage({ params, searchParams }: { params:
         </div>
         <div className="form-row">
           <div className="form-group"><label>Monatliche Rate (€)</label><input type="number" step="0.01" name="monatsrate" defaultValue={k.monatsrate ?? ""} /></div>
-          <div className="form-group" />
+          <div className="form-group"><label>Sondertilgung möglich</label>
+            <select name="sonder" defaultValue={k.sonder ?? ""}>
+              {SONDER.map((s) => <option key={s} value={s}>{s || "Nicht bekannt"}</option>)}
+            </select>
+          </div>
         </div>
 
         <div className="form-section-label">Laufzeit &amp; Zinsbindung</div>
