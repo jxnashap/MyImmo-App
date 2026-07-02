@@ -1,5 +1,7 @@
 "use client";
-import SubmitButton from "@/components/SubmitButton";
+
+import BriefBlatt from "@/components/BriefBlatt";
+import PrintButton from "@/components/PrintButton";
 
 import { useState } from "react";
 import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
@@ -119,12 +121,11 @@ export default function DocGenerator({
   const empfZeilen = adressZeilen(tenant.mieter_adresse || objekt);
   const titel = TITEL[art];
 
-  const muted = "var(--muted)";
 
   return (
     <div style={{ display: "flex", gap: 22, alignItems: "flex-start", flexWrap: "wrap" }}>
       {/* ---------- Eingaben + Vorlagen-Editor ---------- */}
-      <div className="form-box" style={{ maxWidth: 460, flex: "1 1 420px" }}>
+      <div className="form-box no-print" style={{ maxWidth: 460, flex: "1 1 420px" }}>
         <h3>Dokument erstellen</h3>
         <p>Brief an den Mieter — Vorschau rechts, dann als PDF herunterladen.</p>
 
@@ -300,110 +301,45 @@ export default function DocGenerator({
         </div>
       </div>
 
-      {/* ---------- Vorschau (Layout wie NK-Abrechnung) ---------- */}
-      <div style={{ flex: "1 1 460px", minWidth: 320 }}>
-        <div className="card" style={{ overflow: "hidden" }}>
-          <div style={{ padding: "30px 34px", fontSize: 13, lineHeight: 1.6 }}>
-            {/* Briefkopf */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                gap: 16,
-              }}
-            >
-              <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20 }}>
-                My<span style={{ fontStyle: "italic", fontWeight: 300, color: "var(--gold)" }}>Immo</span>
-              </div>
-              <div style={{ textAlign: "right", fontSize: 11, color: muted }}>
-                <div style={{ fontWeight: 600, color: "var(--text)" }}>{absName}</div>
-                {vAdr && <div>{vAdr.split(/,\s*/).join(" · ")}</div>}
-                {vermieter?.email && <div>{vermieter.email}</div>}
-              </div>
-            </div>
-            <div style={{ height: 1, background: "var(--gold)", opacity: 0.6, margin: "12px 0 22px" }} />
-
-            {/* Empfänger + Datum */}
-            <div style={{ fontSize: 10, color: muted, marginBottom: 10 }}>
-              Vertrauliches Dokument
-            </div>
-            <div style={{ marginBottom: 4 }}>{mieterName || "–"}</div>
-            {empfZeilen.map((z, i) => (
-              <div key={i} style={{ color: "var(--text)" }}>
-                {z}
-              </div>
-            ))}
-            <div style={{ textAlign: "right", margin: "18px 0 22px", color: "var(--text)" }}>
-              {ortDatum}
-            </div>
-
-            {/* Betreff */}
-            <div style={{ fontWeight: 700, fontSize: 15 }}>{titel}</div>
-            <div style={{ fontSize: 11, color: muted, marginTop: 2 }}>Mietobjekt: {objekt}</div>
-            <div style={{ height: 2, width: 200, background: "var(--gold)", margin: "8px 0 20px" }} />
-
-            {/* Anrede + Text */}
-            <div>Sehr geehrte/r {mieterName || "–"},</div>
-            {absaetze.length === 0 ? (
-              <p style={{ color: "var(--faint)", marginTop: 10, fontStyle: "italic" }}>
-                (Noch kein Text — Felder ausfüllen oder Vorlage bearbeiten.)
-              </p>
-            ) : (
-              absaetze.map((p, i) => (
-                <p key={i} style={{ margin: "12px 0 0" }}>
-                  {p}
-                </p>
-              ))
-            )}
-
-            {/* Zahlungskonto */}
-            {zeigtBetrag && selectedIban && (
-              <div
-                style={{
-                  marginTop: 18,
-                  background: "var(--bg3)",
-                  borderLeft: "2px solid var(--gold)",
-                  padding: "10px 14px",
-                  borderRadius: 4,
-                  fontSize: 12,
-                }}
-              >
-                <div style={{ fontWeight: 700 }}>Bitte überweisen Sie auf folgendes Konto:</div>
-                <div style={{ marginTop: 4 }}>{selectedIban.inhaber || absName}</div>
-                <div style={{ fontFamily: "monospace", letterSpacing: 1, fontWeight: 700, marginTop: 2 }}>
-                  IBAN {fmtIban(selectedIban.iban)}
-                </div>
-                {selectedIban.kontoname && (
-                  <div style={{ color: muted }}>{selectedIban.kontoname}</div>
-                )}
-              </div>
-            )}
-
-            <p style={{ margin: "30px 0 0" }}>Mit freundlichen Grüßen</p>
-            <div style={{ marginTop: 40 }}>{absName}</div>
-          </div>
-        </div>
-
-        {/* PDF-Download (POST an die PDF-Route) */}
-        <form
-          action={`/tenants/${tenant.id}/dokument/pdf`}
-          method="POST"
-          target="_blank"
-          style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}
+      {/* ---------- Vorschau: DIN-A4-Brief-Blatt (zugleich Druckvorlage) ---------- */}
+      <div style={{ flex: "1 1 480px", minWidth: 320 }}>
+        <BriefBlatt
+          absenderName={absName}
+          absenderZeile={[vAdr ? vAdr.split(/,\s*/).join(" · ") : null, vermieter?.email].filter(Boolean).join(" · ") || null}
+          ruecksende={[vName, vAdr].filter(Boolean).join(", ") || null}
+          vermerk="Vertrauliches Dokument"
+          empfaenger={[mieterName || "–", ...empfZeilen]}
+          ortDatum={ortDatum}
+          betreff={titel}
+          untertitel={`Mietobjekt: ${objekt}`}
         >
-          <input type="hidden" name="art" value={art} />
-          <input type="hidden" name="datum" value={datum} />
-          <input type="hidden" name="betrag" value={betrag} />
-          <input type="hidden" name="grund" value={grund} />
-          <input type="hidden" name="ibanId" value={ibanId} />
-          <input type="hidden" name="vName" value={vName} />
-          <input type="hidden" name="vAdr" value={vAdr} />
-          <input type="hidden" name="text" value={vorlageText} />
-          <SubmitButton>
-            📄 PDF erstellen
-          </SubmitButton>
-        </form>
+          <p>Sehr geehrte/r {mieterName || "–"},</p>
+          {absaetze.length === 0 ? (
+            <p className="brief-muted" style={{ fontStyle: "italic" }}>
+              (Noch kein Text — Felder ausfüllen oder Vorlage bearbeiten.)
+            </p>
+          ) : (
+            absaetze.map((p, i) => <p key={i}>{p}</p>)
+          )}
+
+          {zeigtBetrag && selectedIban && (
+            <div className="brief-konto">
+              <div style={{ fontWeight: 700 }}>Bitte überweisen Sie auf folgendes Konto:</div>
+              <div style={{ marginTop: 4 }}>{selectedIban.inhaber || absName}</div>
+              <div className="iban">IBAN {fmtIban(selectedIban.iban)}</div>
+              {selectedIban.kontoname && (
+                <div className="brief-muted">{selectedIban.kontoname}</div>
+              )}
+            </div>
+          )}
+
+          <p style={{ marginTop: 26 }}>Mit freundlichen Grüßen</p>
+          <p style={{ marginTop: 40 }}>{absName}</p>
+        </BriefBlatt>
+
+        <div className="no-print" style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
+          <PrintButton label="Als PDF speichern / Drucken" />
+        </div>
       </div>
     </div>
   );
