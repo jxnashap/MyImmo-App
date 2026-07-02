@@ -5,6 +5,7 @@
 // Deckblatt-PDF fürs Bankpaket. Design im Einstellungs-Stil der App.
 
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Landmark, FileText, Upload, Eye, Download, X, Bot, Loader2, Share2, Copy, Mail, MessageSquare } from "lucide-react";
 import { useToast } from "@/components/Toast";
@@ -410,8 +411,10 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
         </div>
       )}
 
-      {/* Teilen-Modal */}
-      {showShare && (
+      {/* Teilen-Modal — per Portal an document.body, damit position:fixed
+          garantiert zum Viewport zentriert (unabhängig von Vorfahren-
+          Transforms wie der .fade-up-Seitenanimation). */}
+      {showShare && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={() => setShowShare(false)}>
           <div className="modal-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
             <h3 style={{ marginBottom: 4 }}>Freigabe-Link für die Bank</h3>
@@ -497,7 +500,8 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
