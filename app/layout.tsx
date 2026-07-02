@@ -45,6 +45,8 @@ export default async function RootLayout({
     .from("properties")
     .select("id,bezeichnung,typ")
     .order("bezeichnung");
+  const { data: profil } = await supabase
+    .from("vermieter_profil").select("name").limit(1).maybeSingle();
 
   return (
     <html lang="de" suppressHydrationWarning>
@@ -57,7 +59,7 @@ export default async function RootLayout({
             <FlashToast />
           </Suspense>
           <div className="app">
-            <Sidebar properties={props ?? []} userEmail={user.email} />
+            <Sidebar properties={props ?? []} userEmail={user.email} profilName={profil?.name ?? null} />
             <div className="main-wrap">
               <main className="main">
                 <ZeitraumProvider>{children}</ZeitraumProvider>

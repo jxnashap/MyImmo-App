@@ -38,11 +38,20 @@ const PROP_ICONS: Record<string, string> = {
 export default function Sidebar({
   properties = [],
   userEmail,
+  profilName,
 }: {
   properties?: SidebarProperty[];
   userEmail?: string | null;
+  profilName?: string | null;
 }) {
   const path = usePathname();
+  // Initialen fürs Profil-Avatar (JS = "Jonas Scharp"); ohne Profil "+".
+  const name = (profilName ?? "").trim();
+  const hatProfil = name.length > 0;
+  const teile = name.split(/\s+/).filter(Boolean);
+  const initialen =
+    ((teile[0]?.[0] ?? "") + (teile[1]?.[0] ?? "")).toUpperCase() || name.slice(0, 2).toUpperCase();
+  const vorname = teile[0] ?? "";
   const [open, setOpen] = useState(false);
   // Drawer bei jedem Seitenwechsel schließen.
   useEffect(() => {
@@ -96,46 +105,27 @@ export default function Sidebar({
           <h1>My<span>Immo</span></h1>
         </Link>
         <p>Immobilien-Management</p>
-        <div
-          style={{
-            marginTop: 10,
-            paddingTop: 10,
-            borderTop: "1px solid var(--line)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 6,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 10,
-              color: "var(--muted)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              flex: 1,
-            }}
-            title={userEmail ?? ""}
-          >
-            {userEmail ?? "–"}
-          </div>
-          <ThemeToggle variant="icon" />
-          <Link
-            href="/einstellungen"
-            title="Einstellungen"
-            style={{ color: "var(--faint)", fontSize: 13, padding: "2px 4px", textDecoration: "none", flexShrink: 0 }}
-          >
-            ⚙️
+        <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Avatar = Button zu den Einstellungen (ersetzt das Zahnrad) */}
+          <Link href="/einstellungen" title="Einstellungen" aria-label="Einstellungen" style={{ textDecoration: "none", flexShrink: 0 }}>
+            <div className="settings-avatar" style={{ width: 36, height: 36, fontSize: 13, cursor: "pointer" }}>
+              {hatProfil ? initialen : "+"}
+            </div>
           </Link>
+          {/* Vorname + E-Mail */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {vorname && (
+              <div style={{ fontSize: 12.5, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{vorname}</div>
+            )}
+            <div style={{ fontSize: 10, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={userEmail ?? ""}>
+              {userEmail ?? "–"}
+            </div>
+          </div>
+          {/* Theme-Umschalter bleibt */}
+          <ThemeToggle variant="icon" />
+          {/* Abmelden — rot nur bei Hover */}
           <form action="/auth/signout" method="post" style={{ display: "flex" }}>
-            <button
-              type="submit"
-              title="Abmelden"
-              style={{ background: "none", border: "none", color: "var(--faint)", cursor: "pointer", fontSize: 13, padding: "2px 6px", borderRadius: 4, flexShrink: 0 }}
-            >
-              ⏻
-            </button>
+            <button type="submit" className="logout-btn" title="Abmelden" aria-label="Abmelden">⏻</button>
           </form>
         </div>
       </div>
