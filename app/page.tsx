@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import LandingPage from "@/components/LandingPage";
 import { euro, datum } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
 import { CalendarDays } from "lucide-react";
@@ -8,6 +9,13 @@ import ZeitraumControl from "@/components/ZeitraumControl";
 import type { RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 
+// SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
+export const metadata = {
+  title: "MyImmo — Immobilienverwaltung für private Vermieter",
+  description:
+    "Mieten, Kosten, Kredite, Nebenkostenabrechnung und Anlage V in einer App. Gemacht für private Vermieter — aktuell im Early Access kostenlos.",
+};
+
 export default async function DashboardPage() {
   const supabase = createClient();
   const {
@@ -15,14 +23,7 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return (
-      <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontFamily: "'Fraunces',serif", fontSize: 28, color: "var(--gold)" }}>My<span style={{ fontStyle: "italic", fontWeight: 300 }}>Immo</span></div>
-          <Link href="/login" className="btn btn-gold" style={{ marginTop: 20 }}>Einloggen</Link>
-        </div>
-      </div>
-    );
+    return <LandingPage />;
   }
 
   const [{ data: props }, { data: einn }, { data: kost }, { data: kred }] = await Promise.all([
