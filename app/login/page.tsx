@@ -63,7 +63,7 @@ export default function LoginPage() {
       }
     } else {
       if (!consent) {
-        setError("Bitte stimme Datenschutz und Auftragsverarbeitung zu.");
+        setError("Bitte stimme AGB, Datenschutz und Auftragsverarbeitung zu.");
         setLoading(false);
         return;
       }
@@ -177,6 +177,10 @@ export default function LoginPage() {
               />
               <span>
                 Ich habe die{" "}
+                <Link href="/agb" target="_blank" style={{ color: "var(--gold)" }}>
+                  AGB
+                </Link>{" "}
+                und die{" "}
                 <Link href="/datenschutz" target="_blank" style={{ color: "var(--gold)" }}>
                   Datenschutzerklärung
                 </Link>{" "}
@@ -244,6 +248,7 @@ export default function LoginPage() {
           className="mt-6 flex justify-center gap-4 border-t pt-4 text-[12px]"
           style={{ borderColor: "var(--line)", color: "var(--muted)" }}
         >
+          <Link href="/agb" className="hover:underline">AGB</Link>
           <Link href="/datenschutz" className="hover:underline">Datenschutz</Link>
           <Link href="/avv" className="hover:underline">AVV</Link>
           <Link href="/impressum" className="hover:underline">Impressum</Link>

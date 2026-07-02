@@ -72,6 +72,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/auth") ||
     pathname.startsWith("/beleihung/") ||
     pathname === "/impressum" ||
+    pathname === "/agb" ||
     pathname === "/datenschutz" ||
     pathname.startsWith("/api/");
   if (!user && !istOeffentlich && request.method === "GET") {
