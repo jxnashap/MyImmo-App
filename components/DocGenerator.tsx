@@ -1,7 +1,7 @@
 "use client";
 
 import BriefBlatt from "@/components/BriefBlatt";
-import PrintButton from "@/components/PrintButton";
+import SubmitButton from "@/components/SubmitButton";
 
 import { useState } from "react";
 import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
@@ -337,9 +337,23 @@ export default function DocGenerator({
           <p style={{ marginTop: 40 }}>{absName}</p>
         </BriefBlatt>
 
-        <div className="no-print" style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}>
-          <PrintButton label="Als PDF speichern / Drucken" />
-        </div>
+        {/* PDF-Download: Route liefert attachment → Download ohne neues Fenster */}
+        <form
+          action={`/tenants/${tenant.id}/dokument/pdf`}
+          method="POST"
+          className="no-print"
+          style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}
+        >
+          <input type="hidden" name="art" value={art} />
+          <input type="hidden" name="datum" value={datum} />
+          <input type="hidden" name="betrag" value={betrag} />
+          <input type="hidden" name="grund" value={grund} />
+          <input type="hidden" name="ibanId" value={ibanId} />
+          <input type="hidden" name="vName" value={vName} />
+          <input type="hidden" name="vAdr" value={vAdr} />
+          <input type="hidden" name="text" value={vorlageText} />
+          <SubmitButton>📄 Als PDF herunterladen</SubmitButton>
+        </form>
       </div>
     </div>
   );

@@ -6,7 +6,6 @@ import { eur2, adressZeilen } from "@/lib/format";
 import { vermieterAus } from "@/lib/pdf/nkPdf";
 import { decryptIbanRow } from "@/lib/ibanData";
 import BriefBlatt from "@/components/BriefBlatt";
-import PrintButton from "@/components/PrintButton";
 
 export const dynamic = "force-dynamic";
 
@@ -105,7 +104,9 @@ export default async function NkPage({
             </select>
             <button className="btn btn-ghost" style={{ fontSize: 12 }}>Anzeigen</button>
           </form>
-          <PrintButton label="Als PDF speichern / Drucken" />
+          <a href={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`} className="btn btn-gold">
+            Als PDF herunterladen
+          </a>
         </div>
       </div>
 
