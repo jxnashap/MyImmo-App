@@ -66,6 +66,12 @@ export default async function KreditEditPage({ params, searchParams }: { params:
 
         <div className="form-section-label">Laufzeit &amp; Zinsbindung</div>
         <div className="form-row">
+          <div className="form-group">
+            <label>Vollständige Auszahlung am</label>
+            <input type="date" name="auszahlung_datum" defaultValue={k.auszahlung_datum ?? ""} />
+            <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>
+              Start für das Sonderkündigungsrecht nach 10 Jahren (§ 489 BGB).</span>
+          </div>
           <div className="form-group"><label>Zinsbindung bis</label><input type="date" name="zinsbindung" defaultValue={k.zinsbindung ?? ""} /></div>
           <div className="form-group"><label>Gesamtlaufzeit bis (Jahr)</label><input type="number" name="laufzeit" defaultValue={k.laufzeit ?? ""} /></div>
         </div>
