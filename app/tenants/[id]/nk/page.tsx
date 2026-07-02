@@ -6,6 +6,7 @@ import { eur2, adressZeilen } from "@/lib/format";
 import { vermieterAus } from "@/lib/pdf/nkPdf";
 import { decryptIbanRow } from "@/lib/ibanData";
 import BriefBlatt from "@/components/BriefBlatt";
+import NkSpeichernButton from "@/components/NkSpeichernButton";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +108,7 @@ export default async function NkPage({
           <a href={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`} className="btn btn-gold">
             Als PDF herunterladen
           </a>
+          <NkSpeichernButton mieterId={params.id} jahr={jahr} />
         </div>
       </div>
 

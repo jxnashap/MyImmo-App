@@ -4,7 +4,9 @@
 // „Als PDF herunterladen" = POST an /protokoll/pdf (Server-PDF via pdf-lib,
 // Content-Disposition attachment) — Download ohne neues Fenster/Druckdialog.
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { speichereProtokoll } from "@/lib/actions/dokumente";
+import { useToast } from "@/components/Toast";
 import type { Tenant, Property, VermieterProfil } from "@/lib/types";
 
 const ZUSTAENDE = ["einwandfrei", "leichte Gebrauchsspuren", "Mängel (siehe Notiz)"];
@@ -31,6 +33,8 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
   const titel = `Wohnungsübergabeprotokoll (${typ === "einzug" ? "Einzug" : "Auszug"})`;
   const d = datum ? new Date(datum).toLocaleDateString("de-DE") : "";
   const gefuellteRaeume = raeume.filter((r) => r.name.trim());
+  const [ablegen, startAblegen] = useTransition();
+  const toast = useToast();
 
   return (
     <div style={{ display: "flex", gap: 22, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -74,6 +78,20 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
           <input type="hidden" name="wasser" value={wasser} />
           <input type="hidden" name="schluessel" value={schluessel} />
           <input type="hidden" name="raeume" value={JSON.stringify(gefuellteRaeume)} />
+          <button
+            type="button"
+            className="btn btn-outline"
+            disabled={ablegen}
+            onClick={() =>
+              startAblegen(async () => {
+                const res = await speichereProtokoll(tenant.id, { typ, datum, strom, gas, wasser, schluessel, raeume: gefuellteRaeume });
+                toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.");
+              })
+            }
+            style={{ marginRight: 8 }}
+          >
+            {ablegen ? "Speichert…" : "💾 Speichern"}
+          </button>
           <button type="submit" className="btn btn-gold">📄 Als PDF herunterladen</button>
         </form>
       </div>

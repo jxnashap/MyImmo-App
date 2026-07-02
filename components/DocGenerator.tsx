@@ -3,7 +3,7 @@
 import BriefBlatt from "@/components/BriefBlatt";
 import SubmitButton from "@/components/SubmitButton";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
 import {
   ARTEN,
@@ -15,6 +15,8 @@ import {
   type DocArt,
 } from "@/lib/dokumentVorlagen";
 import { saveDokumentVorlage, resetDokumentVorlage } from "@/lib/actions/dokumentVorlagen";
+import { speichereBrief } from "@/lib/actions/dokumente";
+import { useToast } from "@/components/Toast";
 import { adressZeilen } from "@/lib/format";
 
 const fmtIban = (s: string) => s.replace(/(.{4})/g, "$1 ").trim();
@@ -55,6 +57,8 @@ export default function DocGenerator({
   const [vAdr, setVAdr] = useState(initialAbsAdr);
   const [vorlageText, setVorlageText] = useState(vorlagen["allgemein"] ?? DEFAULT_VORLAGEN.allgemein);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [ablegen, startAblegen] = useTransition();
+  const toast = useToast();
 
   const zeigtBetrag = ART_ZEIGT_BETRAG.includes(art);
   const selectedIban = ibans.find((x) => x.id === ibanId) ?? null;
@@ -352,6 +356,20 @@ export default function DocGenerator({
           <input type="hidden" name="vName" value={vName} />
           <input type="hidden" name="vAdr" value={vAdr} />
           <input type="hidden" name="text" value={vorlageText} />
+          <button
+            type="button"
+            className="btn btn-outline"
+            disabled={ablegen}
+            onClick={() =>
+              startAblegen(async () => {
+                const res = await speichereBrief(tenant.id, { art, datum, betrag, grund, ibanId, vName, vAdr, text: vorlageText });
+                toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.");
+              })
+            }
+            style={{ marginRight: 8 }}
+          >
+            {ablegen ? "Speichert…" : "💾 Speichern"}
+          </button>
           <SubmitButton>📄 Als PDF herunterladen</SubmitButton>
         </form>
       </div>

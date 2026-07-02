@@ -22,6 +22,14 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
   if (!data) notFound();
   const m = data as Tenant;
 
+  // Gespeicherte Dokumente (Archiv-Einträge dieses Mieters)
+  const { data: doks } = await supabase
+    .from("notizen")
+    .select("id,titel,kategorie,datei_name,created_at")
+    .eq("mieter_id", params.id)
+    .order("created_at", { ascending: false });
+  const dokumente = doks ?? [];
+
   let propName = "–";
   if (m.prop_id) {
     const { data: p } = await supabase.from("properties").select("bezeichnung").eq("id", m.prop_id).single();
@@ -74,6 +82,25 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
           </div>
           {m.notiz && (
             <div style={{ marginTop: 12, padding: 12, background: "var(--bg3)", borderRadius: 8, fontSize: 12, color: "var(--muted)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{m.notiz}</div>
+          )}
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="section-header"><h3>Dokumente</h3><Link href="/archiv" className="btn btn-ghost" style={{ fontSize: 11 }}>→ Archiv</Link></div>
+        <div className="section-body">
+          {dokumente.length === 0 ? (
+            <div style={{ color: "var(--faint)", fontSize: 12 }}>Noch keine Dokumente gespeichert.</div>
+          ) : (
+            dokumente.map((n) => (
+              <div key={n.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "7px 0", borderBottom: "1px solid var(--line)" }}>
+                <span style={{ fontWeight: 500, color: "var(--text)" }}>{n.titel || n.datei_name || "Dokument"}</span>
+                {n.kategorie && <span className="badge badge-teal">{n.kategorie}</span>}
+                <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{n.created_at ? datum(n.created_at) : ""}</span>
+                <a href={`/archiv/${n.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
+                <a href={`/archiv/${n.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
+              </div>
+            ))
           )}
         </div>
       </div>
