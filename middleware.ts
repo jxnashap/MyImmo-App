@@ -72,6 +72,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/auth") ||
     pathname.startsWith("/beleihung/") ||
     pathname === "/impressum" ||
+    pathname === "/agb" ||
+    pathname === "/avv" || // im Login-Consent verlinkt — muss ohne Login lesbar sein
     pathname === "/datenschutz" ||
     pathname.startsWith("/api/");
   if (!user && !istOeffentlich && request.method === "GET") {

@@ -446,6 +446,7 @@ function RechtPanel() {
         <h2><FileText size={16} /> Rechtliches</h2>
         <p className="sub">Datenschutz, Auftragsverarbeitung und Anbieterkennzeichnung.</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <RLink href="/agb">Allgemeine Geschäftsbedingungen (AGB)</RLink>
           <RLink href="/datenschutz">Datenschutzerklärung</RLink>
           <RLink href="/avv">Auftragsverarbeitungsvertrag (AVV)</RLink>
           <RLink href="/impressum">Impressum</RLink>
