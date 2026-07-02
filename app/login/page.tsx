@@ -13,6 +13,8 @@ function uebersetze(msg: string): string {
   if (m.includes("user already registered")) return "Diese E-Mail ist bereits registriert.";
   if (m.includes("password should be at least")) return "Das Passwort ist zu kurz (mind. 6 Zeichen).";
   if (m.includes("provider is not enabled")) return "Google-Login ist noch nicht aktiviert (in Supabase einrichten).";
+  if (m.includes("rate limit") || m.includes("too many"))
+    return "Zu viele Anfragen in kurzer Zeit — bitte in ein paar Minuten erneut versuchen (oder „Mit Google anmelden“).";
   return msg;
 }
 
