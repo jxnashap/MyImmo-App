@@ -100,8 +100,24 @@ export default function TenantForm({
         <div className="form-group"><label>Nächste Erhöhung (Staffel/Index)</label><input type="date" name="staffel_datum" defaultValue={v("staffel_datum")} /></div>
         <div className="form-group"><label>Erhöhungsbetrag (€)</label><input type="number" step="0.01" name="staffel_betrag" defaultValue={v("staffel_betrag")} /></div>
       </div>
-      <div className="form-row single">
+      <div className="form-row">
         <div className="form-group"><label>Intervall (Monate)</label><input name="staffel_intervall" defaultValue={v("staffel_intervall")} placeholder="12" /></div>
+        <div className="form-group"><label>Staffel-Art</label>
+          <select name="staffel_typ" defaultValue={(tenant?.staffel_typ as string) || "betrag"}>
+            <option value="betrag">Fester Betrag</option>
+            <option value="prozent">Prozent</option>
+          </select>
+        </div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Erhöhung (%) je Stufe</label><input type="number" step="0.01" name="staffel_prozent" defaultValue={v("staffel_prozent")} placeholder="z. B. 3" /></div>
+        <div className="form-group"><label>Anzahl Stufen (optional)</label><input type="number" name="staffel_stufen" defaultValue={v("staffel_stufen")} placeholder="5" /></div>
+      </div>
+      <div className="form-row single">
+        <small style={{ color: "var(--muted)", fontSize: 12, display: "block", marginTop: -6 }}>
+          Staffelmiete wird vertraglich in Euro-Beträgen vereinbart (§ 557a BGB); die
+          Prozent-Angabe ist nur eine Rechenhilfe — angezeigt werden die konkreten Beträge.
+        </small>
       </div>
 
       <div className="form-row single">

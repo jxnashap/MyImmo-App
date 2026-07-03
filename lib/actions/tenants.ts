@@ -41,6 +41,9 @@ function parse(formData: FormData) {
     staffel_datum: str("staffel_datum"),
     staffel_betrag: num("staffel_betrag"),
     staffel_intervall: str("staffel_intervall"),
+    staffel_typ: str("staffel_typ"),
+    staffel_prozent: num("staffel_prozent"),
+    staffel_stufen: num("staffel_stufen"),
     notiz: str("notiz"),
   };
 }

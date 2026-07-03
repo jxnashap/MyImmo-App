@@ -53,6 +53,9 @@ export type Tenant = {
   staffel_datum: string | null;      // nächste Staffel-/Anpassungsstufe
   staffel_betrag: number | null;     // Erhöhungsbetrag je Stufe
   staffel_intervall: string | null;  // z.B. "12" (Monate) oder "jährlich"
+  staffel_typ?: string | null;       // 'betrag' | 'prozent'
+  staffel_prozent?: number | null;   // % je Stufe (bei typ='prozent')
+  staffel_stufen?: number | null;    // Anzahl vereinbarter Stufen
   iban?: string | null;              // Bankverbindung des Mieters (verschlüsselt, enc:v1:…)
   stellplatz?: string | null;        // z. B. "TG-Platz 12" / "Garage"
   stellplatz_miete?: number | null;  // € / Monat (reine Miete, keine NK)
