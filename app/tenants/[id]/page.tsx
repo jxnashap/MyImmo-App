@@ -6,6 +6,7 @@ import { mieterFristen } from "@/lib/fristen";
 import { deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
 import type { Tenant, Property } from "@/lib/types";
+import { decryptNullable } from "@/lib/crypto/secure";
 
 function Kachel({ label, value, color }: { label: string; value: React.ReactNode; color?: string }) {
   return (
@@ -37,6 +38,8 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
   }
 
   const fristen = mieterFristen(m);
+  const mieterIban = decryptNullable(m.iban);
+  const fmtIban = (x: string) => x.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
   const mietart = m.mietart === "staffel" ? "Staffelmiete" : m.mietart === "index" ? "Indexmiete" : "Standard";
   const kautionTxt = m.kaution_status === "ja" ? "✓ Vollständig" : m.kaution_status === "teilweise" ? "Teilweise" : "⚠️ Ausstehend";
   const kautionCol = m.kaution_status === "ja" ? "var(--green)" : "var(--amber)";
@@ -79,6 +82,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
             <Kachel label="Telefon" value={m.telefon} />
             <Kachel label="E-Mail" value={m.email} />
             <Kachel label="Adresse" value={m.mieter_adresse} />
+            {mieterIban && <Kachel label="Bankverbindung" value={fmtIban(mieterIban)} />}
           </div>
           {m.notiz && (
             <div style={{ marginTop: 12, padding: 12, background: "var(--bg3)", borderRadius: 8, fontSize: 12, color: "var(--muted)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{m.notiz}</div>

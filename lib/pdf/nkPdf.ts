@@ -90,6 +90,7 @@ export function vermieterAus(
 export async function buildNkPdf(
   a: NkAbrechnung,
   vermieter: Vermieter = { name: "MyImmo" },
+  opts?: { mieterIban?: string | null },
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   doc.setTitle(`Nebenkostenabrechnung ${a.jahr} – ${a.mieterName}`);
@@ -304,7 +305,9 @@ export async function buildNkPdf(
   y = neueSeiteWennNoetig(y, 160);
   const hatKonto = !guthaben && !!vermieter.iban;
   const schluss = guthaben
-    ? "Das Guthaben wird Ihnen innerhalb von 14 Tagen auf das uns bekannte Konto erstattet."
+    ? opts?.mieterIban
+      ? `Das Guthaben wird Ihnen innerhalb von 14 Tagen auf Ihr Konto IBAN ${formatIban(opts.mieterIban)} erstattet. Bitte prüfen Sie, ob diese Bankverbindung noch aktuell ist.`
+      : "Das Guthaben wird Ihnen innerhalb von 14 Tagen auf das uns bekannte Konto erstattet."
     : hatKonto
       ? "Bitte überweisen Sie den Nachzahlungsbetrag innerhalb von 14 Tagen auf folgendes Konto:"
       : "Bitte überweisen Sie den Nachzahlungsbetrag innerhalb von 14 Tagen auf das Ihnen bekannte Konto.";

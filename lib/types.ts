@@ -53,6 +53,7 @@ export type Tenant = {
   staffel_datum: string | null;      // nächste Staffel-/Anpassungsstufe
   staffel_betrag: number | null;     // Erhöhungsbetrag je Stufe
   staffel_intervall: string | null;  // z.B. "12" (Monate) oder "jährlich"
+  iban?: string | null;              // Bankverbindung des Mieters (verschlüsselt, enc:v1:…)
   created_at: string | null;
 };
 

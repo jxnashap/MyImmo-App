@@ -115,6 +115,7 @@ export default function DocGenerator({
     miete: miete > 0 ? eur(miete) : "",
     datum: deDate(datum),
     grund: grund.trim(),
+    mieterkonto: tenant.iban ? fmtIban(tenant.iban) : "",
   };
   const absaetze = fuelleVorlage(vorlageText, werte);
 

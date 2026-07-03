@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import TenantForm from "@/components/TenantForm";
+import { decryptNullable } from "@/lib/crypto/secure";
 import PositionsManager, { type Position } from "@/components/PositionsManager";
 import NkOcrUpload from "@/components/NkOcrUpload";
 import { createClient } from "@/lib/supabase/server";
@@ -37,7 +38,7 @@ export default async function EditTenantPage({ params }: { params: { id: string 
         </div>
       </div>
 
-      <TenantForm action={update} tenant={tenant} properties={props ?? []} submitLabel="Speichern" />
+      <TenantForm action={update} tenant={{ ...tenant, iban: decryptNullable(tenant.iban) }} properties={props ?? []} submitLabel="Speichern" />
 
       <div style={{ marginTop: 24 }}>
         <PositionsManager mieterId={tenant.id} positions={(positions ?? []) as Position[]} />

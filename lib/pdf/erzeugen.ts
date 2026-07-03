@@ -8,6 +8,7 @@ import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
 import { buildProtokollPdf, type ProtokollDaten } from "@/lib/pdf/protokollPdf";
 import { berechneNk, type NkRawPosition } from "@/lib/nk";
 import { decryptIbanRow } from "@/lib/ibanData";
+import { decryptNullable } from "@/lib/crypto/secure";
 import {
   TITEL,
   ART_ZEIGT_BETRAG,
@@ -23,6 +24,8 @@ const deDate = (s: string) =>
   s ? new Date(s).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" }) : "";
 
 const safe = (s: string) => (s || "Mieter").replace(/[^a-zA-Z0-9]+/g, "_");
+const fmtIbanAnzeige = (s: string) =>
+  s ? s.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim() : "";
 
 export type ErzeugtesPdf = {
   pdf: Uint8Array;
@@ -53,7 +56,7 @@ export async function erzeugeBriefPdf(
 
   const { data: tenant } = await supabase
     .from("mieter")
-    .select("vorname,nachname,mieter_adresse,einheit,prop_id,kaltmiete")
+    .select("vorname,nachname,mieter_adresse,einheit,prop_id,kaltmiete,iban")
     .eq("id", mieterId)
     .single();
   if (!tenant) return null;
@@ -89,6 +92,7 @@ export async function erzeugeBriefPdf(
     miete: kaltmiete > 0 ? eur(kaltmiete) : "",
     datum: deDate(f.datum),
     grund: f.grund.trim(),
+    mieterkonto: fmtIbanAnzeige(decryptNullable(tenant.iban) ?? ""),
   };
 
   const quelle = f.text.trim() ? f.text : vorlageFuer(art);
@@ -131,7 +135,7 @@ export async function erzeugeNkPdf(
   const { data: tenant } = await supabase
     .from("mieter")
     .select(
-      "id,prop_id,vorname,nachname,mieter_adresse,einheit,flaeche,mietbeginn,mietende,nk_vorauszahlung",
+      "id,prop_id,vorname,nachname,mieter_adresse,einheit,flaeche,mietbeginn,mietende,nk_vorauszahlung,iban",
     )
     .eq("id", mieterId)
     .single();
@@ -175,6 +179,7 @@ export async function erzeugeNkPdf(
   const pdf = await buildNkPdf(
     abrechnung,
     vermieterAus(profil, iban ? decryptIbanRow(iban) : null),
+    { mieterIban: decryptNullable(tenant.iban) },
   );
 
   return {
