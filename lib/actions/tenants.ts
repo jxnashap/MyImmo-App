@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { flashUrl } from "@/lib/flash";
+import { encrypt } from "@/lib/crypto/secure";
+import { normalizeIban } from "@/lib/iban";
 
 function parse(formData: FormData) {
   const num = (k: string) => {
@@ -41,6 +43,13 @@ function parse(formData: FormData) {
   };
 }
 
+// Mieter-IBAN separat: wird VERSCHLÜSSELT gespeichert (wie ibans.iban),
+// darf deshalb nicht durch parse() als Klartext laufen.
+function ibanEnc(formData: FormData): string | null {
+  const raw = String(formData.get("iban") ?? "").trim();
+  return raw ? encrypt(normalizeIban(raw)) : null;
+}
+
 export async function createTenant(formData: FormData) {
   const supabase = createClient();
   const {
@@ -48,7 +57,7 @@ export async function createTenant(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { error } = await supabase.from("mieter").insert({ ...parse(formData), user_id: user.id });
+  const { error } = await supabase.from("mieter").insert({ ...parse(formData), iban: ibanEnc(formData), user_id: user.id });
   if (error) throw new Error(error.message);
 
   revalidatePath("/tenants");
@@ -57,7 +66,7 @@ export async function createTenant(formData: FormData) {
 
 export async function updateTenant(id: string, formData: FormData) {
   const supabase = createClient();
-  const { error } = await supabase.from("mieter").update(parse(formData)).eq("id", id);
+  const { error } = await supabase.from("mieter").update({ ...parse(formData), iban: ibanEnc(formData) }).eq("id", id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/tenants");

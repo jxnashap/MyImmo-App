@@ -42,6 +42,15 @@ export default function TenantForm({
       <div className="form-row single">
         <div className="form-group"><label>Adresse des Mieters</label><input name="mieter_adresse" defaultValue={v("mieter_adresse")} /></div>
       </div>
+      <div className="form-row single">
+        <div className="form-group">
+          <label>Bankverbindung des Mieters (IBAN)</label>
+          <input name="iban" defaultValue={tenant?.iban ?? ""} placeholder="DE.." style={{ textTransform: "uppercase" }} />
+          <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
+            Verschlüsselt gespeichert; erscheint im Erstattungs-Hinweis der NK-Abrechnung.
+          </div>
+        </div>
+      </div>
 
       <div className="form-section-label">Mietverhältnis</div>
       <div className="form-row">

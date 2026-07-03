@@ -5,6 +5,7 @@ import { berechneNk, deDatum, type NkRawPosition } from "@/lib/nk";
 import { eur2, adressZeilen } from "@/lib/format";
 import { vermieterAus } from "@/lib/pdf/nkPdf";
 import { decryptIbanRow } from "@/lib/ibanData";
+import { decryptNullable } from "@/lib/crypto/secure";
 import BriefBlatt from "@/components/BriefBlatt";
 import NkSpeichernButton from "@/components/NkSpeichernButton";
 
@@ -25,7 +26,7 @@ export default async function NkPage({
   const { data: tenant } = await supabase
     .from("mieter")
     .select(
-      "id,prop_id,vorname,nachname,mieter_adresse,einheit,flaeche,mietbeginn,mietende,nk_vorauszahlung",
+      "id,prop_id,vorname,nachname,mieter_adresse,einheit,flaeche,mietbeginn,mietende,nk_vorauszahlung,iban",
     )
     .eq("id", params.id)
     .single();
@@ -74,8 +75,11 @@ export default async function NkPage({
     [vermieter.name, vermieter.strasse, vermieter.ort].filter(Boolean).join(", ") || null;
 
   const hatKonto = !guthaben && !!vermieter.iban;
+  const mieterIban = decryptNullable(tenant.iban);
   const schluss = guthaben
-    ? "Das Guthaben wird Ihnen innerhalb von 14 Tagen auf das uns bekannte Konto erstattet."
+    ? mieterIban
+      ? `Das Guthaben wird Ihnen innerhalb von 14 Tagen auf Ihr Konto IBAN ${formatIban(mieterIban)} erstattet. Bitte prüfen Sie, ob diese Bankverbindung noch aktuell ist.`
+      : "Das Guthaben wird Ihnen innerhalb von 14 Tagen auf das uns bekannte Konto erstattet."
     : hatKonto
       ? "Bitte überweisen Sie den Nachzahlungsbetrag innerhalb von 14 Tagen auf folgendes Konto:"
       : "Bitte überweisen Sie den Nachzahlungsbetrag innerhalb von 14 Tagen auf das Ihnen bekannte Konto.";

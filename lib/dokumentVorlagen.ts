@@ -46,6 +46,7 @@ export const PLATZHALTER: { key: string; label: string }[] = [
   { key: "miete", label: "akt. Kaltmiete" },
   { key: "datum", label: "Datum" },
   { key: "grund", label: "Begründung / Zusatztext" },
+  { key: "mieterkonto", label: "Konto des Mieters (IBAN)" },
 ];
 
 // Standardtexte (Briefkörper zwischen Anrede und Grußformel).
