@@ -51,7 +51,11 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const totalKreditRate = kred.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
   const jahresEinnahmen = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
   const jahresKosten = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
-  const miete = p.miete ?? 0;
+  // Garagen-Objekte: Mieten liegen auf den einzelnen Mietern (je Einheit),
+  // nicht auf p.miete — sonst zeigten KPIs/Cashflow/Rendite 0.
+  const istGaragen = ["Garage / Stellplatz", "Garagenkomplex"].includes(p.typ ?? "");
+  const mieteAusMietern = tenants.reduce((s, t) => s + (t.kaltmiete ?? 0), 0);
+  const miete = istGaragen ? mieteAusMietern : (p.miete ?? 0);
   const rendite = miete && wert ? (miete * 12 / wert) * 100 : 0;
   const faktor = miete && p.kaufpreis ? p.kaufpreis / (miete * 12) : 0;
   // Empfohlene Instandhaltungsrücklage (Peterssche Formel): 1,5× Herstellungs-
@@ -177,10 +181,24 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       {/* Mieter dieser Immobilie */}
       <div className="section mb-20">
         <div className="section-header">
-          <h3>Mieter dieser Immobilie</h3>
-          <Link href="/tenants/new" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Mieter</Link>
+          <h3>{istGaragen ? "Einheiten & Mieter" : "Mieter dieser Immobilie"}</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {istGaragen && (
+              <span style={{ fontSize: 11, color: "var(--muted)" }}>
+                {tenants.length}{p.einheiten_anzahl ? ` von ${p.einheiten_anzahl}` : ""} vermietet · Mieten gesamt {euro(mieteAusMietern)}
+              </span>
+            )}
+            <Link href="/tenants/new" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Mieter</Link>
+          </div>
         </div>
         <div className="section-body">
+          {istGaragen && (
+            <p style={{ fontSize: 11, color: "var(--faint)", margin: "0 0 10px", lineHeight: 1.6 }}>
+              Hinweis: Vermietung von Garagen/Stellplätzen ist grundsätzlich umsatzsteuerpflichtig
+              (§ 4 Nr. 12 S. 2 UStG), außer als Nebenleistung zur Wohnungsvermietung an denselben
+              Mieter; oft über die Kleinunternehmerregelung (§ 19 UStG) entschärft. Keine Steuerberatung.
+            </p>
+          )}
           {tenants.length === 0 ? (
             <div style={{ color: "var(--faint)", fontSize: 12, padding: "8px 0" }}>Noch keine Mieter zugeordnet.</div>
           ) : (

@@ -1,7 +1,7 @@
 import type { Property } from "@/lib/types";
 import SubmitButton from "@/components/SubmitButton";
 
-const TYPEN = ["Eigentumswohnung", "Einfamilienhaus", "Mehrfamilienhaus", "Gewerbeimmobilie", "Ferienimmobilie", "Grundstück"];
+const TYPEN = ["Eigentumswohnung", "Einfamilienhaus", "Mehrfamilienhaus", "Gewerbeimmobilie", "Ferienimmobilie", "Grundstück", "Garage / Stellplatz", "Garagenkomplex"];
 const STATUS = ["Vermietet", "Selbst bewohnt", "Leer", "Feriennutzung"];
 
 const AFA_METHODEN = [
@@ -41,6 +41,7 @@ export default function PropertyForm({
       </div>
       <div className="form-row">
         <div className="form-group"><label>Wohnfläche (m²)</label><input type="number" step="0.01" name="flaeche" defaultValue={v("flaeche")} placeholder="75" /></div>
+        <div className="form-group"><label>Anzahl Einheiten / Garagen (optional)</label><input type="number" name="einheiten_anzahl" defaultValue={v("einheiten_anzahl")} placeholder="z. B. 8" /></div>
         <div className="form-group"><label>Baujahr</label><input type="number" name="baujahr" defaultValue={v("baujahr")} placeholder="1985" /></div>
       </div>
       <div className="form-row">
