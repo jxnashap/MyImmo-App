@@ -111,7 +111,10 @@ export default async function CashflowPage({
           <div className="topbar-title">Ein- &amp; Ausgaben</div>
           <div className="topbar-sub">Einnahmen und Kosten im Vergleich</div>
         </div>
-        <Link href="/cashflow/neu" className="btn btn-gold">＋ Buchung</Link>
+        <div style={{ display: "flex", gap: 8 }}>
+          <a href="/api/export/buchungen" className="btn btn-ghost" style={{ fontSize: 12 }}>CSV-Export</a>
+          <Link href="/cashflow/neu" className="btn btn-gold">＋ Buchung</Link>
+        </div>
       </div>
 
       {/* KPIs */}
