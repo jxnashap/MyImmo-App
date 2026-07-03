@@ -32,6 +32,8 @@ function parse(formData: FormData) {
     letzte_erhoehung: str("letzte_erhoehung"),
     kaltmiete: num("kaltmiete"),
     nk_vorauszahlung: num("nk_vorauszahlung"),
+    stellplatz: str("stellplatz"),
+    stellplatz_miete: num("stellplatz_miete"),
     kaution: num("kaution"),
     kaution_status: str("kaution_status"),
     flaeche: num("flaeche"),

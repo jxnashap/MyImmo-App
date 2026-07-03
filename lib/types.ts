@@ -54,6 +54,8 @@ export type Tenant = {
   staffel_betrag: number | null;     // Erhöhungsbetrag je Stufe
   staffel_intervall: string | null;  // z.B. "12" (Monate) oder "jährlich"
   iban?: string | null;              // Bankverbindung des Mieters (verschlüsselt, enc:v1:…)
+  stellplatz?: string | null;        // z. B. "TG-Platz 12" / "Garage"
+  stellplatz_miete?: number | null;  // € / Monat (reine Miete, keine NK)
   created_at: string | null;
 };
 

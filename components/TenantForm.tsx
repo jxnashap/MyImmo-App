@@ -77,6 +77,12 @@ export default function TenantForm({
         <div className="form-group"><label>NK-Vorauszahlung (€)</label><input type="number" step="0.01" name="nk_vorauszahlung" defaultValue={v("nk_vorauszahlung")} /></div>
       </div>
       <div className="form-row">
+        <div className="form-group"><label>Stellplatz / Garage (Bezeichnung)</label>
+          <input name="stellplatz" defaultValue={v("stellplatz")} placeholder="z. B. TG-Platz 12" /></div>
+        <div className="form-group"><label>Stellplatz-Miete (€ / Mo.)</label>
+          <input type="number" step="0.01" name="stellplatz_miete" defaultValue={v("stellplatz_miete")} /></div>
+      </div>
+      <div className="form-row">
         <div className="form-group"><label>Kaution (€)</label><input type="number" step="0.01" name="kaution" defaultValue={v("kaution")} /></div>
         <div className="form-group"><label>Kaution-Status</label>
           <select name="kaution_status" defaultValue={(tenant?.kaution_status as string) || "nein"}>{KAUTION_STATUS.map((k) => <option key={k.v} value={k.v}>{k.label}</option>)}</select>
