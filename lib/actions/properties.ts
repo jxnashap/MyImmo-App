@@ -29,6 +29,7 @@ function parse(formData: FormData) {
     hausgeld: num("hausgeld"),
     obj_status: str("obj_status"),
     zimmer: num("zimmer"),
+    einheiten_anzahl: num("einheiten_anzahl"),
     energieklasse: str("energieklasse"),
     energieausweis_datum: str("energieausweis_datum"),
     afa_methode: str("afa_methode") ?? "auto",

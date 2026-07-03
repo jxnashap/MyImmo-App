@@ -7,6 +7,7 @@ export type Property = {
   bezeichnung: string;
   typ: string | null;
   adresse: string | null;
+  einheiten_anzahl?: number | null; // Anzahl Einheiten/Garagen (Belegung)
   kaufpreis: number | null;
   wert: number | null;        // aktueller Wert
   flaeche: number | null;
