@@ -441,9 +441,14 @@ function RechtPanel() {
       <div className="glass-card reveal">
         <h2><Download size={16} /> Meine Daten</h2>
         <p className="sub">Lade alle zu deinem Konto gespeicherten Daten (inkl. Mieter, Buchungen, Dokumente) als maschinenlesbare JSON-Datei herunter – DSGVO-Recht auf Datenübertragbarkeit.</p>
-        <a href="/api/export" className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <Download size={15} /> Daten als JSON herunterladen
-        </a>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <a href="/api/export" className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Download size={15} /> Daten als JSON herunterladen
+          </a>
+          <a href="/api/export/buchungen" className="btn btn-outline" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Download size={15} /> Buchungen als CSV
+          </a>
+        </div>
       </div>
 
       <div className="glass-card reveal">
