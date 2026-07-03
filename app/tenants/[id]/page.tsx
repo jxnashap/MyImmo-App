@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { euro, datum } from "@/lib/format";
+import { euro, eur2, datum } from "@/lib/format";
 import { mieterFristen } from "@/lib/fristen";
 import { staffelPlan } from "@/lib/staffel";
 import { deleteTenant } from "@/lib/actions/tenants";
@@ -133,8 +133,8 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
                   return (
                     <tr key={st.datum} style={kommend ? { background: "var(--gold-pale)" } : undefined}>
                       <td style={{ fontWeight: kommend ? 600 : 400 }}>{datum(st.datum)}{kommend && <span className="badge badge-gold" style={{ marginLeft: 8 }}>nächste Stufe</span>}</td>
-                      <td style={{ fontWeight: 600 }}>{euro(st.miete)}</td>
-                      <td style={{ color: "var(--green)" }}>+ {euro(st.delta)}</td>
+                      <td style={{ fontWeight: 600 }}>{eur2(st.miete)}</td>
+                      <td style={{ color: "var(--green)" }}>+ {eur2(st.delta)}</td>
                     </tr>
                   );
                 })}
