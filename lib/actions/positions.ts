@@ -61,6 +61,37 @@ export async function addPositionsBulk(mieterId: string, positionenJson: string)
   revalidatePath(`/tenants/${mieterId}/edit`);
 }
 
+// Eine bestehende Position inline aktualisieren (Autosave im PositionsManager).
+export async function updatePosition(
+  id: string,
+  mieterId: string,
+  f: {
+    bezeichnung: string;
+    betrag: number | null;
+    jahr: number | null;
+    umlageschluessel: string | null;
+    umlagefaehig: boolean;
+  },
+): Promise<{ ok: boolean }> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+
+  const { error } = await supabase
+    .from("mieter_positionen")
+    .update({
+      bezeichnung: f.bezeichnung,
+      betrag: f.betrag,
+      jahr: f.jahr,
+      umlageschluessel: f.umlageschluessel,
+      umlagefaehig: f.umlagefaehig,
+    })
+    .eq("id", id);
+
+  revalidatePath(`/tenants/${mieterId}/edit`);
+  return { ok: !error };
+}
+
 export async function deletePosition(id: string, mieterId: string) {
   const supabase = createClient();
   const { error } = await supabase.from("mieter_positionen").delete().eq("id", id);
