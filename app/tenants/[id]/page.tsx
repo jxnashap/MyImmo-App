@@ -70,6 +70,12 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
             <Kachel label="Kaltmiete / Mo." value={euro(m.kaltmiete)} color="var(--green)" />
             <Kachel label="NK-Vorauszahlung" value={m.nk_vorauszahlung ? euro(m.nk_vorauszahlung) : "–"} />
             <Kachel label="Warmmiete / Mo." value={euro((m.kaltmiete ?? 0) + (m.nk_vorauszahlung ?? 0))} />
+            {(m.stellplatz || m.stellplatz_miete) && (
+              <Kachel label="Stellplatz / Garage" value={`${m.stellplatz_miete ? euro(m.stellplatz_miete) : "–"}${m.stellplatz ? " · " + m.stellplatz : ""}`} />
+            )}
+            {(m.stellplatz_miete ?? 0) > 0 && (
+              <Kachel label="Gesamt / Mo." color="var(--green)" value={euro((m.kaltmiete ?? 0) + (m.nk_vorauszahlung ?? 0) + (m.stellplatz_miete ?? 0))} />
+            )}
             <Kachel label="Mietbeginn" value={m.mietbeginn ? datum(m.mietbeginn) : "–"} />
             <Kachel label="Mietende" value={m.mietende ? datum(m.mietende) : "unbefristet"} />
             <Kachel label="Kündigungsfrist" value={m.kuendigung ? `${m.kuendigung} Monate` : "–"} />
