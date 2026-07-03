@@ -18,7 +18,11 @@ type MieterFristInput = {
   kuendigung: number | null;
   letzte_erhoehung: string | null;
   mietart?: string | null;       // "Staffel" | "Index" | …
-  staffel_datum?: string | null; // nächste Staffelstufe
+  staffel_datum?: string | null; // erste/nächste Staffelstufe
+  staffel_intervall?: string | null;
+  staffel_betrag?: number | null;
+  staffel_prozent?: number | null;
+  staffel_stufen?: number | null;
 };
 
 const iso = (d: Date) => d.toISOString().split("T")[0];
@@ -83,12 +87,26 @@ export function mieterFristen(m: MieterFristInput): Frist[] {
     }
   }
 
-  // Staffelmiete: nächste Anpassungsstufe (gepflegtes Datum).
+  // Staffelmiete: nächste Anpassungsstufe. Liegt ein Staffelplan vor
+  // (Intervall + Betrag/Prozent), wird die NÄCHSTE Stufe ab heute genutzt —
+  // sonst wie bisher das gepflegte Datum.
   if ((m.mietart ?? "").toLowerCase() === "staffel" && m.staffel_datum) {
-    const tage = Math.ceil((new Date(m.staffel_datum).getTime() - heute.getTime()) / 86400000);
+    let stichtag = m.staffel_datum;
+    const intervall = Number(m.staffel_intervall) || 12;
+    const hatPlan = (m.staffel_betrag ?? 0) > 0 || (m.staffel_prozent ?? 0) > 0;
+    if (hatPlan) {
+      const stufen = m.staffel_stufen && m.staffel_stufen > 0 ? m.staffel_stufen : 5;
+      let d = new Date(m.staffel_datum);
+      for (let i = 0; i < stufen; i++) {
+        if (d >= heute) break;
+        d = addMonate(d, intervall);
+      }
+      if (d >= heute) stichtag = iso(d);
+    }
+    const tage = Math.ceil((new Date(stichtag).getTime() - heute.getTime()) / 86400000);
     fristen.push({
       label: "Staffelmiete-Anpassung",
-      datum: m.staffel_datum,
+      datum: stichtag,
       typ: tage <= 30 && tage >= 0 ? "warn" : "info",
       kategorie: "Miete",
       rechtsgrundlage: "§ 557a BGB",

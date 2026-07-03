@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import { mieterFristen } from "@/lib/fristen";
+import { staffelPlan } from "@/lib/staffel";
 import { deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
 import type { Tenant, Property } from "@/lib/types";
@@ -38,6 +39,24 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
   }
 
   const fristen = mieterFristen(m);
+  // Staffelplan: nur bei Staffelmiete mit Startdatum + Betrag ODER Prozent
+  const staffelTyp = m.staffel_typ === "prozent" ? ("prozent" as const) : ("betrag" as const);
+  const plan =
+    (m.mietart ?? "").toLowerCase() === "staffel" &&
+    m.staffel_datum &&
+    ((m.staffel_betrag ?? 0) > 0 || (m.staffel_prozent ?? 0) > 0)
+      ? staffelPlan({
+          startMiete: m.kaltmiete ?? 0,
+          startDatum: m.staffel_datum,
+          intervallMonate: Number(m.staffel_intervall) || 12,
+          typ: staffelTyp,
+          betrag: m.staffel_betrag,
+          prozent: m.staffel_prozent,
+          stufen: m.staffel_stufen ?? 0,
+        })
+      : [];
+  const heuteIso = new Date().toISOString().split("T")[0];
+  const naechsteStufe = plan.find((st) => st.datum >= heuteIso)?.datum;
   const mieterIban = decryptNullable(m.iban);
   const fmtIban = (x: string) => x.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
   const mietart = m.mietart === "staffel" ? "Staffelmiete" : m.mietart === "index" ? "Indexmiete" : "Standard";
@@ -95,6 +114,39 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
           )}
         </div>
       </div>
+
+      {plan.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <h3>Staffelplan</h3>
+            <span style={{ fontSize: 11, color: "var(--muted)" }}>
+              {staffelTyp === "prozent" ? `+${(m.staffel_prozent ?? 0).toLocaleString("de-DE")} % je Stufe` : `+${euro(m.staffel_betrag)} je Stufe`}
+              {" · "}alle {Number(m.staffel_intervall) || 12} Monate
+            </span>
+          </div>
+          <div className="section-body">
+            <table>
+              <thead><tr><th>Ab Datum</th><th>Neue Kaltmiete</th><th>Erhöhung</th></tr></thead>
+              <tbody>
+                {plan.map((st) => {
+                  const kommend = st.datum === naechsteStufe;
+                  return (
+                    <tr key={st.datum} style={kommend ? { background: "var(--gold-pale)" } : undefined}>
+                      <td style={{ fontWeight: kommend ? 600 : 400 }}>{datum(st.datum)}{kommend && <span className="badge badge-gold" style={{ marginLeft: 8 }}>nächste Stufe</span>}</td>
+                      <td style={{ fontWeight: 600 }}>{euro(st.miete)}</td>
+                      <td style={{ color: "var(--green)" }}>+ {euro(st.delta)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 8 }}>
+              Basis: aktuelle Kaltmiete {euro(m.kaltmiete)}. Vertraglich gelten die im Mietvertrag
+              vereinbarten Euro-Beträge (§ 557a BGB) — der Plan ist eine Rechenhilfe.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="section">
         <div className="section-header"><h3>Dokumente</h3><Link href="/archiv" className="btn btn-ghost" style={{ fontSize: 11 }}>→ Archiv</Link></div>
