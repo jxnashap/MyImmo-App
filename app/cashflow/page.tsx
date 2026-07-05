@@ -1,18 +1,16 @@
-// Ein- & Ausgaben: Einnahmen und Kosten in einem Reiter — KPIs, kumulierter
-// Cashflow-Verlauf, Einnahmen-vs-Ausgaben-Balken, Kategorie-Split und die
-// bestehenden Buchungslisten (Zeilen-Edit/Beleg/Löschen unverändert).
+// Ein- & Ausgaben: Einnahmen und Kosten in einem Reiter — KPIs, interaktiver
+// Donut (Einnahmen vs. Ausgaben + Kategorie-Drilldown) und die bestehenden
+// Buchungslisten (Zeilen-Edit/Beleg/Löschen unverändert).
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro } from "@/lib/format";
-import BetragChart from "@/components/BetragChart";
-import ZeitraumControl from "@/components/ZeitraumControl";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import EinnahmenListe from "@/components/lists/EinnahmenListe";
 import KostenListe from "@/components/lists/KostenListe";
 import CashflowListe from "@/components/lists/CashflowListe";
 import AufklappSection from "@/components/AufklappSection";
 import WiederkehrManager from "@/components/WiederkehrManager";
-import type { RawPoint } from "@/lib/zeitraum";
+import CashflowDonut from "@/components/CashflowDonut";
 import type { Einnahme, Kosten, Property, Tenant, WiederkehrVorlage } from "@/lib/types";
 
 export default async function CashflowPage({
@@ -74,20 +72,7 @@ export default async function CashflowPage({
   const ausgabenTotal = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
   const netto = einnahmenTotal - ausgabenTotal;
 
-  // ---- Cashflow-Verlauf (wie Dashboard „Portfolio-Entwicklung") ----
-  const cashflowPoints: RawPoint[] = [
-    ...einnahmen.filter((e) => e.buchungsdatum).map((e) => ({ date: e.buchungsdatum as string, value: e.betrag ?? 0 })),
-    ...kosten.filter((k) => k.buchungsdatum).map((k) => ({ date: k.buchungsdatum as string, value: -(k.betrag ?? 0) })),
-  ];
-
-  // ---- Einnahmen vs. Ausgaben (proportionale Balken) ----
-  const balkenMax = Math.max(einnahmenTotal, ausgabenTotal, 1);
-  const balken = [
-    { lbl: "Einnahmen", val: einnahmenTotal, col: "var(--green)" },
-    { lbl: "Ausgaben", val: ausgabenTotal, col: "var(--red)" },
-  ];
-
-  // ---- Kategorie-Split ----
+  // ---- Kategorie-Split (Daten für den Donut-Drilldown) ----
   const katSumme = (rows: { kategorie: string | null; betrag: number | null }[]) => {
     const m = new Map<string, number>();
     for (const r of rows) m.set(r.kategorie || "Sonstiges", (m.get(r.kategorie || "Sonstiges") ?? 0) + (r.betrag ?? 0));
@@ -95,30 +80,6 @@ export default async function CashflowPage({
   };
   const einKat = katSumme(einnahmen);
   const ausKat = katSumme(kosten);
-
-  const katBlock = (titel: string, kat: [string, number][], farbe: string) => {
-    const max = Math.max(1, ...kat.map(([, v]) => v));
-    return (
-      <div className="section" style={{ marginBottom: 0 }}>
-        <div className="section-header"><h3>{titel}</h3></div>
-        <div className="section-body">
-          {kat.length === 0 ? (
-            <p style={{ fontSize: 12, color: "var(--muted)" }}>Keine Buchungen im Zeitraum.</p>
-          ) : (
-            kat.map(([lbl, val]) => (
-              <div key={lbl} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <div style={{ fontSize: 11, color: "var(--muted)", width: 110, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={lbl}>{lbl}</div>
-                <div style={{ flex: 1, height: 20, background: "var(--bg4)", borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ width: `${((val / max) * 100).toFixed(0)}%`, height: "100%", background: farbe, borderRadius: 4 }} />
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: farbe, width: 80, textAlign: "right" }}>{euro(val)}</div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    );
-  };
 
   const filters: FilterDef[] = [
     { name: "typ", label: "Typ", icon: "quelle", variant: "segmented", options: [{ value: "", label: "Alle" }, { value: "einnahme", label: "Einnahmen" }, { value: "ausgabe", label: "Ausgaben" }] },
@@ -162,37 +123,13 @@ export default async function CashflowPage({
         </div>
       </div>
 
-      {/* Cashflow-Verlauf */}
+      {/* Einnahmen & Ausgaben — interaktiver Donut mit Kategorie-Drilldown */}
       <div className="section mb-20">
-        <div className="section-header">
-          <h3>Cashflow-Verlauf</h3>
-          <ZeitraumControl />
-        </div>
+        <div className="section-header"><h3>Einnahmen &amp; Ausgaben</h3></div>
         <div className="section-body">
-          <BetragChart points={cashflowPoints} mode="area" cumulative color="var(--gold)" caption="Kumulierter Cashflow (Einnahmen − Ausgaben)" />
+          <CashflowDonut einnahmenTotal={einnahmenTotal} ausgabenTotal={ausgabenTotal}
+                         einKat={einKat} ausKat={ausKat} netto={netto} />
         </div>
-      </div>
-
-      {/* Einnahmen vs. Ausgaben */}
-      <div className="section mb-20">
-        <div className="section-header"><h3>Einnahmen vs. Ausgaben</h3></div>
-        <div className="section-body">
-          {balken.map((b) => (
-            <div key={b.lbl} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <div style={{ fontSize: 11, color: "var(--muted)", width: 80, textAlign: "right" }}>{b.lbl}</div>
-              <div style={{ flex: 1, height: 20, background: "var(--bg4)", borderRadius: 4, overflow: "hidden" }}>
-                <div style={{ width: `${((b.val / balkenMax) * 100).toFixed(0)}%`, height: "100%", background: b.col, borderRadius: 4 }} />
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: b.col, width: 80, textAlign: "right" }}>{euro(b.val)}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Kategorie-Split */}
-      <div className="grid-2 mb-20">
-        {katBlock("Einnahmen nach Kategorie", einKat, "var(--green)")}
-        {katBlock("Ausgaben nach Kategorie", ausKat, "var(--red)")}
       </div>
 
       {/* Wiederkehrende Buchungen — ausklappbar, nicht als eigener Reiter */}
