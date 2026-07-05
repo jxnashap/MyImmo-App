@@ -18,11 +18,15 @@ export default function AufklappForm({ label, children }: { label: string; child
       >
         {offen ? "✕ Schließen" : label}
       </button>
-      {offen && (
-        <div className="fade-up" style={{ marginTop: 12 }} onSubmitCapture={() => setOffen(false)}>
-          {children}
-        </div>
-      )}
+      {/* Immer gemountet, nur versteckt: Ein Unmount beim Submit würde die
+          laufende Server-Action des Formulars abbrechen. */}
+      <div
+        className={offen ? "fade-up" : undefined}
+        style={{ marginTop: 12, display: offen ? "block" : "none" }}
+        onSubmitCapture={() => setOffen(false)}
+      >
+        {children}
+      </div>
     </div>
   );
 }
