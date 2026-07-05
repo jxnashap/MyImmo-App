@@ -15,6 +15,7 @@ const TABLES = [
   "mieter_positionen",
   "einnahmen",
   "kosten",
+  "wiederkehrende_buchungen",
   "kredite",
   "verbrauch",
   "termine",

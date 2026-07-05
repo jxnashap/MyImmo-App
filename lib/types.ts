@@ -205,3 +205,17 @@ export const TENANT_FIELDS = [
   "mietbeginn", "mietende", "kaltmiete", "nk_vorauszahlung", "kaution",
   "kaution_status", "flaeche", "mietart", "notiz",
 ] as const;
+
+export type WiederkehrVorlage = {
+  id: string;
+  art: string; // 'einnahme' | 'kosten'
+  prop_id: string | null;
+  mieter_id: string | null;
+  kategorie: string | null;
+  betrag: number | null;
+  beschreibung: string | null;
+  zyklus: string;
+  start_datum: string; // YYYY-MM-DD
+  ende_datum: string | null;
+  aktiv: boolean | null;
+};
