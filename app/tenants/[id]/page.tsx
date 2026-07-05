@@ -6,7 +6,8 @@ import { mieterFristen } from "@/lib/fristen";
 import { staffelPlan } from "@/lib/staffel";
 import { deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
-import type { Tenant, Property } from "@/lib/types";
+import type { Tenant, Property, MietZeitraum } from "@/lib/types";
+import MietZeitraeume from "@/components/MietZeitraeume";
 import { decryptNullable } from "@/lib/crypto/secure";
 
 function Kachel({ label, value, color }: { label: string; value: React.ReactNode; color?: string }) {
@@ -23,6 +24,14 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
   const { data } = await supabase.from("mieter").select("*").eq("id", params.id).single();
   if (!data) notFound();
   const m = data as Tenant;
+
+  // Miet-Zeiträume (unterschiedliche Miete je Periode)
+  const { data: zr } = await supabase
+    .from("miet_zeitraeume")
+    .select("*")
+    .eq("mieter_id", params.id)
+    .order("von", { ascending: true });
+  const zeitraeume = (zr ?? []) as MietZeitraum[];
 
   // Gespeicherte Dokumente (Archiv-Einträge dieses Mieters)
   const { data: doks } = await supabase
@@ -114,6 +123,8 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
           )}
         </div>
       </div>
+
+      <MietZeitraeume mieterId={params.id} zeitraeume={zeitraeume} />
 
       {plan.length > 0 && (
         <div className="section">
