@@ -5,6 +5,7 @@ import { euro, datum } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
 import { deleteEinnahme, deleteKosten, deleteKredit, deleteVerbrauch, deleteNotiz } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
+import Co2Rechner from "@/components/Co2Rechner";
 import type { Property, Tenant } from "@/lib/types";
 
 type Kredit = {
@@ -329,6 +330,19 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
               ))
             )}
           </div>
+        </div>
+      </div>
+
+      {/* CO₂-Kostenaufteilung (CO2KostAufG) */}
+      <div className="section mb-20">
+        <div className="section-header">
+          <h3>CO₂-Kostenaufteilung</h3>
+          <span style={{ fontSize: 11, color: "var(--muted)" }}>
+            Stufenmodell nach CO2KostAufG — Werte von der Brennstoffrechnung
+          </span>
+        </div>
+        <div className="section-body">
+          <Co2Rechner defaultFlaeche={p.flaeche} />
         </div>
       </div>
 
