@@ -40,13 +40,15 @@ type TypConfig = {
   afa: boolean;                   // AfA-Block (false = Grundstück, keine AfA)
   status: string;                 // Vorgabe-Status
   gebHinweis?: string;            // typ-spezifischer Hinweis zum Gebäudeanteil
+  afaHinweis?: string;            // typ-spezifischer Zusatz vor dem AfA-Standardhinweis
+  ustHinweis?: string;            // typ-spezifischer USt-Hinweis (unter dem AfA-Block)
 };
 
 const CONFIG: Record<string, TypConfig> = {
   Eigentumswohnung: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: true, zimmer: true, energie: true, afa: true, status: "Vermietet", gebHinweis: "Bei Eigentumswohnungen oft 70–75 % (Grund- und Gemeinschaftsanteil) — Feld editierbar." },
   Einfamilienhaus: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: false, zimmer: true, energie: true, afa: true, status: "Vermietet" },
   Mehrfamilienhaus: { flaeche: "Wohnfläche gesamt (m²)", einheiten: "Anzahl Wohneinheiten", baujahr: true, miete: true, mieteLabel: "Kaltmiete / Mo. gesamt (€)", hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet" },
-  Gewerbeimmobilie: { flaeche: "Nutzfläche (m²)", einheiten: "Anzahl Einheiten (optional)", baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet" },
+  Gewerbeimmobilie: { flaeche: "Nutzfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet", afaHinweis: "Gewerbe im Privatvermögen i. d. R. 2 % linear. Im Betriebsvermögen kann 3 % gelten (§ 7 Abs. 4 Nr. 1 EStG) — dann „Manueller Betrag“ wählen. ", ustHinweis: "USt-Hinweis: Die Vermietung von Gewerbeflächen kann umsatzsteuerpflichtig sein bzw. zur Umsatzsteuer optierbar (§ 9 UStG). Keine Steuerberatung." },
   Ferienimmobilie: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: true, zimmer: true, energie: true, afa: true, status: "Feriennutzung" },
   Grundstück: { flaeche: "Grundstücksfläche (m²)", einheiten: false, baujahr: false, miete: false, hausgeld: false, zimmer: false, energie: false, afa: false, status: "Leer" },
   "Garage / Stellplatz": { flaeche: "Nutzfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: true, zimmer: false, energie: false, afa: true, status: "Vermietet" },
@@ -168,12 +170,13 @@ export default function PropertyForm({
               <input type="number" step="0.01" name="afa_betrag" defaultValue={v("afa_betrag")} placeholder="z.B. 7500" />
             </div>
           </div>
-          <p style={{ fontSize: 11, color: "var(--muted)", marginTop: -6, marginBottom: 14 }}>
-            {typ === "Gewerbeimmobilie"
-              ? "Gewerbe im Privatvermögen i. d. R. 2 % linear — ggf. „Manueller Betrag“ wählen. "
-              : ""}
+          <p style={{ fontSize: 11, color: "var(--muted)", marginTop: -6, marginBottom: cfg.ustHinweis ? 6 : 14 }}>
+            {cfg.afaHinweis ?? ""}
             Degressiv nur für neue Wohngebäude, Baubeginn/Kauf 10/2023–09/2029. Faustformel ohne Gewähr, keine Steuerberatung.
           </p>
+          {cfg.ustHinweis && (
+            <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 0, marginBottom: 14 }}>{cfg.ustHinweis}</p>
+          )}
         </>
       ) : (
         // Grundstück: nicht abschreibbar → AfA fest auf 0 (ohne Server-Änderung).
