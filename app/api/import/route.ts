@@ -1,34 +1,11 @@
 import { NextResponse } from "next/server";
-import { getAuthedUser, callAnthropic } from "@/lib/aiRoute";
+import { getAuthedUser } from "@/lib/aiRoute";
+import { extrahiereImmodaten, AiImportFehler } from "@/lib/aiImport";
 
 export const runtime = "nodejs";
 
-const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
-
-const PROMPT = (text: string) => `Du bist ein Immobilien-Datenextraktor. Analysiere den folgenden Anzeigentext und extrahiere alle relevanten Immobiliendaten.
-
-Antworte NUR mit einem JSON-Objekt, ohne Markdown-Backticks, ohne Erklärungen. Nur reines JSON.
-
-Felder:
-- name: Kurze Bezeichnung (z.B. "3-Zi-Wohnung Hamburg-Altona")
-- typ: Einer von: "Eigentumswohnung", "Einfamilienhaus", "Mehrfamilienhaus", "Gewerbeimmobilie", "Grundstück"
-- adresse: Vollständige Adresse wenn vorhanden
-- kaufpreis: Zahl (nur Zahl, kein €-Zeichen)
-- wert: Gleich wie kaufpreis wenn kein anderer Wert angegeben
-- flaeche: Wohnfläche in m² als Zahl
-- zimmer: Anzahl Zimmer als Zahl
-- baujahr: Baujahr als Zahl
-- miete: Monatliche Kaltmiete als Zahl (0 wenn keine angegeben)
-- energieklasse: Energieeffizienzklasse (A+, A, B, C, D, E, F, G, H) oder leer
-- status: "Leer", "Vermietet", "Selbst bewohnt" oder "Feriennutzung"
-- notiz: Kurze Zusammenfassung besonderer Merkmale (max 100 Zeichen)
-- konfidenz: Zahl 0-100 wie sicher du bist (100 = alle Daten klar)
-
-Wenn ein Wert nicht gefunden wird, setze null.
-
-Anzeigentext:
-${text.substring(0, 4000)}`;
-
+// Text-Import: Exposé-/Anzeigentext → Immobiliendaten (KI-Extraktion).
+// Response-Shape: { data: {...} } — identisch zu /api/import-url.
 export async function POST(req: Request) {
   const user = await getAuthedUser();
   if (!user) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
@@ -53,35 +30,11 @@ export async function POST(req: Request) {
   }
 
   try {
-    const resp = await callAnthropic(apiKey, {
-      model: MODEL,
-      max_tokens: 1000,
-      messages: [{ role: "user", content: PROMPT(text) }],
-    });
-
-    if (!resp.ok) {
-      console.error("import: Anthropic-Fehler", resp.status, await resp.text().catch(() => ""));
-      return NextResponse.json({ error: `KI-Dienst antwortete mit ${resp.status}.` }, { status: 502 });
-    }
-
-    const data = await resp.json();
-    const raw: string = data?.content?.[0]?.text ?? "";
-    const clean = raw.replace(/```json|```/g, "").trim();
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(clean);
-    } catch {
-      return NextResponse.json({ error: "Antwort der KI war nicht lesbar." }, { status: 422 });
-    }
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return NextResponse.json({ error: "Antwort der KI hatte ein unerwartetes Format." }, { status: 422 });
-    }
+    const parsed = await extrahiereImmodaten(apiKey, { text });
     return NextResponse.json({ data: parsed });
   } catch (err) {
-    if ((err as Error).name === "AbortError") {
-      return NextResponse.json({ error: "Zeitüberschreitung beim KI-Dienst. Bitte erneut versuchen." }, { status: 504 });
-    }
+    if (err instanceof AiImportFehler)
+      return NextResponse.json({ error: err.message }, { status: err.status });
     console.error("import: unerwarteter Fehler", err);
     return NextResponse.json({ error: "Fehler beim Analysieren. Bitte später erneut versuchen." }, { status: 500 });
   }

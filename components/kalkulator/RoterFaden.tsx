@@ -121,11 +121,14 @@ export default function RoterFaden() {
         Schritt-für-Schritt durch die Kalkulation — gibt dir schnell ein Gefühl für die Zahlen.
       </div>
 
-      <KalkImport onResult={(d) => {
-        if (d.kaufpreis != null) setKaufpreis(String(d.kaufpreis));
-        if (d.flaeche != null) setFlaeche(String(d.flaeche));
-        if (d.miete != null && d.miete > 0) setMiete(String(d.miete));
-      }} />
+      <KalkImport
+        beobachten={[kaufpreis, flaeche, miete]}
+        onResult={(d) => {
+          if (d.kaufpreis != null) setKaufpreis(String(d.kaufpreis));
+          if (d.flaeche != null) setFlaeche(String(d.flaeche));
+          if (d.miete != null && d.miete > 0) setMiete(String(d.miete));
+        }}
+      />
 
       <div className="grid-2 mb-20">
         {/* Schritt 1 */}
