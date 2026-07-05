@@ -48,7 +48,7 @@ export type AnlageVObjekt = {
   ueberschuss: number; // Einnahmen − Werbungskosten
   afaBasis: number; // Bemessungsgrundlage der AfA (Gebäudewert)
   afaSatz: number; // verwendeter AfA-Satz in % (für Anzeige)
-  afaMethode: "auto" | "degressiv" | "manuell";
+  afaMethode: "auto" | "degressiv" | "manuell" | "keine";
 };
 
 export type AnlageVErgebnis = {
@@ -140,9 +140,13 @@ export function berechneAnlageV(
     // Gebäudeanteil: Objekt-Override → globaler Regler
     const gebAnteil = p.afa_gebaeudeanteil ?? afa.gebaeudeAnteil;
     g.afaBasis = r2((kaufpreis * gebAnteil) / 100);
-    const methode = (p.afa_methode as "auto" | "degressiv" | "manuell") ?? "auto";
+    const methode = (p.afa_methode as "auto" | "degressiv" | "manuell" | "keine") ?? "auto";
     g.afaMethode = methode;
-    if (methode === "manuell" && p.afa_betrag != null) {
+    if (methode === "keine") {
+      // Grundstücke sind nicht abschreibbar (§ 7 EStG) — keine AfA.
+      g.werbungskosten.afa = 0;
+      g.afaSatz = 0;
+    } else if (methode === "manuell" && p.afa_betrag != null) {
       // Fester Jahresbetrag (deckt § 7b Sonder-AfA / Denkmal § 7i/§ 7h ab)
       g.werbungskosten.afa = r2(Number(p.afa_betrag));
       g.afaSatz = g.afaBasis > 0 ? r2((g.werbungskosten.afa / g.afaBasis) * 100) : 0;

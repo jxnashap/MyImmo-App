@@ -150,6 +150,7 @@ export default function AnlageVExport({
                           <div style={{ fontWeight: 400, fontSize: 10, color: "var(--muted)" }}>
                             {o.afaMethode === "degressiv" ? "AfA degressiv 5 %"
                               : o.afaMethode === "manuell" ? "AfA manuell"
+                              : o.afaMethode === "keine" ? "keine AfA"
                               : `AfA ${o.afaSatz.toLocaleString("de-DE")} %`}
                           </div>
                         )}
