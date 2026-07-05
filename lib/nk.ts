@@ -1,5 +1,9 @@
 // Nebenkosten-Abrechnung — reine Berechnungslogik (ohne Abhängigkeiten).
 // Quelle der Umlagebeträge: mieter_positionen (je Mieter, optional je Jahr).
+// Optional: CO₂-Kostenaufteilung nach CO2KostAufG (lib/co2.ts) — der
+// Vermieteranteil mindert als Gutschrift die vom Mieter zu tragende Summe.
+
+import { co2Aufteilung, CO2_STUFEN } from "@/lib/co2";
 
 export type NkRawPosition = {
   bezeichnung: string;
@@ -31,6 +35,26 @@ export type NkLine = {
   betrag: number;
 };
 
+// Eingaben von der Brennstoffrechnung (Tabelle nk_co2, je Mieter + Jahr).
+export type NkCo2Input = {
+  co2_kg: number | null;
+  co2_kosten: number | null;
+  flaeche: number | null;
+  gewerbe: boolean | null;
+};
+
+export type NkCo2 = {
+  spez: number; // kg CO₂ / m² · a
+  stufeLabel: string; // z. B. "37 bis < 42"
+  mieterProzent: number;
+  vermieterProzent: number;
+  kostenGesamt: number;
+  vermieterAnteil: number; // Gutschrift zugunsten Mieter
+  mieterAnteil: number;
+  geschaetzt: boolean; // Kosten aus BEHG-Referenzpreis geschätzt
+  gewerbe: boolean;
+};
+
 export type NkAbrechnung = {
   jahr: number;
   mieterName: string;
@@ -45,6 +69,8 @@ export type NkAbrechnung = {
   positionen: NkLine[]; // umlagefähige Positionen
   ausgenommen: NkLine[]; // nicht umlagefähige (nur Hinweis)
   umlageGesamt: number;
+  co2: NkCo2 | null; // CO₂-Aufteilung (null = kein CO₂-Block erfasst)
+  kostenNachCo2: number; // umlageGesamt − CO₂-Vermieteranteil
   nkVorauszahlungMonat: number;
   vorauszahlungGeleistet: number;
   saldo: number; // > 0 = Guthaben (Erstattung), < 0 = Nachzahlung
@@ -85,11 +111,47 @@ export function monateImJahr(
   };
 }
 
+const rund2 = (n: number) => Math.round(n * 100) / 100;
+
+/** CO₂-Aufteilung aus den nk_co2-Eingaben (null, wenn nichts Brauchbares erfasst). */
+export function nkCo2Aus(input: NkCo2Input | null | undefined, jahr: number): NkCo2 | null {
+  if (!input) return null;
+  const kg = input.co2_kg ?? 0;
+  const m2 = input.flaeche ?? 0;
+  if (!(kg > 0) || !(m2 > 0)) return null;
+
+  const geschaetzt = input.co2_kosten == null;
+  const a = co2Aufteilung({
+    co2Kg: kg,
+    co2Kosten: input.co2_kosten,
+    flaeche: m2,
+    jahr,
+    gewerbe: !!input.gewerbe,
+  });
+  if (!(a.kostenGesamt > 0)) return null;
+
+  const stufe = CO2_STUFEN[a.stufeIndex];
+  const stufeLabel = stufe.max == null ? `ab ${stufe.min}` : `${stufe.min} bis < ${stufe.max}`;
+
+  return {
+    spez: a.spez,
+    stufeLabel,
+    mieterProzent: a.mieterProzent,
+    vermieterProzent: a.vermieterProzent,
+    kostenGesamt: a.kostenGesamt,
+    vermieterAnteil: a.vermieterAnteil,
+    mieterAnteil: a.mieterAnteil,
+    geschaetzt,
+    gewerbe: !!input.gewerbe,
+  };
+}
+
 export function berechneNk(
   jahr: number,
   tenant: NkTenant,
   property: NkProperty | null,
   positionen: NkRawPosition[],
+  co2Input?: NkCo2Input | null,
 ): NkAbrechnung {
   // Positionen des Jahres (oder ohne Jahresangabe = Altbestand) berücksichtigen.
   const relevant = positionen.filter((p) => p.jahr == null || p.jahr === jahr);
@@ -112,11 +174,17 @@ export function berechneNk(
 
   const umlageGesamt = umlagefaehig.reduce((s, p) => s + p.betrag, 0);
 
+  // CO₂-Gutschrift: Der Vermieteranteil mindert die Mieterlast. Der
+  // Mieteranteil steckt bereits in den Heizkosten-Positionen — er wird nur
+  // ausgewiesen, NICHT addiert (keine Doppelzählung).
+  const co2 = nkCo2Aus(co2Input, jahr);
+  const kostenNachCo2 = rund2(umlageGesamt - (co2?.vermieterAnteil ?? 0));
+
   const { von, bis, monate } = monateImJahr(jahr, tenant.mietbeginn, tenant.mietende);
 
   const nkVorauszahlungMonat = tenant.nk_vorauszahlung ?? 0;
   const vorauszahlungGeleistet = nkVorauszahlungMonat * monate;
-  const saldo = vorauszahlungGeleistet - umlageGesamt;
+  const saldo = rund2(vorauszahlungGeleistet - kostenNachCo2);
 
   const mieterName =
     [tenant.vorname, tenant.nachname].filter(Boolean).join(" ") || "Mieter";
@@ -135,6 +203,8 @@ export function berechneNk(
     positionen: umlagefaehig,
     ausgenommen,
     umlageGesamt,
+    co2,
+    kostenNachCo2,
     nkVorauszahlungMonat,
     vorauszahlungGeleistet,
     saldo,

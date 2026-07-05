@@ -271,6 +271,15 @@ export async function buildNkPdf(
     y -= 16;
   };
   sumLine("Summe umlagefähige Kosten", euro(a.umlageGesamt));
+  if (a.co2) {
+    sumLine(
+      `CO2-Gutschrift Vermieteranteil (${a.co2.vermieterProzent} %)`,
+      `- ${euro(a.co2.vermieterAnteil)}`,
+      font,
+      GREEN,
+    );
+    sumLine("Von Ihnen zu tragende Kosten", euro(a.kostenNachCo2));
+  }
   sumLine(
     `Vorauszahlung (${a.monate} × ${euro(a.nkVorauszahlungMonat)})`,
     euro(a.vorauszahlungGeleistet),
@@ -284,6 +293,31 @@ export async function buildNkPdf(
   text(sumLabel, y, guthaben ? "Ihr Guthaben (Erstattung)" : "Nachzahlung", 12, bold, saldoColor);
   right(RIGHT, y, euro(Math.abs(a.saldo)), 12, bold, saldoColor);
   y -= 26;
+
+  // ---- CO₂-Kostenaufteilung (CO2KostAufG) ----
+  if (a.co2) {
+    y = neueSeiteWennNoetig(y, 70);
+    text(ML, y, "CO2-Kostenaufteilung nach CO2KostAufG", 9.5, bold, INK);
+    y -= 13;
+    const co2Text =
+      `Spezifischer CO2-Ausstoß: ${String(a.co2.spez).replace(".", ",")} kg/m² und Jahr` +
+      (a.co2.gewerbe
+        ? " · Gewerbe/Nichtwohngebäude: pauschale Aufteilung 50/50"
+        : ` · Stufe ${a.co2.stufeLabel} kg/m²·a`) +
+      `, damit Mieter ${a.co2.mieterProzent} %, Vermieter ${a.co2.vermieterProzent} %. ` +
+      `CO2-Kosten gesamt: ${euro(a.co2.kostenGesamt)}` +
+      (a.co2.geschaetzt ? " (geschätzt über BEHG-Referenzpreis)" : "") +
+      ` — davon Mieteranteil ${euro(a.co2.mieterAnteil)} (in den Heizkosten enthalten), ` +
+      `Vermieteranteil ${euro(a.co2.vermieterAnteil)} (oben gutgeschrieben). ` +
+      `Rechtsgrundlage: Kohlendioxidkostenaufteilungsgesetz (CO2KostAufG). Die Einstufung ` +
+      `beruht auf den Angaben der Brennstoff-/Wärmelieferrechnung, ohne Gewähr.`;
+    for (const ln of wrap(co2Text, 8, RIGHT - ML)) {
+      y = neueSeiteWennNoetig(y, 12);
+      text(ML, y, ln, 8, font, MUTED);
+      y -= 11;
+    }
+    y -= 7;
+  }
 
   if (a.ausgenommen.length > 0) {
     text(
