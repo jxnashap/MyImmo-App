@@ -4,6 +4,7 @@ import { datum } from "@/lib/format";
 import { mieterFristen, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
 import { createTermin, createVorlageTermin, deleteTermin, toggleErledigt } from "@/lib/actions/termine";
 import DeleteButton from "@/components/DeleteButton";
+import AufklappForm from "@/components/AufklappForm";
 import ExpandableList from "@/components/ExpandableList";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { KATEGORIE_STIL, TERMIN_KATEGORIEN, WARTUNGS_VORLAGEN, WIEDERKEHRUNG_LABEL } from "@/lib/termine";
@@ -215,7 +216,8 @@ export default async function TerminePage({
         <div className="kpi-card"><div className="kpi-label">Überfällig</div><div className="kpi-value" style={{ color: ueberfaellig > 0 ? "var(--red)" : "var(--green)" }}>{ueberfaellig}</div></div>
       </div>
 
-      <div className="section">
+      <AufklappForm label="＋ Neuer Termin">
+      <div className="section" style={{ marginBottom: 0 }}>
         <div className="section-header"><h3>＋ Neuer Termin</h3></div>
         <div className="section-body">
           <form action={createTermin} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 12 }}>
@@ -280,6 +282,7 @@ export default async function TerminePage({
           </div>
         </div>
       </div>
+      </AufklappForm>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 260 }}><FilterBar filters={filters} /></div>
