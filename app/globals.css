@@ -778,3 +778,12 @@ select:focus-visible, textarea:focus-visible {
   .brief-sig { margin-top: 18mm; }
   .brief-sheet table, .brief-sheet tr { break-inside: avoid; }
 }
+
+/* ===== Mietkonto: Bestätigungs-Animation ===== */
+@keyframes haken-draw { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+@keyframes zeile-ok { 0% { transform: scale(1); } 40% { transform: scale(1.02); } 100% { transform: scale(1); } }
+.haken-draw { animation: haken-draw 0.45s ease-out 0.05s backwards; }
+.row-confirming { animation: zeile-ok 0.45s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .haken-draw, .row-confirming { animation: none !important; }
+}
