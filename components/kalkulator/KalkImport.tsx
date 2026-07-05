@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+// „Aus Anzeige übernehmen": Exposé-LINK laden (Server holt + KI liest) ODER
+// Text einfügen (Fallback). Beide Wege liefern dieselbe Response-Shape
+// ({ data: {...} }) und zeigen danach einen bleibenden Prüf-Hinweis mit
+// Konfidenz, bis der Nutzer ihn schließt oder ein übernommenes Feld ändert.
+
+import { useEffect, useRef, useState } from "react";
 
 export type KalkImportResult = {
   name?: string | null;
+  adresse?: string | null;
   kaufpreis?: number | null;
   wert?: number | null;
   flaeche?: number | null;
@@ -13,43 +19,102 @@ export type KalkImportResult = {
   konfidenz?: number | null;
 };
 
-export default function KalkImport({ onResult }: { onResult: (d: KalkImportResult) => void }) {
+export default function KalkImport({
+  onResult,
+  beobachten,
+}: {
+  onResult: (d: KalkImportResult) => void;
+  // Optional: Feldwerte des Elternteils — ändert der Nutzer eines davon,
+  // verschwindet der Prüf-Hinweis (Werte wurden geprüft/korrigiert).
+  beobachten?: unknown[];
+}) {
   const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState("");
   const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<"url" | "text" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [hinweis, setHinweis] = useState<{ konfidenz: number | null } | null>(null);
 
-  async function auslesen() {
-    setError(null); setInfo(null); setLoading(true);
+  // Prüf-Hinweis schließen, sobald sich ein beobachtetes Feld NACH der
+  // Übernahme ändert. Direkt nach onResult ändern sich die Werte durch die
+  // Übernahme selbst — erster Effekt-Lauf nimmt daher nur den Schnappschuss.
+  const beobachtetJson = JSON.stringify(beobachten ?? []);
+  const schnappschuss = useRef<string | null>(null);
+  useEffect(() => {
+    if (!hinweis) return;
+    if (schnappschuss.current === null) {
+      schnappschuss.current = beobachtetJson;
+      return;
+    }
+    if (beobachtetJson !== schnappschuss.current) {
+      setHinweis(null);
+      schnappschuss.current = null;
+    }
+  }, [beobachtetJson, hinweis]);
+
+  async function rufeAb(endpoint: string, body: object, modus: "url" | "text") {
+    setError(null);
+    setHinweis(null);
+    schnappschuss.current = null;
+    setLoading(modus);
     try {
-      const resp = await fetch("/api/import", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
-      const json = await resp.json();
-      if (!resp.ok) { setError(json.error || "Auslesen fehlgeschlagen."); return; }
-      onResult(json as KalkImportResult);
-      const k = json.konfidenz != null ? ` · Konfidenz ${json.konfidenz}%` : "";
-      setInfo(`✓ Übernommen: ${[json.kaufpreis && "Kaufpreis", json.flaeche && "Fläche", json.miete && "Miete"].filter(Boolean).join(", ") || "—"}${k}`);
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        const basis = json.error || "Auslesen fehlgeschlagen.";
+        setError(modus === "url" ? `${basis} …oder Text unten einfügen.` : basis);
+        return;
+      }
+      const d = (json.data ?? {}) as KalkImportResult;
+      onResult(d);
+      setHinweis({ konfidenz: d.konfidenz ?? null });
     } catch (err) {
       setError(`Fehler: ${(err as Error).message}`);
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   }
+
+  const konfidenz = hinweis?.konfidenz ?? null;
+  const niedrig = konfidenz != null && konfidenz < 70;
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
       <div className="card-header" style={{ cursor: "pointer" }} onClick={() => setOpen((o) => !o)}>
         <div>
           <div className="card-title">🤖 Aus Anzeige übernehmen</div>
-          <div className="card-sub">Exposé-Text einfügen — Claude füllt Kaufpreis, Fläche & Miete</div>
+          <div className="card-sub">Exposé-Link einfügen oder Text — MyImmo füllt die Felder</div>
         </div>
         <span style={{ color: "var(--muted)" }}>{open ? "▲" : "▼"}</span>
       </div>
       {open && (
         <div className="card-body">
+          {/* Link-Weg */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://… Link zu Exposé, Inserat oder PDF"
+              style={{ flex: "1 1 260px" }}
+            />
+            <button
+              type="button"
+              className="btn btn-gold"
+              onClick={() => rufeAb("/api/import-url", { url: url.trim() }, "url")}
+              disabled={loading !== null || !/^https?:\/\/.+\..+/.test(url.trim())}
+            >
+              {loading === "url" ? "⏳ Lade & werte Seite aus…" : "Aus Link laden"}
+            </button>
+          </div>
+
+          <div style={{ margin: "10px 0 6px", fontSize: 11.5, color: "var(--faint)" }}>
+            …oder Exposé-Text einfügen:
+          </div>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -57,11 +122,57 @@ export default function KalkImport({ onResult }: { onResult: (d: KalkImportResul
             placeholder="Exposé / Anzeigentext hier einfügen…"
             style={{ resize: "vertical", width: "100%" }}
           />
+
           {error && <div style={{ marginTop: 8, fontSize: 12, color: "var(--red)" }}>⚠️ {error}</div>}
-          {info && <div style={{ marginTop: 8, fontSize: 12, color: "var(--green)" }}>{info}</div>}
+
+          {hinweis && (
+            <div
+              style={{
+                marginTop: 10,
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 10,
+                padding: "10px 12px",
+                borderRadius: 8,
+                fontSize: 12.5,
+                background: "var(--gold-pale, rgba(184,144,43,.12))",
+                border: `1px solid ${niedrig ? "var(--red)" : "var(--gold-dim, var(--gold))"}`,
+                color: "var(--text)",
+              }}
+            >
+              <span style={{ fontSize: 15, lineHeight: "18px" }}>⚠️</span>
+              <div style={{ flex: 1 }}>
+                <strong>Automatisch aus dem Exposé ausgelesen</strong> — bitte alle übernommenen
+                Werte prüfen und ggf. korrigieren (ohne Gewähr).
+                {konfidenz != null && (
+                  <span style={{ fontWeight: 700, color: niedrig ? "var(--red)" : "var(--gold)" }}>
+                    {" "}
+                    Konfidenz: {konfidenz} %{niedrig ? " — niedrig, Angaben besonders genau prüfen!" : ""}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setHinweis(null);
+                  schnappschuss.current = null;
+                }}
+                title="Hinweis schließen"
+                style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 14, lineHeight: "18px" }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-            <button type="button" className="btn btn-gold" onClick={auslesen} disabled={loading || text.trim().length < 30}>
-              {loading ? "⏳ Claude liest…" : "Auslesen & übernehmen"}
+            <button
+              type="button"
+              className="btn btn-gold"
+              onClick={() => rufeAb("/api/import", { text }, "text")}
+              disabled={loading !== null || text.trim().length < 30}
+            >
+              {loading === "text" ? "⏳ Claude liest…" : "Auslesen & übernehmen"}
             </button>
           </div>
         </div>

@@ -303,11 +303,16 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
         </div>
       </div>
 
-      <KalkImport onResult={(d) => {
-        if (d.kaufpreis != null) setKaufpreis(String(d.kaufpreis));
-        if (d.flaeche != null) setFlaeche(String(d.flaeche));
-        if (d.miete != null && d.miete > 0) setKaltmiete(String(d.miete));
-      }} />
+      <KalkImport
+        beobachten={[kaufpreis, flaeche, kaltmiete, adresse]}
+        onResult={(d) => {
+          if (d.kaufpreis != null) setKaufpreis(String(d.kaufpreis));
+          if (d.flaeche != null) setFlaeche(String(d.flaeche));
+          if (d.miete != null && d.miete > 0) setKaltmiete(String(d.miete));
+          if (d.adresse) setAdresse(d.adresse);
+          if (d.name) setSaveName(d.name); // Vorschlag für den Speicher-Namen
+        }}
+      />
 
       <div className="settings-tabs" style={{ marginBottom: 20 }}>
         {SUBTABS.map((s) => (
