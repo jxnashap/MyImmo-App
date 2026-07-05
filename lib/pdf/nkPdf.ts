@@ -251,11 +251,17 @@ export async function buildNkPdf(
     y -= 16;
   } else {
     for (const p of a.positionen) {
-      y = neueSeiteWennNoetig(y, 15);
+      const zeit = !!p.faktorText;
+      y = neueSeiteWennNoetig(y, zeit ? 27 : 15);
       text(ML, y, fit(p.bezeichnung, 10, colSchluessel - ML - 12), 10, font, INK);
       text(colSchluessel, y, p.umlageschluessel || "—", 10, font, MUTED);
       right(RIGHT, y, euro(p.betrag), 10, font, INK);
       y -= 15;
+      if (zeit) {
+        // Aufteilungsfaktor: Jahreskosten × Belegungstage, z. B. "1.200,00 € × 181/365 Tage"
+        right(RIGHT, y + 3, `${euro(p.basis ?? 0)} × ${p.faktorText}`, 8, font, MUTED);
+        y -= 12;
+      }
     }
   }
   y -= 3;

@@ -17,6 +17,7 @@ export type Position = {
   umlageschluessel: string | null;
   umlagefaehig: boolean | null;
   jahr: number | null;
+  aufteilung: string | null; // 'voll' | 'zeit' (Jahresgesamtkosten)
 };
 
 const SCHLUESSEL = ["Fläche", "Anzahl", "Personen", "Einheit", "Verbrauch", "direkt"];
@@ -33,6 +34,7 @@ type RowState = {
   jahr: number | null;
   umlageschluessel: string;
   umlagefaehig: boolean;
+  aufteilung: string; // 'voll' | 'zeit'
 };
 
 const toRow = (p: Position): RowState => ({
@@ -42,6 +44,7 @@ const toRow = (p: Position): RowState => ({
   jahr: p.jahr,
   umlageschluessel: p.umlageschluessel ?? "",
   umlagefaehig: !!p.umlagefaehig,
+  aufteilung: p.aufteilung === "zeit" ? "zeit" : "voll",
 });
 
 const parseBetrag = (s: string): number | null => {
@@ -70,6 +73,7 @@ export default function PositionsManager({
   const [nJahr, setNJahr] = useState(JETZT);
   const [nSchl, setNSchl] = useState("");
   const [nUml, setNUml] = useState(true);
+  const [nAuf, setNAuf] = useState("voll");
   const [adding, startAdd] = useTransition();
 
   const total = rows.reduce((s, r) => s + (parseBetrag(r.betrag) ?? 0), 0);
@@ -86,6 +90,7 @@ export default function PositionsManager({
       jahr: r.jahr,
       umlageschluessel: r.umlageschluessel || null,
       umlagefaehig: r.umlagefaehig,
+      aufteilung: r.aufteilung,
     };
     if (
       orig &&
@@ -93,7 +98,8 @@ export default function PositionsManager({
       (orig.betrag ?? null) === neu.betrag &&
       (orig.jahr ?? null) === neu.jahr &&
       (orig.umlageschluessel ?? null) === neu.umlageschluessel &&
-      !!orig.umlagefaehig === neu.umlagefaehig
+      !!orig.umlagefaehig === neu.umlagefaehig &&
+      (orig.aufteilung === "zeit" ? "zeit" : "voll") === neu.aufteilung
     )
       return; // nichts geändert
     if (!neu.bezeichnung) return; // leere Bezeichnung nicht speichern
@@ -124,6 +130,7 @@ export default function PositionsManager({
     fd.set("jahr", String(nJahr));
     fd.set("umlageschluessel", nSchl);
     if (nUml) fd.set("umlagefaehig", "on");
+    fd.set("aufteilung", nAuf);
     startAdd(async () => {
       await addPosition(mieterId, fd);
       setNBez("");
@@ -131,6 +138,7 @@ export default function PositionsManager({
       setNJahr(JETZT);
       setNSchl("");
       setNUml(true);
+      setNAuf("voll");
       toast("Position hinzugefügt ✓");
       router.refresh();
     });
@@ -158,6 +166,7 @@ export default function PositionsManager({
                 <th className="px-3 py-2 font-medium">Jahr</th>
                 <th className="px-3 py-2 font-medium">Schlüssel</th>
                 <th className="px-3 py-2 font-medium">Umlage</th>
+                <th className="px-3 py-2 font-medium">Aufteilung</th>
                 <th className="px-3 py-2 text-right font-medium">Betrag</th>
                 <th className="px-3 py-2"></th>
               </tr>
@@ -220,6 +229,29 @@ export default function PositionsManager({
                         {r.umlagefaehig ? "umlagefähig" : "nicht umlagef."}
                       </span>
                     </label>
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <select
+                      className="input"
+                      value={r.aufteilung}
+                      onChange={(e) => {
+                        setRow(r.id, { aufteilung: e.target.value });
+                        speichere({ ...r, aufteilung: e.target.value });
+                      }}
+                      title={
+                        r.aufteilung === "zeit"
+                          ? "Betrag = Jahresgesamtkosten; wird nach Belegungstagen geteilt."
+                          : "Betrag wird unverändert übernommen."
+                      }
+                    >
+                      <option value="voll">Voller Betrag</option>
+                      <option value="zeit">Zeitanteilig (Jahreskosten)</option>
+                    </select>
+                    {r.aufteilung === "zeit" && (
+                      <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3, maxWidth: 170 }}>
+                        Betrag = Jahresgesamtkosten; wird nach Belegungstagen geteilt.
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-1.5 text-right">
                     <input
@@ -298,6 +330,13 @@ export default function PositionsManager({
             {SCHLUESSEL.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-[var(--muted)]">Aufteilung</span>
+          <select className="input" value={nAuf} onChange={(e) => setNAuf(e.target.value)}>
+            <option value="voll">Voller Betrag</option>
+            <option value="zeit">Zeitanteilig (Jahreskosten)</option>
           </select>
         </label>
         <label className="flex items-center gap-2 pb-2 text-sm text-[var(--muted)]">

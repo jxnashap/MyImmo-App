@@ -47,7 +47,7 @@ export default async function NkPage({
         : Promise.resolve({ data: null }),
       supabase
         .from("mieter_positionen")
-        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr")
+        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung")
         .eq("mieter_id", params.id)
         .order("created_at"),
       supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
@@ -185,7 +185,14 @@ export default async function NkPage({
                 <tr key={i}>
                   <td>{p.bezeichnung}</td>
                   <td className="brief-muted">{p.umlageschluessel || "—"}</td>
-                  <td className="zahl">{eur2(p.betrag)}</td>
+                  <td className="zahl">
+                    {eur2(p.betrag)}
+                    {p.faktorText && (
+                      <div className="brief-muted" style={{ fontSize: 9.5 }}>
+                        {eur2(p.basis ?? 0)} × {p.faktorText}
+                      </div>
+                    )}
+                  </td>
                 </tr>
               ))
             )}
