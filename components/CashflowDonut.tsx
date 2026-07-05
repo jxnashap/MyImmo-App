@@ -11,9 +11,11 @@ import { euro } from "@/lib/format";
 
 type Kat = [string, number];
 
-// Warm-/Rot-Palette (Ausgaben) und Grün-/Gold-Palette (Einnahmen) — theme-neutral.
-const PAL_AUS = ["#E05C4B", "#EC7A48", "#D68A3C", "#C0555F", "#B5654A", "#E39B8D", "#A8443A", "#F0A85A"];
-const PAL_EIN = ["#4CAF7D", "#5FBF8E", "#3E9A6B", "#D4A847", "#7FC08A", "#2F8F5B", "#B9C264", "#8FCF9E"];
+// Warm-/Rot-Palette (Ausgaben) und Grün-/Gold-Palette (Einnahmen). Mitteltöne mit
+// genug Sättigung, damit Segmente UND die farbigen €-Beträge in der Legende in
+// beiden Themes (hell/dunkel) lesbar bleiben.
+const PAL_AUS = ["#DB5138", "#E07B2E", "#C28A1E", "#B44A57", "#9C4722", "#CF6A4E", "#8A5A2B", "#D08A2E"];
+const PAL_EIN = ["#3E9E6C", "#2F8F5B", "#C29A2E", "#5A9E5B", "#3B7D77", "#7A8A2C", "#2E7D4F", "#A07E2A"];
 
 const light = (c: string) => `color-mix(in srgb, ${c}, white 30%)`;
 const dark = (c: string) => `color-mix(in srgb, ${c}, black 24%)`;
@@ -48,7 +50,8 @@ export default function CashflowDonut({
   const uid = useId().replace(/[:]/g, "");
   const [side, setSide] = useState<null | "ein" | "aus">(null); // null = Ebene 1
   const [hover, setHover] = useState<string | null>(null);
-  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
+  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null); // Hover (flüchtig)
+  const [pin, setPin] = useState<{ x: number; y: number; text: string } | null>(null); // Tap (fixiert, mobil)
 
   const overview: Seg[] = useMemo(
     () => [
@@ -93,23 +96,36 @@ export default function CashflowDonut({
 
   const empty = total <= 0;
 
+  const mkTip = (label: string, value: number, pct: number, e: React.MouseEvent) => {
+    const rect = (e.currentTarget.closest(".donut-wrap") as HTMLElement)?.getBoundingClientRect();
+    return rect ? { x: e.clientX - rect.left, y: e.clientY - rect.top, text: `${label} · ${euro(value)} · ${pct.toFixed(1)} %` } : null;
+  };
   const onEnter = (key: string, label: string, value: number, pct: number, e: React.MouseEvent) => {
     setHover(key);
-    const rect = (e.currentTarget.closest(".donut-wrap") as HTMLElement)?.getBoundingClientRect();
-    if (rect) setTip({ x: e.clientX - rect.left, y: e.clientY - rect.top, text: `${label} · ${euro(value)} · ${pct.toFixed(1)} %` });
+    const t = mkTip(label, value, pct, e); if (t) setTip(t);
   };
   const onMove = (label: string, value: number, pct: number, e: React.MouseEvent) => {
-    const rect = (e.currentTarget.closest(".donut-wrap") as HTMLElement)?.getBoundingClientRect();
-    if (rect) setTip({ x: e.clientX - rect.left, y: e.clientY - rect.top, text: `${label} · ${euro(value)} · ${pct.toFixed(1)} %` });
+    const t = mkTip(label, value, pct, e); if (t) setTip(t);
   };
-  const onLeave = () => { setHover(null); setTip(null); };
+  const onLeave = () => { setHover(null); setTip(null); }; // fixierten Tooltip (pin) bewusst NICHT löschen
 
-  const clickSeg = (s: Seg) => {
-    if (!side) { if (s.key === "ein" || s.key === "aus") setSide(s.key); }
+  // Klick auf ein Segment: Ebene 1 → Drilldown; Ebene 2 → Tooltip fixieren (Touch).
+  const onSegClick = (a: { key: string; label: string; value: number; pct: number }, e: React.MouseEvent) => {
+    if (!side) {
+      if (a.key === "ein" || a.key === "aus") { setSide(a.key); setPin(null); setTip(null); }
+    } else {
+      const t = mkTip(a.label, a.value, a.pct, e);
+      setPin(t); setHover(a.key); e.stopPropagation();
+    }
   };
+  const onLegendClick = (a: { key: string }) => {
+    if (!side && (a.key === "ein" || a.key === "aus")) { setSide(a.key); setPin(null); setTip(null); }
+  };
+  const back = () => { setSide(null); setPin(null); onLeave(); };
+  const show = pin ?? tip;
 
   return (
-    <div className="donut-wrap" style={{ position: "relative" }} onMouseLeave={onLeave}>
+    <div className="donut-wrap" style={{ position: "relative" }} onMouseLeave={onLeave} onClick={() => setPin(null)}>
       <style>{`
         .donut-svg { transition: opacity .35s ease; }
         .donut-seg { transition: stroke-width .18s ease, filter .18s ease, opacity .18s ease; }
@@ -122,7 +138,7 @@ export default function CashflowDonut({
       `}</style>
 
       {side && (
-        <button type="button" className="btn btn-ghost" onClick={() => { setSide(null); onLeave(); }}
+        <button type="button" className="btn btn-ghost" onClick={(e) => { e.stopPropagation(); back(); }}
           style={{ fontSize: 12, marginBottom: 10 }}>← Zurück</button>
       )}
 
@@ -148,7 +164,7 @@ export default function CashflowDonut({
             >
               <defs>
                 <filter id={`sh-${uid}`} x="-30%" y="-20%" width="160%" height="150%">
-                  <feDropShadow dx="0" dy="7" stdDeviation="7" floodColor="#000" floodOpacity="0.28" />
+                  <feDropShadow dx="0" dy="4" stdDeviation="4.5" floodColor="#000" floodOpacity="0.15" />
                 </filter>
                 {arcs.map((a) => (
                   <radialGradient key={a.key} id={`g-${uid}-${a.key}`} gradientUnits="userSpaceOnUse" cx={CX} cy={CY} r={R + SW / 2}>
@@ -160,8 +176,8 @@ export default function CashflowDonut({
                 ))}
               </defs>
 
-              {/* Schatten-Basisring */}
-              <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--bg4)" strokeWidth={SW} opacity={0.5} filter={`url(#sh-${uid})`} />
+              {/* Schatten-Basisring (dezent) */}
+              <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--bg4)" strokeWidth={SW} opacity={0.35} filter={`url(#sh-${uid})`} />
 
               {arcs.map((a) => {
                 const active = hover === a.key;
@@ -183,7 +199,7 @@ export default function CashflowDonut({
                     }}
                     onMouseEnter={(e) => onEnter(a.key, a.label, a.value, a.pct, e)}
                     onMouseMove={(e) => onMove(a.label, a.value, a.pct, e)}
-                    onClick={() => clickSeg(a)}
+                    onClick={(e) => onSegClick(a, e)}
                   >
                     <title>{`${a.label} · ${euro(a.value)} · ${a.pct.toFixed(1)} %`}</title>
                   </circle>
@@ -195,13 +211,13 @@ export default function CashflowDonut({
               <text x={CX} y={CY + 20} textAnchor="middle" style={{ fill: "var(--muted)", fontSize: 13, letterSpacing: 0.5 }}>{centerLabel}</text>
             </svg>
 
-            {tip && (
+            {show && (
               <div style={{
-                position: "absolute", left: tip.x, top: tip.y - 12, transform: "translate(-50%,-100%)",
+                position: "absolute", left: show.x, top: show.y - 12, transform: "translate(-50%,-100%)",
                 background: "var(--bg3)", border: "1px solid var(--line2)", borderRadius: 8, padding: "6px 10px",
                 fontSize: 12, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap", pointerEvents: "none",
                 boxShadow: "0 6px 18px rgba(0,0,0,.3)", zIndex: 5,
-              }}>{tip.text}</div>
+              }}>{show.text}</div>
             )}
           </div>
 
@@ -211,7 +227,7 @@ export default function CashflowDonut({
               <button
                 key={a.key}
                 type="button"
-                onClick={() => clickSeg(a)}
+                onClick={() => onLegendClick(a)}
                 onMouseEnter={() => setHover(a.key)}
                 onMouseLeave={() => setHover(null)}
                 style={{
