@@ -11,6 +11,7 @@ export type NkRawPosition = {
   umlageschluessel: string | null;
   umlagefaehig: boolean | null;
   jahr: number | null;
+  aufteilung?: string | null; // 'voll' (Default) | 'zeit' = Jahresgesamtkosten
 };
 
 export type NkTenant = {
@@ -32,7 +33,9 @@ export type NkProperty = {
 export type NkLine = {
   bezeichnung: string;
   umlageschluessel: string | null;
-  betrag: number;
+  betrag: number; // bei 'zeit' bereits der anteilige Betrag
+  basis?: number; // Jahresgesamtkosten (nur bei 'zeit')
+  faktorText?: string; // z. B. "181/365 Tage" (nur bei 'zeit')
 };
 
 // Eingaben von der Brennstoffrechnung (Tabelle nk_co2, je Mieter + Jahr).
@@ -146,6 +149,19 @@ export function nkCo2Aus(input: NkCo2Input | null | undefined, jahr: number): Nk
   };
 }
 
+const TAG_MS = 86_400_000;
+
+/** Kalendertage des Jahres (365/366). */
+export function jahresTage(jahr: number): number {
+  return Math.round((Date.UTC(jahr + 1, 0, 1) - Date.UTC(jahr, 0, 1)) / TAG_MS);
+}
+
+/** Tage von..bis einschließlich (ISO-Daten, UTC-Mitternacht). */
+export function belegungsTage(von: string, bis: string): number {
+  const t = (new Date(bis).getTime() - new Date(von).getTime()) / TAG_MS + 1;
+  return Math.max(0, Math.round(t));
+}
+
 export function berechneNk(
   jahr: number,
   tenant: NkTenant,
@@ -153,16 +169,35 @@ export function berechneNk(
   positionen: NkRawPosition[],
   co2Input?: NkCo2Input | null,
 ): NkAbrechnung {
+  // Belegungszeitraum zuerst — der Tage-Faktor gilt für 'zeit'-Positionen.
+  const { von, bis, monate } = monateImJahr(jahr, tenant.mietbeginn, tenant.mietende);
+  const jahrestage = jahresTage(jahr);
+  const tage = monate === 0 ? 0 : belegungsTage(von, bis);
+  const faktor = tage / jahrestage;
+
   // Positionen des Jahres (oder ohne Jahresangabe = Altbestand) berücksichtigen.
   const relevant = positionen.filter((p) => p.jahr == null || p.jahr === jahr);
 
   const umlagefaehig: NkLine[] = relevant
     .filter((p) => p.umlagefaehig === true)
-    .map((p) => ({
-      bezeichnung: p.bezeichnung,
-      umlageschluessel: p.umlageschluessel,
-      betrag: p.betrag ?? 0,
-    }));
+    .map((p) => {
+      const basis = p.betrag ?? 0;
+      if (p.aufteilung === "zeit") {
+        // Betrag = Jahresgesamtkosten → tagegenau nach Belegung aufteilen.
+        return {
+          bezeichnung: p.bezeichnung,
+          umlageschluessel: p.umlageschluessel,
+          betrag: rund2(basis * faktor),
+          basis,
+          faktorText: `${tage}/${jahrestage} Tage`,
+        };
+      }
+      return {
+        bezeichnung: p.bezeichnung,
+        umlageschluessel: p.umlageschluessel,
+        betrag: basis,
+      };
+    });
 
   const ausgenommen: NkLine[] = relevant
     .filter((p) => p.umlagefaehig !== true)
@@ -172,15 +207,13 @@ export function berechneNk(
       betrag: p.betrag ?? 0,
     }));
 
-  const umlageGesamt = umlagefaehig.reduce((s, p) => s + p.betrag, 0);
+  const umlageGesamt = rund2(umlagefaehig.reduce((s, p) => s + p.betrag, 0));
 
   // CO₂-Gutschrift: Der Vermieteranteil mindert die Mieterlast. Der
   // Mieteranteil steckt bereits in den Heizkosten-Positionen — er wird nur
   // ausgewiesen, NICHT addiert (keine Doppelzählung).
   const co2 = nkCo2Aus(co2Input, jahr);
   const kostenNachCo2 = rund2(umlageGesamt - (co2?.vermieterAnteil ?? 0));
-
-  const { von, bis, monate } = monateImJahr(jahr, tenant.mietbeginn, tenant.mietende);
 
   const nkVorauszahlungMonat = tenant.nk_vorauszahlung ?? 0;
   const vorauszahlungGeleistet = nkVorauszahlungMonat * monate;

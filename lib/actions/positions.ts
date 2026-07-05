@@ -28,6 +28,7 @@ export async function addPosition(mieterId: string, formData: FormData) {
     jahr: jahr != null && Number.isNaN(jahr) ? null : jahr,
     umlageschluessel: (formData.get("umlageschluessel") as string) || null,
     umlagefaehig: formData.get("umlagefaehig") === "on",
+    aufteilung: formData.get("aufteilung") === "zeit" ? "zeit" : "voll",
   });
   if (error) throw new Error(error.message);
 
@@ -71,6 +72,7 @@ export async function updatePosition(
     jahr: number | null;
     umlageschluessel: string | null;
     umlagefaehig: boolean;
+    aufteilung?: string;
   },
 ): Promise<{ ok: boolean }> {
   const supabase = createClient();
@@ -85,6 +87,7 @@ export async function updatePosition(
       jahr: f.jahr,
       umlageschluessel: f.umlageschluessel,
       umlagefaehig: f.umlagefaehig,
+      aufteilung: f.aufteilung === "zeit" ? "zeit" : "voll",
     })
     .eq("id", id);
 
