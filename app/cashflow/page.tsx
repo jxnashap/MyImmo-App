@@ -1,11 +1,9 @@
-// Ein- & Ausgaben: Einnahmen und Kosten in einem Reiter — KPIs, kumulierter
-// Cashflow-Verlauf, Einnahmen-vs-Ausgaben-Balken, Kategorie-Split und die
-// bestehenden Buchungslisten (Zeilen-Edit/Beleg/Löschen unverändert).
+// Ein- & Ausgaben: Einnahmen und Kosten in einem Reiter — KPIs, interaktiver
+// Donut (Einnahmen vs. Ausgaben + Kategorie-Drilldown) und die bestehenden
+// Buchungslisten (Zeilen-Edit/Beleg/Löschen unverändert).
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro } from "@/lib/format";
-import BetragChart from "@/components/BetragChart";
-import ZeitraumControl from "@/components/ZeitraumControl";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import EinnahmenListe from "@/components/lists/EinnahmenListe";
 import KostenListe from "@/components/lists/KostenListe";
@@ -13,7 +11,6 @@ import CashflowListe from "@/components/lists/CashflowListe";
 import AufklappSection from "@/components/AufklappSection";
 import WiederkehrManager from "@/components/WiederkehrManager";
 import CashflowDonut from "@/components/CashflowDonut";
-import type { RawPoint } from "@/lib/zeitraum";
 import type { Einnahme, Kosten, Property, Tenant, WiederkehrVorlage } from "@/lib/types";
 
 export default async function CashflowPage({
@@ -75,12 +72,6 @@ export default async function CashflowPage({
   const ausgabenTotal = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
   const netto = einnahmenTotal - ausgabenTotal;
 
-  // ---- Cashflow-Verlauf (wie Dashboard „Portfolio-Entwicklung") ----
-  const cashflowPoints: RawPoint[] = [
-    ...einnahmen.filter((e) => e.buchungsdatum).map((e) => ({ date: e.buchungsdatum as string, value: e.betrag ?? 0 })),
-    ...kosten.filter((k) => k.buchungsdatum).map((k) => ({ date: k.buchungsdatum as string, value: -(k.betrag ?? 0) })),
-  ];
-
   // ---- Kategorie-Split (Daten für den Donut-Drilldown) ----
   const katSumme = (rows: { kategorie: string | null; betrag: number | null }[]) => {
     const m = new Map<string, number>();
@@ -129,17 +120,6 @@ export default async function CashflowPage({
           <div className="kpi-sub">
             <span className={`badge ${netto >= 0 ? "badge-green" : "badge-red"}`}>{netto >= 0 ? "Positiv" : "Negativ"}</span>
           </div>
-        </div>
-      </div>
-
-      {/* Cashflow-Verlauf */}
-      <div className="section mb-20">
-        <div className="section-header">
-          <h3>Cashflow-Verlauf</h3>
-          <ZeitraumControl />
-        </div>
-        <div className="section-body">
-          <BetragChart points={cashflowPoints} mode="area" cumulative color="var(--gold)" caption="Kumulierter Cashflow (Einnahmen − Ausgaben)" />
         </div>
       </div>
 
