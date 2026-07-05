@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { berechneNk, deDatum, type NkRawPosition } from "@/lib/nk";
+import { berechneNk, deDatum, type NkRawPosition, type NkCo2Input } from "@/lib/nk";
 import { eur2, adressZeilen } from "@/lib/format";
 import { vermieterAus } from "@/lib/pdf/nkPdf";
 import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
 import BriefBlatt from "@/components/BriefBlatt";
 import NkSpeichernButton from "@/components/NkSpeichernButton";
+import NkCo2Panel from "@/components/NkCo2Panel";
 
 export const dynamic = "force-dynamic";
 
@@ -35,12 +36,12 @@ export default async function NkPage({
 
   const jahr = Number(searchParams.jahr) || new Date().getFullYear() - 1;
 
-  const [{ data: property }, { data: positions }, { data: profil }, { data: ibanRow }] =
+  const [{ data: property }, { data: positions }, { data: profil }, { data: ibanRow }, { data: co2Row }] =
     await Promise.all([
       tenant.prop_id
         ? supabase
             .from("properties")
-            .select("bezeichnung,adresse")
+            .select("bezeichnung,adresse,flaeche")
             .eq("id", tenant.prop_id)
             .single()
         : Promise.resolve({ data: null }),
@@ -57,9 +58,21 @@ export default async function NkPage({
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("nk_co2")
+        .select("co2_kg,co2_kosten,flaeche,gewerbe")
+        .eq("mieter_id", params.id)
+        .eq("jahr", jahr)
+        .maybeSingle(),
     ]);
 
-  const a = berechneNk(jahr, tenant, property ?? null, (positions ?? []) as NkRawPosition[]);
+  const a = berechneNk(
+    jahr,
+    tenant,
+    property ?? null,
+    (positions ?? []) as NkRawPosition[],
+    (co2Row ?? null) as NkCo2Input | null,
+  );
   const vermieter = vermieterAus(profil, ibanRow ? decryptIbanRow(ibanRow) : null);
 
   const aktuell = new Date().getFullYear();
@@ -124,6 +137,13 @@ export default async function NkPage({
         </div>
       )}
 
+      <NkCo2Panel
+        mieterId={params.id}
+        jahr={jahr}
+        gespeichert={(co2Row ?? null) as { co2_kg: number | null; co2_kosten: number | null; flaeche: number | null; gewerbe: boolean | null } | null}
+        defaultFlaeche={tenant.flaeche ?? (property as { flaeche?: number | null } | null)?.flaeche ?? null}
+      />
+
       <BriefBlatt
         absenderName={vermieter.name}
         absenderZeile={absenderZeile}
@@ -172,11 +192,45 @@ export default async function NkPage({
           </tbody>
         </table>
 
+        {a.co2 && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontWeight: 700, fontSize: 12 }}>
+              CO₂-Kostenaufteilung nach CO2KostAufG
+            </div>
+            <p className="brief-muted" style={{ fontSize: 10.5, margin: "4px 0 6px" }}>
+              Spezifischer CO₂-Ausstoß: {String(a.co2.spez).replace(".", ",")} kg/m² und Jahr
+              {a.co2.gewerbe
+                ? " · Gewerbe/Nichtwohngebäude: pauschale Aufteilung 50/50"
+                : ` · Stufe ${a.co2.stufeLabel} kg/m²·a`}{" "}
+              → Mieter {a.co2.mieterProzent} %, Vermieter {a.co2.vermieterProzent} %. CO₂-Kosten
+              gesamt: {eur2(a.co2.kostenGesamt)}
+              {a.co2.geschaetzt ? " (geschätzt über BEHG-Referenzpreis)" : ""} — davon Mieteranteil{" "}
+              {eur2(a.co2.mieterAnteil)} (in den Heizkosten enthalten), Vermieteranteil{" "}
+              {eur2(a.co2.vermieterAnteil)} (wird Ihnen nachfolgend gutgeschrieben). Einstufung auf
+              Basis der Angaben der Brennstoff-/Wärmelieferrechnung, ohne Gewähr.
+            </p>
+          </div>
+        )}
+
         <div className="brief-summen">
           <div className="zeile">
             <span className="brief-muted">Summe umlagefähige Kosten</span>
             <span>{eur2(a.umlageGesamt)}</span>
           </div>
+          {a.co2 && (
+            <div className="zeile">
+              <span className="brief-muted">
+                CO₂-Gutschrift Vermieteranteil ({a.co2.vermieterProzent} %)
+              </span>
+              <span className="brief-gruen">− {eur2(a.co2.vermieterAnteil)}</span>
+            </div>
+          )}
+          {a.co2 && (
+            <div className="zeile">
+              <span className="brief-muted">Von Ihnen zu tragende Kosten</span>
+              <span>{eur2(a.kostenNachCo2)}</span>
+            </div>
+          )}
           <div className="zeile">
             <span className="brief-muted">
               Vorauszahlung ({a.monate} × {eur2(a.nkVorauszahlungMonat)})

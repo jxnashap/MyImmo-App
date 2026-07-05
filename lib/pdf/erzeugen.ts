@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildDocPdf } from "@/lib/pdf/docPdf";
 import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
 import { buildProtokollPdf, type ProtokollDaten } from "@/lib/pdf/protokollPdf";
-import { berechneNk, type NkRawPosition } from "@/lib/nk";
+import { berechneNk, type NkRawPosition, type NkCo2Input } from "@/lib/nk";
 import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
 import {
@@ -141,7 +141,7 @@ export async function erzeugeNkPdf(
     .single();
   if (!tenant) return null;
 
-  const [{ data: property }, { data: positions }, { data: profil }, { data: iban }] =
+  const [{ data: property }, { data: positions }, { data: profil }, { data: iban }, { data: co2Row }] =
     await Promise.all([
       tenant.prop_id
         ? supabase
@@ -167,6 +167,12 @@ export async function erzeugeNkPdf(
         .order("created_at")
         .limit(1)
         .maybeSingle(),
+      supabase
+        .from("nk_co2")
+        .select("co2_kg,co2_kosten,flaeche,gewerbe")
+        .eq("mieter_id", mieterId)
+        .eq("jahr", jahr)
+        .maybeSingle(),
     ]);
 
   const abrechnung = berechneNk(
@@ -174,6 +180,7 @@ export async function erzeugeNkPdf(
     tenant,
     property ?? null,
     (positions ?? []) as NkRawPosition[],
+    (co2Row ?? null) as NkCo2Input | null,
   );
 
   const pdf = await buildNkPdf(
