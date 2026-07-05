@@ -38,10 +38,11 @@ type TypConfig = {
   energie: boolean;               // Energieklasse + Energieausweis
   afa: boolean;                   // AfA-Block (false = Grundstück, keine AfA)
   status: string;                 // Vorgabe-Status
+  gebHinweis?: string;            // typ-spezifischer Hinweis zum Gebäudeanteil
 };
 
 const CONFIG: Record<string, TypConfig> = {
-  Eigentumswohnung: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: true, zimmer: true, energie: true, afa: true, status: "Vermietet" },
+  Eigentumswohnung: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: true, zimmer: true, energie: true, afa: true, status: "Vermietet", gebHinweis: "Bei Eigentumswohnungen oft 70–75 % (Grund- und Gemeinschaftsanteil) — Feld editierbar." },
   Einfamilienhaus: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: false, zimmer: true, energie: true, afa: true, status: "Vermietet" },
   Mehrfamilienhaus: { flaeche: "Wohnfläche (m²)", einheiten: "Anzahl Einheiten", baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet" },
   Gewerbeimmobilie: { flaeche: "Nutzfläche (m²)", einheiten: "Anzahl Einheiten (optional)", baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet" },
@@ -153,6 +154,9 @@ export default function PropertyForm({
             </div>
             <div className="form-group"><label>Gebäudeanteil (%) — optional</label>
               <input type="number" step="1" name="afa_gebaeudeanteil" defaultValue={v("afa_gebaeudeanteil")} placeholder="Standard 80" />
+              {cfg.gebHinweis && (
+                <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>{cfg.gebHinweis}</span>
+              )}
             </div>
           </div>
           <div className="form-row">
