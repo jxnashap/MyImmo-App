@@ -26,6 +26,10 @@ const AFA_METHODEN = [
   { v: "manuell", l: "Manueller Betrag (§ 7b / Denkmal)" },
 ];
 
+// USt-Hinweis für Garage/Stellplatz + Garagenkomplex (§ 4 Nr. 12 S. 2 UStG).
+const GARAGE_UST =
+  "USt-Hinweis: Die Vermietung von Garagen/Stellplätzen ist grundsätzlich umsatzsteuerpflichtig (§ 4 Nr. 12 S. 2 UStG) — steuerfrei nur als Nebenleistung zur (steuerfreien) Wohnungsvermietung. Keine Steuerberatung.";
+
 // Feld-Konfiguration je Immobilienart: Sichtbarkeit, Labels und Vorgaben.
 type TypConfig = {
   flaeche: string;                 // Label für das flaeche-Feld
@@ -51,8 +55,8 @@ const CONFIG: Record<string, TypConfig> = {
   Gewerbeimmobilie: { flaeche: "Nutzfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet", afaHinweis: "Gewerbe im Privatvermögen i. d. R. 2 % linear. Im Betriebsvermögen kann 3 % gelten (§ 7 Abs. 4 Nr. 1 EStG) — dann „Manueller Betrag“ wählen. ", ustHinweis: "USt-Hinweis: Die Vermietung von Gewerbeflächen kann umsatzsteuerpflichtig sein bzw. zur Umsatzsteuer optierbar (§ 9 UStG). Keine Steuerberatung." },
   Ferienimmobilie: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, mieteLabel: "Kaltmiete / Mo. (= Mieteinnahme) (€)", hausgeld: true, zimmer: true, energie: true, afa: true, status: "Feriennutzung" },
   Grundstück: { flaeche: "Grundstücksfläche (m²)", einheiten: false, baujahr: false, miete: true, mieteLabel: "Pacht / Mo. (optional) (€)", hausgeld: false, zimmer: false, energie: false, afa: false, status: "Leer" },
-  "Garage / Stellplatz": { flaeche: "Nutzfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: true, zimmer: false, energie: false, afa: true, status: "Vermietet" },
-  Garagenkomplex: { flaeche: "Grundstücks-/Nutzfläche (m²)", flaecheHinweis: "(optional)", einheiten: "Anzahl Garagen/Stellplätze", baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: false, afa: true, status: "Vermietet" },
+  "Garage / Stellplatz": { flaeche: "Nutzfläche (m²)", flaecheHinweis: "(optional)", einheiten: false, baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: false, afa: true, status: "Vermietet", ustHinweis: GARAGE_UST },
+  Garagenkomplex: { flaeche: "Grundstücks-/Nutzfläche (m²)", flaecheHinweis: "(optional)", einheiten: "Anzahl Garagen/Stellplätze", baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: false, afa: true, status: "Vermietet", ustHinweis: GARAGE_UST },
 };
 
 const fallback = CONFIG.Eigentumswohnung;
