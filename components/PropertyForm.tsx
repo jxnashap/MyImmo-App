@@ -33,6 +33,7 @@ type TypConfig = {
   einheiten: string | false;      // Label für einheiten_anzahl (false = ausblenden)
   baujahr: boolean;
   miete: boolean;
+  mieteLabel?: string;            // Label fürs Miete-Feld (Vorgabe s. u.)
   hausgeld: boolean;
   zimmer: boolean;
   energie: boolean;               // Energieklasse + Energieausweis
@@ -44,7 +45,7 @@ type TypConfig = {
 const CONFIG: Record<string, TypConfig> = {
   Eigentumswohnung: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: true, zimmer: true, energie: true, afa: true, status: "Vermietet", gebHinweis: "Bei Eigentumswohnungen oft 70–75 % (Grund- und Gemeinschaftsanteil) — Feld editierbar." },
   Einfamilienhaus: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: false, zimmer: true, energie: true, afa: true, status: "Vermietet" },
-  Mehrfamilienhaus: { flaeche: "Wohnfläche (m²)", einheiten: "Anzahl Einheiten", baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet" },
+  Mehrfamilienhaus: { flaeche: "Wohnfläche gesamt (m²)", einheiten: "Anzahl Wohneinheiten", baujahr: true, miete: true, mieteLabel: "Kaltmiete / Mo. gesamt (€)", hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet" },
   Gewerbeimmobilie: { flaeche: "Nutzfläche (m²)", einheiten: "Anzahl Einheiten (optional)", baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet" },
   Ferienimmobilie: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: true, zimmer: true, energie: true, afa: true, status: "Feriennutzung" },
   Grundstück: { flaeche: "Grundstücksfläche (m²)", einheiten: false, baujahr: false, miete: false, hausgeld: false, zimmer: false, energie: false, afa: false, status: "Leer" },
@@ -113,7 +114,7 @@ export default function PropertyForm({
 
       <div className="form-row">
         {cfg.miete && (
-          <div className="form-group"><label>Kaltmiete / Mo. (€)</label><input type="number" step="0.01" name="miete" defaultValue={v("miete")} placeholder="1200" /></div>
+          <div className="form-group"><label>{cfg.mieteLabel ?? "Kaltmiete / Mo. (€)"}</label><input type="number" step="0.01" name="miete" defaultValue={v("miete")} placeholder="1200" /></div>
         )}
         <div className="form-group"><label>Status</label>
           <select name="obj_status" value={status} onChange={(e) => setStatus(e.target.value)}>{STATUS.map((s) => <option key={s}>{s}</option>)}</select>
