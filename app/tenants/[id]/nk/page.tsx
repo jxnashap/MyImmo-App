@@ -47,7 +47,7 @@ export default async function NkPage({
         : Promise.resolve({ data: null }),
       supabase
         .from("mieter_positionen")
-        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung")
+        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt")
         .eq("mieter_id", params.id)
         .order("created_at"),
       supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),

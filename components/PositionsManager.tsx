@@ -17,7 +17,23 @@ export type Position = {
   umlageschluessel: string | null;
   umlagefaehig: boolean | null;
   jahr: number | null;
-  aufteilung: string | null; // 'voll' | 'zeit' (Jahresgesamtkosten)
+  aufteilung: string | null; // 'voll' | 'zeit' | 'verbrauch' | 'gradtag'
+  verbrauch_mieter: number | null;
+  verbrauch_gesamt: number | null;
+};
+
+const AUFTEILUNG_OPTIONEN = [
+  { value: "voll", label: "Voller Betrag" },
+  { value: "zeit", label: "Zeitanteilig (Jahreskosten)" },
+  { value: "verbrauch", label: "Verbrauch (Zwischenablesung)" },
+  { value: "gradtag", label: "Gradtagszahlen (Heizung)" },
+];
+
+const AUFTEILUNG_HINWEIS: Record<string, string> = {
+  zeit: "Betrag = Jahresgesamtkosten; wird nach Belegungstagen geteilt.",
+  verbrauch: "Betrag = Jahresgesamtkosten; wird exakt nach dem abgelesenen Verbrauchsanteil geteilt.",
+  gradtag:
+    "Betrag = Jahresgesamtkosten; Belegungsmonate werden nach Gradtagszahlen gewichtet. Ohne Zwischenablesung darf der Mieter den verbrauchsabhängigen Anteil um 15 % kürzen (§ 12 HeizkostenV).",
 };
 
 const SCHLUESSEL = ["Fläche", "Anzahl", "Personen", "Einheit", "Verbrauch", "direkt"];
@@ -34,8 +50,13 @@ type RowState = {
   jahr: number | null;
   umlageschluessel: string;
   umlagefaehig: boolean;
-  aufteilung: string; // 'voll' | 'zeit'
+  aufteilung: string; // 'voll' | 'zeit' | 'verbrauch' | 'gradtag'
+  vm: string; // Verbrauch Mieter (nur 'verbrauch')
+  vg: string; // Verbrauch gesamt (nur 'verbrauch')
 };
+
+const normAufteilung = (v: string | null) =>
+  AUFTEILUNG_OPTIONEN.some((o) => o.value === v) ? (v as string) : "voll";
 
 const toRow = (p: Position): RowState => ({
   id: p.id,
@@ -44,7 +65,9 @@ const toRow = (p: Position): RowState => ({
   jahr: p.jahr,
   umlageschluessel: p.umlageschluessel ?? "",
   umlagefaehig: !!p.umlagefaehig,
-  aufteilung: p.aufteilung === "zeit" ? "zeit" : "voll",
+  aufteilung: normAufteilung(p.aufteilung),
+  vm: p.verbrauch_mieter != null ? String(p.verbrauch_mieter) : "",
+  vg: p.verbrauch_gesamt != null ? String(p.verbrauch_gesamt) : "",
 });
 
 const parseBetrag = (s: string): number | null => {
@@ -74,6 +97,8 @@ export default function PositionsManager({
   const [nSchl, setNSchl] = useState("");
   const [nUml, setNUml] = useState(true);
   const [nAuf, setNAuf] = useState("voll");
+  const [nVm, setNVm] = useState("");
+  const [nVg, setNVg] = useState("");
   const [adding, startAdd] = useTransition();
 
   const total = rows.reduce((s, r) => s + (parseBetrag(r.betrag) ?? 0), 0);
@@ -91,6 +116,8 @@ export default function PositionsManager({
       umlageschluessel: r.umlageschluessel || null,
       umlagefaehig: r.umlagefaehig,
       aufteilung: r.aufteilung,
+      verbrauch_mieter: parseBetrag(r.vm),
+      verbrauch_gesamt: parseBetrag(r.vg),
     };
     if (
       orig &&
@@ -99,7 +126,9 @@ export default function PositionsManager({
       (orig.jahr ?? null) === neu.jahr &&
       (orig.umlageschluessel ?? null) === neu.umlageschluessel &&
       !!orig.umlagefaehig === neu.umlagefaehig &&
-      (orig.aufteilung === "zeit" ? "zeit" : "voll") === neu.aufteilung
+      normAufteilung(orig.aufteilung) === neu.aufteilung &&
+      (orig.verbrauch_mieter ?? null) === neu.verbrauch_mieter &&
+      (orig.verbrauch_gesamt ?? null) === neu.verbrauch_gesamt
     )
       return; // nichts geändert
     if (!neu.bezeichnung) return; // leere Bezeichnung nicht speichern
@@ -131,6 +160,8 @@ export default function PositionsManager({
     fd.set("umlageschluessel", nSchl);
     if (nUml) fd.set("umlagefaehig", "on");
     fd.set("aufteilung", nAuf);
+    fd.set("verbrauch_mieter", nVm);
+    fd.set("verbrauch_gesamt", nVg);
     startAdd(async () => {
       await addPosition(mieterId, fd);
       setNBez("");
@@ -139,6 +170,8 @@ export default function PositionsManager({
       setNSchl("");
       setNUml(true);
       setNAuf("voll");
+      setNVm("");
+      setNVg("");
       toast("Position hinzugefügt ✓");
       router.refresh();
     });
@@ -238,18 +271,39 @@ export default function PositionsManager({
                         setRow(r.id, { aufteilung: e.target.value });
                         speichere({ ...r, aufteilung: e.target.value });
                       }}
-                      title={
-                        r.aufteilung === "zeit"
-                          ? "Betrag = Jahresgesamtkosten; wird nach Belegungstagen geteilt."
-                          : "Betrag wird unverändert übernommen."
-                      }
+                      title={AUFTEILUNG_HINWEIS[r.aufteilung] ?? "Betrag wird unverändert übernommen."}
                     >
-                      <option value="voll">Voller Betrag</option>
-                      <option value="zeit">Zeitanteilig (Jahreskosten)</option>
+                      {AUFTEILUNG_OPTIONEN.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
                     </select>
-                    {r.aufteilung === "zeit" && (
-                      <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3, maxWidth: 170 }}>
-                        Betrag = Jahresgesamtkosten; wird nach Belegungstagen geteilt.
+                    {r.aufteilung === "verbrauch" && (
+                      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                        <input
+                          className="input"
+                          type="number"
+                          step="0.01"
+                          placeholder="Mieter (z. B. kWh)"
+                          style={{ width: 110, fontSize: 11 }}
+                          value={r.vm}
+                          onChange={(e) => setRow(r.id, { vm: e.target.value })}
+                          onBlur={() => speichere({ ...r })}
+                        />
+                        <input
+                          className="input"
+                          type="number"
+                          step="0.01"
+                          placeholder="Gesamt"
+                          style={{ width: 90, fontSize: 11 }}
+                          value={r.vg}
+                          onChange={(e) => setRow(r.id, { vg: e.target.value })}
+                          onBlur={() => speichere({ ...r })}
+                        />
+                      </div>
+                    )}
+                    {AUFTEILUNG_HINWEIS[r.aufteilung] && (
+                      <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3, maxWidth: 190 }}>
+                        {AUFTEILUNG_HINWEIS[r.aufteilung]}
                       </div>
                     )}
                   </td>
@@ -335,10 +389,23 @@ export default function PositionsManager({
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-[var(--muted)]">Aufteilung</span>
           <select className="input" value={nAuf} onChange={(e) => setNAuf(e.target.value)}>
-            <option value="voll">Voller Betrag</option>
-            <option value="zeit">Zeitanteilig (Jahreskosten)</option>
+            {AUFTEILUNG_OPTIONEN.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
           </select>
         </label>
+        {nAuf === "verbrauch" && (
+          <>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-[var(--muted)]">Verbrauch Mieter</span>
+              <input type="number" step="0.01" className="input w-28" value={nVm} onChange={(e) => setNVm(e.target.value)} placeholder="z. B. kWh" />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-[var(--muted)]">Verbrauch gesamt</span>
+              <input type="number" step="0.01" className="input w-28" value={nVg} onChange={(e) => setNVg(e.target.value)} />
+            </label>
+          </>
+        )}
         <label className="flex items-center gap-2 pb-2 text-sm text-[var(--muted)]">
           <input
             type="checkbox"

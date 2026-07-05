@@ -16,7 +16,7 @@ export default async function EditTenantPage({ params }: { params: { id: string 
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
     supabase
       .from("mieter_positionen")
-      .select("id,bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung")
+      .select("id,bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt")
       .eq("mieter_id", params.id)
       .order("created_at"),
   ]);

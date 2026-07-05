@@ -11,7 +11,11 @@ export type NkRawPosition = {
   umlageschluessel: string | null;
   umlagefaehig: boolean | null;
   jahr: number | null;
-  aufteilung?: string | null; // 'voll' (Default) | 'zeit' = Jahresgesamtkosten
+  // 'voll' (Default) | 'zeit' (Jahreskosten nach Belegungstagen)
+  // | 'verbrauch' (Zwischenablesung) | 'gradtag' (Gradtagszahlen, Heizung)
+  aufteilung?: string | null;
+  verbrauch_mieter?: number | null; // z. B. kWh des Mieters (nur 'verbrauch')
+  verbrauch_gesamt?: number | null; // Gesamtverbrauch des Jahres (nur 'verbrauch')
 };
 
 export type NkTenant = {
@@ -162,6 +166,32 @@ export function belegungsTage(von: string, bis: string): number {
   return Math.max(0, Math.round(t));
 }
 
+// Gradtagszahlen je Monat (Promille, Summe 1000) — STANDARDTABELLE nach
+// VDI 2067 / üblicher Abrechnungspraxis; im Zweifel amtliche Werte prüfen.
+export const GRADTAGSZAHLEN = [170, 150, 130, 80, 40, 20, 0, 0, 30, 80, 120, 180] as const;
+
+/**
+ * Gradtags-Promille des Belegungszeitraums von..bis (beide im selben Jahr,
+ * einschließlich). Volle Monate zählen voll, Übergangsmonate tagegenau
+ * anteilig. Rückgabe als exakter Bruchwert (0..1000).
+ */
+export function gradtagsPromille(jahr: number, von: string, bis: string): number {
+  const vonD = new Date(von);
+  const bisD = new Date(bis);
+  let summe = 0;
+  for (let m = 0; m < 12; m++) {
+    const mStart = Date.UTC(jahr, m, 1);
+    const mEnde = Date.UTC(jahr, m + 1, 0); // letzter Tag des Monats
+    const tageImMonat = new Date(mEnde).getUTCDate();
+    const von_ = Math.max(mStart, vonD.getTime());
+    const bis_ = Math.min(mEnde, bisD.getTime());
+    if (von_ > bis_) continue;
+    const belegt = Math.round((bis_ - von_) / TAG_MS) + 1;
+    summe += GRADTAGSZAHLEN[m] * (belegt / tageImMonat);
+  }
+  return summe;
+}
+
 export function berechneNk(
   jahr: number,
   tenant: NkTenant,
@@ -178,25 +208,56 @@ export function berechneNk(
   // Positionen des Jahres (oder ohne Jahresangabe = Altbestand) berücksichtigen.
   const relevant = positionen.filter((p) => p.jahr == null || p.jahr === jahr);
 
+  const zahl = (n: number) =>
+    new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 }).format(n);
+
+  // Anteil einer 'zeit'-Position (auch Fallback bei fehlenden Verbrauchsdaten).
+  const zeitAnteil = (basis: number, hinweis = ""): Omit<NkLine, "bezeichnung" | "umlageschluessel"> => ({
+    betrag: rund2(basis * faktor),
+    basis,
+    faktorText: `${tage}/${jahrestage} Tage${hinweis}`,
+  });
+
   const umlagefaehig: NkLine[] = relevant
     .filter((p) => p.umlagefaehig === true)
     .map((p) => {
       const basis = p.betrag ?? 0;
+      const kopf = { bezeichnung: p.bezeichnung, umlageschluessel: p.umlageschluessel };
+
       if (p.aufteilung === "zeit") {
         // Betrag = Jahresgesamtkosten → tagegenau nach Belegung aufteilen.
+        return { ...kopf, ...zeitAnteil(basis) };
+      }
+
+      if (p.aufteilung === "verbrauch") {
+        // Zwischenablesung: exakt nach gemessenem Verbrauchsanteil.
+        const vm = p.verbrauch_mieter;
+        const vg = p.verbrauch_gesamt;
+        if (vm == null || vg == null || !(vg > 0) || vm < 0) {
+          // Ohne brauchbare Verbrauchsdaten kein Absturz: tagegenauer Fallback.
+          return { ...kopf, ...zeitAnteil(basis, " — Verbrauchsdaten fehlen") };
+        }
         return {
-          bezeichnung: p.bezeichnung,
-          umlageschluessel: p.umlageschluessel,
-          betrag: rund2(basis * faktor),
+          ...kopf,
+          betrag: rund2(basis * (vm / vg)),
           basis,
-          faktorText: `${tage}/${jahrestage} Tage`,
+          faktorText: `${zahl(vm)}/${zahl(vg)} Verbrauch`,
         };
       }
-      return {
-        bezeichnung: p.bezeichnung,
-        umlageschluessel: p.umlageschluessel,
-        betrag: basis,
-      };
+
+      if (p.aufteilung === "gradtag") {
+        // Heizkosten nach Gradtagszahlen der Belegungsmonate (Übergangsmonat
+        // tagegenau gewichtet).
+        const promille = monate === 0 ? 0 : gradtagsPromille(jahr, von, bis);
+        return {
+          ...kopf,
+          betrag: rund2(basis * (promille / 1000)),
+          basis,
+          faktorText: `${Math.round(promille)}/1000 Gradtagszahlen`,
+        };
+      }
+
+      return { ...kopf, betrag: basis };
     });
 
   const ausgenommen: NkLine[] = relevant

@@ -4,6 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+const AUFTEILUNGEN = ["voll", "zeit", "verbrauch", "gradtag"];
+const aufteilungOk = (v: unknown): string =>
+  AUFTEILUNGEN.includes(String(v)) ? String(v) : "voll";
+
+const numOderNull = (v: FormDataEntryValue | null): number | null => {
+  if (v == null || v === "") return null;
+  const n = Number(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+};
+
 export async function addPosition(mieterId: string, formData: FormData) {
   const supabase = createClient();
   const {
@@ -28,7 +38,9 @@ export async function addPosition(mieterId: string, formData: FormData) {
     jahr: jahr != null && Number.isNaN(jahr) ? null : jahr,
     umlageschluessel: (formData.get("umlageschluessel") as string) || null,
     umlagefaehig: formData.get("umlagefaehig") === "on",
-    aufteilung: formData.get("aufteilung") === "zeit" ? "zeit" : "voll",
+    aufteilung: aufteilungOk(formData.get("aufteilung")),
+    verbrauch_mieter: numOderNull(formData.get("verbrauch_mieter")),
+    verbrauch_gesamt: numOderNull(formData.get("verbrauch_gesamt")),
   });
   if (error) throw new Error(error.message);
 
@@ -73,6 +85,8 @@ export async function updatePosition(
     umlageschluessel: string | null;
     umlagefaehig: boolean;
     aufteilung?: string;
+    verbrauch_mieter?: number | null;
+    verbrauch_gesamt?: number | null;
   },
 ): Promise<{ ok: boolean }> {
   const supabase = createClient();
@@ -87,7 +101,9 @@ export async function updatePosition(
       jahr: f.jahr,
       umlageschluessel: f.umlageschluessel,
       umlagefaehig: f.umlagefaehig,
-      aufteilung: f.aufteilung === "zeit" ? "zeit" : "voll",
+      aufteilung: aufteilungOk(f.aufteilung),
+      verbrauch_mieter: f.verbrauch_mieter ?? null,
+      verbrauch_gesamt: f.verbrauch_gesamt ?? null,
     })
     .eq("id", id);
 
