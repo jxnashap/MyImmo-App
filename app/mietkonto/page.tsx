@@ -1,13 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
-import { sollFuerMonat, zuJahrMonat, ymPlus } from "@/lib/mietkonto";
-import MietkontoBestaetigung, { type MietkontoZeile } from "@/components/MietkontoBestaetigung";
+import { sollFuerMonat, zuJahrMonat } from "@/lib/mietkonto";
+import MietkontoBestaetigung, {
+  type MietkontoZeile,
+  type NacherfassungMieter,
+} from "@/components/MietkontoBestaetigung";
 import type { Tenant, MietZeitraum, Property } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 // Mietkonto: je Monat die erwarteten Mieteingänge sehen und per Klick
-// bestätigen. Soll-Beträge kommen aus lib/mietkonto.ts (Miet-Zeiträume mit
-// Fallback auf die Mieter-Stammdaten).
+// bestätigen — plus Nacherfassen-Modus für offene Vormonate (bis 10 Jahre).
+// Soll-Beträge kommen aus lib/mietkonto.ts (Miet-Zeiträume + Fallback).
 
 export default async function MietkontoPage({
   searchParams,
@@ -20,18 +23,15 @@ export default async function MietkontoPage({
   const aktuellerMonat = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, "0")}`;
   const monat = /^\d{4}-\d{2}$/.test(searchParams.monat ?? "") ? searchParams.monat! : aktuellerMonat;
 
-  const monatVon = `${monat}-01`;
-  const monatBisExkl = `${ymPlus(monat, 1)}-01`;
-
   const [{ data: mieterRows }, { data: zrRows }, { data: einnRows }, { data: propRows }] =
     await Promise.all([
       supabase.from("mieter").select("*").order("nachname"),
       supabase.from("miet_zeitraeume").select("*"),
+      // Alle Miet-Einnahmen (für Monats-Dedup UND Nacherfassung bis 10 Jahre)
       supabase
         .from("einnahmen")
         .select("mieter_id,buchungsdatum,kategorie")
-        .gte("buchungsdatum", monatVon)
-        .lt("buchungsdatum", monatBisExkl),
+        .eq("kategorie", "Miete"),
       supabase.from("properties").select("id,bezeichnung"),
     ]);
 
@@ -42,35 +42,73 @@ export default async function MietkontoPage({
     ((propRows ?? []) as Pick<Property, "id" | "bezeichnung">[]).map((p) => [p.id, p.bezeichnung]),
   );
 
-  const gebuchteMieter = new Set(
-    einnahmen
-      .filter((e) => (e.kategorie ?? "").toLowerCase() === "miete" && zuJahrMonat(e.buchungsdatum) === monat)
-      .map((e) => e.mieter_id)
-      .filter(Boolean) as string[],
-  );
+  // Gebuchte Monate je Mieter (YYYY-MM) — eine Quelle für beide Modi.
+  const gebuchtProMieter = new Map<string, Set<string>>();
+  for (const e of einnahmen) {
+    const ym = zuJahrMonat(e.buchungsdatum);
+    if (!ym || !e.mieter_id) continue;
+    if (!gebuchtProMieter.has(e.mieter_id)) gebuchtProMieter.set(e.mieter_id, new Set());
+    gebuchtProMieter.get(e.mieter_id)!.add(ym);
+  }
 
   const zeilen: MietkontoZeile[] = [];
+  const nacherfassung: NacherfassungMieter[] = [];
+
   for (const m of mieter) {
-    const soll = sollFuerMonat(
-      m,
-      zeitraeume.filter((z) => z.mieter_id === m.id),
-      monat,
-    );
-    if (!soll || soll.gesamt <= 0) continue; // im Monat nicht aktiv / kein Soll
-    zeilen.push({
-      mieterId: m.id,
-      propId: m.prop_id,
-      name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter",
-      objekt: [m.prop_id ? propName.get(m.prop_id) : null, m.einheit].filter(Boolean).join(" · ") || "—",
-      kaltmiete: soll.kaltmiete,
-      nk: soll.nk,
-      stellplatz: soll.stellplatz,
-      gesamt: soll.gesamt,
-      schonGebucht: gebuchteMieter.has(m.id),
-    });
+    const zr = zeitraeume.filter((z) => z.mieter_id === m.id);
+    const name = [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter";
+    const objekt =
+      [m.prop_id ? propName.get(m.prop_id) : null, m.einheit].filter(Boolean).join(" · ") || "—";
+
+    // Monats-Modus
+    const soll = sollFuerMonat(m, zr, monat);
+    if (soll && soll.gesamt > 0) {
+      zeilen.push({
+        mieterId: m.id,
+        propId: m.prop_id,
+        name,
+        objekt,
+        kaltmiete: soll.kaltmiete,
+        nk: soll.nk,
+        stellplatz: soll.stellplatz,
+        gesamt: soll.gesamt,
+        schonGebucht: gebuchtProMieter.get(m.id)?.has(monat) ?? false,
+      });
+    }
+
+    // Nacherfassen-Modus: Engine läuft clientseitig (Startmonat wählbar),
+    // hier nur die Rohdaten mitgeben.
+    if (m.mietbeginn && ((m.kaltmiete ?? 0) + (m.nk_vorauszahlung ?? 0) > 0 || zr.length > 0)) {
+      nacherfassung.push({
+        mieterId: m.id,
+        propId: m.prop_id,
+        name,
+        objekt,
+        mieter: {
+          kaltmiete: m.kaltmiete,
+          nk_vorauszahlung: m.nk_vorauszahlung,
+          stellplatz_miete: m.stellplatz_miete ?? null,
+          mietbeginn: m.mietbeginn,
+          mietende: m.mietende,
+        },
+        zeitraeume: zr.map((z) => ({
+          von: z.von,
+          bis: z.bis,
+          kaltmiete: z.kaltmiete,
+          nk_vorauszahlung: z.nk_vorauszahlung,
+          stellplatz_miete: z.stellplatz_miete,
+        })),
+        gebuchteMonate: Array.from(gebuchtProMieter.get(m.id) ?? []),
+      });
+    }
   }
 
   return (
-    <MietkontoBestaetigung monat={monat} aktuellerMonat={aktuellerMonat} zeilen={zeilen} />
+    <MietkontoBestaetigung
+      monat={monat}
+      aktuellerMonat={aktuellerMonat}
+      zeilen={zeilen}
+      nacherfassung={nacherfassung}
+    />
   );
 }
