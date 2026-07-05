@@ -6,6 +6,9 @@ import { deleteProperty } from "@/lib/actions/properties";
 import { deleteEinnahme, deleteKosten, deleteKredit, deleteVerbrauch, deleteNotiz } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import Co2Rechner from "@/components/Co2Rechner";
+import MarktwertCard from "@/components/MarktwertCard";
+import { refreshBewertung } from "@/lib/actions/bewertung";
+import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
 
 type Kredit = {
@@ -37,6 +40,12 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       supabase.from("verbrauch").select("id,buchungsdatum,art,menge,einheit,verbrauchkosten").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
       supabase.from("notizen").select("id,titel,kategorie,inhalt").eq("prop_id", id),
     ]);
+
+  // Bewertung: Historie + Comparables laden (separat, hängen an prop.id)
+  const [{ data: bewHist }, { data: vglAngebote }] = await Promise.all([
+    supabase.from("bewertung_historie").select("datum,marktwert").eq("immobilie_id", id).order("datum", { ascending: true }),
+    supabase.from("vergleichsangebote").select("quelle,art,flaeche,zimmer,preis,preis_pro_qm,distanz_km").eq("immobilie_id", id).order("distanz_km", { ascending: true }),
+  ]);
 
   if (!prop) notFound();
   const p = prop as Property;
@@ -111,6 +120,32 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   ].filter((i) => i.val > 0);
   const cfMax = Math.max(1, ...cfItems.map((i) => i.val));
 
+  // ---- Immobilienbewertung (ImmoWertV) ----
+  const jetztJahr = new Date().getFullYear();
+  const bewErg = bewerten(
+    { typ: p.typ, obj_status: p.obj_status, flaeche: p.flaeche, grundstuecksflaeche: p.grundstuecksflaeche ?? null, baujahr: p.baujahr, miete: p.miete },
+    {
+      bodenrichtwertM2: p.bodenrichtwert ?? null,
+      liegenschaftszinsProzent: p.liegenschaftszins ?? null,
+      restnutzungsdauer: p.restnutzungsdauer ?? null,
+      vergleichspreisM2: p.vergleichspreis_m2 ?? null,
+      vergleichsmieteM2: p.vergleichsmiete_m2 ?? null,
+    },
+    jetztJahr,
+    (p.bewertungsverfahren as "vergleich" | "ertrag" | "sach" | null) ?? null,
+  );
+  const bewHistorie = ((bewHist ?? []) as { datum: string; marktwert: number | null }[])
+    .filter((h) => h.marktwert != null)
+    .map((h) => ({ datum: h.datum, marktwert: Number(h.marktwert) }));
+  const comparables = ((vglAngebote ?? []) as Record<string, unknown>[]).map((c) => ({
+    quelle: String(c.quelle ?? ""), art: (c.art as string) ?? null,
+    flaeche: c.flaeche != null ? Number(c.flaeche) : null,
+    zimmer: c.zimmer != null ? Number(c.zimmer) : null,
+    preis: c.preis != null ? Number(c.preis) : null,
+    preis_pro_qm: c.preis_pro_qm != null ? Number(c.preis_pro_qm) : null,
+    distanz_km: c.distanz_km != null ? Number(c.distanz_km) : null,
+  }));
+
   return (
     <div className="fade-up">
       <div className="topbar">
@@ -179,6 +214,27 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           </div>
         </div>
       </div>
+
+      {/* Immobilienbewertung (ImmoWertV) */}
+      <MarktwertCard
+        erg={bewErg}
+        defaults={{
+          bodenrichtwert: p.bodenrichtwert ?? null,
+          liegenschaftszins: p.liegenschaftszins ?? null,
+          restnutzungsdauer: p.restnutzungsdauer ?? null,
+          vergleichspreis_m2: p.vergleichspreis_m2 ?? null,
+          vergleichsmiete_m2: p.vergleichsmiete_m2 ?? null,
+          bewertungsverfahren: p.bewertungsverfahren ?? null,
+          bodenrichtwert_stichtag: p.bodenrichtwert_stichtag ?? null,
+        }}
+        marktwertStand={p.marktwert_stand ?? null}
+        quelleninfo={p.bewertung_quelleninfo ?? null}
+        historie={bewHistorie}
+        comparables={comparables}
+        adresse={p.adresse}
+        koordinaten={{ lat: p.latitude ?? null, lng: p.longitude ?? null }}
+        action={refreshBewertung.bind(null, id)}
+      />
 
       {/* Mieter dieser Immobilie */}
       <div className="section mb-20">

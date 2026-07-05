@@ -24,6 +24,19 @@ export type Property = {
   afa_betrag: number | null;         // manuell: fester AfA-Betrag €/Jahr (§ 7b / § 7i/7h)
   afa_gebaeudeanteil: number | null; // optionaler Gebäudeanteil % je Objekt
   notiz_import: string | null;
+  // Immobilienbewertung (ImmoWertV) — adressbasiert, regional
+  latitude?: number | null;
+  longitude?: number | null;
+  bodenrichtwert?: number | null;            // €/m²
+  bodenrichtwert_stichtag?: string | null;
+  liegenschaftszins?: number | null;         // % p.a.
+  restnutzungsdauer?: number | null;         // Jahre
+  vergleichspreis_m2?: number | null;        // €/m²
+  vergleichsmiete_m2?: number | null;        // €/m²/Monat
+  marktwert_aktuell?: number | null;
+  marktwert_stand?: string | null;
+  bewertungsverfahren?: string | null;       // 'vergleich' | 'ertrag' | 'sach'
+  bewertung_quelleninfo?: Record<string, unknown> | null;
   created_at: string | null;
   updated_at: string | null;
 };
