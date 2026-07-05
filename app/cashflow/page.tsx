@@ -10,8 +10,10 @@ import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import EinnahmenListe from "@/components/lists/EinnahmenListe";
 import KostenListe from "@/components/lists/KostenListe";
 import CashflowListe from "@/components/lists/CashflowListe";
+import AufklappSection from "@/components/AufklappSection";
+import WiederkehrManager from "@/components/WiederkehrManager";
 import type { RawPoint } from "@/lib/zeitraum";
-import type { Einnahme, Kosten, Property, Tenant } from "@/lib/types";
+import type { Einnahme, Kosten, Property, Tenant, WiederkehrVorlage } from "@/lib/types";
 
 export default async function CashflowPage({
   searchParams,
@@ -19,15 +21,35 @@ export default async function CashflowPage({
   searchParams: { typ?: string; prop?: string; jahr?: string };
 }) {
   const supabase = createClient();
-  const [{ data: einn }, { data: kost }, { data: props }, { data: miet }] = await Promise.all([
+  const [{ data: einn }, { data: kost }, { data: props }, { data: miet }, { data: vRows }] = await Promise.all([
     supabase.from("einnahmen").select("*").order("buchungsdatum", { ascending: false }),
     supabase.from("kosten").select("*").order("buchungsdatum", { ascending: false }),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
-    supabase.from("mieter").select("id,vorname,nachname").order("nachname"),
+    supabase.from("mieter").select("id,vorname,nachname,prop_id").order("nachname"),
+    supabase.from("wiederkehrende_buchungen").select("*").order("created_at", { ascending: false }),
   ]);
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const tenants = (miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname">[];
+
+  // ---- Wiederkehrende Buchungen (ausklappbarer Bereich) ----
+  const wkVorlagen = (vRows ?? []) as WiederkehrVorlage[];
+  const wkGebucht = new Map<string, string[]>();
+  for (const r of [...((einn ?? []) as Einnahme[]), ...((kost ?? []) as Kosten[])]) {
+    const id = (r as { wiederkehr_id?: string | null }).wiederkehr_id;
+    if (!id || !r.buchungsdatum) continue;
+    if (!wkGebucht.has(id)) wkGebucht.set(id, []);
+    wkGebucht.get(id)!.push(r.buchungsdatum);
+  }
+  const wkMitStatus = wkVorlagen.map((v) => ({ ...v, gebuchteDaten: wkGebucht.get(v.id) ?? [] }));
+  const wkProps = properties.map((p) => ({ id: p.id, bezeichnung: p.bezeichnung ?? "Objekt" }));
+  const wkPropNamen: Record<string, string> = Object.fromEntries(wkProps.map((p) => [p.id, p.bezeichnung]));
+  const wkMieter = ((miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname" | "prop_id">[]).map((m) => ({
+    id: m.id,
+    name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter",
+    prop_id: m.prop_id,
+  }));
+  const wkMieterNamen: Record<string, string> = Object.fromEntries(wkMieter.map((m) => [m.id, m.name]));
 
   // ---- Filter (prop + jahr wirken auf alles; typ steuert nur die Listen) ----
   const aktuellesJahr = new Date().getFullYear();
@@ -172,6 +194,24 @@ export default async function CashflowPage({
         {katBlock("Einnahmen nach Kategorie", einKat, "var(--green)")}
         {katBlock("Ausgaben nach Kategorie", ausKat, "var(--red)")}
       </div>
+
+      {/* Wiederkehrende Buchungen — ausklappbar, nicht als eigener Reiter */}
+      <AufklappSection
+        titel="🔁 Wiederkehrende Buchungen"
+        untertitel={
+          wkVorlagen.length > 0
+            ? `${wkVorlagen.length} Vorlage${wkVorlagen.length === 1 ? "" : "n"} · Miete, Grundsteuer, Müll … automatisch im Zyklus erzeugen`
+            : "Miete, Grundsteuer, Müll … einmal anlegen, im Zyklus erzeugen (rückwirkend bis 10 Jahre)"
+        }
+      >
+        <WiederkehrManager
+          vorlagen={wkMitStatus}
+          propNamen={wkPropNamen}
+          mieterNamen={wkMieterNamen}
+          properties={wkProps}
+          mieter={wkMieter}
+        />
+      </AufklappSection>
 
       <FilterBar filters={filters} />
 

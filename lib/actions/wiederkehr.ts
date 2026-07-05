@@ -60,7 +60,7 @@ export async function createVorlage(fd: FormData): Promise<WkResult> {
   });
   if (error) return { ok: false, error: "Speichern fehlgeschlagen." };
 
-  revalidatePath("/wiederkehrend");
+  revalidatePath("/cashflow");
   return { ok: true };
 }
 
@@ -73,7 +73,7 @@ export async function setVorlageAktiv(id: string, aktiv: boolean): Promise<WkRes
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) return { ok: false, error: "Konnte Status nicht ändern." };
-  revalidatePath("/wiederkehrend");
+  revalidatePath("/cashflow");
   return { ok: true };
 }
 
@@ -88,7 +88,7 @@ export async function deleteVorlage(id: string): Promise<WkResult> {
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) return { ok: false, error: "Löschen fehlgeschlagen." };
-  revalidatePath("/wiederkehrend");
+  revalidatePath("/cashflow");
   return { ok: true };
 }
 
@@ -140,7 +140,6 @@ export async function erzeugeBuchungen(
   const { error } = await supabase.from(tabelle).insert(rows);
   if (error) return { ok: false, anzahl: 0, error: "Erzeugen fehlgeschlagen." };
 
-  revalidatePath("/wiederkehrend");
   revalidatePath("/cashflow");
   revalidatePath(v.art === "einnahme" ? "/einnahmen" : "/kosten");
   return { ok: true, anzahl: rows.length };

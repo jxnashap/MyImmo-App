@@ -13,7 +13,6 @@ const VERWALTUNG: { href: string; label: string; icon: string }[] = [
   { href: "/tenants", label: "Mieter", icon: "👤" },
   { href: "/cashflow", label: "Ein- & Ausgaben", icon: "💶" },
   { href: "/mietkonto", label: "Mietkonto", icon: "🧾" },
-  { href: "/wiederkehrend", label: "Wiederkehrend", icon: "🔁" },
   { href: "/verbrauch", label: "Verbrauch", icon: "⚡" },
   { href: "/kredite", label: "Kredite", icon: "🏦" },
   { href: "/steuer", label: "Steuer", icon: "§" },
