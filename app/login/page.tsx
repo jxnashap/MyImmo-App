@@ -38,6 +38,7 @@ export default function LoginPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [code, setCode] = useState(""); // Beta-Zugangscode (nur Registrierung)
 
   // Hinweis nach Kontolöschung erst nach dem Mount setzen (verhindert
   // Hydration-Mismatch, da window serverseitig nicht existiert).
@@ -64,6 +65,11 @@ export default function LoginPage() {
         window.location.assign("/");
       }
     } else {
+      if (code.trim() !== process.env.NEXT_PUBLIC_BETA_CODE) {
+        setError("Ungültiger Zugangscode.");
+        setLoading(false);
+        return;
+      }
       if (!consent) {
         setError("Bitte stimme AGB, Datenschutz und Auftragsverarbeitung zu.");
         setLoading(false);
@@ -167,6 +173,21 @@ export default function LoginPage() {
           />
 
           {mode === "signup" && (
+            <input
+              type="text"
+              required
+              placeholder="Zugangscode (Beta)"
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value);
+                error && setError(null);
+              }}
+              className="input w-full text-[15px]"
+              style={{ padding: "12px 14px" }}
+            />
+          )}
+
+          {mode === "signup" && (
             <label className="flex items-start gap-2 text-[13px]" style={{ color: "var(--muted)" }}>
               <input
                 type="checkbox"
@@ -222,16 +243,19 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Mit Google anmelden */}
-        <button
-          type="button"
-          onClick={googleLogin}
-          className="mt-3 flex w-full items-center justify-center gap-3 rounded-lg border py-3 text-[15px] font-medium transition hover:brightness-110"
-          style={{ background: "var(--bg3)", borderColor: "var(--line2)", color: "var(--text)" }}
-        >
-          <GoogleIcon />
-          Mit Google anmelden
-        </button>
+        {/* Mit Google anmelden — während der Beta nur im Login-Modus,
+            damit die Registrierung nicht am Zugangscode vorbei läuft */}
+        {mode === "login" && (
+          <button
+            type="button"
+            onClick={googleLogin}
+            className="mt-3 flex w-full items-center justify-center gap-3 rounded-lg border py-3 text-[15px] font-medium transition hover:brightness-110"
+            style={{ background: "var(--bg3)", borderColor: "var(--line2)", color: "var(--text)" }}
+          >
+            <GoogleIcon />
+            Mit Google anmelden
+          </button>
+        )}
 
         {mode === "login" && (
           <div className="mt-5 text-center">
