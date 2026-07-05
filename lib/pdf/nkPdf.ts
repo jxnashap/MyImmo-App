@@ -272,12 +272,10 @@ export async function buildNkPdf(
   };
   sumLine("Summe umlagefähige Kosten", euro(a.umlageGesamt));
   if (a.co2) {
-    sumLine(
-      `CO2-Gutschrift Vermieteranteil (${a.co2.vermieterProzent} %)`,
-      `- ${euro(a.co2.vermieterAnteil)}`,
-      font,
-      GREEN,
-    );
+    // kleinere Schrift: langes Label + Betrag dürfen sich nicht überlagern
+    text(sumLabel, y, "CO2-Gutschrift Vermieteranteil", 9, font, GREEN);
+    right(RIGHT, y, `- ${euro(a.co2.vermieterAnteil)}`, 10, font, GREEN);
+    y -= 16;
     sumLine("Von Ihnen zu tragende Kosten", euro(a.kostenNachCo2));
   }
   sumLine(
