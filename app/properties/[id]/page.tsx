@@ -81,6 +81,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     ["Typ", p.typ || "–"],
     ["Adresse", p.adresse || "–"],
     ["Wohnfläche", p.flaeche ? `${p.flaeche} m²` : "–"],
+    ...(p.grundstuecksflaeche ? [["Grundstücksfläche", `${p.grundstuecksflaeche} m²`]] as [string, React.ReactNode][] : []),
     ["Zimmer", p.zimmer ?? "–"],
     ["Baujahr", p.baujahr ?? "–"],
     ["Kaufpreis", p.kaufpreis ? euro(p.kaufpreis) : "–"],

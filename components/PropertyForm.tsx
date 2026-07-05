@@ -28,12 +28,13 @@ const AFA_METHODEN = [
 
 // USt-Hinweis für Garage/Stellplatz + Garagenkomplex (§ 4 Nr. 12 S. 2 UStG).
 const GARAGE_UST =
-  "USt-Hinweis: Die Vermietung von Garagen/Stellplätzen ist grundsätzlich umsatzsteuerpflichtig (§ 4 Nr. 12 S. 2 UStG) — steuerfrei nur als Nebenleistung zur (steuerfreien) Wohnungsvermietung. Keine Steuerberatung.";
+  "USt-Hinweis: Die Vermietung von Garagen/Stellplätzen ist grundsätzlich umsatzsteuerpflichtig (§ 4 Nr. 12 S. 2 UStG) — steuerfrei nur als Nebenleistung zur (steuerfreien) Wohnungsvermietung. Als Kleinunternehmer wird i. d. R. keine USt erhoben (§ 19 UStG). Keine Steuerberatung.";
 
 // Feld-Konfiguration je Immobilienart: Sichtbarkeit, Labels und Vorgaben.
 type TypConfig = {
   flaeche: string;                 // Label für das flaeche-Feld
   flaecheHinweis?: string;         // z. B. "(optional)"
+  grundstueck?: boolean;           // zusätzliches Feld „Grundstücksfläche (m²)"
   einheiten: string | false;      // Label für einheiten_anzahl (false = ausblenden)
   baujahr: boolean;
   miete: boolean;
@@ -50,7 +51,7 @@ type TypConfig = {
 
 const CONFIG: Record<string, TypConfig> = {
   Eigentumswohnung: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: true, zimmer: true, energie: true, afa: true, status: "Vermietet", gebHinweis: "Bei Eigentumswohnungen oft 70–75 % (Grund- und Gemeinschaftsanteil) — Feld editierbar." },
-  Einfamilienhaus: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: false, zimmer: true, energie: true, afa: true, status: "Vermietet" },
+  Einfamilienhaus: { flaeche: "Wohnfläche (m²)", grundstueck: true, einheiten: false, baujahr: true, miete: true, hausgeld: false, zimmer: true, energie: true, afa: true, status: "Vermietet" },
   Mehrfamilienhaus: { flaeche: "Wohnfläche gesamt (m²)", einheiten: "Anzahl Wohneinheiten", baujahr: true, miete: true, mieteLabel: "Kaltmiete / Mo. gesamt (€)", hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet" },
   Gewerbeimmobilie: { flaeche: "Nutzfläche (m²)", einheiten: false, baujahr: true, miete: true, hausgeld: false, zimmer: false, energie: true, afa: true, status: "Vermietet", afaHinweis: "Gewerbe im Privatvermögen i. d. R. 2 % linear. Im Betriebsvermögen kann 3 % gelten (§ 7 Abs. 4 Nr. 1 EStG) — dann „Manueller Betrag“ wählen. ", ustHinweis: "USt-Hinweis: Die Vermietung von Gewerbeflächen kann umsatzsteuerpflichtig sein bzw. zur Umsatzsteuer optierbar (§ 9 UStG). Keine Steuerberatung." },
   Ferienimmobilie: { flaeche: "Wohnfläche (m²)", einheiten: false, baujahr: true, miete: true, mieteLabel: "Kaltmiete / Mo. (= Mieteinnahme) (€)", hausgeld: true, zimmer: true, energie: true, afa: true, status: "Feriennutzung" },
@@ -110,6 +111,9 @@ export default function PropertyForm({
           <label>{cfg.flaeche}{cfg.flaecheHinweis ? ` ${cfg.flaecheHinweis}` : ""}</label>
           <input type="number" step="0.01" name="flaeche" defaultValue={v("flaeche")} placeholder="75" />
         </div>
+        {cfg.grundstueck && (
+          <div className="form-group"><label>Grundstücksfläche (m²)</label><input type="number" step="0.01" name="grundstuecksflaeche" defaultValue={v("grundstuecksflaeche")} placeholder="450" /></div>
+        )}
         {cfg.einheiten && (
           <div className="form-group"><label>{cfg.einheiten}</label><input type="number" name="einheiten_anzahl" defaultValue={v("einheiten_anzahl")} placeholder="z. B. 8" /></div>
         )}
