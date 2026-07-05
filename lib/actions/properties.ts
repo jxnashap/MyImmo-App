@@ -24,6 +24,7 @@ function parse(formData: FormData) {
     kaufpreis: num("kaufpreis"),
     wert: num("wert"),
     flaeche: num("flaeche"),
+    grundstuecksflaeche: num("grundstuecksflaeche"),
     baujahr: num("baujahr"),
     miete: num("miete"),
     hausgeld: num("hausgeld"),

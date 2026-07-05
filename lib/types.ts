@@ -11,6 +11,7 @@ export type Property = {
   kaufpreis: number | null;
   wert: number | null;        // aktueller Wert
   flaeche: number | null;
+  grundstuecksflaeche?: number | null; // Grundstücksfläche (m²), getrennt von flaeche
   baujahr: number | null;
   miete: number | null;       // Soll-Miete des Objekts
   hausgeld: number | null;
