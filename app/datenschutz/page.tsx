@@ -143,13 +143,11 @@ export default function DatenschutzPage() {
         keine Marketing- oder Statistik-Cookies.
       </p>
 
-      <H2>7. Schriftarten (Google Fonts)</H2>
+      <H2>7. Schriftarten</H2>
       <p>
-        Die App lädt die Schriftarten „Fraunces" und „Outfit" von Google-Servern
-        (fonts.googleapis.com / fonts.gstatic.com). Dabei wird Ihre IP-Adresse an Google
-        übermittelt. <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. f DSGVO (einheitliche,
-        performante Darstellung). Google kann diese Daten auch in den USA verarbeiten
-        (Absicherung s. Ziffer 5).
+        Die Schriftarten „Fraunces" und „Outfit" werden lokal von unseren eigenen Servern
+        geladen (Self-Hosting). Es findet dabei <strong>keine</strong> Verbindung zu
+        Google-Servern statt; Ihre IP-Adresse wird nicht an Google übermittelt.
       </p>
 
       <H2>8. Speicherdauer und Löschung</H2>

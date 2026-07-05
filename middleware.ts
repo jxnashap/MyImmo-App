@@ -12,11 +12,11 @@ function buildCsp(nonce: string): string {
     "default-src 'self'",
     // Skripte nur vom eigenen Origin + per Nonce (kein 'unsafe-inline').
     `script-src 'self' 'nonce-${nonce}'`,
-    // Inline-Styles (style={{}}) + Google-Fonts-Stylesheet.
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    // Inline-Styles (style={{}}); Schriften sind selbst gehostet.
+    "style-src 'self' 'unsafe-inline'",
     // Charts (SVG), hochgeladene Belege (base64/blob), PDF-Vorschau.
     "img-src 'self' data: blob:",
-    "font-src 'self' https://fonts.gstatic.com data:",
+    "font-src 'self' data:",
     // Supabase REST + Realtime.
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
     "frame-ancestors 'none'",
