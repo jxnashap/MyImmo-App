@@ -118,16 +118,7 @@ export default function WiederkehrManager({
   const mieterFuerObjekt = propId ? mieter.filter((m) => m.prop_id === propId) : mieter;
 
   return (
-    <div className="fade-up">
-      <div className="topbar">
-        <div>
-          <div className="topbar-title">Wiederkehrende Buchungen</div>
-          <div className="topbar-sub">
-            Mieten, Grundsteuer, Müll & Co. einmal anlegen — MyImmo erzeugt die Buchungen im Zyklus, rückwirkend bis 10 Jahre.
-          </div>
-        </div>
-      </div>
-
+    <div>
       {/* Neue Vorlage */}
       <div className="section mb-20">
         <div className="section-header"><h3>Neue Vorlage</h3></div>
