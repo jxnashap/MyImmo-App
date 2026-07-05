@@ -63,6 +63,19 @@ export type Tenant = {
   created_at: string | null;
 };
 
+export type MietZeitraum = {
+  id: string;
+  user_id: string;
+  mieter_id: string;
+  prop_id: string | null;
+  von: string;                       // erster Monat (YYYY-MM-01)
+  bis: string | null;                // letzter Monat (YYYY-MM-01) oder null = laufend
+  kaltmiete: number | null;
+  nk_vorauszahlung: number | null;
+  stellplatz_miete: number | null;
+  created_at: string | null;
+};
+
 export type Einnahme = {
   id: string;
   prop_id: string | null;
