@@ -40,8 +40,14 @@ function parse(formData: FormData) {
   };
 }
 
-// Legt bei vermieteter Miete / vorhandenem Hausgeld automatisch wiederkehrende
-// Buchungen an — aber nur, wenn noch keine solche Buchung existiert (idempotent).
+// Pflegt beim Speichern einer Immobilie die zugehörigen WIEDERKEHR-VORLAGEN
+// (Miete als Einnahme, Hausgeld als Kosten) — statt wie früher eine einzelne
+// Einnahme mit irreführendem wiederkehrend=true anzulegen:
+// - fehlt die Vorlage → anlegen (monatlich, Start heute)
+// - Betrag geändert   → Vorlage aktualisieren
+// - Voraussetzung entfällt (Status ≠ Vermietet / Betrag leer) → deaktivieren
+// Die Buchungen selbst erzeugt weiterhin der Nutzer über „Wiederkehrende
+// Buchungen" auf /cashflow (bewusst kein stilles Auto-Insert).
 type Parsed = ReturnType<typeof parse>;
 async function autoBuchungen(
   supabase: ReturnType<typeof createClient>,
@@ -51,41 +57,46 @@ async function autoBuchungen(
 ) {
   const heute = new Date().toISOString().split("T")[0];
 
-  if (p.miete && p.miete > 0 && p.obj_status === "Vermietet") {
-    const { data: vorhanden } = await supabase
-      .from("einnahmen")
-      .select("id")
+  const pflegeVorlage = async (
+    art: "einnahme" | "kosten",
+    kategorie: string,
+    betrag: number | null,
+    aktivSoll: boolean,
+    beschreibung: string,
+  ) => {
+    const { data: rows } = await supabase
+      .from("wiederkehrende_buchungen")
+      .select("id,betrag,aktiv")
       .eq("prop_id", propId)
-      .eq("kategorie", "Miete")
-      .eq("wiederkehrend", true)
+      .eq("art", art)
+      .eq("kategorie", kategorie)
       .limit(1);
-    if (!vorhanden?.length) {
-      await supabase.from("einnahmen").insert({
-        user_id: userId, prop_id: propId, buchungsdatum: heute,
-        kategorie: "Miete", betrag: p.miete,
-        beschreibung: `Kaltmiete ${p.bezeichnung} (automatisch erfasst)`,
-        wiederkehrend: true,
-      });
-    }
-  }
+    const vorhanden = rows?.[0] as { id: string; betrag: number | null; aktiv: boolean | null } | undefined;
 
-  if (p.hausgeld && p.hausgeld > 0) {
-    const { data: vorhanden } = await supabase
-      .from("kosten")
-      .select("id")
-      .eq("prop_id", propId)
-      .eq("kategorie", "Hausgeld / WEG")
-      .eq("wiederkehrend", true)
-      .limit(1);
-    if (!vorhanden?.length) {
-      await supabase.from("kosten").insert({
-        user_id: userId, prop_id: propId, buchungsdatum: heute,
-        kategorie: "Hausgeld / WEG", betrag: p.hausgeld,
-        beschreibung: `Hausgeld ${p.bezeichnung} (automatisch erfasst)`,
-        wiederkehrend: true,
-      });
+    if (aktivSoll && betrag && betrag > 0) {
+      if (!vorhanden) {
+        await supabase.from("wiederkehrende_buchungen").insert({
+          user_id: userId, art, prop_id: propId, kategorie, betrag,
+          beschreibung, zyklus: "monatlich", start_datum: heute, ende_datum: null, aktiv: true,
+        });
+      } else if (Number(vorhanden.betrag) !== betrag || vorhanden.aktiv !== true) {
+        await supabase.from("wiederkehrende_buchungen")
+          .update({ betrag, aktiv: true }).eq("id", vorhanden.id);
+      }
+    } else if (vorhanden && vorhanden.aktiv) {
+      // Voraussetzung entfallen → Vorlage deaktivieren (bestehende Buchungen bleiben).
+      await supabase.from("wiederkehrende_buchungen").update({ aktiv: false }).eq("id", vorhanden.id);
     }
-  }
+  };
+
+  await pflegeVorlage(
+    "einnahme", "Miete", p.miete, p.obj_status === "Vermietet",
+    `Kaltmiete ${p.bezeichnung} (automatisch)`,
+  );
+  await pflegeVorlage(
+    "kosten", "Hausgeld / WEG", p.hausgeld, true,
+    `Hausgeld ${p.bezeichnung} (automatisch)`,
+  );
 }
 
 export async function createProperty(formData: FormData) {
@@ -107,6 +118,7 @@ export async function createProperty(formData: FormData) {
 
   revalidatePath("/properties");
   revalidatePath("/");
+  revalidatePath("/cashflow");
   redirect(flashUrl("/properties", "Immobilie angelegt."));
 }
 
@@ -125,6 +137,7 @@ export async function updateProperty(id: string, formData: FormData) {
 
   revalidatePath("/properties");
   revalidatePath("/");
+  revalidatePath("/cashflow");
   redirect(flashUrl("/properties", "Immobilie gespeichert."));
 }
 
