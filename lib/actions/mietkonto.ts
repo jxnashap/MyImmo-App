@@ -30,6 +30,20 @@ export async function bestaetigeMieteingang(input: {
     ? Number(input.nk_anteil)
     : null;
 
+  // Serverseitige Idempotenz: gleicher Mieter + gleiches Zahlungsdatum ist
+  // schon gebucht (Doppelklick/doppelter Request) → nicht erneut anlegen.
+  const { data: schonDa } = await supabase
+    .from("einnahmen")
+    .select("id")
+    .eq("mieter_id", input.mieter_id)
+    .eq("kategorie", "Miete")
+    .eq("buchungsdatum", input.buchungsdatum)
+    .limit(1);
+  if (schonDa?.length) {
+    revalidatePath("/mietkonto");
+    return { ok: true };
+  }
+
   const { error } = await supabase.from("einnahmen").insert({
     user_id: user.id,
     mieter_id: input.mieter_id,
@@ -74,17 +88,39 @@ export async function bestaetigeMehrere(
   if (gueltig.length === 0) return { ok: false, anzahl: 0, error: "Keine gültigen Zeilen ausgewählt." };
   if (gueltig.length > 600) return { ok: false, anzahl: 0, error: "Zu viele Zeilen auf einmal (max. 600)." };
 
-  const rows = gueltig.map((z) => ({
-    user_id: user.id,
-    mieter_id: z.mieter_id,
-    prop_id: z.prop_id,
-    buchungsdatum: z.buchungsdatum,
-    kategorie: "Miete",
-    betrag: Number(z.betrag),
-    beschreibung: "Mieteingang (Nacherfassung)",
-    nk_anteil: z.nk_anteil != null && Number.isFinite(Number(z.nk_anteil)) ? Number(z.nk_anteil) : null,
-    wiederkehrend: true,
-  }));
+  // Serverseitige Idempotenz: bereits gebuchte (Mieter, Datum)-Paare überspringen
+  // (Doppelklick/doppelter Request) — zusätzlich Dubletten innerhalb der Auswahl.
+  const mieterIds = Array.from(new Set(gueltig.map((z) => z.mieter_id)));
+  const daten = Array.from(new Set(gueltig.map((z) => z.buchungsdatum)));
+  const { data: vorhandene } = await supabase
+    .from("einnahmen")
+    .select("mieter_id,buchungsdatum")
+    .eq("kategorie", "Miete")
+    .in("mieter_id", mieterIds)
+    .in("buchungsdatum", daten);
+  const gebucht = new Set((vorhandene ?? []).map((v) => `${v.mieter_id}|${v.buchungsdatum}`));
+
+  const rows: Record<string, unknown>[] = [];
+  for (const z of gueltig) {
+    const key = `${z.mieter_id}|${z.buchungsdatum}`;
+    if (gebucht.has(key)) continue;
+    gebucht.add(key);
+    rows.push({
+      user_id: user.id,
+      mieter_id: z.mieter_id,
+      prop_id: z.prop_id,
+      buchungsdatum: z.buchungsdatum,
+      kategorie: "Miete",
+      betrag: Number(z.betrag),
+      beschreibung: "Mieteingang (Nacherfassung)",
+      nk_anteil: z.nk_anteil != null && Number.isFinite(Number(z.nk_anteil)) ? Number(z.nk_anteil) : null,
+      wiederkehrend: true,
+    });
+  }
+  if (rows.length === 0) {
+    revalidatePath("/mietkonto");
+    return { ok: true, anzahl: 0 };
+  }
 
   const { error } = await supabase.from("einnahmen").insert(rows);
   if (error) return { ok: false, anzahl: 0, error: "Buchen fehlgeschlagen." };
