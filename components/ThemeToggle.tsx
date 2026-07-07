@@ -5,14 +5,14 @@ import { useEffect, useState } from "react";
 type Theme = "dark" | "light";
 
 export default function ThemeToggle({ variant = "full" }: { variant?: "full" | "icon" }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
     const saved =
       (typeof localStorage !== "undefined" &&
         (localStorage.getItem("theme") as Theme | null)) ||
       (document.documentElement.getAttribute("data-theme") as Theme | null) ||
-      "dark";
+      "light";
     setTheme(saved);
   }, []);
 
