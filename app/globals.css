@@ -154,7 +154,7 @@ h1, h2, h3, .serif { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif
 /* SIDEBAR */
 .sidebar { background: var(--bg2); border-right: 1px solid var(--line); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .sidebar-logo { padding: 24px 20px 18px; border-bottom: 1px solid var(--line); }
-.sidebar-logo h1 { font-family: 'Fraunces', serif; font-size: 20px; color: var(--gold); letter-spacing: -0.3px; }
+.sidebar-logo h1 { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 20px; color: var(--gold); letter-spacing: -0.3px; }
 .sidebar-logo h1 span { font-style: italic; font-weight: 300; }
 .sidebar-logo p { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.07em; text-transform: uppercase; }
 .sidebar-section { padding: 16px 12px 6px; }
@@ -177,7 +177,7 @@ h1, h2, h3, .serif { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif
 
 /* TOPBAR */
 .topbar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; gap: 16px; }
-.topbar-title { font-family: 'Fraunces', serif; font-size: 24px; color: var(--text); }
+.topbar-title { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 24px; color: var(--text); }
 .topbar-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
 /* SUBTABS */
@@ -209,14 +209,14 @@ h1, h2, h3, .serif { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif
 .kpi-card { background: var(--bg3); border-radius: 8px; padding: 16px 18px; border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(0,0,0,0.06); transition: border-color 0.15s, box-shadow 0.15s; }
 .kpi-card:hover { border-color: var(--line2); box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
 .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
-.kpi-value { font-family: 'Fraunces', serif; font-size: 22px; color: var(--text); line-height: 1; }
+.kpi-value { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 22px; color: var(--text); line-height: 1; }
 .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 5px; display: flex; align-items: center; gap: 4px; }
 
 /* STAT BOXES */
 .stat-box { background: var(--bg3); border-radius: 8px; padding: 14px 16px; border: 1px solid var(--line); }
 .stat-box.highlight { background: var(--gold-pale); border-color: var(--gold-dim); }
 .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
-.stat-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.1; }
+.stat-val { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.1; }
 .stat-val.gold { color: var(--gold); }
 .stat-val.green { color: var(--green); }
 .stat-val.red { color: var(--red); }
@@ -308,7 +308,7 @@ tr.no-hover:hover td { background: transparent; }
 
 /* FORMS (Erfassungsseiten) */
 .form-box { background: var(--bg2); border: 1px solid var(--line2); border-radius: 14px; padding: 28px; width: 100%; max-width: 580px; }
-.form-box h3 { font-family: 'Fraunces', serif; font-size: 20px; margin-bottom: 4px; }
+.form-box h3 { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 20px; margin-bottom: 4px; }
 .form-box > p { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 .form-row.single { grid-template-columns: 1fr; }
@@ -335,7 +335,7 @@ tr.no-hover:hover td { background: transparent; }
 .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
 /* SECTION TITLE (kalkulator) */
-.section-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+.section-title { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 20px; font-weight: 600; margin-bottom: 4px; }
 .section-intro { font-size: 12px; color: var(--muted); margin-bottom: 22px; }
 
 /* KOMPATIBILITÄT — Klassen, die einzelne Formular-/Listenseiten noch nutzen */
@@ -406,7 +406,7 @@ tr.no-hover:hover td { background: transparent; }
 .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 60; backdrop-filter: blur(1px); animation: fadeUp 0.15s ease; }
 .hamburger { display: inline-flex; flex-direction: column; justify-content: center; gap: 4px; width: 38px; height: 38px; padding: 9px; background: transparent; border: 1px solid var(--line2); border-radius: 9px; cursor: pointer; }
 .hamburger span { display: block; height: 2px; width: 100%; background: var(--text); border-radius: 2px; }
-.mobile-logo { font-family: 'Fraunces', serif; font-size: 18px; color: var(--gold); text-decoration: none; letter-spacing: -0.3px; }
+.mobile-logo { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 18px; color: var(--gold); text-decoration: none; letter-spacing: -0.3px; }
 .mobile-logo span { font-style: italic; font-weight: 300; }
 
 @media (max-width: 1100px) {
@@ -666,7 +666,7 @@ select:focus-visible, textarea:focus-visible {
 .lp-inner { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 .lp-nav { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .lp-nav-row { display: flex; align-items: center; gap: 20px; height: 60px; }
-.lp-logo { font-family: 'Fraunces', serif; font-size: 20px; color: var(--gold); letter-spacing: -0.3px; font-weight: 600; }
+.lp-logo { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 20px; color: var(--gold); letter-spacing: -0.3px; font-weight: 600; }
 .lp-logo span { font-style: italic; font-weight: 300; }
 .lp-nav-links { display: flex; gap: 18px; margin-left: 12px; }
 .lp-nav-links a { font-size: 13px; color: var(--muted); transition: color 0.15s; }
@@ -725,7 +725,7 @@ select:focus-visible, textarea:focus-visible {
 .lp-plan-tag { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: var(--gold); color: #14120C; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
 .lp-plan h3 { font-size: 15px; margin-bottom: 2px; }
 .lp-plan .lp-einheiten { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
-.lp-price { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600; }
+.lp-price { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 30px; font-weight: 600; }
 .lp-price small { font-size: 12px; color: var(--muted); font-family: 'Outfit', sans-serif; font-weight: 400; }
 .lp-price-jahr { font-size: 11px; color: var(--muted); margin: 2px 0 16px; min-height: 15px; }
 .lp-plan ul { list-style: none; padding: 0; margin: 0 0 18px; display: grid; gap: 7px; font-size: 12px; color: var(--text); }
@@ -782,7 +782,7 @@ select:focus-visible, textarea:focus-visible {
 }
 .brief-head-zone { position: relative; }
 .brief-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.brief-logo { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 600; color: var(--text); }
+.brief-logo { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 21px; font-weight: 600; color: var(--text); }
 .brief-logo span { font-style: italic; font-weight: 300; color: var(--gold); }
 .brief-absender { text-align: right; font-size: 11px; color: var(--muted); line-height: 1.5; }
 .brief-absender strong { display: block; font-size: 12px; color: var(--text); }
