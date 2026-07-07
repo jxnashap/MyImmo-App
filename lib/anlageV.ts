@@ -61,6 +61,10 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 const jahrVon = (d: string | null | undefined) => (d ? Number(d.slice(0, 4)) : NaN);
 const sum = (ns: number[]) => ns.reduce((a, b) => a + b, 0);
 
+// Kategorie → Anlage-V-Zeile. Deckt alle Kategorien des Kosten-Formulars plus
+// automatisch erzeugte Kategorien ab. Unbekannte/eigene Kategorien fallen
+// bewusst in "Hausgeld / sonstige Kosten" (Zeile 47) — dort gehen sie steuerlich
+// nicht verloren, tauchen aber nicht in einer spezifischeren Zeile auf.
 const KOSTEN_BUCKET: Record<string, keyof Omit<AnlageVWerbungskosten, "afa" | "schuldzinsen" | "summe">> = {
   Reparatur: "erhaltung",
   Instandhaltung: "erhaltung",
@@ -70,6 +74,7 @@ const KOSTEN_BUCKET: Record<string, keyof Omit<AnlageVWerbungskosten, "afa" | "s
   Versicherung: "versicherung",
   "Hausgeld / WEG": "hausgeldSonstige",
   Sonstiges: "hausgeldSonstige",
+  "CO₂-Kosten (Vermieteranteil)": "hausgeldSonstige",
 };
 
 function leereWk(): AnlageVWerbungskosten {

@@ -132,6 +132,11 @@ export async function erzeugeNkPdf(
   mieterId: string,
   jahr: number,
 ): Promise<ErzeugtesPdf | null> {
+  // Konsequent wie beim Brief: Profil/IBAN explizit auf den angemeldeten
+  // Nutzer filtern — nicht nur auf RLS verlassen.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
   const { data: tenant } = await supabase
     .from("mieter")
     .select(
@@ -158,11 +163,13 @@ export async function erzeugeNkPdf(
       supabase
         .from("vermieter_profil")
         .select("name,strasse,plz,ort,email")
+        .eq("user_id", user.id)
         .limit(1)
         .maybeSingle(),
       supabase
         .from("ibans")
         .select("kontoname,inhaber,iban")
+        .eq("user_id", user.id)
         .order("standard", { ascending: false })
         .order("created_at")
         .limit(1)
