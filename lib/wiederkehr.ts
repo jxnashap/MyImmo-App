@@ -87,10 +87,13 @@ export function faelligeDaten(v: WiederkehrVorlage, heute: Date = new Date()): s
 }
 
 /**
- * Aus den fälligen Terminen die noch OFFENEN ermitteln: alle, für die noch
- * keine Buchung existiert (Vergleich über das exakte Buchungsdatum).
+ * Aus den fälligen Terminen die noch OFFENEN ermitteln. Zählbasiert statt
+ * datumsgenau: existieren zur Vorlage bereits n Buchungen, gelten die ersten
+ * n fälligen Termine als gebucht — so erzeugt ein nachträglich umdatiertes
+ * Buchungsdatum (§ 11 EStG, tatsächlicher Zufluss) keine Dublette, und eine
+ * gelöschte Buchung wird beim nächsten Erzeugen wieder aufgefüllt.
  */
 export function offeneDaten(faellig: string[], vorhandeneDaten: (string | null)[]): string[] {
-  const gebucht = new Set(vorhandeneDaten.filter(Boolean) as string[]);
-  return faellig.filter((d) => !gebucht.has(d));
+  const anzahlGebucht = vorhandeneDaten.filter(Boolean).length;
+  return faellig.slice(Math.min(anzahlGebucht, faellig.length));
 }

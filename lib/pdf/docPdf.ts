@@ -54,7 +54,13 @@ function sanitize(s: string): string {
     .replace(/…/g, "...")
     .replace(/ /g, " ")
     .split("")
-    .map((c) => (c.charCodeAt(0) > 255 && c !== "€" ? "?" : c))
+    .map((c) => {
+      if (c.charCodeAt(0) <= 255 || c === "€") return c; // Latin-1 (ä/ö/ü/ß …) + € bleiben
+      // Außerhalb WinAnsi: Akzente abstreifen (Č→C, ș→s) statt "?";
+      // erst wenn auch das nicht geht (z. B. Kyrillisch), Fallback "?".
+      const basis = c.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
+      return basis.length && basis.charCodeAt(0) <= 255 ? basis : "?";
+    })
     .join("");
 }
 
