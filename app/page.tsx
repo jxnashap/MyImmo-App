@@ -26,31 +26,43 @@ export default async function DashboardPage() {
     return <LandingPage />;
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select("*"),
     supabase.from("kredite").select("*"),
+    supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete"),
   ]);
 
   const properties = (props ?? []) as Property[];
   const einnahmen = (einn ?? []) as Einnahme[];
   const kosten = (kost ?? []) as Kosten[];
   const kredite = (kred ?? []) as Kredit[];
+  const mieterRows = (miet ?? []) as { id: string; prop_id: string | null; kaltmiete: number | null; stellplatz_miete: number | null }[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
 
   const refinanz = kredite.map((k) => ({ k, w: getRefinanzWarning(k.zinsbindung) })).filter((x) => x.w);
 
   const now = new Date();
-  const mo = now.getMonth();
-  const yr = now.getFullYear();
 
   const totalWert = properties.reduce((s, p) => s + (p.wert ?? 0), 0);
-  const totalMiete = properties.reduce((s, p) => s + (p.miete ?? 0), 0);
+  // Soll-Kaltmiete/Mo.: Garagen-Objekte führen ihre Mieten auf den einzelnen
+  // Mietern (je Einheit), nicht auf property.miete — wie auf der Objektseite.
+  const GARAGEN_TYPEN = ["Garage / Stellplatz", "Garagenkomplex"];
+  const mieteVonMietern = (propId: string) =>
+    mieterRows.filter((m) => m.prop_id === propId).reduce((s, m) => s + (m.kaltmiete ?? 0) + (m.stellplatz_miete ?? 0), 0);
+  const totalMiete = properties.reduce(
+    (s, p) => s + (GARAGEN_TYPEN.includes(p.typ ?? "") ? mieteVonMietern(p.id) : (p.miete ?? 0)),
+    0,
+  );
   const kreditRates = kredite.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
-  const monatKosten = kosten
-    .filter((k) => { const d = k.buchungsdatum ? new Date(k.buchungsdatum) : null; return d && d.getMonth() === mo && d.getFullYear() === yr; })
+  // Laufende Kosten: Ø der letzten 12 Monate aus echten Buchungen — statt nur
+  // des aktuellen Kalendermonats (der zu Monatsbeginn fast immer 0 € zeigte).
+  const vor12M = new Date(now); vor12M.setFullYear(vor12M.getFullYear() - 1);
+  const koLetzte12M = kosten
+    .filter((k) => { const d = k.buchungsdatum ? new Date(k.buchungsdatum) : null; return d && d >= vor12M && d <= now; })
     .reduce((s, k) => s + (k.betrag ?? 0), 0);
+  const monatKosten = Math.round(koLetzte12M / 12);
   const totalKosten = kreditRates + monatKosten;
   const cashflow = totalMiete - totalKosten;
   const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
@@ -61,8 +73,8 @@ export default async function DashboardPage() {
   const leerstand = vermietbar.length > 0 ? (leerCount / vermietbar.length) * 100 : 0;
   const leerFarbe = leerstand <= 5 ? "var(--green)" : leerstand <= 10 ? "var(--amber)" : "var(--red)";
 
-  // Portfolio-Entwicklung: kumulierter Cashflow (Einnahmen − Ausgaben),
-  // Zeitraum wird clientseitig per Segmented-Control gefiltert.
+  // Cashflow-Entwicklung: kumulierter Cashflow (Einnahmen − Ausgaben) aus echten
+  // Buchungen; Zeitraum wird clientseitig per Segmented-Control gefiltert.
   const portfolioPoints: RawPoint[] = [
     ...einnahmen.filter((e) => e.buchungsdatum).map((e) => ({ date: e.buchungsdatum as string, value: e.betrag ?? 0 })),
     ...kosten.filter((k) => k.buchungsdatum).map((k) => ({ date: k.buchungsdatum as string, value: -(k.betrag ?? 0) })),
@@ -73,7 +85,7 @@ export default async function DashboardPage() {
   const balken = [
     { lbl: "Einnahmen", val: totalMiete, col: "var(--green)" },
     { lbl: "Kredite", val: kreditRates, col: "var(--gold)" },
-    { lbl: "Kosten", val: monatKosten, col: "var(--red)" },
+    { lbl: "Kosten Ø/Mo.", val: monatKosten, col: "var(--red)" },
   ];
 
   // Letzte Transaktionen
@@ -122,7 +134,7 @@ export default async function DashboardPage() {
         <div className="kpi-card">
           <div className="kpi-label">Kosten / Mo.</div>
           <div className="kpi-value">{euro(totalKosten)}</div>
-          <div className="kpi-sub">Kredit + laufend</div>
+          <div className="kpi-sub">Kredit + laufend (Ø 12 Mon.)</div>
         </div>
         <div className="kpi-card">
           <div className="kpi-label">Cashflow / Mo.</div>
@@ -140,7 +152,7 @@ export default async function DashboardPage() {
 
       <div className="section mb-20">
         <div className="section-header">
-          <h3>Portfolio-Entwicklung</h3>
+          <h3>Cashflow-Entwicklung</h3>
           <ZeitraumControl />
         </div>
         <div className="section-body">
