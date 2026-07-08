@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Calculator, Save, FolderOpen, Scale, Gauge, Home, Percent, Landmark, Target, TrendingUp } from "lucide-react";
+import { Calculator, Save, FolderOpen, Scale, Gauge, Home, Percent, Landmark, Target, TrendingUp, Lock, BarChart3, Sparkles, ClipboardList, Zap } from "lucide-react";
+
+// Farbiger Status-Punkt (Ersatz für die Ampel-Emojis)
+const Dot = ({ c }: { c: string }) => <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: `var(--${c})`, marginRight: 5, verticalAlign: "-1px" }} />;
 import KalkImport from "@/components/kalkulator/KalkImport";
 import CockpitUeberblick from "@/components/kalkulator/CockpitUeberblick";
 import { useToast } from "@/components/Toast";
@@ -251,14 +254,14 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
     { lbl: "Cashflow operativ", val: cfOp, gruen: -1.67, gelb: -3.33, f: (v: number) => fmtE(v) + "/Mo" },
   ];
 
-  const kennzahlen: [string, string, string][] = [
+  const kennzahlen: [string, string, React.ReactNode][] = [
     ["Kaufpreis", fmtE(kp), ""], ["Gesamtinvestition", fmtE(gesamtInvest), ""],
-    ["Preis/m²", qm > 0 ? fmtE(qm) + "/m²" : "–", ""], ["Kaufpreisfaktor", faktor > 0 ? fmt(faktor, 1) + "x" : "–", faktor < 25 ? "🟢" : faktor < 30 ? "🟡" : "🔴"],
-    ["Bruttomietrendite", pct(brutto), brutto >= 5 ? "🟢" : brutto >= 4 ? "🟡" : "🔴"],
-    ["Nettomietrendite", pct(nettomiet), nettomiet >= 4 ? "🟢" : nettomiet >= 3 ? "🟡" : "🔴"],
-    ["Cashflow operativ", fmtE(cfOp) + "/Mo", cfOp >= -1.67 ? "🟢" : cfOp >= -3.33 ? "🟡" : "🔴"],
-    ["Cashflow nach Steuern", fmtE(cfNetto) + "/Mo", cfNetto >= -1.67 ? "🟢" : cfNetto >= -3.33 ? "🟡" : "🔴"],
-    ["Eigenkapitalrendite", pct(ekRendite), ekRendite >= 20 ? "🟢" : ekRendite >= 10 ? "🟡" : "🔴"],
+    ["Preis/m²", qm > 0 ? fmtE(qm) + "/m²" : "–", ""], ["Kaufpreisfaktor", faktor > 0 ? fmt(faktor, 1) + "x" : "–", faktor < 25 ? <Dot c="green" /> : faktor < 30 ? <Dot c="amber" /> : <Dot c="red" />],
+    ["Bruttomietrendite", pct(brutto), brutto >= 5 ? <Dot c="green" /> : brutto >= 4 ? <Dot c="amber" /> : <Dot c="red" />],
+    ["Nettomietrendite", pct(nettomiet), nettomiet >= 4 ? <Dot c="green" /> : nettomiet >= 3 ? <Dot c="amber" /> : <Dot c="red" />],
+    ["Cashflow operativ", fmtE(cfOp) + "/Mo", cfOp >= -1.67 ? <Dot c="green" /> : cfOp >= -3.33 ? <Dot c="amber" /> : <Dot c="red" />],
+    ["Cashflow nach Steuern", fmtE(cfNetto) + "/Mo", cfNetto >= -1.67 ? <Dot c="green" /> : cfNetto >= -3.33 ? <Dot c="amber" /> : <Dot c="red" />],
+    ["Eigenkapitalrendite", pct(ekRendite), ekRendite >= 20 ? <Dot c="green" /> : ekRendite >= 10 ? <Dot c="amber" /> : <Dot c="red" />],
     ["AfA/Monat", fmtE(afaMo) + "/Mo", ""], ["Grenzsteuersatz", pct(grenzsteuer * 100, 1), ""],
   ];
 
@@ -409,7 +412,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
                     </div>
                   ) : (
                     <div style={{ fontSize: 11, color: "var(--red)", margin: "6px 0 2px", lineHeight: 1.5, fontWeight: 600 }}>
-                      🔒 Degressive AfA gesperrt: {baubeginn ? "Datum liegt außerhalb 10/2023–09/2029." : "Bitte Baubeginn/Kaufvertrag angeben."} Es wird linear 3 % (Neubau) gerechnet.
+                      <Lock size={11} style={{ verticalAlign: "-1px" }} /> Degressive AfA gesperrt: {baubeginn ? "Datum liegt außerhalb 10/2023–09/2029." : "Bitte Baubeginn/Kaufvertrag angeben."} Es wird linear 3 % (Neubau) gerechnet.
                     </div>
                   )}
                 </>
@@ -469,7 +472,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
         <>
           <div className="grid-2 mb-20">
             <div className="card">
-              <div className="card-header"><div className="card-title">📊 Cashflow heute</div></div>
+              <div className="card-header"><div className="card-title"><BarChart3 size={16} style={{ verticalAlign: "-3px" }} /> Cashflow heute</div></div>
               <div className="card-body">
                 <CfRows rows={[
                   ["Warmmiete", warmmiete, "green"], ["Bewirtsch. (umlagef.)", -umlagefaehig, "red"],
@@ -480,7 +483,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
               </div>
             </div>
             <div className="card">
-              <div className="card-header"><div className="card-title">🔮 Cashflow {zJahr}</div></div>
+              <div className="card-header"><div className="card-title"><Sparkles size={16} style={{ verticalAlign: "-3px" }} /> Cashflow {zJahr}</div></div>
               <div className="card-body">
                 <div className="field-row" style={{ marginBottom: 12 }}>
                   {F("Zieljahr", zukunftJahr, setZukunftJahr)}
@@ -505,7 +508,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
             {ampeln.map((a, i) => {
               const color = a.val >= a.gruen ? "var(--green)" : a.val >= a.gelb ? "var(--amber)" : "var(--red)";
               const bg = a.val >= a.gruen ? "var(--green-dim)" : a.val >= a.gelb ? "rgba(240,160,48,0.12)" : "var(--red-dim)";
-              const label = a.val >= a.gruen ? "🟢 Gut" : a.val >= a.gelb ? "🟡 Mittel" : "🔴 Gering";
+              const label = a.val >= a.gruen ? <><Dot c="green" />Gut</> : a.val >= a.gelb ? <><Dot c="amber" />Mittel</> : <><Dot c="red" />Gering</>;
               return (
                 <div key={i} className="stat-box" style={{ borderColor: color, background: bg }}>
                   <div className="stat-lbl">{a.lbl}</div>
@@ -518,7 +521,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
 
           <div className="grid-2 mb-20">
             <div className="card">
-              <div className="card-header"><div className="card-title">📋 Kennzahlen</div></div>
+              <div className="card-header"><div className="card-title"><ClipboardList size={16} style={{ verticalAlign: "-3px" }} /> Kennzahlen</div></div>
               <div className="card-body">
                 <table className="cmp-table">
                   <thead><tr><th>Kennzahl</th><th>Wert</th><th>Bewertung</th></tr></thead>
@@ -527,7 +530,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
               </div>
             </div>
             <div className="card">
-              <div className="card-header"><div className="card-title">⚡ Zinsänderungsrisiko</div></div>
+              <div className="card-header"><div className="card-title"><Zap size={16} style={{ verticalAlign: "-3px" }} /> Zinsänderungsrisiko</div></div>
               <div className="card-body">
                 {[3, 4, 5, 6, 7, 8].map((p) => {
                   const rateNeu = (gesDarlehen * (p / 100 + d1T)) / 12;
@@ -552,7 +555,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
       {/* VERLAUF */}
       {tab === "verlauf" && (
         <div className="card mb-20">
-          <div className="card-header"><div className="card-title">📈 30-Jahres-Verlauf</div></div>
+          <div className="card-header"><div className="card-title"><TrendingUp size={16} style={{ verticalAlign: "-3px" }} /> 30-Jahres-Verlauf</div></div>
           <div className="card-body" style={{ overflowX: "auto" }}>
             <table className="plan-table">
               <thead><tr><th>Jahr</th><th>Kaltmiete/Mo</th><th>Immobilienwert</th><th>Restschuld</th><th>CF operativ</th><th>CF n. Steuern</th></tr></thead>
@@ -596,7 +599,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
           <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginBottom: 14 }}>Gespeicherte Kalkulationen</h3>
             {gespeichertLocal.length === 0 ? (
-              <p style={{ color: "var(--muted)", fontSize: 13 }}>Noch nichts gespeichert. Oben rechts „💾 Speichern".</p>
+              <p style={{ color: "var(--muted)", fontSize: 13 }}>Noch nichts gespeichert. Oben rechts „<Save size={12} style={{ verticalAlign: "-2px" }} /> Speichern".</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "60vh", overflowY: "auto" }}>
                 {gespeichertLocal.map((k) => (

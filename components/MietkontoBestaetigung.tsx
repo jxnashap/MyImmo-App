@@ -1,4 +1,5 @@
 "use client";
+import { Rewind, Info } from "lucide-react";
 
 // Mietkonto: zwei Modi.
 // 1. „Monat bestätigen": pro Mieter eine Karte mit Soll-Betrag, editierbarem
@@ -236,7 +237,7 @@ export default function MietkontoBestaetigung({
           ✓ Monat bestätigen
         </button>
         <button type="button" className={`settings-tab${modus === "nacherfassen" ? " active" : ""}`} onClick={() => setModus("nacherfassen")}>
-          ⏪ Nacherfassen ({offene.length})
+          <Rewind size={14} style={{ verticalAlign: "-2px" }} /> Nacherfassen ({offene.length})
         </button>
       </div>
 
@@ -307,7 +308,7 @@ export default function MietkontoBestaetigung({
                 ) : (
                   <div style={{ display: "flex", alignItems: "flex-end", gap: 10, flexWrap: "wrap", marginLeft: "auto" }}>
                     <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-                      <span>Eingangsdatum{jahresgrenze(monat) ? " ⓘ" : ""}</span>
+                      <span>Eingangsdatum{jahresgrenze(monat) ? <> <Info size={11} style={{ verticalAlign: "-1px" }} /></> : ""}</span>
                       <input
                         type="date"
                         className="input"
@@ -427,7 +428,7 @@ export default function MietkontoBestaetigung({
                               title="10-Tage-Regel: Zahlungen 22.12.–10.01. ggf. dem wirtschaftlich zugehörigen Jahr zuordnen (§ 11 EStG). Buchungsdatum ggf. anpassen."
                               style={{ marginLeft: 6, color: "var(--amber)", cursor: "help", fontSize: 12 }}
                             >
-                              ⓘ
+                              <Info size={12} />
                             </span>
                           )}
                         </td>

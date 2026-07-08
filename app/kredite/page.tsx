@@ -5,6 +5,7 @@ import { getRefinanzWarning } from "@/lib/fristen";
 import { deleteKredit } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import type { Kredit, Property } from "@/lib/types";
+import { Plus, Pencil, X, Siren, Landmark, TriangleAlert } from "lucide-react";
 
 type KreditExt = Kredit & { darlnr?: string | null; grundschuld?: number | null; beleihung?: number | null };
 
@@ -31,7 +32,7 @@ export default async function KreditePage() {
           <div className="topbar-title">Kredite &amp; Finanzierung</div>
           <div className="topbar-sub">Darlehen, Zinsbindung, Tilgungsplan</div>
         </div>
-        <Link href="/kredite/new" className="btn btn-gold">＋ Darlehen</Link>
+        <Link href="/kredite/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Darlehen</Link>
       </div>
 
       {warnungen.length > 0 && (
@@ -49,7 +50,7 @@ export default async function KreditePage() {
                   <div style={{ fontSize: 12, fontWeight: 600, color: w.color }}>{w.label}</div>
                   <div style={{ fontSize: 10, color: "var(--muted)" }}>bis: {datum(k.zinsbindung)}</div>
                 </div>
-                <span className={`badge ${w.level === "warnung" ? "badge-amber" : "badge-red"}`}>{w.level === "abgelaufen" ? "🚨 Abgelaufen" : w.level === "kritisch" ? "🔴 Dringend" : "🟡 Bald"}</span>
+                <span className={`badge ${w.level === "warnung" ? "badge-amber" : "badge-red"}`}>{w.level === "abgelaufen" ? <><Siren size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />Abgelaufen</> : w.level === "kritisch" ? <><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "var(--red)", marginRight: 5, verticalAlign: "-1px" }} />Dringend</> : <><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "var(--amber)", marginRight: 5, verticalAlign: "-1px" }} />Bald</>}</span>
               </div>
             ))}
           </div>
@@ -57,7 +58,7 @@ export default async function KreditePage() {
       )}
 
       {list.length === 0 ? (
-        <div className="empty"><div className="empty-icon">🏦</div><h4>Noch keine Darlehen</h4></div>
+        <div className="empty"><Landmark className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Darlehen</h4></div>
       ) : (
         list.map((k) => {
           const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? 0) / k.betrag) * 100))) : 100;
@@ -69,7 +70,7 @@ export default async function KreditePage() {
             <div key={k.id} className="section" style={{ marginBottom: 14 }}>
               {warn && (
                 <div style={{ background: warn.bg, borderLeft: `3px solid ${warn.color}`, padding: "8px 14px", fontSize: 12, color: warn.color, fontWeight: 500 }}>
-                  ⚠️ Zinsbindung läuft ab: <strong>{datum(k.zinsbindung)}</strong>
+                  <TriangleAlert size={13} style={{ verticalAlign: "-2px" }} /> Zinsbindung läuft ab: <strong>{datum(k.zinsbindung)}</strong>
                 </div>
               )}
               <div className="section-header">
@@ -79,8 +80,8 @@ export default async function KreditePage() {
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}% Zins</span>}
-                  <Link href={`/kredite/${k.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}>✎</Link>
-                  <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label="✕" confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
+                  <Link href={`/kredite/${k.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}><Pencil size={14} /></Link>
+                  <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
                 </div>
               </div>
               <div className="section-body">

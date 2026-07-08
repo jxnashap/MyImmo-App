@@ -10,6 +10,7 @@ import MarktwertCard from "@/components/MarktwertCard";
 import { refreshBewertung } from "@/lib/actions/bewertung";
 import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
+import { Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, type LucideIcon } from "lucide-react";
 
 type Kredit = {
   id: string; bezeichnung: string | null; bank: string | null; betrag: number | null;
@@ -20,7 +21,7 @@ type Buchung = { id: string; betrag: number | null; buchungsdatum: string | null
 type Verbrauch = { id: string; buchungsdatum: string | null; art: string | null; menge: number | null; einheit: string | null; verbrauchkosten: number | null };
 type Notiz = { id: string; titel: string | null; kategorie: string | null; inhalt: string | null };
 
-const ART_ICONS: Record<string, string> = { Strom: "⚡", Gas: "🔥", Wasser: "💧", Heizöl: "🛢", Fernwärme: "♨", Sonstiges: "📦" };
+const ART_ICONS: Record<string, LucideIcon> = { Strom: Zap, Gas: Flame, Wasser: Droplet, Heizöl: Fuel, Fernwärme: Heater, Sonstiges: Package };
 
 function mkBadge(val: number, gut: number, ok: number) {
   return val >= gut ? "badge-green" : val >= ok ? "badge-gold" : "badge-red";
@@ -157,12 +158,12 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href={`/properties/${id}/beleihung`} className="btn btn-ghost" style={{ fontSize: 12 }}>🏦 Beleihungsordner</Link>
-          <Link href={`/properties/${id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}>✏️ Bearbeiten</Link>
+          <Link href={`/properties/${id}/beleihung`} className="btn btn-ghost" style={{ fontSize: 12 }}><Landmark size={14} style={{ verticalAlign: "-2px" }} /> Beleihungsordner</Link>
+          <Link href={`/properties/${id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}><Pencil size={14} style={{ verticalAlign: "-2px" }} /> Bearbeiten</Link>
           <DeleteButton
             action={deleteProperty.bind(null, id)}
             confirmText={`„${p.bezeichnung}" wirklich löschen?`}
-            label="🗑 Löschen"
+            label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>}
             className="btn btn-ghost"
           />
         </div>
@@ -246,7 +247,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                 {tenants.length}{p.einheiten_anzahl ? ` von ${p.einheiten_anzahl}` : ""} vermietet · Mieten gesamt {euro(mieteAusMietern)}
               </span>
             )}
-            <Link href="/tenants/new" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Mieter</Link>
+            <Link href="/tenants/new" className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Mieter</Link>
           </div>
         </div>
         <div className="section-body">
@@ -262,7 +263,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           ) : (
             tenants.map((m) => (
               <Link key={m.id} href={`/tenants/${m.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--line)", textDecoration: "none", color: "var(--text)" }}>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--gold-pale)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>👤</div>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--gold-pale)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}><User size={16} /></div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>
                     {[m.vorname, m.nachname].filter(Boolean).join(" ") || "—"}
@@ -299,11 +300,11 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       <div className="section mb-20">
         <div className="section-header">
           <h3>Kredite &amp; Finanzierung</h3>
-          <Link href={`/kredite/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Darlehen</Link>
+          <Link href={`/kredite/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Darlehen</Link>
         </div>
         <div className="section-body">
           {kred.length === 0 ? (
-            <div className="empty" style={{ padding: 24 }}><div className="empty-icon">🏦</div><p>Noch keine Darlehen</p></div>
+            <div className="empty" style={{ padding: 24 }}><Landmark className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Darlehen</p></div>
           ) : (
             kred.map((k) => {
               const tilgtPct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round((1 - (k.restschuld ?? 0) / k.betrag) * 100))) : 0;
@@ -314,7 +315,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Darlehen"}</div>
                       <div style={{ fontSize: 11, color: "var(--muted)" }}>{k.bank || "–"} · {k.zinssatz ?? 0}% Zins · {k.tilgungssatz ?? 0}% Tilgung</div>
                     </div>
-                    <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label="✕" confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
+                    <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 8 }}>
                     <div><div style={{ fontSize: 10, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
@@ -332,17 +333,17 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
       {/* Einnahmen + Kosten */}
       <div className="grid-2 mb-20">
-        <BuchungSection title="💰 Einnahmen" rows={einnahmen} gesamtColor="var(--green)" badge="badge-green" addHref={`/einnahmen/new?prop=${id}&back=/properties/${id}`} kind="einnahme" />
-        <BuchungSection title="📋 Kosten & Ausgaben" rows={kosten} gesamtColor="var(--red)" badge="badge-red" addHref={`/kosten/new?prop=${id}&back=/properties/${id}`} kind="kosten" />
+        <BuchungSection title={<><Wallet size={16} style={{ verticalAlign: "-3px" }} /> Einnahmen</>} rows={einnahmen} gesamtColor="var(--green)" badge="badge-green" addHref={`/einnahmen/new?prop=${id}&back=/properties/${id}`} kind="einnahme" />
+        <BuchungSection title={<><ClipboardList size={16} style={{ verticalAlign: "-3px" }} /> Kosten &amp; Ausgaben</>} rows={kosten} gesamtColor="var(--red)" badge="badge-red" addHref={`/kosten/new?prop=${id}&back=/properties/${id}`} kind="kosten" />
       </div>
 
       {/* Verbrauch + Notizen */}
       <div className="grid-2 mb-20">
         <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>Verbrauch &amp; Nebenkosten</h3><Link href={`/verbrauch/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
+          <div className="section-header"><h3>Verbrauch &amp; Nebenkosten</h3><Link href={`/verbrauch/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Hinzufügen</Link></div>
           <div className="section-body">
             {verbrauch.length === 0 ? (
-              <div className="empty" style={{ padding: 24 }}><div className="empty-icon">⚡</div><p>Noch kein Verbrauch</p></div>
+              <div className="empty" style={{ padding: 24 }}><Zap className="empty-icon" size={36} color="var(--faint)" /><p>Noch kein Verbrauch</p></div>
             ) : (
               <>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--amber)", marginBottom: 10 }}>
@@ -354,10 +355,10 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                     {verbrauch.slice(0, 8).map((v) => (
                       <tr key={v.id}>
                         <td>{datum(v.buchungsdatum)}</td>
-                        <td>{(v.art && ART_ICONS[v.art]) || ""} {v.art}</td>
+                        <td>{(() => { const Icon = v.art ? ART_ICONS[v.art] : undefined; return Icon ? <Icon size={13} style={{ verticalAlign: "-2px" }} /> : null; })()} {v.art}</td>
                         <td>{v.menge ?? "–"} {v.einheit}</td>
                         <td style={{ fontWeight: 600 }}>{euro(v.verbrauchkosten)}</td>
-                        <td style={{ textAlign: "right" }}><DeleteButton action={deleteVerbrauch.bind(null, v.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></td>
+                        <td style={{ textAlign: "right" }}><DeleteButton action={deleteVerbrauch.bind(null, v.id)} className="delete-btn" label={<X size={14} />} confirmText="Eintrag löschen?" /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -368,10 +369,10 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
 
         <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>Archiv</h3><Link href="/archiv" className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link></div>
+          <div className="section-header"><h3>Archiv</h3><Link href="/archiv" className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Hinzufügen</Link></div>
           <div className="section-body">
             {notizen.length === 0 ? (
-              <div className="empty" style={{ padding: 24 }}><div className="empty-icon">🗄</div><p>Noch keine Dokumente</p></div>
+              <div className="empty" style={{ padding: 24 }}><Archive className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Dokumente</p></div>
             ) : (
               notizen.map((n) => (
                 <div key={n.id} style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
@@ -379,7 +380,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                     <div style={{ fontWeight: 600, fontSize: 13 }}>{n.titel}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {n.kategorie && <span className="badge badge-teal">{n.kategorie}</span>}
-                      <DeleteButton action={deleteNotiz.bind(null, n.id)} className="delete-btn" label="✕" confirmText="Notiz löschen?" />
+                      <DeleteButton action={deleteNotiz.bind(null, n.id)} className="delete-btn" label={<X size={14} />} confirmText="Notiz löschen?" />
                     </div>
                   </div>
                   {n.inhalt && <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>{n.inhalt}</div>}
@@ -429,7 +430,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 function BuchungSection({
   title, rows, gesamtColor, badge, addHref, kind,
 }: {
-  title: string; rows: Buchung[]; gesamtColor: string; badge: string; addHref: string; kind: "einnahme" | "kosten";
+  title: React.ReactNode; rows: Buchung[]; gesamtColor: string; badge: string; addHref: string; kind: "einnahme" | "kosten";
 }) {
   const total = rows.reduce((s, r) => s + (r.betrag ?? 0), 0);
   const isEinnahme = kind === "einnahme";
@@ -438,11 +439,11 @@ function BuchungSection({
     <div className="section" style={{ marginBottom: 0 }}>
       <div className="section-header">
         <h3>{title}</h3>
-        <Link href={addHref} className="btn btn-ghost" style={{ fontSize: 11 }}>＋ Hinzufügen</Link>
+        <Link href={addHref} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Hinzufügen</Link>
       </div>
       <div className="section-body">
         {rows.length === 0 ? (
-          <div className="empty" style={{ padding: 24 }}><div className="empty-icon">{isEinnahme ? "💰" : "📋"}</div><p>Noch keine {isEinnahme ? "Einnahmen" : "Ausgaben"}</p></div>
+          <div className="empty" style={{ padding: 24 }}>{isEinnahme ? <Wallet className="empty-icon" size={36} color="var(--faint)" /> : <ClipboardList className="empty-icon" size={36} color="var(--faint)" />}<p>Noch keine {isEinnahme ? "Einnahmen" : "Ausgaben"}</p></div>
         ) : (
           <>
             <div style={{ fontSize: 12, fontWeight: 600, color: gesamtColor, marginBottom: 10 }}>Gesamt: {euro(total)}</div>
@@ -454,7 +455,7 @@ function BuchungSection({
                     <td>{datum(r.buchungsdatum)}</td>
                     <td>{r.kategorie && <span className={`badge ${badge}`}>{r.kategorie}</span>}</td>
                     <td style={{ fontWeight: 600, color: gesamtColor }}>{euro(r.betrag)}</td>
-                    <td style={{ textAlign: "right" }}><DeleteButton action={del.bind(null, r.id)} className="delete-btn" label="✕" confirmText="Eintrag löschen?" /></td>
+                    <td style={{ textAlign: "right" }}><DeleteButton action={del.bind(null, r.id)} className="delete-btn" label={<X size={14} />} confirmText="Eintrag löschen?" /></td>
                   </tr>
                 ))}
               </tbody>

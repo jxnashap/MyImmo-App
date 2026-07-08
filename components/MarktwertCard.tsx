@@ -4,6 +4,7 @@
 // mit „Jetzt aktualisieren". Interaktivität nur über <details> + Server-Action.
 
 import SubmitButton from "@/components/SubmitButton";
+import { RotateCw, MapPin, TriangleAlert } from "lucide-react";
 import { euro, datum } from "@/lib/format";
 
 type Herleitungszeile = { label: string; wert: number; einheit?: string; hinweis?: string };
@@ -123,9 +124,9 @@ export default function MarktwertCard({
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
-            <SubmitButton pendingLabel="Aktualisiere…">↻ Jetzt aktualisieren</SubmitButton>
+            <SubmitButton pendingLabel="Aktualisiere…"><RotateCw size={14} style={{ verticalAlign: "-2px" }} /> Jetzt aktualisieren</SubmitButton>
             <span style={{ fontSize: 11, color: "var(--muted)" }}>
-              {geokodiert ? "📍 geokodiert" : (adresse ? "📍 Adresse wird beim Aktualisieren geokodiert" : "⚠ keine Adresse hinterlegt")}
+              {geokodiert ? <><MapPin size={11} style={{ verticalAlign: "-1px" }} /> geokodiert</> : (adresse ? <><MapPin size={11} style={{ verticalAlign: "-1px" }} /> Adresse wird beim Aktualisieren geokodiert</> : <><TriangleAlert size={11} style={{ verticalAlign: "-1px" }} /> keine Adresse hinterlegt</>)}
               {brwQuelle && brwQuelle !== "—" ? ` · Bodenrichtwert: ${brwQuelle}` : ""}
             </span>
           </div>

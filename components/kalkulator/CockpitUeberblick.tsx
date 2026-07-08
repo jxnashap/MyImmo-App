@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fmtE, pct, fmt } from "@/lib/kalk";
+import { Wallet, TrendingUp } from "lucide-react";
 
 export type UeberblickProps = {
   kp: number;
@@ -34,10 +35,10 @@ export default function CockpitUeberblick(p: UeberblickProps) {
   const sc = score(p);
   const verdict =
     sc >= 0.75
-      ? { label: "Solide", color: "var(--green)", bg: "var(--green-dim)", icon: "🟢" }
+      ? { label: "Solide", color: "var(--green)", bg: "var(--green-dim)", dot: "var(--green)" }
       : sc >= 0.45
-        ? { label: "Grenzwertig", color: "var(--amber)", bg: "rgba(240,160,48,0.12)", icon: "🟡" }
-        : { label: "Kritisch", color: "var(--red)", bg: "var(--red-dim)", icon: "🔴" };
+        ? { label: "Grenzwertig", color: "var(--amber)", bg: "rgba(240,160,48,0.12)", dot: "var(--amber)" }
+        : { label: "Kritisch", color: "var(--red)", bg: "var(--red-dim)", dot: "var(--red)" };
   const satz =
     sc >= 0.75
       ? "Rendite, Cashflow und Kaufpreisfaktor liegen im gesunden Bereich — tragfähiges Investment."
@@ -77,7 +78,7 @@ export default function CockpitUeberblick(p: UeberblickProps) {
         style={{ borderColor: verdict.color, background: verdict.bg }}
       >
         <div className="card-body" style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ fontSize: 30, lineHeight: 1 }}>{verdict.icon}</div>
+          <div style={{ lineHeight: 1, display: "flex", alignItems: "center" }}><span style={{ display: "inline-block", width: 22, height: 22, borderRadius: "50%", background: verdict.dot }} /></div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontFamily: "'Fraunces', serif", fontSize: 20, color: verdict.color }}>
               {verdict.label}
@@ -104,7 +105,7 @@ export default function CockpitUeberblick(p: UeberblickProps) {
       <div className="grid-2 mb-20">
         {/* Preis-Einordnung */}
         <div className="card">
-          <div className="card-header"><div className="card-title">💰 Preis-Einordnung</div></div>
+          <div className="card-header"><div className="card-title"><Wallet size={16} style={{ verticalAlign: "-3px" }} /> Preis-Einordnung</div></div>
           <div className="card-body">
             <div className="range-row" style={{ marginBottom: 14 }}>
               <label style={{ minWidth: 130, fontSize: 12, color: "var(--muted)" }}>Zielfaktor</label>
@@ -130,7 +131,7 @@ export default function CockpitUeberblick(p: UeberblickProps) {
 
         {/* 30-Jahre-Verlauf-Chart */}
         <div className="card">
-          <div className="card-header"><div className="card-title">📈 Vermögensaufbau (30 J.)</div></div>
+          <div className="card-header"><div className="card-title"><TrendingUp size={16} style={{ verticalAlign: "-3px" }} /> Vermögensaufbau (30 J.)</div></div>
           <div className="card-body">
             <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="200" preserveAspectRatio="none" role="img" aria-label="Immobilienwert gegen Restschuld über 30 Jahre">
               <polygon points={areaPts} fill="var(--gold-pale)" />

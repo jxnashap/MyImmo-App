@@ -4,15 +4,16 @@ import { euro } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
 import DeleteButton from "@/components/DeleteButton";
 import type { Property, Kredit } from "@/lib/types";
+import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Plus, X, Landmark, type LucideIcon } from "lucide-react";
 
-// Emoji je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
-const PROP_ICONS: Record<string, string> = {
-  Eigentumswohnung: "🏢",
-  Einfamilienhaus: "🏠",
-  Mehrfamilienhaus: "🏘",
-  Gewerbeimmobilie: "🏪",
-  Ferienimmobilie: "🏖",
-  Grundstück: "🌿",
+// Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
+const PROP_ICONS: Record<string, LucideIcon> = {
+  Eigentumswohnung: Building2,
+  Einfamilienhaus: Home,
+  Mehrfamilienhaus: Building,
+  Gewerbeimmobilie: Store,
+  Ferienimmobilie: TreePalm,
+  Grundstück: Sprout,
 };
 
 function statusBadge(status: string | null) {
@@ -45,15 +46,15 @@ export default async function PropertiesPage() {
           <div className="topbar-sub">Alle erfassten Objekte</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/properties/import" className="btn btn-ghost">🔗 Importieren</Link>
-          <Link href="/properties/new" className="btn btn-gold">＋ Neu</Link>
+          <Link href="/properties/import" className="btn btn-ghost"><Link2 size={14} style={{ verticalAlign: "-2px" }} /> Importieren</Link>
+          <Link href="/properties/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Neu</Link>
         </div>
       </div>
 
       {list.length === 0 ? (
         <div className="prop-grid">
           <div className="empty" style={{ gridColumn: "1/-1" }}>
-            <div className="empty-icon">🏠</div>
+            <Home className="empty-icon" size={36} color="var(--faint)" />
             <h4>Noch keine Immobilien</h4>
           </div>
         </div>
@@ -66,7 +67,7 @@ export default async function PropertiesPage() {
             return (
               <div key={p.id} className="prop-card">
                 <div className="prop-card-header">
-                  <div className="prop-icon">{(p.typ && PROP_ICONS[p.typ]) || "🏠"}</div>
+                  <div className="prop-icon" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{(() => { const Icon = (p.typ && PROP_ICONS[p.typ]) || Home; return <Icon size={18} />; })()}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <Link href={`/properties/${p.id}`} className="prop-card-name" style={{ color: "var(--text)", textDecoration: "none", display: "block" }}>
                       {p.bezeichnung}
@@ -82,7 +83,7 @@ export default async function PropertiesPage() {
                     action={deleteProperty.bind(null, p.id)}
                     confirmText={`„${p.bezeichnung}" wirklich löschen?`}
                     className="delete-btn"
-                    label="✕"
+                    label={<X size={14} />}
                     title="Löschen"
                   />
                 </div>
@@ -102,7 +103,7 @@ export default async function PropertiesPage() {
                 </div>
                 {rest > 0 && (
                   <div style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", fontSize: 11, color: "var(--muted)" }}>
-                    🏦 Restschuld: <strong style={{ color: "var(--text)" }}>{euro(rest)}</strong>
+                    <Landmark size={12} style={{ verticalAlign: "-2px" }} /> Restschuld: <strong style={{ color: "var(--text)" }}>{euro(rest)}</strong>
                   </div>
                 )}
                 <Link

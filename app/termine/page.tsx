@@ -9,6 +9,7 @@ import ExpandableList from "@/components/ExpandableList";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { KATEGORIE_STIL, TERMIN_KATEGORIEN, WARTUNGS_VORLAGEN, WIEDERKEHRUNG_LABEL } from "@/lib/termine";
 import type { Termin, Property, Tenant, Kredit } from "@/lib/types";
+import { RotateCw, Pencil, X, CalendarDays, Plus } from "lucide-react";
 
 type Eintrag = {
   datum: string;
@@ -108,7 +109,7 @@ export default async function TerminePage({
 
   const filters: FilterDef[] = [
     { name: "quelle", label: "Quelle", icon: "quelle", variant: "segmented", options: [{ value: "", label: "Alle" }, { value: "auto", label: "Automatisch" }, { value: "eigen", label: "Eigene" }] },
-    { name: "kategorie", label: "Kategorie", icon: "kategorie", options: [{ value: "", label: "Alle Kategorien" }, ...TERMIN_KATEGORIEN.map((k) => ({ value: k, label: `${KATEGORIE_STIL[k]?.icon ?? ""} ${k}` })), { value: "Betriebskosten", label: "🧾 Betriebskosten" }] },
+    { name: "kategorie", label: "Kategorie", icon: "kategorie", options: [{ value: "", label: "Alle Kategorien" }, ...TERMIN_KATEGORIEN.map((k) => ({ value: k, label: `${KATEGORIE_STIL[k]?.icon ?? ""} ${k}` })), { value: "Betriebskosten", label: "Betriebskosten" }] },
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
   ];
 
@@ -169,7 +170,7 @@ export default async function TerminePage({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 500, fontSize: 13, textDecoration: e.erledigt ? "line-through" : undefined }}>
             {e.label}
-            {e.wiederkehrung && <span style={{ fontSize: 10.5, color: "var(--muted)", marginLeft: 6 }}>↻ {WIEDERKEHRUNG_LABEL[e.wiederkehrung] ?? e.wiederkehrung}</span>}
+            {e.wiederkehrung && <span style={{ fontSize: 10.5, color: "var(--muted)", marginLeft: 6 }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[e.wiederkehrung] ?? e.wiederkehrung}</span>}
           </div>
           <div style={{ fontSize: 11, color: "var(--muted)" }} title={e.rechtsgrundlage}>
             {[e.wer, e.wo].filter(Boolean).join(" · ")}
@@ -182,8 +183,8 @@ export default async function TerminePage({
         <span className={`badge ${stil.badge}`} style={{ flexShrink: 0 }}>{stil.icon} {e.kategorie}</span>
         {e.quelle === "eigen" && e.id ? (
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <Link href={`/termine/${e.id}/edit`} className="delete-btn" title="Termin bearbeiten" style={{ color: "var(--muted)" }}>✎</Link>
-            <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label="✕" confirmText="Termin löschen?" />
+            <Link href={`/termine/${e.id}/edit`} className="delete-btn" title="Termin bearbeiten" style={{ color: "var(--muted)" }}><Pencil size={14} /></Link>
+            <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label={<X size={14} />} confirmText="Termin löschen?" />
           </span>
         ) : (
           <span style={{ width: 22, flexShrink: 0 }} />
@@ -204,7 +205,7 @@ export default async function TerminePage({
             {ansicht === "monat" ? "☰ Liste" : "▦ Monat"}
           </Link>
           <a href="/termine/ical" className="btn btn-ghost" style={{ fontSize: 12 }} title="Alle anstehenden Termine als iCal-Datei für deinen Kalender">
-            📆 Kalender-Export (.ics)
+            <CalendarDays size={14} style={{ verticalAlign: "-2px" }} /> Kalender-Export (.ics)
           </a>
         </div>
       </div>
@@ -216,9 +217,9 @@ export default async function TerminePage({
         <div className="kpi-card"><div className="kpi-label">Überfällig</div><div className="kpi-value" style={{ color: ueberfaellig > 0 ? "var(--red)" : "var(--green)" }}>{ueberfaellig}</div></div>
       </div>
 
-      <AufklappForm label="＋ Neuer Termin">
+      <AufklappForm label={<><Plus size={14} style={{ verticalAlign: "-2px" }} /> Neuer Termin</>}>
       <div className="section" style={{ marginBottom: 0 }}>
-        <div className="section-header"><h3>＋ Neuer Termin</h3></div>
+        <div className="section-header"><h3><Plus size={16} style={{ verticalAlign: "-3px" }} /> Neuer Termin</h3></div>
         <div className="section-body">
           <form action={createTermin} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 12 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
@@ -264,7 +265,7 @@ export default async function TerminePage({
               <span style={{ color: "var(--muted)" }}>Notiz</span>
               <input name="notiz" className="input" />
             </label>
-            <button className="btn btn-gold">＋ Termin</button>
+            <button className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Termin</button>
           </form>
 
           {/* Wartungs-Vorlagen: Ein Klick legt den Termin mit Intervall an */}
@@ -274,7 +275,7 @@ export default async function TerminePage({
               {WARTUNGS_VORLAGEN.map((v) => (
                 <form key={v.titel} action={createVorlageTermin.bind(null, v.titel, v.wiederkehrung, v.kategorie, v.notiz, null)} style={{ display: "inline-flex" }}>
                   <button className="btn btn-ghost" style={{ fontSize: 11.5 }} title={`${v.notiz} · ${WIEDERKEHRUNG_LABEL[v.wiederkehrung]}`}>
-                    {KATEGORIE_STIL[v.kategorie]?.icon} {v.titel} <span style={{ color: "var(--muted)" }}>↻ {WIEDERKEHRUNG_LABEL[v.wiederkehrung]}</span>
+                    {KATEGORIE_STIL[v.kategorie]?.icon} {v.titel} <span style={{ color: "var(--muted)" }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[v.wiederkehrung]}</span>
                   </button>
                 </form>
               ))}
@@ -351,7 +352,7 @@ export default async function TerminePage({
           </div>
           <div className="section-body">
             {sichtbar.length === 0 ? (
-              <div className="empty"><div className="empty-icon">📅</div><p>Keine Termine</p></div>
+              <div className="empty"><CalendarDays className="empty-icon" size={36} color="var(--faint)" /><p>Keine Termine</p></div>
             ) : (
               <ExpandableList limit={12} label="weitere Termine">
                 {sichtbar.map(zeile)}

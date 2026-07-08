@@ -1,4 +1,5 @@
 "use client";
+import { CheckCircle2 } from "lucide-react";
 
 // Rückmeldeformular der Bank auf der öffentlichen Freigabe-Seite.
 import { useState } from "react";
@@ -11,7 +12,7 @@ export default function BankRueckmeldungForm({ token }: { token: string }) {
   if (status === "ok") {
     return (
       <div style={{ padding: 20, textAlign: "center" }}>
-        <div style={{ fontSize: 28, marginBottom: 8 }}>✅</div>
+        <div style={{ marginBottom: 8 }}><CheckCircle2 size={28} color="var(--green)" /></div>
         <div style={{ fontWeight: 600, marginBottom: 4 }}>Rückmeldung übermittelt</div>
         <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
           Der Eigentümer sieht Ihre Nachricht direkt in seiner Unterlagen-Übersicht.

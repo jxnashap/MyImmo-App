@@ -1,4 +1,5 @@
 "use client";
+import { FileText, Image as ImageIcon, Banknote } from "lucide-react";
 
 // Chronologische Merge-Tabelle für die „Alle"-Ansicht auf /cashflow:
 // Einnahmen + Ausgaben in EINER Liste (neueste zuerst), Zeilenklick öffnet
@@ -65,7 +66,7 @@ export default function CashflowListe({
                     style={{ color: "var(--gold)", fontSize: 12, textDecoration: "none" }}
                     title={r.rechnung_name}
                   >
-                    {r.rechnung_name.toLowerCase().endsWith(".pdf") ? "📄" : "🖼️"} ansehen
+                    {r.rechnung_name.toLowerCase().endsWith(".pdf") ? <FileText size={13} style={{ verticalAlign: "-2px" }} /> : <ImageIcon size={13} style={{ verticalAlign: "-2px" }} />} ansehen
                   </a>
                 ) : (
                   <span style={{ color: "var(--faint)" }}>–</span>
@@ -78,7 +79,7 @@ export default function CashflowListe({
           );
         })}
         {rows.length === 0 && (
-          <tr><td colSpan={7}><div className="empty"><div className="empty-icon">💶</div><h4>Noch keine Buchungen</h4><p>Erfasse Einnahmen und Ausgaben über „＋ Buchung".</p></div></td></tr>
+          <tr><td colSpan={7}><div className="empty"><Banknote className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Buchungen</h4><p>Erfasse Einnahmen und Ausgaben über „＋ Buchung".</p></div></td></tr>
         )}
       </ExpandableRows>
 

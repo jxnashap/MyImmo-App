@@ -1,4 +1,5 @@
 "use client";
+import { BarChart3, Zap, Save, Plus } from "lucide-react";
 
 import { useState } from "react";
 import KalkImport from "@/components/kalkulator/KalkImport";
@@ -100,11 +101,11 @@ export default function RoterFaden() {
 
   let ampel: { c: string; t: string } | null = null;
   if (faktor > 0) {
-    if (faktor < 20) ampel = { c: "var(--green)", t: `🟢 Faktor ${fmt(faktor, 1)}x — Sehr günstig. Starke Mietrendite möglich.` };
-    else if (faktor < 25) ampel = { c: "var(--green)", t: `🟢 Faktor ${fmt(faktor, 1)}x — Günstig. Solide B/C-Städte-Investition.` };
-    else if (faktor < 30) ampel = { c: "var(--amber)", t: `🟡 Faktor ${fmt(faktor, 1)}x — Marktüblich. Typisch für A-Städte.` };
-    else if (faktor < 35) ampel = { c: "var(--amber)", t: `🟠 Faktor ${fmt(faktor, 1)}x — Teuer. Cashflow oft negativ.` };
-    else ampel = { c: "var(--red)", t: `🔴 Faktor ${fmt(faktor, 1)}x — Sehr teuer. Schwer durch Miete zu rechtfertigen.` };
+    if (faktor < 20) ampel = { c: "var(--green)", t: `Faktor ${fmt(faktor, 1)}x — Sehr günstig. Starke Mietrendite möglich.` };
+    else if (faktor < 25) ampel = { c: "var(--green)", t: `Faktor ${fmt(faktor, 1)}x — Günstig. Solide B/C-Städte-Investition.` };
+    else if (faktor < 30) ampel = { c: "var(--amber)", t: `Faktor ${fmt(faktor, 1)}x — Marktüblich. Typisch für A-Städte.` };
+    else if (faktor < 35) ampel = { c: "var(--amber)", t: `Faktor ${fmt(faktor, 1)}x — Teuer. Cashflow oft negativ.` };
+    else ampel = { c: "var(--red)", t: `Faktor ${fmt(faktor, 1)}x — Sehr teuer. Schwer durch Miete zu rechtfertigen.` };
   }
 
   const numField = (label: string, value: string, set: (v: string) => void, ph?: string, step?: string) => (
@@ -144,7 +145,7 @@ export default function RoterFaden() {
               {stat("Bruttomietrendite", brutto > 0 ? pct(brutto) : "–", brutto >= 5 ? "green" : brutto >= 4 ? "gold" : "red")}
             </div>
             {ampel && (
-              <div style={{ marginTop: 10, fontSize: 12, padding: "8px 12px", borderRadius: 7, background: "rgba(0,0,0,0.15)", borderLeft: `3px solid ${ampel.c}`, color: ampel.c }}>{ampel.t}</div>
+              <div style={{ marginTop: 10, fontSize: 12, padding: "8px 12px", borderRadius: 7, background: "rgba(0,0,0,0.15)", borderLeft: `3px solid ${ampel.c}`, color: ampel.c }}><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: ampel.c, marginRight: 6, verticalAlign: "-1px" }} />{ampel.t}</div>
             )}
           </div>
         </div>
@@ -224,7 +225,7 @@ export default function RoterFaden() {
 
       {/* Ergebnis */}
       <div className="card mb-20">
-        <div className="card-header"><div className="card-title">📊 Ergebnis — Cashflow-Übersicht</div></div>
+        <div className="card-header"><div className="card-title"><BarChart3 size={16} style={{ verticalAlign: "-3px" }} /> Ergebnis — Cashflow-Übersicht</div></div>
         <div className="card-body">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 20 }}>
             {stat("Warmmiete", fmtE(warmmiete) + "/Mo", "green", 16)}
@@ -242,7 +243,7 @@ export default function RoterFaden() {
           </div>
           {kp > 0 && (
             <div style={{ marginTop: 14, padding: "10px 14px", background: "var(--bg3)", borderLeft: `3px solid ${cfCol(cfZins)}`, borderRadius: "0 7px 7px 0", fontSize: 12 }}>
-              ⚡ Zinsänderungsrisiko nach {bindung} Jahren (bei 5%): Rate würde <strong style={{ color: cfCol(cfZins) }}>{fmtE(rateNeu)}/Mo</strong> → Cashflow: <strong style={{ color: cfCol(cfZins) }}>{fmtE(cfZins)}/Mo</strong>
+              <Zap size={12} style={{ verticalAlign: "-2px" }} /> Zinsänderungsrisiko nach {bindung} Jahren (bei 5%): Rate würde <strong style={{ color: cfCol(cfZins) }}>{fmtE(rateNeu)}/Mo</strong> → Cashflow: <strong style={{ color: cfCol(cfZins) }}>{fmtE(cfZins)}/Mo</strong>
             </div>
           )}
         </div>
@@ -250,7 +251,7 @@ export default function RoterFaden() {
 
       {/* Ins Portfolio übernehmen */}
       <div className="card mb-20">
-        <div className="card-header"><div className="card-title">💾 Ergebnis ins Portfolio übernehmen</div></div>
+        <div className="card-header"><div className="card-title"><Save size={16} style={{ verticalAlign: "-3px" }} /> Ergebnis ins Portfolio übernehmen</div></div>
         <div className="card-body">
           <form action={saveKalkulationAlsImmobilie} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 12 }}>
             <input type="hidden" name="kaufpreis" value={kp} />
@@ -270,7 +271,7 @@ export default function RoterFaden() {
               <input type="checkbox" checked={mitDarlehen} onChange={(e) => setMitDarlehen(e.target.checked)} style={{ width: "auto" }} />
               auch als Darlehen anlegen
             </label>
-            <button type="submit" className="btn btn-gold" disabled={kp <= 0}>＋ Als Immobilie speichern</button>
+            <button type="submit" className="btn btn-gold" disabled={kp <= 0}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Als Immobilie speichern</button>
           </form>
           <div className="hint" style={{ marginTop: 8 }}>Legt ein neues Objekt mit Kaufpreis, Wert, Fläche und Miete an{mitDarlehen ? " und verknüpft das Darlehen aus Schritt 3" : ""}.</div>
         </div>

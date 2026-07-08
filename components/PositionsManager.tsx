@@ -1,4 +1,5 @@
 "use client";
+import { X } from "lucide-react";
 
 // Umlagepositionen als kleine Tabelle mit IMMER bearbeitbaren Feldern:
 // jede gespeicherte Zeile inline änderbar (Autosave onBlur/onChange),
@@ -324,7 +325,7 @@ export default function PositionsManager({
                       className="text-[var(--faint)] hover:text-[var(--red)]"
                       title="Löschen"
                     >
-                      ✕
+                      <X size={14} />
                     </button>
                   </td>
                 </tr>

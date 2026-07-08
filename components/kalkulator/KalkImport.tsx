@@ -1,4 +1,5 @@
 "use client";
+import { Bot, Hourglass, TriangleAlert, X } from "lucide-react";
 
 // „Aus Anzeige übernehmen": Exposé-LINK laden (Server holt + KI liest) ODER
 // Text einfügen (Fallback). Beide Wege liefern dieselbe Response-Shape
@@ -86,7 +87,7 @@ export default function KalkImport({
     <div className="card" style={{ marginBottom: 16 }}>
       <div className="card-header" style={{ cursor: "pointer" }} onClick={() => setOpen((o) => !o)}>
         <div>
-          <div className="card-title">🤖 Aus Anzeige übernehmen</div>
+          <div className="card-title"><Bot size={16} style={{ verticalAlign: "-3px" }} /> Aus Anzeige übernehmen</div>
           <div className="card-sub">Exposé-Link einfügen oder Text — MyImmo füllt die Felder</div>
         </div>
         <span style={{ color: "var(--muted)" }}>{open ? "▲" : "▼"}</span>
@@ -108,7 +109,7 @@ export default function KalkImport({
               onClick={() => rufeAb("/api/import-url", { url: url.trim() }, "url")}
               disabled={loading !== null || !/^https?:\/\/.+\..+/.test(url.trim())}
             >
-              {loading === "url" ? "⏳ Lade & werte Seite aus…" : "Aus Link laden"}
+              {loading === "url" ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Lade &amp; werte Seite aus…</> : "Aus Link laden"}
             </button>
           </div>
 
@@ -123,7 +124,7 @@ export default function KalkImport({
             style={{ resize: "vertical", width: "100%" }}
           />
 
-          {error && <div style={{ marginTop: 8, fontSize: 12, color: "var(--red)" }}>⚠️ {error}</div>}
+          {error && <div style={{ marginTop: 8, fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
 
           {hinweis && (
             <div
@@ -140,7 +141,7 @@ export default function KalkImport({
                 color: "var(--text)",
               }}
             >
-              <span style={{ fontSize: 15, lineHeight: "18px" }}>⚠️</span>
+              <TriangleAlert size={15} style={{ flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
                 <strong>Automatisch aus dem Exposé ausgelesen</strong> — bitte alle übernommenen
                 Werte prüfen und ggf. korrigieren (ohne Gewähr).
@@ -160,7 +161,7 @@ export default function KalkImport({
                 title="Hinweis schließen"
                 style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 14, lineHeight: "18px" }}
               >
-                ✕
+                <X size={14} />
               </button>
             </div>
           )}
@@ -172,7 +173,7 @@ export default function KalkImport({
               onClick={() => rufeAb("/api/import", { text }, "text")}
               disabled={loading !== null || text.trim().length < 30}
             >
-              {loading === "text" ? "⏳ Claude liest…" : "Auslesen & übernehmen"}
+              {loading === "text" ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Claude liest…</> : "Auslesen & übernehmen"}
             </button>
           </div>
         </div>
