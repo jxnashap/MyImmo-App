@@ -904,3 +904,58 @@ select:focus-visible, textarea:focus-visible {
 th { font-size: 11px; letter-spacing: 0.06em; }
 td { padding: 12px 10px 12px 0; }
 .form-box { border-radius: var(--r); box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 32px rgba(15,23,42,0.06); border: 1px solid var(--line); }
+
+/* =====================================================================
+   MODERNE STEUERELEMENTE (Design-Test, Fintech-Referenz Baselane/Stessa)
+   Überschreibt die älteren Control-Regeln oben (gleiche Selektoren, später
+   im Cascade). Einheitlich: 10px-Radius, weiße Felder, Gold-Fokusring,
+   eigener Select-Chevron, native Checkboxen/Radios/Slider in Markenfarbe.
+   ===================================================================== */
+.form-group input, .form-group select, .form-group textarea,
+.field input, .field select, .field textarea, .input {
+  padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line2);
+  background: var(--bg2); color: var(--text);
+  font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-size: 13.5px;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  outline: none;
+}
+.form-group input:hover, .form-group select:hover, .form-group textarea:hover,
+.field input:hover, .field select:hover, .input:hover { border-color: var(--faint); }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus,
+.field input:focus, .field select:focus, .field textarea:focus, .input:focus {
+  border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-pale); background: var(--bg2);
+}
+input::placeholder, textarea::placeholder { color: var(--faint); }
+textarea { min-height: 88px; resize: vertical; }
+
+/* Select: nativer Pfeil raus, eigener Chevron rein */
+.form-group select, .field select, select.input {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238A8A86' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* Checkboxen & Radios in Markenfarbe, angenehm groß */
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--gold); width: 16px; height: 16px; cursor: pointer;
+}
+
+/* Datumsfelder: Picker-Icon dezent */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
+input[type="date"]:hover::-webkit-calendar-picker-indicator { opacity: .9; }
+
+/* Slider */
+input[type="range"] { accent-color: var(--gold); cursor: pointer; }
+
+/* Buttons: etwas größer, klarer Fokus, weiche Hover-Anhebung */
+.btn { padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; }
+.btn-gold { box-shadow: 0 1px 2px rgba(184,144,43,.35); }
+.btn-gold:hover { background: #A67F24; box-shadow: 0 6px 16px rgba(184,144,43,.35); transform: translateY(-1px); }
+.btn-ghost, .btn-outline { background: var(--bg2); }
+.btn-ghost:hover, .btn-outline:hover { background: var(--bg3); }
+
+/* lucide-Icons sauber in Text/Buttons ausrichten */
+.btn svg, .nav-item .icon svg, .section-header svg, .badge svg { flex-shrink: 0; }
+.nav-item .icon { display: inline-flex; align-items: center; justify-content: center; }
