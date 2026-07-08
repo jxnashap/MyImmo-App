@@ -1,4 +1,5 @@
 "use client";
+import { Save, FileText } from "lucide-react";
 
 import BriefBlatt from "@/components/BriefBlatt";
 import SubmitButton from "@/components/SubmitButton";
@@ -225,7 +226,7 @@ export default function DocGenerator({
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button type="button" className="btn btn-outline" onClick={speichern} disabled={saveState === "saving"}>
-            {saveState === "saving" ? "Speichert…" : "💾 Vorlage speichern"}
+            {saveState === "saving" ? "Speichert…" : <><Save size={14} style={{ verticalAlign: "-2px" }} /> Vorlage speichern</>}
           </button>
           <button type="button" className="btn btn-ghost" onClick={zuruecksetzen}>
             Zurücksetzen
@@ -369,9 +370,9 @@ export default function DocGenerator({
             }
             style={{ marginRight: 8 }}
           >
-            {ablegen ? "Speichert…" : "💾 Speichern"}
+            {ablegen ? "Speichert…" : <><Save size={14} style={{ verticalAlign: "-2px" }} /> Speichern</>}
           </button>
-          <SubmitButton>📄 Als PDF herunterladen</SubmitButton>
+          <SubmitButton><FileText size={14} style={{ verticalAlign: "-2px" }} /> Als PDF herunterladen</SubmitButton>
         </form>
       </div>
     </div>

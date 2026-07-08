@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
 import type { RawPoint } from "@/lib/zeitraum";
@@ -105,13 +105,13 @@ export default async function DashboardPage() {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
           <Link href="/termine" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CalendarDays size={15} /> Terminkalender</Link>
-          <Link href="/properties/new" className="btn btn-gold">＋ Immobilie</Link>
+          <Link href="/properties/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Immobilie</Link>
         </div>
       </div>
 
       {refinanz.length > 0 && (
         <div style={{ marginBottom: 16, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 20 }}>⚠️</span>
+          <TriangleAlert size={20} color="var(--red)" style={{ flexShrink: 0 }} />
           <div>
             <div style={{ fontWeight: 600, color: "var(--red)", fontSize: 13 }}>{refinanz.length} Zinsbindung{refinanz.length > 1 ? "en" : ""} läuft bald ab</div>
             <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{refinanz.map(({ k }) => `${k.bezeichnung || "Darlehen"} (${datum(k.zinsbindung)})`).join(" · ")}</div>
@@ -165,7 +165,7 @@ export default async function DashboardPage() {
           <div className="section-header"><h3>Einnahmen vs. Ausgaben</h3></div>
           <div className="section-body">
             {properties.length === 0 ? (
-              <div className="empty"><div className="empty-icon">📊</div><p>Noch keine Daten</p></div>
+              <div className="empty"><BarChart3 className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Daten</p></div>
             ) : (
               balken.map((b) => (
                 <div key={b.lbl} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
@@ -184,7 +184,7 @@ export default async function DashboardPage() {
           <div className="section-header"><h3>Aktuelle Kredite</h3></div>
           <div className="section-body">
             {kredite.length === 0 ? (
-              <div className="empty"><div className="empty-icon">🏦</div><p>Noch keine Kredite</p></div>
+              <div className="empty"><Landmark className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Kredite</p></div>
             ) : (
               kredite.slice(0, 3).map((k) => {
                 const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? 0) / k.betrag) * 100))) : 100;
@@ -211,7 +211,7 @@ export default async function DashboardPage() {
         <div className="section-header"><h3>Letzte Transaktionen</h3></div>
         <div className="section-body">
           {trans.length === 0 ? (
-            <div className="empty"><div className="empty-icon">💸</div><p>Noch keine Transaktionen</p></div>
+            <div className="empty"><Banknote className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Transaktionen</p></div>
           ) : (
             <table>
               <thead><tr><th>Datum</th><th>Immobilie</th><th>Art</th><th>Beschreibung</th><th>Betrag</th></tr></thead>

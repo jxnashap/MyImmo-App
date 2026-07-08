@@ -1,4 +1,5 @@
 "use client";
+import { FileText, Hourglass, Paperclip, TriangleAlert, CheckCircle2 } from "lucide-react";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -63,14 +64,14 @@ export default function NkOcrUpload({ mieterId }: { mieterId: string }) {
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      <div className="card-header"><div><div className="card-title">📄 Nebenkostenabrechnung hochladen</div><div className="card-sub">PDF/Bild — Claude liest die umlagefähigen Positionen aus</div></div></div>
+      <div className="card-header"><div><div className="card-title"><FileText size={16} style={{ verticalAlign: "-3px" }} /> Nebenkostenabrechnung hochladen</div><div className="card-sub">PDF/Bild — Claude liest die umlagefähigen Positionen aus</div></div></div>
       <div className="card-body">
         <label className="btn btn-ghost" style={{ fontSize: 12, cursor: "pointer", display: "inline-flex" }}>
-          {loading ? "⏳ Claude liest aus…" : "📎 Datei wählen (PDF/Bild)"}
+          {loading ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Claude liest aus…</> : <><Paperclip size={14} style={{ verticalAlign: "-2px" }} /> Datei wählen (PDF/Bild)</>}
           <input type="file" accept="application/pdf,image/*" onChange={onFile} disabled={loading} style={{ display: "none" }} />
         </label>
 
-        {error && <div style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}>⚠️ {error}</div>}
+        {error && <div style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
 
         {positionen && (
           <div style={{ marginTop: 14 }}>
@@ -84,7 +85,7 @@ export default function NkOcrUpload({ mieterId }: { mieterId: string }) {
             ))}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
               <button type="button" className="btn btn-ghost" onClick={() => setPositionen(null)}>Verwerfen</button>
-              <button type="button" className="btn btn-gold" onClick={uebernehmen} disabled={saving}>{saving ? "Speichern…" : "✅ Positionen übernehmen"}</button>
+              <button type="button" className="btn btn-gold" onClick={uebernehmen} disabled={saving}>{saving ? "Speichern…" : <><CheckCircle2 size={14} style={{ verticalAlign: "-2px" }} /> Positionen übernehmen</>}</button>
             </div>
           </div>
         )}

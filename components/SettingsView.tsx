@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   User, Landmark, ShieldCheck, FileText, Download, Trash2, Plus, Star,
-  Lock, ExternalLink, X, Check, type LucideIcon,
+  Lock, ExternalLink, X, Check, TriangleAlert, type LucideIcon,
 } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { KEY_MIN, KEY_CLOSE, AUTOLOGOUT_EVENT } from "@/components/AutoLogout";
@@ -287,7 +287,7 @@ function BankPanel({ ibans }: { ibans: Iban[] }) {
           </label>
           {error && (
             <div className="span2" role="alert" style={{ background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", color: "var(--red)", borderRadius: 10, padding: "9px 12px", fontSize: 13 }}>
-              ⚠️ {error}
+              <TriangleAlert size={13} style={{ verticalAlign: "-2px" }} /> {error}
             </div>
           )}
           <div className="span2">
@@ -344,7 +344,7 @@ function SicherheitPanel({ email, provider }: { email?: string | null; provider?
           </label>
           {err && (
             <div className="span2" role="alert" style={{ background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", color: "var(--red)", borderRadius: 10, padding: "9px 12px", fontSize: 13 }}>
-              ⚠️ {err}
+              <TriangleAlert size={13} style={{ verticalAlign: "-2px" }} /> {err}
             </div>
           )}
           <div className="span2">

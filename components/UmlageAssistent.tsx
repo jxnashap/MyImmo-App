@@ -1,4 +1,5 @@
 "use client";
+import { Hourglass, FileText, TriangleAlert, X, Plus, Save } from "lucide-react";
 
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -364,7 +365,7 @@ export default function UmlageAssistent({
             }}
           >
             <label className="btn btn-ghost" style={{ fontSize: 12, cursor: ocrLoading ? "wait" : "pointer", display: "inline-flex" }}>
-              {ocrLoading ? "⏳ Claude liest aus…" : "📄 NK-Abrechnung hochladen (Positionen auslesen)"}
+              {ocrLoading ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Claude liest aus…</> : <><FileText size={14} style={{ verticalAlign: "-2px" }} /> NK-Abrechnung hochladen (Positionen auslesen)</>}
               <input
                 type="file"
                 accept="application/pdf,image/*"
@@ -379,7 +380,7 @@ export default function UmlageAssistent({
           </div>
           {ocrError && (
             <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
-              ⚠️ {ocrError}
+              <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {ocrError}
             </div>
           )}
           {ocrInfo && (
@@ -468,7 +469,7 @@ export default function UmlageAssistent({
                       ▼
                     </button>
                     <button type="button" className="delete-btn" title="Position entfernen" onClick={() => removeZeile(i)}>
-                      ✕
+                      <X size={14} />
                     </button>
                   </td>
                 </tr>
@@ -483,7 +484,7 @@ export default function UmlageAssistent({
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12, alignItems: "center" }}>
             <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => addZeile()}>
-              ＋ Position
+              <Plus size={14} style={{ verticalAlign: "-2px" }} /> Position
             </button>
             <span style={{ fontSize: 11, color: "var(--faint)" }}>Schnellauswahl:</span>
             {VORLAGEN.slice(0, 8).map((v) => (
@@ -583,7 +584,7 @@ export default function UmlageAssistent({
           onClick={speichern}
           disabled={status === "saving" || aktive.length === 0 || mieter.length === 0}
         >
-          {status === "saving" ? "Speichert…" : "💾 Verteilen & in NK-Abrechnungen übernehmen"}
+          {status === "saving" ? "Speichert…" : <><Save size={14} style={{ verticalAlign: "-2px" }} /> Verteilen &amp; in NK-Abrechnungen übernehmen</>}
         </button>
         <span style={{ fontSize: 11, color: "var(--muted)", maxWidth: 380 }}>
           Überschreibt nur die zuvor automatisch verteilten Positionen ({jahr}). Manuell angelegte Positionen bleiben erhalten.

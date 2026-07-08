@@ -1,4 +1,5 @@
 "use client";
+import { BarChart3 } from "lucide-react";
 
 import { useZeitraum } from "./ZeitraumProvider";
 import { aggregate, niceScale, kurzTick, xTickLabel, type RawPoint } from "@/lib/zeitraum";
@@ -25,7 +26,7 @@ export default function BetragChart({
   if (!points || points.length === 0) {
     return (
       <div className="empty">
-        <div className="empty-icon">📊</div>
+        <BarChart3 className="empty-icon" size={36} color="var(--faint)" />
         <p>Noch keine Daten für die Auswertung</p>
       </div>
     );

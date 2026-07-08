@@ -1,4 +1,5 @@
 "use client";
+import { Zap, Flame, Droplet, Fuel, Heater, Package, type LucideIcon } from "lucide-react";
 
 import { useState } from "react";
 import { euro, datum } from "@/lib/format";
@@ -11,7 +12,7 @@ import type { Verbrauch, Property } from "@/lib/types";
 
 const ARTEN = ["Strom", "Gas", "Wasser", "Heizöl", "Fernwärme", "Sonstiges"];
 const EINHEITEN = ["kWh", "m³", "Liter", "Pauschal"];
-const ART_ICONS: Record<string, string> = { Strom: "⚡", Gas: "🔥", Wasser: "💧", Heizöl: "🛢", Fernwärme: "♨", Heizung: "♨", Sonstiges: "📦" };
+const ART_ICONS: Record<string, LucideIcon> = { Strom: Zap, Gas: Flame, Wasser: Droplet, Heizöl: Fuel, Fernwärme: Heater, Heizung: Heater, Sonstiges: Package };
 
 export default function VerbrauchListe({
   rows,
@@ -40,14 +41,14 @@ export default function VerbrauchListe({
           >
             <td>{datum(v.buchungsdatum)}</td>
             <td style={{ color: "var(--muted)" }}>{v.prop_id ? nameOf.get(v.prop_id) ?? "–" : "–"}</td>
-            <td>{(v.art && ART_ICONS[v.art]) || ""} {v.art ?? "–"}</td>
+            <td>{(() => { const Icon = v.art ? ART_ICONS[v.art] : undefined; return Icon ? <Icon size={13} style={{ verticalAlign: "-2px" }} /> : null; })()} {v.art ?? "–"}</td>
             <td>{v.menge ?? "–"}</td>
             <td style={{ color: "var(--muted)" }}>{v.einheit ?? ""}</td>
             <td style={{ fontWeight: 600 }}>{euro(v.verbrauchkosten)}</td>
           </tr>
         ))}
         {rows.length === 0 && (
-          <tr><td colSpan={6}><div className="empty"><div className="empty-icon">⚡</div>Noch kein Verbrauch</div></td></tr>
+          <tr><td colSpan={6}><div className="empty"><Zap className="empty-icon" size={36} color="var(--faint)" />Noch kein Verbrauch</div></td></tr>
         )}
       </ExpandableRows>
 

@@ -1,4 +1,5 @@
 "use client";
+import { Landmark } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import { fmt, fmtE, pct, CP_STORAGE_KEY, type CpData } from "@/lib/kalk";
@@ -36,7 +37,7 @@ export default function Bankgespraech() {
       <div className="section">
         <div className="section-body">
           <div className="empty">
-            <div className="empty-icon">🏦</div>
+            <Landmark className="empty-icon" size={36} color="var(--faint)" />
             <h4>Fülle zuerst das Cockpit aus</h4>
             <p>Die Übersicht übernimmt automatisch die Zahlen aus deiner letzten Cockpit-Kalkulation.</p>
           </div>

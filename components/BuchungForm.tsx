@@ -1,4 +1,5 @@
 "use client";
+import { Wallet, ClipboardList } from "lucide-react";
 
 // Gemeinsames Buchungs-Formular für Einnahmen UND Ausgaben (Neu + Bearbeiten).
 // Neu: Segmented-Umschalter Einnahme/Ausgabe; Bearbeiten: Typ fix (row gesetzt).
@@ -81,7 +82,7 @@ export default function BuchungForm({
             style={typ === "einnahme" ? { color: "var(--green)", background: "var(--green-dim)" } : undefined}
             onClick={() => setTyp("einnahme")}
           >
-            💰 Einnahme
+            <Wallet size={14} style={{ verticalAlign: "-2px" }} /> Einnahme
           </button>
           <button
             type="button"
@@ -89,7 +90,7 @@ export default function BuchungForm({
             style={typ === "ausgabe" ? { color: "var(--red)", background: "var(--red-dim)" } : undefined}
             onClick={() => setTyp("ausgabe")}
           >
-            📋 Ausgabe
+            <ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Ausgabe
           </button>
         </div>
       )}

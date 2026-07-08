@@ -4,8 +4,9 @@
 // Ein Submit innerhalb (Server-Action-Form) klappt den Bereich wieder zu.
 
 import { useState, type ReactNode } from "react";
+import { X } from "lucide-react";
 
-export default function AufklappForm({ label, children }: { label: string; children: ReactNode }) {
+export default function AufklappForm({ label, children }: { label: ReactNode; children: ReactNode }) {
   const [offen, setOffen] = useState(false);
 
   return (
@@ -16,7 +17,7 @@ export default function AufklappForm({ label, children }: { label: string; child
         onClick={() => setOffen((o) => !o)}
         aria-expanded={offen}
       >
-        {offen ? "✕ Schließen" : label}
+        {offen ? <><X size={14} style={{ verticalAlign: "-2px" }} /> Schließen</> : label}
       </button>
       {/* Immer gemountet, nur versteckt: Ein Unmount beim Submit würde die
           laufende Server-Action des Formulars abbrechen. */}

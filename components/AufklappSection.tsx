@@ -13,7 +13,7 @@ export default function AufklappSection({
   children,
   standardOffen = false,
 }: {
-  titel: string;
+  titel: ReactNode;
   untertitel?: string;
   children: ReactNode;
   standardOffen?: boolean;
