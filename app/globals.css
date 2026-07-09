@@ -959,3 +959,19 @@ input[type="range"] { accent-color: var(--gold); cursor: pointer; }
 /* lucide-Icons sauber in Text/Buttons ausrichten */
 .btn svg, .nav-item .icon svg, .section-header svg, .badge svg { flex-shrink: 0; }
 .nav-item .icon { display: inline-flex; align-items: center; justify-content: center; }
+
+/* ============================================================
+   DARK MODE: Überschriften (Fraunces) in Gold
+   Im hellen Theme bleiben Überschriften Tinte; im dunklen Theme
+   übernehmen sie die Markenfarbe des Briefkopfs.
+   ============================================================ */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] .serif,
+[data-theme="dark"] .topbar-title,
+[data-theme="dark"] .section-header h3,
+[data-theme="dark"] .form-box h3,
+[data-theme="dark"] .section-title {
+  color: var(--gold);
+}
