@@ -131,9 +131,9 @@
   --text: #E6EAF0;
   --muted: #8B94A3;
   --faint: #59626F;
-  --gold: #E5A83B;
-  --gold-dim: rgba(229,168,59,0.25);
-  --gold-pale: rgba(229,168,59,0.10);
+  --gold: #B8902B; /* exakt das Briefkopf-Gold — identisch zum hellen Theme */
+  --gold-dim: rgba(184,144,43,0.30);
+  --gold-pale: rgba(184,144,43,0.12);
   --green: #34C77B;
   --green-dim: rgba(52,199,123,0.15);
   --red: #F26D5F;
