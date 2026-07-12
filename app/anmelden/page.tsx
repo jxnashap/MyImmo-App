@@ -36,16 +36,28 @@ export default function AnmeldenPage() {
 
   function waehle(key: string, e: React.MouseEvent<HTMLButtonElement>) {
     if (gewaehlt) return;
-    // Zoom-Zentrum = Mitte der angeklickten Kachel: die Karte skaliert
-    // exakt in den Button hinein (nur transform/opacity → ruckelfrei).
-    const card = cardRef.current;
-    const t = e.currentTarget.getBoundingClientRect();
-    if (card) {
-      const c = card.getBoundingClientRect();
-      card.style.transformOrigin = `${t.left - c.left + t.width / 2}px ${t.top - c.top + t.height / 2}px`;
-    }
     setGewaehlt(key);
-    setTimeout(() => router.push(`/login?rolle=${key}`), 520);
+    const card = cardRef.current;
+    const reduziert = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!card || reduziert) {
+      router.push(`/login?rolle=${key}`);
+      return;
+    }
+    // Zoom-Zentrum = Mitte der angeklickten Kachel; Animation über die
+    // Web-Animations-API (unabhängig vom CSS-Cascade-Timing → ruckelfrei,
+    // nur transform/opacity, läuft komplett auf dem Compositor).
+    const t = e.currentTarget.getBoundingClientRect();
+    const c = card.getBoundingClientRect();
+    card.style.transformOrigin = `${t.left - c.left + t.width / 2}px ${t.top - c.top + t.height / 2}px`;
+    card.animate(
+      [
+        { transform: "scale(1)", opacity: 1 },
+        { transform: "scale(1.7)", opacity: 1, offset: 0.4 },
+        { transform: "scale(3.6)", opacity: 0 },
+      ],
+      { duration: 560, easing: "cubic-bezier(.5,.05,.7,.3)", fill: "forwards" }
+    );
+    setTimeout(() => router.push(`/login?rolle=${key}`), 540);
   }
 
   return (
@@ -55,11 +67,12 @@ export default function AnmeldenPage() {
     >
       <div
         ref={cardRef}
-        className={`role-card w-full max-w-[420px] rounded-2xl border p-8 sm:p-10 ${gewaehlt ? "zoom-out" : "zoom-in"}`}
+        className="role-card zoom-in w-full max-w-[420px] rounded-2xl border p-8 sm:p-10"
         style={{
           background: "var(--bg2)",
           borderColor: "var(--line2)",
           boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 18px 50px -20px rgba(0,0,0,0.28)",
+          pointerEvents: gewaehlt ? "none" : undefined,
         }}
       >
         <BrandMark size="lg" />

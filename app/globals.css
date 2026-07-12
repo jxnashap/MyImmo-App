@@ -857,13 +857,7 @@ select:focus-visible, textarea:focus-visible {
    Nur transform + opacity → läuft komplett auf dem Compositor.
    ============================================================ */
 .role-card { will-change: transform, opacity; backface-visibility: hidden; }
-.role-card.zoom-in { animation: roleZoomIn .45s cubic-bezier(.22,.9,.3,1) both; }
-.role-card.zoom-out {
-  transform: scale(3.4);
-  opacity: 0;
-  transition: transform .55s cubic-bezier(.6,.05,.75,.4), opacity .42s ease-in .13s;
-  pointer-events: none;
-}
+.role-card.zoom-in { animation: roleZoomIn .45s cubic-bezier(.22,.9,.3,1); }
 @keyframes roleZoomIn {
   from { transform: scale(.94); opacity: 0; }
   to   { transform: none; opacity: 1; }
@@ -880,7 +874,6 @@ select:focus-visible, textarea:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .role-card.zoom-in { animation: none; }
-  .role-card.zoom-out { transition: opacity .2s; transform: none; }
   .role-tile, .role-tile:hover { transform: none; }
 }
 >>>>>>> da99ef8 (Rollen-Auswahl vor dem Login (Vermieter/Mieter/Service/Hausverwaltung))
