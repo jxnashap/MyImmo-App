@@ -11,6 +11,7 @@ import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
 import {
   TITEL,
+  ART_BESCHEINIGUNG,
   ART_ZEIGT_BETRAG,
   fuelleVorlage,
   vorlageFuer,
@@ -56,7 +57,7 @@ export async function erzeugeBriefPdf(
 
   const { data: tenant } = await supabase
     .from("mieter")
-    .select("vorname,nachname,mieter_adresse,einheit,prop_id,kaltmiete,iban")
+    .select("vorname,nachname,mieter_adresse,einheit,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,mietbeginn,iban")
     .eq("id", mieterId)
     .single();
   if (!tenant) return null;
@@ -85,6 +86,8 @@ export async function erzeugeBriefPdf(
   const fallbackMiete = art === "zahlungserinnerung" || art === "mahnung";
   const effBetrag = betragNum > 0 ? betragNum : fallbackMiete ? kaltmiete : 0;
 
+  const nkvz = tenant.nk_vorauszahlung ?? 0;
+  const warm = kaltmiete + nkvz + (tenant.stellplatz_miete ?? 0);
   const werte: Record<string, string> = {
     mieter: mieterName || "–",
     objekt,
@@ -93,6 +96,10 @@ export async function erzeugeBriefPdf(
     datum: deDate(f.datum),
     grund: f.grund.trim(),
     mieterkonto: fmtIbanAnzeige(decryptNullable(tenant.iban) ?? ""),
+    mietbeginn: tenant.mietbeginn ? deDate(tenant.mietbeginn) : "–",
+    nkvz: nkvz > 0 ? eur(nkvz) : "0,00 €",
+    warmmiete: warm > 0 ? eur(warm) : "",
+    vermieter: f.vName || profil?.name || "",
   };
 
   const quelle = f.text.trim() ? f.text : vorlageFuer(art);
@@ -115,6 +122,7 @@ export async function erzeugeBriefPdf(
     objekt,
     absaetze,
     konto,
+    bescheinigung: ART_BESCHEINIGUNG.includes(art),
   });
 
   const titel = TITEL[art] ?? "Schreiben";

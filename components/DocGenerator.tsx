@@ -13,6 +13,7 @@ import {
   PLATZHALTER,
   ART_ZEIGT_BETRAG,
   fuelleVorlage,
+  ART_BESCHEINIGUNG,
   type DocArt,
 } from "@/lib/dokumentVorlagen";
 import { saveDokumentVorlage, resetDokumentVorlage } from "@/lib/actions/dokumentVorlagen";
@@ -109,6 +110,8 @@ export default function DocGenerator({
   const fallbackMiete = art === "zahlungserinnerung" || art === "mahnung";
   const effBetrag = betragNum > 0 ? betragNum : fallbackMiete ? miete : 0;
 
+  const nkvz = tenant.nk_vorauszahlung ?? 0;
+  const warm = miete + nkvz + (tenant.stellplatz_miete ?? 0);
   const werte: Record<string, string> = {
     mieter: mieterName || "–",
     objekt,
@@ -117,7 +120,12 @@ export default function DocGenerator({
     datum: deDate(datum),
     grund: grund.trim(),
     mieterkonto: tenant.iban ? fmtIban(tenant.iban) : "",
+    mietbeginn: tenant.mietbeginn ? deDate(tenant.mietbeginn) : "–",
+    nkvz: nkvz > 0 ? eur(nkvz) : "0,00 €",
+    warmmiete: warm > 0 ? eur(warm) : "",
+    vermieter: vName || "–",
   };
+  const istBescheinigung = ART_BESCHEINIGUNG.includes(art);
   const absaetze = fuelleVorlage(vorlageText, werte);
 
   // --- Vorschau-Daten ---
@@ -319,7 +327,7 @@ export default function DocGenerator({
           betreff={titel}
           untertitel={`Mietobjekt: ${objekt}`}
         >
-          <p>Sehr geehrte/r {mieterName || "–"},</p>
+          {!istBescheinigung && <p>Sehr geehrte/r {mieterName || "–"},</p>}
           {absaetze.length === 0 ? (
             <p className="brief-muted" style={{ fontStyle: "italic" }}>
               (Noch kein Text — Felder ausfüllen oder Vorlage bearbeiten.)
@@ -339,8 +347,14 @@ export default function DocGenerator({
             </div>
           )}
 
+          {istBescheinigung ? (
+            <p style={{ marginTop: 40, borderTop: "1px solid var(--line2)", maxWidth: 220, paddingTop: 4, fontSize: 11, color: "var(--muted)" }}>
+              {vName || "–"} (Vermieter / Wohnungsgeber)
+            </p>
+          ) : (
           <p style={{ marginTop: 26 }}>Mit freundlichen Grüßen</p>
-          <p style={{ marginTop: 40 }}>{absName}</p>
+          )}
+          {!istBescheinigung && <p style={{ marginTop: 40 }}>{absName}</p>}
         </BriefBlatt>
 
         {/* PDF-Download: Route liefert attachment → Download ohne neues Fenster */}

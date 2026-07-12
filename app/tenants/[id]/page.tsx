@@ -9,6 +9,7 @@ import DeleteButton from "@/components/DeleteButton";
 import type { Tenant, Property, MietZeitraum } from "@/lib/types";
 import MietZeitraeume from "@/components/MietZeitraeume";
 import MieterEinladung from "@/components/MieterEinladung";
+import FreigabeToggle from "@/components/FreigabeToggle";
 import { decryptNullable } from "@/lib/crypto/secure";
 import { ReceiptText, FileText, KeyRound, Pencil, Trash2, TriangleAlert } from "lucide-react";
 
@@ -38,7 +39,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
   // Gespeicherte Dokumente (Archiv-Einträge dieses Mieters)
   const { data: doks } = await supabase
     .from("notizen")
-    .select("id,titel,kategorie,datei_name,created_at")
+    .select("id,titel,kategorie,datei_name,created_at,mieter_freigabe")
     .eq("mieter_id", params.id)
     .order("created_at", { ascending: false });
   const dokumente = doks ?? [];
@@ -200,6 +201,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
                 <span style={{ fontWeight: 500, color: "var(--text)" }}>{n.titel || n.datei_name || "Dokument"}</span>
                 {n.kategorie && <span className="badge badge-teal">{n.kategorie}</span>}
                 <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{n.created_at ? datum(n.created_at) : ""}</span>
+                <FreigabeToggle notizId={n.id} freigegeben={!!n.mieter_freigabe} />
                 <a href={`/archiv/${n.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
                 <a href={`/archiv/${n.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
               </div>

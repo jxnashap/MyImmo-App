@@ -13,7 +13,9 @@ export type DocArt =
   | "mahnung"
   | "kuendigung"
   | "reparatur"
-  | "nk-anschreiben";
+  | "nk-anschreiben"
+  | "wohnungsgeber"
+  | "mietbescheinigung";
 
 export const ARTEN: { v: DocArt; label: string }[] = [
   { v: "allgemein", label: "Allgemeines Schreiben" },
@@ -23,6 +25,8 @@ export const ARTEN: { v: DocArt; label: string }[] = [
   { v: "kuendigung", label: "Kündigung" },
   { v: "reparatur", label: "Reparatur-Ankündigung" },
   { v: "nk-anschreiben", label: "NK-Abrechnung — Anschreiben" },
+  { v: "wohnungsgeber", label: "Wohnungsgeberbestätigung (§ 19 BMG)" },
+  { v: "mietbescheinigung", label: "Mietbescheinigung" },
 ];
 
 export const TITEL: Record<DocArt, string> = {
@@ -33,7 +37,13 @@ export const TITEL: Record<DocArt, string> = {
   kuendigung: "Kündigung des Mietverhältnisses",
   reparatur: "Ankündigung von Instandhaltungsarbeiten",
   "nk-anschreiben": "Nebenkostenabrechnung — Anschreiben",
+  wohnungsgeber: "Wohnungsgeberbestätigung (§ 19 BMG)",
+  mietbescheinigung: "Mietbescheinigung",
 };
+
+// Bescheinigungen: sachlicher Aufbau ohne Anrede/Grußformel,
+// stattdessen Unterschriftszeile des Vermieters/Wohnungsgebers.
+export const ART_BESCHEINIGUNG: DocArt[] = ["wohnungsgeber", "mietbescheinigung"];
 
 // Dokumentarten, bei denen ein Betrag + Zahlungskonto sinnvoll ist.
 export const ART_ZEIGT_BETRAG: DocArt[] = ["mieterhoehung", "zahlungserinnerung", "mahnung"];
@@ -47,6 +57,10 @@ export const PLATZHALTER: { key: string; label: string }[] = [
   { key: "datum", label: "Datum" },
   { key: "grund", label: "Begründung / Zusatztext" },
   { key: "mieterkonto", label: "Konto des Mieters (IBAN)" },
+  { key: "mietbeginn", label: "Mietbeginn" },
+  { key: "warmmiete", label: "Warmmiete (kalt + NK)" },
+  { key: "nkvz", label: "NK-Vorauszahlung" },
+  { key: "vermieter", label: "Vermietername" },
 ];
 
 // Standardtexte (Briefkörper zwischen Anrede und Grußformel).
@@ -97,6 +111,30 @@ Gemäß § 555a BGB sind Sie verpflichtet, Erhaltungsmaßnahmen zu dulden. Ich b
 {{grund}}
 
 Die Einzelheiten entnehmen Sie bitte der beigefügten Abrechnung. Bei Fragen stehe ich Ihnen gerne zur Verfügung.`,
+
+  wohnungsgeber: `Hiermit bestätige ich gemäß § 19 Bundesmeldegesetz (BMG) als Wohnungsgeber den Einzug in die unten genannte Wohnung.
+
+Einziehende Person(en): {{mieter}}
+
+Wohnung: {{objekt}}
+
+Einzugsdatum: {{mietbeginn}}
+
+Wohnungsgeber: {{vermieter}}
+
+{{grund}}
+
+Diese Bestätigung dient ausschließlich der Vorlage bei der Meldebehörde (Anmeldung nach § 17 BMG). Hinweis: Das Ausstellen einer solchen Bestätigung ohne tatsächlichen Einzug ist verboten (§ 19 Abs. 6 BMG).`,
+
+  mietbescheinigung: `hiermit wird bescheinigt, dass {{mieter}} seit dem {{mietbeginn}} Mieter/in der folgenden Wohnung ist:
+
+{{objekt}}
+
+Die monatliche Kaltmiete beträgt {{miete}}, die Nebenkosten-Vorauszahlung {{nkvz}} (Gesamtmiete: {{warmmiete}}).
+
+{{grund}}
+
+Diese Bescheinigung wird auf Wunsch des Mieters zur Vorlage bei Behörden, Banken oder Vermietern ausgestellt.`,
 };
 
 /** Liefert die gespeicherte Vorlage für eine Art, sonst den Standardtext. */
