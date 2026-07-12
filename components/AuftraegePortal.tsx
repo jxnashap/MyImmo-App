@@ -2,7 +2,7 @@
 
 // Service-Portal: erhaltene Aufträge annehmen, erledigen oder ablehnen
 // (mit optionaler Rückmeldung an den Vermieter).
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Wrench, CalendarDays, Building2, Phone, Mail, Globe, SendHorizonal, Copy, Check, Link2 } from "lucide-react";
 import { beantworteAuftrag, beantrageAuftrag } from "@/lib/actions/service";
 import { datum } from "@/lib/format";
@@ -48,7 +48,11 @@ function FirmenLinkAktionen({
   token: string; titel: string; objekt: string | null; firma: PortalFirmaRow | null;
 }) {
   const [kopiert, setKopiert] = useState(false);
-  const link = typeof window !== "undefined" ? `${window.location.origin}/auftrag/${token}` : `/auftrag/${token}`;
+  // Origin erst nach der Hydration lesen — sonst backt der Server einen
+  // relativen (toten) Link in die mailto-URL.
+  const [origin, setOrigin] = useState("");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+  const link = `${origin}/auftrag/${token}`;
   const betreff = `Auftragsanfrage: ${titel}${objekt ? ` (${objekt})` : ""}`;
   const text =
     `Guten Tag,\n\nwir bitten um Ausführung des folgenden Auftrags:\n${titel}${objekt ? `\nObjekt: ${objekt}` : ""}\n\n` +
@@ -57,7 +61,7 @@ function FirmenLinkAktionen({
   return (
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
       <a
-        href={`mailto:${firma?.email ?? ""}?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(text)}`}
+        href={`mailto:${encodeURIComponent(firma?.email ?? "")}?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(text)}`}
         className="btn btn-gold" style={{ fontSize: 11, padding: "5px 12px", textDecoration: "none" }}
       >
         <Mail size={12} style={{ verticalAlign: "-2px" }} /> Per E-Mail an die Firma
@@ -115,8 +119,9 @@ function Eintrag({ a, firmen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[] 
       )}
       {(a.status === "offen" || a.status === "angenommen") && a.erstellt_von === "service" && firma && (
         <p style={{ fontSize: 12, marginTop: 6, padding: "6px 10px", background: "var(--green-dim)", color: "var(--green)", borderRadius: 6 }}>
-          Vom Vermieter freigegeben — jetzt die Firma anrufen oder ihr den Auftrags-Link
-          per E-Mail schicken; den Termin stimmt die Firma direkt mit dem Mieter ab.
+          {a.mieter_id
+            ? "Vom Vermieter freigegeben — jetzt die Firma anrufen oder ihr den Auftrags-Link per E-Mail schicken; den Termin stimmt die Firma direkt mit dem Mieter ab."
+            : "Vom Vermieter freigegeben — jetzt die Firma anrufen und das Problem erklären."}
         </p>
       )}
       {(a.status === "offen" || a.status === "angenommen") && a.mieter_id && a.public_token && (

@@ -150,10 +150,19 @@ export async function beantrageAuftrag(formData: FormData) {
   if (!vermieterId) return { error: "Bitte den Auftraggeber wählen." };
   if (!titel) return { error: "Bitte angeben, was gemacht werden muss." };
 
+  // Vorgeschlagene Firma muss zum gewählten Auftraggeber gehören.
+  let firmaOk: string | null = null;
+  if (firmaId) {
+    const { data: f } = await supabase
+      .from("firmen").select("id").eq("id", firmaId).eq("user_id", vermieterId).maybeSingle();
+    if (!f) return { error: "Die gewählte Firma gehört nicht zu diesem Auftraggeber." };
+    firmaOk = f.id;
+  }
+
   const { error } = await supabase.from("auftraege").insert({
     vermieter_id: vermieterId,
     service_user_id: user.id,
-    firma_id: firmaId || null,
+    firma_id: firmaOk,
     objekt_name: objekt || null,
     titel: titel.slice(0, 200),
     beschreibung: beschreibung.slice(0, 2000) || null,
@@ -181,7 +190,8 @@ export async function entscheideAuftrag(id: string, freigeben: boolean, mieterId
   if (freigeben && mieterId) {
     const { data: m } = await supabase
       .from("mieter").select("id").eq("id", mieterId).eq("user_id", user.id).maybeSingle();
-    mieterOk = m?.id ?? null;
+    if (!m) return { error: "Mieter nicht gefunden — Freigabe abgebrochen." };
+    mieterOk = m.id;
   }
 
   const { data, error } = await supabase
@@ -216,12 +226,16 @@ export async function beantworteAuftrag(formData: FormData) {
   if (!id || !["angenommen", "erledigt", "abgelehnt"].includes(status)) {
     return { error: "Ungültige Eingabe." };
   }
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("auftraege")
     .update({ status, antwort: antwort || null, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("service_user_id", user.id);
-  if (error) return { error: "Konnte nicht gespeichert werden." };
+    .eq("service_user_id", user.id)
+    // Nur freigegebene Aufträge sind beantwortbar (Freigabe-Umgehung verhindern)
+    .in("status", ["offen", "angenommen"])
+    .select("id")
+    .maybeSingle();
+  if (error || !data) return { error: "Konnte nicht gespeichert werden — der Auftrag wurde ggf. zurückgezogen." };
   revalidatePath("/service");
   revalidatePath("/anliegen");
   return { ok: true };

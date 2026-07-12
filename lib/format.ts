@@ -22,9 +22,16 @@ export const euro = (n: number | null | undefined) =>
     ? "–"
     : "€ " + new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(Math.round(n));
 
-// Datum „2008-08-02" -> „2.8.2008" (de-DE, ohne führende Nullen)
+// Datum „2008-08-02" -> „2.8.2008" (de-DE, ohne führende Nullen).
+// Reine Datums-Strings werden OHNE Date-Objekt zerlegt — new Date("YYYY-MM-DD")
+// parst als UTC-Mitternacht und zeigt in Zeitzonen westlich von UTC (Nutzer im
+// Ausland!) den Vortag an.
 export const datum = (d: string | null | undefined) => {
   if (!d) return "—";
+  const nurDatum = d.match(/^(\d{4})-(\d{2})-(\d{2})$/); // nur reine date-Spalten, keine Timestamps
+  if (nurDatum) {
+    return `${Number(nurDatum[3])}.${Number(nurDatum[2])}.${nurDatum[1]}`;
+  }
   const date = new Date(d);
   if (Number.isNaN(date.getTime())) return d;
   return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;

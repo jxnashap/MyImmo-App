@@ -13,7 +13,7 @@ export default function BelegFreigabeToggle({ kostenId, freigegeben }: { kostenI
       type="button"
       className="btn btn-ghost"
       style={{ fontSize: 11, padding: "3px 8px", color: freigegeben ? "var(--green)" : "var(--muted)" }}
-      title={freigegeben ? "Beleg ist für den Mieter sichtbar — Klick zum Zurückziehen" : "Beleg für den Mieter im Portal freigeben (Belegeinsicht)"}
+      title={freigegeben ? "Beleg ist für alle Mieter des Objekts sichtbar — Klick zum Zurückziehen" : "Beleg im Portal freigeben — sichtbar für ALLE Mieter dieses Objekts (Belegeinsicht)"}
       disabled={pending}
       onClick={() => startTransition(async () => { await setzeBelegFreigabe(kostenId, !freigegeben); })}
     >

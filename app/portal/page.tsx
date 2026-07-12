@@ -102,7 +102,8 @@ export default async function PortalPage({
         .limit(200)
     : { data: [] as { id: string; buchungsdatum: string | null; kategorie: string | null; betrag: number | null; beschreibung: string | null }[] };
   const zahlungen = zahlungRows ?? [];
-  const jahr = new Date().getFullYear();
+  // Jahr in deutscher Zeitzone bestimmen (Server läuft in UTC).
+  const jahr = Number(new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", year: "numeric" }).format(new Date()));
   const summeJahr = zahlungen
     .filter((z) => (z.buchungsdatum ?? "").startsWith(String(jahr)))
     .reduce((s, z) => s + (z.betrag ?? 0), 0);

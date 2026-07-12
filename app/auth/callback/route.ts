@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  // Nur interne Pfade als Redirect-Ziel akzeptieren ("//" wäre protokoll-relativ).
+  const roh = searchParams.get("next") ?? "/";
+  const next = roh.startsWith("/") && !roh.startsWith("//") ? roh : "/";
 
   if (code) {
     const supabase = createClient();

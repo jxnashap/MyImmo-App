@@ -22,6 +22,7 @@ export default function SignaturPad({
     if (!c) return;
     const dpr = window.devicePixelRatio || 1;
     const w = c.clientWidth;
+    if (w === 0) return; // versteckter Container: nicht auf 0px dimensionieren
     c.width = Math.round(w * dpr);
     c.height = Math.round(hoehe * dpr);
     const ctx = c.getContext("2d");
@@ -64,6 +65,7 @@ export default function SignaturPad({
     if (c) onChange(leerPruefen(c) ? null : c.toDataURL("image/png"));
   };
   const leerPruefen = (c: HTMLCanvasElement) => {
+    if (c.width === 0 || c.height === 0) return true; // 0px-Canvas: getImageData würde werfen
     const ctx = c.getContext("2d");
     if (!ctx) return true;
     const px = ctx.getImageData(0, 0, c.width, c.height).data;
@@ -90,6 +92,7 @@ export default function SignaturPad({
         onPointerMove={move}
         onPointerUp={ende}
         onPointerLeave={ende}
+        onPointerCancel={ende}
       />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span style={{ fontSize: 11, color: "var(--faint)" }}>

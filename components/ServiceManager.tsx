@@ -43,12 +43,15 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 function CodeSektion({ codes }: { codes: ServiceCodeRow[] }) {
   const [neuer, setNeuer] = useState<string | null>(null);
   const [kopiert, setKopiert] = useState<string | null>(null);
+  const [fehler, setFehler] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const erzeugen = () =>
     startTransition(async () => {
+      setFehler(null);
       const r = await erzeugeServiceCode();
       if (r.code) setNeuer(r.code);
+      else setFehler(r.error ?? "Code konnte nicht erstellt werden.");
     });
 
   const alle = neuer && !codes.some((c) => c.code === neuer) ? [{ code: neuer, gueltig_bis: "" }, ...codes] : codes;
@@ -66,6 +69,7 @@ function CodeSektion({ codes }: { codes: ServiceCodeRow[] }) {
           Gib den Code an deinen Handwerker/Hausmeister — er registriert sich damit unter
           „Service / Hausmeister" und ist dann mit dir verknüpft. Jeder Code gilt einmalig, 14 Tage.
         </p>
+        {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
         {alle.map((c) => (
           <div key={c.code} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "8px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>
             <code style={{ fontWeight: 700, letterSpacing: "0.06em" }}>{c.code}</code>
