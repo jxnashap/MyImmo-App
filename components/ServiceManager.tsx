@@ -5,27 +5,39 @@
 import { useState, useTransition } from "react";
 import {
   Wrench, Copy, Check, KeyRound, XCircle, UserRound, Trash2,
+  Building2, Phone, Mail, Globe, ShieldCheck,
 } from "lucide-react";
 import {
   erzeugeServiceCode, widerrufeServiceCode, entferneServicePartner,
-  erstelleAuftrag, loescheAuftrag,
+  erstelleAuftrag, loescheAuftrag, entscheideAuftrag,
 } from "@/lib/actions/service";
+import { erstelleFirma, loescheFirma } from "@/lib/actions/firmen";
+import { GEWERKE } from "@/lib/gewerke";
 import DeleteButton from "@/components/DeleteButton";
 import { datum } from "@/lib/format";
 
 export type ServicePartnerRow = { user_id: string; firma: string | null; email: string | null; created_at: string };
 export type ServiceCodeRow = { code: string; gueltig_bis: string };
+export type FirmaRow = {
+  id: string; name: string; gewerk: string | null; telefon: string | null;
+  email: string | null; website: string | null; notiz: string | null;
+};
 export type AuftragRow = {
   id: string; titel: string; beschreibung: string | null; termin: string | null;
   status: string; antwort: string | null; created_at: string;
   objekt_name: string | null; partnerName: string;
+  erstellt_von: string; firmaName: string | null;
+  mieterName: string | null; public_token: string;
 };
+export type MieterOption = { id: string; name: string };
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
+  freigabe: { label: "Freigabe angefragt", cls: "badge-amber" },
   offen: { label: "Offen", cls: "badge-amber" },
   angenommen: { label: "Angenommen", cls: "badge-blue" },
   erledigt: { label: "Erledigt", cls: "badge-green" },
   abgelehnt: { label: "Abgelehnt", cls: "badge-red" },
+  nicht_freigegeben: { label: "Nicht freigegeben", cls: "badge-red" },
 };
 
 function CodeSektion({ codes }: { codes: ServiceCodeRow[] }) {
@@ -74,13 +86,129 @@ function CodeSektion({ codes }: { codes: ServiceCodeRow[] }) {
   );
 }
 
+function FirmenSektion({ firmen }: { firmen: FirmaRow[] }) {
+  const [offen, setOffen] = useState(false);
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const speichern = (fd: FormData) =>
+    startTransition(async () => {
+      setFehler(null);
+      const r = await erstelleFirma(fd);
+      if (r?.error) setFehler(r.error);
+      else setOffen(false);
+    });
+
+  return (
+    <div className="section">
+      <div className="section-header">
+        <h3><Building2 size={15} style={{ verticalAlign: "-2px" }} /> Firmenverzeichnis</h3>
+        <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => setOffen(!offen)}>
+          {offen ? "Abbrechen" : "Firma hinzufügen"}
+        </button>
+      </div>
+      <div className="section-body">
+        <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
+          Handwerksbetriebe & Grundstücks-Dienste mit Kontaktdaten — dein Hausmeister sieht
+          das Verzeichnis im Service-Portal und ruft nach deiner Freigabe direkt an.
+        </p>
+        {offen && (
+          <form action={speichern} style={{ display: "grid", gap: 10, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)", marginBottom: 12 }}>
+            <div className="form-row">
+              <div className="form-group"><label>Firma *</label><input name="name" required maxLength={200} placeholder="z. B. Sanitär Müller GmbH" /></div>
+              <div className="form-group"><label>Gewerk</label>
+                <select name="gewerk" defaultValue="">
+                  <option value="">– wählen –</option>
+                  {GEWERKE.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group"><label>Telefon</label><input name="telefon" maxLength={50} placeholder="040 1234567" /></div>
+              <div className="form-group"><label>E-Mail</label><input type="email" name="email" maxLength={200} /></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group"><label>Website</label><input name="website" maxLength={300} placeholder="www.beispiel.de" /></div>
+              <div className="form-group"><label>Notiz</label><input name="notiz" maxLength={500} placeholder="z. B. Notdienst 24 h, Ansprechpartner Herr Kurt" /></div>
+            </div>
+            {fehler && <p style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
+            <div><button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "…" : "Speichern"}</button></div>
+          </form>
+        )}
+        {firmen.length === 0 ? (
+          <p style={{ fontSize: 12, color: "var(--faint)" }}>
+            Noch keine Firmen hinterlegt — z. B. Sanitär, Heizung, Elektro, Schlüsseldienst,
+            Gartenpflege oder Winterdienst.
+          </p>
+        ) : (
+          firmen.map((f) => (
+            <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "8px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>
+              <Building2 size={14} color="var(--gold)" />
+              <span style={{ fontWeight: 600 }}>{f.name}</span>
+              {f.gewerk && <span className="badge badge-teal">{f.gewerk}</span>}
+              {f.telefon && <a href={`tel:${f.telefon.replace(/\s/g, "")}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Phone size={11} style={{ verticalAlign: "-1px" }} /> {f.telefon}</a>}
+              {f.email && <a href={`mailto:${f.email}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Mail size={11} style={{ verticalAlign: "-1px" }} /> {f.email}</a>}
+              {f.website && <a href={f.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Globe size={11} style={{ verticalAlign: "-1px" }} /> Website</a>}
+              {f.notiz && <span style={{ fontSize: 11, color: "var(--muted)" }}>{f.notiz}</span>}
+              <span style={{ marginLeft: "auto" }}>
+                <DeleteButton action={async () => { await loescheFirma(f.id); }} className="delete-btn" label={<Trash2 size={13} />} confirmText="Firma aus dem Verzeichnis löschen?" />
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FreigabeButtons({ id, mieterListe }: { id: string; mieterListe: MieterOption[] }) {
+  const [pending, startTransition] = useTransition();
+  const [mieterId, setMieterId] = useState("");
+  const entscheiden = (freigeben: boolean) =>
+    startTransition(async () => { await entscheideAuftrag(id, freigeben, mieterId || undefined); });
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      {mieterListe.length > 0 && (
+        <select className="input" style={{ width: "auto", fontSize: 12, padding: "5px 10px" }} value={mieterId} onChange={(e) => setMieterId(e.target.value)}>
+          <option value="">Mieter-Kontakt teilen? (optional)</option>
+          {mieterListe.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+        </select>
+      )}
+      <button type="button" className="btn btn-gold" style={{ fontSize: 11, padding: "5px 12px" }} disabled={pending} onClick={() => entscheiden(true)}>
+        <ShieldCheck size={12} style={{ verticalAlign: "-2px" }} /> Freigeben
+      </button>
+      <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--red)" }} disabled={pending} onClick={() => entscheiden(false)}>
+        Ablehnen
+      </button>
+    </div>
+  );
+}
+
+function LinkKopierButton({ token }: { token: string }) {
+  const [kopiert, setKopiert] = useState(false);
+  return (
+    <button
+      type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}
+      title="Öffentlicher Link mit Auftragsdetails + Mieter-Kontakt (zur Weitergabe an die Firma)"
+      onClick={async () => {
+        await navigator.clipboard.writeText(`${window.location.origin}/auftrag/${token}`);
+        setKopiert(true); setTimeout(() => setKopiert(false), 1600);
+      }}
+    >
+      {kopiert ? <><Check size={12} style={{ verticalAlign: "-2px" }} /> Kopiert</> : <><Copy size={12} style={{ verticalAlign: "-2px" }} /> Firmen-Link</>}
+    </button>
+  );
+}
+
 export default function ServiceManager({
-  partner, codes, auftraege, properties, initialTitel, initialText,
+  partner, codes, auftraege, properties, firmen, mieterListe, initialTitel, initialText,
 }: {
   partner: ServicePartnerRow[];
   codes: ServiceCodeRow[];
   auftraege: AuftragRow[];
   properties: { id: string; bezeichnung: string }[];
+  firmen: FirmaRow[];
+  mieterListe: MieterOption[];
   initialTitel?: string;
   initialText?: string;
 }) {
@@ -99,6 +227,8 @@ export default function ServiceManager({
   return (
     <>
       <CodeSektion codes={codes} />
+
+      <FirmenSektion firmen={firmen} />
 
       <div className="section">
         <div className="section-header"><h3>Verknüpfte Service-Partner</h3></div>
@@ -158,6 +288,19 @@ export default function ServiceManager({
                   <textarea name="beschreibung" rows={3} maxLength={2000} defaultValue={initialText ?? ""} placeholder="Was ist zu tun? Zugang, Ansprechpartner, Details …" />
                 </div>
               </div>
+              <div className="form-row single">
+                <div className="form-group">
+                  <label>Mieter-Kontakt für Terminabsprache teilen (optional)</label>
+                  <select name="mieterId" defaultValue="">
+                    <option value="">– nicht teilen –</option>
+                    {mieterListe.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                  <span style={{ fontSize: 11, color: "var(--faint)" }}>
+                    Wenn gewählt, enthält der Firmen-Link Name & Telefonnummer des Mieters
+                    mit der Bitte um direkte Terminabsprache.
+                  </span>
+                </div>
+              </div>
               {fehler && <p style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
               {ok && <p style={{ fontSize: 12, color: "var(--green)", margin: 0 }}>Auftrag gesendet ✓</p>}
               <div><button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "…" : "Auftrag senden"}</button></div>
@@ -186,12 +329,21 @@ export default function ServiceManager({
                     <span style={{ fontWeight: 600 }}>{a.titel}</span>
                     <span className={`badge ${s.cls}`}>{s.label}</span>
                     <span className="badge badge-neutral">{a.partnerName}</span>
+                    {a.erstellt_von === "service" && <span className="badge badge-blue">vom Hausmeister beantragt</span>}
+                    {a.firmaName && <span className="badge badge-teal">{a.firmaName}</span>}
+                    {a.mieterName && <span className="badge badge-green" title="Mieter-Kontakt wird über den Firmen-Link geteilt">Kontakt: {a.mieterName}</span>}
+                    {a.mieterName && (a.status === "offen" || a.status === "angenommen") && <LinkKopierButton token={a.public_token} />}
                     {a.objekt_name && <span style={{ fontSize: 11, color: "var(--muted)" }}>{a.objekt_name}</span>}
                     {a.termin && <span style={{ fontSize: 11, color: "var(--muted)" }}>Termin {datum(a.termin)}</span>}
                     <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>{datum(a.created_at)}</span>
                     <DeleteButton action={async () => { await loescheAuftrag(a.id); }} className="delete-btn" label={<Trash2 size={13} />} confirmText="Auftrag löschen?" />
                   </div>
                   {a.beschreibung && <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, whiteSpace: "pre-wrap" }}>{a.beschreibung}</p>}
+                  {a.status === "freigabe" && (
+                    <div style={{ marginTop: 8 }}>
+                      <FreigabeButtons id={a.id} mieterListe={mieterListe} />
+                    </div>
+                  )}
                   {a.antwort && (
                     <p style={{ fontSize: 12, marginTop: 6, padding: "6px 10px", background: "var(--gold-pale)", borderLeft: "3px solid var(--gold)", borderRadius: 6 }}>
                       <strong>Rückmeldung:</strong> {a.antwort}

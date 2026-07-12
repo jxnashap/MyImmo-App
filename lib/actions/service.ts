@@ -82,8 +82,17 @@ export async function erstelleAuftrag(formData: FormData) {
   const beschreibung = String(formData.get("beschreibung") ?? "").trim();
   const termin = String(formData.get("termin") ?? "").trim();
   const anliegenId = String(formData.get("anliegenId") ?? "").trim();
+  const mieterId = String(formData.get("mieterId") ?? "").trim();
   if (!serviceUserId) return { error: "Bitte einen Service-Partner wählen." };
   if (!titel) return { error: "Bitte einen Betreff angeben." };
+
+  // Mieter-Kontakt nur teilen, wenn der Mieter dem Vermieter gehört (Opt-in).
+  let mieterOk: string | null = null;
+  if (mieterId) {
+    const { data: m } = await supabase
+      .from("mieter").select("id").eq("id", mieterId).eq("user_id", user.id).maybeSingle();
+    mieterOk = m?.id ?? null;
+  }
 
   // Partner muss mit diesem Vermieter verknüpft sein.
   const { data: zugang } = await supabase
@@ -115,8 +124,79 @@ export async function erstelleAuftrag(formData: FormData) {
     titel,
     beschreibung: beschreibung || null,
     termin: termin || null,
+    mieter_id: mieterOk,
   });
   if (error) return { error: "Auftrag konnte nicht gespeichert werden." };
+  revalidatePath("/anliegen");
+  revalidatePath("/service");
+  return { ok: true };
+}
+
+/** Service-Partner (Hausmeister): Auftrag BEANTRAGEN — der Vermieter bekommt
+ *  die Anfrage im Mieterportal (Tab Service) und gibt sie frei. */
+export async function beantrageAuftrag(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const vermieterId = String(formData.get("vermieterId") ?? "");
+  const titel = String(formData.get("titel") ?? "").trim();
+  const beschreibung = String(formData.get("beschreibung") ?? "").trim();
+  const objekt = String(formData.get("objekt") ?? "").trim();
+  const firmaId = String(formData.get("firmaId") ?? "").trim();
+  const termin = String(formData.get("termin") ?? "").trim();
+  if (!vermieterId) return { error: "Bitte den Auftraggeber wählen." };
+  if (!titel) return { error: "Bitte angeben, was gemacht werden muss." };
+
+  const { error } = await supabase.from("auftraege").insert({
+    vermieter_id: vermieterId,
+    service_user_id: user.id,
+    firma_id: firmaId || null,
+    objekt_name: objekt || null,
+    titel: titel.slice(0, 200),
+    beschreibung: beschreibung.slice(0, 2000) || null,
+    termin: termin || null,
+    status: "freigabe",
+    erstellt_von: "service",
+  });
+  if (error) return { error: "Antrag konnte nicht gespeichert werden." };
+  revalidatePath("/service");
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
+/** Vermieter: beantragten Auftrag freigeben oder ablehnen. Optional wird
+ *  dabei ein Mieter ausgewählt, dessen Kontakt die Firma über den
+ *  öffentlichen Auftrags-Link zur Terminabsprache bekommt. */
+export async function entscheideAuftrag(id: string, freigeben: boolean, mieterId?: string) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  let mieterOk: string | null = null;
+  if (freigeben && mieterId) {
+    const { data: m } = await supabase
+      .from("mieter").select("id").eq("id", mieterId).eq("user_id", user.id).maybeSingle();
+    mieterOk = m?.id ?? null;
+  }
+
+  const { data, error } = await supabase
+    .from("auftraege")
+    .update({
+      status: freigeben ? "offen" : "nicht_freigegeben",
+      ...(mieterOk ? { mieter_id: mieterOk } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("vermieter_id", user.id)
+    .eq("status", "freigabe")
+    .select("id")
+    .maybeSingle();
+  if (error || !data) return { error: "Entscheidung konnte nicht gespeichert werden." };
   revalidatePath("/anliegen");
   revalidatePath("/service");
   return { ok: true };

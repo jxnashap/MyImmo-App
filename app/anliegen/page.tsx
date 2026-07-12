@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import AnliegenManager, { type AnliegenVermieterRow } from "@/components/AnliegenManager";
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
 import BewerbungenManager, { type BewerberLinkRow, type BewerbungRow } from "@/components/BewerbungenManager";
-import ServiceManager, { type ServicePartnerRow, type ServiceCodeRow, type AuftragRow } from "@/components/ServiceManager";
+import ServiceManager, { type ServicePartnerRow, type ServiceCodeRow, type AuftragRow, type FirmaRow } from "@/components/ServiceManager";
 
 export default async function AnliegenPage({
   searchParams,
@@ -20,7 +20,7 @@ export default async function AnliegenPage({
   const [
     { data: rows }, { data: mieter }, { data: props }, { data: anfrageRows }, { data: zugaenge },
     { data: linkRows }, { data: bewerbungRows },
-    { data: partnerRows }, { data: codeRows }, { data: auftragRows },
+    { data: partnerRows }, { data: codeRows }, { data: auftragRows }, { data: firmenRows },
   ] = await Promise.all([
     supabase.from("anliegen").select("*").order("created_at", { ascending: false }),
     supabase.from("mieter").select("id,vorname,nachname"),
@@ -32,6 +32,7 @@ export default async function AnliegenPage({
     supabase.from("service_zugaenge").select("user_id,firma,email,created_at").order("created_at", { ascending: false }),
     supabase.from("einladungscodes").select("code,gueltig_bis").eq("rolle", "service").is("eingeloest_am", null).gt("gueltig_bis", new Date().toISOString()).order("created_at", { ascending: false }),
     supabase.from("auftraege").select("*").order("created_at", { ascending: false }).limit(100),
+    supabase.from("firmen").select("id,name,gewerk,telefon,email,website,notiz").order("name"),
   ]);
 
   const { data: dateiRows } = (rows ?? []).length
@@ -103,12 +104,22 @@ export default async function AnliegenPage({
     return p?.firma || p?.email || "Partner";
   };
   const codes: ServiceCodeRow[] = ((codeRows ?? []) as any[]).map((c) => ({ code: c.code, gueltig_bis: c.gueltig_bis }));
+  const firmen: FirmaRow[] = ((firmenRows ?? []) as any[]).map((f) => ({
+    id: f.id, name: f.name, gewerk: f.gewerk, telefon: f.telefon,
+    email: f.email, website: f.website, notiz: f.notiz,
+  }));
   const auftraege: AuftragRow[] = ((auftragRows ?? []) as any[]).map((a) => ({
     id: a.id, titel: a.titel, beschreibung: a.beschreibung, termin: a.termin,
     status: a.status, antwort: a.antwort, created_at: a.created_at,
     objekt_name: a.objekt_name, partnerName: partnerName(a.service_user_id),
+    erstellt_von: a.erstellt_von ?? "vermieter",
+    firmaName: firmen.find((f) => f.id === a.firma_id)?.name ?? null,
+    mieterName: a.mieter_id ? mieterName(a.mieter_id) : null,
+    public_token: a.public_token,
   }));
-  const offeneAuftraege = auftraege.filter((a) => a.status === "offen").length;
+  // Badge: Freigabe-Anfragen des Hausmeisters zählen mit (Benachrichtigung).
+  const offeneAuftraege = auftraege.filter((a) => a.status === "offen" || a.status === "freigabe").length;
+  const freigabeAnfragen = auftraege.filter((a) => a.status === "freigabe").length;
 
   const TABS = [
     { key: "anliegen", label: "Anliegen & Anfragen", icon: MessageSquareText, badge: offen },
@@ -125,7 +136,7 @@ export default async function AnliegenPage({
             {tab === "bewerbungen"
               ? `Selbstauskunft-Links & Bewerbungs-Eingang${bewerbungen.length > 0 ? ` · ${neueBewerbungen} neu von ${bewerbungen.length}` : ""}`
               : tab === "service"
-                ? `Handwerker & Hausmeister verknüpfen, Aufträge vergeben${auftraege.length > 0 ? ` · ${offeneAuftraege} offen von ${auftraege.length}` : ""}`
+                ? `Handwerker & Hausmeister verknüpfen, Aufträge vergeben${freigabeAnfragen > 0 ? ` · ${freigabeAnfragen} Freigabe-Anfrage${freigabeAnfragen > 1 ? "n" : ""} wartet` : auftraege.length > 0 ? ` · ${offeneAuftraege} offen von ${auftraege.length}` : ""}`
                 : `Meldungen deiner Mieter & deine Anfragen an sie${liste.length > 0 ? ` · ${offen} offen von ${liste.length}` : ""}`}
           </div>
         </div>
@@ -168,6 +179,8 @@ export default async function AnliegenPage({
           codes={codes}
           auftraege={auftraege}
           properties={props ?? []}
+          firmen={firmen}
+          mieterListe={(mieter ?? []).map((m) => ({ id: m.id, name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }))}
           initialTitel={searchParams.titel}
           initialText={searchParams.text}
         />

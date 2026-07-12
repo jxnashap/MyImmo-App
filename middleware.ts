@@ -75,6 +75,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/auth") ||
     pathname.startsWith("/beleihung/") ||
     pathname.startsWith("/bewerben/") || // öffentliche Bewerber-Selbstauskunft
+    pathname.startsWith("/auftrag/") || // öffentlicher Firmen-Link (Terminabsprache)
 
     pathname === "/impressum" ||
     pathname === "/agb" ||
