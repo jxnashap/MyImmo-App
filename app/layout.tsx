@@ -10,6 +10,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getRolle } from "@/lib/rolle";
+import { istFreigeschaltet } from "@/lib/freischaltung";
 
 export const metadata: Metadata = {
   title: "MyImmo — Immobilien-Management",
@@ -51,6 +52,24 @@ export default async function RootLayout({
   const istOeffentlicheSeite = ["/impressum", "/datenschutz", "/agb", "/avv", "/bewerben", "/beleihung", "/auftrag"].some(
     (p) => pathname.startsWith(p)
   );
+
+  // Freischaltungs-Gate: neu registrierte Konten (auch via Google) müssen
+  // Zugangscode + Consent bestätigen, bevor die App nutzbar ist. Ohne
+  // Freischaltung nur /willkommen (und öffentliche Seiten) erreichbar.
+  if (!istOeffentlicheSeite && !pathname.startsWith("/willkommen")) {
+    if (!(await istFreigeschaltet(supabase, user.id))) redirect("/willkommen");
+  }
+  // Willkommens-Gate ohne App-Shell rendern (keine Navigation vor Freischaltung).
+  if (pathname.startsWith("/willkommen")) {
+    return (
+      <html lang="de" suppressHydrationWarning>
+        <head>
+          <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
+        </head>
+        <body>{children}</body>
+      </html>
+    );
+  }
   if (rolle === "mieter" || rolle === "service") {
     // Mieter → /portal, Service → /service: jeweils eigene schlanke Shell.
     const heim = rolle === "mieter" ? "/portal" : "/service";
