@@ -6,8 +6,8 @@ import { ArrowLeft, KeyRound, Home, Wrench, Building2, type LucideIcon } from "l
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
 
-// Zugangs-Rollen (Businessplan Kap. 14). Funktional ist aktuell der
-// Vermieter-Zugang — die übrigen Portale folgen und zeigen einen Hinweis.
+// Zugangs-Rollen (Businessplan Kap. 14): Vermieter & Hausverwaltung nutzen
+// die volle App, Mieter und Service haben eigene Portale.
 const ROLLEN: Record<string, { label: string; icon: LucideIcon }> = {
   vermieter: { label: "Vermieter", icon: KeyRound },
   mieter: { label: "Mieter", icon: Home },
@@ -48,7 +48,8 @@ export default function LoginPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [consent, setConsent] = useState(false);
-  const [code, setCode] = useState(""); // Beta-Zugangscode (nur Registrierung)
+  const [code, setCode] = useState(""); // Zugangs-/Einladungscode (nur Registrierung)
+  const [firma, setFirma] = useState(""); // Firmenname (nur Service-Registrierung)
   const [rolle, setRolle] = useState<string>("vermieter"); // Standard: Vermieter
   const [falscheRolle, setFalscheRolle] = useState<string | null>(null); // Konto-Rolle bei Fehlanmeldung
 
@@ -78,16 +79,14 @@ export default function LoginPage() {
         return;
       }
       // Rollen-Check: Zugangsdaten müssen zur gewählten Rolle passen.
-      // (Konten ohne Rollen-Eintrag sind Vermieter; Service/Hausverwaltung
-      // nutzen übergangsweise den Vermieter-Zugang, s. Hinweis oben.)
+      // (Konten ohne Rollen-Eintrag sind Vermieter.)
       const { data: rolleRow } = await supabase
         .from("nutzer_rollen")
         .select("rolle")
         .eq("user_id", data.user!.id)
         .maybeSingle();
       const kontoRolle = rolleRow?.rolle ?? "vermieter";
-      const erwartet = rolle === "service" || rolle === "hausverwaltung" ? "vermieter" : rolle;
-      if (kontoRolle !== erwartet) {
+      if (kontoRolle !== rolle) {
         await supabase.auth.signOut();
         setFalscheRolle(kontoRolle);
         setError(
@@ -99,14 +98,14 @@ export default function LoginPage() {
       // Harte Navigation: stellt sicher, dass der Server die neue Session-
       // Cookie sofort sieht — kein manuelles Neuladen mehr nötig.
       window.location.assign("/");
-    } else if (rolle === "mieter") {
-      // Mieter-Registrierung: Einladungscode des Vermieters (der "Schlüssel").
+    } else if (rolle === "mieter" || rolle === "service") {
+      // Mieter/Service-Registrierung: Einladungscode des Vermieters.
       const eingabe = code.trim().toUpperCase();
       const { data: gueltig, error: rpcError } = await supabase.rpc("einladungscode_pruefen", {
         p_code: eingabe,
       });
       if (rpcError || !gueltig) {
-        setError("Dieser Einladungscode ist ungültig oder abgelaufen. Bitte frage deinen Vermieter nach einem neuen Code.");
+        setError("Dieser Einladungscode ist ungültig oder abgelaufen. Bitte frage den Vermieter nach einem neuen Code.");
         setLoading(false);
         return;
       }
@@ -116,16 +115,27 @@ export default function LoginPage() {
         return;
       }
       // Rolle + Code in die User-Metadaten — der DB-Trigger löst den Code
-      // beim Anlegen des Kontos ein und verknüpft die Wohnung.
+      // beim Anlegen des Kontos ein und stellt die Verknüpfung her.
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { rolle: "mieter", einladungscode: eingabe } },
+        options: {
+          data:
+            rolle === "mieter"
+              ? { rolle: "mieter", einladungscode: eingabe }
+              : { rolle: "service", einladungscode: eingabe, firma: firma.trim() },
+        },
       });
       if (error) setError(uebersetze(error.message));
-      else setInfo("Fast geschafft — bitte bestätige die E-Mail in deinem Postfach. Danach findest du deine Wohnung im Mieterportal.");
+      else
+        setInfo(
+          rolle === "mieter"
+            ? "Fast geschafft — bitte bestätige die E-Mail in deinem Postfach. Danach findest du deine Wohnung im Mieterportal."
+            : "Fast geschafft — bitte bestätige die E-Mail in deinem Postfach. Danach findest du deine Aufträge im Service-Portal."
+        );
       setLoading(false);
     } else {
+      // Vermieter & Hausverwaltung: Beta-Zugangscode + volle App.
       if (code.trim() !== process.env.NEXT_PUBLIC_BETA_CODE) {
         setError("Ungültiger Zugangscode.");
         setLoading(false);
@@ -136,7 +146,11 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: rolle === "hausverwaltung" ? { data: { rolle: "hausverwaltung" } } : undefined,
+      });
       if (error) setError(uebersetze(error.message));
       else setInfo("Fast geschafft — bitte bestätige die E-Mail in deinem Postfach.");
       setLoading(false);
@@ -210,16 +224,6 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {(rolle === "service" || rolle === "hausverwaltung") && (
-          <p
-            className="mt-4 rounded-lg px-3 py-2 text-[13px]"
-            style={{ background: "var(--blue-dim)", color: "var(--blue)" }}
-          >
-            Das {ROLLEN[rolle].label}-Portal ist in Vorbereitung. Die Anmeldung unten gilt
-            aktuell für Vermieter.
-          </p>
-        )}
-
         {/* Umschalter Anmelden / Registrieren */}
         <div
           className="mt-7 mb-6 flex gap-1 rounded-xl p-1"
@@ -262,11 +266,28 @@ export default function LoginPage() {
             style={{ padding: "12px 14px" }}
           />
 
+          {mode === "signup" && rolle === "service" && (
+            <input
+              type="text"
+              placeholder="Firma / Betrieb (optional, z. B. Sanitär Müller)"
+              value={firma}
+              onChange={(e) => setFirma(e.target.value)}
+              className="input w-full text-[15px]"
+              style={{ padding: "12px 14px" }}
+            />
+          )}
+
           {mode === "signup" && (
             <input
               type="text"
               required
-              placeholder={rolle === "mieter" ? "Einladungscode (vom Vermieter, z. B. MI-XXXX-XXXX)" : "Zugangscode (Beta)"}
+              placeholder={
+                rolle === "mieter"
+                  ? "Einladungscode (vom Vermieter, z. B. MI-XXXX-XXXX)"
+                  : rolle === "service"
+                    ? "Einladungscode (vom Vermieter, z. B. SV-XXXX-XXXX)"
+                    : "Zugangscode (Beta)"
+              }
               value={code}
               onChange={(e) => {
                 setCode(e.target.value);
@@ -298,7 +319,7 @@ export default function LoginPage() {
                   Datenschutzerklärung
                 </Link>{" "}
                 gelesen und akzeptiere sie.
-                {rolle !== "mieter" && (
+                {rolle !== "mieter" && rolle !== "service" && (
                   <>
                     {" "}Zudem akzeptiere ich den{" "}
                     <Link href="/avv" target="_blank" style={{ color: "var(--gold)" }}>
