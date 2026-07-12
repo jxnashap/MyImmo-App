@@ -1,5 +1,4 @@
 import Link from "next/link";
-import RueckstandWaechter from "@/components/RueckstandWaechter";
 import { createClient } from "@/lib/supabase/server";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum } from "@/lib/format";
@@ -120,8 +119,6 @@ export default async function DashboardPage() {
           <Link href="/kredite" className="btn btn-ghost" style={{ marginLeft: "auto", fontSize: 11 }}>Ansehen</Link>
         </div>
       )}
-
-      <RueckstandWaechter />
 
       <div className="grid-5 mb-20">
         <div className="kpi-card">

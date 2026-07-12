@@ -3,6 +3,7 @@
 // Zahlungserinnerung bzw. Mahnung. Rendert nichts, wenn alles bezahlt ist.
 import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
+import AufklappSection from "@/components/AufklappSection";
 import { createClient } from "@/lib/supabase/server";
 import { euro } from "@/lib/format";
 import { offeneMieten, monatLabel, type MietkontoMieter, type MietkontoZeitraum } from "@/lib/mietkonto";
@@ -36,16 +37,11 @@ export default async function RueckstandWaechter() {
   const summe = offene.reduce((s, o) => s + o.gesamt, 0);
 
   return (
-    <div className="section mb-20" style={{ borderColor: "var(--red-dim)" }}>
-      <div className="section-header">
-        <h3 style={{ color: "var(--red)" }}>
-          <TriangleAlert size={15} style={{ verticalAlign: "-2px" }} /> Offene Mieten
-        </h3>
-        <span style={{ fontSize: 12, color: "var(--muted)" }}>
-          {offene.length} Monat{offene.length === 1 ? "" : "e"} · <span style={{ color: "var(--red)", fontWeight: 600 }}>{euro(summe)}</span>
-        </span>
-      </div>
-      <div className="section-body">
+    <AufklappSection
+      titel={<span style={{ color: "var(--red)" }}><TriangleAlert size={15} style={{ verticalAlign: "-2px" }} /> Offene Mieten</span>}
+      untertitel={`${offene.length} Monat${offene.length === 1 ? "" : "e"} überfällig · ${euro(summe)}`}
+    >
+      <div>
         {offene.map((o) => {
           const grund = `Es handelt sich um die Miete für ${monatLabel(o.jahrMonat)} (fällig am 3. des Monats, § 556b BGB).`;
           const zahlbarBis = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
@@ -63,7 +59,6 @@ export default async function RueckstandWaechter() {
                 {o.tageOffen === 0 ? "heute fällig" : `${o.tageOffen} Tag${o.tageOffen === 1 ? "" : "e"} überfällig`}
               </span>
               <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-                <Link href="/mietkonto" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Eingang bestätigen</Link>
                 <Link href={q("zahlungserinnerung")} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Zahlungserinnerung</Link>
                 <Link href={q("mahnung")} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px", color: "var(--red)" }}>Mahnung</Link>
               </span>
@@ -71,9 +66,9 @@ export default async function RueckstandWaechter() {
           );
         })}
         <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 8 }}>
-          Basis: bestätigte Miet-Eingänge im Mietkonto. Zahlung schon erhalten? Dann im Mietkonto bestätigen.
+          Basis: bestätigte Miet-Eingänge im Mietkonto. Zahlung schon erhalten? Dann unten im Monat bestätigen.
         </p>
       </div>
-    </div>
+    </AufklappSection>
   );
 }
