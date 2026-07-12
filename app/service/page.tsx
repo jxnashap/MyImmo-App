@@ -3,7 +3,7 @@
 import { Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ThemeToggle from "@/components/ThemeToggle";
-import AuftraegePortal, { type PortalAuftragRow } from "@/components/AuftraegePortal";
+import AuftraegePortal, { type PortalAuftragRow, type PortalFirmaRow, type AuftraggeberRow } from "@/components/AuftraegePortal";
 import { datum } from "@/lib/format";
 
 export default async function ServicePortalPage() {
@@ -12,16 +12,27 @@ export default async function ServicePortalPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: zugaenge }, { data: auftragRows }] = await Promise.all([
+  const [{ data: zugaenge }, { data: auftragRows }, { data: firmenRows }] = await Promise.all([
     supabase.from("service_zugaenge").select("vermieter_id,firma,created_at").eq("user_id", user!.id),
     supabase
       .from("auftraege")
-      .select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,vermieter_name")
+      .select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,vermieter_name,erstellt_von,firma_id")
       .eq("service_user_id", user!.id)
       .order("created_at", { ascending: false })
       .limit(100),
+    supabase.from("firmen").select("id,name,gewerk,telefon,email,website,notiz").order("name"),
   ]);
   const auftraege = (auftragRows ?? []) as PortalAuftragRow[];
+  const firmen = (firmenRows ?? []) as PortalFirmaRow[];
+  // Anzeigename je Auftraggeber: bester Kandidat ist der denormalisierte
+  // Vermietername aus einem bestehenden Auftrag (Service hat keinen
+  // RLS-Zugriff auf vermieter_profil).
+  const auftraggeber: AuftraggeberRow[] = (zugaenge ?? []).map((z, i) => ({
+    vermieter_id: z.vermieter_id,
+    label:
+      auftraege.find((a) => a.vermieter_name)?.vermieter_name ??
+      `Auftraggeber ${i + 1} (seit ${datum(z.created_at)})`,
+  }));
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
@@ -69,7 +80,7 @@ export default async function ServicePortalPage() {
                 ? `1 Auftraggeber (seit ${datum((zugaenge ?? [])[0].created_at)})`
                 : `${(zugaenge ?? []).length} Auftraggebern`} — neue Aufträge erscheinen automatisch.
             </p>
-            <AuftraegePortal auftraege={auftraege} />
+            <AuftraegePortal auftraege={auftraege} firmen={firmen} auftraggeber={auftraggeber} />
           </>
         )}
       </main>
