@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Plus, User, Pencil, ReceiptText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import type { Tenant, Property } from "@/lib/types";
@@ -25,7 +26,7 @@ export default async function TenantsPage() {
           <div className="topbar-title">Mieter</div>
           <div className="topbar-sub">Mietverträge, Fristen, Einheiten &amp; Dokumente</div>
         </div>
-        <Link href="/tenants/new" className="btn btn-gold">＋ Mieter</Link>
+        <Link href="/tenants/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Mieter</Link>
       </div>
 
       <div className="grid-4 mb-20">
@@ -38,7 +39,7 @@ export default async function TenantsPage() {
       {list.length === 0 ? (
         <div className="prop-grid">
           <div className="empty" style={{ gridColumn: "1/-1" }}>
-            <div className="empty-icon">👤</div>
+            <User className="empty-icon" size={36} color="var(--faint)" />
             <h4>Noch keine Mieter</h4>
             <p>Füge deinen ersten Mieter hinzu.</p>
           </div>
@@ -69,8 +70,8 @@ export default async function TenantsPage() {
               </div>
               <div style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", display: "flex", gap: 6 }}>
                 <Link href={`/tenants/${m.id}`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>Details</Link>
-                <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>✏️</Link>
-                <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>🧾</Link>
+                <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}><Pencil size={14} /></Link>
+                <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}><ReceiptText size={14} /></Link>
               </div>
             </div>
           ))}

@@ -67,59 +67,83 @@
    Script im <head>). Alle Komponenten nutzen diese Klassen statt Tailwind.
    ===================================================================== */
 :root {
-  --bg: #0F0F0E;
-  --bg2: #161614;
-  --bg3: #1E1E1C;
-  --bg4: #282826;
-  --bg5: #323230;
-  --line: rgba(255,255,255,0.07);
-  --line2: rgba(255,255,255,0.13);
-  --text: #F0EDE6;
-  --muted: #7A7A72;
-  --faint: #4A4A46;
-  --gold: #D4A847;
-  --gold-dim: rgba(212,168,71,0.25);
-  --gold-pale: rgba(212,168,71,0.10);
-  --green: #4CAF7D;
-  --green-dim: rgba(76,175,125,0.15);
-  --red: #E05C4B;
-  --red-dim: rgba(224,92,75,0.15);
-  --blue: #5B9BD5;
-  --blue-dim: rgba(91,155,213,0.15);
-  --amber: #F0A030;
-  --teal: #3AADA8;
-  --r: 10px;
+  --bg: #F6F7F9;
+  --bg2: #FFFFFF;
+  --bg3: #F1F3F6;
+  --bg4: #E7EAEF;
+  --bg5: #D9DEE6;
+  --line: rgba(15,23,42,0.06);
+  --line2: rgba(15,23,42,0.12);
+  --text: #0F172A;
+  --muted: #64748B;
+  --faint: #94A3B8;
+  --gold: #B8902B;
+  --gold-dim: rgba(184,144,43,0.25);
+  --gold-pale: rgba(184,144,43,0.10);
+  --green: #16A34A;
+  --green-dim: rgba(22,163,74,0.12);
+  --red: #DC2626;
+  --red-dim: rgba(220,38,38,0.10);
+  --blue: #2563EB;
+  --blue-dim: rgba(37,99,235,0.10);
+  --amber: #D97706;
+  --teal: #0D9488;
+  --r: 14px;
 }
 * { box-sizing: border-box; }
 
 /* ===== HELLMODUS ===== */
 [data-theme="light"] {
-  --bg: #F4F3EF;
+
+  --bg: #F6F7F9;
   --bg2: #FFFFFF;
-  --bg3: #ECEAE4;
-  --bg4: #E0DDD5;
-  --bg5: #D4D0C8;
-  --line: rgba(0,0,0,0.08);
-  --line2: rgba(0,0,0,0.15);
-  --text: #1A1814;
-  --muted: #6B6860;
-  --faint: #A8A49C;
-  --gold: #B8860B;
-  --gold-dim: rgba(184,134,11,0.2);
-  --gold-pale: rgba(184,134,11,0.08);
-  --green: #2E7D4F;
-  --green-dim: rgba(46,125,79,0.12);
-  --red: #C0392B;
-  --red-dim: rgba(192,57,43,0.10);
-  --blue: #2563A8;
-  --blue-dim: rgba(37,99,168,0.10);
+  --bg3: #F1F3F6;
+  --bg4: #E7EAEF;
+  --bg5: #D9DEE6;
+  --line: rgba(15,23,42,0.06);
+  --line2: rgba(15,23,42,0.12);
+  --text: #0F172A;
+  --muted: #64748B;
+  --faint: #94A3B8;
+  --gold: #B8902B;
+  --gold-dim: rgba(184,144,43,0.25);
+  --gold-pale: rgba(184,144,43,0.10);
+  --green: #16A34A;
+  --green-dim: rgba(22,163,74,0.12);
+  --red: #DC2626;
+  --red-dim: rgba(220,38,38,0.10);
+  --blue: #2563EB;
+  --blue-dim: rgba(37,99,235,0.10);
   --amber: #D97706;
-  --teal: #0F766E;
+  --teal: #0D9488;
+  --r: 14px;
 }
-[data-theme="light"] .sidebar { background: #F0EEE9; border-right: 1px solid #D8D4CC; }
-[data-theme="light"] .nav-item { color: #5A5650; }
-[data-theme="light"] .nav-item:hover { background: rgba(0,0,0,0.05); color: #1A1814; }
-[data-theme="light"] .nav-item.active { color: var(--gold); background: rgba(184,134,11,0.10); }
+
+/* ===== DUNKELMODUS (modern, kühles Anthrazit) ===== */
+[data-theme="dark"] {
+  --bg: #0B0F14;
+  --bg2: #11161D;
+  --bg3: #1A2029;
+  --bg4: #232B36;
+  --bg5: #2D3642;
+  --line: rgba(255,255,255,0.07);
+  --line2: rgba(255,255,255,0.14);
+  --text: #E6EAF0;
+  --muted: #8B94A3;
+  --faint: #59626F;
+  --gold: #B8902B; /* exakt das Briefkopf-Gold — identisch zum hellen Theme */
+  --gold-dim: rgba(184,144,43,0.30);
+  --gold-pale: rgba(184,144,43,0.12);
+  --green: #34C77B;
+  --green-dim: rgba(52,199,123,0.15);
+  --red: #F26D5F;
+  --red-dim: rgba(242,109,95,0.15);
+  --blue: #5B9BD5;
+  --blue-dim: rgba(91,155,213,0.15);
+  --amber: #F0A030;
+  --teal: #2FB8B3;
+}
+
 
 body { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; transition: background-color 0.3s ease, color 0.3s ease; }
 h1, h2, h3, .serif { font-family: 'Fraunces', Georgia, serif; font-weight: 600; }
@@ -185,14 +209,14 @@ h1, h2, h3, .serif { font-family: 'Fraunces', Georgia, serif; font-weight: 600; 
 .kpi-card { background: var(--bg3); border-radius: 8px; padding: 16px 18px; border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(0,0,0,0.06); transition: border-color 0.15s, box-shadow 0.15s; }
 .kpi-card:hover { border-color: var(--line2); box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
 .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
-.kpi-value { font-family: 'Fraunces', serif; font-size: 22px; color: var(--text); line-height: 1; }
+.kpi-value { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 22px; color: var(--text); line-height: 1; }
 .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 5px; display: flex; align-items: center; gap: 4px; }
 
 /* STAT BOXES */
 .stat-box { background: var(--bg3); border-radius: 8px; padding: 14px 16px; border: 1px solid var(--line); }
 .stat-box.highlight { background: var(--gold-pale); border-color: var(--gold-dim); }
 .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
-.stat-val { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.1; }
+.stat-val { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.1; }
 .stat-val.gold { color: var(--gold); }
 .stat-val.green { color: var(--green); }
 .stat-val.red { color: var(--red); }
@@ -701,7 +725,7 @@ select:focus-visible, textarea:focus-visible {
 .lp-plan-tag { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: var(--gold); color: #14120C; border-radius: 999px; padding: 4px 12px; white-space: nowrap; }
 .lp-plan h3 { font-size: 15px; margin-bottom: 2px; }
 .lp-plan .lp-einheiten { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
-.lp-price { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 600; }
+.lp-price { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 30px; font-weight: 600; }
 .lp-price small { font-size: 12px; color: var(--muted); font-family: 'Outfit', sans-serif; font-weight: 400; }
 .lp-price-jahr { font-size: 11px; color: var(--muted); margin: 2px 0 16px; min-height: 15px; }
 .lp-plan ul { list-style: none; padding: 0; margin: 0 0 18px; display: grid; gap: 7px; font-size: 12px; color: var(--text); }
@@ -758,7 +782,7 @@ select:focus-visible, textarea:focus-visible {
 }
 .brief-head-zone { position: relative; }
 .brief-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.brief-logo { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 600; color: var(--text); }
+.brief-logo { font-family: 'Fraunces', serif; font-size: 21px; font-weight: 600; color: var(--text); }
 .brief-logo span { font-style: italic; font-weight: 300; color: var(--gold); }
 .brief-absender { text-align: right; font-size: 11px; color: var(--muted); line-height: 1.5; }
 .brief-absender strong { display: block; font-size: 12px; color: var(--text); }
@@ -844,4 +868,110 @@ select:focus-visible, textarea:focus-visible {
 .row-confirming { animation: zeile-ok 0.45s ease-out; }
 @media (prefers-reduced-motion: reduce) {
   .haken-draw, .row-confirming { animation: none !important; }
+}
+
+
+/* =====================================================================
+   DESIGN-TEST: „Fintech Modern" (Referenzen: Baselane / Stessa).
+   Hell-first, serifenlos, weiche weiße Karten, klare Akzentfarbe.
+   Als Override-Layer am Dateiende — leicht rückbaubar.
+   ===================================================================== */
+.topbar-title { font-size: 26px; font-weight: 700; }
+
+.section, .card { border-radius: var(--r); border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.04); }
+.section-header { padding: 16px 22px; }
+.section-header h3 { font-size: 14px; font-weight: 700; }
+.section-body { padding: 20px 22px; }
+
+.kpi-card { background: var(--bg2); border-radius: var(--r); padding: 20px; border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.04); }
+.kpi-card:hover { box-shadow: 0 2px 4px rgba(15,23,42,0.06), 0 12px 32px rgba(15,23,42,0.08); border-color: var(--line2); }
+.kpi-label { font-size: 11px; letter-spacing: 0.06em; }
+.kpi-value { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+
+.btn { font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 10px; }
+.btn-gold { background: var(--gold); color: #FFFFFF; }
+.btn-gold:hover { background: color-mix(in srgb, var(--gold), black 12%); color: #FFFFFF; box-shadow: 0 6px 18px var(--gold-dim); transform: translateY(-1px); }
+.btn-ghost { background: var(--bg2); color: var(--muted); border: 1px solid var(--line2); }
+.btn-ghost:hover { color: var(--text); background: var(--bg3); }
+
+.input, input[type="text"], input[type="number"], input[type="email"], input[type="password"], input[type="date"], select, textarea { border-radius: 10px; }
+.input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-pale); }
+
+.badge { font-weight: 600; padding: 3px 10px; }
+.nav-item { padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; }
+.nav-item.active { background: var(--gold-pale); color: var(--gold); font-weight: 600; }
+
+th { font-size: 11px; letter-spacing: 0.06em; }
+td { padding: 12px 10px 12px 0; }
+.form-box { border-radius: var(--r); box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 32px rgba(15,23,42,0.06); border: 1px solid var(--line); }
+
+/* =====================================================================
+   MODERNE STEUERELEMENTE (Design-Test, Fintech-Referenz Baselane/Stessa)
+   Überschreibt die älteren Control-Regeln oben (gleiche Selektoren, später
+   im Cascade). Einheitlich: 10px-Radius, weiße Felder, Gold-Fokusring,
+   eigener Select-Chevron, native Checkboxen/Radios/Slider in Markenfarbe.
+   ===================================================================== */
+.form-group input, .form-group select, .form-group textarea,
+.field input, .field select, .field textarea, .input {
+  padding: 11px 14px; border-radius: 10px; border: 1px solid var(--line2);
+  background: var(--bg2); color: var(--text);
+  font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; font-size: 13.5px;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  outline: none;
+}
+.form-group input:hover, .form-group select:hover, .form-group textarea:hover,
+.field input:hover, .field select:hover, .input:hover { border-color: var(--faint); }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus,
+.field input:focus, .field select:focus, .field textarea:focus, .input:focus {
+  border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-pale); background: var(--bg2);
+}
+input::placeholder, textarea::placeholder { color: var(--faint); }
+textarea { min-height: 88px; resize: vertical; }
+
+/* Select: nativer Pfeil raus, eigener Chevron rein */
+.form-group select, .field select, select.input {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238A8A86' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* Checkboxen & Radios in Markenfarbe, angenehm groß */
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--gold); width: 16px; height: 16px; cursor: pointer;
+}
+
+/* Datumsfelder: Picker-Icon dezent */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
+input[type="date"]:hover::-webkit-calendar-picker-indicator { opacity: .9; }
+
+/* Slider */
+input[type="range"] { accent-color: var(--gold); cursor: pointer; }
+
+/* Buttons: etwas größer, klarer Fokus, weiche Hover-Anhebung */
+.btn { padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; }
+.btn-gold { box-shadow: 0 1px 2px rgba(184,144,43,.35); }
+.btn-gold:hover { background: #A67F24; box-shadow: 0 6px 16px rgba(184,144,43,.35); transform: translateY(-1px); }
+.btn-ghost, .btn-outline { background: var(--bg2); }
+.btn-ghost:hover, .btn-outline:hover { background: var(--bg3); }
+
+/* lucide-Icons sauber in Text/Buttons ausrichten */
+.btn svg, .nav-item .icon svg, .section-header svg, .badge svg { flex-shrink: 0; }
+.nav-item .icon { display: inline-flex; align-items: center; justify-content: center; }
+
+/* ============================================================
+   DARK MODE: Überschriften (Fraunces) in Gold
+   Im hellen Theme bleiben Überschriften Tinte; im dunklen Theme
+   übernehmen sie die Markenfarbe des Briefkopfs.
+   ============================================================ */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] .serif,
+[data-theme="dark"] .topbar-title,
+[data-theme="dark"] .section-header h3,
+[data-theme="dark"] .form-box h3,
+[data-theme="dark"] .section-title {
+  color: var(--gold);
 }

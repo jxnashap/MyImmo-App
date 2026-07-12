@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import VerbrauchListe from "@/components/lists/VerbrauchListe";
@@ -42,7 +43,7 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
           <div className="topbar-title">Verbrauch &amp; Nebenkosten</div>
           <div className="topbar-sub">Strom, Gas, Wasser, Heizung</div>
         </div>
-        <Link href="/verbrauch/new" className="btn btn-gold">＋ Verbrauch</Link>
+        <Link href="/verbrauch/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Verbrauch</Link>
       </div>
 
       <FilterBar filters={filters} />

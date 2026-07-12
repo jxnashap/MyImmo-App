@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 
 type Theme = "dark" | "light";
 
 export default function ThemeToggle({ variant = "full" }: { variant?: "full" | "icon" }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
     const saved =
       (typeof localStorage !== "undefined" &&
         (localStorage.getItem("theme") as Theme | null)) ||
       (document.documentElement.getAttribute("data-theme") as Theme | null) ||
-      "dark";
+      "light";
     setTheme(saved);
   }, []);
 
@@ -44,14 +45,14 @@ export default function ThemeToggle({ variant = "full" }: { variant?: "full" | "
           color: "var(--muted)",
         }}
       >
-        {theme === "dark" ? "🌙" : "☀️"}
+        {theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
       </button>
     );
   }
 
   return (
     <button onClick={toggle} className="btn btn-ghost" title="Hell/Dunkel">
-      {theme === "dark" ? "🌙 Heller Modus" : "☀️ Dunkler Modus"}
+      {theme === "dark" ? <><Moon size={14} style={{ verticalAlign: "-2px" }} /> Heller Modus</> : <><Sun size={14} style={{ verticalAlign: "-2px" }} /> Dunkler Modus</>}
     </button>
   );
 }

@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { updateTenant, deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
 import type { Tenant } from "@/lib/types";
+import { ReceiptText, Trash2 } from "lucide-react";
 
 export default async function EditTenantPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -33,8 +34,8 @@ export default async function EditTenantPage({ params }: { params: { id: string 
           <div><div className="topbar-title">{[tenant.vorname, tenant.nachname].filter(Boolean).join(" ") || "Mieter"}</div><div className="topbar-sub">Mieter bearbeiten</div></div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href={`/tenants/${tenant.id}/nk`} className="btn btn-ghost" style={{ fontSize: 12 }}>🧾 NK-Abrechnung</Link>
-          <DeleteButton action={deleteTenant.bind(null, tenant.id)} className="btn btn-ghost" label="🗑 Löschen" confirmText={`„${[tenant.vorname, tenant.nachname].filter(Boolean).join(" ")}" wirklich löschen?`} />
+          <Link href={`/tenants/${tenant.id}/nk`} className="btn btn-ghost" style={{ fontSize: 12 }}><ReceiptText size={14} style={{ verticalAlign: "-2px" }} /> NK-Abrechnung</Link>
+          <DeleteButton action={deleteTenant.bind(null, tenant.id)} className="btn btn-ghost" label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>} confirmText={`„${[tenant.vorname, tenant.nachname].filter(Boolean).join(" ")}" wirklich löschen?`} />
         </div>
       </div>
 

@@ -1,7 +1,8 @@
 // Verbrauchsverlauf je Zähler-Art als SVG-Balkendiagramm (Menge pro Eintrag).
 import { euro } from "@/lib/format";
+import { Zap, Flame, Droplet, Fuel, Heater, Package, BarChart3, type LucideIcon } from "lucide-react";
 
-const ART_ICONS: Record<string, string> = { Strom: "⚡", Gas: "🔥", Wasser: "💧", Heizöl: "🛢", Fernwärme: "♨", Heizung: "♨", Sonstiges: "📦" };
+const ART_ICONS: Record<string, LucideIcon> = { Strom: Zap, Gas: Flame, Wasser: Droplet, Heizöl: Fuel, Fernwärme: Heater, Heizung: Heater, Sonstiges: Package };
 
 export type VPoint = { label: string; menge: number; kosten: number };
 
@@ -18,7 +19,7 @@ export default function VerbrauchChart({ art, einheit, points }: { art: string; 
     <div className="section" style={{ marginBottom: 14 }}>
       <div className="section-header">
         <div>
-          <h3>{(ART_ICONS[art] || "📊") + " " + art}</h3>
+          <h3>{(() => { const Icon = ART_ICONS[art] || BarChart3; return <Icon size={16} style={{ verticalAlign: "-3px" }} />; })()} {art}</h3>
           <span style={{ fontSize: 11, color: "var(--muted)" }}>{n} {n === 1 ? "Ablesung" : "Ablesungen"} · Kosten gesamt {euro(summeKosten)}</span>
         </div>
       </div>

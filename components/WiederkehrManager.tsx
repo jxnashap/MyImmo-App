@@ -1,4 +1,5 @@
 "use client";
+import { Plus, Repeat, X, Pause, Play } from "lucide-react";
 
 // Wiederkehrende Buchungen verwalten: Vorlagen anlegen (Einnahme/Kosten,
 // Zyklus, Zeitraum), aktiv/pausiert schalten, und je Vorlage die noch offenen
@@ -175,7 +176,7 @@ export default function WiederkehrManager({
               <input type="text" style={inputStil} value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)} placeholder="z. B. Grundsteuer Q1" />
             </label>
             <button className="btn btn-gold" disabled={adding} onClick={anlegen} style={{ marginBottom: 1 }}>
-              {adding ? "Speichert…" : "＋ Vorlage"}
+              {adding ? "Speichert…" : <><Plus size={14} style={{ verticalAlign: "-2px" }} /> Vorlage</>}
             </button>
           </div>
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 10 }}>
@@ -191,7 +192,7 @@ export default function WiederkehrManager({
         <div className="section-body">
           {vorlagen.length === 0 ? (
             <div className="empty" style={{ padding: 28 }}>
-              <div className="empty-icon">🔁</div>
+              <Repeat className="empty-icon" size={36} color="var(--faint)" />
               <p>Noch keine wiederkehrenden Buchungen. Lege z. B. „Grundsteuer · jährlich" oder „Müllabfuhr · vierteljährlich" an.</p>
             </div>
           ) : (
@@ -224,9 +225,9 @@ export default function WiederkehrManager({
                       {offen > 0 ? `${offen} erzeugen` : "aktuell"}
                     </button>
                     <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => umschalten(v)} title={v.aktiv ? "Pausieren" : "Aktivieren"}>
-                      {v.aktiv ? "⏸" : "▶"}
+                      {v.aktiv ? <Pause size={14} /> : <Play size={14} />}
                     </button>
-                    <button className="delete-btn" title="Vorlage löschen" onClick={() => loeschen(v)}>✕</button>
+                    <button className="delete-btn" title="Vorlage löschen" onClick={() => loeschen(v)}><X size={14} /></button>
                   </div>
                 </div>
               );

@@ -1,11 +1,12 @@
 "use client";
+import { TriangleAlert } from "lucide-react";
 
 import { useState } from "react";
 import type { Tenant, Property } from "@/lib/types";
 import SubmitButton from "@/components/SubmitButton";
 
 const KAUTION_STATUS = [
-  { v: "nein", label: "⚠️ Ausstehend" },
+  { v: "nein", label: "Ausstehend" },
   { v: "teilweise", label: "Teilweise" },
   { v: "ja", label: "✓ Vollständig" },
 ];
@@ -131,7 +132,7 @@ export default function TenantForm({
       <div className="form-row single">
         <div className="form-group"><label>Notiz</label><textarea name="notiz" rows={3} defaultValue={v("notiz")} style={{ resize: "vertical" }} />
           <small style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, display: "block" }}>
-            ⚠️ Bitte keine besonderen Kategorien personenbezogener Daten erfassen
+            <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> Bitte keine besonderen Kategorien personenbezogener Daten erfassen
             (z.&nbsp;B. Gesundheit, Religion, Herkunft, Gewerkschaft) — Art.&nbsp;9 DSGVO.
           </small>
         </div>

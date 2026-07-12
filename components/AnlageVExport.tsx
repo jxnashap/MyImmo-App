@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Printer, Download } from "lucide-react";
+import { Printer, Download, ReceiptText } from "lucide-react";
 import { eur2 } from "@/lib/format";
 import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
 import {
@@ -118,7 +118,7 @@ export default function AnlageVExport({
       </div>
 
       {erg.objekte.length === 0 ? (
-        <div className="empty"><div className="empty-icon">🧾</div><p>Keine Einnahmen oder Kosten für {jahr} gebucht.</p></div>
+        <div className="empty"><ReceiptText className="empty-icon" size={36} color="var(--faint)" /><p>Keine Einnahmen oder Kosten für {jahr} gebucht.</p></div>
       ) : (
         <>
           {/* Gesamt-Kennzahlen */}

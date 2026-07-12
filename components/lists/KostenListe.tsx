@@ -1,4 +1,5 @@
 "use client";
+import { FileText, Image as ImageIcon, Paperclip, X, ClipboardList } from "lucide-react";
 
 import { useState } from "react";
 import { euro, datum, istUmlagefaehig } from "@/lib/format";
@@ -51,9 +52,9 @@ export default function KostenListe({
                 {k.rechnung_name ? (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                     <a href={`/kosten/${k.id}/rechnung`} target="_blank" rel="noopener noreferrer" title={k.rechnung_name} style={{ color: "var(--gold)" }}>
-                      {k.rechnung_type === "application/pdf" ? "📄" : k.rechnung_type?.startsWith("image/") ? "🖼️" : "📎"} ansehen
+                      {k.rechnung_type === "application/pdf" ? <FileText size={13} style={{ verticalAlign: "-2px" }} /> : k.rechnung_type?.startsWith("image/") ? <ImageIcon size={13} style={{ verticalAlign: "-2px" }} /> : <Paperclip size={13} style={{ verticalAlign: "-2px" }} />} ansehen
                     </a>
-                    <DeleteButton action={deleteRechnung.bind(null, k.id)} className="delete-btn" label="✕" confirmText="Beleg entfernen?" />
+                    <DeleteButton action={deleteRechnung.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText="Beleg entfernen?" />
                   </span>
                 ) : (
                   <span style={{ color: "var(--faint)", fontSize: 12 }}>–</span>
@@ -64,7 +65,7 @@ export default function KostenListe({
           );
         })}
         {rows.length === 0 && (
-          <tr><td colSpan={7}><div className="empty"><div className="empty-icon">📋</div><h4>Noch keine Ausgaben</h4><p>Erfasse Betriebskosten, Reparaturen oder Verwaltungskosten.</p></div></td></tr>
+          <tr><td colSpan={7}><div className="empty"><ClipboardList className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Ausgaben</h4><p>Erfasse Betriebskosten, Reparaturen oder Verwaltungskosten.</p></div></td></tr>
         )}
       </ExpandableRows>
 
