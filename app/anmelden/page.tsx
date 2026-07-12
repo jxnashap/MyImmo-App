@@ -2,9 +2,9 @@
 
 // Rollen-Auswahl vor dem Login (Businessplan Kap. 14 „Rollen-Plattform"):
 // Vermieter · Mieter · Service/Hausmeister · Hausverwaltung. Gleiche
-// Kartengröße wie die Login-Karte; Klick löst einen 3D-Flip aus und
-// navigiert dann zur Login-Seite mit der gewählten Rolle.
-import { useState } from "react";
+// Kartengröße wie die Login-Karte; Klick zoomt in die angeklickte Kachel
+// hinein (transform-origin = Kachelmitte) und navigiert zur Login-Seite.
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { KeyRound, Home, Wrench, Building2, ChevronRight, type LucideIcon } from "lucide-react";
@@ -26,22 +26,36 @@ const ROLLEN: Rolle[] = [
 
 export default function AnmeldenPage() {
   const router = useRouter();
+  const cardRef = useRef<HTMLDivElement>(null);
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
 
-  function waehle(key: string) {
+  // Login-Seite vorladen, damit die Navigation nach dem Zoom nicht ruckelt.
+  useEffect(() => {
+    router.prefetch("/login");
+  }, [router]);
+
+  function waehle(key: string, e: React.MouseEvent<HTMLButtonElement>) {
     if (gewaehlt) return;
+    // Zoom-Zentrum = Mitte der angeklickten Kachel: die Karte skaliert
+    // exakt in den Button hinein (nur transform/opacity → ruckelfrei).
+    const card = cardRef.current;
+    const t = e.currentTarget.getBoundingClientRect();
+    if (card) {
+      const c = card.getBoundingClientRect();
+      card.style.transformOrigin = `${t.left - c.left + t.width / 2}px ${t.top - c.top + t.height / 2}px`;
+    }
     setGewaehlt(key);
-    // Erst den 3D-Flip zeigen, dann navigieren (Dauer = CSS-Animation).
-    setTimeout(() => router.push(`/login?rolle=${key}`), 460);
+    setTimeout(() => router.push(`/login?rolle=${key}`), 520);
   }
 
   return (
     <div
-      className="role-stage flex min-h-screen w-full items-center justify-center px-4 py-10"
+      className="flex min-h-screen w-full items-center justify-center px-4 py-10"
       style={{ background: "var(--bg)", color: "var(--text)" }}
     >
       <div
-        className={`role-card w-full max-w-[420px] rounded-2xl border p-8 sm:p-10 ${gewaehlt ? "flip-out" : "flip-in"}`}
+        ref={cardRef}
+        className={`role-card w-full max-w-[420px] rounded-2xl border p-8 sm:p-10 ${gewaehlt ? "zoom-out" : "zoom-in"}`}
         style={{
           background: "var(--bg2)",
           borderColor: "var(--line2)",
@@ -50,14 +64,7 @@ export default function AnmeldenPage() {
       >
         <BrandMark size="lg" />
 
-        <p className="mt-6 mb-1 text-[17px] font-semibold" style={{ color: "var(--text)" }}>
-          Wie möchtest du MyImmo nutzen?
-        </p>
-        <p className="mb-6 text-[13px]" style={{ color: "var(--muted)" }}>
-          Wähle deinen Zugang — du kannst später jederzeit wechseln.
-        </p>
-
-        <div className="space-y-3">
+        <div className="mt-7 space-y-3">
           {ROLLEN.map((r) => {
             const Icon = r.icon;
             const aktiv = gewaehlt === r.key;
@@ -65,7 +72,7 @@ export default function AnmeldenPage() {
               <button
                 key={r.key}
                 type="button"
-                onClick={() => waehle(r.key)}
+                onClick={(e) => waehle(r.key, e)}
                 className={`role-tile flex w-full items-center gap-3.5 rounded-xl border px-4 py-3.5 text-left ${aktiv ? "tile-aktiv" : ""}`}
                 style={{ background: "var(--bg3)", borderColor: aktiv ? "var(--gold)" : "var(--line)" }}
               >

@@ -131,11 +131,11 @@ export default function LoginPage() {
 
   return (
     <div
-      className="role-stage flex min-h-screen w-full items-center justify-center px-4 py-10"
+      className="flex min-h-screen w-full items-center justify-center px-4 py-10"
       style={{ background: "var(--bg)", color: "var(--text)" }}
     >
       <div
-        className="role-card flip-in w-full max-w-[420px] rounded-2xl border p-8 sm:p-10"
+        className="role-card zoom-in w-full max-w-[420px] rounded-2xl border p-8 sm:p-10"
         style={{
           background: "var(--bg2)",
           borderColor: "var(--line2)",

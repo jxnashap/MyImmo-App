@@ -851,20 +851,22 @@ select:focus-visible, textarea:focus-visible {
 .nav-item .icon { display: inline-flex; align-items: center; justify-content: center; }
 
 /* ============================================================
-   ROLLEN-AUSWAHL & LOGIN: 3D-Übergang
-   Karte klappt beim Rollen-Klick per Y-Rotation aus dem Bild,
-   die Login-Karte klappt spiegelbildlich herein.
+   ROLLEN-AUSWAHL & LOGIN: Zoom-Übergang
+   Klick zoomt in die gewählte Kachel hinein (transform-origin wird
+   per JS auf die Kachelmitte gesetzt); die Login-Karte landet weich.
+   Nur transform + opacity → läuft komplett auf dem Compositor.
    ============================================================ */
-.role-stage { perspective: 1400px; }
-.role-card { transform-style: preserve-3d; will-change: transform, opacity; }
-.role-card.flip-in { animation: roleFlipIn .55s cubic-bezier(.2,.7,.3,1) both; }
-.role-card.flip-out { animation: roleFlipOut .5s cubic-bezier(.5,0,.75,.4) forwards; pointer-events: none; }
-@keyframes roleFlipIn {
-  from { transform: rotateY(65deg) translateZ(-60px) scale(.92); opacity: 0; }
-  to   { transform: none; opacity: 1; }
+.role-card { will-change: transform, opacity; backface-visibility: hidden; }
+.role-card.zoom-in { animation: roleZoomIn .45s cubic-bezier(.22,.9,.3,1) both; }
+.role-card.zoom-out {
+  transform: scale(3.4);
+  opacity: 0;
+  transition: transform .55s cubic-bezier(.6,.05,.75,.4), opacity .42s ease-in .13s;
+  pointer-events: none;
 }
-@keyframes roleFlipOut {
-  to { transform: rotateY(-78deg) translateZ(-80px) scale(.9); opacity: 0; }
+@keyframes roleZoomIn {
+  from { transform: scale(.94); opacity: 0; }
+  to   { transform: none; opacity: 1; }
 }
 
 /* Rollen-Kacheln: leichtes 3D-Kippen beim Hover */
@@ -877,7 +879,8 @@ select:focus-visible, textarea:focus-visible {
 .role-tile.tile-aktiv { box-shadow: 0 0 0 3px var(--gold-pale); }
 
 @media (prefers-reduced-motion: reduce) {
-  .role-card.flip-in, .role-card.flip-out { animation: none; }
+  .role-card.zoom-in { animation: none; }
+  .role-card.zoom-out { transition: opacity .2s; transform: none; }
   .role-tile, .role-tile:hover { transform: none; }
 }
 >>>>>>> da99ef8 (Rollen-Auswahl vor dem Login (Vermieter/Mieter/Service/Hausverwaltung))
