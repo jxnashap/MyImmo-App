@@ -849,3 +849,35 @@ select:focus-visible, textarea:focus-visible {
 /* lucide-Icons sauber in Nav/Buttons/Badges ausrichten */
 .btn svg, .nav-item .icon svg, .section-header svg, .badge svg { flex-shrink: 0; }
 .nav-item .icon { display: inline-flex; align-items: center; justify-content: center; }
+
+/* ============================================================
+   ROLLEN-AUSWAHL & LOGIN: 3D-Übergang
+   Karte klappt beim Rollen-Klick per Y-Rotation aus dem Bild,
+   die Login-Karte klappt spiegelbildlich herein.
+   ============================================================ */
+.role-stage { perspective: 1400px; }
+.role-card { transform-style: preserve-3d; will-change: transform, opacity; }
+.role-card.flip-in { animation: roleFlipIn .55s cubic-bezier(.2,.7,.3,1) both; }
+.role-card.flip-out { animation: roleFlipOut .5s cubic-bezier(.5,0,.75,.4) forwards; pointer-events: none; }
+@keyframes roleFlipIn {
+  from { transform: rotateY(65deg) translateZ(-60px) scale(.92); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+@keyframes roleFlipOut {
+  to { transform: rotateY(-78deg) translateZ(-80px) scale(.9); opacity: 0; }
+}
+
+/* Rollen-Kacheln: leichtes 3D-Kippen beim Hover */
+.role-tile { transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; cursor: pointer; }
+.role-tile:hover {
+  transform: translateY(-2px) rotateX(3deg);
+  border-color: var(--gold) !important;
+  box-shadow: 0 8px 22px -10px rgba(184,144,43,.45);
+}
+.role-tile.tile-aktiv { box-shadow: 0 0 0 3px var(--gold-pale); }
+
+@media (prefers-reduced-motion: reduce) {
+  .role-card.flip-in, .role-card.flip-out { animation: none; }
+  .role-tile, .role-tile:hover { transform: none; }
+}
+>>>>>>> da99ef8 (Rollen-Auswahl vor dem Login (Vermieter/Mieter/Service/Hausverwaltung))

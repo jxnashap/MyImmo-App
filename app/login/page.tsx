@@ -2,8 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ArrowLeft, KeyRound, Home, Wrench, Building2, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
+
+// Zugangs-Rollen (Businessplan Kap. 14). Funktional ist aktuell der
+// Vermieter-Zugang — die übrigen Portale folgen und zeigen einen Hinweis.
+const ROLLEN: Record<string, { label: string; icon: LucideIcon }> = {
+  vermieter: { label: "Vermieter", icon: KeyRound },
+  mieter: { label: "Mieter", icon: Home },
+  service: { label: "Service / Hausmeister", icon: Wrench },
+  hausverwaltung: { label: "Hausverwaltung", icon: Building2 },
+};
 
 // Freundliche deutsche Texte für die häufigsten Supabase-Fehler.
 function uebersetze(msg: string): string {
@@ -39,13 +49,17 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [consent, setConsent] = useState(false);
   const [code, setCode] = useState(""); // Beta-Zugangscode (nur Registrierung)
+  const [rolle, setRolle] = useState<string>("vermieter"); // Standard: Vermieter
 
-  // Hinweis nach Kontolöschung erst nach dem Mount setzen (verhindert
-  // Hydration-Mismatch, da window serverseitig nicht existiert).
+  // Query-Parameter erst nach dem Mount lesen (verhindert Hydration-
+  // Mismatch, da window serverseitig nicht existiert).
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).has("geloescht")) {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("geloescht")) {
       setInfo("Dein Konto und alle Daten wurden gelöscht.");
     }
+    const r = params.get("rolle");
+    if (r && ROLLEN[r]) setRolle(r);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -117,11 +131,11 @@ export default function LoginPage() {
 
   return (
     <div
-      className="flex min-h-screen w-full items-center justify-center px-4 py-10"
+      className="role-stage flex min-h-screen w-full items-center justify-center px-4 py-10"
       style={{ background: "var(--bg)", color: "var(--text)" }}
     >
       <div
-        className="w-full max-w-[420px] rounded-2xl border p-8 sm:p-10"
+        className="role-card flip-in w-full max-w-[420px] rounded-2xl border p-8 sm:p-10"
         style={{
           background: "var(--bg2)",
           borderColor: "var(--line2)",
@@ -129,6 +143,34 @@ export default function LoginPage() {
         }}
       >
         <BrandMark size="lg" />
+
+        {/* Gewählte Rolle + Wechsel zurück zur Auswahl */}
+        <div className="mt-5 flex items-center justify-between">
+          <span
+            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold"
+            style={{ background: "var(--gold-pale)", color: "var(--gold)", border: "1px solid var(--gold-dim)" }}
+          >
+            {(() => { const I = ROLLEN[rolle].icon; return <I size={13} />; })()}
+            {ROLLEN[rolle].label}
+          </span>
+          <Link
+            href="/anmelden"
+            className="inline-flex items-center gap-1 text-[12px] transition hover:underline"
+            style={{ color: "var(--muted)" }}
+          >
+            <ArrowLeft size={12} /> Rolle wechseln
+          </Link>
+        </div>
+
+        {rolle !== "vermieter" && (
+          <p
+            className="mt-4 rounded-lg px-3 py-2 text-[13px]"
+            style={{ background: "var(--blue-dim)", color: "var(--blue)" }}
+          >
+            Das {ROLLEN[rolle].label}-Portal ist in Vorbereitung. Die Anmeldung unten gilt
+            aktuell für Vermieter.
+          </p>
+        )}
 
         {/* Umschalter Anmelden / Registrieren */}
         <div
