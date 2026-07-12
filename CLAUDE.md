@@ -20,6 +20,32 @@
   Teilersatz jetzt: Mindest-Passwortlänge/-anforderungen in denselben Email-Einstellungen erhöhen.
   (DB-Härtung sonst erledigt: FKs, RLS-Performance, Indizes, doppelte Policy entfernt.)
 
+### Open Banking / Konto-Anbindung (geplant — Sandbox-first)
+Entscheidungen aus der Planung (12.07.2026):
+- **Nur Lesezugriff** (Kontoinformationsdienst/AISP) über einen **lizenzierten Anbieter** →
+  keine eigene BaFin-Lizenz nötig. Kein Zahlungsverkehr.
+- **Mehrere Bankverbindungen je Nutzer** (Sparkasse/Groß-/Direktbank via PSD2/XS2A, ~99 % Abdeckung).
+- **Eingänge + Ausgaben**: Mieteingänge automatisch mit erwarteten Mieten abgleichen, wiederkehrende
+  Ausgaben als Kostenvorschläge. Prinzip **„vorschlagen + per Klick bestätigen"** (keine stille
+  Automatik); irrelevante/private Umsätze ausblendbar.
+- **Datenschutz**: Umsätze verschlüsselt (App-Layer, wie IBANs) + RLS. PSD2 = alle 90 Tage
+  Reauth (App erinnert). Hinweis: bei gemischt privat/geschäftlichem Konto separates Mietkonto empfehlen.
+- **Anbieter**: **Enable Banking** (Start-Kandidat, EU-weit, kostenlose Self-Service-Sandbox +
+  Restricted Production für eigene Konten). ⚠️ **GoCardless Bank Account Data (Nordigen) fällt weg**
+  — Neuanmeldungen deaktiviert/wird abgewickelt (12.07.2026 geprüft). Deutsche BaFin-Alternative
+  **finAPI** (Zugang aber verkaufsgebunden). NICHT das GoCardless-„Payments"-Produkt (Lastschrift) —
+  falsches Produkt.
+- **Voraussetzungen für Live**: Gewerbe (in Arbeit) + Anbietervertrag + AVV. Laufende Kosten je
+  Konto/Monat → kostenpflichtiges **Add-on / Business-Tarif**.
+- **Bau-Etappen**: (1) Tabellen `bankverbindungen` + `bank_umsaetze` (verschlüsselt, RLS);
+  (2) Enable-Banking-Sandbox-Flow (Konto verbinden via JWT-Auth + Umsätze abrufen); (3) Abgleich-Engine +
+  „bestätigen"-UI; (4) 90-Tage-Reauth-Erinnerung.
+- **Enable-Banking-Auth**: registrierte „Application" (Sandbox) + selbst generiertes RSA-Schlüsselpaar
+  (privater Key wird im Browser erzeugt, Dateiname = Application ID). API-Calls per JWT (RS256),
+  Header `kid` = Application ID. **Benötigte Env (Vercel)**: `ENABLE_BANKING_APP_ID` +
+  `ENABLE_BANKING_PRIVATE_KEY` (privater Schlüssel, wie DATA_ENCRYPTION_KEY behandeln — nie ins
+  Repo/Logs). Redirect-URL bei der App-Registrierung: `<base>/api/banking/callback`.
+
 ### Sonstiges (kein Geld)
 - **Abo-Zugangscode (mit Bezahlsystem umsetzen):** Nach Abschluss/Bezahlung eines Abos erhält
   der Kunde einen individuellen Zugangscode (per E-Mail oder direkt in der App). Der Code ist
