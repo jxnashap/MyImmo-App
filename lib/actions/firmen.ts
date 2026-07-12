@@ -15,13 +15,18 @@ export async function erstelleFirma(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Bitte den Firmennamen angeben." };
   const website = String(formData.get("website") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim();
+  // Einfache Formatprüfung — verhindert auch mailto-Parameter-Injection ("?", "&").
+  if (email && !/^[^\s@?&]+@[^\s@?&]+\.[^\s@?&]+$/.test(email)) {
+    return { error: "Bitte eine gültige E-Mail-Adresse angeben." };
+  }
 
   const { error } = await supabase.from("firmen").insert({
     user_id: user.id,
     name: name.slice(0, 200),
     gewerk: String(formData.get("gewerk") ?? "").trim() || null,
     telefon: String(formData.get("telefon") ?? "").trim().slice(0, 50) || null,
-    email: String(formData.get("email") ?? "").trim().slice(0, 200) || null,
+    email: email.slice(0, 200) || null,
     website: website ? (website.startsWith("http") ? website : `https://${website}`).slice(0, 300) : null,
     notiz: String(formData.get("notiz") ?? "").trim().slice(0, 500) || null,
   });
