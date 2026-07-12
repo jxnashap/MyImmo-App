@@ -103,6 +103,7 @@ export default function LoginPage() {
       const eingabe = code.trim().toUpperCase();
       const { data: gueltig, error: rpcError } = await supabase.rpc("einladungscode_pruefen", {
         p_code: eingabe,
+        p_rolle: rolle, // Code muss zur gewählten Rolle passen (MI ≠ SV)
       });
       if (rpcError || !gueltig) {
         setError("Dieser Einladungscode ist ungültig oder abgelaufen. Bitte frage den Vermieter nach einem neuen Code.");
