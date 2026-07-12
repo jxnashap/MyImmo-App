@@ -64,12 +64,42 @@ export async function GET() {
   const aspspsDE = await call("/aspsps?country=DE");
   const aspspsFI = await call("/aspsps?country=FI");
 
+  // /auth-Probe: prüft, ob die registrierte Redirect-URL akzeptiert wird.
+  // Nutzt die Produktions-Redirect-URL (www.myimmoapp.de) — genau die, die
+  // der .de-Tippfehler zuvor blockiert hätte. Gibt KEINE Consent-URL-Query
+  // (die könnte einen kurzlebigen Auth-Code-Kontext enthalten) preis, nur
+  // Status + Host der zurückgegebenen URL.
+  const authProbe = await (async () => {
+    try {
+      const bis = new Date(Date.now() + 89 * 864e5).toISOString();
+      const res = await fetch(`${BASE}/auth`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${jwt()}`, "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          access: { valid_until: bis },
+          aspsp: { name: "Mock ASPSP", country: "FI" },
+          state: "00000000-0000-0000-0000-000000000000",
+          redirect_url: "https://www.myimmoapp.de/api/banking/callback",
+          psu_type: "personal",
+        }),
+      });
+      const text = await res.text();
+      let host: string | null = null;
+      try { host = new URL(JSON.parse(text).url).host; } catch { /* keine url */ }
+      return { status: res.status, ok: res.ok, redirect_host: host, fehler: res.ok ? null : text.slice(0, 300) };
+    } catch (e) {
+      return { status: 0, ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  })();
+
   const namen = (r: any) =>
     r?.ok && r.body?.aspsps ? r.body.aspsps.map((a: any) => `${a.name} (${a.country})`).slice(0, 25) : r;
 
   return NextResponse.json({
     env,
     application,
+    auth_probe: authProbe,
     aspsps_DE: namen(aspspsDE),
     aspsps_FI: namen(aspspsFI),
     hinweis: "Diese Route zeigt keine Secrets. Nach dem Test wird sie entfernt.",
