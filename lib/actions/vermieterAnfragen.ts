@@ -5,7 +5,9 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export const ANFRAGE_TYPEN = [
+// "use server"-Dateien dürfen nur async-Funktionen exportieren —
+// die Typliste bleibt deshalb modul-intern.
+const ANFRAGE_TYPEN = [
   "zaehlerstand", "zutritt", "mieterhoehung", "personenzahl",
   "kontaktdaten", "kaution", "dokument", "uebergabe", "sonstiges",
 ] as const;
