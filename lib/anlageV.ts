@@ -239,3 +239,35 @@ export function wertVon(o: AnlageVObjekt, key: string): number {
   if (key in o.werbungskosten) return (o.werbungskosten as unknown as Record<string, number>)[key];
   return 0;
 }
+
+// ---- ELSTER-Ausfüllhilfe (Übertragung nach "Mein ELSTER") ----
+// Ordnet die berechneten Werte den Zeilen der amtlichen Anlage V zu. Die
+// Zeilennummern folgen dem Formular der letzten Jahre und dienen als
+// Orientierung — im konkreten Steuerjahr die Zeile im Formular gegenprüfen.
+// Wichtig: In ELSTER ist JE Objekt eine eigene Anlage V auszufüllen.
+export type ElsterZeile = {
+  zeile: string;
+  bezeichnung: string;
+  betrag: number;
+  bereich: "einnahme" | "wk" | "summe";
+};
+
+export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
+  const e = o.einnahmen;
+  const w = o.werbungskosten;
+  return [
+    { zeile: "9", bezeichnung: "Mieteinnahmen für Wohnungen (ohne Umlagen)", betrag: e.miete, bereich: "einnahme" },
+    { zeile: "13", bezeichnung: "Umlagen, verrechnet mit Erstattungen (Nebenkosten)", betrag: e.umlagen, bereich: "einnahme" },
+    { zeile: "14", bezeichnung: "Sonstige Einnahmen", betrag: e.sonstige, bereich: "einnahme" },
+    { zeile: "21", bezeichnung: "Summe der Einnahmen", betrag: e.summe, bereich: "summe" },
+    { zeile: "33", bezeichnung: "AfA für Gebäude", betrag: w.afa, bereich: "wk" },
+    { zeile: "37", bezeichnung: "Schuldzinsen", betrag: w.schuldzinsen, bereich: "wk" },
+    { zeile: "40", bezeichnung: "Erhaltungsaufwendungen (Reparatur/Instandhaltung)", betrag: w.erhaltung, bereich: "wk" },
+    { zeile: "46", bezeichnung: "Verwaltungskosten", betrag: w.verwaltung, bereich: "wk" },
+    { zeile: "47", bezeichnung: "Grundsteuer / öffentliche Lasten", betrag: w.grundsteuer, bereich: "wk" },
+    { zeile: "47", bezeichnung: "Versicherungen", betrag: w.versicherung, bereich: "wk" },
+    { zeile: "50", bezeichnung: "Sonstige Kosten (Hausgeld/WEG, übrige)", betrag: w.hausgeldSonstige, bereich: "wk" },
+    { zeile: "51", bezeichnung: "Summe der Werbungskosten", betrag: w.summe, bereich: "summe" },
+    { zeile: "23/24", bezeichnung: o.ueberschuss >= 0 ? "Überschuss (Einkünfte)" : "Verlust", betrag: o.ueberschuss, bereich: "summe" },
+  ];
+}

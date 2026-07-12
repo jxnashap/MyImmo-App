@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Printer, Download, ReceiptText } from "lucide-react";
+import { Printer, Download, ReceiptText, Landmark } from "lucide-react";
 import { eur2 } from "@/lib/format";
 import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
 import {
@@ -11,6 +11,7 @@ import {
   wertVon,
   type AnlageVObjekt,
 } from "@/lib/anlageV";
+import ElsterHilfe from "@/components/ElsterHilfe";
 
 export default function AnlageVExport({
   properties,
@@ -29,6 +30,7 @@ export default function AnlageVExport({
   const [jahr, setJahr] = useState(aktuell - 1);
   const [gebaeudeAnteil, setGebaeudeAnteil] = useState(String(AFA_DEFAULT.gebaeudeAnteil));
   const [satz, setSatz] = useState(""); // leer = automatisch je Baujahr
+  const [ansicht, setAnsicht] = useState<"uebersicht" | "elster">("uebersicht");
 
   const erg = useMemo(
     () =>
@@ -111,6 +113,27 @@ export default function AnlageVExport({
             <label>AfA-Satz (% p.a.) — leer = automatisch je Baujahr</label>
             <input className="input" type="number" step="0.5" placeholder="auto" value={satz} onChange={(e) => setSatz(e.target.value)} style={{ width: 120 }} />
           </div>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Ansicht</label>
+            <div style={{ display: "inline-flex", gap: 1, background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, padding: 2 }}>
+              {([["uebersicht", "Übersicht"], ["elster", "ELSTER-Hilfe"]] as const).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setAnsicht(k)}
+                  className="btn"
+                  style={{
+                    fontSize: 12, padding: "6px 12px", borderRadius: 6,
+                    background: ansicht === k ? "var(--gold)" : "transparent",
+                    color: ansicht === k ? "#1a1a17" : "var(--muted)",
+                  }}
+                >
+                  {k === "elster" && <Landmark size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />}
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 360, lineHeight: 1.5 }}>
             AfA = Kaufpreis × Gebäudeanteil × Satz. Typisch: 2 % (Baujahr ab 1925), 2,5 % (älter), 3 % (Neubau ab 2023). Anpassen, falls dein Bescheid abweicht. AfA-Methode je Objekt im Objekt-Formular einstellbar; die globalen Regler gelten für Objekte auf „automatisch".
           </div>
@@ -133,6 +156,7 @@ export default function AnlageVExport({
           </div>
 
           {/* Aufstellung */}
+          {ansicht === "uebersicht" && (
           <div className="section">
             <div className="section-header">
               <h3>Aufstellung {jahr}</h3>
@@ -199,6 +223,9 @@ export default function AnlageVExport({
               </table>
             </div>
           </div>
+          )}
+
+          {ansicht === "elster" && <ElsterHilfe objekte={erg.objekte} jahr={jahr} />}
 
           <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 14, lineHeight: 1.6 }}>
             Hinweis: Diese Aufstellung ist eine Hilfestellung zur Anlage V und ersetzt keine Steuerberatung.
