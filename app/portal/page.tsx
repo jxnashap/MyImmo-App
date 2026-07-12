@@ -1,11 +1,12 @@
-// Mieterportal (Etappe 1): Der verknüpfte Mieter sieht seine Wohnung und
-// Vertragsdaten. Anliegen/Schadensmeldungen und Dokumente folgen in Etappe 2
-// (Businessplan Kap. 14 "Das Mieterportal").
-import { Home, KeyRound, Wrench, FileText } from "lucide-react";
+// Mieterportal: Wohnung + Vertragsdaten (Etappe 1) und Anliegen an den
+// Vermieter — Schaden melden, Dokument anfordern, Frage stellen (Etappe 2,
+// Businessplan Kap. 14 "Das Mieterportal").
+import { Home } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import BrandMark from "@/components/BrandMark";
 import ThemeToggle from "@/components/ThemeToggle";
+import AnliegenPortal, { type AnliegenRow } from "@/components/AnliegenPortal";
 import type { Tenant, Property } from "@/lib/types";
 
 export default async function PortalPage() {
@@ -36,6 +37,13 @@ export default async function PortalPage() {
     m,
     p: propVon(m.prop_id),
   }));
+
+  const { data: anliegenRows } = await supabase
+    .from("anliegen")
+    .select("id,typ,titel,beschreibung,status,antwort,created_at")
+    .eq("mieter_user_id", user!.id)
+    .order("created_at", { ascending: false });
+  const anliegen = (anliegenRows ?? []) as AnliegenRow[];
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
@@ -115,15 +123,8 @@ export default async function PortalPage() {
           ))
         )}
 
-        {/* Ausblick Etappe 2 */}
-        <div className="section">
-          <div className="section-header"><h3>Bald verfügbar</h3></div>
-          <div className="section-body" style={{ display: "grid", gap: 10, fontSize: 13, color: "var(--muted)" }}>
-            <span><Wrench size={14} style={{ verticalAlign: "-2px" }} /> Anliegen &amp; Schadensmeldungen direkt an deinen Vermieter</span>
-            <span><FileText size={14} style={{ verticalAlign: "-2px" }} /> Dokumente anfordern (z. B. Mietbescheinigung, NK-Abrechnung)</span>
-            <span><KeyRound size={14} style={{ verticalAlign: "-2px" }} /> Nachrichten &amp; Status deiner Anfragen</span>
-          </div>
-        </div>
+        {/* Anliegen an den Vermieter (Etappe 2) */}
+        {wohnungen.length > 0 && <AnliegenPortal anliegen={anliegen} />}
       </main>
     </div>
   );
