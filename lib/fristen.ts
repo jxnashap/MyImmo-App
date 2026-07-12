@@ -45,6 +45,22 @@ export function mieterFristen(m: MieterFristInput): Frist[] {
 
   if (m.mietbeginn) fristen.push({ label: "Mietbeginn", datum: m.mietbeginn, typ: "info", kategorie: "Miete" });
 
+  // Wohnungsgeberbestätigung: binnen 2 Wochen nach Einzug ausstellen
+  // (§ 19 BMG, Bußgeld bis 1.000 €). Nur solange die Frist noch läuft.
+  if (m.mietbeginn) {
+    const wgFrist = new Date(new Date(m.mietbeginn).getTime() + 14 * 86400000);
+    const wgTage = Math.ceil((wgFrist.getTime() - heute.getTime()) / 86400000);
+    if (wgTage >= 0) {
+      fristen.push({
+        label: "Wohnungsgeberbestätigung ausstellen",
+        datum: iso(wgFrist),
+        typ: wgTage <= 7 ? "warn" : "info",
+        kategorie: "Miete",
+        rechtsgrundlage: "§ 19 BMG (2 Wochen nach Einzug)",
+      });
+    }
+  }
+
   if (m.mietende) {
     const ende = new Date(m.mietende);
     const tage = Math.ceil((ende.getTime() - heute.getTime()) / 86400000);

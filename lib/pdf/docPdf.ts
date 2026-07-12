@@ -31,6 +31,8 @@ export type BriefDaten = {
   objekt: string;
   absaetze: string[];
   konto?: BriefKonto | null;
+  /** Bescheinigung: keine Anrede/Grußformel, stattdessen Unterschriftszeile. */
+  bescheinigung?: boolean;
 };
 
 const GOLD = rgb(0.722, 0.565, 0.169);
@@ -183,9 +185,11 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
     if (commit) hline(y, ML, ML + 300, GOLD, 1);
     y -= 24;
 
-    // Anrede
-    if (commit) text(ML, y, `Sehr geehrte/r ${d.empfaengerName},`, 10.5, font, INK);
-    y -= 20;
+    // Anrede (bei Bescheinigungen entfällt sie)
+    if (!d.bescheinigung) {
+      if (commit) text(ML, y, `Sehr geehrte/r ${d.empfaengerName},`, 10.5, font, INK);
+      y -= 20;
+    }
 
     // Absätze
     for (const para of d.absaetze) {
@@ -215,13 +219,21 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
       y = boxBottom - 20;
     }
 
-    // Grußformel + Unterschrift
+    // Grußformel + Unterschrift (Bescheinigung: nur Unterschriftszeile)
     if (commit) y = neueSeiteWennNoetig(y, 80);
     y -= 6;
-    if (commit) text(ML, y, "Mit freundlichen Grüßen", 10.5, font, INK);
-    y -= 46; // extra Zeile Platz für die Unterschrift
-    if (commit) text(ML, y, d.absender.name || "", 10.5, font, INK);
-    y -= 14;
+    if (d.bescheinigung) {
+      y -= 40; // Platz für die handschriftliche Unterschrift
+      if (commit) hline(y, ML, ML + 200, LINE, 1);
+      y -= 12;
+      if (commit) text(ML, y, `${d.absender.name || ""} (Vermieter / Wohnungsgeber)`, 9, font, MUTED);
+      y -= 14;
+    } else {
+      if (commit) text(ML, y, "Mit freundlichen Grüßen", 10.5, font, INK);
+      y -= 46; // extra Zeile Platz für die Unterschrift
+      if (commit) text(ML, y, d.absender.name || "", 10.5, font, INK);
+      y -= 14;
+    }
 
     return y;
   };

@@ -59,6 +59,16 @@ export default async function PortalPage({
   const anliegen = (anliegenRows ?? []) as AnliegenRow[];
   const dokumentAnfragen = anliegen.filter((a) => a.typ === "dokument");
 
+  // Vom Vermieter freigegebene Archiv-Dokumente (RLS: nur mieter_freigabe)
+  const { data: freigegebeneDocs } = mieterIds.length
+    ? await supabase
+        .from("notizen")
+        .select("id,titel,kategorie,datei_name,created_at")
+        .in("mieter_id", mieterIds)
+        .eq("mieter_freigabe", true)
+        .order("created_at", { ascending: false })
+    : { data: [] as { id: string; titel: string | null; kategorie: string | null; datei_name: string | null; created_at: string | null }[] };
+
   const { data: dateiRows } = anliegen.length
     ? await supabase
         .from("anliegen_dateien")
@@ -190,7 +200,31 @@ export default async function PortalPage({
                 Erst mit verknüpfter Wohnung möglich — frage deinen Vermieter nach einem Einladungscode.
               </div></div>
             ) : (
-              <DokumenteAnfrage anfragen={dokumentAnfragen} />
+              <>
+                <div className="section">
+                  <div className="section-header"><h3>Bereitgestellte Dokumente</h3></div>
+                  <div className="section-body">
+                    {(freigegebeneDocs ?? []).length === 0 ? (
+                      <p style={{ fontSize: 12, color: "var(--faint)" }}>
+                        Noch keine Dokumente freigegeben — dein Vermieter kann dir hier z. B.
+                        Mietvertrag, NK-Abrechnung oder den Energieausweis bereitstellen.
+                      </p>
+                    ) : (
+                      (freigegebeneDocs ?? []).map((d) => (
+                        <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                          <FileText size={14} color="var(--gold)" />
+                          <span style={{ fontWeight: 600, color: "var(--text)" }}>{d.titel || d.datei_name || "Dokument"}</span>
+                          {d.kategorie && <span className="badge badge-teal">{d.kategorie}</span>}
+                          <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{d.created_at ? datum(d.created_at) : ""}</span>
+                          <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
+                          <a href={`/archiv/${d.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <DokumenteAnfrage anfragen={dokumentAnfragen} />
+              </>
             )}
           </>
         )}
