@@ -48,7 +48,7 @@ export default async function RootLayout({
   // Mieterportal (eigene, schlanke Shell) — nicht in der Vermieter-App.
   const pathname = headers().get("x-pathname") ?? "";
   const rolle = await getRolle(supabase, user.id);
-  const istOeffentlicheSeite = ["/impressum", "/datenschutz", "/agb", "/avv", "/bewerben", "/beleihung"].some(
+  const istOeffentlicheSeite = ["/impressum", "/datenschutz", "/agb", "/avv", "/bewerben", "/beleihung", "/auftrag"].some(
     (p) => pathname.startsWith(p)
   );
   if (rolle === "mieter" || rolle === "service") {

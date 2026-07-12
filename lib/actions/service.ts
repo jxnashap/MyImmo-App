@@ -82,8 +82,17 @@ export async function erstelleAuftrag(formData: FormData) {
   const beschreibung = String(formData.get("beschreibung") ?? "").trim();
   const termin = String(formData.get("termin") ?? "").trim();
   const anliegenId = String(formData.get("anliegenId") ?? "").trim();
+  const mieterId = String(formData.get("mieterId") ?? "").trim();
   if (!serviceUserId) return { error: "Bitte einen Service-Partner wählen." };
   if (!titel) return { error: "Bitte einen Betreff angeben." };
+
+  // Mieter-Kontakt nur teilen, wenn der Mieter dem Vermieter gehört (Opt-in).
+  let mieterOk: string | null = null;
+  if (mieterId) {
+    const { data: m } = await supabase
+      .from("mieter").select("id").eq("id", mieterId).eq("user_id", user.id).maybeSingle();
+    mieterOk = m?.id ?? null;
+  }
 
   // Partner muss mit diesem Vermieter verknüpft sein.
   const { data: zugang } = await supabase
@@ -115,6 +124,7 @@ export async function erstelleAuftrag(formData: FormData) {
     titel,
     beschreibung: beschreibung || null,
     termin: termin || null,
+    mieter_id: mieterOk,
   });
   if (error) return { error: "Auftrag konnte nicht gespeichert werden." };
   revalidatePath("/anliegen");
@@ -157,16 +167,30 @@ export async function beantrageAuftrag(formData: FormData) {
   return { ok: true };
 }
 
-/** Vermieter: beantragten Auftrag freigeben oder ablehnen. */
-export async function entscheideAuftrag(id: string, freigeben: boolean) {
+/** Vermieter: beantragten Auftrag freigeben oder ablehnen. Optional wird
+ *  dabei ein Mieter ausgewählt, dessen Kontakt die Firma über den
+ *  öffentlichen Auftrags-Link zur Terminabsprache bekommt. */
+export async function entscheideAuftrag(id: string, freigeben: boolean, mieterId?: string) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
+
+  let mieterOk: string | null = null;
+  if (freigeben && mieterId) {
+    const { data: m } = await supabase
+      .from("mieter").select("id").eq("id", mieterId).eq("user_id", user.id).maybeSingle();
+    mieterOk = m?.id ?? null;
+  }
+
   const { data, error } = await supabase
     .from("auftraege")
-    .update({ status: freigeben ? "offen" : "nicht_freigegeben", updated_at: new Date().toISOString() })
+    .update({
+      status: freigeben ? "offen" : "nicht_freigegeben",
+      ...(mieterOk ? { mieter_id: mieterOk } : {}),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .eq("vermieter_id", user.id)
     .eq("status", "freigabe")

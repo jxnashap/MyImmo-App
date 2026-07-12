@@ -114,6 +114,8 @@ export default async function AnliegenPage({
     objekt_name: a.objekt_name, partnerName: partnerName(a.service_user_id),
     erstellt_von: a.erstellt_von ?? "vermieter",
     firmaName: firmen.find((f) => f.id === a.firma_id)?.name ?? null,
+    mieterName: a.mieter_id ? mieterName(a.mieter_id) : null,
+    public_token: a.public_token,
   }));
   // Badge: Freigabe-Anfragen des Hausmeisters zählen mit (Benachrichtigung).
   const offeneAuftraege = auftraege.filter((a) => a.status === "offen" || a.status === "freigabe").length;
@@ -178,6 +180,7 @@ export default async function AnliegenPage({
           auftraege={auftraege}
           properties={props ?? []}
           firmen={firmen}
+          mieterListe={(mieter ?? []).map((m) => ({ id: m.id, name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }))}
           initialTitel={searchParams.titel}
           initialText={searchParams.text}
         />

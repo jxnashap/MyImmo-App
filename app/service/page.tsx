@@ -16,7 +16,7 @@ export default async function ServicePortalPage() {
     supabase.from("service_zugaenge").select("vermieter_id,firma,created_at").eq("user_id", user!.id),
     supabase
       .from("auftraege")
-      .select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,vermieter_name,erstellt_von,firma_id")
+      .select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,vermieter_name,erstellt_von,firma_id,mieter_id,public_token")
       .eq("service_user_id", user!.id)
       .order("created_at", { ascending: false })
       .limit(100),

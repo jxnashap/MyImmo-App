@@ -3,7 +3,7 @@
 // Service-Portal: erhaltene Aufträge annehmen, erledigen oder ablehnen
 // (mit optionaler Rückmeldung an den Vermieter).
 import { useState, useTransition } from "react";
-import { Wrench, CalendarDays, Building2, Phone, Mail, Globe, SendHorizonal } from "lucide-react";
+import { Wrench, CalendarDays, Building2, Phone, Mail, Globe, SendHorizonal, Copy, Check, Link2 } from "lucide-react";
 import { beantworteAuftrag, beantrageAuftrag } from "@/lib/actions/service";
 import { datum } from "@/lib/format";
 
@@ -12,6 +12,7 @@ export type PortalAuftragRow = {
   status: string; antwort: string | null; created_at: string;
   objekt_name: string | null; vermieter_name: string | null;
   erstellt_von?: string | null; firma_id?: string | null;
+  mieter_id?: string | null; public_token?: string | null;
 };
 export type PortalFirmaRow = {
   id: string; name: string; gewerk: string | null; telefon: string | null;
@@ -36,6 +37,38 @@ function FirmaKontakt({ f }: { f: PortalFirmaRow }) {
       {f.email && <a href={`mailto:${f.email}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Mail size={11} style={{ verticalAlign: "-1px" }} /> {f.email}</a>}
       {f.website && <a href={f.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Globe size={11} style={{ verticalAlign: "-1px" }} /> Website</a>}
     </span>
+  );
+}
+
+/** Firmen-Link (öffentliche Auftragsseite mit Mieter-Kontakt): kopieren
+ *  oder direkt als vorbefüllte E-Mail an die Firma schicken. */
+function FirmenLinkAktionen({
+  token, titel, objekt, firma,
+}: {
+  token: string; titel: string; objekt: string | null; firma: PortalFirmaRow | null;
+}) {
+  const [kopiert, setKopiert] = useState(false);
+  const link = typeof window !== "undefined" ? `${window.location.origin}/auftrag/${token}` : `/auftrag/${token}`;
+  const betreff = `Auftragsanfrage: ${titel}${objekt ? ` (${objekt})` : ""}`;
+  const text =
+    `Guten Tag,\n\nwir bitten um Ausführung des folgenden Auftrags:\n${titel}${objekt ? `\nObjekt: ${objekt}` : ""}\n\n` +
+    `Alle Details sowie der Mieter-Kontakt für die Terminabsprache:\n${link}\n\n` +
+    `Bitte stimmen Sie den Termin direkt mit der Mieterin / dem Mieter ab.\n\nMit freundlichen Grüßen`;
+  return (
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+      <a
+        href={`mailto:${firma?.email ?? ""}?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(text)}`}
+        className="btn btn-gold" style={{ fontSize: 11, padding: "5px 12px", textDecoration: "none" }}
+      >
+        <Mail size={12} style={{ verticalAlign: "-2px" }} /> Per E-Mail an die Firma
+      </a>
+      <button
+        type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px" }}
+        onClick={async () => { await navigator.clipboard.writeText(link); setKopiert(true); setTimeout(() => setKopiert(false), 1600); }}
+      >
+        {kopiert ? <><Check size={12} style={{ verticalAlign: "-2px" }} /> Kopiert</> : <><Link2 size={12} style={{ verticalAlign: "-2px" }} /> Link kopieren</>}
+      </button>
+    </div>
   );
 }
 
@@ -82,9 +115,12 @@ function Eintrag({ a, firmen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[] 
       )}
       {(a.status === "offen" || a.status === "angenommen") && a.erstellt_von === "service" && firma && (
         <p style={{ fontSize: 12, marginTop: 6, padding: "6px 10px", background: "var(--green-dim)", color: "var(--green)", borderRadius: 6 }}>
-          Vom Vermieter freigegeben — jetzt die Firma anrufen, das Problem erklären
-          und den Termin direkt mit dem Mieter abstimmen.
+          Vom Vermieter freigegeben — jetzt die Firma anrufen oder ihr den Auftrags-Link
+          per E-Mail schicken; den Termin stimmt die Firma direkt mit dem Mieter ab.
         </p>
+      )}
+      {(a.status === "offen" || a.status === "angenommen") && a.mieter_id && a.public_token && (
+        <FirmenLinkAktionen token={a.public_token} titel={a.titel} objekt={a.objekt_name} firma={firma} />
       )}
       {a.antwort && (
         <p style={{ fontSize: 12, marginTop: 6, padding: "6px 10px", background: "var(--gold-pale)", borderLeft: "3px solid var(--gold)", borderRadius: 6 }}>
