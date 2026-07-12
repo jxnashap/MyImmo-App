@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
-  TrendingUp, Route, Calculator, Power, MessageSquareText, Building2, Building, Store, TreePalm, Sprout,
+  TrendingUp, Route, Calculator, Power, MessageSquareText, UserRoundSearch,
+  Building2, Building, Store, TreePalm, Sprout,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,6 +20,7 @@ const VERWALTUNG: NavItem[] = [
   { href: "/properties", label: "Immobilien", icon: Home },
   { href: "/tenants", label: "Mieter", icon: User },
   { href: "/anliegen", label: "Anliegen", icon: MessageSquareText },
+  { href: "/bewerbungen", label: "Bewerbungen", icon: UserRoundSearch },
   { href: "/cashflow", label: "Ein- & Ausgaben", icon: Banknote },
   { href: "/mietkonto", label: "Mietkonto", icon: ReceiptText },
   { href: "/verbrauch", label: "Verbrauch", icon: Zap },

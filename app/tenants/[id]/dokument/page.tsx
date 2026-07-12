@@ -19,11 +19,12 @@ export default async function DokumentPage({
   if (!m) notFound();
   const tenant = m as Tenant;
 
-  const [{ data: prop }, { data: vp }, { data: ibanRows }, { data: vorlagenRows }] = await Promise.all([
+  const [{ data: prop }, { data: vp }, { data: ibanRows }, { data: vorlagenRows }, { data: signatur }] = await Promise.all([
     tenant.prop_id ? supabase.from("properties").select("*").eq("id", tenant.prop_id).single() : Promise.resolve({ data: null }),
     user ? supabase.from("vermieter_profil").select("*").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from("ibans").select("*").order("created_at", { ascending: true }),
     user ? supabase.from("dokument_vorlagen").select("art,text").eq("user_id", user.id) : Promise.resolve({ data: [] }),
+    supabase.from("unterschriften").select("user_id").maybeSingle(),
   ]);
 
   const vorlagen = Object.fromEntries(
@@ -38,7 +39,7 @@ export default async function DokumentPage({
           <div><div className="topbar-title">Dokument erstellen</div><div className="topbar-sub">{[tenant.vorname, tenant.nachname].filter(Boolean).join(" ")}</div></div>
         </div>
       </div>
-      <DocGenerator tenant={{ ...tenant, iban: decryptNullable(tenant.iban) }} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={((ibanRows as Iban[]) ?? []).map(decryptIbanRow)} vorlagen={vorlagen} initial={{ art: searchParams.art, betrag: searchParams.betrag, datum: searchParams.datum, grund: searchParams.grund }} />
+      <DocGenerator tenant={{ ...tenant, iban: decryptNullable(tenant.iban) }} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={((ibanRows as Iban[]) ?? []).map(decryptIbanRow)} vorlagen={vorlagen} initial={{ art: searchParams.art, betrag: searchParams.betrag, datum: searchParams.datum, grund: searchParams.grund }} hatUnterschrift={!!signatur} />
     </div>
   );
 }

@@ -22,6 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     vName: String(form.get("vName") ?? "").trim(),
     vAdr: String(form.get("vAdr") ?? "").trim(),
     text: String(form.get("text") ?? ""),
+    signieren: String(form.get("signieren") ?? ""),
   });
   if (!doc) return new NextResponse("Mieter nicht gefunden", { status: 404 });
 

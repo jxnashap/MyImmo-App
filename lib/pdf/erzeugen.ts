@@ -45,6 +45,8 @@ export type BriefFields = {
   vName: string;
   vAdr: string;
   text: string;
+  /** "1" = gespeicherte E-Signatur ins PDF einbetten. */
+  signieren?: string;
 };
 
 export async function erzeugeBriefPdf(
@@ -109,6 +111,17 @@ export async function erzeugeBriefPdf(
   const konto = ART_ZEIGT_BETRAG.includes(art) && ibanData?.iban ? ibanData : null;
   const absenderOrt = [profil?.plz, profil?.ort].filter(Boolean).join(" ") || null;
 
+  // E-Signatur nur auf Wunsch laden und einbetten.
+  let unterschriftPng: string | null = null;
+  if (f.signieren === "1") {
+    const { data: sig } = await supabase
+      .from("unterschriften")
+      .select("data")
+      .eq("user_id", userId)
+      .maybeSingle();
+    unterschriftPng = sig?.data ?? null;
+  }
+
   const pdf = await buildDocPdf({
     titel: TITEL[art] ?? "Schreiben",
     absender: {
@@ -123,6 +136,7 @@ export async function erzeugeBriefPdf(
     absaetze,
     konto,
     bescheinigung: ART_BESCHEINIGUNG.includes(art),
+    unterschriftPng,
   });
 
   const titel = TITEL[art] ?? "Schreiben";

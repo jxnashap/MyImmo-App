@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   User, Landmark, ShieldCheck, FileText, Download, Trash2, Plus, Star,
-  Lock, ExternalLink, X, Check, TriangleAlert, type LucideIcon,
+  Lock, ExternalLink, X, Check, TriangleAlert, PenLine, type LucideIcon,
 } from "lucide-react";
+import SignaturPad from "@/components/SignaturPad";
+import { speichereUnterschrift, loescheUnterschrift } from "@/lib/actions/bewerber";
 import { useToast } from "@/components/Toast";
 import { KEY_MIN, KEY_CLOSE, AUTOLOGOUT_EVENT } from "@/components/AutoLogout";
 import { createClient } from "@/lib/supabase/client";
@@ -32,11 +34,13 @@ export default function SettingsView({
   ibans,
   email,
   provider,
+  unterschrift,
 }: {
   profil: VermieterProfil | null;
   ibans: Iban[];
   email?: string | null;
   provider?: string | null;
+  unterschrift?: string | null;
 }) {
   const [tab, setTab] = useState<TabKey>("profil");
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -91,7 +95,7 @@ export default function SettingsView({
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} key={tab} className="set-panel">
-        {tab === "profil" && <ProfilPanel profil={profil} />}
+        {tab === "profil" && <ProfilPanel profil={profil} unterschrift={unterschrift ?? null} />}
         {tab === "bank" && <BankPanel ibans={ibans} />}
         {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} />}
         {tab === "recht" && <RechtPanel />}
@@ -134,7 +138,7 @@ function useReveal(dep: unknown) {
 }
 
 // ---------- Profil & Absender ----------
-function ProfilPanel({ profil }: { profil: VermieterProfil | null }) {
+function ProfilPanel({ profil, unterschrift }: { profil: VermieterProfil | null; unterschrift: string | null }) {
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
@@ -184,12 +188,73 @@ function ProfilPanel({ profil }: { profil: VermieterProfil | null }) {
         </div>
       </div>
 
+      <SignaturPanel unterschrift={unterschrift} />
+
       {dirty && (
         <div className="save-bar" role="status">
           <span style={{ fontSize: 13, color: "var(--muted)" }}>Ungespeicherte Änderungen</span>
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" className="btn btn-ghost" onClick={() => setForm(init)} disabled={pending}>Verwerfen</button>
             <button type="button" className="btn btn-gold" onClick={speichern} disabled={pending}>{pending ? "Speichern…" : "Speichern"}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------- E-Signatur (digitale Unterschrift für generierte Dokumente) ----------
+function SignaturPanel({ unterschrift }: { unterschrift: string | null }) {
+  const router = useRouter();
+  const toast = useToast();
+  const [neu, setNeu] = useState<string | null>(null);
+  const [zeichnen, setZeichnen] = useState(false);
+  const [pending, start] = useTransition();
+
+  const speichern = () =>
+    start(async () => {
+      if (!neu) return;
+      const r = await speichereUnterschrift(neu);
+      if (r?.error) toast(r.error);
+      else {
+        toast("Unterschrift gespeichert ✓");
+        setZeichnen(false);
+        setNeu(null);
+        router.refresh();
+      }
+    });
+
+  return (
+    <div className="glass-card reveal" style={{ marginTop: 16 }}>
+      <h2><PenLine size={16} /> E-Signatur</h2>
+      <p className="sub">
+        Deine Unterschrift wird auf Wunsch in generierte Dokumente eingebettet
+        (Mietquittung, Bescheinigungen, Briefe) — praktisch, wenn du nicht vor Ort
+        unterschreiben kannst.
+      </p>
+      {unterschrift && !zeichnen && (
+        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={unterschrift} alt="Gespeicherte Unterschrift" style={{ maxWidth: 240, maxHeight: 90, background: "#fff", borderRadius: 8, border: "1px solid var(--line)", padding: 6 }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setZeichnen(true)}>Neu zeichnen</button>
+            <button
+              type="button" className="btn btn-ghost" style={{ fontSize: 12, color: "var(--red)" }} disabled={pending}
+              onClick={() => start(async () => { await loescheUnterschrift(); toast("Unterschrift gelöscht"); router.refresh(); })}
+            >
+              Löschen
+            </button>
+          </div>
+        </div>
+      )}
+      {(!unterschrift || zeichnen) && (
+        <div style={{ maxWidth: 460, display: "grid", gap: 10 }}>
+          <SignaturPad onChange={setNeu} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} disabled={pending || !neu} onClick={speichern}>
+              {pending ? "Speichern…" : "Unterschrift speichern"}
+            </button>
+            {zeichnen && <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => { setZeichnen(false); setNeu(null); }}>Abbrechen</button>}
           </div>
         </div>
       )}

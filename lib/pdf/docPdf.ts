@@ -9,6 +9,7 @@ import {
   StandardFonts,
   rgb,
   type PDFFont,
+  type PDFImage,
 } from "pdf-lib";
 import { adressfeldZeilen, zeichneAdressfeld } from "@/lib/pdf/adressfeld";
 
@@ -33,6 +34,8 @@ export type BriefDaten = {
   konto?: BriefKonto | null;
   /** Bescheinigung: keine Anrede/Grußformel, stattdessen Unterschriftszeile. */
   bescheinigung?: boolean;
+  /** E-Signatur: PNG-Data-URL, wird über der Unterschriftszeile eingebettet. */
+  unterschriftPng?: string | null;
 };
 
 const GOLD = rgb(0.722, 0.565, 0.169);
@@ -86,6 +89,18 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const serif = await doc.embedFont(StandardFonts.TimesRoman);
   const serifI = await doc.embedFont(StandardFonts.TimesRomanItalic);
+
+  // E-Signatur (optional): PNG einbetten und Zeichenmaße begrenzen.
+  let sig: { img: PDFImage; w: number; h: number } | null = null;
+  if (d.unterschriftPng?.startsWith("data:image/png;base64,")) {
+    try {
+      const img = await doc.embedPng(Buffer.from(d.unterschriftPng.split(",")[1], "base64"));
+      const skala = Math.min(38 / img.height, 170 / img.width, 1);
+      sig = { img, w: img.width * skala, h: img.height * skala };
+    } catch {
+      sig = null; // defektes PNG → ohne Signatur weiter
+    }
+  }
 
   const text = (x: number, y: number, s: string, size = 10, f: PDFFont = font, color = INK) =>
     page.drawText(sanitize(s), { x, y, size, font: f, color });
@@ -223,7 +238,8 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
     if (commit) y = neueSeiteWennNoetig(y, 80);
     y -= 6;
     if (d.bescheinigung) {
-      y -= 40; // Platz für die handschriftliche Unterschrift
+      y -= 40; // Platz für die (E-)Unterschrift
+      if (commit && sig) page.drawImage(sig.img, { x: ML + 6, y: y + 3, width: sig.w, height: sig.h });
       if (commit) hline(y, ML, ML + 200, LINE, 1);
       y -= 12;
       if (commit) text(ML, y, `${d.absender.name || ""} (Vermieter / Wohnungsgeber)`, 9, font, MUTED);
@@ -231,6 +247,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
     } else {
       if (commit) text(ML, y, "Mit freundlichen Grüßen", 10.5, font, INK);
       y -= 46; // extra Zeile Platz für die Unterschrift
+      if (commit && sig) page.drawImage(sig.img, { x: ML + 4, y: y + 12, width: sig.w, height: sig.h });
       if (commit) text(ML, y, d.absender.name || "", 10.5, font, INK);
       y -= 14;
     }
