@@ -5,7 +5,7 @@
 // (privater Schlüssel wie DATA_ENCRYPTION_KEY behandeln: nie ins Repo/Logs).
 // Nur serverseitig verwenden (Server Actions / Route Handler) — der private
 // Schlüssel darf nie in Client-Bundles gelangen.
-import { createHash, createPrivateKey, createSign } from "crypto";
+import { createHash, createPrivateKey, createSign, type KeyObject } from "crypto";
 
 const BASE = "https://api.enablebanking.com";
 
@@ -16,16 +16,41 @@ export function ebKonfiguriert(): boolean {
 const b64url = (input: Buffer | string) =>
   (typeof input === "string" ? Buffer.from(input) : input).toString("base64url");
 
+/**
+ * Lädt den privaten Schlüssel robust in mehreren Formaten:
+ * fertiges PEM (mit Rahmen), rahmenloser Base64-Body (Enable-Banking-Download
+ * ohne BEGIN/END) oder rohes DER. Gibt die verwendete Strategie mit zurück
+ * (für die Diagnose). Wirft nur, wenn wirklich nichts passt.
+ */
+export function ladePrivateKey(): { key: KeyObject; strategy: string } {
+  const raw = process.env.ENABLE_BANKING_PRIVATE_KEY ?? "";
+  const withNl = raw.replace(/\\n/g, "\n").trim();
+  if (!withNl) throw new Error("ENABLE_BANKING_PRIVATE_KEY fehlt.");
+  if (withNl.includes("BEGIN")) return { key: createPrivateKey(withNl), strategy: "pem" };
+  const b64 = withNl.replace(/\s+/g, "");
+  const chunked = b64.match(/.{1,64}/g)?.join("\n") ?? b64;
+  const pem8 = `-----BEGIN PRIVATE KEY-----\n${chunked}\n-----END PRIVATE KEY-----\n`;
+  try {
+    return { key: createPrivateKey(pem8), strategy: "base64->pkcs8-pem" };
+  } catch {
+    const der = Buffer.from(b64, "base64");
+    try {
+      return { key: createPrivateKey({ key: der, format: "der", type: "pkcs8" }), strategy: "der-pkcs8" };
+    } catch {
+      return { key: createPrivateKey({ key: der, format: "der", type: "pkcs1" }), strategy: "der-pkcs1" };
+    }
+  }
+}
+
 /** Kurzlebiger JWT für einen API-Call (RS256, 1 h Gültigkeit). */
 function jwt(): string {
   const appId = process.env.ENABLE_BANKING_APP_ID;
-  const pem = (process.env.ENABLE_BANKING_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
-  if (!appId || !pem) throw new Error("Enable Banking ist nicht konfiguriert (Env-Variablen fehlen).");
+  if (!appId) throw new Error("Enable Banking ist nicht konfiguriert (ENABLE_BANKING_APP_ID fehlt).");
   const now = Math.floor(Date.now() / 1000);
   const header = { typ: "JWT", alg: "RS256", kid: appId };
   const payload = { iss: "enablebanking.com", aud: "api.enablebanking.com", iat: now, exp: now + 3600 };
   const input = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`;
-  const sig = createSign("RSA-SHA256").update(input).sign(createPrivateKey(pem));
+  const sig = createSign("RSA-SHA256").update(input).sign(ladePrivateKey().key);
   return `${input}.${b64url(sig)}`;
 }
 

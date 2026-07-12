@@ -4,7 +4,8 @@
 // Wird nach erfolgreichem Sandbox-Test wieder entfernt.
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createPrivateKey, createSign } from "crypto";
+import { createSign } from "crypto";
+import { ladePrivateKey } from "@/lib/banking/enableBanking";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,12 +16,11 @@ const b64url = (i: Buffer | string) =>
 
 function jwt(): string {
   const appId = process.env.ENABLE_BANKING_APP_ID!;
-  const pem = (process.env.ENABLE_BANKING_PRIVATE_KEY ?? "").replace(/\\n/g, "\n");
   const now = Math.floor(Date.now() / 1000);
   const head = b64url(JSON.stringify({ typ: "JWT", alg: "RS256", kid: appId }));
   const pay = b64url(JSON.stringify({ iss: "enablebanking.com", aud: "api.enablebanking.com", iat: now, exp: now + 3600 }));
   const input = `${head}.${pay}`;
-  const sig = createSign("RSA-SHA256").update(input).sign(createPrivateKey(pem));
+  const sig = createSign("RSA-SHA256").update(input).sign(ladePrivateKey().key);
   return `${input}.${b64url(sig)}`;
 }
 
@@ -45,13 +45,19 @@ export async function GET() {
   if (!user) return NextResponse.redirect(new URL("/login", "https://www.myimmoapp.de"));
 
   const pem = process.env.ENABLE_BANKING_PRIVATE_KEY ?? "";
+  let keyStrategie = "—";
+  let keyGeladen = false;
+  try { keyStrategie = ladePrivateKey().strategy; keyGeladen = true; } catch (e) {
+    keyStrategie = "FEHLER: " + (e instanceof Error ? e.message : String(e));
+  }
   const env = {
     app_id_gesetzt: !!process.env.ENABLE_BANKING_APP_ID,
     app_id: process.env.ENABLE_BANKING_APP_ID ?? null,
     key_gesetzt: !!pem,
     key_beginnt_mit_BEGIN: pem.includes("BEGIN"),
-    key_hat_escaped_n: pem.includes("\\n"),
     key_laenge: pem.length,
+    key_geladen: keyGeladen,
+    key_strategie: keyStrategie,
   };
 
   const application = await call("/application"); // App-Metadaten + freigeschaltete ASPSPs
