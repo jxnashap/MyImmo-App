@@ -3,13 +3,21 @@ import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import VerbrauchListe from "@/components/lists/VerbrauchListe";
+import ZaehlerMeldungen, { type ZaehlerMeldungVermieter } from "@/components/ZaehlerMeldungen";
 import type { Verbrauch, Property } from "@/lib/types";
 
 export default async function VerbrauchPage({ searchParams }: { searchParams: { prop?: string; art?: string; jahr?: string } }) {
   const supabase = createClient();
-  const [{ data: verb }, { data: props }] = await Promise.all([
+  const [{ data: verb }, { data: props }, { data: meldRows }, { data: meldMieter }] = await Promise.all([
     supabase.from("verbrauch").select("*").order("buchungsdatum", { ascending: false }),
     supabase.from("properties").select("id,bezeichnung"),
+    supabase
+      .from("zaehlerstand_meldungen")
+      .select("id,art,zaehlernummer,stand,einheit,ablesedatum,notiz,foto_name,uebernommen_am,mieter_id,prop_id")
+      .order("uebernommen_am", { ascending: true, nullsFirst: true })
+      .order("ablesedatum", { ascending: false })
+      .limit(30),
+    supabase.from("mieter").select("id,vorname,nachname"),
   ]);
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
@@ -36,6 +44,23 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
   ];
 
+  const meldungen: ZaehlerMeldungVermieter[] = ((meldRows ?? []) as any[]).map((m) => ({
+    id: m.id,
+    art: m.art,
+    zaehlernummer: m.zaehlernummer,
+    stand: Number(m.stand),
+    einheit: m.einheit,
+    ablesedatum: m.ablesedatum,
+    notiz: m.notiz,
+    foto_name: m.foto_name,
+    uebernommen_am: m.uebernommen_am,
+    mieterName: (() => {
+      const x = (meldMieter ?? []).find((mm) => mm.id === m.mieter_id);
+      return x ? [x.vorname, x.nachname].filter(Boolean).join(" ") : "Mieter";
+    })(),
+    objektName: properties.find((p) => p.id === m.prop_id)?.bezeichnung ?? "–",
+  }));
+
   return (
     <div className="fade-up">
       <div className="topbar">
@@ -45,6 +70,8 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
         </div>
         <Link href="/verbrauch/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Verbrauch</Link>
       </div>
+
+      <ZaehlerMeldungen rows={meldungen} />
 
       <FilterBar filters={filters} />
 

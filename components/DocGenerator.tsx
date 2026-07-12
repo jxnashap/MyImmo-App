@@ -36,12 +36,15 @@ export default function DocGenerator({
   vermieter,
   ibans = [],
   vorlagen = {},
+  initial,
 }: {
   tenant: Tenant;
   property: Property | null;
   vermieter: VermieterProfil | null;
   ibans?: Iban[];
   vorlagen?: Record<string, string>;
+  /** Vorbefüllung (z. B. aus dem Rückstands-Wächter): art/betrag/datum/grund */
+  initial?: { art?: string; betrag?: string; datum?: string; grund?: string };
 }) {
   const initialAbsAdr = [
     vermieter?.strasse,
@@ -50,14 +53,15 @@ export default function DocGenerator({
     .filter(Boolean)
     .join(", ");
 
-  const [art, setArt] = useState<DocArt>("allgemein");
-  const [betrag, setBetrag] = useState("");
-  const [datum, setDatum] = useState("");
-  const [grund, setGrund] = useState("");
+  const startArt: DocArt = ARTEN.some((a) => a.v === initial?.art) ? (initial!.art as DocArt) : "allgemein";
+  const [art, setArt] = useState<DocArt>(startArt);
+  const [betrag, setBetrag] = useState(initial?.betrag ?? "");
+  const [datum, setDatum] = useState(initial?.datum ?? "");
+  const [grund, setGrund] = useState(initial?.grund ?? "");
   const [ibanId, setIbanId] = useState("");
   const [vName, setVName] = useState(vermieter?.name ?? "");
   const [vAdr, setVAdr] = useState(initialAbsAdr);
-  const [vorlageText, setVorlageText] = useState(vorlagen["allgemein"] ?? DEFAULT_VORLAGEN.allgemein);
+  const [vorlageText, setVorlageText] = useState(vorlagen[startArt] ?? DEFAULT_VORLAGEN[startArt]);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [ablegen, startAblegen] = useTransition();
   const toast = useToast();
