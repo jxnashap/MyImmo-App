@@ -9,6 +9,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import AnliegenPortal, { type AnliegenRow, type DateiRef } from "@/components/AnliegenPortal";
 import DokumenteAnfrage from "@/components/DokumenteAnfrage";
 import ZaehlerPortal, { type ZaehlerMeldungRow } from "@/components/ZaehlerPortal";
+import AnfragenVomVermieter, { type PortalAnfrageRow } from "@/components/AnfragenVomVermieter";
 import type { Tenant, Property } from "@/lib/types";
 
 const TABS = [
@@ -70,6 +71,16 @@ export default async function PortalPage({
         .eq("mieter_freigabe", true)
         .order("created_at", { ascending: false })
     : { data: [] as { id: string; titel: string | null; kategorie: string | null; datei_name: string | null; created_at: string | null }[] };
+
+  const { data: vAnfragenRows } = mieterIds.length
+    ? await supabase
+        .from("vermieter_anfragen")
+        .select("id,typ,titel,beschreibung,termin,faellig_bis,status,antwort,created_at")
+        .in("mieter_id", mieterIds)
+        .order("created_at", { ascending: false })
+        .limit(50)
+    : { data: [] as PortalAnfrageRow[] };
+  const vermieterAnfragen = (vAnfragenRows ?? []) as PortalAnfrageRow[];
 
   const { data: zaehlerRows } = await supabase
     .from("zaehlerstand_meldungen")
@@ -192,7 +203,10 @@ export default async function PortalPage({
                 Erst mit verknüpfter Wohnung möglich — frage deinen Vermieter nach einem Einladungscode.
               </div></div>
             ) : (
-              <AnliegenPortal anliegen={anliegen} dateien={dateien} />
+              <>
+                <AnfragenVomVermieter anfragen={vermieterAnfragen} />
+                <AnliegenPortal anliegen={anliegen} dateien={dateien} />
+              </>
             )}
           </>
         )}
