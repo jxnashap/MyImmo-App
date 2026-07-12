@@ -7,7 +7,9 @@ import { ToastProvider } from "@/components/Toast";
 import FlashToast from "@/components/FlashToast";
 import { ZeitraumProvider } from "@/components/ZeitraumProvider";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getRolle } from "@/lib/rolle";
 
 export const metadata: Metadata = {
   title: "MyImmo — Immobilien-Management",
@@ -41,6 +43,28 @@ export default async function RootLayout({
       </html>
     );
   }
+
+  // Rollen-Weiche (Businessplan Kap. 14): Mieter-Konten arbeiten im
+  // Mieterportal (eigene, schlanke Shell) — nicht in der Vermieter-App.
+  const pathname = headers().get("x-pathname") ?? "";
+  const rolle = await getRolle(supabase, user.id);
+  const istOeffentlicheSeite = ["/impressum", "/datenschutz", "/agb", "/avv"].some(
+    (p) => pathname.startsWith(p)
+  );
+  if (rolle === "mieter") {
+    if (!pathname.startsWith("/portal") && !istOeffentlicheSeite) redirect("/portal");
+    return (
+      <html lang="de" suppressHydrationWarning>
+        <head>
+          <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
+        </head>
+        <body>
+          <ToastProvider>{children}</ToastProvider>
+        </body>
+      </html>
+    );
+  }
+  if (pathname.startsWith("/portal")) redirect("/");
 
   const { data: props } = await supabase
     .from("properties")

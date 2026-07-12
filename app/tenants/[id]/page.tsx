@@ -8,6 +8,7 @@ import { deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
 import type { Tenant, Property, MietZeitraum } from "@/lib/types";
 import MietZeitraeume from "@/components/MietZeitraeume";
+import MieterEinladung from "@/components/MieterEinladung";
 import { decryptNullable } from "@/lib/crypto/secure";
 import { ReceiptText, FileText, KeyRound, Pencil, Trash2, TriangleAlert } from "lucide-react";
 
@@ -41,6 +42,23 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
     .eq("mieter_id", params.id)
     .order("created_at", { ascending: false });
   const dokumente = doks ?? [];
+
+  // Mieterportal-Zugang: aktiver Einladungscode + bereits verbundenes Konto
+  const { data: aktiverCode } = await supabase
+    .from("einladungscodes")
+    .select("code,gueltig_bis")
+    .eq("mieter_id", params.id)
+    .is("eingeloest_am", null)
+    .gt("gueltig_bis", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const { data: zugang } = await supabase
+    .from("mieter_zugaenge")
+    .select("user_id")
+    .eq("mieter_id", params.id)
+    .limit(1)
+    .maybeSingle();
 
   let propName = "–";
   if (m.prop_id) {
@@ -159,6 +177,17 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
           </div>
         </div>
       )}
+
+      <div className="section">
+        <div className="section-header"><h3>Mieterportal-Zugang</h3></div>
+        <div className="section-body">
+          <MieterEinladung
+            mieterId={params.id}
+            verbunden={!!zugang}
+            aktiverCode={aktiverCode ?? null}
+          />
+        </div>
+      </div>
 
       <div className="section">
         <div className="section-header"><h3>Dokumente</h3><Link href="/archiv" className="btn btn-ghost" style={{ fontSize: 11 }}>→ Archiv</Link></div>

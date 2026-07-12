@@ -849,3 +849,30 @@ select:focus-visible, textarea:focus-visible {
 /* lucide-Icons sauber in Nav/Buttons/Badges ausrichten */
 .btn svg, .nav-item .icon svg, .section-header svg, .badge svg { flex-shrink: 0; }
 .nav-item .icon { display: inline-flex; align-items: center; justify-content: center; }
+
+/* ============================================================
+   ROLLEN-AUSWAHL & LOGIN: Zoom-Übergang
+   Klick zoomt in die gewählte Kachel hinein (transform-origin wird
+   per JS auf die Kachelmitte gesetzt); die Login-Karte landet weich.
+   Nur transform + opacity → läuft komplett auf dem Compositor.
+   ============================================================ */
+.role-card { will-change: transform, opacity; backface-visibility: hidden; }
+.role-card.zoom-in { animation: roleZoomIn .45s cubic-bezier(.22,.9,.3,1); }
+@keyframes roleZoomIn {
+  from { transform: scale(.94); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+/* Rollen-Kacheln: leichtes 3D-Kippen beim Hover */
+.role-tile { transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; cursor: pointer; }
+.role-tile:hover {
+  transform: translateY(-2px) rotateX(3deg);
+  border-color: var(--gold) !important;
+  box-shadow: 0 8px 22px -10px rgba(184,144,43,.45);
+}
+.role-tile.tile-aktiv { box-shadow: 0 0 0 3px var(--gold-pale); }
+
+@media (prefers-reduced-motion: reduce) {
+  .role-card.zoom-in { animation: none; }
+  .role-tile, .role-tile:hover { transform: none; }
+}

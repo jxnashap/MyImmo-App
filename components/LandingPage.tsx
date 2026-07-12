@@ -94,8 +94,8 @@ export default function LandingPage() {
             <a href="#faq">FAQ</a>
           </nav>
           <div className="lp-nav-cta">
-            <Link href="/login" className="btn btn-ghost">Anmelden</Link>
-            <Link href="/login" className="btn btn-gold">Kostenlos starten</Link>
+            <Link href="/anmelden" className="btn btn-ghost">Anmelden</Link>
+            <Link href="/anmelden" className="btn btn-gold">Kostenlos starten</Link>
           </div>
         </div>
       </header>
@@ -110,7 +110,7 @@ export default function LandingPage() {
             in einer aufgeräumten App — gemacht für private Vermieter, nicht für Hausverwaltungen.
           </p>
           <div className="lp-cta-row">
-            <Link href="/login" className="btn btn-gold lp-btn-big">Kostenlos starten</Link>
+            <Link href="/anmelden" className="btn btn-gold lp-btn-big">Kostenlos starten</Link>
             <a href="#funktionen" className="btn btn-ghost lp-btn-big">Funktionen ansehen</a>
           </div>
           <p className="lp-hero-note">Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar</p>
@@ -229,7 +229,7 @@ export default function LandingPage() {
                 <ul>
                   {p.punkte.map((pt) => <li key={pt}>{pt}</li>)}
                 </ul>
-                <Link href={p.ctaHref ?? "/login"} className={`btn ${p.highlight ? "btn-gold" : "btn-ghost"}`}>{p.cta}</Link>
+                <Link href={p.ctaHref ?? "/anmelden"} className={`btn ${p.highlight ? "btn-gold" : "btn-ghost"}`}>{p.cta}</Link>
               </div>
             ))}
           </div>
@@ -259,7 +259,7 @@ export default function LandingPage() {
           <h2 className="lp-h2">In 2 Minuten startklar</h2>
           <p className="lp-section-sub">Konto anlegen, erstes Objekt erfassen — den Rest übernimmt MyImmo.</p>
           <div className="lp-cta-row">
-            <Link href="/login" className="btn btn-gold lp-btn-big">Kostenlos starten</Link>
+            <Link href="/anmelden" className="btn btn-gold lp-btn-big">Kostenlos starten</Link>
           </div>
         </div>
       </section>
