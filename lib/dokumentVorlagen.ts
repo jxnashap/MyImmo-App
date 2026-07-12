@@ -15,7 +15,8 @@ export type DocArt =
   | "reparatur"
   | "nk-anschreiben"
   | "wohnungsgeber"
-  | "mietbescheinigung";
+  | "mietbescheinigung"
+  | "mietquittung";
 
 export const ARTEN: { v: DocArt; label: string }[] = [
   { v: "allgemein", label: "Allgemeines Schreiben" },
@@ -27,6 +28,7 @@ export const ARTEN: { v: DocArt; label: string }[] = [
   { v: "nk-anschreiben", label: "NK-Abrechnung — Anschreiben" },
   { v: "wohnungsgeber", label: "Wohnungsgeberbestätigung (§ 19 BMG)" },
   { v: "mietbescheinigung", label: "Mietbescheinigung" },
+  { v: "mietquittung", label: "Mietquittung (§ 368 BGB)" },
 ];
 
 export const TITEL: Record<DocArt, string> = {
@@ -39,14 +41,15 @@ export const TITEL: Record<DocArt, string> = {
   "nk-anschreiben": "Nebenkostenabrechnung — Anschreiben",
   wohnungsgeber: "Wohnungsgeberbestätigung (§ 19 BMG)",
   mietbescheinigung: "Mietbescheinigung",
+  mietquittung: "Mietquittung (§ 368 BGB)",
 };
 
 // Bescheinigungen: sachlicher Aufbau ohne Anrede/Grußformel,
 // stattdessen Unterschriftszeile des Vermieters/Wohnungsgebers.
-export const ART_BESCHEINIGUNG: DocArt[] = ["wohnungsgeber", "mietbescheinigung"];
+export const ART_BESCHEINIGUNG: DocArt[] = ["wohnungsgeber", "mietbescheinigung", "mietquittung"];
 
 // Dokumentarten, bei denen ein Betrag + Zahlungskonto sinnvoll ist.
-export const ART_ZEIGT_BETRAG: DocArt[] = ["mieterhoehung", "zahlungserinnerung", "mahnung"];
+export const ART_ZEIGT_BETRAG: DocArt[] = ["mieterhoehung", "zahlungserinnerung", "mahnung", "mietquittung"];
 
 // Verfügbare Platzhalter (für die Hilfe-Anzeige im Editor).
 export const PLATZHALTER: { key: string; label: string }[] = [
@@ -135,6 +138,12 @@ Die monatliche Kaltmiete beträgt {{miete}}, die Nebenkosten-Vorauszahlung {{nkv
 {{grund}}
 
 Diese Bescheinigung wird auf Wunsch des Mieters zur Vorlage bei Behörden, Banken oder Vermietern ausgestellt.`,
+
+  mietquittung: `hiermit wird bestätigt, dass {{mieter}} für das Mietobjekt {{objekt}} die Mietzahlung in Höhe von {{betrag}} geleistet hat (Zahlung erhalten am {{datum}}).
+
+{{grund}}
+
+Diese Quittung wird gemäß § 368 BGB auf Verlangen des Mieters ausgestellt.`,
 };
 
 /** Liefert die gespeicherte Vorlage für eine Art, sonst den Standardtext. */

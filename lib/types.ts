@@ -116,6 +116,7 @@ export type Kosten = {
   rechnung_type: string | null;
   rechnung_size: string | null;
   rechnung_path: string | null;  // Storage-Pfad im Bucket "belege" (user_id/uuid.ext)
+  mieter_freigabe: boolean | null; // Beleg im Mieterportal einsehbar (§ 556 Abs. 4 BGB)
 };
 
 export type Verbrauch = {

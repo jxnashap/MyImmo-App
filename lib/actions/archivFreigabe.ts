@@ -25,3 +25,25 @@ export async function setzeMieterFreigabe(notizId: string, freigabe: boolean) {
   revalidatePath("/archiv");
   return { ok: true };
 }
+
+/** Beleg einer Kostenbuchung im Mieterportal freigeben/zurückziehen
+ *  (§ 556 Abs. 4 BGB Belegeinsicht). */
+export async function setzeBelegFreigabe(kostenId: string, freigabe: boolean) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const { data, error } = await supabase
+    .from("kosten")
+    .update({ mieter_freigabe: freigabe })
+    .eq("id", kostenId)
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) return { error: "Freigabe konnte nicht geändert werden." };
+  revalidatePath("/cashflow");
+  revalidatePath("/portal");
+  return { ok: true };
+}
