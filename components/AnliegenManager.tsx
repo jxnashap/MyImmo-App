@@ -2,6 +2,7 @@
 
 // Vermieter-Seite /anliegen: eingegangene Mieter-Anliegen bearbeiten
 // (Status setzen + Antwort schreiben).
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Wrench, FileText, MessageCircleQuestion, Save, Paperclip, type LucideIcon } from "lucide-react";
 import { bearbeiteAnliegen } from "@/lib/actions/anliegen";
@@ -87,10 +88,17 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
           </div>
           <textarea name="antwort" rows={2} maxLength={2000} defaultValue={a.antwort ?? ""} className="input" placeholder="Antwort an den Mieter (optional)" />
           {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
-          <div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="submit" className="btn btn-gold" disabled={pending} style={{ fontSize: 12 }}>
               <Save size={13} style={{ verticalAlign: "-2px" }} /> {pending ? "…" : "Speichern"}
             </button>
+            <Link
+              href={`/anliegen?tab=service&titel=${encodeURIComponent(a.titel)}&text=${encodeURIComponent(`${a.mieterName}, ${a.objektName}: ${a.beschreibung ?? ""}`.slice(0, 1500))}`}
+              className="btn btn-ghost"
+              style={{ fontSize: 12 }}
+            >
+              <Wrench size={13} style={{ verticalAlign: "-2px" }} /> An Service weiterleiten
+            </Link>
           </div>
         </form>
       )}

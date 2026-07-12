@@ -51,8 +51,10 @@ export default async function RootLayout({
   const istOeffentlicheSeite = ["/impressum", "/datenschutz", "/agb", "/avv", "/bewerben", "/beleihung"].some(
     (p) => pathname.startsWith(p)
   );
-  if (rolle === "mieter") {
-    if (!pathname.startsWith("/portal") && !istOeffentlicheSeite) redirect("/portal");
+  if (rolle === "mieter" || rolle === "service") {
+    // Mieter → /portal, Service → /service: jeweils eigene schlanke Shell.
+    const heim = rolle === "mieter" ? "/portal" : "/service";
+    if (!pathname.startsWith(heim) && !istOeffentlicheSeite) redirect(heim);
     return (
       <html lang="de" suppressHydrationWarning>
         <head>
@@ -64,7 +66,8 @@ export default async function RootLayout({
       </html>
     );
   }
-  if (pathname.startsWith("/portal")) redirect("/");
+  // Vermieter & Hausverwaltung nutzen die volle App — Portal-Shells sind tabu.
+  if (pathname.startsWith("/portal") || pathname.startsWith("/service")) redirect("/");
 
   const { data: props } = await supabase
     .from("properties")
