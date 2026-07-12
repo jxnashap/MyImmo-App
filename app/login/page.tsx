@@ -78,6 +78,32 @@ export default function LoginPage() {
         // Cookie sofort sieht — kein manuelles Neuladen mehr nötig.
         window.location.assign("/");
       }
+    } else if (rolle === "mieter") {
+      // Mieter-Registrierung: Einladungscode des Vermieters (der "Schlüssel").
+      const eingabe = code.trim().toUpperCase();
+      const { data: gueltig, error: rpcError } = await supabase.rpc("einladungscode_pruefen", {
+        p_code: eingabe,
+      });
+      if (rpcError || !gueltig) {
+        setError("Dieser Einladungscode ist ungültig oder abgelaufen. Bitte frage deinen Vermieter nach einem neuen Code.");
+        setLoading(false);
+        return;
+      }
+      if (!consent) {
+        setError("Bitte stimme AGB und Datenschutzerklärung zu.");
+        setLoading(false);
+        return;
+      }
+      // Rolle + Code in die User-Metadaten — der DB-Trigger löst den Code
+      // beim Anlegen des Kontos ein und verknüpft die Wohnung.
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { rolle: "mieter", einladungscode: eingabe } },
+      });
+      if (error) setError(uebersetze(error.message));
+      else setInfo("Fast geschafft — bitte bestätige die E-Mail in deinem Postfach. Danach findest du deine Wohnung im Mieterportal.");
+      setLoading(false);
     } else {
       if (code.trim() !== process.env.NEXT_PUBLIC_BETA_CODE) {
         setError("Ungültiger Zugangscode.");
@@ -162,7 +188,7 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {rolle !== "vermieter" && (
+        {(rolle === "service" || rolle === "hausverwaltung") && (
           <p
             className="mt-4 rounded-lg px-3 py-2 text-[13px]"
             style={{ background: "var(--blue-dim)", color: "var(--blue)" }}
@@ -218,7 +244,7 @@ export default function LoginPage() {
             <input
               type="text"
               required
-              placeholder="Zugangscode (Beta)"
+              placeholder={rolle === "mieter" ? "Einladungscode (vom Vermieter, z. B. MI-XXXX-XXXX)" : "Zugangscode (Beta)"}
               value={code}
               onChange={(e) => {
                 setCode(e.target.value);
@@ -249,11 +275,16 @@ export default function LoginPage() {
                 <Link href="/datenschutz" target="_blank" style={{ color: "var(--gold)" }}>
                   Datenschutzerklärung
                 </Link>{" "}
-                gelesen und akzeptiere den{" "}
-                <Link href="/avv" target="_blank" style={{ color: "var(--gold)" }}>
-                  Auftragsverarbeitungsvertrag
-                </Link>{" "}
-                für die Verarbeitung der von mir eingegebenen Mieterdaten in meinem Auftrag.
+                gelesen und akzeptiere sie.
+                {rolle !== "mieter" && (
+                  <>
+                    {" "}Zudem akzeptiere ich den{" "}
+                    <Link href="/avv" target="_blank" style={{ color: "var(--gold)" }}>
+                      Auftragsverarbeitungsvertrag
+                    </Link>{" "}
+                    für die Verarbeitung der von mir eingegebenen Mieterdaten in meinem Auftrag.
+                  </>
+                )}
               </span>
             </label>
           )}

@@ -21,6 +21,12 @@
   (DB-Härtung sonst erledigt: FKs, RLS-Performance, Indizes, doppelte Policy entfernt.)
 
 ### Sonstiges (kein Geld)
+- **Abo-Zugangscode (mit Bezahlsystem umsetzen):** Nach Abschluss/Bezahlung eines Abos erhält
+  der Kunde einen individuellen Zugangscode (per E-Mail oder direkt in der App). Der Code ist
+  abo-/rollenspezifisch (z. B. gilt ein Hausverwaltungs-Code nur für die Hausverwaltungs-
+  Registrierung) und wird nur bei der ERST-Registrierung benötigt — danach normaler Login.
+  Fundament existiert: Tabelle `einladungscodes` (rollen-gebunden, Ablauf, Einmal-Einlösung)
+  + Signup-Trigger `handle_new_user_rolle` lassen sich um Abo-Codes erweitern.
 - **AVV-Verträge (Art. 28 DSGVO)** mit Supabase, Vercel, Anthropic, Google abschließen.
 - **Impressum/Datenschutz**: Platzhalter in `app/impressum` + `app/datenschutz` mit echten Daten
   (Gewerbeanmeldung) füllen und rechtlich prüfen lassen.
