@@ -3,7 +3,7 @@
 // Vermieter-Seite /anliegen: eingegangene Mieter-Anliegen bearbeiten
 // (Status setzen + Antwort schreiben).
 import { useState, useTransition } from "react";
-import { Wrench, FileText, MessageCircleQuestion, Save, type LucideIcon } from "lucide-react";
+import { Wrench, FileText, MessageCircleQuestion, Save, Paperclip, type LucideIcon } from "lucide-react";
 import { bearbeiteAnliegen } from "@/lib/actions/anliegen";
 
 export type AnliegenVermieterRow = {
@@ -16,6 +16,7 @@ export type AnliegenVermieterRow = {
   created_at: string;
   mieterName: string;
   objektName: string;
+  dateien: { id: string; name: string }[];
 };
 
 const TYP_META: Record<string, { label: string; icon: LucideIcon }> = {
@@ -63,6 +64,15 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
       </div>
       {a.beschreibung && (
         <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, whiteSpace: "pre-wrap" }}>{a.beschreibung}</p>
+      )}
+      {a.dateien.length > 0 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
+          {a.dateien.map((d) => (
+            <a key={d.id} href={`/api/anliegen-datei/${d.id}`} target="_blank" rel="noopener noreferrer" className="badge badge-neutral" style={{ textDecoration: "none" }} onClick={(e) => e.stopPropagation()}>
+              <Paperclip size={11} style={{ verticalAlign: "-1px" }} /> {d.name}
+            </a>
+          ))}
+        </div>
       )}
       {offen && (
         <form action={speichern} style={{ display: "grid", gap: 8, marginTop: 10, padding: 12, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}>

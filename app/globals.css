@@ -876,3 +876,26 @@ select:focus-visible, textarea:focus-visible {
   .role-card.zoom-in { animation: none; }
   .role-tile, .role-tile:hover { transform: none; }
 }
+
+/* ============================================================
+   MIETERPORTAL: Glass-Toolbar (oben mittig, Bereichs-Umschalter)
+   ============================================================ */
+.portal-toolbar { position: sticky; top: 12px; z-index: 40; display: flex; justify-content: center; margin: 16px 0 22px; pointer-events: none; }
+.glass-bar {
+  pointer-events: auto;
+  display: inline-flex; gap: 4px; padding: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg2) 62%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid var(--line2);
+  box-shadow: 0 10px 32px -14px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.glass-item {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 16px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  text-decoration: none; transition: background .15s ease, color .15s ease;
+}
+.glass-item:hover { color: var(--text); background: color-mix(in srgb, var(--bg4) 70%, transparent); }
+.glass-item.active { background: var(--gold); color: #1a1a17; font-weight: 600; }

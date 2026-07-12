@@ -11,6 +11,13 @@ export default async function AnliegenPage() {
     supabase.from("properties").select("id,bezeichnung"),
   ]);
 
+  const { data: dateiRows } = (rows ?? []).length
+    ? await supabase
+        .from("anliegen_dateien")
+        .select("id,name,anliegen_id")
+        .in("anliegen_id", (rows ?? []).map((a) => a.id))
+    : { data: [] as { id: string; name: string; anliegen_id: string }[] };
+
   const mieterName = (id: string) => {
     const m = (mieter ?? []).find((x) => x.id === id);
     return m ? [m.vorname, m.nachname].filter(Boolean).join(" ") : "Mieter";
@@ -28,6 +35,7 @@ export default async function AnliegenPage() {
     created_at: a.created_at,
     mieterName: mieterName(a.mieter_id),
     objektName: objektName(a.prop_id),
+    dateien: (dateiRows ?? []).filter((d) => d.anliegen_id === a.id).map((d) => ({ id: d.id, name: d.name })),
   }));
 
   const offen = liste.filter((a) => a.status !== "erledigt").length;
