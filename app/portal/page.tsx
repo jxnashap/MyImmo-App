@@ -2,18 +2,20 @@
 // Dokument-Anfragen — umgeschaltet über die Glass-Toolbar oben in der
 // Mitte (Businessplan Kap. 14 "Das Mieterportal").
 import Link from "next/link";
-import { Home, MessageSquareText, FileText } from "lucide-react";
+import { Home, MessageSquareText, FileText, Gauge } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import ThemeToggle from "@/components/ThemeToggle";
 import AnliegenPortal, { type AnliegenRow, type DateiRef } from "@/components/AnliegenPortal";
 import DokumenteAnfrage from "@/components/DokumenteAnfrage";
+import ZaehlerPortal, { type ZaehlerMeldungRow } from "@/components/ZaehlerPortal";
 import type { Tenant, Property } from "@/lib/types";
 
 const TABS = [
   { key: "wohnung", label: "Wohnung", icon: Home },
   { key: "anliegen", label: "Anliegen", icon: MessageSquareText },
   { key: "dokumente", label: "Dokumente", icon: FileText },
+  { key: "zaehler", label: "Zähler", icon: Gauge },
 ] as const;
 
 export default async function PortalPage({
@@ -68,6 +70,14 @@ export default async function PortalPage({
         .eq("mieter_freigabe", true)
         .order("created_at", { ascending: false })
     : { data: [] as { id: string; titel: string | null; kategorie: string | null; datei_name: string | null; created_at: string | null }[] };
+
+  const { data: zaehlerRows } = await supabase
+    .from("zaehlerstand_meldungen")
+    .select("id,art,zaehlernummer,stand,einheit,ablesedatum,notiz,foto_name,uebernommen_am,created_at")
+    .eq("mieter_user_id", user!.id)
+    .order("ablesedatum", { ascending: false })
+    .limit(50);
+  const zaehlerMeldungen = (zaehlerRows ?? []) as ZaehlerMeldungRow[];
 
   const { data: dateiRows } = anliegen.length
     ? await supabase
@@ -225,6 +235,23 @@ export default async function PortalPage({
                 </div>
                 <DokumenteAnfrage anfragen={dokumentAnfragen} />
               </>
+            )}
+          </>
+        )}
+        {tab === "zaehler" && (
+          <>
+            <div className="topbar" style={{ marginBottom: 20 }}>
+              <div>
+                <div className="topbar-title">Zählerstände</div>
+                <div className="topbar-sub">Strom, Gas, Wasser &amp; Co. direkt an den Vermieter melden</div>
+              </div>
+            </div>
+            {wohnungen.length === 0 ? (
+              <div className="section"><div className="section-body" style={{ fontSize: 12, color: "var(--muted)" }}>
+                Erst mit verknüpfter Wohnung möglich — frage deinen Vermieter nach einem Einladungscode.
+              </div></div>
+            ) : (
+              <ZaehlerPortal meldungen={zaehlerMeldungen} />
             )}
           </>
         )}

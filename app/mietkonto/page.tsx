@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import RueckstandWaechter from "@/components/RueckstandWaechter";
 import { sollFuerMonat, zuJahrMonat } from "@/lib/mietkonto";
 import MietkontoBestaetigung, {
   type MietkontoZeile,
@@ -104,11 +105,14 @@ export default async function MietkontoPage({
   }
 
   return (
-    <MietkontoBestaetigung
-      monat={monat}
-      aktuellerMonat={aktuellerMonat}
-      zeilen={zeilen}
-      nacherfassung={nacherfassung}
-    />
+    <>
+      <RueckstandWaechter />
+      <MietkontoBestaetigung
+        monat={monat}
+        aktuellerMonat={aktuellerMonat}
+        zeilen={zeilen}
+        nacherfassung={nacherfassung}
+      />
+    </>
   );
 }

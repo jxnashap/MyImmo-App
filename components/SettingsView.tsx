@@ -97,6 +97,20 @@ export default function SettingsView({
         {tab === "recht" && <RechtPanel />}
       </div>
 
+      {/* Voll-Datenexport: deine Daten gehören dir */}
+      <div className="section" style={{ marginTop: 20 }}>
+        <div className="section-header"><h3>Daten-Export</h3></div>
+        <div className="section-body" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+          <p style={{ fontSize: 12, color: "var(--muted)", margin: 0, flex: "1 1 320px" }}>
+            Lade jederzeit ALLE deine Daten herunter: sämtliche Tabellen als CSV + JSON,
+            dazu Archiv-Dokumente und Kosten-Belege als Dateien — ohne Sperrfrist, ohne Abo-Bedingung.
+          </p>
+          <a href="/api/export/alles" className="btn btn-gold" style={{ fontSize: 12 }}>
+            Alle Daten exportieren (ZIP)
+          </a>
+        </div>
+      </div>
+
       <DangerZone />
     </div>
   );

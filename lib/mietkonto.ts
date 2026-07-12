@@ -153,3 +153,43 @@ export function dedup(
   );
   return erwartet.map((m) => ({ ...m, schonGebucht: gebucht.has(m.jahrMonat) }));
 }
+
+// -------------------------------------------------------- offene Mieten ----
+
+export type OffeneMiete = ErwarteterMonat & {
+  /** Fälligkeit (3. des Monats, § 556b BGB: bis zum 3. Werktag) */
+  faelligSeit: string;
+  tageOffen: number;
+};
+
+const MONATE_DE = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+/** "2026-07" → "Juli 2026" */
+export function monatLabel(ym: string): string {
+  const [j, m] = ym.split("-").map(Number);
+  return `${MONATE_DE[(m ?? 1) - 1] ?? ym} ${j}`;
+}
+
+/**
+ * Offene (unbestätigte) Miet-Monate der letzten 12 Monate — der
+ * Rückstands-Wächter. Ein Monat gilt als offen, wenn keine Miet-Einnahme
+ * gebucht ist und die Fälligkeit (3. des Monats) erreicht wurde.
+ */
+export function offeneMieten(
+  mieter: MietkontoMieter,
+  zeitraeume: MietkontoZeitraum[],
+  einnahmen: DedupEinnahme[],
+  heute: Date = new Date(),
+): OffeneMiete[] {
+  const heuteYm = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}`;
+  const mitStatus = dedup(erwarteteMonate(mieter, zeitraeume, ymPlus(heuteYm, -11), heuteYm, heute), einnahmen);
+  const offene: OffeneMiete[] = [];
+  for (const m of mitStatus) {
+    if (m.schonGebucht || m.gesamt <= 0) continue;
+    const faellig = new Date(`${m.jahrMonat}-03T00:00:00`);
+    const tage = Math.floor((heute.getTime() - faellig.getTime()) / 86400000);
+    if (tage < 0) continue; // aktueller Monat, noch nicht fällig
+    offene.push({ ...m, faelligSeit: `${m.jahrMonat}-03`, tageOffen: tage });
+  }
+  return offene;
+}
