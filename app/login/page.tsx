@@ -50,6 +50,7 @@ export default function LoginPage() {
   const [consent, setConsent] = useState(false);
   const [code, setCode] = useState(""); // Beta-Zugangscode (nur Registrierung)
   const [rolle, setRolle] = useState<string>("vermieter"); // Standard: Vermieter
+  const [falscheRolle, setFalscheRolle] = useState<string | null>(null); // Konto-Rolle bei Fehlanmeldung
 
   // Query-Parameter erst nach dem Mount lesen (verhindert Hydration-
   // Mismatch, da window serverseitig nicht existiert).
@@ -66,18 +67,38 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setInfo(null);
+    setFalscheRolle(null);
     setLoading(true);
 
     if (mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setError(uebersetze(error.message));
         setLoading(false);
-      } else {
-        // Harte Navigation: stellt sicher, dass der Server die neue Session-
-        // Cookie sofort sieht — kein manuelles Neuladen mehr nötig.
-        window.location.assign("/");
+        return;
       }
+      // Rollen-Check: Zugangsdaten müssen zur gewählten Rolle passen.
+      // (Konten ohne Rollen-Eintrag sind Vermieter; Service/Hausverwaltung
+      // nutzen übergangsweise den Vermieter-Zugang, s. Hinweis oben.)
+      const { data: rolleRow } = await supabase
+        .from("nutzer_rollen")
+        .select("rolle")
+        .eq("user_id", data.user!.id)
+        .maybeSingle();
+      const kontoRolle = rolleRow?.rolle ?? "vermieter";
+      const erwartet = rolle === "service" || rolle === "hausverwaltung" ? "vermieter" : rolle;
+      if (kontoRolle !== erwartet) {
+        await supabase.auth.signOut();
+        setFalscheRolle(kontoRolle);
+        setError(
+          `Diese Zugangsdaten gehören zu einem ${ROLLEN[kontoRolle].label}-Konto — die Anmeldung hier ist für ${ROLLEN[rolle].label} gedacht.`
+        );
+        setLoading(false);
+        return;
+      }
+      // Harte Navigation: stellt sicher, dass der Server die neue Session-
+      // Cookie sofort sieht — kein manuelles Neuladen mehr nötig.
+      window.location.assign("/");
     } else if (rolle === "mieter") {
       // Mieter-Registrierung: Einladungscode des Vermieters (der "Schlüssel").
       const eingabe = code.trim().toUpperCase();
@@ -153,6 +174,7 @@ export default function LoginPage() {
     setMode(m);
     setError(null);
     setInfo(null);
+    setFalscheRolle(null);
   };
 
   return (
@@ -290,12 +312,29 @@ export default function LoginPage() {
           )}
 
           {error && (
-            <p
+            <div
               className="rounded-lg px-3 py-2 text-[13px]"
               style={{ background: "var(--red-dim)", color: "var(--red)" }}
             >
               {error}
-            </p>
+              {falscheRolle && (
+                <button
+                  type="button"
+                  className="mt-2 block w-full rounded-lg border py-2 text-[13px] font-medium transition hover:brightness-110"
+                  style={{ background: "var(--bg3)", borderColor: "var(--line2)", color: "var(--text)" }}
+                  onClick={() => {
+                    setRolle(falscheRolle);
+                    setFalscheRolle(null);
+                    setError(null);
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("rolle", falscheRolle);
+                    window.history.replaceState(null, "", url.toString());
+                  }}
+                >
+                  Als {ROLLEN[falscheRolle].label} anmelden
+                </button>
+              )}
+            </div>
           )}
           {info && (
             <p
