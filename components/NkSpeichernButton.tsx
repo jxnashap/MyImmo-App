@@ -1,4 +1,5 @@
 "use client";
+import { Save } from "lucide-react";
 
 // „Speichern" neben dem NK-Download: erzeugt dasselbe PDF serverseitig und
 // legt es beim Mieter + im Archiv ab (Server-Action speichereNk).
@@ -23,7 +24,7 @@ export default function NkSpeichernButton({ mieterId, jahr }: { mieterId: string
         })
       }
     >
-      {pending ? "Speichert…" : "💾 Speichern"}
+      {pending ? "Speichert…" : <><Save size={14} style={{ verticalAlign: "-2px" }} /> Speichern</>}
     </button>
   );
 }

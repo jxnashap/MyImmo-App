@@ -1,4 +1,5 @@
 "use client";
+import { Bot, ClipboardList, Hourglass, TriangleAlert, CheckCircle2, StickyNote } from "lucide-react";
 import SubmitButton from "@/components/SubmitButton";
 
 import { useState } from "react";
@@ -53,8 +54,8 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
       <p>Kopiere den Anzeigentext von ImmoScout24, Immowelt o.ä. — die KI liest die Daten aus. Oder fülle das Schnellformular manuell aus.</p>
 
       <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--line)" }}>
-        <button type="button" onClick={() => setTab("ki")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "ki" ? "var(--gold)" : "transparent"}`, color: tab === "ki" ? "var(--gold)" : "var(--muted)", fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}>🤖 KI-Import</button>
-        <button type="button" onClick={() => setTab("manual")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "manual" ? "var(--gold)" : "transparent"}`, color: tab === "manual" ? "var(--gold)" : "var(--muted)", fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}>📋 Schnellformular</button>
+        <button type="button" onClick={() => setTab("ki")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "ki" ? "var(--gold)" : "transparent"}`, color: tab === "ki" ? "var(--gold)" : "var(--muted)", fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><Bot size={14} style={{ verticalAlign: "-2px" }} /> KI-Import</button>
+        <button type="button" onClick={() => setTab("manual")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "manual" ? "var(--gold)" : "transparent"}`, color: tab === "manual" ? "var(--gold)" : "var(--muted)", fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Schnellformular</button>
       </div>
 
       {tab === "ki" && (
@@ -64,11 +65,11 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
             <textarea rows={7} value={text} onChange={(e) => setText(e.target.value)} placeholder="Text der Immobilienanzeige hier einfügen (Strg+A → Strg+C auf der Anzeige, dann Strg+V hier)." style={{ resize: "vertical", padding: "9px 11px", borderRadius: 7, border: "1px solid var(--line2)", background: "var(--bg3)", color: "var(--text)", fontFamily: "'Outfit',sans-serif", fontSize: 13, outline: "none", lineHeight: 1.6 }} />
           </div>
           <button type="button" onClick={auslesen} disabled={loading || text.trim().length < 30} className="btn btn-gold" style={{ opacity: loading || text.trim().length < 30 ? 0.6 : 1 }}>
-            {loading ? "⏳ KI analysiert…" : "🤖 Anzeige auslesen"}
+            {loading ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> KI analysiert…</> : <><Bot size={14} style={{ verticalAlign: "-2px" }} /> Anzeige auslesen</>}
           </button>
-          {error && <div style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}>⚠️ {error}</div>}
+          {error && <div style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
           {konfidenz != null && (
-            <div style={{ marginTop: 10, fontSize: 12, color: konfColor }}>✅ Daten erkannt — Konfidenz {konfidenz}%. Bitte unten prüfen und speichern.</div>
+            <div style={{ marginTop: 10, fontSize: 12, color: konfColor }}><CheckCircle2 size={12} style={{ verticalAlign: "-2px" }} /> Daten erkannt — Konfidenz {konfidenz}%. Bitte unten prüfen und speichern.</div>
           )}
         </div>
       )}
@@ -99,9 +100,9 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
           <div className="form-group"><label>Energieklasse</label><input name="energieklasse" value={v.energieklasse} onChange={set("energieklasse")} /></div>
           <div className="form-group"><label>Status</label><select name="obj_status" value={v.obj_status} onChange={set("obj_status")}>{STATUS.map((s) => <option key={s}>{s}</option>)}</select></div>
         </div>
-        {notiz && <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>📝 {notiz}</div>}
+        {notiz && <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}><StickyNote size={11} style={{ verticalAlign: "-1px" }} /> {notiz}</div>}
         <div className="form-actions">
-          <SubmitButton>✅ Übernehmen &amp; speichern</SubmitButton>
+          <SubmitButton><CheckCircle2 size={14} style={{ verticalAlign: "-2px" }} /> Übernehmen &amp; speichern</SubmitButton>
         </div>
       </form>
     </div>

@@ -1,4 +1,5 @@
 "use client";
+import { X, Plus, Save, FileText } from "lucide-react";
 
 // Übergabeprotokoll: Eingabe links, daneben die Live-Vorschau (.brief-sheet).
 // „Als PDF herunterladen" = POST an /protokoll/pdf (Server-PDF via pdf-lib,
@@ -63,11 +64,11 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
           <div key={i} className="form-row" style={{ gridTemplateColumns: "1fr 1fr auto", alignItems: "end" }}>
             <div className="form-group"><label>Raum</label><input value={r.name} onChange={(e) => setRaum(i, "name", e.target.value)} /></div>
             <div className="form-group"><label>Zustand</label><select value={r.zustand} onChange={(e) => setRaum(i, "zustand", e.target.value)}>{ZUSTAENDE.map((z) => <option key={z}>{z}</option>)}</select></div>
-            <button type="button" className="delete-btn" onClick={() => delRaum(i)} style={{ marginBottom: 9 }}>✕</button>
+            <button type="button" className="delete-btn" onClick={() => delRaum(i)} style={{ marginBottom: 9 }}><X size={14} /></button>
             <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Anmerkung / Mängel</label><input value={r.notiz} onChange={(e) => setRaum(i, "notiz", e.target.value)} /></div>
           </div>
         ))}
-        <button type="button" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 4 }} onClick={addRaum}>＋ Raum</button>
+        <button type="button" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 4 }} onClick={addRaum}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Raum</button>
 
         {/* PDF-Download: Route liefert attachment → Download ohne neues Fenster */}
         <form action={`/tenants/${tenant.id}/protokoll/pdf`} method="POST" className="form-actions">
@@ -90,9 +91,9 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
             }
             style={{ marginRight: 8 }}
           >
-            {ablegen ? "Speichert…" : "💾 Speichern"}
+            {ablegen ? "Speichert…" : <><Save size={14} style={{ verticalAlign: "-2px" }} /> Speichern</>}
           </button>
-          <button type="submit" className="btn btn-gold">📄 Als PDF herunterladen</button>
+          <button type="submit" className="btn btn-gold"><FileText size={14} style={{ verticalAlign: "-2px" }} /> Als PDF herunterladen</button>
         </form>
       </div>
 

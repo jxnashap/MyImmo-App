@@ -2,7 +2,7 @@
 import SubmitButton from "@/components/SubmitButton";
 
 import { useMemo, useState } from "react";
-import { Building2, User, Tag, X, Download, Eye } from "lucide-react";
+import { Building2, User, Tag, X, Download, Eye, FileText, Image as ImageIcon, Paperclip, Archive, Home, Plus } from "lucide-react";
 import Select from "@/components/filters/Select";
 import RowDialog from "@/components/RowDialog";
 import { createDokument, updateDokument, deleteDokument } from "@/lib/actions/archiv";
@@ -34,7 +34,7 @@ const ART_BADGE: Record<string, string> = {
 };
 
 const fileIcon = (type: string | null) =>
-  type === "application/pdf" ? "📄" : type?.startsWith("image/") ? "🖼️" : "📎";
+  type === "application/pdf" ? <FileText size={22} /> : type?.startsWith("image/") ? <ImageIcon size={22} /> : <Paperclip size={22} />;
 
 const deDate = (s: string | null) =>
   s ? new Date(s).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
@@ -86,7 +86,7 @@ export default function ArchivManager({
           <div className="topbar-sub">Alle Dokumente & Verträge — gefiltert nach Objekt, Mieter und Art</div>
         </div>
         <button type="button" className="btn btn-gold" onClick={() => setShowUpload((s) => !s)}>
-          {showUpload ? "× Schließen" : "＋ Dokument hochladen"}
+          {showUpload ? <><X size={14} style={{ verticalAlign: "-2px" }} /> Schließen</> : <><Plus size={14} style={{ verticalAlign: "-2px" }} /> Dokument hochladen</>}
         </button>
       </div>
 
@@ -180,7 +180,7 @@ export default function ArchivManager({
       {/* Liste */}
       {gefiltert.length === 0 ? (
         <div className="empty">
-          <div className="empty-icon">🗄</div>
+          <Archive className="empty-icon" size={36} color="var(--faint)" />
           <p>{docs.length === 0 ? "Noch keine Dokumente im Archiv." : "Keine Dokumente für diese Filter."}</p>
         </div>
       ) : (
@@ -197,15 +197,15 @@ export default function ArchivManager({
                 onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setEditId(d.id); } }}
                 style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 8px", borderBottom: "1px solid var(--line)", borderRadius: 8 }}
               >
-                <div style={{ fontSize: 22 }}>{fileIcon(d.datei_type)}</div>
+                <div style={{ display: "flex", alignItems: "center", color: "var(--muted)" }}>{fileIcon(d.datei_type)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 500, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {d.titel || d.datei_name || "Dokument"}
                   </div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4, alignItems: "center" }}>
                     {d.kategorie && <span className={`badge ${ART_BADGE[d.kategorie] || "badge-teal"}`}>{d.kategorie}</span>}
-                    {d.prop_id && propName.get(d.prop_id) && <span style={{ fontSize: 11, color: "var(--muted)" }}>🏠 {propName.get(d.prop_id)}</span>}
-                    {d.mieter_id && mieterName.get(d.mieter_id) && <span style={{ fontSize: 11, color: "var(--muted)" }}>👤 {mieterName.get(d.mieter_id)}</span>}
+                    {d.prop_id && propName.get(d.prop_id) && <span style={{ fontSize: 11, color: "var(--muted)" }}><Home size={11} style={{ verticalAlign: "-1px" }} /> {propName.get(d.prop_id)}</span>}
+                    {d.mieter_id && mieterName.get(d.mieter_id) && <span style={{ fontSize: 11, color: "var(--muted)" }}><User size={11} style={{ verticalAlign: "-1px" }} /> {mieterName.get(d.mieter_id)}</span>}
                     <span style={{ fontSize: 11, color: "var(--faint)" }}>{deDate(d.created_at)}</span>
                   </div>
                   {d.inhalt && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{d.inhalt}</div>}

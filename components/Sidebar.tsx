@@ -4,36 +4,43 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
+import {
+  BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
+  TrendingUp, Route, Calculator, Power, Building2, Building, Store, TreePalm, Sprout,
+  type LucideIcon,
+} from "lucide-react";
 
 type SidebarProperty = { id: string; bezeichnung: string; typ: string | null };
 
-const VERWALTUNG: { href: string; label: string; icon: string }[] = [
-  { href: "/", label: "Dashboard", icon: "📊" },
-  { href: "/properties", label: "Immobilien", icon: "🏠" },
-  { href: "/tenants", label: "Mieter", icon: "👤" },
-  { href: "/cashflow", label: "Ein- & Ausgaben", icon: "💶" },
-  { href: "/mietkonto", label: "Mietkonto", icon: "🧾" },
-  { href: "/verbrauch", label: "Verbrauch", icon: "⚡" },
-  { href: "/kredite", label: "Kredite", icon: "🏦" },
-  { href: "/steuer", label: "Steuer", icon: "§" },
-  { href: "/archiv", label: "Archiv", icon: "🗄" },
-  { href: "/jahresbericht", label: "Jahresbericht", icon: "📈" },
+type NavItem = { href: string; label: string; icon?: LucideIcon; paragraph?: boolean };
+
+const VERWALTUNG: NavItem[] = [
+  { href: "/", label: "Dashboard", icon: BarChart3 },
+  { href: "/properties", label: "Immobilien", icon: Home },
+  { href: "/tenants", label: "Mieter", icon: User },
+  { href: "/cashflow", label: "Ein- & Ausgaben", icon: Banknote },
+  { href: "/mietkonto", label: "Mietkonto", icon: ReceiptText },
+  { href: "/verbrauch", label: "Verbrauch", icon: Zap },
+  { href: "/kredite", label: "Kredite", icon: Landmark },
+  { href: "/steuer", label: "Steuer", paragraph: true },
+  { href: "/archiv", label: "Archiv", icon: Archive },
+  { href: "/jahresbericht", label: "Jahresbericht", icon: TrendingUp },
 ];
 
-const KALKULATOR: { href: string; label: string; icon: string }[] = [
-  { href: "/roter-faden", label: "Roter Faden", icon: "🧵" },
-  { href: "/cockpit", label: "Cockpit", icon: "🧮" },
-  { href: "/bankgespraech", label: "Bankgespräch", icon: "🏦" },
+const KALKULATOR: NavItem[] = [
+  { href: "/roter-faden", label: "Roter Faden", icon: Route },
+  { href: "/cockpit", label: "Cockpit", icon: Calculator },
+  { href: "/bankgespraech", label: "Bankgespräch", icon: Landmark },
 ];
 
-// Emoji je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
-const PROP_ICONS: Record<string, string> = {
-  Eigentumswohnung: "🏢",
-  Einfamilienhaus: "🏠",
-  Mehrfamilienhaus: "🏘",
-  Gewerbeimmobilie: "🏪",
-  Ferienimmobilie: "🏖",
-  Grundstück: "🌿",
+// Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
+const PROP_ICONS: Record<string, LucideIcon> = {
+  Eigentumswohnung: Building2,
+  Einfamilienhaus: Home,
+  Mehrfamilienhaus: Building,
+  Gewerbeimmobilie: Store,
+  Ferienimmobilie: TreePalm,
+  Grundstück: Sprout,
 };
 
 export default function Sidebar({
@@ -69,9 +76,12 @@ export default function Sidebar({
   const isActive = (href: string) =>
     href === "/" ? path === "/" : path.startsWith(href);
 
-  const navLink = (n: { href: string; label: string; icon: string }) => (
+  const navLink = (n: NavItem) => (
     <Link key={n.href} href={n.href} className={`nav-item${isActive(n.href) ? " active" : ""}`}>
-      <span className="icon" style={n.icon === "§" ? { color: "var(--gold)", fontWeight: 700 } : undefined}>{n.icon}</span> {n.label}
+      <span className="icon" style={n.paragraph ? { color: "var(--gold)", fontWeight: 700 } : { display: "inline-flex", alignItems: "center" }}>
+        {n.paragraph || !n.icon ? "§" : <n.icon size={15} />}
+      </span>{" "}
+      {n.label}
     </Link>
   );
 
@@ -126,7 +136,7 @@ export default function Sidebar({
           <ThemeToggle variant="icon" />
           {/* Abmelden — rot nur bei Hover */}
           <form action="/auth/signout" method="post" style={{ display: "flex" }}>
-            <button type="submit" className="logout-btn" title="Abmelden" aria-label="Abmelden">⏻</button>
+            <button type="submit" className="logout-btn" title="Abmelden" aria-label="Abmelden"><Power size={14} /></button>
           </form>
         </div>
       </div>
@@ -149,7 +159,9 @@ export default function Sidebar({
           ) : (
             properties.map((p) => (
               <Link key={p.id} href={`/properties/${p.id}`} className="prop-mini" style={{ textDecoration: "none" }}>
-                <div className="prop-mini-icon">{(p.typ && PROP_ICONS[p.typ]) || "🏠"}</div>
+                <div className="prop-mini-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                  {(() => { const Icon = (p.typ && PROP_ICONS[p.typ]) || Home; return <Icon size={15} />; })()}
+                </div>
                 <div style={{ minWidth: 0 }}>
                   <div className="prop-mini-name" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.bezeichnung}</div>
                   <div className="prop-mini-type">{p.typ ?? ""}</div>

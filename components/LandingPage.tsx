@@ -1,18 +1,19 @@
 import Link from "next/link";
+import { BarChart3, Banknote, ReceiptText, Landmark, CalendarDays, Folders, Bot, Archive, AlarmClock, PartyPopper, type LucideIcon } from "lucide-react";
 
 // Landingpage für ausgeloggte Besucher auf "/" — Server Component, indexierbar.
 // Preise aus dem Businessplan; solange Billing nicht live ist, weist der
 // Early-Access-Hinweis darauf hin, dass aktuell alles kostenlos nutzbar ist.
 
-const FEATURES = [
-  { ico: "📊", t: "Portfolio-Dashboard", p: "Wert, Cashflow, Rendite und Leerstand deines Bestands auf einen Blick — mit Verlaufs-Chart." },
-  { ico: "💶", t: "Ein- & Ausgaben", p: "Mieten und Kosten je Objekt erfassen, Belege anhängen, Netto-Cashflow automatisch berechnet." },
-  { ico: "🧾", t: "Nebenkostenabrechnung", p: "Umlage nach Fläche, Einheiten oder Verbrauch — cent-genau verteilt, als fertiges PDF für den Mieter." },
-  { ico: "§", t: "Steuer & Anlage V", p: "Einkünfte aus V+V je Objekt mit AfA und Schuldzinsen, den Anlage-V-Zeilen zugeordnet, CSV-Export." },
-  { ico: "🏦", t: "Kredite & Zinsbindung", p: "Restschuld, Raten und Zinsbindungen im Blick — mit Warnung, bevor die Anschlussfinanzierung ansteht." },
-  { ico: "📅", t: "Termine & Fristen", p: "Automatische Fristen aus Mietern, Krediten und Steuer plus Wartungen — als Kalender und iCal-Export." },
-  { ico: "🗂️", t: "Dokumente & Archiv", p: "Mietverträge, Bescheide und Belege zentral abgelegt — plus Freigabe-Ordner für dein Bankgespräch." },
-  { ico: "🤖", t: "KI-Import & Kalkulatoren", p: "Exposé einfügen, Eckdaten werden ausgelesen. Kauf-Check mit Cashflow-, Rendite- und Vermögensrechnung." },
+const FEATURES: { ico?: LucideIcon; t: string; p: string }[] = [
+  { ico: BarChart3, t: "Portfolio-Dashboard", p: "Wert, Cashflow, Rendite und Leerstand deines Bestands auf einen Blick — mit Verlaufs-Chart." },
+  { ico: Banknote, t: "Ein- & Ausgaben", p: "Mieten und Kosten je Objekt erfassen, Belege anhängen, Netto-Cashflow automatisch berechnet." },
+  { ico: ReceiptText, t: "Nebenkostenabrechnung", p: "Umlage nach Fläche, Einheiten oder Verbrauch — cent-genau verteilt, als fertiges PDF für den Mieter." },
+  { t: "Steuer & Anlage V", p: "Einkünfte aus V+V je Objekt mit AfA und Schuldzinsen, den Anlage-V-Zeilen zugeordnet, CSV-Export." },
+  { ico: Landmark, t: "Kredite & Zinsbindung", p: "Restschuld, Raten und Zinsbindungen im Blick — mit Warnung, bevor die Anschlussfinanzierung ansteht." },
+  { ico: CalendarDays, t: "Termine & Fristen", p: "Automatische Fristen aus Mietern, Krediten und Steuer plus Wartungen — als Kalender und iCal-Export." },
+  { ico: Folders, t: "Dokumente & Archiv", p: "Mietverträge, Bescheide und Belege zentral abgelegt — plus Freigabe-Ordner für dein Bankgespräch." },
+  { ico: Bot, t: "KI-Import & Kalkulatoren", p: "Exposé einfügen, Eckdaten werden ausgelesen. Kauf-Check mit Cashflow-, Rendite- und Vermögensrechnung." },
 ];
 
 type Plan = {
@@ -130,19 +131,19 @@ export default function LandingPage() {
           </p>
           <div className="lp-cards3">
             <div className="lp-card">
-              <div className="lp-card-icon">🗃️</div>
+              <div className="lp-card-icon"><Archive size={22} /></div>
               <span className="lp-vorher">Vorher: alles verstreut</span>
               <h3>Ein Ort für alles</h3>
               <p>Objekte, Mieter, Buchungen, Kredite und Dokumente in einer App — statt in fünf Excel-Dateien und drei Ordnern.</p>
             </div>
             <div className="lp-card">
-              <div className="lp-card-icon">🧾</div>
+              <div className="lp-card-icon"><ReceiptText size={22} /></div>
               <span className="lp-vorher">Vorher: NK-Abrechnung = Wochenende weg</span>
               <h3>Abrechnung auf Knopfdruck</h3>
               <p>Kosten übers Jahr erfassen, Umlageschlüssel wählen — MyImmo verteilt cent-genau und erzeugt das fertige PDF für deine Mieter.</p>
             </div>
             <div className="lp-card">
-              <div className="lp-card-icon">⏰</div>
+              <div className="lp-card-icon"><AlarmClock size={22} /></div>
               <span className="lp-vorher">Vorher: Fristen im Hinterkopf</span>
               <h3>Nichts mehr verpassen</h3>
               <p>Abrechnungsfristen, Zinsbindungen, Wartungen: MyImmo leitet Termine automatisch aus deinen Daten ab und warnt rechtzeitig.</p>
@@ -160,7 +161,7 @@ export default function LandingPage() {
           <div className="lp-features">
             {FEATURES.map((f) => (
               <div key={f.t} className="lp-feature">
-                <div className="ico">{f.ico}</div>
+                <div className="ico">{f.ico ? <f.ico size={20} /> : "§"}</div>
                 <h3>{f.t}</h3>
                 <p>{f.p}</p>
               </div>
@@ -215,7 +216,7 @@ export default function LandingPage() {
           <h2 className="lp-h2">Fair kalkuliert — und aktuell kostenlos</h2>
           <p className="lp-section-sub">So sollen die Tarife später aussehen. Jahreszahlung spart rund zwei Monatsbeiträge.</p>
           <div className="lp-early">
-            🎉 Early Access: Während der Startphase ist der volle Funktionsumfang kostenlos — Bezahltarife werden rechtzeitig angekündigt.
+            <PartyPopper size={14} style={{ verticalAlign: "-2px" }} /> Early Access: Während der Startphase ist der volle Funktionsumfang kostenlos — Bezahltarife werden rechtzeitig angekündigt.
           </div>
           <div className="lp-pricing">
             {PLAENE.map((p) => (

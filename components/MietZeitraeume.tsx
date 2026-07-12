@@ -1,4 +1,5 @@
 "use client";
+import { X, Plus } from "lucide-react";
 
 // Miet-Zeiträume beim Mieter: Liste mit inline bearbeitbaren Perioden
 // (von/bis als Monat, Kaltmiete/NK/Stellplatz) + Zeile zum Hinzufügen.
@@ -171,7 +172,7 @@ export default function MietZeitraeume({
                   onClick={() => loesche(r.id)}
                   style={{ marginBottom: 6, marginLeft: "auto" }}
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               </div>
             );
@@ -207,7 +208,7 @@ export default function MietZeitraeume({
             <input type="number" step="0.01" style={inputStil} value={neu.stellplatz} onChange={(e) => setNeu((n) => ({ ...n, stellplatz: e.target.value }))} />
           </label>
           <button className="btn btn-gold" disabled={adding} style={{ marginBottom: 2 }}>
-            {adding ? "Speichert…" : "＋ Zeitraum"}
+            {adding ? "Speichert…" : <><Plus size={14} style={{ verticalAlign: "-2px" }} /> Zeitraum</>}
           </button>
         </form>
       </div>

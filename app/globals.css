@@ -845,3 +845,7 @@ select:focus-visible, textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .haken-draw, .row-confirming { animation: none !important; }
 }
+
+/* lucide-Icons sauber in Nav/Buttons/Badges ausrichten */
+.btn svg, .nav-item .icon svg, .section-header svg, .badge svg { flex-shrink: 0; }
+.nav-item .icon { display: inline-flex; align-items: center; justify-content: center; }

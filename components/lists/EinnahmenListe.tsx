@@ -1,4 +1,5 @@
 "use client";
+import { Wallet } from "lucide-react";
 
 import { useState } from "react";
 import { euro, datum } from "@/lib/format";
@@ -46,7 +47,7 @@ export default function EinnahmenListe({
           </tr>
         ))}
         {rows.length === 0 && (
-          <tr><td colSpan={5}><div className="empty"><div className="empty-icon">💰</div><h4>Noch keine Einnahmen</h4><p>Erfasse Mietzahlungen, Kautionen oder sonstige Erträge.</p></div></td></tr>
+          <tr><td colSpan={5}><div className="empty"><Wallet className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Einnahmen</h4><p>Erfasse Mietzahlungen, Kautionen oder sonstige Erträge.</p></div></td></tr>
         )}
       </ExpandableRows>
 

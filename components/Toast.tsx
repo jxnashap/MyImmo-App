@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState } from "react";
+import { TriangleAlert, Info } from "lucide-react";
 
 type ToastType = "success" | "error" | "info";
 type ToastItem = { id: number; msg: string; type: ToastType };
@@ -45,7 +46,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             title="Schließen"
           >
             <span className="toast-icon" aria-hidden>
-              {t.type === "success" ? "✓" : t.type === "error" ? "⚠" : "ℹ"}
+              {t.type === "success" ? "✓" : t.type === "error" ? <TriangleAlert size={13} /> : <Info size={13} />}
             </span>
             <span>{t.msg}</span>
           </button>

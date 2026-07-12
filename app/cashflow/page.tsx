@@ -2,6 +2,7 @@
 // Donut (Einnahmen vs. Ausgaben + Kategorie-Drilldown) und die bestehenden
 // Buchungslisten (Zeilen-Edit/Beleg/Löschen unverändert).
 import Link from "next/link";
+import { Plus, Repeat, Wallet, ClipboardList } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { euro } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
@@ -96,7 +97,7 @@ export default async function CashflowPage({
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <a href="/api/export/buchungen" className="btn btn-ghost" style={{ fontSize: 12 }}>CSV-Export</a>
-          <Link href="/cashflow/neu" className="btn btn-gold">＋ Buchung</Link>
+          <Link href="/cashflow/neu" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Buchung</Link>
         </div>
       </div>
 
@@ -134,7 +135,7 @@ export default async function CashflowPage({
 
       {/* Wiederkehrende Buchungen — ausklappbar, nicht als eigener Reiter */}
       <AufklappSection
-        titel="🔁 Wiederkehrende Buchungen"
+        titel={<><Repeat size={16} style={{ verticalAlign: "-3px" }} /> Wiederkehrende Buchungen</>}
         untertitel={
           wkVorlagen.length > 0
             ? `${wkVorlagen.length} Vorlage${wkVorlagen.length === 1 ? "" : "n"} · Miete, Grundsteuer, Müll … automatisch im Zyklus erzeugen`
@@ -168,7 +169,7 @@ export default async function CashflowPage({
       {typ === "einnahme" && (
         <div className="section">
           <div className="section-header">
-            <h3>💰 Einnahmen</h3>
+            <h3><Wallet size={16} style={{ verticalAlign: "-3px" }} /> Einnahmen</h3>
             <span style={{ fontSize: 12, color: "var(--muted)" }}>{einnahmen.length} Buchungen · <span style={{ color: "var(--green)" }}>{euro(einnahmenTotal)}</span></span>
           </div>
           <div className="section-body">
@@ -179,7 +180,7 @@ export default async function CashflowPage({
       {typ === "ausgabe" && (
         <div className="section">
           <div className="section-header">
-            <h3>📋 Ausgaben</h3>
+            <h3><ClipboardList size={16} style={{ verticalAlign: "-3px" }} /> Ausgaben</h3>
             <span style={{ fontSize: 12, color: "var(--muted)" }}>{kosten.length} Buchungen · <span style={{ color: "var(--red)" }}>{euro(ausgabenTotal)}</span></span>
           </div>
           <div className="section-body">

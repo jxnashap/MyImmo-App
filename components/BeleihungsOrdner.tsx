@@ -1,4 +1,5 @@
 "use client";
+import { TriangleAlert } from "lucide-react";
 
 // Beleihungsordner: konditionale Bank-Checkliste mit Upload (Drag&Drop,
 // base64 ≤ 8 MB), Abhaken, Fortschritts-Ring, „Aus MyImmo erzeugen" und
@@ -467,7 +468,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                 </div>
                 {bonitaetGewaehlt && (
                   <div style={{ fontSize: 11.5, color: "var(--amber)", fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
-                    ⚠️ Bonitätsunterlagen enthalten persönliche/finanzielle Daten — nur bewusst teilen.
+                    <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> Bonitätsunterlagen enthalten persönliche/finanzielle Daten — nur bewusst teilen.
                   </div>
                 )}
                 <div className="field" style={{ marginBottom: 14 }}>

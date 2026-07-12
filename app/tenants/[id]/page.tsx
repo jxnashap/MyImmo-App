@@ -9,6 +9,7 @@ import DeleteButton from "@/components/DeleteButton";
 import type { Tenant, Property, MietZeitraum } from "@/lib/types";
 import MietZeitraeume from "@/components/MietZeitraeume";
 import { decryptNullable } from "@/lib/crypto/secure";
+import { ReceiptText, FileText, KeyRound, Pencil, Trash2, TriangleAlert } from "lucide-react";
 
 function Kachel({ label, value, color }: { label: string; value: React.ReactNode; color?: string }) {
   return (
@@ -69,7 +70,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
   const mieterIban = decryptNullable(m.iban);
   const fmtIban = (x: string) => x.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
   const mietart = m.mietart === "staffel" ? "Staffelmiete" : m.mietart === "index" ? "Indexmiete" : "Standard";
-  const kautionTxt = m.kaution_status === "ja" ? "✓ Vollständig" : m.kaution_status === "teilweise" ? "Teilweise" : "⚠️ Ausstehend";
+  const kautionTxt = m.kaution_status === "ja" ? "✓ Vollständig" : m.kaution_status === "teilweise" ? "Teilweise" : <><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> Ausstehend</>;
   const kautionCol = m.kaution_status === "ja" ? "var(--green)" : "var(--amber)";
 
   return (
@@ -83,11 +84,11 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ fontSize: 12 }}>🧾 NK-Abrechnung</Link>
-          <Link href={`/tenants/${m.id}/dokument`} className="btn btn-ghost" style={{ fontSize: 12 }}>📄 Dokument</Link>
-          <Link href={`/tenants/${m.id}/protokoll`} className="btn btn-ghost" style={{ fontSize: 12 }}>🔑 Protokoll</Link>
-          <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}>✏️ Bearbeiten</Link>
-          <DeleteButton action={deleteTenant.bind(null, m.id)} className="btn btn-ghost" label="🗑 Löschen" confirmText={`„${[m.vorname, m.nachname].filter(Boolean).join(" ")}" wirklich löschen?`} />
+          <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ fontSize: 12 }}><ReceiptText size={14} style={{ verticalAlign: "-2px" }} /> NK-Abrechnung</Link>
+          <Link href={`/tenants/${m.id}/dokument`} className="btn btn-ghost" style={{ fontSize: 12 }}><FileText size={14} style={{ verticalAlign: "-2px" }} /> Dokument</Link>
+          <Link href={`/tenants/${m.id}/protokoll`} className="btn btn-ghost" style={{ fontSize: 12 }}><KeyRound size={14} style={{ verticalAlign: "-2px" }} /> Protokoll</Link>
+          <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}><Pencil size={14} style={{ verticalAlign: "-2px" }} /> Bearbeiten</Link>
+          <DeleteButton action={deleteTenant.bind(null, m.id)} className="btn btn-ghost" label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>} confirmText={`„${[m.vorname, m.nachname].filter(Boolean).join(" ")}" wirklich löschen?`} />
         </div>
       </div>
 
@@ -188,7 +189,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
               const farbe = f.typ === "warn" ? "var(--red)" : f.typ === "ok" ? "var(--green)" : "var(--muted)";
               return (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
-                  <span style={{ color: farbe }}>{f.typ === "warn" ? "⚠️ " : f.typ === "ok" ? "✓ " : ""}{f.label}</span>
+                  <span style={{ color: farbe }}>{f.typ === "warn" ? <><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} />{" "}</> : f.typ === "ok" ? "✓ " : ""}{f.label}</span>
                   <span style={{ color: "var(--text)", fontWeight: 500 }}>{f.datum ? datum(f.datum) : "jetzt"}</span>
                 </div>
               );
