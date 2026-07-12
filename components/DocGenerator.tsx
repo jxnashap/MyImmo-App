@@ -37,6 +37,7 @@ export default function DocGenerator({
   ibans = [],
   vorlagen = {},
   initial,
+  hatUnterschrift = false,
 }: {
   tenant: Tenant;
   property: Property | null;
@@ -45,6 +46,8 @@ export default function DocGenerator({
   vorlagen?: Record<string, string>;
   /** Vorbefüllung (z. B. aus dem Rückstands-Wächter): art/betrag/datum/grund */
   initial?: { art?: string; betrag?: string; datum?: string; grund?: string };
+  /** true, wenn in den Einstellungen eine E-Signatur hinterlegt ist. */
+  hatUnterschrift?: boolean;
 }) {
   const initialAbsAdr = [
     vermieter?.strasse,
@@ -63,6 +66,7 @@ export default function DocGenerator({
   const [vAdr, setVAdr] = useState(initialAbsAdr);
   const [vorlageText, setVorlageText] = useState(vorlagen[startArt] ?? DEFAULT_VORLAGEN[startArt]);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [signieren, setSignieren] = useState(false);
   const [ablegen, startAblegen] = useTransition();
   const toast = useToast();
 
@@ -366,7 +370,7 @@ export default function DocGenerator({
           action={`/tenants/${tenant.id}/dokument/pdf`}
           method="POST"
           className="no-print"
-          style={{ marginTop: 14, display: "flex", justifyContent: "flex-end" }}
+          style={{ marginTop: 14, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, flexWrap: "wrap" }}
         >
           <input type="hidden" name="art" value={art} />
           <input type="hidden" name="datum" value={datum} />
@@ -376,17 +380,27 @@ export default function DocGenerator({
           <input type="hidden" name="vName" value={vName} />
           <input type="hidden" name="vAdr" value={vAdr} />
           <input type="hidden" name="text" value={vorlageText} />
+          <input type="hidden" name="signieren" value={signieren ? "1" : ""} />
+          {hatUnterschrift ? (
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--muted)", marginRight: "auto", cursor: "pointer" }}>
+              <input type="checkbox" checked={signieren} onChange={(e) => setSignieren(e.target.checked)} />
+              Digital signieren (E-Signatur einbetten)
+            </label>
+          ) : (
+            <span style={{ fontSize: 11, color: "var(--faint)", marginRight: "auto" }}>
+              Tipp: In den Einstellungen eine E-Signatur hinterlegen, um PDFs digital zu unterschreiben.
+            </span>
+          )}
           <button
             type="button"
             className="btn btn-outline"
             disabled={ablegen}
             onClick={() =>
               startAblegen(async () => {
-                const res = await speichereBrief(tenant.id, { art, datum, betrag, grund, ibanId, vName, vAdr, text: vorlageText });
+                const res = await speichereBrief(tenant.id, { art, datum, betrag, grund, ibanId, vName, vAdr, text: vorlageText, signieren: signieren ? "1" : "" });
                 toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.");
               })
             }
-            style={{ marginRight: 8 }}
           >
             {ablegen ? "Speichert…" : <><Save size={14} style={{ verticalAlign: "-2px" }} /> Speichern</>}
           </button>

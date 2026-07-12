@@ -74,6 +74,8 @@ export async function middleware(request: NextRequest) {
     pathname === "/anmelden" || // Rollen-Auswahl vor dem Login
     pathname.startsWith("/auth") ||
     pathname.startsWith("/beleihung/") ||
+    pathname.startsWith("/bewerben/") || // öffentliche Bewerber-Selbstauskunft
+
     pathname === "/impressum" ||
     pathname === "/agb" ||
     pathname === "/avv" || // im Login-Consent verlinkt — muss ohne Login lesbar sein

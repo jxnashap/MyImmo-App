@@ -7,10 +7,11 @@ export const dynamic = "force-dynamic";
 
 export default async function EinstellungenPage() {
   const supabase = createClient();
-  const [{ data }, { data: ibanRows }, { data: { user } }] = await Promise.all([
+  const [{ data }, { data: ibanRows }, { data: { user } }, { data: signatur }] = await Promise.all([
     supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
     supabase.from("ibans").select("*").order("created_at", { ascending: true }),
     supabase.auth.getUser(),
+    supabase.from("unterschriften").select("data").maybeSingle(),
   ]);
 
   return (
@@ -19,6 +20,7 @@ export default async function EinstellungenPage() {
       ibans={((ibanRows ?? []) as Iban[]).map(decryptIbanRow)}
       email={user?.email}
       provider={user?.app_metadata?.provider}
+      unterschrift={signatur?.data ?? null}
     />
   );
 }
