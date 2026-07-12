@@ -10,6 +10,7 @@ import { euro, datum } from "@/lib/format";
 import ExpandableRows from "@/components/ExpandableRows";
 import RowDialog from "@/components/RowDialog";
 import BuchungForm, { type BuchungRow } from "@/components/BuchungForm";
+import BelegFreigabeToggle from "@/components/BelegFreigabeToggle";
 import type { Einnahme, Kosten, Property, Tenant } from "@/lib/types";
 
 type Row = BuchungRow & { typ: "einnahme" | "ausgabe" };
@@ -58,16 +59,18 @@ export default function CashflowListe({
               <td style={{ color: "var(--muted)" }}>{r.beschreibung ?? ""}</td>
               <td>
                 {!istEin && r.rechnung_name ? (
-                  <a
-                    href={`/kosten/${r.id}/rechnung`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(ev) => ev.stopPropagation()}
-                    style={{ color: "var(--gold)", fontSize: 12, textDecoration: "none" }}
-                    title={r.rechnung_name}
-                  >
-                    {r.rechnung_name.toLowerCase().endsWith(".pdf") ? <FileText size={13} style={{ verticalAlign: "-2px" }} /> : <ImageIcon size={13} style={{ verticalAlign: "-2px" }} />} ansehen
-                  </a>
+                  <span onClick={(ev) => ev.stopPropagation()} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <a
+                      href={`/kosten/${r.id}/rechnung`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "var(--gold)", fontSize: 12, textDecoration: "none" }}
+                      title={r.rechnung_name}
+                    >
+                      {r.rechnung_name.toLowerCase().endsWith(".pdf") ? <FileText size={13} style={{ verticalAlign: "-2px" }} /> : <ImageIcon size={13} style={{ verticalAlign: "-2px" }} />} ansehen
+                    </a>
+                    <BelegFreigabeToggle kostenId={r.id} freigegeben={(r as unknown as Kosten).mieter_freigabe === true} />
+                  </span>
                 ) : (
                   <span style={{ color: "var(--faint)" }}>–</span>
                 )}

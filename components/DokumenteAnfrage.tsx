@@ -3,13 +3,14 @@
 // Mieterportal-Bereich "Dokumente": häufige Dokumente per Klick anfordern
 // (läuft über das Anliegen-System, typ = dokument) + Status der Anfragen.
 import { useState, useTransition } from "react";
-import { FileText, FileCheck2, ReceiptText, FileQuestion, ClipboardCheck, Zap, type LucideIcon } from "lucide-react";
+import { FileText, FileCheck2, ReceiptText, FileQuestion, ClipboardCheck, Zap, BadgeEuro, type LucideIcon } from "lucide-react";
 import { erstelleAnliegen } from "@/lib/actions/anliegen";
 import type { AnliegenRow } from "@/components/AnliegenPortal";
 
 const VORLAGEN: { titel: string; hinweis: string; icon: LucideIcon }[] = [
   { titel: "Mietbescheinigung", hinweis: "z. B. für Amt, Bank oder neuen Vermieter", icon: FileCheck2 },
   { titel: "Wohnungsgeberbestätigung", hinweis: "für die Anmeldung beim Einwohnermeldeamt (§ 19 BMG)", icon: ClipboardCheck },
+  { titel: "Mietquittung", hinweis: "Quittung über gezahlte Miete (§ 368 BGB)", icon: BadgeEuro },
   { titel: "Energieausweis", hinweis: "Energieausweis der Wohnung / des Gebäudes", icon: Zap },
   { titel: "Kopie des Mietvertrags", hinweis: "aktueller Vertrag inkl. Nachträge", icon: FileText },
   { titel: "Aktuelle Nebenkostenabrechnung", hinweis: "letzte NK-Abrechnung als PDF", icon: ReceiptText },

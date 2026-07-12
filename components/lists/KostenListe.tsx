@@ -8,6 +8,7 @@ import ExpandableRows from "@/components/ExpandableRows";
 import DeleteButton from "@/components/DeleteButton";
 import SubmitButton from "@/components/SubmitButton";
 import RowDialog from "@/components/RowDialog";
+import BelegFreigabeToggle from "@/components/BelegFreigabeToggle";
 import type { Kosten, Property, Tenant } from "@/lib/types";
 
 const KATEGORIEN = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
@@ -54,6 +55,7 @@ export default function KostenListe({
                     <a href={`/kosten/${k.id}/rechnung`} target="_blank" rel="noopener noreferrer" title={k.rechnung_name} style={{ color: "var(--gold)" }}>
                       {k.rechnung_type === "application/pdf" ? <FileText size={13} style={{ verticalAlign: "-2px" }} /> : k.rechnung_type?.startsWith("image/") ? <ImageIcon size={13} style={{ verticalAlign: "-2px" }} /> : <Paperclip size={13} style={{ verticalAlign: "-2px" }} />} ansehen
                     </a>
+                    <BelegFreigabeToggle kostenId={k.id} freigegeben={k.mieter_freigabe === true} />
                     <DeleteButton action={deleteRechnung.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText="Beleg entfernen?" />
                   </span>
                 ) : (

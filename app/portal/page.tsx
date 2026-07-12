@@ -2,7 +2,7 @@
 // Dokument-Anfragen — umgeschaltet über die Glass-Toolbar oben in der
 // Mitte (Businessplan Kap. 14 "Das Mieterportal").
 import Link from "next/link";
-import { Home, MessageSquareText, FileText, Gauge } from "lucide-react";
+import { Home, MessageSquareText, FileText, Gauge, Banknote, Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -15,6 +15,7 @@ import type { Tenant, Property } from "@/lib/types";
 const TABS = [
   { key: "wohnung", label: "Wohnung", icon: Home },
   { key: "anliegen", label: "Anliegen", icon: MessageSquareText },
+  { key: "zahlungen", label: "Zahlungen", icon: Banknote },
   { key: "dokumente", label: "Dokumente", icon: FileText },
   { key: "zaehler", label: "Zähler", icon: Gauge },
 ] as const;
@@ -89,6 +90,34 @@ export default async function PortalPage({
     .order("ablesedatum", { ascending: false })
     .limit(50);
   const zaehlerMeldungen = (zaehlerRows ?? []) as ZaehlerMeldungRow[];
+
+  // Vom Vermieter im Mietkonto bestätigte Zahlungen (RLS: nur eigene
+  // Miete/Nebenkosten-Einnahmen der verknüpften Mieter, § 368 BGB)
+  const { data: zahlungRows } = mieterIds.length
+    ? await supabase
+        .from("einnahmen")
+        .select("id,buchungsdatum,kategorie,betrag,beschreibung")
+        .in("mieter_id", mieterIds)
+        .order("buchungsdatum", { ascending: false })
+        .limit(200)
+    : { data: [] as { id: string; buchungsdatum: string | null; kategorie: string | null; betrag: number | null; beschreibung: string | null }[] };
+  const zahlungen = zahlungRows ?? [];
+  const jahr = new Date().getFullYear();
+  const summeJahr = zahlungen
+    .filter((z) => (z.buchungsdatum ?? "").startsWith(String(jahr)))
+    .reduce((s, z) => s + (z.betrag ?? 0), 0);
+
+  // Vom Vermieter freigegebene Kosten-Belege (§ 556 Abs. 4 BGB Belegeinsicht)
+  const { data: belegRows } = propIds.length
+    ? await supabase
+        .from("kosten")
+        .select("id,buchungsdatum,kategorie,betrag,beschreibung,rechnung_name")
+        .in("prop_id", propIds)
+        .eq("mieter_freigabe", true)
+        .order("buchungsdatum", { ascending: false })
+        .limit(200)
+    : { data: [] as { id: string; buchungsdatum: string | null; kategorie: string | null; betrag: number | null; beschreibung: string | null; rechnung_name: string | null }[] };
+  const belege = belegRows ?? [];
 
   const { data: dateiRows } = anliegen.length
     ? await supabase
@@ -211,6 +240,56 @@ export default async function PortalPage({
           </>
         )}
 
+        {tab === "zahlungen" && (
+          <>
+            <div className="topbar" style={{ marginBottom: 20 }}>
+              <div>
+                <div className="topbar-title">Zahlungen</div>
+                <div className="topbar-sub">Vom Vermieter bestätigte Miet- &amp; Nebenkostenzahlungen (§ 368 BGB)</div>
+              </div>
+            </div>
+            {wohnungen.length === 0 ? (
+              <div className="section"><div className="section-body" style={{ fontSize: 12, color: "var(--muted)" }}>
+                Erst mit verknüpfter Wohnung möglich — frage deinen Vermieter nach einem Einladungscode.
+              </div></div>
+            ) : (
+              <div className="section">
+                <div className="section-header">
+                  <h3><Banknote size={15} style={{ verticalAlign: "-2px" }} /> Zahlungsübersicht</h3>
+                  {zahlungen.length > 0 && (
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      {jahr}: <strong style={{ color: "var(--gold)" }}>{euro(summeJahr)}</strong>
+                    </span>
+                  )}
+                </div>
+                <div className="section-body">
+                  {zahlungen.length === 0 ? (
+                    <p style={{ fontSize: 12, color: "var(--faint)" }}>
+                      Noch keine bestätigten Zahlungen — sobald dein Vermieter deine Miete im
+                      Mietkonto verbucht, erscheint sie hier als Nachweis.
+                    </p>
+                  ) : (
+                    <>
+                      {zahlungen.map((z) => (
+                        <div key={z.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                          <span style={{ color: "var(--muted)", minWidth: 74 }}>{z.buchungsdatum ? datum(z.buchungsdatum) : "–"}</span>
+                          <span className={`badge ${z.kategorie === "Miete" ? "badge-green" : "badge-teal"}`}>{z.kategorie ?? "Zahlung"}</span>
+                          {z.beschreibung && <span style={{ color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{z.beschreibung}</span>}
+                          <span style={{ fontWeight: 600, color: "var(--green)", marginLeft: "auto" }}>{euro(z.betrag)}</span>
+                        </div>
+                      ))}
+                      <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 10 }}>
+                        Diese Übersicht zeigt alle Zahlungen, die dein Vermieter verbucht hat.
+                        Eine förmliche Mietquittung (§ 368 BGB) kannst du unter „Dokumente" anfordern.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
         {tab === "dokumente" && (
           <>
             <div className="topbar" style={{ marginBottom: 20 }}>
@@ -242,6 +321,33 @@ export default async function PortalPage({
                           <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{d.created_at ? datum(d.created_at) : ""}</span>
                           <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
                           <a href={`/archiv/${d.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div className="section">
+                  <div className="section-header">
+                    <h3><Receipt size={15} style={{ verticalAlign: "-2px" }} /> Belege (Belegeinsicht)</h3>
+                    <span style={{ fontSize: 11, color: "var(--muted)" }}>§ 556 Abs. 4 BGB</span>
+                  </div>
+                  <div className="section-body">
+                    {belege.length === 0 ? (
+                      <p style={{ fontSize: 12, color: "var(--faint)" }}>
+                        Noch keine Belege freigegeben — dein Vermieter kann dir hier Rechnungen
+                        zur Nebenkostenabrechnung zur Einsicht bereitstellen.
+                      </p>
+                    ) : (
+                      belege.map((b) => (
+                        <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                          <Receipt size={14} color="var(--gold)" />
+                          <span style={{ fontWeight: 600, color: "var(--text)" }}>{b.beschreibung || b.kategorie || b.rechnung_name || "Beleg"}</span>
+                          {b.kategorie && <span className="badge badge-teal">{b.kategorie}</span>}
+                          <span style={{ color: "var(--muted)" }}>{b.buchungsdatum ? datum(b.buchungsdatum) : ""}</span>
+                          <span style={{ fontWeight: 600, marginLeft: "auto" }}>{euro(b.betrag)}</span>
+                          {b.rechnung_name && (
+                            <a href={`/kosten/${b.id}/rechnung`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
+                          )}
                         </div>
                       ))
                     )}

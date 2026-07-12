@@ -23,6 +23,8 @@ async function archiviere(opts: {
   titel: string;
   dateiname: string;
   pdf: Uint8Array;
+  /** direkt im Mieterportal sichtbar machen */
+  mieterFreigabe?: boolean;
 }): Promise<DokumentResult> {
   const supabase = createClient();
 
@@ -45,6 +47,7 @@ async function archiviere(opts: {
     datei_type: "application/pdf",
     datei_size: opts.pdf.length,
     datei_data: dateiData,
+    mieter_freigabe: opts.mieterFreigabe ?? false,
   });
   if (error) return { ok: false, error: "Speichern im Archiv fehlgeschlagen." };
 
@@ -81,6 +84,7 @@ export async function speichereBrief(
 export async function speichereNk(
   mieterId: string,
   jahr: number,
+  zustellen = false,
 ): Promise<DokumentResult> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -96,6 +100,7 @@ export async function speichereNk(
       titel: doc.titel,
       dateiname: doc.dateiname,
       pdf: doc.pdf,
+      mieterFreigabe: zustellen,
     });
   } catch (e) {
     console.error("speichereNk:", e);
