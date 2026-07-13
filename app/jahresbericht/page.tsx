@@ -64,7 +64,12 @@ export default async function JahresberichtPage({
           <div className="topbar-title">Jahresbericht &amp; Steuer-Export</div>
           <div className="topbar-sub">Cashflow-Auswertung · Druckansicht</div>
         </div>
-        <Link href="/steuer" className="btn btn-ghost" style={{ fontSize: 12 }}>Steuerliche Auswertung (Anlage V) →</Link>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link href="/steuer" className="btn btn-ghost" style={{ fontSize: 12 }}>Steuerliche Auswertung (Anlage V) →</Link>
+          <a href={`/api/berichte/jahresbericht?jahr=${year}`} target="_blank" rel="noopener" className="btn btn-gold" style={{ fontSize: 12 }}>
+            PDF-Bericht
+          </a>
+        </div>
       </div>
 
       <FilterBar filters={filters} />
@@ -109,7 +114,7 @@ export default async function JahresberichtPage({
         </div>
       </div>
 
-      <p style={{ fontSize: 11, color: "var(--muted)" }}>Tipp: Diese Seite lässt sich per Cmd+P als PDF speichern oder drucken.</p>
+      <p style={{ fontSize: 11, color: "var(--muted)" }}>„PDF-Bericht" erzeugt den Jahresbericht als Dokument im MyImmo-Briefkopf — zum Ablegen, Versenden oder für den Steuerberater.</p>
     </div>
   );
 }

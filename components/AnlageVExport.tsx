@@ -85,13 +85,19 @@ export default function AnlageVExport({
           <div className="topbar-title"><span style={{ color: "var(--gold)", fontWeight: 700, marginRight: 4 }}>§</span> Steuer — Anlage V</div>
           <div className="topbar-sub">Einkünfte aus Vermietung & Verpachtung je Objekt — aus deinen Buchungen</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" className="btn btn-ghost" onClick={() => window.print()} style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <Printer size={14} /> Drucken
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" className="btn btn-ghost" onClick={exportCsv} style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Download size={14} /> CSV
           </button>
-          <button type="button" className="btn btn-gold" onClick={exportCsv} style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <Download size={14} /> CSV-Export
-          </button>
+          <a
+            className="btn btn-gold"
+            style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
+            href={`/api/berichte/anlage-v?jahr=${jahr}&anteil=${encodeURIComponent(gebaeudeAnteil)}&satz=${encodeURIComponent(satz.trim())}`}
+            target="_blank"
+            rel="noopener"
+          >
+            <Printer size={14} /> PDF-Aufstellung
+          </a>
         </div>
       </div>
 
