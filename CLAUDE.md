@@ -47,6 +47,10 @@ Entscheidungen aus der Planung (12.07.2026):
   Repo/Logs). Redirect-URL bei der App-Registrierung: `<base>/api/banking/callback`.
 
 ### Sonstiges (kein Geld)
+- **Onboarding-Guide für neue Nutzer:** Nach der Registrierung ein kleiner, durchklickbarer
+  Guide (Schritt-für-Schritt-Tour), der zeigt, wo man was einträgt und wie man die App benutzt —
+  z. B. erstes Objekt anlegen → Mieter erfassen → Ein-/Ausgaben buchen → Mietkonto/Dokumente/Steuer.
+  Überspringbar und später über die Einstellungen erneut startbar.
 - **Abo-Zugangscode (mit Bezahlsystem umsetzen):** Nach Abschluss/Bezahlung eines Abos erhält
   der Kunde einen individuellen Zugangscode (per E-Mail oder direkt in der App). Der Code ist
   abo-/rollenspezifisch (z. B. gilt ein Hausverwaltungs-Code nur für die Hausverwaltungs-
