@@ -2,7 +2,7 @@
 import SubmitButton from "@/components/SubmitButton";
 
 import { useMemo, useState } from "react";
-import { Building2, User, Tag, X, Download, Eye, FileText, Image as ImageIcon, Paperclip, Archive, Home, Plus } from "lucide-react";
+import { Building2, User, Tag, X, Download, Eye, FileText, Image as ImageIcon, Paperclip, Archive, Home, Plus, SlidersHorizontal } from "lucide-react";
 import Select from "@/components/filters/Select";
 import RowDialog from "@/components/RowDialog";
 import { createDokument, updateDokument, deleteDokument } from "@/lib/actions/archiv";
@@ -58,6 +58,7 @@ export default function ArchivManager({
   const [fMieter, setFMieter] = useState("");
   const [fArt, setFArt] = useState("");
   const [q, setQ] = useState("");
+  const [fbOpen, setFbOpen] = useState(false); // Mobile: Filter ein-/ausklappen
   const [showUpload, setShowUpload] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const offenDoc = docs.find((d) => d.id === editId) ?? null;
@@ -144,7 +145,10 @@ export default function ArchivManager({
 
       {/* Filter — sofort anwendend, gleiches Design wie app-weit */}
       <div className="filterbar">
-        <div className="fb-controls">
+        <button className="fb-toggle" type="button" aria-expanded={fbOpen} onClick={() => setFbOpen((o) => !o)}>
+          <SlidersHorizontal size={15} /> Filter{aktiveFilter ? " (aktiv)" : ""}
+        </button>
+        <div className={`fb-controls${fbOpen ? " open" : ""}`}>
           <Select
             value={fObjekt}
             ariaLabel="Objekt"
@@ -166,7 +170,7 @@ export default function ArchivManager({
             onChange={setFArt}
             options={[{ value: "", label: "Alle Arten" }, ...ARCHIV_ARTEN.map((a) => ({ value: a, label: a }))]}
           />
-          <input className="set-input" style={{ maxWidth: 200 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Suche: Titel, Dateiname…" aria-label="Suche" />
+          <input className="set-input fb-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Suche: Titel, Dateiname…" aria-label="Suche" />
         </div>
         <span className="fb-spacer" />
         <div className="fb-chips">
