@@ -21,6 +21,10 @@ export type Position = {
   aufteilung: string | null; // 'voll' | 'zeit' | 'verbrauch' | 'gradtag'
   verbrauch_mieter: number | null;
   verbrauch_gesamt: number | null;
+  // Spalten der klassischen Betriebskostenabrechnung (Anzeige im PDF):
+  gesamt_betrag: number | null; // Gesamtkosten des Hauses
+  basis_text: string | null; // z. B. "5 Wohnungen", "352,16 qm", "manuell"
+  anteil_text: string | null; // z. B. "1" oder "67,08 qm"
 };
 
 const AUFTEILUNG_OPTIONEN = [
@@ -54,6 +58,9 @@ type RowState = {
   aufteilung: string; // 'voll' | 'zeit' | 'verbrauch' | 'gradtag'
   vm: string; // Verbrauch Mieter (nur 'verbrauch')
   vg: string; // Verbrauch gesamt (nur 'verbrauch')
+  gesamt: string; // Gesamtkosten Haus (Spalte "Betriebskostenabrechnung")
+  basis: string; // Basis-Text
+  anteil: string; // Anteil-Text
 };
 
 const normAufteilung = (v: string | null) =>
@@ -69,6 +76,9 @@ const toRow = (p: Position): RowState => ({
   aufteilung: normAufteilung(p.aufteilung),
   vm: p.verbrauch_mieter != null ? String(p.verbrauch_mieter) : "",
   vg: p.verbrauch_gesamt != null ? String(p.verbrauch_gesamt) : "",
+  gesamt: p.gesamt_betrag != null ? String(p.gesamt_betrag) : "",
+  basis: p.basis_text ?? "",
+  anteil: p.anteil_text ?? "",
 });
 
 const parseBetrag = (s: string): number | null => {
@@ -100,6 +110,9 @@ export default function PositionsManager({
   const [nAuf, setNAuf] = useState("voll");
   const [nVm, setNVm] = useState("");
   const [nVg, setNVg] = useState("");
+  const [nGesamt, setNGesamt] = useState("");
+  const [nBasis, setNBasis] = useState("");
+  const [nAnteil, setNAnteil] = useState("");
   const [adding, startAdd] = useTransition();
 
   const total = rows.reduce((s, r) => s + (parseBetrag(r.betrag) ?? 0), 0);
@@ -119,6 +132,9 @@ export default function PositionsManager({
       aufteilung: r.aufteilung,
       verbrauch_mieter: parseBetrag(r.vm),
       verbrauch_gesamt: parseBetrag(r.vg),
+      gesamt_betrag: parseBetrag(r.gesamt),
+      basis_text: r.basis.trim() || null,
+      anteil_text: r.anteil.trim() || null,
     };
     if (
       orig &&
@@ -129,7 +145,10 @@ export default function PositionsManager({
       !!orig.umlagefaehig === neu.umlagefaehig &&
       normAufteilung(orig.aufteilung) === neu.aufteilung &&
       (orig.verbrauch_mieter ?? null) === neu.verbrauch_mieter &&
-      (orig.verbrauch_gesamt ?? null) === neu.verbrauch_gesamt
+      (orig.verbrauch_gesamt ?? null) === neu.verbrauch_gesamt &&
+      (orig.gesamt_betrag ?? null) === neu.gesamt_betrag &&
+      (orig.basis_text ?? null) === neu.basis_text &&
+      (orig.anteil_text ?? null) === neu.anteil_text
     )
       return; // nichts geändert
     if (!neu.bezeichnung) return; // leere Bezeichnung nicht speichern
@@ -163,6 +182,9 @@ export default function PositionsManager({
     fd.set("aufteilung", nAuf);
     fd.set("verbrauch_mieter", nVm);
     fd.set("verbrauch_gesamt", nVg);
+    fd.set("gesamt_betrag", nGesamt);
+    fd.set("basis_text", nBasis);
+    fd.set("anteil_text", nAnteil);
     startAdd(async () => {
       await addPosition(mieterId, fd);
       setNBez("");
@@ -173,6 +195,9 @@ export default function PositionsManager({
       setNAuf("voll");
       setNVm("");
       setNVg("");
+      setNGesamt("");
+      setNBasis("");
+      setNAnteil("");
       toast("Position hinzugefügt ✓");
       router.refresh();
     });
@@ -201,6 +226,9 @@ export default function PositionsManager({
                 <th className="px-3 py-2 font-medium">Schlüssel</th>
                 <th className="px-3 py-2 font-medium">Umlage</th>
                 <th className="px-3 py-2 font-medium">Aufteilung</th>
+                <th className="px-3 py-2 text-right font-medium" title="Gesamtkosten des Hauses laut Betriebskostenabrechnung">Gesamt (Haus)</th>
+                <th className="px-3 py-2 font-medium" title="Umlage-Basis, z. B. 5 Wohnungen / 352,16 qm / manuell">Basis</th>
+                <th className="px-3 py-2 font-medium" title="Anteil der Wohnung, z. B. 1 oder 67,08 qm">Anteil</th>
                 <th className="px-3 py-2 text-right font-medium">Betrag</th>
                 <th className="px-3 py-2"></th>
               </tr>
@@ -310,6 +338,37 @@ export default function PositionsManager({
                   </td>
                   <td className="px-3 py-1.5 text-right">
                     <input
+                      className="input w-24 text-right"
+                      type="number"
+                      step="0.01"
+                      placeholder="–"
+                      value={r.gesamt}
+                      onChange={(e) => setRow(r.id, { gesamt: e.target.value })}
+                      onBlur={() => speichere({ ...r })}
+                    />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <input
+                      className="input"
+                      style={{ width: 110 }}
+                      placeholder="z. B. 5 Wohnungen"
+                      value={r.basis}
+                      onChange={(e) => setRow(r.id, { basis: e.target.value })}
+                      onBlur={() => speichere({ ...r })}
+                    />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <input
+                      className="input"
+                      style={{ width: 90 }}
+                      placeholder="z. B. 67,08 qm"
+                      value={r.anteil}
+                      onChange={(e) => setRow(r.id, { anteil: e.target.value })}
+                      onBlur={() => speichere({ ...r })}
+                    />
+                  </td>
+                  <td className="px-3 py-1.5 text-right">
+                    <input
                       className="input w-28 text-right"
                       type="number"
                       step="0.01"
@@ -407,6 +466,18 @@ export default function PositionsManager({
             </label>
           </>
         )}
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-[var(--muted)]" title="Gesamtkosten des Hauses laut Betriebskostenabrechnung">Gesamt Haus (€)</span>
+          <input type="number" step="0.01" className="input w-28" value={nGesamt} onChange={(e) => setNGesamt(e.target.value)} placeholder="–" />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-[var(--muted)]">Basis</span>
+          <input className="input w-32" value={nBasis} onChange={(e) => setNBasis(e.target.value)} placeholder="z. B. 5 Wohnungen" />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-[var(--muted)]">Anteil</span>
+          <input className="input w-28" value={nAnteil} onChange={(e) => setNAnteil(e.target.value)} placeholder="z. B. 67,08 qm" />
+        </label>
         <label className="flex items-center gap-2 pb-2 text-sm text-[var(--muted)]">
           <input
             type="checkbox"

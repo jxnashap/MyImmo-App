@@ -234,7 +234,7 @@ export async function generiereBeleihungDokument(propId: string, itemKey: string
   for (const m of mieterAktiv) {
     const { data: positions } = await supabase
       .from("mieter_positionen")
-      .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt")
+      .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,gesamt_betrag,basis_text,anteil_text")
       .eq("mieter_id", m.id)
       .order("created_at");
     const posJahr = (positions ?? []).filter((p) => p.jahr == null || p.jahr === jahr);

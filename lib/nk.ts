@@ -16,6 +16,10 @@ export type NkRawPosition = {
   aufteilung?: string | null;
   verbrauch_mieter?: number | null; // z. B. kWh des Mieters (nur 'verbrauch')
   verbrauch_gesamt?: number | null; // Gesamtverbrauch des Jahres (nur 'verbrauch')
+  // Anzeige-Spalten im Layout der klassischen Betriebskostenabrechnung:
+  gesamt_betrag?: number | null; // Gesamtkosten des Hauses (Spalte „Betriebskostenabrechnung")
+  basis_text?: string | null; // z. B. "5 Wohnungen", "352,16 qm", "manuell"
+  anteil_text?: string | null; // z. B. "1" oder "67,08 qm"
 };
 
 export type NkTenant = {
@@ -40,6 +44,10 @@ export type NkLine = {
   betrag: number; // bei 'zeit' bereits der anteilige Betrag
   basis?: number; // Jahresgesamtkosten (nur bei 'zeit')
   faktorText?: string; // z. B. "181/365 Tage" (nur bei 'zeit')
+  // Spalten der klassischen Betriebskostenabrechnung (Anzeige, optional):
+  gesamtBetrag?: number | null; // Gesamtkosten des Hauses
+  basisText?: string | null; // Umlage-Basis, z. B. "5 Wohnungen"
+  anteilText?: string | null; // Anteil der Wohnung, z. B. "67,08 qm"
 };
 
 // Eingaben von der Brennstoffrechnung (Tabelle nk_co2, je Mieter + Jahr).
@@ -222,7 +230,13 @@ export function berechneNk(
     .filter((p) => p.umlagefaehig === true)
     .map((p) => {
       const basis = p.betrag ?? 0;
-      const kopf = { bezeichnung: p.bezeichnung, umlageschluessel: p.umlageschluessel };
+      const kopf = {
+        bezeichnung: p.bezeichnung,
+        umlageschluessel: p.umlageschluessel,
+        gesamtBetrag: p.gesamt_betrag ?? null,
+        basisText: p.basis_text ?? null,
+        anteilText: p.anteil_text ?? null,
+      };
 
       if (p.aufteilung === "zeit") {
         // Betrag = Jahresgesamtkosten → tagegenau nach Belegung aufteilen.

@@ -237,11 +237,25 @@ export async function buildNkPdf(
   }
   y -= 12;
 
-  // ---- Tabelle ----
-  const colSchluessel = 330;
-  text(ML, y, "Umlagefähige Position", 9, bold, MUTED);
-  text(colSchluessel, y, "Umlageschlüssel", 9, bold, MUTED);
-  right(RIGHT, y, "Betrag", 9, bold, MUTED);
+  // ---- Tabelle im Layout der klassischen Betriebskostenabrechnung ----
+  // Position | Betriebskostenabrechnung (Gesamt) | Basis | Anteil Wohnung | Zeitraum
+  const colGesamt = ML + 226; // rechte Kante Spalte „Betriebskostenabrechnung"
+  const colBasis = ML + 300; // Mitte Spalte „Basis"
+  const colAnteil = ML + 380; // Mitte Spalte „Anteil"
+  const center = (cx: number, yy: number, s: string, size = 10, f: PDFFont = font, color = INK) => {
+    const ss = sanitize(s);
+    page.drawText(ss, { x: cx - f.widthOfTextAtSize(ss, size) / 2, y: yy, size, font: f, color });
+  };
+
+  const zeitraumKopf = `${deDatum(a.zeitraumVon).slice(0, 6)}-${deDatum(a.zeitraumBis)}`;
+  text(ML, y + 10, "Position", 9, bold, MUTED);
+  // zweizeilige Köpfe wie in der Vorlage — verhindert Kollisionen der Spalten
+  right(colGesamt, y + 10, "Betriebskosten-", 9, bold, MUTED);
+  right(colGesamt, y, "abrechnung", 9, bold, MUTED);
+  center(colBasis, y + 5, "Basis", 9, bold, MUTED);
+  center(colAnteil, y + 10, "Anteil", 9, bold, MUTED);
+  center(colAnteil, y, fit(a.einheit || "Wohnung", 9, 70), 9, bold, MUTED);
+  right(RIGHT, y + 5, zeitraumKopf, 9, bold, MUTED);
   y -= 6;
   hline(y, ML, RIGHT, INK, 0.8);
   y -= 16;
@@ -253,9 +267,15 @@ export async function buildNkPdf(
     for (const p of a.positionen) {
       const zeit = !!p.faktorText;
       y = neueSeiteWennNoetig(y, zeit ? 27 : 15);
-      text(ML, y, fit(p.bezeichnung, 10, colSchluessel - ML - 12), 10, font, INK);
-      text(colSchluessel, y, p.umlageschluessel || "—", 10, font, MUTED);
-      right(RIGHT, y, euro(p.betrag), 10, font, INK);
+      text(ML, y, fit(p.bezeichnung, 9.5, colGesamt - ML - 92), 9.5, font, INK);
+      // Gesamtkosten des Hauses: eigene Spalte, sonst Jahreskosten der Aufteilung
+      const gesamt = p.gesamtBetrag ?? (zeit ? p.basis ?? null : null);
+      if (gesamt != null) right(colGesamt, y, euro(gesamt), 9.5, font, INK);
+      // Basis: eigener Text, sonst Umlageschlüssel („manuell" bei direkter Eingabe)
+      const basisText = p.basisText || p.umlageschluessel || (gesamt != null ? "manuell" : "");
+      if (basisText) center(colBasis, y, fit(basisText, 9, 88), 9, font, MUTED);
+      if (p.anteilText) center(colAnteil, y, fit(p.anteilText, 9, 78), 9, font, MUTED);
+      right(RIGHT, y, euro(p.betrag), 9.5, font, INK);
       y -= 15;
       if (zeit) {
         // Aufteilungsfaktor: Jahreskosten × Belegungstage, z. B. "1.200,00 € × 181/365 Tage"

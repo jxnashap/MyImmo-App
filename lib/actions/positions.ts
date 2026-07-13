@@ -41,6 +41,9 @@ export async function addPosition(mieterId: string, formData: FormData) {
     aufteilung: aufteilungOk(formData.get("aufteilung")),
     verbrauch_mieter: numOderNull(formData.get("verbrauch_mieter")),
     verbrauch_gesamt: numOderNull(formData.get("verbrauch_gesamt")),
+    gesamt_betrag: numOderNull(formData.get("gesamt_betrag")),
+    basis_text: (formData.get("basis_text") as string)?.trim() || null,
+    anteil_text: (formData.get("anteil_text") as string)?.trim() || null,
   });
   if (error) throw new Error(error.message);
 
@@ -87,6 +90,9 @@ export async function updatePosition(
     aufteilung?: string;
     verbrauch_mieter?: number | null;
     verbrauch_gesamt?: number | null;
+    gesamt_betrag?: number | null;
+    basis_text?: string | null;
+    anteil_text?: string | null;
   },
 ): Promise<{ ok: boolean }> {
   const supabase = createClient();
@@ -104,6 +110,9 @@ export async function updatePosition(
       aufteilung: aufteilungOk(f.aufteilung),
       verbrauch_mieter: f.verbrauch_mieter ?? null,
       verbrauch_gesamt: f.verbrauch_gesamt ?? null,
+      gesamt_betrag: f.gesamt_betrag ?? null,
+      basis_text: f.basis_text?.trim() || null,
+      anteil_text: f.anteil_text?.trim() || null,
     })
     .eq("id", id);
 

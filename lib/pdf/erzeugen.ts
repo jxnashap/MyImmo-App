@@ -179,7 +179,7 @@ export async function erzeugeNkPdf(
         : Promise.resolve({ data: null }),
       supabase
         .from("mieter_positionen")
-        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt")
+        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,gesamt_betrag,basis_text,anteil_text")
         .eq("mieter_id", mieterId)
         .order("created_at"),
       supabase
