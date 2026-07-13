@@ -87,12 +87,40 @@ const parseBetrag = (s: string): number | null => {
   return Number.isNaN(n) ? null : n;
 };
 
+// Führende Zahl aus einem Basis-/Anteil-Text ziehen ("352,16 qm" → 352.16,
+// "5 Wohnungen" → 5). Null, wenn keine Zahl am Anfang steht.
+const zahlAus = (s: string): number | null => {
+  const m = s.trim().match(/^-?\d+(?:[.,]\d+)?/);
+  if (!m) return null;
+  const n = Number(m[0].replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+};
+
+// Mieteranteil nach BGH-Schema: Gesamtkosten × Anteil ÷ Basis (auf Cent gerundet).
+const umlageBetrag = (gesamt: string, basis: string, anteil: string): number | null => {
+  const g = parseBetrag(gesamt);
+  const b = zahlAus(basis);
+  const a = zahlAus(anteil);
+  if (g == null || b == null || a == null || !(b > 0) || a < 0) return null;
+  return Math.round(((g * a) / b) * 100) / 100;
+};
+
+export type UmlageVorschlaege = {
+  mieterFlaeche: number | null; // Wohnfläche des Mieters (qm)
+  objektFlaeche: number | null; // Gesamtfläche des Objekts (qm)
+  einheiten: number | null; // Zahl der Wohneinheiten im Objekt
+};
+
+const qm = (n: number) => `${String(n).replace(".", ",")} qm`;
+
 export default function PositionsManager({
   mieterId,
   positions,
+  vorschlaege,
 }: {
   mieterId: string;
   positions: Position[];
+  vorschlaege?: UmlageVorschlaege;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -119,6 +147,19 @@ export default function PositionsManager({
 
   const setRow = (id: string, patch: Partial<RowState>) =>
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+
+  // Durchrechnung beim Verlassen von Gesamt/Basis/Anteil: ist das Betragsfeld
+  // leer, wird der Mieteranteil (Gesamt × Anteil ÷ Basis) direkt eingesetzt.
+  const rechneUndSpeichere = (r: RowState) => {
+    const v = umlageBetrag(r.gesamt, r.basis, r.anteil);
+    if (v != null && !r.betrag.trim()) {
+      const mitBetrag = { ...r, betrag: String(v) };
+      setRow(r.id, { betrag: String(v) });
+      speichere(mitBetrag);
+      return;
+    }
+    speichere(r);
+  };
 
   // Autosave: nur wenn sich gegenüber dem gespeicherten Stand etwas geändert hat.
   const speichere = (r: RowState) => {
@@ -173,9 +214,11 @@ export default function PositionsManager({
 
   const hinzufuegen = () => {
     if (!nBez.trim() || adding) return;
+    const auto = umlageBetrag(nGesamt, nBasis, nAnteil);
+    const betragFinal = nBetrag.trim() === "" && auto != null ? String(auto) : nBetrag;
     const fd = new FormData();
     fd.set("bezeichnung", nBez.trim());
-    fd.set("betrag", nBetrag);
+    fd.set("betrag", betragFinal);
     fd.set("jahr", String(nJahr));
     fd.set("umlageschluessel", nSchl);
     if (nUml) fd.set("umlagefaehig", "on");
@@ -266,8 +309,15 @@ export default function PositionsManager({
                       className="input"
                       value={r.umlageschluessel}
                       onChange={(e) => {
-                        setRow(r.id, { umlageschluessel: e.target.value });
-                        speichere({ ...r, umlageschluessel: e.target.value });
+                        const schl = e.target.value;
+                        // Basis/Anteil aus Stammdaten vorschlagen (nur leere Felder füllen)
+                        const patch: Partial<RowState> = { umlageschluessel: schl };
+                        if (schl === "Fläche" && vorschlaege?.objektFlaeche && !r.basis.trim()) patch.basis = qm(vorschlaege.objektFlaeche);
+                        if (schl === "Fläche" && vorschlaege?.mieterFlaeche && !r.anteil.trim()) patch.anteil = qm(vorschlaege.mieterFlaeche);
+                        if ((schl === "Einheit" || schl === "Anzahl") && vorschlaege?.einheiten && !r.basis.trim()) patch.basis = `${vorschlaege.einheiten} Wohnungen`;
+                        if ((schl === "Einheit" || schl === "Anzahl") && !r.anteil.trim()) patch.anteil = "1";
+                        setRow(r.id, patch);
+                        speichere({ ...r, ...patch } as RowState);
                       }}
                     >
                       <option value="">—</option>
@@ -344,7 +394,7 @@ export default function PositionsManager({
                       placeholder="–"
                       value={r.gesamt}
                       onChange={(e) => setRow(r.id, { gesamt: e.target.value })}
-                      onBlur={() => speichere({ ...r })}
+                      onBlur={() => rechneUndSpeichere({ ...r })}
                     />
                   </td>
                   <td className="px-3 py-1.5">
@@ -354,7 +404,7 @@ export default function PositionsManager({
                       placeholder="z. B. 5 Wohnungen"
                       value={r.basis}
                       onChange={(e) => setRow(r.id, { basis: e.target.value })}
-                      onBlur={() => speichere({ ...r })}
+                      onBlur={() => rechneUndSpeichere({ ...r })}
                     />
                   </td>
                   <td className="px-3 py-1.5">
@@ -364,7 +414,7 @@ export default function PositionsManager({
                       placeholder="z. B. 67,08 qm"
                       value={r.anteil}
                       onChange={(e) => setRow(r.id, { anteil: e.target.value })}
-                      onBlur={() => speichere({ ...r })}
+                      onBlur={() => rechneUndSpeichere({ ...r })}
                     />
                   </td>
                   <td className="px-3 py-1.5 text-right">
@@ -376,6 +426,25 @@ export default function PositionsManager({
                       onChange={(e) => setRow(r.id, { betrag: e.target.value })}
                       onBlur={() => speichere({ ...r })}
                     />
+                    {(() => {
+                      const v = umlageBetrag(r.gesamt, r.basis, r.anteil);
+                      const akt = parseBetrag(r.betrag);
+                      if (v == null || akt === v) return null;
+                      return (
+                        <button
+                          type="button"
+                          className="text-[11px] text-[var(--gold)] hover:underline"
+                          style={{ display: "block", marginLeft: "auto", marginTop: 2 }}
+                          title="Gesamt × Anteil ÷ Basis"
+                          onClick={() => {
+                            setRow(r.id, { betrag: String(v) });
+                            speichere({ ...r, betrag: String(v) });
+                          }}
+                        >
+                          → {eur2(v)} übernehmen
+                        </button>
+                      );
+                    })()}
                   </td>
                   <td className="px-3 py-1.5 text-right">
                     <button
@@ -427,7 +496,17 @@ export default function PositionsManager({
             className="input w-28"
             value={nBetrag}
             onChange={(e) => setNBetrag(e.target.value)}
+            placeholder={(() => { const v = umlageBetrag(nGesamt, nBasis, nAnteil); return v != null ? String(v) : ""; })()}
           />
+          {(() => {
+            const v = umlageBetrag(nGesamt, nBasis, nAnteil);
+            if (v == null || parseBetrag(nBetrag) === v) return null;
+            return (
+              <button type="button" className="text-[11px] text-[var(--gold)] hover:underline text-left" title="Gesamt × Anteil ÷ Basis" onClick={() => setNBetrag(String(v))}>
+                → {eur2(v)} übernehmen
+              </button>
+            );
+          })()}
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-[var(--muted)]">Jahr</span>
@@ -439,7 +518,18 @@ export default function PositionsManager({
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-[var(--muted)]">Umlageschlüssel</span>
-          <select className="input" value={nSchl} onChange={(e) => setNSchl(e.target.value)}>
+          <select
+            className="input"
+            value={nSchl}
+            onChange={(e) => {
+              const schl = e.target.value;
+              setNSchl(schl);
+              if (schl === "Fläche" && vorschlaege?.objektFlaeche && !nBasis.trim()) setNBasis(qm(vorschlaege.objektFlaeche));
+              if (schl === "Fläche" && vorschlaege?.mieterFlaeche && !nAnteil.trim()) setNAnteil(qm(vorschlaege.mieterFlaeche));
+              if ((schl === "Einheit" || schl === "Anzahl") && vorschlaege?.einheiten && !nBasis.trim()) setNBasis(`${vorschlaege.einheiten} Wohnungen`);
+              if ((schl === "Einheit" || schl === "Anzahl") && !nAnteil.trim()) setNAnteil("1");
+            }}
+          >
             <option value="">—</option>
             {SCHLUESSEL.map((s) => (
               <option key={s} value={s}>{s}</option>
