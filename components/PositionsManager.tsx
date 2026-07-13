@@ -21,6 +21,10 @@ export type Position = {
   aufteilung: string | null; // 'voll' | 'zeit' | 'verbrauch' | 'gradtag'
   verbrauch_mieter: number | null;
   verbrauch_gesamt: number | null;
+  // Spalten der klassischen Betriebskostenabrechnung (Anzeige im PDF):
+  gesamt_betrag: number | null; // Gesamtkosten des Hauses
+  basis_text: string | null; // z. B. "5 Wohnungen", "352,16 qm", "manuell"
+  anteil_text: string | null; // z. B. "1" oder "67,08 qm"
 };
 
 const AUFTEILUNG_OPTIONEN = [
@@ -54,6 +58,9 @@ type RowState = {
   aufteilung: string; // 'voll' | 'zeit' | 'verbrauch' | 'gradtag'
   vm: string; // Verbrauch Mieter (nur 'verbrauch')
   vg: string; // Verbrauch gesamt (nur 'verbrauch')
+  gesamt: string; // Gesamtkosten Haus (Spalte "Betriebskostenabrechnung")
+  basis: string; // Basis-Text
+  anteil: string; // Anteil-Text
 };
 
 const normAufteilung = (v: string | null) =>
@@ -69,6 +76,9 @@ const toRow = (p: Position): RowState => ({
   aufteilung: normAufteilung(p.aufteilung),
   vm: p.verbrauch_mieter != null ? String(p.verbrauch_mieter) : "",
   vg: p.verbrauch_gesamt != null ? String(p.verbrauch_gesamt) : "",
+  gesamt: p.gesamt_betrag != null ? String(p.gesamt_betrag) : "",
+  basis: p.basis_text ?? "",
+  anteil: p.anteil_text ?? "",
 });
 
 const parseBetrag = (s: string): number | null => {
@@ -77,12 +87,40 @@ const parseBetrag = (s: string): number | null => {
   return Number.isNaN(n) ? null : n;
 };
 
+// Führende Zahl aus einem Basis-/Anteil-Text ziehen ("352,16 qm" → 352.16,
+// "5 Wohnungen" → 5). Null, wenn keine Zahl am Anfang steht.
+const zahlAus = (s: string): number | null => {
+  const m = s.trim().match(/^-?\d+(?:[.,]\d+)?/);
+  if (!m) return null;
+  const n = Number(m[0].replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+};
+
+// Mieteranteil nach BGH-Schema: Gesamtkosten × Anteil ÷ Basis (auf Cent gerundet).
+const umlageBetrag = (gesamt: string, basis: string, anteil: string): number | null => {
+  const g = parseBetrag(gesamt);
+  const b = zahlAus(basis);
+  const a = zahlAus(anteil);
+  if (g == null || b == null || a == null || !(b > 0) || a < 0) return null;
+  return Math.round(((g * a) / b) * 100) / 100;
+};
+
+export type UmlageVorschlaege = {
+  mieterFlaeche: number | null; // Wohnfläche des Mieters (qm)
+  objektFlaeche: number | null; // Gesamtfläche des Objekts (qm)
+  einheiten: number | null; // Zahl der Wohneinheiten im Objekt
+};
+
+const qm = (n: number) => `${String(n).replace(".", ",")} qm`;
+
 export default function PositionsManager({
   mieterId,
   positions,
+  vorschlaege,
 }: {
   mieterId: string;
   positions: Position[];
+  vorschlaege?: UmlageVorschlaege;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -100,12 +138,28 @@ export default function PositionsManager({
   const [nAuf, setNAuf] = useState("voll");
   const [nVm, setNVm] = useState("");
   const [nVg, setNVg] = useState("");
+  const [nGesamt, setNGesamt] = useState("");
+  const [nBasis, setNBasis] = useState("");
+  const [nAnteil, setNAnteil] = useState("");
   const [adding, startAdd] = useTransition();
 
   const total = rows.reduce((s, r) => s + (parseBetrag(r.betrag) ?? 0), 0);
 
   const setRow = (id: string, patch: Partial<RowState>) =>
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+
+  // Durchrechnung beim Verlassen von Gesamt/Basis/Anteil: ist das Betragsfeld
+  // leer, wird der Mieteranteil (Gesamt × Anteil ÷ Basis) direkt eingesetzt.
+  const rechneUndSpeichere = (r: RowState) => {
+    const v = umlageBetrag(r.gesamt, r.basis, r.anteil);
+    if (v != null && !r.betrag.trim()) {
+      const mitBetrag = { ...r, betrag: String(v) };
+      setRow(r.id, { betrag: String(v) });
+      speichere(mitBetrag);
+      return;
+    }
+    speichere(r);
+  };
 
   // Autosave: nur wenn sich gegenüber dem gespeicherten Stand etwas geändert hat.
   const speichere = (r: RowState) => {
@@ -119,6 +173,9 @@ export default function PositionsManager({
       aufteilung: r.aufteilung,
       verbrauch_mieter: parseBetrag(r.vm),
       verbrauch_gesamt: parseBetrag(r.vg),
+      gesamt_betrag: parseBetrag(r.gesamt),
+      basis_text: r.basis.trim() || null,
+      anteil_text: r.anteil.trim() || null,
     };
     if (
       orig &&
@@ -129,7 +186,10 @@ export default function PositionsManager({
       !!orig.umlagefaehig === neu.umlagefaehig &&
       normAufteilung(orig.aufteilung) === neu.aufteilung &&
       (orig.verbrauch_mieter ?? null) === neu.verbrauch_mieter &&
-      (orig.verbrauch_gesamt ?? null) === neu.verbrauch_gesamt
+      (orig.verbrauch_gesamt ?? null) === neu.verbrauch_gesamt &&
+      (orig.gesamt_betrag ?? null) === neu.gesamt_betrag &&
+      (orig.basis_text ?? null) === neu.basis_text &&
+      (orig.anteil_text ?? null) === neu.anteil_text
     )
       return; // nichts geändert
     if (!neu.bezeichnung) return; // leere Bezeichnung nicht speichern
@@ -154,15 +214,20 @@ export default function PositionsManager({
 
   const hinzufuegen = () => {
     if (!nBez.trim() || adding) return;
+    const auto = umlageBetrag(nGesamt, nBasis, nAnteil);
+    const betragFinal = nBetrag.trim() === "" && auto != null ? String(auto) : nBetrag;
     const fd = new FormData();
     fd.set("bezeichnung", nBez.trim());
-    fd.set("betrag", nBetrag);
+    fd.set("betrag", betragFinal);
     fd.set("jahr", String(nJahr));
     fd.set("umlageschluessel", nSchl);
     if (nUml) fd.set("umlagefaehig", "on");
     fd.set("aufteilung", nAuf);
     fd.set("verbrauch_mieter", nVm);
     fd.set("verbrauch_gesamt", nVg);
+    fd.set("gesamt_betrag", nGesamt);
+    fd.set("basis_text", nBasis);
+    fd.set("anteil_text", nAnteil);
     startAdd(async () => {
       await addPosition(mieterId, fd);
       setNBez("");
@@ -173,6 +238,9 @@ export default function PositionsManager({
       setNAuf("voll");
       setNVm("");
       setNVg("");
+      setNGesamt("");
+      setNBasis("");
+      setNAnteil("");
       toast("Position hinzugefügt ✓");
       router.refresh();
     });
@@ -201,6 +269,9 @@ export default function PositionsManager({
                 <th className="px-3 py-2 font-medium">Schlüssel</th>
                 <th className="px-3 py-2 font-medium">Umlage</th>
                 <th className="px-3 py-2 font-medium">Aufteilung</th>
+                <th className="px-3 py-2 text-right font-medium" title="Gesamtkosten des Hauses laut Betriebskostenabrechnung">Gesamt (Haus)</th>
+                <th className="px-3 py-2 font-medium" title="Umlage-Basis, z. B. 5 Wohnungen / 352,16 qm / manuell">Basis</th>
+                <th className="px-3 py-2 font-medium" title="Anteil der Wohnung, z. B. 1 oder 67,08 qm">Anteil</th>
                 <th className="px-3 py-2 text-right font-medium">Betrag</th>
                 <th className="px-3 py-2"></th>
               </tr>
@@ -238,8 +309,15 @@ export default function PositionsManager({
                       className="input"
                       value={r.umlageschluessel}
                       onChange={(e) => {
-                        setRow(r.id, { umlageschluessel: e.target.value });
-                        speichere({ ...r, umlageschluessel: e.target.value });
+                        const schl = e.target.value;
+                        // Basis/Anteil aus Stammdaten vorschlagen (nur leere Felder füllen)
+                        const patch: Partial<RowState> = { umlageschluessel: schl };
+                        if (schl === "Fläche" && vorschlaege?.objektFlaeche && !r.basis.trim()) patch.basis = qm(vorschlaege.objektFlaeche);
+                        if (schl === "Fläche" && vorschlaege?.mieterFlaeche && !r.anteil.trim()) patch.anteil = qm(vorschlaege.mieterFlaeche);
+                        if ((schl === "Einheit" || schl === "Anzahl") && vorschlaege?.einheiten && !r.basis.trim()) patch.basis = `${vorschlaege.einheiten} Wohnungen`;
+                        if ((schl === "Einheit" || schl === "Anzahl") && !r.anteil.trim()) patch.anteil = "1";
+                        setRow(r.id, patch);
+                        speichere({ ...r, ...patch } as RowState);
                       }}
                     >
                       <option value="">—</option>
@@ -310,6 +388,37 @@ export default function PositionsManager({
                   </td>
                   <td className="px-3 py-1.5 text-right">
                     <input
+                      className="input w-24 text-right"
+                      type="number"
+                      step="0.01"
+                      placeholder="–"
+                      value={r.gesamt}
+                      onChange={(e) => setRow(r.id, { gesamt: e.target.value })}
+                      onBlur={() => rechneUndSpeichere({ ...r })}
+                    />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <input
+                      className="input"
+                      style={{ width: 110 }}
+                      placeholder="z. B. 5 Wohnungen"
+                      value={r.basis}
+                      onChange={(e) => setRow(r.id, { basis: e.target.value })}
+                      onBlur={() => rechneUndSpeichere({ ...r })}
+                    />
+                  </td>
+                  <td className="px-3 py-1.5">
+                    <input
+                      className="input"
+                      style={{ width: 90 }}
+                      placeholder="z. B. 67,08 qm"
+                      value={r.anteil}
+                      onChange={(e) => setRow(r.id, { anteil: e.target.value })}
+                      onBlur={() => rechneUndSpeichere({ ...r })}
+                    />
+                  </td>
+                  <td className="px-3 py-1.5 text-right">
+                    <input
                       className="input w-28 text-right"
                       type="number"
                       step="0.01"
@@ -317,6 +426,25 @@ export default function PositionsManager({
                       onChange={(e) => setRow(r.id, { betrag: e.target.value })}
                       onBlur={() => speichere({ ...r })}
                     />
+                    {(() => {
+                      const v = umlageBetrag(r.gesamt, r.basis, r.anteil);
+                      const akt = parseBetrag(r.betrag);
+                      if (v == null || akt === v) return null;
+                      return (
+                        <button
+                          type="button"
+                          className="text-[11px] text-[var(--gold)] hover:underline"
+                          style={{ display: "block", marginLeft: "auto", marginTop: 2 }}
+                          title="Gesamt × Anteil ÷ Basis"
+                          onClick={() => {
+                            setRow(r.id, { betrag: String(v) });
+                            speichere({ ...r, betrag: String(v) });
+                          }}
+                        >
+                          → {eur2(v)} übernehmen
+                        </button>
+                      );
+                    })()}
                   </td>
                   <td className="px-3 py-1.5 text-right">
                     <button
@@ -368,7 +496,17 @@ export default function PositionsManager({
             className="input w-28"
             value={nBetrag}
             onChange={(e) => setNBetrag(e.target.value)}
+            placeholder={(() => { const v = umlageBetrag(nGesamt, nBasis, nAnteil); return v != null ? String(v) : ""; })()}
           />
+          {(() => {
+            const v = umlageBetrag(nGesamt, nBasis, nAnteil);
+            if (v == null || parseBetrag(nBetrag) === v) return null;
+            return (
+              <button type="button" className="text-[11px] text-[var(--gold)] hover:underline text-left" title="Gesamt × Anteil ÷ Basis" onClick={() => setNBetrag(String(v))}>
+                → {eur2(v)} übernehmen
+              </button>
+            );
+          })()}
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-[var(--muted)]">Jahr</span>
@@ -380,7 +518,18 @@ export default function PositionsManager({
         </label>
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-[var(--muted)]">Umlageschlüssel</span>
-          <select className="input" value={nSchl} onChange={(e) => setNSchl(e.target.value)}>
+          <select
+            className="input"
+            value={nSchl}
+            onChange={(e) => {
+              const schl = e.target.value;
+              setNSchl(schl);
+              if (schl === "Fläche" && vorschlaege?.objektFlaeche && !nBasis.trim()) setNBasis(qm(vorschlaege.objektFlaeche));
+              if (schl === "Fläche" && vorschlaege?.mieterFlaeche && !nAnteil.trim()) setNAnteil(qm(vorschlaege.mieterFlaeche));
+              if ((schl === "Einheit" || schl === "Anzahl") && vorschlaege?.einheiten && !nBasis.trim()) setNBasis(`${vorschlaege.einheiten} Wohnungen`);
+              if ((schl === "Einheit" || schl === "Anzahl") && !nAnteil.trim()) setNAnteil("1");
+            }}
+          >
             <option value="">—</option>
             {SCHLUESSEL.map((s) => (
               <option key={s} value={s}>{s}</option>
@@ -407,6 +556,18 @@ export default function PositionsManager({
             </label>
           </>
         )}
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-[var(--muted)]" title="Gesamtkosten des Hauses laut Betriebskostenabrechnung">Gesamt Haus (€)</span>
+          <input type="number" step="0.01" className="input w-28" value={nGesamt} onChange={(e) => setNGesamt(e.target.value)} placeholder="–" />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-[var(--muted)]">Basis</span>
+          <input className="input w-32" value={nBasis} onChange={(e) => setNBasis(e.target.value)} placeholder="z. B. 5 Wohnungen" />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-[var(--muted)]">Anteil</span>
+          <input className="input w-28" value={nAnteil} onChange={(e) => setNAnteil(e.target.value)} placeholder="z. B. 67,08 qm" />
+        </label>
         <label className="flex items-center gap-2 pb-2 text-sm text-[var(--muted)]">
           <input
             type="checkbox"

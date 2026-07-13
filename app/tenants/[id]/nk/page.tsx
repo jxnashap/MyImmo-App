@@ -47,7 +47,7 @@ export default async function NkPage({
         : Promise.resolve({ data: null }),
       supabase
         .from("mieter_positionen")
-        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt")
+        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,gesamt_betrag,basis_text,anteil_text")
         .eq("mieter_id", params.id)
         .order("created_at"),
       supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
@@ -165,36 +165,45 @@ export default async function NkPage({
           {a.monate === 1 ? "Monat" : "Monate"}).
         </p>
 
+        {/* Tabelle im Layout der klassischen Betriebskostenabrechnung */}
         <table style={{ marginTop: 8 }}>
           <thead>
             <tr>
-              <th>Umlagefähige Position</th>
-              <th>Umlageschlüssel</th>
-              <th className="zahl">Betrag</th>
+              <th>Position</th>
+              <th className="zahl">Betriebskosten&shy;abrechnung</th>
+              <th style={{ textAlign: "center" }}>Basis</th>
+              <th style={{ textAlign: "center" }}>{a.einheit ? `Anteil ${a.einheit}` : "Anteil Wohnung"}</th>
+              <th className="zahl">{deDatum(a.zeitraumVon).slice(0, 6)}–{deDatum(a.zeitraumBis)}</th>
             </tr>
           </thead>
           <tbody>
             {a.positionen.length === 0 ? (
               <tr>
-                <td colSpan={3} className="brief-muted">
+                <td colSpan={5} className="brief-muted">
                   Keine umlagefähigen Positionen für {jahr} hinterlegt.
                 </td>
               </tr>
             ) : (
-              a.positionen.map((p, i) => (
-                <tr key={i}>
-                  <td>{p.bezeichnung}</td>
-                  <td className="brief-muted">{p.umlageschluessel || "—"}</td>
-                  <td className="zahl">
-                    {eur2(p.betrag)}
-                    {p.faktorText && (
-                      <div className="brief-muted" style={{ fontSize: 9.5 }}>
-                        {eur2(p.basis ?? 0)} × {p.faktorText}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))
+              a.positionen.map((p, i) => {
+                const gesamt = p.gesamtBetrag ?? (p.faktorText ? p.basis ?? null : null);
+                const basisText = p.basisText || p.umlageschluessel || (gesamt != null ? "manuell" : "");
+                return (
+                  <tr key={i}>
+                    <td>{p.bezeichnung}</td>
+                    <td className="zahl">{gesamt != null ? eur2(gesamt) : ""}</td>
+                    <td className="brief-muted" style={{ textAlign: "center" }}>{basisText}</td>
+                    <td className="brief-muted" style={{ textAlign: "center" }}>{p.anteilText ?? ""}</td>
+                    <td className="zahl">
+                      {eur2(p.betrag)}
+                      {p.faktorText && (
+                        <div className="brief-muted" style={{ fontSize: 9.5 }}>
+                          {eur2(p.basis ?? 0)} × {p.faktorText}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
