@@ -299,7 +299,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
       <div className="settings-head">
         <div className="settings-avatar"><Calculator size={22} /></div>
         <div className="who"><h1>Cockpit</h1><p>Vollständige Profi-Kalkulation</p></div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div className="settings-actions">
           <button className="btn btn-ghost" onClick={() => { setSaveName(adresse || "Kalkulation"); setShowSave(true); }}><Save size={15} /> Speichern</button>
           <button className="btn btn-ghost" onClick={() => setShowList(true)}><FolderOpen size={15} /> Gespeichert ({gespeichertLocal.length})</button>
           <button className="btn btn-ghost" onClick={() => { setCompareIds([]); setShowCompare(true); }}><Scale size={15} /> Vergleich</button>

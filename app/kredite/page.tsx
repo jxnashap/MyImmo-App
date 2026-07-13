@@ -85,20 +85,20 @@ export default async function KreditePage() {
                 </div>
               </div>
               <div className="section-body">
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14 }}>
+                <div className="kredit-grid" style={{ marginBottom: 14 }}>
                   <div><div className="kredit-field-lbl">Urspr. Darlehen</div><div className="kredit-field-val">{euro(k.betrag)}</div></div>
                   <div><div className="kredit-field-lbl">Restschuld</div><div className="kredit-field-val" style={{ color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
                   <div><div className="kredit-field-lbl">Rate / Monat</div><div className="kredit-field-val">{euro(k.monatsrate)}</div></div>
                   <div><div className="kredit-field-lbl">Laufzeit bis</div><div className="kredit-field-val">{k.laufzeit ?? "–"}</div></div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+                <div className="kredit-grid" style={{ marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
                   <div><div className="kredit-field-lbl">Zinsen / Mo.</div><div className="kredit-field-val" style={{ color: "var(--muted)" }}>{euro(moZins)}</div></div>
                   <div><div className="kredit-field-lbl">Tilgung / Mo.</div><div className="kredit-field-val" style={{ color: "var(--green)" }}>{euro(Math.max(0, moTilg))}</div></div>
                   <div><div className="kredit-field-lbl">Tilgungssatz</div><div className="kredit-field-val">{k.tilgungssatz ? `${k.tilgungssatz}% p.a.` : "–"}</div></div>
                   <div><div className="kredit-field-lbl">Zinsbindung</div><div className="kredit-field-val" style={{ color: warn ? warn.color : "inherit" }}>{k.zinsbindung ? datum(k.zinsbindung) : "–"}</div></div>
                 </div>
                 {(k.grundschuld || k.beleihung || k.sonder) && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+                  <div className="kredit-grid" style={{ marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
                     <div><div className="kredit-field-lbl">Grundschuld</div><div className="kredit-field-val">{k.grundschuld ? euro(k.grundschuld) : "–"}</div></div>
                     <div><div className="kredit-field-lbl">Beleihungsauslauf</div><div className="kredit-field-val">{k.beleihung ? `${k.beleihung}%` : "–"}</div></div>
                     <div><div className="kredit-field-lbl">Darlehensnr.</div><div className="kredit-field-val" style={{ fontSize: 11 }}>{k.darlnr || "–"}</div></div>

@@ -169,7 +169,7 @@ h1, h2, h3, .serif { font-family: 'Fraunces', Georgia, serif; font-weight: 600; 
 .card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .card-body { padding: 20px; }
 .section { background: var(--bg2); border-radius: var(--r); border: 1px solid var(--line); margin-bottom: 20px; overflow: hidden; }
-.section-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 16px 20px; border-bottom: 1px solid var(--line); }
 .section-header h3 { font-size: 13px; font-weight: 600; }
 .section-body { padding: 20px; }
 
@@ -449,6 +449,13 @@ tr.no-hover:hover td { background: transparent; }
 .settings-head .who { min-width: 0; }
 .settings-head .who h1 { font-size: 20px; line-height: 1.2; }
 .settings-head .who p { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-actions { margin-left: auto; display: flex; gap: 8px; }
+@media (max-width: 680px) {
+  /* Kopfzeile darf umbrechen — sonst überlappt der Titel die Aktions-Buttons */
+  .settings-head { flex-wrap: wrap; }
+  .settings-actions { margin-left: 0; width: 100%; overflow-x: auto; padding-bottom: 2px; }
+  .settings-actions .btn { white-space: nowrap; flex-shrink: 0; }
+}
 
 .settings-tabs { position: sticky; top: 0; z-index: 5; display: flex; gap: 4px; padding: 6px; margin-bottom: 22px; border-radius: 14px; background: color-mix(in srgb, var(--bg2) 82%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); overflow-x: auto; }
 .settings-tab { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; padding: 8px 14px; border-radius: 10px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: color .15s, background .15s; }
@@ -554,6 +561,17 @@ tr.no-hover:hover td { background: transparent; }
   .fbtgl { justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) { .fbsel-pop, .filterbar-loading, .fbsel-btn .chev { animation: none !important; transition: none !important; } }
+
+/* Suchfeld in der Filterleiste: Desktop begrenzt, Mobile volle Breite */
+.fb-search { max-width: 200px; }
+@media (max-width: 680px) { .fb-search { max-width: none; } }
+
+/* Kredit-Karten: Kennzahlen-Grid — 4 Spalten, auf Mobile 2 (sonst wird
+   die letzte Spalte von langen Labels aus der Karte gedrückt) */
+.kredit-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.kredit-grid > div { min-width: 0; }
+.kredit-grid .kredit-field-lbl { overflow-wrap: anywhere; }
+@media (max-width: 680px) { .kredit-grid { grid-template-columns: 1fr 1fr; } }
 
 /* =====================================================================
    Native Selects app-weit modernisieren — eigener Chevron statt OS-Doppel-
