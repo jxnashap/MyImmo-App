@@ -237,6 +237,29 @@ export function objektFristen(p: ObjektFristInput): Frist[] {
   return fristen;
 }
 
+// Bank-Freigabe (Open Banking): PSD2 verlangt alle 90 Tage eine neue
+// Zustimmung — ohne sie bricht der Umsatz-Abruf still ab.
+export type BankVerbindungFristInput = {
+  aspsp_name: string | null;
+  konto_name?: string | null;
+  gueltig_bis: string | null;
+};
+
+export function bankingFristen(v: BankVerbindungFristInput): Frist[] {
+  if (!v.gueltig_bis) return [];
+  const ablauf = new Date(v.gueltig_bis);
+  if (Number.isNaN(ablauf.getTime())) return [];
+  const tage = Math.ceil((ablauf.getTime() - Date.now()) / 86400000);
+  const konto = [v.aspsp_name, v.konto_name].filter(Boolean).join(" · ") || "Bankkonto";
+  return [{
+    label: tage < 0 ? `Bank-Freigabe abgelaufen (${konto})` : `Bank-Freigabe erneuern (${konto})`,
+    datum: iso(ablauf),
+    typ: tage <= 14 ? "warn" : "info",
+    kategorie: "Sonstiges",
+    rechtsgrundlage: "PSD2: Kontozugriff alle 90 Tage neu bestätigen",
+  }];
+}
+
 export type RefinanzWarnung = {
   level: "abgelaufen" | "kritisch" | "warnung";
   months: number;

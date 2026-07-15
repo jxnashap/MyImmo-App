@@ -31,7 +31,7 @@ export default async function MietkontoPage({
       // Alle Miet-Einnahmen (für Monats-Dedup UND Nacherfassung bis 10 Jahre)
       supabase
         .from("einnahmen")
-        .select("mieter_id,buchungsdatum,kategorie")
+        .select("mieter_id,buchungsdatum,kategorie,soll_monat")
         .eq("kategorie", "Miete"),
       supabase.from("properties").select("id,bezeichnung"),
     ]);
@@ -46,7 +46,7 @@ export default async function MietkontoPage({
   // Gebuchte Monate je Mieter (YYYY-MM) — eine Quelle für beide Modi.
   const gebuchtProMieter = new Map<string, Set<string>>();
   for (const e of einnahmen) {
-    const ym = zuJahrMonat(e.buchungsdatum);
+    const ym = e.soll_monat ?? zuJahrMonat(e.buchungsdatum);
     if (!ym || !e.mieter_id) continue;
     if (!gebuchtProMieter.has(e.mieter_id)) gebuchtProMieter.set(e.mieter_id, new Set());
     gebuchtProMieter.get(e.mieter_id)!.add(ym);

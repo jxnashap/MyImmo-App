@@ -1,8 +1,10 @@
-// Banking (Open Banking, read-only): Konten verbinden, Umsätze abrufen.
-// Etappe 2 — der Miet-Abgleich („vorschlagen + bestätigen") folgt in Etappe 3.
+// Banking (Open Banking, read-only): Konten verbinden, Umsätze abrufen und
+// mit den erwarteten Mieten abgleichen (Etappe 3, „vorschlagen + bestätigen").
 import { createClient } from "@/lib/supabase/server";
 import { decryptNullable } from "@/lib/crypto/secure";
 import { ebKonfiguriert, holeBanken } from "@/lib/banking/enableBanking";
+import { findeMietVorschlag, findeKostenVorschlag, type AbgleichUmsatz, type AbgleichMieter } from "@/lib/banking/abgleich";
+import { zuJahrMonat } from "@/lib/mietkonto";
 import BankVerbinden, { type BankOption } from "@/components/BankVerbinden";
 import BankKonten, { type BankVerbindungRow } from "@/components/BankKonten";
 import BankUmsaetze, { type BankUmsatzRow } from "@/components/BankUmsaetze";
@@ -16,7 +18,7 @@ export default async function BankingPage({
 }) {
   const supabase = createClient();
 
-  const [{ data: verbindungRows }, { data: umsatzRows }, { data: props }] = await Promise.all([
+  const [{ data: verbindungRows }, { data: umsatzRows }, { data: props }, { data: mieterRows }, { data: zrRows }, { data: einnRows }] = await Promise.all([
     supabase.from("bankverbindungen").select("*").order("created_at", { ascending: false }),
     supabase
       .from("bank_umsaetze")
@@ -24,6 +26,11 @@ export default async function BankingPage({
       .order("buchungsdatum", { ascending: false })
       .limit(200),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
+    supabase
+      .from("mieter")
+      .select("id,vorname,nachname,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,mietbeginn,mietende"),
+    supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
+    supabase.from("einnahmen").select("mieter_id,buchungsdatum,soll_monat").eq("kategorie", "Miete"),
   ]);
 
   const konfiguriert = ebKonfiguriert();
@@ -51,15 +58,55 @@ export default async function BankingPage({
   const bankVon = (verbindungId: string) =>
     verbindungen.find((v) => v.id === verbindungId)?.aspsp_name ?? null;
 
-  const umsaetze: BankUmsatzRow[] = ((umsatzRows ?? []) as any[]).map((u) => ({
+  // Abgleich-Daten: Mieter (mit Miet-Zeiträumen) + bereits gebuchte Miet-Monate.
+  const abgleichMieter: AbgleichMieter[] = ((mieterRows ?? []) as any[]).map((m) => ({
+    id: m.id,
+    vorname: m.vorname,
+    nachname: m.nachname,
+    prop_id: m.prop_id,
+    stammdaten: {
+      kaltmiete: m.kaltmiete != null ? Number(m.kaltmiete) : null,
+      nk_vorauszahlung: m.nk_vorauszahlung != null ? Number(m.nk_vorauszahlung) : null,
+      stellplatz_miete: m.stellplatz_miete != null ? Number(m.stellplatz_miete) : null,
+      mietbeginn: m.mietbeginn,
+      mietende: m.mietende,
+    },
+    zeitraeume: ((zrRows ?? []) as any[])
+      .filter((z) => z.mieter_id === m.id)
+      .map((z) => ({
+        von: z.von,
+        bis: z.bis,
+        kaltmiete: z.kaltmiete != null ? Number(z.kaltmiete) : null,
+        nk_vorauszahlung: z.nk_vorauszahlung != null ? Number(z.nk_vorauszahlung) : null,
+        stellplatz_miete: z.stellplatz_miete != null ? Number(z.stellplatz_miete) : null,
+      })),
+  }));
+  const gebuchteMonate = new Map<string, Set<string>>();
+  for (const e of (einnRows ?? []) as any[]) {
+    const ym = e.soll_monat ?? zuJahrMonat(e.buchungsdatum);
+    if (!ym || !e.mieter_id) continue;
+    if (!gebuchteMonate.has(e.mieter_id)) gebuchteMonate.set(e.mieter_id, new Set());
+    gebuchteMonate.get(e.mieter_id)!.add(ym);
+  }
+
+  const entschluesselt: AbgleichUmsatz[] = ((umsatzRows ?? []) as any[]).map((u) => ({
     id: u.id,
     buchungsdatum: u.buchungsdatum,
     betrag: Number(u.betrag) || 0,
     gegenpartei: decryptNullable(u.gegenpartei),
     verwendungszweck: decryptNullable(u.verwendungszweck),
     status: u.status,
-    bankName: verbindungen.length > 1 ? bankVon(u.verbindung_id) : null,
   }));
+
+  const umsaetze: BankUmsatzRow[] = entschluesselt.map((u) => {
+    const roh = ((umsatzRows ?? []) as any[]).find((r) => r.id === u.id);
+    return {
+      ...u,
+      bankName: verbindungen.length > 1 ? bankVon(roh?.verbindung_id) : null,
+      mietVorschlag: u.status === "neu" ? findeMietVorschlag(u, abgleichMieter, gebuchteMonate) : null,
+      kostenVorschlag: u.status === "neu" ? findeKostenVorschlag(u, entschluesselt) : null,
+    };
+  });
 
   return (
     <div className="fade-up">
@@ -102,7 +149,7 @@ export default async function BankingPage({
         <>
           <BankKonten verbindungen={verbindungen} />
           <BankVerbinden banken={banken} properties={props ?? []} />
-          <BankUmsaetze umsaetze={umsaetze} />
+          <BankUmsaetze umsaetze={umsaetze} properties={props ?? []} />
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 14, lineHeight: 1.6 }}>
             Datenschutz: MyImmo erhält ausschließlich Lesezugriff über einen lizenzierten
             Kontoinformationsdienst (Enable Banking). IBAN, Gegenpartei und Verwendungszweck

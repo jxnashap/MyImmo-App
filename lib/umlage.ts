@@ -6,10 +6,15 @@
 
 export type UmlageSchluessel = "flaeche" | "gleich";
 
+// § 35a EStG: Einordnung des Arbeits-/Lohnkostenanteils einer Position.
+export type Art35a = "" | "haushaltsnah" | "handwerker";
+
 export type UmlageZeile = {
   bezeichnung: string;
   betrag: number; // Gesamtbetrag der Position
   schluessel: UmlageSchluessel;
+  lohnanteil?: number; // davon Arbeits-/Lohnkosten (§ 35a), 0 = keiner
+  art35a?: Art35a;     // haushaltsnah | handwerker | "" (kein Ausweis)
 };
 
 export type UmlageMieter = {
@@ -33,6 +38,8 @@ export type UmlageAnteil = {
   bezeichnung: string;
   schluessel: string; // gespeicherter Umlageschlüssel: "Fläche" | "Einheit"
   betrag: number;
+  lohnanteil?: number; // anteiliger § 35a-Arbeitskostenanteil dieses Mieters
+  art35a?: Art35a;
 };
 
 export type UmlageErgebnisMieter = {
@@ -167,11 +174,20 @@ export function berechneUmlage(
     const verteilt = r2(anteile.reduce((a, b) => a + b, 0));
     zeilenSummen.push(verteilt);
     zeilenNichtUmgelegt.push(r2(z.betrag - verteilt));
+
+    // § 35a: Lohnanteil mit denselben Gewichten und derselben (zeitanteiligen)
+    // Skalierung verteilen — capped auf den umgelegten Betrag der Position.
+    const lohnGesamt = Math.min(z.lohnanteil ?? 0, z.betrag > 0 ? z.betrag : 0);
+    const lohnAllocated = z.betrag > 0 ? r2(lohnGesamt * (allocated / z.betrag)) : 0;
+    const lohnAnteile = lohnAllocated > 0 ? verteileBetrag(lohnAllocated, gewichte) : gewichte.map(() => 0);
+
     anteile.forEach((a, i) => {
       perMieter[i].positionen.push({
         bezeichnung: z.bezeichnung,
         schluessel: schluesselLabel(z.schluessel),
         betrag: a,
+        lohnanteil: lohnAnteile[i] || 0,
+        art35a: z.art35a || undefined,
       });
       perMieter[i].summe = r2(perMieter[i].summe + a);
     });

@@ -17,7 +17,7 @@ export default async function RueckstandWaechter() {
       .from("mieter")
       .select("id,vorname,nachname,prop_id,mietbeginn,mietende,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
     supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
-    supabase.from("einnahmen").select("mieter_id,buchungsdatum,kategorie").eq("kategorie", "Miete"),
+    supabase.from("einnahmen").select("mieter_id,buchungsdatum,kategorie,soll_monat").eq("kategorie", "Miete"),
   ]);
 
   const offene = ((mieterRows ?? []) as MieterRow[]).flatMap((m) => {

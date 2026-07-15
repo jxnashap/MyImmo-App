@@ -57,7 +57,15 @@ Entscheidungen aus der Planung (12.07.2026):
   Registrierung) und wird nur bei der ERST-Registrierung benötigt — danach normaler Login.
   Fundament existiert: Tabelle `einladungscodes` (rollen-gebunden, Ablauf, Einmal-Einlösung)
   + Signup-Trigger `handle_new_user_rolle` lassen sich um Abo-Codes erweitern.
-- **AVV-Verträge (Art. 28 DSGVO)** mit Supabase, Vercel, Anthropic, Google abschließen.
+- **AVV-Verträge (Art. 28 DSGVO)** — Recherche 15.07.2026 (Details: `docs/MASTERPLAN.md` + AVV-Dossier-PDF):
+  Supabase = Dashboard→Org→Documents (PandaDoc, kostenlos, auch Free-Plan); Vercel = automatisch
+  in ToS, **gilt aber nur ab Pro-Plan (20 $/M)** → Upgrade nötig (Hobby verbietet zudem
+  kommerzielle Nutzung); Anthropic = automatisch mit Commercial Terms wirksam (kein Training auf
+  API-Daten, Kopie archivieren); Google = **kein AVV nötig** (OAuth-Login → eigenständig
+  Verantwortlicher, nur Datenschutzerklärungs-Passus). **Größte Lücke: MyImmo muss den eigenen
+  Nutzern einen AVV anbieten** (Vermieter = Verantwortliche für Mieterdaten) — /avv-Seite, AGB-
+  Einbeziehung, anwaltlich prüfen. Plus Verarbeitungsverzeichnis Art. 30 Abs. 1+2 und TOM-Doku.
+- **Masterplan (Markt/Compliance/Steuer-Features/Roadmap): `docs/MASTERPLAN.md`** (15.07.2026).
 - **Impressum/Datenschutz**: Platzhalter in `app/impressum` + `app/datenschutz` mit echten Daten
   (Gewerbeanmeldung) füllen und rechtlich prüfen lassen.
 - ~~**Optional (Härtung):** Spalten-Verschlüsselung für IBAN/Bankdaten.~~ ✅ Erledigt:

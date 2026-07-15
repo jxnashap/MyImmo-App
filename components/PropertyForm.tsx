@@ -106,6 +106,18 @@ export default function PropertyForm({
         <div className="form-group"><label>Aktueller Wert (€)</label><input type="number" step="0.01" name="wert" defaultValue={v("wert")} placeholder="280000" /></div>
       </div>
 
+      {cfg.afa && (
+        <div className="form-row">
+          <div className="form-group"><label>Kaufdatum (Anschaffung)</label>
+            <input type="date" name="kaufdatum" defaultValue={v("kaufdatum")} />
+            <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>
+              Aktiviert den 15 %-Wächter für anschaffungsnahe Herstellungskosten (§ 6 Abs. 1 Nr. 1a EStG) in den ersten 3 Jahren.
+            </span>
+          </div>
+          <div className="form-group" />
+        </div>
+      )}
+
       <div className="form-row">
         <div className="form-group">
           <label>{cfg.flaeche}{cfg.flaecheHinweis ? ` ${cfg.flaecheHinweis}` : ""}</label>
