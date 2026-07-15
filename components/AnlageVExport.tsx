@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Printer, Download, ReceiptText, Landmark } from "lucide-react";
+import { Printer, Download, ReceiptText, Landmark, FileSpreadsheet } from "lucide-react";
 import { eur2 } from "@/lib/format";
 import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
 import {
@@ -89,6 +89,14 @@ export default function AnlageVExport({
           <button type="button" className="btn btn-ghost" onClick={exportCsv} style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Download size={14} /> CSV
           </button>
+          <a
+            className="btn btn-ghost"
+            style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
+            href={`/api/export/datev?jahr=${jahr}`}
+            title="Buchungsstapel (DATEV EXTF) für die Steuerkanzlei — SKR03-Standardvorlage"
+          >
+            <FileSpreadsheet size={14} /> DATEV
+          </a>
           <a
             className="btn btn-gold"
             style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
