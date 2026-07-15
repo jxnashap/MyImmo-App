@@ -73,6 +73,11 @@ export async function middleware(request: NextRequest) {
     pathname === "/funktionen" || // Landing-Unterseiten (Marketing, öffentlich)
     pathname === "/preise" ||
     pathname === "/vision" ||
+    pathname === "/ratgeber" || // SEO-Ratgeber (öffentlich)
+    pathname.startsWith("/ratgeber/") ||
+    pathname === "/vorlagen" || // Vorlagen-Übersicht (öffentlich)
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
     pathname === "/login" ||
     pathname === "/anmelden" || // Rollen-Auswahl vor dem Login
     pathname.startsWith("/auth") ||
