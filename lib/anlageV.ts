@@ -68,6 +68,7 @@ const sum = (ns: number[]) => ns.reduce((a, b) => a + b, 0);
 const KOSTEN_BUCKET: Record<string, keyof Omit<AnlageVWerbungskosten, "afa" | "schuldzinsen" | "summe">> = {
   Reparatur: "erhaltung",
   Instandhaltung: "erhaltung",
+  Modernisierung: "erhaltung",
   Verwaltung: "verwaltung",
   Makler: "verwaltung",
   Grundsteuer: "grundsteuer",

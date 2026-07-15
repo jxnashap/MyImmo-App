@@ -51,6 +51,12 @@ describe("autoMap", () => {
     // "Miete" matcht kaltmiete — und darf dann nicht nochmal woanders landen
     expect(Object.values(m).filter((h) => h === "Miete")).toHaveLength(1);
   });
+
+  it("verwechselt 'Mietende' nicht mit der Kaltmiete", () => {
+    const m = autoMap(["Nachname", "Mietende", "Kaltmiete"], "mieter");
+    expect(m.kaltmiete).toBe("Kaltmiete");
+    expect(m.mietende).toBe("Mietende");
+  });
 });
 
 describe("parseZahl / parseDatum", () => {
@@ -68,6 +74,11 @@ describe("parseZahl / parseDatum", () => {
     expect(parseDatum("1.6.24")).toBe("2024-06-01");
     expect(parseDatum("2024-06-01")).toBe("2024-06-01");
     expect(parseDatum("Quatsch")).toBeNull();
+    // kalender-ungültige Daten werden abgewiesen, nicht stillschweigend übernommen
+    expect(parseDatum("31.02.2024")).toBeNull();
+    expect(parseDatum("2024-13-45")).toBeNull();
+    expect(parseDatum("29.02.2024")).toBe("2024-02-29"); // Schaltjahr ok
+    expect(parseDatum("29.02.2023")).toBeNull(); // kein Schaltjahr
   });
 });
 
