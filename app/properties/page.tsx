@@ -56,6 +56,12 @@ export default async function PropertiesPage() {
           <div className="empty" style={{ gridColumn: "1/-1" }}>
             <Home className="empty-icon" size={36} color="var(--faint)" />
             <h4>Noch keine Immobilien</h4>
+            <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6 }}>
+              Lege oben dein erstes Objekt an — oder{" "}
+              <Link href="/einstellungen/import" style={{ color: "var(--gold)" }}>
+                importiere deine Daten aus vermietet.de, objego oder Excel (CSV)
+              </Link>.
+            </p>
           </div>
         </div>
       ) : (
