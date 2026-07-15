@@ -7,6 +7,8 @@ import type { ReactNode } from "react";
 const NAV = [
   { href: "/funktionen", label: "Funktionen" },
   { href: "/preise", label: "Preise" },
+  { href: "/ratgeber", label: "Ratgeber" },
+  { href: "/vorlagen", label: "Vorlagen" },
   { href: "/vision", label: "Vision" },
 ] as const;
 
@@ -53,6 +55,8 @@ export default function LandingShell({
           <span className="lp-logo" style={{ fontSize: 15 }}>My<span>Immo</span></span>
           <Link href="/funktionen">Funktionen</Link>
           <Link href="/preise">Preise</Link>
+          <Link href="/ratgeber">Ratgeber</Link>
+          <Link href="/vorlagen">Vorlagen</Link>
           <Link href="/vision">Vision</Link>
           <Link href="/agb">AGB</Link>
           <Link href="/datenschutz">Datenschutz</Link>
