@@ -18,7 +18,7 @@ export default function LandingShell({
   children: ReactNode;
 }) {
   return (
-    <div className="lp">
+    <div className="lp lp3">
       <header className="lp-nav">
         <div className="lp-inner lp-nav-row">
           <Link href="/" className="lp-logo" style={{ textDecoration: "none" }}>My<span>Immo</span></Link>
