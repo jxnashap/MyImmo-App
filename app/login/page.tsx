@@ -52,6 +52,8 @@ export default function LoginPage() {
   const [firma, setFirma] = useState(""); // Firmenname (nur Service-Registrierung)
   const [rolle, setRolle] = useState<string>("vermieter"); // Standard: Vermieter
   const [falscheRolle, setFalscheRolle] = useState<string | null>(null); // Konto-Rolle bei Fehlanmeldung
+  // Rücksprung nach dem Login (z. B. Banking-Callback) — nur relative Pfade.
+  const [nextUrl, setNextUrl] = useState<string | null>(null);
 
   // Query-Parameter erst nach dem Mount lesen (verhindert Hydration-
   // Mismatch, da window serverseitig nicht existiert).
@@ -62,6 +64,9 @@ export default function LoginPage() {
     }
     const r = params.get("rolle");
     if (r && ROLLEN[r]) setRolle(r);
+    // Open-Redirect verhindern: nur app-interne Pfade ("/..."), kein "//host".
+    const n = params.get("next");
+    if (n && n.startsWith("/") && !n.startsWith("//")) setNextUrl(n);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -97,7 +102,7 @@ export default function LoginPage() {
       }
       // Harte Navigation: stellt sicher, dass der Server die neue Session-
       // Cookie sofort sieht — kein manuelles Neuladen mehr nötig.
-      window.location.assign("/");
+      window.location.assign(nextUrl ?? "/");
     } else if (rolle === "mieter" || rolle === "service") {
       // Mieter/Service-Registrierung: Einladungscode des Vermieters.
       const eingabe = code.trim().toUpperCase();

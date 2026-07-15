@@ -21,7 +21,12 @@ export async function GET(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/login", req.url));
+  if (!user) {
+    // Nicht eingeloggt (z. B. privater Tab): Der einmalige Freigabe-Code darf
+    // nicht verloren gehen — nach dem Login direkt hierher zurückkehren.
+    const next = encodeURIComponent(url.pathname + url.search);
+    return NextResponse.redirect(new URL(`/login?next=${next}`, req.url));
+  }
 
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
