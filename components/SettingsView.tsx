@@ -101,6 +101,20 @@ export default function SettingsView({
         {tab === "recht" && <RechtPanel />}
       </div>
 
+      {/* Daten-Import: Umzug von vermietet.de, objego oder Excel */}
+      <div className="section" style={{ marginTop: 20 }}>
+        <div className="section-header"><h3>Daten-Import</h3></div>
+        <div className="section-body" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+          <p style={{ fontSize: 12, color: "var(--muted)", margin: 0, flex: "1 1 320px" }}>
+            Du kommst von vermietet.de, objego oder verwaltest bisher in Excel? Importiere Objekte
+            und Mieter per CSV — mit Spalten-Zuordnung und Vorschau, importiert wird erst nach deiner Bestätigung.
+          </p>
+          <Link href="/einstellungen/import" className="btn btn-gold" style={{ fontSize: 12 }}>
+            Daten importieren (CSV)
+          </Link>
+        </div>
+      </div>
+
       {/* Voll-Datenexport: deine Daten gehören dir */}
       <div className="section" style={{ marginTop: 20 }}>
         <div className="section-header"><h3>Daten-Export</h3></div>
