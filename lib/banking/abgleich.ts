@@ -57,14 +57,74 @@ function enthaeltWort(heuhaufen: string, nadel: string): boolean {
   return ` ${heuhaufen} `.includes(` ${nadel} `) || heuhaufen.includes(nadel);
 }
 
+// ------------------------------------------------- Monat aus dem Zweck ----
+
+const MONATSNAMEN: Record<string, number> = {
+  januar: 1, jan: 1, februar: 2, feb: 2, maerz: 3, mrz: 3, april: 4, apr: 4,
+  mai: 5, juni: 6, jun: 6, juli: 7, jul: 7, august: 8, aug: 8,
+  september: 9, sep: 9, sept: 9, oktober: 10, okt: 10,
+  november: 11, nov: 11, dezember: 12, dez: 12,
+};
+
+/**
+ * Monatsangabe aus dem Verwendungszweck lesen („Miete Juli", „Juli 2026",
+ * „07/2026", „2026-07", „07.26" …). Ohne Jahresangabe wird das Jahr des
+ * Buchungsmonats angenommen — mit Umbruch-Korrektur (Dezember-Miete, gebucht
+ * im Januar → Vorjahr; Januar-Miete, gebucht im Dezember → Folgejahr).
+ */
+export function monatAusZweck(zweck: string | null | undefined, buchungsYm: string): string | null {
+  const roh = zweck ?? "";
+  const text = normalisiere(roh);
+  const [buchJahr, buchMonat] = buchungsYm.split("-").map(Number);
+
+  let monat: number | null = null;
+  let jahr: number | null = null;
+
+  // 1) Monatsname, optional gefolgt von Jahr ("juli", "juli 2026", "juli 26")
+  const nameTreffer = text.match(
+    /\b(januar|jan|februar|feb|maerz|mrz|april|apr|mai|juni|jun|juli|jul|august|aug|september|sept|sep|oktober|okt|november|nov|dezember|dez)\b(?: (\d{4}|\d{2})\b)?/,
+  );
+  if (nameTreffer) {
+    monat = MONATSNAMEN[nameTreffer[1]] ?? null;
+    if (nameTreffer[2]) jahr = Number(nameTreffer[2].length === 2 ? `20${nameTreffer[2]}` : nameTreffer[2]);
+  }
+
+  // 2) Numerisch im Original-Text (normalisiere frisst / . -): 07/2026, 07.2026, 2026-07, 07/26
+  if (monat == null) {
+    const num =
+      roh.match(/\b(0?[1-9]|1[0-2])\s*[\/.\-]\s*(20\d{2})\b/) ??      // MM/JJJJ
+      roh.match(/\b(20\d{2})\s*[\/.\-]\s*(0?[1-9]|1[0-2])\b/) ??      // JJJJ-MM
+      roh.match(/\b(0?[1-9]|1[0-2])\s*[\/.]\s*(\d{2})\b/);            // MM/JJ
+    if (num) {
+      const a = Number(num[1]);
+      const b = Number(num[2]);
+      if (a >= 2000) { jahr = a; monat = b; }
+      else { monat = a; jahr = b >= 2000 ? b : 2000 + b; }
+    }
+  }
+
+  if (monat == null || monat < 1 || monat > 12) return null;
+
+  if (jahr == null) {
+    jahr = buchJahr;
+    // Jahres-Umbruch: genannter Monat weit "hinter" bzw. "vor" dem Buchungsmonat.
+    if (monat - buchMonat > 6) jahr -= 1;
+    if (buchMonat - monat > 6) jahr += 1;
+  }
+  if (jahr < 2000 || jahr > 2100) return null;
+
+  return `${jahr}-${String(monat).padStart(2, "0")}`;
+}
+
 // --------------------------------------------------------- Miet-Abgleich ----
 
 const rund2 = (n: number) => Math.round(n * 100) / 100;
 
 /**
  * Besten Mieter-Vorschlag für EINEN Eingang (betrag > 0) finden.
- * Kriterien: Name in Gegenpartei/Verwendungszweck + Betrag ≈ Soll-Miete des
- * Buchungsmonats. Vorschlag nur bei eindeutigem Treffer:
+ * Kriterien: Name in Gegenpartei/Verwendungszweck + Betrag ≈ Soll-Miete.
+ * Der Ziel-Monat kommt aus dem Verwendungszweck („Miete Juli", „07/2026"),
+ * sonst aus dem Buchungsdatum. Vorschlag nur bei eindeutigem Treffer:
  * - „hoch":   Name passt UND Betrag passt (±1 €)
  * - „mittel": Name passt ODER Betrag exakt (±1 Cent) bei genau einem Mieter
  */
@@ -74,8 +134,10 @@ export function findeMietVorschlag(
   gebuchteMonate: ReadonlyMap<string, ReadonlySet<string>>,
 ): MietVorschlag | null {
   if (umsatz.betrag <= 0) return null;
-  const ym = zuJahrMonat(umsatz.buchungsdatum);
-  if (!ym) return null;
+  const buchungsYm = zuJahrMonat(umsatz.buchungsdatum);
+  if (!buchungsYm) return null;
+  // Genannter Monat im Verwendungszweck schlägt das Buchungsdatum.
+  const ym = monatAusZweck(umsatz.verwendungszweck, buchungsYm) ?? buchungsYm;
 
   const text = normalisiere(`${umsatz.gegenpartei ?? ""} ${umsatz.verwendungszweck ?? ""}`);
 

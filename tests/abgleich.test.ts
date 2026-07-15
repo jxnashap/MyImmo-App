@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   normalisiere,
+  monatAusZweck,
   findeMietVorschlag,
   findeKostenVorschlag,
   type AbgleichUmsatz,
@@ -39,6 +40,33 @@ describe("normalisiere", () => {
     expect(normalisiere("Müller-Lüdenscheid, GmbH & Co. KG")).toBe("mueller luedenscheid gmbh co kg");
     expect(normalisiere("José  Ávila")).toBe("jose avila");
     expect(normalisiere(null)).toBe("");
+  });
+});
+
+describe("monatAusZweck", () => {
+  it("liest Monatsnamen mit und ohne Jahr", () => {
+    expect(monatAusZweck("Miete Juli 2026", "2026-07")).toBe("2026-07");
+    expect(monatAusZweck("Miete Juli", "2026-08")).toBe("2026-07");
+    expect(monatAusZweck("Miete Okt. 26", "2026-10")).toBe("2026-10");
+    expect(monatAusZweck("MIETE MÄRZ", "2026-03")).toBe("2026-03");
+  });
+
+  it("liest numerische Formate", () => {
+    expect(monatAusZweck("Miete 07/2026", "2026-07")).toBe("2026-07");
+    expect(monatAusZweck("Miete 07.2026 Whg 3", "2026-08")).toBe("2026-07");
+    expect(monatAusZweck("Miete 2026-07", "2026-07")).toBe("2026-07");
+    expect(monatAusZweck("Miete 7/26", "2026-07")).toBe("2026-07");
+  });
+
+  it("korrigiert den Jahres-Umbruch ohne Jahresangabe", () => {
+    expect(monatAusZweck("Miete Dezember", "2027-01")).toBe("2026-12"); // Nachzügler
+    expect(monatAusZweck("Miete Januar", "2026-12")).toBe("2027-01");   // Vorauszahlung
+  });
+
+  it("liefert null ohne Monatsangabe und matcht nicht in Wörtern", () => {
+    expect(monatAusZweck("Dauerauftrag Wohnung 3", "2026-07")).toBeNull();
+    expect(monatAusZweck("Fam. Maier Miete", "2026-07")).toBeNull(); // "mai" steckt in "maier"
+    expect(monatAusZweck(null, "2026-07")).toBeNull();
   });
 });
 
@@ -86,6 +114,16 @@ describe("findeMietVorschlag", () => {
     expect(findeMietVorschlag(umsatz({ betrag: -750 }), [mieter({ id: "m1" })], keineGebucht)).toBeNull();
     const ausgezogen = mieter({ id: "m1", stammdaten: { kaltmiete: 600, nk_vorauszahlung: 150, stellplatz_miete: 0, mietbeginn: "2020-01-01", mietende: "2025-12-31" } });
     expect(findeMietVorschlag(umsatz({}), [ausgezogen], keineGebucht)).toBeNull();
+  });
+
+  it("nimmt den Monat aus dem Verwendungszweck statt aus dem Buchungsdatum", () => {
+    // Juli-Miete kommt erst am 2. August an — Zweck nennt den Monat.
+    const v = findeMietVorschlag(
+      umsatz({ buchungsdatum: "2026-08-02", verwendungszweck: "Miete Juli Mustermann" }),
+      [mieter({ id: "m1" })],
+      keineGebucht,
+    );
+    expect(v!.jahrMonat).toBe("2026-07");
   });
 
   it("markiert bereits gebuchte Monate", () => {
