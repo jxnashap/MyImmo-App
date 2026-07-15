@@ -18,9 +18,11 @@ export type Position = {
   umlageschluessel: string | null;
   umlagefaehig: boolean | null;
   jahr: number | null;
-  aufteilung: string | null; // 'voll' | 'zeit' | 'verbrauch' | 'gradtag'
+  aufteilung: string | null; // 'voll' | 'zeit' | 'verbrauch' | 'gradtag' | 'hkvo'
   verbrauch_mieter: number | null;
   verbrauch_gesamt: number | null;
+  grundkosten_prozent: number | null;
+  flaeche_gesamt: number | null;
 };
 
 const AUFTEILUNG_OPTIONEN = [
@@ -28,6 +30,7 @@ const AUFTEILUNG_OPTIONEN = [
   { value: "zeit", label: "Zeitanteilig (Jahreskosten)" },
   { value: "verbrauch", label: "Verbrauch (Zwischenablesung)" },
   { value: "gradtag", label: "Gradtagszahlen (Heizung)" },
+  { value: "hkvo", label: "HKVO (Grund + Verbrauch)" },
 ];
 
 const AUFTEILUNG_HINWEIS: Record<string, string> = {
@@ -35,6 +38,8 @@ const AUFTEILUNG_HINWEIS: Record<string, string> = {
   verbrauch: "Betrag = Jahresgesamtkosten; wird exakt nach dem abgelesenen Verbrauchsanteil geteilt.",
   gradtag:
     "Betrag = Jahresgesamtkosten; Belegungsmonate werden nach Gradtagszahlen gewichtet. Ohne Zwischenablesung darf der Mieter den verbrauchsabhängigen Anteil um 15 % kürzen (§ 12 HeizkostenV).",
+  hkvo:
+    "Betrag = Jahresgesamtkosten Heizung/Warmwasser; Grundkosten (30–50 %) nach Fläche, Rest nach abgelesenem Verbrauch (§ 7 HeizkostenV).",
 };
 
 const SCHLUESSEL = ["Fläche", "Anzahl", "Personen", "Einheit", "Verbrauch", "direkt"];
@@ -51,9 +56,11 @@ type RowState = {
   jahr: number | null;
   umlageschluessel: string;
   umlagefaehig: boolean;
-  aufteilung: string; // 'voll' | 'zeit' | 'verbrauch' | 'gradtag'
-  vm: string; // Verbrauch Mieter (nur 'verbrauch')
-  vg: string; // Verbrauch gesamt (nur 'verbrauch')
+  aufteilung: string; // 'voll' | 'zeit' | 'verbrauch' | 'gradtag' | 'hkvo'
+  vm: string; // Verbrauch Mieter (nur 'verbrauch'/'hkvo')
+  vg: string; // Verbrauch gesamt (nur 'verbrauch'/'hkvo')
+  gk: string; // Grundkosten-% (nur 'hkvo')
+  fg: string; // Gesamtfläche (nur 'hkvo')
 };
 
 const normAufteilung = (v: string | null) =>
@@ -69,6 +76,8 @@ const toRow = (p: Position): RowState => ({
   aufteilung: normAufteilung(p.aufteilung),
   vm: p.verbrauch_mieter != null ? String(p.verbrauch_mieter) : "",
   vg: p.verbrauch_gesamt != null ? String(p.verbrauch_gesamt) : "",
+  gk: p.grundkosten_prozent != null ? String(p.grundkosten_prozent) : "",
+  fg: p.flaeche_gesamt != null ? String(p.flaeche_gesamt) : "",
 });
 
 const parseBetrag = (s: string): number | null => {
@@ -100,6 +109,8 @@ export default function PositionsManager({
   const [nAuf, setNAuf] = useState("voll");
   const [nVm, setNVm] = useState("");
   const [nVg, setNVg] = useState("");
+  const [nGk, setNGk] = useState("");
+  const [nFg, setNFg] = useState("");
   const [adding, startAdd] = useTransition();
 
   const total = rows.reduce((s, r) => s + (parseBetrag(r.betrag) ?? 0), 0);
@@ -119,6 +130,8 @@ export default function PositionsManager({
       aufteilung: r.aufteilung,
       verbrauch_mieter: parseBetrag(r.vm),
       verbrauch_gesamt: parseBetrag(r.vg),
+      grundkosten_prozent: parseBetrag(r.gk),
+      flaeche_gesamt: parseBetrag(r.fg),
     };
     if (
       orig &&
@@ -129,7 +142,9 @@ export default function PositionsManager({
       !!orig.umlagefaehig === neu.umlagefaehig &&
       normAufteilung(orig.aufteilung) === neu.aufteilung &&
       (orig.verbrauch_mieter ?? null) === neu.verbrauch_mieter &&
-      (orig.verbrauch_gesamt ?? null) === neu.verbrauch_gesamt
+      (orig.verbrauch_gesamt ?? null) === neu.verbrauch_gesamt &&
+      (orig.grundkosten_prozent ?? null) === neu.grundkosten_prozent &&
+      (orig.flaeche_gesamt ?? null) === neu.flaeche_gesamt
     )
       return; // nichts geändert
     if (!neu.bezeichnung) return; // leere Bezeichnung nicht speichern
@@ -163,6 +178,8 @@ export default function PositionsManager({
     fd.set("aufteilung", nAuf);
     fd.set("verbrauch_mieter", nVm);
     fd.set("verbrauch_gesamt", nVg);
+    fd.set("grundkosten_prozent", nGk);
+    fd.set("flaeche_gesamt", nFg);
     startAdd(async () => {
       await addPosition(mieterId, fd);
       setNBez("");
@@ -278,13 +295,13 @@ export default function PositionsManager({
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
-                    {r.aufteilung === "verbrauch" && (
+                    {(r.aufteilung === "verbrauch" || r.aufteilung === "hkvo") && (
                       <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                         <input
                           className="input"
                           type="number"
                           step="0.01"
-                          placeholder="Mieter (z. B. kWh)"
+                          placeholder="Verbr. Mieter"
                           style={{ width: 110, fontSize: 11 }}
                           value={r.vm}
                           onChange={(e) => setRow(r.id, { vm: e.target.value })}
@@ -294,10 +311,34 @@ export default function PositionsManager({
                           className="input"
                           type="number"
                           step="0.01"
-                          placeholder="Gesamt"
+                          placeholder="Verbr. Gesamt"
                           style={{ width: 90, fontSize: 11 }}
                           value={r.vg}
                           onChange={(e) => setRow(r.id, { vg: e.target.value })}
+                          onBlur={() => speichere({ ...r })}
+                        />
+                      </div>
+                    )}
+                    {r.aufteilung === "hkvo" && (
+                      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                        <input
+                          className="input"
+                          type="number"
+                          step="1"
+                          placeholder="Grundk. % (30–50)"
+                          style={{ width: 110, fontSize: 11 }}
+                          value={r.gk}
+                          onChange={(e) => setRow(r.id, { gk: e.target.value })}
+                          onBlur={() => speichere({ ...r })}
+                        />
+                        <input
+                          className="input"
+                          type="number"
+                          step="0.01"
+                          placeholder="Fläche gesamt (m²)"
+                          style={{ width: 90, fontSize: 11 }}
+                          value={r.fg}
+                          onChange={(e) => setRow(r.id, { fg: e.target.value })}
                           onBlur={() => speichere({ ...r })}
                         />
                       </div>
@@ -395,7 +436,7 @@ export default function PositionsManager({
             ))}
           </select>
         </label>
-        {nAuf === "verbrauch" && (
+        {(nAuf === "verbrauch" || nAuf === "hkvo") && (
           <>
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-[var(--muted)]">Verbrauch Mieter</span>
@@ -404,6 +445,18 @@ export default function PositionsManager({
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-[var(--muted)]">Verbrauch gesamt</span>
               <input type="number" step="0.01" className="input w-28" value={nVg} onChange={(e) => setNVg(e.target.value)} />
+            </label>
+          </>
+        )}
+        {nAuf === "hkvo" && (
+          <>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-[var(--muted)]">Grundkosten % (30–50)</span>
+              <input type="number" step="1" className="input w-28" value={nGk} onChange={(e) => setNGk(e.target.value)} placeholder="z. B. 50" />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-[var(--muted)]">Fläche gesamt (m²)</span>
+              <input type="number" step="0.01" className="input w-28" value={nFg} onChange={(e) => setNFg(e.target.value)} />
             </label>
           </>
         )}

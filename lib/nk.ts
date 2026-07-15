@@ -13,9 +13,12 @@ export type NkRawPosition = {
   jahr: number | null;
   // 'voll' (Default) | 'zeit' (Jahreskosten nach Belegungstagen)
   // | 'verbrauch' (Zwischenablesung) | 'gradtag' (Gradtagszahlen, Heizung)
+  // | 'hkvo' (Heizkostenverordnung: Grundkosten nach Fläche + Verbrauch nach Zählern)
   aufteilung?: string | null;
-  verbrauch_mieter?: number | null; // z. B. kWh des Mieters (nur 'verbrauch')
-  verbrauch_gesamt?: number | null; // Gesamtverbrauch des Jahres (nur 'verbrauch')
+  verbrauch_mieter?: number | null; // z. B. kWh des Mieters (nur 'verbrauch'/'hkvo')
+  verbrauch_gesamt?: number | null; // Gesamtverbrauch des Jahres (nur 'verbrauch'/'hkvo')
+  grundkosten_prozent?: number | null; // HKVO: Anteil Grundkosten (30–50 %)
+  flaeche_gesamt?: number | null;      // HKVO: Gesamtwohnfläche (Grundkosten-Schlüssel)
   lohnanteil?: number | null;       // § 35a: Arbeits-/Lohnkostenanteil (Mieteranteil)
   art_35a?: string | null;          // 'haushaltsnah' | 'handwerker'
 };
@@ -204,6 +207,40 @@ export function gradtagsPromille(jahr: number, von: string, bis: string): number
   return summe;
 }
 
+// --------------------------------------------- HKVO-Heizkostenaufteilung ----
+
+export type HkvoInput = {
+  gesamtkosten: number;
+  grundkostenProzent: number; // Anteil Grundkosten (HKVO: 30–50 %)
+  flaecheMieter: number;
+  flaecheGesamt: number;
+  verbrauchMieter: number;
+  verbrauchGesamt: number;
+};
+
+export type HkvoErgebnis = {
+  grundkosten: number;      // Anteil des Mieters an den Grundkosten (nach Fläche)
+  verbrauchskosten: number; // Anteil des Mieters an den Verbrauchskosten (nach Zählern)
+  gesamt: number;
+  grundProzent: number;     // effektiv verwendeter Grundkosten-Anteil
+};
+
+/**
+ * Heizkostenverordnung: Gesamtkosten in Grundkosten (nach Wohnfläche) und
+ * Verbrauchskosten (nach abgelesenem Verbrauch) aufteilen und den Anteil EINES
+ * Mieters berechnen. Der Grundkosten-Anteil muss nach § 7 HeizkostenV zwischen
+ * 30 % und 50 % liegen; abweichende Werte werden auf diesen Bereich begrenzt.
+ */
+export function hkvoAnteil(input: HkvoInput): HkvoErgebnis {
+  const grundProzent = Math.min(50, Math.max(30, input.grundkostenProzent || 50));
+  const grundAnteil = grundProzent / 100;
+  const grundTopf = input.gesamtkosten * grundAnteil;
+  const verbrauchTopf = input.gesamtkosten * (1 - grundAnteil);
+  const grundkosten = input.flaecheGesamt > 0 ? rund2(grundTopf * (input.flaecheMieter / input.flaecheGesamt)) : 0;
+  const verbrauchskosten = input.verbrauchGesamt > 0 ? rund2(verbrauchTopf * (input.verbrauchMieter / input.verbrauchGesamt)) : 0;
+  return { grundkosten, verbrauchskosten, gesamt: rund2(grundkosten + verbrauchskosten), grundProzent };
+}
+
 export function berechneNk(
   jahr: number,
   tenant: NkTenant,
@@ -254,6 +291,29 @@ export function berechneNk(
           betrag: rund2(basis * (vm / vg)),
           basis,
           faktorText: `${zahl(vm)}/${zahl(vg)} Verbrauch`,
+        };
+      }
+
+      if (p.aufteilung === "hkvo") {
+        // Heizkostenverordnung: Grundkosten (nach Fläche) + Verbrauch (nach Zählern).
+        const gk = p.grundkosten_prozent ?? 50;
+        const fg = p.flaeche_gesamt ?? 0;
+        const fm = tenant.flaeche ?? 0;
+        const vm = p.verbrauch_mieter;
+        const vg = p.verbrauch_gesamt;
+        if (!(fg > 0) || !(fm > 0) || vm == null || vg == null || !(vg > 0) || vm < 0) {
+          // Ohne Flächen-/Verbrauchsdaten kein Absturz: tagegenauer Fallback.
+          return { ...kopf, ...zeitAnteil(basis, " — HKVO-Daten fehlen") };
+        }
+        const h = hkvoAnteil({
+          gesamtkosten: basis, grundkostenProzent: gk,
+          flaecheMieter: fm, flaecheGesamt: fg, verbrauchMieter: vm, verbrauchGesamt: vg,
+        });
+        return {
+          ...kopf,
+          betrag: h.gesamt,
+          basis,
+          faktorText: `Grundkosten ${h.grundProzent}% n. Fläche + Verbrauch ${100 - h.grundProzent}% (§ 7 HeizkostenV)`,
         };
       }
 

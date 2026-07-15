@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-const AUFTEILUNGEN = ["voll", "zeit", "verbrauch", "gradtag"];
+const AUFTEILUNGEN = ["voll", "zeit", "verbrauch", "gradtag", "hkvo"];
 const aufteilungOk = (v: unknown): string =>
   AUFTEILUNGEN.includes(String(v)) ? String(v) : "voll";
 
@@ -41,6 +41,8 @@ export async function addPosition(mieterId: string, formData: FormData) {
     aufteilung: aufteilungOk(formData.get("aufteilung")),
     verbrauch_mieter: numOderNull(formData.get("verbrauch_mieter")),
     verbrauch_gesamt: numOderNull(formData.get("verbrauch_gesamt")),
+    grundkosten_prozent: numOderNull(formData.get("grundkosten_prozent")),
+    flaeche_gesamt: numOderNull(formData.get("flaeche_gesamt")),
   });
   if (error) throw new Error(error.message);
 
@@ -87,6 +89,8 @@ export async function updatePosition(
     aufteilung?: string;
     verbrauch_mieter?: number | null;
     verbrauch_gesamt?: number | null;
+    grundkosten_prozent?: number | null;
+    flaeche_gesamt?: number | null;
   },
 ): Promise<{ ok: boolean }> {
   const supabase = createClient();
@@ -104,6 +108,8 @@ export async function updatePosition(
       aufteilung: aufteilungOk(f.aufteilung),
       verbrauch_mieter: f.verbrauch_mieter ?? null,
       verbrauch_gesamt: f.verbrauch_gesamt ?? null,
+      grundkosten_prozent: f.grundkosten_prozent ?? null,
+      flaeche_gesamt: f.flaeche_gesamt ?? null,
     })
     .eq("id", id);
 
