@@ -8,6 +8,7 @@ import { deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
 import type { Tenant, Property, MietZeitraum } from "@/lib/types";
 import MietZeitraeume from "@/components/MietZeitraeume";
+import VerbilligtAmpel from "@/components/VerbilligtAmpel";
 import MieterEinladung from "@/components/MieterEinladung";
 import FreigabeToggle from "@/components/FreigabeToggle";
 import { decryptNullable } from "@/lib/crypto/secure";
@@ -143,6 +144,18 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
           )}
         </div>
       </div>
+
+      {m.mietspiegel != null && (m.mietspiegel ?? 0) > 0 && (
+        <VerbilligtAmpel
+          input={{
+            kaltmiete: m.kaltmiete,
+            nkVorauszahlung: m.nk_vorauszahlung,
+            stellplatzMiete: m.stellplatz_miete ?? null,
+            vergleichKaltProM2: m.mietspiegel,
+            flaeche: m.flaeche,
+          }}
+        />
+      )}
 
       <MietZeitraeume mieterId={params.id} zeitraeume={zeitraeume} />
 

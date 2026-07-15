@@ -91,6 +91,19 @@ export default function ArchivManager({
         </button>
       </div>
 
+      <details style={{ marginBottom: 16, background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, padding: "10px 14px", fontSize: 12.5 }}>
+        <summary style={{ cursor: "pointer", color: "var(--muted)", fontWeight: 500 }}>
+          Wie lange muss ich Belege aufbewahren?
+        </summary>
+        <ul style={{ margin: "10px 0 2px", paddingLeft: 18, color: "var(--muted)", lineHeight: 1.7 }}>
+          <li>Belege zu Mieteinnahmen und Werbungskosten: mindestens bis der Steuerbescheid bestandskräftig ist (Faustregel ~5 Jahre).</li>
+          <li>Handwerker-/Grundstücksrechnungen: <strong>2 Jahre</strong> gesetzliche Pflicht auch für Privatpersonen (§ 14b UStG).</li>
+          <li>Bei Überschusseinkünften über 500.000 €/Jahr: <strong>6 Jahre</strong> (§ 147a AO).</li>
+          <li>Als Unternehmer (eigene Vermietungs-/Firmenbuchhaltung): Rechnungen/Buchungsbelege <strong>8 Jahre</strong>.</li>
+        </ul>
+        <p style={{ fontSize: 10.5, color: "var(--faint)", margin: "6px 0 0" }}>Anhaltspunkte ohne Gewähr, keine Steuerberatung.</p>
+      </details>
+
       {/* Upload */}
       {showUpload && (
         <form action={createDokument} className="form-box" style={{ marginBottom: 20 }}>

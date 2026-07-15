@@ -9,6 +9,7 @@ import Co2Rechner from "@/components/Co2Rechner";
 import MarktwertCard from "@/components/MarktwertCard";
 import AnschaffungsnahWaechter from "@/components/AnschaffungsnahWaechter";
 import { berechneAnschaffungsnah } from "@/lib/steuer/anschaffungsnah";
+import { berechneSpekulation } from "@/lib/steuer/spekulation";
 import { refreshBewertung } from "@/lib/actions/bewertung";
 import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
@@ -68,6 +69,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         kosten,
       )
     : null;
+  const spekulation = berechneSpekulation(p.kaufdatum ?? null);
   const totalRestschuld = kred.reduce((s, k) => s + (k.restschuld ?? 0), 0);
   const totalKreditRate = kred.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
   const jahresEinnahmen = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
@@ -347,9 +349,33 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         <BuchungSection title={<><ClipboardList size={16} style={{ verticalAlign: "-3px" }} /> Kosten &amp; Ausgaben</>} rows={kosten} gesamtColor="var(--red)" badge="badge-red" addHref={`/kosten/new?prop=${id}&back=/properties/${id}`} kind="kosten" />
       </div>
 
-      {anschaffungsnah && (p.kaufpreis || p.kaufdatum) && (
-        <div className="mb-20">
-          <AnschaffungsnahWaechter e={anschaffungsnah} />
+      {((anschaffungsnah && (p.kaufpreis || p.kaufdatum)) || spekulation.aktiv) && (
+        <div className="grid-2 mb-20">
+          {anschaffungsnah && (p.kaufpreis || p.kaufdatum) ? (
+            <AnschaffungsnahWaechter e={anschaffungsnah} />
+          ) : <div />}
+          {spekulation.aktiv && (
+            <div className="section" style={{ marginBottom: 0 }}>
+              <div className="section-header">
+                <h3><Landmark size={15} style={{ verticalAlign: "-2px" }} /> Spekulationsfrist (§ 23 EStG)</h3>
+                <span className={`badge ${spekulation.steuerfrei ? "badge-green" : "badge-neutral"}`}>
+                  {spekulation.steuerfrei ? "steuerfrei verkaufbar" : `noch ${spekulation.jahreVerbleibend} J.`}
+                </span>
+              </div>
+              <div className="section-body">
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  {spekulation.steuerfrei ? (
+                    <>Ein Verkaufsgewinn ist seit <strong>{datum(spekulation.steuerfreiAb!)}</strong> steuerfrei (10-Jahres-Frist abgelaufen).</>
+                  ) : (
+                    <>Steuerfrei verkaufbar ab <strong>{datum(spekulation.steuerfreiAb!)}</strong> — bis dahin wäre der Gewinn zu versteuern.</>
+                  )}
+                </div>
+                <p style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
+                  Ab dem 4. Verkauf innerhalb von 5 Jahren droht gewerblicher Grundstückshandel. In Anspruch genommene AfA erhöht den steuerpflichtigen Gewinn. Näherung, keine Steuerberatung.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
