@@ -27,15 +27,16 @@ export default function AvvPage() {
       </p>
 
       <div style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, padding: "12px 16px", fontSize: 13, color: "var(--muted)", marginBottom: 24 }}>
-        Hinweis für den Betreiber: [Platzhalter] ausfüllen und anwaltlich prüfen lassen,
-        bevor der Vertrag produktiv akzeptiert wird. Keine Rechtsberatung.
+        Hinweis für den Betreiber: Entwurf — vor produktiver Akzeptanz anwaltlich
+        prüfen lassen. Keine Rechtsberatung.
       </div>
 
       <H2>1. Parteien, Gegenstand und Dauer</H2>
       <p>
         <strong>Verantwortlicher:</strong> die Nutzerin / der Nutzer des jeweiligen
         MyImmo-Kontos (Vermieter).<br />
-        <strong>Auftragsverarbeiter:</strong> [Name / Firma], [Anschrift] („Betreiber").
+        <strong>Auftragsverarbeiter:</strong> Jonas Scharp (MyImmo),
+        Ludwig-Jahn-Straße 42, 23611 Bad Schwartau („Betreiber").
       </p>
       <p>
         Gegenstand ist die Bereitstellung der Web-Anwendung MyImmo zur Immobilien- und
