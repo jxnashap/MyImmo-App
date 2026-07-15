@@ -99,14 +99,20 @@ export const IMPORT_FELDER: Record<ImportTyp, ImportFeld[]> = {
 export function autoMap(headers: string[], typ: ImportTyp): Record<string, string> {
   const mapping: Record<string, string> = {}; // feldKey -> header
   const belegt = new Set<string>();
-  for (const feld of IMPORT_FELDER[typ]) {
-    for (const h of headers) {
-      if (belegt.has(h)) continue;
-      const nh = norm(h);
-      if (feld.synonyme.some((syn) => nh === syn || nh.startsWith(syn))) {
-        mapping[feld.key] = h;
-        belegt.add(h);
-        break;
+  // 1. Durchgang: nur exakte Synonym-Treffer — verhindert, dass ein kurzes
+  //    Synonym wie "miete" die Spalte "Mietende" verschluckt.
+  // 2. Durchgang: Präfix-Treffer als Fallback (z. B. "wohnflaechem2" → "wohnflaeche").
+  for (const exakt of [true, false]) {
+    for (const feld of IMPORT_FELDER[typ]) {
+      if (mapping[feld.key]) continue;
+      for (const h of headers) {
+        if (belegt.has(h)) continue;
+        const nh = norm(h);
+        if (feld.synonyme.some((syn) => (exakt ? nh === syn : nh.startsWith(syn)))) {
+          mapping[feld.key] = h;
+          belegt.add(h);
+          break;
+        }
       }
     }
   }
@@ -127,17 +133,29 @@ export function parseZahl(s: string | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Prüft ein Kalenderdatum inkl. Monatslänge/Schaltjahr. */
+function istGueltigesDatum(jahr: number, monat: number, tag: number): boolean {
+  if (monat < 1 || monat > 12 || tag < 1) return false;
+  const schaltjahr = jahr % 4 === 0 && (jahr % 100 !== 0 || jahr % 400 === 0);
+  const tageImMonat = [31, schaltjahr ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return tag <= tageImMonat[monat - 1];
+}
+
 /** "31.12.2024", "2024-12-31", "31/12/2024" → ISO (YYYY-MM-DD) | null. */
 export function parseDatum(s: string | undefined): string | null {
   if (!s) return null;
   const t = s.trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(t)) return t.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}/.test(t)) {
+    const iso = t.slice(0, 10);
+    const [j, mo, tg] = iso.split("-").map(Number);
+    return istGueltigesDatum(j, mo, tg) ? iso : null;
+  }
   const m = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);
   if (m) {
     const jahr = m[3].length === 2 ? `20${m[3]}` : m[3];
     const monat = m[2].padStart(2, "0");
     const tag = m[1].padStart(2, "0");
-    if (Number(monat) >= 1 && Number(monat) <= 12 && Number(tag) >= 1 && Number(tag) <= 31) {
+    if (istGueltigesDatum(Number(jahr), Number(monat), Number(tag))) {
       return `${jahr}-${monat}-${tag}`;
     }
   }

@@ -349,7 +349,9 @@ export function berechneNk(
     if (!art || !(lohnBasis > 0)) return;
     const basis = p.betrag ?? 0;
     const ratio = basis !== 0 ? line.betrag / basis : 1;
-    const lohn = rund2(lohnBasis * ratio);
+    // Lohnanteil kann fachlich nie über dem (skalierten) Positionsbetrag liegen
+    // — bei fehlerhafter Eingabe deckeln (wie in umlage.ts).
+    const lohn = rund2(Math.min(lohnBasis * ratio, line.betrag));
     if (lohn > 0) {
       line.lohnanteil = lohn;
       line.art35a = art;
