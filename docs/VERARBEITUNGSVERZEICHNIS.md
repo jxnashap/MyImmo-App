@@ -9,9 +9,9 @@ Vermieter-Nutzer (Art. 30 Abs. 2).
 
 | Feld | Angabe |
 |---|---|
-| Verantwortlicher / Auftragsverarbeiter | [Vor- und Nachname], einzelkaufmännisch tätig als MyImmo |
-| Anschrift | [Straße, PLZ Ort] |
-| Kontakt | [E-Mail], [Telefon] |
+| Verantwortlicher / Auftragsverarbeiter | Jonas Scharp, einzelkaufmännisch tätig als MyImmo |
+| Anschrift | Ludwig-Jahn-Straße 42, 23611 Bad Schwartau |
+| Kontakt | info@myimmoapp.de, +49 174 9443943 |
 | Datenschutzbeauftragter | nicht benannt — nicht erforderlich (§ 38 BDSG: < 20 Personen; Art. 37 DSGVO nicht einschlägig) |
 
 ---

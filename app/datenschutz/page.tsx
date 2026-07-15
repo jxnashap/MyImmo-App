@@ -15,8 +15,8 @@ const H3 = ({ children }: { children: React.ReactNode }) => (
 
 // Datenschutzerklärung nach Art. 12–14 DSGVO + § 25 TDDDG, zugeschnitten auf die
 // tatsächlichen Datenflüsse der App (Supabase eu-central-1, Vercel, Anthropic,
-// Google-Login, Google Fonts). [Platzhalter] ausfüllen; vor Produktivbetrieb
-// anwaltlich bzw. durch eine*n Datenschutzbeauftragte*n prüfen lassen.
+// Google-Login, Google Fonts). Vor Produktivbetrieb anwaltlich bzw. durch
+// eine*n Datenschutzbeauftragte*n prüfen lassen.
 export default function DatenschutzPage() {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 20px", lineHeight: 1.65 }}>
@@ -28,15 +28,16 @@ export default function DatenschutzPage() {
       </p>
 
       <div style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, padding: "12px 16px", fontSize: 13, color: "var(--muted)", marginBottom: 24 }}>
-        Hinweis für den Betreiber: [Platzhalter] ausfüllen und vor dem Produktivbetrieb
-        rechtlich prüfen lassen. Dieses Dokument ist keine Rechtsberatung.
+        Hinweis: Dieses Dokument ist keine Rechtsberatung und sollte vor dem
+        Produktivbetrieb anwaltlich geprüft werden.
       </div>
 
       <H2>1. Verantwortlicher</H2>
       <p>
         Verantwortlicher im Sinne der DSGVO für die Verarbeitung Ihrer Konto- und
         Nutzungsdaten ist:<br />
-        <strong>[Name / Firma]</strong>, [Anschrift], E-Mail: [E-Mail].
+        <strong>Jonas Scharp</strong> (MyImmo), Ludwig-Jahn-Straße 42, 23611 Bad Schwartau,
+        E-Mail: info@myimmoapp.de.
         Weitere Angaben im <Link href="/impressum" style={{ color: "var(--gold)" }}>Impressum</Link>.
         Ein Datenschutzbeauftragter ist nicht benannt, da keine gesetzliche Pflicht besteht.
       </p>

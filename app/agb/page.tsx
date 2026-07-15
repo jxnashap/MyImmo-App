@@ -26,14 +26,14 @@ export default function AgbPage() {
       </p>
 
       <div style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, padding: "12px 16px", fontSize: 13, color: "var(--muted)", marginBottom: 24 }}>
-        Hinweis für den Betreiber: Entwurf — [Platzhalter] ausfüllen und vor dem
-        Produktivbetrieb (insbesondere vor Einführung von Bezahltarifen) anwaltlich
-        prüfen lassen. Keine Rechtsberatung.
+        Hinweis für den Betreiber: Entwurf — vor dem Produktivbetrieb (insbesondere
+        vor Einführung von Bezahltarifen) anwaltlich prüfen lassen. Keine Rechtsberatung.
       </div>
 
       <H2>1. Anbieter und Geltungsbereich</H2>
       <p>
-        Anbieter von MyImmo ist <strong>[Name / Firma]</strong>, [Anschrift], E-Mail: [E-Mail]
+        Anbieter von MyImmo ist <strong>Jonas Scharp (MyImmo)</strong>,
+        Ludwig-Jahn-Straße 42, 23611 Bad Schwartau, E-Mail: info@myimmoapp.de
         (siehe <Link href="/impressum" style={{ color: "var(--gold)" }}>Impressum</Link>).
         Diese AGB gelten für alle Verträge über die Nutzung der Web-Anwendung MyImmo
         („Dienst"). Abweichende Bedingungen des Nutzers finden keine Anwendung.
