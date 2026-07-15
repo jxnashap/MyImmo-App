@@ -10,7 +10,10 @@ export type VerbilligtStatus = "inaktiv" | "gruen" | "gelb" | "rot";
 export type VerbilligtInput = {
   kaltmiete: number | null;          // Ist-Kaltmiete / Monat
   nkVorauszahlung: number | null;    // NK-Vorauszahlung / Monat (für Warmmiete)
-  stellplatzMiete?: number | null;   // optionale Stellplatzmiete / Monat
+  /** @deprecated wird nicht mehr einbezogen — separater Stellplatz hat keinen
+   *  Wohnungs-Vergleichswert; siehe berechneVerbilligt(). Feld nur aus
+   *  Kompatibilitätsgründen erhalten. */
+  stellplatzMiete?: number | null;
   vergleichKaltProM2: number | null; // ortsübliche Kaltmiete €/m² (mieter.mietspiegel)
   flaeche: number | null;            // m²
 };
@@ -28,7 +31,6 @@ const rund2 = (n: number) => Math.round(n * 100) / 100;
 export function berechneVerbilligt(input: VerbilligtInput): VerbilligtErgebnis {
   const kalt = input.kaltmiete ?? 0;
   const nk = input.nkVorauszahlung ?? 0;
-  const stellplatz = input.stellplatzMiete ?? 0;
   const vglProM2 = input.vergleichKaltProM2 ?? 0;
   const flaeche = input.flaeche ?? 0;
 
@@ -42,9 +44,13 @@ export function berechneVerbilligt(input: VerbilligtInput): VerbilligtErgebnis {
   }
 
   const vergleichKalt = vglProM2 * flaeche;
-  // Warmmiete = Kaltmiete (+ Stellplatz) + NK-Vorauszahlung; NK auf beiden
-  // Seiten identisch angesetzt (bestverfügbare Näherung).
-  const istWarm = rund2(kalt + stellplatz + nk);
+  // Warmmiete = Kaltmiete + NK-Vorauszahlung; NK auf beiden Seiten identisch
+  // angesetzt (bestverfügbare Näherung). Eine separate Stellplatzmiete bleibt
+  // AUSSEN vor: für sie gibt es keinen Wohnungs-Vergleichswert, sie nur im
+  // Zähler anzusetzen würde den Prozentsatz künstlich Richtung 100 % heben und
+  // eine echte Verbilligung verdecken. Ein mit der Wohnung vermieteter
+  // Stellplatz ist über die Kaltmiete bereits erfasst.
+  const istWarm = rund2(kalt + nk);
   const vergleichWarm = rund2(vergleichKalt + nk);
   const prozent = vergleichWarm > 0 ? rund2((istWarm / vergleichWarm) * 100) : 0;
 

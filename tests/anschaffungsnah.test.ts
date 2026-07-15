@@ -15,7 +15,8 @@ describe("berechneAnschaffungsnah", () => {
     expect(r.gebaeudeAK).toBe(240000);
     expect(r.grenze).toBe(36000);
     expect(r.fensterVon).toBe("2024-06-01");
-    expect(r.fensterBis).toBe("2027-05-31");
+    // § 187/188 BGB: Jahrestag gehört noch ins Fenster.
+    expect(r.fensterBis).toBe("2027-06-01");
     expect(r.status).toBe("ok");
   });
 
@@ -51,7 +52,7 @@ describe("berechneAnschaffungsnah", () => {
   });
 
   it("meldet abgelaufenes Fenster als Entwarnung", () => {
-    const spaeter = new Date("2027-07-01T00:00:00Z"); // nach 2027-05-31
+    const spaeter = new Date("2027-07-01T00:00:00Z"); // nach 2027-06-01
     const r = berechneAnschaffungsnah(objekt, [k("2024-07-01", 5000)], spaeter);
     expect(r.status).toBe("abgelaufen");
     expect(r.monateVerbleibend).toBe(0);
@@ -63,7 +64,7 @@ describe("berechneAnschaffungsnah", () => {
   });
 
   it("berechnet verbleibende Monate bis Fensterende", () => {
-    const r = berechneAnschaffungsnah(objekt, [], heute); // heute 2025-06, Ende 2027-05
-    expect(r.monateVerbleibend).toBe(23);
+    const r = berechneAnschaffungsnah(objekt, [], heute); // heute 2025-06-01, Ende 2027-06-01
+    expect(r.monateVerbleibend).toBe(24);
   });
 });
