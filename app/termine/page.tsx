@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
-import { mieterFristen, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
+import { mieterFristen, kreditFristen, globaleFristen, objektFristen, bankingFristen } from "@/lib/fristen";
 import { createTermin, createVorlageTermin, deleteTermin, toggleErledigt } from "@/lib/actions/termine";
 import DeleteButton from "@/components/DeleteButton";
 import AufklappForm from "@/components/AufklappForm";
@@ -16,7 +16,7 @@ type Eintrag = {
   label: string;
   wer: string;
   wo: string;
-  quelle: "mieter" | "kredit" | "eigen" | "steuer" | "objekt";
+  quelle: "mieter" | "kredit" | "eigen" | "steuer" | "objekt" | "banking";
   typ: "info" | "warn" | "ok";
   kategorie: string;
   rechtsgrundlage?: string;
@@ -31,11 +31,12 @@ export default async function TerminePage({
   searchParams: { quelle?: string; jahr?: string; kategorie?: string; erledigte?: string; ansicht?: string; monat?: string; tag?: string };
 }) {
   const supabase = createClient();
-  const [{ data: term }, { data: props }, { data: miet }, { data: kred }] = await Promise.all([
+  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: bankv }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
     supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum").order("bezeichnung"),
     supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
     supabase.from("kredite").select("id,prop_id,bezeichnung,zinsbindung,auszahlung_datum"),
+    supabase.from("bankverbindungen").select("aspsp_name,konto_name,gueltig_bis"),
   ]);
 
   const properties = (props ?? []) as (Pick<Property, "id" | "bezeichnung" | "typ"> & { energieausweis_datum: string | null })[];
@@ -66,6 +67,13 @@ export default async function TerminePage({
     for (const f of objektFristen(p)) {
       if (!f.datum) continue;
       eintraege.push({ datum: f.datum, label: f.label, wer: "", wo: p.bezeichnung, quelle: "objekt", typ: f.typ, kategorie: f.kategorie ?? "Sonstiges", rechtsgrundlage: f.rechtsgrundlage });
+    }
+  }
+  // Bank-Freigaben (PSD2: alle 90 Tage erneuern)
+  for (const v of bankv ?? []) {
+    for (const f of bankingFristen(v)) {
+      if (!f.datum) continue;
+      eintraege.push({ datum: f.datum, label: f.label, wer: "", wo: "Banking", quelle: "banking", typ: f.typ, kategorie: f.kategorie ?? "Sonstiges", rechtsgrundlage: f.rechtsgrundlage });
     }
   }
   // Globale Steuer-Fristen (Grundsteuer-Raten, ESt-Erklärung)

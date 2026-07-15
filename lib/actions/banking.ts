@@ -141,6 +141,139 @@ export async function loescheBankVerbindung(id: string) {
   return { ok: true };
 }
 
+/** Einen Bank-Eingang als Mieteingang bestätigen (Etappe 3, „vorschlagen + bestätigen"). */
+export async function bestaetigeUmsatzAlsMiete(input: {
+  umsatzId: string;
+  mieterId: string;
+  propId: string | null;
+  nkAnteil: number | null;
+}): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  const { data: u } = await supabase
+    .from("bank_umsaetze")
+    .select("id,betrag,buchungsdatum,status")
+    .eq("id", input.umsatzId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!u) return { ok: false, error: "Umsatz nicht gefunden." };
+  if (u.status === "bestaetigt") return { ok: true }; // Doppelklick
+  const betrag = Number(u.betrag);
+  if (!(betrag > 0) || !u.buchungsdatum)
+    return { ok: false, error: "Nur Eingänge mit Buchungsdatum können als Miete gebucht werden." };
+
+  // Mieter muss dem Nutzer gehören (RLS sichert das ohnehin, aber früh prüfen).
+  const { data: m } = await supabase
+    .from("mieter")
+    .select("id,prop_id")
+    .eq("id", input.mieterId)
+    .maybeSingle();
+  if (!m) return { ok: false, error: "Mieter nicht gefunden." };
+
+  // Idempotenz wie im Mietkonto: gleicher Mieter + gleiches Datum → vorhandene
+  // Einnahme verknüpfen statt doppelt zu buchen.
+  const { data: schonDa } = await supabase
+    .from("einnahmen")
+    .select("id")
+    .eq("mieter_id", input.mieterId)
+    .eq("kategorie", "Miete")
+    .eq("buchungsdatum", u.buchungsdatum)
+    .limit(1);
+
+  let einnahmeId = schonDa?.[0]?.id as string | undefined;
+  if (!einnahmeId) {
+    const nk = input.nkAnteil != null && Number.isFinite(Number(input.nkAnteil)) ? Number(input.nkAnteil) : null;
+    const { data: neu, error } = await supabase
+      .from("einnahmen")
+      .insert({
+        user_id: user.id,
+        mieter_id: input.mieterId,
+        prop_id: input.propId ?? m.prop_id,
+        buchungsdatum: u.buchungsdatum, // tatsächlicher Zufluss (§ 11 EStG)
+        kategorie: "Miete",
+        betrag,
+        beschreibung: "Mieteingang (Bank-Abgleich)",
+        nk_anteil: nk,
+        wiederkehrend: true,
+      })
+      .select("id")
+      .single();
+    if (error || !neu) return { ok: false, error: "Buchen fehlgeschlagen." };
+    einnahmeId = neu.id;
+  }
+
+  await supabase
+    .from("bank_umsaetze")
+    .update({ status: "bestaetigt", einnahme_id: einnahmeId })
+    .eq("id", u.id)
+    .eq("user_id", user.id);
+
+  revalidatePath("/banking");
+  revalidatePath("/mietkonto");
+  revalidatePath("/cashflow");
+  return { ok: true };
+}
+
+/** Einen Bank-Ausgang als Kosten-Buchung bestätigen. */
+export async function bestaetigeUmsatzAlsKosten(input: {
+  umsatzId: string;
+  propId: string | null;
+  kategorie: string;
+  beschreibung: string;
+  wiederkehrend: boolean;
+}): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  const { data: u } = await supabase
+    .from("bank_umsaetze")
+    .select("id,betrag,buchungsdatum,status")
+    .eq("id", input.umsatzId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!u) return { ok: false, error: "Umsatz nicht gefunden." };
+  if (u.status === "bestaetigt") return { ok: true }; // Doppelklick
+  const betrag = Number(u.betrag);
+  if (!(betrag < 0) || !u.buchungsdatum)
+    return { ok: false, error: "Nur Ausgänge mit Buchungsdatum können als Kosten gebucht werden." };
+
+  const kategorie = input.kategorie.trim() || "Sonstiges";
+  const beschreibung = input.beschreibung.trim().slice(0, 200) || "Bank-Umsatz";
+
+  const { data: neu, error } = await supabase
+    .from("kosten")
+    .insert({
+      user_id: user.id,
+      prop_id: input.propId || null,
+      buchungsdatum: u.buchungsdatum,
+      kategorie,
+      betrag: Math.abs(betrag),
+      beschreibung,
+      wiederkehrend: Boolean(input.wiederkehrend),
+    })
+    .select("id")
+    .single();
+  if (error || !neu) return { ok: false, error: "Buchen fehlgeschlagen." };
+
+  await supabase
+    .from("bank_umsaetze")
+    .update({ status: "bestaetigt", kosten_id: neu.id })
+    .eq("id", u.id)
+    .eq("user_id", user.id);
+
+  revalidatePath("/banking");
+  revalidatePath("/kosten");
+  revalidatePath("/cashflow");
+  return { ok: true };
+}
+
 /** Umsatz ausblenden / wieder einblenden (privates herausfiltern). */
 export async function setzeUmsatzStatus(id: string, status: "neu" | "ausgeblendet") {
   const supabase = createClient();

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum } from "@/lib/format";
-import { getRefinanzWarning } from "@/lib/fristen";
+import { getRefinanzWarning, bankingFristen } from "@/lib/fristen";
 import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
@@ -26,12 +26,13 @@ export default async function DashboardPage() {
     return <LandingPage />;
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bankv }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select("*"),
     supabase.from("kredite").select("*"),
     supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete"),
+    supabase.from("bankverbindungen").select("aspsp_name,konto_name,gueltig_bis"),
   ]);
 
   const properties = (props ?? []) as Property[];
@@ -42,6 +43,9 @@ export default async function DashboardPage() {
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
 
   const refinanz = kredite.map((k) => ({ k, w: getRefinanzWarning(k.zinsbindung) })).filter((x) => x.w);
+
+  // Bank-Freigaben, die in <=14 Tagen ablaufen (PSD2-Reauth) — als Warnbanner.
+  const bankWarnungen = (bankv ?? []).flatMap((v) => bankingFristen(v)).filter((f) => f.typ === "warn");
 
   const now = new Date();
 
@@ -117,6 +121,17 @@ export default async function DashboardPage() {
             <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{refinanz.map(({ k }) => `${k.bezeichnung || "Darlehen"} (${datum(k.zinsbindung)})`).join(" · ")}</div>
           </div>
           <Link href="/kredite" className="btn btn-ghost" style={{ marginLeft: "auto", fontSize: 11 }}>Ansehen</Link>
+        </div>
+      )}
+
+      {bankWarnungen.length > 0 && (
+        <div style={{ marginBottom: 16, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <TriangleAlert size={20} color="var(--red)" style={{ flexShrink: 0 }} />
+          <div>
+            <div style={{ fontWeight: 600, color: "var(--red)", fontSize: 13 }}>Bank-Freigabe läuft ab</div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{bankWarnungen.map((f) => `${f.label}${f.datum ? ` (${datum(f.datum)})` : ""}`).join(" · ")} — PSD2: alle 90 Tage neu bestätigen</div>
+          </div>
+          <Link href="/banking" className="btn btn-ghost" style={{ marginLeft: "auto", fontSize: 11 }}>Erneuern</Link>
         </div>
       )}
 
