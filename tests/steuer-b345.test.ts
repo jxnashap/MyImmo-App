@@ -6,7 +6,9 @@ describe("berechneSpekulation (§ 23 EStG)", () => {
   it("setzt die Steuerfrei-Grenze auf Kauf + 10 Jahre", () => {
     const r = berechneSpekulation("2020-06-15", new Date("2025-06-15T00:00:00Z"));
     expect(r.aktiv).toBe(true);
-    expect(r.steuerfreiAb).toBe("2030-06-15");
+    // § 187/188 BGB: Anschaffungstag zählt nicht mit → steuerfrei erst am Tag
+    // nach dem Jahrestag (16.06.), nicht schon am 15.06.
+    expect(r.steuerfreiAb).toBe("2030-06-16");
     expect(r.steuerfrei).toBe(false);
     expect(r.jahreVerbleibend).toBe(5);
   });
@@ -17,9 +19,10 @@ describe("berechneSpekulation (§ 23 EStG)", () => {
     expect(r.tageVerbleibend).toBe(0);
   });
 
-  it("ist am letzten Tag der Frist noch nicht steuerfrei, am Folgetag ja", () => {
-    expect(berechneSpekulation("2015-03-10", new Date("2025-03-10T00:00:00Z")).steuerfrei).toBe(true);
-    expect(berechneSpekulation("2015-03-10", new Date("2025-03-09T00:00:00Z")).steuerfrei).toBe(false);
+  it("ist am Jahrestag noch steuerpflichtig, erst am Folgetag steuerfrei (§ 187/188 BGB)", () => {
+    // Kauf 2015-03-10 → Frist endet mit Ablauf 2025-03-10; steuerfrei ab 2025-03-11.
+    expect(berechneSpekulation("2015-03-10", new Date("2025-03-10T00:00:00Z")).steuerfrei).toBe(false);
+    expect(berechneSpekulation("2015-03-10", new Date("2025-03-11T00:00:00Z")).steuerfrei).toBe(true);
   });
 
   it("ist inaktiv ohne Kaufdatum", () => {
@@ -53,10 +56,12 @@ describe("berechneVerbilligt (§ 21 Abs. 2 EStG)", () => {
     expect(r.prozent).toBeLessThan(50);
   });
 
-  it("bezieht Stellplatzmiete in die Ist-Warmmiete ein", () => {
+  it("bezieht eine separate Stellplatzmiete NICHT in die Ist-Warmmiete ein", () => {
+    // Ohne Wohnungs-Vergleichswert würde der Stellplatz nur im Zähler den
+    // Prozentsatz künstlich heben und eine Verbilligung verdecken.
     const ohne = berechneVerbilligt(basis).istWarm;
     const mit = berechneVerbilligt({ ...basis, stellplatzMiete: 50 }).istWarm;
-    expect(mit).toBe(ohne + 50);
+    expect(mit).toBe(ohne);
   });
 
   it("ist inaktiv ohne Vergleichsmiete oder Kaltmiete", () => {

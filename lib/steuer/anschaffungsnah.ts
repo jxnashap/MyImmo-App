@@ -47,11 +47,12 @@ export type AnschaffungsnahErgebnis = {
 
 const rund2 = (n: number) => Math.round(n * 100) / 100;
 
-/** 3 Jahre nach Anschaffung, minus 1 Tag = letzter Tag im schädlichen Fenster. */
+/** Letzter Tag im schädlichen 3-Jahres-Fenster. § 108 AO i.V.m. § 187 Abs. 1,
+ *  § 188 Abs. 2 BGB: Der Anschaffungstag zählt nicht mit, die Frist endet mit
+ *  Ablauf des Jahrestags — dieser gehört also noch ins Fenster. */
 function fensterEnde(kaufISO: string): string {
   const d = new Date(`${kaufISO}T00:00:00Z`);
   d.setUTCFullYear(d.getUTCFullYear() + 3);
-  d.setUTCDate(d.getUTCDate() - 1);
   return d.toISOString().slice(0, 10);
 }
 

@@ -19,6 +19,10 @@ export function berechneSpekulation(kaufdatum: string | null, heute: Date = new 
   const kauf = new Date(`${kaufdatum}T00:00:00Z`);
   const frei = new Date(kauf);
   frei.setUTCFullYear(frei.getUTCFullYear() + 10);
+  // § 108 AO i.V.m. § 187 Abs. 1, § 188 Abs. 2 BGB: Der Anschaffungstag zählt
+  // nicht mit; die 10-Jahres-Frist endet erst mit Ablauf des Jahrestags. Der
+  // Verkauf AM Jahrestag ist noch steuerpflichtig — steuerfrei erst am Folgetag.
+  frei.setUTCDate(frei.getUTCDate() + 1);
   const steuerfreiAb = frei.toISOString().slice(0, 10);
 
   const heuteMs = Date.UTC(heute.getUTCFullYear(), heute.getUTCMonth(), heute.getUTCDate());
