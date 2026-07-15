@@ -30,7 +30,7 @@ export default async function BankingPage({
       .from("mieter")
       .select("id,vorname,nachname,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,mietbeginn,mietende"),
     supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
-    supabase.from("einnahmen").select("mieter_id,buchungsdatum").eq("kategorie", "Miete"),
+    supabase.from("einnahmen").select("mieter_id,buchungsdatum,soll_monat").eq("kategorie", "Miete"),
   ]);
 
   const konfiguriert = ebKonfiguriert();
@@ -83,7 +83,7 @@ export default async function BankingPage({
   }));
   const gebuchteMonate = new Map<string, Set<string>>();
   for (const e of (einnRows ?? []) as any[]) {
-    const ym = zuJahrMonat(e.buchungsdatum);
+    const ym = e.soll_monat ?? zuJahrMonat(e.buchungsdatum);
     if (!ym || !e.mieter_id) continue;
     if (!gebuchteMonate.has(e.mieter_id)) gebuchteMonate.set(e.mieter_id, new Set());
     gebuchteMonate.get(e.mieter_id)!.add(ym);

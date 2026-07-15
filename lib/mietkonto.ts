@@ -134,12 +134,16 @@ export function erwarteteMonate(
 export type DedupEinnahme = {
   buchungsdatum: string | null;
   kategorie: string | null;
+  /** Zugeordneter Miet-Monat (YYYY-MM) — schlägt den Monat des Buchungsdatums,
+   *  damit verspätete Zahlungen den richtigen Monat schließen. */
+  soll_monat?: string | null;
 };
 
 /**
  * Markiert erwartete Monate als "schonGebucht", wenn für den Kalendermonat
- * bereits eine Miet-Einnahme existiert (Vergleich über YYYY-MM).
- * `vorhandeneEinnahmen` müssen bereits die Einnahmen DIESES Mieters sein.
+ * bereits eine Miet-Einnahme existiert (soll_monat, sonst Monat des
+ * Buchungsdatums). `vorhandeneEinnahmen` müssen bereits die Einnahmen DIESES
+ * Mieters sein.
  */
 export function dedup(
   erwartet: ErwarteterMonat[],
@@ -148,7 +152,7 @@ export function dedup(
   const gebucht = new Set(
     vorhandeneEinnahmen
       .filter((e) => (e.kategorie ?? "").toLowerCase() === "miete")
-      .map((e) => zuJahrMonat(e.buchungsdatum))
+      .map((e) => e.soll_monat ?? zuJahrMonat(e.buchungsdatum))
       .filter(Boolean) as string[],
   );
   return erwartet.map((m) => ({ ...m, schonGebucht: gebucht.has(m.jahrMonat) }));

@@ -15,6 +15,7 @@ export async function bestaetigeMieteingang(input: {
   buchungsdatum: string; // YYYY-MM-DD (Zufluss)
   betrag: number;
   nk_anteil: number | null;
+  soll_monat?: string | null; // YYYY-MM — zugeordneter Miet-Monat
 }): Promise<MietkontoResult> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -44,6 +45,7 @@ export async function bestaetigeMieteingang(input: {
     return { ok: true };
   }
 
+  const sollMonat = /^\d{4}-\d{2}$/.test(input.soll_monat ?? "") ? input.soll_monat : null;
   const { error } = await supabase.from("einnahmen").insert({
     user_id: user.id,
     mieter_id: input.mieter_id,
@@ -54,6 +56,7 @@ export async function bestaetigeMieteingang(input: {
     beschreibung: "Mieteingang",
     nk_anteil: nk,
     wiederkehrend: true,
+    soll_monat: sollMonat,
   });
   if (error) return { ok: false, error: "Buchen fehlgeschlagen." };
 
@@ -68,6 +71,7 @@ export type BatchZeile = {
   buchungsdatum: string; // YYYY-MM-DD
   betrag: number;
   nk_anteil: number | null;
+  soll_monat?: string | null; // YYYY-MM
 };
 
 // Nacherfassung: mehrere Mieteingänge in einem Rutsch buchen (Insert-Array).
@@ -115,6 +119,7 @@ export async function bestaetigeMehrere(
       beschreibung: "Mieteingang (Nacherfassung)",
       nk_anteil: z.nk_anteil != null && Number.isFinite(Number(z.nk_anteil)) ? Number(z.nk_anteil) : null,
       wiederkehrend: true,
+      soll_monat: /^\d{4}-\d{2}$/.test(z.soll_monat ?? "") ? z.soll_monat : null,
     });
   }
   if (rows.length === 0) {

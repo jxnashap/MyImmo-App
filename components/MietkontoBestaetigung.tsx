@@ -115,6 +115,7 @@ export default function MietkontoBestaetigung({
         buchungsdatum: d,
         betrag: b,
         nk_anteil: z.nk > 0 ? z.nk : null,
+        soll_monat: monat,
       });
       setLaufend(null);
       if (res.ok) {
@@ -191,6 +192,7 @@ export default function MietkontoBestaetigung({
       buchungsdatum: nachDatum[r.key] || `${r.jahrMonat}-01`,
       betrag: r.gesamt,
       nk_anteil: r.nk > 0 ? r.nk : null,
+      soll_monat: r.jahrMonat,
     }));
     startBatch(async () => {
       const res = await bestaetigeMehrere(zeilenBatch);

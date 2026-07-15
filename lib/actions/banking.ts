@@ -147,6 +147,7 @@ export async function bestaetigeUmsatzAlsMiete(input: {
   mieterId: string;
   propId: string | null;
   nkAnteil: number | null;
+  sollMonat: string | null; // YYYY-MM — zugeordneter Miet-Monat aus dem Abgleich
 }): Promise<{ ok: boolean; error?: string }> {
   const supabase = createClient();
   const {
@@ -199,6 +200,7 @@ export async function bestaetigeUmsatzAlsMiete(input: {
         beschreibung: "Mieteingang (Bank-Abgleich)",
         nk_anteil: nk,
         wiederkehrend: true,
+        soll_monat: /^\d{4}-\d{2}$/.test(input.sollMonat ?? "") ? input.sollMonat : null,
       })
       .select("id")
       .single();

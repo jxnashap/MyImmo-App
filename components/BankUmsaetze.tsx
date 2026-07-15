@@ -42,6 +42,7 @@ function MietVorschlagZeile({ u }: { u: BankUmsatzRow }) {
         mieterId: v.mieterId,
         propId: v.propId,
         nkAnteil: v.nkAnteil,
+        sollMonat: v.jahrMonat,
       });
       if (!res.ok) setFehler(res.error ?? "Buchen fehlgeschlagen.");
     });

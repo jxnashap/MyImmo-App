@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { dedup } from "@/lib/mietkonto";
 import {
   normalisiere,
   monatAusZweck,
@@ -136,6 +137,26 @@ describe("findeMietVorschlag", () => {
     const m = mieter({ id: "m1", vorname: "Al", nachname: "Wu", stammdaten: { kaltmiete: 100, nk_vorauszahlung: 0, stellplatz_miete: 0, mietbeginn: "2024-01-01", mietende: null } });
     const v = findeMietVorschlag(umsatz({ betrag: 999, gegenpartei: "Irgendwer", verwendungszweck: "wunschlos" }), [m], keineGebucht);
     expect(v).toBeNull();
+  });
+});
+
+describe("dedup mit soll_monat", () => {
+  it("soll_monat schließt den richtigen Monat, nicht den des Buchungsdatums", () => {
+    const erwartet = [
+      { jahrMonat: "2026-07", standardDatum: "2026-07-01", kaltmiete: 600, nk: 150, stellplatz: 0, gesamt: 750 },
+      { jahrMonat: "2026-08", standardDatum: "2026-08-01", kaltmiete: 600, nk: 150, stellplatz: 0, gesamt: 750 },
+    ];
+    // Juli-Miete, verspätet am 2.8. zugeflossen, aber dem Juli zugeordnet:
+    const einnahmen = [{ buchungsdatum: "2026-08-02", kategorie: "Miete", soll_monat: "2026-07" }];
+    const m = dedup(erwartet, einnahmen);
+    expect(m.find((x) => x.jahrMonat === "2026-07")!.schonGebucht).toBe(true);
+    expect(m.find((x) => x.jahrMonat === "2026-08")!.schonGebucht).toBe(false);
+  });
+
+  it("ohne soll_monat zählt wie bisher der Monat des Buchungsdatums", () => {
+    const erwartet = [{ jahrMonat: "2026-08", standardDatum: "2026-08-01", kaltmiete: 600, nk: 150, stellplatz: 0, gesamt: 750 }];
+    const m = dedup(erwartet, [{ buchungsdatum: "2026-08-02", kategorie: "Miete" }]);
+    expect(m[0].schonGebucht).toBe(true);
   });
 });
 
