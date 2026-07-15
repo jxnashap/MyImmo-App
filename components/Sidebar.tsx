@@ -7,7 +7,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import {
   BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
   TrendingUp, Route, Calculator, Power, MessageSquareText, CreditCard,
-  Building2, Building, Store, TreePalm, Sprout,
+  Building2, Building, Store, TreePalm, Sprout, Percent,
   type LucideIcon,
 } from "lucide-react";
 
@@ -33,6 +33,7 @@ const VERWALTUNG: NavItem[] = [
 const KALKULATOR: NavItem[] = [
   { href: "/roter-faden", label: "Roter Faden", icon: Route },
   { href: "/cockpit", label: "Cockpit", icon: Calculator },
+  { href: "/afa-assistent", label: "AfA-Assistent", icon: Percent },
   { href: "/bankgespraech", label: "Bankgespräch", icon: Landmark },
 ];
 
