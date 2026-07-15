@@ -70,6 +70,9 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const istOeffentlich =
     pathname === "/" || // eigene Willkommens-Ansicht für Ausgeloggte
+    pathname === "/funktionen" || // Landing-Unterseiten (Marketing, öffentlich)
+    pathname === "/preise" ||
+    pathname === "/vision" ||
     pathname === "/login" ||
     pathname === "/anmelden" || // Rollen-Auswahl vor dem Login
     pathname.startsWith("/auth") ||
