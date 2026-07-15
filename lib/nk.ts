@@ -16,6 +16,8 @@ export type NkRawPosition = {
   aufteilung?: string | null;
   verbrauch_mieter?: number | null; // z. B. kWh des Mieters (nur 'verbrauch')
   verbrauch_gesamt?: number | null; // Gesamtverbrauch des Jahres (nur 'verbrauch')
+  lohnanteil?: number | null;       // § 35a: Arbeits-/Lohnkostenanteil (Mieteranteil)
+  art_35a?: string | null;          // 'haushaltsnah' | 'handwerker'
 };
 
 export type NkTenant = {
@@ -40,6 +42,15 @@ export type NkLine = {
   betrag: number; // bei 'zeit' bereits der anteilige Betrag
   basis?: number; // Jahresgesamtkosten (nur bei 'zeit')
   faktorText?: string; // z. B. "181/365 Tage" (nur bei 'zeit')
+  lohnanteil?: number; // § 35a-Arbeitskostenanteil dieser Position (skaliert)
+  art35a?: "haushaltsnah" | "handwerker"; // Einordnung
+};
+
+// § 35a EStG-Ausweis: Arbeits-/Lohnkosten, die der Mieter absetzen kann.
+export type NkParagraf35a = {
+  haushaltsnah: number; // § 35a Abs. 2 (20 %, max. 4.000 €)
+  handwerker: number;   // § 35a Abs. 3 (20 % Arbeitskosten, max. 1.200 €)
+  positionen: { bezeichnung: string; betrag: number; art: "haushaltsnah" | "handwerker" }[];
 };
 
 // Eingaben von der Brennstoffrechnung (Tabelle nk_co2, je Mieter + Jahr).
@@ -75,6 +86,7 @@ export type NkAbrechnung = {
   monate: number; // belegte Monate im Abrechnungsjahr (0..12)
   positionen: NkLine[]; // umlagefähige Positionen
   ausgenommen: NkLine[]; // nicht umlagefähige (nur Hinweis)
+  paragraf35a: NkParagraf35a | null; // § 35a-Ausweis (null = keine Lohnanteile erfasst)
   umlageGesamt: number;
   co2: NkCo2 | null; // CO₂-Aufteilung (null = kein CO₂-Block erfasst)
   kostenNachCo2: number; // umlageGesamt − CO₂-Vermieteranteil
@@ -218,8 +230,8 @@ export function berechneNk(
     faktorText: `${tage}/${jahrestage} Tage${hinweis}`,
   });
 
-  const umlagefaehig: NkLine[] = relevant
-    .filter((p) => p.umlagefaehig === true)
+  const umlageRaw = relevant.filter((p) => p.umlagefaehig === true);
+  const umlagefaehig: NkLine[] = umlageRaw
     .map((p) => {
       const basis = p.betrag ?? 0;
       const kopf = { bezeichnung: p.bezeichnung, umlageschluessel: p.umlageschluessel };
@@ -268,6 +280,34 @@ export function berechneNk(
       betrag: p.betrag ?? 0,
     }));
 
+  // § 35a: gespeicherten Lohnanteil auf den (ggf. zeit-/verbrauchsskalierten)
+  // Positionsbetrag umrechnen und je Einordnung aufsummieren.
+  umlagefaehig.forEach((line, idx) => {
+    const p = umlageRaw[idx];
+    const art = p.art_35a === "haushaltsnah" || p.art_35a === "handwerker" ? p.art_35a : undefined;
+    const lohnBasis = p.lohnanteil ?? 0;
+    if (!art || !(lohnBasis > 0)) return;
+    const basis = p.betrag ?? 0;
+    const ratio = basis !== 0 ? line.betrag / basis : 1;
+    const lohn = rund2(lohnBasis * ratio);
+    if (lohn > 0) {
+      line.lohnanteil = lohn;
+      line.art35a = art;
+    }
+  });
+
+  const lohnLines = umlagefaehig.filter((l) => l.lohnanteil && l.art35a);
+  const summe35a = (art: "haushaltsnah" | "handwerker") =>
+    rund2(lohnLines.filter((l) => l.art35a === art).reduce((s, l) => s + (l.lohnanteil ?? 0), 0));
+  const paragraf35a: NkParagraf35a | null =
+    lohnLines.length > 0
+      ? {
+          haushaltsnah: summe35a("haushaltsnah"),
+          handwerker: summe35a("handwerker"),
+          positionen: lohnLines.map((l) => ({ bezeichnung: l.bezeichnung, betrag: l.lohnanteil ?? 0, art: l.art35a! })),
+        }
+      : null;
+
   const umlageGesamt = rund2(umlagefaehig.reduce((s, p) => s + p.betrag, 0));
 
   // CO₂-Gutschrift: Der Vermieteranteil mindert die Mieterlast. Der
@@ -296,6 +336,7 @@ export function berechneNk(
     monate,
     positionen: umlagefaehig,
     ausgenommen,
+    paragraf35a,
     umlageGesamt,
     co2,
     kostenNachCo2,

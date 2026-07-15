@@ -323,6 +323,43 @@ export async function buildNkPdf(
     y -= 7;
   }
 
+  // ---- § 35a EStG-Ausweis (haushaltsnahe Dienstleistungen / Handwerker) ----
+  if (a.paragraf35a) {
+    const p35 = a.paragraf35a;
+    y = neueSeiteWennNoetig(y, 90);
+    text(ML, y, "Steuerlich absetzbare Arbeitskosten (§ 35a EStG)", 9.5, bold, INK);
+    y -= 6;
+    hline(y, ML, RIGHT, LINE, 0.6);
+    y -= 14;
+    const zeile35 = (label: string, value: string, f: PDFFont = font, color = INK, size = 9.5) => {
+      text(ML, y, label, size, f, color);
+      right(RIGHT, y, value, size, f, color);
+      y -= 14;
+    };
+    for (const pos of p35.positionen) {
+      y = neueSeiteWennNoetig(y, 14);
+      const artText = pos.art === "haushaltsnah" ? "haushaltsnahe Dienstleistung" : "Handwerkerleistung";
+      text(ML, y, fit(`${pos.bezeichnung} (${artText})`, 9, RIGHT - ML - 70), 9, font, MUTED);
+      right(RIGHT, y, euro(pos.betrag), 9, font, MUTED);
+      y -= 13;
+    }
+    y -= 2;
+    if (p35.haushaltsnah > 0) zeile35("Haushaltsnahe Dienstleistungen (§ 35a Abs. 2)", euro(p35.haushaltsnah), bold);
+    if (p35.handwerker > 0) zeile35("Handwerkerleistungen (§ 35a Abs. 3)", euro(p35.handwerker), bold);
+    y -= 2;
+    const hinweis35 =
+      "Es handelt sich um die in Ihrem Kostenanteil enthaltenen Arbeits-/Lohnkosten (ohne Material). " +
+      "Diese können Sie in Ihrer Einkommensteuererklärung geltend machen: haushaltsnahe Dienstleistungen " +
+      "mit 20 % (max. 4.000 €/Jahr), Handwerkerleistungen mit 20 % (max. 1.200 €/Jahr). " +
+      "Diese Bescheinigung ersetzt keine Steuerberatung; maßgeblich ist Ihr Steuerbescheid.";
+    for (const ln of wrap(hinweis35, 8, RIGHT - ML)) {
+      y = neueSeiteWennNoetig(y, 12);
+      text(ML, y, ln, 8, font, MUTED);
+      y -= 11;
+    }
+    y -= 7;
+  }
+
   if (a.ausgenommen.length > 0) {
     text(
       ML,

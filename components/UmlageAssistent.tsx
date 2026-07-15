@@ -1,7 +1,7 @@
 "use client";
 import { Hourglass, FileText, TriangleAlert, X, Plus, Save } from "lucide-react";
 
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import Link from "next/link";
 import { eur2 } from "@/lib/format";
 import { monateImJahr } from "@/lib/nk";
@@ -10,6 +10,7 @@ import {
   type UmlageSchluessel,
   type UmlageZeile,
   type VerteilenErgebnis,
+  type Art35a,
 } from "@/lib/umlage";
 import { verteileNebenkosten } from "@/lib/actions/umlage";
 import { useToast } from "@/components/Toast";
@@ -22,7 +23,7 @@ type MieterIn = {
   mietbeginn: string | null;
   mietende: string | null;
 };
-type ZeileUI = { bezeichnung: string; betrag: string; schluessel: UmlageSchluessel };
+type ZeileUI = { bezeichnung: string; betrag: string; schluessel: UmlageSchluessel; lohn: string; art35a: Art35a };
 
 const VORLAGEN = [
   "Grundsteuer",
@@ -40,11 +41,11 @@ const VORLAGEN = [
 
 // Fünf häufigste Betriebskosten als Startvorschlag (nur Werte eintragen).
 const DEFAULT_ZEILEN: ZeileUI[] = [
-  { bezeichnung: "Grundsteuer", betrag: "", schluessel: "flaeche" },
-  { bezeichnung: "Wasser / Abwasser", betrag: "", schluessel: "flaeche" },
-  { bezeichnung: "Müllabfuhr", betrag: "", schluessel: "flaeche" },
-  { bezeichnung: "Gebäudeversicherung", betrag: "", schluessel: "flaeche" },
-  { bezeichnung: "Allgemeinstrom", betrag: "", schluessel: "flaeche" },
+  { bezeichnung: "Grundsteuer", betrag: "", schluessel: "flaeche", lohn: "", art35a: "" },
+  { bezeichnung: "Wasser / Abwasser", betrag: "", schluessel: "flaeche", lohn: "", art35a: "" },
+  { bezeichnung: "Müllabfuhr", betrag: "", schluessel: "flaeche", lohn: "", art35a: "" },
+  { bezeichnung: "Gebäudeversicherung", betrag: "", schluessel: "flaeche", lohn: "", art35a: "" },
+  { bezeichnung: "Allgemeinstrom", betrag: "", schluessel: "flaeche", lohn: "", art35a: "" },
 ];
 
 const num = (s: string) => {
@@ -102,6 +103,8 @@ export default function UmlageAssistent({
     bezeichnung: z.bezeichnung.trim(),
     betrag: num(z.betrag),
     schluessel: z.schluessel,
+    lohnanteil: num(z.lohn),
+    art35a: z.art35a,
   }));
   const aktive = zeilenCalc.filter((z) => z.bezeichnung !== "" && z.betrag > 0);
   const calc = berechneUmlage(aktive, mieterCalc, {
@@ -116,7 +119,7 @@ export default function UmlageAssistent({
     setStatus("idle");
   }
   function addZeile(bez = "") {
-    setZeilen((zs) => [...zs, { bezeichnung: bez, betrag: "", schluessel: "flaeche" }]);
+    setZeilen((zs) => [...zs, { bezeichnung: bez, betrag: "", schluessel: "flaeche", lohn: "", art35a: "" }]);
   }
   function removeZeile(i: number) {
     setZeilen((zs) => zs.filter((_, k) => k !== i));
@@ -203,6 +206,8 @@ export default function UmlageAssistent({
         bezeichnung: p.name.trim(),
         betrag: Number.isFinite(p.betrag) ? String(p.betrag) : "",
         schluessel: "flaeche",
+        lohn: "",
+        art35a: "",
       }));
       setZeilen((zs) => {
         const behalten = zs.filter((z) => z.bezeichnung.trim() !== "" || z.betrag.trim() !== "");
@@ -399,8 +404,8 @@ export default function UmlageAssistent({
             </thead>
             <tbody>
               {zeilen.map((z, i) => (
+                <Fragment key={i}>
                 <tr
-                  key={i}
                   ref={(el) => {
                     rowsRef.current[i] = el;
                   }}
@@ -473,6 +478,34 @@ export default function UmlageAssistent({
                     </button>
                   </td>
                 </tr>
+                <tr>
+                  <td></td>
+                  <td colSpan={4} style={{ paddingBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 11.5, color: "var(--muted)" }}>
+                      <span title="§ 35a EStG: Arbeits-/Lohnkosten, die der Mieter steuerlich absetzen kann (ohne Material).">davon Arbeitskosten (§ 35a):</span>
+                      <input
+                        className="input"
+                        style={{ width: 100 }}
+                        type="number"
+                        step="0.01"
+                        value={z.lohn}
+                        onChange={(e) => setZeile(i, { lohn: e.target.value })}
+                        placeholder="€ (optional)"
+                      />
+                      <select
+                        className="input"
+                        style={{ width: 190 }}
+                        value={z.art35a}
+                        onChange={(e) => setZeile(i, { art35a: e.target.value as Art35a })}
+                      >
+                        <option value="">— kein § 35a-Ausweis —</option>
+                        <option value="haushaltsnah">haushaltsnahe Dienstleistung</option>
+                        <option value="handwerker">Handwerkerleistung</option>
+                      </select>
+                    </div>
+                  </td>
+                </tr>
+                </Fragment>
               ))}
             </tbody>
           </table>

@@ -60,7 +60,13 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
 
   const gueltigeZeilen: UmlageZeile[] = zeilen
     .filter((z) => z.bezeichnung.trim() !== "" && z.betrag > 0)
-    .map((z) => ({ bezeichnung: z.bezeichnung.trim(), betrag: z.betrag, schluessel: z.schluessel }));
+    .map((z) => ({
+      bezeichnung: z.bezeichnung.trim(),
+      betrag: z.betrag,
+      schluessel: z.schluessel,
+      lohnanteil: z.lohnanteil,
+      art35a: z.art35a,
+    }));
 
   // Einheiten zählen (distinct einheit); ohne gepflegte Einheiten-Namen
   // bleibt die Mieterzahl die Näherung.
@@ -95,6 +101,8 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
         jahr,
         umlagefaehig: true,
         quelle: "umlage",
+        lohnanteil: p.lohnanteil && p.lohnanteil > 0 ? p.lohnanteil : null,
+        art_35a: p.art35a ?? null,
       })),
   );
 
