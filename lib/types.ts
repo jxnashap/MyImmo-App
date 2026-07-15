@@ -9,6 +9,7 @@ export type Property = {
   adresse: string | null;
   einheiten_anzahl?: number | null; // Anzahl Einheiten/Garagen (Belegung)
   kaufpreis: number | null;
+  kaufdatum?: string | null;  // Anschaffungsdatum → 15%-Wächter (§ 6 Abs. 1 Nr. 1a EStG)
   wert: number | null;        // aktueller Wert
   flaeche: number | null;
   grundstuecksflaeche?: number | null; // Grundstücksfläche (m²), getrennt von flaeche

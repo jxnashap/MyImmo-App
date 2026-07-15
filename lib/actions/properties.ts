@@ -22,6 +22,7 @@ function parse(formData: FormData) {
     typ: str("typ"),
     adresse: str("adresse"),
     kaufpreis: num("kaufpreis"),
+    kaufdatum: str("kaufdatum"),
     wert: num("wert"),
     flaeche: num("flaeche"),
     grundstuecksflaeche: num("grundstuecksflaeche"),

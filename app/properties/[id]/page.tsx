@@ -7,6 +7,8 @@ import { deleteEinnahme, deleteKosten, deleteKredit, deleteVerbrauch, deleteNoti
 import DeleteButton from "@/components/DeleteButton";
 import Co2Rechner from "@/components/Co2Rechner";
 import MarktwertCard from "@/components/MarktwertCard";
+import AnschaffungsnahWaechter from "@/components/AnschaffungsnahWaechter";
+import { berechneAnschaffungsnah } from "@/lib/steuer/anschaffungsnah";
 import { refreshBewertung } from "@/lib/actions/bewertung";
 import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
@@ -58,6 +60,14 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const notizen = (notiz ?? []) as Notiz[];
 
   const wert = p.wert ?? 0;
+  // 15%-Wächter nur für abschreibbare Objekte (Grundstücke haben keine Gebäude-AfA).
+  const istAbschreibbar = !["Grundstück"].includes(p.typ ?? "");
+  const anschaffungsnah = istAbschreibbar
+    ? berechneAnschaffungsnah(
+        { kaufpreis: p.kaufpreis, gebaeudeanteilProzent: p.afa_gebaeudeanteil ?? null, kaufdatum: p.kaufdatum ?? null },
+        kosten,
+      )
+    : null;
   const totalRestschuld = kred.reduce((s, k) => s + (k.restschuld ?? 0), 0);
   const totalKreditRate = kred.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
   const jahresEinnahmen = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
@@ -336,6 +346,12 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         <BuchungSection title={<><Wallet size={16} style={{ verticalAlign: "-3px" }} /> Einnahmen</>} rows={einnahmen} gesamtColor="var(--green)" badge="badge-green" addHref={`/einnahmen/new?prop=${id}&back=/properties/${id}`} kind="einnahme" />
         <BuchungSection title={<><ClipboardList size={16} style={{ verticalAlign: "-3px" }} /> Kosten &amp; Ausgaben</>} rows={kosten} gesamtColor="var(--red)" badge="badge-red" addHref={`/kosten/new?prop=${id}&back=/properties/${id}`} kind="kosten" />
       </div>
+
+      {anschaffungsnah && (p.kaufpreis || p.kaufdatum) && (
+        <div className="mb-20">
+          <AnschaffungsnahWaechter e={anschaffungsnah} />
+        </div>
+      )}
 
       {/* Verbrauch + Notizen */}
       <div className="grid-2 mb-20">
