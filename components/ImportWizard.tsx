@@ -52,6 +52,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
     <div className="form-box" style={{ maxWidth: 680 }}>
       <h3>Immobilien-Anzeige importieren</h3>
       <p>Kopiere den Anzeigentext von ImmoScout24, Immowelt o.ä. — die KI liest die Daten aus. Oder fülle das Schnellformular manuell aus.</p>
+      <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 4 }}>KI-Auswertung (Anthropic Claude): Der Text wird zur Auswertung an die API übermittelt (kein Modell-Training). Ergebnisse bitte vor dem Speichern prüfen.</p>
 
       <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--line)" }}>
         <button type="button" onClick={() => setTab("ki")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "ki" ? "var(--gold)" : "transparent"}`, color: tab === "ki" ? "var(--gold)" : "var(--muted)", fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><Bot size={14} style={{ verticalAlign: "-2px" }} /> KI-Import</button>

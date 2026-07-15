@@ -93,6 +93,7 @@ export default function AvvPage() {
         <li><strong>Vercel Inc.</strong> (USA) — Hosting/Auslieferung; DPA mit EU-Standardvertragsklauseln.</li>
         <li><strong>Anthropic PBC</strong> (USA) — KI-Auswertung, nur bei aktiver Nutzung durch den Verantwortlichen; DPA mit EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
         <li><strong>Google Ireland Ltd.</strong> — nur „Login mit Google" und Schriftarten-Auslieferung.</li>
+        <li><strong>Enable Banking Oy</strong> (Finnland/EU) — Kontoinformationsdienst (Open Banking, nur bei aktiver Konto-Anbindung durch den Verantwortlichen); lizenzierter AISP unter Aufsicht der FIN-FSA; Verarbeitung in der EU.</li>
       </ul>
       <p>
         Über beabsichtigte Änderungen (Hinzufügen/Ersetzen) informiert der Betreiber vorab

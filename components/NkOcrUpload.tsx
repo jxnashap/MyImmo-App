@@ -70,6 +70,11 @@ export default function NkOcrUpload({ mieterId }: { mieterId: string }) {
           {loading ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Claude liest aus…</> : <><Paperclip size={14} style={{ verticalAlign: "-2px" }} /> Datei wählen (PDF/Bild)</>}
           <input type="file" accept="application/pdf,image/*" onChange={onFile} disabled={loading} style={{ display: "none" }} />
         </label>
+        <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 8 }}>
+          KI-Auswertung (Anthropic Claude): Das Dokument wird zur Auswertung an die API
+          übermittelt (kein Modell-Training mit Ihren Daten). Die KI kann sich irren —
+          bitte alle erkannten Beträge vor der Übernahme prüfen.
+        </p>
 
         {error && <div style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
 
