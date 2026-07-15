@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  User, Landmark, ShieldCheck, FileText, Download, Trash2, Plus, Star,
+  User, Landmark, ShieldCheck, FileText, Download, Upload, Trash2, Plus, Star,
   Lock, ExternalLink, X, Check, TriangleAlert, PenLine, type LucideIcon,
 } from "lucide-react";
 import SignaturPad from "@/components/SignaturPad";
@@ -99,34 +99,6 @@ export default function SettingsView({
         {tab === "bank" && <BankPanel ibans={ibans} />}
         {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} />}
         {tab === "recht" && <RechtPanel />}
-      </div>
-
-      {/* Daten-Import: Umzug von vermietet.de, objego oder Excel */}
-      <div className="section" style={{ marginTop: 20 }}>
-        <div className="section-header"><h3>Daten-Import</h3></div>
-        <div className="section-body" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-          <p style={{ fontSize: 12, color: "var(--muted)", margin: 0, flex: "1 1 320px" }}>
-            Du kommst von vermietet.de, objego oder verwaltest bisher in Excel? Importiere Objekte
-            und Mieter per CSV — mit Spalten-Zuordnung und Vorschau, importiert wird erst nach deiner Bestätigung.
-          </p>
-          <Link href="/einstellungen/import" className="btn btn-gold" style={{ fontSize: 12 }}>
-            Daten importieren (CSV)
-          </Link>
-        </div>
-      </div>
-
-      {/* Voll-Datenexport: deine Daten gehören dir */}
-      <div className="section" style={{ marginTop: 20 }}>
-        <div className="section-header"><h3>Daten-Export</h3></div>
-        <div className="section-body" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-          <p style={{ fontSize: 12, color: "var(--muted)", margin: 0, flex: "1 1 320px" }}>
-            Lade jederzeit ALLE deine Daten herunter: sämtliche Tabellen als CSV + JSON,
-            dazu Archiv-Dokumente und Kosten-Belege als Dateien — ohne Sperrfrist, ohne Abo-Bedingung.
-          </p>
-          <a href="/api/export/alles" className="btn btn-gold" style={{ fontSize: 12 }}>
-            Alle Daten exportieren (ZIP)
-          </a>
-        </div>
       </div>
 
       <DangerZone />
@@ -532,14 +504,22 @@ function RechtPanel() {
   return (
     <div ref={ref}>
       <div className="glass-card reveal">
-        <h2><Download size={16} /> Meine Daten</h2>
-        <p className="sub">Lade alle zu deinem Konto gespeicherten Daten (inkl. Mieter, Buchungen, Dokumente) als maschinenlesbare JSON-Datei herunter – DSGVO-Recht auf Datenübertragbarkeit. Die Buchungen (Einnahmen &amp; Kosten) gibt es zusätzlich als CSV für Excel/Steuerberater.</p>
+        <h2><Upload size={16} /> Daten importieren</h2>
+        <p className="sub">Du kommst von vermietet.de, objego oder verwaltest bisher in Excel? Importiere Objekte und Mieter per CSV — mit Spalten-Zuordnung und Vorschau; angelegt wird erst nach deiner Bestätigung.</p>
+        <Link href="/einstellungen/import" className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <Upload size={15} /> Daten importieren (CSV)
+        </Link>
+      </div>
+
+      <div className="glass-card reveal">
+        <h2><Download size={16} /> Meine Daten exportieren</h2>
+        <p className="sub">Lade jederzeit ALLE deine Daten herunter (inkl. Mieter, Buchungen und Dokumente) – ohne Sperrfrist, DSGVO-Recht auf Datenübertragbarkeit. Das ZIP enthält alle Tabellen als CSV und JSON plus die Dateien; die Buchungen gibt es zusätzlich als einzelne CSV für Excel/Steuerberater.</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <a href="/api/export" className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <Download size={15} /> Daten als JSON herunterladen
+          <a href="/api/export/alles" className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Download size={15} /> Alle Daten inkl. Dateien (ZIP)
           </a>
           <a href="/api/export/buchungen" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <Download size={15} /> Buchungen als CSV
+            <Download size={15} /> Nur Buchungen (CSV)
           </a>
         </div>
       </div>
