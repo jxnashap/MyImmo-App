@@ -10,8 +10,10 @@ import {
   erzeugeBriefPdf,
   erzeugeNkPdf,
   erzeugeProtokollPdf,
+  erzeugeWohnungsgeberPdf,
   type BriefFields,
   type ProtokollFields,
+  type WohnungsgeberFields,
 } from "@/lib/pdf/erzeugen";
 
 export type DokumentResult = { ok: boolean; error?: string };
@@ -129,6 +131,34 @@ export async function speichereProtokoll(
     });
   } catch (e) {
     console.error("speichereProtokoll:", e);
+    return { ok: false, error: "PDF konnte nicht erzeugt werden." };
+  }
+}
+
+export async function speichereWohnungsgeber(
+  mieterId: string,
+  fields: WohnungsgeberFields,
+): Promise<DokumentResult> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  try {
+    const doc = await erzeugeWohnungsgeberPdf(supabase, user.id, mieterId, fields);
+    if (!doc) return { ok: false, error: "Mieter nicht gefunden." };
+    // Direkt fürs Mieterportal freigeben — der Mieter braucht die Bestätigung
+    // für seine An-/Ummeldung (§ 17 BMG, 2-Wochen-Frist).
+    return archiviere({
+      userId: user.id,
+      mieterId,
+      kategorie: "Wohnungsgeberbestätigung",
+      titel: doc.titel,
+      dateiname: doc.dateiname,
+      pdf: doc.pdf,
+      mieterFreigabe: true,
+    });
+  } catch (e) {
+    console.error("speichereWohnungsgeber:", e);
     return { ok: false, error: "PDF konnte nicht erzeugt werden." };
   }
 }
