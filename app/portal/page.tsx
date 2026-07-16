@@ -57,7 +57,7 @@ export default async function PortalPage({
 
   const { data: anliegenRows } = await supabase
     .from("anliegen")
-    .select("id,typ,titel,beschreibung,status,antwort,created_at")
+    .select("id,typ,titel,beschreibung,status,antwort,created_at,termin_vorschlaege,termin_bestaetigt")
     .eq("mieter_user_id", user!.id)
     .order("created_at", { ascending: false });
   const anliegen = (anliegenRows ?? []) as AnliegenRow[];
