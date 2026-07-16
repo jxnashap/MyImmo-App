@@ -6,6 +6,7 @@ import { deleteProperty } from "@/lib/actions/properties";
 import { deleteEinnahme, deleteKosten, deleteKredit, deleteVerbrauch, deleteNotiz } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
 import Co2Rechner from "@/components/Co2Rechner";
+import PruefpflichtenKarte from "@/components/PruefpflichtenKarte";
 import MarktwertCard from "@/components/MarktwertCard";
 import AnschaffungsnahWaechter from "@/components/AnschaffungsnahWaechter";
 import { berechneAnschaffungsnah } from "@/lib/steuer/anschaffungsnah";
@@ -432,6 +433,9 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           </div>
         </div>
       </div>
+
+      {/* Prüfpflichten & Wartung (Katalog vs. aktive wiederkehrende Termine) */}
+      <PruefpflichtenKarte propId={id} objektName={p.bezeichnung ?? "Objekt"} />
 
       {/* CO₂-Kostenaufteilung (CO2KostAufG) */}
       <div className="section mb-20">
