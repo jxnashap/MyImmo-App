@@ -12,7 +12,7 @@ import VerbilligtAmpel from "@/components/VerbilligtAmpel";
 import MieterEinladung from "@/components/MieterEinladung";
 import FreigabeToggle from "@/components/FreigabeToggle";
 import { decryptNullable } from "@/lib/crypto/secure";
-import { ReceiptText, FileText, KeyRound, Pencil, Trash2, TriangleAlert } from "lucide-react";
+import { ReceiptText, FileText, KeyRound, FileCheck, Pencil, Trash2, TriangleAlert } from "lucide-react";
 
 function Kachel({ label, value, color }: { label: string; value: React.ReactNode; color?: string }) {
   return (
@@ -107,6 +107,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
           <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ fontSize: 12 }}><ReceiptText size={14} style={{ verticalAlign: "-2px" }} /> NK-Abrechnung</Link>
           <Link href={`/tenants/${m.id}/dokument`} className="btn btn-ghost" style={{ fontSize: 12 }}><FileText size={14} style={{ verticalAlign: "-2px" }} /> Dokument</Link>
           <Link href={`/tenants/${m.id}/protokoll`} className="btn btn-ghost" style={{ fontSize: 12 }}><KeyRound size={14} style={{ verticalAlign: "-2px" }} /> Protokoll</Link>
+          <Link href={`/tenants/${m.id}/wohnungsgeber`} className="btn btn-ghost" style={{ fontSize: 12 }}><FileCheck size={14} style={{ verticalAlign: "-2px" }} /> Wohnungsgeber</Link>
           <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}><Pencil size={14} style={{ verticalAlign: "-2px" }} /> Bearbeiten</Link>
           <DeleteButton action={deleteTenant.bind(null, m.id)} className="btn btn-ghost" label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>} confirmText={`„${[m.vorname, m.nachname].filter(Boolean).join(" ")}" wirklich löschen?`} />
         </div>
