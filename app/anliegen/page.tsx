@@ -60,6 +60,8 @@ export default async function AnliegenPage({
     mieterName: mieterName(a.mieter_id),
     objektName: objektName(a.prop_id),
     dateien: (dateiRows ?? []).filter((d) => d.anliegen_id === a.id).map((d) => ({ id: d.id, name: d.name })),
+    terminVorschlaege: Array.isArray(a.termin_vorschlaege) ? (a.termin_vorschlaege as string[]) : [],
+    terminBestaetigt: a.termin_bestaetigt ?? null,
   }));
 
   const offen = liste.filter((a) => a.status !== "erledigt").length;

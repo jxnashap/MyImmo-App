@@ -77,6 +77,94 @@ export async function erstelleAnliegen(formData: FormData) {
   return { ok: true };
 }
 
+// ---- Terminkoordination: Vermieter schlägt Slots vor, Mieter bestätigt ----
+
+const SLOT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/; // datetime-local
+
+/** Vermieter: bis zu 3 Terminvorschläge ans Anliegen hängen (ersetzt alte,
+ *  setzt eine evtl. vorhandene Bestätigung zurück). */
+export async function schlageTermineVor(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const id = String(formData.get("id") ?? "");
+  const slots = ["slot1", "slot2", "slot3"]
+    .map((k) => String(formData.get(k) ?? "").trim())
+    .filter((s) => SLOT_RE.test(s))
+    .map((s) => s.slice(0, 16));
+  if (!id) return { error: "Ungültige Eingabe." };
+  if (slots.length === 0) return { error: "Bitte mindestens einen Termin angeben." };
+
+  const { error } = await supabase
+    .from("anliegen")
+    .update({
+      termin_vorschlaege: slots,
+      termin_bestaetigt: null,
+      status: "in_arbeit",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("vermieter_id", user.id);
+  if (error) return { error: "Termine konnten nicht gespeichert werden." };
+  revalidatePath("/anliegen");
+  revalidatePath("/portal");
+  return { ok: true };
+}
+
+/** Mieter: einen der vorgeschlagenen Termine bestätigen. Der DB-Trigger
+ *  stellt sicher, dass nur ein echter Vorschlag bestätigt werden kann. */
+export async function bestaetigeAnliegenTermin(id: string, slot: string) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  if (!id || !SLOT_RE.test(slot)) return { error: "Ungültige Eingabe." };
+
+  const { error } = await supabase
+    .from("anliegen")
+    .update({ termin_bestaetigt: slot.slice(0, 16), updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("mieter_user_id", user.id);
+  if (error) return { error: "Termin konnte nicht bestätigt werden." };
+  revalidatePath("/portal");
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
+/** Vermieter: den vom Mieter bestätigten Termin in den Kalender übernehmen. */
+export async function terminInKalender(id: string) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const { data: a } = await supabase
+    .from("anliegen")
+    .select("titel,termin_bestaetigt,prop_id")
+    .eq("id", id)
+    .eq("vermieter_id", user.id)
+    .maybeSingle();
+  if (!a?.termin_bestaetigt) return { error: "Kein bestätigter Termin vorhanden." };
+
+  const uhrzeit = a.termin_bestaetigt.slice(11, 16);
+  const { error } = await supabase.from("termine").insert({
+    user_id: user.id,
+    titel: `Termin: ${a.titel}`.slice(0, 200),
+    datum: a.termin_bestaetigt.slice(0, 10),
+    prop_id: a.prop_id ?? null,
+    kategorie: "Sonstiges",
+    notiz: `Mit dem Mieter vereinbarter Termin (${uhrzeit} Uhr) — aus Anliegen übernommen.`,
+  });
+  if (error) return { error: "Kalendereintrag konnte nicht angelegt werden." };
+  revalidatePath("/termine");
+  return { ok: true };
+}
+
 export async function bearbeiteAnliegen(formData: FormData) {
   const supabase = createClient();
   const {

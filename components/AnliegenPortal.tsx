@@ -1,10 +1,11 @@
 "use client";
 
 // Mieterportal: Anliegen erstellen (inkl. Foto-/PDF-Anhängen) + eigene
-// Anliegen mit Status/Antwort sehen.
+// Anliegen mit Status/Antwort sehen. Terminkoordination: vom Vermieter
+// vorgeschlagene Slots per Klick bestätigen.
 import { useRef, useState, useTransition } from "react";
-import { Wrench, FileText, MessageCircleQuestion, Plus, Paperclip, type LucideIcon } from "lucide-react";
-import { erstelleAnliegen } from "@/lib/actions/anliegen";
+import { Wrench, FileText, MessageCircleQuestion, Plus, Paperclip, CalendarClock, type LucideIcon } from "lucide-react";
+import { erstelleAnliegen, bestaetigeAnliegenTermin } from "@/lib/actions/anliegen";
 
 export type AnliegenRow = {
   id: string;
@@ -14,7 +15,66 @@ export type AnliegenRow = {
   status: string;
   antwort: string | null;
   created_at: string;
+  termin_vorschlaege: string[] | null;
+  termin_bestaetigt: string | null;
 };
+
+// "2026-07-22T14:30" → "Mi., 22.07.2026, 14:30 Uhr"
+const slotLabel = (s: string) => {
+  const d = new Date(s);
+  return Number.isNaN(d.getTime())
+    ? s
+    : `${d.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}, ${d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr`;
+};
+
+function TerminWahl({ a }: { a: AnliegenRow }) {
+  const [pending, startTransition] = useTransition();
+  const [fehler, setFehler] = useState<string | null>(null);
+  const slots = a.termin_vorschlaege ?? [];
+
+  if (a.termin_bestaetigt) {
+    return (
+      <p style={{ fontSize: 12, marginTop: 8 }}>
+        <span className="badge badge-green">
+          <CalendarClock size={11} style={{ verticalAlign: "-1px" }} /> Termin bestätigt: {slotLabel(a.termin_bestaetigt)}
+        </span>
+      </p>
+    );
+  }
+  if (slots.length === 0 || a.status === "erledigt") return null;
+
+  return (
+    <div style={{ marginTop: 8, padding: "10px 12px", background: "var(--bg3)", borderRadius: 8, border: "1px solid var(--line)" }}>
+      <p style={{ fontSize: 12, margin: "0 0 8px", fontWeight: 600 }}>
+        <CalendarClock size={12} style={{ verticalAlign: "-2px" }} /> Dein Vermieter schlägt Termine vor — wähle einen:
+      </p>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {slots.map((s) => (
+          <button
+            key={s}
+            type="button"
+            className="btn btn-outline"
+            style={{ fontSize: 12 }}
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => {
+                setFehler(null);
+                const r = await bestaetigeAnliegenTermin(a.id, s);
+                if (r?.error) setFehler(r.error);
+              })
+            }
+          >
+            {slotLabel(s)}
+          </button>
+        ))}
+      </div>
+      {fehler && <p style={{ fontSize: 12, color: "var(--red)", marginTop: 6 }}>{fehler}</p>}
+      <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 8, marginBottom: 0 }}>
+        Passt keiner? Antworte deinem Vermieter über ein neues Anliegen oder telefonisch.
+      </p>
+    </div>
+  );
+}
 
 export type DateiRef = { id: string; name: string; anliegen_id: string };
 
@@ -159,6 +219,7 @@ export default function AnliegenPortal({
                   <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, whiteSpace: "pre-wrap" }}>{a.beschreibung}</p>
                 )}
                 <AnhangLinks dateien={dateienVon(a.id)} />
+                <TerminWahl a={a} />
                 {a.antwort && (
                   <p style={{ fontSize: 12, marginTop: 8, padding: "8px 10px", background: "var(--gold-pale)", borderLeft: "3px solid var(--gold)", borderRadius: 6 }}>
                     <strong>Antwort deines Vermieters:</strong> {a.antwort}
