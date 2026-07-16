@@ -6,7 +6,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildDocPdf } from "@/lib/pdf/docPdf";
 import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
 import { buildProtokollPdf, type ProtokollDaten } from "@/lib/pdf/protokollPdf";
-import { buildWohnungsgeberPdf } from "@/lib/pdf/wohnungsgeberPdf";
 import { berechneNk, type NkRawPosition, type NkCo2Input } from "@/lib/nk";
 import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
@@ -282,72 +281,6 @@ export async function erzeugeProtokollPdf(
     pdf,
     titel: `Übergabeprotokoll (${typ === "einzug" ? "Einzug" : "Auszug"})`,
     dateiname: `Uebergabeprotokoll_${safe(mieterName)}.pdf`,
-    mieterName,
-  };
-}
-
-// ------------------------------------------------ Wohnungsgeberbestätigung ----
-export type WohnungsgeberFields = {
-  vorgang: string;          // "einzug" | "auszug"
-  datum: string;            // Einzugs-/Auszugsdatum, ISO
-  weiterePersonen: string;  // zusätzliche meldepflichtige Personen, je Zeile
-};
-
-export async function erzeugeWohnungsgeberPdf(
-  supabase: SupabaseClient,
-  userId: string,
-  mieterId: string,
-  f: WohnungsgeberFields,
-): Promise<ErzeugtesPdf | null> {
-  const vorgang = f.vorgang === "auszug" ? ("auszug" as const) : ("einzug" as const);
-
-  const { data: tenant } = await supabase
-    .from("mieter")
-    .select("vorname,nachname,mieter_adresse,einheit,prop_id,mietbeginn,mietende")
-    .eq("id", mieterId)
-    .single();
-  if (!tenant) return null;
-
-  const [{ data: property }, { data: profil }] = await Promise.all([
-    tenant.prop_id
-      ? supabase.from("properties").select("bezeichnung,adresse").eq("id", tenant.prop_id).single()
-      : Promise.resolve({ data: null }),
-    supabase
-      .from("vermieter_profil")
-      .select("name,strasse,plz,ort")
-      .eq("user_id", userId)
-      .maybeSingle(),
-  ]);
-
-  const mieterName = `${tenant.vorname ?? ""} ${tenant.nachname ?? ""}`.trim();
-  const wohnungsanschrift =
-    [property?.adresse, tenant.einheit].filter(Boolean).join(", ") ||
-    tenant.mieter_adresse ||
-    property?.bezeichnung ||
-    "—";
-  const wohnungsgeberAnschrift =
-    [profil?.strasse, [profil?.plz, profil?.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-
-  // Fallback-Datum: Einzug → Mietbeginn, Auszug → Mietende.
-  const datum = f.datum || (vorgang === "auszug" ? tenant.mietende : tenant.mietbeginn) || "";
-  const weitere = f.weiterePersonen
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const pdf = await buildWohnungsgeberPdf({
-    vorgang,
-    datum,
-    wohnungsgeberName: profil?.name || "",
-    wohnungsgeberAnschrift,
-    wohnungsanschrift,
-    personen: [mieterName, ...weitere].filter(Boolean),
-  });
-
-  return {
-    pdf,
-    titel: `Wohnungsgeberbestätigung (${vorgang === "einzug" ? "Einzug" : "Auszug"})`,
-    dateiname: `Wohnungsgeberbestaetigung_${safe(mieterName)}.pdf`,
     mieterName,
   };
 }
