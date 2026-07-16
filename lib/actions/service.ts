@@ -212,7 +212,23 @@ export async function entscheideAuftrag(id: string, freigeben: boolean, mieterId
   return { ok: true };
 }
 
-/** Service-Partner: Auftrag beantworten (angenommen/erledigt/abgelehnt). */
+// Rechnungs-Anhang: gleiche Grenzen wie bei Anliegen-Anhängen.
+const RECHNUNG_MAX = 4 * 1024 * 1024;
+const RECHNUNG_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
+
+/** "1.234,56" / "1234.56" → number | null (deutsche + englische Schreibweise). */
+function parseBetrag(s: string): number | null {
+  let t = s.replace(/[€\s]/g, "");
+  if (t === "") return null;
+  if (/,\d{1,2}$/.test(t)) t = t.replace(/\./g, "").replace(",", ".");
+  else t = t.replace(",", ".");
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
+}
+
+/** Service-Partner: Auftrag beantworten (angenommen/erledigt/abgelehnt).
+ *  Beim Erledigen können Betrag, Lohnanteil (§ 35a) und die Rechnung
+ *  mitgegeben werden — der Vermieter übernimmt das per Klick als Kosten. */
 export async function beantworteAuftrag(formData: FormData) {
   const supabase = createClient();
   const {
@@ -226,9 +242,37 @@ export async function beantworteAuftrag(formData: FormData) {
   if (!id || !["angenommen", "erledigt", "abgelehnt"].includes(status)) {
     return { error: "Ungültige Eingabe." };
   }
+
+  const update: Record<string, unknown> = {
+    status,
+    antwort: antwort || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (status === "erledigt") {
+    const betrag = parseBetrag(String(formData.get("betrag") ?? ""));
+    const lohnanteil = parseBetrag(String(formData.get("lohnanteil") ?? ""));
+    if (lohnanteil != null && betrag == null) return { error: "Lohnanteil ohne Gesamtbetrag — bitte auch den Betrag angeben." };
+    if (lohnanteil != null && betrag != null && lohnanteil > betrag) {
+      return { error: "Der Lohnanteil kann nicht über dem Gesamtbetrag liegen." };
+    }
+    if (betrag != null) {
+      update.betrag = betrag;
+      update.lohnanteil = lohnanteil;
+    }
+    const datei = formData.get("rechnung");
+    if (datei instanceof File && datei.size > 0) {
+      if (datei.size > RECHNUNG_MAX) return { error: "Die Rechnung ist größer als 4 MB." };
+      if (!RECHNUNG_MIME.includes(datei.type)) return { error: "Rechnung: nur Fotos (JPG/PNG/WebP/HEIC) oder PDF." };
+      update.rechnung_name = datei.name;
+      update.rechnung_type = datei.type;
+      update.rechnung_data = Buffer.from(await datei.arrayBuffer()).toString("base64");
+    }
+  }
+
   const { data, error } = await supabase
     .from("auftraege")
-    .update({ status, antwort: antwort || null, updated_at: new Date().toISOString() })
+    .update(update)
     .eq("id", id)
     .eq("service_user_id", user.id)
     // Nur freigegebene Aufträge sind beantwortbar (Freigabe-Umgehung verhindern)
@@ -238,6 +282,90 @@ export async function beantworteAuftrag(formData: FormData) {
   if (error || !data) return { error: "Konnte nicht gespeichert werden — der Auftrag wurde ggf. zurückgezogen." };
   revalidatePath("/service");
   revalidatePath("/anliegen");
+  return { ok: true };
+}
+
+// Kategorien, in die ein Auftrag übernommen werden darf (Kosten-Formular).
+const UEBERNAHME_KATEGORIEN = ["Reparatur", "Instandhaltung", "Modernisierung", "Verwaltung", "Sonstiges"];
+
+/** Vermieter: erledigten Auftrag als Kosten-Buchung übernehmen (Betrag,
+ *  Rechnung als Anhang, Lohnanteil dokumentiert in der Notiz — für die
+ *  § 35a-Bescheinigung der Mieter in der NK-Abrechnung). */
+export async function uebernimmAuftragAlsKosten(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const id = String(formData.get("id") ?? "");
+  const kat = String(formData.get("kategorie") ?? "Reparatur");
+  const kategorie = UEBERNAHME_KATEGORIEN.includes(kat) ? kat : "Reparatur";
+  if (!id) return { error: "Ungültige Eingabe." };
+
+  const { data: a } = await supabase
+    .from("auftraege")
+    .select("titel,objekt_name,prop_id,betrag,lohnanteil,rechnung_name,rechnung_type,rechnung_data,kosten_id,status,service_user_id")
+    .eq("id", id)
+    .eq("vermieter_id", user.id)
+    .maybeSingle();
+  if (!a) return { error: "Auftrag nicht gefunden." };
+  if (a.status !== "erledigt") return { error: "Nur erledigte Aufträge lassen sich übernehmen." };
+  if (a.kosten_id) return { error: "Dieser Auftrag wurde bereits als Kosten erfasst." };
+  if (!(Number(a.betrag) > 0)) return { error: "Der Partner hat keinen Betrag angegeben — bitte manuell unter Kosten erfassen." };
+
+  const { data: partner } = await supabase
+    .from("service_zugaenge")
+    .select("firma,email")
+    .eq("vermieter_id", user.id)
+    .eq("user_id", a.service_user_id)
+    .maybeSingle();
+  const partnerName = partner?.firma || partner?.email || "Service-Partner";
+
+  const notizTeile = [`Übernommen aus Service-Auftrag (${partnerName}).`];
+  if (Number(a.lohnanteil) > 0) {
+    notizTeile.push(`Davon Arbeits-/Lohnanteil: ${Number(a.lohnanteil).toFixed(2)} € (§ 35a EStG — für die NK-Abrechnung als Lohnanteil erfassen).`);
+  }
+
+  // Rechnung in den Belege-Bucket kopieren (wie beim normalen Kosten-Upload);
+  // schlägt der Upload fehl, bleibt die Base64-Ablage als Fallback lesbar.
+  let rechnung: Record<string, unknown> = {};
+  if (a.rechnung_data) {
+    const buf = Buffer.from(a.rechnung_data, "base64");
+    const kb = buf.length / 1024;
+    const groesse = kb < 1024 ? `${Math.round(kb)} KB` : `${(kb / 1024).toFixed(1)} MB`;
+    const ext = (a.rechnung_name?.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("belege")
+      .upload(path, buf, { contentType: a.rechnung_type ?? "application/octet-stream", upsert: false });
+    rechnung = {
+      rechnung_name: a.rechnung_name,
+      rechnung_type: a.rechnung_type,
+      rechnung_size: groesse,
+      ...(upErr ? { rechnung_data: a.rechnung_data } : { rechnung_path: path, rechnung_data: null }),
+    };
+  }
+
+  const { data: neu, error } = await supabase
+    .from("kosten")
+    .insert({
+      user_id: user.id,
+      prop_id: a.prop_id ?? null,
+      buchungsdatum: new Date().toISOString().slice(0, 10),
+      kategorie,
+      betrag: Number(a.betrag),
+      beschreibung: a.titel.slice(0, 200),
+      notiz: notizTeile.join(" "),
+      ...rechnung,
+    })
+    .select("id")
+    .single();
+  if (error || !neu) return { error: "Kosten-Buchung konnte nicht angelegt werden." };
+
+  await supabase.from("auftraege").update({ kosten_id: neu.id }).eq("id", id).eq("vermieter_id", user.id);
+  revalidatePath("/anliegen");
+  revalidatePath("/kosten");
   return { ok: true };
 }
 
