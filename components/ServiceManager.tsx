@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import {
   erzeugeServiceCode, widerrufeServiceCode, entferneServicePartner,
-  erstelleAuftrag, loescheAuftrag, entscheideAuftrag,
+  erstelleAuftrag, loescheAuftrag, entscheideAuftrag, uebernimmAuftragAlsKosten,
 } from "@/lib/actions/service";
 import { erstelleFirma, loescheFirma } from "@/lib/actions/firmen";
 import { GEWERKE } from "@/lib/gewerke";
@@ -28,6 +28,8 @@ export type AuftragRow = {
   objekt_name: string | null; partnerName: string;
   erstellt_von: string; firmaName: string | null;
   mieterName: string | null; public_token: string;
+  betrag: number | null; lohnanteil: number | null;
+  rechnung_name: string | null; kosten_id: string | null;
 };
 export type MieterOption = { id: string; name: string };
 
@@ -39,6 +41,51 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   abgelehnt: { label: "Abgelehnt", cls: "badge-red" },
   nicht_freigegeben: { label: "Nicht freigegeben", cls: "badge-red" },
 };
+
+const eur = (n: number) =>
+  new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + " €";
+
+// Erledigter Auftrag mit Betrag → per Klick als Kosten-Buchung übernehmen
+// (Rechnung wandert als Beleg mit; Lohnanteil landet in der Notiz für § 35a).
+function KostenUebernahme({ a }: { a: AuftragRow }) {
+  const [pending, startTransition] = useTransition();
+  const [fehler, setFehler] = useState<string | null>(null);
+
+  if (a.status !== "erledigt" || !(Number(a.betrag) > 0)) return null;
+  if (a.kosten_id) {
+    return (
+      <p style={{ fontSize: 12, marginTop: 6 }}>
+        <span className="badge badge-green"><Check size={11} style={{ verticalAlign: "-1px" }} /> Als Kosten erfasst ({eur(Number(a.betrag))})</span>
+      </p>
+    );
+  }
+  return (
+    <form
+      action={(fd) =>
+        startTransition(async () => {
+          setFehler(null);
+          const r = await uebernimmAuftragAlsKosten(fd);
+          if (r?.error) setFehler(r.error);
+        })
+      }
+      style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 8, padding: "8px 10px", background: "var(--bg3)", borderRadius: 8, border: "1px solid var(--line)" }}
+    >
+      <input type="hidden" name="id" value={a.id} />
+      <span style={{ fontSize: 12 }}>
+        <strong>{eur(Number(a.betrag))}</strong>
+        {Number(a.lohnanteil) > 0 && <span style={{ color: "var(--muted)" }}> · davon Lohn {eur(Number(a.lohnanteil))} (§ 35a)</span>}
+        {a.rechnung_name && <span style={{ color: "var(--muted)" }}> · Rechnung: {a.rechnung_name}</span>}
+      </span>
+      <select name="kategorie" className="input" defaultValue="Reparatur" style={{ fontSize: 12, padding: "4px 8px", width: "auto" }}>
+        {["Reparatur", "Instandhaltung", "Modernisierung", "Verwaltung", "Sonstiges"].map((k) => <option key={k}>{k}</option>)}
+      </select>
+      <button type="submit" className="btn btn-gold" disabled={pending} style={{ fontSize: 12 }}>
+        {pending ? "…" : "Als Kosten übernehmen"}
+      </button>
+      {fehler && <span style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</span>}
+    </form>
+  );
+}
 
 function CodeSektion({ codes }: { codes: ServiceCodeRow[] }) {
   const [neuer, setNeuer] = useState<string | null>(null);
@@ -353,6 +400,7 @@ export default function ServiceManager({
                       <strong>Rückmeldung:</strong> {a.antwort}
                     </p>
                   )}
+                  <KostenUebernahme a={a} />
                 </div>
               );
             })

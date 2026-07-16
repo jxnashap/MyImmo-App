@@ -80,6 +80,9 @@ function Eintrag({ a, firmen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[] 
   const firma = a.firma_id ? firmen.find((f) => f.id === a.firma_id) ?? null : null;
   const [aktion, setAktion] = useState<null | "angenommen" | "erledigt" | "abgelehnt">(null);
   const [text, setText] = useState("");
+  const [betrag, setBetrag] = useState("");
+  const [lohn, setLohn] = useState("");
+  const [rechnung, setRechnung] = useState<File | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const s = STATUS_META[a.status] ?? STATUS_META.offen;
@@ -91,9 +94,14 @@ function Eintrag({ a, firmen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[] 
       fd.set("id", a.id);
       fd.set("status", status);
       fd.set("antwort", text);
+      if (status === "erledigt") {
+        fd.set("betrag", betrag);
+        fd.set("lohnanteil", lohn);
+        if (rechnung) fd.set("rechnung", rechnung);
+      }
       const r = await beantworteAuftrag(fd);
       if (r?.error) setFehler(r.error);
-      else { setAktion(null); setText(""); }
+      else { setAktion(null); setText(""); setBetrag(""); setLohn(""); setRechnung(null); }
     });
 
   return (
@@ -140,6 +148,32 @@ function Eintrag({ a, firmen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[] 
                 rows={2} maxLength={1000} className="input" value={text} onChange={(e) => setText(e.target.value)}
                 placeholder={aktion === "abgelehnt" ? "Kurze Begründung (empfohlen)" : "Rückmeldung an den Vermieter (optional, z. B. Termin oder Materialbedarf)"}
               />
+              {aktion === "erledigt" && (
+                <>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)", flex: 1, minWidth: 130 }}>
+                      Rechnungsbetrag (€, optional)
+                      <input className="input" inputMode="decimal" value={betrag} onChange={(e) => setBetrag(e.target.value)} placeholder="z. B. 245,50" />
+                    </label>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)", flex: 1, minWidth: 130 }}>
+                      davon Arbeits-/Lohnanteil (€)
+                      <input className="input" inputMode="decimal" value={lohn} onChange={(e) => setLohn(e.target.value)} placeholder="z. B. 180,00" />
+                    </label>
+                  </div>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+                    Rechnung anhängen (PDF/Foto, max. 4 MB)
+                    <input
+                      type="file" className="input"
+                      accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
+                      onChange={(e) => setRechnung(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  <p style={{ fontSize: 11, color: "var(--faint)", margin: 0 }}>
+                    Betrag, Lohnanteil und Rechnung gehen an den Vermieter — er übernimmt sie per Klick
+                    in seine Kostenerfassung. Der Lohnanteil ist für die Steuer wichtig (§ 35a).
+                  </p>
+                </>
+              )}
               {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
               <div style={{ display: "flex", gap: 8 }}>
                 <button type="button" className="btn btn-gold" disabled={pending} onClick={() => senden(aktion)}>

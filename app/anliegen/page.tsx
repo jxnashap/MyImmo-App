@@ -31,7 +31,8 @@ export default async function AnliegenPage({
     supabase.from("bewerbungen").select("*").order("created_at", { ascending: false }).limit(200),
     supabase.from("service_zugaenge").select("user_id,firma,email,created_at").order("created_at", { ascending: false }),
     supabase.from("einladungscodes").select("code,gueltig_bis").eq("rolle", "service").is("eingeloest_am", null).gt("gueltig_bis", new Date().toISOString()).order("created_at", { ascending: false }),
-    supabase.from("auftraege").select("*").order("created_at", { ascending: false }).limit(100),
+    // rechnung_data (Base64) bewusst NICHT laden — nur Metadaten für die Liste.
+    supabase.from("auftraege").select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,service_user_id,erstellt_von,firma_id,mieter_id,public_token,betrag,lohnanteil,rechnung_name,kosten_id").order("created_at", { ascending: false }).limit(100),
     supabase.from("firmen").select("id,name,gewerk,telefon,email,website,notiz").order("name"),
   ]);
 
@@ -118,6 +119,10 @@ export default async function AnliegenPage({
     firmaName: firmen.find((f) => f.id === a.firma_id)?.name ?? null,
     mieterName: a.mieter_id ? mieterName(a.mieter_id) : null,
     public_token: a.public_token,
+    betrag: a.betrag == null ? null : Number(a.betrag),
+    lohnanteil: a.lohnanteil == null ? null : Number(a.lohnanteil),
+    rechnung_name: a.rechnung_name ?? null,
+    kosten_id: a.kosten_id ?? null,
   }));
   // Badge: Freigabe-Anfragen des Hausmeisters zählen mit (Benachrichtigung).
   const offeneAuftraege = auftraege.filter((a) => a.status === "offen" || a.status === "freigabe").length;
