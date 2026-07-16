@@ -276,19 +276,31 @@ export default async function TerminePage({
             <button className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Termin</button>
           </form>
 
-          {/* Wartungs-Vorlagen: Ein Klick legt den Termin mit Intervall an */}
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
-            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Schnell anlegen (Wartung &amp; Pflichtprüfungen)</div>
+          {/* Prüfpflichten-Katalog: Ein Klick legt den wiederkehrenden Termin an.
+              EIN gemeinsames Formular — jeder Button trägt seine Vorlage als
+              formAction, das Objekt-Select gilt für alle. */}
+          <form style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Schnell anlegen (Wartung &amp; Pflichtprüfungen)</div>
+              <select name="prop_id" className="input" style={{ fontSize: 11.5, padding: "3px 8px", width: "auto" }}>
+                <option value="">Objekt: keins / alle</option>
+                {(props ?? []).map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
+              </select>
+            </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {WARTUNGS_VORLAGEN.map((v) => (
-                <form key={v.titel} action={createVorlageTermin.bind(null, v.titel, v.wiederkehrung, v.kategorie, v.notiz, null)} style={{ display: "inline-flex" }}>
-                  <button className="btn btn-ghost" style={{ fontSize: 11.5 }} title={`${v.notiz} · ${WIEDERKEHRUNG_LABEL[v.wiederkehrung]}`}>
-                    {KATEGORIE_STIL[v.kategorie]?.icon} {v.titel} <span style={{ color: "var(--muted)" }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[v.wiederkehrung]}</span>
-                  </button>
-                </form>
+                <button
+                  key={v.titel}
+                  formAction={createVorlageTermin.bind(null, v.titel, v.wiederkehrung, v.kategorie, v.notiz, null)}
+                  className="btn btn-ghost"
+                  style={{ fontSize: 11.5, opacity: v.kern ? 1 : 0.75 }}
+                  title={`${v.notiz}${v.relevanz ? ` · Nur relevant: ${v.relevanz}` : ""} · ${WIEDERKEHRUNG_LABEL[v.wiederkehrung]}`}
+                >
+                  {KATEGORIE_STIL[v.kategorie]?.icon} {v.titel} <span style={{ color: "var(--muted)" }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[v.wiederkehrung]}</span>
+                </button>
               ))}
             </div>
-          </div>
+          </form>
         </div>
       </div>
       </AufklappForm>

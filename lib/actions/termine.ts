@@ -125,11 +125,15 @@ export async function createVorlageTermin(
   kategorie: string,
   notiz: string,
   propId: string | null,
+  formData?: FormData,
 ) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   if (!(WIEDERKEHRUNGEN as readonly string[]).includes(wiederkehrung)) return;
+
+  // Objekt: fest gebunden (Objektseite) oder aus dem Formular (Termine-Seite).
+  const prop = propId || (formData ? String(formData.get("prop_id") ?? "") : "") || null;
 
   const d = new Date();
   d.setDate(d.getDate() + 30);
@@ -137,11 +141,12 @@ export async function createVorlageTermin(
     user_id: user.id,
     titel,
     datum: d.toISOString().split("T")[0],
-    prop_id: propId,
+    prop_id: prop,
     notiz,
     kategorie: (TERMIN_KATEGORIEN as readonly string[]).includes(kategorie) ? kategorie : "Wartung",
     wiederkehrung,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/termine");
+  if (prop) revalidatePath(`/properties/${prop}`);
 }
