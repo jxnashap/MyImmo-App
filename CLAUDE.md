@@ -94,6 +94,20 @@ Entscheidungen aus der Planung (12.07.2026):
   Verschlüsselung der Bankdaten (IBAN/Inhaber, `lib/crypto/secure.ts`). **Schlüsselverlust =
   Bankdaten unwiederbringlich weg** → sicher sichern (Passwortmanager), nie ins Repo/Logs.
 
+### KI über AWS Frankfurt (Bedrock) statt Anthropic-USA — optional, für den AVV
+Werden ALLE folgenden Env gesetzt, laufen OCR/KI-Import über **Amazon Bedrock in
+eu-central-1 (AWS Frankfurt)** statt über die US-API — Verarbeitung bleibt in der EU
+(kein Drittland-Transfer, AVV/DPA über AWS). Fehlt eine, läuft automatisch der direkte
+Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/bedrock.ts`.
+- `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY` — IAM-User mit Policy `bedrock:InvokeModel`.
+- `BEDROCK_MODEL_ID` — Bedrock-/Inference-Profile-ID, z. B. `eu.anthropic.claude-sonnet-4-...-v1:0`
+  (exakte ID in der Bedrock-Konsole → „Model catalog" der Region ablesen; EU nutzt `eu.`-Profile).
+- `BEDROCK_REGION` — optional, Default `eu-central-1`. `BEDROCK_SESSION_TOKEN` — nur bei STS.
+- **AWS-Setup**: Konto anlegen → Bedrock-Konsole in Frankfurt → „Model access" für das
+  Claude-Modell anfordern (Freischaltung dauert teils Minuten) → IAM-User mit `bedrock:InvokeModel`
+  → Keys als Vercel-Env. SigV4-Signierung ist gegen den AWS-Testvektor geprüft (`tests/bedrock.test.ts`),
+  der echte End-to-End-Call ist aber erst nach dem AWS-Setup verifizierbar.
+
 ## Datenbank
 - Supabase-Projekt `kozhxrvyilkchjpcuwcm` (Region eu-central-1).
 - Dateien (Belege, Archiv-Dokumente) werden als Base64 in Tabellenspalten gespeichert — **kein Storage-Bucket** nötig.
