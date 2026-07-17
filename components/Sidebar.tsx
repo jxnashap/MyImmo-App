@@ -31,6 +31,7 @@ const VERWALTUNG: NavItem[] = [
 ];
 
 const KALKULATOR: NavItem[] = [
+  { href: "/bewertung", label: "Marktwert-Schätzer", icon: TrendingUp },
   { href: "/roter-faden", label: "Roter Faden", icon: Route },
   { href: "/cockpit", label: "Cockpit", icon: Calculator },
   { href: "/afa-assistent", label: "AfA-Assistent", icon: Percent },
