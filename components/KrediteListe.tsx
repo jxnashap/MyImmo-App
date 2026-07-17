@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Pencil, X, TriangleAlert } from "lucide-react";
+import { X, TriangleAlert } from "lucide-react";
 import { euro, datum } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
 import { updateKredit, deleteKredit } from "@/lib/actions/buchungen";
@@ -57,7 +57,6 @@ export default function KrediteListe({
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}% Zins</span>}
-                <button type="button" className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }} onClick={(e) => { stop(e); setOpenId(k.id); }}><Pencil size={14} /></button>
                 <span onClick={stop} style={{ display: "inline-flex" }}>
                   <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
                 </span>
