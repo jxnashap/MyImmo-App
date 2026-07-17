@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { euro, datum } from "@/lib/format";
+import { datum } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
-import { deleteKredit } from "@/lib/actions/buchungen";
-import DeleteButton from "@/components/DeleteButton";
+import KrediteListe from "@/components/KrediteListe";
 import type { Kredit, Property } from "@/lib/types";
-import { Plus, Pencil, X, Siren, Landmark, TriangleAlert } from "lucide-react";
+import { Plus, Siren, Landmark } from "lucide-react";
 
-type KreditExt = Kredit & { darlnr?: string | null; grundschuld?: number | null; beleihung?: number | null };
+type KreditExt = Kredit;
 
 export default async function KreditePage() {
   const supabase = createClient();
@@ -60,58 +59,7 @@ export default async function KreditePage() {
       {list.length === 0 ? (
         <div className="empty"><Landmark className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Darlehen</h4></div>
       ) : (
-        list.map((k) => {
-          const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? 0) / k.betrag) * 100))) : 100;
-          const tilgtPct = 100 - pct;
-          const moZins = k.restschuld ? (k.restschuld * (k.zinssatz ?? 0) / 100) / 12 : 0;
-          const moTilg = (k.monatsrate ?? 0) - moZins;
-          const warn = getRefinanzWarning(k.zinsbindung);
-          return (
-            <div key={k.id} className="section" style={{ marginBottom: 14 }}>
-              {warn && (
-                <div style={{ background: warn.bg, borderLeft: `3px solid ${warn.color}`, padding: "8px 14px", fontSize: 12, color: warn.color, fontWeight: 500 }}>
-                  <TriangleAlert size={13} style={{ verticalAlign: "-2px" }} /> Zinsbindung läuft ab: <strong>{datum(k.zinsbindung)}</strong>
-                </div>
-              )}
-              <div className="section-header">
-                <div>
-                  <h3>{k.bezeichnung || k.bank || "Darlehen"}</h3>
-                  <span style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"}{k.bank ? ` · ${k.bank}` : ""}{k.darlnr ? ` · Nr. ${k.darlnr}` : ""}</span>
-                </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}% Zins</span>}
-                  <Link href={`/kredite/${k.id}/edit`} className="delete-btn" title="Bearbeiten" style={{ color: "var(--muted)" }}><Pencil size={14} /></Link>
-                  <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
-                </div>
-              </div>
-              <div className="section-body">
-                <div className="kredit-grid" style={{ marginBottom: 14 }}>
-                  <div><div className="kredit-field-lbl">Urspr. Darlehen</div><div className="kredit-field-val">{euro(k.betrag)}</div></div>
-                  <div><div className="kredit-field-lbl">Restschuld</div><div className="kredit-field-val" style={{ color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
-                  <div><div className="kredit-field-lbl">Rate / Monat</div><div className="kredit-field-val">{euro(k.monatsrate)}</div></div>
-                  <div><div className="kredit-field-lbl">Laufzeit bis</div><div className="kredit-field-val">{k.laufzeit ?? "–"}</div></div>
-                </div>
-                <div className="kredit-grid" style={{ marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-                  <div><div className="kredit-field-lbl">Zinsen / Mo.</div><div className="kredit-field-val" style={{ color: "var(--muted)" }}>{euro(moZins)}</div></div>
-                  <div><div className="kredit-field-lbl">Tilgung / Mo.</div><div className="kredit-field-val" style={{ color: "var(--green)" }}>{euro(Math.max(0, moTilg))}</div></div>
-                  <div><div className="kredit-field-lbl">Tilgungssatz</div><div className="kredit-field-val">{k.tilgungssatz ? `${k.tilgungssatz}% p.a.` : "–"}</div></div>
-                  <div><div className="kredit-field-lbl">Zinsbindung</div><div className="kredit-field-val" style={{ color: warn ? warn.color : "inherit" }}>{k.zinsbindung ? datum(k.zinsbindung) : "–"}</div></div>
-                </div>
-                {(k.grundschuld || k.beleihung || k.sonder) && (
-                  <div className="kredit-grid" style={{ marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-                    <div><div className="kredit-field-lbl">Grundschuld</div><div className="kredit-field-val">{k.grundschuld ? euro(k.grundschuld) : "–"}</div></div>
-                    <div><div className="kredit-field-lbl">Beleihungsauslauf</div><div className="kredit-field-val">{k.beleihung ? `${k.beleihung}%` : "–"}</div></div>
-                    <div><div className="kredit-field-lbl">Darlehensnr.</div><div className="kredit-field-val" style={{ fontSize: 11 }}>{k.darlnr || "–"}</div></div>
-                    <div><div className="kredit-field-lbl">Sondertilgung</div>
-                      <div className="kredit-field-val">{k.sonder || "–"}</div></div>
-                  </div>
-                )}
-                <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Getilgt: <strong style={{ color: "var(--text)" }}>{tilgtPct}%</strong></div>
-                <div className="progress-bar" style={{ height: 8 }}><div className="progress-fill" style={{ width: `${tilgtPct}%`, background: "var(--teal)" }} /></div>
-              </div>
-            </div>
-          );
-        })
+        <KrediteListe rows={list} properties={properties} />
       )}
     </div>
   );
