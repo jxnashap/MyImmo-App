@@ -605,6 +605,10 @@ select::-ms-expand { display: none; }
    ===================================================================== */
 tr.row-click, .row-click { cursor: pointer; }
 tr.row-click:focus-visible, .row-click:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+/* Klickbare Karten (z. B. Kredite): sichtbares Feedback, dass die ganze Karte
+   das Bearbeiten öffnet. */
+.section.row-click { transition: border-color .15s ease, box-shadow .15s ease; }
+.section.row-click:hover { border-color: var(--gold); box-shadow: 0 4px 18px -8px rgba(0,0,0,.35); }
 .modal-sheet { max-height: 90vh; overflow-y: auto; }
 .modal-sheet.wide { max-width: 640px; }
 
