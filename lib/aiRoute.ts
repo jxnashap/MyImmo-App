@@ -1,6 +1,7 @@
 // Gemeinsame Helfer für die KI-Routen (/api/import, /api/nk-ocr):
 // Auth-Schutz, Anthropic-Call mit Timeout und Größenprüfung für Uploads.
 import { createClient } from "@/lib/supabase/server";
+import { bedrockKonfiguriert, callBedrock } from "@/lib/bedrock";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
@@ -13,12 +14,19 @@ export async function getAuthedUser() {
   return user;
 }
 
-/** Anthropic-Messages-Call mit hartem Timeout (verhindert hängende Functions). */
+/**
+ * Claude-Messages-Call mit hartem Timeout (verhindert hängende Functions).
+ * Sind die BEDROCK_*-Env-Variablen gesetzt, läuft der Call über Amazon
+ * Bedrock in AWS Frankfurt (EU, kein Drittland-Transfer) — sonst über die
+ * direkte Anthropic-API. Beide liefern dasselbe Antwort-Format.
+ */
 export async function callAnthropic(
   apiKey: string,
   payload: unknown,
   timeoutMs = 45_000
 ): Promise<Response> {
+  if (bedrockKonfiguriert()) return callBedrock(payload, timeoutMs);
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
