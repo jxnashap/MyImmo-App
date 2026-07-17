@@ -3,6 +3,7 @@ import {
   Search, Calculator, Route as RouteIcon, Landmark, FolderClosed, FileCheck2,
   ExternalLink, TriangleAlert, ArrowRight,
 } from "lucide-react";
+import AblaufSchritt from "@/components/AblaufSchritt";
 
 export const metadata = { title: "Kauf-Assistent — MyImmo" };
 
@@ -11,23 +12,7 @@ export const metadata = { title: "Kauf-Assistent — MyImmo" };
 // linearen Kauf-Weg verklammert. Rein informativ/navigierend — keine
 // Darlehensvermittlung (§ 34i GewO), nur redaktionelle Erklärtexte.
 
-function Schritt({ n, letzte, icon: Icon, titel, children }: {
-  n: number; letzte?: boolean; icon: React.ElementType; titel: string; children: React.ReactNode;
-}) {
-  return (
-    <div style={{ display: "flex", gap: 16, alignItems: "stretch" }}>
-      {/* Nummern-Spalte mit Verbindungslinie */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-        <div style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--gold)", color: "#1a1814", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 16 }}>{n}</div>
-        {!letzte && <div style={{ flex: 1, width: 2, background: "var(--line2)", marginTop: 4 }} />}
-      </div>
-      <div className="section" style={{ flex: 1, marginBottom: letzte ? 0 : 18 }}>
-        <div className="section-header"><h3><Icon size={16} style={{ verticalAlign: "-3px" }} /> {titel}</h3></div>
-        <div className="section-body">{children}</div>
-      </div>
-    </div>
-  );
-}
+const Schritt = AblaufSchritt;
 
 const DARLEHEN: { name: string; text: string; warn?: boolean }[] = [
   { name: "Annuitätendarlehen", text: "Konstante Rate aus Zins + Tilgung. Der Standard für fast alle Fälle — planbar, flexibel (Sondertilgung, Tilgungswechsel)." },
