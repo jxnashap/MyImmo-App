@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
@@ -16,6 +16,12 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://my-immo-app.vercel.app"),
   title: "MyImmo — Immobilien-Management",
   description: "Portfolio, Mieter und Dokumente für Privatvermieter",
+};
+
+// Mobile: Seite immer auf Gerätebreite, kein seitliches Rausragen/Rauszoomen.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 // Setzt das gespeicherte Theme vor dem ersten Paint (verhindert Flackern).

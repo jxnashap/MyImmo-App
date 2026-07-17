@@ -124,6 +124,13 @@
 body { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; transition: background-color 0.3s ease, color 0.3s ease; }
 h1, h2, h3, .serif { font-family: 'Fraunces', Georgia, serif; font-weight: 600; }
 
+/* Mobile-Overflow-Netz: nichts darf seitlich rausragen und die Seite über die
+   Gerätebreite hinaus „aufziehen". overflow-x:clip (statt hidden) bricht
+   position:sticky NICHT. Lange Wörter/URLs brechen um statt zu überlaufen. */
+html, body { max-width: 100%; overflow-x: clip; overscroll-behavior-x: none; }
+img, svg, video, canvas, table { max-width: 100%; }
+p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
+
 /* APP SHELL */
 .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
 
