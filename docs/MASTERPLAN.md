@@ -251,3 +251,104 @@ natives App-Development (PWA/Mobile-Web reicht der Zielgruppe zunächst).
 - OCR-Modell-Retention (Covered Models = 30 Tage) gegen die tatsächlich genutzte Modell-ID der
   NK-OCR-Route prüfen; optional PII-Minimierung vor dem API-Call.
 - Eigenen Nutzer-AVV + AGB anwaltlich prüfen lassen (ohnehin geplant mit Impressum/Datenschutz).
+
+---
+
+## 10. Kauf- & Verkauf-Assistent — Konzept & Recherche (17.07.2026)
+
+Ziel: Zwei neue Reiter **Kauf** und **Verkauf**, die aus MyImmo einen Begleiter für die
+*Erwerbs-/Veräußerungsphase* machen — nicht nur Bestandsverwaltung. Basis: zwei tiefe
+Recherchen (ImmoWertV-Bewertung + Finanzierung/Förderung/Recht).
+
+### 10.1 Selbstbewertung nach ImmoWertV 2021 (Marktwert-Schätzung, KEIN Gutachten §194 BauGB)
+
+Leitverfahren automatisch nach Objekt:
+- **ETW** → Vergleichswert (§§24–26): `Vergleichsfaktor × Bezugsgröße` (Gutachterausschuss-Faktoren).
+- **Vermietet / MFH (Kapitalanlage)** → **Ertragswert (§§27–34)** — Kernverfahren für unsere Zielgruppe:
+  `Reinertrag = Rohertrag − Bewirtschaftungskosten`; `Gebäudeertragswert = (Reinertrag − Bodenwert×LZ) × BWF`;
+  `Ertragswert = Gebäudeertragswert + Bodenwert`; `BWF = (1−(1+p)^−n)/p` (p=Liegenschaftszins, n=Restnutzungsdauer).
+  Bewirtschaftungskosten nach **Anlage 3** (Verwaltung 298 €/WE bzw. 357 €/ETW, Instandhaltung 11,70 €/m²·a, Mietausfallwagnis 2 %).
+- **Eigengenutztes EFH/ZFH** → Sachwert (§§35–39): `Bodenwert + (NHK2010 × Baupreisindex × Regionalfaktor × RND/GND)` × **Sachwertfaktor**.
+  NHK2010 (€/m² BGF, Std. 3): EFH ~835, MFH ≤6WE 825; GND Wohngebäude 80 J. (Anlage 1/4).
+
+**Bodenrichtwerte — Linkliste je Bundesland** (Ansicht überall kostenlos):
+BORIS-D (zentral, 12 Länder) https://www.bodenrichtwerte-boris.de · BW https://www.gutachterausschuesse-bw.de/borisbw/ ·
+Bayern https://www.boris-bayern.de · Berlin https://fbinter.stadt-berlin.de/boris/ · Brandenburg https://www.boris-brandenburg.de/boris-bb/ ·
+Bremen https://www.gutachterausschuss.bremen.de · Hamburg https://www.hamburg.de/bsw/gutachterausschuss/ ·
+Hessen https://hvbg.hessen.de/immobilienwerte/boris-hessen · MV https://www.geoportal-mv.de · NDS https://immobilienmarkt.niedersachsen.de ·
+NRW https://www.boris.nrw.de · RLP https://maps.rlp.de · Saarland https://geoportal.saarland.de · Sachsen https://www.boris.sachsen.de ·
+Sachsen-Anhalt https://www.lvermgeo.sachsen-anhalt.de/de/gdp-kostenfreier-brw.html · SH https://www.schleswig-holstein.de/DE/GAA/ ·
+Thüringen https://tlbg.thueringen.de/wertermittlung/
+Ergänzend: Mietspiegel (Rohertrag), Destatis Baupreisindex Tab. 61261 (NHK-Aktualisierung), vdp-Preisindex (Trend, echte Transaktionen),
+Grundstücksmarktberichte der Gutachterausschüsse (Liegenschaftszins + Sachwertfaktor — die einzige Quelle für die Marktanpassung).
+
+**Plausibilitäts-Bandbreiten** (Eingabe-Validierung): LZ MFH 2,0–5,5 % (Default 3,0–3,5), LZ EFH 1,0–3,5 %,
+Bewirtschaftung 18–29 % v. Rohertrag, GND 80 J. fix, Sachwertfaktor hart 0,5–2,0, Vervielfältiger (KP/Jahresnettokaltmiete) 15–33 (Metropole ~39).
+Ergebnis IMMER als **Spanne** ausgeben (LZ ±0,5 PP durchrechnen), nie als Scheingenauigkeit; Ampel gegen Kaufpreis.
+
+### 10.2 Finanzierung — Darlehensarten & Förderung (Referenzzins Juli 2026: ~3,4–3,8 % eff., 10 J.)
+
+Darlehensarten (redaktionelle Erklärtexte, KEINE personalisierte Empfehlung — s. 10.3):
+**Annuität** (Standard), **endfällig + Tilgungsersatz** (Vermieter-Klassiker: Zinsen bleiben voll Werbungskosten),
+Tilgungsdarlehen, Volltilger (Zinsrabatt, unflexibel), Forward (Zinswette), variabel/Cap (Nische),
+**Bausparkombi/„Sofortfinanzierung"** → ⚠️ **Warnhinweis pflicht** (Verbraucherzentrale rät ab: intransparenter Effektivzins,
+Abschlussgebühr, Zuteilungsrisiko — der vom Gründer genannte „Bausparer zur Darlehensablösung" gehört genau hierher),
+KfW-Durchleitung, Policendarlehen.
+
+Förderprogramme 2026 (⚠️ veralten schnell — 2× Anpassung allein 2026, mit „Stand"-Datum pflegen):
+- **Vermieter-tauglich** ✅: KfW 297/**298** (klimafr. Neubau, 298 f. Vermieter), KfW **261** (Sanierung Effizienzhaus),
+  KfW **458** (Heizung, Vermieter max ~35 %), **BAFA BEG EM** (Hülle/Technik), **Landesförderbanken** (z. B. NRW.BANK Mietwohnraum, mit Bindung).
+- **Nur Selbstnutzer** ❌: KfW 124, KfW 300 (Familien), KfW 308 („Jung kauft Alt"), Wohn-Riester.
+→ App muss nach Nutzerprofil (Vermieter/Eigennutzer) **filtern**.
+
+Bank-Unterlagen = **exakt der bestehende Beleihungsordner** (`lib/beleihung.ts`): Objekt/Bonität/Vermietung/ETW,
+Auto-Erzeugung aus MyImmo-Daten, `modusKauf`-Schalter, Token-Link, Bank-Rückkanal — die „Finanzierungsmappe" existiert also schon.
+Vorab-Kennzahlen, die die App selbst rechnet (erlaubnisfrei): Annuität, Beleihungsauslauf/LTV, Kapitaldienstfähigkeit, DSCR (Miete ×70–80 %).
+
+### 10.3 ⚠️ Rechtsgrenzen — der Vision-Reality-Check (kritisch, vor jedem Bau lesen)
+
+- **§ 34i GewO (Immobiliar-Darlehensvermittlung):** Erlaubnis + Sachkundeprüfung + VSH nötig, sobald man
+  *vermittelt oder berät*. IHK-Praxis ist eng: schon „welche Unterlagen die Bank verlangt / welche Finanzierungsform passt"
+  kann Vermittlung sein. **Der geplante Banken-Rückkanal + jede Empfehlung/Reihung + jede Bankvergütung macht MyImmo
+  mit hoher Wahrscheinlichkeit erlaubnispflichtig.** Erlaubnisfrei bleibt nur: Werkzeug, mit dem der Nutzer *selbst* Unterlagen
+  organisiert und *selbst* an eine *selbst gewählte* Bank schickt, ohne dass wir zuführen/empfehlen/verdienen.
+- **§ 492 BGB (Form):** Verbraucherdarlehen brauchen Schriftform; digital nur per **QES (eIDAS, §126a BGB)** — einfache/
+  Tablet-Signatur ist **unwirksam**. Ob QES angeboten wird, entscheidet **die Bank**, nicht die App (DKB/Interhyp/Volksbanken
+  können es, viele nicht). „In der App signieren" ist also nicht erzwingbar.
+- **Grundschuld** = notariell + Grundbuch → immer offline. **Auszahlung** erfolgt durch die Bank nach Grundbucheintrag;
+  eigene Zahlungsabwicklung wäre ZAG-erlaubnispflichtig. → **„Darlehen in der App auszahlen" ist rechtlich nicht erreichbar.**
+
+**Ehrliche Konsequenz:** „digital signieren + auszahlen in der App" ist als eigenes Feature **nicht baubar**. Realistisch & trotzdem
+wertvoll: Rechner + Fördercheck + Finanzierungsmappe (Datenraum, Nutzer verschickt selbst) + Angebots-Upload/Vergleich durch den Nutzer.
+
+**Zuschnitt in zwei Stufen:**
+- **Stufe 1 (erlaubnisfrei, so bauen):** Bewertungs-Rechner, Finanzierungs-/Förder-Rechner mit redaktionellen Erklärtexten,
+  Finanzierungsmappe (= Beleihungsordner, Nutzer schickt selbst), neutraler Angebots-Vergleich (Nutzer lädt Angebote hoch).
+  Die generische Unterlagen-Checkliste anwaltlich als Ratgeber (nicht Anbahnungsleistung) absichern — größtes Restrisiko.
+- **Stufe 2 (nur mit § 34i-Erlaubnis ODER Lizenzpartner Europace/Interhyp/Qualitypool):** Banken-Rückkanal über die Plattform,
+  Angebotseinholung, Empfehlung, Provision, QES-Abschluss (über Bankprozess). Grundschuld/Auszahlung bleiben immer extern.
+
+### 10.4 Umsetzung — Ablaufschema (Cockpit + Roter Faden zusammenführen)
+
+Heute drei überlappende Rechner (Roter Faden = Schnell, Cockpit = Detail, Bankgespräch). Der Kauf-Reiter fasst sie zu
+**einem linearen Ablauf** zusammen; „Roter Faden" und „Cockpit" werden die Schritte 2–3 desselben Flows (kein Extra-Menüpunkt mehr).
+
+```mermaid
+flowchart TD
+  A[Objekt gefunden] --> B[1 Steckbrief: Typ, Fläche, Baujahr, Kaufpreis, vermietet?]
+  B --> C[2 Marktwert schätzen: ImmoWertV, BORIS-Link, Ergebnis als Spanne + Ampel vs. Kaufpreis]
+  C --> D[3 Durchrechnen: Kaufnebenkosten, Annuität, Cashflow, LTV, DSCR, Steuer]
+  D --> E[4 Finanzierung waehlen: Darlehensarten erklaert + Foerdercheck nach Profil]
+  E --> F[5 Finanzierungsmappe = Beleihungsordner: Unterlagen sammeln, Token-Link an eigene Bank]
+  F --> G[6 Angebote vergleichen: Nutzer laedt Bankangebote hoch, neutrale Tabelle nach Effektivzins]
+  G --> H[Kauf entscheiden -> Objekt in Bestand uebernehmen]
+  H -. spaeter .-> V[Verkauf-Reiter: Marktwert, Spekulationsfrist §23, Verkaufsunterlagen, Netto-Erloes]
+```
+
+**Verkauf-Reiter (leichter):** gleicher Bewertungs-Rechner (Verkäufer-Sicht) + der bereits vorhandene **Spekulationsfrist-Wächter
+(§23 EStG)** und **AfA/Restwert** → Netto-Erlös nach Steuer + Verkaufsunterlagen-Checkliste (Exposé, Grundbuch, Energieausweis).
+
+**Wiederverwendung (spart ~60 % Aufwand):** Beleihungsordner (Finanzierungsmappe fertig), Cockpit/RoterFaden (Rechenlogik),
+Spekulation §23 + AfA (Verkauf), KI-Objekt-Import (Steckbrief vorbefüllen), Marktwert-Bewertung (bereits `lib/valuation/bewerten.ts`).
+**Neu zu bauen:** ImmoWertV-Bewertungsmodul (Ertrags-/Sachwert mit Anlage-3/4-Werten + BORIS-Linkliste), Förder-Datenbank (gepflegt, mit Stand),
+schlanker Kauf-/Verkauf-Wizard als Klammer um die vorhandenen Teile.
