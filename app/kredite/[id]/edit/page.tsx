@@ -3,6 +3,7 @@ import SubmitButton from "@/components/SubmitButton";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { updateKredit } from "@/lib/actions/buchungen";
+import { decryptKreditRow } from "@/lib/kreditData";
 import type { Property, Kredit } from "@/lib/types";
 
 const SONDER = ["", "5% p.a.", "10% p.a.", "Nein", "Ja, unbegrenzt"];
@@ -14,7 +15,7 @@ export default async function KreditEditPage({ params, searchParams }: { params:
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
   ]);
   if (!row) notFound();
-  const k = row as Kredit;
+  const k = decryptKreditRow(row as Kredit);
   const properties = (propsData ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const back = searchParams.back || "/kredite";
 

@@ -54,6 +54,8 @@ export async function GET() {
       const o: Row = { ...r };
       for (const b of BLOB_SPALTEN) if (b in o) o[b] = o[b] ? "(Datei — siehe Ordner im ZIP)" : null;
       if (t === "mieter" && o.iban) o.iban = decryptNullable(String(o.iban));
+      if (t === "mieter" && o.kaution_bank) o.kaution_bank = decryptNullable(String(o.kaution_bank));
+      if (t === "kredite" && o.darlnr) o.darlnr = decryptNullable(String(o.darlnr));
       return o;
     });
     if (t === "ibans") continue; // separat unten (Entschlüsselung ganzer Zeilen)

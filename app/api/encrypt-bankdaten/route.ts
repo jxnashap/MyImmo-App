@@ -46,5 +46,31 @@ export async function GET() {
     migriert++;
   }
 
-  return NextResponse.json({ ok: true, migriert, gesamt: rows?.length ?? 0 });
+  // Darlehensnummern (kredite.darlnr) — Klartext-Altzeilen verschlüsseln.
+  const { data: kredite } = await supabase.from("kredite").select("id, darlnr");
+  let kreditMigriert = 0;
+  for (const k of kredite ?? []) {
+    if (!k.darlnr || isEncrypted(k.darlnr)) continue;
+    const { error: upErr } = await supabase
+      .from("kredite")
+      .update({ darlnr: encrypt(k.darlnr) })
+      .eq("id", k.id);
+    if (upErr) return NextResponse.json({ error: upErr.message, migriert, kreditMigriert }, { status: 500 });
+    kreditMigriert++;
+  }
+
+  // Kautions-Bank (mieter.kaution_bank) — Altbestand ebenfalls verschlüsseln.
+  const { data: mieter } = await supabase.from("mieter").select("id, kaution_bank");
+  let kautionMigriert = 0;
+  for (const m of mieter ?? []) {
+    if (!m.kaution_bank || isEncrypted(m.kaution_bank)) continue;
+    const { error: upErr } = await supabase
+      .from("mieter")
+      .update({ kaution_bank: encrypt(m.kaution_bank) })
+      .eq("id", m.id);
+    if (upErr) return NextResponse.json({ error: upErr.message, migriert, kreditMigriert, kautionMigriert }, { status: 500 });
+    kautionMigriert++;
+  }
+
+  return NextResponse.json({ ok: true, migriert, kreditMigriert, kautionMigriert, gesamt: rows?.length ?? 0 });
 }

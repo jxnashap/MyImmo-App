@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { flashUrl } from "@/lib/flash";
+import { encryptDarlnr } from "@/lib/kreditData";
 
 // Hilfsfunktionen zum Auslesen von FormData
 function num(fd: FormData, k: string): number | null {
@@ -213,7 +214,7 @@ export async function createKredit(fd: FormData) {
     bezeichnung: str(fd, "bezeichnung"),
     prop_id: str(fd, "prop_id"),
     bank: str(fd, "bank"),
-    darlnr: str(fd, "darlnr"),
+    darlnr: encryptDarlnr(str(fd, "darlnr")),
     betrag: num(fd, "betrag"),
     restschuld: num(fd, "restschuld"),
     grundschuld: num(fd, "grundschuld"),
@@ -235,7 +236,7 @@ export async function updateKredit(id: string, fd: FormData) {
     bezeichnung: str(fd, "bezeichnung"),
     prop_id: str(fd, "prop_id"),
     bank: str(fd, "bank"),
-    darlnr: str(fd, "darlnr"),
+    darlnr: encryptDarlnr(str(fd, "darlnr")),
     betrag: num(fd, "betrag"),
     restschuld: num(fd, "restschuld"),
     grundschuld: num(fd, "grundschuld"),
