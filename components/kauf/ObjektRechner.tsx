@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Home, Building2, Save, Scale, Crown, Trash2, ArrowRight } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import KalkImport from "@/components/kalkulator/KalkImport";
 import { saveKalkulation, deleteKalkulation } from "@/lib/actions/kalkulation";
 import { bestesObjekt, KAUF_AUSWAHL_KEY, type KaufAuswahl, type VglMetrik } from "@/lib/kauf/auswahl";
 import { BUNDESLAENDER } from "@/lib/kalk";
@@ -159,6 +160,21 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
           <Save size={14} /> {saving ? "Speichert…" : "Objekt speichern"}
         </button>
       </div>
+
+      {/* KI-Import: Exposé-Link oder -Text → Felder werden vorbefüllt */}
+      <KalkImport
+        beobachten={[kaufpreis, flaeche, kaltmiete, adresse]}
+        onResult={(d) => {
+          if (d.kaufpreis != null) setKaufpreis(String(d.kaufpreis));
+          if (d.flaeche != null) setFlaeche(String(d.flaeche));
+          if (d.adresse) setAdresse(d.adresse);
+          else if (d.name) setAdresse(d.name);
+          if (d.miete != null && d.miete > 0) {
+            setKaltmiete(String(d.miete));
+            setNutzung("vermietung");
+          }
+        }}
+      />
 
       <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
         {/* Eingaben */}

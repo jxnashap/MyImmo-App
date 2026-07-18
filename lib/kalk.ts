@@ -67,12 +67,3 @@ export const BUNDESLAENDER = [
 ];
 
 export const num = (s: string) => parseFloat(s) || 0;
-
-// Datentyp, den das Cockpit für das Bankgespräch in localStorage ablegt.
-export type CpData = {
-  kp: number; qm: number; flaeche: number; nk: number; gesamtInvest: number;
-  d1Summe: number; d2Summe: number; eigenkapital: number; kaltmiete: number;
-  brutto: number; faktor: number; cfOp: number; cfNetto: number; gesRate: number;
-  adresse: string;
-};
-export const CP_STORAGE_KEY = "myimmo_cockpit";
