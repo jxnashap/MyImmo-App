@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ShieldCheck, Save } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { speichereSelbstauskunft } from "@/lib/actions/selbstauskunft";
@@ -53,6 +54,7 @@ function toStrings(d: SelbstauskunftDaten): Record<string, string> {
 
 export default function SelbstauskunftForm({ initial }: { initial: SelbstauskunftDaten | null }) {
   const toast = useToast();
+  const router = useRouter();
   const [f, setF] = useState<Record<string, string>>(toStrings(initial ?? LEERE_SELBSTAUSKUNFT));
   const [saving, setSaving] = useState(false);
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }));
@@ -84,6 +86,8 @@ export default function SelbstauskunftForm({ initial }: { initial: Selbstauskunf
     const r = await speichereSelbstauskunft(daten);
     setSaving(false);
     toast(r.ok ? "Selbstauskunft gespeichert." : (r.error ?? "Fehler beim Speichern."));
+    // Server-Daten neu laden → Machbarkeits-Ampel zieht die neuen Zahlen ohne Reload.
+    if (r.ok) router.refresh();
   }
 
   const geld = (paare: [keyof SelbstauskunftDaten, string][]) => (
