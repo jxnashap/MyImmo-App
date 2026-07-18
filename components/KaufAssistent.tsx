@@ -4,15 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Search, Landmark, FolderClosed, FileCheck2, ExternalLink, TriangleAlert,
-  ArrowRight, Calculator, Scale, Crown, ClipboardList,
+  ArrowRight, Calculator, Scale, Crown, ClipboardList, TrendingUp,
 } from "lucide-react";
 import Cockpit from "@/components/kalkulator/Cockpit";
+import BewertungAssistent from "@/components/BewertungAssistent";
 import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
 import SelbstauskunftForm from "@/components/kauf/SelbstauskunftForm";
 import MachbarkeitKarte from "@/components/kauf/MachbarkeitKarte";
 import DarlehenWizard from "@/components/kauf/DarlehenWizard";
 import KreditantragButton from "@/components/kauf/KreditantragButton";
 import { KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
+import { KAUF_BEWERTUNG_KEY, type KaufBewertung } from "@/lib/kauf/bewertung";
 import { eigenkapitalGesamt, haushaltsNetto, type SelbstauskunftDaten } from "@/lib/kauf/selbstauskunft";
 import { pruefeMachbarkeit } from "@/lib/kauf/machbarkeit";
 import { fmtE } from "@/lib/kalk";
@@ -48,7 +50,21 @@ export default function KaufAssistent({
 }) {
   const [rechnerOffen, setRechnerOffen] = useState(false);
   const [saOffen, setSaOffen] = useState(false);
+  const [bewOffen, setBewOffen] = useState(false);
+  const [bewertung, setBewertung] = useState<KaufBewertung | null>(null);
   const [auswahl, setAuswahl] = useState<KaufAuswahl | null>(null);
+
+  const ladeBewertung = () => {
+    try {
+      const raw = localStorage.getItem(KAUF_BEWERTUNG_KEY);
+      setBewertung(raw ? (JSON.parse(raw) as KaufBewertung) : null);
+    } catch { setBewertung(null); }
+  };
+  useEffect(() => {
+    ladeBewertung();
+    window.addEventListener("focus", ladeBewertung);
+    return () => window.removeEventListener("focus", ladeBewertung);
+  }, []);
 
   // Gewähltes Objekt aus dem Vergleich lesen (Schritt 2 „übernehmen"). Auf
   // Fokuswechsel neu laden, damit die Übernahme ohne Reload ankommt.
@@ -103,15 +119,33 @@ export default function KaufAssistent({
     {
       icon: Search,
       titel: "Objekt bewerten",
+      autoErledigt: !!bewertung && bewertung.marktwert > 0,
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
             Schätze den Marktwert nach ImmoWertV (Ertrags- oder Sachwert), schlage den Bodenrichtwert
             im amtlichen BORIS-Portal deines Bundeslands nach und vergleiche mit dem Kaufpreis.
           </p>
-          <Link href="/bewertung" className="btn btn-gold" style={{ fontSize: 13 }}>
-            Marktwert-Schätzer öffnen <ArrowRight size={14} style={{ verticalAlign: "-2px" }} />
-          </Link>
+          {bewertung && bewertung.marktwert > 0 && (
+            <div style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 14px", borderRadius: 8, background: "var(--gold-pale, rgba(212,175,90,0.1))", border: "1px solid var(--gold)", marginBottom: 12 }}>
+              <TrendingUp size={16} color="var(--gold)" style={{ flexShrink: 0 }} />
+              <div style={{ fontSize: 12.5 }}>
+                <div style={{ fontWeight: 600 }}>Geschätzter Marktwert: {fmtE(bewertung.marktwert)}</div>
+                <div style={{ color: "var(--muted)" }}>
+                  Spanne {fmtE(bewertung.min)}–{fmtE(bewertung.max)} · wird in den Rechner übernommen
+                </div>
+              </div>
+            </div>
+          )}
+          {!bewOffen ? (
+            <button type="button" className="btn btn-gold" style={{ fontSize: 13 }} onClick={() => setBewOffen(true)}>
+              <Search size={14} style={{ verticalAlign: "-2px" }} /> {bewertung ? "Marktwert-Schätzer erneut öffnen" : "Marktwert-Schätzer öffnen"}
+            </button>
+          ) : (
+            <div style={{ marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+              <BewertungAssistent imKaufFlow onGespeichert={ladeBewertung} />
+            </div>
+          )}
         </>
       ),
     },

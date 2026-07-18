@@ -11,13 +11,16 @@ export type StepperSchritt = {
   icon: LucideIcon;
   titel: string;
   inhalt: ReactNode;
+  // Automatisch als erledigt erkannt (z. B. sobald ein Marktwert vorliegt) —
+  // dann ist keine manuelle Bestätigung nötig.
+  autoErledigt?: boolean;
 };
 
 function SchrittKarte({
-  n, letzte, icon: Icon, titel, erledigt, onToggle, children,
+  n, letzte, icon: Icon, titel, erledigt, auto, onToggle, children,
 }: {
   n: number; letzte?: boolean; icon: LucideIcon; titel: string;
-  erledigt: boolean; onToggle: () => void; children: ReactNode;
+  erledigt: boolean; auto?: boolean; onToggle: () => void; children: ReactNode;
 }) {
   return (
     <div style={{ display: "flex", gap: 16, alignItems: "stretch" }}>
@@ -48,14 +51,20 @@ function SchrittKarte({
       <div className="section" style={{ flex: 1, marginBottom: letzte ? 0 : 18, minWidth: 0 }}>
         <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
           <h3 style={{ margin: 0 }}><Icon size={16} style={{ verticalAlign: "-3px" }} /> {titel}</h3>
-          <button
-            type="button"
-            onClick={onToggle}
-            className="btn btn-ghost"
-            style={{ fontSize: 11.5, flexShrink: 0, color: erledigt ? "var(--green)" : "var(--muted)", whiteSpace: "nowrap" }}
-          >
-            {erledigt ? <><Check size={12} style={{ verticalAlign: "-2px" }} /> erledigt</> : "als erledigt markieren"}
-          </button>
+          {auto ? (
+            <span style={{ fontSize: 11.5, flexShrink: 0, color: "var(--green)", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <Check size={12} /> automatisch erkannt
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={onToggle}
+              className="btn btn-ghost"
+              style={{ fontSize: 11.5, flexShrink: 0, color: erledigt ? "var(--green)" : "var(--muted)", whiteSpace: "nowrap" }}
+            >
+              {erledigt ? <><Check size={12} style={{ verticalAlign: "-2px" }} /> erledigt</> : "als erledigt markieren"}
+            </button>
+          )}
         </div>
         <div className="section-body">{children}</div>
       </div>
@@ -84,7 +93,8 @@ export default function AblaufStepper({
   }, [done, geladen, storageKey]);
 
   const toggle = (n: number) => setDone((d) => ({ ...d, [n]: !d[n] }));
-  const anzahl = Object.values(done).filter(Boolean).length;
+  const istErledigt = (i: number) => !!done[i + 1] || !!schritte[i].autoErledigt;
+  const anzahl = schritte.filter((_, i) => istErledigt(i)).length;
 
   return (
     <>
@@ -102,7 +112,8 @@ export default function AblaufStepper({
           letzte={i === schritte.length - 1}
           icon={s.icon}
           titel={s.titel}
-          erledigt={!!done[i + 1]}
+          erledigt={istErledigt(i)}
+          auto={!!s.autoErledigt}
           onToggle={() => toggle(i + 1)}
         >
           {s.inhalt}

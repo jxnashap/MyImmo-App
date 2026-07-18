@@ -1,18 +1,25 @@
 "use client";
 import { useMemo, useState } from "react";
-import { ExternalLink, TrendingUp, TriangleAlert, Info } from "lucide-react";
+import { ExternalLink, TrendingUp, TriangleAlert, Info, Check } from "lucide-react";
 import {
   ertragswert, sachwert, restnutzungsdauer, vervielfaeltiger, kaufpreisAmpel,
   NHK_TYPEN, GND_WOHNGEBAEUDE, type Bewertungsergebnis,
 } from "@/lib/bewertung/immowertv";
 import { BORIS_D, BORIS_LAENDER, LZ_DEFAULT } from "@/lib/bewertung/boris";
+import { KAUF_BEWERTUNG_KEY, type KaufBewertung } from "@/lib/kauf/bewertung";
+import { useToast } from "@/components/Toast";
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
 const STANDARD = ["1 – sehr einfach", "2 – einfach", "3 – mittel", "4 – gehoben", "5 – hochwertig"];
 const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
 
-export default function BewertungAssistent() {
+export default function BewertungAssistent({
+  imKaufFlow = false, onGespeichert,
+}: {
+  imKaufFlow?: boolean; onGespeichert?: () => void;
+} = {}) {
   const jahr = new Date().getFullYear();
+  const toast = useToast();
   const [zweck, setZweck] = useState<"kapitalanlage" | "eigennutzung">("kapitalanlage");
   const [land, setLand] = useState("");
   // gemeinsame Felder
@@ -60,6 +67,20 @@ export default function BewertungAssistent() {
   const vf = num(kaufpreis) && num(miete) ? vervielfaeltiger(num(kaufpreis), num(miete)) : null;
   const ampel = ergebnis && num(kaufpreis) ? kaufpreisAmpel(ergebnis.wert, num(kaufpreis)) : null;
   const ampelFarbe = ampel?.farbe === "gruen" ? "var(--green)" : ampel?.farbe === "rot" ? "var(--red)" : "var(--amber)";
+
+  // Marktwert speichern → bleibt bei Punkt 1 sichtbar und wird in den Rechner übernommen.
+  function speichern() {
+    if (!ergebnis) return;
+    const b: KaufBewertung = {
+      marktwert: ergebnis.wert, min: ergebnis.min, max: ergebnis.max,
+      kaufpreis: num(kaufpreis), flaeche: num(flaeche),
+      jahresmiete: zweck === "kapitalanlage" ? num(miete) : 0,
+      gespeichertAm: new Date().toISOString().slice(0, 10),
+    };
+    try { localStorage.setItem(KAUF_BEWERTUNG_KEY, JSON.stringify(b)); } catch { /* ignore */ }
+    toast("Marktwert gespeichert und in den Rechner übernommen.");
+    onGespeichert?.();
+  }
 
   return (
     <div style={{ display: "flex", gap: 22, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -184,6 +205,12 @@ export default function BewertungAssistent() {
                       </div>
                     ))}
                   </div>
+                )}
+
+                {imKaufFlow && (
+                  <button type="button" className="btn btn-gold" style={{ marginTop: 14, fontSize: 13 }} onClick={speichern}>
+                    <Check size={14} style={{ verticalAlign: "-2px" }} /> Marktwert speichern &amp; übernehmen
+                  </button>
                 )}
               </>
             )}
