@@ -1,13 +1,24 @@
 "use client";
 import { useMemo, useState } from "react";
-import { ShieldCheck, TriangleAlert, Info } from "lucide-react";
+import { ShieldCheck, TriangleAlert, Info, Home } from "lucide-react";
 import { berechneVerkauf } from "@/lib/verkauf";
 import { datum as fmtDatum } from "@/lib/format";
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
 const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
 
-export default function VerkaufRechner() {
+// Vorbefüllung aus dem Bestand: Objekt wählen → Kaufpreis/-datum, aktueller
+// Wert (als Verkaufspreis-Vorschlag) und Restschuld werden übernommen.
+export type VerkaufObjekt = {
+  id: string;
+  name: string;
+  kaufpreis: number | null;
+  kaufdatum: string | null;
+  wert: number | null;
+  restschuld: number;
+};
+
+export default function VerkaufRechner({ objekte = [] }: { objekte?: VerkaufObjekt[] }) {
   const [vp, setVp] = useState("");
   const [kaufdatum, setKaufdatum] = useState("");
   const [kp, setKp] = useState("");
@@ -17,6 +28,18 @@ export default function VerkaufRechner() {
   const [rest, setRest] = useState("");
   const [vfe, setVfe] = useState("");
   const [satz, setSatz] = useState("42");
+  const [objId, setObjId] = useState("");
+
+  // Bestandsobjekt übernehmen — überschreibt nur die zugehörigen Felder.
+  function uebernehmeObjekt(id: string) {
+    setObjId(id);
+    const o = objekte.find((x) => x.id === id);
+    if (!o) return;
+    if (o.wert && o.wert > 0) setVp(String(Math.round(o.wert)));
+    if (o.kaufdatum) setKaufdatum(o.kaufdatum.slice(0, 10));
+    if (o.kaufpreis && o.kaufpreis > 0) setKp(String(Math.round(o.kaufpreis)));
+    setRest(o.restschuld > 0 ? String(Math.round(o.restschuld)) : "");
+  }
 
   const r = useMemo(() => {
     if (!num(vp)) return null;
@@ -30,6 +53,20 @@ export default function VerkaufRechner() {
   return (
     <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
       <div style={{ flex: "1 1 320px", display: "grid", gap: 10 }}>
+        {objekte.length > 0 && (
+          <div className="form-group">
+            <label><Home size={12} style={{ verticalAlign: "-2px" }} /> Objekt aus deinem Bestand übernehmen</label>
+            <select value={objId} onChange={(e) => uebernehmeObjekt(e.target.value)}>
+              <option value="">– selbst eintragen –</option>
+              {objekte.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
+            {objId && (
+              <span style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 3 }}>
+                Übernommen: aktueller Wert als Verkaufspreis-Vorschlag, Kaufpreis/-datum, Restschuld. AfA &amp; Kosten bitte selbst ergänzen.
+              </span>
+            )}
+          </div>
+        )}
         <div className="form-row">
           <div className="form-group"><label>Voraussichtl. Verkaufspreis (€)</label><input value={vp} onChange={(e) => setVp(e.target.value)} inputMode="decimal" /></div>
           <div className="form-group"><label>Kaufdatum (Notarvertrag)</label><input type="date" value={kaufdatum} onChange={(e) => setKaufdatum(e.target.value)} /></div>
