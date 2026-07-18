@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Calculator, Save, FolderOpen, Scale, Gauge, Home, Percent, Landmark, Target, TrendingUp, Lock, BarChart3, Sparkles, ClipboardList, Zap } from "lucide-react";
+import { Calculator, Save, FolderOpen, Scale, Gauge, Home, Percent, Landmark, Target, TrendingUp, Lock, BarChart3, Sparkles, ClipboardList, Zap, Crown, ArrowRight } from "lucide-react";
 
 // Farbiger Status-Punkt (Ersatz für die Ampel-Emojis)
 const Dot = ({ c }: { c: string }) => <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: `var(--${c})`, marginRight: 5, verticalAlign: "-1px" }} />;
@@ -10,6 +10,7 @@ import KalkImport from "@/components/kalkulator/KalkImport";
 import CockpitUeberblick from "@/components/kalkulator/CockpitUeberblick";
 import { useToast } from "@/components/Toast";
 import { saveKalkulation, deleteKalkulation } from "@/lib/actions/kalkulation";
+import { bestesObjekt, KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
 import type { Kalkulation } from "@/lib/types";
 import { fmt, fmtE, pct, num, calcGrenzsteuer, berechneRestschuld, berechneVolltilgungJahr, BUNDESLAENDER, CP_STORAGE_KEY, type CpData } from "@/lib/kalk";
 
@@ -237,7 +238,30 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   }
 
   function toggleCompare(id: string) {
-    setCompareIds((c) => (c.includes(id) ? c.filter((x) => x !== id) : c.length >= 3 ? c : [...c, id]));
+    setCompareIds((c) => (c.includes(id) ? c.filter((x) => x !== id) : c.length >= 5 ? c : [...c, id]));
+  }
+
+  // Gewähltes Objekt für den Kauf-Flow (Finanzierung/Kreditantrag) mitnehmen.
+  function objektUebernehmen(k: Kalkulation) {
+    const s = k.summary ?? {};
+    const gesamt = s.gesamtInvest ?? 0;
+    const ek = s.eigenkapital ?? 0;
+    const auswahl: KaufAuswahl = {
+      kalkId: k.id,
+      name: k.name,
+      adresse: k.data?.adresse ?? "",
+      kp: s.kp ?? 0,
+      gesamtInvest: gesamt,
+      eigenkapital: ek,
+      darlehen: Math.max(0, gesamt - ek),
+      rate: s.gesRate ?? 0,
+      kaltmiete: s.nettokaltmiete ?? 0,
+      cfNetto: s.cfNetto ?? 0,
+      gewaehltAm: new Date().toISOString().slice(0, 10),
+    };
+    try { localStorage.setItem(KAUF_AUSWAHL_KEY, JSON.stringify(auswahl)); } catch { /* ignore */ }
+    toast(`„${k.name}“ für die Finanzierung übernommen.`);
+    setShowCompare(false);
   }
 
   const F = (label: string, value: string, set: (v: string) => void, step?: string, ph?: string) => (
@@ -292,6 +316,8 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
     const best = better === "high" ? Math.max(...vals) : Math.min(...vals);
     return vals.every((v) => v === best) ? null : best; // kein Highlight, wenn alle gleich
   };
+  // Gesamt-Sieger über alle Kennzahlen (Punkte je gewonnener Zeile).
+  const vergleich = bestesObjekt(cmpSel.map((k) => ({ id: k.id, summary: k.summary })), CMP_METRIKEN);
 
   return (
     <>
@@ -629,7 +655,7 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
         <div className="modal-overlay" onClick={() => setShowCompare(false)}>
           <div className="modal-sheet wide" onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginBottom: 6 }}>Kalkulationen vergleichen</h3>
-            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Bis zu 3 gespeicherte Objekte wählen.</p>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>Bis zu 5 gespeicherte Objekte wählen. Das Objekt mit den meisten besten Kennzahlen wird als Empfehlung markiert — du kannst es für die Finanzierung übernehmen.</p>
             {gespeichertLocal.length === 0 ? (
               <p style={{ color: "var(--muted)", fontSize: 13 }}>Noch nichts gespeichert.</p>
             ) : (
@@ -653,7 +679,15 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
                       <thead>
                         <tr>
                           <th>Kennzahl</th>
-                          {cmpSel.map((k) => <th key={k.id} style={{ textAlign: "right" }}>{k.name}</th>)}
+                          {cmpSel.map((k) => {
+                            const sieger = vergleich.eindeutig && vergleich.id === k.id;
+                            return (
+                              <th key={k.id} style={{ textAlign: "right", color: sieger ? "var(--gold)" : undefined }}>
+                                {sieger && <Crown size={13} style={{ verticalAlign: "-2px", marginRight: 3 }} />}{k.name}
+                                <div style={{ fontSize: 10.5, fontWeight: 500, color: "var(--muted)" }}>{vergleich.punkte[k.id] ?? 0} Bestwerte</div>
+                              </th>
+                            );
+                          })}
                         </tr>
                       </thead>
                       <tbody>
@@ -675,6 +709,26 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
                           );
                         })}
                       </tbody>
+                      <tfoot>
+                        <tr>
+                          <td />
+                          {cmpSel.map((k) => {
+                            const sieger = vergleich.eindeutig && vergleich.id === k.id;
+                            return (
+                              <td key={k.id} style={{ textAlign: "right", paddingTop: 10 }}>
+                                <button
+                                  type="button"
+                                  className={`btn ${sieger ? "btn-gold" : "btn-ghost"}`}
+                                  style={{ fontSize: 11.5 }}
+                                  onClick={() => objektUebernehmen(k)}
+                                >
+                                  übernehmen <ArrowRight size={12} style={{ verticalAlign: "-2px" }} />
+                                </button>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      </tfoot>
                     </table>
                   </div>
                 ) : (

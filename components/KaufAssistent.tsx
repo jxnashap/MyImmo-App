@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Search, Landmark, FolderClosed, FileCheck2, ExternalLink, TriangleAlert,
-  ArrowRight, Calculator, Scale,
+  ArrowRight, Calculator, Scale, Crown,
 } from "lucide-react";
 import Cockpit from "@/components/kalkulator/Cockpit";
 import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
+import { KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
+import { fmtE } from "@/lib/kalk";
 import type { Kalkulation } from "@/lib/types";
 
 // Kauf-Assistent: geführtes Ablaufschema vom gefundenen Objekt bis zur
@@ -35,6 +37,38 @@ const FOERDERUNG: { name: string; wer: string; ok: boolean }[] = [
 
 export default function KaufAssistent({ gespeichert = [] }: { gespeichert?: Kalkulation[] }) {
   const [rechnerOffen, setRechnerOffen] = useState(false);
+  const [auswahl, setAuswahl] = useState<KaufAuswahl | null>(null);
+
+  // Gewähltes Objekt aus dem Vergleich lesen (Schritt 2 „übernehmen"). Auf
+  // Fokuswechsel neu laden, damit die Übernahme ohne Reload ankommt.
+  useEffect(() => {
+    const lade = () => {
+      try {
+        const raw = localStorage.getItem(KAUF_AUSWAHL_KEY);
+        setAuswahl(raw ? (JSON.parse(raw) as KaufAuswahl) : null);
+      } catch { setAuswahl(null); }
+    };
+    lade();
+    window.addEventListener("focus", lade);
+    return () => window.removeEventListener("focus", lade);
+  }, [rechnerOffen]);
+
+  const gewaehltesObjekt = auswahl && (auswahl.kp > 0 || auswahl.darlehen > 0) ? (
+    <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--gold-pale, rgba(212,175,90,0.1))", border: "1px solid var(--gold)", marginBottom: 14 }}>
+      <Crown size={16} color="var(--gold)" style={{ flexShrink: 0, marginTop: 2 }} />
+      <div style={{ fontSize: 12.5 }}>
+        <div style={{ fontWeight: 600, marginBottom: 2 }}>Gewähltes Objekt: {auswahl.name}{auswahl.adresse ? ` — ${auswahl.adresse}` : ""}</div>
+        <div style={{ color: "var(--muted)" }}>
+          Kaufpreis {fmtE(auswahl.kp)} · Eigenkapital {fmtE(auswahl.eigenkapital)} · <strong>Darlehensbedarf {fmtE(auswahl.darlehen)}</strong> · Rate {fmtE(auswahl.rate)}/Mo
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--line)", marginBottom: 14, fontSize: 12, color: "var(--muted)" }}>
+      <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+      <span>Noch kein Objekt gewählt. Rechne in Schritt 2 deine Kandidaten durch, vergleiche sie und übernimm das beste — die Zahlen erscheinen dann hier.</span>
+    </div>
+  );
 
   const schritte: StepperSchritt[] = [
     {
@@ -80,6 +114,7 @@ export default function KaufAssistent({ gespeichert = [] }: { gespeichert?: Kalk
       titel: "Finanzierung & Förderung",
       inhalt: (
         <>
+          {gewaehltesObjekt}
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
             Überblick über die Darlehensarten — welche zu dir passt, entscheidest du mit deiner Bank.
           </p>
