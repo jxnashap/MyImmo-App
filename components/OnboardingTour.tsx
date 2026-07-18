@@ -16,6 +16,10 @@ import {
 
 const DONE_KEY = "myimmo_onboarding_done";
 export const TOUR_FORCE_KEY = "myimmo_onboarding_force";
+// Direktes Startsignal (z. B. aus den Einstellungen): die Tour hängt im
+// Layout und bleibt bei Client-Navigation gemountet — ein Event erreicht sie
+// sofort, ohne Reload/Redirect.
+export const TOUR_EVENT = "myimmo:tour-start";
 
 type TourSchritt = {
   icon: LucideIcon;
@@ -95,6 +99,13 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
       if (neuerNutzer && !localStorage.getItem(DONE_KEY)) setOffen(true);
     } catch { /* ignore */ }
   }, [neuerNutzer]);
+
+  // „Tour erneut starten" aus den Einstellungen: Event öffnet die Tour sofort.
+  useEffect(() => {
+    const starte = () => { setI(0); setOffen(true); };
+    window.addEventListener(TOUR_EVENT, starte);
+    return () => window.removeEventListener(TOUR_EVENT, starte);
+  }, []);
 
   function beenden() {
     try { localStorage.setItem(DONE_KEY, "1"); } catch { /* ignore */ }

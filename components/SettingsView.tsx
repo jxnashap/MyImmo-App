@@ -8,7 +8,7 @@ import {
   User, Landmark, ShieldCheck, FileText, Download, Upload, Trash2, Plus, Star,
   Lock, ExternalLink, X, Check, TriangleAlert, PenLine, Sparkles, type LucideIcon,
 } from "lucide-react";
-import { TOUR_FORCE_KEY } from "@/components/OnboardingTour";
+import { TOUR_EVENT } from "@/components/OnboardingTour";
 import SignaturPad from "@/components/SignaturPad";
 import { speichereUnterschrift, loescheUnterschrift } from "@/lib/actions/bewerber";
 import { useToast } from "@/components/Toast";
@@ -495,12 +495,11 @@ function AutoLogoutKarte() {
 // ---------- Daten & Recht ----------
 function RechtPanel() {
   const ref = useReveal(null);
-  const router = useRouter();
 
-  // Einführungs-Tour erneut starten: Force-Flag setzen → Dashboard öffnet die Tour.
+  // Einführungs-Tour erneut starten: Event an die (im Layout gemountete) Tour
+  // — öffnet sofort, ohne Redirect/Reload.
   function tourStarten() {
-    try { localStorage.setItem(TOUR_FORCE_KEY, "1"); } catch { /* ignore */ }
-    router.push("/");
+    window.dispatchEvent(new Event(TOUR_EVENT));
   }
   const RLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
     <Link href={href} className="bank-card" style={{ textDecoration: "none", color: "var(--text)" }}>
