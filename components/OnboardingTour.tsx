@@ -15,6 +15,7 @@ import {
 // die Einstellungen erneut startbar.
 
 const DONE_KEY = "myimmo_onboarding_done";
+const STATE_KEY = "myimmo_onboarding_state";
 export const TOUR_FORCE_KEY = "myimmo_onboarding_force";
 // Direktes Startsignal (z. B. aus den Einstellungen): die Tour hängt im
 // Layout und bleibt bei Client-Navigation gemountet — ein Event erreicht sie
@@ -86,6 +87,7 @@ const SCHRITTE: TourSchritt[] = [
 
 export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: boolean }) {
   const [offen, setOffen] = useState(false);
+  const [minimiert, setMinimiert] = useState(false);
   const [i, setI] = useState(0);
 
   useEffect(() => {
@@ -96,23 +98,79 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
         setOffen(true);
         return;
       }
+      // Angefangene Tour fortsetzen (z. B. nach Voll-Reload auf der Zielseite):
+      // als „Tour fortsetzen"-Knopf, nicht als aufgerissenes Modal.
+      const raw = localStorage.getItem(STATE_KEY);
+      if (raw && !localStorage.getItem(DONE_KEY)) {
+        const s = JSON.parse(raw) as { i?: number };
+        setI(Math.min(SCHRITTE.length - 1, Math.max(0, s.i ?? 0)));
+        setMinimiert(true);
+        setOffen(true);
+        return;
+      }
       if (neuerNutzer && !localStorage.getItem(DONE_KEY)) setOffen(true);
     } catch { /* ignore */ }
   }, [neuerNutzer]);
 
   // „Tour erneut starten" aus den Einstellungen: Event öffnet die Tour sofort.
   useEffect(() => {
-    const starte = () => { setI(0); setOffen(true); };
+    const starte = () => { setI(0); setMinimiert(false); setOffen(true); };
     window.addEventListener(TOUR_EVENT, starte);
     return () => window.removeEventListener(TOUR_EVENT, starte);
   }, []);
 
+  // Laufenden Stand merken (übersteht Seitenwechsel mit Voll-Reload).
+  useEffect(() => {
+    try {
+      if (offen) localStorage.setItem(STATE_KEY, JSON.stringify({ i, min: minimiert ? 1 : 0 }));
+    } catch { /* ignore */ }
+  }, [offen, i, minimiert]);
+
   function beenden() {
-    try { localStorage.setItem(DONE_KEY, "1"); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(DONE_KEY, "1");
+      localStorage.removeItem(STATE_KEY);
+    } catch { /* ignore */ }
     setOffen(false);
+    setMinimiert(false);
+  }
+
+  // Link-Klick in einem Schritt: Tour NICHT beenden, sondern minimieren und
+  // schon zum nächsten Schritt weiterschalten — auf der Zielseite erscheint
+  // unten rechts „Tour fortsetzen".
+  function zurSeite() {
+    setI((x) => Math.min(SCHRITTE.length - 1, x + 1));
+    setMinimiert(true);
   }
 
   if (!offen || typeof document === "undefined") return null;
+
+  // Minimiert: schwebender Fortsetzen-Knopf (bleibt über Client-Navigation
+  // gemountet, weil die Tour im Layout hängt).
+  if (minimiert) {
+    return createPortal(
+      <div style={{ position: "fixed", right: 18, bottom: 18, zIndex: 1000, display: "flex", gap: 6, alignItems: "center" }}>
+        <button
+          type="button"
+          className="btn btn-gold"
+          style={{ fontSize: 12.5, boxShadow: "0 6px 24px rgba(0,0,0,0.35)" }}
+          onClick={() => setMinimiert(false)}
+        >
+          <Sparkles size={14} style={{ verticalAlign: "-2px" }} /> Tour fortsetzen ({i + 1}/{SCHRITTE.length})
+        </button>
+        <button
+          type="button"
+          onClick={beenden}
+          title="Tour beenden"
+          aria-label="Tour beenden"
+          style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--line2)", background: "var(--bg2)", color: "var(--muted)", cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 6px 24px rgba(0,0,0,0.35)" }}
+        >
+          <X size={13} />
+        </button>
+      </div>,
+      document.body,
+    );
+  }
 
   const s = SCHRITTE[i];
   const letzter = i === SCHRITTE.length - 1;
@@ -141,7 +199,7 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
           <h3 style={{ margin: 0, fontSize: 18 }}>{s.titel}</h3>
           <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>{s.text}</p>
           {s.href && (
-            <Link href={s.href} className="btn btn-outline" style={{ fontSize: 12.5 }} onClick={beenden}>
+            <Link href={s.href} className="btn btn-outline" style={{ fontSize: 12.5 }} onClick={zurSeite}>
               {s.linkLabel} <ArrowRight size={13} style={{ verticalAlign: "-2px" }} />
             </Link>
           )}
