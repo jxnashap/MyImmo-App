@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   User, Landmark, ShieldCheck, FileText, Download, Upload, Trash2, Plus, Star,
-  Lock, ExternalLink, X, Check, TriangleAlert, PenLine, type LucideIcon,
+  Lock, ExternalLink, X, Check, TriangleAlert, PenLine, Sparkles, type LucideIcon,
 } from "lucide-react";
+import { TOUR_FORCE_KEY } from "@/components/OnboardingTour";
 import SignaturPad from "@/components/SignaturPad";
 import { speichereUnterschrift, loescheUnterschrift } from "@/lib/actions/bewerber";
 import { useToast } from "@/components/Toast";
@@ -494,6 +495,13 @@ function AutoLogoutKarte() {
 // ---------- Daten & Recht ----------
 function RechtPanel() {
   const ref = useReveal(null);
+  const router = useRouter();
+
+  // Einführungs-Tour erneut starten: Force-Flag setzen → Dashboard öffnet die Tour.
+  function tourStarten() {
+    try { localStorage.setItem(TOUR_FORCE_KEY, "1"); } catch { /* ignore */ }
+    router.push("/");
+  }
   const RLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
     <Link href={href} className="bank-card" style={{ textDecoration: "none", color: "var(--text)" }}>
       <FileText size={16} style={{ color: "var(--gold)" }} />
@@ -503,6 +511,14 @@ function RechtPanel() {
   );
   return (
     <div ref={ref}>
+      <div className="glass-card reveal">
+        <h2><Sparkles size={16} /> Einführungs-Tour</h2>
+        <p className="sub">Die kurze Tour durch die App (Objekt anlegen → Mieter → Buchungen → Mietkonto → Archiv → Steuer) jederzeit noch einmal ansehen.</p>
+        <button type="button" className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }} onClick={tourStarten}>
+          <Sparkles size={15} /> Tour erneut starten
+        </button>
+      </div>
+
       <div className="glass-card reveal">
         <h2><Upload size={16} /> Daten importieren</h2>
         <p className="sub">Du kommst von vermietet.de, objego oder verwaltest bisher in Excel? Importiere Objekte und Mieter per CSV — mit Spalten-Zuordnung und Vorschau; angelegt wird erst nach deiner Bestätigung.</p>
