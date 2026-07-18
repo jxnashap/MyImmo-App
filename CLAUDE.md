@@ -77,9 +77,10 @@ Entscheidungen aus der Planung (12.07.2026):
 - ~~**Optional (Härtung):** Spalten-Verschlüsselung für IBAN/Bankdaten.~~ ✅ Erledigt:
   App-Layer-Verschlüsselung (AES-256-GCM) für `ibans.iban`/`ibans.inhaber`, Schlüssel als
   Vercel-Env `DATA_ENCRYPTION_KEY` (NICHT in der DB → echter Schutz gegen DB-Leak/Insider).
-  Blind-Index (`iban_bidx`) für Dublettenprüfung. `lib/crypto/secure.ts`. **Noch offen:**
-  `kredite.darlnr`/`mieter.kaution_bank` (bewusst zunächst ausgelassen — Banknamen bzw. viele
-  Touch-Points). Nach Deploy einmalig `/api/encrypt-bankdaten` aufrufen (Altzeilen migrieren).
+  Blind-Index (`iban_bidx`) für Dublettenprüfung. `lib/crypto/secure.ts`. ✅ Auch erledigt
+  (18.07.2026): `kredite.darlnr` + `mieter.kaution_bank` verschlüsselt (`lib/kreditData.ts`,
+  Migration in `/api/encrypt-bankdaten` erweitert). Nach Deploy einmalig `/api/encrypt-bankdaten`
+  aufrufen (migriert IBANs + Darlehensnummern + Kautions-Bank in einem Rutsch).
 
 ## Deployment
 - **Live-URL (Produktion): https://my-immo-app.vercel.app**

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
 import KrediteListe from "@/components/KrediteListe";
+import { decryptKreditRow } from "@/lib/kreditData";
 import type { Kredit, Property } from "@/lib/types";
 import { Plus, Siren, Landmark } from "lucide-react";
 
@@ -17,7 +18,7 @@ export default async function KreditePage() {
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
-  const list = (kred ?? []) as KreditExt[];
+  const list = ((kred ?? []) as KreditExt[]).map(decryptKreditRow);
 
   const warnungen = list
     .map((k) => ({ k, w: getRefinanzWarning(k.zinsbindung) }))
