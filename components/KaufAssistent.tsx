@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Search, Landmark, FolderClosed, FileCheck2, ExternalLink, TriangleAlert,
-  ArrowRight, Calculator, Scale, Crown,
+  ArrowRight, Calculator, Scale, Crown, ClipboardList,
 } from "lucide-react";
 import Cockpit from "@/components/kalkulator/Cockpit";
 import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
+import SelbstauskunftForm from "@/components/kauf/SelbstauskunftForm";
 import { KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
+import type { SelbstauskunftDaten } from "@/lib/kauf/selbstauskunft";
 import { fmtE } from "@/lib/kalk";
 import type { Kalkulation } from "@/lib/types";
 
@@ -35,8 +37,13 @@ const FOERDERUNG: { name: string; wer: string; ok: boolean }[] = [
   { name: "KfW 124 / 300 / 308, Wohn-Riester", wer: "nur Selbstnutzer", ok: false },
 ];
 
-export default function KaufAssistent({ gespeichert = [] }: { gespeichert?: Kalkulation[] }) {
+export default function KaufAssistent({
+  gespeichert = [], selbstauskunft = null,
+}: {
+  gespeichert?: Kalkulation[]; selbstauskunft?: SelbstauskunftDaten | null;
+}) {
   const [rechnerOffen, setRechnerOffen] = useState(false);
+  const [saOffen, setSaOffen] = useState(false);
   const [auswahl, setAuswahl] = useState<KaufAuswahl | null>(null);
 
   // Gewähltes Objekt aus dem Vergleich lesen (Schritt 2 „übernehmen"). Auf
@@ -104,6 +111,28 @@ export default function KaufAssistent({ gespeichert = [] }: { gespeichert?: Kalk
           ) : (
             <div style={{ marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
               <Cockpit gespeichert={gespeichert} />
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      icon: ClipboardList,
+      titel: "Deine Finanzen (Selbstauskunft)",
+      inhalt: (
+        <>
+          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
+            Die Bank prüft, ob du dir die Rate leisten kannst — dafür braucht sie deine Einnahmen,
+            Ausgaben, dein Eigenkapital und bestehende Kredite. Trag es einmal ein: Es fließt in die
+            Machbarkeitsprüfung und später in die Selbstauskunft für die Bank. Verschlüsselt gespeichert.
+          </p>
+          {!saOffen ? (
+            <button type="button" className="btn btn-gold" style={{ fontSize: 13 }} onClick={() => setSaOffen(true)}>
+              <ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Selbstauskunft ausfüllen
+            </button>
+          ) : (
+            <div style={{ marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+              <SelbstauskunftForm initial={selbstauskunft} />
             </div>
           )}
         </>
