@@ -352,3 +352,50 @@ flowchart TD
 Spekulation §23 + AfA (Verkauf), KI-Objekt-Import (Steckbrief vorbefüllen), Marktwert-Bewertung (bereits `lib/valuation/bewerten.ts`).
 **Neu zu bauen:** ImmoWertV-Bewertungsmodul (Ertrags-/Sachwert mit Anlage-3/4-Werten + BORIS-Linkliste), Förder-Datenbank (gepflegt, mit Stand),
 schlanker Kauf-/Verkauf-Wizard als Klammer um die vorhandenen Teile.
+
+---
+
+## 11. Finanzierungs-Assistent — Fahrplan (Recherche 18.07.2026)
+
+Ziel: Ein kompletter Anfänger wird vom gefundenen Objekt bis zur fertigen
+Finanzierungsanfrage geführt. Aus mehreren durchgerechneten Objekten wird das
+beste gekürt, die Zahlen wandern mit, und aus den Wünschen des Nutzers entsteht
+ein Kreditantrag/Selbstauskunft-Paket, das er **selbst** an seine Bank schickt.
+
+**Rechtliche Leitplanke (§ 34i GewO):** erlaubnisfrei bleibt „wir rechnen &
+sortieren, du entscheidest und schließt selbst ab". Verboten ohne Lizenz:
+konkrete Produkt-/Bankempfehlung, Vermittlung, Provision aus dem Kreditabschluss.
+→ Nur generische Rechner, Unterlagen-/Selbstauskunft-Vorbereitung, Export für die
+Bank. Kein „empfohlenes Darlehen der Bank X". Vor Live anwaltlich prüfen.
+
+**Recherche-Kernzahlen (marktüblich, keine Fixwerte — als „typisch" labeln):**
+- Max. Rate: **35 % (max. 40 %) des Netto-Haushaltseinkommens** (Faustformel Netto/100×40).
+- Haushaltspauschale: **~700 €/1 Person, +225 €/weitere Person**.
+- Mieteinnahmen werden nur zu **~70–80 %** angerechnet (Sicherheitsabschlag).
+- Beleihungswert ≈ Kaufpreis − 20–30 %; **Beleihungsauslauf** = Darlehen/Beleihungswert;
+  Zinssprünge bei **60/80/90 %**. EK sollte mind. die Kaufnebenkosten decken.
+- Angestellte: **letzte 3 Gehaltsabrechnungen**; Selbstständige: **2–3 ESt-Bescheide + BWA**.
+- Selbstauskunft (§ 18 KWG): Person, Beruf, Einnahmen, Ausgaben, Vermögen,
+  Verbindlichkeiten (lückenlos!), Objektangaben, Finanzierungswunsch, SCHUFA-Einwilligung.
+
+### Etappen (nach und nach)
+- **A — Datenübergabe & Bestobjekt** ✅ (18.07.2026): Cockpit-Vergleich bis 5 Objekte,
+  Gesamt-Sieger nach Bestwert-Punkten (Krone), „für die Finanzierung übernehmen" →
+  `localStorage myimmo_kauf_auswahl`; Finanzierungs-Schritt zeigt das gewählte Objekt.
+  `lib/kauf/auswahl.ts` + Tests.
+- **B — Selbstauskunft & Haushaltsrechnung:** Formular (Person, Einkommen, Ausgaben,
+  Vermögen, Verbindlichkeiten), einmal erfassen, DB-Tabelle mit RLS (sensible Felder
+  wie Bankdaten via App-Layer-Crypto abwägen). Basis für C + E.
+- **C — Machbarkeits-Check (Ampel):** max. Rate vs. Netto (35/40 %), Beleihungsauslauf
+  (60/80/90 %), EK deckt Nebenkosten, Kapitaldienst. „leistbar / grenzwertig / nein".
+- **D — Darlehens-Wunsch-Wizard:** Fragen (gleiche vs. niedrige Rate, Zinsbindung
+  10/15/20 J., schnell schuldenfrei, Flexibilität/Sondertilgung) → empfohlene
+  Konfiguration (Zinsbindung, Anfangstilgung, Sondertilgung) + Kennzahlen (Rate,
+  Laufzeit, Restschuld) über die vorhandene `berechneRestschuld`/`berechneVolltilgungJahr`.
+- **E — Kreditantrag/Finanzierungsanfrage-PDF:** Selbstauskunft + Objektdaten (A) +
+  Finanzierungswunsch (D) → ein PDF-Paket, das der Nutzer selbst an seine Bank(en)
+  schickt (ergänzt den Beleihungsordner/Finanzierungsmappe).
+- **F — Bankgespräch in den Flow integrieren, Sidebar entschlacken.**
+
+Quellen: Interhyp, Dr. Klein, Finanztip, Baufi24, DKB, vr.de, IHK München (§34i-Merkblatt),
+gesetze-im-internet.de (§ 34i GewO, § 18 KWG, §§ 505a-d BGB). Details im Chat-Rechercheprotokoll 18.07.2026.
