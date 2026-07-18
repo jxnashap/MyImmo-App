@@ -6,7 +6,7 @@ import {
   Search, Landmark, FolderClosed, FileCheck2, ExternalLink, TriangleAlert,
   ArrowRight, Calculator, Scale, Crown, ClipboardList, TrendingUp,
 } from "lucide-react";
-import Cockpit from "@/components/kalkulator/Cockpit";
+import ObjektRechner from "@/components/kauf/ObjektRechner";
 import BewertungAssistent from "@/components/BewertungAssistent";
 import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
 import SelbstauskunftForm from "@/components/kauf/SelbstauskunftForm";
@@ -15,6 +15,7 @@ import DarlehenWizard from "@/components/kauf/DarlehenWizard";
 import KreditantragButton from "@/components/kauf/KreditantragButton";
 import { KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
 import { KAUF_BEWERTUNG_KEY, type KaufBewertung } from "@/lib/kauf/bewertung";
+import { KAUF_DARLEHEN_KEY, type DarlehenAuswahl } from "@/lib/kauf/darlehen";
 import { eigenkapitalGesamt, haushaltsNetto, type SelbstauskunftDaten } from "@/lib/kauf/selbstauskunft";
 import { pruefeMachbarkeit } from "@/lib/kauf/machbarkeit";
 import { fmtE } from "@/lib/kalk";
@@ -53,6 +54,21 @@ export default function KaufAssistent({
   const [bewOffen, setBewOffen] = useState(false);
   const [bewertung, setBewertung] = useState<KaufBewertung | null>(null);
   const [auswahl, setAuswahl] = useState<KaufAuswahl | null>(null);
+  const [darlehenWunsch, setDarlehenWunsch] = useState<DarlehenAuswahl | null>(null);
+
+  // Darlehenswunsch (Schritt „Finanzierung") lesen — liefert die Rate für die
+  // Machbarkeits-Ampel. Auf Fokuswechsel + nach „übernehmen" neu laden.
+  useEffect(() => {
+    const lade = () => {
+      try {
+        const raw = localStorage.getItem(KAUF_DARLEHEN_KEY);
+        setDarlehenWunsch(raw ? (JSON.parse(raw) as DarlehenAuswahl) : null);
+      } catch { setDarlehenWunsch(null); }
+    };
+    lade();
+    window.addEventListener("focus", lade);
+    return () => window.removeEventListener("focus", lade);
+  }, []);
 
   const ladeBewertung = () => {
     try {
@@ -80,13 +96,22 @@ export default function KaufAssistent({
     return () => window.removeEventListener("focus", lade);
   }, [rechnerOffen]);
 
-  const gewaehltesObjekt = auswahl && (auswahl.kp > 0 || auswahl.darlehen > 0) ? (
+  // Eigenkapital aus der Selbstauskunft; Darlehensbedarf & Rate ergeben sich
+  // erst aus der Finanzierung (nicht mehr im Objekt-Rechner).
+  const ekVorhanden = selbstauskunft ? eigenkapitalGesamt(selbstauskunft) : 0;
+  const darlehensbedarf = auswahl ? Math.max(0, auswahl.gesamtInvest - ekVorhanden) : 0;
+  const rate = darlehenWunsch?.monatsrate ?? 0;
+  const darlehen = darlehenWunsch?.darlehen && darlehenWunsch.darlehen > 0 ? darlehenWunsch.darlehen : darlehensbedarf;
+
+  const gewaehltesObjekt = auswahl && auswahl.kp > 0 ? (
     <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--gold-pale, rgba(212,175,90,0.1))", border: "1px solid var(--gold)", marginBottom: 14 }}>
       <Crown size={16} color="var(--gold)" style={{ flexShrink: 0, marginTop: 2 }} />
       <div style={{ fontSize: 12.5 }}>
         <div style={{ fontWeight: 600, marginBottom: 2 }}>Gewähltes Objekt: {auswahl.name}{auswahl.adresse ? ` — ${auswahl.adresse}` : ""}</div>
         <div style={{ color: "var(--muted)" }}>
-          Kaufpreis {fmtE(auswahl.kp)} · Eigenkapital {fmtE(auswahl.eigenkapital)} · <strong>Darlehensbedarf {fmtE(auswahl.darlehen)}</strong> · Rate {fmtE(auswahl.rate)}/Mo
+          Kaufpreis {fmtE(auswahl.kp)} · Gesamtinvestition {fmtE(auswahl.gesamtInvest)}
+          {ekVorhanden > 0 && <> · <strong>Darlehensbedarf {fmtE(darlehensbedarf)}</strong></>}
+          {auswahl.kaltmiete > 0 && <> · Kaltmiete {fmtE(auswahl.kaltmiete)}/Mo</>}
         </div>
       </div>
     </div>
@@ -97,11 +122,12 @@ export default function KaufAssistent({
     </div>
   );
 
-  // Machbarkeits-Ampel: gewähltes Objekt (A) + Selbstauskunft (B).
-  const machbarkeit = auswahl && (auswahl.kp > 0 || auswahl.darlehen > 0)
+  // Machbarkeits-Ampel: gewähltes Objekt (A) + Selbstauskunft (B) + Rate aus
+  // dem Darlehenswunsch (D). Rate 0 → die ratenabhängigen Checks entfallen.
+  const machbarkeit = auswahl && auswahl.kp > 0
     ? pruefeMachbarkeit({
-        darlehen: auswahl.darlehen,
-        rate: auswahl.rate,
+        darlehen,
+        rate,
         kaufpreis: auswahl.kp,
         gesamtInvest: auswahl.gesamtInvest,
         kaltmieteNeu: auswahl.kaltmiete,
@@ -111,7 +137,7 @@ export default function KaufAssistent({
           ? selbstauskunft.ratenKredite + selbstauskunft.versicherungen + selbstauskunft.unterhalt + selbstauskunft.sonstigeAusgaben
           : 0,
         anzahlPersonen: selbstauskunft?.anzahlPersonen ?? 1,
-        eigenkapital: selbstauskunft ? eigenkapitalGesamt(selbstauskunft) : 0,
+        eigenkapital: ekVorhanden,
       })
     : null;
 
@@ -155,10 +181,10 @@ export default function KaufAssistent({
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
-            Rechne jedes in Frage kommende Objekt durch — Kaufnebenkosten, Cashflow, Rendite und die
-            30-Jahres-Entwicklung. <strong>Speichere</strong> mehrere Kandidaten und stelle sie über
-            <Scale size={13} style={{ verticalAlign: "-2px", margin: "0 3px" }} />„Vergleich" nebeneinander,
-            um das beste Objekt auszuwählen — erst danach geht es zur Finanzierung.
+            Trag die Grundwerte ein und wähle <strong>Vermieten</strong> oder <strong>Eigennutzung</strong> —
+            du siehst sofort Rendite, Preis/m² und Kaufpreisfaktor. <strong>Speichere</strong> mehrere
+            Kandidaten und vergleiche 3–5 über <Scale size={13} style={{ verticalAlign: "-2px", margin: "0 3px" }} />„Vergleich":
+            das beste bekommt eine Krone. Die Finanzierung rechnest du danach aus.
           </p>
           {!rechnerOffen ? (
             <button type="button" className="btn btn-gold" style={{ fontSize: 13 }} onClick={() => setRechnerOffen(true)}>
@@ -166,7 +192,7 @@ export default function KaufAssistent({
             </button>
           ) : (
             <div style={{ marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-              <Cockpit gespeichert={gespeichert} />
+              <ObjektRechner gespeichert={gespeichert} />
             </div>
           )}
         </>
@@ -207,7 +233,7 @@ export default function KaufAssistent({
             Beantworte, was dir wichtig ist — daraus stellen wir eine passende Darlehenskonfiguration
             zusammen, die du in den Kreditantrag übernehmen kannst.
           </p>
-          <DarlehenWizard darlehenVorschlag={auswahl?.darlehen ?? 0} />
+          <DarlehenWizard darlehenVorschlag={darlehensbedarf} onUebernommen={setDarlehenWunsch} />
 
           <div className="form-section-label" style={{ marginTop: 20 }}>Darlehensarten im Überblick</div>
           <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>

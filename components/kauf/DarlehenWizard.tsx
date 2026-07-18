@@ -19,7 +19,11 @@ const PRIOS: { id: Prioritaet; label: string; icon: typeof Scale; text: string }
   { id: "zinssicherheit", label: "Maximale Zinssicherheit", icon: ShieldCheck, text: "möglichst lange Zinsbindung" },
 ];
 
-export default function DarlehenWizard({ darlehenVorschlag = 0 }: { darlehenVorschlag?: number }) {
+export default function DarlehenWizard({
+  darlehenVorschlag = 0, onUebernommen,
+}: {
+  darlehenVorschlag?: number; onUebernommen?: (a: DarlehenAuswahl) => void;
+}) {
   const toast = useToast();
   const [darlehen, setDarlehen] = useState(darlehenVorschlag ? String(Math.round(darlehenVorschlag)) : "");
   const [prio, setPrio] = useState<Prioritaet>("gleiche_rate");
@@ -55,6 +59,7 @@ export default function DarlehenWizard({ darlehenVorschlag = 0 }: { darlehenVors
     };
     try { localStorage.setItem(KAUF_DARLEHEN_KEY, JSON.stringify(a)); } catch { /* ignore */ }
     toast("Finanzierungswunsch für den Kreditantrag übernommen.");
+    onUebernommen?.(a);
   }
 
   return (

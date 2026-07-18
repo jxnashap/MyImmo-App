@@ -5,7 +5,7 @@ const FARBE: Record<Ampel, string> = {
   gruen: "var(--green)", gelb: "var(--amber)", rot: "var(--red)", grau: "var(--faint)",
 };
 const TEXT: Record<Ampel, string> = {
-  gruen: "Sieht machbar aus", gelb: "Grenzwertig — genau prüfen", rot: "Kritisch", grau: "Noch keine Einschätzung",
+  gruen: "Sieht machbar aus", gelb: "Machbar — ein Punkt genauer prüfen", rot: "Genauer anschauen", grau: "Noch keine Einschätzung",
 };
 
 function AmpelIcon({ a, size = 16 }: { a: Ampel; size?: number }) {

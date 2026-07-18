@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
+import { eigenkapitalGesamt } from "@/lib/kauf/selbstauskunft";
 import {
   buildKreditantragPdf, type KreditObjekt, type KreditWunsch, type KreditAbsender,
 } from "@/lib/pdf/kreditantragPdf";
@@ -38,14 +39,18 @@ export async function POST(req: NextRequest) {
   let body: { auswahl?: Partial<KreditObjekt> | null; darlehen?: Partial<KreditWunsch> | null } = {};
   try { body = await req.json(); } catch { /* leerer Body erlaubt */ }
 
-  const objekt: KreditObjekt | null = body.auswahl && (body.auswahl.kaufpreis || body.auswahl.darlehen)
+  // Eigenkapital aus der Selbstauskunft, Darlehen aus dem Wunsch (D) bzw.
+  // Gesamtinvest − EK — die Objekt-Auswahl (A) trägt selbst kein Darlehen mehr.
+  const ek = eigenkapitalGesamt(sa);
+  const wunschDarlehen = Number(body.darlehen?.darlehen) || 0;
+  const objekt: KreditObjekt | null = body.auswahl && body.auswahl.kaufpreis
     ? {
         name: body.auswahl.name ?? "",
         adresse: body.auswahl.adresse ?? "",
         kaufpreis: Number(body.auswahl.kaufpreis) || 0,
         gesamtInvest: Number(body.auswahl.gesamtInvest) || 0,
-        eigenkapital: Number(body.auswahl.eigenkapital) || 0,
-        darlehen: Number(body.auswahl.darlehen) || 0,
+        eigenkapital: ek,
+        darlehen: wunschDarlehen > 0 ? wunschDarlehen : Math.max(0, (Number(body.auswahl.gesamtInvest) || 0) - ek),
         kaltmiete: Number(body.auswahl.kaltmiete) || 0,
       }
     : null;
