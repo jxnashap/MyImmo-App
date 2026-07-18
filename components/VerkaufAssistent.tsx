@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Search, Coins, FolderClosed, Handshake, ArrowRight, TriangleAlert } from "lucide-react";
-import VerkaufRechner from "@/components/VerkaufRechner";
+import VerkaufRechner, { type VerkaufObjekt } from "@/components/VerkaufRechner";
 import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
 
 // Verkauf-Assistent: Ablaufschema von der Wertermittlung bis zur Übergabe,
@@ -15,7 +15,7 @@ const UNTERLAGEN: { gruppe: string; items: string[] }[] = [
   { gruppe: "Vermietetes Objekt", items: ["Mietverträge", "Mietaufstellung / Mietnachweis", "Nebenkostenabrechnungen"] },
 ];
 
-export default function VerkaufAssistent() {
+export default function VerkaufAssistent({ objekte = [] }: { objekte?: VerkaufObjekt[] }) {
   const schritte: StepperSchritt[] = [
     {
       icon: Search,
@@ -41,7 +41,7 @@ export default function VerkaufAssistent() {
             Spekulationssteuer nach § 23 EStG (steuerfrei nach 10 Jahren) und was am Ende übrig bleibt —
             nach Tilgung der Restschuld, Verkaufskosten und Steuer.
           </p>
-          <VerkaufRechner />
+          <VerkaufRechner objekte={objekte} />
         </>
       ),
     },
