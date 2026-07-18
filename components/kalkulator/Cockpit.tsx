@@ -11,6 +11,7 @@ import CockpitUeberblick from "@/components/kalkulator/CockpitUeberblick";
 import { useToast } from "@/components/Toast";
 import { saveKalkulation, deleteKalkulation } from "@/lib/actions/kalkulation";
 import { bestesObjekt, KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
+import { KAUF_BEWERTUNG_KEY, type KaufBewertung } from "@/lib/kauf/bewertung";
 import type { Kalkulation } from "@/lib/types";
 import { fmt, fmtE, pct, num, calcGrenzsteuer, berechneRestschuld, berechneVolltilgungJahr, BUNDESLAENDER, CP_STORAGE_KEY, type CpData } from "@/lib/kalk";
 
@@ -107,6 +108,20 @@ export default function Cockpit({ gespeichert = [] }: { gespeichert?: Kalkulatio
   const [kostensteigerung, setKostensteigerung] = useState("5");
   const [mietsteigerung, setMietsteigerung] = useState("2");
   const [wertsteigerung, setWertsteigerung] = useState("2");
+
+  // Werte aus dem Marktwert-Schätzer (Schritt 1) übernehmen — nur leere Felder
+  // füllen, damit eigene Eingaben nicht überschrieben werden.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(KAUF_BEWERTUNG_KEY);
+      if (!raw) return;
+      const b = JSON.parse(raw) as KaufBewertung;
+      if (b.kaufpreis > 0) setKaufpreis((v) => v || String(Math.round(b.kaufpreis)));
+      if (b.flaeche > 0) setFlaeche((v) => v || String(b.flaeche));
+      if (b.jahresmiete > 0) setKaltmiete((v) => v || String(Math.round(b.jahresmiete / 12)));
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ===== Berechnung (Port von calcCP) =====
   const kp = num(kaufpreis), fl = num(flaeche), gew = num(bundesland);
