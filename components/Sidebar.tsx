@@ -35,7 +35,6 @@ const KALKULATOR: NavItem[] = [
   { href: "/verkauf", label: "Verkauf-Assistent", icon: Handshake },
   { href: "/bewertung", label: "Marktwert-Schätzer", icon: TrendingUp },
   { href: "/afa-assistent", label: "AfA-Assistent", icon: Percent },
-  { href: "/bankgespraech", label: "Bankgespräch", icon: Landmark },
 ];
 
 // Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
