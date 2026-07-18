@@ -18,12 +18,17 @@ describe("Machbarkeit", () => {
     expect(r.hatDaten).toBe(true);
     // Quote 1200/4500 = 26,7 % → grün
     expect(r.checks.find((c) => c.key === "quote")?.ampel).toBe("gruen");
-    // Auslauf 250/300 = 83 % → rot
-    expect(r.checks.find((c) => c.key === "ltv")?.ampel).toBe("rot");
+    // Auslauf 250/300 = 83 % → gelb (≤ 85 %, nicht abschreckend rot)
+    expect(r.checks.find((c) => c.key === "ltv")?.ampel).toBe("gelb");
     // EK 80k ≥ benötigt 80k → grün
     expect(r.checks.find((c) => c.key === "ek")?.ampel).toBe("gruen");
-    // Gesamt = schlechteste = rot (wegen Auslauf)
-    expect(r.gesamt).toBe("rot");
+    // Gesamt = schlechteste = gelb (wegen Auslauf)
+    expect(r.gesamt).toBe("gelb");
+  });
+
+  it("sehr hoher Auslauf (> 85 %) bleibt rot", () => {
+    const r = pruefeMachbarkeit({ ...basis, darlehen: 280000 });
+    expect(r.checks.find((c) => c.key === "ltv")?.ampel).toBe("rot");
   });
 
   it("zu hohe Rate → Quote rot", () => {

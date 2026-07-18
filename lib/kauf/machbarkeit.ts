@@ -96,7 +96,7 @@ export function pruefeMachbarkeit(i: MachbarkeitInput): MachbarkeitErgebnis {
   // 3) Beleihungsauslauf (Darlehen / Kaufpreis)
   if (i.kaufpreis > 0 && i.darlehen > 0) {
     const auslauf = i.darlehen / i.kaufpreis;
-    const ampel: Ampel = auslauf <= 0.6 ? "gruen" : auslauf <= 0.8 ? "gelb" : "rot";
+    const ampel: Ampel = auslauf <= 0.6 ? "gruen" : auslauf <= 0.85 ? "gelb" : "rot";
     checks.push({
       key: "ltv",
       label: "Beleihungsauslauf (Darlehen / Kaufpreis)",
