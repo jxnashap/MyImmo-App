@@ -11,6 +11,7 @@ import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
 import SelbstauskunftForm from "@/components/kauf/SelbstauskunftForm";
 import MachbarkeitKarte from "@/components/kauf/MachbarkeitKarte";
 import DarlehenWizard from "@/components/kauf/DarlehenWizard";
+import KreditantragButton from "@/components/kauf/KreditantragButton";
 import { KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
 import { eigenkapitalGesamt, haushaltsNetto, type SelbstauskunftDaten } from "@/lib/kauf/selbstauskunft";
 import { pruefeMachbarkeit } from "@/lib/kauf/machbarkeit";
@@ -216,9 +217,19 @@ export default function KaufAssistent({
             MyImmo erzeugt Kennblatt, Mietaufstellung &amp; Co. aus deinen Daten. Du bekommst einen sicheren
             Link, den du <strong>selbst an deine Bank(en)</strong> schickst.
           </p>
-          <Link href="/beleihung" className="btn btn-gold" style={{ fontSize: 13 }}>
-            Beleihungsordner / Finanzierungsmappe <ArrowRight size={14} style={{ verticalAlign: "-2px" }} />
-          </Link>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Link href="/beleihung" className="btn btn-outline" style={{ fontSize: 13 }}>
+              Beleihungsordner / Finanzierungsmappe <ArrowRight size={14} style={{ verticalAlign: "-2px" }} />
+            </Link>
+          </div>
+          <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+            <div className="form-section-label" style={{ marginTop: 0 }}>Kreditantrag / Selbstauskunft</div>
+            <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
+              Fasst deine Selbstauskunft, das gewählte Objekt und deinen Finanzierungswunsch in einem
+              PDF zusammen — fertig zum Ausdrucken, Unterschreiben und <strong>selbst</strong> an die Bank geben.
+            </p>
+            <KreditantragButton />
+          </div>
         </>
       ),
     },
