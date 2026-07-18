@@ -3,6 +3,7 @@ import "./globals.css";
 import { Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
 import AutoLogout from "@/components/AutoLogout";
+import OnboardingTour from "@/components/OnboardingTour";
 import { ToastProvider } from "@/components/Toast";
 import FlashToast from "@/components/FlashToast";
 import { ZeitraumProvider } from "@/components/ZeitraumProvider";
@@ -115,6 +116,7 @@ export default async function RootLayout({
           <div className="app">
             <Sidebar properties={props ?? []} userEmail={user.email} profilName={profil?.name ?? null} />
             <AutoLogout />
+            <OnboardingTour neuerNutzer={(props ?? []).length === 0} />
             <div className="main-wrap">
               <main className="main">
                 <ZeitraumProvider>{children}</ZeitraumProvider>
