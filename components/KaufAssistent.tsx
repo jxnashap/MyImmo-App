@@ -9,8 +9,10 @@ import {
 import Cockpit from "@/components/kalkulator/Cockpit";
 import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
 import SelbstauskunftForm from "@/components/kauf/SelbstauskunftForm";
+import MachbarkeitKarte from "@/components/kauf/MachbarkeitKarte";
 import { KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
-import type { SelbstauskunftDaten } from "@/lib/kauf/selbstauskunft";
+import { eigenkapitalGesamt, haushaltsNetto, type SelbstauskunftDaten } from "@/lib/kauf/selbstauskunft";
+import { pruefeMachbarkeit } from "@/lib/kauf/machbarkeit";
 import { fmtE } from "@/lib/kalk";
 import type { Kalkulation } from "@/lib/types";
 
@@ -76,6 +78,24 @@ export default function KaufAssistent({
       <span>Noch kein Objekt gewählt. Rechne in Schritt 2 deine Kandidaten durch, vergleiche sie und übernimm das beste — die Zahlen erscheinen dann hier.</span>
     </div>
   );
+
+  // Machbarkeits-Ampel: gewähltes Objekt (A) + Selbstauskunft (B).
+  const machbarkeit = auswahl && (auswahl.kp > 0 || auswahl.darlehen > 0)
+    ? pruefeMachbarkeit({
+        darlehen: auswahl.darlehen,
+        rate: auswahl.rate,
+        kaufpreis: auswahl.kp,
+        gesamtInvest: auswahl.gesamtInvest,
+        kaltmieteNeu: auswahl.kaltmiete,
+        haushaltsNetto: selbstauskunft ? haushaltsNetto(selbstauskunft) : 0,
+        mieteinnahmenBestehend: selbstauskunft?.mieteinnahmen ?? 0,
+        ausgabenFix: selbstauskunft
+          ? selbstauskunft.ratenKredite + selbstauskunft.versicherungen + selbstauskunft.unterhalt + selbstauskunft.sonstigeAusgaben
+          : 0,
+        anzahlPersonen: selbstauskunft?.anzahlPersonen ?? 1,
+        eigenkapital: selbstauskunft ? eigenkapitalGesamt(selbstauskunft) : 0,
+      })
+    : null;
 
   const schritte: StepperSchritt[] = [
     {
@@ -144,6 +164,7 @@ export default function KaufAssistent({
       inhalt: (
         <>
           {gewaehltesObjekt}
+          {machbarkeit && <MachbarkeitKarte ergebnis={machbarkeit} />}
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
             Überblick über die Darlehensarten — welche zu dir passt, entscheidest du mit deiner Bank.
           </p>
