@@ -10,6 +10,7 @@ import Cockpit from "@/components/kalkulator/Cockpit";
 import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
 import SelbstauskunftForm from "@/components/kauf/SelbstauskunftForm";
 import MachbarkeitKarte from "@/components/kauf/MachbarkeitKarte";
+import DarlehenWizard from "@/components/kauf/DarlehenWizard";
 import { KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
 import { eigenkapitalGesamt, haushaltsNetto, type SelbstauskunftDaten } from "@/lib/kauf/selbstauskunft";
 import { pruefeMachbarkeit } from "@/lib/kauf/machbarkeit";
@@ -165,8 +166,17 @@ export default function KaufAssistent({
         <>
           {gewaehltesObjekt}
           {machbarkeit && <MachbarkeitKarte ergebnis={machbarkeit} />}
-          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
-            Überblick über die Darlehensarten — welche zu dir passt, entscheidest du mit deiner Bank.
+
+          <div className="form-section-label" style={{ marginTop: 4 }}>Dein Finanzierungswunsch</div>
+          <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
+            Beantworte, was dir wichtig ist — daraus stellen wir eine passende Darlehenskonfiguration
+            zusammen, die du in den Kreditantrag übernehmen kannst.
+          </p>
+          <DarlehenWizard darlehenVorschlag={auswahl?.darlehen ?? 0} />
+
+          <div className="form-section-label" style={{ marginTop: 20 }}>Darlehensarten im Überblick</div>
+          <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
+            Welche Art zu dir passt, entscheidest du mit deiner Bank.
           </p>
           <div style={{ display: "grid", gap: 8 }}>
             {DARLEHEN.map((d) => (
