@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Search, Landmark, FolderClosed, FileCheck2, ExternalLink, TriangleAlert,
+  Search, Landmark, FolderClosed, FileCheck2, TriangleAlert,
   ArrowRight, Calculator, Scale, Crown, ClipboardList, TrendingUp,
 } from "lucide-react";
 import ObjektRechner from "@/components/kauf/ObjektRechner";
@@ -12,6 +12,7 @@ import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
 import SelbstauskunftForm from "@/components/kauf/SelbstauskunftForm";
 import MachbarkeitKarte from "@/components/kauf/MachbarkeitKarte";
 import DarlehenWizard from "@/components/kauf/DarlehenWizard";
+import FoerderCheck from "@/components/kauf/FoerderCheck";
 import KreditantragButton from "@/components/kauf/KreditantragButton";
 import { KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
 import { KAUF_BEWERTUNG_KEY, type KaufBewertung } from "@/lib/kauf/bewertung";
@@ -33,15 +34,6 @@ const DARLEHEN: { name: string; text: string; warn?: boolean }[] = [
   { name: "Volltilger", text: "Tilgt bis Ende der Zinsbindung auf 0 — oft Zinsrabatt, dafür wenig flexibel." },
   { name: "Forward-Darlehen", text: "Anschlusszins schon heute für später sichern. Aufschlag je Vorlaufmonat; Abnahmepflicht auch bei fallenden Zinsen (Zinswette)." },
   { name: "Bausparkombi / „Sofortfinanzierung“ zur Ablösung", text: "Tilgungsfreies Vorausdarlehen + Bausparvertrag, der später ablöst. Klingt nach Zinssicherung, ist aber oft intransparent und teuer — Verbraucherzentrale rät meist ab (Abschlussgebühr, unsicherer Zuteilungstermin, effektiv höhere Kosten).", warn: true },
-];
-
-const FOERDERUNG: { name: string; wer: string; ok: boolean }[] = [
-  { name: "KfW 297/298 – Klimafreundlicher Neubau", wer: "298 auch für Vermieter", ok: true },
-  { name: "KfW 261 – Sanierung zum Effizienzhaus", wer: "auch Vermieter", ok: true },
-  { name: "KfW 458 – Heizungsförderung (Vermieter max. ~35 %)", wer: "auch Vermieter", ok: true },
-  { name: "BAFA BEG EM – Gebäudehülle & Anlagentechnik", wer: "auch Vermieter", ok: true },
-  { name: "Landesförderbanken (z. B. NRW.BANK Mietwohnraum)", wer: "Vermieter, mit Bindung", ok: true },
-  { name: "KfW 124 / 300 / 308, Wohn-Riester", wer: "nur Selbstnutzer", ok: false },
 ];
 
 export default function KaufAssistent({
@@ -178,6 +170,7 @@ export default function KaufAssistent({
     {
       icon: Calculator,
       titel: "Objekt durchrechnen & vergleichen",
+      autoErledigt: !!auswahl && auswahl.kp > 0,
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
@@ -201,6 +194,7 @@ export default function KaufAssistent({
     {
       icon: ClipboardList,
       titel: "Deine Finanzen (Selbstauskunft)",
+      autoErledigt: !!selbstauskunft,
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
@@ -223,6 +217,7 @@ export default function KaufAssistent({
     {
       icon: Landmark,
       titel: "Finanzierung & Förderung",
+      autoErledigt: !!darlehenWunsch && darlehenWunsch.darlehen > 0,
       inhalt: (
         <>
           {gewaehltesObjekt}
@@ -250,20 +245,11 @@ export default function KaufAssistent({
             ))}
           </div>
 
-          <div className="form-section-label" style={{ marginTop: 16 }}>Förderprogramme (Auswahl, Stand 2026 — vor Antrag Konditionen prüfen)</div>
-          <div style={{ display: "grid", gap: 4 }}>
-            {FOERDERUNG.map((f) => (
-              <div key={f.name} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, padding: "4px 0" }}>
-                <span style={{ width: 7, height: 7, borderRadius: 99, background: f.ok ? "var(--green)" : "var(--faint)", flexShrink: 0 }} />
-                <span style={{ flex: 1 }}>{f.name}</span>
-                <span className={`badge ${f.ok ? "badge-green" : "badge-neutral"}`}>{f.wer}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-            <a href="https://www.kfw.de/inlandsfoerderung/" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 12 }}><ExternalLink size={12} style={{ verticalAlign: "-2px" }} /> KfW</a>
-            <a href="https://www.bafa.de" target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 12 }}><ExternalLink size={12} style={{ verticalAlign: "-2px" }} /> BAFA</a>
-          </div>
+          <div className="form-section-label" style={{ marginTop: 16 }}>Fördercheck</div>
+          <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
+            Wähle Nutzung, Vorhaben und Bundesland — du siehst nur die Programme, die zu dir passen.
+          </p>
+          <FoerderCheck />
         </>
       ),
     },
