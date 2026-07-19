@@ -1,0 +1,69 @@
+# Finanzkonzept
+
+> Zwei Ebenen unter „Finanz": **A) Geschäftsmodell/Monetarisierung** (was MyImmo kostet und
+> einbringt) und **B) der Finanzierungs-Assistent** (App-Feature). Beide hier zusammengefasst.
+> Bei Änderungen an einer der beiden: **diese Datei im selben PR mitaktualisieren** (Regel in `CLAUDE.md`).
+> Stand: 19.07.2026. Verwandt: [[MASTERPLAN]], [[BRIEFING]].
+
+---
+
+## A) Geschäftsmodell / Monetarisierung
+
+### Laufende Kosten (Betrieb)
+| Posten | Heute | Ab Skalierung |
+|---|---|---|
+| Supabase | Free | **Pro ~25 $/M** (Leaked-PW-Schutz, DPA-Komfort) |
+| Vercel | Hobby | **Pro 20 $/M** (kommerziell erlaubt, AVV, Cron) |
+| Anthropic API | pay-per-use (OCR/KI-Import) | skaliert mit Nutzung |
+| AWS Bedrock (optional) | aus | EU-KI-Verarbeitung, pay-per-use |
+| Enable Banking (geplant) | Sandbox (frei) | **Add-on/Business je Konto/Monat** |
+| AVM (Marktwert) | — | **abgelehnt** (siehe unten) |
+
+### Einnahmen (geplant)
+- **Abo-Modell** für Vermieter (Preis noch offen). Fundament vorhanden:
+  Tabelle `einladungscodes` (rollen-gebunden, Ablauf, Einmal-Einlösung) + Signup-Trigger
+  `handle_new_user_rolle` → um **Abo-Zugangscodes** erweiterbar (Code nur bei Erst-Registrierung).
+- Rollen: normale Vermieter + Hausverwaltung (eigene Codes).
+
+### Wichtigste Finanz-Entscheidungen
+- **Bezahltes AVM (Sprengnetter/PriceHubble) → ABGELEHNT.** Vertriebsgebunden, laufende
+  Kosten je Bewertung, AVV nötig. Code-seitig vorbereitet (Quellen-Stub), aber nicht angebunden.
+- **Stattdessen: automatischer Wert-Refresh aus frei-legalen Quellen** (Idee, noch nicht gebaut):
+  Destatis-Häuserpreisindex (via Eurostat, schon genutzt) + BORIS-Bodenrichtwerte, alle ~2 Wochen
+  per GitHub-Action-Cron. **Offene Frage:** nur eigenes Portfolio vs. mandantensicher für alle Nutzer.
+  **Kein Portal-Scraping** (ImmoScout etc.) — ToS/Recht.
+- **Kosten-Einpreisung:** Sobald AVM/Enable-Banking/AWS aktiv werden, sind das **wiederkehrende,
+  mit der Nutzerzahl skalierende** Kosten → müssen ins Abo (z. B. „X Bewertungen/Monat inklusive",
+  Rest kostenpflichtig; Ergebnisse cachen statt bei jedem Aufruf neu abrufen).
+
+### Portfolio-Wert — Ausbaustufen
+- **Stufe 1 (aktiv):** bundesweiter Häuserpreisindex (Eurostat/Destatis), Fortschreibung ab Kaufpreis.
+- **Stufe 1b (geplant):** regional nach BBSR-Kreistypen. ⚠️ Kreistyp-Reihe seit 24.09.2025 nur noch
+  als „Statistischer Bericht" (XLSX), **nicht mehr live per GENESIS-API**. Nutzer hat GENESIS-Token.
+  Blocker: exakte Kreistyp-Indexwerte + amtliche PLZ→Kreistyp-Zuordnung sauber beschaffen (nicht raten).
+- **Stufe 2:** kommerzielles AVM — **verworfen** (siehe oben).
+
+---
+
+## B) Finanzierungs-Assistent (App-Feature)
+
+### Zweck & rechtlicher Rahmen
+Guided Kauf-/Finanzierungs-Rechner: Objekt durchrechnen → Vermietung/Eigennutzung →
+Machbarkeit → Darlehens-Wunsch → Kreditantrag/Selbstauskunft-PDF für die Bank.
+- **Erlaubnisfrei nach § 34i GewO** halten: **„rechnen & sortieren, du entscheidest selbst"** —
+  **keine Produktempfehlung, keine Vermittlung.** Wording bereits neutralisiert („Empfehlung" entfernt).
+- **Anwaltlich freizugeben** (offen, Betreiber): § 34i-Grenze final absichern.
+
+### Bausteine (Etappen A–F, vorhanden)
+- Objekt-Auswahl (bestes von mehreren) → Selbstauskunft/Haushaltsrechnung (verschlüsselt in DB)
+  → Machbarkeits-Check (Ampel) → Darlehens-Wunsch-Wizard → Kreditantrag-PDF → Bankgespräch.
+- Fahrplan-Details: [[MASTERPLAN]] §11. Rechenmodule: `lib/kauf/*`, `components/kauf/*`.
+
+### Verwandte Steuer-/Rechenlogik (StBerG-sensibel)
+Anlage-V-Berechnung, § 82b-Optimierer, AfA-Assistent, DATEV-Export — **Grenze zur unerlaubten
+Steuerberatung** anwaltlich freigeben (offen, Betreiber). Alles als „Näherung, keine Steuerberatung"
+ausgewiesen.
+
+### Offene UX-Punkte (aus dem Scan)
+- „Einzelobjekt in die Finanzierung übernehmen" (Rückkanal), Verkauf-Bewertung einbetten,
+  AfA-Ergebnis ans Objekt zurückschreiben. → eigene PRs mit Preview.
