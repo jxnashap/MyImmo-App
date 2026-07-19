@@ -121,7 +121,9 @@ export async function createProperty(formData: FormData) {
   revalidatePath("/properties");
   revalidatePath("/");
   revalidatePath("/cashflow");
-  redirect(flashUrl("/properties", "Immobilie angelegt."));
+  // Direkt ins neue Objekt springen — dort schließen die Folgeschritte
+  // (Mieter, Kredit, Buchung) ohne erneutes Suchen an.
+  redirect(flashUrl(neu?.id ? `/properties/${neu.id}` : "/properties", "Immobilie angelegt."));
 }
 
 export async function updateProperty(id: string, formData: FormData) {

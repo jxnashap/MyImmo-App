@@ -15,6 +15,7 @@ export default async function NeueEinnahmePage({ searchParams }: { searchParams:
   const properties = (data ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const tenants = (miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname">[];
   const back = searchParams.back || "/einnahmen";
+  const heute = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="fade-up">
@@ -30,7 +31,7 @@ export default async function NeueEinnahmePage({ searchParams }: { searchParams:
         <p>Mietzahlungen, Kautionen oder sonstige Erträge.</p>
         <input type="hidden" name="back" value={back} />
         <div className="form-row">
-          <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" required /></div>
+          <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" required defaultValue={heute} /></div>
           <div className="form-group"><label>Immobilie *</label>
             <select name="prop_id" defaultValue={searchParams.prop ?? ""} required>
               <option value="">– wählen –</option>

@@ -12,6 +12,7 @@ export default async function NeuerVerbrauchPage({ searchParams }: { searchParam
   const { data } = await supabase.from("properties").select("id,bezeichnung").order("bezeichnung");
   const properties = (data ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const back = searchParams.back || "/verbrauch";
+  const heute = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="fade-up">
@@ -27,7 +28,7 @@ export default async function NeuerVerbrauchPage({ searchParams }: { searchParam
         <p>Strom, Gas, Wasser, Heizöl und andere Energieträger.</p>
         <input type="hidden" name="back" value={back} />
         <div className="form-row">
-          <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" required /></div>
+          <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" required defaultValue={heute} /></div>
           <div className="form-group"><label>Immobilie *</label>
             <select name="prop_id" defaultValue={searchParams.prop ?? ""} required>
               <option value="">– wählen –</option>

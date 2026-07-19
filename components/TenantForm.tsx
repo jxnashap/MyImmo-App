@@ -21,11 +21,13 @@ export default function TenantForm({
   tenant,
   properties,
   submitLabel,
+  propInitial = "",
 }: {
   action: (formData: FormData) => void;
   tenant?: Tenant;
   properties: Pick<Property, "id" | "bezeichnung">[];
   submitLabel: string;
+  propInitial?: string;
 }) {
   const [mietart, setMietart] = useState((tenant?.mietart as string) || "standard");
   const v = (k: keyof Tenant) => (tenant?.[k] as string | number | null) ?? "";
@@ -60,7 +62,7 @@ export default function TenantForm({
       <div className="form-section-label">Mietverhältnis</div>
       <div className="form-row">
         <div className="form-group"><label>Objekt</label>
-          <select name="prop_id" defaultValue={tenant?.prop_id ?? ""}>
+          <select name="prop_id" defaultValue={tenant?.prop_id ?? propInitial}>
             <option value="">— kein Objekt —</option>
             {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
           </select>

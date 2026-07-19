@@ -30,6 +30,7 @@ export default async function NeueBuchungPage({
         back="/cashflow"
         typInitial={searchParams.typ === "ausgabe" ? "ausgabe" : "einnahme"}
         propInitial={searchParams.prop ?? ""}
+        datumInitial={new Date().toISOString().slice(0, 10)}
       />
     </div>
   );
