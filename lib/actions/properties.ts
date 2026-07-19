@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { flashUrl } from "@/lib/flash";
+import { protokolliereWert } from "@/lib/wert/protokoll";
 
 // Wandelt FormData in ein typisiertes Objekt um (Zahlen -> number | null)
 function parse(formData: FormData) {
@@ -138,6 +139,10 @@ export async function updateProperty(id: string, formData: FormData) {
   const { error } = await supabase.from("properties").update({ ...parsed, ...koordReset }).eq("id", id);
   if (error) throw new Error(error.message);
 
+  // Manuell gepflegter Wert → als Stand für die Wertentwicklung protokollieren
+  // (nur bei Änderung; siehe protokolliereWert).
+  await protokolliereWert(supabase, user.id, id, parsed.wert, "manuell", "Objekt-Formular");
+
   await autoBuchungen(supabase, user.id, id, parsed);
 
   revalidatePath("/properties");
@@ -176,6 +181,9 @@ export async function uebernehmeIndexwert(id: string, wert: number, standQuartal
     })
     .eq("id", id);
   if (error) throw new Error(error.message);
+
+  // Übernommenen Index-Wert als Stand für die Wertentwicklung protokollieren.
+  await protokolliereWert(supabase, user.id, id, wert, "index", "HPI-Fortschreibung");
 
   revalidatePath(`/properties/${id}`);
   revalidatePath("/properties");

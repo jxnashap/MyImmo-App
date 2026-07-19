@@ -9,8 +9,10 @@ import Co2Rechner from "@/components/Co2Rechner";
 import PruefpflichtenKarte from "@/components/PruefpflichtenKarte";
 import MarktwertCard from "@/components/MarktwertCard";
 import IndexwertKarte from "@/components/IndexwertKarte";
+import WertVerlaufChart from "@/components/WertVerlaufChart";
 import { holeIndexReihe } from "@/lib/wert/hpi";
 import { fortschreibeKaufpreis } from "@/lib/wert/fortschreibung";
+import { objektWertReihe, veraenderungProzent } from "@/lib/wert/verlauf";
 import AnschaffungsnahWaechter from "@/components/AnschaffungsnahWaechter";
 import { berechneAnschaffungsnah } from "@/lib/steuer/anschaffungsnah";
 import { berechneSpekulation } from "@/lib/steuer/spekulation";
@@ -166,6 +168,18 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
     distanz_km: c.distanz_km != null ? Number(c.distanz_km) : null,
   }));
 
+  // Wertentwicklung: Kaufpreis (Anschaffung) → erfasste Wert-Stände → aktueller Wert.
+  const heuteISO = new Date().toISOString().slice(0, 10);
+  const wertReihe = objektWertReihe({
+    kaufpreis: p.kaufpreis,
+    kaufdatum: p.kaufdatum ?? null,
+    aktuellerWert: p.wert,
+    standDatum: p.marktwert_stand ?? null,
+    historie: bewHistorie,
+    heute: heuteISO,
+  });
+  const wertReiheProzent = veraenderungProzent(wertReihe);
+
   return (
     <div className="fade-up">
       <div className="topbar">
@@ -255,6 +269,26 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         koordinaten={{ lat: p.latitude ?? null, lng: p.longitude ?? null }}
         action={refreshBewertung.bind(null, id)}
       />
+
+      {/* Wertentwicklung (Verlauf aus Kaufpreis + erfassten Wert-Ständen) */}
+      {wertReihe.length >= 2 && (
+        <div className="section mb-20">
+          <div className="section-header">
+            <h3>Wertentwicklung</h3>
+            {wertReiheProzent != null && (
+              <span className={`badge ${wertReiheProzent >= 0 ? "badge-green" : "badge-red"}`}>
+                {wertReiheProzent >= 0 ? "+" : ""}{wertReiheProzent.toLocaleString("de-DE")} % seit Anschaffung
+              </span>
+            )}
+          </div>
+          <div className="section-body">
+            <WertVerlaufChart
+              punkte={wertReihe}
+              caption="Kaufpreis (Anschaffung), erfasste Wert-Stände und aktueller Wert. Neue Punkte entstehen bei jeder Wert-Aktualisierung."
+            />
+          </div>
+        </div>
+      )}
 
       {/* Mieter dieser Immobilie */}
       <div className="section mb-20">
