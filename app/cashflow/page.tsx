@@ -13,6 +13,7 @@ import AufklappSection from "@/components/AufklappSection";
 import WiederkehrManager from "@/components/WiederkehrManager";
 import CashflowDonut from "@/components/CashflowDonut";
 import type { Einnahme, Kosten, Property, Tenant, WiederkehrVorlage } from "@/lib/types";
+import { KOSTEN_SPALTEN } from "@/lib/types";
 
 export default async function CashflowPage({
   searchParams,
@@ -22,7 +23,7 @@ export default async function CashflowPage({
   const supabase = createClient();
   const [{ data: einn }, { data: kost }, { data: props }, { data: miet }, { data: vRows }] = await Promise.all([
     supabase.from("einnahmen").select("*").order("buchungsdatum", { ascending: false }),
-    supabase.from("kosten").select("*").order("buchungsdatum", { ascending: false }),
+    supabase.from("kosten").select(KOSTEN_SPALTEN).order("buchungsdatum", { ascending: false }),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
     supabase.from("mieter").select("id,vorname,nachname,prop_id").order("nachname"),
     supabase.from("wiederkehrende_buchungen").select("*").order("created_at", { ascending: false }),
