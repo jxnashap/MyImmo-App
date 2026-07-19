@@ -285,15 +285,21 @@ export default async function DashboardPage() {
         </div>
 
         <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>Aktuelle Kredite</h3></div>
+          <div className="section-header">
+            <h3>Aktuelle Kredite</h3>
+            {kredite.length > 3 && <Link href="/kredite" className="btn btn-ghost" style={{ fontSize: 11 }}>Alle {kredite.length} →</Link>}
+          </div>
           <div className="section-body">
             {kredite.length === 0 ? (
-              <div className="empty"><Landmark className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Kredite</p></div>
+              <div className="empty">
+                <Landmark className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Kredite</p>
+                <Link href="/kredite/new" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 8 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Kredit anlegen</Link>
+              </div>
             ) : (
               kredite.slice(0, 3).map((k) => {
                 const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? k.betrag) / k.betrag) * 100))) : 100;
                 return (
-                  <div key={k.id} style={{ borderLeft: "3px solid var(--gold)", padding: "10px 14px", background: "var(--gold-pale)", borderRadius: "0 8px 8px 0", marginBottom: 8 }}>
+                  <Link key={k.id} href="/kredite" style={{ display: "block", textDecoration: "none", color: "inherit", borderLeft: "3px solid var(--gold)", padding: "10px 14px", background: "var(--gold-pale)", borderRadius: "0 8px 8px 0", marginBottom: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                       <strong style={{ fontSize: 13 }}>{k.bezeichnung || k.bank || "Darlehen"}</strong>
                       {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}%</span>}
@@ -303,7 +309,7 @@ export default async function DashboardPage() {
                       <span>Rate: <strong style={{ color: "var(--text)" }}>{euro(k.monatsrate)}/Mo</strong></span>
                     </div>
                     <div className="progress-bar"><div className="progress-fill" style={{ width: `${100 - pct}%`, background: "var(--teal)" }} /></div>
-                  </div>
+                  </Link>
                 );
               })
             )}
@@ -312,13 +318,19 @@ export default async function DashboardPage() {
       </div>
 
       <div className="section">
-        <div className="section-header"><h3>Letzte Transaktionen</h3></div>
+        <div className="section-header">
+          <h3>Letzte Transaktionen</h3>
+          <Link href="/cashflow" className="btn btn-ghost" style={{ fontSize: 11 }}>Alle anzeigen →</Link>
+        </div>
         <div className="section-body">
           {trans.length === 0 ? (
-            <div className="empty"><Banknote className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Transaktionen</p></div>
+            <div className="empty">
+              <Banknote className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Transaktionen</p>
+              <Link href="/cashflow/neu" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 8 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Erste Buchung erfassen</Link>
+            </div>
           ) : (
             <table>
-              <thead><tr><th>Datum</th><th>Immobilie</th><th>Art</th><th>Beschreibung</th><th>Betrag</th></tr></thead>
+              <thead><tr><th>Datum</th><th>Immobilie</th><th>Art</th><th>Beschreibung</th><th>Betrag</th><th></th></tr></thead>
               <tbody>
                 {trans.map((t) => {
                   const isEin = t._typ === "einnahme";
@@ -329,6 +341,9 @@ export default async function DashboardPage() {
                       <td><span className={`badge ${isEin ? "badge-green" : "badge-red"}`}>{isEin ? "Einnahme" : "Ausgabe"}</span></td>
                       <td style={{ color: "var(--muted)" }}>{t.beschreibung || t.kategorie || ""}</td>
                       <td style={{ fontWeight: 600, color: isEin ? "var(--green)" : "var(--red)" }}>{isEin ? "+ " : "− "}{euro(t.betrag)}</td>
+                      <td style={{ textAlign: "right" }}>
+                        <Link href={`/${isEin ? "einnahmen" : "kosten"}/${t.id}/edit`} style={{ fontSize: 11, color: "var(--gold)", textDecoration: "none" }}>Bearbeiten</Link>
+                      </td>
                     </tr>
                   );
                 })}
