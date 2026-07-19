@@ -17,12 +17,11 @@ export default function ThemeToggle({ variant = "full" }: { variant?: "full" | "
       setTheme(saved);
       return;
     }
-    // Weder localStorage noch data-theme gesetzt: Init-State aus dem OS
-    // ableiten, damit er sich mit dem deckt, was :root:not([data-theme])
-    // tatsächlich rendert (sonst zeigt der Button den falschen Modus und
-    // der erste Klick ist ein No-Op).
-    const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
-    setTheme(prefersLight ? "light" : "dark");
+    // Weder localStorage noch data-theme gesetzt: Standard ist jetzt HELL
+    // (Quiet Luxury), dunkel nur wenn das OS Dunkel bevorzugt — exakt wie die
+    // CSS-Regel :root:not([data-theme]) + @media(prefers-color-scheme:dark).
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setTheme(prefersDark ? "dark" : "light");
   }, []);
 
   const toggle = () => {

@@ -66,29 +66,41 @@
    Hell-/Dunkelmodus über [data-theme="light"] auf <html> (kein Flackern,
    Script im <head>). Alle Komponenten nutzen diese Klassen statt Tailwind.
    ===================================================================== */
+/* ===== QUIET LUXURY — Standard = Hell (Ivory + Espresso-Sidebar + Gold) =====
+   Warme Ivory-Fläche, Espresso-Ink-Text, Gold als einziger Marken-Akzent,
+   Salbei/Ton als gedämpfte Statusfarben. Der Dunkelmodus ([data-theme="dark"])
+   ist die warme Premium-Variante. Die Sidebar ist in BEIDEN Themes espresso
+   (--nav-*), unabhängig vom Theme. */
 :root {
-  --bg: #0F0F0E;
-  --bg2: #161614;
-  --bg3: #1E1E1C;
-  --bg4: #282826;
-  --bg5: #323230;
-  --line: rgba(255,255,255,0.07);
-  --line2: rgba(255,255,255,0.13);
-  --text: #F0EDE6;
-  --muted: #7A7A72;
-  --faint: #4A4A46;
-  --gold: #D4A847;
-  --gold-dim: rgba(212,168,71,0.25);
-  --gold-pale: rgba(212,168,71,0.10);
-  --green: #4CAF7D;
-  --green-dim: rgba(76,175,125,0.15);
-  --red: #E05C4B;
-  --red-dim: rgba(224,92,75,0.15);
-  --blue: #5B9BD5;
-  --blue-dim: rgba(91,155,213,0.15);
-  --amber: #F0A030;
-  --teal: #3AADA8;
-  --r: 10px;
+  --bg: #F3F0E9;
+  --bg2: #FBFAF6;
+  --bg3: #F6F3EC;
+  --bg4: #EDE9E0;
+  --bg5: #E2DDD2;
+  --line: rgba(28,26,23,0.10);
+  --line2: rgba(28,26,23,0.16);
+  --text: #1C1A17;
+  --muted: #837B6E;
+  --faint: #A9A093;
+  --gold: #C79A3E;
+  --gold-dim: rgba(199,154,62,0.28);
+  --gold-pale: rgba(199,154,62,0.12);
+  --green: #5E7C6A;
+  --green-dim: rgba(94,124,106,0.14);
+  --red: #B4674E;
+  --red-dim: rgba(180,103,78,0.14);
+  --blue: #4A6E8A;
+  --blue-dim: rgba(74,110,138,0.12);
+  --amber: #B8863B;
+  --teal: #3E7A72;
+  --r: 13px;
+
+  /* Espresso-Sidebar (in beiden Themes gleich — die „Markenplatte") */
+  --nav-bg: #1C1A17;
+  --nav-bg2: #232019;
+  --nav-text: #B7AE9E;
+  --nav-active: #F0E7D2;
+  --nav-line: rgba(255,255,255,0.08);
 
   /* ===== Design-System-Erweiterung (additiv, siehe docs/PROJEKT-STATUS.md) =====
      Spacing/Radius/Shadow/Typo/Motion-Skalen. --r bleibt unangetastet,
@@ -96,12 +108,12 @@
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 48px;
 
-  --r-sm: 6px; --r-md: var(--r); --r-lg: 14px; --r-xl: 18px; --r-full: 999px;
+  --r-sm: 8px; --r-md: var(--r); --r-lg: 18px; --r-xl: 22px; --r-full: 999px;
 
-  --shadow-1: 0 1px 2px rgba(0,0,0,.35);
-  --shadow-2: 0 4px 12px rgba(0,0,0,.40);
-  --shadow-3: 0 12px 32px rgba(0,0,0,.50);
-  --shadow-gold: 0 4px 14px rgba(212,168,71,.28);
+  --shadow-1: 0 1px 2px rgba(40,32,18,.06), 0 1px 3px rgba(40,32,18,.05);
+  --shadow-2: 0 6px 20px rgba(40,32,18,.08), 0 2px 6px rgba(40,32,18,.05);
+  --shadow-3: 0 20px 48px rgba(40,32,18,.14);
+  --shadow-gold: 0 4px 14px rgba(199,154,62,.24);
 
   --text-xs: 11px; --text-sm: 12px; --text-base: 14px; --text-md: 16px;
   --text-lg: 20px; --text-xl: 24px; --text-2xl: 32px;
@@ -114,84 +126,62 @@
   --focus-ring: 0 0 0 2px var(--gold);
   --focus-offset: 2px;
 
-  --gold-contrast: #0F0F0E;
-
-  /* Surface-Härtung: bg3/bg4 minimal weiter gespreizt für Karte-in-Karte-
-     Kontrast (Wert-Anpassung, kein neuer Token, klein gehalten). */
-  --bg3: #201F1D;
-  --bg4: #2C2C29;
+  --gold-contrast: #2A1E05;
 }
 * { box-sizing: border-box; }
 
-/* ===== HELLMODUS ===== */
-[data-theme="light"] {
-  --bg: #F4F3EF;
-  --bg2: #FFFFFF;
-  --bg3: #ECEAE4;
-  --bg4: #E0DDD5;
-  --bg5: #D4D0C8;
-  --line: rgba(0,0,0,0.08);
-  --line2: rgba(0,0,0,0.15);
-  --text: #1A1814;
-  --muted: #6B6860;
-  --faint: #A8A49C;
-  --gold: #B8860B;
-  --gold-dim: rgba(184,134,11,0.2);
-  --gold-pale: rgba(184,134,11,0.08);
-  --green: #2E7D4F;
-  --green-dim: rgba(46,125,79,0.12);
-  --red: #C0392B;
-  --red-dim: rgba(192,57,43,0.10);
-  --blue: #2563A8;
-  --blue-dim: rgba(37,99,168,0.10);
-  --amber: #D97706;
-  --teal: #0F766E;
-
-  /* Shadows: weicher/wärmer, geringere Alpha (Braun- statt Schwarzton) */
-  --shadow-1: 0 1px 2px rgba(60,50,30,.10);
-  --shadow-2: 0 4px 12px rgba(60,50,30,.14);
-  --shadow-3: 0 12px 32px rgba(60,50,30,.18);
-  --shadow-gold: 0 4px 14px rgba(184,134,11,.20);
-
-  --gold-contrast: #FFFFFF;
-
-  /* Surface-Härtung Light: bg3/bg4 etwas dunkler gegen bg2 #FFFFFF */
-  --bg3: #E8E6E0;
-  --bg4: #DBD7CE;
+/* ===== DUNKELMODUS (warme Premium-Variante) =====
+   Tiefes Espresso-Anthrazit, gewärmtes Gold, gedämpfte Statusfarben.
+   WICHTIG: Werte müssen mit dem @media(prefers-dark)-Block unten synchron
+   bleiben (eine Kopie für „per Klick", eine für „OS-Standard ohne Theme"). */
+:root[data-theme="dark"] {
+  --bg: #14120E;
+  --bg2: #1D1B16;
+  --bg3: #211E18;
+  --bg4: #2A271F;
+  --bg5: #332F26;
+  --line: rgba(255,255,255,0.08);
+  --line2: rgba(255,255,255,0.14);
+  --text: #F0EBE0;
+  --muted: #9A9184;
+  --faint: #625B4F;
+  --gold: #DDB65C;
+  --gold-dim: rgba(221,182,92,0.28);
+  --gold-pale: rgba(221,182,92,0.12);
+  --green: #7FA089;
+  --green-dim: rgba(127,160,137,0.16);
+  --red: #D08A6E;
+  --red-dim: rgba(208,138,110,0.16);
+  --blue: #7FA6C4;
+  --blue-dim: rgba(127,166,196,0.16);
+  --amber: #E0B45C;
+  --teal: #6FB0A8;
+  --gold-contrast: #14120E;
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-2: 0 8px 24px rgba(0,0,0,.45);
+  --shadow-3: 0 20px 48px rgba(0,0,0,.6);
+  --shadow-gold: 0 4px 14px rgba(221,182,92,.26);
 }
 
-/* prefers-color-scheme als Erst-Default, solange kein Theme gewählt wurde
-   (localStorage-Override im <head>-Script gewinnt weiterhin).
-   WICHTIG: Diese Werte müssen mit dem [data-theme="light"]-Block oben synchron
-   bleiben — inkl. der semantischen Statusfarben (--green/--red/--blue/--amber/
-   --teal + -dim) und der Sidebar/Nav-Overrides. Sonst rendern OS-Light-Nutzer
-   ohne gesetztes Theme dunkle Statusfarben auf hellem Grund (WCAG-Kontrast-Fail)
-   bzw. eine weiße statt beige Sidebar. */
-@media (prefers-color-scheme: light) {
+/* OS-Dunkel, solange kein Theme gewählt wurde (localStorage gewinnt weiterhin).
+   Spiegelt exakt den [data-theme="dark"]-Block. */
+@media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #F4F3EF; --bg2: #FFFFFF; --bg3: #E8E6E0; --bg4: #DBD7CE; --bg5: #D4D0C8;
-    --line: rgba(0,0,0,0.08); --line2: rgba(0,0,0,0.15);
-    --text: #1A1814; --muted: #6B6860; --faint: #A8A49C;
-    --gold: #B8860B; --gold-dim: rgba(184,134,11,0.2); --gold-pale: rgba(184,134,11,0.08);
-    --green: #2E7D4F; --green-dim: rgba(46,125,79,0.12);
-    --red: #C0392B; --red-dim: rgba(192,57,43,0.10);
-    --blue: #2563A8; --blue-dim: rgba(37,99,168,0.10);
-    --amber: #D97706; --teal: #0F766E;
-    --gold-contrast: #FFFFFF;
-    --shadow-1: 0 1px 2px rgba(60,50,30,.10);
-    --shadow-2: 0 4px 12px rgba(60,50,30,.14);
-    --shadow-3: 0 12px 32px rgba(60,50,30,.18);
-    --shadow-gold: 0 4px 14px rgba(184,134,11,.20);
+    --bg: #14120E; --bg2: #1D1B16; --bg3: #211E18; --bg4: #2A271F; --bg5: #332F26;
+    --line: rgba(255,255,255,0.08); --line2: rgba(255,255,255,0.14);
+    --text: #F0EBE0; --muted: #9A9184; --faint: #625B4F;
+    --gold: #DDB65C; --gold-dim: rgba(221,182,92,0.28); --gold-pale: rgba(221,182,92,0.12);
+    --green: #7FA089; --green-dim: rgba(127,160,137,0.16);
+    --red: #D08A6E; --red-dim: rgba(208,138,110,0.16);
+    --blue: #7FA6C4; --blue-dim: rgba(127,166,196,0.16);
+    --amber: #E0B45C; --teal: #6FB0A8;
+    --gold-contrast: #14120E;
+    --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-2: 0 8px 24px rgba(0,0,0,.45);
+    --shadow-3: 0 20px 48px rgba(0,0,0,.6);
+    --shadow-gold: 0 4px 14px rgba(221,182,92,.26);
   }
-  :root:not([data-theme]) .sidebar { background: #F0EEE9; border-right: 1px solid #D8D4CC; }
-  :root:not([data-theme]) .nav-item { color: #5A5650; }
-  :root:not([data-theme]) .nav-item:hover { background: rgba(0,0,0,0.05); color: #1A1814; }
-  :root:not([data-theme]) .nav-item.active { color: var(--gold); background: rgba(184,134,11,0.10); }
 }
-[data-theme="light"] .sidebar { background: #F0EEE9; border-right: 1px solid #D8D4CC; }
-[data-theme="light"] .nav-item { color: #5A5650; }
-[data-theme="light"] .nav-item:hover { background: rgba(0,0,0,0.05); color: #1A1814; }
-[data-theme="light"] .nav-item.active { color: var(--gold); background: rgba(184,134,11,0.10); }
 
 body { font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; transition: background-color 0.3s ease, color 0.3s ease; }
 h1, h2, h3, .serif { font-family: 'Fraunces', Georgia, serif; font-weight: 600; }
@@ -207,7 +197,22 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
 
 /* SIDEBAR */
-.sidebar { background: var(--bg2); border-right: 1px solid var(--line); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+/* Sidebar = Espresso-„Markenplatte" in BEIDEN Themes. Damit alle Kinder
+   (Nav, Objekte, Avatar) auf dem dunklen Grund lesbar bleiben, werden die
+   Kontext-Tokens hier lokal auf espresso-taugliche Werte umdefiniert. */
+.sidebar {
+  background: var(--nav-bg); border-right: 1px solid var(--nav-line);
+  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  --text: var(--nav-active);
+  --muted: var(--nav-text);
+  --faint: #6E6656;
+  --bg2: var(--nav-bg);
+  --bg3: rgba(255,255,255,0.05);
+  --bg4: rgba(255,255,255,0.07);
+  --bg5: rgba(255,255,255,0.10);
+  --line: var(--nav-line);
+  --line2: rgba(255,255,255,0.14);
+}
 .sidebar-logo { padding: 24px 20px 18px; border-bottom: 1px solid var(--line); }
 .sidebar-logo h1 { font-family: 'Fraunces', serif; font-size: 20px; color: var(--gold); letter-spacing: -0.3px; }
 .sidebar-logo h1 span { font-style: italic; font-weight: 300; }
