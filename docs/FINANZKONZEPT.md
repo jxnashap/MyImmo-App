@@ -34,7 +34,11 @@
   Verlaufspunkt) per Häuserpreisindex-Fortschreibung (Eurostat), **ohne** den manuell gepflegten
   `wert` zu überschreiben (übernehmen per Klick). Scope über `OWNER_USER_ID`: gesetzt = nur dein
   Portfolio (MVP), weg = mandantenweit. Env: `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`.
-  **Noch offen:** BORIS-Bodenrichtwerte als zusätzliche Quelle einweben. **Kein Portal-Scraping**
+  Der Cron hält zusätzlich **regionale Eingaben best-effort frisch**: fehlende Koordinaten via
+  Geocoding (Nominatim, out-of-the-box) und **Bodenrichtwert (BORIS)** — Letzterer nur, wenn per
+  ENV konfiguriert (`VALUATION_BORIS_ENABLED=true` + `BORIS_ENDPOINT_URL`; deutscher BORIS hat
+  keine einheitliche freie API, je Bundesland unterschiedlich). BRW fließt in die ImmoWertV-
+  Bewertung der Objektseite ein, nicht in den Index-Headline-Wert. **Kein Portal-Scraping**
   (ImmoScout etc.) — ToS/Recht.
 - **Kosten-Einpreisung:** Sobald AVM/Enable-Banking/AWS aktiv werden, sind das **wiederkehrende,
   mit der Nutzerzahl skalierende** Kosten → müssen ins Abo (z. B. „X Bewertungen/Monat inklusive",

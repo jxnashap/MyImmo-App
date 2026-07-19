@@ -112,6 +112,9 @@ Entscheidungen aus der Planung (12.07.2026):
   Nur serverseitig (`lib/supabase/admin.ts`), umgeht RLS → NIE in den Client/ins Repo/Logs.
 - `OWNER_USER_ID` — optional. Gesetzt = nur DIESES Konto wird aktualisiert (MVP „dein Portfolio");
   weggelassen = alle Nutzer (mandantenweit). Deine `auth.users`-ID aus Supabase.
+- Optional BORIS (Bodenrichtwert im Cron): `VALUATION_BORIS_ENABLED=true` + `BORIS_ENDPOINT_URL`
+  (JSON-Endpunkt, der `{lat}`/`{lng}` akzeptiert und `{brw, stichtag?}` liefert). Ohne diese Env
+  läuft der Cron trotzdem (nur Geocoding + Index); BRW bleibt dann leer/manuell.
 
 ### KI über AWS Frankfurt (Bedrock) statt Anthropic-USA — optional, für den AVV
 Werden ALLE folgenden Env gesetzt, laufen OCR/KI-Import über **Amazon Bedrock in
