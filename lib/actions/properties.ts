@@ -131,7 +131,11 @@ export async function updateProperty(id: string, formData: FormData) {
   if (!user) redirect("/login");
 
   const parsed = parse(formData);
-  const { error } = await supabase.from("properties").update(parsed).eq("id", id);
+  // Adresse geändert → gecachte Koordinaten verwerfen; die Portfolio-Karte
+  // geocodiert beim nächsten Aufruf neu.
+  const { data: alt } = await supabase.from("properties").select("adresse").eq("id", id).single();
+  const koordReset = alt && (alt.adresse ?? null) !== parsed.adresse ? { lat: null, lng: null } : {};
+  const { error } = await supabase.from("properties").update({ ...parsed, ...koordReset }).eq("id", id);
   if (error) throw new Error(error.message);
 
   await autoBuchungen(supabase, user.id, id, parsed);
