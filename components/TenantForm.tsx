@@ -74,13 +74,13 @@ export default function TenantForm({
         <div className="form-group"><label>Mietende</label><input type="date" name="mietende" defaultValue={v("mietende")} /></div>
       </div>
       <div className="form-row">
-        <div className="form-group"><label>Kündigungsfrist (Monate)</label><input type="number" name="kuendigung" defaultValue={v("kuendigung")} placeholder="3" /></div>
+        <div className="form-group"><label>Kündigungsfrist (Monate)</label><input type="number" name="kuendigung" defaultValue={tenant ? v("kuendigung") : "3"} placeholder="3" /></div>
         <div className="form-group"><label>Wohnfläche (m²)</label><input type="number" step="0.01" name="flaeche" defaultValue={v("flaeche")} /></div>
       </div>
 
       <div className="form-section-label">Miete &amp; Kaution</div>
       <div className="form-row">
-        <div className="form-group"><label>Kaltmiete (€)</label><input type="number" step="0.01" name="kaltmiete" defaultValue={v("kaltmiete")} /></div>
+        <div className="form-group"><label>Kaltmiete (€)</label><input type="number" step="0.01" name="kaltmiete" defaultValue={v("kaltmiete")} /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Basiswert. Für Mieterhöhungen/Staffeln die Miet-Zeiträume nutzen — die haben Vorrang.</span></div>
         <div className="form-group"><label>NK-Vorauszahlung (€)</label><input type="number" step="0.01" name="nk_vorauszahlung" defaultValue={v("nk_vorauszahlung")} /></div>
       </div>
       <div className="form-row">

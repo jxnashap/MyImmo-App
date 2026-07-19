@@ -102,7 +102,7 @@ export default function PropertyForm({
       </div>
 
       <div className="form-row single">
-        <div className="form-group"><label>Adresse</label><input type="text" name="adresse" defaultValue={v("adresse")} placeholder="Straße, PLZ, Ort" /></div>
+        <div className="form-group"><label>Adresse</label><input type="text" name="adresse" defaultValue={v("adresse")} placeholder="Straße, PLZ, Ort" /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Empfohlen — für die Portfolio-Karte und die automatische Marktwert-Ermittlung.</span></div>
       </div>
 
       <div className="form-row">
