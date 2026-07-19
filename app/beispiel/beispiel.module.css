@@ -1,0 +1,146 @@
+/* Gekapseltes Beispiel-Design ("Bento / Glow"-Richtung) — nur für /beispiel.
+   Vollbild-Overlay über der bestehenden App-Shell, damit nichts anderes berührt
+   wird. Warm-dunkler Grund, Gold als Marken-Akzent, Neon nur für Datenfarben. */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow-y: auto;
+  --bg: #0E0D0B;
+  --card: rgba(255,255,255,.045);
+  --card2: rgba(255,255,255,.07);
+  --border: rgba(255,255,255,.10);
+  --border2: rgba(255,255,255,.17);
+  --text: #F3EEE4;
+  --muted: #A79E90;
+  --faint: #6F6759;
+  --gold: #DDB65C;
+  --cyan: #35C7E0;
+  --emerald: #4FD1A1;
+  --amber: #F0A93E;
+  --pink: #ED7AB0;
+  --ok: #4FD1A1;
+  --down: #F06E6E;
+  color: var(--text);
+  font-family: 'Outfit', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(900px 520px at 82% -12%, rgba(221,182,92,.14), transparent 60%),
+    radial-gradient(760px 520px at -5% 108%, rgba(53,199,224,.09), transparent 55%),
+    var(--bg);
+}
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* Header */
+.head {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 26px;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.back {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--muted);
+  border: 1px solid var(--border); background: var(--card);
+  padding: 8px 13px; border-radius: 11px; text-decoration: none;
+  transition: background .18s, color .18s;
+}
+.back:hover { background: var(--card2); color: var(--text); }
+.wm { font-family: 'Fraunces', Georgia, serif; font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+.wm em { font-style: normal; color: var(--gold); }
+.tagline { font-size: 11px; color: var(--faint); margin-top: 1px; }
+.demoBadge {
+  margin-left: auto; font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  color: var(--gold); background: rgba(221,182,92,.12);
+  border: 1px solid rgba(221,182,92,.3); padding: 5px 12px; border-radius: 999px;
+}
+
+/* Bento grid */
+.grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+  padding: 22px 26px 60px; max-width: 1320px;
+}
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 18px; backdrop-filter: blur(10px); padding: 18px; position: relative; overflow: hidden;
+}
+.span2 { grid-column: span 2; }
+.span4 { grid-column: span 4; }
+.pad0 { padding: 0; }
+.cardH { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.cardH h3 { font-size: 14.5px; font-weight: 650; }
+.cardH .sub { font-size: 11.5px; color: var(--faint); margin-top: 2px; }
+
+/* KPI */
+.kpi .lbl { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+.kpi .val { font-family: 'Fraunces', Georgia, serif; font-size: 27px; font-weight: 600; letter-spacing: -.02em; margin-top: 8px; }
+.kpi .foot { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.kpi .note { font-size: 11px; color: var(--faint); }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+.chip svg { width: 12px; height: 12px; }
+.up { background: rgba(79,209,161,.14); color: var(--emerald); }
+.dn { background: rgba(240,110,110,.15); color: var(--down); }
+
+/* Donut */
+.donutCard { grid-column: span 2; grid-row: span 2; }
+.donutWrap { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.donut { position: relative; width: 288px; height: 288px; flex: 0 0 288px; margin-inline: auto; }
+.donut svg { display: block; width: 288px; height: 288px; }
+.seg { cursor: pointer; transform-box: fill-box; transform-origin: center; transition: transform .22s cubic-bezier(.2,0,0,1), opacity .22s ease, filter .22s ease; }
+.segDim { opacity: .26; }
+.segIn { cursor: default; }
+.center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; }
+.cCap { font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--faint); transition: color .2s; }
+.cVal { font-family: 'Fraunces', Georgia, serif; font-size: 28px; font-weight: 600; letter-spacing: -.02em; margin-top: 4px; transition: color .2s; }
+.cSub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.cSub b { color: var(--text); }
+
+.legend { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 3px; }
+.lg { display: flex; align-items: center; gap: 11px; padding: 10px 11px; border-radius: 12px; border: 1px solid transparent; transition: background .16s, border-color .16s; cursor: pointer; }
+.lgHot { background: var(--card2); border-color: var(--border); }
+.sw { width: 11px; height: 11px; border-radius: 4px; flex: 0 0 11px; transition: transform .16s; }
+.lgHot .sw { transform: scale(1.35); }
+.lName { font-weight: 600; font-size: 13px; }
+.lPct { font-size: 11px; color: var(--faint); }
+.lAmt { margin-left: auto; font-weight: 700; font-size: 13px; }
+.ringToggle { display: inline-flex; background: rgba(0,0,0,.25); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; }
+.ringToggle button { border: none; background: transparent; color: var(--muted); font-size: 11px; font-weight: 600; padding: 4px 11px; border-radius: 999px; cursor: pointer; }
+.ringToggle button.on { background: var(--card2); color: var(--text); }
+
+/* Tabs + area */
+.tabs { display: inline-flex; background: rgba(0,0,0,.25); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; }
+.tabs button { border: none; background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 999px; cursor: pointer; transition: color .18s, background .18s; }
+.tabs button.on { background: var(--card2); color: #fff; }
+.areaVal { display: flex; align-items: baseline; gap: 12px; margin: 14px 0 6px; }
+.areaVal .big { font-family: 'Fraunces', Georgia, serif; font-size: 26px; font-weight: 600; letter-spacing: -.02em; }
+.areaLine { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.2s cubic-bezier(.3,0,.2,1) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* Table */
+.tblWrap { overflow-x: auto; }
+.tbl { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; min-width: 660px; }
+.tbl th { text-align: left; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); font-weight: 650; padding: 6px 18px 12px; }
+.tbl th.r, .tbl td.r { text-align: right; }
+.tbl td { padding: 14px 18px; border-top: 1px solid var(--border); vertical-align: middle; }
+.tbl tbody tr { transition: background .15s; }
+.tbl tbody tr:hover { background: var(--card2); }
+.obj { display: flex; align-items: center; gap: 12px; }
+.thumb { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; flex: 0 0 40px; background: rgba(221,182,92,.14); color: var(--gold); }
+.thumb svg { width: 19px; height: 19px; }
+.oName { font-weight: 600; }
+.oSub { font-size: 11.5px; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.tilg { display: flex; flex-direction: column; gap: 5px; min-width: 108px; }
+.bar { height: 6px; border-radius: 4px; background: rgba(0,0,0,.3); overflow: hidden; }
+.fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #E8C877, var(--gold)); }
+.pct { font-size: 11px; color: var(--muted); }
+.money { font-weight: 650; }
+
+.footNote { grid-column: span 4; text-align: center; font-size: 11px; color: var(--faint); padding-top: 4px; }
+
+@media (max-width: 1180px) { .grid { grid-template-columns: repeat(2, 1fr); } .span4 { grid-column: span 2; } .donutCard { grid-row: auto; } }
+@media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .span2, .span4, .donutCard { grid-column: auto; } .footNote { grid-column: auto; } }
+@media (prefers-reduced-motion: reduce) { .areaLine { animation: none; stroke-dashoffset: 0; } .seg { transition: none; } }
