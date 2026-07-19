@@ -135,7 +135,7 @@ export default function DarlehenWizard({
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 14, fontSize: 12, color: "var(--muted)" }}>
             <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-            <span>{konfig.empfehlung}</span>
+            <span>{konfig.hinweis}</span>
           </div>
           <div style={{ marginTop: 14 }}>
             <button type="button" className="btn btn-gold" onClick={uebernehmen} disabled={num(darlehen) <= 0}>

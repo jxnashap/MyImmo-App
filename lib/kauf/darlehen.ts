@@ -35,7 +35,7 @@ export type DarlehenKonfig = {
   volltilgungJahr: number;       // absolutes Jahr (oder 0, wenn > 60 J.)
   laufzeitJahre: number;
   zinskostenBindung: number;     // Summe Zinsen während der Zinsbindung
-  empfehlung: string;
+  hinweis: string; // redaktionelle Einordnung der GEWÄHLTEN Priorität — bewusst keine „Empfehlung" (§ 34i GewO)
 };
 
 // Beispiel-Sollzins nach Zinsbindung (Richtwert 2026 — real von der Bank).
@@ -55,8 +55,8 @@ function tilgungAusPrioritaet(p: Prioritaet): number {
   }
 }
 
-function empfehlungstext(p: Prioritaet, sonder: boolean): string {
-  const s = sonder ? " Sondertilgungsrecht (meist kostenlos) für zusätzliche Flexibilität mitnehmen." : "";
+function hinweisText(p: Prioritaet, sonder: boolean): string {
+  const s = sonder ? " Sondertilgungsrechte sind meist kostenlos und erhöhen die Flexibilität." : "";
   switch (p) {
     case "niedrige_rate":
       return "Niedrige Rate über geringe Anfangstilgung — Achtung: lange Laufzeit, hohe Zinskosten und hohe Restschuld am Ende der Zinsbindung." + s;
@@ -94,6 +94,6 @@ export function konfiguriereDarlehen(w: DarlehenWunsch, startJahr: number): Darl
     volltilgungJahr,
     laufzeitJahre,
     zinskostenBindung,
-    empfehlung: empfehlungstext(w.prioritaet, w.sondertilgung),
+    hinweis: hinweisText(w.prioritaet, w.sondertilgung),
   };
 }

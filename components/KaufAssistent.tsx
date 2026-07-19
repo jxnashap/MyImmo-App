@@ -225,8 +225,8 @@ export default function KaufAssistent({
 
           <div className="form-section-label" style={{ marginTop: 4 }}>Dein Finanzierungswunsch</div>
           <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
-            Beantworte, was dir wichtig ist — daraus stellen wir eine passende Darlehenskonfiguration
-            zusammen, die du in den Kreditantrag übernehmen kannst.
+            Beantworte, was dir wichtig ist — daraus rechnen wir dir eine Beispiel-Konfiguration mit
+            ihren Auswirkungen aus, die du in den Kreditantrag übernehmen kannst. Die Entscheidung triffst du.
           </p>
           <DarlehenWizard darlehenVorschlag={darlehensbedarf} onUebernommen={setDarlehenWunsch} />
 
