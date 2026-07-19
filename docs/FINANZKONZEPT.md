@@ -28,10 +28,14 @@
 ### Wichtigste Finanz-Entscheidungen
 - **Bezahltes AVM (Sprengnetter/PriceHubble) → ABGELEHNT.** Vertriebsgebunden, laufende
   Kosten je Bewertung, AVV nötig. Code-seitig vorbereitet (Quellen-Stub), aber nicht angebunden.
-- **Stattdessen: automatischer Wert-Refresh aus frei-legalen Quellen** (Idee, noch nicht gebaut):
-  Destatis-Häuserpreisindex (via Eurostat, schon genutzt) + BORIS-Bodenrichtwerte, alle ~2 Wochen
-  per GitHub-Action-Cron. **Offene Frage:** nur eigenes Portfolio vs. mandantensicher für alle Nutzer.
-  **Kein Portal-Scraping** (ImmoScout etc.) — ToS/Recht.
+- **Stattdessen: automatischer Wert-Refresh aus frei-legalen Quellen** — **MVP gebaut** (19.07.2026):
+  geschützte Route `/api/cron/wert-refresh` + GitHub-Action-Cron (1. & 15., `.github/workflows/
+  wert-refresh.yml`). Aktualisiert je Objekt den **geschätzten** Marktwert (`marktwert_aktuell` +
+  Verlaufspunkt) per Häuserpreisindex-Fortschreibung (Eurostat), **ohne** den manuell gepflegten
+  `wert` zu überschreiben (übernehmen per Klick). Scope über `OWNER_USER_ID`: gesetzt = nur dein
+  Portfolio (MVP), weg = mandantenweit. Env: `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`.
+  **Noch offen:** BORIS-Bodenrichtwerte als zusätzliche Quelle einweben. **Kein Portal-Scraping**
+  (ImmoScout etc.) — ToS/Recht.
 - **Kosten-Einpreisung:** Sobald AVM/Enable-Banking/AWS aktiv werden, sind das **wiederkehrende,
   mit der Nutzerzahl skalierende** Kosten → müssen ins Abo (z. B. „X Bewertungen/Monat inklusive",
   Rest kostenpflichtig; Ergebnisse cachen statt bei jedem Aufruf neu abrufen).

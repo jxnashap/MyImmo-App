@@ -104,6 +104,15 @@ Entscheidungen aus der Planung (12.07.2026):
   Verschlüsselung der Bankdaten (IBAN/Inhaber, `lib/crypto/secure.ts`). **Schlüsselverlust =
   Bankdaten unwiederbringlich weg** → sicher sichern (Passwortmanager), nie ins Repo/Logs.
 
+#### Für den Auto-Wert-Refresh (Cron, `/api/cron/wert-refresh`)
+- `CRON_SECRET` — beliebiges Geheimnis; schützt die Route. **Identisch** als GitHub-Repo-Secret
+  hinterlegen (Settings → Secrets and variables → Actions), damit die Action `.github/workflows/
+  wert-refresh.yml` die Route aufrufen darf.
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase Service-Role-Key (Dashboard → Project Settings → API).
+  Nur serverseitig (`lib/supabase/admin.ts`), umgeht RLS → NIE in den Client/ins Repo/Logs.
+- `OWNER_USER_ID` — optional. Gesetzt = nur DIESES Konto wird aktualisiert (MVP „dein Portfolio");
+  weggelassen = alle Nutzer (mandantenweit). Deine `auth.users`-ID aus Supabase.
+
 ### KI über AWS Frankfurt (Bedrock) statt Anthropic-USA — optional, für den AVV
 Werden ALLE folgenden Env gesetzt, laufen OCR/KI-Import über **Amazon Bedrock in
 eu-central-1 (AWS Frankfurt)** statt über die US-API — Verarbeitung bleibt in der EU

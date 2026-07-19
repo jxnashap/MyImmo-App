@@ -1,0 +1,23 @@
+name: Portfolio-Wert Auto-Refresh
+
+# Aktualisiert alle 2 Wochen (1. & 15.) den geschätzten Marktwert je Objekt über
+# die geschützte Route /api/cron/wert-refresh. Kostenlos, unabhängig vom Vercel-Plan.
+#
+# Voraussetzung: Repository-Secret `CRON_SECRET` setzen
+# (GitHub → Settings → Secrets and variables → Actions → New repository secret),
+# identisch zur Vercel-Env `CRON_SECRET`. Manuell auslösbar über „Run workflow".
+
+on:
+  schedule:
+    - cron: "0 3 1,15 * *" # 1. und 15. jeden Monats, 03:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Wert-Refresh
+        run: |
+          curl -fsS -X POST "https://my-immo-app.vercel.app/api/cron/wert-refresh" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --max-time 120 -w "\nHTTP %{http_code}\n"
