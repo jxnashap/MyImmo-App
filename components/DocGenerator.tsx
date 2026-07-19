@@ -402,7 +402,7 @@ export default function DocGenerator({
               })
             }
           >
-            {ablegen ? "Speichert…" : <><Save size={14} style={{ verticalAlign: "-2px" }} /> Speichern</>}
+            {ablegen ? "Speichert…" : <><Save size={14} style={{ verticalAlign: "-2px" }} /> Im Archiv ablegen</>}
           </button>
           <SubmitButton><FileText size={14} style={{ verticalAlign: "-2px" }} /> Als PDF herunterladen</SubmitButton>
         </form>

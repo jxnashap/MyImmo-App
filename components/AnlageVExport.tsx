@@ -166,6 +166,7 @@ export default function AnlageVExport({
           </div>
           <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 360, lineHeight: 1.5 }}>
             AfA = Kaufpreis × Gebäudeanteil × Satz. Typisch: 2 % (Baujahr ab 1925), 2,5 % (älter), 3 % (Neubau ab 2023). Anpassen, falls dein Bescheid abweicht. AfA-Methode je Objekt im Objekt-Formular einstellbar; die globalen Regler gelten für Objekte auf „automatisch".
+            {" "}<a href="/afa-assistent" style={{ color: "var(--gold)", textDecoration: "underline", whiteSpace: "nowrap" }}>AfA optimieren →</a>
           </div>
         </div>
       </div>

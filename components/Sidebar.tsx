@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import CommandPalette from "@/components/ui/CommandPalette";
 import { VERWALTUNG, KALKULATOR, PROP_ICONS, type NavItem } from "@/lib/nav";
-import { Home, Power, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Home, Power, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
 
 type SidebarProperty = { id: string; bezeichnung: string; typ: string | null };
 
@@ -139,6 +139,9 @@ export default function Sidebar({
       <div className="sidebar-section">
         <div className="sidebar-section-label">Kalkulator</div>
         {KALKULATOR.map(navLink)}
+        <Link href="/einstellungen" className={`nav-item${isActive("/einstellungen") ? " active" : ""}`}>
+          <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}><Settings size={15} /></span> Einstellungen
+        </Link>
       </div>
 
       <div className="sidebar-props">
