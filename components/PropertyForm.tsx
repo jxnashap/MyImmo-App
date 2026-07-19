@@ -77,6 +77,10 @@ export default function PropertyForm({
   const [typ, setTyp] = useState(initialTyp);
   // Status ist kontrolliert, damit die Vorgabe bei Typwechsel (nur Neuanlage) mitzieht.
   const [status, setStatus] = useState((property?.obj_status as string) || (CONFIG[initialTyp] ?? fallback).status);
+  // Zweistufig: Neuanlage zeigt nur die Basisfelder, Details auf Klick.
+  // Beim Bearbeiten sind die Details offen. Eingeklappte Felder bleiben im DOM
+  // (display:none) — sie senden weiterhin mit, nichts geht beim Speichern verloren.
+  const [detailsOffen, setDetailsOffen] = useState(!!property);
 
   const cfg = CONFIG[typ] ?? fallback;
 
@@ -103,7 +107,26 @@ export default function PropertyForm({
 
       <div className="form-row">
         <div className="form-group"><label>Kaufpreis (€)</label><input type="number" step="0.01" name="kaufpreis" defaultValue={v("kaufpreis")} placeholder="250000" /></div>
+        {cfg.miete ? (
+          <div className="form-group"><label>{cfg.mieteLabel ?? "Kaltmiete / Mo. (€)"}</label><input type="number" step="0.01" name="miete" defaultValue={v("miete")} placeholder="1200" /></div>
+        ) : <div className="form-group" />}
+      </div>
+
+      {!detailsOffen && (
+        <div style={{ margin: "4px 0 14px" }}>
+          <button type="button" className="btn btn-ghost" style={{ fontSize: 12.5 }} onClick={() => setDetailsOffen(true)}>
+            + Weitere Details (Wert, Fläche, Baujahr, Energie, AfA …) — auch später ergänzbar
+          </button>
+          <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 6, marginBottom: 0 }}>
+            Für den Start reichen Name, Typ, Adresse, Kaufpreis und Miete — alles Weitere kannst du jederzeit nachtragen.
+          </p>
+        </div>
+      )}
+
+      <div style={detailsOffen ? undefined : { display: "none" }}>
+      <div className="form-row">
         <div className="form-group"><label>Aktueller Wert (€)</label><input type="number" step="0.01" name="wert" defaultValue={v("wert")} placeholder="280000" /></div>
+        <div className="form-group" />
       </div>
 
       {cfg.afa && (
@@ -135,12 +158,10 @@ export default function PropertyForm({
       </div>
 
       <div className="form-row">
-        {cfg.miete && (
-          <div className="form-group"><label>{cfg.mieteLabel ?? "Kaltmiete / Mo. (€)"}</label><input type="number" step="0.01" name="miete" defaultValue={v("miete")} placeholder="1200" /></div>
-        )}
         <div className="form-group"><label>Status</label>
           <select name="obj_status" value={status} onChange={(e) => setStatus(e.target.value)}>{STATUS.map((s) => <option key={s}>{s}</option>)}</select>
         </div>
+        <div className="form-group" />
       </div>
 
       {(cfg.hausgeld || cfg.zimmer) && (
@@ -207,6 +228,8 @@ export default function PropertyForm({
           </p>
         </>
       )}
+
+      </div>{/* Ende Details-Bereich */}
 
       <div className="form-actions">
         <SubmitButton>{submitLabel}</SubmitButton>

@@ -101,6 +101,49 @@ export default async function DashboardPage() {
     .sort((a, b) => new Date(b.buchungsdatum ?? 0).getTime() - new Date(a.buchungsdatum ?? 0).getTime())
     .slice(0, 6);
 
+  // Leeres Konto: statt Null-KPIs eine Start-Checkliste, die sagt, was zu tun ist.
+  if (properties.length === 0) {
+    const schritte = [
+      { nr: 1, titel: "Erstes Objekt anlegen", text: "Name, Adresse, Kaufpreis, Miete — mehr braucht es für den Start nicht.", href: "/properties/new", cta: "Objekt anlegen", erledigt: false },
+      { nr: 2, titel: "Mieter erfassen", text: "Mit Kaltmiete und Mietbeginn — daraus entstehen Mietkonto und Abrechnungen.", href: "/tenants/new", cta: "Mieter anlegen", erledigt: mieterRows.length > 0 },
+      { nr: 3, titel: "Ein- & Ausgaben buchen", text: "Mieteingänge und Kosten festhalten — per Hand, CSV oder Kontoanbindung.", href: "/cashflow", cta: "Zu den Buchungen", erledigt: einnahmen.length + kosten.length > 0 },
+    ];
+    return (
+      <div className="fade-up">
+        <div className="topbar">
+          <div>
+            <div className="topbar-title">Willkommen bei MyImmo</div>
+            <div className="topbar-sub">Drei Schritte, dann rechnet die App für dich</div>
+          </div>
+        </div>
+        <div style={{ maxWidth: 560 }}>
+          {schritte.map((s, i) => (
+            <div key={s.nr} style={{ display: "flex", gap: 14, alignItems: "stretch" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: s.erledigt ? "var(--green)" : "var(--gold)", color: s.erledigt ? "#fff" : "#1a1814", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14 }}>
+                  {s.erledigt ? "✓" : s.nr}
+                </div>
+                {i < schritte.length - 1 && <div style={{ flex: 1, width: 2, background: "var(--line2)", marginTop: 4 }} />}
+              </div>
+              <div className="section" style={{ flex: 1, marginBottom: i < schritte.length - 1 ? 14 : 0 }}>
+                <div className="section-body" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ flex: "1 1 220px" }}>
+                    <div style={{ fontWeight: 600, fontSize: 13.5 }}>{s.titel}</div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{s.text}</div>
+                  </div>
+                  <Link href={s.href} className={`btn ${s.nr === 1 ? "btn-gold" : "btn-ghost"}`} style={{ fontSize: 12.5, flexShrink: 0 }}>{s.cta}</Link>
+                </div>
+              </div>
+            </div>
+          ))}
+          <p style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 16 }}>
+            Tipp: Die Einführungs-Tour zeigt dir alle Stationen — jederzeit über Einstellungen → „Daten &amp; Recht" startbar.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fade-up">
       <div className="topbar">
