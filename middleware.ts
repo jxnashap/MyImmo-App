@@ -15,7 +15,8 @@ function buildCsp(nonce: string): string {
     // Inline-Styles (style={{}}); Schriften sind selbst gehostet.
     "style-src 'self' 'unsafe-inline'",
     // Charts (SVG), hochgeladene Belege (base64/blob), PDF-Vorschau.
-    "img-src 'self' data: blob:",
+    // Karten-Tiles (Portfolio-Karte, dunkler CARTO-Stil) sind reine Bilder.
+    "img-src 'self' data: blob: https://*.basemaps.cartocdn.com https://basemaps.cartocdn.com",
     "font-src 'self' data:",
     // Supabase REST + Realtime.
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
