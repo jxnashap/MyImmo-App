@@ -8,6 +8,9 @@ import DeleteButton from "@/components/DeleteButton";
 import Co2Rechner from "@/components/Co2Rechner";
 import PruefpflichtenKarte from "@/components/PruefpflichtenKarte";
 import MarktwertCard from "@/components/MarktwertCard";
+import IndexwertKarte from "@/components/IndexwertKarte";
+import { holeIndexReihe } from "@/lib/wert/hpi";
+import { fortschreibeKaufpreis } from "@/lib/wert/fortschreibung";
 import AnschaffungsnahWaechter from "@/components/AnschaffungsnahWaechter";
 import { berechneAnschaffungsnah } from "@/lib/steuer/anschaffungsnah";
 import { berechneSpekulation } from "@/lib/steuer/spekulation";
@@ -71,6 +74,9 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       )
     : null;
   const spekulation = berechneSpekulation(p.kaufdatum ?? null);
+  // Indexierte Wertschätzung (amtlicher Häuserpreisindex; live gecacht, sonst Snapshot).
+  const hpi = await holeIndexReihe();
+  const indexwert = fortschreibeKaufpreis(p.kaufpreis, p.kaufdatum ?? null, hpi.reihe);
   const totalRestschuld = kred.reduce((s, k) => s + (k.restschuld ?? 0), 0);
   const totalKreditRate = kred.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
   const jahresEinnahmen = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
@@ -377,6 +383,14 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Indexierte Wertschätzung (Portfolio-Wert aktuell halten) */}
+      {indexwert && (
+        <div className="grid-2 mb-20">
+          <IndexwertKarte propId={id} f={indexwert} aktuellerWert={p.wert} live={hpi.live} />
+          <div />
         </div>
       )}
 

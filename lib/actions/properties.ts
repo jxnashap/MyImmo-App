@@ -155,3 +155,30 @@ export async function deleteProperty(id: string) {
   revalidatePath("/");
   redirect("/properties");
 }
+
+// Indexierte Wertschätzung übernehmen (Portfolio-Wert aktuell halten, §12):
+// setzt den fortgeschriebenen Wert als "aktuellen Wert" — bewusst nur auf
+// Klick des Nutzers (vorschlagen + bestätigen, keine stille Automatik).
+export async function uebernehmeIndexwert(id: string, wert: number, standQuartal: string) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  if (!Number.isFinite(wert) || wert <= 0) throw new Error("Ungültiger Wert.");
+
+  const { error } = await supabase
+    .from("properties")
+    .update({
+      wert: Math.round(wert),
+      marktwert_aktuell: Math.round(wert),
+      marktwert_stand: new Date().toISOString().slice(0, 10),
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/properties/${id}`);
+  revalidatePath("/properties");
+  revalidatePath("/");
+  redirect(flashUrl(`/properties/${id}`, `Wert aktualisiert (Index-Stand ${standQuartal}).`));
+}
