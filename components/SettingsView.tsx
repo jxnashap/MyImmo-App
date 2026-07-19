@@ -12,6 +12,7 @@ import { TOUR_EVENT } from "@/components/OnboardingTour";
 import SignaturPad from "@/components/SignaturPad";
 import { speichereUnterschrift, loescheUnterschrift } from "@/lib/actions/bewerber";
 import { useToast } from "@/components/Toast";
+import Switch from "@/components/ui/Switch";
 import { KEY_MIN, KEY_CLOSE, AUTOLOGOUT_EVENT } from "@/components/AutoLogout";
 import { createClient } from "@/lib/supabase/client";
 import { saveVermieter } from "@/lib/actions/vermieter";
@@ -466,20 +467,19 @@ function AutoLogoutKarte() {
         </label>
         <label className="set-field" style={{ justifyContent: "flex-end" }}>
           <span>Beim Schließen des Browsers</span>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
-            <input
-              type="checkbox"
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+            <Switch
               checked={beimSchliessen}
-              onChange={(e) => {
-                setBeimSchliessen(e.target.checked);
-                localStorage.setItem(KEY_CLOSE, e.target.checked ? "1" : "0");
+              label="Beim Schließen des Browsers abmelden"
+              onChange={(next) => {
+                setBeimSchliessen(next);
+                localStorage.setItem(KEY_CLOSE, next ? "1" : "0");
                 uebernehmen();
                 toast("Gespeichert ✓");
               }}
-              style={{ width: 16, height: 16, accentColor: "var(--gold)" }}
             />
-            beim nächsten Öffnen abmelden
-          </label>
+            <span style={{ color: "var(--muted)" }}>beim nächsten Öffnen abmelden</span>
+          </div>
         </label>
         <p className="span2" style={{ fontSize: 11.5, color: "var(--muted)", margin: 0, lineHeight: 1.5 }}>
           Der Timer wirkt auf diesem Gerät und ist die Garantie: Wer länger als die gewählte

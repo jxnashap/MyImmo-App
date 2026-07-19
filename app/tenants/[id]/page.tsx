@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { euro, eur2, datum } from "@/lib/format";
@@ -95,6 +96,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
 
   return (
     <div className="fade-up">
+      <Breadcrumbs items={[{ label: "Mieter", href: "/tenants" }, { label: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }]} />
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link href="/tenants" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
