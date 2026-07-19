@@ -399,3 +399,54 @@ Bank. Kein „empfohlenes Darlehen der Bank X". Vor Live anwaltlich prüfen.
 
 Quellen: Interhyp, Dr. Klein, Finanztip, Baufi24, DKB, vr.de, IHK München (§34i-Merkblatt),
 gesetze-im-internet.de (§ 34i GewO, § 18 KWG, §§ 505a-d BGB). Details im Chat-Rechercheprotokoll 18.07.2026.
+
+---
+
+## 12. Portfolio-Wert aktuell halten — Quellen, Skalierung, AVV (Recherche 19.07.2026)
+
+Ziel: `marktwert_aktuell` je Objekt automatisch fortschreiben (Gerüst existiert:
+`/api/cron/bewertung` + Feature-Flags + Felder `bodenrichtwert`/`marktwert_*`).
+
+### Stufe 1 — kostenlos, sofort (Kosten ≈ 0 €, auch bei 2000+ Nutzern)
+1. **Destatis Häuserpreisindex (61262) via GENESIS-REST-API** (kostenlos, dl-de/by-2-0,
+   quartalsweise): Index-Fortschreibung `marktwert = kaufpreis × (Index_heute/Index_Kaufquartal)`,
+   differenziert nach Regionstyp (Großstadt/städtisch/ländlich via PLZ→Kreistyp).
+   **Caching je Region, nie je Objekt** (~15–20 Indexreihen für alle Nutzer) → Tabelle
+   `preisindizes(region_typ, quartal, wert)`, Cron prüft nur „neues Quartal?".
+2. **Bodenrichtwerte per Länder-Adapter, jährlich**: Start NRW (opengeodata.nrw, dl-de/zero!),
+   Berlin + Brandenburg (offene WFS). Kein einheitlicher BORIS-D-API-Layer! **Bayern auslassen**
+   (kostenpflichtig, ~20–40 €/Auskunft). Übrige Länder nach und nach (Matrix unvollständig).
+3. **Liegenschaftszins/Sachwertfaktoren**: nicht API-fähig (PDF-Marktberichte; Ausnahme
+   Sachsen-Anhalt) → redaktionell gepflegte Jahres-Tabellen + Nutzer-Override (wie bisher).
+4. **UI-Ehrlichkeit**: als „indexierte Schätzung (Basis Kaufpreis + amtlicher Index)" mit
+   Quartalsstand + Quellenvermerk (Lizenzpflicht!) labeln — nicht „Marktwert".
+5. **IS24-/Portal-Scraping-Flag STREICHEN**: BGH (I ZR 159/10, I ZR 224/12) + EuGH-Linie —
+   Überwinden technischer Schutzmaßnahmen (IS24 fährt WAF/401) potenziell unlauter; Abmahn-/
+   Prozessrisiko gegen finanzstarken Gegner. Legaler Weg: IS24-Partner-API (Genehmigung) oder
+   Datenkauf.
+
+### Stufe 2 — kommerzielles AVM (Vergleichsobjekte), wenn zahlende Nutzer da sind
+- **Kandidaten: Sprengnetter AVM-API** (Standard-AVV vorhanden, B2B2C-Modell, ISO 27001,
+  noris-Hosting) und **PriceHubble** (Property-Valuation-API, 12 Mon. Mindestlaufzeit,
+  CH-Angemessenheitsbeschluss). Preise NUR auf Anfrage → parallel Angebote einholen; in den
+  Vertrag: Preis/Call + Staffel, Whitelabel-/Endkundenanzeige-Recht, Standard-AVV.
+- Als **kostenpflichtiges Add-on** bepreisen (nicht Basisgebühr): Abfrage on-demand per Klick
+  + max. 1×/Quartal automatisch je Objekt. Rechenbeispiel: 10 % von 6000 Objekten × 4/Jahr =
+  2400 Calls/Jahr → auch bei einstelligen €/Call vierstellige Jahreskosten.
+- Optional: iib-Wohnlagen-Widget (Lizenzmodell ist deren Kerngeschäft). Scoperty existiert
+  nicht mehr (liquidiert 2022, Technik → Sprengnetter/ING).
+
+### AVV-Liste (Art. 28 DSGVO) — Objektadresse ist im Vermieterkontext personenbezogen
+| Quelle | AVV? | Grund |
+|---|---|---|
+| Destatis GENESIS | Nein | aggregierte Indizes, keine Nutzer-/Objektdaten übermittelt |
+| BORIS-WFS (Länder) | Nein | Geodaten-Download ohne Personenbezug (Datenschutzerklärung erwähnen bei adressgenauen Abfragen) |
+| vdp / GREIX / Marktberichte | Nein | aggregiert; Lizenzfrage ja, AVV nein |
+| **Sprengnetter AVM** | **Ja** | Adresse + Objektdaten zur Bewertung → Auftragsverarbeiter (Standard-AVV existiert) |
+| **PriceHubble** | **Ja** | wie Sprengnetter; + Drittland Schweiz (Angemessenheitsbeschluss) in Datenschutzerklärung |
+| IS24-API / on-geo / iib | Ja bei adressgenauen Abfragen | nein bei rein regionalen Marktdaten (PLZ-Ebene) |
+| Nominatim/OSM (Karte) | Nein (öffentl. Dienst, keine Auftragsverarbeitung) | aber Transparenzpflicht: Passus in Datenschutzerklärung („Objektadresse zur Kartendarstellung an OSM/Nominatim") — bei Skalierung auf bezahlten Geocoder MIT AVV wechseln (Google/HERE bieten DPAs) |
+
+**Offene Lücken (Folgerecherche):** vollständige Länder-WFS-Matrix, GREIX-/vdp-Lizenz für
+SaaS-Weitergabe, VALUE AG/GeoMap/21re, Bundesbank-API, Mietspiegel-Aggregatoren, konkrete
+AVM-Preise (nur per Direktanfrage).
