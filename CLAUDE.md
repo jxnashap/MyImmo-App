@@ -114,6 +114,9 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 
 ## Datenbank
 - Supabase-Projekt `kozhxrvyilkchjpcuwcm` (Region eu-central-1).
+- **Migrations-Regel (19.07.2026):** Jede Schemaänderung via `apply_migration` UND als Datei
+  `supabase/migrations/<version>_<name>.sql` im selben PR committen (Regeln + Historie-Index:
+  `supabase/migrations/README.md`). Kein DDL über `execute_sql`.
 - Dateien (Belege, Archiv-Dokumente) werden als Base64 in Tabellenspalten gespeichert — **kein Storage-Bucket** nötig.
 
 ## Build / Test
