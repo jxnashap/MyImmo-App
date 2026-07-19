@@ -25,8 +25,9 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-// Setzt das gespeicherte Theme vor dem ersten Paint (verhindert Flackern).
-const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
+// Setzt das gespeicherte Theme + den Sidebar-Rail-Zustand vor dem ersten Paint
+// (verhindert Flackern) — selbes Muster für beide Einstellungen.
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}if(localStorage.getItem('rail')==='1'){document.documentElement.setAttribute('data-rail','1');}}catch(e){}})();`;
 
 export default async function RootLayout({
   children,

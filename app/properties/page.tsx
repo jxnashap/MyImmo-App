@@ -123,6 +123,11 @@ export default async function PropertiesPage() {
           })}
         </div>
       )}
+
+      {/* Mobile-Schnellaktion: schwebender „+"-Button (nur < 860px sichtbar) */}
+      <Link href="/properties/new" className="btn-fab show-mobile" aria-label="Neue Immobilie anlegen" title="Neue Immobilie">
+        <Plus size={24} />
+      </Link>
     </div>
   );
 }
