@@ -22,6 +22,7 @@ export type BankUmsatzRow = {
   verwendungszweck: string | null; // entschlüsselt
   status: string;
   bankName: string | null;
+  propIdVorschlag: string | null; // Objekt aus der Bankverbindung (Prefill für Kosten)
   mietVorschlag: MietVorschlag | null;
   kostenVorschlag: KostenVorschlag | null;
 };
@@ -71,7 +72,9 @@ function KostenForm({ u, properties }: { u: BankUmsatzRow; properties: PropOptio
   const [pending, startTransition] = useTransition();
   const [fehler, setFehler] = useState<string | null>(null);
   const v = u.kostenVorschlag!;
-  const [propId, setPropId] = useState<string>(properties.length === 1 ? properties[0].id : "");
+  // Objekt aus der Bankverbindung vorbelegen (objektgebundene Konten) — sonst
+  // Einzel-Objekt-Fallback. Überschreibbar.
+  const [propId, setPropId] = useState<string>(u.propIdVorschlag ?? (properties.length === 1 ? properties[0].id : ""));
   const [kategorie, setKategorie] = useState(v.kategorie);
   const [beschreibung, setBeschreibung] = useState(v.beschreibung);
 

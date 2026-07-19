@@ -57,6 +57,8 @@ export default async function BankingPage({
   }));
   const bankVon = (verbindungId: string) =>
     verbindungen.find((v) => v.id === verbindungId)?.aspsp_name ?? null;
+  const propIdVonVerbindung = (verbindungId: string | null | undefined): string | null =>
+    ((verbindungRows ?? []) as any[]).find((r) => r.id === verbindungId)?.prop_id ?? null;
 
   // Abgleich-Daten: Mieter (mit Miet-Zeiträumen) + bereits gebuchte Miet-Monate.
   const abgleichMieter: AbgleichMieter[] = ((mieterRows ?? []) as any[]).map((m) => ({
@@ -103,6 +105,7 @@ export default async function BankingPage({
     return {
       ...u,
       bankName: verbindungen.length > 1 ? bankVon(roh?.verbindung_id) : null,
+      propIdVorschlag: propIdVonVerbindung(roh?.verbindung_id),
       mietVorschlag: u.status === "neu" ? findeMietVorschlag(u, abgleichMieter, gebuchteMonate) : null,
       kostenVorschlag: u.status === "neu" ? findeKostenVorschlag(u, entschluesselt) : null,
     };

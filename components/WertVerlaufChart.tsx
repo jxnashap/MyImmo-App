@@ -70,6 +70,17 @@ export default function WertVerlaufChart({
             <title>{`${tagLabel(p.datum)}: ${euro(p.marktwert)}`}</title>
           </circle>
         ))}
+        {/* Endwert dauerhaft annotieren — auf Mobil ohne Hover ablesbar */}
+        {(() => {
+          const last = punkte[n - 1];
+          const lx = xOf(n - 1);
+          const ly = yOf(last.marktwert);
+          return (
+            <text x={Math.min(lx, W - padR).toFixed(1)} y={(ly - 8 < padT + 6 ? ly + 14 : ly - 8).toFixed(1)} textAnchor="end" fontSize="11" fontWeight={600} fill={color}>
+              {euro(last.marktwert)}
+            </text>
+          );
+        })()}
 
         {punkte.map((p, i) =>
           zeigeLabel(i) ? (

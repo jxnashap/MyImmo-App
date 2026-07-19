@@ -77,6 +77,17 @@ export default function BetragChart({
                 <title>{`${tooltipLabel(b.date, gran)}: ${euro(b.value)}`}</title>
               </circle>
             ))}
+            {/* Endwert dauerhaft annotieren — auf Mobil ohne Hover ablesbar */}
+            {n > 0 && (() => {
+              const last = buckets[n - 1];
+              const lx = xLine(n - 1);
+              const ly = yOf(last.value);
+              return (
+                <text x={Math.min(lx, W - padR).toFixed(1)} y={(ly - 8 < padT + 6 ? ly + 14 : ly - 8).toFixed(1)} textAnchor="end" fontSize="11" fontWeight={600} fill={color}>
+                  {euro(last.value)}
+                </text>
+              );
+            })()}
           </>
         ) : (
           buckets.map((b, i) => {

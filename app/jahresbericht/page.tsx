@@ -51,7 +51,19 @@ export default async function JahresberichtPage({
     { e: 0, k: 0, zins: 0, tilgung: 0, cashflow: 0 },
   );
 
-  const years = [aktuellesJahr, aktuellesJahr - 1, aktuellesJahr - 2, aktuellesJahr - 3, aktuellesJahr - 4]; // kein Zukunftsjahr, stabil
+  // Jahr-Filter dynamisch: vom aktuellen Jahr zurück bis zum ältesten Datenjahr
+  // (Kaufdatum/Buchung), mindestens aber 5 Jahre — damit auch alte Berichte
+  // (z. B. für eine Steuernachfrage) erreichbar sind.
+  const datenJahre = [
+    ...properties.map((p) => p.kaufdatum),
+    ...einnahmen.map((x) => x.buchungsdatum),
+    ...kosten.map((x) => x.buchungsdatum),
+  ]
+    .map((d) => (d ? Number(String(d).slice(0, 4)) : NaN))
+    .filter((y) => y >= 1990 && y <= aktuellesJahr);
+  const vonJahr = Math.min(datenJahre.length ? Math.min(...datenJahre) : aktuellesJahr, aktuellesJahr - 4);
+  const years: number[] = [];
+  for (let y = aktuellesJahr; y >= vonJahr; y--) years.push(y);
   const filters: FilterDef[] = [
     { name: "year", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: years.map((y) => ({ value: String(y), label: String(y) })) },
   ];
@@ -76,15 +88,22 @@ export default async function JahresberichtPage({
       <FilterBar filters={filters} />
 
       <div className="section">
-        <div className="section-header"><h3>Auswertung {year}</h3></div>
+        <div className="section-header">
+          <h3>Auswertung {year}</h3>
+          {year === aktuellesJahr && (
+            <span style={{ fontSize: 11, color: "var(--muted)" }}>
+              Stand Jan–{heute.toLocaleDateString("de-DE", { month: "short" })} {year} · unterjährig, Zins/Tilgung anteilig
+            </span>
+          )}
+        </div>
         <div className="section-body">
           <table className="list-table">
             <thead>
               <tr>
                 <th>Immobilie</th>
                 <th style={{ textAlign: "right" }}>Einnahmen</th>
-                <th style={{ textAlign: "right" }}>Bewirtschaftung</th>
-                <th style={{ textAlign: "right" }}>Zins</th>
+                <th style={{ textAlign: "right" }} title="Laufende Kosten aus deinen Kosten-Buchungen (Bewirtschaftung)">Laufende Kosten</th>
+                <th style={{ textAlign: "right" }} title="Geschätzter Zinsanteil (Restschuld × Zinssatz) — exakte Werte siehe Anlage V">Zins (ca.)</th>
                 <th style={{ textAlign: "right" }}>Tilgung</th>
                 <th style={{ textAlign: "right" }}>Cashflow</th>
               </tr>
