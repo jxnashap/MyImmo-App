@@ -41,7 +41,7 @@ export default async function JahresberichtPage({
     const rate = propKredite.reduce((s, kr) => s + (kr.monatsrate ?? 0) * monate, 0);
     const tilgung = Math.max(0, rate - zins);
     const cashflow = e - k - rate;
-    return { name: p.bezeichnung, e, k, zins, tilgung, cashflow };
+    return { id: p.id, name: p.bezeichnung, e, k, zins, tilgung, cashflow };
   });
 
   const sum = rows.reduce(
@@ -92,7 +92,7 @@ export default async function JahresberichtPage({
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i}>
-                  <td style={{ fontWeight: 500 }}>{r.name}</td>
+                  <td style={{ fontWeight: 500 }}><Link href={`/properties/${r.id}`} style={{ color: "inherit", textDecoration: "none" }}>{r.name}</Link></td>
                   <td style={{ textAlign: "right", color: "var(--green)" }}>{euro(r.e)}</td>
                   <td style={{ textAlign: "right", color: "var(--red)" }}>{euro(r.k)}</td>
                   <td style={{ textAlign: "right", color: "var(--red)" }}>{euro(r.zins)}</td>
