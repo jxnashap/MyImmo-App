@@ -5,7 +5,9 @@ import { euro, datum } from "@/lib/format";
 import { getRefinanzWarning, bankingFristen } from "@/lib/fristen";
 import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
+import WertVerlaufChart from "@/components/WertVerlaufChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
+import { portfolioWertReihe, veraenderungProzent, type RohStand } from "@/lib/wert/verlauf";
 import type { RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
@@ -27,13 +29,14 @@ export default async function DashboardPage() {
     return <LandingPage />;
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bankv }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bankv }, { data: bewHist }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
     supabase.from("kredite").select("*"),
     supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete"),
     supabase.from("bankverbindungen").select("aspsp_name,konto_name,gueltig_bis"),
+    supabase.from("bewertung_historie").select("immobilie_id,datum,marktwert"),
   ]);
 
   const properties = (props ?? []) as Property[];
@@ -51,6 +54,27 @@ export default async function DashboardPage() {
   const now = new Date();
 
   const totalWert = properties.reduce((s, p) => s + (p.wert ?? 0), 0);
+
+  // Portfolio-Wertentwicklung: je Objekt Kaufpreis → erfasste Stände →
+  // aktueller Wert, an jedem Änderungsdatum aufsummiert.
+  const histNachObjekt = new Map<string, RohStand[]>();
+  for (const h of (bewHist ?? []) as { immobilie_id: string; datum: string; marktwert: number | null }[]) {
+    const arr = histNachObjekt.get(h.immobilie_id) ?? [];
+    arr.push({ datum: h.datum, marktwert: h.marktwert });
+    histNachObjekt.set(h.immobilie_id, arr);
+  }
+  const heuteISO = now.toISOString().slice(0, 10);
+  const portfolioWert = portfolioWertReihe(
+    properties.map((p) => ({
+      kaufpreis: p.kaufpreis,
+      kaufdatum: p.kaufdatum ?? null,
+      aktuellerWert: p.wert,
+      standDatum: p.marktwert_stand ?? null,
+      historie: histNachObjekt.get(p.id) ?? [],
+      heute: heuteISO,
+    })),
+  );
+  const portfolioWertProzent = veraenderungProzent(portfolioWert);
   // Soll-Kaltmiete/Mo.: Garagen-Objekte führen ihre Mieten auf den einzelnen
   // Mietern (je Einheit), nicht auf property.miete — wie auf der Objektseite.
   const GARAGEN_TYPEN = ["Garage / Stellplatz", "Garagenkomplex"];
@@ -208,6 +232,25 @@ export default async function DashboardPage() {
           <div className="kpi-sub"><span className="badge badge-teal">{leerCount} von {vermietbar.length} leer</span></div>
         </div>
       </div>
+
+      {portfolioWert.length >= 2 && (
+        <div className="section mb-20">
+          <div className="section-header">
+            <h3>Portfolio-Wertentwicklung</h3>
+            {portfolioWertProzent != null && (
+              <span className={`badge ${portfolioWertProzent >= 0 ? "badge-green" : "badge-red"}`}>
+                {portfolioWertProzent >= 0 ? "+" : ""}{portfolioWertProzent.toLocaleString("de-DE")} % seit Anschaffung
+              </span>
+            )}
+          </div>
+          <div className="section-body">
+            <WertVerlaufChart
+              punkte={portfolioWert}
+              caption="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte."
+            />
+          </div>
+        </div>
+      )}
 
       <div className="section mb-20">
         <div className="section-header">
