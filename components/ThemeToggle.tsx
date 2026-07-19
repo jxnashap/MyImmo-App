@@ -12,9 +12,17 @@ export default function ThemeToggle({ variant = "full" }: { variant?: "full" | "
     const saved =
       (typeof localStorage !== "undefined" &&
         (localStorage.getItem("theme") as Theme | null)) ||
-      (document.documentElement.getAttribute("data-theme") as Theme | null) ||
-      "dark";
-    setTheme(saved);
+      (document.documentElement.getAttribute("data-theme") as Theme | null);
+    if (saved) {
+      setTheme(saved);
+      return;
+    }
+    // Weder localStorage noch data-theme gesetzt: Init-State aus dem OS
+    // ableiten, damit er sich mit dem deckt, was :root:not([data-theme])
+    // tatsächlich rendert (sonst zeigt der Button den falschen Modus und
+    // der erste Klick ist ein No-Op).
+    const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+    setTheme(prefersLight ? "light" : "dark");
   }, []);
 
   const toggle = () => {

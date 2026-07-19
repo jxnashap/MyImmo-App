@@ -5,6 +5,7 @@ import { euro, datum } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
 import { deleteEinnahme, deleteKosten, deleteKredit, deleteVerbrauch, deleteNotiz } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import Co2Rechner from "@/components/Co2Rechner";
 import PruefpflichtenKarte from "@/components/PruefpflichtenKarte";
 import MarktwertCard from "@/components/MarktwertCard";
@@ -182,6 +183,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
   return (
     <div className="fade-up">
+      <Breadcrumbs items={[{ label: "Immobilien", href: "/properties" }, { label: p.bezeichnung }]} />
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link href="/properties" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
