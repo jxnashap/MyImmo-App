@@ -70,8 +70,8 @@ export default async function TenantsPage() {
               </div>
               <div style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", display: "flex", gap: 6 }}>
                 <Link href={`/tenants/${m.id}`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>Details</Link>
-                <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}><Pencil size={14} /></Link>
-                <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}><ReceiptText size={14} /></Link>
+                <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center", gap: 5 }} title="Mieter bearbeiten" aria-label="Mieter bearbeiten"><Pencil size={14} /> Bearbeiten</Link>
+                <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center", gap: 5 }} title="Nebenkostenabrechnung erstellen" aria-label="Nebenkostenabrechnung erstellen"><ReceiptText size={14} /> NK</Link>
               </div>
             </div>
           ))}

@@ -177,6 +177,7 @@ export default async function DashboardPage() {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
           <Link href="/termine" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CalendarDays size={15} /> Terminkalender</Link>
+          <Link href="/cashflow/neu" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Banknote size={15} /> Buchen</Link>
           <Link href="/properties/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Immobilie</Link>
         </div>
       </div>
@@ -203,34 +204,35 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {/* KPIs sind Deep-Links in den passenden Kontext (spart 1–2 Klicks je Absprung) */}
       <div className="grid-5 mb-20">
-        <div className="kpi-card">
+        <Link href="/properties" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Portfolio-Wert</div>
           <div className="kpi-value">{euro(totalWert)}</div>
           <div className="kpi-sub"><span className="badge badge-teal">{properties.length} Objekt{properties.length === 1 ? "" : "e"}</span></div>
-        </div>
-        <div className="kpi-card">
+        </Link>
+        <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Einnahmen / Mo.</div>
           <div className="kpi-value">{euro(totalMiete)}</div>
           <div className="kpi-sub">{bruttoRendite > 0 ? <span className="badge badge-gold">{bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Brutto-Rendite</span> : "Kaltmiete gesamt"}</div>
-        </div>
-        <div className="kpi-card">
+        </Link>
+        <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Kosten / Mo.</div>
           <div className="kpi-value">{euro(totalKosten)}</div>
           <div className="kpi-sub">Kredit + laufend (Ø 12 Mon.)</div>
-        </div>
-        <div className="kpi-card">
+        </Link>
+        <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Cashflow / Mo.</div>
           <div className="kpi-value" style={{ color: cashflow >= 0 ? "var(--green)" : "var(--red)" }}>{cashflow >= 0 ? "+ " : "− "}{euro(Math.abs(cashflow))}</div>
           <div className="kpi-sub"><span className={`badge ${cashflow >= 0 ? "badge-green" : "badge-red"}`}>{cashflow >= 0 ? "Positiver Cashflow" : "Negativer Cashflow"}</span></div>
-        </div>
-        <div className="kpi-card">
+        </Link>
+        <Link href="/properties" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Leerstandsquote</div>
           <div className="kpi-value" style={{ color: vermietbar.length ? leerFarbe : "var(--muted)" }}>
             {vermietbar.length ? leerstand.toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " %" : "–"}
           </div>
           <div className="kpi-sub"><span className="badge badge-teal">{leerCount} von {vermietbar.length} leer</span></div>
-        </div>
+        </Link>
       </div>
 
       {portfolioWert.length >= 2 && (
@@ -289,7 +291,7 @@ export default async function DashboardPage() {
               <div className="empty"><Landmark className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Kredite</p></div>
             ) : (
               kredite.slice(0, 3).map((k) => {
-                const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? 0) / k.betrag) * 100))) : 100;
+                const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? k.betrag) / k.betrag) * 100))) : 100;
                 return (
                   <div key={k.id} style={{ borderLeft: "3px solid var(--gold)", padding: "10px 14px", background: "var(--gold-pale)", borderRadius: "0 8px 8px 0", marginBottom: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>

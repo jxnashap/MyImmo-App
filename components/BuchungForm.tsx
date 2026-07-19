@@ -40,6 +40,7 @@ export default function BuchungForm({
   back = "/cashflow",
   typInitial = "einnahme",
   propInitial = "",
+  datumInitial = "",
   row,
   imDialog = false,
 }: {
@@ -48,6 +49,7 @@ export default function BuchungForm({
   back?: string;
   typInitial?: "einnahme" | "ausgabe";
   propInitial?: string;
+  datumInitial?: string;
   row?: BuchungRow;
   // Im RowDialog eingebettet: flache Optik, Titel kommt vom Dialog.
   imDialog?: boolean;
@@ -100,7 +102,7 @@ export default function BuchungForm({
       <div className="form-row">
         <div className="form-group">
           <label>Datum *</label>
-          <input type="date" name="buchungsdatum" required defaultValue={row?.buchungsdatum ?? ""} />
+          <input type="date" name="buchungsdatum" required defaultValue={row?.buchungsdatum ?? datumInitial} />
         </div>
         <div className="form-group">
           <label>Immobilie *</label>

@@ -109,6 +109,22 @@ export default function AnlageVExport({
         </div>
       </div>
 
+      {/* Warnung: Objekte ohne Kaufpreis → keine Gebäude-AfA (stille Verlust-Lücke) */}
+      {(() => {
+        const ohne = properties.filter((p) => !p.kaufpreis && (p.typ ?? "") !== "Grundstück");
+        if (ohne.length === 0) return null;
+        return (
+          <div className="no-print" style={{ marginBottom: 16, background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", borderRadius: 8, padding: "12px 16px", fontSize: 12.5, lineHeight: 1.6 }}>
+            <strong style={{ color: "var(--gold)" }}>Ohne Kaufpreis keine AfA:</strong> Bei {ohne.length} Objekt{ohne.length > 1 ? "en" : ""} fehlt der Kaufpreis — dann wird keine Gebäudeabschreibung angesetzt und dein steuerlicher Verlust fällt zu niedrig aus. Kaufpreis ergänzen:{" "}
+            {ohne.map((p, i) => (
+              <span key={p.id}>
+                <a href={`/properties/${p.id}/edit`} style={{ color: "var(--gold)", textDecoration: "underline" }}>{p.bezeichnung}</a>{i < ohne.length - 1 ? ", " : ""}
+              </span>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* Steuerjahr + AfA */}
       <div className="section no-print">
         <div className="section-header"><h3>Einstellungen</h3></div>

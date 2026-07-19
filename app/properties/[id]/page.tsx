@@ -67,7 +67,9 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const verbrauch = (verb ?? []) as Verbrauch[];
   const notizen = (notiz ?? []) as Notiz[];
 
-  const wert = p.wert ?? 0;
+  // Kein gepflegter Wert? → auf Kaufpreis zurückfallen (wie in der Objektliste),
+  // sonst zeigen KPIs/Rendite „0 €" bei Objekten, die nur den Kaufpreis haben.
+  const wert = p.wert ?? p.kaufpreis ?? 0;
   // 15%-Wächter nur für abschreibbare Objekte (Grundstücke haben keine Gebäude-AfA).
   const istAbschreibbar = !["Grundstück"].includes(p.typ ?? "");
   const anschaffungsnah = istAbschreibbar
@@ -302,7 +304,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                 {tenants.length}{p.einheiten_anzahl ? ` von ${p.einheiten_anzahl}` : ""} vermietet · Mieten gesamt {euro(mieteAusMietern)}
               </span>
             )}
-            <Link href="/tenants/new" className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Mieter</Link>
+            <Link href={`/tenants/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Mieter</Link>
           </div>
         </div>
         <div className="section-body">
@@ -362,7 +364,9 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
             <div className="empty" style={{ padding: 24 }}><Landmark className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Darlehen</p></div>
           ) : (
             kred.map((k) => {
-              const tilgtPct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round((1 - (k.restschuld ?? 0) / k.betrag) * 100))) : 0;
+              // Restschuld unbekannt → kein „100 % getilgt" vortäuschen.
+              const restBekannt = k.restschuld != null && k.betrag != null && k.betrag > 0;
+              const tilgtPct = restBekannt ? Math.max(0, Math.min(100, Math.round((1 - (k.restschuld as number) / (k.betrag as number)) * 100))) : null;
               return (
                 <div key={k.id} style={{ padding: "14px 0", borderBottom: "1px solid var(--line)" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
@@ -377,8 +381,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                     <div><div style={{ fontSize: 10, color: "var(--muted)" }}>Rate/Mo.</div><div style={{ fontWeight: 600, fontSize: 13 }}>{euro(k.monatsrate)}</div></div>
                     <div><div style={{ fontSize: 10, color: "var(--muted)" }}>Volltilgung</div><div style={{ fontWeight: 600, fontSize: 13 }}>{k.laufzeit ?? "–"}</div></div>
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Getilgt: {tilgtPct}%</div>
-                  <div className="progress-bar"><div className="progress-fill" style={{ width: `${tilgtPct}%`, background: "var(--teal)" }} /></div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Getilgt: {tilgtPct != null ? `${tilgtPct}%` : "– (Restschuld nicht erfasst)"}</div>
+                  <div className="progress-bar"><div className="progress-fill" style={{ width: `${tilgtPct ?? 0}%`, background: "var(--teal)" }} /></div>
                 </div>
               );
             })

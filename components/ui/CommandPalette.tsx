@@ -10,7 +10,20 @@ import { Search, CornerDownLeft, Home as HomeIcon, type LucideIcon } from "lucid
 import { VERWALTUNG, KALKULATOR, PROP_ICONS } from "@/lib/nav";
 
 type Property = { id: string; bezeichnung: string; typ: string | null };
-type Item = { key: string; label: string; href: string; group: string; icon?: LucideIcon };
+type Item = { key: string; label: string; href: string; group: string; icon?: LucideIcon; alias?: string };
+
+// Such-Aliase: damit man Bereiche auch unter geläufigen Begriffen findet, die
+// nicht im Label stehen (z. B. „Handwerker" → Anliegen, „ELSTER" → Steuer).
+const ALIAS: Record<string, string> = {
+  "/anliegen": "handwerker auftrag bewerbung bewerber service mieterportal reparatur meldung anfrage",
+  "/banking": "konto kontoauszug umsätze umsatz psd2 bank",
+  "/steuer": "anlage v afa elster datev einkommensteuer werbungskosten",
+  "/cashflow": "buchung buchen einnahme ausgabe miete kosten transaktion",
+  "/mietkonto": "zahlung offene posten mahnung soll ist",
+  "/kredite": "darlehen finanzierung hypothek zinsbindung restschuld",
+  "/verbrauch": "strom gas wasser heizung zählerstand energie",
+  "/jahresbericht": "auswertung übersicht cashflow jahr report",
+};
 
 const AKTIONEN: Omit<Item, "group">[] = [
   { key: "neu-objekt", label: "Neues Objekt anlegen", href: "/properties/new" },
@@ -34,7 +47,7 @@ export default function CommandPalette({ properties = [] }: { properties?: Prope
 
   const items = useMemo<Item[]>(() => {
     const bereiche: Item[] = [...VERWALTUNG, ...KALKULATOR].map((n) => ({
-      key: n.href, label: n.label, href: n.href, group: "Bereiche", icon: n.icon,
+      key: n.href, label: n.label, href: n.href, group: "Bereiche", icon: n.icon, alias: ALIAS[n.href],
     }));
     const objekte: Item[] = properties.map((p) => ({
       key: `p-${p.id}`, label: p.bezeichnung, href: `/properties/${p.id}`, group: "Objekte",
@@ -47,7 +60,7 @@ export default function CommandPalette({ properties = [] }: { properties?: Prope
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((i) => i.label.toLowerCase().includes(q));
+    return items.filter((i) => (i.label + " " + (i.alias ?? "")).toLowerCase().includes(q));
   }, [items, query]);
 
   useEffect(() => {

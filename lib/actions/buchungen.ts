@@ -216,7 +216,9 @@ export async function createKredit(fd: FormData) {
     bank: str(fd, "bank"),
     darlnr: encryptDarlnr(str(fd, "darlnr")),
     betrag: num(fd, "betrag"),
-    restschuld: num(fd, "restschuld"),
+    // Restschuld leer? → mit Darlehenssumme vorbelegen, sonst würde ein frisches
+    // Darlehen (Restschuld 0/null) fälschlich als „100 % getilgt" dargestellt.
+    restschuld: num(fd, "restschuld") ?? num(fd, "betrag"),
     grundschuld: num(fd, "grundschuld"),
     beleihung: num(fd, "beleihung"),
     zinssatz: num(fd, "zinssatz"),
