@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { KOSTEN_SPALTEN } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -21,7 +22,7 @@ export async function GET() {
 
   const [{ data: einnahmen }, { data: kosten }, { data: props }] = await Promise.all([
     supabase.from("einnahmen").select("*"),
-    supabase.from("kosten").select("*"),
+    supabase.from("kosten").select(KOSTEN_SPALTEN),
     supabase.from("properties").select("id,bezeichnung"),
   ]);
 

@@ -8,6 +8,7 @@ import BetragChart from "@/components/BetragChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
 import type { RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
+import { KOSTEN_SPALTEN } from "@/lib/types";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
 export const metadata = {
@@ -29,7 +30,7 @@ export default async function DashboardPage() {
   const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bankv }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
-    supabase.from("kosten").select("*"),
+    supabase.from("kosten").select(KOSTEN_SPALTEN),
     supabase.from("kredite").select("*"),
     supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete"),
     supabase.from("bankverbindungen").select("aspsp_name,konto_name,gueltig_bis"),

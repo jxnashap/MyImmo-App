@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { euro } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
+import { KOSTEN_SPALTEN } from "@/lib/types";
 
 export default async function JahresberichtPage({
   searchParams,
@@ -15,7 +16,7 @@ export default async function JahresberichtPage({
   const [{ data: props }, { data: einn }, { data: kost }, { data: kred }] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("einnahmen").select("*"),
-    supabase.from("kosten").select("*"),
+    supabase.from("kosten").select(KOSTEN_SPALTEN),
     supabase.from("kredite").select("*"),
   ]);
 

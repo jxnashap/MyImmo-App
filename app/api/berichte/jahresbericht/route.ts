@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildJahresberichtPdf, type JahresberichtZeile } from "@/lib/pdf/berichtPdf";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
+import { KOSTEN_SPALTEN } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
     await Promise.all([
       supabase.from("properties").select("*").order("bezeichnung"),
       supabase.from("einnahmen").select("*"),
-      supabase.from("kosten").select("*"),
+      supabase.from("kosten").select(KOSTEN_SPALTEN),
       supabase.from("kredite").select("*"),
       supabase.from("vermieter_profil").select("name,strasse,plz,ort,email").eq("user_id", user.id).limit(1).maybeSingle(),
     ]);

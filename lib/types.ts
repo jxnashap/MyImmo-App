@@ -120,6 +120,12 @@ export type Kosten = {
   mieter_freigabe: boolean | null; // Beleg im Mieterportal einsehbar (§ 556 Abs. 4 BGB)
 };
 
+// Alle kosten-Spalten AUSSER dem Base64-Beleg (rechnung_data). Für Listen und
+// Auswertungen IMMER diese Liste statt select("*") verwenden — sonst wandern
+// sämtliche Rechnungs-Dateien als Base64 in jeden Seitenaufruf.
+export const KOSTEN_SPALTEN =
+  "id,user_id,prop_id,buchungsdatum,kategorie,betrag,beschreibung,notiz,wiederkehrend,rechnung_name,rechnung_type,rechnung_size,created_at,mieter_id,rechnung_path,wiederkehr_id,mieter_freigabe";
+
 export type Verbrauch = {
   id: string;
   prop_id: string | null;
