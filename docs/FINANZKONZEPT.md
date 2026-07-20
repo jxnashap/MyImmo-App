@@ -71,10 +71,13 @@ Machbarkeit → Darlehens-Wunsch → Kreditantrag/Selbstauskunft-PDF für die Ba
 - **Scheibe 1 (gebaut):** ObjektRechner entzerrt (5 Pflichtfelder sichtbar, Makler/
   Bewirtschaftung im Ausklapp-Menü, Provisionsfrei-Schnellschalter), Fördercheck mit
   neutraler § 34i-Einordnung, KfW-308-Korrektur (EH 85 EE), aufklappbarer Kurz-Guide.
-- **Folge-Scheiben:** (2) KfW-Matching-Anzeige „kommt in Frage, wenn …", (3) **zwei
-  grafische Finanzierungsvorschläge** (gestapelter Balken EK+Darlehen+Förderung,
-  gleichwertig, § 34i-Disclaimer am Balken), (4) **Makler-Ordner** (neue Tabelle
-  `makler_dokumente`, RLS + Verschlüsselung; Bank-Ordner = vorhandener `BeleihungsOrdner`).
+- **Scheibe 2+3 (gebaut):** KfW-Matching-Anzeige „kommt in Frage, wenn …" +
+  „Antrag vor Vorhabensbeginn"-Hinweis (`foerderung.ts` `bedingung`-Feld,
+  `FoerderCheck.tsx`); **zwei grafische Finanzierungsvorschläge**
+  (`FinanzierungsVorschlaege.tsx`, gestapelter Balken EK + optional Förderkredit +
+  Bankdarlehen, gleichwertig, § 34i-Disclaimer am Balken).
+- **Folge-Scheibe:** (4) **Makler-Ordner** (neue Tabelle `makler_dokumente`,
+  RLS + Verschlüsselung; Bank-Ordner = vorhandener `BeleihungsOrdner`).
 - Recherchierte Deliverables als Vault-Notizen: [[Kunden-Guide]], [[Makler-Ordner]],
   [[Bank-Ordner]], [[KfW-Foerderung-2026]].
 

@@ -28,14 +28,17 @@ Vorschläge) → Förder-Check (KfW/BAFA). Volle Version: [[Kunden-Guide]].
 - `KaufAssistent.tsx`: aufklappbarer 6-Schritte-Kurzguide über dem Stepper,
   Förder-Wording „in Frage kommende Programme".
 
-**Folge-Scheiben (geplant, größer):**
-2. **KfW-Matching-Anzeige** je Treffer „kommt laut deinen Angaben in Frage, wenn …"
-   mit sichtbaren Bedingungen (read-only, keine neue Persistenz).
-3. **Zwei grafische Finanzierungsvorschläge** — gestapelter Balken
-   (Eigenkapital + Darlehen + evtl. Förderkredit/-zuschuss = Gesamtinvestition),
-   Szenario „solide" vs. „liquiditätsschonend", **optisch gleichwertig** (kein
-   „empfohlen"), Disclaimer direkt am Balken. Quelle: `lib/kauf/darlehen.ts` +
-   Selbstauskunft-EK + Fördercheck. Kein neuer Datenweg.
+**Scheibe 2 + 3 (gebaut, PR #194 — reine Anzeige, keine DB):**
+2. **KfW-Matching-Anzeige** — `foerderung.ts` um `bedingung`-Feld erweitert,
+   `FoerderCheck.tsx` rendert je Treffer „Kommt laut deinen Angaben in Frage, wenn …"
+   + prominenten „Antrag VOR Vorhabensbeginn"-Hinweis oben.
+3. **Zwei grafische Finanzierungsvorschläge** — `FinanzierungsVorschlaege.tsx`:
+   gestapelter Balken (Eigenkapital + optional Förderkredit + Bankdarlehen =
+   Gesamtinvestition), Szenario „solide" vs. „liquiditätsschonend", **optisch
+   gleichwertig** (kein „empfohlen"), Disclaimer direkt am Balken. Quelle:
+   `lib/kauf/darlehen.ts` (`konfiguriereDarlehen`/`beispielZins`) + Selbstauskunft-EK.
+
+**Folge-Scheibe (geplant, größer):**
 4. **Makler-Ordner** (NEU, größte Entwicklung, fasst als einzige die DB an):
    `lib/makler.ts` + `components/MaklerOrdner.tsx` spiegelbildlich zum bereits
    vorhandenen `BeleihungsOrdner`/`lib/beleihung.ts` (Bank-Ordner existiert schon!),
