@@ -67,6 +67,17 @@ Machbarkeit → Darlehens-Wunsch → Kreditantrag/Selbstauskunft-PDF für die Ba
   → Machbarkeits-Check (Ampel) → Darlehens-Wunsch-Wizard → Kreditantrag-PDF → Bankgespräch.
 - Fahrplan-Details: [[MASTERPLAN]] §11. Rechenmodule: `lib/kauf/*`, `components/kauf/*`.
 
+### Kauf-Tool-Ausbau (20.07.2026, 8-Agenten-Recherche → [[00 Kauf-Tool Übersicht]])
+- **Scheibe 1 (gebaut):** ObjektRechner entzerrt (5 Pflichtfelder sichtbar, Makler/
+  Bewirtschaftung im Ausklapp-Menü, Provisionsfrei-Schnellschalter), Fördercheck mit
+  neutraler § 34i-Einordnung, KfW-308-Korrektur (EH 85 EE), aufklappbarer Kurz-Guide.
+- **Folge-Scheiben:** (2) KfW-Matching-Anzeige „kommt in Frage, wenn …", (3) **zwei
+  grafische Finanzierungsvorschläge** (gestapelter Balken EK+Darlehen+Förderung,
+  gleichwertig, § 34i-Disclaimer am Balken), (4) **Makler-Ordner** (neue Tabelle
+  `makler_dokumente`, RLS + Verschlüsselung; Bank-Ordner = vorhandener `BeleihungsOrdner`).
+- Recherchierte Deliverables als Vault-Notizen: [[Kunden-Guide]], [[Makler-Ordner]],
+  [[Bank-Ordner]], [[KfW-Foerderung-2026]].
+
 ### Verwandte Steuer-/Rechenlogik (StBerG-sensibel)
 Anlage-V-Berechnung, § 82b-Optimierer, AfA-Assistent, DATEV-Export — **Grenze zur unerlaubten
 Steuerberatung** anwaltlich freigeben (offen, Betreiber). Alles als „Näherung, keine Steuerberatung"

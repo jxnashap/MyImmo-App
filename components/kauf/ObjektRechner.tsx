@@ -179,22 +179,32 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
       <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
         {/* Eingaben */}
         <div style={{ flex: "1 1 340px", display: "grid", gap: 16, minWidth: 280 }}>
+          {/* Kernwerte — immer sichtbar; reichen für die vollständige Grundrechnung */}
           <div style={{ display: "grid", gap: 11 }}>
             {F("Adresse / Bezeichnung", adresse, setAdresse, "Musterstr. 1, Musterstadt", "text")}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
               {F("Kaufpreis (€)", kaufpreis, setKaufpreis, "250000")}
               {F("Wohnfläche (m²)", flaeche, setFlaeche, "75")}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
-              <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                <span style={{ color: "var(--muted)" }}>Bundesland (Grunderwerbst.)</span>
-                <select value={bundesland} onChange={(e) => setBundesland(e.target.value)}
-                  style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 13 }}>
-                  {BUNDESLAENDER.map((b, i) => <option key={i} value={b.v}>{b.l}</option>)}
-                </select>
-              </label>
-              {F("Makler (%)", makler, setMakler, "3.57")}
-            </div>
+            <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+              <span style={{ color: "var(--muted)" }}>Bundesland (Grunderwerbst.)</span>
+              <select value={bundesland} onChange={(e) => setBundesland(e.target.value)}
+                style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 13 }}>
+                {BUNDESLAENDER.map((b, i) => <option key={i} value={b.v}>{b.l}</option>)}
+              </select>
+            </label>
+            {/* Provisionsfrei-Schnellschalter: bei ImmoScout häufig. Setzt die Maklercourtage
+                auf 0 (bzw. zurück auf den Default 3,57 %), damit die Nebenkosten nicht still
+                zu hoch gerechnet werden. Feineinstellung weiter unten im Aufklapp-Menü. */}
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--muted)", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={num(makler) === 0}
+                onChange={(e) => setMakler(e.target.checked ? "0" : "3.57")}
+                style={{ width: 15, height: 15, accentColor: "var(--gold)", cursor: "pointer" }}
+              />
+              Provisionsfrei (keine Maklercourtage)
+            </label>
           </div>
 
           {/* Nutzungs-Umschalter */}
@@ -217,9 +227,8 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
             </div>
 
             {vermietung ? (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginTop: 12 }}>
+              <div style={{ marginTop: 12 }}>
                 {F("Kaltmiete (€/Monat)", kaltmiete, setKaltmiete, "900")}
-                {F("Bewirtschaftung (% der Miete)", bewirt, setBewirt, "20")}
               </div>
             ) : (
               <div style={{ marginTop: 12 }}>
@@ -230,6 +239,25 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
               </div>
             )}
           </div>
+
+          {/* Optional: Ergebnis verfeinern — bleibt gemountet (nur per <details> versteckt),
+              Werte bleiben also beim Zuklappen erhalten. Reine UI-Gruppierung: keine neue
+              Rechenlogik. Defaults (Makler 3,57 %, Bewirtschaftung 20 %) sind gesetzt, damit
+              die Grundrechnung auch ohne Aufklappen stimmt. */}
+          <details style={{ borderRadius: 12, border: "1px solid var(--line)", background: "var(--bg3)" }}>
+            <summary style={{ cursor: "pointer", userSelect: "none", padding: "11px 14px", fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>
+              Optional: Ergebnis verfeinern
+              <span style={{ fontWeight: 400, color: "var(--faint)" }}> — Makler & Bewirtschaftung (Defaults sind gesetzt)</span>
+            </summary>
+            <div style={{ padding: "2px 14px 14px", display: "grid", gap: 11 }}>
+              {F("Maklercourtage (%) · provisionsfrei = 0", makler, setMakler, "3.57")}
+              {vermietung && F("Bewirtschaftung (% der Miete)", bewirt, setBewirt, "20")}
+              <p style={{ fontSize: 11, color: "var(--faint)", margin: 0 }}>
+                Lässt du das zu, rechnet MyImmo mit konservativen Defaults weiter — Bewirtschaftung
+                (20 %) schmälert die Nettorendite realistisch. Ohne Aufklappen bleibt die Grundrechnung korrekt.
+              </p>
+            </div>
+          </details>
         </div>
 
         {/* Ergebnis-Kacheln */}

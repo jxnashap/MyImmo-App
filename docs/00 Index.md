@@ -14,6 +14,10 @@
 - [[MASTERPLAN]] — Markt / Compliance / Steuer-Roadmap
 - [[FINANZKONZEPT]] — Geschäftsmodell **und** Finanzierungs-Assistent (Kosten, Preise, Recht)
 
+## 🏦 Kauf-Tool (Kauf- & Finanzierungs-Assistent)
+- [[00 Kauf-Tool Übersicht]] — Fahrplan, Roadmap, Risiken
+- [[Kunden-Guide]] · [[Makler-Ordner]] · [[Bank-Ordner]] · [[KfW-Foerderung-2026]]
+
 ## ⚖️ Compliance
 - [[AVV-STATUS]] — DSGVO / AVV je Anbieter
 - [[anthropic-dpa-archiv]] — archiviertes Anthropic-DPA

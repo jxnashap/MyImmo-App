@@ -300,5 +300,29 @@ export default function KaufAssistent({
     },
   ];
 
-  return <AblaufStepper schritte={schritte} storageKey="myimmo_kauf_fortschritt" />;
+  return (
+    <>
+      {/* Kurz-Guide: einklappbar, standardmäßig zu. Reine Orientierung — kein Rat. */}
+      <details style={{ marginBottom: 16, borderRadius: 12, border: "1px solid var(--line)", background: "var(--bg3)" }}>
+        <summary style={{ cursor: "pointer", userSelect: "none", padding: "12px 16px", fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
+          So gehst du vor <span style={{ fontWeight: 400, color: "var(--faint)" }}>— der Ablauf in Kürze</span>
+        </summary>
+        <div style={{ padding: "0 16px 14px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}>
+          <ol style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 4 }}>
+            <li><strong>Bewerten:</strong> Marktwert schätzen und mit dem Kaufpreis vergleichen.</li>
+            <li><strong>Durchrechnen:</strong> 3–5 Objekte eingeben, speichern und vergleichen — das beste bekommt eine Krone; übernimm es für die Finanzierung.</li>
+            <li><strong>Selbstauskunft:</strong> Einnahmen, Ausgaben, Eigenkapital und Kredite einmal erfassen (verschlüsselt).</li>
+            <li><strong>Finanzierung &amp; Förderung:</strong> Beispiel-Konfiguration rechnen, in Frage kommende Förderprogramme ansehen.</li>
+            <li><strong>Mappe für die Bank:</strong> Unterlagen sammeln, Kreditantrag erzeugen und <strong>selbst</strong> an deine Bank(en) geben.</li>
+            <li><strong>Angebote vergleichen:</strong> nach effektivem Jahreszins und Flexibilität entscheiden.</li>
+          </ol>
+          <p style={{ fontSize: 11, color: "var(--faint)", margin: "10px 0 0" }}>
+            MyImmo rechnet, sortiert und bereitet Unterlagen vor — es vermittelt keine Darlehen und
+            gibt keine Finanzierungsempfehlung. Die Entscheidung triffst du selbst.
+          </p>
+        </div>
+      </details>
+      <AblaufStepper schritte={schritte} storageKey="myimmo_kauf_fortschritt" />
+    </>
+  );
 }

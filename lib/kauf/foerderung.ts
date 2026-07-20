@@ -78,7 +78,10 @@ export const PROGRAMME: Programm[] = [
     traeger: "KfW", art: "kredit",
     fuer: ["eigennutzen"], vorhaben: ["kauf_bestand"],
     text: "Günstiger Kredit für Familien, die sanierungsbedürftigen Bestand kaufen (schlechte Effizienzklasse) und binnen 4,5 J. sanieren.",
-    hinweis: "Einkommensgrenze wie KfW 300; Sanierungspflicht auf EH 70 EE.",
+    // Quelle (geprüft 20.07.2026): kfw.de – Wohneigentum für Familien – Bestandserwerb (308).
+    // Sanierungsziel ist Effizienzhaus 85 EE (nicht 70); ab 03.08.2026 alternativ über
+    // energetische Einzelmaßnahmen erfüllbar, Förderhöchstbeträge angehoben.
+    hinweis: "Einkommensgrenze wie KfW 300 (90.000 € zvE + 10.000 € je weiterem Kind); Sanierungspflicht auf EH 85 EE (ab 03.08.2026 auch per Einzelmaßnahmen).",
     url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestandsimmobilie/F%C3%B6rderprodukte/Jung-kauft-Alt-(308)/",
   },
   {
