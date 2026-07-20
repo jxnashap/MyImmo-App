@@ -38,12 +38,21 @@ Vorschläge) → Förder-Check (KfW/BAFA). Volle Version: [[Kunden-Guide]].
    gleichwertig** (kein „empfohlen"), Disclaimer direkt am Balken. Quelle:
    `lib/kauf/darlehen.ts` (`konfiguriereDarlehen`/`beispielZins`) + Selbstauskunft-EK.
 
-**Folge-Scheibe (geplant, größer):**
-4. **Makler-Ordner** (NEU, größte Entwicklung, fasst als einzige die DB an):
-   `lib/makler.ts` + `components/MaklerOrdner.tsx` spiegelbildlich zum bereits
-   vorhandenen `BeleihungsOrdner`/`lib/beleihung.ts` (Bank-Ordner existiert schon!),
-   neue Tabelle `makler_dokumente` (RLS + base64, App-Layer-Verschlüsselung für
-   SCHUFA/Einkommen/Ausweis). Bank-Ordner nur als „Ordner 2" einbinden.
+**Scheibe 4 (gebaut, PR #195 — mit DB):**
+4. **Makler-Ordner** — neue Tabelle `makler_dokumente` (user-scoped, RLS),
+   `lib/makler.ts` (6 Kern-Dokumente), `lib/actions/makler.ts`,
+   `app/makler/page.tsx` + geschützte Datei-Route, `components/MaklerOrdner.tsx`
+   (Checkliste, Upload base64 ≤ 8 MB, Abhaken, Fortschritts-Ring, Datum,
+   Datensparsamkeits-Warnungen). Aus dem Kauf-Assistenten (Schritt „Zwei Ordner")
+   verlinkt; Bank-Ordner = vorhandener `BeleihungsOrdner` (objektbezogen).
+
+**Offene Härtung (Folge-PR, betrifft beide Ordner):**
+- `datei_data` liegt in `makler_dokumente` UND `beleihung_dokumente` als base64
+  (unverschlüsselt), geschützt nur per RLS. Für SCHUFA/Einkommen/Ausweis wäre
+  App-Layer-Verschlüsselung (`lib/crypto/secure.ts`) wie bei IBANs konsequent —
+  eigener PR, der BEIDE Ordner umstellt (sonst Inkonsistenz).
+- Auto-Erzeugung „Käufer-Selbstauskunft" aus den Selbstauskunft-Daten + Deckblatt-PDF
+  („Käufer-Kurzprofil") für den Makler-Ordner.
 
 ## Wichtigste Risiken (aus der Kritik)
 - § 34i: Finanzierungsvorschläge nie als „der bessere"/„empfohlen" framen → beide

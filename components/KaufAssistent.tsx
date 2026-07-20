@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Search, Landmark, FolderClosed, FileCheck2, TriangleAlert,
-  ArrowRight, Calculator, Scale, Crown, ClipboardList, TrendingUp,
+  Calculator, Scale, Crown, ClipboardList, TrendingUp, Info,
 } from "lucide-react";
 import ObjektRechner from "@/components/kauf/ObjektRechner";
 import BewertungAssistent from "@/components/BewertungAssistent";
@@ -270,19 +270,26 @@ export default function KaufAssistent({
     },
     {
       icon: FolderClosed,
-      titel: "Finanzierungsmappe für die Bank",
+      titel: "Zwei Ordner: Makler & Bank",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
-            Alle Unterlagen, die Banken verlangen — passend zu deinem Objekt (Kauf, Vermietung, ETW).
-            MyImmo erzeugt Kennblatt, Mietaufstellung &amp; Co. aus deinen Daten. Du bekommst einen sicheren
-            Link, den du <strong>selbst an deine Bank(en)</strong> schickst.
+            Am Ende brauchst du zwei Ordner. Der <strong>Makler-Ordner</strong> zeigt dich als seriösen,
+            finanzierungssicheren Käufer (6 Kern-Dokumente, Datensparsamkeit). Der <strong>Bank-Ordner</strong>
+            bündelt alle Unterlagen für die Finanzierung — passend zu deinem Objekt (Kauf, Vermietung, ETW);
+            MyImmo erzeugt Kennblatt, Mietaufstellung &amp; Co. aus deinen Daten.
           </p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Link href="/beleihung" className="btn btn-outline" style={{ fontSize: 13 }}>
-              Beleihungsordner / Finanzierungsmappe <ArrowRight size={14} style={{ verticalAlign: "-2px" }} />
+            <Link href="/makler" className="btn btn-gold" style={{ fontSize: 13 }}>
+              <FolderClosed size={14} style={{ verticalAlign: "-2px" }} /> Makler-Ordner öffnen
             </Link>
           </div>
+          <p style={{ fontSize: 11.5, color: "var(--faint)", margin: "8px 0 0", display: "flex", gap: 7 }}>
+            <Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>Den <strong>Bank-Ordner</strong> (Beleihungsordner mit Kennblatt, Mietaufstellung, Freigabe-Link)
+              findest du objektbezogen auf der Seite des jeweiligen Objekts → Reiter „Beleihungsordner", sobald das
+              Objekt in deinem Bestand ist.</span>
+          </p>
           <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
             <div className="form-section-label" style={{ marginTop: 0 }}>Kreditantrag / Selbstauskunft</div>
             <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>

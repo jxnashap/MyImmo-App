@@ -76,8 +76,14 @@ Machbarkeit → Darlehens-Wunsch → Kreditantrag/Selbstauskunft-PDF für die Ba
   `FoerderCheck.tsx`); **zwei grafische Finanzierungsvorschläge**
   (`FinanzierungsVorschlaege.tsx`, gestapelter Balken EK + optional Förderkredit +
   Bankdarlehen, gleichwertig, § 34i-Disclaimer am Balken).
-- **Folge-Scheibe:** (4) **Makler-Ordner** (neue Tabelle `makler_dokumente`,
-  RLS + Verschlüsselung; Bank-Ordner = vorhandener `BeleihungsOrdner`).
+- **Scheibe 4 (gebaut):** **Makler-Ordner** — neue Tabelle `makler_dokumente`
+  (user-scoped, RLS), `lib/makler.ts` (6 Kern-Dokumente) + `components/MaklerOrdner.tsx`
+  (Checkliste, Upload, Abhaken, Fortschritts-Ring, Datensparsamkeits-Warnungen),
+  `/makler` + geschützte Datei-Route, aus dem Kauf-Assistenten verlinkt. Bank-Ordner =
+  vorhandener `BeleihungsOrdner` (objektbezogen).
+- **Offene Härtung:** `datei_data` (Makler- UND Bank-Ordner) liegt als base64,
+  nur per RLS geschützt → App-Layer-Verschlüsselung für SCHUFA/Einkommen/Ausweis
+  wie bei IBANs nachrüsten (eigener PR, beide Ordner gemeinsam).
 - Recherchierte Deliverables als Vault-Notizen: [[Kunden-Guide]], [[Makler-Ordner]],
   [[Bank-Ordner]], [[KfW-Foerderung-2026]].
 
