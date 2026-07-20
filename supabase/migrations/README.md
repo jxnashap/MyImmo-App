@@ -86,3 +86,4 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260716083527 | auftraege_kosten_bruecke |
 | 20260718001145 | create_selbstauskunft |
 | 20260719073404 | properties_geo_coords |
+| 20260720190000 | create_makler_dokumente |
