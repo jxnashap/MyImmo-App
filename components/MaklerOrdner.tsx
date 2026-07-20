@@ -6,11 +6,11 @@
 // Bank bzw. werden nur gezeigt — nicht an den Makler herausgegeben.
 
 import { useMemo, useRef, useState, useTransition } from "react";
-import { FolderClosed, Upload, Eye, Download, X, Check, TriangleAlert, Info } from "lucide-react";
+import { FolderClosed, Upload, Eye, Download, X, Check, TriangleAlert, Info, Bot } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { MAKLER_CHECKLISTE, type MaklerDok, type MaklerItem } from "@/lib/makler";
 import {
-  setMaklerStatus, setMaklerDatum, uploadMaklerDatei, removeMaklerDatei,
+  setMaklerStatus, setMaklerDatum, uploadMaklerDatei, removeMaklerDatei, generiereMaklerDokument,
 } from "@/lib/actions/makler";
 
 const LEER = (key: string): MaklerDok => ({
@@ -29,7 +29,7 @@ const BADGE: Record<MaklerDok["status"], { label: string; bg: string; fg: string
   erledigt: { label: "Erledigt", bg: "rgba(74,157,111,0.15)", fg: "var(--green, #4a9d6f)" },
 };
 
-export default function MaklerOrdner({ initialDocs }: { initialDocs: MaklerDok[] }) {
+export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }: { initialDocs: MaklerDok[]; hatSelbstauskunft?: boolean }) {
   const toast = useToast();
   const [docs, setDocs] = useState<Record<string, MaklerDok>>(() => {
     const m: Record<string, MaklerDok> = {};
@@ -82,6 +82,13 @@ export default function MaklerOrdner({ initialDocs }: { initialDocs: MaklerDok[]
     start(async () => {
       try { apply(await removeMaklerDatei(item.key)); }
       catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Entfernen."); }
+    });
+  }
+
+  function onGenerate(item: MaklerItem) {
+    start(async () => {
+      try { apply(await generiereMaklerDokument(item.key)); toast("Käufer-Selbstauskunft aus MyImmo erzeugt."); }
+      catch (e) { toast(e instanceof Error ? e.message : "Erzeugen fehlgeschlagen."); }
     });
   }
 
@@ -162,10 +169,18 @@ export default function MaklerOrdner({ initialDocs }: { initialDocs: MaklerDok[]
                         <button type="button" onClick={() => onRemove(item)} disabled={pending} title="Entfernen" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "grid", placeItems: "center", padding: 0 }}><X size={14} /></button>
                       </div>
                     ) : (
-                      <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={pending}
-                        onClick={() => fileRefs.current[item.key]?.click()}>
-                        <Upload size={13} style={{ verticalAlign: "-2px" }} /> Datei hochladen
-                      </button>
+                      <>
+                        <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={pending}
+                          onClick={() => fileRefs.current[item.key]?.click()}>
+                          <Upload size={13} style={{ verticalAlign: "-2px" }} /> Datei hochladen
+                        </button>
+                        {item.auto && hatSelbstauskunft && (
+                          <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={pending}
+                            onClick={() => onGenerate(item)} title="Aus deiner Selbstauskunft ein PDF erzeugen">
+                            <Bot size={13} style={{ verticalAlign: "-2px" }} /> Aus MyImmo erzeugen
+                          </button>
+                        )}
+                      </>
                     )}
                     <input ref={(el) => { fileRefs.current[item.key] = el; }} type="file" hidden
                       accept="application/pdf,image/*"

@@ -81,9 +81,10 @@ Machbarkeit → Darlehens-Wunsch → Kreditantrag/Selbstauskunft-PDF für die Ba
   (Checkliste, Upload, Abhaken, Fortschritts-Ring, Datensparsamkeits-Warnungen),
   `/makler` + geschützte Datei-Route, aus dem Kauf-Assistenten verlinkt. Bank-Ordner =
   vorhandener `BeleihungsOrdner` (objektbezogen).
-- **Offene Härtung:** `datei_data` (Makler- UND Bank-Ordner) liegt als base64,
-  nur per RLS geschützt → App-Layer-Verschlüsselung für SCHUFA/Einkommen/Ausweis
-  wie bei IBANs nachrüsten (eigener PR, beide Ordner gemeinsam).
+- **Scheibe 5 (gebaut):** Härtung — `datei_data` in Makler- UND Bank-Ordner wird
+  beim Upload/Erzeugen AES-256-GCM-verschlüsselt (wenn `DATA_ENCRYPTION_KEY` gesetzt),
+  Datei-Routen entschlüsseln tolerant (Altbestand bleibt lesbar). Plus Auto-Käufer-
+  Selbstauskunft-PDF (`lib/pdf/kaeuferPdf.ts`, nur Aggregate) mit „Aus MyImmo erzeugen".
 - Recherchierte Deliverables als Vault-Notizen: [[Kunden-Guide]], [[Makler-Ordner]],
   [[Bank-Ordner]], [[KfW-Foerderung-2026]].
 

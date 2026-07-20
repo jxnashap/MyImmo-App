@@ -2,6 +2,7 @@
 // SECURITY-DEFINER-RPC (prüft Token + aktiv + Ablauf + item_key ∈ item_keys).
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { decrypt } from "@/lib/crypto/secure";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +24,8 @@ export async function GET(
     return new NextResponse("Link abgelaufen oder Dokument nicht freigegeben", { status: 404 });
   }
 
-  const raw = String(d.datei_data);
+  // Node-Runtime mit Schlüssel → tolerant entschlüsseln (Klartext-Altzeilen bleiben).
+  const raw = decrypt(String(d.datei_data));
   const comma = raw.indexOf(",");
   const buf = Buffer.from(comma >= 0 ? raw.slice(comma + 1) : raw, "base64");
   const name = (d.datei_name || "Dokument").replace(/[^a-zA-Z0-9._-]+/g, "_");

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { encrypt } from "@/lib/crypto/secure";
 import { BELEIHUNG_CHECKLISTE, type BelDok } from "@/lib/beleihung";
 import { berechneNk, type NkRawPosition } from "@/lib/nk";
 import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
@@ -22,6 +23,13 @@ async function uid() {
 }
 
 const DOK_FELDER = "item_key,status,notiz,datum,datei_name,datei_type,datei_size";
+
+// Sensible Dateiinhalte verschlüsseln, WENN ein Schlüssel konfiguriert ist —
+// sonst (wie bisher) als base64-Klartext ablegen. Die Datei-Routen entschlüsseln
+// tolerant (Klartext-Altzeilen bleiben unverändert), Bestand bleibt lesbar.
+function schuetze(dataUri: string): string {
+  return process.env.DATA_ENCRYPTION_KEY ? encrypt(dataUri) : dataUri;
+}
 
 function pruefeKey(itemKey: string) {
   if (!BELEIHUNG_CHECKLISTE.some((i) => i.key === itemKey)) {
@@ -87,7 +95,7 @@ export async function uploadBeleihungDatei(propId: string, itemKey: string, fd: 
         datei_name: file.name || "Dokument",
         datei_type: mime,
         datei_size: file.size,
-        datei_data: `data:${mime};base64,${base64}`,
+        datei_data: schuetze(`data:${mime};base64,${base64}`),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id,prop_id,item_key" },
@@ -190,7 +198,7 @@ async function speichereAutoPdf(
         datei_name: dateiName,
         datei_type: "application/pdf",
         datei_size: pdf.length,
-        datei_data: `data:application/pdf;base64,${Buffer.from(pdf).toString("base64")}`,
+        datei_data: schuetze(`data:application/pdf;base64,${Buffer.from(pdf).toString("base64")}`),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id,prop_id,item_key" },

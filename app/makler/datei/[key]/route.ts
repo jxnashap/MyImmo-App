@@ -2,6 +2,7 @@
 // (inline oder Download). Zugriff nur für den Eigentümer (RLS, user-scoped).
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { decrypt } from "@/lib/crypto/secure";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +21,9 @@ export async function GET(req: NextRequest, { params }: { params: { key: string 
 
   if (!d?.datei_data) return new NextResponse("Keine Datei hinterlegt", { status: 404 });
 
-  const raw = String(d.datei_data);
+  // decrypt() ist tolerant: verschlüsselte Blobs werden entschlüsselt,
+  // unverschlüsselte Klartext-Altzeilen unverändert zurückgegeben.
+  const raw = decrypt(String(d.datei_data));
   const comma = raw.indexOf(",");
   const buf = Buffer.from(comma >= 0 ? raw.slice(comma + 1) : raw, "base64");
   const name = (d.datei_name || "Dokument").replace(/[^a-zA-Z0-9._-]+/g, "_");
