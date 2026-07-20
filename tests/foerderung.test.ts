@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { filterProgramme, PROGRAMME, LANDESBANKEN } from "@/lib/kauf/foerderung";
+import {
+  filterProgramme, PROGRAMME, LANDESBANKEN,
+  foerderKredit, foerderKredite, foerderEinkommensgrenze,
+  type FoerderKontext,
+} from "@/lib/kauf/foerderung";
+
+const basis: FoerderKontext = {
+  nutzung: "eigennutzen", vorhaben: "kauf_bestand", einWohneinheit: true,
+  kinder: 0, zveJahr: 0, eh40: false, keineFossileHeizung: false, qng: false,
+  restbedarf: 400_000,
+};
 
 describe("Fördercheck", () => {
   it("Selbstnutzer-Programme erscheinen nicht für Vermieter", () => {
@@ -42,5 +52,56 @@ describe("Fördercheck", () => {
       expect(p.vorhaben.length).toBeGreaterThan(0);
       expect(p.url).toMatch(/^https:\/\//);
     }
+  });
+});
+
+describe("Auto-Förderkredit (foerderKredit)", () => {
+  it("Familie Neubau EH40 zvE 85k → KfW 300, gestaffelt nach Kindern & QNG", () => {
+    const k: FoerderKontext = { ...basis, vorhaben: "neubau", kinder: 2, zveJahr: 85_000, eh40: true, keineFossileHeizung: true };
+    expect(foerderKredit(k)?.key).toBe("KfW 300");
+    expect(foerderKredit(k)?.hoechstbetrag).toBe(170_000);
+    expect(foerderKredit({ ...k, qng: true })?.hoechstbetrag).toBe(220_000);
+    expect(foerderKredit({ ...k, kinder: 3 })?.hoechstbetrag).toBe(200_000);
+  });
+
+  it("Familie Bestand Klasse G zvE 80k/1 Kind → KfW 308 (100k)", () => {
+    const k: FoerderKontext = { ...basis, kinder: 1, zveJahr: 80_000, energieklasse: "G" };
+    expect(foerderKredit(k)?.key).toBe("KfW 308");
+    expect(foerderKredit(k)?.hoechstbetrag).toBe(100_000);
+  });
+
+  it("Eigennutzer Neubau EH40 ohne Kinder → KfW 297 (100k)", () => {
+    const k: FoerderKontext = { ...basis, vorhaben: "neubau", eh40: true, keineFossileHeizung: true };
+    expect(foerderKredit(k)?.key).toBe("KfW 297");
+  });
+
+  it("Eigennutzer Bestand ohne Familien-Kriterien → KfW 124 (100k)", () => {
+    expect(foerderKredit({ ...basis, energieklasse: "C" })?.key).toBe("KfW 124");
+  });
+
+  it("Vermieter Neubau EH40 → KfW 298; vermieteter Bestand → null", () => {
+    expect(foerderKredit({ ...basis, nutzung: "vermieten", vorhaben: "neubau", eh40: true, keineFossileHeizung: true })?.key).toBe("KfW 298");
+    expect(foerderKredit({ ...basis, nutzung: "vermieten" })).toBeNull();
+  });
+
+  it("zvE=0 (unbekannt) unterdrückt Familienprogramme 300/308", () => {
+    const k: FoerderKontext = { ...basis, vorhaben: "neubau", kinder: 2, zveJahr: 0, eh40: true, keineFossileHeizung: true };
+    expect(foerderKredite(k).some((t) => t.key === "KfW 300")).toBe(false);
+    expect(foerderKredit(k)?.key).toBe("KfW 297");
+  });
+
+  it("Segment auf Restbedarf gedeckelt", () => {
+    const k: FoerderKontext = { ...basis, restbedarf: 60_000 };
+    expect(foerderKredit(k)?.hoechstbetrag).toBe(100_000);
+    expect(foerderKredit(k)?.segment).toBe(60_000);
+  });
+
+  it("Mehrfamilienhaus (nicht 1 WE) → kein Auto-Treffer", () => {
+    expect(foerderKredite({ ...basis, einWohneinheit: false })).toHaveLength(0);
+  });
+
+  it("Einkommensgrenze steigt um 10k je weiterem Kind", () => {
+    expect(foerderEinkommensgrenze(1)).toBe(90_000);
+    expect(foerderEinkommensgrenze(3)).toBe(110_000);
   });
 });

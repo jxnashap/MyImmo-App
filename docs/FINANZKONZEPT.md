@@ -85,6 +85,13 @@ Machbarkeit → Darlehens-Wunsch → Kreditantrag/Selbstauskunft-PDF für die Ba
   beim Upload/Erzeugen AES-256-GCM-verschlüsselt (wenn `DATA_ENCRYPTION_KEY` gesetzt),
   Datei-Routen entschlüsseln tolerant (Altbestand bleibt lesbar). Plus Auto-Käufer-
   Selbstauskunft-PDF (`lib/pdf/kaeuferPdf.ts`, nur Aggregate) mit „Aus MyImmo erzeugen".
+- **Scheibe 6 (gebaut):** Hausbewertung (Objekttyp Wohnung/Haus + Substanzwert-Block
+  Bodenwert/Gebäudesachwert via ImmoWertV-Engine `lib/kauf/hausbewertung.ts`),
+  **KfW-Förderkredit automatisch in der Finanzierungsgrafik** (`foerderKredit`/
+  `foerderKredite`, Höchstgrenzen, zvE-Guard, 1-WE, entfernbar, § 34i-neutral —
+  Wording anwaltlich freizugeben), Selbstauskunft-Feld `zveHaushaltJahr`, plus
+  spielerische Micro-UX (Belastbarkeits-Ring, progressive Kacheln, Meilenstein-Badges,
+  Animationen mit reduced-motion-Guard).
 - Recherchierte Deliverables als Vault-Notizen: [[Kunden-Guide]], [[Makler-Ordner]],
   [[Bank-Ordner]], [[KfW-Foerderung-2026]].
 

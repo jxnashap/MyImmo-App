@@ -15,7 +15,7 @@ const num = (s: string) => parseFloat(String(s).replace(",", ".")) || 0;
 
 // numerische Felder (Rest sind Text/Select)
 const ZAHL_FELDER: (keyof SelbstauskunftDaten)[] = [
-  "kinder", "anzahlPersonen",
+  "kinder", "anzahlPersonen", "zveHaushaltJahr",
   "einkommen", "einkommenPartner", "mieteinnahmen", "kindergeld", "sonstigeEinnahmen",
   "wohnkostenAktuell", "versicherungen", "unterhalt", "ratenKredite", "sonstigeAusgaben",
   "bankguthaben", "wertpapiere", "bausparen", "sonstigesVermoegen",
@@ -115,6 +115,7 @@ export default function SelbstauskunftForm({ initial }: { initial: Selbstauskunf
           <div className="field"><label>Kinder</label><input inputMode="numeric" value={f.kinder ?? ""} onChange={(e) => set("kinder", e.target.value)} /></div>
           <div className="field"><label>Personen im Haushalt</label><input inputMode="numeric" value={f.anzahlPersonen ?? ""} onChange={(e) => set("anzahlPersonen", e.target.value)} placeholder="1" /></div>
           <div className="field"><label>Staatsangehörigkeit</label><input value={f.staatsangehoerigkeit ?? ""} onChange={(e) => set("staatsangehoerigkeit", e.target.value)} /></div>
+          <div className="field"><label>Zu verst. Haushaltseinkommen (€/Jahr)</label><input inputMode="numeric" value={f.zveHaushaltJahr ?? ""} onChange={(e) => set("zveHaushaltJahr", e.target.value)} placeholder="aus Steuerbescheid — für KfW 300/308" /></div>
           <div className="field">
             <label>Beschäftigung</label>
             <select value={f.beschaeftigung ?? "angestellt"} onChange={(e) => set("beschaeftigung", e.target.value)}>
