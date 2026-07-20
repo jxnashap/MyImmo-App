@@ -13,6 +13,7 @@ import SelbstauskunftForm from "@/components/kauf/SelbstauskunftForm";
 import MachbarkeitKarte from "@/components/kauf/MachbarkeitKarte";
 import DarlehenWizard from "@/components/kauf/DarlehenWizard";
 import FoerderCheck from "@/components/kauf/FoerderCheck";
+import FinanzierungsVorschlaege from "@/components/kauf/FinanzierungsVorschlaege";
 import KreditantragButton from "@/components/kauf/KreditantragButton";
 import { KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
 import { KAUF_BEWERTUNG_KEY, type KaufBewertung } from "@/lib/kauf/bewertung";
@@ -229,6 +230,20 @@ export default function KaufAssistent({
             ihren Auswirkungen aus, die du in den Kreditantrag übernehmen kannst. Die Entscheidung triffst du.
           </p>
           <DarlehenWizard darlehenVorschlag={darlehensbedarf} onUebernommen={setDarlehenWunsch} />
+
+          <div className="form-section-label" style={{ marginTop: 20 }}>Zwei Finanzierungs-Szenarien im Vergleich</div>
+          <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
+            Grafische Aufteilung deiner Gesamtinvestition in Eigenkapital, (optional) Förderkredit und Bankdarlehen —
+            einmal „solide" (mehr Eigenkapital), einmal „liquiditätsschonend" (mehr Puffer). Beide sind Rechenbeispiele, keine Empfehlung.
+          </p>
+          {auswahl && auswahl.gesamtInvest > 0 ? (
+            <FinanzierungsVorschlaege gesamtInvest={auswahl.gesamtInvest} kaufpreis={auswahl.kp} ekVorhanden={ekVorhanden} />
+          ) : (
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--line)", fontSize: 12, color: "var(--muted)" }}>
+              <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>Sobald du in Schritt 2 ein Objekt übernommen hast, erscheinen hier zwei grafische Finanzierungs-Szenarien.</span>
+            </div>
+          )}
 
           <div className="form-section-label" style={{ marginTop: 20 }}>Darlehensarten im Überblick</div>
           <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
