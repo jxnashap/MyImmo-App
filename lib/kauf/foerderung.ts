@@ -137,3 +137,111 @@ export const LANDESBANKEN: Record<string, { bank: string; url: string }> = {
 export function filterProgramme(nutzung: Nutzung, vorhaben: Vorhaben): Programm[] {
   return PROGRAMME.filter((p) => p.fuer.includes(nutzung) && p.vorhaben.includes(vorhaben));
 }
+
+// ============================================================================
+// Auto-Förderkredit für den Finanzierungs-Stack (Kaufpreis-Segment).
+// § 34i GewO: reine Rechnung/Information — "kommt laut deinen Angaben in Frage",
+// KEINE Empfehlung, KEINE Vermittlung. Nur KfW-KREDITE, die den Kaufpreis
+// mitfinanzieren (nicht Zuschüsse 458/BAFA; nicht Sanierungskredite 261/159,
+// da gesamtInvest keine Sanierungskosten enthält).
+// Beträge: Stand 07/2026. ⚠️ KfW 308 hebt laut kfw.de ab 03.08.2026 an —
+// Zahlen dann hier aktualisieren (KFW_STAND anpassen).
+// ============================================================================
+
+export const KFW_STAND = "07/2026";
+
+export type Energieklasse = "A+" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H";
+
+export type FoerderKontext = {
+  nutzung: Nutzung;                     // "eigennutzen" | "vermieten"
+  vorhaben: "neubau" | "kauf_bestand";
+  einWohneinheit: boolean;              // Auto-Matching nur für 1-WE-Objekte (EFH/ETW)
+  kinder: number;                       // Kinder < 18 im Haushalt
+  zveJahr: number;                      // zu versteuerndes Haushaltseinkommen €/Jahr (0 = unbekannt)
+  eh40: boolean;                        // Neubau erreicht Effizienzhaus 40
+  keineFossileHeizung: boolean;         // keine Öl/Gas(/Biomasse)-Heizung
+  qng: boolean;                         // QNG-Nachhaltigkeitszertifikat (hebt Höchstbetrag)
+  energieklasse?: Energieklasse;        // Energieausweis des Bestandsobjekts
+  restbedarf: number;                   // gesamtInvest − eingesetztes Eigenkapital (≥ 0)
+};
+
+export type FoerderKreditTreffer = {
+  key: string;
+  name: string;
+  hoechstbetrag: number;                // programmatische Obergrenze im Kontext (EUR)
+  segment: number;                      // min(hoechstbetrag, restbedarf) — der Balkenwert
+  bedingung: string;                    // "kommt laut deinen Angaben in Frage, wenn …"
+  url: string;
+};
+
+// Einkommensgrenze der Familienprogramme (300/308): 90k + 10k je weiterem Kind.
+export function foerderEinkommensgrenze(kinder: number): number {
+  return 90_000 + Math.max(0, kinder - 1) * 10_000;
+}
+
+// Höchstbeträge je Wohneinheit (Auto-Matching: 1 WE).
+export function kfw300Betrag(kinder: number, qng: boolean): number {
+  if (kinder >= 5) return qng ? 270_000 : 220_000;
+  if (kinder >= 3) return qng ? 250_000 : 200_000;
+  return qng ? 220_000 : 170_000;       // 1–2 Kinder
+}
+export function kfw308Betrag(kinder: number): number {
+  if (kinder >= 3) return 150_000;
+  if (kinder === 2) return 125_000;
+  return 100_000;                       // 1 Kind
+}
+export function kfw297_298Betrag(qng: boolean): number {
+  return qng ? 150_000 : 100_000;
+}
+const KFW124_BETRAG = 100_000;
+
+const istFGH = (k?: Energieklasse) => k === "F" || k === "G" || k === "H";
+const KFW_URL = "https://www.kfw.de/inlandsfoerderung/Privatpersonen/";
+const deckel = (betrag: number, restbedarf: number) =>
+  Math.max(0, Math.min(betrag, Math.max(0, restbedarf)));
+
+// Alle in Frage kommenden KfW-Erwerbskredite (ungedeckelt sortiert nach
+// Höchstbetrag absteigend). Für die Anzeige aller Optionen (Nutzer wählt selbst).
+export function foerderKredite(k: FoerderKontext): FoerderKreditTreffer[] {
+  if (!k.einWohneinheit) return [];
+  const grenze = foerderEinkommensgrenze(k.kinder);
+  const familienBerechtigt = k.kinder >= 1 && k.zveJahr > 0 && k.zveJahr <= grenze; // zvE>0-Guard!
+  const out: Omit<FoerderKreditTreffer, "segment">[] = [];
+  const add = (key: string, name: string, betrag: number, bedingung: string) =>
+    out.push({ key, name, hoechstbetrag: betrag, bedingung, url: KFW_URL });
+
+  if (k.nutzung === "eigennutzen") {
+    if (k.vorhaben === "neubau") {
+      if (familienBerechtigt && k.eh40 && k.keineFossileHeizung)
+        add("KfW 300", "KfW 300 – Wohneigentum für Familien", kfw300Betrag(k.kinder, k.qng),
+          `mind. 1 Kind < 18, zvE ≤ ${grenze.toLocaleString("de-DE")} €, Effizienzhaus 40 ohne fossile Heizung, Selbstnutzung`);
+      if (k.eh40 && k.keineFossileHeizung)
+        add("KfW 297", "KfW 297 – Klimafreundlicher Neubau", kfw297_298Betrag(k.qng),
+          `das Gebäude Effizienzhaus 40 erfüllt und nicht mit Öl/Gas beheizt wird${k.qng ? " (mit QNG-Zertifikat)" : ""}`);
+      add("KfW 124", "KfW 124 – Wohneigentumsprogramm", KFW124_BETRAG,
+        "du das Objekt selbst bewohnst — Basiskredit, kein Energiestandard nötig");
+    } else {
+      if (familienBerechtigt && istFGH(k.energieklasse))
+        add("KfW 308", "KfW 308 – Jung kauft Alt", kfw308Betrag(k.kinder),
+          `mind. 1 Kind < 18, zvE ≤ ${grenze.toLocaleString("de-DE")} €, Energieklasse F/G/H, Sanierung auf EH 85 EE binnen 4,5 J.`);
+      add("KfW 124", "KfW 124 – Wohneigentumsprogramm", KFW124_BETRAG,
+        "du das Objekt selbst bewohnst — Basiskredit, kein Energiestandard nötig");
+    }
+  } else if (k.vorhaben === "neubau" && k.eh40 && k.keineFossileHeizung) {
+    add("KfW 298", "KfW 298 – Klimafreundlicher Neubau (Vermietung)", kfw297_298Betrag(k.qng),
+      `das vermietete Gebäude Effizienzhaus 40 erfüllt und nicht mit Öl/Gas beheizt wird${k.qng ? " (mit QNG-Zertifikat)" : ""}`);
+    // Vermieteter Bestand: kein Erwerbs-Förderkredit (124 nur Selbstnutzer).
+  }
+
+  // Reihenfolge = Push-Reihenfolge (spezifischeres zuerst); stabil nach Betrag absteigend.
+  return out
+    .map((t) => ({ ...t, segment: deckel(t.hoechstbetrag, k.restbedarf) }))
+    .sort((a, b) => b.hoechstbetrag - a.hoechstbetrag);
+}
+
+// Bestpassender (= betragsmäßig größter erfüllbarer) Erwerbs-Förderkredit.
+// "Größter zinsverbilligter Betrag" ist ein rechnerisches Kriterium, KEINE
+// Wertung i. S. § 34i — die UI listet alle Treffer, der Nutzer entscheidet.
+export function foerderKredit(k: FoerderKontext): FoerderKreditTreffer | null {
+  return foerderKredite(k)[0] ?? null;
+}

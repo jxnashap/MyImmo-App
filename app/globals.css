@@ -1331,3 +1331,20 @@ select:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
+
+/* ---- Kauf-Tool: spielerische Micro-Interactions (rein visuell) ---- */
+@keyframes tileReveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.tile-reveal { animation: tileReveal var(--dur) var(--ease-out); }
+
+@keyframes badgePop { 0% { transform: scale(.8); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
+.badge-pop { animation: badgePop .34s var(--ease-out); }
+
+.tile-hover { transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+.tile-hover:hover { border-color: var(--line2); box-shadow: var(--shadow-2); transform: translateY(-1px); }
+@media (hover: none) { .tile-hover:hover { transform: none; box-shadow: var(--shadow-1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-reveal, .badge-pop { animation: none !important; }
+  .tile-hover:hover { transform: none; }
+  .no-motion-transition { transition: none !important; }
+}

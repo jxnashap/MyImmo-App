@@ -17,6 +17,7 @@ export type SelbstauskunftDaten = {
   beschaeftigtSeit: string;     // YYYY-MM
   befristung: Befristung;
   anzahlPersonen: number;       // Haushaltsgröße (für die Lebenshaltungspauschale)
+  zveHaushaltJahr: number;      // zu versteuerndes Haushaltseinkommen €/Jahr (KfW 300/308-Grenze)
   // Einnahmen (€/Monat, netto)
   einkommen: number;
   einkommenPartner: number;
@@ -48,6 +49,7 @@ export const LEERE_SELBSTAUSKUNFT: SelbstauskunftDaten = {
   beschaeftigtSeit: "",
   befristung: "unbefristet",
   anzahlPersonen: 1,
+  zveHaushaltJahr: 0,
   einkommen: 0,
   einkommenPartner: 0,
   mieteinnahmen: 0,

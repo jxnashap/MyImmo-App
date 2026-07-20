@@ -56,6 +56,28 @@ Vorschläge) → Förder-Check (KfW/BAFA). Volle Version: [[Kunden-Guide]].
   Aggregate (Haushaltsnetto, Eigenkapital gesamt), keine Rohdaten. „Aus MyImmo
   erzeugen"-Button im Makler-Ordner (`generiereMaklerDokument`).
 
+**Scheibe 6 (gebaut, PR #197 — Hausbewertung + KfW-Auto + Gamification):**
+- **Hausbewertung:** Objekttyp-Umschalter Wohnung/Haus im `ObjektRechner`; bei Haus
+  ausklappbarer Substanzwert-Block (Grundstück + Bodenrichtwert → Bodenwert,
+  Gebäudesachwert, vorläufiger Sachwert ±20 %). Adapter `lib/kauf/hausbewertung.ts`
+  nutzt die vorhandene ImmoWertV-Engine (`lib/bewertung/immowertv.ts`) — keine
+  Doppelrechnung. Headline-Zahl erst mit Bodenrichtwert; „kein Gutachten"-Disclaimer.
+- **KfW automatisch in der Finanzierungsgrafik:** `lib/kauf/foerderung.ts` →
+  `foerderKredit`/`foerderKredite` erkennen das passende KfW-Erwerbsprogramm samt
+  Höchstgrenze (124/297/298/300/308) aus Nutzung/Kindern/zvE/Energiestandard und
+  legen es als Balkensegment (gedeckelt auf den Finanzierungsbedarf). Alle Treffer
+  wählbar, ein Klick entfernt es; manuelles Feld für andere Förderkredite bleibt.
+  zvE-Guard (>0), 1-WE-Beschränkung, „zzgl. KfW-Rate"-Hinweis, § 34i-neutral.
+  Neues Selbstauskunft-Feld `zveHaushaltJahr`; `KaufAuswahl.nutzung` ergänzt. 9 Tests.
+- **Spielerischer:** Belastbarkeits-/Eingabe-Vollständigkeits-Ring (neutral, nur
+  Feld-Zählung — keine Deal-Wertung), progressive Ergebnis-Kacheln (Anreiz statt „–"),
+  Meilenstein-Badges im Stepper, sanfte Count-up-/Balken-Animationen — alle mit
+  `prefers-reduced-motion`-Guard.
+
+⚠️ **§ 34i (auf der Anwaltsliste):** Das automatisch vorbelegte KfW-Segment ist der
+sensibelste Punkt — neutral gerahmt („kommt in Frage", keine Empfehlung, entfernbar,
+alle Optionen sichtbar), aber final anwaltlich freigeben.
+
 ## Wichtigste Risiken (aus der Kritik)
 - § 34i: Finanzierungsvorschläge nie als „der bessere"/„empfohlen" framen → beide
   Szenarien gleichwertig, Disclaimer am Balken.

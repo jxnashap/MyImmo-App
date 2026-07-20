@@ -2,12 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Home, Building2, Save, Scale, Crown, Trash2, ArrowRight } from "lucide-react";
+import { Home, Building2, Save, Scale, Crown, Trash2, ArrowRight, Landmark, Check } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import KalkImport from "@/components/kalkulator/KalkImport";
 import { saveKalkulation, deleteKalkulation } from "@/lib/actions/kalkulation";
 import { bestesObjekt, KAUF_AUSWAHL_KEY, type KaufAuswahl, type VglMetrik } from "@/lib/kauf/auswahl";
 import { BUNDESLAENDER } from "@/lib/kalk";
+import { hausSachwert, HAUS_DISCLAIMER } from "@/lib/kauf/hausbewertung";
+import { belastbarkeit } from "@/lib/kauf/belastbarkeit";
+import { NHK_TYPEN } from "@/lib/bewertung/immowertv";
+import { useCountUp } from "@/lib/hooks/useCountUp";
 import type { Kalkulation } from "@/lib/types";
 
 const eur = (n: number) => "€ " + Math.round(n || 0).toLocaleString("de-DE");
@@ -33,7 +37,35 @@ function renditeUrteil(brutto: number): { text: string; farbe: string } {
   return { text: "Auf Lage & Wertsteigerung setzen", farbe: "var(--amber)" };
 }
 
-type Tile = { label: string; wert: string; gold?: boolean; farbe?: string; note?: string };
+type Tile = { label: string; wert: string; gold?: boolean; farbe?: string; note?: string; braucht?: string };
+
+// Belastbarkeits-Ring: misst NUR die Eingabe-Vollständigkeit (§ 34i: keine
+// Objekt-/Deal-Bewertung, keine Wertermittlung). Neutrale Farbe, klar getrennt.
+function BelastbarkeitsRing({ prozent, stufe, offen }: { prozent: number; stufe: string; offen: { label: string }[] }) {
+  const r = 20, C = 2 * Math.PI * r;
+  const anim = useCountUp(prozent, 650);
+  return (
+    <div title="Misst nur, wie vollständig deine Eingaben sind — keine Wertermittlung und keine Bewertung des Objekts."
+      aria-label={`Eingabe-Vollständigkeit ${Math.round(prozent)} Prozent`}
+      style={{ display: "flex", alignItems: "center", gap: 11, padding: "9px 12px", borderRadius: 11, background: "var(--bg3)", border: "1px solid var(--line)", marginBottom: 12 }}>
+      <div style={{ position: "relative", width: 50, height: 50, flexShrink: 0 }}>
+        <svg width="50" height="50" viewBox="0 0 50 50" style={{ transform: "rotate(-90deg)" }} aria-hidden="true">
+          <circle cx="25" cy="25" r={r} fill="none" stroke="var(--bg4, #2a2722)" strokeWidth="5" />
+          <circle className="no-motion-transition" cx="25" cy="25" r={r} fill="none" stroke="var(--muted)" strokeWidth="5"
+            strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - anim / 100)}
+            style={{ transition: "stroke-dashoffset .65s var(--ease)" }} />
+        </svg>
+        <span style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{Math.round(anim)}%</span>
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>Eingabe-Vollständigkeit · {stufe}</div>
+        <div style={{ fontSize: 11, color: "var(--muted)" }}>
+          {offen.length > 0 ? <>fehlt noch: {offen.map((o) => o.label).join(", ")}</> : "alle relevanten Felder befüllt"}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalkulation[] }) {
   const toast = useToast();
@@ -45,11 +77,23 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
   const [flaeche, setFlaeche] = useState("");
   const [bundesland, setBundesland] = useState("0.05");
   const [makler, setMakler] = useState("3.57");
+  const [maklerBeruehrt, setMaklerBeruehrt] = useState(false); // für Belastbarkeits-Score
   // Nutzung
   const [nutzung, setNutzung] = useState<"vermietung" | "eigennutzung">("vermietung");
   const [kaltmiete, setKaltmiete] = useState("");
   const [bewirt, setBewirt] = useState("20"); // % der Miete (Rundwert)
   const [hausgeld, setHausgeld] = useState(""); // €/Mo (Eigennutzung: laufende Kosten)
+
+  // Objekttyp + Haus-Substanzwert (Sachwert, ausklappbar). Reine Plausibilisierung
+  // neben der Rendite; nutzt die ImmoWertV-Engine (lib/kauf/hausbewertung.ts).
+  const [objektTyp, setObjektTyp] = useState<"wohnung" | "haus">("wohnung");
+  const [grundFlaeche, setGrundFlaeche] = useState("");
+  const [bodenrichtwert, setBodenrichtwert] = useState("");
+  const [baujahr, setBaujahr] = useState("");
+  const [gebTyp, setGebTyp] = useState("efh");
+  const [ausstattung, setAusstattung] = useState("3");
+  const [bpiFaktor, setBpiFaktor] = useState("1.9");
+  const [regionalFaktor, setRegionalFaktor] = useState("1.0");
 
   // Speichern / Vergleich
   const [saving, setSaving] = useState(false);
@@ -71,18 +115,33 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
 
   const urteil = vermietung && brutto > 0 ? renditeUrteil(brutto) : null;
 
+  const haus = objektTyp === "haus"
+    ? hausSachwert({
+        wohnflaeche: fl, grundFlaeche: num(grundFlaeche), bodenrichtwert: num(bodenrichtwert),
+        baujahr: Math.round(num(baujahr)), gebTyp, ausstattung: Math.round(num(ausstattung)),
+        bpiFaktor: num(bpiFaktor) || 1.9, regionalFaktor: num(regionalFaktor) || 1,
+      })
+    : null;
+
+  const bel = belastbarkeit({
+    nutzung, kp, fl, kaltmiete: num(kaltmiete), hausgeld: num(hausgeld),
+    adresseGesetzt: adresse.trim().length > 0,
+    maklerEntschieden: maklerBeruehrt,
+    bewirtGesetzt: bewirt.trim() !== "",
+  });
+
   const tiles: Tile[] = vermietung
     ? [
-        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "–", gold: true, note: `inkl. ${eur(nebenkosten)} Nebenkosten` },
-        { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "–" },
-        { label: "Bruttorendite", wert: brutto > 0 ? pct(brutto) : "–", farbe: urteil?.farbe, note: urteil?.text },
-        { label: "Nettorendite", wert: nettomiet > 0 ? pct(nettomiet) : "–", note: `nach ${num(bewirt)} % Bewirtschaftung` },
-        { label: "Kaufpreisfaktor", wert: faktor > 0 ? fmt1(faktor) + "×" : "–", note: "Jahresmieten bis zur Amortisation" },
+        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: `inkl. ${eur(nebenkosten)} Nebenkosten`, braucht: "Kaufpreis eintragen" },
+        { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "", braucht: "Kaufpreis + Wohnfläche" },
+        { label: "Bruttorendite", wert: brutto > 0 ? pct(brutto) : "", farbe: urteil?.farbe, note: urteil?.text, braucht: "Kaltmiete eintragen" },
+        { label: "Nettorendite", wert: nettomiet > 0 ? pct(nettomiet) : "", note: `nach ${num(bewirt)} % Bewirtschaftung`, braucht: "Kaltmiete eintragen" },
+        { label: "Kaufpreisfaktor", wert: faktor > 0 ? fmt1(faktor) + "×" : "", note: "Jahresmieten bis zur Amortisation", braucht: "Kaufpreis + Kaltmiete" },
       ]
     : [
-        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "–", gold: true, note: `inkl. ${eur(nebenkosten)} Nebenkosten` },
-        { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "–" },
-        { label: "Laufende Kosten", wert: num(hausgeld) > 0 ? eur(num(hausgeld)) + "/Mo" : "–", note: "Hausgeld / Bewirtschaftung" },
+        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: `inkl. ${eur(nebenkosten)} Nebenkosten`, braucht: "Kaufpreis eintragen" },
+        { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "", braucht: "Kaufpreis + Wohnfläche" },
+        { label: "Laufende Kosten", wert: num(hausgeld) > 0 ? eur(num(hausgeld)) + "/Mo" : "", note: "Hausgeld / Bewirtschaftung", braucht: "Laufende Kosten eintragen" },
       ];
 
   function eingabenSnapshot(): Record<string, string> {
@@ -135,6 +194,8 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
       kalkId: k.id, name: k.name, adresse: k.data?.adresse ?? "",
       kp: s.kp ?? 0, gesamtInvest: s.gesamtInvest ?? 0, eigenkapital: 0,
       darlehen: 0, rate: 0, kaltmiete: s.kaltmiete ?? 0, cfNetto: 0,
+      // summarySnapshot: nutzung = vermietung ? 1 : 0
+      nutzung: s.nutzung === 1 ? "vermieten" : "eigennutzen",
       gewaehltAm: new Date().toISOString().slice(0, 10),
     };
     try { localStorage.setItem(KAUF_AUSWAHL_KEY, JSON.stringify(a)); } catch { /* ignore */ }
@@ -200,11 +261,28 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
               <input
                 type="checkbox"
                 checked={num(makler) === 0}
-                onChange={(e) => setMakler(e.target.checked ? "0" : "3.57")}
+                onChange={(e) => { setMakler(e.target.checked ? "0" : "3.57"); setMaklerBeruehrt(true); }}
                 style={{ width: 15, height: 15, accentColor: "var(--gold)", cursor: "pointer" }}
               />
               Provisionsfrei (keine Maklercourtage)
             </label>
+            {/* Objekttyp: Haus schaltet den Substanzwert-Block (Bodenwert + Gebäude) frei. */}
+            <div style={{ display: "flex", gap: 4, padding: 4, borderRadius: 12, background: "var(--bg3)", border: "1px solid var(--line)" }}>
+              {([["wohnung", "Wohnung", Building2], ["haus", "Haus", Home]] as const).map(([id, label, Icon]) => {
+                const aktiv = objektTyp === id;
+                return (
+                  <button key={id} type="button" onClick={() => setObjektTyp(id)}
+                    style={{
+                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, cursor: "pointer",
+                      padding: "7px 10px", borderRadius: 9, border: "none", fontSize: 12.5, fontWeight: 600,
+                      background: aktiv ? "var(--gold)" : "transparent", color: aktiv ? "#1a1814" : "var(--muted)",
+                      transition: "background .2s, color .2s",
+                    }}>
+                    <Icon size={14} /> {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Nutzungs-Umschalter */}
@@ -250,7 +328,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
               <span style={{ fontWeight: 400, color: "var(--faint)" }}> — Makler & Bewirtschaftung (Defaults sind gesetzt)</span>
             </summary>
             <div style={{ padding: "2px 14px 14px", display: "grid", gap: 11 }}>
-              {F("Maklercourtage (%) · provisionsfrei = 0", makler, setMakler, "3.57")}
+              {F("Maklercourtage (%) · provisionsfrei = 0", makler, (v) => { setMakler(v); setMaklerBeruehrt(true); }, "3.57")}
               {vermietung && F("Bewirtschaftung (% der Miete)", bewirt, setBewirt, "20")}
               <p style={{ fontSize: 11, color: "var(--faint)", margin: 0 }}>
                 Lässt du das zu, rechnet MyImmo mit konservativen Defaults weiter — Bewirtschaftung
@@ -258,18 +336,93 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
               </p>
             </div>
           </details>
+
+          {/* Haus-Substanzwert (Bodenwert + Gebäudesachwert) — nur bei Objekttyp Haus. */}
+          {objektTyp === "haus" && haus && (
+            <details style={{ borderRadius: 12, border: "1px solid var(--line)", background: "var(--bg3)" }}>
+              <summary style={{ cursor: "pointer", userSelect: "none", padding: "11px 14px", fontSize: 12.5, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: 7 }}>
+                <Landmark size={14} color="var(--gold)" /> Haus-Substanzwert (Bodenwert + Gebäude)
+                <span style={{ fontWeight: 400, color: "var(--faint)" }}> — überschlägig, kein Gutachten</span>
+              </summary>
+              <div style={{ padding: "2px 14px 14px", display: "grid", gap: 11 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+                  {F("Grundstücksfläche (m²)", grundFlaeche, setGrundFlaeche, "500")}
+                  {F("Bodenrichtwert (€/m², BORIS)", bodenrichtwert, setBodenrichtwert, "300")}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+                  {F("Baujahr", baujahr, setBaujahr, "1998")}
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ color: "var(--muted)" }}>Gebäudetyp</span>
+                    <select value={gebTyp} onChange={(e) => setGebTyp(e.target.value)}
+                      style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 13 }}>
+                      {NHK_TYPEN.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                  <span style={{ color: "var(--muted)" }}>Ausstattung / Standard: {ausstattung} von 5</span>
+                  <input type="range" min={1} max={5} step={1} value={ausstattung}
+                    onChange={(e) => setAusstattung(e.target.value)} style={{ accentColor: "var(--gold)" }} />
+                </label>
+
+                {/* Ergebnis: Bodenwert + Gebäudesachwert + vorläufiger Sachwert */}
+                {haus.bereit ? (
+                  <div style={{ display: "grid", gap: 6, padding: "11px 13px", borderRadius: 10, background: "var(--bg2)", border: "1px solid var(--gold-dim, var(--line))" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                      <span style={{ color: "var(--muted)" }}>Bodenwert ({eur(num(bodenrichtwert))}/m² × {num(grundFlaeche).toLocaleString("de-DE")} m²)</span>
+                      <strong style={{ color: "var(--text)" }}>{eur(haus.bodenwert)}</strong>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                      <span style={{ color: "var(--muted)" }}>Gebäudesachwert (RND {haus.restnutzungsdauer} J.)</span>
+                      <strong style={{ color: "var(--text)" }}>{eur(haus.gebaeudesachwert)}</strong>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, paddingTop: 6, borderTop: "1px solid var(--line)" }}>
+                      <span style={{ color: "var(--text)", fontWeight: 600 }}>Vorläufiger Sachwert</span>
+                      <strong style={{ color: "var(--gold)" }}>{eur(haus.vorlaeufigerSachwert)}</strong>
+                    </div>
+                    <div style={{ fontSize: 10.5, color: "var(--faint)" }}>Spanne {eur(haus.spanneMin)} – {eur(haus.spanneMax)}</div>
+                    {haus.hinweise.map((h, i) => (
+                      <div key={i} style={{ fontSize: 10.5, color: "var(--amber)" }}>⚠ {h}</div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 11.5, color: "var(--faint)", padding: "9px 12px", borderRadius: 9, background: "var(--bg2)", border: "1px dashed var(--line2)" }}>
+                    Für den Substanzwert brauchst du <strong>Wohnfläche</strong> (oben) und den <strong>Bodenrichtwert</strong>
+                    {" "}(amtlich bei <span style={{ color: "var(--muted)" }}>bodenrichtwerte-boris.de</span>).
+                  </div>
+                )}
+                <p style={{ fontSize: 10, color: "var(--faint)", margin: 0 }}>{HAUS_DISCLAIMER}</p>
+              </div>
+            </details>
+          )}
         </div>
 
         {/* Ergebnis-Kacheln */}
         <div style={{ flex: "1 1 320px", minWidth: 280 }}>
+          <BelastbarkeitsRing prozent={bel.prozent} stufe={bel.stufe} offen={bel.offen} />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
-            {tiles.map((t) => (
-              <div key={t.label} style={{ padding: "14px 15px", borderRadius: 14, background: "var(--bg2)", border: "1px solid var(--line)" }}>
-                <div style={{ fontSize: 11.5, color: "var(--muted)" }}>{t.label}</div>
-                <div style={{ fontSize: 22, fontWeight: 700, marginTop: 3, color: t.farbe ?? (t.gold ? "var(--gold)" : "var(--text)") }}>{t.wert}</div>
-                {t.note && <div style={{ fontSize: 10.5, color: t.farbe ?? "var(--faint)", marginTop: 3 }}>{t.note}</div>}
-              </div>
-            ))}
+            {tiles.map((t) => {
+              const leer = !t.wert;
+              return (
+                <div key={t.label} className={leer ? "" : "tile-reveal tile-hover"}
+                  style={{ padding: "14px 15px", borderRadius: 14,
+                    background: leer ? "var(--bg3)" : "var(--bg2)",
+                    border: `1px solid ${leer ? "var(--line)" : (t.gold ? "var(--gold-dim, var(--line))" : "var(--line)")}`,
+                    opacity: leer ? 0.72 : 1 }}>
+                  <div style={{ fontSize: 11.5, color: "var(--muted)" }}>{t.label}</div>
+                  {leer ? (
+                    <div style={{ fontSize: 12.5, color: "var(--faint)", marginTop: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                      <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1 }}>+</span> {t.braucht ?? "noch offen"}
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 22, fontWeight: 700, marginTop: 3, color: t.farbe ?? (t.gold ? "var(--gold)" : "var(--text)") }}>{t.wert}</div>
+                      {t.note && <div style={{ fontSize: 10.5, color: t.farbe ?? "var(--faint)", marginTop: 3 }}>{t.note}</div>}
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 12 }}>
             Speichere jedes Objekt und vergleiche 3–5 Kandidaten — das beste bekommt eine Krone. Die Finanzierung

@@ -16,6 +16,7 @@ export type KaufAuswahl = {
   rate: number;        // Monatsrate gesamt
   kaltmiete: number;
   cfNetto: number;
+  nutzung: "eigennutzen" | "vermieten"; // gemappt aus ObjektRechner (für KfW-Matching)
   gewaehltAm: string;  // ISO-Datum (nur zur Anzeige)
 };
 

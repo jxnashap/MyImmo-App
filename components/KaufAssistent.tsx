@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Search, Landmark, FolderClosed, FileCheck2, TriangleAlert,
-  Calculator, Scale, Crown, ClipboardList, TrendingUp, Info,
+  Calculator, Scale, Crown, ClipboardList, TrendingUp, Info, Check,
 } from "lucide-react";
 import ObjektRechner from "@/components/kauf/ObjektRechner";
 import BewertungAssistent from "@/components/BewertungAssistent";
@@ -237,7 +237,10 @@ export default function KaufAssistent({
             einmal „solide" (mehr Eigenkapital), einmal „liquiditätsschonend" (mehr Puffer). Beide sind Rechenbeispiele, keine Empfehlung.
           </p>
           {auswahl && auswahl.gesamtInvest > 0 ? (
-            <FinanzierungsVorschlaege gesamtInvest={auswahl.gesamtInvest} kaufpreis={auswahl.kp} ekVorhanden={ekVorhanden} />
+            <FinanzierungsVorschlaege
+              gesamtInvest={auswahl.gesamtInvest} kaufpreis={auswahl.kp} ekVorhanden={ekVorhanden}
+              nutzung={auswahl.nutzung} kinder={selbstauskunft?.kinder ?? 0} zveJahr={selbstauskunft?.zveHaushaltJahr ?? 0}
+            />
           ) : (
             <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--line)", fontSize: 12, color: "var(--muted)" }}>
               <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: 1 }} />
@@ -344,6 +347,24 @@ export default function KaufAssistent({
           </p>
         </div>
       </details>
+
+      {/* Meilenstein-Badges: bestätigen erreichte, real berechnete Schritte
+          (kein Score, keine Objekt-Wertung). Reihenfolge = Ablauf. */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+        {[
+          { id: "bew", label: "Objekt bewertet", an: !!bewertung && bewertung.marktwert > 0, cls: "badge-gold" },
+          { id: "obj", label: "Objekt gewählt", an: !!auswahl && auswahl.kp > 0, cls: "badge-gold" },
+          { id: "fin", label: "Finanzen erfasst", an: !!selbstauskunft, cls: "badge-green" },
+          { id: "darl", label: "Finanzierung gerechnet", an: !!darlehenWunsch && darlehenWunsch.darlehen > 0, cls: "badge-green" },
+        ].map((b) => (
+          <span key={`${b.id}-${b.an}`}
+            className={`badge ${b.an ? `${b.cls} badge-pop` : "badge-muted"}`}
+            style={{ opacity: b.an ? 1 : 0.5, display: "inline-flex", alignItems: "center", gap: 4 }}>
+            {b.an && <Check size={11} />} {b.label}
+          </span>
+        ))}
+      </div>
+
       <AblaufStepper schritte={schritte} storageKey="myimmo_kauf_fortschritt" />
     </>
   );
