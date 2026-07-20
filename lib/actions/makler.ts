@@ -2,7 +2,17 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { istMaklerKey, type MaklerDok } from "@/lib/makler";
+import { encrypt } from "@/lib/crypto/secure";
+import { MAKLER_CHECKLISTE, istMaklerKey, type MaklerDok } from "@/lib/makler";
+import { buildKaeuferSelbstauskunftPdf } from "@/lib/pdf/kaeuferPdf";
+import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
+
+// Sensible Dateiinhalte verschlüsseln, WENN ein Schlüssel konfiguriert ist —
+// sonst (wie bisher) als base64-Klartext ablegen. decrypt() beim Ausliefern ist
+// tolerant und gibt Klartext-Altzeilen unverändert zurück.
+function schuetze(dataUri: string): string {
+  return process.env.DATA_ENCRYPTION_KEY ? encrypt(dataUri) : dataUri;
+}
 
 // Server-Actions für den Makler-Ordner. Nutzergebunden (nicht objektabhängig):
 // unique (user_id, item_key). Datei als base64-Data-URI inline (wie Beleihung),
@@ -80,7 +90,57 @@ export async function uploadMaklerDatei(itemKey: string, fd: FormData): Promise<
         datei_name: file.name || "Dokument",
         datei_type: mime,
         datei_size: file.size,
-        datei_data: `data:${mime};base64,${base64}`,
+        datei_data: schuetze(`data:${mime};base64,${base64}`),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,item_key" },
+    )
+    .select(DOK_FELDER)
+    .single();
+  if (error) throw new Error(error.message);
+  return data as MaklerDok;
+}
+
+// „Aus MyImmo erzeugen": Käufer-Selbstauskunft-PDF aus der (verschlüsselten)
+// Selbstauskunft + Vermieter-/Nutzerprofil erzeugen und am Item ablegen.
+export async function generiereMaklerDokument(itemKey: string): Promise<MaklerDok> {
+  const item = MAKLER_CHECKLISTE.find((i) => i.key === itemKey);
+  if (item?.auto !== "kaeufer_selbstauskunft") {
+    throw new Error("Dieses Item kann nicht automatisch erzeugt werden.");
+  }
+  const { supabase, userId } = await uid();
+
+  const daten = await ladeSelbstauskunft();
+  if (!daten) {
+    throw new Error("Keine Selbstauskunft gefunden — fülle sie erst im Kauf-Assistenten aus.");
+  }
+  const { data: profil } = await supabase
+    .from("vermieter_profil")
+    .select("name,strasse,plz,ort,email")
+    .limit(1)
+    .maybeSingle();
+
+  const absender = {
+    name: profil?.name || "Käufer/in",
+    adresse: [profil?.strasse, [profil?.plz, profil?.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ") || null,
+    email: profil?.email ?? null,
+  };
+
+  const pdf = await buildKaeuferSelbstauskunftPdf(daten, absender);
+  const dataUri = `data:application/pdf;base64,${Buffer.from(pdf).toString("base64")}`;
+
+  const { data, error } = await supabase
+    .from("makler_dokumente")
+    .upsert(
+      {
+        user_id: userId,
+        item_key: itemKey,
+        status: "hochgeladen",
+        notiz: "Aus MyImmo erzeugt",
+        datei_name: "Kaeufer-Selbstauskunft.pdf",
+        datei_type: "application/pdf",
+        datei_size: pdf.length,
+        datei_data: schuetze(dataUri),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id,item_key" },

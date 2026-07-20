@@ -46,13 +46,15 @@ Vorschläge) → Förder-Check (KfW/BAFA). Volle Version: [[Kunden-Guide]].
    Datensparsamkeits-Warnungen). Aus dem Kauf-Assistenten (Schritt „Zwei Ordner")
    verlinkt; Bank-Ordner = vorhandener `BeleihungsOrdner` (objektbezogen).
 
-**Offene Härtung (Folge-PR, betrifft beide Ordner):**
-- `datei_data` liegt in `makler_dokumente` UND `beleihung_dokumente` als base64
-  (unverschlüsselt), geschützt nur per RLS. Für SCHUFA/Einkommen/Ausweis wäre
-  App-Layer-Verschlüsselung (`lib/crypto/secure.ts`) wie bei IBANs konsequent —
-  eigener PR, der BEIDE Ordner umstellt (sonst Inkonsistenz).
-- Auto-Erzeugung „Käufer-Selbstauskunft" aus den Selbstauskunft-Daten + Deckblatt-PDF
-  („Käufer-Kurzprofil") für den Makler-Ordner.
+**Scheibe 5 (gebaut, PR #196 — Härtung + Auto-Doku):**
+- **Verschlüsselung beider Ordner:** `datei_data` wird in `makler_dokumente` UND
+  `beleihung_dokumente` beim Upload/Erzeugen mit AES-256-GCM verschlüsselt, wenn
+  `DATA_ENCRYPTION_KEY` gesetzt ist (`lib/crypto/secure.ts`). Alle drei Datei-Routen
+  entschlüsseln tolerant (Klartext-Altzeilen bleiben lesbar → keine Migration nötig).
+- **Auto-Käufer-Selbstauskunft:** `lib/pdf/kaeuferPdf.ts` erzeugt aus der
+  (verschlüsselten) Selbstauskunft ein Käufer-Kurzprofil-PDF — zeigt bewusst nur
+  Aggregate (Haushaltsnetto, Eigenkapital gesamt), keine Rohdaten. „Aus MyImmo
+  erzeugen"-Button im Makler-Ordner (`generiereMaklerDokument`).
 
 ## Wichtigste Risiken (aus der Kritik)
 - § 34i: Finanzierungsvorschläge nie als „der bessere"/„empfohlen" framen → beide

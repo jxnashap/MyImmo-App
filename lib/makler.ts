@@ -10,6 +10,8 @@ export type MaklerItem = {
   hinweis: string;
   // datensparsam: dem Makler nur zeigen / über die Bank belegen, nicht als Rohdaten geben.
   datensparsam?: boolean;
+  // Dokument kann aus MyImmo-Daten erzeugt werden (Käufer-Selbstauskunft aus der Selbstauskunft).
+  auto?: "kaeufer_selbstauskunft";
 };
 
 export const MAKLER_CHECKLISTE: MaklerItem[] = [
@@ -27,7 +29,8 @@ export const MAKLER_CHECKLISTE: MaklerItem[] = [
   {
     key: "kaeufer_selbstauskunft",
     label: "Käufer-Selbstauskunft",
-    hinweis: "Formular (oft vom Makler): Name, Beruf, Haushaltseinkommen, geplantes Eigenkapital, Nutzung. NICHT die SCHUFA-Selbstauskunft. Vollständig + ehrlich ausfüllen.",
+    hinweis: "Formular (oft vom Makler): Name, Beruf, Haushaltseinkommen, geplantes Eigenkapital, Nutzung. NICHT die SCHUFA-Selbstauskunft. Kann MyImmo aus deiner Selbstauskunft als PDF erzeugen.",
+    auto: "kaeufer_selbstauskunft",
   },
   {
     key: "schufa_bonitaet",
