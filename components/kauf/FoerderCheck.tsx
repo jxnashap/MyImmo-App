@@ -65,6 +65,15 @@ export default function FoerderCheck() {
         </label>
       </div>
 
+      {/* Neutrale Einordnung (§ 34i GewO): informieren, nicht empfehlen. */}
+      {treffer.length > 0 && (
+        <p style={{ fontSize: 12, color: "var(--muted)", margin: "2px 0 0" }}>
+          <strong>{treffer.length}</strong> {treffer.length === 1 ? "Programm kommt" : "Programme kommen"} laut
+          deinen Angaben in Frage — <span style={{ color: "var(--faint)" }}>keine Empfehlung, du entscheidest selbst,
+          was zu dir passt.</span>
+        </p>
+      )}
+
       {/* Treffer */}
       <div style={{ display: "grid", gap: 8 }}>
         {treffer.map((p) => (
