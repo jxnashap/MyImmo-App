@@ -28,7 +28,7 @@ export const PROGRAMME: Programm[] = [
     text: "Zinsgünstiger Kredit für Neubau/Ersterwerb auf Effizienzhaus-40-Niveau (298 für Vermieter/Investoren).",
     bedingung: "das Gebäude Effizienzhaus 40 erfüllt und nicht mit Öl/Gas beheizt wird (297 Selbstnutzer, 298 auch Vermieter) — ohne Einkommens-/Kindergrenze.",
     hinweis: "Nachhaltigkeitsanforderungen (QNG teils nötig); Antrag vor Kaufvertrag/Baubeginn.",
-    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Neubau/",
+    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Neubau/F%C3%B6rderprodukte/Klimafreundlicher-Neubau-Wohngeb%C3%A4ude-(297-298)/",
   },
   {
     key: "kfw261",
@@ -38,7 +38,7 @@ export const PROGRAMME: Programm[] = [
     text: "Kredit mit Tilgungszuschuss für die Komplettsanierung zum Effizienzhaus — auch beim Kauf frisch sanierten Bestands.",
     bedingung: "du ein Bestandsgebäude auf mindestens Effizienzhaus 85 (oder Denkmal) sanierst — Selbstnutzer wie Vermieter, der Tilgungszuschuss steigt mit dem Zielstandard.",
     hinweis: "Energieeffizienz-Experte (dena-Liste) ist Pflicht.",
-    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestandsimmobilie/",
+    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/F%C3%B6rderprodukte/Bundesf%C3%B6rderung-f%C3%BCr-effiziente-Geb%C3%A4ude-Wohngeb%C3%A4ude-Kredit-(261-262)/",
   },
   {
     key: "kfw458",
@@ -48,7 +48,7 @@ export const PROGRAMME: Programm[] = [
     text: "Zuschuss für den Tausch auf Wärmepumpe & Co. — Basis 30 %, mit Boni bis 70 % (Selbstnutzer).",
     bedingung: "das Gebäude mindestens 5 Jahre alt ist und du eine erneuerbare Heizung einbaust — Antrag vor Auftragsvergabe (Vertrag mit aufschiebender Bedingung).",
     hinweis: "Vermieter erhalten nur die Grundförderung (~30–35 %), keine Einkommens-/Speed-Boni.",
-    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestandsimmobilie/Heizungsf%C3%B6rderung/",
+    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/F%C3%B6rderprodukte/Heizungsf%C3%B6rderung-f%C3%BCr-Privatpersonen-Wohngeb%C3%A4ude-(458)/",
   },
   {
     key: "bafa",
@@ -67,7 +67,7 @@ export const PROGRAMME: Programm[] = [
     fuer: ["eigennutzen"], vorhaben: ["kauf_bestand", "neubau"],
     text: "Bis 100.000 € günstiger Kredit für selbstgenutztes Wohneigentum — ohne Einkommensgrenze.",
     bedingung: "du das Objekt selbst bewohnst (oder unentgeltlich an Angehörige überlässt) und vor Kaufvertrag/Baubeginn beantragst — der breiteste Basiskredit, kein Energiestandard nötig.",
-    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestandsimmobilie/F%C3%B6rderprodukte/Wohneigentumsprogramm-(124)/",
+    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Neubau/F%C3%B6rderprodukte/Wohneigentumsprogramm-(124)/",
   },
   {
     key: "kfw300",
@@ -90,7 +90,7 @@ export const PROGRAMME: Programm[] = [
     // Sanierungsziel ist Effizienzhaus 85 EE (nicht 70); ab 03.08.2026 alternativ über
     // energetische Einzelmaßnahmen erfüllbar, Förderhöchstbeträge angehoben.
     hinweis: "Einkommensgrenze wie KfW 300 (90.000 € zvE + 10.000 € je weiterem Kind); Sanierungspflicht auf EH 85 EE (ab 03.08.2026 auch per Einzelmaßnahmen).",
-    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestandsimmobilie/F%C3%B6rderprodukte/Jung-kauft-Alt-(308)/",
+    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/F%C3%B6rderprodukte/Wohneigentum-f%C3%BCr-Familien-Bestandserwerb-(308)/",
   },
   {
     key: "kfw159",
@@ -99,7 +99,7 @@ export const PROGRAMME: Programm[] = [
     fuer: ["vermieten", "eigennutzen"], vorhaben: ["sanierung"],
     text: "Bis 50.000 € Kredit für Barrierereduzierung (Bad, Aufzug, Zugänge) — unabhängig vom Alter.",
     bedingung: "du Barrieren reduzierst (bodengleiche Dusche, Türverbreiterung, Aufzug, Zugänge) — altersunabhängig, Selbstnutzer wie Vermieter, Antrag vor Vorhabensbeginn.",
-    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestandsimmobilie/F%C3%B6rderprodukte/Altersgerecht-Umbauen-(159)/",
+    url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/F%C3%B6rderprodukte/Altersgerecht-Umbauen-(159)/",
   },
   {
     key: "steuer35c",
@@ -196,7 +196,14 @@ export function kfw297_298Betrag(qng: boolean): number {
 const KFW124_BETRAG = 100_000;
 
 const istFGH = (k?: Energieklasse) => k === "F" || k === "G" || k === "H";
-const KFW_URL = "https://www.kfw.de/inlandsfoerderung/Privatpersonen/";
+// Direkte Produktseiten (geprüft 21.07.2026, alle HTTP 200) — nicht die Übersicht.
+const KFW_PRODUKT: Record<string, string> = {
+  "KfW 124": "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Neubau/F%C3%B6rderprodukte/Wohneigentumsprogramm-(124)/",
+  "KfW 300": "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Neubau/F%C3%B6rderprodukte/Wohneigentum-f%C3%BCr-Familien-(300)/",
+  "KfW 308": "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/F%C3%B6rderprodukte/Wohneigentum-f%C3%BCr-Familien-Bestandserwerb-(308)/",
+  "KfW 297": "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Neubau/F%C3%B6rderprodukte/Klimafreundlicher-Neubau-Wohngeb%C3%A4ude-(297-298)/",
+  "KfW 298": "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Neubau/F%C3%B6rderprodukte/Klimafreundlicher-Neubau-Wohngeb%C3%A4ude-(297-298)/",
+};
 const deckel = (betrag: number, restbedarf: number) =>
   Math.max(0, Math.min(betrag, Math.max(0, restbedarf)));
 
@@ -208,7 +215,7 @@ export function foerderKredite(k: FoerderKontext): FoerderKreditTreffer[] {
   const familienBerechtigt = k.kinder >= 1 && k.zveJahr > 0 && k.zveJahr <= grenze; // zvE>0-Guard!
   const out: Omit<FoerderKreditTreffer, "segment">[] = [];
   const add = (key: string, name: string, betrag: number, bedingung: string) =>
-    out.push({ key, name, hoechstbetrag: betrag, bedingung, url: KFW_URL });
+    out.push({ key, name, hoechstbetrag: betrag, bedingung, url: KFW_PRODUKT[key] });
 
   if (k.nutzung === "eigennutzen") {
     if (k.vorhaben === "neubau") {
