@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Info, TriangleAlert, Sparkles } from "lucide-react";
+import { Info, TriangleAlert, Sparkles, ExternalLink } from "lucide-react";
 import { fmtE } from "@/lib/kalk";
 import { konfiguriereDarlehen, beispielZins, type Prioritaet } from "@/lib/kauf/darlehen";
 import {
@@ -189,7 +189,14 @@ export default function FinanzierungsVorschlaege({
                   {treffer.map((t) => (
                     <label key={t.key} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 11.5, color: "var(--muted)", cursor: "pointer" }}>
                       <input type="radio" name="kfwprog" checked={(gewaehlt?.key === t.key)} onChange={() => setProgKey(t.key)} style={{ marginTop: 2, accentColor: "var(--gold)" }} />
-                      <span><strong style={{ color: "var(--text)" }}>{t.name}</strong> · bis {fmtE(t.hoechstbetrag)} — kommt in Frage, wenn {t.bedingung}.</span>
+                      <span>
+                        <strong style={{ color: "var(--text)" }}>{t.name}</strong>
+                        <a href={t.url} target="_blank" rel="noopener noreferrer" title={`${t.key} auf kfw.de öffnen`}
+                          style={{ color: "var(--muted)", marginLeft: 5, verticalAlign: "-1px" }}>
+                          <ExternalLink size={11} />
+                        </a>
+                        {" "}· bis {fmtE(t.hoechstbetrag)} — kommt in Frage, wenn {t.bedingung}.
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -292,7 +299,10 @@ export default function FinanzierungsVorschlaege({
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 13px", borderRadius: 9, background: "rgba(74,157,111,0.08)", border: "1px solid var(--green, #4a9d6f)" }}>
           <Sparkles size={14} color="var(--green, #4a9d6f)" style={{ flexShrink: 0, marginTop: 1 }} />
           <span style={{ fontSize: 11.5, color: "var(--text)" }}>
-            <strong>{gewaehlt.name}</strong> kommt laut deinen Angaben in Frage — Höchstbetrag {fmtE(gewaehlt.hoechstbetrag)}
+            <a href={gewaehlt.url} target="_blank" rel="noopener noreferrer"
+              style={{ color: "var(--text)", fontWeight: 700, textDecoration: "underline", textDecorationColor: "var(--green, #4a9d6f)" }}>
+              {gewaehlt.name} <ExternalLink size={11} style={{ verticalAlign: "-1px" }} />
+            </a> kommt laut deinen Angaben in Frage — Höchstbetrag {fmtE(gewaehlt.hoechstbetrag)}
             {" "}(je Szenario auf den Finanzierungsbedarf begrenzt). Stand {KFW_STAND}, Konditionen können sich ändern.
             <strong> Antrag VOR Notarvertrag/Baubeginn</strong> über deine Hausbank. Keine Empfehlung — du entscheidest selbst;
             weitere/kombinierbare Programme siehe Fördercheck.
