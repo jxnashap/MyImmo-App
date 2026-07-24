@@ -4,7 +4,7 @@
 // properties-Zeile; bei Adressänderung wird der Cache geleert).
 
 const NOMINATIM = "https://nominatim.openstreetmap.org/search";
-const USER_AGENT = "MyImmo/1.0 (https://my-immo-app.vercel.app)";
+const USER_AGENT = "MyImmo/1.0 (https://www.myimmoapp.de)";
 
 export type GeoPunkt = { lat: number; lng: number };
 

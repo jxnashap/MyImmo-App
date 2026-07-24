@@ -69,6 +69,13 @@ Entscheidungen aus der Planung (12.07.2026):
   Repo/Logs). Redirect-URL bei der App-Registrierung: `<base>/api/banking/callback`.
 
 ### Sonstiges (kein Geld)
+- **Komplette Design- & Layout-Überarbeitung der App (VORHABEN, vor dem Marketing-Start):**
+  Gewählte Richtung: **Fintech-hell (Stripe/N26 + etwas Apple)** mit **echter Neu-Anordnung**
+  der Layouts (nicht nur Umfärben). Gold `#D4A847` bleibt das Markenzeichen, Fraunces+Outfit
+  bleiben. Betrifft die App-UI (`app/globals.css` + Komponenten); das Dokument-/PDF-Design
+  (siehe „Dokument-/PDF-Design") bleibt unverändert. Verworfen: „Quiet-Luxury"-Ivory, Neon-Bento.
+  Sinnvolle Reihenfolge: Redesign VOR großem Marketing (Screenshots/Store-Assets/Ratgeber-Bilder
+  sonst doppelt).
 - **Onboarding-Guide für neue Nutzer:** Nach der Registrierung ein kleiner, durchklickbarer
   Guide (Schritt-für-Schritt-Tour), der zeigt, wo man was einträgt und wie man die App benutzt —
   z. B. erstes Objekt anlegen → Mieter erfassen → Ein-/Ausgaben buchen → Mietkonto/Dokumente/Steuer.
@@ -145,7 +152,9 @@ Entscheidungen aus der Planung (12.07.2026):
 - Fremde Dokumente (z. B. Anthropic-DPA) dürfen deren Branding behalten.
 
 ## Deployment
-- **Live-URL (Produktion): https://my-immo-app.vercel.app**
+- **Live-URL (Produktion): https://www.myimmoapp.de** (eigene Domain; Apex leitet auf www um.
+  `my-immo-app.vercel.app` existiert nur noch als Vercel-Fallback — nirgends mehr verlinken;
+  Sitemap/Robots/metadataBase zeigen auf www.myimmoapp.de).
 - Gehostet auf **Vercel**, verbunden mit dem GitHub-Repo `jxnashap/myimmo-app` (Branch `main`).
 - Ein Merge nach `main` löst automatisch einen neuen Vercel-Build/Deploy aus.
 - **Wichtig:** Nach jedem Merge eines PR die Live-URL mitschicken/erwähnen, damit der Stand direkt geprüft werden kann.
