@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { SlidersHorizontal, X } from "lucide-react";
 import Select, { type SelectOption } from "./Select";
@@ -12,10 +12,35 @@ export type FilterDef = {
   name: string;                                   // searchParam-Schlüssel
   label: string;                                  // für aria + Chip
   icon?: FilterIcon;                              // Icon-Name (serialisierbar)
-  variant?: "select" | "segmented" | "toggle";    // default: select
+  variant?: "select" | "segmented" | "toggle" | "search"; // default: select
   defaultValue?: string;                          // Wert, der „kein Filter" bedeutet (default "")
-  options: SelectOption[];                        // bei toggle: options[0] = „An"-Zustand
+  placeholder?: string;                           // nur variant "search"
+  options: SelectOption[];                        // bei toggle: options[0] = „An"-Zustand; bei search leer
 };
+
+// Debounced Freitextsuche — schreibt wie die anderen Varianten in die URL-Query.
+function SearchField({ value, placeholder, ariaLabel, onCommit }: {
+  value: string; placeholder?: string; ariaLabel: string; onCommit: (v: string) => void;
+}) {
+  const [text, setText] = useState(value);
+  const t = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => setText(value), [value]); // extern zurückgesetzt (Chip-X / Zurücksetzen)
+  return (
+    <input
+      className="set-input fb-search"
+      type="search"
+      value={text}
+      placeholder={placeholder ?? "Suchen…"}
+      aria-label={ariaLabel}
+      onChange={(e) => {
+        const v = e.target.value;
+        setText(v);
+        if (t.current) clearTimeout(t.current);
+        t.current = setTimeout(() => onCommit(v.trim()), 350);
+      }}
+    />
+  );
+}
 
 // Einheitliche, sofort anwendende Filterleiste. Schreibt die Auswahl direkt
 // in die URL-Query → Server rendert die Liste gefiltert neu (kein Button).
@@ -54,6 +79,8 @@ export default function FilterBar({ filters }: { filters: FilterDef[] }) {
         {filters.map((f) => {
           const val = currentOf(f);
           const Icon = f.icon ? FILTER_ICONS[f.icon] : undefined;
+          if (f.variant === "search")
+            return <SearchField key={f.name} value={val} placeholder={f.placeholder} ariaLabel={f.label} onCommit={(v) => setValue(f, v)} />;
           if (f.variant === "segmented")
             return <Segmented key={f.name} value={val} options={f.options} ariaLabel={f.label} onChange={(v) => setValue(f, v)} />;
           if (f.variant === "toggle") {

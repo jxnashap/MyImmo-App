@@ -3,9 +3,10 @@
 // AfA-Assistent (D1): vier Planungswerkzeuge rund um die Gebäude-AfA.
 // Kaufpreisaufteilung → Gebäudewert speist die anderen Rechner. Reine
 // Orientierung, keine Steuerberatung.
-import { useMemo, useState } from "react";
-import { Building2, TrendingDown, BadgeCheck, CalendarClock, Landmark } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { Building2, TrendingDown, BadgeCheck, CalendarClock, Landmark, Save } from "lucide-react";
 import { euro } from "@/lib/format";
+import { uebernehmeAfaGebaeudeanteil } from "@/lib/actions/properties";
 import {
   afaSatzNachFertigstellung, degressivVsLinear, pruefe7b, verteile82b, kaufpreisAufteilung,
 } from "@/lib/steuer/afa";
@@ -34,9 +35,19 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
   const [wohnflaeche, setWohnflaeche] = useState("100");
   const [baujahr, setBaujahr] = useState("2024");
 
+  // Rückkanal: gewähltes Objekt merken, damit der ermittelte Gebäudeanteil
+  // per Klick am Objekt gespeichert werden kann.
+  const [objektId, setObjektId] = useState("");
+  const [speichern, startSpeichern] = useTransition();
+  const [gespeichertFuer, setGespeichertFuer] = useState<string | null>(null);
+  const [speicherFehler, setSpeicherFehler] = useState<string | null>(null);
+
   function ladeObjekt(id: string) {
     const o = objekte.find((x) => x.id === id);
     if (!o) return;
+    setObjektId(id);
+    setGespeichertFuer(null);
+    setSpeicherFehler(null);
     if (o.kaufpreis != null) setKaufpreis(String(o.kaufpreis));
     setGrundflaeche(o.grundstuecksflaeche != null ? String(o.grundstuecksflaeche) : "");
     setBodenrichtwert(o.bodenrichtwert != null ? String(o.bodenrichtwert) : "");
@@ -127,6 +138,22 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
                 <div style={{ width: `${aufteilung.grundanteilProzent}%`, background: "var(--line)" }} />
               </div>
               <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 10, marginBottom: 0 }}>{aufteilung.hinweis}</p>
+              {objektId && (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={speichern}
+                    title="Speichert den Gebäudeanteil (%) am gewählten Objekt — fließt in Anlage V / AfA ein"
+                    onClick={() => startSpeichern(async () => {
+                      setSpeicherFehler(null);
+                      const res = await uebernehmeAfaGebaeudeanteil(objektId, aufteilung.gebaeudeanteilProzent);
+                      if (res.ok) setGespeichertFuer(objektId);
+                      else setSpeicherFehler(res.error ?? "Speichern fehlgeschlagen.");
+                    })}>
+                    <Save size={13} style={{ verticalAlign: "-2px" }} /> Gebäudeanteil ({aufteilung.gebaeudeanteilProzent.toLocaleString("de-DE")} %) am Objekt speichern
+                  </button>
+                  {gespeichertFuer === objektId && <span style={{ fontSize: 11.5, color: "var(--green)" }}>Gespeichert ✓</span>}
+                  {speicherFehler && <span style={{ fontSize: 11.5, color: "var(--red)" }}>{speicherFehler}</span>}
+                </div>
+              )}
             </>
           ) : <p style={{ fontSize: 12.5, color: "var(--muted)" }}>Kaufpreis eingeben.</p>}
         </div>

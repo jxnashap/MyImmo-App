@@ -91,6 +91,23 @@ export default function WiederkehrManager({
     });
   };
 
+  // Alle Vorlagen mit offenen Terminen in einem Rutsch erzeugen (Bulk).
+  const alleErzeugen = () => {
+    const faelligeVorlagen = vorlagen.filter(
+      (v) => v.aktiv && offeneDaten(faelligeDaten({ zyklus: v.zyklus, start_datum: v.start_datum, ende_datum: v.ende_datum }), v.gebuchteDaten).length > 0,
+    );
+    if (faelligeVorlagen.length === 0) return;
+    start(async () => {
+      let gesamt = 0;
+      for (const v of faelligeVorlagen) {
+        const res = await erzeugeBuchungen(v.id);
+        if (res.ok) gesamt += res.anzahl;
+      }
+      toast(gesamt > 0 ? `${gesamt} Buchung${gesamt === 1 ? "" : "en"} aus ${faelligeVorlagen.length} Vorlage${faelligeVorlagen.length === 1 ? "" : "n"} erzeugt ✓` : "Nichts Offenes zu erzeugen.");
+      router.refresh();
+    });
+  };
+
   const umschalten = (v: VorlageMitStatus) => {
     start(async () => {
       const res = await setVorlageAktiv(v.id, !v.aktiv);
@@ -188,7 +205,14 @@ export default function WiederkehrManager({
 
       {/* Vorlagen-Liste */}
       <div className="section" style={{ marginBottom: 0 }}>
-        <div className="section-header"><h3>Vorlagen ({vorlagen.length})</h3></div>
+        <div className="section-header">
+          <h3>Vorlagen ({vorlagen.length})</h3>
+          {vorlagen.some((v) => v.aktiv && offeneDaten(faelligeDaten({ zyklus: v.zyklus, start_datum: v.start_datum, ende_datum: v.ende_datum }), v.gebuchteDaten).length > 0) && (
+            <button className="btn btn-ghost" style={{ fontSize: 11.5 }} onClick={alleErzeugen} title="Alle offenen Termine aller aktiven Vorlagen als Buchungen anlegen">
+              <Repeat size={13} style={{ verticalAlign: "-2px" }} /> Alle offenen erzeugen
+            </button>
+          )}
+        </div>
         <div className="section-body">
           {vorlagen.length === 0 ? (
             <div className="empty" style={{ padding: 28 }}>

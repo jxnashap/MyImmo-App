@@ -20,7 +20,7 @@ import { berechneSpekulation } from "@/lib/steuer/spekulation";
 import { refreshBewertung } from "@/lib/actions/bewertung";
 import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
-import { Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, type LucideIcon } from "lucide-react";
+import { Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
 
 type Kredit = {
   id: string; bezeichnung: string | null; bank: string | null; betrag: number | null;
@@ -195,6 +195,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
+          <Link href="/verkauf" className="btn btn-ghost" style={{ fontSize: 12 }} title="Verkauf durchrechnen: Marktwert, § 23-Steuer, Netto-Erlös"><Handshake size={14} style={{ verticalAlign: "-2px" }} /> Verkauf prüfen</Link>
           <Link href={`/properties/${id}/beleihung`} className="btn btn-ghost" style={{ fontSize: 12 }}><Landmark size={14} style={{ verticalAlign: "-2px" }} /> Beleihungsordner</Link>
           <Link href={`/properties/${id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}><Pencil size={14} style={{ verticalAlign: "-2px" }} /> Bearbeiten</Link>
           <DeleteButton

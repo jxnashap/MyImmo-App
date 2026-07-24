@@ -2,18 +2,34 @@ import Link from "next/link";
 import { Plus, User, Pencil, ReceiptText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
+import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import type { Tenant, Property } from "@/lib/types";
 
-export default async function TenantsPage() {
+export default async function TenantsPage({ searchParams }: { searchParams: { q?: string; prop?: string } }) {
   const supabase = createClient();
   const [{ data: tenants }, { data: props }] = await Promise.all([
     supabase.from("mieter").select("*").order("nachname"),
     supabase.from("properties").select("id,bezeichnung"),
   ]);
 
-  const list = (tenants ?? []) as Tenant[];
+  const alle = (tenants ?? []) as Tenant[];
   const propList = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const nameOf = new Map(propList.map((p): [string, string] => [p.id, p.bezeichnung]));
+
+  // Suche über Name/Einheit/Kontakt + Objekt-Filter (URL-gesteuert wie überall).
+  const q = (searchParams.q ?? "").trim().toLowerCase();
+  const prop = searchParams.prop ?? "";
+  const list = alle.filter((m) => {
+    if (prop && m.prop_id !== prop) return false;
+    if (!q) return true;
+    return [m.vorname, m.nachname, m.einheit, m.email, m.telefon]
+      .some((t) => (t ?? "").toLowerCase().includes(q));
+  });
+
+  const filters: FilterDef[] = [
+    { name: "q", label: "Suche", variant: "search", placeholder: "Suche: Name, Einheit, E-Mail…", options: [] },
+    { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...propList.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
+  ];
 
   const gesamtMiete = list.reduce((s, m) => s + (m.kaltmiete ?? 0), 0);
   const gesamtKaution = list.reduce((s, m) => s + (m.kaution ?? 0), 0);
@@ -36,12 +52,23 @@ export default async function TenantsPage() {
         <div className="kpi-card"><div className="kpi-label">Kaution offen</div><div className="kpi-value" style={{ color: offeneKaution > 0 ? "var(--amber)" : "var(--green)" }}>{offeneKaution}</div></div>
       </div>
 
+      <FilterBar filters={filters} />
+
       {list.length === 0 ? (
         <div className="prop-grid">
           <div className="empty" style={{ gridColumn: "1/-1" }}>
             <User className="empty-icon" size={36} color="var(--faint)" />
-            <h4>Noch keine Mieter</h4>
-            <p>Füge deinen ersten Mieter hinzu.</p>
+            {alle.length > 0 ? (
+              <>
+                <h4>Keine Treffer</h4>
+                <p>Kein Mieter passt zur aktuellen Suche/Filterung.</p>
+              </>
+            ) : (
+              <>
+                <h4>Noch keine Mieter</h4>
+                <p>Füge deinen ersten Mieter hinzu.</p>
+              </>
+            )}
           </div>
         </div>
       ) : (
