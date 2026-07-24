@@ -87,8 +87,8 @@ Entscheidungen aus der Planung (12.07.2026):
 - **AVV-Abschlussstand: `docs/compliance/AVV-STATUS.md`** (Checkliste je Anbieter). Erledigt
   15.07.2026: **Anthropic-DPA archiviert** (`docs/compliance/anthropic-dpa-archiv.md`) + DPF
   geprüft → Anthropic nutzt **SCCs, kein DPF** (Transfer in Datenschutzerklärung als SCC ausweisen).
-  Noch offen (nur Betreiber): **Supabase-DPA signieren** (Dashboard→Org→Documents, Anleitung im
-  AVV-STATUS), Vercel Pro, Nutzer-AVV anwaltlich prüfen. Anwaltsliste zusätzlich (19.07.2026):
+  ✅ 24.07.2026: **Supabase-DPA signiert** (PandaDoc; PDF + TIA in `docs/compliance/`).
+  Noch offen (nur Betreiber): Vercel Pro, Nutzer-AVV anwaltlich prüfen. Anwaltsliste zusätzlich (19.07.2026):
   **§ 34i GewO** (Finanzierungs-Assistent Stufe 1 — Wording bereits neutralisiert, „Empfehlung"
   entfernt) und **StBerG § 1–5** (Anlage-V-Berechnung + § 82b-Optimierer + DATEV-Export —
   Grenze zur unerlaubten Steuerberatung schriftlich freigeben lassen).
