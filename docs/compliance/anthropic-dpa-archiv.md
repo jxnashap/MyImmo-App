@@ -5,7 +5,8 @@
 
 > Dies ist eine archivierte Zusammenfassung der Kernklauseln zum Nachweis nach
 > Art. 28 DSGVO. Der vollständige, verbindliche Text steht unter der Quelle oben;
-> bei Bedarf zusätzlich die vollständige PDF/HTML-Fassung ablegen.
+> die vollständige Fassung liegt als PDF daneben:
+> `anthropic-dpa-vollfassung-2026-07-24.pdf` (Volltext, abgerufen 24.07.2026).
 
 ## Abschluss / Wirksamkeit
 Der DPA ist **automatisch Bestandteil der Anthropic Commercial Terms of Service**
