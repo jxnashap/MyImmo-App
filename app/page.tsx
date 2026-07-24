@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum } from "@/lib/format";
-import { getRefinanzWarning, bankingFristen } from "@/lib/fristen";
+import { getRefinanzWarning, bankingFristen, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
 import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
@@ -29,24 +29,63 @@ export default async function DashboardPage() {
     return <LandingPage />;
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bankv }, { data: bewHist }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bankv }, { data: bewHist }, { data: profil }, { data: term }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
     supabase.from("kredite").select("*"),
-    supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete"),
+    supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
     supabase.from("bankverbindungen").select("aspsp_name,konto_name,gueltig_bis"),
     supabase.from("bewertung_historie").select("immobilie_id,datum,marktwert"),
+    supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
+    supabase.from("termine").select("id,titel,datum,kategorie,erledigt").order("datum"),
   ]);
 
   const properties = (props ?? []) as Property[];
   const einnahmen = (einn ?? []) as Einnahme[];
   const kosten = (kost ?? []) as Kosten[];
   const kredite = (kred ?? []) as Kredit[];
-  const mieterRows = (miet ?? []) as { id: string; prop_id: string | null; kaltmiete: number | null; stellplatz_miete: number | null }[];
+  type MieterRow = {
+    id: string; prop_id: string | null; kaltmiete: number | null; stellplatz_miete: number | null;
+    vorname: string | null; nachname: string | null; einheit: string | null;
+    mietbeginn: string | null; mietende: string | null; kuendigung: number | null;
+    letzte_erhoehung: string | null; mietart: string | null; staffel_datum: string | null;
+  };
+  const mieterRows = (miet ?? []) as MieterRow[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
 
   const refinanz = kredite.map((k) => ({ k, w: getRefinanzWarning(k.zinsbindung) })).filter((x) => x.w);
+
+  // Fristen & Aufgaben (Design-Handoff): nächste Termine aus denselben Quellen
+  // wie /termine — abgeleitete Fristen + eigene, unerledigte Termine.
+  const heuteISO0 = new Date().toISOString().slice(0, 10);
+  type DashFrist = { datum: string; label: string; sub: string; warn: boolean };
+  const fristListe: DashFrist[] = [];
+  for (const m of mieterRows) {
+    const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
+    const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
+    for (const f of mieterFristen(m)) if (f.datum && f.datum >= heuteISO0)
+      fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo].filter(Boolean).join(" · "), warn: f.typ === "warn" });
+  }
+  for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (f.datum && f.datum >= heuteISO0)
+    fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Darlehen", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn" });
+  for (const p of properties) for (const f of objektFristen(p)) if (f.datum && f.datum >= heuteISO0)
+    fristListe.push({ datum: f.datum, label: f.label, sub: p.bezeichnung, warn: f.typ === "warn" });
+  for (const v of bankv ?? []) for (const f of bankingFristen(v)) if (f.datum && f.datum >= heuteISO0)
+    fristListe.push({ datum: f.datum, label: f.label, sub: "Banking", warn: f.typ === "warn" });
+  for (const f of globaleFristen()) if (f.datum && f.datum >= heuteISO0)
+    fristListe.push({ datum: f.datum, label: f.label, sub: "Alle Objekte", warn: f.typ === "warn" });
+  for (const t of (term ?? []) as { id: string; titel: string | null; datum: string | null; kategorie: string | null; erledigt: boolean | null }[])
+    if (t.datum && t.datum >= heuteISO0 && !t.erledigt)
+      fristListe.push({ datum: t.datum, label: t.titel ?? "Termin", sub: t.kategorie ?? "Eigener Termin", warn: false });
+  fristListe.sort((a, b) => a.datum.localeCompare(b.datum));
+  const naechsteFristen = fristListe.slice(0, 4);
+
+  // Begrüßung nach Tageszeit (Europe/Berlin) + Vorname aus dem Vermieterprofil.
+  const stunde = Number(new Intl.DateTimeFormat("de-DE", { hour: "numeric", hour12: false, timeZone: "Europe/Berlin" }).format(new Date()));
+  const gruss = stunde < 11 ? "Guten Morgen" : stunde < 18 ? "Guten Tag" : "Guten Abend";
+  const vorname = ((profil as { name: string | null } | null)?.name ?? "").trim().split(/\s+/)[0] || null;
+  const monatJahr = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric", timeZone: "Europe/Berlin" }).format(new Date());
 
   // Bank-Freigaben, die in <=14 Tagen ablaufen (PSD2-Reauth) — als Warnbanner.
   const bankWarnungen = (bankv ?? []).flatMap((v) => bankingFristen(v)).filter((f) => f.typ === "warn");
@@ -128,7 +167,7 @@ export default async function DashboardPage() {
   // Leeres Konto: statt Null-KPIs eine Start-Checkliste, die sagt, was zu tun ist.
   if (properties.length === 0) {
     const schritte = [
-      { nr: 1, titel: "Erstes Objekt anlegen", text: "Name, Adresse, Kaufpreis, Miete — mehr braucht es für den Start nicht.", href: "/properties/new", cta: "Objekt anlegen", erledigt: false },
+      { nr: 1, titel: "Erstes Objekt anlegen", text: "Der Assistent führt dich in 4 Schritten durch Objekt, Mieter und Kredit — mit fertigen Kennzahlen am Ende.", href: "/onboarding", cta: "Assistent starten", erledigt: false },
       { nr: 2, titel: "Mieter erfassen", text: "Mit Kaltmiete und Mietbeginn — daraus entstehen Mietkonto und Abrechnungen.", href: "/tenants/new", cta: "Mieter anlegen", erledigt: mieterRows.length > 0 },
       { nr: 3, titel: "Ein- & Ausgaben buchen", text: "Mieteingänge und Kosten festhalten — per Hand, CSV oder Kontoanbindung.", href: "/cashflow", cta: "Zu den Buchungen", erledigt: einnahmen.length + kosten.length > 0 },
     ];
@@ -170,12 +209,15 @@ export default async function DashboardPage() {
 
   return (
     <div className="fade-up">
-      <div className="topbar">
+      <div className="topbar" style={{ alignItems: "flex-end" }}>
         <div>
-          <div className="topbar-title">Dashboard</div>
-          <div className="topbar-sub">Portfolio-Übersicht</div>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--gold)", fontWeight: 600, marginBottom: 10 }}>Portfolio · {monatJahr}</div>
+          <div className="topbar-title">{gruss}{vorname ? `, ${vorname}` : ""}</div>
+          <div className="topbar-sub">
+            {properties.length} Objekt{properties.length === 1 ? "" : "e"}, {mieterRows.length} Mietverhältnis{mieterRows.length === 1 ? "" : "se"} — Stand heute
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Link href="/termine" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CalendarDays size={15} /> Terminkalender</Link>
           <Link href="/cashflow/neu" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Banknote size={15} /> Buchen</Link>
           <Link href="/properties/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Immobilie</Link>
@@ -317,39 +359,67 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="section">
-        <div className="section-header">
-          <h3>Letzte Transaktionen</h3>
-          <Link href="/cashflow" className="btn btn-ghost" style={{ fontSize: 11 }}>Alle anzeigen →</Link>
+      {/* Design-Handoff: Buchungen + Fristen nebeneinander (Prototyp-Dashboard) */}
+      <div className="grid-2">
+        <div className="section" style={{ marginBottom: 0 }}>
+          <div className="section-header">
+            <div><h3>Letzte Buchungen</h3><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 3 }}>Einnahmen und Ausgaben, zuletzt erfasst</div></div>
+            <Link href="/cashflow" className="btn btn-ghost btn-sm">Alle →</Link>
+          </div>
+          <div className="section-body">
+            {trans.length === 0 ? (
+              <div className="empty">
+                <Banknote className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Buchungen</p>
+                <Link href="/cashflow/neu" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 8 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Erste Buchung erfassen</Link>
+              </div>
+            ) : (
+              <table>
+                <thead><tr><th>Datum</th><th>Beschreibung</th><th style={{ textAlign: "right" }}>Betrag</th></tr></thead>
+                <tbody>
+                  {trans.map((t) => {
+                    const isEin = t._typ === "einnahme";
+                    const objName = t.prop_id ? nameOf.get(t.prop_id) : null;
+                    return (
+                      <tr key={`${t._typ}-${t.id}`}>
+                        <td style={{ whiteSpace: "nowrap" }}>{datum(t.buchungsdatum)}</td>
+                        <td style={{ color: "var(--muted)" }}>
+                          <Link href={`/${isEin ? "einnahmen" : "kosten"}/${t.id}/edit`} style={{ color: "inherit", textDecoration: "none" }}>
+                            {[t.beschreibung || t.kategorie || "Buchung", objName].filter(Boolean).join(" — ")}
+                          </Link>
+                        </td>
+                        <td style={{ textAlign: "right", fontWeight: 600, whiteSpace: "nowrap", color: isEin ? "var(--green)" : "var(--red)" }}>{isEin ? "+ " : "− "}{euro(t.betrag)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
-        <div className="section-body">
-          {trans.length === 0 ? (
-            <div className="empty">
-              <Banknote className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Transaktionen</p>
-              <Link href="/cashflow/neu" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 8 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Erste Buchung erfassen</Link>
-            </div>
-          ) : (
-            <table>
-              <thead><tr><th>Datum</th><th>Immobilie</th><th>Art</th><th>Beschreibung</th><th>Betrag</th><th></th></tr></thead>
-              <tbody>
-                {trans.map((t) => {
-                  const isEin = t._typ === "einnahme";
-                  return (
-                    <tr key={`${t._typ}-${t.id}`}>
-                      <td>{datum(t.buchungsdatum)}</td>
-                      <td>{t.prop_id ? nameOf.get(t.prop_id) ?? "–" : "–"}</td>
-                      <td><span className={`badge ${isEin ? "badge-green" : "badge-red"}`}>{isEin ? "Einnahme" : "Ausgabe"}</span></td>
-                      <td style={{ color: "var(--muted)" }}>{t.beschreibung || t.kategorie || ""}</td>
-                      <td style={{ fontWeight: 600, color: isEin ? "var(--green)" : "var(--red)" }}>{isEin ? "+ " : "− "}{euro(t.betrag)}</td>
-                      <td style={{ textAlign: "right" }}>
-                        <Link href={`/${isEin ? "einnahmen" : "kosten"}/${t.id}/edit`} style={{ fontSize: 11, color: "var(--gold)", textDecoration: "none" }}>Bearbeiten</Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+
+        <div className="section" style={{ marginBottom: 0 }}>
+          <div className="section-header">
+            <div><h3>Fristen &amp; Aufgaben</h3><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 3 }}>Automatisch aus deinen Daten erzeugt</div></div>
+            <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
+          </div>
+          <div className="section-body">
+            {naechsteFristen.length === 0 ? (
+              <div className="empty"><CalendarDays className="empty-icon" size={36} color="var(--faint)" /><p>Keine anstehenden Fristen</p></div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {naechsteFristen.map((f) => (
+                  <div key={`${f.datum}-${f.label}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 10 }}>
+                    <CalendarDays size={15} style={{ color: "var(--gold)", flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13 }}>{f.label}</div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>{f.sub}</div>
+                    </div>
+                    <span className={`badge ${f.warn ? "badge-amber" : "badge-teal"}`}>{datum(f.datum)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
