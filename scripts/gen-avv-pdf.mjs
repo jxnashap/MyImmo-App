@@ -113,8 +113,9 @@ const serifI = await doc.embedFont(StandardFonts.TimesRomanItalic);
 const pages = [];
 let page, y;
 
-function kopf(first) {
-  page = doc.addPage([A4.w, A4.h]); pages.push(page);
+const MID = A4.w / 2; // horizontaler Blattmittelpunkt — goldener Trennstrich sitzt mittig
+
+function briefkopf(first) {
   const yTop = A4.h - 52;
   page.drawText("My", { x: ML, y: yTop, size: first ? 22 : 14, font: serif, color: INK });
   const wMy = serif.widthOfTextAtSize("My", first ? 22 : 14);
@@ -127,13 +128,24 @@ function kopf(first) {
     page.drawText(sanitize(ad), { x: RIGHT - font.widthOfTextAtSize(sanitize(ad), 8.5), y: yTop - 16, size: 8.5, font, color: MUTED });
     const em = "info@myimmoapp.de";
     page.drawText(em, { x: RIGHT - font.widthOfTextAtSize(em, 8.5), y: yTop - 29, size: 8.5, font, color: MUTED });
-    page.drawLine({ start: { x: 372, y: A4.h - 44 }, end: { x: 372, y: A4.h - 82 }, thickness: 1, color: GOLD });
   } else {
     const rt = "Auftragsverarbeitungsvertrag (AVV)";
     page.drawText(rt, { x: RIGHT - font.widthOfTextAtSize(rt, 8.5), y: yTop - 2, size: 8.5, font, color: MUTED });
   }
+  // Goldener vertikaler Trennstrich – mittig auf dem Blatt
+  page.drawLine({ start: { x: MID, y: A4.h - 44 }, end: { x: MID, y: A4.h - 82 }, thickness: 1, color: GOLD });
   page.drawLine({ start: { x: ML, y: A4.h - 96 }, end: { x: RIGHT, y: A4.h - 96 }, thickness: 0.8, color: GOLD });
+}
+
+function kopf(first) {
+  page = doc.addPage([A4.w, A4.h]); pages.push(page);
+  briefkopf(first);
   y = A4.h - 118;
+}
+
+function centerText(yy, s, size, f, color) {
+  const ss = sanitize(s);
+  page.drawText(ss, { x: (A4.w - f.widthOfTextAtSize(ss, size)) / 2, y: yy, size, font: f, color });
 }
 
 function raum(need) { if (y - need < 84) kopf(false); }
@@ -147,54 +159,70 @@ function wrap(s, size, maxW, f) {
   if (cur) lines.push(cur);
   return lines;
 }
-function para(s, { size = 10, f = font, color = INK, x = ML, maxW = RIGHT - ML, lh = 13.5, gap = 7 } = {}) {
+const LH = 15, GAP = 9; // etwas mehr Zeilen- und Absatzabstand
+function para(s, { size = 10, f = font, color = INK, x = ML, maxW = RIGHT - ML, lh = LH, gap = GAP } = {}) {
   for (const ln of wrap(s, size, maxW, f)) { raum(lh); page.drawText(ln, { x, y, size, font: f, color }); y -= lh; }
   y -= gap;
 }
 
-kopf(true);
-// Titelzeile
-page.drawText("Auftragsverarbeitungsvertrag (AVV)", { x: ML, y, size: 16, font: bold, color: INK }); y -= 16;
-page.drawText(sanitize("Vereinbarung nach Art. 28 Abs. 3 DSGVO · Stand 24. Juli 2026"), { x: ML, y, size: 9, font, color: MUTED }); y -= 8;
-page.drawLine({ start: { x: ML, y }, end: { x: ML + 300, y }, thickness: 1, color: GOLD }); y -= 18;
-// Entwurfs-Hinweis-Kasten
+// ---- Deckblatt (Seite 1, im MyImmo-Dokument-Stil) ----
+page = doc.addPage([A4.w, A4.h]); pages.push(page);
+briefkopf(true);
+let yc = A4.h - 250;
+centerText(yc, "Auftragsverarbeitungsvertrag", 26, bold, INK); yc -= 30;
+centerText(yc, "(AVV)", 17, font, MUTED); yc -= 34;
+page.drawLine({ start: { x: MID - 34, y: yc }, end: { x: MID + 34, y: yc }, thickness: 2, color: GOLD }); yc -= 30;
+centerText(yc, sanitize("Vereinbarung nach Art. 28 Abs. 3 DSGVO"), 11, font, INK); yc -= 18;
+centerText(yc, "Stand: 24. Juli 2026", 10, font, MUTED);
+// Parteien-Block (mittig)
+yc = 300;
+centerText(yc, "zwischen", 10, serifI, MUTED); yc -= 22;
+centerText(yc, "der Nutzerin / dem Nutzer des jeweiligen MyImmo-Kontos (Vermieter)", 10.5, bold, INK); yc -= 14;
+centerText(yc, "als Verantwortlichem", 9.5, font, MUTED); yc -= 26;
+centerText(yc, "und", 10, serifI, MUTED); yc -= 22;
+centerText(yc, "Jonas Scharp (MyImmo), Bad Schwartau", 10.5, bold, INK); yc -= 14;
+centerText(yc, "als Auftragsverarbeiter", 9.5, font, MUTED);
+// Entwurfs-Hinweis (unten, Creme-Kasten)
 {
   const t = "Entwurf zur anwaltlichen Prüfung. Dieses Dokument dient der rechtlichen Durchsicht und ist noch nicht final freigegeben. Keine Rechtsberatung.";
-  const lines = wrap(t, 8.5, RIGHT - ML - 24, font);
-  const h = lines.length * 11 + 16;
-  page.drawRectangle({ x: ML, y: y - h + 8, width: RIGHT - ML, height: h, color: BOX });
-  page.drawRectangle({ x: ML, y: y - h + 8, width: 3, height: h, color: GOLD });
-  let yy = y - 6;
-  for (const ln of lines) { page.drawText(ln, { x: ML + 14, y: yy, size: 8.5, font, color: MUTED }); yy -= 11; }
-  y = y - h - 4;
+  const lines = wrap(t, 9, A4.w - 2 * ML - 28, font);
+  const h = lines.length * 12 + 18;
+  const by = 150;
+  page.drawRectangle({ x: ML, y: by - h, width: A4.w - 2 * ML, height: h, color: BOX });
+  page.drawRectangle({ x: ML, y: by - h, width: 3, height: h, color: GOLD });
+  let yy = by - 15;
+  for (const ln of lines) { page.drawText(ln, { x: ML + 16, y: yy, size: 9, font, color: MUTED }); yy -= 12; }
 }
+
+// ---- Inhalt ab Seite 2 (kompakter Briefkopf) ----
+kopf(false);
 
 for (const blk of AVV) {
   if (blk.h) {
-    raum(30);
-    y -= 6;
-    page.drawText(sanitize(blk.h), { x: ML, y, size: 11.5, font: bold, color: INK }); y -= 4;
-    page.drawLine({ start: { x: ML, y }, end: { x: RIGHT, y }, thickness: 1.2, color: GOLD }); y -= 14;
+    raum(34);
+    y -= 10;
+    page.drawText(sanitize(blk.h), { x: ML, y, size: 11.5, font: bold, color: INK }); y -= 5;
+    page.drawLine({ start: { x: ML, y }, end: { x: RIGHT, y }, thickness: 1.2, color: GOLD }); y -= 17;
   } else if (blk.b) {
-    raum(16); page.drawText(sanitize(blk.b), { x: ML, y, size: 10, font: bold, color: INK }); y -= 15;
+    raum(18); page.drawText(sanitize(blk.b), { x: ML, y, size: 10, font: bold, color: INK }); y -= 17;
   } else if (blk.p) {
     para(blk.p);
   } else if (blk.kv) {
     for (const [k, v] of blk.kv) {
-      raum(14);
+      raum(LH);
       const lines = wrap(v, 10, RIGHT - ML - 118, font);
       page.drawText(sanitize(k), { x: ML, y, size: 10, font: bold, color: INK });
-      lines.forEach((ln, i) => { page.drawText(ln, { x: ML + 118, y: y - i * 13.5, size: 10, font, color: INK }); });
-      y -= lines.length * 13.5 + 4;
+      lines.forEach((ln, i) => { page.drawText(ln, { x: ML + 118, y: y - i * LH, size: 10, font, color: INK }); });
+      y -= lines.length * LH + 6;
     }
     y -= 4;
   } else if (blk.ul) {
     for (const it of blk.ul) {
       const lines = wrap(it, 10, RIGHT - ML - 16, font);
-      raum(lines.length * 13.5);
+      raum(lines.length * LH);
       page.drawText("•", { x: ML + 2, y, size: 10, font, color: GOLD });
-      lines.forEach((ln, i) => page.drawText(ln, { x: ML + 16, y: y - i * 13.5, size: 10, font, color: INK }));
-      y -= lines.length * 13.5 + 3;
+      lines.forEach((ln, i) => page.drawText(ln, { x: ML + 16, y: y - i * LH, size: 10, font, color: INK }));
+      y -= lines.length * LH + 5;
     }
     y -= 5;
   } else if (blk.note) {
