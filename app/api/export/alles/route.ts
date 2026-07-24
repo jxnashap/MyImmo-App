@@ -30,6 +30,7 @@ const TABELLEN = [
   "wiederkehrende_buchungen", "kalkulationen", "dokument_vorlagen",
   "vermieter_profil", "nk_co2", "anliegen", "einladungscodes",
   "zaehlerstand_meldungen", "bewertung_historie", "vergleichsangebote",
+  "abos",
 ];
 
 // Spalten mit Datei-Blobs — nicht in CSV/JSON, Dateien liegen separat im ZIP.
