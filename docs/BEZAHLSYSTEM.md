@@ -32,6 +32,19 @@
 Feature-Gates können daher gefahrlos nach und nach in die Server-Actions
 eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
 
+**Security-Review-Härtungen (24.07.2026):**
+- Tarif/Zyklus/Add-on werden im Webhook aus den **bezahlten Preis-IDs** der
+  Subscription abgeleitet (items[] ↔ `PADDLE_PRICE_*`-Env), NICHT aus
+  custom_data — das veraltet bei Tarifwechseln im Paddle-Portal. custom_data
+  liefert nur noch die `user_id`. Unbekannte Preis-IDs → Event wird ignoriert
+  (Ausnahme: Kündigungen kommen immer durch).
+- **Reihenfolge-Schutz:** `abos.letztes_event_am` speichert das occurred_at des
+  zuletzt angewendeten Events; ältere (verspätete) Events werden verworfen.
+- **Konto-Löschung kündigt zuerst das Paddle-Abo** (sofort wirksam); schlägt
+  das fehl, wird die Löschung mit klarer Meldung abgebrochen — keine
+  Abbuchungen nach Kontolöschung.
+- Webhook lehnt Bodies > 64 KB früh ab (öffentliche Route, HMAC-Rechenlast).
+
 ## Tarif-Matrix (aus `/preise` übernommen)
 - **Kostenlos:** 1 Einheit, Basisverwaltung.
 - **Privat (7,99 €/M · 79 €/J):** bis 5 Einheiten + NK-PDF, Steuer, Dokumente, Mieterportal.
@@ -58,11 +71,15 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
    (`SUPABASE_SERVICE_ROLE_KEY` muss gesetzt sein — braucht der Webhook.)
 7. **End-to-End in der Sandbox testen:** Checkout → Webhook kommt an → `abos`-Zeile
    entsteht → Abo-Tab zeigt den Tarif → Kündigung im Portal → Status `gekuendigt`.
-8. **Scharf schalten:** `BILLING_ENFORCED=true` setzen + auf der `/preise`-Seite den
+8. **Datenschutzerklärung ergänzen (PFLICHT vor dem ersten Checkout):** Paddle-Passus
+   aufnehmen — Paddle ist als Merchant of Record **eigenständig Verantwortlicher**
+   (wie Google beim Login, KEIN AVV nötig): Empfänger von Name/E-Mail/Zahlungsdaten,
+   Zweck Zahlungsabwicklung/Rechnungen, Paddle-Datenschutzerklärung verlinken.
+9. **Scharf schalten:** `BILLING_ENFORCED=true` setzen + auf der `/preise`-Seite den
    Early-Access-Hinweis entfernen und die CTAs auf den Abo-Tab zeigen lassen.
-9. Feature-Gates in den wichtigsten Server-Actions aktivieren (NK-PDF, Steuer-Export,
-   KI-Import, Mieter-Einladung, Objekt-Anlage über Limit) — Muster siehe oben.
-10. Bestandsnutzer per E-Mail/In-App **rechtzeitig vorab informieren** (Fairness +
+10. Feature-Gates in den wichtigsten Server-Actions aktivieren (NK-PDF, Steuer-Export,
+    KI-Import, Mieter-Einladung, Objekt-Anlage über Limit) — Muster siehe oben.
+11. Bestandsnutzer per E-Mail/In-App **rechtzeitig vorab informieren** (Fairness +
     AGB-Änderungsfrist); niemand wird automatisch kostenpflichtig.
 
 ## Offen / bewusst NICHT gebaut

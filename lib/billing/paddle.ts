@@ -49,8 +49,12 @@ export function verifyPaddleSignature(
 
 // ---------------------------------------------------------------------------
 // Event-Parsing (pur, testbar): subscription.* → Abo-Upsert-Felder.
-// custom_data {user_id, plan, zyklus, banking_addon} wird beim Checkout
-// mitgegeben und von Paddle an die Subscription durchgereicht.
+//
+// Security-Review-Härtung: Tarif, Zyklus und Banking-Add-on werden aus den
+// TATSÄCHLICH ABGERECHNETEN Preis-IDs der Subscription abgeleitet (items[]),
+// NICHT aus custom_data — custom_data ist ein beim Checkout angehefteter
+// Zettel, der bei Tarifwechseln im Paddle-Portal veraltet. custom_data dient
+// nur noch der Nutzer-Zuordnung (user_id, serverseitig gesetzt).
 // ---------------------------------------------------------------------------
 export type AboUpdate = {
   user_id: string;
@@ -62,6 +66,7 @@ export type AboUpdate = {
   provider_subscription_id: string | null;
   gueltig_bis: string | null;
   storniert_zum: string | null;
+  letztes_event_am: string | null; // occurred_at → Reihenfolge-Schutz im Webhook
 };
 
 const STATUS_MAP: Record<string, AboStatus> = {
@@ -72,17 +77,30 @@ const STATUS_MAP: Record<string, AboStatus> = {
   canceled: "gekuendigt",
 };
 
-const PLAENE: PlanId[] = ["kostenlos", "privat", "plus", "business"];
+export type PreisZuordnung = Record<string, { artikel: "privat" | "plus" | "banking"; zyklus: AboZyklus }>;
 
-export function parsePaddleEvent(payload: unknown): AboUpdate | null {
-  const p = payload as { event_type?: string; data?: Record<string, unknown> } | null;
+/** Preis-ID → Artikel/Zyklus aus der Env (Umkehrung der PADDLE_PRICE_*-Vars). */
+export function preisZuordnungAusEnv(): PreisZuordnung {
+  const map: PreisZuordnung = {};
+  for (const artikel of ["privat", "plus", "banking"] as const) {
+    for (const zyklus of ["monat", "jahr"] as const) {
+      const id = preisId(artikel, zyklus);
+      if (id) map[id] = { artikel, zyklus };
+    }
+  }
+  return map;
+}
+
+export function parsePaddleEvent(payload: unknown, preise: PreisZuordnung = preisZuordnungAusEnv()): AboUpdate | null {
+  const p = payload as { event_type?: string; occurred_at?: string; data?: Record<string, unknown> } | null;
   if (!p?.event_type?.startsWith("subscription.") || !p.data) return null;
 
   const data = p.data as {
     id?: string;
     status?: string;
     customer_id?: string;
-    custom_data?: { user_id?: string; plan?: string; zyklus?: string; banking_addon?: boolean } | null;
+    custom_data?: { user_id?: string } | null;
+    items?: { price?: { id?: string } }[] | null;
     current_billing_period?: { ends_at?: string } | null;
     scheduled_change?: { action?: string; effective_at?: string } | null;
   };
@@ -90,28 +108,46 @@ export function parsePaddleEvent(payload: unknown): AboUpdate | null {
   const userId = data.custom_data?.user_id;
   if (!userId) return null; // ohne Zuordnung kein Upsert — Event ignorieren
 
-  const planRoh = data.custom_data?.plan ?? "";
-  const plan = (PLAENE.includes(planRoh as PlanId) ? planRoh : "privat") as PlanId;
-
   const status: AboStatus =
     p.event_type === "subscription.canceled"
       ? "gekuendigt"
       : STATUS_MAP[data.status ?? ""] ?? "aktiv";
 
-  const zyklusRoh = data.custom_data?.zyklus;
-  const zyklus: AboZyklus | null = zyklusRoh === "monat" || zyklusRoh === "jahr" ? zyklusRoh : null;
+  // Tarif/Add-on aus den abgerechneten Preis-IDs ableiten (siehe Kopfkommentar).
+  let plan: PlanId | null = null;
+  let zyklus: AboZyklus | null = null;
+  let bankingAddon = false;
+  for (const item of data.items ?? []) {
+    const treffer = item.price?.id ? preise[item.price.id] : undefined;
+    if (!treffer) continue;
+    if (treffer.artikel === "banking") {
+      bankingAddon = true;
+    } else if (plan === null || treffer.artikel === "plus") {
+      plan = treffer.artikel;
+      zyklus = treffer.zyklus;
+    }
+  }
+
+  // Kein bekannter Tarif in den Items → Event NICHT anwenden (kein Rate-Fallback
+  // mehr). Ausnahme Kündigung: dort neutralisiert der Status den Plan ohnehin —
+  // die Kündigung muss durchkommen, sonst bliebe ein Bezahl-Tarif aktiv.
+  if (plan === null) {
+    if (status !== "gekuendigt") return null;
+    plan = "kostenlos";
+  }
 
   return {
     user_id: userId,
     plan,
     status,
     zyklus,
-    banking_addon: !!data.custom_data?.banking_addon,
+    banking_addon: bankingAddon,
     provider_customer_id: data.customer_id ?? null,
     provider_subscription_id: data.id ?? null,
     gueltig_bis: data.current_billing_period?.ends_at ?? null,
     storniert_zum:
       data.scheduled_change?.action === "cancel" ? data.scheduled_change.effective_at ?? null : null,
+    letztes_event_am: p.occurred_at ?? null,
   };
 }
 
@@ -170,4 +206,16 @@ export async function kundenPortalUrl(providerCustomerId: string): Promise<strin
   const antwort = await paddleFetch(`/customers/${providerCustomerId}/portal-sessions`, {});
   const data = antwort?.data as { urls?: { general?: { overview?: string } } } | undefined;
   return data?.urls?.general?.overview ?? null;
+}
+
+/**
+ * Kündigt eine Subscription sofort (Security-Review-Fix: wird VOR der
+ * Konto-Löschung aufgerufen, damit nach dem Löschen keine Abbuchungen
+ * mehr laufen). true = Paddle hat die Kündigung bestätigt.
+ */
+export async function kuendigeSubscription(providerSubscriptionId: string): Promise<boolean> {
+  const antwort = await paddleFetch(`/subscriptions/${providerSubscriptionId}/cancel`, {
+    effective_from: "immediately",
+  });
+  return antwort !== null;
 }
