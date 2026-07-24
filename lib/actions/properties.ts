@@ -192,3 +192,31 @@ export async function uebernehmeIndexwert(id: string, wert: number, standQuartal
   revalidatePath("/");
   redirect(flashUrl(`/properties/${id}`, `Wert aktualisiert (Index-Stand ${standQuartal}).`));
 }
+
+// AfA-Assistent → Objekt: den ermittelten Gebäudeanteil (%) am Objekt speichern.
+// Bewusst nur auf Klick (Rückkanal, keine stille Automatik); fließt in Anlage V/
+// AfA-Berechnungen ein. Näherung — keine Steuerberatung.
+export async function uebernehmeAfaGebaeudeanteil(
+  id: string,
+  prozent: number,
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  if (!Number.isFinite(prozent) || prozent <= 0 || prozent > 100) {
+    return { ok: false, error: "Ungültiger Gebäudeanteil." };
+  }
+
+  const { error } = await supabase
+    .from("properties")
+    .update({ afa_gebaeudeanteil: Math.round(prozent * 10) / 10 })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/properties/${id}`);
+  revalidatePath("/afa-assistent");
+  revalidatePath("/steuer");
+  return { ok: true };
+}

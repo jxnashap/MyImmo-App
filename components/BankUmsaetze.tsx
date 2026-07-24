@@ -113,7 +113,9 @@ function KostenForm({ u, properties }: { u: BankUmsatzRow; properties: PropOptio
   );
 }
 
-function Zeile({ u, properties }: { u: BankUmsatzRow; properties: PropOption[] }) {
+function Zeile({ u, properties, sel, onSel }: {
+  u: BankUmsatzRow; properties: PropOption[]; sel: boolean; onSel: (v: boolean) => void;
+}) {
   const [pending, startTransition] = useTransition();
   const [zeigeKosten, setZeigeKosten] = useState(false);
   const ausgeblendet = u.status === "ausgeblendet";
@@ -122,6 +124,13 @@ function Zeile({ u, properties }: { u: BankUmsatzRow; properties: PropOption[] }
   return (
     <div style={{ borderBottom: "1px solid var(--line)", opacity: ausgeblendet ? 0.45 : 1 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", fontSize: 12.5 }}>
+        {u.status !== "bestaetigt" ? (
+          <input type="checkbox" checked={sel} onChange={(e) => onSel(e.target.checked)}
+            aria-label="Umsatz für Mehrfach-Aktion auswählen"
+            style={{ width: 14, height: 14, flexShrink: 0, accentColor: "var(--gold)", cursor: "pointer" }} />
+        ) : (
+          <span style={{ width: 14, flexShrink: 0 }} aria-hidden="true" />
+        )}
         <span style={{ color: "var(--muted)", minWidth: 74 }}>{u.buchungsdatum ? datum(u.buchungsdatum) : "–"}</span>
         <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
           {u.gegenpartei && <strong>{u.gegenpartei}</strong>}
@@ -161,15 +170,49 @@ function Zeile({ u, properties }: { u: BankUmsatzRow; properties: PropOption[] }
 
 export default function BankUmsaetze({ umsaetze, properties }: { umsaetze: BankUmsatzRow[]; properties: PropOption[] }) {
   const [zeigeAusgeblendete, setZeigeAusgeblendete] = useState(false);
+  const [auswahl, setAuswahl] = useState<Set<string>>(new Set());
+  const [bulkPending, startBulk] = useTransition();
   const sichtbar = zeigeAusgeblendete ? umsaetze : umsaetze.filter((u) => u.status !== "ausgeblendet");
   const anzahlAusgeblendet = umsaetze.filter((u) => u.status === "ausgeblendet").length;
   const anzahlVorschlaege = umsaetze.filter((u) => u.status === "neu" && u.mietVorschlag && !u.mietVorschlag.schonGebucht).length;
+
+  const setSel = (id: string, v: boolean) =>
+    setAuswahl((prev) => {
+      const next = new Set(prev);
+      if (v) next.add(id); else next.delete(id);
+      return next;
+    });
+  // Bulk wirkt nur auf sichtbare, nicht gebuchte Zeilen der Auswahl.
+  const bulkIds = sichtbar.filter((u) => auswahl.has(u.id) && u.status !== "bestaetigt").map((u) => u.id);
+  const bulkStatus = (status: "ausgeblendet" | "neu") =>
+    startBulk(async () => {
+      await Promise.all(bulkIds.map((id) => setzeUmsatzStatus(id, status)));
+      setAuswahl(new Set());
+    });
 
   return (
     <div className="section">
       <div className="section-header">
         <h3><ReceiptText size={15} style={{ verticalAlign: "-2px" }} /> Umsätze</h3>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {bulkIds.length > 0 && (
+            <>
+              <button type="button" className="btn btn-ghost" style={{ fontSize: 11 }} disabled={bulkPending}
+                title="Ausgewählte private/irrelevante Umsätze ausblenden"
+                onClick={() => bulkStatus("ausgeblendet")}>
+                <EyeOff size={12} style={{ verticalAlign: "-2px" }} /> {bulkIds.length} ausblenden
+              </button>
+              {zeigeAusgeblendete && (
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 11 }} disabled={bulkPending}
+                  onClick={() => bulkStatus("neu")}>
+                  <Eye size={12} style={{ verticalAlign: "-2px" }} /> {bulkIds.length} einblenden
+                </button>
+              )}
+              <button type="button" className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => setAuswahl(new Set())}>
+                Auswahl aufheben
+              </button>
+            </>
+          )}
           {anzahlVorschlaege > 0 && (
             <span className="badge badge-green">{anzahlVorschlaege} Miet-Vorschlag{anzahlVorschlaege > 1 ? "e" : ""}</span>
           )}
@@ -186,7 +229,9 @@ export default function BankUmsaetze({ umsaetze, properties }: { umsaetze: BankU
             Noch keine Umsätze — verbinde ein Konto und klicke „Umsätze abrufen".
           </p>
         ) : (
-          sichtbar.map((u) => <Zeile key={u.id} u={u} properties={properties} />)
+          sichtbar.map((u) => (
+            <Zeile key={u.id} u={u} properties={properties} sel={auswahl.has(u.id)} onSel={(v) => setSel(u.id, v)} />
+          ))
         )}
         {sichtbar.length > 0 && (
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 10 }}>

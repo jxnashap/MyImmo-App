@@ -18,7 +18,7 @@ import { KOSTEN_SPALTEN } from "@/lib/types";
 export default async function CashflowPage({
   searchParams,
 }: {
-  searchParams: { typ?: string; prop?: string; jahr?: string };
+  searchParams: { typ?: string; prop?: string; jahr?: string; q?: string };
 }) {
   const supabase = createClient();
   const [{ data: einn }, { data: kost }, { data: props }, { data: miet }, { data: vRows }] = await Promise.all([
@@ -57,9 +57,14 @@ export default async function CashflowPage({
   const prop = searchParams.prop ?? "";
   const typ = searchParams.typ === "einnahme" || searchParams.typ === "ausgabe" ? searchParams.typ : "";
 
+  const q = (searchParams.q ?? "").trim().toLowerCase();
+  const trifftQ = (r: { kategorie: string | null; beschreibung: string | null; notiz?: string | null }) =>
+    !q ||
+    [r.kategorie, r.beschreibung, r.notiz ?? null].some((t) => (t ?? "").toLowerCase().includes(q));
+
   const imJahr = (d: string | null) => jahr === "alle" || (d != null && new Date(d).getFullYear() === Number(jahr));
-  const einnahmen = ((einn ?? []) as Einnahme[]).filter((e) => (!prop || e.prop_id === prop) && imJahr(e.buchungsdatum));
-  const kosten = ((kost ?? []) as Kosten[]).filter((k) => (!prop || k.prop_id === prop) && imJahr(k.buchungsdatum));
+  const einnahmen = ((einn ?? []) as Einnahme[]).filter((e) => (!prop || e.prop_id === prop) && imJahr(e.buchungsdatum) && trifftQ(e));
+  const kosten = ((kost ?? []) as Kosten[]).filter((k) => (!prop || k.prop_id === prop) && imJahr(k.buchungsdatum) && trifftQ(k));
 
   const jahre = Array.from(
     new Set([
@@ -84,6 +89,7 @@ export default async function CashflowPage({
   const ausKat = katSumme(kosten);
 
   const filters: FilterDef[] = [
+    { name: "q", label: "Suche", variant: "search", placeholder: "Suche: Kategorie, Beschreibung…", options: [] },
     { name: "typ", label: "Typ", icon: "quelle", variant: "segmented", options: [{ value: "", label: "Alle" }, { value: "einnahme", label: "Einnahmen" }, { value: "ausgabe", label: "Ausgaben" }] },
     { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
