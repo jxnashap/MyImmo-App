@@ -115,7 +115,16 @@ Entscheidungen aus der Planung (12.07.2026):
   (Times-Italic, Gold `rgb(0.722,0.565,0.169)`) + „PRIVATES IMMOBILIEN-MANAGEMENT", Absenderblock
   rechts, goldener Trennstrich, goldene Abschnitts-Überschriften, dezente Creme-Hinweiskästen,
   Fußzeile „MyImmo / Seite x von n". **KEINE** Creme-/Vollflächen-Deckblätter im Magazin-Stil.
-- Wiederverwendbare Vorlage: `scripts/gen-avv-pdf.mjs` (pdf-lib, spiegelt den docPdf-Briefkopf).
+- **Verbindliche Detailregeln (vom Nutzer, „für alle Dokumente von MyImmo"):**
+  1. **Goldener Trennstrich im Briefkopf mittig** — der kurze vertikale Goldstrich sitzt exakt
+     auf der Blattmitte (`x = A4.w / 2`), NICHT nach links versetzt.
+  2. **Großzügiger Zeilenabstand** — Fließtext mit `LH ≈ 15` und Absatzabstand `GAP ≈ 9`
+     (nicht enger), damit die Seiten luftig/lesbar bleiben.
+  3. **Deckblatt vorhanden** — jedes mehrseitige Dokument beginnt mit einer eigenen Titelseite
+     im Dokument-Stil (voller Briefkopf, zentrierter Titel, kurzer Gold-Zierstrich,
+     ggf. Parteien-Block + Entwurfs-/Status-Hinweis als Creme-Kasten), erst danach der Inhalt.
+- Wiederverwendbare Vorlage: `scripts/gen-avv-pdf.mjs` (pdf-lib, spiegelt den docPdf-Briefkopf;
+  enthält bereits mittigen Trennstrich, Deckblatt und den größeren Zeilenabstand als Referenz).
 - Fremde Dokumente (z. B. Anthropic-DPA) dürfen deren Branding behalten.
 
 ## Deployment
