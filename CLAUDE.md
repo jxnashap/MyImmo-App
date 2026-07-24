@@ -43,7 +43,7 @@ Entscheidungen aus der Planung (12.07.2026):
   — Neuanmeldungen deaktiviert/wird abgewickelt (12.07.2026 geprüft). Deutsche BaFin-Alternative
   **finAPI** (Zugang aber verkaufsgebunden). NICHT das GoCardless-„Payments"-Produkt (Lastschrift) —
   falsches Produkt.
-- **Voraussetzungen für Live**: Gewerbe (in Arbeit) + Anbietervertrag + AVV. Laufende Kosten je
+- **Voraussetzungen für Live**: Gewerbe ✅ (angemeldet, Stand 23.07.2026) + Anbietervertrag + AVV. Laufende Kosten je
   Konto/Monat → kostenpflichtiges **Add-on / Business-Tarif**.
 - **Bau-Etappen**: (1) Tabellen `bankverbindungen` + `bank_umsaetze` (verschlüsselt, RLS);
   (2) Enable-Banking-Sandbox-Flow (Konto verbinden via JWT-Auth + Umsätze abrufen); (3) Abgleich-Engine +
@@ -89,8 +89,11 @@ Entscheidungen aus der Planung (12.07.2026):
   **§ 34i GewO** (Finanzierungs-Assistent Stufe 1 — Wording bereits neutralisiert, „Empfehlung"
   entfernt) und **StBerG § 1–5** (Anlage-V-Berechnung + § 82b-Optimierer + DATEV-Export —
   Grenze zur unerlaubten Steuerberatung schriftlich freigeben lassen).
-- **Impressum/Datenschutz**: Platzhalter in `app/impressum` + `app/datenschutz` mit echten Daten
-  (Gewerbeanmeldung) füllen und rechtlich prüfen lassen.
+- **Impressum/Datenschutz**: Daten sind eingetragen (Jonas Scharp / MyImmo, Bad Schwartau);
+  Gewerbe ist angemeldet (23.07.2026). Noch offen (Betreiber): Angaben 1:1 gegen die
+  Gewerbeanmeldung prüfen (v. a. Geschäftsbezeichnung) und beide Seiten rechtlich prüfen lassen.
+  ⚠️ Mit Gewerbe + Live-Betrieb wird der Vercel-Hobby-Plan zum Problem (kommerzielle Nutzung
+  untersagt) → Pro-Upgrade einplanen (siehe „Kostet Geld").
 - ~~**Optional (Härtung):** Spalten-Verschlüsselung für IBAN/Bankdaten.~~ ✅ Erledigt:
   App-Layer-Verschlüsselung (AES-256-GCM) für `ibans.iban`/`ibans.inhaber`, Schlüssel als
   Vercel-Env `DATA_ENCRYPTION_KEY` (NICHT in der DB → echter Schutz gegen DB-Leak/Insider).

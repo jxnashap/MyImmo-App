@@ -68,12 +68,11 @@ Wert-Fallback/Kredit-Tilgung, Feinschliff). Volle Vorschlagsliste + Restposten s
   Idee: **automatischer 2-Wochen-Refresh** aus frei-legalen Quellen (Destatis-Index + BORIS-
   Bodenrichtwerte) via GitHub-Action-Cron. **Offene Frage:** nur eigenes Portfolio vs.
   mandantensicher für alle Nutzer. (Kein Portal-Scraping — rechtlich/ToS.)
-- **Restliche UX-Vorschläge** (mittel/niedrig, noch offen): Bulk-Aktionen (Mietkonto/Banking/
-  wiederkehrend „alle bestätigen"), Such-/Filterleisten (Immobilien-Liste, Umsätze),
-  Kalkulator-Rückkanäle (Einzelobjekt/Verkauf-Bewertung/AfA ans Objekt), client-gekoppelte
-  Kleinigkeiten. Brauchen Preview-Prüfung (Interaktion, blind schwer verifizierbar).
-- **InnoWeb-Website** (separates Projekt des Nutzers, kein MyImmo-Repo): Referenzen einbauen —
-  `https://spiess-theta.vercel.app/` + eine Tattoo-Seite (URL noch offen).
+- ~~Restliche UX-Vorschläge~~ ✅ erledigt (PR #199, 22.07.2026): FilterBar-Freitextsuche
+  (Cashflow + Mieter), Banking-Bulk-Ausblenden, Wiederkehrend „Alle offenen erzeugen",
+  AfA-Gebäudeanteil ans Objekt, „Verkauf prüfen"-Button. Zähler-Bulk bewusst verworfen
+  (Zähler werden digitalisiert; falls doch nötig → CSV-Import statt Maske).
+- ~~InnoWeb-Website~~ ✅ vom Nutzer selbst fertiggestellt (23.07.2026) — kein offener Punkt mehr.
 
 ## Nur der Betreiber (kein Code)
 Vercel Pro (AVV + kommerzielle Nutzung), Supabase-DPA signieren, AWS-Bedrock-/Enable-Banking-
