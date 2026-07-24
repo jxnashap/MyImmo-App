@@ -108,6 +108,16 @@ Entscheidungen aus der Planung (12.07.2026):
   Migration in `/api/encrypt-bankdaten` erweitert). Nach Deploy einmalig `/api/encrypt-bankdaten`
   aufrufen (migriert IBANs + Darlehensnummern + Kautions-Bank in einem Rutsch).
 
+## Dokument-/PDF-Design (verbindlich)
+- **Alle selbst erzeugten MyImmo-PDFs/Dokumente** (Verträge, Compliance-Ablagen, Deckblätter etc.)
+  im **App-Dokument-Stil** setzen — wie die in-App-Generatoren (`lib/pdf/docPdf.ts`,
+  `beleihungPdf.ts`, `nkPdf.ts`): heller DIN-A4-Geschäftsbrief, Briefkopf links `My`(Times)+`Immo`
+  (Times-Italic, Gold `rgb(0.722,0.565,0.169)`) + „PRIVATES IMMOBILIEN-MANAGEMENT", Absenderblock
+  rechts, goldener Trennstrich, goldene Abschnitts-Überschriften, dezente Creme-Hinweiskästen,
+  Fußzeile „MyImmo / Seite x von n". **KEINE** Creme-/Vollflächen-Deckblätter im Magazin-Stil.
+- Wiederverwendbare Vorlage: `scripts/gen-avv-pdf.mjs` (pdf-lib, spiegelt den docPdf-Briefkopf).
+- Fremde Dokumente (z. B. Anthropic-DPA) dürfen deren Branding behalten.
+
 ## Deployment
 - **Live-URL (Produktion): https://my-immo-app.vercel.app**
 - Gehostet auf **Vercel**, verbunden mit dem GitHub-Repo `jxnashap/myimmo-app` (Branch `main`).
