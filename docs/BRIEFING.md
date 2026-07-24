@@ -75,10 +75,13 @@ Wert-Fallback/Kredit-Tilgung, Feinschliff). Volle Vorschlagsliste + Restposten s
 - ~~InnoWeb-Website~~ ✅ vom Nutzer selbst fertiggestellt (23.07.2026) — kein offener Punkt mehr.
 
 ## Nur der Betreiber (kein Code)
-Vercel Pro (AVV + kommerzielle Nutzung), Supabase-DPA signieren, AWS-Bedrock-/Enable-Banking-
-Keys, anwaltliche Prüfung (§34i GewO Finanzierungs-Assistent, StBerG Steuer-Features,
-Nutzer-AVV), Impressum/Datenschutz mit echten Daten füllen. Nach Deploy einmalig
-`/api/encrypt-bankdaten` aufrufen (migriert Bankdaten). Details: `docs/compliance/AVV-STATUS.md`.
+Vercel Pro (AVV + kommerzielle Nutzung — mit dem angemeldeten Gewerbe jetzt dringlich),
+Supabase-DPA signieren, AWS-Bedrock-/Enable-Banking-Keys, anwaltliche Prüfung (§34i GewO
+Finanzierungs-Assistent, StBerG Steuer-Features, Nutzer-AVV, Impressum/Datenschutz).
+✅ Gewerbe angemeldet (GewA 1 Bad Schwartau, bescheinigt 16.07.2026, Nebenerwerb, SaaS-Tätigkeit);
+✅ Impressum/Datenschutz tragen die echten Daten und stimmen mit der Anmeldung überein (24.07.2026).
+Nach Deploy einmalig `/api/encrypt-bankdaten` aufrufen (migriert Bankdaten).
+Details: `docs/compliance/AVV-STATUS.md`.
 
 ## Wo mehr steht
 - `CLAUDE.md` — Projekt-Regeln, Merkliste, Deployment, Env, DB.
