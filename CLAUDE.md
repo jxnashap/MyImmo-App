@@ -79,6 +79,10 @@ Entscheidungen aus der Planung (12.07.2026):
   Verantwortlicher, nur Datenschutzerklärungs-Passus). **Größte Lücke: MyImmo muss den eigenen
   Nutzern einen AVV anbieten** (Vermieter = Verantwortliche für Mieterdaten) — /avv-Seite, AGB-
   Einbeziehung, anwaltlich prüfen. Plus Verarbeitungsverzeichnis Art. 30 Abs. 1+2 und TOM-Doku.
+- **Businessplan (aktuell, als PDF): `docs/business/MyImmo-Businessplan-2026-07.pdf`.** NICHT von
+  Hand neu bauen — der komplette Plan wird per Skript erzeugt: **`node scripts/gen-businessplan-pdf.mjs`**
+  (Sekunden). Inhalt/Zahlen/„Stand"-Datum nur in der `SECTIONS`-Struktur des Skripts anpassen, dann
+  neu erzeugen. Titelseite trägt die Dokument-Wortmarke (My+Immo), Design = MyImmo-Dokument-Stil.
 - **Masterplan (Markt/Compliance/Steuer-Features/Roadmap): `docs/MASTERPLAN.md`** (15.07.2026).
 - **Onboarding-Briefing (aktuell, für neue Chats/Sessions ZUERST lesen): `docs/BRIEFING.md`**.
 - **Obsidian-Vault:** der Ordner `docs/` ist als Obsidian-Vault gedacht (Startseite `docs/00 Index.md`
@@ -126,8 +130,10 @@ Entscheidungen aus der Planung (12.07.2026):
   3. **Deckblatt vorhanden** — jedes mehrseitige Dokument beginnt mit einer eigenen Titelseite
      im Dokument-Stil (voller Briefkopf, zentrierter Titel, kurzer Gold-Zierstrich,
      ggf. Parteien-Block + Entwurfs-/Status-Hinweis als Creme-Kasten), erst danach der Inhalt.
-- Wiederverwendbare Vorlage: `scripts/gen-avv-pdf.mjs` (pdf-lib, spiegelt den docPdf-Briefkopf;
-  enthält bereits mittigen Trennstrich, Deckblatt und den größeren Zeilenabstand als Referenz).
+- Wiederverwendbare Vorlagen (pdf-lib, spiegeln den docPdf-Briefkopf; enthalten bereits mittigen
+  Trennstrich, Deckblatt und den größeren Zeilenabstand als Referenz): `scripts/gen-avv-pdf.mjs`
+  (Vertrag/Deckblatt) und `scripts/gen-businessplan-pdf.mjs` (mehrseitiges Dokument mit Titelseite,
+  Inhaltsverzeichnis + Seitenzahlen, gold-Header-Tabellen, Creme-Kästen).
 - Fremde Dokumente (z. B. Anthropic-DPA) dürfen deren Branding behalten.
 
 ## Deployment
