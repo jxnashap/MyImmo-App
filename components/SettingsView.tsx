@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   User, Landmark, ShieldCheck, FileText, Download, Upload, Trash2, Plus, Star,
-  Lock, ExternalLink, X, Check, TriangleAlert, PenLine, Sparkles, type LucideIcon,
+  Lock, ExternalLink, X, Check, TriangleAlert, PenLine, Sparkles, CreditCard,
+  PartyPopper, type LucideIcon,
 } from "lucide-react";
 import { TOUR_EVENT } from "@/components/OnboardingTour";
 import SignaturPad from "@/components/SignaturPad";
@@ -18,13 +19,27 @@ import { createClient } from "@/lib/supabase/client";
 import { saveVermieter } from "@/lib/actions/vermieter";
 import { addIban, deleteIban, setStandardIban } from "@/lib/actions/ibans";
 import { deleteAccount } from "@/lib/actions/account";
+import { starteCheckout, oeffneAboPortal } from "@/lib/actions/billing";
 import { isValidIban, normalizeIban } from "@/lib/iban";
 import type { VermieterProfil, Iban } from "@/lib/types";
 
-type TabKey = "profil" | "bank" | "sicherheit" | "recht";
+// Anzeige-Daten des Abos (Server lädt, Client zeigt nur an).
+export type AboAnzeige = {
+  plan: string;
+  planName: string;
+  status: string;
+  zyklus: string | null;
+  bankingAddon: boolean;
+  gueltigBis: string | null;
+  storniertZum: string | null;
+  hatPortal: boolean;
+} | null;
+
+type TabKey = "profil" | "bank" | "abo" | "sicherheit" | "recht";
 const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   { key: "profil", label: "Profil", icon: User },
   { key: "bank", label: "Bankkonten", icon: Landmark },
+  { key: "abo", label: "Abo", icon: CreditCard },
   { key: "sicherheit", label: "Sicherheit", icon: ShieldCheck },
   { key: "recht", label: "Daten & Recht", icon: FileText },
 ];
@@ -37,12 +52,18 @@ export default function SettingsView({
   email,
   provider,
   unterschrift,
+  abo = null,
+  einheiten = 0,
+  billingEnforced = false,
 }: {
   profil: VermieterProfil | null;
   ibans: Iban[];
   email?: string | null;
   provider?: string | null;
   unterschrift?: string | null;
+  abo?: AboAnzeige;
+  einheiten?: number;
+  billingEnforced?: boolean;
 }) {
   const [tab, setTab] = useState<TabKey>("profil");
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -99,6 +120,7 @@ export default function SettingsView({
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} key={tab} className="set-panel">
         {tab === "profil" && <ProfilPanel profil={profil} unterschrift={unterschrift ?? null} />}
         {tab === "bank" && <BankPanel ibans={ibans} />}
+        {tab === "abo" && <AboPanel abo={abo} einheiten={einheiten} enforced={billingEnforced} />}
         {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} />}
         {tab === "recht" && <RechtPanel />}
       </div>
@@ -549,6 +571,104 @@ function RechtPanel() {
           <RLink href="/impressum">Impressum</RLink>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ---------- Abo & Tarif ----------
+// Bezahlsystem ist GEBAUT, aber inaktiv (Early Access): ohne BILLING_ENFORCED
+// zeigt das Panel nur den Early-Access-Hinweis. Nach Aktivierung erscheinen
+// Upgrade-Buttons (Paddle-Checkout) bzw. das Kundenportal (Zahlung/Kündigung).
+function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: number; enforced: boolean }) {
+  const ref = useReveal(null);
+  const toast = useToast();
+  const [zyklus, setZyklus] = useState<"monat" | "jahr">("jahr");
+  const [pending, startTransition] = useTransition();
+
+  const zumCheckout = (plan: "privat" | "plus") =>
+    startTransition(async () => {
+      const res = await starteCheckout(plan, zyklus);
+      if ("url" in res) window.location.href = res.url;
+      else toast(res.fehler, "error");
+    });
+
+  const zumPortal = () =>
+    startTransition(async () => {
+      const res = await oeffneAboPortal();
+      if ("url" in res) window.location.href = res.url;
+      else toast(res.fehler, "error");
+    });
+
+  const datum = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
+
+  const zahlend = !!abo && abo.plan !== "kostenlos" && ["aktiv", "testphase", "ueberfaellig"].includes(abo.status);
+
+  return (
+    <div ref={ref}>
+      {!enforced ? (
+        <div className="glass-card reveal">
+          <h2><PartyPopper size={16} /> Early Access — alles kostenlos</h2>
+          <p className="sub">
+            Während der Startphase steht der volle Funktionsumfang kostenlos zur Verfügung.
+            Bezahltarife werden rechtzeitig angekündigt — dein Konto wird dann NICHT automatisch
+            kostenpflichtig, du wählst selbst, ob und welchen Tarif du buchst.
+          </p>
+          <p className="sub" style={{ marginBottom: 12 }}>
+            Aktuell erfasst: <strong style={{ color: "var(--text)" }}>{einheiten}</strong>{" "}
+            {einheiten === 1 ? "Einheit" : "Einheiten"}.
+          </p>
+          <Link href="/preise" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <CreditCard size={15} /> Geplante Tarife ansehen
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div className="glass-card reveal">
+            <h2><CreditCard size={16} /> Dein Tarif</h2>
+            <p className="sub">
+              <strong style={{ color: "var(--text)" }}>{abo?.planName ?? "Kostenlos"}</strong>
+              {abo?.zyklus ? ` · ${abo.zyklus === "jahr" ? "Jahreszahlung" : "Monatszahlung"}` : ""}
+              {abo?.bankingAddon ? " · inkl. Banking-Add-on" : ""}
+              {" — "}{einheiten} {einheiten === 1 ? "Einheit" : "Einheiten"} erfasst.
+            </p>
+            {abo?.storniertZum && (
+              <p className="sub" style={{ color: "var(--red)" }}>
+                Gekündigt zum {datum(abo.storniertZum)} — bis dahin bleibt alles nutzbar.
+              </p>
+            )}
+            {!abo?.storniertZum && abo?.gueltigBis && zahlend && (
+              <p className="sub">Nächste Verlängerung: {datum(abo.gueltigBis)}.</p>
+            )}
+            {zahlend && abo?.hatPortal && (
+              <button type="button" className="btn btn-ghost" disabled={pending} onClick={zumPortal}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <ExternalLink size={15} /> Zahlung & Kündigung verwalten
+              </button>
+            )}
+          </div>
+
+          {!zahlend && (
+            <div className="glass-card reveal">
+              <h2><Star size={16} /> Tarif wählen</h2>
+              <p className="sub">Abrechnung und Rechnungen laufen über unseren Zahlungsanbieter Paddle; die Zahlung ist jederzeit im Kundenportal kündbar.</p>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <button type="button" className={`btn ${zyklus === "monat" ? "btn-gold" : "btn-ghost"}`} onClick={() => setZyklus("monat")}>Monatlich</button>
+                <button type="button" className={`btn ${zyklus === "jahr" ? "btn-gold" : "btn-ghost"}`} onClick={() => setZyklus("jahr")}>Jährlich (≈ 2 Monate gespart)</button>
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button type="button" className="btn btn-gold" disabled={pending} onClick={() => zumCheckout("privat")}>
+                  MyImmo Privat — {zyklus === "jahr" ? "79 €/Jahr" : "7,99 €/Monat"}
+                </button>
+                <button type="button" className="btn btn-gold" disabled={pending} onClick={() => zumCheckout("plus")}>
+                  MyImmo Plus — {zyklus === "jahr" ? "129 €/Jahr" : "12,99 €/Monat"}
+                </button>
+                <Link href="/preise" className="btn btn-ghost">Alle Tarife vergleichen</Link>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

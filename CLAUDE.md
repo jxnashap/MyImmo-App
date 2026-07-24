@@ -19,6 +19,14 @@
   Danach diesen Eintrag entfernen.
 
 ### Kostet Geld (Paid-Plan/Abo nötig)
+- **Bezahlsystem (Paddle, Merchant of Record) — GEBAUT, aber INAKTIV (24.07.2026).**
+  Tabelle `abos` + `lib/plan.ts` (Tarif-/Feature-Matrix) + `lib/billing/paddle.ts` +
+  Webhook `/api/billing/webhook` + Abo-Tab in den Einstellungen. Durchgesetzt wird erst mit
+  Env `BILLING_ENFORCED=true`; ohne Paddle-Env ist alles ein No-op (Early Access bleibt).
+  **Aktivierungs-Checkliste: `docs/BEZAHLSYSTEM.md`** (Reihenfolge: Vercel Pro → AGB/Widerruf
+  anwaltlich → Paddle-Konto/Preise/Webhook → Env → Sandbox-Test → `BILLING_ENFORCED=true` +
+  /preise-Early-Access-Banner raus → Feature-Gates in den Actions). Steuerhinweis: MoR =
+  Paddle ist der Kunde (Reverse-Charge) → bei Kleinunternehmer-Frage berücksichtigen.
 - **„Sign in with Apple" nachrüsten, sobald die App in den iOS App Store geht.** Apple verlangt
   das, sobald ein anderer Social-Login (Google) angeboten wird. Braucht Apple-Developer-Programm
   (99 $/Jahr), App-ID/Services-ID/Key + Provider-Config in Supabase. Aktuell reine Web-App → noch nicht nötig.

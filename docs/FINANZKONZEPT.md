@@ -20,9 +20,21 @@
 | AVM (Marktwert) | — | **abgelehnt** (siehe unten) |
 
 ### Einnahmen (geplant)
-- **Abo-Modell** für Vermieter (Preis noch offen). Fundament vorhanden:
-  Tabelle `einladungscodes` (rollen-gebunden, Ablauf, Einmal-Einlösung) + Signup-Trigger
-  `handle_new_user_rolle` → um **Abo-Zugangscodes** erweiterbar (Code nur bei Erst-Registrierung).
+- **Abo-Modell** für Vermieter — Tarife wie auf `/preise` (Kostenlos · Privat 7,99 €/M bzw.
+  79 €/J · Plus 12,99 €/M bzw. 129 €/J · Business auf Anfrage · Banking-Add-on separat).
+- **Bezahlsystem GEBAUT, aber INAKTIV (24.07.2026):** Anbieter-Entscheidung = **Paddle als
+  Merchant of Record** (Paddle verkauft im eigenen Namen, übernimmt EU-USt/Rechnungen/
+  Steuer-Compliance; Gebühr ~5 % + 0,50 $ — bewusst teurer als Stripe ~2 %, dafür kein
+  OSS-/USt-Aufwand beim Solo-Nebenerwerb). Umsetzung: Tabelle `abos` (RLS, nur Service-Role
+  schreibt), Tarif-/Feature-Matrix `lib/plan.ts`, Paddle-Adapter `lib/billing/paddle.ts`,
+  Webhook `/api/billing/webhook`, Abo-Tab in den Einstellungen. **Durchgesetzt wird erst mit
+  Env `BILLING_ENFORCED=true`** — bis dahin Early Access (alles frei, wie auf /preise
+  angekündigt). Aktivierungs-Checkliste: `docs/BEZAHLSYSTEM.md`.
+  ⚠️ Steuerhinweis für den Steuerberater: Beim MoR-Modell ist **Paddle der Kunde**
+  (B2B-Leistung an Paddle, Reverse-Charge) — relevant für die Kleinunternehmer-Frage.
+- Fundament zusätzlich vorhanden: Tabelle `einladungscodes` (rollen-gebunden, Ablauf,
+  Einmal-Einlösung) + Signup-Trigger `handle_new_user_rolle` → um **Abo-Zugangscodes**
+  erweiterbar (Code nur bei Erst-Registrierung).
 - Rollen: normale Vermieter + Hausverwaltung (eigene Codes).
 
 ### Wichtigste Finanz-Entscheidungen
