@@ -22,6 +22,9 @@
 - **„Sign in with Apple" nachrüsten, sobald die App in den iOS App Store geht.** Apple verlangt
   das, sobald ein anderer Social-Login (Google) angeboten wird. Braucht Apple-Developer-Programm
   (99 $/Jahr), App-ID/Services-ID/Key + Provider-Config in Supabase. Aktuell reine Web-App → noch nicht nötig.
+- **App-Icon für den iOS App Store:** Das schwarze Kachel-Logo `public/myimmo_logo_2048.png`
+  (2048×2048, goldenes Haus + Wortmarke) beim App-Store-Launch als App-Icon einspielen. Ist NICHT
+  die Dokument-Wortmarke (die bleibt für PDFs/Briefe) — das PNG ist nur das App-/Store-Icon.
 - **Leaked Password Protection (Supabase)** aktivieren — Abgleich neuer/geänderter Passwörter gegen
   HaveIBeenPwned. **Nur im Supabase Pro-Plan** (~25 $/Monat); auf Free existiert der Toggle nicht.
   Nach Upgrade: Authentication → Sign In / Providers → Email → „Password Security". Kostenloser
