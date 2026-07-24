@@ -43,7 +43,10 @@ Entscheidungen aus der Planung (12.07.2026):
   — Neuanmeldungen deaktiviert/wird abgewickelt (12.07.2026 geprüft). Deutsche BaFin-Alternative
   **finAPI** (Zugang aber verkaufsgebunden). NICHT das GoCardless-„Payments"-Produkt (Lastschrift) —
   falsches Produkt.
-- **Voraussetzungen für Live**: Gewerbe ✅ (angemeldet, Stand 23.07.2026) + Anbietervertrag + AVV. Laufende Kosten je
+- **Voraussetzungen für Live**: Gewerbe ✅ (GewA 1 Stadt Bad Schwartau, bescheinigt 16.07.2026,
+  Beginn 15.07.2026, Nebenerwerb; Tätigkeit: „Entwicklung und Bereitstellung von Software (SaaS)
+  sowie damit verbundene digitale Dienstleistungen; webbasierte Anwendung zur Immobilienverwaltung
+  für private Vermieter") + Anbietervertrag + AVV. Laufende Kosten je
   Konto/Monat → kostenpflichtiges **Add-on / Business-Tarif**.
 - **Bau-Etappen**: (1) Tabellen `bankverbindungen` + `bank_umsaetze` (verschlüsselt, RLS);
   (2) Enable-Banking-Sandbox-Flow (Konto verbinden via JWT-Auth + Umsätze abrufen); (3) Abgleich-Engine +
@@ -89,9 +92,12 @@ Entscheidungen aus der Planung (12.07.2026):
   **§ 34i GewO** (Finanzierungs-Assistent Stufe 1 — Wording bereits neutralisiert, „Empfehlung"
   entfernt) und **StBerG § 1–5** (Anlage-V-Berechnung + § 82b-Optimierer + DATEV-Export —
   Grenze zur unerlaubten Steuerberatung schriftlich freigeben lassen).
-- **Impressum/Datenschutz**: Daten sind eingetragen (Jonas Scharp / MyImmo, Bad Schwartau);
-  Gewerbe ist angemeldet (23.07.2026). Noch offen (Betreiber): Angaben 1:1 gegen die
-  Gewerbeanmeldung prüfen (v. a. Geschäftsbezeichnung) und beide Seiten rechtlich prüfen lassen.
+- **Impressum/Datenschutz**: ✅ Abgleich mit der Gewerbeanmeldung erledigt (24.07.2026, GewA-1-
+  Scan geprüft): Geschäftsbezeichnung „MyImmo", Inhaber, Anschrift, Telefon, E-Mail und
+  „Einzelunternehmen, nicht im Handelsregister" stimmen 1:1. Noch offen (Betreiber): beide
+  Seiten anwaltlich prüfen lassen. Hinweis: Die angemeldete Tätigkeit (SaaS/digitale
+  Dienstleistungen) deckt KEINE Darlehensvermittlung — passt zur § 34i-freien Ausrichtung des
+  Finanzierungs-Assistenten (nur rechnen/informieren).
   ⚠️ Mit Gewerbe + Live-Betrieb wird der Vercel-Hobby-Plan zum Problem (kommerzielle Nutzung
   untersagt) → Pro-Upgrade einplanen (siehe „Kostet Geld").
 - ~~**Optional (Härtung):** Spalten-Verschlüsselung für IBAN/Bankdaten.~~ ✅ Erledigt:
