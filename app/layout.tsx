@@ -14,7 +14,7 @@ import { getRolle } from "@/lib/rolle";
 import { istFreigeschaltet } from "@/lib/freischaltung";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://my-immo-app.vercel.app"),
+  metadataBase: new URL("https://www.myimmoapp.de"),
   title: "MyImmo — Immobilien-Management",
   description: "Portfolio, Mieter und Dokumente für Privatvermieter",
 };

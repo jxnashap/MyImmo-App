@@ -10,7 +10,7 @@ Mietkonto, Ein-/Ausgaben, Nebenkostenabrechnung, Kredite, Steuer (Anlage V, AfA,
 Banking-Anbindung (geplant), Kauf-/Verkauf-/Marktwert-Kalkulatoren, Portfolio-Karte,
 Wertentwicklung.
 
-- **Live:** https://my-immo-app.vercel.app (Vercel, Auto-Deploy bei Merge nach `main`)
+- **Live:** https://www.myimmoapp.de (eigene Domain; Vercel, Auto-Deploy bei Merge nach `main`)
 - **Repo:** `jxnashap/myimmo-app`
 - **Arbeitsbranch (dieser Kontext):** `claude/magical-feynman-l8w9s5`
 
@@ -55,10 +55,11 @@ umgesetzt in Etappen 1–4 (Deep-Links, Prefills, Korrektheits-Fixes wie AfA-War
 Wert-Fallback/Kredit-Tilgung, Feinschliff). Volle Vorschlagsliste + Restposten siehe unten.
 
 ## Offene Punkte / Entscheidungen (Merkliste)
-- **Design-Überarbeitung** → bewusst **„zum Schluss"**. Gewählte Richtung: **Fintech-hell
-  (Stripe/N26 + bisschen Apple)**, mit **echter Neu-Anordnung** (nicht nur umfärben), Gold
-  bleibt Markenzeichen. Verworfen: „Quiet-Luxury"-Ivory und Neon-Bento. (Mockups nur als
-  Artifacts, nicht im Code.)
+- **Komplette Design- & Layout-Überarbeitung** → **aktives Vorhaben (24.07.2026), vor dem
+  Marketing-Start**. Gewählte Richtung: **Fintech-hell (Stripe/N26 + bisschen Apple)**, mit
+  **echter Neu-Anordnung** (nicht nur umfärben), Gold `#D4A847` bleibt Markenzeichen,
+  Fraunces+Outfit bleiben. Dokument-/PDF-Design bleibt unverändert. Verworfen:
+  „Quiet-Luxury"-Ivory und Neon-Bento. (Mockups nur als Artifacts, nicht im Code.)
 - **Portfolio-Wert Stufe 1b** (regional): Nutzer hat Destatis-GENESIS-Token. **Achtung:** die
   Kreistyp-Reihe ist seit 24.09.2025 aus der GENESIS-API in einen „Statistischen Bericht"
   (XLSX-Download) gewandert → nicht mehr live per API. Nutzer will **vollautomatische**

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { RATGEBER } from "@/lib/ratgeber";
 
-const BASE = "https://my-immo-app.vercel.app";
+const BASE = "https://www.myimmoapp.de";
 
 // Öffentliche, indexierbare Seiten (keine App-/Auth-Bereiche).
 export default function sitemap(): MetadataRoute.Sitemap {

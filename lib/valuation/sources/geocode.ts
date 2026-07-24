@@ -14,7 +14,7 @@ export async function geocode(adresse: string | null | undefined): Promise<GeoTr
     encodeURIComponent(q);
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": "MyImmo-App/1.0 (Immobilienbewertung; +https://my-immo-app.vercel.app)" },
+      headers: { "User-Agent": "MyImmo-App/1.0 (Immobilienbewertung; +https://www.myimmoapp.de)" },
       cache: "no-store",
     });
     if (!res.ok) return null;

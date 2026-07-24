@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/", "/auth/", "/portal", "/einstellungen", "/mietkonto", "/banking", "/archiv"],
     },
-    sitemap: "https://my-immo-app.vercel.app/sitemap.xml",
+    sitemap: "https://www.myimmoapp.de/sitemap.xml",
   };
 }
