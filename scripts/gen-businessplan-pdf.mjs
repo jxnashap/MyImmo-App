@@ -1,3 +1,15 @@
+// ============================================================================
+// MyImmo Businessplan — EINZIGE QUELLE. Nicht neu bauen, nur hier anpassen.
+//
+//   Aktualisieren:  Inhalt in `SECTIONS` unten editieren, "Stand: Juli 2026"
+//                   (Titelseite) + evtl. Zahlen anpassen.
+//   Erzeugen:       node scripts/gen-businessplan-pdf.mjs
+//                   -> docs/business/MyImmo-Businessplan-2026-07.pdf (Sekunden)
+//
+// Design = MyImmo-Dokument-Stil (Wortmarke My+Immo, goldene Linien/Tabellen,
+// Creme-Kästen). Zwei-Pass-Render: erst Kapitel-Seiten messen, dann Inhalts-
+// verzeichnis mit Seitenzahlen. Kein 15-Minuten-Neuaufbau nötig.
+// ============================================================================
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import fs from "fs";
 
@@ -28,7 +40,7 @@ const tracked = (s) => s.split("").join(" ");
 const NUTZER = "die Nutzerin / der Nutzer";
 const SECTIONS = [
   { n: 1, title: "Zusammenfassung", body: [
-    { p: "MyImmo ist eine Web- und iOS-App, mit der private Vermieter ihre Immobilien vollständig digital verwalten: Einnahmen und Ausgaben, Mieter und Mietverhältnisse, Verbrauch, Kredite, die jährliche Nebenkostenabrechnung sowie die steuerliche Anlage V – in einer aufgeräumten, modernen Oberfläche mit automatischer Wiederkehr-Logik für Mieten und regelmäßige Kosten." },
+    { p: "MyImmo ist eine Web-App (iOS-Version in Vorbereitung), mit der private Vermieter ihre Immobilien vollständig digital verwalten: Einnahmen und Ausgaben, Mieter und Mietverhältnisse, Verbrauch, Kredite, die jährliche Nebenkostenabrechnung sowie die steuerliche Anlage V – in einer aufgeräumten, modernen Oberfläche mit automatischer Wiederkehr-Logik für Mieten und regelmäßige Kosten." },
     { p: "Der Zielmarkt ist groß und wächst: In Deutschland gibt es rund 5,5 Millionen private Vermieter, die etwa zwei Drittel aller rund 25 Millionen Mietwohnungen bereitstellen. Rund 60 % davon besitzen genau eine vermietete Einheit – also genau die Gruppe, für die bestehende Profi-Software zu teuer und zu komplex ist und für die Excel-Listen zu fehleranfällig sind." },
     { p: "MyImmo wird als Abo-Modell (Freemium mit kostenpflichtigen Plänen) über den Apple App Store und als Web-App/PWA vertrieben. Die Preisposition liegt bewusst zwischen dem günstigen, aber funktionsärmeren objego und dem umfangreicheren, teureren immocloud." },
     { box: { title: "Eckdaten auf einen Blick", lines: [
@@ -39,29 +51,34 @@ const SECTIONS = [
       "Plan: Jahr 1 ~ kostendeckend · Jahr 3 ~ 77.000 € Umsatz · ~52.000 € Ergebnis",
       "Start nebenberuflich/bootstrapped, ohne externes Kapital",
     ] } },
-    { p: "Der Plan ist bewusst konservativ und auf einen nebenberuflichen, eigenfinanzierten Start ausgelegt. Größter Engpass ist nicht die Technik (die App läuft bereits live), sondern die rechtlichen Launch-Voraussetzungen sowie der Aufbau eines verlässlichen Nutzerwachstums. Das Gewerbe ist seit Juli 2026 angemeldet, die zentralen Auftragsverarbeitungs-Verträge (Supabase, Anthropic) liegen unterschrieben bzw. archiviert vor." },
+    { p: "Der Plan ist bewusst konservativ und auf einen nebenberuflichen, eigenfinanzierten Start ausgelegt. Die Technik ist kein Engpass: Die App ist bereits als Web-Anwendung produktiv und deutlich tiefer gebaut als ein reines Verwaltungs-Tool – Verwaltung, Nebenkostenabrechnung, Steuer (Anlage V/DATEV/AfA), Marktwert-Schätzer, Kauf-Assistent, Mieter- und Service-Portal sowie die Bank-Anbindung (Konto-Abgleich) sind umgesetzt; letztere läuft gegen die Sandbox. Offen für den Bezahl-Start sind vor allem das Monetarisierungs-/Abo-System, die iOS-Veröffentlichung (Sign in with Apple, In-App-Abos, App Review), die anwaltliche Prüfung der Rechtsdokumente und die Produktivschaltung des Banking-Partners (Enable Banking). Gewerbe (Juli 2026) sowie die Auftragsverarbeitungs-Verträge (Supabase signiert, Anthropic archiviert) liegen vor." },
   ]},
 
   { n: 2, title: "Geschäftsidee & Produkt", body: [
     { h2: "Das Problem" },
     { p: "Private Vermieter müssen einmal im Jahr eine korrekte Nebenkostenabrechnung erstellen, die Anlage V für die Steuer ausfüllen und laufend Einnahmen, Kosten und Belege im Blick behalten. In der Praxis passiert das überwiegend in Excel oder auf Papier: zeitraubend, fehleranfällig und unübersichtlich, sobald mehrere Einheiten oder Mieterwechsel hinzukommen." },
     { h2: "Die Lösung" },
-    { p: "MyImmo bündelt die gesamte Verwaltung in einer App. Kernfunktionen:" },
+    { p: "MyImmo bündelt die gesamte Verwaltung in einer App. Kernfunktionen (bereits umgesetzt):" },
     { ul: [
-      "Objekte, Einheiten und Mieter inkl. Mietverhältnis, Kaution und Mietverlauf verwalten.",
-      "Einnahmen und Ausgaben erfassen – mit automatischer Wiederkehr (Mieten, Grundsteuer, Müll) im gewählten Zyklus, rückwirkend bis 10 Jahre.",
-      "Nebenkostenabrechnung weitgehend automatisch erzeugen (PDF-Export).",
-      "Steuer/Anlage V, Jahresbericht, Cashflow- und Portfolio-Auswertungen mit Zeitraum-Filtern.",
-      "Belegarchiv, Datenexport (JSON/CSV) und ein durchgängiges Dark-/Light-Design.",
+      "Objekte, Einheiten und Mieter inkl. Staffel-/Indexmiete, Kaution und Mietkonto (monatlicher Soll-/Ist-Abgleich) verwalten.",
+      "Einnahmen, Ausgaben, Kredite und Verbrauch erfassen – mit automatischer Wiederkehr (rückwirkend bis 10 Jahre) und CSV-Import.",
+      "Nebenkostenabrechnung weitgehend automatisch – inkl. Heizkosten nach HKVO, CO2- und §35a-Ausweis, PDF und Zustellung ins Mieterportal.",
+      "Steuer: Anlage-V-Berechnung, DATEV-Export, AfA-Assistent und Steuer-Wächter (Fristen §23/§6, verbilligte Vermietung §21).",
+      "Termine & Prüfpflichten: wiederkehrende Fristen, iCal-Export und ein gesetzlicher Prüfpflichten-Katalog je Objekt.",
+      "Marktwert-Schätzer (ImmoWertV) und Kauf-Assistent mit Finanzierungs- und KfW-Förder-Übersicht.",
+      "Mieter- und Service-Portal: Anliegen, Zählerstände mit Foto, Aufträge an Handwerker/Dienstleister.",
+      "Bank-Anbindung (PSD2, read-only): Konto-Umsätze mit erwarteten Mieten und Kosten abgleichen – vorschlagen und per Klick bestätigen.",
+      "Belegarchiv, Dokument-Generator (Mahnung, Bescheinigungen), Datenexport (ZIP/CSV) und durchgängiges Dark-/Light-Design.",
     ] },
     { h2: "Alleinstellung (USP)" },
     { ul: [
       "Fokus auf den einfachen Anwendungsfall des Kleinvermieters – nicht auf professionelle Hausverwaltungen.",
       "Modernes, mobil-first Design statt überladener Verwaltungssoftware.",
-      "Durchdachte Automatik (wiederkehrende Buchungen, automatische Zuordnung) als zentraler Zeitsparer.",
+      "Durchdachte Automatik (wiederkehrende Buchungen, Konto-Abgleich) als zentraler Zeitsparer.",
+      "Tiefe bei Steuer und Recht (Anlage V, DATEV, Fristen-Wächter, Prüfpflichten), die reine Gratis-Tools nicht bieten.",
       "Faire, transparente Preise ohne lineare Pro-Einheit-Kostenfalle.",
     ] },
-    { p: "Technisch läuft die App bereits live (Next.js/React, Supabase als Datenbank in der EU-Region, Hosting über Vercel). Das senkt das Umsetzungsrisiko erheblich – der Schwerpunkt liegt jetzt auf Veröffentlichung, Recht und Wachstum." },
+    { p: "Technisch ist die App bereits als Web-Anwendung produktiv (Next.js/React, Supabase in der EU-Region, Hosting über Vercel) und deutlich tiefer gebaut als ein reines Verwaltungs-Tool. Das senkt das Umsetzungsrisiko erheblich – der Schwerpunkt liegt jetzt auf Monetarisierung, iOS-Veröffentlichung, rechtlicher Freigabe und Wachstum." },
   ]},
 
   { n: 3, title: "Markt & Zielgruppe", body: [
@@ -143,14 +160,14 @@ const SECTIONS = [
   { n: 7, title: "Stärken-Schwächen-Analyse (SWOT)", body: [
     { table: { head: ["Stärken", "Schwächen"], widths: [CW / 2, CW / 2], align: ["l", "l"], rows: [
       [[
-        "App läuft bereits live (geringes Technikrisiko)",
-        "Modernes, einfaches Design",
-        "Durchdachte Automatik & NK-PDF",
-        "Sehr schlanke Kostenstruktur",
+        "App ist produktiv – tiefer Funktionsumfang bereits gebaut",
+        "Steuer/DATEV, NK (HKVO/§35a), Banking-Abgleich, Bewertung, Portale",
+        "Durchdachte Automatik & modernes, einfaches Design",
+        "Sehr schlanke Kostenstruktur (bootstrapped)",
       ], [
         "Unbekannte Marke, kein Marketingbudget",
         "Solo-/nebenberuflicher Betrieb",
-        "Rechtliche Restschritte vor Launch (Apple, Rest-Dokumente)",
+        "Monetarisierung/Bezahlsystem noch nicht live",
         "Abhängig von Apple/Plattformregeln",
       ]],
     ] } },
@@ -170,26 +187,27 @@ const SECTIONS = [
   ]},
 
   { n: 8, title: "Fahrplan & Meilensteine", body: [
-    { p: "Vor der ersten Euro-Einnahme stehen rechtliche und plattformseitige Voraussetzungen – sie bestimmen den kritischen Pfad." },
-    { h2: "Phase 1 – Fundament (Q3 2026)" },
+    { p: "Vor der ersten Euro-Einnahme stehen kaufmännische, rechtliche und plattformseitige Voraussetzungen – nicht mehr der Funktionsaufbau, denn die App ist bereits produktiv. Der kritische Pfad:" },
+    { h2: "Phase 1 – Fundament (erledigt / laufend)" },
     { ul: [
-      "Gewerbe ist angemeldet (erledigt Juli 2026, Nebenerwerb, SaaS/digitale Dienstleistungen); steuerliche Erfassung und Kleinunternehmer-Frage in Klärung.",
-      "DSGVO-Grundlage: Auftragsverarbeiter-Rolle geklärt; AVV mit Supabase signiert und Anthropic-DPA archiviert (beide erledigt); Datenhaltung EU-Region, Row Level Security.",
-      "Pflichtdokumente: Impressum & Datenschutzerklärung mit der Gewerbeanmeldung abgeglichen; eigener Nutzer-AVV im Entwurf – AGB und AVV noch anwaltlich prüfen lassen.",
+      "Gewerbe ist angemeldet (Juli 2026, Nebenerwerb, SaaS/digitale Dienstleistungen); steuerliche Erfassung und Kleinunternehmer-Frage in Klärung.",
+      "DSGVO-Grundlage steht: AVV mit Supabase signiert, Anthropic-DPA archiviert; Datenhaltung EU-Region, Row Level Security, Bankdaten app-seitig verschlüsselt.",
+      "Impressum, Datenschutz, AGB und Nutzer-AVV sind erstellt und mit der Gewerbeanmeldung abgeglichen – anwaltliche Prüfung vor den Bezahltarifen steht noch aus.",
     ] },
-    { h2: "Phase 2 – App-Reife für Bezahlmodell (Q3–Q4 2026)" },
+    { h2: "Phase 2 – Monetarisierung & iOS (kritischer Pfad)" },
     { ul: [
-      "Konto-Löschung, Datenexport und „Sign in with Apple\" ergänzen (Apple- & DSGVO-Pflicht).",
-      "In-App-Abos einrichten, App Privacy Label, App Review durchlaufen.",
+      "Bezahl-/Abo-System einführen: Tarife freischalten und Zahlungsdienstleister anbinden – aktuell die zentrale offene Kernarbeit.",
+      "iOS-Veröffentlichung: „Sign in with Apple\" ergänzen, In-App-Abos einrichten, App Privacy Label, App Review. (Konto-Löschung und Datenexport sind bereits umgesetzt.)",
     ] },
-    { h2: "Phase 3 – Launch & erste Nutzer (Q4 2026)" },
+    { h2: "Phase 3 – Launch & erste Nutzer" },
     { ul: [
-      "Soft-Launch Web/PWA, danach iOS-Release; Beta über TestFlight.",
-      "Erste Inhalte/ASO live, Feedback einsammeln, Conversion messen.",
+      "Web/PWA ist live; iOS-Release nach App Review (Beta über TestFlight).",
+      "ASO/Content live, Feedback einsammeln, Conversion messen.",
+      "Banking produktiv schalten (Enable-Banking-Vertrag + Produktions-Keys), sobald der Bezahlbetrieb steht.",
     ] },
     { h2: "Phase 4 – Wachstum (2027–2028)" },
     { ul: [
-      "Funktionen nachschärfen, Content-Engine ausbauen, ab Profitabilität punktuell bezahltes Marketing.",
+      "Funktionen nachschärfen, Content-Engine ausbauen, ab Profitabilität punktuell bezahltes Marketing; Portal-Partnerschaften und Auslandsstart vorbereiten.",
     ] },
   ]},
 
@@ -220,6 +238,7 @@ const SECTIONS = [
       "Kumuliertes Ergebnis über 3 Jahre: ~71.500 € (vor kalkulatorischem Unternehmerlohn).",
       "Die eigene Arbeitszeit ist nicht eingepreist. Bei z. B. 1.500 €/Monat kalkulatorischem Lohn wäre erst ab ~Jahr 2/3 ein echter Gewinn erreichbar.",
       "Größter Stellhebel: Nutzerwachstum und Anteil margenstarker Web-Abos.",
+      "Die Bank-Anbindung (Enable Banking) verursacht laufende Kosten je Bankverbindung und wird als kostenpflichtiges Add-on weitergegeben – im Basisplan nicht enthalten.",
       "Der Firmen-Account (Business, ab 25 Einheiten) ist zusätzliches, umsatzstärkeres Potenzial und in diesen konservativen Zahlen noch nicht enthalten.",
     ] } },
     { p: "Der Kapitalbedarf ist gering: Die wichtigsten Anfangsausgaben (Gewerbe, Rechtsdokumente, Apple-Programm, Infrastruktur) liegen zusammen im niedrigen vierstelligen Bereich und können aus Eigenmitteln gedeckt werden – ein wesentlicher Vorteil des bootstrapped-Ansatzes." },
@@ -229,7 +248,7 @@ const SECTIONS = [
     { table: { head: ["Risiko", "Wirkung", "Gegenmaßnahme"], widths: [CW * 0.29, CW * 0.28, CW * 0.43], align: ["l", "l", "l"], boldCol0: true, rows: [
       ["Wachstum bleibt aus", "Umsatz unter Plan", "Organische Kanäle früh testen, Conversion messen, Produkt nachschärfen"],
       ["DSGVO-/Datenschutzfehler", "Bußgeld, Vertrauensverlust", "EU-Hosting, RLS, AVV, fachkundige Prüfung vor Launch"],
-      ["Apple lehnt App ab", "iOS-Launch verzögert", "Pflichten (Löschung, Apple-Login, Privacy Label) vorab erfüllen; Web zuerst"],
+      ["Apple lehnt App ab", "iOS-Launch verzögert", "Web ist bereits live; Konto-Löschung & Datenexport erfüllt, Apple-Login/Privacy Label ergänzen; iOS als zweiter Kanal"],
       ["Plattformgebühren", "Niedrigere iOS-Marge", "Web-Abos forcieren; Small-Business-Programm nutzen"],
       ["Wettbewerb/Preisdruck", "Margendruck", "Differenzierung über Einfachheit & Design statt Preis"],
       ["Solo-Abhängigkeit", "Engpass bei Zeit/Krankheit", "Automatisieren, dokumentieren, später punktuell auslagern"],
@@ -238,7 +257,7 @@ const SECTIONS = [
 
   { n: 11, title: "Zukunftspläne: Immobilien-Vergleichstool & Portal-Partnerschaften", body: [
     { p: "Über die reine Verwaltung hinaus soll MyImmo zur Entscheidungshilfe beim Immobilienkauf werden. Im Cockpit entsteht ein Immobilien-Vergleichstool, mit dem der Vermieter Kaufobjekte schnell bewerten und gegenüberstellen kann. Das hebt MyImmo deutlich von reinen Verwaltungs-Apps ab und zieht neue Nutzer schon an, bevor sie überhaupt eine Immobilie besitzen." },
-    { i: "Stand Juli 2026: Ein erster Ausbaustand ist bereits in der App umgesetzt – Objektbewertung (Sachwert/Grundstücks- und Bodenwert), Kaufpreisfaktor, Mietrendite und Cashflow sowie grafische Finanzierungsvorschläge inklusive automatischer KfW-Förder-Übersicht. Der Portal-Datenzugang (Link-Import) ist der noch offene Ausbauschritt." },
+    { i: "Stand Juli 2026: Bewertung und Kauf-Kalkulation sind bereits in der App umgesetzt – Marktwert-Schätzer (ImmoWertV), Kaufpreisfaktor, Mietrendite und Cashflow, grafische Finanzierungsvorschläge inklusive KfW-Förder-Übersicht, Käufer-Selbstauskunft sowie KI-Objekt-Import per URL/Exposé. Offen ist vor allem der komfortable Link-Import direkt aus den Portalen (siehe Partnerschaften unten)." },
     { h2: "So funktioniert das Vergleichstool" },
     { ol: [
       "Objekt hinzufügen: Der Nutzer fügt eine Immobilie über den Link einer Online-Anzeige oder per Upload eines Exposés (PDF) hinzu.",
@@ -270,8 +289,9 @@ const SECTIONS = [
     ] } },
   ]},
 
-  { n: 12, title: "Zukunftspläne: Bank-Paket & Konto-Anbindung", body: [
-    { p: "Viele Vermieter beleihen ihre Immobilien, um neue Objekte zu finanzieren. Banken verlangen dafür stets aktuelle und vollständige Unterlagen – heute ein mühsamer Prozess mit Unterlagensuche, mehreren Terminen und ständigem Nachreichen. MyImmo soll das auf Knopfdruck erledigen." },
+  { n: 12, title: "Bank-Paket & Konto-Anbindung (größtenteils umgesetzt)", body: [
+    { p: "Viele Vermieter beleihen ihre Immobilien, um neue Objekte zu finanzieren. Banken verlangen dafür stets aktuelle und vollständige Unterlagen – heute ein mühsamer Prozess mit Unterlagensuche, mehreren Terminen und ständigem Nachreichen. MyImmo erledigt das auf Knopfdruck." },
+    { i: "Stand Juli 2026: Der Konto-Abgleich (Umsätze zu Miet-/Kostenvorschlägen, „vorschlagen und bestätigen\"), die 90-Tage-PSD2-Reauth-Erinnerung sowie die Beleihungs-Unterlagen als Token-Link für die Bank sind bereits im Code umgesetzt; die Anbindung läuft gegen die Sandbox. Für den Produktivbetrieb fehlt nur die Freischaltung beim lizenzierten Open-Banking-Partner (Enable Banking) samt Vertrag und Produktions-Keys." },
     { h2: "Bank-Ordner je Immobilie" },
     { p: "Pro Immobilie stellt MyImmo automatisch einen vollständigen, stets aktuellen Unterlagen-Ordner zusammen, den der Vermieter direkt an die Bank schicken kann – gebündelt als Paket bzw. PDF. Typischer Inhalt:" },
     { ul: [
@@ -292,9 +312,9 @@ const SECTIONS = [
       ["MyImmo", "Starker Bindungsfaktor (der Konto-Sync macht die App zum täglichen Werkzeug), klare Differenzierung und ein möglicher Kooperationskanal mit Banken."],
     ] } },
     { box: { title: "Hinweis zur Umsetzung", lines: [
-      "Der Bank-Ordner (Export) lässt sich früh und ohne Schnittstelle umsetzen – schneller, hoher Mehrwert.",
-      "Konto- und Bank-Schnittstellen unterliegen der PSD2 und erfordern einen lizenzierten/zertifizierten Open-Banking-Partner sowie erhöhten Schutz der Finanzdaten.",
-      "Die Schnittstellen sind daher ein späterer Ausbauschritt – idealerweise über einen spezialisierten Dienstleister.",
+      "Bank-Ordner/Beleihungs-Unterlagen (Token-Link für die Bank) und der Konto-Abgleich sind bereits gebaut.",
+      "Für den Live-Betrieb der Konto-Anbindung braucht es den Vertrag mit dem lizenzierten Open-Banking-Partner (Enable Banking, PSD2/AISP) und die Produktions-Keys.",
+      "Laufende Kosten je Bankverbindung werden als kostenpflichtiges Add-on weitergegeben.",
     ] } },
   ]},
 
@@ -344,13 +364,13 @@ const SECTIONS = [
 
   { n: 14, title: "Fazit & nächste Schritte", body: [
     { p: "MyImmo trifft einen großen, wachsenden Markt mit einem Produkt, das technisch bereits steht und sich klar im Mittelfeld zwischen Gratis-Tools und teurer Profi-Software positioniert. Bei vorsichtiger Planung ist das Vorhaben bereits ab Jahr 1 etwa kostendeckend und entwickelt sich bis Jahr 3 zu einem soliden Nebenerwerb mit Skalierungspotenzial – ganz ohne externes Kapital." },
-    { p: "Der kritische Pfad liegt nicht in der Technik, sondern in den rechtlichen Launch-Voraussetzungen und im Aufbau verlässlichen Nutzerwachstums." },
+    { p: "Der kritische Pfad liegt nicht mehr im Funktionsaufbau, sondern in Monetarisierung, iOS-Veröffentlichung, rechtlicher Freigabe und im Aufbau verlässlichen Nutzerwachstums." },
     { h2: "Empfohlene nächste Schritte" },
     { ol: [
-      "Gewerbe ist angemeldet (Juli 2026); steuerliche Erfassung abschließen und Kleinunternehmer-Status final klären.",
-      "Rechtsdokumente (Datenschutzerklärung, Impressum, AGB, Nutzer-AVV) finalisieren und anwaltlich prüfen lassen (Impressum/Datenschutz bereits mit der Gewerbeanmeldung abgeglichen).",
-      "Apple-Pflichten (Konto-Löschung, Datenexport, Sign in with Apple) in der App nachrüsten.",
-      "Soft-Launch der Web-App, erste Inhalte/ASO live, Conversion messen.",
+      "Steuerliche Erfassung abschließen und die Rechtsdokumente (AGB, Nutzer-AVV) anwaltlich prüfen lassen (Gewerbe ist angemeldet, Impressum/Datenschutz bereits abgeglichen).",
+      "Monetarisierung aufsetzen: Abo-/Bezahlsystem anbinden und erste Tarife live schalten.",
+      "iOS-Veröffentlichung: „Sign in with Apple\", In-App-Abos und App Review (Konto-Löschung und Datenexport sind bereits umgesetzt).",
+      "Banking produktiv schalten: Enable-Banking-Vertrag und Produktions-Keys hinterlegen.",
       "Auf Basis echter Zahlen die Preise justieren und das Marketing schrittweise ausbauen.",
     ] },
     { h2: "Quellen & Annahmen" },
@@ -577,7 +597,7 @@ async function build(tocMap) {
 
     center("Jonas Scharp", yLogo - 178, 11, bold, INK);
     center("Stand: Juli 2026", yLogo - 196, 10, font, MUTED);
-    center("Status: Vorbereitung Markteinführung (iOS App Store + Web/PWA)", yLogo - 214, 10, font, MUTED);
+    center("Status: Web-App live · Vorbereitung Bezahl-Launch und iOS App Store", yLogo - 214, 10, font, MUTED);
   }
 
   // ---------- Seite 2: Inhalt ----------
