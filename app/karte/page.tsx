@@ -52,8 +52,9 @@ export default async function KartePage() {
 
   return (
     <div className="fade-up">
-      <div className="topbar">
+      <div className="topbar" style={{ alignItems: "flex-end" }}>
         <div>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--gold)", fontWeight: 600, marginBottom: 10 }}>Auswertung · Standorte</div>
           <div className="topbar-title">Portfolio-Karte</div>
           <div className="topbar-sub">
             {objekte.length} {objekte.length === 1 ? "Objekt" : "Objekte"} auf der Karte

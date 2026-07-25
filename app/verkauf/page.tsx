@@ -31,8 +31,9 @@ export default async function VerkaufPage() {
 
   return (
     <div className="fade-up">
-      <div className="topbar">
+      <div className="topbar" style={{ alignItems: "flex-end" }}>
         <div>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--gold)", fontWeight: 600, marginBottom: 10 }}>Kalkulator · Verkauf</div>
           <div className="topbar-title">Verkauf-Assistent</div>
           <div className="topbar-sub">Vom Wert bis zur Übergabe — mit Spekulationssteuer- und Netto-Erlös-Check</div>
         </div>

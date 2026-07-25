@@ -97,8 +97,9 @@ export default async function CashflowPage({
 
   return (
     <div className="fade-up">
-      <div className="topbar">
+      <div className="topbar" style={{ alignItems: "flex-end" }}>
         <div>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--gold)", fontWeight: 600, marginBottom: 10 }}>Verwaltung · Ein- &amp; Ausgaben</div>
           <div className="topbar-title">Ein- &amp; Ausgaben</div>
           <div className="topbar-sub">Einnahmen und Kosten im Vergleich</div>
         </div>

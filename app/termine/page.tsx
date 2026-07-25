@@ -203,8 +203,9 @@ export default async function TerminePage({
 
   return (
     <div className="fade-up">
-      <div className="topbar">
+      <div className="topbar" style={{ alignItems: "flex-end" }}>
         <div>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--gold)", fontWeight: 600, marginBottom: 10 }}>Verwaltung · Fristen &amp; Termine</div>
           <div className="topbar-title">Termine</div>
           <div className="topbar-sub">Automatische Fristen aus Mietern, Krediten &amp; Steuer plus eigene Termine · Angaben ohne Gewähr</div>
         </div>

@@ -72,8 +72,9 @@ export default async function JahresberichtPage({
 
   return (
     <div className="fade-up">
-      <div className="topbar">
+      <div className="topbar" style={{ alignItems: "flex-end" }}>
         <div>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--gold)", fontWeight: 600, marginBottom: 10 }}>Auswertung · Jahresbericht</div>
           <div className="topbar-title">Jahresbericht &amp; Steuer-Export</div>
           <div className="topbar-sub">Cashflow-Auswertung · Druckansicht</div>
         </div>

@@ -80,8 +80,9 @@ export default function AnlageVExport({
 
   return (
     <div className="fade-up">
-      <div className="topbar">
+      <div className="topbar" style={{ alignItems: "flex-end" }}>
         <div>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--gold)", fontWeight: 600, marginBottom: 10 }}>Steuer · Anlage V</div>
           <div className="topbar-title"><span style={{ color: "var(--gold)", fontWeight: 700, marginRight: 4 }}>§</span> Steuer — Anlage V</div>
           <div className="topbar-sub">Einkünfte aus Vermietung & Verpachtung je Objekt — aus deinen Buchungen</div>
         </div>

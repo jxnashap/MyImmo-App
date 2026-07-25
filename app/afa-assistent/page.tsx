@@ -25,8 +25,9 @@ export default async function AfaAssistentPage() {
 
   return (
     <div className="fade-up">
-      <div className="topbar">
+      <div className="topbar" style={{ alignItems: "flex-end" }}>
         <div>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--gold)", fontWeight: 600, marginBottom: 10 }}>Steuer · AfA</div>
           <div className="topbar-title">AfA-Assistent</div>
           <div className="topbar-sub">
             Abschreibung planen: Kaufpreisaufteilung, degressiv vs. linear, § 7b-Sonder-AfA und § 82b-Verteilung · Angaben ohne Gewähr

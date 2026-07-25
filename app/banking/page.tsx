@@ -113,8 +113,9 @@ export default async function BankingPage({
 
   return (
     <div className="fade-up">
-      <div className="topbar">
+      <div className="topbar" style={{ alignItems: "flex-end" }}>
         <div>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--gold)", fontWeight: 600, marginBottom: 10 }}>Verwaltung · Open Banking</div>
           <div className="topbar-title">Banking</div>
           <div className="topbar-sub">
             Konten verbinden (nur Lesezugriff) und Umsätze abrufen — Sandbox-Modus bis zum Live-Vertrag
