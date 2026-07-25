@@ -212,6 +212,7 @@ export default function MietkontoBestaetigung({
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Verwaltung · Mietkonto</div>
           <div className="topbar-title">Mietkonto</div>
           <div className="topbar-sub">Mieteingänge bestätigen &amp; nacherfassen</div>
         </div>
@@ -226,6 +227,7 @@ export default function MietkontoBestaetigung({
           </div>
         )}
       </div>
+      <hr className="topbar-rule" />
 
       {/* Disclaimer (dezent, immer sichtbar) */}
       <div className="glass-card" style={{ padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>

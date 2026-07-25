@@ -39,11 +39,13 @@ export default async function TenantsPage({ searchParams }: { searchParams: { q?
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Verwaltung · Vermietung</div>
           <div className="topbar-title">Mieter</div>
           <div className="topbar-sub">Mietverträge, Fristen, Einheiten &amp; Dokumente</div>
         </div>
         <Link href="/tenants/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Mieter</Link>
       </div>
+      <hr className="topbar-rule" />
 
       <div className="grid-4 mb-20">
         <div className="kpi-card"><div className="kpi-label">Mieter gesamt</div><div className="kpi-value">{list.length}</div></div>

@@ -74,6 +74,7 @@ export default async function JahresberichtPage({
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Auswertung · Jahresbericht</div>
           <div className="topbar-title">Jahresbericht &amp; Steuer-Export</div>
           <div className="topbar-sub">Cashflow-Auswertung · Druckansicht</div>
         </div>
@@ -84,6 +85,7 @@ export default async function JahresberichtPage({
           </a>
         </div>
       </div>
+      <hr className="topbar-rule" />
 
       <FilterBar filters={filters} />
 
@@ -91,9 +93,9 @@ export default async function JahresberichtPage({
         <div className="section-header">
           <h3>Auswertung {year}</h3>
           {year === aktuellesJahr && (
-            <span style={{ fontSize: 11, color: "var(--muted)" }}>
+            <div className="section-sub">
               Stand Jan–{heute.toLocaleDateString("de-DE", { month: "short" })} {year} · unterjährig, Zins/Tilgung anteilig
-            </span>
+            </div>
           )}
         </div>
         <div className="section-body">

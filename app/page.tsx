@@ -167,7 +167,7 @@ export default async function DashboardPage() {
   // Leeres Konto: statt Null-KPIs eine Start-Checkliste, die sagt, was zu tun ist.
   if (properties.length === 0) {
     const schritte = [
-      { nr: 1, titel: "Erstes Objekt anlegen", text: "Der Assistent führt dich in 4 Schritten durch Objekt, Mieter und Kredit — mit fertigen Kennzahlen am Ende.", href: "/onboarding", cta: "Assistent starten", erledigt: false },
+      { nr: 1, titel: "Erstes Objekt anlegen", text: "Name, Adresse, Kaufpreis, Miete — mehr braucht es für den Start nicht.", href: "/properties/new", cta: "Objekt anlegen", erledigt: false },
       { nr: 2, titel: "Mieter erfassen", text: "Mit Kaltmiete und Mietbeginn — daraus entstehen Mietkonto und Abrechnungen.", href: "/tenants/new", cta: "Mieter anlegen", erledigt: mieterRows.length > 0 },
       { nr: 3, titel: "Ein- & Ausgaben buchen", text: "Mieteingänge und Kosten festhalten — per Hand, CSV oder Kontoanbindung.", href: "/cashflow", cta: "Zu den Buchungen", erledigt: einnahmen.length + kosten.length > 0 },
     ];
@@ -209,9 +209,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="fade-up">
-      <div className="topbar" style={{ alignItems: "flex-end" }}>
+      <div className="topbar">
         <div>
-          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".16em", color: "var(--gold)", fontWeight: 600, marginBottom: 10 }}>Portfolio · {monatJahr}</div>
+          <div className="topbar-kicker">Portfolio · {monatJahr}</div>
           <div className="topbar-title">{gruss}{vorname ? `, ${vorname}` : ""}</div>
           <div className="topbar-sub">
             {properties.length} Objekt{properties.length === 1 ? "" : "e"}, {mieterRows.length} Mietverhältnis{mieterRows.length === 1 ? "" : "se"} — Stand heute
@@ -223,6 +223,7 @@ export default async function DashboardPage() {
           <Link href="/properties/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Immobilie</Link>
         </div>
       </div>
+      <hr className="topbar-rule" />
 
       {refinanz.length > 0 && (
         <div style={{ marginBottom: 16, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
@@ -263,7 +264,7 @@ export default async function DashboardPage() {
           <div className="kpi-value">{euro(totalKosten)}</div>
           <div className="kpi-sub">Kredit + laufend (Ø 12 Mon.)</div>
         </Link>
-        <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
+        <Link href="/cashflow" className="kpi-card highlight" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Cashflow / Mo.</div>
           <div className="kpi-value" style={{ color: cashflow >= 0 ? "var(--green)" : "var(--red)" }}>{cashflow >= 0 ? "+ " : "− "}{euro(Math.abs(cashflow))}</div>
           <div className="kpi-sub"><span className={`badge ${cashflow >= 0 ? "badge-green" : "badge-red"}`}>{cashflow >= 0 ? "Positiver Cashflow" : "Negativer Cashflow"}</span></div>
@@ -363,7 +364,7 @@ export default async function DashboardPage() {
       <div className="grid-2">
         <div className="section" style={{ marginBottom: 0 }}>
           <div className="section-header">
-            <div><h3>Letzte Buchungen</h3><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 3 }}>Einnahmen und Ausgaben, zuletzt erfasst</div></div>
+            <div><h3>Letzte Buchungen</h3><div className="section-sub">Einnahmen und Ausgaben, zuletzt erfasst</div></div>
             <Link href="/cashflow" className="btn btn-ghost btn-sm">Alle →</Link>
           </div>
           <div className="section-body">
@@ -399,7 +400,7 @@ export default async function DashboardPage() {
 
         <div className="section" style={{ marginBottom: 0 }}>
           <div className="section-header">
-            <div><h3>Fristen &amp; Aufgaben</h3><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 3 }}>Automatisch aus deinen Daten erzeugt</div></div>
+            <div><h3>Fristen &amp; Aufgaben</h3><div className="section-sub">Automatisch aus deinen Daten erzeugt</div></div>
             <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
           </div>
           <div className="section-body">

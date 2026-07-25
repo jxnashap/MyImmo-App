@@ -42,6 +42,7 @@ export default async function PropertiesPage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Immobilien · Portfolio</div>
           <div className="topbar-title">Immobilien</div>
           <div className="topbar-sub">Alle erfassten Objekte</div>
         </div>
@@ -50,6 +51,7 @@ export default async function PropertiesPage() {
           <Link href="/properties/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Neu</Link>
         </div>
       </div>
+      <hr className="topbar-rule" />
 
       {list.length === 0 ? (
         <div className="prop-grid">

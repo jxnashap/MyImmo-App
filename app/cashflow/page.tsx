@@ -99,6 +99,7 @@ export default async function CashflowPage({
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Verwaltung · Ein- &amp; Ausgaben</div>
           <div className="topbar-title">Ein- &amp; Ausgaben</div>
           <div className="topbar-sub">Einnahmen und Kosten im Vergleich</div>
         </div>
@@ -107,6 +108,7 @@ export default async function CashflowPage({
           <Link href="/cashflow/neu" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Buchung</Link>
         </div>
       </div>
+      <hr className="topbar-rule" />
 
       {/* KPIs */}
       <div className="grid-3 mb-20" style={{ gap: 14 }}>

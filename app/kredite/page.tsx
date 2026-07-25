@@ -29,15 +29,17 @@ export default async function KreditePage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Finanzierung · Darlehen</div>
           <div className="topbar-title">Kredite &amp; Finanzierung</div>
           <div className="topbar-sub">Darlehen, Zinsbindung, Tilgungsplan</div>
         </div>
         <Link href="/kredite/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Darlehen</Link>
       </div>
+      <hr className="topbar-rule" />
 
       {warnungen.length > 0 && (
         <div className="section">
-          <div className="section-header"><h3>Refinanzierungs-Kalender</h3><span style={{ fontSize: 11, color: "var(--muted)" }}>Zinsbindungen bald ablaufend</span></div>
+          <div className="section-header"><h3>Refinanzierungs-Kalender</h3><div className="section-sub">Zinsbindungen bald ablaufend</div></div>
           <div className="section-body">
             {warnungen.map(({ k, w }) => (
               <div key={k.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--line)" }}>

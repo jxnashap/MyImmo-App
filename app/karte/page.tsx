@@ -54,6 +54,7 @@ export default async function KartePage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Auswertung · Standorte</div>
           <div className="topbar-title">Portfolio-Karte</div>
           <div className="topbar-sub">
             {objekte.length} {objekte.length === 1 ? "Objekt" : "Objekte"} auf der Karte
@@ -61,6 +62,7 @@ export default async function KartePage() {
           </div>
         </div>
       </div>
+      <hr className="topbar-rule" />
 
       {alle.length === 0 ? (
         <div className="section"><div className="section-body">

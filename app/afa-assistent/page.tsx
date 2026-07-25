@@ -27,12 +27,14 @@ export default async function AfaAssistentPage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Steuer · AfA</div>
           <div className="topbar-title">AfA-Assistent</div>
           <div className="topbar-sub">
             Abschreibung planen: Kaufpreisaufteilung, degressiv vs. linear, § 7b-Sonder-AfA und § 82b-Verteilung · Angaben ohne Gewähr
           </div>
         </div>
       </div>
+      <hr className="topbar-rule" />
       <AfaAssistent objekte={objekte} />
     </div>
   );
