@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
 import KrediteListe from "@/components/KrediteListe";
+import SzenarioRechner from "@/components/SzenarioRechner";
 import { decryptKreditRow } from "@/lib/kreditData";
 import type { Kredit, Property } from "@/lib/types";
 import { Plus, Siren, Landmark } from "lucide-react";
@@ -34,6 +35,9 @@ export default async function KreditePage() {
         </div>
         <Link href="/kredite/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Darlehen</Link>
       </div>
+
+      {/* Design-Handoff Phase 2: Szenario-/Stresstest-Rechner ergänzt die Liste */}
+      <SzenarioRechner />
 
       {warnungen.length > 0 && (
         <div className="section">

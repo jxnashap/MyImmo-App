@@ -29,7 +29,7 @@ export default async function DashboardPage() {
     return <LandingPage />;
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bankv }, { data: bewHist }, { data: profil }, { data: term }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bankv }, { data: bewHist }, { data: profil }, { data: term }, { data: kalks }, { data: sa }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
@@ -39,6 +39,8 @@ export default async function DashboardPage() {
     supabase.from("bewertung_historie").select("immobilie_id,datum,marktwert"),
     supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
     supabase.from("termine").select("id,titel,datum,kategorie,erledigt").order("datum"),
+    supabase.from("kalkulationen").select("id,name,data,summary").order("created_at", { ascending: false }),
+    supabase.from("selbstauskunft").select("id").limit(1).maybeSingle(),
   ]);
 
   const properties = (props ?? []) as Property[];
@@ -80,6 +82,24 @@ export default async function DashboardPage() {
       fristListe.push({ datum: t.datum, label: t.titel ?? "Termin", sub: t.kategorie ?? "Eigener Termin", warn: false });
   fristListe.sort((a, b) => a.datum.localeCompare(b.datum));
   const naechsteFristen = fristListe.slice(0, 4);
+
+  // Kauf-Mission (Design-Handoff): ehrlicher Fortschritt aus echten Daten —
+  // gespeicherte Kauf-Objekte, deren Radar-Bewertung und die Selbstauskunft.
+  type Kalk = { id: string; name: string; data: Record<string, string> | null; summary: Record<string, number> | null };
+  const kalkListe = ((kalks ?? []) as Kalk[]).filter((k) => (k.summary?.kp ?? 0) > 0);
+  const bewertet = kalkListe.filter((k) => k.data?.radar_lage != null).length;
+  const hatSelbstauskunft = !!sa;
+  const missionAn = kalkListe.length > 0;
+  const missionStufen = missionAn
+    ? [
+        { label: `Objekte gespeichert — ${kalkListe.length} im Kauf-Radar`, meta: "erledigt", done: true },
+        { label: bewertet >= kalkListe.length ? "Deal-Scores bewertet" : `Objekte prüfen — ${bewertet} von ${kalkListe.length} bewertet`, meta: bewertet >= kalkListe.length ? "erledigt" : "aktiv", done: bewertet >= kalkListe.length },
+        { label: "Finanzierung durchspielen", meta: "Szenario-Rechner", done: false },
+        { label: "Selbstauskunft für die Bank", meta: hatSelbstauskunft ? "erledigt" : "offen", done: hatSelbstauskunft },
+      ]
+    : [];
+  const missionDone = missionStufen.filter((s) => s.done).length;
+  const missionAktivIdx = missionStufen.findIndex((s) => !s.done);
 
   // Begrüßung nach Tageszeit (Europe/Berlin) + Vorname aus dem Vermieterprofil.
   const stunde = Number(new Intl.DateTimeFormat("de-DE", { hour: "numeric", hour12: false, timeZone: "Europe/Berlin" }).format(new Date()));
@@ -296,14 +316,51 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="section mb-20">
-        <div className="section-header">
-          <h3>Cashflow-Entwicklung</h3>
-          <ZeitraumControl />
+      {/* Design-Handoff: Cashflow-Chart + Kauf-Mission nebeneinander, wenn ein Kauf-Vorhaben läuft */}
+      <div className={missionAn ? "grid-2 mb-20" : ""} style={missionAn ? { alignItems: "stretch" } : undefined}>
+        <div className={`section ${missionAn ? "" : "mb-20"}`} style={missionAn ? { marginBottom: 0 } : undefined}>
+          <div className="section-header">
+            <h3>Cashflow-Entwicklung</h3>
+            <ZeitraumControl />
+          </div>
+          <div className="section-body">
+            <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" caption="Kumulierter Cashflow (Einnahmen − Ausgaben)" />
+          </div>
         </div>
-        <div className="section-body">
-          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" caption="Kumulierter Cashflow (Einnahmen − Ausgaben)" />
-        </div>
+        {missionAn && (
+          <div className="section" style={{ marginBottom: 0 }}>
+            <div className="section-header">
+              <div><h3>Kauf-Mission</h3><div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 3 }}>{kalkListe[0]?.name}</div></div>
+              <span className="badge badge-gold">Stufe {Math.min(missionDone + 1, 4)} von 4</span>
+            </div>
+            <div className="section-body">
+              <div className="bar-track" style={{ marginBottom: 16 }}><div className="bar-fill" style={{ width: `${(missionDone / 4) * 100}%`, background: "var(--gold)" }} /></div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {missionStufen.map((m, i) => {
+                  const aktiv = i === missionAktivIdx;
+                  return (
+                    <div key={m.label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{
+                        width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 11, fontWeight: 600, flexShrink: 0,
+                        background: m.done ? "var(--gold-pale)" : aktiv ? "var(--gold)" : "var(--bg3)",
+                        color: m.done ? "var(--gold)" : aktiv ? "#1A1814" : "var(--faint)",
+                        border: `1px solid ${m.done || aktiv ? "var(--gold-dim)" : "var(--line2)"}`,
+                      }}>{m.done ? "✓" : i + 1}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: aktiv ? 600 : 400, color: aktiv ? "var(--text)" : m.done ? "var(--muted)" : "var(--faint)" }}>{m.label}</div>
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--faint)", whiteSpace: "nowrap" }}>{m.meta}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+                <Link href="/kauf" className="btn btn-ghost btn-sm">Weiter prüfen →</Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid-2 mb-20">
