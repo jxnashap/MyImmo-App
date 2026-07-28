@@ -36,6 +36,8 @@ export type MarktwertErgebnis = {
   /** false = Pflichtangaben fehlen; dann ist `ergebnis` null. */
   bereit: boolean;
   fehlend: string[];
+  /** Gerechnet wurde, aber diese Angaben fehlen und verzerren das Ergebnis. */
+  unsicher: string[];
   ergebnis: Bewertungsergebnis | null;
   restnutzungsdauer: number;
 };
@@ -52,6 +54,26 @@ export function fehlendeAngaben(e: MarktwertEingabe): string[] {
   return fehlt;
 }
 
+/**
+ * Angaben, ohne die gerechnet WIRD, das Ergebnis aber deutlich unsicherer ist.
+ *
+ * Beim Ertragswert ist der Bodenwert Teil der Formel (§ 28 ImmoWertV: Reinertrag
+ * abzüglich Bodenwertverzinsung). Fehlt er, rechnet die Engine mit 0 € Boden —
+ * das Ergebnis ist dann keine Marktwertschätzung mehr, sondern eine reine
+ * Ertragsrechnung. Das darf man zeigen, aber nicht wortlos.
+ *
+ * Fehlt das Baujahr, setzt die Restnutzungsdauer auf die volle Gesamtnutzungs-
+ * dauer — die App rechnet das Objekt also still als Neubau.
+ */
+export function unsichereAngaben(e: MarktwertEingabe): string[] {
+  const unsicher: string[] = [];
+  if (e.baujahr <= 0) unsicher.push("Baujahr — gerechnet wird sonst mit voller Restnutzungsdauer (wie ein Neubau)");
+  if (e.nutzung === "vermietung" && !(e.bodenrichtwert > 0 && e.grundFlaeche > 0)) {
+    unsicher.push("Bodenrichtwert und Grundstücksfläche — ohne sie bleibt der Bodenwert im Ertragswert unberücksichtigt");
+  }
+  return unsicher;
+}
+
 export function marktwert(e: MarktwertEingabe): MarktwertErgebnis {
   const jahr = new Date().getFullYear();
   const rnd = e.baujahr > 0 ? restnutzungsdauer(e.baujahr, jahr, GND_WOHNGEBAEUDE) : GND_WOHNGEBAEUDE;
@@ -59,8 +81,10 @@ export function marktwert(e: MarktwertEingabe): MarktwertErgebnis {
   const verfahren = e.nutzung === "vermietung" ? "ertragswert" : "sachwert";
   const verfahrenLabel = verfahren === "ertragswert" ? "Ertragswert (vermietet)" : "Sachwert (Bausubstanz)";
 
+  const unsicher = unsichereAngaben(e);
+
   if (fehlt.length > 0) {
-    return { verfahren, verfahrenLabel, bereit: false, fehlend: fehlt, ergebnis: null, restnutzungsdauer: rnd };
+    return { verfahren, verfahrenLabel, bereit: false, fehlend: fehlt, unsicher, ergebnis: null, restnutzungsdauer: rnd };
   }
 
   const ergebnis =
@@ -87,7 +111,7 @@ export function marktwert(e: MarktwertEingabe): MarktwertErgebnis {
           sachwertfaktor: e.sachwertfaktor || 1,
         });
 
-  return { verfahren, verfahrenLabel, bereit: true, fehlend: [], ergebnis, restnutzungsdauer: rnd };
+  return { verfahren, verfahrenLabel, bereit: true, fehlend: [], unsicher, ergebnis, restnutzungsdauer: rnd };
 }
 
 /** Kaufpreis gegen den geschätzten Marktwert — schlicht und ohne Drama. */

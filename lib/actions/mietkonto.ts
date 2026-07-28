@@ -7,7 +7,28 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export type MietkontoResult = { ok: boolean; error?: string };
+export type MietkontoResult = {
+  ok: boolean;
+  error?: string;
+  /** true = es wurde NICHTS gebucht, weil dieser Miet-Monat schon erfasst war. */
+  uebersprungen?: boolean;
+};
+
+/**
+ * Idempotenz-Schlüssel einer Miet-Buchung.
+ *
+ * Entscheidend ist der MIET-MONAT, nicht das Zahlungsdatum: Zahlt ein Mieter am
+ * 05.07. sowohl die Juni- als auch die Julimiete nach, sind das zwei Buchungen
+ * mit demselben Datum — mit dem alten Schlüssel (Mieter + Datum) wurde die
+ * zweite stillschweigend verworfen und trotzdem Erfolg gemeldet. Das Geld fehlte
+ * danach in Cashflow und Anlage V.
+ *
+ * Fehlt der Miet-Monat, bleibt das Buchungsdatum der Schlüssel — dann gibt es
+ * nichts Besseres, und der Doppelklick-Schutz greift weiterhin.
+ */
+function buchungsSchluessel(mieterId: string, buchungsdatum: string, sollMonat: string | null): string {
+  return `${mieterId}|${sollMonat ?? `d:${buchungsdatum}`}`;
+}
 
 export async function bestaetigeMieteingang(input: {
   mieter_id: string;
@@ -31,21 +52,29 @@ export async function bestaetigeMieteingang(input: {
     ? Number(input.nk_anteil)
     : null;
 
-  // Serverseitige Idempotenz: gleicher Mieter + gleiches Zahlungsdatum ist
-  // schon gebucht (Doppelklick/doppelter Request) → nicht erneut anlegen.
-  const { data: schonDa } = await supabase
+  const sollMonat = /^\d{4}-\d{2}$/.test(input.soll_monat ?? "") ? input.soll_monat! : null;
+
+  // Serverseitige Idempotenz über den Miet-Monat (siehe buchungsSchluessel).
+  const { data: bestand } = await supabase
     .from("einnahmen")
-    .select("id")
+    .select("buchungsdatum,soll_monat")
     .eq("mieter_id", input.mieter_id)
-    .eq("kategorie", "Miete")
-    .eq("buchungsdatum", input.buchungsdatum)
-    .limit(1);
-  if (schonDa?.length) {
+    .eq("kategorie", "Miete");
+  const schluessel = buchungsSchluessel(input.mieter_id, input.buchungsdatum, sollMonat);
+  const schonDa = (bestand ?? []).some(
+    (e) => buchungsSchluessel(input.mieter_id, e.buchungsdatum, e.soll_monat ?? null) === schluessel,
+  );
+  if (schonDa) {
     revalidatePath("/mietkonto");
-    return { ok: true };
+    return {
+      ok: false,
+      uebersprungen: true,
+      error: sollMonat
+        ? `Für ${sollMonat} ist bereits ein Mieteingang gebucht — es wurde nichts angelegt.`
+        : "Für dieses Datum ist bereits ein Mieteingang gebucht — es wurde nichts angelegt.",
+    };
   }
 
-  const sollMonat = /^\d{4}-\d{2}$/.test(input.soll_monat ?? "") ? input.soll_monat : null;
   const { error } = await supabase.from("einnahmen").insert({
     user_id: user.id,
     mieter_id: input.mieter_id,
@@ -92,21 +121,22 @@ export async function bestaetigeMehrere(
   if (gueltig.length === 0) return { ok: false, anzahl: 0, error: "Keine gültigen Zeilen ausgewählt." };
   if (gueltig.length > 600) return { ok: false, anzahl: 0, error: "Zu viele Zeilen auf einmal (max. 600)." };
 
-  // Serverseitige Idempotenz: bereits gebuchte (Mieter, Datum)-Paare überspringen
-  // (Doppelklick/doppelter Request) — zusätzlich Dubletten innerhalb der Auswahl.
+  // Serverseitige Idempotenz je Miet-Monat (siehe buchungsSchluessel) —
+  // zusätzlich Dubletten innerhalb der Auswahl.
   const mieterIds = Array.from(new Set(gueltig.map((z) => z.mieter_id)));
-  const daten = Array.from(new Set(gueltig.map((z) => z.buchungsdatum)));
   const { data: vorhandene } = await supabase
     .from("einnahmen")
-    .select("mieter_id,buchungsdatum")
+    .select("mieter_id,buchungsdatum,soll_monat")
     .eq("kategorie", "Miete")
-    .in("mieter_id", mieterIds)
-    .in("buchungsdatum", daten);
-  const gebucht = new Set((vorhandene ?? []).map((v) => `${v.mieter_id}|${v.buchungsdatum}`));
+    .in("mieter_id", mieterIds);
+  const gebucht = new Set(
+    (vorhandene ?? []).map((v) => buchungsSchluessel(v.mieter_id, v.buchungsdatum, v.soll_monat ?? null)),
+  );
 
   const rows: Record<string, unknown>[] = [];
   for (const z of gueltig) {
-    const key = `${z.mieter_id}|${z.buchungsdatum}`;
+    const sm = /^\d{4}-\d{2}$/.test(z.soll_monat ?? "") ? z.soll_monat! : null;
+    const key = buchungsSchluessel(z.mieter_id, z.buchungsdatum, sm);
     if (gebucht.has(key)) continue;
     gebucht.add(key);
     rows.push({
@@ -119,7 +149,7 @@ export async function bestaetigeMehrere(
       beschreibung: "Mieteingang (Nacherfassung)",
       nk_anteil: z.nk_anteil != null && Number.isFinite(Number(z.nk_anteil)) ? Number(z.nk_anteil) : null,
       wiederkehrend: true,
-      soll_monat: /^\d{4}-\d{2}$/.test(z.soll_monat ?? "") ? z.soll_monat : null,
+      soll_monat: sm,
     });
   }
   if (rows.length === 0) {

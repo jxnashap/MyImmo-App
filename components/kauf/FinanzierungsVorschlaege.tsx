@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Info, TriangleAlert, Sparkles, ExternalLink } from "lucide-react";
 import { fmtE } from "@/lib/kalk";
+import { zahlDe0 } from "@/lib/zahl";
 import { konfiguriereDarlehen, beispielZins, type Prioritaet } from "@/lib/kauf/darlehen";
 import {
   foerderKredite, KFW_STAND,
@@ -70,11 +71,8 @@ export default function FinanzierungsVorschlaege({
   const [einWE, setEinWE] = useState(true);
   const [progKey, setProgKey] = useState<string>(""); // "" = automatisch (größter Treffer)
 
-  const num = (s: string) => {
-    const n = parseFloat(s.replace(/[^\d.,]/g, "").replace(",", "."));
-    return Number.isFinite(n) ? n : 0;
-  };
-  const ek = Math.max(0, Math.min(num(ekInput), gesamtInvest));
+  // Deutsche Schreibweise: "80.000" sind achtzigtausend, nicht 80 (lib/zahl.ts).
+  const ek = Math.max(0, Math.min(zahlDe0(ekInput), gesamtInvest));
   const startJahr = new Date().getFullYear();
   const sollzins = beispielZins(zinsbindung);
 
@@ -231,7 +229,7 @@ export default function FinanzierungsVorschlaege({
           const ekUsed = Math.min(s.ekEinsatz(ekEin, nebenkosten), gesamtInvest);
           const restbedarf = Math.max(0, gesamtInvest - ekUsed);
           const kfwSeg = gewaehlt ? Math.max(0, Math.min(gewaehlt.hoechstbetrag, restbedarf)) : 0;
-          const manuellSeg = Math.max(0, Math.min(num(manuellInput), restbedarf - kfwSeg));
+          const manuellSeg = Math.max(0, Math.min(zahlDe0(manuellInput), restbedarf - kfwSeg));
           const bankdarlehen = Math.max(0, restbedarf - kfwSeg - manuellSeg);
           const konfig = konfiguriereDarlehen(
             { darlehen: bankdarlehen, prioritaet: s.prioritaet, zinsbindung, sollzins, sondertilgung: true },

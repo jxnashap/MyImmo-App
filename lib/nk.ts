@@ -3,7 +3,8 @@
 // Optional: CO₂-Kostenaufteilung nach CO2KostAufG (lib/co2.ts) — der
 // Vermieteranteil mindert als Gutschrift die vom Mieter zu tragende Summe.
 
-import { co2Aufteilung, CO2_STUFEN } from "@/lib/co2";
+import { co2Aufteilung, CO2_STUFEN, co2PreisBekannt } from "@/lib/co2";
+import { sollFuerMonat, ymPlus, type MietkontoZeitraum } from "@/lib/mietkonto";
 
 export type NkRawPosition = {
   bezeichnung: string;
@@ -76,6 +77,97 @@ export type NkCo2 = {
   gewerbe: boolean;
 };
 
+// ---------------------------------------------------------------------------
+// Geleistete Vorauszahlungen
+// ---------------------------------------------------------------------------
+// Der Saldo der Abrechnung ist nur so gut wie diese Zahl. Sie einfach aus dem
+// HEUTE gespeicherten Stammdaten-Betrag × Monate zu bilden ist falsch, sobald
+// die Vorauszahlung im Abrechnungsjahr geändert wurde oder das Mietverhältnis
+// unterjährig begann: Eine Erhöhung von 150 auf 200 € im Juli führte so zu
+// 12 × 200 = 2.400 € statt der tatsächlich gezahlten 2.100 € — ein Guthaben,
+// das der Mieter nie eingezahlt hat, in einem Dokument, das der Vermieter ihm
+// rechtsverbindlich schickt.
+//
+// Rangfolge der Quellen:
+//   1. "gebucht"     — Summe der NK-Anteile aus den gebuchten Miet-Einnahmen
+//                      des Jahres. Das sind die real geflossenen Beträge.
+//   2. "historie"    — monatsweise aus den Miet-Zeiträumen (Änderungshistorie),
+//                      Beginn-/Endemonat tagesanteilig.
+//   3. "stammdaten"  — nur wenn keine Historie existiert: aktueller Betrag ×
+//                      belegte Monate. Wird als Schätzung ausgewiesen.
+
+export type NkVorauszahlungQuelle = "gebucht" | "historie" | "stammdaten";
+
+export type NkVorauszahlungInput = {
+  /** Summe der `einnahmen.nk_anteil` aus Miet-Buchungen des Abrechnungsjahres. */
+  gebucht?: number | null;
+  /** Miet-Zeiträume des Mieters (Historie von Kaltmiete/NK-Vorauszahlung). */
+  zeitraeume?: MietkontoZeitraum[] | null;
+};
+
+export type NkVorauszahlung = {
+  betrag: number;
+  quelle: NkVorauszahlungQuelle;
+  /** Klartext für die Abrechnung — der Mieter muss die Herkunft nachvollziehen können. */
+  hinweis: string;
+  /** true = geschätzt, nicht aus tatsächlichen Zahlungen belegt. */
+  geschaetzt: boolean;
+};
+
+/** Geleistete NK-Vorauszahlungen des Abrechnungsjahres ermitteln. */
+export function vorauszahlungFuerJahr(
+  jahr: number,
+  tenant: NkTenant,
+  monate: number,
+  input?: NkVorauszahlungInput | null,
+): NkVorauszahlung {
+  const gebucht = input?.gebucht;
+  if (gebucht != null && Number.isFinite(gebucht) && gebucht > 0) {
+    return {
+      betrag: rund2(gebucht),
+      quelle: "gebucht",
+      hinweis: "Summe der tatsächlich gebuchten Nebenkosten-Vorauszahlungen des Abrechnungsjahres.",
+      geschaetzt: false,
+    };
+  }
+
+  const zeitraeume = input?.zeitraeume ?? [];
+  const mieter = {
+    kaltmiete: null,
+    nk_vorauszahlung: tenant.nk_vorauszahlung,
+    stellplatz_miete: null,
+    mietbeginn: tenant.mietbeginn,
+    mietende: tenant.mietende,
+  };
+
+  // Monatsweise über das Abrechnungsjahr — sollFuerMonat zieht den zum jeweiligen
+  // Monat gültigen Betrag aus der Historie und kürzt Beginn-/Endemonat anteilig.
+  if (tenant.mietbeginn) {
+    let summe = 0;
+    for (let ym = `${jahr}-01`; ym <= `${jahr}-12`; ym = ymPlus(ym, 1)) {
+      summe += sollFuerMonat(mieter, zeitraeume, ym)?.nk ?? 0;
+    }
+    if (summe > 0) {
+      return {
+        betrag: rund2(summe),
+        quelle: zeitraeume.length > 0 ? "historie" : "stammdaten",
+        hinweis:
+          zeitraeume.length > 0
+            ? "Monatsweise aus der hinterlegten Miethistorie berechnet (Änderungen der Vorauszahlung berücksichtigt)."
+            : "Aus der vereinbarten monatlichen Vorauszahlung hochgerechnet — bitte gegen die Kontoauszüge prüfen.",
+        geschaetzt: zeitraeume.length === 0,
+      };
+    }
+  }
+
+  return {
+    betrag: rund2((tenant.nk_vorauszahlung ?? 0) * monate),
+    quelle: "stammdaten",
+    hinweis: "Aus der vereinbarten monatlichen Vorauszahlung hochgerechnet — bitte gegen die Kontoauszüge prüfen.",
+    geschaetzt: true,
+  };
+}
+
 export type NkAbrechnung = {
   jahr: number;
   mieterName: string;
@@ -95,7 +187,11 @@ export type NkAbrechnung = {
   kostenNachCo2: number; // umlageGesamt − CO₂-Vermieteranteil
   nkVorauszahlungMonat: number;
   vorauszahlungGeleistet: number;
+  /** Herkunft der Vorauszahlungssumme (gebucht / Historie / geschätzt). */
+  vorauszahlung: NkVorauszahlung;
   saldo: number; // > 0 = Guthaben (Erstattung), < 0 = Nachzahlung
+  /** Sachliche Warnungen zur Abrechnung (fehlender CO₂-Preis, geschätzte Werte …). */
+  warnungen: string[];
 };
 
 function ym(d: Date): number {
@@ -134,6 +230,20 @@ export function monateImJahr(
 }
 
 const rund2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Belegung eines Mieters im Abrechnungsjahr — Monate (für die Anzeige) UND
+ * Kalendertage (für jede Verteilung). Eine Quelle für Verteiler und Abrechnung,
+ * damit beide dieselbe Zeitanteiligkeit verwenden.
+ */
+export function belegung(
+  jahr: number,
+  mietbeginn: string | null,
+  mietende: string | null,
+): { monate: number; tage: number } {
+  const { von, bis, monate } = monateImJahr(jahr, mietbeginn, mietende);
+  return { monate, tage: monate === 0 ? 0 : belegungsTage(von, bis) };
+}
 
 /** CO₂-Aufteilung aus den nk_co2-Eingaben (null, wenn nichts Brauchbares erfasst). */
 export function nkCo2Aus(input: NkCo2Input | null | undefined, jahr: number): NkCo2 | null {
@@ -247,6 +357,7 @@ export function berechneNk(
   property: NkProperty | null,
   positionen: NkRawPosition[],
   co2Input?: NkCo2Input | null,
+  vzInput?: NkVorauszahlungInput | null,
 ): NkAbrechnung {
   // Belegungszeitraum zuerst — der Tage-Faktor gilt für 'zeit'-Positionen.
   const { von, bis, monate } = monateImJahr(jahr, tenant.mietbeginn, tenant.mietende);
@@ -379,8 +490,23 @@ export function berechneNk(
   const kostenNachCo2 = rund2(umlageGesamt - (co2?.vermieterAnteil ?? 0));
 
   const nkVorauszahlungMonat = tenant.nk_vorauszahlung ?? 0;
-  const vorauszahlungGeleistet = nkVorauszahlungMonat * monate;
+  const vorauszahlung = vorauszahlungFuerJahr(jahr, tenant, monate, vzInput);
+  const vorauszahlungGeleistet = vorauszahlung.betrag;
   const saldo = rund2(vorauszahlungGeleistet - kostenNachCo2);
+
+  // Warnungen: Dinge, die die Abrechnung angreifbar machen und die der
+  // Vermieter sehen MUSS, bevor er sie verschickt.
+  const warnungen: string[] = [];
+  if (vorauszahlung.geschaetzt) {
+    warnungen.push(
+      "Die geleisteten Vorauszahlungen sind hochgerechnet, nicht aus tatsächlichen Zahlungen belegt. Buche die Mieteingänge mit Nebenkosten-Anteil, damit hier der reale Betrag steht.",
+    );
+  }
+  if (co2Input && (co2Input.co2_kg ?? 0) > 0 && co2Input.co2_kosten == null && !co2PreisBekannt(jahr)) {
+    warnungen.push(
+      `Für ${jahr} ist kein CO₂-Referenzpreis hinterlegt — die CO₂-Aufteilung fehlt daher in dieser Abrechnung. Trage die tatsächlichen CO₂-Kosten aus der Brennstoffrechnung ein.`,
+    );
+  }
 
   const mieterName =
     [tenant.vorname, tenant.nachname].filter(Boolean).join(" ") || "Mieter";
@@ -404,7 +530,9 @@ export function berechneNk(
     kostenNachCo2,
     nkVorauszahlungMonat,
     vorauszahlungGeleistet,
+    vorauszahlung,
     saldo,
+    warnungen,
   };
 }
 

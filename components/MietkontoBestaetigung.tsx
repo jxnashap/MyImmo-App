@@ -31,6 +31,8 @@ export type MietkontoZeile = {
   stellplatz: number;
   gesamt: number;
   schonGebucht: boolean;
+  /** Gesetzt, wenn Ein-/Auszug mitten im Monat lag — Betrag ist anteilig. */
+  anteilig?: { tage: number; tageImMonat: number };
 };
 
 export type NacherfassungMieter = {
@@ -126,6 +128,8 @@ export default function MietkontoBestaetigung({
         router.refresh();
       } else {
         toast(res.error ?? "Buchen fehlgeschlagen.");
+        // Schon gebucht: Liste auffrischen, damit die Zeile verschwindet.
+        if (res.uebersprungen) router.refresh();
       }
     });
   };
@@ -312,6 +316,11 @@ export default function MietkontoBestaetigung({
                   <div style={{ fontSize: 11, color: "var(--faint)" }}>
                     {eur2(z.kaltmiete)} Kalt{z.nk > 0 ? ` + ${eur2(z.nk)} NK` : ""}{z.stellplatz > 0 ? ` + ${eur2(z.stellplatz)} Stellpl.` : ""}
                   </div>
+                  {z.anteilig && (
+                    <div style={{ fontSize: 11, color: "var(--amber)" }}>
+                      anteilig · {z.anteilig.tage}/{z.anteilig.tageImMonat} Tage belegt
+                    </div>
+                  )}
                 </div>
 
                 {ok ? (

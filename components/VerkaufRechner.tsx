@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { ShieldCheck, TriangleAlert, Info, Home } from "lucide-react";
-import { berechneVerkauf } from "@/lib/verkauf";
+import { berechneVerkauf, SPEK_FREIGRENZE } from "@/lib/verkauf";
 import { datum as fmtDatum } from "@/lib/format";
 import { zahlDe0 } from "@/lib/zahl";
 
@@ -30,6 +30,7 @@ export default function VerkaufRechner({ objekte = [] }: { objekte?: VerkaufObje
   const [vfe, setVfe] = useState("");
   const [satz, setSatz] = useState("42");
   const [objId, setObjId] = useState("");
+  const [eigen, setEigen] = useState(false);
 
   // Bestandsobjekt übernehmen — überschreibt nur die zugehörigen Felder.
   function uebernehmeObjekt(id: string) {
@@ -48,8 +49,9 @@ export default function VerkaufRechner({ objekte = [] }: { objekte?: VerkaufObje
       verkaufspreis: num(vp), kaufdatum: kaufdatum || null, kaufpreis: num(kp),
       kaufnebenkosten: num(knk), afaKumuliert: num(afa), verkaufskosten: num(vk),
       restschuld: num(rest), vorfaelligkeit: num(vfe), steuersatz: num(satz),
+      eigennutzung: eigen,
     });
-  }, [vp, kaufdatum, kp, knk, afa, vk, rest, vfe, satz]);
+  }, [vp, kaufdatum, kp, knk, afa, vk, rest, vfe, satz, eigen]);
 
   return (
     <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -85,6 +87,16 @@ export default function VerkaufRechner({ objekte = [] }: { objekte?: VerkaufObje
           <div className="form-group"><label>Vorfälligkeitsentschädigung (€)</label><input value={vfe} onChange={(e) => setVfe(e.target.value)} inputMode="decimal" /></div>
         </div>
         <div className="form-group" style={{ maxWidth: 220 }}><label>persönl. Steuersatz (%)</label><input value={satz} onChange={(e) => setSatz(e.target.value)} inputMode="decimal" /></div>
+        <label style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13, cursor: "pointer" }}>
+          <input type="checkbox" checked={eigen} onChange={(e) => setEigen(e.target.checked)} style={{ marginTop: 3 }} />
+          <span>
+            Selbst bewohnt
+            <span style={{ display: "block", fontSize: 11, color: "var(--faint)" }}>
+              Im Verkaufsjahr und in den beiden Kalenderjahren davor selbst genutzt — dann ist der
+              Gewinn nach § 23 Abs. 1 Nr. 1 S. 3 EStG steuerfrei, auch innerhalb der 10 Jahre.
+            </span>
+          </span>
+        </label>
       </div>
 
       <div style={{ flex: "1 1 280px", minWidth: 260 }}>
@@ -95,16 +107,40 @@ export default function VerkaufRechner({ objekte = [] }: { objekte?: VerkaufObje
             ) : (
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  {r.spekulationsfrei ? (
+                  {r.steuerfreiGrund === "frist" ? (
                     <span className="badge badge-green"><ShieldCheck size={12} style={{ verticalAlign: "-1px" }} /> Spekulationsfrist abgelaufen — steuerfrei</span>
+                  ) : r.steuerfreiGrund === "eigennutzung" ? (
+                    <span className="badge badge-green"><ShieldCheck size={12} style={{ verticalAlign: "-1px" }} /> Selbst bewohnt — steuerfrei (§ 23 Abs. 1 Nr. 1 S. 3)</span>
+                  ) : r.steuerfreiGrund === "verlust" ? (
+                    <span className="badge badge-teal">Veräußerungsverlust — keine Steuer</span>
+                  ) : r.steuerfreiGrund === "freigrenze" ? (
+                    <span className="badge badge-green"><ShieldCheck size={12} style={{ verticalAlign: "-1px" }} /> Unter der Freigrenze von {eur(SPEK_FREIGRENZE)} — keine Steuer</span>
                   ) : (
                     <span className="badge badge-amber"><TriangleAlert size={12} style={{ verticalAlign: "-1px" }} /> Innerhalb der 10-Jahres-Frist</span>
                   )}
                 </div>
+                {r.fehlend.length > 0 && (
+                  <div style={{ fontSize: 12, background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", borderRadius: 8, padding: "8px 10px", marginBottom: 10 }}>
+                    Ohne diese Angabe ist das Ergebnis nicht belastbar: {r.fehlend.join(", ")}.
+                    {!kaufdatum && " Ohne Kaufdatum rechnet die App vorsorglich mit voller Steuerpflicht."}
+                  </div>
+                )}
+                {r.verlust && (
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
+                    Rechnerischer Veräußerungsverlust: <strong>{eur(Math.abs(r.ergebnisRoh))}</strong>. Er ist
+                    nur mit Gewinnen aus anderen privaten Veräußerungsgeschäften verrechenbar (§ 23 Abs. 3 S. 7 EStG).
+                  </div>
+                )}
+                {r.steuerfreiGrund === "freigrenze" && (
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
+                    Gewinn {eur(r.ergebnisRoh)} — die Freigrenze gilt für die Summe aller privaten
+                    Veräußerungsgeschäfte eines Jahres. Weitere Verkäufe im selben Jahr können sie überschreiten.
+                  </div>
+                )}
                 {r.steuerfreiAb && !r.spekulationsfrei && (
                   <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>Steuerfrei ab: <strong>{fmtDatum(r.steuerfreiAb)}</strong></div>
                 )}
-                {!r.spekulationsfrei && (
+                {!r.steuerfreiGrund && (
                   <>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "4px 0" }}>
                       <span style={{ color: "var(--muted)" }}>Veräußerungsgewinn</span><span style={{ fontWeight: 600 }}>{eur(r.veraeusserungsgewinn)}</span>

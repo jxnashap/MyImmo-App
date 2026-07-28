@@ -22,6 +22,12 @@ export const CO2_STUFEN: Co2Stufe[] = [
 
 // Referenz-CO₂-Preise (BEHG) in €/t — nur Fallback, wenn die tatsächlichen
 // CO₂-Kosten (€) von der Brennstoffrechnung nicht vorliegen.
+//
+// ACHTUNG: Diese Tabelle hat ein Ende. Ab dem ersten Jahr ohne Eintrag gibt es
+// keine Schätzung mehr — dann MUSS der Nutzer die echten CO₂-Kosten eintragen.
+// Früher lieferte ein fehlendes Jahr still 0 €, wodurch der komplette
+// CO₂-Block samt Vermieter-Gutschrift kommentarlos aus der Abrechnung fiel.
+// Deshalb: `co2PreisBekannt()` fragen und den Nutzer warnen, statt zu raten.
 export const CO2_PREIS: Record<number, number> = {
   2021: 25,
   2022: 30,
@@ -30,6 +36,14 @@ export const CO2_PREIS: Record<number, number> = {
   2025: 55,
   2026: 60,
 };
+
+/** Gibt es für dieses Jahr einen hinterlegten BEHG-Referenzpreis? */
+export function co2PreisBekannt(jahr: number): boolean {
+  return CO2_PREIS[jahr] != null;
+}
+
+/** Letztes Jahr mit hinterlegtem Referenzpreis (für Hinweistexte). */
+export const CO2_PREIS_BIS = Math.max(...Object.keys(CO2_PREIS).map(Number));
 
 const rund2 = (n: number) => Math.round(n * 100) / 100;
 

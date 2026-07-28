@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { berechneUmlage, type UmlageZeile, type VerteilenInput, type VerteilenErgebnis } from "@/lib/umlage";
-import { monateImJahr } from "@/lib/nk";
+import { belegung, jahresTage } from "@/lib/nk";
 
 export async function verteileNebenkosten(input: VerteilenInput): Promise<VerteilenErgebnis> {
   const supabase = createClient();
@@ -40,7 +40,7 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
       id: m.id,
       name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter",
       flaeche: Math.max(0, flaecheMap.get(m.id) ?? 0),
-      monate: monateImJahr(jahr, m.mietbeginn, m.mietende).monate,
+      ...belegung(jahr, m.mietbeginn, m.mietende),
     }));
 
   if (aktiveMieter.length === 0) return fehlerErg("Keine Mieter für dieses Objekt gefunden.");
@@ -75,6 +75,7 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
   );
   const ergebnis = berechneUmlage(gueltigeZeilen, aktiveMieter, {
     zeitanteilig,
+    jahresTage: jahresTage(jahr),
     referenzFlaeche: prop?.flaeche ?? 0,
     anzahlEinheiten: einheiten.size,
   });

@@ -29,7 +29,7 @@ export type BankUmsatzRow = {
 
 export type PropOption = { id: string; bezeichnung: string | null };
 
-const KOSTEN_KAT = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
+const KOSTEN_KAT = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Schuldzinsen", "Hausgeld / WEG", "Makler", "Sonstiges"];
 
 function MietVorschlagZeile({ u }: { u: BankUmsatzRow }) {
   const [pending, startTransition] = useTransition();

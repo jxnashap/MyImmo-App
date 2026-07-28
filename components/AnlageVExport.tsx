@@ -260,9 +260,22 @@ export default function AnlageVExport({
 
           {ansicht === "elster" && <ElsterHilfe objekte={erg.objekte} jahr={jahr} />}
 
+          {erg.gesamt.hinweise.length > 0 && (
+            <div style={{ marginTop: 16, background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", borderRadius: 8, padding: "12px 14px", fontSize: 12.5 }}>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>Vor der Übertragung prüfen</div>
+              <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 5 }}>
+                {erg.gesamt.hinweise.map((h) => (
+                  <li key={h}>{h}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 14, lineHeight: 1.6 }}>
             Hinweis: Diese Aufstellung ist eine Hilfestellung zur Anlage V und ersetzt keine Steuerberatung.
-            Schuldzinsen sind aus aktueller Restschuld × Zinssatz geschätzt; Kautionen gelten als durchlaufende Posten und sind nicht enthalten.
+            Kautionen gelten als durchlaufende Posten und sind nicht enthalten. Schuldzinsen stammen
+            aus gebuchten Ausgaben der Kategorie „Schuldzinsen“; fehlen solche Buchungen, werden sie
+            aus der aktuellen Restschuld geschätzt und als nicht übertragbar gekennzeichnet.
           </div>
         </>
       )}

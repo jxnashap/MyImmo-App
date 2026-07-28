@@ -4,7 +4,7 @@ import { Hourglass, FileText, TriangleAlert, X, Plus, Save } from "lucide-react"
 import { Fragment, useRef, useState } from "react";
 import Link from "next/link";
 import { eur2 } from "@/lib/format";
-import { monateImJahr } from "@/lib/nk";
+import { belegung, jahresTage } from "@/lib/nk";
 import {
   berechneUmlage,
   type UmlageSchluessel,
@@ -88,9 +88,13 @@ export default function UmlageAssistent({
   const dragFrom = useRef<number | null>(null);
   const toast = useToast();
 
-  // belegte Monate je Mieter für das gewählte Jahr
+  // Belegung je Mieter für das gewählte Jahr — Monate für die Anzeige,
+  // Tage für die Verteilung (identisch zur Server-Action).
+  const belegungMap = Object.fromEntries(
+    mieter.map((m) => [m.id, belegung(jahr, m.mietbeginn, m.mietende)]),
+  );
   const monateMap = Object.fromEntries(
-    mieter.map((m) => [m.id, monateImJahr(jahr, m.mietbeginn, m.mietende).monate]),
+    Object.entries(belegungMap).map(([id, b]) => [id, b.monate]),
   );
 
   // --- Live-Berechnung (identisch zur Server-Action) ---
@@ -98,7 +102,8 @@ export default function UmlageAssistent({
     id: m.id,
     name: m.name,
     flaeche: num(flaeche[m.id] ?? ""),
-    monate: monateMap[m.id],
+    monate: belegungMap[m.id].monate,
+    tage: belegungMap[m.id].tage,
   }));
   const zeilenCalc: UmlageZeile[] = zeilen.map((z) => ({
     bezeichnung: z.bezeichnung.trim(),
@@ -110,6 +115,7 @@ export default function UmlageAssistent({
   const aktive = zeilenCalc.filter((z) => z.bezeichnung !== "" && z.betrag > 0);
   const calc = berechneUmlage(aktive, mieterCalc, {
     zeitanteilig,
+    jahresTage: jahresTage(jahr),
     referenzFlaeche: propFlaeche ?? 0,
   });
   const fehlendeFlaeche = mieterCalc.some((m) => m.flaeche <= 0);
@@ -303,7 +309,7 @@ export default function UmlageAssistent({
                     </div>
                     {zeitanteilig && (
                       <div style={{ fontSize: 11, color: monate < 12 ? "var(--amber)" : "var(--muted)", marginTop: 4 }}>
-                        {monate}/12 Monate belegt ({jahr})
+                        {monate}/12 Monate belegt ({jahr}) · {belegungMap[m.id].tage} Tage
                       </div>
                     )}
                   </div>

@@ -19,7 +19,7 @@ import {
 import { useToast } from "@/components/Toast";
 import type { WiederkehrVorlage } from "@/lib/types";
 
-const KOSTEN_KAT = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
+const KOSTEN_KAT = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Schuldzinsen", "Hausgeld / WEG", "Makler", "Sonstiges"];
 const EINNAHME_KAT = ["Miete", "Nebenkostenabrechnung", "Sonstiges"];
 
 type VorlageMitStatus = WiederkehrVorlage & { gebuchteDaten: string[] };
