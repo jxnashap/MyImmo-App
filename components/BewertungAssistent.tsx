@@ -11,8 +11,18 @@ import { zahlDe0 } from "@/lib/zahl";
 import { KAUF_BEWERTUNG_KEY, type KaufBewertung } from "@/lib/kauf/bewertung";
 import { speichereEinschaetzung } from "@/lib/actions/einschaetzung";
 
-/** Objekt-Auswahl zum Sichern des Ergebnisses (leer = kein Speichern-Block). */
-export type SchaetzerObjekt = { id: string; name: string };
+/** Bestandsobjekt: Auswahl zum Vorbefüllen UND als Speicherziel. */
+export type SchaetzerObjekt = {
+  id: string;
+  name: string;
+  typ?: string | null;
+  flaeche?: number | null;
+  grundstuecksflaeche?: number | null;
+  baujahr?: number | null;
+  jahresmiete?: number | null; // bereits × 12 gerechnet
+  kaufpreis?: number | null;
+  einheiten?: number | null;
+};
 import { useToast } from "@/components/Toast";
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
@@ -88,10 +98,23 @@ export default function BewertungAssistent({
     onGespeichert?.();
   }
 
-  // Ergebnis dauerhaft am Objekt sichern (landet in der Wertentwicklung und in
-  // der Einschätzungs-Liste des Verkauf-Assistenten).
+  // Bestandsobjekt: befüllt die Maske vor und ist zugleich das Speicherziel.
   const heuteIso = new Date().toISOString().slice(0, 10);
   const [zielObjekt, setZielObjekt] = useState("");
+
+  function uebernehmeObjekt(id: string) {
+    setZielObjekt(id);
+    const o = objekte.find((x) => x.id === id);
+    if (!o) return;
+    if (o.flaeche && o.flaeche > 0) setFlaeche(String(o.flaeche));
+    if (o.grundstuecksflaeche && o.grundstuecksflaeche > 0) setGrund(String(o.grundstuecksflaeche));
+    if (o.baujahr && o.baujahr > 0) setBaujahr(String(o.baujahr));
+    if (o.jahresmiete && o.jahresmiete > 0) { setMiete(String(o.jahresmiete)); setZweck("kapitalanlage"); }
+    if (o.kaufpreis && o.kaufpreis > 0) setKaufpreis(String(o.kaufpreis));
+    if (o.einheiten && o.einheiten > 0) setWhg(String(o.einheiten));
+    setIstEtw(o.typ === "Eigentumswohnung");
+    toast(`Daten aus „${o.name}" übernommen — du kannst sie überschreiben.`);
+  }
   const [zielDatum, setZielDatum] = useState(heuteIso);
   const [sichern, startSichern] = useTransition();
   const router = useRouter();
@@ -121,6 +144,22 @@ export default function BewertungAssistent({
       <div className="form-box" style={{ flex: "1 1 440px", maxWidth: 560 }}>
         <h3>Marktwert schätzen</h3>
         <p>Nach den Modellen der ImmoWertV 2021. Orientierungswert — kein Gutachten (§ 194 BauGB).</p>
+
+        {objekte.length > 0 && (
+          <>
+            <div className="form-section-label">Bestandsimmobilie</div>
+            <div className="form-group" style={{ marginBottom: 6 }}>
+              <label>Objekt wählen — Daten werden übernommen</label>
+              <select value={zielObjekt} onChange={(e) => uebernehmeObjekt(e.target.value)}>
+                <option value="">– ohne Objekt rechnen –</option>
+                {objekte.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+              </select>
+              <span style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 3 }}>
+                Übernimmt Wohnfläche, Grundstück, Baujahr, Miete und Kaufpreis aus dem gespeicherten Objekt — alles überschreibbar.
+              </span>
+            </div>
+          </>
+        )}
 
         <div className="form-section-label">Nutzung</div>
         <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
@@ -282,6 +321,7 @@ export default function BewertungAssistent({
                           <option value="">– bitte wählen –</option>
                           {objekte.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
                         </select>
+                        <span style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 3 }}>Nur Bestandsimmobilien — Kaufobjekte rechnest du im Kauf-Assistenten.</span>
                       </div>
                       <div className="form-group">
                         <label>Datum</label>

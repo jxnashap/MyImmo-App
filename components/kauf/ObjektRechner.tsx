@@ -2,13 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Home, Building2, Save, Scale, Crown, Trash2, ArrowRight, Landmark, Check } from "lucide-react";
+import { Home, Building2, Save, Scale, Crown, Trash2, ArrowRight, Landmark, Check, FolderOpen, Pencil, Plus } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { zahlDe0 } from "@/lib/zahl";
 import KalkImport from "@/components/kalkulator/KalkImport";
-import { saveKalkulation, deleteKalkulation } from "@/lib/actions/kalkulation";
+import { saveKalkulation, deleteKalkulation, updateKalkulation } from "@/lib/actions/kalkulation";
 import { bestesObjekt, KAUF_AUSWAHL_KEY, type KaufAuswahl, type VglMetrik } from "@/lib/kauf/auswahl";
 import { BUNDESLAENDER } from "@/lib/kalk";
-import { hausSachwert, HAUS_DISCLAIMER } from "@/lib/kauf/hausbewertung";
+import { HAUS_DISCLAIMER } from "@/lib/kauf/hausbewertung";
+import { marktwert as rechneMarktwert, preisUrteil } from "@/lib/kauf/marktwert";
 import { belastbarkeit } from "@/lib/kauf/belastbarkeit";
 import { NHK_TYPEN } from "@/lib/bewertung/immowertv";
 import { useCountUp } from "@/lib/hooks/useCountUp";
@@ -17,7 +19,7 @@ import type { Kalkulation } from "@/lib/types";
 const eur = (n: number) => "€ " + Math.round(n || 0).toLocaleString("de-DE");
 const pct = (n: number, d = 1) => (n || 0).toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d }) + " %";
 const fmt1 = (n: number) => (n || 0).toLocaleString("de-DE", { maximumFractionDigits: 1 });
-const num = (s: string) => parseFloat(String(s).replace(",", ".")) || 0;
+const num = zahlDe0;
 
 // Vergleichs-Kennzahlen (ohne Finanzierung — die kommt erst in Schritt 4).
 const CMP: { key: string; label: string; fmt: (v: number) => string; better: "high" | "low" | "none" }[] = [
@@ -26,6 +28,7 @@ const CMP: { key: string; label: string; fmt: (v: number) => string; better: "hi
   { key: "brutto", label: "Bruttorendite", fmt: (v) => (v > 0 ? pct(v) : "–"), better: "high" },
   { key: "nettomiet", label: "Nettorendite", fmt: (v) => (v > 0 ? pct(v) : "–"), better: "high" },
   { key: "faktor", label: "Kaufpreisfaktor", fmt: (v) => (v > 0 ? fmt1(v) + "×" : "–"), better: "low" },
+  { key: "marktwert", label: "Marktwert (geschätzt)", fmt: (v) => (v > 0 ? eur(v) : "–"), better: "high" },
 ];
 const CMP_METRIK: VglMetrik[] = CMP.map((m) => ({ key: m.key, better: m.better }));
 
@@ -94,6 +97,13 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
   const [ausstattung, setAusstattung] = useState("3");
   const [bpiFaktor, setBpiFaktor] = useState("1.9");
   const [regionalFaktor, setRegionalFaktor] = useState("1.0");
+  // Marktwert-Verfahren: Ertragswert braucht Liegenschaftszins + Anzahl WE,
+  // Sachwert den Sachwertfaktor (zuvor nur im Reiter „Marktwert-Schätzer").
+  const [lz, setLz] = useState("3.5");
+  const [anzahlWhg, setAnzahlWhg] = useState("1");
+  const [swFaktor, setSwFaktor] = useState("1.0");
+  // Wiedervorlage: gesetzt = ein gespeichertes Objekt wird bearbeitet.
+  const [bearbeiteId, setBearbeiteId] = useState<string | null>(null);
 
   // Speichern / Vergleich
   const [saving, setSaving] = useState(false);
@@ -115,13 +125,18 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
 
   const urteil = vermietung && brutto > 0 ? renditeUrteil(brutto) : null;
 
-  const haus = objektTyp === "haus"
-    ? hausSachwert({
-        wohnflaeche: fl, grundFlaeche: num(grundFlaeche), bodenrichtwert: num(bodenrichtwert),
-        baujahr: Math.round(num(baujahr)), gebTyp, ausstattung: Math.round(num(ausstattung)),
-        bpiFaktor: num(bpiFaktor) || 1.9, regionalFaktor: num(regionalFaktor) || 1,
-      })
-    : null;
+  // Marktwert — Verfahren automatisch nach Nutzung (Vermietung → Ertragswert,
+  // Eigennutzung → Sachwert). Gilt für Wohnung UND Haus.
+  const mw = rechneMarktwert({
+    nutzung, objektTyp, wohnflaeche: fl, kaltmieteMonat: num(kaltmiete),
+    anzahlWohnungen: Math.round(num(anzahlWhg)) || 1,
+    grundFlaeche: num(grundFlaeche), bodenrichtwert: num(bodenrichtwert),
+    baujahr: Math.round(num(baujahr)), gebTyp, ausstattung: Math.round(num(ausstattung)),
+    bpiFaktor: num(bpiFaktor) || 1.9, regionalFaktor: num(regionalFaktor) || 1,
+    liegenschaftszins: num(lz) || 3.5, sachwertfaktor: num(swFaktor) || 1,
+  });
+  const mwWert = mw.ergebnis?.wert ?? 0;
+  const mwUrteil = preisUrteil(mwWert, kp);
 
   const bel = belastbarkeit({
     nutzung, kp, fl, kaltmiete: num(kaltmiete), hausgeld: num(hausgeld),
@@ -137,27 +152,68 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
         { label: "Bruttorendite", wert: brutto > 0 ? pct(brutto) : "", farbe: urteil?.farbe, note: urteil?.text, braucht: "Kaltmiete eintragen" },
         { label: "Nettorendite", wert: nettomiet > 0 ? pct(nettomiet) : "", note: `nach ${num(bewirt)} % Bewirtschaftung`, braucht: "Kaltmiete eintragen" },
         { label: "Kaufpreisfaktor", wert: faktor > 0 ? fmt1(faktor) + "×" : "", note: "Jahresmieten bis zur Amortisation", braucht: "Kaufpreis + Kaltmiete" },
+        { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil?.text ?? mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
       ]
     : [
         { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: `inkl. ${eur(nebenkosten)} Nebenkosten`, braucht: "Kaufpreis eintragen" },
         { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "", braucht: "Kaufpreis + Wohnfläche" },
         { label: "Laufende Kosten", wert: num(hausgeld) > 0 ? eur(num(hausgeld)) + "/Mo" : "", note: "Hausgeld / Bewirtschaftung", braucht: "Laufende Kosten eintragen" },
+        { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil?.text ?? mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
       ];
 
+  // Alle Eingaben sichern — auch die Bewertungsfelder. Vorher gingen sie beim
+  // Speichern verloren, die Wiedervorlage hätte sie nicht zurückholen können.
   function eingabenSnapshot(): Record<string, string> {
-    return { adresse, kaufpreis, flaeche, bundesland, makler, nutzung, kaltmiete, bewirt, hausgeld };
+    return {
+      adresse, kaufpreis, flaeche, bundesland, makler, nutzung, kaltmiete, bewirt, hausgeld,
+      objektTyp, grundFlaeche, bodenrichtwert, baujahr, gebTyp, ausstattung,
+      bpiFaktor, regionalFaktor, lz, anzahlWhg, swFaktor,
+    };
   }
   function summarySnapshot(): Record<string, number> {
-    return { kp, gesamtInvest, preisM2, brutto, nettomiet, faktor, kaltmiete: num(kaltmiete), nutzung: vermietung ? 1 : 0 };
+    return { kp, gesamtInvest, preisM2, brutto, nettomiet, faktor, kaltmiete: num(kaltmiete), nutzung: vermietung ? 1 : 0, marktwert: mwWert };
+  }
+
+  // Wiedervorlage: gespeichertes Objekt zurück in die Maske holen.
+  function bearbeiten(k: Kalkulation) {
+    const d = k.data ?? {};
+    const g = (key: string, fallback = "") => d[key] ?? fallback;
+    setAdresse(g("adresse")); setKaufpreis(g("kaufpreis")); setFlaeche(g("flaeche"));
+    setBundesland(g("bundesland", "0.05")); setMakler(g("makler", "3.57")); setMaklerBeruehrt(true);
+    setNutzung(g("nutzung") === "eigennutzung" ? "eigennutzung" : "vermietung");
+    setKaltmiete(g("kaltmiete")); setBewirt(g("bewirt", "20")); setHausgeld(g("hausgeld"));
+    setObjektTyp(g("objektTyp") === "haus" ? "haus" : "wohnung");
+    setGrundFlaeche(g("grundFlaeche")); setBodenrichtwert(g("bodenrichtwert")); setBaujahr(g("baujahr"));
+    setGebTyp(g("gebTyp", "efh")); setAusstattung(g("ausstattung", "3"));
+    setBpiFaktor(g("bpiFaktor", "1.9")); setRegionalFaktor(g("regionalFaktor", "1.0"));
+    setLz(g("lz", "3.5")); setAnzahlWhg(g("anzahlWhg", "1")); setSwFaktor(g("swFaktor", "1.0"));
+    setBearbeiteId(k.id);
+    setShowCompare(false);
+    toast(`„${k.name}" zum Bearbeiten geladen.`);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function neuesObjekt() {
+    setBearbeiteId(null);
+    setAdresse(""); setKaufpreis(""); setFlaeche(""); setKaltmiete(""); setHausgeld("");
+    setGrundFlaeche(""); setBodenrichtwert(""); setBaujahr("");
+    toast("Maske geleert — neues Objekt erfassen.");
   }
 
   async function speichern() {
     if (kp <= 0) { toast("Bitte zuerst einen Kaufpreis eingeben."); return; }
     setSaving(true);
     try {
-      const neu = await saveKalkulation(adresse || "Objekt", eingabenSnapshot(), summarySnapshot());
-      setListe((p) => [neu, ...p]);
-      toast("Objekt gespeichert. Du kannst jetzt weitere Objekte rechnen und vergleichen.");
+      if (bearbeiteId) {
+        const akt = await updateKalkulation(bearbeiteId, adresse || "Objekt", eingabenSnapshot(), summarySnapshot());
+        setListe((p) => p.map((k) => (k.id === akt.id ? akt : k)));
+        toast("Objekt aktualisiert.");
+      } else {
+        const neu = await saveKalkulation(adresse || "Objekt", eingabenSnapshot(), summarySnapshot());
+        setListe((p) => [neu, ...p]);
+        setBearbeiteId(neu.id);
+        toast("Objekt im Ordner gespeichert — du kannst es jederzeit wieder öffnen.");
+      }
     } catch {
       toast("Speichern fehlgeschlagen.");
     } finally {
@@ -170,6 +226,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
       await deleteKalkulation(id);
       setListe((p) => p.filter((k) => k.id !== id));
       setCompareIds((c) => c.filter((x) => x !== id));
+      setBearbeiteId((b) => (b === id ? null : b));
     } catch { toast("Löschen fehlgeschlagen."); }
   }
 
@@ -213,13 +270,23 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-        <button type="button" className="btn btn-ghost" style={{ fontSize: 12.5 }} onClick={() => { setCompareIds([]); setShowCompare(true); }}>
-          <Scale size={14} /> Vergleich ({liste.length})
-        </button>
-        <button type="button" className="btn btn-gold" style={{ fontSize: 12.5 }} onClick={speichern} disabled={saving}>
-          <Save size={14} /> {saving ? "Speichert…" : "Objekt speichern"}
-        </button>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 12, color: bearbeiteId ? "var(--gold)" : "var(--faint)" }}>
+          {bearbeiteId ? `Du bearbeitest „${liste.find((k) => k.id === bearbeiteId)?.name ?? "Objekt"}"` : "Neues Objekt"}
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {bearbeiteId && (
+            <button type="button" className="btn btn-ghost" style={{ fontSize: 12.5 }} onClick={neuesObjekt}>
+              <Plus size={14} /> Neues Objekt
+            </button>
+          )}
+          <button type="button" className="btn btn-ghost" style={{ fontSize: 12.5 }} onClick={() => { setCompareIds([]); setShowCompare(true); }}>
+            <Scale size={14} /> Vergleichen ({liste.length})
+          </button>
+          <button type="button" className="btn btn-gold" style={{ fontSize: 12.5 }} onClick={speichern} disabled={saving}>
+            <Save size={14} /> {saving ? "Speichert…" : bearbeiteId ? "Änderungen speichern" : "Im Ordner speichern"}
+          </button>
+        </div>
       </div>
 
       {/* KI-Import: Exposé-Link oder -Text → Felder werden vorbefüllt */}
@@ -337,11 +404,13 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
             </div>
           </details>
 
-          {/* Haus-Substanzwert (Bodenwert + Gebäudesachwert) — nur bei Objekttyp Haus. */}
-          {objektTyp === "haus" && haus && (
+          {/* Marktwert-Einschätzung — Verfahren richtet sich nach der Nutzung.
+              Ersetzt den früheren, nur für Häuser sichtbaren Substanzwert-Block
+              und den separaten Schritt „Objekt bewerten". */}
+          {true && (
             <details style={{ borderRadius: 12, border: "1px solid var(--line)", background: "var(--bg3)" }}>
               <summary style={{ cursor: "pointer", userSelect: "none", padding: "11px 14px", fontSize: 12.5, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: 7 }}>
-                <Landmark size={14} color="var(--gold)" /> Haus-Substanzwert (Bodenwert + Gebäude)
+                <Landmark size={14} color="var(--gold)" /> Marktwert-Einschätzung — {mw.verfahrenLabel}
                 <span style={{ fontWeight: 400, color: "var(--faint)" }}> — überschlägig, kein Gutachten</span>
               </summary>
               <div style={{ padding: "2px 14px 14px", display: "grid", gap: 11 }}>
@@ -359,36 +428,55 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
                     </select>
                   </label>
                 </div>
-                <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
-                  <span style={{ color: "var(--muted)" }}>Ausstattung / Standard: {ausstattung} von 5</span>
-                  <input type="range" min={1} max={5} step={1} value={ausstattung}
-                    onChange={(e) => setAusstattung(e.target.value)} style={{ accentColor: "var(--gold)" }} />
-                </label>
+                {nutzung === "eigennutzung" && (
+                  <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
+                    <span style={{ color: "var(--muted)" }}>Ausstattung / Standard: {ausstattung} von 5</span>
+                    <input type="range" min={1} max={5} step={1} value={ausstattung}
+                      onChange={(e) => setAusstattung(e.target.value)} style={{ accentColor: "var(--gold)" }} />
+                  </label>
+                )}
+                {nutzung === "vermietung" && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+                    {F("Liegenschaftszins (% p. a.)", lz, setLz, "3.5")}
+                    {F("Anzahl Wohneinheiten", anzahlWhg, setAnzahlWhg, "1", "numeric")}
+                  </div>
+                )}
+                {nutzung === "eigennutzung" && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+                    {F("Sachwertfaktor", swFaktor, setSwFaktor, "1.0")}
+                    {F("Baupreisindex", bpiFaktor, setBpiFaktor, "1.9")}
+                  </div>
+                )}
 
                 {/* Ergebnis: Bodenwert + Gebäudesachwert + vorläufiger Sachwert */}
-                {haus.bereit ? (
+                {mw.bereit && mw.ergebnis ? (
                   <div style={{ display: "grid", gap: 6, padding: "11px 13px", borderRadius: 10, background: "var(--bg2)", border: "1px solid var(--gold-dim, var(--line))" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                      <span style={{ color: "var(--muted)" }}>Bodenwert ({eur(num(bodenrichtwert))}/m² × {num(grundFlaeche).toLocaleString("de-DE")} m²)</span>
-                      <strong style={{ color: "var(--text)" }}>{eur(haus.bodenwert)}</strong>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                      <span style={{ color: "var(--muted)" }}>Gebäudesachwert (RND {haus.restnutzungsdauer} J.)</span>
-                      <strong style={{ color: "var(--text)" }}>{eur(haus.gebaeudesachwert)}</strong>
-                    </div>
+                    {Object.entries(mw.ergebnis.details).map(([k, v]) => (
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                        <span style={{ color: "var(--muted)" }}>{k}</span>
+                        <strong style={{ color: "var(--text)" }}>{v.toLocaleString("de-DE")}</strong>
+                      </div>
+                    ))}
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, paddingTop: 6, borderTop: "1px solid var(--line)" }}>
-                      <span style={{ color: "var(--text)", fontWeight: 600 }}>Vorläufiger Sachwert</span>
-                      <strong style={{ color: "var(--gold)" }}>{eur(haus.vorlaeufigerSachwert)}</strong>
+                      <span style={{ color: "var(--text)", fontWeight: 600 }}>Geschätzter Marktwert</span>
+                      <strong style={{ color: "var(--gold)" }}>{eur(mw.ergebnis.wert)}</strong>
                     </div>
-                    <div style={{ fontSize: 10.5, color: "var(--faint)" }}>Spanne {eur(haus.spanneMin)} – {eur(haus.spanneMax)}</div>
-                    {haus.hinweise.map((h, i) => (
+                    <div style={{ fontSize: 10.5, color: "var(--faint)" }}>
+                      Spanne {eur(mw.ergebnis.min)} – {eur(mw.ergebnis.max)} · Restnutzungsdauer {mw.restnutzungsdauer} J.
+                    </div>
+                    {mwUrteil && (
+                      <div style={{ fontSize: 11.5, color: mwUrteil.farbe, fontWeight: 500 }}>
+                        Kaufpreis {mwUrteil.text}
+                      </div>
+                    )}
+                    {mw.ergebnis.warnungen.map((h, i) => (
                       <div key={i} style={{ fontSize: 10.5, color: "var(--amber)" }}>⚠ {h}</div>
                     ))}
                   </div>
                 ) : (
                   <div style={{ fontSize: 11.5, color: "var(--faint)", padding: "9px 12px", borderRadius: 9, background: "var(--bg2)", border: "1px dashed var(--line2)" }}>
-                    Für den Substanzwert brauchst du <strong>Wohnfläche</strong> (oben) und den <strong>Bodenrichtwert</strong>
-                    {" "}(amtlich bei <span style={{ color: "var(--muted)" }}>bodenrichtwerte-boris.de</span>).
+                    Für die Marktwert-Einschätzung fehlt noch: <strong>{mw.fehlend.join(", ")}</strong>.
+                    {" "}Den Bodenrichtwert findest du amtlich bei <span style={{ color: "var(--muted)" }}>bodenrichtwerte-boris.de</span>.
                   </div>
                 )}
                 <p style={{ fontSize: 10, color: "var(--faint)", margin: 0 }}>{HAUS_DISCLAIMER}</p>
@@ -428,6 +516,66 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
             Speichere jedes Objekt und vergleiche 3–5 Kandidaten — das beste bekommt eine Krone. Die Finanzierung
             rechnest du im Schritt „Finanzierung" aus.
           </p>
+        </div>
+      </div>
+
+      {/* Ordner: gespeicherte Kauf-Objekte — getrennt von den Bewertungen der
+          Bestandsimmobilien (die liegen am jeweiligen Objekt). */}
+      <div className="section" style={{ marginBottom: 0 }}>
+        <div className="section-header">
+          <div>
+            <h3><FolderOpen size={15} style={{ verticalAlign: "-2px" }} /> Ordner: deine Kauf-Objekte</h3>
+            <div className="section-sub">
+              {liste.length === 0 ? "Noch nichts gespeichert" : `${liste.length} gespeichert · zum Bearbeiten öffnen oder vergleichen`}
+            </div>
+          </div>
+          {liste.length >= 2 && (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setCompareIds([]); setShowCompare(true); }}>
+              <Scale size={13} /> Vergleichen
+            </button>
+          )}
+        </div>
+        <div className="section-body">
+          {liste.length === 0 ? (
+            <div className="empty">
+              <FolderOpen className="empty-icon" size={32} color="var(--faint)" />
+              <p>Rechne oben ein Objekt durch und speichere es — hier sammeln sich deine Kaufkandidaten und lassen sich jederzeit wieder öffnen.</p>
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Objekt</th>
+                  <th style={{ textAlign: "right" }}>Kaufpreis</th>
+                  <th style={{ textAlign: "right" }}>Marktwert</th>
+                  <th style={{ textAlign: "right" }}>Rendite</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {liste.map((k) => {
+                  const sm = k.summary ?? {};
+                  const aktiv = k.id === bearbeiteId;
+                  return (
+                    <tr key={k.id} style={aktiv ? { background: "var(--gold-pale)" } : undefined}>
+                      <td style={{ fontWeight: aktiv ? 600 : 400 }}>{k.name}</td>
+                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{sm.kp > 0 ? eur(sm.kp) : "–"}</td>
+                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{sm.marktwert > 0 ? eur(sm.marktwert) : "–"}</td>
+                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{sm.brutto > 0 ? pct(sm.brutto) : "–"}</td>
+                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                        <button type="button" className="btn btn-ghost btn-sm" style={{ marginRight: 6 }} onClick={() => bearbeiten(k)}>
+                          <Pencil size={13} /> Bearbeiten
+                        </button>
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => loeschen(k.id)} title="Löschen">
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
