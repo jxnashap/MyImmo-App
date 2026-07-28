@@ -1,8 +1,19 @@
-import BewertungAssistent from "@/components/BewertungAssistent";
+import { createClient } from "@/lib/supabase/server";
+import BewertungAssistent, { type SchaetzerObjekt } from "@/components/BewertungAssistent";
 
 export const metadata = { title: "Marktwert schätzen — MyImmo" };
+export const dynamic = "force-dynamic";
 
-export default function BewertungPage() {
+export default async function BewertungPage() {
+  const supabase = createClient();
+  // Eigene Objekte laden, damit das Schätz-Ergebnis direkt an einem Objekt
+  // gespeichert werden kann (Wertentwicklung + Verkauf-Assistent).
+  const { data: props } = await supabase
+    .from("properties")
+    .select("id,bezeichnung")
+    .order("bezeichnung");
+  const objekte: SchaetzerObjekt[] = (props ?? []).map((p) => ({ id: p.id, name: p.bezeichnung }));
+
   return (
     <div className="fade-up">
       <div className="topbar">
@@ -13,7 +24,7 @@ export default function BewertungPage() {
         </div>
       </div>
       <hr className="topbar-rule" />
-      <BewertungAssistent />
+      <BewertungAssistent objekte={objekte} />
     </div>
   );
 }

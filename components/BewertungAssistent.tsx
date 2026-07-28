@@ -1,5 +1,6 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { ExternalLink, TrendingUp, TriangleAlert, Info, Check } from "lucide-react";
 import {
   ertragswert, sachwert, restnutzungsdauer, vervielfaeltiger, kaufpreisAmpel,
@@ -7,6 +8,10 @@ import {
 } from "@/lib/bewertung/immowertv";
 import { BORIS_D, BORIS_LAENDER, LZ_DEFAULT } from "@/lib/bewertung/boris";
 import { KAUF_BEWERTUNG_KEY, type KaufBewertung } from "@/lib/kauf/bewertung";
+import { speichereEinschaetzung } from "@/lib/actions/einschaetzung";
+
+/** Objekt-Auswahl zum Sichern des Ergebnisses (leer = kein Speichern-Block). */
+export type SchaetzerObjekt = { id: string; name: string };
 import { useToast } from "@/components/Toast";
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
@@ -14,9 +19,9 @@ const STANDARD = ["1 – sehr einfach", "2 – einfach", "3 – mittel", "4 – 
 const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
 
 export default function BewertungAssistent({
-  imKaufFlow = false, onGespeichert,
+  imKaufFlow = false, onGespeichert, objekte = [],
 }: {
-  imKaufFlow?: boolean; onGespeichert?: () => void;
+  imKaufFlow?: boolean; onGespeichert?: () => void; objekte?: SchaetzerObjekt[];
 } = {}) {
   const jahr = new Date().getFullYear();
   const toast = useToast();
@@ -80,6 +85,33 @@ export default function BewertungAssistent({
     try { localStorage.setItem(KAUF_BEWERTUNG_KEY, JSON.stringify(b)); } catch { /* ignore */ }
     toast("Marktwert gespeichert und in den Rechner übernommen.");
     onGespeichert?.();
+  }
+
+  // Ergebnis dauerhaft am Objekt sichern (landet in der Wertentwicklung und in
+  // der Einschätzungs-Liste des Verkauf-Assistenten).
+  const heuteIso = new Date().toISOString().slice(0, 10);
+  const [zielObjekt, setZielObjekt] = useState("");
+  const [zielDatum, setZielDatum] = useState(heuteIso);
+  const [sichern, startSichern] = useTransition();
+  const router = useRouter();
+
+  function amObjektSichern() {
+    if (!ergebnis || !zielObjekt) return;
+    startSichern(async () => {
+      const res = await speichereEinschaetzung({
+        immobilieId: zielObjekt,
+        marktwert: ergebnis.wert,
+        datum: zielDatum,
+        verfahren: "immowertv",
+        notiz: zweck === "kapitalanlage" ? "Ertragswert" : "Sachwert",
+      });
+      if (res.ok) {
+        toast("Marktwert am Objekt gespeichert — sichtbar im Verkauf-Assistenten.");
+        router.refresh();
+      } else {
+        toast(res.error);
+      }
+    });
   }
 
   return (
@@ -211,6 +243,33 @@ export default function BewertungAssistent({
                   <button type="button" className="btn btn-gold" style={{ marginTop: 14, fontSize: 13 }} onClick={speichern}>
                     <Check size={14} style={{ verticalAlign: "-2px" }} /> Marktwert speichern &amp; übernehmen
                   </button>
+                )}
+
+                {objekte.length > 0 && (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+                    <div className="form-section-label" style={{ marginTop: 0 }}>Ergebnis am Objekt speichern</div>
+                    <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10, lineHeight: 1.55 }}>
+                      Legt den geschätzten Marktwert mit Datum ab — er erscheint in der Wertentwicklung
+                      des Objekts und in der Liste im Verkauf-Assistenten.
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Objekt</label>
+                        <select value={zielObjekt} onChange={(e) => setZielObjekt(e.target.value)}>
+                          <option value="">– bitte wählen –</option>
+                          {objekte.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Datum</label>
+                        <input type="date" value={zielDatum} max={heuteIso} onChange={(e) => setZielDatum(e.target.value)} />
+                      </div>
+                    </div>
+                    <button type="button" className="btn btn-gold" style={{ marginTop: 10, fontSize: 13 }}
+                      onClick={amObjektSichern} disabled={sichern || !zielObjekt}>
+                      <Check size={14} style={{ verticalAlign: "-2px" }} /> {sichern ? "Speichert …" : "Am Objekt speichern"}
+                    </button>
+                  </div>
                 )}
               </>
             )}
