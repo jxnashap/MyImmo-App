@@ -4,6 +4,8 @@ import { euro } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
 import DeleteButton from "@/components/DeleteButton";
 import type { Property, Kredit } from "@/lib/types";
+import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
+import { sortiereObjekte, SORT_OPTIONEN } from "@/lib/objektSortierung";
 import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Plus, X, Landmark, type LucideIcon } from "lucide-react";
 
 // Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
@@ -22,14 +24,18 @@ function statusBadge(status: string | null) {
   return "badge-teal";
 }
 
-export default async function PropertiesPage() {
+export default async function PropertiesPage({
+  searchParams,
+}: {
+  searchParams: { sort?: string; q?: string; status?: string };
+}) {
   const supabase = createClient();
   const [{ data }, { data: kred }] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("kredite").select("prop_id,restschuld"),
   ]);
 
-  const list = (data ?? []) as Property[];
+  const alle = (data ?? []) as Property[];
   const kredite = (kred ?? []) as Pick<Kredit, "prop_id" | "restschuld">[];
 
   const restMap = new Map<string, number>();
@@ -37,6 +43,25 @@ export default async function PropertiesPage() {
     if (!k.prop_id) continue;
     restMap.set(k.prop_id, (restMap.get(k.prop_id) ?? 0) + (k.restschuld ?? 0));
   }
+
+  // Suchen, filtern, sortieren — alles über die URL-Query (wie in den anderen Listen).
+  const suche = (searchParams.q ?? "").trim().toLowerCase();
+  let list = alle;
+  if (suche)
+    list = list.filter((p) =>
+      [p.bezeichnung, p.adresse, p.typ].filter(Boolean).join(" ").toLowerCase().includes(suche),
+    );
+  if (searchParams.status) list = list.filter((p) => p.obj_status === searchParams.status);
+  list = sortiereObjekte(list, searchParams.sort);
+
+  const filters: FilterDef[] = [
+    { name: "q", label: "Suche", variant: "search", placeholder: "Name, Adresse oder Typ…", options: [] },
+    {
+      name: "status", label: "Status",
+      options: [{ value: "", label: "Alle Status" }, ...["Vermietet", "Leer", "Selbst bewohnt", "Feriennutzung"].map((s) => ({ value: s, label: s }))],
+    },
+    { name: "sort", label: "Sortierung", defaultValue: "name", options: SORT_OPTIONEN.map((o) => ({ value: o.value, label: o.label })) },
+  ];
 
   return (
     <div className="fade-up">
@@ -53,11 +78,13 @@ export default async function PropertiesPage() {
       </div>
       <hr className="topbar-rule" />
 
+      {alle.length > 0 && <FilterBar filters={filters} />}
+
       {list.length === 0 ? (
         <div className="prop-grid">
           <div className="empty" style={{ gridColumn: "1/-1" }}>
             <Home className="empty-icon" size={36} color="var(--faint)" />
-            <h4>Noch keine Immobilien</h4>
+            <h4>{alle.length === 0 ? "Noch keine Immobilien" : "Keine Treffer"}</h4>
             <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6 }}>
               Lege oben dein erstes Objekt an — oder{" "}
               <Link href="/einstellungen/import" style={{ color: "var(--gold)" }}>
@@ -74,12 +101,13 @@ export default async function PropertiesPage() {
             const rest = restMap.get(p.id) ?? 0;
             return (
               <div key={p.id} className="prop-card">
+                {/* Ganze Kachel klickbar: unsichtbarer Link über der Karte.
+                    Der Löschen-Knopf liegt darüber (z-index) und bleibt bedienbar. */}
+                <Link href={`/properties/${p.id}`} className="prop-card-link" aria-label={`${p.bezeichnung} öffnen`} />
                 <div className="prop-card-header">
                   <div className="prop-icon" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{(() => { const Icon = (p.typ && PROP_ICONS[p.typ]) || Home; return <Icon size={18} />; })()}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <Link href={`/properties/${p.id}`} className="prop-card-name" style={{ color: "var(--text)", textDecoration: "none", display: "block" }}>
-                      {p.bezeichnung}
-                    </Link>
+                    <div className="prop-card-name" style={{ color: "var(--text)" }}>{p.bezeichnung}</div>
                     <div className="prop-card-addr">{p.adresse || p.typ || "—"}</div>
                     {p.obj_status && (
                       <div style={{ marginTop: 5 }}>
@@ -87,13 +115,15 @@ export default async function PropertiesPage() {
                       </div>
                     )}
                   </div>
-                  <DeleteButton
-                    action={deleteProperty.bind(null, p.id)}
-                    confirmText={`„${p.bezeichnung}" wirklich löschen?`}
-                    className="delete-btn"
-                    label={<X size={14} />}
-                    title="Löschen"
-                  />
+                  <span className="prop-card-above">
+                    <DeleteButton
+                      action={deleteProperty.bind(null, p.id)}
+                      confirmText={`„${p.bezeichnung}" wirklich löschen?`}
+                      className="delete-btn"
+                      label={<X size={14} />}
+                      title="Löschen"
+                    />
+                  </span>
                 </div>
                 <div className="prop-card-stats">
                   <div className="prop-stat">
@@ -114,12 +144,9 @@ export default async function PropertiesPage() {
                     <Landmark size={12} style={{ verticalAlign: "-2px" }} /> Restschuld: <strong style={{ color: "var(--text)" }}>{euro(rest)}</strong>
                   </div>
                 )}
-                <Link
-                  href={`/properties/${p.id}`}
-                  style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", fontSize: 11, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4, textDecoration: "none" }}
-                >
+                <div style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", fontSize: 11, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4 }}>
                   <span style={{ color: "var(--gold)" }}>→</span> Details anzeigen
-                </Link>
+                </div>
               </div>
             );
           })}

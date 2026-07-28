@@ -6,6 +6,7 @@ import { getRefinanzWarning, bankingFristen, mieterFristen, kreditFristen, objek
 import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
+import PortfolioKarte, { type KartenObjekt } from "@/components/PortfolioKarte";
 import ZeitraumControl from "@/components/ZeitraumControl";
 import { portfolioWertReihe, veraenderungProzent, type RohStand } from "@/lib/wert/verlauf";
 import type { RawPoint } from "@/lib/zeitraum";
@@ -42,6 +43,11 @@ export default async function DashboardPage() {
   ]);
 
   const properties = (props ?? []) as Property[];
+  // Kleine Portfolio-Karte: nur Objekte, die bereits Koordinaten haben —
+  // das Dashboard geocodiert bewusst NICHT (kein externer Aufruf beim Laden).
+  const kartenObjekte: KartenObjekt[] = properties
+    .filter((p) => p.lat != null && p.lng != null)
+    .map((p) => ({ id: p.id, name: p.bezeichnung, adresse: p.adresse ?? "", typ: p.typ, wert: p.wert, lat: p.lat as number, lng: p.lng as number }));
   const einnahmen = (einn ?? []) as Einnahme[];
   const kosten = (kost ?? []) as Kosten[];
   const kredite = (kred ?? []) as Kredit[];
@@ -306,6 +312,21 @@ export default async function DashboardPage() {
           <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" caption="Kumulierter Cashflow (Einnahmen − Ausgaben)" />
         </div>
       </div>
+
+      {kartenObjekte.length > 0 && (
+        <div className="section mb-20">
+          <div className="section-header">
+            <div>
+              <h3>Standorte</h3>
+              <div className="section-sub">{kartenObjekte.length} von {properties.length} Objekt{properties.length === 1 ? "" : "en"} auf der Karte</div>
+            </div>
+            <Link href="/properties" className="btn btn-ghost btn-sm">Alle Objekte →</Link>
+          </div>
+          <div className="section-body" style={{ padding: 0 }}>
+            <PortfolioKarte objekte={kartenObjekte} hoehe="300px" />
+          </div>
+        </div>
+      )}
 
       <div className="grid-2 mb-20">
         <div className="section" style={{ marginBottom: 0 }}>

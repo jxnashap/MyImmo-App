@@ -12,6 +12,7 @@ import {
 } from "@/lib/actions/bewerber";
 import DeleteButton from "@/components/DeleteButton";
 import { euro, datum } from "@/lib/format";
+import { teilbarerLink } from "@/lib/appUrl";
 
 export type BewerberLinkRow = {
   id: string; token: string; titel: string | null; aktiv: boolean; created_at: string;
@@ -35,7 +36,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 function LinkZeile({ l }: { l: BewerberLinkRow }) {
   const [kopiert, setKopiert] = useState(false);
   const [pending, startTransition] = useTransition();
-  const url = typeof window !== "undefined" ? `${window.location.origin}/bewerben/${l.token}` : `/bewerben/${l.token}`;
+  const url = teilbarerLink(`/bewerben/${l.token}`);
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "9px 0", borderBottom: "1px solid var(--line)", fontSize: 12 }}>
       <Link2 size={14} color={l.aktiv ? "var(--gold)" : "var(--faint)"} />

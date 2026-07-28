@@ -266,6 +266,13 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 .section-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; font-weight: 400; }
 .section-body { padding: 20px; }
 
+/* Ganze Objekt-Kachel klickbar: Overlay-Link deckt die Karte ab; interaktive
+   Elemente darüber bekommen .prop-card-above. Kein verschachteltes <a>. */
+.prop-card { position: relative; }
+.prop-card-link { position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.prop-card-link:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.prop-card-above { position: relative; z-index: 2; }
+
 /* GRIDS — Rasterabstand 18px wie im Design-Handoff */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }

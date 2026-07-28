@@ -2,7 +2,7 @@
 // damit beide garantiert dieselben Bereiche/Icons zeigen (keine Duplikate).
 import {
   BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
-  TrendingUp, MessageSquareText, CreditCard, Map as MapIcon,
+  TrendingUp, MessageSquareText, CreditCard,
   Building2, Building, Store, TreePalm, Sprout, Percent, Compass, Handshake,
   type LucideIcon,
 } from "lucide-react";
@@ -12,7 +12,6 @@ export type NavItem = { href: string; label: string; icon?: LucideIcon; paragrap
 export const VERWALTUNG: NavItem[] = [
   { href: "/", label: "Dashboard", icon: BarChart3 },
   { href: "/properties", label: "Immobilien", icon: Home },
-  { href: "/karte", label: "Karte", icon: MapIcon },
   { href: "/tenants", label: "Mieter", icon: User },
   { href: "/cashflow", label: "Ein- & Ausgaben", icon: Banknote },
   { href: "/mietkonto", label: "Mietkonto", icon: ReceiptText },

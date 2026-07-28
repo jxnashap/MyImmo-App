@@ -1,5 +1,5 @@
 "use client";
-import { Bot, ClipboardList, Hourglass, TriangleAlert, CheckCircle2, StickyNote } from "lucide-react";
+import { Bot, ClipboardList, Hourglass, TriangleAlert, CheckCircle2, StickyNote, Upload, Link2 } from "lucide-react";
 import SubmitButton from "@/components/SubmitButton";
 
 import { useState } from "react";
@@ -16,19 +16,26 @@ const LEER: Values = { bezeichnung: "", typ: "Eigentumswohnung", adresse: "", ka
 export default function ImportWizard({ action }: { action: (fd: FormData) => void }) {
   const [tab, setTab] = useState<"ki" | "manual">("ki");
   const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [url, setUrl] = useState("");
+  const [datei, setDatei] = useState<File | null>(null);
+  const [loading, setLoading] = useState<null | "pdf" | "url" | "text">(null);
   const [error, setError] = useState<string | null>(null);
   const [konfidenz, setKonfidenz] = useState<number | null>(null);
   const [notiz, setNotiz] = useState("");
   const [v, setV] = useState<Values>(LEER);
   const set = (k: keyof Values) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setV((s) => ({ ...s, [k]: e.target.value }));
 
-  async function auslesen() {
-    setError(null); setKonfidenz(null); setLoading(true);
+  // Ein Weg für alle drei Quellen: PDF-Upload, Link, Text.
+  async function rufeAb(endpoint: string, body: object, modus: "pdf" | "url" | "text") {
+    setError(null); setKonfidenz(null); setLoading(modus);
     try {
-      const res = await fetch("/api/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
-      const json = await res.json();
-      if (!res.ok) { setError(json.error || "Fehler beim Analysieren."); return; }
+      const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const basis = json.error || "Fehler beim Analysieren.";
+        setError(modus === "url" ? `${basis} …oder Exposé-PDF hochladen bzw. Text einfügen.` : basis);
+        return;
+      }
       const p = json.data ?? {};
       const str = (x: unknown) => (x == null ? "" : String(x));
       setV({
@@ -42,7 +49,24 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
     } catch (e) {
       setError(`Netzwerkfehler: ${(e as Error).message}`);
     } finally {
-      setLoading(false);
+      setLoading(null);
+    }
+  }
+
+  /** Exposé-PDF einlesen und als base64 an die Auswertung geben. */
+  async function pdfAuslesen() {
+    if (!datei) return;
+    if (datei.size > 20 * 1024 * 1024) { setError("PDF zu groß (max. 20 MB)."); return; }
+    setError(null); setLoading("pdf");
+    try {
+      const buf = await datei.arrayBuffer();
+      let bin = "";
+      const bytes = new Uint8Array(buf);
+      for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
+      await rufeAb("/api/import", { pdfBase64: btoa(bin) }, "pdf");
+    } catch (e) {
+      setError(`Datei konnte nicht gelesen werden: ${(e as Error).message}`);
+      setLoading(null);
     }
   }
 
@@ -51,7 +75,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
   return (
     <div className="form-box" style={{ maxWidth: 680 }}>
       <h3>Immobilien-Anzeige importieren</h3>
-      <p>Kopiere den Anzeigentext von ImmoScout24, Immowelt o.ä. — die KI liest die Daten aus. Oder fülle das Schnellformular manuell aus.</p>
+      <p>Lade das Exposé als PDF hoch, füge den Link zum Inserat ein oder kopiere den Anzeigentext — die KI liest die Daten aus. Oder fülle das Schnellformular manuell aus.</p>
       <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 4 }}>KI-Auswertung (Anthropic Claude): Der Text wird zur Auswertung an die API übermittelt (kein Modell-Training). Ergebnisse bitte vor dem Speichern prüfen.</p>
 
       <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--line)" }}>
@@ -61,12 +85,43 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
 
       {tab === "ki" && (
         <div style={{ marginBottom: 16 }}>
+          {/* Weg 1: Exposé-PDF hochladen — der übliche Fall beim Makler-Exposé. */}
           <div className="form-group" style={{ marginBottom: 10 }}>
-            <label>Anzeigentext einfügen</label>
+            <label><Upload size={12} style={{ verticalAlign: "-2px" }} /> Exposé als PDF hochladen</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <input type="file" accept="application/pdf,.pdf"
+                onChange={(e) => { setDatei(e.target.files?.[0] ?? null); setError(null); }}
+                style={{ flex: "1 1 240px", fontSize: 12.5 }} />
+              <button type="button" className="btn btn-gold" onClick={pdfAuslesen} disabled={loading !== null || !datei}>
+                {loading === "pdf" ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Liest PDF…</> : "PDF auslesen"}
+              </button>
+            </div>
+            <span style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 3 }}>Max. 20 MB. Auch gescannte Exposés werden gelesen.</span>
+          </div>
+
+          {/* Weg 2: Link zum Inserat. */}
+          <div className="form-group" style={{ marginBottom: 10 }}>
+            <label><Link2 size={12} style={{ verticalAlign: "-2px" }} /> …oder Link zum Inserat</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input type="url" value={url} onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://… Exposé, Inserat oder PDF" style={{ flex: "1 1 240px" }} />
+              <button type="button" className="btn btn-ghost"
+                onClick={() => rufeAb("/api/import-url", { url: url.trim() }, "url")}
+                disabled={loading !== null || !/^https?:\/\/.+\..+/.test(url.trim())}>
+                {loading === "url" ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Lädt…</> : "Aus Link laden"}
+              </button>
+            </div>
+          </div>
+
+          {/* Weg 3: Text einfügen (Fallback, wenn Portale blocken). */}
+          <div className="form-group" style={{ marginBottom: 10 }}>
+            <label>…oder Anzeigentext einfügen</label>
             <textarea rows={7} value={text} onChange={(e) => setText(e.target.value)} placeholder="Text der Immobilienanzeige hier einfügen (Strg+A → Strg+C auf der Anzeige, dann Strg+V hier)." style={{ resize: "vertical", padding: "9px 11px", borderRadius: 7, border: "1px solid var(--line2)", background: "var(--bg3)", color: "var(--text)", fontFamily: "'Outfit',sans-serif", fontSize: 13, outline: "none", lineHeight: 1.6 }} />
           </div>
-          <button type="button" onClick={auslesen} disabled={loading || text.trim().length < 30} className="btn btn-gold" style={{ opacity: loading || text.trim().length < 30 ? 0.6 : 1 }}>
-            {loading ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> KI analysiert…</> : <><Bot size={14} style={{ verticalAlign: "-2px" }} /> Anzeige auslesen</>}
+          <button type="button" onClick={() => rufeAb("/api/import", { text }, "text")}
+            disabled={loading !== null || text.trim().length < 30} className="btn btn-ghost"
+            style={{ opacity: loading !== null || text.trim().length < 30 ? 0.6 : 1 }}>
+            {loading === "text" ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> KI analysiert…</> : <><Bot size={14} style={{ verticalAlign: "-2px" }} /> Text auslesen</>}
           </button>
           {error && <div style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
           {konfidenz != null && (
