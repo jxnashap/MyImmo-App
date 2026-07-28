@@ -38,6 +38,9 @@ export default function VerkaufAssistent({
           <Link href="/bewertung" className="btn btn-ghost" style={{ fontSize: 13 }}>
             Marktwert-Schätzer öffnen <ArrowRight size={14} style={{ verticalAlign: "-2px" }} />
           </Link>
+          <div style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 8 }}>
+            Dort kannst du das Ergebnis direkt am Objekt speichern — es erscheint dann unten in der Liste.
+          </div>
           <div style={{ height: 1, background: "var(--line)", margin: "16px 0" }} />
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
             Halte deine Einschätzung mit Datum fest — so siehst du später, wie sich der Wert

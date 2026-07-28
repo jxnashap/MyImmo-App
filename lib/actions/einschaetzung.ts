@@ -15,6 +15,8 @@ export type EinschaetzungEingabe = {
   marktwert: number;
   datum: string; // ISO (YYYY-MM-DD)
   notiz?: string;
+  /** "einschaetzung" (Handeingabe) oder "immowertv" (Ergebnis des Schätzers). */
+  verfahren?: "einschaetzung" | "immowertv";
 };
 
 export type EinschaetzungErgebnis = { ok: true; id: string } | { ok: false; error: string };
@@ -41,7 +43,7 @@ export async function speichereEinschaetzung(e: EinschaetzungEingabe): Promise<E
       immobilie_id: e.immobilieId,
       marktwert: Math.round(e.marktwert),
       datum: zeitpunkt,
-      verfahren: "einschaetzung",
+      verfahren: e.verfahren === "immowertv" ? "immowertv" : "einschaetzung",
       quelle: notiz ? `${QUELLE_VERKAUF} · ${notiz}` : QUELLE_VERKAUF,
     })
     .select("id")
