@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Search, Coins, FolderClosed, Handshake, ArrowRight, TriangleAlert } from "lucide-react";
 import VerkaufRechner, { type VerkaufObjekt } from "@/components/VerkaufRechner";
+import MarktwertEinschaetzungen, { type EinschaetzungObjekt } from "@/components/MarktwertEinschaetzungen";
+import type { EinschaetzungRow } from "@/lib/einschaetzung";
 import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
 
 // Verkauf-Assistent: Ablaufschema von der Wertermittlung bis zur Übergabe,
@@ -15,7 +17,14 @@ const UNTERLAGEN: { gruppe: string; items: string[] }[] = [
   { gruppe: "Vermietetes Objekt", items: ["Mietverträge", "Mietaufstellung / Mietnachweis", "Nebenkostenabrechnungen"] },
 ];
 
-export default function VerkaufAssistent({ objekte = [] }: { objekte?: VerkaufObjekt[] }) {
+export default function VerkaufAssistent({
+  objekte = [],
+  einschaetzungen = [],
+}: {
+  objekte?: VerkaufObjekt[];
+  einschaetzungen?: EinschaetzungRow[];
+}) {
+  const wertObjekte: EinschaetzungObjekt[] = objekte.map((o) => ({ id: o.id, name: o.name, wert: o.wert }));
   const schritte: StepperSchritt[] = [
     {
       icon: Search,
@@ -26,9 +35,15 @@ export default function VerkaufAssistent({ objekte = [] }: { objekte?: VerkaufOb
             Was ist realistisch erzielbar? Schätze den Marktwert nach ImmoWertV und vergleiche mit
             aktuellen Angebotspreisen deiner Lage.
           </p>
-          <Link href="/bewertung" className="btn btn-gold" style={{ fontSize: 13 }}>
+          <Link href="/bewertung" className="btn btn-ghost" style={{ fontSize: 13 }}>
             Marktwert-Schätzer öffnen <ArrowRight size={14} style={{ verticalAlign: "-2px" }} />
           </Link>
+          <div style={{ height: 1, background: "var(--line)", margin: "16px 0" }} />
+          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
+            Halte deine Einschätzung mit Datum fest — so siehst du später, wie sich der Wert
+            entwickelt hat und worauf deine Preisvorstellung beruht.
+          </p>
+          <MarktwertEinschaetzungen objekte={wertObjekte} eintraege={einschaetzungen} />
         </>
       ),
     },

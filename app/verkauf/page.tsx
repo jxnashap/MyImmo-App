@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import VerkaufAssistent from "@/components/VerkaufAssistent";
 import type { VerkaufObjekt } from "@/components/VerkaufRechner";
+import type { EinschaetzungRow } from "@/lib/einschaetzung";
 
 export const metadata = { title: "Verkauf-Assistent — MyImmo" };
 export const dynamic = "force-dynamic";
@@ -10,9 +11,13 @@ export const dynamic = "force-dynamic";
 // der Rechner sie vorbefüllen kann.
 export default async function VerkaufPage() {
   const supabase = createClient();
-  const [{ data: props }, { data: kredite }] = await Promise.all([
+  const [{ data: props }, { data: kredite }, { data: hist }] = await Promise.all([
     supabase.from("properties").select("id,bezeichnung,kaufpreis,kaufdatum,wert").order("bezeichnung"),
     supabase.from("kredite").select("prop_id,restschuld,betrag"),
+    supabase
+      .from("bewertung_historie")
+      .select("id,immobilie_id,datum,marktwert,verfahren,quelle")
+      .order("datum", { ascending: false }),
   ]);
 
   const restschuld = new Map<string, number>();
@@ -39,7 +44,7 @@ export default async function VerkaufPage() {
         </div>
       </div>
       <hr className="topbar-rule" />
-      <VerkaufAssistent objekte={objekte} />
+      <VerkaufAssistent objekte={objekte} einschaetzungen={(hist ?? []) as EinschaetzungRow[]} />
     </div>
   );
 }
