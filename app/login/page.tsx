@@ -44,6 +44,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState(""); // nur Registrierung: Tippfehler abfangen
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -74,6 +75,14 @@ export default function LoginPage() {
     setError(null);
     setInfo(null);
     setFalscheRolle(null);
+
+    // Registrierung: Passwörter müssen übereinstimmen — sonst wäre das Konto
+    // mit einem vertippten Passwort angelegt und der nächste Login scheitert.
+    if (mode === "signup" && password !== password2) {
+      setError("Die Passwörter stimmen nicht überein.");
+      return;
+    }
+
     setLoading(true);
 
     if (mode === "login") {
@@ -192,6 +201,7 @@ export default function LoginPage() {
 
   const wechsel = (m: "login" | "signup") => {
     setMode(m);
+    setPassword2("");
     setError(null);
     setInfo(null);
     setFalscheRolle(null);
@@ -271,6 +281,31 @@ export default function LoginPage() {
             className="input w-full text-[15px]"
             style={{ padding: "12px 14px" }}
           />
+
+          {/* Registrierung: zweite Eingabe gegen Tippfehler — ein falsch
+              getipptes Passwort fiele sonst erst beim nächsten Login auf. */}
+          {mode === "signup" && (
+            <div>
+              <input
+                type="password"
+                required
+                placeholder="Passwort wiederholen"
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                aria-invalid={password2.length > 0 && password2 !== password}
+                className="input w-full text-[15px]"
+                style={{
+                  padding: "12px 14px",
+                  borderColor: password2.length > 0 && password2 !== password ? "var(--red)" : undefined,
+                }}
+              />
+              {password2.length > 0 && password2 !== password && (
+                <div style={{ fontSize: 12, color: "var(--red)", marginTop: 5 }}>
+                  Die Passwörter stimmen nicht überein.
+                </div>
+              )}
+            </div>
+          )}
 
           {mode === "signup" && rolle === "service" && (
             <input

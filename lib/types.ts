@@ -25,6 +25,9 @@ export type Property = {
   afa_betrag: number | null;         // manuell: fester AfA-Betrag €/Jahr (§ 7b / § 7i/7h)
   afa_gebaeudeanteil: number | null; // optionaler Gebäudeanteil % je Objekt
   notiz_import: string | null;
+  // Portfolio-Karte: gecachte Koordinaten aus dem Geocoding (Nominatim).
+  lat?: number | null;
+  lng?: number | null;
   // Immobilienbewertung (ImmoWertV) — adressbasiert, regional
   latitude?: number | null;
   longitude?: number | null;

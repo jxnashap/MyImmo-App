@@ -97,6 +97,21 @@ export default async function RootLayout({
   // Vermieter & Hausverwaltung nutzen die volle App — Portal-Shells sind tabu.
   if (pathname.startsWith("/portal") || pathname.startsWith("/service")) redirect("/");
 
+  // Öffentliche Seiten (Bewerbung, Bank-Freigabe, Auftrag, Rechtstexte) IMMER
+  // ohne App-Hülle ausliefern — auch wenn gerade jemand angemeldet ist. Sonst
+  // sieht der eingeloggte Vermieter beim Prüfen seines Bewerbungs-Links die
+  // eigene Sidebar statt der Seite, die der Bewerber bekommt.
+  if (istOeffentlicheSeite) {
+    return (
+      <html lang="de" suppressHydrationWarning>
+        <head>
+          <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
+        </head>
+        <body>{children}</body>
+      </html>
+    );
+  }
+
   const { data: props } = await supabase
     .from("properties")
     .select("id,bezeichnung,typ")

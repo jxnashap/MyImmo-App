@@ -19,7 +19,7 @@ export type KartenObjekt = {
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
 
-export default function PortfolioKarte({ objekte }: { objekte: KartenObjekt[] }) {
+export default function PortfolioKarte({ objekte, hoehe }: { objekte: KartenObjekt[]; hoehe?: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function PortfolioKarte({ objekte }: { objekte: KartenObjekt[] })
     <div
       ref={ref}
       style={{
-        height: "min(72vh, 720px)",
+        height: hoehe ?? "min(72vh, 720px)",
         minHeight: 380,
         borderRadius: 14,
         overflow: "hidden",
