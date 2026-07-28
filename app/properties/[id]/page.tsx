@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { zeigeVerteiler } from "@/lib/umlage";
 import { euro, datum } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
 import { deleteEinnahme, deleteKosten, deleteKredit, deleteVerbrauch, deleteNotiz } from "@/lib/actions/buchungen";
@@ -88,6 +89,12 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const jahresKosten = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
   // Garagen-Objekte: Mieten liegen auf den einzelnen Mietern (je Einheit),
   // nicht auf p.miete — sonst zeigten KPIs/Cashflow/Rendite 0.
+  // Nebenkosten-Verteiler nur bei mehreren Mietparteien anbieten.
+  const verteilerSichtbar = zeigeVerteiler({
+    typ: p.typ,
+    einheiten_anzahl: p.einheiten_anzahl ?? null,
+    mieterAnzahl: (mieter ?? []).length,
+  });
   const istGaragen = ["Garage / Stellplatz", "Garagenkomplex"].includes(p.typ ?? "");
   const mieteAusMietern = tenants.reduce((s, t) => s + (t.kaltmiete ?? 0), 0);
   const miete = istGaragen ? mieteAusMietern : (p.miete ?? 0);
@@ -339,7 +346,9 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
       </div>
 
-      {/* Nebenkosten-Verteiler */}
+      {/* Nebenkosten-Verteiler — nur bei mehreren Mietparteien sinnvoll
+          (bei einer ETW/einem EFH gibt es nichts zu verteilen). */}
+      {verteilerSichtbar && (
       <div className="section mb-20">
         <div className="section-header">
           <h3>Nebenkosten verteilen</h3>
@@ -347,12 +356,13 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
         <div className="section-body">
           <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
-            Für Mehrfamilienhäuser: Gesamtkosten (Strom, Wasser, Grundsteuer …) <strong>einmal</strong> eingeben — der
+            Gesamtkosten (Strom, Wasser, Grundsteuer …) <strong>einmal</strong> eingeben — der
             Assistent teilt sie automatisch nach <strong>m²-Anteil</strong> auf alle Mieter auf und übernimmt die
             Beträge direkt in deren einzelne NK-Abrechnung.
           </div>
         </div>
       </div>
+      )}
 
       {/* Kredite & Finanzierung */}
       <div className="section mb-20">
