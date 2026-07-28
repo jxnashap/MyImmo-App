@@ -7,6 +7,7 @@ import { useMemo, useState, useTransition } from "react";
 import { Building2, TrendingDown, BadgeCheck, CalendarClock, Landmark, Save } from "lucide-react";
 import { euro } from "@/lib/format";
 import { uebernehmeAfaGebaeudeanteil } from "@/lib/actions/properties";
+import { zahlDe0 } from "@/lib/zahl";
 import {
   afaSatzNachFertigstellung, degressivVsLinear, pruefe7b, verteile82b, kaufpreisAufteilung,
 } from "@/lib/steuer/afa";
@@ -23,7 +24,7 @@ export type AfaObjekt = {
 };
 
 const numOr = (s: string, fallback = 0) => {
-  const v = parseFloat(s.replace(",", "."));
+  const v = zahlDe0(s);
   return Number.isFinite(v) ? v : fallback;
 };
 

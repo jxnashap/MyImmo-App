@@ -7,6 +7,7 @@ import {
   NHK_TYPEN, GND_WOHNGEBAEUDE, type Bewertungsergebnis,
 } from "@/lib/bewertung/immowertv";
 import { BORIS_D, BORIS_LAENDER, LZ_DEFAULT } from "@/lib/bewertung/boris";
+import { zahlDe0 } from "@/lib/zahl";
 import { KAUF_BEWERTUNG_KEY, type KaufBewertung } from "@/lib/kauf/bewertung";
 import { speichereEinschaetzung } from "@/lib/actions/einschaetzung";
 
@@ -16,7 +17,7 @@ import { useToast } from "@/components/Toast";
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
 const STANDARD = ["1 – sehr einfach", "2 – einfach", "3 – mittel", "4 – gehoben", "5 – hochwertig"];
-const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
+const num = zahlDe0;
 
 export default function BewertungAssistent({
   imKaufFlow = false, onGespeichert, objekte = [],
@@ -163,7 +164,15 @@ export default function BewertungAssistent({
           <>
             <div className="form-section-label">Ertrag</div>
             <div className="form-row">
-              <div className="form-group"><label>Jahresnettokaltmiete (€)</label><input value={miete} onChange={(e) => setMiete(e.target.value)} inputMode="decimal" placeholder="marktüblich, ohne NK" /></div>
+              <div className="form-group">
+                <label>Jahresnettokaltmiete (€)</label>
+                <input value={miete} onChange={(e) => setMiete(e.target.value)} inputMode="decimal" placeholder="z. B. 8.520 (= 710 €/Monat)" />
+                {num(miete) > 0 && (
+                  <span style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 3 }}>
+                    entspricht {eur(num(miete) / 12)} pro Monat — ohne Nebenkosten
+                  </span>
+                )}
+              </div>
               <div className="form-group"><label>Anzahl Wohnungen</label><input value={whg} onChange={(e) => setWhg(e.target.value)} inputMode="numeric" /></div>
             </div>
             <div className="form-row">
@@ -202,7 +211,13 @@ export default function BewertungAssistent({
           <div className="section-body">
             {!ergebnis ? (
               <p style={{ fontSize: 13, color: "var(--faint)" }}>
-                {zweck === "kapitalanlage" ? "Miete und Wohnfläche eingeben." : "Wohnfläche eingeben."} für ein Ergebnis.
+                {zweck === "kapitalanlage"
+                  ? !num(flaeche) && !num(miete)
+                    ? "Für ein Ergebnis fehlen noch Jahresnettokaltmiete und Wohnfläche."
+                    : !num(miete)
+                      ? "Für ein Ergebnis fehlt noch die Jahresnettokaltmiete."
+                      : "Für ein Ergebnis fehlt noch die Wohnfläche."
+                  : "Für ein Ergebnis fehlt noch die Wohnfläche."}
               </p>
             ) : (
               <>
@@ -245,7 +260,15 @@ export default function BewertungAssistent({
                   </button>
                 )}
 
-                {objekte.length > 0 && (
+                {objekte.length > 0 && ergebnis.wert <= 0 && (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)", fontSize: 12, color: "var(--amber)", lineHeight: 1.55 }}>
+                    Der Ertragswert liegt bei 0 € — so lässt sich nichts speichern. Prüfe, ob die Miete
+                    als <strong>Jahres</strong>miete eingetragen ist, und ergänze Bodenrichtwert und
+                    Grundstücksfläche.
+                  </div>
+                )}
+
+                {objekte.length > 0 && ergebnis.wert > 0 && (
                   <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
                     <div className="form-section-label" style={{ marginTop: 0 }}>Ergebnis am Objekt speichern</div>
                     <div style={{ fontSize: 11.5, color: "var(--muted)", marginBottom: 10, lineHeight: 1.55 }}>

@@ -3,9 +3,10 @@ import { useMemo, useState } from "react";
 import { ShieldCheck, TriangleAlert, Info, Home } from "lucide-react";
 import { berechneVerkauf } from "@/lib/verkauf";
 import { datum as fmtDatum } from "@/lib/format";
+import { zahlDe0 } from "@/lib/zahl";
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
-const num = (s: string) => parseFloat(s.replace(",", ".")) || 0;
+const num = zahlDe0;
 
 // Vorbefüllung aus dem Bestand: Objekt wählen → Kaufpreis/-datum, aktueller
 // Wert (als Verkaufspreis-Vorschlag) und Restschuld werden übernommen.

@@ -14,6 +14,7 @@ import {
 } from "@/lib/umlage";
 import { verteileNebenkosten } from "@/lib/actions/umlage";
 import { useToast } from "@/components/Toast";
+import { zahlDe0 } from "@/lib/zahl";
 
 type MieterIn = {
   id: string;
@@ -49,7 +50,7 @@ const DEFAULT_ZEILEN: ZeileUI[] = [
 ];
 
 const num = (s: string) => {
-  const v = parseFloat(s.replace(",", "."));
+  const v = zahlDe0(s);
   return Number.isFinite(v) ? v : 0;
 };
 
