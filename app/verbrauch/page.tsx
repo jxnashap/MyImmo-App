@@ -65,11 +65,13 @@ export default async function VerbrauchPage({ searchParams }: { searchParams: { 
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Verwaltung · Verbrauch &amp; Zähler</div>
           <div className="topbar-title">Verbrauch &amp; Nebenkosten</div>
           <div className="topbar-sub">Strom, Gas, Wasser, Heizung</div>
         </div>
         <Link href="/verbrauch/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Verbrauch</Link>
       </div>
+      <hr className="topbar-rule" />
 
       <ZaehlerMeldungen rows={meldungen} />
 

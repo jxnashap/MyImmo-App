@@ -232,9 +232,19 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 .main { padding: 28px 32px; max-width: 1100px; width: 100%; }
 
 /* TOPBAR */
-.topbar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; gap: 16px; }
-.topbar-title { font-family: 'Fraunces', serif; font-size: 24px; color: var(--text); }
-.topbar-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+/* SEITENKOPF — Muster aus dem Design-Handoff:
+   goldener Versal-Kicker · Fraunces-Titel · Untertitel, unten ausgerichtet,
+   danach eine feine Trennlinie (.topbar-rule) als Auftakt des Inhalts. */
+.topbar { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 26px; gap: 16px; flex-wrap: wrap; }
+.topbar-kicker { font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--gold); font-weight: 600; margin-bottom: 10px; }
+.topbar-title { font-family: 'Fraunces', serif; font-size: 26px; letter-spacing: -0.2px; color: var(--text); line-height: 1.15; }
+.topbar-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; max-width: 72ch; }
+.topbar-rule { height: 1px; background: var(--line); margin: 0 0 30px; border: 0; }
+@media (max-width: 860px) {
+  .topbar { align-items: flex-start; margin-bottom: 20px; }
+  .topbar-title { font-size: 22px; }
+  .topbar-rule { margin-bottom: 22px; }
+}
 
 /* SUBTABS */
 .subtabs { display: flex; gap: 4px; padding: 0; margin-bottom: 24px; border-bottom: 1px solid var(--line); overflow-x: auto; }
@@ -248,25 +258,33 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 .card-title { font-size: 13px; font-weight: 600; color: var(--text); }
 .card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .card-body { padding: 20px; }
-.section { background: var(--bg2); border-radius: var(--r-lg); border: 1px solid var(--line); margin-bottom: 20px; overflow: hidden; box-shadow: var(--shadow-1); }
-.section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 16px 20px; border-bottom: 1px solid var(--line); }
-.section-header h3 { font-size: 13px; font-weight: 600; }
+.section { background: var(--bg2); border-radius: var(--r-lg); border: 1px solid var(--line); margin-bottom: 18px; overflow: hidden; box-shadow: var(--shadow-1); transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+.section:hover { border-color: var(--line2); box-shadow: var(--shadow-2); }
+.section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.section-header h3 { font-size: 13.5px; font-weight: 600; letter-spacing: -0.1px; }
+/* Erklärzeile unter dem Abschnitts-Titel (Design-Handoff) */
+.section-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; font-weight: 400; }
 .section-body { padding: 20px; }
 
-/* GRIDS */
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
-.grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; }
+/* GRIDS — Rasterabstand 18px wie im Design-Handoff */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; }
+.grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 16px; }
+/* Automatisch umbrechendes Kartenraster (Kandidaten-/Objektkarten) */
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
 .mb-16 { margin-bottom: 16px; }
 .mb-20 { margin-bottom: 20px; }
 
-/* KPI CARDS */
-.kpi-card { background: var(--bg3); border-radius: var(--r-md); padding: 16px 18px; border: 1px solid var(--line); box-shadow: var(--shadow-1); transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); }
-.kpi-card:hover { border-color: var(--line2); box-shadow: var(--shadow-2); }
+/* KPI CARDS — Karten heben beim Zeigen 1–2 px an (Design-Handoff) */
+.kpi-card { background: var(--bg3); border-radius: var(--r-lg); padding: 16px 18px; border: 1px solid var(--line); box-shadow: var(--shadow-1); transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+.kpi-card:hover { border-color: var(--gold-dim); box-shadow: var(--shadow-2); transform: translateY(-2px); }
+a.kpi-card:active { transform: scale(.985); }
+/* Betonte KPI (z. B. Cashflow) — goldene Ruhefläche statt Inline-Styles */
+.kpi-card.highlight { background: var(--gold-pale); border-color: var(--gold-dim); }
 .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
-.kpi-value { font-family: 'Fraunces', serif; font-size: 22px; color: var(--text); line-height: 1; }
-.kpi-sub { font-size: 11px; color: var(--muted); margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+.kpi-value { font-family: 'Fraunces', serif; font-size: 23px; color: var(--text); line-height: 1.05; letter-spacing: -0.3px; }
+.kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 
 /* STAT BOXES */
 .stat-box { background: var(--bg3); border-radius: var(--r-md); padding: 14px 16px; border: 1px solid var(--line); box-shadow: var(--shadow-1); }
@@ -499,7 +517,7 @@ tr.no-hover:hover td { background: transparent; }
   .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: 270px; max-width: 84vw; z-index: 70; transform: translateX(-100%); transition: transform 0.25s ease; box-shadow: none; }
   .sidebar.open { transform: translateX(0); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
   .topbar { flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
-  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .grid-2, .grid-3, .grid-auto { grid-template-columns: 1fr; }
   /* Breite Inhalte in Karten/Sektionen horizontal scrollbar */
   .section-body, .card-body { overflow-x: auto; }
 }
@@ -1347,4 +1365,6 @@ select:focus-visible, textarea:focus-visible {
   .tile-reveal, .badge-pop { animation: none !important; }
   .tile-hover:hover { transform: none; }
   .no-motion-transition { transition: none !important; }
+  /* Karten-Anheben und Klick-Stauchung aus dem Design-Handoff */
+  .kpi-card:hover, a.kpi-card:active, .section:hover { transform: none; }
 }

@@ -33,10 +33,12 @@ export default async function VerkaufPage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Kalkulator · Verkauf</div>
           <div className="topbar-title">Verkauf-Assistent</div>
           <div className="topbar-sub">Vom Wert bis zur Übergabe — mit Spekulationssteuer- und Netto-Erlös-Check</div>
         </div>
       </div>
+      <hr className="topbar-rule" />
       <VerkaufAssistent objekte={objekte} />
     </div>
   );

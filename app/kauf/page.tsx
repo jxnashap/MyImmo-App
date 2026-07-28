@@ -22,10 +22,12 @@ export default async function KaufPage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Kalkulator · Kauf</div>
           <div className="topbar-title">Kauf-Assistent</div>
           <div className="topbar-sub">Vom gefundenen Objekt bis zur Finanzierungsanfrage — Schritt für Schritt</div>
         </div>
       </div>
+      <hr className="topbar-rule" />
       <KaufAssistent gespeichert={(rows ?? []) as Kalkulation[]} selbstauskunft={selbstauskunft} />
     </div>
   );

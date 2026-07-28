@@ -115,12 +115,14 @@ export default async function BankingPage({
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Verwaltung · Open Banking</div>
           <div className="topbar-title">Banking</div>
           <div className="topbar-sub">
             Konten verbinden (nur Lesezugriff) und Umsätze abrufen — Sandbox-Modus bis zum Live-Vertrag
           </div>
         </div>
       </div>
+      <hr className="topbar-rule" />
 
       {searchParams.verbunden && (
         <div className="section" style={{ borderColor: "var(--green)" }}>

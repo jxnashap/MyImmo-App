@@ -205,6 +205,7 @@ export default async function TerminePage({
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Verwaltung · Fristen &amp; Termine</div>
           <div className="topbar-title">Termine</div>
           <div className="topbar-sub">Automatische Fristen aus Mietern, Krediten &amp; Steuer plus eigene Termine · Angaben ohne Gewähr</div>
         </div>
@@ -217,6 +218,7 @@ export default async function TerminePage({
           </a>
         </div>
       </div>
+      <hr className="topbar-rule" />
 
       <div className="grid-4 mb-20">
         <div className="kpi-card"><div className="kpi-label">Anstehend</div><div className="kpi-value">{anstehend.length}</div></div>

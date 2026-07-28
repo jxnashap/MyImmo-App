@@ -83,6 +83,7 @@ export default function ArchivManager({
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Verwaltung · Belege</div>
           <div className="topbar-title">Archiv</div>
           <div className="topbar-sub">Alle Dokumente & Verträge — gefiltert nach Objekt, Mieter und Art</div>
         </div>
@@ -90,6 +91,7 @@ export default function ArchivManager({
           {showUpload ? <><X size={14} style={{ verticalAlign: "-2px" }} /> Schließen</> : <><Plus size={14} style={{ verticalAlign: "-2px" }} /> Dokument hochladen</>}
         </button>
       </div>
+      <hr className="topbar-rule" />
 
       <details style={{ marginBottom: 16, background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, padding: "10px 14px", fontSize: 12.5 }}>
         <summary style={{ cursor: "pointer", color: "var(--muted)", fontWeight: 500 }}>

@@ -7,10 +7,12 @@ export default function BewertungPage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Kalkulator · Marktwert</div>
           <div className="topbar-title">Marktwert-Schätzer</div>
           <div className="topbar-sub">Objekt selbst bewerten nach ImmoWertV — Ertrags- oder Sachwert</div>
         </div>
       </div>
+      <hr className="topbar-rule" />
       <BewertungAssistent />
     </div>
   );

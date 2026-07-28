@@ -138,6 +138,7 @@ export default async function AnliegenPage({
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Verwaltung · Anliegen &amp; Bewerber</div>
           <div className="topbar-title">Mieterportal</div>
           <div className="topbar-sub">
             {tab === "bewerbungen"
