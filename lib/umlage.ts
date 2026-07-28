@@ -198,3 +198,28 @@ export function berechneUmlage(
 
   return { perMieter, totalFlaeche: sumFlaeche, zeilenSummen, zeilenNichtUmgelegt, gesamt, nichtUmgelegt };
 }
+
+// ---------------------------------------------------------------------------
+// Sichtbarkeit des Nebenkosten-Verteilers
+// ---------------------------------------------------------------------------
+// Der Verteiler teilt Gesamtkosten auf MEHRERE Mietparteien auf. Bei einer
+// einzelnen Einheit (ETW, EFH) gibt es nichts zu verteilen — dort landen die
+// Kosten ohnehin vollständig beim einzigen Mieter. Deshalb wird das Werkzeug
+// nur angeboten, wenn das Objekt tatsächlich mehrere Parteien hat.
+//
+// Wichtig: Das betrifft NUR den Verteiler. Die Frage, welche Kosten
+// umlagefähig sind (BetrKV), und die NK-Abrechnung je Mieter gibt es
+// unverändert für jeden Objekttyp — auch für die ETW.
+
+/** Objekttypen, die von Haus aus mehrere Einheiten haben. */
+export const MEHRPARTEIEN_TYPEN = ["Mehrfamilienhaus", "Garagenkomplex"];
+
+export function zeigeVerteiler(p: {
+  typ?: string | null;
+  einheiten_anzahl?: number | null;
+  mieterAnzahl?: number;
+}): boolean {
+  if (MEHRPARTEIEN_TYPEN.includes(p.typ ?? "")) return true;
+  if ((p.einheiten_anzahl ?? 0) > 1) return true;
+  return (p.mieterAnzahl ?? 0) > 1;
+}
