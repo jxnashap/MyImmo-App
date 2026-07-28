@@ -10,9 +10,20 @@ export default async function BewertungPage() {
   // gespeichert werden kann (Wertentwicklung + Verkauf-Assistent).
   const { data: props } = await supabase
     .from("properties")
-    .select("id,bezeichnung")
+    .select("id,bezeichnung,typ,flaeche,grundstuecksflaeche,baujahr,miete,kaufpreis,einheiten_anzahl")
     .order("bezeichnung");
-  const objekte: SchaetzerObjekt[] = (props ?? []).map((p) => ({ id: p.id, name: p.bezeichnung }));
+  const objekte: SchaetzerObjekt[] = (props ?? []).map((p) => ({
+    id: p.id,
+    name: p.bezeichnung,
+    typ: p.typ ?? null,
+    flaeche: p.flaeche ?? null,
+    grundstuecksflaeche: p.grundstuecksflaeche ?? null,
+    baujahr: p.baujahr ?? null,
+    // properties.miete ist die MONATS-Kaltmiete; der Schätzer rechnet mit der Jahresmiete.
+    jahresmiete: p.miete != null && p.miete > 0 ? Math.round(p.miete * 12) : null,
+    kaufpreis: p.kaufpreis ?? null,
+    einheiten: p.einheiten_anzahl ?? null,
+  }));
 
   return (
     <div className="fade-up">
