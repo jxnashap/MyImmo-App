@@ -62,6 +62,10 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
     [kaufpreis, grundflaeche, bodenrichtwert],
   );
   const gebaeudeAK = aufteilung?.gebaeudewert ?? 0;
+  // Ohne Bodenwert ist die "Aufteilung" keine: Der volle Kaufpreis gilt als
+  // Gebäude. Als Anzeige akzeptabel, als gespeicherter Wert für die Anlage V
+  // nicht — Grund und Boden ist nach § 7 EStG nicht abschreibbar.
+  const bodenwertFehlt = !(numOr(grundflaeche) > 0 && numOr(bodenrichtwert) > 0);
 
   // 2) Degressiv vs. linear
   const linearSatz = afaSatzNachFertigstellung(numOr(baujahr) || null);
@@ -139,7 +143,15 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
                 <div style={{ width: `${aufteilung.grundanteilProzent}%`, background: "var(--line)" }} />
               </div>
               <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 10, marginBottom: 0 }}>{aufteilung.hinweis}</p>
-              {objektId && (
+              {objektId && bodenwertFehlt && (
+                <div style={{ marginTop: 12, fontSize: 12, background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", borderRadius: 8, padding: "10px 12px" }}>
+                  Ohne Grundstücksfläche und Bodenrichtwert läge die AfA-Basis bei 100 % des
+                  Kaufpreises. Grund und Boden ist aber nicht abschreibbar (§ 7 EStG) — ein solcher
+                  Wert würde die Anlage V zu hoch ansetzen. Deshalb lässt sich der Gebäudeanteil
+                  erst speichern, wenn beide Angaben stehen.
+                </div>
+              )}
+              {objektId && !bodenwertFehlt && (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
                   <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={speichern}
                     title="Speichert den Gebäudeanteil (%) am gewählten Objekt — fließt in Anlage V / AfA ein"
@@ -169,10 +181,17 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
         <div className="section-body">
           {vergleich ? (
             <>
+              {/* § 5 StBerG: rechnen und vergleichen ist erlaubt, empfehlen nicht.
+                  Deshalb Rechenbeispiel statt "Empfehlung" — die Entscheidung
+                  trifft der Nutzer bzw. sein Steuerberater. */}
               <p style={{ fontSize: 13, marginTop: 0, marginBottom: 12 }}>
-                Empfehlung: <strong>degressiv abschreiben</strong> (5 % vom Restwert) und im <strong>Jahr {vergleich.wechseljahr}</strong> auf die lineare AfA wechseln.
-                In den ersten 10 Jahren bringt die optimale Strategie <strong style={{ color: "var(--green)" }}>{euro(vergleich.summeOptimal10)}</strong> AfA
+                Rechenbeispiel: Wer degressiv abschreibt (5 % vom Restwert) und im{" "}
+                <strong>Jahr {vergleich.wechseljahr}</strong> auf die lineare AfA wechselt, kommt in
+                den ersten 10 Jahren auf <strong style={{ color: "var(--green)" }}>{euro(vergleich.summeOptimal10)}</strong> AfA
                 (rein linear: {euro(vergleich.plan.slice(0, 10).reduce((s, j) => s + j.linear, 0))}).
+                Ob die degressive AfA für dein Objekt überhaupt zulässig ist, hängt vom
+                Fertigstellungs- bzw. Anschaffungszeitpunkt ab (§ 7 Abs. 5a EStG) — das prüft dein
+                Steuerberater.
               </p>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ fontSize: 12 }}>

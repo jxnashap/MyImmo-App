@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/crypto/secure";
 import { BELEIHUNG_CHECKLISTE, type BelDok } from "@/lib/beleihung";
 import { berechneNk, type NkRawPosition } from "@/lib/nk";
+import { ladeVorauszahlung } from "@/lib/nkDaten";
 import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
 import {
   buildKennblattPdf,
@@ -262,6 +263,8 @@ export async function generiereBeleihungDokument(propId: string, itemKey: string
       },
       { bezeichnung: objekt.bezeichnung, adresse: objekt.adresse ?? null },
       posJahr as NkRawPosition[],
+      null,
+      await ladeVorauszahlung(m.id, jahr),
     );
     const pdf = await buildNkPdf(abrechnung, vermieterAus(profil, null));
     const name = [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter";

@@ -1,5 +1,22 @@
 # Migrationen — Regeln & Historie
 
+## Baseline (ab 28.07.2026)
+`20260728120000_baseline_schema.sql` ist ein **Snapshot des kompletten
+Live-Schemas** — 42 Tabellen, 161 Constraints, 113 Indizes, 78 RLS-Policies und
+14 Funktionen (davon 11 SECURITY DEFINER). Vorher lag nur ein Bruchteil davon im
+Repo: Das Fundament (`properties`, `mieter`, `einnahmen`, `kosten`) und vor allem
+**sämtliche RLS-Policies** existierten ausschließlich in der Datenbank. Damit war
+die Zugriffskontrolle der App weder reviewbar noch reproduzierbar — und alle
+Server-Actions verlassen sich darauf.
+
+Die Datei ist idempotent und wurde gegen ein leeres PostgreSQL 16 verifiziert;
+Spalten- und Policy-Hash stimmen exakt mit der Produktionsdatenbank überein. Sie
+ist ein Snapshot, **kein nachgespieltes Änderungsprotokoll**: Die Alt-Migrationen
+unten bleiben die Historie, die Baseline ist der reviewbare Ist-Stand und der Weg,
+die Datenbank aus dem Repo neu aufzubauen.
+
+Ab hier gilt die Regel unten wieder unverändert für jede weitere Änderung.
+
 ## Die Regel (ab 19.07.2026, verbindlich)
 Jede Schemaänderung läuft über **zwei Schritte, immer beide**:
 1. `apply_migration` (Supabase MCP) — führt aus und versioniert in
@@ -87,3 +104,15 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260718001145 | create_selbstauskunft |
 | 20260719073404 | properties_geo_coords |
 | 20260720190000 | create_makler_dokumente |
+
+## Migrationen mit Datei im Repo
+| Version | Name | Zweck |
+|---|---|---|
+| 20260718001145 | create_selbstauskunft | Käufer-Selbstauskunft (verschlüsselt) |
+| 20260719073404 | properties_geo_coords | lat/lng für die Karte |
+| 20260720190000 | create_makler_dokumente | Makler-Unterlagen |
+| 20260724180000 | create_abos | Abo-/Bezahlsystem (inaktiv) |
+| 20260724190000 | abos_event_ordnung | Reihenfolge-Schutz im Paddle-Webhook |
+| 20260728120000 | baseline_schema | **Snapshot des Gesamtschemas** (s. o.) |
+| 20260728130000 | kontoloeschung_vollstaendig | FK blockierte die Löschung von Mieter-/Service-Konten |
+| 20260728140000 | umlage_ersetzen_transaktion | Verteiler ersetzt Positionen atomar statt delete-dann-insert |

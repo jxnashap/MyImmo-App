@@ -27,6 +27,12 @@ export type SollMiete = {
   nk: number;
   stellplatz: number;
   gesamt: number;
+  /**
+   * Gesetzt, wenn der Monat nur teilweise zum Mietverhältnis gehört (Einzug
+   * oder Auszug mitten im Monat). Die Beträge sind dann bereits tagesanteilig
+   * gekürzt; die Werte dienen der Anzeige („16/30 Tage").
+   */
+  anteilig?: { tage: number; tageImMonat: number };
 };
 
 export type ErwarteterMonat = SollMiete & {
@@ -60,6 +66,12 @@ const rund2 = (n: number) => Math.round(n * 100) / 100;
 
 // -------------------------------------------------------------- Soll-Miete ----
 
+/** Zahl der Kalendertage eines Monats ("2026-02" → 28). */
+export function tageImMonat(jahrMonat: string): number {
+  const [j, m] = jahrMonat.split("-").map(Number);
+  return new Date(Date.UTC(j, m, 0)).getUTCDate();
+}
+
 /**
  * Soll-Miete eines Mieters für einen Kalendermonat.
  * 1. Deckt ein Miet-Zeitraum den Monat ab (von <= Monatsanfang und
@@ -67,6 +79,12 @@ const rund2 = (n: number) => Math.round(n * 100) / 100;
  *    Bei Überlappung gewinnt der Zeitraum mit dem spätesten "von".
  * 2. Sonst Fallback auf die Stammdaten des Mieters.
  * Außerhalb von mietbeginn..mietende (auf Monatsebene) → null.
+ *
+ * Beginnt oder endet das Mietverhältnis MITTEN im Monat, wird die Miete
+ * tagesanteilig gekürzt (pro rata temporis) und in `anteilig` ausgewiesen.
+ * Ohne diese Kürzung bekämen bei einem Mieterwechsel zum Monatswechsel beide
+ * Mieter die volle Monatsmiete vorgeschlagen — für denselben Monat, dieselbe
+ * Wohnung.
  */
 export function sollFuerMonat(
   mieter: MietkontoMieter,
@@ -87,11 +105,37 @@ export function sollFuerMonat(
     .filter((z) => z.von <= monatsanfang && (z.bis == null || z.bis >= monatsanfang))
     .sort((a, b) => b.von.localeCompare(a.von))[0];
 
-  const kaltmiete = passend ? passend.kaltmiete ?? 0 : mieter.kaltmiete ?? 0;
-  const nk = passend ? passend.nk_vorauszahlung ?? 0 : mieter.nk_vorauszahlung ?? 0;
-  const stellplatz = passend ? passend.stellplatz_miete ?? 0 : mieter.stellplatz_miete ?? 0;
+  const kaltmieteVoll = passend ? passend.kaltmiete ?? 0 : mieter.kaltmiete ?? 0;
+  const nkVoll = passend ? passend.nk_vorauszahlung ?? 0 : mieter.nk_vorauszahlung ?? 0;
+  const stellplatzVoll = passend ? passend.stellplatz_miete ?? 0 : mieter.stellplatz_miete ?? 0;
 
-  return { kaltmiete, nk, stellplatz, gesamt: rund2(kaltmiete + nk + stellplatz) };
+  // Belegte Tage im Monat — nur relevant im Beginn-/Endemonat.
+  const gesamtTage = tageImMonat(jahrMonat);
+  const ersterTag = beginnYm === jahrMonat ? Number(mieter.mietbeginn!.slice(8, 10)) || 1 : 1;
+  const letzterTag =
+    endeYm === jahrMonat ? Math.min(gesamtTage, Number(mieter.mietende!.slice(8, 10)) || gesamtTage) : gesamtTage;
+  const belegteTage = Math.max(0, letzterTag - ersterTag + 1);
+
+  if (belegteTage >= gesamtTage) {
+    return {
+      kaltmiete: kaltmieteVoll,
+      nk: nkVoll,
+      stellplatz: stellplatzVoll,
+      gesamt: rund2(kaltmieteVoll + nkVoll + stellplatzVoll),
+    };
+  }
+
+  const q = belegteTage / gesamtTage;
+  const kaltmiete = rund2(kaltmieteVoll * q);
+  const nk = rund2(nkVoll * q);
+  const stellplatz = rund2(stellplatzVoll * q);
+  return {
+    kaltmiete,
+    nk,
+    stellplatz,
+    gesamt: rund2(kaltmiete + nk + stellplatz),
+    anteilig: { tage: belegteTage, tageImMonat: gesamtTage },
+  };
 }
 
 // ------------------------------------------------------- erwartete Monate ----
@@ -161,10 +205,31 @@ export function dedup(
 // -------------------------------------------------------- offene Mieten ----
 
 export type OffeneMiete = ErwarteterMonat & {
-  /** Fälligkeit (3. des Monats, § 556b BGB: bis zum 3. Werktag) */
+  /** Fälligkeit: 3. Werktag des Monats (§ 556b Abs. 1 BGB) */
   faelligSeit: string;
   tageOffen: number;
 };
+
+/**
+ * 3. Werktag eines Monats (§ 556b Abs. 1 BGB) als ISO-Datum.
+ * Werktage sind Montag bis Samstag; der Sonntag zählt nicht. Gesetzliche
+ * Feiertage bleiben bewusst unberücksichtigt — sie sind bundeslandabhängig,
+ * und die Fälligkeit dadurch eher zu früh als zu spät anzusetzen wäre der
+ * schlechtere Fehler. Ohne diese Rechnung würde die App bei einem Monat, der
+ * am Wochenende beginnt, bis zu zwei Tage zu früh einen Rückstand melden.
+ */
+export function dritterWerktag(jahrMonat: string): string {
+  const [j, m] = jahrMonat.split("-").map(Number);
+  let werktage = 0;
+  for (let tag = 1; tag <= 31; tag++) {
+    const d = new Date(Date.UTC(j, m - 1, tag));
+    if (d.getUTCMonth() !== m - 1) break; // Monatsende überschritten
+    if (d.getUTCDay() === 0) continue; // Sonntag ist kein Werktag
+    werktage += 1;
+    if (werktage === 3) return `${jahrMonat}-${String(tag).padStart(2, "0")}`;
+  }
+  return `${jahrMonat}-03`;
+}
 
 const MONATE_DE = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 
@@ -177,7 +242,7 @@ export function monatLabel(ym: string): string {
 /**
  * Offene (unbestätigte) Miet-Monate der letzten 12 Monate — der
  * Rückstands-Wächter. Ein Monat gilt als offen, wenn keine Miet-Einnahme
- * gebucht ist und die Fälligkeit (3. des Monats) erreicht wurde.
+ * gebucht ist und die Fälligkeit (3. Werktag, § 556b BGB) erreicht wurde.
  */
 export function offeneMieten(
   mieter: MietkontoMieter,
@@ -190,10 +255,11 @@ export function offeneMieten(
   const offene: OffeneMiete[] = [];
   for (const m of mitStatus) {
     if (m.schonGebucht || m.gesamt <= 0) continue;
-    const faellig = new Date(`${m.jahrMonat}-03T00:00:00`);
+    const faelligIso = dritterWerktag(m.jahrMonat);
+    const faellig = new Date(`${faelligIso}T00:00:00`);
     const tage = Math.floor((heute.getTime() - faellig.getTime()) / 86400000);
     if (tage < 0) continue; // aktueller Monat, noch nicht fällig
-    offene.push({ ...m, faelligSeit: `${m.jahrMonat}-03`, tageOffen: tage });
+    offene.push({ ...m, faelligSeit: faelligIso, tageOffen: tage });
   }
   return offene;
 }

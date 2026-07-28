@@ -9,9 +9,11 @@ import {
   LEERE_SELBSTAUSKUNFT, eigenkapitalGesamt, haushaltsNetto,
   type SelbstauskunftDaten, type Beschaeftigung, type Befristung,
 } from "@/lib/kauf/selbstauskunft";
+import { zahlDe0 } from "@/lib/zahl";
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
-const num = (s: string) => parseFloat(String(s).replace(",", ".")) || 0;
+// Deutsche Schreibweise: "3.200" sind dreitausendzweihundert, nicht 3,2.
+const num = (s: string) => zahlDe0(s);
 
 // numerische Felder (Rest sind Text/Select)
 const ZAHL_FELDER: (keyof SelbstauskunftDaten)[] = [

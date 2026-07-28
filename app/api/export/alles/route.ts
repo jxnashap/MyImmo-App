@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/server";
 import { decryptNullable } from "@/lib/crypto/secure";
+import { csvZelle } from "@/lib/csv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,12 +16,7 @@ type Row = Record<string, unknown>;
 function csv(rows: Row[]): string {
   if (rows.length === 0) return "";
   const keys = Array.from(new Set(rows.flatMap((r) => Object.keys(r))));
-  const zelle = (v: unknown) => {
-    if (v == null) return "";
-    const s = typeof v === "object" ? JSON.stringify(v) : String(v);
-    return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  return [keys.join(";"), ...rows.map((r) => keys.map((k) => zelle(r[k])).join(";"))].join("\n");
+  return [keys.join(";"), ...rows.map((r) => keys.map((k) => csvZelle(r[k])).join(";"))].join("\n");
 }
 
 // Tabellen mit user_id-Spalte (RLS liefert ohnehin nur eigene Zeilen).

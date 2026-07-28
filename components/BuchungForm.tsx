@@ -19,7 +19,7 @@ import {
 import type { Property, Tenant } from "@/lib/types";
 
 const EIN_KAT = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
-const AUS_KAT = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
+const AUS_KAT = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Schuldzinsen", "Hausgeld / WEG", "Makler", "Sonstiges"];
 
 // Vereinigte Zeile (Einnahme ∪ Kosten) fürs Bearbeiten.
 export type BuchungRow = {

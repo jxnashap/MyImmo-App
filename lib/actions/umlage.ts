@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { berechneUmlage, type UmlageZeile, type VerteilenInput, type VerteilenErgebnis } from "@/lib/umlage";
-import { monateImJahr } from "@/lib/nk";
+import { belegung, jahresTage } from "@/lib/nk";
 
 export async function verteileNebenkosten(input: VerteilenInput): Promise<VerteilenErgebnis> {
   const supabase = createClient();
@@ -40,7 +40,7 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
       id: m.id,
       name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter",
       flaeche: Math.max(0, flaecheMap.get(m.id) ?? 0),
-      monate: monateImJahr(jahr, m.mietbeginn, m.mietende).monate,
+      ...belegung(jahr, m.mietbeginn, m.mietende),
     }));
 
   if (aktiveMieter.length === 0) return fehlerErg("Keine Mieter für dieses Objekt gefunden.");
@@ -75,41 +75,37 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
   );
   const ergebnis = berechneUmlage(gueltigeZeilen, aktiveMieter, {
     zeitanteilig,
+    jahresTage: jahresTage(jahr),
     referenzFlaeche: prop?.flaeche ?? 0,
     anzahlEinheiten: einheiten.size,
   });
 
   // Bestehende Assistenten-Positionen dieses Jahres ersetzen (manuelle bleiben).
+  //
+  // Löschen und Einfügen laufen in EINER Transaktion (DB-Funktion
+  // umlage_positionen_ersetzen). Vorher waren es zwei getrennte Aufrufe: Ging
+  // der Insert schief, war die Vorjahresverteilung bereits gelöscht und der
+  // Nutzer stand mit einer Fehlermeldung und ohne Daten da.
   const mieterIds = aktiveMieter.map((m) => m.id);
-  const { error: delFehler } = await supabase
-    .from("mieter_positionen")
-    .delete()
-    .in("mieter_id", mieterIds)
-    .eq("jahr", jahr)
-    .eq("quelle", "umlage");
-  if (delFehler) return fehlerErg(delFehler.message);
-
   const rows = ergebnis.perMieter.flatMap((m) =>
     m.positionen
       .filter((p) => p.betrag > 0)
       .map((p) => ({
-        user_id: user.id,
         mieter_id: m.id,
         bezeichnung: p.bezeichnung,
         betrag: p.betrag,
         umlageschluessel: p.schluessel,
-        jahr,
-        umlagefaehig: true,
-        quelle: "umlage",
         lohnanteil: p.lohnanteil && p.lohnanteil > 0 ? p.lohnanteil : null,
         art_35a: p.art35a ?? null,
       })),
   );
 
-  if (rows.length > 0) {
-    const { error: insFehler } = await supabase.from("mieter_positionen").insert(rows);
-    if (insFehler) return fehlerErg(insFehler.message);
-  }
+  const { error: ersetzFehler } = await supabase.rpc("umlage_positionen_ersetzen", {
+    p_mieter_ids: mieterIds,
+    p_jahr: jahr,
+    p_rows: rows,
+  });
+  if (ersetzFehler) return fehlerErg(ersetzFehler.message);
 
   revalidatePath(`/properties/${propId}`);
   for (const id of mieterIds) {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { berechneNk, deDatum, type NkRawPosition, type NkCo2Input } from "@/lib/nk";
+import { ladeVorauszahlung } from "@/lib/nkDaten";
 import { eur2, adressZeilen } from "@/lib/format";
 import { vermieterAus } from "@/lib/pdf/nkPdf";
 import { decryptIbanRow } from "@/lib/ibanData";
@@ -72,6 +73,7 @@ export default async function NkPage({
     property ?? null,
     (positions ?? []) as NkRawPosition[],
     (co2Row ?? null) as NkCo2Input | null,
+    await ladeVorauszahlung(params.id, jahr),
   );
   const vermieter = vermieterAus(profil, ibanRow ? decryptIbanRow(ibanRow) : null);
 
@@ -134,6 +136,20 @@ export default async function NkPage({
           Noch kein Absender hinterlegt — im Briefkopf erscheint vorerst nur der Name aus den
           IBAN-Daten.{" "}
           <Link href="/einstellungen" style={{ color: "var(--gold)" }}>Vermieter-Profil ausfüllen</Link>
+        </div>
+      )}
+
+      {a.warnungen.length > 0 && (
+        <div
+          className="no-print"
+          style={{ maxWidth: "210mm", margin: "0 auto 14px", background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", borderRadius: 8, padding: "12px 14px", fontSize: 13 }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>Vor dem Verschicken prüfen</div>
+          <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 5 }}>
+            {a.warnungen.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -240,7 +256,11 @@ export default async function NkPage({
           )}
           <div className="zeile">
             <span className="brief-muted">
-              Vorauszahlung ({a.monate} × {eur2(a.nkVorauszahlungMonat)})
+              {a.vorauszahlung.quelle === "gebucht"
+                ? "Geleistete Vorauszahlungen (gebuchte Zahlungen)"
+                : a.vorauszahlung.quelle === "historie"
+                  ? "Geleistete Vorauszahlungen (laut Miethistorie)"
+                  : `Vorauszahlung (${a.monate} × ${eur2(a.nkVorauszahlungMonat)})`}
             </span>
             <span>{eur2(a.vorauszahlungGeleistet)}</span>
           </div>

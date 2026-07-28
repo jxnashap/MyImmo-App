@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, KeyRound, Home, Wrench, Building2, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
+import { pruefeBetaCode } from "@/lib/actions/freischaltung";
 
 // Zugangs-Rollen (Businessplan Kap. 14): Vermieter & Hausverwaltung nutzen
 // die volle App, Mieter und Service haben eigene Portale.
@@ -151,8 +152,11 @@ export default function LoginPage() {
       setLoading(false);
     } else {
       // Vermieter & Hausverwaltung: Beta-Zugangscode + volle App.
-      if (code.trim() !== process.env.NEXT_PUBLIC_BETA_CODE) {
-        setError("Ungültiger Zugangscode.");
+      // Die Prüfung läuft SERVERSEITIG — der Code darf nicht im ausgelieferten
+      // JavaScript stehen (siehe lib/actions/freischaltung.ts).
+      const codeGeprueft = await pruefeBetaCode(code);
+      if (!codeGeprueft.ok) {
+        setError(codeGeprueft.fehler ?? "Ungültiger Zugangscode.");
         setLoading(false);
         return;
       }

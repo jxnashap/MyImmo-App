@@ -16,8 +16,15 @@ function ObjektBlock({ o, jahr }: { o: AnlageVObjekt; jahr: number }) {
 
   const kopieren = async () => {
     const kopf = `Anlage V — ${o.name}${o.adresse ? `, ${o.adresse}` : ""}\nSteuerjahr ${jahr}\n`;
+    // Nicht übertragbare Zeilen (z. B. geschätzte Schuldzinsen) wandern mit
+    // Warnhinweis in die Zwischenablage — sonst landet die Schätzung
+    // ungeprüft in ELSTER.
     const body = zeilen
-      .map((z) => `Zeile ${z.zeile}\t${z.bezeichnung}: ${elsterBetrag(z.betrag)} €`)
+      .map((z) =>
+        z.uebertragbar === false
+          ? `Zeile ${z.zeile}\t${z.bezeichnung}: NICHT ÜBERTRAGEN (${elsterBetrag(z.betrag)} € geschätzt) — ${z.warnung ?? ""}`
+          : `Zeile ${z.zeile}\t${z.bezeichnung}: ${elsterBetrag(z.betrag)} €`,
+      )
       .join("\n");
     await navigator.clipboard.writeText(kopf + body);
     setKopiert(true);
@@ -52,8 +59,22 @@ function ObjektBlock({ o, jahr }: { o: AnlageVObjekt; jahr: number }) {
             {zeilen.map((z, i) => (
               <tr key={i} style={z.bereich === "summe" ? { fontWeight: 700, background: "var(--bg3)" } : undefined}>
                 <td style={{ color: "var(--gold)", fontWeight: 600 }}>{z.zeile}</td>
-                <td style={{ color: z.bereich === "summe" ? "var(--text)" : "var(--muted)" }}>{z.bezeichnung}</td>
-                <td style={{ textAlign: "right", whiteSpace: "nowrap", color: z.bereich === "summe" && z.betrag < 0 ? "var(--red)" : undefined }}>
+                <td style={{ color: z.bereich === "summe" ? "var(--text)" : "var(--muted)" }}>
+                  {z.bezeichnung}
+                  {z.uebertragbar === false && (
+                    <span style={{ display: "block", fontSize: 11, color: "var(--amber)", marginTop: 2 }}>
+                      Nicht übertragen — {z.warnung}
+                    </span>
+                  )}
+                </td>
+                <td
+                  style={{
+                    textAlign: "right",
+                    whiteSpace: "nowrap",
+                    color: z.uebertragbar === false ? "var(--amber)" : z.bereich === "summe" && z.betrag < 0 ? "var(--red)" : undefined,
+                    textDecoration: z.uebertragbar === false ? "line-through" : undefined,
+                  }}
+                >
                   {eur2(z.betrag)}
                 </td>
               </tr>

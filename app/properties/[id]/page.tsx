@@ -87,6 +87,21 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const totalKreditRate = kred.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
   const jahresEinnahmen = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
   const jahresKosten = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
+  // Monatliche Kosten für die Cashflow-Übersicht: Ø der LETZTEN 12 MONATE aus
+  // echten Buchungen — genau wie im Dashboard (app/page.tsx). Vorher wurde die
+  // Summe ALLER je erfassten Kosten durch 12 geteilt; wer sein Portfolio drei
+  // Jahre lang pflegt, sah dadurch einen dreifach zu hohen Monatswert, der auch
+  // noch dem Dashboard widersprach.
+  const jetzt = new Date();
+  const vor12Monaten = new Date(jetzt);
+  vor12Monaten.setFullYear(vor12Monaten.getFullYear() - 1);
+  const kosten12M = kosten
+    .filter((k) => {
+      const d = k.buchungsdatum ? new Date(k.buchungsdatum) : null;
+      return d && d >= vor12Monaten && d <= jetzt;
+    })
+    .reduce((s, k) => s + (k.betrag ?? 0), 0);
+  const monatsKosten = kosten12M / 12;
   // Garagen-Objekte: Mieten liegen auf den einzelnen Mietern (je Einheit),
   // nicht auf p.miete — sonst zeigten KPIs/Cashflow/Rendite 0.
   // Nebenkosten-Verteiler nur bei mehreren Mietparteien anbieten.
@@ -148,7 +163,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   const cfItems = [
     { lbl: "Kaltmiete", val: miete, col: "var(--green)" },
     { lbl: "Kreditraten", val: totalKreditRate, col: "var(--red)" },
-    { lbl: "Laufende Kosten", val: jahresKosten / 12, col: "var(--red)" },
+    { lbl: "Laufende Kosten (Ø 12 Mon.)", val: monatsKosten, col: "var(--red)" },
   ].filter((i) => i.val > 0);
   const cfMax = Math.max(1, ...cfItems.map((i) => i.val));
 

@@ -21,11 +21,23 @@ export type UmlageMieter = {
   id: string;
   name: string;
   flaeche: number; // m²
-  monate?: number; // belegte Monate im Abrechnungsjahr (0..12), Default 12
+  monate?: number; // belegte Monate im Abrechnungsjahr (0..12) — nur für die Anzeige
+  /**
+   * Belegte KALENDERTAGE im Abrechnungsjahr. Maßgeblich für die Verteilung.
+   *
+   * Vorher gewichtete der Verteiler nach Monaten, während die daraus erzeugte
+   * NK-Abrechnung ('zeit'-Positionen, lib/nk.ts) tagesgenau rechnete. Ein
+   * Einzug am 20.03. ergab im Verteiler 10/12 = 83,3 %, in der Abrechnung
+   * 287/365 = 78,6 % derselben Kostenart — je nach gewähltem Weg ein anderes
+   * Ergebnis für denselben Mieter. Beide Wege rechnen jetzt tagesgenau.
+   */
+  tage?: number;
 };
 
 export type UmlageOptions = {
   zeitanteilig: boolean;
+  /** Kalendertage des Abrechnungsjahres (365/366) — Bezugsgröße der Gewichtung. */
+  jahresTage?: number;
   referenzFlaeche?: number; // Gesamtwohnfläche des Objekts (für zeitanteilige Verteilung)
   // Zahl der Wohneinheiten (für den "gleich"-Schlüssel beim Zeitanteiligen):
   // Bei einem Mieterwechsel in derselben Wohnung gibt es MEHR Mieter-Datensätze
@@ -89,6 +101,9 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 const monateVon = (m: UmlageMieter) =>
   m.monate == null ? 12 : Math.max(0, Math.min(12, m.monate));
 
+const tageVon = (m: UmlageMieter, jahresTage: number) =>
+  Math.max(0, Math.min(jahresTage, m.tage ?? 0));
+
 /**
  * Verteilt einen Betrag cent-genau anhand von Gewichten.
  * Rundungsrest (Cents) wird per größtem Nachkommarest vergeben, sodass die
@@ -127,6 +142,13 @@ export function berechneUmlage(
   opts: UmlageOptions = { zeitanteilig: false },
 ): UmlageErgebnis {
   const zeitanteilig = opts.zeitanteilig;
+  const jahresTage = (opts.jahresTage ?? 0) > 0 ? (opts.jahresTage as number) : 365;
+  // Tagesgenau nur, wenn für JEDEN Mieter Tage vorliegen. Sonst monatsweise
+  // wie bisher — eine Mischung aus beidem wäre schlechter als beide Verfahren
+  // einzeln, weil sich die Bezugsgrößen nicht decken.
+  const tagesgenau = mieter.length > 0 && mieter.every((m) => m.tage != null);
+  const zeitEinheit = tagesgenau ? jahresTage : 12;
+  const zeitVon = (m: UmlageMieter) => (tagesgenau ? tageVon(m, jahresTage) : monateVon(m));
   const sumFlaeche = mieter.reduce((s, m) => s + (m.flaeche > 0 ? m.flaeche : 0), 0);
   // Referenzfläche fürs Zeitanteilige: die Gesamtwohnfläche des Objekts, wenn
   // hinterlegt — sie zählt jede Einheit genau EINMAL und ist daher bei einem
@@ -155,12 +177,12 @@ export function berechneUmlage(
     const basis = istFlaeche
       ? mieter.map((m) => (m.flaeche > 0 ? m.flaeche : 0))
       : mieter.map(() => 1);
-    const gewichte = zeitanteilig ? basis.map((b, i) => b * monateVon(mieter[i])) : basis;
+    const gewichte = zeitanteilig ? basis.map((b, i) => b * zeitVon(mieter[i])) : basis;
     const sumGew = gewichte.reduce((a, b) => a + b, 0);
 
     let allocated: number;
     if (zeitanteilig) {
-      const referenz = istFlaeche ? referenzFlaeche * 12 : anzahl * 12;
+      const referenz = istFlaeche ? referenzFlaeche * zeitEinheit : anzahl * zeitEinheit;
       const faktor = referenz > 0 ? Math.min(1, sumGew / referenz) : 0;
       allocated = r2(z.betrag * faktor);
     } else {

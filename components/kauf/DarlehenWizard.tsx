@@ -7,9 +7,11 @@ import {
   konfiguriereDarlehen, beispielZins, KAUF_DARLEHEN_KEY,
   type Prioritaet, type DarlehenAuswahl,
 } from "@/lib/kauf/darlehen";
+import { zahlDe0 } from "@/lib/zahl";
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
-const num = (s: string) => parseFloat(String(s).replace(",", ".")) || 0;
+// Deutsche Schreibweise: "250.000" sind zweihundertfünfzigtausend, nicht 250.
+const num = (s: string) => zahlDe0(s);
 const JETZT = new Date().getFullYear();
 
 const PRIOS: { id: Prioritaet; label: string; icon: typeof Scale; text: string }[] = [

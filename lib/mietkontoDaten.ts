@@ -62,6 +62,7 @@ export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
         nk: soll.nk,
         stellplatz: soll.stellplatz,
         gesamt: soll.gesamt,
+        anteilig: soll.anteilig,
         schonGebucht: gebuchtProMieter.get(m.id)?.has(monat) ?? false,
       });
     }

@@ -283,6 +283,20 @@ export default function BewertungAssistent({
                   ))}
                 </div>
 
+                {/* Ohne Baujahr setzt restnutzungsdauer() auf die volle Gesamt-
+                    nutzungsdauer — das Objekt wird also still wie ein Neubau
+                    bewertet. Das muss dabeistehen. */}
+                {!baujahr && (
+                  <div style={{ display: "flex", gap: 7, fontSize: 12, color: "var(--amber)", marginTop: 12 }}>
+                    <TriangleAlert size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span>
+                      Ohne Baujahr wird mit der vollen Restnutzungsdauer von {GND_WOHNGEBAEUDE} Jahren
+                      gerechnet — also wie bei einem Neubau. Bei einem älteren Gebäude fällt die
+                      Schätzung dadurch zu hoch aus.
+                    </span>
+                  </div>
+                )}
+
                 {ergebnis.warnungen.length > 0 && (
                   <div style={{ marginTop: 12 }}>
                     {ergebnis.warnungen.map((w, i) => (

@@ -472,6 +472,9 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
                     {mw.ergebnis.warnungen.map((h, i) => (
                       <div key={i} style={{ fontSize: 10.5, color: "var(--amber)" }}>⚠ {h}</div>
                     ))}
+                    {mw.unsicher.map((h) => (
+                      <div key={h} style={{ fontSize: 10.5, color: "var(--amber)" }}>⚠ Fehlt: {h}</div>
+                    ))}
                   </div>
                 ) : (
                   <div style={{ fontSize: 11.5, color: "var(--faint)", padding: "9px 12px", borderRadius: 9, background: "var(--bg2)", border: "1px dashed var(--line2)" }}>

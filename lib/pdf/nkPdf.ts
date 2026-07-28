@@ -285,7 +285,11 @@ export async function buildNkPdf(
     sumLine("Von Ihnen zu tragende Kosten", euro(a.kostenNachCo2));
   }
   sumLine(
-    `Vorauszahlung (${a.monate} × ${euro(a.nkVorauszahlungMonat)})`,
+    a.vorauszahlung.quelle === "gebucht"
+      ? "Geleistete Vorauszahlungen (gebuchte Zahlungen)"
+      : a.vorauszahlung.quelle === "historie"
+        ? "Geleistete Vorauszahlungen (laut Miethistorie)"
+        : `Vorauszahlung (${a.monate} × ${euro(a.nkVorauszahlungMonat)})`,
     euro(a.vorauszahlungGeleistet),
   );
   y -= 3;

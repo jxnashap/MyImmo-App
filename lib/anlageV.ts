@@ -49,6 +49,14 @@ export type AnlageVObjekt = {
   afaBasis: number; // Bemessungsgrundlage der AfA (Gebäudewert)
   afaSatz: number; // verwendeter AfA-Satz in % (für Anzeige)
   afaMethode: "auto" | "degressiv" | "manuell" | "keine";
+  /**
+   * true = die Schuldzinsen sind aus der AKTUELLEN Restschuld hochgerechnet und
+   * gehören damit nicht in die Steuererklärung. Sie stehen nur als Größenordnung
+   * in der Übersicht; für ELSTER zählt allein die Zinsbescheinigung der Bank.
+   */
+  schuldzinsenGeschaetzt: boolean;
+  /** Sachliche Hinweise zur Berechnung dieses Objekts (fehlende Angaben o. Ä.). */
+  hinweise: string[];
 };
 
 export type AnlageVErgebnis = {
@@ -65,7 +73,8 @@ const sum = (ns: number[]) => ns.reduce((a, b) => a + b, 0);
 // automatisch erzeugte Kategorien ab. Unbekannte/eigene Kategorien fallen
 // bewusst in "Hausgeld / sonstige Kosten" (Zeile 47) — dort gehen sie steuerlich
 // nicht verloren, tauchen aber nicht in einer spezifischeren Zeile auf.
-const KOSTEN_BUCKET: Record<string, keyof Omit<AnlageVWerbungskosten, "afa" | "schuldzinsen" | "summe">> = {
+const KOSTEN_BUCKET: Record<string, keyof Omit<AnlageVWerbungskosten, "afa" | "summe">> = {
+  Schuldzinsen: "schuldzinsen",
   Reparatur: "erhaltung",
   Instandhaltung: "erhaltung",
   Modernisierung: "erhaltung",
@@ -108,6 +117,8 @@ export function berechneAnlageV(
         afaBasis: 0,
         afaMethode: "auto",
         afaSatz: 0,
+        schuldzinsenGeschaetzt: false,
+        hinweise: [],
       });
     }
     return gruppen.get(propId)!;
@@ -159,20 +170,51 @@ export function berechneAnlageV(
     } else if (methode === "degressiv") {
       // § 7 Abs. 5a EStG: 5 % geometrisch-degressiv vom Restbuchwert.
       // Vereinfachung: kein Wechsel zu linear, keine Monats-Zeitanteiligkeit im 1. Jahr.
-      const start = p.afa_start_jahr ?? p.baujahr ?? jahr;
-      const n = Math.max(0, jahr - start); // 0 = 1. AfA-Jahr
-      g.werbungskosten.afa = r2(g.afaBasis * 0.05 * Math.pow(0.95, n));
-      g.afaSatz = 5;
+      //
+      // Das Startjahr ist das Jahr der Anschaffung/Herstellung — NICHT das
+      // Baujahr. Früher fiel die Rechnung ersatzweise aufs Baujahr zurück: Bei
+      // einem Objekt von 1998 ergab das einen Exponenten von 28 und damit rund
+      // ein Viertel des richtigen Betrags, kommentarlos. Ohne gepflegtes
+      // Startjahr wird deshalb nicht mehr geraten.
+      const start = p.afa_start_jahr ?? null;
+      if (start == null) {
+        g.werbungskosten.afa = 0;
+        g.afaSatz = 0;
+        g.hinweise.push(
+          "Degressive AfA gewählt, aber kein AfA-Startjahr (Jahr der Anschaffung) hinterlegt — ohne dieses Jahr lässt sich der Restbuchwert nicht bestimmen. Bitte im Objekt ergänzen.",
+        );
+      } else {
+        const n = Math.max(0, jahr - start); // 0 = 1. AfA-Jahr
+        g.werbungskosten.afa = r2(g.afaBasis * 0.05 * Math.pow(0.95, n));
+        g.afaSatz = 5;
+      }
     } else {
       const satz = afa.satz ?? afaSatzAusBaujahr(p.baujahr); // global-Override nur bei "auto"
       g.afaSatz = satz;
       g.werbungskosten.afa = r2((g.afaBasis * satz) / 100);
     }
-    // Schuldzinsen geschätzt aus aktueller Restschuld × Zinssatz.
+    // Schuldzinsen: Gebucht schlägt geschätzt.
+    //
+    // Die Hochrechnung „aktuelle Restschuld × Zinssatz" beschreibt HEUTE, nicht
+    // das Steuerjahr — für 2024 würde die Restschuld von 2026 verzinst. Als
+    // Größenordnung in der Übersicht ist das brauchbar, als Wert zum Abtippen
+    // in ELSTER nicht. Deshalb: Sind für das Jahr Kosten der Kategorie
+    // „Schuldzinsen" gebucht, gelten die — sonst wird geschätzt und die Zeile
+    // in der ELSTER-Hilfe als nicht übertragbar gekennzeichnet.
+    const gebuchteZinsen = g.werbungskosten.schuldzinsen; // aus der Kosten-Schleife
     const propKredite = kredite.filter((kr) => kr.prop_id === p.id);
-    g.werbungskosten.schuldzinsen = r2(
+    const geschaetzteZinsen = r2(
       sum(propKredite.map((kr) => ((Number(kr.restschuld) || 0) * (Number(kr.zinssatz) || 0)) / 100)),
     );
+    if (gebuchteZinsen > 0) {
+      g.schuldzinsenGeschaetzt = false;
+    } else if (geschaetzteZinsen > 0) {
+      g.werbungskosten.schuldzinsen = geschaetzteZinsen;
+      g.schuldzinsenGeschaetzt = true;
+      g.hinweise.push(
+        "Die Schuldzinsen sind aus der heutigen Restschuld hochgerechnet und gelten nicht für das Steuerjahr. Für die Steuererklärung den Betrag aus der Zinsbescheinigung der Bank verwenden — oder die gezahlten Zinsen als Ausgabe der Kategorie Schuldzinsen buchen.",
+      );
+    }
   }
 
   // Summen je Objekt + Rundung
@@ -216,6 +258,8 @@ export function berechneAnlageV(
     afaBasis: r2(sum(sichtbar.map((g) => g.afaBasis))),
     afaSatz: 0,
     afaMethode: "auto",
+    schuldzinsenGeschaetzt: sichtbar.some((g) => g.schuldzinsenGeschaetzt),
+    hinweise: [...new Set(sichtbar.flatMap((g) => g.hinweise))],
   };
 
   return { jahr, objekte: sichtbar, gesamt };
@@ -232,7 +276,7 @@ export const ANLAGE_V_POSITIONEN: { key: string; label: string; bereich: "einnah
   { key: "verwaltung", label: "Verwaltungskosten — Zeile 46", bereich: "wk" },
   { key: "grundsteuer", label: "Grundsteuer / öffentl. Lasten — Zeile 47", bereich: "wk" },
   { key: "versicherung", label: "Versicherungen — Zeile 47", bereich: "wk" },
-  { key: "hausgeldSonstige", label: "Hausgeld / sonstige Kosten — Zeile 47", bereich: "wk" },
+  { key: "hausgeldSonstige", label: "Hausgeld / sonstige Kosten — Zeile 50", bereich: "wk" },
 ];
 
 export function wertVon(o: AnlageVObjekt, key: string): number {
@@ -251,6 +295,13 @@ export type ElsterZeile = {
   bezeichnung: string;
   betrag: number;
   bereich: "einnahme" | "wk" | "summe";
+  /**
+   * false = diesen Wert NICHT nach ELSTER übertragen. Betrifft geschätzte
+   * Größen, die nur der Orientierung dienen (derzeit die hochgerechneten
+   * Schuldzinsen). `warnung` sagt, woher der richtige Wert kommt.
+   */
+  uebertragbar?: boolean;
+  warnung?: string;
 };
 
 export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
@@ -262,7 +313,16 @@ export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
     { zeile: "14", bezeichnung: "Sonstige Einnahmen", betrag: e.sonstige, bereich: "einnahme" },
     { zeile: "21", bezeichnung: "Summe der Einnahmen", betrag: e.summe, bereich: "summe" },
     { zeile: "33", bezeichnung: "AfA für Gebäude", betrag: w.afa, bereich: "wk" },
-    { zeile: "37", bezeichnung: "Schuldzinsen", betrag: w.schuldzinsen, bereich: "wk" },
+    {
+      zeile: "37",
+      bezeichnung: "Schuldzinsen",
+      betrag: w.schuldzinsen,
+      bereich: "wk",
+      uebertragbar: !o.schuldzinsenGeschaetzt,
+      warnung: o.schuldzinsenGeschaetzt
+        ? "Nur Schätzung aus der heutigen Restschuld — nicht übertragen. Betrag der Zinsbescheinigung der Bank eintragen."
+        : undefined,
+    },
     { zeile: "40", bezeichnung: "Erhaltungsaufwendungen (Reparatur/Instandhaltung)", betrag: w.erhaltung, bereich: "wk" },
     { zeile: "46", bezeichnung: "Verwaltungskosten", betrag: w.verwaltung, bereich: "wk" },
     { zeile: "47", bezeichnung: "Grundsteuer / öffentliche Lasten", betrag: w.grundsteuer, bereich: "wk" },

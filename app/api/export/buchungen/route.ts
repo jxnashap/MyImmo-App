@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
+import { csvZelleGequotet } from "@/lib/csv";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
 // Datensicherung — ergänzt den JSON-Gesamtexport (/api/export) und den
 // Anlage-V-CSV. Semikolon-getrennt, deutsche Zahlen, BOM für Umlaute.
 
-const esc = (s: string) => `"${String(s ?? "").replace(/"/g, '""')}"`;
+// Immer gequotet UND gegen Formel-Einschleusung entschaerft (lib/csv.ts).
+const esc = (s: string) => csvZelleGequotet(s);
 const zahl = (n: number | null | undefined) =>
   n == null ? "" : n.toFixed(2).replace(".", ",");
 
