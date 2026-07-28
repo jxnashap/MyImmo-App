@@ -222,15 +222,9 @@ export default function LoginPage() {
       >
         <BrandMark size="lg" />
 
-        {/* Gewählte Rolle + Wechsel zurück zur Auswahl */}
-        <div className="mt-5 flex items-center justify-between">
-          <span
-            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold"
-            style={{ background: "var(--gold-pale)", color: "var(--gold)", border: "1px solid var(--gold-dim)" }}
-          >
-            {(() => { const I = ROLLEN[rolle].icon; return <I size={13} />; })()}
-            {ROLLEN[rolle].label}
-          </span>
+        {/* Links zurück zur Rollen-Auswahl (Pfeil zeigt dorthin), rechts die
+            aktuell gewählte Rolle — gilt für jeden Zugang (Vermieter, Mieter …). */}
+        <div className="mt-5 flex items-center justify-between gap-3">
           <Link
             href="/anmelden"
             className="inline-flex items-center gap-1 text-[12px] transition hover:underline"
@@ -238,6 +232,13 @@ export default function LoginPage() {
           >
             <ArrowLeft size={12} /> Rolle wechseln
           </Link>
+          <span
+            className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold"
+            style={{ background: "var(--gold-pale)", color: "var(--gold)", border: "1px solid var(--gold-dim)" }}
+          >
+            {(() => { const I = ROLLEN[rolle].icon; return <I size={13} />; })()}
+            {ROLLEN[rolle].label}
+          </span>
         </div>
 
         {/* Umschalter Anmelden / Registrieren */}
