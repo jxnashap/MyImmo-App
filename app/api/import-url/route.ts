@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthedUser, MB } from "@/lib/aiRoute";
 import { extrahiereImmodaten, AiImportFehler } from "@/lib/aiImport";
+import { sicheresFetch, pruefeZielUrl, ZielNichtErlaubtFehler } from "@/lib/net/ssrf";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -62,24 +63,44 @@ function htmlZuText(html: string): string {
     .trim();
 }
 
+// Realistischer UA — viele Makler-Seiten blocken Default-Fetch-UAs.
+const UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
+
+/**
+ * Lädt eine URL mit SSRF-Prüfung vor JEDEM Sprung (siehe lib/net/ssrf.ts).
+ * Weiterleitungen werden einzeln geprüft statt blind verfolgt.
+ */
 async function holeMitTimeout(url: string, accept: string): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
-  try {
-    return await fetch(url, {
-      redirect: "follow",
-      headers: {
-        // Realistischer UA — viele Makler-Seiten blocken Default-Fetch-UAs.
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
-        Accept: accept,
-        "Accept-Language": "de-DE,de;q=0.9",
-      },
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
+  const { response } = await sicheresFetch(new URL(url), {
+    accept,
+    timeoutMs: FETCH_TIMEOUT,
+    userAgent: UA,
+  });
+  return response;
+}
+
+// Mengenbremse je Nutzer: Der Link-Import lädt fremde Server und ruft danach
+// die KI — beides kostet Zeit und Geld. Ohne Bremse kann ein einzelnes Konto
+// die Route als Anfrage-Schleuder benutzen.
+const LIMIT_PRO_STUNDE = 30;
+const zugriffe = new Map<string, number[]>();
+
+function limitUeberschritten(userId: string): boolean {
+  const jetzt = Date.now();
+  const grenze = jetzt - 60 * 60 * 1000;
+  const bisher = (zugriffe.get(userId) ?? []).filter((t) => t > grenze);
+  if (bisher.length >= LIMIT_PRO_STUNDE) {
+    zugriffe.set(userId, bisher);
+    return true;
   }
+  bisher.push(jetzt);
+  zugriffe.set(userId, bisher);
+  // Aufräumen, damit die Map nicht unbegrenzt wächst.
+  if (zugriffe.size > 500) {
+    for (const [k, v] of zugriffe) if (v.every((t) => t <= grenze)) zugriffe.delete(k);
+  }
+  return false;
 }
 
 export async function POST(req: Request) {
@@ -108,18 +129,23 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Bitte einen gültigen Link einfügen." }, { status: 400 });
   }
-  if (url.protocol !== "http:" && url.protocol !== "https:")
-    return NextResponse.json({ error: "Nur http/https-Links werden unterstützt." }, { status: 400 });
-  // Kein SSRF auf interne Dienste (grobe Absicherung).
-  const host = url.hostname.toLowerCase();
-  if (
-    host === "localhost" ||
-    /^127\.|^10\.|^192\.168\.|^169\.254\.|^0\./.test(host) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-    host.endsWith(".local") ||
-    host.endsWith(".internal")
-  )
-    return NextResponse.json({ error: "Dieser Link wird nicht unterstützt." }, { status: 400 });
+  if (limitUeberschritten(user.id)) {
+    return NextResponse.json(
+      { error: "Zu viele Link-Importe in kurzer Zeit. Bitte später erneut versuchen." },
+      { status: 429 },
+    );
+  }
+
+  // SSRF: Adresse auflösen und gegen private/lokale Netze prüfen. Reine
+  // Hostnamen-Regexe waren umgehbar (IPv6-Loopback, dezimal kodierte IPs,
+  // DNS-Namen auf interne Adressen) — siehe lib/net/ssrf.ts.
+  try {
+    await pruefeZielUrl(url);
+  } catch (e) {
+    if (e instanceof ZielNichtErlaubtFehler)
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    throw e;
+  }
 
   try {
     // ---- Seite/PDF laden --------------------------------------------------

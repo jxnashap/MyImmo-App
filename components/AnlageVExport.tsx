@@ -12,6 +12,7 @@ import {
   type AnlageVObjekt,
 } from "@/lib/anlageV";
 import ElsterHilfe from "@/components/ElsterHilfe";
+import { csvZelleGequotet } from "@/lib/csv";
 
 export default function AnlageVExport({
   properties,
@@ -47,7 +48,8 @@ export default function AnlageVExport({
 
   function exportCsv() {
     const sep = ";";
-    const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
+    // Formel-Einschleusung mit entschaerfen (lib/csv.ts).
+    const esc = (s: string) => csvZelleGequotet(s);
     const nr = (n: number) => n.toFixed(2).replace(".", ",");
     const lines: string[] = [];
     lines.push(["Objekt", "Bereich", "Position", "Betrag (EUR)"].map(esc).join(sep));
