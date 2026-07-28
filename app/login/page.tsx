@@ -64,6 +64,20 @@ export default function LoginPage() {
     if (params.has("geloescht")) {
       setInfo("Dein Konto und alle Daten wurden gelöscht.");
     }
+    // Google-Anmeldung mit falscher Rolle abgebrochen (siehe /auth/callback).
+    const fehlerArt = params.get("fehler");
+    if (fehlerArt === "rolle") {
+      const konto = params.get("konto") ?? "";
+      const label = ROLLEN[konto]?.label;
+      setFalscheRolle(ROLLEN[konto] ? konto : null);
+      setError(
+        label
+          ? `Dieses Google-Konto gehört zu einem ${label}-Konto. Wähle oben die passende Rolle und versuche es erneut.`
+          : "Dieses Google-Konto passt nicht zur gewählten Rolle.",
+      );
+    } else if (fehlerArt === "google") {
+      setError("Die Anmeldung mit Google hat nicht geklappt. Bitte erneut versuchen.");
+    }
     const r = params.get("rolle");
     if (r && ROLLEN[r]) setRolle(r);
     // Open-Redirect verhindern: nur app-interne Pfade ("/..."), kein "//host".
@@ -179,12 +193,19 @@ export default function LoginPage() {
   async function googleLogin() {
     setError(null);
     setInfo(null);
+    // Die gewählte Rolle mit an den Callback geben. Ohne sie führte der
+    // Google-Weg jede Rollenprüfung ins Leere: Wer sich als „Vermieter"
+    // durchklickte und dann Google nutzte, landete kommentarlos im
+    // Mieterportal — oder legte, ohne bestehendes Konto, ungewollt ein neues
+    // Vermieter-Konto an. Der Passwort-Login prüft das längst (siehe oben).
+    const ziel =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/auth/callback?rolle=${encodeURIComponent(rolle)}` +
+          (nextUrl ? `&next=${encodeURIComponent(nextUrl)}` : "")
+        : undefined;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo:
-          typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined,
-      },
+      options: { redirectTo: ziel },
     });
     if (error) setError(uebersetze(error.message));
   }

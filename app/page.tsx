@@ -313,7 +313,11 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {kartenObjekte.length > 0 && (
+      {/* Koordinaten schreibt ausschließlich /karte beim Aufruf (das Dashboard
+          geocodiert bewusst nicht). Wer die Seite nie öffnet, hat nie
+          Koordinaten — und sah hier dauerhaft nichts, ohne zu ahnen, dass es
+          eine Karte gibt. Deshalb der Platzhalter mit dem Weg dorthin. */}
+      {kartenObjekte.length > 0 ? (
         <div className="section mb-20">
           <div className="section-header">
             <div>
@@ -326,7 +330,24 @@ export default async function DashboardPage() {
             <PortfolioKarte objekte={kartenObjekte} hoehe="300px" />
           </div>
         </div>
-      )}
+      ) : properties.some((p) => p.adresse) ? (
+        <div className="section mb-20">
+          <div className="section-header">
+            <div>
+              <h3>Standorte</h3>
+              <div className="section-sub">Karte noch nicht aktiviert</div>
+            </div>
+            <Link href="/karte" className="btn btn-ghost btn-sm">Karte aktivieren →</Link>
+          </div>
+          <div className="section-body">
+            <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
+              Deine Objekte haben noch keine Koordinaten. Beim ersten Aufruf der Kartenseite
+              werden die Adressen einmalig aufgelöst und gespeichert — danach erscheint die Karte
+              auch hier.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid-2 mb-20">
         <div className="section" style={{ marginBottom: 0 }}>

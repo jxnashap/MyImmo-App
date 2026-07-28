@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { Home, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import BewerbungForm from "@/components/BewerbungForm";
+import OeffentlicheFusszeile from "@/components/OeffentlicheFusszeile";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,10 @@ type Info = {
   adresse: string | null;
   flaeche: number | null;
   zimmer: number | null;
+  // Verantwortlicher nach Art. 13 DSGVO = der Vermieter (siehe RPC).
+  verantwortlicher: string | null;
+  verantwortlicher_email: string | null;
+  verantwortlicher_telefon: string | null;
 };
 
 function Kopf() {
@@ -72,6 +77,11 @@ export default async function BewerbenSeite({ params }: { params: { token: strin
         </div>
       </div>
       <BewerbungForm token={params.token} />
+      <OeffentlicheFusszeile
+        verantwortlicher={info.verantwortlicher}
+        kontakt={info.verantwortlicher_email ?? info.verantwortlicher_telefon}
+        zweck="Ihre Angaben werden zur Prüfung Ihrer Mietanfrage für dieses Objekt verarbeitet."
+      />
     </div>
   );
 }

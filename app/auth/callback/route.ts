@@ -12,11 +12,35 @@ export async function GET(request: Request) {
   // Nur interne Pfade als Redirect-Ziel akzeptieren ("//" wäre protokoll-relativ).
   const roh = searchParams.get("next") ?? "/";
   const next = roh.startsWith("/") && !roh.startsWith("//") ? roh : "/";
+  // Rolle, die der Nutzer auf der Anmeldeseite gewählt hat (siehe googleLogin).
+  const gewaehlt = searchParams.get("rolle");
 
   if (code) {
     const supabase = createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Rollen-Abgleich wie beim Passwort-Login: Passt das Konto nicht zur
+      // gewählten Rolle, wird die Session sofort wieder beendet und der Grund
+      // benannt — statt den Nutzer kommentarlos im falschen Portal abzusetzen.
+      if (gewaehlt) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const { data: rolleRow } = await supabase
+            .from("nutzer_rollen")
+            .select("rolle")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          const kontoRolle = rolleRow?.rolle ?? "vermieter";
+          if (kontoRolle !== gewaehlt) {
+            await supabase.auth.signOut();
+            return NextResponse.redirect(
+              `${origin}/login?fehler=rolle&konto=${encodeURIComponent(kontoRolle)}`,
+            );
+          }
+        }
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

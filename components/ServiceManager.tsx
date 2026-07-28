@@ -302,6 +302,26 @@ export default function ServiceManager({
         </div>
       </div>
 
+      {/* Ohne verknüpftes Service-Konto gibt es keinen Empfänger für einen
+          Auftrag. Der Block verschwand dann kommentarlos — man konnte
+          Handwerksfirmen samt Gewerk und Kontakt pflegen und stieß danach auf
+          eine Funktion, die es scheinbar nicht gibt. Jetzt steht dort, was
+          fehlt. */}
+      {partner.length === 0 && firmen.length > 0 && (
+        <div className="section">
+          <div className="section-header"><h3>Auftrag vergeben</h3></div>
+          <div className="section-body">
+            <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
+              Du hast {firmen.length} {firmen.length === 1 ? "Firma" : "Firmen"} im Verzeichnis,
+              aber noch kein verknüpftes <strong>Service-Konto</strong>. Aufträge laufen über das
+              Service-Portal — der Betrieb braucht dafür einen eigenen Zugang. Erzeuge oben unter{" "}
+              <strong>Service-Partner</strong> einen Einladungscode und schicke ihn deinem
+              Handwerksbetrieb; sobald er sich registriert hat, kannst du hier Aufträge vergeben.
+            </p>
+          </div>
+        </div>
+      )}
+
       {partner.length > 0 && (
         <div className="section">
           <div className="section-header"><h3>Auftrag vergeben</h3></div>

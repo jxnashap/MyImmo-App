@@ -143,6 +143,9 @@ export default async function PortalPage({
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <ThemeToggle variant="icon" />
+          <Link href="/konto" className="btn btn-ghost" style={{ fontSize: 12 }} title="Passwort, Datenexport, Konto löschen">
+            Konto
+          </Link>
           <form action="/auth/signout" method="post">
             <button type="submit" className="btn btn-ghost" style={{ fontSize: 12 }}>Abmelden</button>
           </form>

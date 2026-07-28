@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { zuJahrMonat } from "@/lib/mietkonto";
+import { wartetAufVermieter } from "@/lib/zaehler";
 
 // Zähler für die Navigation: was seit dem letzten Hinsehen liegen geblieben
 // ist. Bewusst dieselbe Definition wie auf den Zielseiten, damit die Zahl am
@@ -12,6 +13,7 @@ export type Neuigkeiten = {
   /** Ein- & Ausgaben: noch nicht bestätigte Mieteingänge des laufenden Monats. */
   cashflow: number;
 };
+
 
 export async function ladeNeuigkeiten(): Promise<Neuigkeiten> {
   const supabase = createClient();
@@ -29,7 +31,7 @@ export async function ladeNeuigkeiten(): Promise<Neuigkeiten> {
 
   const offeneAnliegen = (anliegen ?? []).filter((a) => a.status !== "erledigt").length;
   const neueBewerbungen = (bewerbungen ?? []).filter((b) => b.status === "neu").length;
-  const wartendeFreigaben = (auftraege ?? []).filter((a) => a.status === "freigabe").length;
+  const wartendeFreigaben = wartetAufVermieter(auftraege ?? []);
 
   // Offene Mieteingänge des laufenden Monats: Mietverhältnis aktiv, Soll > 0,
   // aber für diesen Monat noch keine Miet-Einnahme gebucht.

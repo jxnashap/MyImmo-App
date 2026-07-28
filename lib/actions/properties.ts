@@ -21,6 +21,10 @@ function parse(formData: FormData) {
   return {
     bezeichnung: str("bezeichnung") ?? "",
     typ: str("typ"),
+    // Vom KI-Import erkannte Kurznotiz (Ausstattung, Besonderheiten). Wurde
+    // im Wizard angezeigt, aber nie mitgesendet — die Zeile "Notiz" auf der
+    // Objektseite blieb dadurch immer leer.
+    notiz_import: str("notiz_import"),
     adresse: str("adresse"),
     kaufpreis: num("kaufpreis"),
     kaufdatum: str("kaufdatum"),
@@ -148,9 +152,14 @@ export async function updateProperty(id: string, formData: FormData) {
   await autoBuchungen(supabase, user.id, id, parsed);
 
   revalidatePath("/properties");
+  revalidatePath(`/properties/${id}`);
   revalidatePath("/");
   revalidatePath("/cashflow");
-  redirect(flashUrl("/properties", "Immobilie gespeichert."));
+  // Zurueck aufs Objekt, nicht in die Liste: Eingestiegen wird ueber
+  // /properties/<id>/edit, und der Zurueck-Knopf dort zeigt ebenfalls auf die
+  // Detailseite. Wer in die Liste geworfen wird, muss sein Objekt nach jedem
+  // Speichern neu suchen. (createProperty macht es bereits so.)
+  redirect(flashUrl(`/properties/${id}`, "Immobilie gespeichert."));
 }
 
 export async function deleteProperty(id: string) {

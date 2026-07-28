@@ -6,7 +6,7 @@ import DeleteButton from "@/components/DeleteButton";
 import type { Property, Kredit } from "@/lib/types";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { sortiereObjekte, SORT_OPTIONEN } from "@/lib/objektSortierung";
-import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Plus, X, Landmark, type LucideIcon } from "lucide-react";
+import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Upload, Plus, X, Landmark, type LucideIcon } from "lucide-react";
 
 // Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
 const PROP_ICONS: Record<string, LucideIcon> = {
@@ -72,7 +72,17 @@ export default async function PropertiesPage({
           <div className="topbar-sub">Alle erfassten Objekte</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/properties/import" className="btn btn-ghost"><Link2 size={14} style={{ verticalAlign: "-2px" }} /> Importieren</Link>
+          {/* Zwei verschiedene Dinge hiessen beide "Importieren": das KI-Auslesen
+              EINES Exposes und der CSV-Umzug aus einer anderen App. Wer eine
+              vermietet.de-Exportdatei hatte, klickte oben und landete in einem
+              PDF/Link-Formular, das seine CSV nicht annimmt. Jetzt eindeutig
+              benannt und beide Wege an derselben Stelle. */}
+          <Link href="/properties/import" className="btn btn-ghost" title="Ein einzelnes Objekt aus einem Expose (PDF/Link/Text) auslesen">
+            <Link2 size={14} style={{ verticalAlign: "-2px" }} /> Expose auslesen
+          </Link>
+          <Link href="/einstellungen/import" className="btn btn-ghost" title="Bestandsdaten aus vermietet.de, objego oder Excel (CSV) uebernehmen">
+            <Upload size={14} style={{ verticalAlign: "-2px" }} /> Daten uebernehmen
+          </Link>
           <Link href="/properties/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Neu</Link>
         </div>
       </div>
@@ -86,9 +96,11 @@ export default async function PropertiesPage({
             <Home className="empty-icon" size={36} color="var(--faint)" />
             <h4>{alle.length === 0 ? "Noch keine Immobilien" : "Keine Treffer"}</h4>
             <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6 }}>
-              Lege oben dein erstes Objekt an — oder{" "}
+              Lege oben dein erstes Objekt an, lies ein{" "}
+              <Link href="/properties/import" style={{ color: "var(--gold)" }}>Exposé</Link>{" "}
+              aus — oder{" "}
               <Link href="/einstellungen/import" style={{ color: "var(--gold)" }}>
-                importiere deine Daten aus vermietet.de, objego oder Excel (CSV)
+                übernimm deine Daten aus vermietet.de, objego oder Excel (CSV)
               </Link>.
             </p>
           </div>

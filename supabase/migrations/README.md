@@ -116,3 +116,5 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260728120000 | baseline_schema | **Snapshot des Gesamtschemas** (s. o.) |
 | 20260728130000 | kontoloeschung_vollstaendig | FK blockierte die Löschung von Mieter-/Service-Konten |
 | 20260728140000 | umlage_ersetzen_transaktion | Verteiler ersetzt Positionen atomar statt delete-dann-insert |
+| 20260728150000 | bewerber_link_verantwortlicher | Bewerbungsseite nennt den Verantwortlichen (Art. 13 DSGVO) |
+| 20260728160000 | einladungscode_nachtraeglich_einloesen | Ausweg aus dem Freischaltungs-Gate für Mieter/Service |

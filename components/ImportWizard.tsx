@@ -4,7 +4,9 @@ import SubmitButton from "@/components/SubmitButton";
 
 import { useState } from "react";
 
-const TYPEN = ["Eigentumswohnung", "Einfamilienhaus", "Mehrfamilienhaus", "Gewerbeimmobilie", "Ferienimmobilie", "Grundstück"];
+// Muss zur Auswahl im PropertyForm passen — "Garage / Stellplatz" und
+// "Garagenkomplex" fehlten hier, waren ueber den Import also nicht waehlbar.
+const TYPEN = ["Eigentumswohnung", "Einfamilienhaus", "Mehrfamilienhaus", "Gewerbeimmobilie", "Ferienimmobilie", "Garage / Stellplatz", "Garagenkomplex", "Grundstück"];
 const STATUS = ["Vermietet", "Selbst bewohnt", "Leer", "Feriennutzung"];
 
 type Values = {
@@ -156,7 +158,15 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
           <div className="form-group"><label>Energieklasse</label><input name="energieklasse" value={v.energieklasse} onChange={set("energieklasse")} /></div>
           <div className="form-group"><label>Status</label><select name="obj_status" value={v.obj_status} onChange={set("obj_status")}>{STATUS.map((s) => <option key={s}>{s}</option>)}</select></div>
         </div>
-        {notiz && <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}><StickyNote size={11} style={{ verticalAlign: "-1px" }} /> {notiz}</div>}
+        {notiz && (
+          <>
+            {/* Mitsenden, nicht nur anzeigen (siehe parse() in lib/actions/properties.ts). */}
+            <input type="hidden" name="notiz_import" value={notiz} />
+            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>
+              <StickyNote size={11} style={{ verticalAlign: "-1px" }} /> {notiz}
+            </div>
+          </>
+        )}
         <div className="form-actions">
           <SubmitButton><CheckCircle2 size={14} style={{ verticalAlign: "-2px" }} /> Übernehmen &amp; speichern</SubmitButton>
         </div>

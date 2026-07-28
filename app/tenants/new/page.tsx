@@ -16,7 +16,7 @@ export default async function NewTenantPage({ searchParams }: { searchParams: { 
           <div><div className="topbar-title">Neuer Mieter</div></div>
         </div>
       </div>
-      <TenantForm action={createTenant} properties={props ?? []} submitLabel="Anlegen" propInitial={searchParams.prop ?? ""} />
+      <TenantForm action={createTenant} properties={props ?? []} submitLabel="Anlegen" propInitial={searchParams.prop ?? ""} back={back} />
     </div>
   );
 }

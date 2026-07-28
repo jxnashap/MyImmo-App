@@ -117,7 +117,11 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
       <div className="section">
         <div className="section-header"><h3>Mietvertrag &amp; Stammdaten</h3></div>
         <div className="section-body">
-          <div className="grid-2" style={{ gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          {/* Klasse statt Inline-Style: Ein Inline-`gridTemplateColumns`
+              überschreibt die Mobile-Regel in globals.css (Inline gewinnt), die
+              Seite blieb auf dem Telefon dreispaltig und Beträge wie „€ 1.250"
+              brachen um oder erzwangen Seiten-Scroll. */}
+          <div className="grid-kacheln">
             <Kachel label="Kaltmiete / Mo." value={euro(m.kaltmiete)} color="var(--green)" />
             <Kachel label="NK-Vorauszahlung" value={m.nk_vorauszahlung ? euro(m.nk_vorauszahlung) : "–"} />
             <Kachel label="Warmmiete / Mo." value={euro((m.kaltmiete ?? 0) + (m.nk_vorauszahlung ?? 0))} />

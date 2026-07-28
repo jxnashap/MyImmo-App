@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import BankRueckmeldungForm from "@/components/BankRueckmeldungForm";
 import { BELEIHUNG_CHECKLISTE } from "@/lib/beleihung";
 import { Lock, FileText } from "lucide-react";
+import OeffentlicheFusszeile from "@/components/OeffentlicheFusszeile";
 
 export const dynamic = "force-dynamic";
 
@@ -161,6 +162,11 @@ export default async function BankFreigabeSeite({ params }: { params: { token: s
         Diese Seite ist eine zeitlich begrenzte, private Freigabe. Die Inhalte sind vertraulich zu behandeln
         und nur für die Finanzierungsprüfung bestimmt. Erstellt mit MyImmo.
       </p>
+      <OeffentlicheFusszeile
+        verantwortlicher={info.absender}
+        kontakt={null}
+        zweck="Die hier gezeigten Unterlagen dienen ausschließlich der Prüfung einer Finanzierung für dieses Objekt."
+      />
     </div>
   );
 }

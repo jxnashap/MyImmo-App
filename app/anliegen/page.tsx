@@ -8,6 +8,7 @@ import AnliegenManager, { type AnliegenVermieterRow } from "@/components/Anliege
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
 import BewerbungenManager, { type BewerberLinkRow, type BewerbungRow } from "@/components/BewerbungenManager";
 import ServiceManager, { type ServicePartnerRow, type ServiceCodeRow, type AuftragRow, type FirmaRow } from "@/components/ServiceManager";
+import { wartetAufVermieter } from "@/lib/zaehler";
 
 export default async function AnliegenPage({
   searchParams,
@@ -124,14 +125,16 @@ export default async function AnliegenPage({
     rechnung_name: a.rechnung_name ?? null,
     kosten_id: a.kosten_id ?? null,
   }));
-  // Badge: Freigabe-Anfragen des Hausmeisters zählen mit (Benachrichtigung).
+  // Badge: nur was auf DICH wartet — dieselbe Definition wie in der
+  // Seitenleiste (lib/neuigkeiten.ts). Aufträge im Status „offen" liegen beim
+  // Service-Partner und zählen deshalb nicht mit.
   const offeneAuftraege = auftraege.filter((a) => a.status === "offen" || a.status === "freigabe").length;
-  const freigabeAnfragen = auftraege.filter((a) => a.status === "freigabe").length;
+  const freigabeAnfragen = wartetAufVermieter(auftraege);
 
   const TABS = [
     { key: "anliegen", label: "Anliegen & Anfragen", icon: MessageSquareText, badge: offen },
     { key: "bewerbungen", label: "Bewerbungen", icon: UserRoundSearch, badge: neueBewerbungen },
-    { key: "service", label: "Service", icon: Wrench, badge: offeneAuftraege },
+    { key: "service", label: "Service", icon: Wrench, badge: freigabeAnfragen },
   ] as const;
 
   return (
@@ -157,8 +160,20 @@ export default async function AnliegenPage({
           return (
             <Link key={t.key} href={`/anliegen?tab=${t.key}`} className={`glass-item ${tab === t.key ? "active" : ""}`}>
               <Icon size={14} /> {t.label}
-              {t.badge > 0 && tab !== t.key && (
-                <span className="badge badge-amber" style={{ fontSize: 10, padding: "1px 7px" }}>{t.badge}</span>
+              {/* Zähler bleibt auch im AKTIVEN Reiter stehen, nur farblich
+                  zurückgenommen. Ihn dort auszublenden las sich wie
+                  „abgearbeitet", obwohl nichts erledigt war. */}
+              {t.badge > 0 && (
+                <span
+                  className={tab === t.key ? "badge" : "badge badge-amber"}
+                  style={{
+                    fontSize: 10,
+                    padding: "1px 7px",
+                    ...(tab === t.key ? { background: "rgba(0,0,0,.14)", color: "inherit" } : {}),
+                  }}
+                >
+                  {t.badge}
+                </span>
               )}
             </Link>
           );

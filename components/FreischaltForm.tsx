@@ -32,8 +32,16 @@ export default function FreischaltForm({ email }: { email?: string | null }) {
         </div>
         <h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 12 }}>Willkommen — kurz bestätigen</h2>
         <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 6, lineHeight: 1.5 }}>
-          Bevor es losgeht, brauchen wir während der Beta deinen Zugangscode und deine
+          Bevor es losgeht, brauchen wir deinen Zugangscode und deine
           Zustimmung.{email ? ` Angemeldet als ${email}.` : ""}
+        </p>
+        {/* Hier landen auch Mieter und Handwerksbetriebe, wenn beim Registrieren
+            die Code-Einlösung schiefging. Ohne diesen Hinweis suchen sie einen
+            Beta-Code, den sie nie bekommen können. */}
+        <p style={{ fontSize: 12, color: "var(--faint)", marginTop: 8, lineHeight: 1.5 }}>
+          Als <strong>Mieter</strong> oder <strong>Handwerksbetrieb</strong> trägst du hier den
+          Einladungscode deines Vermieters ein — derselbe, den du bei der Registrierung
+          verwendet hast.
         </p>
 
         <form action={absenden} className="space-y-3.5" style={{ marginTop: 18 }}>
@@ -41,7 +49,7 @@ export default function FreischaltForm({ email }: { email?: string | null }) {
             type="text"
             name="code"
             required
-            placeholder="Zugangscode (Beta)"
+            placeholder="Zugangs- oder Einladungscode"
             className="input w-full text-[15px]"
             style={{ padding: "12px 14px" }}
           />
