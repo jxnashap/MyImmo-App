@@ -9,17 +9,12 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Save, Trash2, Check, TrendingUp, ClipboardList } from "lucide-react";
 import { datum as fmtDatum } from "@/lib/format";
+import { zahlDe0 } from "@/lib/zahl";
 import { bereiteListeAuf, type EinschaetzungRow } from "@/lib/einschaetzung";
 import { speichereEinschaetzung, loescheEinschaetzung, uebernehmeAlsWert } from "@/lib/actions/einschaetzung";
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
-const num = (s: string) => {
-  const t = s.trim().replace(/[€\s]/g, "");
-  if (!t) return 0;
-  const norm = /,\d{1,2}$/.test(t) ? t.replace(/\./g, "").replace(",", ".") : t.replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", ".");
-  const n = Number(norm);
-  return Number.isFinite(n) ? n : 0;
-};
+const num = zahlDe0;
 
 export type EinschaetzungObjekt = { id: string; name: string; wert: number | null };
 
