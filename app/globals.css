@@ -219,6 +219,21 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 /* inset box-shadow statt border: kein 1px-Layout-Shift beim Aktiv-Wechsel */
 .nav-item.active { background: var(--gold-pale); color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold-dim); }
 .nav-item .icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+/* Zähler am Navigationseintrag (offene Anliegen, unbestätigte Mieteingänge) */
+.nav-badge {
+  margin-left: auto; flex-shrink: 0;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px; font-size: 10.5px; font-weight: 700; line-height: 1;
+  background: var(--gold); color: var(--gold-contrast);
+}
+.nav-item.active .nav-badge { background: var(--gold); color: var(--gold-contrast); }
+/* Eingeklappte Sidebar (Rail): Zähler als kleiner Punkt am Icon */
+[data-rail="1"] .nav-item { position: relative; }
+[data-rail="1"] .nav-badge {
+  position: absolute; top: 3px; right: 5px; margin-left: 0;
+  min-width: 8px; height: 8px; padding: 0; font-size: 0;
+}
 .sidebar-props { padding: 14px 12px; border-top: 1px solid var(--line); margin-top: auto; }
 .sidebar-props p { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
 .prop-mini { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; margin-bottom: 2px; transition: background 0.15s; }

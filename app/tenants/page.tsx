@@ -77,11 +77,14 @@ export default async function TenantsPage({ searchParams }: { searchParams: { q?
         <div className="prop-grid">
           {list.map((m) => (
             <div key={m.id} className="prop-card">
+              {/* Ganze Kachel klickbar (wie bei den Immobilien) — die Knöpfe
+                  unten liegen darüber und bleiben eigenständig bedienbar. */}
+              <Link href={`/tenants/${m.id}`} className="prop-card-link" aria-label={`${[m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter"} öffnen`} />
               <div className="prop-card-header" style={{ gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <Link href={`/tenants/${m.id}`} className="prop-card-name" style={{ color: "var(--text)", textDecoration: "none", display: "block" }}>
+                  <div className="prop-card-name" style={{ color: "var(--text)" }}>
                     {[m.vorname, m.nachname].filter(Boolean).join(" ") || "—"}
-                  </Link>
+                  </div>
                   <div className="prop-card-addr">{(m.prop_id && nameOf.get(m.prop_id)) || "–"}{m.einheit ? ` · ${m.einheit}` : ""}</div>
                   <div style={{ marginTop: 5, display: "flex", gap: 4, flexWrap: "wrap" }}>
                     <span className="badge badge-green">{euro(m.kaltmiete)} / Mo</span>
@@ -97,8 +100,7 @@ export default async function TenantsPage({ searchParams }: { searchParams: { q?
                 {m.telefon && <div><span style={{ color: "var(--muted)" }}>Tel:</span> {m.telefon}</div>}
                 {m.email && <div style={{ overflow: "hidden", textOverflow: "ellipsis" }}><span style={{ color: "var(--muted)" }}>Mail:</span> {m.email}</div>}
               </div>
-              <div style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", display: "flex", gap: 6 }}>
-                <Link href={`/tenants/${m.id}`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center" }}>Details</Link>
+              <div className="prop-card-above" style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", display: "flex", gap: 6 }}>
                 <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center", gap: 5 }} title="Mieter bearbeiten" aria-label="Mieter bearbeiten"><Pencil size={14} /> Bearbeiten</Link>
                 <Link href={`/tenants/${m.id}/nk`} className="btn btn-ghost" style={{ flex: 1, fontSize: 11, padding: 5, justifyContent: "center", gap: 5 }} title="Nebenkostenabrechnung erstellen" aria-label="Nebenkostenabrechnung erstellen"><ReceiptText size={14} /> NK</Link>
               </div>

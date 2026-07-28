@@ -14,10 +14,13 @@ export default function Sidebar({
   properties = [],
   userEmail,
   profilName,
+  badges = {},
 }: {
   properties?: SidebarProperty[];
   userEmail?: string | null;
   profilName?: string | null;
+  /** Zähler je Route ("/anliegen": 3) — 0/undefined blendet aus. */
+  badges?: Record<string, number>;
 }) {
   const path = usePathname();
   // Initialen fürs Profil-Avatar (JS = "Jonas Scharp"); ohne Profil "+".
@@ -65,14 +68,25 @@ export default function Sidebar({
   const isActive = (href: string) =>
     href === "/" ? path === "/" : path.startsWith(href);
 
-  const navLink = (n: NavItem) => (
-    <Link key={n.href} href={n.href} className={`nav-item${isActive(n.href) ? " active" : ""}`} title={n.label}>
-      <span className="icon" style={n.paragraph ? { color: "var(--gold)", fontWeight: 700 } : { display: "inline-flex", alignItems: "center" }}>
-        {n.paragraph || !n.icon ? "§" : <n.icon size={15} />}
-      </span>
-      <span className="nav-label">{n.label}</span>
-    </Link>
-  );
+  const navLink = (n: NavItem) => {
+    const anzahl = badges[n.href] ?? 0;
+    return (
+      <Link
+        key={n.href}
+        href={n.href}
+        className={`nav-item${isActive(n.href) ? " active" : ""}`}
+        title={anzahl > 0 ? `${n.label} — ${anzahl} neu` : n.label}
+      >
+        <span className="icon" style={n.paragraph ? { color: "var(--gold)", fontWeight: 700 } : { display: "inline-flex", alignItems: "center" }}>
+          {n.paragraph || !n.icon ? "§" : <n.icon size={15} />}
+        </span>
+        <span className="nav-label">{n.label}</span>
+        {anzahl > 0 && (
+          <span className="nav-badge" aria-label={`${anzahl} neu`}>{anzahl > 99 ? "99+" : anzahl}</span>
+        )}
+      </Link>
+    );
+  };
 
   return (
     <>
