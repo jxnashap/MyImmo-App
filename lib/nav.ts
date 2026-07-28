@@ -15,7 +15,7 @@ export const VERWALTUNG: NavItem[] = [
   { href: "/tenants", label: "Mieter", icon: User },
   { href: "/cashflow", label: "Ein- & Ausgaben", icon: Banknote },
   { href: "/mietkonto", label: "Mietkonto", icon: ReceiptText },
-  { href: "/anliegen", label: "Anliegen & Bewerber", icon: MessageSquareText },
+  { href: "/anliegen", label: "Mieterportal", icon: MessageSquareText },
   { href: "/verbrauch", label: "Verbrauch", icon: Zap },
   { href: "/kredite", label: "Kredite", icon: Landmark },
   { href: "/banking", label: "Banking", icon: CreditCard },

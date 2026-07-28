@@ -12,6 +12,8 @@ import CashflowListe from "@/components/lists/CashflowListe";
 import AufklappSection from "@/components/AufklappSection";
 import WiederkehrManager from "@/components/WiederkehrManager";
 import CashflowDonut from "@/components/CashflowDonut";
+import MietkontoBestaetigung from "@/components/MietkontoBestaetigung";
+import { ladeMietkonto } from "@/lib/mietkontoDaten";
 import type { Einnahme, Kosten, Property, Tenant, WiederkehrVorlage } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 
@@ -53,6 +55,11 @@ export default async function CashflowPage({
 
   // ---- Filter (prop + jahr wirken auf alles; typ steuert nur die Listen) ----
   const aktuellesJahr = new Date().getFullYear();
+  // Mietkonto des laufenden Monats — dieselbe Quelle wie /mietkonto.
+  const aktuellerMonat = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  const mietkonto = await ladeMietkonto(aktuellerMonat);
+  const offeneMieten = mietkonto.zeilen.filter((z) => !z.schonGebucht);
+
   const jahr = searchParams.jahr ?? String(aktuellesJahr);
   const prop = searchParams.prop ?? "";
   const typ = searchParams.typ === "einnahme" || searchParams.typ === "ausgabe" ? searchParams.typ : "";
@@ -141,6 +148,33 @@ export default async function CashflowPage({
                          einKat={einKat} ausKat={ausKat} netto={netto} />
         </div>
       </div>
+
+      {/* Mietkonto des laufenden Monats — offene Eingänge oben, bestätigte
+          rutschen in den Ausklapp-Bereich. Volle Ansicht unter /mietkonto. */}
+      {mietkonto.zeilen.length > 0 && (
+        <div className="section mb-20">
+          <div className="section-header">
+            <div>
+              <h3>Mietkonto · {new Date(`${aktuellerMonat}-01T00:00:00`).toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</h3>
+              <div className="section-sub">
+                {offeneMieten.length === 0
+                  ? "Alle erwarteten Mieteingänge sind bestätigt"
+                  : `${offeneMieten.length} von ${mietkonto.zeilen.length} Mieteingängen noch offen`}
+              </div>
+            </div>
+            <Link href="/mietkonto" className="btn btn-ghost btn-sm">Alle Monate &amp; Nacherfassen →</Link>
+          </div>
+          <div className="section-body">
+            <MietkontoBestaetigung
+              kompakt
+              monat={aktuellerMonat}
+              aktuellerMonat={aktuellerMonat}
+              zeilen={mietkonto.zeilen}
+              nacherfassung={mietkonto.nacherfassung}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Wiederkehrende Buchungen — ausklappbar, nicht als eigener Reiter */}
       <AufklappSection

@@ -1,5 +1,5 @@
 "use client";
-import { Rewind, Info } from "lucide-react";
+import { Rewind, Info, Check } from "lucide-react";
 
 // Mietkonto: zwei Modi.
 // 1. „Monat bestätigen": pro Mieter eine Karte mit Soll-Betrag, editierbarem
@@ -73,11 +73,14 @@ export default function MietkontoBestaetigung({
   aktuellerMonat,
   zeilen,
   nacherfassung,
+  kompakt = false,
 }: {
   monat: string;
   aktuellerMonat: string;
   zeilen: MietkontoZeile[];
   nacherfassung: NacherfassungMieter[];
+  /** Eingebettet (Ein- & Ausgaben): ohne Seitenkopf und ohne Nacherfassen-Tab. */
+  kompakt?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -209,38 +212,42 @@ export default function MietkontoBestaetigung({
   const summeAusgewaehlt = ausgewaehlt.reduce((s, r) => s + r.gesamt, 0);
 
   return (
-    <div className="fade-up">
-      <div className="topbar">
-        <div>
-          <div className="topbar-kicker">Verwaltung · Mietkonto</div>
-          <div className="topbar-title">Mietkonto</div>
-          <div className="topbar-sub">Mieteingänge bestätigen &amp; nacherfassen</div>
-        </div>
-        {modus === "monat" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button type="button" className="btn btn-ghost" style={{ padding: "6px 12px" }} onClick={() => router.push(`/mietkonto?monat=${ymPlus(monat, -1)}`)}>←</button>
-            <span style={{ fontWeight: 600, minWidth: 130, textAlign: "center" }}>{monatLabel(monat)}</span>
-            <button type="button" className="btn btn-ghost" style={{ padding: "6px 12px" }} onClick={() => router.push(`/mietkonto?monat=${ymPlus(monat, 1)}`)}>→</button>
-            {monat !== aktuellerMonat && (
-              <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => router.push("/mietkonto")}>Heute</button>
+    <div className={kompakt ? "" : "fade-up"}>
+      {!kompakt && (
+        <>
+          <div className="topbar">
+            <div>
+              <div className="topbar-kicker">Verwaltung · Mietkonto</div>
+              <div className="topbar-title">Mietkonto</div>
+              <div className="topbar-sub">Mieteingänge bestätigen &amp; nacherfassen</div>
+            </div>
+            {modus === "monat" && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button type="button" className="btn btn-ghost" style={{ padding: "6px 12px" }} onClick={() => router.push(`/mietkonto?monat=${ymPlus(monat, -1)}`)}>←</button>
+                <span style={{ fontWeight: 600, minWidth: 130, textAlign: "center" }}>{monatLabel(monat)}</span>
+                <button type="button" className="btn btn-ghost" style={{ padding: "6px 12px" }} onClick={() => router.push(`/mietkonto?monat=${ymPlus(monat, 1)}`)}>→</button>
+                {monat !== aktuellerMonat && (
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => router.push("/mietkonto")}>Heute</button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
-      <hr className="topbar-rule" />
+          <hr className="topbar-rule" />
 
-      {/* Disclaimer (dezent, immer sichtbar) */}
-      <div className="glass-card" style={{ padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
-        Hinweis: MyImmo bucht nach dem von dir bestätigten Zahlungsdatum (Zufluss-/Abflussprinzip,
-        § 11 EStG). Dies ist keine Steuerberatung; Angaben ohne Gewähr — im Zweifel Steuerberater fragen.
-      </div>
+          {/* Disclaimer (dezent, immer sichtbar) */}
+          <div className="glass-card" style={{ padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
+            Hinweis: MyImmo bucht nach dem von dir bestätigten Zahlungsdatum (Zufluss-/Abflussprinzip,
+            § 11 EStG). Dies ist keine Steuerberatung; Angaben ohne Gewähr — im Zweifel Steuerberater fragen.
+          </div>
+        </>
+      )}
 
       {/* Modus-Umschalter */}
-      <div className="settings-tabs" style={{ position: "static", marginBottom: 18 }}>
-        <button type="button" className={`settings-tab${modus === "monat" ? " active" : ""}`} onClick={() => setModus("monat")}>
+      <div className="settings-tabs" style={{ position: "static", marginBottom: 18, display: kompakt ? "none" : undefined }}>
+        <button type="button" className={`settings-tab${modus === "monat" ? " active" : ""}`} onClick={() => setModus("monat")} hidden={kompakt}>
           ✓ Monat bestätigen
         </button>
-        <button type="button" className={`settings-tab${modus === "nacherfassen" ? " active" : ""}`} onClick={() => setModus("nacherfassen")}>
+        <button type="button" className={`settings-tab${modus === "nacherfassen" ? " active" : ""}`} onClick={() => setModus("nacherfassen")} hidden={kompakt}>
           <Rewind size={14} style={{ verticalAlign: "-2px" }} /> Nacherfassen ({offene.length})
         </button>
       </div>
@@ -279,8 +286,10 @@ export default function MietkontoBestaetigung({
             </div>
           </div>
 
-          {zeilen.map((z) => {
-            const ok = z.schonGebucht || frisch.has(z.mieterId);
+          {/* Offene Eingänge oben — bestätigte rutschen nach unten in den
+              Ausklapp-Bereich, damit die Arbeitsliste kurz bleibt. */}
+          {zeilen.filter((z) => !(z.schonGebucht || frisch.has(z.mieterId))).map((z) => {
+            const ok = false;
             const istFrisch = frisch.has(z.mieterId);
             return (
               <div
@@ -347,10 +356,47 @@ export default function MietkontoBestaetigung({
             );
           })}
 
+          {/* Bestätigte Eingänge — eingeklappt unter den offenen. */}
+          {bestaetigt > 0 && (
+            <details className="glass-card" style={{ marginBottom: 12, padding: "12px 18px" }}>
+              <summary style={{ cursor: "pointer", userSelect: "none", fontSize: 13.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+                <Haken />
+                Bestätigte Eingänge ({bestaetigt})
+                <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: 12 }}>
+                  · {eur2(zeilen.filter((z) => z.schonGebucht || frisch.has(z.mieterId)).reduce((s, z) => s + z.gesamt, 0))} in {monatLabel(monat)}
+                </span>
+              </summary>
+              <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+                {zeilen.filter((z) => z.schonGebucht || frisch.has(z.mieterId)).map((z) => (
+                  <div key={z.mieterId} style={{
+                    display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+                    padding: "10px 12px", borderRadius: 10,
+                    background: "var(--bg3)", border: "1px solid rgba(76,175,125,0.35)",
+                  }}>
+                    <div style={{ minWidth: 160, flex: "1 1 160px" }}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{z.name}</div>
+                      <div style={{ fontSize: 11.5, color: "var(--muted)" }}>{z.objekt}</div>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{eur2(z.gesamt)}</div>
+                    <span style={{ marginLeft: "auto", color: "var(--green)", fontSize: 12.5, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                      <Check size={14} /> bestätigt
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+
           {zeilen.length === 0 && (
             <div className="glass-card" style={{ color: "var(--muted)", fontSize: 13 }}>
               Für {monatLabel(monat)} gibt es keine erwarteten Mieteingänge — entweder waren keine
               Mietverhältnisse aktiv oder es fehlen Kaltmiete/Mietbeginn bei den Mietern.
+            </div>
+          )}
+
+          {zeilen.length > 0 && bestaetigt >= gesamt && (
+            <div className="glass-card" style={{ color: "var(--green)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+              <Check size={15} /> Alle Mieteingänge für {monatLabel(monat)} sind bestätigt.
             </div>
           )}
         </>

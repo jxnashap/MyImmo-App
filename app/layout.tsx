@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
+import { ladeNeuigkeiten } from "@/lib/neuigkeiten";
 import AutoLogout from "@/components/AutoLogout";
 import OnboardingTour from "@/components/OnboardingTour";
 import { ToastProvider } from "@/components/Toast";
@@ -118,6 +119,8 @@ export default async function RootLayout({
     .order("bezeichnung");
   const { data: profil } = await supabase
     .from("vermieter_profil").select("name").limit(1).maybeSingle();
+  // Zähler für die Navigation (offene Anliegen/Bewerbungen, unbestätigte Mieteingänge)
+  const neu = await ladeNeuigkeiten();
 
   return (
     <html lang="de" suppressHydrationWarning>
@@ -130,7 +133,7 @@ export default async function RootLayout({
             <FlashToast />
           </Suspense>
           <div className="app">
-            <Sidebar properties={props ?? []} userEmail={user.email} profilName={profil?.name ?? null} />
+            <Sidebar properties={props ?? []} userEmail={user.email} profilName={profil?.name ?? null} badges={{ "/anliegen": neu.mieterportal, "/cashflow": neu.cashflow }} />
             <AutoLogout />
             <OnboardingTour neuerNutzer={(props ?? []).length === 0} />
             <div className="main-wrap">
