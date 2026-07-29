@@ -88,20 +88,49 @@
   --blue-dim: rgba(91,155,213,0.15);
   --amber: #F0A030;
   --teal: #3AADA8;
-  --r: 10px;
 
-  /* ===== Design-System-Erweiterung (additiv, siehe docs/PROJEKT-STATUS.md) =====
-     Spacing/Radius/Shadow/Typo/Motion-Skalen. --r bleibt unangetastet,
-     --r-md ist ein reiner Alias darauf. Kein bestehender Token entfernt/umbenannt. */
+  /* ===== Design-System-Erweiterung ===== Spacing/Radius/Shadow/Typo/Motion. */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 48px;
 
-  --r-sm: 6px; --r-md: var(--r); --r-lg: 14px; --r-xl: 18px; --r-full: 999px;
+  /* Radius: DREI Stufen plus Pille — mehr braucht es nicht.
+     Vorher standen hier fuenf Namen fuer drei Werte: `--r-md` war ein reiner
+     Alias auf `--r` (beide 10px), `--r-xl` wurde nirgends verwendet. Zwei
+     Karteileichen, an denen sich jeder Spaetere orientiert haette.
+     10px ist ausserdem das unglueckliche Mittelmass — weder rund noch kantig;
+     12px ist der Wert, bei dem eine Karte bewusst gerundet aussieht.
+     `--r` und `--r-xl` sind entfernt: beide wurden ausserhalb dieser Zeile
+     nirgends benutzt (weder im CSS noch in einer Komponente). */
+  --r-sm: 8px;    /* Buttons, Inputs, Badges, kleine Schalter */
+  --r-md: 12px;   /* Karten, Sections, Panels */
+  --r-lg: 16px;   /* Hero-Karten, Modals, Glass */
+  --r-full: 999px;
 
-  --shadow-1: 0 1px 2px rgba(0,0,0,.35);
-  --shadow-2: 0 4px 12px rgba(0,0,0,.40);
-  --shadow-3: 0 12px 32px rgba(0,0,0,.50);
+  /* Hoehenstaffelung DUNKEL. Der naheliegende Rat lautet „weichere, hellere
+     Schatten" — auf `--bg: #0F0F0E` ist Schwarz bei 12 % aber schlicht
+     unsichtbar. Auf dunklem Grund entsteht Hoehe nicht durch mehr Schatten,
+     sondern durch LICHT: ein Hauch Weiss auf der Oberkante (inset) traegt die
+     Kante, der breite Schlagschatten darunter setzt sie ab.
+     Zwei Ebenen je Stufe — eine enge fuer den Kontaktpunkt, eine weite fuer
+     den Raum. */
+  --shadow-1:
+    0 1px 0 rgba(255,255,255,.04) inset,
+    0 1px 2px rgba(0,0,0,.40);
+  --shadow-2:
+    0 1px 0 rgba(255,255,255,.05) inset,
+    0 2px 4px rgba(0,0,0,.30),
+    0 8px 24px rgba(0,0,0,.45);
+  --shadow-3:
+    0 1px 0 rgba(255,255,255,.06) inset,
+    0 4px 8px rgba(0,0,0,.32),
+    0 20px 48px rgba(0,0,0,.55);
   --shadow-gold: 0 4px 14px rgba(212,168,71,.28);
+  /* Farbe des Scheins unter dem Primaerknopf — folgt dem Gold des Themes.
+     MUSS in JEDEM Theme-Block stehen: fehlt der Token, ist
+     `rgba(var(--gold-glow),.2)` ungueltig und der Browser verwirft die
+     KOMPLETTE box-shadow-Deklaration — der Knopf steht dann voellig ohne
+     Schatten da. Genau so ist es beim Bauen einmal passiert. */
+  --gold-glow: 212,168,71;
 
   --text-xs: 11px; --text-sm: 12px; --text-base: 14px; --text-md: 16px;
   --text-lg: 20px; --text-xl: 24px; --text-2xl: 32px;
@@ -115,6 +144,9 @@
   --focus-offset: 2px;
 
   --gold-contrast: #0F0F0E;
+  /* Schrift auf goldener Flaeche. Bewusst in beiden Themes dunkel — siehe
+     Begruendung bei .btn-gold (Kontrast). */
+  --btn-gold-text: #0F0F0E;
 
   /* Surface-Härtung: bg3/bg4 minimal weiter gespreizt für Karte-in-Karte-
      Kontrast (Wert-Anpassung, kein neuer Token, klein gehalten). */
@@ -147,13 +179,24 @@
   --amber: #D97706;
   --teal: #0F766E;
 
-  /* Shadows: weicher/wärmer, geringere Alpha (Braun- statt Schwarzton) */
-  --shadow-1: 0 1px 2px rgba(60,50,30,.10);
-  --shadow-2: 0 4px 12px rgba(60,50,30,.14);
-  --shadow-3: 0 12px 32px rgba(60,50,30,.18);
+  /* Hoehenstaffelung HELL: zwei Ebenen je Stufe — eine enge, dichtere fuer den
+     Kontakt zur Flaeche, eine weite, duennere fuer den Raum darum. Das gibt
+     Tiefe, ohne dass der Schatten wie ein Tintentropfen wirkt.
+     Warmer Braunton statt reinem Schwarz (passt zur Creme-Flaeche). */
+  --shadow-1:
+    0 1px 2px rgba(60,50,30,.08),
+    0 1px 3px rgba(60,50,30,.06);
+  --shadow-2:
+    0 2px 4px rgba(60,50,30,.07),
+    0 6px 18px rgba(60,50,30,.10);
+  --shadow-3:
+    0 4px 8px rgba(60,50,30,.07),
+    0 16px 44px rgba(60,50,30,.13);
   --shadow-gold: 0 4px 14px rgba(184,134,11,.20);
+  --gold-glow: 184,134,11;
 
   --gold-contrast: #FFFFFF;
+  --btn-gold-text: #0F0F0E;
 
   /* Surface-Härtung Light: bg3/bg4 etwas dunkler gegen bg2 #FFFFFF */
   --bg3: #E8E6E0;
@@ -178,9 +221,20 @@
     --blue: #2563A8; --blue-dim: rgba(37,99,168,0.10);
     --amber: #D97706; --teal: #0F766E;
     --gold-contrast: #FFFFFF;
-    --shadow-1: 0 1px 2px rgba(60,50,30,.10);
-    --shadow-2: 0 4px 12px rgba(60,50,30,.14);
-    --shadow-3: 0 12px 32px rgba(60,50,30,.18);
+    --btn-gold-text: #0F0F0E;
+    --gold-glow: 184,134,11;
+    /* Gleiche Zwei-Ebenen-Staffelung wie im gesetzten Light-Theme — sonst
+       saehe die App unterschiedlich aus, je nachdem ob „hell" per Schalter
+       oder ueber die Systemeinstellung aktiv ist. */
+    --shadow-1:
+      0 1px 2px rgba(60,50,30,.08),
+      0 1px 3px rgba(60,50,30,.06);
+    --shadow-2:
+      0 2px 4px rgba(60,50,30,.07),
+      0 6px 18px rgba(60,50,30,.10);
+    --shadow-3:
+      0 4px 8px rgba(60,50,30,.07),
+      0 16px 44px rgba(60,50,30,.13);
     --shadow-gold: 0 4px 14px rgba(184,134,11,.20);
   }
   :root:not([data-theme]) .sidebar { background: #F0EEE9; border-right: 1px solid #D8D4CC; }
@@ -225,9 +279,9 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
   min-width: 18px; height: 18px; padding: 0 5px;
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: 999px; font-size: 10.5px; font-weight: 700; line-height: 1;
-  background: var(--gold); color: var(--gold-contrast);
+  background: var(--gold); color: var(--btn-gold-text);
 }
-.nav-item.active .nav-badge { background: var(--gold); color: var(--gold-contrast); }
+.nav-item.active .nav-badge { background: var(--gold); color: var(--btn-gold-text); }
 /* Eingeklappte Sidebar (Rail): Zähler als kleiner Punkt am Icon */
 [data-rail="1"] .nav-item { position: relative; }
 [data-rail="1"] .nav-badge {
@@ -327,16 +381,56 @@ a.kpi-card:active { transform: scale(.985); }
 .badge-teal { background: rgba(58,173,168,0.12); color: var(--teal); border: 1px solid rgba(58,173,168,0.3); }
 
 /* BTNS */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 17px; border-radius: 8px; border: none; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 500; transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease; text-decoration: none; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 17px; border-radius: var(--r-sm); border: none; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 500; transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease; text-decoration: none; }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
 .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-.btn-gold { background: var(--gold); color: #0F0F0E; }
-.btn-gold:hover { background: #c09838; box-shadow: 0 4px 14px rgba(212,168,71,0.28); transform: translateY(-1px); }
+/* Primaeraktion mit Tiefe: Verlauf von hell nach Gold, Licht auf der Oberkante,
+   Bodenkontakt darunter. Beim Druecken kippt der Schatten nach innen — der
+   Knopf sieht dann gedrueckt aus statt nur verschoben.
+
+   Die Textfarbe ist ABSICHTLICH fest und nicht `var(--gold-contrast)`:
+   dieses Token ist im Light-Mode #FFFFFF, und Weiss auf dem hellen Gold
+   (#B8860B) ergibt nur 3.25:1 — durchgefallen nach WCAG AA (4.5 noetig).
+   Das dunkle #0F0F0E liegt bei 5.89:1 (hell) bzw. 8.67:1 (dunkel). */
+.btn-gold {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--gold) 88%, #fff) 0%,
+    var(--gold) 100%);
+  color: var(--btn-gold-text);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.18) inset,
+    0 2px 6px rgba(var(--gold-glow),.20),
+    0 1px 2px rgba(0,0,0,.18);
+}
+.btn-gold:hover {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--gold) 94%, #fff) 0%,
+    color-mix(in srgb, var(--gold) 92%, #000) 100%);
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.18) inset,
+    0 8px 22px rgba(var(--gold-glow),.32),
+    0 2px 4px rgba(0,0,0,.16);
+}
+.btn-gold:active:not(:disabled) {
+  transform: translateY(0) scale(.985);
+  box-shadow: 0 2px 5px rgba(0,0,0,.22) inset;
+}
+
+/* Ghost = kein Rahmen, nur Text — erst beim Hover entsteht eine Flaeche.
+   Outline = sichtbarer Rahmen auf gefuelltem Grund.
+   Vorher trugen beide `1px solid var(--line2)` und unterschieden sich nur in
+   der Textfarbe; als zwei Varianten war das nicht unterscheidbar.
+   Ghost behaelt seinen Rahmen: die Klasse haengt an 224 Stellen, fast immer
+   als Sekundaeraktion neben einem Gold-Knopf. Ihn dort wegzunehmen wuerde die
+   Hierarchie der halben App verschieben — das gehoert in die Layout-Runde,
+   nicht in eine Button-Politur. Getrennt wird deshalb ueber `.btn-outline`
+   (8 Stellen), das jetzt eine eigene Flaeche bekommt. */
 .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--line2); }
 .btn-ghost:hover { color: var(--text); border-color: var(--faint); background: var(--bg3); transform: translateY(-1px); }
-.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--line2); }
-.btn-outline:hover { background: var(--bg3); border-color: var(--faint); transform: translateY(-1px); }
+.btn-outline { background: var(--bg2); color: var(--text); border: 1px solid var(--line2); }
+.btn-outline:hover { background: var(--gold-pale); border-color: var(--gold-dim); color: var(--text); transform: translateY(-1px); }
 
 /* Neue Varianten (additiv) — bestehende .btn/.btn-gold/.btn-ghost/.btn-outline unangetastet.
    Regel: max. 1 .btn-gold je View. */
@@ -352,7 +446,7 @@ a.kpi-card:active { transform: scale(.985); }
 .btn-icon:hover { color: var(--text); border-color: var(--faint); background: var(--bg3); }
 .btn-icon:disabled { opacity: .6; cursor: not-allowed; }
 /* Mobile schwebende Primäraktion — opt-in per Seite, safe-area-bewusst */
-.btn-fab { position: fixed; right: var(--sp-5); bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0px)); z-index: 90; width: 56px; height: 56px; border-radius: var(--r-full); background: var(--gold); color: var(--gold-contrast); border: none; display: none; place-items: center; box-shadow: var(--shadow-gold), var(--shadow-2); cursor: pointer; }
+.btn-fab { position: fixed; right: var(--sp-5); bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0px)); z-index: 90; width: 56px; height: 56px; border-radius: var(--r-full); background: var(--gold); color: var(--btn-gold-text); border: none; display: none; place-items: center; box-shadow: var(--shadow-gold), var(--shadow-2); cursor: pointer; }
 @media (max-width: 860px) { .btn-fab.show-mobile { display: grid; } }
 .btn-fab:active { transform: scale(.94); }
 
@@ -421,7 +515,7 @@ tr.no-hover:hover td { background: transparent; }
 .kredit-field-val { font-size: 14px; font-weight: 600; margin-top: 2px; }
 
 /* FORMS (Erfassungsseiten) */
-.form-box { background: var(--bg2); border: 1px solid var(--line2); border-radius: 14px; padding: 28px; width: 100%; max-width: 580px; }
+.form-box { background: var(--bg2); border: 1px solid var(--line2); border-radius: var(--r-lg); padding: 28px; width: 100%; max-width: 580px; }
 .form-box h3 { font-family: 'Fraunces', serif; font-size: 20px; margin-bottom: 4px; }
 .form-box > p { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
@@ -481,6 +575,7 @@ tr.no-hover:hover td { background: transparent; }
 .link-gold:hover { text-decoration: underline; }
 
 @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
 /* KEIN animation-fill-mode "both": bei "forwards/both" behält der Browser die
    animierte transform-Eigenschaft und serialisiert selbst das End-"none" zu
    matrix(1,0,0,1,0,0). Dieser (nicht-none) Transform erzeugt weiter einen
@@ -490,10 +585,19 @@ tr.no-hover:hover td { background: transparent; }
    dann überall. (Kein Flash, da keine animation-delay genutzt wird.) */
 .fade-up { animation: fadeUp 0.3s ease; }
 
+/* Seitenuebergang fuer alle Routen (app/template.tsx). `template.tsx` wird bei
+   JEDER Navigation neu gemountet — die Animation startet dadurch bei jedem
+   Seitenwechsel von vorn, ohne nachgebaute Route-Change-Erkennung.
+   Nur Aufblenden mit 4px Versatz: die meisten Seiten tragen zusaetzlich
+   `.fade-up` (8px), zusammen ergibt das weiche ~12px ohne sichtbaren Sprung.
+   Ebenfalls OHNE fill-mode — aus demselben Grund wie oben (fixed-Kinder). */
+.page-enter { animation: pageEnter .22s cubic-bezier(.22,.61,.36,1); }
+@keyframes pageEnter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
 /* TOASTS */
 .toast-viewport { position: fixed; bottom: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; max-width: min(92vw, 380px); }
 @keyframes toastIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-.toast { display: flex; align-items: flex-start; gap: 10px; text-align: left; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line2); background: var(--bg3); color: var(--text); font-family: 'Outfit', sans-serif; font-size: 13px; line-height: 1.4; box-shadow: 0 8px 28px rgba(0,0,0,0.32); animation: toastIn 0.2s ease both; }
+.toast { display: flex; align-items: flex-start; gap: 10px; text-align: left; padding: 12px 14px; border-radius: var(--r-sm); border: 1px solid var(--line2); background: var(--bg3); color: var(--text); font-family: 'Outfit', sans-serif; font-size: 13px; line-height: 1.4; box-shadow: 0 8px 28px rgba(0,0,0,0.32); animation: toastIn 0.2s ease both; }
 .toast-icon { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
 .toast-success { border-color: rgba(76,175,125,0.4); }
 .toast-success .toast-icon { background: var(--green-dim); color: var(--green); }
@@ -583,7 +687,7 @@ tr.no-hover:hover td { background: transparent; }
 .settings-wrap { max-width: 720px; margin: 0 auto; }
 
 .settings-head { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
-.settings-avatar { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; font-weight: 600; font-size: 18px; color: var(--gold); background: var(--gold-pale); border: 1px solid var(--gold-dim); flex-shrink: 0; }
+.settings-avatar { width: 52px; height: 52px; border-radius: var(--r-md); display: grid; place-items: center; font-weight: 600; font-size: 18px; color: var(--gold); background: var(--gold-pale); border: 1px solid var(--gold-dim); flex-shrink: 0; }
 .settings-head .who { min-width: 0; }
 .settings-head .who h1 { font-size: 20px; line-height: 1.2; }
 .settings-head .who p { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -595,20 +699,20 @@ tr.no-hover:hover td { background: transparent; }
   .settings-actions .btn { white-space: nowrap; flex-shrink: 0; }
 }
 
-.settings-tabs { position: sticky; top: 0; z-index: 5; display: flex; gap: 4px; padding: 6px; margin-bottom: 22px; border-radius: 14px; background: color-mix(in srgb, var(--bg2) 82%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); overflow-x: auto; }
-.settings-tab { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; padding: 8px 14px; border-radius: 10px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: color .15s, background .15s; }
+.settings-tabs { position: sticky; top: 0; z-index: 5; display: flex; gap: 4px; padding: 6px; margin-bottom: 22px; border-radius: var(--r-md); background: color-mix(in srgb, var(--bg2) 82%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); overflow-x: auto; }
+.settings-tab { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; padding: 8px 14px; border-radius: var(--r-sm); border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: color .15s, background .15s; }
 .settings-tab:hover { color: var(--text); }
 .settings-tab.active { color: var(--gold); background: var(--gold-pale); }
 .settings-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-.glass-card { background: color-mix(in srgb, var(--bg2) 92%, transparent); border: 1px solid var(--line); border-radius: 16px; padding: 22px; box-shadow: 0 1px 2px rgba(0,0,0,.18), 0 14px 34px -20px rgba(0,0,0,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.glass-card { background: color-mix(in srgb, var(--bg2) 92%, transparent); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px; box-shadow: 0 1px 2px rgba(0,0,0,.18), 0 14px 34px -20px rgba(0,0,0,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .glass-card + .glass-card { margin-top: 18px; }
 .glass-card h2 { font-size: 15px; font-weight: 600; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; }
 .glass-card .sub { font-size: 12.5px; color: var(--muted); margin-bottom: 16px; }
 
 .set-field { display: flex; flex-direction: column; gap: 6px; }
 .set-field > span { font-size: 12px; color: var(--muted); }
-.set-input { width: 100%; background: var(--bg3); border: 1px solid var(--line2); border-radius: 10px; padding: 11px 13px; color: var(--text); font-size: 14px; transition: border-color .15s, box-shadow .15s, background .15s; }
+.set-input { width: 100%; background: var(--bg3); border: 1px solid var(--line2); border-radius: var(--r-sm); padding: 11px 13px; color: var(--text); font-size: 14px; transition: border-color .15s, box-shadow .15s, background .15s; }
 .set-input::placeholder { color: var(--faint); }
 .set-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); background: var(--bg2); }
 
@@ -651,12 +755,12 @@ tr.no-hover:hover td { background: transparent; }
 /* =====================================================================
    FilterBar — app-weit, sofort anwendend (Select, Segmented, Chips)
    ===================================================================== */
-.filterbar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--bg2) 92%, transparent); }
-.filterbar-loading { position: absolute; left: 0; top: 0; height: 2px; background: var(--gold); border-radius: 14px 0 0 0; animation: fbLoad 1.1s ease-in-out infinite; }
+.filterbar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in srgb, var(--bg2) 92%, transparent); }
+.filterbar-loading { position: absolute; left: 0; top: 0; height: 2px; background: var(--gold); border-radius: var(--r-md) 0 0 0; animation: fbLoad 1.1s ease-in-out infinite; }
 @keyframes fbLoad { 0% { width: 0; opacity: .5; } 50% { width: 65%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
 
 .fb-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.fb-toggle { display: none; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line2); background: var(--bg3); color: var(--text); font-size: 13px; cursor: pointer; }
+.fb-toggle { display: none; align-items: center; gap: 7px; padding: 8px 12px; border-radius: var(--r-sm); border: 1px solid var(--line2); background: var(--bg3); color: var(--text); font-size: 13px; cursor: pointer; }
 .fb-spacer { flex: 1; }
 .fb-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .fb-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 6px 4px 10px; border-radius: 999px; background: var(--gold-pale); border: 1px solid var(--gold-dim); color: var(--gold); font-size: 12px; white-space: nowrap; }
@@ -666,7 +770,7 @@ tr.no-hover:hover td { background: transparent; }
 .fb-reset:hover { color: var(--text); }
 
 .fbsel { position: relative; }
-.fbsel-btn { display: inline-flex; align-items: center; gap: 7px; min-width: 158px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line2); background: var(--bg3); color: var(--text); font-size: 13px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.fbsel-btn { display: inline-flex; align-items: center; gap: 7px; min-width: 158px; padding: 8px 12px; border-radius: var(--r-sm); border: 1px solid var(--line2); background: var(--bg3); color: var(--text); font-size: 13px; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .fbsel-btn:hover { border-color: var(--line); }
 .fbsel-btn[aria-expanded="true"], .fbsel-btn:focus-visible { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); }
 .fbsel-btn .lbl { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -679,12 +783,12 @@ tr.no-hover:hover td { background: transparent; }
 .fbsel-opt.active, .fbsel-opt:hover { background: var(--gold-pale); }
 .fbsel-icon { color: var(--muted); display: inline-grid; place-items: center; flex-shrink: 0; }
 
-.fbseg { display: inline-flex; gap: 3px; padding: 3px; border-radius: 10px; background: var(--bg4); border: 1px solid var(--line); }
+.fbseg { display: inline-flex; gap: 3px; padding: 3px; border-radius: var(--r-sm); background: var(--bg4); border: 1px solid var(--line); }
 .fbseg button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 7px; border: none; background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 500; cursor: pointer; transition: background .15s, color .15s; white-space: nowrap; }
 .fbseg button[aria-pressed="true"] { background: var(--gold); color: #1a1a17; }
 .fbseg button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-.fbtgl { display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: 10px; border: 1px solid var(--line2); background: var(--bg3); color: var(--muted); font-size: 13px; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+.fbtgl { display: inline-flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: var(--r-sm); border: 1px solid var(--line2); background: var(--bg3); color: var(--muted); font-size: 13px; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
 .fbtgl[aria-pressed="true"] { background: var(--gold-pale); border-color: var(--gold-dim); color: var(--gold); }
 .fbtgl:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .fbtgl .dot { width: 16px; height: 16px; border-radius: 999px; background: var(--line2); display: inline-grid; place-items: center; color: #1a1a17; transition: background .15s; flex-shrink: 0; }
@@ -789,6 +893,7 @@ select:focus-visible, textarea:focus-visible {
 /* Reduzierte Bewegung: alle dekorativen Animationen aus, Lade-Spinner bleibt */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .page-enter,
   .fade-up, .toast, .kpi-card, .prop-card, .btn, .bar-fill, .progress-fill,
   .settings-tab, .tab-btn, .icon-btn {
     animation: none !important;
