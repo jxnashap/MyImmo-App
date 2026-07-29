@@ -52,3 +52,42 @@ describe("Regression: Ertragswert wurde durch die Fehl-Lesung 0", () => {
     expect(zahlDe0("8.520")).toBeGreaterThan(8000);
   });
 });
+
+describe("Regression: führende Null ist ein Dezimalpunkt, kein Tausenderpunkt", () => {
+  // Der Kauf-Rechner las den Grunderwerbsteuersatz aus der Bundesland-Auswahl
+  // ("0.035") durch diesen Parser. Die 3er-Gruppen-Regel machte daraus 35 —
+  // also 3500 % Grunderwerbsteuer und Nebenkosten um den Faktor 1000 zu hoch.
+  it.each([
+    ["0.035", 0.035], // Bayern 3,5 %
+    ["0.055", 0.055], // Bremen, Hamburg, Sachsen 5,5 %
+    ["0.065", 0.065], // Brandenburg, NRW, Saarland, Schleswig-Holstein 6,5 %
+    ["0.025", 0.025],
+    ["0.001", 0.001],
+    ["0.5", 0.5],
+    ["0.05", 0.05], // rechnete zufällig schon vorher richtig
+    ["0.06", 0.06],
+  ])("liest %j als %d", (roh, erwartet) => {
+    expect(zahlDe(roh)).toBeCloseTo(erwartet, 10);
+  });
+
+  it("bleibt bei negativen Dezimalwerten korrekt", () => {
+    expect(zahlDe("-0.035")).toBeCloseTo(-0.035, 10);
+  });
+
+  it("echte Tausenderpunkte werden weiterhin erkannt", () => {
+    expect(zahlDe("1.234")).toBe(1234);
+    expect(zahlDe("415.000")).toBe(415000);
+    expect(zahlDe("1.234.567")).toBe(1234567);
+  });
+
+  it("deutsche Kommaschreibweise mit führender Null bleibt korrekt", () => {
+    expect(zahlDe("0,035")).toBeCloseTo(0.035, 10);
+    expect(zahlDe("0,5")).toBe(0.5);
+  });
+
+  it("Grunderwerbsteuer aller 16 Bundesländer bleibt unter 10 %", () => {
+    // Der eigentliche Schaden: nkSatz ging in die Nebenkosten ein.
+    const saetze = ["0.035", "0.05", "0.055", "0.06", "0.065"];
+    for (const s of saetze) expect(zahlDe0(s)).toBeLessThan(0.1);
+  });
+});
