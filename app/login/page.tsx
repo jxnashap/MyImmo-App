@@ -293,7 +293,7 @@ export default function LoginPage() {
               key={m}
               type="button"
               onClick={() => wechsel(m)}
-              className="flex-1 rounded-lg py-2 text-[13px] font-medium transition"
+              className="flex-1 rounded-sm py-2 text-[13px] font-medium transition"
               style={
                 mode === m
                   ? { background: "var(--bg5)", color: "var(--text)" }
@@ -419,14 +419,14 @@ export default function LoginPage() {
 
           {error && (
             <div
-              className="rounded-lg px-3 py-2 text-[13px]"
+              className="rounded-sm px-3 py-2 text-[13px]"
               style={{ background: "var(--red-dim)", color: "var(--red)" }}
             >
               {error}
               {falscheRolle && (
                 <button
                   type="button"
-                  className="mt-2 block w-full rounded-lg border py-2 text-[13px] font-medium transition hover:brightness-110"
+                  className="mt-2 block w-full rounded-sm border py-2 text-[13px] font-medium transition hover:brightness-110"
                   style={{ background: "var(--bg3)", borderColor: "var(--line2)", color: "var(--text)" }}
                   onClick={() => {
                     setRolle(falscheRolle);
@@ -444,7 +444,7 @@ export default function LoginPage() {
           )}
           {info && (
             <p
-              className="rounded-lg px-3 py-2 text-[13px]"
+              className="rounded-sm px-3 py-2 text-[13px]"
               style={{ background: "var(--green-dim)", color: "var(--green)" }}
             >
               {info}
@@ -454,7 +454,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg py-3 text-[15px] font-semibold transition hover:brightness-95 disabled:opacity-60"
+            className="w-full rounded-sm py-3 text-[15px] font-semibold transition hover:brightness-95 disabled:opacity-60"
             style={{ background: "var(--gold)", color: "#1a1a17" }}
           >
             {loading ? "…" : mode === "login" ? "Anmelden" : "Registrieren"}
@@ -467,7 +467,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={googleLogin}
-            className="mt-3 flex w-full items-center justify-center gap-3 rounded-lg border py-3 text-[15px] font-medium transition hover:brightness-110"
+            className="mt-3 flex w-full items-center justify-center gap-3 rounded-sm border py-3 text-[15px] font-medium transition hover:brightness-110"
             style={{ background: "var(--bg3)", borderColor: "var(--line2)", color: "var(--text)" }}
           >
             <GoogleIcon />

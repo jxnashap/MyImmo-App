@@ -90,7 +90,7 @@ export default function AnmeldenPage() {
                 style={{ background: "var(--bg3)", borderColor: aktiv ? "var(--gold)" : "var(--line)" }}
               >
                 <span
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg"
+                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-sm"
                   style={{ background: "var(--gold-pale)", color: "var(--gold)" }}
                 >
                   <Icon size={19} />
