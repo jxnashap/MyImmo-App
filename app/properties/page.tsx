@@ -94,7 +94,7 @@ export default async function PropertiesPage({
       {alle.length > 0 && <FilterBar filters={filters} />}
 
       {list.length === 0 ? (
-        <div className="prop-grid">
+        <div className="staffel prop-grid">
           <div className="empty" style={{ gridColumn: "1/-1" }}>
             <Home className="empty-icon" size={36} color="var(--faint)" />
             <h4>{alle.length === 0 ? "Noch keine Immobilien" : "Keine Treffer"}</h4>
@@ -109,7 +109,7 @@ export default async function PropertiesPage({
           </div>
         </div>
       ) : (
-        <div className="prop-grid">
+        <div className="staffel prop-grid">
           {list.map((p) => {
             const wert = p.wert ?? p.kaufpreis ?? 0;
             const rendite = p.miete && wert ? ((p.miete * 12) / wert) * 100 : null;

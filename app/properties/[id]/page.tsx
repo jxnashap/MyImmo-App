@@ -236,7 +236,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       </div>
 
       {/* KPI-Leiste */}
-      <div className="grid-4 mb-20">
+      <div className="staffel grid-4 mb-20">
         {kpis.map((k) => (
           <div key={k.lbl} className="kpi-card">
             <div className="kpi-label">{k.lbl}</div>

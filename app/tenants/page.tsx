@@ -58,7 +58,7 @@ export default async function TenantsPage({ searchParams }: { searchParams: { q?
       </div>
       <hr className="topbar-rule" />
 
-      <div className="grid-4 mb-20">
+      <div className="staffel grid-4 mb-20">
         <div className="kpi-card" title={ehemalige > 0 ? `${ehemalige} bereits ausgezogen` : undefined}>
           <div className="kpi-label">Aktive Mietverhältnisse</div>
           <div className="kpi-value">{aktive.length}{ehemalige > 0 && <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400 }}> / {list.length}</span>}</div>
@@ -71,7 +71,7 @@ export default async function TenantsPage({ searchParams }: { searchParams: { q?
       <FilterBar filters={filters} />
 
       {list.length === 0 ? (
-        <div className="prop-grid">
+        <div className="staffel prop-grid">
           <div className="empty" style={{ gridColumn: "1/-1" }}>
             <User className="empty-icon" size={36} color="var(--faint)" />
             {alle.length > 0 ? (
@@ -88,7 +88,7 @@ export default async function TenantsPage({ searchParams }: { searchParams: { q?
           </div>
         </div>
       ) : (
-        <div className="prop-grid">
+        <div className="staffel prop-grid">
           {list.map((m) => (
             <div key={m.id} className="prop-card">
               {/* Ganze Kachel klickbar (wie bei den Immobilien) — die Knöpfe

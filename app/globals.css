@@ -139,6 +139,13 @@
   --dur-fast: 140ms; --dur: 220ms;
   --ease: cubic-bezier(.2,0,0,1);
   --ease-out: cubic-bezier(0,0,.2,1);
+  /* Ueberschwingende Kurve: der y-Wert > 1 laesst das Element kurz ueber das
+     Ziel hinausgehen und zurueckfedern. Fuer Hover-Anhebungen und den FAB —
+     NICHT fuer Farb- oder Groessenwechsel, dort wirkt es zappelig. */
+  --ease-spring: cubic-bezier(.34,1.56,.64,1);
+  /* iOS-artiges Ausfedern: beschleunigt schnell, laeuft sanft aus. Fuer
+     Breiten-/Positionswechsel wie die einklappbare Sidebar. */
+  --ease-ios: cubic-bezier(.32,.72,0,1);
 
   --focus-ring: 0 0 0 2px var(--gold);
   --focus-offset: 2px;
@@ -353,8 +360,11 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 .mb-20 { margin-bottom: 20px; }
 
 /* KPI CARDS — Karten heben beim Zeigen 1–2 px an (Design-Handoff) */
-.kpi-card { background: var(--bg3); border-radius: var(--r-lg); padding: 16px 18px; border: 1px solid var(--line); box-shadow: var(--shadow-1); transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
-.kpi-card:hover { border-color: var(--gold-dim); box-shadow: var(--shadow-2); transform: translateY(-2px); }
+.kpi-card { background: var(--bg3); border-radius: var(--r-lg); padding: 16px 18px; border: 1px solid var(--line); box-shadow: var(--shadow-1); transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease-spring); }
+/* -2px war praktisch unsichtbar. -4px plus ein leichtes Ueberschwingen
+   (cubic-bezier mit y>1) laesst die Karte kurz ueber das Ziel hinausgehen und
+   zurueckfedern — das ist der Unterschied zwischen „bewegt sich" und „lebt". */
+.kpi-card:hover { border-color: var(--gold-dim); box-shadow: var(--shadow-2); transform: translateY(-4px); }
 a.kpi-card:active { transform: scale(.985); }
 /* Betonte KPI (z. B. Cashflow) — goldene Ruhefläche statt Inline-Styles */
 .kpi-card.highlight { background: var(--gold-pale); border-color: var(--gold-dim); }
@@ -446,13 +456,34 @@ a.kpi-card:active { transform: scale(.985); }
 .btn-icon:hover { color: var(--text); border-color: var(--faint); background: var(--bg3); }
 .btn-icon:disabled { opacity: .6; cursor: not-allowed; }
 /* Mobile schwebende Primäraktion — opt-in per Seite, safe-area-bewusst */
-.btn-fab { position: fixed; right: var(--sp-5); bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0px)); z-index: 90; width: 56px; height: 56px; border-radius: var(--r-full); background: var(--gold); color: var(--btn-gold-text); border: none; display: none; place-items: center; box-shadow: var(--shadow-gold), var(--shadow-2); cursor: pointer; }
+/* Squircle statt Kreis — das ist der aktuelle Look und wirkt weniger nach
+   „Material 2014". 56px bleiben: das liegt deutlich ueber dem 44px-Touchziel
+   der WCAG, groesser verdeckt auf kleinen Displays nur mehr Inhalt.
+   Radius bewusst var(--r-lg) und nicht ein neuer 20px-Wert — die Skala wurde
+   gerade auf drei Stufen zusammengezogen, sie sofort wieder aufzuweichen waere
+   sinnlos. */
+.btn-fab { position: fixed; right: var(--sp-5); bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0px)); z-index: 90; width: 56px; height: 56px; border-radius: var(--r-lg); background: var(--gold); color: var(--btn-gold-text); border: none; display: none; place-items: center; box-shadow: 0 4px 18px rgba(var(--gold-glow), .30), var(--shadow-2); cursor: pointer; transition: transform .2s var(--ease-spring), box-shadow .2s var(--ease); }
+.btn-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 8px 26px rgba(var(--gold-glow), .38), var(--shadow-3); }
 @media (max-width: 860px) { .btn-fab.show-mobile { display: grid; } }
 .btn-fab:active { transform: scale(.94); }
 
 /* Spinner für Lade-/Pending-Zustände */
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -2px; }
+
+/* Lade-Zustand fuer Buttons: der Knopf verschluckt seinen Text und zeigt nur
+   den Spinner — dadurch springt die Breite nicht, waehrend geladen wird.
+   `color: transparent` blendet die Schrift aus, der Spinner erbt die Farbe
+   ueber eine eigene Angabe. Bewusst ohne pointer-events, damit ein zweiter
+   Klick nichts ausloest. */
+.btn-loading { position: relative; color: transparent !important; pointer-events: none; }
+.btn-loading::after {
+  content: ""; position: absolute; inset: 0; margin: auto;
+  width: 16px; height: 16px;
+  border: 2px solid var(--btn-gold-text); border-right-color: transparent;
+  border-radius: 50%; animation: spin .6s linear infinite;
+}
+.btn-ghost.btn-loading::after, .btn-outline.btn-loading::after { border-color: var(--text); border-right-color: transparent; }
 
 /* TABLE */
 table { width: 100%; border-collapse: collapse; }
@@ -522,8 +553,15 @@ tr.no-hover:hover td { background: transparent; }
 .form-row.single { grid-template-columns: 1fr; }
 .form-group { display: flex; flex-direction: column; gap: 5px; }
 .form-group label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.form-group input, .form-group select, .form-group textarea { padding: 9px 11px; border-radius: var(--r-md); border: 1px solid var(--line2); font-family: 'Outfit', sans-serif; font-size: 13px; background: var(--bg3); color: var(--text); transition: border-color 0.15s; outline: none; }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-pale); }
+.form-group input, .form-group select, .form-group textarea { padding: 9px 11px; border-radius: var(--r-sm); border: 1px solid var(--line2); font-family: 'Outfit', sans-serif; font-size: 13px; background: var(--bg3); color: var(--text); transition: border-color .15s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease); outline: none; }
+/* Vorher nur ein harter 3px-Ring. Jetzt Ring + weiter, sehr schwacher Halo,
+   und das Feld hebt sich einen Pixel — es fuehlt sich „aktiv" an statt nur
+   umrandet. Der Halo nutzt --gold-glow und folgt damit dem Theme. */
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-pale), 0 0 18px rgba(var(--gold-glow), .10);
+  transform: translateY(-1px);
+}
 .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
 .form-section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 14px 0 8px; }
 
@@ -593,6 +631,41 @@ tr.no-hover:hover td { background: transparent; }
    Ebenfalls OHNE fill-mode — aus demselben Grund wie oben (fixed-Kinder). */
 .page-enter { animation: pageEnter .22s cubic-bezier(.22,.61,.36,1); }
 @keyframes pageEnter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* Gestaffeltes Einblenden von Listen und Kachelreihen.
+   Ohne Stagger erscheinen zehn Objektkarten gleichzeitig — das wirkt wie ein
+   Bildwechsel. Mit 45ms Abstand baut sich die Liste auf.
+
+   ENTSCHEIDEND ist `animation-fill-mode: backwards`, nicht `both`:
+   - Ohne fill-mode waere jede Karte waehrend ihrer animation-delay VOLL
+     sichtbar und wuerde dann auf opacity:0 zurueckspringen — ein Flackern.
+   - Mit `forwards`/`both` behaelt der Browser danach die animierte transform-
+     Eigenschaft. Ein nicht-none transform erzeugt einen Containing-Block,
+     wodurch `position: fixed`-Kinder (Modals, Toasts) relativ zur Karte statt
+     zum Viewport ausgerichtet wuerden — dieselbe Falle, die oben bei .fade-up
+     dokumentiert ist.
+   `backwards` setzt nur den Startzustand waehrend der Verzoegerung und laesst
+   das Element danach auf transform:none zurueckfallen. Beides geloest.
+
+   Rein in CSS: kein framer-motion, keine Client-Komponenten, kein Bundle. */
+@keyframes staffelEin { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.staffel > * {
+  animation: staffelEin .34s var(--ease) backwards;
+}
+/* Nur die ersten zehn staffeln. Danach waere die Wartezeit laenger als der
+   Effekt wert ist — Karte 30 erschiene erst nach 1,35 Sekunden. */
+.staffel > *:nth-child(1)  { animation-delay: 0ms; }
+.staffel > *:nth-child(2)  { animation-delay: 45ms; }
+.staffel > *:nth-child(3)  { animation-delay: 90ms; }
+.staffel > *:nth-child(4)  { animation-delay: 135ms; }
+.staffel > *:nth-child(5)  { animation-delay: 180ms; }
+.staffel > *:nth-child(6)  { animation-delay: 225ms; }
+.staffel > *:nth-child(7)  { animation-delay: 270ms; }
+.staffel > *:nth-child(8)  { animation-delay: 315ms; }
+.staffel > *:nth-child(9)  { animation-delay: 360ms; }
+.staffel > *:nth-child(10) { animation-delay: 405ms; }
+.staffel > *:nth-child(n+11) { animation-delay: 405ms; }
 
 /* TOASTS */
 .toast-viewport { position: fixed; bottom: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; max-width: min(92vw, 380px); }
@@ -738,8 +811,11 @@ tr.no-hover:hover td { background: transparent; }
 .danger-link { background: none; border: none; color: var(--muted); font-size: 12.5px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; transition: color .15s; }
 .danger-link:hover { color: var(--red); }
 
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 60; animation: overlayIn .2s ease; }
-@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 60; animation: overlayIn .2s ease; }
+/* Der Blur wird MITANIMIERT: springt er sofort auf 4px, flackert der
+   Hintergrund beim Oeffnen sichtbar. Bewusst nur 4px — mehr kostet auf
+   schwacher Hardware Bildrate, ohne mehr Fokus zu bringen. */
+@keyframes overlayIn { from { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); } to { opacity: 1; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); } }
 .modal-sheet { width: 100%; max-width: 420px; background: var(--bg2); border: 1px solid var(--line2); border-radius: 18px; padding: 24px; box-shadow: 0 30px 70px -20px rgba(0,0,0,.65); animation: sheetIn .32s cubic-bezier(.22,.61,.36,1); }
 @keyframes sheetIn { from { opacity: 0; transform: translateY(24px) scale(.98); } to { opacity: 1; transform: none; } }
 @media (max-width: 560px) { .modal-overlay { align-items: flex-end; } .modal-sheet { max-width: none; border-radius: 18px 18px 0 0; animation: sheetUp .32s cubic-bezier(.22,.61,.36,1); } }
@@ -893,7 +969,7 @@ select:focus-visible, textarea:focus-visible {
 /* Reduzierte Bewegung: alle dekorativen Animationen aus, Lade-Spinner bleibt */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .page-enter,
+  .page-enter, .staffel > *,
   .fade-up, .toast, .kpi-card, .prop-card, .btn, .bar-fill, .progress-fill,
   .settings-tab, .tab-btn, .icon-btn {
     animation: none !important;
@@ -1200,7 +1276,9 @@ select:focus-visible, textarea:focus-visible {
 .lp-nav-links .lp-nav-aktiv { color: var(--gold); font-weight: 600; }
 
 /* Scroll-Reveal */
-.lp-reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s cubic-bezier(.22,.61,.36,1), transform .6s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
+/* 22px Versatz liess die Elemente sichtbar hochspringen, 0.6s zog sich.
+   12px / 0.4s: man merkt die Bewegung, sie draengt sich aber nicht auf. */
+.lp-reveal { opacity: 0; transform: translateY(12px); transition: opacity .4s cubic-bezier(.22,.61,.36,1), transform .4s cubic-bezier(.22,.61,.36,1); will-change: opacity, transform; }
 .lp-reveal-in { opacity: 1; transform: none; }
 
 /* 3D-Tilt-Karten */
@@ -1283,7 +1361,18 @@ select:focus-visible, textarea:focus-visible {
 .lp3 .lp-hero-note, .lp3 .lp-price-jahr, .lp3 .lp-einheiten { color: var(--l-faint); }
 .lp3 .lp-kicker { color: var(--l-gold-dark); }
 .lp3 .lp-section-alt { background: var(--l-bg3); border-color: var(--l-line); }
-.lp3 .lp-card, .lp3 .lp-feature, .lp3 .lp-stat, .lp3 .lp-plan { background: #fff; border: 1px solid var(--l-line); box-shadow: 0 2px 10px rgba(60, 50, 20, 0.05); }
+/* Der alte Schatten (Alpha 0.05) war praktisch unsichtbar — die Karten lagen
+   flach auf der Flaeche. Jetzt drei Ebenen: eine Haarlinie als inset-Ring
+   (ersetzt den Border und verhindert damit den 1px-Layoutsprung beim Hover),
+   ein naher und ein weiter Schatten. */
+.lp3 .lp-card, .lp3 .lp-feature, .lp3 .lp-stat, .lp3 .lp-plan {
+  background: #fff;
+  border: 1px solid transparent;
+  box-shadow:
+    0 0 0 1px var(--l-line),
+    0 4px 20px rgba(60, 50, 20, .06),
+    0 16px 48px rgba(60, 50, 20, .04);
+}
 .lp3 .lp-feature:hover { border-color: var(--l-gold); box-shadow: 0 10px 30px rgba(60, 50, 20, 0.10); }
 .lp3 .lp-card h3, .lp3 .lp-feature h3, .lp3 .lp-plan h3, .lp3 .lp-stat .z { color: var(--l-ink); }
 .lp3 .lp-stat .z { color: var(--l-gold-dark); }
@@ -1375,7 +1464,9 @@ select:focus-visible, textarea:focus-visible {
    selbes Muster wie ThemeToggle (Inline-Script im <head> gegen Flackern).
    Mobile-Drawer (.sidebar.open) bleibt komplett unangetastet.
    ===================================================================== */
-.sidebar { transition: width var(--dur) var(--ease); }
+/* Vorher `--ease` (gleichmaessig). Die Rail fuehlt sich mit dem
+   ausfedernden Verlauf physikalischer an. */
+.sidebar { transition: width .35s var(--ease-ios); }
 .sidebar-collapse-btn {
   margin: var(--sp-2) var(--sp-3); display: flex; align-items: center; gap: var(--sp-2);
   padding: 8px 10px; border-radius: var(--r-sm); background: transparent; border: 1px solid var(--line);
@@ -1501,7 +1592,7 @@ select:focus-visible, textarea:focus-visible {
     transition-duration: .01ms !important;
     scroll-behavior: auto !important;
   }
-  .spinner { animation: spin .6s linear infinite !important; } /* Statusinfo bleibt sichtbar */
+  .spinner, .btn-loading::after { animation: spin .6s linear infinite !important; } /* Statusinfo bleibt sichtbar */
 }
 :where(.nav-item, .subtab, .tab-btn, .btn-icon, .prop-card, .switch, .cmdk-item, .cmdk-trigger, .sidebar-collapse-btn, .breadcrumb a):focus-visible {
   outline: 2px solid var(--gold);
