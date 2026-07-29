@@ -87,7 +87,15 @@ export function baueDatevBuchungen(
 
 // ------------------------------------------------------------- EXTF bauen ----
 
-const q = (s: string) => `"${String(s ?? "").replace(/"/g, "")}"`;
+// Feldwerte in Anfuehrungszeichen setzen UND Formel-Praefixe entschaerfen.
+// Anfuehrungszeichen allein schuetzen NICHT: Excel/LibreOffice werten einen
+// Zellinhalt, der mit = + - @ beginnt, weiterhin als Formel aus. Ein Mieter-
+// oder Objektname wie "=cmd|..." wuerde beim Oeffnen der Datei ausgefuehrt.
+const FORMEL_START = /^[=+\-@\t\r]/;
+const q = (s: string) => {
+  const roh = String(s ?? "").replace(/"/g, "");
+  return `"${FORMEL_START.test(roh) ? "'" + roh : roh}"`;
+};
 const betragDe = (n: number) => n.toFixed(2).replace(".", ",");
 const ddmm = (iso: string) => `${iso.slice(8, 10)}${iso.slice(5, 7)}`; // DDMM (Jahr aus WJ)
 const yyyymmdd = (iso: string) => iso.slice(0, 10).replace(/-/g, "");

@@ -34,6 +34,8 @@ export type ErzeugtesPdf = {
   titel: string; // Anzeigename (Archiv-Titel)
   dateiname: string; // <...>.pdf
   mieterName: string;
+  /** Pruefhinweise fuer den VERMIETER (nur NK) — nicht Teil des Briefs. */
+  warnungen?: string[];
 };
 
 // ---------------------------------------------------------------- Brief ----
@@ -225,6 +227,10 @@ export async function erzeugeNkPdf(
     titel: `Nebenkostenabrechnung ${jahr}`,
     dateiname: `NK-Abrechnung_${jahr}_${safe(abrechnung.mieterName)}.pdf`,
     mieterName: abrechnung.mieterName,
+    // Pruefhinweise fuer den VERMIETER durchreichen. Sie gehoeren nicht in den
+    // Brief an den Mieter, duerfen aber auch nicht verlorengehen, wenn das PDF
+    // ohne die Bildschirmansicht erzeugt wird (Download, Beleihungs-Mappe).
+    warnungen: abrechnung.warnungen,
   };
 }
 

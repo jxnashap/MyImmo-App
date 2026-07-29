@@ -173,11 +173,21 @@ export default async function CashflowPage({
           <div className="section-body">
             {mietkonto.zeilen.length === 0 ? (
               <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
-                Damit MyImmo die monatliche Soll-Miete kennt, braucht ein Mietverhältnis einen{" "}
-                <strong>Mietbeginn</strong> und eine <strong>Kaltmiete</strong>. Bei mindestens
-                einem deiner Mieter fehlt davon etwas — ergänze es beim jeweiligen{" "}
-                <Link href="/tenants" style={{ color: "var(--gold)" }}>Mieter</Link>, dann erscheinen
-                die Mieteingänge hier automatisch.
+                {tenants.length === 0 ? (
+                  <>
+                    Für diesen Monat ist noch kein Mietverhältnis erfasst. Sobald du einen{" "}
+                    <Link href="/tenants" style={{ color: "var(--gold)" }}>Mieter</Link> anlegst,
+                    erscheinen die Mieteingänge hier automatisch.
+                  </>
+                ) : (
+                  <>
+                    Für {aktuellerMonat} ergibt sich keine Soll-Miete. Das ist bei{" "}
+                    <strong>Leerstand</strong> normal. Läuft dagegen ein Mietverhältnis, fehlt beim
+                    Mieter <strong>Mietbeginn</strong> oder <strong>Kaltmiete</strong> — beides
+                    ergänzt du beim jeweiligen{" "}
+                    <Link href="/tenants" style={{ color: "var(--gold)" }}>Mieter</Link>.
+                  </>
+                )}
               </p>
             ) : (
               <MietkontoBestaetigung

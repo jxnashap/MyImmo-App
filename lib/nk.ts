@@ -101,6 +101,15 @@ export type NkVorauszahlungQuelle = "gebucht" | "historie" | "stammdaten";
 export type NkVorauszahlungInput = {
   /** Summe der `einnahmen.nk_anteil` aus Miet-Buchungen des Abrechnungsjahres. */
   gebucht?: number | null;
+  /**
+   * Für WIE VIELE Monate des Jahres eine Miet-Zahlung mit NK-Anteil gebucht ist.
+   *
+   * Entscheidend, weil `nk_anteil` ein OPTIONALES Feld ist: Wer nur vier von
+   * zwölf Monaten mit NK-Anteil gebucht hat, hätte sonst 600 € statt 1.800 €
+   * als „tatsächlich geleistet" in der Abrechnung stehen — 1.200 € zu viel
+   * Nachforderung in einem Dokument, das der Mieter rechtsverbindlich bekommt.
+   */
+  gebuchteMonate?: number | null;
   /** Miet-Zeiträume des Mieters (Historie von Kaltmiete/NK-Vorauszahlung). */
   zeitraeume?: MietkontoZeitraum[] | null;
 };
@@ -110,8 +119,13 @@ export type NkVorauszahlung = {
   quelle: NkVorauszahlungQuelle;
   /** Klartext für die Abrechnung — der Mieter muss die Herkunft nachvollziehen können. */
   hinweis: string;
-  /** true = geschätzt, nicht aus tatsächlichen Zahlungen belegt. */
+  /** true = rechnerisch ermittelt, NICHT durch tatsächliche Zahlungen belegt. */
   geschaetzt: boolean;
+  /**
+   * Gesetzt, wenn Buchungen existieren, aber nicht für alle belegten Monate.
+   * Der Vermieter muss das sehen, bevor er die Abrechnung verschickt.
+   */
+  luecke?: { gebuchteMonate: number; belegteMonate: number; gebuchterBetrag: number };
 };
 
 /** Geleistete NK-Vorauszahlungen des Abrechnungsjahres ermitteln. */
@@ -122,14 +136,24 @@ export function vorauszahlungFuerJahr(
   input?: NkVorauszahlungInput | null,
 ): NkVorauszahlung {
   const gebucht = input?.gebucht;
-  if (gebucht != null && Number.isFinite(gebucht) && gebucht > 0) {
+  const gebuchteMonate = input?.gebuchteMonate ?? 0;
+  const hatBuchungen = gebucht != null && Number.isFinite(gebucht) && gebucht > 0;
+
+  // Gebuchte Zahlungen zählen nur dann als vollständig, wenn sie ALLE belegten
+  // Monate abdecken. Sonst ist die Summe eine Teilmenge — und als „tatsächlich
+  // geleistet" ausgewiesen wäre sie schlicht falsch.
+  if (hatBuchungen && gebuchteMonate >= monate && monate > 0) {
     return {
       betrag: rund2(gebucht),
       quelle: "gebucht",
-      hinweis: "Summe der tatsächlich gebuchten Nebenkosten-Vorauszahlungen des Abrechnungsjahres.",
+      hinweis: `Summe der tatsächlich gebuchten Nebenkosten-Vorauszahlungen (${gebuchteMonate} von ${monate} Monaten erfasst).`,
       geschaetzt: false,
     };
   }
+
+  const luecke = hatBuchungen
+    ? { gebuchteMonate, belegteMonate: monate, gebuchterBetrag: rund2(gebucht) }
+    : undefined;
 
   const zeitraeume = input?.zeitraeume ?? [];
   const mieter = {
@@ -142,6 +166,11 @@ export function vorauszahlungFuerJahr(
 
   // Monatsweise über das Abrechnungsjahr — sollFuerMonat zieht den zum jeweiligen
   // Monat gültigen Betrag aus der Historie und kürzt Beginn-/Endemonat anteilig.
+  //
+  // WICHTIG: Das ist die VEREINBARTE Vorauszahlung, nicht der Zahlungseingang.
+  // Die Historie sagt, was geschuldet war — nicht, was ankam. Deshalb gilt auch
+  // dieser Weg als geschätzt: Einem säumigen Mieter zu bescheinigen, er habe
+  // gezahlt, kostet den Vermieter die Nachforderung.
   if (tenant.mietbeginn) {
     let summe = 0;
     for (let ym = `${jahr}-01`; ym <= `${jahr}-12`; ym = ymPlus(ym, 1)) {
@@ -153,9 +182,10 @@ export function vorauszahlungFuerJahr(
         quelle: zeitraeume.length > 0 ? "historie" : "stammdaten",
         hinweis:
           zeitraeume.length > 0
-            ? "Monatsweise aus der hinterlegten Miethistorie berechnet (Änderungen der Vorauszahlung berücksichtigt)."
-            : "Aus der vereinbarten monatlichen Vorauszahlung hochgerechnet — bitte gegen die Kontoauszüge prüfen.",
-        geschaetzt: zeitraeume.length === 0,
+            ? "Rechnerische Soll-Vorauszahlung, monatsweise aus der hinterlegten Miethistorie (Änderungen berücksichtigt) — kein Nachweis tatsächlicher Zahlungseingänge."
+            : "Rechnerische Soll-Vorauszahlung aus der vereinbarten Monatsrate — bitte gegen die Kontoauszüge prüfen.",
+        geschaetzt: true,
+        luecke,
       };
     }
   }
@@ -163,8 +193,9 @@ export function vorauszahlungFuerJahr(
   return {
     betrag: rund2((tenant.nk_vorauszahlung ?? 0) * monate),
     quelle: "stammdaten",
-    hinweis: "Aus der vereinbarten monatlichen Vorauszahlung hochgerechnet — bitte gegen die Kontoauszüge prüfen.",
+    hinweis: "Rechnerische Soll-Vorauszahlung aus der vereinbarten Monatsrate — bitte gegen die Kontoauszüge prüfen.",
     geschaetzt: true,
+    luecke,
   };
 }
 
@@ -497,14 +528,35 @@ export function berechneNk(
   // Warnungen: Dinge, die die Abrechnung angreifbar machen und die der
   // Vermieter sehen MUSS, bevor er sie verschickt.
   const warnungen: string[] = [];
-  if (vorauszahlung.geschaetzt) {
+  if (vorauszahlung.luecke) {
+    const l = vorauszahlung.luecke;
     warnungen.push(
-      "Die geleisteten Vorauszahlungen sind hochgerechnet, nicht aus tatsächlichen Zahlungen belegt. Buche die Mieteingänge mit Nebenkosten-Anteil, damit hier der reale Betrag steht.",
+      `Nur für ${l.gebuchteMonate} von ${l.belegteMonate} Monaten ist ein Mieteingang MIT Nebenkosten-Anteil gebucht (zusammen ${l.gebuchterBetrag.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €). ` +
+        `Diese Teilsumme wäre als „geleistet" falsch — die Abrechnung rechnet deshalb mit der vereinbarten Soll-Vorauszahlung. ` +
+        `Ergänze die fehlenden Buchungen, bevor du sie verschickst.`,
+    );
+  } else if (vorauszahlung.geschaetzt) {
+    warnungen.push(
+      "Die ausgewiesenen Vorauszahlungen sind die VEREINBARTEN Beträge, kein Nachweis tatsächlicher Zahlungseingänge. Buche die Mieteingänge mit Nebenkosten-Anteil, damit hier der reale Betrag steht — sonst bescheinigst du einem säumigen Mieter Zahlungen, die nie kamen.",
     );
   }
   if (co2Input && (co2Input.co2_kg ?? 0) > 0 && co2Input.co2_kosten == null && !co2PreisBekannt(jahr)) {
     warnungen.push(
       `Für ${jahr} ist kein CO₂-Referenzpreis hinterlegt — die CO₂-Aufteilung fehlt daher in dieser Abrechnung. Trage die tatsächlichen CO₂-Kosten aus der Brennstoffrechnung ein.`,
+    );
+  } else if (co2Input && (co2Input.co2_kg ?? 0) > 0 && co2 === null) {
+    // CO₂-Menge erfasst, Aufteilung aber nicht berechenbar (Fläche fehlt oder
+    // Kosten mit 0 € eingetragen). Vorher fiel der komplette CO₂-Block samt
+    // Vermieter-Gutschrift kommentarlos aus der Abrechnung — der Mieter zahlte zu viel.
+    warnungen.push(
+      "CO₂-Menge ist erfasst, die Aufteilung lässt sich aber nicht berechnen — es fehlen die Wohnfläche oder die CO₂-Kosten. Die Vermieter-Gutschrift nach CO2KostAufG ist deshalb NICHT in dieser Abrechnung enthalten.",
+    );
+  }
+  if (umlagefaehig.length === 0) {
+    // Ohne Positionen ist der Saldo die volle Vorauszahlung — der Brief endet
+    // dann mit „Ihr Guthaben wird innerhalb von 14 Tagen erstattet".
+    warnungen.push(
+      `Für ${jahr} sind keine umlagefähigen Positionen hinterlegt. Die Abrechnung weist deshalb die komplette Vorauszahlung als Guthaben aus — das willst du fast sicher nicht verschicken. Trage die Betriebskosten zuerst beim Mieter oder über den Nebenkosten-Verteiler ein.`,
     );
   }
 

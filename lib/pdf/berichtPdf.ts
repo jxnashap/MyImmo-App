@@ -229,7 +229,20 @@ export async function buildAnlageVPdf(
   y -= 12;
   c.text(ML, y, "in ELSTER ist je Objekt eine eigene Anlage V auszufüllen.", 8.5, c.font, MUTED);
   y -= 20;
-  c.text(ML, y, "Hinweise: Schuldzinsen sind aus aktueller Restschuld × Zinssatz geschätzt. Kautionen gelten als", 8.5, c.font, MUTED);
+  // Der Text behauptete pauschal, die Schuldzinsen seien geschaetzt. Sind sie
+  // gebucht, stimmt das nicht — und der Vermieter haelt einen korrekten Wert
+  // faelschlich fuer unbrauchbar.
+  const zinsenGeschaetzt = erg.objekte.some((o) => o.schuldzinsenGeschaetzt);
+  c.text(
+    ML,
+    y,
+    zinsenGeschaetzt
+      ? "Hinweise: Wo keine Schuldzinsen gebucht sind, sind sie aus Restschuld × Zinssatz geschätzt (im Blatt markiert). Kautionen gelten als"
+      : "Hinweise: Die Schuldzinsen stammen aus gebuchten Ausgaben. Kautionen gelten als",
+    8.5,
+    c.font,
+    MUTED,
+  );
   y -= 12;
   c.text(ML, y, "durchlaufende Posten und sind nicht enthalten. Hilfestellung zur Anlage V — keine Steuerberatung.", 8.5, c.font, MUTED);
 

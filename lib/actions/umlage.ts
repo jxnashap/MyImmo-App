@@ -45,18 +45,17 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
 
   if (aktiveMieter.length === 0) return fehlerErg("Keine Mieter für dieses Objekt gefunden.");
 
-  // Geänderte m² in mieter.flaeche speichern (damit „vorher festgelegt" persistiert).
-  await Promise.all(
-    aktiveMieter
-      .filter((m) => {
-        // Nie eine gepflegte Fläche mit 0 überschreiben (leeres Feld im
-        // Assistenten darf keinen Datenverlust auslösen).
-        if (m.flaeche <= 0) return false;
-        const alt = erlaubt.get(m.id)?.flaeche ?? null;
-        return alt == null || Number(alt) !== m.flaeche;
-      })
-      .map((m) => supabase.from("mieter").update({ flaeche: m.flaeche }).eq("id", m.id)),
-  );
+  // Geänderte m² merken — GESCHRIEBEN wird erst NACH der Verteilung. Vorher
+  // liefen die Updates vor der Transaktion: Schlug das Verteilen fehl, waren
+  // die Flächen trotzdem schon überschrieben und der Nutzer sah nur einen
+  // Fehler, während sich seine Stammdaten still geändert hatten.
+  const flaechenUpdates = aktiveMieter.filter((m) => {
+    // Nie eine gepflegte Fläche mit 0 überschreiben (leeres Feld im
+    // Assistenten darf keinen Datenverlust auslösen).
+    if (m.flaeche <= 0) return false;
+    const alt = erlaubt.get(m.id)?.flaeche ?? null;
+    return alt == null || Number(alt) !== m.flaeche;
+  });
 
   const gueltigeZeilen: UmlageZeile[] = zeilen
     .filter((z) => z.bezeichnung.trim() !== "" && z.betrag > 0)
@@ -107,6 +106,17 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
   });
   if (ersetzFehler) return fehlerErg(ersetzFehler.message);
 
+  // Erst jetzt die Flächen persistieren. Fehler werden gemeldet statt
+  // verschluckt — sonst zeigt der Assistent beim nächsten Öffnen wieder die
+  // alten m², obwohl die Verteilung mit den neuen gerechnet hat.
+  const flaechenFehler = (
+    await Promise.all(
+      flaechenUpdates.map((m) =>
+        supabase.from("mieter").update({ flaeche: m.flaeche }).eq("id", m.id),
+      ),
+    )
+  ).find((r) => r.error)?.error;
+
   revalidatePath(`/properties/${propId}`);
   for (const id of mieterIds) {
     revalidatePath(`/tenants/${id}/nk`);
@@ -120,5 +130,8 @@ export async function verteileNebenkosten(input: VerteilenInput): Promise<Vertei
     mieter: belieferte,
     gesamt: ergebnis.gesamt,
     nichtUmgelegt: ergebnis.nichtUmgelegt,
+    hinweis: flaechenFehler
+      ? `Die Verteilung wurde gespeichert, die geänderten Wohnflächen konnten aber nicht übernommen werden (${flaechenFehler.message}). Bitte die m² beim Mieter direkt nachtragen.`
+      : undefined,
   };
 }

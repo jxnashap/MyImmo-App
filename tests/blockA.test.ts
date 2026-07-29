@@ -81,7 +81,7 @@ const mieter2024: NkTenant = {
 
 describe("NK-Abrechnung: geleistete Vorauszahlungen", () => {
   it("gebuchte Zahlungen schlagen die Stammdaten", () => {
-    const v = vorauszahlungFuerJahr(2024, mieter2024, 12, { gebucht: 2100 });
+    const v = vorauszahlungFuerJahr(2024, mieter2024, 12, { gebucht: 2100, gebuchteMonate: 12 });
     expect(v.betrag).toBe(2100);
     expect(v.quelle).toBe("gebucht");
     expect(v.geschaetzt).toBe(false);
@@ -116,7 +116,7 @@ describe("NK-Abrechnung: geleistete Vorauszahlungen", () => {
     const pos: NkRawPosition[] = [
       { bezeichnung: "Müll", betrag: 1200, umlageschluessel: "Fläche", umlagefaehig: true, jahr: 2024 },
     ];
-    const a = berechneNk(2024, mieter2024, null, pos, null, { gebucht: 2100 });
+    const a = berechneNk(2024, mieter2024, null, pos, null, { gebucht: 2100, gebuchteMonate: 12 });
     expect(a.vorauszahlungGeleistet).toBe(2100);
     expect(a.saldo).toBe(900); // 2100 − 1200 = Guthaben
     expect(a.warnungen).toHaveLength(0);
@@ -125,7 +125,24 @@ describe("NK-Abrechnung: geleistete Vorauszahlungen", () => {
   it("geschätzte Vorauszahlung erzeugt eine Warnung an den Vermieter", () => {
     const a = berechneNk(2024, mieter2024, null, [], null, null);
     expect(a.vorauszahlung.geschaetzt).toBe(true);
-    expect(a.warnungen.join(" ")).toContain("hochgerechnet");
+    expect(a.warnungen.join(" ")).toContain("kein Nachweis tatsächlicher Zahlungseingänge");
+  });
+
+  it("nur teilweise gebuchte Monate zaehlen NICHT als Nachweis", () => {
+    // 3 von 12 Monaten gebucht: die Summe waere viel zu niedrig und wuerde dem
+    // Mieter eine Nachzahlung bescheinigen, die es nicht gibt.
+    const v = vorauszahlungFuerJahr(2024, mieter2024, 12, { gebucht: 450, gebuchteMonate: 3 });
+    expect(v.quelle).not.toBe("gebucht");
+    expect(v.geschaetzt).toBe(true);
+    expect(v.luecke).toEqual({ gebuchteMonate: 3, belegteMonate: 12, gebuchterBetrag: 450 });
+  });
+
+  it("Luecke bei Teilbuchungen wird dem Vermieter als Warnung gemeldet", () => {
+    const pos: NkRawPosition[] = [
+      { bezeichnung: "Müll", betrag: 1200, umlageschluessel: "Fläche", umlagefaehig: true, jahr: 2024 },
+    ];
+    const a = berechneNk(2024, mieter2024, null, pos, null, { gebucht: 450, gebuchteMonate: 3 });
+    expect(a.warnungen.join(" ")).toContain("3 von 12 Monaten");
   });
 });
 

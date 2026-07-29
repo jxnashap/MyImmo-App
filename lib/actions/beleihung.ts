@@ -268,6 +268,11 @@ export async function generiereBeleihungDokument(propId: string, itemKey: string
     );
     const pdf = await buildNkPdf(abrechnung, vermieterAus(profil, null));
     const name = [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter";
+    // Pruefhinweise in die Notiz des abgelegten Dokuments — hier gibt es keine
+    // Oberflaeche, in der sie sonst jemand zu sehen bekaeme.
+    const hinweis = abrechnung.warnungen.length
+      ? `Aus MyImmo erzeugt — PRUEFEN: ${abrechnung.warnungen.join(" | ")}`
+      : "Aus MyImmo erzeugt";
     return speichereAutoPdf(
       supabase,
       userId,
@@ -275,7 +280,7 @@ export async function generiereBeleihungDokument(propId: string, itemKey: string
       itemKey,
       `NK_${jahr}_${slug}.pdf`,
       pdf,
-      `NK-Abrechnung ${jahr} für ${name} (aus MyImmo erzeugt)`,
+      `NK-Abrechnung ${jahr} für ${name} · ${hinweis}`,
     );
   }
   throw new Error(`Keine NK-Positionen für ${jahr} gefunden — erst unter Mieter → NK-Abrechnung Positionen erfassen.`);

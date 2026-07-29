@@ -6,6 +6,7 @@ import { euro, datum } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
 import { deleteEinnahme, deleteKosten, deleteKredit, deleteVerbrauch, deleteNotiz } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
+import { objektFolgenText } from "@/lib/loeschUmfang";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import Co2Rechner from "@/components/Co2Rechner";
 import PruefpflichtenKarte from "@/components/PruefpflichtenKarte";
@@ -220,9 +221,14 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           <Link href="/verkauf" className="btn btn-ghost" style={{ fontSize: 12 }} title="Verkauf durchrechnen: Marktwert, § 23-Steuer, Netto-Erlös"><Handshake size={14} style={{ verticalAlign: "-2px" }} /> Verkauf prüfen</Link>
           <Link href={`/properties/${id}/beleihung`} className="btn btn-ghost" style={{ fontSize: 12 }}><Landmark size={14} style={{ verticalAlign: "-2px" }} /> Beleihungsordner</Link>
           <Link href={`/properties/${id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}><Pencil size={14} style={{ verticalAlign: "-2px" }} /> Bearbeiten</Link>
+          {/* Der Loeschumfang gehoert in die Rueckfrage: An einem Objekt haengen
+              per Cascade alle Buchungen, Darlehen und Archiv-Dokumente. */}
           <DeleteButton
             action={deleteProperty.bind(null, id)}
-            confirmText={`„${p.bezeichnung}" wirklich löschen?`}
+            confirmText={`„${p.bezeichnung}" wirklich löschen? ${objektFolgenText({
+              einnahmen: einnahmen.length, kosten: kosten.length, kredite: kred.length,
+              dokumente: notizen.length, verbrauch: verbrauch.length, mieter: tenants.length,
+            })}`.trim()}
             label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>}
             className="btn btn-ghost"
           />

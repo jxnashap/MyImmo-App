@@ -208,6 +208,16 @@ export function berechneAnlageV(
     );
     if (gebuchteZinsen > 0) {
       g.schuldzinsenGeschaetzt = false;
+      // Eine einzige gebuchte Zinszahlung verdraengt die Hochrechnung komplett.
+      // Wer nur einen von zwoelf Monaten gebucht hat, sieht dann einen viel zu
+      // niedrigen Wert — ohne jeden Hinweis. Deshalb: liegt der gebuchte Betrag
+      // deutlich (< 60 %) unter der Groessenordnung aus der Restschuld, wird das
+      // ausdruecklich angesprochen.
+      if (geschaetzteZinsen > 0 && gebuchteZinsen < geschaetzteZinsen * 0.6) {
+        g.hinweise.push(
+          `Für ${jahr} sind nur ${gebuchteZinsen.toLocaleString("de-DE", { minimumFractionDigits: 2 })} € Schuldzinsen gebucht; aus der Restschuld ergäbe sich rund ${geschaetzteZinsen.toLocaleString("de-DE", { maximumFractionDigits: 0 })} € im Jahr. Sind wirklich alle Zinszahlungen des Jahres erfasst? Maßgeblich ist die Zinsbescheinigung der Bank.`,
+        );
+      }
     } else if (geschaetzteZinsen > 0) {
       g.werbungskosten.schuldzinsen = geschaetzteZinsen;
       g.schuldzinsenGeschaetzt = true;
@@ -304,6 +314,9 @@ export type ElsterZeile = {
   warnung?: string;
 };
 
+const SUMMEN_WARNUNG =
+  "Enthält die geschätzten Schuldzinsen — nicht übertragen. Erst den Betrag aus der Zinsbescheinigung eintragen, ELSTER bildet die Summe dann selbst.";
+
 export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
   const e = o.einnahmen;
   const w = o.werbungskosten;
@@ -328,7 +341,24 @@ export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
     { zeile: "47", bezeichnung: "Grundsteuer / öffentliche Lasten", betrag: w.grundsteuer, bereich: "wk" },
     { zeile: "47", bezeichnung: "Versicherungen", betrag: w.versicherung, bereich: "wk" },
     { zeile: "50", bezeichnung: "Sonstige Kosten (Hausgeld/WEG, übrige)", betrag: w.hausgeldSonstige, bereich: "wk" },
-    { zeile: "51", bezeichnung: "Summe der Werbungskosten", betrag: w.summe, bereich: "summe" },
-    { zeile: "23/24", bezeichnung: o.ueberschuss >= 0 ? "Überschuss (Einkünfte)" : "Verlust", betrag: o.ueberschuss, bereich: "summe" },
+    {
+      zeile: "51",
+      bezeichnung: "Summe der Werbungskosten",
+      betrag: w.summe,
+      bereich: "summe",
+      // Die Summe enthaelt die geschaetzten Schuldzinsen. Sie als uebertragbar
+      // auszuweisen, waehrend Zeile 37 durchgestrichen ist, ist widerspruechlich —
+      // wer die Summe abtippt, uebertraegt die Schaetzung durch die Hintertuer.
+      uebertragbar: !o.schuldzinsenGeschaetzt,
+      warnung: o.schuldzinsenGeschaetzt ? SUMMEN_WARNUNG : undefined,
+    },
+    {
+      zeile: "23/24",
+      bezeichnung: o.ueberschuss >= 0 ? "Überschuss (Einkünfte)" : "Verlust",
+      betrag: o.ueberschuss,
+      bereich: "summe",
+      uebertragbar: !o.schuldzinsenGeschaetzt,
+      warnung: o.schuldzinsenGeschaetzt ? SUMMEN_WARNUNG : undefined,
+    },
   ];
 }
