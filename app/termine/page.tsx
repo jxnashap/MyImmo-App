@@ -2,14 +2,17 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
 import { mieterFristen, kreditFristen, globaleFristen, objektFristen, bankingFristen } from "@/lib/fristen";
-import { createTermin, createVorlageTermin, deleteTermin, toggleErledigt } from "@/lib/actions/termine";
+import {
+  createTermin, createVorlageTermin, deleteTermin, toggleErledigt,
+  blendeFristAus, zeigeFristWieder,
+} from "@/lib/actions/termine";
 import DeleteButton from "@/components/DeleteButton";
 import AufklappForm from "@/components/AufklappForm";
 import ExpandableList from "@/components/ExpandableList";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
-import { KATEGORIE_STIL, TERMIN_KATEGORIEN, WARTUNGS_VORLAGEN, WIEDERKEHRUNG_LABEL } from "@/lib/termine";
+import { KATEGORIE_STIL, TERMIN_KATEGORIEN, WARTUNGS_VORLAGEN, WIEDERKEHRUNG_LABEL, fristSchluessel } from "@/lib/termine";
 import type { Termin, Property, Tenant, Kredit } from "@/lib/types";
-import { RotateCw, Pencil, X, CalendarDays, Plus } from "lucide-react";
+import { RotateCw, Pencil, X, CalendarDays, Plus, Eye, EyeOff } from "lucide-react";
 
 type Eintrag = {
   datum: string;
@@ -23,20 +26,24 @@ type Eintrag = {
   erledigt?: boolean;
   wiederkehrung?: string | null;
   id?: string;
+  /** Nur abgeleitete Fristen: Schluessel zum Aus-/Einblenden. */
+  schluessel?: string;
+  ausgeblendet?: boolean;
 };
 
 export default async function TerminePage({
   searchParams,
 }: {
-  searchParams: { quelle?: string; jahr?: string; kategorie?: string; erledigte?: string; ansicht?: string; monat?: string; tag?: string };
+  searchParams: { quelle?: string; jahr?: string; kategorie?: string; erledigte?: string; ansicht?: string; monat?: string; tag?: string; ausgeblendete?: string };
 }) {
   const supabase = createClient();
-  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: bankv }] = await Promise.all([
+  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: bankv }, { data: versteckt }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
     supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum").order("bezeichnung"),
     supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
     supabase.from("kredite").select("id,prop_id,bezeichnung,zinsbindung,auszahlung_datum"),
     supabase.from("bankverbindungen").select("aspsp_name,konto_name,gueltig_bis"),
+    supabase.from("frist_ausgeblendet").select("schluessel"),
   ]);
 
   const properties = (props ?? []) as (Pick<Property, "id" | "bezeichnung" | "typ"> & { energieausweis_datum: string | null })[];
@@ -97,14 +104,27 @@ export default async function TerminePage({
     });
   }
 
+  // Abgeleitete Fristen bekommen einen Schluessel, ueber den sie aus- und wieder
+  // eingeblendet werden koennen. Eigene Termine brauchen ihn nicht — die lassen
+  // sich abhaken oder loeschen.
+  const verstecktSet = new Set(((versteckt ?? []) as { schluessel: string }[]).map((v) => v.schluessel));
+  for (const e of eintraege) {
+    if (e.quelle === "eigen") continue;
+    e.schluessel = fristSchluessel(e.quelle, e.datum, e.label);
+    e.ausgeblendet = verstecktSet.has(e.schluessel);
+  }
+
   eintraege.sort((a, b) => a.datum.localeCompare(b.datum));
 
   // ---- Filter ----
   const zeigeErledigte = searchParams.erledigte === "1";
+  const zeigeAusgeblendete = searchParams.ausgeblendete === "1";
+  const anzahlAusgeblendet = eintraege.filter((e) => e.ausgeblendet).length;
   const filterQ = searchParams.quelle;
   const filterK = searchParams.kategorie;
   let sichtbar = eintraege;
   if (!zeigeErledigte) sichtbar = sichtbar.filter((e) => !e.erledigt);
+  if (!zeigeAusgeblendete) sichtbar = sichtbar.filter((e) => !e.ausgeblendet);
   if (filterQ) sichtbar = sichtbar.filter((e) => (filterQ === "auto" ? e.quelle !== "eigen" : e.quelle === filterQ));
   if (filterK) sichtbar = sichtbar.filter((e) => e.kategorie === filterK);
 
@@ -136,7 +156,9 @@ export default async function TerminePage({
 
   const heute = new Date();
   const tageBis = (d: string) => Math.ceil((new Date(d).getTime() - heute.getTime()) / 86400000);
-  const offen = eintraege.filter((e) => !e.erledigt);
+  // Ausgeblendetes zaehlt auch in den Kacheln nicht mehr mit: Eine Zahl unter
+  // „Ueberfaellig", zu der in der Liste nichts steht, ist schlimmer als keine.
+  const offen = eintraege.filter((e) => !e.erledigt && !e.ausgeblendet);
   const anstehend = offen.filter((e) => tageBis(e.datum) >= 0);
   const in30 = anstehend.filter((e) => tageBis(e.datum) <= 30).length;
   const in90 = anstehend.filter((e) => tageBis(e.datum) <= 90).length;
@@ -154,6 +176,7 @@ export default async function TerminePage({
   const proTag = new Map<string, Eintrag[]>();
   for (const e of eintraege) {
     if (!zeigeErledigte && e.erledigt) continue;
+    if (!zeigeAusgeblendete && e.ausgeblendet) continue;
     if (e.datum.startsWith(monatParam)) {
       const arr = proTag.get(e.datum) ?? [];
       arr.push(e);
@@ -207,6 +230,20 @@ export default async function TerminePage({
             <Link href={`/termine/${e.id}/edit`} className="delete-btn" title="Termin bearbeiten" style={{ color: "var(--muted)" }}><Pencil size={14} /></Link>
             <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label={<X size={14} />} confirmText="Termin löschen?" />
           </span>
+        ) : e.schluessel ? (
+          // Abgeleitete Fristen liessen sich weder abhaken noch loeschen — eine
+          // einmal verpasste Frist blieb fuer immer stehen. Ausblenden loescht
+          // nichts; die Frist ergibt sich weiter aus den Stammdaten.
+          <form action={(e.ausgeblendet ? zeigeFristWieder : blendeFristAus).bind(null, e.schluessel)} style={{ display: "inline-flex", flexShrink: 0 }}>
+            <button
+              type="submit"
+              className="delete-btn"
+              title={e.ausgeblendet ? "Wieder einblenden" : "Ausblenden — die Frist bleibt berechnet, verschwindet nur aus der Liste"}
+              style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "grid", placeItems: "center", width: 22 }}
+            >
+              {e.ausgeblendet ? <Eye size={14} /> : <EyeOff size={14} />}
+            </button>
+          </form>
         ) : (
           <span style={{ width: 22, flexShrink: 0 }} />
         )}
@@ -325,6 +362,15 @@ export default async function TerminePage({
         <Link href={linkMit({ erledigte: zeigeErledigte ? "" : "1" })} className="btn btn-ghost" style={{ fontSize: 11.5, marginBottom: 16 }}>
           {zeigeErledigte ? "✓ Erledigte ausblenden" : "Erledigte anzeigen"}
         </Link>
+        {/* Nur zeigen, wenn es auch etwas Ausgeblendetes gibt — sonst ist es
+            ein Knopf, der nichts tut. */}
+        {anzahlAusgeblendet > 0 && (
+          <Link href={linkMit({ ausgeblendete: zeigeAusgeblendete ? "" : "1" })} className="btn btn-ghost" style={{ fontSize: 11.5, marginBottom: 16 }}>
+            {zeigeAusgeblendete
+              ? "✓ Ausgeblendete verstecken"
+              : `Ausgeblendete anzeigen (${anzahlAusgeblendet})`}
+          </Link>
+        )}
       </div>
 
       {ansicht === "monat" ? (

@@ -131,9 +131,14 @@ export default async function PortalPage({
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
       {/* Portal-Topbar mit dem MyImmo-Schriftzug wie in der Vermieter-Sidebar */}
+      {/* `flexWrap` ist hier nicht kosmetisch: Ohne Umbruch quetscht die Zeile
+          auf schmalen Handys den rechten Block (Theme, Konto, Abmelden)
+          zusammen, bis „Abmelden" abgeschnitten ist — die Schaltflaeche, mit
+          der ein Mieter seine Sitzung beendet. */}
       <div
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexWrap: "wrap", gap: 10,
           padding: "12px 22px", borderBottom: "1px solid var(--line)", background: "var(--bg2)",
         }}
       >
@@ -172,7 +177,7 @@ export default async function PortalPage({
             <div className="topbar" style={{ marginBottom: 20 }}>
               <div>
                 <div className="topbar-title">Meine Wohnung</div>
-                <div className="topbar-sub">{user?.email}</div>
+                <div className="topbar-sub" style={{ overflowWrap: "anywhere" }}>{user?.email}</div>
               </div>
             </div>
             {wohnungen.length === 0 ? (

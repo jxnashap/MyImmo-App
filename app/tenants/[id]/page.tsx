@@ -220,6 +220,9 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
             mieterId={params.id}
             verbunden={!!zugang}
             aktiverCode={aktiverCode ?? null}
+            mieterName={[m.vorname, m.nachname].filter(Boolean).join(" ") || null}
+            mieterEmail={m.email ?? null}
+            objekt={[propName, m.einheit].filter((x) => x && x !== "–").join(", ") || null}
           />
         </div>
       </div>

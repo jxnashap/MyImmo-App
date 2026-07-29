@@ -7,7 +7,9 @@ import { createClient } from "@/lib/supabase/server";
 import AnliegenManager, { type AnliegenVermieterRow } from "@/components/AnliegenManager";
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
 import BewerbungenManager, { type BewerberLinkRow, type BewerbungRow } from "@/components/BewerbungenManager";
-import ServiceManager, { type ServicePartnerRow, type ServiceCodeRow, type AuftragRow, type FirmaRow } from "@/components/ServiceManager";
+import ServiceManager, { type ServicePartnerRow, type ServiceCodeRow, type AuftragRow, type FirmaRow, type FirmenRueckmeldung } from "@/components/ServiceManager";
+
+type FirmenRueckmeldungRow = FirmenRueckmeldung & { auftrag_id: string };
 import { wartetAufVermieter } from "@/lib/zaehler";
 
 export default async function AnliegenPage({
@@ -112,6 +114,27 @@ export default async function AnliegenPage({
     id: f.id, name: f.name, gewerk: f.gewerk, telefon: f.telefon,
     email: f.email, website: f.website, notiz: f.notiz,
   }));
+  // Rueckmeldungen der Handwerksfirmen ueber den oeffentlichen Auftrags-Link.
+  // Gezielt nachgeladen statt per Join: die Auftragsliste ist ohnehin auf 100
+  // begrenzt, und ohne Auftraege gibt es nichts abzufragen.
+  const auftragIds = ((auftragRows ?? []) as { id: string }[]).map((a) => a.id);
+  const { data: rueckRows } = auftragIds.length
+    ? await supabase
+        .from("auftrag_rueckmeldungen")
+        .select("id,auftrag_id,art,firma,kontakt,termin,nachricht,created_at")
+        .in("auftrag_id", auftragIds)
+        .order("created_at", { ascending: false })
+    : { data: [] as FirmenRueckmeldungRow[] };
+  const rueckProAuftrag = new Map<string, FirmenRueckmeldung[]>();
+  for (const r of (rueckRows ?? []) as FirmenRueckmeldungRow[]) {
+    const liste = rueckProAuftrag.get(r.auftrag_id) ?? [];
+    liste.push({
+      id: r.id, art: r.art, firma: r.firma, kontakt: r.kontakt,
+      termin: r.termin, nachricht: r.nachricht, created_at: r.created_at,
+    });
+    rueckProAuftrag.set(r.auftrag_id, liste);
+  }
+
   const auftraege: AuftragRow[] = ((auftragRows ?? []) as any[]).map((a) => ({
     id: a.id, titel: a.titel, beschreibung: a.beschreibung, termin: a.termin,
     status: a.status, antwort: a.antwort, created_at: a.created_at,
@@ -124,6 +147,7 @@ export default async function AnliegenPage({
     lohnanteil: a.lohnanteil == null ? null : Number(a.lohnanteil),
     rechnung_name: a.rechnung_name ?? null,
     kosten_id: a.kosten_id ?? null,
+    rueckmeldungen: rueckProAuftrag.get(a.id) ?? [],
   }));
   // Badge: nur was auf DICH wartet — dieselbe Definition wie in der
   // Seitenleiste (lib/neuigkeiten.ts). Aufträge im Status „offen" liegen beim

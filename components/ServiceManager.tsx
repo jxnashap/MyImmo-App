@@ -31,6 +31,13 @@ export type AuftragRow = {
   mieterName: string | null; public_token: string;
   betrag: number | null; lohnanteil: number | null;
   rechnung_name: string | null; kosten_id: string | null;
+  /** Rueckmeldungen der Firma ueber den oeffentlichen Auftrags-Link. */
+  rueckmeldungen?: FirmenRueckmeldung[];
+};
+export type FirmenRueckmeldung = {
+  id: string; art: "zusage" | "absage" | "rueckfrage";
+  firma: string | null; kontakt: string | null;
+  termin: string | null; nachricht: string | null; created_at: string;
 };
 export type MieterOption = { id: string; name: string };
 
@@ -423,6 +430,25 @@ export default function ServiceManager({
                       <strong>Rückmeldung:</strong> {a.antwort}
                     </p>
                   )}
+                  {/* Rueckmeldungen ueber den oeffentlichen Link. Ohne diese
+                      Anzeige liefe der neue Rueckkanal ins Leere — die Firma
+                      antwortet, und niemand sieht es. */}
+                  {(a.rueckmeldungen ?? []).map((r) => {
+                    const stil =
+                      r.art === "zusage" ? { farbe: "var(--green)", label: "Auftrag angenommen" }
+                      : r.art === "absage" ? { farbe: "var(--red)", label: "Abgesagt" }
+                      : { farbe: "var(--amber)", label: "Rückfrage" };
+                    return (
+                      <div key={r.id} style={{ fontSize: 12, marginTop: 6, padding: "7px 10px", background: "var(--bg2)", borderLeft: `3px solid ${stil.farbe}`, borderRadius: 6 }}>
+                        <strong style={{ color: stil.farbe }}>{stil.label}</strong>
+                        {r.firma ? ` · ${r.firma}` : ""}
+                        {r.termin ? ` · Termin ${datum(r.termin)}` : ""}
+                        {r.kontakt && <div style={{ color: "var(--muted)" }}>Rückruf: {r.kontakt}</div>}
+                        {r.nachricht && <div style={{ whiteSpace: "pre-wrap", marginTop: 2 }}>{r.nachricht}</div>}
+                        <div style={{ color: "var(--faint)", fontSize: 10.5, marginTop: 2 }}>{datum(r.created_at)}</div>
+                      </div>
+                    );
+                  })}
                   <KostenUebernahme a={a} />
                 </div>
               );
