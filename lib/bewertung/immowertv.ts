@@ -116,6 +116,11 @@ export function ertragswert(i: ErtragswertInput): Bewertungsergebnis {
   if (i.liegenschaftszins < 2 || i.liegenschaftszins > 5.5) warnungen.push("Liegenschaftszins außerhalb der üblichen Spanne (2,0–5,5 %). Wert aus dem Grundstücksmarktbericht prüfen.");
   if (roh > 0 && (bewkAnteil < 0.15 || bewkAnteil > 0.32)) warnungen.push(`Bewirtschaftungskosten liegen bei ${(bewkAnteil * 100).toFixed(0)} % des Rohertrags (üblich 18–29 %).`);
   if (reinertrag <= 0) warnungen.push("Reinertrag ist ≤ 0 — Miete zu niedrig oder Kosten zu hoch; Ertragswert wenig aussagekräftig.");
+  // Ohne Bodenwert rechnet § 28 ImmoWertV faktisch nur den Gebaeudeertrag: der
+  // Grund und Boden faellt komplett weg. Bei einem Haus sind das schnell 30–50 %
+  // des Werts — und das Ergebnis sah bisher genauso serioes aus wie ein
+  // vollstaendiges.
+  if (bodenwert <= 0) warnungen.push("Kein Bodenwert hinterlegt (Bodenrichtwert × Grundstücksfläche) — der Grund und Boden fehlt im Ergebnis. Der ausgewiesene Wert ist dadurch systematisch ZU NIEDRIG, bei Häusern oft erheblich.");
 
   return {
     wert: r0(wert),
@@ -160,6 +165,7 @@ export function sachwert(i: SachwertInput): Bewertungsergebnis {
   const warnungen: string[] = [];
   if (i.sachwertfaktor < 0.5 || i.sachwertfaktor > 2.0) warnungen.push("Sachwertfaktor außerhalb 0,5–2,0 — den örtlichen Wert aus dem Grundstücksmarktbericht verwenden.");
   if (i.baupreisindex < 1.5 || i.baupreisindex > 2.2) warnungen.push("Baupreisindex-Faktor unplausibel (2025/26 ~1,7–2,1).");
+  if (bodenwert <= 0) warnungen.push("Kein Bodenwert hinterlegt (Bodenrichtwert × Grundstücksfläche) — im Sachwert fehlt damit der komplette Grundstücksanteil. Der ausgewiesene Wert ist zu niedrig.");
 
   return {
     wert: r0(wert),

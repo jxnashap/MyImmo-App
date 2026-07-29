@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Wrench, CalendarDays, Building2, Phone, Mail, Globe, SendHorizonal, Copy, Check, Link2 } from "lucide-react";
 import { beantworteAuftrag, beantrageAuftrag } from "@/lib/actions/service";
 import { datum } from "@/lib/format";
+import { teilbarerLink } from "@/lib/appUrl";
 
 export type PortalAuftragRow = {
   id: string; titel: string; beschreibung: string | null; termin: string | null;
@@ -48,11 +49,12 @@ function FirmenLinkAktionen({
   token: string; titel: string; objekt: string | null; firma: PortalFirmaRow | null;
 }) {
   const [kopiert, setKopiert] = useState(false);
-  // Origin erst nach der Hydration lesen — sonst backt der Server einen
-  // relativen (toten) Link in die mailto-URL.
-  const [origin, setOrigin] = useState("");
-  useEffect(() => { setOrigin(window.location.origin); }, []);
-  const link = `${origin}/auftrag/${token}`;
+  // Erst nach der Hydration bauen — sonst backt der Server einen relativen
+  // (toten) Link in die mailto-URL. NICHT window.location.origin: wird der
+  // Link auf einer Vorschau-/Fallback-Domain erzeugt, bekaeme der Handwerker
+  // genau diese Adresse (siehe lib/appUrl.ts).
+  const [link, setLink] = useState("");
+  useEffect(() => { setLink(teilbarerLink(`/auftrag/${token}`)); }, [token]);
   const betreff = `Auftragsanfrage: ${titel}${objekt ? ` (${objekt})` : ""}`;
   const text =
     `Guten Tag,\n\nwir bitten um Ausführung des folgenden Auftrags:\n${titel}${objekt ? `\nObjekt: ${objekt}` : ""}\n\n` +

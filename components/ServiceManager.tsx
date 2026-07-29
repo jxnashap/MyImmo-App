@@ -15,6 +15,7 @@ import { erstelleFirma, loescheFirma } from "@/lib/actions/firmen";
 import { GEWERKE } from "@/lib/gewerke";
 import DeleteButton from "@/components/DeleteButton";
 import { datum } from "@/lib/format";
+import { teilbarerLink } from "@/lib/appUrl";
 
 export type ServicePartnerRow = { user_id: string; firma: string | null; email: string | null; created_at: string };
 export type ServiceCodeRow = { code: string; gueltig_bis: string };
@@ -242,7 +243,9 @@ function LinkKopierButton({ token }: { token: string }) {
       type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}
       title="Öffentlicher Link mit Auftragsdetails + Mieter-Kontakt (zur Weitergabe an die Firma)"
       onClick={async () => {
-        await navigator.clipboard.writeText(`${window.location.origin}/auftrag/${token}`);
+        // Produktionsadresse statt window.location.origin — der Link geht an
+        // einen Handwerker und muss auch morgen noch stimmen (lib/appUrl.ts).
+        await navigator.clipboard.writeText(teilbarerLink(`/auftrag/${token}`));
         setKopiert(true); setTimeout(() => setKopiert(false), 1600);
       }}
     >

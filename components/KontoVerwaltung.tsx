@@ -5,6 +5,7 @@ import Link from "next/link";
 import { KeyRound, Download, Trash2, Check, X, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { deleteAccount } from "@/lib/actions/account";
+import { pruefePasswort } from "@/lib/passwort";
 
 // Konto-Verwaltung für MIETER- und SERVICE-Konten.
 //
@@ -38,8 +39,10 @@ export default function KontoVerwaltung({ email, rolle }: { email: string; rolle
   async function passwortAendern(e: React.FormEvent) {
     e.preventDefault();
     setPwStatus(null);
-    if (pw1.length < 8) {
-      setPwStatus({ art: "fehler", text: "Das Passwort muss mindestens 8 Zeichen haben." });
+    // Dieselbe Regel wie bei der Registrierung (lib/passwort.ts).
+    const pwFehler = pruefePasswort(pw1);
+    if (pwFehler) {
+      setPwStatus({ art: "fehler", text: pwFehler });
       return;
     }
     if (pw1 !== pw2) {

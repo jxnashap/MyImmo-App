@@ -28,6 +28,7 @@ import {
   widerrufeFreigabe,
   type Freigabe,
 } from "@/lib/actions/beleihung";
+import { teilbarerLink } from "@/lib/appUrl";
 
 export type Rueckmeldung = {
   id: string;
@@ -156,7 +157,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
   }
 
   function kopiereLink(token: string) {
-    navigator.clipboard.writeText(`${window.location.origin}/beleihung/${token}`).then(
+    navigator.clipboard.writeText(teilbarerLink(`/beleihung/${token}`)).then(
       () => toast("Link kopiert."),
       () => toast("Kopieren fehlgeschlagen."),
     );
@@ -489,7 +490,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                       try {
                         const f = await createFreigabe(propId, Array.from(shareKeys), angabenObjekt, Number(shareTage));
                         setFreigaben((prev) => [f, ...prev]);
-                        setNeuerLink(`${window.location.origin}/beleihung/${f.token}`);
+                        setNeuerLink(teilbarerLink(`/beleihung/${f.token}`));
                       } catch (e) {
                         toast(e instanceof Error ? e.message : "Freigabe fehlgeschlagen.");
                       } finally { setShareBusy(false); }

@@ -95,7 +95,15 @@ export async function middleware(request: NextRequest) {
     pathname === "/icon.svg" || // Favicon (app/icon.svg)
     pathname.startsWith("/api/");
   if (!user && !istOeffentlich && request.method === "GET") {
-    const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
+    // Ziel mitgeben, damit der Nutzer nach dem Login DORT landet, wo er hin
+    // wollte. Die Login-Seite wertet `?next=` laengst aus — nur geschickt hat
+    // es ihr nie jemand: Wer einen Deep-Link aus einer E-Mail oeffnete und
+    // nicht eingeloggt war, stand danach auf dem Dashboard und musste den
+    // Mieter/Beleg/Termin von Hand wiederfinden.
+    const ziel = new URL("/login", request.url);
+    const gewollt = `${pathname}${request.nextUrl.search}`;
+    if (pathname !== "/") ziel.searchParams.set("next", gewollt);
+    const redirectResponse = NextResponse.redirect(ziel);
     redirectResponse.headers.set(
       CSP_REPORT_ONLY ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
       csp

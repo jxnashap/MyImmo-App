@@ -78,14 +78,21 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
   const [neueWohnung, setNeueWohnung] = useState(true);
   const [qng, setQng] = useState(false);
   const [baukosten, setBaukosten] = useState("4800");
+  // § 7b stellt auf den BAUANTRAG ab, nicht auf die Fertigstellung. Vorher lief
+  // hier das Fertigstellungsjahr hinein — ein 2024 fertiggestellter Bau mit
+  // Bauantrag 2022 wurde dadurch als foerderfaehig ausgewiesen, obwohl er es
+  // nicht ist (und umgekehrt fiel ein foerderfaehiger Bau durch).
+  const [bauantrag, setBauantrag] = useState("");
+  const [bauantragMonat, setBauantragMonat] = useState("");
   const p7b = useMemo(
     () => pruefe7b({
-      bauantragJahr: numOr(baujahr) || null,
+      bauantragJahr: numOr(bauantrag) || null,
+      bauantragMonat: numOr(bauantragMonat) || null,
       neueWohnung, qngNachweis: qng,
       baukostenProM2: baukosten ? numOr(baukosten) : null,
       flaeche: wohnflaeche ? numOr(wohnflaeche) : null,
     }),
-    [baujahr, neueWohnung, qng, baukosten, wohnflaeche],
+    [bauantrag, bauantragMonat, neueWohnung, qng, baukosten, wohnflaeche],
   );
 
   // 4) § 82b
@@ -223,7 +230,15 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
           <span className={`badge ${p7b.berechtigt ? "badge-green" : "badge-neutral"}`}>{p7b.berechtigt ? "möglich" : "nicht erfüllt"}</span>
         </div>
         <div className="section-body">
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 12 }}>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 12, alignItems: "flex-end" }}>
+            <label style={{ fontSize: 12.5 }}>
+              <span style={{ color: "var(--muted)", marginRight: 6 }}>Bauantrag Jahr</span>
+              <input className="input" style={{ width: 90, display: "inline-block" }} value={bauantrag} onChange={(e) => setBauantrag(e.target.value)} placeholder="z. B. 2024" inputMode="numeric" />
+            </label>
+            <label style={{ fontSize: 12.5 }}>
+              <span style={{ color: "var(--muted)", marginRight: 6 }}>Monat</span>
+              <input className="input" style={{ width: 70, display: "inline-block" }} value={bauantragMonat} onChange={(e) => setBauantragMonat(e.target.value)} placeholder="1–12" inputMode="numeric" />
+            </label>
             <label style={{ fontSize: 12.5, display: "flex", alignItems: "center", gap: 6 }}>
               <input type="checkbox" checked={neueWohnung} onChange={(e) => setNeueWohnung(e.target.checked)} style={{ width: "auto" }} /> Neue Wohnung
             </label>
@@ -246,7 +261,10 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
               (Bemessungsgrundlage {euro(p7b.bemessungsgrundlageProM2)}/m², gedeckelt).
             </p>
           )}
-          <p style={{ fontSize: 11, color: "var(--faint)", margin: 0 }}>{p7b.hinweis}</p>
+          <p style={{ fontSize: 11, color: "var(--faint)", margin: 0 }}>
+            {p7b.hinweis} Maßgeblich ist das Datum des Bauantrags bzw. der Bauanzeige — nicht das
+            Fertigstellungsjahr oben.
+          </p>
         </div>
       </div>
 
