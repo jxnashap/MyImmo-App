@@ -111,7 +111,13 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
   const [compareIds, setCompareIds] = useState<string[]>([]);
 
   const kp = num(kaufpreis), fl = num(flaeche);
-  const nkSatz = num(bundesland) + num(makler) / 100 + 0.02; // + Notar/Grundbuch ~2 %
+  // ACHTUNG: `bundesland` ist KEINE Nutzereingabe, sondern der Maschinenwert der
+  // Auswahl ("0.035" = 3,5 % Grunderwerbsteuer). Solche Werte gehoeren nicht in
+  // den deutschen Zahlenparser — der hielt den Punkt fuer ein Tausendertrennzeichen
+  // und machte aus 0,035 die Zahl 35, also 3500 % Grunderwerbsteuer.
+  // `makler` dagegen ist ein Freitextfeld und bleibt bei num()/zahlDe0.
+  const grestSatz = Number(bundesland) || 0;
+  const nkSatz = grestSatz + num(makler) / 100 + 0.02; // + Notar/Grundbuch ~2 %
   const nebenkosten = kp * nkSatz;
   const gesamtInvest = kp + nebenkosten;
   const preisM2 = kp > 0 && fl > 0 ? kp / fl : 0;
