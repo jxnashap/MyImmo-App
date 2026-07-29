@@ -270,7 +270,7 @@ export default async function TerminePage({
       </div>
       <hr className="topbar-rule" />
 
-      <div className="grid-4 mb-20">
+      <div className="staffel grid-4 mb-20">
         <div className="kpi-card"><div className="kpi-label">Anstehend</div><div className="kpi-value">{anstehend.length}</div></div>
         <div className="kpi-card"><div className="kpi-label">In 30 Tagen</div><div className="kpi-value" style={{ color: in30 > 0 ? "var(--amber)" : "var(--text)" }}>{in30}</div></div>
         <div className="kpi-card"><div className="kpi-label">In 90 Tagen</div><div className="kpi-value">{in90}</div></div>

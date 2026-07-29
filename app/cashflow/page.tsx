@@ -125,7 +125,7 @@ export default async function CashflowPage({
       {/* KPIs — der Zeitraum (und ein gesetzter Objektfilter) MUSS an der Zahl
           stehen. Ohne ihn liest sich „Einnahmen 12.400 €" wie das Gesamtbild,
           obwohl vielleicht nur ein Jahr und ein Objekt gefiltert sind. */}
-      <div className="grid-3 mb-20" style={{ gap: 14 }}>
+      <div className="staffel grid-3 mb-20" style={{ gap: 14 }}>
         <div className="kpi-card">
           <div className="kpi-label">Einnahmen · {zeitraumLabel}</div>
           <div className="kpi-value" style={{ color: "var(--green)" }}>{euro(einnahmenTotal)}</div>

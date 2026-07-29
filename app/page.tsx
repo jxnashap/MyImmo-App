@@ -261,7 +261,7 @@ export default async function DashboardPage() {
       )}
 
       {/* KPIs sind Deep-Links in den passenden Kontext (spart 1–2 Klicks je Absprung) */}
-      <div className="grid-5 mb-20">
+      <div className="staffel grid-5 mb-20">
         <Link href="/properties" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Portfolio-Wert</div>
           <div className="kpi-value">{euro(totalWert)}</div>
