@@ -70,6 +70,11 @@ export default async function CashflowPage({
     [r.kategorie, r.beschreibung, r.notiz ?? null].some((t) => (t ?? "").toLowerCase().includes(q));
 
   const imJahr = (d: string | null) => jahr === "alle" || (d != null && new Date(d).getFullYear() === Number(jahr));
+
+  // Beschriftung der Kennzahlen: sagt, WORAUF sich die Summen beziehen.
+  const zeitraumLabel = jahr === "alle" ? "alle Jahre" : jahr;
+  const gefiltertesObjekt = prop ? properties.find((p) => p.id === prop)?.bezeichnung : null;
+  const objektLabel = gefiltertesObjekt ? ` · ${gefiltertesObjekt}` : "";
   const einnahmen = ((einn ?? []) as Einnahme[]).filter((e) => (!prop || e.prop_id === prop) && imJahr(e.buchungsdatum) && trifftQ(e));
   const kosten = ((kost ?? []) as Kosten[]).filter((k) => (!prop || k.prop_id === prop) && imJahr(k.buchungsdatum) && trifftQ(k));
 
@@ -117,20 +122,22 @@ export default async function CashflowPage({
       </div>
       <hr className="topbar-rule" />
 
-      {/* KPIs */}
+      {/* KPIs — der Zeitraum (und ein gesetzter Objektfilter) MUSS an der Zahl
+          stehen. Ohne ihn liest sich „Einnahmen 12.400 €" wie das Gesamtbild,
+          obwohl vielleicht nur ein Jahr und ein Objekt gefiltert sind. */}
       <div className="grid-3 mb-20" style={{ gap: 14 }}>
         <div className="kpi-card">
-          <div className="kpi-label">Einnahmen</div>
+          <div className="kpi-label">Einnahmen · {zeitraumLabel}</div>
           <div className="kpi-value" style={{ color: "var(--green)" }}>{euro(einnahmenTotal)}</div>
-          <div className="kpi-sub">{einnahmen.length} Buchungen</div>
+          <div className="kpi-sub">{einnahmen.length} Buchungen{objektLabel}</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-label">Ausgaben</div>
+          <div className="kpi-label">Ausgaben · {zeitraumLabel}</div>
           <div className="kpi-value" style={{ color: "var(--red)" }}>{euro(ausgabenTotal)}</div>
-          <div className="kpi-sub">{kosten.length} Buchungen</div>
+          <div className="kpi-sub">{kosten.length} Buchungen{objektLabel}</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-label">Netto-Cashflow</div>
+          <div className="kpi-label">Netto-Cashflow · {zeitraumLabel}</div>
           <div className="kpi-value" style={{ color: netto >= 0 ? "var(--green)" : "var(--red)" }}>
             {netto >= 0 ? "+ " : "− "}{euro(Math.abs(netto))}
           </div>
@@ -173,11 +180,21 @@ export default async function CashflowPage({
           <div className="section-body">
             {mietkonto.zeilen.length === 0 ? (
               <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
-                Damit MyImmo die monatliche Soll-Miete kennt, braucht ein Mietverhältnis einen{" "}
-                <strong>Mietbeginn</strong> und eine <strong>Kaltmiete</strong>. Bei mindestens
-                einem deiner Mieter fehlt davon etwas — ergänze es beim jeweiligen{" "}
-                <Link href="/tenants" style={{ color: "var(--gold)" }}>Mieter</Link>, dann erscheinen
-                die Mieteingänge hier automatisch.
+                {tenants.length === 0 ? (
+                  <>
+                    Für diesen Monat ist noch kein Mietverhältnis erfasst. Sobald du einen{" "}
+                    <Link href="/tenants" style={{ color: "var(--gold)" }}>Mieter</Link> anlegst,
+                    erscheinen die Mieteingänge hier automatisch.
+                  </>
+                ) : (
+                  <>
+                    Für {aktuellerMonat} ergibt sich keine Soll-Miete. Das ist bei{" "}
+                    <strong>Leerstand</strong> normal. Läuft dagegen ein Mietverhältnis, fehlt beim
+                    Mieter <strong>Mietbeginn</strong> oder <strong>Kaltmiete</strong> — beides
+                    ergänzt du beim jeweiligen{" "}
+                    <Link href="/tenants" style={{ color: "var(--gold)" }}>Mieter</Link>.
+                  </>
+                )}
               </p>
             ) : (
               <MietkontoBestaetigung

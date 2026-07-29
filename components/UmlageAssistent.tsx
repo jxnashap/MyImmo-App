@@ -113,10 +113,19 @@ export default function UmlageAssistent({
     art35a: z.art35a,
   }));
   const aktive = zeilenCalc.filter((z) => z.bezeichnung !== "" && z.betrag > 0);
+  // anzahlEinheiten MUSS mit der Server-Action uebereinstimmen (lib/actions/umlage.ts).
+  // Fehlte es hier, fiel berechneUmlage auf mieter.length zurueck: Bei einem
+  // unterjaehrigen Mieterwechsel in derselben Wohnung zeigte die Vorschau den
+  // halben Betrag plus einen erfundenen Posten "nicht umgelegt" — gespeichert
+  // wurde danach der volle. Der Nutzer prueft eine Zahl und verschickt eine andere.
+  const einheitenAnzahl = new Set(
+    mieter.map((m) => (m.einheit ?? "").trim().toLowerCase()).filter(Boolean),
+  ).size;
   const calc = berechneUmlage(aktive, mieterCalc, {
     zeitanteilig,
     jahresTage: jahresTage(jahr),
     referenzFlaeche: propFlaeche ?? 0,
+    anzahlEinheiten: einheitenAnzahl,
   });
   const fehlendeFlaeche = mieterCalc.some((m) => m.flaeche <= 0);
   const gesamtEingabe = aktive.reduce((s, z) => s + z.betrag, 0);
@@ -245,7 +254,8 @@ export default function UmlageAssistent({
       });
       setErgebnis(res);
       setStatus(res.ok ? "done" : "error");
-      if (res.ok) toast(`Verteilt: ${res.mieter} Mieter, ${res.positionen} Positionen.`, "success");
+      if (res.ok && res.hinweis) toast(res.hinweis, "info");
+      else if (res.ok) toast(`Verteilt: ${res.mieter} Mieter, ${res.positionen} Positionen.`, "success");
       else toast(`Fehler: ${res.fehler ?? "unbekannt"}`, "error");
     } catch (e) {
       setErgebnis({ ok: false, positionen: 0, mieter: 0, gesamt: 0, nichtUmgelegt: 0, fehler: String(e) });
@@ -357,7 +367,7 @@ export default function UmlageAssistent({
                 setStatus("idle");
               }}
             />
-            Zeitanteilig nach belegten Monaten verteilen (für unterjährige Mieterwechsel)
+            Zeitanteilig nach belegten Tagen verteilen (kalendergenau) (für unterjährige Mieterwechsel)
           </label>
           {zeitanteilig && !propFlaeche && (
             <div style={{ fontSize: 11, color: "var(--amber)", marginBottom: 10 }}>

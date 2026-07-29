@@ -31,9 +31,20 @@ export default async function TenantsPage({ searchParams }: { searchParams: { q?
     { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...propList.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
   ];
 
-  const gesamtMiete = list.reduce((s, m) => s + (m.kaltmiete ?? 0), 0);
-  const gesamtKaution = list.reduce((s, m) => s + (m.kaution ?? 0), 0);
-  const offeneKaution = list.filter((m) => m.kaution_status !== "ja").length;
+  // Ausgezogene Mieter zaehlten in den KPIs voll mit: Wer seit Jahren
+  // ausgezogen ist, erhoehte „Kaltmiete / Mo." weiter, und seine laengst
+  // abgerechnete Kaution stand dauerhaft unter „Kaution offen". Die Kennzahlen
+  // beziehen sich jetzt auf LAUFENDE Mietverhaeltnisse; die Liste darunter
+  // zeigt weiterhin alle.
+  const heuteISO = new Date().toISOString().slice(0, 10);
+  const laeuft = (m: Tenant) =>
+    (m.mietende ?? "") === "" || (m.mietende as string) >= heuteISO;
+  const aktive = list.filter(laeuft);
+  const ehemalige = list.length - aktive.length;
+
+  const gesamtMiete = aktive.reduce((s, m) => s + (m.kaltmiete ?? 0), 0);
+  const gesamtKaution = aktive.reduce((s, m) => s + (m.kaution ?? 0), 0);
+  const offeneKaution = aktive.filter((m) => m.kaution_status !== "ja").length;
 
   return (
     <div className="fade-up">
@@ -48,10 +59,13 @@ export default async function TenantsPage({ searchParams }: { searchParams: { q?
       <hr className="topbar-rule" />
 
       <div className="grid-4 mb-20">
-        <div className="kpi-card"><div className="kpi-label">Mieter gesamt</div><div className="kpi-value">{list.length}</div></div>
-        <div className="kpi-card"><div className="kpi-label">Kaltmiete / Mo.</div><div className="kpi-value" style={{ color: "var(--green)" }}>{euro(gesamtMiete)}</div></div>
-        <div className="kpi-card"><div className="kpi-label">Kautionen</div><div className="kpi-value">{euro(gesamtKaution)}</div></div>
-        <div className="kpi-card"><div className="kpi-label">Kaution offen</div><div className="kpi-value" style={{ color: offeneKaution > 0 ? "var(--amber)" : "var(--green)" }}>{offeneKaution}</div></div>
+        <div className="kpi-card" title={ehemalige > 0 ? `${ehemalige} bereits ausgezogen` : undefined}>
+          <div className="kpi-label">Aktive Mietverhältnisse</div>
+          <div className="kpi-value">{aktive.length}{ehemalige > 0 && <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 400 }}> / {list.length}</span>}</div>
+        </div>
+        <div className="kpi-card" title="Nur laufende Mietverhältnisse"><div className="kpi-label">Kaltmiete / Mo.</div><div className="kpi-value" style={{ color: "var(--green)" }}>{euro(gesamtMiete)}</div></div>
+        <div className="kpi-card" title="Nur laufende Mietverhältnisse"><div className="kpi-label">Kautionen</div><div className="kpi-value">{euro(gesamtKaution)}</div></div>
+        <div className="kpi-card" title="Nur laufende Mietverhältnisse"><div className="kpi-label">Kaution offen</div><div className="kpi-value" style={{ color: offeneKaution > 0 ? "var(--amber)" : "var(--green)" }}>{offeneKaution}</div></div>
       </div>
 
       <FilterBar filters={filters} />

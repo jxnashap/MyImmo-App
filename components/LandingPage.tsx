@@ -5,6 +5,7 @@ import Reveal from "@/components/landing/Reveal";
 import Tilt from "@/components/landing/Tilt";
 import RollenFlow from "@/components/landing/RollenFlow";
 import { FEATURES, PLAENE, SOON_BADGE, Shot } from "@/components/landing/data";
+import { PREISE_SICHTBAR } from "@/lib/preise";
 
 // Kompakte Startseite für ausgeloggte Besucher — helles Vertrauens-Design
 // nach den Mustern erfolgreicher Vermieter-SaaS (Problem→Lösung,
@@ -148,22 +149,43 @@ export default function LandingPage() {
       </section>
 
       {/* ---------- Preise (Teaser) ---------- */}
+      {/* Solange die Tarife nicht oeffentlich gelten (lib/preise.ts), steht hier
+          bewusst KEINE Zahl — auch keine „ab"-Angabe. Wer sich jetzt anmeldet,
+          soll das nicht auf Basis von Betraegen tun, die bis zum Start noch
+          wandern koennen. */}
       <section className="lp-section" style={{ borderBottom: "none" }}>
         <div className="lp-inner">
           <div className="lp-kicker">Preise</div>
-          <h2 className="lp-h2">Fair kalkuliert — und aktuell kostenlos</h2>
-          <p className="lp-section-sub">Vier Tarife von 0 € bis Business — während des Early Access ist alles kostenlos.</p>
-          <div className="lp-stats" style={{ marginTop: 0 }}>
-            {PLAENE.map((p) => (
-              <Link key={p.name} href="/preise" className="lp-stat" style={{ textDecoration: "none" }}>
-                <div className="z" style={{ fontSize: 20 }}>{p.preis}</div>
-                <div className="t">{p.name} · {p.einheiten}</div>
-              </Link>
-            ))}
-          </div>
-          <div style={{ textAlign: "center", marginTop: 26 }}>
-            <Link href="/preise" className="lp-mehr">Tarife im Detail vergleichen <ArrowRight size={14} /></Link>
-          </div>
+          {PREISE_SICHTBAR ? (
+            <>
+              <h2 className="lp-h2">Fair kalkuliert — und aktuell kostenlos</h2>
+              <p className="lp-section-sub">Vier Tarife von 0 € bis Business — während des Early Access ist alles kostenlos.</p>
+              <div className="lp-stats" style={{ marginTop: 0 }}>
+                {PLAENE.map((p) => (
+                  <Link key={p.name} href="/preise" className="lp-stat" style={{ textDecoration: "none" }}>
+                    <div className="z" style={{ fontSize: 20 }}>{p.preis}</div>
+                    <div className="t">{p.name} · {p.einheiten}</div>
+                  </Link>
+                ))}
+              </div>
+              <div style={{ textAlign: "center", marginTop: 26 }}>
+                <Link href="/preise" className="lp-mehr">Tarife im Detail vergleichen <ArrowRight size={14} /></Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="lp-h2">Aktuell kostenlos</h2>
+              <p className="lp-section-sub">
+                MyImmo ist im Early Access — der volle Funktionsumfang steht ohne Zahlung zur
+                Verfügung. Bezahltarife stehen noch nicht fest und werden rechtzeitig angekündigt.
+                Dein Konto wird dabei nicht automatisch kostenpflichtig: Du entscheidest selbst, ob
+                und welchen Tarif du dann buchst.
+              </p>
+              <div className="lp-cta-row" style={{ marginTop: 22 }}>
+                <Link href="/anmelden" className="btn btn-gold lp-btn-big">Kostenlos starten</Link>
+              </div>
+            </>
+          )}
         </div>
       </section>
     </LandingShell>

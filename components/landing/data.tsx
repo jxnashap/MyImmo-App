@@ -6,6 +6,7 @@ import {
   MessageSquareText, Users, Wrench, CreditCard, ShieldCheck, FileText, Building2,
   type LucideIcon,
 } from "lucide-react";
+import { PREISE_SICHTBAR } from "@/lib/preise";
 
 export type Feature = { ico?: LucideIcon; t: string; p: string; soon?: boolean };
 
@@ -88,7 +89,9 @@ export const VISION: { t: string; p: string; status: "bald" | "geplant" }[] = [
 export const FAQ = [
   {
     q: "Ist MyImmo wirklich kostenlos?",
-    a: "Ja — während des Early Access ist der komplette Funktionsumfang kostenlos. Die Preistabelle zeigt, was die Tarife später kosten sollen. Bestehende Nutzer werden rechtzeitig informiert, bevor Bezahltarife eingeführt werden, und behalten Zugriff auf ihre Daten.",
+    a: PREISE_SICHTBAR
+      ? "Ja — während des Early Access ist der komplette Funktionsumfang kostenlos. Die Preistabelle zeigt, was die Tarife später kosten sollen. Bestehende Nutzer werden rechtzeitig informiert, bevor Bezahltarife eingeführt werden, und behalten Zugriff auf ihre Daten."
+      : "Ja — während des Early Access ist der komplette Funktionsumfang kostenlos. Es gibt keine ablaufende Testphase und es wird keine Zahlungsmethode hinterlegt. Bezahltarife stehen noch nicht fest; bestehende Nutzer werden rechtzeitig informiert, bevor welche eingeführt werden, und behalten Zugriff auf ihre Daten samt vollständigem Export.",
   },
   {
     q: "Kann ich meine Immobilien auch aus dem Ausland verwalten?",
@@ -108,7 +111,9 @@ export const FAQ = [
   },
   {
     q: "Für wen ist MyImmo gedacht?",
-    a: "Für private Vermieter mit etwa 1–24 Einheiten, denen Profi-Hausverwaltungssoftware zu teuer und zu komplex ist — und Excel zu fehleranfällig. Für größere Bestände und Hausverwaltungen gibt es den Business-Tarif.",
+    a: PREISE_SICHTBAR
+      ? "Für private Vermieter mit etwa 1–24 Einheiten, denen Profi-Hausverwaltungssoftware zu teuer und zu komplex ist — und Excel zu fehleranfällig. Für größere Bestände und Hausverwaltungen gibt es den Business-Tarif."
+      : "Für private Vermieter mit etwa 1–24 Einheiten, denen Profi-Hausverwaltungssoftware zu teuer und zu komplex ist — und Excel zu fehleranfällig. Für größere Bestände und Hausverwaltungen gibt es einen eigenen Zugang; sprich uns dazu einfach an.",
   },
   {
     q: "Kann ich meine Daten wieder mitnehmen?",

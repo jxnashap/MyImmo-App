@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { flashUrl } from "@/lib/flash";
+import { flashUrl, sicheresZiel } from "@/lib/flash";
 import { encrypt } from "@/lib/crypto/secure";
 import { normalizeIban } from "@/lib/iban";
 
@@ -70,8 +70,7 @@ export async function createTenant(formData: FormData) {
   // `?back=` entgegen und zeigt es im Zurueck-Knopf an — ausgewertet wurde es
   // bisher nicht, weshalb man nach "+ Mieter" auf der Objektseite in der
   // Mieterliste landete und sein Objekt neu suchen musste.
-  const zurueck = String(formData.get("back") ?? "").trim();
-  const ziel = zurueck.startsWith("/") ? zurueck : "/tenants";
+  const ziel = sicheresZiel(formData.get("back"), "/tenants");
   revalidatePath(ziel);
   redirect(flashUrl(ziel, "Mieter angelegt."));
 }
@@ -82,7 +81,13 @@ export async function updateTenant(id: string, formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/tenants");
-  redirect(flashUrl("/tenants", "Mieter gespeichert."));
+  revalidatePath(`/tenants/${id}`);
+  // Zurueck auf den Mieter, nicht in die Liste: Eingestiegen wird ueber
+  // /tenants/<id>/edit. Wer in die Liste geworfen wird, muss seinen Mieter nach
+  // jedem Speichern neu suchen (wie updateProperty).
+  const ziel = sicheresZiel(formData.get("back"), `/tenants/${id}`);
+  revalidatePath(ziel);
+  redirect(flashUrl(ziel, "Mieter gespeichert."));
 }
 
 export async function deleteTenant(id: string) {

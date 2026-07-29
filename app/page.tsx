@@ -65,24 +65,31 @@ export default async function DashboardPage() {
   // Fristen & Aufgaben (Design-Handoff): nächste Termine aus denselben Quellen
   // wie /termine — abgeleitete Fristen + eigene, unerledigte Termine.
   const heuteISO0 = new Date().toISOString().slice(0, 10);
+  // Untergrenze fuer die Liste. Fruehet wurde ab HEUTE gefiltert — genau das
+  // Ueberfaellige, das man sehen muss, verschwand dadurch vom Dashboard,
+  // waehrend /termine es als „Ueberfaellig" zaehlte. Jetzt sind auch die
+  // letzten 90 Tage dabei (aelteres ist keine Frist mehr, sondern Altlast).
+  const abISO0 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+  const imFenster = (d: string) => d >= abISO0;
   type DashFrist = { datum: string; label: string; sub: string; warn: boolean };
+  const ueberfaellig = (d: string) => d < heuteISO0;
   const fristListe: DashFrist[] = [];
   for (const m of mieterRows) {
     const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
-    for (const f of mieterFristen(m)) if (f.datum && f.datum >= heuteISO0)
+    for (const f of mieterFristen(m)) if (f.datum && imFenster(f.datum))
       fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo].filter(Boolean).join(" · "), warn: f.typ === "warn" });
   }
-  for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (f.datum && f.datum >= heuteISO0)
+  for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (f.datum && imFenster(f.datum))
     fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Darlehen", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn" });
-  for (const p of properties) for (const f of objektFristen(p)) if (f.datum && f.datum >= heuteISO0)
+  for (const p of properties) for (const f of objektFristen(p)) if (f.datum && imFenster(f.datum))
     fristListe.push({ datum: f.datum, label: f.label, sub: p.bezeichnung, warn: f.typ === "warn" });
-  for (const v of bankv ?? []) for (const f of bankingFristen(v)) if (f.datum && f.datum >= heuteISO0)
+  for (const v of bankv ?? []) for (const f of bankingFristen(v)) if (f.datum && imFenster(f.datum))
     fristListe.push({ datum: f.datum, label: f.label, sub: "Banking", warn: f.typ === "warn" });
-  for (const f of globaleFristen()) if (f.datum && f.datum >= heuteISO0)
+  for (const f of globaleFristen()) if (f.datum && imFenster(f.datum))
     fristListe.push({ datum: f.datum, label: f.label, sub: "Alle Objekte", warn: f.typ === "warn" });
   for (const t of (term ?? []) as { id: string; titel: string | null; datum: string | null; kategorie: string | null; erledigt: boolean | null }[])
-    if (t.datum && t.datum >= heuteISO0 && !t.erledigt)
+    if (t.datum && imFenster(t.datum) && !t.erledigt)
       fristListe.push({ datum: t.datum, label: t.titel ?? "Termin", sub: t.kategorie ?? "Eigener Termin", warn: false });
   fristListe.sort((a, b) => a.datum.localeCompare(b.datum));
   const naechsteFristen = fristListe.slice(0, 4);
@@ -452,12 +459,17 @@ export default async function DashboardPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {naechsteFristen.map((f) => (
                   <div key={`${f.datum}-${f.label}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 10 }}>
-                    <CalendarDays size={15} style={{ color: "var(--gold)", flexShrink: 0 }} />
+                    <CalendarDays size={15} style={{ color: ueberfaellig(f.datum) ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13 }}>{f.label}</div>
                       <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>{f.sub}</div>
                     </div>
-                    <span className={`badge ${f.warn ? "badge-amber" : "badge-teal"}`}>{datum(f.datum)}</span>
+                    <span
+                      className={`badge ${ueberfaellig(f.datum) ? "badge-red" : f.warn ? "badge-amber" : "badge-teal"}`}
+                      title={ueberfaellig(f.datum) ? "Überfällig" : undefined}
+                    >
+                      {ueberfaellig(f.datum) ? "überfällig · " : ""}{datum(f.datum)}
+                    </span>
                   </div>
                 ))}
               </div>

@@ -104,7 +104,18 @@ export function degressivVsLinear(
 // --------------------------------------------- 3) § 7b Sonder-AfA-Check ----
 
 export type Paragraf7bInput = {
-  bauantragJahr: number | null;   // Jahr des Bauantrags/der Bauanzeige
+  /**
+   * Jahr des BAUANTRAGS bzw. der Bauanzeige — NICHT das Fertigstellungs-/
+   * Baujahr. Zwischen beiden liegen ueblich ein bis drei Jahre; ein 2024
+   * fertiggestellter Bau mit Bauantrag 2022 faellt nicht unter § 7b.
+   */
+  bauantragJahr: number | null;
+  /**
+   * Optional der genaue Bauantrags-Monat (1–12). Der Foerderzeitraum endet am
+   * 30.09.2029 — mit reiner Jahresangabe galt auch ein Antrag vom Dezember
+   * 2029 als fristgerecht.
+   */
+  bauantragMonat?: number | null;
   neueWohnung: boolean;           // bisher nicht vorhandene Wohnung
   qngNachweis: boolean;           // EH40/QNG-Nachweis (Effizienzhaus 40)
   baukostenProM2: number | null;  // tatsächliche Anschaffungs-/Herstellungskosten je m²
@@ -125,12 +136,23 @@ const P7B_KOSTEN_MAX = 5200; // €/m² Baukostenobergrenze (ab Wachstumschancen
 /** Prüft die Voraussetzungen der Sonderabschreibung § 7b EStG. */
 export function pruefe7b(input: Paragraf7bInput): Paragraf7bErgebnis {
   const j = input.bauantragJahr;
-  const zeitraumOk = j != null && j >= 2023 && j <= 2029;
+  const m = input.bauantragMonat ?? null;
+  // Foerderzeitraum: Bauantrag NACH dem 31.12.2022 und VOR dem 01.10.2029.
+  // Im Jahr 2029 zaehlt deshalb nur Januar–September; ohne Monatsangabe wird
+  // 2029 als unsicher behandelt statt stillschweigend durchgewinkt.
+  const zeitraumOk =
+    j != null && j >= 2023 && (j < 2029 || (j === 2029 && m != null && m <= 9));
+  const zeitraumUnklar = j === 2029 && m == null;
   const kostenOk = input.baukostenProM2 != null && input.baukostenProM2 <= P7B_KOSTEN_MAX;
   const flaeche = input.flaeche ?? 0;
 
   const gruende = [
-    { ok: zeitraumOk, text: "Bauantrag/Bauanzeige zwischen 2023 und 30.09.2029" },
+    {
+      ok: zeitraumOk,
+      text: zeitraumUnklar
+        ? "Bauantrag/Bauanzeige bis 30.09.2029 — Monat angeben, ab Oktober 2029 entfällt die Förderung"
+        : "Bauantrag/Bauanzeige zwischen 01.01.2023 und 30.09.2029 (nicht das Fertigstellungsjahr)",
+    },
     { ok: input.neueWohnung, text: "Neue, bisher nicht vorhandene Wohnung" },
     { ok: input.qngNachweis, text: "Effizienzhaus 40 / QNG-Nachweis (Nachhaltigkeitssiegel)" },
     { ok: kostenOk, text: `Baukosten höchstens ${P7B_KOSTEN_MAX.toLocaleString("de-DE")} €/m²` },

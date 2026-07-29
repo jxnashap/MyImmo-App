@@ -142,7 +142,8 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
     liegenschaftszins: num(lz) || 3.5, sachwertfaktor: num(swFaktor) || 1,
   });
   const mwWert = mw.ergebnis?.wert ?? 0;
-  const mwUrteil = preisUrteil(mwWert, kp);
+  // Unvollstaendige Schaetzung → kein belastbares Preisurteil (siehe preisUrteil).
+  const mwUrteil = preisUrteil(mwWert, kp, mw.unsicher.length > 0);
 
   const bel = belastbarkeit({
     nutzung, kp, fl, kaltmiete: num(kaltmiete), hausgeld: num(hausgeld),
@@ -471,7 +472,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
                       Spanne {eur(mw.ergebnis.min)} – {eur(mw.ergebnis.max)} · Restnutzungsdauer {mw.restnutzungsdauer} J.
                     </div>
                     {mwUrteil && (
-                      <div style={{ fontSize: 11.5, color: mwUrteil.farbe, fontWeight: 500 }}>
+                      <div style={{ fontSize: 11.5, color: mwUrteil.farbe, fontWeight: mwUrteil.vorlaeufig ? 400 : 500 }}>
                         Kaufpreis {mwUrteil.text}
                       </div>
                     )}

@@ -154,7 +154,18 @@ export function findeMietVorschlag(
       enthaeltWort(text, nachname) ||
       (enthaeltWort(text, vorname) && vorname.length >= 4);
 
-    const diff = Math.abs(umsatz.betrag - soll.gesamt);
+    // Im Ein-/Auszugsmonat ist die Soll-Miete tagesanteilig (lib/mietkonto.ts).
+    // Viele Mieter überweisen dort trotzdem die VOLLE Monatsmiete und rechnen
+    // später ab — ein exakter Vergleich gegen den anteiligen Betrag verlöre den
+    // Treffer genau in dem einen Monat je Mietverhältnis. Deshalb gilt hier
+    // beides als Treffer.
+    const vollerMonat = soll.anteilig
+      ? rund2((soll.gesamt / soll.anteilig.tage) * soll.anteilig.tageImMonat)
+      : soll.gesamt;
+    const diff = Math.min(
+      Math.abs(umsatz.betrag - soll.gesamt),
+      Math.abs(umsatz.betrag - vollerMonat),
+    );
     const betragExakt = diff <= 0.01;
     const betragNah = diff <= 1;
 

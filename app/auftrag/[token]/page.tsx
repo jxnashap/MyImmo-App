@@ -57,7 +57,9 @@ export default async function AuftragPublicSeite({ params }: { params: { token: 
             <Lock size={36} color="var(--faint)" />
             <p style={{ marginTop: 12, fontSize: 14, fontWeight: 600 }}>Link nicht mehr gültig</p>
             <p style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
-              Diese Auftragsanfrage wurde abgeschlossen oder zurückgezogen.
+              Diese Auftragsanfrage wurde abgeschlossen, zurückgezogen — oder der Link ist
+              abgelaufen. Auftrags-Links gelten 90 Tage; danach schützt MyImmo die
+              Kontaktdaten des Mieters. Bitte fragen Sie beim Auftraggeber nach einem neuen Link.
             </p>
           </div>
         </div>

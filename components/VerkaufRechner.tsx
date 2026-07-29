@@ -29,6 +29,7 @@ export default function VerkaufRechner({ objekte = [] }: { objekte?: VerkaufObje
   const [rest, setRest] = useState("");
   const [vfe, setVfe] = useState("");
   const [satz, setSatz] = useState("42");
+  const [weitere, setWeitere] = useState("");
   const [objId, setObjId] = useState("");
   const [eigen, setEigen] = useState(false);
 
@@ -49,9 +50,9 @@ export default function VerkaufRechner({ objekte = [] }: { objekte?: VerkaufObje
       verkaufspreis: num(vp), kaufdatum: kaufdatum || null, kaufpreis: num(kp),
       kaufnebenkosten: num(knk), afaKumuliert: num(afa), verkaufskosten: num(vk),
       restschuld: num(rest), vorfaelligkeit: num(vfe), steuersatz: num(satz),
-      eigennutzung: eigen,
+      weitereGewinneImJahr: num(weitere), eigennutzung: eigen,
     });
-  }, [vp, kaufdatum, kp, knk, afa, vk, rest, vfe, satz, eigen]);
+  }, [vp, kaufdatum, kp, knk, afa, vk, rest, vfe, satz, weitere, eigen]);
 
   return (
     <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -84,7 +85,22 @@ export default function VerkaufRechner({ objekte = [] }: { objekte?: VerkaufObje
         </div>
         <div className="form-row">
           <div className="form-group"><label>Restschuld Darlehen (€)</label><input value={rest} onChange={(e) => setRest(e.target.value)} inputMode="decimal" /></div>
-          <div className="form-group"><label>Vorfälligkeitsentschädigung (€)</label><input value={vfe} onChange={(e) => setVfe(e.target.value)} inputMode="decimal" /></div>
+          <div className="form-group">
+            <label>Vorfälligkeitsentschädigung (€)</label>
+            <input value={vfe} onChange={(e) => setVfe(e.target.value)} inputMode="decimal" />
+            <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>
+              Zählt als Veräußerungskosten und mindert den steuerpflichtigen Gewinn — als
+              Werbungskosten bei Vermietung ist sie dagegen nicht abziehbar.
+            </span>
+          </div>
+          <div className="form-group">
+            <label>Weitere private Veräußerungsgewinne im selben Jahr (€)</label>
+            <input value={weitere} onChange={(e) => setWeitere(e.target.value)} inputMode="decimal" placeholder="0" />
+            <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>
+              Krypto, Gold, weitere Immobilien … Die Freigrenze von {eur(SPEK_FREIGRENZE)} gilt für
+              die Summe aller Geschäfte eines Jahres, nicht je Verkauf.
+            </span>
+          </div>
         </div>
         <div className="form-group" style={{ maxWidth: 220 }}><label>persönl. Steuersatz (%)</label><input value={satz} onChange={(e) => setSatz(e.target.value)} inputMode="decimal" /></div>
         <label style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13, cursor: "pointer" }}>
@@ -133,8 +149,18 @@ export default function VerkaufRechner({ objekte = [] }: { objekte?: VerkaufObje
                 )}
                 {r.steuerfreiGrund === "freigrenze" && (
                   <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
-                    Gewinn {eur(r.ergebnisRoh)} — die Freigrenze gilt für die Summe aller privaten
-                    Veräußerungsgeschäfte eines Jahres. Weitere Verkäufe im selben Jahr können sie überschreiten.
+                    Gewinn {eur(r.ergebnisRoh)}
+                    {num(weitere) > 0 && <> zzgl. {eur(num(weitere))} aus weiteren Geschäften = <strong>{eur(r.jahresSumme)}</strong></>}
+                    {" "}— unter der Freigrenze. Sie gilt für die Summe ALLER privaten
+                    Veräußerungsgeschäfte eines Jahres; ein weiterer Verkauf kann sie kippen, und
+                    dann ist der volle Gewinn steuerpflichtig, nicht nur der Teil darüber.
+                  </div>
+                )}
+                {!r.steuerfreiGrund && num(weitere) > 0 && r.jahresSumme >= SPEK_FREIGRENZE && r.ergebnisRoh < SPEK_FREIGRENZE && (
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
+                    Dieser Verkauf allein läge mit {eur(r.ergebnisRoh)} unter der Freigrenze —
+                    zusammen mit den weiteren Geschäften des Jahres ({eur(r.jahresSumme)}) ist sie
+                    aber überschritten, und damit ist der volle Gewinn steuerpflichtig.
                   </div>
                 )}
                 {r.steuerfreiAb && !r.spekulationsfrei && (

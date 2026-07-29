@@ -114,7 +114,7 @@ export default function MietkontoBestaetigung({
     const d = datum[z.mieterId] || `${monat}-01`;
     const b = Number((betrag[z.mieterId] ?? String(z.gesamt)).replace(",", "."));
     if (!Number.isFinite(b) || b <= 0) {
-      toast("Bitte einen Betrag > 0 angeben.");
+      toast("Bitte einen Betrag > 0 angeben.", "error");
       return;
     }
     setLaufend(z.mieterId);
@@ -142,8 +142,10 @@ export default function MietkontoBestaetigung({
           });
         }, 2200);
       } else {
-        toast(res.error ?? "Buchen fehlgeschlagen.");
-        // Schon gebucht: Liste auffrischen, damit die Zeile verschwindet.
+        // toast() hat den Default-Typ "success" — ohne zweites Argument sah der
+        // Nutzer ein gruenes Haekchen fuer einen Fehlschlag und hielt die Miete
+        // fuer gebucht. "info" bei "schon gebucht" (kein Fehler, nur nichts zu tun).
+        toast(res.error ?? "Buchen fehlgeschlagen.", res.uebersprungen ? "info" : "error");
         if (res.uebersprungen) router.refresh();
       }
     });
@@ -223,7 +225,7 @@ export default function MietkontoBestaetigung({
         setAbgewaehlt(new Set());
         router.refresh();
       } else {
-        toast(res.error ?? "Buchen fehlgeschlagen.");
+        toast(res.error ?? "Buchen fehlgeschlagen.", "error");
       }
     });
   };

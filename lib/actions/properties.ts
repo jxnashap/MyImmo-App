@@ -138,11 +138,17 @@ export async function updateProperty(id: string, formData: FormData) {
   if (!user) redirect("/login");
 
   const parsed = parse(formData);
+  // Felder, die das Formular gar nicht mitschickt, duerfen NICHT ueberschrieben
+  // werden: `parse()` liefert dafuer null. Das Objekt-Formular hat kein Feld
+  // `notiz_import` — ohne diese Ausnahme loeschte jedes Speichern die vom
+  // KI-Import erkannte Notiz.
+  const felder: Record<string, unknown> = { ...parsed };
+  if (!formData.has("notiz_import")) delete felder.notiz_import;
   // Adresse geändert → gecachte Koordinaten verwerfen; die Portfolio-Karte
   // geocodiert beim nächsten Aufruf neu.
   const { data: alt } = await supabase.from("properties").select("adresse").eq("id", id).single();
   const koordReset = alt && (alt.adresse ?? null) !== parsed.adresse ? { lat: null, lng: null } : {};
-  const { error } = await supabase.from("properties").update({ ...parsed, ...koordReset }).eq("id", id);
+  const { error } = await supabase.from("properties").update({ ...felder, ...koordReset }).eq("id", id);
   if (error) throw new Error(error.message);
 
   // Manuell gepflegter Wert → als Stand für die Wertentwicklung protokollieren

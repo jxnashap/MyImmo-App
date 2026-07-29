@@ -9,7 +9,7 @@ Trägt den tatsächlichen Abschluss-/Erledigungsstand nach (Datum + „von wem")
 |---|---|---|---|---|
 | **Anthropic** | Auftragsverarbeiter (OCR) | **SCCs** im DPA (NICHT DPF) | automatisch mit Commercial Terms | **15.07.2026 archiviert** (`anthropic-dpa-archiv.md`) |
 | **Supabase** | Auftragsverarbeiter (DB/Auth) | SCCs + TIA (kein DPF) | Dashboard → Org → Documents (PandaDoc) | ✅ **24.07.2026 signiert** (Jonas Scharp/Owner, PandaDoc; `supabase-dpa-signiert-2026-07-24.pdf` + `supabase-tia-2025-03-14.pdf`) |
-| **Vercel** | Auftragsverarbeiter (Hosting) | DPF ✓ + SCCs | automatisch in ToS **ab Pro-Plan** | ⬜ offen (Pro-Upgrade nötig) |
+| **Vercel** | Auftragsverarbeiter (Hosting) | DPF ✓ + SCCs | automatisch in ToS ab Pro-Plan | ✅ **29.07.2026** — Konto ist auf Pro, AVV greift über die ToS |
 | **Google** | eigenständig Verantwortlicher (OAuth-Login) | DPF ✓ (Google LLC) | **kein AVV** — nur Datenschutzerklärungs-Passus | ✅ Passus vorhanden |
 | **Enable Banking** | AISP/Auftragsverarbeiter (später) | EU (FIN-FSA) | vor Banking-Live: Production-Vertrag + AVV | ⬜ offen (vor Live) |
 | **MyImmo → Nutzer** | MyImmo = Auftragsverarbeiter der Vermieter | — | eigener AVV unter `/avv`, AGB-Einbeziehung | ⬜ anwaltlich prüfen |
@@ -42,5 +42,5 @@ Danach in dieser Tabelle „Erledigt am" nachtragen.
 ## Offene Prüfaufträge
 - [ ] Genutzte OCR-Modell-ID gegen die Anthropic-Retention-Klasse prüfen
       (Standard: minimale Speicherung / 30 Tage).
-- [ ] Vercel auf Pro upgraden (aktiviert den Vercel-DPA).
+- [x] ~~Vercel auf Pro upgraden~~ ✅ 29.07.2026 erledigt — DPA gilt über die ToS.
 - [ ] Eigenen Nutzer-AVV (`/avv`) + AGB anwaltlich prüfen lassen.

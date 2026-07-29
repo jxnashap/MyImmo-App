@@ -145,7 +145,11 @@ export async function createVorlageTermin(
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  if (!(WIEDERKEHRUNGEN as readonly string[]).includes(wiederkehrung)) return;
+  // Frueher: stilles `return`. Der Nutzer klickte, nichts passierte, keine
+  // Meldung — ununterscheidbar von „gespeichert".
+  if (!(WIEDERKEHRUNGEN as readonly string[]).includes(wiederkehrung)) {
+    throw new Error(`Unbekanntes Intervall „${wiederkehrung}" — Termin nicht angelegt.`);
+  }
 
   // Objekt: fest gebunden (Objektseite) oder aus dem Formular (Termine-Seite).
   const prop = propId || (formData ? String(formData.get("prop_id") ?? "") : "") || null;

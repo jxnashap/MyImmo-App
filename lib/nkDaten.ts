@@ -30,17 +30,23 @@ export async function ladeVorauszahlung(
       .eq("mieter_id", mieterId),
   ]);
 
+  // Betrag UND Monatsabdeckung erfassen. `nk_anteil` ist optional — ohne die
+  // Zählung der abgedeckten Monate gälte eine Teilsumme als vollständige
+  // Vorauszahlung (siehe vorauszahlungFuerJahr).
   let gebucht = 0;
+  const monate = new Set<string>();
   for (const e of einnahmen ?? []) {
     const anteil = Number(e.nk_anteil);
     if (!Number.isFinite(anteil) || anteil <= 0) continue;
     const ym = e.soll_monat ?? zuJahrMonat(e.buchungsdatum);
     if (!ym || Number(ym.slice(0, 4)) !== jahr) continue;
     gebucht += anteil;
+    monate.add(ym);
   }
 
   return {
     gebucht: gebucht > 0 ? gebucht : null,
+    gebuchteMonate: monate.size,
     zeitraeume: (zeitraeume ?? []) as MietkontoZeitraum[],
   };
 }

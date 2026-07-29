@@ -6,6 +6,8 @@ import { ArrowLeft, KeyRound, Home, Wrench, Building2, type LucideIcon } from "l
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
 import { pruefeBetaCode } from "@/lib/actions/freischaltung";
+import { PASSWORT_MIN, PASSWORT_REGEL, pruefePasswort } from "@/lib/passwort";
+import { sicheresZiel } from "@/lib/flash";
 
 // Zugangs-Rollen (Businessplan Kap. 14): Vermieter & Hausverwaltung nutzen
 // die volle App, Mieter und Service haben eigene Portale.
@@ -22,7 +24,7 @@ function uebersetze(msg: string): string {
   if (m.includes("invalid login credentials")) return "E-Mail oder Passwort ist falsch.";
   if (m.includes("email not confirmed")) return "Bitte bestätige zuerst die E-Mail in deinem Postfach.";
   if (m.includes("user already registered")) return "Diese E-Mail ist bereits registriert.";
-  if (m.includes("password should be at least")) return "Das Passwort ist zu kurz (mind. 6 Zeichen).";
+  if (m.includes("password should be at least")) return `Das Passwort ist zu kurz (${PASSWORT_REGEL}).`;
   if (m.includes("provider is not enabled")) return "Google-Login ist noch nicht aktiviert (in Supabase einrichten).";
   if (m.includes("rate limit") || m.includes("too many"))
     return "Zu viele Anfragen in kurzer Zeit — bitte in ein paar Minuten erneut versuchen (oder „Mit Google anmelden“).";
@@ -80,9 +82,13 @@ export default function LoginPage() {
     }
     const r = params.get("rolle");
     if (r && ROLLEN[r]) setRolle(r);
-    // Open-Redirect verhindern: nur app-interne Pfade ("/..."), kein "//host".
+    // Open-Redirect verhindern: nur app-interne Pfade — dieselbe Pruefung wie
+    // bei den back-Redirects der Server-Actions (lib/flash.ts).
     const n = params.get("next");
-    if (n && n.startsWith("/") && !n.startsWith("//")) setNextUrl(n);
+    if (n) {
+      const ziel = sicheresZiel(n, "");
+      if (ziel) setNextUrl(ziel);
+    }
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -96,6 +102,17 @@ export default function LoginPage() {
     if (mode === "signup" && password !== password2) {
       setError("Die Passwörter stimmen nicht überein.");
       return;
+    }
+    // Dieselbe Regel wie in den Einstellungen (lib/passwort.ts). Ohne die
+    // Pruefung hier galt der Supabase-Standard von 6 Zeichen — wer sich damit
+    // registrierte, konnte sein Passwort spaeter nicht mehr auf denselben Wert
+    // setzen, weil die Aenderung 8 verlangte.
+    if (mode === "signup") {
+      const pwFehler = pruefePasswort(password);
+      if (pwFehler) {
+        setError(pwFehler);
+        return;
+      }
     }
 
     setLoading(true);
@@ -301,7 +318,8 @@ export default function LoginPage() {
           <input
             type="password"
             required
-            placeholder="Passwort"
+            minLength={mode === "signup" ? PASSWORT_MIN : undefined}
+            placeholder={mode === "signup" ? `Passwort (${PASSWORT_REGEL})` : "Passwort"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="input w-full text-[15px]"

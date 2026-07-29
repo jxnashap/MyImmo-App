@@ -6,6 +6,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { zuJahrMonat } from "@/lib/mietkonto";
 
 export type MietkontoResult = {
   ok: boolean;
@@ -27,7 +28,12 @@ export type MietkontoResult = {
  * nichts Besseres, und der Doppelklick-Schutz greift weiterhin.
  */
 function buchungsSchluessel(mieterId: string, buchungsdatum: string, sollMonat: string | null): string {
-  return `${mieterId}|${sollMonat ?? `d:${buchungsdatum}`}`;
+  // Altbuchungen (manuell oder ueber die Bank erfasst) haben kein `soll_monat`.
+  // Frueher bekamen sie einen `d:<datum>`-Schluessel und kollidierten deshalb
+  // NIE mit einer neuen Buchung fuer denselben Monat — der Dublettenschutz lief
+  // fuer genau diese Zeilen ins Leere. Ueberall sonst in der App gilt
+  // `soll_monat ?? zuJahrMonat(buchungsdatum)`; hier jetzt auch.
+  return `${mieterId}|${sollMonat ?? zuJahrMonat(buchungsdatum) ?? `d:${buchungsdatum}`}`;
 }
 
 export async function bestaetigeMieteingang(input: {
@@ -124,13 +130,42 @@ export async function bestaetigeMehrere(
   // Serverseitige Idempotenz je Miet-Monat (siehe buchungsSchluessel) —
   // zusätzlich Dubletten innerhalb der Auswahl.
   const mieterIds = Array.from(new Set(gueltig.map((z) => z.mieter_id)));
-  const { data: vorhandene } = await supabase
-    .from("einnahmen")
-    .select("mieter_id,buchungsdatum,soll_monat")
-    .eq("kategorie", "Miete")
-    .in("mieter_id", mieterIds);
+
+  // Nur die betroffenen Monate laden, nicht die komplette Miethistorie.
+  // Vorher lief die Abfrage ohne jede Eingrenzung; PostgREST liefert hoechstens
+  // `db-max-rows` Zeilen, bei langer Historie fehlten also aeltere Buchungen im
+  // Dublettenschutz — und die Nacherfassung legte sie ein zweites Mal an.
+  const monate = Array.from(
+    new Set(
+      gueltig.map((z) =>
+        /^\d{4}-\d{2}$/.test(z.soll_monat ?? "") ? z.soll_monat! : zuJahrMonat(z.buchungsdatum) ?? "",
+      ),
+    ),
+  ).filter(Boolean).sort();
+  const vonDatum = `${monate[0]}-01`;
+  const bisDatum = `${monate[monate.length - 1]}-31`;
+
+  const [{ data: mitMonat }, { data: ohneMonat }] = await Promise.all([
+    supabase
+      .from("einnahmen")
+      .select("mieter_id,buchungsdatum,soll_monat")
+      .eq("kategorie", "Miete")
+      .in("mieter_id", mieterIds)
+      .in("soll_monat", monate),
+    // Altzeilen ohne soll_monat werden ueber ihr Buchungsdatum zugeordnet.
+    supabase
+      .from("einnahmen")
+      .select("mieter_id,buchungsdatum,soll_monat")
+      .eq("kategorie", "Miete")
+      .in("mieter_id", mieterIds)
+      .is("soll_monat", null)
+      .gte("buchungsdatum", vonDatum)
+      .lte("buchungsdatum", bisDatum),
+  ]);
   const gebucht = new Set(
-    (vorhandene ?? []).map((v) => buchungsSchluessel(v.mieter_id, v.buchungsdatum, v.soll_monat ?? null)),
+    [...(mitMonat ?? []), ...(ohneMonat ?? [])].map((v) =>
+      buchungsSchluessel(v.mieter_id, v.buchungsdatum, v.soll_monat ?? null),
+    ),
   );
 
   const rows: Record<string, unknown>[] = [];

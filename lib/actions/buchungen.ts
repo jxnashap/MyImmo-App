@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { flashUrl } from "@/lib/flash";
+import { flashUrl, sicheresZiel } from "@/lib/flash";
 import { encryptDarlnr } from "@/lib/kreditData";
 
 // Hilfsfunktionen zum Auslesen von FormData
@@ -35,7 +35,9 @@ async function uid() {
 
 function done(fd: FormData, fallback: string): never {
   revalidatePath("/", "layout");
-  redirect(flashUrl(str(fd, "back") || fallback, "Gespeichert."));
+  // `back` kommt aus einem Formularfeld und darf nur auf eine INTERNE Seite
+  // zeigen — vorher wurde der Wert ungeprueft in redirect() gereicht.
+  redirect(flashUrl(sicheresZiel(str(fd, "back"), fallback), "Gespeichert."));
 }
 
 // ===== EINNAHMEN =====

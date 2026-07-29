@@ -90,6 +90,8 @@ export type VerteilenErgebnis = {
   gesamt: number; // verteilte Gesamtsumme
   nichtUmgelegt: number; // nicht umgelegt (Leerstand)
   fehler?: string;
+  /** Teil-Erfolg: Verteilung steht, aber etwas Nebensächliches ging schief. */
+  hinweis?: string;
 };
 
 /** Schlüssel-Mapping in die gespeicherte Bezeichnung (mieter_positionen.umlageschluessel). */

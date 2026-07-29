@@ -114,12 +114,37 @@ export function marktwert(e: MarktwertEingabe): MarktwertErgebnis {
   return { verfahren, verfahrenLabel, bereit: true, fehlend: [], unsicher, ergebnis, restnutzungsdauer: rnd };
 }
 
-/** Kaufpreis gegen den geschätzten Marktwert — schlicht und ohne Drama. */
-export function preisUrteil(marktwert: number, kaufpreis: number): { text: string; farbe: string; abweichung: number } | null {
+/**
+ * Kaufpreis gegen den geschätzten Marktwert — schlicht und ohne Drama.
+ *
+ * `unsicher` = die Schätzung selbst steht auf wackligen Beinen (fehlender
+ * Bodenwert, fehlendes Baujahr; siehe `unsichereAngaben`). Dann darf hier KEIN
+ * grünes „unter der Schätzung" stehen: Ohne Bodenwert fällt der geschätzte Wert
+ * systematisch zu niedrig aus, ein günstig wirkender Preis wäre also gerade
+ * dann falsch beruhigend, wenn er es am wenigsten sein darf. Das Urteil wird in
+ * dem Fall neutral formuliert und ausdrücklich als vorläufig gekennzeichnet.
+ */
+export function preisUrteil(
+  marktwert: number,
+  kaufpreis: number,
+  unsicher = false,
+): { text: string; farbe: string; abweichung: number; vorlaeufig: boolean } | null {
   if (marktwert <= 0 || kaufpreis <= 0) return null;
   const abw = ((kaufpreis - marktwert) / marktwert) * 100;
-  if (abw <= -10) return { text: `${Math.abs(Math.round(abw))} % unter der Schätzung`, farbe: "var(--green)", abweichung: abw };
-  if (abw <= 10) return { text: "im Rahmen der Schätzung", farbe: "var(--teal, #2c9c8f)", abweichung: abw };
-  if (abw <= 25) return { text: `${Math.round(abw)} % über der Schätzung`, farbe: "var(--amber)", abweichung: abw };
-  return { text: `${Math.round(abw)} % über der Schätzung — genau prüfen`, farbe: "var(--amber)", abweichung: abw };
+
+  if (unsicher) {
+    const richtung =
+      abw <= -10 ? `${Math.abs(Math.round(abw))} % unter` : abw <= 10 ? "etwa auf Höhe" : `${Math.round(abw)} % über`;
+    return {
+      text: `${richtung} der vorläufigen Schätzung — die Schätzung ist noch unvollständig, daraus lässt sich kein Urteil über den Preis ableiten`,
+      farbe: "var(--amber)",
+      abweichung: abw,
+      vorlaeufig: true,
+    };
+  }
+
+  if (abw <= -10) return { text: `${Math.abs(Math.round(abw))} % unter der Schätzung`, farbe: "var(--green)", abweichung: abw, vorlaeufig: false };
+  if (abw <= 10) return { text: "im Rahmen der Schätzung", farbe: "var(--teal, #2c9c8f)", abweichung: abw, vorlaeufig: false };
+  if (abw <= 25) return { text: `${Math.round(abw)} % über der Schätzung`, farbe: "var(--amber)", abweichung: abw, vorlaeufig: false };
+  return { text: `${Math.round(abw)} % über der Schätzung — genau prüfen`, farbe: "var(--amber)", abweichung: abw, vorlaeufig: false };
 }

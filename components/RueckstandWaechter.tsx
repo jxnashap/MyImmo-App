@@ -5,7 +5,7 @@ import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
 import AufklappSection from "@/components/AufklappSection";
 import { createClient } from "@/lib/supabase/server";
-import { euro } from "@/lib/format";
+import { euro, datum as deDatum } from "@/lib/format";
 import { offeneMieten, monatLabel, type MietkontoMieter, type MietkontoZeitraum } from "@/lib/mietkonto";
 
 type MieterRow = MietkontoMieter & { id: string; vorname: string | null; nachname: string | null; prop_id: string | null };
@@ -43,7 +43,10 @@ export default async function RueckstandWaechter() {
     >
       <div>
         {offene.map((o) => {
-          const grund = `Es handelt sich um die Miete für ${monatLabel(o.jahrMonat)} (fällig am 3. des Monats, § 556b BGB).`;
+          // Faellig ist der DRITTE WERKTAG (§ 556b BGB) — genau danach rechnet
+          // auch `offeneMieten()`. Der pauschale „3. des Monats" im Mahntext
+          // wich davon ab und nannte dem Mieter ein falsches Datum.
+          const grund = `Es handelt sich um die Miete für ${monatLabel(o.jahrMonat)} (fällig am ${deDatum(o.faelligSeit)}, drittem Werktag des Monats, § 556b BGB).`;
           const zahlbarBis = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
           const q = (art: string) =>
             `/tenants/${o.mieterId}/dokument?art=${art}&betrag=${o.gesamt}&datum=${zahlbarBis}&grund=${encodeURIComponent(grund)}`;

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { mieterFolgenText } from "@/lib/loeschUmfang";
 import { euro, eur2, datum } from "@/lib/format";
 import { mieterFristen } from "@/lib/fristen";
 import { staffelPlan } from "@/lib/staffel";
@@ -63,6 +64,18 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
     .limit(1)
     .maybeSingle();
 
+  // Loeschumfang fuer die Rueckfrage: NK-Positionen und Miet-Zeitraeume gehen
+  // per Cascade mit, gebuchte Mieten verlieren ihre Zuordnung.
+  const [{ count: posAnzahl }, { count: mietAnzahl }] = await Promise.all([
+    supabase.from("mieter_positionen").select("id", { count: "exact", head: true }).eq("mieter_id", params.id),
+    supabase.from("einnahmen").select("id", { count: "exact", head: true }).eq("mieter_id", params.id).eq("kategorie", "Miete"),
+  ]);
+  const loeschUmfang = {
+    zeitraeume: zeitraeume.length,
+    positionen: posAnzahl ?? 0,
+    einnahmen: mietAnzahl ?? 0,
+  };
+
   let propName = "–";
   if (m.prop_id) {
     const { data: p } = await supabase.from("properties").select("bezeichnung").eq("id", m.prop_id).single();
@@ -110,7 +123,9 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
           <Link href={`/tenants/${m.id}/dokument`} className="btn btn-ghost" style={{ fontSize: 12 }}><FileText size={14} style={{ verticalAlign: "-2px" }} /> Dokument</Link>
           <Link href={`/tenants/${m.id}/protokoll`} className="btn btn-ghost" style={{ fontSize: 12 }}><KeyRound size={14} style={{ verticalAlign: "-2px" }} /> Protokoll</Link>
           <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}><Pencil size={14} style={{ verticalAlign: "-2px" }} /> Bearbeiten</Link>
-          <DeleteButton action={deleteTenant.bind(null, m.id)} className="btn btn-ghost" label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>} confirmText={`„${[m.vorname, m.nachname].filter(Boolean).join(" ")}" wirklich löschen?`} />
+          {/* An einem Mieter haengen Miet-Zeitraeume und NK-Positionen — die
+              Grundlage jeder Abrechnung. Das gehoert in die Rueckfrage. */}
+          <DeleteButton action={deleteTenant.bind(null, m.id)} className="btn btn-ghost" label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>} confirmText={`„${[m.vorname, m.nachname].filter(Boolean).join(" ")}" wirklich löschen? ${mieterFolgenText(loeschUmfang)}`.trim()} />
         </div>
       </div>
 

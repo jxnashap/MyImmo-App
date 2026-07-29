@@ -6,6 +6,7 @@ import DeleteButton from "@/components/DeleteButton";
 import type { Property, Kredit } from "@/lib/types";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { sortiereObjekte, SORT_OPTIONEN } from "@/lib/objektSortierung";
+import { objektUmfaenge, objektFolgenText } from "@/lib/loeschUmfang";
 import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Upload, Plus, X, Landmark, type LucideIcon } from "lucide-react";
 
 // Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
@@ -30,9 +31,11 @@ export default async function PropertiesPage({
   searchParams: { sort?: string; q?: string; status?: string };
 }) {
   const supabase = createClient();
-  const [{ data }, { data: kred }] = await Promise.all([
+  const [{ data }, { data: kred }, umfaenge] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("kredite").select("prop_id,restschuld"),
+    // Was am Objekt haengt — gehoert VOR den Loeschklick (lib/loeschUmfang.ts).
+    objektUmfaenge(),
   ]);
 
   const alle = (data ?? []) as Property[];
@@ -130,10 +133,9 @@ export default async function PropertiesPage({
                   <span className="prop-card-above">
                     <DeleteButton
                       action={deleteProperty.bind(null, p.id)}
-                      confirmText={`„${p.bezeichnung}" wirklich löschen?`}
+                      confirmText={`„${p.bezeichnung}" wirklich löschen? ${objektFolgenText(umfaenge.get(p.id))}`.trim()}
                       className="delete-btn"
                       label={<X size={14} />}
-                      title="Löschen"
                     />
                   </span>
                 </div>

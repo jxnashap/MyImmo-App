@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { encrypt, decryptNullable } from "@/lib/crypto/secure";
+import { zuJahrMonat } from "@/lib/mietkonto";
 import {
   ebKonfiguriert,
   starteAutorisierung,
@@ -175,17 +176,25 @@ export async function bestaetigeUmsatzAlsMiete(input: {
     .maybeSingle();
   if (!m) return { ok: false, error: "Mieter nicht gefunden." };
 
-  // Idempotenz wie im Mietkonto: gleicher Mieter + gleiches Datum → vorhandene
-  // Einnahme verknüpfen statt doppelt zu buchen.
-  const { data: schonDa } = await supabase
+  // Idempotenz wie im Mietkonto — ueber den MIET-MONAT, nicht ueber das Datum.
+  //
+  // Der alte Schluessel (Mieter + Buchungsdatum) verschluckte die zweite von
+  // zwei Zahlungen desselben Tages: Zahlt jemand am 05.07. Juni UND Juli nach,
+  // wurde die zweite mit der ersten Einnahme verknuepft statt angelegt — der
+  // Umsatz galt trotzdem als "bestaetigt", das Geld fehlte in Cashflow und
+  // Anlage V. Im Mietkonto ist das behoben, ueber den Bank-Weg war es offen.
+  const sollMonat = /^\d{4}-\d{2}$/.test(input.sollMonat ?? "") ? input.sollMonat! : null;
+  const zielMonat = sollMonat ?? zuJahrMonat(u.buchungsdatum);
+  const { data: bestand } = await supabase
     .from("einnahmen")
-    .select("id")
+    .select("id,buchungsdatum,soll_monat")
     .eq("mieter_id", input.mieterId)
-    .eq("kategorie", "Miete")
-    .eq("buchungsdatum", u.buchungsdatum)
-    .limit(1);
+    .eq("kategorie", "Miete");
+  const treffer = (bestand ?? []).find(
+    (e) => (e.soll_monat ?? zuJahrMonat(e.buchungsdatum)) === zielMonat,
+  );
 
-  let einnahmeId = schonDa?.[0]?.id as string | undefined;
+  let einnahmeId = treffer?.id as string | undefined;
   if (!einnahmeId) {
     const nk = input.nkAnteil != null && Number.isFinite(Number(input.nkAnteil)) ? Number(input.nkAnteil) : null;
     const { data: neu, error } = await supabase
@@ -200,7 +209,7 @@ export async function bestaetigeUmsatzAlsMiete(input: {
         beschreibung: "Mieteingang (Bank-Abgleich)",
         nk_anteil: nk,
         wiederkehrend: true,
-        soll_monat: /^\d{4}-\d{2}$/.test(input.sollMonat ?? "") ? input.sollMonat : null,
+        soll_monat: sollMonat,
       })
       .select("id")
       .single();
