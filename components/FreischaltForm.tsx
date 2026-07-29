@@ -65,14 +65,14 @@ export default function FreischaltForm({ email }: { email?: string | null }) {
             </span>
           </label>
           {fehler && (
-            <div className="rounded-lg px-3 py-2 text-[13px]" style={{ background: "var(--red-dim)", color: "var(--red)" }}>
+            <div className="rounded-sm px-3 py-2 text-[13px]" style={{ background: "var(--red-dim)", color: "var(--red)" }}>
               {fehler}
             </div>
           )}
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-lg py-3 text-[15px] font-semibold transition hover:brightness-95 disabled:opacity-60"
+            className="w-full rounded-sm py-3 text-[15px] font-semibold transition hover:brightness-95 disabled:opacity-60"
             style={{ background: "var(--gold)", color: "#1a1a17" }}
           >
             {pending ? "…" : "Freischalten & starten"}

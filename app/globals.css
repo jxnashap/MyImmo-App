@@ -275,7 +275,7 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 .sidebar-logo p { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.07em; text-transform: uppercase; }
 .sidebar-section { padding: 16px 12px 6px; }
 .sidebar-section-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); padding: 0 8px; margin-bottom: 6px; }
-.nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; cursor: pointer; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); color: var(--muted); font-size: 13px; border: 1px solid transparent; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-sm); cursor: pointer; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); color: var(--muted); font-size: 13px; border: 1px solid transparent; }
 .nav-item:hover { background: var(--bg3); color: var(--text); }
 /* inset box-shadow statt border: kein 1px-Layout-Shift beim Aktiv-Wechsel */
 .nav-item.active { background: var(--gold-pale); color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold-dim); }
@@ -297,9 +297,9 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 }
 .sidebar-props { padding: 14px 12px; border-top: 1px solid var(--line); margin-top: auto; }
 .sidebar-props p { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
-.prop-mini { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; margin-bottom: 2px; transition: background 0.15s; }
+.prop-mini { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--r-sm); cursor: pointer; margin-bottom: 2px; transition: background 0.15s; }
 .prop-mini:hover { background: var(--bg3); }
-.prop-mini-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; background: var(--bg4); }
+.prop-mini-icon { width: 28px; height: 28px; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; background: var(--bg4); }
 .prop-mini-name { font-size: 11px; color: var(--text); font-weight: 500; }
 .prop-mini-type { font-size: 10px; color: var(--muted); }
 
@@ -383,7 +383,7 @@ a.kpi-card:active { transform: scale(.985); }
 .stat-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
 /* BADGES */
-.badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; gap: 4px; }
+.badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: var(--r-full); font-size: 11px; font-weight: 500; gap: 4px; }
 .badge-gold { background: var(--gold-pale); color: var(--gold); border: 1px solid var(--gold-dim); }
 .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
 .badge-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,75,0.3); }
@@ -503,11 +503,15 @@ tr.no-hover:hover td { background: transparent; }
 
 /* TABS (manager) */
 .tabs { display: flex; gap: 4px; }
-.tab-btn { padding: 6px 14px; border-radius: 20px; border: none; background: transparent; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 12px; color: var(--muted); transition: all 0.15s; text-decoration: none; }
+.tab-btn { padding: 6px 14px; border-radius: var(--r-full); border: none; background: transparent; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 12px; color: var(--muted); transition: all 0.15s; text-decoration: none; }
 .tab-btn.active { background: var(--bg4); color: var(--text); }
 .tab-btn:hover:not(.active) { color: var(--text); }
 
 /* PROGRESS / BAR */
+/* AUSNAHME von der Radius-Skala: Diese Leisten sind 6px hoch. Ein Radius von
+   8px waere groesser als die halbe Hoehe — der Browser klemmt ihn dann auf 3px,
+   das Ergebnis ist identisch, die Angabe aber irrefuehrend. 3px = halbe Hoehe
+   ist hier die korrekte Kapselung. */
 .progress-bar { height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; margin-top: 6px; }
 .progress-fill { height: 100%; border-radius: 3px; }
 .bar-track { height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; margin-top: 8px; }
@@ -532,7 +536,7 @@ tr.no-hover:hover td { background: transparent; }
 .prop-card { border-radius: var(--r-lg); border: 1px solid var(--line); overflow: hidden; cursor: pointer; background: var(--bg2); box-shadow: var(--shadow-1); }
 .prop-card:hover { border-color: var(--gold-dim); box-shadow: var(--shadow-gold); }
 .prop-card-header { padding: 16px; display: flex; align-items: flex-start; gap: 12px; }
-.prop-icon { width: 42px; height: 42px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; background: var(--bg3); }
+.prop-icon { width: 42px; height: 42px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; background: var(--bg3); }
 .prop-card-name { font-weight: 600; font-size: 14px; }
 .prop-card-addr { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .prop-card-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid var(--line); }
@@ -601,7 +605,7 @@ tr.no-hover:hover td { background: transparent; }
 /* Abmelde-Button in der Sidebar: neutral, glüht nur beim Hover rot */
 .logout-btn {
   background: none; border: none; color: var(--faint); cursor: pointer;
-  font-size: 14px; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
+  font-size: 14px; padding: 2px 6px; border-radius: var(--r-sm); flex-shrink: 0;
   transition: color .15s ease, text-shadow .15s ease;
 }
 .logout-btn:hover { color: var(--red); text-shadow: 0 0 8px rgba(224,92,75,0.55); }
@@ -681,7 +685,7 @@ tr.no-hover:hover td { background: transparent; }
 
 /* SKELETON / LADEZUSTÄNDE */
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
-.skeleton { background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 38%, var(--bg3) 60%); background-size: 300% 100%; animation: shimmer 1.4s ease infinite; border-radius: 6px; display: block; }
+.skeleton { background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 38%, var(--bg3) 60%); background-size: 300% 100%; animation: shimmer 1.4s ease infinite; border-radius: var(--r-sm); display: block; }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
 /* FORM-ELEMENTE (Eingabeseiten) */
@@ -816,7 +820,7 @@ tr.no-hover:hover td { background: transparent; }
    Hintergrund beim Oeffnen sichtbar. Bewusst nur 4px — mehr kostet auf
    schwacher Hardware Bildrate, ohne mehr Fokus zu bringen. */
 @keyframes overlayIn { from { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); } to { opacity: 1; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); } }
-.modal-sheet { width: 100%; max-width: 420px; background: var(--bg2); border: 1px solid var(--line2); border-radius: 18px; padding: 24px; box-shadow: 0 30px 70px -20px rgba(0,0,0,.65); animation: sheetIn .32s cubic-bezier(.22,.61,.36,1); }
+.modal-sheet { width: 100%; max-width: 420px; background: var(--bg2); border: 1px solid var(--line2); border-radius: var(--r-lg); padding: 24px; box-shadow: 0 30px 70px -20px rgba(0,0,0,.65); animation: sheetIn .32s cubic-bezier(.22,.61,.36,1); }
 @keyframes sheetIn { from { opacity: 0; transform: translateY(24px) scale(.98); } to { opacity: 1; transform: none; } }
 @media (max-width: 560px) { .modal-overlay { align-items: flex-end; } .modal-sheet { max-width: none; border-radius: 18px 18px 0 0; animation: sheetUp .32s cubic-bezier(.22,.61,.36,1); } }
 @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
@@ -860,7 +864,7 @@ tr.no-hover:hover td { background: transparent; }
 .fbsel-icon { color: var(--muted); display: inline-grid; place-items: center; flex-shrink: 0; }
 
 .fbseg { display: inline-flex; gap: 3px; padding: 3px; border-radius: var(--r-sm); background: var(--bg4); border: 1px solid var(--line); }
-.fbseg button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 7px; border: none; background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 500; cursor: pointer; transition: background .15s, color .15s; white-space: nowrap; }
+.fbseg button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: var(--r-sm); border: none; background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 500; cursor: pointer; transition: background .15s, color .15s; white-space: nowrap; }
 .fbseg button[aria-pressed="true"] { background: var(--gold); color: #1a1a17; }
 .fbseg button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
@@ -937,7 +941,7 @@ a:focus-visible, button:focus-visible, input:focus-visible,
 select:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 }
 .field input:focus-visible, .field select:focus-visible,
 .form-group input:focus-visible, .form-group select:focus-visible,
@@ -1094,7 +1098,7 @@ select:focus-visible, textarea:focus-visible {
   width: 100%; max-width: 780px; margin: 0 auto;
   padding: 34px 38px; background: var(--bg2); color: var(--text);
   border: 1px solid var(--line);
-  border-radius: 10px; box-shadow: 0 14px 44px rgba(0,0,0,0.35);
+  border-radius: var(--r-md); box-shadow: 0 14px 44px rgba(0,0,0,0.35);
   font-size: 13px; line-height: 1.6;
 }
 .brief-head-zone { position: relative; }
@@ -1530,7 +1534,7 @@ select:focus-visible, textarea:focus-visible {
   transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
 }
 .cmdk-trigger:hover { color: var(--text); border-color: var(--faint); }
-.cmdk-trigger kbd { margin-left: auto; font-size: 10px; padding: 2px 5px; border-radius: 4px; background: var(--bg4); color: var(--faint); font-family: inherit; }
+.cmdk-trigger kbd { margin-left: auto; font-size: 10px; padding: 2px 5px; border-radius: var(--r-sm); background: var(--bg4); color: var(--faint); font-family: inherit; }
 .cmdk-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: flex-start; justify-content: center; padding: 12vh 16px 16px; z-index: 120; animation: overlayIn var(--dur-fast) var(--ease-out); }
 .cmdk-panel { width: 100%; max-width: 560px; background: var(--bg2); border: 1px solid var(--line2); border-radius: var(--r-lg); box-shadow: var(--shadow-3); overflow: hidden; animation: sheetIn var(--dur) var(--ease); }
 .cmdk-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--line); padding: var(--sp-4) var(--sp-5); color: var(--text); font-family: 'Outfit', sans-serif; font-size: var(--text-md); outline: none; }
