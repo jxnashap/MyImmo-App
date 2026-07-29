@@ -30,6 +30,14 @@
   anwaltlich → Paddle-Konto/Preise/Webhook → Env → Sandbox-Test → `BILLING_ENFORCED=true` +
   /preise-Early-Access-Banner raus → Feature-Gates in den Actions). Steuerhinweis: MoR =
   Paddle ist der Kunde (Reverse-Charge) → bei Kleinunternehmer-Frage berücksichtigen.
+- **Leaked Password Protection (Supabase) — braucht Supabase PRO** (~25 $/Monat).
+  Abgleich neuer/geänderter Passwörter gegen HaveIBeenPwned. Der Toggle ist auf dem
+  Free-Plan zwar SICHTBAR (Authentication → Sign In / Providers → Email → „Password
+  Security"), greift aber nicht: Am 29.07.2026 empirisch geprüft — eine Registrierung
+  mit dem millionenfach geleakten „Password123!" ging trotz gesetztem Schalter durch.
+  Wer das nur im Dashboard umlegt, hält den Schutz für aktiv, obwohl er es nicht ist.
+  Der Supabase-Security-Advisor meldet den Punkt entsprechend dauerhaft als offen.
+  Kostenloser Teilersatz: Mindest-Passwortlänge erhöhen (siehe „Sonstiges").
 - **„Sign in with Apple" nachrüsten, sobald die App in den iOS App Store geht.** Apple verlangt
   das, sobald ein anderer Social-Login (Google) angeboten wird. Braucht Apple-Developer-Programm
   (99 $/Jahr), App-ID/Services-ID/Key + Provider-Config in Supabase. Aktuell reine Web-App → noch nicht nötig.
@@ -67,14 +75,15 @@ Entscheidungen aus der Planung (12.07.2026):
   Repo/Logs). Redirect-URL bei der App-Registrierung: `<base>/api/banking/callback`.
 
 ### Sonstiges (kein Geld)
-- **Supabase-Pro-Schalter, die noch NICHT gesetzt sind** (Stand 29.07.2026, per Advisor geprüft):
-  1. **Leaked Password Protection** — Abgleich gegen HaveIBeenPwned. Dashboard →
-     Authentication → Sign In / Providers → Email → „Password Security". Der Advisor meldet
-     das weiterhin als offen; auf Pro ist der Schalter vorhanden.
-  2. **Mindest-Passwortlänge auf 8** in denselben Einstellungen — die App verlangt seit
-     29.07.2026 durchgängig 8 Zeichen (`lib/passwort.ts`), Supabase steht noch auf 6.
-     Solange das auseinanderläuft, greift nur die App-Prüfung.
-  Beides ist ein Klick im Dashboard und über die API/MCP nicht setzbar.
+- **Mindest-Passwortlänge in Supabase auf 8 setzen** (kostenlos, auch auf Free):
+  Dashboard → Authentication → Sign In / Providers → Email → „Password Security" →
+  Minimum password length. Die App verlangt seit 29.07.2026 durchgängig 8 Zeichen
+  (`lib/passwort.ts`), Supabase steht noch auf **6** — am 29.07.2026 empirisch geprüft:
+  eine Registrierung mit „abc123" wurde angenommen. Solange das auseinanderläuft, greift
+  nur die App-Prüfung; wer die Auth-API direkt anspricht, kommt mit 6 Zeichen durch.
+  Nur im Dashboard setzbar, nicht über API/MCP. **Nach dem Umstellen prüfen**, ob
+  bestehende Konten mit kürzerem Passwort sich weiterhin anmelden können (die Regel
+  gilt für NEUE/geänderte Passwörter, nicht rückwirkend).
 - **Komplette Design- & Layout-Überarbeitung der App (VORHABEN, vor dem Marketing-Start):**
   Gewählte Richtung: **Fintech-hell (Stripe/N26 + etwas Apple)** mit **echter Neu-Anordnung**
   der Layouts (nicht nur Umfärben). Gold `#D4A847` bleibt das Markenzeichen, Fraunces+Outfit
