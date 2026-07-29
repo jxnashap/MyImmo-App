@@ -4,6 +4,7 @@
 // (nicht nur im Formular) und dokumentiert die Zustimmung. Erst danach
 // bekommt ein neu registriertes Konto Zugriff auf die App.
 import { createClient } from "@/lib/supabase/server";
+import { darfWeiter, ZU_VIELE } from "@/lib/net/bremse";
 
 /** Der erwartete Beta-Code — server-only bevorzugt, Fallback auf den alten öffentlichen. */
 function erwarteterCode(): string {
@@ -21,6 +22,14 @@ function erwarteterCode(): string {
  * war — ohne Hinweis, wie man an einen Code kommt.
  */
 export async function pruefeBetaCode(code: string): Promise<{ ok: boolean; fehler?: string }> {
+  // Der Beta-Code ist EIN gemeinsames Geheimnis fuer alle — damit die
+  // lohnendste Angriffsflaeche der App. Ohne Bremse liesse er sich in Ruhe
+  // durchprobieren; niemand wuerde es merken. 8 Versuche in 15 Minuten je IP
+  // reichen fuer Vertipper und machen Raten unpraktikabel.
+  if (!(await darfWeiter("betacode", 8, 900))) {
+    return { ok: false, fehler: ZU_VIELE };
+  }
+
   const erwartet = erwarteterCode();
   if (!erwartet) {
     return {
@@ -65,6 +74,12 @@ export async function schalteKontoFrei(
   //    dieser Seite fest und bekam „Ungültiger Zugangscode" zu einem Beta-Code
   //    gezeigt, den er als Mieter nie erhalten kann. Hier holen wir die
   //    Einlösung nach.
+  // Diese Action probiert BEIDE Code-Arten durch und ist damit ein zweiter
+  // Weg, Codes zu raten — die Bremse muss hier genauso greifen.
+  if (!(await darfWeiter("freischaltung", 10, 900))) {
+    return { ok: false, fehler: ZU_VIELE };
+  }
+
   const geprueft = await pruefeBetaCode(code);
   if (geprueft.ok) {
     const { error } = await supabase.rpc("konto_freischalten", { p_quelle: "code" });
