@@ -23,6 +23,9 @@
   Tabelle `abos` + `lib/plan.ts` (Tarif-/Feature-Matrix) + `lib/billing/paddle.ts` +
   Webhook `/api/billing/webhook` + Abo-Tab in den Einstellungen. Durchgesetzt wird erst mit
   Env `BILLING_ENFORCED=true`; ohne Paddle-Env ist alles ein No-op (Early Access bleibt).
+  **Die Tarife sind auf der Website ausgeblendet** — Schalter `PREISE_SICHTBAR` in
+  `lib/preise.ts` (steuert /preise, Preis-Teaser der Startseite, Menüpunkt, Sitemap,
+  Abo-Tab-Links und die preisbezogenen FAQ-Antworten in einem).
   **Aktivierungs-Checkliste: `docs/BEZAHLSYSTEM.md`** (Reihenfolge: Vercel Pro → AGB/Widerruf
   anwaltlich → Paddle-Konto/Preise/Webhook → Env → Sandbox-Test → `BILLING_ENFORCED=true` +
   /preise-Early-Access-Banner raus → Feature-Gates in den Actions). Steuerhinweis: MoR =

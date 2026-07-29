@@ -1,16 +1,23 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { PREISE_SICHTBAR } from "@/lib/preise";
 
 // Rahmen aller Landing-Seiten: Navigation mit echten Unterseiten + Footer.
 // `aktiv` markiert den aktuellen Menüpunkt.
 
+// „Preise" erscheint erst, wenn die Tarife oeffentlich gelten sollen
+// (lib/preise.ts) — solange das Bezahlsystem inaktiv ist, waeren die Betraege
+// unverbindlich und wuerden trotzdem eine Erwartung erzeugen. Die Route bleibt
+// aber im Menue: dort steht dann die FAQ, die es sonst nirgends gibt.
+const PREIS_LINK = { href: "/preise", label: PREISE_SICHTBAR ? "Preise" : "FAQ" };
+
 const NAV = [
   { href: "/funktionen", label: "Funktionen" },
-  { href: "/preise", label: "Preise" },
+  PREIS_LINK,
   { href: "/ratgeber", label: "Ratgeber" },
   { href: "/vorlagen", label: "Vorlagen" },
   { href: "/vision", label: "Vision" },
-] as const;
+];
 
 export default function LandingShell({
   aktiv,
@@ -54,7 +61,7 @@ export default function LandingShell({
         <div className="lp-inner lp-footer-row">
           <span className="lp-logo" style={{ fontSize: 15 }}>My<span>Immo</span></span>
           <Link href="/funktionen">Funktionen</Link>
-          <Link href="/preise">Preise</Link>
+          <Link href="/preise">{PREIS_LINK.label}</Link>
           <Link href="/ratgeber">Ratgeber</Link>
           <Link href="/vorlagen">Vorlagen</Link>
           <Link href="/vision">Vision</Link>

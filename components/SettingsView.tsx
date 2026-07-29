@@ -21,6 +21,7 @@ import { addIban, deleteIban, setStandardIban } from "@/lib/actions/ibans";
 import { deleteAccount } from "@/lib/actions/account";
 import { starteCheckout, oeffneAboPortal } from "@/lib/actions/billing";
 import { isValidIban, normalizeIban } from "@/lib/iban";
+import { PREISE_SICHTBAR } from "@/lib/preise";
 import type { VermieterProfil, Iban } from "@/lib/types";
 
 // Anzeige-Daten des Abos (Server lädt, Client zeigt nur an).
@@ -619,9 +620,11 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
             Aktuell erfasst: <strong style={{ color: "var(--text)" }}>{einheiten}</strong>{" "}
             {einheiten === 1 ? "Einheit" : "Einheiten"}.
           </p>
-          <Link href="/preise" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <CreditCard size={15} /> Geplante Tarife ansehen
-          </Link>
+          {PREISE_SICHTBAR && (
+            <Link href="/preise" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <CreditCard size={15} /> Geplante Tarife ansehen
+            </Link>
+          )}
         </div>
       ) : (
         <>
@@ -664,7 +667,7 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
                 <button type="button" className="btn btn-gold" disabled={pending} onClick={() => zumCheckout("plus")}>
                   MyImmo Plus — {zyklus === "jahr" ? "129 €/Jahr" : "12,99 €/Monat"}
                 </button>
-                <Link href="/preise" className="btn btn-ghost">Alle Tarife vergleichen</Link>
+                {PREISE_SICHTBAR && <Link href="/preise" className="btn btn-ghost">Alle Tarife vergleichen</Link>}
               </div>
             </div>
           )}

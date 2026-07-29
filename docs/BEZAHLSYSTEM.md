@@ -75,11 +75,18 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
    aufnehmen — Paddle ist als Merchant of Record **eigenständig Verantwortlicher**
    (wie Google beim Login, KEIN AVV nötig): Empfänger von Name/E-Mail/Zahlungsdaten,
    Zweck Zahlungsabwicklung/Rechnungen, Paddle-Datenschutzerklärung verlinken.
-9. **Scharf schalten:** `BILLING_ENFORCED=true` setzen + auf der `/preise`-Seite den
+9. **Preise öffentlich schalten:** In `lib/preise.ts` `PREISE_SICHTBAR = true` setzen.
+   Damit kommen in EINEM Schritt zurück: die Tarifübersicht auf `/preise` (statt der
+   reinen FAQ-Seite, inkl. `noindex`-Entfernung), der Preis-Teaser auf der Startseite,
+   der Menüpunkt „Preise" (heißt bis dahin „FAQ"), der Sitemap-Eintrag, die
+   Tarif-Links im Abo-Tab der Einstellungen und die preisbezogenen FAQ-Antworten.
+   Vorher prüfen, ob die Beträge in `components/landing/data.tsx` (`PLAENE`) noch
+   mit `lib/plan.ts` und den Paddle-Preisen übereinstimmen.
+10. **Scharf schalten:** `BILLING_ENFORCED=true` setzen + auf der `/preise`-Seite den
    Early-Access-Hinweis entfernen und die CTAs auf den Abo-Tab zeigen lassen.
-10. Feature-Gates in den wichtigsten Server-Actions aktivieren (NK-PDF, Steuer-Export,
+11. Feature-Gates in den wichtigsten Server-Actions aktivieren (NK-PDF, Steuer-Export,
     KI-Import, Mieter-Einladung, Objekt-Anlage über Limit) — Muster siehe oben.
-11. Bestandsnutzer per E-Mail/In-App **rechtzeitig vorab informieren** (Fairness +
+12. Bestandsnutzer per E-Mail/In-App **rechtzeitig vorab informieren** (Fairness +
     AGB-Änderungsfrist); niemand wird automatisch kostenpflichtig.
 
 ## Offen / bewusst NICHT gebaut
