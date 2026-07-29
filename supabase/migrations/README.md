@@ -118,3 +118,4 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260728140000 | umlage_ersetzen_transaktion | Verteiler ersetzt Positionen atomar statt delete-dann-insert |
 | 20260728150000 | bewerber_link_verantwortlicher | Bewerbungsseite nennt den Verantwortlichen (Art. 13 DSGVO) |
 | 20260728160000 | einladungscode_nachtraeglich_einloesen | Ausweg aus dem Freischaltungs-Gate für Mieter/Service |
+| 20260729150000 | kontoloeschung_schont_fremddaten | Kontolöschung vernichtet keine Aufträge/Anliegen des Vermieters mehr |

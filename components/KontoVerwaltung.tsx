@@ -138,8 +138,8 @@ export default function KontoVerwaltung({ email, rolle }: { email: string; rolle
         <div className="section-body">
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0, lineHeight: 1.6 }}>
             Löscht deinen Zugang unwiderruflich. {rolle === "mieter"
-              ? "Dein Mietverhältnis bleibt davon unberührt — die Daten dazu gehören deinem Vermieter. Du verlierst nur den Zugang zum Mieterportal."
-              : "Deine Aufträge bleiben beim jeweiligen Auftraggeber. Du verlierst nur den Zugang zum Service-Portal."}
+              ? "Dein Mietverhältnis bleibt davon unberührt — die Daten dazu führt dein Vermieter, er ist dafür verantwortlich. Deine Anliegen und gemeldeten Zählerstände bleiben in seiner Verwaltung stehen, verlieren aber die Verknüpfung zu deinem Zugang."
+              : "Deine Aufträge bleiben beim jeweiligen Auftraggeber — er braucht sie als Nachweis zu seinen Kostenbuchungen. Sie verlieren die Verknüpfung zu deinem Zugang und tragen danach nur noch deinen Firmennamen."}
           </p>
           <button type="button" className="btn btn-ghost" style={{ fontSize: 13, color: "var(--red)" }} onClick={() => setOffen(true)}>
             Konto löschen

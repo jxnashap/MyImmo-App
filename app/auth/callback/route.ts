@@ -20,23 +20,38 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       // Rollen-Abgleich wie beim Passwort-Login: Passt das Konto nicht zur
-      // gewählten Rolle, wird die Session sofort wieder beendet und der Grund
-      // benannt — statt den Nutzer kommentarlos im falschen Portal abzusetzen.
+      // gewählten Rolle, wird die Session beendet und der Grund benannt —
+      // statt den Nutzer kommentarlos im falschen Portal abzusetzen.
+      //
+      // ABER: Eine fehlende Zeile in `nutzer_rollen` heißt NICHT „Vermieter".
+      // Bei OAuth gibt es keine `raw_user_meta_data`, der Trigger
+      // `handle_new_user_rolle` legt also gar keine Rolle an. Ein Mieter, der
+      // „Mieter" wählt und sich per Google NEU registriert, bekäme sonst die
+      // Falschaussage „Dieses Google-Konto gehört zu einem Vermieter-Konto"
+      // über ein Konto, das gerade erst entstanden ist — und käme nie hinein.
+      //
+      // Unterscheidungsmerkmal: Ein etabliertes Vermieter-Konto hat eine Zeile
+      // in `konto_freischaltung`. Fehlt beides (Rolle UND Freischaltung), ist
+      // es ein frischer Zugang — der darf durch und landet über das Layout auf
+      // /willkommen, wo er seinen Einladungscode einlöst. Der setzt dann die
+      // richtige Rolle (siehe einladungscode_einloesen).
       if (gewaehlt) {
         const {
           data: { user },
         } = await supabase.auth.getUser();
         if (user) {
-          const { data: rolleRow } = await supabase
-            .from("nutzer_rollen")
-            .select("rolle")
-            .eq("user_id", user.id)
-            .maybeSingle();
-          const kontoRolle = rolleRow?.rolle ?? "vermieter";
-          if (kontoRolle !== gewaehlt) {
+          const [{ data: rolleRow }, { data: freigeschaltet }] = await Promise.all([
+            supabase.from("nutzer_rollen").select("rolle").eq("user_id", user.id).maybeSingle(),
+            supabase.from("konto_freischaltung").select("user_id").eq("user_id", user.id).maybeSingle(),
+          ]);
+          const kontoRolle = rolleRow?.rolle ?? null;
+          const istNeu = kontoRolle === null && !freigeschaltet;
+          const effektiv = kontoRolle ?? "vermieter";
+
+          if (!istNeu && effektiv !== gewaehlt) {
             await supabase.auth.signOut();
             return NextResponse.redirect(
-              `${origin}/login?fehler=rolle&konto=${encodeURIComponent(kontoRolle)}`,
+              `${origin}/login?fehler=rolle&konto=${encodeURIComponent(effektiv)}`,
             );
           }
         }

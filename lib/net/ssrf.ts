@@ -46,17 +46,68 @@ function istPrivateIpv4(ip: string): boolean {
   return false;
 }
 
+/**
+ * IPv6-Adresse in acht 16-Bit-Gruppen ausschreiben.
+ *
+ * Ohne diesen Schritt prüfte die Funktion nur String-Präfixe — und dieselbe
+ * Adresse hat in IPv6 mehrere gültige Schreibweisen. `::1` wurde geblockt,
+ * `0:0:0:0:0:0:0:1` und `0::1` dagegen nicht, obwohl beides der Loopback ist.
+ * Ein Exposé-Link auf `http://[0:0:0:0:0:0:0:1]:3000/` hätte den Server damit
+ * auf sich selbst zeigen lassen.
+ */
+function ipv6Gruppen(ip: string): number[] | null {
+  let k = ip.toLowerCase().split("%")[0]; // Zonen-Index abschneiden
+
+  // Eingebettete IPv4-Notation (::ffff:127.0.0.1) in zwei Gruppen umrechnen.
+  const v4 = k.match(/(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    const [a, b, c, d] = v4.slice(1).map(Number);
+    if ([a, b, c, d].some((n) => n > 255)) return null;
+    k = k.slice(0, v4.index) + ((a << 8) | b).toString(16) + ":" + ((c << 8) | d).toString(16);
+  }
+
+  const [links, rechts] = k.split("::") as [string, string | undefined];
+  const l = links ? links.split(":").filter(Boolean) : [];
+  const r = rechts !== undefined ? (rechts ? rechts.split(":").filter(Boolean) : []) : null;
+
+  let teile: string[];
+  if (r === null) {
+    teile = l;
+  } else {
+    const luecke = 8 - l.length - r.length;
+    if (luecke < 0) return null;
+    teile = [...l, ...Array(luecke).fill("0"), ...r];
+  }
+  if (teile.length !== 8) return null;
+
+  const zahlen = teile.map((t) => parseInt(t, 16));
+  return zahlen.some((n) => !Number.isFinite(n) || n < 0 || n > 0xffff) ? null : zahlen;
+}
+
 function istPrivateIpv6(ip: string): boolean {
-  const k = ip.toLowerCase().split("%")[0]; // Zonen-Index abschneiden
-  if (k === "::" || k === "::1") return true;                 // unspezifiziert / Loopback
-  if (k.startsWith("fe8") || k.startsWith("fe9") ||
-      k.startsWith("fea") || k.startsWith("feb")) return true; // Link-local fe80::/10
-  if (k.startsWith("fc") || k.startsWith("fd")) return true;   // Unique local fc00::/7
-  if (k.startsWith("ff")) return true;                         // Multicast
-  // IPv4-mapped/-compatible (::ffff:127.0.0.1) auf die IPv4-Regeln zurückführen.
-  const v4 = k.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
-  if (v4) return istPrivateIpv4(v4[1]);
-  if (k.startsWith("64:ff9b::")) return true; // NAT64
+  const g = ipv6Gruppen(ip);
+  if (!g) return true; // nicht auswertbar → im Zweifel blocken
+
+  const alleNull = g.every((n) => n === 0);
+  if (alleNull) return true;                                   // :: unspezifiziert
+  if (g.slice(0, 7).every((n) => n === 0) && g[7] === 1) return true; // ::1 Loopback
+
+  const [h] = g;
+  if ((h & 0xffc0) === 0xfe80) return true; // Link-local fe80::/10
+  if ((h & 0xffc0) === 0xfec0) return true; // Site-local fec0::/10 (veraltet, aber nicht global)
+  if ((h & 0xfe00) === 0xfc00) return true; // Unique local fc00::/7
+  if ((h & 0xff00) === 0xff00) return true; // Multicast ff00::/8
+  if (h === 0x0064 && g[1] === 0xff9b) return true; // NAT64 64:ff9b::/96
+  if (h === 0x2001 && (g[1] & 0xfffe) === 0x0000) return true; // Teredo/IETF 2001::/23
+
+  // IPv4-mapped/-compatible (::ffff:a.b.c.d bzw. ::a.b.c.d) auf die
+  // IPv4-Regeln zurückführen — sonst käme ::ffff:169.254.169.254 durch.
+  const eingebettet =
+    g.slice(0, 5).every((n) => n === 0) && (g[5] === 0xffff || g[5] === 0);
+  if (eingebettet) {
+    const a = (g[6] >> 8) & 0xff, b = g[6] & 0xff, c = (g[7] >> 8) & 0xff, d = g[7] & 0xff;
+    return istPrivateIpv4(`${a}.${b}.${c}.${d}`);
+  }
   return false;
 }
 

@@ -45,12 +45,20 @@ export async function deleteAccount(): Promise<LoeschErgebnis | void> {
   if (laufend) {
     const gekuendigt = paddleKonfiguriert() && (await kuendigeSubscription(sub!.provider_subscription_id!));
     if (!gekuendigt) {
+      // Rollengerecht: Mieter- und Service-Konten kommen gar nicht auf
+      // /einstellungen (das Layout leitet sie um) — ein Verweis dorthin waere
+      // eine Anweisung, die sie nicht ausfuehren koennen.
+      const { data: rolleRow } = await supabase
+        .from("nutzer_rollen").select("rolle").eq("user_id", user.id).maybeSingle();
+      const nurPortal = rolleRow?.rolle === "mieter" || rolleRow?.rolle === "service";
       return {
         ok: false,
-        fehler:
-          "Dein laufendes Abo konnte nicht automatisch gekündigt werden. " +
-          "Bitte kündige es zuerst unter Einstellungen → Abo (Zahlung & Kündigung verwalten) " +
-          "oder melde dich beim Support — danach kannst du das Konto löschen.",
+        fehler: nurPortal
+          ? "Dein laufendes Abo konnte nicht automatisch gekündigt werden. " +
+            "Bitte melde dich bei kontakt@myimmoapp.de — wir kündigen es und löschen dein Konto."
+          : "Dein laufendes Abo konnte nicht automatisch gekündigt werden. " +
+            "Bitte kündige es zuerst unter Einstellungen → Abo (Zahlung & Kündigung verwalten) " +
+            "oder melde dich beim Support — danach kannst du das Konto löschen.",
       };
     }
   }

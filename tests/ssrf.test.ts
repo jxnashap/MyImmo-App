@@ -103,3 +103,38 @@ describe("pruefeZielUrl", () => {
     expect(await fehlerBei("http://kein.host.invalid/")).toBeInstanceOf(ZielNichtErlaubtFehler);
   });
 });
+
+describe("istPrivateIp — IPv6 in allen Schreibweisen (Regression)", () => {
+  // Die erste Fassung verglich nur String-Präfixe. Dieselbe Adresse hat in
+  // IPv6 aber mehrere gültige Schreibweisen: "::1" wurde geblockt,
+  // "0:0:0:0:0:0:0:1" kam durch — und damit der eigene Server.
+  it.each([
+    ["0:0:0:0:0:0:0:1", "Loopback ausgeschrieben"],
+    ["0::1", "Loopback teilkomprimiert"],
+    ["0000:0000:0000:0000:0000:0000:0000:0001", "Loopback voll ausgeschrieben"],
+    ["0:0:0:0:0:0:0:0", "unspezifiziert ausgeschrieben"],
+    ["fe80:0:0:0:0:0:0:1", "Link-local ausgeschrieben"],
+    ["fec0::1", "site-local (fe80::/10-Bereich)"],
+    ["fd12:3456:789a:1::1", "Unique local"],
+    ["ff02:0:0:0:0:0:0:1", "Multicast ausgeschrieben"],
+    ["0:0:0:0:0:ffff:127.0.0.1", "IPv4-mapped Loopback ausgeschrieben"],
+    ["::ffff:10.0.0.1", "IPv4-mapped privat"],
+    ["::127.0.0.1", "IPv4-compatible Loopback"],
+    ["64:ff9b::7f00:1", "NAT64"],
+  ])("blockt %s (%s)", (ip) => {
+    expect(istPrivateIp(ip)).toBe(true);
+  });
+
+  it.each([
+    ["2606:4700:4700:0:0:0:0:1111", "Cloudflare ausgeschrieben"],
+    ["2a00:1450:4001:80f::200e", "Google"],
+    ["::ffff:8.8.8.8", "IPv4-mapped öffentlich"],
+  ])("lässt %s durch (%s)", (ip) => {
+    expect(istPrivateIp(ip)).toBe(false);
+  });
+
+  it("kaputte IPv6-Literale werden geblockt", () => {
+    expect(istPrivateIp("1:2:3:4:5:6:7:8:9")).toBe(true);
+    expect(istPrivateIp("::1::2")).toBe(true);
+  });
+});

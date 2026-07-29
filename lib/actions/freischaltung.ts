@@ -48,7 +48,11 @@ export async function schalteKontoFrei(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, fehler: "Nicht angemeldet." };
 
-  const code = String(formData.get("code") ?? "").trim();
+  // Grossschreibung wie im Registrierungspfad (app/login/page.tsx): Codes sind
+  // immer Grossbuchstaben, die RPC vergleicht exakt. Ohne diese Normalisierung
+  // scheiterte ein auf dem Handy getipptes "mi-abcd-2345" — genau bei der
+  // Gruppe, fuer die das nachtraegliche Einloesen gebaut wurde.
+  const code = String(formData.get("code") ?? "").trim().toUpperCase();
   const consent = formData.get("consent") === "on" || formData.get("consent") === "true";
   if (!consent) return { ok: false, fehler: "Bitte AGB und Datenschutz zustimmen." };
 
