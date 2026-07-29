@@ -53,7 +53,7 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
 - **Banking-Add-on:** eigener Preis je Zyklus, unabhängig vom Tarif (laufende Enable-Banking-Kosten).
 
 ## Aktivierungs-Checkliste (in dieser Reihenfolge)
-1. **Vercel Pro** buchen — Hobby verbietet kommerzielle Nutzung (+ aktiviert den Vercel-DPA).
+1. ~~**Vercel Pro** buchen~~ ✅ **29.07.2026 erledigt** — kommerzielle Nutzung erlaubt, Vercel-DPA aktiv.
 2. **AGB + Widerrufsbelehrung anwaltlich freigeben** (Fernabsatz, digitale Leistung,
    Erlöschen des Widerrufs bei sofortiger Bereitstellung) — Geld annehmen erst danach.
 3. **Paddle-Konto** anlegen (paddle.com, Verifizierung des Gewerbes dauert einige Tage).

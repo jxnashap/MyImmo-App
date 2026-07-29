@@ -36,11 +36,6 @@
 - **App-Icon für den iOS App Store:** Das schwarze Kachel-Logo `public/myimmo_logo_2048.png`
   (2048×2048, goldenes Haus + Wortmarke) beim App-Store-Launch als App-Icon einspielen. Ist NICHT
   die Dokument-Wortmarke (die bleibt für PDFs/Briefe) — das PNG ist nur das App-/Store-Icon.
-- **Leaked Password Protection (Supabase)** aktivieren — Abgleich neuer/geänderter Passwörter gegen
-  HaveIBeenPwned. **Nur im Supabase Pro-Plan** (~25 $/Monat); auf Free existiert der Toggle nicht.
-  Nach Upgrade: Authentication → Sign In / Providers → Email → „Password Security". Kostenloser
-  Teilersatz jetzt: Mindest-Passwortlänge/-anforderungen in denselben Email-Einstellungen erhöhen.
-  (DB-Härtung sonst erledigt: FKs, RLS-Performance, Indizes, doppelte Policy entfernt.)
 
 ### Open Banking / Konto-Anbindung (geplant — Sandbox-first)
 Entscheidungen aus der Planung (12.07.2026):
@@ -72,6 +67,14 @@ Entscheidungen aus der Planung (12.07.2026):
   Repo/Logs). Redirect-URL bei der App-Registrierung: `<base>/api/banking/callback`.
 
 ### Sonstiges (kein Geld)
+- **Supabase-Pro-Schalter, die noch NICHT gesetzt sind** (Stand 29.07.2026, per Advisor geprüft):
+  1. **Leaked Password Protection** — Abgleich gegen HaveIBeenPwned. Dashboard →
+     Authentication → Sign In / Providers → Email → „Password Security". Der Advisor meldet
+     das weiterhin als offen; auf Pro ist der Schalter vorhanden.
+  2. **Mindest-Passwortlänge auf 8** in denselben Einstellungen — die App verlangt seit
+     29.07.2026 durchgängig 8 Zeichen (`lib/passwort.ts`), Supabase steht noch auf 6.
+     Solange das auseinanderläuft, greift nur die App-Prüfung.
+  Beides ist ein Klick im Dashboard und über die API/MCP nicht setzbar.
 - **Komplette Design- & Layout-Überarbeitung der App (VORHABEN, vor dem Marketing-Start):**
   Gewählte Richtung: **Fintech-hell (Stripe/N26 + etwas Apple)** mit **echter Neu-Anordnung**
   der Layouts (nicht nur Umfärben). Gold `#D4A847` bleibt das Markenzeichen, Fraunces+Outfit
@@ -91,8 +94,7 @@ Entscheidungen aus der Planung (12.07.2026):
   + Signup-Trigger `handle_new_user_rolle` lassen sich um Abo-Codes erweitern.
 - **AVV-Verträge (Art. 28 DSGVO)** — Recherche 15.07.2026 (Details: `docs/MASTERPLAN.md` + AVV-Dossier-PDF):
   Supabase = Dashboard→Org→Documents (PandaDoc, kostenlos, auch Free-Plan); Vercel = automatisch
-  in ToS, **gilt aber nur ab Pro-Plan (20 $/M)** → Upgrade nötig (Hobby verbietet zudem
-  kommerzielle Nutzung); Anthropic = automatisch mit Commercial Terms wirksam (kein Training auf
+  in ToS ab Pro-Plan → ✅ **erledigt (29.07.2026: Konto ist auf Pro)**; Anthropic = automatisch mit Commercial Terms wirksam (kein Training auf
   API-Daten, Kopie archivieren); Google = **kein AVV nötig** (OAuth-Login → eigenständig
   Verantwortlicher, nur Datenschutzerklärungs-Passus). **Größte Lücke: MyImmo muss den eigenen
   Nutzern einen AVV anbieten** (Vermieter = Verantwortliche für Mieterdaten) — /avv-Seite, AGB-
@@ -113,7 +115,8 @@ Entscheidungen aus der Planung (12.07.2026):
   15.07.2026: **Anthropic-DPA archiviert** (`docs/compliance/anthropic-dpa-archiv.md`) + DPF
   geprüft → Anthropic nutzt **SCCs, kein DPF** (Transfer in Datenschutzerklärung als SCC ausweisen).
   ✅ 24.07.2026: **Supabase-DPA signiert** (PandaDoc; PDF + TIA in `docs/compliance/`).
-  Noch offen (nur Betreiber): Vercel Pro, Nutzer-AVV anwaltlich prüfen. Anwaltsliste zusätzlich (19.07.2026):
+  ✅ 29.07.2026: **Vercel auf Pro** → AVV greift automatisch über die ToS, kommerzielle
+  Nutzung erlaubt. Noch offen (nur Betreiber): Nutzer-AVV anwaltlich prüfen. Anwaltsliste zusätzlich (19.07.2026):
   **§ 34i GewO** (Finanzierungs-Assistent Stufe 1 — Wording bereits neutralisiert, „Empfehlung"
   entfernt) und **StBerG § 1–5** (Anlage-V-Berechnung + § 82b-Optimierer + DATEV-Export —
   Grenze zur unerlaubten Steuerberatung schriftlich freigeben lassen).
@@ -123,8 +126,7 @@ Entscheidungen aus der Planung (12.07.2026):
   Seiten anwaltlich prüfen lassen. Hinweis: Die angemeldete Tätigkeit (SaaS/digitale
   Dienstleistungen) deckt KEINE Darlehensvermittlung — passt zur § 34i-freien Ausrichtung des
   Finanzierungs-Assistenten (nur rechnen/informieren).
-  ⚠️ Mit Gewerbe + Live-Betrieb wird der Vercel-Hobby-Plan zum Problem (kommerzielle Nutzung
-  untersagt) → Pro-Upgrade einplanen (siehe „Kostet Geld").
+  ✅ Vercel-Plan geklärt (29.07.2026): **Pro** — kommerzielle Nutzung erlaubt, AVV über die ToS.
 - ~~**Optional (Härtung):** Spalten-Verschlüsselung für IBAN/Bankdaten.~~ ✅ Erledigt:
   App-Layer-Verschlüsselung (AES-256-GCM) für `ibans.iban`/`ibans.inhaber`, Schlüssel als
   Vercel-Env `DATA_ENCRYPTION_KEY` (NICHT in der DB → echter Schutz gegen DB-Leak/Insider).
