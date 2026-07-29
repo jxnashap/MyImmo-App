@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { Wrench, Lock, Phone, Mail, CalendarDays, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import OeffentlicheFusszeile from "@/components/OeffentlicheFusszeile";
+import AuftragRueckmeldung from "@/components/AuftragRueckmeldung";
 
 export const dynamic = "force-dynamic";
 
@@ -113,6 +114,10 @@ export default async function AuftragPublicSeite({ params }: { params: { token: 
           </div>
         </div>
       )}
+      {/* Rueckkanal: ohne ihn ist die Seite eine Einbahnstrasse — die Firma
+          liest den Auftrag, der Vermieter erfaehrt nie, ob jemand kommt. */}
+      <AuftragRueckmeldung token={params.token} />
+
       <OeffentlicheFusszeile
         verantwortlicher={info.vermieter}
         kontakt={null}

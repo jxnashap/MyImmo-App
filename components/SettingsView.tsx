@@ -22,6 +22,7 @@ import { deleteAccount } from "@/lib/actions/account";
 import { starteCheckout, oeffneAboPortal } from "@/lib/actions/billing";
 import { isValidIban, normalizeIban } from "@/lib/iban";
 import { PREISE_SICHTBAR } from "@/lib/preise";
+import { wechslePasswort } from "@/lib/passwortWechsel";
 import type { VermieterProfil, Iban } from "@/lib/types";
 
 // Anzeige-Daten des Abos (Server lädt, Client zeigt nur an).
@@ -398,6 +399,7 @@ function SicherheitPanel({ email, provider }: { email?: string | null; provider?
   const toast = useToast();
   const ref = useReveal(null);
   const istGoogle = !!provider && provider !== "email";
+  const [pw0, setPw0] = useState("");
   const [pw1, setPw1] = useState("");
   const [pw2, setPw2] = useState("");
   const [saving, setSaving] = useState(false);
@@ -406,13 +408,16 @@ function SicherheitPanel({ email, provider }: { email?: string | null; provider?
   async function aendern(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    if (pw1.length < 6) return setErr("Das neue Passwort muss mindestens 6 Zeichen haben.");
-    if (pw1 !== pw2) return setErr("Die Passwörter stimmen nicht überein.");
     setSaving(true);
-    const { error } = await supabase.auth.updateUser({ password: pw1 });
+    // Hier stand noch die alte 6-Zeichen-Regel, waehrend der Rest der App
+    // laengst 8 verlangt — und das aktuelle Passwort wurde gar nicht abgefragt.
+    // Beides liegt jetzt in lib/passwortWechsel.ts.
+    const erg = await wechslePasswort(supabase, {
+      email: email ?? "", aktuell: pw0, neu: pw1, wiederholung: pw2, istGoogle,
+    });
     setSaving(false);
-    if (error) return setErr(error.message);
-    setPw1(""); setPw2("");
+    if (!erg.ok) return setErr(erg.fehler);
+    setPw0(""); setPw1(""); setPw2("");
     toast("Passwort geändert ✓");
   }
 
@@ -425,6 +430,15 @@ function SicherheitPanel({ email, provider }: { email?: string | null; provider?
           {istGoogle && " Du meldest dich aktuell mit Google an – hier kannst du zusätzlich ein Passwort setzen, um dich auch per E-Mail anzumelden."}
         </p>
         <form onSubmit={aendern} className="set-grid">
+          {!istGoogle && (
+            <label className="set-field span2">
+              <span>Aktuelles Passwort</span>
+              <input className="set-input" type="password" value={pw0} autoComplete="current-password" onChange={(e) => { setPw0(e.target.value); err && setErr(null); }} />
+              <span style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 4 }}>
+                Zur Bestätigung — damit niemand über eine offene Sitzung dein Passwort ändern kann.
+              </span>
+            </label>
+          )}
           <label className="set-field">
             <span>Neues Passwort</span>
             <input className="set-input" type="password" value={pw1} autoComplete="new-password" onChange={(e) => { setPw1(e.target.value); err && setErr(null); }} />

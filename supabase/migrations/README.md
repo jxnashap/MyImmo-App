@@ -121,3 +121,5 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260729150000 | kontoloeschung_schont_fremddaten | Kontolöschung vernichtet keine Aufträge/Anliegen des Vermieters mehr |
 | 20260729180000 | auftrag_link_ablauf | Öffentlicher Auftrags-Link (Mieter-Kontakt) läuft nach 90 Tagen ab |
 | 20260729200000 | zugriffsbremse_und_trigger_sperren | Zugriffsbremse je IP für Code-Prüfungen; Trigger-Funktionen aus der API genommen |
+| 20260729210000 | fristen_ausblenden | Abgeleitete Fristen ausblendbar — vorher unschließbare Altlasten |
+| 20260729210500 | auftrag_firmen_rueckmeldung | Rückkanal für Handwerksfirmen auf der öffentlichen Auftragsseite |

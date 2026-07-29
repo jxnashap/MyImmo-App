@@ -5,7 +5,7 @@ import Link from "next/link";
 import { KeyRound, Download, Trash2, Check, X, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { deleteAccount } from "@/lib/actions/account";
-import { pruefePasswort } from "@/lib/passwort";
+import { wechslePasswort } from "@/lib/passwortWechsel";
 
 // Konto-Verwaltung für MIETER- und SERVICE-Konten.
 //
@@ -16,9 +16,13 @@ import { pruefePasswort } from "@/lib/passwort";
 // auch nicht für ihn tun. Die DSGVO-Rechte aus Art. 15, 17 und 20 waren für
 // diese Nutzergruppe schlicht nicht ausübbar.
 
-export default function KontoVerwaltung({ email, rolle }: { email: string; rolle: "mieter" | "service" }) {
+export default function KontoVerwaltung({
+  email, rolle, provider,
+}: { email: string; rolle: "mieter" | "service"; provider?: string | null }) {
   const supabase = createClient();
 
+  const istGoogle = !!provider && provider !== "email";
+  const [pw0, setPw0] = useState("");
   const [pw1, setPw1] = useState("");
   const [pw2, setPw2] = useState("");
   const [pwStatus, setPwStatus] = useState<{ art: "ok" | "fehler"; text: string } | null>(null);
@@ -39,23 +43,19 @@ export default function KontoVerwaltung({ email, rolle }: { email: string; rolle
   async function passwortAendern(e: React.FormEvent) {
     e.preventDefault();
     setPwStatus(null);
-    // Dieselbe Regel wie bei der Registrierung (lib/passwort.ts).
-    const pwFehler = pruefePasswort(pw1);
-    if (pwFehler) {
-      setPwStatus({ art: "fehler", text: pwFehler });
-      return;
-    }
-    if (pw1 !== pw2) {
-      setPwStatus({ art: "fehler", text: "Die beiden Passwörter stimmen nicht überein." });
-      return;
-    }
     setPwLaeuft(true);
-    const { error } = await supabase.auth.updateUser({ password: pw1 });
+    // Regeln, Bestaetigung des aktuellen Passworts und die Aenderung selbst
+    // liegen in lib/passwortWechsel.ts — dieselbe Logik wie in den
+    // Vermieter-Einstellungen.
+    const erg = await wechslePasswort(supabase, {
+      email, aktuell: pw0, neu: pw1, wiederholung: pw2, istGoogle,
+    });
     setPwLaeuft(false);
-    if (error) {
-      setPwStatus({ art: "fehler", text: "Passwort konnte nicht geändert werden. Bitte erneut versuchen." });
+    if (!erg.ok) {
+      setPwStatus({ art: "fehler", text: erg.fehler });
       return;
     }
+    setPw0("");
     setPw1("");
     setPw2("");
     setPwStatus({ art: "ok", text: "Passwort geändert." });
@@ -85,6 +85,15 @@ export default function KontoVerwaltung({ email, rolle }: { email: string; rolle
         </div>
         <div className="section-body">
           <form onSubmit={passwortAendern} style={{ display: "grid", gap: 12, maxWidth: 380 }}>
+            {!istGoogle && (
+              <label style={{ display: "grid", gap: 5, fontSize: 12.5 }}>
+                <span>Aktuelles Passwort</span>
+                <input type="password" style={feld} value={pw0} onChange={(e) => setPw0(e.target.value)} autoComplete="current-password" />
+                <span style={{ fontSize: 11, color: "var(--muted)" }}>
+                  Zur Bestätigung — damit niemand über eine offene Sitzung dein Passwort ändern kann.
+                </span>
+              </label>
+            )}
             <label style={{ display: "grid", gap: 5, fontSize: 12.5 }}>
               <span>Neues Passwort</span>
               <input type="password" style={feld} value={pw1} onChange={(e) => setPw1(e.target.value)} autoComplete="new-password" />

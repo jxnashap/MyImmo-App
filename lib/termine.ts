@@ -91,3 +91,18 @@ export const PRUEF_KATALOG: PruefVorlage[] = [
 
 // Rückwärtskompatibler Alias (bisheriger Name).
 export const WARTUNGS_VORLAGEN = PRUEF_KATALOG;
+
+/**
+ * Stabiler Schluessel einer ABGELEITETEN Frist (Termine-Seite).
+ *
+ * Abgeleitete Fristen werden aus den Stammdaten gerechnet und haben keine
+ * eigene Zeile in `termine`. Um sie ausblenden zu koennen, brauchen sie eine
+ * Kennung — sie steckt in `frist_ausgeblendet.schluessel`.
+ *
+ * Das Datum ist bewusst Teil des Schluessels: Eine wiederkehrende Frist (etwa
+ * die Nebenkostenabrechnung) soll im FOLGEJAHR wieder auftauchen und nicht
+ * dauerhaft stumm bleiben, nur weil sie einmal ausgeblendet wurde.
+ */
+export function fristSchluessel(quelle: string, datum: string, label: string): string {
+  return `${quelle}|${datum}|${label}`;
+}

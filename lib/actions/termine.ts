@@ -169,3 +169,44 @@ export async function createVorlageTermin(
   revalidatePath("/termine");
   if (prop) revalidatePath(`/properties/${prop}`);
 }
+
+// ---------------------------------------------------------------------------
+// Abgeleitete Fristen aus- und wieder einblenden
+// ---------------------------------------------------------------------------
+// Abgeleitete Fristen (Miete, Kredit, Objekt, Steuer, Banking) werden aus den
+// Stammdaten gerechnet und haben keine Zeile in `termine` — sie liessen sich
+// deshalb weder abhaken noch loeschen. Eine einmal verpasste Frist blieb fuer
+// immer stehen, bis die Liste ueberwiegend aus Altlasten bestand.
+//
+// Ausblenden loescht nichts: Die Frist ergibt sich weiter aus den Stammdaten,
+// sie verschwindet nur aus der Ansicht.
+
+// Der Schluessel wird in lib/termine.ts gebildet (fristSchluessel) — ein
+// "use server"-Modul darf nur async Funktionen exportieren.
+export async function blendeFristAus(schluessel: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase
+    .from("frist_ausgeblendet")
+    .upsert({ user_id: user.id, schluessel }, { onConflict: "user_id,schluessel" });
+  if (error) throw new Error(error.message);
+  revalidatePath("/termine");
+  revalidatePath("/");
+}
+
+export async function zeigeFristWieder(schluessel: string) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase
+    .from("frist_ausgeblendet")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("schluessel", schluessel);
+  if (error) throw new Error(error.message);
+  revalidatePath("/termine");
+  revalidatePath("/");
+}
