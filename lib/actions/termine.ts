@@ -29,7 +29,11 @@ export async function createTermin(formData: FormData) {
 
   const titel = String(formData.get("titel") ?? "").trim();
   const datum = String(formData.get("datum") ?? "");
-  if (!titel || !datum) return;
+  // Kommentarloses `return` war der Grund, warum ein unvollständiges Formular
+  // nichts anlegte UND nichts sagte — der Nutzer klickte ein zweites Mal.
+  if (!titel || !datum) {
+    redirect(flashUrl("/termine", "Bitte Titel und Datum angeben — es wurde nichts angelegt."));
+  }
 
   const { error } = await supabase.from("termine").insert({
     user_id: user.id,
@@ -40,6 +44,17 @@ export async function createTermin(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/termine");
+  // Redirect statt nur revalidate: Damit ist das Formular geleert und der
+  // Nutzer bekommt eine Bestätigung. Vorher blieben die Eingaben stehen, die
+  // Liste war womöglich jahresgefiltert — und der Termin landete doppelt in
+  // der Datenbank, weil man den Knopf erneut drückte.
+  redirect(flashUrl("/termine", `„${titel}" für den ${deDatumKurz(datum)} angelegt.`));
+}
+
+/** "2026-08-01" → "01.08.2026" (nur für Meldungen). */
+function deDatumKurz(iso: string): string {
+  const [j, m, t] = iso.split("-");
+  return t && m && j ? `${t}.${m}.${j}` : iso;
 }
 
 export async function updateTermin(id: string, formData: FormData) {

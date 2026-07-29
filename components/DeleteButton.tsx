@@ -70,8 +70,22 @@ export default function DeleteButton({
     );
   }
 
+  // Zugänglicher Name: Viele Aufrufer übergeben als `label` nur ein Icon
+  // (`<X size={14} />`). Lucide-SVGs sind `aria-hidden`, der Button hatte damit
+  // GAR KEINEN Namen — Screenreader lasen bloß „Schaltfläche", und per Tastatur
+  // war nicht erkennbar, was gelöscht wird. Ist kein `title` gesetzt und das
+  // Label kein Text, dient der (ohnehin beschreibende) Bestätigungstext als
+  // Name, z. B. „Darlehen XY löschen?".
+  const zugaenglicherName = title ?? (typeof label === "string" ? undefined : confirmText);
+
   return (
-    <button type="button" className={className} title={title} onClick={() => setConfirming(true)}>
+    <button
+      type="button"
+      className={className}
+      title={zugaenglicherName}
+      aria-label={zugaenglicherName}
+      onClick={() => setConfirming(true)}
+    >
       {label}
     </button>
   );

@@ -679,6 +679,8 @@ function DangerZone() {
   const [open, setOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const darf = confirmText.trim().toUpperCase() === "LÖSCHEN";
+  // Fehler der Server-Action im Modal zeigen — nicht auf app/error.tsx landen.
+  const [loeschFehler, setLoeschFehler] = useState<string | null>(null);
 
   // ESC schließt das Modal.
   useEffect(() => {
@@ -702,11 +704,23 @@ function DangerZone() {
             <p style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
               Löscht dein Konto und <strong style={{ color: "var(--text)" }}>unwiderruflich</strong> alle Daten – Immobilien, Mieter, Buchungen, Kredite, Dokumente und Einstellungen. Exportiere vorher bei Bedarf deine Daten.
             </p>
-            <form action={deleteAccount}>
+            <form
+              action={async () => {
+                setLoeschFehler(null);
+                const res = await deleteAccount();
+                // Erfolg endet in einem redirect — hier kommt nur ein Fehler an.
+                if (res && res.ok === false) setLoeschFehler(res.fehler);
+              }}
+            >
               <label className="set-field" style={{ marginBottom: 16 }}>
                 <span>Zum Bestätigen <strong>LÖSCHEN</strong> eingeben</span>
                 <input className="set-input" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="LÖSCHEN" autoFocus />
               </label>
+              {loeschFehler && (
+                <p style={{ fontSize: 13, color: "var(--red)", lineHeight: 1.6, marginBottom: 14 }}>
+                  {loeschFehler}
+                </p>
+              )}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>Abbrechen</button>
                 <button type="submit" disabled={!darf} className="btn" style={{ background: "var(--red)", color: "#fff", opacity: darf ? 1 : 0.4, display: "inline-flex", alignItems: "center", gap: 6 }}>

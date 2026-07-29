@@ -22,18 +22,24 @@ export default function TenantForm({
   properties,
   submitLabel,
   propInitial = "",
+  back,
 }: {
   action: (formData: FormData) => void;
   tenant?: Tenant;
   properties: Pick<Property, "id" | "bezeichnung">[];
   submitLabel: string;
   propInitial?: string;
+  /** Wohin nach dem Speichern zurueck (z. B. die Objektseite, von der man kam). */
+  back?: string;
 }) {
   const [mietart, setMietart] = useState((tenant?.mietart as string) || "standard");
   const v = (k: keyof Tenant) => (tenant?.[k] as string | number | null) ?? "";
 
   return (
     <form action={action} className="form-box" style={{ maxWidth: 640 }}>
+      {/* Rueckweg mitgeben, damit der Nutzer nach dem Speichern dort landet, wo
+          er angefangen hat (z. B. auf der Objektseite) — nicht in der Liste. */}
+      {back && <input type="hidden" name="back" value={back} />}
       <h3>{tenant ? "Mieter bearbeiten" : "Mieter erfassen"}</h3>
       <p>Mietvertrag, Fristen, Kaution und Einheit.</p>
 

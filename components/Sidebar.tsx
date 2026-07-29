@@ -75,14 +75,16 @@ export default function Sidebar({
         key={n.href}
         href={n.href}
         className={`nav-item${isActive(n.href) ? " active" : ""}`}
-        title={anzahl > 0 ? `${n.label} — ${anzahl} neu` : n.label}
+        // "neu" war falsch: Gezaehlt werden OFFENE Vorgaenge und im laufenden
+        // Monat unbestaetigte Mieten — die heissen auch nach Wochen noch so.
+        title={anzahl > 0 ? `${n.label} — ${anzahl} offen` : n.label}
       >
         <span className="icon" style={n.paragraph ? { color: "var(--gold)", fontWeight: 700 } : { display: "inline-flex", alignItems: "center" }}>
           {n.paragraph || !n.icon ? "§" : <n.icon size={15} />}
         </span>
         <span className="nav-label">{n.label}</span>
         {anzahl > 0 && (
-          <span className="nav-badge" aria-label={`${anzahl} neu`}>{anzahl > 99 ? "99+" : anzahl}</span>
+          <span className="nav-badge" aria-label={`${anzahl} offen`}>{anzahl > 99 ? "99+" : anzahl}</span>
         )}
       </Link>
     );

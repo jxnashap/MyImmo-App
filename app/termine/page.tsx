@@ -109,16 +109,29 @@ export default async function TerminePage({
   if (filterK) sichtbar = sichtbar.filter((e) => e.kategorie === filterK);
 
   const aktuellesJahr = new Date().getFullYear();
-  const jahr = searchParams.jahr ?? String(aktuellesJahr);
+  const jahr = searchParams.jahr ?? "rollierend";
   const jahre = Array.from(
     new Set([...eintraege.map((e) => new Date(e.datum).getFullYear()), aktuellesJahr])
   ).sort((a, b) => b - a);
-  if (jahr !== "alle") sichtbar = sichtbar.filter((e) => new Date(e.datum).getFullYear() === Number(jahr));
+  // Zeitraum-Filter. Standard ist NICHT mehr das Kalenderjahr: Im Dezember
+  // waren die Januar-Fristen damit unsichtbar, obwohl die KPI-Kachel „In 30
+  // Tagen" sie mitzählte. Rollierend „nächste 12 Monate" plus alles
+  // Überfällige — das entspricht dem, wonach man auf dieser Seite sucht.
+  if (jahr === "rollierend") {
+    const heuteMs = Date.now();
+    const in12M = heuteMs + 365 * 86400000;
+    sichtbar = sichtbar.filter((e) => {
+      const t = new Date(e.datum).getTime();
+      return t <= in12M; // Vergangenes bleibt drin (überfällige Fristen)
+    });
+  } else if (jahr !== "alle") {
+    sichtbar = sichtbar.filter((e) => new Date(e.datum).getFullYear() === Number(jahr));
+  }
 
   const filters: FilterDef[] = [
     { name: "quelle", label: "Quelle", icon: "quelle", variant: "segmented", options: [{ value: "", label: "Alle" }, { value: "auto", label: "Automatisch" }, { value: "eigen", label: "Eigene" }] },
     { name: "kategorie", label: "Kategorie", icon: "kategorie", options: [{ value: "", label: "Alle Kategorien" }, ...TERMIN_KATEGORIEN.map((k) => ({ value: k, label: `${KATEGORIE_STIL[k]?.icon ?? ""} ${k}` })), { value: "Betriebskosten", label: "Betriebskosten" }] },
-    { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
+    { name: "jahr", label: "Zeitraum", icon: "jahr", defaultValue: "rollierend", options: [{ value: "rollierend", label: "Nächste 12 Monate" }, ...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle" }] },
   ];
 
   const heute = new Date();
@@ -370,14 +383,31 @@ export default async function TerminePage({
       ) : (
         <div className="section">
           <div className="section-header">
-            <h3>Anstehende Termine</h3>
+            {/* Hieß „Anstehende Termine", enthielt aber auch Überfälliges
+                („vor 40 Tg."). Überfälliges steht jetzt in einer eigenen
+                Gruppe darüber, der Rest heißt neutral „Termine". */}
+            <h3>Termine</h3>
           </div>
           <div className="section-body">
             {sichtbar.length === 0 ? (
               <div className="empty"><CalendarDays className="empty-icon" size={36} color="var(--faint)" /><p>Keine Termine</p></div>
             ) : (
               <ExpandableList limit={12} label="weitere Termine">
-                {sichtbar.map(zeile)}
+                {(() => {
+                  const ueber = sichtbar.filter((e) => tageBis(e.datum) < 0);
+                  const rest = sichtbar.filter((e) => tageBis(e.datum) >= 0);
+                  if (ueber.length === 0) return rest.map(zeile);
+                  return [
+                    <div key="h-ueber" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--amber)", fontWeight: 600, padding: "4px 0 8px" }}>
+                      Überfällig ({ueber.length})
+                    </div>,
+                    ...ueber.map(zeile),
+                    <div key="h-rest" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--muted)", fontWeight: 600, padding: "16px 0 8px" }}>
+                      Anstehend
+                    </div>,
+                    ...rest.map(zeile),
+                  ];
+                })()}
               </ExpandableList>
             )}
           </div>

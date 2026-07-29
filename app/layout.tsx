@@ -82,8 +82,12 @@ export default async function RootLayout({
   }
   if (rolle === "mieter" || rolle === "service") {
     // Mieter → /portal, Service → /service: jeweils eigene schlanke Shell.
+    // `/konto` ist zusätzlich erlaubt — dort liegen Passwort, Datenexport und
+    // Kontolöschung. Ohne diese Ausnahme hätten Mieter- und Service-Konten
+    // keinerlei Einstellungen und könnten ihre DSGVO-Rechte nicht ausüben.
     const heim = rolle === "mieter" ? "/portal" : "/service";
-    if (!pathname.startsWith(heim) && !istOeffentlicheSeite) redirect(heim);
+    const erlaubt = pathname.startsWith(heim) || pathname.startsWith("/konto") || istOeffentlicheSeite;
+    if (!erlaubt) redirect(heim);
     return (
       <html lang="de" suppressHydrationWarning>
         <head>

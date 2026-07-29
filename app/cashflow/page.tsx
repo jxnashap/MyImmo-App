@@ -151,27 +151,43 @@ export default async function CashflowPage({
 
       {/* Mietkonto des laufenden Monats — offene Eingänge oben, bestätigte
           rutschen in den Ausklapp-Bereich. Volle Ansicht unter /mietkonto. */}
-      {mietkonto.zeilen.length > 0 && (
+      {/* Der Block wird IMMER gerendert, sobald es Mieter gibt. Vorher hing er
+          an `zeilen.length > 0` — und `sollFuerMonat()` liefert ohne Mietbeginn
+          null. Wer einen Mieter ohne Mietbeginn anlegt (das Feld ist optional),
+          sah hier schlicht gar nichts und erfuhr nirgends, warum. */}
+      {(mietkonto.zeilen.length > 0 || tenants.length > 0) && (
         <div className="section mb-20">
           <div className="section-header">
             <div>
               <h3>Mietkonto · {new Date(`${aktuellerMonat}-01T00:00:00`).toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</h3>
               <div className="section-sub">
-                {offeneMieten.length === 0
-                  ? "Alle erwarteten Mieteingänge sind bestätigt"
-                  : `${offeneMieten.length} von ${mietkonto.zeilen.length} Mieteingängen noch offen`}
+                {mietkonto.zeilen.length === 0
+                  ? "Für diesen Monat ist keine Soll-Miete berechenbar"
+                  : offeneMieten.length === 0
+                    ? "Alle erwarteten Mieteingänge sind bestätigt"
+                    : `${offeneMieten.length} von ${mietkonto.zeilen.length} Mieteingängen noch offen`}
               </div>
             </div>
             <Link href="/mietkonto" className="btn btn-ghost btn-sm">Alle Monate &amp; Nacherfassen →</Link>
           </div>
           <div className="section-body">
-            <MietkontoBestaetigung
-              kompakt
-              monat={aktuellerMonat}
-              aktuellerMonat={aktuellerMonat}
-              zeilen={mietkonto.zeilen}
-              nacherfassung={mietkonto.nacherfassung}
-            />
+            {mietkonto.zeilen.length === 0 ? (
+              <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
+                Damit MyImmo die monatliche Soll-Miete kennt, braucht ein Mietverhältnis einen{" "}
+                <strong>Mietbeginn</strong> und eine <strong>Kaltmiete</strong>. Bei mindestens
+                einem deiner Mieter fehlt davon etwas — ergänze es beim jeweiligen{" "}
+                <Link href="/tenants" style={{ color: "var(--gold)" }}>Mieter</Link>, dann erscheinen
+                die Mieteingänge hier automatisch.
+              </p>
+            ) : (
+              <MietkontoBestaetigung
+                kompakt
+                monat={aktuellerMonat}
+                aktuellerMonat={aktuellerMonat}
+                zeilen={mietkonto.zeilen}
+                nacherfassung={mietkonto.nacherfassung}
+              />
+            )}
           </div>
         </div>
       )}

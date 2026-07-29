@@ -66,7 +66,14 @@ export async function createTenant(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/tenants");
-  redirect(flashUrl("/tenants", "Mieter angelegt."));
+  // Zurueck dorthin, wo der Nutzer angefangen hat. `/tenants/new` nimmt ein
+  // `?back=` entgegen und zeigt es im Zurueck-Knopf an — ausgewertet wurde es
+  // bisher nicht, weshalb man nach "+ Mieter" auf der Objektseite in der
+  // Mieterliste landete und sein Objekt neu suchen musste.
+  const zurueck = String(formData.get("back") ?? "").trim();
+  const ziel = zurueck.startsWith("/") ? zurueck : "/tenants";
+  revalidatePath(ziel);
+  redirect(flashUrl(ziel, "Mieter angelegt."));
 }
 
 export async function updateTenant(id: string, formData: FormData) {

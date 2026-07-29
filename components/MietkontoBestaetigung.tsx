@@ -93,6 +93,11 @@ export default function MietkontoBestaetigung({
   const [datum, setDatum] = useState<Record<string, string>>({});
   const [betrag, setBetrag] = useState<Record<string, string>>({});
   const [frisch, setFrisch] = useState<Set<string>>(new Set());
+  // Gerade bestaetigt: Die Zeile bleibt kurz mit Haken stehen, bevor sie in
+  // den Ausklapp-Bereich rutscht. Vorher wurde sie sofort herausgefiltert —
+  // die Erfolgsanimation war damit toter Code und der Nutzer sah nur, wie die
+  // Karte verschwand, ohne zu wissen, ob gebucht wurde oder etwas abstuerzte.
+  const [ebenGebucht, setEbenGebucht] = useState<Set<string>>(new Set());
   const [laufend, setLaufend] = useState<string | null>(null);
 
   const bestaetigt = useMemo(
@@ -124,8 +129,18 @@ export default function MietkontoBestaetigung({
       });
       setLaufend(null);
       if (res.ok) {
-        setFrisch((s) => new Set(s).add(z.mieterId));
+        setEbenGebucht((s) => new Set(s).add(z.mieterId));
+        toast(`Eingang gebucht: ${z.name} · ${eur2(b)}`, "success");
         router.refresh();
+        // Nach kurzer Bestaetigung in den Ausklapp-Bereich verschieben.
+        window.setTimeout(() => {
+          setFrisch((s) => new Set(s).add(z.mieterId));
+          setEbenGebucht((s) => {
+            const n = new Set(s);
+            n.delete(z.mieterId);
+            return n;
+          });
+        }, 2200);
       } else {
         toast(res.error ?? "Buchen fehlgeschlagen.");
         // Schon gebucht: Liste auffrischen, damit die Zeile verschwindet.
@@ -293,8 +308,8 @@ export default function MietkontoBestaetigung({
           {/* Offene Eingänge oben — bestätigte rutschen nach unten in den
               Ausklapp-Bereich, damit die Arbeitsliste kurz bleibt. */}
           {zeilen.filter((z) => !(z.schonGebucht || frisch.has(z.mieterId))).map((z) => {
-            const ok = false;
-            const istFrisch = frisch.has(z.mieterId);
+            const ok = ebenGebucht.has(z.mieterId);
+            const istFrisch = ok;
             return (
               <div
                 key={z.mieterId}

@@ -1040,6 +1040,15 @@ select:focus-visible, textarea:focus-visible {
 /* ============================================================
    MIETERPORTAL: Glass-Toolbar (oben mittig, Bereichs-Umschalter)
    ============================================================ */
+/* Kachel-Raster, das von selbst umbricht — für Kennzahlen-Reihen wie
+   Kaltmiete / NK / Warmmiete. Passt sich der Breite an, statt eine feste
+   Spaltenzahl zu erzwingen. */
+.grid-kacheln {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
 .portal-toolbar { position: sticky; top: 12px; z-index: 40; display: flex; justify-content: center; margin: 16px 0 22px; pointer-events: none; }
 .glass-bar {
   pointer-events: auto;
@@ -1059,6 +1068,28 @@ select:focus-visible, textarea:focus-visible {
 }
 .glass-item:hover { color: var(--text); background: color-mix(in srgb, var(--bg4) 70%, transparent); }
 .glass-item.active { background: var(--gold); color: #1a1a17; font-weight: 600; }
+
+/* Mobil: Die Leiste ist mit fünf Reitern (Wohnung · Anliegen · Zahlungen ·
+   Dokumente · Zähler) deutlich breiter als ein Telefon-Viewport. Als zentriertes
+   inline-flex OHNE Überlauf lief sie nach beiden Seiten aus dem Bild — die
+   äußeren Reiter waren schlicht nicht erreichbar, und scrollen ging auch nicht.
+   Ausgerechnet für Mieter, die die App fast nur mobil öffnen.
+   Deshalb: horizontal scrollbar, linksbündig, mit Snap-Punkten. */
+@media (max-width: 860px) {
+  /* Der Wrapper zentriert sonst weiter und schneidet beidseitig ab. */
+  .portal-toolbar { justify-content: stretch; padding: 0 14px; }
+  .glass-bar {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .glass-bar::-webkit-scrollbar { display: none; }
+  .glass-item { flex: 0 0 auto; scroll-snap-align: center; }
+}
 
 /* ================= Landing v2: Mehrseiten-Navigation, Reveal, Tilt, 3D-Hero ================= */
 .lp-nav-links .lp-nav-aktiv { color: var(--gold); font-weight: 600; }

@@ -5,6 +5,7 @@
 import type { Metadata } from "next";
 import { Wrench, Lock, Phone, Mail, CalendarDays, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import OeffentlicheFusszeile from "@/components/OeffentlicheFusszeile";
 
 export const dynamic = "force-dynamic";
 
@@ -110,6 +111,11 @@ export default async function AuftragPublicSeite({ params }: { params: { token: 
           </div>
         </div>
       )}
+      <OeffentlicheFusszeile
+        verantwortlicher={info.vermieter}
+        kontakt={null}
+        zweck="Die hier gezeigten Objekt- und Kontaktdaten dienen ausschliesslich der Abwicklung dieses Auftrags."
+      />
     </div>
   );
 }

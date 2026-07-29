@@ -1,5 +1,6 @@
 // Service-Portal (Rolle "service"): schlanke Shell wie das Mieterportal —
 // erhaltene Aufträge der verknüpften Vermieter abarbeiten.
+import Link from "next/link";
 import { Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -49,6 +50,9 @@ export default async function ServicePortalPage() {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <ThemeToggle variant="icon" />
+          <Link href="/konto" className="btn btn-ghost" style={{ fontSize: 12 }} title="Passwort, Datenexport, Konto löschen">
+            Konto
+          </Link>
           <form action="/auth/signout" method="post">
             <button type="submit" className="btn btn-ghost" style={{ fontSize: 12 }}>Abmelden</button>
           </form>
