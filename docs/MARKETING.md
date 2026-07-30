@@ -172,7 +172,7 @@ Bestand: **5 Artikel** in `lib/ratgeber.ts`. Neu: **12**. Reihenfolge = Priorit�
 | — | § 35a EStG für Mieter | K2 | Problem | ✅ vorhanden |
 | — | Die 15-%-Falle | K2 | Problem | ✅ vorhanden |
 | — | Geerbte Immobilie vermieten | K3 | Einstieg | ✅ vorhanden |
-| 1 | Nebenkostenabrechnung erstellen — Schritt für Schritt | K1 | **Lösung** | offen |
+| 1 | Nebenkostenabrechnung erstellen — Schritt für Schritt | K1 | **Lösung** | ✅ 30.07.2026 |
 | 2 | Umlageschlüssel: Fläche, Personen, Verbrauch — was wann gilt | K1 | Problem | offen |
 | 3 | Heizkostenabrechnung: die 50–70-%-Regel der HeizkostenV | K1 | Problem | offen |
 | 4 | Belegeinsicht: was Mieter verlangen dürfen | K1 | Problem | offen |
