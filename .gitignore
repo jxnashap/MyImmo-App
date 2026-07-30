@@ -18,3 +18,6 @@ npm-debug.log*
 # next typings
 /next-env.d.ts
 tsconfig.tsbuildinfo
+
+# erzeugte Marketing-Screenshots (scripts/screenshots.mjs) — jederzeit neu baubar
+/docs/marketing/screenshots/
