@@ -557,7 +557,7 @@ tr.no-hover:hover td { background: transparent; }
 .form-row.single { grid-template-columns: 1fr; }
 .form-group { display: flex; flex-direction: column; gap: 5px; }
 .form-group label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.form-group input, .form-group select, .form-group textarea { padding: 9px 11px; border-radius: var(--r-sm); border: 1px solid var(--line2); font-family: 'Outfit', sans-serif; font-size: 13px; background: var(--bg3); color: var(--text); transition: border-color .15s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease); outline: none; }
+.form-group input, .form-group select, .form-group textarea { padding: 9px 11px; border-radius: var(--r-sm); border: 1px solid var(--line2); font-family: 'Outfit', sans-serif; font-size: 13px; background-color: var(--bg3); color: var(--text); transition: border-color .15s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease); outline: none; }
 /* Vorher nur ein harter 3px-Ring. Jetzt Ring + weiter, sehr schwacher Halo,
    und das Feld hebt sich einen Pixel — es fuehlt sich „aktiv" an statt nur
    umrandet. Der Halo nutzt --gold-glow und folgt damit dem Theme. */
@@ -572,7 +572,7 @@ tr.no-hover:hover td { background: transparent; }
 /* FIELDS (Kalkulator) */
 .field { margin-bottom: 14px; }
 .field label { display: block; font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
-.field input, .field select { width: 100%; background: var(--bg3); border: 1px solid var(--line2); border-radius: var(--r-md); padding: 9px 11px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 13px; outline: none; transition: border-color 0.15s; }
+.field input, .field select { width: 100%; background-color: var(--bg3); border: 1px solid var(--line2); border-radius: var(--r-md); padding: 9px 11px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 13px; outline: none; transition: border-color 0.15s; }
 .field input:focus, .field select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-pale); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .range-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -670,6 +670,38 @@ tr.no-hover:hover td { background: transparent; }
 .staffel > *:nth-child(9)  { animation-delay: 360ms; }
 .staffel > *:nth-child(10) { animation-delay: 405ms; }
 .staffel > *:nth-child(n+11) { animation-delay: 405ms; }
+
+/* =====================================================================
+   Termin-Zeile (app/termine/page.tsx)
+   Lag vorher komplett in Inline-Styles — und die schlagen jede Media-Query.
+   Auf dem Handy summierten sich Punkt, Datum (96px), Restzeit (84px), Badge
+   und Aktion samt Abstaenden auf ~350px; die Textspalte dazwischen (flex:1)
+   wurde auf NULL zusammengedrueckt und der Titel brach BUCHSTABENWEISE um.
+   Deshalb hier in CSS, damit sie unter 640px umbrechen kann.
+   ===================================================================== */
+.termin-zeile {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--line);
+}
+.tz-punkt { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin: 0 5px; }
+.tz-datum { width: 96px; flex-shrink: 0; font-size: 12px; color: var(--muted); }
+.tz-text { flex: 1; min-width: 0; }
+.tz-rest { font-size: 11px; width: 84px; text-align: right; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  /* Zwei Zeilen: oben Punkt + Titel, darunter Datum, Restzeit, Kategorie und
+     die Aktion. Der Titel bekommt damit die volle Breite. */
+  .termin-zeile { flex-wrap: wrap; gap: 6px 10px; padding: 12px 0; }
+  .tz-text { flex: 1 1 100%; order: 1; }
+  /* Der Farbpunkt wandert sonst allein in eine eigene Zeile ueber dem Titel.
+     Er sagt dasselbe wie das Kategorie-Badge darunter (gleiche Farbe, gleiche
+     Bedeutung) — auf dem schmalen Schirm ist er reine Doppelung. */
+  .tz-punkt { display: none; }
+  .tz-datum { width: auto; order: 2; }
+  .tz-rest { width: auto; text-align: left; order: 3; }
+  .termin-zeile > .badge { order: 4; }
+  .termin-zeile > form, .termin-zeile > span:last-child { order: 5; margin-left: auto; }
+}
 
 /* TOASTS */
 .toast-viewport { position: fixed; bottom: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; max-width: min(92vw, 380px); }
@@ -789,9 +821,9 @@ tr.no-hover:hover td { background: transparent; }
 
 .set-field { display: flex; flex-direction: column; gap: 6px; }
 .set-field > span { font-size: 12px; color: var(--muted); }
-.set-input { width: 100%; background: var(--bg3); border: 1px solid var(--line2); border-radius: var(--r-sm); padding: 11px 13px; color: var(--text); font-size: 14px; transition: border-color .15s, box-shadow .15s, background .15s; }
+.set-input { width: 100%; background-color: var(--bg3); border: 1px solid var(--line2); border-radius: var(--r-sm); padding: 11px 13px; color: var(--text); font-size: 14px; transition: border-color .15s, box-shadow .15s, background-color .15s; }
 .set-input::placeholder { color: var(--faint); }
-.set-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); background: var(--bg2); }
+.set-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-dim); background-color: var(--bg2); }
 
 .set-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .set-grid .span2 { grid-column: 1 / -1; }
@@ -899,7 +931,17 @@ tr.no-hover:hover td { background: transparent; }
    Native Selects app-weit modernisieren — eigener Chevron statt OS-Doppel-
    pfeil, dezent im Stil der Filter. Funktioniert mit Formular-Submit.
    ===================================================================== */
-select {
+/* HINWEIS fuer spaeter: Auf <select> niemals die Kurzschreibweise
+   `background:` setzen. Sie setzt background-image/-repeat/-position mit
+   zurueck und loescht damit den Chevron unten. Genau das ist passiert:
+   `.form-group select { background: var(--bg3) }` (hoehere Spezifitaet)
+   liess im Dunkelmodus GAR KEINEN Pfeil uebrig — der native ist per
+   `appearance: none` ja auch weg — und im Hellmodus kam das Bild ueber die
+   Theme-Regel zurueck, aber mit `repeat` und Position 0 0: der Chevron
+   kachelte quer ueber das ganze Feld. Auf Feldern immer `background-color`. */
+select,
+.form-group select,
+.field select {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -911,8 +953,16 @@ select {
   cursor: pointer;
 }
 select::-ms-expand { display: none; }
-[data-theme="light"] select {
+/* Positionsangaben hier bewusst WIEDERHOLT: Setzt eine Regel mit gleicher
+   oder hoeherer Spezifitaet spaeter einen background-Shorthand, kaeme sonst
+   wieder das gekachelte Bild heraus. */
+[data-theme="light"] select,
+[data-theme="light"] .form-group select,
+[data-theme="light"] .field select {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 15px;
 }
 
 /* =====================================================================
