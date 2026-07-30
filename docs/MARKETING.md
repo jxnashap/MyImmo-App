@@ -164,6 +164,7 @@ messbares Ergebnis — und eine ehrliche Aufwandsangabe.
 ## 5. Redaktionsplan — 12 Artikel
 
 Bestand: **5 Artikel** in `lib/ratgeber.ts`. Neu: **12**. Reihenfolge = Priorität.
+Stand 30.07.2026: **12 Artikel live** — K1 (1–4) und K3 (9–11) fertig, K2 und K4 offen.
 
 | # | Arbeitstitel | Kampagne | Suchabsicht | Status |
 |---|---|---|---|---|
@@ -180,9 +181,9 @@ Bestand: **5 Artikel** in `lib/ratgeber.ts`. Neu: **12**. Reihenfolge = Priorit�
 | 6 | AfA richtig ansetzen: 2 %, 2,5 %, 3 % oder degressiv | K2 | Problem | offen |
 | 7 | Erhaltungsaufwand über 5 Jahre verteilen (§ 82b) | K2 | Problem | offen |
 | 8 | Mieterhöhung: Fristen, Kappungsgrenze, Formfehler | K1 | Problem | offen |
-| 9 | Erste Vermietung: die 10 Schritte | K3 | Einstieg | offen |
-| 10 | Mietvertrag prüfen: was Kleinvermieter übersehen | K3 | Einstieg | offen |
-| 11 | Wohnung geerbt: Steuern, Fristen, erste Abrechnung | K3 | Einstieg | offen |
+| 9 | Erste Vermietung: die 10 Schritte | K3 | Einstieg | ✅ 30.07.2026 |
+| 10 | Mietvertrag prüfen: die Klauseln, die Geld kosten | K3 | Einstieg | ✅ 30.07.2026 |
+| 11 | Wohnung geerbt: Steuern, Fristen, erste Abrechnung | K3 | Einstieg | ✅ 30.07.2026 |
 | 12 | Von vermietet.de umziehen — ohne Datenverlust | K4 | **Kauf** | offen |
 
 **Regel für jeden Artikel:** ein klar benanntes Problem, die rechtliche Grundlage mit

@@ -336,6 +336,280 @@ export const RATGEBER: RatgeberArtikel[] = [
     },
   },
   {
+    slug: "erste-vermietung-zehn-schritte",
+    titel: "Erste Vermietung: die 10 Schritte",
+    beschreibung:
+      "Von der Mietpreisfindung bis zum Fristenkalender — was beim ersten Mietverhältnis in welcher Reihenfolge zu tun ist, mit den Pflichten, die man leicht übersieht.",
+    kategorie: "Einstieg",
+    datum: "2026-07-30",
+    lesezeit: 9,
+    intro:
+      "Die erste Vermietung ist keine Frage der Begabung, sondern der Reihenfolge. Wer die zehn Schritte in dieser Abfolge abarbeitet, hat am Ende ein Mietverhältnis, das trägt — und keine Nachfrage vom Ordnungsamt, weil eine Zwei-Wochen-Frist übersehen wurde.",
+    sektionen: [
+      {
+        h: "1. Die Miete bestimmen",
+        p: [
+          "Grundlage ist die ortsübliche Vergleichsmiete: Mietspiegel der Gemeinde, Mietdatenbank oder vergleichbare Wohnungen. Schätzen Sie nicht — die Zahl brauchen Sie später bei jeder Mieterhöhung wieder.",
+          "In Gebieten mit angespanntem Wohnungsmarkt gilt die Mietpreisbremse (§§ 556d ff. BGB): Die Miete darf die ortsübliche Vergleichsmiete um höchstens 10 Prozent übersteigen. Ob Ihr Ort betroffen ist, regelt eine Verordnung des Bundeslandes. Wollen Sie sich auf eine Ausnahme berufen — etwa die höhere Vormiete oder eine umfassende Modernisierung —, müssen Sie den Mieter darüber unaufgefordert vor Vertragsschluss informieren (§ 556g Abs. 1a BGB).",
+        ],
+      },
+      {
+        h: "2. Bewerber auswählen",
+        p: [
+          "Zulässig sind Fragen nach Einkommen, Beruf, Zahl der einziehenden Personen und bestehenden Mietschulden. Unzulässig sind Fragen nach Familienplanung, Religion, Parteizugehörigkeit oder Vorstrafen ohne Bezug zum Mietverhältnis — falsche Antworten darauf berechtigen später auch nicht zur Anfechtung.",
+          "Eine Bonitätsauskunft ist üblich, sollte aber erst in der engeren Auswahl verlangt werden, nicht von jedem Besichtigungsgast. Das ist auch datenschutzrechtlich der saubere Weg: Unterlagen abgelehnter Bewerber vernichten Sie zeitnah.",
+        ],
+      },
+      {
+        h: "3. Den Mietvertrag aufsetzen",
+        p: [
+          "Ein Mietvertrag über mehr als ein Jahr bedarf der Schriftform (§ 550 BGB). Wird sie nicht gewahrt, gilt der Vertrag als auf unbestimmte Zeit geschlossen und ist ordentlich kündbar — ein Fehler, der die ganze Laufzeitplanung kippt.",
+          "Benutzen Sie ein aktuelles Formular. Alte Vorlagen aus dem Internet enthalten regelmäßig Klauseln, die der Bundesgerichtshof längst kassiert hat.",
+        ],
+      },
+      {
+        h: "4. Die Kaution richtig vereinbaren",
+        p: [
+          "Die Kaution beträgt höchstens drei Nettokaltmieten, also ohne Betriebskosten (§ 551 Abs. 1 BGB). Der Mieter darf sie in drei gleichen Monatsraten zahlen; die erste Rate ist zu Beginn des Mietverhältnisses fällig.",
+          "Sie müssen die Kaution getrennt von Ihrem Vermögen anlegen (§ 551 Abs. 3 BGB) — insolvenzfest, verzinst, und die Zinsen stehen dem Mieter zu. Ein eigenes Kautionskonto ist der einfachste Weg, das nachzuweisen.",
+        ],
+      },
+      {
+        h: "5. Betriebskosten ausdrücklich vereinbaren",
+        p: [
+          "Ohne eine wirksame Umlagevereinbarung im Mietvertrag sind sämtliche Betriebskosten mit der Miete abgegolten — Sie können dann nichts abrechnen. Das ist einer der teuersten Anfängerfehler überhaupt.",
+          "Nehmen Sie einen Verweis auf die Betriebskostenverordnung auf und benennen Sie „sonstige Betriebskosten“ einzeln. Ein pauschaler Sammelposten ohne Aufzählung ist unwirksam.",
+        ],
+      },
+      {
+        h: "6. Übergabeprotokoll und Zählerstände",
+        p: [
+          "Das Protokoll ist gesetzlich nicht vorgeschrieben, aber es entscheidet später über die Beweislast. Halten Sie den Zustand jedes Raumes fest, machen Sie Fotos, notieren Sie alle Zählerstände und die Zahl der übergebenen Schlüssel. Beide Seiten unterschreiben.",
+        ],
+      },
+      {
+        h: "7. Wohnungsgeberbestätigung — die Zwei-Wochen-Falle",
+        p: [
+          "Als Vermieter müssen Sie dem Mieter den Einzug schriftlich bestätigen, damit er sich anmelden kann (§ 19 BMG). Die Bestätigung ist innerhalb von zwei Wochen nach dem Einzug auszustellen.",
+          "Wer das versäumt oder gar eine Scheinanmeldung bestätigt, begeht eine Ordnungswidrigkeit. Das ist die Pflicht, die Erstvermieter am häufigsten übersehen — sie steht in keinem Mietvertragsformular.",
+        ],
+      },
+      {
+        h: "8. Versicherungen prüfen",
+        liste: [
+          "Wohngebäudeversicherung — umlagefähig, deckt Feuer, Leitungswasser, Sturm.",
+          "Haus- und Grundbesitzerhaftpflicht — greift, wenn jemand auf Ihrem Grundstück zu Schaden kommt; ebenfalls umlagefähig.",
+          "Optional: Mietausfall- oder Rechtsschutzversicherung — nicht umlagefähig, Kosten tragen Sie selbst.",
+        ],
+      },
+      {
+        h: "9. Die Steuer von Anfang an aufsetzen",
+        p: [
+          "Mieteinnahmen gehören in die Anlage V der Einkommensteuererklärung. Absetzbar sind unter anderem Abschreibung, Schuldzinsen, Grundsteuer, Versicherungen, Verwaltung, Instandhaltung und Fahrtkosten.",
+          "Zwei Dinge sollten Sie im ersten Jahr klären: die Aufteilung des Kaufpreises in Grund und Boden und Gebäude — nur der Gebäudeanteil wird abgeschrieben — und die 15-Prozent-Grenze für anschaffungsnahe Herstellungskosten in den ersten drei Jahren.",
+          "Legen Sie von Beginn an jeden Beleg ab. Was im ersten Jahr nicht erfasst wird, ist am Jahresende praktisch nicht mehr rekonstruierbar.",
+        ],
+      },
+      {
+        h: "10. Den Fristenkalender anlegen",
+        liste: [
+          "Nebenkostenabrechnung: Zugang beim Mieter binnen zwölf Monaten nach Ende des Abrechnungszeitraums (§ 556 Abs. 3 BGB).",
+          "Mieterhöhung auf die ortsübliche Vergleichsmiete: frühestens 15 Monate nach Einzug oder der letzten Erhöhung, mit Zustimmungsfrist.",
+          "Wartungen und Prüfungen: Heizung, Rauchwarnmelder, Schornsteinfeger, Trinkwasser.",
+          "Kautionsrückzahlung nach Auszug — mit angemessener Abrechnungsfrist.",
+        ],
+      },
+      {
+        h: "Rechtsstand und Vorbehalt",
+        p: [
+          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Ob die Mietpreisbremse für Ihren Ort gilt, ergibt sich aus der jeweiligen Landesverordnung.",
+        ],
+      },
+    ],
+    feature: {
+      titel: "Das erste Mietverhältnis in MyImmo",
+      text:
+        "Objekt anlegen, Mieter erfassen, Kaution und Betriebskosten hinterlegen — die Fristen für Abrechnung, Mieterhöhung und Wartung trägt MyImmo danach selbst nach und meldet sich rechtzeitig. Am Jahresende steht die Anlage V fast von allein.",
+      href: "/anmelden",
+      cta: "Kostenlos starten",
+    },
+  },
+  {
+    slug: "mietvertrag-pruefen-klauseln-kleinvermieter",
+    titel: "Mietvertrag prüfen: die Klauseln, die Kleinvermieter Geld kosten",
+    beschreibung:
+      "Schönheitsreparaturen, Kleinreparaturen, Betriebskosten, Schriftform: die Klauseln, die in alten Vorlagen stehen und vor Gericht ersatzlos wegfallen.",
+    kategorie: "Recht",
+    datum: "2026-07-30",
+    lesezeit: 8,
+    intro:
+      "Mietverträge werden selten neu geschrieben. Sie werden kopiert — vom Vormieter, aus dem Internet, aus dem Ordner des Erblassers. Genau deshalb stehen in vielen Verträgen Klauseln, die der Bundesgerichtshof vor Jahren kassiert hat. Das Tückische daran: Der Vertrag sieht vollständig aus, und die Lücke zeigt sich erst, wenn Sie sich auf die Klausel berufen wollen.",
+    sektionen: [
+      {
+        h: "Die Grundregel des AGB-Rechts",
+        p: [
+          "Ein vorformulierter Mietvertrag ist eine Allgemeine Geschäftsbedingung. Ist eine Klausel unwirksam, fällt sie ersatzlos weg — sie wird nicht auf das gerade noch Zulässige zurückgestutzt. Eine zu weit gefasste Klausel ist deshalb schlechter als eine maßvolle.",
+          "Eine salvatorische Klausel („Sollte eine Bestimmung unwirksam sein…“) ändert daran nichts. Sie ist gegenüber Verbrauchern selbst unwirksam.",
+        ],
+      },
+      {
+        h: "Schönheitsreparaturen",
+        p: [
+          "Wurde die Wohnung unrenoviert oder renovierungsbedürftig übergeben, ist die Abwälzung der Schönheitsreparaturen auf den Mieter grundsätzlich unwirksam — es sei denn, der Mieter erhält dafür einen angemessenen Ausgleich. Das ist gefestigte Rechtsprechung seit 2015.",
+          "Ebenfalls unwirksam sind starre Fristenpläne („alle drei Jahre Küche, alle fünf Jahre Wohnräume“), Endrenovierungsklauseln unabhängig vom Zustand und Vorgaben zur Farbwahl während der Mietzeit.",
+          "Zulässig bleiben weiche Fristen, die auf den tatsächlichen Zustand abstellen — und nur bei renoviert übergebener Wohnung.",
+        ],
+      },
+      {
+        h: "Kleinreparaturen",
+        p: [
+          "Eine Kleinreparaturklausel hält nur, wenn sie zwei Grenzen nennt: einen Höchstbetrag je einzelner Reparatur und eine Jahresobergrenze für alle Kleinreparaturen zusammen. Fehlt eine der beiden oder ist sie zu hoch angesetzt, fällt die ganze Klausel weg.",
+          "Die Rechtsprechung akzeptiert je nach Gericht und Zeitpunkt etwa 100 bis 150 € je Reparatur; die Jahresobergrenze liegt üblicherweise bei rund 8 Prozent der Jahresnettokaltmiete. Setzen Sie sich nicht an die Obergrenze — die Ersparnis ist gering, das Risiko trägt der ganze Absatz.",
+          "Erfasst sind nur Teile, die dem häufigen und direkten Zugriff des Mieters unterliegen: Armaturen, Schalter, Verschlüsse, Rollladengurte. Die Reparatur der Heizungsanlage gehört nicht dazu. Und: Der Mieter schuldet nur die Kostenbeteiligung, nicht die Beauftragung des Handwerkers.",
+        ],
+      },
+      {
+        h: "Betriebskosten",
+        p: [
+          "Ohne wirksame Umlagevereinbarung sind alle Betriebskosten mit der Miete abgegolten. Der Vertrag muss die Umlage anordnen und die Kostenarten hinreichend bestimmt bezeichnen — üblicherweise durch Verweis auf die Betriebskostenverordnung.",
+          "Der Auffangposten „sonstige Betriebskosten“ ist nur wirksam, wenn die darunter fallenden Kosten einzeln aufgezählt sind. Ein unbenannter Sammelposten läuft leer; was dort hineingerechnet wird, können Sie nicht abrechnen.",
+        ],
+      },
+      {
+        h: "Weitere Klauseln, die häufig kippen",
+        liste: [
+          "Generelles Tierhaltungsverbot — unwirksam. Zulässig ist ein Zustimmungsvorbehalt für Hunde und Katzen; Kleintiere sind immer erlaubt.",
+          "Kündigungsverzicht über mehr als vier Jahre — unwirksam.",
+          "Befristung ohne qualifizierten Grund (Eigenbedarf, Abriss, Betriebsbedarf) — der Vertrag gilt dann unbefristet (§ 575 BGB).",
+          "Vollständiges Verbot der Untervermietung — der Mieter hat bei berechtigtem Interesse einen Anspruch auf Erlaubnis für einen Teil der Wohnung (§ 553 BGB).",
+          "Kaution über drei Nettokaltmieten oder ohne Ratenrecht — insoweit unwirksam (§ 551 BGB).",
+          "Formularmäßige Verpflichtung zur Endreinigung durch eine Fachfirma — unwirksam.",
+        ],
+      },
+      {
+        h: "Die Schriftform bei Änderungen",
+        p: [
+          "Bei Verträgen mit einer Laufzeit von mehr als einem Jahr gilt die Schriftform (§ 550 BGB) — und sie gilt auch für spätere Änderungen. Eine per E-Mail vereinbarte Mietsenkung oder Flächenänderung kann die Schriftform des Gesamtvertrags zerstören und ihn ordentlich kündbar machen.",
+          "Praktische Konsequenz: Jede wesentliche Änderung als unterschriebenen Nachtrag festhalten, der auf den Ursprungsvertrag Bezug nimmt.",
+        ],
+      },
+      {
+        h: "Was Sie jetzt tun sollten",
+        liste: [
+          "Alle laufenden Verträge einmal durchgehen und die sechs genannten Punkte abhaken.",
+          "Unwirksame Klauseln nicht heimlich streichen — bestehende Verträge lassen sich nicht einseitig ändern. Wissen Sie aber, dass eine Klausel nicht hält, berufen Sie sich nicht darauf und sparen sich den Streit.",
+          "Für neue Vermietungen ein aktuelles Formular verwenden, nicht die Kopie des alten Vertrags.",
+        ],
+      },
+      {
+        h: "Rechtsstand und Vorbehalt",
+        p: [
+          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Die Grenzwerte bei Kleinreparaturen sind Rechtsprechung und keine gesetzlichen Beträge — sie entwickeln sich fort. Bei laufendem Streit ist anwaltlicher Rat der richtige Weg.",
+        ],
+      },
+    ],
+    feature: {
+      titel: "Verträge und Belege an einem Ort",
+      text:
+        "In MyImmo liegt der Mietvertrag beim Mieter, das Übergabeprotokoll beim Objekt und jeder Beleg bei seiner Kostenposition. Wenn eine Klausel zur Diskussion steht, ist das Dokument in Sekunden auf dem Schirm statt im Aktenordner.",
+      href: "/anmelden",
+      cta: "Kostenlos ausprobieren",
+    },
+  },
+  {
+    slug: "wohnung-geerbt-steuern-fristen",
+    titel: "Wohnung geerbt: Steuern, Fristen und die erste Abrechnung",
+    beschreibung:
+      "Sechs Wochen, drei Monate, zwei Jahre: der Fristenkalender nach dem Erbfall — plus Erbschaftsteuer, der 10-%-Abschlag für vermietete Wohnungen und die AfA-Fortführung.",
+    kategorie: "Einstieg",
+    datum: "2026-07-30",
+    lesezeit: 8,
+    intro:
+      "Nach einem Erbfall laufen mehrere Fristen gleichzeitig, und keine davon meldet sich von selbst. Dieser Ratgeber sortiert sie nach Dringlichkeit und erklärt die drei steuerlichen Punkte, die bei einer geerbten Mietwohnung wirklich zählen. Wer die Immobilie behalten und weitervermieten will, findet die praktischen ersten Schritte im Ratgeber „Geerbte Immobilie vermieten“.",
+    sektionen: [
+      {
+        h: "Zuerst: sechs Wochen",
+        p: [
+          "Wollen Sie das Erbe ausschlagen, haben Sie dafür sechs Wochen ab dem Zeitpunkt, zu dem Sie vom Erbfall und Ihrer Berufung als Erbe erfahren haben (§ 1944 BGB). Hatte der Erblasser seinen letzten Wohnsitz im Ausland oder halten Sie sich bei Fristbeginn im Ausland auf, sind es sechs Monate.",
+          "Die Ausschlagung erfolgt zur Niederschrift beim Nachlassgericht oder in notariell beglaubigter Form — eine formlose Erklärung genügt nicht. Verstreicht die Frist, gilt das Erbe als angenommen, samt Schulden.",
+          "Bei einer belasteten Immobilie ist das keine theoretische Frage: Sie erben das Objekt mit dem Darlehen und mit allen laufenden Verpflichtungen aus den Mietverträgen.",
+        ],
+      },
+      {
+        h: "Dann: drei Monate zum Finanzamt",
+        p: [
+          "Jeder Erwerb von Todes wegen ist dem zuständigen Erbschaftsteuerfinanzamt binnen drei Monaten anzuzeigen (§ 30 ErbStG). Eine formlose Mitteilung genügt.",
+          "Die Anzeige entfällt normalerweise, wenn der Erwerb auf einer von einem deutschen Gericht oder Notar eröffneten Verfügung von Todes wegen beruht. Gehört Grundbesitz zum Nachlass, gilt diese Erleichterung nicht — dann müssen Sie in jedem Fall selbst anzeigen. Genau hier verlassen sich viele Erben zu Unrecht auf den Notar.",
+          "Die Steuererklärung selbst verlangt das Finanzamt erst nach Aufforderung, mit einer Frist von mindestens einem Monat.",
+        ],
+      },
+      {
+        h: "Und: zwei Jahre für das Grundbuch",
+        p: [
+          "Die Berichtigung des Grundbuchs ist gebührenfrei, wenn der Antrag innerhalb von zwei Jahren nach dem Erbfall gestellt wird. Danach fallen Gebühren nach dem Wert der Immobilie an — bei einer Eigentumswohnung schnell ein dreistelliger Betrag ohne jeden Gegenwert.",
+          "Als Nachweis dient der Erbschein oder ein notarielles Testament nebst Eröffnungsprotokoll. Liegt Letzteres vor, ist ein Erbschein für die Grundbuchberichtigung meist entbehrlich — das spart die Erbscheinkosten.",
+        ],
+      },
+      {
+        h: "Erbschaftsteuer: Freibeträge und der 10-%-Abschlag",
+        p: [
+          "Die persönlichen Freibeträge richten sich nach dem Verwandtschaftsgrad (§ 16 ErbStG): 500.000 € für Ehegatten und eingetragene Lebenspartner, 400.000 € für Kinder je Elternteil, 200.000 € für Enkel, 20.000 € für Geschwister, Nichten und Neffen. Zusätzlich kann für Ehegatten und Kinder ein Versorgungsfreibetrag greifen.",
+          "Für Grundstücke, die zu Wohnzwecken vermietet sind, gilt ein Bewertungsabschlag von 10 Prozent: Nur 90 Prozent des Steuerwerts werden angesetzt (§ 13d ErbStG). Für vermietete Büro- oder Gewerbeflächen gibt es diesen Abschlag nicht.",
+          "Die weitergehende Befreiung für das Familienheim (§ 13 Abs. 1 Nr. 4b, 4c ErbStG) setzt Selbstnutzung voraus und hilft bei einer vermieteten Wohnung nicht. Wer sie nutzen will, muss selbst einziehen — und zehn Jahre bleiben.",
+          "Grunderwerbsteuer fällt beim Erwerb von Todes wegen nicht an (§ 3 Nr. 2 GrEStG).",
+        ],
+      },
+      {
+        h: "Rechenbeispiel",
+        p: [
+          "Eine Tochter erbt eine vermietete Eigentumswohnung mit einem Steuerwert von 500.000 €.",
+        ],
+        liste: [
+          "Ansatz nach § 13d ErbStG: 90 % von 500.000 € = 450.000 €.",
+          "Abzüglich Freibetrag 400.000 € → steuerpflichtiger Erwerb 50.000 €.",
+          "Steuerklasse I, Satz 7 % → rund 3.500 € Erbschaftsteuer.",
+          "Ohne den 10-%-Abschlag wären 100.000 € steuerpflichtig und der Satz läge in der nächsten Stufe — der Abschlag ist also mehr wert als die 50.000 € Bemessungsgrundlage vermuten lassen.",
+        ],
+      },
+      {
+        h: "Die Abschreibung läuft weiter — nicht neu an",
+        p: [
+          "Der häufigste Irrtum bei geerbten Immobilien: dass der Verkehrswert im Todeszeitpunkt zur neuen Abschreibungsgrundlage wird. Das ist falsch. Bei unentgeltlichem Erwerb führen Sie die Abschreibung des Erblassers fort — mit dessen Bemessungsgrundlage, dessen Satz und dessen Restnutzungsdauer (§ 11d EStDV).",
+          "Praktische Folge: Sie brauchen die alten Unterlagen des Erblassers — Kaufvertrag, Kaufpreisaufteilung, bisherige Abschreibungsbeträge. Ohne sie schätzt das Finanzamt, und selten zu Ihren Gunsten. Beschaffen Sie diese Papiere früh, solange der Nachlass noch beisammen ist.",
+          "Dasselbe Prinzip gilt für die Spekulationsfrist: Beim Verkauf wird Ihnen die Anschaffung durch den Erblasser zugerechnet (§ 23 Abs. 1 Satz 3 EStG). Hat er die Wohnung vor mehr als zehn Jahren gekauft, ist der Verkauf für Sie sofort steuerfrei.",
+        ],
+      },
+      {
+        h: "Die erste Nebenkostenabrechnung",
+        p: [
+          "Als Erbe treten Sie in die laufenden Mietverträge ein — und damit auch in die Pflicht, über einen Abrechnungszeitraum abzurechnen, der zum Teil vor dem Erbfall lag. Die Zwölf-Monats-Frist des § 556 Abs. 3 BGB läuft unabhängig vom Todesfall weiter.",
+          "Das heißt konkret: Sie brauchen die Belege des Erblassers für das gesamte Abrechnungsjahr. Sichern Sie Kontoauszüge, Versorgerrechnungen, den Grundsteuerbescheid und die Ableseprotokolle, bevor eine Wohnung geräumt oder ein Konto aufgelöst wird.",
+          "Informieren Sie die Mieter zeitnah über den Eigentümerwechsel und die neue Bankverbindung. Zahlungen auf ein aufgelöstes Konto erzeugen sonst Rückläufer, die wie Mietrückstände aussehen, aber keine sind.",
+        ],
+      },
+      {
+        h: "Wenn Sie nicht allein erben",
+        p: [
+          "Mehrere Erben bilden eine Erbengemeinschaft. Die Immobilie gehört allen gemeinsam; über Verkauf oder größere Maßnahmen wird gemeinsam entschieden, Maßnahmen der ordnungsgemäßen Verwaltung durch Mehrheitsbeschluss.",
+          "Mieteinnahmen werden nach Erbquote zugerechnet — jeder Miterbe versteuert seinen Anteil selbst. Klären Sie früh, wer das Mietkonto führt, wer die Abrechnung erstellt und wie die Überschüsse verteilt werden. Ungeklärte Zuständigkeit ist der häufigste Grund, warum die erste Abrechnung zu spät kommt.",
+        ],
+      },
+      {
+        h: "Rechtsstand und Vorbehalt",
+        p: [
+          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Erbschaftsteuerliche Bewertung und Freibeträge hängen vom Einzelfall ab; bei größeren Nachlässen oder einer Erbengemeinschaft ist steuerlicher und anwaltlicher Rat sinnvoll.",
+        ],
+      },
+    ],
+    feature: {
+      titel: "Übernommene Objekte sauber weiterführen",
+      text:
+        "MyImmo übernimmt die vorhandene Abschreibung mit Bemessungsgrundlage und Restlaufzeit, statt sie neu zu beginnen, führt das Mietkonto ab dem Erbfall weiter und behält die Zwölf-Monats-Frist für die erste Nebenkostenabrechnung im Blick.",
+      href: "/anmelden",
+      cta: "Kostenlos starten",
+    },
+  },
+  {
     slug: "nebenkostenabrechnung-fristen-fehler",
     titel: "Nebenkostenabrechnung: Fristen und die häufigsten Fehler",
     beschreibung:
