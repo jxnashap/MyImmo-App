@@ -610,6 +610,262 @@ export const RATGEBER: RatgeberArtikel[] = [
     },
   },
   {
+    slug: "anlage-v-ausfuellen-abschnitt-fuer-abschnitt",
+    titel: "Anlage V ausfüllen — Abschnitt für Abschnitt",
+    beschreibung:
+      "Welche der drei Anlagen Sie brauchen, was zu den Einnahmen zählt, welche Werbungskosten abziehbar sind — und die fünf Fehler, die Vermieter jedes Jahr wiederholen.",
+    kategorie: "Steuer",
+    datum: "2026-07-30",
+    lesezeit: 9,
+    intro:
+      "Die Anlage V ist kein kompliziertes Formular, aber ein unübersichtliches. Diese Anleitung geht es Abschnitt für Abschnitt durch. Bewusst ohne Zeilennummern: Die Nummerierung ändert sich fast jedes Jahr, die Struktur bleibt. Wer die Struktur verstanden hat, findet die Zeile in jeder Fassung.",
+    sektionen: [
+      {
+        h: "Zuerst: welche Anlage überhaupt",
+        p: [
+          "Seit dem Veranlagungszeitraum 2023 ist die frühere zweiseitige Anlage V in drei Formulare aufgeteilt. Welches Sie brauchen, entscheidet sich nach der Art der Vermietung.",
+        ],
+        liste: [
+          "Anlage V — der Regelfall: dauerhaft vermietete Wohnung oder vermietetes Haus. Für jedes Objekt eine eigene Anlage V.",
+          "Anlage V-FeWo — Ferienwohnungen und kurzfristige Vermietung, etwa über Portale. Sie kommt zusätzlich zur Anlage V des Objekts.",
+          "Anlage V-Sonstige — Sonderfälle: Untervermietung selbst angemieteter Räume, unbebaute Grundstücke, Beteiligungen an geschlossenen Immobilienfonds, Überlassung von Rechten.",
+        ],
+      },
+      {
+        h: "Abschnitt 1: Angaben zum Grundstück",
+        p: [
+          "Hier stehen Lage, Anschaffungs- oder Fertigstellungsdatum und die Aufteilung der Nutzung. Wichtig ist die Angabe, welcher Teil des Objekts zu fremden Wohnzwecken vermietet, welcher zu eigenen Wohnzwecken genutzt und welcher gewerblich vermietet wird.",
+          "Diese Aufteilung steuert alles Weitere: Nur der vermietete Anteil führt zu Einnahmen und nur auf ihn entfallende Ausgaben sind Werbungskosten. Bei einer teilweise selbst genutzten Doppelhaushälfte wird hier der Schlüssel gesetzt, mit dem später jede Rechnung aufgeteilt wird.",
+        ],
+      },
+      {
+        h: "Abschnitt 2: Einnahmen",
+        p: [
+          "Zu den Einnahmen zählt alles, was Ihnen im Kalenderjahr zugeflossen ist. Maßgeblich ist der tatsächliche Geldeingang, nicht der Zeitraum, für den gezahlt wurde (§ 11 EStG). Eine Ausnahme gilt für regelmäßig wiederkehrende Zahlungen rund um den Jahreswechsel: Sie werden dem Jahr zugeordnet, zu dem sie wirtschaftlich gehören, wenn sie innerhalb von zehn Tagen vor oder nach dem Jahreswechsel fließen.",
+        ],
+        liste: [
+          "Kaltmieten des Jahres.",
+          "Vereinnahmte Nebenkostenvorauszahlungen — sie sind Einnahmen, auch wenn sie durchlaufende Posten zu sein scheinen. Die Ausgaben stehen dann auf der Werbungskostenseite gegenüber.",
+          "Nachzahlungen aus der Nebenkostenabrechnung im Jahr des Zuflusses; erstattete Guthaben mindern die Einnahmen im Jahr der Auszahlung.",
+          "Einnahmen aus Garagen, Stellplätzen, Werbeflächen, Mobilfunkantennen.",
+          "Vereinnahmte Kaution zählt nicht — erst wenn Sie sie mit einer Forderung verrechnen, wird daraus eine Einnahme.",
+        ],
+      },
+      {
+        h: "Abschnitt 3: Werbungskosten",
+        p: [
+          "Werbungskosten sind alle Aufwendungen, die durch die Vermietung veranlasst sind. Die wichtigsten Gruppen im Formular:",
+        ],
+        liste: [
+          "Abschreibung des Gebäudes — der größte Posten, ohne dass Geld fließt.",
+          "Schuldzinsen und Geldbeschaffungskosten. Abziehbar ist nur der Zinsanteil der Rate, nie die Tilgung.",
+          "Erhaltungsaufwand — Reparaturen und Instandhaltung, wahlweise sofort oder verteilt.",
+          "Laufende Betriebskosten: Grundsteuer, Versicherungen, Müll, Wasser, Heizung, Allgemeinstrom, Hausmeister. Auch die Teile, die Sie auf Mieter umlegen, gehören hierher — sie stehen ja auch bei den Einnahmen.",
+          "Verwaltungskosten, Kontoführung, Porto, Fachliteratur, Software für die Verwaltung.",
+          "Fahrten zum Objekt, Mitgliedsbeiträge in Vermietervereinen, Kosten für Steuerberatung und Rechtsberatung, soweit sie die Vermietung betreffen.",
+        ],
+      },
+      {
+        h: "Die fünf Fehler, die sich jedes Jahr wiederholen",
+        liste: [
+          "Die Tilgung als Werbungskosten angesetzt. Nur die Zinsen zählen — der Tilgungsanteil ist Vermögensumschichtung.",
+          "Nebenkostenvorauszahlungen weggelassen, weil sie durchlaufend wirken. Dann fehlen konsequenterweise auch die Ausgaben, und das Ergebnis stimmt zufällig — bis das Finanzamt nachfragt.",
+          "Einzahlungen in die Erhaltungsrücklage der Eigentümergemeinschaft sofort abgezogen. Abziehbar sind sie erst, wenn die Gemeinschaft das Geld tatsächlich für Erhaltungsmaßnahmen verwendet.",
+          "Kosten vor der ersten Vermietung nicht angesetzt. Aufwendungen in der Leerstands- oder Renovierungsphase sind bereits Werbungskosten, wenn die Vermietungsabsicht belegt ist — Inserate aufheben.",
+          "Verbilligte Vermietung an Angehörige übersehen. Liegt die Miete unter 66 Prozent der ortsüblichen Marktmiete, werden die Werbungskosten gekürzt; zwischen 50 und 66 Prozent entscheidet eine Überschussprognose (§ 21 Abs. 2 EStG).",
+        ],
+      },
+      {
+        h: "Was Sie bereithalten sollten",
+        liste: [
+          "Mietkonto oder Kontoauszüge des ganzen Jahres.",
+          "Die Nebenkostenabrechnung des Vorjahres, weil Nachzahlung oder Erstattung dort landet.",
+          "Kaufvertrag und Kaufpreisaufteilung für die Abschreibung.",
+          "Zins- und Tilgungsbescheinigung der Bank.",
+          "Rechnungen über Reparaturen, getrennt nach Objekt.",
+          "Bei Wohnungseigentum: die Jahresabrechnung der Verwaltung.",
+        ],
+      },
+      {
+        h: "Rechtsstand und Vorbehalt",
+        p: [
+          "Stand Juli 2026. Dieser Text beschreibt den Aufbau des Formulars und gibt Anhaltspunkte ohne Gewähr. Er ist keine Steuerberatung und ersetzt sie nicht. Welche Angaben in Ihrem Fall richtig sind, klären Sie mit Ihrem Steuerberater oder einem Lohnsteuerhilfeverein im Rahmen von dessen Beratungsbefugnis.",
+        ],
+      },
+    ],
+    feature: {
+      titel: "Die Zahlen stehen schon bereit",
+      text:
+        "MyImmo ordnet Einnahmen und Ausgaben das ganze Jahr über den Kategorien der Anlage V zu und stellt sie am Jahresende objektweise zusammen — inklusive Abschreibung, Zinsanteil und Erhaltungsaufwand. Übertragen müssen Sie die Werte nur noch.",
+      href: "/anmelden",
+      cta: "Kostenlos ausprobieren",
+    },
+  },
+  {
+    slug: "afa-richtig-ansetzen-linear-degressiv",
+    titel: "AfA richtig ansetzen: 2 %, 2,5 %, 3 % oder degressiv",
+    beschreibung:
+      "Welcher Abschreibungssatz für welches Baujahr gilt, wann die degressive AfA von 5 % in Betracht kommt und wie die Bemessungsgrundlage überhaupt ermittelt wird.",
+    kategorie: "Steuer",
+    datum: "2026-07-30",
+    lesezeit: 8,
+    intro:
+      "Die Abschreibung ist bei den meisten Vermietern der größte Werbungskostenposten — und der einzige, dem kein Geldabfluss gegenübersteht. Umso ärgerlicher, wenn sie zu niedrig angesetzt wird, weil die Bemessungsgrundlage falsch ermittelt wurde oder der falsche Satz gewählt wurde.",
+    sektionen: [
+      {
+        h: "Schritt 1: die Bemessungsgrundlage",
+        p: [
+          "Abgeschrieben wird nur das Gebäude. Der Grund und Boden nutzt sich nicht ab und bleibt außen vor. Der Kaufpreis muss deshalb aufgeteilt werden.",
+          "In die Bemessungsgrundlage gehören neben dem Gebäudeanteil des Kaufpreises auch die anteiligen Anschaffungsnebenkosten: Grunderwerbsteuer, Notar, Grundbuch, Maklerprovision. Sie werden im selben Verhältnis aufgeteilt wie der Kaufpreis.",
+          "Für die Aufteilung stellt das Bundesfinanzministerium eine Arbeitshilfe bereit. Der Bundesfinanzhof hat entschieden, dass sie nicht bindend ist: Führt sie zu einem unangemessenen Ergebnis, ist der Wert gutachterlich zu ermitteln. Eine Aufteilung, die schon im Kaufvertrag steht, erkennt die Finanzverwaltung an, wenn sie wirtschaftlich haltbar ist und nicht nur zum Steuersparen gegriffen wurde.",
+        ],
+      },
+      {
+        h: "Schritt 2: der lineare Satz nach Baujahr",
+        liste: [
+          "Fertigstellung ab dem 01.01.2023: 3 Prozent pro Jahr, rechnerische Nutzungsdauer 33 Jahre.",
+          "Fertigstellung ab 01.01.1925 bis 31.12.2022: 2 Prozent, 50 Jahre.",
+          "Fertigstellung vor dem 01.01.1925: 2,5 Prozent, 40 Jahre.",
+        ],
+        p: [
+          "Maßgeblich ist die Fertigstellung des Gebäudes, nicht der Zeitpunkt Ihres Kaufs. Ein Altbau von 1900, den Sie 2026 erwerben, wird mit 2,5 Prozent abgeschrieben.",
+          "Im Jahr der Anschaffung wird zeitanteilig gerechnet, monatsgenau ab dem Monat des Übergangs von Nutzen und Lasten.",
+        ],
+      },
+      {
+        h: "Kürzere Nutzungsdauer nachweisen",
+        p: [
+          "Ist die tatsächliche Restnutzungsdauer kürzer als der gesetzliche Typisierungswert, darf danach abgeschrieben werden (§ 7 Abs. 4 Satz 2 EStG). Der Nachweis erfolgt in der Praxis über ein Gutachten; die Finanzverwaltung stellt dafür Anforderungen, die in einem eigenen Schreiben geregelt sind.",
+          "Das lohnt vor allem bei stark abgenutzten Altbauten. Kosten und Aufwand des Gutachtens stehen dem gegenüber — rechnen Sie beides gegeneinander, bevor Sie beauftragen.",
+        ],
+      },
+      {
+        h: "Die degressive AfA für Neubauten",
+        p: [
+          "Für neu gebaute oder im Jahr der Fertigstellung erworbene Wohngebäude gibt es eine degressive Abschreibung von 5 Prozent (§ 7 Abs. 5a EStG). Sie greift, wenn mit dem Bau zwischen dem 01.10.2023 und dem 30.09.2029 begonnen wurde beziehungsweise der Kaufvertrag in diesen Zeitraum fällt.",
+          "Degressiv heißt: Die 5 Prozent werden nicht vom ursprünglichen Wert berechnet, sondern jedes Jahr vom verbleibenden Restwert. Der Abzug ist am Anfang deutlich höher und sinkt dann ab. Ein Wechsel zur linearen Abschreibung ist zulässig und sinnvoll, sobald diese den höheren Betrag ergibt.",
+        ],
+      },
+      {
+        h: "Die Sonderabschreibung nach § 7b EStG",
+        p: [
+          "Zusätzlich existiert eine Sonderabschreibung für den Mietwohnungsneubau: vier Jahre lang jeweils bis zu 5 Prozent, neben der regulären Abschreibung. Voraussetzung ist ein Bauantrag oder eine Bauanzeige im Zeitraum vom 01.01.2023 bis zum 30.09.2029, die Einhaltung eines Effizienzhaus-40-Standards mit Qualitätssiegel sowie Grenzen bei den Baukosten und bei der Bemessungsgrundlage je Quadratmeter Wohnfläche.",
+          "Beide Instrumente lassen sich kombinieren, wenn die jeweiligen Voraussetzungen erfüllt sind. Bei der Berechnung ist zu beachten, dass der Restwert für die degressive Abschreibung nur um die degressive Abschreibung selbst gekürzt wird, nicht zusätzlich um die Sonderabschreibung.",
+          "Beide Regelungen sind an enge Fristen und technische Nachweise gebunden. Wer hier ohne fachliche Begleitung plant, riskiert, die Voraussetzungen erst im Nachhinein zu prüfen — dann ist die Frist meist schon vorbei.",
+        ],
+      },
+      {
+        h: "Rechenbeispiel",
+        p: [
+          "Kaufpreis 400.000 €, Nebenkosten 40.000 €, Gebäudeanteil laut Aufteilung 75 Prozent. Baujahr 1998, also linear 2 Prozent. Nutzen und Lasten gehen am 1. Juli über.",
+        ],
+        liste: [
+          "Bemessungsgrundlage: 75 % von 440.000 € = 330.000 €.",
+          "Jahres-AfA: 2 % von 330.000 € = 6.600 €.",
+          "Im Anschaffungsjahr zeitanteilig für sechs Monate: 3.300 €.",
+          "Zum Vergleich: Wäre der Gebäudeanteil mit 60 statt 75 Prozent angesetzt, wären es nur 5.280 € pro Jahr — über 50 Jahre ein Unterschied von 66.000 € Abschreibungsvolumen.",
+        ],
+      },
+      {
+        h: "Geerbt oder geschenkt: keine neue Grundlage",
+        p: [
+          "Bei unentgeltlichem Erwerb führen Sie die Abschreibung des Vorgängers fort — mit dessen Bemessungsgrundlage, dessen Satz und dessen Restnutzungsdauer (§ 11d EStDV). Der Verkehrswert im Zeitpunkt des Erbfalls ist ausdrücklich nicht maßgeblich.",
+          "Deshalb sind die alten Unterlagen des Erblassers so wertvoll. Ohne Kaufvertrag und bisherige Abschreibungsbeträge muss geschätzt werden.",
+        ],
+      },
+      {
+        h: "Rechtsstand und Vorbehalt",
+        p: [
+          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Steuerberatung. Sätze, Fristen und Fördervoraussetzungen ändern sich häufig; degressive AfA und Sonderabschreibung sollten vor der Investitionsentscheidung steuerlich geprüft werden.",
+        ],
+      },
+    ],
+    feature: {
+      titel: "Abschreibung ohne Tabelle",
+      text:
+        "In MyImmo hinterlegen Sie Kaufpreis, Nebenkosten, Gebäudeanteil und Baujahr einmal — der Jahresbetrag steht danach in jeder Auswertung und in der Anlage-V-Zusammenstellung, im Anschaffungsjahr automatisch zeitanteilig.",
+      href: "/anmelden",
+      cta: "Kostenlos ausprobieren",
+    },
+  },
+  {
+    slug: "erhaltungsaufwand-verteilen-82b-estdv",
+    titel: "Erhaltungsaufwand über 5 Jahre verteilen (§ 82b EStDV)",
+    beschreibung:
+      "Wann sich die Verteilung größerer Reparaturkosten lohnt, wie das Wahlrecht ausgeübt wird — und was mit dem Restbetrag bei Verkauf oder Todesfall passiert.",
+    kategorie: "Steuer",
+    datum: "2026-07-30",
+    lesezeit: 7,
+    intro:
+      "Eine neue Heizung, ein neues Dach, neue Fenster: Größere Reparaturen sind im Jahr der Zahlung in voller Höhe abziehbar. Genau das ist manchmal das Problem — der Abzug verpufft, wenn ihm keine ausreichenden Einkünfte gegenüberstehen. Für diesen Fall erlaubt § 82b EStDV die Verteilung auf mehrere Jahre.",
+    sektionen: [
+      {
+        h: "Was die Vorschrift erlaubt",
+        p: [
+          "Größerer Erhaltungsaufwand für Gebäude, die im Privatvermögen gehalten werden und überwiegend Wohnzwecken dienen, kann gleichmäßig auf zwei bis fünf Jahre verteilt werden. Die Aufteilung beginnt im Jahr der Zahlung.",
+          "Es ist ein Wahlrecht, kein Zwang, und es wird für jede Maßnahme einzeln ausgeübt. Sie können also die Dachsanierung verteilen und die Fenster im selben Jahr sofort abziehen.",
+          "Auf gewerblich vermietete Objekte und auf Gebäude im Betriebsvermögen ist die Vorschrift nicht anwendbar.",
+        ],
+      },
+      {
+        h: "Wann die Verteilung sinnvoll ist",
+        liste: [
+          "Wenn die Kosten so hoch sind, dass im Zahlungsjahr ein Verlust entsteht, der sich steuerlich nicht auswirkt.",
+          "Wenn Ihr zu versteuerndes Einkommen in den Folgejahren steigt — dann wirkt derselbe Abzug bei höherem Grenzsteuersatz stärker.",
+          "Wenn mehrere große Maßnahmen in einem Jahr zusammenfallen und Sie die Wirkung strecken wollen.",
+        ],
+        p: [
+          "Umgekehrt spricht gegen die Verteilung, wenn Ihr Einkommen künftig sinkt — etwa vor dem Renteneintritt. Dann ist der Sofortabzug im Jahr der höheren Progression der wirksamere.",
+        ],
+      },
+      {
+        h: "Rechenbeispiel",
+        p: [
+          "Dachsanierung für 30.000 €, gezahlt im Jahr 2026. Die Mieteinnahmen des Objekts betragen 12.000 € im Jahr, die übrigen Werbungskosten 7.000 €.",
+        ],
+        liste: [
+          "Sofortabzug: 12.000 € minus 7.000 € minus 30.000 € = 25.000 € Verlust im Jahr 2026. Er wird mit anderen Einkünften verrechnet — reichen die nicht aus, verpufft ein Teil der Wirkung.",
+          "Verteilung auf fünf Jahre: je 6.000 € in den Jahren 2026 bis 2030. Das Ergebnis liegt jedes Jahr bei minus 1.000 € statt einmal bei minus 25.000 €.",
+          "Welche Variante günstiger ist, hängt allein von Ihren übrigen Einkünften in diesen fünf Jahren ab — die Summe des Abzugs ist in beiden Fällen gleich.",
+        ],
+      },
+      {
+        h: "Die Abgrenzung, die vorher stimmen muss",
+        p: [
+          "Die Verteilung setzt voraus, dass es sich überhaupt um Erhaltungsaufwand handelt. Wird ein Gebäude wesentlich verbessert oder in seiner Substanz erweitert, liegen Herstellungskosten vor — sie sind nicht abziehbar, sondern nur über die Abschreibung zu berücksichtigen.",
+          "Die schärfste Falle liegt in den ersten drei Jahren nach dem Kauf: Übersteigen die Instandsetzungsaufwendungen ohne Umsatzsteuer 15 Prozent der Gebäude-Anschaffungskosten, werden sie insgesamt zu anschaffungsnahen Herstellungskosten umqualifiziert (§ 6 Abs. 1 Nr. 1a EStG). Aus dem sofortigen Abzug wird dann eine Abschreibung über Jahrzehnte.",
+        ],
+      },
+      {
+        h: "Was mit dem Restbetrag passiert",
+        p: [
+          "Wird das Gebäude während des Verteilungszeitraums veräußert, in ein Betriebsvermögen eingebracht oder nicht mehr zur Einkünfteerzielung genutzt, ist der noch nicht berücksichtigte Teil im Jahr dieses Ereignisses in einer Summe abzuziehen.",
+          "Anders beim Todesfall: Nach der Rechtsprechung des Bundesfinanzhofs kann der Erbe eine begonnene Verteilung nicht fortführen. Der Restbetrag ist im Todesjahr beim Erblasser abzuziehen. Wer eine geerbte Immobilie übernimmt, sollte das prüfen — der Abzug gehört in die letzte Steuererklärung des Erblassers, nicht in die eigene.",
+        ],
+      },
+      {
+        h: "Wie das Wahlrecht ausgeübt wird",
+        p: [
+          "Die Entscheidung treffen Sie in der Steuererklärung des Zahlungsjahres, indem Sie den Verteilungszeitraum angeben. In den Folgejahren tragen Sie die jeweilige Jahresrate ein.",
+          "Führen Sie eine kleine Übersicht je Maßnahme mit Datum, Betrag, gewähltem Zeitraum und den bereits abgezogenen Raten. Über fünf Jahre hinweg ist das sonst kaum rekonstruierbar — insbesondere, wenn mehrere Maßnahmen parallel laufen.",
+        ],
+      },
+      {
+        h: "Rechtsstand und Vorbehalt",
+        p: [
+          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Steuerberatung. Ob Verteilung oder Sofortabzug im Einzelfall günstiger ist, hängt von Ihrer gesamten Einkommenssituation ab und sollte steuerlich durchgerechnet werden.",
+        ],
+      },
+    ],
+    feature: {
+      titel: "Verteilte Kosten im Blick behalten",
+      text:
+        "MyImmo hält bei jeder Erhaltungsmaßnahme fest, über welchen Zeitraum sie verteilt wird, und weist die Jahresrate in den Folgejahren automatisch aus — samt Hinweis, wenn eine Maßnahme in die 15-Prozent-Grenze der ersten drei Jahre läuft.",
+      href: "/anmelden",
+      cta: "Kostenlos ausprobieren",
+    },
+  },
+  {
     slug: "nebenkostenabrechnung-fristen-fehler",
     titel: "Nebenkostenabrechnung: Fristen und die häufigsten Fehler",
     beschreibung:

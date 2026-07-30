@@ -164,7 +164,12 @@ messbares Ergebnis — und eine ehrliche Aufwandsangabe.
 ## 5. Redaktionsplan — 12 Artikel
 
 Bestand: **5 Artikel** in `lib/ratgeber.ts`. Neu: **12**. Reihenfolge = Priorität.
-Stand 30.07.2026: **12 Artikel live** — K1 (1–4) und K3 (9–11) fertig, K2 und K4 offen.
+Stand 30.07.2026: **15 Artikel live** — K1 (1–4), K2 (5–7) und K3 (9–11) fertig.
+Offen: Artikel 8 (Mieterhöhung, K1) und Artikel 12 (Umstieg, K4 — setzt den Import-Assistenten voraus).
+
+> Artikel 5 heißt bewusst „Abschnitt für Abschnitt“ statt „Zeile für Zeile“: Die
+> Zeilennummern der Anlage V ändern sich fast jedes Jahr, die Struktur nicht. Ein
+> Artikel mit Zeilennummern wäre jeden Januar falsch.
 
 | # | Arbeitstitel | Kampagne | Suchabsicht | Status |
 |---|---|---|---|---|
@@ -177,9 +182,9 @@ Stand 30.07.2026: **12 Artikel live** — K1 (1–4) und K3 (9–11) fertig, K2 
 | 2 | Umlageschlüssel: Fläche, Personen, Verbrauch — was wann gilt | K1 | Problem | ✅ 30.07.2026 |
 | 3 | Heizkostenabrechnung: 50–70-%-Regel + Frist 31.12.2026 | K1 | Problem | ✅ 30.07.2026 |
 | 4 | Belegeinsicht: was Mieter verlangen dürfen | K1 | Problem | ✅ 30.07.2026 |
-| 5 | Anlage V ausfüllen — Zeile für Zeile | K2 | **Lösung** | offen |
-| 6 | AfA richtig ansetzen: 2 %, 2,5 %, 3 % oder degressiv | K2 | Problem | offen |
-| 7 | Erhaltungsaufwand über 5 Jahre verteilen (§ 82b) | K2 | Problem | offen |
+| 5 | Anlage V ausfüllen — Abschnitt für Abschnitt | K2 | **Lösung** | ✅ 30.07.2026 |
+| 6 | AfA richtig ansetzen: 2 %, 2,5 %, 3 % oder degressiv | K2 | Problem | ✅ 30.07.2026 |
+| 7 | Erhaltungsaufwand über 5 Jahre verteilen (§ 82b) | K2 | Problem | ✅ 30.07.2026 |
 | 8 | Mieterhöhung: Fristen, Kappungsgrenze, Formfehler | K1 | Problem | offen |
 | 9 | Erste Vermietung: die 10 Schritte | K3 | Einstieg | ✅ 30.07.2026 |
 | 10 | Mietvertrag prüfen: die Klauseln, die Geld kosten | K3 | Einstieg | ✅ 30.07.2026 |
