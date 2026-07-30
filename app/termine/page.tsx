@@ -196,7 +196,7 @@ export default async function TerminePage({
     const stil = KATEGORIE_STIL[e.kategorie] ?? KATEGORIE_STIL.Sonstiges;
     const farbe = e.erledigt ? "var(--green)" : e.typ === "warn" || tage < 0 ? "var(--red)" : e.typ === "ok" ? "var(--green)" : "var(--muted)";
     return (
-      <div key={`${e.quelle}-${e.id ?? i}-${e.datum}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid var(--line)", opacity: e.erledigt ? 0.6 : 1 }}>
+      <div key={`${e.quelle}-${e.id ?? i}-${e.datum}`} className="termin-zeile" style={{ opacity: e.erledigt ? 0.6 : 1 }}>
         {e.quelle === "eigen" && e.id ? (
           <form action={toggleErledigt.bind(null, e.id)} style={{ display: "inline-flex" }}>
             <button
@@ -208,10 +208,10 @@ export default async function TerminePage({
             </button>
           </form>
         ) : (
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: stil.punkt, flexShrink: 0, marginLeft: 5, marginRight: 5 }} title={e.kategorie} />
+          <div className="tz-punkt" style={{ background: stil.punkt }} title={e.kategorie} />
         )}
-        <div style={{ width: 96, flexShrink: 0, fontSize: 12, color: "var(--muted)" }}>{datum(e.datum)}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="tz-datum">{datum(e.datum)}</div>
+        <div className="tz-text">
           <div style={{ fontWeight: 500, fontSize: 13, textDecoration: e.erledigt ? "line-through" : undefined }}>
             {e.label}
             {e.wiederkehrung && <span style={{ fontSize: 10.5, color: "var(--muted)", marginLeft: 6 }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[e.wiederkehrung] ?? e.wiederkehrung}</span>}
@@ -221,7 +221,7 @@ export default async function TerminePage({
             {e.rechtsgrundlage && <span style={{ color: "var(--faint)" }}>{[e.wer, e.wo].some(Boolean) ? " · " : ""}{e.rechtsgrundlage}</span>}
           </div>
         </div>
-        <span style={{ fontSize: 11, color: farbe, width: 84, textAlign: "right", flexShrink: 0 }}>
+        <span className="tz-rest" style={{ color: farbe }}>
           {e.erledigt ? "erledigt" : tage < 0 ? `vor ${Math.abs(tage)} Tg.` : tage === 0 ? "heute" : `in ${tage} Tg.`}
         </span>
         <span className={`badge ${stil.badge}`} style={{ flexShrink: 0 }}>{stil.icon} {e.kategorie}</span>
