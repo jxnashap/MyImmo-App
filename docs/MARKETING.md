@@ -173,9 +173,9 @@ Bestand: **5 Artikel** in `lib/ratgeber.ts`. Neu: **12**. Reihenfolge = Priorit�
 | — | Die 15-%-Falle | K2 | Problem | ✅ vorhanden |
 | — | Geerbte Immobilie vermieten | K3 | Einstieg | ✅ vorhanden |
 | 1 | Nebenkostenabrechnung erstellen — Schritt für Schritt | K1 | **Lösung** | ✅ 30.07.2026 |
-| 2 | Umlageschlüssel: Fläche, Personen, Verbrauch — was wann gilt | K1 | Problem | offen |
-| 3 | Heizkostenabrechnung: die 50–70-%-Regel der HeizkostenV | K1 | Problem | offen |
-| 4 | Belegeinsicht: was Mieter verlangen dürfen | K1 | Problem | offen |
+| 2 | Umlageschlüssel: Fläche, Personen, Verbrauch — was wann gilt | K1 | Problem | ✅ 30.07.2026 |
+| 3 | Heizkostenabrechnung: 50–70-%-Regel + Frist 31.12.2026 | K1 | Problem | ✅ 30.07.2026 |
+| 4 | Belegeinsicht: was Mieter verlangen dürfen | K1 | Problem | ✅ 30.07.2026 |
 | 5 | Anlage V ausfüllen — Zeile für Zeile | K2 | **Lösung** | offen |
 | 6 | AfA richtig ansetzen: 2 %, 2,5 %, 3 % oder degressiv | K2 | Problem | offen |
 | 7 | Erhaltungsaufwand über 5 Jahre verteilen (§ 82b) | K2 | Problem | offen |
