@@ -996,6 +996,225 @@ export const RATGEBER: RatgeberArtikel[] = [
     },
   },
   {
+    slug: "mieterhoehung-fristen-kappungsgrenze-formfehler",
+    titel: "Mieterhöhung: Fristen, Kappungsgrenze, Formfehler",
+    beschreibung:
+      "Wann Sie erhöhen dürfen, wie hoch die Kappungsgrenze liegt, wie das Schreiben begründet sein muss — und die Formfehler, an denen die meisten Erhöhungen scheitern.",
+    kategorie: "Recht",
+    datum: "2026-07-31",
+    lesezeit: 8,
+    kurzcheck: {
+      fall: "Die Miete steht seit vier Jahren bei 8,00 € je Quadratmeter, im Mietspiegel stehen inzwischen 9,50 € — und Sie fragen sich, wie viel davon Sie tatsächlich durchsetzen können.",
+      passt: [
+        "Die letzte Mieterhöhung liegt mehr als ein Jahr zurück.",
+        "Sie haben modernisiert und wollen die Kosten umlegen.",
+        "Sie haben ein Erhöhungsschreiben verschickt und der Mieter hat nicht reagiert.",
+        "Sie wissen nicht, ob Ihr Ort unter die abgesenkte Kappungsgrenze fällt.",
+      ],
+      nichtNoetig:
+        "Haben Sie eine Staffel- oder Indexmiete vereinbart, steigt die Miete nach dieser Abrede — der Weg über die Vergleichsmiete ist dann versperrt.",
+    },
+    intro:
+      "Eine Mieterhöhung scheitert selten an der Höhe. Sie scheitert an einer Frist, an einer fehlenden Begründung oder daran, dass das Schreiben nicht an alle Mieter gerichtet war. Dieser Ratgeber geht die drei Wege durch, auf denen die Miete überhaupt steigen darf, und zeigt, wo die Fallen liegen.",
+    sektionen: [
+      {
+        h: "Drei Wege, die Miete zu erhöhen",
+        liste: [
+          "Anpassung an die ortsübliche Vergleichsmiete (§ 558 BGB) — der Regelfall, braucht die Zustimmung des Mieters.",
+          "Modernisierungsumlage (§ 559 BGB) — nach einer echten Modernisierung, wirkt einseitig ohne Zustimmung.",
+          "Vereinbarte Erhöhung: Staffelmiete (§ 557a BGB) oder Indexmiete (§ 557b BGB) — steht schon im Vertrag.",
+        ],
+        p: [
+          "Die Wege schließen sich teilweise aus: Wo eine Staffel- oder Indexmiete vereinbart ist, gibt es keine Erhöhung zur Vergleichsmiete. Prüfen Sie deshalb zuerst den Mietvertrag.",
+        ],
+      },
+      {
+        h: "Weg 1: Anpassung an die Vergleichsmiete",
+        p: [
+          "Drei Bedingungen müssen zusammenkommen. Erstens die Zeit: Die Miete muss beim Wirksamwerden der Erhöhung seit mindestens 15 Monaten unverändert sein, und das Erhöhungsverlangen darf frühestens 12 Monate nach der letzten Erhöhung zugehen.",
+          "Zweitens die Obergrenze: Die neue Miete darf die ortsübliche Vergleichsmiete nicht übersteigen. Sie ist die absolute Decke, unabhängig von jeder Prozentrechnung.",
+          "Drittens die Kappungsgrenze: Innerhalb von drei Jahren darf die Miete um höchstens 20 Prozent steigen. In Gebieten mit angespanntem Wohnungsmarkt haben die Landesregierungen diesen Wert per Verordnung auf 15 Prozent abgesenkt — das betrifft inzwischen mehrere hundert Städte und Gemeinden. Ob Ihr Ort dazugehört, ergibt sich aus der Verordnung Ihres Bundeslandes.",
+        ],
+      },
+      {
+        h: "Rechenbeispiel",
+        p: [
+          "Wohnung mit 80 m², aktuelle Kaltmiete 8,00 € je Quadratmeter, also 640 €. Der Mietspiegel weist 9,50 € aus, das wären 760 €. Die letzte Erhöhung liegt vier Jahre zurück.",
+        ],
+        liste: [
+          "Kappungsgrenze 20 %: 640 € plus 128 € = 768 € wären möglich.",
+          "Die ortsübliche Vergleichsmiete deckelt bei 760 € — mehr geht nicht, obwohl die Kappungsgrenze mehr zuließe.",
+          "In einem Gebiet mit abgesenkter Grenze von 15 %: 640 € plus 96 € = 736 €. Hier ist die Kappungsgrenze die engere Schranke.",
+          "Es gilt immer der niedrigere der beiden Werte.",
+        ],
+      },
+      {
+        h: "Wie das Schreiben aussehen muss",
+        p: [
+          "Das Erhöhungsverlangen bedarf der Textform und muss begründet sein (§ 558a BGB). Als Begründung kommen in Betracht: ein Mietspiegel, eine Mietdatenbank, ein Sachverständigengutachten oder die Benennung von mindestens drei vergleichbaren Wohnungen.",
+          "Formal entscheidend ist außerdem die Richtung: Das Schreiben muss von allen Vermietern ausgehen und an alle Mieter gerichtet sein. Haben zwei Personen den Mietvertrag unterschrieben, genügt ein Schreiben an eine von ihnen nicht.",
+          "Beziehen Sie sich auf einen Mietspiegel, geben Sie das einschlägige Feld und die Einordnung Ihrer Wohnung an. Ein bloßer Verweis auf den Mietspiegel als Ganzes trägt die Begründung nicht.",
+        ],
+      },
+      {
+        h: "Die Fristen nach dem Zugang",
+        p: [
+          "Der Mieter hat bis zum Ablauf des zweiten Kalendermonats nach dem Zugang Zeit, zuzustimmen. Stimmt er zu, schuldet er die erhöhte Miete ab Beginn des dritten Kalendermonats nach Zugang.",
+          "Beispiel: Das Schreiben geht am 10. März zu. Die Zustimmungsfrist läuft bis zum 31. Mai, die erhöhte Miete gilt ab dem 1. Juni.",
+          "Stimmt der Mieter nicht zu, können Sie innerhalb von drei weiteren Monaten auf Zustimmung klagen. Lassen Sie diese Frist verstreichen, ist die Erhöhung erledigt und Sie müssen von vorn beginnen. Schweigen des Mieters ist keine Zustimmung.",
+        ],
+      },
+      {
+        h: "Weg 2: Umlage nach Modernisierung",
+        p: [
+          "Nach einer Modernisierung dürfen Sie die Jahresmiete um 8 Prozent der aufgewendeten Kosten erhöhen (§ 559 BGB). Anders als bei der Vergleichsmiete braucht es keine Zustimmung — die Erhöhung wirkt durch Erklärung.",
+          "Abzuziehen sind der Erhaltungsanteil, also der Teil, der ohnehin als Reparatur angefallen wäre, sowie Zuschüsse und Förderungen. Nur der verbleibende Betrag ist umlagefähig.",
+          "Gedeckelt ist die Modernisierungsumlage auf 3 € je Quadratmeter innerhalb von sechs Jahren; liegt die Ausgangsmiete unter 7 € je Quadratmeter, sind es 2 €. Die Kappungsgrenze des § 558 BGB gilt hier nicht — beide Wege werden getrennt gerechnet.",
+          "Die Maßnahme müssen Sie mindestens drei Monate vor Beginn ankündigen (§ 555c BGB), mit Art, Umfang, voraussichtlicher Dauer und der zu erwartenden Mieterhöhung.",
+        ],
+      },
+      {
+        h: "Rechenbeispiel Modernisierung",
+        p: [
+          "Fenstertausch im ganzen Haus für 40.000 €, davon 10.000 € Erhaltungsanteil. Das Haus hat 400 m², die Wohnung 80 m².",
+        ],
+        liste: [
+          "Umlagefähig: 40.000 € minus 10.000 € = 30.000 €.",
+          "8 % im Jahr: 2.400 €, also 200 € im Monat für das ganze Haus.",
+          "Anteil der Wohnung nach Fläche: 20 % von 200 € = 40 € im Monat.",
+          "Das sind 0,50 € je Quadratmeter — die 3-€-Grenze ist damit nicht ausgeschöpft.",
+        ],
+      },
+      {
+        h: "Die Formfehler, an denen Erhöhungen scheitern",
+        liste: [
+          "Die 15-Monats-Frist nicht eingehalten oder falsch gerechnet.",
+          "Schreiben nur an einen von mehreren Mietern gerichtet.",
+          "Begründung fehlt oder verweist pauschal auf den Mietspiegel, ohne die Wohnung einzuordnen.",
+          "Kappungsgrenze übersehen, weil die abgesenkte Grenze am Ort gilt.",
+          "Nach ausbleibender Zustimmung die Drei-Monats-Klagefrist verstreichen lassen.",
+          "Erhaltungsanteil bei der Modernisierungsumlage nicht abgezogen — das macht die gesamte Erhöhung angreifbar.",
+        ],
+      },
+      {
+        h: "Rechtsstand und Vorbehalt",
+        p: [
+          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Ob an Ihrem Ort die abgesenkte Kappungsgrenze gilt, ergibt sich aus der Verordnung des Bundeslandes; bei Widerspruch des Mieters ist anwaltlicher Rat sinnvoll.",
+        ],
+      },
+    ],
+    feature: {
+      titel: "Die Frist meldet sich von selbst",
+      text:
+        "MyImmo kennt das Datum der letzten Mieterhöhung je Mietverhältnis und meldet sich, sobald eine Anpassung frühestens möglich wird — statt dass die Frist unbemerkt verstreicht. Das Erhöhungsschreiben erzeugt der Dokument-Generator im eigenen Briefkopf.",
+      href: "/anmelden",
+      cta: "Kostenlos ausprobieren",
+    },
+  },
+  {
+    slug: "vermietungssoftware-wechseln-ohne-datenverlust",
+    titel: "Vermietungssoftware wechseln — ohne Datenverlust",
+    beschreibung:
+      "Export beim alten Anbieter, der richtige Zeitpunkt, was wirklich übertragen werden muss — und eine ehrliche Einschätzung, wie viel Handarbeit ein Wechsel kostet.",
+    kategorie: "Einstieg",
+    datum: "2026-07-31",
+    lesezeit: 7,
+    kurzcheck: {
+      fall: "Ihre bisherige Vermieter-App ärgert Sie seit Monaten, aber drei Jahre Buchungen, Mieterdaten und Abrechnungen liegen darin — und niemand sagt Ihnen, wie die da wieder herauskommen.",
+      passt: [
+        "Sie denken über einen Anbieterwechsel nach und fürchten den Datenverlust.",
+        "Ihr Anbieter hat eine Migration hinter sich, nach der Daten fehlten.",
+        "Sie wollen wissen, welchen Zeitpunkt im Jahr Sie für den Wechsel wählen sollten.",
+        "Sie fragen sich, welche Daten Sie rechtlich herausverlangen können.",
+      ],
+      nichtNoetig:
+        "Verwalten Sie bisher mit Tabellen und Ordnern statt mit einer App, ist der Ratgeber zur ersten Vermietung der bessere Einstieg.",
+    },
+    intro:
+      "Der häufigste Grund, bei einer unbefriedigenden Software zu bleiben, ist nicht Zufriedenheit — es ist die Angst vor dem Umzug. Diese Anleitung nimmt ihr die Grundlage: Sie zeigt, was Sie herausverlangen können, wann der Wechsel am wenigsten kostet und wie viel Arbeit realistisch übrig bleibt.",
+    sektionen: [
+      {
+        h: "Schritt 1: Den Export verlangen, bevor Sie kündigen",
+        p: [
+          "Sie haben einen Anspruch darauf, Ihre Daten in einem strukturierten, gängigen und maschinenlesbaren Format zu erhalten (Art. 20 DSGVO). Der Anbieter muss darauf grundsätzlich innerhalb eines Monats reagieren.",
+          "Fordern Sie den Export schriftlich an, solange der Vertrag noch läuft. Nach der Kündigung wird es erfahrungsgemäß nicht einfacher, und manche Anbieter sperren den Zugang zum Vertragsende.",
+          "Bewahren Sie die Exportdatei zusätzlich als Archiv auf, auch wenn Sie die Daten anderswo eingegeben haben. Für steuerliche Zwecke müssen Belege und Aufzeichnungen ohnehin aufbewahrt werden.",
+        ],
+      },
+      {
+        h: "Schritt 2: Wissen, was Sie wirklich brauchen",
+        p: [
+          "Ein Export enthält meist mehr, als Sie übertragen müssen. Diese Angaben brauchen Sie tatsächlich:",
+        ],
+        liste: [
+          "Objektstammdaten: Adresse, Fläche, Baujahr, Kaufpreis und Kaufdatum, Aufteilung Grund und Boden zu Gebäude.",
+          "Abschreibung: bisherige Bemessungsgrundlage, Satz und die bereits abgezogenen Jahre. Ohne diese Werte lässt sich die AfA nicht sauber fortführen.",
+          "Mieterdaten: Namen, Vertragsbeginn, Kaltmiete, Vorauszahlung, Kaution samt Anlageort, Datum der letzten Mieterhöhung.",
+          "Zählerstände und die letzte Nebenkostenabrechnung — sie ist der Anschlusspunkt für die nächste.",
+          "Buchungen des laufenden Jahres, mindestens ab dem 1. Januar.",
+          "Kredite: Restschuld, Zinssatz, Ende der Zinsbindung.",
+          "Dokumente: Mietverträge, Übergabeprotokolle, Bescheide.",
+        ],
+      },
+      {
+        h: "Schritt 3: Den richtigen Zeitpunkt wählen",
+        p: [
+          "Der günstigste Moment ist der Jahreswechsel, und zwar nachdem die Nebenkostenabrechnung für das alte Jahr fertig ist. Dann müssen Sie kein angefangenes Abrechnungsjahr über zwei Systeme hinweg zusammensuchen.",
+          "Der schlechteste Moment ist der Herbst, wenn die Abrechnungsfrist für das Vorjahr näher rückt und gleichzeitig Belege in zwei Systemen liegen.",
+          "Ein Wechsel mitten im Jahr ist möglich, kostet aber zusätzliche Sorgfalt: Sie müssen die Buchungen seit dem 1. Januar vollständig nachtragen, sonst stimmt weder die Abrechnung noch die Anlage V.",
+        ],
+      },
+      {
+        h: "Schritt 4: Übertragen — was realistisch möglich ist",
+        p: [
+          "Hier die unbequeme Wahrheit, die andere Umzugsanleitungen auslassen: Einen Ein-Klick-Import fremder Datenbestände gibt es nicht — weder bei MyImmo noch, soweit ersichtlich, bei den anderen Anbietern. Jeder benutzt ein eigenes Datenmodell, und ein Export des einen passt nicht in die Felder des anderen.",
+          "Was Ihnen Arbeit abnimmt: Für die Objektstammdaten liest der Import-Assistent ein Exposé aus — als PDF, als Link oder als eingefügter Text. Bei einem Objekt, dessen Verkaufsanzeige Sie noch haben, sind Fläche, Baujahr, Zimmerzahl und Preis damit in einem Schritt erfasst.",
+          "Alles Übrige tragen Sie ein. Rechnen Sie mit etwa 20 bis 40 Minuten je Einheit, wenn der Export vorliegt und Sie einmal sortiert haben. Bei einer Eigentumswohnung ist das ein Abend, bei fünf Einheiten ein Wochenende.",
+          "Das klingt nach viel. Gemessen an dem, was ein stiller Datenverlust in einer automatischen Migration kostet, ist es wenig — und Sie kontrollieren jeden Wert dabei einmal.",
+        ],
+      },
+      {
+        h: "Schritt 5: Parallel laufen lassen",
+        p: [
+          "Kündigen Sie nicht, bevor die erste vollständige Nebenkostenabrechnung im neuen System durchgelaufen ist. Solange der alte Zugang besteht, können Sie jeden Zweifelsfall nachschlagen.",
+          "Prüfen Sie nach dem Übertragen drei Dinge gezielt: Stimmen die Kautionsbeträge? Stimmt der Abschreibungsbetrag mit der letzten Steuererklärung überein? Ist bei jedem Mietverhältnis das Datum der letzten Mieterhöhung gesetzt? Diese drei fallen erfahrungsgemäß am ehesten hinten runter.",
+        ],
+      },
+      {
+        h: "Schritt 6: Kündigen und löschen lassen",
+        p: [
+          "Erst wenn alles läuft, kündigen Sie zum nächsten möglichen Termin. Danach können Sie die Löschung Ihrer Daten verlangen (Art. 17 DSGVO) — aber wirklich erst danach, und erst nachdem Sie den Export gesichert haben.",
+          "Beachten Sie dabei Ihre eigenen steuerlichen Aufbewahrungspflichten: Was Sie für das Finanzamt vorhalten müssen, muss bei Ihnen liegen, nicht beim alten Anbieter.",
+        ],
+      },
+      {
+        h: "Was Sie beim nächsten Anbieter prüfen sollten",
+        p: [
+          "Die Frage, die vor dem Wechsel zu stellen ist, lautet nicht, wie leicht man hineinkommt, sondern wie leicht man wieder heraus.",
+        ],
+        liste: [
+          "Gibt es einen vollständigen Datenexport, jederzeit und ohne Nachfrage?",
+          "In welchem Format — maschinenlesbar oder nur als PDF-Ausdruck?",
+          "Lassen sich Buchungen einzeln exportieren, etwa für den Steuerberater?",
+          "Wo liegen die Daten, und gibt es einen Auftragsverarbeitungsvertrag?",
+        ],
+      },
+      {
+        h: "Rechtsstand und Vorbehalt",
+        p: [
+          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Kündigungsfristen und Exportmöglichkeiten richten sich nach dem Vertrag mit Ihrem bisherigen Anbieter.",
+        ],
+      },
+    ],
+    feature: {
+      titel: "Kein Einbahnstraßen-Vertrag",
+      text:
+        "MyImmo gibt jederzeit alles wieder heraus: sämtliche Daten als maschinenlesbarer Export, Buchungen einzeln als CSV, dazu ein DATEV-Export für den Steuerberater. Kein Antrag, keine Wartezeit — dieselbe Freiheit, die dieser Ratgeber von Ihrem bisherigen Anbieter einfordert.",
+      href: "/anmelden",
+      cta: "Kostenlos ausprobieren",
+    },
+  },
+  {
     slug: "nebenkostenabrechnung-fristen-fehler",
     titel: "Nebenkostenabrechnung: Fristen und die häufigsten Fehler",
     beschreibung:

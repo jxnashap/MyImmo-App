@@ -164,8 +164,13 @@ messbares Ergebnis — und eine ehrliche Aufwandsangabe.
 ## 5. Redaktionsplan — 12 Artikel
 
 Bestand: **5 Artikel** in `lib/ratgeber.ts`. Neu: **12**. Reihenfolge = Priorität.
-Stand 30.07.2026: **15 Artikel live** — K1 (1–4), K2 (5–7) und K3 (9–11) fertig.
-Offen: Artikel 8 (Mieterhöhung, K1) und Artikel 12 (Umstieg, K4 — setzt den Import-Assistenten voraus).
+Stand 31.07.2026: **17 Artikel** — Redaktionsplan vollständig abgearbeitet.
+
+> Artikel 12 ist bewusst anbieterneutral geschrieben und verspricht **keinen**
+> Datenimport: Der Import-Assistent liest Exposés (PDF, Link, Text), es gibt
+> keinen Ein-Klick-Import fremder Datenbestände. Der Artikel nennt das offen und
+> beziffert den Handaufwand mit 20–40 Minuten je Einheit. Alles andere wäre genau
+> der Bumerang, vor dem K4 selbst warnt.
 
 > Artikel 5 heißt bewusst „Abschnitt für Abschnitt“ statt „Zeile für Zeile“: Die
 > Zeilennummern der Anlage V ändern sich fast jedes Jahr, die Struktur nicht. Ein
@@ -185,11 +190,11 @@ Offen: Artikel 8 (Mieterhöhung, K1) und Artikel 12 (Umstieg, K4 — setzt den I
 | 5 | Anlage V ausfüllen — Abschnitt für Abschnitt | K2 | **Lösung** | ✅ 30.07.2026 |
 | 6 | AfA richtig ansetzen: 2 %, 2,5 %, 3 % oder degressiv | K2 | Problem | ✅ 30.07.2026 |
 | 7 | Erhaltungsaufwand über 5 Jahre verteilen (§ 82b) | K2 | Problem | ✅ 30.07.2026 |
-| 8 | Mieterhöhung: Fristen, Kappungsgrenze, Formfehler | K1 | Problem | offen |
+| 8 | Mieterhöhung: Fristen, Kappungsgrenze, Formfehler | K1 | Problem | ✅ 31.07.2026 |
 | 9 | Erste Vermietung: die 10 Schritte | K3 | Einstieg | ✅ 30.07.2026 |
 | 10 | Mietvertrag prüfen: die Klauseln, die Geld kosten | K3 | Einstieg | ✅ 30.07.2026 |
 | 11 | Wohnung geerbt: Steuern, Fristen, erste Abrechnung | K3 | Einstieg | ✅ 30.07.2026 |
-| 12 | Von vermietet.de umziehen — ohne Datenverlust | K4 | **Kauf** | offen |
+| 12 | Vermietungssoftware wechseln — ohne Datenverlust | K4 | **Kauf** | ✅ 31.07.2026 |
 
 **Regel für jeden Artikel:** ein klar benanntes Problem, die rechtliche Grundlage mit
 Paragraf, ein Rechenbeispiel — und *erst am Schluss* der Hinweis auf die passende
@@ -256,11 +261,11 @@ Wettbewerbsbeobachtung. **Vollständig.**
 | Art | Möglich | Anmerkung |
 |---|---|---|
 | Ratgeber-Artikel | ✅ | liegen als Code in `lib/ratgeber.ts` — schreiben und ausliefern in einem Schritt |
-| Funktions-Landingpages | ✅ | |
+| Funktions-Landingpages | ✅ | **gebaut 31.07.2026**: `/funktionen/nebenkostenabrechnung`, `/steuer-anlage-v`, `/mietkonto`, `/termine-fristen` |
 | Vorlagen (Text + PDF) | ✅ | PDF-Generator und Dokument-Design existieren |
 | **App-Screenshots** | ✅ | `scripts/screenshots.mjs` — beide Themes, Handy und Desktop, reproduzierbar |
 | E-Mail-Strecken (Text) | ✅ | Versand erst nach V1 |
-| Portal-Profiltexte | ✅ | Einreichen musst du |
+| Portal-Profiltexte | ✅ | **geschrieben 31.07.2026**: `docs/marketing/portal-profile.md`. Einreichen musst du |
 | Bilder / Video | ⚠️ | Higgsfield vorhanden; kostet Credits, Markentreue ungeprüft. Für diese Zielgruppe nachrangig |
 | Canva | ❌ | Verbindung nicht autorisiert — Freigabe in den claude.ai-Connector-Einstellungen |
 
