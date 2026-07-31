@@ -130,6 +130,21 @@ Entscheidungen aus der Planung (12.07.2026):
   15.07.2026: **Anthropic-DPA archiviert** (`docs/compliance/anthropic-dpa-archiv.md`) + DPF
   geprüft → Anthropic nutzt **SCCs, kein DPF** (Transfer in Datenschutzerklärung als SCC ausweisen).
   ✅ 24.07.2026: **Supabase-DPA signiert** (PandaDoc; PDF + TIA in `docs/compliance/`).
+  ⏳ **OFFEN — Brevo-AVV (Recherche 31.07.2026, Schritte stehen fest):** Bei Brevo ist der AVV
+  **Anlage 2 („Annex 2 — Data Processing Agreement") zu den Nutzungsbedingungen** und gilt
+  automatisch mit Vertragsschluss — in der Regel **keine gesonderte Unterschrift** (Muster wie
+  Vercel/Anthropic, NICHT wie Supabase). Zu tun: (1) Konto → Kontoname oben rechts →
+  Einstellungen → **Rechtsdokumente** prüfen, ob dort doch eine signierbare Fassung liegt;
+  (2) **Firmendaten im Konto** auf die Gewerbeanmeldung bringen (MyImmo, Einzelunternehmen,
+  Bad Schwartau) — sonst lautet der Vertrag auf die falsche Partei; (3) DPA-PDF mit Version und
+  Abrufdatum archivieren (`docs/compliance/brevo-dpa-archiv.md`, Muster: Anthropic-Archiv);
+  (4) Unterauftragsverarbeiter-Liste prüfen, Benachrichtigungsadresse muss gelesen werden
+  (Widerspruchsrecht); (5) Transfer in der Datenschutzerklärung als **SCC** ausweisen (kein DPF);
+  (6) Datenschutzkontakt **dpo@brevo.com** ins Verarbeitungsverzeichnis; (7) Eintrag in
+  `docs/compliance/AVV-STATUS.md` (Sitz Frankreich, Verarbeitung EU).
+  ⏳ **OFFEN — Datenschutzerklärung um den Vorlagen-Verteiler ergänzen:** Zweck, Rechtsgrundlage
+  Art. 6 Abs. 1 lit. a DSGVO (Einwilligung), Empfänger Brevo, Speicherdauer, Widerrufsrecht.
+  Ohne den Passus werden die Adressen ohne die vorgeschriebene Information verarbeitet.
   ✅ 29.07.2026: **Vercel auf Pro** → AVV greift automatisch über die ToS, kommerzielle
   Nutzung erlaubt. Noch offen (nur Betreiber): Nutzer-AVV anwaltlich prüfen. Anwaltsliste zusätzlich (19.07.2026):
   **§ 34i GewO** (Finanzierungs-Assistent Stufe 1 — Wording bereits neutralisiert, „Empfehlung"
