@@ -17,6 +17,12 @@
   von kfw308, `KFW_STAND`), `docs/kauf/KfW-Foerderung-2026.md`, Tests in
   `tests/foerderung.test.ts`. Neue Beträge vorher auf der KfW-308-Produktseite nachlesen.
   Danach diesen Eintrag entfernen.
+- **Ab 01.01.2027: Ratgeber-Artikel zur Fernablesepflicht entschärfen.** Der Artikel
+  `heizkostenabrechnung-50-70-regel-fernablesung` in `lib/ratgeber.ts` wirbt mit der
+  ablaufenden Frist **31.12.2026** (§ 5 HeizkostenV). Ab 2027 ist die Frist Vergangenheit:
+  Titel/Beschreibung entschärfen („Frist zum 31.12.2026" raus), Abschnitt auf „Pflicht
+  besteht seit 2027" umschreiben, die 3-%-Kürzungsrechte (§ 12 HeizkostenV) stehen lassen —
+  die bleiben relevant. Danach diesen Eintrag entfernen.
 
 ### Kostet Geld (Paid-Plan/Abo nötig)
 - **Bezahlsystem (Paddle, Merchant of Record) — GEBAUT, aber INAKTIV (24.07.2026).**

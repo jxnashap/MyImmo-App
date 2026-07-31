@@ -72,6 +72,7 @@ export async function middleware(request: NextRequest) {
   const istOeffentlich =
     pathname === "/" || // eigene Willkommens-Ansicht für Ausgeloggte
     pathname === "/funktionen" || // Landing-Unterseiten (Marketing, öffentlich)
+    pathname.startsWith("/funktionen/") || // Funktions-Landingpages je Kernaufgabe
     pathname === "/preise" ||
     pathname === "/vision" ||
     pathname === "/ratgeber" || // SEO-Ratgeber (öffentlich)

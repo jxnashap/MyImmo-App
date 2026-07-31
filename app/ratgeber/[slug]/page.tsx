@@ -53,6 +53,41 @@ export default function RatgeberArtikelSeite({ params }: { params: { slug: strin
 
           <p style={{ fontSize: 16, lineHeight: 1.7, color: "var(--l-ink)", marginBottom: 28, fontWeight: 500 }}>{a.intro}</p>
 
+          {/* Kurzcheck vor dem Text: konkreter Beispielfall statt abstrakter
+              Zielgruppenansage. Wer sich nicht wiedererkennt, spart sich die
+              Lesezeit — das ist beabsichtigt und kein verlorener Leser. */}
+          {a.kurzcheck && (
+            <aside
+              aria-label="Kurzcheck"
+              style={{
+                background: "var(--l-bg3)",
+                borderLeft: "3px solid var(--l-gold)",
+                borderRadius: 8,
+                padding: "18px 20px",
+                margin: "0 0 30px",
+              }}
+            >
+              <div className="lp-vorher" style={{ color: "var(--l-gold-ink)", marginBottom: 8 }}>
+                Kurzcheck — ist das Ihr Fall?
+              </div>
+              <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--l-ink)", margin: "0 0 12px" }}>
+                {a.kurzcheck.fall}
+              </p>
+              <ul style={{ paddingLeft: 20, margin: "0 0 4px", listStyle: "disc" }}>
+                {a.kurzcheck.passt.map((li, k) => (
+                  <li key={k} style={{ fontSize: 14.5, lineHeight: 1.7, color: "var(--l-muted)", marginBottom: 4 }}>
+                    {li}
+                  </li>
+                ))}
+              </ul>
+              {a.kurzcheck.nichtNoetig && (
+                <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "var(--l-muted)", margin: "10px 0 0" }}>
+                  {a.kurzcheck.nichtNoetig}
+                </p>
+              )}
+            </aside>
+          )}
+
           {a.sektionen.map((s, i) => (
             <section key={i} style={{ marginBottom: 24 }}>
               {s.h && <h2 style={{ fontSize: 19, margin: "0 0 10px" }}>{s.h}</h2>}
@@ -60,7 +95,7 @@ export default function RatgeberArtikelSeite({ params }: { params: { slug: strin
                 <p key={k} style={{ fontSize: 15, lineHeight: 1.75, color: "var(--l-muted)", margin: "0 0 12px" }}>{para}</p>
               ))}
               {s.liste && (
-                <ul style={{ paddingLeft: 20, margin: "4px 0 12px" }}>
+                <ul style={{ paddingLeft: 20, margin: "4px 0 12px", listStyle: "disc" }}>
                   {s.liste.map((li, k) => (
                     <li key={k} style={{ fontSize: 15, lineHeight: 1.7, color: "var(--l-muted)", marginBottom: 6 }}>{li}</li>
                   ))}
@@ -71,7 +106,7 @@ export default function RatgeberArtikelSeite({ params }: { params: { slug: strin
 
           {a.feature && (
             <div style={{ background: "var(--l-bg3)", border: "1px solid var(--l-gold)", borderRadius: 12, padding: "22px 24px", margin: "32px 0" }}>
-              <h3 style={{ fontSize: 17, margin: "0 0 8px", color: "var(--l-gold-dark)" }}>{a.feature.titel}</h3>
+              <h3 style={{ fontSize: 17, margin: "0 0 8px", color: "var(--l-gold-ink)" }}>{a.feature.titel}</h3>
               <p style={{ fontSize: 14.5, lineHeight: 1.65, color: "var(--l-muted)", margin: "0 0 16px" }}>{a.feature.text}</p>
               <Link href={a.feature.href} className="btn btn-gold">{a.feature.cta} <ArrowRight size={14} style={{ verticalAlign: "-2px" }} /></Link>
             </div>

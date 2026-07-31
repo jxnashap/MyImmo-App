@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import LandingShell from "@/components/landing/Shell";
 import Reveal from "@/components/landing/Reveal";
 import Tilt from "@/components/landing/Tilt";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { FEATURES, ROLLEN, SOON_BADGE, Shot } from "@/components/landing/data";
+import { FUNKTIONSSEITEN } from "@/lib/funktionen";
 
 export const metadata: Metadata = {
   title: "Funktionen — MyImmo",
@@ -18,6 +21,22 @@ export default function FunktionenPage() {
           <div className="lp-kicker">Funktionen</div>
           <h1 className="lp-h2" style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>Alles, was Vermieten verlangt</h1>
           <p className="lp-section-sub">Vom ersten Mietvertrag bis zur Anlage V — inklusive Mieterportal, Team-Rollen und Banking-Anbindung.</p>
+
+          {/* Vertiefungen zu den vier Kernaufgaben. Ohne diese Verlinkung
+              waeren die Unterseiten fuer Besucher wie fuer Suchmaschinen
+              nicht erreichbar. */}
+          <div className="lp-cards3" style={{ marginBottom: 34 }}>
+            {FUNKTIONSSEITEN.map((f) => (
+              <Link key={f.slug} href={`/funktionen/${f.slug}`} className="lp-card" style={{ textDecoration: "none" }}>
+                <span className="lp-vorher" style={{ color: "var(--l-gold-ink)" }}>{f.kicker}</span>
+                <h3 style={{ fontSize: 16, margin: "2px 0 6px" }}>{f.titel}</h3>
+                <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--l-muted)", margin: "0 0 8px" }}>{f.beschreibung}</p>
+                <span style={{ fontSize: 13, color: "var(--l-gold-ink)", fontWeight: 600, whiteSpace: "nowrap" }}>
+                  Mehr dazu <ArrowRight size={12} style={{ verticalAlign: "-1px" }} />
+                </span>
+              </Link>
+            ))}
+          </div>
           <div className="lp-features">
             {FEATURES.map((f, i) => (
               <Reveal key={f.t} delay={(i % 4) * 60}>
