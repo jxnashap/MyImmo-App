@@ -97,10 +97,13 @@ Entscheidungen aus der Planung (12.07.2026):
   (siehe „Dokument-/PDF-Design") bleibt unverändert. Verworfen: „Quiet-Luxury"-Ivory, Neon-Bento.
   Sinnvolle Reihenfolge: Redesign VOR großem Marketing (Screenshots/Store-Assets/Ratgeber-Bilder
   sonst doppelt).
-- **Onboarding-Guide für neue Nutzer:** Nach der Registrierung ein kleiner, durchklickbarer
-  Guide (Schritt-für-Schritt-Tour), der zeigt, wo man was einträgt und wie man die App benutzt —
-  z. B. erstes Objekt anlegen → Mieter erfassen → Ein-/Ausgaben buchen → Mietkonto/Dokumente/Steuer.
-  Überspringbar und später über die Einstellungen erneut startbar.
+- ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
+  `components/OnboardingTour.tsx` — sechs Stationen (Objekt → Mieter → Ein-/Ausgaben →
+  Mietkonto → Archiv → Steuer/Assistenten) mit Direktlinks. Öffnet sich automatisch,
+  solange kein Objekt existiert und die Tour nie beendet wurde (`neuerNutzer` aus der
+  Objektzahl im Root-Layout), ist überspringbar, merkt den Fortschritt und lässt sich über
+  Einstellungen → „Einführungs-Tour" per Event neu starten. Der Eintrag stand hier zu lange
+  als Vorhaben und hat zu einer Fehleinschätzung geführt.
 - **Abo-Zugangscode (mit Bezahlsystem umsetzen):** Nach Abschluss/Bezahlung eines Abos erhält
   der Kunde einen individuellen Zugangscode (per E-Mail oder direkt in der App). Der Code ist
   abo-/rollenspezifisch (z. B. gilt ein Hausverwaltungs-Code nur für die Hausverwaltungs-
