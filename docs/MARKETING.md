@@ -166,11 +166,12 @@ messbares Ergebnis — und eine ehrliche Aufwandsangabe.
 Bestand: **5 Artikel** in `lib/ratgeber.ts`. Neu: **12**. Reihenfolge = Priorität.
 Stand 31.07.2026: **17 Artikel** — Redaktionsplan vollständig abgearbeitet.
 
-> Artikel 12 ist bewusst anbieterneutral geschrieben und verspricht **keinen**
-> Datenimport: Der Import-Assistent liest Exposés (PDF, Link, Text), es gibt
-> keinen Ein-Klick-Import fremder Datenbestände. Der Artikel nennt das offen und
-> beziffert den Handaufwand mit 20–40 Minuten je Einheit. Alles andere wäre genau
-> der Bumerang, vor dem K4 selbst warnt.
+> Artikel 12 ist bewusst anbieterneutral geschrieben. **Korrigiert am 31.07.2026:**
+> Die erste Fassung behauptete, es gebe keinen Import fremder Datenbestände — falsch.
+> Der CSV-Import (Einstellungen → Daten & Recht) übernimmt Objekt- und Mieter-Stammdaten
+> aus Exporten von vermietet.de, objego oder Excel, mit automatischer Spaltenzuordnung
+> und Vorschau. Der Artikel nennt jetzt beides: was der Import mitbringt und was
+> Handarbeit bleibt (Buchungen, Kredite, Dokumente, AfA-Werte).
 
 > Artikel 5 heißt bewusst „Abschnitt für Abschnitt“ statt „Zeile für Zeile“: Die
 > Zeilennummern der Anlage V ändern sich fast jedes Jahr, die Struktur nicht. Ein
@@ -239,7 +240,7 @@ werden nach nichts aussehen. Das ist normal und kein Grund umzusteuern.
 
 | # | Was | Warum blockierend | Wer |
 |---|---|---|---|
-| V1 | **E-Mail-Anbieter** (Brevo oder Resend, EU) + Double-Opt-in + AVV | Ohne ihn kein Vorlagen-Gate, kein Kontakt bis zur Kaufreife | Claude baut, Konto legst du an |
+| V1 | **E-Mail-Anbieter** | ⚙️ **gebaut 31.07.2026 mit Brevo**: Double-Opt-in, Einwilligungsnachweis in der DB, Abmeldung. Offen: Env in Vercel, Absender verifizieren (SPF/DKIM), AVV im Brevo-Konto | du |
 | V2 | **AGB + Widerruf anwaltlich** | Vor dem ersten Euro Pflicht | nur du |
 | V3 | **Impressum/Datenschutz anwaltlich** | läuft bereits mit V2 | nur du |
 | V4 | **Support-Kanal** (E-Mail-Adresse + Reaktionszeit) | 41 % über 65 rufen an oder schreiben. Reichweite ohne Antwort = schlechte Bewertungen — und die sind das Ranking-Kriterium der Vergleichsportale | du, mit Vorlagen von Claude |

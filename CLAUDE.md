@@ -51,8 +51,13 @@
   (2048×2048, goldenes Haus + Wortmarke) beim App-Store-Launch als App-Icon einspielen. Ist NICHT
   die Dokument-Wortmarke (die bleibt für PDFs/Briefe) — das PNG ist nur das App-/Store-Icon.
 
-### Open Banking / Konto-Anbindung (geplant — Sandbox-first)
-Entscheidungen aus der Planung (12.07.2026):
+### Open Banking / Konto-Anbindung — CODE FERTIG, inaktiv ohne Env (Stand geprüft 31.07.2026)
+⚠️ Stand bis 31.07.2026 hier als „geplant" geführt — falsch. **Etappen 1–4 sind gebaut:**
+Tabellen `bankverbindungen`/`bank_umsaetze`, `lib/banking/enableBanking.ts` (Bankenliste,
+Autorisierung, Session, Kontodetails, Transaktionen), `/api/banking/callback`, Seite `/banking`,
+Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fristen.ts`.
+**Offen: Anbietervertrag + AVV, Sandbox-Durchlauf — und es gibt KEINE Tests dafür**
+(einziger größerer Bereich ohne Abdeckung). Entscheidungen aus der Planung (12.07.2026):
 - **Nur Lesezugriff** (Kontoinformationsdienst/AISP) über einen **lizenzierten Anbieter** →
   keine eigene BaFin-Lizenz nötig. Kein Zahlungsverkehr.
 - **Mehrere Bankverbindungen je Nutzer** (Sparkasse/Groß-/Direktbank via PSD2/XS2A, ~99 % Abdeckung).
@@ -71,9 +76,9 @@ Entscheidungen aus der Planung (12.07.2026):
   sowie damit verbundene digitale Dienstleistungen; webbasierte Anwendung zur Immobilienverwaltung
   für private Vermieter") + Anbietervertrag + AVV. Laufende Kosten je
   Konto/Monat → kostenpflichtiges **Add-on / Business-Tarif**.
-- **Bau-Etappen**: (1) Tabellen `bankverbindungen` + `bank_umsaetze` (verschlüsselt, RLS);
-  (2) Enable-Banking-Sandbox-Flow (Konto verbinden via JWT-Auth + Umsätze abrufen); (3) Abgleich-Engine +
-  „bestätigen"-UI; (4) 90-Tage-Reauth-Erinnerung.
+- ~~**Bau-Etappen** (1) Tabellen (2) Enable-Banking-Flow (3) Abgleich-Engine (4) Reauth-Erinnerung~~
+  ✅ alle vier im Code umgesetzt (31.07.2026 geprüft). Was fehlt, ist der erste echte Durchlauf
+  gegen die Sandbox — plus Tests.
 - **Enable-Banking-Auth**: registrierte „Application" (Sandbox) + selbst generiertes RSA-Schlüsselpaar
   (privater Key wird im Browser erzeugt, Dateiname = Application ID). API-Calls per JWT (RS256),
   Header `kid` = Application ID. **Benötigte Env (Vercel)**: `ENABLE_BANKING_APP_ID` +
@@ -81,11 +86,12 @@ Entscheidungen aus der Planung (12.07.2026):
   Repo/Logs). Redirect-URL bei der App-Registrierung: `<base>/api/banking/callback`.
 
 ### Sonstiges (kein Geld)
-- **Mindest-Passwortlänge in Supabase auf 8 setzen** (kostenlos, auch auf Free):
+- **Mindest-Passwortlänge in Supabase auf 8 setzen** (kostenlos, auch auf Free) — **am 31.07.2026 erneut geprüft, „abc123" wird weiterhin angenommen:**
   Dashboard → Authentication → Sign In / Providers → Email → „Password Security" →
   Minimum password length. Die App verlangt seit 29.07.2026 durchgängig 8 Zeichen
-  (`lib/passwort.ts`), Supabase steht noch auf **6** — am 29.07.2026 empirisch geprüft:
-  eine Registrierung mit „abc123" wurde angenommen. Solange das auseinanderläuft, greift
+  (`lib/passwort.ts`), Supabase steht noch auf **6** — am 29.07. und erneut am 31.07.2026
+  empirisch geprüft: eine Registrierung mit „abc123" wurde beide Male angenommen
+  (Testkonto jeweils sofort gelöscht). Solange das auseinanderläuft, greift
   nur die App-Prüfung; wer die Auth-API direkt anspricht, kommt mit 6 Zeichen durch.
   Nur im Dashboard setzbar, nicht über API/MCP. **Nach dem Umstellen prüfen**, ob
   bestehende Konten mit kürzerem Passwort sich weiterhin anmelden können (die Regel
@@ -97,10 +103,13 @@ Entscheidungen aus der Planung (12.07.2026):
   (siehe „Dokument-/PDF-Design") bleibt unverändert. Verworfen: „Quiet-Luxury"-Ivory, Neon-Bento.
   Sinnvolle Reihenfolge: Redesign VOR großem Marketing (Screenshots/Store-Assets/Ratgeber-Bilder
   sonst doppelt).
-- **Onboarding-Guide für neue Nutzer:** Nach der Registrierung ein kleiner, durchklickbarer
-  Guide (Schritt-für-Schritt-Tour), der zeigt, wo man was einträgt und wie man die App benutzt —
-  z. B. erstes Objekt anlegen → Mieter erfassen → Ein-/Ausgaben buchen → Mietkonto/Dokumente/Steuer.
-  Überspringbar und später über die Einstellungen erneut startbar.
+- ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
+  `components/OnboardingTour.tsx` — sechs Stationen (Objekt → Mieter → Ein-/Ausgaben →
+  Mietkonto → Archiv → Steuer/Assistenten) mit Direktlinks. Öffnet sich automatisch,
+  solange kein Objekt existiert und die Tour nie beendet wurde (`neuerNutzer` aus der
+  Objektzahl im Root-Layout), ist überspringbar, merkt den Fortschritt und lässt sich über
+  Einstellungen → „Einführungs-Tour" per Event neu starten. Der Eintrag stand hier zu lange
+  als Vorhaben und hat zu einer Fehleinschätzung geführt.
 - **Abo-Zugangscode (mit Bezahlsystem umsetzen):** Nach Abschluss/Bezahlung eines Abos erhält
   der Kunde einen individuellen Zugangscode (per E-Mail oder direkt in der App). Der Code ist
   abo-/rollenspezifisch (z. B. gilt ein Hausverwaltungs-Code nur für die Hausverwaltungs-
@@ -125,11 +134,30 @@ Entscheidungen aus der Planung (12.07.2026):
 - **Finanzkonzept: `docs/FINANZKONZEPT.md`** (Geschäftsmodell/Monetarisierung **und** Finanzierungs-
   Assistent). **REGEL: Bei jeder Änderung am Finanzkonzept/Geschäftsmodell diese Datei im selben PR
   mitaktualisieren.** Ebenso `docs/BRIEFING.md` bei größeren Stand-Änderungen aktuell halten.
-- **Projekt-Status / Feature-Inventar (älter, ausführlich): `docs/PROJEKT-STATUS.md`** (16.07.2026).
+- **Projekt-Status / Feature-Inventar: `docs/PROJEKT-STATUS.md`** — am **31.07.2026 vollständig
+  gegen Code, Datenbank und Live-Seite geprüft**. Enthält Kennzahlen, was fertig ist, was gebaut
+  aber inaktiv, was nur der Betreiber erledigen kann, und einen Abschnitt „was nicht verifizierbar
+  war". **Vor jeder Aussage „das fehlt noch" dort nachsehen** — mehrere Punkte standen monatelang
+  als offen, obwohl sie längst gebaut waren.
 - **AVV-Abschlussstand: `docs/compliance/AVV-STATUS.md`** (Checkliste je Anbieter). Erledigt
   15.07.2026: **Anthropic-DPA archiviert** (`docs/compliance/anthropic-dpa-archiv.md`) + DPF
   geprüft → Anthropic nutzt **SCCs, kein DPF** (Transfer in Datenschutzerklärung als SCC ausweisen).
   ✅ 24.07.2026: **Supabase-DPA signiert** (PandaDoc; PDF + TIA in `docs/compliance/`).
+  ⏳ **OFFEN — Brevo-AVV (Recherche 31.07.2026, Schritte stehen fest):** Bei Brevo ist der AVV
+  **Anlage 2 („Annex 2 — Data Processing Agreement") zu den Nutzungsbedingungen** und gilt
+  automatisch mit Vertragsschluss — in der Regel **keine gesonderte Unterschrift** (Muster wie
+  Vercel/Anthropic, NICHT wie Supabase). Zu tun: (1) Konto → Kontoname oben rechts →
+  Einstellungen → **Rechtsdokumente** prüfen, ob dort doch eine signierbare Fassung liegt;
+  (2) **Firmendaten im Konto** auf die Gewerbeanmeldung bringen (MyImmo, Einzelunternehmen,
+  Bad Schwartau) — sonst lautet der Vertrag auf die falsche Partei; (3) DPA-PDF mit Version und
+  Abrufdatum archivieren (`docs/compliance/brevo-dpa-archiv.md`, Muster: Anthropic-Archiv);
+  (4) Unterauftragsverarbeiter-Liste prüfen, Benachrichtigungsadresse muss gelesen werden
+  (Widerspruchsrecht); (5) Transfer in der Datenschutzerklärung als **SCC** ausweisen (kein DPF);
+  (6) Datenschutzkontakt **dpo@brevo.com** ins Verarbeitungsverzeichnis; (7) Eintrag in
+  `docs/compliance/AVV-STATUS.md` (Sitz Frankreich, Verarbeitung EU).
+  ⏳ **OFFEN — Datenschutzerklärung um den Vorlagen-Verteiler ergänzen:** Zweck, Rechtsgrundlage
+  Art. 6 Abs. 1 lit. a DSGVO (Einwilligung), Empfänger Brevo, Speicherdauer, Widerrufsrecht.
+  Ohne den Passus werden die Adressen ohne die vorgeschriebene Information verarbeitet.
   ✅ 29.07.2026: **Vercel auf Pro** → AVV greift automatisch über die ToS, kommerzielle
   Nutzung erlaubt. Noch offen (nur Betreiber): Nutzer-AVV anwaltlich prüfen. Anwaltsliste zusätzlich (19.07.2026):
   **§ 34i GewO** (Finanzierungs-Assistent Stufe 1 — Wording bereits neutralisiert, „Empfehlung"
@@ -182,6 +210,13 @@ Entscheidungen aus der Planung (12.07.2026):
 ### Benötigte Environment-Variablen (Vercel)
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `ANTHROPIC_API_KEY` — für OCR / KI-Import (NK-Abrechnung auslesen, Objekt-Import)
+- `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` — E-Mail-Versand (Vorlagen-Verteiler, Double-Opt-in).
+  Optional `BREVO_ABSENDER_NAME` (Default „MyImmo") und `BREVO_LIST_ID` (ohne sie wird der
+  bestätigte Kontakt zwar angelegt, aber in keine Liste einsortiert). Fehlt eine der beiden
+  Pflicht-Env, antwortet `/api/newsletter` mit 503 statt einen Versand vorzutäuschen.
+  Absenderadresse muss in Brevo verifiziert sein (SPF/DKIM für myimmoapp.de setzen).
+  **AVV mit Brevo im Konto abschließen** (Sitz Frankreich, EU-Verarbeitung) und in
+  `docs/compliance/AVV-STATUS.md` nachtragen.
 - `DATA_ENCRYPTION_KEY` — 32 Byte base64 (`openssl rand -base64 32`) für die App-Layer-
   Verschlüsselung der Bankdaten (IBAN/Inhaber, `lib/crypto/secure.ts`). **Schlüsselverlust =
   Bankdaten unwiederbringlich weg** → sicher sichern (Passwortmanager), nie ins Repo/Logs.

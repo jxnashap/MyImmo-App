@@ -1165,12 +1165,13 @@ export const RATGEBER: RatgeberArtikel[] = [
         ],
       },
       {
-        h: "Schritt 4: Übertragen — was realistisch möglich ist",
+        h: "Schritt 4: Übertragen",
         p: [
-          "Hier die unbequeme Wahrheit, die andere Umzugsanleitungen auslassen: Einen Ein-Klick-Import fremder Datenbestände gibt es nicht — weder bei MyImmo noch, soweit ersichtlich, bei den anderen Anbietern. Jeder benutzt ein eigenes Datenmodell, und ein Export des einen passt nicht in die Felder des anderen.",
-          "Was Ihnen Arbeit abnimmt: Für die Objektstammdaten liest der Import-Assistent ein Exposé aus — als PDF, als Link oder als eingefügter Text. Bei einem Objekt, dessen Verkaufsanzeige Sie noch haben, sind Fläche, Baujahr, Zimmerzahl und Preis damit in einem Schritt erfasst.",
-          "Alles Übrige tragen Sie ein. Rechnen Sie mit etwa 20 bis 40 Minuten je Einheit, wenn der Export vorliegt und Sie einmal sortiert haben. Bei einer Eigentumswohnung ist das ein Abend, bei fünf Einheiten ein Wochenende.",
-          "Das klingt nach viel. Gemessen an dem, was ein stiller Datenverlust in einer automatischen Migration kostet, ist es wenig — und Sie kontrollieren jeden Wert dabei einmal.",
+          "Für Objekte und Mieter gibt es in MyImmo einen CSV-Import (Einstellungen → Daten & Recht → Import). Sie laden den Export Ihres bisherigen Anbieters oder eine Excel-Tabelle hoch, ordnen die Spalten den MyImmo-Feldern zu — ein Vorschlag kommt automatisch, weil die üblichen Spaltennamen hinterlegt sind — sehen eine Vorschau und bestätigen erst dann. Ohne diesen letzten Klick wird nichts geschrieben.",
+          "Übernommen werden dabei die Stammdaten: bei Objekten unter anderem Bezeichnung, Adresse, Typ, Kaufpreis und -datum, Fläche, Baujahr, Miete und Hausgeld; bei Mietern Name, Objektzuordnung, Kaltmiete, Nebenkostenvorauszahlung, Kaution sowie Miet- und Auszugsdatum.",
+          "Einzelne Objekte gehen auch ohne Tabelle: Der Exposé-Import liest eine Verkaufsanzeige als PDF, Link oder eingefügten Text aus und füllt die Felder vor.",
+          "Was der Import nicht mitbringt, tragen Sie nach: laufende Buchungen, Kredite, Dokumente und vor allem die Abschreibungswerte — Bemessungsgrundlage, Satz und bereits abgezogene Jahre. Gerade die sind mühsam zu rekonstruieren und stehen selten in einem Export.",
+          "Realistisch sind damit für die Stammdaten Minuten statt Stunden; der Rest bleibt Handarbeit und lohnt die Sorgfalt, weil Sie dabei jeden Wert einmal prüfen.",
         ],
       },
       {
