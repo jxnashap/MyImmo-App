@@ -166,11 +166,12 @@ messbares Ergebnis — und eine ehrliche Aufwandsangabe.
 Bestand: **5 Artikel** in `lib/ratgeber.ts`. Neu: **12**. Reihenfolge = Priorität.
 Stand 31.07.2026: **17 Artikel** — Redaktionsplan vollständig abgearbeitet.
 
-> Artikel 12 ist bewusst anbieterneutral geschrieben und verspricht **keinen**
-> Datenimport: Der Import-Assistent liest Exposés (PDF, Link, Text), es gibt
-> keinen Ein-Klick-Import fremder Datenbestände. Der Artikel nennt das offen und
-> beziffert den Handaufwand mit 20–40 Minuten je Einheit. Alles andere wäre genau
-> der Bumerang, vor dem K4 selbst warnt.
+> Artikel 12 ist bewusst anbieterneutral geschrieben. **Korrigiert am 31.07.2026:**
+> Die erste Fassung behauptete, es gebe keinen Import fremder Datenbestände — falsch.
+> Der CSV-Import (Einstellungen → Daten & Recht) übernimmt Objekt- und Mieter-Stammdaten
+> aus Exporten von vermietet.de, objego oder Excel, mit automatischer Spaltenzuordnung
+> und Vorschau. Der Artikel nennt jetzt beides: was der Import mitbringt und was
+> Handarbeit bleibt (Buchungen, Kredite, Dokumente, AfA-Werte).
 
 > Artikel 5 heißt bewusst „Abschnitt für Abschnitt“ statt „Zeile für Zeile“: Die
 > Zeilennummern der Anlage V ändern sich fast jedes Jahr, die Struktur nicht. Ein

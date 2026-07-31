@@ -130,8 +130,16 @@ Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterpri
 
 ### Kalkulatoren
 Roter Faden (Kauf-Kalkulation), Cockpit, Bankgespräch, KI-Objekt-Import (URL/Exposé/PDF → Anthropic).
-**Der Import liest Exposés — es gibt keinen Import fremder Datenbestände** (wichtig für die
-Umstiegs-Kommunikation).
+
+**Zwei getrennte Importwege — nicht verwechseln:**
+1. **Exposé-Import** (`/properties/import`): eine Verkaufsanzeige als PDF, Link oder Text →
+   Objektfelder vorbefüllt.
+2. **CSV-Import** (Einstellungen → Daten & Recht → Import, `lib/importCsv.ts` +
+   `components/ImportAssistent.tsx`): Export aus **vermietet.de, objego oder Excel** →
+   Spalten den MyImmo-Feldern zuordnen (Auto-Vorschlag über Synonyme) → Vorschau →
+   bestätigen. Deckt **Objekte** (11 Felder) und **Mieter** (12 Felder) ab.
+   Das ist Roadmap-Punkt C6 und war am 31.07.2026 in zwei Dokumenten fälschlich als
+   fehlend geführt.
 
 ### Mieterportal (`/portal`)
 Wohnung/Vertragsdaten · **Anliegen** melden (Schaden/Frage/Dokument, max. 3 Anhänge à 4 MB) ·
