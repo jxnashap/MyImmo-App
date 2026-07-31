@@ -51,6 +51,12 @@ const SEITEN = [
   { key: "funktionen", pfad: "/funktionen", titel: "Funktionen", voll: true },
   { key: "preise", pfad: "/preise", titel: "Preise", voll: true },
   { key: "ratgeber", pfad: "/ratgeber", titel: "Ratgeber-Übersicht", voll: true },
+  {
+    key: "ratgeber-artikel",
+    pfad: "/ratgeber/nebenkostenabrechnung-erstellen-schritt-fuer-schritt",
+    titel: "Ratgeber-Artikel",
+    voll: true,
+  },
   { key: "vorlagen", pfad: "/vorlagen", titel: "Vorlagen", voll: true },
   { key: "vision", pfad: "/vision", titel: "Vision", voll: true },
   { key: "login", pfad: "/login", titel: "Anmeldung" },

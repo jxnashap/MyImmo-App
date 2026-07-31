@@ -6,6 +6,20 @@ export type RatgeberSektion = { h?: string; p?: string[]; liste?: string[] };
 
 export type RatgeberFeature = { titel: string; text: string; href: string; cta: string };
 
+// Kurzcheck über dem Artikel: Wer ihn aufschlägt, soll in zehn Sekunden wissen,
+// ob er hier richtig ist — statt neun Minuten zu lesen und am Ende zu merken,
+// dass es um einen anderen Fall ging. Ein konkreter Beispielfall trägt das
+// besser als eine abstrakte Zielgruppenbeschreibung: Man erkennt sich wieder
+// oder eben nicht.
+export type RatgeberKurzcheck = {
+  /** Ein konkreter Fall in ein bis zwei Sätzen — zum Wiedererkennen. */
+  fall: string;
+  /** Woran der Leser merkt, dass der Artikel seinen Fall trifft. */
+  passt: string[];
+  /** Wann er sich das Lesen sparen kann — inklusive Verweis, wohin stattdessen. */
+  nichtNoetig?: string;
+};
+
 export type RatgeberArtikel = {
   slug: string;
   titel: string;
@@ -13,6 +27,7 @@ export type RatgeberArtikel = {
   kategorie: "Nebenkosten" | "Steuer" | "Recht" | "Einstieg";
   datum: string;        // ISO
   lesezeit: number;     // Minuten
+  kurzcheck?: RatgeberKurzcheck;
   intro: string;
   sektionen: RatgeberSektion[];
   feature?: RatgeberFeature; // interner Verweis auf eine MyImmo-Funktion
@@ -27,6 +42,17 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Nebenkosten",
     datum: "2026-07-30",
     lesezeit: 9,
+    kurzcheck: {
+      fall:
+        "Das Abrechnungsjahr ist um, der Mieter hat monatlich 200 € vorausgezahlt — und auf dem Tisch liegt ein Stapel Rechnungen, aus dem eine Abrechnung werden soll.",
+      passt: [
+        "Sie erstellen Ihre erste oder zweite Nebenkostenabrechnung und wollen die richtige Reihenfolge kennen.",
+        "Sie rechnen seit Jahren ab, sind sich aber nie sicher, ob die Abrechnung formell hält.",
+        "Ein Mieter hat Ihrer letzten Abrechnung widersprochen und Sie suchen die Stelle, an der es geklemmt hat.",
+      ],
+      nichtNoetig:
+        "Sie wollen eine fremde Abrechnung prüfen statt selbst eine erstellen? Dann ist der Ratgeber zu Fristen und Fehlern der schnellere Einstieg.",
+    },
     intro:
       "Die meisten Anleitungen erklären, was in einer Nebenkostenabrechnung falsch sein kann. Diese hier erklärt, wie Sie eine richtige erstellen — in sechs Schritten, mit einem durchgerechneten Beispiel für eine 80-m²-Wohnung in einem Haus mit 400 m². Wer diese Reihenfolge einhält, hat am Ende eine Abrechnung, die formell hält und inhaltlich nachvollziehbar ist.",
     sektionen: [
@@ -131,6 +157,17 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Nebenkosten",
     datum: "2026-07-30",
     lesezeit: 7,
+    kurzcheck: {
+      fall:
+        "Vier Wohnungen, 1.200 € Müllgebühren im Jahr — und die Frage, ob die vierköpfige Familie mehr zahlen muss als der Single in der gleich großen Wohnung.",
+      passt: [
+        "Ihr Mietvertrag sagt zum Verteilerschlüssel nichts oder nur den Satz nach Wohnfläche.",
+        "Sie wollen einen Schlüssel wechseln und wissen nicht, ob Sie das einseitig dürfen.",
+        "Sie haben Leerstand im Haus oder eine Gewerbeeinheit im Erdgeschoss.",
+      ],
+      nichtNoetig:
+        "Geht es nur um Heizung und Warmwasser? Für die gilt eine eigene Verordnung — dazu der Heizkosten-Ratgeber.",
+    },
     intro:
       "Der Umlageschlüssel entscheidet darüber, wer wie viel zahlt — und er ist einer der vier Punkte, die in jeder Abrechnung genannt und erläutert werden müssen. Dieser Ratgeber zeigt, welcher Schlüssel wann gilt, wann Sie ihn wechseln dürfen und wie stark die Wahl das Ergebnis verschiebt.",
     sektionen: [
@@ -202,6 +239,18 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Nebenkosten",
     datum: "2026-07-30",
     lesezeit: 8,
+    kurzcheck: {
+      fall:
+        "Die Abrechnung des Messdienstes liegt vor, 6.000 € Heizkosten fürs Haus — und der Mieter fragt, warum er trotz sparsamen Heizens fast so viel zahlt wie im Vorjahr.",
+      passt: [
+        "Sie verteilen Heizkosten bisher ganz oder überwiegend nach Wohnfläche.",
+        "Sie wissen nicht, ob Ihre Zähler bis zum 31.12.2026 fernablesbar sein müssen.",
+        "Ein Mieter ist unterjährig ein- oder ausgezogen.",
+        "Sie bewohnen selbst eine Wohnung in einem Zweifamilienhaus — dann könnte eine Ausnahme greifen.",
+      ],
+      nichtNoetig:
+        "Sind Heizung und Warmwasser bei Ihnen in der Miete enthalten und Sie rechnen gar nicht ab, betrifft Sie praktisch nur der Abschnitt zur Fernablesepflicht.",
+    },
     intro:
       "Heizung und Warmwasser sind der größte Posten der Nebenkostenabrechnung und der einzige, für den eine eigene Verordnung gilt. Wer hier pauschal nach Fläche verteilt, verschenkt 15 Prozent. Und zum 31.12.2026 läuft eine Frist ab, die viele Vermieter noch nicht auf dem Schirm haben.",
     sektionen: [
@@ -278,6 +327,17 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Nebenkosten",
     datum: "2026-07-30",
     lesezeit: 6,
+    kurzcheck: {
+      fall:
+        "Zwei Wochen nach der Abrechnung schreibt der Mieter, er wolle sämtliche Belege sehen — und zwar als Kopie per Post.",
+      passt: [
+        "Ein Mieter hat Belegeinsicht verlangt und Sie wissen nicht, was Sie schulden.",
+        "Der Mieter wohnt weit entfernt oder ist bereits ausgezogen.",
+        "Sie überlegen, ob Sie die Nachzahlung anmahnen können, solange die Einsicht offen ist.",
+      ],
+      nichtNoetig:
+        "Sie müssen die Abrechnung erst noch erstellen? Dann zuerst der Schritt-für-Schritt-Ratgeber.",
+    },
     intro:
       "Nach fast jeder Nachzahlung kommt die Frage nach den Belegen. Wer dann falsch reagiert — pauschal ablehnt oder ungefragt alles verschickt — macht sich das Leben schwerer als nötig. Die Rechtslage ist übersichtlicher, als die meisten annehmen.",
     sektionen: [
@@ -343,6 +403,17 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Einstieg",
     datum: "2026-07-30",
     lesezeit: 9,
+    kurzcheck: {
+      fall:
+        "Die Wohnung ist frei, das Inserat steht, drei Bewerber haben sich gemeldet — und Sie haben noch nie einen Mietvertrag geschlossen.",
+      passt: [
+        "Sie vermieten zum ersten Mal.",
+        "Sie haben eine leere Wohnung gekauft oder geerbt und suchen jetzt Mieter.",
+        "Sie sind unsicher, welche Pflichten mit dem Einzug beginnen.",
+      ],
+      nichtNoetig:
+        "Übernehmen Sie ein laufendes Mietverhältnis, ändert sich am Vertrag zunächst nichts — dann passt der Ratgeber zum Mietvertrag besser.",
+    },
     intro:
       "Die erste Vermietung ist keine Frage der Begabung, sondern der Reihenfolge. Wer die zehn Schritte in dieser Abfolge abarbeitet, hat am Ende ein Mietverhältnis, das trägt — und keine Nachfrage vom Ordnungsamt, weil eine Zwei-Wochen-Frist übersehen wurde.",
     sektionen: [
@@ -442,6 +513,17 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Recht",
     datum: "2026-07-30",
     lesezeit: 8,
+    kurzcheck: {
+      fall:
+        "Der Mieter zieht aus, die Wände sind bunt, Sie verweisen auf die Renovierungsklausel im Vertrag von 2009 — und der Mieter antwortet, die sei unwirksam.",
+      passt: [
+        "Ihr Mietvertrag stammt aus einer Vorlage oder ist einige Jahre alt.",
+        "Sie haben eine Wohnung mit laufendem Mietvertrag gekauft oder geerbt.",
+        "Sie wollen wissen, ob Sie sich auf eine bestimmte Klausel überhaupt berufen können.",
+      ],
+      nichtNoetig:
+        "Sie setzen gerade einen neuen Vertrag auf? Dann ist der Ratgeber zur ersten Vermietung der Einstieg — dieser zeigt, was darin nicht stehen sollte.",
+    },
     intro:
       "Mietverträge werden selten neu geschrieben. Sie werden kopiert — vom Vormieter, aus dem Internet, aus dem Ordner des Erblassers. Genau deshalb stehen in vielen Verträgen Klauseln, die der Bundesgerichtshof vor Jahren kassiert hat. Das Tückische daran: Der Vertrag sieht vollständig aus, und die Lücke zeigt sich erst, wenn Sie sich auf die Klausel berufen wollen.",
     sektionen: [
@@ -524,6 +606,18 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Einstieg",
     datum: "2026-07-30",
     lesezeit: 8,
+    kurzcheck: {
+      fall:
+        "Der Vater ist im März gestorben, zum Nachlass gehört eine vermietete Zweizimmerwohnung — und niemand weiß, was zuerst zu tun ist.",
+      passt: [
+        "Der Erbfall liegt weniger als sechs Wochen zurück.",
+        "Zum Nachlass gehört Grundbesitz und Sie haben dem Finanzamt noch nichts gemeldet.",
+        "Sie erben gemeinsam mit Geschwistern.",
+        "Die Nebenkostenabrechnung für das Vorjahr ist noch offen.",
+      ],
+      nichtNoetig:
+        "Geht es Ihnen um die praktischen Schritte der Weitervermietung statt um Steuern und Fristen, hilft der Ratgeber zur geerbten Immobilie.",
+    },
     intro:
       "Nach einem Erbfall laufen mehrere Fristen gleichzeitig, und keine davon meldet sich von selbst. Dieser Ratgeber sortiert sie nach Dringlichkeit und erklärt die drei steuerlichen Punkte, die bei einer geerbten Mietwohnung wirklich zählen. Wer die Immobilie behalten und weitervermieten will, findet die praktischen ersten Schritte im Ratgeber „Geerbte Immobilie vermieten“.",
     sektionen: [
@@ -617,6 +711,18 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Steuer",
     datum: "2026-07-30",
     lesezeit: 9,
+    kurzcheck: {
+      fall:
+        "Die Steuererklärung steht an, 9.600 € Mieteinnahmen im Jahr — und das Formularprogramm bietet drei verschiedene Anlagen V zur Auswahl an.",
+      passt: [
+        "Sie füllen die Anlage V zum ersten Mal aus.",
+        "Sie vermieten eine Ferienwohnung oder untervermieten Räume und wissen nicht, welches Formular gilt.",
+        "Sie haben ein Darlehen und sind unsicher, welcher Teil der Rate absetzbar ist.",
+        "Sie vermieten an Angehörige unter der ortsüblichen Miete.",
+      ],
+      nichtNoetig:
+        "Ist nur die Abschreibung unklar, geht der AfA-Ratgeber allein darauf ein.",
+    },
     intro:
       "Die Anlage V ist kein kompliziertes Formular, aber ein unübersichtliches. Diese Anleitung geht es Abschnitt für Abschnitt durch. Bewusst ohne Zeilennummern: Die Nummerierung ändert sich fast jedes Jahr, die Struktur bleibt. Wer die Struktur verstanden hat, findet die Zeile in jeder Fassung.",
     sektionen: [
@@ -709,6 +815,18 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Steuer",
     datum: "2026-07-30",
     lesezeit: 8,
+    kurzcheck: {
+      fall:
+        "Sie haben eine Eigentumswohnung für 400.000 € gekauft, Baujahr 1998 — und müssen jetzt entscheiden, welcher Anteil davon Gebäude ist und mit welchem Satz abgeschrieben wird.",
+      passt: [
+        "Sie haben in diesem oder im vergangenen Jahr gekauft.",
+        "Im Kaufvertrag steht keine Aufteilung zwischen Grund und Boden und Gebäude.",
+        "Sie bauen neu oder kaufen einen Neubau und haben von degressiver Abschreibung gehört.",
+        "Sie haben geerbt und wollen wissen, ob Sie neu abschreiben dürfen.",
+      ],
+      nichtNoetig:
+        "Läuft Ihre Abschreibung seit Jahren unverändert und der Bescheid war nie strittig, ändert dieser Artikel für Sie wenig.",
+    },
     intro:
       "Die Abschreibung ist bei den meisten Vermietern der größte Werbungskostenposten — und der einzige, dem kein Geldabfluss gegenübersteht. Umso ärgerlicher, wenn sie zu niedrig angesetzt wird, weil die Bemessungsgrundlage falsch ermittelt wurde oder der falsche Satz gewählt wurde.",
     sektionen: [
@@ -796,6 +914,18 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Steuer",
     datum: "2026-07-30",
     lesezeit: 7,
+    kurzcheck: {
+      fall:
+        "Das neue Dach hat 30.000 € gekostet, die Wohnung bringt 12.000 € Miete im Jahr — der Abzug wäre größer als alles, wogegen er sich rechnen ließe.",
+      passt: [
+        "Eine einzelne Maßnahme kostet mehr als die Jahresmiete des Objekts.",
+        "Ihr zu versteuerndes Einkommen steigt oder sinkt in den nächsten Jahren spürbar.",
+        "Sie haben in den ersten drei Jahren nach dem Kauf saniert.",
+        "Sie haben eine Immobilie geerbt, bei der eine Verteilung noch läuft.",
+      ],
+      nichtNoetig:
+        "Kleinere Reparaturen ziehen Sie schlicht im Jahr der Zahlung ab — dafür brauchen Sie diese Vorschrift nicht.",
+    },
     intro:
       "Eine neue Heizung, ein neues Dach, neue Fenster: Größere Reparaturen sind im Jahr der Zahlung in voller Höhe abziehbar. Genau das ist manchmal das Problem — der Abzug verpufft, wenn ihm keine ausreichenden Einkünfte gegenüberstehen. Für diesen Fall erlaubt § 82b EStDV die Verteilung auf mehrere Jahre.",
     sektionen: [
@@ -873,6 +1003,17 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Nebenkosten",
     datum: "2026-07-15",
     lesezeit: 6,
+    kurzcheck: {
+      fall:
+        "Der 31. Dezember rückt näher, und die Abrechnung für das Vorjahr liegt noch als Entwurf auf dem Schreibtisch.",
+      passt: [
+        "Sie sind unsicher, bis wann die Abrechnung beim Mieter sein muss.",
+        "Eine Abrechnung ist verspätet und Sie wollen wissen, was Sie noch fordern können.",
+        "Ein Mieter hat Einwendungen erhoben.",
+      ],
+      nichtNoetig:
+        "Wollen Sie die Abrechnung erst erstellen, ist der Schritt-für-Schritt-Ratgeber der Einstieg.",
+    },
     intro:
       "Studien schätzen, dass über 80 % der Nebenkostenabrechnungen fehlerhaft sind. Für Vermieter ist das teuer: Ein Formfehler oder eine versäumte Frist kann den gesamten Nachzahlungsanspruch kosten. Dieser Ratgeber zeigt die Fristen und die typischen Stolperfallen.",
     sektionen: [
@@ -922,6 +1063,17 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Nebenkosten",
     datum: "2026-07-15",
     lesezeit: 4,
+    kurzcheck: {
+      fall:
+        "Der neue Grundsteuerbescheid liegt vor, der Betrag ist deutlich höher als bisher — und offen ist, ob und ab wann der Mieter das trägt.",
+      passt: [
+        "Ihr Grundsteuerbetrag hat sich durch die Reform verändert.",
+        "Sie wollen wissen, welcher Bescheid in welches Abrechnungsjahr gehört.",
+        "Sie prüfen, ob Ihre Betriebskostenklausel die Grundsteuer überhaupt erfasst.",
+      ],
+      nichtNoetig:
+        "Bei einer Bruttomiete ohne Betriebskostenumlage bleibt die Grundsteuer bei Ihnen — dann ist der Artikel nur zur Einordnung interessant.",
+    },
     intro:
       "Seit dem 1.1.2025 gilt die reformierte Grundsteuer. Je nach Kommune und Landesmodell haben sich die Beträge teils deutlich verändert — nach oben wie nach unten. Für die Abrechnung 2025, die Sie 2026 erstellen, ist das relevant.",
     sektionen: [
@@ -960,6 +1112,17 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Steuer",
     datum: "2026-07-15",
     lesezeit: 5,
+    kurzcheck: {
+      fall:
+        "Ein Mieter bittet Sie, die Handwerker- und Dienstleistungskosten aus der Nebenkostenabrechnung getrennt auszuweisen — er will sie in seiner Steuererklärung geltend machen.",
+      passt: [
+        "Ein Mieter hat nach einer Bescheinigung für haushaltsnahe Leistungen gefragt.",
+        "Sie wollen wissen, welche Positionen der Abrechnung dafür überhaupt in Frage kommen.",
+        "Sie möchten den Ausweis freiwillig anbieten, um Rückfragen einzusparen.",
+      ],
+      nichtNoetig:
+        "Für Ihre eigene Steuererklärung als Vermieter bringt die Vorschrift nichts — dort zählen dieselben Kosten ohnehin voll als Werbungskosten.",
+    },
     intro:
       "Viele Mieter wissen nicht, dass in ihrer Nebenkostenabrechnung steuerlich absetzbare Arbeitskosten stecken. Als Vermieter können Sie diese ausweisen — ein kleiner Service mit großer Wirkung für die Mieterzufriedenheit.",
     sektionen: [
@@ -999,6 +1162,17 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Steuer",
     datum: "2026-07-15",
     lesezeit: 5,
+    kurzcheck: {
+      fall:
+        "Sie haben die Wohnung vor 14 Monaten gekauft und seitdem Bad und Elektrik für 38.000 € erneuert — bei Gebäude-Anschaffungskosten von 240.000 €.",
+      passt: [
+        "Ihr Kauf liegt weniger als drei Jahre zurück.",
+        "Sie planen eine größere Sanierung kurz nach dem Erwerb.",
+        "Sie wollen wissen, welche Kosten in die Grenze einzurechnen sind und welche nicht.",
+      ],
+      nichtNoetig:
+        "Liegt der Kauf länger als drei Jahre zurück, ist die Grenze für dieses Objekt erledigt.",
+    },
     intro:
       "Direkt nach dem Kauf einer vermieteten Immobilie wird oft renoviert. Wer dabei zu viel ausgibt, tappt in eine teure Steuerfalle: Aus sofort abziehbaren Werbungskosten werden Herstellungskosten, die sich nur über Jahrzehnte abschreiben lassen.",
     sektionen: [
@@ -1039,6 +1213,17 @@ export const RATGEBER: RatgeberArtikel[] = [
     kategorie: "Einstieg",
     datum: "2026-07-15",
     lesezeit: 6,
+    kurzcheck: {
+      fall:
+        "Die geerbte Wohnung ist vermietet, der Mieter überweist weiter auf ein Konto, das bald aufgelöst wird — und Sie sind seit vier Wochen Vermieter, ohne es geplant zu haben.",
+      passt: [
+        "Sie haben eine vermietete Immobilie geerbt und wollen sie behalten.",
+        "Sie wissen nicht, was Sie den Mietern mitteilen müssen.",
+        "Sie haben noch nie eine Mietverwaltung geführt.",
+      ],
+      nichtNoetig:
+        "Fristen, Erbschaftsteuer und die erste Abrechnung stehen ausführlich im Ratgeber zu Steuern und Fristen nach dem Erbfall.",
+    },
     intro:
       "Immer mehr Menschen werden durch Erbschaft zu Vermietern — oft ohne Vorerfahrung. Dieser Leitfaden ordnet die wichtigsten ersten Schritte, damit aus der geerbten Wohnung kein Bürokratie-Albtraum wird.",
     sektionen: [

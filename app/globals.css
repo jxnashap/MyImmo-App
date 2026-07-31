@@ -1397,7 +1397,7 @@ select:focus-visible, textarea:focus-visible {
 /* ================= Landing v3: helles Vertrauens-Design (.lp3) =================
    Zielgruppe: private Kleinvermieter — hell, ruhig, seriös. Nur das Logo
    (Fraunces + Gold) bleibt aus dem App-Design erhalten. */
-.lp3 { --l-bg: #faf8f4; --l-bg2: #ffffff; --l-bg3: #f3efe7; --l-ink: #23211c; --l-muted: #6b675e; --l-faint: #9b968a; --l-line: #e7e1d4; --l-gold: #b8902b; --l-gold-dark: #8f6f1f; --l-green: #1f6b4a; --l-red: #b4372e;
+.lp3 { --l-bg: #faf8f4; --l-bg2: #ffffff; --l-bg3: #f3efe7; --l-ink: #23211c; --l-muted: #6b675e; --l-faint: #9b968a; --l-line: #e7e1d4; --l-gold: #b8902b; --l-gold-dark: #8f6f1f; /* AA-sicheres Gold fuer Text: --l-gold-dark erreicht auf --l-bg3 nur 4,10:1. */ --l-gold-ink: #856619; --l-green: #1f6b4a; --l-red: #b4372e;
   background: var(--l-bg); color: var(--l-ink); }
 .lp3 .lp-nav { background: color-mix(in srgb, #ffffff 86%, transparent); border-bottom: 1px solid var(--l-line); }
 .lp3 .lp-logo { color: var(--l-gold); }
