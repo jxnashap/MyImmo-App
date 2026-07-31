@@ -123,3 +123,6 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260729200000 | zugriffsbremse_und_trigger_sperren | Zugriffsbremse je IP für Code-Prüfungen; Trigger-Funktionen aus der API genommen |
 | 20260729210000 | fristen_ausblenden | Abgeleitete Fristen ausblendbar — vorher unschließbare Altlasten |
 | 20260729210500 | auftrag_firmen_rueckmeldung | Rückkanal für Handwerksfirmen auf der öffentlichen Auftragsseite |
+| 20260731180000 | newsletter_double_opt_in | Vorlagen-Verteiler mit Double-Opt-in; Tabelle ist der Einwilligungsnachweis |
+| 20260731181000 | newsletter_abmelde_token | Eigener Abmelde-Schlüssel, damit Abmeldungen nicht nur bei Brevo landen |
+| 20260731182000 | newsletter_email_unique_direkt | Unique auf `email` statt `lower(email)` — Ausdrucks-Index taugt nicht für ON CONFLICT |

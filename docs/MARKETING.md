@@ -239,7 +239,7 @@ werden nach nichts aussehen. Das ist normal und kein Grund umzusteuern.
 
 | # | Was | Warum blockierend | Wer |
 |---|---|---|---|
-| V1 | **E-Mail-Anbieter** (Brevo oder Resend, EU) + Double-Opt-in + AVV | Ohne ihn kein Vorlagen-Gate, kein Kontakt bis zur Kaufreife | Claude baut, Konto legst du an |
+| V1 | **E-Mail-Anbieter** | ⚙️ **gebaut 31.07.2026 mit Brevo**: Double-Opt-in, Einwilligungsnachweis in der DB, Abmeldung. Offen: Env in Vercel, Absender verifizieren (SPF/DKIM), AVV im Brevo-Konto | du |
 | V2 | **AGB + Widerruf anwaltlich** | Vor dem ersten Euro Pflicht | nur du |
 | V3 | **Impressum/Datenschutz anwaltlich** | läuft bereits mit V2 | nur du |
 | V4 | **Support-Kanal** (E-Mail-Adresse + Reaktionszeit) | 41 % über 65 rufen an oder schreiben. Reichweite ohne Antwort = schlechte Bewertungen — und die sind das Ranking-Kriterium der Vergleichsportale | du, mit Vorlagen von Claude |

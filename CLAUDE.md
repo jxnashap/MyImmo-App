@@ -182,6 +182,13 @@ Entscheidungen aus der Planung (12.07.2026):
 ### Benötigte Environment-Variablen (Vercel)
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `ANTHROPIC_API_KEY` — für OCR / KI-Import (NK-Abrechnung auslesen, Objekt-Import)
+- `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` — E-Mail-Versand (Vorlagen-Verteiler, Double-Opt-in).
+  Optional `BREVO_ABSENDER_NAME` (Default „MyImmo") und `BREVO_LIST_ID` (ohne sie wird der
+  bestätigte Kontakt zwar angelegt, aber in keine Liste einsortiert). Fehlt eine der beiden
+  Pflicht-Env, antwortet `/api/newsletter` mit 503 statt einen Versand vorzutäuschen.
+  Absenderadresse muss in Brevo verifiziert sein (SPF/DKIM für myimmoapp.de setzen).
+  **AVV mit Brevo im Konto abschließen** (Sitz Frankreich, EU-Verarbeitung) und in
+  `docs/compliance/AVV-STATUS.md` nachtragen.
 - `DATA_ENCRYPTION_KEY` — 32 Byte base64 (`openssl rand -base64 32`) für die App-Layer-
   Verschlüsselung der Bankdaten (IBAN/Inhaber, `lib/crypto/secure.ts`). **Schlüsselverlust =
   Bankdaten unwiederbringlich weg** → sicher sichern (Passwortmanager), nie ins Repo/Logs.

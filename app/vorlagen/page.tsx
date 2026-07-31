@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import LandingShell from "@/components/landing/Shell";
 import Reveal from "@/components/landing/Reveal";
+import VerteilerForm from "@/components/landing/VerteilerForm";
 import {
   FileText, BellRing, AlertTriangle, DoorClosed, Wrench, Receipt,
   BadgeCheck, ClipboardCheck, ScrollText, HandCoins, ArrowRight,
@@ -27,11 +28,39 @@ const VORLAGEN = [
   { ico: ScrollText, t: "Übergabeprotokoll", p: "Wohnungsübergabe bei Ein- oder Auszug: Zählerstände, Zustand, Schlüssel — beweissicher." },
 ];
 
-export default function VorlagenPage() {
+// Rückmeldungen der Double-Opt-in-Routen (/api/newsletter/*). Sie leiten mit
+// ?nl=... hierher zurück, statt eine eigene Seite zu bekommen — der Besucher
+// landet dort, wo er hergekommen ist.
+const NL_MELDUNG: Record<string, { text: string; gut: boolean }> = {
+  ok: { text: "Danke — Ihre Anmeldung ist bestätigt. Sie bekommen Bescheid, sobald es neue Vorlagen gibt.", gut: true },
+  abgemeldet: { text: "Sie sind abgemeldet. Wir schicken Ihnen keine weiteren E-Mails.", gut: true },
+  abgelaufen: { text: "Dieser Bestätigungslink ist abgelaufen. Bitte tragen Sie sich unten erneut ein.", gut: false },
+  fehler: { text: "Der Link ist ungültig. Bitte tragen Sie sich unten erneut ein.", gut: false },
+};
+
+export default function VorlagenPage({ searchParams }: { searchParams: { nl?: string } }) {
+  const meldung = searchParams.nl ? NL_MELDUNG[searchParams.nl] : undefined;
   return (
     <LandingShell aktiv="/vorlagen">
       <section className="lp-section">
         <div className="lp-inner">
+          {meldung && (
+            <div
+              role="status"
+              style={{
+                background: "var(--l-bg3)",
+                borderLeft: `3px solid ${meldung.gut ? "var(--l-green)" : "var(--l-red)"}`,
+                borderRadius: 8,
+                padding: "14px 18px",
+                marginBottom: 22,
+                fontSize: 14.5,
+                lineHeight: 1.6,
+                color: "var(--l-ink)",
+              }}
+            >
+              {meldung.text}
+            </div>
+          )}
           <div className="lp-kicker">Vorlagen</div>
           <h1 className="lp-h2" style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>Rechtssichere Vorlagen — in Sekunden fertig</h1>
           <p className="lp-section-sub">
@@ -52,7 +81,10 @@ export default function VorlagenPage() {
               );
             })}
           </div>
-          <div className="lp-cta-row" style={{ marginTop: 36 }}>
+          <div style={{ maxWidth: 640, margin: "36px auto 0" }}>
+            <VerteilerForm quelle="vorlagen" />
+          </div>
+          <div className="lp-cta-row" style={{ marginTop: 28 }}>
             <Link href="/anmelden" className="btn btn-gold lp-btn-big">Vorlagen kostenlos nutzen <ArrowRight size={15} style={{ verticalAlign: "-2px" }} /></Link>
           </div>
           <p className="lp-section-sub" style={{ marginTop: 24, marginBottom: 0, fontSize: 12.5 }}>
