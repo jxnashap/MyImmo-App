@@ -5,21 +5,34 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addPositionsBulk } from "@/lib/actions/positions";
 
-type Pos = { name: string; betrag: number };
+// Abrechnung der Hausverwaltung hochladen → Claude liest die Positionen aus →
+// Vorschau → Übernahme ins angegebene Abrechnungsjahr. Nichts wird ohne den
+// letzten Klick gespeichert.
+//
+// Die API liefert je Position getrennt die Gebäude-Gesamtkosten und den in der
+// Abrechnung ausgewiesenen Wohnungsanteil. Liegen Gesamtkosten UND die
+// Gesamtwohnfläche vor, wird die Position als Flächen-Aufteilung übernommen —
+// die App rechnet den Mieteranteil selbst und weist Gesamtkosten samt
+// Rechenweg in der Abrechnung aus (BGH-Pflichtangaben). Sonst wird der
+// ausgewiesene Anteil direkt übernommen.
+
+type Pos = { name: string; gesamt: number | null; anteil: number | null };
 const eur = (n: number) => "€ " + (n || 0).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-export default function NkOcrUpload({ mieterId }: { mieterId: string }) {
+export default function NkOcrUpload({ mieterId, jahr }: { mieterId: string; jahr: number }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [positionen, setPositionen] = useState<Pos[] | null>(null);
   const [check, setCheck] = useState<boolean[]>([]);
+  const [flaecheGesamt, setFlaecheGesamt] = useState<string>("");
+  const [dokJahr, setDokJahr] = useState<number | null>(null);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setError(null); setPositionen(null); setLoading(true);
+    setError(null); setPositionen(null); setDokJahr(null); setLoading(true);
     try {
       const base64 = await new Promise<string>((res, rej) => {
         const r = new FileReader();
@@ -38,6 +51,8 @@ export default function NkOcrUpload({ mieterId }: { mieterId: string }) {
       if (list.length === 0) { setError("Keine umlagefähigen Positionen erkannt."); return; }
       setPositionen(list);
       setCheck(list.map(() => true));
+      setFlaecheGesamt(json.flaecheGesamt != null ? String(json.flaecheGesamt) : "");
+      setDokJahr(typeof json.jahr === "number" ? json.jahr : null);
     } catch (err) {
       setError(`Fehler: ${(err as Error).message}`);
     } finally {
@@ -48,11 +63,22 @@ export default function NkOcrUpload({ mieterId }: { mieterId: string }) {
 
   async function uebernehmen() {
     if (!positionen) return;
-    const auswahl = positionen.filter((_, i) => check[i]);
+    const fg = Number(flaecheGesamt.replace(",", "."));
+    const fgOk = Number.isFinite(fg) && fg > 0 ? fg : null;
+    const auswahl = positionen
+      .filter((_, i) => check[i])
+      .map((p) => ({
+        name: p.name,
+        // Mit Gesamtfläche → Flächen-Aufteilung aus den Gesamtkosten;
+        // ohne → ausgewiesenen Anteil direkt übernehmen.
+        gesamt: fgOk != null && p.gesamt != null ? p.gesamt : undefined,
+        flaecheGesamt: fgOk != null && p.gesamt != null ? fgOk : undefined,
+        betrag: p.anteil ?? p.gesamt ?? undefined,
+      }));
     if (auswahl.length === 0) return;
     setSaving(true);
     try {
-      await addPositionsBulk(mieterId, JSON.stringify(auswahl));
+      await addPositionsBulk(mieterId, JSON.stringify(auswahl), jahr);
       setPositionen(null);
       router.refresh();
     } catch (err) {
@@ -64,7 +90,7 @@ export default function NkOcrUpload({ mieterId }: { mieterId: string }) {
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      <div className="card-header"><div><div className="card-title"><FileText size={16} style={{ verticalAlign: "-3px" }} /> Nebenkostenabrechnung hochladen</div><div className="card-sub">PDF/Bild — Claude liest die umlagefähigen Positionen aus</div></div></div>
+      <div className="card-header"><div><div className="card-title"><FileText size={16} style={{ verticalAlign: "-3px" }} /> Abrechnung der Hausverwaltung hochladen</div><div className="card-sub">PDF/Bild — Claude liest die Positionen aus und trägt sie ins Jahr {jahr} ein</div></div></div>
       <div className="card-body">
         <label className="btn btn-ghost" style={{ fontSize: 12, cursor: "pointer", display: "inline-flex" }}>
           {loading ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Claude liest aus…</> : <><Paperclip size={14} style={{ verticalAlign: "-2px" }} /> Datei wählen (PDF/Bild)</>}
@@ -80,12 +106,37 @@ export default function NkOcrUpload({ mieterId }: { mieterId: string }) {
 
         {positionen && (
           <div style={{ marginTop: 14 }}>
+            {dokJahr != null && dokJahr !== jahr && (
+              <div style={{ marginBottom: 10, background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", borderRadius: 8, padding: "8px 12px", fontSize: 12 }}>
+                <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> Das Dokument nennt das
+                Abrechnungsjahr <strong>{dokJahr}</strong>, übernommen wird in <strong>{jahr}</strong>.
+                Falls das nicht stimmt: oben das Jahr wechseln und erneut hochladen.
+              </div>
+            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: 12, color: "var(--muted)", flexWrap: "wrap" }}>
+              <span>Gesamtwohnfläche des Gebäudes (m²):</span>
+              <input
+                className="input"
+                type="number"
+                step="0.01"
+                value={flaecheGesamt}
+                onChange={(e) => setFlaecheGesamt(e.target.value)}
+                placeholder="z. B. 400"
+                style={{ width: 100, fontSize: 12 }}
+              />
+              <span style={{ color: "var(--faint)" }}>
+                — mit Fläche werden Gesamtkosten automatisch nach m² aufgeteilt
+              </span>
+            </div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>{positionen.length} Position(en) erkannt — auswählen und übernehmen:</div>
             {positionen.map((p, i) => (
               <label key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: "1px solid var(--line)", fontSize: 13, cursor: "pointer" }}>
                 <input type="checkbox" checked={check[i]} onChange={(e) => setCheck((c) => c.map((x, j) => (j === i ? e.target.checked : x)))} style={{ width: "auto" }} />
                 <span style={{ flex: 1 }}>{p.name}</span>
-                <strong>{eur(p.betrag)}</strong>
+                {p.gesamt != null && (
+                  <span style={{ fontSize: 11, color: "var(--muted)" }}>Gesamt {eur(p.gesamt)}</span>
+                )}
+                <strong>{p.anteil != null ? eur(p.anteil) : p.gesamt != null ? eur(p.gesamt) : "—"}</strong>
               </label>
             ))}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>

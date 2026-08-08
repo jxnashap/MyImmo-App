@@ -238,10 +238,16 @@ export async function buildNkPdf(
   y -= 12;
 
   // ---- Tabelle ----
-  const colSchluessel = 330;
+  // Spalten wie in der Web-Ansicht (BGH-Pflichtangaben): Position,
+  // Gesamtkosten je Kostenart, Umlageschlüssel mit Rechenweg als Unterzeile,
+  // Mieteranteil. Ohne Gebäude-Gesamtkosten (direkt erfasster Anteil) steht
+  // in der Gesamt-Spalte ein Strich.
+  const colGesamt = 300;   // rechte Kante der Gesamtkosten-Spalte
+  const colSchluessel = 318;
   text(ML, y, "Umlagefähige Position", 9, bold, MUTED);
+  right(colGesamt, y, "Gesamtkosten", 9, bold, MUTED);
   text(colSchluessel, y, "Umlageschlüssel", 9, bold, MUTED);
-  right(RIGHT, y, "Betrag", 9, bold, MUTED);
+  right(RIGHT, y, "Ihr Anteil", 9, bold, MUTED);
   y -= 6;
   hline(y, ML, RIGHT, INK, 0.8);
   y -= 16;
@@ -251,15 +257,16 @@ export async function buildNkPdf(
     y -= 16;
   } else {
     for (const p of a.positionen) {
-      const zeit = !!p.faktorText;
-      y = neueSeiteWennNoetig(y, zeit ? 27 : 15);
-      text(ML, y, fit(p.bezeichnung, 10, colSchluessel - ML - 12), 10, font, INK);
-      text(colSchluessel, y, p.umlageschluessel || "—", 10, font, MUTED);
+      const rechenweg = !!p.faktorText;
+      y = neueSeiteWennNoetig(y, rechenweg ? 27 : 15);
+      text(ML, y, fit(p.bezeichnung, 10, 190), 10, font, INK);
+      right(colGesamt, y, p.basis != null ? euro(p.basis) : "—", 10, font, MUTED);
+      text(colSchluessel, y, fit(p.umlageschluessel || "—", 10, RIGHT - colSchluessel - 70), 10, font, MUTED);
       right(RIGHT, y, euro(p.betrag), 10, font, INK);
       y -= 15;
-      if (zeit) {
-        // Aufteilungsfaktor: Jahreskosten × Belegungstage, z. B. "1.200,00 € × 181/365 Tage"
-        right(RIGHT, y + 3, `${euro(p.basis ?? 0)} × ${p.faktorText}`, 8, font, MUTED);
+      if (rechenweg) {
+        // Anteilsberechnung, z. B. "Anteil: 80/400 m²" oder "181/365 Tage".
+        text(colSchluessel, y + 3, fit(`Anteil: ${p.faktorText}`, 8, RIGHT - colSchluessel), 8, font, MUTED);
         y -= 12;
       }
     }
