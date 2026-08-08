@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthedUser, callAnthropic, base64Bytes, MB } from "@/lib/aiRoute";
+import { darfWeiter } from "@/lib/net/bremse";
 
 export const runtime = "nodejs";
 
@@ -10,24 +11,47 @@ const ALLOWED_IMAGE = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 const MAX_IMAGE_BYTES = 5 * MB; // Anthropic-Bildlimit
 const MAX_PDF_BYTES = 20 * MB;
 
-const PROMPT = `Du bist ein Assistent für Nebenkostenabrechnungen. Analysiere dieses Dokument der Hausverwaltung und extrahiere alle Kostenpositionen mit ihren Beträgen.
+// Gesamtkosten und Wohnungsanteil werden bewusst GETRENNT abgefragt. Die alte
+// Fassung bat um „den Anteil oder den Gesamtbetrag" in EINEM Feld — damit
+// konnte der Gebäude-Gesamtbetrag unbemerkt als Mieteranteil in der
+// Abrechnung landen. Jetzt entscheidet die Übernahme-Logik anhand beider
+// Werte, und die Abrechnung weist Gesamtkosten + Rechenweg aus (BGH-Pflicht).
+const PROMPT = `Du bist ein Assistent für Nebenkostenabrechnungen. Analysiere dieses Dokument der Hausverwaltung und extrahiere die Kostenpositionen.
 
-Antworte NUR mit einem JSON-Array, kein Text davor oder danach:
-[
-  {"name": "Positionsname", "betrag": 123.45}
-]
+Antworte NUR mit einem JSON-Objekt, kein Text davor oder danach:
+{
+  "jahr": 2025,
+  "flaeche_gesamt": 400.0,
+  "positionen": [
+    {"name": "Positionsname", "gesamt": 6400.00, "anteil": 1280.00}
+  ]
+}
+
+Bedeutung der Felder:
+- "jahr": das Abrechnungsjahr laut Dokument (null, wenn nicht erkennbar)
+- "flaeche_gesamt": Gesamtwohnfläche des Gebäudes in m² (null, wenn nicht angegeben)
+- je Position: "gesamt" = Gesamtkosten des Gebäudes für diese Kostenart,
+  "anteil" = der in der Abrechnung ausgewiesene Anteil der Wohnung.
+  Fehlt einer der beiden Werte im Dokument, setze ihn auf null — NIE raten
+  und NIE den einen Wert in das andere Feld schreiben.
 
 Wichtig:
 - Nur umlagefähige Betriebskosten gemäß § 2 BetrKV
-- Beträge als Zahlen (keine Währungszeichen)
-- Falls Gesamtkosten für das Gebäude angegeben: den Anteil für die Wohnung nutzen (wenn angegeben) oder Gesamtbetrag
+- Beträge als Zahlen (keine Währungszeichen, Tausenderpunkte entfernen)
 - Keine Instandhaltung, Reparaturen oder Verwaltungskosten`;
 
-type Position = { name: string; betrag: number };
+type Position = { name: string; gesamt: number | null; anteil: number | null };
+type OcrErgebnis = { jahr: number | null; flaecheGesamt: number | null; positionen: Position[] };
 
-/** KI-Antwort robust zu sauberen Positionen validieren (gegen Halluzinationen). */
-function parsePositionen(text: string): Position[] | null {
-  const match = text.match(/\[[\s\S]*\]/);
+const zahlOderNull = (v: unknown): number | null => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
+};
+
+/** KI-Antwort robust validieren (gegen Halluzinationen). Versteht auch das
+ *  alte Array-Format {name, betrag}, falls das Modell darauf zurückfällt. */
+function parseErgebnis(text: string): OcrErgebnis | null {
+  const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
   if (!match) return null;
   let raw: unknown;
   try {
@@ -35,21 +59,50 @@ function parsePositionen(text: string): Position[] | null {
   } catch {
     return null;
   }
-  if (!Array.isArray(raw)) return null;
-  const clean: Position[] = [];
-  for (const item of raw) {
+  const liste = Array.isArray(raw)
+    ? raw
+    : Array.isArray((raw as Record<string, unknown>)?.positionen)
+      ? ((raw as Record<string, unknown>).positionen as unknown[])
+      : null;
+  if (!liste) return null;
+
+  const positionen: Position[] = [];
+  for (const item of liste) {
     if (!item || typeof item !== "object") continue;
-    const name = String((item as Record<string, unknown>).name ?? "").trim();
-    const betrag = Number((item as Record<string, unknown>).betrag);
-    if (!name || !Number.isFinite(betrag) || betrag <= 0) continue;
-    clean.push({ name: name.slice(0, 120), betrag: Math.round(betrag * 100) / 100 });
+    const r = item as Record<string, unknown>;
+    const name = String(r.name ?? "").trim();
+    const gesamt = zahlOderNull(r.gesamt);
+    // Altformat: "betrag" ohne Zuordnung → als Anteil behandeln (konservativ:
+    // lieber ein zu kleiner Vorschlag als Gebäudekosten beim Mieter).
+    const anteil = zahlOderNull(r.anteil) ?? (gesamt == null ? zahlOderNull(r.betrag) : null);
+    if (!name || (gesamt == null && anteil == null)) continue;
+    positionen.push({ name: name.slice(0, 120), gesamt, anteil });
   }
-  return clean;
+
+  const kopf = Array.isArray(raw) ? {} : (raw as Record<string, unknown>);
+  const jahrRoh = Number(kopf.jahr);
+  return {
+    jahr: Number.isInteger(jahrRoh) && jahrRoh >= 2000 && jahrRoh <= 2100 ? jahrRoh : null,
+    flaecheGesamt: zahlOderNull(kopf.flaeche_gesamt),
+    positionen,
+  };
 }
 
 export async function POST(req: Request) {
   const user = await getAuthedUser();
   if (!user) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+
+  // Mengenbremse je Konto: Jeder Aufruf kostet Geld beim KI-Anbieter. 20 pro
+  // Stunde reichen für jede reale Abrechnungs-Session — und verhindern, dass
+  // ein einzelnes Konto die Route als Kostenschleuder benutzt. Datenbank-
+  // gestützt (überlebt Serverless-Instanzen), fällt bei Störung auf
+  // Durchlassen zurück wie überall.
+  if (!(await darfWeiter("nk_ocr", 20, 3600, user.id))) {
+    return NextResponse.json(
+      { error: "Zu viele Auswertungen in kurzer Zeit. Bitte in einer Stunde erneut versuchen." },
+      { status: 429 },
+    );
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -98,10 +151,10 @@ export async function POST(req: Request) {
     }
     const result = await resp.json();
     const text: string = (result?.content ?? []).map((c: { text?: string }) => c.text ?? "").join("");
-    const positionen = parsePositionen(text);
-    if (positionen === null) return NextResponse.json({ error: "Antwort der KI war nicht lesbar." }, { status: 422 });
-    if (positionen.length === 0) return NextResponse.json({ error: "Keine Kostenpositionen erkannt." }, { status: 422 });
-    return NextResponse.json({ positionen });
+    const ergebnis = parseErgebnis(text);
+    if (ergebnis === null) return NextResponse.json({ error: "Antwort der KI war nicht lesbar." }, { status: 422 });
+    if (ergebnis.positionen.length === 0) return NextResponse.json({ error: "Keine Kostenpositionen erkannt." }, { status: 422 });
+    return NextResponse.json(ergebnis);
   } catch (err) {
     if ((err as Error).name === "AbortError") {
       return NextResponse.json({ error: "Zeitüberschreitung beim KI-Dienst. Bitte erneut versuchen." }, { status: 504 });

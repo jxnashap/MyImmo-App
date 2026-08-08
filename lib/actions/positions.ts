@@ -50,30 +50,50 @@ export async function addPosition(mieterId: string, formData: FormData) {
 }
 
 // Mehrere per OCR erkannte Positionen auf einmal anlegen (umlagefähig, aktuelles Jahr).
-export async function addPositionsBulk(mieterId: string, positionenJson: string) {
+export async function addPositionsBulk(mieterId: string, positionenJson: string, jahr?: number) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  let items: { name?: string; betrag?: number }[] = [];
+  let items: { name?: string; betrag?: number; gesamt?: number; flaecheGesamt?: number }[] = [];
   try { items = JSON.parse(positionenJson); } catch { items = []; }
-  const jahr = new Date().getFullYear();
+  // Jahr kommt vom Aufrufer (die NK-Seite übergibt das ANGEZEIGTE
+  // Abrechnungsjahr). Der alte Default `new Date().getFullYear()` war ein
+  // stiller Fehler: Die NK-Abrechnung zeigt standardmäßig das VORJAHR — die
+  // hochgeladenen Positionen landeten also in einem Jahr, das niemand ansah.
+  const zielJahr = Number.isInteger(jahr) && jahr! >= 2000 && jahr! <= 2100
+    ? jahr!
+    : new Date().getFullYear() - 1;
 
+  const zahl = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null);
   const rows = items
     .filter((p) => p && p.name)
-    .map((p) => ({
-      user_id: user.id,
-      mieter_id: mieterId,
-      bezeichnung: String(p.name),
-      betrag: typeof p.betrag === "number" && !Number.isNaN(p.betrag) ? p.betrag : null,
-      jahr,
-      umlagefaehig: true,
-    }));
+    .map((p) => {
+      const gesamt = zahl(p.gesamt);
+      const flaecheGesamt = zahl(p.flaecheGesamt);
+      // Gebäude-Gesamtkosten + Gesamtfläche → Flächen-Aufteilung: Die App
+      // rechnet den Mieteranteil selbst und weist Gesamtkosten + Rechenweg in
+      // der Abrechnung aus. Sonst: der Betrag ist bereits der Wohnungsanteil.
+      const alsFlaeche = gesamt != null && flaecheGesamt != null;
+      return {
+        user_id: user.id,
+        mieter_id: mieterId,
+        bezeichnung: String(p.name),
+        betrag: alsFlaeche ? gesamt : (zahl(p.betrag) ?? gesamt),
+        jahr: zielJahr,
+        umlagefaehig: true,
+        aufteilung: alsFlaeche ? "flaeche" : null,
+        flaeche_gesamt: alsFlaeche ? flaecheGesamt : null,
+        umlageschluessel: alsFlaeche ? "Fläche" : null,
+      };
+    })
+    .filter((r) => r.betrag != null);
   if (rows.length === 0) return;
 
   const { error } = await supabase.from("mieter_positionen").insert(rows);
   if (error) throw new Error(error.message);
   revalidatePath(`/tenants/${mieterId}/edit`);
+  revalidatePath(`/tenants/${mieterId}/nk`);
 }
 
 // Eine bestehende Position inline aktualisieren (Autosave im PositionsManager).
