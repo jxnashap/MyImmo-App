@@ -49,7 +49,7 @@ export default async function NkPage({
         : Promise.resolve({ data: null }),
       supabase
         .from("mieter_positionen")
-        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,grundkosten_prozent,flaeche_gesamt,lohnanteil,art_35a")
+        .select("id,bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,grundkosten_prozent,flaeche_gesamt,lohnanteil,art_35a")
         .eq("mieter_id", params.id)
         .order("created_at"),
       supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
@@ -158,7 +158,18 @@ export default async function NkPage({
           Bearbeiten-Seite — wer hier die leere Abrechnung sah, fand den Weg
           nicht. no-print: gehört nicht in den Brief. */}
       <div className="no-print" style={{ maxWidth: "210mm", margin: "0 auto" }}>
-        <NkOcrUpload mieterId={params.id} jahr={jahr} />
+        <NkOcrUpload
+          mieterId={params.id}
+          jahr={jahr}
+          bestehend={(positions ?? [])
+            .filter((p) => (p.jahr == null || p.jahr === jahr) && p.umlagefaehig === true)
+            .map((p) => ({
+              id: (p as { id: string }).id,
+              bezeichnung: p.bezeichnung,
+              betrag: p.betrag,
+              aufteilung: p.aufteilung ?? null,
+            }))}
+        />
       </div>
 
       <NkCo2Panel

@@ -37,8 +37,14 @@ Bedeutung der Felder:
 
 Wichtig:
 - Nur umlagefähige Betriebskosten gemäß § 2 BetrKV
-- Beträge als Zahlen (keine Währungszeichen, Tausenderpunkte entfernen)
-- Keine Instandhaltung, Reparaturen oder Verwaltungskosten`;
+- Beträge als Zahlen. Deutsches Format umrechnen: "1.234,56" bedeutet 1234.56
+- Hat das Dokument getrennte Spalten (z. B. "Gesamtkosten" und "Ihr Anteil" /
+  "Ihr Kostenanteil" / "Anteil der Wohnung"), lies BEIDE aus der jeweiligen
+  Spalte derselben Zeile
+- Nur das aktuelle Abrechnungsjahr — Vorjahres- oder Vergleichsspalten ignorieren
+- Keine Summenzeilen, Zwischensummen, Vorauszahlungen oder Salden als Position
+- Keine Instandhaltung, Reparaturen, Rücklagen oder Verwaltungskosten
+- Lies die Zahlen exakt ab, Ziffer für Ziffer — nicht runden, nicht schätzen`;
 
 type Position = { name: string; gesamt: number | null; anteil: number | null };
 type OcrErgebnis = { jahr: number | null; flaecheGesamt: number | null; positionen: Position[] };
@@ -142,7 +148,9 @@ export async function POST(req: Request) {
   try {
     const resp = await callAnthropic(apiKey, {
       model: MODEL,
-      max_tokens: 1500,
+      max_tokens: 2500,
+      // Extraktion, keine Kreativaufgabe: deterministisch ablesen.
+      temperature: 0,
       messages: [{ role: "user", content: [fileBlock, { type: "text", text: PROMPT }] }],
     });
     if (!resp.ok) {
