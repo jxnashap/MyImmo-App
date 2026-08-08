@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthedUser, callAnthropic, base64Bytes, MB } from "@/lib/aiRoute";
+import { darfWeiter } from "@/lib/net/bremse";
 
 export const runtime = "nodejs";
 
@@ -90,6 +91,18 @@ function parseErgebnis(text: string): OcrErgebnis | null {
 export async function POST(req: Request) {
   const user = await getAuthedUser();
   if (!user) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+
+  // Mengenbremse je Konto: Jeder Aufruf kostet Geld beim KI-Anbieter. 20 pro
+  // Stunde reichen für jede reale Abrechnungs-Session — und verhindern, dass
+  // ein einzelnes Konto die Route als Kostenschleuder benutzt. Datenbank-
+  // gestützt (überlebt Serverless-Instanzen), fällt bei Störung auf
+  // Durchlassen zurück wie überall.
+  if (!(await darfWeiter("nk_ocr", 20, 3600, user.id))) {
+    return NextResponse.json(
+      { error: "Zu viele Auswertungen in kurzer Zeit. Bitte in einer Stunde erneut versuchen." },
+      { status: 429 },
+    );
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
