@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PartyPopper, CreditCard } from "lucide-react";
 import LandingShell from "@/components/landing/Shell";
+import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import { PLAENE, FAQ } from "@/components/landing/data";
 import { PREISE_SICHTBAR } from "@/lib/preise";
@@ -27,15 +28,23 @@ export const metadata: Metadata = PREISE_SICHTBAR
 
 export default function PreisePage() {
   return (
-    <LandingShell aktiv="/preise">
+    <LandingShell aktiv="/preise" mitHero>
+      <QlxHero
+        slug="preise"
+        kompakt
+        kicker={PREISE_SICHTBAR ? "Preise" : "Early Access"}
+        titel={PREISE_SICHTBAR
+          ? <>Fair kalkuliert — <em>und aktuell kostenlos</em></>
+          : <>MyImmo ist <em>aktuell kostenlos</em></>}
+        sub={PREISE_SICHTBAR
+          ? "So sollen die Tarife später aussehen. Jahreszahlung spart rund zwei Monatsbeiträge."
+          : "Voller Funktionsumfang im Early Access — Bezahltarife werden rechtzeitig angekündigt, dein Konto wird nie automatisch kostenpflichtig."}
+      />
       <section className="lp-section">
         <div className="lp-inner">
-          <div className="lp-kicker">{PREISE_SICHTBAR ? "Preise" : "Early Access"}</div>
 
           {PREISE_SICHTBAR ? (
             <>
-              <h1 className="lp-h2" style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>Fair kalkuliert — und aktuell kostenlos</h1>
-              <p className="lp-section-sub">So sollen die Tarife später aussehen. Jahreszahlung spart rund zwei Monatsbeiträge.</p>
               <div className="lp-early">
                 <PartyPopper size={14} style={{ verticalAlign: "-2px" }} /> Early Access: Während der Startphase ist der volle Funktionsumfang kostenlos — Bezahltarife werden rechtzeitig angekündigt.
               </div>
@@ -65,7 +74,6 @@ export default function PreisePage() {
             </>
           ) : (
             <>
-              <h1 className="lp-h2" style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>MyImmo ist aktuell kostenlos</h1>
               <p className="lp-section-sub">
                 Der volle Funktionsumfang steht ohne Zahlung zur Verfügung — es gibt keine
                 Testphase, die abläuft, und es wird keine Zahlungsmethode hinterlegt.

@@ -1671,3 +1671,310 @@ select:focus-visible, textarea:focus-visible {
   /* Karten-Anheben und Klick-Stauchung aus dem Design-Handoff */
   .kpi-card:hover, a.kpi-card:active, .section:hover { transform: none; }
 }
+
+/* ================= Landing QLX: Quiet-Luxury (Baukasten-Bauweise) =============
+   Nachbau des Baukasten-Systems (baukaesten/quiet-luxury): Palette NUR über
+   die --l-*-Variablen (Tausch über die Theme-Klasse, wie dort über :root),
+   Fontenay-Header mit Scroll-Zustand, Overlay-Menü, Cinematic-Video-Hero je
+   Seite, Reveals, Icon-Draw, Parallax. Ersetzt .lp3 als Theme-Klasse — die
+   Unterseiten (Ratgeber-Artikel, Funktionsseiten) erben über dieselben
+   Variablennamen. Gold #D4A847 bleibt Markenzeichen, Fraunces+Outfit bleiben.
+   Die Landing ist bewusst EIN fester Look (kein Dark-Toggle). */
+.qlx {
+  /* Inhaltsfläche: warmes Ivory. Bühnenflächen (Header/Hero/Footer/Overlay):
+     tiefes Nachtblau. Gold wie gehabt; --l-gold-ink ist die AA-sichere
+     Textvariante (4,68:1 auf --l-bg3). */
+  --l-bg: #faf8f3; --l-bg2: #ffffff; --l-bg3: #f2eee5;
+  --l-ink: #1d2230; --l-muted: #5c6070; --l-faint: #9b968a;
+  --l-line: #e6e1d4; --l-gold: #b8902b; --l-gold-dark: #8f6f1f; --l-gold-ink: #856619;
+  --l-green: #1f6b4a; --l-red: #b4372e;
+  --l-night: #101522;      /* Bühnen-Grund */
+  --l-night2: #1a2133;     /* Bühnen-Fläche (Karten auf Nachtblau) */
+  --l-night-line: rgba(255,255,255,.12);
+  --l-night-text: #f4f1e8; /* Elfenbein-Weiß auf Nachtblau */
+  --l-night-muted: rgba(244,241,232,.72);
+  --l-gold-hell: #d4a847;  /* Marken-Gold auf dunklem Grund (Kontrast 7,4:1 auf night) */
+  background: var(--l-bg); color: var(--l-ink);
+}
+
+/* ---------- Fontenay-Header (Baukasten-getreu): Kreis-Burger + „Menü" links ·
+   Logo-Lockup exakt mittig · Pill-CTA rechts. Beim Scrollen: schwebende Bar
+   (94 %), Papierfarbe, runde untere Ecken. Über dem dunklen Hero ist die
+   Schrift elfenbeinfarben; auf der Papier-Bar nachtblau. ---------- */
+.qlx { padding-top: 0; --qlx-header-h: 104px; }
+.qlx-header { position: fixed; inset: 0 0 auto 0; z-index: 60; display: flex; justify-content: center; pointer-events: none; }
+.qlx-header-bar {
+  pointer-events: auto; position: relative; width: 100%; height: var(--qlx-header-h);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(18px, 3.2vw, 50px);
+  color: var(--l-night-text);
+  transition: background .45s var(--ease), width .45s var(--ease), height .45s var(--ease),
+              border-radius .45s var(--ease), box-shadow .45s var(--ease), color .45s var(--ease);
+}
+.qlx[data-scrolled="1"]:not([data-menu="1"]) .qlx-header-bar {
+  width: 94%; height: 74px;
+  background: rgba(250, 248, 243, 0.94); backdrop-filter: blur(14px) saturate(1.1);
+  border-radius: 0 0 22px 22px;
+  box-shadow: 0 30px 60px -40px rgba(17, 24, 32, 0.35);
+  color: var(--l-ink);
+}
+
+/* Logo-Lockup: Monogramm (goldenes Haus) + Wortmarke + Unterzeile, zentriert */
+.qlx-brand {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  text-align: center; text-decoration: none; color: inherit;
+}
+.qlx-mono { width: 40px; height: 40px; display: block; transition: width .45s var(--ease), height .45s var(--ease); }
+.qlx-mono path { fill: none; stroke-width: 2.6; stroke-linecap: square; }
+.qlx-mono .m-gold { stroke: var(--l-gold-hell); }
+.qlx-mono .m-ink { stroke: currentColor; transition: stroke .45s var(--ease); }
+.qlx-brand-word {
+  font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.02rem;
+  letter-spacing: .3em; text-indent: .3em; text-transform: uppercase;
+  line-height: 1; transition: font-size .45s var(--ease);
+}
+.qlx-brand-word em { font-style: italic; font-weight: 300; color: var(--l-gold-hell); }
+.qlx-brand-sub {
+  font-size: .5rem; font-weight: 500; letter-spacing: .4em; text-indent: .4em;
+  text-transform: uppercase; color: var(--l-gold-hell); line-height: 1;
+  max-height: 12px; overflow: hidden;
+  transition: opacity .35s var(--ease), max-height .45s var(--ease);
+}
+.qlx[data-scrolled="1"]:not([data-menu="1"]) .qlx-mono { width: 30px; height: 30px; }
+.qlx[data-scrolled="1"]:not([data-menu="1"]) .qlx-brand-word { font-size: .92rem; }
+.qlx[data-scrolled="1"]:not([data-menu="1"]) .qlx-brand-sub { opacity: 0; max-height: 0; }
+
+/* Kreis-Burger + Label links */
+.qlx-burger { display: flex; align-items: center; gap: 13px; background: none; border: 0; padding: 0; cursor: pointer; color: inherit; z-index: 75; }
+.qlx-burger-kreis {
+  width: 44px; height: 44px; border: 1px solid currentColor; opacity: .92; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  transition: border-color .4s var(--ease);
+}
+.qlx-burger-kreis i { display: block; width: 17px; height: 1.2px; background: currentColor; transition: transform .45s var(--ease); }
+.qlx-burger:hover .qlx-burger-kreis { border-color: var(--l-gold-hell); }
+.qlx-burger-label { font-size: .66rem; font-weight: 500; letter-spacing: .26em; text-transform: uppercase; }
+.qlx[data-menu="1"] .qlx-burger { color: var(--l-night-text); }
+.qlx[data-menu="1"] .qlx-burger-kreis i:nth-child(1) { transform: translateY(3.6px) rotate(45deg); }
+.qlx[data-menu="1"] .qlx-burger-kreis i:nth-child(2) { transform: translateY(-3.6px) rotate(-45deg); }
+
+/* Pill-CTA rechts */
+.qlx-btn-hell {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--l-gold-hell); color: #14120c; border: none; border-radius: 999px;
+  font-size: .72rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
+  padding: 13px 26px; text-decoration: none;
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease), background .3s var(--ease);
+  box-shadow: 0 6px 20px rgba(212,168,71,.28);
+}
+.qlx-btn-hell:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(212,168,71,.36); }
+.qlx-btn-linie {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; color: inherit;
+  border: 1px solid currentColor; border-radius: 999px;
+  font-size: .72rem; font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
+  padding: 12px 24px; text-decoration: none; opacity: .92;
+  transition: border-color .3s, color .3s, background .3s;
+}
+.qlx-btn-linie:hover { border-color: var(--l-gold-hell); color: var(--l-gold-hell); opacity: 1; }
+.qlx[data-menu="1"] .qlx-header-cta .qlx-btn-hell { box-shadow: none; }
+.qlx-header-cta { display: flex; gap: 10px; align-items: center; }
+
+/* ---------- Overlay-Menü (Baukasten-getreu): Nachtblau-Vollfläche,
+   nummerierte Serif-Links links, Bildpanel rechts ---------- */
+.qlx-overlay {
+  position: fixed; inset: 0; z-index: 55; background: var(--l-night);
+  opacity: 0; visibility: hidden;
+  transition: opacity .6s var(--ease), visibility 0s linear .6s;
+}
+.qlx[data-menu="1"] .qlx-overlay { opacity: 1; visibility: visible; transition-delay: 0s, 0s; }
+.qlx-overlay-inner { display: grid; grid-template-columns: 1fr minmax(0, 42%); height: 100%; }
+.qlx-overlay nav { display: flex; flex-direction: column; justify-content: center; padding: 120px clamp(28px, 7vw, 110px) 60px; }
+.qlx-overlay ul { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(8px, 1.6vh, 18px); }
+.qlx-overlay li { opacity: 0; transform: translateY(22px); transition: opacity .6s var(--ease), transform .7s var(--ease); }
+.qlx[data-menu="1"] .qlx-overlay li { opacity: 1; transform: none; }
+.qlx[data-menu="1"] .qlx-overlay li:nth-child(1) { transition-delay: .10s; }
+.qlx[data-menu="1"] .qlx-overlay li:nth-child(2) { transition-delay: .16s; }
+.qlx[data-menu="1"] .qlx-overlay li:nth-child(3) { transition-delay: .22s; }
+.qlx[data-menu="1"] .qlx-overlay li:nth-child(4) { transition-delay: .28s; }
+.qlx[data-menu="1"] .qlx-overlay li:nth-child(5) { transition-delay: .34s; }
+.qlx[data-menu="1"] .qlx-overlay li:nth-child(6) { transition-delay: .40s; }
+.qlx[data-menu="1"] .qlx-overlay li:nth-child(7) { transition-delay: .46s; }
+.qlx-overlay a {
+  display: inline-flex; align-items: baseline; gap: 18px;
+  font-family: 'Fraunces', serif; font-weight: 300;
+  font-size: clamp(1.7rem, 3.4vh, 2.5rem); color: rgba(244,241,232,.86);
+  line-height: 1.2; text-decoration: none; transition: color .4s var(--ease);
+}
+.qlx-overlay a:hover, .qlx-overlay a.qlx-aktiv { color: var(--l-gold-hell); }
+.qlx-overlay a.qlx-aktiv .qlx-nl-label { border-bottom: 1px solid rgba(212,168,71,.5); padding-bottom: 4px; }
+.qlx-nl-num { font-family: 'Outfit', sans-serif; font-size: .64rem; letter-spacing: .2em; color: var(--l-gold-hell); transform: translateY(-.7em); }
+.qlx-overlay-foot { margin-top: clamp(26px, 5vh, 54px); display: flex; flex-wrap: wrap; gap: 10px 32px; }
+.qlx-overlay-foot a { font-family: 'Outfit', sans-serif; font-size: .78rem; color: rgba(244,241,232,.6); letter-spacing: .04em; }
+.qlx-overlay-foot a:hover { color: var(--l-gold-hell); }
+.qlx-overlay-visual { position: relative; overflow: hidden; }
+.qlx-overlay-visual img { width: 100%; height: 100%; object-fit: cover; opacity: .85; display: block; }
+.qlx-overlay-visual::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--l-night) 0%, rgba(16,21,34,.25) 40%, rgba(16,21,34,.05) 100%); }
+@media (max-width: 860px) { .qlx-overlay-inner { grid-template-columns: 1fr; } .qlx-overlay-visual { display: none; } }
+
+/* ---------- Cinematic-Hero: Video-Bühne je Reiter ---------- */
+.qlx-hero {
+  position: relative; overflow: hidden;
+  min-height: clamp(520px, 78vh, 860px);
+  display: flex; align-items: flex-end;
+  background: var(--l-night); color: var(--l-night-text);
+}
+.qlx-hero--kompakt { min-height: clamp(420px, 58vh, 640px); }
+.qlx-hero-medium {
+  position: absolute; inset: -12% 0; /* Überhang für den Parallax-Versatz */
+  will-change: transform;
+}
+.qlx-hero-medium video, .qlx-hero-medium img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+/* Poster-Fallback, solange kein Video liegt: nachtblauer Verlauf mit
+   Gold-Schimmer — wirkt gewollt, nicht kaputt. */
+.qlx-hero-poster {
+  width: 100%; height: 100%;
+  background:
+    radial-gradient(120% 90% at 78% 8%, rgba(212,168,71,.16), transparent 55%),
+    radial-gradient(90% 70% at 15% 95%, rgba(212,168,71,.08), transparent 50%),
+    linear-gradient(168deg, #171d2e 0%, var(--l-night) 55%, #0b0f1a 100%);
+}
+/* Lesbarkeits-Scrim über dem Medium — Text steht IMMER auf Dunkel. */
+.qlx-hero-scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(10,14,24,.55) 0%, rgba(10,14,24,.18) 40%, rgba(10,14,24,.72) 100%);
+}
+.qlx-hero-inhalt { position: relative; width: 100%; padding: 140px 0 64px; }
+.qlx-kicker {
+  font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--l-gold-hell); font-weight: 600;
+}
+.qlx-hero h1 {
+  font-family: 'Fraunces', serif; font-weight: 300;
+  font-size: clamp(34px, 6vw, 64px); line-height: 1.08; letter-spacing: -0.5px;
+  margin: 14px 0 16px; max-width: 760px; color: var(--l-night-text);
+}
+.qlx-hero h1 em { font-style: italic; color: var(--l-gold-hell); }
+.qlx-hero-sub { font-size: clamp(14px, 1.7vw, 17px); color: var(--l-night-muted); max-width: 560px; margin-bottom: 26px; }
+.qlx-hero-note { font-size: 12px; color: rgba(244,241,232,.55); margin-top: 14px; }
+/* Goldene Haarlinie als Abschluss der Bühne */
+.qlx-hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--l-gold-hell) 30%, var(--l-gold-hell) 70%, transparent); opacity: .8; }
+
+/* Scroll-Hinweis (dezente Linie, die atmet) */
+.qlx-scrollhint { position: absolute; right: 40px; bottom: 28px; width: 1.5px; height: 54px; overflow: hidden; opacity: .7; }
+.qlx-scrollhint::before { content: ""; position: absolute; inset: 0; background: var(--l-gold-hell); transform-origin: top; animation: qlxHint 2.4s var(--ease) infinite; }
+@keyframes qlxHint { 0% { transform: translateY(-100%); } 55% { transform: translateY(0); } 100% { transform: translateY(102%); } }
+
+/* ---------- Inhalt: die vorhandenen .lp-*-Bausteine im QLX-Kleid ---------- */
+.qlx .lp-nav { display: none; } /* alter Sticky-Header ist durch .qlx-header ersetzt */
+.qlx .lp-h1, .qlx .lp-h2 { color: var(--l-ink); font-family: 'Fraunces', serif; font-weight: 400; }
+.qlx .lp-h2 { font-size: clamp(26px, 3.6vw, 38px); letter-spacing: -0.4px; }
+.qlx .lp-h1 em, .qlx .lp-h2 em { font-style: italic; color: var(--l-gold-ink); font-weight: 300; }
+.qlx .lp-sub, .qlx .lp-section-sub { color: var(--l-muted); }
+.qlx .lp-section { padding: 84px 0; }
+.qlx .lp-section-alt { background: var(--l-bg3); border-color: var(--l-line); }
+.qlx .lp-kicker { color: var(--l-gold-ink); letter-spacing: .2em; font-size: 11px; }
+.qlx .lp-hero-note, .qlx .lp-price-jahr, .qlx .lp-einheiten { color: var(--l-faint); }
+.qlx .btn-ghost { background: #fff; border: 1px solid var(--l-line); color: var(--l-ink); }
+.qlx .btn-ghost:hover { border-color: var(--l-gold); }
+.qlx .btn-gold { background: var(--l-gold); color: #fff; }
+.qlx .btn-gold:hover { background: var(--l-gold-dark); }
+.qlx .lp-badge { color: var(--l-gold-ink); background: color-mix(in srgb, var(--l-gold) 10%, #fff); border-color: color-mix(in srgb, var(--l-gold) 35%, #fff); }
+.qlx .lp-card, .qlx .lp-feature, .qlx .lp-stat, .qlx .lp-plan {
+  background: #fff; border: 1px solid transparent; border-radius: 14px;
+  box-shadow: 0 0 0 1px var(--l-line), 0 4px 20px rgba(40, 40, 60, .05), 0 18px 52px rgba(40, 40, 60, .05);
+}
+.qlx .lp-feature { transition: box-shadow .25s var(--ease), transform .25s var(--ease); }
+.qlx .lp-feature:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--l-gold), 0 14px 36px rgba(60, 50, 20, .12); border-color: transparent; }
+.qlx .lp-card h3, .qlx .lp-feature h3, .qlx .lp-plan h3 { color: var(--l-ink); }
+.qlx .lp-stat .z { color: var(--l-gold-ink); font-family: 'Fraunces', serif; }
+.qlx .lp-card p, .qlx .lp-feature p, .qlx .lp-stat .t { color: var(--l-muted); }
+.qlx .lp-feature .ico, .qlx .lp-card-icon { color: var(--l-gold-ink); }
+.qlx .lp-vorher { color: var(--l-red); }
+.qlx .lp-plan-highlight { box-shadow: 0 0 0 1.5px var(--l-gold), 0 14px 40px rgba(184, 144, 43, .16); }
+.qlx .lp-plan-tag { background: var(--l-gold); color: #fff; }
+.qlx .lp-price { color: var(--l-ink); }
+.qlx .lp-plan ul li { color: var(--l-muted); }
+.qlx .lp-early { background: color-mix(in srgb, var(--l-gold) 8%, #fff); border: 1px solid color-mix(in srgb, var(--l-gold) 30%, #fff); color: var(--l-gold-ink); }
+.qlx .lp-faq details { background: #fff; border: 1px solid var(--l-line); }
+.qlx .lp-faq summary { color: var(--l-ink); }
+.qlx .lp-faq-body { color: var(--l-muted); }
+.qlx .lp-shot { border-color: var(--l-line); background: #fff; box-shadow: 0 24px 60px rgba(30, 34, 52, .16); }
+.qlx .lp-shot-bar { background: var(--l-bg3); border-color: var(--l-line); }
+.qlx .lp-shot-bar i { background: var(--l-line); }
+.qlx .lp-split ul li, .qlx .lp-split p { color: var(--l-muted); }
+.qlx .lp-split h3 { color: var(--l-ink); font-family: 'Fraunces', serif; font-weight: 400; }
+.qlx .lp-mehr { color: var(--l-gold-ink); }
+.qlx .xl-tab { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--l-line); border-radius: 12px; overflow: hidden; font-size: 13.5px; }
+.qlx .xl-tab th, .qlx .xl-tab td { padding: 12px 16px; border-bottom: 1px solid var(--l-line); text-align: left; }
+.qlx .xl-tab th { background: var(--l-bg3); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--l-muted); }
+.qlx .xl-tab td:first-child { color: var(--l-ink); font-weight: 600; }
+.qlx .xl-tab .schlecht { color: var(--l-red); }
+.qlx .xl-tab .gut { color: var(--l-green); font-weight: 600; }
+.qlx .xl-scroll { overflow-x: auto; }
+.qlx .proz { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; counter-reset: proz; }
+.qlx .proz .p { position: relative; background: #fff; border: 1px solid var(--l-line); border-radius: 12px; padding: 22px 18px 18px; counter-increment: proz; }
+.qlx .proz .p::before { content: counter(proz); position: absolute; top: -13px; left: 16px; width: 26px; height: 26px; border-radius: 999px; background: var(--l-gold); color: #fff; font-weight: 700; font-size: 13px; display: grid; place-items: center; }
+.qlx .proz h3 { font-size: 14.5px; margin-bottom: 6px; }
+.qlx .proz p { font-size: 12.5px; color: var(--l-muted); }
+@media (max-width: 860px) { .qlx .proz { grid-template-columns: 1fr 1fr; } }
+
+/* Abschluss-CTA + Footer auf der Nachtblau-Bühne */
+.qlx .lp-final { background: var(--l-night); color: var(--l-night-text); padding: 96px 0; position: relative; overflow: hidden; }
+.qlx .lp-final::before { content: ""; position: absolute; inset: 0; background: radial-gradient(90% 120% at 50% 120%, rgba(212,168,71,.14), transparent 60%); }
+.qlx .lp-final .lp-h2 { color: var(--l-night-text); position: relative; }
+.qlx .lp-final .lp-section-sub { color: var(--l-night-muted); position: relative; }
+.qlx .lp-final .lp-cta-row { position: relative; }
+.qlx .lp-footer { background: var(--l-night); border-top: 1px solid var(--l-night-line); margin-top: 0; padding: 34px 0; }
+.qlx .lp-footer-row, .qlx .lp-footer a, .qlx .lp-footer span { color: var(--l-night-muted); }
+.qlx .lp-footer a:hover { color: var(--l-night-text); }
+.qlx .lp-footer .lp-logo { color: var(--l-gold-hell); }
+.qlx .lp-footer .lp-logo span { color: var(--l-night-text); }
+
+/* ---------- Signature-Animationen ---------- */
+/* Reveal (wie Baukasten): weiter Weg, weiche Kurve */
+.qlx .lp-reveal { opacity: 0; transform: translateY(26px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
+.qlx .lp-reveal-in { opacity: 1; transform: none; }
+/* Icon-Draw: Lucide-Strokes zeichnen sich beim Reveal */
+.qlx .lp-reveal .ico svg * { stroke-dasharray: 70; stroke-dashoffset: 70; }
+.qlx .lp-reveal-in .ico svg * { animation: qlxDraw 1.1s var(--ease) .15s forwards; }
+@keyframes qlxDraw { to { stroke-dashoffset: 0; } }
+
+@media (max-width: 760px) {
+  /* Schmaler Viewport: nur Burger + mittiges Lockup. Die CTAs würden das
+     zentrierte Logo überlagern — der Weg zum Konto führt hier übers Overlay
+     („Kostenlos starten" steht dort als eigener Menüpunkt). */
+  .qlx { --qlx-header-h: 78px; }
+  .qlx-header-cta { display: none; }
+  .qlx-mono { width: 28px; height: 28px; }
+  .qlx-brand-word { font-size: .82rem; }
+  .qlx-brand-sub { display: none; }
+  .qlx[data-scrolled="1"]:not([data-menu="1"]) .qlx-header-bar { height: 62px; }
+  .qlx-hero-inhalt { padding: 120px 0 76px; }
+  .qlx-scrollhint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qlx .lp-reveal { opacity: 1; transform: none; transition: none; }
+  .qlx .lp-reveal .ico svg * { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+  .qlx-hero-medium { transform: none !important; }
+  .qlx-scrollhint::before { animation: none; }
+  .qlx-hero-medium video { display: none; } /* Standbild statt Bewegtbild */
+}
+
+/* Seiten OHNE eigenen Video-Hero (Artikel, Funktions-Detailseiten) bekommen
+   ein schmales Nachtblau-Band, damit der fixierte Header immer auf dunklem
+   Grund steht. Wird von der Shell gerendert, wenn kein Hero gemeldet ist. */
+.qlx-band { height: 96px; background: linear-gradient(180deg, #171d2e, var(--l-night)); border-bottom: 2px solid; border-image: linear-gradient(90deg, transparent, var(--l-gold-hell) 30%, var(--l-gold-hell) 70%, transparent) 1; }
+
+/* Video-Einblendung nach Baukasten: erst wenn abspielbar (canplay), blendet
+   das Video über dem Poster ein — vorher trägt der Poster-Verlauf den Hero. */
+.qlx-hero-medium { background: var(--l-night); }
+.qlx-hero-medium video { opacity: 0; transition: opacity 1.1s var(--ease); }
+.qlx-hero-medium.qlx-playing video { opacity: 1; }
+.qlx-hero-medium video[poster] { opacity: 1; } /* mit echtem Poster kein Schwarzblitz */
+.qlx-hero-medium.qlx-playing video[poster] { opacity: 1; }
