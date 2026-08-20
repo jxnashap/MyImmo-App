@@ -196,7 +196,7 @@ export default async function DashboardPage() {
           {schritte.map((s, i) => (
             <div key={s.nr} style={{ display: "flex", gap: 14, alignItems: "stretch" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: s.erledigt ? "var(--green)" : "var(--gold)", color: s.erledigt ? "#fff" : "#1a1814", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14 }}>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: s.erledigt ? "var(--green)" : "var(--gold)", color: s.erledigt ? "#fff" : "var(--btn-gold-text)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14 }}>
                   {s.erledigt ? "✓" : s.nr}
                 </div>
                 {i < schritte.length - 1 && <div style={{ flex: 1, width: 2, background: "var(--line2)", marginTop: 4 }} />}

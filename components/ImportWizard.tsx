@@ -81,8 +81,8 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
       <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 4 }}>KI-Auswertung (Anthropic Claude): Der Text wird zur Auswertung an die API übermittelt (kein Modell-Training). Ergebnisse bitte vor dem Speichern prüfen.</p>
 
       <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--line)" }}>
-        <button type="button" onClick={() => setTab("ki")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "ki" ? "var(--gold)" : "transparent"}`, color: tab === "ki" ? "var(--gold)" : "var(--muted)", fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><Bot size={14} style={{ verticalAlign: "-2px" }} /> KI-Import</button>
-        <button type="button" onClick={() => setTab("manual")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "manual" ? "var(--gold)" : "transparent"}`, color: tab === "manual" ? "var(--gold)" : "var(--muted)", fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Schnellformular</button>
+        <button type="button" onClick={() => setTab("ki")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "ki" ? "var(--gold-fill)" : "transparent"}`, color: tab === "ki" ? "var(--gold)" : "var(--muted)", fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><Bot size={14} style={{ verticalAlign: "-2px" }} /> KI-Import</button>
+        <button type="button" onClick={() => setTab("manual")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "manual" ? "var(--gold-fill)" : "transparent"}`, color: tab === "manual" ? "var(--gold)" : "var(--muted)", fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Schnellformular</button>
       </div>
 
       {tab === "ki" && (
@@ -118,7 +118,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
           {/* Weg 3: Text einfügen (Fallback, wenn Portale blocken). */}
           <div className="form-group" style={{ marginBottom: 10 }}>
             <label>…oder Anzeigentext einfügen</label>
-            <textarea rows={7} value={text} onChange={(e) => setText(e.target.value)} placeholder="Text der Immobilienanzeige hier einfügen (Strg+A → Strg+C auf der Anzeige, dann Strg+V hier)." style={{ resize: "vertical", padding: "9px 11px", borderRadius: 7, border: "1px solid var(--line2)", background: "var(--bg3)", color: "var(--text)", fontFamily: "'Outfit',sans-serif", fontSize: 13, outline: "none", lineHeight: 1.6 }} />
+            <textarea rows={7} value={text} onChange={(e) => setText(e.target.value)} placeholder="Text der Immobilienanzeige hier einfügen (Strg+A → Strg+C auf der Anzeige, dann Strg+V hier)." style={{ resize: "vertical", padding: "9px 11px", borderRadius: 7, border: "1px solid var(--line2)", background: "var(--bg3)", color: "var(--text)", fontFamily: "var(--font-ui)", fontSize: 13, outline: "none", lineHeight: 1.6 }} />
           </div>
           <button type="button" onClick={() => rufeAb("/api/import", { text }, "text")}
             disabled={loading !== null || text.trim().length < 30} className="btn btn-ghost"

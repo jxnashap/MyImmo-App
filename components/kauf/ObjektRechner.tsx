@@ -349,7 +349,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
                     style={{
                       flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, cursor: "pointer",
                       padding: "7px 10px", borderRadius: 9, border: "none", fontSize: 12.5, fontWeight: 600,
-                      background: aktiv ? "var(--gold)" : "transparent", color: aktiv ? "#1a1814" : "var(--muted)",
+                      background: aktiv ? "var(--gold-fill)" : "transparent", color: aktiv ? "var(--btn-gold-text)" : "var(--muted)",
                       transition: "background .2s, color .2s",
                     }}>
                     <Icon size={14} /> {label}
@@ -369,7 +369,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
                     style={{
                       flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, cursor: "pointer",
                       padding: "9px 10px", borderRadius: 9, border: "none", fontSize: 13, fontWeight: 600,
-                      background: aktiv ? "var(--gold)" : "transparent", color: aktiv ? "#1a1814" : "var(--muted)",
+                      background: aktiv ? "var(--gold-fill)" : "transparent", color: aktiv ? "var(--btn-gold-text)" : "var(--muted)",
                       transition: "background .2s, color .2s",
                     }}>
                     <Icon size={15} /> {label}

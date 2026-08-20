@@ -160,9 +160,9 @@ export default function DatenschutzPage() {
 
       <H2>7. Schriftarten</H2>
       <p>
-        Die Schriftarten „Fraunces" und „Outfit" werden lokal von unseren eigenen Servern
-        geladen (Self-Hosting). Es findet dabei <strong>keine</strong> Verbindung zu
-        Google-Servern statt; Ihre IP-Adresse wird nicht an Google übermittelt.
+        Die Schriftarten „Fraunces", „Outfit" und „Geist" werden lokal von unseren eigenen
+        Servern geladen (Self-Hosting). Es findet dabei <strong>keine</strong> Verbindung zu
+        Google- oder anderen Drittanbieter-Servern statt; Ihre IP-Adresse wird nicht übermittelt.
       </p>
 
       <H2>8. Speicherdauer und Löschung</H2>

@@ -47,12 +47,12 @@ export default function BankRueckmeldungForm({ token }: { token: string }) {
       <div className="field">
         <label>Nachricht *</label>
         <textarea name="nachricht" required maxLength={4000} rows={4}
-          style={{ width: "100%", background: "var(--bg3)", border: "1px solid var(--line2)", borderRadius: 7, padding: "9px 11px", color: "var(--text)", fontFamily: "'Outfit', sans-serif", fontSize: 13, outline: "none", resize: "vertical" }} />
+          style={{ width: "100%", background: "var(--bg3)", border: "1px solid var(--line2)", borderRadius: 7, padding: "9px 11px", color: "var(--text)", fontFamily: "var(--font-ui)", fontSize: 13, outline: "none", resize: "vertical" }} />
       </div>
       <div className="field">
         <label>Fehlende Unterlagen anfordern (eine je Zeile, optional)</label>
         <textarea name="fehlend" rows={3} placeholder={"z. B. Aktueller Grundbuchauszug\nSCHUFA-Selbstauskunft"}
-          style={{ width: "100%", background: "var(--bg3)", border: "1px solid var(--line2)", borderRadius: 7, padding: "9px 11px", color: "var(--text)", fontFamily: "'Outfit', sans-serif", fontSize: 13, outline: "none", resize: "vertical" }} />
+          style={{ width: "100%", background: "var(--bg3)", border: "1px solid var(--line2)", borderRadius: 7, padding: "9px 11px", color: "var(--text)", fontFamily: "var(--font-ui)", fontSize: 13, outline: "none", resize: "vertical" }} />
       </div>
       {status === "fehler" && (
         <div style={{ fontSize: 12, color: "var(--red)", marginBottom: 10, fontWeight: 600 }}>{fehler}</div>

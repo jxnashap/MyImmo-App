@@ -96,13 +96,17 @@ Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fris
   Nur im Dashboard setzbar, nicht über API/MCP. **Nach dem Umstellen prüfen**, ob
   bestehende Konten mit kürzerem Passwort sich weiterhin anmelden können (die Regel
   gilt für NEUE/geänderte Passwörter, nicht rückwirkend).
-- **Komplette Design- & Layout-Überarbeitung der App (VORHABEN, vor dem Marketing-Start):**
-  Gewählte Richtung: **Fintech-hell (Stripe/N26 + etwas Apple)** mit **echter Neu-Anordnung**
-  der Layouts (nicht nur Umfärben). Gold `#D4A847` bleibt das Markenzeichen, Fraunces+Outfit
-  bleiben. Betrifft die App-UI (`app/globals.css` + Komponenten); das Dokument-/PDF-Design
-  (siehe „Dokument-/PDF-Design") bleibt unverändert. Verworfen: „Quiet-Luxury"-Ivory, Neon-Bento.
-  Sinnvolle Reihenfolge: Redesign VOR großem Marketing (Screenshots/Store-Assets/Ratgeber-Bilder
-  sonst doppelt).
+- **Design- & Layout-Überarbeitung der App — Runde 1 UMGESETZT (20.08.2026):**
+  Neues App-Design **„Frosted Paper"** (shadcn/ui-artig monochrom-hell: Canvas `#f5f5f5`,
+  weiße 24px-Karten auf Haarlinien `#e5e5e5`, Pillen-Radius 18px für alles Interaktive,
+  Geist als UI-Schrift — selbst gehostet, SIL OFL, `public/fonts/geist-variable.woff2`).
+  **Gold `#D4A847` bleibt als schmaler Markenakzent** (Primärknopf `--gold-fill`, Logo,
+  aktive Zustände; Textstufe hell = `--gold` #9a7b24 wegen Kontrast). Rot nur destruktiv.
+  Hell ist jetzt DEFAULT, Dunkelmodus = achromatische Umkehrung über `[data-theme="dark"]`
+  (Logik gedreht — vorher war Dunkel Default). Die Landing ist per Token-Freeze im
+  `.lp`-Scope auf ihrer Quiet-Luxury-Palette eingefroren; PDFs/Briefe unverändert.
+  **Noch offen (Runde 2):** echte Neu-Anordnung einzelner Layouts (bisher v. a. Um-Tokenisierung),
+  Chart-Gradients im Cashflow-Donut ablösen, 11px-Kleinsttexte sukzessive auf 12px.
 - ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
   `components/OnboardingTour.tsx` — sechs Stationen (Objekt → Mieter → Ein-/Ausgaben →
   Mietkonto → Archiv → Steuer/Assistenten) mit Direktlinks. Öffnet sich automatisch,

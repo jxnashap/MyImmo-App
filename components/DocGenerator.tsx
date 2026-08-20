@@ -284,7 +284,7 @@ export default function DocGenerator({
                           height: 14,
                           borderRadius: "50%",
                           border: `2px solid ${sel ? "var(--gold)" : "var(--line2)"}`,
-                          background: sel ? "var(--gold)" : "transparent",
+                          background: sel ? "var(--gold-fill)" : "transparent",
                           flexShrink: 0,
                         }}
                       />

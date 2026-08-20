@@ -455,7 +455,7 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="w-full rounded-sm py-3 text-[15px] font-semibold transition hover:brightness-95 disabled:opacity-60"
-            style={{ background: "var(--gold)", color: "#1a1a17" }}
+            style={{ background: "var(--gold-fill)", color: "var(--btn-gold-text)" }}
           >
             {loading ? "…" : mode === "login" ? "Anmelden" : "Registrieren"}
           </button>
