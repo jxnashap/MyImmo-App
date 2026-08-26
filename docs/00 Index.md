@@ -18,6 +18,11 @@
 - [[00 Kauf-Tool Übersicht]] — Fahrplan, Roadmap, Risiken
 - [[Kunden-Guide]] · [[Makler-Ordner]] · [[Bank-Ordner]] · [[KfW-Foerderung-2026]]
 
+## 🎓 Unterricht / Workshop
+- `workshop/immobilien-workshop.html` — Aufgabenblatt für die Klasse (drei Objekte, zwei Entscheidungen)
+- `workshop/immobilien-workshop-loesung.html` — Musterlösung, Rechenweg, Bewertungsraster (**nur Lehrkraft**)
+- [[README]] in `docs/workshop/` — Rechengrundlage, Herkunft der Zahlen, Anpassen
+
 ## ⚖️ Compliance
 - [[AVV-STATUS]] — DSGVO / AVV je Anbieter
 - [[anthropic-dpa-archiv]] — archiviertes Anthropic-DPA
@@ -27,7 +32,7 @@
 - `CLAUDE.md` (Repo-Wurzel) — verbindliche Projekt-Regeln + Merkliste
 
 ## 🗺️ Schnell-Orientierung
-- **Live:** https://my-immo-app.vercel.app
+- **Live:** https://www.myimmoapp.de
 - **Repo:** `jxnashap/myimmo-app` · **Branch:** `claude/magical-feynman-l8w9s5`
 - **Stack:** Next.js 14 (App Router) · Supabase (RLS) · Vercel · TypeScript · vitest
 - **Arbeitsweise:** ehrlicher Sparringspartner, Risiken zuerst, Deutsch.

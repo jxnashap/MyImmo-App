@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Immobilien-Workshop — Musterlösung</title>
+<style>
+  :root{
+    --gold:#B8860B; --gold-hell:#D4A847; --gold-pale:rgba(212,168,71,.10);
+    --tinte:#1A1A18; --text:#2E2E2A; --muted:#6B6B63; --faint:#93938A;
+    --linie:#E4E1D8; --papier:#FFFFFF; --creme:#FBF9F4; --flaeche:#F6F4EE;
+    --gruen:#2F7D4F; --gruen-pale:#E9F3EC; --amber:#B4761A; --amber-pale:#FBF0DE;
+    --rot:#A33A2E; --rot-pale:#F8E9E6;
+    --serif: Fraunces, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --sans: Outfit, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--flaeche); color:var(--text); font-family:var(--sans); font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased}
+  .blatt{max-width:1080px; margin:0 auto; background:var(--papier); padding:44px 52px 60px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 12px 40px rgba(0,0,0,.05)}
+
+  .kopf{display:flex; align-items:flex-start; justify-content:space-between; gap:24px}
+  .marke{font-family:var(--serif); font-size:30px; line-height:1; color:var(--tinte)}
+  .marke em{font-style:italic; color:var(--gold); font-weight:400}
+  .marke-sub{font-size:9.5px; letter-spacing:.22em; text-transform:uppercase; color:var(--faint); margin-top:7px; font-weight:500}
+  .kopf-rechts{text-align:right; font-size:12px; color:var(--muted); line-height:1.7; padding-top:3px}
+  .kopf-rechts strong{color:var(--tinte); font-weight:600}
+  .trenn{position:relative; height:1px; background:var(--linie); margin:22px 0 0}
+  .trenn::after{content:""; position:absolute; left:50%; top:-6px; width:1.5px; height:13px; background:var(--gold); transform:translateX(-50%)}
+
+  .titel{margin:38px 0 0; text-align:center}
+  .titel .kicker{font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); font-weight:600}
+  .titel h1{font-family:var(--serif); font-size:36px; line-height:1.15; margin:12px 0 0; color:var(--tinte); font-weight:600}
+  .titel .zier{width:52px; height:2px; background:var(--gold); margin:18px auto 0; border-radius:2px}
+
+  .warnung{margin:26px 0 0; padding:14px 20px; border:1.5px solid var(--rot); background:var(--rot-pale); border-radius:10px; font-size:13.5px; color:var(--rot); font-weight:600; text-align:center}
+
+  section{margin-top:44px}
+  h2{font-family:var(--serif); font-size:21px; color:var(--gold); margin:0 0 4px; font-weight:600; display:flex; align-items:baseline; gap:11px}
+  h2 .nr{font-family:var(--sans); font-size:11px; font-weight:700; color:var(--gold-hell); border:1.5px solid var(--gold-hell); border-radius:50%; width:23px; height:23px; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto}
+  h2 + .lead{color:var(--muted); font-size:14px; margin:0 0 20px; padding-left:34px}
+  h3{font-family:var(--serif); font-size:17px; color:var(--tinte); margin:26px 0 8px; font-weight:600}
+
+  .tab-wrap{overflow-x:auto; border:1px solid var(--linie); border-radius:12px}
+  table{border-collapse:collapse; width:100%; min-width:560px; font-size:13.5px}
+  thead th{background:var(--gold); color:#fff; text-align:right; padding:11px 14px; font-weight:600; font-size:11.5px; letter-spacing:.07em; text-transform:uppercase; white-space:nowrap}
+  thead th:first-child{text-align:left}
+  tbody td{padding:9px 14px; border-bottom:1px solid var(--linie); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+  tbody td:first-child{text-align:left; color:var(--text); font-weight:500; background:var(--creme)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr.gruppe td{background:var(--flaeche); font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); font-weight:700; text-align:left; padding:8px 14px}
+  td.sieg{background:var(--gruen-pale); color:var(--gruen); font-weight:700}
+  td.schwach{color:var(--faint)}
+  .fuss-note{font-size:12px; color:var(--faint); margin-top:9px; padding-left:2px}
+
+  .antwort{border:1.5px solid var(--gold-hell); border-radius:14px; overflow:hidden; margin-top:8px}
+  .antwort-kopf{background:var(--gold-pale); padding:15px 24px; display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .antwort-kopf .frage{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); font-weight:700}
+  .antwort-kopf .ergebnis{font-family:var(--serif); font-size:24px; color:var(--tinte); font-weight:600}
+  .antwort-koerper{padding:20px 24px 22px}
+  .antwort-koerper p{margin:0 0 12px} .antwort-koerper p:last-child{margin-bottom:0}
+  .antwort-koerper ul{margin:10px 0 14px; padding-left:19px} .antwort-koerper li{margin:6px 0}
+
+  .rechenweg{background:var(--creme); border:1px solid var(--linie); border-radius:12px; padding:18px 22px; font-size:13.5px}
+  .rechenweg .schritt{display:grid; grid-template-columns:1fr auto; gap:12px; padding:8px 0; border-bottom:1px dashed var(--linie); align-items:baseline}
+  .rechenweg .schritt:last-child{border-bottom:0}
+  .rechenweg .schritt code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12.5px; color:var(--muted)}
+  .rechenweg .schritt b{font-family:var(--serif); font-size:16px; color:var(--tinte); font-variant-numeric:tabular-nums}
+
+  .kasten{background:var(--creme); border:1px solid var(--linie); border-radius:12px; padding:20px 24px; font-size:14px; margin-top:16px}
+  .kasten.warn{border-color:var(--amber); background:var(--amber-pale)}
+  .kasten h4{margin:0 0 9px; font-family:var(--serif); font-size:16px; color:var(--tinte); font-weight:600}
+  .kasten p{margin:0 0 10px} .kasten p:last-child{margin-bottom:0}
+  .kasten ul{margin:8px 0 0; padding-left:19px} .kasten li{margin:6px 0}
+
+  .fehler{display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:14px}
+  .fehler div{border:1px solid var(--linie); border-left:3px solid var(--amber); border-radius:0 10px 10px 0; padding:14px 18px; background:#FEFDFA; font-size:13.5px}
+  .fehler div > b{display:block; color:var(--tinte); margin-bottom:5px; font-weight:600}
+
+  .punkt{display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 7px; border-radius:6px; font-size:12px; font-weight:700}
+  .p-gut{background:var(--gruen-pale); color:var(--gruen)}
+  .p-mit{background:var(--amber-pale); color:var(--amber)}
+  .p-sch{background:var(--rot-pale); color:var(--rot)}
+
+  .fuss{margin-top:52px; padding-top:16px; border-top:1px solid var(--linie); display:flex; justify-content:space-between; gap:16px; font-size:11.5px; color:var(--faint); flex-wrap:wrap}
+  .fuss a{color:var(--gold); text-decoration:none}
+
+  @media (max-width:760px){
+    .blatt{padding:28px 20px 40px}
+    .kopf{flex-direction:column; gap:14px} .kopf-rechts{text-align:left}
+    .titel h1{font-size:27px}
+  }
+  @media print{
+    body{background:#fff; font-size:11pt}
+    .blatt{max-width:none; box-shadow:none; padding:0}
+    section{margin-top:24px; break-inside:avoid}
+    .antwort,.kasten,.tab-wrap,.rechenweg,.fehler div{break-inside:avoid}
+    @page{size:A4; margin:16mm 14mm}
+  }
+</style>
+</head>
+<body>
+<div class="blatt">
+
+  <header class="kopf">
+    <div>
+      <div class="marke">My<em>Immo</em></div>
+      <div class="marke-sub">Privates Immobilien-Management</div>
+    </div>
+    <div class="kopf-rechts">
+      <strong>Immobilien-Workshop</strong><br>
+      Musterlösung · Teil 2<br>
+      Stand: August 2026
+    </div>
+  </header>
+  <div class="trenn"></div>
+
+  <div class="titel">
+    <div class="kicker">Fallstudie · Auflösung und Rechenweg</div>
+    <h1>Rendite oder Zuhause?</h1>
+    <div class="zier"></div>
+  </div>
+
+  <div class="warnung">Nur für die Lehrkraft — dieses Blatt nicht mit dem Aufgabenblatt zusammen verteilen.</div>
+
+  <section>
+    <h2><span class="nr">1</span> Ergebnistabelle</h2>
+    <p class="lead">Grün markiert ist jeweils der beste Wert der Zeile.</p>
+    <div class="tab-wrap">
+      <table>
+        <thead>
+          <tr><th>Kennzahl</th><th>A — Altbau-ETW</th><th>B — Neubau-ETW</th><th>C — Reihenhaus</th></tr>
+        </thead>
+        <tbody>
+          <tr class="gruppe"><td colspan="4">Kauf</td></tr>
+          <tr><td>Kaufpreis</td><td>129.000 €</td><td>349.000 €</td><td>379.000 €</td></tr>
+          <tr><td>Preis je m²</td><td class="sieg">1.897 €</td><td>4.716 €</td><td>3.212 €</td></tr>
+          <tr><td>Kaufnebenkosten (12,07 %)</td><td>15.570 €</td><td>42.124 €</td><td>45.745 €</td></tr>
+          <tr><td>Gesamtinvestition</td><td>144.570 €</td><td>391.124 €</td><td>424.745 €</td></tr>
+          <tr class="gruppe"><td colspan="4">Ertrag</td></tr>
+          <tr><td>Kaltmiete je m²</td><td>8,24 €</td><td>12,03 €</td><td>10,93 €</td></tr>
+          <tr><td>Jahreskaltmiete</td><td>6.720 €</td><td>10.680 €</td><td>15.480 €</td></tr>
+          <tr><td>Bruttomietrendite</td><td class="sieg">5,21 %</td><td class="schwach">3,06 %</td><td>4,08 %</td></tr>
+          <tr><td>Nettomietrendite</td><td class="sieg">3,72 %</td><td class="schwach">2,18 %</td><td>2,92 %</td></tr>
+          <tr><td>Kaufpreisfaktor</td><td class="sieg">19,2 ×</td><td class="schwach">32,7 ×</td><td>24,5 ×</td></tr>
+          <tr class="gruppe"><td colspan="4">Finanzierung (90 % Kaufpreis, 3,8 % / 2,0 %)</td></tr>
+          <tr><td>Eigenkapital</td><td class="sieg">28.470 €</td><td>77.024 €</td><td>83.645 €</td></tr>
+          <tr><td>Darlehen</td><td>116.100 €</td><td>314.100 €</td><td>341.100 €</td></tr>
+          <tr><td>Annuität je Monat</td><td>561 €</td><td>1.518 €</td><td>1.649 €</td></tr>
+          <tr><td>Zinsen Jahr 1</td><td>4.412 €</td><td>11.936 €</td><td>12.962 €</td></tr>
+          <tr><td>Cashflow je Monat</td><td class="sieg">− 113 €</td><td class="schwach">− 806 €</td><td>− 617 €</td></tr>
+          <tr><td>Eigenkapitalrendite</td><td class="sieg">+ 3,39 %</td><td class="schwach">− 4,40 %</td><td>− 0,69 %</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="fuss-note">Rundung: Beträge auf volle Euro, Prozentwerte auf zwei Nachkommastellen.
+    Abweichungen von ±1 € durch Zwischenrundung sind zu akzeptieren.</p>
+  </section>
+
+  <section>
+    <h2><span class="nr">2</span> Rechenweg am Beispiel Objekt A</h2>
+    <p class="lead">Genügt als Muster — B und C laufen identisch mit anderen Ausgangszahlen.</p>
+    <div class="rechenweg">
+      <div class="schritt"><code>129.000 € ÷ 68 m²</code><b>1.897 € / m²</b></div>
+      <div class="schritt"><code>129.000 € × 12,07 %</code><b>15.570 € Nebenkosten</b></div>
+      <div class="schritt"><code>129.000 € + 15.570 €</code><b>144.570 € Gesamtinvestition</b></div>
+      <div class="schritt"><code>560 € × 12</code><b>6.720 € Jahreskaltmiete</b></div>
+      <div class="schritt"><code>6.720 € ÷ 129.000 € × 100</code><b>5,21 % brutto</b></div>
+      <div class="schritt"><code>6.720 € × 20 %</code><b>1.344 € Bewirtschaftung</b></div>
+      <div class="schritt"><code>(6.720 € − 1.344 €) ÷ 144.570 € × 100</code><b>3,72 % netto</b></div>
+      <div class="schritt"><code>129.000 € ÷ 6.720 €</code><b>19,2 × Kaufpreisfaktor</b></div>
+      <div class="schritt"><code>15.570 € + 12.900 €</code><b>28.470 € Eigenkapital</b></div>
+      <div class="schritt"><code>129.000 € × 90 %</code><b>116.100 € Darlehen</b></div>
+      <div class="schritt"><code>116.100 € × 5,80 % ÷ 12</code><b>561 € Annuität / Monat</b></div>
+      <div class="schritt"><code>116.100 € × 3,80 %</code><b>4.412 € Zinsen Jahr 1</b></div>
+      <div class="schritt"><code>(6.720 € − 1.344 €) − 6.734 €</code><b>− 1.358 € / Jahr Cashflow</b></div>
+      <div class="schritt"><code>(5.376 € − 4.412 €) ÷ 28.470 € × 100</code><b>+ 3,39 % EK-Rendite</b></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="nr">3</span> Frage 1 — Beste Mietrendite</h2>
+    <div class="antwort">
+      <div class="antwort-kopf">
+        <span class="frage">Antwort</span>
+        <span class="ergebnis">Objekt A — Altbau-ETW Lübeck St. Lorenz Nord</span>
+      </div>
+      <div class="antwort-koerper">
+        <p>A gewinnt in <b>jeder einzelnen</b> Renditekennzahl, nicht nur in der Bruttorendite:</p>
+        <ul>
+          <li><b>Bruttomietrendite 5,21 %</b> — gegen 4,08 % (C) und 3,06 % (B).</li>
+          <li><b>Nettomietrendite 3,72 %</b> — der Vorsprung bleibt auch, wenn man Bewirtschaftung
+          und Kaufnebenkosten ehrlich einrechnet. Das ist der eigentliche Beleg.</li>
+          <li><b>Kaufpreisfaktor 19,2 ×</b> — deutlich unter B (32,7 ×) und C (24,5 ×).</li>
+          <li><b>Einzige positive Eigenkapitalrendite (+ 3,39 %)</b> — B und C erwirtschaften im
+          ersten Jahr nicht einmal ihre Zinsen.</li>
+        </ul>
+        <p>Wer nur die Bruttorendite nennt, hat die Aufgabe nicht erfüllt — verlangt waren drei
+        Kennzahlen. Wer <b>Netto</b> und <b>EK-Rendite</b> bringt, hat verstanden, worum es geht.</p>
+      </div>
+    </div>
+
+    <div class="kasten warn">
+      <h4>Was das Ergebnis kippen könnte — der geforderte Risikopunkt</h4>
+      <p>Mindestens einer dieser Punkte muss genannt werden:</p>
+      <ul>
+        <li><b>Beschlossene Sonderumlage 9.500 €.</b> Sie erhöht das eingesetzte Eigenkapital auf
+        37.970 € und drückt die EK-Rendite von 3,39 % auf <b>2,54 %</b>. A bleibt vorn — aber der
+        Abstand halbiert sich fast.</li>
+        <li><b>Instandhaltungsrücklage von 8.400 € auf 12 Einheiten</b> ist praktisch leer. Nach der
+        Dachsanierung ist keine Reserve mehr da; Fenster (1998), Bad (1995) und Elektrik stehen
+        ebenfalls an. Weitere Umlagen sind wahrscheinlich, nicht bloß möglich.</li>
+        <li><b>Energieklasse F</b> und eine Gasheizung von 2006 sind ein absehbarer Kostenblock —
+        und ein Preisrisiko beim Wiederverkauf.</li>
+        <li><b>Nicht umlagefähiges Hausgeld 110 €/Monat = 1.320 €/Jahr.</b> Das sind bereits 19,6 %
+        der Jahresmiete — die 20-%-Pauschale ist damit fast vollständig aufgebraucht, bevor
+        Verwaltung, Mietausfall und eigene Rücklage überhaupt gezählt sind. Die Nettorendite ist
+        also eher zu <em>optimistisch</em> gerechnet.</li>
+      </ul>
+      <p><b>Gegenpunkt, der genauso zählt:</b> Die Miete liegt mit 8,24 €/m² rund 17 % unter der
+      ortsüblichen Vergleichsmiete (9,90 €/m²). Da steckt Mietsteigerungspotenzial drin — allerdings
+      nur in den Grenzen des Mietrechts und erst über die Zeit.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="nr">4</span> Frage 2 — Beste Eigennutzung</h2>
+    <div class="antwort">
+      <div class="antwort-kopf">
+        <span class="frage">Antwort</span>
+        <span class="ergebnis">Objekt C — Reihenmittelhaus Stockelsdorf</span>
+      </div>
+      <div class="antwort-koerper">
+        <p>Wichtig für die Besprechung: <b>Objekt A gewinnt Frage 1 und verliert Frage 2 — und zwar
+        deutlich.</b> Genau das ist der Kern der Aufgabe. Rendite und Wohnqualität messen nicht
+        dasselbe.</p>
+      </div>
+    </div>
+
+    <h3>Kriterienmatrix</h3>
+    <div class="tab-wrap">
+      <table>
+        <thead>
+          <tr><th>Kriterium</th><th>A</th><th>B</th><th>C</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Verfügbarkeit / Einzug möglich</td><td><span class="punkt p-sch">nein</span></td><td><span class="punkt p-gut">sofort</span></td><td><span class="punkt p-gut">11/2026</span></td></tr>
+          <tr><td>Zustand &amp; Sanierungsstau</td><td><span class="punkt p-sch">hoch</span></td><td><span class="punkt p-gut">keiner</span></td><td><span class="punkt p-gut">gering</span></td></tr>
+          <tr><td>Energiestandard / Heizkosten</td><td><span class="punkt p-sch">F</span></td><td><span class="punkt p-gut">A</span></td><td><span class="punkt p-mit">C</span></td></tr>
+          <tr><td>Fläche &amp; Grundriss für Familie</td><td><span class="punkt p-mit">68 m², 3 Zi</span></td><td><span class="punkt p-sch">74 m², 2,5 Zi</span></td><td><span class="punkt p-gut">118 m², 5 Zi</span></td></tr>
+          <tr><td>Entscheidungsfreiheit</td><td><span class="punkt p-sch">WEG</span></td><td><span class="punkt p-mit">WEG</span></td><td><span class="punkt p-gut">allein</span></td></tr>
+          <tr><td>Kostenrisiko &amp; Rücklage</td><td><span class="punkt p-sch">Umlage fix</span></td><td><span class="punkt p-gut">Rücklage voll</span></td><td><span class="punkt p-mit">trägt man allein</span></td></tr>
+          <tr><td>Außenbereich</td><td><span class="punkt p-sch">keiner</span></td><td><span class="punkt p-mit">Terrasse</span></td><td><span class="punkt p-gut">Garten</span></td></tr>
+          <tr><td>Infrastruktur / Anbindung</td><td><span class="punkt p-gut">sehr gut</span></td><td><span class="punkt p-gut">sehr gut</span></td><td><span class="punkt p-mit">gut</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="kasten">
+      <h4>Warum A ausscheidet</h4>
+      <p>Das ist kein Abwägungspunkt, sondern ein <b>Ausschlusskriterium</b>: Die Wohnung ist seit
+      2014 unbefristet vermietet. Wer dort selbst einziehen will, braucht eine Kündigung wegen
+      Eigenbedarfs — mit Kündigungsfristen, die sich nach der Mietdauer richten, mit Widerspruchs­recht
+      des Mieters wegen Härte und gegebenenfalls mit einer Sperrfrist nach Umwandlung in
+      Wohnungseigentum. Das ist Monate bis Jahre unsicheres Warten, kein Einzugstermin.
+      Dazu kommen Energieklasse F, leere Rücklage und beschlossene Sonderumlage.
+      <b>Die höchste Rendite ist hier das schlechteste Zuhause.</b></p>
+    </div>
+
+    <div class="kasten">
+      <h4>Warum B ausscheidet</h4>
+      <p>B ist objektiv das technisch beste Gebäude: Baujahr 2023, Energieklasse A, Wärmepumpe,
+      volle Rücklage, laufende Gewährleistung. Es scheitert nicht am Zustand, sondern am
+      <b>Zuschnitt und am Preis</b>: 74 m² mit 2,5 Zimmern für 349.000 € sind 4.716 €/m² — der
+      höchste Quadratmeterpreis im Feld für die zweitkleinste Wohnung. Kein Garten, WEG-Bindung,
+      und die 890 € Mietansatz stammen aus einem Gutachten, nicht aus einem echten Mietvertrag.
+      <b>Für einen Single oder ein Paar ohne Kinder wäre B eine vertretbare Antwort</b> — wenn die
+      Klasse das sauber begründet, ist es zu werten.</p>
+    </div>
+
+    <div class="kasten">
+      <h4>Warum C gewinnt</h4>
+      <ul>
+        <li><b>Frei ab 01.11.2026</b> — planbarer Einzug ohne rechtliche Hürde.</li>
+        <li><b>118 m², 5 Zimmer, 214 m² Grundstück</b> bei 3.212 €/m². Deutlich mehr Wohnwert je Euro als B.</li>
+        <li><b>Alleineigentum.</b> Keine Eigentümerversammlung, die über Ihr Dach abstimmt — Sie
+        entscheiden über Zeitpunkt und Umfang jeder Maßnahme selbst.</li>
+        <li><b>2021 saniert</b> (Heizung, 3-fach-Fenster, Dachdämmung), Energieklasse C. Kein
+        Neubaustandard, aber auf Jahre hinaus kein Zwang zu handeln.</li>
+        <li><b>Familientaugliche Lage:</b> Kita 400 m, Grundschule 600 m, Bus im 8-Minuten-Takt.</li>
+      </ul>
+      <p style="margin-top:12px"><b>Ehrlich dazusagen:</b> C ist die teuerste Finanzierung im Feld
+      (1.649 € Annuität/Monat) und die Instandhaltung trägt man allein — bei einem Haus von 1998
+      stehen in 10–15 Jahren Dach und Fassade an, ohne WEG-Rücklage im Rücken. Wer das nennt, hat
+      die Aufgabe besonders gut gelöst.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="nr">5</span> Typische Fehler — worauf beim Korrigieren zu achten ist</h2>
+    <div class="fehler">
+      <div>
+        <b>Nettorendite auf den Kaufpreis gerechnet</b>
+        Sie gehört auf die <em>Gesamtinvestition</em>. Sonst kommt bei A 4,17 % statt 3,72 % heraus —
+        die Nebenkosten verschwinden einfach.
+      </div>
+      <div>
+        <b>Tilgung als Aufwand in der EK-Rendite</b>
+        Häufigster Fehler. Dann werden alle drei Objekte negativ und das Ergebnis ist wertlos.
+        In die EK-Rendite gehören <em>nur die Zinsen</em>; Tilgung ist Vermögensaufbau.
+      </div>
+      <div>
+        <b>Negativer Cashflow = schlechtes Objekt</b>
+        Falsch. Bei A besteht die Rate von 561 € aus rund 368 € Zins und rund 193 € Tilgung. Die 113 €
+        Minus pro Monat sind der Preis dafür, monatlich rund 193 € Schulden abzubauen.
+      </div>
+      <div>
+        <b>Grunderwerbsteuer verrechnet</b>
+        6,5 % von 129.000 € sind 8.385 € — nicht 8,385 € und nicht 83.850 €. Klassischer
+        Kommafehler, der die halbe Tabelle zerlegt.
+      </div>
+      <div>
+        <b>Hausgeld voll von der Miete abgezogen</b>
+        Der umlagefähige Teil zahlt der Mieter. Nur der nicht umlagefähige Anteil belastet den
+        Eigentümer — bei A sind das 110 € von 245 €.
+      </div>
+      <div>
+        <b>Beide Fragen mit demselben Objekt beantwortet</b>
+        Meist A oder C zweimal. Dann fehlt die zentrale Einsicht der Aufgabe: Rendite und
+        Wohnqualität sind zwei verschiedene Maßstäbe.
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="nr">6</span> Bewertungsvorschlag · 30 Punkte</h2>
+    <div class="tab-wrap">
+      <table>
+        <thead><tr><th>Anforderung</th><th>Punkte</th></tr></thead>
+        <tbody>
+          <tr><td>Kaufnebenkosten und Gesamtinvestition für alle drei Objekte korrekt</td><td>4</td></tr>
+          <tr><td>Brutto- und Nettomietrendite korrekt, Netto auf die Gesamtinvestition bezogen</td><td>5</td></tr>
+          <tr><td>Kaufpreisfaktor korrekt</td><td>2</td></tr>
+          <tr><td>Finanzierungsblock: Eigenkapital, Darlehen, Annuität, Zinsen</td><td>4</td></tr>
+          <tr><td>Cashflow und Eigenkapitalrendite korrekt (Zins ≠ Tilgung sauber getrennt)</td><td>4</td></tr>
+          <tr><td><b>Frage 1:</b> Objekt A mit mindestens drei Kennzahlen belegt</td><td>4</td></tr>
+          <tr><td><b>Frage 1:</b> ein belastbarer Risikopunkt genannt</td><td>2</td></tr>
+          <tr><td><b>Frage 2:</b> vier eigene Kriterien, auf alle drei Objekte angewendet</td><td>3</td></tr>
+          <tr><td><b>Frage 2:</b> A als vermietet erkannt und deshalb ausgeschlossen</td><td>2</td></tr>
+          <tr><td>Rundung, Einheiten und saubere Darstellung durchgehend</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="fuss-note">Voll zu werten ist auch eine abweichende Antwort bei Frage 2, wenn die
+    Kriterien benannt, konsistent angewendet und die Ausschlüsse begründet sind. Bei Frage 1 gibt es
+    dagegen nur eine richtige Antwort — dort entscheidet die Rechnung, nicht die Meinung.</p>
+  </section>
+
+  <section>
+    <h2><span class="nr">7</span> Vertiefung, falls Zeit bleibt</h2>
+    <div class="kasten">
+      <ul>
+        <li><b>Zins auf 5,0 % erhöhen.</b> Bei A steigen die Zinsen auf 5.805 € — die EK-Rendite
+        fällt auf − 1,51 %. Zeigt in einem Schritt, wie stark Fremdkapital hebelt: in beide Richtungen.</li>
+        <li><b>Bewirtschaftung auf 25 % anheben.</b> Realistischer für einen Altbau von 1928.
+        A fällt damit auf 3,49 % netto — bleibt aber vorn.</li>
+        <li><b>Umgekehrt fragen:</b> Welchen Kaufpreis dürfte B höchstens haben, um auf A's
+        Bruttorendite von 5,21 % zu kommen? (10.680 € ÷ 5,21 % ≈ <b>205.000 €</b> — also gut
+        144.000 € unter dem Angebot. Macht anschaulich, warum Neubau selten Renditeobjekt ist.)</li>
+        <li><b>Mieten statt kaufen.</b> Wer C für 1.290 € mietet statt für 1.649 € Annuität zu
+        kaufen, spart monatlich 359 € — hat aber am Ende kein Eigentum. Wo liegt die Grenze?</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="fuss">
+    <span>MyImmo · Immobilien-Workshop · Musterlösung</span>
+    <span>Nachrechnen unter <a href="https://www.myimmoapp.de/kauf">myimmoapp.de/kauf</a></span>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Immobilien-Workshop — Aufgabenblatt</title>
+<style>
+  :root{
+    --gold:#B8860B; --gold-hell:#D4A847; --gold-pale:rgba(212,168,71,.10);
+    --tinte:#1A1A18; --text:#2E2E2A; --muted:#6B6B63; --faint:#93938A;
+    --linie:#E4E1D8; --papier:#FFFFFF; --creme:#FBF9F4; --flaeche:#F6F4EE;
+    --gruen:#2F7D4F; --amber:#B4761A; --rot:#A33A2E;
+    --serif: Fraunces, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --sans: Outfit, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--flaeche); color:var(--text);
+    font-family:var(--sans); font-size:16px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .blatt{
+    max-width:1080px; margin:0 auto; background:var(--papier);
+    padding:44px 52px 60px; box-shadow:0 1px 3px rgba(0,0,0,.06),0 12px 40px rgba(0,0,0,.05);
+  }
+
+  /* ---------- Briefkopf (MyImmo-Dokumentstil) ---------- */
+  .kopf{display:flex; align-items:flex-start; justify-content:space-between; gap:24px}
+  .marke{font-family:var(--serif); font-size:30px; line-height:1; letter-spacing:.01em; color:var(--tinte)}
+  .marke em{font-style:italic; color:var(--gold); font-weight:400}
+  .marke-sub{
+    font-family:var(--sans); font-size:9.5px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--faint); margin-top:7px; font-weight:500;
+  }
+  .kopf-rechts{text-align:right; font-size:12px; color:var(--muted); line-height:1.7; padding-top:3px}
+  .kopf-rechts strong{color:var(--tinte); font-weight:600}
+  .trenn{position:relative; height:1px; background:var(--linie); margin:22px 0 0}
+  .trenn::after{content:""; position:absolute; left:50%; top:-6px; width:1.5px; height:13px; background:var(--gold); transform:translateX(-50%)}
+
+  /* ---------- Titel ---------- */
+  .titel{margin:38px 0 0; text-align:center}
+  .titel .kicker{font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); font-weight:600}
+  .titel h1{font-family:var(--serif); font-size:36px; line-height:1.15; margin:12px 0 0; color:var(--tinte); font-weight:600}
+  .titel .zier{width:52px; height:2px; background:var(--gold); margin:18px auto 0; border-radius:2px}
+  .titel p{max-width:60ch; margin:16px auto 0; color:var(--muted); font-size:14.5px}
+
+  /* ---------- Namensfeld ---------- */
+  .namensfeld{display:flex; gap:28px; margin:30px 0 0; padding:16px 20px; background:var(--creme); border:1px solid var(--linie); border-radius:10px; flex-wrap:wrap}
+  .namensfeld div{flex:1 1 180px; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--faint); font-weight:600}
+  .namensfeld span{display:block; border-bottom:1px solid var(--linie); height:26px; margin-top:6px}
+
+  /* ---------- Abschnitte ---------- */
+  section{margin-top:44px}
+  h2{
+    font-family:var(--serif); font-size:21px; color:var(--gold); margin:0 0 4px; font-weight:600;
+    display:flex; align-items:baseline; gap:11px;
+  }
+  h2 .nr{
+    font-family:var(--sans); font-size:11px; font-weight:700; color:var(--gold-hell);
+    border:1.5px solid var(--gold-hell); border-radius:50%; width:23px; height:23px;
+    display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  h2 + .lead{color:var(--muted); font-size:14px; margin:0 0 20px; padding-left:34px}
+
+  /* ---------- Auftrag ---------- */
+  .auftrag{border:1.5px solid var(--gold-hell); border-radius:14px; overflow:hidden}
+  .auftrag-kopf{background:var(--gold-pale); padding:13px 22px; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); font-weight:700}
+  .auftrag ol{margin:0; padding:8px 22px 22px 22px; list-style:none; counter-reset:a}
+  .auftrag li{counter-increment:a; padding:16px 0 16px 52px; position:relative; border-bottom:1px dashed var(--linie)}
+  .auftrag li:last-child{border-bottom:0; padding-bottom:4px}
+  .auftrag li::before{
+    content:counter(a); position:absolute; left:0; top:15px;
+    font-family:var(--serif); font-size:22px; color:var(--gold); font-weight:600;
+    width:34px; text-align:center;
+  }
+  .auftrag strong{display:block; font-size:17px; color:var(--tinte); font-weight:600; margin-bottom:3px}
+  .auftrag small{display:block; color:var(--muted); font-size:13.5px; line-height:1.55}
+
+  /* ---------- Rahmendaten ---------- */
+  .rahmen{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--linie); border:1px solid var(--linie); border-radius:12px; overflow:hidden}
+  .rahmen div{background:var(--papier); padding:14px 16px}
+  .rahmen dt{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); font-weight:600; margin:0}
+  .rahmen dd{margin:5px 0 0; font-family:var(--serif); font-size:19px; color:var(--tinte); font-weight:600}
+  .rahmen small{display:block; color:var(--faint); font-size:11.5px; margin-top:2px; font-family:var(--sans); font-weight:400}
+
+  /* ---------- Objektkarten ---------- */
+  .objekte{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:22px}
+  .objekt{border:1px solid var(--linie); border-radius:14px; overflow:hidden; background:var(--papier); display:flex; flex-direction:column}
+  .objekt-kopf{padding:18px 20px 16px; border-bottom:1px solid var(--linie); background:var(--creme)}
+  .objekt-kopf .badge{
+    display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:7px;
+    background:var(--gold); color:#fff; font-family:var(--serif); font-size:15px; font-weight:700; margin-bottom:10px;
+  }
+  .objekt-kopf h3{font-family:var(--serif); font-size:18px; margin:0; color:var(--tinte); font-weight:600; line-height:1.3}
+  .objekt-kopf .ort{font-size:12.5px; color:var(--muted); margin-top:4px; min-height:2.9em}
+  .objekt-preis{padding:14px 20px; border-bottom:1px solid var(--linie); display:flex; align-items:baseline; justify-content:space-between; gap:10px}
+  .objekt-preis b{font-family:var(--serif); font-size:25px; color:var(--tinte); font-weight:600}
+  .objekt-preis span{font-size:12px; color:var(--faint)}
+  .daten{margin:0; padding:4px 20px 14px}
+  .daten .zeile{display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid #F1EFE8; font-size:13.5px}
+  .daten .zeile:last-child{border-bottom:0}
+  .daten .zeile dt{color:var(--muted); margin:0; flex:0 1 auto}
+  .daten .zeile dd{margin:0; color:var(--tinte); font-weight:600; text-align:right; flex:1 1 auto; min-width:0; overflow-wrap:anywhere}
+  .rubrik{
+    font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold);
+    font-weight:700; padding:14px 20px 6px; border-top:1px solid var(--linie); background:#FDFCF9;
+  }
+  .rubrik + .daten{background:#FDFCF9; padding-top:0}
+  .hinweise{padding:0 20px 18px; background:#FDFCF9; margin:0; flex:1}
+  .hinweise ul{margin:0; padding:0 0 0 17px; font-size:13px; color:var(--text); line-height:1.55}
+  .hinweise li{margin:6px 0}
+  .flag{display:inline-block; font-size:11px; font-weight:700; padding:1px 7px; border-radius:5px; letter-spacing:.02em; vertical-align:1px}
+  .flag.frei{background:#E9F3EC; color:var(--gruen)}
+  .flag.acht{background:#FBF0DE; color:var(--amber)}
+  .flag.stop{background:#F8E9E6; color:var(--rot)}
+
+  /* ---------- Formeln ---------- */
+  .formeln{display:grid; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:14px}
+  .formel{border:1px solid var(--linie); border-left:3px solid var(--gold-hell); border-radius:0 10px 10px 0; padding:14px 18px; background:var(--creme)}
+  .formel > b{display:block; font-size:13.5px; color:var(--tinte); margin-bottom:7px; font-weight:600}
+  .formel small b{color:var(--tinte); font-weight:700}
+  .formel code{
+    display:block; font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12.5px;
+    color:var(--tinte); background:var(--papier); border:1px solid var(--linie); border-radius:6px; padding:8px 10px; line-height:1.5;
+  }
+  .formel small{display:block; color:var(--muted); font-size:12px; margin-top:7px; line-height:1.5}
+
+  /* ---------- Tabelle ---------- */
+  .tab-wrap{overflow-x:auto; border:1px solid var(--linie); border-radius:12px}
+  table{border-collapse:collapse; width:100%; min-width:520px; font-size:13.5px}
+  thead th{
+    background:var(--gold); color:#fff; text-align:right; padding:11px 14px; font-weight:600;
+    font-size:11.5px; letter-spacing:.07em; text-transform:uppercase; white-space:nowrap;
+  }
+  thead th:first-child{text-align:left}
+  tbody td{padding:0; border-bottom:1px solid var(--linie); border-left:1px solid var(--linie)}
+  tbody td:first-child{
+    border-left:0; padding:11px 14px; color:var(--text); font-weight:500; white-space:nowrap; background:var(--creme);
+  }
+  tbody td.feld{height:40px; background:repeating-linear-gradient(transparent,transparent 39px,#F1EFE8 39px,#F1EFE8 40px)}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr.gruppe td{background:var(--flaeche); font-size:10.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); font-weight:700; padding:8px 14px}
+
+  /* ---------- Kästen ---------- */
+  .kasten{background:var(--creme); border:1px solid var(--linie); border-radius:12px; padding:20px 24px; font-size:14px}
+  .kasten.gold{border-color:var(--gold-hell); background:var(--gold-pale)}
+  .kasten h4{margin:0 0 9px; font-family:var(--serif); font-size:16px; color:var(--tinte); font-weight:600}
+  .kasten p{margin:0 0 10px} .kasten p:last-child{margin-bottom:0}
+  .kasten ul{margin:8px 0 0; padding-left:19px} .kasten li{margin:5px 0}
+
+  .fuss{margin-top:52px; padding-top:16px; border-top:1px solid var(--linie); display:flex; justify-content:space-between; gap:16px; font-size:11.5px; color:var(--faint); flex-wrap:wrap}
+  .fuss a{color:var(--gold); text-decoration:none}
+
+  @media (max-width:760px){
+    .blatt{padding:28px 20px 40px}
+    .kopf{flex-direction:column; gap:14px}
+    .kopf-rechts{text-align:left}
+    .titel h1{font-size:27px}
+    .rahmen{grid-template-columns:repeat(2,1fr)}
+    .objekt-kopf .ort{min-height:0}
+  }
+  @media print{
+    body{background:#fff; font-size:11pt}
+    .blatt{max-width:none; box-shadow:none; padding:0}
+    section{margin-top:24px; break-inside:avoid}
+    .objekt,.formel,.kasten,.tab-wrap,.auftrag{break-inside:avoid}
+    .objekte{grid-template-columns:1fr 1fr 1fr; gap:10px}
+    /* A4 ist schmaler als 760px -> die Mobil-Regeln greifen. Hier zuruecknehmen,
+       sonst fluchten die Karten nicht und lange Werte laufen aus der Spalte. */
+    .rahmen{grid-template-columns:repeat(2,1fr)}
+    .objekt-kopf{padding:11px 12px 10px}
+    .objekt-kopf h3{font-size:13.5px}
+    .objekt-kopf .ort{font-size:10.5px; min-height:3.4em}
+    .objekt-preis{padding:9px 12px}
+    .objekt-preis b{font-size:18px}
+    .objekt-preis span{font-size:9.5px}
+    .daten{padding:2px 12px 10px}
+    .daten .zeile{font-size:10.5px; padding:4px 0}
+    .rubrik{padding:10px 12px 4px; font-size:8.5px}
+    .hinweise{padding:0 12px 12px}
+    .hinweise ul{font-size:10px; padding-left:14px}
+    .flag{font-size:9px; padding:1px 5px}
+    @page{size:A4; margin:16mm 14mm}
+  }
+</style>
+</head>
+<body>
+<div class="blatt">
+
+  <header class="kopf">
+    <div>
+      <div class="marke">My<em>Immo</em></div>
+      <div class="marke-sub">Privates Immobilien-Management</div>
+    </div>
+    <div class="kopf-rechts">
+      <strong>Immobilien-Workshop</strong><br>
+      Aufgabenblatt · Teil 1<br>
+      Stand: August 2026
+    </div>
+  </header>
+  <div class="trenn"></div>
+
+  <div class="titel">
+    <div class="kicker">Fallstudie · Drei Objekte, zwei Entscheidungen</div>
+    <h1>Rendite oder Zuhause?</h1>
+    <div class="zier"></div>
+    <p>Drei reale Marktlagen aus dem Raum Lübeck. Dieselben Kaufnebenkosten, dieselbe
+    Finanzierung, dieselben Formeln — und trotzdem drei sehr unterschiedliche Antworten.
+    Rechnen Sie nach und entscheiden Sie begründet.</p>
+  </div>
+
+  <div class="namensfeld">
+    <div>Name<span></span></div>
+    <div>Klasse / Gruppe<span></span></div>
+    <div>Datum<span></span></div>
+  </div>
+
+  <section>
+    <h2><span class="nr">1</span> Ihr Auftrag</h2>
+    <p class="lead">Beide Fragen sind getrennt zu beantworten — die Antwort ist <em>nicht</em> zweimal dasselbe Objekt.</p>
+    <div class="auftrag">
+      <div class="auftrag-kopf">Zwei Fragen, zwei Begründungen</div>
+      <ol>
+        <li>
+          <strong>Welches Objekt hat die beste Mietrendite?</strong>
+          <small>Als Kapitalanlage betrachtet. Belegen Sie Ihre Antwort mit <b>mindestens drei</b> der
+          berechneten Kennzahlen — eine allein reicht nicht. Benennen Sie außerdem einen Punkt,
+          der Ihr Ergebnis gefährden könnte.</small>
+        </li>
+        <li>
+          <strong>Welches Objekt eignet sich am besten zur Eigennutzung?</strong>
+          <small>Sie ziehen selbst ein. Die Rendite ist hier <b>nicht</b> das Entscheidungskriterium.
+          Nennen Sie <b>vier</b> Kriterien, nach denen Sie entscheiden, und wenden Sie diese auf alle
+          drei Objekte an. Begründen Sie auch, warum Sie die beiden anderen ausschließen.</small>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="nr">2</span> Rahmendaten für alle drei Objekte</h2>
+    <p class="lead">Damit die Objekte vergleichbar bleiben, gelten überall dieselben Annahmen.</p>
+    <dl class="rahmen">
+      <div><dt>Grunderwerbsteuer</dt><dd>6,50 %</dd><small>Schleswig-Holstein</small></div>
+      <div><dt>Maklerprovision</dt><dd>3,57 %</dd><small>Käuferanteil, inkl. MwSt.</small></div>
+      <div><dt>Notar &amp; Grundbuch</dt><dd>2,00 %</dd><small>Pauschale</small></div>
+      <div><dt>Nebenkosten gesamt</dt><dd>12,07 %</dd><small>vom Kaufpreis</small></div>
+      <div><dt>Bewirtschaftung</dt><dd>20 %</dd><small>der Jahreskaltmiete</small></div>
+      <div><dt>Eigenkapital</dt><dd>NK + 10 %</dd><small>alle Nebenkosten + 10 % des Kaufpreises</small></div>
+      <div><dt>Sollzins</dt><dd>3,80 %</dd><small>p. a., 10 Jahre fest</small></div>
+      <div><dt>Anfangstilgung</dt><dd>2,00 %</dd><small>Annuität = 5,80 %</small></div>
+    </dl>
+  </section>
+
+  <section>
+    <h2><span class="nr">3</span> Die drei Objekte</h2>
+    <p class="lead">Alle Angaben stammen aus dem Exposé bzw. der letzten Eigentümerversammlung.</p>
+    <div class="objekte">
+
+      <!-- ===== A ===== -->
+      <article class="objekt">
+        <div class="objekt-kopf">
+          <div class="badge">A</div>
+          <h3>Altbau-Eigentumswohnung</h3>
+          <div class="ort">Lübeck, St. Lorenz Nord · einfache bis mittlere Wohnlage</div>
+        </div>
+        <div class="objekt-preis"><b>129.000 €</b><span>Kaufpreis</span></div>
+        <dl class="daten">
+          <div class="zeile"><dt>Wohnfläche</dt><dd>68 m²</dd></div>
+          <div class="zeile"><dt>Zimmer</dt><dd>3</dd></div>
+          <div class="zeile"><dt>Baujahr</dt><dd>1928</dd></div>
+          <div class="zeile"><dt>Lage im Haus</dt><dd>2. OG, kein Aufzug</dd></div>
+          <div class="zeile"><dt>Kaltmiete (IST)</dt><dd>560 € / Monat</dd></div>
+          <div class="zeile"><dt>Hausgeld</dt><dd>245 € / Monat</dd></div>
+          <div class="zeile"><dt>davon nicht umlagefähig</dt><dd>110 € / Monat</dd></div>
+          <div class="zeile"><dt>Energieausweis</dt><dd>F · 178 kWh/(m²·a)</dd></div>
+          <div class="zeile"><dt>Heizung</dt><dd>Gas-Zentral, Bj. 2006</dd></div>
+          <div class="zeile"><dt>Verfügbarkeit</dt><dd><span class="flag stop">vermietet</span></dd></div>
+        </dl>
+        <div class="rubrik">Was noch im Exposé steht</div>
+        <div class="hinweise">
+          <ul>
+            <li>Vermietet seit 2014, <b>unbefristet</b>. Ortsübliche Vergleichsmiete der Lage: rund 9,90 €/m².</li>
+            <li>WEG mit 12 Einheiten, Instandhaltungsrücklage insgesamt <b>8.400 €</b>.</li>
+            <li>Dachsanierung ist <b>beschlossen</b> (2027) — Sonderumlage auf diese Einheit: <b>9.500 €</b>.</li>
+            <li>Fenster von 1998 (2-fach), Bad von 1995, Elektrik in Teilen im Originalzustand.</li>
+            <li>Bushaltestelle 4 Gehminuten, Hauptbahnhof 15 Minuten mit dem Rad.</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- ===== B ===== -->
+      <article class="objekt">
+        <div class="objekt-kopf">
+          <div class="badge">B</div>
+          <h3>Neubau-Eigentumswohnung</h3>
+          <div class="ort">Lübeck, innenstadtnah · gute Wohnlage</div>
+        </div>
+        <div class="objekt-preis"><b>349.000 €</b><span>Kaufpreis</span></div>
+        <dl class="daten">
+          <div class="zeile"><dt>Wohnfläche</dt><dd>74 m²</dd></div>
+          <div class="zeile"><dt>Zimmer</dt><dd>2,5</dd></div>
+          <div class="zeile"><dt>Baujahr</dt><dd>2023</dd></div>
+          <div class="zeile"><dt>Lage im Haus</dt><dd>EG mit Terrasse</dd></div>
+          <div class="zeile"><dt>Kaltmiete (erzielbar)</dt><dd>890 € / Monat</dd></div>
+          <div class="zeile"><dt>Hausgeld</dt><dd>290 € / Monat</dd></div>
+          <div class="zeile"><dt>davon nicht umlagefähig</dt><dd>130 € / Monat</dd></div>
+          <div class="zeile"><dt>Energieausweis</dt><dd>A · 34 kWh/(m²·a)</dd></div>
+          <div class="zeile"><dt>Heizung</dt><dd>Wärmepumpe + PV (WEG)</dd></div>
+          <div class="zeile"><dt>Verfügbarkeit</dt><dd><span class="flag frei">bezugsfrei</span></dd></div>
+        </dl>
+        <div class="rubrik">Was noch im Exposé steht</div>
+        <div class="hinweise">
+          <ul>
+            <li>Mietangabe stammt aus einem Wertgutachten, das Objekt war <b>noch nie vermietet</b>.</li>
+            <li>WEG mit 24 Einheiten, Rücklage <b>41.000 €</b>, keine Maßnahmen beschlossen.</li>
+            <li>Gewährleistung auf die Bauleistungen läuft noch bis 2028.</li>
+            <li>Tiefgaragen-Stellplatz ist im Kaufpreis enthalten.</li>
+            <li>Innenstadt in 10 Minuten mit dem Rad; kein eigener Garten.</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- ===== C ===== -->
+      <article class="objekt">
+        <div class="objekt-kopf">
+          <div class="badge">C</div>
+          <h3>Reihenmittelhaus</h3>
+          <div class="ort">Stockelsdorf (Kreis Ostholstein) · Lübecker Umland</div>
+        </div>
+        <div class="objekt-preis"><b>379.000 €</b><span>Kaufpreis</span></div>
+        <dl class="daten">
+          <div class="zeile"><dt>Wohnfläche</dt><dd>118 m²</dd></div>
+          <div class="zeile"><dt>Zimmer</dt><dd>5</dd></div>
+          <div class="zeile"><dt>Grundstück</dt><dd>214 m²</dd></div>
+          <div class="zeile"><dt>Baujahr</dt><dd>1998</dd></div>
+          <div class="zeile"><dt>Kaltmiete (erzielbar)</dt><dd>1.290 € / Monat</dd></div>
+          <div class="zeile"><dt>Laufende Kosten</dt><dd>230 € / Monat</dd></div>
+          <div class="zeile"><dt>Eigentumsform</dt><dd>Alleineigentum</dd></div>
+          <div class="zeile"><dt>Energieausweis</dt><dd>C · 92 kWh/(m²·a)</dd></div>
+          <div class="zeile"><dt>Heizung</dt><dd>Gas-Brennwert + Solar, 2021</dd></div>
+          <div class="zeile"><dt>Verfügbarkeit</dt><dd><span class="flag frei">frei ab 01.11.2026</span></dd></div>
+        </dl>
+        <div class="rubrik">Was noch im Exposé steht</div>
+        <div class="hinweise">
+          <ul>
+            <li>2021 saniert: Heizung, 3-fach-Fenster, Dachdämmung. Keine WEG — <b>Sie entscheiden allein</b>.</li>
+            <li>Garten nach Südwesten, Carport. Instandhaltung liegt vollständig bei Ihnen.</li>
+            <li>Kita 400 m, Grundschule 600 m, Bus nach Lübeck im 8-Minuten-Takt, A1 in 6 km.</li>
+            <li>Laufende Kosten enthalten Grundsteuer, Versicherung, Schornsteinfeger und kalkulatorische Rücklage.</li>
+            <li>Maklerprovision fällt an wie bei A und B.</li>
+          </ul>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="nr">4</span> Formeln</h2>
+    <p class="lead">Genau diese Formeln benutzt auch der Objekt-Rechner von MyImmo.</p>
+    <div class="formeln">
+      <div class="formel">
+        <b>Kaufnebenkosten</b>
+        <code>NK = Kaufpreis × 12,07 %</code>
+        <small>Grunderwerbsteuer 6,5 % + Makler 3,57 % + Notar/Grundbuch 2 %.</small>
+      </div>
+      <div class="formel">
+        <b>Gesamtinvestition</b>
+        <code>GI = Kaufpreis + NK</code>
+        <small>Das ist das Geld, das tatsächlich im Objekt steckt — nicht der Kaufpreis.</small>
+      </div>
+      <div class="formel">
+        <b>Bruttomietrendite</b>
+        <code>Jahreskaltmiete ÷ Kaufpreis × 100</code>
+        <small>Schnelle Vorsortierung. Blendet Nebenkosten und laufende Kosten komplett aus.</small>
+      </div>
+      <div class="formel">
+        <b>Nettomietrendite</b>
+        <code>(Jahresmiete − 20 %) ÷ GI × 100</code>
+        <small>Ehrlicher: zieht die Bewirtschaftung ab und rechnet auf die Gesamtinvestition.</small>
+      </div>
+      <div class="formel">
+        <b>Kaufpreisfaktor</b>
+        <code>Kaufpreis ÷ Jahreskaltmiete</code>
+        <small>Wie viele Jahreskaltmieten der Kaufpreis kostet. Niedriger = günstiger eingekauft.</small>
+      </div>
+      <div class="formel">
+        <b>Darlehen &amp; Annuität</b>
+        <code>D = Kaufpreis × 90 %<br>Annuität = D × 5,80 %</code>
+        <small>Eigenkapital = alle Nebenkosten + 10 % des Kaufpreises.</small>
+      </div>
+      <div class="formel">
+        <b>Cashflow vor Steuern</b>
+        <code>(Jahresmiete − 20 %) − Annuität</code>
+        <small>Was am Jahresende übrig bleibt — oder fehlt. Ein Minus ist nicht automatisch schlecht.</small>
+      </div>
+      <div class="formel">
+        <b>Eigenkapitalrendite</b>
+        <code>((Jahresmiete − 20 %) − Zinsen) ÷ EK × 100</code>
+        <small>Zinsen Jahr 1 = Darlehen × 3,8 %. <b>Nur Zinsen</b>, nicht die Tilgung — Tilgung ist
+        kein Aufwand, sondern Vermögensaufbau.</small>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="nr">5</span> Auswertung</h2>
+    <p class="lead">Runden Sie Beträge auf volle Euro, Prozentwerte auf zwei Nachkommastellen.</p>
+    <div class="tab-wrap">
+      <table>
+        <thead>
+          <tr><th>Kennzahl</th><th>Objekt A</th><th>Objekt B</th><th>Objekt C</th></tr>
+        </thead>
+        <tbody>
+          <tr class="gruppe"><td colspan="4">Kauf</td></tr>
+          <tr><td>Preis je m²</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr><td>Kaufnebenkosten</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr><td>Gesamtinvestition</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr class="gruppe"><td colspan="4">Ertrag</td></tr>
+          <tr><td>Jahreskaltmiete</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr><td>Bruttomietrendite</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr><td>Nettomietrendite</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr><td>Kaufpreisfaktor</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr class="gruppe"><td colspan="4">Finanzierung</td></tr>
+          <tr><td>Eigenkapital</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr><td>Darlehen</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr><td>Annuität je Monat</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr><td>Zinsen Jahr 1</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr><td>Cashflow je Monat</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+          <tr><td>Eigenkapitalrendite</td><td class="feld"></td><td class="feld"></td><td class="feld"></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="nr">6</span> Ihre Entscheidung</h2>
+    <div class="kasten gold">
+      <h4>Frage 1 — Beste Mietrendite</h4>
+      <p>Objekt: ____________ &nbsp;&nbsp; Begründung mit mindestens drei Kennzahlen:</p>
+      <div style="border-bottom:1px solid var(--linie); height:26px; margin-top:14px"></div>
+      <div style="border-bottom:1px solid var(--linie); height:26px"></div>
+      <div style="border-bottom:1px solid var(--linie); height:26px"></div>
+      <p style="margin-top:14px">Was könnte dieses Ergebnis kippen?</p>
+      <div style="border-bottom:1px solid var(--linie); height:26px; margin-top:10px"></div>
+      <div style="border-bottom:1px solid var(--linie); height:26px"></div>
+    </div>
+    <div class="kasten gold" style="margin-top:18px">
+      <h4>Frage 2 — Beste Eigennutzung</h4>
+      <p>Objekt: ____________ &nbsp;&nbsp; Ihre vier Kriterien und die Anwendung auf alle drei Objekte:</p>
+      <div style="border-bottom:1px solid var(--linie); height:26px; margin-top:14px"></div>
+      <div style="border-bottom:1px solid var(--linie); height:26px"></div>
+      <div style="border-bottom:1px solid var(--linie); height:26px"></div>
+      <div style="border-bottom:1px solid var(--linie); height:26px"></div>
+      <p style="margin-top:14px">Warum scheiden die beiden anderen aus?</p>
+      <div style="border-bottom:1px solid var(--linie); height:26px; margin-top:10px"></div>
+      <div style="border-bottom:1px solid var(--linie); height:26px"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="nr">7</span> Drei Denkanstöße</h2>
+    <div class="kasten">
+      <ul>
+        <li><b>Die höchste Rendite ist nicht automatisch der beste Kauf.</b> Prüfen Sie, was hinter
+        einem niedrigen Kaufpreis steckt — der Markt verschenkt nichts.</li>
+        <li><b>Eine vermietete Wohnung ist kein leeres Zuhause.</b> Überlegen Sie, was zwischen
+        Kaufvertrag und Einzug rechtlich passieren müsste.</li>
+        <li><b>Ein negativer Cashflow ist kein K.-o.-Kriterium.</b> Ein Teil der Rate ist Tilgung —
+        die zahlen Sie an sich selbst. Trennen Sie Zins und Tilgung sauber.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="fuss">
+    <span>MyImmo · Immobilien-Workshop · Aufgabenblatt</span>
+    <span>Nachrechnen unter <a href="https://www.myimmoapp.de/kauf">myimmoapp.de/kauf</a></span>
+  </footer>
+
+</div>
+</body>
+</html>
