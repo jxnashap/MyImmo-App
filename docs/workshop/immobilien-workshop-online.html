@@ -157,15 +157,6 @@ h1,h2,h3{text-wrap:balance}
   font-family:var(--mono); font-size:11.5px; color:var(--muted); line-height:1.7;
   border-left:2px solid var(--gold-dim); padding:1px 0 1px 10px;
 }
-/* Gold = Wert steht im Exposé. Kursiv = Wert, den man vorher selbst berechnet
-   hat. Die Auszeichnung macht damit die Reihenfolge der Rechenschritte sichtbar. */
-.formel .geg{color:var(--gold); font-weight:700; font-family:var(--ui); font-size:12.5px}
-.formel .vor{color:var(--tinte); font-style:italic; font-weight:500; font-family:var(--ui); font-size:12.5px}
-
-.legende{display:flex; gap:22px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin:0 0 18px; padding-left:38px}
-.legende b{color:var(--gold); font-weight:700}
-.legende i{color:var(--tinte); font-style:italic; font-weight:500}
-
 .formelblatt{margin:18px 0 0; border:1px solid var(--linie); border-radius:14px; background:var(--flaeche); box-shadow:var(--schatten)}
 .formelblatt summary{
   cursor:pointer; padding:15px 22px; font-size:14px; font-weight:600; list-style:none;
@@ -327,13 +318,10 @@ td.leer{color:var(--faint)}
 
   <div class="abschnitt" style="margin-top:34px">
     <h2><span class="zahl">1</span> Rechne die Objekte durch</h2>
-    <p class="lead">Unter jedem Feld steht die Formel — mit den Zahlen des gewählten Objekts
-    eingesetzt. Trage deinen Wert ein und verlasse das Feld, dann wird geprüft.
-    Nachkommastellen mit Komma, Tausender-Punkte darfst du weglassen.</p>
-    <div class="legende">
-      <span><b>129.000 €</b> = steht im Exposé</span>
-      <span><i>Jahreskaltmiete</i> = hast du in einem Feld darüber schon berechnet</span>
-    </div>
+    <p class="lead">Unter jedem Feld steht die Formel. Welche Zahlen du einsetzen musst,
+    findest du links im Exposé — oder in einem Feld, das du vorher schon berechnet hast.
+    Trage deinen Wert ein und verlasse das Feld, dann wird geprüft. Nachkommastellen mit
+    Komma, Tausender-Punkte darfst du weglassen.</p>
 
     <div class="reiter" role="tablist" id="reiter" aria-label="Objekt wählen"></div>
 
@@ -510,40 +498,34 @@ function werte(o){
   };
 }
 
-/* Formel-Auszeichnung: G() = Wert steht im Exposé, V() = Wert, den man in einem
-   frueheren Feld selbst berechnet hat. Abgeleitete Werte werden bewusst NICHT
-   eingesetzt — sonst stuende die Loesung des vorigen Feldes gleich daneben. */
-const G = t => `<b class="geg">${t}</b>`;
-const V = t => `<i class="vor">${t}</i>`;
-
 const FELDER = [
   { gruppe:"Kauf & Ertrag", key:"preisM2", label:"Preis je m²",        einheit:"€", art:"eur", tol:1,
-    formel: o => `${G(nf(o.kp) + " €")} ÷ ${G(o.fl + " m²")}` },
+    formel:"Kaufpreis ÷ Wohnfläche" },
   { gruppe:"Kauf & Ertrag", key:"nk",      label:"Kaufnebenkosten",    einheit:"€", art:"eur", tol:1,
-    formel: o => `${G(nf(o.kp) + " €")} × 12,07 %` },
+    formel:"Kaufpreis × 12,07 %" },
   { gruppe:"Kauf & Ertrag", key:"gi",      label:"Gesamtinvestition",  einheit:"€", art:"eur", tol:2,
-    formel: o => `${G(nf(o.kp) + " €")} + ${V("Kaufnebenkosten")}` },
+    formel:"Kaufpreis + Kaufnebenkosten" },
   { gruppe:"Kauf & Ertrag", key:"jm",      label:"Jahreskaltmiete",    einheit:"€", art:"eur", tol:1,
-    formel: o => `${G(nf(o.miete) + " €")} × 12` },
+    formel:"Kaltmiete je Monat × 12" },
   { gruppe:"Kauf & Ertrag", key:"brutto",  label:"Bruttomietrendite",  einheit:"%", art:"pct", tol:0.05,
-    formel: o => `${V("Jahreskaltmiete")} ÷ ${G(nf(o.kp) + " €")} × 100` },
+    formel:"Jahreskaltmiete ÷ Kaufpreis × 100" },
   { gruppe:"Kauf & Ertrag", key:"netto",   label:"Nettomietrendite",   einheit:"%", art:"pct", tol:0.05,
-    formel: () => `(${V("Jahreskaltmiete")} − 20 %) ÷ ${V("Gesamtinvestition")} × 100` },
+    formel:"(Jahreskaltmiete − 20 %) ÷ Gesamtinvestition × 100" },
   { gruppe:"Kauf & Ertrag", key:"faktor",  label:"Kaufpreisfaktor",    einheit:"×", art:"fak", tol:0.1,
-    formel: o => `${G(nf(o.kp) + " €")} ÷ ${V("Jahreskaltmiete")}` },
+    formel:"Kaufpreis ÷ Jahreskaltmiete" },
 
   { gruppe:"Finanzierung",  key:"ek",      label:"Eigenkapital",       einheit:"€", art:"eur", tol:2,
-    formel: o => `${V("Kaufnebenkosten")} + 15 % von ${G(nf(o.kp) + " €")}` },
+    formel:"Kaufnebenkosten + 15 % des Kaufpreises" },
   { gruppe:"Finanzierung",  key:"dar",     label:"Darlehen",           einheit:"€", art:"eur", tol:1,
-    formel: o => `${G(nf(o.kp) + " €")} × 85 %` },
+    formel:"Kaufpreis × 85 %" },
   { gruppe:"Finanzierung",  key:"zins",    label:"Zinsen Jahr 1",      einheit:"€", art:"eur", tol:2,
-    formel: () => `${V("Darlehen")} × 3,80 %` },
+    formel:"Darlehen × 3,80 %" },
   { gruppe:"Finanzierung",  key:"annu",    label:"Annuität je Monat",  einheit:"€", art:"eur", tol:2,
-    formel: () => `${V("Darlehen")} × 5,80 % ÷ 12` },
+    formel:"Darlehen × 5,80 % ÷ 12" },
   { gruppe:"Finanzierung",  key:"cf",      label:"Cashflow je Monat",  einheit:"€", art:"eur", tol:2,
-    formel: () => `((${V("Jahreskaltmiete")} − 20 %) − ${V("Annuität je Monat")} × 12) ÷ 12` },
+    formel:"((Jahreskaltmiete − 20 %) − Annuität je Monat × 12) ÷ 12" },
   { gruppe:"Finanzierung",  key:"ekr",     label:"Eigenkapitalrendite",einheit:"%", art:"pct", tol:0.05,
-    formel: () => `((${V("Jahreskaltmiete")} − 20 %) − ${V("Zinsen Jahr 1")}) ÷ ${V("Eigenkapital")} × 100` },
+    formel:"((Jahreskaltmiete − 20 %) − Zinsen Jahr 1) ÷ Eigenkapital × 100" },
 ];
 
 /* Richtung für die Vergleichstabelle: was ist der bessere Wert? */
@@ -693,7 +675,7 @@ function bauRechner(o){
           const idAttr = `f-${o.id}-${f.key}`;
           return `<div class="feld" data-stand="${p.art}">
             <label for="${idAttr}">${f.label}</label>
-            <div class="formel">${f.formel(o)}</div>
+            <div class="formel">${f.formel}</div>
             <div class="eingabe">
               <input id="${idAttr}" data-key="${f.key}" type="text" inputmode="decimal"
                      autocomplete="off" spellcheck="false" placeholder="—"
