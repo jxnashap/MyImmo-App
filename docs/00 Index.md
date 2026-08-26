@@ -19,6 +19,9 @@
 - [[Kunden-Guide]] · [[Makler-Ordner]] · [[Bank-Ordner]] · [[KfW-Foerderung-2026]]
 
 ## 🎓 Unterricht / Workshop
+- **Online-Fassung für die Klasse:** https://claude.ai/code/artifact/70a9c592-9fde-4132-ae06-c0e6cfef587f
+  (erst privat — vor dem Unterricht einmal über das Teilen-Menü freigeben)
+- `workshop/immobilien-workshop-online.html` — Quelle der Online-Fassung (interaktiv, mit Prüfung)
 - `workshop/immobilien-workshop.html` — Aufgabenblatt für die Klasse (drei Objekte, zwei Entscheidungen)
 - `workshop/immobilien-workshop-loesung.html` — Musterlösung, Rechenweg, Bewertungsraster (**nur Lehrkraft**)
 - [[README]] in `docs/workshop/` — Rechengrundlage, Herkunft der Zahlen, Anpassen

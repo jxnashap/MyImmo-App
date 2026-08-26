@@ -1,0 +1,847 @@
+<title>Rendite oder Zuhause?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Outfit:wght@300;400;500;600;700&display=swap">
+<style>
+/* ==========================================================================
+   MyImmo — Immobilien-Workshop, interaktive Fassung
+   Farb-Token 1:1 aus app/globals.css. Hell ist die Vorgabe (Klassenraum,
+   Beamer, Papierfassung); Dunkel wird vollstaendig mitgefuehrt.
+   ========================================================================== */
+:root{
+  --grund:#F4F3EF; --flaeche:#FFFFFF; --erhoben:#ECEAE4; --tief:#E0DDD5;
+  --tinte:#1A1814; --muted:#6B6860; --faint:#A8A49C;
+  --linie:rgba(0,0,0,.08); --linie2:rgba(0,0,0,.15);
+  --gold:#B8860B; --gold-dim:rgba(184,134,11,.20); --gold-pale:rgba(184,134,11,.08);
+  --gruen:#2E7D4F; --gruen-pale:rgba(46,125,79,.12);
+  --rot:#C0392B;   --rot-pale:rgba(192,57,43,.10);
+  --amber:#D97706; --amber-pale:rgba(217,119,6,.12);
+  --gold-kontrast:#FFFFFF;
+  --schatten:0 1px 2px rgba(60,50,30,.08), 0 6px 18px rgba(60,50,30,.07);
+  --display:'Fraunces','Iowan Old Style',Georgia,'Times New Roman',serif;
+  --ui:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --grund:#0F0F0E; --flaeche:#161614; --erhoben:#1E1E1C; --tief:#282826;
+    --tinte:#F0EDE6; --muted:#8B8B82; --faint:#5A5A54;
+    --linie:rgba(255,255,255,.09); --linie2:rgba(255,255,255,.16);
+    --gold:#D4A847; --gold-dim:rgba(212,168,71,.25); --gold-pale:rgba(212,168,71,.10);
+    --gruen:#4CAF7D; --gruen-pale:rgba(76,175,125,.15);
+    --rot:#E05C4B;   --rot-pale:rgba(224,92,75,.15);
+    --amber:#F0A030; --amber-pale:rgba(240,160,48,.15);
+    --gold-kontrast:#0F0F0E;
+    --schatten:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --grund:#0F0F0E; --flaeche:#161614; --erhoben:#1E1E1C; --tief:#282826;
+  --tinte:#F0EDE6; --muted:#8B8B82; --faint:#5A5A54;
+  --linie:rgba(255,255,255,.09); --linie2:rgba(255,255,255,.16);
+  --gold:#D4A847; --gold-dim:rgba(212,168,71,.25); --gold-pale:rgba(212,168,71,.10);
+  --gruen:#4CAF7D; --gruen-pale:rgba(76,175,125,.15);
+  --rot:#E05C4B;   --rot-pale:rgba(224,92,75,.15);
+  --amber:#F0A030; --amber-pale:rgba(240,160,48,.15);
+  --gold-kontrast:#0F0F0E;
+  --schatten:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--grund); color:var(--tinte);
+  font-family:var(--ui); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{text-wrap:balance}
+:focus-visible{outline:2px solid var(--gold); outline-offset:2px; border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+
+.huelle{max-width:1160px; margin:0 auto; padding:0 24px 80px}
+
+/* ---------- Kopf ---------- */
+.kopf{display:flex; align-items:center; justify-content:space-between; gap:20px; padding:26px 0 0; flex-wrap:wrap}
+.marke{font-family:var(--display); font-size:26px; line-height:1; color:var(--tinte)}
+.marke em{font-style:italic; color:var(--gold); font-weight:400}
+.marke-sub{font-size:9px; letter-spacing:.22em; text-transform:uppercase; color:var(--faint); margin-top:6px; font-weight:500}
+.kopf-meta{font-size:12px; color:var(--muted); text-align:right; line-height:1.6}
+.kopf-meta b{color:var(--tinte); font-weight:600}
+
+/* ---------- Einstieg ---------- */
+.einstieg{padding:44px 0 8px; max-width:66ch}
+.einstieg .kicker{font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); font-weight:600}
+.einstieg h1{font-family:var(--display); font-size:clamp(32px,5vw,46px); line-height:1.1; margin:14px 0 0; font-weight:600; letter-spacing:-.01em}
+.einstieg p{color:var(--muted); font-size:15.5px; margin:16px 0 0}
+
+.fragen{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; margin:30px 0 0}
+.frage-karte{background:var(--flaeche); border:1px solid var(--linie); border-radius:14px; padding:20px 22px; box-shadow:var(--schatten)}
+.frage-karte .nr{font-family:var(--display); font-size:13px; color:var(--gold); font-weight:700; letter-spacing:.12em; text-transform:uppercase}
+.frage-karte h2{font-family:var(--display); font-size:20px; margin:9px 0 6px; font-weight:600; line-height:1.25}
+.frage-karte p{margin:0; color:var(--muted); font-size:13.5px; line-height:1.55}
+
+/* ---------- Annahmen-Leiste ---------- */
+.annahmen{
+  position:sticky; top:0; z-index:20; margin:34px 0 0;
+  background:color-mix(in srgb, var(--flaeche) 92%, transparent);
+  backdrop-filter:blur(10px);
+  border:1px solid var(--linie); border-radius:14px; padding:12px 6px;
+  display:flex; flex-wrap:wrap; row-gap:12px; box-shadow:var(--schatten);
+}
+@media (max-width:640px){ .annahmen{position:static} }
+.annahmen .a{padding:0 14px; border-right:1px solid var(--linie); white-space:nowrap; flex:1 1 auto}
+.annahmen .a:last-child{border-right:0}
+.annahmen dt{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:600}
+.annahmen dd{margin:3px 0 0; font-family:var(--display); font-size:15px; font-weight:600; font-variant-numeric:tabular-nums}
+
+/* ---------- Reiter ---------- */
+.reiter{display:flex; gap:10px; margin:34px 0 0; flex-wrap:wrap}
+.reiter button{
+  font-family:var(--ui); font-size:14px; font-weight:600; color:var(--muted);
+  background:var(--flaeche); border:1px solid var(--linie); border-radius:12px;
+  padding:12px 18px; cursor:pointer; display:flex; align-items:center; gap:11px;
+  transition:border-color .16s, color .16s, background .16s;
+}
+.reiter button:hover{border-color:var(--linie2); color:var(--tinte)}
+.reiter button[aria-selected="true"]{border-color:var(--gold); color:var(--tinte); background:var(--gold-pale)}
+.reiter .kennung{
+  width:24px; height:24px; border-radius:7px; background:var(--tief); color:var(--muted);
+  font-family:var(--display); font-size:14px; font-weight:700;
+  display:grid; place-items:center; flex:0 0 auto; transition:background .16s, color .16s;
+}
+.reiter button[aria-selected="true"] .kennung{background:var(--gold); color:var(--gold-kontrast)}
+.reiter .stand{font-size:11.5px; font-weight:600; color:var(--faint); font-variant-numeric:tabular-nums}
+.reiter button.fertig .stand{color:var(--gruen)}
+
+/* ---------- Arbeitsfläche ---------- */
+.arbeit{display:grid; grid-template-columns:minmax(0,320px) minmax(0,1fr); gap:22px; margin:22px 0 0; align-items:start}
+@media (max-width:900px){ .arbeit{grid-template-columns:1fr} }
+
+.karte{background:var(--flaeche); border:1px solid var(--linie); border-radius:16px; box-shadow:var(--schatten); overflow:hidden}
+.karte-kopf{padding:18px 22px 15px; border-bottom:1px solid var(--linie)}
+.karte-kopf h3{font-family:var(--display); font-size:19px; margin:0; font-weight:600; line-height:1.25}
+.karte-kopf .ort{font-size:12.5px; color:var(--muted); margin-top:5px}
+.karte-preis{padding:15px 22px; border-bottom:1px solid var(--linie); display:flex; align-items:baseline; justify-content:space-between; gap:12px; background:var(--gold-pale)}
+.karte-preis b{font-family:var(--display); font-size:27px; font-weight:600; font-variant-numeric:tabular-nums}
+.karte-preis span{font-size:11.5px; color:var(--muted)}
+.expose{margin:0; padding:8px 22px 16px}
+.expose .z{display:flex; justify-content:space-between; gap:14px; padding:7px 0; border-bottom:1px solid var(--linie); font-size:13.5px}
+.expose .z:last-child{border-bottom:0}
+.expose dt{margin:0; color:var(--muted)}
+.expose dd{margin:0; font-weight:600; text-align:right; font-variant-numeric:tabular-nums; min-width:0; overflow-wrap:anywhere}
+.notiz{padding:0 22px 20px}
+.notiz .titel{font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); font-weight:700; padding:14px 0 8px; border-top:1px solid var(--linie)}
+.notiz ul{margin:0; padding-left:17px; font-size:12.5px; color:var(--muted); line-height:1.6}
+.notiz li{margin:6px 0}
+.notiz b{color:var(--tinte)}
+.marker{display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:6px}
+.marker.frei{background:var(--gruen-pale); color:var(--gruen)}
+.marker.belegt{background:var(--rot-pale); color:var(--rot)}
+
+/* ---------- Eingabe ---------- */
+.gruppe-titel{
+  display:flex; align-items:baseline; justify-content:space-between; gap:14px;
+  padding:16px 22px 12px; border-bottom:1px solid var(--linie); background:var(--erhoben);
+}
+.gruppe-titel h4{font-family:var(--display); font-size:15.5px; margin:0; font-weight:600}
+.gruppe-titel span{font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums}
+.felder{display:grid; grid-template-columns:repeat(auto-fill,minmax(268px,1fr)); gap:0; background:var(--flaeche)}
+.feld{
+  background:var(--flaeche); padding:15px 20px 16px; display:flex; flex-direction:column; gap:8px;
+  box-shadow:inset -1px -1px 0 0 var(--linie);
+}
+.feld label{font-size:13.5px; font-weight:600; display:flex; align-items:center; justify-content:space-between; gap:10px}
+.feld .formel{font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.45}
+.eingabe{display:flex; align-items:center; gap:8px}
+.eingabe input{
+  font-family:var(--ui); font-size:15px; font-weight:600; font-variant-numeric:tabular-nums;
+  width:100%; padding:9px 12px; color:var(--tinte); background:var(--grund);
+  border:1.5px solid var(--linie2); border-radius:9px; text-align:right;
+  transition:border-color .16s, background .16s;
+}
+.eingabe input::placeholder{color:var(--faint); font-weight:400}
+.eingabe .einheit{font-family:var(--display); font-size:15px; color:var(--muted); flex:0 0 auto; min-width:18px}
+.feld[data-stand="richtig"] .eingabe input{border-color:var(--gruen); background:var(--gruen-pale)}
+.feld[data-stand="falsch"] .eingabe input{border-color:var(--amber); background:var(--amber-pale)}
+.rueck{font-size:12px; line-height:1.5; min-height:1.5em}
+.feld[data-stand="richtig"] .rueck{color:var(--gruen); font-weight:600}
+.feld[data-stand="falsch"] .rueck{color:var(--amber)}
+.feld .rueck:empty::before{content:"\00a0"}
+
+/* ---------- Vergleich ---------- */
+.abschnitt{margin:56px 0 0}
+.abschnitt > h2{
+  font-family:var(--display); font-size:25px; margin:0 0 6px; font-weight:600;
+  display:flex; align-items:center; gap:12px;
+}
+.abschnitt > h2 .zahl{
+  font-family:var(--ui); font-size:11px; font-weight:700; color:var(--gold);
+  border:1.5px solid var(--gold-dim); border-radius:50%; width:26px; height:26px;
+  display:grid; place-items:center; flex:0 0 auto;
+}
+.abschnitt > .lead{color:var(--muted); font-size:14.5px; margin:0 0 20px; padding-left:38px; max-width:70ch}
+
+.sperre{
+  border:1.5px dashed var(--linie2); border-radius:16px; padding:34px 24px; text-align:center;
+  color:var(--muted); font-size:14.5px; background:var(--flaeche);
+}
+.sperre b{color:var(--tinte)}
+
+.tab-huelle{overflow-x:auto; border:1px solid var(--linie); border-radius:14px; background:var(--flaeche); box-shadow:var(--schatten)}
+table{border-collapse:collapse; width:100%; min-width:600px; font-size:13.5px}
+thead th{
+  background:var(--gold); color:var(--gold-kontrast); text-align:right; padding:12px 16px;
+  font-weight:600; font-size:11px; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap;
+}
+thead th:first-child{text-align:left}
+tbody td{padding:10px 16px; border-bottom:1px solid var(--linie); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+tbody td:first-child{text-align:left; font-weight:500; background:var(--erhoben)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.rubrik td{background:var(--grund); font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); font-weight:700; text-align:left}
+td.spitze{background:var(--gruen-pale); color:var(--gruen); font-weight:700}
+td.leer{color:var(--faint)}
+
+/* ---------- Entscheidung ---------- */
+.wahl{display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:20px}
+.wahl-karte{background:var(--flaeche); border:1px solid var(--linie); border-radius:16px; padding:22px 24px 24px; box-shadow:var(--schatten)}
+.wahl-karte .nr{font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); font-weight:700}
+.wahl-karte h3{font-family:var(--display); font-size:19px; margin:8px 0 4px; font-weight:600}
+.wahl-karte > p{margin:0 0 16px; color:var(--muted); font-size:13.5px}
+.optionen{display:flex; gap:10px; flex-wrap:wrap}
+.optionen label{
+  flex:1 1 80px; cursor:pointer; border:1.5px solid var(--linie2); border-radius:11px;
+  padding:13px 10px; text-align:center; transition:border-color .16s, background .16s;
+}
+.optionen label:hover{border-color:var(--gold-dim)}
+.optionen input{position:absolute; opacity:0; width:0; height:0}
+.optionen .buchst{font-family:var(--display); font-size:21px; font-weight:700; display:block; line-height:1}
+.optionen .name{font-size:11px; color:var(--muted); display:block; margin-top:5px}
+.optionen label:has(input:checked){border-color:var(--gold); background:var(--gold-pale)}
+.optionen label:has(input:focus-visible){outline:2px solid var(--gold); outline-offset:2px}
+
+.kriterien{margin:20px 0 0; padding:18px 0 0; border-top:1px solid var(--linie)}
+.kriterien .k-titel{font-size:12.5px; font-weight:600; margin-bottom:12px}
+.kriterien .k-liste{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:9px 16px}
+.kriterien label{display:flex; align-items:flex-start; gap:9px; font-size:12.5px; color:var(--muted); cursor:pointer; line-height:1.45}
+.kriterien input{margin:3px 0 0; accent-color:var(--gold); flex:0 0 auto; width:15px; height:15px}
+.kriterien label:has(input:checked){color:var(--tinte)}
+
+.leiste{display:flex; gap:14px; align-items:center; margin:28px 0 0; flex-wrap:wrap}
+.knopf{
+  font-family:var(--ui); font-size:15px; font-weight:600; cursor:pointer;
+  padding:13px 26px; border-radius:11px; border:1.5px solid transparent;
+  background:var(--gold); color:var(--gold-kontrast); transition:opacity .16s;
+}
+.knopf:hover{opacity:.88}
+.knopf:disabled{opacity:.4; cursor:not-allowed}
+.knopf.leise{background:transparent; color:var(--muted); border-color:var(--linie2)}
+.knopf.leise:hover{color:var(--tinte); border-color:var(--linie2); opacity:1}
+
+.urteil{margin:24px 0 0; border-radius:16px; border:1.5px solid var(--linie); padding:24px 26px; background:var(--flaeche)}
+.urteil[data-art="richtig"]{border-color:var(--gruen); background:var(--gruen-pale)}
+.urteil[data-art="teils"]{border-color:var(--amber); background:var(--amber-pale)}
+.urteil[data-art="falsch"]{border-color:var(--rot); background:var(--rot-pale)}
+.urteil h4{font-family:var(--display); font-size:18px; margin:0 0 10px; font-weight:600}
+.urteil p{margin:0 0 12px; font-size:14px; line-height:1.6} .urteil p:last-child{margin-bottom:0}
+.urteil ul{margin:10px 0 0; padding-left:19px; font-size:13.5px; line-height:1.6}
+.urteil li{margin:6px 0}
+.urteil + .urteil{margin-top:16px}
+
+.fuss{margin:64px 0 0; padding-top:20px; border-top:1px solid var(--linie); display:flex; justify-content:space-between; gap:16px; font-size:12px; color:var(--faint); flex-wrap:wrap}
+.fuss a{color:var(--gold); text-decoration:none}
+.fuss a:hover{text-decoration:underline}
+.vsteckt{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+
+@media print{
+  .annahmen{position:static; backdrop-filter:none}
+  .reiter,.leiste,.sperre{display:none}
+  .abschnitt{break-inside:avoid}
+}
+</style>
+
+<div class="huelle">
+
+  <header class="kopf">
+    <div>
+      <div class="marke">My<em>Immo</em></div>
+      <div class="marke-sub">Privates Immobilien-Management</div>
+    </div>
+    <div class="kopf-meta">
+      <b>Immobilien-Workshop</b><br>
+      Deine Eingaben bleiben in diesem Browser gespeichert.
+    </div>
+  </header>
+
+  <div class="einstieg">
+    <div class="kicker">Fallstudie · Drei Objekte, zwei Entscheidungen</div>
+    <h1>Rendite oder Zuhause?</h1>
+    <p>Drei Objekte aus dem Raum Lübeck. Gleiche Kaufnebenkosten, gleiche Finanzierung,
+    gleiche Formeln — und trotzdem zwei verschiedene Antworten. Rechne jedes Objekt einzeln
+    durch, trage deine Werte ein und entscheide dann selbst.</p>
+  </div>
+
+  <div class="fragen">
+    <div class="frage-karte">
+      <div class="nr">Frage 1</div>
+      <h2>Welches Objekt hat die beste Mietrendite?</h2>
+      <p>Als Kapitalanlage betrachtet. Hier entscheidet die Rechnung — es gibt genau eine
+      richtige Antwort.</p>
+    </div>
+    <div class="frage-karte">
+      <div class="nr">Frage 2</div>
+      <h2>Welches Objekt eignet sich am besten zur Eigennutzung?</h2>
+      <p>Du ziehst selbst ein. Die Rendite ist hier <b>nicht</b> das Kriterium. Hier zählt,
+      wie gut du begründest.</p>
+    </div>
+  </div>
+
+  <dl class="annahmen" id="annahmen" aria-label="Annahmen, die für alle drei Objekte gelten"></dl>
+
+  <div class="abschnitt" style="margin-top:34px">
+    <h2><span class="zahl">1</span> Rechne die Objekte durch</h2>
+    <p class="lead">Wähle ein Objekt, trage deine Werte ein und verlasse das Feld — dann wird
+    geprüft. Nachkommastellen mit Komma, Tausender-Punkte darfst du weglassen.</p>
+
+    <div class="reiter" role="tablist" id="reiter" aria-label="Objekt wählen"></div>
+    <div class="arbeit">
+      <div class="karte" id="exposeKarte"></div>
+      <div class="karte" id="rechenKarte"></div>
+    </div>
+  </div>
+
+  <div class="abschnitt">
+    <h2><span class="zahl">2</span> Dein Vergleich</h2>
+    <p class="lead">Diese Tabelle zeigt <b>deine</b> Werte, nicht die Lösung. Grün ist jeweils
+    der beste Wert der Zeile — sobald alle drei Objekte den Wert haben.</p>
+    <div id="vergleich"></div>
+  </div>
+
+  <div class="abschnitt">
+    <h2><span class="zahl">3</span> Deine Entscheidung</h2>
+    <p class="lead">Erst beantworten, dann auswerten. Für Frage 2 kreuze die Kriterien an, die
+    dich überzeugt haben — davon hängt die Rückmeldung ab.</p>
+
+    <div class="wahl">
+      <div class="wahl-karte">
+        <div class="nr">Frage 1</div>
+        <h3>Beste Mietrendite</h3>
+        <p>Vergleiche Bruttorendite, Nettorendite, Kaufpreisfaktor und Eigenkapitalrendite.</p>
+        <div class="optionen" id="wahl1"></div>
+      </div>
+
+      <div class="wahl-karte">
+        <div class="nr">Frage 2</div>
+        <h3>Beste Eigennutzung</h3>
+        <p>Du ziehst selbst ein — mit Partner oder Familie.</p>
+        <div class="optionen" id="wahl2"></div>
+        <div class="kriterien">
+          <div class="k-titel">Welche Kriterien haben dich überzeugt?</div>
+          <div class="k-liste" id="kriterien"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="leiste">
+      <button class="knopf" id="auswerten">Auswerten</button>
+      <button class="knopf leise" id="zuruecksetzen">Alles zurücksetzen</button>
+      <span id="hinweis" style="font-size:13px; color:var(--muted)"></span>
+    </div>
+
+    <div id="urteil" aria-live="polite"></div>
+  </div>
+
+  <footer class="fuss">
+    <span>MyImmo · Immobilien-Workshop</span>
+    <span>Selbst nachrechnen: <a href="https://www.myimmoapp.de/kauf" target="_blank" rel="noopener">myimmoapp.de/kauf</a></span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ===================== Rahmendaten =====================
+   Identisch mit dem gedruckten Aufgabenblatt und mit dem Objekt-Rechner
+   der App (components/kauf/ObjektRechner.tsx). */
+const GREST = 0.065, MAKLER = 0.0357, NEBEN = 0.02;
+const NK_SATZ = GREST + MAKLER + NEBEN;      // 12,07 %
+const BEWIRT  = 0.20;                        // der Jahreskaltmiete
+const ZINS    = 0.038, TILGUNG = 0.020;
+const ANNUI   = ZINS + TILGUNG;              // 5,80 %
+const EK_KP   = 0.10;                        // Eigenkapital = NK + 10 % Kaufpreis
+
+const ANNAHMEN = [
+  ["Grunderwerbsteuer","6,50 %"], ["Maklerprovision","3,57 %"], ["Notar & Grundbuch","2,00 %"],
+  ["Nebenkosten gesamt","12,07 %"], ["Bewirtschaftung","20 %"], ["Eigenkapital","NK + 10 %"],
+  ["Sollzins","3,80 %"], ["Anfangstilgung","2,00 %"],
+];
+
+const OBJEKTE = [
+  {
+    id:"A", titel:"Altbau-Eigentumswohnung", ort:"Lübeck, St. Lorenz Nord · einfache bis mittlere Wohnlage",
+    kp:129000, fl:68, miete:560,
+    daten:[
+      ["Wohnfläche","68 m²"],["Zimmer","3"],["Baujahr","1928"],["Lage im Haus","2. OG, kein Aufzug"],
+      ["Kaltmiete (IST)","560 € / Monat"],["Hausgeld","245 € / Monat"],["davon nicht umlagefähig","110 € / Monat"],
+      ["Energieausweis","F · 178 kWh/(m²·a)"],["Heizung","Gas-Zentral, Bj. 2006"],
+      ["Verfügbarkeit",'<span class="marker belegt">vermietet</span>'],
+    ],
+    notizen:[
+      "Vermietet seit 2014, <b>unbefristet</b>. Ortsübliche Vergleichsmiete der Lage: rund 9,90 €/m².",
+      "WEG mit 12 Einheiten, Instandhaltungsrücklage insgesamt <b>8.400 €</b>.",
+      "Dachsanierung ist <b>beschlossen</b> (2027) — Sonderumlage auf diese Einheit: <b>9.500 €</b>.",
+      "Fenster von 1998 (2-fach), Bad von 1995, Elektrik in Teilen im Originalzustand.",
+      "Bushaltestelle 4 Gehminuten, Hauptbahnhof 15 Minuten mit dem Rad.",
+    ],
+  },
+  {
+    id:"B", titel:"Neubau-Eigentumswohnung", ort:"Lübeck, innenstadtnah · gute Wohnlage",
+    kp:349000, fl:74, miete:890,
+    daten:[
+      ["Wohnfläche","74 m²"],["Zimmer","2,5"],["Baujahr","2023"],["Lage im Haus","EG mit Terrasse"],
+      ["Kaltmiete (erzielbar)","890 € / Monat"],["Hausgeld","290 € / Monat"],["davon nicht umlagefähig","130 € / Monat"],
+      ["Energieausweis","A · 34 kWh/(m²·a)"],["Heizung","Wärmepumpe + PV (WEG)"],
+      ["Verfügbarkeit",'<span class="marker frei">bezugsfrei</span>'],
+    ],
+    notizen:[
+      "Mietangabe stammt aus einem Wertgutachten, das Objekt war <b>noch nie vermietet</b>.",
+      "WEG mit 24 Einheiten, Rücklage <b>41.000 €</b>, keine Maßnahmen beschlossen.",
+      "Gewährleistung auf die Bauleistungen läuft noch bis 2028.",
+      "Tiefgaragen-Stellplatz ist im Kaufpreis enthalten.",
+      "Innenstadt in 10 Minuten mit dem Rad; kein eigener Garten.",
+    ],
+  },
+  {
+    id:"C", titel:"Reihenmittelhaus", ort:"Stockelsdorf (Kreis Ostholstein) · Lübecker Umland",
+    kp:379000, fl:118, miete:1290,
+    daten:[
+      ["Wohnfläche","118 m²"],["Zimmer","5"],["Grundstück","214 m²"],["Baujahr","1998"],
+      ["Kaltmiete (erzielbar)","1.290 € / Monat"],["Laufende Kosten","230 € / Monat"],
+      ["Eigentumsform","Alleineigentum"],["Energieausweis","C · 92 kWh/(m²·a)"],
+      ["Heizung","Gas-Brennwert + Solar, 2021"],
+      ["Verfügbarkeit",'<span class="marker frei">frei ab 01.11.2026</span>'],
+    ],
+    notizen:[
+      "2021 saniert: Heizung, 3-fach-Fenster, Dachdämmung. Keine WEG — <b>du entscheidest allein</b>.",
+      "Garten nach Südwesten, Carport. Instandhaltung liegt vollständig bei dir.",
+      "Kita 400 m, Grundschule 600 m, Bus nach Lübeck im 8-Minuten-Takt, A1 in 6 km.",
+      "Laufende Kosten enthalten Grundsteuer, Versicherung, Schornsteinfeger und Rücklage.",
+      "Maklerprovision fällt an wie bei A und B.",
+    ],
+  },
+];
+
+/* ===================== Abgeleitete Werte =====================
+   Eine einzige Quelle: alles wird aus kp/fl/miete gerechnet. Es gibt keine
+   zweite, fest eingetippte Lösungsliste, die auseinanderlaufen könnte. */
+function werte(o){
+  const nk = o.kp * NK_SATZ;
+  const gi = o.kp + nk;
+  const jm = o.miete * 12;
+  const netto = jm * (1 - BEWIRT);
+  const ek = nk + o.kp * EK_KP;
+  const dar = o.kp * (1 - EK_KP);
+  const zins = dar * ZINS;
+  const annuJahr = dar * ANNUI;
+  return {
+    preisM2: o.kp / o.fl,
+    nk, gi, jm,
+    brutto: jm / o.kp * 100,
+    netto:  netto / gi * 100,
+    faktor: o.kp / jm,
+    ek, dar, zins,
+    annu: annuJahr / 12,
+    cf:   (netto - annuJahr) / 12,
+    ekr:  (netto - zins) / ek * 100,
+  };
+}
+
+const FELDER = [
+  { gruppe:"Kauf & Ertrag", key:"preisM2", label:"Preis je m²",        einheit:"€", art:"eur", tol:1,
+    formel:"Kaufpreis ÷ Wohnfläche" },
+  { gruppe:"Kauf & Ertrag", key:"nk",      label:"Kaufnebenkosten",    einheit:"€", art:"eur", tol:1,
+    formel:"Kaufpreis × 12,07 %" },
+  { gruppe:"Kauf & Ertrag", key:"gi",      label:"Gesamtinvestition",  einheit:"€", art:"eur", tol:2,
+    formel:"Kaufpreis + Kaufnebenkosten" },
+  { gruppe:"Kauf & Ertrag", key:"jm",      label:"Jahreskaltmiete",    einheit:"€", art:"eur", tol:1,
+    formel:"Kaltmiete × 12" },
+  { gruppe:"Kauf & Ertrag", key:"brutto",  label:"Bruttomietrendite",  einheit:"%", art:"pct", tol:0.05,
+    formel:"Jahreskaltmiete ÷ Kaufpreis × 100" },
+  { gruppe:"Kauf & Ertrag", key:"netto",   label:"Nettomietrendite",   einheit:"%", art:"pct", tol:0.05,
+    formel:"(Jahreskaltmiete − 20 %) ÷ Gesamtinvestition × 100" },
+  { gruppe:"Kauf & Ertrag", key:"faktor",  label:"Kaufpreisfaktor",    einheit:"×", art:"fak", tol:0.1,
+    formel:"Kaufpreis ÷ Jahreskaltmiete" },
+
+  { gruppe:"Finanzierung",  key:"ek",      label:"Eigenkapital",       einheit:"€", art:"eur", tol:2,
+    formel:"Kaufnebenkosten + 10 % des Kaufpreises" },
+  { gruppe:"Finanzierung",  key:"dar",     label:"Darlehen",           einheit:"€", art:"eur", tol:1,
+    formel:"Kaufpreis × 90 %" },
+  { gruppe:"Finanzierung",  key:"zins",    label:"Zinsen Jahr 1",      einheit:"€", art:"eur", tol:2,
+    formel:"Darlehen × 3,80 %" },
+  { gruppe:"Finanzierung",  key:"annu",    label:"Annuität je Monat",  einheit:"€", art:"eur", tol:2,
+    formel:"Darlehen × 5,80 % ÷ 12" },
+  { gruppe:"Finanzierung",  key:"cf",      label:"Cashflow je Monat",  einheit:"€", art:"eur", tol:2,
+    formel:"((Jahreskaltmiete − 20 %) − Annuität pro Jahr) ÷ 12" },
+  { gruppe:"Finanzierung",  key:"ekr",     label:"Eigenkapitalrendite",einheit:"%", art:"pct", tol:0.05,
+    formel:"((Jahreskaltmiete − 20 %) − Zinsen) ÷ Eigenkapital × 100" },
+];
+
+/* Richtung für die Vergleichstabelle: was ist der bessere Wert? */
+const RICHTUNG = { brutto:"hoch", netto:"hoch", ekr:"hoch", cf:"hoch", faktor:"tief" };
+
+const KRITERIEN = [
+  "Einzug tatsächlich möglich", "Zustand und Sanierungsstau", "Energiestandard / Heizkosten",
+  "Fläche und Grundriss", "Entscheidungsfreiheit (WEG oder allein)", "Kostenrisiko und Rücklage",
+  "Außenbereich / Garten", "Infrastruktur und Anbindung", "Monatliche Belastung", "Wiederverkäuflichkeit",
+];
+
+/* ===================== Zahlen ===================== */
+const nf = (n, k=0) => n.toLocaleString("de-DE",{minimumFractionDigits:k, maximumFractionDigits:k});
+const zeigeWert = (v, art) =>
+  art === "pct" ? nf(v,2) + " %" : art === "fak" ? nf(v,1) + " ×" : nf(Math.round(v)) + " €";
+
+/* Deutsche Eingabe robust lesen: "1.897", "1897", "3,72", "-113", "− 113".
+   Ein einzelner Punkt mit genau drei Ziffern dahinter ist ein Tausenderpunkt,
+   sonst ein Dezimalpunkt — sonst wird aus 144.570 die Zahl 144,57. */
+function lies(s){
+  if (typeof s !== "string") return NaN;
+  let t = s.trim().replace(/[€%×x\s ]/g,"").replace(/[−–—]/g,"-");
+  if (!t) return NaN;
+  const hatKomma = t.includes(","), punkte = (t.match(/\./g) || []).length;
+  if (hatKomma) t = t.replace(/\./g,"").replace(",",".");
+  else if (punkte === 1 && /\.\d{3}$/.test(t)) t = t.replace(".","");
+  else if (punkte > 1) t = t.replace(/\./g,"");
+  return /^-?\d*\.?\d+$/.test(t) ? parseFloat(t) : NaN;
+}
+
+/* ===================== Zustand ===================== */
+const SCHLUESSEL = "myimmo-workshop-v1";
+let stand = { aktiv:"A", eingaben:{}, wahl1:null, wahl2:null, kriterien:[] };
+OBJEKTE.forEach(o => { stand.eingaben[o.id] = {}; });
+
+function laden(){
+  try{
+    const roh = localStorage.getItem(SCHLUESSEL);
+    if (!roh) return;
+    const g = JSON.parse(roh);
+    if (g && typeof g === "object"){
+      if (typeof g.aktiv === "string" && OBJEKTE.some(o => o.id === g.aktiv)) stand.aktiv = g.aktiv;
+      if (g.eingaben && typeof g.eingaben === "object"){
+        OBJEKTE.forEach(o => {
+          const e = g.eingaben[o.id];
+          if (e && typeof e === "object") stand.eingaben[o.id] = { ...e };
+        });
+      }
+      if (typeof g.wahl1 === "string") stand.wahl1 = g.wahl1;
+      if (typeof g.wahl2 === "string") stand.wahl2 = g.wahl2;
+      if (Array.isArray(g.kriterien)) stand.kriterien = g.kriterien.slice(0,40);
+    }
+  }catch(_){ /* privater Modus, geleerte Daten, blockierter Speicher — egal */ }
+}
+function sichern(){
+  try{ localStorage.setItem(SCHLUESSEL, JSON.stringify(stand)); }catch(_){}
+}
+
+/* Prüft eine Eingabe gegen den errechneten Wert. */
+function pruefe(objId, feld){
+  const roh = stand.eingaben[objId] ? stand.eingaben[objId][feld.key] : undefined;
+  if (roh === undefined || String(roh).trim() === "") return { art:"leer" };
+  const zahl = lies(String(roh));
+  if (Number.isNaN(zahl)) return { art:"falsch", text:"Das ist keine Zahl." };
+  const soll = werte(OBJEKTE.find(o => o.id === objId))[feld.key];
+  if (Math.abs(zahl - soll) <= feld.tol) return { art:"richtig", text:"Stimmt." };
+  if (soll < 0 && zahl > 0 && Math.abs(zahl + soll) <= feld.tol)
+    return { art:"falsch", text:"Der Betrag stimmt — aber achte auf das Vorzeichen." };
+  if (feld.art === "pct" && Math.abs(zahl * 100 - soll) <= feld.tol)
+    return { art:"falsch", text:"Das ist der Anteil, nicht der Prozentwert — mal 100 nehmen." };
+  if (Math.abs(zahl - soll * 12) <= feld.tol * 12)
+    return { art:"falsch", text:"Das sieht nach dem Jahreswert aus — gefragt ist der Monat." };
+  if (Math.abs(zahl - soll / 12) <= Math.max(feld.tol, 1))
+    return { art:"falsch", text:"Das sieht nach dem Monatswert aus — gefragt ist das Jahr." };
+  return { art:"falsch", text: zahl > soll ? "Noch zu hoch — rechne die Formel nach." : "Noch zu niedrig — rechne die Formel nach." };
+}
+
+const fertigeFelder = objId => FELDER.filter(f => pruefe(objId, f).art === "richtig").length;
+const objFertig     = objId => fertigeFelder(objId) === FELDER.length;
+
+/* ===================== Aufbau ===================== */
+const $ = id => document.getElementById(id);
+
+function bauAnnahmen(){
+  $("annahmen").innerHTML = ANNAHMEN
+    .map(([k,v]) => `<div class="a"><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+}
+
+function bauReiter(){
+  $("reiter").innerHTML = OBJEKTE.map(o => {
+    const n = fertigeFelder(o.id), fertig = n === FELDER.length;
+    return `<button role="tab" type="button" data-obj="${o.id}"
+      aria-selected="${o.id === stand.aktiv}" aria-controls="rechenKarte"
+      class="${fertig ? "fertig" : ""}">
+      <span class="kennung">${o.id}</span>
+      <span>${o.titel}</span>
+      <span class="stand">${fertig ? "✓ fertig" : n + "/" + FELDER.length}</span>
+    </button>`;
+  }).join("");
+  $("reiter").querySelectorAll("button").forEach(b => {
+    b.addEventListener("click", () => { stand.aktiv = b.dataset.obj; sichern(); zeichne(); });
+  });
+}
+
+function bauExpose(o){
+  $("exposeKarte").innerHTML = `
+    <div class="karte-kopf">
+      <h3>${o.id} — ${o.titel}</h3>
+      <div class="ort">${o.ort}</div>
+    </div>
+    <div class="karte-preis"><b>${nf(o.kp)} €</b><span>Kaufpreis</span></div>
+    <dl class="expose">
+      ${o.daten.map(([k,v]) => `<div class="z"><dt>${k}</dt><dd>${v}</dd></div>`).join("")}
+    </dl>
+    <div class="notiz">
+      <div class="titel">Was noch im Exposé steht</div>
+      <ul>${o.notizen.map(n => `<li>${n}</li>`).join("")}</ul>
+    </div>`;
+}
+
+function bauRechner(o){
+  const gruppen = [...new Set(FELDER.map(f => f.gruppe))];
+  $("rechenKarte").innerHTML = gruppen.map(g => {
+    const felder = FELDER.filter(f => f.gruppe === g);
+    const fertig = felder.filter(f => pruefe(o.id, f).art === "richtig").length;
+    return `
+      <div class="gruppe-titel">
+        <h4>${g}</h4><span>${fertig} von ${felder.length}</span>
+      </div>
+      <div class="felder">
+        ${felder.map(f => {
+          const wert = stand.eingaben[o.id][f.key] || "";
+          const p = pruefe(o.id, f);
+          const idAttr = `f-${o.id}-${f.key}`;
+          return `<div class="feld" data-stand="${p.art}">
+            <label for="${idAttr}">${f.label}</label>
+            <div class="formel">${f.formel}</div>
+            <div class="eingabe">
+              <input id="${idAttr}" data-key="${f.key}" type="text" inputmode="decimal"
+                     autocomplete="off" spellcheck="false" placeholder="—"
+                     value="${String(wert).replace(/"/g,"&quot;")}"
+                     aria-describedby="${idAttr}-r">
+              <span class="einheit" aria-hidden="true">${f.einheit}</span>
+            </div>
+            <div class="rueck" id="${idAttr}-r">${p.text || ""}</div>
+          </div>`;
+        }).join("")}
+      </div>`;
+  }).join("");
+
+  $("rechenKarte").querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("input", () => {
+      stand.eingaben[o.id][inp.dataset.key] = inp.value;
+      sichern();
+    });
+    inp.addEventListener("blur", () => { sichern(); zeichne(inp.id); });
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") inp.blur(); });
+  });
+}
+
+function bauVergleich(){
+  const bereit = OBJEKTE.filter(o => Object.keys(stand.eingaben[o.id]).length > 0).length;
+  if (bereit === 0){
+    $("vergleich").innerHTML = `<div class="sperre">
+      Sobald du oben Werte einträgst, füllt sich diese Tabelle — <b>mit deinen Zahlen</b>.
+    </div>`;
+    return;
+  }
+  const zeilen = [];
+  let letzteGruppe = null;
+  FELDER.forEach(f => {
+    if (f.gruppe !== letzteGruppe){
+      zeilen.push(`<tr class="rubrik"><td colspan="4">${f.gruppe}</td></tr>`);
+      letzteGruppe = f.gruppe;
+    }
+    const werteJeObj = OBJEKTE.map(o => {
+      const roh = stand.eingaben[o.id][f.key];
+      if (roh === undefined || String(roh).trim() === "") return null;
+      const z = lies(String(roh));
+      return Number.isNaN(z) ? null : z;
+    });
+    let bestIdx = -1;
+    const richtung = RICHTUNG[f.key];
+    if (richtung && werteJeObj.every(v => v !== null)){
+      bestIdx = werteJeObj.reduce((b,v,i,arr) =>
+        richtung === "hoch" ? (v > arr[b] ? i : b) : (v < arr[b] ? i : b), 0);
+    }
+    zeilen.push(`<tr><td>${f.label}</td>` + werteJeObj.map((v,i) =>
+      v === null
+        ? `<td class="leer">—</td>`
+        : `<td class="${i === bestIdx ? "spitze" : ""}">${zeigeWert(v, f.art)}</td>`
+    ).join("") + `</tr>`);
+  });
+  $("vergleich").innerHTML = `<div class="tab-huelle"><table>
+    <thead><tr><th>Kennzahl</th>${OBJEKTE.map(o => `<th>${o.id} — ${o.titel}</th>`).join("")}</tr></thead>
+    <tbody>${zeilen.join("")}</tbody></table></div>`;
+}
+
+function bauWahl(){
+  ["wahl1","wahl2"].forEach(name => {
+    $(name).innerHTML = OBJEKTE.map(o => `
+      <label>
+        <input type="radio" name="${name}" value="${o.id}" ${stand[name] === o.id ? "checked" : ""}>
+        <span class="buchst">${o.id}</span>
+        <span class="name">${o.titel}</span>
+      </label>`).join("");
+    $(name).querySelectorAll("input").forEach(r => {
+      r.addEventListener("change", () => { stand[name] = r.value; sichern(); bauLeiste(); });
+    });
+  });
+
+  $("kriterien").innerHTML = KRITERIEN.map((k,i) => `
+    <label><input type="checkbox" value="${i}" ${stand.kriterien.includes(i) ? "checked" : ""}>
+    <span>${k}</span></label>`).join("");
+  $("kriterien").querySelectorAll("input").forEach(c => {
+    c.addEventListener("change", () => {
+      const i = Number(c.value);
+      stand.kriterien = c.checked
+        ? [...new Set([...stand.kriterien, i])]
+        : stand.kriterien.filter(x => x !== i);
+      sichern();
+    });
+  });
+}
+
+function bauLeiste(){
+  const bereit = stand.wahl1 && stand.wahl2;
+  $("auswerten").disabled = !bereit;
+  $("hinweis").textContent = bereit ? "" : "Beantworte erst beide Fragen.";
+}
+
+/* ===================== Auswertung ===================== */
+const o_kp = id => OBJEKTE.find(o => o.id === id).kp;
+
+function auswerten(){
+  const w = {}; OBJEKTE.forEach(o => { w[o.id] = werte(o); });
+  const bestRendite = OBJEKTE.reduce((b,o) => w[o.id].brutto > w[b.id].brutto ? o : b, OBJEKTE[0]).id;
+
+  const blocks = [];
+
+  /* --- Frage 1: rechnerisch eindeutig --- */
+  const r1 = stand.wahl1 === bestRendite;
+  const belegt = ["brutto","netto","faktor","ekr"].filter(k => {
+    const f = FELDER.find(x => x.key === k);
+    return pruefe(bestRendite, f).art === "richtig";
+  }).length;
+
+  blocks.push(`
+    <div class="urteil" data-art="${r1 ? "richtig" : "falsch"}">
+      <h4>Frage 1 — ${r1 ? "Richtig: Objekt " + bestRendite : "Nicht richtig — es ist Objekt " + bestRendite}</h4>
+      <p>${r1
+        ? `Objekt ${bestRendite} gewinnt in <b>jeder</b> Renditekennzahl, nicht nur in der Bruttorendite.`
+        : `Du hast Objekt ${stand.wahl1} gewählt. Sieh dir die vier Renditezeilen deiner Vergleichstabelle noch einmal an — Objekt ${bestRendite} führt in allen vieren.`}</p>
+      <ul>
+        <li><b>Bruttomietrendite</b> — ${OBJEKTE.map(o => `${o.id}: ${nf(w[o.id].brutto,2)} %`).join(" · ")}</li>
+        <li><b>Nettomietrendite</b> — ${OBJEKTE.map(o => `${o.id}: ${nf(w[o.id].netto,2)} %`).join(" · ")}</li>
+        <li><b>Kaufpreisfaktor</b> (niedriger ist besser) — ${OBJEKTE.map(o => `${o.id}: ${nf(w[o.id].faktor,1)} ×`).join(" · ")}</li>
+        <li><b>Eigenkapitalrendite</b> — ${OBJEKTE.map(o => `${o.id}: ${nf(w[o.id].ekr,2)} %`).join(" · ")}</li>
+      </ul>
+      <p>${belegt >= 3
+        ? `Du hast ${belegt === 4 ? "alle vier" : "drei der vier"} Kennzahlen für Objekt ${bestRendite} selbst korrekt berechnet — damit ist deine Antwort belegt.`
+        : `Du hast bisher ${belegt === 0 ? "keine" : belegt === 1 ? "eine" : "zwei"} der vier Kennzahlen für Objekt ${bestRendite} korrekt berechnet. Für eine belastbare Begründung brauchst du mindestens drei.`}</p>
+      <p><b>Und der Haken:</b> Bei Objekt A ist eine Sonderumlage von 9.500 € bereits beschlossen.
+      Rechnet man sie ins Eigenkapital, fällt die Eigenkapitalrendite von
+      ${nf(w.A.ekr,2)} % auf ${nf((w.A.jm*(1-BEWIRT) - w.A.zins) / (w.A.ek + 9500) * 100, 2)} %.
+      A bleibt vorn — aber der Abstand halbiert sich fast. Wer das nicht nennt, hat nur die halbe Antwort.</p>
+    </div>`);
+
+  /* --- Frage 2: begründungsabhängig --- */
+  const kAusgewaehlt = stand.kriterien.map(i => KRITERIEN[i]).filter(Boolean);
+  const hatEinzug = stand.kriterien.includes(0);
+  const kText = kAusgewaehlt.length
+    ? `Du hast angekreuzt: ${kAusgewaehlt.join(", ")}.`
+    : `Du hast kein Kriterium angekreuzt — genau daran scheitert die Begründung.`;
+
+  let art2, kopf2, text2;
+  if (stand.wahl2 === "C"){
+    art2 = "richtig"; kopf2 = "Frage 2 — Objekt C, gut begründbar";
+    text2 = `<p>C ist die stärkste Antwort: frei ab 01.11.2026, 118 m² auf 214 m² Grundstück
+      zu ${nf(Math.round(w.C.preisM2))} €/m², Alleineigentum ohne Eigentümerversammlung,
+      2021 saniert, Kita und Grundschule fußläufig.</p>
+      <p><b>Ehrlich dazu:</b> C hat die höchste Monatsrate im Feld
+      (${nf(Math.round(w.C.annu))} €) und die Instandhaltung trägst du allein — bei einem Haus
+      von 1998 stehen in 10–15 Jahren Dach und Fassade an, ohne WEG-Rücklage im Rücken.
+      Wer das mitnennt, hat die Aufgabe besonders gut gelöst.</p>`;
+  } else if (stand.wahl2 === "B"){
+    art2 = "teils"; kopf2 = "Frage 2 — Objekt B, vertretbar mit Einschränkung";
+    text2 = `<p>B ist technisch das beste Gebäude: Baujahr 2023, Energieklasse A, Wärmepumpe,
+      volle Rücklage, laufende Gewährleistung. <b>Für einen Single oder ein Paar ohne Kinder
+      ist B eine vertretbare Antwort</b> — wenn du genau so begründest.</p>
+      <p>Was gegen B spricht: 74 m² mit 2,5 Zimmern für ${nf(o_kp("B"))} € sind
+      ${nf(Math.round(w.B.preisM2))} €/m² — der höchste Quadratmeterpreis im Feld für die
+      zweitkleinste Wohnung. Kein Garten, WEG-Bindung. Für eine Familie ist C die klar
+      bessere Antwort.</p>`;
+  } else {
+    art2 = "falsch"; kopf2 = "Frage 2 — Objekt A scheidet aus";
+    text2 = `<p><b>Das ist kein Abwägungspunkt, sondern ein Ausschlusskriterium:</b> Die Wohnung
+      ist seit 2014 unbefristet vermietet. Wer dort selbst einziehen will, braucht eine
+      Kündigung wegen Eigenbedarfs — mit Kündigungsfristen nach Mietdauer, Widerspruchsrecht
+      des Mieters wegen Härte und gegebenenfalls einer Sperrfrist nach Umwandlung in
+      Wohnungseigentum. Das sind Monate bis Jahre unsicheres Warten, kein Einzugstermin.</p>
+      <p>Dazu Energieklasse F, eine praktisch leere Rücklage und eine beschlossene
+      Sonderumlage. A gewinnt Frage 1 — und verliert Frage 2 deutlich.
+      <b>Die höchste Rendite ist hier das schlechteste Zuhause.</b></p>`;
+  }
+
+  blocks.push(`
+    <div class="urteil" data-art="${art2}">
+      <h4>${kopf2}</h4>
+      ${text2}
+      <p>${kText} ${hatEinzug
+        ? "Gut — <b>„Einzug tatsächlich möglich“ ist das Kriterium, das die Aufgabe entscheidet.</b>"
+        : "<b>Ein Kriterium fehlt dir: „Einzug tatsächlich möglich“.</b> Es ist das einzige, das ein Objekt hier komplett ausschließt."}</p>
+    </div>`);
+
+  /* --- Der Kern --- */
+  blocks.push(`
+    <div class="urteil">
+      <h4>Worum es in dieser Aufgabe eigentlich geht</h4>
+      <p>Die beiden Fragen haben <b>verschiedene Antworten</b> — und das ist kein Zufall,
+      sondern der Punkt. Rendite misst, was ein Objekt abwirft. Wohnqualität misst, wie es
+      sich darin lebt. Ein Objekt kann in der einen Disziplin gewinnen und in der anderen
+      ausscheiden.</p>
+      <p>Und noch etwas: Ein negativer Cashflow ist kein K.-o.-Kriterium. Bei Objekt A
+      besteht die Monatsrate von ${nf(Math.round(w.A.annu))} € aus rund
+      ${nf(Math.round(w.A.dar * ZINS / 12))} € Zins und rund
+      ${nf(Math.round(w.A.annu - w.A.dar * ZINS / 12))} € Tilgung. Die Tilgung ist kein
+      Aufwand — die zahlst du an dich selbst.</p>
+    </div>`);
+
+  $("urteil").innerHTML = blocks.join("");
+  $("urteil").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+/* ===================== Zeichnen ===================== */
+function zeichne(fokusId){
+  const o = OBJEKTE.find(x => x.id === stand.aktiv) || OBJEKTE[0];
+  bauReiter();
+  bauExpose(o);
+  bauRechner(o);
+  bauVergleich();
+  bauLeiste();
+  if (fokusId){
+    const el = document.getElementById(fokusId);
+    if (el) el.focus({ preventScroll:true });
+  }
+}
+
+$("auswerten").addEventListener("click", auswerten);
+$("zuruecksetzen").addEventListener("click", () => {
+  if (!confirm("Alle Eingaben und Antworten löschen?")) return;
+  stand = { aktiv:"A", eingaben:{}, wahl1:null, wahl2:null, kriterien:[] };
+  OBJEKTE.forEach(o => { stand.eingaben[o.id] = {}; });
+  try{ localStorage.removeItem(SCHLUESSEL); }catch(_){}
+  $("urteil").innerHTML = "";
+  bauAnnahmen(); bauWahl(); zeichne();
+});
+
+laden();
+bauAnnahmen();
+bauWahl();
+zeichne();
+</script>

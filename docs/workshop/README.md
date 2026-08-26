@@ -4,8 +4,25 @@ Fallstudie für den Unterricht: drei Objekte, zwei Entscheidungen.
 
 | Datei | Für wen | Inhalt |
 |---|---|---|
-| `immobilien-workshop.html` | **Klasse** | Aufgabenblatt: Auftrag, Rahmendaten, drei Exposés, Formelblatt, leere Auswertungstabelle, Antwortfelder |
+| `immobilien-workshop-online.html` | **Klasse, im Browser** | Interaktive Fassung: Reiter je Objekt, Eingabefelder mit sofortiger Prüfung und gezielten Fehlerhinweisen, Vergleichstabelle aus den eigenen Werten, Entscheidungspanel mit Auswertung |
+| `immobilien-workshop.html` | **Klasse, auf Papier** | Aufgabenblatt: Auftrag, Rahmendaten, drei Exposés, Formelblatt, leere Auswertungstabelle, Antwortfelder |
 | `immobilien-workshop-loesung.html` | **nur Lehrkraft** | Ergebnistabelle, Rechenweg, beide Antworten mit Begründung, typische Fehler, Bewertungsraster (30 P.), Vertiefungsaufgaben |
+
+## Webadresse für die Klasse
+
+    https://claude.ai/code/artifact/70a9c592-9fde-4132-ae06-c0e6cfef587f
+
+⚠️ **Die Seite ist erst privat.** Damit die Klasse sie öffnen kann, muss sie einmal über das
+Teilen-Menü auf der Seite freigegeben werden. Ohne diesen Schritt bekommen die Schüler
+keinen Zugriff.
+
+Die Eingaben jedes Schülers liegen nur in dessen eigenem Browser (`localStorage`) — sie
+überstehen ein Neuladen, sind aber weder für andere Schüler noch für die Lehrkraft sichtbar.
+Wer die Ergebnisse einsammeln will, braucht einen anderen Weg (Screenshot, mündlich).
+
+⚠️ **Die Lösung steht im Quelltext.** Die Seite rechnet die Zielwerte aus den angezeigten
+Objektdaten — wer die Entwicklerkonsole öffnet, kommt an die Ergebnisse. Für eine benotete
+Klassenarbeit ist die Seite deshalb nicht geeignet, für Übung und Unterricht schon.
 
 Beide Dateien sind **self-contained** (CSS inline, keine externen Requests, keine
 Web-Fonts) — per Doppelklick offline lauffähig, per `Strg+P` sauber auf A4 druckbar.
