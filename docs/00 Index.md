@@ -23,6 +23,7 @@
   (erst privat — vor dem Unterricht einmal über das Teilen-Menü freigeben)
 - `workshop/immobilien-workshop-online.html` — Quelle der Online-Fassung (interaktiv, mit Prüfung)
 - `workshop/immobilien-workshop.html` — Aufgabenblatt für die Klasse (drei Objekte, zwei Entscheidungen)
+- [[MENTIMETER]] — acht Fragen zum Abtippen in Mentimeter (Fragetyp, Optionen, Lösung)
 - `workshop/immobilien-workshop-loesung.html` — Musterlösung, Rechenweg, Bewertungsraster (**nur Lehrkraft**)
 - [[README]] in `docs/workshop/` — Rechengrundlage, Herkunft der Zahlen, Anpassen
 

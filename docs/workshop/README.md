@@ -29,6 +29,15 @@ Web-Fonts) — per Doppelklick offline lauffähig, per `Strg+P` sauber auf A4 dr
 Die Lösung liegt bewusst in einer **getrennten Datei**, nicht als aufklappbarer
 Abschnitt im Aufgabenblatt.
 
+## Mentimeter
+
+`MENTIMETER.md` — acht Fragen zum Abtippen in Mentimeter, mit Fragetyp,
+Antwortoptionen und richtiger Lösung. Die falschen Antworten der Kontrollfrage
+sind bewusst die drei häufigsten Rechenfehler, nicht Zufallszahlen.
+
+Kernidee: dieselbe Frage vor und nach dem Rechnen stellen und beide Ergebnisse
+nebeneinander zeigen.
+
 ## Die Aufgabe
 
 1. **Welches Objekt hat die beste Mietrendite?** → Objekt **A** (Altbau-ETW Lübeck)
