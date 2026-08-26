@@ -570,19 +570,32 @@ function bauAnnahmen(){
     .map(([k,v]) => `<div class="a"><dt>${k}</dt><dd>${v}</dd></div>`).join("");
 }
 
+/* Die Reiter werden GENAU EINMAL gebaut und danach nur noch neu beschriftet.
+   Wer sie bei jeder Aenderung neu erzeugt, zerstoert sie zwischen mousedown
+   und mouseup — der Klick kommt dann nie an, weil das angeklickte Element
+   nicht mehr existiert. */
 function bauReiter(){
-  $("reiter").innerHTML = OBJEKTE.map(o => {
-    const n = fertigeFelder(o.id), fertig = n === FELDER.length;
-    return `<button role="tab" type="button" data-obj="${o.id}"
-      aria-selected="${o.id === stand.aktiv}" aria-controls="rechenKarte"
-      class="${fertig ? "fertig" : ""}">
+  $("reiter").innerHTML = OBJEKTE.map(o => `
+    <button role="tab" type="button" data-obj="${o.id}" aria-controls="rechenKarte">
       <span class="kennung">${o.id}</span>
       <span>${o.titel}</span>
-      <span class="stand">${fertig ? "✓ fertig" : n + "/" + FELDER.length}</span>
-    </button>`;
-  }).join("");
+      <span class="stand"></span>
+    </button>`).join("");
   $("reiter").querySelectorAll("button").forEach(b => {
-    b.addEventListener("click", () => { stand.aktiv = b.dataset.obj; sichern(); zeichne(); });
+    b.addEventListener("click", () => {
+      if (stand.aktiv === b.dataset.obj) return;
+      stand.aktiv = b.dataset.obj; sichern(); zeichne();
+    });
+  });
+  reiterAktualisieren();
+}
+
+function reiterAktualisieren(){
+  $("reiter").querySelectorAll("button").forEach(b => {
+    const n = fertigeFelder(b.dataset.obj), fertig = n === FELDER.length;
+    b.classList.toggle("fertig", fertig);
+    b.setAttribute("aria-selected", String(b.dataset.obj === stand.aktiv));
+    b.querySelector(".stand").textContent = fertig ? "✓ fertig" : n + "/" + FELDER.length;
   });
 }
 
@@ -608,7 +621,7 @@ function bauRechner(o){
     const felder = FELDER.filter(f => f.gruppe === g);
     const fertig = felder.filter(f => pruefe(o.id, f).art === "richtig").length;
     return `
-      <div class="gruppe-titel">
+      <div class="gruppe-titel" data-gruppe="${g}">
         <h4>${g}</h4><span>${fertig} von ${felder.length}</span>
       </div>
       <div class="felder">
@@ -632,13 +645,52 @@ function bauRechner(o){
       </div>`;
   }).join("");
 
-  $("rechenKarte").querySelectorAll("input").forEach(inp => {
+  const eingaben = [...$("rechenKarte").querySelectorAll("input")];
+  eingaben.forEach((inp, i) => {
     inp.addEventListener("input", () => {
       stand.eingaben[o.id][inp.dataset.key] = inp.value;
       sichern();
+      // Waehrend des Tippens neutral bleiben — sonst blinkt bei jeder Ziffer
+      // "noch zu niedrig" auf, obwohl die Zahl noch gar nicht fertig ist.
+      const feldEl = inp.closest(".feld");
+      feldEl.dataset.stand = "leer";
+      feldEl.querySelector(".rueck").textContent = "";
+      bauVergleich();
     });
-    inp.addEventListener("blur", () => { sichern(); zeichne(inp.id); });
-    inp.addEventListener("keydown", e => { if (e.key === "Enter") inp.blur(); });
+    inp.addEventListener("blur", () => {
+      sichern();
+      feldAktualisieren(o.id, inp);
+      gruppenZaehler(o.id);
+      reiterAktualisieren();
+      bauVergleich();
+    });
+    inp.addEventListener("keydown", e => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const naechstes = eingaben[i + 1];
+      if (naechstes){ naechstes.focus(); naechstes.select(); } else { inp.blur(); }
+    });
+  });
+}
+
+/* Aktualisiert GENAU EIN Feld — kein Neuaufbau der Karte. Der alte Code hat
+   hier die ganze Rechenkarte neu gerendert: dabei wurden alle Eingabefelder
+   zerstoert und neu erzeugt, und der Fokus landete zwangsweise wieder im
+   gerade verlassenen Feld. Ein Klick ins naechste Feld ging damit ins Leere. */
+function feldAktualisieren(objId, inp){
+  const f = FELDER.find(x => x.key === inp.dataset.key);
+  if (!f) return;
+  const p = pruefe(objId, f);
+  const feldEl = inp.closest(".feld");
+  feldEl.dataset.stand = p.art;
+  feldEl.querySelector(".rueck").textContent = p.text || "";
+}
+
+function gruppenZaehler(objId){
+  $("rechenKarte").querySelectorAll(".gruppe-titel").forEach(el => {
+    const felder = FELDER.filter(f => f.gruppe === el.dataset.gruppe);
+    const n = felder.filter(f => pruefe(objId, f).art === "richtig").length;
+    el.querySelector("span").textContent = `${n} von ${felder.length}`;
   });
 }
 
@@ -817,17 +869,16 @@ function auswerten(){
 }
 
 /* ===================== Zeichnen ===================== */
-function zeichne(fokusId){
+/* Vollstaendiger Neuaufbau — nur beim Reiterwechsel und beim Zuruecksetzen,
+   also nie waehrend jemand tippt. Kein erzwungener Fokus: der Fokus gehoert
+   dem Nutzer, nicht dem Rendering. */
+function zeichne(){
   const o = OBJEKTE.find(x => x.id === stand.aktiv) || OBJEKTE[0];
-  bauReiter();
+  reiterAktualisieren();
   bauExpose(o);
   bauRechner(o);
   bauVergleich();
   bauLeiste();
-  if (fokusId){
-    const el = document.getElementById(fokusId);
-    if (el) el.focus({ preventScroll:true });
-  }
 }
 
 $("auswerten").addEventListener("click", auswerten);
@@ -837,11 +888,12 @@ $("zuruecksetzen").addEventListener("click", () => {
   OBJEKTE.forEach(o => { stand.eingaben[o.id] = {}; });
   try{ localStorage.removeItem(SCHLUESSEL); }catch(_){}
   $("urteil").innerHTML = "";
-  bauAnnahmen(); bauWahl(); zeichne();
+  bauWahl(); zeichne();
 });
 
 laden();
 bauAnnahmen();
+bauReiter();
 bauWahl();
 zeichne();
 </script>

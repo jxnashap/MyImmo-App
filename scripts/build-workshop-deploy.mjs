@@ -99,5 +99,62 @@ if (existsSync(pdf)) {
   console.log("         docs/workshop/immobilien-workshop.pdf, dann erneut ausfuehren.");
 }
 
+/* ---------- README-DEPLOY.txt ---------- */
+writeFileSync(join(ZIEL, "README-DEPLOY.txt"), `MyImmo — Immobilien-Workshop · Ordner zum Deployen
+
+INHALT
+
+  index.html          Die interaktive Fassung. Startseite.
+  aufgabenblatt.html  Fassung zum Ausdrucken (aus der Fußzeile verlinkt).
+  aufgabenblatt.pdf   Dasselbe als PDF, 7 Seiten A4.
+
+Alles ist self-contained: kein Build, kein npm, keine Datenbank, keine
+Server-Logik. Reines statisches HTML. Einzige externe Ressource sind die
+Google-Schriften — fehlen die, greift eine Ersatzschrift und die Seite
+funktioniert unverändert weiter.
+
+Die MUSTERLÖSUNG ist absichtlich NICHT in diesem Ordner. Wer sie mit
+hochlädt, stellt sie öffentlich ins Netz.
+
+
+DEPLOYEN — drei Wege
+
+1) Netlify Drop (am schnellsten)
+   app.netlify.com/drop öffnen, diesen ORDNER hineinziehen.
+
+2) Vercel
+   vercel.com/new → Ordner hochladen, oder im Ordner: npx vercel --prod
+   Kein Framework wählen ("Other"), kein Build-Command.
+
+3) Eigener Webspace / Schulserver / GitHub Pages
+   Ordnerinhalt ins Wurzelverzeichnis kopieren.
+
+Bei allen dreien: KEIN Build-Schritt, KEIN Output-Verzeichnis. Wenn ein
+Dienst nach einem Build-Command fragt, leer lassen.
+
+
+BEVOR SIE ES ÖFFENTLICH STELLEN
+
+• Die Seite trägt "noindex, nofollow". Das ist eine Bitte an Suchmaschinen,
+  KEIN Zugriffsschutz. Wer die Adresse kennt, kommt rein.
+
+• Die Zielwerte stehen im Quelltext. Die Seite rechnet sie aus den
+  angezeigten Objektdaten — wer die Entwicklerkonsole öffnet, kommt an die
+  Ergebnisse. Für Übung unproblematisch, für eine benotete Klassenarbeit
+  ungeeignet. Dafür das Papier-Aufgabenblatt nehmen.
+
+• Die Eingaben der Schüler bleiben in deren Browser (localStorage). Sie
+  gehen weder an einen Server noch an die Lehrkraft.
+
+• Impressum/Datenschutz: Bei rein schulischer Nutzung meist unkritisch.
+  Wird die Seite unter einer MyImmo-Domain öffentlich erreichbar, gehören
+  Impressum und Datenschutzhinweis dazu — die Seite setzt keine Cookies
+  und überträgt keine Daten, lädt aber Schriften von Google.
+
+
+Erzeugt mit: node scripts/build-workshop-deploy.mjs
+MyImmo · Privates Immobilien-Management · www.myimmoapp.de
+`);
+
 console.log(`Fertig: ${ZIEL}/ — Ordner unveraendert auf einen Static-Host legen.`);
 console.log("Die Musterloesung wurde absichtlich nicht mitkopiert.");
