@@ -53,7 +53,7 @@ Eigenkapitalrendite), den die App selbst nicht ausweist.
 
 Einheitliche Annahmen für alle drei Objekte: Schleswig-Holstein (GrESt 6,5 %),
 Makler 3,57 %, Notar/Grundbuch 2 %, Bewirtschaftung 20 %, Eigenkapital = alle
-Nebenkosten + 10 % des Kaufpreises, Sollzins 3,8 %, Anfangstilgung 2,0 %.
+Nebenkosten + 15 % des Kaufpreises, Sollzins 3,8 %, Anfangstilgung 2,0 %.
 
 ## Herkunft der Zahlen
 

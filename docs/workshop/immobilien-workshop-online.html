@@ -366,11 +366,11 @@ const NK_SATZ = GREST + MAKLER + NEBEN;      // 12,07 %
 const BEWIRT  = 0.20;                        // der Jahreskaltmiete
 const ZINS    = 0.038, TILGUNG = 0.020;
 const ANNUI   = ZINS + TILGUNG;              // 5,80 %
-const EK_KP   = 0.10;                        // Eigenkapital = NK + 10 % Kaufpreis
+const EK_KP   = 0.15;                        // Eigenkapital = NK + 15 % Kaufpreis
 
 const ANNAHMEN = [
   ["Grunderwerbsteuer","6,50 %"], ["Maklerprovision","3,57 %"], ["Notar & Grundbuch","2,00 %"],
-  ["Nebenkosten gesamt","12,07 %"], ["Bewirtschaftung","20 %"], ["Eigenkapital","NK + 10 %"],
+  ["Nebenkosten gesamt","12,07 %"], ["Bewirtschaftung","20 %"], ["Eigenkapital","NK + 15 %"],
   ["Sollzins","3,80 %"], ["Anfangstilgung","2,00 %"],
 ];
 
@@ -471,9 +471,9 @@ const FELDER = [
     formel:"Kaufpreis ÷ Jahreskaltmiete" },
 
   { gruppe:"Finanzierung",  key:"ek",      label:"Eigenkapital",       einheit:"€", art:"eur", tol:2,
-    formel:"Kaufnebenkosten + 10 % des Kaufpreises" },
+    formel:"Kaufnebenkosten + 15 % des Kaufpreises" },
   { gruppe:"Finanzierung",  key:"dar",     label:"Darlehen",           einheit:"€", art:"eur", tol:1,
-    formel:"Kaufpreis × 90 %" },
+    formel:"Kaufpreis × 85 %" },
   { gruppe:"Finanzierung",  key:"zins",    label:"Zinsen Jahr 1",      einheit:"€", art:"eur", tol:2,
     formel:"Darlehen × 3,80 %" },
   { gruppe:"Finanzierung",  key:"annu",    label:"Annuität je Monat",  einheit:"€", art:"eur", tol:2,
