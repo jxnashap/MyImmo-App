@@ -531,8 +531,29 @@ tr.no-hover:hover td { background: transparent; }
 .empty p { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
 
 /* TABELLEN-SCROLL (breite Tabellen auf schmalen Screens) */
-.table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* Breite Tabellen scrollen im eigenen Container — MIT sichtbarer Affordance:
+   Die Rand-Schatten (background-attachment: local/scroll-Trick) erscheinen
+   nur, wenn in die jeweilige Richtung noch Inhalt liegt. Ohne den Hinweis
+   hielten Nutzer die abgeschnittene Betrag-Spalte für fehlend. */
+.table-scroll {
+  width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(90deg, var(--bg2) 40%, rgba(255,255,255,0)) left / 28px 100% no-repeat local,
+    linear-gradient(270deg, var(--bg2) 40%, rgba(255,255,255,0)) right / 28px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.16), rgba(0,0,0,0)) left / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.16), rgba(0,0,0,0)) right / 12px 100% no-repeat scroll;
+}
 .list-table { min-width: 560px; }
+/* Mobil bleibt die Geld-/letzte Spalte angepinnt sichtbar — in einer
+   Finanz-App ist der Betrag die eine Spalte, die nie verschwinden darf. */
+@media (max-width: 640px) {
+  .list-table th:last-child, .list-table td:last-child {
+    position: sticky; right: 0; background: var(--bg2);
+    box-shadow: -10px 0 10px -8px rgba(0,0,0,.22);
+  }
+  .list-table thead th:last-child { background: var(--bg2); }
+  tr:hover .list-table td:last-child, .list-table tr:hover td:last-child { background: var(--bg3); }
+}
 
 /* DELETE BTN */
 .delete-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 14px; padding: 3px 7px; border-radius: 5px; transition: all 0.15s; line-height: 1; }
@@ -562,11 +583,11 @@ tr.no-hover:hover td { background: transparent; }
 .form-box > p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 .form-row.single { grid-template-columns: 1fr; }
-.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .form-group label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: var(--track-caption); }
 /* Eingabefelder nach Referenz: weiche graue Fuellung (#f5f5f5) OHNE Rahmen
    im Ruhezustand, Pillen-Radius — der Fokus zeichnet den Ring. */
-.form-group input, .form-group select, .form-group textarea { padding: 9px 13px; border-radius: var(--r-sm); border: 1px solid transparent; font-family: var(--font-ui); font-size: 14px; background-color: var(--bg3); color: var(--text); transition: border-color .15s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease); outline: none; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 13px; border-radius: var(--r-sm); border: 1px solid transparent; font-family: var(--font-ui); font-size: 14px; background-color: var(--bg3); color: var(--text); transition: border-color .15s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease); outline: none; }
 /* Vorher nur ein harter 3px-Ring. Jetzt Ring + weiter, sehr schwacher Halo,
    und das Feld hebt sich einen Pixel — es fuehlt sich „aktiv" an statt nur
    umrandet. Der Halo nutzt --gold-glow und folgt damit dem Theme. */
@@ -2032,3 +2053,17 @@ select:focus-visible, textarea:focus-visible {
 .qlx-hero-medium.qlx-playing video { opacity: 1; }
 .qlx-hero-medium video[poster] { opacity: 1; } /* mit echtem Poster kein Schwarzblitz */
 .qlx-hero-medium.qlx-playing video[poster] { opacity: 1; }
+
+/* Leaflet-Bedienelemente im App-Stil: folgen beiden Themes statt des
+   hellen Leaflet-Defaults (im Dunkelmodus vorher weisse Inseln). */
+.leaflet-control-zoom a { background: var(--bg2) !important; color: var(--text) !important; border-color: var(--line) !important; }
+.leaflet-control-zoom a:hover { background: var(--bg3) !important; }
+.leaflet-control-attribution { background: color-mix(in srgb, var(--bg2) 85%, transparent) !important; color: var(--muted) !important; }
+.leaflet-control-attribution a { color: var(--muted) !important; }
+
+/* NK-Briefvorschau: am Handy scrollt die Kostentabelle im Blatt, statt
+   Spalten zusammenzuquetschen; der Druck (@media print) bleibt unberuehrt. */
+@media (max-width: 640px) {
+  .brief-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+@media print { .brief-scroll { overflow: visible; } .brief-scroll table { min-width: 0 !important; } }

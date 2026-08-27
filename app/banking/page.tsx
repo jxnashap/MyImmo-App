@@ -146,8 +146,9 @@ export default async function BankingPage({
       {!konfiguriert ? (
         <div className="section">
           <div className="section-body" style={{ fontSize: 13, color: "var(--muted)" }}>
-            Banking ist noch nicht konfiguriert. In Vercel müssen <code>ENABLE_BANKING_APP_ID</code> und{" "}
-            <code>ENABLE_BANKING_PRIVATE_KEY</code> gesetzt sein (Enable-Banking-Application, siehe Projektnotizen).
+            Die Konto-Anbindung ist noch nicht freigeschaltet. Sobald sie verfügbar ist, kannst du
+            hier dein Mietkonto verbinden — Mieteingänge werden dann automatisch zum Abgleich
+            vorgeschlagen. Bis dahin funktioniert alles wie gewohnt über „Ein- &amp; Ausgaben".
           </div>
         </div>
       ) : (

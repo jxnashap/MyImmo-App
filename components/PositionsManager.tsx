@@ -213,7 +213,7 @@ export default function PositionsManager({
         </p>
       ) : (
         <div className="mb-4 overflow-hidden rounded-[10px] border border-[var(--line)]">
-          <table className="w-full text-sm">
+          <div className="table-scroll"><table className="w-full min-w-[620px] text-sm">
             <thead className="bg-[var(--bg3)] text-left text-[var(--muted)]">
               <tr>
                 <th className="px-3 py-2 font-medium">Position</th>
@@ -389,7 +389,7 @@ export default function PositionsManager({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 

@@ -35,7 +35,7 @@ export default function CashflowListe({
   ].sort((a, b) => (b.buchungsdatum || "").localeCompare(a.buchungsdatum || ""));
 
   return (
-    <table className="list-table">
+    <div className="table-scroll"><table className="list-table">
       <thead>
         <tr><th>Datum</th><th>Typ</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Beleg</th><th>Betrag</th></tr>
       </thead>
@@ -98,6 +98,6 @@ export default function CashflowListe({
           />
         </RowDialog>
       )}
-    </table>
+    </table></div>
   );
 }
