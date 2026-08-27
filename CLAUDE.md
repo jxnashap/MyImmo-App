@@ -209,6 +209,20 @@ Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fris
 
 ### Benötigte Environment-Variablen (Vercel)
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `BETA_CODE` — **der Zugangscode für die Registrierung als Vermieter/Hausverwaltung**
+  (Early Access). Steht NUR in Vercel, nirgends im Repo. Nachsehen und ändern:
+  Vercel → Projekt → Settings → Environment Variables → `BETA_CODE`; nach dem Ändern
+  ist ein **Redeploy nötig**, sonst gilt weiter der alte Wert. Geprüft wird serverseitig
+  in `lib/actions/freischaltung.ts` (`pruefeBetaCode`), mit Bremse: 8 Versuche je 15 Minuten
+  und IP. Ist die Variable nicht gesetzt, schlägt JEDE Registrierung mit
+  „Die Registrierung ist derzeit nicht freigeschaltet" fehl.
+  ⚠️ Der Code kennt noch einen Rückfall auf `NEXT_PUBLIC_BETA_CODE` — diese Variante
+  **niemals setzen**: Alles mit `NEXT_PUBLIC_`-Präfix landet im ausgelieferten JavaScript,
+  der Code stünde dann für jeden im Quelltext. Am 27.08.2026 geprüft: In den 10 Bundles
+  der Login-Seite (629 KB) taucht kein Beta-Code auf, die Variante ist also nicht gesetzt.
+  NICHT zu verwechseln mit den **Einladungscodes** für Mieter/Dienstleister
+  (`MI-XXXX-XXXX` / `SV-XXXX-XXXX`) — die stehen in der Tabelle `einladungscodes`,
+  werden vom Vermieter in der App erzeugt und per RPC `einladungscode_pruefen` geprüft.
 - `ANTHROPIC_API_KEY` — für OCR / KI-Import (NK-Abrechnung auslesen, Objekt-Import)
 - `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` — E-Mail-Versand (Vorlagen-Verteiler, Double-Opt-in).
   Optional `BREVO_ABSENDER_NAME` (Default „MyImmo") und `BREVO_LIST_ID` (ohne sie wird der
