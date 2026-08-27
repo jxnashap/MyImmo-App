@@ -89,8 +89,7 @@ export async function haengeBewerbungDateiAn(
   bewerbungId: string,
   fd: FormData,
 ): Promise<{ ok: boolean; fehler?: string }> {
-  // Eigenes, großzügigeres IP-Limit als beim Einreichen: bis zu 5 Dateien je
-  // Bewerbung, 3 Bewerbungen je Fenster → 15 Uploads sind legitim.
+  // Eigenes, großzügigeres IP-Limit als beim Einreichen (siehe Zähler unten).
   const ip = (headers().get("x-forwarded-for") ?? "unbekannt").split(",")[0].trim();
   if (uploadRateLimited(ip)) {
     return { ok: false, fehler: "Zu viele Uploads — bitte in ein paar Minuten erneut versuchen." };
@@ -100,6 +99,11 @@ export async function haengeBewerbungDateiAn(
   }
 
   const datei = fd.get("datei");
+  // Dokument-Kategorie (Slot) — Whitelist wie in der RPC; unbekannte Werte
+  // landen als "sonstiges".
+  const slotRoh = String(fd.get("slot") ?? "").trim();
+  const SLOTS = new Set(["gehalt","schufa","mietschuldenfrei","arbeitsvertrag","einkommen_selbst","buergschaft","einkommen_sonstig","wbs","sonstiges"]);
+  const slot = SLOTS.has(slotRoh) ? slotRoh : "sonstiges";
   if (!(datei instanceof File) || datei.size === 0) return { ok: false, fehler: "Keine Datei gewählt." };
   if (!DATEI_TYPEN.has(datei.type)) return { ok: false, fehler: "Nur PDF-, JPG-, PNG- oder WebP-Dateien." };
   if (datei.size > DATEI_MAX_BYTES) return { ok: false, fehler: `„${datei.name}" ist größer als 6 MB.` };
@@ -122,7 +126,7 @@ export async function haengeBewerbungDateiAn(
   const { data, error } = await supabase.rpc("bewerbung_datei_anhaengen", {
     p_token: token,
     p_bewerbung: bewerbungId,
-    p: { name: datei.name, typ: datei.type, groesse: datei.size, data: gespeichert },
+    p: { name: datei.name, typ: datei.type, groesse: datei.size, data: gespeichert, slot },
   });
   if (error) return { ok: false, fehler: "Upload fehlgeschlagen — bitte erneut versuchen." };
   const r = data as { ok?: boolean; error?: string } | null;
@@ -130,12 +134,13 @@ export async function haengeBewerbungDateiAn(
   return { ok: true };
 }
 
-// Getrennter Zähler für Datei-Uploads: max. 20 / 10 Min / IP.
+// Getrennter Zähler für Datei-Uploads: max. 40 / 10 Min / IP
+// (bis 12 Dateien je Bewerbung, 3 Bewerbungen je Fenster).
 const uploadHits = new Map<string, number[]>();
 function uploadRateLimited(ip: string): boolean {
   const now = Date.now();
   const arr = (uploadHits.get(ip) ?? []).filter((t) => now - t < FENSTER);
-  if (arr.length >= 20) {
+  if (arr.length >= 40) {
     uploadHits.set(ip, arr);
     return true;
   }

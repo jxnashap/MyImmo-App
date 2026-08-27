@@ -26,6 +26,87 @@ export async function erstelleBewerberLink(formData: FormData) {
   return { ok: true };
 }
 
+/**
+ * Objekt-Steckbrief (Anzeige-Eckdaten) + gewünschte Dokument-Slots eines
+ * Bewerbungs-Links speichern. Zahlen tolerant parsen (deutsches Komma),
+ * Slots gegen den Katalog whitelisten.
+ */
+export async function aktualisiereBewerberLink(id: string, fd: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const zahl = (k: string): number | null => {
+    const roh = String(fd.get(k) ?? "").trim().replace(/\./g, "").replace(",", ".");
+    if (!roh) return null;
+    const n = Number(roh);
+    return Number.isFinite(n) && n >= 0 && n < 100000000 ? n : null;
+  };
+  const text = (k: string, max: number): string | null => {
+    const t = String(fd.get(k) ?? "").trim();
+    return t ? t.slice(0, max) : null;
+  };
+
+  const { DOKUMENT_SLOTS, AUSSTATTUNG_OPTIONEN } = await import("@/lib/bewerbungsDokumente");
+  const erlaubteSlots = new Set(DOKUMENT_SLOTS.map((s) => s.slug));
+  const slots = fd.getAll("dokumente").map(String).filter((s) => erlaubteSlots.has(s));
+  const erlaubteAusstattung = new Set<string>(AUSSTATTUNG_OPTIONEN);
+  const ausstattung = fd.getAll("ausstattung").map(String).filter((a) => erlaubteAusstattung.has(a));
+
+  const anzeige = {
+    kaltmiete: zahl("kaltmiete"),
+    nebenkosten: zahl("nebenkosten"),
+    heizkosten_enthalten: String(fd.get("heizkosten_enthalten") ?? "") === "on",
+    warmmiete: zahl("warmmiete"),
+    kaution: zahl("kaution"),
+    bezugsfrei_ab: text("bezugsfrei_ab", 10),
+    etage: text("etage", 40),
+    zimmer: zahl("zimmer"),
+    schlafzimmer: zahl("schlafzimmer"),
+    badezimmer: zahl("badezimmer"),
+    flaeche: zahl("flaeche"),
+    ausstattung,
+    heizungsart: text("heizungsart", 80),
+    energieausweis: text("energieausweis", 120),
+    beschreibung: text("beschreibung", 2000),
+    lage: text("lage", 1000),
+  };
+
+  const { error } = await supabase
+    .from("bewerber_links")
+    .update({ anzeige, dokumente_gewuenscht: slots })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) return { error: "Konnte nicht gespeichert werden." };
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
+/**
+ * DSGVO-Aufräumen: abgelehnte Bewerbungen, die älter als 6 Monate sind,
+ * samt Dokumenten löschen (Frist deckt AGG-Geltendmachungsansprüche ab).
+ * Bewusst KEINE stille Automatik — der Vermieter bestätigt per Klick.
+ */
+export async function loescheAlteAbgelehnteBewerbungen() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  const grenze = new Date();
+  grenze.setMonth(grenze.getMonth() - 6);
+  await supabase
+    .from("bewerbungen")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("status", "abgelehnt")
+    .lt("created_at", grenze.toISOString());
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
 export async function setzeBewerberLinkAktiv(id: string, aktiv: boolean) {
   const supabase = createClient();
   const {
