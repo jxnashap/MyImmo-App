@@ -128,3 +128,4 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260731182000 | newsletter_email_unique_direkt | Unique auf `email` statt `lower(email)` — Ausdrucks-Index taugt nicht für ON CONFLICT |
 | 20260827100000 | bewerbung_dateien | Bewerber legen der Selbstauskunft Dokumente bei (Gehaltsabrechnungen, SCHUFA) |
 | 20260827110000 | bewerbung_dateien_verschluesselt | Anhänge-RPC akzeptiert App-Chiffretext (enc:v1), Limit 12 MB Text |
+| 20260827120000 | bewerber_link_steckbrief_slots | Objekt-Steckbrief am Bewerbungs-Link + wählbare Dokument-Slots (max. 12 Dateien) |

@@ -44,9 +44,9 @@ export default async function AnliegenPage({
   const { data: bewerbungDateiRows } = (bewerbungRows ?? []).length
     ? await supabase
         .from("bewerbung_dateien")
-        .select("id,name,groesse,bewerbung_id")
+        .select("id,name,groesse,slot,bewerbung_id")
         .in("bewerbung_id", (bewerbungRows ?? []).map((b: any) => b.id))
-    : { data: [] as { id: string; name: string; groesse: number; bewerbung_id: string }[] };
+    : { data: [] as { id: string; name: string; groesse: number; slot: string | null; bewerbung_id: string }[] };
 
   const { data: dateiRows } = (rows ?? []).length
     ? await supabase
@@ -100,6 +100,8 @@ export default async function AnliegenPage({
   const links: BewerberLinkRow[] = ((linkRows ?? []) as any[]).map((l) => ({
     id: l.id, token: l.token, titel: l.titel, aktiv: l.aktiv, created_at: l.created_at,
     objektName: objektName(l.prop_id),
+    anzeige: l.anzeige ?? null,
+    dokumenteGewuenscht: Array.isArray(l.dokumente_gewuenscht) ? l.dokumente_gewuenscht : [],
   }));
   const bewerbungen: BewerbungRow[] = ((bewerbungRows ?? []) as any[]).map((b) => ({
     id: b.id, name: b.name, email: b.email, telefon: b.telefon, einzug_ab: b.einzug_ab,
@@ -110,7 +112,7 @@ export default async function AnliegenPage({
     objektName: objektName(b.prop_id),
     dateien: (bewerbungDateiRows ?? [])
       .filter((d) => d.bewerbung_id === b.id)
-      .map((d) => ({ id: d.id, name: d.name, groesse: d.groesse })),
+      .map((d) => ({ id: d.id, name: d.name, groesse: d.groesse, slot: d.slot ?? null })),
   }));
   const neueBewerbungen = bewerbungen.filter((b) => b.status === "neu").length;
 
