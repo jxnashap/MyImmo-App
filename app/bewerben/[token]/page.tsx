@@ -50,74 +50,108 @@ const datumText = (iso: string | null | undefined) => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("de-DE");
 };
 
-/** Objekt-Steckbrief — die Eckdaten der Anzeige, wie sie der Vermieter am Link gepflegt hat. */
+/** Objekt-Steckbrief — die Eckdaten der Anzeige, geordnet wie im Inserat:
+    große Kennzahlen-Kacheln (Kaltmiete mit €/m², Zimmer, Fläche, Warmmiete),
+    darunter die Blöcke „Kosten" und „Objektdaten", Ausstattung, Beschreibung. */
 function Steckbrief({ info }: { info: Info }) {
   const a = info.anzeige ?? {};
+  const zimmer = a.zimmer ?? info.zimmer;
+  const flaeche = a.flaeche ?? info.flaeche;
+  const warm = a.warmmiete ?? (a.kaltmiete != null && a.nebenkosten != null ? a.kaltmiete + a.nebenkosten : null);
+  const proQm = a.kaltmiete != null && flaeche ? a.kaltmiete / flaeche : null;
+
+  const kacheln: { label: string; wert: string | null; sub?: string | null }[] = [
+    { label: "Kaltmiete", wert: euroText(a.kaltmiete), sub: proQm != null ? `${proQm.toLocaleString("de-DE", { maximumFractionDigits: 2 })} €/m²` : null },
+    { label: "Zimmer", wert: zimmer != null ? String(zimmer) : null },
+    { label: "Wohnfläche", wert: flaeche != null ? `${flaeche} m²` : null },
+    { label: "Warmmiete", wert: euroText(warm), sub: a.heizkosten_enthalten ? "inkl. Heizkosten" : null },
+  ];
+
   const kosten: [string, string | null][] = [
     ["Kaltmiete", euroText(a.kaltmiete)],
-    ["Nebenkosten", a.nebenkosten != null ? `+ ${euroText(a.nebenkosten)}${a.heizkosten_enthalten ? " (inkl. Heizkosten)" : ""}` : null],
-    ["Warmmiete", euroText(a.warmmiete ?? (a.kaltmiete != null && a.nebenkosten != null ? a.kaltmiete + a.nebenkosten : null))],
+    ["Nebenkosten", a.nebenkosten != null ? `+ ${euroText(a.nebenkosten)}` : null],
+    ["Heizkosten", a.nebenkosten != null ? (a.heizkosten_enthalten ? "in Nebenkosten enthalten" : null) : null],
+    ["Gesamtmiete", euroText(warm)],
+    ["Miete pro m²", proQm != null ? `${proQm.toLocaleString("de-DE", { maximumFractionDigits: 2 })} €/m²` : null],
     ["Kaution", euroText(a.kaution)],
   ];
-  const fakten: [string, string | null][] = [
-    ["Zimmer", (a.zimmer ?? info.zimmer)?.toString() ?? null],
-    ["Wohnfläche", (a.flaeche ?? info.flaeche) != null ? `${a.flaeche ?? info.flaeche} m²` : null],
-    ["Schlafzimmer", a.schlafzimmer?.toString() ?? null],
-    ["Badezimmer", a.badezimmer?.toString() ?? null],
+  const objekt: [string, string | null][] = [
+    ["Zimmer", zimmer != null ? String(zimmer) : null],
+    ["Schlafzimmer", a.schlafzimmer != null ? String(a.schlafzimmer) : null],
+    ["Badezimmer", a.badezimmer != null ? String(a.badezimmer) : null],
+    ["Wohnfläche", flaeche != null ? `${flaeche} m²` : null],
     ["Etage", a.etage ?? null],
     ["Bezugsfrei ab", datumText(a.bezugsfrei_ab)],
     ["Heizungsart", a.heizungsart ?? null],
     ["Energieausweis", a.energieausweis ?? null],
   ];
-  const kostenDa = kosten.some(([, v]) => v);
-  const faktenDa = fakten.some(([, v]) => v);
   const ausstattung = a.ausstattung ?? [];
+
+  const Block = ({ titel, zeilen }: { titel: string; zeilen: [string, string | null][] }) => {
+    const da = zeilen.filter(([, v]) => v);
+    if (da.length === 0) return null;
+    return (
+      <div style={{ flex: "1 1 240px", minWidth: 220 }}>
+        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>{titel}</div>
+        <div style={{ display: "grid", gap: 0 }}>
+          {da.map(([k, v]) => (
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "5px 0", borderBottom: "1px solid var(--line)", fontSize: 12.5 }}>
+              <span style={{ color: "var(--muted)" }}>{k}</span>
+              <span style={{ fontWeight: 600, textAlign: "right" }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="section" style={{ marginBottom: 16 }}>
-      <div className="section-header">
+      <div className="section-header" style={{ display: "block" }}>
         <h3><Home size={15} style={{ verticalAlign: "-2px" }} /> {info.titel || info.objekt}</h3>
+        {info.adresse && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{info.adresse}</div>}
       </div>
-      <div className="section-body" style={{ display: "grid", gap: 14 }}>
-        <div style={{ fontSize: 12, color: "var(--muted)", display: "flex", flexWrap: "wrap", gap: "6px 22px" }}>
-          {info.adresse && <span>{info.adresse}</span>}
-        </div>
-
-        {kostenDa && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8 }}>
-            {kosten.filter(([, v]) => v).map(([k, v]) => (
-              <div key={k} style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 10, padding: "10px 12px" }}>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted)" }}>{k}</div>
-                <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2 }}>
-                  {k === "Kaltmiete" && <BadgeEuro size={13} color="var(--gold)" style={{ verticalAlign: "-2px", marginRight: 4 }} />}
-                  {v}
+      <div className="section-body" style={{ display: "grid", gap: 16 }}>
+        {kacheln.some((k) => k.wert) && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
+            {kacheln.filter((k) => k.wert).map((k) => (
+              <div key={k.label} style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", textAlign: "center" }}>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--muted)" }}>{k.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 600, marginTop: 3, letterSpacing: "-0.01em" }}>
+                  {k.label === "Kaltmiete" && <BadgeEuro size={14} color="var(--gold)" style={{ verticalAlign: "-2px", marginRight: 5 }} />}
+                  {k.wert}
                 </div>
+                {k.sub && <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{k.sub}</div>}
               </div>
             ))}
           </div>
         )}
 
-        {faktenDa && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "6px 18px", fontSize: 12.5 }}>
-            {fakten.filter(([, v]) => v).map(([k, v]) => (
-              <span key={k}><span style={{ color: "var(--muted)" }}>{k}:</span> <strong>{v}</strong></span>
-            ))}
-          </div>
-        )}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "14px 32px" }}>
+          <Block titel="Kosten" zeilen={kosten} />
+          <Block titel="Objektdaten" zeilen={objekt} />
+        </div>
 
         {ausstattung.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {ausstattung.map((t) => <span key={t} className="badge badge-gold">{t}</span>)}
+          <div>
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>Ausstattung</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {ausstattung.map((t) => <span key={t} className="badge badge-gold">{t}</span>)}
+            </div>
           </div>
         )}
 
         {a.beschreibung && (
-          <p style={{ fontSize: 12.5, color: "var(--text)", whiteSpace: "pre-wrap", margin: 0 }}>{a.beschreibung}</p>
+          <div>
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>Objektbeschreibung</div>
+            <p style={{ fontSize: 12.5, color: "var(--text)", whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.6 }}>{a.beschreibung}</p>
+          </div>
         )}
         {a.lage && (
-          <p style={{ fontSize: 12, color: "var(--muted)", whiteSpace: "pre-wrap", margin: 0 }}>
-            <strong style={{ color: "var(--text)" }}>Lage:</strong> {a.lage}
-          </p>
+          <div>
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>Lage</div>
+            <p style={{ fontSize: 12.5, color: "var(--muted)", whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.6 }}>{a.lage}</p>
+          </div>
         )}
       </div>
     </div>
