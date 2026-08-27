@@ -205,7 +205,7 @@ export default async function NkPage({
             Unterzeile), Anteilsberechnung — der Vorauszahlungsabzug folgt im
             Summenblock. Bei direkt erfassten Mieteranteilen (ohne Aufteilung)
             gibt es keine Gebäude-Gesamtkosten; dort steht ein Strich. */}
-        <table style={{ marginTop: 8 }}>
+        <div className="brief-scroll"><table style={{ marginTop: 8, minWidth: 460 }}>
           <thead>
             <tr>
               <th>Umlagefähige Position</th>
@@ -239,7 +239,7 @@ export default async function NkPage({
               ))
             )}
           </tbody>
-        </table>
+        </table></div>
 
         {a.co2 && (
           <div style={{ marginTop: 16 }}>

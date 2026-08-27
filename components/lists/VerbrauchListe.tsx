@@ -26,7 +26,7 @@ export default function VerbrauchListe({
   const offen = rows.find((r) => r.id === openId) ?? null;
 
   return (
-    <table className="list-table">
+    <div className="table-scroll"><table className="list-table">
       <thead><tr><th>Datum</th><th>Immobilie</th><th>Art</th><th>Menge</th><th>Einheit</th><th>Kosten</th></tr></thead>
       <ExpandableRows cols={6} limit={10} label="weitere Einträge">
         {rows.map((v) => (
@@ -80,6 +80,6 @@ export default function VerbrauchListe({
           </form>
         </RowDialog>
       )}
-    </table>
+    </table></div>
   );
 }

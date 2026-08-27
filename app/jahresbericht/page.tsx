@@ -114,7 +114,7 @@ export default async function JahresberichtPage({
           )}
         </div>
         <div className="section-body">
-          <table className="list-table">
+          <div className="table-scroll"><table className="list-table">
             <thead>
               <tr>
                 <th>Immobilie</th>
@@ -147,7 +147,7 @@ export default async function JahresberichtPage({
                 <td style={{ textAlign: "right", color: sum.cashflow >= 0 ? "var(--green)" : "var(--red)", borderTop: border }}>{euro(sum.cashflow)}</td>
               </tr>
             </tfoot>
-          </table>
+          </table></div>
         </div>
       </div>
 

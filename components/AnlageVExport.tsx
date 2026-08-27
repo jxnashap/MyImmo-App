@@ -197,7 +197,7 @@ export default function AnlageVExport({
               <h3>Aufstellung {jahr}</h3>
               <span style={{ fontSize: 11, color: "var(--muted)" }}>{erg.objekte.length} Objekt(e)</span>
             </div>
-            <div className="section-body" style={{ overflowX: "auto" }}>
+            <div className="section-body table-scroll">
               <table style={{ fontSize: 12, minWidth: 520 }}>
                 <thead>
                   <tr>

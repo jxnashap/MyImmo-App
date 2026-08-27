@@ -81,10 +81,10 @@ export default async function PropertiesPage({
               PDF/Link-Formular, das seine CSV nicht annimmt. Jetzt eindeutig
               benannt und beide Wege an derselben Stelle. */}
           <Link href="/properties/import" className="btn btn-ghost" title="Ein einzelnes Objekt aus einem Expose (PDF/Link/Text) auslesen">
-            <Link2 size={14} style={{ verticalAlign: "-2px" }} /> Expose auslesen
+            <Link2 size={14} style={{ verticalAlign: "-2px" }} /> Exposé auslesen
           </Link>
-          <Link href="/einstellungen/import" className="btn btn-ghost" title="Bestandsdaten aus vermietet.de, objego oder Excel (CSV) uebernehmen">
-            <Upload size={14} style={{ verticalAlign: "-2px" }} /> Daten uebernehmen
+          <Link href="/einstellungen/import" className="btn btn-ghost" title="Bestandsdaten aus vermietet.de, objego oder Excel (CSV) übernehmen">
+            <Upload size={14} style={{ verticalAlign: "-2px" }} /> Daten übernehmen
           </Link>
           <Link href="/properties/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Neu</Link>
         </div>
