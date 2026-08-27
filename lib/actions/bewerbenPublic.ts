@@ -106,12 +106,23 @@ export async function haengeBewerbungDateiAn(
 
   const puffer = Buffer.from(await datei.arrayBuffer());
   const dataUrl = `data:${datei.type};base64,${puffer.toString("base64")}`;
+  // Gehaltsnachweise & Co. sind hochsensibel: App-Layer-Verschlüsselung wie
+  // bei IBANs (AES-256-GCM, Schlüssel NUR als Vercel-Env — die DB sieht nur
+  // Chiffretext). Ohne gesetzten DATA_ENCRYPTION_KEY (lokale Entwicklung)
+  // fällt der Upload auf Klartext zurück; decrypt() liest später beides.
+  let gespeichert = dataUrl;
+  try {
+    const { encrypt } = await import("@/lib/crypto/secure");
+    gespeichert = encrypt(dataUrl);
+  } catch {
+    /* DATA_ENCRYPTION_KEY fehlt — Klartext-Fallback (Dev) */
+  }
 
   const supabase = createClient();
   const { data, error } = await supabase.rpc("bewerbung_datei_anhaengen", {
     p_token: token,
     p_bewerbung: bewerbungId,
-    p: { name: datei.name, typ: datei.type, groesse: datei.size, data: dataUrl },
+    p: { name: datei.name, typ: datei.type, groesse: datei.size, data: gespeichert },
   });
   if (error) return { ok: false, fehler: "Upload fehlgeschlagen — bitte erneut versuchen." };
   const r = data as { ok?: boolean; error?: string } | null;

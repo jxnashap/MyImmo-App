@@ -90,7 +90,9 @@ export async function ladeBewerbungDatei(
     .eq("user_id", user.id)
     .maybeSingle();
   if (error || !data) return { ok: false, fehler: "Dokument nicht gefunden." };
-  return { ok: true, name: data.name, typ: data.typ, data: data.data };
+  // App-Layer-Verschlüsselung auflösen (Klartext-Altzeilen bleiben lesbar).
+  const { decrypt } = await import("@/lib/crypto/secure");
+  return { ok: true, name: data.name, typ: data.typ, data: decrypt(data.data) };
 }
 
 /** Ein einzelnes Bewerbungs-Dokument löschen (DSGVO-Datensparsamkeit). */

@@ -104,6 +104,7 @@ export async function GET() {
       if (t === "mieter" && o.iban) o.iban = decryptNullable(String(o.iban));
       if (t === "mieter" && o.kaution_bank) o.kaution_bank = decryptNullable(String(o.kaution_bank));
       if (t === "kredite" && o.darlnr) o.darlnr = decryptNullable(String(o.darlnr));
+      if (t === "bewerbung_dateien" && o.data) o.data = decryptNullable(String(o.data));
       if (t === "bankverbindungen" && o.iban) o.iban = decryptNullable(String(o.iban));
       return o;
     });

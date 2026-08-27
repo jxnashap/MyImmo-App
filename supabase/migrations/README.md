@@ -127,3 +127,4 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260731181000 | newsletter_abmelde_token | Eigener Abmelde-Schlüssel, damit Abmeldungen nicht nur bei Brevo landen |
 | 20260731182000 | newsletter_email_unique_direkt | Unique auf `email` statt `lower(email)` — Ausdrucks-Index taugt nicht für ON CONFLICT |
 | 20260827100000 | bewerbung_dateien | Bewerber legen der Selbstauskunft Dokumente bei (Gehaltsabrechnungen, SCHUFA) |
+| 20260827110000 | bewerbung_dateien_verschluesselt | Anhänge-RPC akzeptiert App-Chiffretext (enc:v1), Limit 12 MB Text |
