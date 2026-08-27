@@ -29,7 +29,7 @@ function SchrittKarte({
           style={{
             width: 38, height: 38, borderRadius: "50%",
             background: erledigt ? "var(--green)" : "var(--gold)",
-            color: erledigt ? "#fff" : "#1a1814",
+            color: erledigt ? "#fff" : "var(--btn-gold-text)",
             display: "grid", placeItems: "center", fontWeight: 700, fontSize: 16,
             transition: "background .4s ease, color .4s ease",
           }}

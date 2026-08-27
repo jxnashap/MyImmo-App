@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import LandingShell from "@/components/landing/Shell";
+import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import { RATGEBER, ratgeberDatum } from "@/lib/ratgeber";
 import { ArrowRight, Clock } from "lucide-react";
@@ -14,14 +15,16 @@ export const metadata: Metadata = {
 
 export default function RatgeberIndex() {
   return (
-    <LandingShell aktiv="/ratgeber">
+    <LandingShell aktiv="/ratgeber" mitHero>
+      <QlxHero
+        slug="ratgeber"
+        kompakt
+        kicker="Ratgeber"
+        titel={<>Praxiswissen für <em>Vermieter</em></>}
+        sub="Nebenkosten, Steuer, Fristen und der Einstieg in die Vermietung — verständlich erklärt, mit Bezug auf die passenden MyImmo-Funktionen."
+      />
       <section className="lp-section">
         <div className="lp-inner">
-          <div className="lp-kicker">Ratgeber</div>
-          <h1 className="lp-h2" style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>Praxiswissen für Vermieter</h1>
-          <p className="lp-section-sub">
-            Nebenkosten, Steuer, Fristen und der Einstieg in die Vermietung — verständlich erklärt, mit Bezug auf die passenden MyImmo-Funktionen.
-          </p>
           <div className="lp-cards3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", alignItems: "stretch" }}>
             {RATGEBER.map((a, i) => (
               <Reveal key={a.slug} delay={i * 60} className="lp-reveal-fill">

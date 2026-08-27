@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Plane } from "lucide-react";
 import LandingShell from "@/components/landing/Shell";
+import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import Tilt from "@/components/landing/Tilt";
 import RollenFlow from "@/components/landing/RollenFlow";
@@ -16,24 +17,31 @@ export default function LandingPage() {
   const topFeatures = FEATURES.slice(0, 6);
 
   return (
-    <LandingShell>
-      {/* ---------- Hero ---------- */}
-      <section className="lp-section" style={{ paddingBottom: 24 }}>
-        <div className="lp-inner lp-hero2">
-          <div>
-            <span className="lp-badge"><span className="dot" />Early Access — aktuell alles kostenlos</span>
-            <h1 className="lp-h1">Vermieten ohne Papierkram. <em>Von überall.</em></h1>
-            <p className="lp-sub">
-              Nebenkostenabrechnung, Anlage V, Mieten und dein ganzes Team — Mieter, Hausmeister,
-              Handwerker — in einer aufgeräumten App. Gemacht für private Vermieter mit 1–24
-              Einheiten, denen Excel zu fehleranfällig und Profi-Software zu teuer ist.
-            </p>
-            <div className="lp-cta-row">
-              <Link href="/anmelden" className="btn btn-gold lp-btn-big">Kostenlos starten</Link>
-              <Link href="/funktionen" className="btn btn-ghost lp-btn-big">Alle Funktionen</Link>
+    <LandingShell aktiv="/" mitHero>
+      {/* ---------- Cinematic-Hero ---------- */}
+      <QlxHero
+        slug="start"
+        kicker="Privates Immobilien-Management"
+        titel={<>Vermieten ohne Papierkram. <em>Von überall.</em></>}
+        sub={
+          <>
+            Nebenkostenabrechnung, Anlage V, Mieten und dein ganzes Team — Mieter, Hausmeister,
+            Handwerker — in einer aufgeräumten App. Für private Vermieter mit 1–24 Einheiten.
+          </>
+        }
+        kinder={
+          <>
+            <div className="lp-cta-row" style={{ justifyContent: "flex-start" }}>
+              <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
+              <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
             </div>
-            <p className="lp-hero-note">Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar</p>
-          </div>
+            <p className="qlx-hero-note">Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar</p>
+          </>
+        }
+      />
+
+      <section className="lp-section" style={{ paddingBottom: 24 }}>
+        <div className="lp-inner" style={{ marginBottom: 40 }}>
           <Reveal>
             <Shot src="/landing/dashboard.webp" alt="MyImmo-Dashboard mit Portfolio-Wert, Cashflow und Verlaufs-Chart" />
           </Reveal>

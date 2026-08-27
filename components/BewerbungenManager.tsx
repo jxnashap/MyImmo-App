@@ -5,10 +5,11 @@
 import { useState, useTransition } from "react";
 import {
   Link2, Copy, Check, Star, XCircle, RotateCcw, ChevronDown, ChevronUp, UserRound,
+  FileText, Download, X,
 } from "lucide-react";
 import {
   erstelleBewerberLink, setzeBewerberLinkAktiv, loescheBewerberLink,
-  setzeBewerbungStatus, loescheBewerbung,
+  setzeBewerbungStatus, loescheBewerbung, ladeBewerbungDatei, loescheBewerbungDatei,
 } from "@/lib/actions/bewerber";
 import DeleteButton from "@/components/DeleteButton";
 import { euro, datum } from "@/lib/format";
@@ -25,7 +26,58 @@ export type BewerbungRow = {
   haustiere: string | null; schufa: boolean | null; nachricht: string | null;
   unterschrift_data: string | null; status: string; created_at: string;
   objektName: string;
+  dateien: { id: string; name: string; groesse: number }[];
 };
+
+function dateiGroesse(b: number): string {
+  if (b >= 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(b / 1024))} kB`;
+}
+
+// Download über die Server-Action: Base64 erst auf Klick laden (RLS-geprüft),
+// dann als Blob speichern — kein Base64 in der Listen-Payload.
+function BewerbungDatei({ d }: { d: { id: string; name: string; groesse: number } }) {
+  const [laedt, setLaedt] = useState(false);
+  const herunterladen = async () => {
+    setLaedt(true);
+    try {
+      const r = await ladeBewerbungDatei(d.id);
+      if (!r.ok || !r.data) return;
+      // Data-URL von Hand dekodieren statt fetch(): die CSP der App erlaubt
+      // unter connect-src kein data: — atob braucht keinen Netzwerkpfad.
+      const komma = r.data.indexOf(",");
+      const bin = atob(r.data.slice(komma + 1));
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: r.typ ?? "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = r.name ?? d.name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } finally {
+      setLaedt(false);
+    }
+  };
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, padding: "5px 10px", background: "var(--bg2)", border: "1px solid var(--line)", borderRadius: 10 }}>
+      <FileText size={13} color="var(--gold)" />
+      <span style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</span>
+      <span style={{ color: "var(--faint)" }}>{dateiGroesse(d.groesse)}</span>
+      <button
+        type="button" title="Herunterladen" disabled={laedt} onClick={herunterladen}
+        style={{ background: "none", border: "none", color: "var(--gold)", cursor: "pointer", display: "inline-grid", placeItems: "center", padding: 2 }}
+      >
+        {laedt ? <span className="spinner" style={{ width: 11, height: 11 }} /> : <Download size={13} />}
+      </button>
+      <DeleteButton
+        action={async () => { await loescheBewerbungDatei(d.id); }}
+        className="delete-btn" label={<X size={12} />} confirmText={`Dokument „${d.name}“ endgültig löschen?`}
+      />
+    </span>
+  );
+}
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   neu: { label: "Neu", cls: "badge-amber" },
@@ -100,6 +152,16 @@ function BewerbungKarte({ b }: { b: BewerbungRow }) {
             ))}
           </div>
           {b.nachricht && <p style={{ marginTop: 10, whiteSpace: "pre-wrap", color: "var(--text)" }}>{b.nachricht}</p>}
+          {b.dateien.length > 0 && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>
+                Dokumente ({b.dateien.length}) — z. B. Gehaltsabrechnungen, SCHUFA:
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {b.dateien.map((d) => <BewerbungDatei key={d.id} d={d} />)}
+              </div>
+            </div>
+          )}
           {b.unterschrift_data && (
             <div style={{ marginTop: 10 }}>
               <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Unterschrift (bestätigt die Richtigkeit der Angaben):</div>

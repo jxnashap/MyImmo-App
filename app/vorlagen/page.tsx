@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import LandingShell from "@/components/landing/Shell";
+import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import VerteilerForm from "@/components/landing/VerteilerForm";
 import {
@@ -41,7 +42,14 @@ const NL_MELDUNG: Record<string, { text: string; gut: boolean }> = {
 export default function VorlagenPage({ searchParams }: { searchParams: { nl?: string } }) {
   const meldung = searchParams.nl ? NL_MELDUNG[searchParams.nl] : undefined;
   return (
-    <LandingShell aktiv="/vorlagen">
+    <LandingShell aktiv="/vorlagen" mitHero>
+      <QlxHero
+        slug="vorlagen"
+        kompakt
+        kicker="Vorlagen"
+        titel={<>Rechtssichere Vorlagen — <em>in Sekunden fertig</em></>}
+        sub="Statt Word-Dokumente mühsam auszufüllen: Vorlage wählen, der Rest wird aus Ihren Objekt- und Mieterdaten automatisch ergänzt — als sauberes PDF im Geschäftsbriefstil. Kostenlos im Early Access."
+      />
       <section className="lp-section">
         <div className="lp-inner">
           {meldung && (
@@ -61,12 +69,6 @@ export default function VorlagenPage({ searchParams }: { searchParams: { nl?: st
               {meldung.text}
             </div>
           )}
-          <div className="lp-kicker">Vorlagen</div>
-          <h1 className="lp-h2" style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>Rechtssichere Vorlagen — in Sekunden fertig</h1>
-          <p className="lp-section-sub">
-            Statt Word-Dokumente mühsam auszufüllen: In MyImmo wählen Sie die Vorlage, der Rest wird aus Ihren Objekt- und
-            Mieterdaten automatisch ergänzt — als sauberes PDF im Geschäftsbriefstil. Kostenlos im Early Access.
-          </p>
           <div className="lp-features" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
             {VORLAGEN.map((v, i) => {
               const Ico = v.ico;

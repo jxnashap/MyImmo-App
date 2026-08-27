@@ -39,7 +39,7 @@ export default function FoerderCheck() {
                 style={{
                   display: "flex", alignItems: "center", gap: 7, cursor: "pointer",
                   padding: "8px 14px", borderRadius: 9, border: "none", fontSize: 12.5, fontWeight: 600,
-                  background: aktiv ? "var(--gold)" : "transparent", color: aktiv ? "#1a1814" : "var(--muted)",
+                  background: aktiv ? "var(--gold-fill)" : "transparent", color: aktiv ? "var(--btn-gold-text)" : "var(--muted)",
                   transition: "background .2s, color .2s",
                 }}>
                 <Icon size={14} /> {label}

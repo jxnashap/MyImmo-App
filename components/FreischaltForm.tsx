@@ -73,7 +73,7 @@ export default function FreischaltForm({ email }: { email?: string | null }) {
             type="submit"
             disabled={pending}
             className="w-full rounded-sm py-3 text-[15px] font-semibold transition hover:brightness-95 disabled:opacity-60"
-            style={{ background: "var(--gold)", color: "#1a1a17" }}
+            style={{ background: "var(--gold-fill)", color: "var(--btn-gold-text)" }}
           >
             {pending ? "…" : "Freischalten & starten"}
           </button>

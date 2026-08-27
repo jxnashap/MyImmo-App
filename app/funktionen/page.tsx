@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import LandingShell from "@/components/landing/Shell";
+import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import Tilt from "@/components/landing/Tilt";
 import Link from "next/link";
@@ -15,12 +16,16 @@ export const metadata: Metadata = {
 
 export default function FunktionenPage() {
   return (
-    <LandingShell aktiv="/funktionen">
+    <LandingShell aktiv="/funktionen" mitHero>
+      <QlxHero
+        slug="funktionen"
+        kompakt
+        kicker="Funktionen"
+        titel={<>Alles, was Vermieten <em>verlangt</em></>}
+        sub="Vom ersten Mietvertrag bis zur Anlage V — inklusive Mieterportal, Team-Rollen und Banking-Anbindung."
+      />
       <section className="lp-section">
         <div className="lp-inner">
-          <div className="lp-kicker">Funktionen</div>
-          <h1 className="lp-h2" style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>Alles, was Vermieten verlangt</h1>
-          <p className="lp-section-sub">Vom ersten Mietvertrag bis zur Anlage V — inklusive Mieterportal, Team-Rollen und Banking-Anbindung.</p>
 
           {/* Vertiefungen zu den vier Kernaufgaben. Ohne diese Verlinkung
               waeren die Unterseiten fuer Besucher wie fuer Suchmaschinen

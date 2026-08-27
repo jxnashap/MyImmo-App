@@ -158,8 +158,8 @@ export default function AnlageVExport({
                   className="btn"
                   style={{
                     fontSize: 12, padding: "6px 12px", borderRadius: 6,
-                    background: ansicht === k ? "var(--gold)" : "transparent",
-                    color: ansicht === k ? "#1a1a17" : "var(--muted)",
+                    background: ansicht === k ? "var(--gold-fill)" : "transparent",
+                    color: ansicht === k ? "var(--btn-gold-text)" : "var(--muted)",
                   }}
                 >
                   {k === "elster" && <Landmark size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />}
@@ -186,7 +186,7 @@ export default function AnlageVExport({
             <KennzahlCard
               label={erg.gesamt.ueberschuss >= 0 ? "Überschuss (Einkünfte)" : "Verlust"}
               value={eur2(erg.gesamt.ueberschuss)}
-              color={erg.gesamt.ueberschuss >= 0 ? "var(--gold)" : "var(--red)"}
+              color={erg.gesamt.ueberschuss >= 0 ? "var(--gold-fill)" : "var(--red)"}
             />
           </div>
 
@@ -249,7 +249,7 @@ export default function AnlageVExport({
                   <tr style={{ borderTop: "2px solid var(--line2)" }}>
                     <td style={{ fontWeight: 700 }}>Überschuss / Verlust</td>
                     {spalten.map((o) => (
-                      <td key={o.propId ?? "g"} style={{ textAlign: "right", fontWeight: 700, color: o.ueberschuss >= 0 ? "var(--gold)" : "var(--red)", background: o === erg.gesamt ? "var(--bg3)" : undefined }}>
+                      <td key={o.propId ?? "g"} style={{ textAlign: "right", fontWeight: 700, color: o.ueberschuss >= 0 ? "var(--gold-fill)" : "var(--red)", background: o === erg.gesamt ? "var(--bg3)" : undefined }}>
                         {eur2(o.ueberschuss)}
                       </td>
                     ))}

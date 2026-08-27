@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { Plane } from "lucide-react";
 import LandingShell from "@/components/landing/Shell";
+import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import Tilt from "@/components/landing/Tilt";
 import { VISION } from "@/components/landing/data";
@@ -13,19 +13,21 @@ export const metadata: Metadata = {
 
 export default function VisionPage() {
   return (
-    <LandingShell aktiv="/vision">
+    <LandingShell aktiv="/vision" mitHero>
+      <QlxHero
+        slug="vision"
+        kicker="Die Vision"
+        titel={<>Leben, wo du willst. <em>Verwalten, als wärst du da.</em></>}
+        sub={
+          <>
+            MyImmo entsteht aus einem konkreten Ziel: im Ausland leben und den Immobilienbestand in
+            Deutschland vollständig aus der App steuern. Kein Papierkram, der auf dem Küchentisch
+            wartet. Kein Anruf, der dich um 7 Uhr Ortszeit weckt.
+          </>
+        }
+      />
       <section className="lp-section">
         <div className="lp-inner">
-          <div className="lp-kicker">Die Vision</div>
-          <div style={{ textAlign: "center", marginTop: 12 }}><Plane size={30} style={{ color: "var(--gold)" }} /></div>
-          <h1 className="lp-h2" style={{ fontSize: "clamp(28px, 4vw, 40px)", marginTop: 4 }}>
-            Leben, wo du willst. Verwalten, als wärst du da.
-          </h1>
-          <p className="lp-section-sub" style={{ maxWidth: 680 }}>
-            MyImmo entsteht aus einem konkreten Ziel: im Ausland leben und den Immobilienbestand in
-            Deutschland vollständig aus der App steuern. Kein Papierkram, der auf dem Küchentisch wartet.
-            Kein Anruf, der dich um 7 Uhr Ortszeit weckt.
-          </p>
 
           <Reveal>
             <div className="lp-cards3">

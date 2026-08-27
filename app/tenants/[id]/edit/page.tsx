@@ -43,7 +43,15 @@ export default async function EditTenantPage({ params }: { params: { id: string 
 
       <div style={{ marginTop: 24 }}>
         <PositionsManager mieterId={tenant.id} positions={(positions ?? []) as Position[]} />
-        <NkOcrUpload mieterId={tenant.id} />
+        {/* Vorjahr wie der Default der NK-Seite — der alte Upload speicherte
+            ins laufende Kalenderjahr, wo die Abrechnung nie hinschaut. */}
+        <NkOcrUpload
+          mieterId={tenant.id}
+          jahr={new Date().getFullYear() - 1}
+          bestehend={(positions ?? [])
+            .filter((p) => (p.jahr == null || p.jahr === new Date().getFullYear() - 1) && p.umlagefaehig === true)
+            .map((p) => ({ id: p.id, bezeichnung: p.bezeichnung, betrag: p.betrag, aufteilung: p.aufteilung ?? null }))}
+        />
       </div>
     </div>
   );

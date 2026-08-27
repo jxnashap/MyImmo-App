@@ -10,6 +10,7 @@ import { decryptNullable } from "@/lib/crypto/secure";
 import BriefBlatt from "@/components/BriefBlatt";
 import NkSpeichernButton from "@/components/NkSpeichernButton";
 import NkCo2Panel from "@/components/NkCo2Panel";
+import NkOcrUpload from "@/components/NkOcrUpload";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +49,7 @@ export default async function NkPage({
         : Promise.resolve({ data: null }),
       supabase
         .from("mieter_positionen")
-        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,grundkosten_prozent,flaeche_gesamt,lohnanteil,art_35a")
+        .select("id,bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,grundkosten_prozent,flaeche_gesamt,lohnanteil,art_35a")
         .eq("mieter_id", params.id)
         .order("created_at"),
       supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
@@ -153,6 +154,24 @@ export default async function NkPage({
         </div>
       )}
 
+      {/* Upload direkt an der Abrechnung: Die Karte stand bisher nur auf der
+          Bearbeiten-Seite — wer hier die leere Abrechnung sah, fand den Weg
+          nicht. no-print: gehört nicht in den Brief. */}
+      <div className="no-print" style={{ maxWidth: "210mm", margin: "0 auto" }}>
+        <NkOcrUpload
+          mieterId={params.id}
+          jahr={jahr}
+          bestehend={(positions ?? [])
+            .filter((p) => (p.jahr == null || p.jahr === jahr) && p.umlagefaehig === true)
+            .map((p) => ({
+              id: (p as { id: string }).id,
+              bezeichnung: p.bezeichnung,
+              betrag: p.betrag,
+              aufteilung: p.aufteilung ?? null,
+            }))}
+        />
+      </div>
+
       <NkCo2Panel
         mieterId={params.id}
         jahr={jahr}
@@ -181,18 +200,24 @@ export default async function NkPage({
           {a.monate === 1 ? "Monat" : "Monate"}).
         </p>
 
+        {/* Die vier Spalten bilden die BGH-Pflichtangaben ab: Gesamtkosten je
+            Kostenart, Verteilerschlüssel mit Erläuterung (Rechenweg als
+            Unterzeile), Anteilsberechnung — der Vorauszahlungsabzug folgt im
+            Summenblock. Bei direkt erfassten Mieteranteilen (ohne Aufteilung)
+            gibt es keine Gebäude-Gesamtkosten; dort steht ein Strich. */}
         <table style={{ marginTop: 8 }}>
           <thead>
             <tr>
               <th>Umlagefähige Position</th>
+              <th className="zahl">Gesamtkosten</th>
               <th>Umlageschlüssel</th>
-              <th className="zahl">Betrag</th>
+              <th className="zahl">Ihr Anteil</th>
             </tr>
           </thead>
           <tbody>
             {a.positionen.length === 0 ? (
               <tr>
-                <td colSpan={3} className="brief-muted">
+                <td colSpan={4} className="brief-muted">
                   Keine umlagefähigen Positionen für {jahr} hinterlegt.
                 </td>
               </tr>
@@ -200,15 +225,16 @@ export default async function NkPage({
               a.positionen.map((p, i) => (
                 <tr key={i}>
                   <td>{p.bezeichnung}</td>
-                  <td className="brief-muted">{p.umlageschluessel || "—"}</td>
-                  <td className="zahl">
-                    {eur2(p.betrag)}
+                  <td className="zahl brief-muted">{p.basis != null ? eur2(p.basis) : "—"}</td>
+                  <td className="brief-muted">
+                    {p.umlageschluessel || "—"}
                     {p.faktorText && (
                       <div className="brief-muted" style={{ fontSize: 9.5 }}>
-                        {eur2(p.basis ?? 0)} × {p.faktorText}
+                        Anteil: {p.faktorText}
                       </div>
                     )}
                   </td>
+                  <td className="zahl">{eur2(p.betrag)}</td>
                 </tr>
               ))
             )}

@@ -39,6 +39,15 @@ export default async function AnliegenPage({
     supabase.from("firmen").select("id,name,gewerk,telefon,email,website,notiz").order("name"),
   ]);
 
+  // Bewerbungs-Dokumente: nur Metadaten (ohne Base64-data) für die Liste —
+  // der Download lädt die Datei einzeln über eine Server-Action.
+  const { data: bewerbungDateiRows } = (bewerbungRows ?? []).length
+    ? await supabase
+        .from("bewerbung_dateien")
+        .select("id,name,groesse,bewerbung_id")
+        .in("bewerbung_id", (bewerbungRows ?? []).map((b: any) => b.id))
+    : { data: [] as { id: string; name: string; groesse: number; bewerbung_id: string }[] };
+
   const { data: dateiRows } = (rows ?? []).length
     ? await supabase
         .from("anliegen_dateien")
@@ -99,6 +108,9 @@ export default async function AnliegenPage({
     raucher: b.raucher, haustiere: b.haustiere, schufa: b.schufa, nachricht: b.nachricht,
     unterschrift_data: b.unterschrift_data, status: b.status, created_at: b.created_at,
     objektName: objektName(b.prop_id),
+    dateien: (bewerbungDateiRows ?? [])
+      .filter((d) => d.bewerbung_id === b.id)
+      .map((d) => ({ id: d.id, name: d.name, groesse: d.groesse })),
   }));
   const neueBewerbungen = bewerbungen.filter((b) => b.status === "neu").length;
 
