@@ -70,6 +70,41 @@ export async function loescheBewerbung(id: string) {
   return { ok: true };
 }
 
+/**
+ * Ein Bewerbungs-Dokument (Gehaltsabrechnung, SCHUFA, …) zum Download laden.
+ * Die Base64-Daten werden bewusst NICHT mit der Liste ausgeliefert, sondern
+ * erst hier auf Klick — RLS lässt ohnehin nur den Eigentümer durch.
+ */
+export async function ladeBewerbungDatei(
+  id: string,
+): Promise<{ ok: boolean; fehler?: string; name?: string; typ?: string; data?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, fehler: "Nicht angemeldet." };
+  const { data, error } = await supabase
+    .from("bewerbung_dateien")
+    .select("name,typ,data")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error || !data) return { ok: false, fehler: "Dokument nicht gefunden." };
+  return { ok: true, name: data.name, typ: data.typ, data: data.data };
+}
+
+/** Ein einzelnes Bewerbungs-Dokument löschen (DSGVO-Datensparsamkeit). */
+export async function loescheBewerbungDatei(id: string) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  await supabase.from("bewerbung_dateien").delete().eq("id", id).eq("user_id", user.id);
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
 /** E-Signatur des Vermieters speichern (PNG-Data-URL, max. ~200 kB). */
 export async function speichereUnterschrift(dataUrl: string) {
   const supabase = createClient();

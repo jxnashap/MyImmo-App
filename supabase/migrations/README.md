@@ -126,3 +126,4 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260731180000 | newsletter_double_opt_in | Vorlagen-Verteiler mit Double-Opt-in; Tabelle ist der Einwilligungsnachweis |
 | 20260731181000 | newsletter_abmelde_token | Eigener Abmelde-Schlüssel, damit Abmeldungen nicht nur bei Brevo landen |
 | 20260731182000 | newsletter_email_unique_direkt | Unique auf `email` statt `lower(email)` — Ausdrucks-Index taugt nicht für ON CONFLICT |
+| 20260827100000 | bewerbung_dateien | Bewerber legen der Selbstauskunft Dokumente bei (Gehaltsabrechnungen, SCHUFA) |

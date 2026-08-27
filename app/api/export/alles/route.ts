@@ -43,6 +43,7 @@ const VERMIETER_TABELLEN: [tabelle: string, spalte: string][] = [
   ["vermieter_profil", "user_id"], ["nk_co2", "user_id"],
   ["bewertung_historie", "user_id"], ["vergleichsangebote", "user_id"],
   ["firmen", "user_id"], ["bewerber_links", "user_id"], ["bewerbungen", "user_id"],
+  ["bewerbung_dateien", "user_id"],
   ["bankverbindungen", "user_id"], ["bank_umsaetze", "user_id"],
   ["abos", "user_id"],
   ["anliegen", "vermieter_id"], ["vermieter_anfragen", "vermieter_id"],
