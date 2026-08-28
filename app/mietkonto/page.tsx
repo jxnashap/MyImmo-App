@@ -20,14 +20,12 @@ export default async function MietkontoPage({
   const { zeilen, nacherfassung } = await ladeMietkonto(monat);
 
   return (
-    <>
-      <RueckstandWaechter />
-      <MietkontoBestaetigung
-        monat={monat}
-        aktuellerMonat={aktuellerMonat}
-        zeilen={zeilen}
-        nacherfassung={nacherfassung}
-      />
-    </>
+    <MietkontoBestaetigung
+      monat={monat}
+      aktuellerMonat={aktuellerMonat}
+      zeilen={zeilen}
+      nacherfassung={nacherfassung}
+      banner={<RueckstandWaechter />}
+    />
   );
 }

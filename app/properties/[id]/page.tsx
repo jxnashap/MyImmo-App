@@ -151,11 +151,11 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   ];
 
   const kennzahlen = [
-    { lbl: "Bruttomietrendite", val: rendite > 0 ? prozent(rendite, 2) : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-teal", note: "Jahreskaltmiete / Kaufpreis" },
-    { lbl: "Kaufpreisfaktor", val: faktor > 0 ? `${zahl(faktor, 1)}×` : "–", badge: faktor > 0 ? (faktor < 25 ? "badge-green" : faktor < 30 ? "badge-gold" : "badge-red") : "badge-teal", note: "Kaufpreis / Jahreskaltmiete" },
-    { lbl: "Instandhaltungsrücklage (empf.)", val: petersJahr > 0 ? euro(petersJahr) + "/Jahr" : "–", badge: "badge-teal", note: petersM2 > 0 ? `Peterssche Formel · ${euro(petersM2)}/m²·Jahr` : "Peterssche Formel (Faustformel)" },
-    { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-teal", note: "Summe aller Darlehensraten" },
-    { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–", badge: "badge-teal", note: "Summe aller Darlehen" },
+    { lbl: "Bruttomietrendite", val: rendite > 0 ? prozent(rendite, 2) : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-neutral", note: "Jahreskaltmiete / Kaufpreis" },
+    { lbl: "Kaufpreisfaktor", val: faktor > 0 ? `${zahl(faktor, 1)}×` : "–", badge: faktor > 0 ? (faktor < 25 ? "badge-green" : faktor < 30 ? "badge-gold" : "badge-red") : "badge-neutral", note: "Kaufpreis / Jahreskaltmiete" },
+    { lbl: "Instandhaltungsrücklage (empf.)", val: petersJahr > 0 ? euro(petersJahr) + "/Jahr" : "–", badge: "badge-neutral", note: petersM2 > 0 ? `Peterssche Formel · ${euro(petersM2)}/m²·Jahr` : "Peterssche Formel (Faustformel)" },
+    { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-neutral", note: "Summe aller Darlehensraten" },
+    { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–", badge: "badge-neutral", note: "Summe aller Darlehen" },
     { lbl: "Cashflow / Mo.", val: cfStr, badge: cashflowMo >= 0 ? "badge-green" : "badge-red", note: "Miete minus Kreditrate" },
     { lbl: "Einnahmen gesamt", val: jahresEinnahmen > 0 ? euro(jahresEinnahmen) : "–", badge: "badge-green", note: "Alle erfassten Einnahmen" },
     { lbl: "Kosten gesamt", val: jahresKosten > 0 ? euro(jahresKosten) : "–", badge: "badge-red", note: "Alle erfassten Ausgaben" },

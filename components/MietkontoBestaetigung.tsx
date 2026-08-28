@@ -8,7 +8,7 @@ import { Rewind, Info, Check } from "lucide-react";
 //    Batch-Bestätigung in einem Rutsch — mit 10-Tage-Regel-Hinweis an der
 //    Jahresgrenze (§ 11 EStG).
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { eur2 } from "@/lib/format";
 import {
@@ -76,6 +76,7 @@ export default function MietkontoBestaetigung({
   zeilen,
   nacherfassung,
   kompakt = false,
+  banner = null,
 }: {
   monat: string;
   aktuellerMonat: string;
@@ -83,6 +84,9 @@ export default function MietkontoBestaetigung({
   nacherfassung: NacherfassungMieter[];
   /** Eingebettet (Ein- & Ausgaben): ohne Seitenkopf und ohne Nacherfassen-Tab. */
   kompakt?: boolean;
+  /** Optionaler Banner (z. B. Rückstands-Wächter) — erscheint NACH dem Seitenkopf,
+      nicht darüber, damit der Kopf das oberste Element der Seite bleibt. */
+  banner?: ReactNode;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -254,6 +258,8 @@ export default function MietkontoBestaetigung({
             )}
           </div>
           <hr className="topbar-rule" />
+
+          {banner}
 
           {/* Disclaimer (dezent, immer sichtbar) */}
           <div className="glass-card" style={{ padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>

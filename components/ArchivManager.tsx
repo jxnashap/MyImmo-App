@@ -204,7 +204,7 @@ export default function ArchivManager({
           {/* Der Leerzustand nannte kein Weiter — der Upload-Knopf oben war
               leicht zu uebersehen (Audit: "Archiv ohne Upload-CTA"). */}
           {docs.length === 0 && (
-            <button type="button" className="btn btn-gold" style={{ marginTop: 10 }} onClick={() => setShowUpload(true)}>
+            <button type="button" className="btn btn-outline" style={{ marginTop: 10 }} onClick={() => setShowUpload(true)}>
               <Upload size={14} style={{ verticalAlign: "-2px" }} /> Erstes Dokument hochladen
             </button>
           )}

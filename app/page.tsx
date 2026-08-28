@@ -279,7 +279,7 @@ export default async function DashboardPage() {
           <div className="kpi-value">{euro(totalKosten)}</div>
           <div className="kpi-sub">Kredit + laufend (Ø 12 Mon.)</div>
         </Link>
-        <Link href="/cashflow" className="kpi-card highlight" style={{ textDecoration: "none", color: "inherit" }}>
+        <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Cashflow / Mo.</div>
           <div className="kpi-value" style={{ color: cashflow >= 0 ? "var(--green)" : "var(--red)" }}>{cashflow >= 0 ? "+ " : "− "}{euro(Math.abs(cashflow))}</div>
           <div className="kpi-sub"><span className={`badge ${cashflow >= 0 ? "badge-green" : "badge-red"}`}>{cashflow >= 0 ? "Positiver Cashflow" : "Negativer Cashflow"}</span></div>
