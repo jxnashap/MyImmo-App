@@ -106,7 +106,8 @@ Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fris
   (Logik gedreht — vorher war Dunkel Default). Die Landing ist per Token-Freeze im
   `.lp`-Scope auf ihrer Quiet-Luxury-Palette eingefroren; PDFs/Briefe unverändert.
   **Noch offen (Runde 2):** echte Neu-Anordnung einzelner Layouts (bisher v. a. Um-Tokenisierung),
-  Chart-Gradients im Cashflow-Donut ablösen, 11px-Kleinsttexte sukzessive auf 12px.
+  11px-Kleinsttexte sukzessive auf 12px, Binnennavigation für lange Mobilseiten.
+  (Die Chart-Gradients im Cashflow-Donut sind seit dem UX-Audit-Paket B abgelöst.)
 - ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
   `components/OnboardingTour.tsx` — sechs Stationen (Objekt → Mieter → Ein-/Ausgaben →
   Mietkonto → Archiv → Steuer/Assistenten) mit Direktlinks. Öffnet sich automatisch,
@@ -159,9 +160,10 @@ Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fris
   (Widerspruchsrecht); (5) Transfer in der Datenschutzerklärung als **SCC** ausweisen (kein DPF);
   (6) Datenschutzkontakt **dpo@brevo.com** ins Verarbeitungsverzeichnis; (7) Eintrag in
   `docs/compliance/AVV-STATUS.md` (Sitz Frankreich, Verarbeitung EU).
-  ⏳ **OFFEN — Datenschutzerklärung um den Vorlagen-Verteiler ergänzen:** Zweck, Rechtsgrundlage
-  Art. 6 Abs. 1 lit. a DSGVO (Einwilligung), Empfänger Brevo, Speicherdauer, Widerrufsrecht.
-  Ohne den Passus werden die Adressen ohne die vorgeschriebene Information verarbeitet.
+  ✅ 28.08.2026: **Datenschutzerklärung um den Vorlagen-Verteiler ergänzt** — `/datenschutz`
+  Ziffer 3 h (Double-Opt-in, Einwilligungsnachweis mit Zeitpunkt/IP/Wortlaut, Art. 6 Abs. 1
+  lit. a + Art. 7 Abs. 1, Empfänger Brevo, Speicherdauer, Widerruf) + Brevo in der
+  Subprozessoren-Liste (Ziffer 4). Der **AVV mit Brevo** bleibt offen (Punkte (1)–(4), (6), (7) oben).
   ✅ 29.07.2026: **Vercel auf Pro** → AVV greift automatisch über die ToS, kommerzielle
   Nutzung erlaubt. Noch offen (nur Betreiber): Nutzer-AVV anwaltlich prüfen. Anwaltsliste zusätzlich (19.07.2026):
   **§ 34i GewO** (Finanzierungs-Assistent Stufe 1 — Wording bereits neutralisiert, „Empfehlung"

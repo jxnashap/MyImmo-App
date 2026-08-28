@@ -61,7 +61,7 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
 4. Im Paddle-Dashboard: Produkte + Preise anlegen (Privat/Plus je Monat/Jahr,
    Banking-Add-on je Monat/Jahr) und die **Default Payment Link**-Domain setzen
    (Checkout-Einstellungen → sonst liefert die API keine `checkout.url`).
-5. **Webhook-Destination** anlegen: `https://my-immo-app.vercel.app/api/billing/webhook`,
+5. **Webhook-Destination** anlegen: `https://www.myimmoapp.de/api/billing/webhook`,
    Events `subscription.activated/created/updated/canceled/past_due/paused/resumed`.
    Secret notieren.
 6. **Vercel-Env setzen:** `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`,

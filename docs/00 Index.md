@@ -27,7 +27,7 @@
 - `CLAUDE.md` (Repo-Wurzel) — verbindliche Projekt-Regeln + Merkliste
 
 ## 🗺️ Schnell-Orientierung
-- **Live:** https://my-immo-app.vercel.app
+- **Live:** https://www.myimmoapp.de
 - **Repo:** `jxnashap/myimmo-app` · **Branch:** `claude/magical-feynman-l8w9s5`
 - **Stack:** Next.js 14 (App Router) · Supabase (RLS) · Vercel · TypeScript · vitest
 - **Arbeitsweise:** ehrlicher Sparringspartner, Risiken zuerst, Deutsch.

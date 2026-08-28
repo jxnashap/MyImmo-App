@@ -23,7 +23,7 @@ export default function DatenschutzPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 2. Juli 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
+        Stand: 28. August 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
         Verarbeitung personenbezogener Daten bei Nutzung der Web-Anwendung MyImmo.
       </p>
 
@@ -50,7 +50,7 @@ export default function DatenschutzPage() {
       </p>
 
       <H2>2. Grundsätze</H2>
-      <ul style={{ paddingLeft: 20 }}>
+      <ul style={{ paddingLeft: 20, listStyle: "disc" }}>
         <li>Kein Tracking, keine Analyse-Tools, keine Werbung, kein Verkauf von Daten.</li>
         <li>Es werden ausschließlich <strong>technisch notwendige</strong> Cookies und Speichereinträge verwendet (Ziffer 6) — deshalb gibt es kein Cookie-Banner (§ 25 Abs. 2 Nr. 2 TDDDG).</li>
         <li>Datenbank und Authentifizierung laufen in der EU (Frankfurt, AWS eu-central-1).</li>
@@ -127,14 +127,43 @@ export default function DatenschutzPage() {
         Bestätigung. <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO.
       </p>
 
+      <H3>h) Vorlagen-Verteiler / E-Mail-Hinweise (freiwillig)</H3>
+      <p>
+        Melden Sie sich für die MyImmo-Vorlagen und gelegentliche Hinweise für Vermieter an,
+        verarbeiten wir Ihre <strong>E-Mail-Adresse</strong>. Die Anmeldung läuft im{" "}
+        <strong>Double-Opt-in</strong>: Sie erhalten zunächst eine Bestätigungsmail; erst nach
+        Ihrem Klick wird die Adresse in den Verteiler aufgenommen. Als Nachweis der Einwilligung
+        (Art. 7 Abs. 1 DSGVO) speichern wir zusätzlich <strong>Zeitpunkt und IP-Adresse</strong>{" "}
+        von Anforderung und Bestätigung sowie den <strong>Wortlaut</strong>, dem Sie zugestimmt
+        haben. Bleibt die Bestätigung aus, verfällt der Link nach 72 Stunden.
+      </p>
+      <p>
+        <em>Zweck:</em> Versand der angeforderten Vorlagen und Hinweise.{" "}
+        <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung) — für den
+        Einwilligungsnachweis zusätzlich Art. 6 Abs. 1 lit. c i. V. m. Art. 7 Abs. 1 DSGVO.{" "}
+        <em>Empfänger:</em> <strong>Brevo</strong> (Sendinblue GmbH / Sendinblue SAS, Frankreich)
+        als Auftragsverarbeiter für Versand und Verwaltung des Verteilers; die Verarbeitung
+        findet in der EU statt.
+      </p>
+      <p>
+        <em>Speicherdauer:</em> bis zum Widerruf. Danach löschen wir die Adresse aus dem
+        Verteiler; der Einwilligungs- und Widerrufsnachweis wird noch bis zu drei Jahre
+        aufbewahrt, um die Rechtmäßigkeit belegen zu können, und danach gelöscht.{" "}
+        <em>Widerruf:</em> jederzeit über den <strong>Abmeldelink in jeder E-Mail</strong> oder
+        formlos an <a href="mailto:info@myimmoapp.de" style={{ color: "var(--gold)" }}>info@myimmoapp.de</a> —
+        die Rechtmäßigkeit der bis dahin erfolgten Verarbeitung bleibt unberührt. Die Anmeldung
+        ist freiwillig; die Nutzung von MyImmo hängt nicht davon ab.
+      </p>
+
       <H2>4. Empfänger und Auftragsverarbeiter (Subprozessoren)</H2>
       <p>Wir setzen folgende Dienstleister mit Verträgen nach Art. 28 DSGVO ein:</p>
-      <ul style={{ paddingLeft: 20 }}>
+      <ul style={{ paddingLeft: 20, listStyle: "disc" }}>
         <li><strong>Supabase Inc.</strong> (Datenbank, Authentifizierung, Datei-Speicher) — Datenhaltung in Frankfurt (AWS eu-central-1); DPA inkl. EU-Standardvertragsklauseln.</li>
         <li><strong>Vercel Inc.</strong>, USA (Hosting/Auslieferung der App) — DPA inkl. EU-Standardvertragsklauseln; technische Logs können in den USA verarbeitet werden.</li>
         <li><strong>Anthropic PBC</strong>, USA (KI-Auswertung, nur bei aktiver Nutzung) — DPA inkl. EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
         <li><strong>Google Ireland Ltd.</strong> — nur bei „Login mit Google" und für Schriftarten (Ziffer 7).</li>
         <li><strong>Enable Banking Oy</strong>, Finnland/EU (Kontoinformationsdienst, nur bei aktiver Konto-Anbindung) — lizenzierter AISP; Datenverarbeitung in der EU.</li>
+        <li><strong>Brevo</strong> (Sendinblue GmbH, Deutschland / Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 h); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO.</li>
       </ul>
       <p>
         Eine Übermittlung an sonstige Dritte findet nicht statt, außer Sie stoßen sie selbst
@@ -166,7 +195,7 @@ export default function DatenschutzPage() {
       </p>
 
       <H2>8. Speicherdauer und Löschung</H2>
-      <ul style={{ paddingLeft: 20 }}>
+      <ul style={{ paddingLeft: 20, listStyle: "disc" }}>
         <li>Konto- und Verwaltungsdaten speichern wir, solange Ihr Konto besteht.</li>
         <li>Sie können Ihr Konto jederzeit selbst löschen (Einstellungen → „Konto löschen"): Dabei werden alle Daten — Objekte, Mieter, Buchungen, Kredite, Dokumente, Belege im Datei-Speicher — unwiderruflich entfernt.</li>
         <li>Bank-Freigabelinks laufen automatisch ab (7–30 Tage) und sind jederzeit widerrufbar.</li>
