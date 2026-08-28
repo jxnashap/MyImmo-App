@@ -149,8 +149,9 @@ export default async function DashboardPage() {
   const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
   // Leerstandsquote: nur vermietbare Objekte (Status "Vermietet"/"Leer");
   // Benchmark: 2–5 % gesund, >10 % kritisch.
-  const vermietbar = properties.filter((p) => p.obj_status === "Vermietet" || p.obj_status === "Leer");
-  const leerCount = properties.filter((p) => p.obj_status === "Leer").length;
+  const status = (p: { obj_status: string | null }) => (p.obj_status ?? "").trim().toLowerCase();
+  const vermietbar = properties.filter((p) => status(p) === "vermietet" || status(p) === "leer");
+  const leerCount = properties.filter((p) => status(p) === "leer").length;
   const leerstand = vermietbar.length > 0 ? (leerCount / vermietbar.length) * 100 : 0;
   const leerFarbe = leerstand <= 5 ? "var(--green)" : leerstand <= 10 ? "var(--amber)" : "var(--red)";
 
@@ -287,7 +288,11 @@ export default async function DashboardPage() {
           <div className="kpi-value" style={{ color: vermietbar.length ? leerFarbe : "var(--muted)" }}>
             {vermietbar.length ? leerstand.toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " %" : "–"}
           </div>
-          <div className="kpi-sub"><span className="badge badge-teal">{leerCount} von {vermietbar.length} leer</span></div>
+          <div className="kpi-sub">
+            {vermietbar.length
+              ? <span className="badge badge-neutral">{leerCount} von {vermietbar.length} leer</span>
+              : <span style={{ color: "var(--muted)" }}>Status je Objekt hinterlegen</span>}
+          </div>
         </Link>
       </div>
 

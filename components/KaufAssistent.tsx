@@ -95,7 +95,7 @@ export default function KaufAssistent({
   ) : (
     <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--line)", marginBottom: 14, fontSize: 12, color: "var(--muted)" }}>
       <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-      <span>Noch kein Objekt gewählt. Rechne in Schritt 2 deine Kandidaten durch, vergleiche sie und übernimm das beste — die Zahlen erscheinen dann hier.</span>
+      <span>Noch kein Objekt gewählt. Rechne in Schritt 1 deine Kandidaten durch, vergleiche sie und übernimm das beste — die Zahlen erscheinen dann hier.</span>
     </div>
   );
 
@@ -198,7 +198,7 @@ export default function KaufAssistent({
           ) : (
             <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--line)", fontSize: 12, color: "var(--muted)" }}>
               <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>Sobald du in Schritt 2 ein Objekt übernommen hast, erscheinen hier zwei grafische Finanzierungs-Szenarien.</span>
+              <span>Sobald du in Schritt 1 ein Objekt übernommen hast, erscheinen hier zwei grafische Finanzierungs-Szenarien.</span>
             </div>
           )}
 

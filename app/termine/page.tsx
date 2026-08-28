@@ -162,7 +162,11 @@ export default async function TerminePage({
   const anstehend = offen.filter((e) => tageBis(e.datum) >= 0);
   const in30 = anstehend.filter((e) => tageBis(e.datum) <= 30).length;
   const in90 = anstehend.filter((e) => tageBis(e.datum) <= 90).length;
-  const ueberfaellig = offen.filter((e) => tageBis(e.datum) < 0).length;
+  // Nur echte Aufgaben koennen ueberfaellig werden. Reine Ereignis-Marker
+  // (typ "info": Mietbeginn, Kaufdatum ...) sind mit ihrem Datum erledigt —
+  // ein vergangener Mietbeginn ist keine offene Frist.
+  const istAufgabe = (e: Eintrag) => e.typ !== "info" || e.quelle === "eigen";
+  const ueberfaellig = offen.filter((e) => tageBis(e.datum) < 0 && istAufgabe(e)).length;
 
   // ---- Monatsansicht ----
   const ansicht = searchParams.ansicht === "monat" ? "monat" : "liste";
@@ -194,7 +198,8 @@ export default async function TerminePage({
   const zeile = (e: Eintrag, i: number) => {
     const tage = tageBis(e.datum);
     const stil = KATEGORIE_STIL[e.kategorie] ?? KATEGORIE_STIL.Sonstiges;
-    const farbe = e.erledigt ? "var(--green)" : e.typ === "warn" || tage < 0 ? "var(--red)" : e.typ === "ok" ? "var(--green)" : "var(--muted)";
+    const aufgabe = e.typ !== "info" || e.quelle === "eigen";
+    const farbe = e.erledigt ? "var(--green)" : e.typ === "warn" || (tage < 0 && aufgabe) ? "var(--red)" : e.typ === "ok" ? "var(--green)" : "var(--muted)";
     return (
       <div key={`${e.quelle}-${e.id ?? i}-${e.datum}`} className="termin-zeile" style={{ opacity: e.erledigt ? 0.6 : 1 }}>
         {e.quelle === "eigen" && e.id ? (
@@ -222,7 +227,7 @@ export default async function TerminePage({
           </div>
         </div>
         <span className="tz-rest" style={{ color: farbe }}>
-          {e.erledigt ? "erledigt" : tage < 0 ? `vor ${Math.abs(tage)} Tg.` : tage === 0 ? "heute" : `in ${tage} Tg.`}
+          {e.erledigt ? "erledigt" : tage < 0 ? (aufgabe ? `vor ${Math.abs(tage)} Tg.` : "erfolgt") : tage === 0 ? "heute" : `in ${tage} Tg.`}
         </span>
         <span className={`badge ${stil.badge}`} style={{ flexShrink: 0 }}>{stil.icon} {e.kategorie}</span>
         {e.quelle === "eigen" && e.id ? (
@@ -440,8 +445,9 @@ export default async function TerminePage({
             ) : (
               <ExpandableList limit={12} label="weitere Termine">
                 {(() => {
-                  const ueber = sichtbar.filter((e) => tageBis(e.datum) < 0);
-                  const rest = sichtbar.filter((e) => tageBis(e.datum) >= 0);
+                  const ueber = sichtbar.filter((e) => tageBis(e.datum) < 0 && (e.typ !== "info" || e.quelle === "eigen"));
+                  const vergangen = sichtbar.filter((e) => tageBis(e.datum) < 0 && !(e.typ !== "info" || e.quelle === "eigen"));
+                  const rest = [...sichtbar.filter((e) => tageBis(e.datum) >= 0), ...vergangen];
                   if (ueber.length === 0) return rest.map(zeile);
                   return [
                     <div key="h-ueber" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--amber)", fontWeight: 600, padding: "4px 0 8px" }}>

@@ -68,18 +68,13 @@ function Steckbrief({ info }: { info: Info }) {
   ];
 
   const kosten: [string, string | null][] = [
-    ["Kaltmiete", euroText(a.kaltmiete)],
     ["Nebenkosten", a.nebenkosten != null ? `+ ${euroText(a.nebenkosten)}` : null],
-    ["Heizkosten", a.nebenkosten != null ? (a.heizkosten_enthalten ? "in Nebenkosten enthalten" : null) : null],
-    ["Gesamtmiete", euroText(warm)],
-    ["Miete pro m²", proQm != null ? `${proQm.toLocaleString("de-DE", { maximumFractionDigits: 2 })} €/m²` : null],
+    ["Heizkosten", a.nebenkosten != null ? (a.heizkosten_enthalten ? "in Nebenkosten enthalten" : "nicht enthalten") : null],
     ["Kaution", euroText(a.kaution)],
   ];
   const objekt: [string, string | null][] = [
-    ["Zimmer", zimmer != null ? String(zimmer) : null],
     ["Schlafzimmer", a.schlafzimmer != null ? String(a.schlafzimmer) : null],
     ["Badezimmer", a.badezimmer != null ? String(a.badezimmer) : null],
-    ["Wohnfläche", flaeche != null ? `${flaeche} m²` : null],
     ["Etage", a.etage ?? null],
     ["Bezugsfrei ab", datumText(a.bezugsfrei_ab)],
     ["Heizungsart", a.heizungsart ?? null],

@@ -197,6 +197,18 @@ export default function AnlageVExport({
               <h3>Aufstellung {jahr}</h3>
               <span style={{ fontSize: 11, color: "var(--muted)" }}>{erg.objekte.length} Objekt(e)</span>
             </div>
+            {erg.gesamt.einnahmen.summe === 0 && erg.gesamt.werbungskosten.summe === 0 && (
+              <div className="section-body" style={{ paddingBottom: 0 }}>
+                <div style={{ background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", borderRadius: 12, padding: "10px 14px", fontSize: 12.5 }}>
+                  Für {jahr} sind keine Buchungen erfasst — deshalb stehen unten überall Nullen.
+                  {jahre.filter((j) => j !== jahr).length > 0 && (
+                    <> Anderes Jahr wählen: {jahre.filter((j) => j !== jahr).map((j) => (
+                      <button key={j} type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "3px 9px", marginLeft: 6 }} onClick={() => setJahr(j)}>{j}</button>
+                    ))}</>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="section-body table-scroll">
               <table style={{ fontSize: 12, minWidth: 520 }}>
                 <thead>

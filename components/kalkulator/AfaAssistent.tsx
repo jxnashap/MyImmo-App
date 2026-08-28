@@ -84,6 +84,9 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
   // nicht ist (und umgekehrt fiel ein foerderfaehiger Bau durch).
   const [bauantrag, setBauantrag] = useState("");
   const [bauantragMonat, setBauantragMonat] = useState("");
+  // „angetippt": erst wenn der Nutzer etwas eingegeben hat, sind unerfuellte
+  // Punkte wirklich ein Nein — davor sind sie schlicht offen.
+  const angetippt = bauantrag.trim() !== "" || bauantragMonat.trim() !== "";
   const p7b = useMemo(
     () => pruefe7b({
       bauantragJahr: numOr(bauantrag) || null,
@@ -142,11 +145,11 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
           {aufteilung ? (
             <>
               <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 8 }}>
-                <Kennwert label="Gebäude (AfA-Basis)" wert={euro(aufteilung.gebaeudewert)} prozent={`${aufteilung.gebaeudeanteilProzent.toLocaleString("de-DE")} %`} farbe="var(--green)" />
+                <Kennwert label="Gebäude (AfA-Basis)" wert={euro(aufteilung.gebaeudewert)} prozent={`${aufteilung.gebaeudeanteilProzent.toLocaleString("de-DE")} %`} farbe={aufteilung.grundanteilProzent > 0 ? "var(--green)" : "var(--amber)"} />
                 <Kennwert label="Grund und Boden" wert={euro(aufteilung.bodenwert)} prozent={`${aufteilung.grundanteilProzent.toLocaleString("de-DE")} %`} farbe="var(--muted)" />
               </div>
               <div style={{ height: 8, borderRadius: 5, overflow: "hidden", display: "flex" }}>
-                <div style={{ width: `${aufteilung.gebaeudeanteilProzent}%`, background: "var(--green)" }} />
+                <div style={{ width: `${aufteilung.gebaeudeanteilProzent}%`, background: aufteilung.grundanteilProzent > 0 ? "var(--green)" : "var(--amber)" }} />
                 <div style={{ width: `${aufteilung.grundanteilProzent}%`, background: "var(--line)" }} />
               </div>
               <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 10, marginBottom: 0 }}>{aufteilung.hinweis}</p>
@@ -252,9 +255,19 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
           </div>
           <ul style={{ listStyle: "none", padding: 0, margin: "0 0 10px", fontSize: 12.5 }}>
             {p7b.gruende.map((g, i) => (
-              <li key={i} style={{ color: g.ok ? "var(--green)" : "var(--red)", marginBottom: 3 }}>{g.ok ? "✓" : "✗"} {g.text}</li>
+              <li
+                key={i}
+                style={{ color: g.ok ? "var(--green)" : angetippt ? "var(--red)" : "var(--muted)", marginBottom: 3 }}
+              >
+                {g.ok ? "✓" : angetippt ? "✗" : "○"} {g.text}
+              </li>
             ))}
           </ul>
+          {!angetippt && (
+            <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 10px" }}>
+              Trage oben Bauantrag und Eckdaten ein — die Punkte prüfen sich dann automatisch.
+            </p>
+          )}
           {p7b.berechtigt && (
             <p style={{ fontSize: 13, margin: "0 0 6px" }}>
               Zusätzliche Sonder-AfA: <strong style={{ color: "var(--green)" }}>bis {euro(p7b.maxSonderAfaProJahr)} / Jahr</strong> in den Jahren 1–4
