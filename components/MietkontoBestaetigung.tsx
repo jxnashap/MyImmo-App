@@ -258,7 +258,8 @@ export default function MietkontoBestaetigung({
           {/* Disclaimer (dezent, immer sichtbar) */}
           <div className="glass-card" style={{ padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
             Hinweis: MyImmo bucht nach dem von dir bestätigten Zahlungsdatum (Zufluss-/Abflussprinzip,
-            § 11 EStG). Dies ist keine Steuerberatung; Angaben ohne Gewähr — im Zweifel Steuerberater fragen.
+            § 11 EStG; 10-Tage-Regel am Jahreswechsel für wiederkehrende Zahlungen). Keine
+            Steuerberatung, ohne Gewähr — im Zweifel Steuerberater fragen.
           </div>
         </>
       )}
@@ -531,10 +532,8 @@ export default function MietkontoBestaetigung({
         </>
       )}
 
-      <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 14 }}>
-        Steuerlich zählt der Tag des tatsächlichen Zuflusses (§ 11 EStG; 10-Tage-Regel am
-        Jahreswechsel für wiederkehrende Zahlungen). Keine Steuerberatung, ohne Gewähr.
-      </p>
+      {/* Kein zweiter §-11-Hinweis hier unten — der Disclaimer oben sagt
+          bereits dasselbe (Audit: doppelte Fußnote auf einer Seite). */}
     </div>
   );
 }

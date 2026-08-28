@@ -140,7 +140,15 @@ export default function DocGenerator({
   const absName = vName || "–";
   const heute = deDate(new Date().toISOString());
   const ortDatum = (vermieter?.ort ? vermieter.ort.replace(/^\d{4,5}\s*/, "") + ", " : "") + heute;
-  const empfZeilen = adressZeilen(tenant.mieter_adresse || objekt);
+  // Anschrift-Fallback OHNE Objektnamen: Der interne Name („ETW Lindenstraße 12")
+  // enthält oft selbst die Straße — mit `objekt` als Fallback stand sie im
+  // Adressfeld doppelt. Postalisch zählt nur Einheit + Adresse.
+  const empfZeilen = adressZeilen(
+    tenant.mieter_adresse ||
+      [tenant.einheit, property?.adresse].filter(Boolean).join(", ") ||
+      property?.bezeichnung ||
+      "",
+  );
   const titel = TITEL[art];
 
 

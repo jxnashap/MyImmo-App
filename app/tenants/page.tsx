@@ -27,7 +27,7 @@ export default async function TenantsPage({ searchParams }: { searchParams: { q?
   });
 
   const filters: FilterDef[] = [
-    { name: "q", label: "Suche", variant: "search", placeholder: "Suche: Name, Einheit, E-Mail…", options: [] },
+    { name: "q", label: "Suche", variant: "search", placeholder: "Name, Einheit, E-Mail…", options: [] },
     { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...propList.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
   ];
 

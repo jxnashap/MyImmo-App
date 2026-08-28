@@ -134,7 +134,13 @@ export async function erzeugeBriefPdf(
       ort: profil?.ort ?? null,
     },
     empfaengerName: mieterName || "–",
-    empfaengerAdresse: tenant.mieter_adresse || objekt,
+    // Fallback ohne Objektnamen — der enthält oft selbst die Straße, sie stand
+    // im Adressfeld dann doppelt (gleiches Muster wie im DocGenerator).
+    empfaengerAdresse:
+      tenant.mieter_adresse ||
+      [tenant.einheit, property?.adresse].filter(Boolean).join(", ") ||
+      property?.bezeichnung ||
+      "–",
     objekt,
     absaetze,
     konto,
