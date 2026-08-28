@@ -99,7 +99,7 @@ export default function AnmeldenPage() {
                   <span className="block text-[14px] font-semibold" style={{ color: "var(--text)" }}>
                     {r.label}
                   </span>
-                  <span className="block truncate text-[12px]" style={{ color: "var(--muted)" }}>
+                  <span className="block text-[12px] leading-snug" style={{ color: "var(--muted)" }}>
                     {r.desc}
                   </span>
                 </span>

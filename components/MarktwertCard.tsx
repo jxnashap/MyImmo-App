@@ -67,14 +67,16 @@ export default function MarktwertCard({
     <div className="section mb-20">
       <div className="section-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h3><span style={{ color: "var(--gold)", marginRight: 6 }}>⌂</span>Marktwert (ImmoWertV)</h3>
-        <span className="badge badge-teal" style={{ fontSize: 10 }}>automatisch aktualisiert</span>
+        <span className={`badge ${hatWert ? "badge-neutral" : "badge-muted"}`} style={{ fontSize: 10 }}>
+          {hatWert ? "automatisch aktualisiert" : "noch keine Berechnung"}
+        </span>
       </div>
       <div className="section-body">
         {/* Kopf: Wert + Spanne + Stand + Verfahren */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "flex-end", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: 32, fontWeight: 700, color: hatWert ? "var(--gold)" : "var(--muted)", lineHeight: 1.1 }}>
-              {hatWert ? euro(erg.marktwert) : "— nicht berechenbar"}
+            <div style={{ fontSize: hatWert ? 32 : 17, fontWeight: hatWert ? 700 : 500, color: hatWert ? "var(--gold)" : "var(--muted)", lineHeight: 1.2 }}>
+              {hatWert ? euro(erg.marktwert) : "Noch keine Bewertung — Angaben unten ergänzen"}
             </div>
             {erg.spanne && (
               <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 2 }}>

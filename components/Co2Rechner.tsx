@@ -91,7 +91,7 @@ export default function Co2Rechner({ defaultFlaeche }: { defaultFlaeche?: number
 
       {!ergebnis ? (
         <p style={{ color: "var(--faint)", fontSize: 12, margin: "4px 0 10px" }}>
-          CO₂-Menge und Wohnfläche eingeben — beides steht auf der Brennstoff- bzw. Wärmerechnung.
+          CO₂-Menge und Wohnfläche eingeben.
         </p>
       ) : (
         <>

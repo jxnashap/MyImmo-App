@@ -474,7 +474,12 @@ a.kpi-card:active { transform: scale(.985); }
    sinnlos. */
 .btn-fab { position: fixed; right: var(--sp-5); bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0px)); z-index: 90; width: 56px; height: 56px; border-radius: var(--r-lg); background: var(--gold-fill); color: var(--btn-gold-text); border: none; display: none; place-items: center; box-shadow: 0 4px 18px rgba(var(--gold-glow), .30), var(--shadow-2); cursor: pointer; transition: transform .2s var(--ease-spring), box-shadow .2s var(--ease); }
 .btn-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 8px 26px rgba(var(--gold-glow), .38), var(--shadow-3); }
-@media (max-width: 860px) { .btn-fab.show-mobile { display: grid; } }
+@media (max-width: 860px) {
+  .btn-fab.show-mobile { display: grid; }
+  /* Platz unter dem Inhalt, damit der schwebende Knopf die letzte Karte
+     nicht verdeckt (vorher lag er ueber Rendite + "Details anzeigen"). */
+  .main { padding-bottom: 96px; }
+}
 .btn-fab:active { transform: scale(.94); }
 
 /* Spinner für Lade-/Pending-Zustände */
@@ -529,7 +534,7 @@ tr.no-hover:hover td { background: transparent; }
 
 /* EMPTY */
 .empty { text-align: center; padding: 40px 24px; color: var(--muted); }
-.empty .empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.85; }
+.empty .empty-icon { font-size: 36px; margin: 0 auto 10px; display: block; opacity: 0.85; }
 .empty h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
 .empty p { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
 

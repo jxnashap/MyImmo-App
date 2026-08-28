@@ -129,11 +129,11 @@ export default function DarlehenWizard({
       <div className="section" style={{ marginBottom: 0 }}>
         <div className="section-body">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
-            <Kennzahl label="Monatsrate" wert={eur(konfig.monatsrate) + "/Mo"} gold />
+            <Kennzahl label="Monatsrate" wert={konfig.monatsrate > 0 ? eur(konfig.monatsrate) + "/Mo" : "–"} gold />
             <Kennzahl label="Anfangstilgung" wert={konfig.anfangstilgung.toLocaleString("de-DE") + " %"} />
-            <Kennzahl label={`Restschuld nach ${konfig.zinsbindung} J.`} wert={eur(konfig.restschuldNachBindung)} />
+            <Kennzahl label={`Restschuld nach ${konfig.zinsbindung} J.`} wert={konfig.monatsrate > 0 ? eur(konfig.restschuldNachBindung) : "–"} />
             <Kennzahl label="Schuldenfrei ca." wert={konfig.laufzeitJahre > 0 ? `${konfig.volltilgungJahr} (${konfig.laufzeitJahre} J.)` : "–"} />
-            <Kennzahl label={`Zinskosten (${konfig.zinsbindung} J.)`} wert={eur(konfig.zinskostenBindung)} />
+            <Kennzahl label={`Zinskosten (${konfig.zinsbindung} J.)`} wert={konfig.monatsrate > 0 ? eur(konfig.zinskostenBindung) : "–"} />
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 14, fontSize: 12, color: "var(--muted)" }}>
             <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
