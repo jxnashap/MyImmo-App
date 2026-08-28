@@ -207,7 +207,11 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
                 <table style={{ fontSize: 12 }}>
                   <thead><tr><th>Jahr</th><th>Degressiv (5 %)</th><th>Linear ({linearSatz} %)</th><th>Optimal</th></tr></thead>
                   <tbody>
-                    {vergleich.plan.slice(0, 12).map((j) => (
+                    {/* Der Plan reicht bis Jahr 15, die Tabelle zeigte pauschal 12 —
+                        bei einem Wechseljahr von 13–15 argumentierte der Text über
+                        eine Zeile, die gar nicht zu sehen war. Immer mindestens bis
+                        zum hervorgehobenen Wechseljahr zeigen. */}
+                    {vergleich.plan.slice(0, Math.max(12, vergleich.wechseljahr)).map((j) => (
                       <tr key={j.jahr} style={j.jahr === vergleich.wechseljahr ? { background: "var(--gold-pale)" } : undefined}>
                         <td>{j.jahr}{j.jahr === vergleich.wechseljahr && <span className="badge badge-gold" style={{ marginLeft: 6 }}>Wechsel</span>}</td>
                         <td>{euro(j.degressiv)}</td>

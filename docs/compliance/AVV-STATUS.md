@@ -1,6 +1,6 @@
 # AVV-/DPA-Status & Abschluss-Checkliste
 
-Stand: 15.07.2026 · Ergänzt das AVV-Dossier und `docs/MASTERPLAN.md`.
+Stand: 28.08.2026 · Ergänzt das AVV-Dossier und `docs/MASTERPLAN.md`.
 Trägt den tatsächlichen Abschluss-/Erledigungsstand nach (Datum + „von wem").
 
 ## Status je Anbieter
@@ -11,7 +11,9 @@ Trägt den tatsächlichen Abschluss-/Erledigungsstand nach (Datum + „von wem")
 | **Supabase** | Auftragsverarbeiter (DB/Auth) | SCCs + TIA (kein DPF) | Dashboard → Org → Documents (PandaDoc) | ✅ **24.07.2026 signiert** (Jonas Scharp/Owner, PandaDoc; `supabase-dpa-signiert-2026-07-24.pdf` + `supabase-tia-2025-03-14.pdf`) |
 | **Vercel** | Auftragsverarbeiter (Hosting) | DPF ✓ + SCCs | automatisch in ToS ab Pro-Plan | ✅ **29.07.2026** — Konto ist auf Pro, AVV greift über die ToS |
 | **Google** | eigenständig Verantwortlicher (OAuth-Login) | DPF ✓ (Google LLC) | **kein AVV** — nur Datenschutzerklärungs-Passus | ✅ Passus vorhanden |
+| **Brevo** (Sendinblue GmbH/SAS) | Auftragsverarbeiter (Vorlagen-Verteiler) | Sitz Frankreich, **Verarbeitung EU** — Transfer als **SCC** ausweisen (kein DPF) | **Anlage 2 („Annex 2 — DPA") zu den Nutzungsbedingungen**, gilt automatisch mit Vertragsschluss — i. d. R. **keine gesonderte Unterschrift** | ⬜ **offen**: Konto → Einstellungen → Rechtsdokumente prüfen, Firmendaten auf die Gewerbeanmeldung bringen, DPA-PDF archivieren (`brevo-dpa-archiv.md`) |
 | **Enable Banking** | AISP/Auftragsverarbeiter (später) | EU (FIN-FSA) | vor Banking-Live: Production-Vertrag + AVV | ⬜ offen (vor Live) |
+| **Paddle** (Bezahlsystem, inaktiv) | **Merchant of Record = eigenständig Verantwortlicher**, kein AVV | — | vor dem ersten Checkout: Datenschutz-Passus statt AVV | ⬜ offen (erst bei Aktivierung, `docs/BEZAHLSYSTEM.md`) |
 | **MyImmo → Nutzer** | MyImmo = Auftragsverarbeiter der Vermieter | — | eigener AVV unter `/avv`, AGB-Einbeziehung | ⬜ anwaltlich prüfen |
 
 ## Anthropic — erledigt (15.07.2026)
@@ -44,3 +46,8 @@ Danach in dieser Tabelle „Erledigt am" nachtragen.
       (Standard: minimale Speicherung / 30 Tage).
 - [x] ~~Vercel auf Pro upgraden~~ ✅ 29.07.2026 erledigt — DPA gilt über die ToS.
 - [ ] Eigenen Nutzer-AVV (`/avv`) + AGB anwaltlich prüfen lassen.
+- [x] ~~Datenschutz-Passus für den Vorlagen-Verteiler (Brevo)~~ ✅ **28.08.2026** —
+      `/datenschutz` Ziffer 3 h + Brevo in der Subprozessoren-Liste (Ziffer 4).
+- [ ] **Brevo-AVV** abschließen/archivieren (Schritte in der Tabelle oben und in `CLAUDE.md`);
+      Datenschutzkontakt **dpo@brevo.com** ins Verarbeitungsverzeichnis, Unterauftrags-
+      verarbeiterliste und Benachrichtigungsadresse prüfen (Widerspruchsrecht).

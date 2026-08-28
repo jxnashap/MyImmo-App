@@ -1,6 +1,8 @@
-// Vermieter-Seite "Mieterportal": alles, was über das Portal mit Mietern
-// (und Bewerbern) läuft — Anliegen der Mieter, eigene Anfragen an Mieter
-// und der Bewerbungs-Eingang mit Selbstauskunft-Links.
+// Vermieter-Seite "Anliegen & Kontakte": alles, was mit Personen außerhalb
+// des eigenen Kontos läuft — Anliegen der Mieter und eigene Anfragen an sie,
+// der Bewerbungs-Eingang mit Selbstauskunft-Links, und die Service-Partner
+// (Handwerker/Hausmeister) samt Aufträgen.
+// NICHT "Mieterportal" nennen: So heißt die Mieter-Oberfläche unter /portal.
 import Link from "next/link";
 import { MessageSquareText, UserRoundSearch, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -170,17 +172,21 @@ export default async function AnliegenPage({
   const freigabeAnfragen = wartetAufVermieter(auftraege);
 
   const TABS = [
-    { key: "anliegen", label: "Anliegen & Anfragen", icon: MessageSquareText, badge: offen },
+    { key: "anliegen", label: "Mieter-Anliegen", icon: MessageSquareText, badge: offen },
     { key: "bewerbungen", label: "Bewerbungen", icon: UserRoundSearch, badge: neueBewerbungen },
-    { key: "service", label: "Service", icon: Wrench, badge: freigabeAnfragen },
+    { key: "service", label: "Service-Partner", icon: Wrench, badge: freigabeAnfragen },
   ] as const;
 
   return (
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Verwaltung · Anliegen &amp; Bewerber</div>
-          <div className="topbar-title">Mieterportal</div>
+          {/* Der Bereich hiess an vier Stellen anders ("Mieterportal",
+              "Anliegen & Bewerber", "Anliegen & Anfragen", "Service") — und
+              "Mieterportal" ist bereits die Mieter-Oberflaeche unter /portal.
+              Ein Name fuer die Vermieter-Sicht, der alle drei Tabs traegt. */}
+          <div className="topbar-kicker">Verwaltung</div>
+          <div className="topbar-title">Anliegen &amp; Kontakte</div>
           <div className="topbar-sub">
             {tab === "bewerbungen"
               ? `Selbstauskunft-Links & Bewerbungs-Eingang${bewerbungen.length > 0 ? ` · ${neueBewerbungen} neu von ${bewerbungen.length}` : ""}`
@@ -192,7 +198,7 @@ export default async function AnliegenPage({
       </div>
 
       {/* Bereichs-Umschalter im Glass-Stil (wie im Mieter-Portal) */}
-      <nav className="glass-bar" aria-label="Mieterportal-Bereiche" style={{ marginBottom: 20 }}>
+      <nav className="glass-bar" aria-label="Bereiche" style={{ marginBottom: 20 }}>
         {TABS.map((t) => {
           const Icon = t.icon;
           return (

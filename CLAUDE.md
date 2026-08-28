@@ -11,12 +11,13 @@
 ## Offene Punkte / Merkliste
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
-- **Ab 03.08.2026: KfW-308-Konditionen aktualisieren** (laut kfw.de werden die
-  Förderhöchstbeträge angehoben; Sanierungsziel EH 85 EE dann auch per Einzelmaßnahmen
-  erfüllbar). Zu ändern: `lib/kauf/foerderung.ts` (`kfw308Betrag()`, `bedingung`/`hinweis`
-  von kfw308, `KFW_STAND`), `docs/kauf/KfW-Foerderung-2026.md`, Tests in
-  `tests/foerderung.test.ts`. Neue Beträge vorher auf der KfW-308-Produktseite nachlesen.
-  Danach diesen Eintrag entfernen.
+- ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**
+  (gegen die KfW-308-Produktseite geprüft): Höchstbeträge **140.000 / 160.000 / 180.000 €**
+  (1 / 2 / 3+ Kinder, vorher 100/125/150 Tsd.), Sanierungsziel EH 85 EE bzw. Denkmal EE
+  jetzt auch über **kombinierte Einzelmaßnahmen** (Heizung ≥ 65 % EE, Fenster, Fassade, Dach)
+  erfüllbar; Einkommensgrenze unverändert. `KFW_STAND = "08/2026"`.
+  **Regel für künftige Fälle:** Konditionen nicht raten und nicht auf Zulieferung warten —
+  die Produktseite per WebFetch lesen und mit einer zweiten Quelle gegenprüfen.
 - **Ab 01.01.2027: Ratgeber-Artikel zur Fernablesepflicht entschärfen.** Der Artikel
   `heizkostenabrechnung-50-70-regel-fernablesung` in `lib/ratgeber.ts` wirbt mit der
   ablaufenden Frist **31.12.2026** (§ 5 HeizkostenV). Ab 2027 ist die Frist Vergangenheit:
@@ -106,7 +107,8 @@ Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fris
   (Logik gedreht — vorher war Dunkel Default). Die Landing ist per Token-Freeze im
   `.lp`-Scope auf ihrer Quiet-Luxury-Palette eingefroren; PDFs/Briefe unverändert.
   **Noch offen (Runde 2):** echte Neu-Anordnung einzelner Layouts (bisher v. a. Um-Tokenisierung),
-  Chart-Gradients im Cashflow-Donut ablösen, 11px-Kleinsttexte sukzessive auf 12px.
+  11px-Kleinsttexte sukzessive auf 12px, Binnennavigation für lange Mobilseiten.
+  (Die Chart-Gradients im Cashflow-Donut sind seit dem UX-Audit-Paket B abgelöst.)
 - ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
   `components/OnboardingTour.tsx` — sechs Stationen (Objekt → Mieter → Ein-/Ausgaben →
   Mietkonto → Archiv → Steuer/Assistenten) mit Direktlinks. Öffnet sich automatisch,
@@ -159,9 +161,10 @@ Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fris
   (Widerspruchsrecht); (5) Transfer in der Datenschutzerklärung als **SCC** ausweisen (kein DPF);
   (6) Datenschutzkontakt **dpo@brevo.com** ins Verarbeitungsverzeichnis; (7) Eintrag in
   `docs/compliance/AVV-STATUS.md` (Sitz Frankreich, Verarbeitung EU).
-  ⏳ **OFFEN — Datenschutzerklärung um den Vorlagen-Verteiler ergänzen:** Zweck, Rechtsgrundlage
-  Art. 6 Abs. 1 lit. a DSGVO (Einwilligung), Empfänger Brevo, Speicherdauer, Widerrufsrecht.
-  Ohne den Passus werden die Adressen ohne die vorgeschriebene Information verarbeitet.
+  ✅ 28.08.2026: **Datenschutzerklärung um den Vorlagen-Verteiler ergänzt** — `/datenschutz`
+  Ziffer 3 h (Double-Opt-in, Einwilligungsnachweis mit Zeitpunkt/IP/Wortlaut, Art. 6 Abs. 1
+  lit. a + Art. 7 Abs. 1, Empfänger Brevo, Speicherdauer, Widerruf) + Brevo in der
+  Subprozessoren-Liste (Ziffer 4). Der **AVV mit Brevo** bleibt offen (Punkte (1)–(4), (6), (7) oben).
   ✅ 29.07.2026: **Vercel auf Pro** → AVV greift automatisch über die ToS, kommerzielle
   Nutzung erlaubt. Noch offen (nur Betreiber): Nutzer-AVV anwaltlich prüfen. Anwaltsliste zusätzlich (19.07.2026):
   **§ 34i GewO** (Finanzierungs-Assistent Stufe 1 — Wording bereits neutralisiert, „Empfehlung"

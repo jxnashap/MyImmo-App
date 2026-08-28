@@ -15,7 +15,10 @@ export const VERWALTUNG: NavItem[] = [
   { href: "/tenants", label: "Mieter", icon: User },
   { href: "/cashflow", label: "Ein- & Ausgaben", icon: Banknote },
   { href: "/mietkonto", label: "Mietkonto", icon: ReceiptText },
-  { href: "/anliegen", label: "Mieterportal", icon: MessageSquareText },
+  // Nicht "Mieterportal": So heisst die Mieter-Oberflaeche unter /portal.
+  // Diese Seite ist die Vermieter-Sicht und enthaelt neben Mieter-Anliegen
+  // auch Bewerbungen und die Handwerker-Verwaltung.
+  { href: "/anliegen", label: "Anliegen & Kontakte", icon: MessageSquareText },
   { href: "/verbrauch", label: "Verbrauch", icon: Zap },
   { href: "/kredite", label: "Kredite", icon: Landmark },
   { href: "/banking", label: "Banking", icon: CreditCard },

@@ -202,26 +202,42 @@ export default function KaufAssistent({
             </div>
           )}
 
-          <div className="form-section-label" style={{ marginTop: 20 }}>Darlehensarten im Überblick</div>
-          <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
-            Welche Art zu dir passt, entscheidest du mit deiner Bank.
-          </p>
-          <div style={{ display: "grid", gap: 8 }}>
-            {DARLEHEN.map((d) => (
-              <div key={d.name} style={{ padding: "8px 12px", borderRadius: 8, background: d.warn ? "rgba(240,160,48,0.08)" : "var(--bg3)", border: `1px solid ${d.warn ? "var(--amber)" : "var(--line)"}` }}>
-                <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                  {d.warn && <TriangleAlert size={13} color="var(--amber)" />} {d.name}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{d.text}</div>
+          {/* Glossar und Fördercheck sind Nachschlage-Inhalte, kein Schritt im
+              Ablauf. Dauerhaft ausgeklappt machten sie aus diesem Schritt eine
+              Karte über mehrere Bildschirmhöhen, in der der eigentliche
+              Finanzierungswunsch unterging. */}
+          <details className="klapp">
+            <summary>
+              Darlehensarten im Überblick <span className="klapp-hint">— Glossar, {DARLEHEN.length} Arten</span>
+            </summary>
+            <div className="klapp-body">
+              <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
+                Welche Art zu dir passt, entscheidest du mit deiner Bank.
+              </p>
+              <div style={{ display: "grid", gap: 8 }}>
+                {DARLEHEN.map((d) => (
+                  <div key={d.name} style={{ padding: "8px 12px", borderRadius: 8, background: d.warn ? "rgba(240,160,48,0.08)" : "var(--bg2)", border: `1px solid ${d.warn ? "var(--amber)" : "var(--line)"}` }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      {d.warn && <TriangleAlert size={13} color="var(--amber)" />} {d.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{d.text}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          </details>
 
-          <div className="form-section-label" style={{ marginTop: 16 }}>Fördercheck</div>
-          <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
-            Wähle Nutzung, Vorhaben und Bundesland — du siehst nur die Programme, die zu dir passen.
-          </p>
-          <FoerderCheck />
+          <details className="klapp">
+            <summary>
+              Fördercheck <span className="klapp-hint">— KfW, BAFA &amp; Landesbanken nach deiner Lage filtern</span>
+            </summary>
+            <div className="klapp-body">
+              <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
+                Wähle Nutzung, Vorhaben und Bundesland — du siehst nur die Programme, die zu dir passen.
+              </p>
+              <FoerderCheck />
+            </div>
+          </details>
         </>
       ),
     },
@@ -232,7 +248,7 @@ export default function KaufAssistent({
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
             Am Ende brauchst du zwei Ordner. Der <strong>Makler-Ordner</strong> zeigt dich als seriösen,
-            finanzierungssicheren Käufer (6 Kern-Dokumente, Datensparsamkeit). Der <strong>Bank-Ordner</strong>
+            finanzierungssicheren Käufer (6 Kern-Dokumente, Datensparsamkeit). Der <strong>Bank-Ordner</strong>{" "}
             bündelt alle Unterlagen für die Finanzierung — passend zu deinem Objekt (Kauf, Vermietung, ETW);
             MyImmo erzeugt Kennblatt, Mietaufstellung &amp; Co. aus deinen Daten.
           </p>
