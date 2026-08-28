@@ -88,7 +88,10 @@ export default function AuftragRueckmeldung({ token }: { token: string }) {
             <button
               key={a.wert}
               type="button"
-              className={`btn ${art === a.wert ? "btn-gold" : "btn-ghost"}`}
+              /* Aktiver Segment-Zustand als tonal (gold-pale) statt vollflächig
+                 gold — sonst konkurrieren zwei Gold-Flächen mit dem eigentlichen
+                 Primärknopf „Rückmeldung senden". */
+              className={`btn ${art === a.wert ? "btn-tonal" : "btn-ghost"}`}
               style={{ fontSize: 12.5 }}
               onClick={() => setArt(a.wert)}
             >

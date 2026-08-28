@@ -135,7 +135,7 @@ export default function KaufAssistent({
             beste bekommt eine Krone.
           </p>
           {!rechnerOffen ? (
-            <button type="button" className="btn btn-gold" style={{ fontSize: 13 }} onClick={() => setRechnerOffen(true)}>
+            <button type="button" className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setRechnerOffen(true)}>
               <Calculator size={14} style={{ verticalAlign: "-2px" }} /> Objekt-Rechner öffnen
             </button>
           ) : (
@@ -158,7 +158,7 @@ export default function KaufAssistent({
             Machbarkeitsprüfung und später in die Selbstauskunft für die Bank. Verschlüsselt gespeichert.
           </p>
           {!saOffen ? (
-            <button type="button" className="btn btn-gold" style={{ fontSize: 13 }} onClick={() => setSaOffen(true)}>
+            <button type="button" className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setSaOffen(true)}>
               <ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Selbstauskunft ausfüllen
             </button>
           ) : (
@@ -253,7 +253,7 @@ export default function KaufAssistent({
             MyImmo erzeugt Kennblatt, Mietaufstellung &amp; Co. aus deinen Daten.
           </p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Link href="/makler" className="btn btn-gold" style={{ fontSize: 13 }}>
+            <Link href="/makler" className="btn btn-ghost" style={{ fontSize: 13 }}>
               <FolderClosed size={14} style={{ verticalAlign: "-2px" }} /> Makler-Ordner öffnen
             </Link>
           </div>

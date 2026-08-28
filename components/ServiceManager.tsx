@@ -115,7 +115,7 @@ function CodeSektion({ codes }: { codes: ServiceCodeRow[] }) {
     <div className="section">
       <div className="section-header">
         <h3><KeyRound size={15} style={{ verticalAlign: "-2px" }} /> Service-Einladungscodes</h3>
-        <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} disabled={pending} onClick={erzeugen}>
+        <button type="button" className="btn btn-outline" style={{ fontSize: 12 }} disabled={pending} onClick={erzeugen}>
           {pending ? "…" : "Neuen Code erzeugen"}
         </button>
       </div>
@@ -162,7 +162,7 @@ function FirmenSektion({ firmen }: { firmen: FirmaRow[] }) {
     <div className="section">
       <div className="section-header">
         <h3><Building2 size={15} style={{ verticalAlign: "-2px" }} /> Firmenverzeichnis</h3>
-        <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => setOffen(!offen)}>
+        <button type="button" className="btn btn-outline" style={{ fontSize: 12 }} onClick={() => setOffen(!offen)}>
           {offen ? "Abbrechen" : "Firma hinzufügen"}
         </button>
       </div>
