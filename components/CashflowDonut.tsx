@@ -4,18 +4,18 @@
 // Ebene 1 (Overview): Einnahmen (orange) vs. Ausgaben (rot).
 // Ebene 2 (Drilldown): Kategorien der gewählten Seite — GLEICHE Seitenfarbe, die pro
 // Segment weiter verblasst (nach Betrag absteigend sortiert: groß = kräftig, klein = blass).
-// Nur zwei Marken-Farben (var(--gold), var(--red)); Verblassung via color-mix gegen
+// Nur zwei Semantik-Farben (var(--green), var(--red)); Verblassung via color-mix gegen
 // warmes Off-White. Eigenes SVG: dicker, leicht gekippter Ring, radiales Volumen,
 // weicher Schatten, Glanz-Bogen. Segmente fahren per stroke-dasharray smooth ein.
 // Wechsel per Toggle und horizontalem Swipe. prefers-reduced-motion wird respektiert.
 
 import { useEffect, useMemo, useRef, useState, useId } from "react";
-import { euro } from "@/lib/format";
+import { euro, prozent } from "@/lib/format";
 
 type Kat = [string, number];
 
 // Die einzigen beiden Diagrammfarben (aus globals.css).
-const GOLD = "var(--gold)"; // #D4A847 — Einnahmen
+const GRUEN = "var(--green)"; // Einnahmen — semantisch wie die KPI-Karten
 const RED = "var(--red)";   //  #E05C4B — Ausgaben
 const OFFWHITE = "#F7EFDD";  // nur Aufhell-Ziel der Rampe, keine eigene Diagrammfarbe
 
@@ -80,21 +80,21 @@ export default function CashflowDonut({
 
   const overview: Seg[] = useMemo(
     () => [
-      { key: "ein", label: "Einnahmen", value: einnahmenTotal, color: GOLD },
+      { key: "ein", label: "Einnahmen", value: einnahmenTotal, color: GRUEN },
       { key: "aus", label: "Ausgaben", value: ausgabenTotal, color: RED },
     ].filter((s) => s.value > 0),
     [einnahmenTotal, ausgabenTotal],
   );
 
   const drillSegs = useMemo(
-    () => (side === "ein" ? drill(einKat, GOLD) : side === "aus" ? drill(ausKat, RED) : []),
+    () => (side === "ein" ? drill(einKat, GRUEN) : side === "aus" ? drill(ausKat, RED) : []),
     [side, einKat, ausKat],
   );
 
   const segs = side ? drillSegs : overview;
   const total = segs.reduce((s, x) => s + x.value, 0);
 
-  const sideBase = side === "ein" ? GOLD : side === "aus" ? RED : netto >= 0 ? GOLD : RED;
+  const sideBase = side === "ein" ? GRUEN : side === "aus" ? RED : netto >= 0 ? GRUEN : RED;
   const sideSum = side === "ein" ? einnahmenTotal : side === "aus" ? ausgabenTotal : 0;
   const centerBig = side ? euro(sideSum) : `${netto >= 0 ? "+ " : "− "}${euro(Math.abs(netto))}`;
   const centerLabel = side === "ein" ? "Einnahmen" : side === "aus" ? "Ausgaben" : "Netto";
@@ -121,7 +121,7 @@ export default function CashflowDonut({
 
   const mkTip = (label: string, value: number, pct: number, e: { clientX: number; clientY: number; currentTarget: Element }) => {
     const rect = (e.currentTarget.closest(".donut-wrap") as HTMLElement)?.getBoundingClientRect();
-    return rect ? { x: e.clientX - rect.left, y: e.clientY - rect.top, text: `${label} · ${euro(value)} · ${pct.toFixed(1)} %` } : null;
+    return rect ? { x: e.clientX - rect.left, y: e.clientY - rect.top, text: `${label} · ${euro(value)} · ${prozent(pct)}` } : null;
   };
   const onEnter = (key: string, label: string, value: number, pct: number, e: React.MouseEvent) => {
     setHover(key); const t = mkTip(label, value, pct, e); if (t) setTip(t);
@@ -170,7 +170,7 @@ export default function CashflowDonut({
           <div style={{ display: "inline-flex", border: "1px solid var(--line2)", borderRadius: 8, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
             {(["ein", "aus"] as const).map((s) => {
               const on = side === s;
-              const col = s === "ein" ? GOLD : RED;
+              const col = s === "ein" ? GRUEN : RED;
               return (
                 <button key={s} type="button" onClick={() => goSide(s)}
                   style={{
@@ -204,21 +204,10 @@ export default function CashflowDonut({
               aria-label={side ? `Kategorien ${centerLabel}` : "Einnahmen und Ausgaben im Vergleich"}
             >
               <defs>
-                <filter id={`sh-${uid}`} x="-30%" y="-25%" width="160%" height="160%">
-                  <feDropShadow dx="0" dy="1" stdDeviation="4" floodColor="#000" floodOpacity="0.22" />
-                </filter>
-                {arcs.map((a) => (
-                  <radialGradient key={a.key} id={`g-${uid}-${a.key}`} gradientUnits="userSpaceOnUse" cx={CX} cy={CY} r={R + SW / 2}>
-                    <stop offset="0" style={{ stopColor: inner(a.color) }} />
-                    <stop offset={String((R - SW / 2) / (R + SW / 2))} style={{ stopColor: inner(a.color) }} />
-                    <stop offset="0.82" style={{ stopColor: a.color }} />
-                    <stop offset="1" style={{ stopColor: outer(a.color) }} />
-                  </radialGradient>
-                ))}
               </defs>
 
               {/* Schatten-Basisring (dezent) */}
-              <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--bg4)" strokeWidth={SW} opacity={0.3} filter={`url(#sh-${uid})`} />
+              <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--bg4)" strokeWidth={SW} opacity={0.3} />
 
               {arcs.map((a) => {
                 const active = hover === a.key;
@@ -228,7 +217,7 @@ export default function CashflowDonut({
                     key={a.key}
                     cx={CX} cy={CY} r={R}
                     fill="none"
-                    stroke={`url(#g-${uid}-${a.key})`}
+                    stroke={a.color}
                     strokeWidth={active ? SW + 6 : SW}
                     strokeDasharray={`${targetDash} ${C - targetDash}`}
                     strokeLinecap="round"
@@ -243,7 +232,7 @@ export default function CashflowDonut({
                     onMouseMove={(e) => onMove(a.label, a.value, a.pct, e)}
                     onClick={(e) => onSegClick(a, e)}
                   >
-                    <title>{`${a.label} · ${euro(a.value)} · ${a.pct.toFixed(1)} %`}</title>
+                    <title>{`${a.label} · ${euro(a.value)} · ${prozent(a.pct)}`}</title>
                   </circle>
                 );
               })}
@@ -288,7 +277,7 @@ export default function CashflowDonut({
               >
                 <span style={{ width: 12, height: 12, borderRadius: 3, background: a.color, flexShrink: 0 }} />
                 <span style={{ fontSize: 13, color: "var(--text)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.label}>{a.label}</span>
-                <span style={{ fontSize: 12, color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>{a.pct.toFixed(1)} %</span>
+                <span style={{ fontSize: 12, color: "var(--muted)", fontVariantNumeric: "tabular-nums" }}>{prozent(a.pct)}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: a.color, width: 96, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{euro(a.value)}</span>
               </button>
             ))}

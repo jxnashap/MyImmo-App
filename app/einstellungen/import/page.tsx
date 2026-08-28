@@ -16,6 +16,7 @@ export default async function ImportPage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
+          <div className="topbar-kicker">Konto · Datenübernahme</div>
           <div className="topbar-title">Daten importieren</div>
           <div className="topbar-sub">
             Umzug von vermietet.de, objego oder Excel — CSV hochladen, Spalten zuordnen, prüfen, importieren

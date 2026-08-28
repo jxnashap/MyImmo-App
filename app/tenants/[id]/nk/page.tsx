@@ -125,7 +125,7 @@ export default async function NkPage({
             </select>
             <button className="btn btn-ghost" style={{ fontSize: 12 }}>Anzeigen</button>
           </form>
-          <a href={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`} className="btn btn-gold">
+          <a href={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`} className="btn btn-ghost">
             Als PDF herunterladen
           </a>
           <NkSpeichernButton mieterId={params.id} jahr={jahr} />

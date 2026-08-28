@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { X, TriangleAlert } from "lucide-react";
-import { euro, datum } from "@/lib/format";
+import { euro, datum, zahl } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
 import { updateKredit, deleteKredit } from "@/lib/actions/buchungen";
 import RowDialog from "@/components/RowDialog";
@@ -56,7 +56,7 @@ export default function KrediteListe({
                 <span style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"}{k.bank ? ` · ${k.bank}` : ""}{k.darlnr ? ` · Nr. ${k.darlnr}` : ""}</span>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}% Zins</span>}
+                {k.zinssatz != null && <span className="badge badge-gold">{zahl(k.zinssatz, 1)} % Zins</span>}
                 <span onClick={stop} style={{ display: "inline-flex" }}>
                   <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
                 </span>
@@ -65,7 +65,7 @@ export default function KrediteListe({
             <div className="section-body">
               <div className="kredit-grid" style={{ marginBottom: 14 }}>
                 <div><div className="kredit-field-lbl">Urspr. Darlehen</div><div className="kredit-field-val">{euro(k.betrag)}</div></div>
-                <div><div className="kredit-field-lbl">Restschuld</div><div className="kredit-field-val" style={{ color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
+                <div><div className="kredit-field-lbl">Restschuld</div><div className="kredit-field-val">{euro(k.restschuld)}</div></div>
                 <div><div className="kredit-field-lbl">Rate / Monat</div><div className="kredit-field-val">{euro(k.monatsrate)}</div></div>
                 <div><div className="kredit-field-lbl">Laufzeit bis</div><div className="kredit-field-val">{k.laufzeit ?? "–"}</div></div>
               </div>

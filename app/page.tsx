@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LandingPage from "@/components/LandingPage";
-import { euro, datum } from "@/lib/format";
+import { euro, datum, zahl } from "@/lib/format";
 import { getRefinanzWarning, bankingFristen, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
 import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
@@ -165,7 +165,7 @@ export default async function DashboardPage() {
   const balkenMax = Math.max(totalMiete, totalKosten, 1);
   const balken = [
     { lbl: "Einnahmen", val: totalMiete, col: "var(--green)" },
-    { lbl: "Kredite", val: kreditRates, col: "var(--gold)" },
+    { lbl: "Kredite", val: kreditRates, col: "var(--red)" },
     { lbl: "Kosten Ø/Mo.", val: monatKosten, col: "var(--red)" },
   ];
 
@@ -394,7 +394,7 @@ export default async function DashboardPage() {
                   <Link key={k.id} href="/kredite" style={{ display: "block", textDecoration: "none", color: "inherit", borderLeft: "3px solid var(--gold)", padding: "10px 14px", background: "var(--gold-pale)", borderRadius: "0 8px 8px 0", marginBottom: 8 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                       <strong style={{ fontSize: 13 }}>{k.bezeichnung || k.bank || "Darlehen"}</strong>
-                      {k.zinssatz != null && <span className="badge badge-gold">{k.zinssatz}%</span>}
+                      {k.zinssatz != null && <span className="badge badge-gold">{zahl(k.zinssatz, 1)} %</span>}
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>
                       <span>Restschuld: <strong style={{ color: "var(--text)" }}>{euro(k.restschuld)}</strong></span>

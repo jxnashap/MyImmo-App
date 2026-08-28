@@ -230,7 +230,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
         {item.auto && !hatDatei && (
           <button
             type="button"
-            className="btn btn-gold"
+            className="btn btn-outline"
             style={{ fontSize: 11 }}
             disabled={busy === item.key}
             onClick={() => run(item.key, () => generiereBeleihungDokument(propId, item.key), "Dokument aus MyImmo erzeugt.")}
@@ -266,9 +266,13 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
   return (
     <div className="fade-up">
       {/* Kopf */}
+      <div style={{ marginBottom: 12 }}>
+        <Link href={`/properties/${propId}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zum Objekt</Link>
+      </div>
       <div className="settings-head" style={{ flexWrap: "wrap", rowGap: 12 }}>
         <div className="settings-avatar"><Landmark size={22} /></div>
         <div className="who">
+          <div className="topbar-kicker" style={{ marginBottom: 4 }}>Immobilie · Bankunterlagen</div>
           <h1>Beleihungsordner</h1>
           <p>{objektName} — alle Unterlagen fürs Bankgespräch</p>
         </div>
@@ -340,7 +344,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
       {/* Bankpaket-Leiste */}
       <div className="section" style={{ marginBottom: 18 }}>
         <div style={{ padding: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <a href={deckblattUrl} target="_blank" rel="noopener noreferrer" className="btn btn-gold" style={{ fontSize: 12 }}>
+          <a href={deckblattUrl} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 12 }}>
             <FileText size={14} /> Deckblatt / Übersicht als PDF
           </a>
           <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={openShare}>
@@ -430,7 +434,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                   {neuerLink}
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => { navigator.clipboard.writeText(neuerLink).then(() => toast("Link kopiert.")); }}>
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => { navigator.clipboard.writeText(neuerLink).then(() => toast("Link kopiert.")); }}>
                     <Copy size={13} /> Kopieren
                   </button>
                   <a
