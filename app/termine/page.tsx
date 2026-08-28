@@ -229,7 +229,9 @@ export default async function TerminePage({
         <span className="tz-rest" style={{ color: farbe }}>
           {e.erledigt ? "erledigt" : tage < 0 ? (aufgabe ? `vor ${Math.abs(tage)} Tg.` : "erfolgt") : tage === 0 ? "heute" : `in ${tage} Tg.`}
         </span>
-        <span className={`badge ${stil.badge}`} style={{ flexShrink: 0 }}>{stil.icon} {e.kategorie}</span>
+        {/* Nutzer tippen Kategorien auch klein ("wartung") — im Badge trotzdem
+            mit Großbuchstaben beginnen, wie die vordefinierten. */}
+        <span className={`badge ${stil.badge}`} style={{ flexShrink: 0 }}>{stil.icon} {e.kategorie.charAt(0).toUpperCase() + e.kategorie.slice(1)}</span>
         {e.quelle === "eigen" && e.id ? (
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
             <Link href={`/termine/${e.id}/edit`} className="delete-btn" title="Termin bearbeiten" style={{ color: "var(--muted)" }}><Pencil size={14} /></Link>
@@ -288,46 +290,46 @@ export default async function TerminePage({
         <div className="section-body">
           <form action={createTermin} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 12 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
-              <span style={{ color: "var(--muted)" }}>Titel</span>
-              <input name="titel" required className="input" placeholder="z.B. Heizungswartung" />
+              <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}>Titel</span>
+              <input name="titel" required className="input" placeholder="z. B. Heizungswartung" />
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
-              <span style={{ color: "var(--muted)" }}>Datum</span>
+              <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}>Datum</span>
               <input name="datum" type="date" required className="input" />
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
-              <span style={{ color: "var(--muted)" }}>Kategorie</span>
+              <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}>Kategorie</span>
               <select name="kategorie" className="input">
                 {TERMIN_KATEGORIEN.map((k) => <option key={k} value={k}>{KATEGORIE_STIL[k]?.icon} {k}</option>)}
               </select>
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
-              <span style={{ color: "var(--muted)" }}>Wiederkehrung</span>
+              <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}>Wiederkehrung</span>
               <select name="wiederkehrung" className="input">
                 <option value="">einmalig</option>
                 {Object.entries(WIEDERKEHRUNG_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
-              <span style={{ color: "var(--muted)" }}>Immobilie</span>
+              <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}>Immobilie</span>
               <select name="prop_id" className="input">
                 <option value="">—</option>
                 {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
               </select>
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
-              <span style={{ color: "var(--muted)" }}>Mieter</span>
+              <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}>Mieter</span>
               <select name="mieter_id" className="input">
                 <option value="">—</option>
                 {mieter.map((m) => <option key={m.id} value={m.id}>{[m.vorname, m.nachname].filter(Boolean).join(" ")}</option>)}
               </select>
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, width: 90 }}>
-              <span style={{ color: "var(--muted)" }}>Vorlauf (Tg.)</span>
+              <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}>Vorlauf (Tg.)</span>
               <input name="vorlauf_tage" type="number" min="0" max="365" className="input" placeholder="—" />
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12, flex: 1, minWidth: 140 }}>
-              <span style={{ color: "var(--muted)" }}>Notiz</span>
+              <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}>Notiz</span>
               <input name="notiz" className="input" />
             </label>
             <button className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Termin</button>
@@ -353,7 +355,7 @@ export default async function TerminePage({
                   style={{ fontSize: 11.5, opacity: v.kern ? 1 : 0.75 }}
                   title={`${v.notiz}${v.relevanz ? ` · Nur relevant: ${v.relevanz}` : ""} · ${WIEDERKEHRUNG_LABEL[v.wiederkehrung]}`}
                 >
-                  {KATEGORIE_STIL[v.kategorie]?.icon} {v.titel} <span style={{ color: "var(--muted)" }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[v.wiederkehrung]}</span>
+                  {KATEGORIE_STIL[v.kategorie]?.icon} {v.titel} <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[v.wiederkehrung]}</span>
                 </button>
               ))}
             </div>

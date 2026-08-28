@@ -1268,9 +1268,17 @@ select:focus-visible, textarea:focus-visible {
    Bildschirm theme-treu über var(--*); Papierfarben nur im @media print.
    ===================================================================== */
 .brief-sheet {
+  /* Papier bleibt Papier: Die Vorschau zeigt das Dokument, das wirklich
+     gedruckt/verschickt wird — es gibt keine dunkle Fassung davon. Deshalb
+     lokale Token-Overrides statt Theme-Vererbung; vorher invertierte die
+     NK-Briefvorschau im Dunkelmodus. */
+  --text: #171717; --muted: #636363; --faint: #979797;
+  --line: #e2e2e2; --line2: #d6d6d6;
+  --gold: #9a7b24; --gold-pale: #f6efdd;
+  --green: #1f6b4a; --red: #b4372e;
   position: relative; display: flex; flex-direction: column;
   width: 100%; max-width: 780px; margin: 0 auto;
-  padding: 34px 38px; background: var(--bg2); color: var(--text);
+  padding: 34px 38px; background: #ffffff; color: var(--text);
   border: 1px solid var(--line);
   border-radius: var(--r-xs); box-shadow: var(--shadow-2);
   font-size: 13px; line-height: 1.6;

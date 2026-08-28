@@ -101,7 +101,7 @@ export default async function CashflowPage({
   const ausKat = katSumme(kosten);
 
   const filters: FilterDef[] = [
-    { name: "q", label: "Suche", variant: "search", placeholder: "Suche: Kategorie, Beschreibung…", options: [] },
+    { name: "q", label: "Suche", variant: "search", placeholder: "Kategorie, Beschreibung…", options: [] },
     { name: "typ", label: "Typ", icon: "quelle", variant: "segmented", options: [{ value: "", label: "Alle" }, { value: "einnahme", label: "Einnahmen" }, { value: "ausgabe", label: "Ausgaben" }] },
     { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },

@@ -28,7 +28,7 @@ export default async function NeuerKreditPage({ searchParams }: { searchParams: 
 
         <div className="form-section-label">Grunddaten</div>
         <div className="form-row">
-          <div className="form-group"><label>Bezeichnung *</label><input type="text" name="bezeichnung" placeholder="z.B. Hypothek Volksbank" required /></div>
+          <div className="form-group"><label>Bezeichnung *</label><input type="text" name="bezeichnung" placeholder="z. B. Hypothek Volksbank" required /></div>
           <div className="form-group"><label>Immobilie</label>
             <select name="prop_id" defaultValue={searchParams.prop ?? ""}>
               <option value="">– wählen –</option>

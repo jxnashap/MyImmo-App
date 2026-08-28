@@ -209,7 +209,7 @@ export default function PositionsManager({
 
       {rows.length === 0 ? (
         <p className="mb-4 text-sm text-[var(--muted)]">
-          Noch keine Positionen. Lege z.B. Müll, Abwasser oder Grundsteuer individuell für diesen Mieter an.
+          Noch keine Positionen. Lege z. B. Müll, Abwasser oder Grundsteuer individuell für diesen Mieter an.
         </p>
       ) : (
         <div className="mb-4 overflow-hidden rounded-[10px] border border-[var(--line)]">
@@ -412,7 +412,7 @@ export default function PositionsManager({
           <input
             list="pos-vorlagen"
             required
-            placeholder="z.B. Müll"
+            placeholder="z. B. Müll"
             className="input"
             value={nBez}
             onChange={(e) => setNBez(e.target.value)}

@@ -42,7 +42,8 @@ export default function VerbrauchListe({
             <td>{datum(v.buchungsdatum)}</td>
             <td style={{ color: "var(--muted)" }}>{v.prop_id ? nameOf.get(v.prop_id) ?? "–" : "–"}</td>
             <td>{(() => { const Icon = v.art ? ART_ICONS[v.art] : undefined; return Icon ? <Icon size={13} style={{ verticalAlign: "-2px" }} /> : null; })()} {v.art ?? "–"}</td>
-            <td>{v.menge ?? "–"}</td>
+            {/* "1400" ohne Tausenderpunkt war nicht ueberschlagbar — de-DE-Format, bis zu 2 Dezimalstellen nur wenn erfasst. */}
+            <td style={{ fontVariantNumeric: "tabular-nums" }}>{v.menge == null ? "–" : v.menge.toLocaleString("de-DE", { maximumFractionDigits: 2 })}</td>
             <td style={{ color: "var(--muted)" }}>{v.einheit ?? ""}</td>
             <td style={{ fontWeight: 600 }}>{euro(v.verbrauchkosten)}</td>
           </tr>

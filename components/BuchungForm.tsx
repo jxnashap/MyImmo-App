@@ -139,7 +139,7 @@ export default function BuchungForm({
         </div>
         <div className="form-group">
           <label>Beschreibung</label>
-          <input type="text" name="beschreibung" defaultValue={row?.beschreibung ?? ""} placeholder={typ === "einnahme" ? "z.B. Miete August" : "z.B. Handwerkerrechnung"} />
+          <input type="text" name="beschreibung" defaultValue={row?.beschreibung ?? ""} placeholder={typ === "einnahme" ? "z. B. Miete August" : "z. B. Handwerkerrechnung"} />
         </div>
       </div>
 
@@ -147,7 +147,7 @@ export default function BuchungForm({
         <div className="form-row">
           <div className="form-group">
             <label>davon Nebenkosten-Vorauszahlung (€)</label>
-            <input type="number" step="0.01" min="0" name="nk_anteil" defaultValue={row?.nk_anteil ?? ""} placeholder="z.B. 160" />
+            <input type="number" step="0.01" min="0" name="nk_anteil" defaultValue={row?.nk_anteil ?? ""} placeholder="z. B. 160" />
             <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>
               In „Miete" enthalten – Anlage V Zeile 13.
             </span>

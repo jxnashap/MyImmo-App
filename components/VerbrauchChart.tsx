@@ -34,8 +34,8 @@ export default function VerbrauchChart({ art, einheit, points }: { art: string; 
                 <rect x={cx - barW / 2} y={yTop} width={barW} height={h} rx={4} fill="var(--gold)" opacity={0.85}>
                   <title>{`${p.label}: ${fmtMenge(p.menge)} ${einheit} · ${euro(p.kosten)}`}</title>
                 </rect>
-                <text x={cx} y={yTop - 4} textAnchor="middle" fontSize="10" fill="var(--muted)">{fmtMenge(p.menge)}</text>
-                <text x={cx} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--muted)">{p.label}</text>
+                <text x={cx} y={yTop - 4} textAnchor="middle" fontSize="11.5" fill="var(--muted)">{fmtMenge(p.menge)}</text>
+                <text x={cx} y={H - 8} textAnchor="middle" fontSize="11.5" fill="var(--muted)">{p.label}</text>
               </g>
             );
           })}

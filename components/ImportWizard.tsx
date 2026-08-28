@@ -136,7 +136,9 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
           {/* Weg 3: Text einfügen (Fallback, wenn Portale blocken). */}
           <div className="form-group" style={{ marginBottom: 10 }}>
             <label>…oder Anzeigentext einfügen</label>
-            <textarea rows={7} value={text} onChange={(e) => setText(e.target.value)} placeholder="Text der Immobilienanzeige hier einfügen (Strg+A → Strg+C auf der Anzeige, dann Strg+V hier)." style={{ resize: "vertical", padding: "9px 11px", borderRadius: 7, border: "1px solid var(--line2)", background: "var(--bg3)", color: "var(--text)", fontFamily: "var(--font-ui)", fontSize: 13, outline: "none", lineHeight: 1.6 }} />
+            {/* Kein Inline-Stil: erbt die Standard-Optik aus .form-group — die
+                Extra-Rahmenfarbe war die zweite Input-Optik im selben Formular. */}
+            <textarea rows={7} value={text} onChange={(e) => setText(e.target.value)} placeholder="Text der Immobilienanzeige hier einfügen (Strg+A → Strg+C auf der Anzeige, dann Strg+V hier)." style={{ resize: "vertical", lineHeight: 1.6 }} />
           </div>
           <button type="button" onClick={() => rufeAb("/api/import", { text }, "text")}
             disabled={loading !== null || text.trim().length < 30} className="btn btn-ghost"
@@ -165,7 +167,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
       <form action={action} style={{ display: zeigeFormular ? undefined : "none" }}>
         <div className="form-section-label">{tab === "ki" ? "Erkannte Daten (prüfen & speichern)" : "Objektdaten"}</div>
         <div className="form-row">
-          <div className="form-group"><label>Name *</label><input name="bezeichnung" required value={v.bezeichnung} onChange={set("bezeichnung")} placeholder="z.B. 3-Zi-Wohnung Hamburg" /></div>
+          <div className="form-group"><label>Name *</label><input name="bezeichnung" required value={v.bezeichnung} onChange={set("bezeichnung")} placeholder="z. B. 3-Zi-Wohnung Hamburg" /></div>
           <div className="form-group"><label>Typ</label><select name="typ" value={v.typ} onChange={set("typ")}>{TYPEN.map((t) => <option key={t}>{t}</option>)}</select></div>
         </div>
         <div className="form-row single">
