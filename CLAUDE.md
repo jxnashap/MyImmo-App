@@ -11,12 +11,13 @@
 ## Offene Punkte / Merkliste
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
-- **Ab 03.08.2026: KfW-308-Konditionen aktualisieren** (laut kfw.de werden die
-  Förderhöchstbeträge angehoben; Sanierungsziel EH 85 EE dann auch per Einzelmaßnahmen
-  erfüllbar). Zu ändern: `lib/kauf/foerderung.ts` (`kfw308Betrag()`, `bedingung`/`hinweis`
-  von kfw308, `KFW_STAND`), `docs/kauf/KfW-Foerderung-2026.md`, Tests in
-  `tests/foerderung.test.ts`. Neue Beträge vorher auf der KfW-308-Produktseite nachlesen.
-  Danach diesen Eintrag entfernen.
+- ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**
+  (gegen die KfW-308-Produktseite geprüft): Höchstbeträge **140.000 / 160.000 / 180.000 €**
+  (1 / 2 / 3+ Kinder, vorher 100/125/150 Tsd.), Sanierungsziel EH 85 EE bzw. Denkmal EE
+  jetzt auch über **kombinierte Einzelmaßnahmen** (Heizung ≥ 65 % EE, Fenster, Fassade, Dach)
+  erfüllbar; Einkommensgrenze unverändert. `KFW_STAND = "08/2026"`.
+  **Regel für künftige Fälle:** Konditionen nicht raten und nicht auf Zulieferung warten —
+  die Produktseite per WebFetch lesen und mit einer zweiten Quelle gegenprüfen.
 - **Ab 01.01.2027: Ratgeber-Artikel zur Fernablesepflicht entschärfen.** Der Artikel
   `heizkostenabrechnung-50-70-regel-fernablesung` in `lib/ratgeber.ts` wirbt mit der
   ablaufenden Frist **31.12.2026** (§ 5 HeizkostenV). Ab 2027 ist die Frist Vergangenheit:

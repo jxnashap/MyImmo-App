@@ -64,10 +64,29 @@ describe("Auto-Förderkredit (foerderKredit)", () => {
     expect(foerderKredit({ ...k, kinder: 3 })?.hoechstbetrag).toBe(200_000);
   });
 
-  it("Familie Bestand Klasse G zvE 80k/1 Kind → KfW 308 (100k)", () => {
+  // Höchstbeträge zum 03.08.2026 angehoben (vorher 100/125/150 Tsd.).
+  // Quelle: kfw.de-Produktseite 308, geprüft 28.08.2026.
+  it("Familie Bestand Klasse G zvE 80k/1 Kind → KfW 308 (140k)", () => {
     const k: FoerderKontext = { ...basis, kinder: 1, zveJahr: 80_000, energieklasse: "G" };
     expect(foerderKredit(k)?.key).toBe("KfW 308");
-    expect(foerderKredit(k)?.hoechstbetrag).toBe(100_000);
+    expect(foerderKredit(k)?.hoechstbetrag).toBe(140_000);
+  });
+
+  it("KfW 308: Staffel 140/160/180 Tsd. nach Kinderzahl (Stand 08/2026)", () => {
+    const bestand = (kinder: number, zve: number): FoerderKontext =>
+      ({ ...basis, kinder, zveJahr: zve, energieklasse: "F" });
+    expect(foerderKredit(bestand(1, 80_000))?.hoechstbetrag).toBe(140_000);
+    expect(foerderKredit(bestand(2, 95_000))?.hoechstbetrag).toBe(160_000);
+    expect(foerderKredit(bestand(3, 105_000))?.hoechstbetrag).toBe(180_000);
+    expect(foerderKredit(bestand(5, 125_000))?.hoechstbetrag).toBe(180_000); // kein weiterer Anstieg
+  });
+
+  // Einkommensgrenze 90k + 10k je weiterem Kind — zum 03.08.2026 NICHT geändert
+  // (kfw.de: 1 Kind 90k, 2 Kinder 100k, 3 Kinder 110k, ab 5 Kindern 130k + 10k je weiterem).
+  it("KfW 308: Einkommensgrenze staffelt mit, knapp darüber fällt das Programm weg", () => {
+    const g: FoerderKontext = { ...basis, kinder: 2, zveJahr: 100_000, energieklasse: "G" };
+    expect(foerderKredit(g)?.key).toBe("KfW 308");
+    expect(foerderKredite({ ...g, zveJahr: 100_001 }).some((t) => t.key === "KfW 308")).toBe(false);
   });
 
   it("Eigennutzer Neubau EH40 ohne Kinder → KfW 297 (100k)", () => {

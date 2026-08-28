@@ -2,11 +2,11 @@
 title: KfW-Foerderung-2026
 ---
 
-> Recherche 20.07.2026 (nur kfw.de / bafa.de / Gesetzestext). Umsetzung: `lib/kauf/foerderung.ts` (filterProgramme). Verwandt: [[00 Kauf-Tool Übersicht]], [[Bank-Ordner]].
+> Recherche 20.07.2026 (nur kfw.de / bafa.de / Gesetzestext), **KfW 308 am 28.08.2026 gegen die Produktseite nachgezogen** (Reform zum 03.08.2026); KfW 300/297/298/124/261 dabei gegengeprüft und unverändert. Umsetzung: `lib/kauf/foerderung.ts` (filterProgramme). Verwandt: [[00 Kauf-Tool Übersicht]], [[Bank-Ordner]].
 
 # Staatliche Förderprogramme 2026 — Wohnimmobilie kaufen, bauen, sanieren
 
-**Stand: 20.07.2026. Quellen: ausschließlich kfw.de und bafa.de (Zinsen: tagesaktuell/kapitalmarktorientiert, auf den KfW-Seiten nur als Platzhalter „–,–– %" ausgewiesen; die Bank nennt den Zins bei Zusage). § 35c aus dem Gesetzestext.**
+**Stand: 28.08.2026 (KfW 308; übrige Programme 20.07.2026). Quellen: ausschließlich kfw.de und bafa.de (Zinsen: tagesaktuell/kapitalmarktorientiert, auf den KfW-Seiten nur als Platzhalter „–,–– %" ausgewiesen; die Bank nennt den Zins bei Zusage). § 35c aus dem Gesetzestext.**
 
 > **Rechtlicher Hinweis (§ 34i GewO):** MyImmo rechnet, sortiert und zeigt an, welche Programme **laut deinen Angaben in Frage kommen** — das ist eine reine Information/Vorauswahl, **keine Empfehlung und keine Vermittlung** eines Finanzierungs- oder Förderprodukts. **Du entscheidest selbst**, ob und wo du einen Antrag stellst. Steuerliche Aussagen (z. B. § 35c) sind **keine Steuerberatung**.
 
@@ -20,7 +20,7 @@ title: KfW-Foerderung-2026
 |---|---|---|---|---|---|---|---|---|
 | **KfW 124** Wohneigentum | KfW (Kredit) | Kauf/Bau Eigenheim | bis **100.000 €** Kredit | **Ja** (oder unentgeltl. an Angehörige) | keine | keine | keiner | **Ja** |
 | **KfW 300** WEF Neubau | KfW (Kredit, zinsverbilligt) | Neubau/Ersterwerb | **170.000–270.000 €** je Kinder/QNG | **Ja**, ≥50 %, min. 5 J. | **≤ 90.000 €** +10.000 €/weit. Kind | **≥1 Kind < 18** | **Effizienzhaus 40**, keine fossile/Biomasse-Heizung | **Ja** |
-| **KfW 308** „Jung kauft Alt" | KfW (Kredit, zinsverbilligt) | Kauf Bestand + Sanierung | **100.000–150.000 €** je Kinder | **Ja**, ≥50 % | **≤ 90.000 €** +10.000 €/weit. Kind | **≥1 Kind < 18** | Gebäude Klasse **F/G/H**, Sanierung auf EH 85 EE in 4,5 J. | **Ja** |
+| **KfW 308** „Jung kauft Alt" | KfW (Kredit, zinsverbilligt) | Kauf Bestand + Sanierung | **140.000–180.000 €** je Kinder (seit 03.08.2026) | **Ja**, ≥50 % | **≤ 90.000 €** +10.000 €/weit. Kind | **≥1 Kind < 18** | Gebäude Klasse **F/G/H**, Sanierung auf EH 85 EE **oder** kombinierte Einzelmaßnahmen in 4,5 J. | **Ja** |
 | **KfW 297/298** Klimafr. Neubau | KfW (Kredit) | Neubau/Erstkauf | bis **100.000 €** (mit QNG **150.000 €**)/WE | 297 Selbstnutzung, **298 auch Vermietung** | keine | keine | **Effizienzhaus 40**, keine fossile Heizung | **Ja** |
 | **KfW 261** Wohngebäude Sanierung | KfW (Kredit + Tilgungszuschuss) | Sanierung zum Effizienzhaus | bis **120.000 €** (mit EE/NH-Klasse **150.000 €**)/WE, Zuschuss **5–45 %** | **Selbstnutzer UND Vermieter** | keine | keine | Ziel **EH 85 … 40** oder Denkmal; **Energieberater Pflicht** | **Ja** |
 | **KfW 458** Heizungsförderung | KfW (Zuschuss) | Heizungstausch (Wärmepumpe etc.) | **30–70 %** von max. 30.000 € (EFH) | Selbstnutzer **und** Vermieter | nur für **Einkommensbonus**: ≤ 40.000 € | — | Bestandsgebäude ≥ 5 J.; erneuerbare Heizung | **Ja** (mit aufschieb. Bedingung) |
@@ -40,8 +40,10 @@ title: KfW-Foerderung-2026
 **Kommt in Frage, wenn:** **mindestens 1 leibliches/adoptiertes Kind < 18** im Haushalt lebt, das **zu versteuernde Haushaltseinkommen ≤ 90.000 €** (+10.000 € je weiterem Kind) ist, du **selbst einziehst (≥ 5 Jahre, ≥ 50 % Eigentum)**, es deine **einzige Wohnimmobilie** ist, das Haus **Effizienzhaus 40** erreicht (keine Öl-/Gas-/Biomasse-Heizung) und der Antrag **vor Baubeginn** liegt.
 
 ### KfW 308 — „Jung kauft Alt" (WEF Bestandserwerb)
-**Gefördert:** zinsverbilligter Kredit für den **Kauf eines sanierungsbedürftigen Bestandsgebäudes** durch Familien. Höchstbeträge: 1 Kind 100.000 €, 2 Kinder 125.000 €, 3+ Kinder 150.000 €.
-**Kommt in Frage, wenn:** **≥ 1 Kind < 18**, **Haushaltseinkommen ≤ 90.000 €** (1 Kind; +je Kind mehr), Selbstnutzung, das gekaufte Gebäude einen **Energieausweis Klasse F, G oder H** hat und du dich verpflichtest, es **innerhalb 4,5 Jahren auf mind. Effizienzhaus 85 EE** (oder Denkmal EE) zu sanieren. Antrag **vor Kauf**. (Sanierungskosten selbst werden hier nicht gefördert — die laufen über KfW 261/BAFA.)
+**Gefördert:** zinsverbilligter Kredit für den **Kauf eines sanierungsbedürftigen Bestandsgebäudes** durch Familien. Höchstbeträge **seit 03.08.2026**: 1 Kind **140.000 €**, 2 Kinder **160.000 €**, 3+ Kinder **180.000 €** (vorher 100.000 / 125.000 / 150.000 €).
+**Kommt in Frage, wenn:** **≥ 1 Kind < 18**, **Haushaltseinkommen ≤ 90.000 €** (1 Kind; +10.000 € je weiterem Kind — unverändert), Selbstnutzung, das gekaufte Gebäude einen **Energieausweis Klasse F, G oder H** hat und du dich verpflichtest, es **innerhalb 4,5 Jahren nach Zusage** zu sanieren. Antrag **vor Kauf**. (Sanierungskosten selbst werden hier nicht gefördert — die laufen über KfW 261/BAFA.)
+
+**Zweite Änderung zum 03.08.2026 — Sanierungsziel:** Neben der Komplettsanierung auf **Effizienzhaus 85 EE** bzw. **Effizienzhaus Denkmal EE** genügen jetzt auch **kombinierte energetische Einzelmaßnahmen** nach BEG EM. Die KfW verlangt dafür das Paket aus **Heizungstausch (mind. 65 % erneuerbar), Fenstertausch, Fassadendämmung und Dämmung des Dachs bzw. der obersten Geschossdecke**. Das senkt die Einstiegshürde erheblich — vorher scheiterten viele Käufer an der Komplettsanierung.
 
 ### KfW 297/298 — Klimafreundlicher Neubau Wohngebäude
 **Gefördert:** Neubau/Erstkauf ohne Einkommens-/Kindergrenze. Kredit bis 100.000 €/WE, mit QNG-Zertifikat bis 150.000 €/WE.

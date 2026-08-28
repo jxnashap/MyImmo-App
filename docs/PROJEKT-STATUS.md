@@ -224,9 +224,8 @@ keinen Brevo-Include — Brevo nutzt eigenen Return-Path und signiert per DKIM.
 
 ## 5. Terminiert
 
-- ⚠️ **Seit 03.08.2026 ÜBERFÄLLIG** — KfW-308-Konditionen aktualisieren
-  (`lib/kauf/foerderung.ts` steht auf `KFW_STAND = "07/2026"`, dazu Doku + Tests).
-  Braucht die neuen Höchstbeträge von der KfW-308-Produktseite — die kann nur der Betreiber liefern.
+- ✅ **03.08.2026 — KfW-308-Konditionen** am 28.08.2026 nachgezogen (140/160/180 Tsd. €,
+  Einzelmaßnahmen als Alternative zum EH 85 EE; `KFW_STAND = "08/2026"`).
 - **Ab 01.01.2027** — Ratgeber-Artikel zur Fernablesepflicht entschärfen
 
 ---

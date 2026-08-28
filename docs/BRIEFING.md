@@ -85,7 +85,7 @@ Fristenlogik, Leerzustände), Datenschutz-Passus für den Vorlagen-Verteiler.
 ## Nur der Betreiber (kein Code)
 AWS-Bedrock-/Enable-Banking-Keys, Brevo-AVV, Supabase-Mindestpasswortlänge auf 8,
 anwaltliche Prüfung (§34i GewO Finanzierungs-Assistent, StBerG Steuer-Features,
-Nutzer-AVV, Impressum/Datenschutz/AGB), **überfällig seit 03.08.2026: KfW-308-Konditionen**.
+Nutzer-AVV, Impressum/Datenschutz/AGB).
 ✅ Vercel Pro seit 29.07.2026 (AVV greift über die ToS, kommerzielle Nutzung erlaubt).
 ✅ Gewerbe angemeldet (GewA 1 Bad Schwartau, bescheinigt 16.07.2026, Nebenerwerb, SaaS-Tätigkeit);
 ✅ Impressum/Datenschutz tragen die echten Daten und stimmen mit der Anmeldung überein (24.07.2026).
