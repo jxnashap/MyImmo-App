@@ -49,7 +49,7 @@ export const KATEGORIE_STIL: Record<string, { badge: string; punkt: string; icon
   Miete: { badge: "badge-teal", punkt: "var(--teal)", icon: "🏠" },
   Betriebskosten: { badge: "badge-teal", punkt: "var(--teal)", icon: "🧾" },
   Finanzierung: { badge: "badge-gold", punkt: "var(--gold)", icon: "🏦" },
-  Steuer: { badge: "badge-blue", punkt: "var(--blue)", icon: "📋" },
+  Steuer: { badge: "badge-neutral", punkt: "var(--muted)", icon: "📋" },
   Wartung: { badge: "badge-amber", punkt: "var(--amber)", icon: "🔧" },
   WEG: { badge: "badge-green", punkt: "var(--green)", icon: "🏢" },
   Versicherung: { badge: "badge-muted", punkt: "var(--muted)", icon: "🛡️" },

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { datum } from "@/lib/format";
+import { datum, zahl } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
 import KrediteListe from "@/components/KrediteListe";
 import { decryptKreditRow } from "@/lib/kreditData";
@@ -46,7 +46,7 @@ export default async function KreditePage() {
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: w.color, flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Darlehen"}</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"} · {k.bank || ""} · {k.zinssatz ?? 0}%</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"} · {k.bank || ""} · {zahl(k.zinssatz ?? 0, 1)} %</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: w.color }}>{w.label}</div>

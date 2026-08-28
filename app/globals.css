@@ -91,7 +91,7 @@
   --line2: #d4d4d4;
   --text: #0a0a0a;        /* Ink */
   --muted: #737373;
-  --faint: #a3a3a3;
+  --faint: #8a8a8a;
   /* Gold zweistufig: --gold ist die LESBARE Textstufe (Kicker, Links,
      aktive Zustände auf Weiß), --gold-fill das Marken-Gold für Flächen
      (Primärknopf, Zähler, Logo-Haus) mit dunkler Schrift darauf. */
@@ -196,8 +196,8 @@
   --line: rgba(255,255,255,0.08);
   --line2: rgba(255,255,255,0.16);
   --text: #f5f5f5;
-  --muted: #8f8f8f;
-  --faint: #5c5c5c;
+  --muted: #9a9a9a;
+  --faint: #7c7c7c;
   --gold: #D4A847;
   --gold-fill: #D4A847;
   --gold-dim: rgba(212,168,71,0.25);
@@ -239,7 +239,7 @@
   :root:not([data-theme]) {
     --bg: #0f0f0f; --bg2: #171717; --bg3: #1f1f1f; --bg4: #292929; --bg5: #333333;
     --line: rgba(255,255,255,0.08); --line2: rgba(255,255,255,0.16);
-    --text: #f5f5f5; --muted: #8f8f8f; --faint: #5c5c5c;
+    --text: #f5f5f5; --muted: #9a9a9a; --faint: #7c7c7c;
     --gold: #D4A847; --gold-fill: #D4A847;
     --gold-dim: rgba(212,168,71,0.25); --gold-pale: rgba(212,168,71,0.10);
     --green: #4CAF7D; --green-dim: rgba(76,175,125,0.15);
@@ -417,6 +417,9 @@ a.kpi-card:active { transform: scale(.985); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 16px; border-radius: var(--r-sm); border: none; cursor: pointer; font-family: var(--font-ui); font-size: 13px; font-weight: 500; transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease; text-decoration: none; }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+/* Deaktivierter Primaerknopf wird grau statt "blassgold" — Blassgold las
+   sich wie eine zweite Primaerfarbe, nicht wie ein Zustand. */
+.btn-gold:disabled { background: var(--bg4); color: var(--muted); opacity: 1; }
 .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 /* Primaeraktion: flaches Marken-Gold (--gold-fill), dunkle Schrift — die
    einzige „chromatische" Interaktion des Systems. Kein Verlauf, kein
@@ -544,6 +547,9 @@ tr.no-hover:hover td { background: transparent; }
     radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.16), rgba(0,0,0,0)) right / 12px 100% no-repeat scroll;
 }
 .list-table { min-width: 560px; }
+/* Geld-/Zahlenspalte (immer die letzte) rechtsbuendig mit Tabellenziffern —
+   linksbuendige Betraege sind nicht ueberschlagbar. */
+.list-table td:last-child, .list-table th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 /* Mobil bleibt die Geld-/letzte Spalte angepinnt sichtbar — in einer
    Finanz-App ist der Betrag die eine Spalte, die nie verschwinden darf. */
 @media (max-width: 640px) {
@@ -556,8 +562,20 @@ tr.no-hover:hover td { background: transparent; }
 }
 
 /* DELETE BTN */
-.delete-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 14px; padding: 3px 7px; border-radius: 5px; transition: all 0.15s; line-height: 1; }
+/* Destruktive Aktionen sind AB RUHEZUSTAND als solche erkennbar — vorher
+   grau wie ein "Schliessen"-Kreuz, was auf Objekt-/Kreditkarten regelmaessig
+   zu Fehlklick-Angst fuehrte. Rot geduempft, beim Hover volle Signalfarbe.
+   Touch-Ziel per Padding auf ~44px (Pointer-Geraete unveraendert kompakt). */
+.delete-btn {
+  background: none; border: none; cursor: pointer;
+  color: color-mix(in srgb, var(--red) 62%, var(--muted));
+  font-size: 14px; padding: 3px 7px; border-radius: var(--r-sm);
+  transition: all 0.15s; line-height: 1;
+  display: inline-grid; place-items: center; position: relative;
+}
+.delete-btn::after { content: ""; position: absolute; inset: -10px; }
 .delete-btn:hover { background: var(--red-dim); color: var(--red); }
+.delete-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
 /* PROP CARDS */
 .prop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
@@ -874,7 +892,7 @@ tr.no-hover:hover td { background: transparent; }
 .icon-btn:disabled { opacity: .5; cursor: default; }
 
 .danger-zone { margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line); text-align: center; }
-.danger-link { background: none; border: none; color: var(--muted); font-size: 12.5px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; transition: color .15s; }
+.danger-link { background: none; border: none; color: var(--red); font-size: 12.5px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; transition: color .15s; }
 .danger-link:hover { color: var(--red); }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(10,10,10,.32); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 60; animation: overlayIn .2s ease; }

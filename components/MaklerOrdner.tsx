@@ -99,10 +99,11 @@ export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }:
       {/* Kopf: Titel + Fortschritts-Ring */}
       <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <FolderClosed size={20} color="var(--gold)" />
+          <FolderClosed size={22} color="var(--gold)" />
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Makler-Ordner</div>
-            <div style={{ fontSize: 11.5, color: "var(--muted)" }}>Dein Käufer-Paket für Makler &amp; Verkäufer</div>
+            <div className="topbar-kicker" style={{ marginBottom: 4 }}>Kalkulator · Kaufunterlagen</div>
+            <div className="topbar-title" style={{ fontSize: 24 }}>Makler-Ordner</div>
+            <div className="topbar-sub">Dein Käufer-Paket für Makler &amp; Verkäufer</div>
           </div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>

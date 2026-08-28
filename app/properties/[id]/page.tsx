@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { zeigeVerteiler } from "@/lib/umlage";
-import { euro, datum } from "@/lib/format";
+import { euro, datum, prozent, zahl } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
 import { deleteEinnahme, deleteKosten, deleteKredit, deleteVerbrauch, deleteNotiz } from "@/lib/actions/buchungen";
 import DeleteButton from "@/components/DeleteButton";
@@ -150,8 +150,8 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
   ];
 
   const kennzahlen = [
-    { lbl: "Bruttomietrendite", val: rendite > 0 ? rendite.toFixed(2) + "%" : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-teal", note: "Jahreskaltmiete / Kaufpreis" },
-    { lbl: "Kaufpreisfaktor", val: faktor > 0 ? faktor.toFixed(1) + "x" : "–", badge: faktor > 0 ? (faktor < 25 ? "badge-green" : faktor < 30 ? "badge-gold" : "badge-red") : "badge-teal", note: "Kaufpreis / Jahreskaltmiete" },
+    { lbl: "Bruttomietrendite", val: rendite > 0 ? prozent(rendite, 2) : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-teal", note: "Jahreskaltmiete / Kaufpreis" },
+    { lbl: "Kaufpreisfaktor", val: faktor > 0 ? `${zahl(faktor, 1)}×` : "–", badge: faktor > 0 ? (faktor < 25 ? "badge-green" : faktor < 30 ? "badge-gold" : "badge-red") : "badge-teal", note: "Kaufpreis / Jahreskaltmiete" },
     { lbl: "Instandhaltungsrücklage (empf.)", val: petersJahr > 0 ? euro(petersJahr) + "/Jahr" : "–", badge: "badge-teal", note: petersM2 > 0 ? `Peterssche Formel · ${euro(petersM2)}/m²·Jahr` : "Peterssche Formel (Faustformel)" },
     { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-teal", note: "Summe aller Darlehensraten" },
     { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–", badge: "badge-teal", note: "Summe aller Darlehen" },
@@ -404,7 +404,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Darlehen"}</div>
-                      <div style={{ fontSize: 11, color: "var(--muted)" }}>{k.bank || "–"} · {k.zinssatz ?? 0}% Zins · {k.tilgungssatz ?? 0}% Tilgung</div>
+                      <div style={{ fontSize: 11, color: "var(--muted)" }}>{k.bank || "–"} · {zahl(k.zinssatz ?? 0, 1)} % Zins · {zahl(k.tilgungssatz ?? 0, 1)} % Tilgung</div>
                     </div>
                     <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
                   </div>

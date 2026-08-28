@@ -71,3 +71,16 @@ export function istUmlagefaehig(kat: string | null): "ja" | "nein" | "unklar" {
   if (nein.includes(kat)) return "nein";
   return "unklar";
 }
+
+// Prozent deutsch: „4,4 %" (Komma, geschütztes Leerzeichen vor %).
+// Ersetzt die verstreuten `toFixed(1) + "%"`-Stellen mit Dezimalpunkt.
+export const prozent = (n: number | null | undefined, dez = 1) =>
+  n == null || !Number.isFinite(n)
+    ? "—"
+    : `${n.toLocaleString("de-DE", { minimumFractionDigits: dez, maximumFractionDigits: dez })} %`;
+
+// Zahl deutsch mit fester Nachkommastellen-Zahl: „19,4", „1.400".
+export const zahl = (n: number | null | undefined, dez = 0) =>
+  n == null || !Number.isFinite(n)
+    ? "—"
+    : n.toLocaleString("de-DE", { minimumFractionDigits: dez, maximumFractionDigits: dez });

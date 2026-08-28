@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { euro } from "@/lib/format";
+import { euro, prozent } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
 import DeleteButton from "@/components/DeleteButton";
 import type { Property, Kredit } from "@/lib/types";
@@ -149,7 +149,7 @@ export default async function PropertiesPage({
                     <div className="prop-stat-lbl">Miete/Mo</div>
                   </div>
                   <div className="prop-stat">
-                    <div className="prop-stat-val" style={{ color: "var(--teal)" }}>{rendite != null ? `${rendite.toFixed(2)}%` : "–"}</div>
+                    <div className="prop-stat-val" style={{ color: "var(--teal)" }}>{rendite != null ? prozent(rendite, 2) : "–"}</div>
                     <div className="prop-stat-lbl">Rendite</div>
                   </div>
                 </div>

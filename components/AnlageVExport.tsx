@@ -232,7 +232,7 @@ export default function AnlageVExport({
                     ))}
                   </tr>
 
-                  <tr><td colSpan={spalten.length + 1} style={{ fontWeight: 700, color: "var(--red)", paddingTop: 10 }}>Werbungskosten</td></tr>
+                  <tr><td colSpan={spalten.length + 1} style={{ fontWeight: 700, paddingTop: 10 }}>Werbungskosten</td></tr>
                   {wkPos.map((p) => (
                     <tr key={p.key}>
                       <td style={{ paddingLeft: 12, color: "var(--muted)" }}>{p.label}</td>
