@@ -8,6 +8,7 @@ import { deleteEinnahme, deleteKosten, deleteKredit, deleteVerbrauch, deleteNoti
 import DeleteButton from "@/components/DeleteButton";
 import { objektFolgenText } from "@/lib/loeschUmfang";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import Sprungmarken from "@/components/Sprungmarken";
 import Co2Rechner from "@/components/Co2Rechner";
 import PruefpflichtenKarte from "@/components/PruefpflichtenKarte";
 import MarktwertCard from "@/components/MarktwertCard";
@@ -235,6 +236,23 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
         </div>
       </div>
 
+      {/* Binnennavigation: Die Objektseite ist am Handy rund 24 Bildschirm-
+          höhen lang. Nur Marken listen, deren Abschnitt auch gerendert wird —
+          sonst springt ein Chip ins Leere. */}
+      <Sprungmarken
+        marken={[
+          { id: "stammdaten", label: "Stammdaten" },
+          { id: "kennzahlen", label: "Kennzahlen" },
+          ...(wertReihe.length >= 2 ? [{ id: "wertentwicklung", label: "Wertentwicklung" }] : []),
+          { id: "mieter", label: istGaragen ? "Einheiten" : "Mieter" },
+          ...(verteilerSichtbar ? [{ id: "nebenkosten", label: "Nebenkosten" }] : []),
+          { id: "kredite", label: "Kredite" },
+          { id: "verbrauch", label: "Verbrauch" },
+          { id: "archiv", label: "Archiv" },
+          { id: "co2", label: "CO₂" },
+        ]}
+      />
+
       {/* KPI-Leiste */}
       <div className="staffel grid-4 mb-20">
         {kpis.map((k) => (
@@ -248,7 +266,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
       {/* Stammdaten + Kennzahlen */}
       <div className="grid-2 mb-20">
-        <div className="section" style={{ marginBottom: 0 }}>
+        <div id="stammdaten" data-anker className="section" style={{ marginBottom: 0 }}>
           <div className="section-header"><h3>Stammdaten</h3></div>
           <div className="section-body">
             <table style={{ fontSize: 13 }}>
@@ -264,7 +282,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           </div>
         </div>
 
-        <div className="section" style={{ marginBottom: 0 }}>
+        <div id="kennzahlen" data-anker className="section" style={{ marginBottom: 0 }}>
           <div className="section-header"><h3>Kennzahlen &amp; Rendite</h3></div>
           <div className="section-body">
             <div style={{ display: "flex", flexDirection: "column" }}>
@@ -305,7 +323,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
       {/* Wertentwicklung (Verlauf aus Kaufpreis + erfassten Wert-Ständen) */}
       {wertReihe.length >= 2 && (
-        <div className="section mb-20">
+        <div id="wertentwicklung" data-anker className="section mb-20">
           <div className="section-header">
             <h3>Wertentwicklung</h3>
             {wertReiheProzent != null && (
@@ -324,7 +342,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       )}
 
       {/* Mieter dieser Immobilie */}
-      <div className="section mb-20">
+      <div id="mieter" data-anker className="section mb-20">
         <div className="section-header">
           <h3>{istGaragen ? "Einheiten & Mieter" : "Mieter dieser Immobilie"}</h3>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -370,7 +388,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       {/* Nebenkosten-Verteiler — nur bei mehreren Mietparteien sinnvoll
           (bei einer ETW/einem EFH gibt es nichts zu verteilen). */}
       {verteilerSichtbar && (
-      <div className="section mb-20">
+      <div id="nebenkosten" data-anker className="section mb-20">
         <div className="section-header">
           <h3>Nebenkosten verteilen</h3>
           <Link href={`/properties/${id}/umlage`} className="btn btn-gold" style={{ fontSize: 11 }}>Verteiler öffnen</Link>
@@ -386,7 +404,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       )}
 
       {/* Kredite & Finanzierung */}
-      <div className="section mb-20">
+      <div id="kredite" data-anker className="section mb-20">
         <div className="section-header">
           <h3>Kredite &amp; Finanzierung</h3>
           <Link href={`/kredite/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Darlehen</Link>
@@ -468,7 +486,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
 
       {/* Verbrauch + Notizen */}
       <div className="grid-2 mb-20">
-        <div className="section" style={{ marginBottom: 0 }}>
+        <div id="verbrauch" data-anker className="section" style={{ marginBottom: 0 }}>
           <div className="section-header"><h3>Verbrauch &amp; Nebenkosten</h3><Link href={`/verbrauch/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Hinzufügen</Link></div>
           <div className="section-body">
             {verbrauch.length === 0 ? (
@@ -497,7 +515,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
           </div>
         </div>
 
-        <div className="section" style={{ marginBottom: 0 }}>
+        <div id="archiv" data-anker className="section" style={{ marginBottom: 0 }}>
           <div className="section-header"><h3>Archiv</h3><Link href="/archiv" className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Hinzufügen</Link></div>
           <div className="section-body">
             {notizen.length === 0 ? (
@@ -524,7 +542,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
       <PruefpflichtenKarte propId={id} objektName={p.bezeichnung ?? "Objekt"} />
 
       {/* CO₂-Kostenaufteilung (CO2KostAufG) */}
-      <div className="section mb-20">
+      <div id="co2" data-anker className="section mb-20">
         <div className="section-header">
           <h3>CO₂-Kostenaufteilung</h3>
           <span style={{ fontSize: 11, color: "var(--muted)" }}>

@@ -148,9 +148,9 @@ function LinkZeile({ l }: { l: BewerberLinkRow }) {
         {l.dokumenteGewuenscht.length > 0 && (
           <span className="badge badge-gold">{l.dokumenteGewuenscht.length} Unterlagen gewünscht</span>
         )}
-        <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6 }}>
+        <span className="row-actions">
           <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }} onClick={() => setOffen(!offen)}>
-            <ClipboardList size={12} style={{ verticalAlign: "-2px" }} /> Steckbrief & Unterlagen {offen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            <ClipboardList size={12} style={{ verticalAlign: "-2px" }} /> Steckbrief<span className="nur-breit"> &amp; Unterlagen</span> {offen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
           </button>
           <button
             type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}
@@ -348,9 +348,12 @@ export default function BewerbungenManager({
                 {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
               </select>
             </div>
-            <div className="form-group" style={{ flex: 1, minWidth: 180 }}>
+            {/* minWidth 180 war zu schmal: Das Feld blieb am Handy in der Zeile
+                stehen und schnitt den Platzhalter ab. Ab 240 bricht es sauber
+                in eine eigene Zeile um. */}
+            <div className="form-group" style={{ flex: 1, minWidth: 240 }}>
               <label>Titel (optional, sieht der Bewerber)</label>
-              <input name="titel" maxLength={120} placeholder="z. B. 3-Zi-Wohnung ab 01.09." />
+              <input name="titel" maxLength={120} placeholder="z. B. 3-Zi-Wohnung Altbau" />
             </div>
             <button type="submit" className="btn btn-gold" disabled={pending}>Link erstellen</button>
           </form>

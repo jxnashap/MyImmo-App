@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LandingPage from "@/components/LandingPage";
-import { euro, datum, zahl } from "@/lib/format";
+import { euro, datum, zahl, begruessung } from "@/lib/format";
 import { getRefinanzWarning, bankingFristen, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
 import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
@@ -95,8 +95,9 @@ export default async function DashboardPage() {
   const naechsteFristen = fristListe.slice(0, 4);
 
   // Begrüßung nach Tageszeit (Europe/Berlin) + Vorname aus dem Vermieterprofil.
-  const stunde = Number(new Intl.DateTimeFormat("de-DE", { hour: "numeric", hour12: false, timeZone: "Europe/Berlin" }).format(new Date()));
-  const gruss = stunde < 11 ? "Guten Morgen" : stunde < 18 ? "Guten Tag" : "Guten Abend";
+  // Die Stundenermittlung steckt in lib/format (getestet) — die frühere
+  // Inline-Variante parste „11 Uhr" mit Number() und ergab immer NaN.
+  const gruss = begruessung();
   const vorname = ((profil as { name: string | null } | null)?.name ?? "").trim().split(/\s+/)[0] || null;
   const monatJahr = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric", timeZone: "Europe/Berlin" }).format(new Date());
 

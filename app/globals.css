@@ -357,7 +357,11 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 .section { background: var(--bg2); border-radius: var(--r-lg); border: 1px solid var(--line); margin-bottom: 18px; overflow: hidden; box-shadow: var(--shadow-1); transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
 .section:hover { border-color: var(--line2); box-shadow: var(--shadow-2); }
 .section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 16px 20px; border-bottom: 1px solid var(--line); }
-.section-header h3 { font-size: 13.5px; font-weight: 600; letter-spacing: -0.1px; }
+/* Flex-Zeile aus demselben Grund wie bei .form-group label: Tailwind-Preflight
+   setzt `svg { display: block }`, wodurch das Icon ueber der Ueberschrift
+   landete statt daneben. */
+.section-header h3 { font-size: 13.5px; font-weight: 600; letter-spacing: -0.1px; display: flex; align-items: center; gap: 6px; }
+.section-header h3 > svg { flex-shrink: 0; }
 /* Erklärzeile unter dem Abschnitts-Titel (Design-Handoff) */
 .section-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; font-weight: 400; }
 .section-body { padding: 20px; }
@@ -607,7 +611,14 @@ tr.no-hover:hover td { background: transparent; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 .form-row.single { grid-template-columns: 1fr; }
 .form-group { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.form-group label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: var(--track-caption); }
+/* Label als Flex-Zeile: Tailwind-Preflight setzt `svg { display: block }`,
+   dadurch sprang jedes Icon in einem Label auf eine eigene Zeile ("Icon
+   bricht mitten im Fliesstext um" aus dem UX-Audit). */
+.form-group label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: var(--track-caption); display: flex; align-items: center; gap: 5px; }
+.form-group label > svg { flex-shrink: 0; }
+/* Dasselbe Preflight-Problem in Fliesstext: ein Icon mitten im Satz landete
+   auf einer eigenen Zeile und riss den Absatz auseinander. */
+p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2px; }
 /* Eingabefelder nach Referenz: weiche graue Fuellung (#f5f5f5) OHNE Rahmen
    im Ruhezustand, Pillen-Radius — der Fokus zeichnet den Ring. */
 .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 13px; border-radius: var(--r-sm); border: 1px solid transparent; font-family: var(--font-ui); font-size: 14px; background-color: var(--bg3); color: var(--text); transition: border-color .15s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease); outline: none; }
@@ -801,6 +812,21 @@ tr.no-hover:hover td { background: transparent; }
   .main { padding: 18px 16px; }
   /* Mobile-Kopfleiste einblenden */
   .mobile-bar { display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 50; background: var(--bg2); border-bottom: 1px solid var(--line); padding: 10px 16px; }
+  /* Am Handy scrollt das FENSTER, nicht .main-wrap (dessen scrollTop bleibt 0).
+     Solange dort aber `overflow-y: auto` steht, ist .main-wrap trotzdem der
+     Sticky-Bezugsrahmen — und weil dieser Rahmen nie scrollt, wandert jedes
+     sticky-Element darin einfach mit weg. Genau daran sind die Sprungmarken
+     gescheitert. `visible` aendert am Scrollverhalten nichts (es scrollt
+     ohnehin das Fenster) und macht sticky wieder wirksam.
+     WICHTIG `clip` statt `visible`/`hidden`: `visible` nimmt auch die
+     horizontale Begrenzung weg (Karten liefen rechts aus dem Bild), `hidden`
+     wuerde wieder einen Scroll-Container aufmachen und sticky erneut toeten.
+     `overflow-x: clip` beschneidet, ohne scrollbar zu sein.
+     `min-width: 0` ist dabei Pflicht: Ein Scroll-Container hat implizit die
+     automatische Mindestgroesse 0, ein normaler Grid-Eintrag nicht — ohne die
+     Zeile drueckt der Inhalt die 1fr-Spalte auf 630px auf und die halbe Seite
+     steht ausserhalb des Bildschirms. */
+  .main-wrap { overflow-x: clip; overflow-y: visible; min-width: 0; }
   /* Sidebar wird zum Off-Canvas-Drawer */
   .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: 270px; max-width: 84vw; z-index: 70; transform: translateX(-100%); transition: transform 0.25s ease; box-shadow: none; }
   .sidebar.open { transform: translateX(0); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
@@ -2090,3 +2116,97 @@ select:focus-visible, textarea:focus-visible {
   .brief-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 @media print { .brief-scroll { overflow: visible; } .brief-scroll table { min-width: 0 !important; } }
+
+/* ---------------------------------------------------------------------------
+   Aktionszeile in Listen (Link-Verwaltung, Bewerbungen).
+   Auf dem Desktop rechtsbuendig neben dem Titel; unter 640px bekommt die
+   Gruppe eine eigene Zeile, statt die Knopfbeschriftungen dreizeilig
+   umbrechen zu lassen. `.nur-breit` blendet erklaerende Wortteile aus, die
+   am Handy nur Platz kosten ("Steckbrief & Unterlagen" -> "Steckbrief").
+   --------------------------------------------------------------------------- */
+.row-actions {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .row-actions { margin-left: 0; width: 100%; margin-top: 6px; }
+  .row-actions .btn { flex: 0 1 auto; }
+  .nur-breit { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Nachschlage-Bloecke in langen Karten (Glossare, Checklisten).
+   Native <details>/<summary> — kein JS, funktioniert auch ohne Hydration.
+   Zweck: Referenzinhalte muessen nicht dauerhaft die Seite verlaengern.
+   --------------------------------------------------------------------------- */
+.klapp {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg3);
+  margin-top: 16px;
+}
+.klapp > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--r-md);
+}
+.klapp > summary::-webkit-details-marker { display: none; }
+.klapp > summary::after {
+  content: "▾";
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+  transition: transform .15s ease;
+}
+.klapp[open] > summary::after { transform: rotate(180deg); }
+.klapp > summary:focus-visible { outline: 2px solid var(--gold-fill); outline-offset: 2px; }
+.klapp > .klapp-body { padding: 0 14px 14px; }
+.klapp > summary > .klapp-hint { font-weight: 400; color: var(--muted); font-size: 11.5px; }
+
+/* ---------------------------------------------------------------------------
+   Sprungmarken: Binnennavigation fuer lange Seiten (Objekt-Detail sind am
+   Handy rund 24 Bildschirmhoehen). Nur unter 860px sichtbar — auf dem Desktop
+   ueberblickt man die Seite ohnehin. Klebt unter der mobilen Kopfleiste.
+   --------------------------------------------------------------------------- */
+.sprungmarken { display: none; }
+@media (max-width: 860px) {
+  .sprungmarken {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    position: sticky;
+    top: 58px; /* gemessene Hoehe der .mobile-bar (59px) minus Haarlinie */
+    z-index: 6;
+    margin: 0 -16px 18px;
+    padding: 8px 16px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .sprungmarken::-webkit-scrollbar { display: none; }
+  .sprungmarken a {
+    flex: 0 0 auto;
+    font-size: 11.5px;
+    padding: 5px 11px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--line);
+    background: var(--bg2);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .sprungmarken a:active { background: var(--bg4); color: var(--ink); }
+  /* Sprungziel nicht unter Kopfleiste + Markenleiste schieben */
+  [data-anker] { scroll-margin-top: 116px; } /* Kopfleiste 59 + Markenleiste 45 + Luft */
+}

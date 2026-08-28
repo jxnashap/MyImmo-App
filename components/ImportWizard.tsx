@@ -25,6 +25,13 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
   const [konfidenz, setKonfidenz] = useState<number | null>(null);
   const [notiz, setNotiz] = useState("");
   const [v, setV] = useState<Values>(LEER);
+  // Im KI-Tab stand das leere Objektformular dauerhaft unter den drei
+  // Auslese-Wegen — man sah nicht, ob es das Ergebnis oder eine zweite
+  // Eingabemaske ist. Es erscheint jetzt erst, wenn es etwas zu prüfen gibt
+  // (oder man es bewusst aufklappt).
+  const [manuellOffen, setManuellOffen] = useState(false);
+  const etwasErkannt = konfidenz != null || Object.entries(v).some(([k, val]) => val !== LEER[k as keyof Values]);
+  const zeigeFormular = tab === "manual" || etwasErkannt || manuellOffen;
   const set = (k: keyof Values) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setV((s) => ({ ...s, [k]: e.target.value }));
 
   // Ein Weg für alle drei Quellen: PDF-Upload, Link, Text.
@@ -90,10 +97,21 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
           {/* Weg 1: Exposé-PDF hochladen — der übliche Fall beim Makler-Exposé. */}
           <div className="form-group" style={{ marginBottom: 10 }}>
             <label><Upload size={12} style={{ verticalAlign: "-2px" }} /> Exposé als PDF hochladen</label>
+            {/* Der native Datei-Dialog-Knopf war die einzige Stelle der App mit
+                englischer Systembeschriftung und eckigem Rahmen — deshalb hier
+                dasselbe Pillen-Muster wie im CSV-Import. */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <input type="file" accept="application/pdf,.pdf"
-                onChange={(e) => { setDatei(e.target.files?.[0] ?? null); setError(null); }}
-                style={{ flex: "1 1 240px", fontSize: 12.5 }} />
+              <label className="btn btn-ghost" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <Upload size={14} /> PDF wählen
+                <input type="file" accept="application/pdf,.pdf"
+                  onChange={(e) => { setDatei(e.target.files?.[0] ?? null); setError(null); }}
+                  style={{ display: "none" }} />
+              </label>
+              {datei && (
+                <span style={{ fontSize: 12.5, color: "var(--muted)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220 }}>
+                  {datei.name}
+                </span>
+              )}
               <button type="button" className="btn btn-gold" onClick={pdfAuslesen} disabled={loading !== null || !datei}>
                 {loading === "pdf" ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Liest PDF…</> : "PDF auslesen"}
               </button>
@@ -132,8 +150,19 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
         </div>
       )}
 
+      {tab === "ki" && !zeigeFormular && (
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => setManuellOffen(true)}
+          style={{ marginBottom: 4 }}
+        >
+          <ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Lieber selbst eintragen
+        </button>
+      )}
+
       {/* Geteiltes (editierbares) Formular */}
-      <form action={action}>
+      <form action={action} style={{ display: zeigeFormular ? undefined : "none" }}>
         <div className="form-section-label">{tab === "ki" ? "Erkannte Daten (prüfen & speichern)" : "Objektdaten"}</div>
         <div className="form-row">
           <div className="form-group"><label>Name *</label><input name="bezeichnung" required value={v.bezeichnung} onChange={set("bezeichnung")} placeholder="z.B. 3-Zi-Wohnung Hamburg" /></div>

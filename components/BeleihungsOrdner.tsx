@@ -238,13 +238,22 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
             {busy === item.key ? <Loader2 size={13} style={{ animation: "spin .8s linear infinite" }} /> : <Bot size={13} />} Aus MyImmo erzeugen
           </button>
         )}
-        <input
-          type="date"
-          value={d.datum ?? ""}
-          onChange={(e) => run(item.key, () => setBeleihungDatum(propId, item.key, e.target.value || null))}
-          title="Datum des Dokuments (optional)"
-          style={{ fontSize: 11, padding: "4px 6px", background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, color: d.datum ? "var(--ink)" : "var(--muted)", width: 118 }}
-        />
+        {/* Das Feld stand vorher ohne jede Beschriftung in jeder der ~25 Zeilen —
+            mit Tooltip, den am Handy niemand sieht. Ein kurzes „Stand" davor
+            sagt in jeder Zeile, welches Datum gemeint ist. */}
+        <label
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10.5, color: "var(--muted)", whiteSpace: "nowrap" }}
+          title="Datum, das auf dem Dokument steht (Ausstellung bzw. Stichtag) — optional"
+        >
+          Stand
+          <input
+            type="date"
+            value={d.datum ?? ""}
+            onChange={(e) => run(item.key, () => setBeleihungDatum(propId, item.key, e.target.value || null))}
+            aria-label={`Dokumentdatum: ${item.label}`}
+            style={{ fontSize: 11, padding: "4px 6px", background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, color: d.datum ? "var(--ink)" : "var(--muted)", width: 118 }}
+          />
+        </label>
       </div>
     );
   }
