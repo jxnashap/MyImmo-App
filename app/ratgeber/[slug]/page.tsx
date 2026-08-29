@@ -5,6 +5,12 @@ import LandingShell from "@/components/landing/Shell";
 import { RATGEBER, ratgeberBySlug, ratgeberDatum } from "@/lib/ratgeber";
 import { ArrowRight, ArrowLeft, Clock } from "lucide-react";
 
+// Nur die zur Bauzeit bekannten Slugs sind gültig. Ohne dieses Flag versucht
+// Next jeden unbekannten Slug dynamisch zu rendern; weil die Seite dabei
+// streamt, ist der Status 200 schon raus, bevor notFound() greift — Google
+// sah einen "Soft 404" (Seite sagt 404, Server sagt 200).
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return RATGEBER.map((a) => ({ slug: a.slug }));
 }
@@ -26,15 +32,43 @@ export default function RatgeberArtikelSeite({ params }: { params: { slug: strin
 
   const weitere = RATGEBER.filter((x) => x.slug !== a.slug).slice(0, 2);
 
-  // JSON-LD (Article) für SEO/Rich Results.
+  // JSON-LD für SEO. Article + BreadcrumbList — die beiden Typen, die 2026
+  // noch Rich Results liefern (FAQPage ist seit 07.05.2026 abgeschaltet,
+  // HowTo seit 2023; siehe docs/SEO.md).
+  const url = `https://www.myimmoapp.de/ratgeber/${a.slug}`;
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
-    headline: a.titel,
-    description: a.beschreibung,
-    datePublished: a.datum,
-    author: { "@type": "Organization", name: "MyImmo" },
-    publisher: { "@type": "Organization", name: "MyImmo" },
+    "@graph": [
+      {
+        "@type": "Article",
+        "@id": `${url}#article`,
+        headline: a.titel,
+        description: a.beschreibung,
+        datePublished: a.datum,
+        // dateModified fehlte — bei Steuer-/Rechtsinhalten (YMYL) ist
+        // Aktualität ein Kernsignal.
+        dateModified: a.datum,
+        inLanguage: "de-DE",
+        url,
+        mainEntityOfPage: { "@type": "WebPage", "@id": url },
+        image: "https://www.myimmoapp.de/og.png",
+        author: { "@type": "Organization", name: "MyImmo" },
+        publisher: {
+          "@type": "Organization",
+          name: "MyImmo",
+          url: "https://www.myimmoapp.de",
+          logo: "https://www.myimmoapp.de/myimmo_logo_2048.png",
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Start", item: "https://www.myimmoapp.de" },
+          { "@type": "ListItem", position: 2, name: "Ratgeber", item: "https://www.myimmoapp.de/ratgeber" },
+          { "@type": "ListItem", position: 3, name: a.titel, item: url },
+        ],
+      },
+    ],
   };
 
   return (

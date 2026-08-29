@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "Vision — MyImmo",
   description:
     "Die MyImmo-Vision: im Ausland leben und den Immobilienbestand in Deutschland vollständig aus der App steuern — mit Team-Rollen und Steuerberater-Freigabe.",
+  alternates: { canonical: "/vision" },
   openGraph: { images: ["/og.png"] },
 };
 

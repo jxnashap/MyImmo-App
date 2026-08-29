@@ -6,6 +6,12 @@ import { FUNKTIONSSEITEN, funktionsseiteBySlug } from "@/lib/funktionen";
 import { ratgeberBySlug } from "@/lib/ratgeber";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 
+// Nur die zur Bauzeit bekannten Slugs sind gültig. Ohne dieses Flag versucht
+// Next jeden unbekannten Slug dynamisch zu rendern; weil die Seite dabei
+// streamt, ist der Status 200 schon raus, bevor notFound() greift — Google
+// sah einen "Soft 404" (Seite sagt 404, Server sagt 200).
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return FUNKTIONSSEITEN.map((f) => ({ slug: f.slug }));
 }

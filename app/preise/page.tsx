@@ -16,6 +16,7 @@ export const metadata: Metadata = PREISE_SICHTBAR
       title: "Preise — MyImmo",
       description:
         "MyImmo-Tarife: Kostenlos, Privat, Plus und Business — fair kalkuliert, während des Early Access komplett kostenlos.",
+      alternates: { canonical: "/preise" },
     }
   : {
       title: "Häufige Fragen — MyImmo",
