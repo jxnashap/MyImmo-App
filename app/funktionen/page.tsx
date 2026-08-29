@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: "Funktionen — MyImmo",
   description:
     "Alle MyImmo-Funktionen: Nebenkostenabrechnung, Anlage V & ELSTER, Mieterportal, Service-Aufträge, Kredite, Dokumente und mehr.",
+  openGraph: { images: ["/og.png"] },
 };
 
 export default function FunktionenPage() {
@@ -88,7 +89,8 @@ export default function FunktionenPage() {
 
 
           <Reveal>
-            <div className="lp-split lp-split-rev">
+            {/* Zickzack-Rhythmus: „Steuer" davor ist bereits rev — Fristen wieder normal */}
+            <div className="lp-split">
               <div>
                 <h3>Fristen, die sich selbst eintragen</h3>
                 <p>Aus Mietern, Krediten und Steuerterminen entstehen automatisch Fristen — eigene Wartungstermine legst du mit einem Klick an.</p>

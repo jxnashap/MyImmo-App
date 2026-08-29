@@ -15,13 +15,13 @@ import { useEffect, useState } from "react";
 
 export type QlxNavEintrag = { href: string; label: string };
 
-// Goldenes Haus-Monogramm — die Kachel-Logo-Form als Strichzeichnung.
+// Goldenes Haus-Monogramm — exakt die Form des App-Icons
+// (public/myimmo_logo_2048.png): Dach + zwei Wände, unten OFFEN,
+// keine Tür, kein Boden. Ein durchgehender Gold-Strich.
 function Monogramm() {
   return (
     <svg className="qlx-mono" viewBox="0 0 44 44" aria-hidden>
-      <path className="m-gold" d="M6 22 L22 8 L38 22" />
-      <path className="m-ink" d="M11 20 V36 H33 V20" />
-      <path className="m-gold" d="M19 36 V27 H25 V36" />
+      <path className="m-gold" d="M10 40 V19 L22 8 L34 19 V40" />
     </svg>
   );
 }
@@ -118,6 +118,7 @@ export default function QlxHeader({
             <div className="qlx-overlay-foot">
               <Link href="/agb" onClick={zu} tabIndex={offen ? 0 : -1}>AGB</Link>
               <Link href="/datenschutz" onClick={zu} tabIndex={offen ? 0 : -1}>Datenschutz</Link>
+              <Link href="/avv" onClick={zu} tabIndex={offen ? 0 : -1}>AVV</Link>
               <Link href="/impressum" onClick={zu} tabIndex={offen ? 0 : -1}>Impressum</Link>
             </div>
           </nav>

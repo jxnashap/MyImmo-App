@@ -17,7 +17,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     title: `${f.metaTitel} — MyImmo`,
     description: f.beschreibung,
     alternates: { canonical: `/funktionen/${f.slug}` },
-    openGraph: { title: f.titel, description: f.beschreibung, type: "website" },
+    openGraph: { title: f.titel, description: f.beschreibung, type: "website", images: ["/og.png"] },
   };
 }
 
@@ -36,7 +36,7 @@ export default function FunktionsSeite({ params }: { params: { slug: string } })
           <Link href="/funktionen" style={{ fontSize: 13, color: "var(--l-muted)", textDecoration: "none" }}>
             <ArrowLeft size={13} style={{ verticalAlign: "-2px" }} /> Alle Funktionen
           </Link>
-          <div className="lp-kicker" style={{ marginTop: 18 }}>{f.kicker}</div>
+          <div className="lp-kicker" style={{ marginTop: 18, textAlign: "left" }}>{f.kicker}</div>
           <h1 className="lp-h2" style={{ fontSize: "clamp(27px, 3.8vw, 38px)", textAlign: "left" }}>{f.titel}</h1>
           <p style={{ fontSize: 16, lineHeight: 1.7, color: "var(--l-ink)", margin: "0 0 30px", fontWeight: 500 }}>{f.sub}</p>
 

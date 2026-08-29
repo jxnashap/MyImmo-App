@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   description:
     "Praxiswissen für private Vermieter: Nebenkostenabrechnung, Steuer, Fristen und der Einstieg in die Vermietung — verständlich erklärt.",
   alternates: { canonical: "/ratgeber" },
+  openGraph: { images: ["/og.png"] },
 };
 
 export default function RatgeberIndex() {

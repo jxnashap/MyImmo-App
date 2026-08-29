@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "Vision — MyImmo",
   description:
     "Die MyImmo-Vision: im Ausland leben und den Immobilienbestand in Deutschland vollständig aus der App steuern — mit Team-Rollen und Steuerberater-Freigabe.",
+  openGraph: { images: ["/og.png"] },
 };
 
 export default function VisionPage() {
@@ -32,17 +33,17 @@ export default function VisionPage() {
           <Reveal>
             <div className="lp-cards3">
               <div className="lp-card">
-                <span className="lp-vorher" style={{ color: "var(--gold)" }}>Heute schon</span>
+                <span className="lp-vorher" style={{ color: "var(--l-gold-ink)" }}>Heute schon</span>
                 <h3>Das Team arbeitet vor Ort</h3>
                 <p>Mieter melden Anliegen digital, der Hausmeister legt Aufträge an, Firmen bekommen Termin-Links — du gibst nur noch frei. Alles läuft über Rollen, nichts über deinen Anrufbeantworter.</p>
               </div>
               <div className="lp-card">
-                <span className="lp-vorher" style={{ color: "var(--gold)" }}>Heute schon</span>
+                <span className="lp-vorher" style={{ color: "var(--l-gold-ink)" }}>Heute schon</span>
                 <h3>Papierkram wird zu PDFs</h3>
                 <p>Nebenkostenabrechnung, Mahnung, Anlage V, Jahresbericht: fertige Dokumente im eigenen Briefkopf — erzeugt in Sekunden, abgelegt im Archiv, verschickt von überall.</p>
               </div>
               <div className="lp-card">
-                <span className="lp-vorher" style={{ color: "var(--gold)" }}>Heute schon</span>
+                <span className="lp-vorher" style={{ color: "var(--l-gold-ink)" }}>Heute schon</span>
                 <h3>Zahlen ohne Zettel</h3>
                 <p>Cashflow, Rendite, Restschuld und Fristen leben in der App statt in Excel — mit automatischen Warnungen, bevor etwas anbrennt.</p>
               </div>
@@ -56,7 +57,9 @@ export default function VisionPage() {
               <Reveal key={v.t} delay={i * 70}>
                 <Tilt>
                   <div className="lp-card" style={{ height: "100%" }}>
-                    <span className="lp-vorher" style={v.status === "bald" ? { color: "var(--gold)" } : undefined}>
+                    {/* „Geplant" ist nichts Negatives — neutral statt des roten
+                        .lp-vorher-Defaults; „In Arbeit" im AA-sicheren Gold. */}
+                    <span className="lp-vorher" style={{ color: v.status === "bald" ? "var(--l-gold-ink)" : "var(--l-muted)" }}>
                       {v.status === "bald" ? "In Arbeit" : "Geplant"}
                     </span>
                     <h3>{v.t}</h3>

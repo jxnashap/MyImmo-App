@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   description:
     "Mieterhöhung, Kündigung, Mahnung, Wohnungsgeberbestätigung, Übergabeprotokoll und mehr — rechtssichere Vorlagen, in MyImmo mit einem Klick personalisiert als PDF.",
   alternates: { canonical: "/vorlagen" },
+  openGraph: { images: ["/og.png"] },
 };
 
 const VORLAGEN = [
@@ -33,22 +34,24 @@ const VORLAGEN = [
 // ?nl=... hierher zurück, statt eine eigene Seite zu bekommen — der Besucher
 // landet dort, wo er hergekommen ist.
 const NL_MELDUNG: Record<string, { text: string; gut: boolean }> = {
-  ok: { text: "Danke — Ihre Anmeldung ist bestätigt. Sie bekommen Bescheid, sobald es neue Vorlagen gibt.", gut: true },
-  abgemeldet: { text: "Sie sind abgemeldet. Wir schicken Ihnen keine weiteren E-Mails.", gut: true },
-  abgelaufen: { text: "Dieser Bestätigungslink ist abgelaufen. Bitte tragen Sie sich unten erneut ein.", gut: false },
-  fehler: { text: "Der Link ist ungültig. Bitte tragen Sie sich unten erneut ein.", gut: false },
+  ok: { text: "Danke — deine Anmeldung ist bestätigt. Du bekommst Bescheid, sobald es neue Vorlagen gibt.", gut: true },
+  abgemeldet: { text: "Du bist abgemeldet. Wir schicken dir keine weiteren E-Mails.", gut: true },
+  abgelaufen: { text: "Dieser Bestätigungslink ist abgelaufen. Bitte trag dich unten erneut ein.", gut: false },
+  fehler: { text: "Der Link ist ungültig. Bitte trag dich unten erneut ein.", gut: false },
 };
 
 export default function VorlagenPage({ searchParams }: { searchParams: { nl?: string } }) {
   const meldung = searchParams.nl ? NL_MELDUNG[searchParams.nl] : undefined;
   return (
-    <LandingShell aktiv="/vorlagen" mitHero>
+    // ohneSchlussCta: Die Seite hat ihren eigenen Gold-CTA — sonst stünden
+    // zwei „Kostenlos …"-Bänder direkt übereinander.
+    <LandingShell aktiv="/vorlagen" mitHero ohneSchlussCta>
       <QlxHero
         slug="vorlagen"
         kompakt
         kicker="Vorlagen"
         titel={<>Rechtssichere Vorlagen — <em>in Sekunden fertig</em></>}
-        sub="Statt Word-Dokumente mühsam auszufüllen: Vorlage wählen, der Rest wird aus Ihren Objekt- und Mieterdaten automatisch ergänzt — als sauberes PDF im Geschäftsbriefstil. Kostenlos im Early Access."
+        sub="Statt Word-Dokumente mühsam auszufüllen: Vorlage wählen, der Rest wird aus deinen Objekt- und Mieterdaten automatisch ergänzt — als sauberes PDF im Geschäftsbriefstil. Kostenlos im Early Access."
       />
       <section className="lp-section">
         <div className="lp-inner">
@@ -90,7 +93,7 @@ export default function VorlagenPage({ searchParams }: { searchParams: { nl?: st
             <Link href="/anmelden" className="btn btn-gold lp-btn-big">Vorlagen kostenlos nutzen <ArrowRight size={15} style={{ verticalAlign: "-2px" }} /></Link>
           </div>
           <p className="lp-section-sub" style={{ marginTop: 24, marginBottom: 0, fontSize: 12.5 }}>
-            Alle Vorlagen werden mit Ihren Daten personalisiert und lassen sich vor dem Export bearbeiten.
+            Alle Vorlagen werden mit deinen Daten personalisiert und lassen sich vor dem Export bearbeiten.
             Anhaltspunkte ohne Gewähr, keine Rechtsberatung.
           </p>
         </div>
