@@ -206,6 +206,8 @@ export default async function TerminePage({
           <form action={toggleErledigt.bind(null, e.id)} style={{ display: "inline-flex" }}>
             <button
               type="submit"
+              className="tap44"
+              aria-label={e.erledigt ? "Termin wieder öffnen" : "Termin als erledigt abhaken"}
               title={e.erledigt ? "Wieder öffnen" : "Als erledigt abhaken"}
               style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${e.erledigt ? "var(--green)" : "var(--line2)"}`, background: e.erledigt ? "var(--green-dim)" : "transparent", color: "var(--green)", cursor: "pointer", display: "grid", placeItems: "center", fontSize: 11, lineHeight: 1, padding: 0 }}
             >

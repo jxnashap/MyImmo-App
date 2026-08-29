@@ -767,6 +767,11 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
   .termin-zeile > form, .termin-zeile > span:last-child { order: 5; margin-left: auto; }
 }
 
+/* Kleines Bedienelement (z. B. die 18px-Abhaken-Box in Termine) auf ein
+   ~44px-Touchziel vergroessern, ohne die sichtbare Box zu veraendern. */
+.tap44 { position: relative; }
+.tap44::after { content: ""; position: absolute; inset: -13px; }
+
 /* TOASTS */
 .toast-viewport { position: fixed; bottom: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; max-width: min(92vw, 380px); }
 @keyframes toastIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
