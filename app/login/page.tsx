@@ -56,7 +56,7 @@ export default function LoginPage() {
   const [firma, setFirma] = useState(""); // Firmenname (nur Service-Registrierung)
   const [rolle, setRolle] = useState<string>("vermieter"); // Standard: Vermieter
   const [falscheRolle, setFalscheRolle] = useState<string | null>(null); // Konto-Rolle bei Fehlanmeldung
-  // Rücksprung nach dem Login (z. B. Banking-Callback) — nur relative Pfade.
+  // Rücksprung nach dem Login (Deep-Link aus einer E-Mail o. Ä.) — nur relative Pfade.
   const [nextUrl, setNextUrl] = useState<string | null>(null);
 
   // Query-Parameter erst nach dem Mount lesen (verhindert Hydration-

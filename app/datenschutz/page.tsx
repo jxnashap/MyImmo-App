@@ -23,7 +23,7 @@ export default function DatenschutzPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 28. August 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
+        Stand: 29. August 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
         Verarbeitung personenbezogener Daten bei Nutzung der Web-Anwendung MyImmo.
       </p>
 
@@ -114,20 +114,7 @@ export default function DatenschutzPage() {
         Kontakt, Nachricht) werden Ihrem Konto zugeordnet gespeichert.
       </p>
 
-      <H3>g) Konto-Anbindung (Open Banking, optional)</H3>
-      <p>
-        Verbinden Sie freiwillig ein Bankkonto, erfolgt der Zugriff ausschließlich lesend
-        über den lizenzierten Kontoinformationsdienst <strong>Enable Banking Oy</strong>{" "}
-        (Finnland/EU, beaufsichtigt durch die finnische Finanzaufsicht FIN-FSA). Die
-        Freigabe erteilen Sie direkt bei Ihrer Bank; sie läuft nach PSD2 spätestens nach
-        90 Tagen ab und ist jederzeit widerrufbar. Abgerufene Umsatzdaten (Datum, Betrag,
-        Zahlungsbeteiligte, Verwendungszweck) werden in unserer Datenbank{" "}
-        <strong>verschlüsselt</strong> gespeichert und nur zur Zuordnung zu Ihren Miet- und
-        Kostenbuchungen verwendet — Buchungen entstehen ausschließlich nach Ihrer
-        Bestätigung. <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO.
-      </p>
-
-      <H3>h) Vorlagen-Verteiler / E-Mail-Hinweise (freiwillig)</H3>
+      <H3>g) Vorlagen-Verteiler / E-Mail-Hinweise (freiwillig)</H3>
       <p>
         Melden Sie sich für die MyImmo-Vorlagen und gelegentliche Hinweise für Vermieter an,
         verarbeiten wir Ihre <strong>E-Mail-Adresse</strong>. Die Anmeldung läuft im{" "}
@@ -162,8 +149,7 @@ export default function DatenschutzPage() {
         <li><strong>Vercel Inc.</strong>, USA (Hosting/Auslieferung der App) — DPA inkl. EU-Standardvertragsklauseln; technische Logs können in den USA verarbeitet werden.</li>
         <li><strong>Anthropic PBC</strong>, USA (KI-Auswertung, nur bei aktiver Nutzung) — DPA inkl. EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
         <li><strong>Google Ireland Ltd.</strong> — nur bei „Login mit Google" und für Schriftarten (Ziffer 7).</li>
-        <li><strong>Enable Banking Oy</strong>, Finnland/EU (Kontoinformationsdienst, nur bei aktiver Konto-Anbindung) — lizenzierter AISP; Datenverarbeitung in der EU.</li>
-        <li><strong>Brevo</strong> (Sendinblue GmbH, Deutschland / Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 h); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO.</li>
+        <li><strong>Brevo</strong> (Sendinblue GmbH, Deutschland / Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO.</li>
       </ul>
       <p>
         Eine Übermittlung an sonstige Dritte findet nicht statt, außer Sie stoßen sie selbst

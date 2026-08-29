@@ -11,7 +11,7 @@ import { FUNKTIONSSEITEN } from "@/lib/funktionen";
 export const metadata: Metadata = {
   title: "Funktionen — MyImmo",
   description:
-    "Alle MyImmo-Funktionen: Nebenkostenabrechnung, Anlage V & ELSTER, Mieterportal, Service-Aufträge, Banking-Anbindung, Kredite, Dokumente und mehr.",
+    "Alle MyImmo-Funktionen: Nebenkostenabrechnung, Anlage V & ELSTER, Mieterportal, Service-Aufträge, Kredite, Dokumente und mehr.",
 };
 
 export default function FunktionenPage() {
@@ -22,7 +22,7 @@ export default function FunktionenPage() {
         kompakt
         kicker="Funktionen"
         titel={<>Alles, was Vermieten <em>verlangt</em></>}
-        sub="Vom ersten Mietvertrag bis zur Anlage V — inklusive Mieterportal, Team-Rollen und Banking-Anbindung."
+        sub="Vom ersten Mietvertrag bis zur Anlage V — inklusive Mieterportal und Team-Rollen."
       />
       <section className="lp-section">
         <div className="lp-inner">
@@ -86,20 +86,6 @@ export default function FunktionenPage() {
             </div>
           </Reveal>
 
-          <Reveal>
-            <div className="lp-split">
-              <div>
-                <h3>Banking: Kontoauszüge waren gestern {SOON_BADGE}</h3>
-                <p>Verbinde deine Konten mit reinem Lesezugriff (PSD2) — MyImmo gleicht Mieteingänge mit den erwarteten Mieten ab und schlägt Kosten automatisch vor. Du bestätigst per Klick.</p>
-                <ul>
-                  <li>Nur Lesezugriff über lizenzierten Anbieter — kein Zahlungsverkehr</li>
-                  <li>Umsätze verschlüsselt gespeichert, Freigabe jederzeit widerrufbar</li>
-                  <li>Mehrere Bankverbindungen je Konto möglich</li>
-                </ul>
-              </div>
-              <Shot src="/landing/banking.webp" alt="Banking-Ansicht: Konto verbinden mit Bankensuche" />
-            </div>
-          </Reveal>
 
           <Reveal>
             <div className="lp-split lp-split-rev">

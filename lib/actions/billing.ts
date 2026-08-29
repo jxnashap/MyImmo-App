@@ -13,7 +13,6 @@ type ActionErgebnis = { url: string } | { fehler: string };
 export async function starteCheckout(
   plan: "privat" | "plus",
   zyklus: AboZyklus,
-  bankingAddon = false,
 ): Promise<ActionErgebnis> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -27,7 +26,6 @@ export async function starteCheckout(
     email: user.email,
     plan,
     zyklus,
-    bankingAddon,
   });
   if (!url) return { fehler: "Checkout konnte nicht erstellt werden. Bitte später erneut versuchen." };
   return { url };

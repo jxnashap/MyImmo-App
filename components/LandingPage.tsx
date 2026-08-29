@@ -86,7 +86,7 @@ export default function LandingPage() {
                 <tbody>
                   <tr><td>Nebenkostenabrechnung</td><td className="schlecht">Ein Wochenende rechnen, Formel-Fehler inklusive</td><td className="gut">Positionen erfasst → fertiges PDF, Anteil automatisch gerechnet</td></tr>
                   <tr><td>Anlage V</td><td className="schlecht">Belege suchen, Zeilen raten</td><td className="gut">Buchungen sind den ELSTER-Zeilen schon zugeordnet</td></tr>
-                  <tr><td>Mieteingang prüfen</td><td className="schlecht">Kontoauszüge durchgehen</td><td className="gut">Mietkonto zeigt offene Monate — Banking-Abgleich kommt</td></tr>
+                  <tr><td>Mieteingang prüfen</td><td className="schlecht">Kontoauszüge durchgehen</td><td className="gut">Mietkonto zeigt offene Monate auf einen Blick</td></tr>
                   <tr><td>Schadensmeldung</td><td className="schlecht">Anruf, Rückruf, Zettel, nochmal Anruf</td><td className="gut">Mieter meldet mit Foto, Hausmeister übernimmt, du gibst frei</td></tr>
                   <tr><td>Fristen</td><td className="schlecht">Im Hinterkopf oder im Papierkalender</td><td className="gut">Werden automatisch aus deinen Daten abgeleitet</td></tr>
                   <tr><td>Unterlagen fürs Bankgespräch</td><td className="schlecht">Aktenordner zusammensuchen</td><td className="gut">Beleihungsordner mit Deckblatt auf Knopfdruck</td></tr>

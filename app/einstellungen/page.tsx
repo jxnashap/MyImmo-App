@@ -29,7 +29,6 @@ export default async function EinstellungenPage() {
         planName: PLAN_NAMEN[effektiverPlan(abo)],
         status: abo.status,
         zyklus: abo.zyklus,
-        bankingAddon: abo.banking_addon,
         gueltigBis: abo.gueltig_bis,
         storniertZum: abo.storniert_zum,
         hatPortal: !!abo.provider_customer_id,

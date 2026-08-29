@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/auth/", "/portal", "/einstellungen", "/mietkonto", "/banking", "/archiv"],
+      disallow: ["/api/", "/auth/", "/portal", "/einstellungen", "/mietkonto", "/archiv"],
     },
     sitemap: "https://www.myimmoapp.de/sitemap.xml",
   };

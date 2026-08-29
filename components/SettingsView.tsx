@@ -31,7 +31,6 @@ export type AboAnzeige = {
   planName: string;
   status: string;
   zyklus: string | null;
-  bankingAddon: boolean;
   gueltigBis: string | null;
   storniertZum: string | null;
   hatPortal: boolean;
@@ -646,9 +645,7 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
             <h2><CreditCard size={16} /> Dein Tarif</h2>
             <p className="sub">
               <strong style={{ color: "var(--text)" }}>{abo?.planName ?? "Kostenlos"}</strong>
-              {abo?.zyklus ? ` · ${abo.zyklus === "jahr" ? "Jahreszahlung" : "Monatszahlung"}` : ""}
-              {abo?.bankingAddon ? " · inkl. Banking-Add-on" : ""}
-              {" — "}{einheiten} {einheiten === 1 ? "Einheit" : "Einheiten"} erfasst.
+              {abo?.zyklus ? ` · ${abo.zyklus === "jahr" ? "Jahreszahlung" : "Monatszahlung"}` : ""}              {" — "}{einheiten} {einheiten === 1 ? "Einheit" : "Einheiten"} erfasst.
             </p>
             {abo?.storniertZum && (
               <p className="sub" style={{ color: "var(--red)" }}>

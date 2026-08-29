@@ -3,7 +3,7 @@
 // komponieren daraus ihre Abschnitte.
 import {
   BarChart3, Banknote, ReceiptText, Landmark, CalendarDays, Folders, Bot,
-  MessageSquareText, Users, Wrench, CreditCard, ShieldCheck, FileText, Building2,
+  MessageSquareText, Users, Wrench, ShieldCheck, FileText, Building2,
   type LucideIcon,
 } from "lucide-react";
 import { PREISE_SICHTBAR } from "@/lib/preise";
@@ -18,7 +18,6 @@ export const FEATURES: Feature[] = [
   { ico: MessageSquareText, t: "Mieterportal", p: "Mieter melden Schäden, Zählerstände und Anliegen direkt in der App — inklusive Bewerber-Verwaltung für freie Wohnungen." },
   { ico: Wrench, t: "Service & Aufträge", p: "Hausmeister erstellt den Auftrag, du gibst per Klick frei — mit Firmenverzeichnis und Termin-Link für Handwerker." },
   { ico: Users, t: "Rollen & Team", p: "Vermieter, Mieter, Hausmeister und Hausverwaltung — jeder sieht genau das, was er braucht. Zugang per Einladungscode." },
-  { ico: CreditCard, t: "Banking-Anbindung", p: "Konten per PSD2 verbinden (nur Lesezugriff): Mieteingänge automatisch abgleichen, Ausgaben als Kostenvorschläge.", soon: true },
   { ico: Landmark, t: "Kredite & Zinsbindung", p: "Restschuld, Raten und Zinsbindungen im Blick — mit Warnung, bevor die Anschlussfinanzierung ansteht." },
   { ico: CalendarDays, t: "Termine & Fristen", p: "Automatische Fristen aus Mietern, Krediten und Steuer plus Wartungen — als Kalender und iCal-Export." },
   { ico: FileText, t: "Dokument-Generator", p: "Mahnung, Mietbescheinigung, Übergabeprotokoll & Co. als fertige Brief-PDFs im eigenen Briefkopf — auf Wunsch e-signiert." },
@@ -80,7 +79,6 @@ export const PLAENE: Plan[] = [
 ];
 
 export const VISION: { t: string; p: string; status: "bald" | "geplant" }[] = [
-  { t: "Banking-Abgleich", p: "Mieteingänge landen automatisch am richtigen Mietkonto — du bestätigst nur noch per Klick.", status: "bald" },
   { t: "Steuerberater-Freigabe", p: "Fertige Unterlagen auf Knopfdruck prüfen lassen — Ergebnis in 1–3 Tagen, ohne Termin.", status: "geplant" },
   { t: "News für Vermieter", p: "Mietrecht, Steuer, Förderungen: kuratierte Meldungen aus seriösen Quellen, direkt in der App.", status: "geplant" },
   { t: "Geführtes Onboarding", p: "Durchklickbarer Guide nach der Registrierung: Objekt anlegen → Mieter erfassen → erste Buchung.", status: "geplant" },
@@ -95,15 +93,11 @@ export const FAQ = [
   },
   {
     q: "Kann ich meine Immobilien auch aus dem Ausland verwalten?",
-    a: "Ja — genau dafür ist MyImmo gebaut. Die App läuft im Browser auf jedem Gerät, dein Hausmeister kümmert sich vor Ort über den Service-Bereich, Mieter melden Anliegen digital, und du gibst Aufträge von überall frei. Mit der Banking-Anbindung entfällt auch der Kontoauszugs-Abgleich.",
+    a: "Ja — genau dafür ist MyImmo gebaut. Die App läuft im Browser auf jedem Gerät, dein Hausmeister kümmert sich vor Ort über den Service-Bereich, Mieter melden Anliegen digital, und du gibst Aufträge von überall frei.",
   },
   {
     q: "Wo liegen meine Daten?",
     a: "In der EU (Frankfurt, eu-central-1) bei Supabase; gehostet wird die App bei Vercel. Bankdaten wie IBANs werden zusätzlich anwendungsseitig verschlüsselt (AES-256-GCM). Details stehen in der Datenschutzerklärung und im AVV.",
-  },
-  {
-    q: "Wie funktioniert die Banking-Anbindung?",
-    a: "Über einen lizenzierten Kontoinformationsdienst (PSD2) mit reinem Lesezugriff — MyImmo sieht nie dein Bank-Passwort und kann keine Überweisungen auslösen. Die Freigabe läuft nach 90 Tagen automatisch ab und ist jederzeit widerrufbar. Der Start ist in Vorbereitung.",
   },
   {
     q: "Ersetzt MyImmo meinen Steuerberater?",
