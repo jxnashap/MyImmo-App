@@ -64,7 +64,7 @@ export default function VerkaufAssistent({
             Spekulationssteuer nach § 23 EStG (steuerfrei nach 10 Jahren) und was am Ende übrig bleibt —
             nach Tilgung der Restschuld, Verkaufskosten und Steuer.
           </p>
-          <VerkaufRechner objekte={objekte} />
+          <VerkaufRechner objekte={objekte} demo={demo} />
         </>
       ),
     },
