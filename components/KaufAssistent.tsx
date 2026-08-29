@@ -47,8 +47,37 @@ export default function KaufAssistent({
   // der Besucher haette den Rechner sonst nie zu Gesicht bekommen.
   const [rechnerOffen, setRechnerOffen] = useState(demo);
   const [saOffen, setSaOffen] = useState(demo);
-  const [auswahl, setAuswahl] = useState<KaufAuswahl | null>(null);
-  const [darlehenWunsch, setDarlehenWunsch] = useState<DarlehenAuswahl | null>(null);
+  // In der Demo stehen Objektwahl und Darlehenswunsch von Anfang an fest.
+  // Beide leben sonst im localStorage und werden ueber die (gesperrten)
+  // Formulare gefuellt — ohne Vorbelegung blieben die Machbarkeits-Ampel und
+  // der Finanzierungsschritt dauerhaft leer.
+  const DEMO_AUSWAHL: KaufAuswahl = {
+    kalkId: null,
+    name: "Altbau-ETW Leipzig Süd",
+    adresse: "Karl-Liebknecht-Str. 42, 04275 Leipzig",
+    kp: 245000,
+    gesamtInvest: 268500,
+    eigenkapital: 70000,
+    darlehen: 198500,
+    rate: 992,
+    kaltmiete: 720,
+    cfNetto: -128,
+    nutzung: "vermieten",
+    gewaehltAm: "2026-08-29",
+  };
+  const DEMO_DARLEHEN: DarlehenAuswahl = {
+    darlehen: 198500,
+    prioritaet: "gleiche_rate",
+    zinsbindung: 15,
+    sollzins: 3.6,
+    sondertilgung: true,
+    anfangstilgung: 2.4,
+    monatsrate: 992,
+    gewaehltAm: "2026-08-29",
+  };
+
+  const [auswahl, setAuswahl] = useState<KaufAuswahl | null>(demo ? DEMO_AUSWAHL : null);
+  const [darlehenWunsch, setDarlehenWunsch] = useState<DarlehenAuswahl | null>(demo ? DEMO_DARLEHEN : null);
 
   // Darlehenswunsch (Schritt „Finanzierung") lesen — liefert die Rate für die
   // Machbarkeits-Ampel. Auf Fokuswechsel + nach „übernehmen" neu laden.
@@ -56,8 +85,11 @@ export default function KaufAssistent({
     const lade = () => {
       try {
         const raw = localStorage.getItem(KAUF_DARLEHEN_KEY);
-        setDarlehenWunsch(raw ? (JSON.parse(raw) as DarlehenAuswahl) : null);
-      } catch { setDarlehenWunsch(null); }
+        // In der Demo den festen Stand behalten, wenn nichts gespeichert ist —
+        // sonst ueberschreibt dieser Effekt die Vorbelegung sofort mit null.
+        if (raw) setDarlehenWunsch(JSON.parse(raw) as DarlehenAuswahl);
+        else if (!demo) setDarlehenWunsch(null);
+      } catch { if (!demo) setDarlehenWunsch(null); }
     };
     lade();
     window.addEventListener("focus", lade);
@@ -70,8 +102,11 @@ export default function KaufAssistent({
     const lade = () => {
       try {
         const raw = localStorage.getItem(KAUF_AUSWAHL_KEY);
-        setAuswahl(raw ? (JSON.parse(raw) as KaufAuswahl) : null);
-      } catch { setAuswahl(null); }
+        // Wie beim Darlehenswunsch: in der Demo den festen Stand behalten,
+        // sonst knipst dieser Effekt die Vorbelegung sofort wieder aus.
+        if (raw) setAuswahl(JSON.parse(raw) as KaufAuswahl);
+        else if (!demo) setAuswahl(null);
+      } catch { if (!demo) setAuswahl(null); }
     };
     lade();
     window.addEventListener("focus", lade);
