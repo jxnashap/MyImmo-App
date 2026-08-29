@@ -23,6 +23,7 @@ import { starteCheckout, oeffneAboPortal } from "@/lib/actions/billing";
 import { isValidIban, normalizeIban } from "@/lib/iban";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 import { wechslePasswort } from "@/lib/passwortWechsel";
+import { PASSWORT_REGEL } from "@/lib/passwort";
 import type { VermieterProfil, Iban } from "@/lib/types";
 
 // Anzeige-Daten des Abos (Server lädt, Client zeigt nur an).
@@ -70,7 +71,19 @@ export default function SettingsView({
   billingEnforced?: boolean;
 }) {
   const [tab, setTab] = useState<TabKey>("profil");
+  const [pwHinweis, setPwHinweis] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
+
+  // Der Login schickt Bestandsnutzer mit zu schwachem Passwort hierher
+  // (`?pw=schwach`, siehe app/login/page.tsx). Erst nach dem Mount lesen —
+  // window existiert serverseitig nicht, und ein direkt gesetzter Tab wuerde
+  // einen Hydration-Mismatch erzeugen.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("pw") === "schwach") {
+      setTab("sicherheit");
+      setPwHinweis(true);
+    }
+  }, []);
 
   // Pfeiltasten-Navigation der Tabs (Barrierefreiheit).
   function onTabKey(e: React.KeyboardEvent, i: number) {
@@ -99,6 +112,19 @@ export default function SettingsView({
           {email && <p title={email}>{email}</p>}
         </div>
       </div>
+
+      {pwHinweis && (
+        <div
+          role="status"
+          className="rounded-sm px-3 py-2 text-[13px]"
+          style={{ background: "var(--blue-dim)", color: "var(--blue)", marginBottom: 16 }}
+        >
+          <strong>Bitte ändere dein Passwort.</strong> Es ist kürzer, als die
+          Sicherheitsregeln es heute verlangen ({PASSWORT_REGEL}). Du bist ganz
+          normal angemeldet — der Wechsel dauert eine Minute und steht unten
+          unter „Passwort ändern“.
+        </div>
+      )}
 
       <div className="settings-tabs" role="tablist" aria-label="Einstellungsbereiche" ref={tabsRef}>
         {TABS.map((t, i) => {

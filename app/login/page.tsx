@@ -25,6 +25,11 @@ function uebersetze(msg: string): string {
   if (m.includes("email not confirmed")) return "Bitte bestätige zuerst die E-Mail in deinem Postfach.";
   if (m.includes("user already registered")) return "Diese E-Mail ist bereits registriert.";
   if (m.includes("password should be at least")) return `Das Passwort ist zu kurz (${PASSWORT_REGEL}).`;
+  // Supabase meldet ein zu schwaches Bestandspasswort beim LOGIN — zusammen mit
+  // einer gueltigen Session (siehe handleSubmit). Ohne diesen Fall sah der
+  // Nutzer die englische Rohmeldung.
+  if (m.includes("weak") && m.includes("password"))
+    return `Dein Passwort erfuellt die aktuellen Sicherheitsregeln nicht mehr (${PASSWORT_REGEL}). Bitte aendere es gleich hier.`;
   if (m.includes("provider is not enabled")) return "Google-Login ist noch nicht aktiviert (in Supabase einrichten).";
   if (m.includes("rate limit") || m.includes("too many"))
     return "Zu viele Anfragen in kurzer Zeit — bitte in ein paar Minuten erneut versuchen (oder „Mit Google anmelden“).";
@@ -119,7 +124,16 @@ export default function LoginPage() {
 
     if (mode === "login") {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
+      // Sonderfall „schwaches Bestandspasswort": Ist ein altes Passwort kuerzer
+      // als die inzwischen verschaerfte Supabase-Regel, liefert die API BEIDES —
+      // eine gueltige Session UND einen WeakPasswordError. Der Fehler ist ein
+      // Hinweis, keine Abweisung. Wer ihn wie jeden anderen behandelt, wirft die
+      // Session weg und sperrt genau die Bestandsnutzer aus, die aus der Phase
+      // stammen, in der die Registrierung hier noch keine 8 Zeichen verlangte.
+      // Erkannt wird er an der Kombination Fehler + Session, nicht am Fehlercode
+      // — das bleibt auch bei einer Umbenennung in supabase-js stabil.
+      const schwachesPasswort = !!error && !!data?.session;
+      if (error && !schwachesPasswort) {
         setError(uebersetze(error.message));
         setLoading(false);
         return;
@@ -143,7 +157,9 @@ export default function LoginPage() {
       }
       // Harte Navigation: stellt sicher, dass der Server die neue Session-
       // Cookie sofort sieht — kein manuelles Neuladen mehr nötig.
-      window.location.assign(nextUrl ?? "/");
+      // Bei schwachem Bestandspasswort zuerst in die Einstellungen (Sicherheit),
+      // damit der Wechsel nicht untergeht; der Deep-Link tritt dahinter zurueck.
+      window.location.assign(schwachesPasswort ? "/einstellungen?pw=schwach" : (nextUrl ?? "/"));
     } else if (rolle === "mieter" || rolle === "service") {
       // Mieter/Service-Registrierung: Einladungscode des Vermieters.
       const eingabe = code.trim().toUpperCase();
