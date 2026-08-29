@@ -151,6 +151,26 @@ export default async function RootLayout({
             <AutoLogout />
             <OnboardingTour neuerNutzer={(props ?? []).length === 0} />
             <div className="main-wrap">
+              {/* Demo-Hinweis: Ohne ihn haelt ein Besucher seine Eingaben fuer
+                  echt und ist ueberrascht, wenn sie beim naechsten Start weg
+                  sind. Der Vergleich mit der festen Adresse genuegt — das
+                  Demo-Konto ist ein einzelnes, festes Konto. */}
+              {user.email === "demo.vermieter@myimmo.test" && (
+                <div
+                  role="status"
+                  style={{
+                    background: "var(--blue-dim)",
+                    color: "var(--blue)",
+                    padding: "8px 16px",
+                    fontSize: 13,
+                    textAlign: "center",
+                  }}
+                >
+                  <strong>Demo-Modus.</strong> Du siehst Beispieldaten und kannst
+                  alles ausprobieren. Änderungen werden beim nächsten Start der
+                  Demo zurückgesetzt.
+                </div>
+              )}
               <main className="main">
                 <ZeitraumProvider>{children}</ZeitraumProvider>
               </main>
