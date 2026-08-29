@@ -3,6 +3,7 @@ import type { Kalkulation } from "@/lib/types";
 import KaufAssistent from "@/components/KaufAssistent";
 import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
 import { istDemoKonto } from "@/lib/demo";
+import { DEMO_SELBSTAUSKUNFT } from "@/lib/kauf/selbstauskunft";
 
 export const metadata = { title: "Kauf-Assistent — MyImmo" };
 export const dynamic = "force-dynamic";
@@ -20,6 +21,10 @@ export default async function KaufPage() {
   const selbstauskunft = await ladeSelbstauskunft();
   const { data: { user } } = await supabase.auth.getUser();
   const demo = istDemoKonto(user?.email);
+  // In der Demo steht ein fester Beispielstand statt des leeren Formulars —
+  // die Selbstauskunft liegt verschluesselt in der DB und kann dort nicht
+  // vorbelegt werden.
+  const auskunft = demo ? DEMO_SELBSTAUSKUNFT : selbstauskunft;
 
   return (
     <div className="fade-up">
@@ -31,7 +36,7 @@ export default async function KaufPage() {
         </div>
       </div>
       <hr className="topbar-rule" />
-      <KaufAssistent gespeichert={(rows ?? []) as Kalkulation[]} selbstauskunft={selbstauskunft} demo={demo} />
+      <KaufAssistent gespeichert={(rows ?? []) as Kalkulation[]} selbstauskunft={auskunft} demo={demo} />
     </div>
   );
 }
