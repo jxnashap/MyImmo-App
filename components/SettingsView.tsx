@@ -24,6 +24,7 @@ import { isValidIban, normalizeIban } from "@/lib/iban";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 import { wechslePasswort } from "@/lib/passwortWechsel";
 import HilfeInhalt from "@/components/HilfeInhalt";
+import { istDemoKonto } from "@/lib/demo";
 import { PASSWORT_REGEL } from "@/lib/passwort";
 import type { VermieterProfil, Iban } from "@/lib/types";
 
@@ -74,6 +75,7 @@ export default function SettingsView({
   einheiten?: number;
   billingEnforced?: boolean;
 }) {
+  const demoKonto = istDemoKonto(email);
   const [tab, setTab] = useState<TabKey>("profil");
   const [pwHinweis, setPwHinweis] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -156,7 +158,7 @@ export default function SettingsView({
         {tab === "profil" && <ProfilPanel profil={profil} unterschrift={unterschrift ?? null} />}
         {tab === "bank" && <BankPanel ibans={ibans} />}
         {tab === "abo" && <AboPanel abo={abo} einheiten={einheiten} enforced={billingEnforced} />}
-        {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} />}
+        {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} demo={demoKonto} />}
         {tab === "recht" && <RechtPanel />}
         {tab === "hilfe" && <HilfeInhalt />}
       </div>
@@ -427,7 +429,7 @@ function BankPanel({ ibans }: { ibans: Iban[] }) {
 }
 
 // ---------- Sicherheit ----------
-function SicherheitPanel({ email, provider }: { email?: string | null; provider?: string | null }) {
+function SicherheitPanel({ email, provider, demo = false }: { email?: string | null; provider?: string | null; demo?: boolean }) {
   const supabase = createClient();
   const toast = useToast();
   const ref = useReveal(null);
@@ -462,6 +464,19 @@ function SicherheitPanel({ email, provider }: { email?: string | null; provider?
           Ändere das Passwort für dein Konto{email ? ` (${email})` : ""}.
           {istGoogle && " Du meldest dich aktuell mit Google an – hier kannst du zusätzlich ein Passwort setzen, um dich auch per E-Mail anzumelden."}
         </p>
+        {demo && (
+          <div
+            role="status"
+            className="rounded-sm px-3 py-2 text-[13px]"
+            style={{ background: "var(--blue-dim)", color: "var(--blue)", marginBottom: 14 }}
+          >
+            <strong>In der Demo gesperrt.</strong> Das Demo-Konto teilen sich alle
+            Besucher — ein geändertes Passwort würde alle anderen aussperren.
+          </div>
+        )}
+        {/* fieldset disabled statt einzelner disabled-Attribute: deaktiviert
+            nativ jedes Feld UND den Absenden-Knopf, auch fuer Tastatur. */}
+        <fieldset disabled={demo} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
         <form onSubmit={aendern} className="set-grid">
           {!istGoogle && (
             <label className="set-field span2">
@@ -489,6 +504,7 @@ function SicherheitPanel({ email, provider }: { email?: string | null; provider?
             <button className="btn btn-gold" disabled={saving}>{saving ? "Speichern…" : "Passwort ändern"}</button>
           </div>
         </form>
+        </fieldset>
       </div>
 
       <AutoLogoutKarte />
