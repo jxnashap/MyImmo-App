@@ -121,6 +121,16 @@ export default async function RootLayout({
     .from("properties")
     .select("id,bezeichnung,typ")
     .order("bezeichnung");
+  // Mieter für die Befehlspalette: „NK Müller" / „Mieterhöhung Müller" führt
+  // direkt zur passenden Dokument-Seite dieses Mieters.
+  const { data: mieter } = await supabase
+    .from("mieter")
+    .select("id,vorname,nachname")
+    .order("nachname");
+  const tenants = (mieter ?? []).map((m) => ({
+    id: m.id as string,
+    name: [m.vorname, m.nachname].filter(Boolean).join(" ").trim() || "Mieter",
+  }));
   const { data: profil } = await supabase
     .from("vermieter_profil").select("name").limit(1).maybeSingle();
   // Zähler für die Navigation (offene Anliegen/Bewerbungen, unbestätigte Mieteingänge)
@@ -137,7 +147,7 @@ export default async function RootLayout({
             <FlashToast />
           </Suspense>
           <div className="app">
-            <Sidebar properties={props ?? []} userEmail={user.email} profilName={profil?.name ?? null} badges={{ "/anliegen": neu.mieterportal, "/cashflow": neu.cashflow }} />
+            <Sidebar properties={props ?? []} tenants={tenants} userEmail={user.email} profilName={profil?.name ?? null} badges={{ "/anliegen": neu.mieterportal, "/cashflow": neu.cashflow }} />
             <AutoLogout />
             <OnboardingTour neuerNutzer={(props ?? []).length === 0} />
             <div className="main-wrap">
