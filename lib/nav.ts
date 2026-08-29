@@ -18,7 +18,7 @@ export const VERWALTUNG: NavItem[] = [
   // Nicht "Mieterportal": So heisst die Mieter-Oberflaeche unter /portal.
   // Diese Seite ist die Vermieter-Sicht und enthaelt neben Mieter-Anliegen
   // auch Bewerbungen und die Handwerker-Verwaltung.
-  { href: "/anliegen", label: "Anliegen & Kontakte", icon: MessageSquareText },
+  { href: "/anliegen", label: "Mieterportal", icon: MessageSquareText },
   { href: "/verbrauch", label: "Verbrauch", icon: Zap },
   { href: "/kredite", label: "Kredite", icon: Landmark },
   { href: "/steuer", label: "Steuer", icon: Scale, paragraph: true }, // Icon nur fuer die Command-Palette; die Sidebar zeigt bewusst "§"

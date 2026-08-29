@@ -122,6 +122,7 @@ export default function KaufAssistent({
     {
       icon: Calculator,
       titel: "Objekt bewerten, durchrechnen & vergleichen",
+      hinweis: "Grundwerte eintragen — Rendite, Preis/m² und Marktwert sehen, Kandidaten vergleichen.",
       autoErledigt: gespeichert.length > 0,
       inhalt: (
         <>
@@ -149,6 +150,7 @@ export default function KaufAssistent({
     {
       icon: ClipboardList,
       titel: "Deine Finanzen (Selbstauskunft)",
+      hinweis: "Einnahmen, Ausgaben, Eigenkapital und Kredite erfassen — für die Machbarkeit und die Bank.",
       autoErledigt: !!selbstauskunft,
       inhalt: (
         <>
@@ -172,6 +174,7 @@ export default function KaufAssistent({
     {
       icon: Landmark,
       titel: "Finanzierung & Förderung",
+      hinweis: "Finanzierungswunsch, zwei Szenarien im Vergleich, Darlehensarten und Fördercheck.",
       autoErledigt: !!darlehenWunsch && darlehenWunsch.darlehen > 0,
       inhalt: (
         <>
@@ -244,6 +247,7 @@ export default function KaufAssistent({
     {
       icon: FolderClosed,
       titel: "Zwei Ordner: Makler & Bank",
+      hinweis: "Makler-Ordner (seriöser Käufer) und Bank-Ordner (Finanzierung) mit den nötigen Unterlagen.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
@@ -277,6 +281,7 @@ export default function KaufAssistent({
     {
       icon: FileCheck2,
       titel: "Angebote vergleichen & entscheiden",
+      hinweis: "Bankangebote nach Effektivzins & Flexibilität vergleichen, dann Notartermin.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
