@@ -7,6 +7,7 @@ import { Bot, Hourglass, TriangleAlert, X } from "lucide-react";
 // Konfidenz, bis der Nutzer ihn schließt oder ein übernommenes Feld ändert.
 
 import { useEffect, useRef, useState } from "react";
+import { tastaturAktion } from "@/lib/a11y";
 
 export type KalkImportResult = {
   name?: string | null;
@@ -85,7 +86,16 @@ export default function KalkImport({
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
-      <div className="card-header" style={{ cursor: "pointer" }} onClick={() => setOpen((o) => !o)}>
+      <div
+        className="card-header"
+        style={{ cursor: "pointer" }}
+        onClick={() => setOpen((o) => !o)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        aria-label={`„Aus Anzeige übernehmen" ${open ? "zuklappen" : "aufklappen"}`}
+        onKeyDown={tastaturAktion(() => setOpen((o) => !o))}
+      >
         <div>
           <div className="card-title"><Bot size={16} style={{ verticalAlign: "-3px" }} /> Aus Anzeige übernehmen</div>
           <div className="card-sub">Exposé-Link einfügen oder Text — MyImmo füllt die Felder</div>

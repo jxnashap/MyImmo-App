@@ -6,6 +6,7 @@
 // braucht (z. B. wiederkehrende Buchungen verwalten).
 
 import { useState, type ReactNode } from "react";
+import { tastaturAktion } from "@/lib/a11y";
 
 export default function AufklappSection({
   titel,
@@ -27,7 +28,9 @@ export default function AufklappSection({
         style={{ cursor: "pointer", userSelect: "none" }}
         onClick={() => setOffen((o) => !o)}
         role="button"
+        tabIndex={0}
         aria-expanded={offen}
+        onKeyDown={tastaturAktion(() => setOffen((o) => !o))}
       >
         <div>
           <h3>{titel}</h3>

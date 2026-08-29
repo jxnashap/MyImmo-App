@@ -134,7 +134,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div style={{ textAlign: "center", marginTop: 26 }}>
-            <Link href="/funktionen" className="lp-mehr">Alle 14 Funktionen ansehen <ArrowRight size={14} /></Link>
+            <Link href="/funktionen" className="lp-mehr">Alle Funktionen ansehen <ArrowRight size={14} /></Link>
           </div>
         </div>
       </section>
