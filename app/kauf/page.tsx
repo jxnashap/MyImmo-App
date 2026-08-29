@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Kalkulation } from "@/lib/types";
 import KaufAssistent from "@/components/KaufAssistent";
 import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
+import { istDemoKonto } from "@/lib/demo";
 
 export const metadata = { title: "Kauf-Assistent — MyImmo" };
 export const dynamic = "force-dynamic";
@@ -17,6 +18,8 @@ export default async function KaufPage() {
     .select("*")
     .order("created_at", { ascending: false });
   const selbstauskunft = await ladeSelbstauskunft();
+  const { data: { user } } = await supabase.auth.getUser();
+  const demo = istDemoKonto(user?.email);
 
   return (
     <div className="fade-up">
@@ -28,7 +31,7 @@ export default async function KaufPage() {
         </div>
       </div>
       <hr className="topbar-rule" />
-      <KaufAssistent gespeichert={(rows ?? []) as Kalkulation[]} selbstauskunft={selbstauskunft} />
+      <KaufAssistent gespeichert={(rows ?? []) as Kalkulation[]} selbstauskunft={selbstauskunft} demo={demo} />
     </div>
   );
 }
