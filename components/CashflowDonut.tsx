@@ -1,12 +1,14 @@
 "use client";
 
 // Interaktives Donut-Diagramm für die Ein-/Ausgaben-Seite.
-// Ebene 1 (Overview): Einnahmen (orange) vs. Ausgaben (rot).
+// Ebene 1 (Overview): Einnahmen (grün) vs. Ausgaben (rot).
 // Ebene 2 (Drilldown): Kategorien der gewählten Seite — GLEICHE Seitenfarbe, die pro
 // Segment weiter verblasst (nach Betrag absteigend sortiert: groß = kräftig, klein = blass).
 // Nur zwei Semantik-Farben (var(--green), var(--red)); Verblassung via color-mix gegen
-// warmes Off-White. Eigenes SVG: dicker, leicht gekippter Ring, radiales Volumen,
-// weicher Schatten, Glanz-Bogen. Segmente fahren per stroke-dasharray smooth ein.
+// die Kartenfläche (theme-aware). Design bewusst FLACH & minimal (Frosted Paper):
+// echter Kreis (keine Fake-3D-Kippung, kein Glanz-Bogen), schlanker Ring mit
+// weichen Kappen, dezenter Grundring. Segmente fahren per stroke-dasharray smooth ein.
+// Hover lässt das Segment in seiner eigenen Farbe sanft glühen.
 // Wechsel per Toggle und horizontalem Swipe. prefers-reduced-motion wird respektiert.
 
 import { useEffect, useMemo, useRef, useState, useId } from "react";
@@ -17,15 +19,13 @@ type Kat = [string, number];
 // Die einzigen beiden Diagrammfarben (aus globals.css).
 const GRUEN = "var(--green)"; // Einnahmen — semantisch wie die KPI-Karten
 const RED = "var(--red)";   //  #E05C4B — Ausgaben
-const OFFWHITE = "#F7EFDD";  // nur Aufhell-Ziel der Rampe, keine eigene Diagrammfarbe
+// Aufhell-Ziel der Rampe = die Kartenfläche (--bg2) → funktioniert in Hell UND Dunkel
+// (Segmente verblassen in den Hintergrund statt in ein festes warmes Creme).
+const FADE = "var(--bg2)";
 
 // Verblass-Rampe: base bleibt bei i=0 voll gesättigt, jedes weitere Segment blasser.
 const ramp = (base: string, i: number, n: number) =>
-  n <= 1 ? base : `color-mix(in srgb, ${base}, ${OFFWHITE} ${Math.round((i / (n - 1)) * 62)}%)`;
-
-// Volumen: innen heller, außen dunkler — funktioniert auch mit der Rampenfarbe.
-const inner = (c: string) => `color-mix(in srgb, ${c}, #fff 22%)`;
-const outer = (c: string) => `color-mix(in srgb, ${c}, #000 30%)`;
+  n <= 1 ? base : `color-mix(in srgb, ${base}, ${FADE} ${Math.round((i / (n - 1)) * 60)}%)`;
 
 type Seg = { key: string; label: string; value: number; color: string };
 
@@ -44,7 +44,8 @@ function drill(kat: Kat[], base: string): Seg[] {
 }
 
 // Auto-Schriftgröße für die Mittelzahl, damit große Beträge im Ring bleiben.
-const centerFont = (s: string) => (s.length <= 9 ? 26 : s.length <= 12 ? 21 : s.length <= 15 ? 17 : 14);
+// Schlanker Ring = größeres Innenloch → die Zahl darf etwas kräftiger stehen.
+const centerFont = (s: string) => (s.length <= 9 ? 30 : s.length <= 12 ? 24 : s.length <= 15 ? 19 : 15);
 
 export default function CashflowDonut({
   einnahmenTotal,
@@ -99,10 +100,10 @@ export default function CashflowDonut({
   const centerBig = side ? euro(sideSum) : `${netto >= 0 ? "+ " : "− "}${euro(Math.abs(netto))}`;
   const centerLabel = side === "ein" ? "Einnahmen" : side === "aus" ? "Ausgaben" : "Netto";
 
-  // Geometrie.
-  const CX = 120, CY = 120, R = 84, SW = 30;
+  // Geometrie — schlanker Ring, echter Kreis (keine Kippung mehr).
+  const CX = 120, CY = 120, R = 88, SW = 22;
   const C = 2 * Math.PI * R;
-  const gapPx = segs.length > 1 ? 7 : 0;
+  const gapPx = segs.length > 1 ? 6 : 0;
 
   let acc = 0;
   const arcs = segs.map((s, i) => {
@@ -167,16 +168,16 @@ export default function CashflowDonut({
       {side && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
           <button type="button" className="btn btn-ghost" onClick={(e) => { e.stopPropagation(); back(); }} style={{ fontSize: 12 }}>← Zurück</button>
-          <div style={{ display: "inline-flex", border: "1px solid var(--line2)", borderRadius: 8, overflow: "hidden" }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: "inline-flex", border: "1px solid var(--line2)", borderRadius: 999, overflow: "hidden", padding: 2, gap: 2 }} onClick={(e) => e.stopPropagation()}>
             {(["ein", "aus"] as const).map((s) => {
               const on = side === s;
               const col = s === "ein" ? GRUEN : RED;
               return (
                 <button key={s} type="button" onClick={() => goSide(s)}
                   style={{
-                    fontSize: 12, fontWeight: 600, padding: "6px 12px", border: "none", cursor: "pointer",
+                    fontSize: 12, fontWeight: 600, padding: "5px 14px", border: "none", borderRadius: 999, cursor: "pointer",
                     background: on ? (s === "ein" ? "var(--gold-pale)" : "var(--red-dim)") : "transparent",
-                    color: on ? col : "var(--muted)",
+                    color: on ? col : "var(--muted)", transition: "background .15s ease, color .15s ease",
                   }}>{s === "ein" ? "Einnahmen" : "Ausgaben"}</button>
               );
             })}
@@ -186,7 +187,7 @@ export default function CashflowDonut({
 
       {empty ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0" }}>
-          <svg width="180" height="180" viewBox="0 0 240 240" style={{ transform: "scaleY(.9)" }} aria-hidden>
+          <svg width="180" height="180" viewBox="0 0 240 240" aria-hidden>
             <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--bg4)" strokeWidth={SW} />
           </svg>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 6 }}>
@@ -198,16 +199,13 @@ export default function CashflowDonut({
           <div style={{ display: "flex", justifyContent: "center", position: "relative" }}
                onPointerDown={onPointerDown} onPointerUp={onPointerUp}>
             <svg
-              width="260" height="240" viewBox="0 0 240 240"
-              style={{ transform: "scaleY(.9)", overflow: "visible", maxWidth: "100%" }}
+              width="240" height="240" viewBox="0 0 240 240"
+              style={{ overflow: "visible", maxWidth: "100%" }}
               role="img"
               aria-label={side ? `Kategorien ${centerLabel}` : "Einnahmen und Ausgaben im Vergleich"}
             >
-              <defs>
-              </defs>
-
-              {/* Schatten-Basisring (dezent) */}
-              <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--bg4)" strokeWidth={SW} opacity={0.3} />
+              {/* Dezenter Grundring (der „leere" Rest des Kreises) */}
+              <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--bg4)" strokeWidth={SW} opacity={0.45} />
 
               {arcs.map((a) => {
                 const active = hover === a.key;
@@ -218,15 +216,16 @@ export default function CashflowDonut({
                     cx={CX} cy={CY} r={R}
                     fill="none"
                     stroke={a.color}
-                    strokeWidth={active ? SW + 6 : SW}
+                    strokeWidth={active ? SW + 5 : SW}
                     strokeDasharray={`${targetDash} ${C - targetDash}`}
                     strokeLinecap="round"
                     transform={`rotate(${a.rot} ${CX} ${CY})`}
                     style={{
                       cursor: side ? "default" : "pointer",
                       transition: segTransition(a.i),
-                      filter: active ? "brightness(1.1)" : undefined,
-                      opacity: hover && !active ? 0.7 : 1,
+                      // Hover: sanftes Glühen in der EIGENEN Segmentfarbe (statt Aufhellen).
+                      filter: active ? `drop-shadow(0 0 7px ${a.color})` : undefined,
+                      opacity: hover && !active ? 0.55 : 1,
                     }}
                     onMouseEnter={(e) => onEnter(a.key, a.label, a.value, a.pct, e)}
                     onMouseMove={(e) => onMove(a.label, a.value, a.pct, e)}
@@ -237,17 +236,9 @@ export default function CashflowDonut({
                 );
               })}
 
-              {/* Glanz-Bogen am oberen Rand (Highlight) */}
-              <circle
-                cx={CX} cy={CY} r={R} fill="none" stroke="#fff" strokeWidth={SW * 0.44}
-                strokeLinecap="round" strokeDasharray={`${C * 0.13} ${C}`}
-                transform={`rotate(-118 ${CX} ${CY})`}
-                style={{ opacity: 0.22, pointerEvents: "none" }}
-              />
-
-              {/* Zentrum (Auto-Font) */}
-              <text x={CX} y={CY - 4} textAnchor="middle" style={{ fill: sideBase, fontSize: centerFont(centerBig), fontWeight: 700 }}>{centerBig}</text>
-              <text x={CX} y={CY + 20} textAnchor="middle" style={{ fill: "var(--muted)", fontSize: 13, letterSpacing: 0.5 }}>{centerLabel}</text>
+              {/* Zentrum (Auto-Font) — flach, ohne Glanz. Label klein & versal. */}
+              <text x={CX} y={CY - 3} textAnchor="middle" style={{ fill: sideBase, fontSize: centerFont(centerBig), fontWeight: 700, fontVariantNumeric: "tabular-nums", letterSpacing: -0.3 }}>{centerBig}</text>
+              <text x={CX} y={CY + 21} textAnchor="middle" style={{ fill: "var(--muted)", fontSize: 11, letterSpacing: 1.4, textTransform: "uppercase" }}>{centerLabel}</text>
             </svg>
 
             {show && (
