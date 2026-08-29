@@ -1684,6 +1684,7 @@ select:focus-visible, textarea:focus-visible {
 }
 .sidebar-collapse-btn:hover { color: var(--text); background: var(--bg3); }
 .sidebar-userrow { display: flex; align-items: center; gap: 8px; }
+.sidebar-logout-form { display: flex; }
 
 @media (min-width: 861px) {
   [data-rail="1"] .app { grid-template-columns: 68px 1fr; }
