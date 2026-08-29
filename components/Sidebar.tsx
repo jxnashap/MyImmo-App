@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import CommandPalette from "@/components/ui/CommandPalette";
 import { VERWALTUNG, KALKULATOR, PROP_ICONS, type NavItem } from "@/lib/nav";
-import { Home, Power, PanelLeftClose, PanelLeftOpen, Settings, LifeBuoy } from "lucide-react";
+import { istDemoKonto, demoDarfRoute } from "@/lib/demo";
+import { Home, Power, PanelLeftClose, PanelLeftOpen, Settings, LifeBuoy, Lock } from "lucide-react";
 
 type SidebarProperty = { id: string; bezeichnung: string; typ: string | null };
 type SidebarTenant = { id: string; name: string };
@@ -71,8 +72,33 @@ export default function Sidebar({
   const isActive = (href: string) =>
     href === "/" ? path === "/" : path.startsWith(href);
 
+  const demo = istDemoKonto(userEmail);
+
   const navLink = (n: NavItem) => {
     const anzahl = badges[n.href] ?? 0;
+
+    // Demo-Konto: gesperrte Bereiche bleiben SICHTBAR, sind aber nicht
+    // klickbar — so sieht ein Interessent den Umfang, ohne ihn zu benutzen.
+    // Die eigentliche Sperre steht in der Middleware; das hier ist nur die
+    // ehrliche Anzeige dazu.
+    if (demo && !demoDarfRoute(n.href)) {
+      return (
+        <span
+          key={n.href}
+          className="nav-item"
+          aria-disabled="true"
+          title={`${n.label} — in der Demo gesperrt. Nach der Anmeldung verfügbar.`}
+          style={{ opacity: 0.45, cursor: "not-allowed" }}
+        >
+          <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}>
+            {n.paragraph || !n.icon ? "§" : <n.icon size={15} />}
+          </span>
+          <span className="nav-label">{n.label}</span>
+          <Lock size={12} style={{ marginLeft: "auto", flexShrink: 0 }} aria-hidden />
+        </span>
+      );
+    }
+
     return (
       <Link
         key={n.href}
@@ -131,11 +157,18 @@ export default function Sidebar({
         <div className="sidebar-userrow" style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
           {/* Avatar = Button zu den Einstellungen (ersetzt das Zahnrad).
               Im Rail bleibt NUR dieser Kreis stehen (Name/Mail/Theme/Logout aus). */}
-          <Link href="/einstellungen" className="avatar-link" title="Einstellungen" aria-label="Einstellungen" style={{ textDecoration: "none", flexShrink: 0 }}>
-            <div className="settings-avatar" style={{ width: 36, height: 36, fontSize: 13, cursor: "pointer" }}>
+          {demo ? (
+            // Kein Link in der Demo: /einstellungen ist gesperrt.
+            <div className="settings-avatar" title="In der Demo gesperrt" style={{ width: 36, height: 36, fontSize: 13, flexShrink: 0, opacity: 0.6 }}>
               {hatProfil ? initialen : "+"}
             </div>
-          </Link>
+          ) : (
+            <Link href="/einstellungen" className="avatar-link" title="Einstellungen" aria-label="Einstellungen" style={{ textDecoration: "none", flexShrink: 0 }}>
+              <div className="settings-avatar" style={{ width: 36, height: 36, fontSize: 13, cursor: "pointer" }}>
+                {hatProfil ? initialen : "+"}
+              </div>
+            </Link>
+          )}
           {/* Vorname + E-Mail */}
           <div style={{ flex: 1, minWidth: 0 }}>
             {vorname && (
@@ -165,12 +198,27 @@ export default function Sidebar({
       <div className="sidebar-section">
         <div className="sidebar-section-label">Kalkulator</div>
         {KALKULATOR.map(navLink)}
-        <Link href="/einstellungen" className={`nav-item${isActive("/einstellungen") ? " active" : ""}`} title="Einstellungen">
-          {/* Label in .nav-label, sonst bleibt der Text im eingeklappten Rail
-              stehen und quetscht sich neben das Icon. */}
-          <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}><Settings size={15} /></span>
-          <span className="nav-label">Einstellungen</span>
-        </Link>
+        {demo ? (
+          // In der Demo gesperrt wie die uebrigen Bereiche — sonst waere hier
+          // ein klickbarer Link, den die Middleware sofort wieder wegleitet.
+          <span
+            className="nav-item"
+            aria-disabled="true"
+            title="Einstellungen — in der Demo gesperrt. Nach der Anmeldung verfügbar."
+            style={{ opacity: 0.45, cursor: "not-allowed" }}
+          >
+            <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}><Settings size={15} /></span>
+            <span className="nav-label">Einstellungen</span>
+            <Lock size={12} style={{ marginLeft: "auto", flexShrink: 0 }} aria-hidden />
+          </span>
+        ) : (
+          <Link href="/einstellungen" className={`nav-item${isActive("/einstellungen") ? " active" : ""}`} title="Einstellungen">
+            {/* Label in .nav-label, sonst bleibt der Text im eingeklappten Rail
+                stehen und quetscht sich neben das Icon. */}
+            <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}><Settings size={15} /></span>
+            <span className="nav-label">Einstellungen</span>
+          </Link>
+        )}
         {/* Support-Kanal: im Early Access der einzige Weg, auf dem eine
             Fehlermeldung ankommt. Bewusst hier unten neben den Einstellungen —
             gesucht wird er im selben Moment. */}
