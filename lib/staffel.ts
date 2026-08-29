@@ -7,25 +7,15 @@
 // vereinbart sein — die Prozent-Angabe hier ist nur eine Rechenhilfe, angezeigt
 // werden immer die konkreten Beträge.
 
+import { iso, addMonate } from "@/lib/datum";
+
 export type StaffelStufe = {
   datum: string; // ISO (YYYY-MM-DD)
   miete: number; // neue Kaltmiete ab diesem Datum
   delta: number; // Erhöhung gegenüber der vorherigen Stufe
 };
 
-const iso = (d: Date) => d.toISOString().split("T")[0];
-
-// Monate addieren OHNE Tag-Rollover (wie lib/fristen.ts):
-// 31.03. + 11 Monate → 28./29.02., nicht 03.03.
-function addMonate(d: Date, monate: number): Date {
-  const r = new Date(d);
-  const tag = r.getDate();
-  r.setDate(1);
-  r.setMonth(r.getMonth() + monate);
-  const letzterTag = new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate();
-  r.setDate(Math.min(tag, letzterTag));
-  return r;
-}
+// iso/addMonate liegen in lib/datum.ts (UTC-fest, siehe Kommentar dort).
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 

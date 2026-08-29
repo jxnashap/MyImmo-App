@@ -1,5 +1,7 @@
 // Fristen-Logik aus der ursprünglichen App — typisiert für das Supabase-Schema.
 
+import { iso, addMonate } from "@/lib/datum";
+
 export type FristKategorie =
   | "Miete" | "Betriebskosten" | "Finanzierung" | "Steuer" | "Wartung" | "WEG" | "Versicherung" | "Sonstiges";
 
@@ -25,18 +27,8 @@ type MieterFristInput = {
   staffel_stufen?: number | null;
 };
 
-const iso = (d: Date) => d.toISOString().split("T")[0];
-
-// Monate addieren OHNE Tag-Rollover: 31.03. − 1 Monat → 28./29.02. (nicht 03.03.).
-function addMonate(d: Date, monate: number): Date {
-  const r = new Date(d);
-  const tag = r.getDate();
-  r.setDate(1);
-  r.setMonth(r.getMonth() + monate);
-  const letzterTag = new Date(r.getFullYear(), r.getMonth() + 1, 0).getDate();
-  r.setDate(Math.min(tag, letzterTag));
-  return r;
-}
+// iso/addMonate liegen in lib/datum.ts und rechnen in UTC — die frühere
+// lokale Variante verschob Sommer-Termine um einen Tag nach vorn.
 
 // Abgeleitete Fristen eines Mieters (Mietbeginn, -ende, Kündigungsfrist, nächste Erhöhung).
 export function mieterFristen(m: MieterFristInput): Frist[] {
