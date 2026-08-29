@@ -5,7 +5,7 @@ import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import Tilt from "@/components/landing/Tilt";
 import RollenFlow from "@/components/landing/RollenFlow";
-import { FEATURES, PLAENE, SOON_BADGE, Shot } from "@/components/landing/data";
+import { FEATURES, PLAENE, FAQ, SOON_BADGE, Shot } from "@/components/landing/data";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 
 // Kompakte Startseite für ausgeloggte Besucher — helles Vertrauens-Design
@@ -49,7 +49,7 @@ export default function LandingPage() {
         <div className="lp-inner">
           <Reveal>
             <div className="lp-stats">
-              <div className="lp-stat"><div className="z">14+</div><div className="t">Funktionen — vom Mietvertrag bis ELSTER</div></div>
+              <div className="lp-stat"><div className="z">{FEATURES.length}+</div><div className="t">Funktionen — vom Mietvertrag bis ELSTER</div></div>
               <div className="lp-stat"><div className="z">4</div><div className="t">Rollen: Vermieter, Mieter, Hausmeister, Verwaltung</div></div>
               <div className="lp-stat"><div className="z">100 %</div><div className="t">Daten in der EU, Bankdaten AES-256-verschlüsselt</div></div>
               <div className="lp-stat"><div className="z">0 €</div><div className="t">im Early Access — voller Funktionsumfang</div></div>
@@ -194,6 +194,50 @@ export default function LandingPage() {
               </div>
             </>
           )}
+        </div>
+      </section>
+
+      {/* ---------- FAQ ---------- */}
+      <section className="lp-section lp-section-alt">
+        <div className="lp-inner">
+          <div className="lp-kicker">Häufige Fragen</div>
+          <h2 className="lp-h2">Was Vermieter am häufigsten fragen</h2>
+          <p className="lp-section-sub">
+            Ehrliche Antworten — zu Kosten, Datenschutz und dem, was MyImmo bewusst nicht ist.
+          </p>
+          <Reveal>
+            <div className="lp-faq" style={{ marginTop: 26 }}>
+              {FAQ.map((f) => (
+                <details key={f.q}>
+                  <summary>{f.q}</summary>
+                  <div className="lp-faq-body">{f.a}</div>
+                </details>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---------- Abschluss-CTA ---------- */}
+      <section className="lp-section" style={{ borderBottom: "none" }}>
+        <div className="lp-inner">
+          <Reveal>
+            <div className="lp-final">
+              <div className="lp-kicker" style={{ justifyContent: "center" }}>Bereit?</div>
+              <h2 className="lp-h2">Dein Portfolio, endlich an einem Ort.</h2>
+              <p className="lp-section-sub">
+                In wenigen Minuten eingerichtet — Objekt anlegen, Mieter erfassen, loslegen.
+                Kostenlos im Early Access, ohne Kreditkarte.
+              </p>
+              <div className="lp-cta-row" style={{ marginTop: 26 }}>
+                <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
+                <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
+              </div>
+              <p className="qlx-hero-note" style={{ marginTop: 16 }}>
+                Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar
+              </p>
+            </div>
+          </Reveal>
         </div>
       </section>
     </LandingShell>

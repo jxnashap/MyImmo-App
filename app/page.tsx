@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, zahl, begruessung } from "@/lib/format";
@@ -14,10 +15,34 @@ import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
+// metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
+const OG_TITEL = "MyImmo — Immobilienverwaltung für private Vermieter";
+const OG_BESCHREIBUNG =
+  "Nebenkostenabrechnung, Anlage V, Mieten, Kredite und dein Team in einer App. Für private Vermieter mit 1–24 Einheiten — Daten in der EU, aktuell im Early Access kostenlos.";
+
 export const metadata = {
-  title: "MyImmo — Immobilienverwaltung für private Vermieter",
-  description:
-    "Mieten, Kosten, Kredite, Nebenkostenabrechnung und Anlage V in einer App. Gemacht für private Vermieter — aktuell im Early Access kostenlos.",
+  title: OG_TITEL,
+  description: OG_BESCHREIBUNG,
+  keywords: [
+    "Immobilienverwaltung", "Vermieter Software", "Nebenkostenabrechnung", "Anlage V",
+    "Mietverwaltung", "Hausverwaltung Software", "privater Vermieter", "Mietkonto", "ELSTER Anlage V",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "de_DE",
+    url: "/",
+    siteName: "MyImmo",
+    title: OG_TITEL,
+    description: OG_BESCHREIBUNG,
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "MyImmo — Privates Immobilien-Management" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: OG_TITEL,
+    description: OG_BESCHREIBUNG,
+    images: ["/og.png"],
+  },
 };
 
 export default async function DashboardPage() {
@@ -27,7 +52,43 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return <LandingPage />;
+    // Structured Data (JSON-LD) für Google — als SoftwareApplication + Anbieter.
+    // Bewusst OHNE aggregateRating/Reviews (keine echten → wäre Richtlinienverstoß).
+    // nonce aus der Middleware, sonst würde die strenge CSP das Script blocken.
+    const nonce = headers().get("x-nonce") ?? undefined;
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://www.myimmoapp.de/#org",
+          name: "MyImmo",
+          url: "https://www.myimmoapp.de",
+          logo: "https://www.myimmoapp.de/myimmo_logo_2048.png",
+        },
+        {
+          "@type": "SoftwareApplication",
+          name: "MyImmo",
+          applicationCategory: "BusinessApplication",
+          operatingSystem: "Web",
+          url: "https://www.myimmoapp.de",
+          description: OG_BESCHREIBUNG,
+          inLanguage: "de",
+          publisher: { "@id": "https://www.myimmoapp.de/#org" },
+          offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+        },
+      ],
+    };
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <LandingPage />
+      </>
+    );
   }
 
   const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }] = await Promise.all([
