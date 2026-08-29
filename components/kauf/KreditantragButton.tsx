@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { FileText } from "lucide-react";
 import { KAUF_AUSWAHL_KEY } from "@/lib/kauf/auswahl";
 import { KAUF_DARLEHEN_KEY } from "@/lib/kauf/darlehen";
@@ -21,23 +22,30 @@ function lies(key: string): unknown {
 }
 
 export default function KreditantragButton() {
+  // Das PDF entsteht in einem NEUEN Tab — die Ursprungsseite bleibt sonst völlig
+  // unverändert und der Klick fühlt sich wirkungslos an. Deshalb kurz „Erzeugt…"
+  // zeigen und danach wieder freigeben (ein Ende des fremden Tabs sieht man nicht).
+  const [laeuft, setLaeuft] = useState(false);
+
   return (
     <form
       action="/api/kauf/kreditantrag"
       method="POST"
       target="_blank"
-      rel="noopener"
       onSubmit={(e) => {
         const feld = e.currentTarget.elements.namedItem("daten") as HTMLInputElement | null;
         if (feld) {
           feld.value = JSON.stringify({ auswahl: lies(KAUF_AUSWAHL_KEY), darlehen: lies(KAUF_DARLEHEN_KEY) });
         }
+        setLaeuft(true);
+        setTimeout(() => setLaeuft(false), 2500);
       }}
       style={{ display: "inline-flex" }}
     >
       <input type="hidden" name="daten" defaultValue="" />
-      <button type="submit" className="btn btn-gold" style={{ fontSize: 13 }}>
-        <FileText size={14} style={{ verticalAlign: "-2px" }} /> Kreditantrag / Selbstauskunft als PDF
+      <button type="submit" className="btn btn-gold" style={{ fontSize: 13 }} disabled={laeuft} aria-busy={laeuft}>
+        <FileText size={14} style={{ verticalAlign: "-2px" }} />{" "}
+        {laeuft ? "Erzeugt…" : "Kreditantrag / Selbstauskunft als PDF"}
       </button>
     </form>
   );

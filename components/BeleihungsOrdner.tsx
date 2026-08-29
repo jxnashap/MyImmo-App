@@ -310,7 +310,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 11, color: "var(--muted)" }}>{done}/{items.length}</span>
                 <div className="progress-bar" style={{ width: 90, marginTop: 0 }}>
-                  <div className="progress-fill" style={{ width: `${items.length ? (done / items.length) * 100 : 0}%`, background: "var(--gold)" }} />
+                  <div className="progress-fill" style={{ width: `${items.length ? (done / items.length) * 100 : 0}%`, background: "var(--gold-fill)" }} />
                 </div>
               </div>
             </div>

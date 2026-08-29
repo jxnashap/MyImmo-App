@@ -104,6 +104,8 @@ export default function Sidebar({
         key={n.href}
         href={n.href}
         className={`nav-item${isActive(n.href) ? " active" : ""}`}
+        // Aktiver Punkt war nur farblich markiert — Screenreader erfuhren ihn nicht.
+        aria-current={isActive(n.href) ? "page" : undefined}
         // "neu" war falsch: Gezaehlt werden OFFENE Vorgaenge und im laufenden
         // Monat unbestaetigte Mieten — die heissen auch nach Wochen noch so.
         title={anzahl > 0 ? `${n.label} — ${anzahl} offen` : n.label}
@@ -183,6 +185,9 @@ export default function Sidebar({
         <CommandPalette properties={properties} tenants={tenants} />
       </div>
 
+      {/* <aside> allein meldet "complementary" — die Links brauchen ein
+          echtes navigation-Landmark, damit Screenreader sie anspringen können. */}
+      <nav aria-label="Hauptnavigation">
       <div className="sidebar-section">
         <div className="sidebar-section-label">Verwaltung</div>
         {VERWALTUNG.map(navLink)}
@@ -199,12 +204,13 @@ export default function Sidebar({
           <span className="nav-label">Einstellungen</span>
         </Link>
       </div>
+      </nav>
 
       <div className="sidebar-props">
         <p>Meine Objekte</p>
         <div>
           {properties.length === 0 ? (
-            <div style={{ fontSize: 11, color: "var(--faint)", padding: "4px 8px" }}>Noch keine Objekte</div>
+            <div className="props-leer" style={{ fontSize: 12, color: "var(--muted)", padding: "4px 8px" }}>Noch keine Objekte</div>
           ) : (
             properties.map((p) => (
               <Link key={p.id} href={`/properties/${p.id}`} className="prop-mini" title={p.bezeichnung} style={{ textDecoration: "none" }}>
@@ -232,19 +238,12 @@ export default function Sidebar({
         <span>Einklappen</span>
       </button>
 
-      <div
-        style={{
-          padding: "4px 8px 4px",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 10,
-          fontSize: 10,
-          color: "var(--faint)",
-        }}
-      >
-        <Link href="/datenschutz" style={{ color: "var(--faint)", textDecoration: "none" }}>Datenschutz</Link>
-        <Link href="/avv" style={{ color: "var(--faint)", textDecoration: "none" }}>AVV</Link>
-        <Link href="/impressum" style={{ color: "var(--faint)", textDecoration: "none" }}>Impressum</Link>
+      {/* Klasse statt reiner Inline-Styles, damit der Rail-Block die Zeile
+          ausblenden kann — im 68px-Rail stapelten sich die drei Links sonst. */}
+      <div className="sidebar-rechtslinks">
+        <Link href="/datenschutz">Datenschutz</Link>
+        <Link href="/avv">AVV</Link>
+        <Link href="/impressum">Impressum</Link>
       </div>
       </aside>
     </>

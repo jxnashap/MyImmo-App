@@ -85,7 +85,7 @@ export default function VerkaufAssistent({
                 <div style={{ display: "grid", gap: 3 }}>
                   {g.items.map((it) => (
                     <div key={it} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: 99, background: "var(--gold)", flexShrink: 0 }} /> {it}
+                      <span style={{ width: 6, height: 6, borderRadius: 99, background: "var(--gold-fill)", flexShrink: 0 }} /> {it}
                     </div>
                   ))}
                 </div>

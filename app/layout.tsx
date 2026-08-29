@@ -146,6 +146,8 @@ export default async function RootLayout({
           <Suspense fallback={null}>
             <FlashToast />
           </Suspense>
+          {/* Tastaturnutzer sonst durch ~25 Navigationslinks vor dem Inhalt */}
+          <a href="#inhalt" className="skip-link">Zum Inhalt springen</a>
           <div className="app">
             <Sidebar properties={props ?? []} tenants={tenants} userEmail={user.email} profilName={profil?.name ?? null} badges={{ "/anliegen": neu.mieterportal, "/cashflow": neu.cashflow }} />
             <AutoLogout />
@@ -171,7 +173,8 @@ export default async function RootLayout({
                   Demo zurückgesetzt.
                 </div>
               )}
-              <main className="main">
+              {/* id/tabIndex: Ziel des Skip-Links „Zum Inhalt springen" */}
+              <main className="main" id="inhalt" tabIndex={-1}>
                 <ZeitraumProvider>{children}</ZeitraumProvider>
               </main>
             </div>

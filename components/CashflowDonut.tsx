@@ -139,7 +139,15 @@ export default function CashflowDonut({
   const onPointerUp = (e: React.PointerEvent) => {
     if (startX.current == null) return;
     const dx = e.clientX - startX.current; startX.current = null;
-    if (side && Math.abs(dx) > 45) { swiped.current = true; setSide(dx < 0 ? "aus" : "ein"); setPin(null); setTip(null); }
+    if (side && Math.abs(dx) > 45) {
+      swiped.current = true;
+      setSide(dx < 0 ? "aus" : "ein"); setPin(null); setTip(null);
+      // Marke wieder freigeben, sobald der Klick durch ist. Vorher wurde sie
+      // NUR in onSegClick zurückgesetzt — endete ein Wisch neben einem Segment
+      // (Innenloch, Leerfläche), blieb sie stehen und verschluckte den nächsten
+      // echten Tap. Auf dem Handy war das der Regelfall.
+      setTimeout(() => { swiped.current = false; }, 0);
+    }
   };
 
   const onSegClick = (a: { key: string; label: string; value: number; pct: number }, e: React.MouseEvent) => {
@@ -176,7 +184,9 @@ export default function CashflowDonut({
                 <button key={s} type="button" onClick={() => goSide(s)}
                   style={{
                     fontSize: 12, fontWeight: 600, padding: "5px 14px", border: "none", borderRadius: 999, cursor: "pointer",
-                    background: on ? (s === "ein" ? "var(--gold-pale)" : "var(--red-dim)") : "transparent",
+                    // Einnahmen grün, Ausgaben rot — vorher war die aktive
+                    // Einnahmen-Pille gold hinterlegt (grüner Text auf Gold).
+                    background: on ? (s === "ein" ? "var(--green-dim)" : "var(--red-dim)") : "transparent",
                     color: on ? col : "var(--muted)", transition: "background .15s ease, color .15s ease",
                   }}>{s === "ein" ? "Einnahmen" : "Ausgaben"}</button>
               );

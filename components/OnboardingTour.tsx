@@ -245,7 +245,7 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
         {/* Kopf: Fortschritt + Überspringen */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
           <div style={{ flex: 1, height: 5, background: "var(--line2)", borderRadius: 99, overflow: "hidden" }}>
-            <div style={{ width: `${((i + 1) / SCHRITTE.length) * 100}%`, height: "100%", background: "var(--gold)", transition: "width .4s ease" }} />
+            <div style={{ width: `${((i + 1) / SCHRITTE.length) * 100}%`, height: "100%", background: "var(--gold-fill)", transition: "width .4s ease" }} />
           </div>
           <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{i + 1}/{SCHRITTE.length}</span>
           <button type="button" onClick={beenden} title="Tour überspringen" aria-label="Tour überspringen"
