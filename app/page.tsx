@@ -413,7 +413,7 @@ export default async function DashboardPage() {
                 <Link href="/cashflow/neu" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 8 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Erste Buchung erfassen</Link>
               </div>
             ) : (
-              <table>
+              <div className="table-scroll"><table>
                 <thead><tr><th>Datum</th><th>Beschreibung</th><th style={{ textAlign: "right" }}>Betrag</th></tr></thead>
                 <tbody>
                   {trans.map((t) => {
@@ -432,7 +432,7 @@ export default async function DashboardPage() {
                     );
                   })}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </div>
         </div>

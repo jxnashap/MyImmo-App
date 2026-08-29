@@ -190,7 +190,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
             </span>
           </div>
           <div className="section-body">
-            <table>
+            <div className="table-scroll"><table>
               <thead><tr><th>Ab Datum</th><th>Neue Kaltmiete</th><th>Erhöhung</th></tr></thead>
               <tbody>
                 {plan.map((st) => {
@@ -204,7 +204,7 @@ export default async function MieterDetailPage({ params }: { params: { id: strin
                   );
                 })}
               </tbody>
-            </table>
+            </table></div>
             <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 8 }}>
               Basis: aktuelle Kaltmiete {euro(m.kaltmiete)}. Vertraglich gelten die im Mietvertrag
               vereinbarten Euro-Beträge (§ 557a BGB) — der Plan ist eine Rechenhilfe.

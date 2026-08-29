@@ -92,7 +92,7 @@ export default function MarktwertCard({
           {historie.length >= 2 && (
             <div style={{ textAlign: "right" }}>
               <Sparkline punkte={historie} />
-              <div style={{ fontSize: 10, color: "var(--faint)" }}>Verlauf ({historie.length} Stände)</div>
+              <div style={{ fontSize: 12, color: "var(--faint)" }}>Verlauf ({historie.length} Stände)</div>
             </div>
           )}
         </div>

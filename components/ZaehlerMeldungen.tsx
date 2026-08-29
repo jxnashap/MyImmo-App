@@ -64,7 +64,7 @@ export default function ZaehlerMeldungen({ rows }: { rows: ZaehlerMeldungVermiet
               {m.uebernommen_am ? (
                 <span className="badge badge-green"><Check size={11} style={{ verticalAlign: "-1px" }} /> Übernommen</span>
               ) : (
-                <button type="button" className="btn btn-gold" style={{ fontSize: 11, padding: "5px 12px" }} disabled={pending} onClick={() => uebernehmen(m.id)}>
+                <button type="button" className="btn btn-outline" style={{ fontSize: 11, padding: "5px 12px" }} disabled={pending} onClick={() => uebernehmen(m.id)}>
                   {pending ? "…" : "Übernehmen"}
                 </button>
               )}

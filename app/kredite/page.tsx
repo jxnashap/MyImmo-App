@@ -50,7 +50,7 @@ export default async function KreditePage() {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: w.color }}>{w.label}</div>
-                  <div style={{ fontSize: 10, color: "var(--muted)" }}>bis: {datum(k.zinsbindung)}</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)" }}>bis: {datum(k.zinsbindung)}</div>
                 </div>
                 <span className={`badge ${w.level === "warnung" ? "badge-amber" : "badge-red"}`}>{w.level === "abgelaufen" ? <><Siren size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />Abgelaufen</> : w.level === "kritisch" ? <><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "var(--red)", marginRight: 5, verticalAlign: "-1px" }} />Dringend</> : <><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "var(--amber)", marginRight: 5, verticalAlign: "-1px" }} />Bald</>}</span>
               </div>
