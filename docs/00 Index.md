@@ -18,8 +18,14 @@
 - [[00 Kauf-Tool Übersicht]] — Fahrplan, Roadmap, Risiken
 - [[Kunden-Guide]] · [[Makler-Ordner]] · [[Bank-Ordner]] · [[KfW-Foerderung-2026]]
 
+## 📣 Marketing & Sichtbarkeit
+- [[SEO]] — Stand der Technik 2026 **+ Prüfung von MyImmo** (live gemessen)
+- [[MARKETING]] — Kanäle, Prioritäten, was sich lohnt
+- [[INSTAGRAM]] — Strategie, Profil, erste Post-Visuals (Test, zurückgestellt)
+
 ## ⚖️ Compliance
 - [[AVV-STATUS]] — DSGVO / AVV je Anbieter
+- [[APP-STORE-RECHT]] — App/Play Store: Gesetze, Store-Regeln, Gebühren **+ Prüfung von MyImmo**
 - [[anthropic-dpa-archiv]] — archiviertes Anthropic-DPA
 
 ## 🛠️ Technik
