@@ -47,25 +47,33 @@ export default function DeleteButton({
   }
 
   if (confirming) {
+    // Layout muss mit KURZEN (Tabellenzeile) und LANGEN Bestätigungstexten
+    // (Objekt löschen: „… wirklich löschen? Damit werden auch 9 Einnahmen …")
+    // klarkommen. Vorher lag alles in EINER inline-flex-Zeile: auf dem Handy
+    // quetschte der lange Text die Knöpfe, „Ja, löschen“ brach mitten im Wort
+    // auf zwei Zeilen. Jetzt darf der Block umbrechen (flex-wrap), die beiden
+    // Knöpfe bleiben als Einheit zusammen und brechen NICHT mehr um (nowrap).
     return (
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 12, color: "var(--muted)" }}>{confirmText}</span>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          style={{ fontSize: 12, padding: "5px 10px", color: "var(--red)", borderColor: "var(--red)" }}
-          onClick={run}
-        >
-          Ja, löschen
-        </button>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          style={{ fontSize: 12, padding: "5px 10px" }}
-          onClick={() => setConfirming(false)}
-        >
-          Abbrechen
-        </button>
+      <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: "8px 6px", maxWidth: "100%" }}>
+        <span style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.4 }}>{confirmText}</span>
+        <span style={{ display: "inline-flex", gap: 6, flexShrink: 0 }}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{ fontSize: 12, padding: "5px 10px", color: "var(--red)", borderColor: "var(--red)", whiteSpace: "nowrap" }}
+            onClick={run}
+          >
+            Ja, löschen
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{ fontSize: 12, padding: "5px 10px", whiteSpace: "nowrap" }}
+            onClick={() => setConfirming(false)}
+          >
+            Abbrechen
+          </button>
+        </span>
       </span>
     );
   }

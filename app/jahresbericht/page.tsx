@@ -114,7 +114,7 @@ export default async function JahresberichtPage({
           )}
         </div>
         <div className="section-body">
-          <div className="table-scroll"><table className="list-table">
+          <div className="table-scroll"><table className="list-table report">
             <thead>
               <tr>
                 <th>Immobilie</th>
