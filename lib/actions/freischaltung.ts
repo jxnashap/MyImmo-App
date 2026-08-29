@@ -35,14 +35,14 @@ export async function pruefeBetaCode(code: string): Promise<{ ok: boolean; fehle
     return {
       ok: false,
       fehler:
-        "Die Registrierung ist derzeit nicht freigeschaltet. Bitte wende dich an kontakt@myimmoapp.de.",
+        "Die Registrierung ist derzeit nicht freigeschaltet. Bitte wende dich an info@myimmoapp.de.",
     };
   }
   if (code.trim() !== erwartet) {
     return {
       ok: false,
       fehler:
-        "Zugangscode stimmt nicht. MyImmo ist noch im Early Access — einen Code bekommst du unter kontakt@myimmoapp.de.",
+        "Zugangscode stimmt nicht. MyImmo ist noch im Early Access — einen Code bekommst du unter info@myimmoapp.de.",
     };
   }
   return { ok: true };
