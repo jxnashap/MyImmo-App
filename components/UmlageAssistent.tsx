@@ -409,7 +409,7 @@ export default function UmlageAssistent({
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>✓ {ocrInfo}</div>
           )}
 
-          <table style={{ fontSize: 13 }}>
+          <div className="table-scroll"><table style={{ fontSize: 13 }}>
             <thead>
               <tr>
                 <th style={{ width: 24 }}></th>
@@ -525,7 +525,7 @@ export default function UmlageAssistent({
                 </Fragment>
               ))}
             </tbody>
-          </table>
+          </table></div>
           <datalist id="umlage-vorlagen">
             {VORLAGEN.map((v) => (
               <option key={v} value={v} />

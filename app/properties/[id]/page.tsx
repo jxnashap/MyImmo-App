@@ -377,7 +377,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontWeight: 600, fontSize: 13, color: "var(--green)" }}>{euro(m.kaltmiete)}</div>
-                  <div style={{ fontSize: 10, color: "var(--muted)" }}>Kaltmiete / Mo.</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)" }}>Kaltmiete / Mo.</div>
                 </div>
               </Link>
             ))
@@ -427,9 +427,9 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                     <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 8 }}>
-                    <div><div style={{ fontSize: 10, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
-                    <div><div style={{ fontSize: 10, color: "var(--muted)" }}>Rate/Mo.</div><div style={{ fontWeight: 600, fontSize: 13 }}>{euro(k.monatsrate)}</div></div>
-                    <div><div style={{ fontSize: 10, color: "var(--muted)" }}>Volltilgung</div><div style={{ fontWeight: 600, fontSize: 13 }}>{k.laufzeit ?? "–"}</div></div>
+                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
+                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Rate/Mo.</div><div style={{ fontWeight: 600, fontSize: 13 }}>{euro(k.monatsrate)}</div></div>
+                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Volltilgung</div><div style={{ fontWeight: 600, fontSize: 13 }}>{k.laufzeit ?? "–"}</div></div>
                   </div>
                   <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Getilgt: {tilgtPct != null ? `${tilgtPct}%` : "– (Restschuld nicht erfasst)"}</div>
                   <div className="progress-bar"><div className="progress-fill" style={{ width: `${tilgtPct ?? 0}%`, background: "var(--teal)" }} /></div>
@@ -496,7 +496,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--amber)", marginBottom: 10 }}>
                   Gesamt: {euro(verbrauch.reduce((s, v) => s + (v.verbrauchkosten ?? 0), 0))}
                 </div>
-                <table style={{ fontSize: 12 }}>
+                <div className="table-scroll"><table style={{ fontSize: 12 }}>
                   <thead><tr><th>Datum</th><th>Art</th><th>Menge</th><th>Kosten</th><th></th></tr></thead>
                   <tbody>
                     {verbrauch.slice(0, 8).map((v) => (
@@ -509,7 +509,7 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               </>
             )}
           </div>
@@ -597,7 +597,7 @@ function BuchungSection({
         ) : (
           <>
             <div style={{ fontSize: 12, fontWeight: 600, color: gesamtColor, marginBottom: 10 }}>Gesamt: {euro(total)}</div>
-            <table style={{ fontSize: 12 }}>
+            <div className="table-scroll"><table style={{ fontSize: 12 }}>
               <thead><tr><th>Datum</th><th>Kategorie</th><th>Betrag</th><th></th></tr></thead>
               <tbody>
                 {rows.slice(0, 10).map((r) => (
@@ -609,7 +609,7 @@ function BuchungSection({
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
             {rows.length > 10 && <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 8 }}>+ {rows.length - 10} weitere</div>}
           </>
         )}

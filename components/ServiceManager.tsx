@@ -233,7 +233,7 @@ function FreigabeButtons({ id, mieterListe }: { id: string; mieterListe: MieterO
           {mieterListe.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
       )}
-      <button type="button" className="btn btn-gold" style={{ fontSize: 11, padding: "5px 12px" }} disabled={pending} onClick={() => entscheiden(true)}>
+      <button type="button" className="btn btn-outline" style={{ fontSize: 11, padding: "5px 12px" }} disabled={pending} onClick={() => entscheiden(true)}>
         <ShieldCheck size={12} style={{ verticalAlign: "-2px" }} /> Freigeben
       </button>
       <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--red)" }} disabled={pending} onClick={() => entscheiden(false)}>

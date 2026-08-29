@@ -64,7 +64,7 @@ function FirmenLinkAktionen({
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
       <a
         href={`mailto:${encodeURIComponent(firma?.email ?? "")}?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(text)}`}
-        className="btn btn-gold" style={{ fontSize: 11, padding: "5px 12px", textDecoration: "none" }}
+        className="btn btn-outline" style={{ fontSize: 11, padding: "5px 12px", textDecoration: "none" }}
       >
         <Mail size={12} style={{ verticalAlign: "-2px" }} /> Per E-Mail an die Firma
       </a>
