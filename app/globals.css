@@ -1270,6 +1270,7 @@ select:focus-visible, textarea:focus-visible {
 @media (max-width: 900px) {
   .lp-features { grid-template-columns: repeat(2, 1fr); }
   .lp-pricing { grid-template-columns: repeat(2, 1fr); }
+  .lp-cards3 { grid-template-columns: repeat(2, 1fr); } /* 641–900px: sonst 3 Spalten à ~200px */
   .lp-split { grid-template-columns: 1fr; gap: 20px; }
   .lp-split-rev > :first-child { order: 1; }
   .lp-split-rev > :last-child { order: 2; }
@@ -1560,7 +1561,7 @@ select:focus-visible, textarea:focus-visible {
 .lp3 .lp-nav-links .lp-nav-aktiv { color: var(--l-gold-dark); }
 .lp3 .btn-ghost { background: #fff; border: 1px solid var(--l-line); color: var(--l-ink); }
 .lp3 .btn-ghost:hover { border-color: var(--l-gold); }
-.lp3 .btn-gold { background: var(--l-gold); color: #fff; }
+.lp3 .btn-gold { background: var(--l-gold); color: #14120c; }
 .lp3 .btn-gold:hover { background: var(--l-gold-dark); }
 .lp3 .lp-badge { color: var(--l-gold-dark); background: color-mix(in srgb, var(--l-gold) 10%, #fff); border-color: color-mix(in srgb, var(--l-gold) 35%, #fff); }
 .lp3 .lp-h1, .lp3 .lp-h2 { color: var(--l-ink); }
@@ -2046,8 +2047,10 @@ select:focus-visible, textarea:focus-visible {
 .qlx .lp-hero-note, .qlx .lp-price-jahr, .qlx .lp-einheiten { color: var(--l-faint); }
 .qlx .btn-ghost { background: #fff; border: 1px solid var(--l-line); color: var(--l-ink); }
 .qlx .btn-ghost:hover { border-color: var(--l-gold); }
-.qlx .btn-gold { background: var(--l-gold); color: #fff; }
-.qlx .btn-gold:hover { background: var(--l-gold-dark); }
+/* Dunkler Text auf Gold (wie .qlx-btn-hell und die App) — #fff auf #b8902b lag bei ~2,9:1. */
+.qlx .btn-gold { background: var(--l-gold); color: #14120c; }
+.qlx .btn-gold:hover { background: var(--l-gold-dark); color: #fff; }
+.qlx .btn-gold:disabled { background: var(--l-line); color: var(--l-muted); }
 .qlx .lp-badge { color: var(--l-gold-ink); background: color-mix(in srgb, var(--l-gold) 10%, #fff); border-color: color-mix(in srgb, var(--l-gold) 35%, #fff); }
 .qlx .lp-card, .qlx .lp-feature, .qlx .lp-stat, .qlx .lp-plan {
   background: #fff; border: 1px solid transparent; border-radius: 14px;
@@ -2097,8 +2100,16 @@ select:focus-visible, textarea:focus-visible {
 .qlx .lp-footer { background: var(--l-night); border-top: 1px solid var(--l-night-line); margin-top: 0; padding: 34px 0; }
 .qlx .lp-footer-row, .qlx .lp-footer a, .qlx .lp-footer span { color: var(--l-night-muted); }
 .qlx .lp-footer a:hover { color: var(--l-night-text); }
+/* Footer-Wortmarke wie Header/App-Icon: komplett Gold (vorher war die
+   Goldverteilung invertiert — „My" gold, „Immo" elfenbein). */
 .qlx .lp-footer .lp-logo { color: var(--l-gold-hell); }
-.qlx .lp-footer .lp-logo span { color: var(--l-night-text); }
+.qlx .lp-footer .lp-logo span { color: inherit; }
+/* Auf der Nachtbühne braucht Gold die helle Stufe — der Ink-Ton säuft ab. */
+.qlx .lp-final .lp-kicker { color: var(--l-gold-hell); }
+.qlx .lp-final .lp-h2 em { color: var(--l-gold-hell); }
+/* Reveal-Wrapper, der height:100%-Karten in Grid-Zeilen strecken lässt
+   (war 3× referenziert, nie definiert). */
+.lp-reveal-fill { height: 100%; }
 
 /* ---------- Signature-Animationen ---------- */
 /* Reveal (wie Baukasten): weiter Weg, weiche Kurve */

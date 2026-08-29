@@ -225,7 +225,7 @@ export default function LandingPage() {
         <div className="lp-inner">
           <Reveal>
             <div className="lp-final">
-              <div className="lp-kicker" style={{ justifyContent: "center" }}>Bereit?</div>
+              <div className="lp-kicker">Bereit?</div>
               <h2 className="lp-h2">Dein Portfolio, endlich an einem Ort.</h2>
               <p className="lp-section-sub">
                 In wenigen Minuten eingerichtet — Objekt anlegen, Mieter erfassen, loslegen.

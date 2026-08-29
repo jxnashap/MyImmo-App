@@ -16,7 +16,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     title: `${a.titel} — MyImmo`,
     description: a.beschreibung,
     alternates: { canonical: `/ratgeber/${a.slug}` },
-    openGraph: { title: a.titel, description: a.beschreibung, type: "article" },
+    openGraph: { title: a.titel, description: a.beschreibung, type: "article", images: ["/og.png"] },
   };
 }
 
@@ -45,9 +45,9 @@ export default function RatgeberArtikelSeite({ params }: { params: { slug: strin
           <Link href="/ratgeber" style={{ fontSize: 13, color: "var(--l-muted)", textDecoration: "none" }}>
             <ArrowLeft size={13} style={{ verticalAlign: "-2px" }} /> Alle Ratgeber
           </Link>
-          <div className="lp-kicker" style={{ marginTop: 18 }}>{a.kategorie}</div>
-          <h1 className="lp-h2" style={{ fontSize: "clamp(26px, 3.6vw, 36px)", textAlign: "left" }}>{a.titel}</h1>
-          <div style={{ fontSize: 12.5, color: "var(--l-faint)", marginBottom: 24 }}>
+          <div className="lp-kicker" style={{ marginTop: 18, textAlign: "left" }}>{a.kategorie}</div>
+          <h1 className="lp-h2" style={{ fontSize: "clamp(27px, 3.8vw, 38px)", textAlign: "left" }}>{a.titel}</h1>
+          <div style={{ fontSize: 12.5, color: "var(--l-muted)", marginBottom: 24 }}>
             <Clock size={12} style={{ verticalAlign: "-2px" }} /> {a.lesezeit} Min Lesezeit · {ratgeberDatum(a.datum)}
           </div>
 
@@ -68,7 +68,7 @@ export default function RatgeberArtikelSeite({ params }: { params: { slug: strin
               }}
             >
               <div className="lp-vorher" style={{ color: "var(--l-gold-ink)", marginBottom: 8 }}>
-                Kurzcheck — ist das Ihr Fall?
+                Kurzcheck — ist das dein Fall?
               </div>
               <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--l-ink)", margin: "0 0 12px" }}>
                 {a.kurzcheck.fall}
@@ -112,7 +112,7 @@ export default function RatgeberArtikelSeite({ params }: { params: { slug: strin
             </div>
           )}
 
-          <p style={{ fontSize: 12, color: "var(--l-faint)", borderTop: "1px solid var(--l-line)", paddingTop: 16, marginTop: 8 }}>
+          <p style={{ fontSize: 12, color: "var(--l-muted)", borderTop: "1px solid var(--l-line)", paddingTop: 16, marginTop: 8 }}>
             Rechtsstand Juli 2026. Alle Angaben sind Anhaltspunkte ohne Gewähr und ersetzen keine Steuer- oder Rechtsberatung.
           </p>
 

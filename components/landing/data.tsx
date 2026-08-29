@@ -74,7 +74,8 @@ export const PLAENE: Plan[] = [
       "Team-Zugänge (geplant)",
       "Sammel-Funktionen (geplant)",
     ],
-    cta: "Kontakt aufnehmen", highlight: false, ctaHref: "/impressum",
+    // Impressum ist keine Kontaktstrecke — direkt die Postfach-Adresse.
+    cta: "Kontakt aufnehmen", highlight: false, ctaHref: "mailto:info@myimmoapp.de",
   },
 ];
 
@@ -130,7 +131,7 @@ export function Shot({ src, alt }: { src: string; alt: string }) {
 }
 
 export const SOON_BADGE = (
-  <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.4, color: "var(--gold)", border: "1px solid var(--gold-dim)", background: "var(--gold-pale)", borderRadius: 999, padding: "2px 8px", marginLeft: 8, verticalAlign: "2px", whiteSpace: "nowrap" }}>
+  <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.4, color: "var(--l-gold-ink)", border: "1px solid var(--gold-dim)", background: "var(--gold-pale)", borderRadius: 999, padding: "2px 8px", marginLeft: 8, verticalAlign: "2px", whiteSpace: "nowrap" }}>
     BALD
   </span>
 );

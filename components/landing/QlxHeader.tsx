@@ -118,6 +118,7 @@ export default function QlxHeader({
             <div className="qlx-overlay-foot">
               <Link href="/agb" onClick={zu} tabIndex={offen ? 0 : -1}>AGB</Link>
               <Link href="/datenschutz" onClick={zu} tabIndex={offen ? 0 : -1}>Datenschutz</Link>
+              <Link href="/avv" onClick={zu} tabIndex={offen ? 0 : -1}>AVV</Link>
               <Link href="/impressum" onClick={zu} tabIndex={offen ? 0 : -1}>Impressum</Link>
             </div>
           </nav>
