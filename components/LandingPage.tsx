@@ -17,7 +17,7 @@ export default function LandingPage() {
   const topFeatures = FEATURES.slice(0, 6);
 
   return (
-    <LandingShell aktiv="/" mitHero>
+    <LandingShell aktiv="/" mitHero ohneSchlussCta>
       {/* ---------- Cinematic-Hero ---------- */}
       <QlxHero
         slug="start"
@@ -143,7 +143,8 @@ export default function LandingPage() {
       <section className="lp-section lp-section-alt">
         <div className="lp-inner">
           <div className="lp-kicker">Die Vision</div>
-          <div style={{ textAlign: "center", marginTop: 12 }}><Plane size={28} style={{ color: "var(--l-gold-dark)" }} /></div>
+          {/* display:inline — Tailwind-Preflight macht SVGs display:block, dann greift textAlign nicht */}
+          <div style={{ textAlign: "center", marginTop: 12 }}><Plane size={28} style={{ color: "var(--l-gold-dark)", display: "inline" }} /></div>
           <h2 className="lp-h2" style={{ marginTop: 4 }}>Leben, wo du willst.</h2>
           <p className="lp-section-sub">
             MyImmo entsteht aus einem konkreten Ziel: im Ausland leben und den Bestand in Deutschland
@@ -190,7 +191,8 @@ export default function LandingPage() {
                 und welchen Tarif du dann buchst.
               </p>
               <div className="lp-cta-row" style={{ marginTop: 22 }}>
-                <Link href="/anmelden" className="btn btn-gold lp-btn-big">Kostenlos starten</Link>
+                {/* Landing-Button statt App-Button (.btn-gold gehört der App, nicht der .lp-Bühne) */}
+                <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
               </div>
             </>
           )}

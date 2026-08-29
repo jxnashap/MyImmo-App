@@ -29,10 +29,14 @@ const NAV = [
 export default function LandingShell({
   aktiv,
   mitHero = false,
+  ohneSchlussCta = false,
   children,
 }: {
   aktiv?: string;
   mitHero?: boolean;
+  /** Für Seiten, die ein EIGENES Abschluss-CTA mitbringen (Startseite) —
+      sonst stünden zwei „Kostenlos starten"-Bänder direkt untereinander. */
+  ohneSchlussCta?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -42,15 +46,17 @@ export default function LandingShell({
 
       {children}
 
-      <section className="lp-final">
-        <div className="lp-inner">
-          <h2 className="lp-h2">In 2 Minuten <em>startklar</em></h2>
-          <p className="lp-section-sub">Konto anlegen, erstes Objekt erfassen — den Rest übernimmt MyImmo.</p>
-          <div className="lp-cta-row">
-            <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
+      {!ohneSchlussCta && (
+        <section className="lp-final">
+          <div className="lp-inner">
+            <h2 className="lp-h2">In 2 Minuten <em>startklar</em></h2>
+            <p className="lp-section-sub">Konto anlegen, erstes Objekt erfassen — den Rest übernimmt MyImmo.</p>
+            <div className="lp-cta-row">
+              <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <footer className="lp-footer">
         <div className="lp-inner lp-footer-row">
