@@ -37,10 +37,13 @@ export type AboAnzeige = {
 } | null;
 
 type TabKey = "profil" | "bank" | "abo" | "sicherheit" | "recht";
+// Der Abo-Tab hängt am selben Schalter wie alle anderen Preis-Stellen: Solange
+// die Tarife app-weit ausgeblendet sind (PREISE_SICHTBAR=false, Bezahlsystem
+// inaktiv), erscheint kein verwaister Abrechnungsbereich, der nichts tut.
 const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   { key: "profil", label: "Profil", icon: User },
   { key: "bank", label: "Bankkonten", icon: Landmark },
-  { key: "abo", label: "Abo", icon: CreditCard },
+  ...(PREISE_SICHTBAR ? [{ key: "abo" as const, label: "Abo", icon: CreditCard }] : []),
   { key: "sicherheit", label: "Sicherheit", icon: ShieldCheck },
   { key: "recht", label: "Daten & Recht", icon: FileText },
 ];

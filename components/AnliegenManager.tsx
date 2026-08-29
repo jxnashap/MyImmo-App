@@ -8,6 +8,7 @@ import { useState, useTransition } from "react";
 import { Wrench, FileText, MessageCircleQuestion, Save, Paperclip, CalendarClock, CalendarPlus, type LucideIcon } from "lucide-react";
 import { bearbeiteAnliegen, schlageTermineVor, terminInKalender } from "@/lib/actions/anliegen";
 import { useToast } from "@/components/Toast";
+import { tastaturAktion } from "@/lib/a11y";
 
 export type AnliegenVermieterRow = {
   id: string;
@@ -80,6 +81,11 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
       <div
         style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", cursor: "pointer" }}
         onClick={() => setOffen((o) => !o)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={offen}
+        aria-label={`Meldung „${a.titel}" ${offen ? "zuklappen" : "aufklappen"}`}
+        onKeyDown={tastaturAktion(() => setOffen((o) => !o))}
       >
         <Icon size={14} color="var(--gold)" />
         <span style={{ fontSize: 13, fontWeight: 600 }}>{a.titel}</span>

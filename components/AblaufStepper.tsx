@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { Check, ChevronDown, type LucideIcon } from "lucide-react";
+import { tastaturAktion } from "@/lib/a11y";
 
 // Gemeinsamer Ablauf-Stepper für Kauf-/Verkauf-Assistent. Akkordeon: jeder
 // Schritt klappt auf seine Kopfzeile (Nummer + Titel + Kurzhinweis + Status)
@@ -52,7 +53,10 @@ function SchrittKarte({
           style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, cursor: "pointer", userSelect: "none" }}
           onClick={onToggleOffen}
           role="button"
+          tabIndex={0}
           aria-expanded={offen}
+          aria-label={`Schritt „${titel}" ${offen ? "zuklappen" : "aufklappen"}`}
+          onKeyDown={tastaturAktion(onToggleOffen)}
         >
           <div style={{ minWidth: 0 }}>
             <h3 style={{ margin: 0 }}>{titel}</h3>

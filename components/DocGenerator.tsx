@@ -18,6 +18,7 @@ import {
 } from "@/lib/dokumentVorlagen";
 import { saveDokumentVorlage, resetDokumentVorlage } from "@/lib/actions/dokumentVorlagen";
 import { speichereBrief } from "@/lib/actions/dokumente";
+import { tastaturAktion } from "@/lib/a11y";
 import { useToast } from "@/components/Toast";
 import { adressZeilen } from "@/lib/format";
 
@@ -275,6 +276,11 @@ export default function DocGenerator({
                     <div
                       key={x.id}
                       onClick={() => setIbanId(sel ? "" : x.id)}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={sel}
+                      aria-label={`Zahlungskonto ${x.kontoname || x.inhaber || x.iban}${sel ? " abwählen" : " auswählen"}`}
+                      onKeyDown={tastaturAktion(() => setIbanId(sel ? "" : x.id))}
                       style={{
                         padding: "8px 12px",
                         borderRadius: 7,
