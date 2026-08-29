@@ -147,8 +147,10 @@ export default function Sidebar({
           </div>
           {/* Theme-Umschalter bleibt */}
           <ThemeToggle variant="icon" />
-          {/* Abmelden — rot nur bei Hover */}
-          <form action="/auth/signout" method="post" style={{ display: "flex" }}>
+          {/* Abmelden — rot nur bei Hover. display kommt aus dem CSS, NICHT
+              inline: Das Inline-Style hat die Rail-Regel überstimmt, die im
+              eingeklappten Zustand alles außer dem Initialen-Kreis ausblendet. */}
+          <form action="/auth/signout" method="post" className="sidebar-logout-form">
             <button type="submit" className="logout-btn" title="Abmelden" aria-label="Abmelden"><Power size={14} /></button>
           </form>
         </div>
@@ -163,8 +165,11 @@ export default function Sidebar({
       <div className="sidebar-section">
         <div className="sidebar-section-label">Kalkulator</div>
         {KALKULATOR.map(navLink)}
-        <Link href="/einstellungen" className={`nav-item${isActive("/einstellungen") ? " active" : ""}`}>
-          <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}><Settings size={15} /></span> Einstellungen
+        <Link href="/einstellungen" className={`nav-item${isActive("/einstellungen") ? " active" : ""}`} title="Einstellungen">
+          {/* Label in .nav-label, sonst bleibt der Text im eingeklappten Rail
+              stehen und quetscht sich neben das Icon. */}
+          <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}><Settings size={15} /></span>
+          <span className="nav-label">Einstellungen</span>
         </Link>
       </div>
 
