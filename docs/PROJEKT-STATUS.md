@@ -16,7 +16,7 @@ Ergänzt `CLAUDE.md` (Arbeitsweise, Merkliste, Deployment), `docs/MASTERPLAN.md`
 | Was | Stand bisher | Tatsächlich (31.07.2026 geprüft) |
 |---|---|---|
 | **Onboarding-Tour** | Backlog | ✅ fertig — `components/OnboardingTour.tsx`, im Root-Layout, aus den Einstellungen neu startbar |
-| **Open Banking Etappe 3–4** | Backlog / „teilweise" | ✅ **Code vollständig**: `starteAutorisierung`, `erstelleSession`, `holeKontoDetails`, `holeTransaktionen`, Callback-Route, `/banking`, Abgleich-Engine, 90-Tage-Reauth-Frist. Inaktiv ohne Env, nie end-to-end gelaufen. Die Abgleich-Engine hat Tests (`tests/abgleich.test.ts`); der API-Client (`lib/banking/enableBanking.ts`) hat keine |
+| **Open Banking** | zurückgestellt | ⏸️ **Am 29.08.2026 komplett entfernt** — nie live, laufende Kosten. Gesichert unter `docs/zukunft/OPEN-BANKING.md`, Code bis Commit `85feb98` |
 | **`kredite.darlnr` / `mieter.kaution_bank` verschlüsseln** | Backlog | ✅ erledigt (18.07.) |
 | **Supabase-DPA** | „geparkt" | ✅ signiert (24.07.) |
 | **Vercel Pro** | offen | ✅ aktiv (29.07.) |
@@ -53,7 +53,7 @@ Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterpri
   Live: **https://www.myimmoapp.de** (Apex leitet auf www; `my-immo-app.vercel.app` nur noch Fallback).
 - Env: `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`, `ANTHROPIC_API_KEY` (OCR/KI-Import),
   `DATA_ENCRYPTION_KEY` (AES-256-GCM, `lib/crypto/secure.ts` — Verlust = Bankdaten weg),
-  `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`; optional Brevo, Paddle, Enable Banking, Bedrock.
+  `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`; optional Brevo, Paddle, Bedrock.
 - Workflow: Feature-Branch `claude/…` → PR → **Squash-Merge** → Branch auf `origin/main` zurücksetzen
   **und `origin/<branch>` mit force-with-lease nachziehen**. Nach jedem Merge Live-URL erwähnen.
   Design: **App-UI „Frosted Paper"** seit 20.08.2026 — hell ist Default (Canvas `#f5f5f5`,
@@ -85,16 +85,11 @@ Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterpri
   Auto-Mapping per Synonymen (Zwei-Pass exakt→Präfix), 3-Schritt-Assistent, Batch-Insert.
 - **Datenexport**: Komplett-ZIP + Buchungen-CSV + DATEV (nur unter Daten & Recht).
 
-### Banking (Etappen 1–4 gebaut, inaktiv ohne Env)
-- Tabellen `bankverbindungen` + `bank_umsaetze` (App-Layer-verschlüsselt, RLS).
-- `lib/banking/enableBanking.ts`: Bankenliste, Autorisierung starten, Session tauschen,
-  Kontodetails und **Transaktionen abrufen** (JWT/RS256, `kid` = Application ID).
-- `/api/banking/callback` bindet den Rückweg über `bank_auth_anfragen` an den Nutzer.
-- **Abgleich-Engine** `lib/banking/abgleich.ts`: Miet-/Kostenvorschläge aus Umsätzen,
-  liest Soll-Monat aus dem Verwendungszweck („Miete Juli", „07/2026", Jahres-Rollover),
-  Prinzip **vorschlagen + per Klick bestätigen**. 90-Tage-PSD2-Reauth als Frist.
-- **Offen:** Anbietervertrag + AVV, Sandbox-Durchlauf, **Tests fehlen vollständig** —
-  der einzige größere Bereich ohne jede Abdeckung.
+### Banking / Konto-Anbindung — ZURÜCKGESTELLT (29.08.2026)
+Komplett aus der App entfernt (nie live gegangen; laufende Kosten je Konto). Gesichert als
+Zukunftsprojekt: **`docs/zukunft/OPEN-BANKING.md`**. Code in der Git-Historie bis Commit
+`85feb98`; DB-Tabellen + `abos.banking_addon` per Migration `20260829120000` gedroppt.
+Wieder aufbauen, sobald das Produkt Geld verdient.
 
 ### Steuer (Phase B + D fertig)
 - **Anlage V**-Berechnung + Export je Objekt (`lib/anlageV.ts`), **DATEV-EXTF-Export** (SKR03, `lib/datev.ts`).
@@ -120,7 +115,7 @@ Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterpri
 ### Termine & Prüfpflichten
 - **Termine-Seite**: eigene + abgeleitete Fristen (Mietende/Kündigung, NK-Frist §556 III,
   Mieterhöhung §558, Staffel/Index, Zinsbindung/Anschlussfinanzierung, §489-Sonderkündigung,
-  Grundsteuer, ESt-Erklärung, Energieausweis, Bank-Reauth), Kategorien, iCal-Export,
+  Grundsteuer, ESt-Erklärung, Energieausweis), Kategorien, iCal-Export,
   Erledigt-Haken → **wiederkehrende Termine legen automatisch die nächste Instanz an**.
   Abgeleitete Fristen sind **ausblendbar** (`frist_ausgeblendet`), kehren im Folgejahr zurück.
 - **Prüfpflichten-Katalog** (`PRUEF_KATALOG`, 15 Prüfarten mit Intervall + Rechtsgrundlage +
@@ -180,7 +175,6 @@ Ohne die jeweilige Env folgenlos — das ist gewollt und kein Fehler.
 | Was | Schalter | Was noch fehlt |
 |---|---|---|
 | **Bezahlsystem (Paddle)** | `BILLING_ENFORCED=true` + `PREISE_SICHTBAR` (steht auf `false`) | Paddle-Konto verifizieren, AGB/Widerruf anwaltlich, Sandbox-Test, Feature-Gates in den Actions → `docs/BEZAHLSYSTEM.md` |
-| **Open Banking** | `ENABLE_BANKING_APP_ID` + `ENABLE_BANKING_PRIVATE_KEY` | Anbietervertrag + AVV, Sandbox-Durchlauf, Tests für den API-Client |
 | **E-Mail-Verteiler (Brevo)** | `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` | gemergt; **Datenschutz-Passus ✅ 28.08.2026**, Brevo-AVV im Konto weiterhin offen |
 
 **DNS für Brevo ist fertig** (31.07. per DNS-Abfrage geprüft): `brevo-code`-TXT gesetzt,
@@ -210,7 +204,7 @@ keinen Brevo-Include — Brevo nutzt eigenen Return-Path und signiert per DKIM.
 | Was | Umfang | Anmerkung |
 |---|---|---|
 | **Design Runde 2** | mittel | Runde 1 („Frosted Paper") ist am 20.08.2026 umgesetzt. Offen: echte Neu-Anordnung einzelner Layouts statt reiner Um-Tokenisierung, 11px-Kleinsttexte auf 12px |
-| **Tests für Komponenten/Actions** | mittel | `components/`, `lib/actions/`, `lib/pdf/` und `lib/banking/enableBanking.ts` haben keine Abdeckung |
+| **Tests für Komponenten/Actions** | mittel | `components/`, `lib/actions/` und `lib/pdf/` haben keine Abdeckung |
 | Terminkoordination + Status-Tracking an Anliegen/Auftrag | mittel | war „in Arbeit" laut alter Fassung — Stand nicht abschließend geprüft |
 | Auftrag „erledigt" → Kostenvorschlag | mittel | kein eigenes Rechnungsmodul (E-Rechnung §14 zu riskant) |
 | Vorlagen-Gate | klein | erst wenn der Versand läuft |
@@ -237,7 +231,6 @@ Damit hier nichts als sicher steht, was es nicht ist:
 - **Ob die Brevo-Env in Vercel gesetzt ist** — Vercel-Anbindung lief ins Rate-Limit.
   Entscheidet, ob der Verteiler nach dem Merge wirklich sendet.
 - **Echter Mailversand** — ohne Brevo-Schlüssel keine Aussage zur Zustellbarkeit.
-- **Open Banking end-to-end** — Code vorhanden, ein Durchlauf hat nie stattgefunden.
 - **Login-Pfad von `scripts/screenshots.mjs`** — braucht echte Zugangsdaten.
 - **Stand der Terminkoordination** — als „in Arbeit" übernommen, nicht im Detail geprüft.
 - **AVV-Stände bei Anbietern und Vercel-Plan** — aus früheren Sessions übernommen.

@@ -52,39 +52,14 @@
   (2048×2048, goldenes Haus + Wortmarke) beim App-Store-Launch als App-Icon einspielen. Ist NICHT
   die Dokument-Wortmarke (die bleibt für PDFs/Briefe) — das PNG ist nur das App-/Store-Icon.
 
-### Open Banking / Konto-Anbindung — CODE FERTIG, inaktiv ohne Env (Stand geprüft 31.07.2026)
-⚠️ Stand bis 31.07.2026 hier als „geplant" geführt — falsch. **Etappen 1–4 sind gebaut:**
-Tabellen `bankverbindungen`/`bank_umsaetze`, `lib/banking/enableBanking.ts` (Bankenliste,
-Autorisierung, Session, Kontodetails, Transaktionen), `/api/banking/callback`, Seite `/banking`,
-Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fristen.ts`.
-**Offen: Anbietervertrag + AVV, Sandbox-Durchlauf — und es gibt KEINE Tests dafür**
-(einziger größerer Bereich ohne Abdeckung). Entscheidungen aus der Planung (12.07.2026):
-- **Nur Lesezugriff** (Kontoinformationsdienst/AISP) über einen **lizenzierten Anbieter** →
-  keine eigene BaFin-Lizenz nötig. Kein Zahlungsverkehr.
-- **Mehrere Bankverbindungen je Nutzer** (Sparkasse/Groß-/Direktbank via PSD2/XS2A, ~99 % Abdeckung).
-- **Eingänge + Ausgaben**: Mieteingänge automatisch mit erwarteten Mieten abgleichen, wiederkehrende
-  Ausgaben als Kostenvorschläge. Prinzip **„vorschlagen + per Klick bestätigen"** (keine stille
-  Automatik); irrelevante/private Umsätze ausblendbar.
-- **Datenschutz**: Umsätze verschlüsselt (App-Layer, wie IBANs) + RLS. PSD2 = alle 90 Tage
-  Reauth (App erinnert). Hinweis: bei gemischt privat/geschäftlichem Konto separates Mietkonto empfehlen.
-- **Anbieter**: **Enable Banking** (Start-Kandidat, EU-weit, kostenlose Self-Service-Sandbox +
-  Restricted Production für eigene Konten). ⚠️ **GoCardless Bank Account Data (Nordigen) fällt weg**
-  — Neuanmeldungen deaktiviert/wird abgewickelt (12.07.2026 geprüft). Deutsche BaFin-Alternative
-  **finAPI** (Zugang aber verkaufsgebunden). NICHT das GoCardless-„Payments"-Produkt (Lastschrift) —
-  falsches Produkt.
-- **Voraussetzungen für Live**: Gewerbe ✅ (GewA 1 Stadt Bad Schwartau, bescheinigt 16.07.2026,
-  Beginn 15.07.2026, Nebenerwerb; Tätigkeit: „Entwicklung und Bereitstellung von Software (SaaS)
-  sowie damit verbundene digitale Dienstleistungen; webbasierte Anwendung zur Immobilienverwaltung
-  für private Vermieter") + Anbietervertrag + AVV. Laufende Kosten je
-  Konto/Monat → kostenpflichtiges **Add-on / Business-Tarif**.
-- ~~**Bau-Etappen** (1) Tabellen (2) Enable-Banking-Flow (3) Abgleich-Engine (4) Reauth-Erinnerung~~
-  ✅ alle vier im Code umgesetzt (31.07.2026 geprüft). Was fehlt, ist der erste echte Durchlauf
-  gegen die Sandbox — plus Tests.
-- **Enable-Banking-Auth**: registrierte „Application" (Sandbox) + selbst generiertes RSA-Schlüsselpaar
-  (privater Key wird im Browser erzeugt, Dateiname = Application ID). API-Calls per JWT (RS256),
-  Header `kid` = Application ID. **Benötigte Env (Vercel)**: `ENABLE_BANKING_APP_ID` +
-  `ENABLE_BANKING_PRIVATE_KEY` (privater Schlüssel, wie DATA_ENCRYPTION_KEY behandeln — nie ins
-  Repo/Logs). Redirect-URL bei der App-Registrierung: `<base>/api/banking/callback`.
+### Open Banking / Konto-Anbindung — ZURÜCKGESTELLT (29.08.2026)
+Das Feature war fertig gebaut, aber nie live (nie end-to-end gelaufen) und verursacht im
+echten Betrieb laufende Kosten je Konto/Monat. **Am 29.08.2026 komplett aus der App entfernt**
+und als Zukunftsprojekt gesichert: **`docs/zukunft/OPEN-BANKING.md`** (Konzept, Entscheidungen,
+Env, Wiederherstellungsweg). Der vollständige Code liegt in der Git-Historie bis Commit `85feb98`;
+die DB-Tabellen (`bankverbindungen`, `bank_umsaetze`, `bank_auth_anfragen`) und `abos.banking_addon`
+wurden per Migration `20260829120000` gedroppt. Wieder aufbauen, sobald das Produkt Geld verdient
+(dann als bezahltes Add-on über einen lizenzierten AISP wie Enable Banking).
 
 ### Sonstiges (kein Geld)
 - **Mindest-Passwortlänge in Supabase auf 8 setzen** (kostenlos, auch auf Free) — **am 31.07.2026 erneut geprüft, „abc123" wird weiterhin angenommen:**

@@ -8,7 +8,7 @@ import { VISION } from "@/components/landing/data";
 export const metadata: Metadata = {
   title: "Vision — MyImmo",
   description:
-    "Die MyImmo-Vision: im Ausland leben und den Immobilienbestand in Deutschland vollständig aus der App steuern — mit Team-Rollen, Banking-Abgleich und Steuerberater-Freigabe.",
+    "Die MyImmo-Vision: im Ausland leben und den Immobilienbestand in Deutschland vollständig aus der App steuern — mit Team-Rollen und Steuerberater-Freigabe.",
 };
 
 export default function VisionPage() {

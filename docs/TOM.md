@@ -52,14 +52,14 @@ statt Klartext. Datenbank-seitige Verschlüsselung at rest durch Supabase/AWS.
 ## 5. Auftragskontrolle (Subprozessoren)
 
 Verträge nach Art. 28 mit: Supabase (DPA signiert am [Datum]), Vercel (DPA via Pro-Plan seit
-[Datum]), Anthropic (DPA via Commercial Terms, archiviert am [Datum]), Enable Banking
-(vor Banking-Live). Subprozessorenliste im Nutzer-AVV; Änderungen mit Ankündigung +
+[Datum]), Anthropic (DPA via Commercial Terms, archiviert am [Datum]).
+Subprozessorenliste im Nutzer-AVV; Änderungen mit Ankündigung +
 Widerspruchsrecht.
 
 ## 6. Datenminimierung / Löschkonzept
 
 - Dateien (Belege/Dokumente) liegen nutzergebunden in der DB und werden mit dem Datensatz
-  bzw. Konto gelöscht (CASCADE); Bankverbindung löschen entfernt zugehörige Umsätze.
+  bzw. Konto gelöscht (CASCADE).
 - Export-/Rückgabemöglichkeit vor Kontolöschung (AVV lit. g) — [CSV/JSON-Export bereitstellen].
 - PSD2: Bank-Freigaben laufen automatisch nach max. 90 Tagen ab.
 

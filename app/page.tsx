@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, zahl, begruessung } from "@/lib/format";
-import { getRefinanzWarning, bankingFristen, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
+import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
 import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
@@ -30,13 +30,12 @@ export default async function DashboardPage() {
     return <LandingPage />;
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bankv }, { data: bewHist }, { data: profil }, { data: term }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
     supabase.from("kredite").select("*"),
     supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
-    supabase.from("bankverbindungen").select("aspsp_name,konto_name,gueltig_bis"),
     supabase.from("bewertung_historie").select("immobilie_id,datum,marktwert"),
     supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
     supabase.from("termine").select("id,titel,datum,kategorie,erledigt").order("datum"),
@@ -84,8 +83,6 @@ export default async function DashboardPage() {
     fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Darlehen", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn" });
   for (const p of properties) for (const f of objektFristen(p)) if (f.datum && imFenster(f.datum))
     fristListe.push({ datum: f.datum, label: f.label, sub: p.bezeichnung, warn: f.typ === "warn" });
-  for (const v of bankv ?? []) for (const f of bankingFristen(v)) if (f.datum && imFenster(f.datum))
-    fristListe.push({ datum: f.datum, label: f.label, sub: "Banking", warn: f.typ === "warn" });
   for (const f of globaleFristen()) if (f.datum && imFenster(f.datum))
     fristListe.push({ datum: f.datum, label: f.label, sub: "Alle Objekte", warn: f.typ === "warn" });
   for (const t of (term ?? []) as { id: string; titel: string | null; datum: string | null; kategorie: string | null; erledigt: boolean | null }[])
@@ -100,9 +97,6 @@ export default async function DashboardPage() {
   const gruss = begruessung();
   const vorname = ((profil as { name: string | null } | null)?.name ?? "").trim().split(/\s+/)[0] || null;
   const monatJahr = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric", timeZone: "Europe/Berlin" }).format(new Date());
-
-  // Bank-Freigaben, die in <=14 Tagen ablaufen (PSD2-Reauth) — als Warnbanner.
-  const bankWarnungen = (bankv ?? []).flatMap((v) => bankingFristen(v)).filter((f) => f.typ === "warn");
 
   const now = new Date();
 
@@ -251,16 +245,6 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {bankWarnungen.length > 0 && (
-        <div style={{ marginBottom: 16, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-          <TriangleAlert size={20} color="var(--red)" style={{ flexShrink: 0 }} />
-          <div>
-            <div style={{ fontWeight: 600, color: "var(--red)", fontSize: 13 }}>Bank-Freigabe läuft ab</div>
-            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{bankWarnungen.map((f) => `${f.label}${f.datum ? ` (${datum(f.datum)})` : ""}`).join(" · ")} — PSD2: alle 90 Tage neu bestätigen</div>
-          </div>
-          <Link href="/banking" className="btn btn-ghost" style={{ marginLeft: "auto", fontSize: 11 }}>Erneuern</Link>
-        </div>
-      )}
 
       {/* KPIs sind Deep-Links in den passenden Kontext (spart 1–2 Klicks je Absprung) */}
       <div className="staffel grid-5 mb-20">

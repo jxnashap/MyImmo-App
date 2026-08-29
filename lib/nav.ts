@@ -2,7 +2,7 @@
 // damit beide garantiert dieselben Bereiche/Icons zeigen (keine Duplikate).
 import {
   BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
-  TrendingUp, MessageSquareText, CreditCard,
+  TrendingUp, MessageSquareText,
   Building2, Building, Store, TreePalm, Sprout, Percent, Compass, Handshake, Scale,
   type LucideIcon,
 } from "lucide-react";
@@ -21,7 +21,6 @@ export const VERWALTUNG: NavItem[] = [
   { href: "/anliegen", label: "Anliegen & Kontakte", icon: MessageSquareText },
   { href: "/verbrauch", label: "Verbrauch", icon: Zap },
   { href: "/kredite", label: "Kredite", icon: Landmark },
-  { href: "/banking", label: "Banking", icon: CreditCard },
   { href: "/steuer", label: "Steuer", icon: Scale, paragraph: true }, // Icon nur fuer die Command-Palette; die Sidebar zeigt bewusst "§"
   { href: "/archiv", label: "Archiv", icon: Archive },
   { href: "/jahresbericht", label: "Jahresbericht", icon: TrendingUp },

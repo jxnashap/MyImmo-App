@@ -7,7 +7,7 @@
 ## Was ist MyImmo
 Deutschsprachige **Immobilienverwaltung für private Vermieter** (SaaS). Objekte, Mieter,
 Mietkonto, Ein-/Ausgaben, Nebenkostenabrechnung, Kredite, Steuer (Anlage V, AfA, DATEV),
-Banking-Anbindung (geplant), Kauf-/Verkauf-/Marktwert-Kalkulatoren, Portfolio-Karte,
+Kauf-/Verkauf-/Marktwert-Kalkulatoren, Portfolio-Karte,
 Wertentwicklung.
 
 - **Live:** https://www.myimmoapp.de (eigene Domain; Vercel, Auto-Deploy bei Merge nach `main`)
@@ -45,12 +45,12 @@ Umkehrung über `[data-theme="dark"]`. UI-Schrift **Geist** (selbst gehostet,
   `noreply@anthropic.com`. Der Stop-Hook „Unverified commit" beim GitHub-Squash-Commit
   (`noreply@github.com`) ist ein **bekannter Fehlalarm** — gemergte Historie NICHT amenden.
 - **Env-Vars (Vercel):** `NEXT_PUBLIC_SUPABASE_*`, `ANTHROPIC_API_KEY` (OCR/KI),
-  `DATA_ENCRYPTION_KEY`. Optional Bedrock (EU-KI) `BEDROCK_*`; Enable Banking `ENABLE_BANKING_*`.
+  `DATA_ENCRYPTION_KEY`. Optional Bedrock (EU-KI) `BEDROCK_*`.
 
 ## Aktueller Stand (was existiert)
 Voll funktionsfähige App mit: Dashboard, Immobilien (Liste/Detail/Edit), Mieter, Mietkonto,
-Ein-/Ausgaben (+ CSV-Import, wiederkehrende Buchungen), Verbrauch, Kredite, Banking-Sandbox-
-Grundgerüst, Steuer (Anlage V + ELSTER-Hilfe + DATEV-Export), AfA-Assistent, Archiv,
+Ein-/Ausgaben (+ CSV-Import, wiederkehrende Buchungen), Verbrauch, Kredite,
+Steuer (Anlage V + ELSTER-Hilfe + DATEV-Export), AfA-Assistent, Archiv,
 Jahresbericht, Kauf-/Verkauf-Assistent, Marktwert-Schätzer (ImmoWertV), Portfolio-Karte
 (Leaflet, dark), Wertentwicklung (Eurostat-HPI-Fortschreibung), Onboarding-Tour,
 Command-Palette (Cmd+K), collapsible Sidebar, Toast/Breadcrumbs.
@@ -83,7 +83,7 @@ Fristenlogik, Leerzustände), Datenschutz-Passus für den Vorlagen-Verteiler.
 - ~~InnoWeb-Website~~ ✅ vom Nutzer selbst fertiggestellt (23.07.2026) — kein offener Punkt mehr.
 
 ## Nur der Betreiber (kein Code)
-AWS-Bedrock-/Enable-Banking-Keys, Brevo-AVV, Supabase-Mindestpasswortlänge auf 8,
+AWS-Bedrock-Keys, Brevo-AVV, Supabase-Mindestpasswortlänge auf 8,
 anwaltliche Prüfung (§34i GewO Finanzierungs-Assistent, StBerG Steuer-Features,
 Nutzer-AVV, Impressum/Datenschutz/AGB).
 ✅ Vercel Pro seit 29.07.2026 (AVV greift über die ToS, kommerzielle Nutzung erlaubt).

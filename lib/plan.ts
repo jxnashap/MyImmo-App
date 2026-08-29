@@ -12,7 +12,6 @@ export type Abo = {
   plan: PlanId;
   status: AboStatus;
   zyklus: AboZyklus | null;
-  banking_addon: boolean;
   provider_customer_id: string | null;
   provider_subscription_id: string | null;
   gueltig_bis: string | null;
@@ -38,7 +37,6 @@ export const EINHEITEN_LIMIT: Record<PlanId, number> = {
 };
 
 // Funktions-Schlüssel → günstigster Tarif, der sie enthält (Preise-Seite).
-// "banking" ist KEIN Tarif-Feature, sondern das kostenpflichtige Add-on.
 export type Feature =
   | "nk_pdf"        // Nebenkostenabrechnung als PDF
   | "steuer"        // Anlage V, ELSTER-Hilfe, Berichte, DATEV
@@ -48,10 +46,9 @@ export type Feature =
   | "ki_import"     // KI-Import (OCR, Objekt-Import)
   | "kalkulatoren"  // Kauf-/Verkauf-/Bewertungs-Kalkulatoren
   | "beleihung"     // Beleihungsordner & Bankgespräch-Paket
-  | "hausverwaltung"// Mandanten-getrennter HV-Zugang
-  | "banking";      // Konto-Anbindung (Add-on zu Privat/Plus/Business)
+  | "hausverwaltung";// Mandanten-getrennter HV-Zugang
 
-export const FEATURE_AB_PLAN: Record<Exclude<Feature, "banking">, PlanId> = {
+export const FEATURE_AB_PLAN: Record<Feature, PlanId> = {
   nk_pdf: "privat",
   steuer: "privat",
   dokumente: "privat",
@@ -79,9 +76,8 @@ export function effektiverPlan(abo: Abo | null): PlanId {
   return istZahlend(abo.status) ? abo.plan : "kostenlos";
 }
 
-/** Enthält der Tarif das Feature? (banking → nur über das Add-on) */
+/** Enthält der Tarif das Feature? */
 export function planEnthaelt(plan: PlanId, feature: Feature): boolean {
-  if (feature === "banking") return false;
   return RANG[plan] >= RANG[FEATURE_AB_PLAN[feature]];
 }
 
@@ -91,7 +87,6 @@ export function planEnthaelt(plan: PlanId, feature: Feature): boolean {
  */
 export function darfFeature(abo: Abo | null, feature: Feature, enforced: boolean = billingAktiv()): boolean {
   if (!enforced) return true;
-  if (feature === "banking") return !!abo && istZahlend(abo.status) && abo.banking_addon;
   return planEnthaelt(effektiverPlan(abo), feature);
 }
 
@@ -105,7 +100,7 @@ export function einheitenLimit(abo: Abo | null, enforced: boolean = billingAktiv
 export async function getAbo(supabase: SupabaseClient): Promise<Abo | null> {
   const { data } = await supabase
     .from("abos")
-    .select("plan,status,zyklus,banking_addon,provider_customer_id,provider_subscription_id,gueltig_bis,storniert_zum")
+    .select("plan,status,zyklus,provider_customer_id,provider_subscription_id,gueltig_bis,storniert_zum")
     .limit(1)
     .maybeSingle();
   return (data as Abo | null) ?? null;

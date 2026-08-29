@@ -44,7 +44,6 @@ const VERMIETER_TABELLEN: [tabelle: string, spalte: string][] = [
   ["bewertung_historie", "user_id"], ["vergleichsangebote", "user_id"],
   ["firmen", "user_id"], ["bewerber_links", "user_id"], ["bewerbungen", "user_id"],
   ["bewerbung_dateien", "user_id"],
-  ["bankverbindungen", "user_id"], ["bank_umsaetze", "user_id"],
   ["abos", "user_id"],
   ["anliegen", "vermieter_id"], ["vermieter_anfragen", "vermieter_id"],
   ["zaehlerstand_meldungen", "vermieter_id"], ["einladungscodes", "vermieter_id"],
@@ -105,7 +104,6 @@ export async function GET() {
       if (t === "mieter" && o.kaution_bank) o.kaution_bank = decryptNullable(String(o.kaution_bank));
       if (t === "kredite" && o.darlnr) o.darlnr = decryptNullable(String(o.darlnr));
       if (t === "bewerbung_dateien" && o.data) o.data = decryptNullable(String(o.data));
-      if (t === "bankverbindungen" && o.iban) o.iban = decryptNullable(String(o.iban));
       return o;
     });
     alles[t] = rows;

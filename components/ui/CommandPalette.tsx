@@ -16,7 +16,6 @@ type Item = { key: string; label: string; href: string; group: string; icon?: Lu
 // nicht im Label stehen (z. B. „Handwerker" → Anliegen, „ELSTER" → Steuer).
 const ALIAS: Record<string, string> = {
   "/anliegen": "handwerker auftrag bewerbung bewerber service mieterportal reparatur meldung anfrage",
-  "/banking": "konto kontoauszug umsätze umsatz psd2 bank",
   "/steuer": "anlage v afa elster datev einkommensteuer werbungskosten",
   "/cashflow": "buchung buchen einnahme ausgabe miete kosten transaktion",
   "/mietkonto": "zahlung offene posten mahnung soll ist",

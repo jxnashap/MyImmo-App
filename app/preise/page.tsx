@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PartyPopper, CreditCard } from "lucide-react";
+import { PartyPopper } from "lucide-react";
 import LandingShell from "@/components/landing/Shell";
 import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
@@ -20,7 +20,7 @@ export const metadata: Metadata = PREISE_SICHTBAR
   : {
       title: "Häufige Fragen — MyImmo",
       description:
-        "MyImmo ist im Early Access und aktuell kostenlos. Antworten zu Datenschutz, Banking-Anbindung, Steuer und Nutzung.",
+        "MyImmo ist im Early Access und aktuell kostenlos. Antworten zu Datenschutz, Steuer und Nutzung.",
       // Nicht indexieren, solange hier keine Tarife stehen — sonst steht die
       // Seite als „Preise" im Suchergebnis und liefert dann keine.
       robots: { index: false, follow: true },
@@ -65,12 +65,6 @@ export default function PreisePage() {
                   </Reveal>
                 ))}
               </div>
-              <p className="lp-section-sub" style={{ marginTop: 18, marginBottom: 0, fontSize: 13 }}>
-                <CreditCard size={14} style={{ verticalAlign: "-2px", color: "var(--gold)" }} />{" "}
-                <strong>Add-on Banking:</strong> Die Konto-Anbindung verursacht laufende Kosten je Bankverbindung
-                und wird deshalb als optionales Add-on zu Privat/Plus/Business angeboten — Preis wird mit dem
-                Start bekannt gegeben. Ohne Add-on funktioniert alles andere uneingeschränkt.
-              </p>
             </>
           ) : (
             <>
