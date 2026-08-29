@@ -480,9 +480,6 @@ a.kpi-card:active { transform: scale(.985); }
 .btn-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 8px 26px rgba(var(--gold-glow), .38), var(--shadow-3); }
 @media (max-width: 860px) {
   .btn-fab.show-mobile { display: grid; }
-  /* Platz unter dem Inhalt, damit der schwebende Knopf die letzte Karte
-     nicht verdeckt (vorher lag er ueber Rendite + "Details anzeigen"). */
-  .main { padding-bottom: 96px; }
 }
 .btn-fab:active { transform: scale(.94); }
 
@@ -568,7 +565,15 @@ tr.no-hover:hover td { background: transparent; }
   }
   .list-table thead th:last-child { background: var(--bg2); }
   tr:hover .list-table td:last-child, .list-table tr:hover td:last-child { background: var(--bg3); }
+  /* Breite Report-Tabellen (6 Spalten, z. B. Jahresbericht) scrollen sauber
+     horizontal statt die letzte Spalte anzupinnen: der Pin sass bei so vielen
+     Spalten mitten im Inhalt und ueberlappte die mittleren Spalten
+     („L CASHFLOW"-Garble). Fuer schmale Listen bleibt der Pin. */
+  .list-table.report th:last-child, .list-table.report td:last-child {
+    position: static; box-shadow: none; background: transparent;
+  }
 }
+.list-table.report { min-width: 680px; }
 
 /* DELETE BTN */
 /* Destruktive Aktionen sind AB RUHEZUSTAND als solche erkennbar — vorher
@@ -815,6 +820,12 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
      erste Zeile → aufgeblähte Mobile-Kopfleiste (uneinheitliche Höhe je Seite). */
   .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .main { padding: 18px 16px; }
+  /* Nur Seiten mit schwebendem Aktionsknopf (FAB) brauchen unten Freiraum,
+     damit er die letzte Karte nicht verdeckt. `:has()` hält das scoped, statt
+     jede Mobilseite mit Leerraum zu versehen; die Kurzschreibweise oben setzt
+     das Bottom-Padding sonst auf 18px zurueck (deshalb griff der Freiraum nie).
+     Die Regel ist spezifischer als `.main` und gewinnt daher trotz Reihenfolge. */
+  .main:has(.btn-fab.show-mobile) { padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px)); }
   /* Mobile-Kopfleiste einblenden */
   .mobile-bar { display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 50; background: var(--bg2); border-bottom: 1px solid var(--line); padding: 10px 16px; }
   /* Am Handy scrollt das FENSTER, nicht .main-wrap (dessen scrollTop bleibt 0).
@@ -844,9 +855,13 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 @media (max-width: 560px) {
   .grid-4, .grid-5 { grid-template-columns: 1fr 1fr; gap: 10px; }
   .topbar-title { font-size: 20px; }
-  /* Aktionsbuttons in der Topbar volle Breite, gleichmäßig */
-  .topbar > div:last-child { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
-  .topbar > div:last-child .btn { flex: 1 1 auto; }
+  /* Aktionsbuttons in der Topbar volle Breite, gleichmäßig.
+     `:not(:only-child)` ist Pflicht: Auf Seiten OHNE Button oben rechts ist der
+     Text-Block (Kicker/Titel/Untertitel) selbst `:last-child` und wurde sonst
+     zur Flex-Zeile — Kicker und Titel standen dann nebeneinander statt
+     gestapelt („VERWALTUNG · OPEN BANKING  Banking"). */
+  .topbar > div:last-child:not(:only-child) { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+  .topbar > div:last-child:not(:only-child) .btn { flex: 1 1 auto; }
   .form-row { grid-template-columns: 1fr; }
   .form-box { padding: 20px 16px; }
   .btn { padding: 10px 16px; }

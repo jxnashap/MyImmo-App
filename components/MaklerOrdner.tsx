@@ -135,6 +135,8 @@ export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }:
               <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                 {/* Abhaken */}
                 <button type="button" onClick={() => toggleErledigt(item)} disabled={pending}
+                  className="tap44"
+                  aria-label={d.status === "erledigt" ? "Dokument wieder öffnen" : "Dokument als erledigt markieren"}
                   title={d.status === "erledigt" ? "Wieder öffnen" : "Als erledigt markieren"}
                   style={{
                     flexShrink: 0, width: 22, height: 22, marginTop: 1, borderRadius: 6, cursor: "pointer",
