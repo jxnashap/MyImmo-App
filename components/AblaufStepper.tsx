@@ -105,9 +105,21 @@ function SchrittKarte({
 }
 
 export default function AblaufStepper({
-  schritte, storageKey,
+  schritte, storageKey, gesperrt = false,
 }: {
   schritte: StepperSchritt[]; storageKey: string;
+  /**
+   * Nur-Lesen-Modus (oeffentliche Demo): Der Ablauf bleibt vollstaendig
+   * durchklickbar, aber jede Eingabe im Schritt-Inhalt ist tot.
+   *
+   * Umgesetzt ueber ein natives <fieldset disabled> statt ueber ein
+   * `readOnly`-Prop, das durch sieben Unterkomponenten (31 Eingabefelder)
+   * gereicht werden muesste: `disabled` am fieldset deaktiviert JEDES
+   * Formularelement im Baum darunter — auch fuer Tastatur und Screenreader,
+   * nicht nur optisch. Die Schritt-Kopfzeilen liegen bewusst AUSSERHALB,
+   * damit Auf- und Zuklappen weiter funktioniert.
+   */
+  gesperrt?: boolean;
 }) {
   const [done, setDone] = useState<Record<number, boolean>>({});
   const [offen, setOffen] = useState<Record<number, boolean>>({});
@@ -163,7 +175,13 @@ export default function AblaufStepper({
           onToggleOffen={() => toggleOffen(i + 1)}
           onToggleErledigt={() => toggleErledigt(i + 1)}
         >
-          {s.inhalt}
+          {gesperrt ? (
+            <fieldset disabled style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+              {s.inhalt}
+            </fieldset>
+          ) : (
+            s.inhalt
+          )}
         </SchrittKarte>
       ))}
     </>

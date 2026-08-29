@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { istDemoKonto } from "@/lib/demo";
 import VerkaufAssistent from "@/components/VerkaufAssistent";
 import type { VerkaufObjekt } from "@/components/VerkaufRechner";
 import type { EinschaetzungRow } from "@/lib/einschaetzung";
@@ -19,6 +20,9 @@ export default async function VerkaufPage() {
       .select("id,immobilie_id,datum,marktwert,verfahren,quelle")
       .order("datum", { ascending: false }),
   ]);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const demo = istDemoKonto(user?.email);
 
   const restschuld = new Map<string, number>();
   for (const k of kredite ?? []) {
@@ -44,7 +48,7 @@ export default async function VerkaufPage() {
         </div>
       </div>
       <hr className="topbar-rule" />
-      <VerkaufAssistent objekte={objekte} einschaetzungen={(hist ?? []) as EinschaetzungRow[]} />
+      <VerkaufAssistent objekte={objekte} einschaetzungen={(hist ?? []) as EinschaetzungRow[]} demo={demo} />
     </div>
   );
 }

@@ -70,20 +70,34 @@ function BelastbarkeitsRing({ prozent, stufe, offen }: { prozent: number; stufe:
   );
 }
 
-export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalkulation[] }) {
+// Vorbelegung fuer die oeffentliche Demo. Ohne sie stuende dort ein leerer,
+// gesperrter Rechner — sichtbar, aber ohne Aussage. Die Zahlen sind bewusst
+// unspektakulaer und plausibel: eine vermietete 3-Zimmer-Altbauwohnung, wie sie
+// die Zielgruppe tatsaechlich kauft.
+const DEMO_START = {
+  adresse: "Karl-Liebknecht-Str. 42, 04275 Leipzig",
+  kaufpreis: "245000",
+  flaeche: "72",
+  kaltmiete: "720",
+  baujahr: "1911",
+};
+
+export default function ObjektRechner({
+  gespeichert = [], demo = false,
+}: { gespeichert?: Kalkulation[]; demo?: boolean }) {
   const toast = useToast();
   const [liste, setListe] = useState<Kalkulation[]>(gespeichert);
 
   // Grundwerte
-  const [adresse, setAdresse] = useState("");
-  const [kaufpreis, setKaufpreis] = useState("");
-  const [flaeche, setFlaeche] = useState("");
+  const [adresse, setAdresse] = useState(demo ? DEMO_START.adresse : "");
+  const [kaufpreis, setKaufpreis] = useState(demo ? DEMO_START.kaufpreis : "");
+  const [flaeche, setFlaeche] = useState(demo ? DEMO_START.flaeche : "");
   const [bundesland, setBundesland] = useState("0.05");
   const [makler, setMakler] = useState("3.57");
   const [maklerBeruehrt, setMaklerBeruehrt] = useState(false); // für Belastbarkeits-Score
   // Nutzung
   const [nutzung, setNutzung] = useState<"vermietung" | "eigennutzung">("vermietung");
-  const [kaltmiete, setKaltmiete] = useState("");
+  const [kaltmiete, setKaltmiete] = useState(demo ? DEMO_START.kaltmiete : "");
   const [bewirt, setBewirt] = useState("20"); // % der Miete (Rundwert)
   const [hausgeld, setHausgeld] = useState(""); // €/Mo (Eigennutzung: laufende Kosten)
 
@@ -92,7 +106,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
   const [objektTyp, setObjektTyp] = useState<"wohnung" | "haus">("wohnung");
   const [grundFlaeche, setGrundFlaeche] = useState("");
   const [bodenrichtwert, setBodenrichtwert] = useState("");
-  const [baujahr, setBaujahr] = useState("");
+  const [baujahr, setBaujahr] = useState(demo ? DEMO_START.baujahr : "");
   const [gebTyp, setGebTyp] = useState("efh");
   const [ausstattung, setAusstattung] = useState("3");
   const [bpiFaktor, setBpiFaktor] = useState("1.9");

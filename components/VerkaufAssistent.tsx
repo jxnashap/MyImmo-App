@@ -20,9 +20,12 @@ const UNTERLAGEN: { gruppe: string; items: string[] }[] = [
 export default function VerkaufAssistent({
   objekte = [],
   einschaetzungen = [],
+  demo = false,
 }: {
   objekte?: VerkaufObjekt[];
   einschaetzungen?: EinschaetzungRow[];
+  /** Oeffentliche Demo: fester Beispielstand, keine Eingaben. */
+  demo?: boolean;
 }) {
   const wertObjekte: EinschaetzungObjekt[] = objekte.map((o) => ({ id: o.id, name: o.name, wert: o.wert }));
   const schritte: StepperSchritt[] = [
@@ -113,5 +116,20 @@ export default function VerkaufAssistent({
     },
   ];
 
-  return <AblaufStepper schritte={schritte} storageKey="myimmo_verkauf_fortschritt" />;
+  return (
+    <>
+      {demo && (
+        <div
+          role="status"
+          className="rounded-sm px-3 py-2 text-[13px]"
+          style={{ background: "var(--blue-dim)", color: "var(--blue)", marginBottom: 16 }}
+        >
+          <strong>Beispielrechnung.</strong> In der Demo ist der Ablauf mit festen
+          Werten durchgerechnet — du kannst alles ansehen und aufklappen, aber nichts
+          ändern. Mit einem eigenen Konto rechnest du hier mit deinen Zahlen.
+        </div>
+      )}
+      <AblaufStepper schritte={schritte} storageKey="myimmo_verkauf_fortschritt" gesperrt={demo} />
+    </>
+  );
 }

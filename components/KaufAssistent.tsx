@@ -36,9 +36,11 @@ const DARLEHEN: { name: string; text: string; warn?: boolean }[] = [
 ];
 
 export default function KaufAssistent({
-  gespeichert = [], selbstauskunft = null,
+  gespeichert = [], selbstauskunft = null, demo = false,
 }: {
   gespeichert?: Kalkulation[]; selbstauskunft?: SelbstauskunftDaten | null;
+  /** Oeffentliche Demo: fester Beispielstand, keine Eingaben. */
+  demo?: boolean;
 }) {
   const [rechnerOffen, setRechnerOffen] = useState(false);
   const [saOffen, setSaOffen] = useState(false);
@@ -141,7 +143,7 @@ export default function KaufAssistent({
             </button>
           ) : (
             <div style={{ marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-              <ObjektRechner gespeichert={gespeichert} />
+              <ObjektRechner gespeichert={gespeichert} demo={demo} />
             </div>
           )}
         </>
@@ -340,7 +342,18 @@ export default function KaufAssistent({
         ))}
       </div>
 
-      <AblaufStepper schritte={schritte} storageKey="myimmo_kauf_fortschritt" />
+      {demo && (
+        <div
+          role="status"
+          className="rounded-sm px-3 py-2 text-[13px]"
+          style={{ background: "var(--blue-dim)", color: "var(--blue)", marginBottom: 16 }}
+        >
+          <strong>Beispielrechnung.</strong> In der Demo ist der Ablauf mit festen
+          Werten durchgerechnet — du kannst alles ansehen und aufklappen, aber nichts
+          ändern. Mit einem eigenen Konto rechnest du hier mit deinen Zahlen.
+        </div>
+      )}
+      <AblaufStepper schritte={schritte} storageKey="myimmo_kauf_fortschritt" gesperrt={demo} />
     </>
   );
 }
