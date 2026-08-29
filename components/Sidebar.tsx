@@ -9,14 +9,17 @@ import { VERWALTUNG, KALKULATOR, PROP_ICONS, type NavItem } from "@/lib/nav";
 import { Home, Power, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
 
 type SidebarProperty = { id: string; bezeichnung: string; typ: string | null };
+type SidebarTenant = { id: string; name: string };
 
 export default function Sidebar({
   properties = [],
+  tenants = [],
   userEmail,
   profilName,
   badges = {},
 }: {
   properties?: SidebarProperty[];
+  tenants?: SidebarTenant[];
   userEmail?: string | null;
   profilName?: string | null;
   /** Zähler je Route ("/anliegen": 3) — 0/undefined blendet aus. */
@@ -144,7 +147,7 @@ export default function Sidebar({
             <button type="submit" className="logout-btn" title="Abmelden" aria-label="Abmelden"><Power size={14} /></button>
           </form>
         </div>
-        <CommandPalette properties={properties} />
+        <CommandPalette properties={properties} tenants={tenants} />
       </div>
 
       <div className="sidebar-section">
