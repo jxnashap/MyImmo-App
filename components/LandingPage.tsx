@@ -35,7 +35,17 @@ export default function LandingPage() {
               <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
               <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
             </div>
-            <p className="qlx-hero-note">Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar</p>
+            <p className="qlx-hero-note">
+              Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar
+            </p>
+            {/* Demo ohne Anmeldung: bewusst als Textlink und nicht als dritter
+                Knopf — drei gleich große Schaltflächen im Hero verwässern die
+                Hauptaktion. Führt auf /api/demo (setzt zurück, meldet an). */}
+            <p className="qlx-hero-note" style={{ marginTop: 6 }}>
+              <a href="/api/demo" style={{ textDecoration: "underline" }}>
+                Oder erst die Demo ansehen — ohne Anmeldung
+              </a>
+            </p>
           </>
         }
       />
