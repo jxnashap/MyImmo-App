@@ -42,8 +42,11 @@ export default function KaufAssistent({
   /** Oeffentliche Demo: fester Beispielstand, keine Eingaben. */
   demo?: boolean;
 }) {
-  const [rechnerOffen, setRechnerOffen] = useState(false);
-  const [saOffen, setSaOffen] = useState(false);
+  // In der Demo von Anfang an aufgeklappt: Die Aufklapp-Knoepfe liegen im
+  // gesperrten Bereich (fieldset disabled) und waeren dort nicht bedienbar —
+  // der Besucher haette den Rechner sonst nie zu Gesicht bekommen.
+  const [rechnerOffen, setRechnerOffen] = useState(demo);
+  const [saOffen, setSaOffen] = useState(demo);
   const [auswahl, setAuswahl] = useState<KaufAuswahl | null>(null);
   const [darlehenWunsch, setDarlehenWunsch] = useState<DarlehenAuswahl | null>(null);
 
