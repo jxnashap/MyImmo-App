@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import { ladeNeuigkeiten } from "@/lib/neuigkeiten";
 import AutoLogout from "@/components/AutoLogout";
 import OnboardingTour from "@/components/OnboardingTour";
+import LabelVerknuepfung from "@/components/LabelVerknuepfung";
 import { ToastProvider } from "@/components/Toast";
 import FlashToast from "@/components/FlashToast";
 import { ZeitraumProvider } from "@/components/ZeitraumProvider";
@@ -151,6 +152,9 @@ export default async function RootLayout({
           <div className="app">
             <Sidebar properties={props ?? []} tenants={tenants} userEmail={user.email} profilName={profil?.name ?? null} badges={{ "/anliegen": neu.mieterportal, "/cashflow": neu.cashflow }} />
             <AutoLogout />
+            {/* Verknüpft Beschriftungen mit ihren Feldern (label[for] ↔ id) —
+                auch in später nachgeladenen Formularen. */}
+            <LabelVerknuepfung />
             <OnboardingTour neuerNutzer={(props ?? []).length === 0} />
             <div className="main-wrap">
               {/* Demo-Hinweis: Ohne ihn haelt ein Besucher seine Eingaben fuer
