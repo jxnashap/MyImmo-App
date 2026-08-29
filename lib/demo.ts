@@ -25,6 +25,10 @@ const ERLAUBTE_PRAEFIXE = [
   "/kauf",
   "/verkauf",
   "/hilfe", // Support muss immer erreichbar sein, auch in der Demo
+  // Einstellungen bewusst frei (Vorgabe Betreiber 29.08.2026): Dort sieht der
+  // Besucher das Profil "Max Mustermann" und findet Hilfe & Support. Aenderungen
+  // dort sind unbedenklich — der naechste Demo-Start setzt sie zurueck.
+  "/einstellungen",
 ];
 
 // Technisch noetig, unabhaengig von der Demo-Auswahl.
