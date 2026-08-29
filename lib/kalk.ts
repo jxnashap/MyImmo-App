@@ -23,27 +23,46 @@ export function calcGrenzsteuer(zvE: number, splitting: boolean): number {
 }
 
 // Restschuld nach n Jahren bei konstanter Annuität.
+//
+// Rechnet MONATLICH, so wie ein Annuitätendarlehen tatsächlich läuft: Jede Rate
+// mindert sofort die Restschuld, die nächste Zinsberechnung setzt auf dem
+// niedrigeren Stand auf. Vorher wurde ein volles Jahr Zinsen auf den
+// Jahresanfangsstand gerechnet, obwohl unterjährig 12 Raten fließen — die
+// Restschuld fiel dadurch systematisch zu hoch aus (bei 250.000 € / 4 % / 2 %
+// nach 20 Jahren rund 3.900 € bzw. ~4 %).
+const MONATE_MAX = 60 * 12; // Sicherheitsgrenze gegen Endlosschleifen
+
 export function berechneRestschuld(darlehen: number, zinsPa: number, rateMo: number, jahre: number): number {
+  if (darlehen <= 0) return 0;
+  const zinsMo = zinsPa / 12;
   let rs = darlehen;
-  for (let j = 0; j < jahre; j++) {
-    const zinsen = rs * zinsPa;
-    const tilgung = rateMo * 12 - zinsen;
-    rs = Math.max(0, rs - tilgung);
-    if (rs <= 0) break;
+  for (let m = 0; m < jahre * 12; m++) {
+    const zinsen = rs * zinsMo;
+    const tilgung = rateMo - zinsen;
+    // Rate deckt nicht einmal die Zinsen → das Darlehen tilgt sich nie.
+    if (tilgung <= 0) return rs;
+    rs -= tilgung;
+    if (rs <= 0) return 0;
   }
   return rs;
 }
 
-// Jahr der Volltilgung.
+// Jahr der Volltilgung — 0, wenn das Darlehen in 60 Jahren nicht getilgt ist
+// (so dokumentiert in lib/kauf/darlehen.ts und von der Oberfläche als
+// „> 60 J." erwartet; vorher gab die Funktion stattdessen startJahr + 60
+// zurück, wodurch dieser Zweig nie griff).
 export function berechneVolltilgungJahr(darlehen: number, zinsPa: number, rateMo: number, startJahr: number): number {
   if (darlehen <= 0 || rateMo <= 0) return 0;
-  let rs = darlehen, j = 0;
-  while (rs > 0 && j < 60) {
-    const zinsen = rs * zinsPa;
-    rs = Math.max(0, rs - (rateMo * 12 - zinsen));
-    j++;
+  const zinsMo = zinsPa / 12;
+  let rs = darlehen;
+  for (let m = 1; m <= MONATE_MAX; m++) {
+    const zinsen = rs * zinsMo;
+    const tilgung = rateMo - zinsen;
+    if (tilgung <= 0) return 0; // Rate deckt die Zinsen nicht
+    rs -= tilgung;
+    if (rs <= 0) return startJahr + Math.ceil(m / 12);
   }
-  return startJahr + j;
+  return 0;
 }
 
 // Grunderwerbsteuer je Bundesland, Stand 2026 (offizielle Landesquellen / finanz-tools.de).
