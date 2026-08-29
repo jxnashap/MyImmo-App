@@ -120,13 +120,18 @@ export default function Sidebar({
 
       <aside className={"sidebar" + (open ? " open" : "")}>
       <div className="sidebar-logo">
-        <Link href="/" style={{ textDecoration: "none" }}>
-          <h1>My<span>Immo</span></h1>
+        <Link href="/" style={{ textDecoration: "none" }} className="sidebar-brand">
+          {/* Ausgeklappt: Wortmarke. Eingeklappt (Rail): automatisch das App-Icon,
+              damit „MyImmo" nicht auf 68px zusammengequetscht wird. */}
+          <h1 className="brand-wordmark">My<span>Immo</span></h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/myimmo_logo_2048.png" alt="MyImmo" className="brand-icon" width={38} height={38} />
         </Link>
         <p>Immobilien-Management</p>
         <div className="sidebar-userrow" style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
-          {/* Avatar = Button zu den Einstellungen (ersetzt das Zahnrad) */}
-          <Link href="/einstellungen" title="Einstellungen" aria-label="Einstellungen" style={{ textDecoration: "none", flexShrink: 0 }}>
+          {/* Avatar = Button zu den Einstellungen (ersetzt das Zahnrad).
+              Im Rail bleibt NUR dieser Kreis stehen (Name/Mail/Theme/Logout aus). */}
+          <Link href="/einstellungen" className="avatar-link" title="Einstellungen" aria-label="Einstellungen" style={{ textDecoration: "none", flexShrink: 0 }}>
             <div className="settings-avatar" style={{ width: 36, height: 36, fontSize: 13, cursor: "pointer" }}>
               {hatProfil ? initialen : "+"}
             </div>
