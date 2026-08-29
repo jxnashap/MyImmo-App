@@ -30,27 +30,16 @@ function SchrittKarte({
 }) {
   return (
     <div style={{ display: "flex", gap: 16, alignItems: "stretch" }}>
+      {/* Icon-Punkt statt Nummer: leuchtet golden auf, sobald der Schritt aktiv
+          (offen) oder erledigt ist. Die Verbindungslinie füllt sich mit einer
+          fließenden Gold-Textur, sobald der Schritt erledigt ist. */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-        <div
-          style={{
-            width: 38, height: 38, borderRadius: "50%",
-            background: erledigt ? "var(--green)" : "var(--gold)",
-            color: erledigt ? "#fff" : "var(--btn-gold-text)",
-            display: "grid", placeItems: "center", fontWeight: 700, fontSize: 16,
-            transition: "background .4s ease, color .4s ease",
-          }}
-        >
-          {erledigt ? <Check size={18} /> : n}
+        <div className={`step-dot${erledigt ? " fertig" : offen ? " aktiv" : ""}`}>
+          <Icon size={19} />
         </div>
         {!letzte && (
-          <div style={{ position: "relative", flex: 1, width: 2, background: "var(--line2)", marginTop: 4, borderRadius: 2, overflow: "hidden" }}>
-            <div
-              style={{
-                position: "absolute", top: 0, left: 0, width: "100%",
-                height: erledigt ? "100%" : "0%",
-                background: "var(--gold)", transition: "height .6s ease",
-              }}
-            />
+          <div className="step-line">
+            {erledigt && <div className="step-line-fill" />}
           </div>
         )}
       </div>
@@ -66,7 +55,7 @@ function SchrittKarte({
           aria-expanded={offen}
         >
           <div style={{ minWidth: 0 }}>
-            <h3 style={{ margin: 0 }}><Icon size={16} style={{ verticalAlign: "-3px" }} /> {titel}</h3>
+            <h3 style={{ margin: 0 }}>{titel}</h3>
             {!offen && hinweis && (
               <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3, lineHeight: 1.4 }}>{hinweis}</div>
             )}

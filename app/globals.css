@@ -2238,3 +2238,44 @@ select:focus-visible, textarea:focus-visible {
   /* Sprungziel nicht unter Kopfleiste + Markenleiste schieben */
   [data-anker] { scroll-margin-top: 116px; } /* Kopfleiste 59 + Markenleiste 45 + Luft */
 }
+
+/* ---------------------------------------------------------------------------
+   Ablauf-Stepper (Kauf-/Verkauf-Assistent): Icon-Punkte, die beim Erledigen
+   golden aufleuchten, + eine fließende Gold-Linie (Fortschritt „strömt" nach
+   unten). Der Glow kommt bewusst aus dem Gold-Ton 212,168,71 (= #D4A847),
+   nicht aus --gold-glow (das ist ein neutraler Tiefenschatten).
+   --------------------------------------------------------------------------- */
+@keyframes stepAufleuchten {
+  0%, 100% { box-shadow: 0 0 0 3px var(--gold-pale), 0 0 10px 0 rgba(212,168,71,.30); }
+  50%      { box-shadow: 0 0 0 5px var(--gold-pale), 0 0 22px 3px rgba(212,168,71,.55); }
+}
+@keyframes goldFliessen { from { background-position: 0 0; } to { background-position: 0 34px; } }
+
+.step-dot {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: grid; place-items: center; flex-shrink: 0;
+  border: 1.5px solid var(--line2); background: var(--bg3); color: var(--muted);
+  transition: background .45s var(--ease), color .45s var(--ease),
+              border-color .45s var(--ease), box-shadow .45s var(--ease), transform .45s var(--ease);
+}
+.step-dot.aktiv { border-color: var(--gold-fill); color: var(--gold); animation: stepAufleuchten 2.4s ease-in-out infinite; }
+.step-dot.fertig {
+  border-color: transparent; background: var(--gold-fill); color: var(--btn-gold-text);
+  box-shadow: 0 0 0 3px var(--gold-pale), 0 6px 20px rgba(212,168,71,.5);
+  transform: scale(1.03);
+}
+.step-line { position: relative; flex: 1; width: 2.5px; margin-top: 5px; border-radius: 3px; background: var(--line2); overflow: hidden; }
+.step-line-fill {
+  position: absolute; inset: 0; border-radius: 3px;
+  background-image: repeating-linear-gradient(180deg,
+    var(--gold-fill) 0, var(--gold-fill) 11px,
+    color-mix(in srgb, var(--gold-fill) 45%, #fff) 17px,
+    var(--gold-fill) 23px, var(--gold-fill) 34px);
+  background-size: 100% 34px;
+  animation: goldFliessen 1.7s linear infinite;
+  box-shadow: 0 0 8px rgba(212,168,71,.45);
+}
+@media (prefers-reduced-motion: reduce) {
+  .step-dot.aktiv { animation: none; box-shadow: 0 0 0 3px var(--gold-pale); }
+  .step-line-fill { animation: none; }
+}
