@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import CommandPalette from "@/components/ui/CommandPalette";
 import { VERWALTUNG, KALKULATOR, PROP_ICONS, type NavItem } from "@/lib/nav";
-import { Home, Power, PanelLeftClose, PanelLeftOpen, Settings } from "lucide-react";
+import { Home, Power, PanelLeftClose, PanelLeftOpen, Settings, LifeBuoy } from "lucide-react";
 
 type SidebarProperty = { id: string; bezeichnung: string; typ: string | null };
 type SidebarTenant = { id: string; name: string };
@@ -170,6 +170,13 @@ export default function Sidebar({
               stehen und quetscht sich neben das Icon. */}
           <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}><Settings size={15} /></span>
           <span className="nav-label">Einstellungen</span>
+        </Link>
+        {/* Support-Kanal: im Early Access der einzige Weg, auf dem eine
+            Fehlermeldung ankommt. Bewusst hier unten neben den Einstellungen —
+            gesucht wird er im selben Moment. */}
+        <Link href="/hilfe" className={`nav-item${isActive("/hilfe") ? " active" : ""}`} title="Hilfe & Support">
+          <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}><LifeBuoy size={15} /></span>
+          <span className="nav-label">Hilfe &amp; Support</span>
         </Link>
       </div>
 
