@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   User, Landmark, ShieldCheck, FileText, Download, Upload, Trash2, Plus, Star,
   Lock, ExternalLink, X, Check, TriangleAlert, PenLine, Sparkles, CreditCard,
-  PartyPopper, type LucideIcon,
+  PartyPopper, LifeBuoy, type LucideIcon,
 } from "lucide-react";
 import { TOUR_EVENT } from "@/components/OnboardingTour";
 import SignaturPad from "@/components/SignaturPad";
@@ -23,6 +23,7 @@ import { starteCheckout, oeffneAboPortal } from "@/lib/actions/billing";
 import { isValidIban, normalizeIban } from "@/lib/iban";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 import { wechslePasswort } from "@/lib/passwortWechsel";
+import HilfeInhalt from "@/components/HilfeInhalt";
 import { PASSWORT_REGEL } from "@/lib/passwort";
 import type { VermieterProfil, Iban } from "@/lib/types";
 
@@ -37,7 +38,7 @@ export type AboAnzeige = {
   hatPortal: boolean;
 } | null;
 
-type TabKey = "profil" | "bank" | "abo" | "sicherheit" | "recht";
+type TabKey = "profil" | "bank" | "abo" | "sicherheit" | "recht" | "hilfe";
 // Der Abo-Tab hängt am selben Schalter wie alle anderen Preis-Stellen: Solange
 // die Tarife app-weit ausgeblendet sind (PREISE_SICHTBAR=false, Bezahlsystem
 // inaktiv), erscheint kein verwaister Abrechnungsbereich, der nichts tut.
@@ -47,6 +48,9 @@ const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   ...(PREISE_SICHTBAR ? [{ key: "abo" as const, label: "Abo", icon: CreditCard }] : []),
   { key: "sicherheit", label: "Sicherheit", icon: ShieldCheck },
   { key: "recht", label: "Daten & Recht", icon: FileText },
+  // Support gehoert hierher und NICHT in die Hauptnavigation (Vorgabe
+  // Betreiber 29.08.2026) — man sucht ihn beim Konto, nicht neben den Objekten.
+  { key: "hilfe", label: "Hilfe & Support", icon: LifeBuoy },
 ];
 
 const fmtIban = (iban: string) => iban.replace(/(.{4})/g, "$1 ").trim();
@@ -154,6 +158,7 @@ export default function SettingsView({
         {tab === "abo" && <AboPanel abo={abo} einheiten={einheiten} enforced={billingEnforced} />}
         {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} />}
         {tab === "recht" && <RechtPanel />}
+        {tab === "hilfe" && <HilfeInhalt />}
       </div>
 
       <DangerZone />
