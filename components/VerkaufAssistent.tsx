@@ -29,6 +29,7 @@ export default function VerkaufAssistent({
     {
       icon: Search,
       titel: "Verkaufswert ermitteln",
+      hinweis: "Marktwert schätzen und mit den Angebotspreisen deiner Lage vergleichen.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
@@ -53,6 +54,7 @@ export default function VerkaufAssistent({
     {
       icon: Coins,
       titel: "Steuer & Netto-Erlös berechnen",
+      hinweis: "Spekulationssteuer (§ 23 EStG) und was nach Restschuld, Kosten und Steuer übrig bleibt.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
@@ -66,6 +68,7 @@ export default function VerkaufAssistent({
     {
       icon: FolderClosed,
       titel: "Verkaufsunterlagen vorbereiten",
+      hinweis: "Checkliste der Unterlagen, die Käufer und ihre Banken verlangen — vieles liegt im Archiv.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
@@ -93,6 +96,7 @@ export default function VerkaufAssistent({
     {
       icon: Handshake,
       titel: "Verkaufen & übergeben",
+      hinweis: "Inserieren, verhandeln, notariell beurkunden, Übergabe protokollieren.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>

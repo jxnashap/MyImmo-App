@@ -1,4 +1,4 @@
-// Vermieter-Seite "Anliegen & Kontakte": alles, was mit Personen außerhalb
+// Vermieter-Seite "Mieterportal": alles, was mit Personen außerhalb
 // des eigenen Kontos läuft — Anliegen der Mieter und eigene Anfragen an sie,
 // der Bewerbungs-Eingang mit Selbstauskunft-Links, und die Service-Partner
 // (Handwerker/Hausmeister) samt Aufträgen.
@@ -181,12 +181,11 @@ export default async function AnliegenPage({
     <div className="fade-up">
       <div className="topbar">
         <div>
-          {/* Der Bereich hiess an vier Stellen anders ("Mieterportal",
-              "Anliegen & Bewerber", "Anliegen & Anfragen", "Service") — und
-              "Mieterportal" ist bereits die Mieter-Oberflaeche unter /portal.
-              Ein Name fuer die Vermieter-Sicht, der alle drei Tabs traegt. */}
+          {/* Vom Nutzer gewünschter Name. Hinweis: Die Mieter-Oberfläche unter
+              /portal trägt denselben Namen — hier ist die Vermieter-Sicht
+              (Mieter-Anliegen, Bewerbungen, Service-Partner). */}
           <div className="topbar-kicker">Verwaltung</div>
-          <div className="topbar-title">Anliegen &amp; Kontakte</div>
+          <div className="topbar-title">Mieterportal</div>
           <div className="topbar-sub">
             {tab === "bewerbungen"
               ? `Selbstauskunft-Links & Bewerbungs-Eingang${bewerbungen.length > 0 ? ` · ${neueBewerbungen} neu von ${bewerbungen.length}` : ""}`
