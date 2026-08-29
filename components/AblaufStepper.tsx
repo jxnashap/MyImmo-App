@@ -8,7 +8,10 @@ import { tastaturAktion } from "@/lib/a11y";
 // Schritt klappt auf seine Kopfzeile (Nummer + Titel + Kurzhinweis + Status)
 // ein — offen ist standardmäßig nur der erste noch nicht erledigte. So bleibt
 // die Seite scanbar, statt alle Schritte gleichzeitig als Wand zu zeigen.
-// Fortschritt UND welcher Schritt offen ist bleiben in localStorage.
+// Der Fortschritt (welche Schritte erledigt sind) bleibt in localStorage.
+// Welcher Schritt AUFGEKLAPPT ist, wird bewusst nicht gespeichert: Nach einem
+// Neuladen führt der erste noch offene Schritt — das ist der nützlichere
+// Einstieg als der zuletzt angesehene.
 
 export type StepperSchritt = {
   icon: LucideIcon;
@@ -131,7 +134,13 @@ export default function AblaufStepper({
     let gespeichert: Record<number, boolean> = {};
     try {
       const raw = localStorage.getItem(storageKey);
-      if (raw) gespeichert = JSON.parse(raw);
+      const geparst = raw ? JSON.parse(raw) : null;
+      // JSON.parse kann erfolgreich sein und trotzdem null/Zahl/Array liefern
+      // (alter Stand, manuell verändert). Ohne diese Prüfung würde der Zugriff
+      // weiter unten werfen und der ganze Assistent nicht mehr rendern.
+      if (geparst && typeof geparst === "object" && !Array.isArray(geparst)) {
+        gespeichert = geparst as Record<number, boolean>;
+      }
     } catch { /* ignore */ }
     setDone(gespeichert);
     // Standardmäßig den ersten noch nicht erledigten Schritt öffnen (Auto-
@@ -156,7 +165,7 @@ export default function AblaufStepper({
     <>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, fontSize: 12.5, color: "var(--muted)" }}>
         <div style={{ flex: 1, height: 6, background: "var(--line2)", borderRadius: 99, overflow: "hidden" }}>
-          <div style={{ width: `${(anzahl / schritte.length) * 100}%`, height: "100%", background: "var(--gold)", transition: "width .6s ease" }} />
+          <div style={{ width: `${(anzahl / schritte.length) * 100}%`, height: "100%", background: "var(--gold-fill)", transition: "width .6s ease" }} />
         </div>
         <span style={{ flexShrink: 0 }}>{anzahl}/{schritte.length} erledigt</span>
       </div>

@@ -6,8 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
 import { eigenkapitalGesamt } from "@/lib/kauf/selbstauskunft";
 import {
-  buildKreditantragPdf, type KreditObjekt, type KreditWunsch, type KreditAbsender,
+  buildKreditantragPdf, type KreditWunsch, type KreditAbsender,
 } from "@/lib/pdf/kreditantragPdf";
+import { baueKreditObjekt, type AuswahlEingang } from "@/lib/kauf/kreditantrag";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
   // Der Knopf schickt ein echtes Formular (CSP-konform, siehe
   // KreditantragButton) — die Daten stecken im Feld „daten" als JSON.
   // JSON-Bodies bleiben zusätzlich erlaubt (Direktaufrufe/Tests).
-  let body: { auswahl?: Partial<KreditObjekt> | null; darlehen?: Partial<KreditWunsch> | null } = {};
+  let body: { auswahl?: AuswahlEingang | null; darlehen?: Partial<KreditWunsch> | null } = {};
   const typ = req.headers.get("content-type") ?? "";
   try {
     if (typ.includes("form")) {
@@ -73,17 +74,7 @@ export async function POST(req: NextRequest) {
   // Gesamtinvest − EK — die Objekt-Auswahl (A) trägt selbst kein Darlehen mehr.
   const ek = eigenkapitalGesamt(sa);
   const wunschDarlehen = Number(body.darlehen?.darlehen) || 0;
-  const objekt: KreditObjekt | null = body.auswahl && body.auswahl.kaufpreis
-    ? {
-        name: body.auswahl.name ?? "",
-        adresse: body.auswahl.adresse ?? "",
-        kaufpreis: Number(body.auswahl.kaufpreis) || 0,
-        gesamtInvest: Number(body.auswahl.gesamtInvest) || 0,
-        eigenkapital: ek,
-        darlehen: wunschDarlehen > 0 ? wunschDarlehen : Math.max(0, (Number(body.auswahl.gesamtInvest) || 0) - ek),
-        kaltmiete: Number(body.auswahl.kaltmiete) || 0,
-      }
-    : null;
+  const objekt = baueKreditObjekt(body.auswahl, ek, wunschDarlehen);
 
   const wunsch: KreditWunsch | null = body.darlehen && body.darlehen.darlehen
     ? {
