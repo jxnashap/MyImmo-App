@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { istDemoKonto, demoDarfRoute } from "@/lib/demo";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
@@ -111,6 +112,27 @@ export async function middleware(request: NextRequest) {
     );
     redirectResponse.headers.set("X-Content-Type-Options", "nosniff");
     return redirectResponse;
+  }
+
+  // Demo-Konto: nur der freigegebene Ausschnitt. Die Seitenleiste graut den
+  // Rest zwar aus, aber wer die Adresse kennt, tippt sie ein — deshalb hier
+  // serverseitig abweisen. Nur GET: ein POST auf eine gesperrte Server-Action
+  // hat ohnehin keine Oberfläche, über die er erreichbar wäre.
+  if (
+    user &&
+    istDemoKonto(user.email) &&
+    request.method === "GET" &&
+    !istOeffentlich &&
+    !demoDarfRoute(pathname)
+  ) {
+    const ziel = new URL("/?demo=gesperrt", request.url);
+    const gesperrt = NextResponse.redirect(ziel);
+    gesperrt.headers.set(
+      CSP_REPORT_ONLY ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
+      csp
+    );
+    gesperrt.headers.set("X-Content-Type-Options", "nosniff");
+    return gesperrt;
   }
 
   // ---- Security-Header zentral für alle Routen ----

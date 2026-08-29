@@ -46,8 +46,15 @@ export async function GET(request: Request) {
   //    ist fuer anon/authenticated ausdruecklich gesperrt).
   //    `createAdminClient()` gibt null zurueck, wenn der Service-Role-Key fehlt
   //    — dann wird NICHT zurueckgesetzt, die Demo aber trotzdem geoeffnet.
+  //    Der Ausgang wird im Redirect mitgegeben. Grund: Beim ersten Live-Test am
+  //    29.08.2026 schlug der Reset stumm fehl — die Route meldete `demo=1`, als
+  //    sei alles gut, obwohl gar nicht zurueckgesetzt wurde (der
+  //    Service-Role-Key fehlte in Vercel). Ein `console.error`, das niemand
+  //    liest, ist keine Fehlerbehandlung.
+  let resetStatus: "ok" | "kein-key" | "fehler" = "ok";
   const admin = createAdminClient();
   if (!admin) {
+    resetStatus = "kein-key";
     console.error("Demo-Reset uebersprungen: SUPABASE_SERVICE_ROLE_KEY fehlt.");
   } else {
     const { error: resetFehler } = await admin.rpc("demo_zuruecksetzen");
@@ -55,6 +62,7 @@ export async function GET(request: Request) {
       // Nicht abbrechen: Ein fehlgeschlagener Reset ist aergerlich, aber die
       // Demo bleibt benutzbar — nur eben mit dem Stand, den der Vorgaenger
       // hinterlassen hat. Ein harter Fehler waere die schlechtere Erfahrung.
+      resetStatus = "fehler";
       console.error("Demo-Reset fehlgeschlagen:", resetFehler.message);
     }
   }
@@ -70,5 +78,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/?demo=fehler", ziel));
   }
 
-  return NextResponse.redirect(new URL("/?demo=1", ziel));
+  // `reset` steht nur im Fehlerfall in der URL — im Normalbetrieb bleibt sie
+  // sauber. Damit laesst sich von aussen (curl) pruefen, ob wirklich
+  // zurueckgesetzt wurde, ohne Zugriff auf die Server-Logs.
+  const ziel_url = resetStatus === "ok" ? "/?demo=1" : `/?demo=1&reset=${resetStatus}`;
+  return NextResponse.redirect(new URL(ziel_url, ziel));
 }
