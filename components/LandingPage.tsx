@@ -33,18 +33,16 @@ export default function LandingPage() {
           <>
             <div className="lp-cta-row" style={{ justifyContent: "flex-start" }}>
               <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
+              {/* Demo ohne Anmeldung. Als eigener Knopf auf Wunsch des
+                  Betreibers (29.08.2026) — vorher eine Textzeile darunter.
+                  Bewusst ein <a> und kein <Link>: /api/demo ist ein Route
+                  Handler, der Cookies setzt und weiterleitet; der Client-Router
+                  von Next würde das abfangen. */}
+              <a href="/api/demo" className="qlx-btn-linie lp-btn-big">Demo ansehen</a>
               <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
             </div>
             <p className="qlx-hero-note">
-              Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar
-            </p>
-            {/* Demo ohne Anmeldung: bewusst als Textlink und nicht als dritter
-                Knopf — drei gleich große Schaltflächen im Hero verwässern die
-                Hauptaktion. Führt auf /api/demo (setzt zurück, meldet an). */}
-            <p className="qlx-hero-note" style={{ marginTop: 6 }}>
-              <a href="/api/demo" style={{ textDecoration: "underline" }}>
-                Oder erst die Demo ansehen — ohne Anmeldung
-              </a>
+              Demo ohne Anmeldung · Keine Kreditkarte nötig · Daten in der EU
             </p>
           </>
         }
