@@ -97,3 +97,18 @@ describe("Brotkrumen bilden die echte Seitenstruktur ab", () => {
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 });
+
+// Eine Jahreszahl im Slug altert mit — sie liest sich fuer Leser wie fuer
+// Suchmaschinen als „nicht gepflegt", und Umbenennen kostet spaeter eine
+// Weiterleitung. `grundsteuer-2025-…` stand ein Jahr zu lange so da.
+describe("Slugs altern nicht", () => {
+  it("kein Ratgeber-Slug traegt eine Jahreszahl", () => {
+    const mitJahr = RATGEBER.map((a) => a.slug).filter((s) => /(^|-)(19|20)\d\d(-|$)/.test(s));
+    expect(mitJahr).toEqual([]);
+  });
+
+  it("kein Funktions-Slug traegt eine Jahreszahl", () => {
+    const mitJahr = FUNKTIONSSEITEN.map((f) => f.slug).filter((s) => /(^|-)(19|20)\d\d(-|$)/.test(s));
+    expect(mitJahr).toEqual([]);
+  });
+});

@@ -1297,37 +1297,56 @@ export const RATGEBER: RatgeberArtikel[] = [
     },
   },
   {
-    slug: "grundsteuer-2025-auf-mieter-umlegen",
-    titel: "Grundsteuer 2025 richtig auf die Mieter umlegen",
+    slug: "grundsteuer-auf-mieter-umlegen",
+    titel: "Grundsteuer richtig auf die Mieter umlegen",
     beschreibung:
-      "Nach der Grundsteuerreform haben sich viele Beträge geändert. So legen Sie die neue Grundsteuer korrekt um und passen Vorauszahlungen an.",
+      "Grundsteuer ist voll umlagefähig — aber welcher Bescheid gehört in welches Abrechnungsjahr? Und was bedeutet das BFH-Urteil von 2025 für Einsprüche und Vorauszahlungen?",
     kategorie: "Nebenkosten",
     datum: "2026-07-15",
-    lesezeit: 4,
+    aktualisiert: "2026-08-30",
+    rechtsstand: "August 2026",
+    lesezeit: 5,
     kurzcheck: {
       fall:
-        "Der neue Grundsteuerbescheid liegt vor, der Betrag ist deutlich höher als bisher — und offen ist, ob und ab wann der Mieter das trägt.",
+        "Der Grundsteuerbescheid liegt vor, der Betrag weicht spürbar vom Vorjahr ab — und offen ist, ob und ab wann der Mieter das trägt.",
       passt: [
-        "Ihr Grundsteuerbetrag hat sich durch die Reform verändert.",
+        "Ihr Grundsteuerbetrag hat sich verändert, durch die Reform oder durch einen neuen Hebesatz.",
         "Sie wollen wissen, welcher Bescheid in welches Abrechnungsjahr gehört.",
+        "Sie haben Einspruch eingelegt und fragen sich, was Sie bis zur Entscheidung umlegen dürfen.",
         "Sie prüfen, ob Ihre Betriebskostenklausel die Grundsteuer überhaupt erfasst.",
       ],
       nichtNoetig:
         "Bei einer Bruttomiete ohne Betriebskostenumlage bleibt die Grundsteuer bei Ihnen — dann ist der Artikel nur zur Einordnung interessant.",
     },
     intro:
-      "Seit dem 1.1.2025 gilt die reformierte Grundsteuer. Je nach Kommune und Landesmodell haben sich die Beträge teils deutlich verändert — nach oben wie nach unten. Für die Abrechnung 2025, die Sie 2026 erstellen, ist das relevant.",
+      "Seit dem 1.1.2025 gilt die reformierte Grundsteuer. Die Aufregung um die Reform hat sich gelegt, zwei Fragen sind geblieben: Welcher Betrag gehört in welche Abrechnung — und was passiert mit dem Geld, wenn der Bescheid noch angefochten ist?",
     sektionen: [
       {
         h: "Grundsteuer bleibt voll umlagefähig",
         p: [
           "Die Grundsteuer (Grundsteuer B) zählt zu den umlagefähigen Betriebskosten nach § 2 Nr. 1 BetrKV. Voraussetzung ist eine wirksame Betriebskostenklausel im Mietvertrag. Umgelegt wird der tatsächlich gezahlte Jahresbetrag laut Grundsteuerbescheid.",
+          "Bei Mehrfamilienhäusern wird der Gesamtbetrag nach dem vereinbarten Schlüssel verteilt — in der Regel nach Wohnfläche. Steht im Vertrag kein Schlüssel, gilt nach § 556a Abs. 1 BGB die Wohnfläche.",
         ],
       },
       {
-        h: "Neuen Bescheid zugrunde legen",
+        h: "Jedes Jahr den aktuellen Bescheid prüfen — nicht nur einmal nach der Reform",
         p: [
-          "Verwenden Sie für die Abrechnung 2025 den neuen Grundsteuerbescheid Ihrer Gemeinde. Prüfen Sie den Betrag — durch die Reform weichen viele Werte von den Vorjahren ab. Bei Mehrfamilienhäusern wird der Gesamtbetrag nach dem vereinbarten Schlüssel (i. d. R. Wohnfläche) auf die Einheiten verteilt.",
+          "Ein verbreiteter Irrtum: Der Grundsteuerwert wurde 2022 einmalig festgestellt, also sei der Betrag jetzt fest. Das stimmt nicht. Der Hebesatz wird von jeder der rund 11.000 Gemeinden selbst bestimmt und kann sich jedes Jahr ändern — 2026 hat etwa Berlin gesenkt, während mehrere Großstädte erhöht haben.",
+          "Für jede Abrechnung gilt deshalb: den Bescheid des jeweiligen Jahres zugrunde legen, nicht den der Reform. Wer einmal einen Betrag übernimmt und ihn fortschreibt, rechnet nach dem ersten Hebesatzwechsel still falsch.",
+        ],
+      },
+      {
+        h: "Einspruch eingelegt? Umgelegt wird trotzdem",
+        p: [
+          "Der Bundesfinanzhof hat am 10.12.2025 in drei Verfahren entschieden (II R 25/24, II R 31/24, II R 3/25), dass das sogenannte Bundesmodell verfassungsgemäß ist: Der Gesetzgeber darf bei rund 36 Millionen Grundstücken typisieren und pauschalieren. Haus & Grund Deutschland und der Bund der Steuerzahler haben angekündigt, die Frage nach Karlsruhe zu tragen — entschieden ist dort nichts.",
+          "Für die Nebenkostenabrechnung ändert das nichts an der Grundregel: Umgelegt wird, was Sie tatsächlich gezahlt haben. Ein laufender Einspruch setzt die Zahlungspflicht nicht aus, und die Bescheide bleiben gültig. Wird ein Bescheid später zu Ihren Gunsten geändert, korrigieren Sie die betroffene Abrechnung nach — deshalb lohnt es, den Vorgang im Objekt zu dokumentieren.",
+        ],
+      },
+      {
+        h: "Niedrigeren Wert nachweisen: die 40-Prozent-Schwelle",
+        p: [
+          "Im Bundesmodell — es gilt in elf Ländern; Baden-Württemberg, Bayern, Hamburg, Hessen und Niedersachsen haben eigene Modelle — können Eigentümer einen niedrigeren gemeinen Wert nachweisen. Der Bundesfinanzhof hat das mit zwei Beschlüssen vom 27.05.2024 (II B 78/23 und II B 79/23, jeweils AdV) eröffnet, die Länder haben es mit gleich lautenden Erlassen vom 24.06.2024 umgesetzt.",
+          "Die Schwelle ist hoch: Der festgestellte Grundsteuerwert muss den tatsächlichen Wert um mindestens 40 Prozent übersteigen. Für die Aussetzung der Vollziehung genügt zunächst eine schlüssige Darlegung, ein Gutachten ist dafür noch nicht nötig. Ein kleiner Bewertungsunterschied trägt diesen Weg nicht — bei einer moderaten Abweichung kostet das Gutachten mehr, als es einbringt.",
         ],
       },
       {
@@ -1336,11 +1355,17 @@ export const RATGEBER: RatgeberArtikel[] = [
           "Ist die Grundsteuer deutlich gestiegen, können Sie die monatliche Vorauszahlung nach einer Abrechnung anpassen — angemessen und mit Erklärung gegenüber dem Mieter. So vermeiden Sie hohe Nachzahlungen im Folgejahr. Ist sie gesunken, ist eine Senkung fair und beugt Guthaben-Rückzahlungen vor.",
         ],
       },
+      {
+        h: "Rechtsstand und Vorbehalt",
+        p: [
+          "Dieser Text gibt Anhaltspunkte ohne Gewähr und ersetzt keine Rechts- oder Steuerberatung. Ob sich ein Einspruch oder ein Wertgutachten im Einzelfall lohnt, hängt vom Bundesland, vom Modell und von der konkreten Abweichung ab — das gehört zum Steuerberater oder zum Fachanwalt.",
+        ],
+      },
     ],
     feature: {
       titel: "Grundsteuer automatisch verteilen",
       text:
-        "In MyImmo tragen Sie den neuen Jahresbetrag einmal ein — der Umlage-Assistent verteilt ihn auf alle Einheiten und übernimmt ihn in die Nebenkostenabrechnung.",
+        "In MyImmo tragen Sie den Jahresbetrag einmal ein — der Umlage-Assistent verteilt ihn auf alle Einheiten und übernimmt ihn in die Nebenkostenabrechnung. Ändert sich der Hebesatz, tauschen Sie nur die Zahl.",
       href: "/anmelden",
       cta: "Jetzt starten",
     },

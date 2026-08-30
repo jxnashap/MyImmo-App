@@ -354,5 +354,5 @@ Signal — zu Recht.
 **Konkret fällig sind zwei Artikel:**
 | Artikel | Warum |
 |---|---|
-| `grundsteuer-2025-auf-mieter-umlegen` | trägt die Jahreszahl **2025** im Slug und Titel, wir sind in 2026 |
+| ~~`grundsteuer-2025-auf-mieter-umlegen`~~ | ✅ **überarbeitet 30.08.2026** → `grundsteuer-auf-mieter-umlegen` (301/308-Weiterleitung in `next.config.mjs`). Jahreszahl raus, BFH-Urteile vom 10.12.2025 und 27.05.2024 ergänzt, jährlich wechselnde Hebesätze erklärt. **Erster Artikel mit echtem `aktualisiert`-Datum** — `dateModified` weicht jetzt zu Recht von `datePublished` ab. |
 | `heizkostenabrechnung-50-70-regel-fernablesung` | wirbt mit der Frist 31.12.2026 — ab 01.01.2027 Vergangenheit (steht schon als Termin in `CLAUDE.md`) |
