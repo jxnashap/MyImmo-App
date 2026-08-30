@@ -61,6 +61,19 @@ die DB-Tabellen (`bankverbindungen`, `bank_umsaetze`, `bank_auth_anfragen`) und 
 wurden per Migration `20260829120000` gedroppt. Wieder aufbauen, sobald das Produkt Geld verdient
 (dann als bezahltes Add-on über einen lizenzierten AISP wie Enable Banking).
 
+### Zukunftsideen (notiert, nicht gebaut)
+- **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
+  Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
+  Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das
+  nächste Objekt finanzierbar, was fehlt bis dahin. Die Daten liegen fast alle schon vor
+  (Cashflow, Kredite/Restschuld, Objektwerte, Beleihung, Selbstauskunft, Kaufnebenkosten).
+  **Größtes Risiko: die Grenze zur Anlageberatung.** „Im März 2028 kannst du kaufen" ist eine
+  Empfehlung zu einer Vermögensdisposition — § 34i GewO steht ohnehin auf der Anwaltsliste,
+  dieser Punkt gehört dort mit hinein, VOR dem Bau. Zweites Risiko: Zehnjahresprognosen sind
+  Scheingenauigkeit (Zins, Miete, Wert, Instandhaltung) → Szenarien statt einer Zahl.
+  Vor dem Bau außerdem klären: kostenlos oder Tarifmerkmal (dann `docs/FINANZKONZEPT.md`
+  im selben PR mitziehen).
+
 ### Sonstiges (kein Geld)
 - **Demo-Konto ist seit 30.08.2026 NUR-LESEN.** Vorgabe des Betreibers: Schaustück, kein
   Sandkasten. Drei Ebenen, alle drei nötig (Begründung in `lib/demo.ts`):
