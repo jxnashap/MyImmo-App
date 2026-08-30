@@ -13,6 +13,7 @@ import { portfolioWertReihe, veraenderungProzent, type RohStand } from "@/lib/we
 import type { RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
+import { ORGANISATION } from "@/lib/seo/jsonLd";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
 // metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
@@ -59,13 +60,7 @@ export default async function DashboardPage() {
     const jsonLd = {
       "@context": "https://schema.org",
       "@graph": [
-        {
-          "@type": "Organization",
-          "@id": "https://www.myimmoapp.de/#org",
-          name: "MyImmo",
-          url: "https://www.myimmoapp.de",
-          logo: "https://www.myimmoapp.de/myimmo_logo_2048.png",
-        },
+        ORGANISATION,
         {
           "@type": "SoftwareApplication",
           name: "MyImmo",
@@ -74,7 +69,7 @@ export default async function DashboardPage() {
           url: "https://www.myimmoapp.de",
           description: OG_BESCHREIBUNG,
           inLanguage: "de",
-          publisher: { "@id": "https://www.myimmoapp.de/#org" },
+          publisher: { "@id": ORGANISATION["@id"] },
           offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
         },
       ],

@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import LandingShell from "@/components/landing/Shell";
 import { FUNKTIONSSEITEN, funktionsseiteBySlug } from "@/lib/funktionen";
 import { ratgeberBySlug } from "@/lib/ratgeber";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import Brotkrumen from "@/components/landing/Brotkrumen";
 
 // Kein `dynamicParams = false` noetig: seit die oeffentliche Strecke ein
 // eigenes, statisches Root-Layout hat (app/(pub)/layout.tsx), wird nicht mehr
@@ -34,13 +35,17 @@ export default function FunktionsSeite({ params }: { params: { slug: string } })
   // kostet mehr Vertrauen, als der Verweis einbringt.
   const artikel = f.ratgeber.map((s) => ratgeberBySlug(s)).filter(Boolean);
 
+  const stufen = [
+    { name: "Start", pfad: "" },
+    { name: "Funktionen", pfad: "/funktionen" },
+    { name: f.titel, pfad: `/funktionen/${f.slug}` },
+  ];
+
   return (
     <LandingShell aktiv="/funktionen">
       <section className="lp-section">
         <div className="lp-inner" style={{ maxWidth: 820 }}>
-          <Link href="/funktionen" style={{ fontSize: 13, color: "var(--l-muted)", textDecoration: "none" }}>
-            <ArrowLeft size={13} style={{ verticalAlign: "-2px" }} /> Alle Funktionen
-          </Link>
+          <Brotkrumen stufen={stufen} />
           <div className="lp-kicker" style={{ marginTop: 18, textAlign: "left" }}>{f.kicker}</div>
           <h1 className="lp-h2" style={{ fontSize: "clamp(27px, 3.8vw, 38px)", textAlign: "left" }}>{f.titel}</h1>
           <p style={{ fontSize: 16, lineHeight: 1.7, color: "var(--l-ink)", margin: "0 0 30px", fontWeight: 500 }}>{f.sub}</p>

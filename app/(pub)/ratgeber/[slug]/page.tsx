@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import LandingShell from "@/components/landing/Shell";
-import { RATGEBER, ratgeberBySlug, ratgeberDatum } from "@/lib/ratgeber";
-import { ArrowRight, ArrowLeft, Clock } from "lucide-react";
+import { RATGEBER, RECHTSSTAND, ratgeberBySlug, ratgeberDatum } from "@/lib/ratgeber";
+import Brotkrumen from "@/components/landing/Brotkrumen";
+import { BASIS_URL, ORGANISATION } from "@/lib/seo/jsonLd";
+import { ArrowRight, Clock } from "lucide-react";
 
 // Kein `dynamicParams = false` noetig: seit die oeffentliche Strecke ein
 // eigenes, statisches Root-Layout hat (app/(pub)/layout.tsx), wird nicht mehr
@@ -31,43 +33,34 @@ export default function RatgeberArtikelSeite({ params }: { params: { slug: strin
 
   const weitere = RATGEBER.filter((x) => x.slug !== a.slug).slice(0, 2);
 
-  // JSON-LD für SEO. Article + BreadcrumbList — die beiden Typen, die 2026
-  // noch Rich Results liefern (FAQPage ist seit 07.05.2026 abgeschaltet,
-  // HowTo seit 2023; siehe docs/SEO.md).
-  const url = `https://www.myimmoapp.de/ratgeber/${a.slug}`;
+  const url = `${BASIS_URL}/ratgeber/${a.slug}`;
+  const stufen = [
+    { name: "Start", pfad: "" },
+    { name: "Ratgeber", pfad: "/ratgeber" },
+    { name: a.titel, pfad: `/ratgeber/${a.slug}` },
+  ];
+  // Article-Markup. Die BreadcrumbList kommt aus <Brotkrumen>, damit sie nicht
+  // zweimal im Dokument steht — widerspruechliche strukturierte Daten sind
+  // schlechter als gar keine. Bewusst nur diese beiden Typen: FAQPage ist seit
+  // 07.05.2026 abgeschaltet, HowTo seit 2023 (siehe docs/SEO.md).
   const jsonLd = {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Article",
-        "@id": `${url}#article`,
-        headline: a.titel,
-        description: a.beschreibung,
-        datePublished: a.datum,
-        // dateModified fehlte — bei Steuer-/Rechtsinhalten (YMYL) ist
-        // Aktualität ein Kernsignal.
-        dateModified: a.datum,
-        inLanguage: "de-DE",
-        url,
-        mainEntityOfPage: { "@type": "WebPage", "@id": url },
-        image: "https://www.myimmoapp.de/og.png",
-        author: { "@type": "Organization", name: "MyImmo" },
-        publisher: {
-          "@type": "Organization",
-          name: "MyImmo",
-          url: "https://www.myimmoapp.de",
-          logo: "https://www.myimmoapp.de/myimmo_logo_2048.png",
-        },
-      },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Start", item: "https://www.myimmoapp.de" },
-          { "@type": "ListItem", position: 2, name: "Ratgeber", item: "https://www.myimmoapp.de/ratgeber" },
-          { "@type": "ListItem", position: 3, name: a.titel, item: url },
-        ],
-      },
-    ],
+    "@type": "Article",
+    "@id": `${url}#article`,
+    headline: a.titel,
+    description: a.beschreibung,
+    datePublished: a.datum,
+    // dateModified weicht nur ab, wenn der Artikel wirklich ueberarbeitet
+    // wurde (Feld `aktualisiert`). Es pauschal auf „heute" zu setzen waere das
+    // billigste Frische-Signal — und eine Luege gegenueber Google wie
+    // gegenueber dem Leser, der den Text fuer neu geprueft haelt.
+    dateModified: a.aktualisiert ?? a.datum,
+    inLanguage: "de-DE",
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    image: `${BASIS_URL}/og.png`,
+    author: ORGANISATION,
+    publisher: ORGANISATION,
   };
 
   return (
@@ -75,13 +68,18 @@ export default function RatgeberArtikelSeite({ params }: { params: { slug: strin
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <article className="lp-section">
         <div className="lp-inner" style={{ maxWidth: 760 }}>
-          <Link href="/ratgeber" style={{ fontSize: 13, color: "var(--l-muted)", textDecoration: "none" }}>
-            <ArrowLeft size={13} style={{ verticalAlign: "-2px" }} /> Alle Ratgeber
-          </Link>
+          <Brotkrumen stufen={stufen} />
           <div className="lp-kicker" style={{ marginTop: 18, textAlign: "left" }}>{a.kategorie}</div>
           <h1 className="lp-h2" style={{ fontSize: "clamp(27px, 3.8vw, 38px)", textAlign: "left" }}>{a.titel}</h1>
-          <div style={{ fontSize: 12.5, color: "var(--l-muted)", marginBottom: 24 }}>
+          {/* Rechtsstand sichtbar: Bei Steuer- und Mietrechtsthemen entscheidet
+              der Leser daran, ob er sich auf den Text noch verlassen kann.
+              Steht bewusst gleichberechtigt neben Datum und Lesezeit und nicht
+              versteckt im Fussbereich. */}
+          <div style={{ fontSize: 12.5, color: "var(--l-muted)", marginBottom: 24, lineHeight: 1.7 }}>
             <Clock size={12} style={{ verticalAlign: "-2px" }} /> {a.lesezeit} Min Lesezeit · {ratgeberDatum(a.datum)}
+            {a.aktualisiert && <> · aktualisiert {ratgeberDatum(a.aktualisiert)}</>}
+            <br />
+            Rechtsstand: {a.rechtsstand ?? RECHTSSTAND}
           </div>
 
           <p style={{ fontSize: 16, lineHeight: 1.7, color: "var(--l-ink)", marginBottom: 28, fontWeight: 500 }}>{a.intro}</p>
@@ -146,7 +144,8 @@ export default function RatgeberArtikelSeite({ params }: { params: { slug: strin
           )}
 
           <p style={{ fontSize: 12, color: "var(--l-muted)", borderTop: "1px solid var(--l-line)", paddingTop: 16, marginTop: 8 }}>
-            Rechtsstand Juli 2026. Alle Angaben sind Anhaltspunkte ohne Gewähr und ersetzen keine Steuer- oder Rechtsberatung.
+            Rechtsstand {a.rechtsstand ?? RECHTSSTAND}. Alle Angaben sind Anhaltspunkte ohne Gewähr und ersetzen
+            keine Steuer- oder Rechtsberatung.
           </p>
 
           <div style={{ marginTop: 40 }}>
