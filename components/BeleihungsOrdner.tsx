@@ -29,6 +29,7 @@ import {
   type Freigabe,
 } from "@/lib/actions/beleihung";
 import { teilbarerLink } from "@/lib/appUrl";
+import { useModalFokus } from "@/lib/modalFokus";
 
 export type Rueckmeldung = {
   id: string;
@@ -91,6 +92,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
   // Freigaben (Phase 2) lokal führen; Teilen-Modal-Zustand
   const [freigaben, setFreigaben] = useState<Freigabe[]>(initialFreigaben);
   const [showShare, setShowShare] = useState(false);
+  const teilenRef = useModalFokus<HTMLDivElement>(() => setShowShare(false), showShare);
   const [shareKeys, setShareKeys] = useState<Set<string>>(new Set());
   const [shareTage, setShareTage] = useState("14");
   const [shareBusy, setShareBusy] = useState(false);
@@ -431,8 +433,17 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
           Transforms wie der .fade-up-Seitenanimation). */}
       {showShare && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={() => setShowShare(false)}>
-          <div className="modal-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
-            <h3 style={{ marginBottom: 4 }}>Freigabe-Link für die Bank</h3>
+          <div
+            ref={teilenRef}
+            className="modal-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="beleihung-teilen-titel"
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 520 }}
+          >
+            <h3 id="beleihung-teilen-titel" style={{ marginBottom: 4 }}>Freigabe-Link für die Bank</h3>
             <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
               Wähle, welche hochgeladenen Dokumente die Bank sehen darf. Der Link läuft automatisch ab und ist jederzeit widerrufbar.
             </p>

@@ -27,6 +27,7 @@ import HilfeInhalt from "@/components/HilfeInhalt";
 import { istDemoKonto } from "@/lib/demo";
 import { PASSWORT_REGEL } from "@/lib/passwort";
 import type { VermieterProfil, Iban } from "@/lib/types";
+import { useModalFokus } from "@/lib/modalFokus";
 
 // Anzeige-Daten des Abos (Server lädt, Client zeigt nur an).
 export type AboAnzeige = {
@@ -741,26 +742,29 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
 // ---------- Gefahrenzone + Lösch-Modal ----------
 function DangerZone() {
   const [open, setOpen] = useState(false);
+  const loeschRef = useModalFokus<HTMLDivElement>(() => setOpen(false), open);
   const [confirmText, setConfirmText] = useState("");
   const darf = confirmText.trim().toUpperCase() === "LÖSCHEN";
   // Fehler der Server-Action im Modal zeigen — nicht auf app/error.tsx landen.
   const [loeschFehler, setLoeschFehler] = useState<string | null>(null);
-
-  // ESC schließt das Modal.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
 
   return (
     <div className="danger-zone">
       <button type="button" className="danger-link" onClick={() => setOpen(true)}>Konto löschen</button>
 
       {open && typeof document !== "undefined" && createPortal(
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)} role="dialog" aria-modal="true" aria-label="Konto löschen">
-          <div className="modal-sheet" style={{ textAlign: "left" }}>
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
+          {/* role/aria-modal auf dem Blatt statt auf dem Overlay — sonst zaehlt
+              der Hintergrund-Schleier zum Dialog. */}
+          <div
+            ref={loeschRef}
+            className="modal-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Konto löschen"
+            tabIndex={-1}
+            style={{ textAlign: "left" }}
+          >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
               <h2 style={{ fontSize: 17, display: "flex", alignItems: "center", gap: 8, color: "var(--red)" }}><Trash2 size={18} /> Konto löschen</h2>
               <button type="button" className="icon-btn" onClick={() => setOpen(false)} title="Schließen"><X size={16} /></button>

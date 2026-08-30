@@ -15,6 +15,7 @@ import { belastbarkeit } from "@/lib/kauf/belastbarkeit";
 import { NHK_TYPEN } from "@/lib/bewertung/immowertv";
 import { useCountUp } from "@/lib/hooks/useCountUp";
 import type { Kalkulation } from "@/lib/types";
+import { useModalFokus } from "@/lib/modalFokus";
 
 const eur = (n: number) => "€ " + Math.round(n || 0).toLocaleString("de-DE");
 const pct = (n: number, d = 1) => (n || 0).toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d }) + " %";
@@ -122,6 +123,7 @@ export default function ObjektRechner({
   // Speichern / Vergleich
   const [saving, setSaving] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
+  const vergleichRef = useModalFokus<HTMLDivElement>(() => setShowCompare(false), showCompare);
   const [compareIds, setCompareIds] = useState<string[]>([]);
 
   const kp = num(kaufpreis), fl = num(flaeche);
@@ -606,8 +608,16 @@ export default function ObjektRechner({
       {/* Vergleich-Modal */}
       {showCompare && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={() => setShowCompare(false)}>
-          <div className="modal-sheet wide" onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginBottom: 6 }}>Objekte vergleichen</h3>
+          <div
+            ref={vergleichRef}
+            className="modal-sheet wide"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="objekte-vergleichen-titel"
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="objekte-vergleichen-titel" style={{ marginBottom: 6 }}>Objekte vergleichen</h3>
             <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
               Bis zu 5 gespeicherte Objekte wählen. Das Objekt mit den meisten besten Kennzahlen bekommt die Krone —
               übernimm es für die Finanzierung.
