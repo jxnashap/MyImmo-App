@@ -20,12 +20,33 @@ export type RatgeberKurzcheck = {
   nichtNoetig?: string;
 };
 
+/**
+ * Rechtsstand der Ratgeber-Inhalte. Wird über jedem Artikel SICHTBAR
+ * ausgewiesen — bei Steuer- und Mietrechtsthemen (YMYL) ist das kein
+ * Beiwerk, sondern die Angabe, an der ein Leser erkennt, ob er sich auf den
+ * Text noch verlassen kann.
+ *
+ * **Beim Überarbeiten von Inhalten mit hochsetzen** — und dann im jeweiligen
+ * Artikel `aktualisiert` füllen (siehe dort).
+ */
+export const RECHTSSTAND = "Juli 2026";
+
 export type RatgeberArtikel = {
   slug: string;
   titel: string;
   beschreibung: string; // Meta-Description / Teaser
   kategorie: "Nebenkosten" | "Steuer" | "Recht" | "Einstieg";
-  datum: string;        // ISO
+  datum: string;        // ISO — Erstveröffentlichung
+  /**
+   * NUR setzen, wenn der Artikel inhaltlich überarbeitet wurde — nicht bei
+   * Tippfehlern, und schon gar nicht, „damit das Datum frisch aussieht".
+   * Speist `dateModified` im Article-Markup: ein erfundenes Datum ist ein
+   * Falschsignal an Google UND an den Leser, der glaubt, der Text sei
+   * gegen die aktuelle Rechtslage geprüft worden.
+   */
+  aktualisiert?: string;
+  /** Nur, wenn dieser Artikel einen anderen Rechtsstand hat als `RECHTSSTAND`. */
+  rechtsstand?: string;
   lesezeit: number;     // Minuten
   kurzcheck?: RatgeberKurzcheck;
   intro: string;
@@ -137,7 +158,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Dieser Text gibt Anhaltspunkte ohne Gewähr und ersetzt keine Rechts- oder Steuerberatung. Bei strittigen Positionen oder ungewöhnlichen Vertragsklauseln lohnt der Gang zum Fachanwalt für Mietrecht oder zum Vermieterverein.",
+          "Dieser Text gibt Anhaltspunkte ohne Gewähr und ersetzt keine Rechts- oder Steuerberatung. Bei strittigen Positionen oder ungewöhnlichen Vertragsklauseln lohnt der Gang zum Fachanwalt für Mietrecht oder zum Vermieterverein.",
         ],
       },
     ],
@@ -219,7 +240,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Bei ungewöhnlichen Vertragsklauseln oder gemischt genutzten Objekten lohnt die anwaltliche Prüfung.",
+          "Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Bei ungewöhnlichen Vertragsklauseln oder gemischt genutzten Objekten lohnt die anwaltliche Prüfung.",
         ],
       },
     ],
@@ -307,7 +328,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Ob Ihr Gebäude unter die 70-Prozent-Regel oder unter eine Ausnahme fällt, klären Sie im Zweifel mit Ihrem Messdienstleister oder anwaltlich.",
+          "Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Ob Ihr Gebäude unter die 70-Prozent-Regel oder unter eine Ausnahme fällt, klären Sie im Zweifel mit Ihrem Messdienstleister oder anwaltlich.",
         ],
       },
     ],
@@ -383,7 +404,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Die Rechtsprechung zur Zumutbarkeit der Anreise ist einzelfallabhängig.",
+          "Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Die Rechtsprechung zur Zumutbarkeit der Anreise ist einzelfallabhängig.",
         ],
       },
     ],
@@ -493,7 +514,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Ob die Mietpreisbremse für Ihren Ort gilt, ergibt sich aus der jeweiligen Landesverordnung.",
+          "Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Ob die Mietpreisbremse für Ihren Ort gilt, ergibt sich aus der jeweiligen Landesverordnung.",
         ],
       },
     ],
@@ -586,7 +607,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Die Grenzwerte bei Kleinreparaturen sind Rechtsprechung und keine gesetzlichen Beträge — sie entwickeln sich fort. Bei laufendem Streit ist anwaltlicher Rat der richtige Weg.",
+          "Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Die Grenzwerte bei Kleinreparaturen sind Rechtsprechung und keine gesetzlichen Beträge — sie entwickeln sich fort. Bei laufendem Streit ist anwaltlicher Rat der richtige Weg.",
         ],
       },
     ],
@@ -691,7 +712,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Erbschaftsteuerliche Bewertung und Freibeträge hängen vom Einzelfall ab; bei größeren Nachlässen oder einer Erbengemeinschaft ist steuerlicher und anwaltlicher Rat sinnvoll.",
+          "Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Erbschaftsteuerliche Bewertung und Freibeträge hängen vom Einzelfall ab; bei größeren Nachlässen oder einer Erbengemeinschaft ist steuerlicher und anwaltlicher Rat sinnvoll.",
         ],
       },
     ],
@@ -795,7 +816,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Dieser Text beschreibt den Aufbau des Formulars und gibt Anhaltspunkte ohne Gewähr. Er ist keine Steuerberatung und ersetzt sie nicht. Welche Angaben in Ihrem Fall richtig sind, klären Sie mit Ihrem Steuerberater oder einem Lohnsteuerhilfeverein im Rahmen von dessen Beratungsbefugnis.",
+          "Dieser Text beschreibt den Aufbau des Formulars und gibt Anhaltspunkte ohne Gewähr. Er ist keine Steuerberatung und ersetzt sie nicht. Welche Angaben in Ihrem Fall richtig sind, klären Sie mit Ihrem Steuerberater oder einem Lohnsteuerhilfeverein im Rahmen von dessen Beratungsbefugnis.",
         ],
       },
     ],
@@ -894,7 +915,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Steuerberatung. Sätze, Fristen und Fördervoraussetzungen ändern sich häufig; degressive AfA und Sonderabschreibung sollten vor der Investitionsentscheidung steuerlich geprüft werden.",
+          "Anhaltspunkte ohne Gewähr, keine Steuerberatung. Sätze, Fristen und Fördervoraussetzungen ändern sich häufig; degressive AfA und Sonderabschreibung sollten vor der Investitionsentscheidung steuerlich geprüft werden.",
         ],
       },
     ],
@@ -983,7 +1004,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Steuerberatung. Ob Verteilung oder Sofortabzug im Einzelfall günstiger ist, hängt von Ihrer gesamten Einkommenssituation ab und sollte steuerlich durchgerechnet werden.",
+          "Anhaltspunkte ohne Gewähr, keine Steuerberatung. Ob Verteilung oder Sofortabzug im Einzelfall günstiger ist, hängt von Ihrer gesamten Einkommenssituation ab und sollte steuerlich durchgerechnet werden.",
         ],
       },
     ],
@@ -1099,7 +1120,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Ob an Ihrem Ort die abgesenkte Kappungsgrenze gilt, ergibt sich aus der Verordnung des Bundeslandes; bei Widerspruch des Mieters ist anwaltlicher Rat sinnvoll.",
+          "Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Ob an Ihrem Ort die abgesenkte Kappungsgrenze gilt, ergibt sich aus der Verordnung des Bundeslandes; bei Widerspruch des Mieters ist anwaltlicher Rat sinnvoll.",
         ],
       },
     ],
@@ -1203,7 +1224,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Stand Juli 2026. Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Kündigungsfristen und Exportmöglichkeiten richten sich nach dem Vertrag mit Ihrem bisherigen Anbieter.",
+          "Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Kündigungsfristen und Exportmöglichkeiten richten sich nach dem Vertrag mit Ihrem bisherigen Anbieter.",
         ],
       },
     ],

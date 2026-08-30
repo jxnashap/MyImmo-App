@@ -292,15 +292,21 @@ nicht. Google indexiert solche Seiten als Soft-404 und verbrennt Crawl-Budget.
 1. ~~**D1: Öffentliche Seiten statisch machen**~~ ✅ **erledigt 30.08.2026** (Layout-Split,
    siehe Abschnitt 5). Preis: `'unsafe-inline'` auf den 9 öffentlichen Pfaden — dort dokumentiert.
 2. ~~**D2: Soft 404**~~ ✅ **erledigt** — fiel wie erwartet mit D1 weg.
-3. **Search Console + Bing/IndexNow einrichten** (~2 h, 0 €). Ohne GSC steuern wir blind,
-   ohne Bing sind wir für ChatGPT unsichtbar.
-4. **`@vercel/speed-insights`** — ohne Felddaten ist jede CWV-Aussage Spekulation.
+3. **Search Console** ✅ vorhanden (Betreiber, bestätigt 30.08.2026).
+   ⏳ **Bing Webmaster Tools + IndexNow** noch offen — ohne Bing sind wir für ChatGPT
+   unsichtbar, und der GSC-Import macht die Einrichtung zu einer Sache von Minuten.
+4. ~~**`@vercel/speed-insights`**~~ ✅ erledigt (#278) — Felddaten laufen auf, sind aber noch
+   zu jung für belastbare CWV-Aussagen.
 
 **Kurzfristig (YMYL/E-E-A-T)**
-5. Namentliche Autorenschaft + Autorenseite mit `ProfilePage`-Markup.
-6. `dateModified` ergänzen, Rechtsstand sichtbar je Artikel.
-7. `BreadcrumbList`-JSON-LD.
-8. Canonicals vervollständigen.
+5. Namentliche Autorenschaft + Autorenseite mit `ProfilePage`-Markup. ⏳ **offen** — braucht
+   die Entscheidung des Betreibers, ob sein Name öffentlich unter den Artikeln steht.
+6. ~~`dateModified` ergänzen, Rechtsstand sichtbar je Artikel~~ ✅ **erledigt 30.08.2026.**
+   Siehe Abschnitt 8 — mit einer Einschränkung, die man kennen muss.
+7. ~~`BreadcrumbList`-JSON-LD~~ ✅ **erledigt 30.08.2026** — auf `/ratgeber/<slug>` und
+   `/funktionen/<slug>`, sichtbare Navigation und Markup aus einer Quelle
+   (`components/landing/Brotkrumen.tsx`).
+8. ~~Canonicals vervollständigen~~ ✅ erledigt (#278).
 
 **Strategisch**
 9. **Nicht** auf „Vermieter Software" optimieren — stattdessen Listung bei trusted.de,
@@ -315,3 +321,38 @@ nicht. Google indexiert solche Seiten als Soft-404 und verbrennt Crawl-Budget.
 **Ausdrücklich nicht tun**
 13. Kein FAQPage-/HowTo-Markup (seit Mai 2026 bzw. 2023 wirkungslos) · kein hreflang ·
     kein llms.txt.
+
+
+## 8. Aktualitätssignale — was am 30.08.2026 gebaut wurde (und was es NICHT leistet)
+
+**Gebaut:**
+- `RECHTSSTAND` als eine Konstante in `lib/ratgeber.ts`, über jedem Artikel sichtbar
+  ausgewiesen (Kopfzeile neben Lesezeit und Datum, nicht im Fußbereich versteckt).
+  Bei Steuer- und Mietrechtsthemen ist das die Angabe, an der ein Leser erkennt, ob er
+  sich auf den Text noch verlassen kann.
+- Optionales Feld `aktualisiert` je Artikel → speist `dateModified` im Article-Markup.
+- Die Anbieter-Entität (`ORGANISATION` in `lib/seo/jsonLd.ts`) hat ein festes `@id`.
+  Startseite und Artikel verweisen jetzt auf **dieselbe** Organisation statt auf mehrere
+  gleichnamige — Entitäts-Konsolidierung ist eines der wenigen E-E-A-T-Signale, die sich
+  technisch überhaupt setzen lassen.
+- `"Stand Juli 2026."` stand zusätzlich fest im Fließtext von 12 Artikeln. Entfernt und
+  durch die Konstante ersetzt; ein Test verhindert den Rückfall. Sonst hätte beim nächsten
+  Rechtsstand-Update die Kopfzeile etwas anderes behauptet als der Text darunter.
+
+**Was es ausdrücklich NICHT leistet — wichtig:**
+`dateModified` ist bei **allen 17 Artikeln gleich `datePublished`**, weil seit der
+Veröffentlichung (Juli 2026) kein Artikel inhaltlich überarbeitet wurde. Das Feld auf
+„heute" zu setzen wäre das billigste Frische-Signal überhaupt — und eine Falschaussage
+gegenüber Google **und** gegenüber dem Leser, der glaubt, der Text sei gegen die aktuelle
+Rechtslage geprüft worden. Google erkennt aufgeblasene `dateModified`-Werte und wertet sie
+ab. **Frische entsteht durch Überarbeiten, nicht durch ein Datumsfeld.**
+
+Das Gerüst dafür steht jetzt: wer einen Artikel überarbeitet, setzt `aktualisiert` und hebt
+bei Bedarf `RECHTSSTAND` (oder das artikeleigene `rechtsstand`). Erst dann bewegt sich das
+Signal — zu Recht.
+
+**Konkret fällig sind zwei Artikel:**
+| Artikel | Warum |
+|---|---|
+| `grundsteuer-2025-auf-mieter-umlegen` | trägt die Jahreszahl **2025** im Slug und Titel, wir sind in 2026 |
+| `heizkostenabrechnung-50-70-regel-fernablesung` | wirbt mit der Frist 31.12.2026 — ab 01.01.2027 Vergangenheit (steht schon als Termin in `CLAUDE.md`) |
