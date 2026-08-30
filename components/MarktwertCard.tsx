@@ -170,25 +170,33 @@ export default function MarktwertCard({
               sobald ein Partnerzugang hinterlegt ist; bis dahin dient der eigene Bestand als Vergleich.
             </p>
           ) : (
-            <table style={{ fontSize: 12, marginTop: 8, width: "100%" }}>
-              <thead>
-                <tr style={{ color: "var(--muted)" }}>
-                  <th style={{ textAlign: "left" }}>Quelle</th><th style={{ textAlign: "right" }}>Fläche</th>
-                  <th style={{ textAlign: "right" }}>€/m²</th><th style={{ textAlign: "right" }}>Preis</th><th style={{ textAlign: "right" }}>Distanz</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparables.map((c, i) => (
-                  <tr key={i}>
-                    <td>{c.quelle}{c.art ? ` · ${c.art}` : ""}</td>
-                    <td style={{ textAlign: "right" }}>{c.flaeche ? `${c.flaeche} m²` : "—"}</td>
-                    <td style={{ textAlign: "right" }}>{c.preis_pro_qm ? euro(c.preis_pro_qm) : "—"}</td>
-                    <td style={{ textAlign: "right" }}>{c.preis ? euro(c.preis) : "—"}</td>
-                    <td style={{ textAlign: "right" }}>{c.distanz_km != null ? `${c.distanz_km} km` : "—"}</td>
+            // Fuenf Spalten brauchen bei 320 px Breite 334 px. Ohne eigenen
+            // Scroll-Bereich schneidet das globale `overflow-x: clip` die
+            // letzte Spalte (Distanz) stumm ab — sie ist dann nicht
+            // abgeschnitten sichtbar, sondern schlicht weg.
+            // Die Herleitungs-Tabelle darueber hat nur zwei Spalten, bricht
+            // sauber um und bleibt bewusst ohne Wrapper.
+            <div className="table-scroll">
+              <table style={{ fontSize: 12, marginTop: 8, width: "100%" }}>
+                <thead>
+                  <tr style={{ color: "var(--muted)" }}>
+                    <th style={{ textAlign: "left" }}>Quelle</th><th style={{ textAlign: "right" }}>Fläche</th>
+                    <th style={{ textAlign: "right" }}>€/m²</th><th style={{ textAlign: "right" }}>Preis</th><th style={{ textAlign: "right" }}>Distanz</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {comparables.map((c, i) => (
+                    <tr key={i}>
+                      <td>{c.quelle}{c.art ? ` · ${c.art}` : ""}</td>
+                      <td style={{ textAlign: "right" }}>{c.flaeche ? `${c.flaeche} m²` : "—"}</td>
+                      <td style={{ textAlign: "right" }}>{c.preis_pro_qm ? euro(c.preis_pro_qm) : "—"}</td>
+                      <td style={{ textAlign: "right" }}>{c.preis ? euro(c.preis) : "—"}</td>
+                      <td style={{ textAlign: "right" }}>{c.distanz_km != null ? `${c.distanz_km} km` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </details>
 

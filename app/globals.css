@@ -972,7 +972,11 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 .icon-btn:disabled { opacity: .5; cursor: default; }
 
 .danger-zone { margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line); text-align: center; }
-.danger-link { background: none; border: none; color: var(--red); font-size: 12.5px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; transition: color .15s; }
+/* padding + negativer margin: vergroessert die Trefferflaeche auf die von
+   WCAG 2.2 (2.5.8) geforderten 24 px Hoehe, OHNE das Layout zu verschieben —
+   der Knopf sass mit 18 px als einziger in der App unter der Schwelle.
+   Optisch bleibt er der schlanke unterstrichene Textknopf, der er war. */
+.danger-link { background: none; border: none; color: var(--red); font-size: 12.5px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; transition: color .15s; padding: 4px 2px; margin: -4px -2px; }
 .danger-link:hover { color: var(--red); }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(10,10,10,.32); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 60; animation: overlayIn .2s ease; }
