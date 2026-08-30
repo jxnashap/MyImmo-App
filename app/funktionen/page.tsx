@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: "Funktionen — MyImmo",
   description:
     "Alle MyImmo-Funktionen: Nebenkostenabrechnung, Anlage V & ELSTER, Mieterportal, Service-Aufträge, Kredite, Dokumente und mehr.",
+  alternates: { canonical: "/funktionen" },
   openGraph: { images: ["/og.png"] },
 };
 

@@ -6,6 +6,7 @@ import { ladeNeuigkeiten } from "@/lib/neuigkeiten";
 import AutoLogout from "@/components/AutoLogout";
 import OnboardingTour from "@/components/OnboardingTour";
 import LabelVerknuepfung from "@/components/LabelVerknuepfung";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ToastProvider } from "@/components/Toast";
 import FlashToast from "@/components/FlashToast";
 import { ZeitraumProvider } from "@/components/ZeitraumProvider";
@@ -45,13 +46,19 @@ export default async function RootLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    // ohne Sidebar (Login/Willkommen)
+    // Ohne Sidebar — hier landen ALLE ausgeloggten Besucher, also die gesamte
+    // Marketing-/Ratgeber-Strecke. Deshalb sitzt die Feldmessung hier.
     return (
       <html lang="de" suppressHydrationWarning>
         <head>
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
-        <body>{children}</body>
+        <body>
+          {children}
+          {/* Echte Nutzer-Messwerte (LCP/INP/CLS), cookielos. Das Skript kommt
+              vom eigenen Origin und ist damit von der CSP gedeckt. */}
+          <SpeedInsights />
+        </body>
       </html>
     );
   }
@@ -113,7 +120,13 @@ export default async function RootLayout({
         <head>
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
-        <body>{children}</body>
+        <body>
+          {children}
+          {/* Echte Feld-Messwerte (LCP/INP/CLS) der oeffentlichen Seiten.
+              Cookielos; das Skript kommt vom eigenen Origin und ist damit von
+              der CSP ("script-src 'self'") gedeckt. */}
+          <SpeedInsights />
+        </body>
       </html>
     );
   }

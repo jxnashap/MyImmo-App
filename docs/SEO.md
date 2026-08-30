@@ -193,8 +193,19 @@ auth-freiem Layout (`app/(public)/…`), Middleware-Matcher entsprechend ausnehm
 ```
 Die 404-Seite **rendert korrekt** („404 · Seite nicht gefunden"), nur der Statuscode stimmt
 nicht. Google indexiert solche Seiten als Soft-404 und verbrennt Crawl-Budget.
-*Ursache noch nicht abschließend geklärt* — Verdacht: Layout/Middleware überschreiben den
-Status. Muss beim Fix lokal reproduziert werden.
+
+> **✅ Ursache geklärt (29.08.2026, lokal nachgemessen) — D2 ist ein SYMPTOM von D1.**
+> Drei Hypothesen der Reihe nach geprüft:
+> 1. `dynamicParams = false` auf den `[slug]`-Routen → **reicht nicht**, weiterhin 200.
+>    (Die Routen werden dadurch im Build immerhin `●` statt `ƒ` — die Änderung bleibt drin.)
+> 2. Middleware als Verursacher → **nein**. Mit aus dem Matcher ausgenommener Route
+>    ebenfalls 200.
+> 3. **Treffer:** Der Antwort-Header zeigt `Cache-Control: no-store`, obwohl der Build `●`
+>    meldet. Das **dynamische Root-Layout** (`supabase.auth.getUser()` + `headers()` auf
+>    *jeder* Route) überschreibt die statische Generierung zur Laufzeit. Die Seite streamt,
+>    der Status 200 ist bereits gesendet, bevor `notFound()` greift.
+>
+> ➡️ **D2 lässt sich nicht separat beheben.** Es fällt automatisch weg, sobald D1 gelöst ist.
 
 ### 🟠 Weitere Lücken
 | Lücke | Wirkung |
