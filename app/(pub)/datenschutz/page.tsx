@@ -128,9 +128,13 @@ export default function DatenschutzPage() {
         <em>Zweck:</em> Versand der angeforderten Vorlagen und Hinweise.{" "}
         <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung) — für den
         Einwilligungsnachweis zusätzlich Art. 6 Abs. 1 lit. c i. V. m. Art. 7 Abs. 1 DSGVO.{" "}
-        <em>Empfänger:</em> <strong>Brevo</strong> (Sendinblue GmbH / Sendinblue SAS, Frankreich)
-        als Auftragsverarbeiter für Versand und Verwaltung des Verteilers; die Verarbeitung
-        findet in der EU statt.
+        <em>Empfänger:</em> <strong>Brevo</strong> (Sendinblue SAS, 7 rue de Madrid, 75008 Paris,
+        Frankreich) als Auftragsverarbeiter für Versand und Verwaltung des Verteilers. Die
+        Verteiler- und Versanddaten werden in der EU verarbeitet (Rechenzentren in Frankreich,
+        Belgien und Deutschland). Brevo setzt seinerseits Unterauftragsverarbeiter ein, von
+        denen einzelne (z. B. Betriebs- und Protokollüberwachung, Support-Ticketsystem) Daten
+        in den USA oder in Indien verarbeiten; abgesichert über EU-Standardvertragsklauseln
+        bzw. den Angemessenheitsbeschluss zum EU-US Data Privacy Framework (Ziffer 5).
       </p>
       <p>
         <em>Speicherdauer:</em> bis zum Widerruf. Danach löschen wir die Adresse aus dem
@@ -149,7 +153,7 @@ export default function DatenschutzPage() {
         <li><strong>Vercel Inc.</strong>, USA (Hosting/Auslieferung der App) — DPA inkl. EU-Standardvertragsklauseln; technische Logs können in den USA verarbeitet werden.</li>
         <li><strong>Anthropic PBC</strong>, USA (KI-Auswertung, nur bei aktiver Nutzung) — DPA inkl. EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
         <li><strong>Google Ireland Ltd.</strong> — nur bei „Login mit Google" und für Schriftarten (Ziffer 7).</li>
-        <li><strong>Brevo</strong> (Sendinblue GmbH, Deutschland / Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO.</li>
+        <li><strong>Brevo</strong> (Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO (Anlage 2 zu den Nutzungsbedingungen, inkl. EU-Standardvertragsklauseln). Einzelne Unterauftragsverarbeiter von Brevo verarbeiten in Drittländern (Ziffer 5).</li>
       </ul>
       <p>
         Eine Übermittlung an sonstige Dritte findet nicht statt, außer Sie stoßen sie selbst
@@ -162,6 +166,14 @@ export default function DatenschutzPage() {
         dies auf Grundlage der EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO)
         bzw. — soweit der Anbieter zertifiziert ist — des Angemessenheitsbeschlusses zum
         EU-US Data Privacy Framework (Art. 45 DSGVO).
+      </p>
+      <p>
+        Bei <strong>Brevo</strong> (Vorlagen-Verteiler) liegt der Vertragspartner in der EU;
+        die Übermittlung in Drittländer entsteht erst durch dessen Unterauftragsverarbeiter
+        (u. a. Protokollüberwachung in den USA, Support und Wartung in Indien und den USA).
+        Sie ist im Auftragsverarbeitungsvertrag von Brevo über die
+        <strong> EU-Standardvertragsklauseln</strong> abgesichert; ergänzend berufen sich
+        einzelne dieser Dienstleister auf das EU-US Data Privacy Framework.
       </p>
 
       <H2>6. Cookies und lokale Speicherung (§ 25 TDDDG)</H2>
