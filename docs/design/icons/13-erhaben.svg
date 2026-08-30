@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg13" cx="42%" cy="34%" r="86%">
+      <stop offset="0%" stop-color="#26252A"/>
+      <stop offset="52%" stop-color="#141317"/>
+      <stop offset="100%" stop-color="#08080A"/>
+    </radialGradient>
+    <linearGradient id="mt13" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0%" stop-color="#F8E9BC"/><stop offset="26%" stop-color="#E2C170"/>
+      <stop offset="58%" stop-color="#D4A847"/><stop offset="100%" stop-color="#A87C1D"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg13)"/>
+  <defs>
+    <filter id="fs13" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="b"/>
+      <feSpecularLighting in="b" surfaceScale="8" specularConstant="0.95"
+          specularExponent="21" lighting-color="#FFF7E2" result="sp">
+        <feDistantLight azimuth="228" elevation="56"/>
+      </feSpecularLighting>
+      <feComposite in="sp" in2="SourceAlpha" operator="in" result="spk"/>
+      <feComposite in="SourceGraphic" in2="spk" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+    </filter>
+    <filter id="wf13" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="32" stdDeviation="28" flood-color="#000000" flood-opacity="0.72"/>
+    </filter></defs>
+  <g filter="url(#wf13)">
+    <g filter="url(#fs13)">
+      <path d="M244,764 V444 L378,306 L512,444 L646,306 L780,444 V764 M512,444 V764" fill="none" stroke="url(#mt13)" stroke-width="94"
+            stroke-linejoin="miter" stroke-miterlimit="10" stroke-linecap="butt"/>
+    </g>
+  </g>
+</svg>

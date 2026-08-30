@@ -166,3 +166,45 @@ Buchstaben zu groß. Dach steiler, Wand höher, Schriftgrad kleiner — jetzt tr
 das Haus die Buchstaben und nicht umgekehrt.
 
 Neu erzeugen: `python3 icons-my-bauen.py`
+
+---
+
+# Nachtrag: Relief (Entwürfe 13–16) — eine Farbe, Tiefe allein durch Licht
+
+Kein Leuchten, kein zweiter Farbton. **Eine Farbe in fünf Werten** auf Graphit:
+Lichtkante, Hell, Basis, Tief, Schattenkante. Die Wertigkeit entsteht dort,
+wo sie in der Wirklichkeit entsteht — an Kanten, die Licht führen.
+
+| | Entwurf | Lichtführung |
+|---|---|---|
+| 13 | **Erhaben** | Fase mit Glanzlicht von links oben, weicher Schlagschatten nach unten |
+| 14 | **Eingeprägt** | Dunkle Oberkante innen, helle Unterlippe — das Zeichen liegt in der Fläche |
+| 15 | **Doppelrelief** | Giebel erhaben, das MY darin vertieft: zwei Tiefen in einem Zeichen |
+| 16 | **Goldplatte** | Die ganze Kachel ist Metall, das Zeichen hineingeprägt |
+
+Technik: Die Fase ist echte SVG-Beleuchtung (`feSpecularLighting` mit
+`feDistantLight`) auf der weichgezeichneten Alphakante. Die Prägung entsteht aus
+zwei gegenläufigen Innenschatten — dunkel von oben, hell von unten. Das ist der
+ganze Trick: **Tiefe kommt aus zwei Kanten, nicht aus Farbe.**
+
+Zu Apple: Untersagt ist ein Schatten **außerhalb** des Icons, weil er mit der
+Systemmaske kollidiert. Schatten innerhalb der Fläche sind erlaubt und das
+übliche Mittel für Wertigkeit.
+
+## Zwei Fehler, die dabei aufgefallen sind
+
+**1 — Alle zwölf zuvor gelieferten Icons waren unten abgeschnitten.**
+Chrome liefert bei `--window-size=1024,1024` nur rund 937 px Viewporthöhe; die
+PNG bekamen dadurch einen 87 px hohen schwarzen Streifen am unteren Rand. Bei
+Entwurf 4 (Goldfeld) war das sichtbar — die Goldfläche lief unten nicht durch.
+Behoben: `rendern.py` rendert mit Reserve, beschneidet exakt auf 1024 × 1024 und
+**misst das Ergebnis anschließend** (Seitenhintergrund in Magenta, damit
+Durchscheinen sofort auffällt; Prüfung auf schwarzen Rand). Alle 16 Icons wurden
+damit neu erzeugt.
+
+**2 — Der rechte Schenkel des M war eine Diagonale.**
+Im Pfad fehlte der Traufpunkt: `… L646,306 L780,764` verband Firstpunkt und
+Sockel direkt, statt über die Traufe zu gehen. Richtig ist
+`… L646,306 L780,444 V764`.
+
+Neu erzeugen: `python3 icons-relief-bauen.py && python3 rendern.py *.svg`
