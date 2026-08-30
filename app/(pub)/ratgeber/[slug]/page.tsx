@@ -5,11 +5,10 @@ import LandingShell from "@/components/landing/Shell";
 import { RATGEBER, ratgeberBySlug, ratgeberDatum } from "@/lib/ratgeber";
 import { ArrowRight, ArrowLeft, Clock } from "lucide-react";
 
-// Nur die zur Bauzeit bekannten Slugs sind gültig. Ohne dieses Flag versucht
-// Next jeden unbekannten Slug dynamisch zu rendern; weil die Seite dabei
-// streamt, ist der Status 200 schon raus, bevor notFound() greift — Google
-// sah einen "Soft 404" (Seite sagt 404, Server sagt 200).
-export const dynamicParams = false;
+// Kein `dynamicParams = false` noetig: seit die oeffentliche Strecke ein
+// eigenes, statisches Root-Layout hat (app/(pub)/layout.tsx), wird nicht mehr
+// gestreamt, bevor der Status feststeht — `notFound()` liefert echte 404 samt
+// gebrandeter Seite. Bekannte Slugs bleiben vorgerendert.
 
 export function generateStaticParams() {
   return RATGEBER.map((a) => ({ slug: a.slug }));

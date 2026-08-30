@@ -179,12 +179,75 @@ GET /            cache-control: private, no-cache, no-store  x-vercel-cache: MIS
 GET /ratgeber    cache-control: private, no-cache, no-store  x-vercel-cache: MISS  TTFB 0,59 s
 GET /funktionen  cache-control: private, no-cache, no-store  x-vercel-cache: MISS  TTFB 0,40 s
 ```
-Trotz `generateStaticParams` greift **kein** Prerendering. Ursache: Das Root-Layout ruft für
-*jede* Route `supabase.auth.getUser()` auf und liest `headers()` — beides erzwingt Dynamic
-Rendering und `no-store` für den ganzen Baum, Marketing- und Ratgeberseiten eingeschlossen.
-Die Middleware läuft zusätzlich auf allem außer `_next/static`.
-➡️ **Größter technischer Hebel.** Fix: öffentliche Seiten in eine eigene Route-Group mit
-auth-freiem Layout (`app/(public)/…`), Middleware-Matcher entsprechend ausnehmen.
+Trotz `generateStaticParams` greift **kein** Prerendering.
+
+> **⚠️ Korrektur der Ursache (30.08.2026).** Die zuerst notierte Erklärung — „das Root-Layout
+> ruft `supabase.auth.getUser()`" — war **falsch**. Drei Experimente haben sie widerlegt:
+> 1. Middleware-Matcher für eine Route ausgenommen → weiterhin dynamisch.
+> 2. Minimales Layout ohne Auth/`headers()` → weiterhin dynamisch.
+> 3. `next.config.mjs` und alle `export const dynamic` geprüft → unauffällig.
+>
+> **Die echte Ursache ist die nonce-basierte CSP.** Die Next.js-Doku sagt es wörtlich:
+> *„To use a nonce, your page must be dynamically rendered. […] When you use nonces in your CSP,
+> **all pages must be dynamically rendered**. Static optimization and ISR are disabled. Pages
+> cannot be cached by CDNs."*
+> <https://nextjs.org/docs/app/guides/content-security-policy>
+>
+> Eine Nonce muss pro Request neu und unvorhersehbar sein — zur Bauzeit gibt es keinen Request,
+> also keine Nonce. `middleware.ts:15` setzt `script-src 'self' 'nonce-…'` für **alle** Routen.
+
+➡️ **Das ist kein Bug, sondern ein bewusster Zielkonflikt: Sicherheit gegen Auslieferungstempo.**
+Der Sicherheits-Audit (08/2026) hat genau diese strenge CSP als Stärke bewertet.
+
+**Drei Wege, mit Kosten:**
+
+| Weg | Ergebnis | Preis |
+|---|---|---|
+| **A — so lassen** | Alles bleibt dynamisch, ~0,5 s TTFB | keine Änderung, Sicherheit unangetastet |
+| **B — Strecken trennen** | Marketing/Ratgeber statisch + CDN-cachebar, App behält Nonce-CSP | Öffentliche Seiten brauchen `script-src 'self' 'unsafe-inline'` (Next.js gibt seine Flight-Daten als Inline-`<script>` aus) |
+| **C — SRI global** | Alles statisch möglich | `experimental.sri` gibt es **erst ab Next 15**; das Projekt läuft auf **14.2.35** → nicht verfügbar |
+
+### ✅ Umgesetzt: Weg B (30.08.2026)
+
+Die App hat jetzt **zwei Root-Layouts**:
+
+| | `app/(app)/layout.tsx` | `app/(pub)/layout.tsx` |
+|---|---|---|
+| Inhalt | gesamte Vermieter-App, `/`, Login, Token-Seiten (`/bewerben`, `/beleihung`, `/auftrag`) | `/funktionen`, `/ratgeber`, `/vision`, `/vorlagen`, `/preise`, `/agb`, `/avv`, `/datenschutz`, `/impressum` |
+| liest `headers()` / Session | ja | **nein** |
+| CSP | Nonce, aus `middleware.ts` — **unverändert** | statisch, aus `next.config.mjs` |
+| Middleware | läuft | **ausgenommen** (kein Supabase-Roundtrip pro Aufruf) |
+| Rendering | dynamisch | **statisch, `s-maxage=31536000`** |
+
+Nachgemessen (lokaler Prod-Build, `next start`):
+
+```
+/funktionen           200  Cache-Control: s-maxage=31536000, stale-while-revalidate
+/ratgeber/<artikel>   200  Cache-Control: s-maxage=31536000, stale-while-revalidate
+/impressum /agb /datenschutz /avv /preise /vision   ebenso
+/ratgeber/gibt-es-nicht   404  (gebrandete deutsche 404-Seite)
+/  /login  /steuer    unverändert: Nonce-CSP, 307-Login-Weiche intakt
+```
+14 Seiten im echten Chromium geprüft: **0 CSP-Verstöße, 0 JS-Fehler, alle hydrieren.**
+
+**Was der Weg kostet — ehrlich:**
+- Auf den 9 öffentlichen Pfaden gilt `script-src 'self' 'unsafe-inline'` statt der Nonce.
+  Ein XSS dort wäre nicht mehr durch die CSP gebremst. Realistisch ist die Angriffsfläche
+  klein: die Inhalte stammen fest aus `lib/ratgeber.ts` / `lib/funktionen.ts`, es wird keine
+  Nutzereingabe gerendert, und das einzige Formular (Vorlagen-Verteiler) postet gegen
+  `form-action 'self'`. **Gleicher Origin wie die App** — deshalb ist die Restrisiko-Frage
+  nicht null, sondern nur klein.
+- Alle übrigen Direktiven bleiben streng (`default-src 'self'`, `object-src 'none'`,
+  `frame-ancestors 'none'`, kein fremder Origin, kein `blob:`).
+- Das Theme-Skript liegt jetzt als Datei `public/theme.js` statt inline — dadurch braucht
+  die öffentliche Strecke kein eigenes Inline-Skript mehr.
+- **Zwei Listen müssen zusammen gepflegt werden:** der Middleware-Matcher (`middleware.ts`)
+  und `OEFFENTLICH` in `next.config.mjs`. Ein neuer Pfad in nur einer der beiden Listen
+  bedeutet entweder fehlende Security-Header oder eine Login-Weiche auf einer öffentlichen
+  Seite. Beide Stellen tragen einen Kommentar mit Verweis aufeinander.
+- **`/` bleibt dynamisch.** Die Startseite entscheidet anhand der Session zwischen Landing
+  und Dashboard — sie ließe sich nur statisch machen, wenn das Dashboard eine eigene Adresse
+  bekäme. Das ist eine Produktentscheidung, keine technische, und steht offen.
 
 **D2 — Soft 404.** Nicht existierende Seiten liefern **HTTP 200**:
 ```
@@ -194,18 +257,19 @@ auth-freiem Layout (`app/(public)/…`), Middleware-Matcher entsprechend ausnehm
 Die 404-Seite **rendert korrekt** („404 · Seite nicht gefunden"), nur der Statuscode stimmt
 nicht. Google indexiert solche Seiten als Soft-404 und verbrennt Crawl-Budget.
 
-> **✅ Ursache geklärt (29.08.2026, lokal nachgemessen) — D2 ist ein SYMPTOM von D1.**
-> Drei Hypothesen der Reihe nach geprüft:
+> **✅ Ursache geklärt und behoben (30.08.2026, lokal nachgemessen) — D2 war ein SYMPTOM von D1.**
+> Der Reihe nach geprüft:
 > 1. `dynamicParams = false` auf den `[slug]`-Routen → **reicht nicht**, weiterhin 200.
->    (Die Routen werden dadurch im Build immerhin `●` statt `ƒ` — die Änderung bleibt drin.)
-> 2. Middleware als Verursacher → **nein**. Mit aus dem Matcher ausgenommener Route
->    ebenfalls 200.
-> 3. **Treffer:** Der Antwort-Header zeigt `Cache-Control: no-store`, obwohl der Build `●`
->    meldet. Das **dynamische Root-Layout** (`supabase.auth.getUser()` + `headers()` auf
->    *jeder* Route) überschreibt die statische Generierung zur Laufzeit. Die Seite streamt,
->    der Status 200 ist bereits gesendet, bevor `notFound()` greift.
+> 2. `notFound()` schon in `generateMetadata()` → **reicht auch nicht**, weiterhin 200.
+> 3. Middleware als Verursacher → **nein**. Mit aus dem Matcher ausgenommener Route ebenfalls 200.
+> 4. **Treffer:** Die Seite wurde zur Laufzeit trotz `●` im Build dynamisch gerendert
+>    (Ursache siehe D1: die **nonce-basierte CSP**) und dabei gestreamt — der Status 200 war
+>    bereits gesendet, bevor `notFound()` greifen konnte.
 >
-> ➡️ **D2 lässt sich nicht separat beheben.** Es fällt automatisch weg, sobald D1 gelöst ist.
+> ➡️ Mit dem Layout-Split (Weg B oben) liefern `/ratgeber/<unbekannt>` und
+> `/funktionen/<unbekannt>` jetzt **echte 404** samt gebrandeter deutscher Fehlerseite.
+> `dynamicParams = false` wurde wieder entfernt: es erzwang zwar den Status, aber über den
+> Router — und damit die ungestylte englische Next-Standardseite statt der eigenen.
 
 ### 🟠 Weitere Lücken
 | Lücke | Wirkung |
@@ -225,9 +289,9 @@ nicht. Google indexiert solche Seiten als Soft-404 und verbrennt Crawl-Budget.
 ## 6. Priorisiert — was am meisten bringt
 
 **Sofort (großer Hebel, kleiner Aufwand)**
-1. **D1: Öffentliche Seiten statisch machen** — von ~0,5 s TTFB auf Edge. Verbessert LCP,
-   Crawl-Effizienz und Absprungrate gleichzeitig.
-2. **D2: Soft 404 reparieren** — 404 muss 404 liefern.
+1. ~~**D1: Öffentliche Seiten statisch machen**~~ ✅ **erledigt 30.08.2026** (Layout-Split,
+   siehe Abschnitt 5). Preis: `'unsafe-inline'` auf den 9 öffentlichen Pfaden — dort dokumentiert.
+2. ~~**D2: Soft 404**~~ ✅ **erledigt** — fiel wie erwartet mit D1 weg.
 3. **Search Console + Bing/IndexNow einrichten** (~2 h, 0 €). Ohne GSC steuern wir blind,
    ohne Bing sind wir für ChatGPT unsichtbar.
 4. **`@vercel/speed-insights`** — ohne Felddaten ist jede CWV-Aussage Spekulation.
