@@ -1,14 +1,9 @@
 import Link from "next/link";
 
-export const metadata = {
-  title: "Seite nicht gefunden — MyImmo",
-  robots: { index: false, follow: false },
-};
-
-// Gebrandete 404 im MyImmo-Stil statt der ungestylten Next.js-Standardseite.
-// Bewusst ohne Sidebar/Layout-Annahmen: not-found rendert nur im Root-Layout,
-// also selbsttragend und für ein- wie ausgeloggte Besucher gleich.
-export default function NotFound() {
+// Gemeinsame 404-Darstellung fuer beide Root-Layouts (App und oeffentliche
+// Strecke). Selbsttragend, ohne Sidebar-Annahmen — fuer ein- wie ausgeloggte
+// Besucher gleich.
+export default function NichtGefunden() {
   return (
     <div style={{ minHeight: "70vh", display: "grid", placeItems: "center", padding: "40px 20px" }}>
       <div style={{ maxWidth: 460, width: "100%", textAlign: "center" }}>

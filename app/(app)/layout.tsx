@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import "./globals.css";
+import "../globals.css";
 import { Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
 import { ladeNeuigkeiten } from "@/lib/neuigkeiten";
@@ -67,8 +67,12 @@ export default async function RootLayout({
   // Mieterportal (eigene, schlanke Shell) — nicht in der Vermieter-App.
   const pathname = headers().get("x-pathname") ?? "";
   const rolle = await getRolle(supabase, user.id);
-  const istOeffentlicheSeite = ["/impressum", "/datenschutz", "/agb", "/avv", "/bewerben", "/beleihung", "/auftrag"].some(
-    (p) => pathname.startsWith(p)
+  // Rechtstexte (/impressum, /datenschutz, /agb, /avv) laufen seit dem
+  // Layout-Split ueber app/(pub)/ und kommen hier gar nicht mehr an. Uebrig
+  // bleiben die Token-Seiten, die eine Datenbank brauchen und darum in der
+  // App-Strecke bleiben muessen.
+  const istOeffentlicheSeite = ["/bewerben", "/beleihung", "/auftrag"].some((p) =>
+    pathname.startsWith(p)
   );
 
   // Freischaltungs-Gate: neu registrierte Konten (auch via Google) müssen

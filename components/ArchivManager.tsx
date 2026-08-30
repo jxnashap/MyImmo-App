@@ -6,7 +6,7 @@ import { Building2, User, Tag, X, Download, Eye, FileText, Image as ImageIcon, P
 import Select from "@/components/filters/Select";
 import RowDialog from "@/components/RowDialog";
 import { createDokument, updateDokument, deleteDokument } from "@/lib/actions/archiv";
-import type { ArchivDoc } from "@/app/archiv/page";
+import type { ArchivDoc } from "@/app/(app)/archiv/page";
 import type { Property, Tenant } from "@/lib/types";
 
 export const ARCHIV_ARTEN = [

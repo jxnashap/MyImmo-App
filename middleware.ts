@@ -149,5 +149,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Die rein oeffentliche Strecke (app/(pub)/…) ist bewusst ausgenommen: dort
+  // laeuft weder die Session-Auffrischung noch die Nonce-CSP. Nur so bleiben
+  // diese Seiten statisch und am Edge cachebar. Ihre Security-Header setzt
+  // stattdessen next.config.mjs — beide Listen muessen zusammen gepflegt
+  // werden (Kommentar dort).
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.ico|theme\\.js|(?:funktionen|ratgeber|vision|preise|vorlagen|agb|avv|datenschutz|impressum)(?:/|$)).*)",
+  ],
 };
