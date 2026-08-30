@@ -134,10 +134,10 @@ export default function KalkImport({
             style={{ resize: "vertical", width: "100%" }}
           />
 
-          {error && <div style={{ marginTop: 8, fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
+          {error && <div role="alert" style={{ marginTop: 8, fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
 
           {hinweis && (
-            <div
+            <div role="status"
               style={{
                 marginTop: 10,
                 display: "flex",

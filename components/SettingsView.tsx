@@ -785,7 +785,7 @@ function DangerZone() {
                 <input className="set-input" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="LÖSCHEN" autoFocus />
               </label>
               {loeschFehler && (
-                <p style={{ fontSize: 13, color: "var(--red)", lineHeight: 1.6, marginBottom: 14 }}>
+                <p role="alert" style={{ fontSize: 13, color: "var(--red)", lineHeight: 1.6, marginBottom: 14 }}>
                   {loeschFehler}
                 </p>
               )}

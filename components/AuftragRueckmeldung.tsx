@@ -123,7 +123,7 @@ export default function AuftragRueckmeldung({ token }: { token: string }) {
           <textarea rows={3} value={nachricht} onChange={(e) => setNachricht(e.target.value)} placeholder="optional" />
         </div>
 
-        {fehler && <p style={{ margin: 0, fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+        {fehler && <p role="alert" style={{ margin: 0, fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
 
         <button type="submit" className="btn btn-gold" disabled={laeuft} style={{ justifySelf: "start" }}>
           {laeuft ? "Wird gesendet…" : "Rückmeldung senden"}

@@ -176,7 +176,7 @@ function Eintrag({ a, firmen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[] 
                   </p>
                 </>
               )}
-              {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+              {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
               <div style={{ display: "flex", gap: 8 }}>
                 <button type="button" className="btn btn-gold" disabled={pending} onClick={() => senden(aktion)}>
                   {pending ? "…" : aktion === "angenommen" ? "Annahme senden" : aktion === "erledigt" ? "Als erledigt melden" : "Ablehnung senden"}
@@ -266,7 +266,7 @@ function AntragForm({ auftraggeber, firmen }: { auftraggeber: AuftraggeberRow[];
             <div className="form-row single">
               <div className="form-group"><label>Beschreibung</label><textarea name="beschreibung" rows={3} maxLength={2000} placeholder="Problem, Dringlichkeit, betroffener Mieter …" /></div>
             </div>
-            {fehler && <p style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
+            {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
             <div><button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "…" : "Antrag an den Vermieter senden"}</button></div>
           </form>
         )}

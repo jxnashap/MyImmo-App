@@ -65,7 +65,7 @@ export default function FreischaltForm({ email }: { email?: string | null }) {
             </span>
           </label>
           {fehler && (
-            <div className="rounded-sm px-3 py-2 text-[13px]" style={{ background: "var(--red-dim)", color: "var(--red)" }}>
+            <div role="alert" className="rounded-sm px-3 py-2 text-[13px]" style={{ background: "var(--red-dim)", color: "var(--red)" }}>
               {fehler}
             </div>
           )}

@@ -112,8 +112,8 @@ export default function MarktwertEinschaetzungen({
           <button type="button" className="btn btn-gold" onClick={speichern} disabled={busy || !objId || num(wert) <= 0}>
             <Save size={14} /> {busy ? "Speichert …" : "Einschätzung speichern"}
           </button>
-          {fehler && <span style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</span>}
-          {hinweis && !fehler && <span style={{ fontSize: 12, color: "var(--green)" }}>{hinweis}</span>}
+          {fehler && <span role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</span>}
+          {hinweis && !fehler && <span role="status" style={{ fontSize: 12, color: "var(--green)" }}>{hinweis}</span>}
         </div>
       </div>
 

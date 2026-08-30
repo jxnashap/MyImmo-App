@@ -192,7 +192,7 @@ export default function KontoVerwaltung({
                 <input style={feld} value={bestaetigung} onChange={(e) => setBestaetigung(e.target.value)} placeholder="LÖSCHEN" autoFocus />
               </label>
               {loeschFehler && (
-                <p style={{ fontSize: 13, color: "var(--red)", lineHeight: 1.6, marginBottom: 14 }}>{loeschFehler}</p>
+                <p role="alert" style={{ fontSize: 13, color: "var(--red)", lineHeight: 1.6, marginBottom: 14 }}>{loeschFehler}</p>
               )}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setOffen(false)}>Abbrechen</button>

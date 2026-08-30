@@ -434,7 +434,7 @@ export default function LoginPage() {
           )}
 
           {error && (
-            <div
+            <div role="alert"
               className="rounded-sm px-3 py-2 text-[13px]"
               style={{ background: "var(--red-dim)", color: "var(--red)" }}
             >

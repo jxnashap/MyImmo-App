@@ -19,6 +19,35 @@ export function useToast(): ToastFn {
 
 let counter = 0;
 
+// Eine Zeile — beide Live-Bereiche (assertive/polite) rendern dieselbe.
+function ToastZeile({ t, remove }: { t: ToastItem; remove: (id: number) => void }) {
+  return (
+    <div className={`toast toast-${t.type}`}>
+      <span className="toast-icon" aria-hidden>
+        {t.type === "success" ? "✓" : t.type === "error" ? <TriangleAlert size={13} /> : <Info size={13} />}
+      </span>
+      <span>{t.msg}</span>
+      <div className="toast-actions">
+        {t.onUndo ? (
+          <button
+            type="button"
+            className="toast-action"
+            onClick={() => {
+              t.onUndo?.();
+              remove(t.id);
+            }}
+          >
+            Rückgängig
+          </button>
+        ) : null}
+        <button type="button" className="toast-close" aria-label="Schließen" onClick={() => remove(t.id)}>
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
 
@@ -39,32 +68,32 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastCtx.Provider value={toast}>
       {children}
-      <div className="toast-viewport" aria-live="polite" aria-atomic="false" role="status">
-        {items.map((t) => (
-          <div key={t.id} className={`toast toast-${t.type}`}>
-            <span className="toast-icon" aria-hidden>
-              {t.type === "success" ? "✓" : t.type === "error" ? <TriangleAlert size={13} /> : <Info size={13} />}
-            </span>
-            <span>{t.msg}</span>
-            <div className="toast-actions">
-              {t.onUndo ? (
-                <button
-                  type="button"
-                  className="toast-action"
-                  onClick={() => {
-                    t.onUndo?.();
-                    remove(t.id);
-                  }}
-                >
-                  Rückgängig
-                </button>
-              ) : null}
-              <button type="button" className="toast-close" aria-label="Schließen" onClick={() => remove(t.id)}>
-                <X size={14} />
-              </button>
-            </div>
-          </div>
-        ))}
+      {/* ZWEI Bereiche, nicht einer: Fehler muessen den Screenreader
+          unterbrechen (assertive), Erfolg und Hinweis duerfen warten, bis der
+          Vorleser fertig ist (polite). Lagen sie zusammen in einem
+          polite-Bereich, kam die Fehlermeldung unter Umstaenden erst, nachdem
+          der Toast schon wieder weg war. Beide Bereiche liegen uebereinander
+          im selben Streifen — optisch aendert sich nichts. */}
+      <div className="toast-viewport">
+        {/* Ein sichtbarer Streifen, darin ZWEI Live-Bereiche: Fehler
+            unterbrechen den Screenreader (assertive), Erfolg und Hinweis
+            warten, bis er ausgeredet hat (polite). Vorher lag beides in einem
+            polite-Bereich — eine Fehlermeldung konnte damit erst angesagt
+            werden, wenn der Toast optisch schon wieder weg war.
+            Zwei eigene .toast-viewport waeren beide position:fixed gewesen und
+            haetten sich uebereinandergelegt; deshalb der gemeinsame Rahmen.
+            Beide Bereiche bleiben IMMER im DOM, auch leer — ein Live-Bereich,
+            der erst mit seinem Inhalt entsteht, wird nicht angesagt. */}
+        <div className="toast-stapel" aria-live="assertive" aria-atomic="false" role="alert">
+          {items.filter((t) => t.type === "error").map((t) => (
+            <ToastZeile key={t.id} t={t} remove={remove} />
+          ))}
+        </div>
+        <div className="toast-stapel" aria-live="polite" aria-atomic="false" role="status">
+          {items.filter((t) => t.type !== "error").map((t) => (
+            <ToastZeile key={t.id} t={t} remove={remove} />
+          ))}
+        </div>
       </div>
     </ToastCtx.Provider>
   );

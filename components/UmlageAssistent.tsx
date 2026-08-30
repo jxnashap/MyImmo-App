@@ -401,7 +401,7 @@ export default function UmlageAssistent({
             </span>
           </div>
           {ocrError && (
-            <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+            <div role="alert" style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
               <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {ocrError}
             </div>
           )}

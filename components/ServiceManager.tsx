@@ -90,7 +90,7 @@ function KostenUebernahme({ a }: { a: AuftragRow }) {
       <button type="submit" className="btn btn-gold" disabled={pending} style={{ fontSize: 12 }}>
         {pending ? "…" : "Als Kosten übernehmen"}
       </button>
-      {fehler && <span style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</span>}
+      {fehler && <span role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</span>}
     </form>
   );
 }
@@ -124,7 +124,7 @@ function CodeSektion({ codes }: { codes: ServiceCodeRow[] }) {
           Gib den Code an deinen Handwerker/Hausmeister — er registriert sich damit unter
           „Service / Hausmeister" und ist dann mit dir verknüpft. Jeder Code gilt einmalig, 14 Tage.
         </p>
-        {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+        {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
         {alle.map((c) => (
           <div key={c.code} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "8px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>
             <code style={{ fontWeight: 700, letterSpacing: "0.06em" }}>{c.code}</code>
@@ -190,7 +190,7 @@ function FirmenSektion({ firmen }: { firmen: FirmaRow[] }) {
               <div className="form-group"><label>Website</label><input name="website" maxLength={300} placeholder="www.beispiel.de" /></div>
               <div className="form-group"><label>Notiz</label><input name="notiz" maxLength={500} placeholder="z. B. Notdienst 24 h, Ansprechpartner Herr Kurt" /></div>
             </div>
-            {fehler && <p style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
+            {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
             <div><button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "…" : "Speichern"}</button></div>
           </form>
         )}
@@ -382,7 +382,7 @@ export default function ServiceManager({
                   </span>
                 </div>
               </div>
-              {fehler && <p style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
+              {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
               {ok && <p style={{ fontSize: 12, color: "var(--green)", margin: 0 }}>Auftrag gesendet ✓</p>}
               <div><button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "…" : "Auftrag senden"}</button></div>
             </form>

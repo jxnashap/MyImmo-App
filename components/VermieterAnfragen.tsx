@@ -154,7 +154,7 @@ export default function VermieterAnfragen({
                     <input name="faelligBis" type="date" className="input" />
                   </div>
                 </div>
-                {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+                {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
                 <div style={{ display: "flex", gap: 8 }}>
                   <button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "…" : "Anfrage senden"}</button>
                   <button type="button" className="btn btn-ghost" onClick={() => setOffenForm(false)}>Abbrechen</button>

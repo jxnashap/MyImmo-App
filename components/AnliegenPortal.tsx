@@ -68,7 +68,7 @@ function TerminWahl({ a }: { a: AnliegenRow }) {
           </button>
         ))}
       </div>
-      {fehler && <p style={{ fontSize: 12, color: "var(--red)", marginTop: 6 }}>{fehler}</p>}
+      {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", marginTop: 6 }}>{fehler}</p>}
       <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 8, marginBottom: 0 }}>
         Passt keiner? Antworte deinem Vermieter über ein neues Anliegen oder telefonisch.
       </p>
@@ -188,7 +188,7 @@ export default function AnliegenPortal({
                 </p>
               )}
             </div>
-            {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+            {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
             <div style={{ display: "flex", gap: 8 }}>
               <button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "Wird gesendet …" : "Absenden"}</button>
               <button type="button" className="btn btn-ghost" onClick={() => setOffenForm(false)}>Abbrechen</button>

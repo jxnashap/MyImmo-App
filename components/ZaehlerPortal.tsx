@@ -84,7 +84,7 @@ export default function ZaehlerPortal({ meldungen }: { meldungen: ZaehlerMeldung
               </div>
             </div>
             <textarea name="notiz" rows={2} maxLength={500} className="input" placeholder="Anmerkung (optional)" />
-            {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+            {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
             <div style={{ display: "flex", gap: 8 }}>
               <button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "Wird gesendet …" : "Melden"}</button>
               <button type="button" className="btn btn-ghost" onClick={() => setOffenForm(false)}>Abbrechen</button>

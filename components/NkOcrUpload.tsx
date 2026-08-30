@@ -152,7 +152,7 @@ export default function NkOcrUpload({
           bitte alle erkannten Beträge vor der Übernahme prüfen.
         </p>
 
-        {error && <div style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
+        {error && <div role="alert" style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
 
         {abgleich && (
           <div style={{ marginTop: 14 }}>

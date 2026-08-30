@@ -90,7 +90,7 @@ export default function DokumenteAnfrage({ anfragen }: { anfragen: AnliegenRow[]
                 value={notiz}
                 onChange={(e) => setNotiz(e.target.value)}
               />
-              {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+              {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   type="button"
