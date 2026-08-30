@@ -192,7 +192,7 @@ export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }:
                     <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>
                       Datum
                       <input type="date" value={d.datum ?? ""} onChange={(e) => onDatum(item, e.target.value)}
-                        style={{ padding: "4px 7px", borderRadius: 7, border: "1px solid var(--line2)", background: "var(--bg3)", fontSize: 11.5, color: "var(--text)" }} />
+                        style={{ padding: "4px 7px", borderRadius: 7, border: "1px solid var(--feld-rand)", background: "var(--bg3)", fontSize: 11.5, color: "var(--text)" }} />
                     </label>
                   </div>
                 </div>

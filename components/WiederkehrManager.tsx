@@ -126,7 +126,7 @@ export default function WiederkehrManager({
   };
 
   const inputStil: React.CSSProperties = {
-    background: "var(--bg3)", border: "1px solid var(--line2)", color: "var(--text)",
+    background: "var(--bg3)", border: "1px solid var(--feld-rand)", color: "var(--text)",
     borderRadius: 7, padding: "8px 10px", fontSize: 13, width: "100%",
   };
   const feld = (breite: number | string): React.CSSProperties => ({
