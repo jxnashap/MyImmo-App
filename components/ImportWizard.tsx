@@ -145,7 +145,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
             style={{ opacity: loading !== null || text.trim().length < 30 ? 0.6 : 1 }}>
             {loading === "text" ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> KI analysiert…</> : <><Bot size={14} style={{ verticalAlign: "-2px" }} /> Text auslesen</>}
           </button>
-          {error && <div style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
+          {error && <div role="alert" style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
           {konfidenz != null && (
             <div style={{ marginTop: 10, fontSize: 12, color: konfColor }}><CheckCircle2 size={12} style={{ verticalAlign: "-2px" }} /> Daten erkannt — Konfidenz {konfidenz}%. Bitte unten prüfen und speichern.</div>
           )}

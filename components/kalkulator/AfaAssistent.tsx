@@ -174,7 +174,7 @@ export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
                     <Save size={13} style={{ verticalAlign: "-2px" }} /> Gebäudeanteil ({aufteilung.gebaeudeanteilProzent.toLocaleString("de-DE")} %) am Objekt speichern
                   </button>
                   {gespeichertFuer === objektId && <span style={{ fontSize: 11.5, color: "var(--green)" }}>Gespeichert ✓</span>}
-                  {speicherFehler && <span style={{ fontSize: 11.5, color: "var(--red)" }}>{speicherFehler}</span>}
+                  {speicherFehler && <span role="alert" style={{ fontSize: 11.5, color: "var(--red)" }}>{speicherFehler}</span>}
                 </div>
               )}
             </>

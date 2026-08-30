@@ -357,7 +357,7 @@ export default function BewerbungenManager({
             </div>
             <button type="submit" className="btn btn-gold" disabled={pending}>Link erstellen</button>
           </form>
-          {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+          {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
           {links.length === 0 ? (
             <p style={{ fontSize: 12, color: "var(--faint)", marginTop: 8 }}>
               Noch keine Links — erstelle einen Link je Objekt und teile ihn im Inserat

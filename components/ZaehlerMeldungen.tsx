@@ -46,8 +46,8 @@ export default function ZaehlerMeldungen({ rows }: { rows: ZaehlerMeldungVermiet
         {offene.length > 0 && <span className="badge badge-amber">{offene.length} neu</span>}
       </div>
       <div className="section-body">
-        {fehler && <p style={{ fontSize: 12, color: "var(--red)", marginBottom: 8 }}>{fehler}</p>}
-        {hinweis && <p style={{ fontSize: 12, color: "var(--blue)", marginBottom: 8 }}>{hinweis}</p>}
+        {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", marginBottom: 8 }}>{fehler}</p>}
+        {hinweis && <p role="status" style={{ fontSize: 12, color: "var(--blue)", marginBottom: 8 }}>{hinweis}</p>}
         {rows.map((m) => (
           <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "9px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>
             <span style={{ fontWeight: 600 }}>{m.art}</span>

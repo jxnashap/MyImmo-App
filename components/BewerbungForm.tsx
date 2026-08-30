@@ -249,7 +249,7 @@ export default function BewerbungForm({
               <DateiZeilen slot={SLOT_SONSTIGES} />
             </ul>
           )}
-          {dateiFehler && <p style={{ fontSize: 12, color: "var(--red)", margin: "4px 0 0" }}>{dateiFehler}</p>}
+          {dateiFehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: "4px 0 0" }}>{dateiFehler}</p>}
         </div>
 
         <div className="form-group">
@@ -262,7 +262,7 @@ export default function BewerbungForm({
           und verarbeitet werden (Art. 6 Abs. 1 lit. a/b DSGVO). Kommt kein Mietvertrag zustande,
           werden deine Daten wieder gelöscht; du kannst die Löschung jederzeit verlangen.
         </p>
-        {fehler && <p style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
+        {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
         <div>
           <button type="submit" className="btn btn-gold" disabled={pending}>
             {pending ? (uploadStand ?? "Wird gesendet …") : "Bewerbung absenden"}
