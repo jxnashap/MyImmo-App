@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg12" cx="50%" cy="42%" r="80%">
+      <stop offset="0%"   stop-color="#2B2B30"/>
+      <stop offset="55%"  stop-color="#17171A"/>
+      <stop offset="100%" stop-color="#0A0A0C"/>
+    </radialGradient>
+    <linearGradient id="au12" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F0CE72"/><stop offset="52%" stop-color="#D4A847"/>
+      <stop offset="100%" stop-color="#9E7207"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg12)"/>
+  <defs>
+    <filter id="gl12" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="40" result="w"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="14" result="m"/>
+      <feMerge><feMergeNode in="w"/><feMergeNode in="w"/><feMergeNode in="m"/>
+               <feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g stroke="#D4A847" stroke-opacity="0.05" stroke-width="1" fill="none"><path d="M0,0 V1024M0,0 H1024"/><path d="M64,0 V1024M0,64 H1024"/><path d="M128,0 V1024M0,128 H1024"/><path d="M192,0 V1024M0,192 H1024"/><path d="M256,0 V1024M0,256 H1024"/><path d="M320,0 V1024M0,320 H1024"/><path d="M384,0 V1024M0,384 H1024"/><path d="M448,0 V1024M0,448 H1024"/><path d="M512,0 V1024M0,512 H1024"/><path d="M576,0 V1024M0,576 H1024"/><path d="M640,0 V1024M0,640 H1024"/><path d="M704,0 V1024M0,704 H1024"/><path d="M768,0 V1024M0,768 H1024"/><path d="M832,0 V1024M0,832 H1024"/><path d="M896,0 V1024M0,896 H1024"/><path d="M960,0 V1024M0,960 H1024"/><path d="M1024,0 V1024M0,1024 H1024"/></g>
+  <path d="M244,762 V438 L376,306 L512,438 L648,306 L780,438 V762" fill="none" stroke="#D4A847" stroke-width="72" stroke-opacity="0.150" stroke-linejoin="round" stroke-linecap="round" filter="url(#gl12)"/><path d="M244,762 V438 L376,306 L512,438 L648,306 L780,438 V762" fill="none" stroke="#D4A847" stroke-width="40" stroke-opacity="0.500" stroke-linejoin="round" stroke-linecap="round"/><path d="M244,762 V438 L376,306 L512,438 L648,306 L780,438 V762" fill="none" stroke="#D4A847" stroke-width="30" stroke-linejoin="round" stroke-linecap="round"/><path d="M244,762 V438 L376,306 L512,438 L648,306 L780,438 V762" fill="none" stroke="#FBE6A8" stroke-width="9" stroke-opacity="0.95" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M512,438 V762" fill="none" stroke="#D4A847" stroke-width="58" stroke-opacity="0.128" stroke-linejoin="round" stroke-linecap="round" filter="url(#gl12)"/><path d="M512,438 V762" fill="none" stroke="#D4A847" stroke-width="32" stroke-opacity="0.425" stroke-linejoin="round" stroke-linecap="round"/><path d="M512,438 V762" fill="none" stroke="#D4A847" stroke-width="24" stroke-linejoin="round" stroke-linecap="round"/><path d="M512,438 V762" fill="none" stroke="#FBE6A8" stroke-width="7" stroke-opacity="0.95" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

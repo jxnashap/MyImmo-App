@@ -130,3 +130,39 @@ steht. Als Icon kann das reizvoll sein — ein Kontrast zur ruhigen App —, es
 sollte aber eine bewusste Entscheidung sein, kein Versehen.
 
 Neu erzeugen: `python3 icons-neon-bauen.py`
+
+---
+
+# Nachtrag: „MY" im Haus (Entwürfe 9–12), Graphitgrund
+
+Grund ist jetzt Graphit statt Schwarz: Anthrazit in der Mitte, fast Schwarz zum
+Rand. Das gibt dem Gold Tiefe, ohne dass die Kachel schwer wirkt.
+
+## Der Kniff
+
+Ein M besteht aus zwei Giebeln mit einem Tal dazwischen. **Dieses Tal ist
+bereits das V eines Y — es fehlt nur der Stamm.** Ein einziger senkrechter
+Strich vom Tal zum Boden macht aus dem M ein MY. Zwei Buchstaben, eine
+Zeichnung, und beide sind gleichzeitig das Haus.
+
+| | Entwurf | Lesart |
+|---|---|---|
+| 9 | **MY-Ligatur** | M ist der Giebel, der Stamm macht daraus das Y |
+| 10 | **MY ausgespart** | Massiver Giebel, Buchstaben als Negativraum |
+| 11 | **Y trägt das Haus** | Hauskontur mit Doppelgiebel, das Y als Stütze und Tür |
+| 12 | **Neon-Ligatur** | Entwurf 9 als Leuchtröhre |
+
+## Warum das die bessere Lösung ist als das alte Logo
+
+Apple untersagt **Wörter** im Icon, nicht Buchstaben eines Logotypes. Das alte
+`myimmo_logo_2048.png` trägt „My Immo" als Wortmarke — zwei Zeilen Serifenschrift,
+die unterhalb von etwa 120 px zu einem Fleck zerfallen. „MY" als
+Zwei-Zeichen-Monogramm bleibt bis 58 px lesbar und ist als Logotype zulässig.
+
+## Nach dem Test überarbeitet
+
+**10** las sich zuerst als Schild mit Deckel: Das Dach war zu flach, die
+Buchstaben zu groß. Dach steiler, Wand höher, Schriftgrad kleiner — jetzt trägt
+das Haus die Buchstaben und nicht umgekehrt.
+
+Neu erzeugen: `python3 icons-my-bauen.py`
