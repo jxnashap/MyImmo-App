@@ -83,3 +83,50 @@ Neu erzeugen: `python3 icons-bauen.py`, dann die SVG mit einem Browser auf
 vorgerundeten Ecken. Apple lehnt App-Icons mit Alphakanal ab. Zusätzlich
 zerfällt das Wortzeichen „My Immo" unterhalb von etwa 120 px zu einem Fleck.
 Als Logo für Website und Dokumente bleibt es gültig; als App-Icon nicht.
+
+---
+
+# Nachtrag: Neon-Serie (Entwürfe 5–8)
+
+Auf Wunsch deutlich komplexer und leuchtend. Die Dichte entsteht **programmatisch**
+— Raster, Fenster, Ringe, Fluchtlinien werden gerechnet, nicht von Hand gestreut.
+Jede Leuchtröhre besteht aus vier Lagen: weiter Halo, mittlerer Schein, Körper,
+heißer Kern.
+
+| | Entwurf | Dichte |
+|---|---|---|
+| 5 | **Neon-Giebel im Raster** | Messgitter aus 64 Linien, Knotenpunkte, Horizontlinie |
+| 6 | **Datenstadt** | Neun Baukörper, über 200 einzeln beleuchtete Fenster, Bodenreflex |
+| 7 | **Isometrisches Drahtgitter** | Fluchtlinien-Boden, Horizontband, Haus als Drahtmodell |
+| 8 | **Strahlenkranz** | 32 konzentrische Ringe, 72 Strahlen, Licht durch das Schloss |
+
+## Der Zielkonflikt, offen benannt
+
+Apple verlangt ein Icon, das bei 29 pt noch erkennbar ist. Neon und Dichte
+arbeiten dagegen: Was bei 1024 px als feines Gitter fasziniert, ist bei 40 px
+ein grauer Schleier. Die harten Ablehnungskriterien sind eingehalten — kein
+Alphakanal, keine vorgerundeten Ecken, keine Schrift, 1024 × 1024. Die
+Empfehlung „so einfach wie möglich" ist bewusst gedehnt.
+
+Gemessene Kantenenergie nach Verkleinerung auf 40 px (höher = mehr erkennbare
+Struktur): Strahlenkranz 23,9 · Datenstadt 20,2 · Neon-Raster 16,9 ·
+Drahtgitter 16,6.
+
+## Nach dem ersten Test überarbeitet
+
+- **5**: Die Lichtschächte über den Firsten liefen in den Bereich, den iOS
+  wegschneidet, und lasen sich klein als Antennen. Gestrichen.
+- **7**: Die Dachfläche dominierte, die Wände waren dünne Linien — bei 40 px
+  eine Raute statt eines Hauses. Dach und Wände erhöht, Wände als eigene Röhre,
+  Boden zurückgenommen.
+- **8**: Ringe und Strahlen waren zu schwach, die Dichte war nicht zu sehen.
+  Deckkraft angehoben.
+
+## Weiterer Vorbehalt
+
+Für die App-Oberfläche wurde bewusst **Fintech-hell** gewählt (siehe CLAUDE.md).
+Ein Neon-Icon setzt einen dunklen, technischen Ton, der dazu im Widerspruch
+steht. Als Icon kann das reizvoll sein — ein Kontrast zur ruhigen App —, es
+sollte aber eine bewusste Entscheidung sein, kein Versehen.
+
+Neu erzeugen: `python3 icons-neon-bauen.py`
