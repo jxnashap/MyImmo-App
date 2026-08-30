@@ -62,6 +62,20 @@ wurden per Migration `20260829120000` gedroppt. Wieder aufbauen, sobald das Prod
 (dann als bezahltes Add-on über einen lizenzierten AISP wie Enable Banking).
 
 ### Sonstiges (kein Geld)
+- **Demo-Konto ist seit 30.08.2026 NUR-LESEN.** Vorgabe des Betreibers: Schaustück, kein
+  Sandkasten. Drei Ebenen, alle drei nötig (Begründung in `lib/demo.ts`):
+  (1) **Datenbank** — restriktive RLS-Policies verweigern dem Demo-Konto jedes
+  INSERT/UPDATE/DELETE (Migration `20260830150000_demo_nur_lesen.sql`, Funktion
+  `public.ist_demo_nutzer()`). (2) **Routen** — `demoDarfRoute` sperrt NK-Rechner,
+  Protokoll, alle Bearbeiten-Formulare und **alle API-Routen außer `/api/demo`**;
+  die Middleware weist jetzt jede Methode ab, nicht nur GET. (3) **Oberfläche** —
+  `components/DemoNurLesen.tsx` macht Felder schreibgeschützt und Speichern-Knöpfe inaktiv.
+  **Warum Ebene 3 trotz Ebene 1 nötig ist:** Ein per RLS blockiertes UPDATE/DELETE wirft
+  KEINEN Fehler, es trifft null Zeilen — der Besucher hielte Ungespeichertes für gespeichert.
+  **Einzige Ausnahme:** das Mieterhöhungs-Dokument samt PDF (`data-demo-erlaubt` im
+  `DocGenerator`) — gespeichert wird dabei nichts.
+  **Beim Anlegen einer neuen Tabelle** greifen die Policies NICHT automatisch; die Migration
+  dann erneut ausführen (sie ist idempotent).
 - **ZURÜCKGESTELLT (30.08.2026, Entscheidung des Nutzers): Namentliche Autorenschaft der
   Ratgeber.** Im Article-Markup steht derzeit `author: Organization "MyImmo"` — bei
   Steuer- und Mietrechtsthemen (YMYL) das schwächste denkbare Vertrauenssignal und die

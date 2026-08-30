@@ -116,15 +116,33 @@ export async function middleware(request: NextRequest) {
 
   // Demo-Konto: nur der freigegebene Ausschnitt. Die Seitenleiste graut den
   // Rest zwar aus, aber wer die Adresse kennt, tippt sie ein — deshalb hier
-  // serverseitig abweisen. Nur GET: ein POST auf eine gesperrte Server-Action
-  // hat ohnehin keine Oberfläche, über die er erreichbar wäre.
-  if (
-    user &&
-    istDemoKonto(user.email) &&
-    request.method === "GET" &&
-    !istOeffentlich &&
-    !demoDarfRoute(pathname)
-  ) {
+  // serverseitig abweisen.
+  //
+  // `istOeffentlich` zaehlt ALLE `/api/`-Routen mit, weil sie ihre Auth selbst
+  // pruefen. Fuer die Demo-Sperre darf das nicht gelten: sonst laeuft die
+  // Pruefung an genau den Routen vorbei, die Geld kosten (`/api/nk-ocr`,
+  // `/api/import-url` rufen Anthropic auf). Die Auswahl der erlaubten
+  // API-Routen trifft `demoDarfRoute`.
+  const oeffentlichFuerDemo = istOeffentlich && !pathname.startsWith("/api/");
+  if (user && istDemoKonto(user.email) && !oeffentlichFuerDemo && !demoDarfRoute(pathname)) {
+    // Frueher galt die Sperre nur fuer GET — die teuren Routen sind aber POST.
+    // Jetzt gilt sie fuer jede Methode.
+    //
+    // Bei einem Schreibzugriff ist eine Weiterleitung die falsche Antwort — ein
+    // fetch() bekaeme eine HTML-Seite mit Status 200 zurueck und haelt das fuer
+    // Erfolg. Deshalb hier ein klares 403 mit Begruendung.
+    if (request.method !== "GET") {
+      const abgelehnt = NextResponse.json(
+        { fehler: "In der Demo nicht verfügbar. Nach der Anmeldung steht die Funktion bereit." },
+        { status: 403 },
+      );
+      abgelehnt.headers.set(
+        CSP_REPORT_ONLY ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
+        csp,
+      );
+      abgelehnt.headers.set("X-Content-Type-Options", "nosniff");
+      return abgelehnt;
+    }
     const ziel = new URL("/?demo=gesperrt", request.url);
     const gesperrt = NextResponse.redirect(ziel);
     gesperrt.headers.set(
