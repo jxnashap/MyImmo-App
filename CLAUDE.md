@@ -62,6 +62,25 @@ wurden per Migration `20260829120000` gedroppt. Wieder aufbauen, sobald das Prod
 (dann als bezahltes Add-on über einen lizenzierten AISP wie Enable Banking).
 
 ### Sonstiges (kein Geld)
+- **ZURÜCKGESTELLT (30.08.2026, Entscheidung des Nutzers): Namentliche Autorenschaft der
+  Ratgeber.** Im Article-Markup steht derzeit `author: Organization "MyImmo"` — bei
+  Steuer- und Mietrechtsthemen (YMYL) das schwächste denkbare Vertrauenssignal und die
+  größte verbliebene E-E-A-T-Lücke (Details: `docs/SEO.md`, Punkt 5).
+  Umsetzung wäre: sichtbare Autorenzeile · `author: Person` mit Verweis auf eine
+  Autorenseite · Autorenseite mit `ProfilePage`-Markup (wer, warum qualifiziert, seit wann,
+  erreichbar). Qualifikation hier nicht akademisch, sondern praktisch: selbst Vermieter,
+  hat die Software für den eigenen Bedarf gebaut.
+  **Vor der Umsetzung zwingend zu klären — nicht überspringen:** Wer die Artikel
+  namentlich zeichnet, behauptet, sie geschrieben oder inhaltlich verantwortet zu haben.
+  Die 19 Ratgeber sind KI-gestützt entstanden. Solange nicht geklärt ist, dass der Namens-
+  geber sie fachlich geprüft hat, ist die Zeile eine Falschangabe — ausgerechnet dort, wo
+  Vertrauen der ganze Zweck ist. Ehrlicher Mittelweg, falls das zu weit geht:
+  „Fachlich geprüft von …" statt „Von …".
+  Weitere Risiken: Name dauerhaft öffentlich und indexiert unter Steueraussagen (die
+  Anschrift steht als Einzelunternehmer ohnehin im Impressum, die Zusatzpreisgabe ist also
+  kleiner als sie wirkt); namentliche Zeichnung liest sich näher an Beratung → läuft auf
+  der StBerG-Anwaltsliste mit. Und: E-E-A-T ist kein schaltbares Ranking-Signal, das hier
+  beseitigt eine bekannte Schwäche, es garantiert keine Platzierung.
 - ~~**Mindest-Passwortlänge in Supabase auf 8 setzen**~~ ✅ **erledigt 30.08.2026** (vom Nutzer
   im Dashboard umgestellt). App und Supabase verlangen jetzt beide 8 Zeichen; vorher griff nur
   die App-Prüfung (`lib/passwort.ts`), wer die Auth-API direkt ansprach, kam mit 6 durch.

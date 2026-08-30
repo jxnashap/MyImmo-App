@@ -299,8 +299,10 @@ nicht. Google indexiert solche Seiten als Soft-404 und verbrennt Crawl-Budget.
    zu jung für belastbare CWV-Aussagen.
 
 **Kurzfristig (YMYL/E-E-A-T)**
-5. Namentliche Autorenschaft + Autorenseite mit `ProfilePage`-Markup. ⏳ **offen** — braucht
-   die Entscheidung des Betreibers, ob sein Name öffentlich unter den Artikeln steht.
+5. Namentliche Autorenschaft + Autorenseite mit `ProfilePage`-Markup.
+   ⏸️ **ZURÜCKGESTELLT (30.08.2026, Entscheidung des Betreibers)** — Begründung, Risiken und
+   die vorab zu klärende Frage (wer hat die Artikel tatsächlich verantwortet?) stehen in
+   `CLAUDE.md` unter „Sonstiges". Bleibt damit die größte offene E-E-A-T-Lücke.
 6. ~~`dateModified` ergänzen, Rechtsstand sichtbar je Artikel~~ ✅ **erledigt 30.08.2026.**
    Siehe Abschnitt 8 — mit einer Einschränkung, die man kennen muss.
 7. ~~`BreadcrumbList`-JSON-LD~~ ✅ **erledigt 30.08.2026** — auf `/ratgeber/<slug>` und
