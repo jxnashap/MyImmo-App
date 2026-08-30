@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" shape-rendering="geometricPrecision">
+  <defs>
+    <radialGradient id="g3" cx="50%" cy="38%" r="78%">
+      <stop offset="0%"  stop-color="#191712"/>
+      <stop offset="62%" stop-color="#101010"/>
+      <stop offset="100%" stop-color="#0B0B0A"/>
+    </radialGradient>
+    <linearGradient id="au3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#F2D583"/>
+      <stop offset="52%"  stop-color="#D4A847"/>
+      <stop offset="100%" stop-color="#A97A11"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#g3)"/>
+  <defs>
+    <linearGradient id="s3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8A6410"/><stop offset="100%" stop-color="#6B4C0B"/>
+    </linearGradient>
+  </defs>
+  <path d="M258,512 L390,610 V800 H126 V610 Z" fill="url(#s3)"/>
+  <path d="M766,512 L898,610 V800 H634 V610 Z" fill="url(#s3)"/>
+  <path d="M258,512 L390,610 V800 H126 V610 Z" fill="none" stroke="#0B0B0A" stroke-width="18"/><path d="M766,512 L898,610 V800 H634 V610 Z" fill="none" stroke="#0B0B0A" stroke-width="18"/>
+  <path d="M512,404 L670,546 V812 H354 V546 Z" fill="url(#au3)"/>
+  <path d="M512,404 L670,546 H354 Z" fill="#FFFFFF" fill-opacity="0.12"/>
+  <rect x="478" y="700" width="68" height="112" fill="#0B0B0A" fill-opacity="0.55"/>
+</svg>

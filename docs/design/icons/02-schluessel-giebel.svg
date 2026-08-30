@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" shape-rendering="geometricPrecision">
+  <defs>
+    <radialGradient id="g2" cx="50%" cy="38%" r="78%">
+      <stop offset="0%"  stop-color="#191712"/>
+      <stop offset="62%" stop-color="#101010"/>
+      <stop offset="100%" stop-color="#0B0B0A"/>
+    </radialGradient>
+    <linearGradient id="au2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#F2D583"/>
+      <stop offset="52%"  stop-color="#D4A847"/>
+      <stop offset="100%" stop-color="#A97A11"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#g2)"/>
+  <defs>
+    <mask id="m2">
+      <rect width="1024" height="1024" fill="#000"/>
+      <path d="M512,214 L818,462 V806 H206 V462 Z" fill="#fff"/>
+      <circle cx="512" cy="588" r="66" fill="#000"/>
+      <path d="M478,624 L546,624 L566,752 L458,752 Z" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#m2)">
+    <rect width="1024" height="1024" fill="url(#au2)"/>
+    <path d="M512,214 L818,462 H206 Z" fill="#FFFFFF" fill-opacity="0.13"/>
+  </g>
+  <path d="M512,214 L818,462 V806 H206 V462 Z" fill="none" stroke="#0B0B0A" stroke-opacity="0.35" stroke-width="2"/>
+</svg>
