@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg19" cx="46%" cy="36%" r="84%">
+      <stop offset="0%" stop-color="#26262B"/><stop offset="54%" stop-color="#141416"/>
+      <stop offset="100%" stop-color="#0A0A0B"/>
+    </radialGradient>
+    <linearGradient id="au19" gradientUnits="userSpaceOnUse" x1="180" y1="200" x2="850" y2="820">
+      <stop offset="0%" stop-color="#F2CB86"/><stop offset="46%" stop-color="#E2A94C"/>
+      <stop offset="100%" stop-color="#A87A2C"/>
+    </linearGradient>
+    <filter id="sch19" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+    <linearGradient id="bo19" gradientUnits="userSpaceOnUse" x1="120" y1="0" x2="904" y2="0">
+      <stop offset="0%" stop-color="#E2A94C" stop-opacity="0"/>
+      <stop offset="22%" stop-color="#E2A94C" stop-opacity="0.85"/>
+      <stop offset="78%" stop-color="#E2A94C" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#E2A94C" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg19)"/>
+  <defs><linearGradient id="auX" gradientUnits="userSpaceOnUse" x1="180" y1="200" x2="850" y2="820">
+    <stop offset="0%" stop-color="#F2CB86"/><stop offset="46%" stop-color="#E2A94C"/>
+    <stop offset="100%" stop-color="#A87A2C"/></linearGradient></defs>
+  <g filter="url(#sch19)" fill="none" stroke="url(#au19)" stroke-linejoin="miter"
+     stroke-miterlimit="8" stroke-linecap="butt">
+    <path d="M246,404.1 V306 H302 V341.5" stroke-width="22"/>
+    <path d="M634,562 H844 V802" stroke-width="24"/>
+    <path d="M684,624 H806 V744 H684 Z" stroke-width="16" stroke-opacity="0.7"/>
+    <path d="M150,802 H874" stroke="url(#bo19)" stroke-width="16"/>
+    <path d="M180,802 V478 L407.0,224 L634,478 V802" stroke-width="32"/>
+  </g>
+  <g filter="url(#sch19)"><text x="407" y="700" font-family="Liberation Serif, FreeSerif, Times New Roman, serif" font-size="186" text-anchor="middle" fill="url(#auX)">My</text></g>
+</svg>

@@ -208,3 +208,44 @@ Sockel direkt, statt über die Traufe zu gehen. Richtig ist
 `… L646,306 L780,444 V764`.
 
 Neu erzeugen: `python3 icons-relief-bauen.py && python3 rendern.py *.svg`
+
+---
+
+# Nachtrag: bestehendes Logo weitergebaut (Entwürfe 17–20)
+
+Nicht neu erfunden, sondern fortgeschrieben. Farben und Linienführung stammen
+aus `public/myimmo_logo_2048.png` — **gemessen, nicht nachempfunden**:
+Gold `#E2A94C`, Grund `#141416`. „Immo" entfällt, „My" bleibt als Logotype im
+Haus. Das Haus wird gebaut, statt nur gezeichnet.
+
+| | Entwurf | Was dazukommt |
+|---|---|---|
+| 17 | **Schornstein** | Schornstein auf der rechten Dachschräge, Grundlinie |
+| 18 | **Moderner Anbau** | Flachdach-Anbau rechts mit Band unter der Attika |
+| 19 | **Schornstein und Anbau** | beides, dazu ein Fenster im Anbau |
+| 20 | **Anbau mit Glasfront** | Schornstein links, dreiteilige Verglasung |
+
+Der Schornstein wird **auf die Dachschräge gerechnet**, nicht danebengesetzt:
+Aus der Position auf dem Dach ergeben sich die beiden unterschiedlich langen
+Schornsteinwangen von selbst.
+
+Das Haus stand in den ersten Fassungen buchstäblich in der Luft — die Wände
+endeten ohne Boden. Eine an den Enden auslaufende Grundlinie gibt ihm Halt.
+
+## Drei Fehler, die dabei auftraten
+
+**1 — Alle dünnen Linien waren unsichtbar.** Der Goldverlauf war in
+Bounding-Box-Einheiten definiert. Bei einer senkrechten Linie ist diese Box null
+Pixel breit, der Verlauf damit ungültig, und der Browser zeichnet das Element gar
+nicht. Behoben durch `gradientUnits="userSpaceOnUse"`. Gewinn nebenbei: **eine
+gemeinsame Lichtrichtung** für die ganze Zeichnung statt einer eigenen je Linie.
+
+**2 — Die Grundlinie lag viermal übereinander in Entwurf 17** und fehlte in
+18–20, weil die Ersetzung immer wieder dieselbe Stelle traf. Jetzt je Entwurf
+einmal, pro Funktionskörper eingesetzt.
+
+**3 — Die Anbau-Details lasen sich als Streulinien.** Eine einzelne Senkrechte
+ergibt kein Fenster. Ersetzt durch ein durchlaufendes Band (18) und ein
+geschlossenes Fensterrechteck (19).
+
+Neu erzeugen: `python3 icons-haus-bauen.py && python3 rendern.py *.svg`

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg20" cx="46%" cy="36%" r="84%">
+      <stop offset="0%" stop-color="#26262B"/><stop offset="54%" stop-color="#141416"/>
+      <stop offset="100%" stop-color="#0A0A0B"/>
+    </radialGradient>
+    <linearGradient id="au20" gradientUnits="userSpaceOnUse" x1="180" y1="200" x2="850" y2="820">
+      <stop offset="0%" stop-color="#F2CB86"/><stop offset="46%" stop-color="#E2A94C"/>
+      <stop offset="100%" stop-color="#A87A2C"/>
+    </linearGradient>
+    <filter id="sch20" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+    <linearGradient id="bo20" gradientUnits="userSpaceOnUse" x1="120" y1="0" x2="904" y2="0">
+      <stop offset="0%" stop-color="#E2A94C" stop-opacity="0"/>
+      <stop offset="22%" stop-color="#E2A94C" stop-opacity="0.85"/>
+      <stop offset="78%" stop-color="#E2A94C" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#E2A94C" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg20)"/>
+  <defs><linearGradient id="auX" gradientUnits="userSpaceOnUse" x1="180" y1="200" x2="850" y2="820">
+    <stop offset="0%" stop-color="#F2CB86"/><stop offset="46%" stop-color="#E2A94C"/>
+    <stop offset="100%" stop-color="#A87A2C"/></linearGradient></defs>
+  <g filter="url(#sch20)" fill="none" stroke="url(#au20)" stroke-linejoin="miter"
+     stroke-miterlimit="8" stroke-linecap="butt">
+    <path d="M258,408.1 V310 H312 V347.7" stroke-width="22"/>
+    <path d="M646,552 H838 V804" stroke-width="24"/>
+    <path d="M698,610 V770" stroke-width="14" stroke-opacity="0.7"/><path d="M748,610 V770" stroke-width="14" stroke-opacity="0.7"/><path d="M798,610 V770" stroke-width="14" stroke-opacity="0.7"/>
+    <path d="M664,610 H822" stroke-width="16" stroke-opacity="0.7"/>
+    <path d="M150,804 H874" stroke="url(#bo20)" stroke-width="16"/>
+    <path d="M192,804 V482 L419.0,228 L646,482 V804" stroke-width="32"/>
+  </g>
+  <g filter="url(#sch20)"><text x="419" y="702" font-family="Liberation Serif, FreeSerif, Times New Roman, serif" font-size="188" text-anchor="middle" fill="url(#auX)">My</text></g>
+</svg>
