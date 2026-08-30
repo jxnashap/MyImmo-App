@@ -62,16 +62,12 @@ wurden per Migration `20260829120000` gedroppt. Wieder aufbauen, sobald das Prod
 (dann als bezahltes Add-on über einen lizenzierten AISP wie Enable Banking).
 
 ### Sonstiges (kein Geld)
-- **Mindest-Passwortlänge in Supabase auf 8 setzen** (kostenlos, auch auf Free) — **am 31.07.2026 erneut geprüft, „abc123" wird weiterhin angenommen:**
-  Dashboard → Authentication → Sign In / Providers → Email → „Password Security" →
-  Minimum password length. Die App verlangt seit 29.07.2026 durchgängig 8 Zeichen
-  (`lib/passwort.ts`), Supabase steht noch auf **6** — am 29.07. und erneut am 31.07.2026
-  empirisch geprüft: eine Registrierung mit „abc123" wurde beide Male angenommen
-  (Testkonto jeweils sofort gelöscht). Solange das auseinanderläuft, greift
-  nur die App-Prüfung; wer die Auth-API direkt anspricht, kommt mit 6 Zeichen durch.
-  Nur im Dashboard setzbar, nicht über API/MCP. **Nach dem Umstellen prüfen**, ob
-  bestehende Konten mit kürzerem Passwort sich weiterhin anmelden können (die Regel
-  gilt für NEUE/geänderte Passwörter, nicht rückwirkend).
+- ~~**Mindest-Passwortlänge in Supabase auf 8 setzen**~~ ✅ **erledigt 30.08.2026** (vom Nutzer
+  im Dashboard umgestellt). App und Supabase verlangen jetzt beide 8 Zeichen; vorher griff nur
+  die App-Prüfung (`lib/passwort.ts`), wer die Auth-API direkt ansprach, kam mit 6 durch.
+  **Noch offen (nur Betreiber, kleine Sache):** stichprobenhaft prüfen, ob sich ein bestehendes
+  Konto mit kürzerem Passwort weiterhin anmelden kann — die Regel gilt für NEUE/geänderte
+  Passwörter, nicht rückwirkend.
 - **Design- & Layout-Überarbeitung der App — Runde 1 UMGESETZT (20.08.2026):**
   Neues App-Design **„Frosted Paper"** (shadcn/ui-artig monochrom-hell: Canvas `#f5f5f5`,
   weiße 24px-Karten auf Haarlinien `#e5e5e5`, Pillen-Radius 18px für alles Interaktive,
@@ -124,18 +120,23 @@ wurden per Migration `20260829120000` gedroppt. Wieder aufbauen, sobald das Prod
   15.07.2026: **Anthropic-DPA archiviert** (`docs/compliance/anthropic-dpa-archiv.md`) + DPF
   geprüft → Anthropic nutzt **SCCs, kein DPF** (Transfer in Datenschutzerklärung als SCC ausweisen).
   ✅ 24.07.2026: **Supabase-DPA signiert** (PandaDoc; PDF + TIA in `docs/compliance/`).
-  ⏳ **OFFEN — Brevo-AVV (Recherche 31.07.2026, Schritte stehen fest):** Bei Brevo ist der AVV
-  **Anlage 2 („Annex 2 — Data Processing Agreement") zu den Nutzungsbedingungen** und gilt
-  automatisch mit Vertragsschluss — in der Regel **keine gesonderte Unterschrift** (Muster wie
-  Vercel/Anthropic, NICHT wie Supabase). Zu tun: (1) Konto → Kontoname oben rechts →
-  Einstellungen → **Rechtsdokumente** prüfen, ob dort doch eine signierbare Fassung liegt;
-  (2) **Firmendaten im Konto** auf die Gewerbeanmeldung bringen (MyImmo, Einzelunternehmen,
-  Bad Schwartau) — sonst lautet der Vertrag auf die falsche Partei; (3) DPA-PDF mit Version und
-  Abrufdatum archivieren (`docs/compliance/brevo-dpa-archiv.md`, Muster: Anthropic-Archiv);
-  (4) Unterauftragsverarbeiter-Liste prüfen, Benachrichtigungsadresse muss gelesen werden
-  (Widerspruchsrecht); (5) Transfer in der Datenschutzerklärung als **SCC** ausweisen (kein DPF);
-  (6) Datenschutzkontakt **dpo@brevo.com** ins Verarbeitungsverzeichnis; (7) Eintrag in
-  `docs/compliance/AVV-STATUS.md` (Sitz Frankreich, Verarbeitung EU).
+  🟨 **Brevo-AVV — am 30.08.2026 zur Hälfte erledigt.** Der DPA ist gelesen, ausgewertet und
+  archiviert: `docs/compliance/brevo-dpa-archiv.md` + Volltext `brevo-dpa-2024-05-15.pdf`.
+  Bestätigt: Er ist **Anlage 2 zu den Nutzungsbedingungen und gilt ohne Unterschrift** — das war
+  vorher eine Vermutung, jetzt steht es wörtlich belegt da („execution of the General Terms and
+  Conditions and the DPA constitutes execution"). Vertragspartner **Sendinblue SAS**, Paris;
+  DPO **dpo@brevo.com**; SCCs Module Two, Recht Frankreichs, Gerichtsstand Paris; Datenpanne
+  **72 h**; Löschung erst **100 Tage** nach Vertragsende; Unterauftragsverarbeiter-Änderungen
+  **10 Werktage** vorher mit Widerspruchsrecht.
+  **Dabei gefunden und korrigiert:** Die Datenschutzerklärung behauptete pauschal „Verarbeitung
+  in der EU". Das stimmt für die Versanddaten, nicht für Brevos eigene Unterauftragsverarbeiter —
+  Datadog protokolliert in den **USA**, Zendesk und Convrrt ebenfalls, Support und Wartung laufen
+  über **Indien**. `/datenschutz` Ziffern 3 g, 4 und 5 entsprechend präzisiert.
+  **Rest, nur im eingeloggten Brevo-Konto (Betreiber):** (1) Kontoname → Einstellungen →
+  Rechtsdokumente: liegt dort eine neuere oder signierbare Fassung als 15.05.2024? (2) Firmendaten
+  auf die Gewerbeanmeldung bringen (MyImmo, Einzelunternehmen, Bad Schwartau) — sonst lautet der
+  Vertrag auf die falsche Partei. (3) Prüfen, an welche Adresse die Unterauftragsverarbeiter-
+  Ankündigungen gehen; die 10-Werktage-Frist verfällt ungelesen.
   ✅ 28.08.2026: **Datenschutzerklärung um den Vorlagen-Verteiler ergänzt** — `/datenschutz`
   Ziffer 3 h (Double-Opt-in, Einwilligungsnachweis mit Zeitpunkt/IP/Wortlaut, Art. 6 Abs. 1
   lit. a + Art. 7 Abs. 1, Empfänger Brevo, Speicherdauer, Widerruf) + Brevo in der

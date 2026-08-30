@@ -11,7 +11,7 @@ Trägt den tatsächlichen Abschluss-/Erledigungsstand nach (Datum + „von wem")
 | **Supabase** | Auftragsverarbeiter (DB/Auth) | SCCs + TIA (kein DPF) | Dashboard → Org → Documents (PandaDoc) | ✅ **24.07.2026 signiert** (Jonas Scharp/Owner, PandaDoc; `supabase-dpa-signiert-2026-07-24.pdf` + `supabase-tia-2025-03-14.pdf`) |
 | **Vercel** | Auftragsverarbeiter (Hosting) | DPF ✓ + SCCs | automatisch in ToS ab Pro-Plan | ✅ **29.07.2026** — Konto ist auf Pro, AVV greift über die ToS |
 | **Google** | eigenständig Verantwortlicher (OAuth-Login) | DPF ✓ (Google LLC) | **kein AVV** — nur Datenschutzerklärungs-Passus | ✅ Passus vorhanden |
-| **Brevo** (Sendinblue GmbH/SAS) | Auftragsverarbeiter (Vorlagen-Verteiler) | Sitz Frankreich, **Verarbeitung EU** — Transfer als **SCC** ausweisen (kein DPF) | **Anlage 2 („Annex 2 — DPA") zu den Nutzungsbedingungen**, gilt automatisch mit Vertragsschluss — i. d. R. **keine gesonderte Unterschrift** | ⬜ **offen**: Konto → Einstellungen → Rechtsdokumente prüfen, Firmendaten auf die Gewerbeanmeldung bringen, DPA-PDF archivieren (`brevo-dpa-archiv.md`) |
+| **Brevo** (Sendinblue SAS, Paris) | Auftragsverarbeiter (Vorlagen-Verteiler) | Vertragspartner in der EU; Drittland erst über Brevos **Unterauftragsverarbeiter** (Datadog USA, Zendesk/Convrrt USA, Support Indien) → **SCCs Module Two**, teils ergänzend DPF | **Anlage 2 („Annex 2 — DPA") zu den Nutzungsbedingungen**, gilt automatisch mit Vertragsschluss — **keine gesonderte Unterschrift** (im Volltext belegt) | 🟨 **teilweise erledigt 30.08.2026**: DPA archiviert (`brevo-dpa-archiv.md` + `brevo-dpa-2024-05-15.pdf`), Subprozessoren ausgewertet, Datenschutzerklärung korrigiert. **Offen (nur im Konto):** Rechtsdokumente prüfen, Firmendaten auf die Gewerbeanmeldung bringen |
 | ~~Enable Banking~~ | — | — | **Feature zurückgestellt (29.08.2026), aus der App entfernt** — kein AVV nötig, bis Open Banking wieder aufgebaut wird (`docs/zukunft/OPEN-BANKING.md`) | ⏸️ entfällt |
 | **Paddle** (Bezahlsystem, inaktiv) | **Merchant of Record = eigenständig Verantwortlicher**, kein AVV | — | vor dem ersten Checkout: Datenschutz-Passus statt AVV | ⬜ offen (erst bei Aktivierung, `docs/BEZAHLSYSTEM.md`) |
 | **MyImmo → Nutzer** | MyImmo = Auftragsverarbeiter der Vermieter | — | eigener AVV unter `/avv`, AGB-Einbeziehung | ⬜ anwaltlich prüfen |
@@ -48,6 +48,17 @@ Danach in dieser Tabelle „Erledigt am" nachtragen.
 - [ ] Eigenen Nutzer-AVV (`/avv`) + AGB anwaltlich prüfen lassen.
 - [x] ~~Datenschutz-Passus für den Vorlagen-Verteiler (Brevo)~~ ✅ **28.08.2026** —
       `/datenschutz` Ziffer 3 g + Brevo in der Subprozessoren-Liste (Ziffer 4).
-- [ ] **Brevo-AVV** abschließen/archivieren (Schritte in der Tabelle oben und in `CLAUDE.md`);
-      Datenschutzkontakt **dpo@brevo.com** ins Verarbeitungsverzeichnis, Unterauftrags-
-      verarbeiterliste und Benachrichtigungsadresse prüfen (Widerspruchsrecht).
+- [x] ~~**Brevo-AVV** archivieren, Subprozessoren auswerten, Datenschutzerklärung angleichen~~
+      ✅ **30.08.2026** — `docs/compliance/brevo-dpa-archiv.md` (Zusammenfassung, Klauselnachweise,
+      Subprozessoren-Tabelle) + `brevo-dpa-2024-05-15.pdf` (Volltext). Der AVV gilt **ohne
+      Unterschrift** über die Nutzungsbedingungen; das ist im Volltext belegt und damit keine
+      Vermutung mehr. Datenschutzkontakt **dpo@brevo.com** steht im Archiv-Eintrag.
+      **Dabei gefunden:** Die Datenschutzerklärung behauptete pauschal „Verarbeitung in der EU" —
+      Brevos eigene Unterauftragsverarbeiter verarbeiten aber in den USA (Datadog, Zendesk,
+      Convrrt) und in Indien (Support). Ziffern 3 g, 4 und 5 entsprechend korrigiert.
+- [ ] **Brevo — nur im eingeloggten Konto (Betreiber):** (a) Kontoname → Einstellungen →
+      Rechtsdokumente: liegt dort eine neuere oder signierbare Fassung als 15.05.2024?
+      (b) Firmendaten auf die Gewerbeanmeldung bringen (MyImmo, Einzelunternehmen, Bad Schwartau) —
+      sonst lautet der Vertrag auf die falsche Partei. (c) Dabei prüfen, an welche Adresse die
+      Unterauftragsverarbeiter-Ankündigungen gehen: **10 Werktage** Widerspruchsfrist, die
+      ungelesen verfällt.
