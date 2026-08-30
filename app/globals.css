@@ -87,8 +87,18 @@
   --bg3: #f5f5f5;         /* Input-Ruhefläche, genestete Fläche */
   --bg4: #ececec;         /* Hover-Fläche */
   --bg5: #e2e2e2;
-  --line: #e5e5e5;        /* Haarlinie */
+  --line: #e5e5e5;        /* Haarlinie — Karten, Tabellen, Trenner */
   --line2: #d4d4d4;
+  /* Rahmen fuer BEDIENELEMENTE (Eingabefelder, Auswahlfelder, Textfelder).
+     Bewusst deutlich dunkler als --line: WCAG 1.4.11 verlangt 3:1 gegen die
+     angrenzenden Farben, und ein Feld war vorher praktisch unsichtbar —
+     Fuellung #f5f5f5 auf weisser Karte sind 1,09:1, auf dem Canvas sogar
+     1,0:1 (identische Farbe, das Feld verschwand komplett).
+     #8e8e8e ist das HELLSTE Grau, das die Schwelle noch haelt:
+     3,28:1 gegen die Karte, 3,01:1 gegen die Feldfuellung.
+     Karten und Tabellen behalten die Haarlinie — ein Kartenrand ist kein
+     Bedienelement, dessen Grenze man erkennen muss. */
+  --feld-rand: #8e8e8e;
   --text: #0a0a0a;        /* Ink */
   --muted: #737373;
   /* AA-korrigiert (war #8a8a8a = 3,45:1 auf Weiß): --faint trägt fast immer
@@ -199,6 +209,9 @@
   --bg5: #333333;
   --line: rgba(255,255,255,0.08);
   --line2: rgba(255,255,255,0.16);
+  /* Dunkel: 0,36 Weiss ueber der Karte ergibt #6b6b6b — 3,09:1 gegen die
+     Feldfuellung #1f1f1f und 3,36:1 gegen die Karte #171717. */
+  --feld-rand: rgba(255,255,255,0.36);
   --text: #f5f5f5;
   --muted: #9a9a9a;
   --faint: #8e8e8e; /* AA-korrigiert (war #7c7c7c = 3,5–4,3:1 auf den dunklen Flächen) */
@@ -243,6 +256,7 @@
   :root:not([data-theme]) {
     --bg: #0f0f0f; --bg2: #171717; --bg3: #1f1f1f; --bg4: #292929; --bg5: #333333;
     --line: rgba(255,255,255,0.08); --line2: rgba(255,255,255,0.16);
+    --feld-rand: rgba(255,255,255,0.36);
     --text: #f5f5f5; --muted: #9a9a9a; --faint: #8e8e8e; /* AA, wie im data-theme-Block */
     --gold: #D4A847; --gold-fill: #D4A847;
     --gold-dim: rgba(212,168,71,0.25); --gold-pale: rgba(212,168,71,0.10);
@@ -632,7 +646,7 @@ tr.no-hover:hover td { background: transparent; }
 p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2px; }
 /* Eingabefelder nach Referenz: weiche graue Fuellung (#f5f5f5) OHNE Rahmen
    im Ruhezustand, Pillen-Radius — der Fokus zeichnet den Ring. */
-.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 13px; border-radius: var(--r-sm); border: 1px solid transparent; font-family: var(--font-ui); font-size: 14px; background-color: var(--bg3); color: var(--text); transition: border-color .15s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease); outline: none; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 13px; border-radius: var(--r-sm); border: 1px solid var(--feld-rand); font-family: var(--font-ui); font-size: 14px; background-color: var(--bg3); color: var(--text); transition: border-color .15s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease); outline: none; }
 /* Vorher nur ein harter 3px-Ring. Jetzt Ring + weiter, sehr schwacher Halo,
    und das Feld hebt sich einen Pixel — es fuehlt sich „aktiv" an statt nur
    umrandet. Der Halo nutzt --gold-glow und folgt damit dem Theme. */
@@ -647,8 +661,8 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 /* FIELDS (Kalkulator) */
 .field { margin-bottom: 14px; }
 .field label { display: block; font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
-.field input, .field select { width: 100%; background-color: var(--bg3); border: 1px solid transparent; border-radius: var(--r-sm); padding: 9px 13px; color: var(--text); font-family: var(--font-ui); font-size: 14px; outline: none; transition: border-color 0.15s; }
-.field input:focus, .field select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-pale); }
+.field input, .field select, .field textarea { width: 100%; background-color: var(--bg3); border: 1px solid var(--feld-rand); border-radius: var(--r-sm); padding: 9px 13px; color: var(--text); font-family: var(--font-ui); font-size: 14px; outline: none; transition: border-color 0.15s; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-pale); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .range-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .range-row label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; width: 130px; flex-shrink: 0; }
@@ -665,7 +679,7 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 
 /* KOMPATIBILITÄT — Klassen, die einzelne Formular-/Listenseiten noch nutzen */
 .input {
-  background: var(--bg3); border: 1px solid transparent; border-radius: var(--r-sm);
+  background: var(--bg3); border: 1px solid var(--feld-rand); border-radius: var(--r-sm);
   padding: 9px 13px; color: var(--text); font-family: var(--font-ui);
   font-size: 14px; outline: none; transition: border-color 0.15s;
 }
@@ -926,7 +940,7 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 
 .set-field { display: flex; flex-direction: column; gap: 6px; }
 .set-field > span { font-size: 12px; color: var(--muted); }
-.set-input { width: 100%; background-color: var(--bg3); border: 1px solid transparent; border-radius: var(--r-sm); padding: 11px 13px; color: var(--text); font-size: 14px; transition: border-color .15s, box-shadow .15s, background-color .15s; }
+.set-input { width: 100%; background-color: var(--bg3); border: 1px solid var(--feld-rand); border-radius: var(--r-sm); padding: 11px 13px; color: var(--text); font-size: 14px; transition: border-color .15s, box-shadow .15s, background-color .15s; }
 .set-input::placeholder { color: var(--faint); }
 .set-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-pale); background-color: var(--bg2); }
 
@@ -1108,7 +1122,7 @@ select:focus-visible, textarea:focus-visible {
   outline-offset: 2px;
   border-radius: var(--r-sm);
 }
-.field input:focus-visible, .field select:focus-visible,
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible,
 .form-group input:focus-visible, .form-group select:focus-visible,
 .form-group textarea:focus-visible { outline: none; } /* haben eigenen Gold-Ring */
 
@@ -1769,7 +1783,7 @@ select:focus-visible, textarea:focus-visible {
    ===================================================================== */
 .cmdk-trigger {
   display: inline-flex; align-items: center; gap: 8px; width: 100%;
-  padding: 7px 10px; margin-top: 10px; border-radius: var(--r-sm); border: 1px solid transparent;
+  padding: 7px 10px; margin-top: 10px; border-radius: var(--r-sm); border: 1px solid var(--feld-rand);
   background: var(--bg3); color: var(--muted); font-family: var(--font-ui); font-size: 12px; cursor: pointer;
   transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
 }

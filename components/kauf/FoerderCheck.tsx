@@ -58,7 +58,7 @@ export default function FoerderCheck() {
         <label style={{ display: "grid", gap: 4, fontSize: 11.5, color: "var(--muted)", marginLeft: "auto" }}>
           Bundesland (Landesförderung)
           <select value={land} onChange={(e) => setLand(e.target.value)}
-            style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 12.5, color: "var(--text)" }}>
+            style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 12.5, color: "var(--text)" }}>
             <option value="">– wählen –</option>
             {Object.keys(LANDESBANKEN).map((l) => <option key={l} value={l}>{l}</option>)}
           </select>

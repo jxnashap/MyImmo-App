@@ -285,7 +285,7 @@ export default function ObjektRechner({
     <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
       <span style={{ color: "var(--muted)" }}>{label}</span>
       <input value={value} onChange={(e) => set(e.target.value)} placeholder={ph} inputMode={mode === "text" ? undefined : mode}
-        style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 14 }} />
+        style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 14 }} />
     </label>
   );
 
@@ -338,7 +338,7 @@ export default function ObjektRechner({
             <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
               <span style={{ color: "var(--muted)" }}>Bundesland (Grunderwerbst.)</span>
               <select value={bundesland} onChange={(e) => setBundesland(e.target.value)}
-                style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 13 }}>
+                style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13 }}>
                 {BUNDESLAENDER.map((b, i) => <option key={i} value={b.v}>{b.l}</option>)}
               </select>
             </label>
@@ -444,7 +444,7 @@ export default function ObjektRechner({
                   <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
                     <span style={{ color: "var(--muted)" }}>Gebäudetyp</span>
                     <select value={gebTyp} onChange={(e) => setGebTyp(e.target.value)}
-                      style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 13 }}>
+                      style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13 }}>
                       {NHK_TYPEN.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
                     </select>
                   </label>

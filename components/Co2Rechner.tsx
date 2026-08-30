@@ -44,7 +44,7 @@ export default function Co2Rechner({ defaultFlaeche }: { defaultFlaeche?: number
 
   const inputStil: React.CSSProperties = {
     background: "var(--bg3)",
-    border: "1px solid var(--line2)",
+    border: "1px solid var(--feld-rand)",
     color: "var(--text)",
     borderRadius: 7,
     padding: "7px 9px",
