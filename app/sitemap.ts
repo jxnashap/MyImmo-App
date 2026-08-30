@@ -25,7 +25,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
   const artikel = RATGEBER.map((a) => ({
     url: `${BASE}/ratgeber/${a.slug}`,
-    lastModified: a.datum,
+    // Ueberarbeitungsdatum, falls es eins gibt — sonst behauptet die Sitemap
+    // etwas anderes als das dateModified im Article-Markup der Seite.
+    lastModified: a.aktualisiert ?? a.datum,
     changeFrequency: "yearly" as const,
     priority: 0.6,
   }));

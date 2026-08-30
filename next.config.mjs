@@ -51,6 +51,21 @@ const nextConfig = {
       bodySizeLimit: "18mb",
     },
   },
+  // Dauerhafte Weiterleitungen fuer umbenannte Inhalte. Ohne sie laeuft jeder
+  // bereits indexierte oder verlinkte Aufruf der alten Adresse in eine 404 —
+  // und die aufgebaute Sichtbarkeit ist weg statt uebertragen.
+  async redirects() {
+    return [
+      {
+        // Jahreszahl aus dem Slug genommen (30.08.2026): Der Artikel gilt
+        // nicht nur fuer 2025, und eine veraltete Jahreszahl in der Adresse
+        // liest sich fuer Leser wie fuer Suchmaschinen als "nicht gepflegt".
+        source: "/ratgeber/grundsteuer-2025-auf-mieter-umlegen",
+        destination: "/ratgeber/grundsteuer-auf-mieter-umlegen",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       ...OEFFENTLICH.flatMap((p) => [

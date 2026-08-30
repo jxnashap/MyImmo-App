@@ -299,8 +299,10 @@ nicht. Google indexiert solche Seiten als Soft-404 und verbrennt Crawl-Budget.
    zu jung für belastbare CWV-Aussagen.
 
 **Kurzfristig (YMYL/E-E-A-T)**
-5. Namentliche Autorenschaft + Autorenseite mit `ProfilePage`-Markup. ⏳ **offen** — braucht
-   die Entscheidung des Betreibers, ob sein Name öffentlich unter den Artikeln steht.
+5. Namentliche Autorenschaft + Autorenseite mit `ProfilePage`-Markup.
+   ⏸️ **ZURÜCKGESTELLT (30.08.2026, Entscheidung des Betreibers)** — Begründung, Risiken und
+   die vorab zu klärende Frage (wer hat die Artikel tatsächlich verantwortet?) stehen in
+   `CLAUDE.md` unter „Sonstiges". Bleibt damit die größte offene E-E-A-T-Lücke.
 6. ~~`dateModified` ergänzen, Rechtsstand sichtbar je Artikel~~ ✅ **erledigt 30.08.2026.**
    Siehe Abschnitt 8 — mit einer Einschränkung, die man kennen muss.
 7. ~~`BreadcrumbList`-JSON-LD~~ ✅ **erledigt 30.08.2026** — auf `/ratgeber/<slug>` und
@@ -354,5 +356,5 @@ Signal — zu Recht.
 **Konkret fällig sind zwei Artikel:**
 | Artikel | Warum |
 |---|---|
-| `grundsteuer-2025-auf-mieter-umlegen` | trägt die Jahreszahl **2025** im Slug und Titel, wir sind in 2026 |
+| ~~`grundsteuer-2025-auf-mieter-umlegen`~~ | ✅ **überarbeitet 30.08.2026** → `grundsteuer-auf-mieter-umlegen` (301/308-Weiterleitung in `next.config.mjs`). Jahreszahl raus, BFH-Urteile vom 10.12.2025 und 27.05.2024 ergänzt, jährlich wechselnde Hebesätze erklärt. **Erster Artikel mit echtem `aktualisiert`-Datum** — `dateModified` weicht jetzt zu Recht von `datePublished` ab. |
 | `heizkostenabrechnung-50-70-regel-fernablesung` | wirbt mit der Frist 31.12.2026 — ab 01.01.2027 Vergangenheit (steht schon als Termin in `CLAUDE.md`) |
