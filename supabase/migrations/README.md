@@ -132,3 +132,4 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260829120000 | open_banking_entfernen | Open Banking zurückgestellt: Tabellen (bankverbindungen, bank_umsaetze, bank_auth_anfragen) + abos.banking_addon gedroppt (Code in Historie bis 85feb98; docs/zukunft/OPEN-BANKING.md) |
 | 20260830150000 | demo_nur_lesen | Demo-Konto: restriktive RLS-Policies verweigern jedes INSERT/UPDATE/DELETE; `ist_demo_nutzer()`. SELECT und Service-Role (Reset) bleiben frei |
 | 20260830153000 | demo_mieterhoehung_beispielwerte | Beispiel-Vergleichsmieten und Sperrfrist-Daten für die 6 Demo-Mieter, damit das Mieterhöhungs-Dokument rechnet; Schnappschuss nachgezogen |
+| 20260831090000 | registrierung_freigabe_vormerken | Zugangscode nur noch EINMAL: Freigabe wird bei der Registrierung serverseitig vorgemerkt, `freischaltung_nachholen()` löst sie beim ersten Login ein |

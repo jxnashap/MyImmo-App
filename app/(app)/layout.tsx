@@ -81,7 +81,16 @@ export default async function RootLayout({
   // Zugangscode + Consent bestätigen, bevor die App nutzbar ist. Ohne
   // Freischaltung nur /willkommen (und öffentliche Seiten) erreichbar.
   if (!istOeffentlicheSeite && !pathname.startsWith("/willkommen")) {
-    if (!(await istFreigeschaltet(supabase, user.id))) redirect("/willkommen");
+    if (!(await istFreigeschaltet(supabase, user.id))) {
+      // Bei der Registrierung wurde der Zugangscode bereits geprüft und die
+      // Freischaltung vorgemerkt (siehe `bereiteRegistrierungVor`). Sie hier
+      // einzulösen erspart dem Nutzer, denselben Code ein zweites Mal zu
+      // tippen. Bewusst im Gate statt im Auth-Callback: Der Bestätigungslink
+      // aus der E-Mail läuft je nach Supabase-Konfiguration nicht zwingend
+      // über /auth/callback — hier greift es auf jedem Weg.
+      const { data: nachgeholt } = await supabase.rpc("freischaltung_nachholen");
+      if (!nachgeholt) redirect("/willkommen");
+    }
   }
   // Willkommens-Gate ohne App-Shell rendern (keine Navigation vor Freischaltung).
   if (pathname.startsWith("/willkommen")) {

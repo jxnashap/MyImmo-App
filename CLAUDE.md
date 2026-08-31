@@ -61,6 +61,26 @@ die DB-Tabellen (`bankverbindungen`, `bank_umsaetze`, `bank_auth_anfragen`) und 
 wurden per Migration `20260829120000` gedroppt. Wieder aufbauen, sobald das Produkt Geld verdient
 (dann als bezahltes Add-on über einen lizenzierten AISP wie Enable Banking).
 
+### Registrierung — Ablauf (Stand 31.08.2026)
+1. E-Mail, Passwort (2×), **Zugangscode**, Zustimmung → der Code wird serverseitig geprüft
+   UND die Freischaltung vorgemerkt (`bereiteRegistrierungVor`, Tabelle
+   `registrierung_freigaben`, 14 Tage gültig).
+2. Bestätigungsmail anklicken.
+3. Einmal mit E-Mail + Passwort anmelden → das Layout-Gate löst die Vormerkung per
+   `freischaltung_nachholen()` ein. **Der Code wird NICHT erneut abgefragt.**
+
+`/willkommen` bleibt als Rückfallweg: Google-Registrierung (dort gibt es keinen Code-Schritt),
+Mieter/Handwerker mit Einladungscode, abgelaufene oder fehlende Vormerkung.
+**Zwei Fehler, die dort steckten** (gemeldet 31.08.2026) — nicht wieder einbauen:
+- Das Gate schrieb den Code vor der Prüfung in **Großbuchstaben**. Der Beta-Code enthält
+  Klein-/Großbuchstaben, Ziffern und Sonderzeichen, der Vergleich ist exakt → derselbe Code,
+  der bei der Registrierung ging, war hier zwangsläufig falsch. Großschreibung gilt **nur**
+  für Einladungscodes (Format `MI-XXXX-XXXX`).
+- Bei der Registrierung wurde der Code nur geprüft, nie gespeichert → das Gate fragte
+  überhaupt erst ein zweites Mal.
+**Nicht über `signUp`-Metadaten lösen:** `raw_user_meta_data` kommt vom Client und ist frei
+setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangscode vorbei.
+
 ### Zukunftsideen (notiert, nicht gebaut)
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
