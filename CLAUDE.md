@@ -291,8 +291,13 @@ setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangsco
   steht das Risiko gegenüber, an einer laufenden Domain-Konfiguration weiterzuschrauben
   (beim Versuch wurde bereits der falsche von zwei `.com`-Einträgen erwischt).
   → **`NEBENDOMAINS` in `next.config.mjs` bleibt drin** und ist kein toter Code.
-  **Noch offen (nur Betreiber):** in der Search Console die **Adressänderung** anstossen;
-  der Indexwechsel dauert sonst Wochen.
+  **Search-Console-Adressänderung: entfällt** (Betreiber, 01.09.2026). Die Property war
+  durchgehend `.de`; `.store` war nie eine. Eine Adressänderung verschiebt Signale von einer
+  alten verifizierten Property auf eine neue — hier gibt es nichts zu verschieben, weil
+  `.store` nie eigene Inhalte oder Verlinkungen aufgebaut hat, sondern nur dieselbe App unter
+  der falschen Adresse auslieferte. Die 308er führen den Index von allein zusammen; das
+  dauert Wochen, mehr bewirkt eine Adressänderung auch nicht.
+  **Damit ist das Domain-Thema vollständig abgeschlossen** — offen bleibt nur die Geduld.
   `my-immo-app.vercel.app` existiert nur noch als Vercel-Fallback — nirgends mehr verlinken;
   Sitemap/Robots/metadataBase zeigen auf www.myimmoapp.de).
 - Gehostet auf **Vercel**, verbunden mit dem GitHub-Repo `jxnashap/myimmo-app` (Branch `main`).
