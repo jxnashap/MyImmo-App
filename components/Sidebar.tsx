@@ -199,7 +199,7 @@ export default function Sidebar({
         <Link href="/einstellungen" className={`nav-item${isActive("/einstellungen") ? " active" : ""}`} title="Einstellungen">
           {/* Label in .nav-label, sonst bleibt der Text im eingeklappten Rail
               stehen und quetscht sich neben das Icon. Auch in der Demo offen:
-              dort liegen Profil und Hilfe & Support. */}
+              dort liegen Profil und Support. */}
           <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}><Settings size={15} /></span>
           <span className="nav-label">Einstellungen</span>
         </Link>

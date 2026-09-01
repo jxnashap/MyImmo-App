@@ -57,6 +57,14 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        // Der Bereich heisst seit 01.09.2026 „Support"; der Pfad bleibt
+        // /hilfe, weil er in verschickten E-Mails steht. Diese Weiterleitung
+        // sorgt dafuer, dass auch der neue Name ankommt.
+        source: "/support",
+        destination: "/hilfe",
+        permanent: true,
+      },
+      {
         // Jahreszahl aus dem Slug genommen (30.08.2026): Der Artikel gilt
         // nicht nur fuer 2025, und eine veraltete Jahreszahl in der Adresse
         // liest sich fuer Leser wie fuer Suchmaschinen als "nicht gepflegt".

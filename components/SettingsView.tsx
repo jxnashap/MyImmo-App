@@ -52,7 +52,7 @@ const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   { key: "recht", label: "Daten & Recht", icon: FileText },
   // Support gehoert hierher und NICHT in die Hauptnavigation (Vorgabe
   // Betreiber 29.08.2026) — man sucht ihn beim Konto, nicht neben den Objekten.
-  { key: "hilfe", label: "Hilfe & Support", icon: LifeBuoy },
+  { key: "hilfe", label: "Support", icon: LifeBuoy },
 ];
 
 const fmtIban = (iban: string) => iban.replace(/(.{4})/g, "$1 ").trim();
