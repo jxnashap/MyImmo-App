@@ -36,6 +36,17 @@ const CSP_STATISCH = [
   "upgrade-insecure-requests",
 ].join("; ");
 
+// Das Vercel-Projekt beantwortet mehrere Domains. Maßgeblich ist genau EINE:
+// www.myimmoapp.de. Alle anderen liefern denselben Inhalt aus — fuer Google
+// sind das konkurrierende Adressen derselben Seite, und es entscheidet selbst,
+// welche es zeigt (am 01.09.2026 war das `.store`).
+//
+// Wert in Regex-Schreibweise, wie `has: { type: "host" }` es erwartet.
+// Neue Domain im Vercel-Projekt? Hier eintragen.
+const NEBENDOMAINS = ["(www\\.)?myimmoapp\\.store", "(www\\.)?myimmoapp\\.com"];
+
+const HAUPTDOMAIN = "https://www.myimmoapp.de";
+
 const SICHERHEITS_HEADER = [
   { key: "Content-Security-Policy", value: CSP_STATISCH },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -56,28 +67,29 @@ const nextConfig = {
   // und die aufgebaute Sichtbarkeit ist weg statt uebertragen.
   async redirects() {
     return [
-      {
-        // Die Seite war unter ZWEI Domains erreichbar: myimmoapp.de und
-        // myimmoapp.store (beide auf dasselbe Vercel-Projekt). Google hat sich
-        // daraufhin fuer `.store` als maßgebliche Adresse entschieden und zeigte
-        // sie in den Ergebnissen — obwohl `.store` bereits ein korrektes
-        // `<link rel="canonical">` auf `.de` ausliefert. Canonical ist eben nur
-        // ein Hinweis, keine Anweisung.
-        //
-        // Hier wird `.store` deshalb dauerhaft auf `.de` umgeleitet, damit es
-        // dort schlicht nichts mehr zu indexieren gibt. `:pfad*` erhaelt den
-        // Pfad, damit bereits verlinkte Unterseiten nicht auf der Startseite
-        // landen.
-        //
-        // Sauberer waere dieselbe Weiterleitung direkt in Vercel
-        // (Settings -> Domains -> Redirect) — dann wird die App gar nicht erst
-        // aufgerufen. Diese Regel hier wirkt sofort mit dem naechsten Deploy und
-        // ist versioniert; ist die Vercel-Einstellung gesetzt, kann sie weg.
+      // Die Seite war unter MEHREREN Domains erreichbar: myimmoapp.de,
+      // myimmoapp.store und myimmoapp.com — alle auf demselben Vercel-Projekt,
+      // alle mit 200 und identischem Inhalt. Google hat sich daraufhin fuer
+      // `.store` als maßgebliche Adresse entschieden und zeigte sie in den
+      // Ergebnissen, obwohl `.store` bereits ein korrektes
+      // `<link rel="canonical">` auf `.de` ausliefert. Canonical ist eben nur
+      // ein Hinweis, keine Anweisung.
+      //
+      // Deshalb werden alle Nebendomains dauerhaft auf `.de` umgeleitet, damit
+      // es dort schlicht nichts mehr zu indexieren gibt. `:pfad*` erhaelt den
+      // Pfad, damit bereits verlinkte Unterseiten nicht auf der Startseite
+      // landen.
+      //
+      // Sauberer waere dieselbe Weiterleitung direkt in Vercel
+      // (Settings -> Domains -> Redirect) — dann wird die App gar nicht erst
+      // aufgerufen. Diese Regeln wirken sofort mit dem naechsten Deploy und
+      // sind versioniert; sind die Vercel-Einstellungen gesetzt, koennen sie weg.
+      ...NEBENDOMAINS.map((host) => ({
         source: "/:pfad*",
-        has: [{ type: "host", value: "(www\\.)?myimmoapp\\.store" }],
-        destination: "https://www.myimmoapp.de/:pfad*",
+        has: [{ type: "host", value: host }],
+        destination: `${HAUPTDOMAIN}/:pfad*`,
         permanent: true,
-      },
+      })),
       {
         // Der Bereich heisst seit 01.09.2026 „Support"; der Pfad bleibt
         // /hilfe, weil er in verschickten E-Mails steht. Diese Weiterleitung

@@ -287,7 +287,7 @@ nicht. Google indexiert solche Seiten als Soft-404 und verbrennt Crawl-Budget.
 > `dynamicParams = false` wurde wieder entfernt: es erzwang zwar den Status, aber über den
 > Router — und damit die ungestylte englische Next-Standardseite statt der eigenen.
 
-**D3 — Zweite Domain liefert dieselbe Seite (gefunden 01.09.2026).**
+**D3 — Weitere Domains liefern dieselbe Seite (gefunden 01.09.2026).**
 Bei der Suche nach „MyImmo" zeigt Google die Seite unter **`myimmoapp.store`** statt unter
 `myimmoapp.de`. Nachgemessen:
 ```
@@ -297,18 +297,31 @@ www.myimmoapp.store   200  (server: Vercel — liefert dieselbe App aus)
 Die Seite ist damit unter **zwei** Domains erreichbar. Google muss eine davon als die
 maßgebliche wählen — und hat sich für `.store` entschieden.
 
+**Nachtrag vom selben Tag — es waren nicht zwei, sondern drei.** Die Vercel-Domainliste
+(Screenshot des Betreibers) zeigte eine dritte Adresse, die ich vorher nicht kannte:
+```
+myimmoapp.com         308 -> www.myimmoapp.com
+www.myimmoapp.com     200  („Production", Valid Configuration — dieselbe App)
+```
+Auch `.com` sendet ein korrektes Canonical auf `.de` — und hilft aus demselben Grund
+nicht. Die erste Fassung der Weiterleitung kannte nur `.store`; das Problem wäre also
+nur zur Hälfte behoben gewesen. **Lehre:** Beim Duplicate-Domain-Problem nicht die eine
+Domain reparieren, die aufgefallen ist, sondern die **Domainliste des Hosters** ansehen.
+Die Liste steht deshalb jetzt als `NEBENDOMAINS` an einer Stelle in `next.config.mjs` —
+neue Domain im Vercel-Projekt heißt: dort eintragen.
+
 **Bemerkenswert:** Technisch ist alles richtig gesetzt. `.store` liefert bereits
 `<link rel="canonical" href="https://www.myimmoapp.de">`, und die Sitemap dort listet
 ausschließlich `.de`-Adressen. **Es hat trotzdem nicht gereicht** — Canonical ist ein
 Hinweis, keine Anweisung. Google wägt weitere Signale ab (welche Domain zuerst gefunden
 wurde, Verlinkungen, Nutzerverhalten) und kann sich anders entscheiden.
 
-➡️ **Der einzige verlässliche Weg: `.store` darf gar keinen Inhalt mehr ausliefern.**
+➡️ **Der einzige verlässliche Weg: Nur `.de` darf noch Inhalt ausliefern.**
 Eine dauerhafte Weiterleitung auf `.de` nimmt Google die Wahl ab.
 Zwei Wege, gleiches Ergebnis:
-1. **Vercel** → Projekt → Settings → Domains → `myimmoapp.store` auf „Redirect to
-   www.myimmoapp.de" stellen. Sauberster Weg: Die App wird gar nicht erst aufgerufen.
-   Nur der Betreiber kann das.
+1. **Vercel** → Projekt → Settings → Domains → `myimmoapp.store` **und** `myimmoapp.com`
+   (samt `www.`-Varianten) auf „Redirect to www.myimmoapp.de" stellen. Sauberster Weg:
+   Die App wird gar nicht erst aufgerufen. Nur der Betreiber kann das.
 2. **Im Code** — `next.config.mjs`, `redirects()` mit `has: [{ type: "host" }]`. Wirkt mit
    dem nächsten Deploy und ist versioniert.
 

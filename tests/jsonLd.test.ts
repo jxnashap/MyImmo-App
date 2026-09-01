@@ -117,24 +117,35 @@ describe("Slugs altern nicht", () => {
 // `myimmoapp.de`. Beide Domains lieferten dieselbe App aus (200 von Vercel) —
 // und das, obwohl `.store` bereits ein korrektes Canonical auf `.de` sendete.
 // Canonical ist eben nur ein Hinweis. Verlaesslich hilft nur, dass es unter
-// `.store` nichts mehr zu indexieren gibt.
+// den Nebendomains nichts mehr zu indexieren gibt.
+//
+// Nachtrag vom selben Tag: Beim Blick in die Vercel-Domainliste kam eine
+// DRITTE Domain zum Vorschein — `www.myimmoapp.com`, ebenfalls „Production",
+// ebenfalls 200. Die erste Fassung dieser Regel kannte nur `.store`. Deshalb
+// steht die Liste jetzt an einer Stelle und wird hier vollstaendig geprueft.
 describe("Nur eine Domain liefert Inhalt aus", () => {
   const config = readFileSync("next.config.mjs", "utf8");
+  const NEBEN = ["myimmoapp\\\\.store", "myimmoapp\\\\.com"];
 
-  it("myimmoapp.store wird dauerhaft auf myimmoapp.de umgeleitet", () => {
-    expect(config).toContain('has: [{ type: "host", value: "(www\\\\.)?myimmoapp\\\\.store" }]');
-    expect(config).toContain('destination: "https://www.myimmoapp.de/:pfad*"');
+  it("jede Nebendomain wird dauerhaft auf myimmoapp.de umgeleitet", () => {
+    for (const host of NEBEN) {
+      expect(config).toContain(`"(www\\\\.)?${host}"`);
+    }
+    expect(config).toContain('const HAUPTDOMAIN = "https://www.myimmoapp.de"');
+    expect(config).toContain("destination: `${HAUPTDOMAIN}/:pfad*`");
+    expect(config).toContain("permanent: true");
   });
 
   it("der Pfad bleibt erhalten — verlinkte Unterseiten landen nicht auf der Startseite", () => {
-    const ab = config.indexOf("myimmoapp\\\\.store");
-    const block = config.slice(Math.max(0, ab - 400), ab + 300);
-    expect(block).toContain('source: "/:pfad*"');
+    const ab = config.indexOf("NEBENDOMAINS.map");
+    expect(ab).toBeGreaterThan(-1);
+    expect(config.slice(ab, ab + 300)).toContain('source: "/:pfad*"');
   });
 
-  it("alle Absolut-URLs im Code zeigen auf .de, nie auf .store", () => {
+  it("alle Absolut-URLs im Code zeigen auf .de, nie auf eine Nebendomain", () => {
     expect(BASIS_URL).toBe("https://www.myimmoapp.de");
-    expect(readFileSync("app/sitemap.ts", "utf8")).not.toMatch(/myimmoapp\.store/);
-    expect(readFileSync("app/robots.ts", "utf8")).not.toMatch(/myimmoapp\.store/);
+    for (const datei of ["app/sitemap.ts", "app/robots.ts"]) {
+      expect(readFileSync(datei, "utf8")).not.toMatch(/myimmoapp\.(store|com)/);
+    }
   });
 });
