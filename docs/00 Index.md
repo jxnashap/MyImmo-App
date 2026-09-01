@@ -24,6 +24,7 @@
 - [[INSTAGRAM]] — Strategie, Profil, erste Post-Visuals (Test, zurückgestellt)
 
 ## ⚖️ Compliance
+- [[SICHERHEIT-ABHAENGIGKEITEN]] — OSV-Scanner-Befund, Bewertung, Next.js-14-Ende
 - [[AVV-STATUS]] — DSGVO / AVV je Anbieter
 - [[APP-STORE-RECHT]] — App/Play Store: Gesetze, Store-Regeln, Gebühren **+ Prüfung von MyImmo**
 - [[anthropic-dpa-archiv]] — archiviertes Anthropic-DPA

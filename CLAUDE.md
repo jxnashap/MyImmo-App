@@ -338,5 +338,17 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   `supabase/migrations/README.md`). Kein DDL über `execute_sql`.
 - Dateien (Belege, Archiv-Dokumente) werden als Base64 in Tabellenspalten gespeichert — **kein Storage-Bucket** nötig.
 
+## Sicherheit der Abhängigkeiten
+- **Next.js 14 bekommt KEINE Sicherheitsfixes mehr (festgestellt 01.09.2026).** `14.2.35`
+  ist die letzte je veröffentlichte 14.2.x; alle 21 offenen Meldungen sind erst in **15.5.x**
+  behoben. Befund, Bewertung je Meldung (was trifft MyImmo wirklich) und der Migrationsplan:
+  **`docs/SICHERHEIT-ABHAENGIGKEITEN.md`**. Der Umstieg auf 15 ist ein eigener Arbeitsblock
+  (async `headers()`/`cookies()`/`params`, gedrehte Caching-Vorgaben, React 19) — **nicht**
+  nebenbei in einen anderen PR packen.
+- **Scanner (kostenlos, ohne Konto):** `osv-scanner scan source --lockfile=package-lock.json`
+  (`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest`). Vor jedem größeren
+  Release laufen lassen, mindestens monatlich. Neue Befunde in der genannten Datei bewerten,
+  nicht nur die Zahl weiterreichen.
+
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).
