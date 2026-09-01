@@ -155,8 +155,24 @@ nicht sieht, zählt nicht — Inhalt hinter dem E-Mail-Gate verliert SEO-Wert.
 
 1. **Google Search Console** — nicht ersetzbar (Queries, Positionen, CrUX-Felddaten,
    Indexierungsfehler). Verifikation per DNS-TXT.
-2. **Bing Webmaster Tools + IndexNow** — **belegt relevant**: ChatGPT Search und Copilot nutzen
-   den Bing-Index. Was Bing nicht kennt, kann ChatGPT nicht zitieren. ~1 h, 0 €.
+2. **Bing Webmaster Tools** — kostenlos, ~15 Min über den Import aus der Google Search
+   Console. Liefert eine zweite Datenquelle; Bing ist in Deutschland klein, aber die Daten
+   kosten nichts.
+   **IndexNow dagegen: bei MyImmo kaum sinnvoll.** Das Protokoll (Bing, Yandex, Naver,
+   Seznam, Yep — **Google nutzt es nicht**) spielt seine Stärke bei Seiten aus, die sich
+   ständig ändern. Rund 30 selten geänderte Seiten gewinnen dadurch Stunden, nicht Rang.
+
+   > **⚠️ Korrektur (01.09.2026).** Hier stand: „ChatGPT Search und Copilot nutzen den
+   > Bing-Index. Was Bing nicht kennt, kann ChatGPT nicht zitieren." **Das war überholt**
+   > und ungeprüft aus älterem Wissen übernommen. OpenAI betreibt mit `OAI-SearchBot` einen
+   > eigenen Crawler und kombiniert eigene Erfassung mit lizenzierten Daten. Die
+   > Übereinstimmung von ChatGPT-Zitaten mit Bing-Ergebnissen ist laut Profound von **26 %
+   > auf 8 %** gefallen, die mit Google von **12 % auf 33 %** gestiegen.
+   > **Bing ist keine Eintrittskarte zu ChatGPT mehr.** Für ChatGPT ist nichts zu tun:
+   > `robots.txt` erlaubt `User-Agent: *` mit `Allow: /`, `OAI-SearchBot` darf also crawlen
+   > (live geprüft 01.09.2026).
+   > Quellen: <https://developers.openai.com/api/docs/bots> ·
+   > <https://en.wikipedia.org/wiki/IndexNow>
    Quelle: <https://www.bing.com/indexnow>
 3. **`@vercel/speed-insights`** — echte INP/LCP/CLS-Felddaten, cookielos/DSGVO-freundlich.
 4. **Bewusst nicht**: llms.txt (s. o.), Google Analytics (Consent-Aufwand > Nutzen).
@@ -271,6 +287,35 @@ nicht. Google indexiert solche Seiten als Soft-404 und verbrennt Crawl-Budget.
 > `dynamicParams = false` wurde wieder entfernt: es erzwang zwar den Status, aber über den
 > Router — und damit die ungestylte englische Next-Standardseite statt der eigenen.
 
+**D3 — Zweite Domain liefert dieselbe Seite (gefunden 01.09.2026).**
+Bei der Suche nach „MyImmo" zeigt Google die Seite unter **`myimmoapp.store`** statt unter
+`myimmoapp.de`. Nachgemessen:
+```
+myimmoapp.store       308 -> www.myimmoapp.store
+www.myimmoapp.store   200  (server: Vercel — liefert dieselbe App aus)
+```
+Die Seite ist damit unter **zwei** Domains erreichbar. Google muss eine davon als die
+maßgebliche wählen — und hat sich für `.store` entschieden.
+
+**Bemerkenswert:** Technisch ist alles richtig gesetzt. `.store` liefert bereits
+`<link rel="canonical" href="https://www.myimmoapp.de">`, und die Sitemap dort listet
+ausschließlich `.de`-Adressen. **Es hat trotzdem nicht gereicht** — Canonical ist ein
+Hinweis, keine Anweisung. Google wägt weitere Signale ab (welche Domain zuerst gefunden
+wurde, Verlinkungen, Nutzerverhalten) und kann sich anders entscheiden.
+
+➡️ **Der einzige verlässliche Weg: `.store` darf gar keinen Inhalt mehr ausliefern.**
+Eine dauerhafte Weiterleitung auf `.de` nimmt Google die Wahl ab.
+Zwei Wege, gleiches Ergebnis:
+1. **Vercel** → Projekt → Settings → Domains → `myimmoapp.store` auf „Redirect to
+   www.myimmoapp.de" stellen. Sauberster Weg: Die App wird gar nicht erst aufgerufen.
+   Nur der Betreiber kann das.
+2. **Im Code** — `next.config.mjs`, `redirects()` mit `has: [{ type: "host" }]`. Wirkt mit
+   dem nächsten Deploy und ist versioniert.
+
+**Erwartungshaltung:** Der Wechsel im Index dauert Wochen, nicht Stunden. Beschleunigen
+lässt er sich über die **Adressänderung** in der Search Console — dafür müssen beide
+Domains dort als Property bestätigt sein.
+
 ### 🟠 Weitere Lücken
 | Lücke | Wirkung |
 |---|---|
@@ -293,8 +338,9 @@ nicht. Google indexiert solche Seiten als Soft-404 und verbrennt Crawl-Budget.
    siehe Abschnitt 5). Preis: `'unsafe-inline'` auf den 9 öffentlichen Pfaden — dort dokumentiert.
 2. ~~**D2: Soft 404**~~ ✅ **erledigt** — fiel wie erwartet mit D1 weg.
 3. **Search Console** ✅ vorhanden (Betreiber, bestätigt 30.08.2026).
-   ⏳ **Bing Webmaster Tools + IndexNow** noch offen — ohne Bing sind wir für ChatGPT
-   unsichtbar, und der GSC-Import macht die Einrichtung zu einer Sache von Minuten.
+   ⏳ **Bing Webmaster Tools** noch offen — der GSC-Import macht die Einrichtung zu einer
+   Sache von Minuten. **IndexNow zurückgestellt** (geringer Nutzen bei selten geänderten
+   Seiten); die frühere ChatGPT-Begründung war falsch, siehe Korrektur oben.
 4. ~~**`@vercel/speed-insights`**~~ ✅ erledigt (#278) — Felddaten laufen auf, sind aber noch
    zu jung für belastbare CWV-Aussagen.
 
