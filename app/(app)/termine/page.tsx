@@ -31,12 +31,13 @@ type Eintrag = {
   ausgeblendet?: boolean;
 };
 
-export default async function TerminePage({
-  searchParams,
-}: {
-  searchParams: { quelle?: string; jahr?: string; kategorie?: string; erledigte?: string; ansicht?: string; monat?: string; tag?: string; ausgeblendete?: string };
-}) {
-  const supabase = createClient();
+export default async function TerminePage(
+  props0: {
+    searchParams: Promise<{ quelle?: string; jahr?: string; kategorie?: string; erledigte?: string; ansicht?: string; monat?: string; tag?: string; ausgeblendete?: string }>;
+  }
+) {
+  const searchParams = await props0.searchParams;
+  const supabase = await createClient();
   const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
     supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum").order("bezeichnung"),

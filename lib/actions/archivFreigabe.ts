@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function setzeMieterFreigabe(notizId: string, freigabe: boolean) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -29,7 +29,7 @@ export async function setzeMieterFreigabe(notizId: string, freigabe: boolean) {
 /** Beleg einer Kostenbuchung im Mieterportal freigeben/zurückziehen
  *  (§ 556 Abs. 4 BGB Belegeinsicht). */
 export async function setzeBelegFreigabe(kostenId: string, freigabe: boolean) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

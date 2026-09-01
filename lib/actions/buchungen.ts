@@ -27,7 +27,7 @@ function posNum(fd: FormData, k: string, label: string): number {
 }
 
 async function uid() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   return { supabase, userId: user.id };
@@ -98,7 +98,7 @@ function fmtSize(bytes: number) {
 // Base64-in-DB-Ablage; rechnung_data wird beim Neuspeichern genullt
 // (alte Base64-Belege bleiben über den Routen-Fallback lesbar).
 async function rechnungHochladen(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   fd: FormData,
   altPath?: string | null,

@@ -14,7 +14,7 @@ export async function starteCheckout(
   plan: "privat" | "plus",
   zyklus: AboZyklus,
 ): Promise<ActionErgebnis> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { fehler: "Nicht angemeldet." };
   if (plan !== "privat" && plan !== "plus") return { fehler: "Unbekannter Tarif." };
@@ -33,7 +33,7 @@ export async function starteCheckout(
 
 /** Öffnet das Paddle-Kundenportal (Zahlungsdaten ändern, kündigen). */
 export async function oeffneAboPortal(): Promise<ActionErgebnis> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { fehler: "Nicht angemeldet." };
   if (!paddleKonfiguriert()) return { fehler: "Das Bezahlsystem ist noch nicht freigeschaltet." };

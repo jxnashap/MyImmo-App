@@ -16,7 +16,7 @@ export async function ladeVorauszahlung(
   mieterId: string,
   jahr: number,
 ): Promise<NkVorauszahlungInput> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const [{ data: einnahmen }, { data: zeitraeume }] = await Promise.all([
     supabase

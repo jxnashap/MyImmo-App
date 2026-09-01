@@ -14,14 +14,15 @@ import ServiceManager, { type ServicePartnerRow, type ServiceCodeRow, type Auftr
 type FirmenRueckmeldungRow = FirmenRueckmeldung & { auftrag_id: string };
 import { wartetAufVermieter } from "@/lib/zaehler";
 
-export default async function AnliegenPage({
-  searchParams,
-}: {
-  searchParams: { tab?: string; titel?: string; text?: string };
-}) {
+export default async function AnliegenPage(
+  props0: {
+    searchParams: Promise<{ tab?: string; titel?: string; text?: string }>;
+  }
+) {
+  const searchParams = await props0.searchParams;
   const tab = ["bewerbungen", "service"].includes(searchParams.tab ?? "") ? (searchParams.tab as string) : "anliegen";
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const [
     { data: rows }, { data: mieter }, { data: props }, { data: anfrageRows }, { data: zugaenge },
     { data: linkRows }, { data: bewerbungRows },

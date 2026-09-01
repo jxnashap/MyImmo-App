@@ -5,7 +5,7 @@ export const metadata = { title: "Marktwert schätzen — MyImmo" };
 export const dynamic = "force-dynamic";
 
 export default async function BewertungPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   // Eigene Objekte laden, damit das Schätz-Ergebnis direkt an einem Objekt
   // gespeichert werden kann (Wertentwicklung + Verkauf-Assistent).
   const { data: props } = await supabase

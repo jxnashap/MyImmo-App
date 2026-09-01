@@ -5,12 +5,13 @@ import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 
-export default async function JahresberichtPage({
-  searchParams,
-}: {
-  searchParams: { year?: string };
-}) {
-  const supabase = createClient();
+export default async function JahresberichtPage(
+  props0: {
+    searchParams: Promise<{ year?: string }>;
+  }
+) {
+  const searchParams = await props0.searchParams;
+  const supabase = await createClient();
   const year = Number(searchParams.year) || new Date().getFullYear();
 
   const [{ data: props }, { data: einn }, { data: kost }, { data: kred }] = await Promise.all([

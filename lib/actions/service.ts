@@ -18,7 +18,7 @@ function neuerCode(): string {
 
 /** Vermieter: Einladungscode für einen Service-Partner erzeugen (14 Tage). */
 export async function erzeugeServiceCode() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -36,7 +36,7 @@ export async function erzeugeServiceCode() {
 }
 
 export async function widerrufeServiceCode(code: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -54,7 +54,7 @@ export async function widerrufeServiceCode(code: string) {
 
 /** Vermieter: Verknüpfung zu einem Service-Partner lösen (Aufträge bleiben). */
 export async function entferneServicePartner(serviceUserId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -70,7 +70,7 @@ export async function entferneServicePartner(serviceUserId: string) {
 
 /** Vermieter: Auftrag an einen verknüpften Service-Partner erstellen. */
 export async function erstelleAuftrag(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -135,7 +135,7 @@ export async function erstelleAuftrag(formData: FormData) {
 /** Service-Partner (Hausmeister): Auftrag BEANTRAGEN — der Vermieter bekommt
  *  die Anfrage im Mieterportal (Tab Service) und gibt sie frei. */
 export async function beantrageAuftrag(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -180,7 +180,7 @@ export async function beantrageAuftrag(formData: FormData) {
  *  dabei ein Mieter ausgewählt, dessen Kontakt die Firma über den
  *  öffentlichen Auftrags-Link zur Terminabsprache bekommt. */
 export async function entscheideAuftrag(id: string, freigeben: boolean, mieterId?: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -230,7 +230,7 @@ function parseBetrag(s: string): number | null {
  *  Beim Erledigen können Betrag, Lohnanteil (§ 35a) und die Rechnung
  *  mitgegeben werden — der Vermieter übernimmt das per Klick als Kosten. */
 export async function beantworteAuftrag(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -292,7 +292,7 @@ const UEBERNAHME_KATEGORIEN = ["Reparatur", "Instandhaltung", "Modernisierung", 
  *  Rechnung als Anhang, Lohnanteil dokumentiert in der Notiz — für die
  *  § 35a-Bescheinigung der Mieter in der NK-Abrechnung). */
 export async function uebernimmAuftragAlsKosten(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -371,7 +371,7 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
 
 /** Vermieter: Auftrag löschen. */
 export async function loescheAuftrag(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

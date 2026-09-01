@@ -7,8 +7,9 @@ import type { Property } from "@/lib/types";
 const ARTEN = ["Strom", "Gas", "Wasser", "Heizöl", "Fernwärme", "Sonstiges"];
 const EINHEITEN = ["kWh", "m³", "Liter", "Pauschal"];
 
-export default async function NeuerVerbrauchPage({ searchParams }: { searchParams: { prop?: string; back?: string } }) {
-  const supabase = createClient();
+export default async function NeuerVerbrauchPage(props: { searchParams: Promise<{ prop?: string; back?: string }> }) {
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
   const { data } = await supabase.from("properties").select("id,bezeichnung").order("bezeichnung");
   const properties = (data ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const back = searchParams.back || "/verbrauch";

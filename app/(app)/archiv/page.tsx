@@ -18,7 +18,7 @@ export type ArchivDoc = {
 };
 
 export default async function ArchivPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const [{ data: docs }, { data: props }, { data: miet }] = await Promise.all([
     supabase
       .from("notizen")

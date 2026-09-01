@@ -20,14 +20,15 @@ const TABS = [
   { key: "zaehler", label: "Zähler", icon: Gauge },
 ] as const;
 
-export default async function PortalPage({
-  searchParams,
-}: {
-  searchParams: { tab?: string };
-}) {
+export default async function PortalPage(
+  props: {
+    searchParams: Promise<{ tab?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const tab = TABS.some((t) => t.key === searchParams.tab) ? (searchParams.tab as string) : "wohnung";
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

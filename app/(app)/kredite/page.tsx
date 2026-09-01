@@ -10,7 +10,7 @@ import { Plus, Siren, Landmark } from "lucide-react";
 type KreditExt = Kredit;
 
 export default async function KreditePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const [{ data: kred }, { data: props }] = await Promise.all([
     supabase.from("kredite").select("*"),
     supabase.from("properties").select("id,bezeichnung"),

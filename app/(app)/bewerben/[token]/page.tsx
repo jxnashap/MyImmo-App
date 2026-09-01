@@ -153,8 +153,9 @@ function Steckbrief({ info }: { info: Info }) {
   );
 }
 
-export default async function BewerbenSeite({ params }: { params: { token: string } }) {
-  const supabase = createClient();
+export default async function BewerbenSeite(props: { params: Promise<{ token: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
   let info: Info | null = null;
   if (/^[0-9a-f-]{36}$/i.test(params.token)) {
     const { data } = await supabase.rpc("bewerber_link_info", { p_token: params.token });

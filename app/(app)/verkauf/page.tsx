@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 // Bestandsobjekte (inkl. Restschuld-Summe) werden serverseitig geladen, damit
 // der Rechner sie vorbefüllen kann.
 export default async function VerkaufPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const [{ data: props }, { data: kredite }, { data: hist }] = await Promise.all([
     supabase.from("properties").select("id,bezeichnung,kaufpreis,kaufdatum,wert").order("bezeichnung"),
     supabase.from("kredite").select("prop_id,restschuld,betrag"),

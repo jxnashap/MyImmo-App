@@ -47,7 +47,7 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
     // Structured Data (JSON-LD) für Google — als SoftwareApplication + Anbieter.
     // Bewusst OHNE aggregateRating/Reviews (keine echten → wäre Richtlinienverstoß).
     // nonce aus der Middleware, sonst würde die strenge CSP das Script blocken.
-    const nonce = headers().get("x-nonce") ?? undefined;
+    const nonce = (await headers()).get("x-nonce") ?? undefined;
     const jsonLd = {
       "@context": "https://schema.org",
       "@graph": [

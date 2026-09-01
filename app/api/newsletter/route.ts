@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { besucherIp, darfWeiter } from "@/lib/net/bremse";
+import { basisUrl } from "@/lib/net/basisUrl";
 import { brevoBereit, sendeMail } from "@/lib/mail/brevo";
 import {
   EINWILLIGUNGSTEXT,
@@ -18,14 +18,6 @@ export const dynamic = "force-dynamic";
 // Schritt 1 des Double-Opt-ins: Adresse vormerken und Bestätigungsmail senden.
 // In den Verteiler kommt sie erst nach dem Klick in dieser Mail
 // (/api/newsletter/bestaetigen).
-
-export function basisUrl(): string {
-  const h = headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (!host) return "https://www.myimmoapp.de";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
 
 export async function POST(req: Request) {
   let email = "";
@@ -85,7 +77,7 @@ export async function POST(req: Request) {
       quelle: quelle || null,
       einwilligungstext: EINWILLIGUNGSTEXT,
       angefordert_am: new Date().toISOString(),
-      angefordert_ip: besucherIp(),
+      angefordert_ip: await besucherIp(),
       // Eine frühere Abmeldung wird durch die neue Anmeldung aufgehoben.
       abgemeldet_am: null,
     },
@@ -96,7 +88,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ fehler: "Speichern fehlgeschlagen." }, { status: 500 });
   }
 
-  const url = `${basisUrl()}/api/newsletter/bestaetigen?token=${encodeURIComponent(token)}`;
+  const url = `${await basisUrl()}/api/newsletter/bestaetigen?token=${encodeURIComponent(token)}`;
   const mail = bestaetigungsMail(url);
   const gesendet = await sendeMail({ an: email, betreff: mail.betreff, html: mail.html, text: mail.text });
   if (!gesendet) {

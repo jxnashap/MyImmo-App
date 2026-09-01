@@ -18,7 +18,7 @@ function neuerCode(): string {
 }
 
 export async function erzeugeEinladungscode(mieterId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -60,7 +60,7 @@ export async function erzeugeEinladungscode(mieterId: string) {
 }
 
 export async function widerrufeEinladung(mieterId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

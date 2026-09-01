@@ -31,7 +31,7 @@ const leer: ObjektUmfang = { einnahmen: 0, kosten: 0, kredite: 0, dokumente: 0, 
 
 /** Löschumfang je Objekt — eine schlanke Abfrage je Tabelle (nur prop_id). */
 export async function objektUmfaenge(): Promise<Map<string, ObjektUmfang>> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const [einn, kost, kred, notiz, verbr, miet] = await Promise.all([
     supabase.from("einnahmen").select("prop_id"),
     supabase.from("kosten").select("prop_id"),
@@ -76,7 +76,7 @@ export type MieterUmfang = { zeitraeume: number; positionen: number; einnahmen: 
 
 /** Löschumfang je Mieter. */
 export async function mieterUmfaenge(): Promise<Map<string, MieterUmfang>> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const [zr, pos, einn] = await Promise.all([
     supabase.from("miet_zeitraeume").select("mieter_id"),
     supabase.from("mieter_positionen").select("mieter_id"),

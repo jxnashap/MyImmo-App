@@ -5,7 +5,7 @@ import type { createClient } from "@/lib/supabase/server";
 // Speicherungen). Damit füllt sich der Wertentwicklungs-Chart über die Zeit,
 // egal ob der Wert per Index-Fortschreibung, ImmoWertV oder manuell entstand.
 export async function protokolliereWert(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   propId: string,
   marktwert: number | null | undefined,

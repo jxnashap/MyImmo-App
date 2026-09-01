@@ -25,12 +25,13 @@ function statusBadge(status: string | null) {
   return "badge-teal";
 }
 
-export default async function PropertiesPage({
-  searchParams,
-}: {
-  searchParams: { sort?: string; q?: string; status?: string };
-}) {
-  const supabase = createClient();
+export default async function PropertiesPage(
+  props: {
+    searchParams: Promise<{ sort?: string; q?: string; status?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
   const [{ data }, { data: kred }, umfaenge] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("kredite").select("prop_id,restschuld"),

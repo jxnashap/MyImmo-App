@@ -13,7 +13,7 @@ export async function saveKalkulation(
   data: Record<string, string>,
   summary: Record<string, number>,
 ): Promise<Kalkulation> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { data: row, error } = await supabase.from("kalkulationen").insert({
@@ -27,7 +27,7 @@ export async function saveKalkulation(
 }
 
 export async function deleteKalkulation(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { error } = await supabase.from("kalkulationen").delete().eq("id", id);
@@ -42,7 +42,7 @@ export async function updateKalkulation(
   data: Record<string, string>,
   summary: Record<string, number>,
 ): Promise<Kalkulation> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { data: row, error } = await supabase

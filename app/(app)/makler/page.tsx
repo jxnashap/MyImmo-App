@@ -7,7 +7,7 @@ import type { MaklerDok } from "@/lib/makler";
 export const dynamic = "force-dynamic";
 
 export default async function MaklerPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   // Existenz der Selbstauskunft prüfen (für den „Aus MyImmo erzeugen"-Button) —

@@ -37,7 +37,7 @@ export async function sendeBankRueckmeldung(
   token: string,
   fd: FormData,
 ): Promise<{ ok: boolean; fehler?: string }> {
-  const ip = (headers().get("x-forwarded-for") ?? "unbekannt").split(",")[0].trim();
+  const ip = ((await headers()).get("x-forwarded-for") ?? "unbekannt").split(",")[0].trim();
   if (rateLimited(ip)) {
     return { ok: false, fehler: "Zu viele Anfragen — bitte in ein paar Minuten erneut versuchen." };
   }
@@ -53,7 +53,7 @@ export async function sendeBankRueckmeldung(
     .filter(Boolean)
     .slice(0, 30);
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.rpc("beleihung_public_rueckmeldung", {
     p_token: token,
     p_name: name,

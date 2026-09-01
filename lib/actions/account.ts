@@ -27,7 +27,7 @@ export type LoeschErgebnis = { ok: false; fehler: string };
  * Im Erfolgsfall wird weiterhin umgeleitet (die Funktion kehrt dann nicht zurück).
  */
 export async function deleteAccount(): Promise<LoeschErgebnis | void> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

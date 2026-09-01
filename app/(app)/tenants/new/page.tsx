@@ -3,8 +3,9 @@ import TenantForm from "@/components/TenantForm";
 import { createTenant } from "@/lib/actions/tenants";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function NewTenantPage({ searchParams }: { searchParams: { prop?: string; back?: string } }) {
-  const supabase = createClient();
+export default async function NewTenantPage(props0: { searchParams: Promise<{ prop?: string; back?: string }> }) {
+  const searchParams = await props0.searchParams;
+  const supabase = await createClient();
   const { data: props } = await supabase.from("properties").select("id,bezeichnung").order("bezeichnung");
   const back = searchParams.back || "/tenants";
 

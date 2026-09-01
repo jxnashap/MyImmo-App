@@ -41,7 +41,7 @@ export async function importiereDaten(
   typ: ImportTyp,
   zeilen: ImportZeile[],
 ): Promise<ImportAktionErgebnis> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Nicht angemeldet." };
 

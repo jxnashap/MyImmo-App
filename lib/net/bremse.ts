@@ -11,8 +11,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // Besucher-IP hier ausgelesen und ausdruecklich mitgegeben.
 
 /** IP des Besuchers aus den Proxy-Headern; erster Eintrag von x-forwarded-for. */
-export function besucherIp(): string {
-  const h = headers();
+export async function besucherIp(): Promise<string> {
+  const h = await headers();
   const kette = h.get("x-forwarded-for") ?? "";
   const erste = kette.split(",")[0]?.trim();
   return erste || h.get("x-real-ip") || "unbekannt";
@@ -43,7 +43,7 @@ export async function darfWeiter(
       p_aktion: aktion,
       p_max: max,
       p_sekunden: sekunden,
-      p_kennung: kennung ?? besucherIp(),
+      p_kennung: kennung ?? (await besucherIp()),
     });
     // Die Funktion wirft beim Ueberschreiten — PostgREST macht daraus einen Fehler.
     return !error;

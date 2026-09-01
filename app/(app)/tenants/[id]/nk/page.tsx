@@ -17,14 +17,15 @@ export const dynamic = "force-dynamic";
 const formatIban = (s: string) =>
   s.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
 
-export default async function NkPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: { jahr?: string };
-}) {
-  const supabase = createClient();
+export default async function NkPage(
+  props: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ jahr?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const supabase = await createClient();
 
   const { data: tenant } = await supabase
     .from("mieter")

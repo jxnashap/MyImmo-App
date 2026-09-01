@@ -8,11 +8,12 @@ export const dynamic = "force-dynamic";
 // bestätigen — plus Nacherfassen-Modus für offene Vormonate (bis 10 Jahre).
 // Soll-Beträge kommen aus lib/mietkonto.ts (Miet-Zeiträume + Fallback).
 
-export default async function MietkontoPage({
-  searchParams,
-}: {
-  searchParams: { monat?: string };
-}) {
+export default async function MietkontoPage(
+  props: {
+    searchParams: Promise<{ monat?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const jetzt = new Date();
   const aktuellerMonat = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, "0")}`;
   const monat = /^\d{4}-\d{2}$/.test(searchParams.monat ?? "") ? searchParams.monat! : aktuellerMonat;

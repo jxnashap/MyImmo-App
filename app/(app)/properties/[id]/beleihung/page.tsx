@@ -9,8 +9,9 @@ import type { Freigabe } from "@/lib/actions/beleihung";
 
 export const dynamic = "force-dynamic";
 
-export default async function BeleihungPage({ params }: { params: { id: string } }) {
-  const supabase = createClient();
+export default async function BeleihungPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
 
   const [{ data: prop }, { data: mieter }, { data: kredite }, { data: docs }, { data: freigaben }] =
     await Promise.all([

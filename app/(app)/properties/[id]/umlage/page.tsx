@@ -6,8 +6,9 @@ import { zeigeVerteiler } from "@/lib/umlage";
 
 export const dynamic = "force-dynamic";
 
-export default async function UmlagePage({ params }: { params: { id: string } }) {
-  const supabase = createClient();
+export default async function UmlagePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
   const id = params.id;
 
   const [{ data: prop }, { data: mieter }] = await Promise.all([

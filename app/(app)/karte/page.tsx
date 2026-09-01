@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const MAX_GEOCODE_PRO_AUFRUF = 3;
 
 export default async function KartePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: rows } = await supabase
     .from("properties")
     .select("id,bezeichnung,adresse,typ,wert,lat,lng")

@@ -11,7 +11,7 @@ import { offeneMieten, monatLabel, type MietkontoMieter, type MietkontoZeitraum 
 type MieterRow = MietkontoMieter & { id: string; vorname: string | null; nachname: string | null; prop_id: string | null };
 
 export default async function RueckstandWaechter() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const [{ data: mieterRows }, { data: zrRows }, { data: einnRows }] = await Promise.all([
     supabase
       .from("mieter")

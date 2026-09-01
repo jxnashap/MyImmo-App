@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function erstelleBewerberLink(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -32,7 +32,7 @@ export async function erstelleBewerberLink(formData: FormData) {
  * Slots gegen den Katalog whitelisten.
  */
 export async function aktualisiereBewerberLink(id: string, fd: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -90,7 +90,7 @@ export async function aktualisiereBewerberLink(id: string, fd: FormData) {
  * Bewusst KEINE stille Automatik — der Vermieter bestätigt per Klick.
  */
 export async function loescheAlteAbgelehnteBewerbungen() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -108,7 +108,7 @@ export async function loescheAlteAbgelehnteBewerbungen() {
 }
 
 export async function setzeBewerberLinkAktiv(id: string, aktiv: boolean) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -119,7 +119,7 @@ export async function setzeBewerberLinkAktiv(id: string, aktiv: boolean) {
 }
 
 export async function loescheBewerberLink(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -130,7 +130,7 @@ export async function loescheBewerberLink(id: string) {
 }
 
 export async function setzeBewerbungStatus(id: string, status: "neu" | "favorit" | "abgelehnt") {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -141,7 +141,7 @@ export async function setzeBewerbungStatus(id: string, status: "neu" | "favorit"
 }
 
 export async function loescheBewerbung(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -159,7 +159,7 @@ export async function loescheBewerbung(id: string) {
 export async function ladeBewerbungDatei(
   id: string,
 ): Promise<{ ok: boolean; fehler?: string; name?: string; typ?: string; data?: string }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -178,7 +178,7 @@ export async function ladeBewerbungDatei(
 
 /** Ein einzelnes Bewerbungs-Dokument löschen (DSGVO-Datensparsamkeit). */
 export async function loescheBewerbungDatei(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -190,7 +190,7 @@ export async function loescheBewerbungDatei(id: string) {
 
 /** E-Signatur des Vermieters speichern (PNG-Data-URL, max. ~200 kB). */
 export async function speichereUnterschrift(dataUrl: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -207,7 +207,7 @@ export async function speichereUnterschrift(dataUrl: string) {
 }
 
 export async function loescheUnterschrift() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

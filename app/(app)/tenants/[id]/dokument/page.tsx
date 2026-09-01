@@ -6,14 +6,15 @@ import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
 import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
 
-export default async function DokumentPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: { art?: string; betrag?: string; datum?: string; grund?: string };
-}) {
-  const supabase = createClient();
+export default async function DokumentPage(
+  props: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ art?: string; betrag?: string; datum?: string; grund?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: m } = await supabase.from("mieter").select("*").eq("id", params.id).single();
   if (!m) notFound();

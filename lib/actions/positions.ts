@@ -15,7 +15,7 @@ const numOderNull = (v: FormDataEntryValue | null): number | null => {
 };
 
 export async function addPosition(mieterId: string, formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -51,7 +51,7 @@ export async function addPosition(mieterId: string, formData: FormData) {
 
 // Mehrere per OCR erkannte Positionen auf einmal anlegen (umlagefähig, aktuelles Jahr).
 export async function addPositionsBulk(mieterId: string, positionenJson: string, jahr?: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
@@ -113,7 +113,7 @@ export async function updatePosition(
     flaeche_gesamt?: number | null;
   },
 ): Promise<{ ok: boolean }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false };
 
@@ -146,7 +146,7 @@ export async function uebernehmeNkOcr(
   jahr: number,
   datenJson: string,
 ): Promise<{ ok: boolean; fehler?: string }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
@@ -208,7 +208,7 @@ export async function uebernehmeNkOcr(
 }
 
 export async function deletePosition(id: string, mieterId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("mieter_positionen").delete().eq("id", id);
   if (error) throw new Error(error.message);
 

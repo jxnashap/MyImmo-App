@@ -25,8 +25,9 @@ function Kachel({ label, value, color }: { label: string; value: React.ReactNode
   );
 }
 
-export default async function MieterDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createClient();
+export default async function MieterDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
   const { data } = await supabase.from("mieter").select("*").eq("id", params.id).single();
   if (!data) notFound();
   const m = data as Tenant;

@@ -6,8 +6,9 @@ import { updateTermin } from "@/lib/actions/termine";
 import { KATEGORIE_STIL, TERMIN_KATEGORIEN, WIEDERKEHRUNG_LABEL } from "@/lib/termine";
 import type { Property, Termin } from "@/lib/types";
 
-export default async function TerminEditPage({ params }: { params: { id: string } }) {
-  const supabase = createClient();
+export default async function TerminEditPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
   const [{ data: row }, { data: propsData }, { data: mieterData }] = await Promise.all([
     supabase.from("termine").select("*").eq("id", params.id).single(),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),

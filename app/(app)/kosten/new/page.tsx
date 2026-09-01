@@ -6,8 +6,9 @@ import type { Property, Tenant } from "@/lib/types";
 
 const KATEGORIEN = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
 
-export default async function NeueKostenPage({ searchParams }: { searchParams: { prop?: string; back?: string } }) {
-  const supabase = createClient();
+export default async function NeueKostenPage(props0: { searchParams: Promise<{ prop?: string; back?: string }> }) {
+  const searchParams = await props0.searchParams;
+  const supabase = await createClient();
   const [{ data: props }, { data: miet }] = await Promise.all([
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
     supabase.from("mieter").select("id,vorname,nachname,prop_id").order("nachname"),

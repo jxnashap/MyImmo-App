@@ -8,7 +8,7 @@ import AuftraegePortal, { type PortalAuftragRow, type PortalFirmaRow, type Auftr
 import { datum } from "@/lib/format";
 
 export default async function ServicePortalPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

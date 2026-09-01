@@ -34,7 +34,7 @@ export async function reicheBewerbungEin(
   token: string,
   fd: FormData,
 ): Promise<{ ok: boolean; fehler?: string; bewerbungId?: string }> {
-  const ip = (headers().get("x-forwarded-for") ?? "unbekannt").split(",")[0].trim();
+  const ip = ((await headers()).get("x-forwarded-for") ?? "unbekannt").split(",")[0].trim();
   if (rateLimited(ip)) {
     return { ok: false, fehler: "Zu viele Anfragen — bitte in ein paar Minuten erneut versuchen." };
   }
@@ -47,7 +47,7 @@ export async function reicheBewerbungEin(
     return { ok: false, fehler: "Ungültige Unterschrift." };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.rpc("bewerbung_einreichen", {
     p_token: token,
     p: {
@@ -90,7 +90,7 @@ export async function haengeBewerbungDateiAn(
   fd: FormData,
 ): Promise<{ ok: boolean; fehler?: string }> {
   // Eigenes, großzügigeres IP-Limit als beim Einreichen (siehe Zähler unten).
-  const ip = (headers().get("x-forwarded-for") ?? "unbekannt").split(",")[0].trim();
+  const ip = ((await headers()).get("x-forwarded-for") ?? "unbekannt").split(",")[0].trim();
   if (uploadRateLimited(ip)) {
     return { ok: false, fehler: "Zu viele Uploads — bitte in ein paar Minuten erneut versuchen." };
   }
@@ -122,7 +122,7 @@ export async function haengeBewerbungDateiAn(
     /* DATA_ENCRYPTION_KEY fehlt — Klartext-Fallback (Dev) */
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.rpc("bewerbung_datei_anhaengen", {
     p_token: token,
     p_bewerbung: bewerbungId,

@@ -9,12 +9,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { token: string; key: string } },
+  props: { params: Promise<{ token: string; key: string }> }
 ) {
+  const params = await props.params;
   if (!/^[0-9a-f-]{36}$/i.test(params.token)) {
     return new NextResponse("Ungültiger Link", { status: 404 });
   }
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.rpc("beleihung_public_datei", {
     p_token: params.token,
     p_item_key: params.key,

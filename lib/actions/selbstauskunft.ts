@@ -12,7 +12,7 @@ export type SelbstauskunftResult = { ok: boolean; error?: string };
 // Lädt die (verschlüsselte) Selbstauskunft des angemeldeten Nutzers und gibt
 // sie entschlüsselt zurück. null, wenn noch nichts gespeichert ist.
 export async function ladeSelbstauskunft(): Promise<SelbstauskunftDaten | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
@@ -34,7 +34,7 @@ export async function ladeSelbstauskunft(): Promise<SelbstauskunftDaten | null> 
 
 // Verschlüsselt und speichert (Upsert je Nutzer) die Selbstauskunft.
 export async function speichereSelbstauskunft(daten: SelbstauskunftDaten): Promise<SelbstauskunftResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
 
