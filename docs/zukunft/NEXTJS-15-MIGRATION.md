@@ -21,6 +21,22 @@ Sicherheitsfixes mehr) und die offiziellen Upgrade-Guides von Next.js, abgerufen
 > ohne npm-override belassen). Rückkehrpunkt: Branch **`stand/vor-next15-2026-09-01`**.
 > Abnahmepunkte 1, 2 und 4 (Anmelde-Gate end-to-end, Demo-Konto, TTFB live) sind erst
 > nach dem Deploy gegen die echte Umgebung prüfbar.
+>
+> ✅ **Live-Nachmessung nach dem Produktions-Deploy (01.09.2026, ~19:30 UTC):**
+> - **Punkt 4 (statische Auslieferung): bestanden.** `/ratgeber` und `/funktionen` mit
+>   `x-vercel-cache: HIT`; `/ratgeber` pendelt nach dem Cache-Aufwärmen auf **0,16 s TTFB**
+>   ein — exakt der Zielwert. Der MISS auf `/` ist KEIN Regress: Die Startseite liegt im
+>   App-Baum (eingeloggt = Dashboard) und war schon vor der Migration dynamisch
+>   (`docs/SEO.md`, Messung D1).
+> - **Punkt 3 (Nonce-CSP): bestanden.** `/login` trägt `script-src 'self' 'nonce-…'`,
+>   App-Strecke `private, no-cache, no-store`, Pub-Strecke `public`.
+> - **Punkt 5 (echte 404): bestanden.** Unbekannte Ratgeber-/Funktions-Slugs → 404 mit
+>   deutscher Fehlerseite.
+> - **Punkt 6 (Domains): bestanden.** Alle vier Alias-Hosts landen auf `.de` (Apex-/www-
+>   Normalisierung von Vercel macht daraus teils zwei Hops — Endziel stimmt, Pfad erhalten).
+> - **Punkt 9 (OSV): 25 → 4** (nur noch `postcss` 8.4.31, siehe Sicherheitsdossier).
+> - **Offen bleiben Punkte 1, 2 und 7** — Anmelde-Gate end-to-end, Demo-Konto und
+>   PDF-Erzeugung kann nur der Betreiber in der echten App durchspielen.
 
 ## Zielversion: 15.5.25, ausdrücklich nicht 16
 
