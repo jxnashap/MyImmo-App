@@ -6,6 +6,7 @@ import { ladeNeuigkeiten } from "@/lib/neuigkeiten";
 import AutoLogout from "@/components/AutoLogout";
 import OnboardingTour from "@/components/OnboardingTour";
 import LabelVerknuepfung from "@/components/LabelVerknuepfung";
+import DemoNurLesen from "@/components/DemoNurLesen";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ToastProvider } from "@/components/Toast";
 import FlashToast from "@/components/FlashToast";
@@ -15,6 +16,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getRolle } from "@/lib/rolle";
 import { istFreigeschaltet } from "@/lib/freischaltung";
+import { istDemoKonto } from "@/lib/demo";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.myimmoapp.de"),
@@ -79,7 +81,16 @@ export default async function RootLayout({
   // Zugangscode + Consent bestätigen, bevor die App nutzbar ist. Ohne
   // Freischaltung nur /willkommen (und öffentliche Seiten) erreichbar.
   if (!istOeffentlicheSeite && !pathname.startsWith("/willkommen")) {
-    if (!(await istFreigeschaltet(supabase, user.id))) redirect("/willkommen");
+    if (!(await istFreigeschaltet(supabase, user.id))) {
+      // Bei der Registrierung wurde der Zugangscode bereits geprüft und die
+      // Freischaltung vorgemerkt (siehe `bereiteRegistrierungVor`). Sie hier
+      // einzulösen erspart dem Nutzer, denselben Code ein zweites Mal zu
+      // tippen. Bewusst im Gate statt im Auth-Callback: Der Bestätigungslink
+      // aus der E-Mail läuft je nach Supabase-Konfiguration nicht zwingend
+      // über /auth/callback — hier greift es auf jedem Weg.
+      const { data: nachgeholt } = await supabase.rpc("freischaltung_nachholen");
+      if (!nachgeholt) redirect("/willkommen");
+    }
   }
   // Willkommens-Gate ohne App-Shell rendern (keine Navigation vor Freischaltung).
   if (pathname.startsWith("/willkommen")) {
@@ -172,6 +183,11 @@ export default async function RootLayout({
             {/* Verknüpft Beschriftungen mit ihren Feldern (label[for] ↔ id) —
                 auch in später nachgeladenen Formularen. */}
             <LabelVerknuepfung />
+            {/* Demo: Felder schreibgeschuetzt, Speichern-Knoepfe inaktiv.
+                Die Datenbank sperrt zwar ohnehin (Migration 20260830150000),
+                blockiert UPDATE/DELETE aber STUMM — ohne diese Ebene haelt der
+                Besucher ungespeicherte Aenderungen fuer gespeichert. */}
+            {istDemoKonto(user.email) && <DemoNurLesen />}
             <OnboardingTour neuerNutzer={(props ?? []).length === 0} />
             <div className="main-wrap">
               {/* Demo-Hinweis: Ohne ihn haelt ein Besucher seine Eingaben fuer

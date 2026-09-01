@@ -154,7 +154,13 @@ export default function DocGenerator({
 
 
   return (
-    <div style={{ display: "flex", gap: 22, alignItems: "flex-start", flexWrap: "wrap" }}>
+    // `data-demo-erlaubt`: Der Brief-Generator ist das EINZIGE Werkzeug, das in
+    // der Demo bedienbar bleibt (Vorgabe Betreiber 30.08.2026) — als Beispiel
+    // zum Selbstzusammenstellen, inklusive PDF. `components/DemoNurLesen.tsx`
+    // laesst alles innerhalb dieses Bereichs in Ruhe. Gespeichert wird trotzdem
+    // nichts: `speichereBrief` und `saveDokumentVorlage` laufen gegen die
+    // RLS-Schreibsperre des Demo-Kontos.
+    <div data-demo-erlaubt style={{ display: "flex", gap: 22, alignItems: "flex-start", flexWrap: "wrap" }}>
       {/* ---------- Eingaben + Vorlagen-Editor ---------- */}
       <div className="form-box no-print" style={{ maxWidth: 460, flex: "1 1 420px" }}>
         <h3>Dokument erstellen</h3>

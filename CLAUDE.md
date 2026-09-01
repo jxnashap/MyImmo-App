@@ -61,7 +61,54 @@ die DB-Tabellen (`bankverbindungen`, `bank_umsaetze`, `bank_auth_anfragen`) und 
 wurden per Migration `20260829120000` gedroppt. Wieder aufbauen, sobald das Produkt Geld verdient
 (dann als bezahltes Add-on über einen lizenzierten AISP wie Enable Banking).
 
+### Registrierung — Ablauf (Stand 31.08.2026)
+1. E-Mail, Passwort (2×), **Zugangscode**, Zustimmung → der Code wird serverseitig geprüft
+   UND die Freischaltung vorgemerkt (`bereiteRegistrierungVor`, Tabelle
+   `registrierung_freigaben`, 14 Tage gültig).
+2. Bestätigungsmail anklicken.
+3. Einmal mit E-Mail + Passwort anmelden → das Layout-Gate löst die Vormerkung per
+   `freischaltung_nachholen()` ein. **Der Code wird NICHT erneut abgefragt.**
+
+`/willkommen` bleibt als Rückfallweg: Google-Registrierung (dort gibt es keinen Code-Schritt),
+Mieter/Handwerker mit Einladungscode, abgelaufene oder fehlende Vormerkung.
+**Zwei Fehler, die dort steckten** (gemeldet 31.08.2026) — nicht wieder einbauen:
+- Das Gate schrieb den Code vor der Prüfung in **Großbuchstaben**. Der Beta-Code enthält
+  Klein-/Großbuchstaben, Ziffern und Sonderzeichen, der Vergleich ist exakt → derselbe Code,
+  der bei der Registrierung ging, war hier zwangsläufig falsch. Großschreibung gilt **nur**
+  für Einladungscodes (Format `MI-XXXX-XXXX`).
+- Bei der Registrierung wurde der Code nur geprüft, nie gespeichert → das Gate fragte
+  überhaupt erst ein zweites Mal.
+**Nicht über `signUp`-Metadaten lösen:** `raw_user_meta_data` kommt vom Client und ist frei
+setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangscode vorbei.
+
+### Zukunftsideen (notiert, nicht gebaut)
+- **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
+  Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
+  Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das
+  nächste Objekt finanzierbar, was fehlt bis dahin. Die Daten liegen fast alle schon vor
+  (Cashflow, Kredite/Restschuld, Objektwerte, Beleihung, Selbstauskunft, Kaufnebenkosten).
+  **Größtes Risiko: die Grenze zur Anlageberatung.** „Im März 2028 kannst du kaufen" ist eine
+  Empfehlung zu einer Vermögensdisposition — § 34i GewO steht ohnehin auf der Anwaltsliste,
+  dieser Punkt gehört dort mit hinein, VOR dem Bau. Zweites Risiko: Zehnjahresprognosen sind
+  Scheingenauigkeit (Zins, Miete, Wert, Instandhaltung) → Szenarien statt einer Zahl.
+  Vor dem Bau außerdem klären: kostenlos oder Tarifmerkmal (dann `docs/FINANZKONZEPT.md`
+  im selben PR mitziehen).
+
 ### Sonstiges (kein Geld)
+- **Demo-Konto ist seit 30.08.2026 NUR-LESEN.** Vorgabe des Betreibers: Schaustück, kein
+  Sandkasten. Drei Ebenen, alle drei nötig (Begründung in `lib/demo.ts`):
+  (1) **Datenbank** — restriktive RLS-Policies verweigern dem Demo-Konto jedes
+  INSERT/UPDATE/DELETE (Migration `20260830150000_demo_nur_lesen.sql`, Funktion
+  `public.ist_demo_nutzer()`). (2) **Routen** — `demoDarfRoute` sperrt NK-Rechner,
+  Protokoll, alle Bearbeiten-Formulare und **alle API-Routen außer `/api/demo`**;
+  die Middleware weist jetzt jede Methode ab, nicht nur GET. (3) **Oberfläche** —
+  `components/DemoNurLesen.tsx` macht Felder schreibgeschützt und Speichern-Knöpfe inaktiv.
+  **Warum Ebene 3 trotz Ebene 1 nötig ist:** Ein per RLS blockiertes UPDATE/DELETE wirft
+  KEINEN Fehler, es trifft null Zeilen — der Besucher hielte Ungespeichertes für gespeichert.
+  **Einzige Ausnahme:** das Mieterhöhungs-Dokument samt PDF (`data-demo-erlaubt` im
+  `DocGenerator`) — gespeichert wird dabei nichts.
+  **Beim Anlegen einer neuen Tabelle** greifen die Policies NICHT automatisch; die Migration
+  dann erneut ausführen (sie ist idempotent).
 - **ZURÜCKGESTELLT (30.08.2026, Entscheidung des Nutzers): Namentliche Autorenschaft der
   Ratgeber.** Im Article-Markup steht derzeit `author: Organization "MyImmo"` — bei
   Steuer- und Mietrechtsthemen (YMYL) das schwächste denkbare Vertrauenssignal und die

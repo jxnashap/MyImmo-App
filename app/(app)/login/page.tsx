@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, KeyRound, Home, Wrench, Building2, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
-import { pruefeBetaCode } from "@/lib/actions/freischaltung";
+import { bereiteRegistrierungVor } from "@/lib/actions/freischaltung";
 import { PASSWORT_MIN, PASSWORT_REGEL, pruefePasswort } from "@/lib/passwort";
 import { sicheresZiel } from "@/lib/flash";
 
@@ -201,14 +201,18 @@ export default function LoginPage() {
       // Vermieter & Hausverwaltung: Beta-Zugangscode + volle App.
       // Die Prüfung läuft SERVERSEITIG — der Code darf nicht im ausgelieferten
       // JavaScript stehen (siehe lib/actions/freischaltung.ts).
-      const codeGeprueft = await pruefeBetaCode(code);
-      if (!codeGeprueft.ok) {
-        setError(codeGeprueft.fehler ?? "Ungültiger Zugangscode.");
+      if (!consent) {
+        setError("Bitte stimme AGB, Datenschutz und Auftragsverarbeitung zu.");
         setLoading(false);
         return;
       }
-      if (!consent) {
-        setError("Bitte stimme AGB, Datenschutz und Auftragsverarbeitung zu.");
+      // Prüft den Code UND merkt die Freischaltung serverseitig vor. Ohne die
+      // Vormerkung fragte das Willkommens-Gate beim ersten Login ein zweites
+      // Mal nach demselben Code — die Freischaltung braucht eine angemeldete
+      // Sitzung, die es vor der E-Mail-Bestätigung noch nicht gibt.
+      const codeGeprueft = await bereiteRegistrierungVor(code, email, consent);
+      if (!codeGeprueft.ok) {
+        setError(codeGeprueft.fehler ?? "Ungültiger Zugangscode.");
         setLoading(false);
         return;
       }
@@ -218,7 +222,12 @@ export default function LoginPage() {
         options: rolle === "hausverwaltung" ? { data: { rolle: "hausverwaltung" } } : undefined,
       });
       if (error) setError(uebersetze(error.message));
-      else setInfo("Fast geschafft — bitte bestätige die E-Mail in deinem Postfach.");
+      else
+        setInfo(
+          "Fast geschafft — bestätige jetzt die E-Mail in deinem Postfach. " +
+            "Danach meldest du dich hier einmal mit E-Mail und Passwort an; " +
+            "der Zugangscode wird nicht noch einmal gebraucht.",
+        );
       setLoading(false);
     }
   }

@@ -28,6 +28,10 @@
 - [[APP-STORE-RECHT]] — App/Play Store: Gesetze, Store-Regeln, Gebühren **+ Prüfung von MyImmo**
 - [[anthropic-dpa-archiv]] — archiviertes Anthropic-DPA
 
+## 🔮 Zukunftsprojekte (notiert, nicht gebaut)
+- [[STRATEGIE-REITER]] — Ankaufsstrategie: wann ist das nächste Objekt finanzierbar? (Idee 30.08.2026)
+- [[OPEN-BANKING]] — Konto-Anbindung, zurückgestellt 29.08.2026 (Code in der Git-Historie)
+
 ## 🛠️ Technik
 - [[README]] (in `supabase/migrations/`) — Migrations-Regeln + Historie
 - `CLAUDE.md` (Repo-Wurzel) — verbindliche Projekt-Regeln + Merkliste
