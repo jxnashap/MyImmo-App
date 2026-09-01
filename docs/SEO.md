@@ -325,6 +325,12 @@ Zwei Wege, gleiches Ergebnis:
 2. **Im Code** — `next.config.mjs`, `redirects()` mit `has: [{ type: "host" }]`. Wirkt mit
    dem nächsten Deploy und ist versioniert.
 
+**Nicht „aufräumen": Die `.com`-Weiterleitung ist gewollt.** Am 01.09.2026 stand die Frage
+im Raum, `myimmoapp.com` stattdessen als englische Fassung zu betreiben. Entscheidung des
+Betreibers: **nein** — `.de` bleibt vorerst die einzige Adresse, `.com` bleibt Weiterleitung
+und wird lediglich weiter verlängert. Begründung und der Weg für eine spätere Expansion
+stehen in `CLAUDE.md` unter „Zukunftsideen → Englische Fassung".
+
 **Erwartungshaltung:** Der Wechsel im Index dauert Wochen, nicht Stunden. Beschleunigen
 lässt er sich über die **Adressänderung** in der Search Console — dafür müssen beide
 Domains dort als Property bestätigt sein.

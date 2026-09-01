@@ -82,6 +82,30 @@ Mieter/Handwerker mit Einladungscode, abgelaufene oder fehlende Vormerkung.
 setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangscode vorbei.
 
 ### Zukunftsideen (notiert, nicht gebaut)
+- **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
+  Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
+  **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
+  Erst wenn der deutsche Markt Geld einbringt, wird über Expansion entschieden.
+  **`myimmoapp.com` deshalb NICHT auslaufen lassen** — die Domain trägt den eigenen
+  Markennamen und ist bis dahin indexiert; ein Rückkauf beim Expandieren kostet ein
+  Vielfaches der Verlängerungsgebühr.
+  **Warum nicht jetzt** (Analyse vom 01.09.2026): MyImmo ist keine deutschsprachige
+  Software, sondern deutsches Recht in Softwareform (Anlage V, § 558a BGB, BetrKV,
+  HeizkostenV, Mietspiegel, Grundsteuer, § 82b EStDV, DATEV, KfW). Eine Übersetzung
+  öffnet keinen neuen Markt, nur denselben Markt für Expats in Deutschland. Die
+  erzeugten Dokumente müssten ohnehin deutsch bleiben (Formzwang, Empfänger sind
+  deutsche Mieter), ebenso Impressum/AGB/Datenschutz. Aufwand: 374 Dateien,
+  ~48.400 Zeilen mit **fest im Code stehenden** deutschen Texten (keinerlei i18n,
+  kein next-intl), 8 PDF-Generatoren, ~106 KB Ratgeber-Text → aus 19 Artikeln würden
+  38, die alle auf Rechtsstand zu halten wären.
+  **Wenn doch, dann in dieser Reihenfolge:** (1) nur die Marketing-Oberfläche unter
+  `www.myimmoapp.de/en/` + `hreflang`, App und Ratgeber bleiben deutsch → in der
+  Search Console messen, ob englische Nachfrage überhaupt existiert; (2) erst danach
+  App-i18n, und zwar mit Sprachdateien statt Textkopien.
+  **Wichtig für die spätere Entscheidung:** Eine reine SPRACHversion gehört ins
+  Unterverzeichnis derselben Domain (eine Domain, eine Autorität). Eine eigene Domain
+  lohnt erst, wenn ein Land ein eigenes PRODUKT bekommt (z. B. österreichisches
+  Mietrecht) — nicht für eine übersetzte Oberfläche.
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das
