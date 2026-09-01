@@ -250,6 +250,13 @@ setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangsco
 
 ## Deployment
 - **Live-URL (Produktion): https://www.myimmoapp.de** (eigene Domain; Apex leitet auf www um.
+  **`myimmoapp.store` gehoert ebenfalls zum Projekt und lieferte bis 01.09.2026 dieselbe App
+  aus (200)** — Google zeigte MyImmo daraufhin unter `.store`. Seit 01.09.2026 leitet `.store`
+  dauerhaft auf `.de` (`next.config.mjs`, host-basierter Redirect). Das korrekte Canonical auf
+  `.de` allein hatte NICHT gereicht: Canonical ist ein Hinweis, keine Anweisung.
+  **Noch offen (nur Betreiber):** dieselbe Weiterleitung in Vercel setzen (Settings → Domains →
+  Redirect) — dann wird die App gar nicht erst aufgerufen und die Code-Regel kann weg. Und in
+  der Search Console die **Adressänderung** anstossen; der Indexwechsel dauert sonst Wochen.
   `my-immo-app.vercel.app` existiert nur noch als Vercel-Fallback — nirgends mehr verlinken;
   Sitemap/Robots/metadataBase zeigen auf www.myimmoapp.de).
 - Gehostet auf **Vercel**, verbunden mit dem GitHub-Repo `jxnashap/myimmo-app` (Branch `main`).

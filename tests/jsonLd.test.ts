@@ -112,3 +112,29 @@ describe("Slugs altern nicht", () => {
     expect(mitJahr).toEqual([]);
   });
 });
+
+// Gefunden am 01.09.2026: Google zeigte MyImmo unter `myimmoapp.store` statt
+// `myimmoapp.de`. Beide Domains lieferten dieselbe App aus (200 von Vercel) —
+// und das, obwohl `.store` bereits ein korrektes Canonical auf `.de` sendete.
+// Canonical ist eben nur ein Hinweis. Verlaesslich hilft nur, dass es unter
+// `.store` nichts mehr zu indexieren gibt.
+describe("Nur eine Domain liefert Inhalt aus", () => {
+  const config = readFileSync("next.config.mjs", "utf8");
+
+  it("myimmoapp.store wird dauerhaft auf myimmoapp.de umgeleitet", () => {
+    expect(config).toContain('has: [{ type: "host", value: "(www\\\\.)?myimmoapp\\\\.store" }]');
+    expect(config).toContain('destination: "https://www.myimmoapp.de/:pfad*"');
+  });
+
+  it("der Pfad bleibt erhalten — verlinkte Unterseiten landen nicht auf der Startseite", () => {
+    const ab = config.indexOf("myimmoapp\\\\.store");
+    const block = config.slice(Math.max(0, ab - 400), ab + 300);
+    expect(block).toContain('source: "/:pfad*"');
+  });
+
+  it("alle Absolut-URLs im Code zeigen auf .de, nie auf .store", () => {
+    expect(BASIS_URL).toBe("https://www.myimmoapp.de");
+    expect(readFileSync("app/sitemap.ts", "utf8")).not.toMatch(/myimmoapp\.store/);
+    expect(readFileSync("app/robots.ts", "utf8")).not.toMatch(/myimmoapp\.store/);
+  });
+});
