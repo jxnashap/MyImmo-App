@@ -345,6 +345,15 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **`docs/SICHERHEIT-ABHAENGIGKEITEN.md`**. Der Umstieg auf 15 ist ein eigener Arbeitsblock
   (async `headers()`/`cookies()`/`params`, gedrehte Caching-Vorgaben, React 19) — **nicht**
   nebenbei in einen anderen PR packen.
+- **Migrationsplan liegt fertig vor: `docs/zukunft/NEXTJS-15-MIGRATION.md`** (01.09.2026).
+  Zielversion **15.5.25**, ausdrücklich **nicht 16** — 16 verlangt `middleware.ts` → `proxy.ts`
+  (und unterstützt dort **keinen Edge-Runtime**), Turbopack als Standard und den Wegfall von
+  `next lint`; alles Umbau ohne Sicherheitsgewinn, ausgerechnet am Bauteil, an dem Login-Gate,
+  Demo-Sperre und Nonce-CSP hängen. Betroffen sind 10 `headers()`/`cookies()`-Aufrufe in 7
+  Dateien und 54 Dateien mit `params`/`searchParams`; `useFormState`, `geo`/`ip`, `@next/font`
+  und `defaultProps` **gar nicht**. **Die Abnahmeliste im Plan ist Pflicht** — die gefährlichen
+  Regressionen (Anmelde-Gate, Demo-Sperre, statische Auslieferung) machen sich nicht durch
+  einen Bauabbruch bemerkbar.
 - **Scanner (kostenlos, ohne Konto):** `osv-scanner scan source --lockfile=package-lock.json`
   (`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest`). Vor jedem größeren
   Release laufen lassen, mindestens monatlich. Neue Befunde in der genannten Datei bewerten,

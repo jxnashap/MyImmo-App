@@ -25,6 +25,7 @@
 
 ## ⚖️ Compliance
 - [[SICHERHEIT-ABHAENGIGKEITEN]] — OSV-Scanner-Befund, Bewertung, Next.js-14-Ende
+- [[NEXTJS-15-MIGRATION]] — Plan für den Umstieg auf Next.js 15.5 (noch nicht umgesetzt)
 - [[AVV-STATUS]] — DSGVO / AVV je Anbieter
 - [[APP-STORE-RECHT]] — App/Play Store: Gesetze, Store-Regeln, Gebühren **+ Prüfung von MyImmo**
 - [[anthropic-dpa-archiv]] — archiviertes Anthropic-DPA
