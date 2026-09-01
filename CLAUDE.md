@@ -281,10 +281,18 @@ setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangsco
   allein hatte NICHT gereicht: Canonical ist ein Hinweis, keine Anweisung.
   **Regel:** Kommt eine weitere Domain ins Vercel-Projekt, gehoert sie in `NEBENDOMAINS` —
   sonst liefert sie stillschweigend Duplikate aus.
-  **Noch offen (nur Betreiber):** dieselbe Weiterleitung in Vercel setzen (Settings → Domains →
-  `.store` und `.com` auf „Redirect") — dann wird die App gar nicht erst aufgerufen und die
-  Code-Regel kann weg. Und in der Search Console die **Adressänderung** anstossen; der
-  Indexwechsel dauert sonst Wochen.
+  **Stand 01.09.2026 abends, live gemessen — ABGESCHLOSSEN, nicht weiter daran drehen:**
+  `myimmoapp.store` leitet inzwischen auf **Vercel-Ebene** direkt auf `.de` um (Settings →
+  Domains → Redirect). Bei `.com` läuft die Kette `myimmoapp.com` → 308 → `www.myimmoapp.com`
+  → 308 → `.de`, wobei der letzte Schritt weiter über die **Code-Regel** geht. Das ist
+  BEWUSST so belassen: Für Google ist die Sache erledigt (beide `.com`-Adressen enden
+  permanent auf `.de`, zwei Hops sind unkritisch), der einzige Gewinn eines weiteren
+  Umbaus wäre eine eingesparte Serverless-Ausführung auf einer Domain ohne Verkehr — dem
+  steht das Risiko gegenüber, an einer laufenden Domain-Konfiguration weiterzuschrauben
+  (beim Versuch wurde bereits der falsche von zwei `.com`-Einträgen erwischt).
+  → **`NEBENDOMAINS` in `next.config.mjs` bleibt drin** und ist kein toter Code.
+  **Noch offen (nur Betreiber):** in der Search Console die **Adressänderung** anstossen;
+  der Indexwechsel dauert sonst Wochen.
   `my-immo-app.vercel.app` existiert nur noch als Vercel-Fallback — nirgends mehr verlinken;
   Sitemap/Robots/metadataBase zeigen auf www.myimmoapp.de).
 - Gehostet auf **Vercel**, verbunden mit dem GitHub-Repo `jxnashap/myimmo-app` (Branch `main`).
