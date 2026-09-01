@@ -16,7 +16,7 @@ export type Neuigkeiten = {
 
 
 export async function ladeNeuigkeiten(): Promise<Neuigkeiten> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const monat = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
 

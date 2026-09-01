@@ -6,8 +6,11 @@ import VerbrauchListe from "@/components/lists/VerbrauchListe";
 import ZaehlerMeldungen, { type ZaehlerMeldungVermieter } from "@/components/ZaehlerMeldungen";
 import type { Verbrauch, Property } from "@/lib/types";
 
-export default async function VerbrauchPage({ searchParams }: { searchParams: { prop?: string; art?: string; jahr?: string } }) {
-  const supabase = createClient();
+export default async function VerbrauchPage(
+  props0: { searchParams: Promise<{ prop?: string; art?: string; jahr?: string }> }
+) {
+  const searchParams = await props0.searchParams;
+  const supabase = await createClient();
   const [{ data: verb }, { data: props }, { data: meldRows }, { data: meldMieter }] = await Promise.all([
     supabase.from("verbrauch").select("*").order("buchungsdatum", { ascending: false }),
     supabase.from("properties").select("id,bezeichnung"),

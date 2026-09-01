@@ -2,7 +2,25 @@
 
 Stand 01.09.2026. Grundlage: `docs/SICHERHEIT-ABHAENGIGKEITEN.md` (Next 14 bekommt keine
 Sicherheitsfixes mehr) und die offiziellen Upgrade-Guides von Next.js, abgerufen am
-01.09.2026. **Noch nicht umgesetzt** — dies ist der Plan, nicht der Bericht.
+01.09.2026.
+
+> ✅ **UMGESETZT am 01.09.2026, noch am selben Tag.** Ergebnis wie geplant, mit drei
+> erwähnenswerten Abweichungen:
+> 1. Der Codemod wählte an **drei** Stellen den Notausgang `UnsafeUnwrapped…` statt echter
+>    Asynchronität — darunter ausgerechnet `lib/supabase/server.ts`, die zentralste Datei.
+>    Alle drei von Hand richtig umgestellt; `createClient()` ist jetzt async, alle 178
+>    Aufrufstellen in 112 Dateien tragen `await`.
+> 2. `basisUrl()` musste aus `app/api/newsletter/route.ts` heraus (nach
+>    `lib/net/basisUrl.ts`): Route-Dateien dürfen in 15 nur noch HTTP-Methoden und bekannte
+>    Segment-Konfig exportieren.
+> 3. Die Build-Anzeige fiel von „78 static pages" auf 65 — **kein Verlust**, sondern
+>    geänderte Zählweise; gegen `.next/prerender-manifest.json` geprüft: 17/17 Ratgeber,
+>    4/4 Funktionsseiten statisch, unbekannte Slugs → echte 404.
+> React-19-Nacharbeit: nur zweimal `useRef()` ohne Startwert. OSV danach: 25 → 4 Meldungen
+> (Rest: `postcss` 8.4.31, das auch Next 15 fest verdrahtet — Bauzeit-Exposition, bewusst
+> ohne npm-override belassen). Rückkehrpunkt: Branch **`stand/vor-next15-2026-09-01`**.
+> Abnahmepunkte 1, 2 und 4 (Anmelde-Gate end-to-end, Demo-Konto, TTFB live) sind erst
+> nach dem Deploy gegen die echte Umgebung prüfbar.
 
 ## Zielversion: 15.5.25, ausdrücklich nicht 16
 

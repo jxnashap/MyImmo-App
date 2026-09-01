@@ -6,8 +6,9 @@ import type { Property } from "@/lib/types";
 
 const SONDER = ["", "5% p.a.", "10% p.a.", "Nein", "Ja, unbegrenzt"];
 
-export default async function NeuerKreditPage({ searchParams }: { searchParams: { prop?: string; back?: string } }) {
-  const supabase = createClient();
+export default async function NeuerKreditPage(props: { searchParams: Promise<{ prop?: string; back?: string }> }) {
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
   const { data } = await supabase.from("properties").select("id,bezeichnung").order("bezeichnung");
   const properties = (data ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const back = searchParams.back || "/kredite";

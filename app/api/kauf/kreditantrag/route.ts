@@ -32,7 +32,7 @@ function hinweisSeite(text: string, status: number) {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return hinweisSeite("Bitte melde dich an, um den Kreditantrag zu erzeugen.", 401);
 

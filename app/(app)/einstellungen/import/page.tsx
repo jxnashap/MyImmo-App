@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // Daten-Import (C6): Umzug von vermietet.de, objego oder Excel per CSV mit
 // Spalten-Zuordnung. Erst Objekte importieren, dann Mieter (Zuordnung per Name).
 export default async function ImportPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: props } = await supabase.from("properties").select("bezeichnung").order("bezeichnung");
   const objektNamen = (props ?? []).map((p) => p.bezeichnung as string).filter(Boolean);
 

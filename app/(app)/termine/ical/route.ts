@@ -14,7 +14,7 @@ const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace
 const ymd = (iso: string) => iso.replace(/-/g, "");
 
 export async function GET(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.url));
 

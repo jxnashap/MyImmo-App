@@ -5,8 +5,9 @@ import { euro, datum } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import type { Tenant, Property } from "@/lib/types";
 
-export default async function TenantsPage({ searchParams }: { searchParams: { q?: string; prop?: string } }) {
-  const supabase = createClient();
+export default async function TenantsPage(props0: { searchParams: Promise<{ q?: string; prop?: string }> }) {
+  const searchParams = await props0.searchParams;
+  const supabase = await createClient();
   const [{ data: tenants }, { data: props }] = await Promise.all([
     supabase.from("mieter").select("*").order("nachname"),
     supabase.from("properties").select("id,bezeichnung"),

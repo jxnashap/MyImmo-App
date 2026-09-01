@@ -56,7 +56,7 @@ function ibanEnc(formData: FormData): string | null {
 }
 
 export async function createTenant(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -76,7 +76,7 @@ export async function createTenant(formData: FormData) {
 }
 
 export async function updateTenant(id: string, formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("mieter").update({ ...parse(formData), iban: ibanEnc(formData) }).eq("id", id);
   if (error) throw new Error(error.message);
 
@@ -91,7 +91,7 @@ export async function updateTenant(id: string, formData: FormData) {
 }
 
 export async function deleteTenant(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("mieter").delete().eq("id", id);
   if (error) throw new Error(error.message);
 

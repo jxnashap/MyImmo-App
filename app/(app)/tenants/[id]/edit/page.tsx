@@ -10,8 +10,9 @@ import DeleteButton from "@/components/DeleteButton";
 import type { Tenant } from "@/lib/types";
 import { ReceiptText, Trash2 } from "lucide-react";
 
-export default async function EditTenantPage({ params }: { params: { id: string } }) {
-  const supabase = createClient();
+export default async function EditTenantPage(props0: { params: Promise<{ id: string }> }) {
+  const params = await props0.params;
+  const supabase = await createClient();
   const [{ data }, { data: props }, { data: positions }] = await Promise.all([
     supabase.from("mieter").select("*").eq("id", params.id).single(),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),

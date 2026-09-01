@@ -7,8 +7,9 @@ import DeleteButton from "@/components/DeleteButton";
 import type { Property } from "@/lib/types";
 import { Trash2 } from "lucide-react";
 
-export default async function EditPropertyPage({ params }: { params: { id: string } }) {
-  const supabase = createClient();
+export default async function EditPropertyPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
   const { data } = await supabase.from("properties").select("*").eq("id", params.id).single();
   if (!data) notFound();
   const property = data as Property;

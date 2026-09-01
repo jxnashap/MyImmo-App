@@ -17,12 +17,13 @@ import { ladeMietkonto } from "@/lib/mietkontoDaten";
 import type { Einnahme, Kosten, Property, Tenant, WiederkehrVorlage } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 
-export default async function CashflowPage({
-  searchParams,
-}: {
-  searchParams: { typ?: string; prop?: string; jahr?: string; q?: string };
-}) {
-  const supabase = createClient();
+export default async function CashflowPage(
+  props0: {
+    searchParams: Promise<{ typ?: string; prop?: string; jahr?: string; q?: string }>;
+  }
+) {
+  const searchParams = await props0.searchParams;
+  const supabase = await createClient();
   const [{ data: einn }, { data: kost }, { data: props }, { data: miet }, { data: vRows }] = await Promise.all([
     supabase.from("einnahmen").select("*").order("buchungsdatum", { ascending: false }),
     supabase.from("kosten").select(KOSTEN_SPALTEN).order("buchungsdatum", { ascending: false }),

@@ -7,7 +7,7 @@ import { berechneUmlage, type UmlageZeile, type VerteilenInput, type VerteilenEr
 import { belegung, jahresTage } from "@/lib/nk";
 
 export async function verteileNebenkosten(input: VerteilenInput): Promise<VerteilenErgebnis> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

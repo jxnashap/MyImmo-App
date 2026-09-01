@@ -41,8 +41,9 @@ function Kopf() {
   );
 }
 
-export default async function AuftragPublicSeite({ params }: { params: { token: string } }) {
-  const supabase = createClient();
+export default async function AuftragPublicSeite(props: { params: Promise<{ token: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
   let info: Info | null = null;
   if (/^[0-9a-f-]{36}$/i.test(params.token)) {
     const { data } = await supabase.rpc("auftrag_public_info", { p_token: params.token });

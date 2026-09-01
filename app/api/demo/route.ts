@@ -68,7 +68,7 @@ export async function GET(request: Request) {
   }
 
   // 2. Anmelden — schreibt die Session-Cookies ueber den Server-Client.
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error: loginFehler } = await supabase.auth.signInWithPassword({
     email: DEMO_EMAIL,
     password: passwort,

@@ -75,7 +75,7 @@ function tabellenFuer(rolle: Rolle): [string, string][] {
 const BLOB_SPALTEN = ["datei_data", "rechnung_data", "foto_data", "daten"];
 
 export async function GET() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

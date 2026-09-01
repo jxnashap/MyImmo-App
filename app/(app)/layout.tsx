@@ -40,9 +40,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   // CSP-Nonce aus der Middleware (für das Inline-Theme-Script).
-  const nonce = headers().get("x-nonce") ?? undefined;
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -67,7 +67,7 @@ export default async function RootLayout({
 
   // Rollen-Weiche (Businessplan Kap. 14): Mieter-Konten arbeiten im
   // Mieterportal (eigene, schlanke Shell) — nicht in der Vermieter-App.
-  const pathname = headers().get("x-pathname") ?? "";
+  const pathname = (await headers()).get("x-pathname") ?? "";
   const rolle = await getRolle(supabase, user.id);
   // Rechtstexte (/impressum, /datenschutz, /agb, /avv) laufen seit dem
   // Layout-Split ueber app/(pub)/ und kommen hier gar nicht mehr an. Uebrig

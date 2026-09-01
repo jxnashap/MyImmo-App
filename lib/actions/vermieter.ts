@@ -11,7 +11,7 @@ const str = (fd: FormData, key: string) => {
 };
 
 export async function saveVermieter(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

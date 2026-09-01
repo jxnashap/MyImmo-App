@@ -52,7 +52,7 @@ export async function pruefeBetaCode(code: string): Promise<{ ok: boolean; fehle
 export async function schalteKontoFrei(
   formData: FormData,
 ): Promise<{ ok: boolean; fehler?: string; rolle?: string }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

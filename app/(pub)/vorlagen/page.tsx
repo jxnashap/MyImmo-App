@@ -40,7 +40,8 @@ const NL_MELDUNG: Record<string, { text: string; gut: boolean }> = {
   fehler: { text: "Der Link ist ungültig. Bitte trag dich unten erneut ein.", gut: false },
 };
 
-export default function VorlagenPage({ searchParams }: { searchParams: { nl?: string } }) {
+export default async function VorlagenPage(props: { searchParams: Promise<{ nl?: string }> }) {
+  const searchParams = await props.searchParams;
   const meldung = searchParams.nl ? NL_MELDUNG[searchParams.nl] : undefined;
   return (
     // ohneSchlussCta: Die Seite hat ihren eigenen Gold-CTA — sonst stünden

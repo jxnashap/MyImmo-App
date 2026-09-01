@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import UebergabeProtokoll from "@/components/UebergabeProtokoll";
 import type { Tenant, Property, VermieterProfil } from "@/lib/types";
 
-export default async function ProtokollPage({ params }: { params: { id: string } }) {
-  const supabase = createClient();
+export default async function ProtokollPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: m } = await supabase.from("mieter").select("*").eq("id", params.id).single();
   if (!m) notFound();

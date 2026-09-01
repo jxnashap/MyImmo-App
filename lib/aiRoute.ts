@@ -7,7 +7,7 @@ const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
 /** Liefert den eingeloggten Nutzer oder null. KI-Routen ohne Login ablehnen. */
 export async function getAuthedUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

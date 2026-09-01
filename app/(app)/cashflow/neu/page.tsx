@@ -4,12 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import BuchungForm from "@/components/BuchungForm";
 import type { Property, Tenant } from "@/lib/types";
 
-export default async function NeueBuchungPage({
-  searchParams,
-}: {
-  searchParams: { typ?: string; prop?: string };
-}) {
-  const supabase = createClient();
+export default async function NeueBuchungPage(
+  props0: {
+    searchParams: Promise<{ typ?: string; prop?: string }>;
+  }
+) {
+  const searchParams = await props0.searchParams;
+  const supabase = await createClient();
   const [{ data: props }, { data: miet }] = await Promise.all([
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
     supabase.from("mieter").select("id,vorname,nachname").order("nachname"),

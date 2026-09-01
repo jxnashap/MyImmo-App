@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 // Selbstauskunft werden hier serverseitig geladen und an den Client-Stepper
 // übergeben.
 export default async function KaufPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: rows } = await supabase
     .from("kalkulationen")
     .select("*")

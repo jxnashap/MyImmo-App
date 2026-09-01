@@ -21,7 +21,8 @@ den Paketnamen/-versionen.
 | | Pakete | Meldungen |
 |---|---|---|
 | Erster Lauf | 4 | 29 (0 kritisch, 13 hoch, 14 mittel, 2 niedrig) |
-| Nach dem Update | 2 | **25** |
+| Nach dem Update | 2 | 25 |
+| **Nach der Next-15-Migration (01.09.2026)** | 1 | **4** |
 
 **Behoben (01.09.2026):** `postcss` 8.5.15 → 8.5.26, `nanoid` 3.3.15 → 3.3.18 — die eigenen
 Abhängigkeiten, per `npm update` innerhalb des bestehenden Semver-Bereichs. Beide laufen
@@ -67,7 +68,16 @@ Bankdaten.** Die Datentrennung hängt nicht an Next.js, sondern an der RLS in Po
 der App-Layer-Verschlüsselung. Das ist der Grund, warum hier kein Alarm steht — aber kein
 Grund, auf 14 zu bleiben.
 
-## Empfehlung: Umstieg auf Next.js 15.5.x, als eigenes Vorhaben
+> ✅ **ERLEDIGT am 01.09.2026: Next 15.5.25 / React 19.2.8 sind drin.** Alle 21
+> next-Meldungen geschlossen, `browserslist` (dev) mit aktualisiert. Übrig bleiben die
+> **4 Meldungen zu `postcss` 8.4.31** — diese Version verdrahtet auch Next 15 (und 16)
+> fest. Bewertung: reine **Bauzeit**-Exposition (ReDoS auf Angreifer-kontrolliertes CSS,
+> das es in diesem Build nicht gibt); ein npm-`override` würde Nexts eigene CSS-Pipeline
+> auf eine ungetestete Version heben — mehr Risiko als Gewinn. Bewusst belassen; beim
+> nächsten Next-Update erneut prüfen. Details der Umsetzung: [[NEXTJS-15-MIGRATION]].
+> Die Bewertungstabelle oben bleibt als Zeitdokument stehen.
+
+## Empfehlung: Umstieg auf Next.js 15.5.x, als eigenes Vorhaben — ✅ umgesetzt
 
 Nicht nebenbei. Die Migration berührt genau die Stellen, die zuletzt mühsam richtig gestellt
 wurden:

@@ -5,7 +5,7 @@ import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function SteuerPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const [{ data: props }, { data: ein }, { data: kos }, { data: kre }] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("einnahmen").select("id,prop_id,buchungsdatum,kategorie,betrag,nk_anteil"),

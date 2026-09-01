@@ -22,7 +22,7 @@ const text = (v: FormDataEntryValue | null): string | null => {
 };
 
 async function uid() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   return { supabase, user };
 }

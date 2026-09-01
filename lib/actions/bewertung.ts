@@ -21,7 +21,7 @@ const numOr = (fd: FormData, k: string): number | null => {
 };
 
 export async function refreshBewertung(propId: string, formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 

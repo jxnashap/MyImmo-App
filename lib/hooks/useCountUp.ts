@@ -11,7 +11,7 @@ const prefersReduced = () =>
 export function useCountUp(ziel: number, dauer = 500): number {
   const [wert, setWert] = useState(ziel);
   const vonRef = useRef(ziel);
-  const rafRef = useRef<number>();
+  const rafRef = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (prefersReduced() || dauer <= 0) { setWert(ziel); vonRef.current = ziel; return; }
     const von = vonRef.current;

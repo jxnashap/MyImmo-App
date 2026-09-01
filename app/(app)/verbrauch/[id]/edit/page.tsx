@@ -8,8 +8,12 @@ import type { Property, Verbrauch } from "@/lib/types";
 const ARTEN = ["Strom", "Gas", "Wasser", "Heizöl", "Fernwärme", "Sonstiges"];
 const EINHEITEN = ["kWh", "m³", "Liter", "Pauschal"];
 
-export default async function VerbrauchEditPage({ params, searchParams }: { params: { id: string }; searchParams: { back?: string } }) {
-  const supabase = createClient();
+export default async function VerbrauchEditPage(
+  props: { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const supabase = await createClient();
   const [{ data: row }, { data: propsData }] = await Promise.all([
     supabase.from("verbrauch").select("*").eq("id", params.id).single(),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),

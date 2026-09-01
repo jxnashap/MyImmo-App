@@ -40,8 +40,9 @@ function mkBadge(val: number, gut: number, ok: number) {
   return val >= gut ? "badge-green" : val >= ok ? "badge-gold" : "badge-red";
 }
 
-export default async function PropertyDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createClient();
+export default async function PropertyDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient();
   const id = params.id;
 
   const [{ data: prop }, { data: mieter }, { data: einn }, { data: kost }, { data: kredite }, { data: verb }, { data: notiz }] =

@@ -7,8 +7,12 @@ import type { Property, Tenant, Einnahme } from "@/lib/types";
 
 const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
 
-export default async function EinnahmeEditPage({ params, searchParams }: { params: { id: string }; searchParams: { back?: string } }) {
-  const supabase = createClient();
+export default async function EinnahmeEditPage(
+  props: { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const supabase = await createClient();
   const [{ data: row }, { data: propsData }, { data: miet }] = await Promise.all([
     supabase.from("einnahmen").select("*").eq("id", params.id).single(),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),

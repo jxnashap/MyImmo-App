@@ -16,7 +16,8 @@ export function generateStaticParams() {
   return RATGEBER.map((a) => ({ slug: a.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const a = ratgeberBySlug(params.slug);
   if (!a) return { title: "Ratgeber — MyImmo" };
   return {
@@ -27,7 +28,8 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-export default function RatgeberArtikelSeite({ params }: { params: { slug: string } }) {
+export default async function RatgeberArtikelSeite(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
   const a = ratgeberBySlug(params.slug);
   if (!a) notFound();
 
