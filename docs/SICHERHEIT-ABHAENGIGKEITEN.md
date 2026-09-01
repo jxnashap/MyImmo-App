@@ -70,12 +70,19 @@ Grund, auf 14 zu bleiben.
 
 > ✅ **ERLEDIGT am 01.09.2026: Next 15.5.25 / React 19.2.8 sind drin.** Alle 21
 > next-Meldungen geschlossen, `browserslist` (dev) mit aktualisiert. Übrig bleiben die
-> **4 Meldungen zu `postcss` 8.4.31** — diese Version verdrahtet auch Next 15 (und 16)
-> fest. Bewertung: reine **Bauzeit**-Exposition (ReDoS auf Angreifer-kontrolliertes CSS,
-> das es in diesem Build nicht gibt); ein npm-`override` würde Nexts eigene CSS-Pipeline
-> auf eine ungetestete Version heben — mehr Risiko als Gewinn. Bewusst belassen; beim
-> nächsten Next-Update erneut prüfen. Details der Umsetzung: [[NEXTJS-15-MIGRATION]].
-> Die Bewertungstabelle oben bleibt als Zeitdokument stehen.
+> **4 Meldungen zu `postcss` 8.4.31** — diese Version verdrahtet Next 15 exakt gepinnt
+> (in `next@15.5.25` nachgeprüft). Inhaltlich (Korrektur 01.09.2026 — hier stand zuerst
+> pauschal „ReDoS", das war ungenau): dreimal Datei-Lesen/Path-Traversal über eine
+> angreifer-kontrollierte `sourceMappingURL` in CSS-Kommentaren (`GHSA-6g55-p6wh-862q`,
+> `GHSA-r28c-9q8g-f849`, `GHSA-fxqj-rqcc-2cmp`), einmal XSS über unmaskiertes `</style>`
+> in der Stringify-Ausgabe (`GHSA-qx2v-qp2m-jg93`). Alle vier setzen voraus, dass ein
+> Angreifer CSS in die Verarbeitung einschleust. Dieses postcss läuft aber ausschließlich
+> beim `next build` über die eigenen CSS-Dateien aus dem Repo — im Betrieb gar nicht, und
+> Besucher-Eingaben erreichen die Pipeline nie. Ein npm-`override` würde Nexts eigene, gegen
+> 8.4.31 getestete CSS-Pipeline auf eine ungetestete Version heben — mehr Risiko als Gewinn.
+> Bewusst belassen; beim nächsten Next-Update erneut prüfen. Die vier tauchen bei jedem
+> Scanner-Lauf wieder auf — erwartbar, kein Alarm. Details der Umsetzung:
+> [[NEXTJS-15-MIGRATION]]. Die Bewertungstabelle oben bleibt als Zeitdokument stehen.
 
 ## Empfehlung: Umstieg auf Next.js 15.5.x, als eigenes Vorhaben — ✅ umgesetzt
 
