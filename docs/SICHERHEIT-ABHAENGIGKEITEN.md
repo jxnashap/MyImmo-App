@@ -83,6 +83,10 @@ wurden:
 4. **Middleware und die Nonce-CSP** sind der empfindlichste Teil — dort hängt das Login-Gate,
    die Demo-Sperre und die Trennung öffentlich/privat.
 
+**Der ausgearbeitete Plan liegt in [[NEXTJS-15-MIGRATION]]** (`docs/zukunft/NEXTJS-15-MIGRATION.md`):
+Zielversion **15.5.25** und ausdrücklich nicht 16, gezählte Betroffenheit je Guide-Punkt,
+Abnahmeliste vor dem Merge.
+
 **Vorgehen, wenn es angegangen wird:** eigener Branch, `npx @next/codemod@canary upgrade
 latest` als Startpunkt, danach Punkt für Punkt: Build, 544 Tests, Login-Weiche, Demo-Sperre
 (alle drei Ebenen), statische Auslieferung nachmessen, Vercel-Preview vor dem Merge
