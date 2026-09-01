@@ -339,21 +339,20 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 - Dateien (Belege, Archiv-Dokumente) werden als Base64 in Tabellenspalten gespeichert — **kein Storage-Bucket** nötig.
 
 ## Sicherheit der Abhängigkeiten
-- **Next.js 14 bekommt KEINE Sicherheitsfixes mehr (festgestellt 01.09.2026).** `14.2.35`
-  ist die letzte je veröffentlichte 14.2.x; alle 21 offenen Meldungen sind erst in **15.5.x**
-  behoben. Befund, Bewertung je Meldung (was trifft MyImmo wirklich) und der Migrationsplan:
-  **`docs/SICHERHEIT-ABHAENGIGKEITEN.md`**. Der Umstieg auf 15 ist ein eigener Arbeitsblock
-  (async `headers()`/`cookies()`/`params`, gedrehte Caching-Vorgaben, React 19) — **nicht**
-  nebenbei in einen anderen PR packen.
-- **Migrationsplan liegt fertig vor: `docs/zukunft/NEXTJS-15-MIGRATION.md`** (01.09.2026).
-  Zielversion **15.5.25**, ausdrücklich **nicht 16** — 16 verlangt `middleware.ts` → `proxy.ts`
-  (und unterstützt dort **keinen Edge-Runtime**), Turbopack als Standard und den Wegfall von
-  `next lint`; alles Umbau ohne Sicherheitsgewinn, ausgerechnet am Bauteil, an dem Login-Gate,
-  Demo-Sperre und Nonce-CSP hängen. Betroffen sind 10 `headers()`/`cookies()`-Aufrufe in 7
-  Dateien und 54 Dateien mit `params`/`searchParams`; `useFormState`, `geo`/`ip`, `@next/font`
-  und `defaultProps` **gar nicht**. **Die Abnahmeliste im Plan ist Pflicht** — die gefährlichen
-  Regressionen (Anmelde-Gate, Demo-Sperre, statische Auslieferung) machen sich nicht durch
-  einen Bauabbruch bemerkbar.
+- ✅ **Next-15-Migration UMGESETZT (01.09.2026): Next 15.5.25 / React 19.2.8.** Plan samt
+  Umsetzungsbericht: **`docs/zukunft/NEXTJS-15-MIGRATION.md`**; Befundlage:
+  **`docs/SICHERHEIT-ABHAENGIGKEITEN.md`**. Alle 21 next-Meldungen geschlossen (25 → 4).
+  **Wichtigste Code-Folge:** `createClient()` aus `lib/supabase/server.ts` ist jetzt
+  **async** — neue Aufrufstellen brauchen `await createClient()`. Ebenso `besucherIp()`
+  und `basisUrl()` (jetzt `lib/net/basisUrl.ts`; Route-Dateien dürfen in Next 15 nur noch
+  HTTP-Methoden + Segment-Konfig exportieren). React 19: `useRef` braucht einen Startwert.
+  **Rückkehrpunkt: Branch `stand/vor-next15-2026-09-01`** (= letzter 14er-Stand, Commit
+  `3ef7ccc`); Tags lässt der Git-Proxy der Remote-Umgebung nicht durch, deshalb ein Branch.
+- **Bewusst offen: 4 Meldungen zu `postcss` 8.4.31** — von Next selbst fest verdrahtet
+  (auch in 15/16), reine Bauzeit-Exposition. KEIN npm-`override` setzen (verstellt Nexts
+  CSS-Pipeline); beim nächsten Next-Update erneut prüfen.
+- **Next 16 ist ein eigenes, späteres Vorhaben** — verlangt `middleware.ts` → `proxy.ts`
+  (dort **kein Edge-Runtime**), Turbopack als Standard, Wegfall von `next lint`.
 - **Scanner (kostenlos, ohne Konto):** `osv-scanner scan source --lockfile=package-lock.json`
   (`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest`). Vor jedem größeren
   Release laufen lassen, mindestens monatlich. Neue Befunde in der genannten Datei bewerten,
