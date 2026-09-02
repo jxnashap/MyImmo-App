@@ -220,3 +220,76 @@ describe("Trefferflaechen der Fusszeile (WCAG 2.5.8)", () => {
     expect(b).toContain('margin: "-3px -2px"');
   });
 });
+
+// ===== Redesign Runde 3 (02.09.2026) =====
+// Auftrag: „bessere Layouts und Animationen, modern, innovativ, mit Detail".
+// Zwei Eingriffe, beide im Browser nachgemessen.
+describe("Buehne fuers Produktbild", () => {
+  // Das Dashboard-Bild blendete wie jeder andere Abschnitt ein. Bei einer
+  // Software IST das Produkt das Argument — es richtet sich jetzt beim
+  // Hereinscrollen aus einer Neigung auf. Gemessen bei 1440px: vor dem
+  // Scrollen opacity 0.83 mit matrix3d (geneigt), ab ~700px opacity 1.00 und
+  // identity matrix (gerade).
+  it("die Perspektive sitzt am Elternrahmen, nicht in der Transform-Kette", () => {
+    // Sonst wird der Fluchtpunkt mitanimiert und wandert waehrend der Bewegung.
+    expect(regel(".lp-buehne")).toContain("perspective: 1600px");
+    expect(css).toMatch(/@keyframes lpBuehneAuf \{[^}]*rotateX\(9deg\)/);
+  });
+
+  it("scroll-getrieben und nur ohne Reduced-Motion", () => {
+    const ab = css.indexOf(".lp-buehne > .lp-shot");
+    const block = css.slice(Math.max(0, ab - 240), ab + 420);
+    expect(block).toContain("@supports (animation-timeline: view())");
+    expect(block).toContain("prefers-reduced-motion: no-preference");
+    expect(block).toContain("animation-timeline: view()");
+  });
+
+  it("ohne scroll-getriebene Animationen steht das Bild gerade da", () => {
+    // Das Bild liegt bewusst NICHT mehr in <Reveal> — ohne diesen Rueckfall
+    // waere es in aelteren Browsern dauerhaft geneigt und halb durchsichtig.
+    expect(css).toContain("@supports not (animation-timeline: view())");
+    const ab = css.indexOf("@supports not (animation-timeline: view())");
+    expect(css.slice(ab, ab + 200)).toContain("opacity: 1");
+  });
+
+  it("das Bild steckt nicht mehr zusaetzlich in <Reveal>", () => {
+    // Beides uebereinander liesse es zweimal erscheinen.
+    const lp = readFileSync("components/LandingPage.tsx", "utf8");
+    expect(lp).toMatch(/<Shot buehne/);
+    expect(lp).not.toMatch(/<Reveal>\s*<Shot/);
+  });
+});
+
+describe("Redaktioneller Abschnittskopf", () => {
+  // Neun Abschnitte im identischen Rhythmus (Kicker, zentrierte H2, Unterzeile)
+  // lesen sich wie eine Vorlage. Inhaltsschwere Abschnitte bekommen jetzt einen
+  // linksbuendigen Kopf mit der Unterzeile in einer zweiten Spalte.
+  // Absichtlich KEINE feste Anzahl: Der erste Versuch nagelte „genau drei" fest
+  // und schlug prompt beim naechsten Abschnitt fehl. Geprueft wird die Absicht —
+  // ein GEMISCHTER Rhythmus. Waeren alle Koepfe redaktionell, waere die
+  // Monotonie nur um 90 Grad gedreht.
+  it("mehrere Abschnitte nutzen die Variante — aber nicht alle", () => {
+    const lp = readFileSync("components/LandingPage.tsx", "utf8");
+    const redaktionell = (lp.match(/className="lp-kopf-editorial"/g) ?? []).length;
+    const kicker = (lp.match(/className="lp-kicker"/g) ?? []).length;
+    expect(redaktionell).toBeGreaterThanOrEqual(3);
+    // Es muss weiterhin zentrierte Koepfe geben (Kicker ausserhalb der Variante).
+    expect(kicker).toBeGreaterThan(redaktionell);
+  });
+
+  it("linksbuendig, und die Unterzeile sitzt in der zweiten Spalte", () => {
+    expect(css).toContain(".lp-kopf-editorial .lp-section-sub");
+    const ab = css.indexOf(".lp-kopf-editorial {");
+    const block = css.slice(ab, ab + 900);
+    expect(block).toContain("text-align: left");
+    expect(block).toContain("grid-column: 2");
+  });
+
+  it("auf dem Handy einspaltig — die zweite Spalte gilt erst ab 861px", () => {
+    // Gemessen bei 390px: gridTemplateColumns = "none", kein Querlauf.
+    const ab = css.indexOf(".lp-kopf-editorial {");
+    const block = css.slice(ab, ab + 900);
+    expect(block).toContain("@media (min-width: 861px)");
+    expect(block.indexOf("@media (min-width: 861px)")).toBeLessThan(block.indexOf("grid-column: 2"));
+  });
+});

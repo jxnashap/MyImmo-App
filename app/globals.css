@@ -2500,3 +2500,80 @@ select:focus-visible, textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
 }
+
+/* ===== Redesign Runde 3 (02.09.2026) — Bühne fürs Produktbild =====
+   Das Dashboard-Bild blendete bisher nur ein wie jeder andere Abschnitt. Bei
+   einer Software IST das Produkt das Argument; es verdient mehr Gewicht als
+   eine FAQ. Es richtet sich jetzt beim Hereinscrollen aus einer leichten
+   Neigung auf — die Bewegung, die man von Apple, Linear und Vercel kennt.
+
+   Bewusst scroll-getrieben statt zeitgesteuert: Der Nutzer bestimmt das Tempo,
+   und `animation-timeline: view()` laeuft ausserhalb des Hauptthreads — es
+   bleibt fluessig, waehrend das Bild selbst noch laedt. Kein JavaScript.
+
+   Die `perspective` sitzt am Elternrahmen, nicht in der Transform-Kette des
+   Kindes: sonst wuerde sie beim Aufrichten mitanimiert und der Fluchtpunkt
+   wandert. `will-change` bleibt bewusst weg — die Animation laeuft ohnehin
+   auf dem Compositor, und ein dauerhafter Hint kostet nur Speicher. */
+.lp-buehne { perspective: 1600px; perspective-origin: 50% 0%; }
+
+@keyframes lpBuehneAuf {
+  from { transform: rotateX(9deg) scale(.90); opacity: .5; }
+  to   { transform: rotateX(0deg)  scale(1);   opacity: 1; }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .lp-buehne > .lp-shot {
+      transform-origin: 50% 0%;
+      animation: lpBuehneAuf both;
+      animation-timeline: view();
+      /* Bis `cover 38%` fertig: Das Bild steht aufrecht, bevor es die
+         Bildschirmmitte erreicht — sonst liest man es die halbe Zeit schief. */
+      animation-range: entry 0% cover 38%;
+      animation-timing-function: var(--ease-out-stark);
+    }
+  }
+}
+
+/* Ohne scroll-getriebene Animationen (aeltere Browser) bleibt das Bild
+   einfach gerade stehen — `Reveal` greift dort nicht mehr, weil das Bild
+   bewusst ausserhalb davon liegt. Lieber sofort sichtbar als unsichtbar. */
+@supports not (animation-timeline: view()) {
+  .lp-buehne > .lp-shot { transform: none; opacity: 1; }
+}
+
+/* ===== Redaktioneller Abschnittskopf (Redesign Runde 3) =====
+   Die Startseite hatte NEUN Abschnitte im identischen Rhythmus: Kicker,
+   zentrierte H2, Unterzeile, Inhalt. Jeder Abschnitt fuer sich war in Ordnung,
+   in der Folge liest sich das aber wie eine Vorlage — und die FAQ bekam
+   dieselbe visuelle Wucht wie das Kernargument.
+
+   Diese Variante setzt Kicker und Ueberschrift links und stellt die Unterzeile
+   in eine zweite, schmalere Spalte daneben. Die Asymmetrie gibt der Seite
+   Takt, ohne eine zweite Gestaltungssprache einzufuehren — Farben, Schriften
+   und Abstaende bleiben identisch.
+
+   REGEL, damit der Wechsel nicht willkuerlich wirkt: inhaltsschwere Abschnitte
+   (Tabelle, Funktionsraster, FAQ) bekommen den redaktionellen Kopf, kurze und
+   emotionale (Rollen-Flow, Vision, Schluss-CTA) bleiben zentriert. */
+.lp-kopf-editorial { margin-bottom: 30px; }
+.lp-kopf-editorial .lp-kicker,
+.lp-kopf-editorial .lp-h2,
+.lp-kopf-editorial .lp-section-sub { text-align: left; }
+.lp-kopf-editorial .lp-h2 { margin: 8px 0 0; }
+.lp-kopf-editorial .lp-section-sub { margin: 0; max-width: 46ch; }
+
+@media (min-width: 861px) {
+  .lp-kopf-editorial {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 10px 56px;
+    align-items: end;
+  }
+  /* Kicker und Ueberschrift in die linke Spalte, Unterzeile rechts daneben —
+     sie sitzt auf der Grundlinie der Ueberschrift statt darunter. */
+  .lp-kopf-editorial .lp-kicker { grid-column: 1; }
+  .lp-kopf-editorial .lp-h2 { grid-column: 1; }
+  .lp-kopf-editorial .lp-section-sub { grid-column: 2; grid-row: 2; padding-bottom: 4px; }
+}

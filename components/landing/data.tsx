@@ -120,14 +120,20 @@ export const FAQ = [
   },
 ];
 
-export function Shot({ src, alt }: { src: string; alt: string }) {
-  return (
+export function Shot({ src, alt, buehne }: { src: string; alt: string; buehne?: boolean }) {
+  const bild = (
     <div className="lp-shot">
       <div className="lp-shot-bar"><i /><i /><i /></div>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={alt} loading="lazy" />
     </div>
   );
+  // `buehne`: Das Bild richtet sich beim Hereinscrollen auf, statt nur
+  // einzublenden — die Perspektive braucht dafuer einen eigenen Rahmen, weil
+  // `perspective()` im transform des Kindes sonst mit dem Aufrichten kollidiert.
+  // Die Bewegung selbst steckt komplett in CSS (`animation-timeline: view()`),
+  // laeuft also ausserhalb des Hauptthreads und kostet kein JavaScript.
+  return buehne ? <div className="lp-buehne">{bild}</div> : bild;
 }
 
 export const SOON_BADGE = (

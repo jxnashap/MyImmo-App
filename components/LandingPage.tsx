@@ -50,9 +50,9 @@ export default function LandingPage() {
 
       <section className="lp-section" style={{ paddingBottom: 24 }}>
         <div className="lp-inner" style={{ marginBottom: 40 }}>
-          <Reveal>
-            <Shot src="/landing/dashboard.webp" alt="MyImmo-Dashboard mit Portfolio-Wert, Cashflow und Verlaufs-Chart" />
-          </Reveal>
+          {/* Kein <Reveal> mehr: Das Aufrichten IST die Einblendung — beides
+              uebereinander liesse das Bild zweimal erscheinen. */}
+          <Shot buehne src="/landing/dashboard.webp" alt="MyImmo-Dashboard mit Portfolio-Wert, Cashflow und Verlaufs-Chart" />
         </div>
         <div className="lp-inner">
           <Reveal>
@@ -82,9 +82,11 @@ export default function LandingPage() {
       {/* ---------- Excel-Vergleich ---------- */}
       <section className="lp-section">
         <div className="lp-inner">
-          <div className="lp-kicker">Vorher / Nachher</div>
-          <h2 className="lp-h2">Excel war gestern</h2>
-          <p className="lp-section-sub">Die ehrliche Gegenüberstellung — Aufgabe für Aufgabe.</p>
+          <div className="lp-kopf-editorial">
+            <div className="lp-kicker">Vorher / Nachher</div>
+            <h2 className="lp-h2">Excel war gestern</h2>
+            <p className="lp-section-sub">Die ehrliche Gegenüberstellung — Aufgabe für Aufgabe.</p>
+          </div>
           <Reveal>
             <div className="xl-scroll">
               <table className="xl-tab">
@@ -100,6 +102,71 @@ export default function LandingPage() {
                   <tr><td>Unterlagen fürs Bankgespräch</td><td className="schlecht">Aktenordner zusammensuchen</td><td className="gut">Beleihungsordner mit Deckblatt auf Knopfdruck</td></tr>
                 </tbody>
               </table>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---------- Beweis: die App selbst, statt Beschreibungen ----------
+           Von den fuenf vorhandenen Produktbildern lag bis 02.09.2026 nur das
+           Dashboard auf der Startseite; die uebrigen vier steckten allein auf
+           /funktionen. Bei einer Software ist das Zeigen das staerkste
+           Argument — Icon-plus-Text-Karten sind die schwaechste Form, sie zu
+           verkaufen. Der Abschnitt steht bewusst DIREKT hinter der
+           Excel-Tabelle: Dort ist gerade behauptet worden, MyImmo koenne es
+           besser; hier folgt der Beleg.
+           `lp-split` samt Zickzack (`lp-split-rev`) ist das Muster, das
+           /funktionen schon nutzt — keine zweite Gestaltungssprache. */}
+      <section className="lp-section">
+        <div className="lp-inner">
+          <div className="lp-kopf-editorial">
+            <div className="lp-kicker">In der App</div>
+            <h2 className="lp-h2">So sieht das aus</h2>
+            <p className="lp-section-sub">Drei Ansichten aus dem laufenden Betrieb — keine Illustrationen.</p>
+          </div>
+
+          <Reveal>
+            <div className="lp-split">
+              <div>
+                <h3>Alle Objekte, ein Blick</h3>
+                <p>Wert, Miete und Rendite je Immobilie — inklusive Leerstand und offener Posten.</p>
+                <ul>
+                  <li>Portfolio-Wert und Cashflow laufend berechnet</li>
+                  <li>Status je Objekt: vermietet, leer, in Sanierung</li>
+                  <li>Karte mit allen Standorten</li>
+                </ul>
+              </div>
+              <Shot src="/landing/immobilien.webp" alt="Immobilien-Übersicht mit Wert, Miete und Rendite je Objekt" />
+            </div>
+          </Reveal>
+
+          <Reveal>
+            <div className="lp-split lp-split-rev">
+              <div>
+                <h3>Der Mieter meldet, du gibst frei</h3>
+                <p>Schäden mit Foto, Zählerstände und Anliegen laufen im Portal auf — ohne Telefonkette.</p>
+                <ul>
+                  <li>Mieter braucht keine App, nur einen Einladungscode</li>
+                  <li>Hausmeister erstellt den Auftrag, du bestätigst</li>
+                  <li>Bewerber-Verwaltung für freie Wohnungen inklusive</li>
+                </ul>
+              </div>
+              <Shot src="/landing/mieterportal.webp" alt="Mieterportal mit Schadensmeldungen und Zählerständen" />
+            </div>
+          </Reveal>
+
+          <Reveal>
+            <div className="lp-split">
+              <div>
+                <h3>Steuer ohne Belege-Suchen</h3>
+                <p>Deine Buchungen sind den Zeilen der Anlage V bereits zugeordnet — je Objekt, mit AfA und Schuldzinsen.</p>
+                <ul>
+                  <li>ELSTER-Ausfüllhilfe, Zeile für Zeile</li>
+                  <li>PDF-Aufstellung und Jahresbericht im eigenen Briefkopf</li>
+                  <li>DATEV-Export für den Steuerberater</li>
+                </ul>
+              </div>
+              <Shot src="/landing/steuer.webp" alt="Steuer-Ansicht mit Anlage-V-Aufstellung je Objekt" />
             </div>
           </Reveal>
         </div>
@@ -125,9 +192,11 @@ export default function LandingPage() {
       {/* ---------- Funktionen (Teaser) ---------- */}
       <section className="lp-section">
         <div className="lp-inner">
-          <div className="lp-kicker">Funktionen</div>
-          <h2 className="lp-h2">Alles, was Vermieten verlangt</h2>
-          <p className="lp-section-sub">Ein Auszug — die komplette Übersicht mit Screenshots findest du auf der Funktionsseite.</p>
+          <div className="lp-kopf-editorial">
+            <div className="lp-kicker">Funktionen</div>
+            <h2 className="lp-h2">Alles, was Vermieten verlangt</h2>
+            <p className="lp-section-sub">Ein Auszug — die komplette Übersicht mit Screenshots findest du auf der Funktionsseite.</p>
+          </div>
           {/* Drei Spalten per KLASSE, nicht per Inline-Style. Bis 02.09.2026 stand
               hier `style={{ gridTemplateColumns: "repeat(3, 1fr)" }}` — ein
               Inline-Style schlaegt jede Media Query, damit waren die Umbruch-
@@ -216,11 +285,13 @@ export default function LandingPage() {
       {/* ---------- FAQ ---------- */}
       <section className="lp-section lp-section-alt">
         <div className="lp-inner">
-          <div className="lp-kicker">Häufige Fragen</div>
-          <h2 className="lp-h2">Was Vermieter am häufigsten fragen</h2>
-          <p className="lp-section-sub">
-            Ehrliche Antworten — zu Kosten, Datenschutz und dem, was MyImmo bewusst nicht ist.
-          </p>
+          <div className="lp-kopf-editorial">
+            <div className="lp-kicker">Häufige Fragen</div>
+            <h2 className="lp-h2">Was Vermieter am häufigsten fragen</h2>
+            <p className="lp-section-sub">
+              Ehrliche Antworten — zu Kosten, Datenschutz und dem, was MyImmo bewusst nicht ist.
+            </p>
+          </div>
           <Reveal>
             <div className="lp-faq" style={{ marginTop: 26 }}>
               {FAQ.map((f) => (
