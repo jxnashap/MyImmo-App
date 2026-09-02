@@ -260,10 +260,16 @@ Koordination keine Rolle, sondern eine Liste. Die existiert bereits (Merkliste i
 CFO entfällt als Rolle und wird zu **einer Zahl im Wochenbericht** (Ausgaben, siehe 4.3) —
 solange es weder Umsatz noch Investitionen gibt, ist ein CFO-Agent Theater.
 
-**Technische Umsetzung ohne neue Infrastruktur:** je Rolle eine Datei unter
-`.claude/agents/*.md` (Subagent mit eigenem Prompt und eingeschränktem Werkzeugsatz) plus
-je ein Skill für wiederkehrende Abläufe. Versioniert im Repo, damit die Rollen denselben
-Review-Weg gehen wie Code. Das ist heute verfügbar, kostet keinen Server und keine Abhängigkeit.
+**Technische Umsetzung — entschieden am 02.09.2026: n8n.** Die Rollen laufen als
+Prompts in einer eigenen Datenbank, n8n ist die Steuerungsschicht (Vorgänge, Budget,
+Audit, Freigabe, Wochenbericht). Alles Lauffähige liegt unter **`agency/`**, die
+Einrichtung in acht Schritten in **`agency/README.md`**. Details und die drei
+Sicherheitsentscheidungen: Abschnitt 8.
+
+Die zuvor hier vorgeschlagene Variante (je Rolle eine Datei unter `.claude/agents/`,
+kein Server, keine Abhängigkeit) bleibt der billigere Weg und ist als Rückfallebene
+notiert — sie liefert dieselben Rollen ohne Betriebskosten, aber ohne Zeitsteuerung,
+ohne Budgetbuchung und ohne Freigabe per Link.
 
 ### 4.2 Der Auditor, neu definiert
 Nicht „zweite Meinung zur selben Argumentation", sondern **drei Prüffragen gegen die Wirklichkeit**:
@@ -340,10 +346,10 @@ die wichtigste.
 ### Phase 2 — Das Betriebssystem v0.2 bauen (parallel möglich, 1–2 Wochen)
 | # | Schritt | Ergebnis |
 |---|---|---|
-| 2.1 | Constitution v0.2 schreiben: Prinzipien aus 3, 9, 10, 11, 18–22, 30, 33, 36 behalten; Organigramm auf sechs Rollen kürzen; als **Erweiterung von `CLAUDE.md`**, nicht daneben | ein System statt zwei |
-| 2.2 | Sechs Rollen als `.claude/agents/*.md` mit eingeschränkten Werkzeugsätzen | ausführbar statt beschrieben |
-| 2.3 | Auditor-Skill mit den drei Prüffragen aus 4.2, Pflicht bei HIGH/CRITICAL | Gate, das ohne Copy-Paste läuft |
-| 2.4 | Wochenbericht automatisieren (GitHub Action, Muster: `wert-refresh.yml`) | fünf Zahlen kommen von selbst |
+| 2.1 | ✅ **gebaut (02.09.2026)** — Rollen-Prompts, Datenbankschema, vier n8n-Workflows, Kennzahlen-Route: `agency/` | ausführbar statt beschrieben |
+| 2.2 | Betreiber: n8n bereitstellen, Agency-Supabase anlegen, **Monatsdeckel setzen** (steht auf 0 = gesperrt), Zugangsdaten anlegen, Workflows importieren | `agency/README.md`, Schritte 1–7 |
+| 2.3 | Testlauf mit `risiko: niedrig`, danach mit `risiko: hoch` (Audit + Freigabe) | der Weg läuft einmal ganz durch |
+| 2.4 | Wochenbericht am ersten Montag prüfen: kommen die fünf Zahlen an, greifen die Abbruchkriterien? | die Zahlen kommen von selbst |
 | 2.5 | Rückblick nach 4 Wochen: Hat der Apparat eine Entscheidung verbessert, die ohne ihn schlechter gewesen wäre? Wenn nein: kürzen. | das Betriebssystem unterliegt seinen eigenen Regeln |
 
 ### Phase 3 — Erst nach zahlenden Kunden
@@ -374,3 +380,44 @@ Entscheidung 0.5.
   Automatisierung zu verdienen (Abschnitt 4 des Entwurfs sagt das selbst).
 - Keine 12 Task-Zustände — NEU / LÄUFT / WARTET AUF FREIGABE / FERTIG / VERWORFEN reichen.
 - Kein Paperclip vor Phase 3.
+
+---
+
+## 8. Umsetzung auf n8n (entschieden vom Betreiber, 02.09.2026)
+
+Gebaut unter **`agency/`**. Einrichtung: **`agency/README.md`** (acht Schritte).
+
+| Schicht | Wo | Aufgabe |
+|---|---|---|
+| Steuerung | n8n | Vorgänge, Rollenwahl, Budget, Audit, Freigabe, Bericht |
+| Denken | Claude API (`claude-opus-5`) | die fünf Rollen + Auditor |
+| Zustand | eigenes Supabase-Projekt | Vorgänge, Läufe, Kosten, Audits, Gedächtnis |
+| Code-Ausführung | Claude Code + GitHub | Branch, Tests, PR, Merge — wie bisher |
+| Messung | MyImmo `/api/intern/kennzahlen` | die fünf Zahlen, nur Aggregate |
+
+Inhalt: `agency/rollen/` (6 Prompts, versioniert), `agency/sql/01_agency_schema.sql`
+(Schema + RPC-Funktionen), `agency/n8n/` (4 importierbare Workflows),
+`agency/scripts/` (Rollen einspielen, Workflows prüfen).
+
+### Drei Sicherheitsentscheidungen
+1. **Eigenes Supabase-Projekt für die Agency.** n8n braucht einen Service-Role-Key,
+   der RLS umgeht. Im Produktionsprojekt hätte ein kompromittierter n8n-Server Zugriff
+   auf alle Vermieter- und Mieterdaten. Free-Tier reicht.
+2. **Kennzahlen nur über eine geschützte Route**, die serverseitig läuft und
+   ausschließlich Aggregate herausgibt. n8n bekommt keinen Datenbankzugang zu MyImmo.
+3. **Tabellen im Schema `agency`**, damit über PostgREST unerreichbar; Zugriff nur über
+   `public.agency_*`-Funktionen, ausführbar allein für `service_role`.
+
+### Was n8n ausdrücklich nicht tut
+Kein Schreiben in die Produktion, kein Code. Die Rolle „Bau" liefert eine technische
+Spezifikation; nach Freigabe entsteht daraus ein GitHub-Issue, das in Claude Code
+umgesetzt wird — Branch, Tests, PR, Merge unverändert.
+
+### Was dadurch neu an Risiko dazukommt
+- **Ein zusätzlicher Server** (n8n Cloud ~24 €/M oder VPS ~5 €/M plus Updates, Backups,
+  TLS) — und damit die Stelle, an der Anthropic-Key, Agency-Service-Key, Brevo-Key und
+  GitHub-Token zusammenliegen. Deshalb die Trennung der Datenbanken oben.
+- **Webhooks müssen von außen erreichbar sein** (Freigabe-Links). Ohne TLS und ohne
+  Reverse Proxy nicht betreiben.
+- **Der Deckel ist die einzige Bremse.** Er steht bewusst auf `0`: ohne bewusst gesetzte
+  Zahl startet kein Vorgang. Das ist kein Fehler, das ist Abschnitt 4.5 in Code.

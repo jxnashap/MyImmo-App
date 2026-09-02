@@ -121,6 +121,23 @@ setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangsco
   ein gebündeltes Anwaltsmandat (AGB/Widerruf, §34i, StBerG, Nutzer-AVV) und 5 echte Gespräche
   mit den 8 aktivierten Konten. Offene Grundsatzfrage: **Agentur (Kundenarbeit) oder Studio
   (eigene Produkte)?** — beide konkurrieren um dieselben Nebenerwerbs-Stunden.
+  **UMSETZUNG AUF n8n GEBAUT (02.09.2026, Entscheidung des Nutzers):** alles Lauffähige
+  liegt unter **`agency/`** — 6 Rollen-Prompts (`agency/rollen/`, versioniert), Schema +
+  RPC-Funktionen (`agency/sql/01_agency_schema.sql`, **eigenes** Supabase-Projekt), vier
+  importierbare n8n-Workflows (`agency/n8n/`), Skripte zum Einspielen und Prüfen.
+  Einrichtung in 8 Schritten: **`agency/README.md`**.
+  **Drei Regeln, die nicht aufgeweicht werden dürfen:** (1) Die Agency bekommt ein
+  EIGENES Supabase-Projekt — n8n braucht einen Service-Role-Key, der RLS umgeht; im
+  Produktionsprojekt läge damit der gesamte Mieter-/Vermieterbestand offen.
+  (2) Kennzahlen kommen ausschließlich über die geschützte Route
+  `/api/intern/kennzahlen` (nur Aggregate, `CRON_SECRET` wie beim Wert-Refresh-Cron).
+  (3) n8n schreibt NIE in die Produktion und schreibt keinen Code — die Rolle „Bau"
+  liefert eine Spezifikation, daraus wird nach Freigabe ein GitHub-Issue, umgesetzt in
+  Claude Code über Branch/Tests/PR.
+  **Der Monatsdeckel steht bewusst auf 0** (`agency.einstellungen`) — ohne bewusst
+  gesetzte USD-Zahl startet kein Vorgang. Modellpreise stehen in `agency.preise` und
+  müssen bei Modellwechsel gepflegt werden; ein unbekanntes Modell wird abgelehnt statt
+  mit 0 gebucht.
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das

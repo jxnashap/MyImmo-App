@@ -36,7 +36,7 @@ Umkehrung über `[data-theme="dark"]`. UI-Schrift **Geist** (selbst gehostet,
 - **Dateien** (Belege/Archiv) werden **als Base64 in Tabellenspalten** gespeichert — kein
   Storage-Bucket. In Listen NIE `select("*")` auf `kosten` (Blob!) → `KOSTEN_SPALTEN` nutzen.
 - **Build/Test:** `NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SUPABASE_ANON_KEY=... npm run build`
-  (Platzhalter genügen) · `npx vitest run` (**439 Tests in 41 Dateien**, decken im Wesentlichen
+  (Platzhalter genügen) · `npx vitest run` (**552 Tests in 53 Dateien**, nachgezählt 02.09.2026, decken im Wesentlichen
   lib-Purefunctions ab — keine Coverage für `components/`, `lib/actions/`, `lib/pdf/`, RLS oder E2E).
   Achtung: `NEXT_PUBLIC_*` wird zur **Build-Zeit** eingebacken — `.env.local` muss VOR
   `npm run build` existieren, sonst zeigt der Client nur „Etwas ist schiefgelaufen".
