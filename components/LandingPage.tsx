@@ -50,9 +50,9 @@ export default function LandingPage() {
 
       <section className="lp-section" style={{ paddingBottom: 24 }}>
         <div className="lp-inner" style={{ marginBottom: 40 }}>
-          <Reveal>
-            <Shot src="/landing/dashboard.webp" alt="MyImmo-Dashboard mit Portfolio-Wert, Cashflow und Verlaufs-Chart" />
-          </Reveal>
+          {/* Kein <Reveal> mehr: Das Aufrichten IST die Einblendung — beides
+              uebereinander liesse das Bild zweimal erscheinen. */}
+          <Shot buehne src="/landing/dashboard.webp" alt="MyImmo-Dashboard mit Portfolio-Wert, Cashflow und Verlaufs-Chart" />
         </div>
         <div className="lp-inner">
           <Reveal>
@@ -82,9 +82,11 @@ export default function LandingPage() {
       {/* ---------- Excel-Vergleich ---------- */}
       <section className="lp-section">
         <div className="lp-inner">
-          <div className="lp-kicker">Vorher / Nachher</div>
-          <h2 className="lp-h2">Excel war gestern</h2>
-          <p className="lp-section-sub">Die ehrliche Gegenüberstellung — Aufgabe für Aufgabe.</p>
+          <div className="lp-kopf-editorial">
+            <div className="lp-kicker">Vorher / Nachher</div>
+            <h2 className="lp-h2">Excel war gestern</h2>
+            <p className="lp-section-sub">Die ehrliche Gegenüberstellung — Aufgabe für Aufgabe.</p>
+          </div>
           <Reveal>
             <div className="xl-scroll">
               <table className="xl-tab">
@@ -125,9 +127,11 @@ export default function LandingPage() {
       {/* ---------- Funktionen (Teaser) ---------- */}
       <section className="lp-section">
         <div className="lp-inner">
-          <div className="lp-kicker">Funktionen</div>
-          <h2 className="lp-h2">Alles, was Vermieten verlangt</h2>
-          <p className="lp-section-sub">Ein Auszug — die komplette Übersicht mit Screenshots findest du auf der Funktionsseite.</p>
+          <div className="lp-kopf-editorial">
+            <div className="lp-kicker">Funktionen</div>
+            <h2 className="lp-h2">Alles, was Vermieten verlangt</h2>
+            <p className="lp-section-sub">Ein Auszug — die komplette Übersicht mit Screenshots findest du auf der Funktionsseite.</p>
+          </div>
           {/* Drei Spalten per KLASSE, nicht per Inline-Style. Bis 02.09.2026 stand
               hier `style={{ gridTemplateColumns: "repeat(3, 1fr)" }}` — ein
               Inline-Style schlaegt jede Media Query, damit waren die Umbruch-
@@ -216,11 +220,13 @@ export default function LandingPage() {
       {/* ---------- FAQ ---------- */}
       <section className="lp-section lp-section-alt">
         <div className="lp-inner">
-          <div className="lp-kicker">Häufige Fragen</div>
-          <h2 className="lp-h2">Was Vermieter am häufigsten fragen</h2>
-          <p className="lp-section-sub">
-            Ehrliche Antworten — zu Kosten, Datenschutz und dem, was MyImmo bewusst nicht ist.
-          </p>
+          <div className="lp-kopf-editorial">
+            <div className="lp-kicker">Häufige Fragen</div>
+            <h2 className="lp-h2">Was Vermieter am häufigsten fragen</h2>
+            <p className="lp-section-sub">
+              Ehrliche Antworten — zu Kosten, Datenschutz und dem, was MyImmo bewusst nicht ist.
+            </p>
+          </div>
           <Reveal>
             <div className="lp-faq" style={{ marginTop: 26 }}>
               {FAQ.map((f) => (
