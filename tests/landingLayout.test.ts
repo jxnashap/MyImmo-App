@@ -103,6 +103,49 @@ describe("Raster bleiben umbruchfaehig", () => {
   });
 });
 
+// Geprueft gegen die Regeln aus `emilkowalski/skills` (Skill `animate`,
+// Abschnitt „Never Ship"), am 02.09.2026 installiert.
+describe("Bewegungsregeln", () => {
+  it("kein `transition: all` — Eigenschaften werden benannt", () => {
+    // `all` animiert auch Layout-Eigenschaften und laesst jede spaetere
+    // Ergaenzung ungewollt mitlaufen. Kommentare zaehlen nicht mit.
+    const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(ohneKommentare).not.toMatch(/transition:\s*all\b/);
+  });
+
+  it("kein scale(0) als Eingangsanimation", () => {
+    // Nichts in der echten Welt erscheint aus dem Nichts — scale(.9-.97).
+    expect(css).not.toMatch(/transform:\s*scale\(0\)/);
+  });
+
+  it("kein ease-in auf UI-Elementen", () => {
+    // ease-in startet langsam — genau in dem Moment, den der Nutzer ansieht.
+    const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(ohneKommentare).not.toMatch(/(transition|animation)[^;]*\bease-in\b(?!-out)/);
+  });
+
+  // Am 02.09.2026 auf einem emulierten Pixel 7 nachgemessen: Nach dem Antippen
+  // einer Funktionskarte blieb ihr transform dauerhaft auf translateY(-3px)
+  // stehen — der Schein-Hover von Touch-Geraeten.
+  it("Hover-BEWEGUNG ist auf Zeigegeraete beschraenkt", () => {
+    expect(css).toContain("@media (hover: none), (pointer: coarse)");
+    const ab = css.indexOf("@media (hover: none), (pointer: coarse)");
+    const block = css.slice(ab, ab + 400);
+    for (const sel of [".lp-feature:hover", ".qlx .lp-feature:hover", ".kpi-card:hover", ".btn-ghost:hover"]) {
+      expect(block).toContain(sel);
+    }
+  });
+
+  // Gleiche Spezifitaet — es entscheidet die Reihenfolge. Stuende das Gate vor
+  // `.qlx .lp-feature:hover` (Zeile ~2140), waere es wirkungslos. Genau das ist
+  // beim Bauen passiert und fiel erst im Browser auf.
+  it("das Gate steht NACH allen Hover-Regeln, gewinnt also", () => {
+    const gate = css.indexOf("@media (hover: none), (pointer: coarse)");
+    const letzterHover = css.lastIndexOf(":hover { transform: translate");
+    expect(gate).toBeGreaterThan(letzterHover);
+  });
+});
+
 describe("Trefferflaechen der Fusszeile (WCAG 2.5.8)", () => {
   // Gemessen: 15px hoch, ohne unsichtbare Vergroesserung — und es sind die
   // Rechtslinks, die auf jeder Seite stehen muessen.

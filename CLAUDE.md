@@ -371,5 +371,26 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Release laufen lassen, mindestens monatlich. Neue Befunde in der genannten Datei bewerten,
   nicht nur die Zahl weiterreichen.
 
+## Bewegung / Animationen (Regelwerk seit 02.09.2026)
+- **Installiert: `emilkowalski/skills`** (`npx skills@latest add emilkowalski/skills`) —
+  12 Skills in `.agents/skills/`, per Symlink in `.claude/skills/` eingehängt, MIT-Lizenz.
+  Autor ist der Entwickler von Sonner und Vaul. Wichtigste für dieses Projekt:
+  **`animate`** (baut Animationen, enthält die Werte-Tabellen), **`review-animations`**
+  (prüft einen Diff), **`improve-animations`** (auditiert die Codebasis, schreibt Pläne —
+  ändert ausdrücklich KEINEN Quellcode), **`apple-design`**, **`pick-ui-library`**.
+- **Verbindliche Regeln, gegen die die App am 02.09.2026 geprüft wurde** (Details und
+  Messwerte in `tests/landingLayout.test.ts`):
+  kein `transition: all` · kein `scale(0)` als Eingang (stattdessen `scale(.9–.97)` +
+  `opacity: 0`) · **nie `ease-in` auf UI** · UI-Dauern unter 300 ms · nur `transform`
+  und `opacity` animieren · Hover-**Bewegung** nur hinter `@media (hover: hover) and
+  (pointer: fine)` bzw. abgeschaltet in `@media (hover: none), (pointer: coarse)` ·
+  `prefers-reduced-motion` gehört zur Animation, nicht als Nachtrag.
+- **Fallstrick, der beim Bauen zugeschlagen hat:** Das Touch-Gate hat dieselbe Spezifität
+  wie die Hover-Regeln — es muss deshalb **nach** ihnen in `globals.css` stehen, sonst ist
+  es wirkungslos. Steht jetzt am Dateiende und ist per Test festgenagelt.
+- **Bewusst NICHT geändert:** die Easing-Tokens (`--ease-out: cubic-bezier(0,0,.2,1)`).
+  Emils Empfehlung wäre `cubic-bezier(0.23,1,0.32,1)`; ein globales Token zu drehen ändert
+  jede Animation der App auf einmal — das ist eine Design-Entscheidung, kein Fehler.
+
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).
