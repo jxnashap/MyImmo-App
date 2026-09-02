@@ -293,3 +293,79 @@ describe("Redaktioneller Abschnittskopf", () => {
     expect(block.indexOf("@media (min-width: 861px)")).toBeLessThan(block.indexOf("grid-column: 2"));
   });
 });
+
+describe("Kennzahlen-Band", () => {
+  // Vier umrandete Kaestchen mit 24px-Zahlen standen an der prominentesten
+  // Stelle der Seite. Kaesten trennen, wo Zusammenhang gemeint ist — die vier
+  // Zahlen sind EIN Argument. Jetzt ein durchgehendes Band mit Haarlinien.
+  it("keine Kaesten mehr, sondern Trennlinien", () => {
+    const r = regel(".qlx .lp-stat");
+    expect(r).toContain("background: none");
+    expect(r).toContain("border: 0");
+    expect(r).toContain("border-left: 1px solid var(--l-line)");
+  });
+
+  it("die Zahlen stehen auf Anzeigengroesse", () => {
+    // Gemessen: 46px bei 1440px, 30px bei 390px (vorher durchgehend 24px).
+    expect(css).toMatch(/\.qlx \.lp-stat \.z \{[^}]*font-size: clamp\(30px, 3\.6vw, 46px\)/);
+  });
+
+  // DER FEHLER BEIM BAUEN: `.qlx .lp-stats` hat zwei Klassen und schlaegt damit
+  // die bestehende Ein-Klassen-Regel `.lp-stats { repeat(2, 1fr) }` im
+  // 720px-Umbruch — unabhaengig von der Reihenfolge. Auf dem Handy standen
+  // daraufhin vier gequetschte, ungleiche Spalten (gemessen 82/105/86/129 px).
+  // Derselbe Fehler wie beim Funktionsraster, nur ueber Spezifitaet statt
+  // ueber einen Inline-Style.
+  it("auf dem Handy zwei Spalten — im selben Scope wiederholt", () => {
+    const ab = css.indexOf("@media (max-width: 720px) {\n  /* Die Zwei-Spalten-Regel");
+    expect(ab).toBeGreaterThan(-1);
+    const block = css.slice(ab, ab + 700);
+    expect(block).toContain(".qlx .lp-stats { grid-template-columns: repeat(2, 1fr); }");
+  });
+
+  it("gestaffelter Auftritt ueber versetzte Bereiche, nicht ueber Verzoegerungen", () => {
+    // An einer Zeitleiste, die am Scrollen haengt, gibt es keine Zeit zum
+    // Verzoegern — die Staffelung entsteht ueber `animation-range`.
+    for (const n of [2, 3, 4]) {
+      expect(css).toMatch(new RegExp(`\\.qlx \\.lp-stat:nth-child\\(${n}\\) \\{ animation-range:`));
+    }
+  });
+
+  it("die Staffelung ersetzt den gemeinsamen <Reveal>-Block", () => {
+    const lp = readFileSync("components/LandingPage.tsx", "utf8");
+    // Genau die Verschachtelung pruefen, die entfernt wurde — ein Fenster von
+    // 400 Zeichen fing den <Reveal> des NACHBARBLOCKS mit ein und schlug fehl,
+    // obwohl der Code stimmte.
+    expect(lp).not.toMatch(/<Reveal>\s*<div className="lp-stats"/);
+    expect(lp).toMatch(/className="lp-stats"/);
+  });
+});
+
+describe("Weiche Abschnittsnaehte", () => {
+  // DER ZWEITE FEHLER BEIM BAUEN: Der Rahmen war zuerst nur auf `transparent`
+  // gesetzt. Ein transparenter Rahmen behaelt seine Breite, und darunter
+  // scheint der Hintergrund des Elements durch (background-clip: border-box) —
+  // die Creme blitzte als 1px-Linie VOR dem Verlauf durch. Bei dreifacher
+  // Vergroesserung im Browser sichtbar, bei einfacher kaum.
+  it("der Rahmen ist entfernt, nicht nur durchsichtig", () => {
+    // ACHTUNG: `.qlx .lp-section-alt` kommt ZWEIMAL vor — die alte Regel (nur
+    // Hintergrund und Rahmenfarbe) und die neue am Dateiende. `regel()` liefert
+    // den ersten Treffer und pruefte deshalb die falsche Stelle. Hier gezielt
+    // die letzte nehmen, denn die gewinnt in der Kaskade.
+    const ab = css.lastIndexOf(".qlx .lp-section-alt {");
+    const r = css.slice(ab, css.indexOf("}", ab) + 1);
+    expect(r).toContain("border-top-width: 0");
+    expect(r).toContain("border-bottom-width: 0");
+    expect(css).not.toContain("border-top-color: transparent");
+  });
+
+  it("Verlauf an beiden Kanten, nach dem hellen Untergrund", () => {
+    expect(css).toContain(".qlx .lp-section-alt::before { top: 0; background: linear-gradient(var(--l-bg), transparent); }");
+    expect(css).toContain(".qlx .lp-section-alt::after { bottom: 0; background: linear-gradient(transparent, var(--l-bg)); }");
+  });
+
+  it("der Inhalt liegt UEBER dem Verlauf", () => {
+    // Ohne das legen die Verlaeufe einen Schleier auf die oberste Textzeile.
+    expect(css).toContain(".qlx .lp-section-alt > * { position: relative; z-index: 1; }");
+  });
+});

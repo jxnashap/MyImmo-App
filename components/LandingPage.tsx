@@ -55,14 +55,15 @@ export default function LandingPage() {
           <Shot buehne src="/landing/dashboard.webp" alt="MyImmo-Dashboard mit Portfolio-Wert, Cashflow und Verlaufs-Chart" />
         </div>
         <div className="lp-inner">
-          <Reveal>
-            <div className="lp-stats">
-              <div className="lp-stat"><div className="z">{FEATURES.length}+</div><div className="t">Funktionen — vom Mietvertrag bis ELSTER</div></div>
-              <div className="lp-stat"><div className="z">4</div><div className="t">Rollen: Vermieter, Mieter, Hausmeister, Verwaltung</div></div>
-              <div className="lp-stat"><div className="z">100 %</div><div className="t">Daten in der EU, Bankdaten AES-256-verschlüsselt</div></div>
-              <div className="lp-stat"><div className="z">0 €</div><div className="t">im Early Access — voller Funktionsumfang</div></div>
-            </div>
-          </Reveal>
+          {/* Kein <Reveal>: Die Staffelung sitzt an den einzelnen Zahlen
+              (globals.css, versetzte animation-range) — ein gemeinsamer
+              Reveal-Block darueber wuerde sie zu einem Block verschmelzen. */}
+          <div className="lp-stats">
+            <div className="lp-stat"><div className="z">{FEATURES.length}+</div><div className="t">Funktionen — vom Mietvertrag bis ELSTER</div></div>
+            <div className="lp-stat"><div className="z">4</div><div className="t">Rollen: Vermieter, Mieter, Hausmeister, Verwaltung</div></div>
+            <div className="lp-stat"><div className="z">100 %</div><div className="t">Daten in der EU, Bankdaten AES-256-verschlüsselt</div></div>
+            <div className="lp-stat"><div className="z">0 €</div><div className="t">im Early Access — voller Funktionsumfang</div></div>
+          </div>
         </div>
       </section>
 
