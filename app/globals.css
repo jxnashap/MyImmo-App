@@ -2577,3 +2577,112 @@ select:focus-visible, textarea:focus-visible {
   .lp-kopf-editorial .lp-h2 { grid-column: 1; }
   .lp-kopf-editorial .lp-section-sub { grid-column: 2; grid-row: 2; padding-bottom: 4px; }
 }
+
+/* ===== Kennzahlen-Band (Redesign Runde 3, Teil 3) =====
+   Vier umrandete Kaestchen mit 24px-Zahlen an der prominentesten Stelle der
+   Seite — direkt unter dem Hero. Kaesten trennen, wo Zusammenhang gemeint ist:
+   Die vier Zahlen sind EIN Argument, nicht vier Karten.
+
+   Deshalb ein durchgehendes Band: Haarlinien oben und unten, senkrechte
+   Trenner dazwischen, keine Rahmen. Die Zahlen wachsen auf Anzeigengroesse
+   und stehen in Fraunces — dieselbe Schrift wie die Ueberschriften, also die
+   Stimme der Marke statt der der Oberflaeche. Linksbuendig, weil das Band
+   damit denselben redaktionellen Takt aufnimmt wie die Abschnittskoepfe. */
+.qlx .lp-stats {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-top: 56px;
+  border-top: 1px solid var(--l-line);
+  border-bottom: 1px solid var(--l-line);
+}
+.qlx .lp-stat {
+  background: none;
+  border: 0;
+  border-left: 1px solid var(--l-line);
+  border-radius: 0;
+  padding: 28px 24px;
+  text-align: left;
+}
+.qlx .lp-stat:first-child { border-left: 0; padding-left: 0; }
+.qlx .lp-stat .z {
+  font-size: clamp(30px, 3.6vw, 46px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.qlx .lp-stat .t { font-size: 12.5px; line-height: 1.5; margin-top: 10px; max-width: 24ch; }
+
+/* Handy: zwei Spalten. Die senkrechte Linie faellt in der ersten Spalte weg,
+   die zweite Zeile bekommt stattdessen eine waagerechte — sonst schwebten die
+   unteren beiden Zahlen ohne Bezug im Band. */
+@media (max-width: 720px) {
+  /* Die Zwei-Spalten-Regel MUSS hier wiederholt werden: Sie steht im Original
+     als `.lp-stats` (eine Klasse), die Regel oben als `.qlx .lp-stats` (zwei) —
+     und schlaegt sie damit unabhaengig von der Reihenfolge. Ohne diese Zeile
+     standen auf dem Handy vier gequetschte, ungleiche Spalten (gemessen:
+     82 / 105 / 86 / 129 px). Derselbe Fehler wie beim Funktionsraster, nur
+     ueber Spezifitaet statt ueber einen Inline-Style. */
+  .qlx .lp-stats { grid-template-columns: repeat(2, 1fr); }
+  .qlx .lp-stat { padding: 22px 16px; }
+  .qlx .lp-stat:nth-child(odd) { border-left: 0; padding-left: 0; }
+  .qlx .lp-stat:nth-child(n+3) { border-top: 1px solid var(--l-line); }
+}
+
+/* Gestaffelter Auftritt: Die Zahlen erscheinen nacheinander statt als Block.
+   Mit scroll-getriebenen Animationen entsteht die Staffelung ueber versetzte
+   Bereiche, nicht ueber Verzoegerungen — bei einer Zeitleiste, die am Scrollen
+   haengt, gibt es keine Zeit, die man verzoegern koennte. */
+@keyframes lpStatAuf { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .qlx .lp-stat {
+      animation: lpStatAuf both;
+      animation-timeline: view();
+      animation-timing-function: var(--ease-out-stark);
+      animation-range: entry 6% cover 22%;
+    }
+    .qlx .lp-stat:nth-child(2) { animation-range: entry 10% cover 26%; }
+    .qlx .lp-stat:nth-child(3) { animation-range: entry 14% cover 30%; }
+    .qlx .lp-stat:nth-child(4) { animation-range: entry 18% cover 34%; }
+  }
+}
+
+/* ===== Weiche Abschnittsnaehte (Redesign Runde 3, Teil 4) =====
+   Die creme-farbenen Abschnitte (`lp-section-alt`, #f2eee5) sassen mit einer
+   1px-Linie im hellen Untergrund (#faf8f3). Der Tonwechsel selbst ist fein —
+   die harte Kante daneben liess die Seite trotzdem wie gestapelte Bloecke
+   wirken statt wie eine durchgehende Flaeche.
+
+   Statt der Linie jetzt ein Verlauf ueber 88px an Ober- und Unterkante. Der
+   frisst sich in den ohnehin vorhandenen Innenabstand (84px) und beruehrt
+   damit keinen Text.
+
+   `z-index` ist Pflicht, nicht Zierde: Ohne ihn liegen die Verlaeufe UEBER dem
+   Inhalt und legen einen Schleier auf die oberste Zeile.
+   Die Verlaeufe blenden bewusst nach `--l-bg` (heller Untergrund) — alle
+   `lp-section-alt` liegen zwischen hellen Abschnitten. Stiesse einer an die
+   dunkle Schlussbuehne oder den Footer, waere hier ein zweiter Fall noetig. */
+.qlx .lp-section-alt {
+  position: relative;
+  /* Rahmen ENTFERNEN, nicht nur durchsichtig machen: Ein transparenter Rahmen
+     behaelt seine Breite, und darunter scheint der Hintergrund des Elements
+     selbst durch (background-clip ist standardmaessig border-box) — die Creme
+     blitzt also als 1px-Linie VOR dem Verlauf durch, weil der Verlauf erst
+     innerhalb des Rahmens beginnt. Bei dreifacher Vergroesserung deutlich
+     sichtbar, bei einfacher kaum. */
+  border-top-width: 0;
+  border-bottom-width: 0;
+}
+.qlx .lp-section-alt::before,
+.qlx .lp-section-alt::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 88px;
+  pointer-events: none;
+  z-index: 0;
+}
+.qlx .lp-section-alt::before { top: 0; background: linear-gradient(var(--l-bg), transparent); }
+.qlx .lp-section-alt::after { bottom: 0; background: linear-gradient(transparent, var(--l-bg)); }
+.qlx .lp-section-alt > * { position: relative; z-index: 1; }
