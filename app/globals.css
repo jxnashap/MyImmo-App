@@ -1251,6 +1251,9 @@ select:focus-visible, textarea:focus-visible {
 .lp-card .lp-vorher { display: block; font-size: 11px; color: var(--red); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 6px; }
 
 .lp-features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+/* Variante mit drei Spalten (Funktions-Teaser der Startseite). Als Klasse, damit
+   die Umbruchpunkte weiter unten greifen — als Inline-Style taeten sie es nicht. */
+.lp-features--drei { grid-template-columns: repeat(3, 1fr); }
 .lp-feature { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 20px 18px; transition: border-color 0.2s, transform 0.2s; }
 .lp-feature:hover { border-color: var(--gold-dim); transform: translateY(-2px); }
 .lp-section-alt .lp-feature { background: var(--bg3); }
@@ -1294,7 +1297,13 @@ select:focus-visible, textarea:focus-visible {
 .lp-final { text-align: center; padding: 80px 0; }
 .lp-footer { border-top: 1px solid var(--line); padding: 28px 0; margin-top: auto; }
 .lp-footer-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
-.lp-footer-row a { color: var(--muted); transition: color 0.15s; }
+/* Trefferflaeche auf die von WCAG 2.5.8 geforderten 24px Hoehe bringen. Die
+   Zeilen waren 15px hoch — auf dem Handy zu klein, und es sind ausgerechnet die
+   Rechtslinks (Impressum, Datenschutz, AGB, AVV), die jede Seite tragen muss.
+   Ueber Innenabstand plus negativen Aussenabstand, damit das Aussehen und die
+   Zeilenabstaende der Fusszeile unveraendert bleiben. */
+.lp-footer-row a { color: var(--muted); transition: color 0.15s;
+  display: inline-block; padding: 5px 3px; margin: -5px -3px; }
 .lp-footer-row a:hover { color: var(--text); }
 .lp-footer-row .spacer { margin-left: auto; }
 
@@ -2080,7 +2089,13 @@ select:focus-visible, textarea:focus-visible {
     linear-gradient(180deg, rgba(10,14,24,.68) 0%, rgba(10,14,24,.30) 42%, rgba(10,14,24,.74) 100%),
     linear-gradient(100deg, rgba(10,14,24,.52) 0%, rgba(10,14,24,.12) 55%, rgba(10,14,24,0) 75%);
 }
-.qlx-hero-inhalt { position: relative; width: 100%; padding: 140px 0 64px; }
+/* Der Hero-Inhalt traegt `lp-inner qlx-hero-inhalt`. Die seitlichen 24px kommen
+   aus `.lp-inner` — und wurden hier bis 02.09.2026 von der Kurzform
+   `padding: 140px 0 64px` mitgeloescht. Auf grossen Schirmen faellt das nicht
+   auf (max-width 1080px zentriert von allein), unterhalb von ~1128px klebte
+   die Ueberschrift jedoch am Bildschirmrand — auf JEDER Seite mit Hero.
+   Deshalb hier immer den seitlichen Wert mitschreiben, nie die Dreier-Kurzform. */
+.qlx-hero-inhalt { position: relative; width: 100%; padding: 140px 24px 64px; }
 .qlx-kicker {
   font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase;
   color: var(--l-gold-hell); font-weight: 600;
@@ -2197,7 +2212,7 @@ select:focus-visible, textarea:focus-visible {
   .qlx-brand-word { font-size: 1.05rem; }
   .qlx-brand-sub { display: none; }
   .qlx[data-scrolled="1"]:not([data-menu="1"]) .qlx-header-bar { height: 62px; }
-  .qlx-hero-inhalt { padding: 120px 0 76px; }
+  .qlx-hero-inhalt { padding: 120px 24px 76px; } /* seitlicher Wert: siehe oben */
   .qlx-scrollhint { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
