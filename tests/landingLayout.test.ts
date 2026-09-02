@@ -130,10 +130,22 @@ describe("Bewegungsregeln", () => {
   it("Hover-BEWEGUNG ist auf Zeigegeraete beschraenkt", () => {
     expect(css).toContain("@media (hover: none), (pointer: coarse)");
     const ab = css.indexOf("@media (hover: none), (pointer: coarse)");
-    const block = css.slice(ab, ab + 400);
+    const block = css.slice(ab, css.indexOf("transform: none;", ab));
     for (const sel of [".lp-feature:hover", ".qlx .lp-feature:hover", ".kpi-card:hover", ".btn-ghost:hover"]) {
       expect(block).toContain(sel);
     }
+  });
+
+  // Chrome setzt bei Touch :hover UND :active gleichzeitig. Ein Gate ohne
+  // `:not(:active)` wuerde das Druck-Feedback auf Touch erwuergen — genau so
+  // gebaut und im Browser erwischt (transform waehrend des Drucks: none).
+  it("das Touch-Gate laesst den Druck (:active) durch", () => {
+    const ab = css.indexOf("@media (hover: none), (pointer: coarse)");
+    // Kommentar im Block erwaehnt ":hover UND :active" — vorher rausnehmen.
+    const block = css.slice(ab, css.indexOf("transform: none;", ab)).replace(/\/\*[\s\S]*?\*\//g, "");
+    const hovers = block.match(/:hover(?::not\(:active\))?/g) ?? [];
+    expect(hovers.length).toBeGreaterThanOrEqual(10);
+    for (const h of hovers) expect(h).toBe(":hover:not(:active)");
   });
 
   // Gleiche Spezifitaet — es entscheidet die Reihenfolge. Stuende das Gate vor
@@ -143,6 +155,51 @@ describe("Bewegungsregeln", () => {
     const gate = css.indexOf("@media (hover: none), (pointer: coarse)");
     const letzterHover = css.lastIndexOf(":hover { transform: translate");
     expect(gate).toBeGreaterThan(letzterHover);
+  });
+});
+
+// Runde 2 (02.09.2026): scroll-getriebene Einblendung, Druck-Feedback,
+// Seitenuebergaenge. Gemessen im Browser: Startseite 16 -> 1 Intersection-
+// Observer; tief liegende Abschnitte opacity 0 vor / 0.98 nach dem Scrollen.
+describe("Bewegung Runde 2", () => {
+  const reveal = readFileSync("components/landing/Reveal.tsx", "utf8");
+
+  it("die starken Kurven sind NEUE Tokens — die alten bleiben unangetastet", () => {
+    expect(css).toContain("--ease-out-stark: cubic-bezier(0.23, 1, 0.32, 1)");
+    expect(css).toContain("--ease-in-out-stark: cubic-bezier(0.77, 0, 0.175, 1)");
+    // Die bestehenden Tokens duerfen nicht still umgebogen worden sein.
+    expect(css).toContain("--ease-out: cubic-bezier(0,0,.2,1)");
+  });
+
+  it("Einblendung laeuft scroll-getrieben in CSS, hinter @supports und Reduced-Motion", () => {
+    const ab = css.indexOf("@supports (animation-timeline: view())");
+    expect(ab).toBeGreaterThan(-1);
+    const block = css.slice(ab, ab + 1200);
+    expect(block).toContain("@media (prefers-reduced-motion: no-preference)");
+    expect(block).toContain("animation-timeline: view()");
+    expect(block).toContain("animation-range: entry 8% cover 26%");
+    // `both`: Elemente, die beim Laden schon im Bild sind, stehen im Endzustand.
+    expect(block).toMatch(/animation:\s*lpReveal both/);
+  });
+
+  it("Reveal.tsx legt KEINEN Beobachter an, wenn CSS es kann", () => {
+    // Sonst haette die CSS-Loesung nur Arbeit hinzugefuegt statt weggenommen.
+    expect(reveal).toContain('CSS.supports?.("animation-timeline: view()")');
+    expect(reveal.indexOf("CSS.supports")).toBeLessThan(reveal.indexOf("new IntersectionObserver"));
+  });
+
+  it("die Marketing-Knoepfe haben Druck-Feedback (scale .97, <=160 ms)", () => {
+    expect(regel(".qlx-btn-hell:active")).toContain("scale(.97)");
+    expect(regel(".qlx-btn-linie:active")).toContain("scale(.97)");
+    expect(regel(".qlx-btn-hell")).toMatch(/transform \.16s var\(--ease-out-stark\)/);
+    expect(regel(".qlx-btn-linie")).toMatch(/transform \.16s var\(--ease-out-stark\)/);
+  });
+
+  it("Seitenuebergaenge: an, unter 300 ms, bei Reduced-Motion aus", () => {
+    expect(css).toContain("@view-transition { navigation: auto; }");
+    expect(css).toMatch(/::view-transition-new\(root\)\s*\{[^}]*animation-duration:\s*\.22s/);
+    const rm = css.indexOf("@media (prefers-reduced-motion: reduce) {\n  @view-transition { navigation: none; }");
+    expect(rm).toBeGreaterThan(-1);
   });
 });
 

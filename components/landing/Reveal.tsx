@@ -18,6 +18,12 @@ export default function Reveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Kann der Browser scroll-getriebene Animationen, uebernimmt CSS das
+    // Einblenden (globals.css, `animation-timeline: view()`) — dann entsteht
+    // hier gar kein Beobachter. Das spart auf der oeffentlichen Strecke 45
+    // IntersectionObserver und verlagert die Bewegung vom Hauptthread weg.
+    // Der JS-Weg bleibt als Rueckfall fuer aeltere Browser (~16 % Stand 09/2026).
+    if (typeof CSS !== "undefined" && CSS.supports?.("animation-timeline: view()")) return;
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {

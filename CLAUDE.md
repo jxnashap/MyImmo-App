@@ -388,9 +388,27 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 - **Fallstrick, der beim Bauen zugeschlagen hat:** Das Touch-Gate hat dieselbe Spezifität
   wie die Hover-Regeln — es muss deshalb **nach** ihnen in `globals.css` stehen, sonst ist
   es wirkungslos. Steht jetzt am Dateiende und ist per Test festgenagelt.
-- **Bewusst NICHT geändert:** die Easing-Tokens (`--ease-out: cubic-bezier(0,0,.2,1)`).
-  Emils Empfehlung wäre `cubic-bezier(0.23,1,0.32,1)`; ein globales Token zu drehen ändert
-  jede Animation der App auf einmal — das ist eine Design-Entscheidung, kein Fehler.
+- **Bewusst NICHT geändert:** die bestehenden Easing-Tokens (`--ease-out: cubic-bezier(0,0,.2,1)`).
+  Ein globales Token zu drehen ändert jede Animation der App auf einmal. Stattdessen gibt es
+  seit Runde 2 **neue** Tokens `--ease-out-stark` (`cubic-bezier(0.23,1,0.32,1)`) und
+  `--ease-in-out-stark` — eingesetzt auf der öffentlichen Strecke.
+- **Runde 2 (02.09.2026, Auftrag „bessere Layouts und Animationen, modern, komplex, aber
+  schnell"):** Recherche-Ergebnis war eindeutig — **CSS scroll-driven animations**
+  (`animation-timeline: view()`, ~84 % Abdeckung, Chrome 115 / Safari 18 / Firefox 132)
+  laufen außerhalb des Hauptthreads und ersetzen JS-Beobachter. Umgesetzt:
+  (1) Einblendung der Abschnitte scroll-getrieben in CSS, hinter `@supports` und
+  `prefers-reduced-motion: no-preference`; `Reveal.tsx` legt den IntersectionObserver
+  **nur noch als Rückfall** an → Startseite **16 → 1 Beobachter** (gemessen).
+  (2) **Druck-Feedback** `:active { scale(.97) }` auf den Marketing-Knöpfen — sie hatten keins.
+  (3) **`@view-transition { navigation: auto }`** für Dokumentwechsel (220 ms, bei
+  Reduced-Motion `none`). Greift bei Startseite ↔ Unterseite (Root-Layout-Wechsel = echter
+  Dokumentwechsel); **innerhalb** der Pub-Strecke navigiert `<Link>` soft, dort bewusst nichts.
+  Firefox ohne Cross-Document-VT fällt auf den normalen Wechsel zurück.
+  **Zwei Fallstricke, im Browser erwischt:** Das Touch-Gate braucht `:hover:not(:active)`,
+  weil Chrome bei Touch Hover **und** Active gleichzeitig setzt — ohne das erwürgt das Gate
+  das Druck-Feedback. Und: Playwright-Locators/`networkidle` sind auf dieser Seite
+  unzuverlässig; messen mit `document.querySelector` + 2,5 s Wartezeit, `:active`-Kaskade
+  per `CSS.forcePseudoState` (synthetische Touch-Events setzen in Headless kein `:active`).
 
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).

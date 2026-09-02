@@ -187,6 +187,13 @@
   /* iOS-artiges Ausfedern: beschleunigt schnell, laeuft sanft aus. Fuer
      Breiten-/Positionswechsel wie die einklappbare Sidebar. */
   --ease-ios: cubic-bezier(.32,.72,0,1);
+  /* NEUE Kurven (02.09.2026), bewusst zusaetzlich statt die bestehenden zu
+     drehen — ein globales Token zu aendern faerbt jede Animation der App auf
+     einmal um. Werte aus dem Regelkatalog von emilkowalski/skills: die
+     eingebauten CSS-Kurven sind zu schwach, ihnen fehlt der Nachdruck.
+     Eingesetzt auf der oeffentlichen Strecke (Landing + Marketingseiten). */
+  --ease-out-stark: cubic-bezier(0.23, 1, 0.32, 1);      /* Ein-/Austritte */
+  --ease-in-out-stark: cubic-bezier(0.77, 0, 0.175, 1);  /* Bewegung auf dem Schirm */
 
   --focus-ring: 0 0 0 2px var(--gold);
   --focus-offset: 2px;
@@ -2007,19 +2014,26 @@ select:focus-visible, textarea:focus-visible {
   background: var(--l-gold-hell); color: #14120c; border: none; border-radius: 999px;
   font-size: .72rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
   padding: 13px 26px; text-decoration: none;
-  transition: transform .2s var(--ease), box-shadow .2s var(--ease), background .3s var(--ease);
+  /* transform in 160 ms statt 200 ms: Druck-Feedback (Regelkatalog: 100–160 ms). */
+  transition: transform .16s var(--ease-out-stark), box-shadow .2s var(--ease), background .3s var(--ease);
   box-shadow: 0 6px 20px rgba(212,168,71,.28);
 }
 .qlx-btn-hell:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(212,168,71,.36); }
+/* Druck-Feedback (02.09.2026): Die Marketing-Knoepfe hatten KEIN :active — der
+   wichtigste Knopf der Seite („Kostenlos starten") reagierte auf den Druck
+   nicht. scale(.97) bestaetigt, dass die Oberflaeche den Nutzer gehoert hat;
+   wirkt auf Touch genauso, weil :active kein Hover ist. */
+.qlx-btn-hell:active { transform: scale(.97); box-shadow: 0 3px 12px rgba(212,168,71,.24); }
 .qlx-btn-linie {
   display: inline-flex; align-items: center; gap: 8px;
   background: transparent; color: inherit;
   border: 1px solid currentColor; border-radius: 999px;
   font-size: .72rem; font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
   padding: 12px 24px; text-decoration: none; opacity: .92;
-  transition: border-color .3s, color .3s, background .3s;
+  transition: border-color .3s, color .3s, background .3s, transform .16s var(--ease-out-stark);
 }
 .qlx-btn-linie:hover { border-color: var(--l-gold-hell); color: var(--l-gold-hell); opacity: 1; }
+.qlx-btn-linie:active { transform: scale(.97); } /* siehe .qlx-btn-hell:active */
 .qlx[data-menu="1"] .qlx-header-cta .qlx-btn-hell { box-shadow: none; }
 .qlx-header-cta { display: flex; gap: 10px; align-items: center; }
 
@@ -2404,16 +2418,85 @@ select:focus-visible, textarea:focus-visible {
    Direkt gemessen wurde die Landing (.lp-feature); die App-Klassen tragen
    dieselbe Regelform und denselben Mechanismus. */
 @media (hover: none), (pointer: coarse) {
-  .kpi-card:hover,
-  .prop-card:hover,
-  .lp-feature:hover,
-  .qlx .lp-feature:hover,
-  .qlx-btn-hell:hover,
-  .btn-ghost:hover,
-  .btn-outline:hover,
-  .btn-tonal:hover,
-  .btn-danger:hover,
-  .btn-fab:hover {
+  /* `:not(:active)`: Chrome setzt bei Touch :hover UND :active gleichzeitig.
+     Ohne die Einschraenkung erwuergte dieses Gate das Druck-Feedback
+     (scale .97) genau auf den Geraeten, fuer die es gedacht ist — im Browser
+     gemessen am 02.09.2026: transform stand waehrend des Touch-Drucks auf
+     none. Neutralisiert wird nur der REINE Schein-Hover. */
+  .kpi-card:hover:not(:active),
+  .prop-card:hover:not(:active),
+  .lp-feature:hover:not(:active),
+  .qlx .lp-feature:hover:not(:active),
+  .qlx-btn-hell:hover:not(:active),
+  .btn-ghost:hover:not(:active),
+  .btn-outline:hover:not(:active),
+  .btn-tonal:hover:not(:active),
+  .btn-danger:hover:not(:active),
+  .btn-fab:hover:not(:active) {
     transform: none;
   }
+}
+
+/* ===== Scroll-getriebene Einblendung, ohne JavaScript (02.09.2026) =====
+   Bis hierher blendete `components/landing/Reveal.tsx` die Abschnitte per
+   IntersectionObserver ein — 45 Beobachter auf der oeffentlichen Strecke,
+   16 allein auf der Startseite, alle auf dem Hauptthread.
+
+   `animation-timeline: view()` erledigt dasselbe in CSS und laeuft AUSSERHALB
+   des Hauptthreads: Es bleibt fluessig, waehrend der Browser gerade laedt,
+   Skripte ausfuehrt oder zeichnet — genau dann, wenn rAF-basierte Loesungen
+   Bilder verlieren. Abdeckung Stand 09/2026 rund 84 % (Chrome 115+,
+   Safari 18+, Firefox 132+); `@supports` sorgt dafuer, dass aeltere Browser
+   weiterhin den JS-Weg bekommen. Reveal.tsx legt den Beobachter deshalb nur
+   noch an, wenn CSS es NICHT kann.
+
+   `animation-range: entry 8% cover 26%` heisst: Die Einblendung beginnt, wenn
+   das Element 8 % weit ins Bild geragt ist, und ist abgeschlossen, sobald es
+   gut ein Viertel des Sichtfensters bedeckt — nah am fruehen Verhalten des
+   Beobachters (threshold 0.12), nur ohne Sprung. `both` sorgt dafuer, dass
+   Elemente, die beim Laden schon im Bild sind, direkt im Endzustand stehen. */
+@keyframes lpReveal { to { opacity: 1; transform: none; } }
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .lp-reveal,
+    .qlx .lp-reveal {
+      animation: lpReveal both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 26%;
+      animation-timing-function: var(--ease-out-stark);
+      /* Die JS-Klasse darf nicht dagegenhalten: Animationen gewinnen in der
+         Kaskade ohnehin gegen normale Deklarationen — hier nur zur Klarheit,
+         dass beide Wege denselben Endzustand meinen. */
+      transition: none;
+    }
+    /* Die gezeichneten Icon-Linien haengen bisher an `.lp-reveal-in`, das ohne
+       JS nie gesetzt wird. Gleiche Bewegung, ebenfalls scroll-getrieben. */
+    .qlx .lp-reveal .ico svg * {
+      animation: qlxDraw both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 34%;
+    }
+  }
+}
+
+/* ===== Seitenuebergaenge zwischen Dokumenten (02.09.2026) =====
+   Die oeffentliche Strecke ist statisch und wird ueber echte Dokumentwechsel
+   erreicht — vor allem Startseite (App-Baum) -> Unterseite (Pub-Baum), der
+   haeufigste Weg ueber die Hero-Knoepfe. Ohne Regel ist das ein harter
+   Weissblitz. `@view-transition` laesst den Browser alt und neu ueberblenden,
+   ohne JavaScript und ohne Router-Umbau.
+   Innerhalb der Pub-Strecke navigiert <Link> per Client-Router (Soft
+   Navigation) — dort greift diese Regel NICHT; das ist so gewollt, die Wechsel
+   sind dort ohnehin sofort. Abdeckung: Chrome/Edge 126+, Safari 18.2+;
+   Firefox faellt auf den normalen Seitenwechsel zurueck (reine Erweiterung).
+   Dauer 220 ms mit starker Ease-out — unter der 300-ms-Grenze fuer UI. */
+@view-transition { navigation: auto; }
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: .22s;
+  animation-timing-function: var(--ease-out-stark);
+}
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
 }
