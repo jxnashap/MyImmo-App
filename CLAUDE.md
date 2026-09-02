@@ -8,6 +8,28 @@
 - Bei jeder Entscheidung des Nutzers zuerst die Risiken nennen, bevor zugestimmt wird.
 
 
+## Vault & Wissensspeicher (verbindlich)
+
+- **`docs/VAULT-REGELN.md` — Aufnahmeschwelle für die Vault. JEDER Chat hält sich daran.**
+  Kurzfassung: In `docs/` kommt nur, was (1) eine Entscheidung festhält, die sonst neu
+  getroffen werden müsste, (2) einen Fehler mit Ursache und Gegenprüfung dokumentiert,
+  (3) eine alternde Zahl/Frist/Vertragslage **mit Stand-Datum und Quelle** festhält,
+  (4) eine Konvention verbindlich macht oder (5) einen Ist-Stand belegt, der sonst falsch
+  eingeschätzt wird. **Nicht** hinein: Verlaufsprotokolle, Allgemeinwissen, Doppelungen,
+  Vermutungen im Indikativ, Zwischenstände, Rohdaten.
+  Vor dem Schreiben die vier Aufnahmefragen aus der Datei durchgehen.
+- **`docs/app-entwicklung/` — wiederverwendbares App-Bau-Wissen** (Vorgehen, Code-Regeln,
+  Design, Rechner, Anbindungen, Recht, volatile Kennzahlen, Fehlerkatalog).
+  Ziel: aus einer Ideenskizze eine App bauen, ohne Entscheidungen und Fallstricke neu zu
+  erarbeiten. Einstieg: `docs/app-entwicklung/00 App-Entwicklung Index.md`,
+  Ablauf für neue Apps: `09 Neue App bauen.md`.
+- **`docs/app-entwicklung/07 Volatile Kennzahlen und Pruefzyklus.md` — BEI JEDEM SESSIONSTART
+  auf fällige Prüfungen sehen** (Steuersätze, Förderkonditionen, Anbieterverträge, Beispielzinsen,
+  Marktdaten). Fällige Zeilen abarbeiten, bevor die eigentliche Aufgabe beginnt; das Ergebnis
+  eintragen — auch „unverändert" ist ein Prüfergebnis.
+- **Neue Erkenntnisse gehören dorthin**, nicht in den Chatverlauf: Wer einen Fehler behebt,
+  eine Anbindung klärt oder eine Konvention festlegt, trägt sie im selben PR nach.
+
 ## Offene Punkte / Merkliste
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig

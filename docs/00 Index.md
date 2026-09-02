@@ -7,7 +7,14 @@
 >    Vault immer auf dem neuesten Stand — er *ist* die Projekt-Doku, kein Duplikat.
 
 ## 📌 Zuerst lesen
+- [[VAULT-REGELN]] — **was in diese Vault gehört und was nicht. Verbindlich für jeden Chat.**
 - [[BRIEFING]] — Onboarding in 5 Minuten (Stack, Konventionen, aktueller Stand, offene Punkte)
+
+## 🏗️ App-Entwicklung (wiederverwendbares Bau-Wissen)
+- [[00 App-Entwicklung Index]] — Einstieg in den Wissensspeicher
+- [[09 Neue App bauen]] — Ablauf, wenn aus einer Idee eine App werden soll
+- [[07 Volatile Kennzahlen und Pruefzyklus]] — **bei Sessionstart auf fällige Prüfungen sehen**
+- [[08 Fehlerkatalog]] — echte Fehler mit Ursache und Gegenprüfung
 
 ## 📚 Kern-Doku
 - [[PROJEKT-STATUS]] — Feature-Inventar
