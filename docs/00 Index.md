@@ -31,6 +31,7 @@
 - [[anthropic-dpa-archiv]] — archiviertes Anthropic-DPA
 
 ## 🔮 Zukunftsprojekte (notiert, nicht gebaut)
+- [[AI-AGENCY-OS]] — Bewertung der „AI Agency OS"-Verfassung + Fahrplan (02.09.2026)
 - [[STRATEGIE-REITER]] — Ankaufsstrategie: wann ist das nächste Objekt finanzierbar? (Idee 30.08.2026)
 - [[OPEN-BANKING]] — Konto-Anbindung, zurückgestellt 29.08.2026 (Code in der Git-Historie)
 

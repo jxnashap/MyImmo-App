@@ -106,6 +106,21 @@ setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangsco
   Unterverzeichnis derselben Domain (eine Domain, eine Autorität). Eine eigene Domain
   lohnt erst, wenn ein Land ein eigenes PRODUKT bekommt (z. B. österreichisches
   Mietrecht) — nicht für eine übersetzte Oberfläche.
+- **AI Agency OS (Firmen-Verfassung, 29 Agenten) — BEWERTET, NICHT ENTSCHIEDEN (02.09.2026).**
+  Entwurf v1.0 des Nutzers; kritische Bewertung + Fahrplan: **`docs/zukunft/AI-AGENCY-OS.md`**.
+  Kurz: Die Prinzipien (Evidenz-Hierarchie, Risikostufen, Experiment-vor-Bau, Production Rule)
+  sind stark und decken sich mit dem, was hier schon läuft — das Organigramm (29 Agenten,
+  12 Task-Zustände, eigenes Memory-Schema) widerspricht dem eigenen Satz „Simplicity over
+  complexity" und würde neben `CLAUDE.md` ein zweites, ungepflegtes Governance-System erzeugen.
+  **Erstmals gemessen (02.09.2026, Produktions-DB):** 15 externe Vermieter-Konten, davon 8 mit
+  einem Objekt, 3 mit mehr als beiläufigen Buchungen, **3 jemals an einem zweiten Tag**,
+  0 Abos, 0 Newsletter-Anmeldungen. **Web-Analytics ist nicht installiert** (`@vercel/analytics`
+  fehlt, Vercel Web Analytics gibt 404) → oberhalb der Registrierung wird gar nichts gemessen.
+  **Empfehlung:** v0.2 mit sechs Rollen statt 29, fünf Wochenzahlen, Euro-Monatsdeckel,
+  schriftliche Abbruchkriterien — und der Apparat erst NACH der Kassenöffnung. Vorrang haben
+  ein gebündeltes Anwaltsmandat (AGB/Widerruf, §34i, StBerG, Nutzer-AVV) und 5 echte Gespräche
+  mit den 8 aktivierten Konten. Offene Grundsatzfrage: **Agentur (Kundenarbeit) oder Studio
+  (eigene Produkte)?** — beide konkurrieren um dieselben Nebenerwerbs-Stunden.
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das
