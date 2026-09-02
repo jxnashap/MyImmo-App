@@ -187,6 +187,13 @@
   /* iOS-artiges Ausfedern: beschleunigt schnell, laeuft sanft aus. Fuer
      Breiten-/Positionswechsel wie die einklappbare Sidebar. */
   --ease-ios: cubic-bezier(.32,.72,0,1);
+  /* NEUE Kurven (02.09.2026), bewusst zusaetzlich statt die bestehenden zu
+     drehen — ein globales Token zu aendern faerbt jede Animation der App auf
+     einmal um. Werte aus dem Regelkatalog von emilkowalski/skills: die
+     eingebauten CSS-Kurven sind zu schwach, ihnen fehlt der Nachdruck.
+     Eingesetzt auf der oeffentlichen Strecke (Landing + Marketingseiten). */
+  --ease-out-stark: cubic-bezier(0.23, 1, 0.32, 1);      /* Ein-/Austritte */
+  --ease-in-out-stark: cubic-bezier(0.77, 0, 0.175, 1);  /* Bewegung auf dem Schirm */
 
   --focus-ring: 0 0 0 2px var(--gold);
   --focus-offset: 2px;
@@ -364,7 +371,10 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 
 /* SUBTABS */
 .subtabs { display: flex; gap: 4px; padding: 0; margin-bottom: 24px; border-bottom: 1px solid var(--line); overflow-x: auto; }
-.subtab { padding: 10px 16px; border: none; background: transparent; color: var(--muted); font-family: var(--font-ui); font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.15s; }
+/* Eigenschaften einzeln benannt statt `transition: all` (02.09.2026): `all`
+   animiert auch Layout-Eigenschaften und laesst spaetere Aenderungen
+   unbeabsichtigt mitlaufen. Hier wechseln nur Textfarbe und Unterstrich. */
+.subtab { padding: 10px 16px; border: none; background: transparent; color: var(--muted); font-family: var(--font-ui); font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: color 0.15s var(--ease), border-bottom-color 0.15s var(--ease); }
 .subtab:hover { color: var(--text); }
 .subtab.active { color: var(--gold); border-bottom-color: var(--gold); }
 
@@ -539,7 +549,8 @@ tr.no-hover:hover td { background: transparent; }
 
 /* TABS (manager) */
 .tabs { display: flex; gap: 4px; }
-.tab-btn { padding: 6px 14px; border-radius: var(--r-full); border: none; background: transparent; cursor: pointer; font-family: var(--font-ui); font-size: 12px; color: var(--muted); transition: all 0.15s; text-decoration: none; }
+/* siehe .subtab — hier wechseln nur Hintergrund und Textfarbe. */
+.tab-btn { padding: 6px 14px; border-radius: var(--r-full); border: none; background: transparent; cursor: pointer; font-family: var(--font-ui); font-size: 12px; color: var(--muted); transition: background 0.15s var(--ease), color 0.15s var(--ease); text-decoration: none; }
 .tab-btn.active { background: var(--bg4); color: var(--text); }
 .tab-btn:hover:not(.active) { color: var(--text); }
 
@@ -604,7 +615,8 @@ tr.no-hover:hover td { background: transparent; }
   background: none; border: none; cursor: pointer;
   color: color-mix(in srgb, var(--red) 62%, var(--muted));
   font-size: 14px; padding: 3px 7px; border-radius: var(--r-sm);
-  transition: all 0.15s; line-height: 1;
+  /* siehe .subtab — hier wechseln nur Hintergrund und Textfarbe. */
+  transition: background 0.15s var(--ease), color 0.15s var(--ease); line-height: 1;
   display: inline-grid; place-items: center; position: relative;
 }
 .delete-btn::after { content: ""; position: absolute; inset: -10px; }
@@ -1251,6 +1263,9 @@ select:focus-visible, textarea:focus-visible {
 .lp-card .lp-vorher { display: block; font-size: 11px; color: var(--red); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 6px; }
 
 .lp-features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+/* Variante mit drei Spalten (Funktions-Teaser der Startseite). Als Klasse, damit
+   die Umbruchpunkte weiter unten greifen — als Inline-Style taeten sie es nicht. */
+.lp-features--drei { grid-template-columns: repeat(3, 1fr); }
 .lp-feature { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 20px 18px; transition: border-color 0.2s, transform 0.2s; }
 .lp-feature:hover { border-color: var(--gold-dim); transform: translateY(-2px); }
 .lp-section-alt .lp-feature { background: var(--bg3); }
@@ -1294,7 +1309,13 @@ select:focus-visible, textarea:focus-visible {
 .lp-final { text-align: center; padding: 80px 0; }
 .lp-footer { border-top: 1px solid var(--line); padding: 28px 0; margin-top: auto; }
 .lp-footer-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
-.lp-footer-row a { color: var(--muted); transition: color 0.15s; }
+/* Trefferflaeche auf die von WCAG 2.5.8 geforderten 24px Hoehe bringen. Die
+   Zeilen waren 15px hoch — auf dem Handy zu klein, und es sind ausgerechnet die
+   Rechtslinks (Impressum, Datenschutz, AGB, AVV), die jede Seite tragen muss.
+   Ueber Innenabstand plus negativen Aussenabstand, damit das Aussehen und die
+   Zeilenabstaende der Fusszeile unveraendert bleiben. */
+.lp-footer-row a { color: var(--muted); transition: color 0.15s;
+  display: inline-block; padding: 5px 3px; margin: -5px -3px; }
 .lp-footer-row a:hover { color: var(--text); }
 .lp-footer-row .spacer { margin-left: auto; }
 
@@ -1888,6 +1909,7 @@ select:focus-visible, textarea:focus-visible {
 .tile-hover:hover { border-color: var(--line2); box-shadow: var(--shadow-2); transform: translateY(-1px); }
 @media (hover: none) { .tile-hover:hover { transform: none; box-shadow: var(--shadow-1); } }
 
+
 @media (prefers-reduced-motion: reduce) {
   .tile-reveal, .badge-pop { animation: none !important; }
   .tile-hover:hover { transform: none; }
@@ -1992,19 +2014,26 @@ select:focus-visible, textarea:focus-visible {
   background: var(--l-gold-hell); color: #14120c; border: none; border-radius: 999px;
   font-size: .72rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
   padding: 13px 26px; text-decoration: none;
-  transition: transform .2s var(--ease), box-shadow .2s var(--ease), background .3s var(--ease);
+  /* transform in 160 ms statt 200 ms: Druck-Feedback (Regelkatalog: 100–160 ms). */
+  transition: transform .16s var(--ease-out-stark), box-shadow .2s var(--ease), background .3s var(--ease);
   box-shadow: 0 6px 20px rgba(212,168,71,.28);
 }
 .qlx-btn-hell:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(212,168,71,.36); }
+/* Druck-Feedback (02.09.2026): Die Marketing-Knoepfe hatten KEIN :active — der
+   wichtigste Knopf der Seite („Kostenlos starten") reagierte auf den Druck
+   nicht. scale(.97) bestaetigt, dass die Oberflaeche den Nutzer gehoert hat;
+   wirkt auf Touch genauso, weil :active kein Hover ist. */
+.qlx-btn-hell:active { transform: scale(.97); box-shadow: 0 3px 12px rgba(212,168,71,.24); }
 .qlx-btn-linie {
   display: inline-flex; align-items: center; gap: 8px;
   background: transparent; color: inherit;
   border: 1px solid currentColor; border-radius: 999px;
   font-size: .72rem; font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
   padding: 12px 24px; text-decoration: none; opacity: .92;
-  transition: border-color .3s, color .3s, background .3s;
+  transition: border-color .3s, color .3s, background .3s, transform .16s var(--ease-out-stark);
 }
 .qlx-btn-linie:hover { border-color: var(--l-gold-hell); color: var(--l-gold-hell); opacity: 1; }
+.qlx-btn-linie:active { transform: scale(.97); } /* siehe .qlx-btn-hell:active */
 .qlx[data-menu="1"] .qlx-header-cta .qlx-btn-hell { box-shadow: none; }
 .qlx-header-cta { display: flex; gap: 10px; align-items: center; }
 
@@ -2080,7 +2109,13 @@ select:focus-visible, textarea:focus-visible {
     linear-gradient(180deg, rgba(10,14,24,.68) 0%, rgba(10,14,24,.30) 42%, rgba(10,14,24,.74) 100%),
     linear-gradient(100deg, rgba(10,14,24,.52) 0%, rgba(10,14,24,.12) 55%, rgba(10,14,24,0) 75%);
 }
-.qlx-hero-inhalt { position: relative; width: 100%; padding: 140px 0 64px; }
+/* Der Hero-Inhalt traegt `lp-inner qlx-hero-inhalt`. Die seitlichen 24px kommen
+   aus `.lp-inner` — und wurden hier bis 02.09.2026 von der Kurzform
+   `padding: 140px 0 64px` mitgeloescht. Auf grossen Schirmen faellt das nicht
+   auf (max-width 1080px zentriert von allein), unterhalb von ~1128px klebte
+   die Ueberschrift jedoch am Bildschirmrand — auf JEDER Seite mit Hero.
+   Deshalb hier immer den seitlichen Wert mitschreiben, nie die Dreier-Kurzform. */
+.qlx-hero-inhalt { position: relative; width: 100%; padding: 140px 24px 64px; }
 .qlx-kicker {
   font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase;
   color: var(--l-gold-hell); font-weight: 600;
@@ -2197,7 +2232,7 @@ select:focus-visible, textarea:focus-visible {
   .qlx-brand-word { font-size: 1.05rem; }
   .qlx-brand-sub { display: none; }
   .qlx[data-scrolled="1"]:not([data-menu="1"]) .qlx-header-bar { height: 62px; }
-  .qlx-hero-inhalt { padding: 120px 0 76px; }
+  .qlx-hero-inhalt { padding: 120px 24px 76px; } /* seitlicher Wert: siehe oben */
   .qlx-scrollhint { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2368,4 +2403,100 @@ select:focus-visible, textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .step-dot.aktiv { animation: none; box-shadow: 0 0 0 3px var(--gold-pale); }
   .step-line-fill { animation: none; }
+}
+
+/* ===== Hover-Bewegung nur fuer echte Zeigegeraete (02.09.2026) =====
+   Auf Touch-Geraeten loest ein Tippen einen SCHEIN-Hover aus, der bis zum
+   naechsten Tippen woanders haengen bleibt. Auf einem emulierten Pixel 7
+   nachgemessen: Nach dem Antippen einer Funktionskarte stand ihr transform
+   dauerhaft auf translateY(-3px) — die Karte blieb angehoben stehen.
+   Das Muster (`@media (hover: none)`) gab es hier bereits, aber nur fuer
+   `.tile-hover` — die uebrigen 15 Hover-Bewegungen waren ungegated.
+   `pointer: coarse` deckt zusaetzlich Geraete ab, die Hover melden, aber
+   grob zeigen. Farb-/Rahmen-/Schattenwechsel bleiben absichtlich erhalten;
+   ausgeschaltet wird nur die BEWEGUNG.
+   Direkt gemessen wurde die Landing (.lp-feature); die App-Klassen tragen
+   dieselbe Regelform und denselben Mechanismus. */
+@media (hover: none), (pointer: coarse) {
+  /* `:not(:active)`: Chrome setzt bei Touch :hover UND :active gleichzeitig.
+     Ohne die Einschraenkung erwuergte dieses Gate das Druck-Feedback
+     (scale .97) genau auf den Geraeten, fuer die es gedacht ist — im Browser
+     gemessen am 02.09.2026: transform stand waehrend des Touch-Drucks auf
+     none. Neutralisiert wird nur der REINE Schein-Hover. */
+  .kpi-card:hover:not(:active),
+  .prop-card:hover:not(:active),
+  .lp-feature:hover:not(:active),
+  .qlx .lp-feature:hover:not(:active),
+  .qlx-btn-hell:hover:not(:active),
+  .btn-ghost:hover:not(:active),
+  .btn-outline:hover:not(:active),
+  .btn-tonal:hover:not(:active),
+  .btn-danger:hover:not(:active),
+  .btn-fab:hover:not(:active) {
+    transform: none;
+  }
+}
+
+/* ===== Scroll-getriebene Einblendung, ohne JavaScript (02.09.2026) =====
+   Bis hierher blendete `components/landing/Reveal.tsx` die Abschnitte per
+   IntersectionObserver ein — 45 Beobachter auf der oeffentlichen Strecke,
+   16 allein auf der Startseite, alle auf dem Hauptthread.
+
+   `animation-timeline: view()` erledigt dasselbe in CSS und laeuft AUSSERHALB
+   des Hauptthreads: Es bleibt fluessig, waehrend der Browser gerade laedt,
+   Skripte ausfuehrt oder zeichnet — genau dann, wenn rAF-basierte Loesungen
+   Bilder verlieren. Abdeckung Stand 09/2026 rund 84 % (Chrome 115+,
+   Safari 18+, Firefox 132+); `@supports` sorgt dafuer, dass aeltere Browser
+   weiterhin den JS-Weg bekommen. Reveal.tsx legt den Beobachter deshalb nur
+   noch an, wenn CSS es NICHT kann.
+
+   `animation-range: entry 8% cover 26%` heisst: Die Einblendung beginnt, wenn
+   das Element 8 % weit ins Bild geragt ist, und ist abgeschlossen, sobald es
+   gut ein Viertel des Sichtfensters bedeckt — nah am fruehen Verhalten des
+   Beobachters (threshold 0.12), nur ohne Sprung. `both` sorgt dafuer, dass
+   Elemente, die beim Laden schon im Bild sind, direkt im Endzustand stehen. */
+@keyframes lpReveal { to { opacity: 1; transform: none; } }
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .lp-reveal,
+    .qlx .lp-reveal {
+      animation: lpReveal both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 26%;
+      animation-timing-function: var(--ease-out-stark);
+      /* Die JS-Klasse darf nicht dagegenhalten: Animationen gewinnen in der
+         Kaskade ohnehin gegen normale Deklarationen — hier nur zur Klarheit,
+         dass beide Wege denselben Endzustand meinen. */
+      transition: none;
+    }
+    /* Die gezeichneten Icon-Linien haengen bisher an `.lp-reveal-in`, das ohne
+       JS nie gesetzt wird. Gleiche Bewegung, ebenfalls scroll-getrieben. */
+    .qlx .lp-reveal .ico svg * {
+      animation: qlxDraw both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 34%;
+    }
+  }
+}
+
+/* ===== Seitenuebergaenge zwischen Dokumenten (02.09.2026) =====
+   Die oeffentliche Strecke ist statisch und wird ueber echte Dokumentwechsel
+   erreicht — vor allem Startseite (App-Baum) -> Unterseite (Pub-Baum), der
+   haeufigste Weg ueber die Hero-Knoepfe. Ohne Regel ist das ein harter
+   Weissblitz. `@view-transition` laesst den Browser alt und neu ueberblenden,
+   ohne JavaScript und ohne Router-Umbau.
+   Innerhalb der Pub-Strecke navigiert <Link> per Client-Router (Soft
+   Navigation) — dort greift diese Regel NICHT; das ist so gewollt, die Wechsel
+   sind dort ohnehin sofort. Abdeckung: Chrome/Edge 126+, Safari 18.2+;
+   Firefox faellt auf den normalen Seitenwechsel zurueck (reine Erweiterung).
+   Dauer 220 ms mit starker Ease-out — unter der 300-ms-Grenze fuer UI. */
+@view-transition { navigation: auto; }
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: .22s;
+  animation-timing-function: var(--ease-out-stark);
+}
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
 }

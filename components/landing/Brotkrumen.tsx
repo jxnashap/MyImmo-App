@@ -43,7 +43,19 @@ export default function Brotkrumen({ stufen }: { stufen: Brotkrume[] }) {
                   {s.name}
                 </span>
               ) : (
-                <Link href={s.pfad || "/"} style={{ color: "inherit", textDecoration: "none" }}>
+                // Innenabstand plus negativer Aussenabstand: bringt die Treffer-
+                // flaeche auf die von WCAG 2.5.8 geforderten 24px Hoehe (vorher
+                // 20px), ohne die Zeile optisch zu veraendern.
+                <Link
+                  href={s.pfad || "/"}
+                  style={{
+                    color: "inherit",
+                    textDecoration: "none",
+                    display: "inline-block",
+                    padding: "3px 2px",
+                    margin: "-3px -2px",
+                  }}
+                >
                   {s.name}
                 </Link>
               )}

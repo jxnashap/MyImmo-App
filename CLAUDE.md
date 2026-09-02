@@ -281,10 +281,23 @@ setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangsco
   allein hatte NICHT gereicht: Canonical ist ein Hinweis, keine Anweisung.
   **Regel:** Kommt eine weitere Domain ins Vercel-Projekt, gehoert sie in `NEBENDOMAINS` —
   sonst liefert sie stillschweigend Duplikate aus.
-  **Noch offen (nur Betreiber):** dieselbe Weiterleitung in Vercel setzen (Settings → Domains →
-  `.store` und `.com` auf „Redirect") — dann wird die App gar nicht erst aufgerufen und die
-  Code-Regel kann weg. Und in der Search Console die **Adressänderung** anstossen; der
-  Indexwechsel dauert sonst Wochen.
+  **Stand 01.09.2026 abends, live gemessen — ABGESCHLOSSEN, nicht weiter daran drehen:**
+  `myimmoapp.store` leitet inzwischen auf **Vercel-Ebene** direkt auf `.de` um (Settings →
+  Domains → Redirect). Bei `.com` läuft die Kette `myimmoapp.com` → 308 → `www.myimmoapp.com`
+  → 308 → `.de`, wobei der letzte Schritt weiter über die **Code-Regel** geht. Das ist
+  BEWUSST so belassen: Für Google ist die Sache erledigt (beide `.com`-Adressen enden
+  permanent auf `.de`, zwei Hops sind unkritisch), der einzige Gewinn eines weiteren
+  Umbaus wäre eine eingesparte Serverless-Ausführung auf einer Domain ohne Verkehr — dem
+  steht das Risiko gegenüber, an einer laufenden Domain-Konfiguration weiterzuschrauben
+  (beim Versuch wurde bereits der falsche von zwei `.com`-Einträgen erwischt).
+  → **`NEBENDOMAINS` in `next.config.mjs` bleibt drin** und ist kein toter Code.
+  **Search-Console-Adressänderung: entfällt** (Betreiber, 01.09.2026). Die Property war
+  durchgehend `.de`; `.store` war nie eine. Eine Adressänderung verschiebt Signale von einer
+  alten verifizierten Property auf eine neue — hier gibt es nichts zu verschieben, weil
+  `.store` nie eigene Inhalte oder Verlinkungen aufgebaut hat, sondern nur dieselbe App unter
+  der falschen Adresse auslieferte. Die 308er führen den Index von allein zusammen; das
+  dauert Wochen, mehr bewirkt eine Adressänderung auch nicht.
+  **Damit ist das Domain-Thema vollständig abgeschlossen** — offen bleibt nur die Geduld.
   `my-immo-app.vercel.app` existiert nur noch als Vercel-Fallback — nirgends mehr verlinken;
   Sitemap/Robots/metadataBase zeigen auf www.myimmoapp.de).
 - Gehostet auf **Vercel**, verbunden mit dem GitHub-Repo `jxnashap/myimmo-app` (Branch `main`).
@@ -357,6 +370,45 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   (`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest`). Vor jedem größeren
   Release laufen lassen, mindestens monatlich. Neue Befunde in der genannten Datei bewerten,
   nicht nur die Zahl weiterreichen.
+
+## Bewegung / Animationen (Regelwerk seit 02.09.2026)
+- **Installiert: `emilkowalski/skills`** (`npx skills@latest add emilkowalski/skills`) —
+  12 Skills in `.agents/skills/`, per Symlink in `.claude/skills/` eingehängt, MIT-Lizenz.
+  Autor ist der Entwickler von Sonner und Vaul. Wichtigste für dieses Projekt:
+  **`animate`** (baut Animationen, enthält die Werte-Tabellen), **`review-animations`**
+  (prüft einen Diff), **`improve-animations`** (auditiert die Codebasis, schreibt Pläne —
+  ändert ausdrücklich KEINEN Quellcode), **`apple-design`**, **`pick-ui-library`**.
+- **Verbindliche Regeln, gegen die die App am 02.09.2026 geprüft wurde** (Details und
+  Messwerte in `tests/landingLayout.test.ts`):
+  kein `transition: all` · kein `scale(0)` als Eingang (stattdessen `scale(.9–.97)` +
+  `opacity: 0`) · **nie `ease-in` auf UI** · UI-Dauern unter 300 ms · nur `transform`
+  und `opacity` animieren · Hover-**Bewegung** nur hinter `@media (hover: hover) and
+  (pointer: fine)` bzw. abgeschaltet in `@media (hover: none), (pointer: coarse)` ·
+  `prefers-reduced-motion` gehört zur Animation, nicht als Nachtrag.
+- **Fallstrick, der beim Bauen zugeschlagen hat:** Das Touch-Gate hat dieselbe Spezifität
+  wie die Hover-Regeln — es muss deshalb **nach** ihnen in `globals.css` stehen, sonst ist
+  es wirkungslos. Steht jetzt am Dateiende und ist per Test festgenagelt.
+- **Bewusst NICHT geändert:** die bestehenden Easing-Tokens (`--ease-out: cubic-bezier(0,0,.2,1)`).
+  Ein globales Token zu drehen ändert jede Animation der App auf einmal. Stattdessen gibt es
+  seit Runde 2 **neue** Tokens `--ease-out-stark` (`cubic-bezier(0.23,1,0.32,1)`) und
+  `--ease-in-out-stark` — eingesetzt auf der öffentlichen Strecke.
+- **Runde 2 (02.09.2026, Auftrag „bessere Layouts und Animationen, modern, komplex, aber
+  schnell"):** Recherche-Ergebnis war eindeutig — **CSS scroll-driven animations**
+  (`animation-timeline: view()`, ~84 % Abdeckung, Chrome 115 / Safari 18 / Firefox 132)
+  laufen außerhalb des Hauptthreads und ersetzen JS-Beobachter. Umgesetzt:
+  (1) Einblendung der Abschnitte scroll-getrieben in CSS, hinter `@supports` und
+  `prefers-reduced-motion: no-preference`; `Reveal.tsx` legt den IntersectionObserver
+  **nur noch als Rückfall** an → Startseite **16 → 1 Beobachter** (gemessen).
+  (2) **Druck-Feedback** `:active { scale(.97) }` auf den Marketing-Knöpfen — sie hatten keins.
+  (3) **`@view-transition { navigation: auto }`** für Dokumentwechsel (220 ms, bei
+  Reduced-Motion `none`). Greift bei Startseite ↔ Unterseite (Root-Layout-Wechsel = echter
+  Dokumentwechsel); **innerhalb** der Pub-Strecke navigiert `<Link>` soft, dort bewusst nichts.
+  Firefox ohne Cross-Document-VT fällt auf den normalen Wechsel zurück.
+  **Zwei Fallstricke, im Browser erwischt:** Das Touch-Gate braucht `:hover:not(:active)`,
+  weil Chrome bei Touch Hover **und** Active gleichzeitig setzt — ohne das erwürgt das Gate
+  das Druck-Feedback. Und: Playwright-Locators/`networkidle` sind auf dieser Seite
+  unzuverlässig; messen mit `document.querySelector` + 2,5 s Wartezeit, `:active`-Kaskade
+  per `CSS.forcePseudoState` (synthetische Touch-Events setzen in Headless kein `:active`).
 
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).

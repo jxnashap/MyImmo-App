@@ -128,7 +128,13 @@ export default function LandingPage() {
           <div className="lp-kicker">Funktionen</div>
           <h2 className="lp-h2">Alles, was Vermieten verlangt</h2>
           <p className="lp-section-sub">Ein Auszug — die komplette Übersicht mit Screenshots findest du auf der Funktionsseite.</p>
-          <div className="lp-features" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+          {/* Drei Spalten per KLASSE, nicht per Inline-Style. Bis 02.09.2026 stand
+              hier `style={{ gridTemplateColumns: "repeat(3, 1fr)" }}` — ein
+              Inline-Style schlaegt jede Media Query, damit waren die Umbruch-
+              punkte fuer dieses Raster tot: Auf dem Handy wurden drei Spalten in
+              342px gepresst, zwei der sechs Karten lagen ausserhalb des Bild-
+              schirms und waren nicht erreichbar (die Seite scrollt nicht quer). */}
+          <div className="lp-features lp-features--drei">
             {topFeatures.map((f, i) => (
               <Reveal key={f.t} delay={i * 60}>
                 <Tilt>

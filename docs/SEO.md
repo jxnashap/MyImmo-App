@@ -331,9 +331,19 @@ Betreibers: **nein** — `.de` bleibt vorerst die einzige Adresse, `.com` bleibt
 und wird lediglich weiter verlängert. Begründung und der Weg für eine spätere Expansion
 stehen in `CLAUDE.md` unter „Zukunftsideen → Englische Fassung".
 
-**Erwartungshaltung:** Der Wechsel im Index dauert Wochen, nicht Stunden. Beschleunigen
-lässt er sich über die **Adressänderung** in der Search Console — dafür müssen beide
-Domains dort als Property bestätigt sein.
+**Erwartungshaltung:** Der Wechsel im Index dauert Wochen, nicht Stunden.
+
+**Adressänderung in der Search Console — geprüft und verworfen (01.09.2026).** Sie stand
+hier zunächst als Beschleuniger. Tatsächlich entfällt sie: Das Werkzeug verschiebt Signale
+von einer **alten, verifizierten Property** auf eine neue. Property war durchgehend `.de`,
+`.store` war nie eine — und hat als reiner Duplikat-Auslieferer auch nie eigene Inhalte oder
+Verlinkungen aufgebaut, die zu übertragen wären. `.store` nachträglich nur für diesen Zweck
+zu verifizieren, wäre Arbeit ohne Gegenwert. Die 308er führen den Index von allein zusammen.
+
+**Endstand der Domains (live gemessen, 01.09.2026 abends):** `myimmoapp.store` leitet auf
+**Vercel-Ebene** direkt auf `.de` um; bei `.com` läuft die Kette Apex → `www.myimmoapp.com`
+→ `.de`, letzter Schritt über die Code-Regel. Bewusst so belassen — Begründung in `CLAUDE.md`
+unter „Deployment". `NEBENDOMAINS` in `next.config.mjs` ist deshalb **kein toter Code**.
 
 ### 🟠 Weitere Lücken
 | Lücke | Wirkung |
