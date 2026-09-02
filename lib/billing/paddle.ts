@@ -19,7 +19,7 @@ export function paddleKonfiguriert(): boolean {
 }
 
 /** Preis-ID aus der Env (z. B. PADDLE_PRICE_PRIVAT_MONAT). */
-export function preisId(artikel: "privat" | "plus" | "banking", zyklus: AboZyklus): string | null {
+export function preisId(artikel: "privat" | "plus", zyklus: AboZyklus): string | null {
   return process.env[`PADDLE_PRICE_${artikel.toUpperCase()}_${zyklus.toUpperCase()}`] ?? null;
 }
 
@@ -61,7 +61,6 @@ export type AboUpdate = {
   plan: PlanId;
   status: AboStatus;
   zyklus: AboZyklus | null;
-  banking_addon: boolean;
   provider_customer_id: string | null;
   provider_subscription_id: string | null;
   gueltig_bis: string | null;
@@ -77,12 +76,12 @@ const STATUS_MAP: Record<string, AboStatus> = {
   canceled: "gekuendigt",
 };
 
-export type PreisZuordnung = Record<string, { artikel: "privat" | "plus" | "banking"; zyklus: AboZyklus }>;
+export type PreisZuordnung = Record<string, { artikel: "privat" | "plus"; zyklus: AboZyklus }>;
 
 /** Preis-ID → Artikel/Zyklus aus der Env (Umkehrung der PADDLE_PRICE_*-Vars). */
 export function preisZuordnungAusEnv(): PreisZuordnung {
   const map: PreisZuordnung = {};
-  for (const artikel of ["privat", "plus", "banking"] as const) {
+  for (const artikel of ["privat", "plus"] as const) {
     for (const zyklus of ["monat", "jahr"] as const) {
       const id = preisId(artikel, zyklus);
       if (id) map[id] = { artikel, zyklus };
@@ -116,13 +115,10 @@ export function parsePaddleEvent(payload: unknown, preise: PreisZuordnung = prei
   // Tarif/Add-on aus den abgerechneten Preis-IDs ableiten (siehe Kopfkommentar).
   let plan: PlanId | null = null;
   let zyklus: AboZyklus | null = null;
-  let bankingAddon = false;
   for (const item of data.items ?? []) {
     const treffer = item.price?.id ? preise[item.price.id] : undefined;
     if (!treffer) continue;
-    if (treffer.artikel === "banking") {
-      bankingAddon = true;
-    } else if (plan === null || treffer.artikel === "plus") {
+    if (plan === null || treffer.artikel === "plus") {
       plan = treffer.artikel;
       zyklus = treffer.zyklus;
     }
@@ -141,7 +137,6 @@ export function parsePaddleEvent(payload: unknown, preise: PreisZuordnung = prei
     plan,
     status,
     zyklus,
-    banking_addon: bankingAddon,
     provider_customer_id: data.customer_id ?? null,
     provider_subscription_id: data.id ?? null,
     gueltig_bis: data.current_billing_period?.ends_at ?? null,
@@ -176,16 +171,11 @@ export async function erstelleCheckoutUrl(args: {
   email?: string | null;
   plan: "privat" | "plus";
   zyklus: AboZyklus;
-  bankingAddon?: boolean;
 }): Promise<string | null> {
   const items: { price_id: string; quantity: number }[] = [];
   const tarifPreis = preisId(args.plan, args.zyklus);
   if (!tarifPreis) return null;
   items.push({ price_id: tarifPreis, quantity: 1 });
-  if (args.bankingAddon) {
-    const addonPreis = preisId("banking", args.zyklus);
-    if (addonPreis) items.push({ price_id: addonPreis, quantity: 1 });
-  }
 
   const antwort = await paddleFetch("/transactions", {
     items,
@@ -194,7 +184,6 @@ export async function erstelleCheckoutUrl(args: {
       user_id: args.userId,
       plan: args.plan,
       zyklus: args.zyklus,
-      banking_addon: !!args.bankingAddon,
     },
   });
   const data = antwort?.data as { checkout?: { url?: string } } | undefined;

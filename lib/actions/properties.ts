@@ -56,7 +56,7 @@ function parse(formData: FormData) {
 // Buchungen" auf /cashflow (bewusst kein stilles Auto-Insert).
 type Parsed = ReturnType<typeof parse>;
 async function autoBuchungen(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   propId: string,
   p: Parsed,
@@ -106,7 +106,7 @@ async function autoBuchungen(
 }
 
 export async function createProperty(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -131,7 +131,7 @@ export async function createProperty(formData: FormData) {
 }
 
 export async function updateProperty(id: string, formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -169,7 +169,7 @@ export async function updateProperty(id: string, formData: FormData) {
 }
 
 export async function deleteProperty(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("properties").delete().eq("id", id);
   if (error) throw new Error(error.message);
 
@@ -182,7 +182,7 @@ export async function deleteProperty(id: string) {
 // setzt den fortgeschriebenen Wert als "aktuellen Wert" — bewusst nur auf
 // Klick des Nutzers (vorschlagen + bestätigen, keine stille Automatik).
 export async function uebernehmeIndexwert(id: string, wert: number, standQuartal: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -215,7 +215,7 @@ export async function uebernehmeAfaGebaeudeanteil(
   id: string,
   prozent: number,
 ): Promise<{ ok: boolean; error?: string }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -27,6 +27,7 @@ export type Position = {
 
 const AUFTEILUNG_OPTIONEN = [
   { value: "voll", label: "Voller Betrag" },
+  { value: "flaeche", label: "Fläche (Gesamtkosten ÷ m²)" },
   { value: "zeit", label: "Zeitanteilig (Jahreskosten)" },
   { value: "verbrauch", label: "Verbrauch (Zwischenablesung)" },
   { value: "gradtag", label: "Gradtagszahlen (Heizung)" },
@@ -34,6 +35,8 @@ const AUFTEILUNG_OPTIONEN = [
 ];
 
 const AUFTEILUNG_HINWEIS: Record<string, string> = {
+  flaeche:
+    "Betrag = Gesamtkosten des Gebäudes; der Mieteranteil wird nach Wohnfläche berechnet (§ 556a I BGB) — z. B. 6.400 € × 80/400 m² = 1.280 €.",
   zeit: "Betrag = Jahresgesamtkosten; wird nach Belegungstagen geteilt.",
   verbrauch: "Betrag = Jahresgesamtkosten; wird exakt nach dem abgelesenen Verbrauchsanteil geteilt.",
   gradtag:
@@ -206,11 +209,11 @@ export default function PositionsManager({
 
       {rows.length === 0 ? (
         <p className="mb-4 text-sm text-[var(--muted)]">
-          Noch keine Positionen. Lege z.B. Müll, Abwasser oder Grundsteuer individuell für diesen Mieter an.
+          Noch keine Positionen. Lege z. B. Müll, Abwasser oder Grundsteuer individuell für diesen Mieter an.
         </p>
       ) : (
         <div className="mb-4 overflow-hidden rounded-[10px] border border-[var(--line)]">
-          <table className="w-full text-sm">
+          <div className="table-scroll"><table className="w-full min-w-[620px] text-sm">
             <thead className="bg-[var(--bg3)] text-left text-[var(--muted)]">
               <tr>
                 <th className="px-3 py-2 font-medium">Position</th>
@@ -319,6 +322,20 @@ export default function PositionsManager({
                         />
                       </div>
                     )}
+                    {r.aufteilung === "flaeche" && (
+                      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                        <input
+                          className="input"
+                          type="number"
+                          step="0.01"
+                          placeholder="Fläche gesamt (m²)"
+                          style={{ width: 130, fontSize: 11 }}
+                          value={r.fg}
+                          onChange={(e) => setRow(r.id, { fg: e.target.value })}
+                          onBlur={() => speichere({ ...r })}
+                        />
+                      </div>
+                    )}
                     {r.aufteilung === "hkvo" && (
                       <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                         <input
@@ -372,7 +389,7 @@ export default function PositionsManager({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 
@@ -395,7 +412,7 @@ export default function PositionsManager({
           <input
             list="pos-vorlagen"
             required
-            placeholder="z.B. Müll"
+            placeholder="z. B. Müll"
             className="input"
             value={nBez}
             onChange={(e) => setNBez(e.target.value)}
@@ -447,6 +464,12 @@ export default function PositionsManager({
               <input type="number" step="0.01" className="input w-28" value={nVg} onChange={(e) => setNVg(e.target.value)} />
             </label>
           </>
+        )}
+        {nAuf === "flaeche" && (
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-[var(--muted)]">Fläche gesamt (m²)</span>
+            <input type="number" step="0.01" className="input w-28" value={nFg} onChange={(e) => setNFg(e.target.value)} placeholder="z. B. 400" />
+          </label>
         )}
         {nAuf === "hkvo" && (
           <>

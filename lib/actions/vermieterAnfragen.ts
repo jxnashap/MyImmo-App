@@ -13,7 +13,7 @@ const ANFRAGE_TYPEN = [
 ] as const;
 
 export async function erstelleVermieterAnfrage(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -55,7 +55,7 @@ export async function erstelleVermieterAnfrage(formData: FormData) {
 
 /** Mieter beantwortet: status = erledigt | abgelehnt (+ optionale Antwort). */
 export async function beantworteVermieterAnfrage(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -78,7 +78,7 @@ export async function beantworteVermieterAnfrage(formData: FormData) {
 
 /** Vermieter löscht eine (z. B. versehentliche) Anfrage. */
 export async function loescheVermieterAnfrage(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

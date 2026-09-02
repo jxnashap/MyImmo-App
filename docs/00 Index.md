@@ -34,9 +34,21 @@
 - `workshop/immobilien-workshop-loesung.html` — Musterlösung, Rechenweg, Bewertungsraster (**nur Lehrkraft**)
 - [[README]] in `docs/workshop/` — Rechengrundlage, Herkunft der Zahlen, Anpassen
 
+## 📣 Marketing & Sichtbarkeit
+- [[SEO]] — Stand der Technik 2026 **+ Prüfung von MyImmo** (live gemessen)
+- [[MARKETING]] — Kanäle, Prioritäten, was sich lohnt
+- [[INSTAGRAM]] — Strategie, Profil, erste Post-Visuals (Test, zurückgestellt)
+
 ## ⚖️ Compliance
+- [[SICHERHEIT-ABHAENGIGKEITEN]] — OSV-Scanner-Befund, Bewertung, Next.js-14-Ende
+- [[NEXTJS-15-MIGRATION]] — Umstieg auf Next.js 15.5 ✅ umgesetzt 01.09.2026 (Plan + Bericht)
 - [[AVV-STATUS]] — DSGVO / AVV je Anbieter
+- [[APP-STORE-RECHT]] — App/Play Store: Gesetze, Store-Regeln, Gebühren **+ Prüfung von MyImmo**
 - [[anthropic-dpa-archiv]] — archiviertes Anthropic-DPA
+
+## 🔮 Zukunftsprojekte (notiert, nicht gebaut)
+- [[STRATEGIE-REITER]] — Ankaufsstrategie: wann ist das nächste Objekt finanzierbar? (Idee 30.08.2026)
+- [[OPEN-BANKING]] — Konto-Anbindung, zurückgestellt 29.08.2026 (Code in der Git-Historie)
 
 ## 🛠️ Technik
 - [[README]] (in `supabase/migrations/`) — Migrations-Regeln + Historie
@@ -45,7 +57,7 @@
 ## 🗺️ Schnell-Orientierung
 - **Live:** https://www.myimmoapp.de
 - **Repo:** `jxnashap/myimmo-app` · **Branch:** `claude/magical-feynman-l8w9s5`
-- **Stack:** Next.js 14 (App Router) · Supabase (RLS) · Vercel · TypeScript · vitest
+- **Stack:** Next.js 15 (App Router) · Supabase (RLS) · Vercel · TypeScript · vitest
 - **Arbeitsweise:** ehrlicher Sparringspartner, Risiken zuerst, Deutsch.
 
 ---

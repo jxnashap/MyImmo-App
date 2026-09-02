@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
@@ -53,7 +53,10 @@ const SCHRITTE: TourSchritt[] = [
   {
     icon: Banknote,
     titel: "3 · Ein- & Ausgaben buchen",
-    text: "Miete rein, Handwerker raus: Unter „Ein- & Ausgaben“ hältst du alle Zahlungen fest — per Hand, CSV-Import oder Kontoanbindung. Rechnungen kannst du direkt an die Buchung hängen.",
+    // Die Kontoanbindung (Open Banking) wurde am 29.08.2026 komplett aus der App
+    // entfernt — sie stand hier noch als Versprechen. Nicht wieder aufnehmen,
+    // solange docs/zukunft/OPEN-BANKING.md ein Zukunftsprojekt beschreibt.
+    text: "Miete rein, Handwerker raus: Unter „Ein- & Ausgaben“ hältst du alle Zahlungen fest — per Hand oder per CSV-Import. Rechnungen kannst du direkt an die Buchung hängen.",
     href: "/cashflow",
     linkLabel: "Zu Ein- & Ausgaben",
   },
@@ -89,6 +92,10 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
   const [offen, setOffen] = useState(false);
   const [minimiert, setMinimiert] = useState(false);
   const [i, setI] = useState(0);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  // Fokus vor dem Oeffnen merken, damit er beim Schliessen zurueckkehrt —
+  // sonst landet er am Seitenanfang und der Tastaturnutzer verliert die Stelle.
+  const vorherFokus = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     try {
@@ -126,14 +133,62 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
     } catch { /* ignore */ }
   }, [offen, i, minimiert]);
 
-  function beenden() {
+  const beenden = useCallback(() => {
     try {
       localStorage.setItem(DONE_KEY, "1");
       localStorage.removeItem(STATE_KEY);
     } catch { /* ignore */ }
     setOffen(false);
     setMinimiert(false);
-  }
+    vorherFokus.current?.focus?.();
+    vorherFokus.current = null;
+  }, []);
+
+  // Dialog-Verhalten: Escape schliesst, der Fokus wandert ins Fenster und bleibt
+  // darin. Ohne das tabbt man hinter dem Overlay weiter — man sieht das Fenster,
+  // bedient aber die Seite dahinter. Betrifft Tastatur- und Screenreader-Nutzung
+  // und ist bei einer im Schnitt 58-jaehrigen Zielgruppe kein Randfall.
+  // Bewusst NICHT von `i` abhaengig: der Effekt darf beim Schrittwechsel nicht
+  // neu laufen. Sonst wuerde (a) `vorherFokus` mit einem Knopf AUS dem Dialog
+  // ueberschrieben, der beim Schliessen nicht mehr existiert, und (b) der Fokus
+  // bei jedem „Weiter" auf das erste Element springen — man koennte nicht
+  // zweimal hintereinander mit der Tastatur weiterklicken. `fokussierbar()`
+  // liest ohnehin bei jedem Tastendruck live aus dem DOM.
+  useEffect(() => {
+    if (!offen || minimiert) return;
+    if (!vorherFokus.current) vorherFokus.current = document.activeElement as HTMLElement | null;
+    const sheet = sheetRef.current;
+    const fokussierbar = () =>
+      Array.from(
+        sheet?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((el) => el.offsetParent !== null);
+
+    fokussierbar()[0]?.focus();
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        beenden();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const el = fokussierbar();
+      if (el.length === 0) return;
+      const erster = el[0];
+      const letzter = el[el.length - 1];
+      if (e.shiftKey && document.activeElement === erster) {
+        e.preventDefault();
+        letzter.focus();
+      } else if (!e.shiftKey && document.activeElement === letzter) {
+        e.preventDefault();
+        erster.focus();
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [offen, minimiert, beenden]);
 
   // Link-Klick in einem Schritt: Tour NICHT beenden, sondern minimieren und
   // schon zum nächsten Schritt weiterschalten — auf der Zielseite erscheint
@@ -153,7 +208,7 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
         <button
           type="button"
           className="btn btn-gold"
-          style={{ fontSize: 12.5, boxShadow: "0 6px 24px rgba(0,0,0,0.35)" }}
+          style={{ fontSize: 12.5, boxShadow: "var(--shadow-2)" }}
           onClick={() => setMinimiert(false)}
         >
           <Sparkles size={14} style={{ verticalAlign: "-2px" }} /> Tour fortsetzen ({i + 1}/{SCHRITTE.length})
@@ -163,7 +218,7 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
           onClick={beenden}
           title="Tour beenden"
           aria-label="Tour beenden"
-          style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--line2)", background: "var(--bg2)", color: "var(--muted)", cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "0 6px 24px rgba(0,0,0,0.35)" }}
+          style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--line2)", background: "var(--bg2)", color: "var(--muted)", cursor: "pointer", display: "grid", placeItems: "center", boxShadow: "var(--shadow-2)" }}
         >
           <X size={13} />
         </button>
@@ -178,11 +233,19 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
 
   return createPortal(
     <div className="modal-overlay" onClick={beenden}>
-      <div className="modal-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
+      <div
+        ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tour-titel"
+        className="modal-sheet"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: 480 }}
+      >
         {/* Kopf: Fortschritt + Überspringen */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
           <div style={{ flex: 1, height: 5, background: "var(--line2)", borderRadius: 99, overflow: "hidden" }}>
-            <div style={{ width: `${((i + 1) / SCHRITTE.length) * 100}%`, height: "100%", background: "var(--gold)", transition: "width .4s ease" }} />
+            <div style={{ width: `${((i + 1) / SCHRITTE.length) * 100}%`, height: "100%", background: "var(--gold-fill)", transition: "width .4s ease" }} />
           </div>
           <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>{i + 1}/{SCHRITTE.length}</span>
           <button type="button" onClick={beenden} title="Tour überspringen" aria-label="Tour überspringen"
@@ -193,10 +256,14 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
 
         {/* Inhalt */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 12, padding: "6px 4px 2px" }}>
-          <div style={{ width: 54, height: 54, borderRadius: "50%", background: "var(--gold-pale, rgba(212,175,90,0.12))", border: "1px solid var(--gold)", display: "grid", placeItems: "center" }}>
+          {/* Seit „Frosted Paper" (20.08.2026) ist Gold nur noch schmaler Akzent.
+              Vorher war hier alles gold: Kreisflaeche, Rand UND Icon — dazu der
+              Fortschrittsbalken und beide Knoepfe. Der Kreis ist jetzt neutral,
+              das Gold bleibt dem Icon und dem Balken. */}
+          <div style={{ width: 54, height: 54, borderRadius: "50%", background: "var(--bg3)", border: "1px solid var(--line2)", display: "grid", placeItems: "center" }}>
             <Icon size={24} color="var(--gold)" />
           </div>
-          <h3 style={{ margin: 0, fontSize: 18 }}>{s.titel}</h3>
+          <h3 id="tour-titel" style={{ margin: 0, fontSize: 18 }}>{s.titel}</h3>
           <p style={{ margin: 0, fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>{s.text}</p>
           {s.href && (
             <Link href={s.href} className="btn btn-outline" style={{ fontSize: 12.5 }} onClick={zurSeite}>

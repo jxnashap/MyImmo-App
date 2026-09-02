@@ -19,18 +19,26 @@ export type VerkaufObjekt = {
   restschuld: number;
 };
 
-export default function VerkaufRechner({ objekte = [] }: { objekte?: VerkaufObjekt[] }) {
-  const [vp, setVp] = useState("");
-  const [kaufdatum, setKaufdatum] = useState("");
-  const [kp, setKp] = useState("");
+export default function VerkaufRechner({
+  objekte = [], demo = false,
+}: { objekte?: VerkaufObjekt[]; demo?: boolean }) {
+  // In der oeffentlichen Demo ist die Objekt-Auswahl gesperrt (fieldset
+  // disabled). Ohne Vorbelegung bliebe der Rechner deshalb dauerhaft leer —
+  // man koennte nie ein Objekt waehlen und saehe nie eine Rechnung. Deshalb
+  // steht dort das erste Bestandsobjekt von Anfang an drin.
+  const start = demo ? objekte[0] : undefined;
+
+  const [vp, setVp] = useState(start?.wert ? String(Math.round(start.wert)) : "");
+  const [kaufdatum, setKaufdatum] = useState(start?.kaufdatum ? start.kaufdatum.slice(0, 10) : "");
+  const [kp, setKp] = useState(start?.kaufpreis ? String(Math.round(start.kaufpreis)) : "");
   const [knk, setKnk] = useState("");
   const [afa, setAfa] = useState("");
   const [vk, setVk] = useState("");
-  const [rest, setRest] = useState("");
+  const [rest, setRest] = useState(start && start.restschuld > 0 ? String(Math.round(start.restschuld)) : "");
   const [vfe, setVfe] = useState("");
   const [satz, setSatz] = useState("42");
   const [weitere, setWeitere] = useState("");
-  const [objId, setObjId] = useState("");
+  const [objId, setObjId] = useState(start?.id ?? "");
   const [eigen, setEigen] = useState(false);
 
   // Bestandsobjekt übernehmen — überschreibt nur die zugehörigen Felder.

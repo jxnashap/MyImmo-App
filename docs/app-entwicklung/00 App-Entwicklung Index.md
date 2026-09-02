@@ -23,8 +23,12 @@
 ## Die fünf Sätze, die am meisten gekostet haben
 
 1. **„Das fehlt noch."** — Mehrere Punkte standen monatelang als offen, obwohl
-   sie längst gebaut waren (Onboarding-Tour, Open Banking Etappen 1–4). **Vor
-   jeder solchen Aussage in `docs/PROJEKT-STATUS.md` nachsehen.**
+   sie längst gebaut waren (Onboarding-Tour, Open Banking Etappen 1–4; Open
+   Banking wurde am 29.08.2026 wieder entfernt — die Fehleinschätzung betraf
+   den Zeitraum davor). **Vor jeder solchen Aussage in `docs/PROJEKT-STATUS.md`
+   nachsehen.** Der Umkehrfall kostet genauso: siehe „Das ist offen" in
+   [[08 Fehlerkatalog]] — eine Notiz aus einem veralteten Baum meldet Erledigtes
+   als offen.
 2. **„Der Schalter ist gesetzt, also greift er."** — Supabase Leaked Password
    Protection ist auf dem Free-Plan sichtbar, aber wirkungslos. Empirisch
    geprüft: „Password123!" ging durch. Schalter ≠ Wirkung.
@@ -40,7 +44,7 @@
 
 ## Was diesen Stack ausmacht
 
-**Next.js 14 (App Router) · Supabase (Postgres + Auth + RLS) · Vercel ·
+**Next.js 15 (App Router) · Supabase (Postgres + Auth + RLS) · Vercel ·
 TypeScript · vitest.** Kein Storage-Bucket (Dateien als Base64 in Spalten),
 keine eigene Backend-Schicht, keine ORM-Zwischenlage. Server Actions statt
 API-Routen, wo möglich. Die Zugriffskontrolle liegt **in der Datenbank** (RLS),

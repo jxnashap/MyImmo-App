@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   User, Landmark, ShieldCheck, FileText, Download, Upload, Trash2, Plus, Star,
   Lock, ExternalLink, X, Check, TriangleAlert, PenLine, Sparkles, CreditCard,
-  PartyPopper, type LucideIcon,
+  PartyPopper, LifeBuoy, type LucideIcon,
 } from "lucide-react";
 import { TOUR_EVENT } from "@/components/OnboardingTour";
 import SignaturPad from "@/components/SignaturPad";
@@ -23,7 +23,11 @@ import { starteCheckout, oeffneAboPortal } from "@/lib/actions/billing";
 import { isValidIban, normalizeIban } from "@/lib/iban";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 import { wechslePasswort } from "@/lib/passwortWechsel";
+import HilfeInhalt from "@/components/HilfeInhalt";
+import { istDemoKonto } from "@/lib/demo";
+import { PASSWORT_REGEL } from "@/lib/passwort";
 import type { VermieterProfil, Iban } from "@/lib/types";
+import { useModalFokus } from "@/lib/modalFokus";
 
 // Anzeige-Daten des Abos (Server lädt, Client zeigt nur an).
 export type AboAnzeige = {
@@ -31,19 +35,24 @@ export type AboAnzeige = {
   planName: string;
   status: string;
   zyklus: string | null;
-  bankingAddon: boolean;
   gueltigBis: string | null;
   storniertZum: string | null;
   hatPortal: boolean;
 } | null;
 
-type TabKey = "profil" | "bank" | "abo" | "sicherheit" | "recht";
+type TabKey = "profil" | "bank" | "abo" | "sicherheit" | "recht" | "hilfe";
+// Der Abo-Tab hängt am selben Schalter wie alle anderen Preis-Stellen: Solange
+// die Tarife app-weit ausgeblendet sind (PREISE_SICHTBAR=false, Bezahlsystem
+// inaktiv), erscheint kein verwaister Abrechnungsbereich, der nichts tut.
 const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   { key: "profil", label: "Profil", icon: User },
   { key: "bank", label: "Bankkonten", icon: Landmark },
-  { key: "abo", label: "Abo", icon: CreditCard },
+  ...(PREISE_SICHTBAR ? [{ key: "abo" as const, label: "Abo", icon: CreditCard }] : []),
   { key: "sicherheit", label: "Sicherheit", icon: ShieldCheck },
   { key: "recht", label: "Daten & Recht", icon: FileText },
+  // Support gehoert hierher und NICHT in die Hauptnavigation (Vorgabe
+  // Betreiber 29.08.2026) — man sucht ihn beim Konto, nicht neben den Objekten.
+  { key: "hilfe", label: "Support", icon: LifeBuoy },
 ];
 
 const fmtIban = (iban: string) => iban.replace(/(.{4})/g, "$1 ").trim();
@@ -67,8 +76,21 @@ export default function SettingsView({
   einheiten?: number;
   billingEnforced?: boolean;
 }) {
+  const demoKonto = istDemoKonto(email);
   const [tab, setTab] = useState<TabKey>("profil");
+  const [pwHinweis, setPwHinweis] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
+
+  // Der Login schickt Bestandsnutzer mit zu schwachem Passwort hierher
+  // (`?pw=schwach`, siehe app/login/page.tsx). Erst nach dem Mount lesen —
+  // window existiert serverseitig nicht, und ein direkt gesetzter Tab wuerde
+  // einen Hydration-Mismatch erzeugen.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("pw") === "schwach") {
+      setTab("sicherheit");
+      setPwHinweis(true);
+    }
+  }, []);
 
   // Pfeiltasten-Navigation der Tabs (Barrierefreiheit).
   function onTabKey(e: React.KeyboardEvent, i: number) {
@@ -98,6 +120,19 @@ export default function SettingsView({
         </div>
       </div>
 
+      {pwHinweis && (
+        <div
+          role="status"
+          className="rounded-sm px-3 py-2 text-[13px]"
+          style={{ background: "var(--blue-dim)", color: "var(--blue)", marginBottom: 16 }}
+        >
+          <strong>Bitte ändere dein Passwort.</strong> Es ist kürzer, als die
+          Sicherheitsregeln es heute verlangen ({PASSWORT_REGEL}). Du bist ganz
+          normal angemeldet — der Wechsel dauert eine Minute und steht unten
+          unter „Passwort ändern“.
+        </div>
+      )}
+
       <div className="settings-tabs" role="tablist" aria-label="Einstellungsbereiche" ref={tabsRef}>
         {TABS.map((t, i) => {
           const Icon = t.icon;
@@ -124,8 +159,9 @@ export default function SettingsView({
         {tab === "profil" && <ProfilPanel profil={profil} unterschrift={unterschrift ?? null} />}
         {tab === "bank" && <BankPanel ibans={ibans} />}
         {tab === "abo" && <AboPanel abo={abo} einheiten={einheiten} enforced={billingEnforced} />}
-        {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} />}
+        {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} demo={demoKonto} />}
         {tab === "recht" && <RechtPanel />}
+        {tab === "hilfe" && <HilfeInhalt />}
       </div>
 
       <DangerZone />
@@ -394,7 +430,7 @@ function BankPanel({ ibans }: { ibans: Iban[] }) {
 }
 
 // ---------- Sicherheit ----------
-function SicherheitPanel({ email, provider }: { email?: string | null; provider?: string | null }) {
+function SicherheitPanel({ email, provider, demo = false }: { email?: string | null; provider?: string | null; demo?: boolean }) {
   const supabase = createClient();
   const toast = useToast();
   const ref = useReveal(null);
@@ -429,6 +465,19 @@ function SicherheitPanel({ email, provider }: { email?: string | null; provider?
           Ändere das Passwort für dein Konto{email ? ` (${email})` : ""}.
           {istGoogle && " Du meldest dich aktuell mit Google an – hier kannst du zusätzlich ein Passwort setzen, um dich auch per E-Mail anzumelden."}
         </p>
+        {demo && (
+          <div
+            role="status"
+            className="rounded-sm px-3 py-2 text-[13px]"
+            style={{ background: "var(--blue-dim)", color: "var(--blue)", marginBottom: 14 }}
+          >
+            <strong>In der Demo gesperrt.</strong> Das Demo-Konto teilen sich alle
+            Besucher — ein geändertes Passwort würde alle anderen aussperren.
+          </div>
+        )}
+        {/* fieldset disabled statt einzelner disabled-Attribute: deaktiviert
+            nativ jedes Feld UND den Absenden-Knopf, auch fuer Tastatur. */}
+        <fieldset disabled={demo} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
         <form onSubmit={aendern} className="set-grid">
           {!istGoogle && (
             <label className="set-field span2">
@@ -456,6 +505,7 @@ function SicherheitPanel({ email, provider }: { email?: string | null; provider?
             <button className="btn btn-gold" disabled={saving}>{saving ? "Speichern…" : "Passwort ändern"}</button>
           </div>
         </form>
+        </fieldset>
       </div>
 
       <AutoLogoutKarte />
@@ -646,9 +696,7 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
             <h2><CreditCard size={16} /> Dein Tarif</h2>
             <p className="sub">
               <strong style={{ color: "var(--text)" }}>{abo?.planName ?? "Kostenlos"}</strong>
-              {abo?.zyklus ? ` · ${abo.zyklus === "jahr" ? "Jahreszahlung" : "Monatszahlung"}` : ""}
-              {abo?.bankingAddon ? " · inkl. Banking-Add-on" : ""}
-              {" — "}{einheiten} {einheiten === 1 ? "Einheit" : "Einheiten"} erfasst.
+              {abo?.zyklus ? ` · ${abo.zyklus === "jahr" ? "Jahreszahlung" : "Monatszahlung"}` : ""}              {" — "}{einheiten} {einheiten === 1 ? "Einheit" : "Einheiten"} erfasst.
             </p>
             {abo?.storniertZum && (
               <p className="sub" style={{ color: "var(--red)" }}>
@@ -694,26 +742,29 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
 // ---------- Gefahrenzone + Lösch-Modal ----------
 function DangerZone() {
   const [open, setOpen] = useState(false);
+  const loeschRef = useModalFokus<HTMLDivElement>(() => setOpen(false), open);
   const [confirmText, setConfirmText] = useState("");
   const darf = confirmText.trim().toUpperCase() === "LÖSCHEN";
   // Fehler der Server-Action im Modal zeigen — nicht auf app/error.tsx landen.
   const [loeschFehler, setLoeschFehler] = useState<string | null>(null);
-
-  // ESC schließt das Modal.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
 
   return (
     <div className="danger-zone">
       <button type="button" className="danger-link" onClick={() => setOpen(true)}>Konto löschen</button>
 
       {open && typeof document !== "undefined" && createPortal(
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)} role="dialog" aria-modal="true" aria-label="Konto löschen">
-          <div className="modal-sheet" style={{ textAlign: "left" }}>
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
+          {/* role/aria-modal auf dem Blatt statt auf dem Overlay — sonst zaehlt
+              der Hintergrund-Schleier zum Dialog. */}
+          <div
+            ref={loeschRef}
+            className="modal-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Konto löschen"
+            tabIndex={-1}
+            style={{ textAlign: "left" }}
+          >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
               <h2 style={{ fontSize: 17, display: "flex", alignItems: "center", gap: 8, color: "var(--red)" }}><Trash2 size={18} /> Konto löschen</h2>
               <button type="button" className="icon-btn" onClick={() => setOpen(false)} title="Schließen"><X size={16} /></button>
@@ -734,7 +785,7 @@ function DangerZone() {
                 <input className="set-input" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="LÖSCHEN" autoFocus />
               </label>
               {loeschFehler && (
-                <p style={{ fontSize: 13, color: "var(--red)", lineHeight: 1.6, marginBottom: 14 }}>
+                <p role="alert" style={{ fontSize: 13, color: "var(--red)", lineHeight: 1.6, marginBottom: 14 }}>
                   {loeschFehler}
                 </p>
               )}

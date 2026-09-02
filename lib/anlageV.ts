@@ -5,6 +5,7 @@
 // Hinweis: Hilfestellung zur Steuererklärung, keine Steuerberatung.
 
 import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
+import { afaZeitanteil, monatVon } from "@/lib/steuer/afaZeitraum";
 
 export type AfaParams = {
   gebaeudeAnteil: number; // % des Kaufpreises, der auf das Gebäude entfällt
@@ -184,14 +185,29 @@ export function berechneAnlageV(
           "Degressive AfA gewählt, aber kein AfA-Startjahr (Jahr der Anschaffung) hinterlegt — ohne dieses Jahr lässt sich der Restbuchwert nicht bestimmen. Bitte im Objekt ergänzen.",
         );
       } else {
+        // Zeitanteil: keine AfA vor der Anschaffung, im 1. Jahr monatsgenau.
+        const z = afaZeitanteil(jahr, start, monatVon(p.kaufdatum), null);
+        if (z.hinweis) g.hinweise.push(z.hinweis);
         const n = Math.max(0, jahr - start); // 0 = 1. AfA-Jahr
-        g.werbungskosten.afa = r2(g.afaBasis * 0.05 * Math.pow(0.95, n));
+        g.werbungskosten.afa = r2(g.afaBasis * 0.05 * Math.pow(0.95, n) * z.faktor);
         g.afaSatz = 5;
       }
     } else {
       const satz = afa.satz ?? afaSatzAusBaujahr(p.baujahr); // global-Override nur bei "auto"
       g.afaSatz = satz;
-      g.werbungskosten.afa = r2((g.afaBasis * satz) / 100);
+      // Lineare AfA lief bisher ohne jede zeitliche Grenze: auch für Jahre VOR
+      // der Anschaffung, ohne Monatsanteil im Kaufjahr und ohne Ende nach der
+      // Nutzungsdauer (bei 2 % also über 50 Jahre hinaus).
+      const startLinear = p.afa_start_jahr ?? (Number.isFinite(jahrVon(p.kaufdatum)) ? jahrVon(p.kaufdatum) : null);
+      const dauer = satz > 0 ? Math.round(100 / satz) : null;
+      const z = afaZeitanteil(jahr, startLinear, monatVon(p.kaufdatum), dauer);
+      if (z.hinweis) g.hinweise.push(z.hinweis);
+      g.werbungskosten.afa = r2(((g.afaBasis * satz) / 100) * z.faktor);
+      if (startLinear == null && g.afaBasis > 0) {
+        g.hinweise.push(
+          "Kein Anschaffungsdatum hinterlegt — die AfA wird für jedes Jahr voll gerechnet. Bitte Kaufdatum im Objekt ergänzen, damit das Anschaffungsjahr zeitanteilig läuft (§ 7 Abs. 1 S. 4 EStG).",
+        );
+      }
     }
     // Schuldzinsen: Gebucht schlägt geschätzt.
     //

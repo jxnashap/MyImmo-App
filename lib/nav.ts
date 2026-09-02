@@ -2,8 +2,8 @@
 // damit beide garantiert dieselben Bereiche/Icons zeigen (keine Duplikate).
 import {
   BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
-  TrendingUp, MessageSquareText, CreditCard,
-  Building2, Building, Store, TreePalm, Sprout, Percent, Compass, Handshake,
+  TrendingUp, MessageSquareText,
+  Building2, Building, Store, TreePalm, Sprout, Percent, Compass, Handshake, Scale,
   type LucideIcon,
 } from "lucide-react";
 
@@ -15,11 +15,13 @@ export const VERWALTUNG: NavItem[] = [
   { href: "/tenants", label: "Mieter", icon: User },
   { href: "/cashflow", label: "Ein- & Ausgaben", icon: Banknote },
   { href: "/mietkonto", label: "Mietkonto", icon: ReceiptText },
+  // Nicht "Mieterportal": So heisst die Mieter-Oberflaeche unter /portal.
+  // Diese Seite ist die Vermieter-Sicht und enthaelt neben Mieter-Anliegen
+  // auch Bewerbungen und die Handwerker-Verwaltung.
   { href: "/anliegen", label: "Mieterportal", icon: MessageSquareText },
   { href: "/verbrauch", label: "Verbrauch", icon: Zap },
   { href: "/kredite", label: "Kredite", icon: Landmark },
-  { href: "/banking", label: "Banking", icon: CreditCard },
-  { href: "/steuer", label: "Steuer", paragraph: true },
+  { href: "/steuer", label: "Steuer", icon: Scale, paragraph: true }, // Icon nur fuer die Command-Palette; die Sidebar zeigt bewusst "§"
   { href: "/archiv", label: "Archiv", icon: Archive },
   { href: "/jahresbericht", label: "Jahresbericht", icon: TrendingUp },
 ];

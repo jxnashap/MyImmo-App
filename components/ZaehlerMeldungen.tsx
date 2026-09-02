@@ -46,8 +46,8 @@ export default function ZaehlerMeldungen({ rows }: { rows: ZaehlerMeldungVermiet
         {offene.length > 0 && <span className="badge badge-amber">{offene.length} neu</span>}
       </div>
       <div className="section-body">
-        {fehler && <p style={{ fontSize: 12, color: "var(--red)", marginBottom: 8 }}>{fehler}</p>}
-        {hinweis && <p style={{ fontSize: 12, color: "var(--blue)", marginBottom: 8 }}>{hinweis}</p>}
+        {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", marginBottom: 8 }}>{fehler}</p>}
+        {hinweis && <p role="status" style={{ fontSize: 12, color: "var(--blue)", marginBottom: 8 }}>{hinweis}</p>}
         {rows.map((m) => (
           <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "9px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>
             <span style={{ fontWeight: 600 }}>{m.art}</span>
@@ -64,7 +64,7 @@ export default function ZaehlerMeldungen({ rows }: { rows: ZaehlerMeldungVermiet
               {m.uebernommen_am ? (
                 <span className="badge badge-green"><Check size={11} style={{ verticalAlign: "-1px" }} /> Übernommen</span>
               ) : (
-                <button type="button" className="btn btn-gold" style={{ fontSize: 11, padding: "5px 12px" }} disabled={pending} onClick={() => uebernehmen(m.id)}>
+                <button type="button" className="btn btn-outline" style={{ fontSize: 11, padding: "5px 12px" }} disabled={pending} onClick={() => uebernehmen(m.id)}>
                   {pending ? "…" : "Übernehmen"}
                 </button>
               )}

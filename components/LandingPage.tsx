@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, Plane } from "lucide-react";
 import LandingShell from "@/components/landing/Shell";
+import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import Tilt from "@/components/landing/Tilt";
 import RollenFlow from "@/components/landing/RollenFlow";
-import { FEATURES, PLAENE, SOON_BADGE, Shot } from "@/components/landing/data";
+import { FEATURES, PLAENE, FAQ, SOON_BADGE, Shot } from "@/components/landing/data";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 
 // Kompakte Startseite für ausgeloggte Besucher — helles Vertrauens-Design
@@ -16,24 +17,39 @@ export default function LandingPage() {
   const topFeatures = FEATURES.slice(0, 6);
 
   return (
-    <LandingShell>
-      {/* ---------- Hero ---------- */}
-      <section className="lp-section" style={{ paddingBottom: 24 }}>
-        <div className="lp-inner lp-hero2">
-          <div>
-            <span className="lp-badge"><span className="dot" />Early Access — aktuell alles kostenlos</span>
-            <h1 className="lp-h1">Vermieten ohne Papierkram. <em>Von überall.</em></h1>
-            <p className="lp-sub">
-              Nebenkostenabrechnung, Anlage V, Mieten und dein ganzes Team — Mieter, Hausmeister,
-              Handwerker — in einer aufgeräumten App. Gemacht für private Vermieter mit 1–24
-              Einheiten, denen Excel zu fehleranfällig und Profi-Software zu teuer ist.
-            </p>
-            <div className="lp-cta-row">
-              <Link href="/anmelden" className="btn btn-gold lp-btn-big">Kostenlos starten</Link>
-              <Link href="/funktionen" className="btn btn-ghost lp-btn-big">Alle Funktionen</Link>
+    <LandingShell aktiv="/" mitHero ohneSchlussCta>
+      {/* ---------- Cinematic-Hero ---------- */}
+      <QlxHero
+        slug="start"
+        kicker="Privates Immobilien-Management"
+        titel={<>Vermieten ohne Papierkram. <em>Von überall.</em></>}
+        sub={
+          <>
+            Nebenkostenabrechnung, Anlage V, Mieten und dein ganzes Team — Mieter, Hausmeister,
+            Handwerker — in einer aufgeräumten App. Für private Vermieter mit 1–24 Einheiten.
+          </>
+        }
+        kinder={
+          <>
+            <div className="lp-cta-row" style={{ justifyContent: "flex-start" }}>
+              <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
+              {/* Demo ohne Anmeldung. Als eigener Knopf auf Wunsch des
+                  Betreibers (29.08.2026) — vorher eine Textzeile darunter.
+                  Bewusst ein <a> und kein <Link>: /api/demo ist ein Route
+                  Handler, der Cookies setzt und weiterleitet; der Client-Router
+                  von Next würde das abfangen. */}
+              <a href="/api/demo" className="qlx-btn-linie lp-btn-big">Demo ansehen</a>
+              <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
             </div>
-            <p className="lp-hero-note">Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar</p>
-          </div>
+            <p className="qlx-hero-note">
+              Demo ohne Anmeldung · Keine Kreditkarte nötig · Daten in der EU
+            </p>
+          </>
+        }
+      />
+
+      <section className="lp-section" style={{ paddingBottom: 24 }}>
+        <div className="lp-inner" style={{ marginBottom: 40 }}>
           <Reveal>
             <Shot src="/landing/dashboard.webp" alt="MyImmo-Dashboard mit Portfolio-Wert, Cashflow und Verlaufs-Chart" />
           </Reveal>
@@ -41,7 +57,7 @@ export default function LandingPage() {
         <div className="lp-inner">
           <Reveal>
             <div className="lp-stats">
-              <div className="lp-stat"><div className="z">14+</div><div className="t">Funktionen — vom Mietvertrag bis ELSTER</div></div>
+              <div className="lp-stat"><div className="z">{FEATURES.length}+</div><div className="t">Funktionen — vom Mietvertrag bis ELSTER</div></div>
               <div className="lp-stat"><div className="z">4</div><div className="t">Rollen: Vermieter, Mieter, Hausmeister, Verwaltung</div></div>
               <div className="lp-stat"><div className="z">100 %</div><div className="t">Daten in der EU, Bankdaten AES-256-verschlüsselt</div></div>
               <div className="lp-stat"><div className="z">0 €</div><div className="t">im Early Access — voller Funktionsumfang</div></div>
@@ -78,7 +94,7 @@ export default function LandingPage() {
                 <tbody>
                   <tr><td>Nebenkostenabrechnung</td><td className="schlecht">Ein Wochenende rechnen, Formel-Fehler inklusive</td><td className="gut">Positionen erfasst → fertiges PDF, Anteil automatisch gerechnet</td></tr>
                   <tr><td>Anlage V</td><td className="schlecht">Belege suchen, Zeilen raten</td><td className="gut">Buchungen sind den ELSTER-Zeilen schon zugeordnet</td></tr>
-                  <tr><td>Mieteingang prüfen</td><td className="schlecht">Kontoauszüge durchgehen</td><td className="gut">Mietkonto zeigt offene Monate — Banking-Abgleich kommt</td></tr>
+                  <tr><td>Mieteingang prüfen</td><td className="schlecht">Kontoauszüge durchgehen</td><td className="gut">Mietkonto zeigt offene Monate auf einen Blick</td></tr>
                   <tr><td>Schadensmeldung</td><td className="schlecht">Anruf, Rückruf, Zettel, nochmal Anruf</td><td className="gut">Mieter meldet mit Foto, Hausmeister übernimmt, du gibst frei</td></tr>
                   <tr><td>Fristen</td><td className="schlecht">Im Hinterkopf oder im Papierkalender</td><td className="gut">Werden automatisch aus deinen Daten abgeleitet</td></tr>
                   <tr><td>Unterlagen fürs Bankgespräch</td><td className="schlecht">Aktenordner zusammensuchen</td><td className="gut">Beleihungsordner mit Deckblatt auf Knopfdruck</td></tr>
@@ -126,7 +142,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div style={{ textAlign: "center", marginTop: 26 }}>
-            <Link href="/funktionen" className="lp-mehr">Alle 14 Funktionen ansehen <ArrowRight size={14} /></Link>
+            <Link href="/funktionen" className="lp-mehr">Alle Funktionen ansehen <ArrowRight size={14} /></Link>
           </div>
         </div>
       </section>
@@ -135,7 +151,8 @@ export default function LandingPage() {
       <section className="lp-section lp-section-alt">
         <div className="lp-inner">
           <div className="lp-kicker">Die Vision</div>
-          <div style={{ textAlign: "center", marginTop: 12 }}><Plane size={28} style={{ color: "var(--l-gold-dark)" }} /></div>
+          {/* display:inline — Tailwind-Preflight macht SVGs display:block, dann greift textAlign nicht */}
+          <div style={{ textAlign: "center", marginTop: 12 }}><Plane size={28} style={{ color: "var(--l-gold-dark)", display: "inline" }} /></div>
           <h2 className="lp-h2" style={{ marginTop: 4 }}>Leben, wo du willst.</h2>
           <p className="lp-section-sub">
             MyImmo entsteht aus einem konkreten Ziel: im Ausland leben und den Bestand in Deutschland
@@ -182,10 +199,55 @@ export default function LandingPage() {
                 und welchen Tarif du dann buchst.
               </p>
               <div className="lp-cta-row" style={{ marginTop: 22 }}>
-                <Link href="/anmelden" className="btn btn-gold lp-btn-big">Kostenlos starten</Link>
+                {/* Landing-Button statt App-Button (.btn-gold gehört der App, nicht der .lp-Bühne) */}
+                <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
               </div>
             </>
           )}
+        </div>
+      </section>
+
+      {/* ---------- FAQ ---------- */}
+      <section className="lp-section lp-section-alt">
+        <div className="lp-inner">
+          <div className="lp-kicker">Häufige Fragen</div>
+          <h2 className="lp-h2">Was Vermieter am häufigsten fragen</h2>
+          <p className="lp-section-sub">
+            Ehrliche Antworten — zu Kosten, Datenschutz und dem, was MyImmo bewusst nicht ist.
+          </p>
+          <Reveal>
+            <div className="lp-faq" style={{ marginTop: 26 }}>
+              {FAQ.map((f) => (
+                <details key={f.q}>
+                  <summary>{f.q}</summary>
+                  <div className="lp-faq-body">{f.a}</div>
+                </details>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---------- Abschluss-CTA ---------- */}
+      <section className="lp-section" style={{ borderBottom: "none" }}>
+        <div className="lp-inner">
+          <Reveal>
+            <div className="lp-final">
+              <div className="lp-kicker">Bereit?</div>
+              <h2 className="lp-h2">Dein Portfolio, endlich an einem Ort.</h2>
+              <p className="lp-section-sub">
+                In wenigen Minuten eingerichtet — Objekt anlegen, Mieter erfassen, loslegen.
+                Kostenlos im Early Access, ohne Kreditkarte.
+              </p>
+              <div className="lp-cta-row" style={{ marginTop: 26 }}>
+                <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
+                <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
+              </div>
+              <p className="qlx-hero-note" style={{ marginTop: 16 }}>
+                Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar
+              </p>
+            </div>
+          </Reveal>
         </div>
       </section>
     </LandingShell>

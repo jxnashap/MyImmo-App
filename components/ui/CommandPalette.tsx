@@ -6,17 +6,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Search, CornerDownLeft, Home as HomeIcon, type LucideIcon } from "lucide-react";
+import { Search, CornerDownLeft, Home as HomeIcon, User as UserIcon, FileText, ReceiptText, type LucideIcon } from "lucide-react";
 import { VERWALTUNG, KALKULATOR, PROP_ICONS } from "@/lib/nav";
 
 type Property = { id: string; bezeichnung: string; typ: string | null };
+type TenantLite = { id: string; name: string };
 type Item = { key: string; label: string; href: string; group: string; icon?: LucideIcon; alias?: string };
 
 // Such-Aliase: damit man Bereiche auch unter geläufigen Begriffen findet, die
 // nicht im Label stehen (z. B. „Handwerker" → Anliegen, „ELSTER" → Steuer).
 const ALIAS: Record<string, string> = {
   "/anliegen": "handwerker auftrag bewerbung bewerber service mieterportal reparatur meldung anfrage",
-  "/banking": "konto kontoauszug umsätze umsatz psd2 bank",
   "/steuer": "anlage v afa elster datev einkommensteuer werbungskosten",
   "/cashflow": "buchung buchen einnahme ausgabe miete kosten transaktion",
   "/mietkonto": "zahlung offene posten mahnung soll ist",
@@ -33,7 +33,27 @@ const AKTIONEN: Omit<Item, "group">[] = [
   { key: "einstellungen", label: "Einstellungen öffnen", href: "/einstellungen" },
 ];
 
-export default function CommandPalette({ properties = [] }: { properties?: Property[] }) {
+// Mieterbezogene Dokument-Aktionen: Wer „NK Müller" oder „Mieterhöhung Müller"
+// tippt, soll direkt auf der passenden Erstellungsseite dieses Mieters landen.
+// `stichworte` sind die Wörter, die die Aktion auslösen (der Rest der Eingabe
+// filtert dann die Mieter). NK ist eine eigene Seite, alle anderen laufen über
+// den Dokument-Generator (?art=…).
+type DokAktion = { key: string; label: string; stichworte: string[]; icon: LucideIcon; href: (tenantId: string) => string };
+const DOK_AKTIONEN: DokAktion[] = [
+  { key: "nk", label: "NK-Abrechnung", icon: ReceiptText, stichworte: ["nk", "nebenkosten", "nebenkostenabrechnung", "betriebskosten", "betriebskostenabrechnung"], href: (id) => `/tenants/${id}/nk` },
+  { key: "mieterhoehung", label: "Mieterhöhung", icon: FileText, stichworte: ["mieterhöhung", "mieterhoehung", "mieterhöung", "erhöhung", "erhoehung"], href: (id) => `/tenants/${id}/dokument?art=mieterhoehung` },
+  { key: "kuendigung", label: "Kündigung", icon: FileText, stichworte: ["kündigung", "kuendigung", "kündigen"], href: (id) => `/tenants/${id}/dokument?art=kuendigung` },
+  { key: "mahnung", label: "Mahnung", icon: FileText, stichworte: ["mahnung", "mahnen"], href: (id) => `/tenants/${id}/dokument?art=mahnung` },
+  { key: "zahlungserinnerung", label: "Zahlungserinnerung", icon: FileText, stichworte: ["zahlungserinnerung", "erinnerung"], href: (id) => `/tenants/${id}/dokument?art=zahlungserinnerung` },
+  { key: "reparatur", label: "Reparatur-Ankündigung", icon: FileText, stichworte: ["reparatur", "instandhaltung", "handwerker", "ankündigung"], href: (id) => `/tenants/${id}/dokument?art=reparatur` },
+  { key: "nk-anschreiben", label: "NK-Anschreiben", icon: FileText, stichworte: ["anschreiben"], href: (id) => `/tenants/${id}/dokument?art=nk-anschreiben` },
+  { key: "wohnungsgeber", label: "Wohnungsgeberbestätigung", icon: FileText, stichworte: ["wohnungsgeber", "wohnungsgeberbestätigung", "meldebescheinigung", "anmeldung"], href: (id) => `/tenants/${id}/dokument?art=wohnungsgeber` },
+  { key: "mietbescheinigung", label: "Mietbescheinigung", icon: FileText, stichworte: ["mietbescheinigung", "bescheinigung"], href: (id) => `/tenants/${id}/dokument?art=mietbescheinigung` },
+  { key: "mietquittung", label: "Mietquittung", icon: FileText, stichworte: ["mietquittung", "quittung"], href: (id) => `/tenants/${id}/dokument?art=mietquittung` },
+  { key: "allgemein", label: "Schreiben", icon: FileText, stichworte: ["schreiben", "brief", "dokument"], href: (id) => `/tenants/${id}/dokument?art=allgemein` },
+];
+
+export default function CommandPalette({ properties = [], tenants = [] }: { properties?: Property[]; tenants?: TenantLite[] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
@@ -53,15 +73,41 @@ export default function CommandPalette({ properties = [] }: { properties?: Prope
       key: `p-${p.id}`, label: p.bezeichnung, href: `/properties/${p.id}`, group: "Objekte",
       icon: (p.typ && PROP_ICONS[p.typ]) || HomeIcon,
     }));
+    const mieter: Item[] = tenants.map((t) => ({
+      key: `t-${t.id}`, label: t.name, href: `/tenants/${t.id}`, group: "Mieter", icon: UserIcon,
+    }));
     const aktionen: Item[] = AKTIONEN.map((a) => ({ ...a, group: "Aktionen" }));
-    return [...bereiche, ...objekte, ...aktionen];
-  }, [properties]);
+    return [...bereiche, ...objekte, ...mieter, ...aktionen];
+  }, [properties, tenants]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((i) => (i.label + " " + (i.alias ?? "")).toLowerCase().includes(q));
-  }, [items, query]);
+    const tokens = q.split(/\s+/).filter(Boolean);
+    const passt = (text: string) => tokens.every((tk) => text.includes(tk));
+
+    // Kombi-Treffer „Dokumentart + Mieter": sobald ein Stichwort einer Dokument-
+    // Aktion getippt ist, aus den restlichen Wörtern die Mieter filtern und je
+    // Treffer einen Direkt-Link „<Dokumentart> · <Mieter>" bauen. So landet man
+    // mit „nk müller" oder „mieterhöhung müller" direkt auf der Erstellungsseite.
+    const kombis: Item[] = [];
+    for (const d of DOK_AKTIONEN) {
+      const dokTokens = tokens.filter((tk) => tk.length >= 2 && d.stichworte.some((s) => s.startsWith(tk)));
+      if (dokTokens.length === 0) continue;
+      const restTokens = tokens.filter((tk) => !dokTokens.includes(tk));
+      for (const t of tenants) {
+        const name = t.name.toLowerCase();
+        if (restTokens.every((rt) => name.includes(rt))) {
+          kombis.push({
+            key: `d-${d.key}-${t.id}`, label: `${d.label} · ${t.name}`,
+            href: d.href(t.id), group: "Dokument erstellen", icon: d.icon,
+          });
+        }
+      }
+    }
+    // Kombi-Treffer zuerst (direkte Absicht), danach die normale Suche.
+    return [...kombis, ...items.filter((i) => passt((i.label + " " + (i.alias ?? "")).toLowerCase()))];
+  }, [items, query, tenants]);
 
   useEffect(() => {
     setActiveIdx(0);
@@ -175,7 +221,7 @@ export default function CommandPalette({ properties = [] }: { properties?: Prope
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={onInputKeyDown}
-                  placeholder="Bereich, Objekt oder Aktion suchen…"
+                  placeholder={'Suchen… z. B. „NK Müller" oder „Mieterhöhung Müller"'}
                   role="combobox"
                   aria-expanded="true"
                   aria-controls="cmdk-listbox"

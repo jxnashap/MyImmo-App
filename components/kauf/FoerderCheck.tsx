@@ -39,7 +39,7 @@ export default function FoerderCheck() {
                 style={{
                   display: "flex", alignItems: "center", gap: 7, cursor: "pointer",
                   padding: "8px 14px", borderRadius: 9, border: "none", fontSize: 12.5, fontWeight: 600,
-                  background: aktiv ? "var(--gold)" : "transparent", color: aktiv ? "#1a1814" : "var(--muted)",
+                  background: aktiv ? "var(--gold-fill)" : "transparent", color: aktiv ? "var(--btn-gold-text)" : "var(--muted)",
                   transition: "background .2s, color .2s",
                 }}>
                 <Icon size={14} /> {label}
@@ -58,7 +58,7 @@ export default function FoerderCheck() {
         <label style={{ display: "grid", gap: 4, fontSize: 11.5, color: "var(--muted)", marginLeft: "auto" }}>
           Bundesland (Landesförderung)
           <select value={land} onChange={(e) => setLand(e.target.value)}
-            style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 12.5, color: "var(--text)" }}>
+            style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 12.5, color: "var(--text)" }}>
             <option value="">– wählen –</option>
             {Object.keys(LANDESBANKEN).map((l) => <option key={l} value={l}>{l}</option>)}
           </select>

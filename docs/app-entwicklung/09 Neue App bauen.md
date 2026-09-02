@@ -27,7 +27,7 @@ entscheide ich nach der Vault und sage es dazu:
 
 ## Was ich ohne Nachfrage übernehme
 
-- Stack: **Next.js 14 App Router · Supabase (eu-central-1) · Vercel ·
+- Stack: **Next.js 15 App Router · Supabase (eu-central-1) · Vercel ·
   TypeScript · vitest**
 - **Deutsch** als Sprache im Code
 - **RLS auf jeder Tabelle**, Migrationsregel (zwei Schritte, immer beide)

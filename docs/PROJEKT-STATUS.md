@@ -1,9 +1,10 @@
 # MyImmo — Projekt-Status (Übergabe für neue Sessions)
 
-**Stand: 31.07.2026.** Diese Fassung ist eine **vollständige Prüfung gegen Code, Datenbank
-und Live-Seite**, nicht die Fortschreibung der alten Liste. Anlass: Mehrere Einträge standen
-als offen, obwohl sie längst gebaut waren. Eine Liste, der man nicht trauen kann, ist
-schlechter als keine.
+**Stand: 28.08.2026.** Basis ist die vollständige Prüfung gegen Code, Datenbank und
+Live-Seite vom 31.07.2026; am 28.08.2026 gegen den Code nachgezogen (Kennzahlen neu gezählt,
+Design-Abschnitt korrigiert, erledigte Punkte ausgetragen). Anlass der Neufassung: Mehrere
+Einträge standen als offen, obwohl sie längst gebaut waren. Eine Liste, der man nicht trauen
+kann, ist schlechter als keine.
 
 Ergänzt `CLAUDE.md` (Arbeitsweise, Merkliste, Deployment), `docs/MASTERPLAN.md`
 (Markt/Compliance) und `docs/MARKETING.md` (Kampagnen, Redaktionsplan).
@@ -15,26 +16,26 @@ Ergänzt `CLAUDE.md` (Arbeitsweise, Merkliste, Deployment), `docs/MASTERPLAN.md`
 | Was | Stand bisher | Tatsächlich (31.07.2026 geprüft) |
 |---|---|---|
 | **Onboarding-Tour** | Backlog | ✅ fertig — `components/OnboardingTour.tsx`, im Root-Layout, aus den Einstellungen neu startbar |
-| **Open Banking Etappe 3–4** | Backlog / „teilweise" | ✅ **Code vollständig**: `starteAutorisierung`, `erstelleSession`, `holeKontoDetails`, `holeTransaktionen`, Callback-Route, `/banking`, Abgleich-Engine, 90-Tage-Reauth-Frist. Inaktiv ohne Env, **ohne Tests**, nie end-to-end gelaufen |
+| **Open Banking** | zurückgestellt | ⏸️ **Am 29.08.2026 komplett entfernt** — nie live, laufende Kosten. Gesichert unter `docs/zukunft/OPEN-BANKING.md`, Code bis Commit `85feb98` |
 | **`kredite.darlnr` / `mieter.kaution_bank` verschlüsseln** | Backlog | ✅ erledigt (18.07.) |
 | **Supabase-DPA** | „geparkt" | ✅ signiert (24.07.) |
 | **Vercel Pro** | offen | ✅ aktiv (29.07.) |
 | **Ratgeber** | 5 Artikel | 17 Artikel + 4 Funktions-Landingpages |
-| **Tests** | 123 | 427 |
+| **Tests** | 123 | 439 |
 | **Live-URL** | `my-immo-app.vercel.app` | **`www.myimmoapp.de`** |
 | **Stop-Hook „Unverified"** | „Fehlalarm" | Ursache war der eigene Ablauf: lokal auf `origin/main` zurückgesetzt, ohne `origin/<branch>` mitzuziehen — GitHubs Merge-Commit blieb im Vergleich stehen |
 
 ---
 
-## 1. Kennzahlen (gezählt 31.07.2026)
+## 1. Kennzahlen (nachgezählt 28.08.2026)
 
 | | |
 |---|---|
 | Seiten (`page.tsx`) | 66 |
 | API-Routen | 20 |
-| Komponenten | 85 |
-| Tests | **427 in 39 Dateien, alle grün** |
-| Migrationen im Repo | 18 |
+| Komponenten | 116 |
+| Tests | **439 in 41 Dateien, alle grün** |
+| Migrationen im Repo | 21 |
 | Tabellen in Postgres | **46, alle mit RLS** |
 | Ratgeber-Artikel / Funktionsseiten | 17 / 4 |
 | `loading.tsx` | 12 von 66 Seiten |
@@ -45,17 +46,22 @@ denen Profi-Hausverwaltungssoftware zu teuer/komplex und Excel zu fehleranfälli
 Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterprise-Featurebreite.
 
 ## Stack & Betrieb
-- **Next.js 14 App Router** (TypeScript, Server Actions, Server Components), vitest (`tests/`, 427 grün).
+- **Next.js 14 App Router** (TypeScript, Server Actions, Server Components), vitest (`tests/`, 439 grün).
 - **Supabase** `kozhxrvyilkchjpcuwcm` (eu-central-1): Postgres + Auth (E-Mail, Google), RLS auf allen 46 Tabellen.
   Dateien als **Base64 in Tabellenspalten** (kein Storage-Bucket).
 - **Vercel** (Plan **Pro**, Repo `jxnashap/myimmo-app`, Branch `main` → Auto-Deploy).
   Live: **https://www.myimmoapp.de** (Apex leitet auf www; `my-immo-app.vercel.app` nur noch Fallback).
 - Env: `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`, `ANTHROPIC_API_KEY` (OCR/KI-Import),
   `DATA_ENCRYPTION_KEY` (AES-256-GCM, `lib/crypto/secure.ts` — Verlust = Bankdaten weg),
-  `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`; optional Brevo, Paddle, Enable Banking, Bedrock.
+  `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`; optional Brevo, Paddle, Bedrock.
 - Workflow: Feature-Branch `claude/…` → PR → **Squash-Merge** → Branch auf `origin/main` zurücksetzen
   **und `origin/<branch>` mit force-with-lease nachziehen**. Nach jedem Merge Live-URL erwähnen.
-  Design: Dark-UI mit Gold (`--gold`), Landing hell (`.lp3`, `--l-*`-Variablen).
+  Design: **App-UI „Frosted Paper"** seit 20.08.2026 — hell ist Default (Canvas `#f5f5f5`,
+  weiße 24px-Karten auf Haarlinien), Dunkelmodus als achromatische Umkehrung über
+  `[data-theme="dark"]`; Gold nur noch als schmaler Akzent (`--gold` #9a7b24 für Text,
+  `--gold-fill` #D4A847 für Flächen). UI-Schrift **Geist** (selbst gehostet).
+  Die Landing hängt davon unabhängig an ihrer eigenen Palette (`.lp`/`.lp3`, `--l-*`,
+  Fraunces + Outfit) — im `.lp`-Scope per Token-Freeze eingefroren.
 
 ## Rollen (lib/rolle.ts, Zugang per Einladungscode)
 | Rolle | Zugang | Oberfläche |
@@ -79,16 +85,11 @@ Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterpri
   Auto-Mapping per Synonymen (Zwei-Pass exakt→Präfix), 3-Schritt-Assistent, Batch-Insert.
 - **Datenexport**: Komplett-ZIP + Buchungen-CSV + DATEV (nur unter Daten & Recht).
 
-### Banking (Etappen 1–4 gebaut, inaktiv ohne Env)
-- Tabellen `bankverbindungen` + `bank_umsaetze` (App-Layer-verschlüsselt, RLS).
-- `lib/banking/enableBanking.ts`: Bankenliste, Autorisierung starten, Session tauschen,
-  Kontodetails und **Transaktionen abrufen** (JWT/RS256, `kid` = Application ID).
-- `/api/banking/callback` bindet den Rückweg über `bank_auth_anfragen` an den Nutzer.
-- **Abgleich-Engine** `lib/banking/abgleich.ts`: Miet-/Kostenvorschläge aus Umsätzen,
-  liest Soll-Monat aus dem Verwendungszweck („Miete Juli", „07/2026", Jahres-Rollover),
-  Prinzip **vorschlagen + per Klick bestätigen**. 90-Tage-PSD2-Reauth als Frist.
-- **Offen:** Anbietervertrag + AVV, Sandbox-Durchlauf, **Tests fehlen vollständig** —
-  der einzige größere Bereich ohne jede Abdeckung.
+### Banking / Konto-Anbindung — ZURÜCKGESTELLT (29.08.2026)
+Komplett aus der App entfernt (nie live gegangen; laufende Kosten je Konto). Gesichert als
+Zukunftsprojekt: **`docs/zukunft/OPEN-BANKING.md`**. Code in der Git-Historie bis Commit
+`85feb98`; DB-Tabellen + `abos.banking_addon` per Migration `20260829120000` gedroppt.
+Wieder aufbauen, sobald das Produkt Geld verdient.
 
 ### Steuer (Phase B + D fertig)
 - **Anlage V**-Berechnung + Export je Objekt (`lib/anlageV.ts`), **DATEV-EXTF-Export** (SKR03, `lib/datev.ts`).
@@ -114,7 +115,7 @@ Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterpri
 ### Termine & Prüfpflichten
 - **Termine-Seite**: eigene + abgeleitete Fristen (Mietende/Kündigung, NK-Frist §556 III,
   Mieterhöhung §558, Staffel/Index, Zinsbindung/Anschlussfinanzierung, §489-Sonderkündigung,
-  Grundsteuer, ESt-Erklärung, Energieausweis, Bank-Reauth), Kategorien, iCal-Export,
+  Grundsteuer, ESt-Erklärung, Energieausweis), Kategorien, iCal-Export,
   Erledigt-Haken → **wiederkehrende Termine legen automatisch die nächste Instanz an**.
   Abgeleitete Fristen sind **ausblendbar** (`frist_ausgeblendet`), kehren im Folgejahr zurück.
 - **Prüfpflichten-Katalog** (`PRUEF_KATALOG`, 15 Prüfarten mit Intervall + Rechtsgrundlage +
@@ -159,7 +160,8 @@ als Opt-in-Link zur Terminabsprache, Link läuft nach 90 Tagen ab) · Partner an
 - **Impressum/Datenschutz/AVV/AGB mit echten Betreiberdaten gefüllt**, Abgleich mit der
   Gewerbeanmeldung erledigt (24.07.). ⚠️ anwaltliche Prüfung steht aus.
 - Compliance-Doku: `docs/MASTERPLAN.md`, `docs/VERARBEITUNGSVERZEICHNIS.md`, `docs/TOM.md`
-  (beide **existieren als Entwürfe**, Inhalte sind Platzhalter), `docs/compliance/AVV-STATUS.md`,
+  (beide **als Entwurf ausformuliert**, inhaltlich am echten System — offen sind nur noch
+  wenige eckig-geklammerte Lücken: 5 in `TOM.md`, 1 im Verzeichnis), `docs/compliance/AVV-STATUS.md`,
   `anthropic-dpa-archiv.md` (Transfer via **SCCs, kein DPF**).
 - **Marketing**: `docs/MARKETING.md` (Konzept, 4 Kampagnen), `docs/marketing/portal-profile.md`,
   `scripts/screenshots.mjs`.
@@ -173,8 +175,7 @@ Ohne die jeweilige Env folgenlos — das ist gewollt und kein Fehler.
 | Was | Schalter | Was noch fehlt |
 |---|---|---|
 | **Bezahlsystem (Paddle)** | `BILLING_ENFORCED=true` + `PREISE_SICHTBAR` (steht auf `false`) | Paddle-Konto verifizieren, AGB/Widerruf anwaltlich, Sandbox-Test, Feature-Gates in den Actions → `docs/BEZAHLSYSTEM.md` |
-| **Open Banking** | `ENABLE_BANKING_APP_ID` + `ENABLE_BANKING_PRIVATE_KEY` | Anbietervertrag + AVV, Sandbox-Durchlauf, Tests |
-| **E-Mail-Verteiler (Brevo)** | `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` | in PR #237; AVV + Datenschutz-Passus offen |
+| **E-Mail-Verteiler (Brevo)** | `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` | gemergt; **Datenschutz-Passus ✅ 28.08.2026**, Brevo-AVV im Konto weiterhin offen |
 
 **DNS für Brevo ist fertig** (31.07. per DNS-Abfrage geprüft): `brevo-code`-TXT gesetzt,
 DKIM `brevo1`/`brevo2._domainkey` zeigen auf Brevo, DMARC vorhanden. SPF enthält bewusst
@@ -191,8 +192,8 @@ keinen Brevo-Include — Brevo nutzt eigenen Return-Path und signiert per DKIM.
 | B3 | Impressum/Datenschutz anwaltlich | Datenabgleich erledigt, Prüfung nicht |
 | B4 | **Nutzer-AVV** (Vermieter = Verantwortliche für Mieterdaten) | größte Compliance-Lücke |
 | B5 | StBerG-Freigabe (Anlage V, §82b, DATEV) und §34i GewO (Finanzierung) | Grenze zur unerlaubten Beratung |
-| B6 | Brevo-AVV + Datenschutz-Passus für den Verteiler | Schritte stehen in `CLAUDE.md` |
-| B7 | TOM + Verarbeitungsverzeichnis mit echten Daten füllen | Dokumente da, Inhalte Platzhalter |
+| B6 | **Brevo-AVV** im Konto abschließen/archivieren | Datenschutz-Passus ist seit 28.08.2026 in `/datenschutz`; der AVV fehlt noch. Schritte stehen in `CLAUDE.md` |
+| B7 | TOM + Verarbeitungsverzeichnis: die letzten geklammerten Lücken füllen | Texte stehen, 6 Stellen `[…]` offen (u. a. 2FA auf den Admin-Zugängen bestätigen) |
 | B8 | Support-Kanal mit Reaktionszeit | Bewertungen sind das Ranking-Kriterium der Vergleichsportale |
 | B9 | Supabase Pro für Leaked Password Protection | auf Free ist der Schalter sichtbar, aber wirkungslos |
 
@@ -202,8 +203,8 @@ keinen Brevo-Include — Brevo nutzt eigenen Return-Path und signiert per DKIM.
 
 | Was | Umfang | Anmerkung |
 |---|---|---|
-| **Layout-Redesign** (Fintech-hell) | groß | Sperrt Bilder, Store-Assets und bezahlte Reichweite, solange es aussteht |
-| **Tests für Open Banking** | mittel | einziger größerer Bereich ohne Abdeckung |
+| **Design Runde 2** | mittel | Runde 1 („Frosted Paper") ist am 20.08.2026 umgesetzt. Offen: echte Neu-Anordnung einzelner Layouts statt reiner Um-Tokenisierung, 11px-Kleinsttexte auf 12px |
+| **Tests für Komponenten/Actions** | mittel | `components/`, `lib/actions/` und `lib/pdf/` haben keine Abdeckung |
 | Terminkoordination + Status-Tracking an Anliegen/Auftrag | mittel | war „in Arbeit" laut alter Fassung — Stand nicht abschließend geprüft |
 | Auftrag „erledigt" → Kostenvorschlag | mittel | kein eigenes Rechnungsmodul (E-Rechnung §14 zu riskant) |
 | Vorlagen-Gate | klein | erst wenn der Versand läuft |
@@ -217,7 +218,8 @@ keinen Brevo-Include — Brevo nutzt eigenen Return-Path und signiert per DKIM.
 
 ## 5. Terminiert
 
-- **Ab 03.08.2026** — KfW-308-Konditionen aktualisieren (`lib/kauf/foerderung.ts`, Doku, Tests)
+- ✅ **03.08.2026 — KfW-308-Konditionen** am 28.08.2026 nachgezogen (140/160/180 Tsd. €,
+  Einzelmaßnahmen als Alternative zum EH 85 EE; `KFW_STAND = "08/2026"`).
 - **Ab 01.01.2027** — Ratgeber-Artikel zur Fernablesepflicht entschärfen
 
 ---
@@ -229,7 +231,6 @@ Damit hier nichts als sicher steht, was es nicht ist:
 - **Ob die Brevo-Env in Vercel gesetzt ist** — Vercel-Anbindung lief ins Rate-Limit.
   Entscheidet, ob der Verteiler nach dem Merge wirklich sendet.
 - **Echter Mailversand** — ohne Brevo-Schlüssel keine Aussage zur Zustellbarkeit.
-- **Open Banking end-to-end** — Code vorhanden, ein Durchlauf hat nie stattgefunden.
 - **Login-Pfad von `scripts/screenshots.mjs`** — braucht echte Zugangsdaten.
 - **Stand der Terminkoordination** — als „in Arbeit" übernommen, nicht im Detail geprüft.
 - **AVV-Stände bei Anbietern und Vercel-Plan** — aus früheren Sessions übernommen.

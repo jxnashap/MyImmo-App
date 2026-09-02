@@ -2,7 +2,7 @@
 
 ## Der Stack und warum
 
-**Next.js 14 App Router · Supabase (Postgres, Auth, RLS) · Vercel · TypeScript ·
+**Next.js 15 App Router · Supabase (Postgres, Auth, RLS) · Vercel · TypeScript ·
 vitest.** Kein Storage-Bucket (Dateien als Base64 in Spalten), kein ORM, keine
 eigene Backend-Schicht.
 
@@ -118,8 +118,10 @@ Projekt beschreibt einen **behobenen Fehler**, damit ihn niemand zurückbaut:
   // 300000*(0.038+0.02)/12 = 1450
   expect(Math.round(k.monatsrate)).toBe(1450);
   ```
-- **Ohne Abdeckung wird es benannt.** Open Banking ist in MyImmo der einzige
-  größere Bereich ohne Tests — das steht so in `CLAUDE.md`, statt es zu verschweigen.
+- **Ohne Abdeckung wird es benannt.** Was keine Tests hat, steht in `CLAUDE.md`,
+  statt verschwiegen zu werden. Stand 02.09.2026: 52 Testdateien, **544 Tests, alle
+  grün** (`npm test`) — der bis dahin genannte Ausreißer Open Banking ist am
+  29.08.2026 samt Code aus der App entfernt worden.
 
 ## Build
 

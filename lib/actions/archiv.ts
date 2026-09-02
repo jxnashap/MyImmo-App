@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 // zusätzlich prop_id (Objekt) und mieter_id (Mieter) für die Filterung.
 
 async function uid() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

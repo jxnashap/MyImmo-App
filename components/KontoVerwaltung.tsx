@@ -6,6 +6,8 @@ import { KeyRound, Download, Trash2, Check, X, ShieldCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client";
 import { deleteAccount } from "@/lib/actions/account";
 import { wechslePasswort } from "@/lib/passwortWechsel";
+import { createPortal } from "react-dom";
+import { useModalFokus } from "@/lib/modalFokus";
 
 // Konto-Verwaltung für MIETER- und SERVICE-Konten.
 //
@@ -29,16 +31,10 @@ export default function KontoVerwaltung({
   const [pwLaeuft, setPwLaeuft] = useState(false);
 
   const [offen, setOffen] = useState(false);
+  const loeschRef = useModalFokus<HTMLDivElement>(() => setOffen(false), offen);
   const [bestaetigung, setBestaetigung] = useState("");
   const [loeschFehler, setLoeschFehler] = useState<string | null>(null);
   const darfLoeschen = bestaetigung.trim().toUpperCase() === "LÖSCHEN";
-
-  useEffect(() => {
-    if (!offen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOffen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [offen]);
 
   async function passwortAendern(e: React.FormEvent) {
     e.preventDefault();
@@ -159,9 +155,20 @@ export default function KontoVerwaltung({
         </div>
       </div>
 
-      {offen && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setOffen(false)} role="dialog" aria-modal="true" aria-label="Konto löschen">
-          <div className="modal-sheet" style={{ textAlign: "left" }}>
+      {/* Per Portal an <body>: nur so kann useModalFokus den Rest der Seite
+          fuer Screenreader stummschalten — ein Dialog INNERHALB des Inhalts
+          laesst sich nicht von ihm trennen. */}
+      {offen && typeof document !== "undefined" && createPortal(
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setOffen(false)}>
+          <div
+            ref={loeschRef}
+            className="modal-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Konto löschen"
+            tabIndex={-1}
+            style={{ textAlign: "left" }}
+          >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
               <h2 style={{ fontSize: 17, display: "flex", alignItems: "center", gap: 8, color: "var(--red)" }}>
                 <Trash2 size={18} /> Konto löschen
@@ -185,7 +192,7 @@ export default function KontoVerwaltung({
                 <input style={feld} value={bestaetigung} onChange={(e) => setBestaetigung(e.target.value)} placeholder="LÖSCHEN" autoFocus />
               </label>
               {loeschFehler && (
-                <p style={{ fontSize: 13, color: "var(--red)", lineHeight: 1.6, marginBottom: 14 }}>{loeschFehler}</p>
+                <p role="alert" style={{ fontSize: 13, color: "var(--red)", lineHeight: 1.6, marginBottom: 14 }}>{loeschFehler}</p>
               )}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setOffen(false)}>Abbrechen</button>
@@ -200,7 +207,8 @@ export default function KontoVerwaltung({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

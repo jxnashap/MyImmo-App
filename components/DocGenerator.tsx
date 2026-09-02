@@ -18,6 +18,7 @@ import {
 } from "@/lib/dokumentVorlagen";
 import { saveDokumentVorlage, resetDokumentVorlage } from "@/lib/actions/dokumentVorlagen";
 import { speichereBrief } from "@/lib/actions/dokumente";
+import { tastaturAktion } from "@/lib/a11y";
 import { useToast } from "@/components/Toast";
 import { adressZeilen } from "@/lib/format";
 
@@ -140,12 +141,26 @@ export default function DocGenerator({
   const absName = vName || "–";
   const heute = deDate(new Date().toISOString());
   const ortDatum = (vermieter?.ort ? vermieter.ort.replace(/^\d{4,5}\s*/, "") + ", " : "") + heute;
-  const empfZeilen = adressZeilen(tenant.mieter_adresse || objekt);
+  // Anschrift-Fallback OHNE Objektnamen: Der interne Name („ETW Lindenstraße 12")
+  // enthält oft selbst die Straße — mit `objekt` als Fallback stand sie im
+  // Adressfeld doppelt. Postalisch zählt nur Einheit + Adresse.
+  const empfZeilen = adressZeilen(
+    tenant.mieter_adresse ||
+      [tenant.einheit, property?.adresse].filter(Boolean).join(", ") ||
+      property?.bezeichnung ||
+      "",
+  );
   const titel = TITEL[art];
 
 
   return (
-    <div style={{ display: "flex", gap: 22, alignItems: "flex-start", flexWrap: "wrap" }}>
+    // `data-demo-erlaubt`: Der Brief-Generator ist das EINZIGE Werkzeug, das in
+    // der Demo bedienbar bleibt (Vorgabe Betreiber 30.08.2026) — als Beispiel
+    // zum Selbstzusammenstellen, inklusive PDF. `components/DemoNurLesen.tsx`
+    // laesst alles innerhalb dieses Bereichs in Ruhe. Gespeichert wird trotzdem
+    // nichts: `speichereBrief` und `saveDokumentVorlage` laufen gegen die
+    // RLS-Schreibsperre des Demo-Kontos.
+    <div data-demo-erlaubt style={{ display: "flex", gap: 22, alignItems: "flex-start", flexWrap: "wrap" }}>
       {/* ---------- Eingaben + Vorlagen-Editor ---------- */}
       <div className="form-box no-print" style={{ maxWidth: 460, flex: "1 1 420px" }}>
         <h3>Dokument erstellen</h3>
@@ -267,6 +282,11 @@ export default function DocGenerator({
                     <div
                       key={x.id}
                       onClick={() => setIbanId(sel ? "" : x.id)}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={sel}
+                      aria-label={`Zahlungskonto ${x.kontoname || x.inhaber || x.iban}${sel ? " abwählen" : " auswählen"}`}
+                      onKeyDown={tastaturAktion(() => setIbanId(sel ? "" : x.id))}
                       style={{
                         padding: "8px 12px",
                         borderRadius: 7,
@@ -284,7 +304,7 @@ export default function DocGenerator({
                           height: 14,
                           borderRadius: "50%",
                           border: `2px solid ${sel ? "var(--gold)" : "var(--line2)"}`,
-                          background: sel ? "var(--gold)" : "transparent",
+                          background: sel ? "var(--gold-fill)" : "transparent",
                           flexShrink: 0,
                         }}
                       />

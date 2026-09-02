@@ -62,14 +62,11 @@ Nutzer-AVV (`/avv`), akzeptiert bei Registrierung.
 - **Subauftragsverarbeiter:** Anthropic PBC (USA) — DPA mit SCCs; kein Modell-Training auf
   API-Daten; minimale Retention (Modellklasse der OCR-Route beachten).
 
-### B3 Konto-Anbindung / Bank-Umsatzabgleich (optional, nutzerinitiiert)
-- **Verarbeitung im Auftrag:** Lesender Abruf von Kontoumsätzen über den lizenzierten AISP
-  Enable Banking Oy (FIN-FSA, EU); verschlüsselte Speicherung (AES-256-GCM) von
-  Gegenpartei/Verwendungszweck; Abgleich-Vorschläge, Buchung nur nach Nutzer-Bestätigung.
-- **Betroffene:** Zahlungsbeteiligte der Auftraggeber-Konten (v. a. Mieter).
-- **Subauftragsverarbeiter:** Enable Banking Oy (EU), Supabase, Vercel.
-- **Löschung:** mit Löschung der Bankverbindung (CASCADE) bzw. Kontolöschung.
-- **Hinweis:** Vor Production-Betrieb DSFA-Schwellenprüfung dokumentieren (Ergebnisvermerk hier ablegen).
+### B3 Konto-Anbindung / Bank-Umsatzabgleich — ZURÜCKGESTELLT (29.08.2026)
+Das Feature (lesender Umsatzabruf über einen AISP) wurde am 29.08.2026 aus der App entfernt,
+bevor es je live war — es findet keine solche Verarbeitung statt. Bei Wiederaufbau ist diese
+Tätigkeit neu aufzunehmen (samt AISP-AVV und DSFA-Schwellenprüfung). Konzept:
+`docs/zukunft/OPEN-BANKING.md`.
 
 ### B4 Mieterportal / Freigabelinks
 - **Verarbeitung im Auftrag:** Bereitstellung von Dokumenten/Abrechnungen an Mieter des

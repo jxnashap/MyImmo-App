@@ -1,0 +1,246 @@
+import Link from "next/link";
+import BackLink from "@/components/BackLink";
+
+export const metadata = {
+  title: "Datenschutzerklärung — MyImmo",
+  robots: { index: false, follow: false },
+};
+
+const H2 = ({ children }: { children: React.ReactNode }) => (
+  <h2 style={{ fontSize: 18, marginTop: 28, marginBottom: 8 }}>{children}</h2>
+);
+const H3 = ({ children }: { children: React.ReactNode }) => (
+  <h3 style={{ fontSize: 15, marginTop: 18, marginBottom: 6 }}>{children}</h3>
+);
+
+// Datenschutzerklärung nach Art. 12–14 DSGVO + § 25 TDDDG, zugeschnitten auf die
+// tatsächlichen Datenflüsse der App (Supabase eu-central-1, Vercel, Anthropic,
+// Google-Login, Google Fonts). Vor Produktivbetrieb anwaltlich bzw. durch
+// eine*n Datenschutzbeauftragte*n prüfen lassen.
+export default function DatenschutzPage() {
+  return (
+    <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 20px", lineHeight: 1.65 }}>
+      <BackLink />
+      <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
+      <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
+        Stand: 29. August 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
+        Verarbeitung personenbezogener Daten bei Nutzung der Web-Anwendung MyImmo.
+      </p>
+
+      <div style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, padding: "12px 16px", fontSize: 13, color: "var(--muted)", marginBottom: 24 }}>
+        Hinweis: Dieses Dokument ist keine Rechtsberatung und sollte vor dem
+        Produktivbetrieb anwaltlich geprüft werden.
+      </div>
+
+      <H2>1. Verantwortlicher</H2>
+      <p>
+        Verantwortlicher im Sinne der DSGVO für die Verarbeitung Ihrer Konto- und
+        Nutzungsdaten ist:<br />
+        <strong>Jonas Scharp</strong> (MyImmo), Ludwig-Jahn-Straße 42, 23611 Bad Schwartau,
+        E-Mail: info@myimmoapp.de.
+        Weitere Angaben im <Link href="/impressum" style={{ color: "var(--gold)" }}>Impressum</Link>.
+        Ein Datenschutzbeauftragter ist nicht benannt, da keine gesetzliche Pflicht besteht.
+      </p>
+      <p style={{ fontSize: 13, color: "var(--muted)" }}>
+        Rollenhinweis: Für die Daten <em>Ihrer Mieter</em>, die Sie in MyImmo erfassen, sind{" "}
+        <strong>Sie selbst</strong> Verantwortlicher; wir verarbeiten diese Daten als Ihr
+        Auftragsverarbeiter auf Grundlage des{" "}
+        <Link href="/avv" style={{ color: "var(--gold)" }}>Auftragsverarbeitungsvertrags (AVV)</Link>{" "}
+        (siehe Ziffer 3c und 4).
+      </p>
+
+      <H2>2. Grundsätze</H2>
+      <ul style={{ paddingLeft: 20, listStyle: "disc" }}>
+        <li>Kein Tracking, keine Analyse-Tools, keine Werbung, kein Verkauf von Daten.</li>
+        <li>Es werden ausschließlich <strong>technisch notwendige</strong> Cookies und Speichereinträge verwendet (Ziffer 6) — deshalb gibt es kein Cookie-Banner (§ 25 Abs. 2 Nr. 2 TDDDG).</li>
+        <li>Datenbank und Authentifizierung laufen in der EU (Frankfurt, AWS eu-central-1).</li>
+        <li>Besonders sensible Bankdaten (IBAN, Kontoinhaber) werden zusätzlich anwendungsseitig verschlüsselt (AES-256-GCM); der Schlüssel liegt außerhalb der Datenbank.</li>
+      </ul>
+
+      <H2>3. Welche Daten wir verarbeiten, wofür und auf welcher Grundlage</H2>
+
+      <H3>a) Konto und Login</H3>
+      <p>
+        E-Mail-Adresse, Passwort (nur als bcrypt-Hash gespeichert), Zeitpunkte von
+        Registrierung/Anmeldung. Bei <strong>„Login mit Google"</strong> erhalten wir von Google Ihre
+        E-Mail-Adresse und Konto-Kennung; die Anmeldung bei Google unterliegt deren
+        Datenschutzerklärung. <em>Zweck:</em> Bereitstellung Ihres Kontos.{" "}
+        <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO (Nutzungsvertrag).
+      </p>
+
+      <H3>b) Von Ihnen erfasste Verwaltungsdaten</H3>
+      <p>
+        Immobilien-, Einnahmen-/Kosten-, Kredit-, Verbrauchs-, Termin- und Dokumentdaten
+        sowie Ihr Vermieterprofil (Name, Anschrift, Bankverbindung).{" "}
+        <em>Zweck:</em> die Kernfunktionen der App (Verwaltung, Auswertungen, Dokumente).{" "}
+        <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO.
+      </p>
+
+      <H3>c) Mieterdaten (Daten Dritter)</H3>
+      <p>
+        Namen, Kontaktdaten, Mietverhältnis-, Kautions- und Abrechnungsdaten Ihrer Mieter,
+        die Sie erfassen. Hierfür sind Sie Verantwortlicher (Rechtsgrundlage in Ihrem
+        Verhältnis zum Mieter regelmäßig Art. 6 Abs. 1 lit. b und c DSGVO — Mietvertrag,
+        Betriebskostenabrechnung, steuerliche Pflichten); wir verarbeiten sie ausschließlich
+        in Ihrem Auftrag (Art. 28 DSGVO, siehe AVV).
+      </p>
+
+      <H3>d) Server-Logs (Hosting)</H3>
+      <p>
+        Beim Aufruf der App verarbeitet unser Hoster technisch bedingt IP-Adresse,
+        Datum/Uhrzeit, aufgerufene URL und Browserkennung. <em>Zweck:</em> Auslieferung,
+        Stabilität und Sicherheit (z. B. Missbrauchsabwehr). <em>Rechtsgrundlage:</em> Art. 6
+        Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb). Logs werden nach
+        kurzer Zeit automatisch gelöscht.
+      </p>
+
+      <H3>e) KI-Funktionen (Beleg-/Dokumenterkennung)</H3>
+      <p>
+        Wenn Sie die optionalen KI-Funktionen nutzen (z. B. Nebenkostenabrechnung auslesen,
+        Objekt aus Exposé-Text übernehmen), wird der von Ihnen hochgeladene Inhalt an die
+        API von Anthropic (USA) übermittelt und dort zur Beantwortung Ihrer Anfrage
+        verarbeitet. API-Eingaben werden von Anthropic standardmäßig{" "}
+        <strong>nicht zum Training von KI-Modellen verwendet</strong>. <em>Zweck:</em> die von Ihnen
+        angestoßene Auswertung. <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO; die
+        Nutzung ist freiwillig. Bitte laden Sie nur Dokumente hoch, die für die Auswertung
+        erforderlich sind.
+      </p>
+
+      <H3>f) Bank-Freigabelinks (Beleihungsordner)</H3>
+      <p>
+        Erstellen Sie einen Freigabelink für eine Bank, sind die von Ihnen ausgewählten
+        Unterlagen für Inhaber des Links bis zum Ablauf bzw. Widerruf abrufbar. Auswahl,
+        Laufzeit und Widerruf liegen bei Ihnen. Rückmeldungen der Bank (Name, Institut,
+        Kontakt, Nachricht) werden Ihrem Konto zugeordnet gespeichert.
+      </p>
+
+      <H3>g) Vorlagen-Verteiler / E-Mail-Hinweise (freiwillig)</H3>
+      <p>
+        Melden Sie sich für die MyImmo-Vorlagen und gelegentliche Hinweise für Vermieter an,
+        verarbeiten wir Ihre <strong>E-Mail-Adresse</strong>. Die Anmeldung läuft im{" "}
+        <strong>Double-Opt-in</strong>: Sie erhalten zunächst eine Bestätigungsmail; erst nach
+        Ihrem Klick wird die Adresse in den Verteiler aufgenommen. Als Nachweis der Einwilligung
+        (Art. 7 Abs. 1 DSGVO) speichern wir zusätzlich <strong>Zeitpunkt und IP-Adresse</strong>{" "}
+        von Anforderung und Bestätigung sowie den <strong>Wortlaut</strong>, dem Sie zugestimmt
+        haben. Bleibt die Bestätigung aus, verfällt der Link nach 72 Stunden.
+      </p>
+      <p>
+        <em>Zweck:</em> Versand der angeforderten Vorlagen und Hinweise.{" "}
+        <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung) — für den
+        Einwilligungsnachweis zusätzlich Art. 6 Abs. 1 lit. c i. V. m. Art. 7 Abs. 1 DSGVO.{" "}
+        <em>Empfänger:</em> <strong>Brevo</strong> (Sendinblue SAS, 7 rue de Madrid, 75008 Paris,
+        Frankreich) als Auftragsverarbeiter für Versand und Verwaltung des Verteilers. Die
+        Verteiler- und Versanddaten werden in der EU verarbeitet (Rechenzentren in Frankreich,
+        Belgien und Deutschland). Brevo setzt seinerseits Unterauftragsverarbeiter ein, von
+        denen einzelne (z. B. Betriebs- und Protokollüberwachung, Support-Ticketsystem) Daten
+        in den USA oder in Indien verarbeiten; abgesichert über EU-Standardvertragsklauseln
+        bzw. den Angemessenheitsbeschluss zum EU-US Data Privacy Framework (Ziffer 5).
+      </p>
+      <p>
+        <em>Speicherdauer:</em> bis zum Widerruf. Danach löschen wir die Adresse aus dem
+        Verteiler; der Einwilligungs- und Widerrufsnachweis wird noch bis zu drei Jahre
+        aufbewahrt, um die Rechtmäßigkeit belegen zu können, und danach gelöscht.{" "}
+        <em>Widerruf:</em> jederzeit über den <strong>Abmeldelink in jeder E-Mail</strong> oder
+        formlos an <a href="mailto:info@myimmoapp.de" style={{ color: "var(--gold)" }}>info@myimmoapp.de</a> —
+        die Rechtmäßigkeit der bis dahin erfolgten Verarbeitung bleibt unberührt. Die Anmeldung
+        ist freiwillig; die Nutzung von MyImmo hängt nicht davon ab.
+      </p>
+
+      <H2>4. Empfänger und Auftragsverarbeiter (Subprozessoren)</H2>
+      <p>Wir setzen folgende Dienstleister mit Verträgen nach Art. 28 DSGVO ein:</p>
+      <ul style={{ paddingLeft: 20, listStyle: "disc" }}>
+        <li><strong>Supabase Inc.</strong> (Datenbank, Authentifizierung, Datei-Speicher) — Datenhaltung in Frankfurt (AWS eu-central-1); DPA inkl. EU-Standardvertragsklauseln.</li>
+        <li><strong>Vercel Inc.</strong>, USA (Hosting/Auslieferung der App) — DPA inkl. EU-Standardvertragsklauseln; technische Logs können in den USA verarbeitet werden.</li>
+        <li><strong>Anthropic PBC</strong>, USA (KI-Auswertung, nur bei aktiver Nutzung) — DPA inkl. EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
+        <li><strong>Google Ireland Ltd.</strong> — nur bei „Login mit Google" und für Schriftarten (Ziffer 7).</li>
+        <li><strong>Brevo</strong> (Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO (Anlage 2 zu den Nutzungsbedingungen, inkl. EU-Standardvertragsklauseln). Einzelne Unterauftragsverarbeiter von Brevo verarbeiten in Drittländern (Ziffer 5).</li>
+      </ul>
+      <p>
+        Eine Übermittlung an sonstige Dritte findet nicht statt, außer Sie stoßen sie selbst
+        an (z. B. Bank-Freigabelink) oder wir sind gesetzlich dazu verpflichtet.
+      </p>
+
+      <H2>5. Drittlandübermittlung</H2>
+      <p>
+        Soweit Daten in die USA übermittelt werden (Vercel, Anthropic, ggf. Google), erfolgt
+        dies auf Grundlage der EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO)
+        bzw. — soweit der Anbieter zertifiziert ist — des Angemessenheitsbeschlusses zum
+        EU-US Data Privacy Framework (Art. 45 DSGVO).
+      </p>
+      <p>
+        Bei <strong>Brevo</strong> (Vorlagen-Verteiler) liegt der Vertragspartner in der EU;
+        die Übermittlung in Drittländer entsteht erst durch dessen Unterauftragsverarbeiter
+        (u. a. Protokollüberwachung in den USA, Support und Wartung in Indien und den USA).
+        Sie ist im Auftragsverarbeitungsvertrag von Brevo über die
+        <strong> EU-Standardvertragsklauseln</strong> abgesichert; ergänzend berufen sich
+        einzelne dieser Dienstleister auf das EU-US Data Privacy Framework.
+      </p>
+
+      <H2>6. Cookies und lokale Speicherung (§ 25 TDDDG)</H2>
+      <p>
+        MyImmo verwendet ausschließlich technisch notwendige Einträge: Sitzungs-Cookies der
+        Anmeldung (Supabase Auth) und lokale Speichereinträge für Ihre Hell/Dunkel-Einstellung
+        sowie Kalkulator-Zwischenstände. Diese sind für den von Ihnen gewünschten Dienst
+        erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG) und bedürfen keiner Einwilligung. Es gibt
+        keine Marketing- oder Statistik-Cookies.
+      </p>
+
+      <H2>7. Schriftarten</H2>
+      <p>
+        Die Schriftarten „Fraunces", „Outfit" und „Geist" werden lokal von unseren eigenen
+        Servern geladen (Self-Hosting). Es findet dabei <strong>keine</strong> Verbindung zu
+        Google- oder anderen Drittanbieter-Servern statt; Ihre IP-Adresse wird nicht übermittelt.
+      </p>
+
+      <H2>8. Speicherdauer und Löschung</H2>
+      <ul style={{ paddingLeft: 20, listStyle: "disc" }}>
+        <li>Konto- und Verwaltungsdaten speichern wir, solange Ihr Konto besteht.</li>
+        <li>Sie können Ihr Konto jederzeit selbst löschen (Einstellungen → „Konto löschen"): Dabei werden alle Daten — Objekte, Mieter, Buchungen, Kredite, Dokumente, Belege im Datei-Speicher — unwiderruflich entfernt.</li>
+        <li>Bank-Freigabelinks laufen automatisch ab (7–30 Tage) und sind jederzeit widerrufbar.</li>
+        <li>Technische Backups des Datenbank-Anbieters werden turnusmäßig überschrieben.</li>
+        <li>Gesetzliche Aufbewahrungspflichten (z. B. § 147 AO für Ihre Vermieterunterlagen) liegen in Ihrer Verantwortung — exportieren Sie benötigte Daten vor einer Löschung.</li>
+      </ul>
+
+      <H2>9. Ihre Rechte</H2>
+      <p>
+        Sie haben gegenüber dem Verantwortlichen das Recht auf Auskunft (Art. 15),
+        Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung
+        (Art. 18), Datenübertragbarkeit (Art. 20) sowie <strong>Widerspruch</strong> gegen
+        Verarbeitungen auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO (Art. 21). Eine erteilte
+        Einwilligung können Sie jederzeit mit Wirkung für die Zukunft widerrufen (Art. 7
+        Abs. 3). Zudem haben Sie ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde
+        (Art. 77), z. B. der Behörde Ihres Wohnsitzes; zuständig für den Betreiber ist
+        [zuständige Landesdatenschutzbehörde].
+      </p>
+      <p style={{ fontSize: 13, color: "var(--muted)" }}>
+        Betrifft Ihr Anliegen Mieterdaten, die ein Vermieter in MyImmo erfasst hat, richten
+        Sie es bitte an den jeweiligen Vermieter als Verantwortlichen; wir unterstützen ihn
+        bei der Beantwortung.
+      </p>
+
+      <H2>10. Datensicherheit</H2>
+      <p>
+        Übertragung ausschließlich TLS-verschlüsselt; Zugriffstrennung je Konto auf
+        Datenbankebene (Row Level Security); Passwörter nur als Hash; App-seitige
+        Verschlüsselung von Bankdaten (AES-256-GCM) mit Schlüssel außerhalb der Datenbank;
+        Content-Security-Policy und weitere Sicherheits-Header; private Datei-Speicher mit
+        kurzlebigen, signierten Abruf-Links.
+      </p>
+
+      <H2>11. Keine automatisierte Entscheidungsfindung</H2>
+      <p>
+        Es findet keine automatisierte Entscheidungsfindung einschließlich Profiling im
+        Sinne von Art. 22 DSGVO statt. Die KI-Funktionen werten nur von Ihnen angestoßene
+        Dokumente aus und treffen keine Entscheidungen mit Rechtswirkung.
+      </p>
+
+      <H2>12. Pflicht zur Bereitstellung &amp; Änderungen</H2>
+      <p>
+        Für die Registrierung ist nur die E-Mail-Adresse erforderlich; alle weiteren Angaben
+        sind freiwillig, ohne sie stehen ggf. einzelne Funktionen nicht zur Verfügung. Wir
+        passen diese Erklärung an, wenn sich Funktionen oder Rechtslage ändern; es gilt die
+        jeweils hier veröffentlichte Fassung.
+      </p>
+    </div>
+  );
+}

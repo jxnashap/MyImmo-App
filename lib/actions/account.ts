@@ -27,7 +27,7 @@ export type LoeschErgebnis = { ok: false; fehler: string };
  * Im Erfolgsfall wird weiterhin umgeleitet (die Funktion kehrt dann nicht zurück).
  */
 export async function deleteAccount(): Promise<LoeschErgebnis | void> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -55,7 +55,7 @@ export async function deleteAccount(): Promise<LoeschErgebnis | void> {
         ok: false,
         fehler: nurPortal
           ? "Dein laufendes Abo konnte nicht automatisch gekündigt werden. " +
-            "Bitte melde dich bei kontakt@myimmoapp.de — wir kündigen es und löschen dein Konto."
+            "Bitte melde dich bei info@myimmoapp.de — wir kündigen es und löschen dein Konto."
           : "Dein laufendes Abo konnte nicht automatisch gekündigt werden. " +
             "Bitte kündige es zuerst unter Einstellungen → Abo (Zahlung & Kündigung verwalten) " +
             "oder melde dich beim Support — danach kannst du das Konto löschen.",

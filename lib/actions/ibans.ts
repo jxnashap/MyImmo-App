@@ -8,7 +8,7 @@ import { encrypt, blindIndex } from "@/lib/crypto/secure";
 export type IbanResult = { ok: boolean; error?: string };
 
 export async function addIban(formData: FormData): Promise<IbanResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
 
@@ -71,7 +71,7 @@ export async function addIban(formData: FormData): Promise<IbanResult> {
 
 // Markiert ein Konto als Standard und entfernt die Markierung bei allen anderen.
 export async function setStandardIban(id: string): Promise<IbanResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
 
@@ -95,7 +95,7 @@ export async function setStandardIban(id: string): Promise<IbanResult> {
 }
 
 export async function deleteIban(id: string): Promise<IbanResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
 

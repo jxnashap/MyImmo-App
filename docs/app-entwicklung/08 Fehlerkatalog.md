@@ -89,9 +89,26 @@ Helligkeitsschwelle nicht zwischen Gestaltung und Beschnitt unterschied.
 
 **Punkte standen monatelang fälschlich als offen**
 Onboarding-Tour und Open Banking Etappen 1–4 waren längst gebaut. Das hat zu
-Fehleinschätzungen bei der Planung geführt.
+Fehleinschätzungen bei der Planung geführt. (Open Banking wurde am 29.08.2026
+bewusst wieder entfernt — das entwertet den Fehler nicht, er lag davor.)
 → *Gegenprüfung:* Vor jeder Aussage „das fehlt noch" in
 `docs/PROJEKT-STATUS.md` nachsehen. Erledigtes sofort umtragen.
+
+**Der Wissensspeicher selbst wurde aus einem veralteten Baum geschrieben**
+Die Notizen 00–10 entstanden am 01.09.2026 auf einem Arbeitsbranch, der
+**56 Commits hinter `main`** lag. Ergebnis: Der Stack stand an vier Stellen als
+Next.js 14 (main lief seit #293 auf 15.5.25), Open Banking galt als gebaut
+(am 29.08.2026 entfernt), und von den drei als „überfällig" markierten Prüfungen
+waren **zwei längst erledigt** (KfW-308 am 28.08., Supabase-Passwortlänge am
+30.08.2026). Eine Notiz, die Erledigtes als offen meldet, richtet denselben
+Schaden an wie eine, die Offenes als erledigt meldet — sie kostet die nächste
+Session Arbeit an einem gelösten Problem.
+→ *Gegenprüfung:* **Vor** dem Schreiben einer Vault-Notiz `git fetch` und gegen
+den aktuellen Stand von `main` schreiben, nicht gegen den Arbeitsbaum. Jede
+Behauptung über Code beim Schreiben am Pfad verifizieren (`ls`, `grep`), jede
+Behauptung über einen Stand gegen `CLAUDE.md` und `docs/PROJEKT-STATUS.md` auf
+`main`. Und: **die Vault gehört auf `main`**, nicht auf einen Themenbranch —
+sonst findet die nächste Session sie nicht und schreibt sie ein zweites Mal.
 
 **Schema existierte nur in der Datenbank**
 Fundament-Tabellen und alle 78 RLS-Policies lagen nicht im Repo — die

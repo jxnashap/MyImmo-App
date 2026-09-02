@@ -15,7 +15,7 @@ import {
 } from "@/lib/pdf/beleihungPdf";
 
 async function uid() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -135,7 +135,7 @@ export async function removeBeleihungDatei(propId: string, itemKey: string): Pro
 
 // ===== „Aus MyImmo erzeugen": Kennblatt / Mietaufstellung / NK-Abrechnung =====
 
-async function ladeObjektDaten(supabase: ReturnType<typeof createClient>, propId: string) {
+async function ladeObjektDaten(supabase: Awaited<ReturnType<typeof createClient>>, propId: string) {
   const [{ data: prop }, { data: mieter }, { data: kredite }, { data: profil }] = await Promise.all([
     supabase
       .from("properties")
@@ -179,7 +179,7 @@ async function ladeObjektDaten(supabase: ReturnType<typeof createClient>, propId
 }
 
 async function speichereAutoPdf(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   propId: string,
   itemKey: string,

@@ -14,7 +14,7 @@ export type MietkontoDaten = {
 };
 
 export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const [{ data: mieterRows }, { data: zrRows }, { data: einnRows }, { data: propRows }] =
     await Promise.all([
       supabase.from("mieter").select("*").order("nachname"),

@@ -134,7 +134,7 @@ export default function ImportAssistent({ objektNamen }: { objektNamen: string[]
       </div>
 
       {fehler && !ergebnis && (
-        <div className="section" style={{ borderColor: "var(--red)" }}>
+        <div role="alert" className="section" style={{ borderColor: "var(--red)" }}>
           <div className="section-body" style={{ fontSize: 13, color: "var(--red)" }}>
             <TriangleAlert size={13} style={{ verticalAlign: "-2px" }} /> {fehler}
           </div>

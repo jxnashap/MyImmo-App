@@ -71,3 +71,39 @@ export function istUmlagefaehig(kat: string | null): "ja" | "nein" | "unklar" {
   if (nein.includes(kat)) return "nein";
   return "unklar";
 }
+
+// Prozent deutsch: „4,4 %" (Komma, geschütztes Leerzeichen vor %).
+// Ersetzt die verstreuten `toFixed(1) + "%"`-Stellen mit Dezimalpunkt.
+export const prozent = (n: number | null | undefined, dez = 1) =>
+  n == null || !Number.isFinite(n)
+    ? "—"
+    : `${n.toLocaleString("de-DE", { minimumFractionDigits: dez, maximumFractionDigits: dez })} %`;
+
+// Zahl deutsch mit fester Nachkommastellen-Zahl: „19,4", „1.400".
+export const zahl = (n: number | null | undefined, dez = 0) =>
+  n == null || !Number.isFinite(n)
+    ? "—"
+    : n.toLocaleString("de-DE", { minimumFractionDigits: dez, maximumFractionDigits: dez });
+
+// Stunde (0–23) in deutscher Zeit — unabhängig davon, in welcher Zone der
+// Server läuft (Vercel = UTC).
+//
+// ACHTUNG, Falle: `Intl…({hour:"numeric",hour12:false}).format()` liefert in
+// de-DE den String „11 Uhr" — `Number("11 Uhr")` ist NaN. Genau daran ist die
+// Dashboard-Begrüßung gescheitert: Beide Vergleiche gegen NaN sind false,
+// also stand dort rund um die Uhr „Guten Abend". Deshalb formatToParts.
+export function stundeInDE(jetzt: Date = new Date()): number {
+  const teil = new Intl.DateTimeFormat("de-DE", { hour: "numeric", hour12: false, timeZone: "Europe/Berlin" })
+    .formatToParts(jetzt)
+    .find((p) => p.type === "hour");
+  const h = Number(teil?.value);
+  return Number.isFinite(h) ? h % 24 : 12; // im Zweifel neutral „Guten Tag"
+}
+
+// Tageszeit-Begrüßung fürs Dashboard.
+export function begruessung(jetzt: Date = new Date()): "Guten Morgen" | "Guten Tag" | "Guten Abend" {
+  const h = stundeInDE(jetzt);
+  if (h < 11) return "Guten Morgen";
+  if (h < 18) return "Guten Tag";
+  return "Guten Abend";
+}

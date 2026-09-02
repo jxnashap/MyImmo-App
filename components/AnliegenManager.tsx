@@ -8,6 +8,7 @@ import { useState, useTransition } from "react";
 import { Wrench, FileText, MessageCircleQuestion, Save, Paperclip, CalendarClock, CalendarPlus, type LucideIcon } from "lucide-react";
 import { bearbeiteAnliegen, schlageTermineVor, terminInKalender } from "@/lib/actions/anliegen";
 import { useToast } from "@/components/Toast";
+import { tastaturAktion } from "@/lib/a11y";
 
 export type AnliegenVermieterRow = {
   id: string;
@@ -80,6 +81,11 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
       <div
         style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", cursor: "pointer" }}
         onClick={() => setOffen((o) => !o)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={offen}
+        aria-label={`Meldung „${a.titel}" ${offen ? "zuklappen" : "aufklappen"}`}
+        onKeyDown={tastaturAktion(() => setOffen((o) => !o))}
       >
         <Icon size={14} color="var(--gold)" />
         <span style={{ fontSize: 13, fontWeight: 600 }}>{a.titel}</span>
@@ -119,7 +125,7 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
             </select>
           </div>
           <textarea name="antwort" rows={2} maxLength={2000} defaultValue={a.antwort ?? ""} className="input" placeholder="Antwort an den Mieter (optional)" />
-          {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+          {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="submit" className="btn btn-gold" disabled={pending} style={{ fontSize: 12 }}>
               <Save size={13} style={{ verticalAlign: "-2px" }} /> {pending ? "…" : "Speichern"}

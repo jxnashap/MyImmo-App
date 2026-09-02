@@ -6,22 +6,41 @@ import { createClient } from "@/lib/supabase/server";
 import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
 import { eigenkapitalGesamt } from "@/lib/kauf/selbstauskunft";
 import {
-  buildKreditantragPdf, type KreditObjekt, type KreditWunsch, type KreditAbsender,
+  buildKreditantragPdf, type KreditWunsch, type KreditAbsender,
 } from "@/lib/pdf/kreditantragPdf";
+import { baueKreditObjekt, type AuswahlEingang } from "@/lib/kauf/kreditantrag";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Die Seite wird per Formular in einem NEUEN TAB geöffnet — dort kann kein
+// Toast erscheinen. Fehler deshalb als lesbare Mini-Seite ausliefern statt als
+// JSON, das der Nutzer sonst als rohen Text vorgesetzt bekäme.
+function hinweisSeite(text: string, status: number) {
+  const html = `<!doctype html><html lang="de"><head><meta charset="utf-8">
+<title>Kreditantrag — MyImmo</title><meta name="viewport" content="width=device-width,initial-scale=1">
+</head><body style="margin:0;display:grid;place-items:center;min-height:100vh;background:#f5f5f5;font-family:system-ui,sans-serif;color:#0a0a0a">
+<div style="max-width:420px;padding:32px;background:#fff;border:1px solid #e5e5e5;border-radius:18px;text-align:center">
+<div style="font-family:Georgia,serif;font-size:22px;color:#9a7b24;margin-bottom:12px">My<em>Immo</em></div>
+<p style="font-size:15px;line-height:1.6;margin:0 0 18px">${text}</p>
+<button onclick="window.close()" style="font:600 13px system-ui;padding:9px 18px;border:1px solid #d4d4d4;border-radius:999px;background:#fff;cursor:pointer">Fenster schließen</button>
+</div></body></html>`;
+  return new NextResponse(html, {
+    status,
+    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+  });
+}
+
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return new NextResponse("Nicht angemeldet", { status: 401 });
+  if (!user) return hinweisSeite("Bitte melde dich an, um den Kreditantrag zu erzeugen.", 401);
 
   const sa = await ladeSelbstauskunft();
   if (!sa) {
-    return NextResponse.json(
-      { error: "Bitte zuerst die Selbstauskunft ausfüllen und speichern." },
-      { status: 400 },
+    return hinweisSeite(
+      "Bitte zuerst die Selbstauskunft im Kauf-Assistenten ausfüllen und speichern.",
+      400,
     );
   }
 
@@ -36,24 +55,26 @@ export async function POST(req: NextRequest) {
     email: profil?.email ?? null,
   };
 
-  let body: { auswahl?: Partial<KreditObjekt> | null; darlehen?: Partial<KreditWunsch> | null } = {};
-  try { body = await req.json(); } catch { /* leerer Body erlaubt */ }
+  // Der Knopf schickt ein echtes Formular (CSP-konform, siehe
+  // KreditantragButton) — die Daten stecken im Feld „daten" als JSON.
+  // JSON-Bodies bleiben zusätzlich erlaubt (Direktaufrufe/Tests).
+  let body: { auswahl?: AuswahlEingang | null; darlehen?: Partial<KreditWunsch> | null } = {};
+  const typ = req.headers.get("content-type") ?? "";
+  try {
+    if (typ.includes("form")) {
+      const form = await req.formData();
+      const roh = form.get("daten");
+      if (typeof roh === "string" && roh) body = JSON.parse(roh);
+    } else {
+      body = await req.json();
+    }
+  } catch { /* leerer/ungültiger Body erlaubt — PDF entsteht dann ohne Objektteil */ }
 
   // Eigenkapital aus der Selbstauskunft, Darlehen aus dem Wunsch (D) bzw.
   // Gesamtinvest − EK — die Objekt-Auswahl (A) trägt selbst kein Darlehen mehr.
   const ek = eigenkapitalGesamt(sa);
   const wunschDarlehen = Number(body.darlehen?.darlehen) || 0;
-  const objekt: KreditObjekt | null = body.auswahl && body.auswahl.kaufpreis
-    ? {
-        name: body.auswahl.name ?? "",
-        adresse: body.auswahl.adresse ?? "",
-        kaufpreis: Number(body.auswahl.kaufpreis) || 0,
-        gesamtInvest: Number(body.auswahl.gesamtInvest) || 0,
-        eigenkapital: ek,
-        darlehen: wunschDarlehen > 0 ? wunschDarlehen : Math.max(0, (Number(body.auswahl.gesamtInvest) || 0) - ek),
-        kaltmiete: Number(body.auswahl.kaltmiete) || 0,
-      }
-    : null;
+  const objekt = baueKreditObjekt(body.auswahl, ek, wunschDarlehen);
 
   const wunsch: KreditWunsch | null = body.darlehen && body.darlehen.darlehen
     ? {

@@ -2,11 +2,11 @@
 import SubmitButton from "@/components/SubmitButton";
 
 import { useMemo, useState } from "react";
-import { Building2, User, Tag, X, Download, Eye, FileText, Image as ImageIcon, Paperclip, Archive, Home, Plus, SlidersHorizontal } from "lucide-react";
+import { Building2, User, Tag, X, Download, Eye, FileText, Image as ImageIcon, Paperclip, Archive, Home, Plus, SlidersHorizontal, Upload } from "lucide-react";
 import Select from "@/components/filters/Select";
 import RowDialog from "@/components/RowDialog";
 import { createDokument, updateDokument, deleteDokument } from "@/lib/actions/archiv";
-import type { ArchivDoc } from "@/app/archiv/page";
+import type { ArchivDoc } from "@/app/(app)/archiv/page";
 import type { Property, Tenant } from "@/lib/types";
 
 export const ARCHIV_ARTEN = [
@@ -185,7 +185,7 @@ export default function ArchivManager({
             onChange={setFArt}
             options={[{ value: "", label: "Alle Arten" }, ...ARCHIV_ARTEN.map((a) => ({ value: a, label: a }))]}
           />
-          <input className="set-input fb-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Suche: Titel, Dateiname…" aria-label="Suche" />
+          <input className="set-input fb-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Titel, Dateiname…" aria-label="Suche" />
         </div>
         <span className="fb-spacer" />
         <div className="fb-chips">
@@ -201,6 +201,13 @@ export default function ArchivManager({
         <div className="empty">
           <Archive className="empty-icon" size={36} color="var(--faint)" />
           <p>{docs.length === 0 ? "Noch keine Dokumente im Archiv." : "Keine Dokumente für diese Filter."}</p>
+          {/* Der Leerzustand nannte kein Weiter — der Upload-Knopf oben war
+              leicht zu uebersehen (Audit: "Archiv ohne Upload-CTA"). */}
+          {docs.length === 0 && (
+            <button type="button" className="btn btn-outline" style={{ marginTop: 10 }} onClick={() => setShowUpload(true)}>
+              <Upload size={14} style={{ verticalAlign: "-2px" }} /> Erstes Dokument hochladen
+            </button>
+          )}
         </div>
       ) : (
         <div className="section">

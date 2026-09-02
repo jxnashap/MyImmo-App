@@ -38,7 +38,7 @@ export default function VerteilerForm({ quelle = "vorlagen" }: { quelle?: string
       setMeldung(
         json.schon
           ? "Diese Adresse ist bereits im Verteiler — es wurde keine neue E-Mail verschickt."
-          : "Fast geschafft: Bitte bestätigen Sie den Link in der E-Mail, die wir gerade verschickt haben.",
+          : "Fast geschafft: Bitte bestätige den Link in der E-Mail, die wir gerade verschickt haben.",
       );
     } catch {
       setStatus("fehler");
@@ -94,7 +94,7 @@ export default function VerteilerForm({ quelle = "vorlagen" }: { quelle?: string
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="ihre@adresse.de"
+          placeholder="deine@adresse.de"
           autoComplete="email"
           style={{
             flex: "1 1 220px",

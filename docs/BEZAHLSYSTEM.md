@@ -50,7 +50,6 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
 - **Privat (7,99 €/M · 79 €/J):** bis 5 Einheiten + NK-PDF, Steuer, Dokumente, Mieterportal.
 - **Plus (12,99 €/M · 129 €/J):** bis 24 Einheiten + Service-Portal, KI-Import, Kalkulatoren, Beleihung.
 - **Business (auf Anfrage):** ab 25 Einheiten, Hausverwaltung — KEIN Self-Service-Checkout.
-- **Banking-Add-on:** eigener Preis je Zyklus, unabhängig vom Tarif (laufende Enable-Banking-Kosten).
 
 ## Aktivierungs-Checkliste (in dieser Reihenfolge)
 1. ~~**Vercel Pro** buchen~~ ✅ **29.07.2026 erledigt** — kommerzielle Nutzung erlaubt, Vercel-DPA aktiv.
@@ -58,16 +57,15 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
    Erlöschen des Widerrufs bei sofortiger Bereitstellung) — Geld annehmen erst danach.
 3. **Paddle-Konto** anlegen (paddle.com, Verifizierung des Gewerbes dauert einige Tage).
    Erst **Sandbox** durchtesten, dann Production.
-4. Im Paddle-Dashboard: Produkte + Preise anlegen (Privat/Plus je Monat/Jahr,
-   Banking-Add-on je Monat/Jahr) und die **Default Payment Link**-Domain setzen
-   (Checkout-Einstellungen → sonst liefert die API keine `checkout.url`).
-5. **Webhook-Destination** anlegen: `https://my-immo-app.vercel.app/api/billing/webhook`,
+4. Im Paddle-Dashboard: Produkte + Preise anlegen (Privat/Plus je Monat/Jahr) und die
+   **Default Payment Link**-Domain setzen (Checkout-Einstellungen → sonst liefert die API
+   keine `checkout.url`).
+5. **Webhook-Destination** anlegen: `https://www.myimmoapp.de/api/billing/webhook`,
    Events `subscription.activated/created/updated/canceled/past_due/paused/resumed`.
    Secret notieren.
 6. **Vercel-Env setzen:** `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`,
    `PADDLE_ENV=production` (vorher `sandbox`), `PADDLE_PRICE_PRIVAT_MONAT`,
-   `PADDLE_PRICE_PRIVAT_JAHR`, `PADDLE_PRICE_PLUS_MONAT`, `PADDLE_PRICE_PLUS_JAHR`,
-   `PADDLE_PRICE_BANKING_MONAT`, `PADDLE_PRICE_BANKING_JAHR`.
+   `PADDLE_PRICE_PRIVAT_JAHR`, `PADDLE_PRICE_PLUS_MONAT`, `PADDLE_PRICE_PLUS_JAHR`.
    (`SUPABASE_SERVICE_ROLE_KEY` muss gesetzt sein — braucht der Webhook.)
 7. **End-to-End in der Sandbox testen:** Checkout → Webhook kommt an → `abos`-Zeile
    entsteht → Abo-Tab zeigt den Tarif → Kündigung im Portal → Status `gekuendigt`.

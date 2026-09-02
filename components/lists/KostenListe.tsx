@@ -29,7 +29,7 @@ export default function KostenListe({
   const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
-    <table className="list-table">
+    <div className="table-scroll"><table className="list-table">
       <thead><tr><th>Datum</th><th>Immobilie</th><th>Mieter</th><th>Kategorie</th><th>Umlage</th><th>Beleg</th><th>Betrag</th></tr></thead>
       <ExpandableRows cols={7} limit={10} label="weitere Buchungen">
         {rows.map((k) => {
@@ -119,6 +119,6 @@ export default function KostenListe({
           </form>
         </RowDialog>
       )}
-    </table>
+    </table></div>
   );
 }

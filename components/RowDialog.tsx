@@ -3,10 +3,15 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { useModalFokus } from "@/lib/modalFokus";
 
 // Wiederverwendbarer Bearbeiten-Dialog (Modal) im einheitlichen App-Stil.
 // Rendert per Portal an <body> (valides DOM auch aus Tabellen heraus).
-// Schließt per ESC, Klick aufs Overlay oder X. Barrierefrei (role=dialog).
+// Schließt per ESC, Klick aufs Overlay oder X.
+//
+// Fokus (Anfangsfokus, Falle, Rückgabe) und das Stummschalten des Hintergrunds
+// für Screenreader kommen aus `useModalFokus` — siehe dort, warum jedes der drei
+// Teile nötig ist.
 export default function RowDialog({
   title,
   onClose,
@@ -18,28 +23,28 @@ export default function RowDialog({
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
+  // `mounted` als Aktiv-Flag: vor dem Portal-Mount ist die Ref leer.
+  const ref = useModalFokus<HTMLDivElement>(onClose, mounted);
 
   if (!mounted) return null;
 
   return createPortal(
     <div
       className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="modal-sheet wide">
+      {/* role/aria-modal sitzen auf dem Blatt, nicht auf dem Overlay: sonst
+          zählt der Hintergrund-Schleier mit zum Dialog. tabIndex={-1}, damit
+          der Dialog den Anfangsfokus annehmen kann, wenn er kein Bedienelement
+          enthält. */}
+      <div
+        ref={ref}
+        className="modal-sheet wide"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        tabIndex={-1}
+      >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <h3 style={{ fontSize: 17 }}>{title}</h3>
           <button type="button" className="icon-btn" onClick={onClose} title="Schließen" aria-label="Schließen">

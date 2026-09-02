@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 // verschlüsselt; weitere Aufrufe sind no-ops. RLS stellt sicher, dass nur die
 // eigenen Zeilen verarbeitet werden.
 export async function GET() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

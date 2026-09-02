@@ -20,7 +20,7 @@ function schuetze(dataUri: string): string {
 // Datensparsamkeits-Hinweise in der UI.
 
 async function uid() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

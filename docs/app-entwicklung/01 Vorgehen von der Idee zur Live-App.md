@@ -27,7 +27,7 @@ Das Datenmodell folgt aus den Rollen und den Rechten, nicht umgekehrt.
 
 **Ergebnis: leere App, die deployt, mit Auth und einer geschützten Tabelle.**
 
-1. Next.js 14 App Router, TypeScript, Tailwind nur als Basis (Komponenten
+1. Next.js 15 App Router, TypeScript, Tailwind nur als Basis (Komponenten
    nutzen eigene Klassen, siehe [[03 Design und Layout]]).
 2. Supabase-Projekt in **eu-central-1** (Datenschutz: EU-Verarbeitung).
 3. **Eine** Tabelle mit RLS anlegen und die Policy testen — mit einem zweiten

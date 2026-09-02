@@ -44,7 +44,7 @@ export async function bestaetigeMieteingang(input: {
   nk_anteil: number | null;
   soll_monat?: string | null; // YYYY-MM — zugeordneter Miet-Monat
 }): Promise<MietkontoResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
 
@@ -113,7 +113,7 @@ export type BatchZeile = {
 export async function bestaetigeMehrere(
   zeilen: BatchZeile[],
 ): Promise<{ ok: boolean; anzahl: number; error?: string }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, anzahl: 0, error: "Nicht angemeldet." };
 

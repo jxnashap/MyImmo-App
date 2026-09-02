@@ -56,7 +56,7 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
         </div>
         <div className="form-row">
           <div className="form-group"><label>Wasser</label><input value={wasser} onChange={(e) => setWasser(e.target.value)} placeholder="m³" /></div>
-          <div className="form-group"><label>Schlüssel (Anzahl/Art)</label><input value={schluessel} onChange={(e) => setSchluessel(e.target.value)} placeholder="z.B. 2 Haustür, 1 Briefkasten" /></div>
+          <div className="form-group"><label>Schlüssel (Anzahl/Art)</label><input value={schluessel} onChange={(e) => setSchluessel(e.target.value)} placeholder="z. B. 2 Haustür, 1 Briefkasten" /></div>
         </div>
 
         <div className="form-section-label">Räume &amp; Zustand</div>

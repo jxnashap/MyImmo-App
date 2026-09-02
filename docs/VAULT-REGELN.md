@@ -71,6 +71,26 @@ Ein Eintrag muss **mindestens eines** davon leisten:
 
 Viermal ja → aufnehmen. Sonst → weglassen.
 
+## Gegen welchen Stand geschrieben wird
+
+**Gegen `main`, nie gegen den eigenen Arbeitsbaum.** Vor dem Schreiben
+`git fetch origin main`; wer auf einem Themenbranch sitzt, sitzt oft Wochen
+hinter dem echten Stand. Jede Behauptung über Code beim Schreiben am Pfad
+verifizieren (`ls`, `grep`), jede Behauptung über einen Bearbeitungsstand gegen
+`CLAUDE.md` und `docs/PROJEKT-STATUS.md` **auf `main`**.
+
+Das ist keine Formalie: Die Notizen 00–10 sind am 01.09.2026 auf einem Branch
+entstanden, der 56 Commits hinter `main` lag — Ergebnis waren ein falscher
+Stack (Next.js 14 statt 15.5), ein längst entferntes Feature als „gebaut" und
+zwei als „überfällig" gemeldete Prüfungen, die erledigt waren. **Erledigtes als
+offen zu melden kostet genauso viel wie das Umgekehrte.** Siehe
+`08 Fehlerkatalog`.
+
+**Und: Die Vault gehört auf `main`.** Ein Wissensspeicher auf einem Themenbranch
+wird von der nächsten Session nicht gefunden — sie schreibt ihn ein zweites Mal
+und die beiden Fassungen laufen auseinander. Eine Vault-Änderung ist erst fertig,
+wenn sie auf `main` liegt.
+
 ## Ort
 
 | Inhalt | Datei |

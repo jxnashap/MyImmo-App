@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // DATEV-Export (Buchungsstapel EXTF) eines Jahres — zur Übergabe an die
 // Steuerkanzlei. Kontenzuordnung = SKR03-Standardvorlage (Kanzlei passt an).
 export async function GET(request: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new NextResponse("Nicht angemeldet", { status: 401 });
 

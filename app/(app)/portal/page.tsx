@@ -1,0 +1,391 @@
+// Mieterportal: Wohnung + Vertragsdaten, Anliegen (mit Anhängen) und
+// Dokument-Anfragen — umgeschaltet über die Glass-Toolbar oben in der
+// Mitte (Businessplan Kap. 14 "Das Mieterportal").
+import Link from "next/link";
+import { Home, MessageSquareText, FileText, Gauge, Banknote, Receipt } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { euro, datum } from "@/lib/format";
+import ThemeToggle from "@/components/ThemeToggle";
+import AnliegenPortal, { type AnliegenRow, type DateiRef } from "@/components/AnliegenPortal";
+import DokumenteAnfrage from "@/components/DokumenteAnfrage";
+import ZaehlerPortal, { type ZaehlerMeldungRow } from "@/components/ZaehlerPortal";
+import AnfragenVomVermieter, { type PortalAnfrageRow } from "@/components/AnfragenVomVermieter";
+import type { Tenant, Property } from "@/lib/types";
+
+const TABS = [
+  { key: "wohnung", label: "Wohnung", icon: Home },
+  { key: "anliegen", label: "Anliegen", icon: MessageSquareText },
+  { key: "zahlungen", label: "Zahlungen", icon: Banknote },
+  { key: "dokumente", label: "Dokumente", icon: FileText },
+  { key: "zaehler", label: "Zähler", icon: Gauge },
+] as const;
+
+export default async function PortalPage(
+  props: {
+    searchParams: Promise<{ tab?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const tab = TABS.some((t) => t.key === searchParams.tab) ? (searchParams.tab as string) : "wohnung";
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: zugaenge } = await supabase
+    .from("mieter_zugaenge")
+    .select("mieter_id,prop_id")
+    .eq("user_id", user!.id);
+
+  const mieterIds = (zugaenge ?? []).map((z) => z.mieter_id);
+  const { data: mieterRows } = mieterIds.length
+    ? await supabase.from("mieter").select("*").in("id", mieterIds)
+    : { data: [] as Tenant[] };
+  const propIds = Array.from(
+    new Set((zugaenge ?? []).map((z) => z.prop_id).filter(Boolean))
+  ) as string[];
+  const { data: propRows } = propIds.length
+    ? await supabase.from("properties").select("id,bezeichnung,adresse").in("id", propIds)
+    : { data: [] as Pick<Property, "id" | "bezeichnung" | "adresse">[] };
+  const propVon = (id: string | null) =>
+    (propRows ?? []).find((p) => p.id === id) ?? null;
+
+  const wohnungen = ((mieterRows ?? []) as Tenant[]).map((m) => ({
+    m,
+    p: propVon(m.prop_id),
+  }));
+
+  const { data: anliegenRows } = await supabase
+    .from("anliegen")
+    .select("id,typ,titel,beschreibung,status,antwort,created_at,termin_vorschlaege,termin_bestaetigt")
+    .eq("mieter_user_id", user!.id)
+    .order("created_at", { ascending: false });
+  const anliegen = (anliegenRows ?? []) as AnliegenRow[];
+  const dokumentAnfragen = anliegen.filter((a) => a.typ === "dokument");
+
+  // Vom Vermieter freigegebene Archiv-Dokumente (RLS: nur mieter_freigabe)
+  const { data: freigegebeneDocs } = mieterIds.length
+    ? await supabase
+        .from("notizen")
+        .select("id,titel,kategorie,datei_name,created_at")
+        .in("mieter_id", mieterIds)
+        .eq("mieter_freigabe", true)
+        .order("created_at", { ascending: false })
+    : { data: [] as { id: string; titel: string | null; kategorie: string | null; datei_name: string | null; created_at: string | null }[] };
+
+  const { data: vAnfragenRows } = mieterIds.length
+    ? await supabase
+        .from("vermieter_anfragen")
+        .select("id,typ,titel,beschreibung,termin,faellig_bis,status,antwort,created_at")
+        .in("mieter_id", mieterIds)
+        .order("created_at", { ascending: false })
+        .limit(50)
+    : { data: [] as PortalAnfrageRow[] };
+  const vermieterAnfragen = (vAnfragenRows ?? []) as PortalAnfrageRow[];
+
+  const { data: zaehlerRows } = await supabase
+    .from("zaehlerstand_meldungen")
+    .select("id,art,zaehlernummer,stand,einheit,ablesedatum,notiz,foto_name,uebernommen_am,created_at")
+    .eq("mieter_user_id", user!.id)
+    .order("ablesedatum", { ascending: false })
+    .limit(50);
+  const zaehlerMeldungen = (zaehlerRows ?? []) as ZaehlerMeldungRow[];
+
+  // Vom Vermieter im Mietkonto bestätigte Zahlungen (RLS: nur eigene
+  // Miete/Nebenkosten-Einnahmen der verknüpften Mieter, § 368 BGB)
+  const { data: zahlungRows } = mieterIds.length
+    ? await supabase
+        .from("einnahmen")
+        .select("id,buchungsdatum,kategorie,betrag,beschreibung")
+        .in("mieter_id", mieterIds)
+        .order("buchungsdatum", { ascending: false })
+        .limit(200)
+    : { data: [] as { id: string; buchungsdatum: string | null; kategorie: string | null; betrag: number | null; beschreibung: string | null }[] };
+  const zahlungen = zahlungRows ?? [];
+  // Jahr in deutscher Zeitzone bestimmen (Server läuft in UTC).
+  const jahr = Number(new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", year: "numeric" }).format(new Date()));
+  const summeJahr = zahlungen
+    .filter((z) => (z.buchungsdatum ?? "").startsWith(String(jahr)))
+    .reduce((s, z) => s + (z.betrag ?? 0), 0);
+
+  // Vom Vermieter freigegebene Kosten-Belege (§ 556 Abs. 4 BGB Belegeinsicht)
+  const { data: belegRows } = propIds.length
+    ? await supabase
+        .from("kosten")
+        .select("id,buchungsdatum,kategorie,betrag,beschreibung,rechnung_name")
+        .in("prop_id", propIds)
+        .eq("mieter_freigabe", true)
+        .order("buchungsdatum", { ascending: false })
+        .limit(200)
+    : { data: [] as { id: string; buchungsdatum: string | null; kategorie: string | null; betrag: number | null; beschreibung: string | null; rechnung_name: string | null }[] };
+  const belege = belegRows ?? [];
+
+  const { data: dateiRows } = anliegen.length
+    ? await supabase
+        .from("anliegen_dateien")
+        .select("id,name,anliegen_id")
+        .in("anliegen_id", anliegen.map((a) => a.id))
+    : { data: [] as DateiRef[] };
+  const dateien = (dateiRows ?? []) as DateiRef[];
+
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
+      {/* Portal-Topbar mit dem MyImmo-Schriftzug wie in der Vermieter-Sidebar */}
+      {/* `flexWrap` ist hier nicht kosmetisch: Ohne Umbruch quetscht die Zeile
+          auf schmalen Handys den rechten Block (Theme, Konto, Abmelden)
+          zusammen, bis „Abmelden" abgeschnitten ist — die Schaltflaeche, mit
+          der ein Mieter seine Sitzung beendet. */}
+      <div
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexWrap: "wrap", gap: 10,
+          padding: "12px 22px", borderBottom: "1px solid var(--line)", background: "var(--bg2)",
+        }}
+      >
+        <div className="sidebar-logo" style={{ padding: 0, borderBottom: "none" }}>
+          <h1>My<span>Immo</span></h1>
+          <p>Mieterportal</p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <ThemeToggle variant="icon" />
+          <Link href="/konto" className="btn btn-ghost" style={{ fontSize: 12 }} title="Passwort, Datenexport, Konto löschen">
+            Konto
+          </Link>
+          <form action="/auth/signout" method="post">
+            <button type="submit" className="btn btn-ghost" style={{ fontSize: 12 }}>Abmelden</button>
+          </form>
+        </div>
+      </div>
+
+      {/* Glass-Toolbar oben in der Mitte: Bereiche umschalten */}
+      <div className="portal-toolbar">
+        <nav className="glass-bar" aria-label="Portal-Bereiche">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            return (
+              <Link key={t.key} href={`/portal?tab=${t.key}`} className={`glass-item ${tab === t.key ? "active" : ""}`}>
+                <Icon size={14} /> {t.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+
+      <main className="fade-up" style={{ maxWidth: 760, margin: "0 auto", padding: "8px 20px 40px" }}>
+        {tab === "wohnung" && (
+          <>
+            <div className="topbar" style={{ marginBottom: 20 }}>
+              <div>
+                <div className="topbar-title">Meine Wohnung</div>
+                <div className="topbar-sub" style={{ overflowWrap: "anywhere" }}>{user?.email}</div>
+              </div>
+            </div>
+            {wohnungen.length === 0 ? (
+              <div className="section">
+                <div className="section-body" style={{ textAlign: "center", padding: "36px 20px" }}>
+                  <Home size={36} color="var(--faint)" />
+                  <p style={{ marginTop: 12, fontSize: 14, fontWeight: 600 }}>Noch keine Wohnung verknüpft</p>
+                  <p style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
+                    Bitte frage deinen Vermieter nach einem Einladungscode — die Verknüpfung
+                    passiert automatisch bei der Registrierung mit dem Code.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              wohnungen.map(({ m, p }) => (
+                <div key={m.id} className="section">
+                  <div className="section-header">
+                    <h3><Home size={15} style={{ verticalAlign: "-2px" }} /> {p?.bezeichnung ?? "Wohnung"}{m.einheit ? ` · ${m.einheit}` : ""}</h3>
+                    {p?.adresse && <span style={{ fontSize: 12, color: "var(--muted)" }}>{p.adresse}</span>}
+                  </div>
+                  <div className="section-body">
+                    <div className="grid-3" style={{ gap: 12 }}>
+                      <div className="stat-box">
+                        <div className="stat-lbl">Kaltmiete</div>
+                        <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4 }}>{euro(m.kaltmiete)}</div>
+                      </div>
+                      <div className="stat-box">
+                        <div className="stat-lbl">NK-Vorauszahlung</div>
+                        <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4 }}>{euro(m.nk_vorauszahlung)}</div>
+                      </div>
+                      <div className="stat-box">
+                        <div className="stat-lbl">Warmmiete</div>
+                        <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4, color: "var(--gold)" }}>
+                          {euro((m.kaltmiete ?? 0) + (m.nk_vorauszahlung ?? 0) + (m.stellplatz_miete ?? 0))}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", marginTop: 16, fontSize: 12, color: "var(--muted)" }}>
+                      {m.mietbeginn && <span>Mietbeginn: <strong style={{ color: "var(--text)" }}>{datum(m.mietbeginn)}</strong></span>}
+                      {m.flaeche != null && <span>Fläche: <strong style={{ color: "var(--text)" }}>{m.flaeche} m²</strong></span>}
+                      {(m.kaution ?? 0) > 0 && <span>Kaution: <strong style={{ color: "var(--text)" }}>{euro(m.kaution)}</strong></span>}
+                      {m.stellplatz && <span>Stellplatz: <strong style={{ color: "var(--text)" }}>{m.stellplatz}</strong></span>}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </>
+        )}
+
+        {tab === "anliegen" && (
+          <>
+            <div className="topbar" style={{ marginBottom: 20 }}>
+              <div>
+                <div className="topbar-title">Anliegen</div>
+                <div className="topbar-sub">Schäden melden, Fragen stellen — mit Fotos/PDF als Anhang</div>
+              </div>
+            </div>
+            {wohnungen.length === 0 ? (
+              <div className="section"><div className="section-body" style={{ fontSize: 12, color: "var(--muted)" }}>
+                Erst mit verknüpfter Wohnung möglich — frage deinen Vermieter nach einem Einladungscode.
+              </div></div>
+            ) : (
+              <>
+                <AnfragenVomVermieter anfragen={vermieterAnfragen} />
+                <AnliegenPortal anliegen={anliegen} dateien={dateien} />
+              </>
+            )}
+          </>
+        )}
+
+        {tab === "zahlungen" && (
+          <>
+            <div className="topbar" style={{ marginBottom: 20 }}>
+              <div>
+                <div className="topbar-title">Zahlungen</div>
+                <div className="topbar-sub">Vom Vermieter bestätigte Miet- &amp; Nebenkostenzahlungen (§ 368 BGB)</div>
+              </div>
+            </div>
+            {wohnungen.length === 0 ? (
+              <div className="section"><div className="section-body" style={{ fontSize: 12, color: "var(--muted)" }}>
+                Erst mit verknüpfter Wohnung möglich — frage deinen Vermieter nach einem Einladungscode.
+              </div></div>
+            ) : (
+              <div className="section">
+                <div className="section-header">
+                  <h3><Banknote size={15} style={{ verticalAlign: "-2px" }} /> Zahlungsübersicht</h3>
+                  {zahlungen.length > 0 && (
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      {jahr}: <strong style={{ color: "var(--gold)" }}>{euro(summeJahr)}</strong>
+                    </span>
+                  )}
+                </div>
+                <div className="section-body">
+                  {zahlungen.length === 0 ? (
+                    <p style={{ fontSize: 12, color: "var(--faint)" }}>
+                      Noch keine bestätigten Zahlungen — sobald dein Vermieter deine Miete im
+                      Mietkonto verbucht, erscheint sie hier als Nachweis.
+                    </p>
+                  ) : (
+                    <>
+                      {zahlungen.map((z) => (
+                        <div key={z.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                          <span style={{ color: "var(--muted)", minWidth: 74 }}>{z.buchungsdatum ? datum(z.buchungsdatum) : "–"}</span>
+                          <span className={`badge ${z.kategorie === "Miete" ? "badge-green" : "badge-teal"}`}>{z.kategorie ?? "Zahlung"}</span>
+                          {z.beschreibung && <span style={{ color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{z.beschreibung}</span>}
+                          <span style={{ fontWeight: 600, color: "var(--green)", marginLeft: "auto" }}>{euro(z.betrag)}</span>
+                        </div>
+                      ))}
+                      <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 10 }}>
+                        Diese Übersicht zeigt alle Zahlungen, die dein Vermieter verbucht hat.
+                        Eine förmliche Mietquittung (§ 368 BGB) kannst du unter „Dokumente" anfordern.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {tab === "dokumente" && (
+          <>
+            <div className="topbar" style={{ marginBottom: 20 }}>
+              <div>
+                <div className="topbar-title">Dokumente</div>
+                <div className="topbar-sub">Bescheinigungen &amp; Unterlagen beim Vermieter anfordern</div>
+              </div>
+            </div>
+            {wohnungen.length === 0 ? (
+              <div className="section"><div className="section-body" style={{ fontSize: 12, color: "var(--muted)" }}>
+                Erst mit verknüpfter Wohnung möglich — frage deinen Vermieter nach einem Einladungscode.
+              </div></div>
+            ) : (
+              <>
+                <div className="section">
+                  <div className="section-header"><h3>Bereitgestellte Dokumente</h3></div>
+                  <div className="section-body">
+                    {(freigegebeneDocs ?? []).length === 0 ? (
+                      <p style={{ fontSize: 12, color: "var(--faint)" }}>
+                        Noch keine Dokumente freigegeben — dein Vermieter kann dir hier z. B.
+                        Mietvertrag, NK-Abrechnung oder den Energieausweis bereitstellen.
+                      </p>
+                    ) : (
+                      (freigegebeneDocs ?? []).map((d) => (
+                        <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                          <FileText size={14} color="var(--gold)" />
+                          <span style={{ fontWeight: 600, color: "var(--text)" }}>{d.titel || d.datei_name || "Dokument"}</span>
+                          {d.kategorie && <span className="badge badge-teal">{d.kategorie}</span>}
+                          <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{d.created_at ? datum(d.created_at) : ""}</span>
+                          <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
+                          <a href={`/archiv/${d.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div className="section">
+                  <div className="section-header">
+                    <h3><Receipt size={15} style={{ verticalAlign: "-2px" }} /> Belege (Belegeinsicht)</h3>
+                    <span style={{ fontSize: 11, color: "var(--muted)" }}>§ 556 Abs. 4 BGB</span>
+                  </div>
+                  <div className="section-body">
+                    {belege.length === 0 ? (
+                      <p style={{ fontSize: 12, color: "var(--faint)" }}>
+                        Noch keine Belege freigegeben — dein Vermieter kann dir hier Rechnungen
+                        zur Nebenkostenabrechnung zur Einsicht bereitstellen.
+                      </p>
+                    ) : (
+                      belege.map((b) => (
+                        <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                          <Receipt size={14} color="var(--gold)" />
+                          <span style={{ fontWeight: 600, color: "var(--text)" }}>{b.beschreibung || b.kategorie || b.rechnung_name || "Beleg"}</span>
+                          {b.kategorie && <span className="badge badge-teal">{b.kategorie}</span>}
+                          <span style={{ color: "var(--muted)" }}>{b.buchungsdatum ? datum(b.buchungsdatum) : ""}</span>
+                          <span style={{ fontWeight: 600, marginLeft: "auto" }}>{euro(b.betrag)}</span>
+                          {b.rechnung_name && (
+                            <a href={`/kosten/${b.id}/rechnung`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <DokumenteAnfrage anfragen={dokumentAnfragen} />
+              </>
+            )}
+          </>
+        )}
+        {tab === "zaehler" && (
+          <>
+            <div className="topbar" style={{ marginBottom: 20 }}>
+              <div>
+                <div className="topbar-title">Zählerstände</div>
+                <div className="topbar-sub">Strom, Gas, Wasser &amp; Co. direkt an den Vermieter melden</div>
+              </div>
+            </div>
+            {wohnungen.length === 0 ? (
+              <div className="section"><div className="section-body" style={{ fontSize: 12, color: "var(--muted)" }}>
+                Erst mit verknüpfter Wohnung möglich — frage deinen Vermieter nach einem Einladungscode.
+              </div></div>
+            ) : (
+              <ZaehlerPortal meldungen={zaehlerMeldungen} />
+            )}
+          </>
+        )}
+      </main>
+    </div>
+  );
+}

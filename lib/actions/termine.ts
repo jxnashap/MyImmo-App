@@ -21,7 +21,7 @@ function feldWerte(formData: FormData) {
 }
 
 export async function createTermin(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -58,7 +58,7 @@ function deDatumKurz(iso: string): string {
 }
 
 export async function updateTermin(id: string, formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
@@ -78,7 +78,7 @@ export async function updateTermin(id: string, formData: FormData) {
 }
 
 export async function deleteTermin(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("termine").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/termine");
@@ -87,7 +87,7 @@ export async function deleteTermin(id: string) {
 // Erledigt-Haken: beim Erledigen eines wiederkehrenden Termins wird die
 // nächste Instanz angelegt (der abgehakte Eintrag bleibt als Historie).
 export async function toggleErledigt(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
@@ -142,7 +142,7 @@ export async function createVorlageTermin(
   propId: string | null,
   formData?: FormData,
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   // Frueher: stilles `return`. Der Nutzer klickte, nichts passierte, keine
@@ -184,7 +184,7 @@ export async function createVorlageTermin(
 // Der Schluessel wird in lib/termine.ts gebildet (fristSchluessel) — ein
 // "use server"-Modul darf nur async Funktionen exportieren.
 export async function blendeFristAus(schluessel: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
@@ -197,7 +197,7 @@ export async function blendeFristAus(schluessel: string) {
 }
 
 export async function zeigeFristWieder(schluessel: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 

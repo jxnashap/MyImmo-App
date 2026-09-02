@@ -2,12 +2,12 @@
 
 > Zweck: Ein anderer Chat/eine neue Session versteht MyImmo in 5 Minuten.
 > Reihenfolge zum Einlesen: **diese Datei → `CLAUDE.md` → `docs/PROJEKT-STATUS.md` → `docs/MASTERPLAN.md`**.
-> Stand: 19.07.2026.
+> Stand: 28.08.2026.
 
 ## Was ist MyImmo
 Deutschsprachige **Immobilienverwaltung für private Vermieter** (SaaS). Objekte, Mieter,
 Mietkonto, Ein-/Ausgaben, Nebenkostenabrechnung, Kredite, Steuer (Anlage V, AfA, DATEV),
-Banking-Anbindung (geplant), Kauf-/Verkauf-/Marktwert-Kalkulatoren, Portfolio-Karte,
+Kauf-/Verkauf-/Marktwert-Kalkulatoren, Portfolio-Karte,
 Wertentwicklung.
 
 - **Live:** https://www.myimmoapp.de (eigene Domain; Vercel, Auto-Deploy bei Merge nach `main`)
@@ -18,8 +18,11 @@ Wertentwicklung.
 Next.js 14 (App Router, Server Components + Server Actions) · TypeScript · Supabase
 (Postgres + RLS, Projekt `kozhxrvyilkchjpcuwcm`, eu-central-1) · Vercel · vitest.
 Kein Tailwind-Framework-Look — **eigenes CSS in `app/globals.css`** mit Klassen
-(`.section`, `.btn`, `.kpi-card`, `.badge`, `.input`, `.nav-item`, …). Hell-/Dunkelmodus
-über `[data-theme]`.
+(`.section`, `.btn`, `.kpi-card`, `.badge`, `.input`, `.nav-item`, …). App-Design
+**„Frosted Paper"** (seit 20.08.2026): **hell ist Default**, Dunkelmodus als achromatische
+Umkehrung über `[data-theme="dark"]`. UI-Schrift **Geist** (selbst gehostet,
+`public/fonts/geist-variable.woff2`). Die Landing hat ihre eigene Palette
+(`.lp`/`.lp3`, `--l-*`, Fraunces + Outfit) und ist per Token-Freeze davon entkoppelt.
 
 ## Wichtige Konventionen (unbedingt beachten)
 - **Arbeitsweise (vom Nutzer gewünscht):** ehrlicher Sparringspartner, kritisch, Risiken
@@ -33,33 +36,37 @@ Kein Tailwind-Framework-Look — **eigenes CSS in `app/globals.css`** mit Klasse
 - **Dateien** (Belege/Archiv) werden **als Base64 in Tabellenspalten** gespeichert — kein
   Storage-Bucket. In Listen NIE `select("*")` auf `kosten` (Blob!) → `KOSTEN_SPALTEN` nutzen.
 - **Build/Test:** `NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SUPABASE_ANON_KEY=... npm run build`
-  (Platzhalter genügen) · `npx vitest run` (Tests decken nur lib-Purefunctions ab, ~183 Tests —
-  keine Server-Action/RLS/E2E-Coverage).
+  (Platzhalter genügen) · `npx vitest run` (**439 Tests in 41 Dateien**, decken im Wesentlichen
+  lib-Purefunctions ab — keine Coverage für `components/`, `lib/actions/`, `lib/pdf/`, RLS oder E2E).
+  Achtung: `NEXT_PUBLIC_*` wird zur **Build-Zeit** eingebacken — `.env.local` muss VOR
+  `npm run build` existieren, sonst zeigt der Client nur „Etwas ist schiefgelaufen".
 - **PR-Workflow:** Branch → Build+Tests grün → commit → force-with-lease push → PR → **squash-merge**
   → Branch auf `origin/main` zurücksetzen → Live-URL nennen. Committer-Identität
   `noreply@anthropic.com`. Der Stop-Hook „Unverified commit" beim GitHub-Squash-Commit
   (`noreply@github.com`) ist ein **bekannter Fehlalarm** — gemergte Historie NICHT amenden.
 - **Env-Vars (Vercel):** `NEXT_PUBLIC_SUPABASE_*`, `ANTHROPIC_API_KEY` (OCR/KI),
-  `DATA_ENCRYPTION_KEY`. Optional Bedrock (EU-KI) `BEDROCK_*`; Enable Banking `ENABLE_BANKING_*`.
+  `DATA_ENCRYPTION_KEY`. Optional Bedrock (EU-KI) `BEDROCK_*`.
 
 ## Aktueller Stand (was existiert)
 Voll funktionsfähige App mit: Dashboard, Immobilien (Liste/Detail/Edit), Mieter, Mietkonto,
-Ein-/Ausgaben (+ CSV-Import, wiederkehrende Buchungen), Verbrauch, Kredite, Banking-Sandbox-
-Grundgerüst, Steuer (Anlage V + ELSTER-Hilfe + DATEV-Export), AfA-Assistent, Archiv,
+Ein-/Ausgaben (+ CSV-Import, wiederkehrende Buchungen), Verbrauch, Kredite,
+Steuer (Anlage V + ELSTER-Hilfe + DATEV-Export), AfA-Assistent, Archiv,
 Jahresbericht, Kauf-/Verkauf-Assistent, Marktwert-Schätzer (ImmoWertV), Portfolio-Karte
 (Leaflet, dark), Wertentwicklung (Eurostat-HPI-Fortschreibung), Onboarding-Tour,
 Command-Palette (Cmd+K), collapsible Sidebar, Toast/Breadcrumbs.
 
-**Zuletzt (diese Session):** großer **UX-/Effizienz-Scan** (8 Agenten) → 87 Vorschläge,
-umgesetzt in Etappen 1–4 (Deep-Links, Prefills, Korrektheits-Fixes wie AfA-Warnung/
-Wert-Fallback/Kredit-Tilgung, Feinschliff). Volle Vorschlagsliste + Restposten siehe unten.
+**Zuletzt (August 2026):** Landing im Quiet-Luxury-Stil, App-Redesign „Frosted Paper",
+**Bewerbungs-Dokumente im Mieterportal** (verschlüsselte Slot-Uploads + DSGVO-Aufräumen +
+Objekt-Steckbrief auf der Bewerbungsseite), großer **UX-Audit** (100 Screenshots über 40 Routen,
+Pakete A–C umgesetzt: mobile Geldspalten/Scroll-Container, Zahlenformate, Farbsemantik,
+Fristenlogik, Leerzustände), Datenschutz-Passus für den Vorlagen-Verteiler.
 
 ## Offene Punkte / Entscheidungen (Merkliste)
-- **Komplette Design- & Layout-Überarbeitung** → **aktives Vorhaben (24.07.2026), vor dem
-  Marketing-Start**. Gewählte Richtung: **Fintech-hell (Stripe/N26 + bisschen Apple)**, mit
-  **echter Neu-Anordnung** (nicht nur umfärben), Gold `#D4A847` bleibt Markenzeichen,
-  Fraunces+Outfit bleiben. Dokument-/PDF-Design bleibt unverändert. Verworfen:
-  „Quiet-Luxury"-Ivory und Neon-Bento. (Mockups nur als Artifacts, nicht im Code.)
+- **Design- & Layout-Überarbeitung** — **Runde 1 umgesetzt (20.08.2026)**: „Frosted Paper"
+  (shadcn-artig monochrom-hell), Gold `#D4A847` als schmaler Akzent, **Geist statt Outfit**
+  als UI-Schrift (Fraunces+Outfit bleiben nur noch auf der Landing). Dokument-/PDF-Design
+  unverändert. **Offen (Runde 2):** echte Neu-Anordnung einzelner Layouts, 11px-Texte auf 12px,
+  lange Mobilseiten brauchen Binnennavigation.
 - **Portfolio-Wert Stufe 1b** (regional): Nutzer hat Destatis-GENESIS-Token. **Achtung:** die
   Kreistyp-Reihe ist seit 24.09.2025 aus der GENESIS-API in einen „Statistischen Bericht"
   (XLSX-Download) gewandert → nicht mehr live per API. Nutzer will **vollautomatische**
@@ -76,9 +83,10 @@ Wert-Fallback/Kredit-Tilgung, Feinschliff). Volle Vorschlagsliste + Restposten s
 - ~~InnoWeb-Website~~ ✅ vom Nutzer selbst fertiggestellt (23.07.2026) — kein offener Punkt mehr.
 
 ## Nur der Betreiber (kein Code)
-Vercel Pro (AVV + kommerzielle Nutzung — mit dem angemeldeten Gewerbe jetzt dringlich),
-AWS-Bedrock-/Enable-Banking-Keys, anwaltliche Prüfung (§34i GewO
-Finanzierungs-Assistent, StBerG Steuer-Features, Nutzer-AVV, Impressum/Datenschutz).
+AWS-Bedrock-Keys, Brevo-AVV, Supabase-Mindestpasswortlänge auf 8,
+anwaltliche Prüfung (§34i GewO Finanzierungs-Assistent, StBerG Steuer-Features,
+Nutzer-AVV, Impressum/Datenschutz/AGB).
+✅ Vercel Pro seit 29.07.2026 (AVV greift über die ToS, kommerzielle Nutzung erlaubt).
 ✅ Gewerbe angemeldet (GewA 1 Bad Schwartau, bescheinigt 16.07.2026, Nebenerwerb, SaaS-Tätigkeit);
 ✅ Impressum/Datenschutz tragen die echten Daten und stimmen mit der Anmeldung überein (24.07.2026).
 Nach Deploy einmalig `/api/encrypt-bankdaten` aufrufen (migriert Bankdaten).
@@ -86,7 +94,8 @@ Details: `docs/compliance/AVV-STATUS.md`.
 
 ## Wo mehr steht
 - `CLAUDE.md` — Projekt-Regeln, Merkliste, Deployment, Env, DB.
-- `docs/PROJEKT-STATUS.md` — Feature-Inventar (älter, aber ausführlich).
+- `docs/PROJEKT-STATUS.md` — vollständiges Feature-Inventar + Kennzahlen (Stand 28.08.2026).
+  **Vor jeder Aussage „das fehlt noch" dort nachsehen.**
 - `docs/MASTERPLAN.md` — Markt/Compliance/Steuer-Roadmap (u. a. §11 Finanzierungs-Assistent,
   §12 Portfolio-Wert-Quellen).
 - `docs/compliance/AVV-STATUS.md` — DSGVO/AVV je Anbieter.

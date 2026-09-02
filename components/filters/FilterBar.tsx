@@ -23,7 +23,7 @@ function SearchField({ value, placeholder, ariaLabel, onCommit }: {
   value: string; placeholder?: string; ariaLabel: string; onCommit: (v: string) => void;
 }) {
   const [text, setText] = useState(value);
-  const t = useRef<ReturnType<typeof setTimeout>>();
+  const t = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => setText(value), [value]); // extern zurückgesetzt (Chip-X / Zurücksetzen)
   return (
     <input

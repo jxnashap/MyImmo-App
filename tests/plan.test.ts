@@ -5,7 +5,7 @@ import {
 } from "@/lib/plan";
 
 const abo = (over: Partial<Abo> = {}): Abo => ({
-  plan: "privat", status: "aktiv", zyklus: "jahr", banking_addon: false,
+  plan: "privat", status: "aktiv", zyklus: "jahr",
   provider_customer_id: "ctm_1", provider_subscription_id: "sub_1",
   gueltig_bis: null, storniert_zum: null, ...over,
 });
@@ -30,9 +30,6 @@ describe("Tarif-Matrix", () => {
   it("Business enthält Hausverwaltung", () => {
     expect(planEnthaelt("business", "hausverwaltung")).toBe(true);
   });
-  it("Banking ist NIE Tarif-Feature (nur Add-on)", () => {
-    expect(planEnthaelt("business", "banking")).toBe(false);
-  });
 });
 
 describe("Wirksamer Plan", () => {
@@ -51,7 +48,6 @@ describe("Wirksamer Plan", () => {
 describe("darfFeature", () => {
   it("Early Access (enforced=false): ALLES erlaubt, auch ohne Abo", () => {
     expect(darfFeature(null, "nk_pdf", false)).toBe(true);
-    expect(darfFeature(null, "banking", false)).toBe(true);
     expect(darfFeature(null, "hausverwaltung", false)).toBe(true);
   });
   it("durchgesetzt: Feature folgt dem Tarif", () => {
@@ -59,11 +55,6 @@ describe("darfFeature", () => {
     expect(darfFeature(abo(), "nk_pdf", true)).toBe(true);
     expect(darfFeature(abo(), "ki_import", true)).toBe(false);
     expect(darfFeature(abo({ plan: "plus" }), "ki_import", true)).toBe(true);
-  });
-  it("Banking nur mit Add-on UND zahlendem Status", () => {
-    expect(darfFeature(abo(), "banking", true)).toBe(false);
-    expect(darfFeature(abo({ banking_addon: true }), "banking", true)).toBe(true);
-    expect(darfFeature(abo({ banking_addon: true, status: "gekuendigt" }), "banking", true)).toBe(false);
   });
 });
 

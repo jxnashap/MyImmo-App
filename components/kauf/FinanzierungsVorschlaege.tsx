@@ -105,12 +105,12 @@ export default function FinanzierungsVorschlaege({
         <label style={{ display: "grid", gap: 4, fontSize: 11.5, color: "var(--muted)" }}>
           Verfügbares Eigenkapital (€)
           <input value={ekInput} onChange={(e) => setEkInput(e.target.value)} inputMode="numeric" placeholder="z. B. 80000"
-            style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 13, color: "var(--text)", width: 150 }} />
+            style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13, color: "var(--text)", width: 150 }} />
         </label>
         <label style={{ display: "grid", gap: 4, fontSize: 11.5, color: "var(--muted)" }}>
           Zinsbindung
           <select value={zinsbindung} onChange={(e) => setZinsbindung(Number(e.target.value))}
-            style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 13, color: "var(--text)" }}>
+            style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13, color: "var(--text)" }}>
             <option value={10}>10 Jahre</option>
             <option value={15}>15 Jahre</option>
             <option value={20}>20 Jahre</option>
@@ -154,7 +154,7 @@ export default function FinanzierungsVorschlaege({
                   <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: "var(--muted)" }}>
                     Energieklasse
                     <select value={energieklasse} onChange={(e) => setEnergieklasse(e.target.value as Energieklasse | "")}
-                      style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 12, color: "var(--text)" }}>
+                      style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 12, color: "var(--text)" }}>
                       <option value="">– unbekannt –</option>
                       {KLASSEN.map((k) => <option key={k} value={k}>{k}</option>)}
                     </select>
@@ -207,7 +207,7 @@ export default function FinanzierungsVorschlaege({
               <label style={{ display: "grid", gap: 4, fontSize: 11.5, color: "var(--muted)" }}>
                 Anderer Förderkredit (€) — z. B. Landesförderbank, optional
                 <input value={manuellInput} onChange={(e) => setManuellInput(e.target.value)} inputMode="numeric" placeholder="0"
-                  style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 12.5, color: "var(--text)", width: 200 }} />
+                  style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 12.5, color: "var(--text)", width: 200 }} />
               </label>
             </>
           )}

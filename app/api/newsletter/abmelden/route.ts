@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
+import { basisUrl } from "@/lib/net/basisUrl";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { kontaktAbmelden } from "@/lib/mail/brevo";
 import { tokenHash } from "@/lib/newsletterToken";
-import { basisUrl } from "../route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +15,10 @@ export const dynamic = "force-dynamic";
 // wie die Einwilligung selbst.
 export async function GET(req: Request) {
   const token = new URL(req.url).searchParams.get("token") ?? "";
-  const ziel = (s: string) => `${basisUrl()}/vorlagen?nl=${s}`;
+  // Basis einmal aufloesen: `basisUrl()` ist seit Next 15 asynchron, und in
+  // einer Pfeilfunktion darf kein `await` stehen.
+  const basis = await basisUrl();
+  const ziel = (s: string) => `${basis}/vorlagen?nl=${s}`;
   if (!token) return NextResponse.redirect(ziel("fehler"), { status: 303 });
 
   const supabase = createAdminClient();

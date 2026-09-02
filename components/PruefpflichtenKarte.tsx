@@ -12,7 +12,7 @@ import { datum as deDatum } from "@/lib/format";
 import AufklappSection from "@/components/AufklappSection";
 
 export default async function PruefpflichtenKarte({ propId, objektName }: { propId: string; objektName: string }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: termine } = await supabase
     .from("termine")
     .select("id,titel,datum,erledigt")

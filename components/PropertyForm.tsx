@@ -95,7 +95,7 @@ export default function PropertyForm({
       <p>{property ? "Objektdaten aktualisieren." : "Neues Objekt zum Portfolio hinzufügen."}</p>
 
       <div className="form-row">
-        <div className="form-group"><label>Name *</label><input type="text" name="bezeichnung" required defaultValue={v("bezeichnung")} placeholder="z.B. Wohnung Hamburg-Altona" /></div>
+        <div className="form-group"><label>Name *</label><input type="text" name="bezeichnung" required defaultValue={v("bezeichnung")} placeholder="z. B. Wohnung Hamburg-Altona" /></div>
         <div className="form-group"><label>Typ</label>
           <select name="typ" value={typ} onChange={(e) => onTypChange(e.target.value)}>{TYPEN.map((t) => <option key={t}>{t}</option>)}</select>
         </div>
@@ -177,7 +177,7 @@ export default function PropertyForm({
 
       {cfg.energie && (
         <div className="form-row">
-          <div className="form-group"><label>Energieklasse</label><input type="text" name="energieklasse" defaultValue={v("energieklasse")} placeholder="z.B. B" /></div>
+          <div className="form-group"><label>Energieklasse</label><input type="text" name="energieklasse" defaultValue={v("energieklasse")} placeholder="z. B. B" /></div>
           <div className="form-group">
             <label>Energieausweis ausgestellt am</label>
             <input type="date" name="energieausweis_datum" defaultValue={v("energieausweis_datum")} />
@@ -208,7 +208,7 @@ export default function PropertyForm({
               <input type="number" name="afa_start_jahr" defaultValue={v("afa_start_jahr")} placeholder="= Baujahr" />
             </div>
             <div className="form-group"><label>Manueller AfA-Betrag (€/Jahr, nur „manuell")</label>
-              <input type="number" step="0.01" name="afa_betrag" defaultValue={v("afa_betrag")} placeholder="z.B. 7500" />
+              <input type="number" step="0.01" name="afa_betrag" defaultValue={v("afa_betrag")} placeholder="z. B. 7500" />
             </div>
           </div>
           <p style={{ fontSize: 11, color: "var(--muted)", marginTop: -6, marginBottom: cfg.ustHinweis ? 6 : 14 }}>

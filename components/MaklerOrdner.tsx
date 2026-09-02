@@ -99,10 +99,11 @@ export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }:
       {/* Kopf: Titel + Fortschritts-Ring */}
       <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <FolderClosed size={20} color="var(--gold)" />
+          <FolderClosed size={22} color="var(--gold)" />
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>Makler-Ordner</div>
-            <div style={{ fontSize: 11.5, color: "var(--muted)" }}>Dein Käufer-Paket für Makler &amp; Verkäufer</div>
+            <div className="topbar-kicker" style={{ marginBottom: 4 }}>Kalkulator · Kaufunterlagen</div>
+            <div className="topbar-title" style={{ fontSize: 24 }}>Makler-Ordner</div>
+            <div className="topbar-sub">Dein Käufer-Paket für Makler &amp; Verkäufer</div>
           </div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
@@ -134,6 +135,8 @@ export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }:
               <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                 {/* Abhaken */}
                 <button type="button" onClick={() => toggleErledigt(item)} disabled={pending}
+                  className="tap44"
+                  aria-label={d.status === "erledigt" ? "Dokument wieder öffnen" : "Dokument als erledigt markieren"}
                   title={d.status === "erledigt" ? "Wieder öffnen" : "Als erledigt markieren"}
                   style={{
                     flexShrink: 0, width: 22, height: 22, marginTop: 1, borderRadius: 6, cursor: "pointer",
@@ -189,7 +192,7 @@ export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }:
                     <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>
                       Datum
                       <input type="date" value={d.datum ?? ""} onChange={(e) => onDatum(item, e.target.value)}
-                        style={{ padding: "4px 7px", borderRadius: 7, border: "1px solid var(--line2)", background: "var(--bg3)", fontSize: 11.5, color: "var(--text)" }} />
+                        style={{ padding: "4px 7px", borderRadius: 7, border: "1px solid var(--feld-rand)", background: "var(--bg3)", fontSize: 11.5, color: "var(--text)" }} />
                     </label>
                   </div>
                 </div>

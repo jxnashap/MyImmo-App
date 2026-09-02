@@ -20,15 +20,19 @@ const UNTERLAGEN: { gruppe: string; items: string[] }[] = [
 export default function VerkaufAssistent({
   objekte = [],
   einschaetzungen = [],
+  demo = false,
 }: {
   objekte?: VerkaufObjekt[];
   einschaetzungen?: EinschaetzungRow[];
+  /** Oeffentliche Demo: fester Beispielstand, keine Eingaben. */
+  demo?: boolean;
 }) {
   const wertObjekte: EinschaetzungObjekt[] = objekte.map((o) => ({ id: o.id, name: o.name, wert: o.wert }));
   const schritte: StepperSchritt[] = [
     {
       icon: Search,
       titel: "Verkaufswert ermitteln",
+      hinweis: "Marktwert schätzen und mit den Angebotspreisen deiner Lage vergleichen.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
@@ -53,19 +57,21 @@ export default function VerkaufAssistent({
     {
       icon: Coins,
       titel: "Steuer & Netto-Erlös berechnen",
+      hinweis: "Spekulationssteuer (§ 23 EStG) und was nach Restschuld, Kosten und Steuer übrig bleibt.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
             Spekulationssteuer nach § 23 EStG (steuerfrei nach 10 Jahren) und was am Ende übrig bleibt —
             nach Tilgung der Restschuld, Verkaufskosten und Steuer.
           </p>
-          <VerkaufRechner objekte={objekte} />
+          <VerkaufRechner objekte={objekte} demo={demo} />
         </>
       ),
     },
     {
       icon: FolderClosed,
       titel: "Verkaufsunterlagen vorbereiten",
+      hinweis: "Checkliste der Unterlagen, die Käufer und ihre Banken verlangen — vieles liegt im Archiv.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
@@ -79,7 +85,7 @@ export default function VerkaufAssistent({
                 <div style={{ display: "grid", gap: 3 }}>
                   {g.items.map((it) => (
                     <div key={it} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: 99, background: "var(--gold)", flexShrink: 0 }} /> {it}
+                      <span style={{ width: 6, height: 6, borderRadius: 99, background: "var(--gold-fill)", flexShrink: 0 }} /> {it}
                     </div>
                   ))}
                 </div>
@@ -93,6 +99,7 @@ export default function VerkaufAssistent({
     {
       icon: Handshake,
       titel: "Verkaufen & übergeben",
+      hinweis: "Inserieren, verhandeln, notariell beurkunden, Übergabe protokollieren.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
@@ -109,5 +116,20 @@ export default function VerkaufAssistent({
     },
   ];
 
-  return <AblaufStepper schritte={schritte} storageKey="myimmo_verkauf_fortschritt" />;
+  return (
+    <>
+      {demo && (
+        <div
+          role="status"
+          className="rounded-sm px-3 py-2 text-[13px]"
+          style={{ background: "var(--blue-dim)", color: "var(--blue)", marginBottom: 16 }}
+        >
+          <strong>Beispielrechnung.</strong> In der Demo ist der Ablauf mit festen
+          Werten durchgerechnet — du kannst alles ansehen und aufklappen, aber nichts
+          ändern. Mit einem eigenen Konto rechnest du hier mit deinen Zahlen.
+        </div>
+      )}
+      <AblaufStepper schritte={schritte} storageKey="myimmo_verkauf_fortschritt" gesperrt={demo} />
+    </>
+  );
 }

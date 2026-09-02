@@ -14,7 +14,7 @@ const MAX_GROESSE = 4 * 1024 * 1024;
 const ERLAUBTE_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
 
 export async function erstelleAnliegen(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -84,7 +84,7 @@ const SLOT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/; // datetime-local
 /** Vermieter: bis zu 3 Terminvorschläge ans Anliegen hängen (ersetzt alte,
  *  setzt eine evtl. vorhandene Bestätigung zurück). */
 export async function schlageTermineVor(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -117,7 +117,7 @@ export async function schlageTermineVor(formData: FormData) {
 /** Mieter: einen der vorgeschlagenen Termine bestätigen. Der DB-Trigger
  *  stellt sicher, dass nur ein echter Vorschlag bestätigt werden kann. */
 export async function bestaetigeAnliegenTermin(id: string, slot: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -137,7 +137,7 @@ export async function bestaetigeAnliegenTermin(id: string, slot: string) {
 
 /** Vermieter: den vom Mieter bestätigten Termin in den Kalender übernehmen. */
 export async function terminInKalender(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -166,7 +166,7 @@ export async function terminInKalender(id: string) {
 }
 
 export async function bearbeiteAnliegen(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

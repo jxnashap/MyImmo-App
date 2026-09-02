@@ -15,6 +15,7 @@ import { belastbarkeit } from "@/lib/kauf/belastbarkeit";
 import { NHK_TYPEN } from "@/lib/bewertung/immowertv";
 import { useCountUp } from "@/lib/hooks/useCountUp";
 import type { Kalkulation } from "@/lib/types";
+import { useModalFokus } from "@/lib/modalFokus";
 
 const eur = (n: number) => "€ " + Math.round(n || 0).toLocaleString("de-DE");
 const pct = (n: number, d = 1) => (n || 0).toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d }) + " %";
@@ -70,20 +71,34 @@ function BelastbarkeitsRing({ prozent, stufe, offen }: { prozent: number; stufe:
   );
 }
 
-export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalkulation[] }) {
+// Vorbelegung fuer die oeffentliche Demo. Ohne sie stuende dort ein leerer,
+// gesperrter Rechner — sichtbar, aber ohne Aussage. Die Zahlen sind bewusst
+// unspektakulaer und plausibel: eine vermietete 3-Zimmer-Altbauwohnung, wie sie
+// die Zielgruppe tatsaechlich kauft.
+const DEMO_START = {
+  adresse: "Karl-Liebknecht-Str. 42, 04275 Leipzig",
+  kaufpreis: "245000",
+  flaeche: "72",
+  kaltmiete: "720",
+  baujahr: "1911",
+};
+
+export default function ObjektRechner({
+  gespeichert = [], demo = false,
+}: { gespeichert?: Kalkulation[]; demo?: boolean }) {
   const toast = useToast();
   const [liste, setListe] = useState<Kalkulation[]>(gespeichert);
 
   // Grundwerte
-  const [adresse, setAdresse] = useState("");
-  const [kaufpreis, setKaufpreis] = useState("");
-  const [flaeche, setFlaeche] = useState("");
+  const [adresse, setAdresse] = useState(demo ? DEMO_START.adresse : "");
+  const [kaufpreis, setKaufpreis] = useState(demo ? DEMO_START.kaufpreis : "");
+  const [flaeche, setFlaeche] = useState(demo ? DEMO_START.flaeche : "");
   const [bundesland, setBundesland] = useState("0.05");
   const [makler, setMakler] = useState("3.57");
   const [maklerBeruehrt, setMaklerBeruehrt] = useState(false); // für Belastbarkeits-Score
   // Nutzung
   const [nutzung, setNutzung] = useState<"vermietung" | "eigennutzung">("vermietung");
-  const [kaltmiete, setKaltmiete] = useState("");
+  const [kaltmiete, setKaltmiete] = useState(demo ? DEMO_START.kaltmiete : "");
   const [bewirt, setBewirt] = useState("20"); // % der Miete (Rundwert)
   const [hausgeld, setHausgeld] = useState(""); // €/Mo (Eigennutzung: laufende Kosten)
 
@@ -92,7 +107,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
   const [objektTyp, setObjektTyp] = useState<"wohnung" | "haus">("wohnung");
   const [grundFlaeche, setGrundFlaeche] = useState("");
   const [bodenrichtwert, setBodenrichtwert] = useState("");
-  const [baujahr, setBaujahr] = useState("");
+  const [baujahr, setBaujahr] = useState(demo ? DEMO_START.baujahr : "");
   const [gebTyp, setGebTyp] = useState("efh");
   const [ausstattung, setAusstattung] = useState("3");
   const [bpiFaktor, setBpiFaktor] = useState("1.9");
@@ -108,6 +123,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
   // Speichern / Vergleich
   const [saving, setSaving] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
+  const vergleichRef = useModalFokus<HTMLDivElement>(() => setShowCompare(false), showCompare);
   const [compareIds, setCompareIds] = useState<string[]>([]);
 
   const kp = num(kaufpreis), fl = num(flaeche);
@@ -271,7 +287,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
     <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
       <span style={{ color: "var(--muted)" }}>{label}</span>
       <input value={value} onChange={(e) => set(e.target.value)} placeholder={ph} inputMode={mode === "text" ? undefined : mode}
-        style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 14 }} />
+        style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 14 }} />
     </label>
   );
 
@@ -324,7 +340,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
             <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
               <span style={{ color: "var(--muted)" }}>Bundesland (Grunderwerbst.)</span>
               <select value={bundesland} onChange={(e) => setBundesland(e.target.value)}
-                style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 13 }}>
+                style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13 }}>
                 {BUNDESLAENDER.map((b, i) => <option key={i} value={b.v}>{b.l}</option>)}
               </select>
             </label>
@@ -349,7 +365,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
                     style={{
                       flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, cursor: "pointer",
                       padding: "7px 10px", borderRadius: 9, border: "none", fontSize: 12.5, fontWeight: 600,
-                      background: aktiv ? "var(--gold)" : "transparent", color: aktiv ? "#1a1814" : "var(--muted)",
+                      background: aktiv ? "var(--gold-fill)" : "transparent", color: aktiv ? "var(--btn-gold-text)" : "var(--muted)",
                       transition: "background .2s, color .2s",
                     }}>
                     <Icon size={14} /> {label}
@@ -369,7 +385,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
                     style={{
                       flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 7, cursor: "pointer",
                       padding: "9px 10px", borderRadius: 9, border: "none", fontSize: 13, fontWeight: 600,
-                      background: aktiv ? "var(--gold)" : "transparent", color: aktiv ? "#1a1814" : "var(--muted)",
+                      background: aktiv ? "var(--gold-fill)" : "transparent", color: aktiv ? "var(--btn-gold-text)" : "var(--muted)",
                       transition: "background .2s, color .2s",
                     }}>
                     <Icon size={15} /> {label}
@@ -430,7 +446,7 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
                   <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
                     <span style={{ color: "var(--muted)" }}>Gebäudetyp</span>
                     <select value={gebTyp} onChange={(e) => setGebTyp(e.target.value)}
-                      style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--line2)", background: "var(--bg2)", fontSize: 13 }}>
+                      style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13 }}>
                       {NHK_TYPEN.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
                     </select>
                   </label>
@@ -592,8 +608,16 @@ export default function ObjektRechner({ gespeichert = [] }: { gespeichert?: Kalk
       {/* Vergleich-Modal */}
       {showCompare && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={() => setShowCompare(false)}>
-          <div className="modal-sheet wide" onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginBottom: 6 }}>Objekte vergleichen</h3>
+          <div
+            ref={vergleichRef}
+            className="modal-sheet wide"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="objekte-vergleichen-titel"
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="objekte-vergleichen-titel" style={{ marginBottom: 6 }}>Objekte vergleichen</h3>
             <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
               Bis zu 5 gespeicherte Objekte wählen. Das Objekt mit den meisten besten Kennzahlen bekommt die Krone —
               übernimm es für die Finanzierung.

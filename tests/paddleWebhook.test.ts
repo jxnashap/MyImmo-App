@@ -32,7 +32,6 @@ const PREISE: PreisZuordnung = {
   pri_privat_m: { artikel: "privat", zyklus: "monat" },
   pri_privat_j: { artikel: "privat", zyklus: "jahr" },
   pri_plus_j: { artikel: "plus", zyklus: "jahr" },
-  pri_banking_j: { artikel: "banking", zyklus: "jahr" },
 };
 
 const eventFixture = (over: Record<string, unknown> = {}, typ = "subscription.activated") => ({
@@ -43,7 +42,7 @@ const eventFixture = (over: Record<string, unknown> = {}, typ = "subscription.ac
     status: "active",
     customer_id: "ctm_456",
     custom_data: { user_id: "u-1" },
-    items: [{ price: { id: "pri_plus_j" } }, { price: { id: "pri_banking_j" } }],
+    items: [{ price: { id: "pri_plus_j" } }],
     current_billing_period: { ends_at: "2027-07-24T00:00:00Z" },
     scheduled_change: null,
     ...over,
@@ -51,22 +50,22 @@ const eventFixture = (over: Record<string, unknown> = {}, typ = "subscription.ac
 });
 
 describe("parsePaddleEvent", () => {
-  it("subscription.activated → Tarif/Zyklus/Add-on aus den Preis-IDs", () => {
+  it("subscription.activated → Tarif/Zyklus aus den Preis-IDs", () => {
     const u = parsePaddleEvent(eventFixture(), PREISE);
     expect(u).toMatchObject({
       user_id: "u-1", plan: "plus", status: "aktiv", zyklus: "jahr",
-      banking_addon: true, provider_customer_id: "ctm_456",
+      provider_customer_id: "ctm_456",
       provider_subscription_id: "sub_123", gueltig_bis: "2027-07-24T00:00:00Z",
       storniert_zum: null, letztes_event_am: "2026-07-24T12:00:00Z",
     });
   });
   it("Tarifwechsel im Portal: Items zählen, nicht ein alter custom_data-Zettel", () => {
-    // custom_data behauptet plus+banking — bezahlt wird nur privat/Monat.
+    // custom_data behauptet plus — bezahlt wird nur privat/Monat.
     const u = parsePaddleEvent(eventFixture({
-      custom_data: { user_id: "u-1", plan: "plus", banking_addon: true },
+      custom_data: { user_id: "u-1", plan: "plus" },
       items: [{ price: { id: "pri_privat_m" } }],
     }), PREISE);
-    expect(u).toMatchObject({ plan: "privat", zyklus: "monat", banking_addon: false });
+    expect(u).toMatchObject({ plan: "privat", zyklus: "monat" });
   });
   it("nur unbekannte Preis-IDs → Event wird NICHT angewendet (kein Privat-Fallback)", () => {
     expect(parsePaddleEvent(eventFixture({ items: [{ price: { id: "pri_fremd" } }] }), PREISE)).toBeNull();

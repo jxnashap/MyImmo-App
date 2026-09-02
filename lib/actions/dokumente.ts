@@ -26,7 +26,7 @@ async function archiviere(opts: {
   /** direkt im Mieterportal sichtbar machen */
   mieterFreigabe?: boolean;
 }): Promise<DokumentResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: mieter } = await supabase
     .from("mieter")
@@ -60,7 +60,7 @@ export async function speichereBrief(
   mieterId: string,
   fields: BriefFields,
 ): Promise<DokumentResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
 
@@ -86,7 +86,7 @@ export async function speichereNk(
   jahr: number,
   zustellen = false,
 ): Promise<DokumentResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
 
@@ -112,7 +112,7 @@ export async function speichereProtokoll(
   mieterId: string,
   fields: ProtokollFields,
 ): Promise<DokumentResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
 

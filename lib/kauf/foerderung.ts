@@ -84,12 +84,14 @@ export const PROGRAMME: Programm[] = [
     name: "KfW 308 – Jung kauft Alt (Bestandskauf + Sanierung)",
     traeger: "KfW", art: "kredit",
     fuer: ["eigennutzen"], vorhaben: ["kauf_bestand"],
-    text: "Günstiger Kredit für Familien, die sanierungsbedürftigen Bestand kaufen (schlechte Effizienzklasse) und binnen 4,5 J. sanieren.",
-    bedingung: "mind. 1 Kind unter 18, Haushaltseinkommen ≤ 90.000 € zvE (+ je Kind), Selbstnutzung und das gekaufte Gebäude hat Energieklasse F, G oder H (Sanierungspflicht auf EH 85 EE binnen 4,5 J.).",
-    // Quelle (geprüft 20.07.2026): kfw.de – Wohneigentum für Familien – Bestandserwerb (308).
-    // Sanierungsziel ist Effizienzhaus 85 EE (nicht 70); ab 03.08.2026 alternativ über
-    // energetische Einzelmaßnahmen erfüllbar, Förderhöchstbeträge angehoben.
-    hinweis: "Einkommensgrenze wie KfW 300 (90.000 € zvE + 10.000 € je weiterem Kind); Sanierungspflicht auf EH 85 EE (ab 03.08.2026 auch per Einzelmaßnahmen).",
+    text: "Günstiger Kredit bis 180.000 € für Familien, die sanierungsbedürftigen Bestand kaufen (schlechte Effizienzklasse) und binnen 4,5 J. sanieren.",
+    bedingung: "mind. 1 Kind unter 18, Haushaltseinkommen ≤ 90.000 € zvE (+ je Kind), Selbstnutzung und das gekaufte Gebäude hat Energieklasse F, G oder H (Sanierungspflicht binnen 4,5 J. nach Zusage).",
+    // Quelle (geprüft 28.08.2026): kfw.de – Wohneigentum für Familien – Bestandserwerb (308).
+    // Zum 03.08.2026 geändert: Höchstbeträge 140/160/180 Tsd. € (1/2/3+ Kinder) statt
+    // 100/125/150 Tsd.; Sanierungsziel EH 85 EE bzw. Denkmal EE alternativ über kombinierte
+    // energetische Einzelmaßnahmen erfüllbar (Heizungstausch ≥ 65 % EE + Fenstertausch +
+    // Fassadendämmung + Dach/oberste Geschossdecke).
+    hinweis: "Einkommensgrenze wie KfW 300 (90.000 € zvE + 10.000 € je weiterem Kind); Kredit 140.000 € (1 Kind) bis 180.000 € (ab 3 Kindern). Sanierungsziel EH 85 EE / Denkmal EE — seit 03.08.2026 alternativ über kombinierte Einzelmaßnahmen (Heizung ≥ 65 % EE, Fenster, Fassade, Dach).",
     url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/F%C3%B6rderprodukte/Wohneigentum-f%C3%BCr-Familien-Bestandserwerb-(308)/",
   },
   {
@@ -144,11 +146,13 @@ export function filterProgramme(nutzung: Nutzung, vorhaben: Vorhaben): Programm[
 // KEINE Empfehlung, KEINE Vermittlung. Nur KfW-KREDITE, die den Kaufpreis
 // mitfinanzieren (nicht Zuschüsse 458/BAFA; nicht Sanierungskredite 261/159,
 // da gesamtInvest keine Sanierungskosten enthält).
-// Beträge: Stand 07/2026. ⚠️ KfW 308 hebt laut kfw.de ab 03.08.2026 an —
-// Zahlen dann hier aktualisieren (KFW_STAND anpassen).
+// Beträge: Stand 08/2026 — KfW 308 zum 03.08.2026 angehoben (140/160/180 Tsd.
+// statt 100/125/150 Tsd.), Sanierungsziel alternativ über kombinierte
+// Einzelmaßnahmen erfüllbar. Quelle: kfw.de-Produktseite 308, geprüft 28.08.2026.
+// KfW 300/297/298/124 waren zum selben Datum unverändert (gegengeprüft).
 // ============================================================================
 
-export const KFW_STAND = "07/2026";
+export const KFW_STAND = "08/2026";
 
 export type Energieklasse = "A+" | "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H";
 
@@ -185,10 +189,11 @@ export function kfw300Betrag(kinder: number, qng: boolean): number {
   if (kinder >= 3) return qng ? 250_000 : 200_000;
   return qng ? 220_000 : 170_000;       // 1–2 Kinder
 }
+// KfW 308: Höchstbeträge zum 03.08.2026 angehoben (vorher 100/125/150 Tsd.).
 export function kfw308Betrag(kinder: number): number {
-  if (kinder >= 3) return 150_000;
-  if (kinder === 2) return 125_000;
-  return 100_000;                       // 1 Kind
+  if (kinder >= 3) return 180_000;
+  if (kinder === 2) return 160_000;
+  return 140_000;                       // 1 Kind
 }
 export function kfw297_298Betrag(qng: boolean): number {
   return qng ? 150_000 : 100_000;
@@ -230,7 +235,7 @@ export function foerderKredite(k: FoerderKontext): FoerderKreditTreffer[] {
     } else {
       if (familienBerechtigt && istFGH(k.energieklasse))
         add("KfW 308", "KfW 308 – Jung kauft Alt", kfw308Betrag(k.kinder),
-          `mind. 1 Kind < 18, zvE ≤ ${grenze.toLocaleString("de-DE")} €, Energieklasse F/G/H, Sanierung auf EH 85 EE binnen 4,5 J.`);
+          `mind. 1 Kind < 18, zvE ≤ ${grenze.toLocaleString("de-DE")} €, Energieklasse F/G/H, Sanierung auf EH 85 EE (oder kombinierte Einzelmaßnahmen) binnen 4,5 J.`);
       add("KfW 124", "KfW 124 – Wohneigentumsprogramm", KFW124_BETRAG,
         "du das Objekt selbst bewohnst — Basiskredit, kein Energiestandard nötig");
     }

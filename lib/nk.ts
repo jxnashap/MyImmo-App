@@ -12,14 +12,15 @@ export type NkRawPosition = {
   umlageschluessel: string | null;
   umlagefaehig: boolean | null;
   jahr: number | null;
-  // 'voll' (Default) | 'zeit' (Jahreskosten nach Belegungstagen)
+  // 'voll' (Default) | 'flaeche' (Gesamtkosten nach Wohnfläche, § 556a I BGB)
+  // | 'zeit' (Jahreskosten nach Belegungstagen)
   // | 'verbrauch' (Zwischenablesung) | 'gradtag' (Gradtagszahlen, Heizung)
   // | 'hkvo' (Heizkostenverordnung: Grundkosten nach Fläche + Verbrauch nach Zählern)
   aufteilung?: string | null;
   verbrauch_mieter?: number | null; // z. B. kWh des Mieters (nur 'verbrauch'/'hkvo')
   verbrauch_gesamt?: number | null; // Gesamtverbrauch des Jahres (nur 'verbrauch'/'hkvo')
   grundkosten_prozent?: number | null; // HKVO: Anteil Grundkosten (30–50 %)
-  flaeche_gesamt?: number | null;      // HKVO: Gesamtwohnfläche (Grundkosten-Schlüssel)
+  flaeche_gesamt?: number | null;      // Gesamtwohnfläche ('flaeche' + HKVO-Grundkosten)
   lohnanteil?: number | null;       // § 35a: Arbeits-/Lohnkostenanteil (Mieteranteil)
   art_35a?: string | null;          // 'haushaltsnah' | 'handwerker'
 };
@@ -44,8 +45,8 @@ export type NkLine = {
   bezeichnung: string;
   umlageschluessel: string | null;
   betrag: number; // bei 'zeit' bereits der anteilige Betrag
-  basis?: number; // Jahresgesamtkosten (nur bei 'zeit')
-  faktorText?: string; // z. B. "181/365 Tage" (nur bei 'zeit')
+  basis?: number; // Jahresgesamtkosten des Gebäudes (bei allen Aufteilungen außer 'voll')
+  faktorText?: string; // Rechenweg, z. B. "80/400 m²" oder "181/365 Tage"
   lohnanteil?: number; // § 35a-Arbeitskostenanteil dieser Position (skaliert)
   art35a?: "haushaltsnah" | "handwerker"; // Einordnung
 };
@@ -418,6 +419,27 @@ export function berechneNk(
       if (p.aufteilung === "zeit") {
         // Betrag = Jahresgesamtkosten → tagegenau nach Belegung aufteilen.
         return { ...kopf, ...zeitAnteil(basis) };
+      }
+
+      if (p.aufteilung === "flaeche") {
+        // Der Regelfall des § 556a Abs. 1 BGB: Gebäude-Gesamtkosten nach
+        // Wohnfläche. Beispiel aus dem Ratgeber: 6.400 € × 80/400 m² = 1.280 €.
+        // Bei unterjähriger Belegung zusätzlich tagegenau — beide Faktoren
+        // stehen im Rechenweg, damit die Anteilsberechnung (BGH-Pflichtangabe)
+        // für den Mieter nachvollziehbar bleibt.
+        const fg = p.flaeche_gesamt ?? 0;
+        const fm = tenant.flaeche ?? 0;
+        if (!(fg > 0) || !(fm > 0)) {
+          // Ohne Flächen kein Absturz: tagegenauer Fallback mit Hinweis.
+          return { ...kopf, ...zeitAnteil(basis, " — Flächenangaben fehlen") };
+        }
+        const voll = faktor >= 1;
+        return {
+          ...kopf,
+          betrag: rund2(basis * (fm / fg) * (voll ? 1 : faktor)),
+          basis,
+          faktorText: `${zahl(fm)}/${zahl(fg)} m²${voll ? "" : ` × ${tage}/${jahrestage} Tage`}`,
+        };
       }
 
       if (p.aufteilung === "verbrauch") {

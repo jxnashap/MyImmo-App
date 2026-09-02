@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 /** Speichert (upsert) den bearbeiteten Standardtext einer Dokumentart für den aktuellen Nutzer. */
 export async function saveDokumentVorlage(art: string, text: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -22,7 +22,7 @@ export async function saveDokumentVorlage(art: string, text: string) {
 
 /** Setzt eine Dokumentart auf den Standardtext zurück (löscht die gespeicherte Vorlage). */
 export async function resetDokumentVorlage(art: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

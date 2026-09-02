@@ -401,7 +401,7 @@ export default function UmlageAssistent({
             </span>
           </div>
           {ocrError && (
-            <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+            <div role="alert" style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
               <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {ocrError}
             </div>
           )}
@@ -409,7 +409,7 @@ export default function UmlageAssistent({
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>✓ {ocrInfo}</div>
           )}
 
-          <table style={{ fontSize: 13 }}>
+          <div className="table-scroll"><table style={{ fontSize: 13 }}>
             <thead>
               <tr>
                 <th style={{ width: 24 }}></th>
@@ -525,7 +525,7 @@ export default function UmlageAssistent({
                 </Fragment>
               ))}
             </tbody>
-          </table>
+          </table></div>
           <datalist id="umlage-vorlagen">
             {VORLAGEN.map((v) => (
               <option key={v} value={v} />

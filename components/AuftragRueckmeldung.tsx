@@ -88,7 +88,10 @@ export default function AuftragRueckmeldung({ token }: { token: string }) {
             <button
               key={a.wert}
               type="button"
-              className={`btn ${art === a.wert ? "btn-gold" : "btn-ghost"}`}
+              /* Aktiver Segment-Zustand als tonal (gold-pale) statt vollflächig
+                 gold — sonst konkurrieren zwei Gold-Flächen mit dem eigentlichen
+                 Primärknopf „Rückmeldung senden". */
+              className={`btn ${art === a.wert ? "btn-tonal" : "btn-ghost"}`}
               style={{ fontSize: 12.5 }}
               onClick={() => setArt(a.wert)}
             >
@@ -120,7 +123,7 @@ export default function AuftragRueckmeldung({ token }: { token: string }) {
           <textarea rows={3} value={nachricht} onChange={(e) => setNachricht(e.target.value)} placeholder="optional" />
         </div>
 
-        {fehler && <p style={{ margin: 0, fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+        {fehler && <p role="alert" style={{ margin: 0, fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
 
         <button type="submit" className="btn btn-gold" disabled={laeuft} style={{ justifySelf: "start" }}>
           {laeuft ? "Wird gesendet…" : "Rückmeldung senden"}

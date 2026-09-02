@@ -28,10 +28,10 @@ export default function CashflowChart({ data }: { data: { label: string; wert: n
     <div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto" }}>
         <line x1={padL} y1={nullY} x2={W - padR} y2={nullY} stroke="var(--line2)" strokeDasharray="4 4" />
-        <text x={padL - 6} y={y(max) + 4} textAnchor="end" fontSize="10" fill="var(--muted)">{euro(max)}</text>
-        <text x={padL - 6} y={nullY + 4} textAnchor="end" fontSize="10" fill="var(--muted)">€ 0</text>
+        <text x={padL - 6} y={y(max) + 4} textAnchor="end" fontSize="11.5" fill="var(--muted)">{euro(max)}</text>
+        <text x={padL - 6} y={nullY + 4} textAnchor="end" fontSize="11.5" fill="var(--muted)">€ 0</text>
         {min < 0 && (
-          <text x={padL - 6} y={y(min) + 4} textAnchor="end" fontSize="10" fill="var(--muted)">−{euro(Math.abs(min))}</text>
+          <text x={padL - 6} y={y(min) + 4} textAnchor="end" fontSize="11.5" fill="var(--muted)">−{euro(Math.abs(min))}</text>
         )}
         <path d={flaeche} fill={farbe} opacity="0.10" />
         <path d={pfad} fill="none" stroke={farbe} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
@@ -41,7 +41,7 @@ export default function CashflowChart({ data }: { data: { label: string; wert: n
           </circle>
         ))}
         {data.map((p, i) => (i % 2 === 0 ? (
-          <text key={`t${i}`} x={x(i).toFixed(1)} y={H - 8} textAnchor="middle" fontSize="10" fill="var(--muted)">{p.label}</text>
+          <text key={`t${i}`} x={x(i).toFixed(1)} y={H - 8} textAnchor="middle" fontSize="11.5" fill="var(--muted)">{p.label}</text>
         ) : null))}
       </svg>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, color: "var(--muted)" }}>

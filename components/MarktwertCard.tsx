@@ -67,14 +67,16 @@ export default function MarktwertCard({
     <div className="section mb-20">
       <div className="section-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h3><span style={{ color: "var(--gold)", marginRight: 6 }}>⌂</span>Marktwert (ImmoWertV)</h3>
-        <span className="badge badge-teal" style={{ fontSize: 10 }}>automatisch aktualisiert</span>
+        <span className={`badge ${hatWert ? "badge-neutral" : "badge-muted"}`} style={{ fontSize: 10 }}>
+          {hatWert ? "automatisch aktualisiert" : "noch keine Berechnung"}
+        </span>
       </div>
       <div className="section-body">
         {/* Kopf: Wert + Spanne + Stand + Verfahren */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "flex-end", justifyContent: "space-between" }}>
           <div>
-            <div style={{ fontSize: 32, fontWeight: 700, color: hatWert ? "var(--gold)" : "var(--muted)", lineHeight: 1.1 }}>
-              {hatWert ? euro(erg.marktwert) : "— nicht berechenbar"}
+            <div style={{ fontSize: hatWert ? 32 : 17, fontWeight: hatWert ? 700 : 500, color: hatWert ? "var(--gold)" : "var(--muted)", lineHeight: 1.2 }}>
+              {hatWert ? euro(erg.marktwert) : "Noch keine Bewertung — Angaben unten ergänzen"}
             </div>
             {erg.spanne && (
               <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 2 }}>
@@ -90,7 +92,7 @@ export default function MarktwertCard({
           {historie.length >= 2 && (
             <div style={{ textAlign: "right" }}>
               <Sparkline punkte={historie} />
-              <div style={{ fontSize: 10, color: "var(--faint)" }}>Verlauf ({historie.length} Stände)</div>
+              <div style={{ fontSize: 12, color: "var(--faint)" }}>Verlauf ({historie.length} Stände)</div>
             </div>
           )}
         </div>
@@ -168,25 +170,33 @@ export default function MarktwertCard({
               sobald ein Partnerzugang hinterlegt ist; bis dahin dient der eigene Bestand als Vergleich.
             </p>
           ) : (
-            <table style={{ fontSize: 12, marginTop: 8, width: "100%" }}>
-              <thead>
-                <tr style={{ color: "var(--muted)" }}>
-                  <th style={{ textAlign: "left" }}>Quelle</th><th style={{ textAlign: "right" }}>Fläche</th>
-                  <th style={{ textAlign: "right" }}>€/m²</th><th style={{ textAlign: "right" }}>Preis</th><th style={{ textAlign: "right" }}>Distanz</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparables.map((c, i) => (
-                  <tr key={i}>
-                    <td>{c.quelle}{c.art ? ` · ${c.art}` : ""}</td>
-                    <td style={{ textAlign: "right" }}>{c.flaeche ? `${c.flaeche} m²` : "—"}</td>
-                    <td style={{ textAlign: "right" }}>{c.preis_pro_qm ? euro(c.preis_pro_qm) : "—"}</td>
-                    <td style={{ textAlign: "right" }}>{c.preis ? euro(c.preis) : "—"}</td>
-                    <td style={{ textAlign: "right" }}>{c.distanz_km != null ? `${c.distanz_km} km` : "—"}</td>
+            // Fuenf Spalten brauchen bei 320 px Breite 334 px. Ohne eigenen
+            // Scroll-Bereich schneidet das globale `overflow-x: clip` die
+            // letzte Spalte (Distanz) stumm ab — sie ist dann nicht
+            // abgeschnitten sichtbar, sondern schlicht weg.
+            // Die Herleitungs-Tabelle darueber hat nur zwei Spalten, bricht
+            // sauber um und bleibt bewusst ohne Wrapper.
+            <div className="table-scroll">
+              <table style={{ fontSize: 12, marginTop: 8, width: "100%" }}>
+                <thead>
+                  <tr style={{ color: "var(--muted)" }}>
+                    <th style={{ textAlign: "left" }}>Quelle</th><th style={{ textAlign: "right" }}>Fläche</th>
+                    <th style={{ textAlign: "right" }}>€/m²</th><th style={{ textAlign: "right" }}>Preis</th><th style={{ textAlign: "right" }}>Distanz</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {comparables.map((c, i) => (
+                    <tr key={i}>
+                      <td>{c.quelle}{c.art ? ` · ${c.art}` : ""}</td>
+                      <td style={{ textAlign: "right" }}>{c.flaeche ? `${c.flaeche} m²` : "—"}</td>
+                      <td style={{ textAlign: "right" }}>{c.preis_pro_qm ? euro(c.preis_pro_qm) : "—"}</td>
+                      <td style={{ textAlign: "right" }}>{c.preis ? euro(c.preis) : "—"}</td>
+                      <td style={{ textAlign: "right" }}>{c.distanz_km != null ? `${c.distanz_km} km` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </details>
 

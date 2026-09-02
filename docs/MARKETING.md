@@ -64,7 +64,7 @@ Aus `[[MASTERPLAN]]` Abschnitt 1:
 | Kanal | Urteil | Begründung |
 |---|---|---|
 | TikTok, Reels, Shorts | **nein** | Altersschnitt 58; wir würden für die falsche Kohorte produzieren |
-| Instagram organisch | **nein** | dito, plus hoher Pflegeaufwand für einen Ein-Personen-Betrieb |
+| Instagram organisch | **Test (seit 29.08.2026)** | Betreiber-Entscheidung überstimmt das ursprüngliche „nein". 8-Wochen-Test mit Messkriterien & Abbruchregel — Strategie, Profil und die ersten 9 Post-Visuals: `docs/marketing/INSTAGRAM.md` + `docs/marketing/instagram/` |
 | LinkedIn | **später, klein** | nur für die Hausverwaltungs-Schiene (Business-Tarif) |
 | Podcast/YouTube-Format | **nein (jetzt)** | Produktionsaufwand steht in keinem Verhältnis |
 

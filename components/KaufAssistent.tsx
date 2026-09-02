@@ -36,14 +36,48 @@ const DARLEHEN: { name: string; text: string; warn?: boolean }[] = [
 ];
 
 export default function KaufAssistent({
-  gespeichert = [], selbstauskunft = null,
+  gespeichert = [], selbstauskunft = null, demo = false,
 }: {
   gespeichert?: Kalkulation[]; selbstauskunft?: SelbstauskunftDaten | null;
+  /** Oeffentliche Demo: fester Beispielstand, keine Eingaben. */
+  demo?: boolean;
 }) {
-  const [rechnerOffen, setRechnerOffen] = useState(false);
-  const [saOffen, setSaOffen] = useState(false);
-  const [auswahl, setAuswahl] = useState<KaufAuswahl | null>(null);
-  const [darlehenWunsch, setDarlehenWunsch] = useState<DarlehenAuswahl | null>(null);
+  // In der Demo von Anfang an aufgeklappt: Die Aufklapp-Knoepfe liegen im
+  // gesperrten Bereich (fieldset disabled) und waeren dort nicht bedienbar —
+  // der Besucher haette den Rechner sonst nie zu Gesicht bekommen.
+  const [rechnerOffen, setRechnerOffen] = useState(demo);
+  const [saOffen, setSaOffen] = useState(demo);
+  // In der Demo stehen Objektwahl und Darlehenswunsch von Anfang an fest.
+  // Beide leben sonst im localStorage und werden ueber die (gesperrten)
+  // Formulare gefuellt — ohne Vorbelegung blieben die Machbarkeits-Ampel und
+  // der Finanzierungsschritt dauerhaft leer.
+  const DEMO_AUSWAHL: KaufAuswahl = {
+    kalkId: null,
+    name: "Altbau-ETW Leipzig Süd",
+    adresse: "Karl-Liebknecht-Str. 42, 04275 Leipzig",
+    kp: 245000,
+    gesamtInvest: 268500,
+    eigenkapital: 70000,
+    darlehen: 198500,
+    rate: 992,
+    kaltmiete: 720,
+    cfNetto: -128,
+    nutzung: "vermieten",
+    gewaehltAm: "2026-08-29",
+  };
+  const DEMO_DARLEHEN: DarlehenAuswahl = {
+    darlehen: 198500,
+    prioritaet: "gleiche_rate",
+    zinsbindung: 15,
+    sollzins: 3.6,
+    sondertilgung: true,
+    anfangstilgung: 2.4,
+    monatsrate: 992,
+    gewaehltAm: "2026-08-29",
+  };
+
+  const [auswahl, setAuswahl] = useState<KaufAuswahl | null>(demo ? DEMO_AUSWAHL : null);
+  const [darlehenWunsch, setDarlehenWunsch] = useState<DarlehenAuswahl | null>(demo ? DEMO_DARLEHEN : null);
 
   // Darlehenswunsch (Schritt „Finanzierung") lesen — liefert die Rate für die
   // Machbarkeits-Ampel. Auf Fokuswechsel + nach „übernehmen" neu laden.
@@ -51,8 +85,11 @@ export default function KaufAssistent({
     const lade = () => {
       try {
         const raw = localStorage.getItem(KAUF_DARLEHEN_KEY);
-        setDarlehenWunsch(raw ? (JSON.parse(raw) as DarlehenAuswahl) : null);
-      } catch { setDarlehenWunsch(null); }
+        // In der Demo den festen Stand behalten, wenn nichts gespeichert ist —
+        // sonst ueberschreibt dieser Effekt die Vorbelegung sofort mit null.
+        if (raw) setDarlehenWunsch(JSON.parse(raw) as DarlehenAuswahl);
+        else if (!demo) setDarlehenWunsch(null);
+      } catch { if (!demo) setDarlehenWunsch(null); }
     };
     lade();
     window.addEventListener("focus", lade);
@@ -65,8 +102,11 @@ export default function KaufAssistent({
     const lade = () => {
       try {
         const raw = localStorage.getItem(KAUF_AUSWAHL_KEY);
-        setAuswahl(raw ? (JSON.parse(raw) as KaufAuswahl) : null);
-      } catch { setAuswahl(null); }
+        // Wie beim Darlehenswunsch: in der Demo den festen Stand behalten,
+        // sonst knipst dieser Effekt die Vorbelegung sofort wieder aus.
+        if (raw) setAuswahl(JSON.parse(raw) as KaufAuswahl);
+        else if (!demo) setAuswahl(null);
+      } catch { if (!demo) setAuswahl(null); }
     };
     lade();
     window.addEventListener("focus", lade);
@@ -95,7 +135,7 @@ export default function KaufAssistent({
   ) : (
     <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--line)", marginBottom: 14, fontSize: 12, color: "var(--muted)" }}>
       <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-      <span>Noch kein Objekt gewählt. Rechne in Schritt 2 deine Kandidaten durch, vergleiche sie und übernimm das beste — die Zahlen erscheinen dann hier.</span>
+      <span>Noch kein Objekt gewählt. Rechne in Schritt 1 deine Kandidaten durch, vergleiche sie und übernimm das beste — die Zahlen erscheinen dann hier.</span>
     </div>
   );
 
@@ -122,6 +162,7 @@ export default function KaufAssistent({
     {
       icon: Calculator,
       titel: "Objekt bewerten, durchrechnen & vergleichen",
+      hinweis: "Grundwerte eintragen — Rendite, Preis/m² und Marktwert sehen, Kandidaten vergleichen.",
       autoErledigt: gespeichert.length > 0,
       inhalt: (
         <>
@@ -135,12 +176,12 @@ export default function KaufAssistent({
             beste bekommt eine Krone.
           </p>
           {!rechnerOffen ? (
-            <button type="button" className="btn btn-gold" style={{ fontSize: 13 }} onClick={() => setRechnerOffen(true)}>
+            <button type="button" className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setRechnerOffen(true)}>
               <Calculator size={14} style={{ verticalAlign: "-2px" }} /> Objekt-Rechner öffnen
             </button>
           ) : (
             <div style={{ marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-              <ObjektRechner gespeichert={gespeichert} />
+              <ObjektRechner gespeichert={gespeichert} demo={demo} />
             </div>
           )}
         </>
@@ -149,6 +190,7 @@ export default function KaufAssistent({
     {
       icon: ClipboardList,
       titel: "Deine Finanzen (Selbstauskunft)",
+      hinweis: "Einnahmen, Ausgaben, Eigenkapital und Kredite erfassen — für die Machbarkeit und die Bank.",
       autoErledigt: !!selbstauskunft,
       inhalt: (
         <>
@@ -158,7 +200,7 @@ export default function KaufAssistent({
             Machbarkeitsprüfung und später in die Selbstauskunft für die Bank. Verschlüsselt gespeichert.
           </p>
           {!saOffen ? (
-            <button type="button" className="btn btn-gold" style={{ fontSize: 13 }} onClick={() => setSaOffen(true)}>
+            <button type="button" className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setSaOffen(true)}>
               <ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Selbstauskunft ausfüllen
             </button>
           ) : (
@@ -172,6 +214,7 @@ export default function KaufAssistent({
     {
       icon: Landmark,
       titel: "Finanzierung & Förderung",
+      hinweis: "Finanzierungswunsch, zwei Szenarien im Vergleich, Darlehensarten und Fördercheck.",
       autoErledigt: !!darlehenWunsch && darlehenWunsch.darlehen > 0,
       inhalt: (
         <>
@@ -198,46 +241,63 @@ export default function KaufAssistent({
           ) : (
             <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--line)", fontSize: 12, color: "var(--muted)" }}>
               <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>Sobald du in Schritt 2 ein Objekt übernommen hast, erscheinen hier zwei grafische Finanzierungs-Szenarien.</span>
+              <span>Sobald du in Schritt 1 ein Objekt übernommen hast, erscheinen hier zwei grafische Finanzierungs-Szenarien.</span>
             </div>
           )}
 
-          <div className="form-section-label" style={{ marginTop: 20 }}>Darlehensarten im Überblick</div>
-          <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
-            Welche Art zu dir passt, entscheidest du mit deiner Bank.
-          </p>
-          <div style={{ display: "grid", gap: 8 }}>
-            {DARLEHEN.map((d) => (
-              <div key={d.name} style={{ padding: "8px 12px", borderRadius: 8, background: d.warn ? "rgba(240,160,48,0.08)" : "var(--bg3)", border: `1px solid ${d.warn ? "var(--amber)" : "var(--line)"}` }}>
-                <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                  {d.warn && <TriangleAlert size={13} color="var(--amber)" />} {d.name}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{d.text}</div>
+          {/* Glossar und Fördercheck sind Nachschlage-Inhalte, kein Schritt im
+              Ablauf. Dauerhaft ausgeklappt machten sie aus diesem Schritt eine
+              Karte über mehrere Bildschirmhöhen, in der der eigentliche
+              Finanzierungswunsch unterging. */}
+          <details className="klapp">
+            <summary>
+              Darlehensarten im Überblick <span className="klapp-hint">— Glossar, {DARLEHEN.length} Arten</span>
+            </summary>
+            <div className="klapp-body">
+              <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
+                Welche Art zu dir passt, entscheidest du mit deiner Bank.
+              </p>
+              <div style={{ display: "grid", gap: 8 }}>
+                {DARLEHEN.map((d) => (
+                  <div key={d.name} style={{ padding: "8px 12px", borderRadius: 8, background: d.warn ? "rgba(240,160,48,0.08)" : "var(--bg2)", border: `1px solid ${d.warn ? "var(--amber)" : "var(--line)"}` }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      {d.warn && <TriangleAlert size={13} color="var(--amber)" />} {d.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{d.text}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          </details>
 
-          <div className="form-section-label" style={{ marginTop: 16 }}>Fördercheck</div>
-          <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
-            Wähle Nutzung, Vorhaben und Bundesland — du siehst nur die Programme, die zu dir passen.
-          </p>
-          <FoerderCheck />
+          <details className="klapp">
+            <summary>
+              Fördercheck <span className="klapp-hint">— KfW, BAFA &amp; Landesbanken nach deiner Lage filtern</span>
+            </summary>
+            <div className="klapp-body">
+              <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
+                Wähle Nutzung, Vorhaben und Bundesland — du siehst nur die Programme, die zu dir passen.
+              </p>
+              <FoerderCheck />
+            </div>
+          </details>
         </>
       ),
     },
     {
       icon: FolderClosed,
       titel: "Zwei Ordner: Makler & Bank",
+      hinweis: "Makler-Ordner (seriöser Käufer) und Bank-Ordner (Finanzierung) mit den nötigen Unterlagen.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
             Am Ende brauchst du zwei Ordner. Der <strong>Makler-Ordner</strong> zeigt dich als seriösen,
-            finanzierungssicheren Käufer (6 Kern-Dokumente, Datensparsamkeit). Der <strong>Bank-Ordner</strong>
+            finanzierungssicheren Käufer (6 Kern-Dokumente, Datensparsamkeit). Der <strong>Bank-Ordner</strong>{" "}
             bündelt alle Unterlagen für die Finanzierung — passend zu deinem Objekt (Kauf, Vermietung, ETW);
             MyImmo erzeugt Kennblatt, Mietaufstellung &amp; Co. aus deinen Daten.
           </p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Link href="/makler" className="btn btn-gold" style={{ fontSize: 13 }}>
+            <Link href="/makler" className="btn btn-ghost" style={{ fontSize: 13 }}>
               <FolderClosed size={14} style={{ verticalAlign: "-2px" }} /> Makler-Ordner öffnen
             </Link>
           </div>
@@ -261,6 +321,7 @@ export default function KaufAssistent({
     {
       icon: FileCheck2,
       titel: "Angebote vergleichen & entscheiden",
+      hinweis: "Bankangebote nach Effektivzins & Flexibilität vergleichen, dann Notartermin.",
       inhalt: (
         <>
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
@@ -319,7 +380,18 @@ export default function KaufAssistent({
         ))}
       </div>
 
-      <AblaufStepper schritte={schritte} storageKey="myimmo_kauf_fortschritt" />
+      {demo && (
+        <div
+          role="status"
+          className="rounded-sm px-3 py-2 text-[13px]"
+          style={{ background: "var(--blue-dim)", color: "var(--blue)", marginBottom: 16 }}
+        >
+          <strong>Beispielrechnung.</strong> In der Demo ist der Ablauf mit festen
+          Werten durchgerechnet — du kannst alles ansehen und aufklappen, aber nichts
+          ändern. Mit einem eigenen Konto rechnest du hier mit deinen Zahlen.
+        </div>
+      )}
+      <AblaufStepper schritte={schritte} storageKey="myimmo_kauf_fortschritt" gesperrt={demo} />
     </>
   );
 }

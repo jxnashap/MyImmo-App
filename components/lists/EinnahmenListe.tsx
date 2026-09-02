@@ -26,7 +26,7 @@ export default function EinnahmenListe({
   const offen = rows.find((r) => r.id === openId) ?? null;
 
   return (
-    <table className="list-table">
+    <div className="table-scroll"><table className="list-table">
       <thead><tr><th>Datum</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th></tr></thead>
       <ExpandableRows cols={5} limit={10} label="weitere Buchungen">
         {rows.map((e) => (
@@ -88,6 +88,6 @@ export default function EinnahmenListe({
               </form>
         </RowDialog>
       )}
-    </table>
+    </table></div>
   );
 }

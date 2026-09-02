@@ -36,8 +36,8 @@ export default function ZeitraumControl() {
               border: "none",
               cursor: "pointer",
               transition: "background 0.12s",
-              background: active ? "var(--gold)" : "transparent",
-              color: active ? "#1a1a17" : "var(--muted)",
+              background: active ? "var(--gold-fill)" : "transparent",
+              color: active ? "var(--btn-gold-text)" : "var(--muted)",
             }}
           >
             {z}

@@ -82,7 +82,7 @@ function Eintrag({ a }: { a: PortalAnfrageRow }) {
             <div style={{ display: "grid", gap: 8, marginTop: 8, padding: 12, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}>
               <textarea rows={2} maxLength={1000} className="input" value={text} onChange={(e) => setText(e.target.value)}
                 placeholder={antwortOffen === "erledigt" ? "Antwort/Info an den Vermieter (optional, z. B. 2 Personen im Haushalt)" : "Kurze Begründung (empfohlen)"} />
-              {fehler && <p style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+              {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
               <div style={{ display: "flex", gap: 8 }}>
                 <button type="button" className="btn btn-gold" disabled={pending} onClick={() => senden(antwortOffen)}>
                   {pending ? "…" : antwortOffen === "erledigt" ? "Als erledigt senden" : "Ablehnung senden"}

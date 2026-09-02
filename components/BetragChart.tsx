@@ -62,7 +62,7 @@ export default function BetragChart({
           return (
             <g key={`y${t}`}>
               <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="var(--line2)" strokeWidth={t === 0 ? 1 : 0.6} strokeDasharray={t === 0 ? "0" : "3 4"} opacity={t === 0 ? 0.8 : 0.5} />
-              <text x={padL - 8} y={y + 3.5} textAnchor="end" fontSize="10" fill="var(--muted)">{kurzTick(t)}</text>
+              <text x={padL - 8} y={y + 3.5} textAnchor="end" fontSize="11.5" fill="var(--muted)">{kurzTick(t)}</text>
             </g>
           );
         })}
@@ -106,12 +106,12 @@ export default function BetragChart({
           const label = xTickLabel(buckets, i, gran);
           if (!label) return null;
           const x = mode === "bars" ? xCenter(i) : xLine(i);
-          return <text key={`x${i}`} x={x.toFixed(1)} y={H - padB + 16} textAnchor="middle" fontSize="10" fill="var(--muted)">{label}</text>;
+          return <text key={`x${i}`} x={x.toFixed(1)} y={H - padB + 16} textAnchor="middle" fontSize="11.5" fill="var(--muted)">{label}</text>;
         })}
 
         {/* Achsentitel */}
-        <text x={padL + plotW / 2} y={H - 6} textAnchor="middle" fontSize="10" fill="var(--faint)">Zeitraum</text>
-        <text x={14} y={padT + plotH / 2} textAnchor="middle" fontSize="10" fill="var(--faint)" transform={`rotate(-90 14 ${padT + plotH / 2})`}>Betrag (€)</text>
+        <text x={padL + plotW / 2} y={H - 6} textAnchor="middle" fontSize="11.5" fill="var(--faint)">Zeitraum</text>
+        <text x={14} y={padT + plotH / 2} textAnchor="middle" fontSize="11.5" fill="var(--faint)" transform={`rotate(-90 14 ${padT + plotH / 2})`}>Betrag (€)</text>
       </svg>
 
       {caption && (

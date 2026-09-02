@@ -39,6 +39,40 @@ export type SelbstauskunftDaten = {
   summeVerbindlichkeiten: number;
 };
 
+// Fester Beispielstand fuer die oeffentliche Demo. Ohne ihn stuende dort ein
+// leeres, gesperrtes Formular — der Besucher saehe die Machbarkeits-Ampel nie
+// rechnen. Die Zahlen passen zur Demo-Wohnung (245.000 EUR, 720 EUR Kaltmiete):
+// ein Angestelltenhaushalt mit zwei Einkommen, der sich das plausibel leisten
+// kann. In der Datenbank kann das NICHT liegen, weil `selbstauskunft.daten_enc`
+// App-Layer-verschluesselt ist und der Schluessel nur zur Laufzeit existiert.
+export const DEMO_SELBSTAUSKUNFT: SelbstauskunftDaten = {
+  familienstand: "verheiratet",
+  kinder: 1,
+  staatsangehoerigkeit: "deutsch",
+  beschaeftigung: "angestellt",
+  beruf: "Projektleiterin",
+  arbeitgeber: "Muster GmbH",
+  beschaeftigtSeit: "2019-04",
+  befristung: "unbefristet",
+  anzahlPersonen: 3,
+  zveHaushaltJahr: 74000,
+  einkommen: 3400,
+  einkommenPartner: 2100,
+  mieteinnahmen: 0,
+  kindergeld: 250,
+  sonstigeEinnahmen: 0,
+  wohnkostenAktuell: 1150,
+  versicherungen: 210,
+  unterhalt: 0,
+  ratenKredite: 180,
+  sonstigeAusgaben: 120,
+  bankguthaben: 48000,
+  wertpapiere: 22000,
+  bausparen: 9000,
+  sonstigesVermoegen: 0,
+  summeVerbindlichkeiten: 6400,
+};
+
 export const LEERE_SELBSTAUSKUNFT: SelbstauskunftDaten = {
   familienstand: "",
   kinder: 0,

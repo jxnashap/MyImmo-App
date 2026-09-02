@@ -33,12 +33,13 @@
 ## Offene Punkte / Merkliste
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
-- **Ab 03.08.2026: KfW-308-Konditionen aktualisieren** (laut kfw.de werden die
-  Förderhöchstbeträge angehoben; Sanierungsziel EH 85 EE dann auch per Einzelmaßnahmen
-  erfüllbar). Zu ändern: `lib/kauf/foerderung.ts` (`kfw308Betrag()`, `bedingung`/`hinweis`
-  von kfw308, `KFW_STAND`), `docs/kauf/KfW-Foerderung-2026.md`, Tests in
-  `tests/foerderung.test.ts`. Neue Beträge vorher auf der KfW-308-Produktseite nachlesen.
-  Danach diesen Eintrag entfernen.
+- ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**
+  (gegen die KfW-308-Produktseite geprüft): Höchstbeträge **140.000 / 160.000 / 180.000 €**
+  (1 / 2 / 3+ Kinder, vorher 100/125/150 Tsd.), Sanierungsziel EH 85 EE bzw. Denkmal EE
+  jetzt auch über **kombinierte Einzelmaßnahmen** (Heizung ≥ 65 % EE, Fenster, Fassade, Dach)
+  erfüllbar; Einkommensgrenze unverändert. `KFW_STAND = "08/2026"`.
+  **Regel für künftige Fälle:** Konditionen nicht raten und nicht auf Zulieferung warten —
+  die Produktseite per WebFetch lesen und mit einer zweiten Quelle gegenprüfen.
 - **Ab 01.01.2027: Ratgeber-Artikel zur Fernablesepflicht entschärfen.** Der Artikel
   `heizkostenabrechnung-50-70-regel-fernablesung` in `lib/ratgeber.ts` wirbt mit der
   ablaufenden Frist **31.12.2026** (§ 5 HeizkostenV). Ab 2027 ist die Frist Vergangenheit:
@@ -73,58 +74,124 @@
   (2048×2048, goldenes Haus + Wortmarke) beim App-Store-Launch als App-Icon einspielen. Ist NICHT
   die Dokument-Wortmarke (die bleibt für PDFs/Briefe) — das PNG ist nur das App-/Store-Icon.
 
-### Open Banking / Konto-Anbindung — CODE FERTIG, inaktiv ohne Env (Stand geprüft 31.07.2026)
-⚠️ Stand bis 31.07.2026 hier als „geplant" geführt — falsch. **Etappen 1–4 sind gebaut:**
-Tabellen `bankverbindungen`/`bank_umsaetze`, `lib/banking/enableBanking.ts` (Bankenliste,
-Autorisierung, Session, Kontodetails, Transaktionen), `/api/banking/callback`, Seite `/banking`,
-Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fristen.ts`.
-**Offen: Anbietervertrag + AVV, Sandbox-Durchlauf — und es gibt KEINE Tests dafür**
-(einziger größerer Bereich ohne Abdeckung). Entscheidungen aus der Planung (12.07.2026):
-- **Nur Lesezugriff** (Kontoinformationsdienst/AISP) über einen **lizenzierten Anbieter** →
-  keine eigene BaFin-Lizenz nötig. Kein Zahlungsverkehr.
-- **Mehrere Bankverbindungen je Nutzer** (Sparkasse/Groß-/Direktbank via PSD2/XS2A, ~99 % Abdeckung).
-- **Eingänge + Ausgaben**: Mieteingänge automatisch mit erwarteten Mieten abgleichen, wiederkehrende
-  Ausgaben als Kostenvorschläge. Prinzip **„vorschlagen + per Klick bestätigen"** (keine stille
-  Automatik); irrelevante/private Umsätze ausblendbar.
-- **Datenschutz**: Umsätze verschlüsselt (App-Layer, wie IBANs) + RLS. PSD2 = alle 90 Tage
-  Reauth (App erinnert). Hinweis: bei gemischt privat/geschäftlichem Konto separates Mietkonto empfehlen.
-- **Anbieter**: **Enable Banking** (Start-Kandidat, EU-weit, kostenlose Self-Service-Sandbox +
-  Restricted Production für eigene Konten). ⚠️ **GoCardless Bank Account Data (Nordigen) fällt weg**
-  — Neuanmeldungen deaktiviert/wird abgewickelt (12.07.2026 geprüft). Deutsche BaFin-Alternative
-  **finAPI** (Zugang aber verkaufsgebunden). NICHT das GoCardless-„Payments"-Produkt (Lastschrift) —
-  falsches Produkt.
-- **Voraussetzungen für Live**: Gewerbe ✅ (GewA 1 Stadt Bad Schwartau, bescheinigt 16.07.2026,
-  Beginn 15.07.2026, Nebenerwerb; Tätigkeit: „Entwicklung und Bereitstellung von Software (SaaS)
-  sowie damit verbundene digitale Dienstleistungen; webbasierte Anwendung zur Immobilienverwaltung
-  für private Vermieter") + Anbietervertrag + AVV. Laufende Kosten je
-  Konto/Monat → kostenpflichtiges **Add-on / Business-Tarif**.
-- ~~**Bau-Etappen** (1) Tabellen (2) Enable-Banking-Flow (3) Abgleich-Engine (4) Reauth-Erinnerung~~
-  ✅ alle vier im Code umgesetzt (31.07.2026 geprüft). Was fehlt, ist der erste echte Durchlauf
-  gegen die Sandbox — plus Tests.
-- **Enable-Banking-Auth**: registrierte „Application" (Sandbox) + selbst generiertes RSA-Schlüsselpaar
-  (privater Key wird im Browser erzeugt, Dateiname = Application ID). API-Calls per JWT (RS256),
-  Header `kid` = Application ID. **Benötigte Env (Vercel)**: `ENABLE_BANKING_APP_ID` +
-  `ENABLE_BANKING_PRIVATE_KEY` (privater Schlüssel, wie DATA_ENCRYPTION_KEY behandeln — nie ins
-  Repo/Logs). Redirect-URL bei der App-Registrierung: `<base>/api/banking/callback`.
+### Open Banking / Konto-Anbindung — ZURÜCKGESTELLT (29.08.2026)
+Das Feature war fertig gebaut, aber nie live (nie end-to-end gelaufen) und verursacht im
+echten Betrieb laufende Kosten je Konto/Monat. **Am 29.08.2026 komplett aus der App entfernt**
+und als Zukunftsprojekt gesichert: **`docs/zukunft/OPEN-BANKING.md`** (Konzept, Entscheidungen,
+Env, Wiederherstellungsweg). Der vollständige Code liegt in der Git-Historie bis Commit `85feb98`;
+die DB-Tabellen (`bankverbindungen`, `bank_umsaetze`, `bank_auth_anfragen`) und `abos.banking_addon`
+wurden per Migration `20260829120000` gedroppt. Wieder aufbauen, sobald das Produkt Geld verdient
+(dann als bezahltes Add-on über einen lizenzierten AISP wie Enable Banking).
+
+### Registrierung — Ablauf (Stand 31.08.2026)
+1. E-Mail, Passwort (2×), **Zugangscode**, Zustimmung → der Code wird serverseitig geprüft
+   UND die Freischaltung vorgemerkt (`bereiteRegistrierungVor`, Tabelle
+   `registrierung_freigaben`, 14 Tage gültig).
+2. Bestätigungsmail anklicken.
+3. Einmal mit E-Mail + Passwort anmelden → das Layout-Gate löst die Vormerkung per
+   `freischaltung_nachholen()` ein. **Der Code wird NICHT erneut abgefragt.**
+
+`/willkommen` bleibt als Rückfallweg: Google-Registrierung (dort gibt es keinen Code-Schritt),
+Mieter/Handwerker mit Einladungscode, abgelaufene oder fehlende Vormerkung.
+**Zwei Fehler, die dort steckten** (gemeldet 31.08.2026) — nicht wieder einbauen:
+- Das Gate schrieb den Code vor der Prüfung in **Großbuchstaben**. Der Beta-Code enthält
+  Klein-/Großbuchstaben, Ziffern und Sonderzeichen, der Vergleich ist exakt → derselbe Code,
+  der bei der Registrierung ging, war hier zwangsläufig falsch. Großschreibung gilt **nur**
+  für Einladungscodes (Format `MI-XXXX-XXXX`).
+- Bei der Registrierung wurde der Code nur geprüft, nie gespeichert → das Gate fragte
+  überhaupt erst ein zweites Mal.
+**Nicht über `signUp`-Metadaten lösen:** `raw_user_meta_data` kommt vom Client und ist frei
+setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangscode vorbei.
+
+### Zukunftsideen (notiert, nicht gebaut)
+- **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
+  Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
+  **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
+  Erst wenn der deutsche Markt Geld einbringt, wird über Expansion entschieden.
+  **`myimmoapp.com` deshalb NICHT auslaufen lassen** — die Domain trägt den eigenen
+  Markennamen und ist bis dahin indexiert; ein Rückkauf beim Expandieren kostet ein
+  Vielfaches der Verlängerungsgebühr.
+  **Warum nicht jetzt** (Analyse vom 01.09.2026): MyImmo ist keine deutschsprachige
+  Software, sondern deutsches Recht in Softwareform (Anlage V, § 558a BGB, BetrKV,
+  HeizkostenV, Mietspiegel, Grundsteuer, § 82b EStDV, DATEV, KfW). Eine Übersetzung
+  öffnet keinen neuen Markt, nur denselben Markt für Expats in Deutschland. Die
+  erzeugten Dokumente müssten ohnehin deutsch bleiben (Formzwang, Empfänger sind
+  deutsche Mieter), ebenso Impressum/AGB/Datenschutz. Aufwand: 374 Dateien,
+  ~48.400 Zeilen mit **fest im Code stehenden** deutschen Texten (keinerlei i18n,
+  kein next-intl), 8 PDF-Generatoren, ~106 KB Ratgeber-Text → aus 19 Artikeln würden
+  38, die alle auf Rechtsstand zu halten wären.
+  **Wenn doch, dann in dieser Reihenfolge:** (1) nur die Marketing-Oberfläche unter
+  `www.myimmoapp.de/en/` + `hreflang`, App und Ratgeber bleiben deutsch → in der
+  Search Console messen, ob englische Nachfrage überhaupt existiert; (2) erst danach
+  App-i18n, und zwar mit Sprachdateien statt Textkopien.
+  **Wichtig für die spätere Entscheidung:** Eine reine SPRACHversion gehört ins
+  Unterverzeichnis derselben Domain (eine Domain, eine Autorität). Eine eigene Domain
+  lohnt erst, wenn ein Land ein eigenes PRODUKT bekommt (z. B. österreichisches
+  Mietrecht) — nicht für eine übersetzte Oberfläche.
+- **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
+  Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
+  Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das
+  nächste Objekt finanzierbar, was fehlt bis dahin. Die Daten liegen fast alle schon vor
+  (Cashflow, Kredite/Restschuld, Objektwerte, Beleihung, Selbstauskunft, Kaufnebenkosten).
+  **Größtes Risiko: die Grenze zur Anlageberatung.** „Im März 2028 kannst du kaufen" ist eine
+  Empfehlung zu einer Vermögensdisposition — § 34i GewO steht ohnehin auf der Anwaltsliste,
+  dieser Punkt gehört dort mit hinein, VOR dem Bau. Zweites Risiko: Zehnjahresprognosen sind
+  Scheingenauigkeit (Zins, Miete, Wert, Instandhaltung) → Szenarien statt einer Zahl.
+  Vor dem Bau außerdem klären: kostenlos oder Tarifmerkmal (dann `docs/FINANZKONZEPT.md`
+  im selben PR mitziehen).
 
 ### Sonstiges (kein Geld)
-- **Mindest-Passwortlänge in Supabase auf 8 setzen** (kostenlos, auch auf Free) — **am 31.07.2026 erneut geprüft, „abc123" wird weiterhin angenommen:**
-  Dashboard → Authentication → Sign In / Providers → Email → „Password Security" →
-  Minimum password length. Die App verlangt seit 29.07.2026 durchgängig 8 Zeichen
-  (`lib/passwort.ts`), Supabase steht noch auf **6** — am 29.07. und erneut am 31.07.2026
-  empirisch geprüft: eine Registrierung mit „abc123" wurde beide Male angenommen
-  (Testkonto jeweils sofort gelöscht). Solange das auseinanderläuft, greift
-  nur die App-Prüfung; wer die Auth-API direkt anspricht, kommt mit 6 Zeichen durch.
-  Nur im Dashboard setzbar, nicht über API/MCP. **Nach dem Umstellen prüfen**, ob
-  bestehende Konten mit kürzerem Passwort sich weiterhin anmelden können (die Regel
-  gilt für NEUE/geänderte Passwörter, nicht rückwirkend).
-- **Komplette Design- & Layout-Überarbeitung der App (VORHABEN, vor dem Marketing-Start):**
-  Gewählte Richtung: **Fintech-hell (Stripe/N26 + etwas Apple)** mit **echter Neu-Anordnung**
-  der Layouts (nicht nur Umfärben). Gold `#D4A847` bleibt das Markenzeichen, Fraunces+Outfit
-  bleiben. Betrifft die App-UI (`app/globals.css` + Komponenten); das Dokument-/PDF-Design
-  (siehe „Dokument-/PDF-Design") bleibt unverändert. Verworfen: „Quiet-Luxury"-Ivory, Neon-Bento.
-  Sinnvolle Reihenfolge: Redesign VOR großem Marketing (Screenshots/Store-Assets/Ratgeber-Bilder
-  sonst doppelt).
+- **Demo-Konto ist seit 30.08.2026 NUR-LESEN.** Vorgabe des Betreibers: Schaustück, kein
+  Sandkasten. Drei Ebenen, alle drei nötig (Begründung in `lib/demo.ts`):
+  (1) **Datenbank** — restriktive RLS-Policies verweigern dem Demo-Konto jedes
+  INSERT/UPDATE/DELETE (Migration `20260830150000_demo_nur_lesen.sql`, Funktion
+  `public.ist_demo_nutzer()`). (2) **Routen** — `demoDarfRoute` sperrt NK-Rechner,
+  Protokoll, alle Bearbeiten-Formulare und **alle API-Routen außer `/api/demo`**;
+  die Middleware weist jetzt jede Methode ab, nicht nur GET. (3) **Oberfläche** —
+  `components/DemoNurLesen.tsx` macht Felder schreibgeschützt und Speichern-Knöpfe inaktiv.
+  **Warum Ebene 3 trotz Ebene 1 nötig ist:** Ein per RLS blockiertes UPDATE/DELETE wirft
+  KEINEN Fehler, es trifft null Zeilen — der Besucher hielte Ungespeichertes für gespeichert.
+  **Einzige Ausnahme:** das Mieterhöhungs-Dokument samt PDF (`data-demo-erlaubt` im
+  `DocGenerator`) — gespeichert wird dabei nichts.
+  **Beim Anlegen einer neuen Tabelle** greifen die Policies NICHT automatisch; die Migration
+  dann erneut ausführen (sie ist idempotent).
+- **ZURÜCKGESTELLT (30.08.2026, Entscheidung des Nutzers): Namentliche Autorenschaft der
+  Ratgeber.** Im Article-Markup steht derzeit `author: Organization "MyImmo"` — bei
+  Steuer- und Mietrechtsthemen (YMYL) das schwächste denkbare Vertrauenssignal und die
+  größte verbliebene E-E-A-T-Lücke (Details: `docs/SEO.md`, Punkt 5).
+  Umsetzung wäre: sichtbare Autorenzeile · `author: Person` mit Verweis auf eine
+  Autorenseite · Autorenseite mit `ProfilePage`-Markup (wer, warum qualifiziert, seit wann,
+  erreichbar). Qualifikation hier nicht akademisch, sondern praktisch: selbst Vermieter,
+  hat die Software für den eigenen Bedarf gebaut.
+  **Vor der Umsetzung zwingend zu klären — nicht überspringen:** Wer die Artikel
+  namentlich zeichnet, behauptet, sie geschrieben oder inhaltlich verantwortet zu haben.
+  Die 19 Ratgeber sind KI-gestützt entstanden. Solange nicht geklärt ist, dass der Namens-
+  geber sie fachlich geprüft hat, ist die Zeile eine Falschangabe — ausgerechnet dort, wo
+  Vertrauen der ganze Zweck ist. Ehrlicher Mittelweg, falls das zu weit geht:
+  „Fachlich geprüft von …" statt „Von …".
+  Weitere Risiken: Name dauerhaft öffentlich und indexiert unter Steueraussagen (die
+  Anschrift steht als Einzelunternehmer ohnehin im Impressum, die Zusatzpreisgabe ist also
+  kleiner als sie wirkt); namentliche Zeichnung liest sich näher an Beratung → läuft auf
+  der StBerG-Anwaltsliste mit. Und: E-E-A-T ist kein schaltbares Ranking-Signal, das hier
+  beseitigt eine bekannte Schwäche, es garantiert keine Platzierung.
+- ~~**Mindest-Passwortlänge in Supabase auf 8 setzen**~~ ✅ **erledigt 30.08.2026** (vom Nutzer
+  im Dashboard umgestellt). App und Supabase verlangen jetzt beide 8 Zeichen; vorher griff nur
+  die App-Prüfung (`lib/passwort.ts`), wer die Auth-API direkt ansprach, kam mit 6 durch.
+  **Noch offen (nur Betreiber, kleine Sache):** stichprobenhaft prüfen, ob sich ein bestehendes
+  Konto mit kürzerem Passwort weiterhin anmelden kann — die Regel gilt für NEUE/geänderte
+  Passwörter, nicht rückwirkend.
+- **Design- & Layout-Überarbeitung der App — Runde 1 UMGESETZT (20.08.2026):**
+  Neues App-Design **„Frosted Paper"** (shadcn/ui-artig monochrom-hell: Canvas `#f5f5f5`,
+  weiße 24px-Karten auf Haarlinien `#e5e5e5`, Pillen-Radius 18px für alles Interaktive,
+  Geist als UI-Schrift — selbst gehostet, SIL OFL, `public/fonts/geist-variable.woff2`).
+  **Gold `#D4A847` bleibt als schmaler Markenakzent** (Primärknopf `--gold-fill`, Logo,
+  aktive Zustände; Textstufe hell = `--gold` #9a7b24 wegen Kontrast). Rot nur destruktiv.
+  Hell ist jetzt DEFAULT, Dunkelmodus = achromatische Umkehrung über `[data-theme="dark"]`
+  (Logik gedreht — vorher war Dunkel Default). Die Landing ist per Token-Freeze im
+  `.lp`-Scope auf ihrer Quiet-Luxury-Palette eingefroren; PDFs/Briefe unverändert.
+  **Noch offen (Runde 2):** echte Neu-Anordnung einzelner Layouts (bisher v. a. Um-Tokenisierung),
+  11px-Kleinsttexte sukzessive auf 12px, Binnennavigation für lange Mobilseiten.
+  (Die Chart-Gradients im Cashflow-Donut sind seit dem UX-Audit-Paket B abgelöst.)
 - ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
   `components/OnboardingTour.tsx` — sechs Stationen (Objekt → Mieter → Ein-/Ausgaben →
   Mietkonto → Archiv → Steuer/Assistenten) mit Direktlinks. Öffnet sich automatisch,
@@ -165,21 +232,27 @@ Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fris
   15.07.2026: **Anthropic-DPA archiviert** (`docs/compliance/anthropic-dpa-archiv.md`) + DPF
   geprüft → Anthropic nutzt **SCCs, kein DPF** (Transfer in Datenschutzerklärung als SCC ausweisen).
   ✅ 24.07.2026: **Supabase-DPA signiert** (PandaDoc; PDF + TIA in `docs/compliance/`).
-  ⏳ **OFFEN — Brevo-AVV (Recherche 31.07.2026, Schritte stehen fest):** Bei Brevo ist der AVV
-  **Anlage 2 („Annex 2 — Data Processing Agreement") zu den Nutzungsbedingungen** und gilt
-  automatisch mit Vertragsschluss — in der Regel **keine gesonderte Unterschrift** (Muster wie
-  Vercel/Anthropic, NICHT wie Supabase). Zu tun: (1) Konto → Kontoname oben rechts →
-  Einstellungen → **Rechtsdokumente** prüfen, ob dort doch eine signierbare Fassung liegt;
-  (2) **Firmendaten im Konto** auf die Gewerbeanmeldung bringen (MyImmo, Einzelunternehmen,
-  Bad Schwartau) — sonst lautet der Vertrag auf die falsche Partei; (3) DPA-PDF mit Version und
-  Abrufdatum archivieren (`docs/compliance/brevo-dpa-archiv.md`, Muster: Anthropic-Archiv);
-  (4) Unterauftragsverarbeiter-Liste prüfen, Benachrichtigungsadresse muss gelesen werden
-  (Widerspruchsrecht); (5) Transfer in der Datenschutzerklärung als **SCC** ausweisen (kein DPF);
-  (6) Datenschutzkontakt **dpo@brevo.com** ins Verarbeitungsverzeichnis; (7) Eintrag in
-  `docs/compliance/AVV-STATUS.md` (Sitz Frankreich, Verarbeitung EU).
-  ⏳ **OFFEN — Datenschutzerklärung um den Vorlagen-Verteiler ergänzen:** Zweck, Rechtsgrundlage
-  Art. 6 Abs. 1 lit. a DSGVO (Einwilligung), Empfänger Brevo, Speicherdauer, Widerrufsrecht.
-  Ohne den Passus werden die Adressen ohne die vorgeschriebene Information verarbeitet.
+  🟨 **Brevo-AVV — am 30.08.2026 zur Hälfte erledigt.** Der DPA ist gelesen, ausgewertet und
+  archiviert: `docs/compliance/brevo-dpa-archiv.md` + Volltext `brevo-dpa-2024-05-15.pdf`.
+  Bestätigt: Er ist **Anlage 2 zu den Nutzungsbedingungen und gilt ohne Unterschrift** — das war
+  vorher eine Vermutung, jetzt steht es wörtlich belegt da („execution of the General Terms and
+  Conditions and the DPA constitutes execution"). Vertragspartner **Sendinblue SAS**, Paris;
+  DPO **dpo@brevo.com**; SCCs Module Two, Recht Frankreichs, Gerichtsstand Paris; Datenpanne
+  **72 h**; Löschung erst **100 Tage** nach Vertragsende; Unterauftragsverarbeiter-Änderungen
+  **10 Werktage** vorher mit Widerspruchsrecht.
+  **Dabei gefunden und korrigiert:** Die Datenschutzerklärung behauptete pauschal „Verarbeitung
+  in der EU". Das stimmt für die Versanddaten, nicht für Brevos eigene Unterauftragsverarbeiter —
+  Datadog protokolliert in den **USA**, Zendesk und Convrrt ebenfalls, Support und Wartung laufen
+  über **Indien**. `/datenschutz` Ziffern 3 g, 4 und 5 entsprechend präzisiert.
+  **Rest, nur im eingeloggten Brevo-Konto (Betreiber):** (1) Kontoname → Einstellungen →
+  Rechtsdokumente: liegt dort eine neuere oder signierbare Fassung als 15.05.2024? (2) Firmendaten
+  auf die Gewerbeanmeldung bringen (MyImmo, Einzelunternehmen, Bad Schwartau) — sonst lautet der
+  Vertrag auf die falsche Partei. (3) Prüfen, an welche Adresse die Unterauftragsverarbeiter-
+  Ankündigungen gehen; die 10-Werktage-Frist verfällt ungelesen.
+  ✅ 28.08.2026: **Datenschutzerklärung um den Vorlagen-Verteiler ergänzt** — `/datenschutz`
+  Ziffer 3 h (Double-Opt-in, Einwilligungsnachweis mit Zeitpunkt/IP/Wortlaut, Art. 6 Abs. 1
+  lit. a + Art. 7 Abs. 1, Empfänger Brevo, Speicherdauer, Widerruf) + Brevo in der
+  Subprozessoren-Liste (Ziffer 4). Der **AVV mit Brevo** bleibt offen (Punkte (1)–(4), (6), (7) oben).
   ✅ 29.07.2026: **Vercel auf Pro** → AVV greift automatisch über die ToS, kommerzielle
   Nutzung erlaubt. Noch offen (nur Betreiber): Nutzer-AVV anwaltlich prüfen. Anwaltsliste zusätzlich (19.07.2026):
   **§ 34i GewO** (Finanzierungs-Assistent Stufe 1 — Wording bereits neutralisiert, „Empfehlung"
@@ -223,6 +296,17 @@ Abgleich-Engine `lib/banking/abgleich.ts`, 90-Tage-Reauth als Frist in `lib/fris
 
 ## Deployment
 - **Live-URL (Produktion): https://www.myimmoapp.de** (eigene Domain; Apex leitet auf www um.
+  **Das Vercel-Projekt beantwortet aber MEHRERE Domains: `myimmoapp.store` UND `myimmoapp.com`
+  lieferten bis 01.09.2026 dieselbe App aus (200)** — Google zeigte MyImmo daraufhin unter
+  `.store`. Seit 01.09.2026 leiten beide dauerhaft auf `.de` (`next.config.mjs`, Liste
+  `NEBENDOMAINS`, host-basierter Redirect mit Pfad-Erhalt). Das korrekte Canonical auf `.de`
+  allein hatte NICHT gereicht: Canonical ist ein Hinweis, keine Anweisung.
+  **Regel:** Kommt eine weitere Domain ins Vercel-Projekt, gehoert sie in `NEBENDOMAINS` —
+  sonst liefert sie stillschweigend Duplikate aus.
+  **Noch offen (nur Betreiber):** dieselbe Weiterleitung in Vercel setzen (Settings → Domains →
+  `.store` und `.com` auf „Redirect") — dann wird die App gar nicht erst aufgerufen und die
+  Code-Regel kann weg. Und in der Search Console die **Adressänderung** anstossen; der
+  Indexwechsel dauert sonst Wochen.
   `my-immo-app.vercel.app` existiert nur noch als Vercel-Fallback — nirgends mehr verlinken;
   Sitemap/Robots/metadataBase zeigen auf www.myimmoapp.de).
 - Gehostet auf **Vercel**, verbunden mit dem GitHub-Repo `jxnashap/myimmo-app` (Branch `main`).
@@ -289,6 +373,26 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   `supabase/migrations/<version>_<name>.sql` im selben PR committen (Regeln + Historie-Index:
   `supabase/migrations/README.md`). Kein DDL über `execute_sql`.
 - Dateien (Belege, Archiv-Dokumente) werden als Base64 in Tabellenspalten gespeichert — **kein Storage-Bucket** nötig.
+
+## Sicherheit der Abhängigkeiten
+- ✅ **Next-15-Migration UMGESETZT (01.09.2026): Next 15.5.25 / React 19.2.8.** Plan samt
+  Umsetzungsbericht: **`docs/zukunft/NEXTJS-15-MIGRATION.md`**; Befundlage:
+  **`docs/SICHERHEIT-ABHAENGIGKEITEN.md`**. Alle 21 next-Meldungen geschlossen (25 → 4).
+  **Wichtigste Code-Folge:** `createClient()` aus `lib/supabase/server.ts` ist jetzt
+  **async** — neue Aufrufstellen brauchen `await createClient()`. Ebenso `besucherIp()`
+  und `basisUrl()` (jetzt `lib/net/basisUrl.ts`; Route-Dateien dürfen in Next 15 nur noch
+  HTTP-Methoden + Segment-Konfig exportieren). React 19: `useRef` braucht einen Startwert.
+  **Rückkehrpunkt: Branch `stand/vor-next15-2026-09-01`** (= letzter 14er-Stand, Commit
+  `3ef7ccc`); Tags lässt der Git-Proxy der Remote-Umgebung nicht durch, deshalb ein Branch.
+- **Bewusst offen: 4 Meldungen zu `postcss` 8.4.31** — von Next selbst fest verdrahtet
+  (auch in 15/16), reine Bauzeit-Exposition. KEIN npm-`override` setzen (verstellt Nexts
+  CSS-Pipeline); beim nächsten Next-Update erneut prüfen.
+- **Next 16 ist ein eigenes, späteres Vorhaben** — verlangt `middleware.ts` → `proxy.ts`
+  (dort **kein Edge-Runtime**), Turbopack als Standard, Wegfall von `next lint`.
+- **Scanner (kostenlos, ohne Konto):** `osv-scanner scan source --lockfile=package-lock.json`
+  (`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest`). Vor jedem größeren
+  Release laufen lassen, mindestens monatlich. Neue Befunde in der genannten Datei bewerten,
+  nicht nur die Zahl weiterreichen.
 
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).

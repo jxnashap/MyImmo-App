@@ -158,8 +158,8 @@ export default function AnlageVExport({
                   className="btn"
                   style={{
                     fontSize: 12, padding: "6px 12px", borderRadius: 6,
-                    background: ansicht === k ? "var(--gold)" : "transparent",
-                    color: ansicht === k ? "#1a1a17" : "var(--muted)",
+                    background: ansicht === k ? "var(--gold-fill)" : "transparent",
+                    color: ansicht === k ? "var(--btn-gold-text)" : "var(--muted)",
                   }}
                 >
                   {k === "elster" && <Landmark size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />}
@@ -186,7 +186,7 @@ export default function AnlageVExport({
             <KennzahlCard
               label={erg.gesamt.ueberschuss >= 0 ? "Überschuss (Einkünfte)" : "Verlust"}
               value={eur2(erg.gesamt.ueberschuss)}
-              color={erg.gesamt.ueberschuss >= 0 ? "var(--gold)" : "var(--red)"}
+              color={erg.gesamt.ueberschuss >= 0 ? "var(--gold-fill)" : "var(--red)"}
             />
           </div>
 
@@ -197,7 +197,19 @@ export default function AnlageVExport({
               <h3>Aufstellung {jahr}</h3>
               <span style={{ fontSize: 11, color: "var(--muted)" }}>{erg.objekte.length} Objekt(e)</span>
             </div>
-            <div className="section-body" style={{ overflowX: "auto" }}>
+            {erg.gesamt.einnahmen.summe === 0 && erg.gesamt.werbungskosten.summe === 0 && (
+              <div className="section-body" style={{ paddingBottom: 0 }}>
+                <div style={{ background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", borderRadius: 12, padding: "10px 14px", fontSize: 12.5 }}>
+                  Für {jahr} sind keine Buchungen erfasst — deshalb stehen unten überall Nullen.
+                  {jahre.filter((j) => j !== jahr).length > 0 && (
+                    <> Anderes Jahr wählen: {jahre.filter((j) => j !== jahr).map((j) => (
+                      <button key={j} type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "3px 9px", marginLeft: 6 }} onClick={() => setJahr(j)}>{j}</button>
+                    ))}</>
+                  )}
+                </div>
+              </div>
+            )}
+            <div className="section-body table-scroll">
               <table style={{ fontSize: 12, minWidth: 520 }}>
                 <thead>
                   <tr>
@@ -232,7 +244,7 @@ export default function AnlageVExport({
                     ))}
                   </tr>
 
-                  <tr><td colSpan={spalten.length + 1} style={{ fontWeight: 700, color: "var(--red)", paddingTop: 10 }}>Werbungskosten</td></tr>
+                  <tr><td colSpan={spalten.length + 1} style={{ fontWeight: 700, paddingTop: 10 }}>Werbungskosten</td></tr>
                   {wkPos.map((p) => (
                     <tr key={p.key}>
                       <td style={{ paddingLeft: 12, color: "var(--muted)" }}>{p.label}</td>
@@ -249,7 +261,7 @@ export default function AnlageVExport({
                   <tr style={{ borderTop: "2px solid var(--line2)" }}>
                     <td style={{ fontWeight: 700 }}>Überschuss / Verlust</td>
                     {spalten.map((o) => (
-                      <td key={o.propId ?? "g"} style={{ textAlign: "right", fontWeight: 700, color: o.ueberschuss >= 0 ? "var(--gold)" : "var(--red)", background: o === erg.gesamt ? "var(--bg3)" : undefined }}>
+                      <td key={o.propId ?? "g"} style={{ textAlign: "right", fontWeight: 700, color: o.ueberschuss >= 0 ? "var(--gold-fill)" : "var(--red)", background: o === erg.gesamt ? "var(--bg3)" : undefined }}>
                         {eur2(o.ueberschuss)}
                       </td>
                     ))}

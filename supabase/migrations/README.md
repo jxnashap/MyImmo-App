@@ -126,3 +126,10 @@ Einzelne Datei nachziehen: Statement(s) der Version in `<version>_<name>.sql` ko
 | 20260731180000 | newsletter_double_opt_in | Vorlagen-Verteiler mit Double-Opt-in; Tabelle ist der Einwilligungsnachweis |
 | 20260731181000 | newsletter_abmelde_token | Eigener Abmelde-Schlüssel, damit Abmeldungen nicht nur bei Brevo landen |
 | 20260731182000 | newsletter_email_unique_direkt | Unique auf `email` statt `lower(email)` — Ausdrucks-Index taugt nicht für ON CONFLICT |
+| 20260827100000 | bewerbung_dateien | Bewerber legen der Selbstauskunft Dokumente bei (Gehaltsabrechnungen, SCHUFA) |
+| 20260827110000 | bewerbung_dateien_verschluesselt | Anhänge-RPC akzeptiert App-Chiffretext (enc:v1), Limit 12 MB Text |
+| 20260827120000 | bewerber_link_steckbrief_slots | Objekt-Steckbrief am Bewerbungs-Link + wählbare Dokument-Slots (max. 12 Dateien) |
+| 20260829120000 | open_banking_entfernen | Open Banking zurückgestellt: Tabellen (bankverbindungen, bank_umsaetze, bank_auth_anfragen) + abos.banking_addon gedroppt (Code in Historie bis 85feb98; docs/zukunft/OPEN-BANKING.md) |
+| 20260830150000 | demo_nur_lesen | Demo-Konto: restriktive RLS-Policies verweigern jedes INSERT/UPDATE/DELETE; `ist_demo_nutzer()`. SELECT und Service-Role (Reset) bleiben frei |
+| 20260830153000 | demo_mieterhoehung_beispielwerte | Beispiel-Vergleichsmieten und Sperrfrist-Daten für die 6 Demo-Mieter, damit das Mieterhöhungs-Dokument rechnet; Schnappschuss nachgezogen |
+| 20260831090000 | registrierung_freigabe_vormerken | Zugangscode nur noch EINMAL: Freigabe wird bei der Registrierung serverseitig vorgemerkt, `freischaltung_nachholen()` löst sie beim ersten Login ein |

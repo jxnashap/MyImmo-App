@@ -73,7 +73,7 @@ export default function TenantForm({
             {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
           </select>
         </div>
-        <div className="form-group"><label>Einheit (z.B. EG links)</label><input name="einheit" defaultValue={v("einheit")} /></div>
+        <div className="form-group"><label>Einheit (z. B. EG links)</label><input name="einheit" defaultValue={v("einheit")} /></div>
       </div>
       <div className="form-row">
         <div className="form-group"><label>Mietbeginn</label><input type="date" name="mietbeginn" defaultValue={v("mietbeginn")} /></div>

@@ -112,8 +112,8 @@ export default function MarktwertEinschaetzungen({
           <button type="button" className="btn btn-gold" onClick={speichern} disabled={busy || !objId || num(wert) <= 0}>
             <Save size={14} /> {busy ? "Speichert …" : "Einschätzung speichern"}
           </button>
-          {fehler && <span style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</span>}
-          {hinweis && !fehler && <span style={{ fontSize: 12, color: "var(--green)" }}>{hinweis}</span>}
+          {fehler && <span role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</span>}
+          {hinweis && !fehler && <span role="status" style={{ fontSize: 12, color: "var(--green)" }}>{hinweis}</span>}
         </div>
       </div>
 
@@ -140,58 +140,64 @@ export default function MarktwertEinschaetzungen({
               <p>Halte oben deine erste Marktwert-Einschätzung fest — mit Datum, damit du die Entwicklung später vergleichen kannst.</p>
             </div>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Datum</th>
-                  <th>Objekt</th>
-                  <th>Herkunft</th>
-                  <th style={{ textAlign: "right" }}>Marktwert</th>
-                  <th style={{ textAlign: "right" }}>Δ</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {gefiltert.map((e) => {
-                  const w = e.marktwert == null ? null : Number(e.marktwert);
-                  const eigene = e.verfahren === "einschaetzung";
-                  return (
-                    <tr key={e.id}>
-                      <td style={{ whiteSpace: "nowrap" }}>{fmtDatum(e.datum)}</td>
-                      <td>{nameOf.get(e.immobilie_id) ?? "–"}</td>
-                      <td style={{ color: "var(--muted)" }}>
-                        {e.herkunft}
-                        {e.notiz && <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 2 }}>{e.notiz}</div>}
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>{w == null ? "–" : eur(w)}</td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                        {e.deltaProzent == null ? (
-                          <span style={{ color: "var(--faint)" }}>–</span>
-                        ) : (
-                          <span className={`badge ${e.deltaProzent >= 0 ? "badge-green" : "badge-red"}`}>
-                            {e.deltaProzent >= 0 ? "+" : ""}{e.deltaProzent.toLocaleString("de-DE")} %
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                        {w != null && (
-                          <button type="button" className="btn btn-ghost btn-sm" style={{ marginRight: 6 }} disabled={busy}
-                            onClick={() => uebernehmen(e.immobilie_id, w, e.datum)} title="Als aktuellen Marktwert des Objekts setzen">
-                            <Check size={13} /> Übernehmen
-                          </button>
-                        )}
-                        {eigene && (
-                          <button type="button" className="btn btn-ghost btn-sm" disabled={busy}
-                            onClick={() => loeschen(e.id)} title="Einschätzung löschen">
-                            <Trash2 size={13} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            // .table-scroll wie bei den uebrigen Tabellen der App: fuenf
+            // Spalten passen auf dem Telefon nicht nebeneinander, und ohne
+            // eigenen Scroll-Bereich wuerde die Seite seitlich wandern statt
+            // der Tabelle.
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Datum</th>
+                    <th>Objekt</th>
+                    <th>Herkunft</th>
+                    <th style={{ textAlign: "right" }}>Marktwert</th>
+                    <th style={{ textAlign: "right" }}>Δ</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gefiltert.map((e) => {
+                    const w = e.marktwert == null ? null : Number(e.marktwert);
+                    const eigene = e.verfahren === "einschaetzung";
+                    return (
+                      <tr key={e.id}>
+                        <td style={{ whiteSpace: "nowrap" }}>{fmtDatum(e.datum)}</td>
+                        <td>{nameOf.get(e.immobilie_id) ?? "–"}</td>
+                        <td style={{ color: "var(--muted)" }}>
+                          {e.herkunft}
+                          {e.notiz && <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 2 }}>{e.notiz}</div>}
+                        </td>
+                        <td style={{ textAlign: "right", fontWeight: 600, whiteSpace: "nowrap" }}>{w == null ? "–" : eur(w)}</td>
+                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                          {e.deltaProzent == null ? (
+                            <span style={{ color: "var(--faint)" }}>–</span>
+                          ) : (
+                            <span className={`badge ${e.deltaProzent >= 0 ? "badge-green" : "badge-red"}`}>
+                              {e.deltaProzent >= 0 ? "+" : ""}{e.deltaProzent.toLocaleString("de-DE")} %
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                          {w != null && (
+                            <button type="button" className="btn btn-ghost btn-sm" style={{ marginRight: 6 }} disabled={busy}
+                              onClick={() => uebernehmen(e.immobilie_id, w, e.datum)} title="Als aktuellen Marktwert des Objekts setzen">
+                              <Check size={13} /> Übernehmen
+                            </button>
+                          )}
+                          {eigene && (
+                            <button type="button" className="btn btn-ghost btn-sm" disabled={busy}
+                              onClick={() => loeschen(e.id)} title="Einschätzung löschen">
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 12 }}>
             Eigene Einschätzungen erscheinen auch in der Wertentwicklung des Objekts. „Übernehmen" setzt den Wert als aktuellen Marktwert —

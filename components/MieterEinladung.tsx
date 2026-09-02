@@ -159,7 +159,7 @@ export default function MieterEinladung({
         </button>
       )}
       {fehler && (
-        <p style={{ marginTop: 8, fontSize: 12, color: "var(--red)" }}>{fehler}</p>
+        <p role="alert" style={{ marginTop: 8, fontSize: 12, color: "var(--red)" }}>{fehler}</p>
       )}
     </div>
   );

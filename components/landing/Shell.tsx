@@ -1,9 +1,16 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { PREISE_SICHTBAR } from "@/lib/preise";
+import QlxHeader from "@/components/landing/QlxHeader";
 
-// Rahmen aller Landing-Seiten: Navigation mit echten Unterseiten + Footer.
-// `aktiv` markiert den aktuellen Menüpunkt.
+// Rahmen aller Landing-Seiten — Quiet-Luxury-Bauweise (QLX): fixierter
+// Fontenay-Header mit Overlay-Menü, Abschluss-CTA und Footer auf der
+// Nachtblau-Bühne. `aktiv` markiert den aktuellen Menüpunkt.
+//
+// `mitHero`: Die sechs Reiter-Seiten bringen einen eigenen Cinematic-Hero mit
+// (QlxHero) — dort steht der Header transparent auf dem Video. Alle übrigen
+// Seiten (Ratgeber-Artikel, Funktions-Detailseiten) bekommen stattdessen ein
+// schmales Nachtblau-Band, damit der Header nie auf hellem Grund hängt.
 
 // „Preise" erscheint erst, wenn die Tarife oeffentlich gelten sollen
 // (lib/preise.ts) — solange das Bezahlsystem inaktiv ist, waeren die Betraege
@@ -21,41 +28,35 @@ const NAV = [
 
 export default function LandingShell({
   aktiv,
+  mitHero = false,
+  ohneSchlussCta = false,
   children,
 }: {
   aktiv?: string;
+  mitHero?: boolean;
+  /** Für Seiten, die ein EIGENES Abschluss-CTA mitbringen (Startseite) —
+      sonst stünden zwei „Kostenlos starten"-Bänder direkt untereinander. */
+  ohneSchlussCta?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className="lp lp3">
-      <header className="lp-nav">
-        <div className="lp-inner lp-nav-row">
-          <Link href="/" className="lp-logo" style={{ textDecoration: "none" }}>My<span>Immo</span></Link>
-          <nav className="lp-nav-links">
-            {NAV.map((n) => (
-              <Link key={n.href} href={n.href} className={aktiv === n.href ? "lp-nav-aktiv" : undefined}>
-                {n.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="lp-nav-cta">
-            <Link href="/anmelden" className="btn btn-ghost">Anmelden</Link>
-            <Link href="/anmelden" className="btn btn-gold">Kostenlos starten</Link>
-          </div>
-        </div>
-      </header>
+    <div className="lp qlx" data-scrolled="0" data-menu="0">
+      <QlxHeader nav={NAV} aktiv={aktiv} />
+      {!mitHero && <div className="qlx-band" aria-hidden />}
 
       {children}
 
-      <section className="lp-final lp-section-alt">
-        <div className="lp-inner">
-          <h2 className="lp-h2">In 2 Minuten startklar</h2>
-          <p className="lp-section-sub">Konto anlegen, erstes Objekt erfassen — den Rest übernimmt MyImmo.</p>
-          <div className="lp-cta-row">
-            <Link href="/anmelden" className="btn btn-gold lp-btn-big">Kostenlos starten</Link>
+      {!ohneSchlussCta && (
+        <section className="lp-final">
+          <div className="lp-inner">
+            <h2 className="lp-h2">In 2 Minuten <em>startklar</em></h2>
+            <p className="lp-section-sub">Konto anlegen, erstes Objekt erfassen — den Rest übernimmt MyImmo.</p>
+            <div className="lp-cta-row">
+              <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <footer className="lp-footer">
         <div className="lp-inner lp-footer-row">

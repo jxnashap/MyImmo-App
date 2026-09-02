@@ -11,7 +11,7 @@ const MAX_FOTO = 4 * 1024 * 1024;
 const FOTO_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 
 export async function meldeZaehlerstand(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -66,7 +66,7 @@ export async function meldeZaehlerstand(formData: FormData) {
 }
 
 export async function uebernehmeZaehlerstand(meldungId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

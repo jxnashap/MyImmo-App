@@ -25,6 +25,13 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
   const [konfidenz, setKonfidenz] = useState<number | null>(null);
   const [notiz, setNotiz] = useState("");
   const [v, setV] = useState<Values>(LEER);
+  // Im KI-Tab stand das leere Objektformular dauerhaft unter den drei
+  // Auslese-Wegen — man sah nicht, ob es das Ergebnis oder eine zweite
+  // Eingabemaske ist. Es erscheint jetzt erst, wenn es etwas zu prüfen gibt
+  // (oder man es bewusst aufklappt).
+  const [manuellOffen, setManuellOffen] = useState(false);
+  const etwasErkannt = konfidenz != null || Object.entries(v).some(([k, val]) => val !== LEER[k as keyof Values]);
+  const zeigeFormular = tab === "manual" || etwasErkannt || manuellOffen;
   const set = (k: keyof Values) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setV((s) => ({ ...s, [k]: e.target.value }));
 
   // Ein Weg für alle drei Quellen: PDF-Upload, Link, Text.
@@ -81,8 +88,8 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
       <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 4 }}>KI-Auswertung (Anthropic Claude): Der Text wird zur Auswertung an die API übermittelt (kein Modell-Training). Ergebnisse bitte vor dem Speichern prüfen.</p>
 
       <div style={{ display: "flex", gap: 4, marginBottom: 18, borderBottom: "1px solid var(--line)" }}>
-        <button type="button" onClick={() => setTab("ki")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "ki" ? "var(--gold)" : "transparent"}`, color: tab === "ki" ? "var(--gold)" : "var(--muted)", fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><Bot size={14} style={{ verticalAlign: "-2px" }} /> KI-Import</button>
-        <button type="button" onClick={() => setTab("manual")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "manual" ? "var(--gold)" : "transparent"}`, color: tab === "manual" ? "var(--gold)" : "var(--muted)", fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Schnellformular</button>
+        <button type="button" onClick={() => setTab("ki")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "ki" ? "var(--gold-fill)" : "transparent"}`, color: tab === "ki" ? "var(--gold)" : "var(--muted)", fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><Bot size={14} style={{ verticalAlign: "-2px" }} /> KI-Import</button>
+        <button type="button" onClick={() => setTab("manual")} style={{ padding: "8px 16px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === "manual" ? "var(--gold-fill)" : "transparent"}`, color: tab === "manual" ? "var(--gold)" : "var(--muted)", fontFamily: "var(--font-ui)", fontSize: 12, fontWeight: 500, cursor: "pointer", marginBottom: -1 }}><ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Schnellformular</button>
       </div>
 
       {tab === "ki" && (
@@ -90,10 +97,21 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
           {/* Weg 1: Exposé-PDF hochladen — der übliche Fall beim Makler-Exposé. */}
           <div className="form-group" style={{ marginBottom: 10 }}>
             <label><Upload size={12} style={{ verticalAlign: "-2px" }} /> Exposé als PDF hochladen</label>
+            {/* Der native Datei-Dialog-Knopf war die einzige Stelle der App mit
+                englischer Systembeschriftung und eckigem Rahmen — deshalb hier
+                dasselbe Pillen-Muster wie im CSV-Import. */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <input type="file" accept="application/pdf,.pdf"
-                onChange={(e) => { setDatei(e.target.files?.[0] ?? null); setError(null); }}
-                style={{ flex: "1 1 240px", fontSize: 12.5 }} />
+              <label className="btn btn-ghost" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <Upload size={14} /> PDF wählen
+                <input type="file" accept="application/pdf,.pdf"
+                  onChange={(e) => { setDatei(e.target.files?.[0] ?? null); setError(null); }}
+                  style={{ display: "none" }} />
+              </label>
+              {datei && (
+                <span style={{ fontSize: 12.5, color: "var(--muted)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220 }}>
+                  {datei.name}
+                </span>
+              )}
               <button type="button" className="btn btn-gold" onClick={pdfAuslesen} disabled={loading !== null || !datei}>
                 {loading === "pdf" ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Liest PDF…</> : "PDF auslesen"}
               </button>
@@ -118,25 +136,38 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
           {/* Weg 3: Text einfügen (Fallback, wenn Portale blocken). */}
           <div className="form-group" style={{ marginBottom: 10 }}>
             <label>…oder Anzeigentext einfügen</label>
-            <textarea rows={7} value={text} onChange={(e) => setText(e.target.value)} placeholder="Text der Immobilienanzeige hier einfügen (Strg+A → Strg+C auf der Anzeige, dann Strg+V hier)." style={{ resize: "vertical", padding: "9px 11px", borderRadius: 7, border: "1px solid var(--line2)", background: "var(--bg3)", color: "var(--text)", fontFamily: "'Outfit',sans-serif", fontSize: 13, outline: "none", lineHeight: 1.6 }} />
+            {/* Kein Inline-Stil: erbt die Standard-Optik aus .form-group — die
+                Extra-Rahmenfarbe war die zweite Input-Optik im selben Formular. */}
+            <textarea rows={7} value={text} onChange={(e) => setText(e.target.value)} placeholder="Text der Immobilienanzeige hier einfügen (Strg+A → Strg+C auf der Anzeige, dann Strg+V hier)." style={{ resize: "vertical", lineHeight: 1.6 }} />
           </div>
           <button type="button" onClick={() => rufeAb("/api/import", { text }, "text")}
             disabled={loading !== null || text.trim().length < 30} className="btn btn-ghost"
             style={{ opacity: loading !== null || text.trim().length < 30 ? 0.6 : 1 }}>
             {loading === "text" ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> KI analysiert…</> : <><Bot size={14} style={{ verticalAlign: "-2px" }} /> Text auslesen</>}
           </button>
-          {error && <div style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
+          {error && <div role="alert" style={{ marginTop: 10, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "var(--red)" }}><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {error}</div>}
           {konfidenz != null && (
             <div style={{ marginTop: 10, fontSize: 12, color: konfColor }}><CheckCircle2 size={12} style={{ verticalAlign: "-2px" }} /> Daten erkannt — Konfidenz {konfidenz}%. Bitte unten prüfen und speichern.</div>
           )}
         </div>
       )}
 
+      {tab === "ki" && !zeigeFormular && (
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => setManuellOffen(true)}
+          style={{ marginBottom: 4 }}
+        >
+          <ClipboardList size={14} style={{ verticalAlign: "-2px" }} /> Lieber selbst eintragen
+        </button>
+      )}
+
       {/* Geteiltes (editierbares) Formular */}
-      <form action={action}>
+      <form action={action} style={{ display: zeigeFormular ? undefined : "none" }}>
         <div className="form-section-label">{tab === "ki" ? "Erkannte Daten (prüfen & speichern)" : "Objektdaten"}</div>
         <div className="form-row">
-          <div className="form-group"><label>Name *</label><input name="bezeichnung" required value={v.bezeichnung} onChange={set("bezeichnung")} placeholder="z.B. 3-Zi-Wohnung Hamburg" /></div>
+          <div className="form-group"><label>Name *</label><input name="bezeichnung" required value={v.bezeichnung} onChange={set("bezeichnung")} placeholder="z. B. 3-Zi-Wohnung Hamburg" /></div>
           <div className="form-group"><label>Typ</label><select name="typ" value={v.typ} onChange={set("typ")}>{TYPEN.map((t) => <option key={t}>{t}</option>)}</select></div>
         </div>
         <div className="form-row single">

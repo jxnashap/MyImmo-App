@@ -29,6 +29,7 @@ import {
   type Freigabe,
 } from "@/lib/actions/beleihung";
 import { teilbarerLink } from "@/lib/appUrl";
+import { useModalFokus } from "@/lib/modalFokus";
 
 export type Rueckmeldung = {
   id: string;
@@ -91,6 +92,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
   // Freigaben (Phase 2) lokal führen; Teilen-Modal-Zustand
   const [freigaben, setFreigaben] = useState<Freigabe[]>(initialFreigaben);
   const [showShare, setShowShare] = useState(false);
+  const teilenRef = useModalFokus<HTMLDivElement>(() => setShowShare(false), showShare);
   const [shareKeys, setShareKeys] = useState<Set<string>>(new Set());
   const [shareTage, setShareTage] = useState("14");
   const [shareBusy, setShareBusy] = useState(false);
@@ -230,7 +232,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
         {item.auto && !hatDatei && (
           <button
             type="button"
-            className="btn btn-gold"
+            className="btn btn-outline"
             style={{ fontSize: 11 }}
             disabled={busy === item.key}
             onClick={() => run(item.key, () => generiereBeleihungDokument(propId, item.key), "Dokument aus MyImmo erzeugt.")}
@@ -238,13 +240,22 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
             {busy === item.key ? <Loader2 size={13} style={{ animation: "spin .8s linear infinite" }} /> : <Bot size={13} />} Aus MyImmo erzeugen
           </button>
         )}
-        <input
-          type="date"
-          value={d.datum ?? ""}
-          onChange={(e) => run(item.key, () => setBeleihungDatum(propId, item.key, e.target.value || null))}
-          title="Datum des Dokuments (optional)"
-          style={{ fontSize: 11, padding: "4px 6px", background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, color: d.datum ? "var(--ink)" : "var(--muted)", width: 118 }}
-        />
+        {/* Das Feld stand vorher ohne jede Beschriftung in jeder der ~25 Zeilen —
+            mit Tooltip, den am Handy niemand sieht. Ein kurzes „Stand" davor
+            sagt in jeder Zeile, welches Datum gemeint ist. */}
+        <label
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10.5, color: "var(--muted)", whiteSpace: "nowrap" }}
+          title="Datum, das auf dem Dokument steht (Ausstellung bzw. Stichtag) — optional"
+        >
+          Stand
+          <input
+            type="date"
+            value={d.datum ?? ""}
+            onChange={(e) => run(item.key, () => setBeleihungDatum(propId, item.key, e.target.value || null))}
+            aria-label={`Dokumentdatum: ${item.label}`}
+            style={{ fontSize: 11, padding: "4px 6px", background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, color: d.datum ? "var(--ink)" : "var(--muted)", width: 118 }}
+          />
+        </label>
       </div>
     );
   }
@@ -266,9 +277,13 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
   return (
     <div className="fade-up">
       {/* Kopf */}
+      <div style={{ marginBottom: 12 }}>
+        <Link href={`/properties/${propId}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zum Objekt</Link>
+      </div>
       <div className="settings-head" style={{ flexWrap: "wrap", rowGap: 12 }}>
         <div className="settings-avatar"><Landmark size={22} /></div>
         <div className="who">
+          <div className="topbar-kicker" style={{ marginBottom: 4 }}>Immobilie · Bankunterlagen</div>
           <h1>Beleihungsordner</h1>
           <p>{objektName} — alle Unterlagen fürs Bankgespräch</p>
         </div>
@@ -297,7 +312,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 11, color: "var(--muted)" }}>{done}/{items.length}</span>
                 <div className="progress-bar" style={{ width: 90, marginTop: 0 }}>
-                  <div className="progress-fill" style={{ width: `${items.length ? (done / items.length) * 100 : 0}%`, background: "var(--gold)" }} />
+                  <div className="progress-fill" style={{ width: `${items.length ? (done / items.length) * 100 : 0}%`, background: "var(--gold-fill)" }} />
                 </div>
               </div>
             </div>
@@ -340,7 +355,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
       {/* Bankpaket-Leiste */}
       <div className="section" style={{ marginBottom: 18 }}>
         <div style={{ padding: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <a href={deckblattUrl} target="_blank" rel="noopener noreferrer" className="btn btn-gold" style={{ fontSize: 12 }}>
+          <a href={deckblattUrl} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 12 }}>
             <FileText size={14} /> Deckblatt / Übersicht als PDF
           </a>
           <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={openShare}>
@@ -418,8 +433,17 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
           Transforms wie der .fade-up-Seitenanimation). */}
       {showShare && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={() => setShowShare(false)}>
-          <div className="modal-sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
-            <h3 style={{ marginBottom: 4 }}>Freigabe-Link für die Bank</h3>
+          <div
+            ref={teilenRef}
+            className="modal-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="beleihung-teilen-titel"
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 520 }}
+          >
+            <h3 id="beleihung-teilen-titel" style={{ marginBottom: 4 }}>Freigabe-Link für die Bank</h3>
             <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
               Wähle, welche hochgeladenen Dokumente die Bank sehen darf. Der Link läuft automatisch ab und ist jederzeit widerrufbar.
             </p>
@@ -430,7 +454,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                   {neuerLink}
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => { navigator.clipboard.writeText(neuerLink).then(() => toast("Link kopiert.")); }}>
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => { navigator.clipboard.writeText(neuerLink).then(() => toast("Link kopiert.")); }}>
                     <Copy size={13} /> Kopieren
                   </button>
                   <a

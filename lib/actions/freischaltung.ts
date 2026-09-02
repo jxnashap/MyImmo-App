@@ -4,6 +4,7 @@
 // (nicht nur im Formular) und dokumentiert die Zustimmung. Erst danach
 // bekommt ein neu registriertes Konto Zugriff auf die App.
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { darfWeiter, ZU_VIELE } from "@/lib/net/bremse";
 
 /** Der erwartete Beta-Code — server-only bevorzugt, Fallback auf den alten öffentlichen. */
@@ -35,14 +36,14 @@ export async function pruefeBetaCode(code: string): Promise<{ ok: boolean; fehle
     return {
       ok: false,
       fehler:
-        "Die Registrierung ist derzeit nicht freigeschaltet. Bitte wende dich an kontakt@myimmoapp.de.",
+        "Die Registrierung ist derzeit nicht freigeschaltet. Bitte wende dich an info@myimmoapp.de.",
     };
   }
   if (code.trim() !== erwartet) {
     return {
       ok: false,
       fehler:
-        "Zugangscode stimmt nicht. MyImmo ist noch im Early Access — einen Code bekommst du unter kontakt@myimmoapp.de.",
+        "Zugangscode stimmt nicht. MyImmo ist noch im Early Access — einen Code bekommst du unter info@myimmoapp.de.",
     };
   }
   return { ok: true };
@@ -51,17 +52,27 @@ export async function pruefeBetaCode(code: string): Promise<{ ok: boolean; fehle
 export async function schalteKontoFrei(
   formData: FormData,
 ): Promise<{ ok: boolean; fehler?: string; rolle?: string }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, fehler: "Nicht angemeldet." };
 
-  // Grossschreibung wie im Registrierungspfad (app/login/page.tsx): Codes sind
-  // immer Grossbuchstaben, die RPC vergleicht exakt. Ohne diese Normalisierung
-  // scheiterte ein auf dem Handy getipptes "mi-abcd-2345" — genau bei der
-  // Gruppe, fuer die das nachtraegliche Einloesen gebaut wurde.
-  const code = String(formData.get("code") ?? "").trim().toUpperCase();
+  // ZWEI Schreibweisen, und das ist kein Zufall:
+  //
+  //   `code`      — unveraendert, nur getrimmt. So wie ihn auch der
+  //                 Registrierungspfad an `pruefeBetaCode` gibt.
+  //   `codeGross` — grossgeschrieben, NUR fuer Einladungscodes (Format
+  //                 MI-XXXX-XXXX). Die sind immer gross; ein auf dem Handy
+  //                 getipptes "mi-abcd-2345" soll trotzdem gehen.
+  //
+  // Vorher lief BEIDES ueber die grossgeschriebene Fassung. Der Beta-Zugangscode
+  // enthaelt aber Klein- und Grossbuchstaben, Ziffern und Sonderzeichen — die
+  // Grossschreibung zerstoerte ihn, und `pruefeBetaCode` vergleicht exakt.
+  // Folge (gemeldet 31.08.2026): Derselbe Code, der bei der Registrierung
+  // funktionierte, wurde hier als falsch abgewiesen.
+  const code = String(formData.get("code") ?? "").trim();
+  const codeGross = code.toUpperCase();
   const consent = formData.get("consent") === "on" || formData.get("consent") === "true";
   if (!consent) return { ok: false, fehler: "Bitte AGB und Datenschutz zustimmen." };
 
@@ -87,7 +98,7 @@ export async function schalteKontoFrei(
     return { ok: true };
   }
 
-  const { data, error: rpcFehler } = await supabase.rpc("einladungscode_einloesen", { p_code: code });
+  const { data, error: rpcFehler } = await supabase.rpc("einladungscode_einloesen", { p_code: codeGross });
   const erg = data as { ok: boolean; fehler?: string; rolle?: string } | null;
   if (!rpcFehler && erg?.ok) return { ok: true, rolle: erg.rolle };
 
@@ -100,4 +111,51 @@ export async function schalteKontoFrei(
       "Als Mieter oder Handwerksbetrieb bekommst du den Code von deinem Vermieter — " +
       "frag dort nach einem neuen, falls deiner abgelaufen ist.",
   };
+}
+
+/**
+ * Registrierung vorbereiten: Zugangscode pruefen UND die Freischaltung
+ * serverseitig vormerken.
+ *
+ * Ersetzt den frueheren blossen `pruefeBetaCode`-Aufruf im Registrierungspfad.
+ * Vorher wurde der Code nur geprueft und nichts gespeichert — die Freischaltung
+ * braucht `auth.uid()`, die es vor der E-Mail-Bestaetigung nicht gibt. Deshalb
+ * fragte das Willkommens-Gate beim ersten Login ein ZWEITES Mal nach dem Code.
+ *
+ * Pruefung und Vormerkung liegen bewusst in EINER Action: Waeren es zwei,
+ * koennte man die Vormerkung direkt aufrufen und sich eine beliebige Adresse
+ * am Zugangscode vorbei freischalten.
+ *
+ * Schlaegt das Vormerken fehl (fehlender Service-Role-Key), wird die
+ * Registrierung NICHT abgebrochen — der Nutzer landet dann wie bisher auf
+ * /willkommen und traegt den Code dort ein. Ein funktionierender Rueckfallweg
+ * ist besser als eine abgebrochene Anmeldung.
+ */
+export async function bereiteRegistrierungVor(
+  code: string,
+  email: string,
+  consent: boolean,
+): Promise<{ ok: boolean; fehler?: string; vorgemerkt?: boolean }> {
+  const geprueft = await pruefeBetaCode(code);
+  if (!geprueft.ok) return geprueft;
+  if (!consent) return { ok: false, fehler: "Bitte stimme AGB, Datenschutz und Auftragsverarbeitung zu." };
+
+  const adresse = email.trim().toLowerCase();
+  if (!adresse) return { ok: false, fehler: "Bitte E-Mail-Adresse angeben." };
+
+  const admin = createAdminClient();
+  if (!admin) {
+    console.error("Registrierungs-Vormerkung uebersprungen: SUPABASE_SERVICE_ROLE_KEY fehlt.");
+    return { ok: true, vorgemerkt: false };
+  }
+
+  const { error } = await admin.from("registrierung_freigaben").upsert(
+    { email: adresse, consent: true, quelle: "registrierung" },
+    { onConflict: "email" },
+  );
+  if (error) {
+    console.error("Registrierungs-Vormerkung fehlgeschlagen:", error.message);
+    return { ok: true, vorgemerkt: false };
+  }
+  return { ok: true, vorgemerkt: true };
 }
