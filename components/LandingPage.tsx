@@ -107,6 +107,71 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ---------- Beweis: die App selbst, statt Beschreibungen ----------
+           Von den fuenf vorhandenen Produktbildern lag bis 02.09.2026 nur das
+           Dashboard auf der Startseite; die uebrigen vier steckten allein auf
+           /funktionen. Bei einer Software ist das Zeigen das staerkste
+           Argument — Icon-plus-Text-Karten sind die schwaechste Form, sie zu
+           verkaufen. Der Abschnitt steht bewusst DIREKT hinter der
+           Excel-Tabelle: Dort ist gerade behauptet worden, MyImmo koenne es
+           besser; hier folgt der Beleg.
+           `lp-split` samt Zickzack (`lp-split-rev`) ist das Muster, das
+           /funktionen schon nutzt — keine zweite Gestaltungssprache. */}
+      <section className="lp-section">
+        <div className="lp-inner">
+          <div className="lp-kopf-editorial">
+            <div className="lp-kicker">In der App</div>
+            <h2 className="lp-h2">So sieht das aus</h2>
+            <p className="lp-section-sub">Drei Ansichten aus dem laufenden Betrieb — keine Illustrationen.</p>
+          </div>
+
+          <Reveal>
+            <div className="lp-split">
+              <div>
+                <h3>Alle Objekte, ein Blick</h3>
+                <p>Wert, Miete und Rendite je Immobilie — inklusive Leerstand und offener Posten.</p>
+                <ul>
+                  <li>Portfolio-Wert und Cashflow laufend berechnet</li>
+                  <li>Status je Objekt: vermietet, leer, in Sanierung</li>
+                  <li>Karte mit allen Standorten</li>
+                </ul>
+              </div>
+              <Shot src="/landing/immobilien.webp" alt="Immobilien-Übersicht mit Wert, Miete und Rendite je Objekt" />
+            </div>
+          </Reveal>
+
+          <Reveal>
+            <div className="lp-split lp-split-rev">
+              <div>
+                <h3>Der Mieter meldet, du gibst frei</h3>
+                <p>Schäden mit Foto, Zählerstände und Anliegen laufen im Portal auf — ohne Telefonkette.</p>
+                <ul>
+                  <li>Mieter braucht keine App, nur einen Einladungscode</li>
+                  <li>Hausmeister erstellt den Auftrag, du bestätigst</li>
+                  <li>Bewerber-Verwaltung für freie Wohnungen inklusive</li>
+                </ul>
+              </div>
+              <Shot src="/landing/mieterportal.webp" alt="Mieterportal mit Schadensmeldungen und Zählerständen" />
+            </div>
+          </Reveal>
+
+          <Reveal>
+            <div className="lp-split">
+              <div>
+                <h3>Steuer ohne Belege-Suchen</h3>
+                <p>Deine Buchungen sind den Zeilen der Anlage V bereits zugeordnet — je Objekt, mit AfA und Schuldzinsen.</p>
+                <ul>
+                  <li>ELSTER-Ausfüllhilfe, Zeile für Zeile</li>
+                  <li>PDF-Aufstellung und Jahresbericht im eigenen Briefkopf</li>
+                  <li>DATEV-Export für den Steuerberater</li>
+                </ul>
+              </div>
+              <Shot src="/landing/steuer.webp" alt="Steuer-Ansicht mit Anlage-V-Aufstellung je Objekt" />
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ---------- Prozess in 4 Schritten ---------- */}
       <section className="lp-section lp-section-alt">
         <div className="lp-inner">

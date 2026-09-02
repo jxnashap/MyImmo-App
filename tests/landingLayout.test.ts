@@ -264,10 +264,17 @@ describe("Redaktioneller Abschnittskopf", () => {
   // Neun Abschnitte im identischen Rhythmus (Kicker, zentrierte H2, Unterzeile)
   // lesen sich wie eine Vorlage. Inhaltsschwere Abschnitte bekommen jetzt einen
   // linksbuendigen Kopf mit der Unterzeile in einer zweiten Spalte.
-  it("drei Abschnitte nutzen die Variante", () => {
+  // Absichtlich KEINE feste Anzahl: Der erste Versuch nagelte „genau drei" fest
+  // und schlug prompt beim naechsten Abschnitt fehl. Geprueft wird die Absicht —
+  // ein GEMISCHTER Rhythmus. Waeren alle Koepfe redaktionell, waere die
+  // Monotonie nur um 90 Grad gedreht.
+  it("mehrere Abschnitte nutzen die Variante — aber nicht alle", () => {
     const lp = readFileSync("components/LandingPage.tsx", "utf8");
-    const treffer = lp.match(/className="lp-kopf-editorial"/g) ?? [];
-    expect(treffer.length).toBe(3);
+    const redaktionell = (lp.match(/className="lp-kopf-editorial"/g) ?? []).length;
+    const kicker = (lp.match(/className="lp-kicker"/g) ?? []).length;
+    expect(redaktionell).toBeGreaterThanOrEqual(3);
+    // Es muss weiterhin zentrierte Koepfe geben (Kicker ausserhalb der Variante).
+    expect(kicker).toBeGreaterThan(redaktionell);
   });
 
   it("linksbuendig, und die Unterzeile sitzt in der zweiten Spalte", () => {
