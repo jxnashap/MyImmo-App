@@ -17,7 +17,8 @@
 - [[06 Recht und Compliance]] — DSGVO, Gewerbe, Berufsrecht
 - [[07 Volatile Kennzahlen und Pruefzyklus]] — was altert und wann geprüft wird
 - [[08 Fehlerkatalog]] — echte Fehler mit Ursache und Gegenprüfung
-- [[09 Neue App bauen]] — der Ablauf für die nächste App
+- [[09 Neue App bauen]] — der Ablauf für die nächste App (Neubau)
+- [[10 Bestehendes Projekt ueberarbeiten]] — Ablauf, wenn schon Code existiert
 
 ## Die fünf Sätze, die am meisten gekostet haben
 
