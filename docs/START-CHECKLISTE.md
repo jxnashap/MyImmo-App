@@ -125,7 +125,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 7 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 108 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei ein echter Fehler gefunden und behoben** (doppelte Mieteinnahmen). Offen: 22 Dateien, ~3.600 Zeilen |
+| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 9 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 146 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei ein echter Fehler gefunden und behoben** (doppelte Mieteinnahmen; Datenbestand geprüft — nicht eingetreten). Offen: 20 Dateien, ~3.200 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
@@ -158,7 +158,7 @@ jetzt ausgewertet — schlägt die Prüfung fehl, wird gar nichts gebucht. Doppe
 Mieteinnahmen wandern in die Steuererklärung; eine Fehlermeldung kostet nur einen zweiten
 Anlauf. Drei Tests sperren den Fehler.
 
-**Abgedeckt (7 Dateien, 108 Tests):**
+**Abgedeckt (9 Dateien, 146 Tests):**
 
 | Datei | Was abgesichert ist |
 |---|---|
@@ -169,14 +169,16 @@ Anlauf. Drei Tests sperren den Fehler.
 | `einladung.ts` | Codeformat ohne verwechselbare Zeichen, Mieter gehört dem Vermieter, eingelöste Codes bleiben |
 | `umlage.ts` | Verteilung in EINER Transaktion, Flächen erst **nach** der Verteilung, keine Fläche wird mit 0 überschrieben, Flächen-Fehler wird gemeldet statt verschluckt, fremde Mieter-IDs laufen ins Leere |
 | `mietkonto.ts` | Miet-Monat als Schlüssel (nicht Zahlungsdatum), Altzeilen ohne `soll_monat`, gültige Abfragegrenzen für **alle zwölf** Monate, kein Buchen bei fehlgeschlagener Prüfung |
+| `positions.ts` | Weißliste der Aufteilungsarten, Vorjahr als Ziel des OCR-Imports, Gesamtkosten-vs-Wohnungsanteil, OCR-Updates nur am eigenen Mieter |
+| `wiederkehr.ts` | Zyklus-Weißliste, Ende-vor-Start, **Dedup beim zweiten Klick**, richtige Zieltabelle je Art, alle Änderungen auf das eigene Konto eingeschränkt |
 
 **Wie geprüft, dass die Tests etwas taugen:** In jede getestete Datei wurden nacheinander
 Fehler eingebaut (Prüfung entfernt, Verschlüsselung ausgehängt, Großschreibung
 wiederhergestellt, Schranke umgangen, …) — **jede einzelne Mutation wurde rot**. Ein Test,
 der beim ersten Lauf grün ist und nie rot war, beweist nichts.
 
-**Offen:** 22 Dateien, ~3.600 Zeilen. Die nächsten nach Nutzen: `service.ts` (383 Z.),
-`beleihung.ts` (335), `positions.ts` (216), `wiederkehr.ts` (146), `nkco2.ts` (127).
+**Offen:** 20 Dateien, ~3.200 Zeilen. Die nächsten nach Nutzen: `service.ts` (383 Z.),
+`beleihung.ts` (335), `bewerber.ts` (218), `termine.ts` (212), `anliegen.ts` (189).
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat.
 
