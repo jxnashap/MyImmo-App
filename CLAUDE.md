@@ -446,9 +446,9 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   `tests/registrierung.test.ts` durchsucht Actions per `readFileSync` als Text. Solche
   Struktur-Tests halten eine Schreibweise fest, kein Verhalten.
   **Regel für neue Tests hier:** Einen neuen Action-Test erst glauben, wenn er gegen einen
-  absichtlich eingebauten Fehler ROT wird. Alle 108 Tests dieser Dateien wurden so geprüft.
-  Stand 04.09.2026: 7 von 29 Action-Dateien abgedeckt (`buchungen`, `properties`,
-  `freischaltung`, `ibans`, `einladung`, `umlage`, `mietkonto`).
+  absichtlich eingebauten Fehler ROT wird. Alle 146 Tests dieser Dateien wurden so geprüft.
+  Stand 04.09.2026: 9 von 29 Action-Dateien abgedeckt (`buchungen`, `properties`,
+  `freischaltung`, `ibans`, `einladung`, `umlage`, `mietkonto`, `positions`, `wiederkehr`).
 - 🐞 **Beim Testschreiben gefunden und behoben (04.09.2026): doppelte Mieteinnahmen.**
   `lib/actions/mietkonto.ts` baute die Obergrenze der Dubletten-Abfrage als `` `${monat}-31` ``.
   **Den 31. gibt es im Februar, April, Juni, September und November nicht** — Postgres
@@ -461,3 +461,7 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   unterscheiden sich; Bereichsgrenzen exklusiv über den Folgemonat bilden. (2) `error` aus
   einer Supabase-Abfrage nie wegdestrukturieren, wenn das Ergebnis eine Schutzfunktion
   speist — eine leere Antwort sieht dann aus wie „nichts gefunden".
+  **Datenbestand geprüft (04.09.2026): NICHT eingetreten** — 377 Miet-Buchungen mit
+  Mieterzuordnung, 0 Dubletten. (Eine erste Abfrage meldete 112 Gruppen; das war ein
+  Fehler der Abfrage: `GROUP BY` fasst `NULL`-Mieter-IDs zu einer Gruppe zusammen.
+  Bei solchen Auswertungen `mieter_id is not null` setzen.)
