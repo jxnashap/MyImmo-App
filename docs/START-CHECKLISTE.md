@@ -125,7 +125,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 5 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 76 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. Offen: 24 Dateien, ~3.900 Zeilen |
+| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 7 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 108 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei ein echter Fehler gefunden und behoben** (doppelte Mieteinnahmen). Offen: 22 Dateien, ~3.600 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
@@ -143,7 +143,22 @@ und die beiden Supabase-Clients, sonst nichts. Die Action läuft unverändert. `
 **wirft** in der Attrappe, wie in Next auch; ein stiller No-op würde Code nach einem
 Redirect weiterlaufen lassen, der in Produktion nie erreicht wird.
 
-**Abgedeckt (5 Dateien, 76 Tests):**
+**Der Punkt, der T2 überhaupt rechtfertigt — beim Testschreiben gefunden:**
+
+`lib/actions/mietkonto.ts` baute die Obergrenze der Dubletten-Abfrage als
+`` `${monat}-31` ``. **Den 31. gibt es im Februar, April, Juni, September und November
+nicht.** PostgREST castet den Wert auf `date`, Postgres antwortet mit `22008` — und weil
+der Fehler nicht ausgewertet wurde, kam die Abfrage still leer zurück. In **fünf von zwölf
+Monaten** fielen damit alle Altzeilen ohne `soll_monat` aus dem Dublettenschutz, und die
+Nacherfassung legte Mieteingänge ein zweites Mal an: **unbemerkt doppelte Mieteinnahmen in
+Cashflow und Anlage V.** Gegen die Produktionsdatenbank nachgestellt, nicht vermutet.
+
+Behoben: exklusive Obergrenze (erster Tag des Folgemonats) **und** die Abfragefehler werden
+jetzt ausgewertet — schlägt die Prüfung fehl, wird gar nichts gebucht. Doppelt erfasste
+Mieteinnahmen wandern in die Steuererklärung; eine Fehlermeldung kostet nur einen zweiten
+Anlauf. Drei Tests sperren den Fehler.
+
+**Abgedeckt (7 Dateien, 108 Tests):**
 
 | Datei | Was abgesichert ist |
 |---|---|
@@ -152,16 +167,22 @@ Redirect weiterlaufen lassen, der in Produktion nie erreicht wird.
 | `freischaltung.ts` | Exakter Code-Vergleich, Vorrang von `BETA_CODE`, leere Env sperrt, Zustimmung, Zugriffsbremse, Vormerkung |
 | `ibans.ts` | IBAN nie im Klartext, Blind-Index deterministisch, Prüfziffer, fehlender Schlüssel bricht **vor** dem ersten DB-Zugriff ab |
 | `einladung.ts` | Codeformat ohne verwechselbare Zeichen, Mieter gehört dem Vermieter, eingelöste Codes bleiben |
+| `umlage.ts` | Verteilung in EINER Transaktion, Flächen erst **nach** der Verteilung, keine Fläche wird mit 0 überschrieben, Flächen-Fehler wird gemeldet statt verschluckt, fremde Mieter-IDs laufen ins Leere |
+| `mietkonto.ts` | Miet-Monat als Schlüssel (nicht Zahlungsdatum), Altzeilen ohne `soll_monat`, gültige Abfragegrenzen für **alle zwölf** Monate, kein Buchen bei fehlgeschlagener Prüfung |
 
 **Wie geprüft, dass die Tests etwas taugen:** In jede getestete Datei wurden nacheinander
 Fehler eingebaut (Prüfung entfernt, Verschlüsselung ausgehängt, Großschreibung
 wiederhergestellt, Schranke umgangen, …) — **jede einzelne Mutation wurde rot**. Ein Test,
 der beim ersten Lauf grün ist und nie rot war, beweist nichts.
 
-**Offen:** 24 Dateien, ~3.900 Zeilen. Die nächsten nach Nutzen:
-`service.ts` (383 Z.), `beleihung.ts` (335), `positions.ts`/`umlage.ts` (Umlage-Rechnung),
-`mietkonto.ts` (Sollstellungen). `components/` bleibt komplett offen — dafür bräuchte es
-eine DOM-Umgebung, die das Projekt bisher nicht hat.
+**Offen:** 22 Dateien, ~3.600 Zeilen. Die nächsten nach Nutzen: `service.ts` (383 Z.),
+`beleihung.ts` (335), `positions.ts` (216), `wiederkehr.ts` (146), `nkco2.ts` (127).
+`components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
+bisher nicht hat.
+
+**Lehre aus dem Mietkonto-Fund:** Der Fehler steckte direkt unter einem Kommentar, der
+dieselbe Fehlerklasse als behoben beschrieb. Ein Kommentar ist kein Nachweis — er hält
+fest, was gemeint war, nicht was der Code tut.
 
 ---
 
