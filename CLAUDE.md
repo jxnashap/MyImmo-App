@@ -436,3 +436,14 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).
+- **Server-Actions testen (seit 04.09.2026): `tests/stubs/actionHarness.ts`.**
+  `fakeSupabase()` + `mockeNextUndSupabase()` ersetzen `next/cache`, `next/navigation`
+  und die beiden Supabase-Clients — sonst nichts, die Action läuft unverändert.
+  `fangeRedirect()` fängt das Redirect-Signal ab (die Attrappe **wirft**, wie Next auch).
+  Muster: `vi.resetModules()` → mocken → `await import("@/lib/actions/…")`.
+  Vorbilder: `tests/actionsBuchungen.test.ts`, `…Properties`, `…Freischaltung`, `…Bankdaten`.
+  **Warum das nötig war:** Bis dahin hatte KEINE Testdatei `lib/actions` je ausgeführt —
+  `tests/registrierung.test.ts` durchsucht Actions per `readFileSync` als Text. Solche
+  Struktur-Tests halten eine Schreibweise fest, kein Verhalten.
+  **Regel für neue Tests hier:** Einen neuen Action-Test erst glauben, wenn er gegen einen
+  absichtlich eingebauten Fehler ROT wird. Alle 76 Tests dieser Dateien wurden so geprüft.

@@ -125,10 +125,43 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` und `components/` | mittel | 53 Testdateien, davon **eine** berührt `lib/actions`. Die Geschäftslogik ist praktisch ungetestet |
+| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 5 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 76 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. Offen: 24 Dateien, ~3.900 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
+
+### T2 im Detail — Stand 04.09.2026
+
+**Der Ausgangsbefund war schärfer als „eine Testdatei berührt `lib/actions`":
+KEINE Testdatei hat `lib/actions` jemals ausgeführt.** `tests/registrierung.test.ts`
+liest die Action per `readFileSync` und sucht Zeichenketten darin. Das hält eine
+Schreibweise fest, nicht ein Verhalten — solche Tests bleiben grün, wenn die Logik
+darunter umgebaut wird.
+
+**Gebaut:** `tests/stubs/actionHarness.ts` — ersetzt `next/cache`, `next/navigation`
+und die beiden Supabase-Clients, sonst nichts. Die Action läuft unverändert. `redirect()`
+**wirft** in der Attrappe, wie in Next auch; ein stiller No-op würde Code nach einem
+Redirect weiterlaufen lassen, der in Produktion nie erreicht wird.
+
+**Abgedeckt (5 Dateien, 76 Tests):**
+
+| Datei | Was abgesichert ist |
+|---|---|
+| `buchungen.ts` | Betrag > 0, Komma-Zahlen, NK-Anteil in Grenzen, Restschuld-Vorbelegung, verschlüsselte Darlehensnummer, Open-Redirect-Schutz, Upload-Grenzen und Pfadbildung |
+| `properties.ts` | Einheiten-Schranke (Early Access + scharf), `notiz_import` wird nicht geleert, Koordinaten-Reset bei Adressänderung, Wert-Übernahmen |
+| `freischaltung.ts` | Exakter Code-Vergleich, Vorrang von `BETA_CODE`, leere Env sperrt, Zustimmung, Zugriffsbremse, Vormerkung |
+| `ibans.ts` | IBAN nie im Klartext, Blind-Index deterministisch, Prüfziffer, fehlender Schlüssel bricht **vor** dem ersten DB-Zugriff ab |
+| `einladung.ts` | Codeformat ohne verwechselbare Zeichen, Mieter gehört dem Vermieter, eingelöste Codes bleiben |
+
+**Wie geprüft, dass die Tests etwas taugen:** In jede getestete Datei wurden nacheinander
+Fehler eingebaut (Prüfung entfernt, Verschlüsselung ausgehängt, Großschreibung
+wiederhergestellt, Schranke umgangen, …) — **jede einzelne Mutation wurde rot**. Ein Test,
+der beim ersten Lauf grün ist und nie rot war, beweist nichts.
+
+**Offen:** 24 Dateien, ~3.900 Zeilen. Die nächsten nach Nutzen:
+`service.ts` (383 Z.), `beleihung.ts` (335), `positions.ts`/`umlage.ts` (Umlage-Rechnung),
+`mietkonto.ts` (Sollstellungen). `components/` bleibt komplett offen — dafür bräuchte es
+eine DOM-Umgebung, die das Projekt bisher nicht hat.
 
 ---
 
