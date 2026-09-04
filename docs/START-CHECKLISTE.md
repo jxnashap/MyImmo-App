@@ -56,7 +56,44 @@ Ohne diese Punkte darf kein Bezahlvorgang starten. Reihenfolge aus
 | **A6** | Datenschutzerklärung um den Paddle-Passus ergänzen | Betreiber | Pflicht **vor** dem ersten Checkout — Paddle ist eigener Verantwortlicher für die Zahlungsdaten |
 | **A7** | `PREISE_SICHTBAR = true` + Early-Access-Banner von `/preise` nehmen | Entwicklung | Ein Schalter in `lib/preise.ts`, steuert /preise, Preis-Teaser, Menüpunkt, Sitemap und FAQ in einem |
 | **A8** | Bestandsnutzer vorab informieren | Betreiber | Fairness und AGB-Änderungsfrist. Niemand wird automatisch kostenpflichtig |
-| **A9** | **Demo-Konto vor dem Scharfschalten versorgen** | Betreiber/Entwicklung | Die Dokument-PDF-Route ist die **einzige Ausnahme des Demo-Kontos**. Mit aktivem Billing hätte das Demo-Konto Tarif „Kostenlos" → die Ausnahme wäre tot. Entweder dem Demo-Konto eine Zeile in `abos` geben oder in der Route auf `istDemoKonto` prüfen. Der Hinweis steht als Kommentar in der Route |
+| **A9** | **Bestandsschutz anlegen, bevor der Schalter umgelegt wird** | Betreiber | **Am 04.09.2026 in der Produktionsdatenbank nachgemessen — nicht geschätzt.** Siehe Kasten unten. Skript liegt fertig: `scripts/sql/bestandsschutz-vor-billing.sql` |
+
+### A9 im Detail — der Schalter sperrt heute die eigenen Nutzer aus
+
+Die Tabelle `abos` ist **leer**. `getAbo()` liefert für ein Konto ohne Zeile `null`, und
+`effektiverPlan(null)` ist `"kostenlos"` — also **eine Einheit** und keine der Funktionen
+ab Privat (NK-PDF, Steuer/Anlage V, Dokument-Generator, Mieterportal).
+
+Stand 04.09.2026, live abgefragt:
+
+| | |
+|---|---|
+| Zeilen in `abos` | **0** |
+| Konten insgesamt | 22 |
+| davon mit Objekten | 11 (36 Einheiten) |
+| **würden sofort gesperrt** (über 1 Einheit) | **5** |
+| davon auch über dem Privat-Limit (5) | 4 |
+| größtes Konto | 8 Einheiten |
+
+`BILLING_ENFORCED=true` würde damit **alle 22 Konten auf Kostenlos setzen — auch das des
+Betreibers** — und fünf davon auf der Stelle über ihr Limit heben. Ohne Vorwarnung und
+ohne dass jemand etwas falsch gemacht hätte.
+
+**Gegenmittel:** `scripts/sql/bestandsschutz-vor-billing.sql` (Abschnitt A ansehen,
+B ausführen, C gegenprüfen, **dann erst** den Schalter). Es vergibt „Plus" mit
+`provider = 'bestandsschutz'` und `status = 'testphase'` — erkennbar als das, was es ist,
+und nicht mit einem Paddle-Abo zu verwechseln.
+
+**Zwei Dinge, die man dabei falsch machen kann:**
+1. **Zu früh ausführen.** Das Skript versorgt die Konten, die es vorfindet. Wer es Wochen
+   vorher laufen lässt, lässt jedes danach angelegte Konto ungeschützt.
+2. **Auf `gueltig_bis` vertrauen.** `effektiverPlan()` wertet die Spalte **nicht** aus
+   (geprüft) — maßgeblich ist allein `status`. Der Bestandsschutz endet erst, wenn jemand
+   ihn aktiv beendet (Abschnitt D des Skripts). Das ist Absicht.
+
+Das Demo-Konto ist damit **mit**versorgt — und darauf angewiesen: Die Dokument-PDF-Route
+ist seine einzige erlaubte Schreib-/Erzeugungsfunktion; auf „Kostenlos" liefe sie in die
+Tarif-Schranke, und das Schaustück könnte sein wichtigstes Dokument nicht mehr zeigen.
 
 ---
 
@@ -120,6 +157,10 @@ Damit niemand sie versehentlich wieder aufmacht:
 
 Vor dem ersten Euro stehen **drei Anwaltsfragen** (A1–A3), davon ist **A2 (StBerG)** die
 einzige, die im ungünstigen Fall ein Feature kostet und nicht nur einen Textbaustein.
-Alles Technische daneben ist überschaubar: Paddle einrichten, das Demo-Konto versorgen
+Alles Technische daneben ist überschaubar: Paddle einrichten, den Bestandsschutz anlegen
 (**A9**) und zwei Schalter umlegen. **A5 ist erledigt** — die Schranken warten nur noch
 darauf, dass jemand `BILLING_ENFORCED=true` setzt.
+
+Und genau darin liegt die verbliebene Falle: Der Schalter ist ein Einzeiler, seine Wirkung
+ist es nicht. **A9 vorher erledigen**, sonst sperrt der erste Schritt Richtung Umsatz die
+Nutzer aus, die bis dahin geblieben sind.

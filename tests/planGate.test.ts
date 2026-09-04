@@ -141,6 +141,64 @@ describe("Scharf geschaltet: die Schranken greifen", () => {
   });
 });
 
+describe("Bestandsschutz: was der Schalter mit Konten OHNE Abo-Zeile macht", () => {
+  // Am 04.09.2026 in der Produktionsdatenbank gemessen: `abos` hat 0 Zeilen,
+  // es gibt 22 Konten, 5 davon liegen ueber dem Kostenlos-Limit. Diese Tests
+  // halten fest, WARUM `BILLING_ENFORCED=true` ohne Vorarbeit die eigenen
+  // Nutzer aussperrt — damit die Erkenntnis nicht nur in einer Doku steht,
+  // die beim Umlegen des Schalters niemand aufschlaegt.
+  beforeEach(() => {
+    process.env.BILLING_ENFORCED = "true";
+    vi.resetModules();
+  });
+
+  it("kein Abo-Datensatz = Kostenlos = 1 Einheit, keine Privat-Funktion", async () => {
+    const { effektiverPlan, einheitenLimit, darfFeature } = await import("@/lib/plan");
+    expect(effektiverPlan(null)).toBe("kostenlos");
+    expect(einheitenLimit(null, true)).toBe(1);
+    for (const f of ["nk_pdf", "steuer", "dokumente", "mieterportal"] as const) {
+      expect(darfFeature(null, f, true)).toBe(false);
+    }
+  });
+
+  it("`gueltig_bis` laeuft NICHT von selbst ab — nur `status` zaehlt", async () => {
+    // Diese Eigenschaft ist der Grund, warum das Bestandsschutz-Skript sein
+    // Ende ueber den Status regelt und nicht ueber ein Datum. Wer sich hier
+    // auf `gueltig_bis` verlaesst, baut einen Ablauf, den es nicht gibt.
+    const { effektiverPlan } = await import("@/lib/plan");
+    const laengstAbgelaufen = {
+      plan: "plus",
+      status: "testphase",
+      zyklus: null,
+      provider_customer_id: null,
+      provider_subscription_id: null,
+      gueltig_bis: "2020-01-01T00:00:00Z",
+      storniert_zum: null,
+    } as const;
+    expect(effektiverPlan(laengstAbgelaufen)).toBe("plus");
+  });
+
+  it("die Tarifwerte des Bestandsschutz-Skripts sind gueltig und reichen aus", async () => {
+    const { einheitenLimit, istZahlend } = await import("@/lib/plan");
+    const skript = readFileSync("scripts/sql/bestandsschutz-vor-billing.sql", "utf8");
+    // Das Skript vergibt 'plus'/'testphase'. Aendert jemand die Werte dort,
+    // ohne sie hier nachzuziehen, faellt es hier auf.
+    expect(skript).toContain("'plus'");
+    expect(skript).toContain("'testphase'");
+    expect(istZahlend("testphase")).toBe(true);
+    // Groesstes Konto am 04.09.2026: 8 Einheiten. Plus deckt 24.
+    expect(einheitenLimit({ plan: "plus", status: "testphase" } as never, true)).toBeGreaterThanOrEqual(8);
+  });
+
+  it("das Skript liegt NICHT in supabase/migrations/", () => {
+    // Es aendert kein Schema und darf nicht mit der Migrationshistorie
+    // vermischt werden — eine dort abgelegte, absichtlich nicht ausgefuehrte
+    // Datei wuerde die Regel „Datei == ausgefuehrt" entwerten.
+    const migrationen = readdirSync("supabase/migrations");
+    expect(migrationen.some((n) => n.includes("bestandsschutz"))).toBe(false);
+  });
+});
+
 describe("Die Schranken sind auch wirklich eingebaut", () => {
   // Ohne diesen Test bleibt die Gefahr, dass planGate.ts existiert und wieder
   // niemand es aufruft — genau der Zustand, der bis zum 04.09.2026 bestand.
