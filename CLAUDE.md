@@ -23,6 +23,16 @@
 > zurück — **ohne Datenbankabfrage**. Im Early Access kosten sie nichts und können nichts
 > verändern; nachgewiesen durch Tests UND am laufenden Server (307/401/405 wie vorher,
 > nirgends ein 402).
+>
+> ⚠️ **NICHT `BILLING_ENFORCED=true` setzen, ohne vorher A9 zu erledigen.** Die Tabelle
+> `abos` ist leer; ein Konto ohne Zeile gilt als „Kostenlos" (1 Einheit, keine Funktion
+> ab Privat). Am 04.09.2026 live gemessen: **22 Konten, 0 Abo-Zeilen, 5 davon sofort über
+> dem Limit** — der Schalter würde alle bestehenden Nutzer aussperren, das Betreiberkonto
+> eingeschlossen. Gegenmittel liegt fertig: **`scripts/sql/bestandsschutz-vor-billing.sql`**
+> (unmittelbar vor dem Schalter ausführen, nicht Wochen vorher — es versorgt nur die
+> Konten, die es vorfindet). Begründung und Zahlen: `docs/START-CHECKLISTE.md`, „A9 im Detail".
+> **Merke außerdem:** `effektiverPlan()` wertet `gueltig_bis` NICHT aus — ein Abo endet
+> allein über `status`.
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**

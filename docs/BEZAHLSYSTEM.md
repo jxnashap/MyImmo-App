@@ -80,18 +80,32 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
    Tarif-Links im Abo-Tab der Einstellungen und die preisbezogenen FAQ-Antworten.
    Vorher prüfen, ob die Beträge in `components/landing/data.tsx` (`PLAENE`) noch
    mit `lib/plan.ts` und den Paddle-Preisen übereinstimmen.
-10. **Scharf schalten:** `BILLING_ENFORCED=true` setzen + auf der `/preise`-Seite den
+10. Bestandsnutzer per E-Mail/In-App **rechtzeitig vorab informieren** (Fairness +
+    AGB-Änderungsfrist); niemand wird automatisch kostenpflichtig.
+    **Steht bewusst VOR dem Schalter** — hinterher informiert zu werden, nachdem die
+    eigene Auswertung schon gesperrt ist, ist keine Information mehr.
+11. **Bestandsschutz anlegen — `scripts/sql/bestandsschutz-vor-billing.sql`.**
+    Der wichtigste und am leichtesten zu übersehende Schritt. `abos` ist leer; ein
+    Nutzer ohne Zeile gilt als „Kostenlos" = **1 Einheit und keine Funktion ab Privat**.
+    Am 04.09.2026 in der Produktionsdatenbank gemessen: **22 Konten, 0 Abo-Zeilen,
+    5 Konten über dem Kostenlos-Limit** (größtes: 8 Einheiten). Ohne diesen Schritt
+    sperrt der Schalter die eigenen Early-Access-Nutzer aus — inklusive des
+    Betreiberkontos.
+    Das Skript ist idempotent und gehört **unmittelbar** vor Schritt 12: Wer es Wochen
+    vorher ausführt, versorgt nur die damaligen Konten; alle später hinzugekommenen
+    stünden beim Umlegen wieder ohne Zeile da.
+    Es ist bewusst **keine Migration** — es ändert kein Schema, und eine absichtlich
+    nicht ausgeführte Datei in `supabase/migrations/` würde die Historie entwerten.
+12. **Scharf schalten:** `BILLING_ENFORCED=true` setzen + auf der `/preise`-Seite den
    Early-Access-Hinweis entfernen und die CTAs auf den Abo-Tab zeigen lassen.
-11. ~~Feature-Gates in den wichtigsten Server-Actions aktivieren~~ ✅ **erledigt
+13. ~~Feature-Gates in den wichtigsten Server-Actions aktivieren~~ ✅ **erledigt
     04.09.2026** — `lib/planGate.ts` (`featureSperre()`, `pruefeEinheiten()`), eingebaut
     an 9 Stellen: Anlage V, Jahresbericht, DATEV, `/api/import`, `/api/import-url`,
     `/api/nk-ocr`, NK-PDF, Dokument-PDF, Mieter-Einladung, Objekt-Anlage.
     Sie sind ohne `BILLING_ENFORCED=true` inert — und zwar **ohne Datenbankabfrage**.
-    **Vor dem Scharfschalten:** Das Demo-Konto braucht ein Abo in `abos` (oder eine
-    `istDemoKonto`-Ausnahme in der Dokument-PDF-Route), sonst stirbt seine einzige
-    erlaubte Funktion.
-12. Bestandsnutzer per E-Mail/In-App **rechtzeitig vorab informieren** (Fairness +
-    AGB-Änderungsfrist); niemand wird automatisch kostenpflichtig.
+    Das **Demo-Konto** wird von Schritt 11 mitversorgt; das ist keine Kosmetik, sondern
+    die Voraussetzung dafür, dass seine einzige erlaubte Funktion (Dokument-PDF)
+    überlebt. Details im Kopf des Skripts.
 
 ## Offen / bewusst NICHT gebaut
 - **Kein automatischer Feature-Entzug** in allen Actions — die Gates werden bei der
