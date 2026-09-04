@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { featureSperre } from "@/lib/planGate";
 import { getAuthedUser, callAnthropic, base64Bytes, MB } from "@/lib/aiRoute";
 import { darfWeiter } from "@/lib/net/bremse";
 
@@ -95,8 +96,12 @@ function parseErgebnis(text: string): OcrErgebnis | null {
 }
 
 export async function POST(req: Request) {
-  const user = await getAuthedUser();
+  const { user, supabase } = await getAuthedUser();
   if (!user) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+  // Tarif-Schranke. Im Early Access (ohne BILLING_ENFORCED) kehrt
+  // featureSperre() sofort mit null zurueck — ohne Datenbankabfrage.
+  const sperre = await featureSperre(supabase, "ki_import");
+  if (sperre) return NextResponse.json({ error: sperre }, { status: 402 });
 
   // Mengenbremse je Konto: Jeder Aufruf kostet Geld beim KI-Anbieter. 20 pro
   // Stunde reichen für jede reale Abrechnungs-Session — und verhindern, dass

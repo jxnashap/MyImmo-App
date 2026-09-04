@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { featureSperre } from "@/lib/planGate";
 import { baueDatevBuchungen, baueDatevExtf } from "@/lib/datev";
 
 export const runtime = "nodejs";
@@ -11,6 +12,10 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new NextResponse("Nicht angemeldet", { status: 401 });
+  // Tarif-Schranke. Im Early Access (ohne BILLING_ENFORCED) kehrt
+  // featureSperre() sofort mit null zurueck — ohne Datenbankabfrage.
+  const sperre = await featureSperre(supabase, "steuer");
+  if (sperre) return new NextResponse(sperre, { status: 402 });
 
   const url = new URL(request.url);
   const jahrParam = Number(url.searchParams.get("jahr"));

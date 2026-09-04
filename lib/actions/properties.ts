@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { pruefeEinheiten } from "@/lib/planGate";
 import { flashUrl } from "@/lib/flash";
 import { protokolliereWert } from "@/lib/wert/protokoll";
 
@@ -113,6 +114,15 @@ export async function createProperty(formData: FormData) {
   if (!user) redirect("/login");
 
   const parsed = parse(formData);
+
+  // Einheiten-Schranke des Tarifs. Ohne BILLING_ENFORCED kehrt
+  // pruefeEinheiten() sofort mit `erlaubt` zurueck — ohne Datenbankabfrage.
+  // Gezaehlt wird die Summe der EINHEITEN ueber alle Objekte, nicht die Zahl
+  // der Objekte: So ist das Limit in lib/plan.ts definiert und so steht es
+  // auf der Preisseite („bis 5 Einheiten").
+  const einheiten = await pruefeEinheiten(supabase, Math.max(1, parsed.einheiten_anzahl ?? 1));
+  if (!einheiten.erlaubt) redirect(flashUrl("/properties", einheiten.meldung ?? "Tarif-Limit erreicht."));
+
   const { data: neu, error } = await supabase
     .from("properties")
     .insert({ ...parsed, user_id: user.id })

@@ -12,10 +12,17 @@
 
 > **Vor dem Start: `docs/START-CHECKLISTE.md`** (04.09.2026) — alle offenen Punkte nach
 > Dringlichkeit sortiert, frisch gegen den Code geprüft, mit einem Abschnitt „ausdrücklich
-> NICHT nötig". **Wichtigster technischer Fund:** Die Tarif-Matrix in `lib/plan.ts` ist
-> vollständig (4 Tarife, Limits 1/5/24/∞, 9 Funktionen zugeordnet) und deckt sich mit der
-> Preisseite — aber `darfFeature()` und `einheitenLimit()` werden an NULL Stellen der App
-> aufgerufen. Ohne diese Gates bleibt `BILLING_ENFORCED=true` wirkungslos.
+> NICHT nötig".
+>
+> ✅ **A5 erledigt (04.09.2026): Die Tarif-Schranken sind eingebaut.** Bis dahin war die
+> Matrix in `lib/plan.ts` zwar vollständig, `darfFeature()` und `einheitenLimit()` wurden
+> aber an NULL Stellen aufgerufen — `BILLING_ENFORCED=true` wäre wirkungslos gewesen.
+> Jetzt greifen sie über **`lib/planGate.ts`** an 9 Stellen (Steuer-PDFs, DATEV, die drei
+> KI-Routen, NK-PDF, Dokument-PDF, Mieter-Einladung, Objekt-Anlage).
+> **Entscheidende Eigenschaft:** Ohne `BILLING_ENFORCED=true` kehren die Schranken sofort
+> zurück — **ohne Datenbankabfrage**. Im Early Access kosten sie nichts und können nichts
+> verändern; nachgewiesen durch Tests UND am laufenden Server (307/401/405 wie vorher,
+> nirgends ein 402).
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**

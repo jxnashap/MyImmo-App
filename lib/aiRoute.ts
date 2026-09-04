@@ -6,12 +6,20 @@ import { bedrockKonfiguriert, callBedrock } from "@/lib/bedrock";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
 /** Liefert den eingeloggten Nutzer oder null. KI-Routen ohne Login ablehnen. */
+/**
+ * Angemeldeten Nutzer UND den Supabase-Client liefern.
+ *
+ * Der Client wird seit dem Einbau der Tarif-Schranken (04.09.2026) mit
+ * zurueckgegeben: Die KI-Routen brauchen ihn fuer `featureSperre()`, und ein
+ * zweites `createClient()` je Aufruf waere unnoetig. Alle drei Aufrufer
+ * (import, import-url, nk-ocr) wurden mit umgestellt.
+ */
 export async function getAuthedUser() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user;
+  return { user, supabase };
 }
 
 /**

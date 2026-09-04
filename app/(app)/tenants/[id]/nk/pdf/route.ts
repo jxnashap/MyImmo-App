@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { featureSperre } from "@/lib/planGate";
 import { erzeugeNkPdf } from "@/lib/pdf/erzeugen";
 
 export const runtime = "nodejs";
@@ -12,6 +13,10 @@ export async function GET(req: NextRequest, props: { params: Promise<{ id: strin
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.url));
+  // Tarif-Schranke. Ohne BILLING_ENFORCED kehrt featureSperre() sofort
+  // mit null zurueck — ohne Datenbankabfrage, ohne Verhaltensaenderung.
+  const sperre = await featureSperre(supabase, "nk_pdf");
+  if (sperre) return new NextResponse(sperre, { status: 402 });
 
   const jahr = Number(req.nextUrl.searchParams.get("jahr")) || new Date().getFullYear() - 1;
 

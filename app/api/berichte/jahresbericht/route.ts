@@ -2,6 +2,7 @@
 // Query: ?jahr=2026 — Berechnung identisch zur Jahresbericht-Seite.
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { featureSperre } from "@/lib/planGate";
 import { buildJahresberichtPdf, type JahresberichtZeile } from "@/lib/pdf/berichtPdf";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
@@ -13,6 +14,10 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.url));
+  // Tarif-Schranke. Im Early Access (ohne BILLING_ENFORCED) kehrt
+  // featureSperre() sofort mit null zurueck — ohne Datenbankabfrage.
+  const sperre = await featureSperre(supabase, "steuer");
+  if (sperre) return NextResponse.redirect(new URL("/einstellungen?tab=abo", req.url));
 
   const jahr = Number(req.nextUrl.searchParams.get("jahr")) || new Date().getFullYear();
 
