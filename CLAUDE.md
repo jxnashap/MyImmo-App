@@ -10,6 +10,13 @@
 
 ## Offene Punkte / Merkliste
 
+> **Vor dem Start: `docs/START-CHECKLISTE.md`** (04.09.2026) — alle offenen Punkte nach
+> Dringlichkeit sortiert, frisch gegen den Code geprüft, mit einem Abschnitt „ausdrücklich
+> NICHT nötig". **Wichtigster technischer Fund:** Die Tarif-Matrix in `lib/plan.ts` ist
+> vollständig (4 Tarife, Limits 1/5/24/∞, 9 Funktionen zugeordnet) und deckt sich mit der
+> Preisseite — aber `darfFeature()` und `einheitenLimit()` werden an NULL Stellen der App
+> aufgerufen. Ohne diese Gates bleibt `BILLING_ENFORCED=true` wirkungslos.
+
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**
   (gegen die KfW-308-Produktseite geprüft): Höchstbeträge **140.000 / 160.000 / 180.000 €**
