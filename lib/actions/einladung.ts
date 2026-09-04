@@ -6,6 +6,7 @@
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { featureSperre } from "@/lib/planGate";
 
 // Ohne verwechselbare Zeichen (0/O, 1/I/L).
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -23,6 +24,14 @@ export async function erzeugeEinladungscode(mieterId: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
+
+  // Tarif-Schranke. Ohne BILLING_ENFORCED kehrt featureSperre() sofort mit
+  // null zurueck — ohne Datenbankabfrage, ohne Verhaltensaenderung.
+  // Nur das ERZEUGEN ist geschraenkt: Bereits eingeloeste Zugaenge bleiben
+  // gueltig, sonst wuerde ein Tarifwechsel Mieter aussperren, die nichts
+  // dafuer koennen.
+  const sperre = await featureSperre(supabase, "mieterportal");
+  if (sperre) return { error: sperre };
 
   // Mieter muss dem angemeldeten Vermieter gehören.
   const { data: mieter } = await supabase

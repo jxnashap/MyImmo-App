@@ -26,13 +26,18 @@ Die Preisseite (`PLAENE` in `components/landing/data.tsx`) und der Code
 (`FEATURE_AB_PLAN`) sagen **heute dasselbe** — nachgeprüft. Sie sind aber zwei getrennte
 Quellen ohne Test dazwischen (siehe T1).
 
-**Die eigentliche Lücke ist eine andere:** `darfFeature()`, `einheitenLimit()` und
-`planEnthaelt()` werden **an keiner einzigen Stelle der App aufgerufen**. Null Treffer
-außerhalb von `lib/plan.ts` und den Tests. Die Tarif-Logik ist gebaut, getestet — und
-nirgends angeschlossen (→ **A5**).
+**Die eigentliche Lücke war eine andere — und ist seit 04.09.2026 geschlossen:**
+`darfFeature()` und `einheitenLimit()` wurden an **keiner einzigen Stelle der App**
+aufgerufen. Die Tarif-Logik war gebaut, getestet und nirgends angeschlossen;
+`BILLING_ENFORCED=true` hätte kassiert, ohne zu beschränken.
 
-Das ist auch so gewollt, solange Early Access gilt: Ohne `BILLING_ENFORCED=true` gäbe
-jede Prüfung ohnehin „erlaubt" zurück. Nur muss man es beim Scharfschalten eben tun.
+Jetzt greifen die Schranken über **`lib/planGate.ts`** an neun Stellen: Anlage V,
+Jahresbericht, DATEV, die drei KI-Routen, NK-PDF, Dokument-PDF, Mieter-Einladung und die
+Objekt-Anlage (Einheiten-Limit).
+
+**Ohne `BILLING_ENFORCED=true` sind sie inert — und zwar ohne Datenbankabfrage.** Sie
+kosten im Early Access nichts und können nichts verändern. Nachgewiesen durch Tests und
+am laufenden Server: 307/401/405 wie vorher, nirgends ein 402.
 
 ---
 
@@ -47,10 +52,11 @@ Ohne diese Punkte darf kein Bezahlvorgang starten. Reihenfolge aus
 | **A2** | **StBerG § 1–5 klären** (Anlage V, § 82b-Optimierer, DATEV-Export) | Anwalt | **Der gewichtigste Punkt der ganzen Liste.** Kein Formfehler, sondern die Frage, ob ein Kernfeature bleiben darf |
 | **A3** | **§ 34i GewO klären** (Finanzierungs-Assistent) | Anwalt | Wording ist bereits neutralisiert, Gewerbeanmeldung deckt keine Darlehensvermittlung — vermutlich unkritisch, aber ungeprüft |
 | **A4** | Paddle: Konto, Produkte/Preise, Webhook, Env, Sandbox-Test | Betreiber | Schritte 3–7 in `docs/BEZAHLSYSTEM.md`. Gewerbe-Verifizierung dauert Tage — früh anfangen |
-| **A5** | **Feature-Gates in die Server-Actions einbauen** | Entwicklung | NK-PDF, Steuer-Export, KI-Import, Mieter-Einladung, Objekt-Anlage über Limit. Muster steht in `docs/BEZAHLSYSTEM.md`. **Ohne das ist `BILLING_ENFORCED=true` wirkungslos** |
+| ~~**A5**~~ | ~~Feature-Gates in die Server-Actions einbauen~~ | — | ✅ **erledigt 04.09.2026.** `lib/planGate.ts`, eingebaut an 9 Stellen. Ohne `BILLING_ENFORCED=true` inert **ohne Datenbankabfrage** — am laufenden Server nachgewiesen. **Beim Scharfschalten beachten: A9** |
 | **A6** | Datenschutzerklärung um den Paddle-Passus ergänzen | Betreiber | Pflicht **vor** dem ersten Checkout — Paddle ist eigener Verantwortlicher für die Zahlungsdaten |
 | **A7** | `PREISE_SICHTBAR = true` + Early-Access-Banner von `/preise` nehmen | Entwicklung | Ein Schalter in `lib/preise.ts`, steuert /preise, Preis-Teaser, Menüpunkt, Sitemap und FAQ in einem |
 | **A8** | Bestandsnutzer vorab informieren | Betreiber | Fairness und AGB-Änderungsfrist. Niemand wird automatisch kostenpflichtig |
+| **A9** | **Demo-Konto vor dem Scharfschalten versorgen** | Betreiber/Entwicklung | Die Dokument-PDF-Route ist die **einzige Ausnahme des Demo-Kontos**. Mit aktivem Billing hätte das Demo-Konto Tarif „Kostenlos" → die Ausnahme wäre tot. Entweder dem Demo-Konto eine Zeile in `abos` geben oder in der Route auf `istDemoKonto` prüfen. Der Hinweis steht als Kommentar in der Route |
 
 ---
 
@@ -114,5 +120,6 @@ Damit niemand sie versehentlich wieder aufmacht:
 
 Vor dem ersten Euro stehen **drei Anwaltsfragen** (A1–A3), davon ist **A2 (StBerG)** die
 einzige, die im ungünstigen Fall ein Feature kostet und nicht nur einen Textbaustein.
-Alles Technische daneben ist überschaubar: Paddle einrichten, **A5** einbauen, zwei
-Schalter umlegen.
+Alles Technische daneben ist überschaubar: Paddle einrichten, das Demo-Konto versorgen
+(**A9**) und zwei Schalter umlegen. **A5 ist erledigt** — die Schranken warten nur noch
+darauf, dass jemand `BILLING_ENFORCED=true` setzt.

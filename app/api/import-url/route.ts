@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { featureSperre } from "@/lib/planGate";
 import { getAuthedUser, MB } from "@/lib/aiRoute";
 import { extrahiereImmodaten, AiImportFehler } from "@/lib/aiImport";
 import { sicheresFetch, pruefeZielUrl, ZielNichtErlaubtFehler } from "@/lib/net/ssrf";
@@ -104,8 +105,12 @@ function limitUeberschritten(userId: string): boolean {
 }
 
 export async function POST(req: Request) {
-  const user = await getAuthedUser();
+  const { user, supabase } = await getAuthedUser();
   if (!user) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+  // Tarif-Schranke. Im Early Access (ohne BILLING_ENFORCED) kehrt
+  // featureSperre() sofort mit null zurueck — ohne Datenbankabfrage.
+  const sperre = await featureSperre(supabase, "ki_import");
+  if (sperre) return NextResponse.json({ error: sperre }, { status: 402 });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {

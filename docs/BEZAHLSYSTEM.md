@@ -82,8 +82,14 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
    mit `lib/plan.ts` und den Paddle-Preisen übereinstimmen.
 10. **Scharf schalten:** `BILLING_ENFORCED=true` setzen + auf der `/preise`-Seite den
    Early-Access-Hinweis entfernen und die CTAs auf den Abo-Tab zeigen lassen.
-11. Feature-Gates in den wichtigsten Server-Actions aktivieren (NK-PDF, Steuer-Export,
-    KI-Import, Mieter-Einladung, Objekt-Anlage über Limit) — Muster siehe oben.
+11. ~~Feature-Gates in den wichtigsten Server-Actions aktivieren~~ ✅ **erledigt
+    04.09.2026** — `lib/planGate.ts` (`featureSperre()`, `pruefeEinheiten()`), eingebaut
+    an 9 Stellen: Anlage V, Jahresbericht, DATEV, `/api/import`, `/api/import-url`,
+    `/api/nk-ocr`, NK-PDF, Dokument-PDF, Mieter-Einladung, Objekt-Anlage.
+    Sie sind ohne `BILLING_ENFORCED=true` inert — und zwar **ohne Datenbankabfrage**.
+    **Vor dem Scharfschalten:** Das Demo-Konto braucht ein Abo in `abos` (oder eine
+    `istDemoKonto`-Ausnahme in der Dokument-PDF-Route), sonst stirbt seine einzige
+    erlaubte Funktion.
 12. Bestandsnutzer per E-Mail/In-App **rechtzeitig vorab informieren** (Fairness +
     AGB-Änderungsfrist); niemand wird automatisch kostenpflichtig.
 
