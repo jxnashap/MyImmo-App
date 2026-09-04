@@ -125,7 +125,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 9 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 146 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei ein echter Fehler gefunden und behoben** (doppelte Mieteinnahmen; Datenbestand geprüft — nicht eingetreten). Offen: 20 Dateien, ~3.200 Zeilen |
+| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 11 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 195 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei ZWEI echte Fehler gefunden und behoben** (doppelte Mieteinnahmen · Tausenderpunkt in Handwerker-Beträgen). Offen: 18 Dateien, ~2.500 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
@@ -158,7 +158,7 @@ jetzt ausgewertet — schlägt die Prüfung fehl, wird gar nichts gebucht. Doppe
 Mieteinnahmen wandern in die Steuererklärung; eine Fehlermeldung kostet nur einen zweiten
 Anlauf. Drei Tests sperren den Fehler.
 
-**Abgedeckt (9 Dateien, 146 Tests):**
+**Abgedeckt (11 Dateien, 195 Tests):**
 
 | Datei | Was abgesichert ist |
 |---|---|
@@ -171,14 +171,28 @@ Anlauf. Drei Tests sperren den Fehler.
 | `mietkonto.ts` | Miet-Monat als Schlüssel (nicht Zahlungsdatum), Altzeilen ohne `soll_monat`, gültige Abfragegrenzen für **alle zwölf** Monate, kein Buchen bei fehlgeschlagener Prüfung |
 | `positions.ts` | Weißliste der Aufteilungsarten, Vorjahr als Ziel des OCR-Imports, Gesamtkosten-vs-Wohnungsanteil, OCR-Updates nur am eigenen Mieter |
 | `wiederkehr.ts` | Zyklus-Weißliste, Ende-vor-Start, **Dedup beim zweiten Klick**, richtige Zieltabelle je Art, alle Änderungen auf das eigene Konto eingeschränkt |
+| `beleihung.ts` | Weißliste der Checklisten-Punkte, 8-MB-Grenze, Verschlüsselung sensibler Dateien, Freigabe-Links (Schlüsselfilter, 7/14/30 Tage, Widerruf statt Löschen) |
+| `service.ts` | Der Handwerker kann sich **nichts selbst freigeben** (Antrag entsteht immer im Status `freigabe`), Zugehörigkeit von Partner/Mieter/Objekt/Firma, § 35a-Lohnanteil ≤ Gesamtbetrag, MIME-Weißliste, **keine doppelte Kostenübernahme** |
 
 **Wie geprüft, dass die Tests etwas taugen:** In jede getestete Datei wurden nacheinander
 Fehler eingebaut (Prüfung entfernt, Verschlüsselung ausgehängt, Großschreibung
 wiederhergestellt, Schranke umgangen, …) — **jede einzelne Mutation wurde rot**. Ein Test,
 der beim ersten Lauf grün ist und nie rot war, beweist nichts.
 
-**Offen:** 20 Dateien, ~3.200 Zeilen. Die nächsten nach Nutzen: `service.ts` (383 Z.),
-`beleihung.ts` (335), `bewerber.ts` (218), `termine.ts` (212), `anliegen.ts` (189).
+**Zweiter Fund (04.09.2026): Tausenderpunkte in Handwerker-Beträgen.**
+`parseBetrag` in `service.ts` las einen Punkt ohne Komma immer als Dezimaltrennzeichen.
+In einer deutschsprachigen App wurde damit aus **„1.000" ein Euro** statt tausend; bei
+„12.345" war das Ergebnis (12,35) unter **beiden** Lesarten falsch. Der Betrag kommt vom
+Handwerker und wird vom Vermieter per Klick zur Kosten-Buchung — der Fehler wäre in die
+Steuerauswertung gelaufen, und zwar zu niedrig.
+Behoben **nicht** mit einer neuen Regel, sondern über das bereits vorhandene
+`zahlDe()` aus `lib/zahl.ts`: Dort ist die deutsche Lesart schon korrekt gelöst und
+zusätzlich feiner (Ausnahme für führende Nullen, „0.500" bleibt ein halber Euro). Damit
+eine Kopie dieser Logik weniger. `lib/importCsv.ts` hatte den Fall bereits richtig —
+geprüft, nicht angefasst.
+
+**Offen:** 18 Dateien, ~2.500 Zeilen. Die nächsten nach Nutzen: `bewerber.ts` (218 Z.),
+`termine.ts` (212), `anliegen.ts` (189), `makler.ts` (177), `bewerbenPublic.ts` (157).
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat.
 

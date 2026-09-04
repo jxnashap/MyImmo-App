@@ -6,6 +6,7 @@
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { zahlDe } from "@/lib/zahl";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // ohne 0/O, 1/I/L
 
@@ -216,14 +217,29 @@ export async function entscheideAuftrag(id: string, freigeben: boolean, mieterId
 const RECHNUNG_MAX = 4 * 1024 * 1024;
 const RECHNUNG_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
 
-/** "1.234,56" / "1234.56" → number | null (deutsche + englische Schreibweise). */
+/**
+ * "1.234,56" / "1234.56" / "1.000" → number | null.
+ *
+ * DER FALL, DER HIER FEHLTE (gefunden 04.09.2026): Ein Punkt ohne Komma wurde
+ * IMMER als Dezimaltrennzeichen gelesen. In einer deutschsprachigen App ist
+ * "1.000" aber der naheliegendste Weg, tausend Euro zu schreiben — daraus
+ * wurde 1,00 €. Bei "12.345" war das Ergebnis unter BEIDEN Lesarten falsch
+ * (12,35 — auf zwei Stellen gerundet). Der Betrag kommt vom Handwerker und
+ * wird vom Vermieter per Klick zur Kosten-Buchung, landet also in der
+ * Steuerauswertung.
+ *
+ * Gelöst wird das NICHT durch eine eigene Regel, sondern über `zahlDe()` aus
+ * `lib/zahl.ts` — die Stelle, an der die deutsche Zahlenlesart im Projekt
+ * ohnehin schon korrekt implementiert ist (samt Test). Sie ist zusätzlich
+ * feiner als ein reiner Tausender-Test: Dank der Ausnahme für führende Nullen
+ * bleibt "0.500" ein halber Euro und wird nicht zu 500.
+ *
+ * Hier bleibt nur, was die Beträge dieser Datei zusätzlich brauchen:
+ * keine negativen Werte, auf Cent gerundet.
+ */
 function parseBetrag(s: string): number | null {
-  let t = s.replace(/[€\s]/g, "");
-  if (t === "") return null;
-  if (/,\d{1,2}$/.test(t)) t = t.replace(/\./g, "").replace(",", ".");
-  else t = t.replace(",", ".");
-  const n = Number(t);
-  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
+  const n = zahlDe(s);
+  return n != null && n >= 0 ? Math.round(n * 100) / 100 : null;
 }
 
 /** Service-Partner: Auftrag beantworten (angenommen/erledigt/abgelehnt).
