@@ -143,9 +143,27 @@ export async function bestaetigeMehrere(
     ),
   ).filter(Boolean).sort();
   const vonDatum = `${monate[0]}-01`;
-  const bisDatum = `${monate[monate.length - 1]}-31`;
+  // OBERGRENZE EXKLUSIV: erster Tag des Folgemonats.
+  //
+  // Vorher stand hier `${letzterMonat}-31`. Den 31. gibt es im Februar, April,
+  // Juni, September und November NICHT — PostgREST castet den Wert auf `date`,
+  // Postgres antwortet mit 22008 („date/time field value out of range"), und
+  // weil der Fehler unten nicht ausgewertet wurde, kam `ohneMonat` still als
+  // null zurueck. In fuenf von zwoelf Monaten fielen damit genau die Altzeilen
+  // ohne `soll_monat` aus dem Dublettenschutz — der Fehler, den der Kommentar
+  // darueber als behoben beschreibt, war fuer diese Monate wieder da: Die
+  // Nacherfassung legte Mieteingaenge ein zweites Mal an, und zwar unbemerkt
+  // in Cashflow UND Anlage V.
+  const [jahrLetzt, monatLetzt] = monate[monate.length - 1].split("-").map(Number);
+  const bisDatumExklusiv =
+    monatLetzt === 12
+      ? `${jahrLetzt + 1}-01-01`
+      : `${jahrLetzt}-${String(monatLetzt + 1).padStart(2, "0")}-01`;
 
-  const [{ data: mitMonat }, { data: ohneMonat }] = await Promise.all([
+  const [
+    { data: mitMonat, error: fehlerMitMonat },
+    { data: ohneMonat, error: fehlerOhneMonat },
+  ] = await Promise.all([
     supabase
       .from("einnahmen")
       .select("mieter_id,buchungsdatum,soll_monat")
@@ -160,8 +178,18 @@ export async function bestaetigeMehrere(
       .in("mieter_id", mieterIds)
       .is("soll_monat", null)
       .gte("buchungsdatum", vonDatum)
-      .lte("buchungsdatum", bisDatum),
+      .lt("buchungsdatum", bisDatumExklusiv),
   ]);
+  // Scheitert eine der beiden Abfragen, ist der Dublettenschutz UNVOLLSTAENDIG.
+  // Dann lieber nichts buchen: Eine Fehlermeldung kostet einen zweiten Anlauf,
+  // doppelt erfasste Mieteinnahmen wandern in die Steuererklaerung.
+  if (fehlerMitMonat || fehlerOhneMonat) {
+    return {
+      ok: false,
+      anzahl: 0,
+      error: "Bestehende Buchungen konnten nicht geprüft werden — es wurde nichts angelegt. Bitte erneut versuchen.",
+    };
+  }
   const gebucht = new Set(
     [...(mitMonat ?? []), ...(ohneMonat ?? [])].map((v) =>
       buchungsSchluessel(v.mieter_id, v.buchungsdatum, v.soll_monat ?? null),

@@ -446,4 +446,18 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   `tests/registrierung.test.ts` durchsucht Actions per `readFileSync` als Text. Solche
   Struktur-Tests halten eine Schreibweise fest, kein Verhalten.
   **Regel für neue Tests hier:** Einen neuen Action-Test erst glauben, wenn er gegen einen
-  absichtlich eingebauten Fehler ROT wird. Alle 76 Tests dieser Dateien wurden so geprüft.
+  absichtlich eingebauten Fehler ROT wird. Alle 108 Tests dieser Dateien wurden so geprüft.
+  Stand 04.09.2026: 7 von 29 Action-Dateien abgedeckt (`buchungen`, `properties`,
+  `freischaltung`, `ibans`, `einladung`, `umlage`, `mietkonto`).
+- 🐞 **Beim Testschreiben gefunden und behoben (04.09.2026): doppelte Mieteinnahmen.**
+  `lib/actions/mietkonto.ts` baute die Obergrenze der Dubletten-Abfrage als `` `${monat}-31` ``.
+  **Den 31. gibt es im Februar, April, Juni, September und November nicht** — Postgres
+  antwortet mit `22008`, und weil der Fehler nicht ausgewertet wurde, kam die Abfrage still
+  leer zurück. In fünf von zwölf Monaten fiel damit der Dublettenschutz für Altzeilen ohne
+  `soll_monat` aus → die Nacherfassung buchte Mieteingänge doppelt, unbemerkt in Cashflow
+  UND Anlage V. Jetzt: exklusive Obergrenze (erster Tag des Folgemonats) und Abfragefehler
+  brechen ab, statt still weiterzulaufen.
+  **Zwei Regeln daraus:** (1) Ein Datum nie aus Textbausteinen zusammensetzen — Monatsenden
+  unterscheiden sich; Bereichsgrenzen exklusiv über den Folgemonat bilden. (2) `error` aus
+  einer Supabase-Abfrage nie wegdestrukturieren, wenn das Ergebnis eine Schutzfunktion
+  speist — eine leere Antwort sieht dann aus wie „nichts gefunden".
