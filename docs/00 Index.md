@@ -23,6 +23,9 @@
 - [[MARKETING]] — Kanäle, Prioritäten, was sich lohnt
 - [[INSTAGRAM]] — Strategie, Profil, erste Post-Visuals (Test, zurückgestellt)
 
+## 🚀 Vor dem Start
+- [[START-CHECKLISTE]] — was vor dem Start ansteht, nach Dringlichkeit sortiert (04.09.2026)
+
 ## ⚖️ Compliance
 - [[SICHERHEIT-ABHAENGIGKEITEN]] — OSV-Scanner-Befund, Bewertung, Next.js-14-Ende
 - [[NEXTJS-15-MIGRATION]] — Umstieg auf Next.js 15.5 ✅ umgesetzt 01.09.2026 (Plan + Bericht)
