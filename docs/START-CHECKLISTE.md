@@ -125,7 +125,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 11 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 195 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei ZWEI echte Fehler gefunden und behoben** (doppelte Mieteinnahmen · Tausenderpunkt in Handwerker-Beträgen). Offen: 18 Dateien, ~2.500 Zeilen |
+| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 12 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 216 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei ZWEI echte Fehler gefunden und behoben** (doppelte Mieteinnahmen · Tausenderpunkt in Handwerker-Beträgen). Offen: 17 Dateien, ~2.350 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
@@ -158,7 +158,7 @@ jetzt ausgewertet — schlägt die Prüfung fehl, wird gar nichts gebucht. Doppe
 Mieteinnahmen wandern in die Steuererklärung; eine Fehlermeldung kostet nur einen zweiten
 Anlauf. Drei Tests sperren den Fehler.
 
-**Abgedeckt (11 Dateien, 195 Tests):**
+**Abgedeckt (12 Dateien, 216 Tests):**
 
 | Datei | Was abgesichert ist |
 |---|---|
@@ -172,6 +172,7 @@ Anlauf. Drei Tests sperren den Fehler.
 | `positions.ts` | Weißliste der Aufteilungsarten, Vorjahr als Ziel des OCR-Imports, Gesamtkosten-vs-Wohnungsanteil, OCR-Updates nur am eigenen Mieter |
 | `wiederkehr.ts` | Zyklus-Weißliste, Ende-vor-Start, **Dedup beim zweiten Klick**, richtige Zieltabelle je Art, alle Änderungen auf das eigene Konto eingeschränkt |
 | `beleihung.ts` | Weißliste der Checklisten-Punkte, 8-MB-Grenze, Verschlüsselung sensibler Dateien, Freigabe-Links (Schlüsselfilter, 7/14/30 Tage, Widerruf statt Löschen) |
+| `bewerbenPublic.ts` | **Die einzige Action ohne Login.** IP-Bremse (greift vor der Token-Prüfung), Token-Format, Unterschrift nur als PNG-Data-URL, Datei-Weißliste (**kein SVG**), 6-MB-Grenze, Slot-Weißliste, Verschlüsselung der Nachweise, keine Interna in Fehlermeldungen |
 | `service.ts` | Der Handwerker kann sich **nichts selbst freigeben** (Antrag entsteht immer im Status `freigabe`), Zugehörigkeit von Partner/Mieter/Objekt/Firma, § 35a-Lohnanteil ≤ Gesamtbetrag, MIME-Weißliste, **keine doppelte Kostenübernahme** |
 
 **Wie geprüft, dass die Tests etwas taugen:** In jede getestete Datei wurden nacheinander
@@ -191,8 +192,14 @@ zusätzlich feiner (Ausnahme für führende Nullen, „0.500" bleibt ein halber 
 eine Kopie dieser Logik weniger. `lib/importCsv.ts` hatte den Fall bereits richtig —
 geprüft, nicht angefasst.
 
-**Offen:** 18 Dateien, ~2.500 Zeilen. Die nächsten nach Nutzen: `bewerber.ts` (218 Z.),
-`termine.ts` (212), `anliegen.ts` (189), `makler.ts` (177), `bewerbenPublic.ts` (157).
+**Geprüft, kein Befund (07.09.2026):** Die IP-Bremse der öffentlichen Bewerbung hängt an
+`x-forwarded-for`. Laut Vercel-Dokumentation überschreibt Vercel diesen Header und leitet
+externe Werte nicht weiter — ausdrücklich „to prevent spoofing"; Ausnahme nur bei
+Enterprise-Trusted-Proxy. Der Wert ist dort also vertrauenswürdig. Steht als Kommentar im
+Test, damit es niemand später „repariert".
+
+**Offen:** 17 Dateien, ~2.350 Zeilen. Die nächsten nach Nutzen: `bewerber.ts` (218 Z.),
+`termine.ts` (212), `anliegen.ts` (189), `makler.ts` (177), `dokumente.ts` (134).
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat.
 
