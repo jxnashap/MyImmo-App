@@ -447,9 +447,9 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Struktur-Tests halten eine Schreibweise fest, kein Verhalten.
   **Regel für neue Tests hier:** Einen neuen Action-Test erst glauben, wenn er gegen einen
   absichtlich eingebauten Fehler ROT wird. Alle 216 Tests dieser Dateien wurden so geprüft.
-  Stand 07.09.2026: 14 von 29 Action-Dateien abgedeckt (`buchungen`, `properties`,
+  Stand 07.09.2026: 15 von 29 Action-Dateien abgedeckt (`buchungen`, `properties`,
   `freischaltung`, `ibans`, `einladung`, `umlage`, `mietkonto`, `positions`, `wiederkehr`,
-  `beleihung`, `service`, `bewerbenPublic`, `anliegen`, `bewerber`).
+  `beleihung`, `service`, `bewerbenPublic`, `anliegen`, `bewerber`, `zaehler`).
   **Warum die Mutationsprüfung nicht optional ist — Beispiel vom 07.09.2026:** Ein Test zur
   Slot-Weißliste in `bewerbenPublic` prüfte nur, DASS die RPC aufgerufen wird, nicht WOMIT.
   Er war grün und blieb grün, als die Weißliste testweise entfernt wurde. Erst die
@@ -489,3 +489,16 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **120.050 €**, aus „0.5" eine 5, und das steht öffentlich im Steckbrief, den jeder
   Bewerber sieht. Ebenfalls über `zahlDe()` behoben. **Damit ist der genannte Fall
   „Textfeld statt Zahlenfeld" nicht mehr hypothetisch — er war schon da.**
+- 🐞 **Vierter Fund (07.09.2026): Zählerstand tausendfach daneben — UND die Grenze der
+  Regel oben.** `meldeZaehlerstand` in `lib/actions/zaehler.ts` las den Stand mit
+  `parseFloat(s.replace(",", "."))`; das ersetzt nur das **erste** Komma und lässt Punkte
+  stehen → aus „14.382,5" wurde 14,382. Der Wert geht über die Übernahme als Differenz in
+  die Verbrauchsbuchung und damit in die **NK-Abrechnung des Mieters**.
+  **WICHTIG — hier ist `zahlDe()` die FALSCHE Lösung:** Gas- und Wasserzähler haben regulär
+  drei Nachkommastellen („5123.456" m³); `zahlDe()` deutet den Punkt vor drei Ziffern als
+  Tausenderpunkt und macht daraus 5.123.456. Behoben wurde deshalb nur der eindeutige Fall
+  (Komma vorhanden → Punkte sind Tausender) plus `Number` statt `parseFloat` (sonst wird
+  „123abc" stillschweigend zu 123). „14.382" ohne Komma bleibt mehrdeutig und wird als
+  Dezimalzahl gelesen — beim Zähler die häufigere Lesart.
+  **Regel dazu: `zahlDe()` ist für GELDBETRÄGE gedacht (zwei Nachkommastellen). Für Größen
+  mit drei oder mehr Nachkommastellen — Zählerstände, m³, kWh-Bruchteile — nicht verwenden.**

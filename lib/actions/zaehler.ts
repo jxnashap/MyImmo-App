@@ -10,6 +10,37 @@ const ARTEN = ["Strom", "Gas", "Wasser", "Warmwasser", "Fernwärme", "Öl", "Son
 const MAX_FOTO = 4 * 1024 * 1024;
 const FOTO_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 
+/**
+ * Zählerstand aus dem Formular lesen. Das Feld ist ein TEXTfeld
+ * (`ZaehlerPortal.tsx`, `inputMode="decimal"` steuert nur die Handy-Tastatur).
+ *
+ * HIER BEWUSST NICHT `zahlDe()` AUS lib/zahl.ts — im Gegensatz zu Geldbeträgen:
+ * Gas- und Wasserzähler haben regulär DREI Nachkommastellen ("5123.456" m³).
+ * `zahlDe()` deutet einen Punkt vor drei Ziffern als Tausenderpunkt und würde
+ * daraus 5.123.456 machen. Die Euro-Heuristik ist hier also falsch.
+ *
+ * BEHOBEN WURDE (07.09.2026) der eindeutige Fall: Steht ein Komma im Wert, sind
+ * die Punkte Tausendertrennzeichen. Vorher lief hier
+ * `parseFloat(s.replace(",", "."))` — das ersetzt nur das ERSTE Komma und ließ
+ * die Punkte stehen: Aus "14.382,5" wurde 14,382 statt 14382,5, also das
+ * Tausendfache daneben. Der Wert wandert über `uebernehmeZaehlerstand` als
+ * Differenz in die Verbrauchsbuchung und von dort in die Nebenkostenabrechnung
+ * des Mieters.
+ *
+ * OFFEN UND UNAUFLÖSBAR: "14.382" ohne Komma bleibt mehrdeutig — beim Stromzähler
+ * sind vierzehntausend gemeint, beim Gaszähler vierzehn Komma drei-acht-zwei.
+ * Es bleibt beim Dezimalpunkt (die für Zähler häufigere Lesart). Der Platzhalter
+ * im Formular zeigt deshalb die Komma-Schreibweise.
+ */
+function parseStand(roh: string): number {
+  const t = roh.trim().replace(/\s/g, "");
+  // Komma vorhanden → deutsche Schreibweise, Punkte sind Tausender.
+  const norm = t.includes(",") ? t.replace(/\./g, "").replace(",", ".") : t;
+  // `Number` statt `parseFloat`: "123abc" ist kein Zählerstand, sondern ein
+  // Vertipper — parseFloat hätte daraus stillschweigend 123 gemacht.
+  return norm === "" ? Number.NaN : Number(norm);
+}
+
 export async function meldeZaehlerstand(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -18,7 +49,7 @@ export async function meldeZaehlerstand(formData: FormData) {
   if (!user) return { error: "Nicht angemeldet." };
 
   const art = String(formData.get("art") ?? "Strom");
-  const stand = parseFloat(String(formData.get("stand") ?? "").replace(",", "."));
+  const stand = parseStand(String(formData.get("stand") ?? ""));
   const einheit = String(formData.get("einheit") ?? "kWh").trim() || "kWh";
   const zaehlernummer = String(formData.get("zaehlernummer") ?? "").trim();
   const ablesedatum = String(formData.get("ablesedatum") ?? "").trim() || new Date().toISOString().slice(0, 10);
