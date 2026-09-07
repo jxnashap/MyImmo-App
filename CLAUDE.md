@@ -447,9 +447,9 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Struktur-Tests halten eine Schreibweise fest, kein Verhalten.
   **Regel für neue Tests hier:** Einen neuen Action-Test erst glauben, wenn er gegen einen
   absichtlich eingebauten Fehler ROT wird. Alle 216 Tests dieser Dateien wurden so geprüft.
-  Stand 07.09.2026: 12 von 29 Action-Dateien abgedeckt (`buchungen`, `properties`,
+  Stand 07.09.2026: 14 von 29 Action-Dateien abgedeckt (`buchungen`, `properties`,
   `freischaltung`, `ibans`, `einladung`, `umlage`, `mietkonto`, `positions`, `wiederkehr`,
-  `beleihung`, `service`, `bewerbenPublic`).
+  `beleihung`, `service`, `bewerbenPublic`, `anliegen`, `bewerber`).
   **Warum die Mutationsprüfung nicht optional ist — Beispiel vom 07.09.2026:** Ein Test zur
   Slot-Weißliste in `bewerbenPublic` prüfte nur, DASS die RPC aufgerufen wird, nicht WOMIT.
   Er war grün und blieb grün, als die Weißliste testweise entfernt wurde. Erst die
@@ -482,3 +482,10 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   benutzen.** Ein eigenes `String(v).replace(",", ".")` liest deutsche Tausenderpunkte
   falsch. (Die schlichten Varianten in `buchungen`/`properties`/`positions` u. a. hängen
   an Zahlenfeldern; wer dort ein Textfeld einführt, muss auf `zahlDe()` umstellen.)
+- 🐞 **Dritter Fund (07.09.2026): Dezimalpunkt im öffentlichen Steckbrief.**
+  `aktualisiereBewerberLink` in `lib/actions/bewerber.ts` entfernte mit
+  `.replace(/\./g, "")` **alle** Punkte. Die Steckbrief-Felder sind **Textfelder**
+  (`BewerbungenManager.tsx`, `feld()` mit `typ = "text"`) — aus „1200.50" wurden
+  **120.050 €**, aus „0.5" eine 5, und das steht öffentlich im Steckbrief, den jeder
+  Bewerber sieht. Ebenfalls über `zahlDe()` behoben. **Damit ist der genannte Fall
+  „Textfeld statt Zahlenfeld" nicht mehr hypothetisch — er war schon da.**
