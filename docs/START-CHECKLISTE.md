@@ -125,7 +125,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 14 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 256 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei DREI echte Fehler gefunden und behoben** (doppelte Mieteinnahmen · Tausenderpunkt in Handwerker-Beträgen · Dezimalpunkt im öffentlichen Steckbrief). Offen: 15 Dateien, ~1.900 Zeilen |
+| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 15 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 275 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** — alle vier bei Zahlen oder Dubletten. Offen: 14 Dateien, ~1.780 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
@@ -158,7 +158,7 @@ jetzt ausgewertet — schlägt die Prüfung fehl, wird gar nichts gebucht. Doppe
 Mieteinnahmen wandern in die Steuererklärung; eine Fehlermeldung kostet nur einen zweiten
 Anlauf. Drei Tests sperren den Fehler.
 
-**Abgedeckt (14 Dateien, 256 Tests):**
+**Abgedeckt (15 Dateien, 275 Tests):**
 
 | Datei | Was abgesichert ist |
 |---|---|
@@ -172,6 +172,7 @@ Anlauf. Drei Tests sperren den Fehler.
 | `positions.ts` | Weißliste der Aufteilungsarten, Vorjahr als Ziel des OCR-Imports, Gesamtkosten-vs-Wohnungsanteil, OCR-Updates nur am eigenen Mieter |
 | `wiederkehr.ts` | Zyklus-Weißliste, Ende-vor-Start, **Dedup beim zweiten Klick**, richtige Zieltabelle je Art, alle Änderungen auf das eigene Konto eingeschränkt |
 | `beleihung.ts` | Weißliste der Checklisten-Punkte, 8-MB-Grenze, Verschlüsselung sensibler Dateien, Freigabe-Links (Schlüsselfilter, 7/14/30 Tage, Widerruf statt Löschen) |
+| `zaehler.ts` | Zählerstand mit Tausendertrennzeichen, **drei Nachkommastellen für Gas/Wasser bleiben erhalten**, Arten- und Foto-Weißlisten, Differenz nur vorwärts, keine Doppelübernahme, Vormeldung nach Zählerart |
 | `anliegen.ts` | Empfänger (Vermieter/Wohnung/Mieter) kommt aus `mieter_zugaenge`, **nie aus dem Formular**; Typ- und Status-Weißlisten; Anhänge werden **vor** dem Anlegen geprüft; Mieter bestätigt über `mieter_user_id`, Vermieter schlägt über `vermieter_id` vor |
 | `bewerber.ts` | Steckbrief-Zahlen über `zahlDe()`, Slot- und Ausstattungs-Weißlisten, Freitext-Kappung, **DSGVO-Löschung trifft nur eigene, abgelehnte, ältere als 6 Monate**, Dokument-Download nur mit eigener `user_id`, E-Signatur nur als PNG |
 | `bewerbenPublic.ts` | **Die einzige Action ohne Login.** IP-Bremse (greift vor der Token-Prüfung), Token-Format, Unterschrift nur als PNG-Data-URL, Datei-Weißliste (**kein SVG**), 6-MB-Grenze, Slot-Weißliste, Verschlüsselung der Nachweise, keine Interna in Fehlermeldungen |
@@ -208,8 +209,23 @@ Punkte — ohne Ansehen der Stellung. Die Steckbrief-Felder sind **Textfelder** 
 Bewerber sieht. Behoben über `zahlDe()` — derselbe Helfer wie beim zweiten Fund; damit ist
 die Regel aus `CLAUDE.md` jetzt an beiden Stellen umgesetzt, an denen sie verletzt war.
 
-**Offen:** 15 Dateien, ~1.900 Zeilen. Die nächsten nach Nutzen: `termine.ts` (212 Z.),
-`makler.ts` (177), `dokumente.ts` (134), `zaehler.ts` (124), `importDaten.ts` (124).
+**Vierter Fund (07.09.2026): Zählerstand tausendfach daneben — und warum `zahlDe()`
+hier NICHT die Lösung war.**
+`meldeZaehlerstand` las den Stand mit `parseFloat(s.replace(",", "."))`. Das ersetzt nur
+das **erste** Komma und lässt die Punkte stehen: aus „14.382,5" wurde **14,382**. Der Wert
+wandert über die Übernahme als Differenz in die Verbrauchsbuchung und von dort in die
+**Nebenkostenabrechnung des Mieters**. Das Feld ist ein Textfeld (`inputMode="decimal"`
+steuert nur die Handy-Tastatur).
+
+**Hier wäre der Reflex falsch gewesen:** `zahlDe()` deutet einen Punkt vor drei Ziffern als
+Tausenderpunkt — bei Gas- und Wasserzählern mit drei Nachkommastellen („5123.456" m³)
+würde daraus 5.123.456. Die Euro-Heuristik gilt für Zähler nicht. Behoben wurde deshalb nur
+der **eindeutige** Fall (Komma vorhanden → Punkte sind Tausender), plus `Number` statt
+`parseFloat`, damit „123abc" nicht stillschweigend zu 123 wird. Der Rest bleibt mehrdeutig
+und ist als solcher dokumentiert.
+
+**Offen:** 14 Dateien, ~1.780 Zeilen. Die nächsten nach Nutzen: `termine.ts` (212 Z.),
+`makler.ts` (177), `dokumente.ts` (134), `importDaten.ts` (124), `nkco2.ts` (127).
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat.
 
