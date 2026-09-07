@@ -4,6 +4,7 @@
 // bewerten/löschen und die eigene E-Signatur pflegen.
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { zahlDe } from "@/lib/zahl";
 
 export async function erstelleBewerberLink(formData: FormData) {
   const supabase = await createClient();
@@ -38,11 +39,17 @@ export async function aktualisiereBewerberLink(id: string, fd: FormData) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
 
+  // Zahlen über `zahlDe()` lesen, NICHT selbst parsen (Regel in CLAUDE.md).
+  //
+  // Vorher stand hier `.replace(/\./g, "")` — alle Punkte weg, ohne Ansehen der
+  // Stellung. Die Felder des Steckbriefs sind TEXTfelder (siehe
+  // `BewerbungenManager.tsx`, `feld()` mit `typ = "text"`), also kommt an, was
+  // getippt wurde: Aus „1200.50" wurden **120.050 €**, aus „0.5" eine 5.
+  // Und das steht anschliessend öffentlich im Steckbrief, den jeder Bewerber
+  // sieht. `zahlDe()` unterscheidet Tausenderpunkt und Dezimalpunkt korrekt.
   const zahl = (k: string): number | null => {
-    const roh = String(fd.get(k) ?? "").trim().replace(/\./g, "").replace(",", ".");
-    if (!roh) return null;
-    const n = Number(roh);
-    return Number.isFinite(n) && n >= 0 && n < 100000000 ? n : null;
+    const n = zahlDe(String(fd.get(k) ?? ""));
+    return n != null && n >= 0 && n < 100000000 ? n : null;
   };
   const text = (k: string, max: number): string | null => {
     const t = String(fd.get(k) ?? "").trim();
