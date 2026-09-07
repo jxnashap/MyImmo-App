@@ -502,3 +502,13 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Dezimalzahl gelesen — beim Zähler die häufigere Lesart.
   **Regel dazu: `zahlDe()` ist für GELDBETRÄGE gedacht (zwei Nachkommastellen). Für Größen
   mit drei oder mehr Nachkommastellen — Zählerstände, m³, kWh-Bruchteile — nicht verwenden.**
+- ✅ **Systematischer Durchgang abgeschlossen (07.09.2026): alle Zahlen-Eingänge geprüft.**
+  Weil drei der vier Funde derselbe Fehler waren, wurden **alle** Stellen durchgegangen, an
+  denen eine Zeichenkette zur Zahl wird (33 in 26 Dateien, Server und Oberfläche), je Stelle
+  gegen die Feldart geprüft. **Kein weiterer Fund.**
+  **Festgehalten in `tests/zahlenEingaenge.test.ts`** — je erlaubter Stelle eine Begründung;
+  eine NEUE handgebaute Lesart in `lib/actions/` macht den Test rot. Wird er rot: nicht
+  eintragen, sondern erst die Feldart nachsehen.
+  **Entscheidungshilfe:** `type="number"` → `Number(s.replace(",", "."))` unbedenklich ·
+  Textfeld mit Geld → `zahlDe()` · Textfeld mit drei Nachkommastellen → eigener Parser
+  (Vorbild `parseStand` in `zaehler.ts`).

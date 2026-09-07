@@ -125,7 +125,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 15 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 275 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** — alle vier bei Zahlen oder Dubletten. Offen: 14 Dateien, ~1.780 Zeilen |
+| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 15 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 281 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** — alle vier bei Zahlen oder Dubletten. Offen: 14 Dateien, ~1.780 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
@@ -224,8 +224,34 @@ der **eindeutige** Fall (Komma vorhanden → Punkte sind Tausender), plus `Numbe
 `parseFloat`, damit „123abc" nicht stillschweigend zu 123 wird. Der Rest bleibt mehrdeutig
 und ist als solcher dokumentiert.
 
-**Offen:** 14 Dateien, ~1.780 Zeilen. Die nächsten nach Nutzen: `termine.ts` (212 Z.),
-`makler.ts` (177), `dokumente.ts` (134), `importDaten.ts` (124), `nkco2.ts` (127).
+### Systematischer Durchgang „Zahlen aus Nutzereingaben" (07.09.2026) — abgeschlossen
+
+Drei der vier Funde waren **derselbe Fehler**: eine von Hand gebaute Zahlenlesart an einem
+**Textfeld**. Statt weiter Datei für Datei zu testen, wurden deshalb **alle** Stellen
+durchgegangen, an denen eine Zeichenkette zur Zahl wird — Server-Actions und Oberfläche,
+maschinell erhoben und je Stelle gegen die Feldart geprüft.
+
+| | |
+|---|---|
+| Umwandlungsstellen gesamt | 33 in 26 Dateien |
+| Textfelder mit Zahl-Verdacht | 22 (maschinell), davon 5 echt |
+| **weitere Funde** | **0** |
+
+Die fünf echten Textfeld-Zahlen: Zählerstand (behoben), Handwerker-Betrag und Lohnanteil
+(behoben), Selbstauskunft und Darlehens-Assistent (nutzten `zahlDe0()` bereits korrekt).
+Die Beleihungs-Eingaben sind zwar Textfelder, werden aber **nie gerechnet** — sie gehen als
+Text an die Bank.
+
+**Damit der Durchgang etwas wert bleibt: `tests/zahlenEingaenge.test.ts`.** Der Test hält
+den geprüften Stand fest — je erlaubter Stelle eine Begründung, warum die handgebaute
+Lesart dort in Ordnung ist. Kommt eine **neue** dazu, wird er rot und erzwingt die Frage,
+die dreimal falsch beantwortet war: Zahlen- oder Textfeld? Zusätzlich festgenagelt: die
+drei reparierten Stellen bleiben repariert, und `zaehler.ts` wird **nicht**
+„zur Vereinheitlichung" auf `zahlDe()` umgestellt.
+
+**Offen:** 14 Dateien, ~1.780 Zeilen — nach dem Durchgang aber ohne bekanntes Zahlenrisiko.
+Die nächsten nach Nutzen: `termine.ts` (212 Z.), `makler.ts` (177), `dokumente.ts` (134),
+`importDaten.ts` (124), `archiv.ts` (78).
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat.
 
