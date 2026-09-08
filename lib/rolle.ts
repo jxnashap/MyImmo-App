@@ -12,3 +12,16 @@ export async function getRolle(supabase: SupabaseClient, userId: string): Promis
     .maybeSingle();
   return ((data?.rolle as Rolle | undefined) ?? "vermieter");
 }
+
+/**
+ * Darf dieses Konto Vermieter-Auswertungen (Exporte, Berichte) abrufen?
+ *
+ * `getRolle` ist fail-open (kein Eintrag = Vermieter, damit Bestandskonten
+ * unverändert bleiben). Für die Exporte ist das tragbar, weil dort zusätzlich
+ * jede Abfrage explizit auf `user_id` filtert — die Rollenprüfung ist die
+ * zweite Linie, nicht die einzige.
+ */
+export async function istVermieterKonto(supabase: SupabaseClient, userId: string): Promise<boolean> {
+  const rolle = await getRolle(supabase, userId);
+  return rolle === "vermieter" || rolle === "hausverwaltung";
+}

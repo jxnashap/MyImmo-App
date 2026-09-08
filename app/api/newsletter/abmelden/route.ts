@@ -36,7 +36,12 @@ export async function GET(req: Request) {
 
   // Erst bei Brevo austragen, dann lokal vermerken. Andersherum stünde die
   // Adresse als abgemeldet in der eigenen Tabelle und bekäme trotzdem Post.
-  await kontaktAbmelden(zeile.email);
+  // Das Ergebnis MUSS ausgewertet werden — sonst passiert bei einem Brevo-
+  // Fehler genau das, was der Satz darüber ausschließen will.
+  if (!(await kontaktAbmelden(zeile.email))) {
+    console.error("Newsletter: Brevo-Abmeldung fehlgeschlagen für", zeile.id);
+    return NextResponse.redirect(ziel("fehler"), { status: 303 });
+  }
 
   const { error } = await supabase
     .from("newsletter_anmeldungen")

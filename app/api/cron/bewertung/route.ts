@@ -12,12 +12,15 @@ export const dynamic = "force-dynamic";
 // Index-Fortschreibung docken hier an, sobald die Quellen live sind.
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
-  // Vercel Cron sendet automatisch "Authorization: Bearer <CRON_SECRET>", wenn gesetzt.
-  if (secret) {
-    const auth = req.headers.get("authorization");
-    if (auth !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
+  // Ohne Secret ist die Route NICHT offen, sondern aus — wie wert-refresh.
+  // (Vorher: `if (secret)` → ohne Env war der Endpunkt für jeden erreichbar.
+  // Heute ein Gerüst ohne Schreibvorgänge, aber der Zustand würde beim Ausbau
+  // stillschweigend mitwandern.)
+  if (!secret) return NextResponse.json({ error: "CRON_SECRET nicht gesetzt" }, { status: 503 });
+  // Vercel Cron sendet automatisch "Authorization: Bearer <CRON_SECRET>".
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   const quellenAktiv = {

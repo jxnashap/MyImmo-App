@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { istVermieterKonto } from "@/lib/rolle";
 import { decryptIbanRow } from "@/lib/ibanData";
 
 export const dynamic = "force-dynamic";
@@ -32,10 +33,18 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Nicht angemeldet" }, { status: 401 });
   }
+  // NUR Vermieter-Konten. Die RLS-Policy `properties_select_zugang` gibt
+  // einem MIETER die komplette Objektzeile seiner Wohnung — inklusive
+  // Kaufpreis, Wert und Kaufdatum. Ohne diese Prüfung und ohne den expliziten
+  // `user_id`-Filter unten bekäme ein Mieter hier die Zahlen seines Vermieters.
+  // (In /api/export/alles war das bereits behoben; diese Route nicht.)
+  if (!(await istVermieterKonto(supabase, user.id))) {
+    return new NextResponse("Nur für Vermieter-Konten", { status: 403 });
+  }
 
   const daten: Record<string, unknown> = {};
   for (const table of TABLES) {
-    const { data, error } = await supabase.from(table).select("*");
+    const { data, error } = await supabase.from(table).select("*").eq("user_id", user.id);
     if (error) {
       daten[table] = { fehler: error.message };
       continue;

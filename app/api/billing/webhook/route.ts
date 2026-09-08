@@ -53,11 +53,16 @@ export async function POST(req: NextRequest) {
   if (!admin) return NextResponse.json({ fehler: "Service-Role fehlt" }, { status: 503 });
 
   // Reihenfolge-Schutz: nur anwenden, wenn das Event neuer ist als der Stand.
-  const { data: bestehend } = await admin
+  // Der Abfragefehler MUSS ausgewertet werden: Käme der Stand wegen eines
+  // Fehlers leer zurück, gälte JEDES Event als „neuer" — ein verspätetes
+  // "updated" überschriebe dann doch ein späteres "canceled". Mit 500 wiederholt
+  // Paddle die Zustellung; das ist hier der richtige Ausgang.
+  const { data: bestehend, error: standFehler } = await admin
     .from("abos")
     .select("letztes_event_am")
     .eq("user_id", update.user_id)
     .maybeSingle();
+  if (standFehler) return NextResponse.json({ fehler: "Stand nicht lesbar" }, { status: 500 });
   const letzter = (bestehend as { letztes_event_am: string | null } | null)?.letztes_event_am;
   if (letzter && update.letztes_event_am && new Date(update.letztes_event_am) <= new Date(letzter))
     return NextResponse.json({ veraltet: true });
@@ -65,7 +70,7 @@ export async function POST(req: NextRequest) {
   const { error } = await admin
     .from("abos")
     .upsert({ ...update, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-  if (error) return NextResponse.json({ fehler: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ fehler: "Speichern fehlgeschlagen" }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }

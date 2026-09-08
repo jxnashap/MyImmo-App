@@ -59,13 +59,23 @@ export async function POST(req: Request) {
 
   // Bereits bestätigte Adressen bekommen keine neue Bestätigungsmail — sonst
   // ließe sich über das Formular jedem Abonnenten wiederholt Post schicken.
-  const { data: vorhanden } = await supabase
+  // Fehler auswerten: Leer hieße „unbekannte Adresse" — und genau die Mail,
+  // die dieser Block verhindern soll, ginge raus.
+  const { data: vorhanden, error: leseFehler } = await supabase
     .from("newsletter_anmeldungen")
-    .select("id, bestaetigt_am")
+    .select("id, bestaetigt_am, abgemeldet_am")
     .eq("email", email)
     .maybeSingle();
+  if (leseFehler) {
+    console.error("Newsletter: Prüfung fehlgeschlagen", leseFehler.message);
+    return NextResponse.json({ fehler: "Speichern fehlgeschlagen." }, { status: 500 });
+  }
 
-  if (vorhanden?.bestaetigt_am) {
+  // Bestätigt UND nicht abgemeldet → nichts zu tun. Wer sich abgemeldet hat,
+  // darf sich neu anmelden — das ist der Fall `abgemeldet_am: null` im Upsert
+  // unten, der vorher nie erreicht wurde: Die Prüfung sah nur `bestaetigt_am`
+  // und schickte Abgemeldete mit „schon dabei" weg.
+  if (vorhanden?.bestaetigt_am && !vorhanden.abgemeldet_am) {
     return NextResponse.json({ ok: true, schon: true });
   }
 

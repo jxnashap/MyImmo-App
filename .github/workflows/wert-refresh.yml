@@ -18,6 +18,6 @@ jobs:
     steps:
       - name: Trigger Wert-Refresh
         run: |
-          curl -fsS -X POST "https://my-immo-app.vercel.app/api/cron/wert-refresh" \
+          curl -fsS -X POST "https://www.myimmoapp.de/api/cron/wert-refresh" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             --max-time 120 -w "\nHTTP %{http_code}\n"

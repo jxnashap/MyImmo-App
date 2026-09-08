@@ -2,6 +2,7 @@
 // Query: ?jahr=2025&anteil=80&satz= (leer = automatisch je Baujahr)
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { istVermieterKonto } from "@/lib/rolle";
 import { featureSperre } from "@/lib/planGate";
 import { AFA_DEFAULT, berechneAnlageV } from "@/lib/anlageV";
 import { buildAnlageVPdf } from "@/lib/pdf/berichtPdf";
@@ -15,6 +16,14 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.url));
+  // NUR Vermieter-Konten. Die RLS-Policy `properties_select_zugang` gibt
+  // einem MIETER die komplette Objektzeile seiner Wohnung — inklusive
+  // Kaufpreis, Wert und Kaufdatum. Ohne diese Prüfung und ohne den expliziten
+  // `user_id`-Filter unten bekäme ein Mieter hier die Zahlen seines Vermieters.
+  // (In /api/export/alles war das bereits behoben; diese Route nicht.)
+  if (!(await istVermieterKonto(supabase, user.id))) {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
   // Tarif-Schranke. Im Early Access (ohne BILLING_ENFORCED) kehrt
   // featureSperre() sofort mit null zurueck — ohne Datenbankabfrage.
   const sperre = await featureSperre(supabase, "steuer");
@@ -30,10 +39,10 @@ export async function GET(req: NextRequest) {
 
   const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: profil }] =
     await Promise.all([
-      supabase.from("properties").select("*").order("bezeichnung"),
-      supabase.from("einnahmen").select("*"),
-      supabase.from("kosten").select(KOSTEN_SPALTEN),
-      supabase.from("kredite").select("*"),
+      supabase.from("properties").select("*").eq("user_id", user.id).order("bezeichnung"),
+      supabase.from("einnahmen").select("*").eq("user_id", user.id),
+      supabase.from("kosten").select(KOSTEN_SPALTEN).eq("user_id", user.id),
+      supabase.from("kredite").select("*").eq("user_id", user.id),
       supabase.from("vermieter_profil").select("name,strasse,plz,ort,email").eq("user_id", user.id).limit(1).maybeSingle(),
     ]);
 

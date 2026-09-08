@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
+import { istVermieterKonto } from "@/lib/rolle";
 import { csvZelleGequotet } from "@/lib/csv";
 
 export const runtime = "nodejs";
@@ -21,11 +22,19 @@ export async function GET() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return new NextResponse("Nicht angemeldet", { status: 401 });
+  // NUR Vermieter-Konten. Die RLS-Policy `properties_select_zugang` gibt
+  // einem MIETER die komplette Objektzeile seiner Wohnung — inklusive
+  // Kaufpreis, Wert und Kaufdatum. Ohne diese Prüfung und ohne den expliziten
+  // `user_id`-Filter unten bekäme ein Mieter hier die Zahlen seines Vermieters.
+  // (In /api/export/alles war das bereits behoben; diese Route nicht.)
+  if (!(await istVermieterKonto(supabase, user.id))) {
+    return new NextResponse("Nur für Vermieter-Konten", { status: 403 });
+  }
 
   const [{ data: einnahmen }, { data: kosten }, { data: props }] = await Promise.all([
-    supabase.from("einnahmen").select("*"),
-    supabase.from("kosten").select(KOSTEN_SPALTEN),
-    supabase.from("properties").select("id,bezeichnung"),
+    supabase.from("einnahmen").select("*").eq("user_id", user.id),
+    supabase.from("kosten").select(KOSTEN_SPALTEN).eq("user_id", user.id),
+    supabase.from("properties").select("id,bezeichnung").eq("user_id", user.id),
   ]);
 
   const nameOf = new Map(

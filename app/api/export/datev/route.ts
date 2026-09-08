@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { istVermieterKonto } from "@/lib/rolle";
 import { featureSperre } from "@/lib/planGate";
 import { baueDatevBuchungen, baueDatevExtf } from "@/lib/datev";
 
@@ -12,6 +13,14 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new NextResponse("Nicht angemeldet", { status: 401 });
+  // NUR Vermieter-Konten. Die RLS-Policy `properties_select_zugang` gibt
+  // einem MIETER die komplette Objektzeile seiner Wohnung — inklusive
+  // Kaufpreis, Wert und Kaufdatum. Ohne diese Prüfung und ohne den expliziten
+  // `user_id`-Filter unten bekäme ein Mieter hier die Zahlen seines Vermieters.
+  // (In /api/export/alles war das bereits behoben; diese Route nicht.)
+  if (!(await istVermieterKonto(supabase, user.id))) {
+    return new NextResponse("Nur für Vermieter-Konten", { status: 403 });
+  }
   // Tarif-Schranke. Im Early Access (ohne BILLING_ENFORCED) kehrt
   // featureSperre() sofort mit null zurueck — ohne Datenbankabfrage.
   const sperre = await featureSperre(supabase, "steuer");
@@ -24,9 +33,9 @@ export async function GET(request: Request) {
     : new Date().getFullYear() - 1;
 
   const [{ data: einnahmen }, { data: kosten }, { data: props }] = await Promise.all([
-    supabase.from("einnahmen").select("buchungsdatum,betrag,kategorie,beschreibung,prop_id"),
-    supabase.from("kosten").select("buchungsdatum,betrag,kategorie,beschreibung,prop_id"),
-    supabase.from("properties").select("id,bezeichnung"),
+    supabase.from("einnahmen").select("buchungsdatum,betrag,kategorie,beschreibung,prop_id").eq("user_id", user.id),
+    supabase.from("kosten").select("buchungsdatum,betrag,kategorie,beschreibung,prop_id").eq("user_id", user.id),
+    supabase.from("properties").select("id,bezeichnung").eq("user_id", user.id),
   ]);
 
   const nameOf = new Map(((props ?? []) as { id: string; bezeichnung: string }[]).map((p) => [p.id, p.bezeichnung]));

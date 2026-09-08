@@ -47,7 +47,10 @@ export async function GET() {
   }
 
   // Darlehensnummern (kredite.darlnr) — Klartext-Altzeilen verschlüsseln.
-  const { data: kredite } = await supabase.from("kredite").select("id, darlnr");
+  // Auch hier den Fehler auswerten: Ein leeres Ergebnis hieße „nichts zu
+  // migrieren" — und die Route meldete ok, während Klartext liegen bleibt.
+  const { data: kredite, error: kreditFehler } = await supabase.from("kredite").select("id, darlnr");
+  if (kreditFehler) return NextResponse.json({ error: kreditFehler.message, migriert }, { status: 500 });
   let kreditMigriert = 0;
   for (const k of kredite ?? []) {
     if (!k.darlnr || isEncrypted(k.darlnr)) continue;
@@ -60,7 +63,8 @@ export async function GET() {
   }
 
   // Kautions-Bank (mieter.kaution_bank) — Altbestand ebenfalls verschlüsseln.
-  const { data: mieter } = await supabase.from("mieter").select("id, kaution_bank");
+  const { data: mieter, error: mieterFehler } = await supabase.from("mieter").select("id, kaution_bank");
+  if (mieterFehler) return NextResponse.json({ error: mieterFehler.message, migriert, kreditMigriert }, { status: 500 });
   let kautionMigriert = 0;
   for (const m of mieter ?? []) {
     if (!m.kaution_bank || isEncrypted(m.kaution_bank)) continue;

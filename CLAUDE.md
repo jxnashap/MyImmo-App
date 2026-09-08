@@ -596,6 +596,24 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   SELBEN Test das gecachte Modul** — es hängt noch an der ersten Attrappe, der frische `db`
   bleibt leer, und ein Test mit einer Schleife über mehrere Eingaben prüft nur den ersten
   Durchlauf. `resetModules()` steht deshalb jetzt in jedem `lade()`-Helfer.
+- 🚪 **Fünfter Durchgang (08.09.2026): `app/api`.** 20 Routen, alle gelesen; 50 Tests, 31
+  Mutationen rot; `schreibFehler.test.ts` bewacht jetzt auch die Routen.
+  **Schwerster Fund:** `/api/export`, `/api/export/buchungen`, `/api/export/datev`,
+  `/api/berichte/anlage-v`, `/api/berichte/jahresbericht` lasen `properties` & Co. ohne
+  Nutzerfilter — die Policy `properties_select_zugang` gibt einem **Mieter** die komplette
+  Objektzeile seiner Wohnung (Kaufpreis, Wert, Kaufdatum). `/api/export/alles` hatte das
+  schon behoben, die fünf Geschwister nicht. **Regel: Jede Abfrage in einer API-Route
+  filtert explizit auf `user_id` — RLS ist die zweite Linie, nicht die einzige — und
+  Vermieter-Auswertungen prüfen `istVermieterKonto()` aus `lib/rolle.ts`.**
+  Weitere Funde: Webhook-Reihenfolge fail-open; Cron `wert-refresh` mit drei stillen
+  Service-Role-Schreibvorgängen und `?secret=` in der URL (entfernt — **Geheimnisse nie
+  als Query-Parameter**, sie landen in Logs); Cron `bewertung` ohne `CRON_SECRET` **offen**
+  (jetzt 503 — **Regel: fehlende Env = Route aus, nie Route offen**); Newsletter: Abgemeldete
+  konnten sich nie wieder anmelden, Brevo-Ergebnis beim Abmelden ignoriert; `/api/import`
+  ohne Mengenbremse; `encrypt-bankdaten` meldete „ok" bei ungelesenen Tabellen. Die
+  GitHub-Action rief `my-immo-app.vercel.app` statt der kanonischen Domain.
+  **Bewusst belassen:** `darfWeiter()` sperrt bei DB-Fehler (fail-closed), obwohl der
+  Kommentar „durchlassen" sagt — sicherer, kostet Verfügbarkeit bei DB-Ausfall.
 - **Prüfstand-Erweiterung (08.09.2026): `db.fehlerBei`.** `db.fehler` trifft JEDEN Zugriff,
   auch die Abfragen davor — eine Action, die vorher korrekt abbricht, erreicht die zu
   prüfende Stelle dann nie, und der Test wäre aus dem falschen Grund grün. `fehlerBei`
