@@ -63,14 +63,24 @@
   anwaltlich → Paddle-Konto/Preise/Webhook → Env → Sandbox-Test → `BILLING_ENFORCED=true` +
   /preise-Early-Access-Banner raus → Feature-Gates in den Actions). Steuerhinweis: MoR =
   Paddle ist der Kunde (Reverse-Charge) → bei Kleinunternehmer-Frage berücksichtigen.
-- **Leaked Password Protection (Supabase) — braucht Supabase PRO** (~25 $/Monat).
-  Abgleich neuer/geänderter Passwörter gegen HaveIBeenPwned. Der Toggle ist auf dem
-  Free-Plan zwar SICHTBAR (Authentication → Sign In / Providers → Email → „Password
-  Security"), greift aber nicht: Am 29.07.2026 empirisch geprüft — eine Registrierung
-  mit dem millionenfach geleakten „Password123!" ging trotz gesetztem Schalter durch.
-  Wer das nur im Dashboard umlegt, hält den Schutz für aktiv, obwohl er es nicht ist.
-  Der Supabase-Security-Advisor meldet den Punkt entsprechend dauerhaft als offen.
-  Kostenloser Teilersatz: Mindest-Passwortlänge erhöhen (siehe „Sonstiges").
+- ⚠️ **KORREKTUR 08.09.2026: Supabase ist auf PRO, nicht auf Free.** Live abgefragt
+  (Organisation `wkxmbevawmmifleiggrs`, `plan: "pro"`). Der Eintrag hier behauptete
+  seit dem 29.07.2026 das Gegenteil und hat zwei Punkte falsch eingeordnet:
+  - **Leaked Password Protection kostet nichts mehr extra** — sie ist im bereits
+    bezahlten Pro-Plan enthalten und steht laut Security-Advisor **aktuell auf AUS**.
+    Damit ist das kein Geldpunkt mehr, sondern ein Ein-Klick-Schalter für den Betreiber:
+    Authentication → Sign In / Providers → Email → „Password Security". **Danach die
+    empirische Gegenprobe wiederholen** (Registrierung mit „Password123!" muss jetzt
+    scheitern) — am 29.07.2026 ging sie durch, und ob das am Plan lag oder daran, dass
+    der Schalter nicht gespeichert wurde, ist rückblickend nicht mehr feststellbar.
+  - **Backups gibt es** (das war eine offene Frage aus der Feedback-Bewertung):
+    Pro sichert **täglich, die letzten 7 Tage** sind im Dashboard unter Database →
+    Backups abrufbar. Feinere Wiederherstellung (PITR, sekundengenau) ist ein Add-on
+    für ~100 $/Monat bei 7 Tagen Aufbewahrung — **nicht nötig**, solange die Daten
+    überschaubar sind und ein Tagesstand als Rückfall genügt.
+  **Lehre daraus, ernster als die zwei Punkte:** Ein Plan-/Konto-Zustand ist eine
+  Tatsache, die sich ändert, und stand hier sechs Wochen als Notiz. Solche Aussagen
+  vor dem Weiterverwenden **nachfragen, nicht nachlesen** (`get_organization`).
 - **„Sign in with Apple" nachrüsten, sobald die App in den iOS App Store geht.** Apple verlangt
   das, sobald ein anderer Social-Login (Google) angeboten wird. Braucht Apple-Developer-Programm
   (99 $/Jahr), App-ID/Services-ID/Key + Provider-Config in Supabase. Aktuell reine Web-App → noch nicht nötig.
@@ -383,6 +393,20 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   `supabase/migrations/<version>_<name>.sql` im selben PR committen (Regeln + Historie-Index:
   `supabase/migrations/README.md`). Kein DDL über `execute_sql`.
 - Dateien (Belege, Archiv-Dokumente) werden als Base64 in Tabellenspalten gespeichert — **kein Storage-Bucket** nötig.
+- 🔑 **`revoke ... from anon, authenticated` allein wirkt im `public`-Schema NICHT** (08.09.2026
+  am eigenen Leib erlebt). Supabase vergibt `EXECUTE` dort an die Rolle **PUBLIC**; anon und
+  authenticated erben es von da. Nach jedem Revoke `proacl` nachsehen: Steht dort weiter ein
+  Eintrag, der **mit `=` beginnt** (`=X/postgres`), hat der Revoke nichts bewirkt — es braucht
+  zusätzlich `from public`. Migrationen `20260908122320` (wirkungslos) und `20260908122404`.
+  Trigger-Funktionen dürfen bedenkenlos entzogen werden: Postgres prüft `EXECUTE` beim
+  **Anlegen** des Triggers, nicht beim Auslösen (in einer zurückgerollten Transaktion mit
+  einem Probe-Konto in `auth.users` nachgewiesen, statt es anzunehmen).
+- **Security-Advisor, Stand 08.09.2026 — was BEWUSST offen bleibt:** `billing_einstellungen`
+  und `registrierung_freigaben` haben RLS an und **keine** Policy. Das ist Absicht und
+  fail-closed: Beide werden ausschließlich von SECURITY-DEFINER-Funktionen gelesen, eine
+  Policy würde den Zugang nur öffnen. Die 13+17 Meldungen zu SECURITY-DEFINER-Funktionen
+  sind die öffentlichen Token-RPCs (`beleihung_public_*`, `bewerbung_*`, `einladungscode_*`) —
+  die MÜSSEN von `anon` aufrufbar sein, das ist ihr Zweck; sie prüfen das Token selbst.
 
 ## Sicherheit der Abhängigkeiten
 - ✅ **Next-15-Migration UMGESETZT (01.09.2026): Next 15.5.25 / React 19.2.8.** Plan samt
