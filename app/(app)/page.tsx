@@ -152,7 +152,6 @@ export default async function DashboardPage() {
     if (t.datum && imFenster(t.datum) && !t.erledigt)
       fristListe.push({ datum: t.datum, label: t.titel ?? "Termin", sub: t.kategorie ?? "Eigener Termin", warn: false });
   fristListe.sort((a, b) => a.datum.localeCompare(b.datum));
-  const naechsteFristen = fristListe.slice(0, 4);
 
   // ----- „Heute wichtig" -----------------------------------------------------
   // Zusammenführung der Quellen, die eine HANDLUNG verlangen. Die Daten liegen
@@ -356,85 +355,6 @@ export default async function DashboardPage() {
       )}
 
 
-      {/* Die eine Frage beim Öffnen: Was muss ich JETZT tun? Alle Quellen mit
-          Handlungsbedarf in EINER Liste, jede Zeile mit genau einem Ziel
-          (Feedback 08.09., Befund 7 — Phase „Kern nach vorn"). */}
-      <div className="section mb-20" style={{ borderColor: heuteAufgaben.some((a) => a.dringend) ? "var(--red-dim)" : undefined }}>
-        <div className="section-header">
-          <div>
-            <h3>Heute wichtig</h3>
-            <div className="section-sub">
-              {heuteAufgaben.length === 0
-                ? "Nichts Offenes — der Rest der Seite zeigt, wie es läuft."
-                : `${heuteAufgaben.length} ${heuteAufgaben.length === 1 ? "Sache wartet" : "Sachen warten"} auf dich`}
-            </div>
-          </div>
-        </div>
-        <div className="section-body">
-          {heuteAufgaben.length === 0 ? (
-            <div className="empty">
-              <CheckCircle2 className="empty-icon" size={36} color="var(--green)" />
-              <p>Alles erledigt. Keine offenen Mieten, Anliegen oder Fristen.</p>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {heuteAufgaben.map((a) => {
-                const Icon = AUFGABEN_ICON[a.art];
-                return (
-                  <Link
-                    key={`${a.art}-${a.href}-${a.label}-${a.sub}`}
-                    href={a.href}
-                    className="heute-zeile"
-                    style={{ borderLeftColor: a.dringend ? "var(--red)" : "var(--gold)" }}
-                  >
-                    <Icon size={15} style={{ color: a.dringend ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontSize: 13.5 }}>{a.label}</span>
-                      <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{a.sub}</span>
-                    </span>
-                    <span className="heute-aktion">{a.aktion} <ArrowRight size={13} /></span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Zuerst die Frage, die ein Vermieter beim Öffnen hat: Was muss ich tun?
-          Bis 08.09.2026 war dieser Block der LETZTE Abschnitt der Seite — hinter
-          Kennzahlen, zwei Charts, Karte, Krediten und Buchungen. Auf dem Handy
-          war er ohne Scrollen unsichtbar. (Feedback 08.09., Befund 7.) */}
-      <div className="section mb-20">
-        <div className="section-header">
-          <div><h3>Fristen &amp; Aufgaben</h3><div className="section-sub">Was als Nächstes ansteht — automatisch aus deinen Daten</div></div>
-          <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
-        </div>
-        <div className="section-body">
-          {naechsteFristen.length === 0 ? (
-            <div className="empty"><CalendarDays className="empty-icon" size={36} color="var(--faint)" /><p>Keine anstehenden Fristen</p></div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {naechsteFristen.map((f) => (
-                <div key={`${f.datum}-${f.label}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 10 }}>
-                  <CalendarDays size={15} style={{ color: ueberfaellig(f.datum) ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13 }}>{f.label}</div>
-                    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>{f.sub}</div>
-                  </div>
-                  <span
-                    className={`badge ${ueberfaellig(f.datum) ? "badge-red" : f.warn ? "badge-amber" : "badge-teal"}`}
-                    title={ueberfaellig(f.datum) ? "Überfällig" : undefined}
-                  >
-                    {ueberfaellig(f.datum) ? "überfällig · " : ""}{datum(f.datum)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* KPIs sind Deep-Links in den passenden Kontext (spart 1–2 Klicks je Absprung) */}
       <div className="staffel grid-5 mb-20">
         <Link href="/properties" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
@@ -588,9 +508,15 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Fristen & Aufgaben stehen seit 08.09.2026 ganz OBEN (siehe dort) —
-          hier bleibt nur die Buchungsliste. */}
-      <div>
+      {/* REIHENFOLGE, Stand 08.09.2026 abends: Kennzahlen und Verläufe zuerst,
+          Termine und Aufgaben ans Ende. Vorgabe des Betreibers, nachdem er die
+          umgekehrte Fassung (#320, aus dem externen Feedback) live gesehen hat —
+          eine gesehene Seite schlägt eine vermutete.
+          Die beiden Blöcke „Heute wichtig" und „Fristen & Aufgaben" sind dabei
+          zu EINEM zusammengefasst: Beide listeten dieselben Fristen, der eine
+          nur zusätzlich Mieten, Anliegen und Zählerstände. Geblieben ist die
+          reichere Fassung mit je einer Handlung je Zeile. */}
+      <div className="grid-2">
         <div className="section" style={{ marginBottom: 0 }}>
           <div className="section-header">
             <div><h3>Letzte Buchungen</h3><div className="section-sub">Einnahmen und Ausgaben, zuletzt erfasst</div></div>
@@ -627,6 +553,55 @@ export default async function DashboardPage() {
           </div>
         </div>
 
+        <div className="section" style={{ marginBottom: 0 }}>
+          <div className="section-header">
+            <div>
+              <h3>Termine &amp; Aufgaben</h3>
+              <div className="section-sub">
+                {heuteAufgaben.length === 0
+                  ? "Nichts Offenes"
+                  : `${heuteAufgaben.length} ${heuteAufgaben.length === 1 ? "Sache wartet" : "Sachen warten"} auf dich`}
+              </div>
+            </div>
+            <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
+          </div>
+          <div className="section-body">
+            {heuteAufgaben.length === 0 ? (
+              <div className="empty">
+                <CheckCircle2 className="empty-icon" size={36} color="var(--green)" />
+                <p>Alles erledigt. Keine offenen Mieten, Anliegen oder Fristen.</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {heuteAufgaben.map((a) => {
+                  const Icon = AUFGABEN_ICON[a.art];
+                  return (
+                    <Link
+                      key={`${a.art}-${a.href}-${a.label}-${a.sub}`}
+                      href={a.href}
+                      className="heute-zeile"
+                      style={{ borderLeftColor: a.dringend ? "var(--red)" : "var(--gold)" }}
+                    >
+                      <Icon size={15} style={{ color: a.dringend ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: "block", fontSize: 13.5 }}>{a.label}</span>
+                        <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{a.sub}</span>
+                      </span>
+                      {/* Datum nur bei echten Fristen — bei einer offenen Miete
+                          waere der Monatserste eine Zahl ohne Aussage. */}
+                      {a.art === "frist" && (
+                        <span className={`badge ${a.dringend ? "badge-red" : "badge-teal"}`}>
+                          {ueberfaellig(a.datum) ? "überfällig · " : ""}{datum(a.datum)}
+                        </span>
+                      )}
+                      <span className="heute-aktion">{a.aktion} <ArrowRight size={13} /></span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

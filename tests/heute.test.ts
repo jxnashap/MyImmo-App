@@ -146,6 +146,41 @@ describe("baueHeuteAufgaben()", () => {
   });
 });
 
+describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026)", () => {
+  // Das externe Feedback wollte die Aufgaben ganz oben; der Betreiber hat die
+  // Seite danach LIVE gesehen und das Gegenteil entschieden: Kennzahlen und
+  // Verläufe zuerst, Termine und Aufgaben ans Ende. Eine gesehene Seite schlägt
+  // eine vermutete — dieser Test hält die Entscheidung fest, damit sie nicht
+  // beim nächsten Feedback-Durchlauf still zurückgedreht wird.
+  const seite = readFileSync("app/(app)/page.tsx", "utf8");
+
+  it("die Kennzahlen stehen vor den Aufgaben", () => {
+    const kpis = seite.indexOf('staffel grid-5');
+    const aufgaben = seite.indexOf("Termine &amp; Aufgaben");
+    expect(kpis).toBeGreaterThan(0);
+    expect(aufgaben).toBeGreaterThan(0);
+    expect(kpis).toBeLessThan(aufgaben);
+  });
+
+  it("auch die beiden Verlaufs-Charts stehen davor", () => {
+    const aufgaben = seite.indexOf("Termine &amp; Aufgaben");
+    for (const chart of ["Portfolio-Wertentwicklung", "Cashflow-Entwicklung"]) {
+      expect(seite.indexOf(chart), chart).toBeLessThan(aufgaben);
+    }
+  });
+
+  it("es gibt nur EINEN Aufgaben-Block — nicht zwei mit denselben Fristen", () => {
+    // „Heute wichtig" und „Fristen & Aufgaben" listeten beide dieselben
+    // Fristen. Zusammengefasst auf die reichere Fassung (mit Handlung je Zeile).
+    // Geprüft wird die ÜBERSCHRIFT, nicht das Wort: Die Kommentare im Code
+    // erklären die Zusammenlegung und dürfen den alten Namen nennen.
+    // (Zweites Mal dieselbe zu grobe Zusicherung an einem Tag — beim CTA-Test
+    // schlug sie ebenfalls auf einem Kommentar an.)
+    expect(seite).not.toMatch(/<h3>\s*Heute wichtig\s*<\/h3>/);
+    expect(seite.split("heuteAufgaben.map").length - 1).toBe(1);
+  });
+});
+
 describe("Navigation: drei Gruppen statt elf gleichrangiger Punkte", () => {
   it("die drei Gruppen sind überschneidungsfrei und vollständig", () => {
     const alle = [...VERWALTEN, ...ABRECHNEN, ...PLANEN].map((n) => n.href);
