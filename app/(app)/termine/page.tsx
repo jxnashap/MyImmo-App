@@ -13,6 +13,7 @@ import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { KATEGORIE_STIL, TERMIN_KATEGORIEN, WARTUNGS_VORLAGEN, WIEDERKEHRUNG_LABEL, fristSchluessel } from "@/lib/termine";
 import type { Termin, Property, Tenant, Kredit } from "@/lib/types";
 import { RotateCw, Pencil, X, CalendarDays, Plus, Eye, EyeOff } from "lucide-react";
+import Leer from "@/components/Leer";
 
 type Eintrag = {
   datum: string;
@@ -438,7 +439,25 @@ export default async function TerminePage(
           </div>
           <div className="section-body">
             {sichtbar.length === 0 ? (
-              <div className="empty"><CalendarDays className="empty-icon" size={36} color="var(--faint)" /><p>Keine Termine</p></div>
+              // Zwei Fälle, die vorher beide „Keine Termine" hießen: Wer noch
+              // gar nichts angelegt hat, braucht einen Einstieg — wer nur
+              // gefiltert hat, braucht den Hinweis auf den Filter, sonst hält
+              // er seine Termine für verschwunden.
+              eintraege.length === 0 ? (
+                <Leer
+                  icon={CalendarDays}
+                  titel="Noch keine Termine"
+                  text="Hier laufen Fristen und Termine zusammen — Nebenkosten, Mieterhöhungen, Wartungen. Vieles trägt MyImmo automatisch ein, sobald Objekte und Mieter erfasst sind."
+                  aktion={{ href: "/properties", label: "Zu den Objekten" }}
+                />
+              ) : (
+                <Leer
+                  art="filter"
+                  icon={CalendarDays}
+                  titel="Keine Termine in dieser Auswahl"
+                  text="Es gibt Termine, aber keiner passt zu den gesetzten Filtern. Setze Jahr, Quelle oder Kategorie zurück."
+                />
+              )
             ) : (
               <ExpandableList limit={12} label="weitere Termine">
                 {(() => {

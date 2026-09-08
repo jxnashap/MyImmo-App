@@ -9,6 +9,7 @@ import DeleteButton from "@/components/DeleteButton";
 import SubmitButton from "@/components/SubmitButton";
 import RowDialog from "@/components/RowDialog";
 import type { Verbrauch, Property } from "@/lib/types";
+import Leer from "@/components/Leer";
 
 const ARTEN = ["Strom", "Gas", "Wasser", "Heizöl", "Fernwärme", "Sonstiges"];
 const EINHEITEN = ["kWh", "m³", "Liter", "Pauschal"];
@@ -49,7 +50,14 @@ export default function VerbrauchListe({
           </tr>
         ))}
         {rows.length === 0 && (
-          <tr><td colSpan={6}><div className="empty"><Zap className="empty-icon" size={36} color="var(--faint)" />Noch kein Verbrauch</div></td></tr>
+          <tr><td colSpan={6}>
+            <Leer
+              icon={Zap}
+              titel="Noch kein Verbrauch erfasst"
+              text="Zählerstände für Strom, Gas, Wasser und Heizung. Sie sind die Grundlage der Nebenkostenabrechnung — ohne sie lässt sich nichts verbrauchsabhängig umlegen."
+              aktion={{ href: "/verbrauch/new", label: "Verbrauch erfassen" }}
+            />
+          </td></tr>
         )}
       </ExpandableRows>
 

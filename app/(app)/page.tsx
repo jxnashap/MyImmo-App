@@ -16,6 +16,7 @@ import type { RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { ORGANISATION } from "@/lib/seo/jsonLd";
+import Leer from "@/components/Leer";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
 // metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
@@ -460,7 +461,12 @@ export default async function DashboardPage() {
           <div className="section-header"><h3>Einnahmen vs. Ausgaben</h3></div>
           <div className="section-body">
             {properties.length === 0 ? (
-              <div className="empty"><BarChart3 className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Daten</p></div>
+              <Leer
+                icon={BarChart3}
+                titel="Noch keine Auswertung"
+                text="Sobald das erste Objekt angelegt ist, stehen hier Einnahmen und Ausgaben nebeneinander."
+                aktion={{ href: "/properties/new", label: "Erstes Objekt anlegen" }}
+              />
             ) : (
               balken.map((b) => (
                 <div key={b.lbl} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
@@ -483,7 +489,7 @@ export default async function DashboardPage() {
           <div className="section-body">
             {kredite.length === 0 ? (
               <div className="empty">
-                <Landmark className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Kredite</p>
+                <Landmark className="empty-icon" size={36} color="var(--faint)" /><p>Finanzierungen mit Restschuld und Zinsbindung — MyImmo erinnert rechtzeitig, bevor eine Bindung ausläuft.</p>
                 <Link href="/kredite/new" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 8 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Kredit anlegen</Link>
               </div>
             ) : (
@@ -525,7 +531,7 @@ export default async function DashboardPage() {
           <div className="section-body">
             {trans.length === 0 ? (
               <div className="empty">
-                <Banknote className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Buchungen</p>
+                <Banknote className="empty-icon" size={36} color="var(--faint)" /><p>Mieteingänge und Kosten. Sie speisen Cashflow, Nebenkosten und die Anlage V.</p>
                 <Link href="/cashflow/neu" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 8 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Erste Buchung erfassen</Link>
               </div>
             ) : (
