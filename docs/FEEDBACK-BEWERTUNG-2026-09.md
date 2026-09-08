@@ -35,7 +35,7 @@ der Plan des Feedbacks vermuten lässt. Siehe Phase 3.
 | 4 | „kurzer Zeit", „turnusmäßig" zu unbestimmt | **stimmt** | `datenschutz:94`, `:200` | mittel | Betreiber: echte Fristen bei Vercel/Supabase nachsehen, dann 30 min |
 | 5 | Keine 2FA; Auto-Abmeldung standardmäßig aus | **stimmt** | kein MFA/TOTP im Code; `AutoLogout.tsx:32` liest `localStorage` mit Default `"0"` = aus | **hoch** für Bank-/Bewerberdaten | 2FA: 2–3 Tage (Supabase TOTP ist im Free-Plan enthalten); Default: 10 min |
 | 6 | Vollexport entschlüsselt ohne erneute Passwortabfrage | **stimmt** | `api/export/alles` prüft nur die Sitzung | mittel–hoch | 1 Tag (Re-Auth-Schritt, siehe Phase 2) |
-| 7 | Aufgaben stehen auf dem Dashboard nach Chart und Kennzahlen | **stimmt — schlimmer** | „Fristen & Aufgaben" ist der **letzte** Abschnitt (`page.tsx:501`), nach KPIs, zwei Charts, Karte, Einnahmen/Ausgaben, Krediten und Buchungen | **hoch** — die Kernfrage „was muss ich tun?" steht ganz unten | 2 h (verschieben) · 1–2 Tage (Karte „Heute wichtig" mit Handlungen) |
+| 7 | Aufgaben stehen auf dem Dashboard nach Chart und Kennzahlen | **stimmt — aber die Folgerung war falsch, siehe unten** | „Fristen & Aufgaben" ist der **letzte** Abschnitt (`page.tsx:501`), nach KPIs, zwei Charts, Karte, Einnahmen/Ausgaben, Krediten und Buchungen | **hoch** — die Kernfrage „was muss ich tun?" steht ganz unten | 2 h (verschieben) · 1–2 Tage (Karte „Heute wichtig" mit Handlungen) |
 | 8 | Seitenleiste mit sehr vielen gleichrangigen Punkten | **teils** | 11 + 4 Punkte in **zwei** Gruppen (`lib/nav.ts`) — gruppiert, aber die erste Gruppe ist zu lang | mittel | 2 h |
 | 9 | Demo-Hinweis „kannst alles ausprobieren; Änderungen werden zurückgesetzt" stimmt nicht | **stimmt** | `app/(app)/layout.tsx:207–209`; die Demo ist seit 30.08. Nur-Lesen (`CLAUDE.md`) | **hoch** — erster Kontakt, falsche Aussage | 10 min |
 | 10 | Fünf Kennzahlen als 2–2–1 | **stimmt** | `.grid-5` → `1fr 1fr` unter 1100 px, fünf Kacheln → eine allein | niedrig | 30 min |
@@ -130,6 +130,29 @@ gesehen.
 ### Nicht vor Abschluss der Wochen 1–4
 Banking, weitere KI, WEG-Modul, Strategie-Reiter, englische Fassung. Das Feedback hat
 recht: Erst die Führung, dann der Umfang.
+
+## 4b. Korrektur am eigenen Plan: Befund 7 war richtig, die Lösung nicht
+
+**08.09.2026 abends, nach dem Live-Blick des Betreibers.** Das Feedback wollte die
+Aufgaben ganz oben; #318 und #320 haben genau das gebaut. Am fertigen Dashboard
+gesehen, war es falsch: **Kennzahlen und Verläufe gehören nach oben, Termine und
+Aufgaben ans Ende.** Zurückgedreht in PR #321.
+
+Was daran zu lernen ist — für mich wie für das Feedback:
+- Der Befund stimmte (die Aufgaben standen ganz unten, auf dem Handy unsichtbar).
+  Die **Folgerung** „also ganz nach oben" war eine Vermutung, keine Beobachtung.
+- Ein Dashboard beantwortet zwei Fragen: „Wie steht es?" und „Was ist zu tun?".
+  Das Feedback hat die zweite für die wichtigere gehalten. Der Betreiber, der die
+  Seite täglich benutzt, sieht es umgekehrt — und **eine gesehene Seite schlägt
+  eine vermutete.**
+- Was vom Umbau bleibt und richtig war: die **Zusammenführung**. Vorher gab es
+  zwei Blöcke mit denselben Fristen; jetzt einen, mit je einer Handlung pro Zeile
+  („Miete bestätigen", „Anliegen öffnen"). Nur eben unten.
+- Drei Tests halten die Reihenfolge jetzt fest, damit sie nicht beim nächsten
+  Feedback-Durchlauf still zurückgedreht wird.
+
+**Konsequenz für den Rest dieses Plans:** Bei jedem weiteren Layout-Punkt
+(Phase 5) erst zeigen, dann festschreiben — nicht umgekehrt.
 
 ## 5. Was ich als Nächstes tun würde
 

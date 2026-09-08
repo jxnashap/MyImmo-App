@@ -631,6 +631,11 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Bewusst belassen:** `darfWeiter()` sperrt bei DB-Fehler (fail-closed), obwohl der
   Kommentar „durchlassen" sagt — sicherer, kostet Verfügbarkeit bei DB-Ausfall.
 - 🎯 **„Heute wichtig" und drei Navigations-Gruppen (08.09.2026, Feedback Befund 7 + 8).**
+  **REIHENFOLGE (08.09.2026 abends korrigiert, Vorgabe des Betreibers nach Live-Blick):**
+  Kennzahlen und Verläufe ZUERST, „Termine & Aufgaben" ans ENDE der Seite. Das externe
+  Feedback wollte das Gegenteil, #318/#320 hatten es so gebaut — am fertigen Dashboard
+  gesehen war es falsch. **Nicht wieder umdrehen**, `tests/heute.test.ts` hält es fest.
+  Geblieben ist die Zusammenführung: vorher zwei Blöcke mit denselben Fristen, jetzt einer.
   **`lib/heute.ts` → `baueHeuteAufgaben()`** führt offene Mieten des laufenden Monats,
   offene Mieter-Anliegen, nicht übernommene Zählerstände und Fristen in EINER Liste
   zusammen — jede Zeile mit genau einem Ziel und einer Handlung. Reine Funktion, ohne
