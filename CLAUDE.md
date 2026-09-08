@@ -445,6 +445,13 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).
+- ⚠️ **`npx vitest run | tail` verschluckt den Exit-Code.** Der Status einer Pipeline ist
+  der des LETZTEN Befehls. `vitest … | tail -3 && git commit` committet also auch bei
+  roten Tests — so ist #317 mit einem roten Test durchgegangen (08.09.2026). Vor einem
+  Commit: `npx vitest run > datei; echo $?` oder `set -o pipefail`.
+- **Speed Insights entfernt (08.09.2026).** Die Datenschutzerklärung sagt „keine
+  Analyse-Tools" — bis dahin lud `@vercel/speed-insights` in allen drei Layouts. Nicht
+  wieder einbauen, ohne Ziffer 2 der Datenschutzerklärung zu ändern.
 - **Server-Actions testen (seit 04.09.2026): `tests/stubs/actionHarness.ts`.**
   `fakeSupabase()` + `mockeNextUndSupabase()` ersetzen `next/cache`, `next/navigation`
   und die beiden Supabase-Clients — sonst nichts, die Action läuft unverändert.

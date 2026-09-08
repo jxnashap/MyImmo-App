@@ -69,7 +69,7 @@ gesehen.
 
 ## 4. Der Plan — nach Nutzen je Stunde, nicht nach Phase
 
-### Sofort (ein PR, unter drei Stunden, nur Code)
+### Sofort (ein PR, unter drei Stunden, nur Code) — ✅ erledigt 08.09.2026, PR #318
 1. Speed Insights aus allen drei Layouts entfernen; Paket deinstallieren.
 2. `[zuständige Landesdatenschutzbehörde]` → ULD Schleswig-Holstein (Sitz Bad Schwartau),
    mit Anschrift und Link.
@@ -132,6 +132,15 @@ Banking, weitere KI, WEG-Modul, Strategie-Reiter, englische Fassung. Das Feedbac
 recht: Erst die Führung, dann der Umfang.
 
 ## 5. Was ich als Nächstes tun würde
+
+**Nachtrag 08.09.2026, nach dem Sofort-PR:** Die sechs Punkte sind drin. Dabei ist ein
+eigener Fehler aufgefallen: PR #317 war mit **einem roten Test** gemergt worden, weil
+`npx vitest run | tail -3 && git commit` den Exit-Code von `tail` prüft, nicht den von
+vitest. Der Test (alte A9-Annahme „Skript liegt NICHT in migrations") war inhaltlich
+überholt und ist ersetzt — aber die Pipeline hätte ihn nicht durchlassen dürfen.
+Regel jetzt in `CLAUDE.md`: Testlauf nie hinter eine Pipe hängen, wenn danach
+committet wird.
+
 
 Den **Sofort-PR** — sechs Punkte, unter drei Stunden, davon vier reine Wahrheitskorrekturen
 an Texten, die heute live falsch sind. Danach ist die App nicht besser, aber ehrlich.

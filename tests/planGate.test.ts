@@ -190,12 +190,23 @@ describe("Bestandsschutz: was der Schalter mit Konten OHNE Abo-Zeile macht", () 
     expect(einheitenLimit({ plan: "plus", status: "testphase" } as never, true)).toBeGreaterThanOrEqual(8);
   });
 
-  it("das Skript liegt NICHT in supabase/migrations/", () => {
-    // Es aendert kein Schema und darf nicht mit der Migrationshistorie
-    // vermischt werden — eine dort abgelegte, absichtlich nicht ausgefuehrte
-    // Datei wuerde die Regel „Datei == ausgefuehrt" entwerten.
+  it("der Bestandsschutz ist ein Automatismus in der Datenbank, kein Termin-Skript", () => {
+    // Bis 08.09.2026 stand hier das Gegenteil: „das Skript liegt NICHT in
+    // supabase/migrations/" — weil es ein bewusst NICHT ausgefuehrtes Termin-
+    // Skript war. Seit Migration 20260908082914 ist der Bestandsschutz ein
+    // Trigger mit Schalter; die Migration IST ausgefuehrt (22 Konten versorgt),
+    // die Regel „Datei == ausgefuehrt" gilt also. Der alte Test war nach #317
+    // einen PR lang rot, weil `vitest | tail` den Exit-Code verschluckt hatte.
     const migrationen = readdirSync("supabase/migrations");
-    expect(migrationen.some((n) => n.includes("bestandsschutz"))).toBe(false);
+    const datei = migrationen.find((n) => n.includes("bestandsschutz_automatisch"));
+    expect(datei).toBeDefined();
+    const sql = readFileSync(join("supabase/migrations", datei!), "utf8");
+    expect(sql).toContain("create trigger on_auth_user_created_bestandsschutz");
+    expect(sql).toContain("bestandsschutz_offen");
+    // Das Kontrollskript darf sich nicht mehr als Pflichtschritt ausgeben.
+    const skript = readFileSync("scripts/sql/bestandsschutz-vor-billing.sql", "utf8");
+    expect(skript).toMatch(/AUTOMATISCH/);
+    expect(skript).not.toMatch(/auszuführen UNMITTELBAR VOR/);
   });
 });
 
