@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Search, CornerDownLeft, Home as HomeIcon, User as UserIcon, FileText, ReceiptText, type LucideIcon } from "lucide-react";
-import { VERWALTUNG, KALKULATOR, PROP_ICONS } from "@/lib/nav";
+import { ALLE_ZIELE, PROP_ICONS } from "@/lib/nav";
 
 type Property = { id: string; bezeichnung: string; typ: string | null };
 type TenantLite = { id: string; name: string };
@@ -66,7 +66,7 @@ export default function CommandPalette({ properties = [], tenants = [] }: { prop
   useEffect(() => setMounted(true), []);
 
   const items = useMemo<Item[]>(() => {
-    const bereiche: Item[] = [...VERWALTUNG, ...KALKULATOR].map((n) => ({
+    const bereiche: Item[] = ALLE_ZIELE.map((n) => ({
       key: n.href, label: n.label, href: n.href, group: "Bereiche", icon: n.icon, alias: ALIAS[n.href],
     }));
     const objekte: Item[] = properties.map((p) => ({
