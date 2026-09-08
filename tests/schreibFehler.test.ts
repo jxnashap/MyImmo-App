@@ -40,6 +40,14 @@ import { anweisungen } from "./stubs/tsAnweisungen";
 
 const ORDNER = "lib/actions";
 
+/** Alle route.ts unter app/api — seit dem fünften Durchgang (08.09.2026) ebenfalls bewacht. */
+function apiRouten(ordner = "app/api"): string[] {
+  return readdirSync(ordner, { withFileTypes: true }).flatMap((e) => {
+    const p = join(ordner, e.name);
+    return e.isDirectory() ? apiRouten(p) : e.name === "route.ts" ? [p] : [];
+  });
+}
+
 const SCHREIBT = /\.(update|delete|upsert|insert)\(/;
 
 /** Alle Schreibanweisungen einer Datei — Rohtext und entkleidete Fassung. */
@@ -67,6 +75,22 @@ describe("Kein Schreibvorgang in lib/actions/ verschluckt den Fehler", () => {
     const z = anweisungen(quelle);
     expect(z.mindestTiefe).toBe(0);
     expect(z.entkleidet.filter((a) => SCHREIBT.test(a))).toHaveLength(2);
+  });
+
+  it("auch in app/api verschluckt kein Schreibvorgang den Fehler", () => {
+    // Fünfter Durchgang: Die Cron-Route `wert-refresh` hatte DREI stille
+    // Schreibvorgänge — mit Service-Role, also über alle Konten hinweg. Der
+    // Lauf zählte „aktualisiert", während der Wert nirgends stand.
+    const still: string[] = [];
+    for (const p of apiRouten()) {
+      const z = anweisungen(readFileSync(p, "utf8"));
+      expect(z.mindestTiefe, p).toBeGreaterThanOrEqual(0);
+      for (const x of schreibvorgaenge(readFileSync(p, "utf8"))) {
+        if (!/\berror\b/.test(x.nackt)) still.push(`${p}: ${x.roh.trim().replace(/\s+/g, " ").slice(0, 100)}`);
+      }
+    }
+    expect(still).toEqual([]);
+    expect(apiRouten().length).toBeGreaterThan(15);
   });
 
   it("der Erkenner ist in KEINER Datei blind", () => {

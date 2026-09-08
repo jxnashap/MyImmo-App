@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { holeIndexReihe } from "@/lib/wert/hpi";
 import { fortschreibeKaufpreis } from "@/lib/wert/fortschreibung";
@@ -16,7 +17,9 @@ import { bodenrichtwertAbrufen } from "@/lib/valuation/sources/boris";
 //     Diese fließen in die ImmoWertV-Bewertung auf der Objektseite ein.
 // Der manuell gepflegte `wert` wird NIE überschrieben — vorschlagen statt still ändern.
 //
-// Schutz: Header `Authorization: Bearer <CRON_SECRET>` oder `?secret=`.
+// Schutz: Header `Authorization: Bearer <CRON_SECRET>`. Der frühere Weg über
+// `?secret=` ist entfernt (08.09.2026): Ein Geheimnis in der URL landet in
+// Vercel-Logs und Browserverläufen. Die GitHub-Action nutzt den Header.
 // Env (Vercel): CRON_SECRET, SUPABASE_SERVICE_ROLE_KEY, optional OWNER_USER_ID.
 // Für BORIS zusätzlich: VALUATION_BORIS_ENABLED=true + BORIS_ENDPOINT_URL.
 
@@ -28,6 +31,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // damit die Route im Zeitbudget bleibt; der Rest kommt beim nächsten Lauf dran.
 const GEOCODE_PAUSE_MS = 1100;
 const GEOCODE_PRO_LAUF = 8;
+
+/** Vergleich in konstanter Zeit — die Länge verrät sonst schon etwas. */
+function geheimnisGleich(a: string, b: string): boolean {
+  const x = Buffer.from(a);
+  const y = Buffer.from(b);
+  return x.length === y.length && timingSafeEqual(x, y);
+}
 
 export async function GET(req: Request) {
   return handle(req);
@@ -43,8 +53,7 @@ async function handle(req: Request) {
   }
   const auth = req.headers.get("authorization") ?? "";
   const bearer = auth.replace(/^Bearer\s+/i, "").trim();
-  const fromQuery = new URL(req.url).searchParams.get("secret") ?? "";
-  if (bearer !== secret && fromQuery !== secret) {
+  if (!geheimnisGleich(bearer, secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -68,6 +77,7 @@ async function handle(req: Request) {
   let aktualisiert = 0;
   let unveraendert = 0;
   let uebersprungen = 0;
+  let fehlgeschlagen = 0;
   let geokodiert = 0;
   let bodenrichtwerte = 0;
   let geoBudget = GEOCODE_PRO_LAUF;
@@ -82,19 +92,27 @@ async function handle(req: Request) {
     if (f) {
       const wert = Math.round(f.wert);
       if (Math.round(p.marktwert_aktuell ?? 0) !== wert) {
-        await supabase
+        // Fehler auswerten: Sonst zählte der Lauf „aktualisiert", während der
+        // Wert nirgends steht — und die Historie bekäme einen Wert, den das
+        // Objekt gar nicht hat.
+        const { error: wertFehler } = await supabase
           .from("properties")
           .update({ marktwert_aktuell: wert, marktwert_stand: heute })
-          .eq("id", p.id);
-        await protokolliereWert(
-          supabase as never,
-          p.user_id,
-          p.id,
-          wert,
-          "index-auto",
-          "HPI-Fortschreibung (Auto-Refresh)",
-        );
-        aktualisiert++;
+          .eq("id", p.id)
+          .eq("user_id", p.user_id);
+        if (wertFehler) {
+          fehlgeschlagen++;
+        } else {
+          await protokolliereWert(
+            supabase as never,
+            p.user_id,
+            p.id,
+            wert,
+            "index-auto",
+            "HPI-Fortschreibung (Auto-Refresh)",
+          );
+          aktualisiert++;
+        }
       } else {
         unveraendert++;
       }
@@ -112,19 +130,26 @@ async function handle(req: Request) {
         if (g) {
           lat = g.lat;
           lng = g.lng;
-          await supabase.from("properties").update({ latitude: lat, longitude: lng }).eq("id", p.id);
-          geokodiert++;
+          const { error: geoFehler } = await supabase
+            .from("properties")
+            .update({ latitude: lat, longitude: lng })
+            .eq("id", p.id)
+            .eq("user_id", p.user_id);
+          if (geoFehler) fehlgeschlagen++;
+          else geokodiert++;
         }
         await sleep(GEOCODE_PAUSE_MS); // Nominatim-Policy respektieren
       }
       if (lat != null && lng != null) {
         const brw = await bodenrichtwertAbrufen(lat, lng);
         if (brw && Math.round(brw.wert) !== Math.round(p.bodenrichtwert ?? 0)) {
-          await supabase
+          const { error: brwFehler } = await supabase
             .from("properties")
             .update({ bodenrichtwert: brw.wert, bodenrichtwert_stichtag: brw.stichtag })
-            .eq("id", p.id);
-          bodenrichtwerte++;
+            .eq("id", p.id)
+            .eq("user_id", p.user_id);
+          if (brwFehler) fehlgeschlagen++;
+          else bodenrichtwerte++;
         }
       }
     } catch {
@@ -133,7 +158,8 @@ async function handle(req: Request) {
   }
 
   return NextResponse.json({
-    ok: true,
+    // `ok` heißt „kein Schreibvorgang ist gescheitert" — nicht „Route lief durch".
+    ok: fehlgeschlagen === 0,
     stand: heute,
     indexLive: hpi.live,
     scope: owner ? "owner" : "alle",
@@ -141,6 +167,7 @@ async function handle(req: Request) {
     aktualisiert,
     unveraendert,
     uebersprungen,
+    fehlgeschlagen,
     geokodiert,
     bodenrichtwerte,
     borisAktiv: process.env.VALUATION_BORIS_ENABLED === "true" && !!process.env.BORIS_ENDPOINT_URL,

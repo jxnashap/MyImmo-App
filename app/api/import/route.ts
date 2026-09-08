@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { featureSperre } from "@/lib/planGate";
+import { darfWeiter } from "@/lib/net/bremse";
 import { getAuthedUser, MB } from "@/lib/aiRoute";
 import { extrahiereImmodaten, AiImportFehler } from "@/lib/aiImport";
 
@@ -17,6 +18,14 @@ export async function POST(req: Request) {
   // featureSperre() sofort mit null zurueck — ohne Datenbankabfrage.
   const sperre = await featureSperre(supabase, "ki_import");
   if (sperre) return NextResponse.json({ error: sperre }, { status: 402 });
+  // Mengenbremse je Konto wie in nk-ocr — jeder Aufruf kostet Geld beim
+  // KI-Anbieter. Datenbankgestützt, überlebt Serverless-Instanzen.
+  if (!(await darfWeiter("ki_import", 20, 3600, user.id))) {
+    return NextResponse.json(
+      { error: "Zu viele Importe in kurzer Zeit. Bitte in einer Stunde erneut versuchen." },
+      { status: 429 },
+    );
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {

@@ -452,15 +452,68 @@ eingetreten, soweit prüfbar (Dubletten-Abfrage 04.09.).
 (nur die Datei-Auslieferung), `lib/pdf` und `lib/valuation` (reine Rechenlogik, teils
 eigene Tests), und die 33 Lese-Abfragen, die ich per Hand als fail-closed eingestuft habe.
 
+### Fünfter Durchgang: die API-Routen (08.09.2026)
+
+Dieselben vier Klassen wie in `lib/actions/`, anderer Ordner — plus die Frage, die es dort
+nicht gab: **Wer darf die Route überhaupt aufrufen?** 20 Routen, 1.794 Zeilen, alle gelesen;
+sieben davon schreiben mit der **Service-Role** (RLS-Bypass), ein Fehler dort trifft alle
+Konten. 50 Verhaltenstests in vier Dateien, 31 Mutationen, alle rot. Der Wächter
+`schreibFehler.test.ts` bewacht jetzt auch `app/api`.
+
+**Der schwerste Fund: Fünf Routen gaben einem Mieter-Konto die Zahlen seines Vermieters.**
+`/api/export`, `/api/export/buchungen`, `/api/export/datev`, `/api/berichte/anlage-v` und
+`/api/berichte/jahresbericht` lasen `properties`, `einnahmen`, `kosten`, `kredite` mit
+`select("*")` ohne Nutzerfilter — „RLS liefert ohnehin nur eigene Zeilen". Für Vermieter
+stimmt das. Die Policy `properties_select_zugang` gibt einem **Mieter aber die komplette
+Objektzeile seiner Wohnung** — Kaufpreis, Wert, Kaufdatum (live geprüft). Beim Anlage-V-PDF
+kämen die Zahlen sogar als fertig gerechnete Werbungskosten heraus. `/api/export/alles` hatte
+genau diesen Fehler bereits behoben; der Kommentar dort beschreibt ihn. Die fünf Geschwister
+nicht. Jetzt: expliziter `user_id`-Filter auf jeder Abfrage + Rollenprüfung
+(`istVermieterKonto` in `lib/rolle.ts`).
+**Ehrlich zur Schwere:** Nur ein eingeloggtes Mieter-Konto mit Portalzugang, nur das eigene
+Objekt. Kein Fremdzugriff über Konten hinweg — aber Kaufpreis und Beleihungswert des eigenen
+Vermieters sind genau die Zahlen, die er seinem Mieter nicht zeigen will.
+
+**Weitere Funde:**
+- **Paddle-Webhook:** Reihenfolge-Schutz las fail-open → ein verspätetes `updated` hätte
+  ein späteres `canceled` überschrieben. Jetzt 500 → Paddle wiederholt.
+- **Cron `wert-refresh`:** drei stille Schreibvorgänge mit Service-Role; der Lauf zählte
+  „aktualisiert" und schrieb die Historie fort, während der Wert nirgends stand. Dazu:
+  `?secret=` in der URL akzeptiert (landet in Vercel-Logs) → entfernt; Vergleich jetzt in
+  konstanter Zeit. Die GitHub-Action zeigte auf `my-immo-app.vercel.app` statt auf die
+  kanonische Domain — korrigiert.
+- **Cron `bewertung`:** `if (secret)` — **ohne gesetztes CRON_SECRET war die Route offen.**
+  Heute ein Gerüst ohne Schreibvorgänge; der Zustand wäre beim Ausbau mitgewandert.
+- **Newsletter:** (1) Prüfung „schon bestätigt?" fail-open → bei DB-Fehler ging genau die
+  Mail raus, die der Block verhindern soll. (2) **Wer sich abgemeldet hatte, konnte sich
+  nie wieder anmelden** — die Prüfung sah nur `bestaetigt_am`; der Upsert-Zweig „frühere
+  Abmeldung wird aufgehoben" wurde nie erreicht. (3) Abmelden ignorierte das Brevo-Ergebnis
+  → lokal abgemeldet, bei Brevo nicht, Adresse bekam weiter Post — der Kommentar darüber
+  warnt vor genau dieser Reihenfolge.
+- **`/api/import` hatte keine Mengenbremse**, `import-url` nur eine je Serverless-Instanz,
+  `nk-ocr` eine datenbankgestützte. Jeder Aufruf kostet Geld. Jetzt alle drei gleich.
+- **`/api/encrypt-bankdaten`** las Kredite und Mieter fail-open → „ok, 0 migriert", Klartext
+  bleibt liegen. Die Route hat genau einen Zweck.
+
+**Geprüft, bewusst belassen:** `darfWeiter()` in `lib/net/bremse.ts` sperrt bei einem
+Datenbankfehler (nicht geworfen, sondern als `{ error }` zurückgegeben), obwohl der
+Kommentar „lieber durchlassen" sagt. Für eine Bremse ist fail-closed die sicherere Richtung;
+der Preis ist, dass ein DB-Ausfall Registrierung, Newsletter und KI-Import mit 429 stoppt.
+Nicht geändert, aber notiert — wer die Verfügbarkeit höher gewichtet, muss dort den
+Limit-Fehler vom Verbindungsfehler unterscheiden.
+
+**Nicht abgedeckt:** `/api/export/alles` (192 Z., bereits korrekt gebaut, JSZip),
+`/api/demo` (gut gebaut, gelesen), `/api/kauf/kreditantrag`, `/api/nk-ocr` (gelesen,
+Grenzen und Bremse vorhanden). Für die Datei-Routen gilt weiter `dateiAuslieferung.test.ts`.
+
 **Offen:** nichts mehr in T2 — nach drei Durchgängen ohne bekanntes Zahlen-,
 Datei- oder Schreibfehler-Risiko.
 **Zahl am 08.09.2026 korrigiert:** Hier stand „14 von 29". Tatsächlich enthält
 `lib/actions/` **35** Dateien, und 15 werden von Tests importiert — offen sind also **20**,
 nicht 14. Die alte Zahl entstand daraus, dass Dateien, die nur beiläufig in einer anderen
 Testdatei mitliefen, als abgedeckt gezählt wurden.
-T2 ist damit vollständig. Der nächste Hebel auf der Liste ist entweder ein fünfter
-Durchgang über die **API-Routen** (`app/api`, dieselben vier Klassen, anderer Ordner)
-oder T3/T4 aus der Tabelle oben.
+T2 und der fünfte Durchgang sind damit abgeschlossen. Was bleibt: `components/` (kein
+DOM), `lib/pdf` und `lib/valuation` (teils eigene Tests), und die Betreiber-Punkte A1–A9.
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat. (`actionFehler()` ist die Ausnahme: Die Logik wurde bewusst aus dem
 Bauteil herausgezogen, damit sie ohne DOM prüfbar ist.)
