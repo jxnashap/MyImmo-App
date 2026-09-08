@@ -53,7 +53,7 @@ export async function createDokument(fd: FormData) {
 }
 
 export async function updateDokument(id: string, fd: FormData) {
-  const { supabase } = await uid();
+  const { supabase, userId } = await uid();
   const datei = await dateiFelder(fd); // nur ersetzen, wenn neue Datei gewählt
   const { error } = await supabase
     .from("notizen")
@@ -65,14 +65,17 @@ export async function updateDokument(id: string, fd: FormData) {
       inhalt: str(fd, "inhalt"),
       ...datei,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", userId);
   if (error) throw new Error(error.message);
   revalidatePath("/archiv");
 }
 
 export async function deleteDokument(id: string) {
-  const { supabase } = await uid();
-  const { error } = await supabase.from("notizen").delete().eq("id", id);
+  const { supabase, userId } = await uid();
+  // user_id im Filter wie in den übrigen Actions — ein RLS-Treffer-Null sähe
+  // sonst wie ein gelungenes Löschen aus.
+  const { error } = await supabase.from("notizen").delete().eq("id", id).eq("user_id", userId);
   if (error) throw new Error(error.message);
   revalidatePath("/archiv");
 }

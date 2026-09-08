@@ -28,11 +28,15 @@ async function archiviere(opts: {
 }): Promise<DokumentResult> {
   const supabase = await createClient();
 
-  const { data: mieter } = await supabase
+  // Fehler auswerten: Sonst landete das Dokument bei einem Abfragefehler ohne
+  // Objekt-Zuordnung im Archiv — und der Nutzer fände es unter dem Objekt nicht.
+  const { data: mieter, error: mieterFehler } = await supabase
     .from("mieter")
     .select("prop_id")
     .eq("id", opts.mieterId)
-    .single();
+    .eq("user_id", opts.userId)
+    .maybeSingle();
+  if (mieterFehler || !mieter) return { ok: false, error: "Mieter nicht gefunden." };
 
   const dateiData =
     "data:application/pdf;base64," + Buffer.from(opts.pdf).toString("base64");
@@ -40,7 +44,7 @@ async function archiviere(opts: {
   const { error } = await supabase.from("notizen").insert({
     user_id: opts.userId,
     mieter_id: opts.mieterId,
-    prop_id: mieter?.prop_id ?? null,
+    prop_id: mieter.prop_id ?? null,
     kategorie: opts.kategorie,
     titel: opts.titel,
     datei_name: opts.dateiname,
