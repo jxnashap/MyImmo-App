@@ -23,7 +23,8 @@ import { berechneSpekulation } from "@/lib/steuer/spekulation";
 import { refreshBewertung } from "@/lib/actions/bewertung";
 import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
-import { Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
+import { BarChart3, Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
+import Leer from "@/components/Leer";
 
 type Kredit = {
   id: string; bezeichnung: string | null; bank: string | null; betrag: number | null;
@@ -412,7 +413,11 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
         </div>
         <div className="section-body">
           {kred.length === 0 ? (
-            <div className="empty" style={{ padding: 24 }}><Landmark className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Darlehen</p></div>
+            <Leer
+              icon={Landmark}
+              titel="Noch keine Darlehen"
+              text="Ist das Objekt finanziert, gehören Darlehen hierher: Restschuld, Zinsbindung und Tilgung fließen dann in Beleihung und Cashflow ein."
+            />
           ) : (
             kred.map((k) => {
               // Restschuld unbekannt → kein „100 % getilgt" vortäuschen.
@@ -491,7 +496,11 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
           <div className="section-header"><h3>Verbrauch &amp; Nebenkosten</h3><Link href={`/verbrauch/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Hinzufügen</Link></div>
           <div className="section-body">
             {verbrauch.length === 0 ? (
-              <div className="empty" style={{ padding: 24 }}><Zap className="empty-icon" size={36} color="var(--faint)" /><p>Noch kein Verbrauch</p></div>
+              <Leer
+                icon={Zap}
+                titel="Noch kein Verbrauch erfasst"
+                text="Zählerstände für Strom, Gas, Wasser und Heizung — die Grundlage jeder verbrauchsabhängigen Umlage in der Nebenkostenabrechnung."
+              />
             ) : (
               <>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--amber)", marginBottom: 10 }}>
@@ -520,7 +529,11 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
           <div className="section-header"><h3>Archiv</h3><Link href="/archiv" className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Hinzufügen</Link></div>
           <div className="section-body">
             {notizen.length === 0 ? (
-              <div className="empty" style={{ padding: 24 }}><Archive className="empty-icon" size={36} color="var(--faint)" /><p>Noch keine Dokumente</p></div>
+              <Leer
+                icon={Archive}
+                titel="Noch keine Dokumente"
+                text="Kaufvertrag, Teilungserklärung, Energieausweis, Handwerkerrechnungen — hier liegen sie beim Objekt statt in einem Ordner."
+              />
             ) : (
               notizen.map((n) => (
                 <div key={n.id} style={{ padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
@@ -560,7 +573,12 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
         <div className="section-header"><h3>Cashflow-Übersicht (Monat)</h3></div>
         <div className="section-body">
           {cfItems.length === 0 ? (
-            <div style={{ color: "var(--faint)", fontSize: 12 }}>Noch keine Daten.</div>
+            <Leer
+              icon={BarChart3}
+              titel="Noch keine Buchungen"
+              text="Die Monatsübersicht entsteht aus erfassten Einnahmen und Ausgaben dieses Objekts."
+              aktion={{ href: `/cashflow/neu?prop=${id}&back=/properties/${id}`, label: "Buchung erfassen" }}
+            />
           ) : (
             cfItems.map((i) => (
               <div key={i.lbl} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>

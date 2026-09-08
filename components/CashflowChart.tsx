@@ -1,14 +1,17 @@
 // Portfolio-Entwicklung — kumulierter Cashflow (SVG-Liniendiagramm), 1:1 wie Vorlage.
 import { euro } from "@/lib/format";
 import { TrendingUp } from "lucide-react";
+import Leer from "@/components/Leer";
 
 export default function CashflowChart({ data }: { data: { label: string; wert: number }[] }) {
   if (data.length === 0 || data.every((p) => p.wert === 0)) {
     return (
-      <div className="empty">
-        <TrendingUp className="empty-icon" size={36} color="var(--faint)" />
-        <p>Noch keine Buchungen für die Entwicklung</p>
-      </div>
+      <Leer
+        icon={TrendingUp}
+        titel="Noch kein Verlauf"
+        text="Der Verlauf entsteht aus gebuchten Einnahmen und Ausgaben. Ab der zweiten Buchung wird die Linie aussagekräftig."
+        aktion={{ href: "/cashflow/neu", label: "Buchung erfassen" }}
+      />
     );
   }
 

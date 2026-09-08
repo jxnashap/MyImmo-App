@@ -4,6 +4,7 @@ import { BarChart3 } from "lucide-react";
 import { useZeitraum } from "./ZeitraumProvider";
 import { aggregate, niceScale, kurzTick, xTickLabel, type RawPoint } from "@/lib/zeitraum";
 import { euro } from "@/lib/format";
+import Leer from "@/components/Leer";
 
 // Wiederverwendbarer Betrags-Chart mit globalem Zeitraum-Filter.
 // mode "area"  → Linie/Fläche (z. B. kumulierte Portfolio-Entwicklung)
@@ -25,10 +26,12 @@ export default function BetragChart({
 
   if (!points || points.length === 0) {
     return (
-      <div className="empty">
-        <BarChart3 className="empty-icon" size={36} color="var(--faint)" />
-        <p>Noch keine Daten für die Auswertung</p>
-      </div>
+      <Leer
+        art="filter"
+        icon={BarChart3}
+        titel="Nichts im gewählten Zeitraum"
+        text="Für diesen Zeitraum sind keine Buchungen erfasst. Wähle oben einen größeren Zeitraum."
+      />
     );
   }
 

@@ -6,6 +6,7 @@ import KrediteListe from "@/components/KrediteListe";
 import { decryptKreditRow } from "@/lib/kreditData";
 import type { Kredit, Property } from "@/lib/types";
 import { Plus, Siren, Landmark } from "lucide-react";
+import Leer from "@/components/Leer";
 
 type KreditExt = Kredit;
 
@@ -60,7 +61,12 @@ export default async function KreditePage() {
       )}
 
       {list.length === 0 ? (
-        <div className="empty"><Landmark className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Darlehen</h4></div>
+        <Leer
+          icon={Landmark}
+          titel="Noch keine Darlehen"
+          text="Trage deine Finanzierungen ein — MyImmo rechnet daraus Restschuld, Zinsbindung und Tilgungsverlauf und erinnert rechtzeitig an das Ende der Zinsbindung."
+          aktion={{ href: "/kredite/new", label: "Darlehen anlegen" }}
+        />
       ) : (
         <KrediteListe rows={list} properties={properties} />
       )}

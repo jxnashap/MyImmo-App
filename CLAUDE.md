@@ -220,6 +220,23 @@ setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangsco
   Die 356 Inline-Stellen brauchen je eine eigene Entscheidung; sie sind dichte
   Datenansichten, in denen 11px verteidigbar ist.
   (Die Chart-Gradients im Cashflow-Donut sind seit dem UX-Audit-Paket B abgelöst.)
+- 📭 **Leerzustände: `components/Leer.tsx` (08.09.2026).** Für einen neuen Nutzer ist die
+  leere Ansicht die HÄUFIGSTE Ansicht der App — am Anfang ist alles leer. Etwa die Hälfte
+  der 20 Stellen war eine Sackgasse („Noch keine Daten", Ende).
+  **Zwei Sorten leer, die nicht verwechselt werden dürfen:** `art="nichts"` (noch nichts
+  angelegt → erklären + Knopf) und `art="filter"` (es GIBT Daten, nur passt keine zur
+  Suche → **kein** Anlegen-Knopf; „Lege deine erste Buchung an" ist dort schlicht falsch).
+  Genau diese Verwechslung steckte in `/termine`, wo `sichtbar` fünffach gefiltert wird.
+  **Regel: Ein Leerzustand erklärt sich in einem Satz.** `text` ist im Baustein **nicht**
+  optional; `tests/leerzustaende.test.ts` wird sonst rot. **Die Überschrift ist NICHT
+  Pflicht** — acht Stellen haben einen guten Satz ohne `<h4>` und sind damit in Ordnung.
+  Wo die Kopfzeile des Abschnitts schon einen „Hinzufügen"-Link hat (Objekt-Detailseite),
+  bekommt der Leerzustand **keinen zweiten Knopf**, nur die Erklärung.
+  🙈 **Der Wächter war zuerst selbst blind:** Er schnitt den Block bis zum ersten `</div>`
+  — und hielt `<div className="empty-icon">📊</div>` für das Ende, wodurch der erklärende
+  Satz dahinter nie gesehen wurde und eine tadellose Stelle als Sackgasse galt. Jetzt zählt
+  er die Verschachtelung; eine Mutation hält das fest. **Dieselbe Falle wie bei
+  `schreibFehler.test.ts` — Textmuster über JSX brauchen eine echte Klammerzählung.**
 - ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
   `components/OnboardingTour.tsx` — sechs Stationen (Objekt → Mieter → Ein-/Ausgaben →
   Mietkonto → Archiv → Steuer/Assistenten) mit Direktlinks. Öffnet sich automatisch,
