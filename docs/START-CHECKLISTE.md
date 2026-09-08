@@ -367,17 +367,31 @@ und der frische `db` bleibt leer. Ein Test mit einer Schleife über mehrere Eing
 dann nur den ersten Durchlauf. `resetModules()` steht jetzt in jedem `lade()`-Helfer aller
 15 Action-Testdateien; alle blieben grün, es war also nichts kaputt — aber es war Zufall.
 
-**Offen:** 17 Dateien, ~1.280 Zeilen — nach drei Durchgängen ohne bekanntes Zahlen-,
+### Paket B abgearbeitet: Fremdzugriff (08.09.2026)
+
+`beleihungPublic.ts`, `archivFreigabe.ts`, `makler.ts` — 28 Verhaltenstests, 16 Mutationen,
+alle rot. **Kein Codefund.** Das ist nach vier Durchgängen mit je einem Fund die erste
+Runde ohne — und verdient eine Einordnung: Die drei Dateien sind klein, spät entstanden
+und haben die Muster bereits, die die Funde anderswo vermissen ließen. `archivFreigabe.ts`
+benutzt sogar das beste Muster der Codebasis: `.update().select().maybeSingle()` mit
+`error || !data` — damit fällt auch das RLS-Treffer-Null auf, das sonst wie Erfolg aussieht.
+Wer eine neue Schreib-Action baut, kopiert am besten von dort.
+
+Festgehalten für `beleihungPublic.ts`: Die Bremse greift **vor** der Token-Prüfung (sonst
+ließe sich der Token-Raum kostenlos abtasten), die Zeichen-Kappung (200/300/4000, je Eintrag
+100) sitzt in der RPC, die Zeilen-Kappung (30) in der Action; ein DB-Fehler verrät nichts.
+`makler.ts` ist der Zwilling von `beleihung.ts` — die Tests spiegeln das; einziger Unterschied
+ist die Bindung an den Nutzer statt ans Objekt.
+
+**Offen:** 14 Dateien, ~990 Zeilen — nach drei Durchgängen ohne bekanntes Zahlen-,
 Datei- oder Schreibfehler-Risiko.
 **Zahl am 08.09.2026 korrigiert:** Hier stand „14 von 29". Tatsächlich enthält
 `lib/actions/` **35** Dateien, und 15 werden von Tests importiert — offen sind also **20**,
 nicht 14. Die alte Zahl entstand daraus, dass Dateien, die nur beiläufig in einer anderen
 Testdatei mitliefen, als abgedeckt gezählt wurden.
-Als Nächstes **Paket B (Fremdzugriff)**: `beleihungPublic.ts` (68 Z., neben
-`bewerbenPublic.ts` die zweite Action ohne Login), `archivFreigabe.ts` (49),
-`makler.ts` (177 — Strukturzwilling von `beleihung.ts`, dessen Tests sich weitgehend
-übertragen lassen). Danach Paket C (`importDaten.ts` 124, `dokumente.ts` 134,
-`archiv.ts` 78) und Paket D (11 kleine Dateien unter 100 Zeilen).
+Als Nächstes **Paket C (Import und Bestand)**: `importDaten.ts` (124 Z. — der KI-Import
+schreibt viel auf einmal; was tut er bei Teilfehlern?), `dokumente.ts` (134), `archiv.ts` (78).
+Danach Paket D (11 kleine Dateien unter 100 Zeilen).
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat. (`actionFehler()` ist die Ausnahme: Die Logik wurde bewusst aus dem
 Bauteil herausgezogen, damit sie ohne DOM prüfbar ist.)
