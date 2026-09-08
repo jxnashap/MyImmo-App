@@ -56,7 +56,22 @@ export type FakeDb = {
   fehlerBei: Record<string, { message: string; code?: string }>;
   /** Rückgaben für `rpc(name, …)`. */
   rpc: Record<string, unknown>;
+  /**
+   * Sitzung/Anmeldestufe (seit 08.09.2026, für die Frische-Prüfung in
+   * lib/auth/frisch.ts). Standard: Passwort-Anmeldung GERADE EBEN, kein 2FA —
+   * also „frisch". Tests, die die Hürde prüfen, setzen `amrVorSekunden` hoch
+   * oder `aal` auf { currentLevel: "aal1", nextLevel: "aal2" }.
+   */
+  amrVorSekunden: number;
+  aal: { currentLevel: string; nextLevel: string };
 };
+
+/** Ein unsignierter JWT mit `amr`-Zeitstempel — die Prüfung liest nur die Payload. */
+export function jwtMitAmr(vorSekunden: number, methode = "password"): string {
+  const ts = Math.floor(Date.now() / 1000) - vorSekunden;
+  const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  return `${b64({ alg: "none" })}.${b64({ sub: "nutzer-1", amr: [{ method: methode, timestamp: ts }] })}.sig`;
+}
 
 /**
  * Supabase-Attrappe, die jeden Zugriff mitschreibt.
@@ -74,6 +89,8 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
     fehler: null,
     fehlerBei: {},
     rpc: {},
+    amrVorSekunden: 0,
+    aal: { currentLevel: "aal1", nextLevel: "aal1" },
     ...init,
   };
 
@@ -130,6 +147,10 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
     },
     auth: {
       getUser: async () => ({ data: { user: { id: "nutzer-1", email: "test@example.org" } } }),
+      getSession: async () => ({ data: { session: { access_token: jwtMitAmr(db.amrVorSekunden) } }, error: null }),
+      mfa: {
+        getAuthenticatorAssuranceLevel: async () => ({ data: db.aal, error: null }),
+      },
     },
     storage: {
       from: (_bucket: string) => ({

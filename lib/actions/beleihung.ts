@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { pruefeFrischeAnmeldung, REAUTH_MELDUNG } from "@/lib/auth/frisch";
 import { encrypt } from "@/lib/crypto/secure";
 import { BELEIHUNG_CHECKLISTE, type BelDok } from "@/lib/beleihung";
 import { berechneNk, type NkRawPosition } from "@/lib/nk";
@@ -309,6 +310,10 @@ export async function createFreigabe(
   const tage = [7, 14, 30].includes(tageAblauf) ? tageAblauf : 14;
 
   const { supabase, userId } = await uid();
+  // Ein Freigabe-Link öffnet Gehaltsabrechnungen und Ausweis für jeden, der
+  // ihn hat — frische Anmeldung verlangen (08.09.2026).
+  const frisch = await pruefeFrischeAnmeldung(supabase);
+  if (!frisch.ok) throw new Error(REAUTH_MELDUNG);
   const { data, error } = await supabase
     .from("beleihung_freigaben")
     .insert({

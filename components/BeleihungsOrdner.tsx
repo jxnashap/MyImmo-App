@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Landmark, FileText, Upload, Eye, Download, X, Bot, Loader2, Share2, Copy, Mail, MessageSquare } from "lucide-react";
 import { useToast } from "@/components/Toast";
+import { useReAuth } from "@/components/ReAuthDialog";
 import {
   BELEIHUNG_CHECKLISTE,
   BEL_GRUPPEN,
@@ -96,6 +97,8 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
   const [shareKeys, setShareKeys] = useState<Set<string>>(new Set());
   const [shareTage, setShareTage] = useState("14");
   const [shareBusy, setShareBusy] = useState(false);
+  // Bank-Freigabe verlangt eine frische Anmeldung (Server prüft, Dialog holt nach).
+  const { absichern: freigabeAbsichern, dialog: reAuthDialog } = useReAuth();
   const [neuerLink, setNeuerLink] = useState<string | null>(null);
   const [modusKauf, setModusKauf] = useState(false);
   const [selbst, setSelbst] = useState(false);
@@ -276,6 +279,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
 
   return (
     <div className="fade-up">
+      {reAuthDialog}
       {/* Kopf */}
       <div style={{ marginBottom: 12 }}>
         <Link href={`/properties/${propId}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zum Objekt</Link>
@@ -509,7 +513,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                   <button
                     type="button" className="btn btn-gold" style={{ fontSize: 12 }}
                     disabled={shareBusy || shareKeys.size === 0}
-                    onClick={async () => {
+                    onClick={() => freigabeAbsichern(async () => {
                       setShareBusy(true);
                       try {
                         const f = await createFreigabe(propId, Array.from(shareKeys), angabenObjekt, Number(shareTage));
@@ -518,7 +522,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                       } catch (e) {
                         toast(e instanceof Error ? e.message : "Freigabe fehlgeschlagen.");
                       } finally { setShareBusy(false); }
-                    }}
+                    })}
                   >
                     {shareBusy ? "Erzeuge…" : `Link erzeugen (${shareKeys.size})`}
                   </button>

@@ -3,6 +3,7 @@ import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/server";
 import { decryptNullable } from "@/lib/crypto/secure";
 import { csvZelle } from "@/lib/csv";
+import { pruefeFrischeAnmeldung } from "@/lib/auth/frisch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,6 +81,17 @@ export async function GET() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return new NextResponse("Nicht angemeldet", { status: 401 });
+  // Frische Anmeldung (08.09.2026, Feedback Befund 6): Der Export liefert
+  // IBANs und Dokumente ENTSCHLÜSSELT — eine offene Sitzung im Café genügte.
+  // Die Oberfläche fragt vorher Passwort/2FA ab (useReAuth); wer die URL
+  // direkt aufruft, bekommt hier die Hürde.
+  const frisch = await pruefeFrischeAnmeldung(supabase);
+  if (!frisch.ok) {
+    return new NextResponse(
+      "Bitte bestätige zuerst deine Anmeldung: Einstellungen → Daten & Recht → 'Alle Daten' — dort wird das Passwort bzw. der 2FA-Code abgefragt.",
+      { status: 403, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } },
+    );
+  }
 
   const { data: rolleRow } = await supabase
     .from("nutzer_rollen")

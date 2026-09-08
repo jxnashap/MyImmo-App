@@ -15,6 +15,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getRolle } from "@/lib/rolle";
 import { istFreigeschaltet } from "@/lib/freischaltung";
+import { mussMfaNachholen } from "@/lib/auth/sitzung";
 import { istDemoKonto } from "@/lib/demo";
 
 export const metadata: Metadata = {
@@ -64,6 +65,16 @@ export default async function RootLayout({
   // Rollen-Weiche (Businessplan Kap. 14): Mieter-Konten arbeiten im
   // Mieterportal (eigene, schlanke Shell) — nicht in der Vermieter-App.
   const pathname = (await headers()).get("x-pathname") ?? "";
+
+  // Zwei-Faktor-Sperre: Konto verlangt aal2, Sitzung hat nur aal1 (Passwort
+  // stimmt, Code fehlt) → nichts aus der App rendern, zurück zum zweiten
+  // Schritt. /login und /auth bleiben erreichbar, sonst käme niemand mehr hin.
+  if (!pathname.startsWith("/login") && !pathname.startsWith("/auth")) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (mussMfaNachholen(aal)) {
+      redirect(`/login?mfa=1${pathname && pathname !== "/" ? `&next=${encodeURIComponent(pathname)}` : ""}`);
+    }
+  }
   const rolle = await getRolle(supabase, user.id);
   // Rechtstexte (/impressum, /datenschutz, /agb, /avv) laufen seit dem
   // Layout-Split ueber app/(pub)/ und kommen hier gar nicht mehr an. Uebrig

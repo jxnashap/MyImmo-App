@@ -17,6 +17,10 @@ import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export const KEY_MIN = "myimmo:autologout:min"; // "0"|"5"|"10"|"30"|"60"
+// Standard seit 08.09.2026: 30 Minuten (vorher aus). Bank-, Mieter- und
+// Bewerberdaten auf einem offenen Rechner sind das Risiko; 30 Minuten
+// Inaktivität stören keine Nebenkostenabrechnung. Wer "0" gewählt hat, behält es.
+export const STANDARD_MIN = "30";
 export const KEY_CLOSE = "myimmo:autologout:onclose"; // "1"|"0"
 export const AUTOLOGOUT_EVENT = "myimmo-autologout-change";
 
@@ -29,7 +33,7 @@ export default function AutoLogout() {
   const last = useRef(Date.now());
 
   useEffect(() => {
-    const min = () => Number(localStorage.getItem(KEY_MIN) || "0");
+    const min = () => Number(localStorage.getItem(KEY_MIN) || STANDARD_MIN);
     const onCl = () => localStorage.getItem(KEY_CLOSE) === "1";
     let ms = min() * 60000;
 

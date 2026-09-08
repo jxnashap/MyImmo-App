@@ -23,6 +23,7 @@ export default async function EinstellungenPage() {
       ibans={((ibanRows ?? []) as Iban[]).map(decryptIbanRow)}
       email={user?.email}
       provider={user?.app_metadata?.provider}
+      lastSignIn={user?.last_sign_in_at ?? null}
       unterschrift={signatur?.data ?? null}
       abo={abo ? {
         plan: effektiverPlan(abo),

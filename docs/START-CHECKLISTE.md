@@ -116,7 +116,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Preis | Anmerkung |
 |---|---|---|---|
 | **C1** | Supabase Pro für Leaked Password Protection | ~25 $/Monat | Auf Free ist der Schalter **sichtbar, aber wirkungslos** — am 29.07. empirisch belegt. Wer ihn dort umlegt, hält den Schutz für aktiv |
-| **C2** | 2FA für Nutzerkonten | Entwicklungszeit | Existiert nicht — heute erneut geprüft, kein Treffer im Code. Bei Bank- und Mieterdaten ein spürbares Argument |
+| ~~**C2**~~ | ✅ **Zwei-Faktor-Anmeldung — gebaut 08.09.2026** (Supabase-TOTP, Free-Plan). Einstellungen → Sicherheit: Einrichten per QR, acht Wiederherstellungscodes (nur Hash in `mfa_wiederherstellung`), Abschalten nur mit Code. Login zeigt den zweiten Schritt; das Layout lässt aal1-Sitzungen nicht in die App. Dazu: frische Anmeldung (10 min) vor Vollexport, Kontolöschung, Bank-Freigabe; Auto-Abmeldung standardmäßig 30 min; Knopf „Alle anderen Geräte abmelden“. Nicht erzwungen — angeboten. |
 
 ---
 

@@ -91,7 +91,7 @@ gesehen.
 - `scripts/demo-video.mjs` lokal sichern oder löschen; lokalen Ordner auf `main` bringen.
 - **A2 abschicken:** `docs/compliance/StBerG-ANFRAGE.md` liegt fertig.
 
-### Woche 1–2: Kontoschutz (Code, ~4 Tage)
+### Woche 1–2: Kontoschutz (Code, ~4 Tage) — ✅ erledigt 08.09.2026, PR #319
 1. **2FA per Authenticator-App** über Supabase MFA (TOTP, im Free-Plan enthalten):
    Einrichten in Einstellungen → Sicherheit, Wiederherstellungscodes, Abfrage beim Login.
    Nicht erzwingen, aber prominent anbieten; für Konten mit IBANs oder Bewerberdaten

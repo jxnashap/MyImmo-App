@@ -8,6 +8,8 @@ import BrandMark from "@/components/BrandMark";
 import { bereiteRegistrierungVor } from "@/lib/actions/freischaltung";
 import { PASSWORT_MIN, PASSWORT_REGEL, pruefePasswort } from "@/lib/passwort";
 import { sicheresZiel } from "@/lib/flash";
+import MfaAbfrage from "@/components/MfaAbfrage";
+import { mussMfaNachholen } from "@/lib/auth/sitzung";
 
 // Zugangs-Rollen (Businessplan Kap. 14): Vermieter & Hausverwaltung nutzen
 // die volle App, Mieter und Service haben eigene Portale.
@@ -63,6 +65,8 @@ export default function LoginPage() {
   const [falscheRolle, setFalscheRolle] = useState<string | null>(null); // Konto-Rolle bei Fehlanmeldung
   // Rücksprung nach dem Login (Deep-Link aus einer E-Mail o. Ä.) — nur relative Pfade.
   const [nextUrl, setNextUrl] = useState<string | null>(null);
+  // Zweiter Schritt (2FA): Passwort stimmt, Konto verlangt einen Code.
+  const [mfaOffen, setMfaOffen] = useState(false);
 
   // Query-Parameter erst nach dem Mount lesen (verhindert Hydration-
   // Mismatch, da window serverseitig nicht existiert).
@@ -94,7 +98,23 @@ export default function LoginPage() {
       const ziel = sicheresZiel(n, "");
       if (ziel) setNextUrl(ziel);
     }
+    // Vom Layout hergeschickt: angemeldet, aber der zweite Faktor fehlt noch.
+    if (params.has("mfa")) {
+      void supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => {
+        if (mussMfaNachholen(data)) setMfaOffen(true);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Nach bestandenem zweiten Schritt: dorthin, wo der Nutzer hinwollte.
+  const nachMfa = (wiederhergestellt: boolean) => {
+    window.location.assign(wiederhergestellt ? "/einstellungen?tab=sicherheit&mfa=neu" : (nextUrl ?? "/"));
+  };
+  const mfaAbbrechen = async () => {
+    await supabase.auth.signOut();
+    setMfaOffen(false);
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -152,6 +172,14 @@ export default function LoginPage() {
         setError(
           `Diese Zugangsdaten gehören zu einem ${ROLLEN[kontoRolle].label}-Konto — die Anmeldung hier ist für ${ROLLEN[rolle].label} gedacht.`
         );
+        setLoading(false);
+        return;
+      }
+      // Zwei-Faktor: Verlangt das Konto einen Code, ist die Sitzung erst aal1 —
+      // das Layout ließe sie nicht in die App. Hier den zweiten Schritt zeigen.
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (mussMfaNachholen(aal)) {
+        setMfaOffen(true);
         setLoading(false);
         return;
       }
@@ -308,6 +336,12 @@ export default function LoginPage() {
           </span>
         </div>
 
+        {mfaOffen ? (
+          <div className="mt-7">
+            <MfaAbfrage onErfolg={nachMfa} onAbbruch={mfaAbbrechen} />
+          </div>
+        ) : (
+        <>
         {/* Umschalter Anmelden / Registrieren */}
         <div
           className="mt-7 mb-6 flex gap-1 rounded-xl p-1"
@@ -485,6 +519,8 @@ export default function LoginPage() {
             {loading ? "…" : mode === "login" ? "Anmelden" : "Registrieren"}
           </button>
         </form>
+        </>
+        )}
 
         {/* Mit Google anmelden — während der Beta nur im Login-Modus,
             damit die Registrierung nicht am Zugangscode vorbei läuft */}
