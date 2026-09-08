@@ -447,7 +447,7 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Struktur-Tests halten eine Schreibweise fest, kein Verhalten.
   **Regel für neue Tests hier:** Einen neuen Action-Test erst glauben, wenn er gegen einen
   absichtlich eingebauten Fehler ROT wird. Alle 216 Tests dieser Dateien wurden so geprüft.
-  Stand 07.09.2026: 15 von 29 Action-Dateien abgedeckt (`buchungen`, `properties`,
+  Stand 08.09.2026: 15 von 35 Action-Dateien abgedeckt (die frühere Angabe „von 29" war falsch gezählt) (`buchungen`, `properties`,
   `freischaltung`, `ibans`, `einladung`, `umlage`, `mietkonto`, `positions`, `wiederkehr`,
   `beleihung`, `service`, `bewerbenPublic`, `anliegen`, `bewerber`, `zaehler`).
   **Warum die Mutationsprüfung nicht optional ist — Beispiel vom 07.09.2026:** Ein Test zur

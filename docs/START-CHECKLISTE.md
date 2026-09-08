@@ -125,7 +125,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 15 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, Verhaltenstests jeweils gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** (alle bei Zahlen oder Dubletten) plus **drei systematische Durchgänge** — Zahlen-Eingänge, Datei-Auslieferung, stille Schreibfehler —, die je einen Wächter-Test über ALLE 29 Dateien hinterlassen haben. Offen: 14 Dateien, ~1.780 Zeilen |
+| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 15 von 35 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, Verhaltenstests jeweils gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** (alle bei Zahlen oder Dubletten) plus **drei systematische Durchgänge** — Zahlen-Eingänge, Datei-Auslieferung, stille Schreibfehler —, die je einen Wächter-Test über ALLE 35 Dateien hinterlassen haben. Offen: 20 Dateien, ~1.755 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
@@ -313,10 +313,14 @@ einen Fehler zu machen, würde harmlose Fälle zu Fehlermeldungen erheben.
 Fehlerauswertung und jede Aufrufstelle, die die Rückgabe wegwirft. Alle Verhaltenstests
 wurden gegen absichtlich eingebaute Fehler geprüft (11 Mutationen, alle rot).
 
-**Offen:** 14 Dateien, ~1.780 Zeilen — nach drei Durchgängen ohne bekanntes Zahlen-,
+**Offen:** 20 Dateien, ~1.755 Zeilen — nach drei Durchgängen ohne bekanntes Zahlen-,
 Datei- oder Schreibfehler-Risiko.
-Die nächsten nach Nutzen: `termine.ts` (212 Z.), `makler.ts` (177), `dokumente.ts` (134),
-`importDaten.ts` (124), `archiv.ts` (78).
+**Zahl am 08.09.2026 korrigiert:** Hier stand „14 von 29". Tatsächlich enthält
+`lib/actions/` **35** Dateien, und 15 werden von Tests importiert — offen sind also **20**,
+nicht 14. Die alte Zahl entstand daraus, dass Dateien, die nur beiläufig in einer anderen
+Testdatei mitliefen, als abgedeckt gezählt wurden.
+Die nächsten nach Nutzen: `termine.ts` (216 Z.), `makler.ts` (177), `bewertung.ts` (136),
+`dokumente.ts` (134), `nkco2.ts` (127), `importDaten.ts` (124).
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat. (`actionFehler()` ist die Ausnahme: Die Logik wurde bewusst aus dem
 Bauteil herausgezogen, damit sie ohne DOM prüfbar ist.)
