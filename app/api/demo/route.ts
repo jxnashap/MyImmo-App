@@ -69,13 +69,23 @@ export async function GET(request: Request) {
 
   // 2. Anmelden — schreibt die Session-Cookies ueber den Server-Client.
   const supabase = await createClient();
-  const { error: loginFehler } = await supabase.auth.signInWithPassword({
+  const { data: login, error: loginFehler } = await supabase.auth.signInWithPassword({
     email: DEMO_EMAIL,
     password: passwort,
   });
   if (loginFehler) {
     console.error("Demo-Login fehlgeschlagen:", loginFehler.message);
     return NextResponse.redirect(new URL("/?demo=fehler", ziel));
+  }
+
+  // 2FA-Faktoren am Demo-Konto entfernen (08.09.2026): Die Oberfläche sperrt
+  // die Einrichtung, aber die Supabase-API nicht. Ein Besucher, der dem
+  // geteilten Konto einen Faktor anhängt, sperrte alle anderen aus.
+  if (admin && login.user) {
+    const { data: faktoren } = await admin.auth.admin.mfa.listFactors({ userId: login.user.id });
+    for (const f of faktoren?.factors ?? []) {
+      await admin.auth.admin.mfa.deleteFactor({ id: f.id, userId: login.user.id });
+    }
   }
 
   // `reset` steht nur im Fehlerfall in der URL — im Normalbetrieb bleibt sie

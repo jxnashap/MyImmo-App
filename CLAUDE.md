@@ -630,6 +630,28 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   GitHub-Action rief `my-immo-app.vercel.app` statt der kanonischen Domain.
   **Bewusst belassen:** `darfWeiter()` sperrt bei DB-Fehler (fail-closed), obwohl der
   Kommentar „durchlassen" sagt — sicherer, kostet Verfügbarkeit bei DB-Ausfall.
+- 🔐 **Zwei-Faktor-Anmeldung und frische Anmeldung (08.09.2026, Feedback Befund 5 + 6).**
+  Supabase-MFA (TOTP) direkt Browser ↔ Supabase (`supabase.auth.mfa.*`); was Supabase nicht
+  mitbringt, liegt in **`lib/actions/mfa.ts`**: acht Wiederherstellungscodes, nur SHA-256-Hash
+  in `mfa_wiederherstellung`, Einlösen atomar (Update mit Filter, kein Lesen-dann-Schreiben),
+  danach Faktor per Service-Role entfernt. **Nicht erzwungen, angeboten.** Bausteine:
+  `components/ZweiFaktor.tsx` (Einstellungen → Sicherheit), `MfaAbfrage.tsx` (zweiter Schritt
+  im Login), `ReAuthDialog.tsx` + `useReAuth()` (vor sensiblen Aktionen).
+  **Layout-Sperre:** `app/(app)/layout.tsx` schickt aal1-Sitzungen mit 2FA-Pflicht nach
+  `/login?mfa=1` — /login und /auth bleiben erreichbar, sonst käme niemand mehr hin.
+  **Frische Anmeldung:** `lib/auth/frisch.ts` → `pruefeFrischeAnmeldung()` liest den
+  `amr`-Zeitstempel aus dem JWT (`lib/auth/sitzung.ts`, reine Helfer, **fail-closed**: ohne
+  `amr` ist nichts frisch) und verlangt aal2, wenn das Konto 2FA hat. Eingebaut in
+  `deleteAccount`, `createFreigabe` (Bank-Link) und `/api/export/alles` (403).
+  **Regel: Eine neue Aktion, die entschlüsselte Daten herausgibt oder etwas Unumkehrbares
+  tut, ruft `pruefeFrischeAnmeldung()` und die Oberfläche `useReAuth()`.**
+  **Demo-Konto:** Oberfläche sperrt die Einrichtung, `/api/demo` räumt Faktoren beim Start
+  ab — ein Besucher, der dem geteilten Konto per API einen Faktor anhängt, sperrte sonst
+  alle anderen aus.
+  **Auto-Abmeldung:** Standard jetzt 30 Minuten (`STANDARD_MIN` in `AutoLogout.tsx`); wer
+  „Aus“ gewählt hat, behält es.
+  **Prüfstand:** `db.amrVorSekunden` (Alter der Anmeldung) und `db.aal` steuern die
+  Frische; Standard ist „gerade eben, kein 2FA“ — bestehende Tests bleiben unberührt.
 - **Prüfstand-Erweiterung (08.09.2026): `db.fehlerBei`.** `db.fehler` trifft JEDEN Zugriff,
   auch die Abfragen davor — eine Action, die vorher korrekt abbricht, erreicht die zu
   prüfende Stelle dann nie, und der Test wäre aus dem falschen Grund grün. `fehlerBei`

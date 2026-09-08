@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { kuendigeSubscription, paddleKonfiguriert } from "@/lib/billing/paddle";
+import { pruefeFrischeAnmeldung, REAUTH_MELDUNG } from "@/lib/auth/frisch";
 
 // DSGVO Art. 17: löscht das eigene Konto samt aller Daten über die
 // SECURITY-DEFINER-Funktion delete_own_account() und meldet danach ab.
@@ -12,7 +13,7 @@ import { kuendigeSubscription, paddleKonfiguriert } from "@/lib/billing/paddle";
 // weiter abbuchen, ohne dass der Kunde in der App noch kündigen könnte.
 // Schlägt die Kündigung fehl, wird die Löschung abgebrochen (kein stilles
 // Weiterlaufen von Zahlungen).
-export type LoeschErgebnis = { ok: false; fehler: string };
+export type LoeschErgebnis = { ok: false; fehler: string; reauth?: boolean };
 
 /**
  * Löscht das eigene Konto.
@@ -32,6 +33,12 @@ export async function deleteAccount(): Promise<LoeschErgebnis | void> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  // Frische Anmeldung verlangen (08.09.2026): Eine offene Sitzung auf einem
+  // fremden Rechner darf kein Konto löschen. Der Dialog in der Oberfläche
+  // holt Passwort oder 2FA-Code nach und ruft erneut auf.
+  const frisch = await pruefeFrischeAnmeldung(supabase);
+  if (!frisch.ok) return { ok: false, fehler: REAUTH_MELDUNG, reauth: true };
 
   // Der Abfragefehler MUSS ausgewertet werden: Käme die Abo-Zeile wegen eines
   // Fehlers leer zurück, gälte „kein laufendes Abo" — das Konto würde gelöscht

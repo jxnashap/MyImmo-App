@@ -6,6 +6,7 @@ import { KeyRound, Download, Trash2, Check, X, ShieldCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client";
 import { deleteAccount } from "@/lib/actions/account";
 import { wechslePasswort } from "@/lib/passwortWechsel";
+import { useReAuth } from "@/components/ReAuthDialog";
 import { createPortal } from "react-dom";
 import { useModalFokus } from "@/lib/modalFokus";
 
@@ -24,6 +25,7 @@ export default function KontoVerwaltung({
   const supabase = createClient();
 
   const istGoogle = !!provider && provider !== "email";
+  const { absichern, dialog: reAuthDialog } = useReAuth(email, istGoogle);
   const [pw0, setPw0] = useState("");
   const [pw1, setPw1] = useState("");
   const [pw2, setPw2] = useState("");
@@ -122,9 +124,10 @@ export default function KontoVerwaltung({
             Alle Daten, die zu deinem Konto gehören, als ZIP mit CSV-Dateien — Auskunft und
             Datenübertragbarkeit nach Art. 15 und 20 DSGVO.
           </p>
-          <a href="/api/export/alles" className="btn btn-gold" style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <button type="button" onClick={() => absichern(() => window.location.assign("/api/export/alles"))} className="btn btn-gold" style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Download size={14} /> Daten herunterladen
-          </a>
+          </button>
+          {reAuthDialog}
         </div>
       </div>
 
@@ -181,11 +184,13 @@ export default function KontoVerwaltung({
               Das lässt sich nicht rückgängig machen. Exportiere vorher bei Bedarf deine Daten.
             </p>
             <form
-              action={async () => {
-                setLoeschFehler(null);
-                const res = await deleteAccount();
-                if (res && res.ok === false) setLoeschFehler(res.fehler);
-              }}
+              action={() =>
+                absichern(async () => {
+                  setLoeschFehler(null);
+                  const res = await deleteAccount();
+                  if (res && res.ok === false) setLoeschFehler(res.fehler);
+                })
+              }
             >
               <label style={{ display: "grid", gap: 5, fontSize: 12.5, marginBottom: 14 }}>
                 <span>Zum Bestätigen <strong>LÖSCHEN</strong> eingeben</span>

@@ -14,7 +14,9 @@ import SignaturPad from "@/components/SignaturPad";
 import { speichereUnterschrift, loescheUnterschrift } from "@/lib/actions/bewerber";
 import { useToast } from "@/components/Toast";
 import Switch from "@/components/ui/Switch";
-import { KEY_MIN, KEY_CLOSE, AUTOLOGOUT_EVENT } from "@/components/AutoLogout";
+import { KEY_MIN, KEY_CLOSE, AUTOLOGOUT_EVENT, STANDARD_MIN } from "@/components/AutoLogout";
+import ZweiFaktor from "@/components/ZweiFaktor";
+import { useReAuth } from "@/components/ReAuthDialog";
 import { createClient } from "@/lib/supabase/client";
 import { saveVermieter } from "@/lib/actions/vermieter";
 import { addIban, deleteIban, setStandardIban } from "@/lib/actions/ibans";
@@ -66,6 +68,7 @@ export default function SettingsView({
   abo = null,
   einheiten = 0,
   billingEnforced = false,
+  lastSignIn = null,
 }: {
   profil: VermieterProfil | null;
   ibans: Iban[];
@@ -75,6 +78,7 @@ export default function SettingsView({
   abo?: AboAnzeige;
   einheiten?: number;
   billingEnforced?: boolean;
+  lastSignIn?: string | null;
 }) {
   const demoKonto = istDemoKonto(email);
   const [tab, setTab] = useState<TabKey>("profil");
@@ -159,12 +163,12 @@ export default function SettingsView({
         {tab === "profil" && <ProfilPanel profil={profil} unterschrift={unterschrift ?? null} />}
         {tab === "bank" && <BankPanel ibans={ibans} />}
         {tab === "abo" && <AboPanel abo={abo} einheiten={einheiten} enforced={billingEnforced} />}
-        {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} demo={demoKonto} />}
-        {tab === "recht" && <RechtPanel />}
+        {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} demo={demoKonto} lastSignIn={lastSignIn} />}
+        {tab === "recht" && <RechtPanel email={email} provider={provider} />}
         {tab === "hilfe" && <HilfeInhalt />}
       </div>
 
-      <DangerZone />
+      <DangerZone email={email} provider={provider} />
     </div>
   );
 }
@@ -435,7 +439,7 @@ function BankPanel({ ibans }: { ibans: Iban[] }) {
 }
 
 // ---------- Sicherheit ----------
-function SicherheitPanel({ email, provider, demo = false }: { email?: string | null; provider?: string | null; demo?: boolean }) {
+function SicherheitPanel({ email, provider, demo = false, lastSignIn }: { email?: string | null; provider?: string | null; demo?: boolean; lastSignIn?: string | null }) {
   const supabase = createClient();
   const toast = useToast();
   const ref = useReveal(null);
@@ -513,7 +517,39 @@ function SicherheitPanel({ email, provider, demo = false }: { email?: string | n
         </fieldset>
       </div>
 
+      <ZweiFaktor demo={demo} istGoogle={istGoogle} />
+      <SitzungenKarte lastSignIn={lastSignIn} demo={demo} />
       <AutoLogoutKarte />
+    </div>
+  );
+}
+
+// Letzte Anmeldung + „andere Geräte abmelden" (Supabase: signOut scope "others").
+function SitzungenKarte({ lastSignIn, demo }: { lastSignIn?: string | null; demo: boolean }) {
+  const supabase = createClient();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const wann = lastSignIn
+    ? new Date(lastSignIn).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : null;
+  return (
+    <div className="glass-card reveal" style={{ marginTop: 18 }}>
+      <h2><Lock size={16} /> Sitzungen</h2>
+      <p className="sub">
+        {wann ? <>Letzte Anmeldung: <strong style={{ color: "var(--text)" }}>{wann}</strong>.</> : "Letzte Anmeldung: unbekannt."}{" "}
+        Wenn du dich an einem fremden Gerät angemeldet hast und nicht sicher bist, ob du abgemeldet bist:
+      </p>
+      <button
+        type="button" className="btn btn-ghost" disabled={busy || demo}
+        onClick={async () => {
+          setBusy(true);
+          const { error } = await supabase.auth.signOut({ scope: "others" });
+          setBusy(false);
+          toast(error ? "Abmelden fehlgeschlagen." : "Alle anderen Geräte sind abgemeldet ✓", error ? "error" : undefined);
+        }}
+      >
+        Alle anderen Geräte abmelden
+      </button>
     </div>
   );
 }
@@ -521,11 +557,11 @@ function SicherheitPanel({ email, provider, demo = false }: { email?: string | n
 // Automatische Abmeldung (clientseitig, localStorage — wirkt sofort ohne Reload).
 function AutoLogoutKarte() {
   const toast = useToast();
-  const [minuten, setMinuten] = useState("0");
+  const [minuten, setMinuten] = useState(STANDARD_MIN);
   const [beimSchliessen, setBeimSchliessen] = useState(false);
 
   useEffect(() => {
-    setMinuten(localStorage.getItem(KEY_MIN) || "0");
+    setMinuten(localStorage.getItem(KEY_MIN) || STANDARD_MIN);
     setBeimSchliessen(localStorage.getItem(KEY_CLOSE) === "1");
   }, []);
 
@@ -586,7 +622,10 @@ function AutoLogoutKarte() {
 }
 
 // ---------- Daten & Recht ----------
-function RechtPanel() {
+function RechtPanel({ email, provider }: { email?: string | null; provider?: string | null }) {
+  // Vollexport und Kontolöschung verlangen eine frische Anmeldung (Feedback
+  // 08.09., Befund 6): Der Server prüft, der Dialog lässt den Nutzer bestehen.
+  const { absichern, dialog } = useReAuth(email, !!provider && provider !== "email");
   const ref = useReveal(null);
 
   // Einführungs-Tour erneut starten: Event an die (im Layout gemountete) Tour
@@ -623,9 +662,10 @@ function RechtPanel() {
         <h2><Download size={16} /> Meine Daten exportieren</h2>
         <p className="sub">Lade jederzeit ALLE deine Daten herunter (inkl. Mieter, Buchungen und Dokumente) – ohne Sperrfrist, DSGVO-Recht auf Datenübertragbarkeit. Das ZIP enthält alle Tabellen als CSV und JSON plus die Dateien; die Buchungen gibt es zusätzlich als einzelne CSV für Excel/Steuerberater.</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <a href="/api/export/alles" className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <button type="button" onClick={() => absichern(() => window.location.assign("/api/export/alles"))} className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Download size={15} /> Alle Daten inkl. Dateien (ZIP)
-          </a>
+          </button>
+          {dialog}
           <a href="/api/export/buchungen" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Download size={15} /> Nur Buchungen (CSV)
           </a>
@@ -745,7 +785,8 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
 }
 
 // ---------- Gefahrenzone + Lösch-Modal ----------
-function DangerZone() {
+function DangerZone({ email, provider }: { email?: string | null; provider?: string | null }) {
+  const { absichern, dialog } = useReAuth(email, !!provider && provider !== "email");
   const [open, setOpen] = useState(false);
   const loeschRef = useModalFokus<HTMLDivElement>(() => setOpen(false), open);
   const [confirmText, setConfirmText] = useState("");
@@ -755,6 +796,7 @@ function DangerZone() {
 
   return (
     <div className="danger-zone">
+      {dialog}
       <button type="button" className="danger-link" onClick={() => setOpen(true)}>Konto löschen</button>
 
       {open && typeof document !== "undefined" && createPortal(
@@ -778,12 +820,14 @@ function DangerZone() {
               Löscht dein Konto und <strong style={{ color: "var(--text)" }}>unwiderruflich</strong> alle Daten – Immobilien, Mieter, Buchungen, Kredite, Dokumente und Einstellungen. Exportiere vorher bei Bedarf deine Daten.
             </p>
             <form
-              action={async () => {
-                setLoeschFehler(null);
-                const res = await deleteAccount();
-                // Erfolg endet in einem redirect — hier kommt nur ein Fehler an.
-                if (res && res.ok === false) setLoeschFehler(res.fehler);
-              }}
+              action={() =>
+                absichern(async () => {
+                  setLoeschFehler(null);
+                  const res = await deleteAccount();
+                  // Erfolg endet in einem redirect — hier kommt nur ein Fehler an.
+                  if (res && res.ok === false) setLoeschFehler(res.fehler);
+                })
+              }
             >
               <label className="set-field" style={{ marginBottom: 16 }}>
                 <span>Zum Bestätigen <strong>LÖSCHEN</strong> eingeben</span>
