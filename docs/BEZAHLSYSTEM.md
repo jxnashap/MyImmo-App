@@ -84,18 +84,17 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
     AGB-Änderungsfrist); niemand wird automatisch kostenpflichtig.
     **Steht bewusst VOR dem Schalter** — hinterher informiert zu werden, nachdem die
     eigene Auswertung schon gesperrt ist, ist keine Information mehr.
-11. **Bestandsschutz anlegen — `scripts/sql/bestandsschutz-vor-billing.sql`.**
-    Der wichtigste und am leichtesten zu übersehende Schritt. `abos` ist leer; ein
-    Nutzer ohne Zeile gilt als „Kostenlos" = **1 Einheit und keine Funktion ab Privat**.
-    Am 04.09.2026 in der Produktionsdatenbank gemessen: **22 Konten, 0 Abo-Zeilen,
-    5 Konten über dem Kostenlos-Limit** (größtes: 8 Einheiten). Ohne diesen Schritt
-    sperrt der Schalter die eigenen Early-Access-Nutzer aus — inklusive des
-    Betreiberkontos.
-    Das Skript ist idempotent und gehört **unmittelbar** vor Schritt 12: Wer es Wochen
-    vorher ausführt, versorgt nur die damaligen Konten; alle später hinzugekommenen
-    stünden beim Umlegen wieder ohne Zeile da.
-    Es ist bewusst **keine Migration** — es ändert kein Schema, und eine absichtlich
-    nicht ausgeführte Datei in `supabase/migrations/` würde die Historie entwerten.
+11. **Bestandsschutz — seit 08.09.2026 automatisch** (Migration
+    `20260908082914_bestandsschutz_automatisch.sql`). Alle Konten haben eine Zeile
+    `plus/testphase/bestandsschutz`, jedes neue bekommt sie per Trigger. Ein Nutzer ohne
+    Zeile gälte als „Kostenlos" (1 Einheit, keine Funktion ab Privat) — genau das war
+    bis dahin der Zustand ALLER 22 Konten, und der Schalter hätte sie ausgesperrt.
+    **Beim Scharfschalten ist nur noch der Trigger abzuschalten**, zusammen mit der Env:
+    ```sql
+    update public.billing_einstellungen set bestandsschutz_offen = false, updated_at = now();
+    ```
+    Vergessen ist ungefährlich: Neue Konten bekämen weiter Plus — großzügig, nicht
+    ausschließend. Kontrollabfragen: `scripts/sql/bestandsschutz-vor-billing.sql`, A und C.
 12. **Scharf schalten:** `BILLING_ENFORCED=true` setzen + auf der `/preise`-Seite den
    Early-Access-Hinweis entfernen und die CTAs auf den Abo-Tab zeigen lassen.
 13. ~~Feature-Gates in den wichtigsten Server-Actions aktivieren~~ ✅ **erledigt

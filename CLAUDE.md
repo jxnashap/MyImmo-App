@@ -24,13 +24,15 @@
 > verändern; nachgewiesen durch Tests UND am laufenden Server (307/401/405 wie vorher,
 > nirgends ein 402).
 >
-> ⚠️ **NICHT `BILLING_ENFORCED=true` setzen, ohne vorher A9 zu erledigen.** Die Tabelle
-> `abos` ist leer; ein Konto ohne Zeile gilt als „Kostenlos" (1 Einheit, keine Funktion
-> ab Privat). Am 04.09.2026 live gemessen: **22 Konten, 0 Abo-Zeilen, 5 davon sofort über
-> dem Limit** — der Schalter würde alle bestehenden Nutzer aussperren, das Betreiberkonto
-> eingeschlossen. Gegenmittel liegt fertig: **`scripts/sql/bestandsschutz-vor-billing.sql`**
-> (unmittelbar vor dem Schalter ausführen, nicht Wochen vorher — es versorgt nur die
-> Konten, die es vorfindet). Begründung und Zahlen: `docs/START-CHECKLISTE.md`, „A9 im Detail".
+> ✅ **A9 erledigt (08.09.2026): Bestandsschutz ist automatisch.** Migration
+> `20260908082914_bestandsschutz_automatisch.sql`: alle 22 Konten haben eine Zeile
+> `plus/testphase/bestandsschutz`, jedes neue Konto bekommt sie per Trigger auf
+> `auth.users`, solange `public.billing_einstellungen.bestandsschutz_offen = true`.
+> Ohne `BILLING_ENFORCED=true` ist das wirkungslos (Schranken kehren vorher zurück, der
+> Abo-Tab zeigt im Early Access die Early-Access-Karte). **Beim Scharfschalten:** den
+> Schalter auf `false` setzen — vergessen ist ungefährlich (neue Konten bekämen Plus).
+> Das frühere Termin-Skript `scripts/sql/bestandsschutz-vor-billing.sql` ist nur noch
+> Kontrolle (A/C) und späteres Beenden (D). Zahlen und Begründung: `docs/START-CHECKLISTE.md`.
 > **Merke außerdem:** `effektiverPlan()` wertet `gueltig_bis` NICHT aus — ein Abo endet
 > allein über `status`.
 
@@ -220,6 +222,13 @@ setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangsco
   neu erzeugen. Titelseite trägt die Dokument-Wortmarke (My+Immo), Design = MyImmo-Dokument-Stil.
 - **Masterplan (Markt/Compliance/Steuer-Features/Roadmap): `docs/MASTERPLAN.md`** (15.07.2026).
 - **Onboarding-Briefing (aktuell, für neue Chats/Sessions ZUERST lesen): `docs/BRIEFING.md`**.
+- **Externes Feedback vom 08.09.2026, geprüft und mit Plan: `docs/FEEDBACK-BEWERTUNG-2026-09.md`.**
+  Zwölf Behauptungen, elf gegen den Code bestätigt (Speed Insights vs. „keine Analyse-Tools",
+  Platzhalter in der Datenschutzerklärung, Demo-Text widerspricht Nur-Lesen, „Fristen &
+  Aufgaben" ist der LETZTE Dashboard-Abschnitt, keine 2FA, Auto-Abmeldung aus). Der Plan
+  dort ist nach Nutzen je Stunde sortiert: erst der Sofort-PR (Wahrheitskorrekturen, < 3 h),
+  dann 2FA, dann „Heute wichtig" nach oben. Nicht mit dem Dashboard-Umbau anfangen, solange
+  die Datenschutzerklärung einen Platzhalter enthält.
 - **Obsidian-Vault:** der Ordner `docs/` ist als Obsidian-Vault gedacht (Startseite `docs/00 Index.md`
   mit `[[Verlinkungen]]`). Nutzer öffnet `docs/` als Vault, `git pull` hält ihn aktuell.
 - **Finanzkonzept: `docs/FINANZKONZEPT.md`** (Geschäftsmodell/Monetarisierung **und** Finanzierungs-

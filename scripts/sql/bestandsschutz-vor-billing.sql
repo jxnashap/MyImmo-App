@@ -1,40 +1,27 @@
--- BESTANDSSCHUTZ — auszuführen UNMITTELBAR VOR `BILLING_ENFORCED=true`.
+-- BESTANDSSCHUTZ — seit 08.09.2026 AUTOMATISCH, dieses Skript ist nur noch Kontrolle.
 --
 -- ============================================================================
--- WARUM DIESES SKRIPT EXISTIERT
+-- WAS SICH GEÄNDERT HAT
 -- ============================================================================
--- Die Tabelle `abos` ist leer (Stand 04.09.2026: 0 Zeilen). `getAbo()` liefert
--- für einen Nutzer ohne Zeile `null`, und `effektiverPlan(null)` ist
--- "kostenlos" — Tarif Kostenlos heißt EINE Einheit und keine der Funktionen
--- ab Privat (NK-PDF, Steuer/Anlage V, Dokument-Generator, Mieterportal).
+-- Bis 08.09.2026 war dies ein Termin-Skript: unmittelbar vor `BILLING_ENFORCED=true`
+-- von Hand ausführen, weil es nur die Konten versorgt, die es vorfindet. Ein
+-- Termin-Skript ist ein Termin-Fehler in Wartestellung.
 --
--- In der Sekunde, in der jemand `BILLING_ENFORCED=true` setzt, fallen deshalb
--- ALLE bestehenden Konten auf Kostenlos — auch das des Betreibers. Am
--- 04.09.2026 gemessen: 11 Konten mit Objekten, 36 Einheiten insgesamt,
--- davon 5 Konten über dem Kostenlos-Limit und 4 über dem Privat-Limit
--- (größtes Konto: 8 Einheiten). Ohne dieses Skript sperrt der Schalter die
--- eigenen Early-Access-Nutzer aus, ohne dass sie etwas getan hätten.
+-- Migration `20260908082914_bestandsschutz_automatisch.sql` hat das ersetzt:
+--   * Alle damaligen 22 Konten haben ihre Zeile (plus/testphase/bestandsschutz).
+--   * Jedes NEUE Konto bekommt sie per Trigger auf auth.users — solange
+--     `public.billing_einstellungen.bestandsschutz_offen = true` steht.
 --
--- ============================================================================
--- WARUM DAS HIER STEHT UND NICHT IN supabase/migrations/
--- ============================================================================
--- Zwei Gründe:
--- 1. Es ist keine Schemaänderung, sondern eine einmalige Datenmaßnahme.
---    Die Migrationsregel (supabase/migrations/README.md) verlangt, dass jede
---    Datei dort auch AUSGEFÜHRT ist. Eine absichtlich nicht ausgeführte
---    Migration macht die Historie unbrauchbar.
--- 2. Der richtige Zeitpunkt ist NICHT heute. Wer heute ausführt, versorgt nur
---    die heutigen Konten; jedes Konto, das bis zum Start dazukommt, stünde
---    beim Umlegen wieder ohne Zeile da. Das Skript ist idempotent und
---    gehört deshalb direkt VOR den Schalter — nicht Wochen davor.
+-- BEIM SCHARFSCHALTEN bleibt genau EIN Schritt, zusammen mit der Env:
 --
--- ============================================================================
--- ABLAUF
--- ============================================================================
---   1. Abschnitt A ausführen (nur lesen) — zeigt, wen es betrifft.
---   2. Abschnitt B ausführen — legt die Bestandsschutz-Zeilen an.
---   3. Abschnitt C ausführen (nur lesen) — Gegenprobe: niemand ohne Zeile.
---   4. ERST DANN `BILLING_ENFORCED=true` setzen.
+--   update public.billing_einstellungen set bestandsschutz_offen = false, updated_at = now();
+--
+-- Wird er vergessen, bekommen neue Konten weiter Plus — großzügig, nicht
+-- ausschließend. Das ist die richtige Richtung für einen vergessenen Schritt.
+--
+-- Die Abschnitte A und C unten sind Kontrollabfragen (nur lesen); Abschnitt B
+-- ist als Nachholmaßnahme erhalten (idempotent, falls je eine Zeile fehlt);
+-- Abschnitt D beendet den Bestandsschutz später — bewusst, mit Vorlauf.
 --
 -- Ausführung im Supabase-SQL-Editor (läuft als `postgres`, umgeht RLS).
 -- `abos` hat bewusst KEINE insert/update-Policy — über die App ist das nicht
@@ -65,7 +52,7 @@ order by coalesce(e.einheiten, 0) desc, u.email;
 
 
 -- ============================================================================
--- B) BESTANDSSCHUTZ ANLEGEN
+-- B) BESTANDSSCHUTZ NACHHOLEN (normalerweise 0 Zeilen — der Trigger war schneller)
 -- ============================================================================
 -- Tarifwahl, offen begründet:
 --   * "plus" (24 Einheiten) deckt jedes heutige Konto mit Abstand — das größte
