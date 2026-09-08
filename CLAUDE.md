@@ -469,6 +469,30 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).
+- 🔥 **`npm run rauchtest` (08.09.2026): sechs Kernwege gegen die LAUFENDE App.**
+  Bis dahin hatte kein einziger der 1.167 Tests je eine Seite ausgeliefert — ein
+  kaputter Import in einer Server-Komponente oder eine 500er-Seite blieb grün.
+  Läuft gegen die Produktion und meldet sich am Demo-Konto an; **nur lesend**.
+  **Nicht bei jedem Push:** Der Demo-Einstieg SETZT DEN DEMO-BESTAND ZURÜCK (alle
+  Besucher teilen ein Konto) und `/api/demo` bremst bei 6 Aufrufen je 300 s —
+  deshalb meldet sich das Skript genau EINMAL an. Vor einem Release, nach einem
+  Deploy, bei Verdacht.
+  **Was er NICHT prüft:** alles, was erst im Browser passiert (JS-Ausnahmen,
+  Hydration, Klick-Ziele, Layout). Der erste Entwurf war ein echter Browser-Lauf
+  und ist daran gescheitert, dass Chromium in der Remote-Umgebung durch den
+  Proxy keine TLS-Verbindung aufbaut — **kein Fehler der App**; wer den
+  Browser-Lauf will, baut ihn auf einem Rechner mit normalem Netzzugang.
+  🐞 **Der Test war beim ersten Lauf FALSCH GRÜN — die wichtigste Lehre daraus:**
+  `/mietkonto` und `/steuer` sind in der Demo gesperrt und werden auf `/`
+  umgeleitet. Das Dashboard enthält „Mietkonto" (Menü) und „€" — die Prüfung
+  „Text kommt vor" war also erfüllt, ohne dass die Seite je geladen wurde.
+  **Regel: Bei jeder HTTP-Prüfung zuerst feststellen, WO man gelandet ist
+  (`endePfad`), erst dann den Inhalt ansehen.** Sonst prüft man die Menüleiste.
+  **Ungeprüft bleiben** Mietkonto, Steuer, Mieterportal, Archiv, Verbrauch,
+  Termine — die Demo gibt sie bewusst nicht frei. Der Weg `demo-grenze` deckt
+  stattdessen ab, dass die Sperre hält (fällt sie weg, klickt ein Besucher in
+  Bereichen herum, deren Speichern stumm an der RLS scheitert). Volle Abdeckung
+  bräuchte ein eigenes leeres Vermieter-Konto als Rauchtest-Zugang.
 - ⚠️ **`npx vitest run | tail` verschluckt den Exit-Code.** Der Status einer Pipeline ist
   der des LETZTEN Befehls. `vitest … | tail -3 && git commit` committet also auch bei
   roten Tests — so ist #317 mit einem roten Test durchgegangen (08.09.2026). Vor einem
