@@ -853,6 +853,9 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 
 @media (max-width: 1100px) {
   .grid-4, .grid-5 { grid-template-columns: 1fr 1fr; }
+  /* Fünf Kacheln in zwei Spalten: die letzte stünde allein in einer halben
+     Zeile (2-2-1). Über die volle Breite ist sie ruhiger — und nicht „übrig". */
+  .grid-5 > :nth-child(5):last-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 860px) {

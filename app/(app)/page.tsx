@@ -305,6 +305,40 @@ export default async function DashboardPage() {
       )}
 
 
+      {/* Zuerst die Frage, die ein Vermieter beim Öffnen hat: Was muss ich tun?
+          Bis 08.09.2026 war dieser Block der LETZTE Abschnitt der Seite — hinter
+          Kennzahlen, zwei Charts, Karte, Krediten und Buchungen. Auf dem Handy
+          war er ohne Scrollen unsichtbar. (Feedback 08.09., Befund 7.) */}
+      <div className="section mb-20">
+        <div className="section-header">
+          <div><h3>Fristen &amp; Aufgaben</h3><div className="section-sub">Was als Nächstes ansteht — automatisch aus deinen Daten</div></div>
+          <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
+        </div>
+        <div className="section-body">
+          {naechsteFristen.length === 0 ? (
+            <div className="empty"><CalendarDays className="empty-icon" size={36} color="var(--faint)" /><p>Keine anstehenden Fristen</p></div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {naechsteFristen.map((f) => (
+                <div key={`${f.datum}-${f.label}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 10 }}>
+                  <CalendarDays size={15} style={{ color: ueberfaellig(f.datum) ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13 }}>{f.label}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>{f.sub}</div>
+                  </div>
+                  <span
+                    className={`badge ${ueberfaellig(f.datum) ? "badge-red" : f.warn ? "badge-amber" : "badge-teal"}`}
+                    title={ueberfaellig(f.datum) ? "Überfällig" : undefined}
+                  >
+                    {ueberfaellig(f.datum) ? "überfällig · " : ""}{datum(f.datum)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* KPIs sind Deep-Links in den passenden Kontext (spart 1–2 Klicks je Absprung) */}
       <div className="staffel grid-5 mb-20">
         <Link href="/properties" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
@@ -458,8 +492,9 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Design-Handoff: Buchungen + Fristen nebeneinander (Prototyp-Dashboard) */}
-      <div className="grid-2">
+      {/* Fristen & Aufgaben stehen seit 08.09.2026 ganz OBEN (siehe dort) —
+          hier bleibt nur die Buchungsliste. */}
+      <div>
         <div className="section" style={{ marginBottom: 0 }}>
           <div className="section-header">
             <div><h3>Letzte Buchungen</h3><div className="section-sub">Einnahmen und Ausgaben, zuletzt erfasst</div></div>
@@ -496,35 +531,6 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header">
-            <div><h3>Fristen &amp; Aufgaben</h3><div className="section-sub">Automatisch aus deinen Daten erzeugt</div></div>
-            <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
-          </div>
-          <div className="section-body">
-            {naechsteFristen.length === 0 ? (
-              <div className="empty"><CalendarDays className="empty-icon" size={36} color="var(--faint)" /><p>Keine anstehenden Fristen</p></div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {naechsteFristen.map((f) => (
-                  <div key={`${f.datum}-${f.label}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 10 }}>
-                    <CalendarDays size={15} style={{ color: ueberfaellig(f.datum) ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13 }}>{f.label}</div>
-                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>{f.sub}</div>
-                    </div>
-                    <span
-                      className={`badge ${ueberfaellig(f.datum) ? "badge-red" : f.warn ? "badge-amber" : "badge-teal"}`}
-                      title={ueberfaellig(f.datum) ? "Überfällig" : undefined}
-                    >
-                      {ueberfaellig(f.datum) ? "überfällig · " : ""}{datum(f.datum)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );

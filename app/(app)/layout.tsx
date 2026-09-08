@@ -7,7 +7,6 @@ import AutoLogout from "@/components/AutoLogout";
 import OnboardingTour from "@/components/OnboardingTour";
 import LabelVerknuepfung from "@/components/LabelVerknuepfung";
 import DemoNurLesen from "@/components/DemoNurLesen";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ToastProvider } from "@/components/Toast";
 import FlashToast from "@/components/FlashToast";
 import { ZeitraumProvider } from "@/components/ZeitraumProvider";
@@ -57,9 +56,6 @@ export default async function RootLayout({
         </head>
         <body>
           {children}
-          {/* Echte Nutzer-Messwerte (LCP/INP/CLS), cookielos. Das Skript kommt
-              vom eigenen Origin und ist damit von der CSP gedeckt. */}
-          <SpeedInsights />
         </body>
       </html>
     );
@@ -137,10 +133,7 @@ export default async function RootLayout({
         </head>
         <body>
           {children}
-          {/* Echte Feld-Messwerte (LCP/INP/CLS) der oeffentlichen Seiten.
-              Cookielos; das Skript kommt vom eigenen Origin und ist damit von
-              der CSP ("script-src 'self'") gedeckt. */}
-          <SpeedInsights />
+          {/* Speed Insights entfernt (08.09.2026) — siehe app/(pub)/layout.tsx. */}
         </body>
       </html>
     );
@@ -206,8 +199,8 @@ export default async function RootLayout({
                   }}
                 >
                   <strong>Demo-Modus.</strong> Du siehst Beispieldaten und kannst
-                  alles ausprobieren. Änderungen werden beim nächsten Start der
-                  Demo zurückgesetzt.
+                  alle Funktionen erkunden. Speichern ist in der Demo nicht
+                  möglich — dafür brauchst du ein eigenes Konto.
                 </div>
               )}
               {/* id/tabIndex: Ziel des Skip-Links „Zum Inhalt springen" */}

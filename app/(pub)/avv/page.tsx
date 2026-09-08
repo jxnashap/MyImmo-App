@@ -130,7 +130,7 @@ export default function AvvPage() {
         <li><strong>Supabase Inc.</strong> — Datenbank, Authentifizierung, Datei-Speicher; Datenhaltung Frankfurt (AWS eu-central-1); DPA mit EU-Standardvertragsklauseln.</li>
         <li><strong>Vercel Inc.</strong> (USA) — Hosting/Auslieferung; DPA mit EU-Standardvertragsklauseln.</li>
         <li><strong>Anthropic PBC</strong> (USA) — KI-Auswertung, nur bei aktiver Nutzung durch den Verantwortlichen; DPA mit EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
-        <li><strong>Google Ireland Ltd.</strong> — nur „Login mit Google" und Schriftarten-Auslieferung.</li>
+        <li><strong>Google Ireland Ltd.</strong> — ausschließlich „Login mit Google"; Schriftarten werden selbst gehostet.</li>
       </ul>
       <p>
         Über beabsichtigte Änderungen (Hinzufügen/Ersetzen) informiert der Betreiber vorab

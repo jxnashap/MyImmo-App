@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "../globals.css";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Eigenes Root-Layout fuer die oeffentliche Strecke (Marketing, Ratgeber,
 // Rechtstexte). Es liest bewusst KEINE headers() und keine Supabase-Session —
@@ -24,8 +23,10 @@ export default function OeffentlichesLayout({ children }: { children: React.Reac
       </head>
       <body>
         {children}
-        {/* Echte Nutzer-Messwerte (LCP/INP/CLS), cookielos, eigener Origin. */}
-        <SpeedInsights />
+        {/* Vercel Speed Insights wurde am 08.09.2026 entfernt: Die Datenschutz-
+            erklärung sagt „keine Analyse-Tools", und das soll auch stimmen.
+            Speed Insights ist cookielos, misst aber Route, Gerät, Land und
+            Ladezeiten — das ist eine Messung, keine Null-Analyse. */}
       </body>
     </html>
   );

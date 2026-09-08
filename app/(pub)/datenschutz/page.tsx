@@ -152,7 +152,7 @@ export default function DatenschutzPage() {
         <li><strong>Supabase Inc.</strong> (Datenbank, Authentifizierung, Datei-Speicher) — Datenhaltung in Frankfurt (AWS eu-central-1); DPA inkl. EU-Standardvertragsklauseln.</li>
         <li><strong>Vercel Inc.</strong>, USA (Hosting/Auslieferung der App) — DPA inkl. EU-Standardvertragsklauseln; technische Logs können in den USA verarbeitet werden.</li>
         <li><strong>Anthropic PBC</strong>, USA (KI-Auswertung, nur bei aktiver Nutzung) — DPA inkl. EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
-        <li><strong>Google Ireland Ltd.</strong> — nur bei „Login mit Google" und für Schriftarten (Ziffer 7).</li>
+        <li><strong>Google Ireland Ltd.</strong> — ausschließlich bei „Login mit Google" (Ziffer 3 b). Schriftarten werden nicht von Google geladen (Ziffer 7).</li>
         <li><strong>Brevo</strong> (Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO (Anlage 2 zu den Nutzungsbedingungen, inkl. EU-Standardvertragsklauseln). Einzelne Unterauftragsverarbeiter von Brevo verarbeiten in Drittländern (Ziffer 5).</li>
       </ul>
       <p>
@@ -209,8 +209,10 @@ export default function DatenschutzPage() {
         Verarbeitungen auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO (Art. 21). Eine erteilte
         Einwilligung können Sie jederzeit mit Wirkung für die Zukunft widerrufen (Art. 7
         Abs. 3). Zudem haben Sie ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde
-        (Art. 77), z. B. der Behörde Ihres Wohnsitzes; zuständig für den Betreiber ist
-        [zuständige Landesdatenschutzbehörde].
+        (Art. 77), z. B. der Behörde Ihres Wohnsitzes. Zuständig für den Betreiber (Sitz in
+        Schleswig-Holstein) ist das <strong>Unabhängige Landeszentrum für Datenschutz
+        Schleswig-Holstein (ULD)</strong>, Holstenstraße 98, 24103 Kiel,{" "}
+        <a href="https://www.datenschutzzentrum.de" target="_blank" rel="noopener noreferrer">www.datenschutzzentrum.de</a>.
       </p>
       <p style={{ fontSize: 13, color: "var(--muted)" }}>
         Betrifft Ihr Anliegen Mieterdaten, die ein Vermieter in MyImmo erfasst hat, richten
