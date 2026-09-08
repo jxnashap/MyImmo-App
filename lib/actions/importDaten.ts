@@ -87,7 +87,14 @@ export async function importiereDaten(
   }
 
   // Mieter: Objekt-Zuordnung über den Namen (case-insensitiv, getrimmt).
-  const { data: props } = await supabase.from("properties").select("id,bezeichnung");
+  // Der Abfragefehler MUSS ausgewertet werden: Käme die Liste wegen eines
+  // Fehlers leer zurück, würden ALLE Mieter ohne Objekt angelegt — und die
+  // Meldung „n ohne Objekt" sähe aus wie ein Namensproblem der Eingabe.
+  const { data: props, error: propsFehler } = await supabase
+    .from("properties")
+    .select("id,bezeichnung")
+    .eq("user_id", user.id);
+  if (propsFehler) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Objekte konnten nicht geladen werden — es wurde nichts importiert." };
   const propByName = new Map(
     (props ?? []).map((p) => [String(p.bezeichnung ?? "").trim().toLowerCase(), p.id]),
   );

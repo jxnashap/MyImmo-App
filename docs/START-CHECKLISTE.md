@@ -383,15 +383,44 @@ ließe sich der Token-Raum kostenlos abtasten), die Zeichen-Kappung (200/300/400
 `makler.ts` ist der Zwilling von `beleihung.ts` — die Tests spiegeln das; einziger Unterschied
 ist die Bindung an den Nutzer statt ans Objekt.
 
-**Offen:** 14 Dateien, ~990 Zeilen — nach drei Durchgängen ohne bekanntes Zahlen-,
+### Paket C abgearbeitet: Import und Bestand (08.09.2026)
+
+`importDaten.ts`, `dokumente.ts`, `archiv.ts` — 31 Verhaltenstests, 21 Mutationen, alle rot.
+
+**Die Hypothese „Teilerfolg als Erfolg gemeldet" hat sich NICHT bestätigt.** Der Import
+schickt alle Zeilen in EINEM `insert(rows)`; Postgres führt eine Anweisung ganz oder gar
+nicht aus. Scheitert Zeile drei, bleibt nichts stehen. Ein Test hält fest, dass es EIN
+Aufruf bleibt — wer ihn in eine Schleife umbaut, wird rot.
+
+**Zwei Funde, beide aus der vierten Klasse (fail-open-Abfragen):**
+- `importDaten.ts`: Die Objektliste für die Mieter-Zuordnung wurde ohne Fehlerauswertung
+  gelesen. Käme sie wegen eines Fehlers leer zurück, würden **alle Mieter ohne Objekt**
+  angelegt — und „n ohne Objekt" sähe aus wie ein Namensproblem der Eingabe.
+- `dokumente.ts`: Die Mieter-Abfrage vor dem Archivieren wertete den Fehler nicht aus
+  und filterte nicht auf den Nutzer. Bei einem Abfragefehler landete das PDF **ohne
+  Objekt-Zuordnung** im Archiv — unter dem Objekt nicht zu finden, aber „gespeichert".
+
+Damit steht die vierte Klasse bei **neun** Fundstellen. `archiv.ts` bekam den
+`user_id`-Filter für Bearbeiten/Löschen, wie die übrigen Actions.
+
+**Geprüft, kein Befund:** Das Archiv-Bearbeitungsformular schickt alle fünf Felder mit —
+der `notiz_import`-Fehler aus `properties.ts` (nicht mitgeschicktes Feld wird mit null
+überschrieben) tritt hier nicht auf.
+
+**Notiert, nicht geändert:** Importierte Objekte bekommen keine Miet-/Hausgeld-Vorlage
+(`autoBuchungen` läuft nur in `createProperty`). Kein Fehler, aber eine Lücke im Produkt —
+wer 20 Objekte importiert, muss 20 Vorlagen von Hand anlegen.
+
+**Offen:** 11 Dateien, ~650 Zeilen — nach drei Durchgängen ohne bekanntes Zahlen-,
 Datei- oder Schreibfehler-Risiko.
 **Zahl am 08.09.2026 korrigiert:** Hier stand „14 von 29". Tatsächlich enthält
 `lib/actions/` **35** Dateien, und 15 werden von Tests importiert — offen sind also **20**,
 nicht 14. Die alte Zahl entstand daraus, dass Dateien, die nur beiläufig in einer anderen
 Testdatei mitliefen, als abgedeckt gezählt wurden.
-Als Nächstes **Paket C (Import und Bestand)**: `importDaten.ts` (124 Z. — der KI-Import
-schreibt viel auf einmal; was tut er bei Teilfehlern?), `dokumente.ts` (134), `archiv.ts` (78).
-Danach Paket D (11 kleine Dateien unter 100 Zeilen).
+Als Nächstes **Paket D**, der Rest: `tenants.ts` (100), `einschaetzung.ts` (98),
+`vermieterAnfragen.ts` (95), `mietzeitraeume.ts` (94), `account.ts` (74), `selbstauskunft.ts` (56),
+`kalkulation.ts` (56), `firmen.ts` (50), `billing.ts` (48), `vermieter.ts` (38),
+`dokumentVorlagen.ts` (37). Danach ist T2 geschlossen.
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat. (`actionFehler()` ist die Ausnahme: Die Logik wurde bewusst aus dem
 Bauteil herausgezogen, damit sie ohne DOM prüfbar ist.)
