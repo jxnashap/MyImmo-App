@@ -48,6 +48,7 @@ afterEach(() => {
 });
 
 async function lade(rpcAntwort: unknown = { ok: true, id: randomUUID() }, ip = frischeIp()) {
+  vi.resetModules();
   mockeHeaders(ip);
   const { db, client } = fakeSupabase({
     rpc: { bewerbung_einreichen: rpcAntwort, bewerbung_datei_anhaengen: rpcAntwort },

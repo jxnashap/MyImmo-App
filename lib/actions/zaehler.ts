@@ -112,8 +112,12 @@ export async function uebernehmeZaehlerstand(meldungId: string) {
   if (!m) return { error: "Meldung nicht gefunden." };
   if (m.uebernommen_am) return { error: "Bereits übernommen." };
 
-  // Vorherige übernommene Meldung desselben Zählers → Differenz = Verbrauch
-  const { data: vorher } = await supabase
+  // Vorherige übernommene Meldung desselben Zählers → Differenz = Verbrauch.
+  // Der Abfragefehler MUSS ausgewertet werden: Leer heißt „keine Vormeldung,
+  // also kein Verbrauch" — die Meldung würde trotzdem als übernommen markiert,
+  // und der Verbrauch dieses Zeitraums fehlte dauerhaft in der NK-Abrechnung
+  // des Mieters (die nächste Differenz zählt ab DIESEM Stand weiter).
+  const { data: vorher, error: vorherFehler } = await supabase
     .from("zaehlerstand_meldungen")
     .select("stand,ablesedatum")
     .eq("vermieter_id", user.id)
@@ -124,6 +128,7 @@ export async function uebernehmeZaehlerstand(meldungId: string) {
     .order("ablesedatum", { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (vorherFehler) return { error: "Der vorherige Zählerstand konnte nicht gelesen werden — es wurde nichts übernommen." };
 
   let verbrauchGebucht = false;
   if (vorher && m.stand >= vorher.stand) {

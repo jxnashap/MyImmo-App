@@ -28,6 +28,7 @@ afterEach(() => {
 });
 
 async function lade(init: Record<string, unknown> = {}) {
+  vi.resetModules();
   const { db, client } = fakeSupabase(init);
   mockeNextUndSupabase(client);
   const mod = await import("@/lib/actions/mietkonto");
@@ -225,5 +226,22 @@ describe("Nacherfassung: was gebucht wird und was nicht", () => {
     const { db, mod } = await lade();
     await mod.bestaetigeMehrere([zeile(), zeile({ mieter_id: "m2", soll_monat: "2025-08" })] as never);
     expect(db.zugriffe.flatMap((z) => z.filter).some((f) => f.startsWith("in:mieter_id"))).toBe(true);
+  });
+});
+
+describe("Dublettenprüfung beim EINZELNEN Mieteingang", () => {
+  it("scheitert die Abfrage, wird nichts gebucht", async () => {
+    // Fund vom 08.09.2026. Der Fix vom 04.09. betraf `bestaetigeMehrere`
+    // (Datumsgrenze `-31`); DIESE Stelle blieb übrig: Eine fehlgeschlagene
+    // Abfrage kommt leer zurück, `schonDa` wird false — und der Mieteingang
+    // landet ein zweites Mal in Cashflow und Anlage V.
+    const { db, mod } = await lade({ fehlerBei: { "einnahmen:select": { message: "connection reset" } } });
+    const r = await mod.bestaetigeMieteingang({
+      mieter_id: "m1", prop_id: "obj-1", betrag: 800, nk_anteil: null,
+      buchungsdatum: "2026-03-01", soll_monat: "2026-03",
+    });
+    expect(r.ok).toBe(false);
+    expect(String(r.error)).toMatch(/geprüft/);
+    expect(db.zugriffe.some((x) => x.tabelle === "einnahmen" && x.op === "insert")).toBe(false);
   });
 });

@@ -2,13 +2,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fakeSupabase, mockeNextUndSupabase, fd } from "./stubs/actionHarness";
+import { anweisungen } from "./stubs/tsAnweisungen";
 
 // STILLE SCHREIBFEHLER — der dritte Durchgang (08.09.2026).
 //
 // Nach den Zahlen-Eingängen und der Datei-Auslieferung war dies die dritte
 // Klasse, bei der ein Fehler nicht auffällt, sondern SCHWEIGT.
 //
-// AUSGANGSLAGE: 128 Schreiboperationen in `lib/actions/`, davon **20**, die den
+// AUSGANGSLAGE: 132 Schreiboperationen in `lib/actions/`, davon **24**, die den
 // `error` der Datenbank gar nicht erst ausgewertet haben und anschließend
 // bedingungslos `{ ok: true }` zurückgaben. Die Oberfläche meldete „gespeichert"
 // bzw. „widerrufen", während die Datenbank nichts getan hatte.
@@ -39,33 +40,45 @@ import { fakeSupabase, mockeNextUndSupabase, fd } from "./stubs/actionHarness";
 
 const ORDNER = "lib/actions";
 
-/** Anweisungen an ';' auf Klammertiefe 0 trennen (Klammern, nicht Blöcke). */
-function anweisungen(text: string): string[] {
-  const out: string[] = [];
-  let tiefe = 0;
-  let start = 0;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (c === "(") tiefe++;
-    else if (c === ")") tiefe--;
-    else if (c === ";" && tiefe === 0) {
-      out.push(text.slice(start, i + 1));
-      start = i + 1;
-    }
-  }
-  return out;
-}
+const SCHREIBT = /\.(update|delete|upsert|insert)\(/;
 
-/** Schreibanweisungen, die den Fehler der Datenbank nirgends erwähnen. */
-function stilleSchreibvorgaenge(quelle: string): string[] {
-  return anweisungen(quelle)
-    .filter((a) => /\.(update|delete|upsert|insert)\(/.test(a) && a.includes(".from("))
-    .filter((a) => !/\berror\b/.test(a))
-    .map((a) => a.trim().replace(/\s+/g, " ").slice(0, 100));
+/** Alle Schreibanweisungen einer Datei — Rohtext und entkleidete Fassung. */
+function schreibvorgaenge(quelle: string): { roh: string; nackt: string }[] {
+  const z = anweisungen(quelle);
+  return z.entkleidet
+    .map((nackt, i) => ({ roh: z.anweisungen[i], nackt }))
+    .filter((x) => SCHREIBT.test(x.nackt) && x.nackt.includes(".from("));
 }
 
 describe("Kein Schreibvorgang in lib/actions/ verschluckt den Fehler", () => {
   const dateien = readdirSync(ORDNER).filter((n) => n.endsWith(".ts"));
+
+  it("der Zerleger lässt sich von Klammern in Kommentaren nicht täuschen", () => {
+    // Der konkrete Fall aus `bewertung.ts`: `// 5) Persistieren.` Der alte
+    // Erkenner zählte diese schließende Klammer mit, rutschte ins Minus und
+    // fand danach GAR NICHTS mehr — für die ganze Datei.
+    const quelle = [
+      '// 5) Persistieren.',
+      'await supabase.from("properties").update({ a: 1 }).eq("id", x);',
+      'const s = "ein ) im Text";',
+      '/* auch ) im Block */',
+      'await supabase.from("y").delete().eq("id", x);',
+    ].join("\n");
+    const z = anweisungen(quelle);
+    expect(z.mindestTiefe).toBe(0);
+    expect(z.entkleidet.filter((a) => SCHREIBT.test(a))).toHaveLength(2);
+  });
+
+  it("der Erkenner ist in KEINER Datei blind", () => {
+    // DIESER TEST IST DER WICHTIGERE VON BEIDEN. Der erste Entwurf zählte
+    // Klammern im Rohtext. `lib/actions/bewertung.ts` enthält Kommentare der
+    // Form „// 5) Persistieren." — die schließende Klammer hat keine öffnende,
+    // die Tiefe rutschte ins Negative, und die Datei wurde stillschweigend
+    // übersprungen. Der Test war grün und hatte vier ungeprüfte Schreibvorgänge
+    // nie gesehen. Ein Wächter, der nichts findet, muss das BEWEISEN können.
+    const blind = dateien.filter((n) => anweisungen(readFileSync(join(ORDNER, n), "utf8")).mindestTiefe < 0);
+    expect(blind).toEqual([]);
+  });
 
   it("jede Schreiboperation wertet den Fehler aus", () => {
     // Wird dieser Test rot: NICHT die Zeile hier eintragen, sondern den Fehler
@@ -73,21 +86,20 @@ describe("Kein Schreibvorgang in lib/actions/ verschluckt den Fehler", () => {
     // geprüft zu haben, behauptet etwas über die Datenbank, das sie nicht weiß.
     const still: string[] = [];
     for (const n of dateien) {
-      for (const a of stilleSchreibvorgaenge(readFileSync(join(ORDNER, n), "utf8"))) {
-        still.push(`${n}: ${a}`);
+      for (const x of schreibvorgaenge(readFileSync(join(ORDNER, n), "utf8"))) {
+        if (!/\berror\b/.test(x.nackt)) still.push(`${n}: ${x.roh.trim().replace(/\s+/g, " ").slice(0, 100)}`);
       }
     }
     expect(still).toEqual([]);
   });
 
   it("es gibt überhaupt Schreiboperationen zu prüfen", () => {
-    // Sicherung gegen einen Erkenner, der nach einem Umbau nichts mehr findet
-    // und deshalb schweigend grün bleibt. Stand 08.09.2026: 128.
+    // Zweite Sicherung gegen einen Erkenner, der nach einem Umbau nichts mehr
+    // findet und deshalb schweigend grün bleibt. Stand 08.09.2026: 132.
     const anzahl = dateien
-      .map((n) => readFileSync(join(ORDNER, n), "utf8"))
-      .flatMap(anweisungen)
-      .filter((a) => /\.(update|delete|upsert|insert)\(/.test(a) && a.includes(".from(")).length;
-    expect(anzahl).toBeGreaterThan(100);
+      .map((n) => schreibvorgaenge(readFileSync(join(ORDNER, n), "utf8")).length)
+      .reduce((a, b) => a + b, 0);
+    expect(anzahl).toBeGreaterThan(120);
   });
 });
 

@@ -61,11 +61,22 @@ export async function bestaetigeMieteingang(input: {
   const sollMonat = /^\d{4}-\d{2}$/.test(input.soll_monat ?? "") ? input.soll_monat! : null;
 
   // Serverseitige Idempotenz über den Miet-Monat (siehe buchungsSchluessel).
-  const { data: bestand } = await supabase
+  // Der Abfragefehler MUSS ausgewertet werden. Eine fehlgeschlagene Abfrage
+  // kommt LEER zurück und sieht damit aus wie „noch nichts gebucht" — der
+  // Dublettenschutz fällt aus und der Mieteingang landet ein zweites Mal in
+  // Cashflow und Anlage V. (Derselbe Fehler steckte in `nacherfasseMieten`
+  // und wurde dort am 04.09.2026 behoben; diese Stelle blieb übrig.)
+  const { data: bestand, error: bestandFehler } = await supabase
     .from("einnahmen")
     .select("buchungsdatum,soll_monat")
     .eq("mieter_id", input.mieter_id)
     .eq("kategorie", "Miete");
+  if (bestandFehler) {
+    return {
+      ok: false,
+      error: "Bestehende Buchungen konnten nicht geprüft werden — es wurde nichts angelegt. Bitte erneut versuchen.",
+    };
+  }
   const schluessel = buchungsSchluessel(input.mieter_id, input.buchungsdatum, sollMonat);
   const schonDa = (bestand ?? []).some(
     (e) => buchungsSchluessel(input.mieter_id, e.buchungsdatum, e.soll_monat ?? null) === schluessel,

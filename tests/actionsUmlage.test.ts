@@ -29,6 +29,7 @@ const DB_MIETER = [
 ];
 
 async function lade(init: Record<string, unknown> = {}) {
+  vi.resetModules();
   const { db, client } = fakeSupabase({
     antworten: { properties: { flaeche: 100 }, mieter: DB_MIETER },
     ...init,

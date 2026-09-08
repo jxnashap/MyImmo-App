@@ -19,6 +19,7 @@ afterEach(() => {
 const ZUGANG = { vermieter_id: "v-1", mieter_id: "m-1", prop_id: "p-1" };
 
 async function lade(init: Record<string, unknown> = {}) {
+  vi.resetModules();
   const { db, client } = fakeSupabase(init);
   mockeNextUndSupabase(client);
   const mod = await import("@/lib/actions/anliegen");

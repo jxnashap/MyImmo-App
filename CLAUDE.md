@@ -447,9 +447,10 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Struktur-Tests halten eine Schreibweise fest, kein Verhalten.
   **Regel für neue Tests hier:** Einen neuen Action-Test erst glauben, wenn er gegen einen
   absichtlich eingebauten Fehler ROT wird. Alle 216 Tests dieser Dateien wurden so geprüft.
-  Stand 08.09.2026: 15 von 35 Action-Dateien abgedeckt (die frühere Angabe „von 29" war falsch gezählt) (`buchungen`, `properties`,
+  Stand 08.09.2026: 18 von 35 Action-Dateien abgedeckt (die frühere Angabe „von 29" war falsch gezählt) (`buchungen`, `properties`,
   `freischaltung`, `ibans`, `einladung`, `umlage`, `mietkonto`, `positions`, `wiederkehr`,
-  `beleihung`, `service`, `bewerbenPublic`, `anliegen`, `bewerber`, `zaehler`).
+  `beleihung`, `service`, `bewerbenPublic`, `anliegen`, `bewerber`, `zaehler`,
+  `termine`, `nkco2`, `bewertung`).
   **Warum die Mutationsprüfung nicht optional ist — Beispiel vom 07.09.2026:** Ein Test zur
   Slot-Weißliste in `bewerbenPublic` prüfte nur, DASS die RPC aufgerufen wird, nicht WOMIT.
   Er war grün und blieb grün, als die Weißliste testweise entfernt wurde. Erst die
@@ -555,6 +556,37 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   geblocktes UPDATE liefert keinen Fehler, sondern null Zeilen — das gilt aber genauso für
   ein doppelt ausgelöstes Löschen und für die Demo-Sperre. Daraus einen Fehler zu machen,
   würde harmlose Fälle zu Fehlermeldungen erheben.
+- 🕳️ **Vierte Klasse (08.09.2026): Prüf-Abfragen, die fail-open scheitern.** Der dritte
+  Durchgang sah nur SCHREIB-Vorgänge an. Eine Abfrage, deren LEERES Ergebnis „dann leg los"
+  bedeutet, ist genauso gefährlich — eine fehlgeschlagene Abfrage kommt ebenfalls leer
+  zurück. Von 40 Lese-Abfragen ohne Fehlerauswertung waren **sieben** von dieser Sorte:
+  `mietkonto.ts` (Einzelbuchung — der Fix vom 04.09. betraf nur die Nacherfassung),
+  `nkco2.ts`, `wiederkehr.ts`, `properties.ts`, `termine.ts`, `bewertung.ts`, `zaehler.ts`.
+  Folge jeweils: eine doppelte Buchung oder ein fehlender Verbrauch in der NK-Abrechnung.
+  Alle behoben und mit Tests festgenagelt.
+  **Regel: Wenn ein leeres Abfrageergebnis „darf ausgeführt werden" heißt, MUSS `error`
+  ausgewertet werden.** Fail-closed (`if (!x) return …`) ist unbedenklich.
+- 🙈 **Der Wächter war blind — und meldete Grün (08.09.2026).** `schreibFehler.test.ts`
+  zählte Klammern im Rohtext. Die Kommentare `// 1)` … `// 5)` in `lib/actions/bewertung.ts`
+  enthalten schließende Klammern ohne öffnende → die Klammertiefe rutschte ins Negative,
+  es wurde keine einzige Anweisung erkannt, und die Datei galt als geprüft. Dahinter lagen
+  **vier Schreibvorgänge ohne jede Fehlerauswertung**. Behoben in
+  **`tests/stubs/tsAnweisungen.ts`** (Kommentare/Zeichenketten werden entfernt, bevor
+  gezählt wird) plus einem Test, der beweist, dass der Erkenner hingesehen hat.
+  **Regel: Ein Wächter, der nichts findet, muss belegen können, dass er gesucht hat** —
+  mindestens über eine Mindestzahl gefundener Stellen und eine Plausibilitätsprüfung des
+  Erkenners selbst.
+- ⏱️ **`naechsteFaelligkeit` rechnete zeitzonenabhängig (08.09.2026 behoben).**
+  `new Date("2026-03-15")` (UTC) gemischt mit `getDate()`/`setDate()` (Ortszeit) und
+  `toISOString()` (wieder UTC). Gemessen: `TZ=Europe/Berlin` → 15.03. + 1 Monat = **14.04.**
+  (Sommerzeitumstellung), `TZ=America/New_York` → 31.01. + 1 Monat = **01.03.** Vercel läuft
+  in UTC, produktiv war es richtig — aber abhängig von einer Einstellung, die niemand hier
+  verwaltet. **Regel: Kalenderrechnungen auf den Zahlen des ISO-Datums ausführen, nicht über
+  `Date` mit Ortszeit-Zugriffen.** `tests/actionsTermine.test.ts` vergleicht vier Zonen.
+- ⚠️ **Prüfstand-Falle: ohne `vi.resetModules()` liefert ein zweites `await import` im
+  SELBEN Test das gecachte Modul** — es hängt noch an der ersten Attrappe, der frische `db`
+  bleibt leer, und ein Test mit einer Schleife über mehrere Eingaben prüft nur den ersten
+  Durchlauf. `resetModules()` steht deshalb jetzt in jedem `lade()`-Helfer.
 - **Prüfstand-Erweiterung (08.09.2026): `db.fehlerBei`.** `db.fehler` trifft JEDEN Zugriff,
   auch die Abfragen davor — eine Action, die vorher korrekt abbricht, erreicht die zu
   prüfende Stelle dann nie, und der Test wäre aus dem falschen Grund grün. `fehlerBei`

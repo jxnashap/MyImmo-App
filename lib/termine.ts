@@ -31,17 +31,34 @@ const WIEDERKEHRUNG_MONATE: Record<string, number> = {
 };
 
 // Nächste Fälligkeit — ohne Tag-Rollover (31.01. +1 Mon. → 28./29.02.).
+// ZEITZONEN-FREI GERECHNET (08.09.2026 umgestellt). Die frühere Fassung
+// mischte `new Date("2026-03-15")` (UTC-Mitternacht) mit `getDate()`/`setDate()`
+// (Ortszeit) und `toISOString()` (wieder UTC). Ergebnis, gemessen:
+//   · TZ=Europe/Berlin: 15.03. + 1 Monat → **14.04.** (Sommerzeit-Umstellung)
+//   · TZ=America/New_York: 31.01. + 1 Monat → **01.03.** (statt 28.02.)
+// Auf Vercel läuft alles in UTC, produktiv war das Ergebnis also richtig — die
+// Rechnung hing aber an einer Umgebungseinstellung, die niemand hier verwaltet.
+// Jetzt reine Kalenderarithmetik auf den Zahlen: kein `Date`-Objekt für die
+// Verschiebung, nur eines für „wie viele Tage hat dieser Monat" (in UTC).
 export function naechsteFaelligkeit(datum: string, wiederkehrung: string): string | null {
   const monate = WIEDERKEHRUNG_MONATE[wiederkehrung] ?? 0;
   if (!monate) return null;
-  const d = new Date(datum);
-  if (Number.isNaN(d.getTime())) return null;
-  const tag = d.getDate();
-  d.setDate(1);
-  d.setMonth(d.getMonth() + monate);
-  const letzterTag = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  d.setDate(Math.min(tag, letzterTag));
-  return d.toISOString().split("T")[0];
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datum);
+  if (!m) return null;
+  const jahr = Number(m[1]);
+  const monat = Number(m[2]);
+  const tag = Number(m[3]);
+  if (monat < 1 || monat > 12 || tag < 1 || tag > 31) return null;
+
+  const verschoben = jahr * 12 + (monat - 1) + monate;
+  const zielJahr = Math.floor(verschoben / 12);
+  const zielMonat = (verschoben % 12) + 1;
+  // Tag 0 des Folgemonats = letzter Tag des Zielmonats. Über `Date.UTC`
+  // gebildet, damit die Ortszeit keine Rolle spielt.
+  const letzterTag = new Date(Date.UTC(zielJahr, zielMonat, 0)).getUTCDate();
+  const zielTag = Math.min(tag, letzterTag);
+  const zwei = (n: number) => String(n).padStart(2, "0");
+  return `${zielJahr}-${zwei(zielMonat)}-${zwei(zielTag)}`;
 }
 
 // Kategorie-Chips: Farbe (Badge-Klasse bzw. Punkt-Farbe) + Icon.

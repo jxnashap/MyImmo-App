@@ -18,6 +18,7 @@ afterEach(() => {
 const ZUGANG = { vermieter_id: "v-1", mieter_id: "m-1", prop_id: "p-1" };
 
 async function lade(init: Record<string, unknown> = {}) {
+  vi.resetModules();
   const { db, client } = fakeSupabase({ antworten: { mieter_zugaenge: ZUGANG }, ...init });
   mockeNextUndSupabase(client);
   const mod = await import("@/lib/actions/zaehler");
@@ -225,10 +226,35 @@ describe("Übernahme durch den Vermieter", () => {
     // gebucht wurde.
     const { db, mod } = await lade({
       ...laden({}, { stand: 14000, ablesedatum: "2026-06-01" }),
-      fehler: { message: "abgelehnt" },
+      // Gezielt NUR die Verbrauchsbuchung scheitern lassen. Mit dem globalen
+      // `fehler` schlüge seit dem 08.09.2026 schon die Abfrage der Vormeldung
+      // fehl — der Test prüfte dann etwas anderes als seinen Namen.
+      fehlerBei: { "verbrauch:insert": { message: "abgelehnt" } },
     });
     const r = await mod.uebernehmeZaehlerstand("z-2");
     expect(r.error).toContain("Verbrauch konnte nicht gebucht werden");
     expect(db.zugriffe.some((z) => z.op === "update")).toBe(false);
+  });
+});
+
+describe("Vormeldung lesen", () => {
+  it("scheitert die Abfrage, wird NICHTS übernommen", async () => {
+    // Fund vom 08.09.2026: Leer hieß „keine Vormeldung, kein Verbrauch". Die
+    // Meldung wurde trotzdem als übernommen markiert — der Verbrauch dieses
+    // Zeitraums fehlte damit dauerhaft in der NK-Abrechnung, denn die nächste
+    // Differenz zählt ab diesem Stand weiter.
+    const { db, mod } = await lade({
+      antworten: {
+        zaehlerstand_meldungen: {
+          id: "z1", mieter_id: "m1", prop_id: "obj-1", art: "strom",
+          stand: 15000, einheit: "kWh", ablesedatum: "2026-06-30", uebernommen_am: null,
+        },
+      },
+      fehlerBei: { "zaehlerstand_meldungen:select": { message: "connection reset" } },
+    });
+    const r = await mod.uebernehmeZaehlerstand("z1");
+    expect(String(r.error)).toMatch(/vorherige|nichts übernommen/i);
+    expect(db.zugriffe.some((x) => x.tabelle === "verbrauch" && x.op === "insert")).toBe(false);
+    expect(db.zugriffe.some((x) => x.tabelle === "zaehlerstand_meldungen" && x.op === "update")).toBe(false);
   });
 });
