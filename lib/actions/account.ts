@@ -33,10 +33,18 @@ export async function deleteAccount(): Promise<LoeschErgebnis | void> {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: abo } = await supabase
+  // Der Abfragefehler MUSS ausgewertet werden: Käme die Abo-Zeile wegen eines
+  // Fehlers leer zurück, gälte „kein laufendes Abo" — das Konto würde gelöscht
+  // und Paddle buchte weiter ab, ohne dass der Kunde noch kündigen könnte.
+  // Genau das, was der Kommentar oben ausschließen will.
+  const { data: abo, error: aboFehler } = await supabase
     .from("abos")
     .select("provider_subscription_id,status")
+    .eq("user_id", user.id)
     .maybeSingle();
+  if (aboFehler) {
+    return { ok: false, fehler: "Der Abo-Status konnte nicht geprüft werden — das Konto wurde NICHT gelöscht. Bitte erneut versuchen." };
+  }
   const sub = (abo as { provider_subscription_id: string | null; status: string } | null);
   const laufend =
     !!sub?.provider_subscription_id &&

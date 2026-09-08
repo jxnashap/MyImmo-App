@@ -125,7 +125,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 15 von 35 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, Verhaltenstests jeweils gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** (alle bei Zahlen oder Dubletten) plus **drei systematische Durchgänge** — Zahlen-Eingänge, Datei-Auslieferung, stille Schreibfehler —, die je einen Wächter-Test über ALLE 35 Dateien hinterlassen haben. Offen: 20 Dateien, ~1.755 Zeilen |
+| ~~**T2**~~ | ✅ Tests für `lib/actions/` — **abgeschlossen 08.09.2026**, 35 von 35 Dateien | erledigt | Siehe Kasten unten. Prüfstand steht, Verhaltenstests jeweils gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** (alle bei Zahlen oder Dubletten) plus **drei systematische Durchgänge** — Zahlen-Eingänge, Datei-Auslieferung, stille Schreibfehler —, die je einen Wächter-Test über ALLE 35 Dateien hinterlassen haben. Offen: 20 Dateien, ~1.755 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
@@ -411,16 +411,56 @@ der `notiz_import`-Fehler aus `properties.ts` (nicht mitgeschicktes Feld wird mi
 (`autoBuchungen` läuft nur in `createProperty`). Kein Fehler, aber eine Lücke im Produkt —
 wer 20 Objekte importiert, muss 20 Vorlagen von Hand anlegen.
 
-**Offen:** 11 Dateien, ~650 Zeilen — nach drei Durchgängen ohne bekanntes Zahlen-,
+### Paket D abgearbeitet — T2 ist geschlossen (08.09.2026)
+
+Die elf Restdateien in vier Testdateien: `actionsAccount` (account + billing),
+`actionsTenants` (tenants + mietzeitraeume), `actionsEinschaetzung` (einschaetzung +
+kalkulation), `actionsKleinkram` (firmen, vermieter, dokumentVorlagen, selbstauskunft,
+vermieterAnfragen). 54 Verhaltenstests, 33 Mutationen, alle rot.
+
+**Ein Fund, und der geht ans Geld des Nutzers:** `deleteAccount` in `account.ts` las das
+Abo ohne Fehlerauswertung. Käme die Abfrage wegen eines Fehlers leer zurück, gälte „kein
+laufendes Abo" — das Konto würde gelöscht, und **Paddle buchte weiter ab, ohne dass der
+Kunde noch kündigen könnte**. Der Kommentar direkt darüber schließt genau das ausdrücklich
+aus („kein stilles Weiterlaufen von Zahlungen"); die Abfrage darunter hielt sich nicht
+daran. Zehnte Fundstelle der vierten Klasse. Heute folgenlos (Billing inaktiv, `abos`
+leer) — aber der Schalter `BILLING_ENFORCED` hätte den Fehler scharf gestellt.
+
+**Zweiter, kleinerer:** `mietzeitraeume.ts` las den Mieter fail-open und ohne Nutzerfilter;
+ein fremder Mieter bekam einen Zeitraum mit `prop_id null`. Elfte Fundstelle.
+
+**Geprüft, kein Fund — und das war die eigentliche Sorge in `tenants.ts`:** `updateTenant`
+überschreibt jedes Feld aus `parse()`. Fehlt ein Feld im Formular, wird es genullt — der
+`notiz_import`-Fehler aus `properties.ts`. `TenantForm.tsx` schickt alle 26 Felder, und
+die Bearbeiten-Seite füllt die **IBAN entschlüsselt** vor. Ein Speichern löscht nichts.
+
+**Nachbesserungen ohne Fund:** `user_id`-Filter für Bearbeiten/Löschen in `tenants`,
+`einschaetzung`, `kalkulation`, `mietzeitraeume`; `error.message` geht in `einschaetzung`
+nicht mehr an den Client (Postgres nennt Tabellen und Spalten); `billing` prüft den
+Zyklus; `dokumentVorlagen` prüft die Dokumentart gegen `ARTEN` und kappt den Text bei
+20.000 Zeichen.
+
+**Bilanz T2 (04.–08.09.2026):** 35 von 35 Action-Dateien mit Verhaltenstests, insgesamt
+**1.068 Tests** (vorher 887 vor T2-Beginn: 53 Dateien, keine davon führte eine Action aus).
+Jeder Test gegen absichtlich eingebaute Fehler geprüft. Vier systematische Durchgänge mit
+je einem Wächter über alle Dateien. **Funde: 4 Zahlen-Lesarten, 1 Content-Type,
+24 stille Schreibfehler, 11 fail-open-Abfragen, 1 zeitzonenabhängige Terminrechnung,
+2 stille `return`s, 1 blinder Wächter.** Nichts davon war in den Produktionsdaten
+eingetreten, soweit prüfbar (Dubletten-Abfrage 04.09.).
+
+**Was T2 NICHT abdeckt, ehrlich:** `components/` (kein DOM), die API-Routen unter `app/api`
+(nur die Datei-Auslieferung), `lib/pdf` und `lib/valuation` (reine Rechenlogik, teils
+eigene Tests), und die 33 Lese-Abfragen, die ich per Hand als fail-closed eingestuft habe.
+
+**Offen:** nichts mehr in T2 — nach drei Durchgängen ohne bekanntes Zahlen-,
 Datei- oder Schreibfehler-Risiko.
 **Zahl am 08.09.2026 korrigiert:** Hier stand „14 von 29". Tatsächlich enthält
 `lib/actions/` **35** Dateien, und 15 werden von Tests importiert — offen sind also **20**,
 nicht 14. Die alte Zahl entstand daraus, dass Dateien, die nur beiläufig in einer anderen
 Testdatei mitliefen, als abgedeckt gezählt wurden.
-Als Nächstes **Paket D**, der Rest: `tenants.ts` (100), `einschaetzung.ts` (98),
-`vermieterAnfragen.ts` (95), `mietzeitraeume.ts` (94), `account.ts` (74), `selbstauskunft.ts` (56),
-`kalkulation.ts` (56), `firmen.ts` (50), `billing.ts` (48), `vermieter.ts` (38),
-`dokumentVorlagen.ts` (37). Danach ist T2 geschlossen.
+T2 ist damit vollständig. Der nächste Hebel auf der Liste ist entweder ein fünfter
+Durchgang über die **API-Routen** (`app/api`, dieselben vier Klassen, anderer Ordner)
+oder T3/T4 aus der Tabelle oben.
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat. (`actionFehler()` ist die Ausnahme: Die Logik wurde bewusst aus dem
 Bauteil herausgezogen, damit sie ohne DOM prüfbar ist.)

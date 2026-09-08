@@ -49,16 +49,20 @@ export async function createMietZeitraum(mieterId: string, fd: FormData): Promis
   if (f.bis && f.bis < f.von) return { ok: false, error: "\u201eBis\u201c liegt vor \u201eVon\u201c." };
 
   // prop_id aus dem Mieter übernehmen (praktisch für Objektauswertungen).
-  const { data: mieter } = await supabase
+  // Fail-closed: Ein fremder oder nicht lesbarer Mieter bekommt keinen
+  // Zeitraum — vorher wäre er mit prop_id null angelegt worden.
+  const { data: mieter, error: mieterFehler } = await supabase
     .from("mieter")
     .select("prop_id")
     .eq("id", mieterId)
-    .single();
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (mieterFehler || !mieter) return { ok: false, error: "Mieter nicht gefunden." };
 
   const { error } = await supabase.from("miet_zeitraeume").insert({
     user_id: userId,
     mieter_id: mieterId,
-    prop_id: mieter?.prop_id ?? null,
+    prop_id: mieter.prop_id ?? null,
     ...f,
   });
   if (error) return { ok: false, error: "Speichern fehlgeschlagen." };
@@ -75,7 +79,7 @@ export async function updateMietZeitraum(id: string, mieterId: string, fd: FormD
   if (!f.von) return { ok: false, error: "Bitte den ersten Monat (von) angeben." };
   if (f.bis && f.bis < f.von) return { ok: false, error: "\u201eBis\u201c liegt vor \u201eVon\u201c." };
 
-  const { error } = await supabase.from("miet_zeitraeume").update(f).eq("id", id);
+  const { error } = await supabase.from("miet_zeitraeume").update(f).eq("id", id).eq("user_id", userId);
   if (error) return { ok: false, error: "Speichern fehlgeschlagen." };
 
   revalidatePath(`/tenants/${mieterId}`);
@@ -86,7 +90,7 @@ export async function deleteMietZeitraum(id: string, mieterId: string): Promise<
   const { supabase, userId } = await uid();
   if (!userId) return { ok: false, error: "Nicht angemeldet." };
 
-  const { error } = await supabase.from("miet_zeitraeume").delete().eq("id", id);
+  const { error } = await supabase.from("miet_zeitraeume").delete().eq("id", id).eq("user_id", userId);
   if (error) return { ok: false, error: "Löschen fehlgeschlagen." };
 
   revalidatePath(`/tenants/${mieterId}`);

@@ -447,11 +447,13 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Struktur-Tests halten eine Schreibweise fest, kein Verhalten.
   **Regel für neue Tests hier:** Einen neuen Action-Test erst glauben, wenn er gegen einen
   absichtlich eingebauten Fehler ROT wird. Alle 216 Tests dieser Dateien wurden so geprüft.
-  Stand 08.09.2026: 24 von 35 Action-Dateien abgedeckt (die frühere Angabe „von 29" war falsch gezählt) (`buchungen`, `properties`,
+  **T2 abgeschlossen 08.09.2026: 35 von 35 Action-Dateien abgedeckt**, 1.068 Tests (`buchungen`, `properties`,
   `freischaltung`, `ibans`, `einladung`, `umlage`, `mietkonto`, `positions`, `wiederkehr`,
   `beleihung`, `service`, `bewerbenPublic`, `anliegen`, `bewerber`, `zaehler`,
   `termine`, `nkco2`, `bewertung`, `makler`, `beleihungPublic`, `archivFreigabe`,
-  `importDaten`, `dokumente`, `archiv`).
+  `importDaten`, `dokumente`, `archiv`, `account`, `billing`, `tenants`, `mietzeitraeume`,
+  `einschaetzung`, `kalkulation`, `firmen`, `vermieter`, `dokumentVorlagen`, `selbstauskunft`,
+  `vermieterAnfragen`).
   **Vorbild für neue Schreib-Actions: `archivFreigabe.ts`** — `.update().select().maybeSingle()`
   mit `error || !data`; damit fällt auch das RLS-Treffer-Null auf.
   **Warum die Mutationsprüfung nicht optional ist — Beispiel vom 07.09.2026:** Ein Test zur
@@ -562,10 +564,13 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 - 🕳️ **Vierte Klasse (08.09.2026): Prüf-Abfragen, die fail-open scheitern.** Der dritte
   Durchgang sah nur SCHREIB-Vorgänge an. Eine Abfrage, deren LEERES Ergebnis „dann leg los"
   bedeutet, ist genauso gefährlich — eine fehlgeschlagene Abfrage kommt ebenfalls leer
-  zurück. Von 40 Lese-Abfragen ohne Fehlerauswertung waren **neun** von dieser Sorte:
+  zurück. Von 40 Lese-Abfragen ohne Fehlerauswertung waren **elf** von dieser Sorte:
   `mietkonto.ts` (Einzelbuchung — der Fix vom 04.09. betraf nur die Nacherfassung),
   `nkco2.ts`, `wiederkehr.ts`, `properties.ts`, `termine.ts`, `bewertung.ts`, `zaehler.ts`,
-  `importDaten.ts` (alle Mieter ohne Objekt), `dokumente.ts` (PDF ohne Objekt-Zuordnung).
+  `importDaten.ts` (alle Mieter ohne Objekt), `dokumente.ts` (PDF ohne Objekt-Zuordnung),
+  `mietzeitraeume.ts`, und — **die schwerste — `account.ts`: Konto gelöscht, Paddle bucht
+  weiter**, obwohl der Kommentar darüber genau das ausschließt. Heute folgenlos (Billing
+  inaktiv), aber `BILLING_ENFORCED=true` hätte den Fehler scharf gestellt.
   Folge jeweils: eine doppelte Buchung oder ein fehlender Verbrauch in der NK-Abrechnung.
   Alle behoben und mit Tests festgenagelt.
   **Regel: Wenn ein leeres Abfrageergebnis „darf ausgeführt werden" heißt, MUSS `error`
