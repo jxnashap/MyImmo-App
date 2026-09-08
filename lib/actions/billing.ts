@@ -18,6 +18,7 @@ export async function starteCheckout(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { fehler: "Nicht angemeldet." };
   if (plan !== "privat" && plan !== "plus") return { fehler: "Unbekannter Tarif." };
+  if (zyklus !== "monat" && zyklus !== "jahr") return { fehler: "Unbekannter Abrechnungszeitraum." };
   if (!paddleKonfiguriert())
     return { fehler: "Das Bezahlsystem ist noch nicht freigeschaltet — aktuell ist alles kostenlos (Early Access)." };
 

@@ -48,7 +48,7 @@ export async function speichereEinschaetzung(e: EinschaetzungEingabe): Promise<E
     })
     .select("id")
     .single();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: "Einschätzung konnte nicht gespeichert werden." };
 
   revalidatePath("/verkauf");
   revalidatePath("/bewertung");
@@ -62,8 +62,8 @@ export async function loescheEinschaetzung(id: string): Promise<{ ok: boolean; e
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { error } = await supabase.from("bewertung_historie").delete().eq("id", id);
-  if (error) return { ok: false, error: error.message };
+  const { error } = await supabase.from("bewertung_historie").delete().eq("id", id).eq("user_id", user.id);
+  if (error) return { ok: false, error: "Einschätzung konnte nicht gelöscht werden." };
 
   revalidatePath("/verkauf");
   return { ok: true };
@@ -90,8 +90,9 @@ export async function uebernehmeAlsWert(
       marktwert_aktuell: Math.round(marktwert),
       marktwert_stand: datumIso.slice(0, 10),
     })
-    .eq("id", immobilieId);
-  if (error) return { ok: false, error: error.message };
+    .eq("id", immobilieId)
+    .eq("user_id", user.id);
+  if (error) return { ok: false, error: "Wert konnte nicht übernommen werden." };
 
   for (const p of ["/verkauf", "/properties", `/properties/${immobilieId}`, "/"]) revalidatePath(p);
   return { ok: true };

@@ -77,7 +77,19 @@ export async function createTenant(formData: FormData) {
 
 export async function updateTenant(id: string, formData: FormData) {
   const supabase = await createClient();
-  const { error } = await supabase.from("mieter").update({ ...parse(formData), iban: ibanEnc(formData) }).eq("id", id);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  // Geprüft (08.09.2026): TenantForm schickt ALLE Felder aus parse() mit, und
+  // die Bearbeiten-Seite füllt die IBAN entschlüsselt vor — ein Speichern
+  // löscht also nichts, was nicht im Formular stand (anders als seinerzeit
+  // `notiz_import` in properties.ts).
+  const { error } = await supabase
+    .from("mieter")
+    .update({ ...parse(formData), iban: ibanEnc(formData) })
+    .eq("id", id)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/tenants");
@@ -92,7 +104,11 @@ export async function updateTenant(id: string, formData: FormData) {
 
 export async function deleteTenant(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("mieter").delete().eq("id", id);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const { error } = await supabase.from("mieter").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/tenants");
