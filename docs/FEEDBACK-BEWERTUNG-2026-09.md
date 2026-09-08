@@ -104,7 +104,7 @@ gesehen.
 4. **Sicherheitsbereich** in den Einstellungen: letzte Anmeldung, aktive Sitzungen
    (Supabase liefert sie), Passwort ändern, 2FA.
 
-### Woche 3: Der Kern nach vorn (Code, ~3 Tage)
+### Woche 3: Der Kern nach vorn (Code, ~3 Tage) — ✅ erledigt 08.09.2026, PR #320
 1. Karte **„Heute wichtig"** ganz oben: überfällige Fristen, offene Mieten des Monats,
    neue Anliegen, ausstehende Zählerstand-Freigaben — jede Zeile mit **einer** Handlung
    („Miete bestätigen" → `bestaetigeMieteingang`, „Anliegen öffnen", „Termin abhaken").

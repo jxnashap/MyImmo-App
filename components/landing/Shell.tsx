@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { START_CTA } from "@/lib/preise";
 import type { ReactNode } from "react";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 import QlxHeader from "@/components/landing/QlxHeader";
@@ -35,7 +36,7 @@ export default function LandingShell({
   aktiv?: string;
   mitHero?: boolean;
   /** Für Seiten, die ein EIGENES Abschluss-CTA mitbringen (Startseite) —
-      sonst stünden zwei „Kostenlos starten"-Bänder direkt untereinander. */
+      sonst stünden zwei Start-CTA-Bänder direkt untereinander. */
   ohneSchlussCta?: boolean;
   children: ReactNode;
 }) {
@@ -52,7 +53,7 @@ export default function LandingShell({
             <h2 className="lp-h2">In 2 Minuten <em>startklar</em></h2>
             <p className="lp-section-sub">Konto anlegen, erstes Objekt erfassen — den Rest übernimmt MyImmo.</p>
             <div className="lp-cta-row">
-              <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">Kostenlos starten</Link>
+              <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">{START_CTA}</Link>
             </div>
           </div>
         </section>

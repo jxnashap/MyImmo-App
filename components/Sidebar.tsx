@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import CommandPalette from "@/components/ui/CommandPalette";
-import { VERWALTUNG, KALKULATOR, PROP_ICONS, type NavItem } from "@/lib/nav";
+import { VERWALTEN, ABRECHNEN, PLANEN, PROP_ICONS, type NavItem } from "@/lib/nav";
 import { istDemoKonto, demoDarfRoute } from "@/lib/demo";
 import { Home, Power, PanelLeftClose, PanelLeftOpen, Settings, Lock } from "lucide-react";
 
@@ -189,13 +189,25 @@ export default function Sidebar({
           echtes navigation-Landmark, damit Screenreader sie anspringen können. */}
       <nav aria-label="Hauptnavigation">
       <div className="sidebar-section">
-        <div className="sidebar-section-label">Verwaltung</div>
-        {VERWALTUNG.map(navLink)}
+        <div className="sidebar-section-label">Heute verwalten</div>
+        {VERWALTEN.map(navLink)}
       </div>
 
       <div className="sidebar-section">
-        <div className="sidebar-section-label">Kalkulator</div>
-        {KALKULATOR.map(navLink)}
+        <div className="sidebar-section-label">Abrechnen</div>
+        {ABRECHNEN.map(navLink)}
+      </div>
+
+      {/* „Planen" ist eingeklappt, aber nicht versteckt: <details> braucht kein
+          JavaScript, merkt sich den Zustand nicht (bewusst — sonst wäre die
+          Sidebar bei jedem Nutzer anders lang) und ist per Tastatur bedienbar.
+          Wer hier drin arbeitet, klappt einmal auf. */}
+      <details className="sidebar-section" open={PLANEN.some((n) => isActive(n.href))}>
+        <summary className="sidebar-section-label sidebar-gruppe">Planen</summary>
+        {PLANEN.map(navLink)}
+      </details>
+
+      <div className="sidebar-section">
         <Link href="/einstellungen" className={`nav-item${isActive("/einstellungen") ? " active" : ""}`} title="Einstellungen">
           {/* Label in .nav-label, sonst bleibt der Text im eingeklappten Rail
               stehen und quetscht sich neben das Icon. Auch in der Demo offen:

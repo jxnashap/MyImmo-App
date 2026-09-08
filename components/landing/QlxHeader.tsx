@@ -11,6 +11,7 @@
 // das CSS schaltet zentral — wie im Original über body.nav-open/.solid.
 
 import Link from "next/link";
+import { START_CTA } from "@/lib/preise";
 import { useEffect, useState } from "react";
 
 export type QlxNavEintrag = { href: string; label: string };
@@ -86,7 +87,7 @@ export default function QlxHeader({
 
           <div className="qlx-header-cta">
             <Link href="/anmelden" className="qlx-btn-linie">Anmelden</Link>
-            <Link href="/anmelden" className="qlx-btn-hell">Kostenlos starten</Link>
+            <Link href="/anmelden" className="qlx-btn-hell">{START_CTA}</Link>
           </div>
         </div>
       </header>
@@ -111,7 +112,7 @@ export default function QlxHeader({
               <li>
                 <Link href="/anmelden" onClick={zu} tabIndex={offen ? 0 : -1} style={{ fontStyle: "italic", color: "var(--l-gold-hell)" }}>
                   <span className="qlx-nl-num">→</span>
-                  <span className="qlx-nl-label">Kostenlos starten</span>
+                  <span className="qlx-nl-label">{START_CTA}</span>
                 </Link>
               </li>
             </ul>

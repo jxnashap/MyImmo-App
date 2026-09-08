@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, zahl, begruessung } from "@/lib/format";
 import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
-import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote } from "lucide-react";
+import { baueHeuteAufgaben, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
+import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
+import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2 } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
 import PortfolioKarte, { type KartenObjekt } from "@/components/PortfolioKarte";
@@ -86,7 +88,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
@@ -95,6 +97,11 @@ export default async function DashboardPage() {
     supabase.from("bewertung_historie").select("immobilie_id,datum,marktwert"),
     supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
     supabase.from("termine").select("id,titel,datum,kategorie,erledigt").order("datum"),
+    // „Heute wichtig": offene Mieter-Anliegen und noch nicht übernommene
+    // Zählerstände. Beides sind Handlungen, die auf den Vermieter warten.
+    supabase.from("anliegen").select("id,titel,status,created_at,mieter_name").eq("status", "offen").order("created_at"),
+    supabase.from("zaehlerstand_meldungen").select("id,art,ablesedatum,mieter_id").is("uebernommen_am", null).order("ablesedatum"),
+    supabase.from("miet_zeitraeume").select("*"),
   ]);
 
   const properties = (props ?? []) as Property[];
@@ -146,6 +153,50 @@ export default async function DashboardPage() {
       fristListe.push({ datum: t.datum, label: t.titel ?? "Termin", sub: t.kategorie ?? "Eigener Termin", warn: false });
   fristListe.sort((a, b) => a.datum.localeCompare(b.datum));
   const naechsteFristen = fristListe.slice(0, 4);
+
+  // ----- „Heute wichtig" -----------------------------------------------------
+  // Zusammenführung der Quellen, die eine HANDLUNG verlangen. Die Daten liegen
+  // ohnehin auf der Seite; gefehlt hat die eine Liste mit je einem Ziel.
+  const laufenderMonat = heuteISO0.slice(0, 7);
+  const mieterNameOf = new Map(
+    mieterRows.map((m) => [m.id as string, [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter"]),
+  );
+  // Schon gebuchte Mieten des laufenden Monats (Miet-Kategorie, mit Mieter).
+  const gebuchtDiesenMonat = new Set(
+    ((einn ?? []) as Einnahme[])
+      // `soll_monat` steht im Typ noch nicht (Altbestand hat es nicht) — der
+      // Fallback auf das Buchungsdatum ist derselbe wie im Mietkonto.
+      .filter((e) => {
+        const soll = (e as { soll_monat?: string | null }).soll_monat ?? zuJahrMonat(e.buchungsdatum);
+        return e.kategorie === "Miete" && e.mieter_id && soll === laufenderMonat;
+      })
+      .map((e) => String(e.mieter_id)),
+  );
+  const zeitraeumeVon = (id: string) =>
+    ((mzRows ?? []) as { mieter_id: string }[]).filter((z) => z.mieter_id === id) as never[];
+  const offeneMieten: OffeneMiete[] = mieterRows
+    .filter((m) => !gebuchtDiesenMonat.has(m.id as string))
+    // Nur Mieter, für die dieser Monat überhaupt eine Soll-Miete hat
+    // (Einzug/Auszug, Miet-Zeiträume) — sonst stünde jeder Altmieter hier.
+    .filter((m) => erwarteteMonate(m as never, zeitraeumeVon(m.id as string), laufenderMonat, laufenderMonat).length > 0)
+    .map((m) => ({
+      mieterId: m.id as string,
+      name: mieterNameOf.get(m.id as string) ?? "Mieter",
+      objekt: (m.prop_id && nameOf.get(m.prop_id)) || "",
+      monat: laufenderMonat,
+    }));
+
+  const offeneAnliegen: OffenesAnliegen[] = ((anlRows ?? []) as { id: string; titel: string | null; created_at: string; mieter_name: string | null }[])
+    .map((a) => ({ id: a.id, titel: a.titel, mieter: a.mieter_name ?? "Mieter", erstellt: a.created_at }));
+
+  const offeneMeldungen: OffeneMeldung[] = ((zaehlerRows ?? []) as { id: string; art: string | null; ablesedatum: string; mieter_id: string | null }[])
+    .map((z) => ({ id: z.id, art: z.art, mieter: (z.mieter_id && mieterNameOf.get(z.mieter_id)) || "Mieter", datum: z.ablesedatum }));
+
+  const heuteAufgaben = baueHeuteAufgaben(
+    { offeneMieten, anliegen: offeneAnliegen, meldungen: offeneMeldungen, fristen: fristListe },
+    heuteISO0,
+  );
+  const AUFGABEN_ICON = { miete: ReceiptText, anliegen: MessageSquareText, zaehler: Zap, frist: CalendarDays, termin: CalendarDays } as const;
 
   // Begrüßung nach Tageszeit (Europe/Berlin) + Vorname aus dem Vermieterprofil.
   // Die Stundenermittlung steckt in lib/format (getestet) — die frühere
@@ -304,6 +355,51 @@ export default async function DashboardPage() {
         </div>
       )}
 
+
+      {/* Die eine Frage beim Öffnen: Was muss ich JETZT tun? Alle Quellen mit
+          Handlungsbedarf in EINER Liste, jede Zeile mit genau einem Ziel
+          (Feedback 08.09., Befund 7 — Phase „Kern nach vorn"). */}
+      <div className="section mb-20" style={{ borderColor: heuteAufgaben.some((a) => a.dringend) ? "var(--red-dim)" : undefined }}>
+        <div className="section-header">
+          <div>
+            <h3>Heute wichtig</h3>
+            <div className="section-sub">
+              {heuteAufgaben.length === 0
+                ? "Nichts Offenes — der Rest der Seite zeigt, wie es läuft."
+                : `${heuteAufgaben.length} ${heuteAufgaben.length === 1 ? "Sache wartet" : "Sachen warten"} auf dich`}
+            </div>
+          </div>
+        </div>
+        <div className="section-body">
+          {heuteAufgaben.length === 0 ? (
+            <div className="empty">
+              <CheckCircle2 className="empty-icon" size={36} color="var(--green)" />
+              <p>Alles erledigt. Keine offenen Mieten, Anliegen oder Fristen.</p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {heuteAufgaben.map((a) => {
+                const Icon = AUFGABEN_ICON[a.art];
+                return (
+                  <Link
+                    key={`${a.art}-${a.href}-${a.label}-${a.sub}`}
+                    href={a.href}
+                    className="heute-zeile"
+                    style={{ borderLeftColor: a.dringend ? "var(--red)" : "var(--gold)" }}
+                  >
+                    <Icon size={15} style={{ color: a.dringend ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 13.5 }}>{a.label}</span>
+                      <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{a.sub}</span>
+                    </span>
+                    <span className="heute-aktion">{a.aktion} <ArrowRight size={13} /></span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Zuerst die Frage, die ein Vermieter beim Öffnen hat: Was muss ich tun?
           Bis 08.09.2026 war dieser Block der LETZTE Abschnitt der Seite — hinter

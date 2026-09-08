@@ -321,6 +321,12 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 /* App-Icon nur im eingeklappten Rail (siehe Rail-Media-Query unten). */
 .sidebar-logo .brand-icon { display: none; border-radius: 9px; }
 .sidebar-section { padding: 16px 12px 6px; }
+/* „Planen" ist ein <details> — der Marker würde die Gruppenüberschrift
+   verschieben; der Zustand steckt im Element, nicht in JavaScript. */
+.sidebar-gruppe { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 5px; }
+.sidebar-gruppe::-webkit-details-marker { display: none; }
+.sidebar-gruppe::after { content: "›"; transition: transform var(--dur-fast) var(--ease); font-size: 13px; line-height: 1; }
+details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 .sidebar-section-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); padding: 0 8px; margin-bottom: 6px; }
 .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-sm); cursor: pointer; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); color: var(--muted); font-size: 13px; border: 1px solid transparent; }
 .nav-item:hover { background: var(--bg3); color: var(--text); }
@@ -415,6 +421,23 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
 
 /* KPI CARDS — weiße Paper-Karten auf dem Canvas (Referenz), heben beim
    Zeigen leicht an */
+/* „Heute wichtig": Zeile = Link mit genau einer Handlung. Der farbige Rand
+   links unterscheidet dringend (rot) von normal (gold), ohne die Zeile
+   einzufärben — Rot als Fläche wäre für „Miete noch nicht bestätigt" zu laut. */
+/* Geführte Demo-Wege unter dem Hero der Landing. */
+.qlx-demo-wege { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 10px 0 0; font-size: 13px; }
+.qlx-demo-wege span { color: var(--lp-muted, var(--muted)); }
+.qlx-demo-wege a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+.heute-zeile { display: flex; align-items: center; gap: 12px; padding: 11px 13px; background: var(--bg3);
+  border: 1px solid var(--line); border-left-width: 3px; border-radius: 10px; text-decoration: none;
+  color: inherit; transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease); }
+.heute-aktion { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; font-size: 12px;
+  font-weight: 600; color: var(--gold); white-space: nowrap; }
+@media (hover: hover) and (pointer: fine) { .heute-zeile:hover { background: var(--bg4); border-color: var(--line2); } }
+.heute-zeile:active { transform: scale(.995); }
+@media (max-width: 560px) { .heute-aktion span { display: none; } }
+
 .kpi-card { background: var(--bg2); border-radius: var(--r-lg); padding: 16px 18px; border: 1px solid var(--line); box-shadow: var(--shadow-1); transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease-spring); }
 /* -2px war praktisch unsichtbar. -4px plus ein leichtes Ueberschwingen
    (cubic-bezier mit y>1) laesst die Karte kurz ueber das Ziel hinausgehen und

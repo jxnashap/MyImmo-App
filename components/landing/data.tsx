@@ -6,7 +6,7 @@ import {
   MessageSquareText, Users, Wrench, ShieldCheck, FileText, Building2,
   type LucideIcon,
 } from "lucide-react";
-import { PREISE_SICHTBAR } from "@/lib/preise";
+import { PREISE_SICHTBAR, START_CTA } from "@/lib/preise";
 
 export type Feature = { ico?: LucideIcon; t: string; p: string; soon?: boolean };
 
@@ -42,7 +42,7 @@ export const PLAENE: Plan[] = [
   {
     name: "Kostenlos", preis: "0 €", jahr: null, einheiten: "1 Einheit",
     punkte: ["Objekt, Mieter & Buchungen", "Dashboard & Cashflow", "Termine & Fristen", "Verbrauch & Zähler"],
-    cta: "Kostenlos starten", highlight: false,
+    cta: START_CTA, highlight: false,
   },
   {
     name: "MyImmo Privat", preis: "7,99 €", jahr: "oder 79 € im Jahr", einheiten: "bis 5 Einheiten",
@@ -53,7 +53,7 @@ export const PLAENE: Plan[] = [
       "Dokument-Generator & Archiv",
       "Mieterportal mit Mieter-Zugängen",
     ],
-    cta: "Kostenlos starten", highlight: true, tag: "Beliebt",
+    cta: START_CTA, highlight: true, tag: "Beliebt",
   },
   {
     name: "MyImmo Plus", preis: "12,99 €", jahr: "oder 129 € im Jahr", einheiten: "bis 24 Einheiten",
@@ -64,7 +64,7 @@ export const PLAENE: Plan[] = [
       "KI-Import & alle Kalkulatoren",
       "Beleihungsordner & Bankgespräch-Paket",
     ],
-    cta: "Kostenlos starten", highlight: false,
+    cta: START_CTA, highlight: false,
   },
   {
     name: "MyImmo Business", preis: "auf Anfrage", jahr: null, einheiten: "ab 25 Einheiten · Hausverwaltungen",

@@ -630,6 +630,24 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   GitHub-Action rief `my-immo-app.vercel.app` statt der kanonischen Domain.
   **Bewusst belassen:** `darfWeiter()` sperrt bei DB-Fehler (fail-closed), obwohl der
   Kommentar „durchlassen" sagt — sicherer, kostet Verfügbarkeit bei DB-Ausfall.
+- 🎯 **„Heute wichtig" und drei Navigations-Gruppen (08.09.2026, Feedback Befund 7 + 8).**
+  **`lib/heute.ts` → `baueHeuteAufgaben()`** führt offene Mieten des laufenden Monats,
+  offene Mieter-Anliegen, nicht übernommene Zählerstände und Fristen in EINER Liste
+  zusammen — jede Zeile mit genau einem Ziel und einer Handlung. Reine Funktion, ohne
+  Datenbank und ohne React, deshalb prüfbar (`tests/heute.test.ts`).
+  Dringlichkeits-Uhren: Miete ab dem 5. des Monats, Anliegen nach 7 Tagen, Zählerstand
+  nach 14, Fristen bei Überfälligkeit oder `warn`. Dringendes steht oben, auch wenn es
+  später dran ist. **Datumsrechnung über `tageVor()` — `Date.UTC`, nie Ortszeit**
+  (dieselbe Falle wie bei `naechsteFaelligkeit`).
+  **Navigation: `lib/nav.ts` hat jetzt `VERWALTEN` / `ABRECHNEN` / `PLANEN`** (vorher elf
+  gleichrangige Punkte unter „Verwaltung"). „Planen" ist ein `<details>` — eingeklappt,
+  aber nicht versteckt, und automatisch offen, wenn man darin arbeitet. `ALLE_ZIELE` ist
+  die Liste für die Command-Palette; `VERWALTUNG`/`KALKULATOR` sind Übergangsnamen.
+  **Geführte Demo-Wege:** `/api/demo?weg=miete|nk|schaden` — **Weißliste `DEMO_ZIELE`**,
+  kein freier Pfad-Parameter (das wäre eine offene Weiterleitung auf der eigenen Domain).
+  **`START_CTA` in `lib/preise.ts`:** Solange `REGISTRIERUNG_OFFEN = false` (Zugangscode
+  nötig), heißt der Knopf „Early-Access-Zugang anfragen" statt „Kostenlos starten". Ein
+  Test hält fest, dass keine Landing-Datei die Beschriftung wieder hart einträgt.
 - 🔐 **Zwei-Faktor-Anmeldung und frische Anmeldung (08.09.2026, Feedback Befund 5 + 6).**
   Supabase-MFA (TOTP) direkt Browser ↔ Supabase (`supabase.auth.mfa.*`); was Supabase nicht
   mitbringt, liegt in **`lib/actions/mfa.ts`**: acht Wiederherstellungscodes, nur SHA-256-Hash

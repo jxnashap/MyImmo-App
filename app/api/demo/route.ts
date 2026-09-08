@@ -26,6 +26,16 @@ export const dynamic = "force-dynamic";
 
 const DEMO_EMAIL = "demo.vermieter@myimmo.test";
 
+// Geführte Demo-Wege (08.09.2026, Feedback Phase 4): Ein Besucher soll nicht
+// auf dem Dashboard landen und raten, sondern dort, wo die Frage beantwortet
+// wird, die ihn hergeführt hat. WEISSLISTE, kein freier Pfad — sonst wäre der
+// Parameter eine offene Weiterleitung auf Kosten der eigenen Domain.
+const DEMO_ZIELE: Record<string, string> = {
+  miete: "/mietkonto",
+  nk: "/tenants",
+  schaden: "/anliegen",
+};
+
 export async function GET(request: Request) {
   const ziel = new URL(request.url).origin;
 
@@ -91,6 +101,8 @@ export async function GET(request: Request) {
   // `reset` steht nur im Fehlerfall in der URL — im Normalbetrieb bleibt sie
   // sauber. Damit laesst sich von aussen (curl) pruefen, ob wirklich
   // zurueckgesetzt wurde, ohne Zugriff auf die Server-Logs.
-  const ziel_url = resetStatus === "ok" ? "/?demo=1" : `/?demo=1&reset=${resetStatus}`;
+  const gewaehlt = DEMO_ZIELE[new URL(request.url).searchParams.get("weg") ?? ""] ?? "/";
+  const basis = gewaehlt === "/" ? "/?demo=1" : `${gewaehlt}?demo=1`;
+  const ziel_url = resetStatus === "ok" ? basis : `${basis}&reset=${resetStatus}`;
   return NextResponse.redirect(new URL(ziel_url, ziel));
 }
