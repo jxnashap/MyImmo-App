@@ -49,14 +49,14 @@ Ohne diese Punkte darf kein Bezahlvorgang starten. Reihenfolge aus
 | # | Was | Wer | Anmerkung |
 |---|---|---|---|
 | **A1** | **AGB + Widerrufsbelehrung anwaltlich freigeben** | Anwalt | Fernabsatz, digitale Leistung, Erlöschen des Widerrufsrechts. Die Texte stehen (167 Zeilen), geprüft hat sie niemand |
-| **A2** | **StBerG § 1–5 klären** (Anlage V, § 82b-Optimierer, DATEV-Export) | Anwalt | **Der gewichtigste Punkt der ganzen Liste.** Kein Formfehler, sondern die Frage, ob ein Kernfeature bleiben darf |
+| **A2** | **StBerG § 1–5 klären** (Anlage V, § 82b-Verteilung, DATEV-Export) | Anwalt | **Der gewichtigste Punkt der ganzen Liste.** Kein Formfehler, sondern die Frage, ob ein Kernfeature bleiben darf. **Anfrage liegt fertig: `docs/compliance/StBerG-ANFRAGE.md`** (08.09.2026) — Funktionsbeschreibung, Wortlaute, die drei konkreten Fragen. Was noch fehlt, kann nur der Anwalt: die Antwort |
 | **A3** | **§ 34i GewO klären** (Finanzierungs-Assistent) | Anwalt | Wording ist bereits neutralisiert, Gewerbeanmeldung deckt keine Darlehensvermittlung — vermutlich unkritisch, aber ungeprüft |
 | **A4** | Paddle: Konto, Produkte/Preise, Webhook, Env, Sandbox-Test | Betreiber | Schritte 3–7 in `docs/BEZAHLSYSTEM.md`. Gewerbe-Verifizierung dauert Tage — früh anfangen |
 | ~~**A5**~~ | ~~Feature-Gates in die Server-Actions einbauen~~ | — | ✅ **erledigt 04.09.2026.** `lib/planGate.ts`, eingebaut an 9 Stellen. Ohne `BILLING_ENFORCED=true` inert **ohne Datenbankabfrage** — am laufenden Server nachgewiesen. **Beim Scharfschalten beachten: A9** |
 | **A6** | Datenschutzerklärung um den Paddle-Passus ergänzen | Betreiber | Pflicht **vor** dem ersten Checkout — Paddle ist eigener Verantwortlicher für die Zahlungsdaten |
 | **A7** | `PREISE_SICHTBAR = true` + Early-Access-Banner von `/preise` nehmen | Entwicklung | Ein Schalter in `lib/preise.ts`, steuert /preise, Preis-Teaser, Menüpunkt, Sitemap und FAQ in einem |
 | **A8** | Bestandsnutzer vorab informieren | Betreiber | Fairness und AGB-Änderungsfrist. Niemand wird automatisch kostenpflichtig |
-| **A9** | **Bestandsschutz anlegen, bevor der Schalter umgelegt wird** | Betreiber | **Am 04.09.2026 in der Produktionsdatenbank nachgemessen — nicht geschätzt.** Siehe Kasten unten. Skript liegt fertig: `scripts/sql/bestandsschutz-vor-billing.sql` |
+| ~~**A9**~~ | ✅ **Bestandsschutz — automatisch seit 08.09.2026** | erledigt | Migration `20260908082914`: 22 Konten versorgt, Trigger für neue Konten, Schalter `billing_einstellungen.bestandsschutz_offen`. Beim Scharfschalten nur noch den Schalter auf `false` — vergessen ist ungefährlich (großzügig, nicht ausschließend). Kein Termin-Skript mehr |
 
 ### A9 im Detail — der Schalter sperrt heute die eigenen Nutzer aus
 
