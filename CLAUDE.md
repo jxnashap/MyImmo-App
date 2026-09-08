@@ -204,7 +204,21 @@ setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangsco
   (Logik gedreht — vorher war Dunkel Default). Die Landing ist per Token-Freeze im
   `.lp`-Scope auf ihrer Quiet-Luxury-Palette eingefroren; PDFs/Briefe unverändert.
   **Noch offen (Runde 2):** echte Neu-Anordnung einzelner Layouts (bisher v. a. Um-Tokenisierung),
-  11px-Kleinsttexte sukzessive auf 12px, Binnennavigation für lange Mobilseiten.
+  Binnennavigation für lange Mobilseiten.
+  **11px → 12px, Stand 08.09.2026 nachgemessen — die Notiz hier war zu klein gedacht:**
+  Es gibt keinen zentralen Schalter, und „sukzessive" verdeckte 376 Einzelstellen.
+  Von 399 Fundstellen „11px" sind viele **Abstände** (`padding: 11px 13px`, `top: -11px`),
+  kein `font-size` — pauschales Ersetzen zerlegt Layouts. Echte Schriftgrößen:
+  20 Regeln in `globals.css` und **356 inline `fontSize: 11` im JSX** von 30+ Komponenten.
+  **Was gemacht ist:** Die 16 App-Regeln in `globals.css` hängen jetzt am Token
+  **`--text-xs`** (die Landing ausdrücklich NICHT — Token-Freeze; `tests/landingLayout.test.ts`
+  hält beides fest). Damit ist die Umstellung für die App-Oberfläche **eine Zeile**.
+  **Was offen ist und warum:** Der Schalter steht bewusst noch auf 11px. Ein Pixel mehr
+  kann in `.tz-rest` (feste Breite 84px), in Badges und in gesperrt gesetzten
+  Großbuchstaben-Labels umbrechen — **das muss jemand ansehen**, kein Test findet es.
+  Vorgehen: Token auf 12px, Seiten durchklicken, bei Bruch eine Zeile zurück.
+  Die 356 Inline-Stellen brauchen je eine eigene Entscheidung; sie sind dichte
+  Datenansichten, in denen 11px verteidigbar ist.
   (Die Chart-Gradients im Cashflow-Donut sind seit dem UX-Audit-Paket B abgelöst.)
 - ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
   `components/OnboardingTour.tsx` — sechs Stationen (Objekt → Mieter → Ein-/Ausgaben →

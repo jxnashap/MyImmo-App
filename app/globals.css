@@ -166,6 +166,22 @@
      KOMPLETTE box-shadow-Deklaration. */
   --gold-glow: 23,23,23;
 
+  /* --text-xs ist der Schalter fuer die Kleinsttexte der APP-Oberflaeche
+     (Kpi-Beschriftungen, Badges, Hinweise, Formular-Labels — 16 Regeln unten).
+     Die Landing benutzt ihn BEWUSST NICHT: Sie ist per Token-Freeze auf ihrer
+     Quiet-Luxury-Palette eingefroren, dort stehen die 11px fest im Code.
+
+     STAND 08.09.2026: bewusst noch 11px — die Umstellung auf 12px ist offen
+     (Design-Runde 2), aber sie will angesehen werden: `.tz-rest` hat eine
+     feste Breite von 84px, Badges und Kpi-Labels sind in Grossbuchstaben mit
+     Sperrung gesetzt. Ein Pixel mehr kann dort umbrechen. Also: umstellen,
+     Seiten durchklicken, und wenn etwas bricht, hier eine Zeile zurueck.
+
+     ACHTUNG, damit die Erwartung stimmt: Dieser Schalter deckt die 16 Regeln
+     der App-Oberflaeche ab — NICHT die rund 356 Stellen, an denen Komponenten
+     `fontSize: 11` direkt im JSX stehen haben. Die brauchen je eine eigene
+     Entscheidung; ein pauschales Ersetzen waere falsch, weil viele „11px" im
+     Code Abstaende sind (`padding: 11px 13px`) und keine Schriftgroessen. */
   --text-xs: 11px; --text-sm: 12px; --text-base: 14px; --text-md: 16px;
   --text-lg: 18px; --text-xl: 24px; --text-2xl: 30px;
   --text-3xl: 36px; --text-display: 48px;
@@ -353,7 +369,7 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 .prop-mini { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--r-sm); cursor: pointer; margin-bottom: 2px; transition: background 0.15s; }
 .prop-mini:hover { background: var(--bg3); }
 .prop-mini-icon { width: 28px; height: 28px; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; background: var(--bg4); }
-.prop-mini-name { font-size: 11px; color: var(--text); font-weight: 500; }
+.prop-mini-name { font-size: var(--text-xs); color: var(--text); font-weight: 500; }
 .prop-mini-type { font-size: 10px; color: var(--muted); }
 
 /* MAIN */
@@ -365,7 +381,7 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
    gestrafftem Tracking (Referenz: „engineered headline") · Untertitel,
    danach eine feine Trennlinie (.topbar-rule) als Auftakt des Inhalts. */
 .topbar { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 26px; gap: 16px; flex-wrap: wrap; }
-.topbar-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: var(--track-caption); color: var(--gold); font-weight: 600; margin-bottom: 10px; }
+.topbar-kicker { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--track-caption); color: var(--gold); font-weight: 600; margin-bottom: 10px; }
 .topbar-title { font-family: var(--font-ui); font-size: var(--text-2xl); font-weight: 600; letter-spacing: var(--track-heading); color: var(--text); line-height: 1.2; }
 .topbar-sub { font-size: 13px; color: var(--muted); margin-top: 4px; max-width: 72ch; }
 .topbar-rule { height: 1px; background: var(--line); margin: 0 0 30px; border: 0; }
@@ -388,7 +404,7 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 .card { background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-1); }
 .card-header { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; }
 .card-title { font-size: 13px; font-weight: 600; color: var(--text); }
-.card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.card-sub { font-size: var(--text-xs); color: var(--muted); margin-top: 2px; }
 .card-body { padding: 20px; }
 .section { background: var(--bg2); border-radius: var(--r-lg); border: 1px solid var(--line); margin-bottom: 18px; overflow: hidden; box-shadow: var(--shadow-1); transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
 .section:hover { border-color: var(--line2); box-shadow: var(--shadow-2); }
@@ -446,22 +462,22 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 a.kpi-card:active { transform: scale(.985); }
 /* Betonte KPI (z. B. Cashflow) — goldene Ruhefläche statt Inline-Styles */
 .kpi-card.highlight { background: var(--gold-pale); border-color: var(--gold-dim); }
-.kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: var(--track-caption); color: var(--muted); margin-bottom: 8px; }
+.kpi-label { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--track-caption); color: var(--muted); margin-bottom: 8px; }
 .kpi-value { font-family: var(--font-ui); font-weight: 600; font-size: 24px; color: var(--text); line-height: 1.1; letter-spacing: var(--track-heading); }
-.kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.kpi-sub { font-size: var(--text-xs); color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 
 /* STAT BOXES */
 .stat-box { background: var(--bg3); border-radius: var(--r-md); padding: 14px 16px; border: 1px solid var(--line); box-shadow: var(--shadow-1); }
 .stat-box.highlight { background: var(--gold-pale); border-color: var(--gold-dim); }
-.stat-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: var(--track-caption); color: var(--muted); margin-bottom: 6px; }
+.stat-lbl { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--track-caption); color: var(--muted); margin-bottom: 6px; }
 .stat-val { font-family: var(--font-ui); font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.1; letter-spacing: var(--track-heading); }
 .stat-val.gold { color: var(--gold); }
 .stat-val.green { color: var(--green); }
 .stat-val.red { color: var(--red); }
-.stat-note { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.stat-note { font-size: var(--text-xs); color: var(--muted); margin-top: 4px; }
 
 /* BADGES */
-.badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: var(--r-full); font-size: 11px; font-weight: 500; gap: 4px; }
+.badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: var(--r-full); font-size: var(--text-xs); font-weight: 500; gap: 4px; }
 .badge-gold { background: var(--gold-pale); color: var(--gold); border: 1px solid var(--gold-dim); }
 .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
 .badge-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,75,0.3); }
@@ -653,7 +669,7 @@ tr.no-hover:hover td { background: transparent; }
 .prop-card-header { padding: 16px; display: flex; align-items: flex-start; gap: 12px; }
 .prop-icon { width: 42px; height: 42px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; background: var(--bg3); }
 .prop-card-name { font-weight: 600; font-size: 14px; }
-.prop-card-addr { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.prop-card-addr { font-size: var(--text-xs); color: var(--muted); margin-top: 2px; }
 .prop-card-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid var(--line); }
 .prop-stat { padding: 12px 14px; text-align: center; border-right: 1px solid var(--line); }
 .prop-stat:last-child { border-right: none; }
@@ -674,7 +690,7 @@ tr.no-hover:hover td { background: transparent; }
 /* Label als Flex-Zeile: Tailwind-Preflight setzt `svg { display: block }`,
    dadurch sprang jedes Icon in einem Label auf eine eigene Zeile ("Icon
    bricht mitten im Fliesstext um" aus dem UX-Audit). */
-.form-group label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: var(--track-caption); display: flex; align-items: center; gap: 5px; }
+.form-group label { font-size: var(--text-xs); font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: var(--track-caption); display: flex; align-items: center; gap: 5px; }
 .form-group label > svg { flex-shrink: 0; }
 /* Dasselbe Preflight-Problem in Fliesstext: ein Icon mitten im Satz landete
    auf einer eigenen Zeile und riss den Absatz auseinander. */
@@ -706,7 +722,7 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 
 /* DIVIDER / HINT */
 .divider { height: 1px; background: var(--line); margin: 16px 0; }
-.hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.hint { font-size: var(--text-xs); color: var(--muted); margin-top: 4px; }
 
 /* SECTION TITLE (kalkulator) */
 .section-title { font-family: var(--font-ui); font-size: 20px; font-weight: 600; letter-spacing: var(--track-heading); margin-bottom: 4px; }
@@ -810,7 +826,7 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 .tz-punkt { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin: 0 5px; }
 .tz-datum { width: 96px; flex-shrink: 0; font-size: 12px; color: var(--muted); }
 .tz-text { flex: 1; min-width: 0; }
-.tz-rest { font-size: 11px; width: 84px; text-align: right; flex-shrink: 0; }
+.tz-rest { font-size: var(--text-xs); width: 84px; text-align: right; flex-shrink: 0; }
 
 @media (max-width: 640px) {
   /* Zwei Zeilen: oben Punkt + Titel, darunter Datum, Restzeit, Kategorie und
@@ -1388,7 +1404,7 @@ select:focus-visible, textarea:focus-visible {
 .brief-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .brief-logo { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 600; color: var(--text); }
 .brief-logo span { font-style: italic; font-weight: 300; color: var(--gold); }
-.brief-absender { text-align: right; font-size: 11px; color: var(--muted); line-height: 1.5; }
+.brief-absender { text-align: right; font-size: var(--text-xs); color: var(--muted); line-height: 1.5; }
 .brief-absender strong { display: block; font-size: 12px; color: var(--text); }
 .brief-goldline { height: 1px; background: var(--gold); opacity: 0.7; margin-top: 10px; }
 /* DIN-5008-Adressfeld (Form B, Fensterkuvert): absolut zur Blattkante */
@@ -1399,7 +1415,7 @@ select:focus-visible, textarea:focus-visible {
 .brief-ortdatum .ref { font-size: 10.5px; color: var(--faint); margin-top: 3px; }
 .brief-betreff { margin-top: 20px; }
 .brief-betreff h2 { font-family: inherit; font-size: 15.5px; font-weight: 700; color: var(--text); margin: 0; }
-.brief-betreff .unter { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.brief-betreff .unter { font-size: var(--text-xs); color: var(--muted); margin-top: 2px; }
 .brief-betreff-linie { height: 2px; width: 200px; background: var(--gold); margin: 8px 0 0; }
 .brief-body { margin-top: 22px; }
 .brief-body p { margin: 0 0 12px; }
@@ -2343,7 +2359,7 @@ select:focus-visible, textarea:focus-visible {
   content: "▾";
   margin-left: auto;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-xs);
   transition: transform .15s ease;
 }
 .klapp[open] > summary::after { transform: rotate(180deg); }
