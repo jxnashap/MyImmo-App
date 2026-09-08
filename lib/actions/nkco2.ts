@@ -98,13 +98,18 @@ export async function bucheCo2Vermieteranteil(
     return { ok: false, error: "Vermieteranteil ist 0 € — nichts zu buchen." };
 
   const buchungsdatum = `${jahr}-12-31`;
-  const { data: vorhanden } = await supabase
+  // Leer heißt hier „noch nicht gebucht" — eine fehlgeschlagene Abfrage sieht
+  // genauso aus. Ohne diese Prüfung landet der CO₂-Vermieteranteil ein zweites
+  // Mal in den Werbungskosten und damit in der Anlage V.
+  const { data: vorhanden, error: pruefFehler } = await supabase
     .from("kosten")
     .select("id")
     .eq("mieter_id", mieterId)
     .eq("kategorie", KOSTEN_KATEGORIE)
     .eq("buchungsdatum", buchungsdatum)
     .limit(1);
+  if (pruefFehler)
+    return { ok: false, error: "Bestehende Buchungen konnten nicht geprüft werden — es wurde nichts gebucht." };
   if (vorhanden && vorhanden.length > 0)
     return { ok: false, error: `Für ${jahr} bereits gebucht (siehe Kosten).` };
 

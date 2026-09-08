@@ -313,14 +313,71 @@ einen Fehler zu machen, würde harmlose Fälle zu Fehlermeldungen erheben.
 Fehlerauswertung und jede Aufrufstelle, die die Rückgabe wegwirft. Alle Verhaltenstests
 wurden gegen absichtlich eingebaute Fehler geprüft (11 Mutationen, alle rot).
 
-**Offen:** 20 Dateien, ~1.755 Zeilen — nach drei Durchgängen ohne bekanntes Zahlen-,
+### Paket A abgearbeitet: Termine, CO₂, Bewertung (08.09.2026)
+
+Erstes von vier Paketen des restlichen T2 — nach Nutzen sortiert, nicht nach Dateigröße:
+die drei Dateien, in denen sich verrechnen lässt. 47 neue Verhaltenstests, jeder gegen
+absichtlich eingebaute Fehler geprüft (25 Mutationen, alle rot).
+
+**Der schwerwiegendste Fund war der Wächter selbst.** `schreibFehler.test.ts` meldete
+`lib/actions/bewertung.ts` als sauber — er hatte die Datei nie angesehen. Der Erkenner
+zählte Klammern im Rohtext, und die Kommentare `// 1)` … `// 5)` in dieser Datei enthalten
+schließende Klammern ohne öffnende. Die Klammertiefe rutschte ins Negative, es wurde keine
+einzige Anweisung mehr erkannt, und der Test war grün. Dahinter lagen **vier Schreibvorgänge
+ohne jede Fehlerauswertung**: der berechnete Marktwert, der Vergleichsangebots-Schnappschuss
+(Löschen und Einfügen) und die Wert-Historie. Der Knopf meldete „Aktualisiert", während
+nichts gespeichert war.
+Behoben in `tests/stubs/tsAnweisungen.ts` (Kommentare und Zeichenketten werden entfernt,
+bevor gezählt wird) **plus einem Test, der beweist, dass der Erkenner hingesehen hat**.
+Merksatz: Ein Wächter, der still nichts findet, ist schlimmer als keiner.
+
+**Vierte Fehlerklasse gefunden: Prüf-Abfragen, die fail-open scheitern.** Der dritte
+Durchgang hatte nur SCHREIB-Vorgänge betrachtet. Eine Abfrage, deren LEERES Ergebnis
+„dann leg los" bedeutet, ist genauso gefährlich — eine fehlgeschlagene Abfrage kommt
+ebenfalls leer zurück. Von 40 Lese-Abfragen ohne Fehlerauswertung waren **sieben** von
+dieser Sorte, alle behoben:
+
+| Stelle | Was ohne die Prüfung passiert |
+|---|---|
+| `mietkonto.ts` (Einzelbuchung) | Mieteingang doppelt in Cashflow und Anlage V — der Fix vom 04.09. betraf nur die Nacherfassung |
+| `nkco2.ts` | CO₂-Vermieteranteil doppelt in den Werbungskosten |
+| `wiederkehr.ts` | Die Vorlage legt **alle** ihre Buchungen ein zweites Mal an |
+| `properties.ts` | Zweite Miet-Vorlage → Miete doppelt im Cashflow |
+| `termine.ts` | Folgetermin doppelt |
+| `bewertung.ts` | Wert-Historie bekommt bei jedem Lauf denselben Wert erneut |
+| `zaehler.ts` | Verbrauch eines ganzen Zeitraums fehlt dauerhaft in der NK-Abrechnung |
+
+Die übrigen 33 Lese-Abfragen scheitern fail-closed (`if (!x) return …`) oder reichern nur
+Anzeigetexte an; sie bleiben bewusst wie sie sind.
+
+**Zwei weitere Funde in `termine.ts` / `lib/termine.ts`:**
+- `updateTermin` hatte ein **kommentarloses `return`**, wenn Titel oder Datum fehlten —
+  derselbe Fall, den `createTermin` zwanzig Zeilen darüber ausdrücklich als Fehler
+  beschreibt („der Nutzer klickte ein zweites Mal"). Beim Bearbeiten stand er noch drin.
+- `naechsteFaelligkeit` rechnete **zeitzonenabhängig**: `new Date("2026-03-15")` (UTC)
+  gemischt mit `getDate()`/`setDate()` (Ortszeit) und `toISOString()` (wieder UTC).
+  Gemessen: `TZ=Europe/Berlin` schob den 15.03. um einen Monat auf den **14.04.**
+  (Sommerzeit), `TZ=America/New_York` den 31.01. auf den **01.03.** Auf Vercel läuft alles
+  in UTC, produktiv war das Ergebnis richtig — es hing aber an einer Einstellung, die
+  niemand hier verwaltet. Jetzt reine Kalenderarithmetik; ein Test vergleicht vier Zonen.
+
+**Falle im Prüfstand, die dabei aufflog:** Ohne `vi.resetModules()` liefert ein zweites
+`await import` in DEMSELBEN Test das gecachte Modul — es hängt noch an der ersten Attrappe,
+und der frische `db` bleibt leer. Ein Test mit einer Schleife über mehrere Eingaben prüft
+dann nur den ersten Durchlauf. `resetModules()` steht jetzt in jedem `lade()`-Helfer aller
+15 Action-Testdateien; alle blieben grün, es war also nichts kaputt — aber es war Zufall.
+
+**Offen:** 17 Dateien, ~1.280 Zeilen — nach drei Durchgängen ohne bekanntes Zahlen-,
 Datei- oder Schreibfehler-Risiko.
 **Zahl am 08.09.2026 korrigiert:** Hier stand „14 von 29". Tatsächlich enthält
 `lib/actions/` **35** Dateien, und 15 werden von Tests importiert — offen sind also **20**,
 nicht 14. Die alte Zahl entstand daraus, dass Dateien, die nur beiläufig in einer anderen
 Testdatei mitliefen, als abgedeckt gezählt wurden.
-Die nächsten nach Nutzen: `termine.ts` (216 Z.), `makler.ts` (177), `bewertung.ts` (136),
-`dokumente.ts` (134), `nkco2.ts` (127), `importDaten.ts` (124).
+Als Nächstes **Paket B (Fremdzugriff)**: `beleihungPublic.ts` (68 Z., neben
+`bewerbenPublic.ts` die zweite Action ohne Login), `archivFreigabe.ts` (49),
+`makler.ts` (177 — Strukturzwilling von `beleihung.ts`, dessen Tests sich weitgehend
+übertragen lassen). Danach Paket C (`importDaten.ts` 124, `dokumente.ts` 134,
+`archiv.ts` 78) und Paket D (11 kleine Dateien unter 100 Zeilen).
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
 bisher nicht hat. (`actionFehler()` ist die Ausnahme: Die Logik wurde bewusst aus dem
 Bauteil herausgezogen, damit sie ohne DOM prüfbar ist.)

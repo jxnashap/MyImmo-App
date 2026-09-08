@@ -25,6 +25,7 @@ afterEach(() => {
 });
 
 async function lade(init = {}) {
+  vi.resetModules();
   const { db, client } = fakeSupabase(init);
   const spuren = mockeNextUndSupabase(client);
   const mod = await import("@/lib/actions/properties");
@@ -166,5 +167,21 @@ describe("Wert-Übernahmen prüfen ihre Eingaben", () => {
     const { db, mod } = await lade();
     await mod.uebernehmeAfaGebaeudeanteil("p1", 78.4567);
     expect(schrieb(db, "properties")?.afa_gebaeudeanteil).toBe(78.5);
+  });
+});
+
+describe("Buchungsvorlagen beim Objekt-Speichern", () => {
+  it("scheitert die Bestandsabfrage, wird KEINE zweite Vorlage angelegt", async () => {
+    // Leer heißt „noch keine Vorlage". Eine fehlgeschlagene Abfrage sieht
+    // genauso aus — die Miete stünde danach doppelt im Cashflow.
+    const { db, spuren, mod } = await lade({
+      fehlerBei: { "wiederkehrende_buchungen:select": { message: "connection reset" } },
+    });
+    await mod
+      .updateProperty("obj-1", fd({ bezeichnung: "Haus A", obj_status: "Vermietet", miete: "800" }))
+      .catch(() => {});
+    expect(db.zugriffe.some((x) => x.tabelle === "wiederkehrende_buchungen" && x.op === "insert")).toBe(false);
+    // Und der Nutzer erfährt davon.
+    expect(decodeURIComponent(spuren.redirects.at(-1)!)).toMatch(/Buchungsvorlagen konnten nicht/);
   });
 });

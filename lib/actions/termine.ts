@@ -64,13 +64,18 @@ export async function updateTermin(id: string, formData: FormData) {
 
   const titel = String(formData.get("titel") ?? "").trim();
   const datum = String(formData.get("datum") ?? "");
-  if (!titel || !datum) return;
+  // Hier stand ein kommentarloses `return` — derselbe Fall, den `createTermin`
+  // ein paar Zeilen weiter oben ausdrücklich als Fehler beschreibt: Der Nutzer
+  // speichert, nichts passiert, nichts wird gesagt. Ununterscheidbar von Erfolg.
+  if (!titel || !datum) {
+    redirect(flashUrl("/termine", "Bitte Titel und Datum angeben — es wurde nichts gespeichert."));
+  }
 
   const { error } = await supabase.from("termine").update({
     titel,
     datum,
     ...feldWerte(formData),
-  }).eq("id", id);
+  }).eq("id", id).eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/termine");
@@ -79,7 +84,9 @@ export async function updateTermin(id: string, formData: FormData) {
 
 export async function deleteTermin(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("termine").delete().eq("id", id);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  const { error } = await supabase.from("termine").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/termine");
 }
@@ -95,24 +102,33 @@ export async function toggleErledigt(id: string) {
     .from("termine")
     .select("id,titel,datum,prop_id,mieter_id,notiz,kategorie,wiederkehrung,vorlauf_tage,erledigt")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
   if (!t) throw new Error("Termin nicht gefunden.");
 
   const neuErledigt = !t.erledigt;
-  const { error } = await supabase.from("termine").update({ erledigt: neuErledigt }).eq("id", id);
+  const { error } = await supabase
+    .from("termine")
+    .update({ erledigt: neuErledigt })
+    .eq("id", id)
+    .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   if (neuErledigt && t.wiederkehrung && t.datum) {
     const next = naechsteFaelligkeit(t.datum, t.wiederkehrung);
     if (next) {
       // Doppelklick-Schutz: nächste Instanz nur, wenn nicht schon vorhanden.
-      const { data: vorhanden } = await supabase
+      // Leer = „gibt es noch nicht". Eine fehlgeschlagene Abfrage sieht genauso
+      // aus und legte den Folgetermin ein zweites Mal an.
+      const { data: vorhanden, error: pruefFehler } = await supabase
         .from("termine")
         .select("id")
+        .eq("user_id", user.id)
         .eq("titel", t.titel)
         .eq("datum", next)
         .limit(1)
         .maybeSingle();
+      if (pruefFehler) throw new Error(`Folgetermin konnte nicht geprüft werden: ${pruefFehler.message}`);
       if (!vorhanden) {
         // Fehler auswerten wie beim Abhaken darüber: Sonst gilt der Termin als
         // erledigt, der Folgetermin fehlt aber stillschweigend — und genau der

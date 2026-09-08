@@ -112,10 +112,16 @@ export async function erzeugeBuchungen(
   const tabelle = v.art === "einnahme" ? "einnahmen" : "kosten";
 
   // Bereits erzeugte Buchungen dieser Vorlage (für Dedup).
-  const { data: vorhanden } = await supabase
+  // Leer = „noch nichts erzeugt". Käme die Abfrage wegen eines Fehlers leer
+  // zurück, gälte JEDER fällige Termin als offen — die Vorlage würde ihre
+  // gesamten Buchungen ein zweites Mal anlegen.
+  const { data: vorhanden, error: bestandFehler } = await supabase
     .from(tabelle)
     .select("buchungsdatum")
     .eq("wiederkehr_id", vorlageId);
+  if (bestandFehler) {
+    return { ok: false, anzahl: 0, error: "Bestehende Buchungen konnten nicht geprüft werden — es wurde nichts angelegt." };
+  }
 
   const faellig = faelligeDaten({
     zyklus: v.zyklus,

@@ -17,6 +17,7 @@ afterEach(() => {
 });
 
 async function lade(init = {}) {
+  vi.resetModules();
   const { db, client } = fakeSupabase(init);
   mockeNextUndSupabase(client);
   const mod = await import("@/lib/actions/wiederkehr");
@@ -216,5 +217,27 @@ describe("Buchungen erzeugen: der Dedup ist die Kernfunktion", () => {
     });
     await mod.erzeugeBuchungen("v1");
     expect(insertZeilen(db, "kosten")[0]).toMatchObject({ beschreibung: "Hausgeld (wiederkehrend)" });
+  });
+});
+
+describe("Dedup-Abfrage der Vorlage", () => {
+  it("scheitert sie, wird KEINE Buchung erzeugt", async () => {
+    // Käme die Abfrage wegen eines Fehlers leer zurück, gälte jeder fällige
+    // Termin als offen — die Vorlage legte ihre gesamten Buchungen ein
+    // zweites Mal an.
+    const { db, mod } = await lade({
+      antworten: {
+        wiederkehrende_buchungen: {
+          id: "v1", art: "einnahme", zyklus: "monatlich",
+          start_datum: "2026-01-01", ende_datum: "2026-06-01",
+          kategorie: "Miete", betrag: 800, prop_id: "obj-1", mieter_id: "m1", beschreibung: null,
+        },
+      },
+      fehlerBei: { "einnahmen:select": { message: "connection reset" } },
+    });
+    const r = await mod.erzeugeBuchungen("v1");
+    expect(r.ok).toBe(false);
+    expect(String(r.error)).toMatch(/geprüft/);
+    expect(db.zugriffe.some((x) => x.tabelle === "einnahmen" && x.op === "insert")).toBe(false);
   });
 });

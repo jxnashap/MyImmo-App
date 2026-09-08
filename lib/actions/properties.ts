@@ -71,13 +71,17 @@ async function autoBuchungen(
     aktivSoll: boolean,
     beschreibung: string,
   ) => {
-    const { data: rows } = await supabase
+    // Leer = „noch keine Vorlage". Eine fehlgeschlagene Abfrage sieht genauso
+    // aus und legte eine ZWEITE Miet-Vorlage an — die Miete stünde doppelt im
+    // Cashflow. Der Aufrufer meldet den Fehlschlag in der Erfolgsmeldung.
+    const { data: rows, error: leseFehler } = await supabase
       .from("wiederkehrende_buchungen")
       .select("id,betrag,aktiv")
       .eq("prop_id", propId)
       .eq("art", art)
       .eq("kategorie", kategorie)
       .limit(1);
+    if (leseFehler) return false;
     const vorhanden = rows?.[0] as { id: string; betrag: number | null; aktiv: boolean | null } | undefined;
 
     // Der Fehler wird zurückgegeben, nicht geworfen: Das Objekt ist zu diesem

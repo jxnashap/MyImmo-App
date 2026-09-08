@@ -22,6 +22,7 @@ afterEach(() => {
 });
 
 async function lade(modul: string, init = {}) {
+  vi.resetModules();
   const { db, client } = fakeSupabase(init);
   const spuren = mockeNextUndSupabase(client);
   const mod = await import(modul);

@@ -94,7 +94,10 @@ export async function refreshBewertung(propId: string, formData: FormData) {
   };
 
   // 5) Persistieren.
-  await supabase.from("properties").update({
+  // Fehler werden geworfen, nicht verschluckt: Der Knopf meldet sonst
+  // „Aktualisiert", während der berechnete Marktwert nirgends steht. So halten
+  // es `createTermin`/`updateTermin` auch.
+  const { error: propFehler } = await supabase.from("properties").update({
     latitude: lat, longitude: lng,
     bodenrichtwert: brw, bodenrichtwert_stichtag: brwStichtag,
     liegenschaftszins: kennzahlen.liegenschaftszinsProzent,
@@ -105,30 +108,44 @@ export async function refreshBewertung(propId: string, formData: FormData) {
     marktwert_stand: erg.marktwert != null ? now : null,
     bewertungsverfahren: erg.verfahren,
     bewertung_quelleninfo: quelleninfo,
-  }).eq("id", propId);
+  }).eq("id", propId).eq("user_id", user.id);
+  if (propFehler) throw new Error(`Bewertung konnte nicht gespeichert werden: ${propFehler.message}`);
 
-  // Comparables-Snapshot ersetzen.
-  await supabase.from("vergleichsangebote").delete().eq("immobilie_id", propId);
+  // Comparables-Snapshot ersetzen. Beide Schritte werden geprüft — ein
+  // gelungenes Löschen mit gescheitertem Einfügen hinterlässt sonst eine leere
+  // Vergleichsliste, die aussieht, als gäbe es keine Angebote.
+  const { error: loeschFehler } = await supabase
+    .from("vergleichsangebote")
+    .delete()
+    .eq("immobilie_id", propId)
+    .eq("user_id", user.id);
+  if (loeschFehler) throw new Error(`Vergleichsangebote konnten nicht ersetzt werden: ${loeschFehler.message}`);
   if (comps.length) {
-    await supabase.from("vergleichsangebote").insert(comps.map((c) => ({
+    const { error: compFehler } = await supabase.from("vergleichsangebote").insert(comps.map((c) => ({
       user_id: user.id, immobilie_id: propId, quelle: c.quelle, externe_id: c.externe_id, art: c.art,
       flaeche: c.flaeche, zimmer: c.zimmer, preis: c.preis, preis_pro_qm: c.preis_pro_qm,
       distanz_km: c.distanz_km, angebots_datum: c.angebots_datum,
     })));
+    if (compFehler) throw new Error(`Vergleichsangebote konnten nicht gespeichert werden: ${compFehler.message}`);
   }
 
   // Historie fortschreiben — nur wenn Wert vorliegt UND sich geändert hat.
   if (erg.marktwert != null) {
-    const { data: letzte } = await supabase
+    // Der Abfragefehler MUSS ausgewertet werden: Eine fehlgeschlagene Abfrage
+    // kommt leer zurück und sieht damit aus wie „noch kein Wert erfasst" — die
+    // Historie bekäme bei jedem Lauf einen weiteren Eintrag mit demselben Wert.
+    const { data: letzte, error: histFehler } = await supabase
       .from("bewertung_historie").select("marktwert").eq("immobilie_id", propId)
       .order("datum", { ascending: false }).limit(1);
+    if (histFehler) throw new Error(`Wert-Historie konnte nicht gelesen werden: ${histFehler.message}`);
     const vorher = letzte?.[0]?.marktwert ?? null;
     if (vorher == null || Math.round(vorher) !== erg.marktwert) {
-      await supabase.from("bewertung_historie").insert({
+      const { error: neuFehler } = await supabase.from("bewertung_historie").insert({
         user_id: user.id, immobilie_id: propId, verfahren: erg.verfahren,
         marktwert: erg.marktwert, mietwert: erg.mietwert,
         eingangsdaten: { kennzahlen, comparables: comps.slice(0, 20), quelleninfo }, quelle: "ImmoWertV/App",
       });
+      if (neuFehler) throw new Error(`Wert-Historie konnte nicht fortgeschrieben werden: ${neuFehler.message}`);
     }
   }
 

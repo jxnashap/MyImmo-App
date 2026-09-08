@@ -22,6 +22,7 @@ afterEach(() => {
 });
 
 async function lade(init = {}) {
+  vi.resetModules();
   const { db, client } = fakeSupabase({ antworten: { beleihung_dokumente: { item_key: "grundbuch" } }, ...init });
   mockeNextUndSupabase(client);
   const mod = await import("@/lib/actions/beleihung");

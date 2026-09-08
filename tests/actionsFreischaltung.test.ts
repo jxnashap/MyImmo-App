@@ -41,6 +41,7 @@ function mockeBremse(durchlassen = true) {
 }
 
 async function lade(init = {}, bremseDurchlassen = true) {
+  vi.resetModules();
   mockeBremse(bremseDurchlassen);
   const { db, client } = fakeSupabase(init);
   mockeNextUndSupabase(client);
