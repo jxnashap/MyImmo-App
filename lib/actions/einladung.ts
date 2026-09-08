@@ -42,13 +42,16 @@ export async function erzeugeEinladungscode(mieterId: string) {
     .maybeSingle();
   if (!mieter) return { error: "Mieter nicht gefunden." };
 
-  // Alte, noch nicht eingelöste Codes dieses Mieters ersetzen.
-  await supabase
+  // Alte, noch nicht eingelöste Codes dieses Mieters ersetzen. Schlägt das
+  // fehl, darf NICHT weitergemacht werden: Sonst gäbe es zwei gültige Codes
+  // für denselben Mieter, und der alte ist womöglich schon weitergegeben.
+  const { error: altFehler } = await supabase
     .from("einladungscodes")
     .delete()
     .eq("mieter_id", mieterId)
     .eq("vermieter_id", user.id)
     .is("eingeloest_am", null);
+  if (altFehler) return { error: "Der bisherige Code konnte nicht ersetzt werden. Bitte erneut versuchen." };
 
   const code = neuerCode();
   const { data, error } = await supabase
@@ -75,12 +78,15 @@ export async function widerrufeEinladung(mieterId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
 
-  await supabase
+  // Fehler auswerten: „widerrufen" gemeldet, Code weiterhin gültig — genau der
+  // Fall, den ein Widerruf verhindern soll.
+  const { error } = await supabase
     .from("einladungscodes")
     .delete()
     .eq("mieter_id", mieterId)
     .eq("vermieter_id", user.id)
     .is("eingeloest_am", null);
+  if (error) return { error: "Einladung konnte nicht widerrufen werden — der Code ist weiterhin gültig." };
   revalidatePath(`/tenants/${mieterId}`);
   return { ok: true };
 }

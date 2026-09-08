@@ -114,7 +114,10 @@ export async function toggleErledigt(id: string) {
         .limit(1)
         .maybeSingle();
       if (!vorhanden) {
-        await supabase.from("termine").insert({
+        // Fehler auswerten wie beim Abhaken darüber: Sonst gilt der Termin als
+        // erledigt, der Folgetermin fehlt aber stillschweigend — und genau der
+        // ist der Zweck einer Wiederkehrung.
+        const { error: folgeFehler } = await supabase.from("termine").insert({
           user_id: user.id,
           titel: t.titel,
           datum: next,
@@ -125,6 +128,7 @@ export async function toggleErledigt(id: string) {
           wiederkehrung: t.wiederkehrung,
           vorlauf_tage: t.vorlauf_tage,
         });
+        if (folgeFehler) throw new Error(`Folgetermin konnte nicht angelegt werden: ${folgeFehler.message}`);
       }
     }
   }

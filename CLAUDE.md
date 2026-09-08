@@ -529,3 +529,33 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Ehrlich zur Schwere:** Der Angreifer muss ein registrierter Vermieter sein und jemanden
   dazu bringen, seinen Freigabe-Link zu öffnen (`/beleihung/<token>/datei/<key>` ist die
   einzige dieser Routen ohne Login). Kein Selbstläufer — aber billig zu schließen.
+- 🔇 **Dritter Durchgang (08.09.2026): stille Schreibfehler.** Von 128 Schreiboperationen
+  in `lib/actions/` werteten **20** den `error` der Datenbank gar nicht aus und gaben
+  danach bedingungslos `{ ok: true }` zurück. **Vier davon waren mehr als Kosmetik:**
+  `widerrufeServiceCode` und `widerrufeEinladung` meldeten „widerrufen", während der
+  Zugangscode weiter einlösbar blieb; `erzeugeEinladungscode` legte einen neuen Code an,
+  ohne dass das Löschen des alten geprüft wurde (**zwei gültige Codes**); und
+  `uebernimmAuftragAlsKosten` schrieb die `kosten_id` ungeprüft — ohne sie hält der Auftrag
+  sich für unverbucht und erzeugt beim nächsten Klick eine **zweite Kosten-Buchung**
+  (derselbe Doppelbuchungs-Fehler wie in `mietkonto.ts`, nur an anderer Stelle).
+  **Zweite Hälfte desselben Fehlers — in der Oberfläche:** Alle DeleteButton-Stellen riefen
+  `action={async () => { await x(); }}` auf und warfen die Rückgabe weg; der Knopf meldete
+  anschließend „Gelöscht.". Serverseitig einen Fehler zurückzugeben nützt nichts, solange
+  der Aufrufer ihn verwirft. Jetzt entscheidet **`lib/actionErgebnis.ts` → `actionFehler()`**
+  an einer Stelle, und `DeleteButton` zeigt die Meldung an.
+  **Regel: Jeder Schreibvorgang in `lib/actions/` wertet `error` aus, und jeder Aufrufer
+  wertet die Rückgabe aus.** `tests/schreibFehler.test.ts` wird sonst rot.
+  **Was NICHT gefunden wurde — ein Ergebnis, kein Nicht-Ergebnis:** Ein Schreibzugriff über
+  Mandantengrenzen ist nicht möglich. Live gegen die Datenbank geprüft: alle **45 Tabellen**
+  in `public` haben RLS aktiv, und jede Tabelle, in die nur über `.eq("id", …)` geschrieben
+  wird, hat eine UPDATE/DELETE-Policy auf `auth.uid() = user_id` (bzw. `vermieter_id`).
+  Die 38 Schreibzugriffe ohne eigenen Mandantenfilter sind dadurch abgesichert; in
+  `deleteIban` und `deleteProperty` steht der Filter trotzdem jetzt ausdrücklich dabei.
+  **Bewusst NICHT umgesetzt: „0 betroffene Zeilen" als Fehler zu werten.** Ein per RLS
+  geblocktes UPDATE liefert keinen Fehler, sondern null Zeilen — das gilt aber genauso für
+  ein doppelt ausgelöstes Löschen und für die Demo-Sperre. Daraus einen Fehler zu machen,
+  würde harmlose Fälle zu Fehlermeldungen erheben.
+- **Prüfstand-Erweiterung (08.09.2026): `db.fehlerBei`.** `db.fehler` trifft JEDEN Zugriff,
+  auch die Abfragen davor — eine Action, die vorher korrekt abbricht, erreicht die zu
+  prüfende Stelle dann nie, und der Test wäre aus dem falschen Grund grün. `fehlerBei`
+  setzt den Fehler gezielt (`"tabelle"` oder `"tabelle:op"`).

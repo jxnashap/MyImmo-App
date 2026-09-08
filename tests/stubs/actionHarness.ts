@@ -42,8 +42,18 @@ export type FakeDb = {
   antwortFolge: Record<string, unknown[]>;
   /** Werte für `select(..., { count: "exact" })`. */
   zaehler: Record<string, number>;
-  /** Fehler, den der nächste Schreibvorgang melden soll. */
+  /** Fehler, den JEDER Zugriff melden soll (grobe Keule). */
   fehler: { message: string; code?: string } | null;
+  /**
+   * Fehler nur an einer bestimmten Stelle — Schlüssel `"tabelle"` oder
+   * `"tabelle:op"`, `op` = select/insert/update/delete/upsert.
+   *
+   * Warum das nötig ist: `fehler` trifft auch die Abfragen DAVOR. Eine Action,
+   * die erst etwas liest oder anlegt und dabei den Fehler korrekt behandelt,
+   * bricht dann schon vorher ab — die Stelle, um die es geht, wird nie
+   * erreicht, und der Test wäre aus dem falschen Grund grün.
+   */
+  fehlerBei: Record<string, { message: string; code?: string }>;
   /** Rückgaben für `rpc(name, …)`. */
   rpc: Record<string, unknown>;
 };
@@ -62,6 +72,7 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
     antwortFolge: {},
     zaehler: {},
     fehler: null,
+    fehlerBei: {},
     rpc: {},
     ...init,
   };
@@ -77,7 +88,9 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
       const grob = db.antwortFolge[tabelle];
       const folge = genau && genau.length > 0 ? genau : grob;
       const data = folge && folge.length > 0 ? folge.shift() : (db.antworten[tabelle] ?? null);
-      return { data: data ?? null, error: db.fehler, count: db.zaehler[tabelle] };
+      const gezielt: FakeDb["fehler"] =
+        db.fehlerBei[`${tabelle}:${z.op}`] ?? db.fehlerBei[tabelle] ?? null;
+      return { data: data ?? null, error: gezielt ?? db.fehler, count: db.zaehler[tabelle] };
     };
 
     const k: Record<string, unknown> = {};
@@ -107,9 +120,13 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
 
   const client = {
     from: (tabelle: string) => kette(tabelle),
-    rpc: async (name: string, _args?: unknown) => {
+    rpc: async (
+      name: string,
+      _args?: unknown,
+    ): Promise<{ data: unknown; error: FakeDb["fehler"] }> => {
       db.zugriffe.push({ tabelle: `rpc:${name}`, op: "rpc", filter: [] });
-      return { data: db.rpc[name] ?? null, error: db.fehler };
+      const gezielt: FakeDb["fehler"] = db.fehlerBei[`rpc:${name}`] ?? null;
+      return { data: db.rpc[name] ?? null, error: gezielt ?? db.fehler };
     },
     auth: {
       getUser: async () => ({ data: { user: { id: "nutzer-1", email: "test@example.org" } } }),

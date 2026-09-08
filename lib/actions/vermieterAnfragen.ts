@@ -83,7 +83,12 @@ export async function loescheVermieterAnfrage(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase.from("vermieter_anfragen").delete().eq("id", id).eq("vermieter_id", user.id);
+  const { error } = await supabase
+    .from("vermieter_anfragen")
+    .delete()
+    .eq("id", id)
+    .eq("vermieter_id", user.id);
+  if (error) return { error: "Anfrage konnte nicht gelöscht werden." };
   revalidatePath("/anliegen");
   revalidatePath("/portal");
   return { ok: true };

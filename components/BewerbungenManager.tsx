@@ -3,6 +3,7 @@
 // Vermieter: Bewerbungs-Links verwalten + eingegangene Selbstauskünfte
 // sichten und bewerten (Favorit / Ablehnen).
 import { useState, useTransition } from "react";
+import { useToast } from "@/components/Toast";
 import {
   Link2, Copy, Check, Star, XCircle, RotateCcw, ChevronDown, ChevronUp, UserRound,
   FileText, Download, X, ClipboardList, Trash2,
@@ -76,7 +77,7 @@ function BewerbungDatei({ d }: { d: { id: string; name: string; groesse: number 
         {laedt ? <span className="spinner" style={{ width: 11, height: 11 }} /> : <Download size={13} />}
       </button>
       <DeleteButton
-        action={async () => { await loescheBewerbungDatei(d.id); }}
+        action={() => loescheBewerbungDatei(d.id)}
         className="delete-btn" label={<X size={12} />} confirmText={`Dokument „${d.name}“ endgültig löschen?`}
       />
     </span>
@@ -118,6 +119,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 };
 
 function LinkZeile({ l }: { l: BewerberLinkRow }) {
+  const toast = useToast();
   const [kopiert, setKopiert] = useState(false);
   const [offen, setOffen] = useState(false);
   const [gespeichert, setGespeichert] = useState(false);
@@ -160,11 +162,16 @@ function LinkZeile({ l }: { l: BewerberLinkRow }) {
           </button>
           <button
             type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }} disabled={pending}
-            onClick={() => startTransition(async () => { await setzeBewerberLinkAktiv(l.id, !l.aktiv); })}
+            onClick={() =>
+              startTransition(async () => {
+                const r = await setzeBewerberLinkAktiv(l.id, !l.aktiv);
+                if (r && "error" in r && r.error) toast(r.error, "error");
+              })
+            }
           >
             {l.aktiv ? "Deaktivieren" : "Aktivieren"}
           </button>
-          <DeleteButton action={async () => { await loescheBewerberLink(l.id); }} className="delete-btn" label={<XCircle size={14} />} confirmText="Link und alle zugehörigen Bewerbungen löschen?" />
+          <DeleteButton action={() => loescheBewerberLink(l.id)} className="delete-btn" label={<XCircle size={14} />} confirmText="Link und alle zugehörigen Bewerbungen löschen?" />
         </span>
       </div>
 
@@ -241,8 +248,12 @@ function BewerbungKarte({ b }: { b: BewerbungRow }) {
   const [offen, setOffen] = useState(false);
   const [pending, startTransition] = useTransition();
   const s = STATUS_META[b.status] ?? STATUS_META.neu;
+  const toast = useToast();
   const set = (status: "neu" | "favorit" | "abgelehnt") =>
-    startTransition(async () => { await setzeBewerbungStatus(b.id, status); });
+    startTransition(async () => {
+      const r = await setzeBewerbungStatus(b.id, status);
+      if (r && "error" in r && r.error) toast(r.error, "error");
+    });
   const info: [string, string][] = [];
   if (b.einzug_ab) info.push(["Einzug ab", datum(b.einzug_ab)]);
   if (b.personen != null) info.push(["Personen", String(b.personen)]);
@@ -310,7 +321,7 @@ function BewerbungKarte({ b }: { b: BewerbungRow }) {
                 <RotateCcw size={12} style={{ verticalAlign: "-2px" }} /> Zurücksetzen
               </button>
             )}
-            <DeleteButton action={async () => { await loescheBewerbung(b.id); }} className="btn btn-ghost" label="Löschen" confirmText="Diese Bewerbung endgültig löschen (DSGVO)?" />
+            <DeleteButton action={() => loescheBewerbung(b.id)} className="btn btn-ghost" label="Löschen" confirmText="Diese Bewerbung endgültig löschen (DSGVO)?" />
           </div>
         </div>
       )}

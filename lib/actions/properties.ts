@@ -80,31 +80,46 @@ async function autoBuchungen(
       .limit(1);
     const vorhanden = rows?.[0] as { id: string; betrag: number | null; aktiv: boolean | null } | undefined;
 
+    // Der Fehler wird zurückgegeben, nicht geworfen: Das Objekt ist zu diesem
+    // Zeitpunkt bereits gespeichert. Verschlucken darf man ihn aber auch nicht —
+    // ohne Miet-Vorlage fehlt die Einnahme im Cashflow, und das Formular hätte
+    // trotzdem „gespeichert" gemeldet.
     if (aktivSoll && betrag && betrag > 0) {
       if (!vorhanden) {
-        await supabase.from("wiederkehrende_buchungen").insert({
+        const { error } = await supabase.from("wiederkehrende_buchungen").insert({
           user_id: userId, art, prop_id: propId, kategorie, betrag,
           beschreibung, zyklus: "monatlich", start_datum: heute, ende_datum: null, aktiv: true,
         });
-      } else if (Number(vorhanden.betrag) !== betrag || vorhanden.aktiv !== true) {
-        await supabase.from("wiederkehrende_buchungen")
-          .update({ betrag, aktiv: true }).eq("id", vorhanden.id);
+        return !error;
+      }
+      if (Number(vorhanden.betrag) !== betrag || vorhanden.aktiv !== true) {
+        const { error } = await supabase.from("wiederkehrende_buchungen")
+          .update({ betrag, aktiv: true }).eq("id", vorhanden.id).eq("user_id", userId);
+        return !error;
       }
     } else if (vorhanden && vorhanden.aktiv) {
       // Voraussetzung entfallen → Vorlage deaktivieren (bestehende Buchungen bleiben).
-      await supabase.from("wiederkehrende_buchungen").update({ aktiv: false }).eq("id", vorhanden.id);
+      const { error } = await supabase.from("wiederkehrende_buchungen")
+        .update({ aktiv: false }).eq("id", vorhanden.id).eq("user_id", userId);
+      return !error;
     }
+    return true;
   };
 
-  await pflegeVorlage(
+  const miete = await pflegeVorlage(
     "einnahme", "Miete", p.miete, p.obj_status === "Vermietet",
     `Kaltmiete ${p.bezeichnung} (automatisch)`,
   );
-  await pflegeVorlage(
+  const hausgeld = await pflegeVorlage(
     "kosten", "Hausgeld / WEG", p.hausgeld, true,
     `Hausgeld ${p.bezeichnung} (automatisch)`,
   );
+  return miete && hausgeld;
 }
+
+/** Zusatz für die Erfolgsmeldung, wenn die Vorlagen-Pflege scheiterte. */
+const VORLAGEN_HINWEIS =
+  " Die automatischen Buchungsvorlagen konnten nicht aktualisiert werden — bitte auf /cashflow prüfen.";
 
 export async function createProperty(formData: FormData) {
   const supabase = await createClient();
@@ -130,14 +145,19 @@ export async function createProperty(formData: FormData) {
     .single();
   if (error) throw new Error(error.message);
 
-  if (neu?.id) await autoBuchungen(supabase, user.id, neu.id, parsed);
+  const vorlagenOk = neu?.id ? await autoBuchungen(supabase, user.id, neu.id, parsed) : true;
 
   revalidatePath("/properties");
   revalidatePath("/");
   revalidatePath("/cashflow");
   // Direkt ins neue Objekt springen — dort schließen die Folgeschritte
   // (Mieter, Kredit, Buchung) ohne erneutes Suchen an.
-  redirect(flashUrl(neu?.id ? `/properties/${neu.id}` : "/properties", "Immobilie angelegt."));
+  redirect(
+    flashUrl(
+      neu?.id ? `/properties/${neu.id}` : "/properties",
+      "Immobilie angelegt." + (vorlagenOk ? "" : VORLAGEN_HINWEIS),
+    ),
+  );
 }
 
 export async function updateProperty(id: string, formData: FormData) {
@@ -165,7 +185,7 @@ export async function updateProperty(id: string, formData: FormData) {
   // (nur bei Änderung; siehe protokolliereWert).
   await protokolliereWert(supabase, user.id, id, parsed.wert, "manuell", "Objekt-Formular");
 
-  await autoBuchungen(supabase, user.id, id, parsed);
+  const vorlagenOk = await autoBuchungen(supabase, user.id, id, parsed);
 
   revalidatePath("/properties");
   revalidatePath(`/properties/${id}`);
@@ -175,12 +195,19 @@ export async function updateProperty(id: string, formData: FormData) {
   // /properties/<id>/edit, und der Zurueck-Knopf dort zeigt ebenfalls auf die
   // Detailseite. Wer in die Liste geworfen wird, muss sein Objekt nach jedem
   // Speichern neu suchen. (createProperty macht es bereits so.)
-  redirect(flashUrl(`/properties/${id}`, "Immobilie gespeichert."));
+  redirect(flashUrl(`/properties/${id}`, "Immobilie gespeichert." + (vorlagenOk ? "" : VORLAGEN_HINWEIS)));
 }
 
 export async function deleteProperty(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase.from("properties").delete().eq("id", id);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  // `user_id` steht mit im Filter, obwohl RLS greift: Ein RLS-geblocktes DELETE
+  // liefert KEINEN Fehler, sondern null Zeilen — der Aufrufer hielte eine fremde
+  // ID für gelöscht. Mit dem Filter ist es dieselbe Wirkung, aber absichtlich.
+  const { error } = await supabase.from("properties").delete().eq("id", id).eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/properties");

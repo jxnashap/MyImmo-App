@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useToast } from "@/components/Toast";
+import { actionFehler } from "@/lib/actionErgebnis";
 
 // Generischer Lösch-Button mit Inline-Bestätigung und Lade-Feedback.
 // Erster Klick → Button verwandelt sich in „Wirklich? · Ja / Nein"; während
@@ -14,7 +15,13 @@ export default function DeleteButton({
   className = "btn btn-ghost",
   title,
 }: {
-  action: () => void | Promise<void>;
+  /**
+   * Die Server-Action. Gibt sie ein Ergebnis mit `error` zurück, wird DAS
+   * angezeigt statt „Gelöscht." — Actions melden Fehler als Rückgabewert,
+   * nicht per Ausnahme, und ein `await action()` ohne Auswertung hat den
+   * Fehlschlag bisher als Erfolg dargestellt.
+   */
+  action: () => void | Promise<void | { error?: string | null } | null>;
   label?: React.ReactNode;
   confirmText?: string;
   className?: string;
@@ -27,7 +34,12 @@ export default function DeleteButton({
   const run = () =>
     startTransition(async () => {
       try {
-        await action();
+        const fehler = actionFehler(await action());
+        if (fehler) {
+          toast(fehler, "error");
+          setConfirming(false);
+          return;
+        }
         toast("Gelöscht.", "success");
       } catch (e) {
         // Framework-Navigation (redirect/notFound) durchreichen, nicht als Fehler zeigen.
