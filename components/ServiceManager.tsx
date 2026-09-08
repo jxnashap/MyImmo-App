@@ -136,7 +136,7 @@ function CodeSektion({ codes }: { codes: ServiceCodeRow[] }) {
               >
                 {kopiert === c.code ? <><Check size={12} style={{ verticalAlign: "-2px" }} /> Kopiert</> : <><Copy size={12} style={{ verticalAlign: "-2px" }} /> Kopieren</>}
               </button>
-              <DeleteButton action={async () => { await widerrufeServiceCode(c.code); }} className="delete-btn" label={<XCircle size={14} />} confirmText="Diesen Code widerrufen?" />
+              <DeleteButton action={() => widerrufeServiceCode(c.code)} className="delete-btn" label={<XCircle size={14} />} confirmText="Diesen Code widerrufen?" />
             </span>
           </div>
         ))}
@@ -210,7 +210,7 @@ function FirmenSektion({ firmen }: { firmen: FirmaRow[] }) {
               {f.website && <a href={f.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Globe size={11} style={{ verticalAlign: "-1px" }} /> Website</a>}
               {f.notiz && <span style={{ fontSize: 11, color: "var(--muted)" }}>{f.notiz}</span>}
               <span style={{ marginLeft: "auto" }}>
-                <DeleteButton action={async () => { await loescheFirma(f.id); }} className="delete-btn" label={<Trash2 size={13} />} confirmText="Firma aus dem Verzeichnis löschen?" />
+                <DeleteButton action={() => loescheFirma(f.id)} className="delete-btn" label={<Trash2 size={13} />} confirmText="Firma aus dem Verzeichnis löschen?" />
               </span>
             </div>
           ))
@@ -305,7 +305,7 @@ export default function ServiceManager({
                 <span style={{ fontWeight: 600 }}>{p.firma || p.email || "Service-Partner"}</span>
                 {p.firma && p.email && <span style={{ fontSize: 11, color: "var(--muted)" }}>{p.email}</span>}
                 <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>seit {datum(p.created_at)}</span>
-                <DeleteButton action={async () => { await entferneServicePartner(p.user_id); }} className="delete-btn" label={<Trash2 size={13} />} confirmText="Verknüpfung zu diesem Partner lösen?" />
+                <DeleteButton action={() => entferneServicePartner(p.user_id)} className="delete-btn" label={<Trash2 size={13} />} confirmText="Verknüpfung zu diesem Partner lösen?" />
               </div>
             ))
           )}
@@ -417,7 +417,7 @@ export default function ServiceManager({
                     {a.objekt_name && <span style={{ fontSize: 11, color: "var(--muted)" }}>{a.objekt_name}</span>}
                     {a.termin && <span style={{ fontSize: 11, color: "var(--muted)" }}>Termin {datum(a.termin)}</span>}
                     <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>{datum(a.created_at)}</span>
-                    <DeleteButton action={async () => { await loescheAuftrag(a.id); }} className="delete-btn" label={<Trash2 size={13} />} confirmText="Auftrag löschen?" />
+                    <DeleteButton action={() => loescheAuftrag(a.id)} className="delete-btn" label={<Trash2 size={13} />} confirmText="Auftrag löschen?" />
                   </div>
                   {a.beschreibung && <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, whiteSpace: "pre-wrap" }}>{a.beschreibung}</p>}
                   {a.status === "freigabe" && (

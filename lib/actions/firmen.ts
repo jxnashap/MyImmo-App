@@ -42,7 +42,8 @@ export async function loescheFirma(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase.from("firmen").delete().eq("id", id).eq("user_id", user.id);
+  const { error } = await supabase.from("firmen").delete().eq("id", id).eq("user_id", user.id);
+  if (error) return { error: "Firma konnte nicht gelöscht werden." };
   revalidatePath("/anliegen");
   revalidatePath("/service");
   return { ok: true };

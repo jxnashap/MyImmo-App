@@ -59,7 +59,8 @@ export default function MieterEinladung({
   const widerrufen = () =>
     startTransition(async () => {
       setFehler(null);
-      await widerrufeEinladung(mieterId);
+      const r = await widerrufeEinladung(mieterId);
+      if (r && "error" in r && r.error) setFehler(r.error);
     });
 
   const kopieren = async () => {

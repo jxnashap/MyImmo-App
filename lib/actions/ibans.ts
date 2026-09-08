@@ -99,7 +99,10 @@ export async function deleteIban(id: string): Promise<IbanResult> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
 
-  const { error } = await supabase.from("ibans").delete().eq("id", id);
+  // `user_id` gehört mit in den Filter — nicht weil RLS es nicht abfinge,
+  // sondern weil eine fremde ID sonst zu einem stillen Treffer-Null wird, das
+  // wie ein Erfolg aussieht. Die übrigen Funktionen dieser Datei tun es auch.
+  const { error } = await supabase.from("ibans").delete().eq("id", id).eq("user_id", user.id);
   if (error) return { ok: false, error: "Löschen fehlgeschlagen." };
 
   // Falls dadurch kein Standard mehr existiert: ältestes verbleibendes Konto nachrücken.
@@ -108,10 +111,22 @@ export async function deleteIban(id: string): Promise<IbanResult> {
     .select("id, standard")
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
+  let nachrueckFehler = false;
   if (rest && rest.length > 0 && !rest.some((r) => r.standard)) {
-    await supabase.from("ibans").update({ standard: true }).eq("id", rest[0].id);
+    const { error: e2 } = await supabase
+      .from("ibans")
+      .update({ standard: true })
+      .eq("id", rest[0].id)
+      .eq("user_id", user.id);
+    nachrueckFehler = Boolean(e2);
   }
 
+  // Gelöscht ist gelöscht — die Liste muss auf jeden Fall neu geladen werden,
+  // sonst steht das entfernte Konto weiter da. Der Nutzer erfährt aber, wenn
+  // dabei kein Standard-Konto nachgerückt ist.
   revalidatePath("/einstellungen");
+  if (nachrueckFehler) {
+    return { ok: false, error: "Gelöscht. Es konnte aber kein neues Standard-Konto gesetzt werden — bitte eines auswählen." };
+  }
   return { ok: true };
 }

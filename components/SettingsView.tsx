@@ -289,7 +289,12 @@ function SignaturPanel({ unterschrift }: { unterschrift: string | null }) {
             <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setZeichnen(true)}>Neu zeichnen</button>
             <button
               type="button" className="btn btn-ghost" style={{ fontSize: 12, color: "var(--red)" }} disabled={pending}
-              onClick={() => start(async () => { await loescheUnterschrift(); toast("Unterschrift gelöscht"); router.refresh(); })}
+              onClick={() => start(async () => {
+                  const r = await loescheUnterschrift();
+                  if (r && "error" in r && r.error) return toast(r.error, "error");
+                  toast("Unterschrift gelöscht");
+                  router.refresh();
+                })}
             >
               Löschen
             </button>

@@ -42,13 +42,16 @@ export async function widerrufeServiceCode(code: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase
+  // Der Fehler MUSS ausgewertet werden: Ein stillschweigend fehlgeschlagenes
+  // Löschen meldet „widerrufen", während der Code weiter gültig ist.
+  const { error } = await supabase
     .from("einladungscodes")
     .delete()
     .eq("code", code)
     .eq("vermieter_id", user.id)
     .eq("rolle", "service")
     .is("eingeloest_am", null);
+  if (error) return { error: "Code konnte nicht widerrufen werden — er ist weiterhin gültig." };
   revalidatePath("/anliegen");
   return { ok: true };
 }
@@ -60,11 +63,14 @@ export async function entferneServicePartner(serviceUserId: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase
+  // Wie beim Widerruf: Bleibt der Fehler unbemerkt, behält der Partner Zugriff,
+  // obwohl die Oberfläche „gelöst" anzeigt.
+  const { error } = await supabase
     .from("service_zugaenge")
     .delete()
     .eq("vermieter_id", user.id)
     .eq("user_id", serviceUserId);
+  if (error) return { error: "Verknüpfung konnte nicht gelöst werden — der Zugriff besteht weiter." };
   revalidatePath("/anliegen");
   return { ok: true };
 }
@@ -379,7 +385,21 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
     .single();
   if (error || !neu) return { error: "Kosten-Buchung konnte nicht angelegt werden." };
 
-  await supabase.from("auftraege").update({ kosten_id: neu.id }).eq("id", id).eq("vermieter_id", user.id);
+  // Die Verknüpfung ist der Doppel-Buchungs-Schutz: Ohne `kosten_id` hält der
+  // Auftrag sich für unverbucht und legt beim nächsten Klick eine ZWEITE
+  // Kosten-Buchung an. Der Fehler darf deshalb nicht verschluckt werden.
+  const { error: linkFehler } = await supabase
+    .from("auftraege")
+    .update({ kosten_id: neu.id })
+    .eq("id", id)
+    .eq("vermieter_id", user.id);
+  if (linkFehler) {
+    return {
+      error:
+        "Die Kosten-Buchung wurde angelegt, konnte dem Auftrag aber nicht zugeordnet werden. " +
+        "Bitte in den Kosten prüfen, bevor erneut gebucht wird.",
+    };
+  }
   revalidatePath("/anliegen");
   revalidatePath("/kosten");
   return { ok: true };
@@ -392,7 +412,8 @@ export async function loescheAuftrag(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase.from("auftraege").delete().eq("id", id).eq("vermieter_id", user.id);
+  const { error } = await supabase.from("auftraege").delete().eq("id", id).eq("vermieter_id", user.id);
+  if (error) return { error: "Auftrag konnte nicht gelöscht werden." };
   revalidatePath("/anliegen");
   revalidatePath("/service");
   return { ok: true };

@@ -104,12 +104,13 @@ export async function loescheAlteAbgelehnteBewerbungen() {
   if (!user) return { error: "Nicht angemeldet." };
   const grenze = new Date();
   grenze.setMonth(grenze.getMonth() - 6);
-  await supabase
+  const { error } = await supabase
     .from("bewerbungen")
     .delete()
     .eq("user_id", user.id)
     .eq("status", "abgelehnt")
     .lt("created_at", grenze.toISOString());
+  if (error) return { error: "Aufräumen fehlgeschlagen — es wurde nichts gelöscht." };
   revalidatePath("/anliegen");
   return { ok: true };
 }
@@ -120,7 +121,8 @@ export async function setzeBewerberLinkAktiv(id: string, aktiv: boolean) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase.from("bewerber_links").update({ aktiv }).eq("id", id).eq("user_id", user.id);
+  const { error } = await supabase.from("bewerber_links").update({ aktiv }).eq("id", id).eq("user_id", user.id);
+  if (error) return { error: "Konnte nicht umgestellt werden — der Link ist unverändert." };
   revalidatePath("/bewerbungen");
   return { ok: true };
 }
@@ -131,7 +133,8 @@ export async function loescheBewerberLink(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase.from("bewerber_links").delete().eq("id", id).eq("user_id", user.id);
+  const { error } = await supabase.from("bewerber_links").delete().eq("id", id).eq("user_id", user.id);
+  if (error) return { error: "Link konnte nicht gelöscht werden — er ist weiterhin erreichbar." };
   revalidatePath("/bewerbungen");
   return { ok: true };
 }
@@ -142,7 +145,8 @@ export async function setzeBewerbungStatus(id: string, status: "neu" | "favorit"
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase.from("bewerbungen").update({ status }).eq("id", id).eq("user_id", user.id);
+  const { error } = await supabase.from("bewerbungen").update({ status }).eq("id", id).eq("user_id", user.id);
+  if (error) return { error: "Status konnte nicht gespeichert werden." };
   revalidatePath("/bewerbungen");
   return { ok: true };
 }
@@ -153,7 +157,8 @@ export async function loescheBewerbung(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase.from("bewerbungen").delete().eq("id", id).eq("user_id", user.id);
+  const { error } = await supabase.from("bewerbungen").delete().eq("id", id).eq("user_id", user.id);
+  if (error) return { error: "Bewerbung konnte nicht gelöscht werden." };
   revalidatePath("/bewerbungen");
   return { ok: true };
 }
@@ -190,7 +195,8 @@ export async function loescheBewerbungDatei(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase.from("bewerbung_dateien").delete().eq("id", id).eq("user_id", user.id);
+  const { error } = await supabase.from("bewerbung_dateien").delete().eq("id", id).eq("user_id", user.id);
+  if (error) return { error: "Dokument konnte nicht gelöscht werden — es liegt weiterhin gespeichert vor." };
   revalidatePath("/anliegen");
   return { ok: true };
 }
@@ -219,7 +225,8 @@ export async function loescheUnterschrift() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  await supabase.from("unterschriften").delete().eq("user_id", user.id);
+  const { error } = await supabase.from("unterschriften").delete().eq("user_id", user.id);
+  if (error) return { error: "Unterschrift konnte nicht gelöscht werden." };
   revalidatePath("/einstellungen");
   return { ok: true };
 }

@@ -125,7 +125,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 15 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 295 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** — alle vier bei Zahlen oder Dubletten. Offen: 14 Dateien, ~1.780 Zeilen |
+| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 15 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, Verhaltenstests jeweils gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** (alle bei Zahlen oder Dubletten) plus **drei systematische Durchgänge** — Zahlen-Eingänge, Datei-Auslieferung, stille Schreibfehler —, die je einen Wächter-Test über ALLE 29 Dateien hinterlassen haben. Offen: 14 Dateien, ~1.780 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
@@ -271,12 +271,55 @@ bringen, seinen Freigabe-Link zu öffnen — `/beleihung/<token>/datei/<key>` is
 dieser Routen ohne Login. Kein Selbstläufer, aber der Schaden träfe eine fremde Sitzung auf
 der eigenen Domain, und die Gegenmaßnahme kostet nichts.
 
-**Offen:** 14 Dateien, ~1.780 Zeilen — nach beiden Durchgängen ohne bekanntes Zahlen- oder
-Datei-Risiko.
+### Dritter Durchgang: stille Schreibfehler (08.09.2026)
+
+Dieselbe Bauart, dritte Klasse. Untersucht wurden **alle 128 Schreiboperationen** in
+`lib/actions/` — auf zwei Fragen: Kann jemand über Mandantengrenzen hinweg schreiben?
+Und: Wird ein fehlgeschlagener Schreibvorgang bemerkt?
+
+**Frage 1 — kein Befund, und das ist ein Ergebnis.** 38 Schreibzugriffe schränken nur über
+`.eq("id", …)` ein, ohne eigenen Mandantenfilter. Live gegen die Datenbank geprüft: **alle
+45 Tabellen** in `public` haben RLS aktiv, und jede dieser Tabellen hat eine UPDATE/DELETE-
+Policy auf `auth.uid() = user_id` bzw. `vermieter_id`. Ein Zugriff quer über Konten ist
+damit nicht möglich. In `deleteIban` und `deleteProperty` steht der Filter trotzdem jetzt
+ausdrücklich dabei — nicht wegen RLS, sondern weil eine fremde ID sonst ein stilles
+Treffer-Null erzeugt, das wie ein Erfolg aussieht.
+
+**Frage 2 — 20 Befunde.** So viele Schreiboperationen werteten den `error` gar nicht aus
+und gaben danach bedingungslos `{ ok: true }` zurück. Vier davon sind mehr als Kosmetik:
+
+| Stelle | Was der Nutzer sah | Was tatsächlich galt |
+|---|---|---|
+| `widerrufeServiceCode` | „widerrufen" | Der Zugangscode blieb einlösbar |
+| `widerrufeEinladung` | „widerrufen" | dito, beim Mieter-Zugangscode |
+| `erzeugeEinladungscode` | neuer Code da | Der alte wurde nicht gelöscht → **zwei gültige Codes** |
+| `uebernimmAuftragAlsKosten` | „gebucht" | `kosten_id` nicht gesetzt → der nächste Klick legt eine **zweite Kosten-Buchung** an |
+
+Der letzte Fall ist derselbe Doppelbuchungs-Fehler wie in `mietkonto.ts`, nur an anderer
+Stelle — und er wäre in die Steuerauswertung gelaufen.
+
+**Die zweite Hälfte steckte in der Oberfläche.** Alle DeleteButton-Stellen riefen die Action
+als `action={async () => { await x(); }}` auf und warfen die Rückgabe weg; der Knopf meldete
+danach „Gelöscht.". Serverseitig einen Fehler zurückzugeben nützt nichts, solange der
+Aufrufer ihn verwirft. Die Entscheidung liegt jetzt in **`lib/actionErgebnis.ts` →
+`actionFehler()`** — eine Stelle statt in jedem Aufrufer neu, und ohne DOM prüfbar.
+
+**Bewusst NICHT umgesetzt: „0 betroffene Zeilen" als Fehler zu werten.** Ein per RLS
+geblocktes UPDATE liefert keinen Fehler, sondern null Zeilen. Das gilt aber genauso für ein
+doppelt ausgelöstes Löschen und für die Demo-Sperre, die genau so funktioniert. Daraus
+einen Fehler zu machen, würde harmlose Fälle zu Fehlermeldungen erheben.
+
+**Wächter: `tests/schreibFehler.test.ts`** — findet jede neue Schreiboperation ohne
+Fehlerauswertung und jede Aufrufstelle, die die Rückgabe wegwirft. Alle Verhaltenstests
+wurden gegen absichtlich eingebaute Fehler geprüft (11 Mutationen, alle rot).
+
+**Offen:** 14 Dateien, ~1.780 Zeilen — nach drei Durchgängen ohne bekanntes Zahlen-,
+Datei- oder Schreibfehler-Risiko.
 Die nächsten nach Nutzen: `termine.ts` (212 Z.), `makler.ts` (177), `dokumente.ts` (134),
 `importDaten.ts` (124), `archiv.ts` (78).
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
-bisher nicht hat.
+bisher nicht hat. (`actionFehler()` ist die Ausnahme: Die Logik wurde bewusst aus dem
+Bauteil herausgezogen, damit sie ohne DOM prüfbar ist.)
 
 **Lehre aus dem Mietkonto-Fund:** Der Fehler steckte direkt unter einem Kommentar, der
 dieselbe Fehlerklasse als behoben beschrieb. Ein Kommentar ist kein Nachweis — er hält

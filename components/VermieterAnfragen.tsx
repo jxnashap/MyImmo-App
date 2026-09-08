@@ -68,7 +68,12 @@ export default function VermieterAnfragen({
       }
     });
 
-  const loeschen = (id: string) => startTransition(async () => { await loescheVermieterAnfrage(id); });
+  const loeschen = (id: string) =>
+    startTransition(async () => {
+      setFehler(null);
+      const r = await loescheVermieterAnfrage(id);
+      if (r?.error) setFehler(r.error);
+    });
 
   return (
     <div className="section">
