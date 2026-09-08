@@ -2,6 +2,7 @@
 // (inline oder Download). Zugriff nur für den Eigentümer (RLS, user-scoped).
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { dateiKopf } from "@/lib/net/dateiKopf";
 import { decrypt } from "@/lib/crypto/secure";
 
 export const runtime = "nodejs";
@@ -27,15 +28,11 @@ export async function GET(req: NextRequest, props: { params: Promise<{ key: stri
   const raw = decrypt(String(d.datei_data));
   const comma = raw.indexOf(",");
   const buf = Buffer.from(comma >= 0 ? raw.slice(comma + 1) : raw, "base64");
-  const name = (d.datei_name || "Dokument").replace(/[^a-zA-Z0-9._-]+/g, "_");
-  const disposition = req.nextUrl.searchParams.get("download") ? "attachment" : "inline";
 
   return new NextResponse(buf, {
     status: 200,
     headers: {
-      "Content-Type": d.datei_type || "application/octet-stream",
-      "Content-Disposition": `${disposition}; filename="${name}"`,
-      "Cache-Control": "private, no-store",
+      ...dateiKopf(d.datei_type, d.datei_name, req.nextUrl.searchParams.has("download")),
     },
   });
 }

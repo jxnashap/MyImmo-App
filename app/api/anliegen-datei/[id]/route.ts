@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { dateiKopf } from "@/lib/net/dateiKopf";
 
 // Liefert einen Anliegen-Anhang aus. Zugriff regelt die RLS-Policy
 // (nur Mieter-Konto des Anliegens + Vermieter).
@@ -22,10 +23,8 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
   const download = new URL(request.url).searchParams.has("download");
   return new NextResponse(bytes, {
     headers: {
-      "Content-Type": data.mime,
+      ...dateiKopf(data.mime, data.name, download),
       "Content-Length": String(bytes.length),
-      "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${encodeURIComponent(data.name)}"`,
-      "Cache-Control": "private, max-age=300",
     },
   });
 }

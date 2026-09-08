@@ -512,3 +512,20 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Entscheidungshilfe:** `type="number"` → `Number(s.replace(",", "."))` unbedenklich ·
   Textfeld mit Geld → `zahlDe()` · Textfeld mit drei Nachkommastellen → eigener Parser
   (Vorbild `parseStand` in `zaehler.ts`).
+- 🔒 **Hochgeladene Dateien werden über `lib/net/dateiKopf.ts` ausgeliefert (08.09.2026).**
+  Sieben Routen gaben den gespeicherten `Content-Type` unverändert und standardmäßig
+  **`inline`** zurück; vier Upload-Pfade (`beleihung`, `makler`, `buchungen`, `archiv`)
+  haben **keine MIME-Weißliste**. Die CSP fing das nicht ganz auf: Sie ist zwar streng
+  (`script-src 'self' 'nonce-…'`), aber **`'self'` erlaubt Skripte von JEDEM Pfad der
+  eigenen Domain** — auch von einer hochgeladenen `.js`-Datei, ausgeliefert über ihre
+  eigene Route mit selbst bestimmtem MIME-Typ.
+  **Jetzt:** Nur PDF und Bilder gehen `inline`; alles andere wird als
+  `application/octet-stream` zum Download gezwungen, immer mit `nosniff`, Dateiname
+  bereinigt. **Gelöst an der AUSLIEFERUNG, nicht am Upload** — eine Weißliste beim
+  Hochladen würde den Altbestand in der Datenbank nicht erfassen.
+  **Regel: Eine neue Route, die eine gespeicherte Datei zurückgibt, benutzt `dateiKopf()`.**
+  `tests/dateiAuslieferung.test.ts` wird sonst rot (es sucht nach `"Content-Type": x.mime`
+  & Co. in allen `route.ts`).
+  **Ehrlich zur Schwere:** Der Angreifer muss ein registrierter Vermieter sein und jemanden
+  dazu bringen, seinen Freigabe-Link zu öffnen (`/beleihung/<token>/datei/<key>` ist die
+  einzige dieser Routen ohne Login). Kein Selbstläufer — aber billig zu schließen.

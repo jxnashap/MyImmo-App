@@ -125,7 +125,7 @@ Sobald mehr als eine Handvoll Vermieter echte Mieterdaten erfassen.
 | # | Was | Aufwand | Anmerkung |
 |---|---|---|---|
 | **T1** | Test, der `PLAENE` (Preisseite) gegen `FEATURE_AB_PLAN` (Code) prüft | klein | Zwei Quellen für dieselbe Aussage. Heute stimmen sie überein — nichts hält sie synchron. Fällt sonst erst auf, wenn ein zahlender Kunde etwas nicht bekommt, das die Preisseite versprach |
-| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 15 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 281 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** — alle vier bei Zahlen oder Dubletten. Offen: 14 Dateien, ~1.780 Zeilen |
+| **T2** | Tests für `lib/actions/` — **begonnen 04.09.2026**, 15 von 29 Dateien | mittel | Siehe Kasten unten. Prüfstand steht, 295 Verhaltenstests, jeder gegen absichtlich eingebaute Fehler geprüft. **Dabei VIER echte Fehler gefunden und behoben** — alle vier bei Zahlen oder Dubletten. Offen: 14 Dateien, ~1.780 Zeilen |
 | **T3** | `loading.tsx` für die restlichen Seiten | klein, repetitiv | 12 von 66 Seiten haben eine |
 | **T4** | Design Runde 2 der **App** (nicht der Website) | mittel | Die Website ist am 02.09. überarbeitet. In der App offen: 11px-Kleinsttexte auf 12px, Binnennavigation für lange Mobilseiten |
 | **T5** | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht. Mit Paddle-Checkout **nicht mehr zwingend** |
@@ -249,7 +249,30 @@ die dreimal falsch beantwortet war: Zahlen- oder Textfeld? Zusätzlich festgenag
 drei reparierten Stellen bleiben repariert, und `zaehler.ts` wird **nicht**
 „zur Vereinheitlichung" auf `zahlDe()` umgestellt.
 
-**Offen:** 14 Dateien, ~1.780 Zeilen — nach dem Durchgang aber ohne bekanntes Zahlenrisiko.
+### Zweiter Durchgang: Auslieferung hochgeladener Dateien (08.09.2026)
+
+Nach demselben Muster wie bei den Zahlen — nicht Datei für Datei, sondern die Klasse als
+Ganzes. **Sieben Routen** geben hochgeladene Dateien zurück; sie nahmen den gespeicherten
+`Content-Type` unverändert und lieferten standardmäßig **`inline`** aus. Vier Upload-Pfade
+(`beleihung`, `makler`, `buchungen`, `archiv`) haben **keine MIME-Weißliste**.
+
+**Warum die CSP das nicht auffing:** Sie ist streng (`script-src 'self' 'nonce-…'`), ein
+Inline-Skript wäre blockiert. Aber `'self'` erlaubt Skripte von **jedem Pfad der eigenen
+Domain** — auch von einer hochgeladenen `.js`-Datei, ausgeliefert über ihre eigene Route
+mit einem MIME-Typ, den der Hochladende bestimmt.
+
+**Behoben an der Auslieferung** (`lib/net/dateiKopf.ts`), nicht am Upload: Eine Weißliste
+beim Hochladen würde den Altbestand in der Datenbank nicht erfassen. Nur PDF und Bilder
+gehen inline, alles andere wird zum Download gezwungen; `nosniff` immer, Dateiname
+bereinigt.
+
+**Schwere, ehrlich:** Der Angreifer muss ein registrierter Vermieter sein und jemanden dazu
+bringen, seinen Freigabe-Link zu öffnen — `/beleihung/<token>/datei/<key>` ist die einzige
+dieser Routen ohne Login. Kein Selbstläufer, aber der Schaden träfe eine fremde Sitzung auf
+der eigenen Domain, und die Gegenmaßnahme kostet nichts.
+
+**Offen:** 14 Dateien, ~1.780 Zeilen — nach beiden Durchgängen ohne bekanntes Zahlen- oder
+Datei-Risiko.
 Die nächsten nach Nutzen: `termine.ts` (212 Z.), `makler.ts` (177), `dokumente.ts` (134),
 `importDaten.ts` (124), `archiv.ts` (78).
 `components/` bleibt komplett offen — dafür bräuchte es eine DOM-Umgebung, die das Projekt
