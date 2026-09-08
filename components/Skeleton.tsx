@@ -61,6 +61,54 @@ export function CardSkeleton({ rows = 4 }: { rows?: number }) {
   );
 }
 
+/**
+ * Formular-Platzhalter: Beschriftung + Feld, paarweise.
+ *
+ * Die häufigste Form in der App (alle `new`- und `edit`-Seiten). Bewusst mit
+ * sichtbarer Beschriftungs-Zeile über jedem Feld — ein Formular ohne
+ * Beschriftungen sieht aus wie eine Liste und der Nutzer erwartet dann das
+ * Falsche.
+ */
+export function FormSkeleton({ felder = 6, spalten = 2 }: { felder?: number; spalten?: number }) {
+  return (
+    <div className="section">
+      <div className="section-header">
+        <Skeleton w={170} h={14} />
+      </div>
+      <div
+        className="section-body"
+        style={{ display: "grid", gridTemplateColumns: `repeat(${spalten}, minmax(0, 1fr))`, gap: 18 }}
+      >
+        {Array.from({ length: felder }).map((_, i) => (
+          <div key={i}>
+            <Skeleton w={`${45 + ((i * 13) % 30)}%`} h={10} />
+            <Skeleton h={38} r={10} style={{ marginTop: 8 }} />
+          </div>
+        ))}
+      </div>
+      <div className="section-body" style={{ display: "flex", gap: 10, paddingTop: 0 }}>
+        <Skeleton w={130} h={38} r={18} />
+        <Skeleton w={90} h={38} r={18} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Platzhalter für die ÖFFENTLICHEN Token-Seiten (Bank-Freigabe, Handwerker-
+ * Auftrag, Bewerbung). Die haben keinen App-Rahmen und keine Topbar — ein
+ * `TopbarSkeleton` würde dort einen Balken versprechen, der nie kommt.
+ */
+export function PublicSkeleton() {
+  return (
+    <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 20px" }}>
+      <Skeleton w={180} h={22} style={{ margin: "0 auto", display: "block" }} />
+      <Skeleton w={240} h={12} style={{ margin: "12px auto 32px", display: "block" }} />
+      <CardSkeleton rows={5} />
+    </div>
+  );
+}
+
 export function CardGridSkeleton({ n = 6 }: { n?: number }) {
   return (
     <div className="prop-grid">

@@ -1,0 +1,15 @@
+-- Die Trigger-Funktion aus 20260908082914 war fuer `anon` und `authenticated`
+-- mit EXECUTE versehen (Supabase vergibt das im public-Schema standardmaessig).
+--
+-- Praktisch ausnutzbar war das nicht: Der Rueckgabetyp ist `trigger`, deshalb
+-- legt PostgREST dafuer keinen /rpc/-Endpunkt an, und Postgres lehnt einen
+-- direkten Aufruf ohnehin ab ("trigger functions can only be called as
+-- triggers"). Der Security-Advisor meldet es trotzdem — zu Recht: Ein Recht,
+-- das niemand braucht, gehoert weg, damit die Advisor-Liste kurz bleibt und
+-- echte Funde nicht im Rauschen untergehen.
+--
+-- Trigger sind davon nicht betroffen: Postgres prueft EXECUTE beim ANLEGEN des
+-- Triggers, nicht bei jedem Ausloesen.
+--
+-- ACHTUNG: Diese Migration allein war WIRKUNGSLOS — siehe 20260908122404.
+revoke execute on function public.bestandsschutz_anlegen() from anon, authenticated;

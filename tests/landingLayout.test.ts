@@ -369,3 +369,33 @@ describe("Weiche Abschnittsnaehte", () => {
     expect(css).toContain(".qlx .lp-section-alt > * { position: relative; z-index: 1; }");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Kleinsttext-Schalter (08.09.2026, Woche 4)
+//
+// `--text-xs` steuert die Kleinsttexte der APP. Die Landing ist per
+// Token-Freeze eingefroren und darf NICHT daran haengen — sonst aendert ein
+// Umstellen der App-Schriftgroesse stillschweigend auch die Startseite.
+describe("Kleinsttext-Schalter --text-xs", () => {
+  const css = readFileSync(join(process.cwd(), "app", "globals.css"), "utf8");
+
+  it("die App-Regeln haengen am Token, nicht an einem festen Wert", () => {
+    // Wer eine neue Regel mit `font-size: 11px` in den App-Bereich schreibt,
+    // haengt sie am Schalter vorbei — dann greift das Umstellen dort nicht.
+    const amToken = css.match(/font-size: var\(--text-xs\)/g)?.length ?? 0;
+    expect(amToken).toBeGreaterThanOrEqual(16);
+  });
+
+  it("die Landing benutzt den Schalter NICHT", () => {
+    for (const zeile of css.split("\n")) {
+      const selektor = zeile.split("{")[0];
+      if (!/\.lp|\.qlx/.test(selektor)) continue;
+      expect(zeile, `Landing-Regel haengt am App-Schalter: ${selektor.trim()}`)
+        .not.toMatch(/font-size: var\(--text-xs\)/);
+    }
+  });
+
+  it("der Schalter ist genau einmal definiert — sonst waere er keiner", () => {
+    expect(css.match(/--text-xs:/g)?.length).toBe(1);
+  });
+});

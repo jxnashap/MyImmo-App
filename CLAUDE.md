@@ -63,14 +63,24 @@
   anwaltlich → Paddle-Konto/Preise/Webhook → Env → Sandbox-Test → `BILLING_ENFORCED=true` +
   /preise-Early-Access-Banner raus → Feature-Gates in den Actions). Steuerhinweis: MoR =
   Paddle ist der Kunde (Reverse-Charge) → bei Kleinunternehmer-Frage berücksichtigen.
-- **Leaked Password Protection (Supabase) — braucht Supabase PRO** (~25 $/Monat).
-  Abgleich neuer/geänderter Passwörter gegen HaveIBeenPwned. Der Toggle ist auf dem
-  Free-Plan zwar SICHTBAR (Authentication → Sign In / Providers → Email → „Password
-  Security"), greift aber nicht: Am 29.07.2026 empirisch geprüft — eine Registrierung
-  mit dem millionenfach geleakten „Password123!" ging trotz gesetztem Schalter durch.
-  Wer das nur im Dashboard umlegt, hält den Schutz für aktiv, obwohl er es nicht ist.
-  Der Supabase-Security-Advisor meldet den Punkt entsprechend dauerhaft als offen.
-  Kostenloser Teilersatz: Mindest-Passwortlänge erhöhen (siehe „Sonstiges").
+- ⚠️ **KORREKTUR 08.09.2026: Supabase ist auf PRO, nicht auf Free.** Live abgefragt
+  (Organisation `wkxmbevawmmifleiggrs`, `plan: "pro"`). Der Eintrag hier behauptete
+  seit dem 29.07.2026 das Gegenteil und hat zwei Punkte falsch eingeordnet:
+  - **Leaked Password Protection kostet nichts mehr extra** — sie ist im bereits
+    bezahlten Pro-Plan enthalten und steht laut Security-Advisor **aktuell auf AUS**.
+    Damit ist das kein Geldpunkt mehr, sondern ein Ein-Klick-Schalter für den Betreiber:
+    Authentication → Sign In / Providers → Email → „Password Security". **Danach die
+    empirische Gegenprobe wiederholen** (Registrierung mit „Password123!" muss jetzt
+    scheitern) — am 29.07.2026 ging sie durch, und ob das am Plan lag oder daran, dass
+    der Schalter nicht gespeichert wurde, ist rückblickend nicht mehr feststellbar.
+  - **Backups gibt es** (das war eine offene Frage aus der Feedback-Bewertung):
+    Pro sichert **täglich, die letzten 7 Tage** sind im Dashboard unter Database →
+    Backups abrufbar. Feinere Wiederherstellung (PITR, sekundengenau) ist ein Add-on
+    für ~100 $/Monat bei 7 Tagen Aufbewahrung — **nicht nötig**, solange die Daten
+    überschaubar sind und ein Tagesstand als Rückfall genügt.
+  **Lehre daraus, ernster als die zwei Punkte:** Ein Plan-/Konto-Zustand ist eine
+  Tatsache, die sich ändert, und stand hier sechs Wochen als Notiz. Solche Aussagen
+  vor dem Weiterverwenden **nachfragen, nicht nachlesen** (`get_organization`).
 - **„Sign in with Apple" nachrüsten, sobald die App in den iOS App Store geht.** Apple verlangt
   das, sobald ein anderer Social-Login (Google) angeboten wird. Braucht Apple-Developer-Programm
   (99 $/Jahr), App-ID/Services-ID/Key + Provider-Config in Supabase. Aktuell reine Web-App → noch nicht nötig.
@@ -194,7 +204,21 @@ setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangsco
   (Logik gedreht — vorher war Dunkel Default). Die Landing ist per Token-Freeze im
   `.lp`-Scope auf ihrer Quiet-Luxury-Palette eingefroren; PDFs/Briefe unverändert.
   **Noch offen (Runde 2):** echte Neu-Anordnung einzelner Layouts (bisher v. a. Um-Tokenisierung),
-  11px-Kleinsttexte sukzessive auf 12px, Binnennavigation für lange Mobilseiten.
+  Binnennavigation für lange Mobilseiten.
+  **11px → 12px, Stand 08.09.2026 nachgemessen — die Notiz hier war zu klein gedacht:**
+  Es gibt keinen zentralen Schalter, und „sukzessive" verdeckte 376 Einzelstellen.
+  Von 399 Fundstellen „11px" sind viele **Abstände** (`padding: 11px 13px`, `top: -11px`),
+  kein `font-size` — pauschales Ersetzen zerlegt Layouts. Echte Schriftgrößen:
+  20 Regeln in `globals.css` und **356 inline `fontSize: 11` im JSX** von 30+ Komponenten.
+  **Was gemacht ist:** Die 16 App-Regeln in `globals.css` hängen jetzt am Token
+  **`--text-xs`** (die Landing ausdrücklich NICHT — Token-Freeze; `tests/landingLayout.test.ts`
+  hält beides fest). Damit ist die Umstellung für die App-Oberfläche **eine Zeile**.
+  **Was offen ist und warum:** Der Schalter steht bewusst noch auf 11px. Ein Pixel mehr
+  kann in `.tz-rest` (feste Breite 84px), in Badges und in gesperrt gesetzten
+  Großbuchstaben-Labels umbrechen — **das muss jemand ansehen**, kein Test findet es.
+  Vorgehen: Token auf 12px, Seiten durchklicken, bei Bruch eine Zeile zurück.
+  Die 356 Inline-Stellen brauchen je eine eigene Entscheidung; sie sind dichte
+  Datenansichten, in denen 11px verteidigbar ist.
   (Die Chart-Gradients im Cashflow-Donut sind seit dem UX-Audit-Paket B abgelöst.)
 - ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
   `components/OnboardingTour.tsx` — sechs Stationen (Objekt → Mieter → Ein-/Ausgaben →
@@ -383,6 +407,20 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   `supabase/migrations/<version>_<name>.sql` im selben PR committen (Regeln + Historie-Index:
   `supabase/migrations/README.md`). Kein DDL über `execute_sql`.
 - Dateien (Belege, Archiv-Dokumente) werden als Base64 in Tabellenspalten gespeichert — **kein Storage-Bucket** nötig.
+- 🔑 **`revoke ... from anon, authenticated` allein wirkt im `public`-Schema NICHT** (08.09.2026
+  am eigenen Leib erlebt). Supabase vergibt `EXECUTE` dort an die Rolle **PUBLIC**; anon und
+  authenticated erben es von da. Nach jedem Revoke `proacl` nachsehen: Steht dort weiter ein
+  Eintrag, der **mit `=` beginnt** (`=X/postgres`), hat der Revoke nichts bewirkt — es braucht
+  zusätzlich `from public`. Migrationen `20260908122320` (wirkungslos) und `20260908122404`.
+  Trigger-Funktionen dürfen bedenkenlos entzogen werden: Postgres prüft `EXECUTE` beim
+  **Anlegen** des Triggers, nicht beim Auslösen (in einer zurückgerollten Transaktion mit
+  einem Probe-Konto in `auth.users` nachgewiesen, statt es anzunehmen).
+- **Security-Advisor, Stand 08.09.2026 — was BEWUSST offen bleibt:** `billing_einstellungen`
+  und `registrierung_freigaben` haben RLS an und **keine** Policy. Das ist Absicht und
+  fail-closed: Beide werden ausschließlich von SECURITY-DEFINER-Funktionen gelesen, eine
+  Policy würde den Zugang nur öffnen. Die 13+17 Meldungen zu SECURITY-DEFINER-Funktionen
+  sind die öffentlichen Token-RPCs (`beleihung_public_*`, `bewerbung_*`, `einladungscode_*`) —
+  die MÜSSEN von `anon` aufrufbar sein, das ist ihr Zweck; sie prüfen das Token selbst.
 
 ## Sicherheit der Abhängigkeiten
 - ✅ **Next-15-Migration UMGESETZT (01.09.2026): Next 15.5.25 / React 19.2.8.** Plan samt
@@ -445,6 +483,30 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).
+- 🔥 **`npm run rauchtest` (08.09.2026): sechs Kernwege gegen die LAUFENDE App.**
+  Bis dahin hatte kein einziger der 1.167 Tests je eine Seite ausgeliefert — ein
+  kaputter Import in einer Server-Komponente oder eine 500er-Seite blieb grün.
+  Läuft gegen die Produktion und meldet sich am Demo-Konto an; **nur lesend**.
+  **Nicht bei jedem Push:** Der Demo-Einstieg SETZT DEN DEMO-BESTAND ZURÜCK (alle
+  Besucher teilen ein Konto) und `/api/demo` bremst bei 6 Aufrufen je 300 s —
+  deshalb meldet sich das Skript genau EINMAL an. Vor einem Release, nach einem
+  Deploy, bei Verdacht.
+  **Was er NICHT prüft:** alles, was erst im Browser passiert (JS-Ausnahmen,
+  Hydration, Klick-Ziele, Layout). Der erste Entwurf war ein echter Browser-Lauf
+  und ist daran gescheitert, dass Chromium in der Remote-Umgebung durch den
+  Proxy keine TLS-Verbindung aufbaut — **kein Fehler der App**; wer den
+  Browser-Lauf will, baut ihn auf einem Rechner mit normalem Netzzugang.
+  🐞 **Der Test war beim ersten Lauf FALSCH GRÜN — die wichtigste Lehre daraus:**
+  `/mietkonto` und `/steuer` sind in der Demo gesperrt und werden auf `/`
+  umgeleitet. Das Dashboard enthält „Mietkonto" (Menü) und „€" — die Prüfung
+  „Text kommt vor" war also erfüllt, ohne dass die Seite je geladen wurde.
+  **Regel: Bei jeder HTTP-Prüfung zuerst feststellen, WO man gelandet ist
+  (`endePfad`), erst dann den Inhalt ansehen.** Sonst prüft man die Menüleiste.
+  **Ungeprüft bleiben** Mietkonto, Steuer, Mieterportal, Archiv, Verbrauch,
+  Termine — die Demo gibt sie bewusst nicht frei. Der Weg `demo-grenze` deckt
+  stattdessen ab, dass die Sperre hält (fällt sie weg, klickt ein Besucher in
+  Bereichen herum, deren Speichern stumm an der RLS scheitert). Volle Abdeckung
+  bräuchte ein eigenes leeres Vermieter-Konto als Rauchtest-Zugang.
 - ⚠️ **`npx vitest run | tail` verschluckt den Exit-Code.** Der Status einer Pipeline ist
   der des LETZTEN Befehls. `vitest … | tail -3 && git commit` committet also auch bei
   roten Tests — so ist #317 mit einem roten Test durchgegangen (08.09.2026). Vor einem

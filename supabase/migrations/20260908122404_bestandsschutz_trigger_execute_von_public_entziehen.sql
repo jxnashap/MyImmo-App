@@ -1,0 +1,14 @@
+-- Nachtrag zu 20260908122320: Der erste Revoke (nur anon/authenticated) war
+-- WIRKUNGSLOS. Supabase vergibt EXECUTE im public-Schema an die Rolle PUBLIC;
+-- anon und authenticated erben es dort. Sichtbar an `=X/postgres` in proacl —
+-- der leere Rollenname VOR dem `=` ist PUBLIC.
+--
+-- Merke fuer kuenftige Faelle: Nach einem `revoke ... from anon, authenticated`
+-- die proacl nachsehen. Steht dort weiter ein Eintrag, der mit `=` beginnt,
+-- hat der Revoke nichts bewirkt.
+--
+-- VORHER GEPRUEFT, nicht vermutet: In einer zurueckgerollten Transaktion wurde
+-- nach dem Revoke ein Probe-Konto in auth.users angelegt — die abo-Zeile
+-- entstand weiterhin. Postgres prueft EXECUTE beim ANLEGEN des Triggers, nicht
+-- beim Ausloesen.
+revoke execute on function public.bestandsschutz_anlegen() from public;
