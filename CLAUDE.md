@@ -117,6 +117,34 @@ Mieter/Handwerker mit Einladungscode, abgelaufene oder fehlende Vormerkung.
 **Nicht über `signUp`-Metadaten lösen:** `raw_user_meta_data` kommt vom Client und ist frei
 setzbar — ein Trigger, der darauf vertraut, wäre eine Hintertür am Zugangscode vorbei.
 
+### Passwort vergessen — Rückweg ins Konto (09.09.2026 gebaut)
+**Vorher war der Weg eine Sackgasse:** `resetPasswordForEmail` zeigte auf `/login`, dort
+wurde der Link nirgends eingelöst, und ein Formular für ein neues Passwort gab es in der
+ganzen App nicht — `wechslePasswort` ist der einzige Weg zu einem neuen Passwort und
+verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
+**Jetzt:** `/auth/passwort` (Route, löst ein) → `/auth/passwort-neu` (Formular).
+- **Beide Linkformen bedient:** `token_hash` + `verifyOtp` **geräteübergreifend** (Reset am
+  Rechner anstoßen, Mail am Handy öffnen ist der Normalfall) und `code` +
+  `exchangeCodeForSession` (PKCE, nur **dasselbe Gerät** — der `code_verifier` liegt im
+  anfordernden Browser). Die Standard-Vorlage liefert `code`; für den geräteübergreifenden
+  Weg muss der Betreiber die **E-Mail-Vorlage** in Supabase auf `token_hash` umstellen.
+- **Die Seite ist die Hintertür an `wechslePasswort` vorbei** — sie setzt ein Passwort ohne
+  das alte. Deshalb reicht „ist angemeldet" NICHT: `lib/auth/resetNachweis.ts` stellt nach
+  bestätigtem Token einen **kurzlebigen, signierten Nachweis** aus (5 min, httpOnly,
+  an den Nutzer gebunden, Ablauf mitsigniert, zeitkonstanter Vergleich). Ohne ihn zeigt die
+  Seite „Link nicht mehr gültig".
+  **Warum eigener Nachweis statt `amr`:** Welchen Bezeichner Supabase für Recovery in `amr`
+  setzt, ist nicht dokumentiert und hier nicht überprüfbar. Auf eine unbelegte Annahme
+  lässt sich keine Schranke bauen — rät man falsch, ist die Seite für alle gesperrt oder
+  für alle offen.
+- **Liegt unter `/auth/`**, weil dieser Pfad in der Middleware öffentlich und vom
+  2FA-Gate im Layout ausgenommen ist. Ein Konto mit Zwei-Faktor muss sein Passwort auch
+  dann zurücksetzen können, wenn der zweite Faktor noch nicht bestätigt ist.
+- **Nach dem Wechsel `signOut({ scope: "global" })`** — man setzt ein Passwort oft genau
+  dann zurück, weil man fremden Zugriff vermutet; Supabase beendet fremde Sitzungen von
+  sich aus **nicht**.
+`tests/passwortReset.test.ts`, sieben Mutationen geprüft.
+
 ### Zukunftsideen (notiert, nicht gebaut)
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).

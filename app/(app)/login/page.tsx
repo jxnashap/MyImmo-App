@@ -76,6 +76,9 @@ export default function LoginPage() {
       setInfo("Dein Konto und alle Daten wurden gelöscht.");
     }
     // Google-Anmeldung mit falscher Rolle abgebrochen (siehe /auth/callback).
+    if (params.get("info") === "passwort-neu") {
+      setInfo("Dein Passwort wurde geändert. Melde dich jetzt damit an.");
+    }
     const fehlerArt = params.get("fehler");
     if (fehlerArt === "rolle") {
       const konto = params.get("konto") ?? "";
@@ -85,6 +88,11 @@ export default function LoginPage() {
         label
           ? `Dieses Google-Konto gehört zu einem ${label}-Konto. Wähle oben die passende Rolle und versuche es erneut.`
           : "Dieses Google-Konto passt nicht zur gewählten Rolle.",
+      );
+    } else if (fehlerArt === "reset") {
+      setError(
+        "Der Link zum Zurücksetzen ist abgelaufen oder wurde schon benutzt. " +
+          "Fordere unten einfach einen neuen an.",
       );
     } else if (fehlerArt === "google") {
       setError("Die Anmeldung mit Google hat nicht geklappt. Bitte erneut versuchen.");
@@ -287,8 +295,12 @@ export default function LoginPage() {
       setError("Bitte zuerst deine E-Mail oben eingeben.");
       return;
     }
+    // Ziel ist die Einlöse-Route, NICHT /login: Dort wurde der Link früher
+    // nirgends eingelöst, und ein Formular für ein neues Passwort gab es auch
+    // nicht — der Weg endete im Nichts (siehe app/(app)/auth/passwort/route.ts).
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== "undefined" ? `${window.location.origin}/login` : undefined,
+      redirectTo:
+        typeof window !== "undefined" ? `${window.location.origin}/auth/passwort` : undefined,
     });
     if (error) setError(uebersetze(error.message));
     else setInfo("Wir haben dir eine E-Mail zum Zurücksetzen geschickt.");
