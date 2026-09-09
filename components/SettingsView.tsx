@@ -24,7 +24,7 @@ import { deleteAccount } from "@/lib/actions/account";
 import { starteCheckout, oeffneAboPortal } from "@/lib/actions/billing";
 import { isValidIban, normalizeIban } from "@/lib/iban";
 import { PREISE_SICHTBAR } from "@/lib/preise";
-import { wechslePasswort } from "@/lib/passwortWechsel";
+import { wechslePasswort, sendePasswortMail } from "@/lib/passwortWechsel";
 import HilfeInhalt from "@/components/HilfeInhalt";
 import { istDemoKonto } from "@/lib/demo";
 import { PASSWORT_REGEL } from "@/lib/passwort";
@@ -458,12 +458,26 @@ function SicherheitPanel({ email, provider, demo = false, lastSignIn }: { email?
     // laengst 8 verlangt — und das aktuelle Passwort wurde gar nicht abgefragt.
     // Beides liegt jetzt in lib/passwortWechsel.ts.
     const erg = await wechslePasswort(supabase, {
-      email: email ?? "", aktuell: pw0, neu: pw1, wiederholung: pw2, istGoogle,
+      email: email ?? "", aktuell: pw0, neu: pw1, wiederholung: pw2,
     });
     setSaving(false);
     if (!erg.ok) return setErr(erg.fehler);
     setPw0(""); setPw1(""); setPw2("");
     toast("Passwort geändert ✓");
+  }
+
+  // Google-Konten haben kein Passwort, das sie bestätigen könnten. Statt die
+  // Bestätigung zu überspringen (so war es bis 09.09.2026 — mit eingeschaltetem
+  // Supabase-Schalter „Require current password" hätte das still versagt),
+  // geht der Weg über die E-Mail: Der Link erzeugt eine frische Sitzung und
+  // führt auf /auth/passwort-neu, wo ein Passwort ohne das alte gesetzt wird.
+  async function perMail() {
+    setErr(null);
+    setSaving(true);
+    const erg = await sendePasswortMail(supabase, email ?? "");
+    setSaving(false);
+    if (!erg.ok) return setErr(erg.fehler);
+    toast("E-Mail verschickt ✓");
   }
 
   return (
@@ -487,8 +501,25 @@ function SicherheitPanel({ email, provider, demo = false, lastSignIn }: { email?
         {/* fieldset disabled statt einzelner disabled-Attribute: deaktiviert
             nativ jedes Feld UND den Absenden-Knopf, auch fuer Tastatur. */}
         <fieldset disabled={demo} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+        {istGoogle ? (
+          <div>
+            <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 14 }}>
+              Dein Konto hat noch kein Passwort — es gibt also keines zu bestätigen. Wir
+              schicken dir einen Link, über den du eines setzt. Danach kannst du dich
+              wahlweise mit Google oder mit E-Mail und Passwort anmelden.
+            </p>
+            {err && (
+              <div role="alert" style={{ background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", color: "var(--red)", borderRadius: 10, padding: "9px 12px", fontSize: 13, marginBottom: 12 }}>
+                <TriangleAlert size={13} style={{ verticalAlign: "-2px" }} /> {err}
+              </div>
+            )}
+            <button type="button" className="btn btn-gold" onClick={perMail} disabled={saving}>
+              {saving ? "Wird verschickt…" : "Link zum Einrichten schicken"}
+            </button>
+          </div>
+        ) : (
         <form onSubmit={aendern} className="set-grid">
-          {!istGoogle && (
+          {(
             <label className="set-field span2">
               <span>Aktuelles Passwort</span>
               <input className="set-input" type="password" value={pw0} autoComplete="current-password" onChange={(e) => { setPw0(e.target.value); err && setErr(null); }} />
@@ -514,6 +545,7 @@ function SicherheitPanel({ email, provider, demo = false, lastSignIn }: { email?
             <button className="btn btn-gold" disabled={saving}>{saving ? "Speichern…" : "Passwort ändern"}</button>
           </div>
         </form>
+        )}
         </fieldset>
       </div>
 

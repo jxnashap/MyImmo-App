@@ -85,8 +85,11 @@ describe("Verdrahtung des Reset-Wegs", () => {
   it("der Reset-Link zeigt auf die Einlöse-Route, nicht auf /login", () => {
     // Das war der eigentliche Fehler: Der Link landete auf einer Seite, die
     // ihn gar nicht auswertete.
+    // Seit 09.09.2026 ueber die Konstante RESET_ZIEL, damit Login und
+    // Einstellungen nicht auseinanderlaufen koennen.
     const login = lies("app/(app)/login/page.tsx");
-    expect(login).toMatch(/resetPasswordForEmail\([\s\S]{0,200}\/auth\/passwort`/);
+    expect(login).toMatch(/resetPasswordForEmail\([\s\S]{0,200}\$\{RESET_ZIEL\}`/);
+    expect(lies("lib/passwortWechsel.ts")).toMatch(/RESET_ZIEL = "\/auth\/passwort"/);
   });
 
   it("die Einlöse-Route bedient BEIDE Linkformen", () => {

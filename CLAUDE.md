@@ -153,7 +153,29 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   (`type=recovery&token_hash`, oder `code` auf `/` bzw. `/login`) ab und reicht sie an
   `/auth/passwort` weiter — samt Suchparametern. `/auth/` ist ausgenommen, sonst
   Endlosschleife und der Google-Callback (nutzt ebenfalls `code`) würde gekapert.
-`tests/passwortReset.test.ts`, zehn Mutationen geprüft.
+- 🔑 **Passwortwechsel prüft jetzt ZWEIFACH (09.09.2026), `lib/passwortWechsel.ts`:**
+  (1) `signInWithPassword` mit dem alten Passwort — wirkt **sofort**, ohne Schalter, und
+  erzeugt nebenbei eine sekundenfrische Sitzung (erfüllt „Secure password change").
+  (2) **`current_password` im `updateUser`-Aufruf** — die einzige Prüfung, die
+  **serverseitig** greift; sie wirkt, sobald „Require current password when updating"
+  eingeschaltet ist, und schützt dann auch gegen einen direkten API-Aufruf **am Formular
+  vorbei**. Nur (1) wäre umgehbar, nur (2) bis zum Umlegen des Schalters wirkungslos.
+- 🚫 **Der `istGoogle`-Zweig in `wechslePasswort` ist WEG — nicht wieder einbauen.**
+  Er übersprang die Bestätigung für Konten ohne Passwort. Mit dem Schalter „Require
+  current password" hätte er still versagt: Ein Konto ohne Passwort kann keines
+  mitschicken. Google-Konten bekommen stattdessen **`sendePasswortMail()`** (Einstellungen
+  → Sicherheit und Mieter-/Service-Konto zeigen dort einen Knopf statt der Felder) — der
+  Link erzeugt eine frische Sitzung und endet auf `/auth/passwort-neu`.
+  **`RESET_ZIEL` in `lib/passwortWechsel.ts` ist die EINE Stelle für das Linkziel** —
+  Login und Einstellungen hängen beide daran, damit sie nicht auseinanderlaufen.
+- 📋 **Reihenfolge beim Scharfschalten der beiden übrigen Supabase-Schalter:**
+  erst „Passwort vergessen" mit einer echten Mail beweisen → dann beide Schalter →
+  **sofort danach erneut testen**. Die Supabase-Doku nennt **keine Ausnahme für Recovery**
+  bei „Require current password"; es ist offen, ob der Schalter den Reset-Weg blockiert
+  (`components/PasswortNeu.tsx` kann und darf kein altes Passwort mitschicken). Bricht er,
+  geht dieser Schalter wieder aus — die Absicherung leisten dann (1) oben plus
+  „Secure password change".
+`tests/passwortReset.test.ts` + `tests/blockF.test.ts`, fünfzehn Mutationen geprüft.
 
 ### Zukunftsideen (notiert, nicht gebaut)
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
