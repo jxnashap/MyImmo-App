@@ -70,6 +70,34 @@ export async function middleware(request: NextRequest) {
   // Seiten (Login/Auth-Callback, Bank-Freigabe, Impressum/Datenschutz).
   // API-/Datei-Routen prüfen Auth selbst (eigene Redirects/Fehlercodes).
   const { pathname } = request.nextUrl;
+
+  // RÜCKFALL für den „Passwort vergessen"-Link (09.09.2026).
+  //
+  // `resetPasswordForEmail` bekommt zwar `/auth/passwort` als Ziel mit — aber
+  // Supabase nimmt dieses Ziel NUR, wenn es wörtlich in der Redirect-URL-
+  // Weißliste des Projekts steht (Authentication → URL Configuration). Fehlt
+  // es dort, wird es stillschweigend verworfen und die **Site URL** genommen.
+  // Steht die noch auf `http://localhost:3000`, führt der Link ins Nichts —
+  // genau so gemeldet.
+  //
+  // Deshalb hier: Wo auch immer die Reset-Merkmale landen, sie werden zur
+  // Einlöse-Route weitergereicht. Damit hängt der Rückweg ins Konto nicht mehr
+  // an einer Einstellung, die im Code nicht sichtbar ist.
+  //
+  // `/auth/` ist ausgenommen: Dort liegen die Einlöse-Route selbst und der
+  // Google-Callback, der `code` ebenfalls benutzt — sonst entstünde eine
+  // Endlosschleife bzw. der OAuth-Login würde gekapert.
+  if (!pathname.startsWith("/auth")) {
+    const p = request.nextUrl.searchParams;
+    const istReset =
+      (p.get("type") === "recovery" && p.get("token_hash")) ||
+      (p.has("code") && (pathname === "/" || pathname === "/login"));
+    if (istReset) {
+      const ziel = new URL("/auth/passwort", request.url);
+      ziel.search = request.nextUrl.search;
+      return NextResponse.redirect(ziel);
+    }
+  }
   const istOeffentlich =
     pathname === "/" || // eigene Willkommens-Ansicht für Ausgeloggte
     pathname === "/funktionen" || // Landing-Unterseiten (Marketing, öffentlich)

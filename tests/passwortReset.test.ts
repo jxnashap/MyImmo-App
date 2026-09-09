@@ -144,3 +144,39 @@ describe("Verdrahtung des Reset-Wegs", () => {
     expect(layout).toMatch(/!pathname\.startsWith\("\/auth"\)/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Rückfall, wenn Supabase das Ziel verwirft (09.09.2026, live gemeldet:
+// „URL führt ins Nichts")
+//
+// `redirectTo` gilt nur, wenn die URL WÖRTLICH in der Redirect-URL-Weißliste
+// des Supabase-Projekts steht. Fehlt sie, nimmt Supabase stillschweigend die
+// Site URL — steht die auf localhost, landet der Nutzer im Nichts. Das ist
+// eine Dashboard-Einstellung, die im Code nicht sichtbar ist; der Rückweg ins
+// Konto darf nicht daran hängen.
+describe("Rückfall: Reset-Merkmale landen woanders", () => {
+  const mw = readFileSync(join(process.cwd(), "middleware.ts"), "utf8");
+
+  it("die Middleware leitet Recovery-Merkmale zur Einlöse-Route", () => {
+    expect(mw).toMatch(/type"\) === "recovery"/);
+    expect(mw).toMatch(/new URL\("\/auth\/passwort", request\.url\)/);
+  });
+
+  it("die Suchparameter gehen dabei mit — sonst wäre der Token weg", () => {
+    expect(mw).toMatch(/ziel\.search = request\.nextUrl\.search/);
+  });
+
+  it("/auth/ ist ausgenommen — sonst Endlosschleife und gekaperter Google-Login", () => {
+    // Die Einlöse-Route selbst trägt dieselben Merkmale; ohne die Ausnahme
+    // würde sie sich im Kreis auf sich selbst weiterleiten. Und
+    // /auth/callback nutzt `code` für Google — den darf der Rückfall nicht
+    // an die Passwort-Route umbiegen.
+    expect(mw).toMatch(/if \(!pathname\.startsWith\("\/auth"\)\) \{/);
+  });
+
+  it("ein blankes `code` greift nur auf / und /login, nicht überall", () => {
+    // `code` allein ist mehrdeutig. Nur dort umbiegen, wo Supabase bei
+    // verworfenem Ziel tatsächlich landet.
+    expect(mw).toMatch(/p\.has\("code"\) && \(pathname === "\/" \|\| pathname === "\/login"\)/);
+  });
+});
