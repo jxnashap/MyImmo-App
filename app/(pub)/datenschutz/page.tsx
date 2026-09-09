@@ -85,13 +85,22 @@ export default function DatenschutzPage() {
         in Ihrem Auftrag (Art. 28 DSGVO, siehe AVV).
       </p>
 
+      {/* OFFEN (Betreiber, 08.09.2026): Die konkrete Aufbewahrungsdauer der Vercel-
+          Runtime-Logs steht weder in der oeffentlichen Doku noch war sie ueber die
+          API abfragbar. Sie ist im Vercel-Dashboard unter Observability -> Logs
+          bzw. im Plan-Vergleich abzulesen und gehoert dann HIER als konkrete Zahl
+          hinein (Art. 13 Abs. 2 lit. a DSGVO verlangt Dauer ODER Kriterien).
+          Bis dahin steht unten, was nachweislich stimmt — nicht "kurze Zeit",
+          was gar nichts aussagt. Keine Zahl erfinden. */}
       <H3>d) Server-Logs (Hosting)</H3>
       <p>
         Beim Aufruf der App verarbeitet unser Hoster technisch bedingt IP-Adresse,
         Datum/Uhrzeit, aufgerufene URL und Browserkennung. <em>Zweck:</em> Auslieferung,
         Stabilität und Sicherheit (z. B. Missbrauchsabwehr). <em>Rechtsgrundlage:</em> Art. 6
-        Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb). Logs werden nach
-        kurzer Zeit automatisch gelöscht.
+        Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb).{" "}
+        <em>Speicherdauer:</em> Wir legen <strong>keine eigenen Kopien</strong> dieser Logs an
+        und werten sie nicht aus; sie entstehen und verfallen automatisch in der Plattform des
+        Hosters nach dessen Voreinstellung, die wir nicht verlängern.
       </p>
 
       <H3>e) KI-Funktionen (Beleg-/Dokumenterkennung)</H3>
@@ -195,9 +204,23 @@ export default function DatenschutzPage() {
       <H2>8. Speicherdauer und Löschung</H2>
       <ul style={{ paddingLeft: 20, listStyle: "disc" }}>
         <li>Konto- und Verwaltungsdaten speichern wir, solange Ihr Konto besteht.</li>
-        <li>Sie können Ihr Konto jederzeit selbst löschen (Einstellungen → „Konto löschen"): Dabei werden alle Daten — Objekte, Mieter, Buchungen, Kredite, Dokumente, Belege im Datei-Speicher — unwiderruflich entfernt.</li>
+        <li>Sie können Ihr Konto jederzeit selbst löschen (Einstellungen → „Konto löschen"): Dabei werden alle Daten — Objekte, Mieter, Buchungen, Kredite, Dokumente, Belege im Datei-Speicher — sofort und vollständig aus der laufenden Datenbank entfernt.</li>
         <li>Bank-Freigabelinks laufen automatisch ab (7–30 Tage) und sind jederzeit widerrufbar.</li>
-        <li>Technische Backups des Datenbank-Anbieters werden turnusmäßig überschrieben.</li>
+        <li>
+          <strong>Backups:</strong> Unser Datenbank-Anbieter erstellt <strong>täglich</strong> eine
+          Sicherung und bewahrt die <strong>letzten 7 Tage</strong> auf. Nach einer Löschung können
+          Restkopien Ihrer Daten daher noch bis zu sieben Tage in diesen Sicherungen liegen; sie
+          werden ausschließlich zur Wiederherstellung im Störungsfall vorgehalten, nicht für den
+          laufenden Betrieb ausgewertet, und danach automatisch überschrieben.
+        </li>
+        <li>
+          <strong>Zugriffsbremse:</strong> Zum Schutz vor automatisierten Massenanfragen (z. B. auf
+          die Anmeldung oder den Zugangscode) zählen wir Versuche je Absender. Gespeichert wird dabei
+          <strong> keine IP-Adresse im Klartext</strong>, sondern nur ein mit einem geheimen
+          Schlüssel gebildeter, nicht rückrechenbarer Prüfwert. Diese Einträge werden{" "}
+          <strong>nach 24 Stunden gelöscht</strong>. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO
+          (berechtigtes Interesse am Schutz vor Missbrauch).
+        </li>
         <li>Gesetzliche Aufbewahrungspflichten (z. B. § 147 AO für Ihre Vermieterunterlagen) liegen in Ihrer Verantwortung — exportieren Sie benötigte Daten vor einer Löschung.</li>
       </ul>
 

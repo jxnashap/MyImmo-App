@@ -432,6 +432,27 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Trigger-Funktionen dürfen bedenkenlos entzogen werden: Postgres prüft `EXECUTE` beim
   **Anlegen** des Triggers, nicht beim Auslösen (in einer zurückgerollten Transaktion mit
   einem Probe-Konto in `auth.users` nachgewiesen, statt es anzunehmen).
+- 🕵️ **Zugriffsbremse speicherte IP-Adressen im Klartext — behoben 08.09.2026.**
+  `darfWeiter()` gab die rohe Besucher-IP als Teil des Schlüssels an
+  `rate_limit_pruefen`; in `zugriff_limit` lagen daraufhin **29 Zeilen, alle 29 mit
+  IP im Klartext**, die älteste neun Tage alt — **gelöscht wurde nie** (`on conflict
+  do update` setzt nur den Zähler zurück, die Zeile bleibt). Über
+  `newsletter_adresse` wäre zusätzlich die **E-Mail-Adresse** so gelandet.
+  Gefunden wurde das nicht durch Lesen, sondern durch Nachzählen in der Datenbank.
+  **Jetzt:** `lib/net/bremse.ts` → `kennzeichen()` schickt nur noch einen HMAC
+  (`blindIndex()` aus `lib/crypto/secure.ts`). **HMAC, nicht bloßes Hashen** — ein
+  SHA-256 über eine IPv4 ist in Sekunden rückrechenbar, es gibt nur ~4 Mrd. davon.
+  Fehlt `DATA_ENCRYPTION_KEY`, wird auf SHA-256 zurückgefallen (schwächer, aber die
+  Bremse darf an einer fehlenden Env nicht scheitern) — **nie auf Klartext**.
+  Dazu Migration `20260908143000`: Altbestand gelöscht, Zeilen älter als 24 h werden
+  bei ~1 % der Aufrufe aufgeräumt (kein Cron, der unbemerkt ausfallen kann), und das
+  Aufrufrecht ist `public, anon, authenticated` entzogen — die App ruft die Funktion
+  ausschließlich über die Service-Role auf, ein angemeldeter Nutzer hätte sonst
+  fremde Zähler hochtreiben und z. B. den Zugangscode-Versuch anderer blockieren
+  können. **Nach dem Entzug live geprüft**, nicht angenommen: Rauchtest grün.
+  **Regel: Was in `darfWeiter()` als Kennung hineingeht, ist personenbezogen —
+  IP, E-Mail, Konto-ID. Es verlässt die App nur als HMAC.**
+  `tests/zugriffsbremse.test.ts` wird sonst rot (fünf Mutationen geprüft).
 - **Security-Advisor, Stand 08.09.2026 — was BEWUSST offen bleibt:** `billing_einstellungen`
   und `registrierung_freigaben` haben RLS an und **keine** Policy. Das ist Absicht und
   fail-closed: Beide werden ausschließlich von SECURITY-DEFINER-Funktionen gelesen, eine
