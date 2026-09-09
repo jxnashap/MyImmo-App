@@ -143,7 +143,17 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 - **Nach dem Wechsel `signOut({ scope: "global" })`** — man setzt ein Passwort oft genau
   dann zurück, weil man fremden Zugriff vermutet; Supabase beendet fremde Sitzungen von
   sich aus **nicht**.
-`tests/passwortReset.test.ts`, sieben Mutationen geprüft.
+- ⚠️ **BETREIBER-SCHRITT, ohne den der Link ins Nichts führt:** `redirectTo` wirkt nur,
+  wenn die URL **wörtlich** in der Redirect-URL-Weißliste steht (Authentication → URL
+  Configuration). Fehlt sie, verwirft Supabase das Ziel stillschweigend und nimmt die
+  **Site URL** — steht die auf `localhost`, landet der Nutzer im Nichts. Genau so am
+  09.09.2026 gemeldet. Einzutragen: `https://www.myimmoapp.de/auth/passwort`; Site URL
+  muss `https://www.myimmoapp.de` sein.
+  **Der Code hängt seitdem nicht mehr daran:** Die **Middleware** fängt Recovery-Merkmale
+  (`type=recovery&token_hash`, oder `code` auf `/` bzw. `/login`) ab und reicht sie an
+  `/auth/passwort` weiter — samt Suchparametern. `/auth/` ist ausgenommen, sonst
+  Endlosschleife und der Google-Callback (nutzt ebenfalls `code`) würde gekapert.
+`tests/passwortReset.test.ts`, zehn Mutationen geprüft.
 
 ### Zukunftsideen (notiert, nicht gebaut)
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
