@@ -5,7 +5,7 @@ import Link from "next/link";
 import { KeyRound, Download, Trash2, Check, X, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { deleteAccount } from "@/lib/actions/account";
-import { wechslePasswort } from "@/lib/passwortWechsel";
+import { wechslePasswort, sendePasswortMail } from "@/lib/passwortWechsel";
 import { useReAuth } from "@/components/ReAuthDialog";
 import { createPortal } from "react-dom";
 import { useModalFokus } from "@/lib/modalFokus";
@@ -46,7 +46,7 @@ export default function KontoVerwaltung({
     // liegen in lib/passwortWechsel.ts — dieselbe Logik wie in den
     // Vermieter-Einstellungen.
     const erg = await wechslePasswort(supabase, {
-      email, aktuell: pw0, neu: pw1, wiederholung: pw2, istGoogle,
+      email, aktuell: pw0, neu: pw1, wiederholung: pw2,
     });
     setPwLaeuft(false);
     if (!erg.ok) {
@@ -57,6 +57,20 @@ export default function KontoVerwaltung({
     setPw1("");
     setPw2("");
     setPwStatus({ art: "ok", text: "Passwort geändert." });
+  }
+
+  // Google-Konten haben kein Passwort zum Bestaetigen — siehe
+  // lib/passwortWechsel.ts. Fuer sie geht der Weg ueber die E-Mail.
+  async function perMail() {
+    setPwStatus(null);
+    setPwLaeuft(true);
+    const erg = await sendePasswortMail(supabase, email);
+    setPwLaeuft(false);
+    setPwStatus(
+      erg.ok
+        ? { art: "ok", text: "E-Mail verschickt. Der Link fuehrt dich zum Einrichten." }
+        : { art: "fehler", text: erg.fehler },
+    );
   }
 
   const feld: React.CSSProperties = {
@@ -82,8 +96,24 @@ export default function KontoVerwaltung({
           <h3><KeyRound size={15} style={{ verticalAlign: "-2px" }} /> Passwort ändern</h3>
         </div>
         <div className="section-body">
+          {istGoogle ? (
+            <div style={{ maxWidth: 460 }}>
+              <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6, marginTop: 0 }}>
+                Dein Konto hat noch kein Passwort — es gibt also keines zu bestätigen. Wir
+                schicken dir einen Link, über den du eines setzt.
+              </p>
+              {pwStatus && (
+                <p style={{ fontSize: 12.5, color: pwStatus.art === "ok" ? "var(--green)" : "var(--red)" }}>
+                  {pwStatus.text}
+                </p>
+              )}
+              <button type="button" onClick={perMail} className="btn btn-gold" disabled={pwLaeuft} style={{ fontSize: 13 }}>
+                {pwLaeuft ? "Wird verschickt …" : "Link zum Einrichten schicken"}
+              </button>
+            </div>
+          ) : (
           <form onSubmit={passwortAendern} style={{ display: "grid", gap: 12, maxWidth: 380 }}>
-            {!istGoogle && (
+            {(
               <label style={{ display: "grid", gap: 5, fontSize: 12.5 }}>
                 <span>Aktuelles Passwort</span>
                 <input type="password" style={feld} value={pw0} onChange={(e) => setPw0(e.target.value)} autoComplete="current-password" />
@@ -111,6 +141,7 @@ export default function KontoVerwaltung({
               </button>
             </div>
           </form>
+          )}
         </div>
       </div>
 

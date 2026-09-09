@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
 import { bereiteRegistrierungVor } from "@/lib/actions/freischaltung";
 import { PASSWORT_MIN, PASSWORT_REGEL, pruefePasswort } from "@/lib/passwort";
+import { RESET_ZIEL } from "@/lib/passwortWechsel";
 import { sicheresZiel } from "@/lib/flash";
 import MfaAbfrage from "@/components/MfaAbfrage";
 import { mussMfaNachholen } from "@/lib/auth/sitzung";
@@ -300,7 +301,7 @@ export default function LoginPage() {
     // nicht — der Weg endete im Nichts (siehe app/(app)/auth/passwort/route.ts).
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo:
-        typeof window !== "undefined" ? `${window.location.origin}/auth/passwort` : undefined,
+        typeof window !== "undefined" ? `${window.location.origin}${RESET_ZIEL}` : undefined,
     });
     if (error) setError(uebersetze(error.message));
     else setInfo("Wir haben dir eine E-Mail zum Zurücksetzen geschickt.");
