@@ -30,7 +30,28 @@ export const dynamic = "force-dynamic";
 // eine Seite, die ein Passwort OHNE das alte setzt, für jede fremde offene
 // Sitzung erreichbar.
 
-const FEHLER = "/login?fehler=reset";
+// Warum das Einlösen scheiterte — als Parameter an die Anmeldeseite.
+//
+// WARUM UNTERSCHIEDEN WIRD (09.09.2026): Die erste Fassung schickte jeden
+// Fehlschlag mit derselben Meldung zurück. Beim ersten echten Test hiess es
+// dann „Link abgelaufen oder bereits benutzt" — und niemand konnte sagen, ob
+// der Link wirklich alt war, ob er auf einem anderen Geraet geoeffnet wurde
+// oder ob ueberhaupt kein Token beim Server ankam. Eine Fehlermeldung, die
+// jede Ursache gleich benennt, kostet eine ganze Runde Raten.
+type Grund =
+  /** Weder token_hash noch code kamen an. Passiert, wenn der Token im
+   *  URL-Fragment steht (#access_token…) — das schickt der Browser NIE an den
+   *  Server. Dann muss die E-Mail-Vorlage auf `token_hash` umgestellt werden. */
+  | "ohne-token"
+  /** `code` da, Tausch gescheitert: meist fehlender `code_verifier`, weil die
+   *  Mail in einem ANDEREN Browser/Geraet geoeffnet wurde als dem, der den
+   *  Reset angefordert hat. Oder der Code wurde schon eingeloest. */
+  | "geraet"
+  /** `token_hash` da, aber abgelaufen oder schon benutzt. */
+  | "abgelaufen";
+
+const zurueck = (origin: string, grund: Grund) =>
+  NextResponse.redirect(`${origin}/login?fehler=reset&grund=${grund}`);
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -40,23 +61,30 @@ export async function GET(request: Request) {
 
   const supabase = await createClient();
   let ok = false;
+  let grund: Grund = "ohne-token";
 
   if (tokenHash && typ === "recovery") {
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
     ok = !error;
+    grund = "abgelaufen";
+    if (error) console.error("Reset (token_hash) gescheitert:", error.message);
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     ok = !error;
+    grund = "geraet";
+    if (error) console.error("Reset (code) gescheitert:", error.message);
+  } else {
+    console.error("Reset ohne Token — weder token_hash noch code im Aufruf.");
   }
 
-  if (!ok) return NextResponse.redirect(`${origin}${FEHLER}`);
+  if (!ok) return zurueck(origin, grund);
 
   // `getUser()` und nicht `getSession()`: Nur die erste prüft den Token gegen
   // Supabase. Ohne bestätigten Nutzer gibt es keinen Nachweis.
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(`${origin}${FEHLER}`);
+  if (!user) return zurueck(origin, grund);
 
   const antwort = NextResponse.redirect(`${origin}/auth/passwort-neu`);
   antwort.cookies.set(NACHWEIS_COOKIE, stelleNachweisAus(user.id), {

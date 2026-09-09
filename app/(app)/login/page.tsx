@@ -91,9 +91,21 @@ export default function LoginPage() {
           : "Dieses Google-Konto passt nicht zur gewählten Rolle.",
       );
     } else if (fehlerArt === "reset") {
+      // Der Grund kommt aus app/(app)/auth/passwort/route.ts. Ohne ihn hiess
+      // jeder Fehlschlag „abgelaufen oder schon benutzt" — auch dann, wenn der
+      // Link tadellos war und nur im falschen Browser geoeffnet wurde.
+      const grund = params.get("grund");
       setError(
-        "Der Link zum Zurücksetzen ist abgelaufen oder wurde schon benutzt. " +
-          "Fordere unten einfach einen neuen an.",
+        grund === "geraet"
+          ? "Dieser Link lässt sich nur in dem Browser öffnen, in dem du das Zurücksetzen " +
+              "angefordert hast. Fordere unten einen neuen an und öffne die E-Mail auf " +
+              "demselben Gerät — oder klicke den Link erneut, falls du ihn schon einmal benutzt hast."
+          : grund === "ohne-token"
+            ? "Der Link enthielt keine Kennung, die wir prüfen können. Bitte fordere unten " +
+              "einen neuen an. (Falls das erneut passiert: Die E-Mail-Vorlage in Supabase " +
+              "muss auf „token_hash“ umgestellt werden.)"
+            : "Der Link zum Zurücksetzen ist abgelaufen oder wurde schon benutzt. " +
+              "Fordere unten einfach einen neuen an.",
       );
     } else if (fehlerArt === "google") {
       setError("Die Anmeldung mit Google hat nicht geklappt. Bitte erneut versuchen.");
