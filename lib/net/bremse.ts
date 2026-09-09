@@ -1,6 +1,8 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { blindIndex } from "@/lib/crypto/secure";
 
 // Zugriffsbremse fuer Server-Actions.
 //
@@ -16,6 +18,41 @@ export async function besucherIp(): Promise<string> {
   const kette = h.get("x-forwarded-for") ?? "";
   const erste = kette.split(",")[0]?.trim();
   return erste || h.get("x-real-ip") || "unbekannt";
+}
+
+let schonGewarnt = false;
+
+/**
+ * Die Kennung, unter der gezaehlt wird — NIE im Klartext.
+ *
+ * WARUM (08.09.2026, gemessen): Bis dahin wanderte die rohe Besucher-IP als
+ * Teil des Schluessels in die Tabelle `zugriff_limit` und blieb dort liegen —
+ * 29 Zeilen, alle mit IP im Klartext, die aelteste neun Tage alt, geloescht
+ * wurde nie. Ueber `newsletter_adresse` waere zusaetzlich die E-Mail-Adresse
+ * im Klartext gelandet. Fuer eine Bremse braucht es aber nur einen STABILEN
+ * Schluessel, keinen lesbaren.
+ *
+ * HMAC, nicht einfaches Hashen: Ein SHA-256 ueber eine IPv4-Adresse ist in
+ * Sekunden rueckrechenbar — es gibt nur rund vier Milliarden davon. Erst der
+ * geheime Schluessel macht daraus etwas, das ein Datenbank-Leck nicht
+ * preisgibt.
+ *
+ * Fehlt `DATA_ENCRYPTION_KEY`, wird auf SHA-256 zurueckgefallen: schwaecher
+ * (siehe oben), aber immer noch besser als Klartext — und vor allem darf die
+ * Bremse daran nicht scheitern. In der Produktion ist der Schluessel gesetzt.
+ */
+function kennzeichen(wert: string): string {
+  try {
+    return blindIndex(wert);
+  } catch {
+    if (!schonGewarnt) {
+      schonGewarnt = true;
+      console.warn(
+        "Zugriffsbremse: DATA_ENCRYPTION_KEY fehlt — Kennungen werden nur gehasht, nicht mit HMAC geschuetzt.",
+      );
+    }
+    return createHash("sha256").update(wert, "utf8").digest("hex");
+  }
 }
 
 /**
@@ -43,7 +80,10 @@ export async function darfWeiter(
       p_aktion: aktion,
       p_max: max,
       p_sekunden: sekunden,
-      p_kennung: kennung ?? (await besucherIp()),
+      // Immer eine Kennung mitgeben — auch dann, wenn der Aufrufer keine
+      // gesetzt hat. Sonst griffe der Rueckfall `anfrage_ip()` INNERHALB der
+      // Datenbank, und der schreibt die IP wieder im Klartext.
+      p_kennung: kennzeichen(kennung ?? (await besucherIp())),
     });
     // Die Funktion wirft beim Ueberschreiten — PostgREST macht daraus einen Fehler.
     return !error;

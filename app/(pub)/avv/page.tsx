@@ -174,7 +174,9 @@ export default function AvvPage() {
         Dateien im Datei-Speicher unwiderruflich gelöscht, soweit keine gesetzliche
         Aufbewahrungspflicht des Betreibers entgegensteht. Der Verantwortliche kann seine
         Daten zuvor über die Export-Funktionen der App sichern. Restkopien in technischen
-        Backups werden turnusmäßig überschrieben.
+        Backups des Datenbank-Anbieters (tägliche Sicherung, Aufbewahrung 7 Tage) werden
+        spätestens <strong>sieben Tage</strong> nach der Löschung automatisch überschrieben;
+        sie dienen ausschließlich der Wiederherstellung im Störungsfall.
       </p>
 
       <H2>11. Nachweise und Kontrollen (lit. h)</H2>
