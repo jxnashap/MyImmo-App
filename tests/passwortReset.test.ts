@@ -183,3 +183,41 @@ describe("Rückfall: Reset-Merkmale landen woanders", () => {
     expect(mw).toMatch(/p\.has\("code"\) && \(pathname === "\/" \|\| pathname === "\/login"\)/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Fehlergründe unterscheiden (09.09.2026, nach dem ersten echten Test)
+//
+// Der erste Versuch endete mit „Link abgelaufen oder bereits benutzt" — und
+// niemand konnte sagen, ob das stimmte. Drei völlig verschiedene Ursachen
+// führten zu derselben Meldung: abgelaufen, falscher Browser, oder gar kein
+// Token beim Server. Eine Meldung, die jede Ursache gleich benennt, kostet
+// eine ganze Runde Raten.
+describe("Fehlergründe beim Einlösen", () => {
+  const lies = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
+  const route = lies("app/(app)/auth/passwort/route.ts");
+
+  it("die Route unterscheidet drei Ursachen", () => {
+    for (const g of ["ohne-token", "geraet", "abgelaufen"]) {
+      expect(route, g).toContain(`"${g}"`);
+    }
+  });
+
+  it("der Grund steht in der Weiterleitung", () => {
+    expect(route).toMatch(/fehler=reset&grund=\$\{grund\}/);
+  });
+
+  it("die echte Supabase-Meldung landet im Server-Log, nicht beim Nutzer", () => {
+    // Im Log steht sie für die Fehlersuche; in der URL hätte sie nichts zu
+    // suchen — dort liest sie jeder mit, der über die Schulter schaut.
+    expect(route).toMatch(/console\.error\("Reset \(token_hash\) gescheitert:", error\.message\)/);
+    expect(route).toMatch(/console\.error\("Reset \(code\) gescheitert:", error\.message\)/);
+    expect(route).not.toMatch(/grund=\$\{error/);
+  });
+
+  it("die Anmeldeseite zeigt zu jedem Grund einen anderen Text", () => {
+    const login = lies("app/(app)/login/page.tsx");
+    expect(login).toMatch(/params\.get\("grund"\)/);
+    expect(login).toMatch(/grund === "geraet"/);
+    expect(login).toMatch(/grund === "ohne-token"/);
+  });
+});
