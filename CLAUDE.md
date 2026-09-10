@@ -36,6 +36,45 @@
 > **Merke außerdem:** `effektiverPlan()` wertet `gueltig_bis` NICHT aus — ein Abo endet
 > allein über `status`.
 
+### 👤 NUR DER BETREIBER — offene Punkte (Stand 10.09.2026)
+Alles hier ist **kein Code**, sondern ein Dashboard, ein Anwalt oder ein Blick in einen
+Browser. Ich kann es nicht erledigen und nicht prüfen. **In jeder Session kurz nachfragen,
+ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut vorzuschlagen.
+
+**Dringend — ein Kernweg hängt daran:**
+1. **Supabase → Authentication → URL Configuration.** Site URL muss
+   `https://www.myimmoapp.de` sein; `https://www.myimmoapp.de/auth/passwort` gehört in die
+   Redirect-URLs. **Dreimal gefragt, noch nicht beantwortet** — steht dort `localhost`,
+   sind auch die Registrierungs-Bestätigungsmails betroffen.
+2. **E-Mail-Vorlage „Reset Password" auf `token_hash` umstellen** (Authentication → Emails).
+   Die Standard-Vorlage schickt einen PKCE-`code`, der **nur im anfordernden Browser**
+   funktioniert — Mail am Handy öffnen scheitert zwangsläufig. Wortlaut steht in
+   `docs/BETREIBER-CHECKLISTE.md`.
+3. **„Passwort vergessen" testen und den `grund=`-Parameter aus der Adresszeile melden.**
+   Der Weg ist gebaut, aber **nie mit einer echten Mail erfolgreich durchlaufen**.
+
+**Danach, in dieser Reihenfolge:**
+4. **Die zwei restlichen Passwort-Schalter** („Secure password change", „Require current
+   password") — Voraussetzungen sind gebaut (PR #327), aber **erst nach Punkt 3**, und
+   unmittelbar danach erneut testen (siehe „Passwort vergessen", letzter Unterpunkt).
+5. **Leaked Password Protection: Gegenprobe.** Der Schalter ist an (09.09.2026), die
+   **Wirkung ist ungeprüft** — Registrierung mit „Password123!" muss scheitern. Am
+   29.07.2026 ging sie trotz gesetztem Schalter durch.
+6. **2FA einmal durchspielen** — einrichten, abmelden, mit Code anmelden, „Handy nicht zur
+   Hand?" mit einem Wiederherstellungscode. Die Logik ist getestet, der Ablauf nie.
+
+**Ohne Eile:**
+7. **StBerG-Anfrage an den Anwalt** — `docs/compliance/StBerG-ANFRAGE.md` ist fertig.
+8. **Vercel-Log-Aufbewahrung nachsehen** (Dashboard → Observability) und mir die Zahl geben;
+   sie fehlt als einzige konkrete Angabe in `/datenschutz` Ziffer 3 d. Weder Doku noch API
+   geben sie her — **keine Zahl erfinden**.
+9. **11px → 12px**: Token `--text-xs` in `app/globals.css` umstellen, Seiten durchklicken,
+   bei Bruch eine Zeile zurück. Kein Test findet einen hässlichen Umbruch.
+10. **Brevo-Konto**: AVV-Restpunkte (neuere Fassung? Firmendaten? Empfängeradresse für
+    Unterauftragsverarbeiter-Ankündigungen) — Details unter „AVV-Abschlussstand".
+11. **Altes kurzes Passwort**: stichprobenhaft prüfen, ob sich ein Bestandskonto mit
+    weniger als 8 Zeichen noch anmelden kann.
+
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**
   (gegen die KfW-308-Produktseite geprüft): Höchstbeträge **140.000 / 160.000 / 180.000 €**
@@ -530,9 +569,32 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   HTTP-Methoden + Segment-Konfig exportieren). React 19: `useRef` braucht einen Startwert.
   **Rückkehrpunkt: Branch `stand/vor-next15-2026-09-01`** (= letzter 14er-Stand, Commit
   `3ef7ccc`); Tags lässt der Git-Proxy der Remote-Umgebung nicht durch, deshalb ein Branch.
-- **Bewusst offen: 4 Meldungen zu `postcss` 8.4.31** — von Next selbst fest verdrahtet
-  (auch in 15/16), reine Bauzeit-Exposition. KEIN npm-`override` setzen (verstellt Nexts
-  CSS-Pipeline); beim nächsten Next-Update erneut prüfen.
+- 🔄 **Monatslauf 10.09.2026 — Befunde und Grenzen: `docs/SICHERHEIT-ABHAENGIGKEITEN.md`.**
+  **osv-scanner ließ sich nicht installieren** (kein Go-Modul-Zugang in der Remote-Umgebung)
+  → `npm audit`, dieselbe Advisory-Grundlage. **4 Meldungen, davon 1 hoch.**
+- **`postcss` — jetzt HOCH, aber weiterhin nur Bauzeit.** Zwei der vier Meldungen sind
+  inzwischen hoch eingestuft. **Nachgesehen statt fortgeschrieben:** Es liegen ZWEI postcss
+  im Baum — das **direkte** (8.5.26) ist **sauber**, verwundbar ist nur Nexts fest gepinnte
+  Kopie `node_modules/next/node_modules/postcss` (8.4.31). Erreichbar nur über CSS, das ein
+  Angreifer bestimmt; **CSS-Uploads gibt es nicht** (geprüft). **KEIN npm-`override`.**
+  **Neu:** `npm audit` nennt als Behebung **next@16.3.4** — die Next-16-Migration ist damit
+  der einzige Weg, diese Meldung zu schließen.
+- ⛔ **`npm install` funktioniert in der Remote-Umgebung NICHT** (10.09.2026):
+  `Cannot read properties of null (reading 'edgesOut')` in Arborist `buildIdealTree` — bei
+  jedem Weg, auch mit `--package-lock-only` und nach `rm -rf node_modules`. **Nur `npm ci`
+  läuft.** Abhängigkeits-Updates gehen deshalb nur auf einem Rechner mit funktionierendem npm.
+  **`--legacy-peer-deps` ist KEIN Ausweg:** Der Versuch ging durch, warf aber **70 Pakete
+  aus der Lockdatei** (den ganzen eslint-Baum — `eslint` steht nirgends als Abhängigkeit und
+  kam nur als Peer von `eslint-config-next` mit). Tests und Build blieben grün; aufgefallen
+  wäre es erst auf Vercel. Wurde vollständig zurückgenommen.
+  **Offen für den nächsten Rechner:** `npm install -D vitest@^4.1.11` (schließt
+  `GHSA-82fw-gwwq-j7x9`, moderat, **nur Entwicklung** — wer Testcode bestimmt, hat ohnehin
+  Schreibrechte am Repo).
+- 🧹 **`npm run lint` hat NIE gelint** (10.09.2026 gefunden). Es gibt keine
+  ESLint-Konfiguration im Repo (kein `.eslintrc*`, kein `eslint.config.*`) — `next lint`
+  startet deshalb den interaktiven Einrichtungsdialog. **Nicht nebenbei reparieren:**
+  Next 16 entfernt `next lint`; die Einrichtung gehört als eigenständiges
+  `eslint.config.mjs` in dieselbe Migration.
 - **Next 16 ist ein eigenes, späteres Vorhaben** — verlangt `middleware.ts` → `proxy.ts`
   (dort **kein Edge-Runtime**), Turbopack als Standard, Wegfall von `next lint`.
 - **Scanner (kostenlos, ohne Konto):** `osv-scanner scan source --lockfile=package-lock.json`
