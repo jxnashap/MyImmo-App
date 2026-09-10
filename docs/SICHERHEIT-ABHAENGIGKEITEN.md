@@ -1,4 +1,66 @@
-# Sicherheit der Abhängigkeiten — Stand 01.09.2026
+# Sicherheit der Abhängigkeiten
+
+> ## 🔄 Nachlauf 10.09.2026 (`npm audit`)
+>
+> Der Monatslauf war fällig. **osv-scanner ließ sich nicht installieren** (kein Go-Modul-
+> Zugang in der Remote-Umgebung), deshalb `npm audit` — dieselbe Advisory-Grundlage,
+> weniger Komfort. **4 Meldungen, davon 1 hoch.**
+>
+> ### 1. postcss — jetzt HOCH statt moderat, aber unverändert Bauzeit
+> Am 01.09. standen hier vier moderate Meldungen. Inzwischen sind zwei davon **hoch**
+> (`GHSA-6g55-p6wh-862q`, `GHSA-r28c-9q8g-f849`: beliebige `.map`-Dateien lesbar über
+> einen `sourceMappingURL` in einem CSS-Kommentar).
+>
+> **Genau nachgesehen, statt die alte Einschätzung fortzuschreiben** — es liegen ZWEI
+> postcss im Baum:
+>
+> | Pfad | Version | Betroffen? |
+> |---|---|---|
+> | `node_modules/postcss` (direkte devDependency) | **8.5.26** | **nein** — über allen vier Bereichen |
+> | `node_modules/next/node_modules/postcss` | **8.4.31** | **ja** — von Next fest gepinnt |
+>
+> **Erreichbarkeit:** postcss läuft in Nexts CSS-Pipeline zur **Bauzeit**. Der Angriff
+> braucht CSS, das der Angreifer bestimmt. Das CSS dieser App kommt aus dem Repo;
+> **CSS-Uploads gibt es nicht** (geprüft: keine Stelle nimmt `text/css` entgegen). Wer
+> bösartiges CSS einschleusen wollte, bräuchte Schreibrechte am Repo — und hätte dann
+> ganz andere Möglichkeiten.
+>
+> **Neu und wichtig:** `npm audit` nennt als Behebung jetzt **next@16.3.4**. Damit ist die
+> Next-16-Migration nicht mehr nur „irgendwann", sondern **der einzige Weg**, diese
+> Meldung loszuwerden. Sie bleibt trotzdem ein eigenes Vorhaben (`middleware.ts` →
+> `proxy.ts`, Turbopack, Wegfall von `next lint`) und wird nicht nebenbei gemacht.
+> **KEIN npm-`override` auf postcss** — das verstellt Nexts CSS-Pipeline (Begründung unten).
+>
+> ### 2. vitest / @vitest/mocker — moderat, nur Entwicklung, BLOCKIERT
+> `GHSA-82fw-gwwq-j7x9` (Path Traversal über Redirect-Mock), behoben ab **4.1.11**,
+> installiert ist **4.1.9**. Ein Patch-Sprung — trivial, aber hier **nicht durchführbar**:
+> `npm install` bricht in dieser Umgebung mit einem internen Fehler ab
+> (`Cannot read properties of null (reading 'edgesOut')` in Arborist `buildIdealTree`),
+> und zwar bei jedem Weg — mit und ohne `--package-lock-only`, auch nach `rm -rf
+> node_modules`. **Nur `npm ci` funktioniert**, und das installiert stur die Lockdatei.
+>
+> **Auf einem Rechner mit funktionierendem npm nachholen:** `npm install -D vitest@^4.1.11`,
+> danach `npx vitest run` und `npm run build`.
+>
+> **Warum es nicht dringend ist:** Testcode ist die Angriffsfläche. Wer den bestimmt, hat
+> bereits Schreibrechte am Repo. Nichts davon läuft in der Produktion.
+>
+> ⚠️ **`--legacy-peer-deps` NICHT als Ausweg benutzen.** Ein Versuch damit ging durch, warf
+> aber **70 Pakete aus der Lockdatei** — den kompletten eslint-Baum, weil `eslint` nirgends
+> als Abhängigkeit steht und nur als Peer von `eslint-config-next` mitkam. Tests und Build
+> liefen danach weiterhin grün; das Loch wäre erst auf Vercel oder beim nächsten `npm ci`
+> aufgefallen. Wurde vollständig zurückgenommen.
+>
+> ### 3. Nebenbefund: `npm run lint` ist Dekoration
+> Beim Aufräumen aufgefallen und **unabhängig von allem oben**: Es gibt **keine
+> ESLint-Konfiguration** im Repo (kein `.eslintrc*`, kein `eslint.config.*`). `next lint`
+> startet deshalb den interaktiven Einrichtungsdialog — in einer Pipeline hinge oder
+> scheiterte es. Das Skript steht seit jeher in der `package.json` und hat **nie gelint**.
+> Kein akutes Risiko, aber eine Zeile, die etwas verspricht, das sie nicht hält.
+> **Nicht nebenbei reparieren:** Next 16 entfernt `next lint` ohnehin; die Einrichtung
+> gehört in dieselbe Migration (dann direkt als eigenständiges `eslint.config.mjs`).
+
+## Erster Lauf — Stand 01.09.2026
 
 Erster Lauf des **OSV-Scanners** (`google/osv-scanner`, v2.5.1) gegen `package-lock.json`.
 OSV ist die Schwachstellen-Datenbank von Google/OpenSSF; sie führt GitHub-Advisories und
