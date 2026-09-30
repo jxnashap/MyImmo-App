@@ -25,6 +25,7 @@ import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
 import { BarChart3, Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
 import Leer from "@/components/Leer";
+import { kostenSchnittMonat, monatsCashflow, cashflowFormel } from "@/lib/cashflowKennzahl";
 
 type Kredit = {
   id: string; bezeichnung: string | null; bank: string | null; betrag: number | null;
@@ -91,21 +92,11 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   const totalKreditRate = kred.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
   const jahresEinnahmen = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
   const jahresKosten = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
-  // Monatliche Kosten für die Cashflow-Übersicht: Ø der LETZTEN 12 MONATE aus
-  // echten Buchungen — genau wie im Dashboard (app/page.tsx). Vorher wurde die
-  // Summe ALLER je erfassten Kosten durch 12 geteilt; wer sein Portfolio drei
-  // Jahre lang pflegt, sah dadurch einen dreifach zu hohen Monatswert, der auch
-  // noch dem Dashboard widersprach.
-  const jetzt = new Date();
-  const vor12Monaten = new Date(jetzt);
-  vor12Monaten.setFullYear(vor12Monaten.getFullYear() - 1);
-  const kosten12M = kosten
-    .filter((k) => {
-      const d = k.buchungsdatum ? new Date(k.buchungsdatum) : null;
-      return d && d >= vor12Monaten && d <= jetzt;
-    })
-    .reduce((s, k) => s + (k.betrag ?? 0), 0);
-  const monatsKosten = kosten12M / 12;
+  // Monatliche Kosten: dieselbe Rechnung wie auf dem Dashboard
+  // (lib/cashflowKennzahl.ts) — Ø der letzten 12 Monate MIT BUCHUNGEN, geteilt
+  // durch die Monate, die das Fenster wirklich umfasst. Vorher / 12 fest.
+  const kostenSchnitt = kostenSchnittMonat(kosten, [...einnahmen, ...kosten], new Date().toISOString().slice(0, 10));
+  const monatsKosten = kostenSchnitt.betrag;
   // Garagen-Objekte: Mieten liegen auf den einzelnen Mietern (je Einheit),
   // nicht auf p.miete — sonst zeigten KPIs/Cashflow/Rendite 0.
   // Nebenkosten-Verteiler nur bei mehreren Mietparteien anbieten.
@@ -127,14 +118,18 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   const petersBasis = (p.kaufpreis ?? wert ?? 0) * GEBAEUDEANTEIL;
   const petersJahr = petersBasis * 1.5 / 80;
   const petersM2 = p.flaeche && p.flaeche > 0 ? petersJahr / p.flaeche : 0;
-  const cashflowMo = miete - totalKreditRate;
+  // MIT laufenden Kosten (30.09.2026). Vorher „Miete − Kreditrate": Die
+  // Übersicht weiter unten auf DIESER Seite führte die Kosten als eigenen
+  // Posten, zog sie in der Kennzahl aber nicht ab — der Wert war zu gut und
+  // passte nicht zum Dashboard.
+  const cashflowMo = monatsCashflow({ miete, kreditraten: totalKreditRate, kostenSchnitt: monatsKosten });
   const cfStr = (cashflowMo >= 0 ? "+ " : "– ") + euro(Math.abs(cashflowMo));
 
   const kpis = [
     { lbl: "Aktueller Wert", val: euro(wert) },
     { lbl: "Kaltmiete / Mo.", val: miete ? euro(miete) : "–" },
     { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–" },
-    { lbl: "Cashflow / Mo.", val: cfStr, sub: cashflowMo >= 0 ? "positiv" : "negativ", col: cashflowMo >= 0 ? "var(--green)" : "var(--red)" },
+    { lbl: "Cashflow / Mo.", val: cfStr, sub: cashflowFormel(kostenSchnitt), col: cashflowMo >= 0 ? "var(--green)" : "var(--red)" },
   ];
 
   const stammRows: [string, React.ReactNode][] = [
@@ -158,7 +153,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
     { lbl: "Instandhaltungsrücklage (empf.)", val: petersJahr > 0 ? euro(petersJahr) + "/Jahr" : "–", badge: "badge-neutral", note: petersM2 > 0 ? `Peterssche Formel · ${euro(petersM2)}/m²·Jahr` : "Peterssche Formel (Faustformel)" },
     { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-neutral", note: "Summe aller Darlehensraten" },
     { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–", badge: "badge-neutral", note: "Summe aller Darlehen" },
-    { lbl: "Cashflow / Mo.", val: cfStr, badge: cashflowMo >= 0 ? "badge-green" : "badge-red", note: "Miete minus Kreditrate" },
+    { lbl: "Cashflow / Mo.", val: cfStr, badge: cashflowMo >= 0 ? "badge-green" : "badge-red", note: cashflowFormel(kostenSchnitt) },
     { lbl: "Einnahmen gesamt", val: jahresEinnahmen > 0 ? euro(jahresEinnahmen) : "–", badge: "badge-green", note: "Alle erfassten Einnahmen" },
     { lbl: "Kosten gesamt", val: jahresKosten > 0 ? euro(jahresKosten) : "–", badge: "badge-red", note: "Alle erfassten Ausgaben" },
   ];
@@ -167,7 +162,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   const cfItems = [
     { lbl: "Kaltmiete", val: miete, col: "var(--green)" },
     { lbl: "Kreditraten", val: totalKreditRate, col: "var(--red)" },
-    { lbl: "Laufende Kosten (Ø 12 Mon.)", val: monatsKosten, col: "var(--red)" },
+    { lbl: `Laufende Kosten (Ø ${kostenSchnitt.monate} Mon.)`, val: monatsKosten, col: "var(--red)" },
   ].filter((i) => i.val > 0);
   const cfMax = Math.max(1, ...cfItems.map((i) => i.val));
 

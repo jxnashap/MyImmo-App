@@ -164,7 +164,12 @@ describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026)", (
 
   it("auch die beiden Verlaufs-Charts stehen davor", () => {
     const aufgaben = seite.indexOf("Termine &amp; Aufgaben");
-    for (const chart of ["Portfolio-Wertentwicklung", "Cashflow-Entwicklung"]) {
+    // Der Verlauf heißt seit 30.09.2026 „Buchungssaldo" (Review: der Endwert
+    // stand als „Cashflow" neben dem Monats-Cashflow). Der Titel muss DA sein —
+    // `indexOf` liefert sonst -1, und -1 ist immer „davor": Die erste Fassung
+    // wäre nach der Umbenennung still grün geblieben.
+    for (const chart of ["Portfolio-Wertentwicklung", "<h3>Buchungssaldo</h3>"]) {
+      expect(seite.indexOf(chart), chart).toBeGreaterThan(0);
       expect(seite.indexOf(chart), chart).toBeLessThan(aufgaben);
     }
   });
