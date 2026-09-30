@@ -6,6 +6,7 @@ import DeleteButton from "@/components/DeleteButton";
 import type { Property, Kredit } from "@/lib/types";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { sortiereObjekte, SORT_OPTIONEN } from "@/lib/objektSortierung";
+import { sollKaltmiete } from "@/lib/sollMiete";
 import { objektUmfaenge, objektFolgenText } from "@/lib/loeschUmfang";
 import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Upload, Plus, X, Landmark, type LucideIcon } from "lucide-react";
 
@@ -32,14 +33,18 @@ export default async function PropertiesPage(
 ) {
   const searchParams = await props.searchParams;
   const supabase = await createClient();
-  const [{ data }, { data: kred }, umfaenge] = await Promise.all([
+  const [{ data }, { data: kred }, { data: miet }, umfaenge] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("kredite").select("prop_id,restschuld"),
+    supabase.from("mieter").select("prop_id,kaltmiete,stellplatz_miete,mietbeginn,mietende"),
     // Was am Objekt haengt — gehoert VOR den Loeschklick (lib/loeschUmfang.ts).
     objektUmfaenge(),
   ]);
 
-  const alle = (data ?? []) as Property[];
+  // Miete je Objekt nach derselben Regel wie Dashboard und Objektseite
+  // (lib/sollMiete.ts) — auch für Rendite und Sortierung „nach Miete".
+  const heute = new Date().toISOString().slice(0, 10);
+  const alle = ((data ?? []) as Property[]).map((p) => ({ ...p, miete: sollKaltmiete(p, miet ?? [], heute).betrag }));
   const kredite = (kred ?? []) as Pick<Kredit, "prop_id" | "restschuld">[];
 
   const restMap = new Map<string, number>();

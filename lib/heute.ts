@@ -11,7 +11,7 @@
 // Reine Funktion ohne Datenbank und ohne React: Was hier gerechnet wird, lässt
 // sich prüfen. Die Seite reicht nur die Zeilen herein.
 
-export type AufgabenArt = "miete" | "anliegen" | "zaehler" | "frist" | "termin";
+export type AufgabenArt = "miete" | "anliegen" | "zaehler" | "frist" | "termin" | "stammdaten";
 
 export type Aufgabe = {
   art: AufgabenArt;
@@ -33,6 +33,7 @@ export type OffeneMiete = { mieterId: string; name: string; objekt: string; mona
 export type OffenesAnliegen = { id: string; titel: string | null; mieter: string; erstellt: string };
 export type OffeneMeldung = { id: string; art: string | null; mieter: string; datum: string };
 export type FristZeile = { datum: string; label: string; sub: string; warn: boolean };
+export type ObjektOhneKaufdatum = { id: string; name: string };
 
 const monatLabel = (ym: string) => {
   const [j, m] = ym.split("-");
@@ -53,6 +54,8 @@ export function baueHeuteAufgaben(
     anliegen: OffenesAnliegen[];
     meldungen: OffeneMeldung[];
     fristen: FristZeile[];
+    /** Objekte ohne Kaufdatum — AfA und Spekulationsfrist rechnen sonst falsch. */
+    ohneKaufdatum?: ObjektOhneKaufdatum[];
   },
   heuteISO: string,
   grenze = 5,
@@ -111,7 +114,24 @@ export function baueHeuteAufgaben(
     });
   }
 
-  const rang: Record<AufgabenArt, number> = { miete: 0, anliegen: 1, zaehler: 2, frist: 3, termin: 4 };
+  // Fehlendes Kaufdatum (30.09.2026: bei 20 von 23 echten Objekten). Die
+  // Steuerseite warnte zwar, aber nur, wer sie öffnete. EINE Sammelzeile statt
+  // einer je Objekt — sonst verdrängen zwanzig Stammdaten-Zeilen die Miete.
+  // Nie dringend und ans Ende sortiert: Es eilt nicht, es fällt nur auf.
+  const ohne = q.ohneKaufdatum ?? [];
+  if (ohne.length > 0) {
+    aufgaben.push({
+      art: "stammdaten",
+      label: ohne.length === 1 ? `Kaufdatum fehlt: ${ohne[0].name}` : `Kaufdatum fehlt bei ${ohne.length} Objekten`,
+      sub: "für die AfA im Kaufjahr und die Spekulationsfrist",
+      href: ohne.length === 1 ? `/properties/${ohne[0].id}` : "/properties",
+      aktion: "Ergänzen",
+      dringend: false,
+      datum: "9999-12-31",
+    });
+  }
+
+  const rang: Record<AufgabenArt, number> = { miete: 0, anliegen: 1, zaehler: 2, frist: 3, termin: 4, stammdaten: 5 };
   aufgaben.sort((a, b) => {
     if (a.dringend !== b.dringend) return a.dringend ? -1 : 1;
     if (a.datum !== b.datum) return a.datum.localeCompare(b.datum);

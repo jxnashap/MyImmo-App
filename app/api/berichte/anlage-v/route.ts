@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { istVermieterKonto } from "@/lib/rolle";
 import { featureSperre } from "@/lib/planGate";
-import { AFA_DEFAULT, berechneAnlageV } from "@/lib/anlageV";
+import { AFA_DEFAULT, berechneAnlageV, type MieterNkVertrag } from "@/lib/anlageV";
 import { buildAnlageVPdf } from "@/lib/pdf/berichtPdf";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
@@ -37,13 +37,14 @@ export async function GET(req: NextRequest) {
   const satzRaw = q.get("satz");
   const satz = satzRaw === null || satzRaw.trim() === "" ? null : Number(satzRaw) || 0;
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: profil }] =
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: profil }, { data: mie }] =
     await Promise.all([
       supabase.from("properties").select("*").eq("user_id", user.id).order("bezeichnung"),
       supabase.from("einnahmen").select("*").eq("user_id", user.id),
       supabase.from("kosten").select(KOSTEN_SPALTEN).eq("user_id", user.id),
       supabase.from("kredite").select("*").eq("user_id", user.id),
       supabase.from("vermieter_profil").select("name,strasse,plz,ort,email").eq("user_id", user.id).limit(1).maybeSingle(),
+      supabase.from("mieter").select("prop_id,nk_vorauszahlung,mietbeginn,mietende").eq("user_id", user.id),
     ]);
 
   const erg = berechneAnlageV(
@@ -53,6 +54,7 @@ export async function GET(req: NextRequest) {
     (kost ?? []) as Kosten[],
     (kred ?? []) as Kredit[],
     { gebaeudeAnteil: anteil, satz },
+    (mie ?? []) as MieterNkVertrag[],
   );
 
   const pdf = await buildAnlageVPdf(erg, {

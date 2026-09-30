@@ -6,7 +6,7 @@ import { euro, datum, zahl, begruessung } from "@/lib/format";
 import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
 import { baueHeuteAufgaben, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
-import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2 } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
 import PortfolioKarte, { type KartenObjekt } from "@/components/PortfolioKarte";
@@ -18,6 +18,7 @@ import { KOSTEN_SPALTEN } from "@/lib/types";
 import { ORGANISATION } from "@/lib/seo/jsonLd";
 import Leer from "@/components/Leer";
 import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, laufendeKosten } from "@/lib/cashflowKennzahl";
+import { sollKaltmiete } from "@/lib/sollMiete";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
 // metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
@@ -194,10 +195,13 @@ export default async function DashboardPage() {
     .map((z) => ({ id: z.id, art: z.art, mieter: (z.mieter_id && mieterNameOf.get(z.mieter_id)) || "Mieter", datum: z.ablesedatum }));
 
   const heuteAufgaben = baueHeuteAufgaben(
-    { offeneMieten, anliegen: offeneAnliegen, meldungen: offeneMeldungen, fristen: fristListe },
+    {
+      offeneMieten, anliegen: offeneAnliegen, meldungen: offeneMeldungen, fristen: fristListe,
+      ohneKaufdatum: properties.filter((p) => !p.kaufdatum).map((p) => ({ id: p.id, name: p.bezeichnung })),
+    },
     heuteISO0,
   );
-  const AUFGABEN_ICON = { miete: ReceiptText, anliegen: MessageSquareText, zaehler: Zap, frist: CalendarDays, termin: CalendarDays } as const;
+  const AUFGABEN_ICON = { miete: ReceiptText, anliegen: MessageSquareText, zaehler: Zap, frist: CalendarDays, termin: CalendarDays, stammdaten: Building2 } as const;
 
   // Begrüßung nach Tageszeit (Europe/Berlin) + Vorname aus dem Vermieterprofil.
   // Die Stundenermittlung steckt in lib/format (getestet) — die frühere
@@ -234,15 +238,9 @@ export default async function DashboardPage() {
   // Demo +754,9 % statt +11,9 %). Begründung in lib/wert/verlauf.ts.
   const wertzuwachs = wertzuwachsGgKaufpreis(properties.map((p) => ({ kaufpreis: p.kaufpreis, aktuellerWert: p.wert })));
   const portfolioWertProzent = wertzuwachs?.prozent ?? null;
-  // Soll-Kaltmiete/Mo.: Garagen-Objekte führen ihre Mieten auf den einzelnen
-  // Mietern (je Einheit), nicht auf property.miete — wie auf der Objektseite.
-  const GARAGEN_TYPEN = ["Garage / Stellplatz", "Garagenkomplex"];
-  const mieteVonMietern = (propId: string) =>
-    mieterRows.filter((m) => m.prop_id === propId).reduce((s, m) => s + (m.kaltmiete ?? 0) + (m.stellplatz_miete ?? 0), 0);
-  const totalMiete = properties.reduce(
-    (s, p) => s + (GARAGEN_TYPEN.includes(p.typ ?? "") ? mieteVonMietern(p.id) : (p.miete ?? 0)),
-    0,
-  );
+  // Soll-Kaltmiete/Mo.: aus den laufenden Mietern, sonst aus dem Objektfeld —
+  // dieselbe Regel wie Objektseite und Objektliste (lib/sollMiete.ts).
+  const totalMiete = properties.reduce((s, p) => s + sollKaltmiete(p, mieterRows, heuteISO).betrag, 0);
   const kreditRates = kredite.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
   // Laufende Kosten: Ø der letzten 12 Monate MIT BUCHUNGEN, geteilt durch die
   // Monate, die das Fenster wirklich umfasst — Begründung in

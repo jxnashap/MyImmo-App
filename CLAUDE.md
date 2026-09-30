@@ -1000,6 +1000,30 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Neue Pläne kommen erst hinein, wenn der Betreiber sie beschlossen hat.**
   **Nicht gemacht, braucht den Betreiber:** Gründer-Abschnitt (Inhalte), Kundenstimmen (es
   gibt keine echten — **niemals erfinden**).
+- 🔎 **Echte Konten gegen die Demo-Fehler geprüft (30.09.2026), `tests/datenluecken.test.ts`,
+  13 Mutationen.** Die Demo-Fehler waren DATEN-Fehler — dieselben Lücken fanden sich bei
+  echten Nutzern (10 Konten, 23 Objekte; nur Zählungen ausgewertet, Demo ausgenommen):
+  (1) **Soll-Miete:** Bei 6 Objekten wich das Objektfeld „Miete" von den laufenden Mietern
+  ab; gegen die gebuchten Mieten stimmten 3× die Mieter, 0× das Objektfeld; eines hatte
+  gar keine Objekt-Miete (Dashboard 0 €, obwohl 1.450 €/Monat eingingen). Dazu ein
+  „Phantom-Soll" (nur beendete Mieter). **Regel jetzt `lib/sollMiete.ts` → `sollKaltmiete()`**
+  für Dashboard, Objektseite UND Objektliste: laufende Mieter → deren Kaltmiete; nur
+  beendete/künftige → 0; gar keine Mieter → Objektfeld. **Nie still:** Weichen Objektfeld
+  und Mieter ab, zeigt die Objektseite beide Zahlen + Knopf „Objekt-Miete angleichen"
+  (`gleicheObjektMieteAn`, rechnet serverseitig neu — kein Betrag vom Client). Grund: Ein
+  Mehrfamilienhaus mit nur teilweise angelegten Mietern (echt: 2.080 € vs. 780 €) verlöre
+  sonst ohne Hinweis Miete. Bewertung/Beleihung nutzen weiter das Objektfeld (Eingabe).
+  (2) **Kaufdatum fehlte bei 20 von 23 Objekten** → AfA im Kaufjahr voll, Spekulationsfrist
+  unbekannt; gewarnt wurde nur auf der Steuerseite. Jetzt EINE Sammel-Aufgabe in
+  `baueHeuteAufgaben` (`ohneKaufdatum`, Art `stammdaten`, nie dringend, ans Ende) + Hinweis
+  auf der Objektseite. Kein Pflichtfeld (Import kennt das Datum oft nicht).
+  (3) **Umlagen fehlten (2 Konten, 332 Buchungen):** Mieten nur kalt gebucht, kein NK-Anteil,
+  obwohl die Verträge NK-Vorauszahlungen haben — und umlagefähige Kosten als Werbungskosten
+  → Überschuss zu niedrig. `berechneAnlageV(..., mieter)` + `nkSollImJahr()` → Hinweis, wenn
+  gebuchte Umlagen < 50 % des Vertrags-Solls. Steuerseite UND Anlage-V-PDF übergeben die
+  Verträge; ohne sie (alte Aufrufer) kein Hinweis. **Nur Hinweis, keine Datenänderung** —
+  ob NK an den Vermieter gehen, weiß nur der Nutzer.
+  **Nicht angefasst:** fremde Daten. Die App korrigiert nichts selbst, sie zeigt es an.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,
