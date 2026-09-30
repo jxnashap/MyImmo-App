@@ -6,7 +6,7 @@ import { ArrowLeft, KeyRound, Home, Wrench, Building2, type LucideIcon } from "l
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
 import { bereiteRegistrierungVor } from "@/lib/actions/freischaltung";
-import { PASSWORT_MIN, PASSWORT_REGEL, pruefePasswort } from "@/lib/passwort";
+import { PASSWORT_LECK_HINWEIS, PASSWORT_MIN, PASSWORT_REGEL, passwortAblehnung, pruefePasswort } from "@/lib/passwort";
 import { RESET_ZIEL } from "@/lib/passwortWechsel";
 import { sicheresZiel } from "@/lib/flash";
 import MfaAbfrage from "@/components/MfaAbfrage";
@@ -238,7 +238,7 @@ export default function LoginPage() {
               : { rolle: "service", einladungscode: eingabe, firma: firma.trim() },
         },
       });
-      if (error) setError(uebersetze(error.message));
+      if (error) setError(passwortAblehnung(error) ?? uebersetze(error.message));
       else
         setInfo(
           rolle === "mieter"
@@ -270,7 +270,7 @@ export default function LoginPage() {
         password,
         options: rolle === "hausverwaltung" ? { data: { rolle: "hausverwaltung" } } : undefined,
       });
-      if (error) setError(uebersetze(error.message));
+      if (error) setError(passwortAblehnung(error) ?? uebersetze(error.message));
       else
         setInfo(
           "Fast geschafft — bestätige jetzt die E-Mail in deinem Postfach. " +
@@ -409,6 +409,11 @@ export default function LoginPage() {
             className="input w-full text-[15px]"
             style={{ padding: "12px 14px" }}
           />
+          {mode === "signup" && (
+            <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.45, margin: "-4px 2px 0" }}>
+              {PASSWORT_LECK_HINWEIS}.
+            </p>
+          )}
 
           {/* Registrierung: zweite Eingabe gegen Tippfehler — ein falsch
               getipptes Passwort fiele sonst erst beim nächsten Login auf. */}

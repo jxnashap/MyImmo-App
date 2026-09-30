@@ -217,8 +217,8 @@ keinen Brevo-Include — Brevo nutzt eigenen Return-Path und signiert per DKIM.
 ## 3. Offen — nur der Betreiber
 
 **Aktuelle, nach Dringlichkeit sortierte Liste: `CLAUDE.md` → „👤 NUR DER BETREIBER" und
-`docs/BETREIBER-CHECKLISTE.md`.** Dringend ist dort (Stand 30.09.2026) nur noch: „Passwort vergessen"
-einmal mit echter Mail durchlaufen — die Vorlage ist laut Betreiber umgestellt. Die Tabelle hier ist die ältere Compliance-Sicht.
+`docs/BETREIBER-CHECKLISTE.md`.** Stand 30.09.2026: nichts Dringendes mehr — „Passwort vergessen"
+ist mit einem echten Nutzer durchgelaufen, der Leak-Schutz wirkt (beides im Supabase-Log belegt). Die Tabelle hier ist die ältere Compliance-Sicht.
 
 | # | Was | Warum es zählt |
 |---|---|---|
@@ -230,7 +230,7 @@ einmal mit echter Mail durchlaufen — die Vorlage ist laut Betreiber umgestellt
 | B6 | **Brevo-AVV** im Konto abschließen/archivieren | Datenschutz-Passus ist seit 28.08.2026 in `/datenschutz`; der AVV fehlt noch. Schritte stehen in `CLAUDE.md` |
 | B7 | TOM + Verarbeitungsverzeichnis: die letzten geklammerten Lücken füllen | Texte stehen, 6 Stellen `[…]` offen (u. a. 2FA auf den Admin-Zugängen bestätigen) |
 | B8 | Support-Kanal mit Reaktionszeit | Bewertungen sind das Ranking-Kriterium der Vergleichsportale |
-| B9 | Leaked Password Protection: **Gegenprobe** | Konto ist auf Pro, Schalter an seit 09.09.2026 — Registrierung mit „Password123!" muss scheitern, bisher ungeprüft |
+| B9 | ~~Leaked Password Protection: Gegenprobe~~ | ✅ wirkt, im Supabase-Log belegt (30.09.2026) |
 
 ---
 

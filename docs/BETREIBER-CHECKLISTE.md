@@ -29,7 +29,7 @@ die Site URL. Steht die noch auf `http://localhost:3000`, führt jeder Mail-Link
 
 ---
 
-## 2. Supabase: E-Mail-Vorlage „Reset Password" ✅ laut Betreiber erledigt (30.09.2026)
+## 2. Supabase: E-Mail-Vorlage „Reset Password" ✅ erledigt und belegt (30.09.2026)
 
 **Ungeprüft**, bis Punkt 3 mit echter Mail durchläuft. Die gestaltete Vorlage blieb erhalten;
 ersetzt wurde nur jedes `{{ .ConfirmationURL }}` durch die Adresse aus dem Beispiel unten.
@@ -53,7 +53,7 @@ Setzt voraus, dass die **Site URL** (Punkt 1) stimmt — die Vorlage baut den Li
 
 ---
 
-## 3. „Passwort vergessen" testen ⚠️ dringend
+## 3. „Passwort vergessen" testen ✅ belegt (30.09.2026, echter Nutzer, Supabase-Log)
 
 Der Weg ist gebaut (PR #325–#328), aber **nie mit einer echten Mail erfolgreich
 durchlaufen**. Nur der Test zeigt, ob er hält.
@@ -93,7 +93,7 @@ immer noch deutlich mehr als vorher.
 
 ---
 
-## 5. Leaked Password Protection: Gegenprobe
+## 5. Leaked Password Protection: Gegenprobe ✅ wirkt (30.09.2026, Supabase-Log: 422 „known to be weak")
 
 Der Schalter ist seit 09.09.2026 an. **Die Wirkung ist ungeprüft.**
 

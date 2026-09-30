@@ -53,23 +53,39 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    ist das, was Supabase ANGENOMMEN hat. Ein verworfenes Ziel fällt auf die Site URL zurück —
    damit ist auch die Site URL auslesbar. Hinterlässt je Probe eine unvollendete
    `flow_state`-Zeile ohne Nutzer (verfällt; nicht löschen, kein Schreiben ins Auth-Schema).
-2. ~~**E-Mail-Vorlage „Reset Password" auf `token_hash` umstellen**~~ ✅ **laut Betreiber
-   erledigt 30.09.2026, von Claude UNGEPRÜFT** (Vorlage nicht lesbar, keine Mail empfangbar).
+2. ~~**E-Mail-Vorlage „Reset Password" auf `token_hash` umstellen**~~ ✅ **erledigt 30.09.2026
+   und durch Punkt 3 BELEGT** (Supabase-Log: `POST /verify` von unserem Server, Status 200).
+   Falle dabei: Die Vorlage enthielt `{{ .ConfirmationURL }}` ZWEIMAL (Knopf + Ersatzlink
+   „falls der Knopf nicht funktioniert"); zuerst war nur der Knopf umgestellt.
    Die eigene Vorlage (46 Zeilen, gestaltet) blieb erhalten; nur jedes `{{ .ConfirmationURL }}`
    wurde durch `{{ .SiteURL }}/auth/passwort?token_hash={{ .TokenHash }}&type=recovery`
    ersetzt. **Beweis erst durch Punkt 3.** Merkmal am Link der Mail: beginnt er mit
    `www.myimmoapp.de/auth/passwort?token_hash=`, greift die Vorlage; beginnt er mit
    `…supabase.co/auth/v1/verify`, ist es noch die alte.
-3. **„Passwort vergessen" testen und den `grund=`-Parameter aus der Adresszeile melden.**
-   Der Weg ist gebaut, aber **nie mit einer echten Mail erfolgreich durchlaufen**.
+3. ~~**„Passwort vergessen" testen**~~ ✅ **BELEGT 30.09.2026** durch einen echten Nutzer,
+   in den Supabase-Auth-Logs nachverfolgt: `recover` → `verify` (token_hash, 200) →
+   `PUT /user` 200 → `logout` 204 (globale Abmeldung greift). **Ob die Mail auf einem
+   anderen Gerät geöffnet wurde, ist aus den Logs nicht zu sehen** (gleiche IP = gleiches
+   Heimnetz). **Dabei gefunden und behoben:** Ein vom Leak-Schutz abgelehntes Passwort
+   („12345678") ergab „Bitte fordere einen neuen Link an" — die Erkennung suchte
+   `pwned|leaked`, Supabase schreibt „known to be weak". Der Tester forderte daraufhin
+   unnötig einen neuen Link an. Jetzt `passwortAblehnung()` in `lib/passwort.ts` (Fehlercode
+   zuerst, Text als Rückfall) an allen drei Stellen (Reset, Passwortwechsel, Registrierung),
+   und die Leak-Regel steht VOR der Eingabe da (`PASSWORT_LECK_HINWEIS`).
+   **Warum der Test grün war:** `tests/blockF.test.ts` benutzte eine AUSGEDACHTE
+   Supabase-Meldung mit angehängtem „(pwned)". **Regel: Fremde Fehlertexte in Tests nur
+   wörtlich aus einem echten Log übernehmen, nie formulieren.**
+   Nebenbefund: 8 s nach dem erfolgreichen `verify` ein zweites mit 403 `otp_expired`
+   (Doppel-Tipp oder Mail-Vorschau) — folgenlos, der erste war durch.
 
 **Danach, in dieser Reihenfolge:**
 4. **Die zwei restlichen Passwort-Schalter** („Secure password change", „Require current
    password") — Voraussetzungen sind gebaut (PR #327), aber **erst nach Punkt 3**, und
    unmittelbar danach erneut testen (siehe „Passwort vergessen", letzter Unterpunkt).
-5. **Leaked Password Protection: Gegenprobe.** Der Schalter ist an (09.09.2026), die
-   **Wirkung ist ungeprüft** — Registrierung mit „Password123!" muss scheitern. Am
-   29.07.2026 ging sie trotz gesetztem Schalter durch.
+5. ~~**Leaked Password Protection: Gegenprobe.**~~ ✅ **WIRKT, belegt 30.09.2026** im
+   Supabase-Log: sechsmal `PUT /user` 422 „Password is known to be weak" beim Reset-Test
+   („12345678" u. a.), danach ein sicheres Passwort angenommen. Belegt am Passwort-SETZEN;
+   für die Registrierung gilt dieselbe Server-Einstellung, dort nicht eigens probiert.
 6. **2FA einmal durchspielen** — einrichten, abmelden, mit Code anmelden, „Handy nicht zur
    Hand?" mit einem Wiederherstellungscode. Die Logik ist getestet, der Ablauf nie.
 

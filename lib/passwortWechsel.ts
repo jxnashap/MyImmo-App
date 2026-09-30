@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { pruefePasswort } from "@/lib/passwort";
+import { passwortAblehnung, pruefePasswort } from "@/lib/passwort";
 
 // Passwortwechsel mit Bestätigung des AKTUELLEN Passworts.
 //
@@ -71,9 +71,7 @@ export async function wechslePasswort(
   if (error) {
     return {
       ok: false,
-      fehler: /pwned|leaked|compromis/i.test(error.message)
-        ? "Dieses Passwort steht in einem bekannten Datenleck. Bitte wähle ein anderes."
-        : "Passwort konnte nicht geändert werden. Bitte erneut versuchen.",
+      fehler: passwortAblehnung(error) ?? "Passwort konnte nicht geändert werden. Bitte erneut versuchen.",
     };
   }
   return { ok: true };
