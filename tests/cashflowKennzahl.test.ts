@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { kostenSchnittMonat, monatsCashflow, cashflowFormel, type Buchung } from "@/lib/cashflowKennzahl";
+import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, type Buchung } from "@/lib/cashflowKennzahl";
 
 // Der Kostenschnitt des Monats-Cashflows (Phase 4 nach dem externen Review).
 // Die alte Rechnung — Kosten der letzten 12 Monate / 12 — steht in jedem Fall
@@ -106,14 +106,60 @@ describe("kostenSchnittMonat", () => {
 });
 
 describe("monatsCashflow und Formel", () => {
-  it("Kaltmiete − Kreditraten − Ø Kosten", () => {
-    expect(monatsCashflow({ miete: 5930, kreditraten: 4490, kostenSchnitt: 922 })).toBe(518);
+  it("Warmmiete − Kreditraten − Ø Kosten (Demo: 5.930 kalt + 1.030 NK)", () => {
+    expect(monatsCashflow({ warmmiete: 6960, kreditraten: 4490, kostenSchnitt: 922 })).toBe(1548);
   });
 
   it("die Formel nennt das Fenster — und den Fall ohne Kosten", () => {
-    expect(cashflowFormel({ betrag: 100, monate: 12 })).toBe("Kaltmiete − Kreditraten − Ø Kosten (12 Monate)");
-    expect(cashflowFormel({ betrag: 100, monate: 1 })).toBe("Kaltmiete − Kreditraten − Ø Kosten (1 Monat)");
+    expect(cashflowFormel({ betrag: 100, monate: 12 })).toBe("Warmmiete − Kreditraten − Ø Kosten (12 Monate)");
+    expect(cashflowFormel({ betrag: 100, monate: 1 })).toBe("Warmmiete − Kreditraten − Ø Kosten (1 Monat)");
     expect(cashflowFormel({ betrag: 0, monate: 0 })).toMatch(/noch keine Kosten gebucht/);
+  });
+});
+
+describe("NK-Vorauszahlungen: nur laufende Verträge", () => {
+  const HEUTE_NK = "2026-09-30";
+  it("summiert die Vorauszahlungen der Mieter, die heute wohnen", () => {
+    expect(nkVorauszahlungenMonat([
+      { nk_vorauszahlung: 160, mietbeginn: "2021-04-01", mietende: null },
+      { nk_vorauszahlung: "190", mietbeginn: "2023-09-01", mietende: null }, // numeric kann als Text kommen
+    ], HEUTE_NK)).toBe(350);
+  });
+  it("Ausgezogene und Künftige zählen nicht — Stichtage selbst zählen", () => {
+    expect(nkVorauszahlungenMonat([
+      { nk_vorauszahlung: 210, mietbeginn: "2018-03-01", mietende: "2025-09-30" }, // Hoffmann, Reihenhaus Halle
+      { nk_vorauszahlung: 100, mietbeginn: "2026-10-01", mietende: null },
+      { nk_vorauszahlung: 50, mietbeginn: "2026-09-30", mietende: null },
+      { nk_vorauszahlung: 70, mietbeginn: "2020-01-01", mietende: "2026-09-30" },
+    ], HEUTE_NK)).toBe(120);
+  });
+  it("ohne Mietbeginn zählt der Vertrag; Unsinn und Negatives zählen nicht", () => {
+    expect(nkVorauszahlungenMonat([
+      { nk_vorauszahlung: 80, mietbeginn: null, mietende: null },
+      { nk_vorauszahlung: null, mietbeginn: null, mietende: null },
+      { nk_vorauszahlung: "abc", mietbeginn: null, mietende: null },
+      { nk_vorauszahlung: -40, mietbeginn: null, mietende: null },
+    ], HEUTE_NK)).toBe(80);
+    expect(nkVorauszahlungenMonat([{ nk_vorauszahlung: 80, mietbeginn: null, mietende: null }], "")).toBe(0);
+  });
+});
+
+describe("Warmmiete im Cashflow, Kaltmiete in Rendite und Steuer", () => {
+  const dashboard = readFileSync("app/(app)/page.tsx", "utf8");
+  const objekt = readFileSync("app/(app)/properties/[id]/page.tsx", "utf8");
+  it("das Dashboard lädt die Vorauszahlung und rechnet sie ein", () => {
+    expect(dashboard).toMatch(/select\("[^"]*nk_vorauszahlung[^"]*"\)/);
+    expect(dashboard).toMatch(/warmmiete = totalMiete \+ nkVorauszahlungenMonat\(mieterRows, heuteISO\)/);
+    expect(dashboard).toMatch(/monatsCashflow\(\{ warmmiete, kreditraten: kreditRates, kostenSchnitt: monatKosten \}\)/);
+  });
+  it("die Rendite bleibt kalt", () => {
+    expect(dashboard).toMatch(/bruttoRendite = totalWert > 0 \? \(\(totalMiete \* 12\)/);
+    expect(objekt).toMatch(/rendite = miete && wert \? \(miete \* 12/);
+  });
+  it("die Anlage V trennt weiter Kaltmiete (Zeile 9) und Umlagen (Zeile 13)", () => {
+    const q = readFileSync("lib/anlageV.ts", "utf8");
+    expect(q).toMatch(/g\.einnahmen\.miete \+= betrag - nk;/);
+    expect(q).toMatch(/g\.einnahmen\.umlagen \+= nk;/);
   });
 });
 
@@ -130,7 +176,7 @@ describe("Dashboard und Objektseite rechnen dieselbe Zahl", () => {
   });
 
   it("die Objektseite zieht die laufenden Kosten ab (vorher: nur Miete − Kreditrate)", () => {
-    expect(objekt).toMatch(/cashflowMo = monatsCashflow\(\{ miete, kreditraten: totalKreditRate, kostenSchnitt: monatsKosten \}\)/);
+    expect(objekt).toMatch(/cashflowMo = monatsCashflow\(\{ warmmiete: miete \+ nkVorausMo, kreditraten: totalKreditRate, kostenSchnitt: monatsKosten \}\)/);
     expect(objekt).not.toMatch(/cashflowMo = miete - totalKreditRate/);
   });
 

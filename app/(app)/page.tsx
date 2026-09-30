@@ -17,7 +17,7 @@ import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { ORGANISATION } from "@/lib/seo/jsonLd";
 import Leer from "@/components/Leer";
-import { kostenSchnittMonat, monatsCashflow, cashflowFormel } from "@/lib/cashflowKennzahl";
+import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat } from "@/lib/cashflowKennzahl";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
 // metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
     supabase.from("kredite").select("*"),
-    supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
+    supabase.from("mieter").select("id,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
     supabase.from("bewertung_historie").select("immobilie_id,datum,marktwert"),
     supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
     supabase.from("termine").select("id,titel,datum,kategorie,erledigt").order("datum"),
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
   const kosten = (kost ?? []) as Kosten[];
   const kredite = (kred ?? []) as Kredit[];
   type MieterRow = {
-    id: string; prop_id: string | null; kaltmiete: number | null; stellplatz_miete: number | null;
+    id: string; prop_id: string | null; kaltmiete: number | null; nk_vorauszahlung: number | null; stellplatz_miete: number | null;
     vorname: string | null; nachname: string | null; einheit: string | null;
     mietbeginn: string | null; mietende: string | null; kuendigung: number | null;
     letzte_erhoehung: string | null; mietart: string | null; staffel_datum: string | null;
@@ -247,7 +247,10 @@ export default async function DashboardPage() {
   const kostenSchnitt = kostenSchnittMonat(kosten, [...einnahmen, ...kosten], heuteISO);
   const monatKosten = Math.round(kostenSchnitt.betrag);
   const totalKosten = kreditRates + monatKosten;
-  const cashflow = monatsCashflow({ miete: totalMiete, kreditraten: kreditRates, kostenSchnitt: monatKosten });
+  // Warmmiete = Soll-Kaltmiete + NK-Vorauszahlungen laufender Verträge —
+  // Begründung in lib/cashflowKennzahl.ts. Die Rendite bleibt kalt.
+  const warmmiete = totalMiete + nkVorauszahlungenMonat(mieterRows, heuteISO);
+  const cashflow = monatsCashflow({ warmmiete, kreditraten: kreditRates, kostenSchnitt: monatKosten });
   const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
   // Leerstandsquote: nur vermietbare Objekte (Status "Vermietet"/"Leer");
   // Benchmark: 2–5 % gesund, >10 % kritisch.
@@ -265,9 +268,9 @@ export default async function DashboardPage() {
   ];
 
   // Einnahmen vs. Ausgaben
-  const balkenMax = Math.max(totalMiete, totalKosten, 1);
+  const balkenMax = Math.max(warmmiete, totalKosten, 1);
   const balken = [
-    { lbl: "Einnahmen", val: totalMiete, col: "var(--green)" },
+    { lbl: "Warmmiete", val: warmmiete, col: "var(--green)" },
     { lbl: "Kredite", val: kreditRates, col: "var(--red)" },
     { lbl: `Kosten Ø ${kostenSchnitt.monate} Mon.`, val: monatKosten, col: "var(--red)" },
   ];
