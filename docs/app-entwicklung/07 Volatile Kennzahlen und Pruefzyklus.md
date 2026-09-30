@@ -40,10 +40,14 @@
 
 ## Eigene Einstellungen, die nachweislich nicht greifen
 
+> **Am 30.09.2026 erneut nachgezogen.** Zwei Zeilen dieser Tabelle waren nach
+> vier Wochen wieder überholt — das ist der Normalfall, nicht die Ausnahme.
+> Deshalb steht hier ein Prüfdatum und kein Dauerbefund.
+
 | Punkt | Befund | Geprüft | Nächste Prüfung |
 |---|---|---|---|
 | **Supabase Mindest-Passwortlänge** | ✅ vom Nutzer auf 8 gesetzt — App und Dashboard stimmen wieder überein | 30.08.2026 | jährlich → **01.09.2027** |
-| **Leaked Password Protection** | Schalter sichtbar, aber wirkungslos ohne Pro | 29.07.2026 | bei Plan-Wechsel |
+| **Leaked Password Protection** | Schalter **an** seit 09.09.2026 — Supabase ist entgegen älterer Notizen auf **Pro**, der Schutz kostet nichts extra. **Wirkung ungeprüft:** Registrierung mit „Password123!" muss scheitern | 09.09.2026 | **Gegenprobe offen** |
 | **`NEXT_PUBLIC_BETA_CODE`** | nicht gesetzt (10 Bundles, 629 KB durchsucht) | 27.08.2026 | halbjährlich → **01.03.2027** |
 
 ## Preise und Pläne (verändern die Kalkulation)

@@ -119,8 +119,8 @@ Projekt beschreibt einen **behobenen Fehler**, damit ihn niemand zurückbaut:
   expect(Math.round(k.monatsrate)).toBe(1450);
   ```
 - **Ohne Abdeckung wird es benannt.** Was keine Tests hat, steht in `CLAUDE.md`,
-  statt verschwiegen zu werden. Stand 02.09.2026: 52 Testdateien, **544 Tests, alle
-  grün** (`npm test`) — der bis dahin genannte Ausreißer Open Banking ist am
+  statt verschwiegen zu werden. Stand 30.09.2026: 94 Testdateien, **1.228 Tests, alle
+  grün** (`npm test`) — der früher genannte Ausreißer Open Banking ist am
   29.08.2026 samt Code aus der App entfernt worden.
 
 ## Build
