@@ -173,7 +173,7 @@ durchgelaufen (Supabase-Log belegt), der Leak-Schutz wirkt. Nächster Schritt: d
 restlichen Passwort-Schalter, danach sofort erneut testen.
 (✅ Supabase-URL-Konfiguration am 30.09.2026 gesetzt und ohne Mail geprüft; ✅ E-Mail-Vorlage
 am 30.09.2026 auf `token_hash` umgestellt, durch den Test belegt.)
-Danach: die zwei restlichen Passwort-Schalter, Gegenprobe zum Leak-Schutz, 2FA durchspielen.
+Danach: 2FA einmal durchspielen.
 Ohne Eile: AWS-Bedrock-Keys, Brevo-AVV-Rest, anwaltliche Prüfung (§ 34i GewO, StBerG,
 Nutzer-AVV, Impressum/Datenschutz/AGB).
 ✅ Supabase-Mindestpasswortlänge auf 8 (30.08.2026) · ✅ Leaked Password Protection
