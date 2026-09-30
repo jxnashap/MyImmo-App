@@ -14,6 +14,15 @@
 - [[MASTERPLAN]] — Markt / Compliance / Steuer-Roadmap
 - [[FINANZKONZEPT]] — Geschäftsmodell **und** Finanzierungs-Assistent (Kosten, Preise, Recht)
 
+## 💼 Beteiligung & Investorengespräch (30.09.2026)
+- [[INVESTOR-GESPRAECH]] — **Gesprächsvorbereitung**: die Zahlen auswendig, die fünf
+  kritischen Fragen mit ehrlichen Antworten, was du IHN fragen musst
+- [[KOSTENMODELL]] — was der Betrieb bei 100 / 1.000 / 10.000 Nutzern kostet
+  (erzeugt aus `scripts/gen-kostenmodell.mjs`, Anbieterpreise nachgelesen)
+- [[BETEILIGUNG]] — Rechtsform, Anteile, Vesting, Wandeldarlehen, Trennungsfall
+- `business/MyImmo-Businessplan-2026-09.pdf` — **aktuelle Fassung.** Die Juli-Fassung
+  daneben ist überholt (beschreibt ein entferntes Feature als gebaut) — nicht mehr herausgeben.
+
 ## 🏦 Kauf-Tool (Kauf- & Finanzierungs-Assistent)
 - [[00 Kauf-Tool Übersicht]] — Fahrplan, Roadmap, Risiken
 - [[Kunden-Guide]] · [[Makler-Ordner]] · [[Bank-Ordner]] · [[KfW-Foerderung-2026]]
