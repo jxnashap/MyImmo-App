@@ -1024,6 +1024,18 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Verträge; ohne sie (alte Aufrufer) kein Hinweis. **Nur Hinweis, keine Datenänderung** —
   ob NK an den Vermieter gehen, weiß nur der Nutzer.
   **Nicht angefasst:** fremde Daten. Die App korrigiert nichts selbst, sie zeigt es an.
+  **Zweiter Schub (gleicher Tag):** drei weitere stille Lücken, gleiches Muster (Sammel-
+  Aufgabe `stammdaten` + Hinweis dort, wo die Lücke wirkt; Helfer `luecke()` in `lib/heute.ts`):
+  **Mieter ohne Mietbeginn** (3) waren im Mietkonto UNSICHTBAR — `sollFuerMonat` liefert
+  ohne Beginn nie ein Soll, also nie „offen", nie Nacherfassung; die Soll-Miete zählte sie
+  aber. Jetzt nennt `/mietkonto` sie (`ladeMietkonto().ohneMietbeginn`).
+  **Mieter ohne Objekt** (3): Ihre NK flossen in die Warmmiete, ihre Kaltmiete in keine
+  Objekt-Miete → NK-Summe jetzt nur über Mieter mit Objekt.
+  **Kredite ohne Auszahlungsdatum** (6 von 8): keine Frist fürs Sonderkündigungsrecht
+  (§ 489 BGB, `lib/fristen.ts`) und kein Laufzeitende → Hinweis auf der Kreditkarte.
+  **Test-Falle (N2):** Kein Test übergab LEERE Listen — genau das tut das Dashboard bei
+  jedem gepflegten Konto; die Mutation hätte „Kaufdatum fehlt bei 0 Objekten" gezeigt.
+  **Regel: Den Normalfall (alles in Ordnung) ausdrücklich testen, nicht nur die Lücke.**
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

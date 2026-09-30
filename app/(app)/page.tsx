@@ -18,7 +18,7 @@ import { KOSTEN_SPALTEN } from "@/lib/types";
 import { ORGANISATION } from "@/lib/seo/jsonLd";
 import Leer from "@/components/Leer";
 import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, laufendeKosten } from "@/lib/cashflowKennzahl";
-import { sollKaltmiete } from "@/lib/sollMiete";
+import { sollKaltmiete, laeuftAm } from "@/lib/sollMiete";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
 // metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
@@ -198,6 +198,15 @@ export default async function DashboardPage() {
     {
       offeneMieten, anliegen: offeneAnliegen, meldungen: offeneMeldungen, fristen: fristListe,
       ohneKaufdatum: properties.filter((p) => !p.kaufdatum).map((p) => ({ id: p.id, name: p.bezeichnung })),
+      mieterOhneBeginn: mieterRows
+        .filter((m) => !m.mietbeginn && laeuftAm(m, heuteISO0))
+        .map((m) => ({ id: m.id, name: mieterNameOf.get(m.id) ?? "Mieter" })),
+      mieterOhneObjekt: mieterRows
+        .filter((m) => !m.prop_id && laeuftAm(m, heuteISO0))
+        .map((m) => ({ id: m.id, name: mieterNameOf.get(m.id) ?? "Mieter" })),
+      krediteOhneAuszahlung: kredite
+        .filter((k) => !k.auszahlung_datum)
+        .map((k) => ({ id: k.id, name: k.bezeichnung || k.bank || "Kredit" })),
     },
     heuteISO0,
   );
@@ -253,7 +262,10 @@ export default async function DashboardPage() {
   const totalKosten = kreditRates + monatKosten;
   // Warmmiete = Soll-Kaltmiete + NK-Vorauszahlungen laufender Verträge —
   // Begründung in lib/cashflowKennzahl.ts. Die Rendite bleibt kalt.
-  const warmmiete = totalMiete + nkVorauszahlungenMonat(mieterRows, heuteISO);
+  // NK nur von Mietern, die zu einem Objekt gehören — deren Kaltmiete zählt
+  // in totalMiete; ein Mieter ohne Objekt stünde sonst nur halb im Cashflow.
+  const objektIds = new Set(properties.map((p) => p.id));
+  const warmmiete = totalMiete + nkVorauszahlungenMonat(mieterRows.filter((m) => m.prop_id && objektIds.has(m.prop_id)), heuteISO);
   const cashflow = monatsCashflow({ warmmiete, kreditraten: kreditRates, kostenSchnitt: monatKosten });
   const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
   // Leerstandsquote: nur vermietbare Objekte (Status "Vermietet"/"Leer");
