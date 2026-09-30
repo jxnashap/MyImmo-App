@@ -1,10 +1,10 @@
 # MyImmo — Projekt-Status (Übergabe für neue Sessions)
 
-**Stand: 28.08.2026.** Basis ist die vollständige Prüfung gegen Code, Datenbank und
-Live-Seite vom 31.07.2026; am 28.08.2026 gegen den Code nachgezogen (Kennzahlen neu gezählt,
-Design-Abschnitt korrigiert, erledigte Punkte ausgetragen). Anlass der Neufassung: Mehrere
-Einträge standen als offen, obwohl sie längst gebaut waren. Eine Liste, der man nicht trauen
-kann, ist schlechter als keine.
+**Stand: 30.09.2026.** Basis ist die vollständige Prüfung gegen Code, Datenbank und
+Live-Seite vom 31.07.2026; nachgezogen am 28.08.2026 und am **30.09.2026** (Kennzahlen neu
+gezählt, Tabellenzahl live abgefragt, Abschnitte 3 und 4 gegen den Code geprüft, September
+ergänzt). Anlass der ersten Neufassung: Mehrere Einträge standen als offen, obwohl sie
+längst gebaut waren. Eine Liste, der man nicht trauen kann, ist schlechter als keine.
 
 Ergänzt `CLAUDE.md` (Arbeitsweise, Merkliste, Deployment), `docs/MASTERPLAN.md`
 (Markt/Compliance) und `docs/MARKETING.md` (Kampagnen, Redaktionsplan).
@@ -25,20 +25,33 @@ Ergänzt `CLAUDE.md` (Arbeitsweise, Merkliste, Deployment), `docs/MASTERPLAN.md`
 | **Live-URL** | `my-immo-app.vercel.app` | **`www.myimmoapp.de`** |
 | **Stop-Hook „Unverified"** | „Fehlalarm" | Ursache war der eigene Ablauf: lokal auf `origin/main` zurückgesetzt, ohne `origin/<branch>` mitzuziehen — GitHubs Merge-Commit blieb im Vergleich stehen |
 
+### Korrekturen gegenüber der Fassung vom 28.08.2026 (geprüft 30.09.2026)
+
+| Was | Stand bisher | Tatsächlich |
+|---|---|---|
+| **Stack** | Next.js 14 | **Next.js 16.3.8 / React 19.2.8** (Migrationen 01.09. und 30.09.) |
+| **2FA** | „existiert nicht" | ✅ TOTP + acht Wiederherstellungscodes, frische Anmeldung vor Export/Löschung/Bank-Freigabe (08.09.) |
+| **Tests für Actions** | „keine Abdeckung" | ✅ alle 36 Action-Dateien und 20 API-Routen über `tests/stubs/actionHarness.ts` |
+| **`loading.tsx`** | 12 von 66 | 50 von 67 |
+| **Supabase-Mindestpasswortlänge** | offen (B1) | ✅ 8 Zeichen (30.08.) |
+| **Supabase-Plan** | „Free, Leak-Schutz wirkungslos" (B9) | **Pro** — Leak-Schutz ist enthalten und seit 09.09. an, **Wirkung ungeprüft** |
+| **Supabase-URL-Konfiguration** | — | ✅ am 30.09. ohne Mail geprüft (Site URL `www.myimmoapp.de`, fremde Ziele verworfen) |
+
 ---
 
-## 1. Kennzahlen (nachgezählt 28.08.2026)
+## 1. Kennzahlen (nachgezählt 30.09.2026)
 
 | | |
 |---|---|
-| Seiten (`page.tsx`) | 66 |
-| API-Routen | 20 |
-| Komponenten | 116 |
-| Tests | **439 in 41 Dateien, alle grün** |
-| Migrationen im Repo | 21 |
-| Tabellen in Postgres | **46, alle mit RLS** |
-| Ratgeber-Artikel / Funktionsseiten | 17 / 4 |
-| `loading.tsx` | 12 von 66 Seiten |
+| Seiten (`page.tsx`) | 67 |
+| API-Routen (eigene Endpunkte) | 20 |
+| Komponenten (`.tsx` in `components/`) | 127 |
+| Tests | **1.331 in 101 Dateien, alle grün** |
+| Migrationen im Repo | 37 |
+| Tabellen in Postgres | **47, alle mit RLS** (live abgefragt) |
+| Ratgeber-Artikel / Funktionsseiten | 19 / 6 |
+| `loading.tsx` | 50 von 67 Seiten |
+| Lint (erster Lauf, 30.09.) | 93 Fehler, 39 Warnungen — Altlast, blockiert nichts |
 
 ## Was ist MyImmo?
 Deutschsprachige Immobilienverwaltungs-SaaS für **private Vermieter (1–24 Einheiten)**,
@@ -46,8 +59,11 @@ denen Profi-Hausverwaltungssoftware zu teuer/komplex und Excel zu fehleranfälli
 Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterprise-Featurebreite.
 
 ## Stack & Betrieb
-- **Next.js 14 App Router** (TypeScript, Server Actions, Server Components), vitest (`tests/`, 439 grün).
-- **Supabase** `kozhxrvyilkchjpcuwcm` (eu-central-1): Postgres + Auth (E-Mail, Google), RLS auf allen 46 Tabellen.
+- **Next.js 16.3.8 App Router, React 19.2.8** (TypeScript, Server Actions, Server Components,
+  Turbopack), vitest (`tests/`, 1.331 grün), ESLint (`eslint.config.mjs`).
+  **`proxy.ts` statt `middleware.ts`** (Next 16, Laufzeit Node). `createClient()` ist async.
+  Rückfallpunkt Next 15: Vercel-Deployment `dpl_LRgMzU1c5Kb47uKKjht63FFQCaLp`.
+- **Supabase** `kozhxrvyilkchjpcuwcm` (eu-central-1, **Pro**): Postgres + Auth (E-Mail, Google, TOTP-2FA), RLS auf allen 47 Tabellen.
   Dateien als **Base64 in Tabellenspalten** (kein Storage-Bucket).
 - **Vercel** (Plan **Pro**, Repo `jxnashap/myimmo-app`, Branch `main` → Auto-Deploy).
   Live: **https://www.myimmoapp.de** (Apex leitet auf www; `my-immo-app.vercel.app` nur noch Fallback).
@@ -81,6 +97,21 @@ Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterpri
 - **Einnahmen/Kosten/Kredite/Verbrauch** mit Anlegen/Bearbeiten/Löschen, Rechnungs-Upload bei Kosten,
   wiederkehrende Buchungen; **Mietkonto** (Soll/Ist-Abgleich je Monat, `soll_monat`-Zuordnung, Bestätigungs-UI).
 - **Cashflow-Übersicht**, Dashboard mit Fristen/Refinanz-Kalender.
+- **Monats-Cashflow — EINE Rechnung** (`lib/cashflowKennzahl.ts`, seit 30.09.2026) für Dashboard
+  und Objektseite: **Warmmiete** (Soll-Kaltmiete + NK-Vorauszahlungen laufender Verträge)
+  − Kreditraten − Ø laufende Kosten (letzte bis zu 12 Monate mit Buchungen, geteilt durch die
+  tatsächliche Monatszahl; gebuchte Schuldzinsen herausgenommen, sie stecken in der Rate).
+  Die Kacheln lassen sich nachrechnen: Warmmiete − Kosten = Cashflow. Rendite bleibt kalt.
+  Die Steuer rechnet unabhängig davon aus Buchungen (`lib/anlageV.ts`).
+- **Soll-Miete** (`lib/sollMiete.ts`): laufende Mieter schlagen das Objektfeld; weichen beide
+  ab, zeigt die Objektseite beide Zahlen + „Objekt-Miete angleichen".
+- **Wertzuwachs** „ggü. Kaufpreis" (`wertzuwachsGgKaufpreis`) statt der alten Reihe, die jeden
+  Zukauf als Wertsteigerung zählte (Demo vorher +754,9 %, jetzt +11,9 %).
+- **Jahresbericht**: Seite und PDF über `lib/jahresberichtZeile.ts` — vorher zog das PDF
+  Zinsen doppelt ab.
+- **Datenlücken-Hinweise** (`lib/heute.ts`, Art `stammdaten`): Objekte ohne Kaufdatum, Mieter
+  ohne Mietbeginn oder ohne Objekt, Kredite ohne Auszahlungsdatum; in der Anlage V ein Hinweis,
+  wenn gebuchte Umlagen < 50 % des Vertrags-Solls. **Die App korrigiert nichts selbst.**
 - **CSV-Import** (Einstellungen → Daten & Recht): Parser mit deutschem Zahlen-/Datumsformat,
   Auto-Mapping per Synonymen (Zwei-Pass exakt→Präfix), 3-Schritt-Assistent, Batch-Insert.
 - **Datenexport**: Komplett-ZIP + Buchungen-CSV + DATEV (nur unter Daten & Recht).
@@ -185,9 +216,14 @@ keinen Brevo-Include — Brevo nutzt eigenen Return-Path und signiert per DKIM.
 
 ## 3. Offen — nur der Betreiber
 
+**Aktuelle, nach Dringlichkeit sortierte Liste: `CLAUDE.md` → „👤 NUR DER BETREIBER" und
+`docs/BETREIBER-CHECKLISTE.md`.** Dringend sind dort (Stand 30.09.2026): E-Mail-Vorlage
+„Reset Password" auf `token_hash` umstellen und „Passwort vergessen" einmal mit echter Mail
+durchlaufen. Die Tabelle hier ist die ältere Compliance-Sicht.
+
 | # | Was | Warum es zählt |
 |---|---|---|
-| B1 | **Supabase-Mindestpasswortlänge auf 8** | **Am 31.07.2026 erneut empirisch geprüft: „abc123" wurde angenommen.** App verlangt 8, Supabase steht auf 6 — wer die Auth-API direkt anspricht, kommt durch. Testkonto sofort gelöscht |
+| B1 | ~~Supabase-Mindestpasswortlänge auf 8~~ | ✅ erledigt 30.08.2026 |
 | B2 | AGB + Widerrufsbelehrung anwaltlich | Pflicht vor dem ersten Euro |
 | B3 | Impressum/Datenschutz anwaltlich | Datenabgleich erledigt, Prüfung nicht |
 | B4 | **Nutzer-AVV** (Vermieter = Verantwortliche für Mieterdaten) | größte Compliance-Lücke |
@@ -195,7 +231,7 @@ keinen Brevo-Include — Brevo nutzt eigenen Return-Path und signiert per DKIM.
 | B6 | **Brevo-AVV** im Konto abschließen/archivieren | Datenschutz-Passus ist seit 28.08.2026 in `/datenschutz`; der AVV fehlt noch. Schritte stehen in `CLAUDE.md` |
 | B7 | TOM + Verarbeitungsverzeichnis: die letzten geklammerten Lücken füllen | Texte stehen, 6 Stellen `[…]` offen (u. a. 2FA auf den Admin-Zugängen bestätigen) |
 | B8 | Support-Kanal mit Reaktionszeit | Bewertungen sind das Ranking-Kriterium der Vergleichsportale |
-| B9 | Supabase Pro für Leaked Password Protection | auf Free ist der Schalter sichtbar, aber wirkungslos |
+| B9 | Leaked Password Protection: **Gegenprobe** | Konto ist auf Pro, Schalter an seit 09.09.2026 — Registrierung mit „Password123!" muss scheitern, bisher ungeprüft |
 
 ---
 
@@ -203,13 +239,15 @@ keinen Brevo-Include — Brevo nutzt eigenen Return-Path und signiert per DKIM.
 
 | Was | Umfang | Anmerkung |
 |---|---|---|
-| **Design Runde 2** | mittel | Runde 1 („Frosted Paper") ist am 20.08.2026 umgesetzt. Offen: echte Neu-Anordnung einzelner Layouts statt reiner Um-Tokenisierung, 11px-Kleinsttexte auf 12px |
-| **Tests für Komponenten/Actions** | mittel | `components/`, `lib/actions/` und `lib/pdf/` haben keine Abdeckung |
+| **Lint-Altlast** | mittel | 93 Fehler / 39 Warnungen. Zuerst die 7 × `react-hooks/static-components` (Komponente wird je Rendern neu erzeugt → verliert Zustand/Fokus — mögliche echte Fehler) |
+| **Proxy: `getUser` → `getClaims`** | mittel, sicherheitskritisch | spart einen Auth-Rundlauf je Anfrage, braucht asymmetrische JWT-Schlüssel in Supabase |
+| **Design Runde 2** | mittel | Runde 1 („Frosted Paper") ist am 20.08.2026 umgesetzt. Offen: echte Neu-Anordnung einzelner Layouts statt reiner Um-Tokenisierung. 11px → 12px ist eine Zeile (`--text-xs`), muss aber angesehen werden |
+| **Tests für Komponenten/PDF** | mittel | `components/`, `lib/pdf/` und RLS-Policies ohne Abdeckung (Actions und API-Routen sind abgedeckt) |
+| **`vitest` ≥ 4.1.11** | klein | nur Entwicklung; `npm install` scheitert in der Remote-Umgebung an diesem Paket → anderer Rechner |
 | Terminkoordination + Status-Tracking an Anliegen/Auftrag | mittel | war „in Arbeit" laut alter Fassung — Stand nicht abschließend geprüft |
 | Auftrag „erledigt" → Kostenvorschlag | mittel | kein eigenes Rechnungsmodul (E-Rechnung §14 zu riskant) |
 | Vorlagen-Gate | klein | erst wenn der Versand läuft |
-| **2FA** | mittel | existiert nicht — geprüft, kein Treffer im Code |
-| `loading.tsx` für 54 weitere Seiten | klein, repetitiv | 12 von 66 vorhanden |
+| `loading.tsx` für 17 weitere Seiten | klein, repetitiv | 50 von 67 vorhanden |
 | Abo-Zugangscode | klein | Fundament (`einladungscodes` + Signup-Trigger) steht |
 | Mieterhöhungs-Assistent §558 | mittel | **Rechtsrisiko**; der Ratgeber-Artikel dazu existiert bereits |
 | Mieter-Selbstpflege, Mängelanzeige §634a, Anträge-Workflow, Chat-Threads, WEG-Modul, E-Rechnungs-Parser | groß | Backlog unverändert |
@@ -234,6 +272,10 @@ Damit hier nichts als sicher steht, was es nicht ist:
 - **Login-Pfad von `scripts/screenshots.mjs`** — braucht echte Zugangsdaten.
 - **Stand der Terminkoordination** — als „in Arbeit" übernommen, nicht im Detail geprüft.
 - **AVV-Stände bei Anbietern und Vercel-Plan** — aus früheren Sessions übernommen.
+- **Nachtrag 30.09.2026:** Der angemeldete Teil der App ist nach der Next-16-Migration nur
+  über den Rauchtest (16 Wege, Demo-Konto) live geprüft, nicht im Browser — Chromium kommt in
+  der Remote-Umgebung nicht durch den Proxy. Echte Konten wurden nur über **Zählungen**
+  ausgewertet, nie inhaltlich angesehen oder verändert.
 
 ---
 
