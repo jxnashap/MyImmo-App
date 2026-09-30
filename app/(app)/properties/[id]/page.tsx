@@ -27,6 +27,8 @@ import { BarChart3, Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, 
 import Leer from "@/components/Leer";
 import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, laufendeKosten } from "@/lib/cashflowKennzahl";
 import { laufzeitText } from "@/lib/kreditLaufzeit";
+import { sollKaltmiete, GARAGEN_TYPEN } from "@/lib/sollMiete";
+import MieteAngleichen from "@/components/MieteAngleichen";
 
 type Kredit = {
   id: string; bezeichnung: string | null; bank: string | null; betrag: number | null;
@@ -108,9 +110,12 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
     einheiten_anzahl: p.einheiten_anzahl ?? null,
     mieterAnzahl: (mieter ?? []).length,
   });
-  const istGaragen = ["Garage / Stellplatz", "Garagenkomplex"].includes(p.typ ?? "");
-  const mieteAusMietern = tenants.reduce((s, t) => s + (t.kaltmiete ?? 0), 0);
-  const miete = istGaragen ? mieteAusMietern : (p.miete ?? 0);
+  const istGaragen = GARAGEN_TYPEN.includes(p.typ ?? "");
+  // Soll-Kaltmiete: laufende Mieter, sonst Objektfeld — dieselbe Regel wie
+  // Dashboard und Objektliste (lib/sollMiete.ts). Weichen beide ab, zeigt die
+  // Seite unten einen Hinweis statt still umzuschalten.
+  const soll = sollKaltmiete(p, tenants, new Date().toISOString().slice(0, 10));
+  const miete = soll.betrag;
   const rendite = miete && wert ? (miete * 12 / wert) * 100 : 0;
   const faktor = miete && p.kaufpreis ? p.kaufpreis / (miete * 12) : 0;
   // Empfohlene Instandhaltungsrücklage (Peterssche Formel): 1,5× Herstellungs-
@@ -268,6 +273,46 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
         ))}
       </div>
 
+      {/* Datenlücken, die Zahlen auf dieser Seite verfälschen (30.09.2026:
+          bei den echten Konten hatten 20 von 23 Objekten kein Kaufdatum und
+          6 eine Objekt-Miete, die nicht zu den Mietern passte). */}
+      {(soll.abweichung || soll.quelle === "beendet" || !p.kaufdatum) && (
+        <div className="section mb-20" style={{ borderColor: "var(--amber)" }}>
+          <div className="section-body" style={{ display: "grid", gap: 12 }}>
+            {soll.abweichung && (
+              <div>
+                <strong>Miete passt nicht zu den Mietern.</strong>{" "}
+                Im Objekt stehen {euro(soll.abweichung.objekt)} Kaltmiete, die laufenden Mieter zahlen zusammen{" "}
+                {euro(soll.abweichung.mieter)}. Gerechnet wird mit den Mietern (wie im Mietkonto). Fehlen Mieter, lege sie an —
+                ist die Objekt-Miete veraltet, gleiche sie an.
+                <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <MieteAngleichen id={p.id} betrag={euro(soll.abweichung.mieter)} />
+                  <Link href={`/tenants/new?prop=${p.id}`} className="btn btn-ghost btn-sm">Mieter anlegen</Link>
+                </div>
+              </div>
+            )}
+            {soll.quelle === "beendet" && (
+              <div>
+                <strong>Kein laufender Mietvertrag.</strong>{" "}
+                Alle Mieter dieses Objekts sind ausgezogen (oder ziehen erst ein) — die Soll-Miete ist deshalb 0 €
+                {p.miete ? `, nicht die ${euro(p.miete)} aus dem Objekt` : ""}. Status „{p.obj_status || "–"}“ prüfen oder
+                Nachmieter anlegen.
+              </div>
+            )}
+            {!p.kaufdatum && (
+              <div>
+                <strong>Kaufdatum fehlt.</strong>{" "}
+                Ohne Anschaffungsdatum läuft die AfA in der Anlage V auch im Kaufjahr voll, und die Spekulationsfrist
+                (§ 23 EStG) lässt sich nicht berechnen.
+                <div style={{ marginTop: 8 }}>
+                  <Link href={`/properties/${p.id}/edit`} className="btn btn-ghost btn-sm">Kaufdatum ergänzen</Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Stammdaten + Kennzahlen */}
       <div className="grid-2 mb-20">
         <div id="stammdaten" data-anker className="section" style={{ marginBottom: 0 }}>
@@ -352,7 +397,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {istGaragen && (
               <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                {tenants.length}{p.einheiten_anzahl ? ` von ${p.einheiten_anzahl}` : ""} vermietet · Mieten gesamt {euro(mieteAusMietern)}
+                {tenants.length}{p.einheiten_anzahl ? ` von ${p.einheiten_anzahl}` : ""} vermietet · Mieten gesamt {euro(miete)}
               </span>
             )}
             <Link href={`/tenants/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Mieter</Link>
