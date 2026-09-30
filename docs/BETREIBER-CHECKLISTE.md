@@ -75,7 +75,7 @@ Bitte **beide Fälle** durchspielen: Mail auf demselben Gerät öffnen, und Mail
 
 ---
 
-## 4. Die zwei restlichen Passwort-Schalter
+## 4. Die zwei restlichen Passwort-Schalter ✅ an; Reset läuft damit (Log 30.09.2026) — offen: Wechsel mit falschem Passwort muss scheitern
 
 **Authentication → Sign In / Providers → Email → Password Security**
 
