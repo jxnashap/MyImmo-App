@@ -52,7 +52,7 @@ export default async function RootLayout({
     // Ohne Sidebar — hier landen ALLE ausgeloggten Besucher, also die gesamte
     // Marketing-/Ratgeber-Strecke. Deshalb sitzt die Feldmessung hier.
     return (
-      <html lang="de" suppressHydrationWarning>
+      <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
         <head>
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
@@ -113,7 +113,7 @@ export default async function RootLayout({
   // Willkommens-Gate ohne App-Shell rendern (keine Navigation vor Freischaltung).
   if (pathname.startsWith("/willkommen")) {
     return (
-      <html lang="de" suppressHydrationWarning>
+      <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
         <head>
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
@@ -130,7 +130,7 @@ export default async function RootLayout({
     const erlaubt = pathname.startsWith(heim) || pathname.startsWith("/konto") || istOeffentlicheSeite;
     if (!erlaubt) redirect(heim);
     return (
-      <html lang="de" suppressHydrationWarning>
+      <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
         <head>
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
@@ -149,7 +149,7 @@ export default async function RootLayout({
   // eigene Sidebar statt der Seite, die der Bewerber bekommt.
   if (istOeffentlicheSeite) {
     return (
-      <html lang="de" suppressHydrationWarning>
+      <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
         <head>
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
@@ -178,7 +178,7 @@ export default async function RootLayout({
   }));
 
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

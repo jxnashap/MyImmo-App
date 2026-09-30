@@ -615,6 +615,32 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   die MÜSSEN von `anon` aufrufbar sein, das ist ihr Zweck; sie prüfen das Token selbst.
 
 ## Sicherheit der Abhängigkeiten
+- ✅ **Next-16-Migration UMGESETZT (30.09.2026): Next 16.3.8, React 19.2.8.** Die hohe
+  `postcss`-Meldung ist damit geschlossen; `npm audit` meldet nur noch 3 Befunde, **alle nur
+  Entwicklung** (vitest < 4.1.11, `brace-expansion` im ESLint-Baum). Details:
+  `docs/SICHERHEIT-ABHAENGIGKEITEN.md`, Abschnitt 30.09.2026.
+  **Was sich im Code geändert hat:** (1) **`middleware.ts` heißt jetzt `proxy.ts`**, die
+  Funktion `proxy` — Laufzeit Node statt Edge (für uns folgenlos: `btoa`/`crypto.randomUUID`
+  gibt es dort, Funktion und Datenbank liegen in Frankfurt). Alle Verweise „Middleware" in
+  Kommentaren meinen diese Datei. (2) **`data-scroll-behavior="smooth"` an jedem `<html>`**
+  (beide Root-Layouts, sechs Stellen): `globals.css` setzt `scroll-behavior: smooth`, und
+  Next 16 schaltet das beim Seitenwechsel NICHT mehr selbst ab — ohne das Attribut würde
+  jeder Seitenwechsel sichtbar nach oben scrollen. (3) **Turbopack** baut jetzt (Standard,
+  kein eigenes Webpack im Projekt). (4) **ESLint eigenständig** (`eslint.config.mjs`,
+  `npm run lint` = `eslint .`).
+  **Geprüft:** tsc, 1.331 Tests, Turbopack-Build; Routentabelle gegen Next 15 verglichen
+  (keine Seite von statisch auf dynamisch gerutscht); lokaler Server gegen die Live-Seite:
+  gleiche Weiterleitungen (Login, Recovery-Links, `/auth/callback`), gleiche Header, jedes
+  Inline-Skript mit Nonce; im Browser alle öffentlichen Seiten hydriert, keine CSP-Fehler,
+  weiche Navigation. Der angemeldete Teil nur über den Rauchtest nach dem Deploy (Chromium
+  erreicht Supabase aus der Remote-Umgebung nicht).
+  🧹 **Lint-Altlast, erster Lauf überhaupt: 93 Fehler, 39 Warnungen** (552 Dateien).
+  Größte Posten: `react/no-unescaped-entities` 40 (Anführungszeichen im JSX-Text, harmlos),
+  `react-hooks/set-state-in-effect` 25, `@typescript-eslint/no-explicit-any` 12,
+  `react-hooks/static-components` 7 (Komponente wird bei jedem Rendern neu erzeugt → verliert
+  Zustand/Fokus — **mögliche echte Fehler, zuerst ansehen**), `react-hooks/purity` 4.
+  Blockiert nichts (Next 16 lintet beim Build nicht mehr) — **als eigenes Vorhaben abarbeiten,
+  nicht nebenbei.**
 - ✅ **Next-15-Migration UMGESETZT (01.09.2026): Next 15.5.25 / React 19.2.8.** Plan samt
   Umsetzungsbericht: **`docs/zukunft/NEXTJS-15-MIGRATION.md`**; Befundlage:
   **`docs/SICHERHEIT-ABHAENGIGKEITEN.md`**. Alle 21 next-Meldungen geschlossen (25 → 4).
@@ -634,6 +660,10 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Angreifer bestimmt; **CSS-Uploads gibt es nicht** (geprüft). **KEIN npm-`override`.**
   **Neu:** `npm audit` nennt als Behebung **next@16.3.4** — die Next-16-Migration ist damit
   der einzige Weg, diese Meldung zu schließen.
+- ⚠️ **Stand 30.09.2026: `npm install` geht wieder TEILWEISE** — `next@16`, ESLint und
+  `undici` ließen sich installieren; `npm audit fix` und `vitest@4.1.11` scheitern weiter am
+  selben Arborist-Fehler. Nach jeder Installation die Lockdatei auf verlorene Pakete prüfen
+  (Paketzahl vorher/nachher). Historie:
 - ⛔ **`npm install` funktioniert in der Remote-Umgebung NICHT** (10.09.2026):
   `Cannot read properties of null (reading 'edgesOut')` in Arborist `buildIdealTree` — bei
   jedem Weg, auch mit `--package-lock-only` und nach `rm -rf node_modules`. **Nur `npm ci`
@@ -645,13 +675,11 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Offen für den nächsten Rechner:** `npm install -D vitest@^4.1.11` (schließt
   `GHSA-82fw-gwwq-j7x9`, moderat, **nur Entwicklung** — wer Testcode bestimmt, hat ohnehin
   Schreibrechte am Repo).
-- 🧹 **`npm run lint` hat NIE gelint** (10.09.2026 gefunden). Es gibt keine
+- 🧹 ~~**`npm run lint` hat NIE gelint**~~ ✅ eingerichtet mit Next 16 (30.09.2026, siehe oben). Historie: (10.09.2026 gefunden). Es gibt keine
   ESLint-Konfiguration im Repo (kein `.eslintrc*`, kein `eslint.config.*`) — `next lint`
   startet deshalb den interaktiven Einrichtungsdialog. **Nicht nebenbei reparieren:**
   Next 16 entfernt `next lint`; die Einrichtung gehört als eigenständiges
   `eslint.config.mjs` in dieselbe Migration.
-- **Next 16 ist ein eigenes, späteres Vorhaben** — verlangt `middleware.ts` → `proxy.ts`
-  (dort **kein Edge-Runtime**), Turbopack als Standard, Wegfall von `next lint`.
 - **Scanner (kostenlos, ohne Konto):** `osv-scanner scan source --lockfile=package-lock.json`
   (`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest`). Vor jedem größeren
   Release laufen lassen, mindestens monatlich. Neue Befunde in der genannten Datei bewerten,

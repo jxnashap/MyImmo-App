@@ -24,14 +24,14 @@
 //      naechste Server-Action vergisst oder direkt gegen PostgREST spricht.
 //      Der Trigger ist noetig, weil die Policies UPDATE/DELETE nur STILL
 //      wegfiltern — die Action meldete „gespeichert", obwohl nichts geschah.
-//   2. Route — `demoDarfRoute` unten, durchgesetzt in `middleware.ts`.
+//   2. Route — `demoDarfRoute` unten, durchgesetzt in `proxy.ts` (bis Next 15: `middleware.ts`).
 //   3. Oberflaeche — `components/DemoNurLesen.tsx` macht Felder schreibgeschuetzt
 //      und Speichern-Knoepfe inaktiv. Seit dem Trigger in (1) ist sie keine
 //      Sicherung mehr, sondern Hoeflichkeit: Wer gar nicht erst tippen kann,
 //      muss sich keine Fehlermeldung durchlesen.
 //
 // `components/Sidebar.tsx` graut gesperrte Eintraege aus (Schloss),
-// `middleware.ts` weist gesperrte Adressen serverseitig ab. Das Ausgrauen
+// `proxy.ts` weist gesperrte Adressen serverseitig ab. Das Ausgrauen
 // allein waere reine Optik: Wer die Adresse kennt, tippt sie ein.
 
 import { istOeffentlicheSeite } from "@/lib/oeffentlich";

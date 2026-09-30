@@ -1,5 +1,25 @@
 # Sicherheit der Abhängigkeiten
 
+> ## Stand 30.09.2026 — Next 16.3.8, `postcss`-Meldung geschlossen
+>
+> Umstieg auf **Next 16.3.8** (React bleibt 19.2.8). Damit ist die hohe `postcss`-Meldung
+> weg — sie hing an Nexts fest gepinnter Kopie 8.4.31. `npm audit` danach:
+> **3 Meldungen, alle nur Entwicklung:**
+>
+> | Paket | Schwere | Wo | Erreichbar zur Laufzeit? |
+> |---|---|---|---|
+> | `vitest` / `@vitest/mocker` < 4.1.11 | moderat (2×) | Testlauf | nein |
+> | `brace-expansion` 1.1.18 | hoch | im ESLint-Baum (`minimatch` 3) | nein — nur beim Linten |
+>
+> **Nicht behoben, weil `npm` hier scheitert:** `npm audit fix` und `npm install -D
+> vitest@4.1.11` brechen weiter mit `Cannot read properties of null (reading 'edgesOut')`
+> ab. **Neu:** Einzelne `npm install` laufen inzwischen durch (Next, ESLint, undici) —
+> der Fehler hängt am konkreten Baum, nicht an npm überhaupt. `undici` (Entwicklung) wurde
+> auf 8.11.2 gehoben.
+> Lockdatei geprüft: 517 → 548 Pakete, weg nur `@rushstack/eslint-patch` (gehörte zur
+> alten ESLint-Konfiguration), neu v. a. Babel (React-Hooks-Regeln von `eslint-config-next` 16).
+
+
 > ## 🔄 Nachlauf 10.09.2026 (`npm audit`)
 >
 > Der Monatslauf war fällig. **osv-scanner ließ sich nicht installieren** (kein Go-Modul-

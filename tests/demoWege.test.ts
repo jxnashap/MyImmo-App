@@ -246,7 +246,7 @@ describe("Demo: Oberfläche sagt die Wahrheit und hat einen Ausgang", () => {
 });
 
 describe("Middleware: gesperrte Aufrufe erklären sich", () => {
-  const mw = readFileSync("middleware.ts", "utf8");
+  const mw = readFileSync("proxy.ts", "utf8");
 
   it("403 liefert `error` — den Schlüssel, den die KI-Formulare lesen", () => {
     expect(mw).toMatch(/NextResponse\.json\(\{ error: text/);

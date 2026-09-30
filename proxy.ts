@@ -30,7 +30,12 @@ function buildCsp(nonce: string): string {
   ].join("; ");
 }
 
-export async function middleware(request: NextRequest) {
+// Next 16 (30.09.2026): `middleware.ts` heißt jetzt `proxy.ts`, die Funktion
+// `proxy`. Laufzeit ist Node statt Edge — für diese Datei ohne Folgen:
+// `btoa`/`crypto.randomUUID` gibt es dort auch, und Funktionen wie Datenbank
+// liegen in Frankfurt (vorher lief die Edge-Middleware beim Besucher und
+// fragte Supabase von dort aus).
+export async function proxy(request: NextRequest) {
   // Pro Request eine Nonce; an Next weitergeben (Request-Header), damit Next
   // seine eigenen Inline-Skripte automatisch mit der Nonce versieht.
   const nonce = btoa(crypto.randomUUID());
