@@ -1000,6 +1000,28 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Neue Pläne kommen erst hinein, wenn der Betreiber sie beschlossen hat.**
   **Nicht gemacht, braucht den Betreiber:** Gründer-Abschnitt (Inhalte), Kundenstimmen (es
   gibt keine echten — **niemals erfinden**).
+- 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
+  (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
+  daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,
+  Kaltmiete und Rendite stehen darunter → Warmmiete − Kosten = Cashflow, sichtbar.
+  (2) **„+754,9 % seit Anschaffung"** war erster gegen letzten Punkt der Portfolio-Reihe —
+  jeder Zukauf zählte als Wertsteigerung. Jetzt `wertzuwachsGgKaufpreis()` (lib/wert/verlauf.ts):
+  Σ heutiger Wert gegen Σ Kaufpreis, nur Objekte mit BEIDEM → Demo **+11,9 % ggü. Kaufpreis**.
+  (3) **Schuldzinsen doppelt abgezogen:** Die Anlage V rät, Zinsen als Kosten „Schuldzinsen"
+  zu buchen; der Cashflow zieht aber die volle Kreditrate ab, die sie schon enthält.
+  `laufendeKosten()` (lib/cashflowKennzahl.ts) nimmt sie vor dem Kostenschnitt heraus
+  (Dashboard + Objektseite). Live noch nie eingetreten (0 Schuldzinsen-Buchungen).
+  **Regel: Kosten, die in der Kreditrate stecken, gehören nie zusätzlich in „laufende Kosten".**
+  (4) **Jahresbericht-PDF rechnete anders als die Seite** (Kopfkommentar behauptete
+  „identisch"): Zinsen doppelt, Zinsanteil immer geschätzt. Beide jetzt über
+  `jahresZeile()` in `lib/jahresberichtZeile.ts`.
+  (5) **Demo ohne Zinsbuchungen** → Steuer zeigte „aus Restschuld hochgerechnet". Migration
+  `20260930174605`: 4 Darlehen × 18 Monate im Schnappschuss, der Reset schreibt fort. Die
+  Steuerseite zeigt standardmäßig das VORJAHR (`AnlageVExport`, `aktuell - 1`), das in der
+  Demo immer voll gebucht ist.
+  **Test-Falle, die M4 aufdeckte:** Gebuchte Zinsen = Schätzung (3.000 = 100.000 × 3 %) —
+  der Test konnte „gebucht schlägt geschätzt" gar nicht unterscheiden. Testwerte so wählen,
+  dass die zu unterscheidenden Wege VERSCHIEDENE Ergebnisse liefern.
 - 💶 **Cashflow: EINE Rechnung, jede Zahl sagt, was sie ist (Phase 4, 30.09.2026).**
   `lib/cashflowKennzahl.ts` → `kostenSchnittMonat()` + `monatsCashflow()` + `cashflowFormel()`,
   benutzt von Dashboard UND Objektseite. **Drei Fehler, die dort steckten:**
