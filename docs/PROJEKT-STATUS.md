@@ -51,7 +51,7 @@ Ergänzt `CLAUDE.md` (Arbeitsweise, Merkliste, Deployment), `docs/MASTERPLAN.md`
 | Tabellen in Postgres | **47, alle mit RLS** (live abgefragt) |
 | Ratgeber-Artikel / Funktionsseiten | 19 / 6 |
 | `loading.tsx` | 50 von 67 Seiten |
-| Lint (erster Lauf, 30.09.) | 93 Fehler, 39 Warnungen — Altlast, blockiert nichts |
+| Lint (30.09.) | 86 Fehler, 39 Warnungen — Altlast, blockiert nichts (erster Lauf: 93) |
 
 ## Was ist MyImmo?
 Deutschsprachige Immobilienverwaltungs-SaaS für **private Vermieter (1–24 Einheiten)**,
@@ -239,7 +239,7 @@ durchlaufen. Die Tabelle hier ist die ältere Compliance-Sicht.
 
 | Was | Umfang | Anmerkung |
 |---|---|---|
-| **Lint-Altlast** | mittel | 93 Fehler / 39 Warnungen. Zuerst die 7 × `react-hooks/static-components` (Komponente wird je Rendern neu erzeugt → verliert Zustand/Fokus — mögliche echte Fehler) |
+| **Lint-Altlast** | mittel | 86 Fehler / 39 Warnungen. `static-components` ist erledigt (kein echter Fehler dahinter); nächste Kandidaten `react-hooks/purity` (4) und `set-state-in-effect` (25) |
 | **Proxy: `getUser` → `getClaims`** | mittel, sicherheitskritisch | spart einen Auth-Rundlauf je Anfrage, braucht asymmetrische JWT-Schlüssel in Supabase |
 | **Design Runde 2** | mittel | Runde 1 („Frosted Paper") ist am 20.08.2026 umgesetzt. Offen: echte Neu-Anordnung einzelner Layouts statt reiner Um-Tokenisierung. 11px → 12px ist eine Zeile (`--text-xs`), muss aber angesehen werden |
 | **Tests für Komponenten/PDF** | mittel | `components/`, `lib/pdf/` und RLS-Policies ohne Abdeckung (Actions und API-Routen sind abgedeckt) |

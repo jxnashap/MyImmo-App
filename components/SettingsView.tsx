@@ -672,13 +672,6 @@ function RechtPanel({ email, provider }: { email?: string | null; provider?: str
   function tourStarten() {
     window.dispatchEvent(new Event(TOUR_EVENT));
   }
-  const RLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <Link href={href} className="bank-card" style={{ textDecoration: "none", color: "var(--text)" }}>
-      <FileText size={16} style={{ color: "var(--gold)" }} />
-      <span style={{ flex: 1, fontSize: 13.5 }}>{children}</span>
-      <ExternalLink size={14} style={{ color: "var(--muted)" }} />
-    </Link>
-  );
   return (
     <div ref={ref}>
       <div className="glass-card reveal">
@@ -889,5 +882,16 @@ function DangerZone({ email, provider }: { email?: string | null; provider?: str
         document.body,
       )}
     </div>
+  );
+}
+
+// Außerhalb der Panels, damit React sie nicht bei jedem Rendern neu erzeugt.
+function RLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className="bank-card" style={{ textDecoration: "none", color: "var(--text)" }}>
+      <FileText size={16} style={{ color: "var(--gold)" }} />
+      <span style={{ flex: 1, fontSize: 13.5 }}>{children}</span>
+      <ExternalLink size={14} style={{ color: "var(--muted)" }} />
+    </Link>
   );
 }

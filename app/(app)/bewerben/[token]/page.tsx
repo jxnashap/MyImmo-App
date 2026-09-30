@@ -50,6 +50,25 @@ const datumText = (iso: string | null | undefined) => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("de-DE");
 };
 
+// Außerhalb von Steckbrief, damit React sie nicht bei jedem Rendern neu erzeugt.
+function Block({ titel, zeilen }: { titel: string; zeilen: [string, string | null][] }) {
+  const da = zeilen.filter(([, v]) => v);
+  if (da.length === 0) return null;
+  return (
+    <div style={{ flex: "1 1 240px", minWidth: 220 }}>
+      <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>{titel}</div>
+      <div style={{ display: "grid", gap: 0 }}>
+        {da.map(([k, v]) => (
+          <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "5px 0", borderBottom: "1px solid var(--line)", fontSize: 12.5 }}>
+            <span style={{ color: "var(--muted)" }}>{k}</span>
+            <span style={{ fontWeight: 600, textAlign: "right" }}>{v}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Objekt-Steckbrief — die Eckdaten der Anzeige, geordnet wie im Inserat:
     große Kennzahlen-Kacheln (Kaltmiete mit €/m², Zimmer, Fläche, Warmmiete),
     darunter die Blöcke „Kosten" und „Objektdaten", Ausstattung, Beschreibung. */
@@ -82,23 +101,6 @@ function Steckbrief({ info }: { info: Info }) {
   ];
   const ausstattung = a.ausstattung ?? [];
 
-  const Block = ({ titel, zeilen }: { titel: string; zeilen: [string, string | null][] }) => {
-    const da = zeilen.filter(([, v]) => v);
-    if (da.length === 0) return null;
-    return (
-      <div style={{ flex: "1 1 240px", minWidth: 220 }}>
-        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>{titel}</div>
-        <div style={{ display: "grid", gap: 0 }}>
-          {da.map(([k, v]) => (
-            <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "5px 0", borderBottom: "1px solid var(--line)", fontSize: 12.5 }}>
-              <span style={{ color: "var(--muted)" }}>{k}</span>
-              <span style={{ fontWeight: 600, textAlign: "right" }}>{v}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="section" style={{ marginBottom: 16 }}>
