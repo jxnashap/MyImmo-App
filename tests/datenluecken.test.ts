@@ -195,3 +195,56 @@ describe("Anlage V: fehlende Umlagen fallen auf", () => {
     expect(pdf).toMatch(/from\("mieter"\)\.select\("prop_id,nk_vorauszahlung,mietbeginn,mietende"\)\.eq\("user_id", user\.id\)/);
   });
 });
+
+describe("Weitere Stammdaten-Lücken: Mietbeginn, Objekt, Auszahlungsdatum", () => {
+  const leer = { offeneMieten: [], anliegen: [], meldungen: [], fristen: [] };
+
+  it("je Lücke eine Zeile mit dem passenden Ziel", () => {
+    const liste = baueHeuteAufgaben({
+      ...leer,
+      mieterOhneBeginn: [{ id: "m1", name: "A" }],
+      mieterOhneObjekt: [{ id: "m2", name: "B" }, { id: "m3", name: "C" }],
+      krediteOhneAuszahlung: [{ id: "k1", name: "Sparkasse" }],
+    }, HEUTE, 10);
+    expect(liste.map((a) => [a.label, a.href])).toEqual([
+      ["Mietbeginn fehlt: A", "/tenants/m1/edit"],
+      ["2 Mieter ohne Objekt", "/tenants"],
+      ["Auszahlungsdatum fehlt: Sparkasse", "/kredite/k1/edit"],
+    ]);
+    expect(liste.every((a) => a.art === "stammdaten" && !a.dringend)).toBe(true);
+  });
+
+  it("leere Listen (der Normalfall: alles gepflegt) → keine Zeile, kein „bei 0 Objekten“", () => {
+    expect(baueHeuteAufgaben({ ...leer, ohneKaufdatum: [], mieterOhneBeginn: [], mieterOhneObjekt: [], krediteOhneAuszahlung: [] }, HEUTE)).toEqual([]);
+  });
+
+  it("mehrere Kredite → Sammelzeile auf die Kreditliste", () => {
+    const [a] = baueHeuteAufgaben({ ...leer, krediteOhneAuszahlung: [{ id: "a", name: "x" }, { id: "b", name: "y" }] }, HEUTE);
+    expect(a).toMatchObject({ label: "Auszahlungsdatum fehlt bei 2 Krediten", href: "/kredite" });
+  });
+
+  it("das Dashboard füllt alle drei Listen — nur laufende Mieter", () => {
+    const q = readFileSync("app/(app)/page.tsx", "utf8");
+    expect(q).toMatch(/mieterOhneBeginn: mieterRows\s*\.filter\(\(m\) => !m\.mietbeginn && laeuftAm\(m, heuteISO0\)\)/);
+    expect(q).toMatch(/mieterOhneObjekt: mieterRows\s*\.filter\(\(m\) => !m\.prop_id && laeuftAm\(m, heuteISO0\)\)/);
+    expect(q).toMatch(/krediteOhneAuszahlung: kredite\s*\.filter\(\(k\) => !k\.auszahlung_datum\)/);
+  });
+
+  it("Warmmiete: NK nur von Mietern mit Objekt (deren Kaltmiete zählt ja auch)", () => {
+    expect(readFileSync("app/(app)/page.tsx", "utf8"))
+      .toMatch(/nkVorauszahlungenMonat\(mieterRows\.filter\(\(m\) => m\.prop_id && objektIds\.has\(m\.prop_id\)\), heuteISO\)/);
+  });
+
+  it("das Mietkonto nennt die Mieter ohne Mietbeginn, statt sie still wegzulassen", () => {
+    const daten = readFileSync("lib/mietkontoDaten.ts", "utf8");
+    expect(daten).toMatch(/\.filter\(\(m\) => !m\.mietbeginn && laeuftAm\(m, heute\)\)/);
+    expect(daten).toMatch(/return \{ zeilen, nacherfassung, ohneMietbeginn \};/);
+    expect(readFileSync("app/(app)/mietkonto/page.tsx", "utf8")).toMatch(/\{ohneMietbeginn\.length > 0 && \(/);
+  });
+
+  it("die Kreditkarte sagt, was ohne Auszahlungsdatum fehlt", () => {
+    const q = readFileSync("components/KrediteListe.tsx", "utf8");
+    expect(q).toMatch(/\{!k\.auszahlung_datum && \(/);
+    expect(q).toContain("§ 489 BGB");
+  });
+});

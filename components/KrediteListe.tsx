@@ -70,6 +70,15 @@ export default function KrediteListe({
                 <div><div className="kredit-field-lbl">Rate / Monat</div><div className="kredit-field-val">{euro(k.monatsrate)}</div></div>
                 <div><div className="kredit-field-lbl">Laufzeit</div><div className="kredit-field-val">{laufzeitText(k.laufzeit, k.auszahlung_datum)}</div></div>
               </div>
+              {/* Ohne Auszahlungsdatum fehlt die Frist fürs Sonderkündigungsrecht
+                  (lib/fristen.ts, 10 Jahre nach Vollauszahlung) — und in den
+                  Terminen steht dazu nichts (30.09.2026: 6 von 8 echten Krediten). */}
+              {!k.auszahlung_datum && (
+                <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 14px" }}>
+                  <TriangleAlert size={12} style={{ verticalAlign: "-2px", color: "var(--amber)" }} /> Auszahlungsdatum fehlt — ohne es
+                  berechnet MyImmo weder das Laufzeitende noch die Frist fürs Sonderkündigungsrecht nach 10 Jahren (§ 489 BGB).
+                </p>
+              )}
               <div className="kredit-grid" style={{ marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
                 <div><div className="kredit-field-lbl">Zinsen / Mo.</div><div className="kredit-field-val" style={{ color: "var(--muted)" }}>{euro(moZins)}</div></div>
                 <div><div className="kredit-field-lbl">Tilgung / Mo.</div><div className="kredit-field-val" style={{ color: "var(--green)" }}>{euro(Math.max(0, moTilg))}</div></div>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import RueckstandWaechter from "@/components/RueckstandWaechter";
 import { ladeMietkonto } from "@/lib/mietkontoDaten";
 import MietkontoBestaetigung from "@/components/MietkontoBestaetigung";
@@ -18,7 +19,7 @@ export default async function MietkontoPage(
   const aktuellerMonat = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, "0")}`;
   const monat = /^\d{4}-\d{2}$/.test(searchParams.monat ?? "") ? searchParams.monat! : aktuellerMonat;
 
-  const { zeilen, nacherfassung } = await ladeMietkonto(monat);
+  const { zeilen, nacherfassung, ohneMietbeginn } = await ladeMietkonto(monat);
 
   return (
     <MietkontoBestaetigung
@@ -26,7 +27,28 @@ export default async function MietkontoPage(
       aktuellerMonat={aktuellerMonat}
       zeilen={zeilen}
       nacherfassung={nacherfassung}
-      banner={<RueckstandWaechter />}
+      banner={
+        <>
+          <RueckstandWaechter />
+          {ohneMietbeginn.length > 0 && (
+            <div className="section mb-20" style={{ borderColor: "var(--amber)" }}>
+              <div className="section-body">
+                <strong>
+                  {ohneMietbeginn.length === 1 ? "Ein Mieter fehlt hier" : `${ohneMietbeginn.length} Mieter fehlen hier`}
+                </strong>{" "}
+                — ohne Mietbeginn lässt sich keine Soll-Miete berechnen:{" "}
+                {ohneMietbeginn.map((m, i) => (
+                  <span key={m.id}>
+                    {i > 0 && ", "}
+                    <Link href={`/tenants/${m.id}/edit`}>{m.name}</Link>
+                  </span>
+                ))}
+                . Mietbeginn ergänzen, dann erscheinen die Monate zum Bestätigen.
+              </div>
+            </div>
+          )}
+        </>
+      }
     />
   );
 }
