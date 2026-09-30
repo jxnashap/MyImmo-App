@@ -942,7 +942,30 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   rechnet gegen `demoDarfRoute` und wird sonst rot (elf Mutationen geprüft).
   **Der Vorgänger-Test prüfte nur, OB die Links auf der Startseite stehen** — und hielt
   damit drei Sackgassen fest. Ein Test, der eine Schreibweise prüft, schützt kein Verhalten.
-  **Phase 2–4 erledigt 30.09.2026.** Offen: Phase 5 (Dashboard-Ladezeit messen).
+  **Phase 2–5 erledigt 30.09.2026.**
+- ⏱️ **Phase 5: Ladezeit GEMESSEN, nicht vermutet (30.09.2026, PR #338).** Live, Demo-Konto,
+  TTFB je 10 Aufrufe, Messpunkt in den USA (Edge `iad1`, Funktion `fra1`):
+  | Seite | vorher min/median | nachher min/median |
+  |---|---|---|
+  | `/` Dashboard | 573 / 785 ms | 444 / 711 ms |
+  | `/einstellungen` | 523 / 743 ms | 414 / 596 ms |
+  | `/tenants` | 545 / 709 ms | 402 / 568 ms |
+  Untergrenze dynamische Seite ohne Anmeldung (`/login`): ~170–185 ms; statisch ~50 ms.
+  **Befund, der die eigene Hypothese widerlegte:** Das Dashboard war NICHT langsamer als
+  `/einstellungen`. Die Zeit steckte im gemeinsamen **Layout** (sieben Aufrufe
+  hintereinander) → jetzt drei Stufen (getUser → Rolle+Freischaltung → vier Datenabfragen
+  parallel). Gewinn ~110–140 ms (Minima), im Median kleiner als die Netzstreuung.
+  Funktionen UND Datenbank liegen in Frankfurt — ein Regionen-Problem gibt es nicht.
+  **Grenzen der Messung:** Aus Deutschland nicht messbar; die Edge-Middleware läuft beim
+  Nutzer, ihr `getUser` geht von hier über den Atlantik → für deutsche Nutzer ist die Zeit
+  eher kürzer. Browser-Zeit (JS, Hydration) nicht gemessen (Chromium kommt hier nicht durch
+  den Proxy). Vercel-Observability liefert für das Projekt nichts (404).
+  **Noch offen, bewusst nicht gemacht:** (1) `getUser` läuft pro Seite ZWEI- bis dreimal
+  (Middleware, Layout, Seite) — Layout/Seite ließen sich per React `cache()` teilen.
+  (2) Middleware `getUser` → `getClaims` (lokale JWT-Prüfung) spart einen Auth-Rundlauf je
+  Anfrage, braucht aber asymmetrische JWT-Schlüssel in Supabase und ist sicherheitskritisch —
+  eigenes Vorhaben. Messskript-Muster: einmal `/api/demo`, dann N× GET mit Cookie, TTFB
+  über `performance.now()` bis zu den Antwortköpfen; `x-vercel-id` zeigt Edge::Funktion.
 - 🔁 **Zweite Review-Runde (30.09.2026), `tests/reviewRunde2.test.ts`, acht Mutationen:**
   (1) **Buchungssaldo-Diagramm** startete bei „12 Monate" beim Saldo ALLER früheren
   Buchungen (`lib/zeitraum.ts`, „Grundlinie") → Endwert 100.182 € passte zu nichts. Jetzt ab
