@@ -3,7 +3,7 @@
 import { ZEITRAEUME } from "@/lib/zeitraum";
 import { useZeitraum } from "./ZeitraumProvider";
 
-// Segmented-Control (Trade-Republic-Stil): 1M · 1J · 5J · Max.
+// Segmented-Control (Trade-Republic-Stil): 1J · 3J · 5J · Max.
 // Aktiver Button hervorgehoben, Rest dezent; kompakt & mobil-tauglich.
 export default function ZeitraumControl() {
   const { zeitraum, setZeitraum } = useZeitraum();
