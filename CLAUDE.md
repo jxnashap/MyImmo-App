@@ -634,6 +634,13 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Inline-Skript mit Nonce; im Browser alle öffentlichen Seiten hydriert, keine CSP-Fehler,
   weiche Navigation. Der angemeldete Teil nur über den Rauchtest nach dem Deploy (Chromium
   erreicht Supabase aus der Remote-Umgebung nicht).
+  **Live nach dem Deploy (PR #347):** Rauchtest 16/16 grün; CSP-Nonce kommt weiter aus dem
+  Proxy; TTFB unverändert im Rahmen der Streuung (min 393–480 ms, Median 533–621 ms);
+  Seiten 5–6 KB kleiner. **Rückfall, falls nötig:** Vercel Instant Rollback auf den letzten
+  Next-15-Stand `dpl_LRgMzU1c5Kb47uKKjht63FFQCaLp`.
+  **Falle beim Prüfen (erneut):** `pkill -f "[n]ext start"` in DERSELBEN Befehlszeile wie
+  `npx next start …` trifft die eigene Shell (Exit 144) — das Muster schützt nur, wenn der
+  Text nicht woanders in der Zeile steht. Aufräumen und Starten in getrennte Aufrufe.
   🧹 **Lint-Altlast, erster Lauf überhaupt: 93 Fehler, 39 Warnungen** (552 Dateien).
   Größte Posten: `react/no-unescaped-entities` 40 (Anführungszeichen im JSX-Text, harmlos),
   `react-hooks/set-state-in-effect` 25, `@typescript-eslint/no-explicit-any` 12,
