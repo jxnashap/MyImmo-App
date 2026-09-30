@@ -217,9 +217,8 @@ keinen Brevo-Include — Brevo nutzt eigenen Return-Path und signiert per DKIM.
 ## 3. Offen — nur der Betreiber
 
 **Aktuelle, nach Dringlichkeit sortierte Liste: `CLAUDE.md` → „👤 NUR DER BETREIBER" und
-`docs/BETREIBER-CHECKLISTE.md`.** Dringend sind dort (Stand 30.09.2026): E-Mail-Vorlage
-„Reset Password" auf `token_hash` umstellen und „Passwort vergessen" einmal mit echter Mail
-durchlaufen. Die Tabelle hier ist die ältere Compliance-Sicht.
+`docs/BETREIBER-CHECKLISTE.md`.** Dringend ist dort (Stand 30.09.2026) nur noch: „Passwort vergessen"
+einmal mit echter Mail durchlaufen — die Vorlage ist laut Betreiber umgestellt. Die Tabelle hier ist die ältere Compliance-Sicht.
 
 | # | Was | Warum es zählt |
 |---|---|---|
