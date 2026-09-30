@@ -42,12 +42,17 @@ Browser. Ich kann es nicht erledigen und nicht prüfen. **In jeder Session kurz 
 ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut vorzuschlagen.
 
 **Dringend — ein Kernweg hängt daran:**
-1. ~~**Supabase → Authentication → URL Configuration.**~~ ✅ **Vom Betreiber bestätigt
-   30.09.2026** (Site URL `https://www.myimmoapp.de`, Redirect `…/auth/passwort` eingetragen).
-   **Nicht von mir geprüft** — das Dashboard ist über keine Schnittstelle lesbar, und die
-   Auth-Logs der letzten 24 h enthielten keinen Recovery-/Redirect-Vorgang. Den Beweis
-   liefert erst Punkt 3. Offen blieb: was VORHER drinstand (bei `localhost` wären auch
-   Registrierungs-Bestätigungen der Vergangenheit ins Leere gelaufen).
+1. ~~**Supabase → Authentication → URL Configuration.**~~ ✅ **ERLEDIGT UND GEPRÜFT
+   30.09.2026.** Site URL = `https://www.myimmoapp.de`; `…/auth/passwort` wird angenommen;
+   ein Platzhalter für die eigene Domain existiert (`www.myimmoapp.de/irgendwas` wird
+   angenommen); fremde Domains, `*.vercel.app`, Vercel-Vorschauen und `localhost` werden
+   **verworfen** — kein gefährlicher Platzhalter.
+   🔍 **Prüfverfahren (ohne Mail, ohne Dashboard):** `GET /auth/v1/authorize?provider=google
+   &redirect_to=<ziel>` mit Header `apikey: <publishable key>` → die `state`-UUID aus der
+   Google-Weiterleitung ist die ID einer Zeile in `auth.flow_state`; deren Spalte `referrer`
+   ist das, was Supabase ANGENOMMEN hat. Ein verworfenes Ziel fällt auf die Site URL zurück —
+   damit ist auch die Site URL auslesbar. Hinterlässt je Probe eine unvollendete
+   `flow_state`-Zeile ohne Nutzer (verfällt; nicht löschen, kein Schreiben ins Auth-Schema).
 2. **E-Mail-Vorlage „Reset Password" auf `token_hash` umstellen** (Authentication → Emails).
    Die Standard-Vorlage schickt einen PKCE-`code`, der **nur im anfordernden Browser**
    funktioniert — Mail am Handy öffnen scheitert zwangsläufig. Wortlaut steht in
