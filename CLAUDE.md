@@ -8,6 +8,28 @@
 - Bei jeder Entscheidung des Nutzers zuerst die Risiken nennen, bevor zugestimmt wird.
 
 
+## Vault & Wissensspeicher (verbindlich)
+
+- **`docs/VAULT-REGELN.md` — Aufnahmeschwelle für die Vault. JEDER Chat hält sich daran.**
+  Kurzfassung: In `docs/` kommt nur, was (1) eine Entscheidung festhält, die sonst neu
+  getroffen werden müsste, (2) einen Fehler mit Ursache und Gegenprüfung dokumentiert,
+  (3) eine alternde Zahl/Frist/Vertragslage **mit Stand-Datum und Quelle** festhält,
+  (4) eine Konvention verbindlich macht oder (5) einen Ist-Stand belegt, der sonst falsch
+  eingeschätzt wird. **Nicht** hinein: Verlaufsprotokolle, Allgemeinwissen, Doppelungen,
+  Vermutungen im Indikativ, Zwischenstände, Rohdaten.
+  Vor dem Schreiben die vier Aufnahmefragen aus der Datei durchgehen.
+- **`docs/app-entwicklung/` — wiederverwendbares App-Bau-Wissen** (Vorgehen, Code-Regeln,
+  Design, Rechner, Anbindungen, Recht, volatile Kennzahlen, Fehlerkatalog).
+  Ziel: aus einer Ideenskizze eine App bauen, ohne Entscheidungen und Fallstricke neu zu
+  erarbeiten. Einstieg: `docs/app-entwicklung/00 App-Entwicklung Index.md`,
+  Ablauf für neue Apps: `09 Neue App bauen.md`.
+- **`docs/app-entwicklung/07 Volatile Kennzahlen und Pruefzyklus.md` — BEI JEDEM SESSIONSTART
+  auf fällige Prüfungen sehen** (Steuersätze, Förderkonditionen, Anbieterverträge, Beispielzinsen,
+  Marktdaten). Fällige Zeilen abarbeiten, bevor die eigentliche Aufgabe beginnt; das Ergebnis
+  eintragen — auch „unverändert" ist ein Prüfergebnis.
+- **Neue Erkenntnisse gehören dorthin**, nicht in den Chatverlauf: Wer einen Fehler behebt,
+  eine Anbindung klärt oder eine Konvention festlegt, trägt sie im selben PR nach.
+
 ## Offene Punkte / Merkliste
 
 > **Vor dem Start: `docs/START-CHECKLISTE.md`** (04.09.2026) — alle offenen Punkte nach
@@ -479,6 +501,20 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 
 ### Benötigte Environment-Variablen (Vercel)
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `BETA_CODE` — **der Zugangscode für die Registrierung als Vermieter/Hausverwaltung**
+  (Early Access). Steht NUR in Vercel, nirgends im Repo. Nachsehen und ändern:
+  Vercel → Projekt → Settings → Environment Variables → `BETA_CODE`; nach dem Ändern
+  ist ein **Redeploy nötig**, sonst gilt weiter der alte Wert. Geprüft wird serverseitig
+  in `lib/actions/freischaltung.ts` (`pruefeBetaCode`), mit Bremse: 8 Versuche je 15 Minuten
+  und IP. Ist die Variable nicht gesetzt, schlägt JEDE Registrierung mit
+  „Die Registrierung ist derzeit nicht freigeschaltet" fehl.
+  ⚠️ Der Code kennt noch einen Rückfall auf `NEXT_PUBLIC_BETA_CODE` — diese Variante
+  **niemals setzen**: Alles mit `NEXT_PUBLIC_`-Präfix landet im ausgelieferten JavaScript,
+  der Code stünde dann für jeden im Quelltext. Am 27.08.2026 geprüft: In den 10 Bundles
+  der Login-Seite (629 KB) taucht kein Beta-Code auf, die Variante ist also nicht gesetzt.
+  NICHT zu verwechseln mit den **Einladungscodes** für Mieter/Dienstleister
+  (`MI-XXXX-XXXX` / `SV-XXXX-XXXX`) — die stehen in der Tabelle `einladungscodes`,
+  werden vom Vermieter in der App erzeugt und per RPC `einladungscode_pruefen` geprüft.
 - `ANTHROPIC_API_KEY` — für OCR / KI-Import (NK-Abrechnung auslesen, Objekt-Import)
 - `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` — E-Mail-Versand (Vorlagen-Verteiler, Double-Opt-in).
   Optional `BREVO_ABSENDER_NAME` (Default „MyImmo") und `BREVO_LIST_ID` (ohne sie wird der
