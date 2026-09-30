@@ -77,7 +77,17 @@ export default async function RootLayout({
       redirect(`/login?mfa=1${pathname && pathname !== "/" ? `&next=${encodeURIComponent(pathname)}` : ""}`);
     }
   }
-  const rolle = await getRolle(supabase, user.id);
+  // Rolle und Freischaltung sind voneinander unabhängig → EIN Rundlauf statt
+  // zwei (Phase 5, 30.09.2026: Jede App-Seite brauchte ~400 ms Serverzeit,
+  // das Dashboard nicht mehr als /einstellungen — die Zeit steckte in den
+  // hintereinander laufenden Abfragen HIER, nicht in der Seite).
+  // Die Freischaltung wird mitgelesen, auch wenn der Pfad sie nicht braucht
+  // (/willkommen, öffentliche Seiten) — eine Abfrage, keine Wirkung: Die
+  // Entscheidung unten liest sie nur dort, wo sie vorher auch geprüft wurde.
+  const [rolle, freigeschaltet] = await Promise.all([
+    getRolle(supabase, user.id),
+    istFreigeschaltet(supabase, user.id),
+  ]);
   // Rechtstexte (/impressum, /datenschutz, /agb, /avv) laufen seit dem
   // Layout-Split ueber app/(pub)/ und kommen hier gar nicht mehr an. Uebrig
   // bleiben die Token-Seiten, die eine Datenbank brauchen und darum in der
@@ -90,7 +100,7 @@ export default async function RootLayout({
   // Zugangscode + Consent bestätigen, bevor die App nutzbar ist. Ohne
   // Freischaltung nur /willkommen (und öffentliche Seiten) erreichbar.
   if (!istOeffentlicheSeite && !pathname.startsWith("/willkommen")) {
-    if (!(await istFreigeschaltet(supabase, user.id))) {
+    if (!freigeschaltet) {
       // Bei der Registrierung wurde der Zugangscode bereits geprüft und die
       // Freischaltung vorgemerkt (siehe `bereiteRegistrierungVor`). Sie hier
       // einzulösen erspart dem Nutzer, denselben Code ein zweites Mal zu
@@ -152,24 +162,21 @@ export default async function RootLayout({
     );
   }
 
-  const { data: props } = await supabase
-    .from("properties")
-    .select("id,bezeichnung,typ")
-    .order("bezeichnung");
+  // Die vier Abfragen für Navigation und Befehlspalette hängen nicht
+  // voneinander ab → parallel (vorher vier Rundläufe hintereinander).
   // Mieter für die Befehlspalette: „NK Müller" / „Mieterhöhung Müller" führt
   // direkt zur passenden Dokument-Seite dieses Mieters.
-  const { data: mieter } = await supabase
-    .from("mieter")
-    .select("id,vorname,nachname")
-    .order("nachname");
+  // Zähler für die Navigation (offene Anliegen/Bewerbungen, unbestätigte Mieteingänge)
+  const [{ data: props }, { data: mieter }, { data: profil }, neu] = await Promise.all([
+    supabase.from("properties").select("id,bezeichnung,typ").order("bezeichnung"),
+    supabase.from("mieter").select("id,vorname,nachname").order("nachname"),
+    supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
+    ladeNeuigkeiten(),
+  ]);
   const tenants = (mieter ?? []).map((m) => ({
     id: m.id as string,
     name: [m.vorname, m.nachname].filter(Boolean).join(" ").trim() || "Mieter",
   }));
-  const { data: profil } = await supabase
-    .from("vermieter_profil").select("name").limit(1).maybeSingle();
-  // Zähler für die Navigation (offene Anliegen/Bewerbungen, unbestätigte Mieteingänge)
-  const neu = await ladeNeuigkeiten();
 
   return (
     <html lang="de" suppressHydrationWarning>
