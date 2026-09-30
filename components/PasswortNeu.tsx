@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { PASSWORT_MIN, PASSWORT_REGEL, pruefePasswort } from "@/lib/passwort";
+import { PASSWORT_LECK_HINWEIS, PASSWORT_MIN, PASSWORT_REGEL, passwortAblehnung, pruefePasswort } from "@/lib/passwort";
 
 // Neues Passwort nach „Passwort vergessen".
 //
@@ -36,14 +36,12 @@ export default function PasswortNeu() {
     const { error } = await supabase.auth.updateUser({ password: pw1 });
     if (error) {
       setLaeuft(false);
-      // Die Meldung von Supabase durchreichen, wo sie etwas erklärt: Bei
-      // aktivem Leak-Schutz steht dort, dass das Passwort in einem bekannten
-      // Datenleck vorkommt. Eine eigene Pauschalmeldung würde den Nutzer im
-      // Dunkeln lassen, warum ausgerechnet dieses Passwort abgelehnt wird.
+      // Wurde das PASSWORT abgelehnt, ist der Link noch gut — dann darf die
+      // Seite auf keinen Fall „neuen Link anfordern" raten (so geschehen beim
+      // ersten echten Durchlauf, siehe lib/passwort.ts).
       setFehler(
-        /pwned|leaked|compromis/i.test(error.message)
-          ? "Dieses Passwort steht in einem bekannten Datenleck. Bitte wähle ein anderes."
-          : "Das Passwort konnte nicht gesetzt werden. Bitte fordere einen neuen Link an.",
+        passwortAblehnung(error) ??
+          "Das Passwort konnte nicht gesetzt werden. Bitte fordere einen neuen Link an.",
       );
       return;
     }
@@ -57,8 +55,8 @@ export default function PasswortNeu() {
       <div className="section-body">
         <h3 style={{ marginBottom: 6 }}>Neues Passwort wählen</h3>
         <p style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5, marginBottom: 18 }}>
-          {PASSWORT_REGEL}. Nach dem Speichern wirst du auf allen Geräten abgemeldet und
-          meldest dich einmal neu an.
+          Das Passwort braucht {PASSWORT_REGEL}. {PASSWORT_LECK_HINWEIS}. Nach dem Speichern
+          wirst du auf allen Geräten abgemeldet und meldest dich einmal neu an.
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
