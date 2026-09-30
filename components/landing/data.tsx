@@ -12,7 +12,7 @@ export type Feature = { ico?: LucideIcon; t: string; p: string; soon?: boolean }
 
 export const FEATURES: Feature[] = [
   { ico: BarChart3, t: "Portfolio-Dashboard", p: "Wert, Cashflow, Rendite und Leerstand deines Bestands auf einen Blick — mit Verlaufs-Chart." },
-  { ico: Banknote, t: "Ein- & Ausgaben", p: "Mieten und Kosten je Objekt erfassen, Belege anhängen, Netto-Cashflow automatisch berechnet." },
+  { ico: Banknote, t: "Ein- & Ausgaben", p: "Mieten und Kosten je Objekt erfassen, Belege anhängen, Saldo und Monats-Cashflow automatisch berechnet." },
   { ico: ReceiptText, t: "Nebenkostenabrechnung", p: "Im klassischen Layout mit Gesamtkosten, Basis und Wohnungsanteil — die App rechnet den Mieteranteil selbst und erzeugt das fertige PDF." },
   { t: "Steuer, Anlage V & ELSTER", p: "Einkünfte aus V+V je Objekt mit AfA und Schuldzinsen — als ELSTER-Ausfüllhilfe Zeile für Zeile, PDF-Aufstellung und CSV." },
   { ico: MessageSquareText, t: "Mieterportal", p: "Mieter melden Schäden, Zählerstände und Anliegen direkt in der App — inklusive Bewerber-Verwaltung für freie Wohnungen." },

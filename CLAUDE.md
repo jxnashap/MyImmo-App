@@ -939,11 +939,26 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   rechnet gegen `demoDarfRoute` und wird sonst rot (elf Mutationen geprüft).
   **Der Vorgänger-Test prüfte nur, OB die Links auf der Startseite stehen** — und hielt
   damit drei Sackgassen fest. Ein Test, der eine Schreibweise prüft, schützt kein Verhalten.
-  **Phase 2 + 3 erledigt 30.09.2026** (siehe „Demo-Konto ist NUR-LESEN" und „Demo-Daten laufen
-  mit" oben). **Offen (Phase 4–5):** Cashflow-Kennzahlen beschriften (drei Zahlen, drei
-  Fragen, ein Wort) und das Ø-Kosten-Fenster für ECHTE Nutzer reparieren — in der Demo ist
-  es durch die fortgeschriebenen Daten behoben, bei einem Nutzer mit Buchungslücken schönt
-  es sich weiter selbst. Dann die Dashboard-Ladezeit messen.
+  **Phase 2–4 erledigt 30.09.2026.** Offen: Phase 5 (Dashboard-Ladezeit messen).
+- 💶 **Cashflow: EINE Rechnung, jede Zahl sagt, was sie ist (Phase 4, 30.09.2026).**
+  `lib/cashflowKennzahl.ts` → `kostenSchnittMonat()` + `monatsCashflow()` + `cashflowFormel()`,
+  benutzt von Dashboard UND Objektseite. **Drei Fehler, die dort steckten:**
+  (1) Der Kostenschnitt war „letzte 12 Monate / 12" — ein Nutzer mit drei Monaten Buchungen
+  sah ein VIERTEL seiner Kosten (Test rechnet es nach: 25 € statt 100 €), einer mit Lücke am
+  Ende ebenfalls zu wenig. Jetzt: Fenster = letzte 12 Monate MIT Buchungen, geteilt durch
+  die tatsächliche Monatszahl. **Nicht** durch „Monate mit Kosten" teilen — Grundsteuer
+  fällt nur in 4 Monaten an, der Schnitt wäre dreifach zu hoch. Lücken MITTEN im Zeitraum
+  bleiben ungelöst (bewusst).
+  (2) Die **Objektseite** rechnete „Miete − Kreditrate" OHNE Kosten, obwohl die Übersicht
+  darunter die Kosten als Posten führte; die Summe der Objekte ergab nicht das Dashboard.
+  (3) Vier Zahlen hießen „Cashflow". Jetzt: Monats-Cashflow mit Formel an der Zahl;
+  Dashboard-Verlauf und `/cashflow`-KPI heißen **„Buchungssaldo"**; „Einnahmen / Mo." heißt
+  „Kaltmiete / Mo." (es ist die Soll-Miete, keine Buchung); Jahresbericht-Spalte mit Formel.
+  **OFFENE ENTSCHEIDUNG (Betreiber): Kalt- oder Warmmiete.** Die Formel zählt nur die
+  KALTmiete als Einnahme, zieht aber ALLE Kosten ab — auch umlagefähiges Hausgeld, das die
+  Mieter über die NK-Vorauszahlung erstatten. Das drückt den Cashflow systematisch (Demo:
+  4 von 6 Objekten rot). Ehrlich beschriftet ist es, richtig im Sinne von Liquidität erst
+  mit Warmmiete. `tests/cashflowKennzahl.test.ts`, acht Mutationen geprüft.
   **`START_CTA` in `lib/preise.ts`:** Solange `REGISTRIERUNG_OFFEN = false` (Zugangscode
   nötig), heißt der Knopf „Early-Access-Zugang anfragen" statt „Kostenlos starten". Ein
   Test hält fest, dass keine Landing-Datei die Beschriftung wieder hart einträgt.

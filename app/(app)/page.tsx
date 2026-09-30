@@ -17,6 +17,7 @@ import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { ORGANISATION } from "@/lib/seo/jsonLd";
 import Leer from "@/components/Leer";
+import { kostenSchnittMonat, monatsCashflow, cashflowFormel } from "@/lib/cashflowKennzahl";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
 // metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
@@ -239,15 +240,14 @@ export default async function DashboardPage() {
     0,
   );
   const kreditRates = kredite.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
-  // Laufende Kosten: Ø der letzten 12 Monate aus echten Buchungen — statt nur
-  // des aktuellen Kalendermonats (der zu Monatsbeginn fast immer 0 € zeigte).
-  const vor12M = new Date(now); vor12M.setFullYear(vor12M.getFullYear() - 1);
-  const koLetzte12M = kosten
-    .filter((k) => { const d = k.buchungsdatum ? new Date(k.buchungsdatum) : null; return d && d >= vor12M && d <= now; })
-    .reduce((s, k) => s + (k.betrag ?? 0), 0);
-  const monatKosten = Math.round(koLetzte12M / 12);
+  // Laufende Kosten: Ø der letzten 12 Monate MIT BUCHUNGEN, geteilt durch die
+  // Monate, die das Fenster wirklich umfasst — Begründung in
+  // lib/cashflowKennzahl.ts (vorher / 12 fest: Neue Nutzer sahen einen Bruchteil
+  // ihrer Kosten). Dieselbe Rechnung steht auf der Objektseite.
+  const kostenSchnitt = kostenSchnittMonat(kosten, [...einnahmen, ...kosten], heuteISO);
+  const monatKosten = Math.round(kostenSchnitt.betrag);
   const totalKosten = kreditRates + monatKosten;
-  const cashflow = totalMiete - totalKosten;
+  const cashflow = monatsCashflow({ miete: totalMiete, kreditraten: kreditRates, kostenSchnitt: monatKosten });
   const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
   // Leerstandsquote: nur vermietbare Objekte (Status "Vermietet"/"Leer");
   // Benchmark: 2–5 % gesund, >10 % kritisch.
@@ -257,7 +257,7 @@ export default async function DashboardPage() {
   const leerstand = vermietbar.length > 0 ? (leerCount / vermietbar.length) * 100 : 0;
   const leerFarbe = leerstand <= 5 ? "var(--green)" : leerstand <= 10 ? "var(--amber)" : "var(--red)";
 
-  // Cashflow-Entwicklung: kumulierter Cashflow (Einnahmen − Ausgaben) aus echten
+  // Buchungssaldo: aufsummierte gebuchte Einnahmen − Ausgaben aus echten
   // Buchungen; Zeitraum wird clientseitig per Segmented-Control gefiltert.
   const portfolioPoints: RawPoint[] = [
     ...einnahmen.filter((e) => e.buchungsdatum).map((e) => ({ date: e.buchungsdatum as string, value: e.betrag ?? 0 })),
@@ -269,7 +269,7 @@ export default async function DashboardPage() {
   const balken = [
     { lbl: "Einnahmen", val: totalMiete, col: "var(--green)" },
     { lbl: "Kredite", val: kreditRates, col: "var(--red)" },
-    { lbl: "Kosten Ø/Mo.", val: monatKosten, col: "var(--red)" },
+    { lbl: `Kosten Ø ${kostenSchnitt.monate} Mon.`, val: monatKosten, col: "var(--red)" },
   ];
 
   // Letzte Transaktionen
@@ -364,19 +364,24 @@ export default async function DashboardPage() {
           <div className="kpi-sub"><span className="badge badge-teal">{properties.length} Objekt{properties.length === 1 ? "" : "e"}</span></div>
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
-          <div className="kpi-label">Einnahmen / Mo.</div>
+          {/* „Kaltmiete", nicht „Einnahmen": Die Zahl ist die VERTRAGLICHE
+              Soll-Miete der Objekte, keine gebuchte Einnahme (Review 30.09.2026). */}
+          <div className="kpi-label">Kaltmiete / Mo.</div>
           <div className="kpi-value">{euro(totalMiete)}</div>
-          <div className="kpi-sub">{bruttoRendite > 0 ? <span className="badge badge-gold">{bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Brutto-Rendite</span> : "Kaltmiete gesamt"}</div>
+          <div className="kpi-sub">{bruttoRendite > 0 ? <span className="badge badge-gold">{bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Brutto-Rendite</span> : "Soll laut Objekten"}</div>
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Kosten / Mo.</div>
           <div className="kpi-value">{euro(totalKosten)}</div>
-          <div className="kpi-sub">Kredit + laufend (Ø 12 Mon.)</div>
+          <div className="kpi-sub">Kreditraten + Ø Kosten ({kostenSchnitt.monate === 1 ? "1 Monat" : `${kostenSchnitt.monate} Monate`})</div>
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Cashflow / Mo.</div>
           <div className="kpi-value" style={{ color: cashflow >= 0 ? "var(--green)" : "var(--red)" }}>{cashflow >= 0 ? "+ " : "− "}{euro(Math.abs(cashflow))}</div>
-          <div className="kpi-sub"><span className={`badge ${cashflow >= 0 ? "badge-green" : "badge-red"}`}>{cashflow >= 0 ? "Positiver Cashflow" : "Negativer Cashflow"}</span></div>
+          {/* Die Formel steht an der Zahl — vorher hieß hier nur „Positiver
+              Cashflow", und niemand konnte sie vom Buchungssaldo darunter
+              unterscheiden. */}
+          <div className="kpi-sub">{cashflowFormel(kostenSchnitt)}</div>
         </Link>
         <Link href="/properties" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Leerstandsquote</div>
@@ -412,11 +417,14 @@ export default async function DashboardPage() {
 
       <div className="section mb-20">
         <div className="section-header">
-          <h3>Cashflow-Entwicklung</h3>
+          {/* „Buchungssaldo", nicht „Cashflow": Die Kurve summiert GEBUCHTE
+              Einnahmen und Ausgaben über den gewählten Zeitraum. Ihr Endwert
+              stand im Review neben dem Monats-Cashflow als „Widerspruch". */}
+          <h3>Buchungssaldo</h3>
           <ZeitraumControl />
         </div>
         <div className="section-body">
-          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" caption="Kumulierter Cashflow (Einnahmen − Ausgaben)" />
+          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" caption="Gebuchte Einnahmen minus gebuchte Ausgaben, aufsummiert über den gewählten Zeitraum. Kreditraten zählen nur, soweit sie als Ausgabe gebucht sind." />
         </div>
       </div>
 

@@ -123,7 +123,7 @@ export default async function JahresberichtPage(
                 <th style={{ textAlign: "right" }} title="Laufende Kosten aus deinen Kosten-Buchungen (Bewirtschaftung)">Laufende Kosten</th>
                 <th style={{ textAlign: "right" }} title="Gebuchte Schuldzinsen des Jahres; ohne Buchung geschätzt aus Restschuld × Zinssatz (mit ~ markiert)">Zins</th>
                 <th style={{ textAlign: "right" }}>Tilgung</th>
-                <th style={{ textAlign: "right" }}>Cashflow</th>
+                <th style={{ textAlign: "right" }} title="Einnahmen − laufende Kosten − Kreditraten (Zins + Tilgung) des Jahres, aus deinen Buchungen">Cashflow</th>
               </tr>
             </thead>
             <tbody>

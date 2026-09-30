@@ -138,7 +138,11 @@ export default async function CashflowPage(
           <div className="kpi-sub">{kosten.length} Buchungen{objektLabel}</div>
         </div>
         <div className="kpi-card">
-          <div className="kpi-label">Netto-Cashflow · {zeitraumLabel}</div>
+          {/* „Buchungssaldo", nicht „Netto-Cashflow" (Review 30.09.2026): Die
+              Zahl ist gebuchte Einnahmen minus gebuchte Ausgaben im Zeitraum.
+              Der Monats-Cashflow auf dem Dashboard rechnet mit Soll-Miete und
+              Kreditraten — dasselbe Wort für beides las sich als Widerspruch. */}
+          <div className="kpi-label">Buchungssaldo · {zeitraumLabel}</div>
           <div className="kpi-value" style={{ color: netto >= 0 ? "var(--green)" : "var(--red)" }}>
             {netto >= 0 ? "+ " : "− "}{euro(Math.abs(netto))}
           </div>
