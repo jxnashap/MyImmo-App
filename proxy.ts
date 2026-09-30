@@ -68,9 +68,24 @@ export async function proxy(request: NextRequest) {
       },
     }
   );
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // `getClaims` statt `getUser` (30.09.2026): prüft die Signatur des Tokens
+  // LOKAL gegen den öffentlichen Schlüssel des Projekts (ES256, Schlüsselsatz
+  // modulweit 10 min zwischengespeichert) — statt bei JEDER Anfrage den
+  // Auth-Server zu fragen. Anlass: Ein einziger Seitenaufruf erzeugte in den
+  // Supabase-Logs rund 40 `GET /user` in zwei Sekunden (Vorab-Laden der Links).
+  //
+  // Bewusst in Kauf genommen: Eine anderswo beendete Sitzung erkennt der Proxy
+  // erst, wenn das Token abläuft (≤ 1 h). Die Datenbank nimmt dasselbe Token
+  // bis dahin ohnehin an (RLS prüft nur die Signatur); die Seiten fragen über
+  // `aktuellerNutzer()` weiterhin beim Auth-Server nach.
+  //
+  // Fail-closed: Ungültige Signatur, abgelaufenes Token oder nicht erreichbarer
+  // Schlüsselsatz → `claims` fehlt → Besucher gilt als nicht angemeldet.
+  // `getClaims` frischt über `getSession` ein abgelaufenes Token auf und
+  // schreibt die Cookies über `setAll` — wie vorher `getUser`.
+  const { data: claimsDaten } = await supabase.auth.getClaims();
+  const claims = claimsDaten?.claims;
+  const user = claims?.sub ? { id: claims.sub, email: typeof claims.email === "string" ? claims.email : undefined } : null;
 
   // Nicht eingeloggte Nutzer auf /login leiten — außer auf öffentlichen
   // Seiten (Login/Auth-Callback, Bank-Freigabe, Impressum/Datenschutz).

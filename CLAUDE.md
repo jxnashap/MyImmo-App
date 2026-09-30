@@ -1013,9 +1013,22 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   (`tests/nutzerCache.test.ts`). **`/auth/passwort-neu` bewusst ausgenommen** (setzt ein
   Passwort ohne das alte). **Regel: Neue Server-Seiten holen den Nutzer über
   `aktuellerNutzer()`, nicht über ein eigenes `supabase.auth.getUser()`.**
-  **Noch offen:** (2) Middleware `getUser` → `getClaims` (lokale JWT-Prüfung) spart einen Auth-Rundlauf je
-  Anfrage, braucht aber asymmetrische JWT-Schlüssel in Supabase und ist sicherheitskritisch —
-  eigenes Vorhaben. Messskript-Muster: einmal `/api/demo`, dann N× GET mit Cookie, TTFB
+  ✅ **(2) erledigt 30.09.2026: Proxy `getUser` → `getClaims`.** Anlass: In den Supabase-Logs
+  erzeugte EIN Seitenaufruf ~40 `GET /user` in zwei Sekunden (Vorab-Laden der Links, je
+  Anfrage Proxy + Layout). Das Projekt signiert bereits mit **ES256** (JWKS
+  `kid 5b81f0f9…`, am echten Demo-Token nachgesehen) → Signatur wird lokal geprüft,
+  Schlüsselsatz modulweit 10 min im Speicher. **In Kauf genommen:** Eine anderswo beendete
+  Sitzung erkennt der Proxy erst bei Token-Ablauf (≤ 1 h) — die Datenbank (RLS) nimmt das
+  Token bis dahin ohnehin an, die Seiten fragen über `aktuellerNutzer()` weiter beim
+  Auth-Server. **Fail-closed:** fremde Signatur, abgelaufen, HS256 ohne Server-Bestätigung,
+  Schlüsselsatz nicht erreichbar → nicht angemeldet. `tests/proxyAnmeldung.test.ts` mit
+  ECHTEN ES256-Schlüsseln und der echten Bibliothek (nur das Netz ersetzt), 9 Tests,
+  5 Mutationen rot — darunter **`allowExpired`**, das erst ein Test fing, der ein
+  abgelaufenes Token mit gefälschtem `expires_at` im Cookie einreicht (das Cookie ist
+  frei setzbar; ohne diesen Fall war die Ablaufprüfung ungetestet). Zusätzlich lokal
+  gegen das echte Supabase: gültige Demo-Sitzung 200, Demo-Sperre greift, manipulierte
+  Signatur → Login. **Regel: Im Proxy nie `getSession()`-Daten als Anmeldung werten —
+  nur `getClaims()` (geprüft) oder `getUser()`.** Messskript-Muster: einmal `/api/demo`, dann N× GET mit Cookie, TTFB
   über `performance.now()` bis zu den Antwortköpfen; `x-vercel-id` zeigt Edge::Funktion.
 - 🔁 **Zweite Review-Runde (30.09.2026), `tests/reviewRunde2.test.ts`, acht Mutationen:**
   (1) **Buchungssaldo-Diagramm** startete bei „12 Monate" beim Saldo ALLER früheren
