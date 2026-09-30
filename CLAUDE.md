@@ -231,6 +231,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   mitschicken. Google-Konten bekommen stattdessen **`sendePasswortMail()`** (Einstellungen
   → Sicherheit und Mieter-/Service-Konto zeigen dort einen Knopf statt der Felder) — der
   Link erzeugt eine frische Sitzung und endet auf `/auth/passwort-neu`.
+  🐞 **„Google-Konto" hieß bis 30.09.2026: `app_metadata.provider !== "email"`** — das ist
+  der Anmeldeweg bei der ANLAGE und ändert sich nie. Ein am 26.06. über Google angelegtes
+  Konto, das per „Passwort vergessen" ein Passwort bekam, konnte es danach nicht ändern
+  („du meldest dich mit Google an"). Jetzt fragt die Seite die Datenbank:
+  RPC **`konto_hat_passwort()`** (Migration `20260930212305`, nur `authenticated`, ja/nein
+  für `auth.uid()`, in einer zurückgerollten Transaktion an drei Kontoarten geprüft) →
+  `ohnePasswort()` in `lib/passwort.ts`; `provider` nur noch als Rückfall und für den
+  2FA-Hinweis „gilt auch für Google". **Regel: Für „hat ein Passwort" nie `provider` oder
+  `identities` nehmen** — ein per Reset gesetztes Passwort legt KEINE `email`-Identität an
+  (live gesehen). `tests/kontoPasswort.test.ts`, drei Mutationen rot.
   **`RESET_ZIEL` in `lib/passwortWechsel.ts` ist die EINE Stelle für das Linkziel** —
   Login und Einstellungen hängen beide daran, damit sie nicht auseinanderlaufen.
 - 📋 **Reihenfolge beim Scharfschalten der beiden übrigen Supabase-Schalter:**

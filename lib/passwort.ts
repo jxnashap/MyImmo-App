@@ -60,3 +60,22 @@ export function passwortAblehnung(error: { code?: string; message?: string; reas
   }
   return null;
 }
+
+/**
+ * Hat das Konto KEIN Passwort? Entscheidet, ob die Einstellungen „altes
+ * Passwort bestätigen" zeigen oder den Weg per E-Mail-Link.
+ *
+ * WARUM (30.09.2026): Vorher galt `app_metadata.provider !== "email"`. Der
+ * Wert ist der Anmeldeweg bei der ANLAGE und ändert sich nie — ein
+ * Google-Konto, das später per „Passwort vergessen" ein Passwort bekam,
+ * konnte es danach nicht mehr ändern („du meldest dich mit Google an").
+ * Jetzt fragt die Seite die Datenbank (`konto_hat_passwort()`); nur wenn die
+ * Antwort fehlt, gilt der alte Schluss als Rückfall.
+ */
+export function ohnePasswort(
+  antwort: { data: unknown; error: unknown },
+  provider?: string | null,
+): boolean {
+  if (!antwort.error && typeof antwort.data === "boolean") return !antwort.data;
+  return !!provider && provider !== "email";
+}

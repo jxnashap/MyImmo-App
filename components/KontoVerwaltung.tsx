@@ -20,11 +20,13 @@ import { useModalFokus } from "@/lib/modalFokus";
 // diese Nutzergruppe schlicht nicht ausübbar.
 
 export default function KontoVerwaltung({
-  email, rolle, provider,
-}: { email: string; rolle: "mieter" | "service"; provider?: string | null }) {
+  email, rolle, ohnePasswort = false,
+}: { email: string; rolle: "mieter" | "service"; ohnePasswort?: boolean }) {
   const supabase = createClient();
 
-  const istGoogle = !!provider && provider !== "email";
+  // Ob das Konto ein Passwort HAT — nicht, wie es angelegt wurde (siehe
+  // `ohnePasswort` in lib/passwort.ts).
+  const istGoogle = ohnePasswort;
   const { absichern, dialog: reAuthDialog } = useReAuth(email, istGoogle);
   const [pw0, setPw0] = useState("");
   const [pw1, setPw1] = useState("");
