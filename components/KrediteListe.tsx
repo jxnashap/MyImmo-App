@@ -8,6 +8,7 @@ import RowDialog from "@/components/RowDialog";
 import DeleteButton from "@/components/DeleteButton";
 import SubmitButton from "@/components/SubmitButton";
 import type { Kredit, Property } from "@/lib/types";
+import { laufzeitText } from "@/lib/kreditLaufzeit";
 
 const SONDER = ["", "5% p.a.", "10% p.a.", "Nein", "Ja, unbegrenzt"];
 
@@ -67,7 +68,7 @@ export default function KrediteListe({
                 <div><div className="kredit-field-lbl">Urspr. Darlehen</div><div className="kredit-field-val">{euro(k.betrag)}</div></div>
                 <div><div className="kredit-field-lbl">Restschuld</div><div className="kredit-field-val">{euro(k.restschuld)}</div></div>
                 <div><div className="kredit-field-lbl">Rate / Monat</div><div className="kredit-field-val">{euro(k.monatsrate)}</div></div>
-                <div><div className="kredit-field-lbl">Laufzeit bis</div><div className="kredit-field-val">{k.laufzeit ?? "–"}</div></div>
+                <div><div className="kredit-field-lbl">Laufzeit</div><div className="kredit-field-val">{laufzeitText(k.laufzeit, k.auszahlung_datum)}</div></div>
               </div>
               <div className="kredit-grid" style={{ marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
                 <div><div className="kredit-field-lbl">Zinsen / Mo.</div><div className="kredit-field-val" style={{ color: "var(--muted)" }}>{euro(moZins)}</div></div>
@@ -143,7 +144,7 @@ export default function KrediteListe({
                   Start für das Sonderkündigungsrecht nach 10 Jahren (§ 489 BGB).</span>
               </div>
               <div className="form-group"><label>Zinsbindung bis</label><input type="date" name="zinsbindung" defaultValue={offen.zinsbindung ?? ""} /></div>
-              <div className="form-group"><label>Gesamtlaufzeit bis (Jahr)</label><input type="number" name="laufzeit" defaultValue={offen.laufzeit ?? ""} /></div>
+              <div className="form-group"><label>Gesamtlaufzeit (Jahre)</label><input type="number" name="laufzeit" defaultValue={offen.laufzeit ?? ""} /></div>
             </div>
 
             <div className="form-actions" style={{ justifyContent: "space-between" }}>

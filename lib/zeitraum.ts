@@ -113,19 +113,23 @@ export function aggregate(
   const summen = new Map<string, number>();
   for (const b of reihe) summen.set(bucketKey(b.cursor, gran), 0);
 
-  // Grundlinie: Summe aller Punkte VOR dem Zeitraum (nur bei cumulative relevant).
-  let basis = 0;
+  // Punkte VOR dem Zeitraum zählen NICHT — auch nicht bei `cumulative`.
+  //
+  // Bis 30.09.2026 startete die kumulierte Linie beim Saldo aller früheren
+  // Buchungen („Grundlinie"). Bei „12 Monate" stand am Ende dann der Saldo
+  // seit der ERSTEN Buchung überhaupt (Demo: 100.182 €) — eine Zahl, die davon
+  // abhängt, wann jemand mit dem Buchen angefangen hat, und die zu keiner
+  // anderen Anzeige passte (externes Review). Jetzt beginnt die Linie im
+  // Zeitraum bei 0: Der Endwert ist der Saldo DES ZEITRAUMS. Wer den Saldo
+  // seit Beginn will, wählt „Max".
   for (const p of gueltig) {
     const d = new Date(p.date);
-    if (d < start) {
-      basis += p.value;
-      continue;
-    }
+    if (d < start) continue;
     const key = bucketKey(d, gran);
     if (summen.has(key)) summen.set(key, (summen.get(key) ?? 0) + p.value);
   }
 
-  let lauf = basis;
+  let lauf = 0;
   const buckets: Bucket[] = reihe.map((b) => {
     const wert = summen.get(bucketKey(b.cursor, gran)) ?? 0;
     if (opts.cumulative) {

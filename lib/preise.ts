@@ -36,3 +36,7 @@ export const REGISTRIERUNG_OFFEN = false;
 
 /** Beschriftung des Haupt-Knopfes auf der öffentlichen Strecke. */
 export const START_CTA = REGISTRIERUNG_OFFEN ? "Kostenlos starten" : "Early-Access-Zugang anfragen";
+/** Kurzform für enge Kopfzeilen (761–1.319 px). Die lange Form ist fast doppelt
+ *  so breit wie das frühere „Kostenlos starten" und überlagerte dort das
+ *  mittige Logo (gemessen 30.09.2026: bis zu 215 px Überlappung). */
+export const START_CTA_KURZ = REGISTRIERUNG_OFFEN ? "Kostenlos starten" : "Zugang anfragen";

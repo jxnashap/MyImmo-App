@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { eur2 } from "@/lib/format";
 import {
   ymPlus,
+  standardStartNacherfassung,
   erwarteteMonate,
   dedup,
   type MietkontoMieter,
@@ -157,16 +158,14 @@ export default function MietkontoBestaetigung({
 
   // ---------- Modus 2: Nacherfassen ----------
   const zehnJahre = ymPlus(aktuellerMonat, -120);
-  const fruehesterBeginn = useMemo(() => {
-    const beginne = nacherfassung
-      .map((n) => (n.mieter.mietbeginn ?? "").slice(0, 7))
-      .filter((ym) => /^\d{4}-\d{2}$/.test(ym))
-      .sort();
-    const b = beginne[0] ?? zehnJahre;
-    return b < zehnJahre ? zehnJahre : b;
-  }, [nacherfassung, zehnJahre]);
+  // Voreinstellung: Januar des Vorjahres (bzw. späterer Mietbeginn) — nicht
+  // mehr der früheste Mietbeginn. Begründung in lib/mietkonto.ts.
+  const startVoreinstellung = useMemo(
+    () => standardStartNacherfassung(nacherfassung.map((n) => n.mieter.mietbeginn), aktuellerMonat),
+    [nacherfassung, aktuellerMonat],
+  );
 
-  const [startMonat, setStartMonat] = useState(fruehesterBeginn);
+  const [startMonat, setStartMonat] = useState(startVoreinstellung);
   const [abgewaehlt, setAbgewaehlt] = useState<Set<string>>(new Set());
   const [nachDatum, setNachDatum] = useState<Record<string, string>>({});
   const [batchLaeuft, startBatch] = useTransition();
