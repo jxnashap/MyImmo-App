@@ -644,8 +644,11 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   🧹 **Lint-Altlast, erster Lauf überhaupt: 93 Fehler, 39 Warnungen** (552 Dateien).
   Größte Posten: `react/no-unescaped-entities` 40 (Anführungszeichen im JSX-Text, harmlos),
   `react-hooks/set-state-in-effect` 25, `@typescript-eslint/no-explicit-any` 12,
-  `react-hooks/static-components` 7 (Komponente wird bei jedem Rendern neu erzeugt → verliert
-  Zustand/Fokus — **mögliche echte Fehler, zuerst ansehen**), `react-hooks/purity` 4.
+  `react-hooks/purity` 4. ✅ `react-hooks/static-components` 7 → 0 (30.09.2026, jetzt
+  **86 Fehler**): `Block` (Bewerbungs-Steckbrief), `RLink` (Einstellungen) auf Modulebene,
+  `DateiZeilen` (BewerbungForm) als Renderfunktion. **Kein echter Fehler dahinter** — die
+  Steckbrief-Seite ist eine Server-Komponente, die beiden anderen ohne eigenen Zustand;
+  es war Hygiene. **Regel: Komponenten nie innerhalb einer Komponente definieren.**
   Blockiert nichts (Next 16 lintet beim Build nicht mehr) — **als eigenes Vorhaben abarbeiten,
   nicht nebenbei.**
 - ✅ **Next-15-Migration UMGESETZT (01.09.2026): Next 15.5.25 / React 19.2.8.** Plan samt

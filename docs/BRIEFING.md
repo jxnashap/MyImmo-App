@@ -21,7 +21,7 @@ Turbopack) · TypeScript · Supabase (Postgres + RLS, Projekt `kozhxrvyilkchjpcu
 **Folgen der Next-16-Migration (30.09.2026):** `middleware.ts` heißt jetzt **`proxy.ts`**
 (Funktion `proxy`, Laufzeit Node) — „Middleware" in Kommentaren meint diese Datei. Jedes
 `<html>` trägt `data-scroll-behavior="smooth"`. `npm run lint` = `eslint .`
-(`eslint.config.mjs`); der erste Lauf überhaupt ergab **93 Fehler / 39 Warnungen** —
+(`eslint.config.mjs`); der erste Lauf überhaupt ergab **93 Fehler / 39 Warnungen** (jetzt 86) —
 Altlast, blockiert den Build nicht. Rückfall: Vercel Instant Rollback auf
 `dpl_LRgMzU1c5Kb47uKKjht63FFQCaLp` (letzter Next-15-Stand).
 **Den Nutzer auf Server-Seiten über `aktuellerNutzer()`** (`lib/supabase/nutzer.ts`,
