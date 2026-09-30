@@ -46,7 +46,7 @@ describe("Demo: jeder angebotene Weg führt irgendwohin", () => {
   it("der Erkenner ist nicht blind: gesperrt, frei und unbekannt werden unterschieden", () => {
     expect(ERSATZ).toBe("In der Demo gesperrt");
     expect(unerklaert("/gibt-es-nicht")).toBe(true);
-    expect(unerklaert("/anliegen")).toBe(false); // gesperrt, aber erklärt
+    expect(unerklaert("/makler")).toBe(false); // gesperrt, aber erklärt
     expect(unerklaert("/properties")).toBe(false); // frei
     expect(unerklaert("/datenschutz")).toBe(false); // öffentlich
   });
@@ -101,7 +101,7 @@ describe("Demo: jeder angebotene Weg führt irgendwohin", () => {
   });
 
   it("die Weißliste hat Einträge und die Startseite verlinkt jeden davon", () => {
-    expect(Object.keys(DEMO_ZIELE).length).toBeGreaterThanOrEqual(3);
+    expect(Object.keys(DEMO_ZIELE).length).toBeGreaterThanOrEqual(4);
     const landing = readFileSync("components/LandingPage.tsx", "utf8");
     for (const weg of Object.keys(DEMO_ZIELE)) expect(landing).toContain(`/api/demo?weg=${weg}`);
   });
@@ -124,13 +124,13 @@ describe("Demo: jeder angebotene Weg führt irgendwohin", () => {
 
 describe("demoSperrZiel: welche Links der Klick-Abfang übernimmt", () => {
   it("gesperrte eigene Pfade, auch mit Suchparametern und absolut", () => {
-    expect(demoSperrZiel("/anliegen?filter=offen", HERKUNFT)).toBe("/anliegen");
-    expect(demoSperrZiel("https://www.myimmoapp.de/archiv", HERKUNFT)).toBe("/archiv");
+    expect(demoSperrZiel("/makler?objekt=1", HERKUNFT)).toBe("/makler");
+    expect(demoSperrZiel("https://www.myimmoapp.de/makler/datei/x", HERKUNFT)).toBe("/makler/datei/x");
     expect(demoSperrZiel("/properties/new", HERKUNFT)).toBe("/properties/new");
   });
 
   it("freie Pfade, öffentliche Seiten, fremde Seiten und Unsinn bleiben unberührt", () => {
-    for (const frei of ["/properties", "/", "/mietkonto?monat=2026-09", "/steuer", "/tenants/abc/nk"]) {
+    for (const frei of ["/properties", "/", "/mietkonto?monat=2026-09", "/steuer", "/tenants/abc/nk", "/anliegen", "/archiv"]) {
       expect(demoSperrZiel(frei, HERKUNFT), frei).toBeNull();
     }
     // Öffentlich: Die Middleware lässt sie auch der Demo durch. Bis 30.09.
@@ -145,10 +145,10 @@ describe("demoSperrZiel: welche Links der Klick-Abfang übernimmt", () => {
   });
 
   it("gesperrte Bereiche und Formulare bekommen ihren eigenen Text", () => {
-    expect(demoBereich("/anliegen").titel).toBe("Mieterportal");
+    expect(demoBereich("/makler").titel).toBe("Makler-Unterlagen");
     expect(demoBereich("/tenants/abc/edit").titel).toBe("Anlegen und bearbeiten");
-    // Präfix-Grenze: /archivalien ist nicht /archiv.
-    expect(demoBereich("/archivalien").titel).toBe(ERSATZ);
+    // Präfix-Grenze: /maklerin ist nicht /makler.
+    expect(demoBereich("/maklerin").titel).toBe(ERSATZ);
   });
 });
 

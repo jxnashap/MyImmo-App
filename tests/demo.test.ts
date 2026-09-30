@@ -42,6 +42,9 @@ describe("demoDarfRoute — was sichtbar bleibt", () => {
     "/tenants/abc/nk",
     "/tenants/abc/nk/pdf",
     "/tenants/abc/protokoll",
+    // Seit Phase 3 mit Beispieldaten.
+    "/anliegen",
+    "/archiv",
   ])("erlaubt %s", (pfad) => {
     expect(demoDarfRoute(pfad)).toBe(true);
   });
@@ -63,7 +66,7 @@ describe("demoDarfRoute — was gesperrt ist", () => {
   });
 
   // Nur noch Bereiche OHNE Beispieldaten.
-  it.each(["/archiv", "/anliegen"])(
+  it.each(["/makler"])(
     "sperrt den Bereich %s",
     (pfad) => {
       expect(demoDarfRoute(pfad)).toBe(false);

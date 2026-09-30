@@ -135,9 +135,9 @@ function ersterLink(html, praefix) {
 // Verbrauch, Termine, Karte — und stehen deshalb jetzt als Kernwege hier.
 // Vorher waren sie gesperrt und damit von diesem Test UNGEPRÜFT.
 //
-// Weiterhin gesperrt (keine Beispieldaten): Mieterportal, Archiv,
-// Makler-Unterlagen. Der Weg „demo-grenze" prüft, dass die Sperre hält und die
-// Weiterleitung den Bereich nennt (sonst öffnet sich kein Sperr-Dialog).
+// Seit Phase 3 auch Mieterportal und Archiv (Beispieldaten im Schnappschuss).
+// Weiterhin gesperrt: Makler-Unterlagen. Der Weg „demo-grenze" prüft, dass die
+// Sperre hält und die Weiterleitung den Bereich nennt.
 const WEGE = [
   {
     schluessel: "dashboard",
@@ -209,6 +209,40 @@ const WEGE = [
     erwartet: [],
     async pruefe({ html }) {
       return /€|&euro;/.test(html) ? null : "Cashflow ohne Beträge";
+    },
+  },
+  {
+    schluessel: "aktuell",
+    titel: "Demo-Daten reichen bis zum laufenden Monat",
+    pfad: "/cashflow",
+    erwartet: [],
+    async pruefe({ html }) {
+      // Review 30.09.2026: Die Buchungen endeten am 01.06.2026 — Ende
+      // September stand jeder Mieter als säumig da. Seit Migration
+      // 20260930154606 schreibt der Reset bis heute fort. UTC, weil die
+      // Datenbank `current_date` in UTC rechnet (sonst falsch rot um
+      // Mitternacht am Monatswechsel). Format wie `datum()` in lib/format.ts.
+      const jetzt = new Date();
+      const erster = `1.${jetzt.getUTCMonth() + 1}.${jetzt.getUTCFullYear()}`;
+      return html.includes(`>${erster}<`) ? null : `keine Buchung vom ${erster} — Demo-Daten veraltet?`;
+    },
+  },
+  {
+    schluessel: "mieterportal",
+    titel: "Mieterportal — Beispiel-Anliegen",
+    pfad: "/anliegen",
+    erwartet: ["Heizkörper im Bad wird nicht warm"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "archiv",
+    titel: "Archiv — Beispiel-Einträge",
+    pfad: "/archiv",
+    erwartet: ["Mietvertrag Weber"],
+    async pruefe() {
+      return null;
     },
   },
   {
@@ -302,7 +336,7 @@ const WEGE = [
       // Sperre unbemerkt weg, sähe ein Besucher Bereiche, in denen er Dinge
       // anklicken kann, die stumm an der RLS scheitern. Genau der Fall, den
       // lib/demo.ts als Grund für Ebene 2 nennt.
-      const gesperrt = ["/anliegen", "/archiv", "/makler"];
+      const gesperrt = ["/makler"];
       const offen = [];
       const stumm = [];
       for (const p of gesperrt) {
