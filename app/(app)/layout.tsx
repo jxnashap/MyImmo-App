@@ -7,6 +7,8 @@ import AutoLogout from "@/components/AutoLogout";
 import OnboardingTour from "@/components/OnboardingTour";
 import LabelVerknuepfung from "@/components/LabelVerknuepfung";
 import DemoNurLesen from "@/components/DemoNurLesen";
+import DemoSperre from "@/components/DemoSperre";
+import DemoLeiste from "@/components/DemoLeiste";
 import { ToastProvider } from "@/components/Toast";
 import FlashToast from "@/components/FlashToast";
 import { ZeitraumProvider } from "@/components/ZeitraumProvider";
@@ -192,28 +194,18 @@ export default async function RootLayout({
                 blockiert UPDATE/DELETE aber STUMM — ohne diese Ebene haelt der
                 Besucher ungespeicherte Aenderungen fuer gespeichert. */}
             {istDemoKonto(user.email) && <DemoNurLesen />}
+            {/* Klicks auf gesperrte Bereiche öffnen einen Dialog statt ins
+                Leere zu laufen. Suspense wegen useSearchParams. */}
+            {istDemoKonto(user.email) && (
+              <Suspense fallback={null}>
+                <DemoSperre />
+              </Suspense>
+            )}
             <OnboardingTour neuerNutzer={(props ?? []).length === 0} />
             <div className="main-wrap">
-              {/* Demo-Hinweis: Ohne ihn haelt ein Besucher seine Eingaben fuer
-                  echt und ist ueberrascht, wenn sie beim naechsten Start weg
-                  sind. Der Vergleich mit der festen Adresse genuegt — das
-                  Demo-Konto ist ein einzelnes, festes Konto. */}
-              {user.email === "demo.vermieter@myimmo.test" && (
-                <div
-                  role="status"
-                  style={{
-                    background: "var(--blue-dim)",
-                    color: "var(--blue)",
-                    padding: "8px 16px",
-                    fontSize: 13,
-                    textAlign: "center",
-                  }}
-                >
-                  <strong>Demo-Modus.</strong> Du siehst Beispieldaten und kannst
-                  alle Funktionen erkunden. Speichern ist in der Demo nicht
-                  möglich — dafür brauchst du ein eigenes Konto.
-                </div>
-              )}
+              {/* Demo-Hinweis mit Ausgang (Early Access / Demo beenden).
+                  Begründung in components/DemoLeiste.tsx. */}
+              {istDemoKonto(user.email) && <DemoLeiste />}
               {/* id/tabIndex: Ziel des Skip-Links „Zum Inhalt springen" */}
               <main className="main" id="inhalt" tabIndex={-1}>
                 <ZeitraumProvider>{children}</ZeitraumProvider>

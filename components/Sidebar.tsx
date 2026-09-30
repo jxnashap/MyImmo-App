@@ -77,25 +77,24 @@ export default function Sidebar({
   const navLink = (n: NavItem) => {
     const anzahl = badges[n.href] ?? 0;
 
-    // Demo-Konto: gesperrte Bereiche bleiben SICHTBAR, sind aber nicht
-    // klickbar — so sieht ein Interessent den Umfang, ohne ihn zu benutzen.
-    // Die eigentliche Sperre steht in der Middleware; das hier ist nur die
-    // ehrliche Anzeige dazu.
+    // Demo-Konto: gesperrte Bereiche bleiben SICHTBAR — ein Interessent soll
+    // den Umfang sehen. Die Sperre selbst steht in der Middleware.
+    //
+    // Ein echter Link, kein `<span>` (Review 30.09.2026): Der `<span>` mit
+    // `title` reagierte auf einen Klick gar nicht, und auf dem Handy gibt es
+    // kein Hovern — die Navigation wirkte kaputt. Den Klick fängt jetzt
+    // `components/DemoSperre.tsx` ab und erklärt den Bereich. Bewusst `<a>`
+    // statt `<Link>`: `<Link>` würde das gesperrte Ziel vorab laden.
     if (demo && !demoDarfRoute(n.href)) {
       return (
-        <span
-          key={n.href}
-          className="nav-item"
-          aria-disabled="true"
-          title={`${n.label} — in der Demo gesperrt. Nach der Anmeldung verfügbar.`}
-          style={{ opacity: 0.45, cursor: "not-allowed" }}
-        >
+        <a key={n.href} href={n.href} className="nav-item nav-gesperrt">
           <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}>
             {n.paragraph || !n.icon ? "§" : <n.icon size={15} />}
           </span>
           <span className="nav-label">{n.label}</span>
+          <span className="sr-only"> (in der Demo gesperrt)</span>
           <Lock size={12} style={{ marginLeft: "auto", flexShrink: 0 }} aria-hidden />
-        </span>
+        </a>
       );
     }
 

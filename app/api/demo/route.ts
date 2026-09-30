@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { darfWeiter } from "@/lib/net/bremse";
+import { DEMO_ZIELE } from "@/lib/demo";
 
 // Oeffentlicher Demo-Zugang: setzt den Demo-Bestand zurueck und meldet den
 // Besucher am Demo-Konto an. Danach steht die volle App mit 6 Objekten,
@@ -26,15 +27,9 @@ export const dynamic = "force-dynamic";
 
 const DEMO_EMAIL = "demo.vermieter@myimmo.test";
 
-// Geführte Demo-Wege (08.09.2026, Feedback Phase 4): Ein Besucher soll nicht
-// auf dem Dashboard landen und raten, sondern dort, wo die Frage beantwortet
-// wird, die ihn hergeführt hat. WEISSLISTE, kein freier Pfad — sonst wäre der
-// Parameter eine offene Weiterleitung auf Kosten der eigenen Domain.
-const DEMO_ZIELE: Record<string, string> = {
-  miete: "/mietkonto",
-  nk: "/tenants",
-  schaden: "/anliegen",
-};
+// Geführte Demo-Wege: Weißliste `DEMO_ZIELE` in `lib/demo.ts`, neben
+// `demoDarfRoute` — damit ein Test beide gegeneinander prüfen kann. Die erste
+// Fassung (08.09.2026) stand hier und führte in gesperrte Bereiche.
 
 export async function GET(request: Request) {
   const ziel = new URL(request.url).origin;
@@ -101,7 +96,10 @@ export async function GET(request: Request) {
   // `reset` steht nur im Fehlerfall in der URL — im Normalbetrieb bleibt sie
   // sauber. Damit laesst sich von aussen (curl) pruefen, ob wirklich
   // zurueckgesetzt wurde, ohne Zugriff auf die Server-Logs.
-  const gewaehlt = DEMO_ZIELE[new URL(request.url).searchParams.get("weg") ?? ""] ?? "/";
+  // `Object.hasOwn`, nicht `DEMO_ZIELE[weg]`: `?weg=constructor` fände sonst
+  // über den Prototyp eine Funktion und leitete auf deren Quelltext weiter.
+  const weg = new URL(request.url).searchParams.get("weg") ?? "";
+  const gewaehlt = Object.hasOwn(DEMO_ZIELE, weg) ? DEMO_ZIELE[weg] : "/";
   const basis = gewaehlt === "/" ? "/?demo=1" : `${gewaehlt}?demo=1`;
   const ziel_url = resetStatus === "ok" ? basis : `${basis}&reset=${resetStatus}`;
   return NextResponse.redirect(new URL(ziel_url, ziel));

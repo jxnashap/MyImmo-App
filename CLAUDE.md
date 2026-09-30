@@ -870,8 +870,27 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   gleichrangige Punkte unter „Verwaltung"). „Planen" ist ein `<details>` — eingeklappt,
   aber nicht versteckt, und automatisch offen, wenn man darin arbeitet. `ALLE_ZIELE` ist
   die Liste für die Command-Palette; `VERWALTUNG`/`KALKULATOR` sind Übergangsnamen.
-  **Geführte Demo-Wege:** `/api/demo?weg=miete|nk|schaden` — **Weißliste `DEMO_ZIELE`**,
-  kein freier Pfad-Parameter (das wäre eine offene Weiterleitung auf der eigenen Domain).
+  **Geführte Demo-Wege:** Weißliste `DEMO_ZIELE`, seit 30.09.2026 in `lib/demo.ts` und
+  **derzeit LEER** — alle drei Wege (`miete|nk|schaden`) führten in gesperrte Bereiche und
+  sind ausgebaut, bis Phase 2 ihre Ziele freigibt. Kein freier Pfad-Parameter (das wäre eine
+  offene Weiterleitung auf der eigenen Domain).
+- 🚪 **Demo: jeder Klick führt irgendwohin (30.09.2026, externes Review).** Die Demo war an
+  den gelobten Stellen kaputt: Die Aufgabenliste des Dashboards verlinkte NUR auf gesperrte
+  Bereiche, ebenso „Karte aktivieren", „+ Immobilie" und jede Zeile unter „Letzte
+  Buchungen"; gesperrte Nav-Einträge waren stumme `<span>`s; der Banner versprach „alle
+  Funktionen"; die KI-Formulare zeigten „Fehler beim Analysieren", weil die Middleware
+  `fehler` statt `error` schickte. **Jetzt:** `components/DemoSperre.tsx` fängt JEDEN Link
+  auf ein gesperrtes Ziel in der Capture-Phase ab und erklärt den Bereich im Dialog
+  (Texte: `DEMO_BEREICHE` in `lib/demo.ts`); `DemoLeiste.tsx` hat Early-Access-Knopf und
+  „Demo beenden" (beide melden zuerst ab — `/` zeigt einem angemeldeten Konto sonst nur
+  das Dashboard). **Regel: Ein neuer Link, eine neue Aufgabenquelle oder ein neuer
+  gesperrter Bereich braucht einen Eintrag in `DEMO_BEREICHE`** — `tests/demoWege.test.ts`
+  rechnet gegen `demoDarfRoute` und wird sonst rot (elf Mutationen geprüft).
+  **Der Vorgänger-Test prüfte nur, OB die Links auf der Startseite stehen** — und hielt
+  damit drei Sackgassen fest. Ein Test, der eine Schreibweise prüft, schützt kein Verhalten.
+  **Offen (Phase 2–5 des Plans):** Kaufgründe (Steuer, NK, Mietkonto …) nur-lesend
+  freischalten, Demo-Daten relativ zum heutigen Datum, Cashflow-Kennzahlen beschriften und
+  das Ø-Kosten-Fenster reparieren (schönt sich bei Datenlücken selbst), Ladezeit messen.
   **`START_CTA` in `lib/preise.ts`:** Solange `REGISTRIERUNG_OFFEN = false` (Zugangscode
   nötig), heißt der Knopf „Early-Access-Zugang anfragen" statt „Kostenlos starten". Ein
   Test hält fest, dass keine Landing-Datei die Beschriftung wieder hart einträgt.

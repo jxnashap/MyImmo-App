@@ -239,7 +239,9 @@ describe("Ehrliche Beschriftung, solange ein Zugangscode nötig ist", () => {
     expect(route).toContain("DEMO_ZIELE");
     // Ein freier Pfad-Parameter wäre eine offene Weiterleitung auf der eigenen Domain.
     expect(route).not.toMatch(/searchParams\.get\("ziel"\)/);
-    const landing = readFileSync("components/LandingPage.tsx", "utf8");
-    for (const weg of ["miete", "nk", "schaden"]) expect(landing).toContain(`/api/demo?weg=${weg}`);
+    // Hier stand bis 30.09.2026 eine Prüfung, dass die drei Links auf der
+    // Startseite STEHEN. Sie hielt damit drei Sackgassen fest: Alle drei Ziele
+    // waren in der Demo gesperrt. Ob ein Weg aufgeht, prüft jetzt
+    // tests/demoWege.test.ts gegen `demoDarfRoute`.
   });
 });
