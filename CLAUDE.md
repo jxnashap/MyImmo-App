@@ -1190,6 +1190,16 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Demo-Konto:** Oberfläche sperrt die Einrichtung, `/api/demo` räumt Faktoren beim Start
   ab — ein Besucher, der dem geteilten Konto per API einen Faktor anhängt, sperrte sonst
   alle anderen aus.
+  🐞 **2FA dauerhaft blockiert (30.09.2026, Supabase-Log):** Neunmal „A factor with the
+  friendly name "MyImmo" … already exists". Die Aufräumschleife suchte unbestätigte Faktoren
+  in `listFactors().totp` — dort liegen in supabase-js **nur bestätigte**
+  (`GoTrueClient.js`, `_listFactors`: `if (factor.status === 'verified') data[type].push`).
+  Wer die Einrichtung ohne „Abbrechen" verließ, kam nie wieder hinein. Jetzt
+  `unbestaetigteTotp()` (`lib/auth/mfaFaktoren.ts`, über `.all`), aufgeräumt beim Laden UND
+  vor jedem `enroll()`. `tests/mfaFaktoren.test.ts` prüft gegen die ECHTE Bibliothek (nur
+  `getUser` ersetzt), vier Mutationen rot. **Regel: Bei `listFactors()` für unbestätigte
+  Faktoren immer `.all` lesen.** Live lag genau ein solcher Rest (1 Konto) — er wird beim
+  nächsten Öffnen von Einstellungen → Sicherheit automatisch entfernt.
   **Auto-Abmeldung:** Standard jetzt 30 Minuten (`STANDARD_MIN` in `AutoLogout.tsx`); wer
   „Aus“ gewählt hat, behält es.
   **Prüfstand:** `db.amrVorSekunden` (Alter der Anmeldung) und `db.aal` steuern die

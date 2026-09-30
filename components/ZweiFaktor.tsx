@@ -10,6 +10,7 @@ import {
   loescheWiederherstellungscodes,
   zaehleWiederherstellungscodes,
 } from "@/lib/actions/mfa";
+import { unbestaetigteTotp } from "@/lib/auth/mfaFaktoren";
 
 // Zwei-Faktor-Anmeldung per Authenticator-App (TOTP) — Einstellungen → Sicherheit.
 //
@@ -44,10 +45,17 @@ export default function ZweiFaktor({ demo = false, istGoogle = false }: { demo?:
     const { data } = await supabase.auth.mfa.listFactors();
     const totp = (data?.totp ?? []).find((f) => f.status === "verified") ?? null;
     setFaktor(totp ? { id: totp.id, status: totp.status, friendly_name: totp.friendly_name } : null);
-    // Unverifizierte Reste einer abgebrochenen Einrichtung aufräumen — sonst
-    // meldet Supabase beim nächsten enroll() „already exists".
-    for (const f of data?.totp ?? []) if (f.status !== "verified") await supabase.auth.mfa.unenroll({ factorId: f.id });
+    await raeumeAuf(data);
     setCodesUebrig(await zaehleWiederherstellungscodes());
+  }
+
+  // Unbestätigte Reste einer abgebrochenen Einrichtung entfernen — sonst meldet
+  // Supabase beim nächsten enroll() „already exists". Sie stehen NUR in `.all`
+  // (siehe lib/auth/mfaFaktoren.ts; die frühere Schleife über `.totp` fand nie
+  // einen und blockierte 2FA dauerhaft).
+  async function raeumeAuf(data?: Parameters<typeof unbestaetigteTotp>[0]) {
+    const liste = data ?? (await supabase.auth.mfa.listFactors()).data;
+    for (const id of unbestaetigteTotp(liste)) await supabase.auth.mfa.unenroll({ factorId: id });
   }
   useEffect(() => {
     void laden();
@@ -57,6 +65,9 @@ export default function ZweiFaktor({ demo = false, istGoogle = false }: { demo?:
   async function starten() {
     setFehler(null);
     setBusy(true);
+    // Auch HIER aufräumen: Ein Rest kann seit dem Laden entstanden sein
+    // (zweiter Tab, Neuladen mitten in der Einrichtung).
+    await raeumeAuf();
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "MyImmo" });
     setBusy(false);
     if (error || !data) return setFehler(error?.message ?? "Einrichtung konnte nicht gestartet werden.");
