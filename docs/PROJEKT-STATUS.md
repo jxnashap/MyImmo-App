@@ -239,7 +239,6 @@ einmal mit echter Mail durchlaufen — die Vorlage ist laut Betreiber umgestellt
 | Was | Umfang | Anmerkung |
 |---|---|---|
 | **Lint-Altlast** | mittel | 86 Fehler / 39 Warnungen. `static-components` ist erledigt (kein echter Fehler dahinter); nächste Kandidaten `react-hooks/purity` (4) und `set-state-in-effect` (25) |
-| **Proxy: `getUser` → `getClaims`** | mittel, sicherheitskritisch | spart einen Auth-Rundlauf je Anfrage, braucht asymmetrische JWT-Schlüssel in Supabase |
 | **Design Runde 2** | mittel | Runde 1 („Frosted Paper") ist am 20.08.2026 umgesetzt. Offen: echte Neu-Anordnung einzelner Layouts statt reiner Um-Tokenisierung. 11px → 12px ist eine Zeile (`--text-xs`), muss aber angesehen werden |
 | **Tests für Komponenten/PDF** | mittel | `components/`, `lib/pdf/` und RLS-Policies ohne Abdeckung (Actions und API-Routen sind abgedeckt) |
 | **`vitest` ≥ 4.1.11** | klein | nur Entwicklung; `npm install` scheitert in der Remote-Umgebung an diesem Paket → anderer Rechner |
