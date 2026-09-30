@@ -267,9 +267,10 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   zurückgerollten Transaktion bewiesen: Demo wirft, fremdes Konto schreibt, Reset läuft.
   (2) **Routen** — `demoDarfRoute`. FREI: Dashboard, Objekte, Mieter, Ein-/Ausgaben, Kauf/
   Verkauf, **Mietkonto, Verbrauch, Kredite, Steuer, Jahresbericht, Termine, Karte, Marktwert,
-  AfA, NK-Abrechnung, Übergabeprotokoll** + LESENDE API-Routen (Anlage-V-/Jahresbericht-PDF,
-  DATEV, CSV, Kreditantrag, Datei-Ansicht). GESPERRT: Mieterportal, Archiv, Makler (keine
-  Beispieldaten — leere Seite wirbt schlechter als der Sperr-Dialog), Anlegen/Bearbeiten,
+  AfA, NK-Abrechnung, Übergabeprotokoll, seit Phase 3 auch Mieterportal und Archiv** +
+  LESENDE API-Routen (Anlage-V-/Jahresbericht-PDF, DATEV, CSV, Kreditantrag, Datei-Ansicht).
+  GESPERRT: Makler (keine Beispieldaten — leere Seite wirbt schlechter als der Sperr-Dialog),
+  Anlegen/Bearbeiten,
   `/api/nk-ocr` + `/api/import-url` (**kosten je Aufruf Geld**), `/api/import`,
   `/api/export/alles`. (3) **Oberfläche** — `DemoNurLesen.tsx`; seit dem Trigger Höflichkeit,
   keine Sicherung mehr.
@@ -280,6 +281,28 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Migrationen erneut ausführen (idempotent).
   **Koordinaten der 6 Demo-Objekte stehen fest im Schnappschuss** (`20260930150903`) —
   sonst geokodierte `/karte` bei jedem Besuch neu (Nominatim-Regeln).
+- ⏳ **Demo-Daten laufen mit der Zeit mit (Phase 3, 30.09.2026, Migration `20260930154606`).**
+  Vorher endeten alle Buchungen am 01.06.2026 → Ende September stand jeder Mieter als säumig
+  da, und die Cashflow-Kennzahl schönte sich selbst (leere Monate senkten den Kostenschnitt).
+  `demo_zuruecksetzen(p_heute)` schreibt beim Demo-Start FORT, statt zu verschieben:
+  **Mieten aus dem Vormonat** (nur laufende Verträge — sonst zahlt eine geräumte Wohnung),
+  **Kosten aus dem Vorjahresmonat** (saisonal), **ganze Jahre** verschoben, sobald eines
+  vergangen ist (Anlage V bleibt ein volles Kalenderjahr — beim Verschieben um Monate
+  hätte 2025 nur neun Monate gehabt), **eine Miete des laufenden Monats bleibt offen**
+  (sonst zeigt die Aufgabenliste nichts). Anliegen und Zählermeldung werden tagesgenau auf
+  heute gezogen. **Nachgewiesen** in einer zurückgerollten Transaktion an fünf simulierten
+  Stichtagen bis 2028 — `p_heute` existiert genau dafür; `/api/demo` ruft ohne Argument.
+  **Mitbehoben:** Das „Reihenhaus Halle" stand als vermietet (1.150 €), der Mieter war zum
+  30.09.2025 ausgezogen → Phantom-Soll-Miete auf dem Dashboard. Jetzt Nachmieterin ab
+  01.11.2025. Dashboard-Cashflow der Demo damit **+518 €** statt +711 € — niedriger, aber wahr.
+  **Neue Tabelle in der Demo** braucht DREI Dinge: Trigger + Policies (zwei Migrationen
+  erneut ausführen), eine `demo_seed`-Kopie UND einen Eintrag in `tabellen` der
+  Reset-Funktion (Besitzspalte `vermieter_id` → auch in `besitz_vermieter`). Der Reset
+  überträgt nur gemeinsame Spalten; eine neue Spalte in `public` bricht ihn nicht mehr.
+  **Bekannter Schönheitsfehler, bewusst belassen:** Die gebuchten Mietbeträge weichen bei
+  vier Mietern vom Vertrag ab (z. B. 1.150 € bei 1.090 + 190 €). Das Mietkonto zählt einen
+  Monat als bezahlt, sobald eine Mietbuchung darin liegt — sichtbar wird es nur in Summen.
+  **Rauchtest-Weg `aktuell`** prüft live, dass eine Buchung vom 1. des laufenden Monats da ist.
 - 🔕 **Zwei Wächter, die die Demo mitgebracht hat, gelten für die ganze App (30.09.2026):**
   `tests/toastTyp.test.ts` — **ein Fehler-Toast nennt seinen Typ**: `toast()` ist ohne
   zweites Argument „success", 24 Stellen zeigten Fehlschläge mit grünem Haken.
@@ -898,9 +921,9 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   aber nicht versteckt, und automatisch offen, wenn man darin arbeitet. `ALLE_ZIELE` ist
   die Liste für die Command-Palette; `VERWALTUNG`/`KALKULATOR` sind Übergangsnamen.
   **Geführte Demo-Wege:** Weißliste `DEMO_ZIELE` in `lib/demo.ts` — `miete` → /mietkonto,
-  `nk` → /tenants, `steuer` → /steuer. Die erste Fassung (08.09.) führte in gesperrte
-  Bereiche; `tests/demoWege.test.ts` verlangt jetzt, dass jedes Ziel frei ist. „Schaden
-  verfolgen" fehlt, bis das Mieterportal Beispieldaten hat. Kein freier Pfad-Parameter (das
+  `nk` → /tenants, `steuer` → /steuer, `schaden` → /anliegen. Die erste Fassung (08.09.)
+  führte in gesperrte Bereiche; `tests/demoWege.test.ts` verlangt jetzt, dass jedes Ziel frei
+  ist. Kein freier Pfad-Parameter (das
   wäre eine offene Weiterleitung auf der eigenen Domain).
 - 🚪 **Demo: jeder Klick führt irgendwohin (30.09.2026, externes Review).** Die Demo war an
   den gelobten Stellen kaputt: Die Aufgabenliste des Dashboards verlinkte NUR auf gesperrte
@@ -916,10 +939,11 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   rechnet gegen `demoDarfRoute` und wird sonst rot (elf Mutationen geprüft).
   **Der Vorgänger-Test prüfte nur, OB die Links auf der Startseite stehen** — und hielt
   damit drei Sackgassen fest. Ein Test, der eine Schreibweise prüft, schützt kein Verhalten.
-  **Phase 2 erledigt 30.09.2026** (siehe „Demo-Konto ist NUR-LESEN" oben). **Offen (Phase 3–5):**
-  Demo-Daten relativ zum heutigen Datum (enden am 01.06.2026 — das Mietkonto zeigt deshalb
-  Jun–Sep offen), Beispieldaten für Mieterportal/Archiv, Cashflow-Kennzahlen beschriften und
-  das Ø-Kosten-Fenster reparieren (schönt sich bei Datenlücken selbst), Ladezeit messen.
+  **Phase 2 + 3 erledigt 30.09.2026** (siehe „Demo-Konto ist NUR-LESEN" und „Demo-Daten laufen
+  mit" oben). **Offen (Phase 4–5):** Cashflow-Kennzahlen beschriften (drei Zahlen, drei
+  Fragen, ein Wort) und das Ø-Kosten-Fenster für ECHTE Nutzer reparieren — in der Demo ist
+  es durch die fortgeschriebenen Daten behoben, bei einem Nutzer mit Buchungslücken schönt
+  es sich weiter selbst. Dann die Dashboard-Ladezeit messen.
   **`START_CTA` in `lib/preise.ts`:** Solange `REGISTRIERUNG_OFFEN = false` (Zugangscode
   nötig), heißt der Knopf „Early-Access-Zugang anfragen" statt „Kostenlos starten". Ein
   Test hält fest, dass keine Landing-Datei die Beschriftung wieder hart einträgt.

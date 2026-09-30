@@ -7,9 +7,11 @@
 // KAUFGRUENDE frei — Steuer/Anlage V, Nebenkostenabrechnung, Mietkonto,
 // Kredite, Jahresbericht. Vorher waren genau die Funktionen gesperrt, mit
 // denen die Startseite wirbt; wer „Demo ansehen" klickte, fand sie nicht.
-// Gesperrt bleiben nur Bereiche OHNE Beispieldaten (Mieterportal, Archiv) —
-// eine leere Seite wirbt schlechter als der Sperr-Dialog — sowie Anlegen und
-// Bearbeiten.
+// Seit Phase 3 (30.09.2026) auch Mieterportal und Archiv: Der Schnappschuss
+// enthaelt jetzt Beispiel-Anliegen, Archiv-Eintraege und eine Zaehlermeldung
+// (Migration 20260930154606), und die Daten laufen bis heute mit.
+// Gesperrt bleiben Makler-Unterlagen (keine Beispieldaten — eine leere Seite
+// wirbt schlechter als der Sperr-Dialog) sowie Anlegen und Bearbeiten.
 //
 // Einzige Ausnahme: das Mieterhoehungs-Dokument samt PDF. Es ist das Beispiel
 // zum Selbstzusammenstellen — gespeichert wird dabei nichts.
@@ -59,6 +61,9 @@ const ERLAUBTE_PRAEFIXE = [
   "/karte", // Koordinaten fest im Schnappschuss (Migration 20260930150903)
   "/bewertung",
   "/afa-assistent",
+  // Mit Beispieldaten seit Phase 3.
+  "/anliegen",
+  "/archiv",
   "/hilfe", // Support muss immer erreichbar sein, auch in der Demo
   // Einstellungen bewusst sichtbar (Vorgabe Betreiber 29.08.2026): Dort sieht
   // der Besucher das Profil "Max Mustermann" und findet den Support.
@@ -146,17 +151,7 @@ export function demoDarfRoute(pathname: string): boolean {
 export type DemoBereich = { titel: string; text: string };
 
 export const DEMO_BEREICHE: Record<string, DemoBereich> = {
-  // Beide ohne Beispieldaten — kommen frei, sobald der Schnappschuss Anliegen
-  // bzw. Archiv-Eintraege enthaelt (Phase 3).
-  "/anliegen": {
-    titel: "Mieterportal",
-    text: "Mieter melden Schäden und Zählerstände selbst, mit Foto. Du siehst den Stand je Anliegen und beauftragst Handwerker direkt aus der Meldung.",
-  },
-  "/archiv": {
-    titel: "Archiv",
-    text: "Verträge, Belege und Bescheide je Objekt, auffindbar und mit Ablauffristen.",
-  },
-  // Verlinkt aus dem Kauf-Assistenten.
+  // Verlinkt aus dem Kauf-Assistenten. Ohne Beispieldaten.
   "/makler": {
     titel: "Makler-Unterlagen",
     text: "Exposé, Grundbuchauszug, Teilungserklärung und Protokolle je Kaufobjekt an einer Stelle, mit Prüfliste, was noch fehlt.",
@@ -211,10 +206,10 @@ export function demoSperrZiel(href: string, herkunft: string): string | null {
 // Die ersten drei Wege (08.09.2026) fuehrten ALLE ins Leere: Ihre Ziele waren
 // in der Demo gesperrt. Der Test pruefte nur, OB die Links auf der Startseite
 // stehen. Jetzt verlangt `tests/demoWege.test.ts`, dass jedes Ziel
-// `demoDarfRoute` besteht. „Schaden verfolgen" (/anliegen) fehlt deshalb, bis
-// das Mieterportal Beispieldaten hat.
+// `demoDarfRoute` besteht.
 export const DEMO_ZIELE: Record<string, string> = {
   miete: "/mietkonto",
   nk: "/tenants", // je Mieter der Knopf „NK" — die Abrechnung braucht eine Mieter-ID
   steuer: "/steuer",
+  schaden: "/anliegen", // seit Phase 3 mit Beispiel-Anliegen
 };

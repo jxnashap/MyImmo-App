@@ -52,6 +52,7 @@ export default function LandingPage() {
               <a href="/api/demo?weg=miete">Miete prüfen</a>
               <a href="/api/demo?weg=nk">Nebenkosten abrechnen</a>
               <a href="/api/demo?weg=steuer">Anlage V ansehen</a>
+              <a href="/api/demo?weg=schaden">Schaden verfolgen</a>
             </p>
             <p className="qlx-hero-note">
               Demo ohne Anmeldung · Beispieldaten, Speichern ist dort nicht möglich · Daten in der EU
