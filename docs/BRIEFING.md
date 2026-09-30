@@ -2,7 +2,7 @@
 
 > Zweck: Ein anderer Chat/eine neue Session versteht MyImmo in 5 Minuten.
 > Reihenfolge zum Einlesen: **diese Datei → `CLAUDE.md` → `docs/PROJEKT-STATUS.md` → `docs/MASTERPLAN.md`**.
-> Stand: **10.09.2026**.
+> Stand: **30.09.2026**.
 
 ## Was ist MyImmo
 Deutschsprachige **Immobilienverwaltung für private Vermieter** (SaaS). Objekte, Mieter,
@@ -15,9 +15,17 @@ Wertentwicklung.
 - **Arbeitsbranch (dieser Kontext):** `claude/magical-feynman-l8w9s5`
 
 ## Stack
-**Next.js 15.5.25 / React 19.2.8** (App Router, Server Components + Server Actions) ·
-TypeScript · Supabase (Postgres + RLS, Projekt `kozhxrvyilkchjpcuwcm`, **Pro-Plan**,
-eu-central-1) · Vercel (**Pro**) · vitest.
+**Next.js 16.3.8 / React 19.2.8** (App Router, Server Components + Server Actions,
+Turbopack) · TypeScript · Supabase (Postgres + RLS, Projekt `kozhxrvyilkchjpcuwcm`,
+**Pro-Plan**, eu-central-1) · Vercel (**Pro**, Funktionen in Frankfurt) · vitest · ESLint.
+**Folgen der Next-16-Migration (30.09.2026):** `middleware.ts` heißt jetzt **`proxy.ts`**
+(Funktion `proxy`, Laufzeit Node) — „Middleware" in Kommentaren meint diese Datei. Jedes
+`<html>` trägt `data-scroll-behavior="smooth"`. `npm run lint` = `eslint .`
+(`eslint.config.mjs`); der erste Lauf überhaupt ergab **93 Fehler / 39 Warnungen** —
+Altlast, blockiert den Build nicht. Rückfall: Vercel Instant Rollback auf
+`dpl_LRgMzU1c5Kb47uKKjht63FFQCaLp` (letzter Next-15-Stand).
+**Den Nutzer auf Server-Seiten über `aktuellerNutzer()`** (`lib/supabase/nutzer.ts`,
+React `cache`, bleibt `getUser()`) holen, nicht über ein eigenes `supabase.auth.getUser()`.
 **Folge der Next-15-Migration (01.09.2026), leicht zu übersehen:** `createClient()` aus
 `lib/supabase/server.ts` ist **async** — neue Aufrufstellen brauchen `await createClient()`.
 Ebenso `besucherIp()` und `basisUrl()` (jetzt `lib/net/basisUrl.ts`). Route-Dateien dürfen
@@ -41,11 +49,11 @@ Umkehrung über `[data-theme="dark"]`. UI-Schrift **Geist** (selbst gehostet,
 - **Dateien** (Belege/Archiv) werden **als Base64 in Tabellenspalten** gespeichert — kein
   Storage-Bucket. In Listen NIE `select("*")` auf `kosten` (Blob!) → `KOSTEN_SPALTEN` nutzen.
 - **Build/Test:** `NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SUPABASE_ANON_KEY=... npm run build`
-  (Platzhalter genügen) · `npx vitest run` — **1.211 Tests in 93 Dateien** (Stand 10.09.2026).
+  (Platzhalter genügen) · `npx vitest run` — **1.331 Tests in 101 Dateien** (Stand 30.09.2026).
   **Nicht mehr nur Purefunctions:** Alle **36 Action-Dateien** und die **20 API-Routen** sind
   abgedeckt (Prüfstand `tests/stubs/actionHarness.ts`; `mfa.ts` über `tests/zweiFaktor.test.ts`). Weiterhin ohne Abdeckung:
   `components/`, `lib/pdf/`, RLS-Policies.
-- 🔥 **`npm run rauchtest`** — sechs Kernwege gegen die LAUFENDE App (nur lesend, Demo-Konto).
+- 🔥 **`npm run rauchtest`** — 16 Wege gegen die LAUFENDE App (nur lesend, Demo-Konto).
   Der einzige Test, der je eine Seite ausliefert. **Nicht bei jedem Push** (setzt den
   geteilten Demo-Bestand zurück). Grenzen und Fallstricke: `CLAUDE.md`.
 - 🧪 **Regel, die hier alles trägt: Einen neuen Test erst glauben, wenn er gegen einen
@@ -53,8 +61,10 @@ Umkehrung über `[data-theme="dark"]`. UI-Schrift **Geist** (selbst gehostet,
   erwiesen — und zwei Wächter als blind.
 - ⚠️ **`npx vitest run | tail` verschluckt den Exit-Code** — so ist #317 mit rotem Test
   durchgegangen. Vor einem Commit: `npx vitest run > datei; echo $?`.
-- ⛔ **`npm install` läuft in der Remote-Umgebung NICHT** (Arborist-Fehler); nur `npm ci`.
-  Abhängigkeits-Updates brauchen einen anderen Rechner.
+- ⚠️ **`npm install` läuft in der Remote-Umgebung nur TEILWEISE** (seit 30.09.2026: `next@16`,
+  ESLint, `undici` gingen; `npm audit fix` und `vitest@4.1.11` scheitern weiter am
+  Arborist-Fehler `edgesOut`). Nach jeder Installation die Paketzahl der Lockdatei
+  vorher/nachher vergleichen. **Nie `--legacy-peer-deps`** — warf einmal 70 Pakete raus.
   Achtung: `NEXT_PUBLIC_*` wird zur **Build-Zeit** eingebacken — `.env.local` muss VOR
   `npm run build` existieren, sonst zeigt der Client nur „Etwas ist schiefgelaufen".
 - **PR-Workflow:** Branch → Build+Tests grün → commit → force-with-lease push → PR → **squash-merge**
@@ -72,8 +82,8 @@ Jahresbericht, Kauf-/Verkauf-Assistent, Marktwert-Schätzer (ImmoWertV), Portfol
 (Leaflet, dark), Wertentwicklung (Eurostat-HPI-Fortschreibung), Onboarding-Tour,
 Command-Palette (Cmd+K), collapsible Sidebar, Toast/Breadcrumbs.
 
-Umfang (10.09.2026): **56 Seiten**, **20 API-Routen**, **36 Action-Dateien**,
-**32 Migrationen**, **19 Ratgeber-Artikel**.
+Umfang (30.09.2026): **67 Seiten**, **20 API-Routen**, **36 Action-Dateien**,
+**37 Migrationen**, **47 Tabellen (alle mit RLS)**, **19 Ratgeber-Artikel**.
 
 **Zuletzt (August 2026):** Landing im Quiet-Luxury-Stil, App-Redesign „Frosted Paper",
 **Bewerbungs-Dokumente im Mieterportal** (verschlüsselte Slot-Uploads + DSGVO-Aufräumen +
@@ -102,8 +112,30 @@ Pakete A–C umgesetzt), Datenschutz-Passus für den Vorlagen-Verteiler.
   in der Datenbank, nicht durch Lesen. Jetzt HMAC, Aufräumen nach 24 h.
 - **„Passwort vergessen" war eine Sackgasse** (09.09.): Der Link wurde nirgends eingelöst,
   ein Formular für ein neues Passwort gab es in der ganzen App nicht. Gebaut — aber
-  **noch nie mit einer echten Mail erfolgreich durchlaufen**; es fehlen zwei Einstellungen
-  im Supabase-Dashboard (`docs/BETREIBER-CHECKLISTE.md`, Punkte 1–3).
+  **noch nie mit einer echten Mail erfolgreich durchlaufen**. Die URL-Konfiguration ist
+  seit 30.09. gesetzt und geprüft; offen ist die E-Mail-Vorlage (`docs/BETREIBER-CHECKLISTE.md`).
+
+### 30.09.2026 — Demo als Prüfstand, dann die echten Konten (rund 20 PRs)
+Ein externes Review der Demo hat Fehler aufgedeckt, die sich bei echten Konten wiederfanden.
+Reihenfolge und Lehre: erst die Demo reparieren, dann **dieselben Fehlerklassen an den
+echten Daten zählen** (nur Zählungen, nichts angesehen oder verändert).
+- **Demo** (Phasen 1–5): Jeder Klick führt irgendwohin (`DemoSperre.tsx` erklärt gesperrte
+  Bereiche), Schreibsperre per Datenbank-Trigger **laut** statt still, Beispieldaten laufen
+  mit dem Datum mit, Mietbuchungen = Warmmiete laut Vertrag, Zinsbuchungen.
+- **Cashflow — eine Rechnung, Warmmiete** (`lib/cashflowKennzahl.ts`), Entscheidung des
+  Betreibers. Kacheln: Warmmiete − Kosten = Cashflow. Rendite bleibt kalt, die Steuer rechnet
+  unabhängig aus Buchungen. Schuldzinsen werden nicht mehr doppelt abgezogen.
+- **„+754,9 % seit Anschaffung"** zählte Zukäufe als Wertsteigerung → jetzt „ggü. Kaufpreis".
+- **Jahresbericht** Seite und PDF rechnen über dieselbe Funktion (`lib/jahresberichtZeile.ts`).
+- **Echte Konten:** Soll-Miete aus laufenden Mietern statt veraltetem Objektfeld
+  (`lib/sollMiete.ts`, mit sichtbarer Abweichung), Hinweise auf fehlende Kaufdaten,
+  Mietbeginne, Objekt-Zuordnungen, Auszahlungsdaten und fehlende Umlagen in der Anlage V.
+  **Die App zeigt Lücken an, sie korrigiert nichts selbst.**
+- **Ladezeit gemessen** (Phase 5): Das gemeinsame Layout war der Engpass, nicht das
+  Dashboard → parallelisiert, Nutzerabfrage je Anfrage dedupliziert. Gewinn ~110–140 ms
+  (Minima), im Median innerhalb der Netzstreuung — ehrlich: nicht sicher nachweisbar.
+- **Next 16** (siehe Stack). Schließt die hohe `postcss`-Meldung; `npm audit` meldet nur
+  noch 3 Befunde, alle nur Entwicklung.
 
 ## Offene Punkte / Entscheidungen (Merkliste)
 - **Design- & Layout-Überarbeitung** — **Runde 1 umgesetzt (20.08.2026)**: „Frosted Paper"
@@ -136,8 +168,9 @@ Pakete A–C umgesetzt), Datenschutz-Passus für den Vorlagen-Verteiler.
 nach Dringlichkeit). Kurzfassung steht in `CLAUDE.md` unter „👤 NUR DER BETREIBER".
 **In jeder Session kurz nachfragen, was davon erledigt ist** — sonst wird es erneut
 vorgeschlagen.
-Die drei dringenden hängen alle am selben Kernweg: Supabase-URL-Konfiguration,
-E-Mail-Vorlage auf `token_hash`, „Passwort vergessen" einmal echt testen.
+Die dringenden hängen alle am selben Kernweg: E-Mail-Vorlage auf `token_hash`,
+„Passwort vergessen" einmal echt testen. (✅ Supabase-URL-Konfiguration am 30.09.2026
+gesetzt und ohne Mail geprüft — Verfahren in `CLAUDE.md`.)
 Danach: die zwei restlichen Passwort-Schalter, Gegenprobe zum Leak-Schutz, 2FA durchspielen.
 Ohne Eile: AWS-Bedrock-Keys, Brevo-AVV-Rest, anwaltliche Prüfung (§ 34i GewO, StBerG,
 Nutzer-AVV, Impressum/Datenschutz/AGB).
@@ -151,10 +184,8 @@ Details: `docs/compliance/AVV-STATUS.md`.
 
 ## Wo mehr steht
 - `CLAUDE.md` — Projekt-Regeln, Merkliste, Deployment, Env, DB.
-- `docs/PROJEKT-STATUS.md` — Feature-Inventar + Kennzahlen. **Achtung: Stand 31.07.2026,
-  also älter als dieses Briefing** — die September-Änderungen oben stehen dort noch nicht.
-  **Vor jeder Aussage „das fehlt noch" trotzdem dort nachsehen**, aber gegen `CLAUDE.md`
-  gegenprüfen.
+- `docs/PROJEKT-STATUS.md` — Feature-Inventar + Kennzahlen, Stand 30.09.2026.
+  **Vor jeder Aussage „das fehlt noch" dort nachsehen** und gegen `CLAUDE.md` gegenprüfen.
 - `docs/BETREIBER-CHECKLISTE.md` — was nur der Betreiber tun kann, mit Wortlauten.
 - `docs/FEEDBACK-BEWERTUNG-2026-09.md` — externes Feedback vom 08.09., geprüft, mit Plan.
 - `docs/SICHERHEIT-ABHAENGIGKEITEN.md` — Schwachstellen-Befunde und ihre Grenzen.
