@@ -278,8 +278,18 @@ const WEGE = [
     erwartet: ["Portfolio-Karte"],
     async pruefe({ html }) {
       // Ohne gespeicherte Koordinaten geokodierte die Seite bei JEDEM
-      // Demo-Besuch neu. Der Hinweis auf fehlende Adressen darf nicht stehen.
-      return /noch keine Koordinaten|nicht gefunden/i.test(html) ? "Karte meldet fehlende Koordinaten" : null;
+      // Demo-Besuch neu.
+      //
+      // POSITIV prüfen, mit Sätzen, die NUR diese Seite schreibt. Die erste
+      // Fassung suchte /nicht gefunden/ im ganzen HTML und war falsch ROT: Der
+      // Ausdruck steckt im mitgeschickten Next-Code, nicht im Seiteninhalt.
+      // Dieselbe Lehre wie beim falsch grünen ersten Rauchtest, nur umgekehrt.
+      // (React trennt Textteile mit `<!-- -->` — deshalb die Lücken im Muster.)
+      const m = /(\d+)(?:<!-- -->|\s)+Objekte?(?:<!-- -->|\s)+auf der Karte/.exec(html);
+      if (!m) return "keine Angabe „N Objekte auf der Karte\"";
+      if (Number(m[1]) < 1) return "0 Objekte auf der Karte";
+      if (/beim nächsten Aufruf der Karte verortet/.test(html)) return "Objekte ohne Koordinaten — Schnappschuss unvollständig?";
+      return null;
     },
   },
   {
