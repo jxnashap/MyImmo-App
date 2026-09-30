@@ -11,13 +11,13 @@ import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
 import PortfolioKarte, { type KartenObjekt } from "@/components/PortfolioKarte";
 import ZeitraumControl from "@/components/ZeitraumControl";
-import { portfolioWertReihe, veraenderungProzent, type RohStand } from "@/lib/wert/verlauf";
+import { portfolioWertReihe, wertzuwachsGgKaufpreis, type RohStand } from "@/lib/wert/verlauf";
 import type { RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { ORGANISATION } from "@/lib/seo/jsonLd";
 import Leer from "@/components/Leer";
-import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat } from "@/lib/cashflowKennzahl";
+import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, laufendeKosten } from "@/lib/cashflowKennzahl";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
 // metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
@@ -229,7 +229,11 @@ export default async function DashboardPage() {
       heute: heuteISO,
     })),
   );
-  const portfolioWertProzent = veraenderungProzent(portfolioWert);
+  // „seit Anschaffung" = heutiger Wert gegen Kaufpreise, NICHT erster gegen
+  // letzten Punkt der Reihe (der zählte jeden Zukauf als Wertsteigerung —
+  // Demo +754,9 % statt +11,9 %). Begründung in lib/wert/verlauf.ts.
+  const wertzuwachs = wertzuwachsGgKaufpreis(properties.map((p) => ({ kaufpreis: p.kaufpreis, aktuellerWert: p.wert })));
+  const portfolioWertProzent = wertzuwachs?.prozent ?? null;
   // Soll-Kaltmiete/Mo.: Garagen-Objekte führen ihre Mieten auf den einzelnen
   // Mietern (je Einheit), nicht auf property.miete — wie auf der Objektseite.
   const GARAGEN_TYPEN = ["Garage / Stellplatz", "Garagenkomplex"];
@@ -244,7 +248,9 @@ export default async function DashboardPage() {
   // Monate, die das Fenster wirklich umfasst — Begründung in
   // lib/cashflowKennzahl.ts (vorher / 12 fest: Neue Nutzer sahen einen Bruchteil
   // ihrer Kosten). Dieselbe Rechnung steht auf der Objektseite.
-  const kostenSchnitt = kostenSchnittMonat(kosten, [...einnahmen, ...kosten], heuteISO);
+  // Schuldzinsen-Buchungen zählen hier NICHT — sie stecken schon in der
+  // Kreditrate (lib/cashflowKennzahl.ts, `laufendeKosten`).
+  const kostenSchnitt = kostenSchnittMonat(laufendeKosten(kosten), [...einnahmen, ...kosten], heuteISO);
   const monatKosten = Math.round(kostenSchnitt.betrag);
   const totalKosten = kreditRates + monatKosten;
   // Warmmiete = Soll-Kaltmiete + NK-Vorauszahlungen laufender Verträge —
@@ -367,11 +373,14 @@ export default async function DashboardPage() {
           <div className="kpi-sub"><span className="badge badge-teal">{properties.length} Objekt{properties.length === 1 ? "" : "e"}</span></div>
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
-          {/* „Kaltmiete", nicht „Einnahmen": Die Zahl ist die VERTRAGLICHE
-              Soll-Miete der Objekte, keine gebuchte Einnahme (Review 30.09.2026). */}
-          <div className="kpi-label">Kaltmiete / Mo.</div>
-          <div className="kpi-value">{euro(totalMiete)}</div>
-          <div className="kpi-sub">{bruttoRendite > 0 ? <span className="badge badge-gold">{bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Brutto-Rendite</span> : "Soll laut Objekten"}</div>
+          {/* WARMmiete, weil der Cashflow daneben mit ihr rechnet: Die drei
+              Kacheln ergeben zusammen die Rechnung Warmmiete − Kosten =
+              Cashflow (Review 30.09.2026 — mit „Kaltmiete 5.930" hier kam
+              beim Nachrechnen 518 € statt 1.548 € heraus). Kaltmiete und
+              Rendite stehen darunter; die Rendite bleibt kalt. */}
+          <div className="kpi-label">Warmmiete / Mo.</div>
+          <div className="kpi-value">{euro(warmmiete)}</div>
+          <div className="kpi-sub">Kaltmiete {euro(totalMiete)}{bruttoRendite > 0 ? <> · <span className="badge badge-gold">{bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Brutto-Rendite</span></> : null}</div>
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Kosten / Mo.</div>
@@ -405,14 +414,14 @@ export default async function DashboardPage() {
             <h3>Portfolio-Wertentwicklung</h3>
             {portfolioWertProzent != null && (
               <span className={`badge ${portfolioWertProzent >= 0 ? "badge-green" : "badge-red"}`}>
-                {portfolioWertProzent >= 0 ? "+" : ""}{portfolioWertProzent.toLocaleString("de-DE")} % seit Anschaffung
+                {portfolioWertProzent >= 0 ? "+" : ""}{portfolioWertProzent.toLocaleString("de-DE")} % ggü. Kaufpreis
               </span>
             )}
           </div>
           <div className="section-body">
             <WertVerlaufChart
               punkte={portfolioWert}
-              caption="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte."
+              caption="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte. Die Kurve springt bei jedem Kauf — ein Zukauf ist kein Wertzuwachs. Der Prozentwert vergleicht den heutigen Wert mit den Kaufpreisen."
             />
           </div>
         </div>

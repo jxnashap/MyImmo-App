@@ -93,3 +93,27 @@ export function veraenderungProzent(reihe: WertPunkt[]): number | null {
   if (erst <= 0) return null;
   return Math.round(((letzt - erst) / erst) * 1000) / 10;
 }
+
+// Wertzuwachs gegenüber den Kaufpreisen — die Zahl für „seit Anschaffung".
+//
+// WARUM NICHT `veraenderungProzent(portfolioWertReihe(…))` (externes Review,
+// 30.09.2026): Die Portfolio-Reihe beginnt beim ERSTEN Kauf und springt bei
+// jedem weiteren Kauf um dessen vollen Preis. Erster gegen letzten Punkt
+// zählte damit jeden Zukauf als Wertsteigerung — Demo: +754,9 % (1.838.000 €
+// heute gegen 215.000 € für das erste Objekt 2017). Richtig ist: heutiger Wert
+// gegen Kaufpreis, und zwar nur für Objekte, die BEIDES haben — ein Objekt ohne
+// Kaufpreis würde sonst seinen ganzen Wert als Zuwachs einbringen.
+export function wertzuwachsGgKaufpreis(
+  objekte: { kaufpreis?: number | null; aktuellerWert?: number | null }[],
+): { prozent: number; kaufpreise: number; wert: number; objekte: number } | null {
+  const mitBeidem = objekte.filter((o) => gueltig(o.kaufpreis) && gueltig(o.aktuellerWert));
+  if (mitBeidem.length === 0) return null;
+  const kaufpreise = mitBeidem.reduce((s, o) => s + (o.kaufpreis as number), 0);
+  const wert = mitBeidem.reduce((s, o) => s + (o.aktuellerWert as number), 0);
+  return {
+    prozent: Math.round(((wert - kaufpreise) / kaufpreise) * 1000) / 10,
+    kaufpreise,
+    wert,
+    objekte: mitBeidem.length,
+  };
+}

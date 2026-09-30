@@ -25,7 +25,7 @@ import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
 import { BarChart3, Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
 import Leer from "@/components/Leer";
-import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat } from "@/lib/cashflowKennzahl";
+import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, laufendeKosten } from "@/lib/cashflowKennzahl";
 import { laufzeitText } from "@/lib/kreditLaufzeit";
 
 type Kredit = {
@@ -97,7 +97,8 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // Monatliche Kosten: dieselbe Rechnung wie auf dem Dashboard
   // (lib/cashflowKennzahl.ts) — Ø der letzten 12 Monate MIT BUCHUNGEN, geteilt
   // durch die Monate, die das Fenster wirklich umfasst. Vorher / 12 fest.
-  const kostenSchnitt = kostenSchnittMonat(kosten, [...einnahmen, ...kosten], new Date().toISOString().slice(0, 10));
+  // Ohne Schuldzinsen-Buchungen — die stecken schon in der Kreditrate.
+  const kostenSchnitt = kostenSchnittMonat(laufendeKosten(kosten), [...einnahmen, ...kosten], new Date().toISOString().slice(0, 10));
   const monatsKosten = kostenSchnitt.betrag;
   // Garagen-Objekte: Mieten liegen auf den einzelnen Mietern (je Einheit),
   // nicht auf p.miete — sonst zeigten KPIs/Cashflow/Rendite 0.

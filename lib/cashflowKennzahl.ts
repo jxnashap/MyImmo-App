@@ -48,6 +48,21 @@ export type KostenSchnitt = {
   monate: number;
 };
 
+// KOSTEN, DIE SCHON IN DER KREDITRATE STECKEN (30.09.2026).
+//
+// Die Anlage V rät, gezahlte Zinsen als Kosten der Kategorie „Schuldzinsen"
+// zu buchen — dann gelten die gebuchten statt geschätzter Zinsen. Der
+// Monats-Cashflow zieht aber die volle Kreditrate ab, und die ENTHÄLT die
+// Zinsen. Ohne diesen Filter wurden sie zweimal abgezogen. Eingetreten war das
+// noch nicht (live: keine einzige Schuldzinsen-Buchung) — es wäre beim ersten
+// Nutzer passiert, der dem Rat der Anlage V folgt.
+export const IN_KREDITRATE_ENTHALTEN = ["Schuldzinsen"] as const;
+
+/** Kostenbuchungen ohne die, die bereits über die Kreditrate abgezogen werden. */
+export function laufendeKosten<T extends { kategorie?: string | null }>(kosten: T[]): T[] {
+  return kosten.filter((k) => !(IN_KREDITRATE_ENTHALTEN as readonly string[]).includes(k.kategorie ?? ""));
+}
+
 /**
  * Durchschnittliche laufende Kosten je Monat.
  *
