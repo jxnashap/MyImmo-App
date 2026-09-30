@@ -53,10 +53,13 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    ist das, was Supabase ANGENOMMEN hat. Ein verworfenes Ziel fällt auf die Site URL zurück —
    damit ist auch die Site URL auslesbar. Hinterlässt je Probe eine unvollendete
    `flow_state`-Zeile ohne Nutzer (verfällt; nicht löschen, kein Schreiben ins Auth-Schema).
-2. **E-Mail-Vorlage „Reset Password" auf `token_hash` umstellen** (Authentication → Emails).
-   Die Standard-Vorlage schickt einen PKCE-`code`, der **nur im anfordernden Browser**
-   funktioniert — Mail am Handy öffnen scheitert zwangsläufig. Wortlaut steht in
-   `docs/BETREIBER-CHECKLISTE.md`.
+2. ~~**E-Mail-Vorlage „Reset Password" auf `token_hash` umstellen**~~ ✅ **laut Betreiber
+   erledigt 30.09.2026, von Claude UNGEPRÜFT** (Vorlage nicht lesbar, keine Mail empfangbar).
+   Die eigene Vorlage (46 Zeilen, gestaltet) blieb erhalten; nur jedes `{{ .ConfirmationURL }}`
+   wurde durch `{{ .SiteURL }}/auth/passwort?token_hash={{ .TokenHash }}&type=recovery`
+   ersetzt. **Beweis erst durch Punkt 3.** Merkmal am Link der Mail: beginnt er mit
+   `www.myimmoapp.de/auth/passwort?token_hash=`, greift die Vorlage; beginnt er mit
+   `…supabase.co/auth/v1/verify`, ist es noch die alte.
 3. **„Passwort vergessen" testen und den `grund=`-Parameter aus der Adresszeile melden.**
    Der Weg ist gebaut, aber **nie mit einer echten Mail erfolgreich durchlaufen**.
 

@@ -1,6 +1,6 @@
 # Betreiber-Checkliste
 
-Stand **10.09.2026**. Alles hier ist **kein Code** — ein Dashboard, ein Anwalt oder ein
+Stand **30.09.2026**. Alles hier ist **kein Code** — ein Dashboard, ein Anwalt oder ein
 Blick in einen Browser. Claude kann es weder erledigen noch nachprüfen.
 
 Kurzfassung mit Reihenfolge steht in `CLAUDE.md` unter „👤 NUR DER BETREIBER".
@@ -29,7 +29,10 @@ die Site URL. Steht die noch auf `http://localhost:3000`, führt jeder Mail-Link
 
 ---
 
-## 2. Supabase: E-Mail-Vorlage „Reset Password" ⚠️ dringend
+## 2. Supabase: E-Mail-Vorlage „Reset Password" ✅ laut Betreiber erledigt (30.09.2026)
+
+**Ungeprüft**, bis Punkt 3 mit echter Mail durchläuft. Die gestaltete Vorlage blieb erhalten;
+ersetzt wurde nur jedes `{{ .ConfirmationURL }}` durch die Adresse aus dem Beispiel unten.
 
 **Authentication → Emails → Reset Password**
 

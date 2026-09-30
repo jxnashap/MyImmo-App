@@ -113,7 +113,7 @@ Pakete A–C umgesetzt), Datenschutz-Passus für den Vorlagen-Verteiler.
 - **„Passwort vergessen" war eine Sackgasse** (09.09.): Der Link wurde nirgends eingelöst,
   ein Formular für ein neues Passwort gab es in der ganzen App nicht. Gebaut — aber
   **noch nie mit einer echten Mail erfolgreich durchlaufen**. Die URL-Konfiguration ist
-  seit 30.09. gesetzt und geprüft; offen ist die E-Mail-Vorlage (`docs/BETREIBER-CHECKLISTE.md`).
+  seit 30.09. gesetzt und geprüft; die E-Mail-Vorlage laut Betreiber ebenfalls; offen ist der echte Test.
 
 ### 30.09.2026 — Demo als Prüfstand, dann die echten Konten (rund 20 PRs)
 Ein externes Review der Demo hat Fehler aufgedeckt, die sich bei echten Konten wiederfanden.
@@ -168,9 +168,9 @@ echten Daten zählen** (nur Zählungen, nichts angesehen oder verändert).
 nach Dringlichkeit). Kurzfassung steht in `CLAUDE.md` unter „👤 NUR DER BETREIBER".
 **In jeder Session kurz nachfragen, was davon erledigt ist** — sonst wird es erneut
 vorgeschlagen.
-Die dringenden hängen alle am selben Kernweg: E-Mail-Vorlage auf `token_hash`,
-„Passwort vergessen" einmal echt testen. (✅ Supabase-URL-Konfiguration am 30.09.2026
-gesetzt und ohne Mail geprüft — Verfahren in `CLAUDE.md`.)
+Dringend ist nur noch: „Passwort vergessen" einmal echt testen (Mail am Handy öffnen).
+(✅ Supabase-URL-Konfiguration am 30.09.2026 gesetzt und ohne Mail geprüft; ✅ E-Mail-Vorlage
+laut Betreiber am 30.09.2026 auf `token_hash` umgestellt — ungeprüft bis zum Test.)
 Danach: die zwei restlichen Passwort-Schalter, Gegenprobe zum Leak-Schutz, 2FA durchspielen.
 Ohne Eile: AWS-Bedrock-Keys, Brevo-AVV-Rest, anwaltliche Prüfung (§ 34i GewO, StBerG,
 Nutzer-AVV, Impressum/Datenschutz/AGB).
