@@ -684,6 +684,11 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   „Text kommt vor" war also erfüllt, ohne dass die Seite je geladen wurde.
   **Regel: Bei jeder HTTP-Prüfung zuerst feststellen, WO man gelandet ist
   (`endePfad`), erst dann den Inhalt ansehen.** Sonst prüft man die Menüleiste.
+  **Und umgekehrt (30.09.2026, falsch ROT):** Die Kartenprüfung suchte `/nicht gefunden/`
+  im ganzen HTML — der Ausdruck steckt im mitgeschickten Next-Code, nicht auf der Seite.
+  **Regel: positiv prüfen, mit Sätzen, die NUR diese Seite schreibt** (dort: „N Objekte
+  auf der Karte"; React trennt Textteile mit `<!-- -->`). Seit Phase 2 deckt der Test
+  auch Steuer, Anlage-V-PDF, CSV, Mietkonto, NK, Kredite und Karte ab (13 Wege).
   **Ungeprüft bleiben** Mietkonto, Steuer, Mieterportal, Archiv, Verbrauch,
   Termine — die Demo gibt sie bewusst nicht frei. Der Weg `demo-grenze` deckt
   stattdessen ab, dass die Sperre hält (fällt sie weg, klickt ein Besucher in
