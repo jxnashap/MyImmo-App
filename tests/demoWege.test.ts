@@ -26,22 +26,29 @@ import { baueHeuteAufgaben } from "@/lib/heute";
 // DIE REGEL: Ein Link in der Demo führt entweder in einen freien Bereich oder
 // in einen gesperrten, der im Sperr-Dialog ERKLÄRT wird (`DEMO_BEREICHE`).
 // Der allgemeine Ersatzsatz zählt nicht als Erklärung.
+//
+// Gerechnet wird mit `demoSperrZiel` — derselben Funktion, die der Klick-
+// Abfang zur Laufzeit benutzt. Die erste Fassung fragte `demoDarfRoute`
+// direkt und übersah damit, dass öffentliche Seiten (Datenschutz, Impressum)
+// frei sind: Der Abfang hielt sie für gesperrt, der Test auch — beide gleich
+// falsch, also grün.
 
 const HERKUNFT = "https://www.myimmoapp.de/";
 const ERSATZ = demoBereich("/gibt-es-nicht").titel;
 
 /** Gesperrt UND ohne eigenen Text im Dialog — genau das darf es nicht geben. */
 function unerklaert(href: string): boolean {
-  const pfad = new URL(href, HERKUNFT).pathname;
-  return !demoDarfRoute(pfad) && demoBereich(pfad).titel === ERSATZ;
+  const ziel = demoSperrZiel(href, HERKUNFT);
+  return ziel !== null && demoBereich(ziel).titel === ERSATZ;
 }
 
 describe("Demo: jeder angebotene Weg führt irgendwohin", () => {
   it("der Erkenner ist nicht blind: gesperrt, frei und unbekannt werden unterschieden", () => {
     expect(ERSATZ).toBe("In der Demo gesperrt");
     expect(unerklaert("/gibt-es-nicht")).toBe(true);
-    expect(unerklaert("/mietkonto")).toBe(false); // gesperrt, aber erklärt
+    expect(unerklaert("/anliegen")).toBe(false); // gesperrt, aber erklärt
     expect(unerklaert("/properties")).toBe(false); // frei
+    expect(unerklaert("/datenschutz")).toBe(false); // öffentlich
   });
 
   it("jedes Navigationsziel ist frei oder wird im Dialog erklärt", () => {
@@ -93,6 +100,12 @@ describe("Demo: jeder angebotene Weg führt irgendwohin", () => {
     }
   });
 
+  it("die Weißliste hat Einträge und die Startseite verlinkt jeden davon", () => {
+    expect(Object.keys(DEMO_ZIELE).length).toBeGreaterThanOrEqual(3);
+    const landing = readFileSync("components/LandingPage.tsx", "utf8");
+    for (const weg of Object.keys(DEMO_ZIELE)) expect(landing).toContain(`/api/demo?weg=${weg}`);
+  });
+
   it("die Startseite verlinkt nur Demo-Einstiege, die es in der Weißliste gibt", () => {
     const dateien = ["components/LandingPage.tsx", ...alleDateien("components/landing")];
     for (const p of dateien) {
@@ -111,25 +124,89 @@ describe("Demo: jeder angebotene Weg führt irgendwohin", () => {
 
 describe("demoSperrZiel: welche Links der Klick-Abfang übernimmt", () => {
   it("gesperrte eigene Pfade, auch mit Suchparametern und absolut", () => {
-    expect(demoSperrZiel("/mietkonto?monat=2026-09", HERKUNFT)).toBe("/mietkonto");
-    expect(demoSperrZiel("https://www.myimmoapp.de/steuer", HERKUNFT)).toBe("/steuer");
-    expect(demoSperrZiel("/tenants/abc/nk", HERKUNFT)).toBe("/tenants/abc/nk");
+    expect(demoSperrZiel("/anliegen?filter=offen", HERKUNFT)).toBe("/anliegen");
+    expect(demoSperrZiel("https://www.myimmoapp.de/archiv", HERKUNFT)).toBe("/archiv");
+    expect(demoSperrZiel("/properties/new", HERKUNFT)).toBe("/properties/new");
   });
 
-  it("freie Pfade, fremde Seiten und Unsinn bleiben unberührt", () => {
-    expect(demoSperrZiel("/properties", HERKUNFT)).toBeNull();
-    expect(demoSperrZiel("/", HERKUNFT)).toBeNull();
+  it("freie Pfade, öffentliche Seiten, fremde Seiten und Unsinn bleiben unberührt", () => {
+    for (const frei of ["/properties", "/", "/mietkonto?monat=2026-09", "/steuer", "/tenants/abc/nk"]) {
+      expect(demoSperrZiel(frei, HERKUNFT), frei).toBeNull();
+    }
+    // Öffentlich: Die Middleware lässt sie auch der Demo durch. Bis 30.09.
+    // öffnete „Datenschutz" in der Seitenleiste den Sperr-Dialog.
+    for (const oeff of ["/datenschutz", "/impressum", "/avv", "/agb", "/ratgeber/x"]) {
+      expect(demoSperrZiel(oeff, HERKUNFT), oeff).toBeNull();
+    }
     expect(demoSperrZiel("#inhalt", HERKUNFT)).toBeNull();
-    expect(demoSperrZiel("https://example.com/steuer", HERKUNFT)).toBeNull();
+    expect(demoSperrZiel("https://example.com/archiv", HERKUNFT)).toBeNull();
     expect(demoSperrZiel("mailto:info@myimmoapp.de", HERKUNFT)).toBeNull();
     expect(demoSperrZiel("http://[", HERKUNFT)).toBeNull();
   });
 
-  it("Unterseiten bekommen ihren eigenen Text", () => {
-    expect(demoBereich("/tenants/abc/nk").titel).toBe("Nebenkostenabrechnung");
-    expect(demoBereich("/mietkonto").titel).toBe("Mietkonto");
-    // Präfix-Grenze: /steuerbar ist nicht /steuer.
-    expect(demoBereich("/steuerbar").titel).toBe(ERSATZ);
+  it("gesperrte Bereiche und Formulare bekommen ihren eigenen Text", () => {
+    expect(demoBereich("/anliegen").titel).toBe("Mieterportal");
+    expect(demoBereich("/tenants/abc/edit").titel).toBe("Anlegen und bearbeiten");
+    // Präfix-Grenze: /archivalien ist nicht /archiv.
+    expect(demoBereich("/archivalien").titel).toBe(ERSATZ);
+  });
+});
+
+describe("Demo: KEIN Link irgendwo in der App läuft unerklärt ins Leere", () => {
+  // Die Lehre aus Phase 1: Der Wächter prüfte nur Dashboard, Navigation und
+  // Aufgabenliste — die Rechtslinks in der Fußzeile der Seitenleiste und der
+  // CSV-Export auf /cashflow rutschten durch. Jetzt wird JEDE Datei gelesen,
+  // die im App-Rahmen gerendert werden kann.
+  // Dateien, die NIE im Demo-Konto (einem Vermieter) rendern: Mieter-Portal
+  // und Handwerker-Bereich. Der Test unten prüft die Behauptung selbst — die
+  // Komponenten dürfen nur von diesen Seiten importiert werden.
+  const ANDERE_ROLLE = [
+    join("app", "(app)", "portal", "page.tsx"),
+    join("app", "(app)", "service", "page.tsx"),
+    join("components", "AnfragenVomVermieter.tsx"),
+    join("components", "AnliegenPortal.tsx"),
+    join("components", "ZaehlerPortal.tsx"),
+  ];
+  const dateien = [...alleDateien("app/(app)"), ...alleDateien("components")].filter(
+    // Die Startseite rendert nur für Abgemeldete — dort gibt es keine Demo.
+    (p) => !p.startsWith(join("components", "landing")) && !p.endsWith("LandingPage.tsx") && !ANDERE_ROLLE.includes(p),
+  );
+
+  it("die Ausnahmen gehören wirklich nur zu Mieter- und Handwerker-Seiten", () => {
+    const seiten = ANDERE_ROLLE.filter((p) => p.startsWith("app"));
+    for (const komp of ANDERE_ROLLE.filter((p) => p.startsWith("components"))) {
+      const name = komp.replace(/^components[\\/]/, "").replace(/\.tsx$/, "");
+      const nutzer = [...alleDateien("app"), ...alleDateien("components")].filter(
+        // `import type` rendert nichts und zählt nicht als Verwendung.
+        (p) => p !== komp && new RegExp(`^import (?!type )[^;]*from "@/components/${name}"`, "m").test(readFileSync(p, "utf8")),
+      );
+      expect(nutzer.length, name).toBeGreaterThan(0);
+      for (const n of nutzer) expect(seiten, `${name} wird von ${n} benutzt`).toContain(n);
+    }
+  });
+
+  function links(quelle: string): string[] {
+    const fest = [...quelle.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]);
+    const vorlagen = [...quelle.matchAll(/href=\{`(\/[^`]*)`\}/g)].flatMap((m) => {
+      const zweige = /\$\{\w+ \? "([^"]+)" : "([^"]+)"\}/.exec(m[1]);
+      const varianten = zweige ? [m[1].replace(zweige[0], zweige[1]), m[1].replace(zweige[0], zweige[2])] : [m[1]];
+      return varianten.map((v) => v.replace(/\$\{[^}]*\}/g, "x"));
+    });
+    return [...fest, ...vorlagen];
+  }
+
+  it("der Erkenner hat gesucht: genug Dateien und Links", () => {
+    expect(dateien.length).toBeGreaterThan(150);
+    const alle = dateien.flatMap((p) => links(readFileSync(p, "utf8")));
+    expect(alle.length).toBeGreaterThan(100);
+    expect(alle).toContain("/datenschutz");
+  });
+
+  it("jeder Link ist frei, öffentlich oder im Dialog erklärt", () => {
+    const offen = dateien.flatMap((p) =>
+      links(readFileSync(p, "utf8")).filter(unerklaert).map((l) => `${p}: ${l}`),
+    );
+    expect(offen).toEqual([]);
   });
 });
 

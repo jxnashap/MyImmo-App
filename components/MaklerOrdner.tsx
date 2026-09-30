@@ -56,14 +56,14 @@ export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }:
     const next = cur.status === "erledigt" ? (cur.datei_name ? "hochgeladen" : "offen") : "erledigt";
     start(async () => {
       try { apply(await setMaklerStatus(item.key, next)); }
-      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Speichern."); }
+      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Speichern.", "error"); }
     });
   }
 
   function onDatum(item: MaklerItem, datum: string) {
     start(async () => {
       try { apply(await setMaklerDatum(item.key, datum || null)); }
-      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Speichern."); }
+      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Speichern.", "error"); }
     });
   }
 
@@ -74,21 +74,21 @@ export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }:
     fd.set("datei", file);
     start(async () => {
       try { apply(await uploadMaklerDatei(item.key, fd)); toast("Datei hinterlegt."); }
-      catch (e) { toast(e instanceof Error ? e.message : "Upload fehlgeschlagen."); }
+      catch (e) { toast(e instanceof Error ? e.message : "Upload fehlgeschlagen.", "error"); }
     });
   }
 
   function onRemove(item: MaklerItem) {
     start(async () => {
       try { apply(await removeMaklerDatei(item.key)); }
-      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Entfernen."); }
+      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Entfernen.", "error"); }
     });
   }
 
   function onGenerate(item: MaklerItem) {
     start(async () => {
       try { apply(await generiereMaklerDokument(item.key)); toast("Käufer-Selbstauskunft aus MyImmo erzeugt."); }
-      catch (e) { toast(e instanceof Error ? e.message : "Erzeugen fehlgeschlagen."); }
+      catch (e) { toast(e instanceof Error ? e.message : "Erzeugen fehlgeschlagen.", "error"); }
     });
   }
 

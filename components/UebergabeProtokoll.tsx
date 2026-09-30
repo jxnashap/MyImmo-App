@@ -86,7 +86,7 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
             onClick={() =>
               startAblegen(async () => {
                 const res = await speichereProtokoll(tenant.id, { typ, datum, strom, gas, wasser, schluessel, raeume: gefuellteRaeume });
-                toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.");
+                toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.", res.ok ? "success" : "error");
               })
             }
             style={{ marginRight: 8 }}

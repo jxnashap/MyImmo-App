@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, ShieldOff, KeyRound, Copy, Check, TriangleAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
+import { actionFehler } from "@/lib/actionErgebnis";
 import {
   erzeugeWiederherstellungscodes,
   loescheWiederherstellungscodes,
@@ -99,12 +100,19 @@ export default function ZweiFaktor({ demo = false, istGoogle = false }: { demo?:
       setBusy(false);
       return setFehler("Abschalten fehlgeschlagen.");
     }
-    await loescheWiederherstellungscodes();
+    // Antwort auswerten (30.09.2026): Der Faktor ist zu diesem Zeitpunkt schon
+    // weg — scheitert nur das Aufräumen der Codes, ist 2FA trotzdem aus. Das
+    // gehört gesagt, statt es zu verschweigen.
+    const codesWeg = await loescheWiederherstellungscodes();
     setAusCode("");
     setBusy(false);
     setNeueCodes(null);
     await laden();
-    toast("Zwei-Faktor-Anmeldung ist aus.");
+    if (actionFehler(codesWeg)) {
+      toast("Zwei-Faktor-Anmeldung ist aus. Die alten Wiederherstellungscodes ließen sich nicht löschen — sie sind ohne zweiten Faktor wirkungslos.", "info");
+    } else {
+      toast("Zwei-Faktor-Anmeldung ist aus.");
+    }
   }
 
   async function codesNeu() {

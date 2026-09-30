@@ -130,7 +130,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
       setDocs((prev) => ({ ...prev, [key]: neu }));
       if (okMsg) toast(okMsg);
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Fehler — bitte erneut versuchen.");
+      toast(e instanceof Error ? e.message : "Fehler — bitte erneut versuchen.", "error");
     } finally {
       setBusy(null);
     }
@@ -164,7 +164,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
   function kopiereLink(token: string) {
     navigator.clipboard.writeText(teilbarerLink(`/beleihung/${token}`)).then(
       () => toast("Link kopiert."),
-      () => toast("Kopieren fehlgeschlagen."),
+      () => toast("Kopieren fehlgeschlagen.", "error"),
     );
   }
 
@@ -395,7 +395,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                       await widerrufeFreigabe(f.token);
                       setFreigaben((prev) => prev.map((x) => (x.token === f.token ? { ...x, aktiv: false } : x)));
                       toast("Freigabe widerrufen — der Link ist sofort ungültig.");
-                    } catch { toast("Widerrufen fehlgeschlagen."); }
+                    } catch { toast("Widerrufen fehlgeschlagen.", "error"); }
                   }}
                 >
                   <X size={12} /> Widerrufen
@@ -520,7 +520,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                         setFreigaben((prev) => [f, ...prev]);
                         setNeuerLink(teilbarerLink(`/beleihung/${f.token}`));
                       } catch (e) {
-                        toast(e instanceof Error ? e.message : "Freigabe fehlgeschlagen.");
+                        toast(e instanceof Error ? e.message : "Freigabe fehlgeschlagen.", "error");
                       } finally { setShareBusy(false); }
                     })}
                   >

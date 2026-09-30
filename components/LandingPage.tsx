@@ -42,10 +42,17 @@ export default function LandingPage() {
               <a href="/api/demo" className="qlx-btn-linie lp-btn-big">Demo ansehen</a>
               <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
             </div>
-            {/* Die geführten Demo-Wege („Miete prüfen" …) sind seit 30.09.2026
-                ausgebaut: Alle drei führten in der Demo in gesperrte Bereiche.
-                Sie kommen zurück, wenn ihre Ziele freigegeben sind — siehe
-                `DEMO_ZIELE` in lib/demo.ts. */}
+            {/* Drei geführte Wege statt „schau dich mal um": Jeder Link
+                landet DORT, wo die Frage beantwortet wird. Weißliste
+                `DEMO_ZIELE` in lib/demo.ts; tests/demoWege.test.ts verlangt,
+                dass jedes Ziel in der Demo frei ist — die erste Fassung führte
+                in gesperrte Bereiche. */}
+            <p className="qlx-demo-wege">
+              <span>Direkt ausprobieren:</span>
+              <a href="/api/demo?weg=miete">Miete prüfen</a>
+              <a href="/api/demo?weg=nk">Nebenkosten abrechnen</a>
+              <a href="/api/demo?weg=steuer">Anlage V ansehen</a>
+            </p>
             <p className="qlx-hero-note">
               Demo ohne Anmeldung · Beispieldaten, Speichern ist dort nicht möglich · Daten in der EU
             </p>

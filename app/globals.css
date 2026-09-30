@@ -440,6 +440,11 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 /* „Heute wichtig": Zeile = Link mit genau einer Handlung. Der farbige Rand
    links unterscheidet dringend (rot) von normal (gold), ohne die Zeile
    einzufärben — Rot als Fläche wäre für „Miete noch nicht bestätigt" zu laut. */
+/* Geführte Demo-Wege unter dem Hero der Landing. */
+.qlx-demo-wege { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 10px 0 0; font-size: 13px; }
+.qlx-demo-wege span { color: var(--lp-muted, var(--muted)); }
+.qlx-demo-wege a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
 .heute-zeile { display: flex; align-items: center; gap: 12px; padding: 11px 13px; background: var(--bg3);
   border: 1px solid var(--line); border-left-width: 3px; border-radius: 10px; text-decoration: none;
   color: inherit; transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease); }
