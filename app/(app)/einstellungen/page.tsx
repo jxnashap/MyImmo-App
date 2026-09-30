@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import SettingsView from "@/components/SettingsView";
 import { decryptIbanRow } from "@/lib/ibanData";
+import { ohnePasswort } from "@/lib/passwort";
 import { billingAktiv, getAbo, zaehleEinheiten, PLAN_NAMEN, effektiverPlan } from "@/lib/plan";
 import type { VermieterProfil, Iban } from "@/lib/types";
 
@@ -9,13 +10,14 @@ export const dynamic = "force-dynamic";
 
 export default async function EinstellungenPage() {
   const supabase = await createClient();
-  const [{ data }, { data: ibanRows }, user, { data: signatur }, abo, einheiten] = await Promise.all([
+  const [{ data }, { data: ibanRows }, user, { data: signatur }, abo, einheiten, passwortAntwort] = await Promise.all([
     supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
     supabase.from("ibans").select("*").order("created_at", { ascending: true }),
     aktuellerNutzer(),
     supabase.from("unterschriften").select("data").maybeSingle(),
     getAbo(supabase),
     zaehleEinheiten(supabase),
+    supabase.rpc("konto_hat_passwort"),
   ]);
 
   return (
@@ -24,6 +26,7 @@ export default async function EinstellungenPage() {
       ibans={((ibanRows ?? []) as Iban[]).map(decryptIbanRow)}
       email={user?.email}
       provider={user?.app_metadata?.provider}
+      ohnePasswort={ohnePasswort(passwortAntwort, user?.app_metadata?.provider)}
       lastSignIn={user?.last_sign_in_at ?? null}
       unterschrift={signatur?.data ?? null}
       abo={abo ? {
