@@ -25,7 +25,7 @@ import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
 import { BarChart3, Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
 import Leer from "@/components/Leer";
-import { kostenSchnittMonat, monatsCashflow, cashflowFormel } from "@/lib/cashflowKennzahl";
+import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat } from "@/lib/cashflowKennzahl";
 import { laufzeitText } from "@/lib/kreditLaufzeit";
 
 type Kredit = {
@@ -124,7 +124,10 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // Übersicht weiter unten auf DIESER Seite führte die Kosten als eigenen
   // Posten, zog sie in der Kennzahl aber nicht ab — der Wert war zu gut und
   // passte nicht zum Dashboard.
-  const cashflowMo = monatsCashflow({ miete, kreditraten: totalKreditRate, kostenSchnitt: monatsKosten });
+  // Seit 30.09.2026 mit Warmmiete (Kaltmiete + NK-Vorauszahlungen laufender
+  // Verträge) — dieselbe Rechnung wie auf dem Dashboard, lib/cashflowKennzahl.ts.
+  const nkVorausMo = nkVorauszahlungenMonat(tenants, new Date().toISOString().slice(0, 10));
+  const cashflowMo = monatsCashflow({ warmmiete: miete + nkVorausMo, kreditraten: totalKreditRate, kostenSchnitt: monatsKosten });
   const cfStr = (cashflowMo >= 0 ? "+ " : "– ") + euro(Math.abs(cashflowMo));
 
   const kpis = [
@@ -163,6 +166,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // Cashflow-Übersicht
   const cfItems = [
     { lbl: "Kaltmiete", val: miete, col: "var(--green)" },
+    { lbl: "NK-Vorauszahlungen", val: nkVorausMo, col: "var(--green)" },
     { lbl: "Kreditraten", val: totalKreditRate, col: "var(--red)" },
     { lbl: `Laufende Kosten (Ø ${kostenSchnitt.monate} Mon.)`, val: monatsKosten, col: "var(--red)" },
   ].filter((i) => i.val > 0);

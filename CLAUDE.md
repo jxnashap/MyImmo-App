@@ -984,11 +984,15 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   (3) Vier Zahlen hießen „Cashflow". Jetzt: Monats-Cashflow mit Formel an der Zahl;
   Dashboard-Verlauf und `/cashflow`-KPI heißen **„Buchungssaldo"**; „Einnahmen / Mo." heißt
   „Kaltmiete / Mo." (es ist die Soll-Miete, keine Buchung); Jahresbericht-Spalte mit Formel.
-  **OFFENE ENTSCHEIDUNG (Betreiber): Kalt- oder Warmmiete.** Die Formel zählt nur die
-  KALTmiete als Einnahme, zieht aber ALLE Kosten ab — auch umlagefähiges Hausgeld, das die
-  Mieter über die NK-Vorauszahlung erstatten. Das drückt den Cashflow systematisch (Demo:
-  4 von 6 Objekten rot). Ehrlich beschriftet ist es, richtig im Sinne von Liquidität erst
-  mit Warmmiete. `tests/cashflowKennzahl.test.ts`, acht Mutationen geprüft.
+  **ENTSCHIEDEN 30.09.2026 (Betreiber): WARMmiete.** Monats-Cashflow = Soll-Kaltmiete +
+  NK-Vorauszahlungen laufender Verträge (`nkVorauszahlungenMonat()`) − Kreditraten − Ø Kosten.
+  Vorher zählte nur die Kaltmiete, abgezogen wurden aber ALLE Kosten inkl. umlagefähiger —
+  Demo +518 € mit 4 von 6 Objekten rot, jetzt +1.548 €. **Die Steuer berührt das NICHT:**
+  Anlage V rechnet aus Buchungen (`lib/anlageV.ts`: Betrag − `nk_anteil` → Zeile 9,
+  `nk_anteil` → Zeile 13). **Rendite und Kaufpreisfaktor bleiben KALT** (Marktkonvention).
+  Nicht enthalten: Stellplatzmieten außerhalb von Garagen-Objekten (Doppelzählung nicht
+  auszuschließen) und NK-Nachzahlungen/-Erstattungen. `tests/cashflowKennzahl.test.ts`,
+  16 Mutationen geprüft.
   **`START_CTA` in `lib/preise.ts`:** Solange `REGISTRIERUNG_OFFEN = false` (Zugangscode
   nötig), heißt der Knopf „Early-Access-Zugang anfragen" statt „Kostenlos starten". Ein
   Test hält fest, dass keine Landing-Datei die Beschriftung wieder hart einträgt.

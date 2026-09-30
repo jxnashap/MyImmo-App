@@ -82,14 +82,48 @@ export function kostenSchnittMonat(
   return { betrag: summe / anzahl, monate: anzahl };
 }
 
-/** Kaltmiete − Kreditraten − Ø laufende Kosten, je Monat. */
-export function monatsCashflow(teile: { miete: number; kreditraten: number; kostenSchnitt: number }): number {
-  return teile.miete - teile.kreditraten - teile.kostenSchnitt;
+// WARMMIETE STATT KALTMIETE (Entscheidung des Betreibers, 30.09.2026).
+//
+// Bis dahin zählte die Formel nur die KALTmiete als Einnahme, zog aber ALLE
+// Kosten ab — auch umlagefähiges Hausgeld, Grundsteuer, Versicherung, die die
+// Mieter über die NK-Vorauszahlung erstatten. Der Cashflow war dadurch
+// systematisch zu schlecht (Demo: 4 von 6 Objekten rot, +518 € statt +1.548 €).
+// Liquidität ist, was aufs Konto kommt, minus was abgeht — also Warmmiete.
+//
+// DIE STEUER BERÜHRT DAS NICHT: Die Anlage V rechnet aus den BUCHUNGEN
+// (lib/anlageV.ts: Kaltmiete = Betrag − nk_anteil → Zeile 9, nk_anteil →
+// Zeile 13 Umlagen), dieser Cashflow aus den VERTRÄGEN. Bruttorendite und
+// Kaufpreisfaktor bleiben ebenfalls kalt — das ist dort die Marktkonvention.
+//
+// Nicht enthalten: Stellplatzmieten außerhalb von Garagen-Objekten (ob sie im
+// Objektfeld „Miete" schon stecken, ist nicht feststellbar — lieber zu wenig
+// als doppelt) und NK-Nachzahlungen/-Erstattungen (einmal jährlich, stehen in
+// den Buchungen, nicht in den Verträgen).
+
+export type MieterNk = { nk_vorauszahlung: number | string | null; mietbeginn: string | null; mietende: string | null };
+
+/** Summe der NK-Vorauszahlungen aller Mieter, deren Vertrag heute läuft. */
+export function nkVorauszahlungenMonat(mieter: MieterNk[], heuteIso: string): number {
+  const heute = /^\d{4}-\d{2}-\d{2}/.exec(heuteIso)?.[0];
+  if (!heute) return 0;
+  return mieter.reduce((s, m) => {
+    const beginn = (m.mietbeginn ?? "").slice(0, 10);
+    const ende = (m.mietende ?? "").slice(0, 10);
+    if (beginn && beginn > heute) return s; // zieht erst noch ein
+    if (ende && ende < heute) return s;     // ist ausgezogen
+    const nk = Number(m.nk_vorauszahlung);
+    return Number.isFinite(nk) && nk > 0 ? s + nk : s;
+  }, 0);
+}
+
+/** Warmmiete − Kreditraten − Ø laufende Kosten, je Monat. */
+export function monatsCashflow(teile: { warmmiete: number; kreditraten: number; kostenSchnitt: number }): number {
+  return teile.warmmiete - teile.kreditraten - teile.kostenSchnitt;
 }
 
 /** Die Formel als Text — steht an jeder Stelle, die die Zahl zeigt. */
 export function cashflowFormel(schnitt: KostenSchnitt): string {
-  if (schnitt.monate === 0) return "Kaltmiete − Kreditraten (noch keine Kosten gebucht)";
+  if (schnitt.monate === 0) return "Warmmiete − Kreditraten (noch keine Kosten gebucht)";
   const fenster = schnitt.monate === 1 ? "1 Monat" : `${schnitt.monate} Monate`;
-  return `Kaltmiete − Kreditraten − Ø Kosten (${fenster})`;
+  return `Warmmiete − Kreditraten − Ø Kosten (${fenster})`;
 }
