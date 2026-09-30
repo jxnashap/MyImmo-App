@@ -106,6 +106,7 @@ async function hole(pfad, tiefe = 0, kette = []) {
     url,
     endePfad: new URL(url).pathname,
     kette,
+    typ: antwort.headers.get("content-type") ?? "",
     html: await antwort.text(),
   };
 }
@@ -129,16 +130,14 @@ function ersterLink(html, praefix) {
 // WELCHE WEGE HIER STEHEN — und welche NICHT
 //
 // Das Demo-Konto ist Schaustück, nicht Sandkasten: `demoDarfRoute` in
-// lib/demo.ts gibt nur einen Teil der App frei. Mietkonto, Steuer/Anlage V,
-// Mieterportal, Archiv, Verbrauch und Termine sind gesperrt und werden auf das
-// Dashboard umgeleitet. Sie stehen deshalb NICHT als Kernweg hier — ein Test,
-// der sie über die Demo aufruft, prüft das Dashboard.
+// lib/demo.ts gibt nur einen Teil der App frei. Seit 30.09.2026 gehören die
+// KAUFGRÜNDE dazu — Mietkonto, Steuer/Anlage V, NK-Abrechnung, Kredite,
+// Verbrauch, Termine, Karte — und stehen deshalb jetzt als Kernwege hier.
+// Vorher waren sie gesperrt und damit von diesem Test UNGEPRÜFT.
 //
-// Diese Bereiche sind damit ungeprüft. Das ist keine Nachlässigkeit, sondern
-// die Folge einer bewussten Produktentscheidung; wer sie abdecken will,
-// braucht einen Rauchtest-Zugang mit einem eigenen (leeren) Vermieter-Konto.
-// Solange es den nicht gibt, deckt der Weg „demo-grenze" wenigstens ab, dass
-// die Sperre hält.
+// Weiterhin gesperrt (keine Beispieldaten): Mieterportal, Archiv,
+// Makler-Unterlagen. Der Weg „demo-grenze" prüft, dass die Sperre hält und die
+// Weiterleitung den Bereich nennt (sonst öffnet sich kein Sperr-Dialog).
 const WEGE = [
   {
     schluessel: "dashboard",
@@ -213,8 +212,79 @@ const WEGE = [
     },
   },
   {
+    schluessel: "steuer",
+    titel: "Steuer — Anlage V",
+    pfad: "/steuer",
+    erwartet: ["Anlage V"],
+    async pruefe({ html }) {
+      return /€|&euro;/.test(html) ? null : "Steuerseite ohne Beträge";
+    },
+  },
+  {
+    schluessel: "anlage-v-pdf",
+    titel: "Anlage V als PDF — lesende API-Route",
+    pfad: "/api/berichte/anlage-v",
+    erwartet: [],
+    async pruefe({ typ }) {
+      return typ.includes("application/pdf") ? null : `kein PDF, sondern „${typ}"`;
+    },
+  },
+  {
+    schluessel: "csv-export",
+    titel: "CSV-Export der Buchungen — war in der Demo eine Sackgasse",
+    pfad: "/api/export/buchungen",
+    erwartet: [],
+    async pruefe({ typ }) {
+      return typ.includes("text/csv") ? null : `keine CSV, sondern „${typ}"`;
+    },
+  },
+  {
+    schluessel: "mietkonto",
+    titel: "Mietkonto — Soll und Ist je Mieter",
+    pfad: "/mietkonto",
+    erwartet: ["Verwaltung · Mietkonto"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "nk",
+    titel: "Nebenkostenabrechnung eines Mieters",
+    pfad: "/tenants",
+    erwartet: ["Mieter"],
+    async pruefe({ html }) {
+      const mieter = ersterLink(html, "/tenants/");
+      if (!mieter) return "kein Mieter in der Liste";
+      const seite = await hole(`${mieter}/nk`);
+      if (seite.status >= 400) return `HTTP ${seite.status}`;
+      if (seite.endePfad !== `${mieter}/nk`) return `umgeleitet auf ${seite.endePfad} — NK-Rechner wieder gesperrt?`;
+      if (!/Nebenkostenabrechnung/.test(seite.html)) return "NK-Seite ohne Überschrift";
+      return null;
+    },
+  },
+  {
+    schluessel: "kredite",
+    titel: "Kredite",
+    pfad: "/kredite",
+    erwartet: ["Kredite &amp; Finanzierung"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "karte",
+    titel: "Portfolio-Karte — Koordinaten im Schnappschuss",
+    pfad: "/karte",
+    erwartet: ["Portfolio-Karte"],
+    async pruefe({ html }) {
+      // Ohne gespeicherte Koordinaten geokodierte die Seite bei JEDEM
+      // Demo-Besuch neu. Der Hinweis auf fehlende Adressen darf nicht stehen.
+      return /noch keine Koordinaten|nicht gefunden/i.test(html) ? "Karte meldet fehlende Koordinaten" : null;
+    },
+  },
+  {
     schluessel: "demo-grenze",
-    titel: "Demo-Grenze — gesperrte Bereiche bleiben gesperrt",
+    titel: "Demo-Grenze — gesperrte Bereiche bleiben gesperrt und nennen sich",
     pfad: "/",
     erwartet: [],
     async pruefe() {
@@ -222,13 +292,19 @@ const WEGE = [
       // Sperre unbemerkt weg, sähe ein Besucher Bereiche, in denen er Dinge
       // anklicken kann, die stumm an der RLS scheitern. Genau der Fall, den
       // lib/demo.ts als Grund für Ebene 2 nennt.
-      const gesperrt = ["/mietkonto", "/steuer", "/anliegen", "/archiv", "/verbrauch"];
+      const gesperrt = ["/anliegen", "/archiv", "/makler"];
       const offen = [];
+      const stumm = [];
       for (const p of gesperrt) {
         const r = await hole(p);
         if (r.endePfad === p) offen.push(p);
+        // Ohne `bereich=` öffnet das Dashboard keinen Sperr-Dialog — der
+        // Besucher stünde wieder kommentarlos dort (Review 30.09.2026).
+        else if (!new URL(r.url).searchParams.get("bereich")) stumm.push(p);
       }
-      return offen.length ? `nicht mehr gesperrt: ${offen.join(", ")}` : null;
+      if (offen.length) return `nicht mehr gesperrt: ${offen.join(", ")}`;
+      if (stumm.length) return `Weiterleitung ohne bereich=: ${stumm.join(", ")}`;
+      return null;
     },
   },
 ];

@@ -238,7 +238,7 @@ export default function ObjektRechner({
         toast("Objekt im Ordner gespeichert — du kannst es jederzeit wieder öffnen.");
       }
     } catch {
-      toast("Speichern fehlgeschlagen.");
+      toast("Speichern fehlgeschlagen.", "error");
     } finally {
       setSaving(false);
     }
@@ -250,7 +250,7 @@ export default function ObjektRechner({
       setListe((p) => p.filter((k) => k.id !== id));
       setCompareIds((c) => c.filter((x) => x !== id));
       setBearbeiteId((b) => (b === id ? null : b));
-    } catch { toast("Löschen fehlgeschlagen."); }
+    } catch { toast("Löschen fehlgeschlagen.", "error"); }
   }
 
   function toggleCompare(id: string) {

@@ -157,15 +157,25 @@ export default function PositionsManager({
         toast("Gespeichert ✓");
         router.refresh();
       } else {
-        toast("Speichern fehlgeschlagen.");
+        toast("Speichern fehlgeschlagen.", "error");
       }
     });
   };
 
+  // `deletePosition`/`addPosition` WERFEN bei einem Fehler. Ohne try/catch
+  // reichte React 19 das aus der Transition an die Fehlerseite weiter — ein
+  // gescheitertes Löschen ersetzte die ganze Seite durch „Etwas ist
+  // schiefgelaufen" (30.09.2026; in der Demo scheitert jeder Schreibversuch).
   const loesche = (id: string) => {
+    const vorher = rows;
     setRows((rs) => rs.filter((r) => r.id !== id));
     startSave(async () => {
-      await deletePosition(id, mieterId);
+      try {
+        await deletePosition(id, mieterId);
+      } catch {
+        setRows(vorher);
+        toast("Löschen fehlgeschlagen.", "error");
+      }
       router.refresh();
     });
   };
@@ -184,7 +194,12 @@ export default function PositionsManager({
     fd.set("grundkosten_prozent", nGk);
     fd.set("flaeche_gesamt", nFg);
     startAdd(async () => {
-      await addPosition(mieterId, fd);
+      try {
+        await addPosition(mieterId, fd);
+      } catch {
+        toast("Speichern fehlgeschlagen.", "error");
+        return;
+      }
       setNBez("");
       setNBetrag("");
       setNJahr(JETZT);

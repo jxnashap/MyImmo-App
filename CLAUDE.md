@@ -254,20 +254,42 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   im selben PR mitziehen).
 
 ### Sonstiges (kein Geld)
-- **Demo-Konto ist seit 30.08.2026 NUR-LESEN.** Vorgabe des Betreibers: Schaustück, kein
-  Sandkasten. Drei Ebenen, alle drei nötig (Begründung in `lib/demo.ts`):
-  (1) **Datenbank** — restriktive RLS-Policies verweigern dem Demo-Konto jedes
-  INSERT/UPDATE/DELETE (Migration `20260830150000_demo_nur_lesen.sql`, Funktion
-  `public.ist_demo_nutzer()`). (2) **Routen** — `demoDarfRoute` sperrt NK-Rechner,
-  Protokoll, alle Bearbeiten-Formulare und **alle API-Routen außer `/api/demo`**;
-  die Middleware weist jetzt jede Methode ab, nicht nur GET. (3) **Oberfläche** —
-  `components/DemoNurLesen.tsx` macht Felder schreibgeschützt und Speichern-Knöpfe inaktiv.
-  **Warum Ebene 3 trotz Ebene 1 nötig ist:** Ein per RLS blockiertes UPDATE/DELETE wirft
-  KEINEN Fehler, es trifft null Zeilen — der Besucher hielte Ungespeichertes für gespeichert.
-  **Einzige Ausnahme:** das Mieterhöhungs-Dokument samt PDF (`data-demo-erlaubt` im
-  `DocGenerator`) — gespeichert wird dabei nichts.
-  **Beim Anlegen einer neuen Tabelle** greifen die Policies NICHT automatisch; die Migration
-  dann erneut ausführen (sie ist idempotent).
+- **Demo-Konto ist NUR-LESEN (seit 30.08.2026) — und zeigt seit 30.09.2026 die Kaufgründe.**
+  Vorgabe des Betreibers: Schaustück, kein Sandkasten. Drei Ebenen (Begründung `lib/demo.ts`):
+  (1) **Datenbank** — seit 30.09.2026 ein BEFORE-**Anweisungs**-Trigger `demo_schreibsperre`
+  auf jeder RLS-Tabelle (Migration `20260930150643`), der für das Demo-Konto einen FEHLER
+  wirft. Die restriktiven Policies (`20260830150000`) bleiben als zweite Linie.
+  **Warum der Trigger:** Die Policies filterten UPDATE/DELETE STILL weg (0 Zeilen, kein
+  Fehler — nachgemessen) → jede Action meldete „gespeichert". **Warum Anweisungs- statt
+  Zeilen-Trigger:** Ein Zeilen-Trigger feuert nie, weil die Policy keine Zeile durchlässt.
+  **Warum SECURITY DEFINER:** `ist_demo_nutzer()` darf nur `authenticated`/`anon` — ohne
+  DEFINER scheiterte die SERVICE-ROLE (Demo-Reset, Wert-Cron, Zugriffsbremse). In einer
+  zurückgerollten Transaktion bewiesen: Demo wirft, fremdes Konto schreibt, Reset läuft.
+  (2) **Routen** — `demoDarfRoute`. FREI: Dashboard, Objekte, Mieter, Ein-/Ausgaben, Kauf/
+  Verkauf, **Mietkonto, Verbrauch, Kredite, Steuer, Jahresbericht, Termine, Karte, Marktwert,
+  AfA, NK-Abrechnung, Übergabeprotokoll** + LESENDE API-Routen (Anlage-V-/Jahresbericht-PDF,
+  DATEV, CSV, Kreditantrag, Datei-Ansicht). GESPERRT: Mieterportal, Archiv, Makler (keine
+  Beispieldaten — leere Seite wirbt schlechter als der Sperr-Dialog), Anlegen/Bearbeiten,
+  `/api/nk-ocr` + `/api/import-url` (**kosten je Aufruf Geld**), `/api/import`,
+  `/api/export/alles`. (3) **Oberfläche** — `DemoNurLesen.tsx`; seit dem Trigger Höflichkeit,
+  keine Sicherung mehr.
+  **Öffentliche Seiten: `lib/oeffentlich.ts` ist die EINE Liste** für Middleware UND
+  Klick-Abfang. Vorher stand sie nur in der Middleware → „Datenschutz" öffnete in der Demo
+  den Sperr-Dialog.
+  **Beim Anlegen einer neuen Tabelle** greifen Trigger UND Policies NICHT automatisch; beide
+  Migrationen erneut ausführen (idempotent).
+  **Koordinaten der 6 Demo-Objekte stehen fest im Schnappschuss** (`20260930150903`) —
+  sonst geokodierte `/karte` bei jedem Besuch neu (Nominatim-Regeln).
+- 🔕 **Zwei Wächter, die die Demo mitgebracht hat, gelten für die ganze App (30.09.2026):**
+  `tests/toastTyp.test.ts` — **ein Fehler-Toast nennt seinen Typ**: `toast()` ist ohne
+  zweites Argument „success", 24 Stellen zeigten Fehlschläge mit grünem Haken.
+  `tests/aktionsAntwort.test.ts` — **keine verworfene Action-Antwort** (`await x();` als
+  Anweisung) für Actions, die `{ error }` zurückgeben; und **werfende** Actions stehen in
+  einem `try {` (sonst reicht React 19 den Fehler aus der Transition an die Fehlerseite
+  weiter, oder er verpufft im onClick). Welche Action wirft, leitet der Test aus
+  `lib/actions/` ab. **Fallstrick beim Bauen:** Die erste Fassung suchte das WORT `try` und
+  wurde vom Kommentar „Ohne try/catch …" darüber getäuscht — dritte Wiederholung derselben
+  Falle (Kommentare im Textmuster). **Das Konstrukt suchen, Kommentarzeilen auslassen.**
 - **ZURÜCKGESTELLT (30.08.2026, Entscheidung des Nutzers): Namentliche Autorenschaft der
   Ratgeber.** Im Article-Markup steht derzeit `author: Organization "MyImmo"` — bei
   Steuer- und Mietrechtsthemen (YMYL) das schwächste denkbare Vertrauenssignal und die
@@ -870,10 +892,11 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   gleichrangige Punkte unter „Verwaltung"). „Planen" ist ein `<details>` — eingeklappt,
   aber nicht versteckt, und automatisch offen, wenn man darin arbeitet. `ALLE_ZIELE` ist
   die Liste für die Command-Palette; `VERWALTUNG`/`KALKULATOR` sind Übergangsnamen.
-  **Geführte Demo-Wege:** Weißliste `DEMO_ZIELE`, seit 30.09.2026 in `lib/demo.ts` und
-  **derzeit LEER** — alle drei Wege (`miete|nk|schaden`) führten in gesperrte Bereiche und
-  sind ausgebaut, bis Phase 2 ihre Ziele freigibt. Kein freier Pfad-Parameter (das wäre eine
-  offene Weiterleitung auf der eigenen Domain).
+  **Geführte Demo-Wege:** Weißliste `DEMO_ZIELE` in `lib/demo.ts` — `miete` → /mietkonto,
+  `nk` → /tenants, `steuer` → /steuer. Die erste Fassung (08.09.) führte in gesperrte
+  Bereiche; `tests/demoWege.test.ts` verlangt jetzt, dass jedes Ziel frei ist. „Schaden
+  verfolgen" fehlt, bis das Mieterportal Beispieldaten hat. Kein freier Pfad-Parameter (das
+  wäre eine offene Weiterleitung auf der eigenen Domain).
 - 🚪 **Demo: jeder Klick führt irgendwohin (30.09.2026, externes Review).** Die Demo war an
   den gelobten Stellen kaputt: Die Aufgabenliste des Dashboards verlinkte NUR auf gesperrte
   Bereiche, ebenso „Karte aktivieren", „+ Immobilie" und jede Zeile unter „Letzte
@@ -888,8 +911,9 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   rechnet gegen `demoDarfRoute` und wird sonst rot (elf Mutationen geprüft).
   **Der Vorgänger-Test prüfte nur, OB die Links auf der Startseite stehen** — und hielt
   damit drei Sackgassen fest. Ein Test, der eine Schreibweise prüft, schützt kein Verhalten.
-  **Offen (Phase 2–5 des Plans):** Kaufgründe (Steuer, NK, Mietkonto …) nur-lesend
-  freischalten, Demo-Daten relativ zum heutigen Datum, Cashflow-Kennzahlen beschriften und
+  **Phase 2 erledigt 30.09.2026** (siehe „Demo-Konto ist NUR-LESEN" oben). **Offen (Phase 3–5):**
+  Demo-Daten relativ zum heutigen Datum (enden am 01.06.2026 — das Mietkonto zeigt deshalb
+  Jun–Sep offen), Beispieldaten für Mieterportal/Archiv, Cashflow-Kennzahlen beschriften und
   das Ø-Kosten-Fenster reparieren (schönt sich bei Datenlücken selbst), Ladezeit messen.
   **`START_CTA` in `lib/preise.ts`:** Solange `REGISTRIERUNG_OFFEN = false` (Zugangscode
   nötig), heißt der Knopf „Early-Access-Zugang anfragen" statt „Kostenlos starten". Ein

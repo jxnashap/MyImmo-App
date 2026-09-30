@@ -16,6 +16,8 @@ import { GEWERKE } from "@/lib/gewerke";
 import DeleteButton from "@/components/DeleteButton";
 import { datum } from "@/lib/format";
 import { teilbarerLink } from "@/lib/appUrl";
+import { useToast } from "@/components/Toast";
+import { actionFehler } from "@/lib/actionErgebnis";
 
 export type ServicePartnerRow = { user_id: string; firma: string | null; email: string | null; created_at: string };
 export type ServiceCodeRow = { code: string; gueltig_bis: string };
@@ -222,9 +224,14 @@ function FirmenSektion({ firmen }: { firmen: FirmaRow[] }) {
 
 function FreigabeButtons({ id, mieterListe }: { id: string; mieterListe: MieterOption[] }) {
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
   const [mieterId, setMieterId] = useState("");
   const entscheiden = (freigeben: boolean) =>
-    startTransition(async () => { await entscheideAuftrag(id, freigeben, mieterId || undefined); });
+    startTransition(async () => {
+      // Antwort auswerten — sonst bleibt „Mieter nicht gefunden" ungesagt.
+      const f = actionFehler(await entscheideAuftrag(id, freigeben, mieterId || undefined));
+      if (f) toast(f, "error");
+    });
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
       {mieterListe.length > 0 && (

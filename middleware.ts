@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { istDemoKonto, demoDarfRoute } from "@/lib/demo";
+import { istOeffentlicheSeite } from "@/lib/oeffentlich";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
@@ -98,32 +99,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(ziel);
     }
   }
-  const istOeffentlich =
-    pathname === "/" || // eigene Willkommens-Ansicht für Ausgeloggte
-    pathname === "/funktionen" || // Landing-Unterseiten (Marketing, öffentlich)
-    pathname.startsWith("/funktionen/") || // Funktions-Landingpages je Kernaufgabe
-    pathname === "/preise" ||
-    pathname === "/vision" ||
-    pathname === "/ratgeber" || // SEO-Ratgeber (öffentlich)
-    pathname.startsWith("/ratgeber/") ||
-    pathname === "/vorlagen" || // Vorlagen-Übersicht (öffentlich)
-    pathname === "/sitemap.xml" ||
-    pathname === "/robots.txt" ||
-    pathname === "/login" ||
-    pathname === "/anmelden" || // Rollen-Auswahl vor dem Login
-    pathname.startsWith("/auth") ||
-    pathname.startsWith("/beleihung/") ||
-    pathname.startsWith("/bewerben/") || // öffentliche Bewerber-Selbstauskunft
-    pathname.startsWith("/auftrag/") || // öffentlicher Firmen-Link (Terminabsprache)
-
-    pathname === "/impressum" ||
-    pathname === "/agb" ||
-    pathname === "/avv" || // im Login-Consent verlinkt — muss ohne Login lesbar sein
-    pathname === "/datenschutz" ||
-    pathname.startsWith("/landing/") || // statische Landingpage-Screenshots (public/)
-    pathname.startsWith("/fonts/") || // selbst gehostete Schriften (public/fonts/)
-    pathname === "/icon.svg" || // Favicon (app/icon.svg)
-    pathname.startsWith("/api/");
+  // Liste in lib/oeffentlich.ts — dieselbe, die der Demo-Klick-Abfang nutzt.
+  // `/api/` zählt hier mit, weil die Routen ihre Anmeldung selbst prüfen.
+  const istOeffentlich = istOeffentlicheSeite(pathname) || pathname.startsWith("/api/");
   if (!user && !istOeffentlich && request.method === "GET") {
     // Ziel mitgeben, damit der Nutzer nach dem Login DORT landet, wo er hin
     // wollte. Die Login-Seite wertet `?next=` laengst aus — nur geschickt hat
@@ -151,7 +129,7 @@ export async function middleware(request: NextRequest) {
   // Pruefung an genau den Routen vorbei, die Geld kosten (`/api/nk-ocr`,
   // `/api/import-url` rufen Anthropic auf). Die Auswahl der erlaubten
   // API-Routen trifft `demoDarfRoute`.
-  const oeffentlichFuerDemo = istOeffentlich && !pathname.startsWith("/api/");
+  const oeffentlichFuerDemo = istOeffentlicheSeite(pathname);
   if (user && istDemoKonto(user.email) && !oeffentlichFuerDemo && !demoDarfRoute(pathname)) {
     // Frueher galt die Sperre nur fuer GET — die teuren Routen sind aber POST.
     // Jetzt gilt sie fuer jede Methode.

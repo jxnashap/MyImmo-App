@@ -4,6 +4,7 @@
 // sichten und bewerten (Favorit / Ablehnen).
 import { useState, useTransition } from "react";
 import { useToast } from "@/components/Toast";
+import { actionFehler } from "@/lib/actionErgebnis";
 import {
   Link2, Copy, Check, Star, XCircle, RotateCcw, ChevronDown, ChevronUp, UserRound,
   FileText, Download, X, ClipboardList, Trash2,
@@ -89,6 +90,7 @@ function BewerbungDatei({ d }: { d: { id: string; name: string; groesse: number 
 // und löscht auf EINEN Klick (bewusst keine stille Automatik).
 function DsgvoAufraeumen({ bewerbungen }: { bewerbungen: BewerbungRow[] }) {
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
   const grenze = new Date();
   grenze.setMonth(grenze.getMonth() - 6);
   const alte = bewerbungen.filter((b) => b.status === "abgelehnt" && new Date(b.created_at) < grenze);
@@ -103,7 +105,11 @@ function DsgvoAufraeumen({ bewerbungen }: { bewerbungen: BewerbungRow[] }) {
         </span>
         <button
           type="button" className="btn btn-outline" style={{ marginLeft: "auto", fontSize: 12 }} disabled={pending}
-          onClick={() => startTransition(async () => { await loescheAlteAbgelehnteBewerbungen(); })}
+          onClick={() => startTransition(async () => {
+            // Antwort auswerten — die Action meldet „es wurde nichts gelöscht".
+            const f = actionFehler(await loescheAlteAbgelehnteBewerbungen());
+            if (f) toast(f, "error");
+          })}
         >
           {pending ? "Löscht …" : "Jetzt löschen"}
         </button>

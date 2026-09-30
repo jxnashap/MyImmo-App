@@ -73,7 +73,7 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
   const inKalender = () =>
     startTransition(async () => {
       const r = await terminInKalender(a.id);
-      toast(r?.error ?? "Termin im Kalender angelegt ✓");
+      toast(r?.error ?? "Termin im Kalender angelegt ✓", r?.error ? "error" : "success");
     });
 
   return (

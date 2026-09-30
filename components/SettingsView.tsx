@@ -213,7 +213,14 @@ function ProfilPanel({ profil, unterschrift }: { profil: VermieterProfil | null;
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.set(k, v));
     start(async () => {
-      await saveVermieter(fd);
+      // `saveVermieter` WIRFT bei einem Fehler. Ohne try/catch reichte React
+      // das aus der Transition an die Fehlerseite weiter (30.09.2026).
+      try {
+        await saveVermieter(fd);
+      } catch {
+        toast("Speichern fehlgeschlagen.", "error");
+        return;
+      }
       toast("Gespeichert ✓");
       router.refresh();
     });
@@ -268,7 +275,7 @@ function SignaturPanel({ unterschrift }: { unterschrift: string | null }) {
     start(async () => {
       if (!neu) return;
       const r = await speichereUnterschrift(neu);
-      if (r?.error) toast(r.error);
+      if (r?.error) toast(r.error, "error");
       else {
         toast("Unterschrift gespeichert ✓");
         setZeichnen(false);
