@@ -8,7 +8,10 @@ Hier stehen die Wortlaute und die Begründungen.
 
 ---
 
-## 1. Supabase: URL-Konfiguration ⚠️ dringend
+## 1. Supabase: URL-Konfiguration ✅ vom Betreiber bestätigt (30.09.2026)
+
+> Eingetragen laut Betreiber; bewiesen ist es erst, wenn Punkt 3 („Passwort vergessen“ mit
+> echter Mail) durchläuft.
 
 **Authentication → URL Configuration**
 

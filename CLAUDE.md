@@ -42,10 +42,12 @@ Browser. Ich kann es nicht erledigen und nicht prüfen. **In jeder Session kurz 
 ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut vorzuschlagen.
 
 **Dringend — ein Kernweg hängt daran:**
-1. **Supabase → Authentication → URL Configuration.** Site URL muss
-   `https://www.myimmoapp.de` sein; `https://www.myimmoapp.de/auth/passwort` gehört in die
-   Redirect-URLs. **Dreimal gefragt, noch nicht beantwortet** — steht dort `localhost`,
-   sind auch die Registrierungs-Bestätigungsmails betroffen.
+1. ~~**Supabase → Authentication → URL Configuration.**~~ ✅ **Vom Betreiber bestätigt
+   30.09.2026** (Site URL `https://www.myimmoapp.de`, Redirect `…/auth/passwort` eingetragen).
+   **Nicht von mir geprüft** — das Dashboard ist über keine Schnittstelle lesbar, und die
+   Auth-Logs der letzten 24 h enthielten keinen Recovery-/Redirect-Vorgang. Den Beweis
+   liefert erst Punkt 3. Offen blieb: was VORHER drinstand (bei `localhost` wären auch
+   Registrierungs-Bestätigungen der Vergangenheit ins Leere gelaufen).
 2. **E-Mail-Vorlage „Reset Password" auf `token_hash` umstellen** (Authentication → Emails).
    Die Standard-Vorlage schickt einen PKCE-`code`, der **nur im anfordernden Browser**
    funktioniert — Mail am Handy öffnen scheitert zwangsläufig. Wortlaut steht in
