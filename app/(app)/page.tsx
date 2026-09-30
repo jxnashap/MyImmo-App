@@ -13,7 +13,7 @@ import WertVerlaufChart from "@/components/WertVerlaufChart";
 import PortfolioKarte, { type KartenObjekt } from "@/components/PortfolioKarte";
 import ZeitraumControl from "@/components/ZeitraumControl";
 import { portfolioWertReihe, wertzuwachsGgKaufpreis, type RohStand } from "@/lib/wert/verlauf";
-import type { RawPoint } from "@/lib/zeitraum";
+import { einnahmeDatum, type RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { ORGANISATION } from "@/lib/seo/jsonLd";
@@ -278,7 +278,11 @@ export default async function DashboardPage() {
   // Buchungssaldo: aufsummierte gebuchte Einnahmen − Ausgaben aus echten
   // Buchungen; Zeitraum wird clientseitig per Segmented-Control gefiltert.
   const portfolioPoints: RawPoint[] = [
-    ...einnahmen.filter((e) => e.buchungsdatum).map((e) => ({ date: e.buchungsdatum as string, value: e.betrag ?? 0 })),
+    // Mieten im Mietmonat (`soll_monat`), nicht im Monat des Zahlungseingangs.
+    ...einnahmen.flatMap((e) => {
+      const date = einnahmeDatum(e as { buchungsdatum?: string | null; soll_monat?: string | null });
+      return date ? [{ date, value: e.betrag ?? 0 }] : [];
+    }),
     ...kosten.filter((k) => k.buchungsdatum).map((k) => ({ date: k.buchungsdatum as string, value: -(k.betrag ?? 0) })),
   ];
 

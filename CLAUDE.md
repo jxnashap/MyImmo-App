@@ -1061,6 +1061,22 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Signatur → Login. **Regel: Im Proxy nie `getSession()`-Daten als Anmeldung werten —
   nur `getClaims()` (geprüft) oder `getUser()`.** Messskript-Muster: einmal `/api/demo`, dann N× GET mit Cookie, TTFB
   über `performance.now()` bis zu den Antwortköpfen; `x-vercel-id` zeigt Edge::Funktion.
+- 📈 **Dashboard-Grafik: 1J · 3J · 5J · Max, monatsweise, Mieten im Mietmonat (30.09.2026,
+  Vorgabe des Betreibers).** „1M" ist WEG — Miete kommt einmal im Monat, die Tagesansicht
+  zeigte 29 leere Tage und einen Ausschlag. `lib/zeitraum.ts` rechnet jetzt ausschließlich
+  auf den ZAHLEN des ISO-Datums (Monatsindex), nie mehr `new Date(iso)` + Ortszeit: Ein
+  Monatserster („2026-03-01") rutschte westlich von UTC in den Vormonat — genau das Datum,
+  an dem Mieten gebucht werden (Mutation M2 unter `TZ=America/New_York` belegt es).
+  **Einnahmen zählen im Mietmonat** (`einnahmeDatum()`: `soll_monat` schlägt
+  `buchungsdatum`) — sonst steht bei einer am 2. Februar gezahlten Januar-Miete der Januar
+  leer und der Februar doppelt. Live-Bestand: 148 von 633 Einnahmen haben `soll_monat`,
+  bisher 0 abweichend — der Fall ist also noch nicht eingetreten, aber die Nacherfassung
+  erzeugt genau ihn. **„Max"** zeigt Monate, solange der Bestand ≤ 72 Monate ist
+  (`MAX_MONATE_MONATSWEISE`), sonst Jahre; vorher immer Jahre → zwei Jahre Buchungen waren
+  zwei Punkte. Vorausbuchungen nach dem laufenden Monat zählen nicht. Gespeicherte
+  Altwahl „1M" im localStorage fällt über `istZeitraum()` auf „1J" zurück.
+  `tests/zeitraum.test.ts`, 19 Tests, 5 Mutationen rot; M5 („Grundlinie zurück") ist
+  gleichwertig — Buckets vor dem Zeitraum existieren nicht, `summen.has()` fängt es ohnehin.
 - 🔁 **Zweite Review-Runde (30.09.2026), `tests/reviewRunde2.test.ts`, acht Mutationen:**
   (1) **Buchungssaldo-Diagramm** startete bei „12 Monate" beim Saldo ALLER früheren
   Buchungen (`lib/zeitraum.ts`, „Grundlinie") → Endwert 100.182 € passte zu nichts. Jetzt ab

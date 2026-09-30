@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import type { Zeitraum } from "@/lib/zeitraum";
+import { istZeitraum, type Zeitraum } from "@/lib/zeitraum";
 
 // Gemeinsamer Zeitraum-State über alle Ansichten hinweg. In localStorage
 // gespeichert, damit die Auswahl beim Wechsel zwischen Seiten erhalten bleibt.
@@ -12,10 +12,6 @@ const Ctx = createContext<{ zeitraum: Zeitraum; setZeitraum: (z: Zeitraum) => vo
   setZeitraum: () => {},
 });
 
-function gueltig(s: string | null): s is Zeitraum {
-  return s === "1M" || s === "1J" || s === "5J" || s === "Max";
-}
-
 export function ZeitraumProvider({ children }: { children: React.ReactNode }) {
   // Default "1J" — passt zu Server-Render, vermeidet Hydration-Mismatch.
   const [zeitraum, setZ] = useState<Zeitraum>("1J");
@@ -23,7 +19,8 @@ export function ZeitraumProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const s = localStorage.getItem(KEY);
-      if (gueltig(s)) setZ(s);
+      // Ein gespeichertes „1M" (entfallen 30.09.2026) ist ungültig → bleibt „1J".
+      if (istZeitraum(s)) setZ(s);
     } catch {
       /* localStorage nicht verfügbar */
     }
