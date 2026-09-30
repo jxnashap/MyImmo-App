@@ -8,10 +8,10 @@ Hier stehen die Wortlaute und die Begründungen.
 
 ---
 
-## 1. Supabase: URL-Konfiguration ✅ vom Betreiber bestätigt (30.09.2026)
+## 1. Supabase: URL-Konfiguration ✅ erledigt und geprüft (30.09.2026)
 
-> Eingetragen laut Betreiber; bewiesen ist es erst, wenn Punkt 3 („Passwort vergessen“ mit
-> echter Mail) durchläuft.
+> Von außen nachgewiesen (Verfahren in `CLAUDE.md`, Betreiber-Punkt 1): Site URL stimmt,
+> `/auth/passwort` wird angenommen, fremde Domains und `localhost` werden verworfen.
 
 **Authentication → URL Configuration**
 
