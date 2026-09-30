@@ -64,7 +64,11 @@ describe("Der Code wird nur noch EINMAL abgefragt", () => {
   });
 
   it("das Gate löst die Vormerkung ein, bevor es nach /willkommen umleitet", () => {
-    const ab = layout.indexOf("istFreigeschaltet(supabase, user.id)");
+    // Seit Phase 5 (30.09.2026) wird die Freischaltung parallel zur Rolle
+    // GELESEN; entschieden wird weiter an derselben Stelle wie vorher.
+    expect(layout).toMatch(/const \[rolle, freigeschaltet\] = await Promise\.all\(\[\s*getRolle\(supabase, user\.id\),\s*istFreigeschaltet\(supabase, user\.id\),\s*\]\)/);
+    const ab = layout.indexOf("if (!freigeschaltet)");
+    expect(ab).toBeGreaterThan(0);
     const koerper = layout.slice(ab, ab + 900);
     expect(koerper).toContain("freischaltung_nachholen");
     expect(koerper.indexOf("freischaltung_nachholen")).toBeLessThan(
