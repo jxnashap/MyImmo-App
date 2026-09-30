@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { Home, MessageSquareText, FileText, Gauge, Banknote, Receipt } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { euro, datum } from "@/lib/format";
 import ThemeToggle from "@/components/ThemeToggle";
 import AnliegenPortal, { type AnliegenRow, type DateiRef } from "@/components/AnliegenPortal";
@@ -29,9 +30,7 @@ export default async function PortalPage(
   const tab = TABS.some((t) => t.key === searchParams.tab) ? (searchParams.tab as string) : "wohnung";
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
 
   const { data: zugaenge } = await supabase
     .from("mieter_zugaenge")

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import DocGenerator from "@/components/DocGenerator";
 import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
@@ -15,7 +16,7 @@ export default async function DokumentPage(
   const searchParams = await props.searchParams;
   const params = await props.params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
   const { data: m } = await supabase.from("mieter").select("*").eq("id", params.id).single();
   if (!m) notFound();
   const tenant = m as Tenant;

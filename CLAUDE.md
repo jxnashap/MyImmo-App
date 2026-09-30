@@ -967,9 +967,12 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Nutzer, ihr `getUser` geht von hier über den Atlantik → für deutsche Nutzer ist die Zeit
   eher kürzer. Browser-Zeit (JS, Hydration) nicht gemessen (Chromium kommt hier nicht durch
   den Proxy). Vercel-Observability liefert für das Projekt nichts (404).
-  **Noch offen, bewusst nicht gemacht:** (1) `getUser` läuft pro Seite ZWEI- bis dreimal
-  (Middleware, Layout, Seite) — Layout/Seite ließen sich per React `cache()` teilen.
-  (2) Middleware `getUser` → `getClaims` (lokale JWT-Prüfung) spart einen Auth-Rundlauf je
+  ✅ **(1) erledigt 30.09.2026:** `lib/supabase/nutzer.ts` → `aktuellerNutzer()` (React
+  `cache`, gilt je Anfrage) in Layout + 11 Seiten; bleibt `getUser()`, nie `getSession()`
+  (`tests/nutzerCache.test.ts`). **`/auth/passwort-neu` bewusst ausgenommen** (setzt ein
+  Passwort ohne das alte). **Regel: Neue Server-Seiten holen den Nutzer über
+  `aktuellerNutzer()`, nicht über ein eigenes `supabase.auth.getUser()`.**
+  **Noch offen:** (2) Middleware `getUser` → `getClaims` (lokale JWT-Prüfung) spart einen Auth-Rundlauf je
   Anfrage, braucht aber asymmetrische JWT-Schlüssel in Supabase und ist sicherheitskritisch —
   eigenes Vorhaben. Messskript-Muster: einmal `/api/demo`, dann N× GET mit Cookie, TTFB
   über `performance.now()` bis zu den Antwortköpfen; `x-vercel-id` zeigt Edge::Funktion.

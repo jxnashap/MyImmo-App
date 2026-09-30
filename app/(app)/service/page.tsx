@@ -3,15 +3,14 @@
 import Link from "next/link";
 import { Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import ThemeToggle from "@/components/ThemeToggle";
 import AuftraegePortal, { type PortalAuftragRow, type PortalFirmaRow, type AuftraggeberRow } from "@/components/AuftraegePortal";
 import { datum } from "@/lib/format";
 
 export default async function ServicePortalPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
 
   const [{ data: zugaenge }, { data: auftragRows }, { data: firmenRows }] = await Promise.all([
     supabase.from("service_zugaenge").select("vermieter_id,firma,created_at").eq("user_id", user!.id),

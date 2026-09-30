@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import UebergabeProtokoll from "@/components/UebergabeProtokoll";
 import type { Tenant, Property, VermieterProfil } from "@/lib/types";
 
 export default async function ProtokollPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
   const { data: m } = await supabase.from("mieter").select("*").eq("id", params.id).single();
   if (!m) notFound();
   const tenant = m as Tenant;
