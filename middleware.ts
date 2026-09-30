@@ -160,10 +160,15 @@ export async function middleware(request: NextRequest) {
     // fetch() bekaeme eine HTML-Seite mit Status 200 zurueck und haelt das fuer
     // Erfolg. Deshalb hier ein klares 403 mit Begruendung.
     if (request.method !== "GET") {
-      const abgelehnt = NextResponse.json(
-        { fehler: "In der Demo nicht verfügbar. Nach der Anmeldung steht die Funktion bereit." },
-        { status: 403 },
-      );
+      // `error` UND `fehler`: Die Formulare mit KI-Auslese (ImportWizard,
+      // KalkImport, NkOcrUpload, UmlageAssistent) lesen alle `json.error`.
+      // Stand hier nur `fehler`, zeigten sie „Fehler beim Analysieren." — der
+      // Besucher hielt die KI für kaputt statt für abgeschaltet (Review 30.09.).
+      const kostetGeld = pathname === "/api/nk-ocr" || pathname === "/api/import-url";
+      const text = kostetGeld
+        ? "In der Demo abgeschaltet, weil jede KI-Auswertung Kosten verursacht. Nach der Anmeldung steht sie bereit."
+        : "In der Demo nicht verfügbar. Nach der Anmeldung steht die Funktion bereit.";
+      const abgelehnt = NextResponse.json({ error: text, fehler: text }, { status: 403 });
       abgelehnt.headers.set(
         CSP_REPORT_ONLY ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
         csp,
@@ -171,7 +176,13 @@ export async function middleware(request: NextRequest) {
       abgelehnt.headers.set("X-Content-Type-Options", "nosniff");
       return abgelehnt;
     }
-    const ziel = new URL("/?demo=gesperrt", request.url);
+    // `bereich` nennt dem Dashboard, WAS gesperrt war — es zeigt daraufhin den
+    // Sperr-Dialog. Vorher las niemand `demo=gesperrt`, und der Besucher stand
+    // ohne Erklärung wieder auf dem Dashboard. Der Wert wird nur als Schlüssel
+    // für einen festen Text benutzt (`demoBereich`), nie als Ziel.
+    const ziel = new URL("/", request.url);
+    ziel.searchParams.set("demo", "gesperrt");
+    ziel.searchParams.set("bereich", pathname);
     const gesperrt = NextResponse.redirect(ziel);
     gesperrt.headers.set(
       CSP_REPORT_ONLY ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",

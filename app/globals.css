@@ -440,11 +440,6 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 /* „Heute wichtig": Zeile = Link mit genau einer Handlung. Der farbige Rand
    links unterscheidet dringend (rot) von normal (gold), ohne die Zeile
    einzufärben — Rot als Fläche wäre für „Miete noch nicht bestätigt" zu laut. */
-/* Geführte Demo-Wege unter dem Hero der Landing. */
-.qlx-demo-wege { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 10px 0 0; font-size: 13px; }
-.qlx-demo-wege span { color: var(--lp-muted, var(--muted)); }
-.qlx-demo-wege a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
-
 .heute-zeile { display: flex; align-items: center; gap: 12px; padding: 11px 13px; background: var(--bg3);
   border: 1px solid var(--line); border-left-width: 3px; border-radius: 10px; text-decoration: none;
   color: inherit; transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease); }
@@ -1172,6 +1167,21 @@ tr.row-click:focus-visible, .row-click:focus-visible { outline: 2px solid var(--
 .section.row-click:hover { border-color: var(--line2); box-shadow: var(--shadow-2); }
 .modal-sheet { max-height: 90vh; overflow-y: auto; }
 .modal-sheet.wide { max-width: 640px; }
+
+/* Nur für Screenreader sichtbar (z. B. „in der Demo gesperrt" neben dem Schloss). */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Demo: Hinweisleiste mit Ausgang und Sperr-Dialog (components/DemoLeiste.tsx,
+   components/DemoSperre.tsx). */
+.demo-leiste { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 16px;
+  background: var(--blue-dim); color: var(--blue); padding: 8px 16px; font-size: 13px; line-height: 1.45; text-align: center; }
+.demo-leiste-knoepfe { display: inline-flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.nav-item.nav-gesperrt { opacity: .5; }
+.nav-item.nav-gesperrt:focus-visible { opacity: 1; }
+.demo-sperre-overlay { z-index: 80; }
+.demo-sperre-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-xs, 11px); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted); }
+.demo-sperre-knoepfe { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 
 /* ===== Motion & Feinschliff (global) ===== */
 /* Sanftes Scrollen (Anker, scrollIntoView) */
