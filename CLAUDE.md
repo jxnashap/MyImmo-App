@@ -79,9 +79,14 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    (Doppel-Tipp oder Mail-Vorschau) — folgenlos, der erste war durch.
 
 **Danach, in dieser Reihenfolge:**
-4. **Die zwei restlichen Passwort-Schalter** („Secure password change", „Require current
-   password") — Voraussetzungen sind gebaut (PR #327), aber **erst nach Punkt 3**, und
-   unmittelbar danach erneut testen (siehe „Passwort vergessen", letzter Unterpunkt).
+4. ~~**Die zwei restlichen Passwort-Schalter**~~ ✅ **laut Betreiber seit Längerem an**
+   (genauer Zeitpunkt unbekannt). **Belegt 30.09.2026:** „Passwort vergessen" läuft MIT den
+   Schaltern durch (Supabase-Log 22:04 UTC: recover → verify 200 → PUT /user 200 → Anmeldung
+   mit neuem Passwort 200) — die offene Frage, ob „Require current password" den Reset
+   blockiert, ist damit beantwortet: **nein.** **Noch offen:** Passwortwechsel in den
+   Einstellungen mit FALSCHEM altem Passwort muss scheitern (kein Log-Beleg bisher).
+   **Falle beim Prüfen:** Aus fehlenden „reloading api"-Einträgen im Auth-Log auf „nicht
+   gespeichert" zu schließen, war falsch — das Log belegt nur den abgefragten Zeitraum.
 5. ~~**Leaked Password Protection: Gegenprobe.**~~ ✅ **WIRKT, belegt 30.09.2026** im
    Supabase-Log: sechsmal `PUT /user` 422 „Password is known to be weak" beim Reset-Test
    („12345678" u. a.), danach ein sicheres Passwort angenommen. Belegt am Passwort-SETZEN;
