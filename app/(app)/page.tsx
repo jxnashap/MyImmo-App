@@ -23,7 +23,7 @@ import { kostenSchnittMonat, monatsCashflow, cashflowFormel } from "@/lib/cashfl
 // metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
 const OG_TITEL = "MyImmo — Immobilienverwaltung für private Vermieter";
 const OG_BESCHREIBUNG =
-  "Nebenkostenabrechnung, Anlage V, Mieten, Kredite und dein Team in einer App. Für private Vermieter mit 1–24 Einheiten — Daten in der EU, aktuell im Early Access kostenlos.";
+  "Nebenkostenabrechnung, Anlage V, Mieten, Kredite und dein Team in einer App. Für private Vermieter mit 1–24 Einheiten — Datenbank in Frankfurt, aktuell im Early Access kostenlos.";
 
 export const metadata = {
   title: OG_TITEL,
@@ -424,7 +424,7 @@ export default async function DashboardPage() {
           <ZeitraumControl />
         </div>
         <div className="section-body">
-          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" caption="Gebuchte Einnahmen minus gebuchte Ausgaben, aufsummiert über den gewählten Zeitraum. Kreditraten zählen nur, soweit sie als Ausgabe gebucht sind." />
+          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" caption="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
         </div>
       </div>
 

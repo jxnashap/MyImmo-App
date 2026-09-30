@@ -146,9 +146,11 @@ export default async function CashflowPage(
           <div className="kpi-value" style={{ color: netto >= 0 ? "var(--green)" : "var(--red)" }}>
             {netto >= 0 ? "+ " : "− "}{euro(Math.abs(netto))}
           </div>
-          <div className="kpi-sub">
-            <span className={`badge ${netto >= 0 ? "badge-green" : "badge-red"}`}>{netto >= 0 ? "Positiv" : "Negativ"}</span>
-          </div>
+          {/* Sagt, was FEHLT: Das Review rechnete die Kreditraten selbst heraus,
+              um diese Zahl mit dem Dashboard abzugleichen — weil nirgends stand,
+              dass sie nicht enthalten sind. Tilgung lässt sich gar nicht buchen,
+              Zinsen nur als „Schuldzinsen". */}
+          <div className="kpi-sub">Ohne Tilgung · Zinsen nur, soweit gebucht</div>
         </div>
       </div>
 

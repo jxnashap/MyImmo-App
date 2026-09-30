@@ -62,6 +62,29 @@ export function ymPlus(ym: string, n: number): string {
   return `${jj}-${String(mm).padStart(2, "0")}`;
 }
 
+/**
+ * Voreingestellter Startmonat der Nacherfassung.
+ *
+ * Der spätere von: frühester Mietbeginn · Januar des VORJAHRES.
+ *
+ * VORHER (bis 30.09.2026): frühester Mietbeginn, bis zu zehn Jahre zurück.
+ * Wer beim Einrichten Mieter seit 2015 anlegte, sah beim ersten Blick ins
+ * Mietkonto „Nacherfassen (600)" — in der Demo waren es 299, weil der
+ * älteste Vertrag von 2018 ist und ab 2025 gebucht wurde. Das Review nannte
+ * es abschreckend, und es ist auch nicht die Aufgabe: Für die Anlage V zählt
+ * das Vorjahr. Wer weiter zurück will, stellt den Startmonat früher ein (bis
+ * zehn Jahre, unverändert).
+ */
+export function standardStartNacherfassung(mietbeginne: (string | null | undefined)[], aktuellerMonat: string): string {
+  const vorjahrJanuar = `${Number(aktuellerMonat.slice(0, 4)) - 1}-01`;
+  const beginne = mietbeginne
+    .map((b) => (b ?? "").slice(0, 7))
+    .filter((ym) => YM.test(ym))
+    .sort();
+  const fruehester = beginne[0];
+  return fruehester && fruehester > vorjahrJanuar ? fruehester : vorjahrJanuar;
+}
+
 const rund2 = (n: number) => Math.round(n * 100) / 100;
 
 // -------------------------------------------------------------- Soll-Miete ----

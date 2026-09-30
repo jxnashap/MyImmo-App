@@ -76,7 +76,7 @@ export default async function NeuerKreditPage(props: { searchParams: Promise<{ p
         </div>
         <div className="form-row">
           <div className="form-group"><label>Zinsbindung bis</label><input type="date" name="zinsbindung" /></div>
-          <div className="form-group"><label>Gesamtlaufzeit bis (Jahr)</label><input type="number" name="laufzeit" placeholder="2042" /></div>
+          <div className="form-group"><label>Gesamtlaufzeit (Jahre)</label><input type="number" name="laufzeit" placeholder="30" min="1" max="60" /></div>
         </div>
 
         <div className="form-actions">

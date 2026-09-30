@@ -26,11 +26,13 @@ import type { Property, Tenant } from "@/lib/types";
 import { BarChart3, Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
 import Leer from "@/components/Leer";
 import { kostenSchnittMonat, monatsCashflow, cashflowFormel } from "@/lib/cashflowKennzahl";
+import { laufzeitText } from "@/lib/kreditLaufzeit";
 
 type Kredit = {
   id: string; bezeichnung: string | null; bank: string | null; betrag: number | null;
   restschuld: number | null; monatsrate: number | null; zinssatz: number | null;
   tilgungssatz: number | null; laufzeit: number | null; zinsbindung: string | null;
+  auszahlung_datum: string | null;
 };
 type Buchung = { id: string; betrag: number | null; buchungsdatum: string | null; kategorie: string | null };
 type Verbrauch = { id: string; buchungsdatum: string | null; art: string | null; menge: number | null; einheit: string | null; verbrauchkosten: number | null };
@@ -53,7 +55,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
       supabase.from("mieter").select("*").eq("prop_id", id).order("mietbeginn"),
       supabase.from("einnahmen").select("id,betrag,buchungsdatum,kategorie").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
       supabase.from("kosten").select("id,betrag,buchungsdatum,kategorie").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
-      supabase.from("kredite").select("id,bezeichnung,bank,betrag,restschuld,monatsrate,zinssatz,tilgungssatz,laufzeit,zinsbindung").eq("prop_id", id),
+      supabase.from("kredite").select("id,bezeichnung,bank,betrag,restschuld,monatsrate,zinssatz,tilgungssatz,laufzeit,zinsbindung,auszahlung_datum").eq("prop_id", id),
       supabase.from("verbrauch").select("id,buchungsdatum,art,menge,einheit,verbrauchkosten").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
       supabase.from("notizen").select("id,titel,kategorie,inhalt").eq("prop_id", id),
     ]);
@@ -430,7 +432,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 8 }}>
                     <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
                     <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Rate/Mo.</div><div style={{ fontWeight: 600, fontSize: 13 }}>{euro(k.monatsrate)}</div></div>
-                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Volltilgung</div><div style={{ fontWeight: 600, fontSize: 13 }}>{k.laufzeit ?? "–"}</div></div>
+                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Laufzeit</div><div style={{ fontWeight: 600, fontSize: 13 }}>{laufzeitText(k.laufzeit, k.auszahlung_datum)}</div></div>
                   </div>
                   <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Getilgt: {tilgtPct != null ? `${tilgtPct}%` : "– (Restschuld nicht erfasst)"}</div>
                   <div className="progress-bar"><div className="progress-fill" style={{ width: `${tilgtPct ?? 0}%`, background: "var(--teal)" }} /></div>

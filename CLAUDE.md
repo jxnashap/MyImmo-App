@@ -299,9 +299,12 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   erneut ausführen), eine `demo_seed`-Kopie UND einen Eintrag in `tabellen` der
   Reset-Funktion (Besitzspalte `vermieter_id` → auch in `besitz_vermieter`). Der Reset
   überträgt nur gemeinsame Spalten; eine neue Spalte in `public` bricht ihn nicht mehr.
-  **Bekannter Schönheitsfehler, bewusst belassen:** Die gebuchten Mietbeträge weichen bei
-  vier Mietern vom Vertrag ab (z. B. 1.150 € bei 1.090 + 190 €). Das Mietkonto zählt einen
-  Monat als bezahlt, sobald eine Mietbuchung darin liegt — sichtbar wird es nur in Summen.
+  **KORRIGIERT 30.09.2026 (Migration `20260930162539`) — war KEIN Schönheitsfehler:** Die
+  Mietbuchungen hießen „Warmmiete …", trugen einen NK-Anteil, der Betrag war aber ~Kaltmiete
+  (Krüger 840 € mit 150 € NK → rechnerisch 690 € kalt). Das verfälschte Anlage V (Miete vs.
+  Umlagen) und NK-Abrechnung, nicht nur Summen. Jetzt Betrag = Kalt + NK (+ Stellplatz) des
+  Vertrags, NK-Anteil = Vorauszahlung. Dazu Kaufdaten (Steuer warnte „Kein
+  Anschaffungsdatum") und Kredit-Auszahlungen, aufeinander abgestimmt.
   **Rauchtest-Weg `aktuell`** prüft live, dass eine Buchung vom 1. des laufenden Monats da ist.
 - 🔕 **Zwei Wächter, die die Demo mitgebracht hat, gelten für die ganze App (30.09.2026):**
   `tests/toastTyp.test.ts` — **ein Fehler-Toast nennt seinen Typ**: `toast()` ist ohne
@@ -940,6 +943,33 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Der Vorgänger-Test prüfte nur, OB die Links auf der Startseite stehen** — und hielt
   damit drei Sackgassen fest. Ein Test, der eine Schreibweise prüft, schützt kein Verhalten.
   **Phase 2–4 erledigt 30.09.2026.** Offen: Phase 5 (Dashboard-Ladezeit messen).
+- 🔁 **Zweite Review-Runde (30.09.2026), `tests/reviewRunde2.test.ts`, acht Mutationen:**
+  (1) **Buchungssaldo-Diagramm** startete bei „12 Monate" beim Saldo ALLER früheren
+  Buchungen (`lib/zeitraum.ts`, „Grundlinie") → Endwert 100.182 € passte zu nichts. Jetzt ab
+  0 im Zeitraum; „Max" zeigt weiter seit Beginn. `/cashflow`-Kachel sagt „Ohne Tilgung ·
+  Zinsen nur, soweit gebucht" (Tilgung ist gar keine Kostenkategorie).
+  (2) **Kredit-Laufzeit:** Das Formular fragte „bis (Jahr)", ALLE 4 echten Nutzer trugen eine
+  Dauer ein (live gezählt). Jetzt „Gesamtlaufzeit (Jahre)"; `lib/kreditLaufzeit.ts` zeigt
+  Dauer („30 Jahre · bis 2051") UND Alt-Endjahre (≥ 1900 → „bis 2042") richtig an.
+  (3) **Nacherfassung** startete beim ältesten Mietvertrag (Demo: 299 offene Monate; ein
+  Vermieter mit Mietern seit 2015 sähe 600) → Voreinstellung jetzt Januar des Vorjahres
+  (`standardStartNacherfassung` in `lib/mietkonto.ts`), früher wählbar wie bisher.
+  (4) **„100 % Daten in der EU" auf der Startseite widersprach `/datenschutz`** (nennt USA:
+  Vercel, Anthropic) → irreführend (§ 5 UWG). Überall ersetzt durch das Belegte: „Datenbank
+  in Frankfurt". **Regel: Keine Werbeaussage, die der Datenschutzerklärung widerspricht.**
+  (5) **Header 761–1.200 px:** Logo und Knöpfe überlappten bis 215 px, seit der CTA
+  „Early-Access-Zugang anfragen" heißt. Gemessen in Chromium gegen **localhost** (das geht,
+  nur externe Seiten nicht). Stufen: < 1.320 Kurzform `START_CTA_KURZ` + ohne Unterzeile,
+  < 900 nur „Anmelden". Danach ≥ 46 px Abstand bis 1.920 px.
+  **Fallstrick beim Messen:** Ein alter `next start` hielt Port 3100, der neue brach mit
+  EADDRINUSE ab, und der alte lieferte HTML mit CSS-Verweisen aus dem gelöschten `.next` →
+  unsinnige Messwerte. Und `pkill -f "next start …"` trifft die eigene Shell — Muster mit
+  `[n]ext` schreiben.
+  (6) **Roadmap** führte „Geführtes Onboarding" als GEPLANT, obwohl es seit Juli existiert.
+  Jetzt Stufen „Umgesetzt / In Arbeit / Geplant"; „Umgesetzt" nur mit Komponente als Beleg.
+  **Neue Pläne kommen erst hinein, wenn der Betreiber sie beschlossen hat.**
+  **Nicht gemacht, braucht den Betreiber:** Gründer-Abschnitt (Inhalte), Kundenstimmen (es
+  gibt keine echten — **niemals erfinden**).
 - 💶 **Cashflow: EINE Rechnung, jede Zahl sagt, was sie ist (Phase 4, 30.09.2026).**
   `lib/cashflowKennzahl.ts` → `kostenSchnittMonat()` + `monatsCashflow()` + `cashflowFormel()`,
   benutzt von Dashboard UND Objektseite. **Drei Fehler, die dort steckten:**

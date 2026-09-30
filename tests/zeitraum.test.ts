@@ -66,11 +66,16 @@ describe("aggregate — Bucketing nach Zeitraum", () => {
     expect(a.buckets.length).toBe(3); // 2024, 2025, 2026
   });
 
-  it("cumulative bildet laufende Summe inkl. Grundlinie", () => {
+  it("cumulative beginnt im Zeitraum bei 0 — frühere Buchungen zählen nicht", () => {
+    // Bis 30.09.2026 mit „Grundlinie" (100 + 200 davor → 1000). Das ergab bei
+    // „12 Monate" den Saldo seit der ersten Buchung überhaupt, der zu keiner
+    // anderen Anzeige passte (externes Review).
     const a = aggregate(points, "1J", now, { cumulative: true });
     const last = a.buckets[a.buckets.length - 1].value;
-    // Grundlinie (vor dem 1J-Fenster: 100 + 200) + Fenster (300 + 400) = 1000
-    expect(last).toBe(1000);
+    expect(last).toBe(700); // nur das Fenster: 300 + 400
+    // „Max" zeigt weiterhin den Saldo seit Beginn.
+    const m = aggregate(points, "Max", now, { cumulative: true });
+    expect(m.buckets[m.buckets.length - 1].value).toBe(1000);
   });
 
   it("kein Fehler bei leeren Daten", () => {

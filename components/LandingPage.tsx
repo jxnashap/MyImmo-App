@@ -55,7 +55,7 @@ export default function LandingPage() {
               <a href="/api/demo?weg=schaden">Schaden verfolgen</a>
             </p>
             <p className="qlx-hero-note">
-              Demo ohne Anmeldung · Beispieldaten, Speichern ist dort nicht möglich · Daten in der EU
+              Demo ohne Anmeldung · Beispieldaten, Speichern ist dort nicht möglich · Datenbank in Frankfurt
             </p>
           </>
         }
@@ -74,7 +74,12 @@ export default function LandingPage() {
           <div className="lp-stats">
             <div className="lp-stat"><div className="z">{FEATURES.length}+</div><div className="t">Funktionen — vom Mietvertrag bis ELSTER</div></div>
             <div className="lp-stat"><div className="z">4</div><div className="t">Rollen: Vermieter, Mieter, Hausmeister, Verwaltung</div></div>
-            <div className="lp-stat"><div className="z">100 %</div><div className="t">Daten in der EU, Bankdaten AES-256-verschlüsselt</div></div>
+            {/* Nicht „100 % Daten in der EU" (bis 30.09.2026): Die eigene
+                Datenschutzerklärung nennt Übermittlungen in die USA (Vercel-Logs,
+                Anthropic bei der KI-Auslese). Eine Werbeaussage, die ihr
+                widerspricht, ist irreführend (§ 5 UWG). Belegt ist der Standort
+                der Datenbank: Supabase eu-central-1. */}
+            <div className="lp-stat"><div className="z">Frankfurt</div><div className="t">Standort der Datenbank, Bankdaten zusätzlich AES-256-verschlüsselt</div></div>
             <div className="lp-stat"><div className="z">0 €</div><div className="t">im Early Access — voller Funktionsumfang</div></div>
           </div>
         </div>
@@ -335,7 +340,7 @@ export default function LandingPage() {
                 <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
               </div>
               <p className="qlx-hero-note" style={{ marginTop: 16 }}>
-                Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar
+                Keine Kreditkarte nötig · Datenbank in Frankfurt · jederzeit kündbar
               </p>
             </div>
           </Reveal>
