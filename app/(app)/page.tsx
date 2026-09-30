@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, zahl, begruessung } from "@/lib/format";
 import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
@@ -53,9 +54,7 @@ export const metadata = {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
 
   if (!user) {
     // Structured Data (JSON-LD) für Google — als SoftwareApplication + Anbieter.

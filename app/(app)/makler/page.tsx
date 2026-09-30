@@ -1,6 +1,7 @@
 // Makler-Ordner (buyer-level): Käufer-Checkliste + Upload/Abhaken/Fortschritt.
 // Nicht objektabhängig — pro Nutzer. Gegenstück zum Bank-/Beleihungsordner.
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import MaklerOrdner from "@/components/MaklerOrdner";
 import type { MaklerDok } from "@/lib/makler";
 
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MaklerPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
 
   // Existenz der Selbstauskunft prüfen (für den „Aus MyImmo erzeugen"-Button) —
   // ohne den verschlüsselten Blob zu entschlüsseln.

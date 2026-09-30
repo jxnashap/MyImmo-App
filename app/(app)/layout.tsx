@@ -15,6 +15,7 @@ import { ZeitraumProvider } from "@/components/ZeitraumProvider";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { getRolle } from "@/lib/rolle";
 import { istFreigeschaltet } from "@/lib/freischaltung";
 import { mussMfaNachholen } from "@/lib/auth/sitzung";
@@ -45,9 +46,7 @@ export default async function RootLayout({
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
 
   if (!user) {
     // Ohne Sidebar — hier landen ALLE ausgeloggten Besucher, also die gesamte

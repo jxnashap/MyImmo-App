@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import KontoVerwaltung from "@/components/KontoVerwaltung";
 
 // Konto-Einstellungen für MIETER und SERVICE.
@@ -15,9 +16,7 @@ export const dynamic = "force-dynamic";
 
 export default async function KontoSeite() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
   if (!user) redirect("/login");
 
   const { data: rolleRow } = await supabase

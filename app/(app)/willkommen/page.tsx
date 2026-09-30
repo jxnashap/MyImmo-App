@@ -3,6 +3,7 @@
 // auf die App — das Root-Layout leitet hierher um.
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { istFreigeschaltet } from "@/lib/freischaltung";
 import FreischaltForm from "@/components/FreischaltForm";
 
@@ -10,9 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function WillkommenPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
   if (!user) redirect("/login");
   if (await istFreigeschaltet(supabase, user.id)) redirect("/");
   return <FreischaltForm email={user.email} />;

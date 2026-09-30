@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import type { Kalkulation } from "@/lib/types";
 import KaufAssistent from "@/components/KaufAssistent";
 import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
@@ -19,7 +20,7 @@ export default async function KaufPage() {
     .select("*")
     .order("created_at", { ascending: false });
   const selbstauskunft = await ladeSelbstauskunft();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
   const demo = istDemoKonto(user?.email);
   // In der Demo steht ein fester Beispielstand statt des leeren Formulars —
   // die Selbstauskunft liegt verschluesselt in der DB und kann dort nicht

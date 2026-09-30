@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import SettingsView from "@/components/SettingsView";
 import { decryptIbanRow } from "@/lib/ibanData";
 import { billingAktiv, getAbo, zaehleEinheiten, PLAN_NAMEN, effektiverPlan } from "@/lib/plan";
@@ -8,10 +9,10 @@ export const dynamic = "force-dynamic";
 
 export default async function EinstellungenPage() {
   const supabase = await createClient();
-  const [{ data }, { data: ibanRows }, { data: { user } }, { data: signatur }, abo, einheiten] = await Promise.all([
+  const [{ data }, { data: ibanRows }, user, { data: signatur }, abo, einheiten] = await Promise.all([
     supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
     supabase.from("ibans").select("*").order("created_at", { ascending: true }),
-    supabase.auth.getUser(),
+    aktuellerNutzer(),
     supabase.from("unterschriften").select("data").maybeSingle(),
     getAbo(supabase),
     zaehleEinheiten(supabase),
