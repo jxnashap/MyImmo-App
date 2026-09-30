@@ -1,7 +1,7 @@
 // Seiten, die ohne Anmeldung erreichbar sind — EINE Liste für Middleware und
 // Demo-Klick-Abfang.
 //
-// WARUM AUSGELAGERT (30.09.2026): Die Liste stand nur in `middleware.ts`. Der
+// WARUM AUSGELAGERT (30.09.2026): Die Liste stand nur in `middleware.ts` (seit Next 16 `proxy.ts`). Der
 // Klick-Abfang der Demo (`components/DemoSperre.tsx`) fragte deshalb nur
 // `demoDarfRoute` — und hielt Impressum, Datenschutz, AVV und AGB für
 // gesperrt. In der Demo öffnete „Datenschutz" in der Seitenleiste den Dialog

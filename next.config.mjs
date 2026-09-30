@@ -4,7 +4,7 @@
 // im Middleware-Matcher AUSGENOMMEN — sonst liefe pro Aufruf eine Supabase-
 // Session-Pruefung und die Seiten koennten nicht am Edge gecacht werden.
 // Weil damit auch die Nonce-CSP der Middleware entfaellt, setzen wir die
-// Security-Header fuer sie hier. Beide Listen zusammen pflegen (middleware.ts).
+// Security-Header fuer sie hier. Beide Listen zusammen pflegen (proxy.ts, bis Next 15 middleware.ts).
 const OEFFENTLICH = [
   "funktionen",
   "ratgeber",

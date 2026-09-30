@@ -132,7 +132,7 @@ describe("Die drei Sperr-Ebenen sind alle vorhanden", () => {
   });
 
   it("Middleware: die Sperre gilt fuer jede Methode, nicht nur GET", () => {
-    const mw = readFileSync("middleware.ts", "utf8");
+    const mw = readFileSync("proxy.ts", "utf8");
     const block = mw.slice(mw.indexOf("istDemoKonto(user.email)"));
     expect(block).toContain('request.method !== "GET"');
     expect(block).toContain("status: 403");
