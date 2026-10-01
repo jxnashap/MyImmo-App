@@ -8,7 +8,7 @@ import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { sortiereObjekte, SORT_OPTIONEN } from "@/lib/objektSortierung";
 import { sollKaltmiete } from "@/lib/sollMiete";
 import { objektUmfaenge, objektFolgenText } from "@/lib/loeschUmfang";
-import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Upload, Plus, X, Landmark, type LucideIcon } from "lucide-react";
+import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Upload, Plus, X, Landmark, MapPin, type LucideIcon } from "lucide-react";
 
 // Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
 const PROP_ICONS: Record<string, LucideIcon> = {
@@ -86,6 +86,11 @@ export default async function PropertiesPage(
               vermietet.de-Exportdatei hatte, klickte oben und landete in einem
               PDF/Link-Formular, das seine CSV nicht annimmt. Jetzt eindeutig
               benannt und beide Wege an derselben Stelle. */}
+          {/* Einziger Weg zur Kartenseite, seit die Karte vom Dashboard
+              genommen wurde (01.10.2026) — sie steht in keiner Navigation. */}
+          <Link href="/karte" className="btn btn-ghost" title="Alle Objekte auf einer Karte">
+            <MapPin size={14} style={{ verticalAlign: "-2px" }} /> Karte
+          </Link>
           <Link href="/properties/import" className="btn btn-ghost" title="Ein einzelnes Objekt aus einem Expose (PDF/Link/Text) auslesen">
             <Link2 size={14} style={{ verticalAlign: "-2px" }} /> Exposé auslesen
           </Link>
