@@ -451,6 +451,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   neu erzeugen. Titelseite trägt die Dokument-Wortmarke (My+Immo), Design = MyImmo-Dokument-Stil.
 - **Masterplan (Markt/Compliance/Steuer-Features/Roadmap): `docs/MASTERPLAN.md`** (15.07.2026).
 - **Onboarding-Briefing (aktuell, für neue Chats/Sessions ZUERST lesen): `docs/BRIEFING.md`**.
+- 🔍 **Gesamt-Audit 01.10.2026: `docs/AUDIT-2026-10-01.md`** — sechs lesende Durchgänge (Links,
+  öffentliche Strecke, UX, Browser, Zahlen, adversarial) über Website, App, Datenbank; jede
+  A-Stelle selbst nachgeprüft. **12 A · 36 B · 40 C**, dedupliziert, mit PR-Paketen. Die vier
+  schwersten: `konto_freischalten()` ist per REST ohne Code aufrufbar (A1); das 2FA-Gate liest
+  die Faktorliste aus dem **Cookie** (A2) und Actions/Routen verlangen nur aal1 (A3); Mieter
+  lesen per REST die ganze Objekt-/Mieterzeile (A4). Dazu: Early-Access-Weg endet am Code-Feld
+  ohne Anfrageweg, AGB-Platzhalter live, werfende Formular-Actions, Dashboard-Aufgaben von
+  Kreditfristen verdrängt, `og.png` hinter dem Login. **Bevor etwas davon als „offen" neu
+  gefunden wird: dort nachsehen.** Lehren in Abschnitt 7 (u. a. `curl -I` täuscht beim
+  Login-Gate; Cookie-Inhalte sind Nutzereingaben).
 - **Externes Feedback vom 08.09.2026, geprüft und mit Plan: `docs/FEEDBACK-BEWERTUNG-2026-09.md`.**
   Zwölf Behauptungen, elf gegen den Code bestätigt (Speed Insights vs. „keine Analyse-Tools",
   Platzhalter in der Datenschutzerklärung, Demo-Text widerspricht Nur-Lesen, „Fristen &

@@ -25,6 +25,8 @@
 
 ## 🚀 Vor dem Start
 - [[START-CHECKLISTE]] — was vor dem Start ansteht, nach Dringlichkeit sortiert (04.09.2026)
+- [[AUDIT-2026-10-01]] — **Gesamt-Audit 01.10.2026**: Links, UX, Browser, Zahlen, Sicherheit — 12 A · 36 B · 40 C, mit PR-Paketen
+- [[FEEDBACK-BEWERTUNG-2026-09]] — externes Feedback vom 08.09.2026, geprüft, mit Plan
 
 ## ⚖️ Compliance
 - [[SICHERHEIT-ABHAENGIGKEITEN]] — OSV-Scanner-Befund, Bewertung, Next.js-14-Ende
