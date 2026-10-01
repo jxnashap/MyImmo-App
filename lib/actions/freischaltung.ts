@@ -93,7 +93,17 @@ export async function schalteKontoFrei(
 
   const geprueft = await pruefeBetaCode(code);
   if (geprueft.ok) {
-    const { error } = await supabase.rpc("konto_freischalten", { p_quelle: "code" });
+    // Per SERVICE-ROLE, nicht per RPC: `konto_freischalten()` war bis zum
+    // 01.10.2026 fuer jeden Angemeldeten ausfuehrbar und prueft selbst keinen
+    // Code — wer `signUp` direkt aufrief, konnte sich damit per REST am
+    // Zugangscode vorbei freischalten (Audit A1). Die RPC ist jetzt nur noch
+    // fuer die Service-Role ausfuehrbar; die Pruefung ist diese Action.
+    const admin = createAdminClient();
+    if (!admin) return { ok: false, fehler: "Freischaltung derzeit nicht möglich — bitte später erneut versuchen." };
+    const { error } = await admin.from("konto_freischaltung").upsert(
+      { user_id: user.id, consent_agb: true, consent_datenschutz: true, quelle: "code", freigeschaltet_am: new Date().toISOString() },
+      { onConflict: "user_id" },
+    );
     if (error) return { ok: false, fehler: "Freischaltung fehlgeschlagen — bitte erneut versuchen." };
     return { ok: true };
   }
@@ -158,4 +168,38 @@ export async function bereiteRegistrierungVor(
     return { ok: true, vorgemerkt: false };
   }
   return { ok: true, vorgemerkt: true };
+}
+
+/**
+ * Einladungscode VOR der Mieter-/Service-Registrierung pruefen.
+ *
+ * Bis zum 01.10.2026 rief der Browser dafuer die RPC `einladungscode_pruefen`
+ * auf. Deren Bremse lief ueber `anfrage_ip()` — und schrieb damit die
+ * IP-Adresse im Klartext nach `zugriff_limit`, genau die Klasse, die am
+ * 08.09.2026 fuer die App geschlossen wurde (Audit B2). Jetzt: Bremse ueber
+ * `darfWeiter()` (nur HMAC), Lesezugriff per Service-Role, RPC gesperrt.
+ * Nur ja/nein — die Zeile selbst verlaesst den Server nicht.
+ */
+export async function pruefeEinladungscode(
+  code: string,
+  rolle: "mieter" | "service",
+): Promise<{ ok: boolean; fehler?: string }> {
+  if (!(await darfWeiter("einladungscode", 10, 600))) return { ok: false, fehler: ZU_VIELE };
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, fehler: "Die Prüfung ist derzeit nicht möglich — bitte später erneut versuchen." };
+  const { data, error } = await admin
+    .from("einladungscodes")
+    .select("id")
+    .eq("code", code.trim().toUpperCase())
+    .eq("rolle", rolle) // Code muss zur gewählten Rolle passen (MI ≠ SV)
+    .is("eingeloest_am", null)
+    .gt("gueltig_bis", new Date().toISOString())
+    .maybeSingle();
+  if (error || !data) {
+    return {
+      ok: false,
+      fehler: "Dieser Einladungscode ist ungültig oder abgelaufen. Bitte frage den Vermieter nach einem neuen Code.",
+    };
+  }
+  return { ok: true };
 }

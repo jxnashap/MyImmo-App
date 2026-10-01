@@ -240,8 +240,14 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
                 {n.kategorie && <span className="badge badge-teal">{n.kategorie}</span>}
                 <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{n.created_at ? datum(n.created_at) : ""}</span>
                 <FreigabeToggle notizId={n.id} freigegeben={!!n.mieter_freigabe} />
-                <a href={`/archiv/${n.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
-                <a href={`/archiv/${n.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
+                {n.datei_name ? (
+                  <>
+                    <a href={`/archiv/${n.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
+                    <a href={`/archiv/${n.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
+                  </>
+                ) : (
+                  <span style={{ fontSize: 11, color: "var(--muted)" }}>ohne Datei</span>
+                )}
               </div>
             ))
           )}

@@ -12,12 +12,14 @@ export default function FlashToast() {
   const path = usePathname();
   const toast = useToast();
   const flash = sp.get("flash");
+  const typ = sp.get("flashTyp");
 
   useEffect(() => {
     if (!flash) return;
-    toast(flash, "success");
+    toast(flash, typ === "error" ? "error" : typ === "info" ? "info" : "success");
     const params = new URLSearchParams(Array.from(sp.entries()));
     params.delete("flash");
+    params.delete("flashTyp");
     const qs = params.toString();
     router.replace(qs ? `${path}?${qs}` : path, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps

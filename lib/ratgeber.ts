@@ -286,7 +286,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Wann 70 Prozent zwingend sind",
         p: [
-          "In Gebäuden, in denen die freiliegenden Leitungen der Wärmeverteilung überwiegend gedämmt sind, müssen mindestens 70 Prozent nach Verbrauch verteilt werden (§ 7 Abs. 1 Satz 2 HeizkostenV). Das betrifft in der Praxis die meisten Bestandsgebäude mit nachgerüsteter Dämmung.",
+          "Genau 70 Prozent nach Verbrauch sind Pflicht, wenn drei Bedingungen zusammen zutreffen (§ 7 Abs. 1 Satz 1 HeizkostenV): Das Gebäude erfüllt das Anforderungsniveau der Wärmeschutzverordnung von 1994 nicht, es wird mit Öl oder Gas beheizt, und die freiliegenden Leitungen der Wärmeverteilung sind überwiegend gedämmt. Fehlt eine der drei Bedingungen, bleibt die Wahl in der Spanne von 50 bis 70 Prozent.",
           "Prüfen Sie das einmal für Ihr Objekt und halten Sie das Ergebnis fest. Die Wahl innerhalb der Spanne ist Ihre Entscheidung, aber sie muss zum Gebäude passen und sollte nicht jedes Jahr wechseln.",
         ],
       },
@@ -1256,7 +1256,7 @@ export const RATGEBER: RatgeberArtikel[] = [
         "Wollen Sie die Abrechnung erst erstellen, ist der Schritt-für-Schritt-Ratgeber der Einstieg.",
     },
     intro:
-      "Studien schätzen, dass über 80 % der Nebenkostenabrechnungen fehlerhaft sind. Für Vermieter ist das teuer: Ein Formfehler oder eine versäumte Frist kann den gesamten Nachzahlungsanspruch kosten. Dieser Ratgeber zeigt die Fristen und die typischen Stolperfallen.",
+      "Mietervereine berichten seit Jahren, dass ein großer Teil der geprüften Nebenkostenabrechnungen Fehler enthält. Für Vermieter ist das teuer: Ein Formfehler oder eine versäumte Frist kann den gesamten Nachzahlungsanspruch kosten. Dieser Ratgeber zeigt die Fristen und die typischen Stolperfallen.",
     sektionen: [
       {
         h: "Die wichtigste Frist: 12 Monate (§ 556 Abs. 3 BGB)",

@@ -64,11 +64,11 @@ export function mieterFristen(m: MieterFristInput): Frist[] {
     }
   }
 
-  // Nächste mögliche Mieterhöhung: 12 Monate nach letzter (Kappungsgrenze §558)
+  // Nächste mögliche Mieterhöhung: 12 Monate nach der letzten (Jahressperrfrist, § 558 Abs. 1 S. 2 BGB — die Kappungsgrenze ist Abs. 3)
   if (m.letzte_erhoehung) {
     const next = addMonate(new Date(m.letzte_erhoehung), 12);
     const nTage = Math.ceil((next.getTime() - heute.getTime()) / 86400000);
-    fristen.push({ label: "Nächste Mieterhöhung möglich", datum: iso(next), typ: nTage <= 0 ? "ok" : "info", kategorie: "Miete", rechtsgrundlage: "§ 558 BGB (Kappungsgrenze)" });
+    fristen.push({ label: "Nächste Mieterhöhung möglich", datum: iso(next), typ: nTage <= 0 ? "ok" : "info", kategorie: "Miete", rechtsgrundlage: "§ 558 Abs. 1 BGB (Jahressperrfrist)" });
   } else if (m.mietbeginn) {
     const next = addMonate(new Date(m.mietbeginn), 12);
     if (next < heute) fristen.push({ label: "Mieterhöhung möglich (keine bisher)", datum: null, typ: "ok", kategorie: "Miete", rechtsgrundlage: "§ 558 BGB" });

@@ -36,6 +36,12 @@ export function istOeffentlicheSeite(pathname: string): boolean {
     pathname === "/datenschutz" ||
     pathname.startsWith("/landing/") || // statische Landingpage-Screenshots (public/)
     pathname.startsWith("/fonts/") || // selbst gehostete Schriften (public/fonts/)
-    pathname === "/icon.svg" // Favicon (app/icon.svg)
+    pathname === "/icon.svg" || // Favicon (app/icon.svg)
+    // og:image aller oeffentlichen Seiten und Organization.logo im JSON-LD.
+    // Bis 01.10.2026 NICHT gelistet -> GET /og.png lief auf /login (307): jede
+    // geteilte Vorschau ohne Bild, in der Demo auf jeder Seite ein kaputtes
+    // Logo. `curl -I` taeuscht hier: das Gate prueft nur GET, HEAD gab 200.
+    pathname === "/og.png" ||
+    pathname === "/myimmo_logo_2048.png"
   );
 }

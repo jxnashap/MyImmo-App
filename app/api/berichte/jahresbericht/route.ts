@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
 
   const zeilen: JahresberichtZeile[] = properties.map((p) => {
     const z = jahresZeile(p.id, jahr, monate, { einnahmen, kosten, kredite });
-    return { name: p.bezeichnung, einnahmen: z.e, bewirtschaftung: z.k, zins: z.zins, tilgung: z.tilgung, cashflow: z.cashflow };
+    return { name: p.bezeichnung, einnahmen: z.e, bewirtschaftung: z.k, zins: z.zins, tilgung: z.tilgung, cashflow: z.cashflow, zinsGeschaetzt: z.zinsGeschaetzt };
   });
 
   const pdf = await buildJahresberichtPdf(jahr, zeilen, {

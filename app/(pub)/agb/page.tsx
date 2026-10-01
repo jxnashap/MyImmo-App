@@ -22,7 +22,7 @@ export default function AgbPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Allgemeine Geschäftsbedingungen (AGB)</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 2. Juli 2026 · für die Nutzung der Web-Anwendung MyImmo.
+        Stand: 1. Oktober 2026 · für die Nutzung der Web-Anwendung MyImmo.
       </p>
 
       <div style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, padding: "12px 16px", fontSize: 13, color: "var(--muted)", marginBottom: 24 }}>
@@ -93,10 +93,8 @@ export default function AgbPage() {
       <H2>7. Preise, Zahlung, Widerrufsrecht (künftige Bezahltarife)</H2>
       <p>
         Sofern kostenpflichtige Tarife angeboten werden, gelten die bei Bestellung
-        ausgewiesenen Preise (Brutto, inkl. gesetzlicher USt., soweit anfallend [bzw.
-        Hinweis nach § 19 UStG bei Kleinunternehmerregelung]). Abrechnung wahlweise
-        monatlich oder jährlich über den angegebenen Zahlungsdienstleister bzw. den
-        Apple App Store.
+        ausgewiesenen Preise (Brutto, inkl. gesetzlicher USt., soweit anfallend). Abrechnung
+        wahlweise monatlich oder jährlich über den angegebenen Zahlungsdienstleister.
       </p>
       <p>
         <strong>Widerrufsrecht für Verbraucher:</strong> Verbrauchern steht bei
@@ -155,9 +153,7 @@ export default function AgbPage() {
       <p>
         Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts; gegenüber Verbrauchern
         bleiben zwingende Verbraucherschutzvorschriften ihres Aufenthaltsstaats unberührt.
-        Die EU-Plattform zur Online-Streitbeilegung ist unter{" "}
-        <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)" }}>ec.europa.eu/consumers/odr</a>{" "}
-        erreichbar; zur Teilnahme an Streitbeilegungsverfahren vor einer
+        Zur Teilnahme an Streitbeilegungsverfahren vor einer
         Verbraucherschlichtungsstelle ist der Anbieter nicht verpflichtet und nicht
         bereit. Sollten einzelne Bestimmungen unwirksam sein, bleibt der Vertrag im
         Übrigen wirksam.

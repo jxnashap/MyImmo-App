@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, KeyRound, Home, Wrench, Building2, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
-import { bereiteRegistrierungVor } from "@/lib/actions/freischaltung";
+import { bereiteRegistrierungVor, pruefeEinladungscode } from "@/lib/actions/freischaltung";
 import { PASSWORT_LECK_HINWEIS, PASSWORT_MIN, PASSWORT_REGEL, passwortAblehnung, pruefePasswort } from "@/lib/passwort";
 import { RESET_ZIEL } from "@/lib/passwortWechsel";
 import { sicheresZiel } from "@/lib/flash";
@@ -212,12 +212,11 @@ export default function LoginPage() {
     } else if (rolle === "mieter" || rolle === "service") {
       // Mieter/Service-Registrierung: Einladungscode des Vermieters.
       const eingabe = code.trim().toUpperCase();
-      const { data: gueltig, error: rpcError } = await supabase.rpc("einladungscode_pruefen", {
-        p_code: eingabe,
-        p_rolle: rolle, // Code muss zur gewählten Rolle passen (MI ≠ SV)
-      });
-      if (rpcError || !gueltig) {
-        setError("Dieser Einladungscode ist ungültig oder abgelaufen. Bitte frage den Vermieter nach einem neuen Code.");
+      // Serverseitig (HMAC-Bremse, Service-Role) — die fruehere RPC aus dem
+      // Browser schrieb die IP im Klartext in die Zugriffsbremse.
+      const gueltig = await pruefeEinladungscode(eingabe, rolle);
+      if (!gueltig.ok) {
+        setError(gueltig.fehler ?? "Dieser Einladungscode ist ungültig oder abgelaufen.");
         setLoading(false);
         return;
       }

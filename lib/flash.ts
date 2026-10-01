@@ -1,8 +1,14 @@
 // Hängt eine Flash-Nachricht an eine Redirect-URL. Der FlashToast-Reader im
 // Layout zeigt sie nach der Navigation als Toast und entfernt den Parameter.
-export function flashUrl(url: string, msg: string): string {
+/**
+ * `typ` = Toast-Art. Ohne Angabe gruen (Erfolg). Fehlermeldungen ("es wurde
+ * nichts angelegt") MUESSEN "error" mitgeben — bis 01.10.2026 zeigte der
+ * Flash-Weg jeden Fehlschlag mit gruenem Haken.
+ */
+export function flashUrl(url: string, msg: string, typ: "success" | "error" | "info" = "success"): string {
   const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}flash=${encodeURIComponent(msg)}`;
+  const t = typ === "success" ? "" : `&flashTyp=${typ}`;
+  return `${url}${sep}flash=${encodeURIComponent(msg)}${t}`;
 }
 
 /**

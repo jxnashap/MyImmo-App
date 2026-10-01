@@ -50,13 +50,17 @@ describe("Soll-Miete: Mieterwechsel mitten im Monat", () => {
 // ----------------------------------------------------- 3. Werktag BGB ----
 
 describe("Fälligkeit der Miete (§ 556b BGB)", () => {
-  it("Monat beginnt Donnerstag → 3. Werktag ist der 3.", () => {
-    expect(dritterWerktag("2026-01")).toBe("2026-01-03"); // Do/Fr/Sa
+  it("Monat beginnt Donnerstag → Samstag zählt NICHT (BGH VIII ZR 129/09), 3. Werktag ist Montag der 5.", () => {
+    expect(dritterWerktag("2026-01")).toBe("2026-01-05"); // Do/Fr/Mo
   });
 
-  it("Monat beginnt Samstag → Sonntag zählt nicht, 3. Werktag ist der 4.", () => {
-    // 01.08.2026 = Samstag, 02. = Sonntag, 03. = Montag, 04. = Dienstag
-    expect(dritterWerktag("2026-08")).toBe("2026-08-04");
+  it("Oktober 2026 (beginnt Donnerstag): fällig am 5., nicht am Samstag, den 3.", () => {
+    expect(dritterWerktag("2026-10")).toBe("2026-10-05");
+  });
+
+  it("Monat beginnt Samstag → Wochenende zählt nicht, 3. Werktag ist der 5.", () => {
+    // 01.08.2026 = Samstag, 02. = Sonntag, 03. Mo, 04. Di, 05. Mi
+    expect(dritterWerktag("2026-08")).toBe("2026-08-05");
   });
 
   it("Monat beginnt Sonntag → 3. Werktag ist der 4.", () => {

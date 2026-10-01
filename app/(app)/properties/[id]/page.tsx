@@ -116,7 +116,11 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // Seite unten einen Hinweis statt still umzuschalten.
   const soll = sollKaltmiete(p, tenants, new Date().toISOString().slice(0, 10));
   const miete = soll.betrag;
-  const rendite = miete && wert ? (miete * 12 / wert) * 100 : 0;
+  // Bruttomietrendite auf den KAUFPREIS (Marktkonvention, wie der Kaufpreis-
+  // faktor daneben); nur ohne erfassten Kaufpreis auf den aktuellen Wert.
+  // Bis 01.10.2026 stand "/ Kaufpreis" dran, gerechnet wurde mit dem Wert.
+  const renditeBasis = p.kaufpreis || wert;
+  const rendite = miete && renditeBasis ? (miete * 12 / renditeBasis) * 100 : 0;
   const faktor = miete && p.kaufpreis ? p.kaufpreis / (miete * 12) : 0;
   // Empfohlene Instandhaltungsrücklage (Peterssche Formel): 1,5× Herstellungs-
   // kosten über 80 Jahre. Faustformel ohne Gewähr; als Herstellungskosten dient
@@ -159,7 +163,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   ];
 
   const kennzahlen = [
-    { lbl: "Bruttomietrendite", val: rendite > 0 ? prozent(rendite, 2) : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-neutral", note: "Jahreskaltmiete / Kaufpreis" },
+    { lbl: "Bruttomietrendite", val: rendite > 0 ? prozent(rendite, 2) : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-neutral", note: p.kaufpreis ? "Jahreskaltmiete / Kaufpreis" : "Jahreskaltmiete / aktueller Wert (kein Kaufpreis erfasst)" },
     { lbl: "Kaufpreisfaktor", val: faktor > 0 ? `${zahl(faktor, 1)}×` : "–", badge: faktor > 0 ? (faktor < 25 ? "badge-green" : faktor < 30 ? "badge-gold" : "badge-red") : "badge-neutral", note: "Kaufpreis / Jahreskaltmiete" },
     { lbl: "Instandhaltungsrücklage (empf.)", val: petersJahr > 0 ? euro(petersJahr) + "/Jahr" : "–", badge: "badge-neutral", note: petersM2 > 0 ? `Peterssche Formel · ${euro(petersM2)}/m²·Jahr` : "Peterssche Formel (Faustformel)" },
     { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-neutral", note: "Summe aller Darlehensraten" },

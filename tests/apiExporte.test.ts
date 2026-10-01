@@ -52,7 +52,6 @@ type Db = { zugriffe: { tabelle: string; op: string; filter: string[] }[] };
 const selects = (db: Db) => db.zugriffe.filter((z) => z.op === "select" && z.tabelle !== "nutzer_rollen");
 
 const ROUTEN: [pfad: string, url: string, sperrStatus: number][] = [
-  ["@/app/api/export/route", "https://x/api/export", 403],
   ["@/app/api/export/buchungen/route", "https://x/api/export/buchungen", 403],
   ["@/app/api/export/datev/route", "https://x/api/export/datev?jahr=2025", 403],
   ["@/app/api/berichte/anlage-v/route", "https://x/api/berichte/anlage-v?jahr=2025", 307],

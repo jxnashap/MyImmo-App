@@ -32,7 +32,7 @@ export async function createTermin(formData: FormData) {
   // Kommentarloses `return` war der Grund, warum ein unvollständiges Formular
   // nichts anlegte UND nichts sagte — der Nutzer klickte ein zweites Mal.
   if (!titel || !datum) {
-    redirect(flashUrl("/termine", "Bitte Titel und Datum angeben — es wurde nichts angelegt."));
+    redirect(flashUrl("/termine", "Bitte Titel und Datum angeben — es wurde nichts angelegt.", "error"));
   }
 
   const { error } = await supabase.from("termine").insert({
@@ -68,7 +68,7 @@ export async function updateTermin(id: string, formData: FormData) {
   // ein paar Zeilen weiter oben ausdrücklich als Fehler beschreibt: Der Nutzer
   // speichert, nichts passiert, nichts wird gesagt. Ununterscheidbar von Erfolg.
   if (!titel || !datum) {
-    redirect(flashUrl("/termine", "Bitte Titel und Datum angeben — es wurde nichts gespeichert."));
+    redirect(flashUrl("/termine", "Bitte Titel und Datum angeben — es wurde nichts gespeichert.", "error"));
   }
 
   const { error } = await supabase.from("termine").update({
