@@ -1,6 +1,6 @@
-// Die EINE Verortung (Adresse → lat/lng) für Karte, Bewertung und Wert-Cron,
+// Die EINE Verortung (Adresse → lat/lng) für Marktwert-Schätzung und Wert-Cron,
 // über Nominatim (OpenStreetMap). Neu gefasst 01.10.2026, nachdem nur 7 von 23
-// echten Objekten auf der Karte standen.
+// echten Objekten verortet waren (die Kartenseite ist seitdem entfernt).
 //
 // Was vorher schiefging (gemessen, nicht vermutet):
 //   - Nominatim antwortet unter Last mit 429 „Too many requests". Das wurde wie
@@ -136,33 +136,3 @@ export function geoAenderung(erg: GeoErgebnis, jetztIso: string): Record<string,
 
 /** Beim Speichern mit geänderter Adresse: alles vergessen, was zur alten gehörte. */
 export const GEO_ZURUECKSETZEN = { lat: null, lng: null, latitude: null, longitude: null, geo_status: null, geo_versucht_am: null } as const;
-
-export type KartenZeile = GeoZeile & { id: string; bezeichnung: string | null; typ: string | null; wert: number | null };
-type Basis = { id: string; name: string; adresse: string; typ: string | null; wert: number | null };
-
-/**
- * Ordnet die Objekte für die Karte: verortet (mit Punkt), offen (Browser darf
- * fragen), nicht gefunden, ohne Adresse, pausiert (nach Drosselung). Jedes
- * Objekt landet in GENAU einer Gruppe — die Seite sagt so für jedes, warum es
- * (noch) nicht auf der Karte ist.
- */
-export function ordneFuerKarte(zeilen: KartenZeile[], jetzt: number = Date.now()) {
-  const basis = (p: KartenZeile): Basis => ({
-    id: p.id, name: p.bezeichnung || "Objekt", adresse: p.adresse ?? "", typ: p.typ, wert: p.wert,
-  });
-  const verortet: (Basis & GeoPunkt)[] = [];
-  const offen: Basis[] = [];
-  const nichtGefunden: { id: string; name: string }[] = [];
-  const ohneAdresse: { id: string; name: string }[] = [];
-  const pausiert: { id: string; name: string }[] = [];
-  for (const p of zeilen) {
-    const k = koordinaten(p);
-    const b = basis(p);
-    if (k) verortet.push({ ...b, ...k });
-    else if (!p.adresse?.trim()) ohneAdresse.push({ id: b.id, name: b.name });
-    else if (p.geo_status === "nicht_gefunden") nichtGefunden.push({ id: b.id, name: b.name });
-    else if (sollVerorten(p, jetzt)) offen.push(b);
-    else pausiert.push({ id: b.id, name: b.name });
-  }
-  return { verortet, offen, nichtGefunden, ohneAdresse, pausiert };
-}

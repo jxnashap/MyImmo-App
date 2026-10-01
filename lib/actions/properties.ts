@@ -182,7 +182,7 @@ export async function updateProperty(id: string, formData: FormData) {
   if (!formData.has("notiz_import")) delete felder.notiz_import;
   // Adresse geändert → gecachte Koordinaten UND das gemerkte Suchergebnis
   // verwerfen (auch „nicht gefunden" gilt nur für die alte Adresse); die
-  // Portfolio-Karte verortet beim nächsten Aufruf neu (lib/geocode.ts).
+  // Marktwert-Schätzung verortet beim nächsten „Aktualisieren“ neu (lib/geocode.ts).
   const { data: alt } = await supabase.from("properties").select("adresse").eq("id", id).single();
   const koordReset = alt && (alt.adresse ?? null) !== parsed.adresse ? GEO_ZURUECKSETZEN : {};
   const { error } = await supabase.from("properties").update({ ...felder, ...koordReset }).eq("id", id);

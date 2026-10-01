@@ -152,7 +152,7 @@ export default function LandingPage() {
                 <ul>
                   <li>Portfolio-Wert und Cashflow laufend berechnet</li>
                   <li>Status je Objekt: vermietet, leer, in Sanierung</li>
-                  <li>Karte mit allen Standorten</li>
+                  <li>Restschuld je Objekt auf einen Blick</li>
                 </ul>
               </div>
               <Shot src="/landing/immobilien.webp" alt="Immobilien-Übersicht mit Wert, Miete und Rendite je Objekt" />

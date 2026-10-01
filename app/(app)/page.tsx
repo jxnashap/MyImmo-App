@@ -459,10 +459,9 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Keine Karte auf dem Dashboard (01.10.2026, Entscheidung des Betreibers):
-          Sie zeigte nur Objekte, deren Adresse schon auf /karte aufgelöst war
-          (live 7 von 21), und passte optisch nicht zur Seite. Die Kartenseite
-          bleibt über die Navigation erreichbar. */}
+      {/* Keine Karte (01.10.2026, Entscheidung des Betreibers): erst vom
+          Dashboard genommen, am selben Tag auch die Kartenseite /karte — sie
+          zeigte nur einen Teil der Objekte und passte optisch nicht. */}
 
       <div className="grid-2 mb-20">
         <div className="section" style={{ marginBottom: 0 }}>

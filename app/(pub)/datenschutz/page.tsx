@@ -155,29 +155,19 @@ export default function DatenschutzPage() {
         ist freiwillig; die Nutzung von MyImmo hängt nicht davon ab.
       </p>
 
-      <H3>h) Portfolio-Karte, Marktwert und Exposé-Import (externe Dienste)</H3>
+      <H3>h) Marktwert-Schätzung und Exposé-Import (externe Dienste)</H3>
       <p>
-        <strong>Verortung der Objektadresse (OpenStreetMap/Nominatim).</strong> Damit ein Objekt auf
-        der Portfolio-Karte erscheint oder für die Marktwert-Schätzung eine Lage erhält, übermittelt
-        unser Server die <strong>Adresse des Objekts</strong> — sonst nichts, insbesondere weder Ihren
-        Namen noch Mieterdaten oder Ihre IP-Adresse — an den Suchdienst Nominatim der{" "}
+        <strong>Verortung der Objektadresse (OpenStreetMap/Nominatim).</strong> Damit die
+        Marktwert-Schätzung eines Objekts einen Lagebezug erhält, übermittelt unser Server die{" "}
+        <strong>Adresse des Objekts</strong> — sonst nichts, insbesondere weder Ihren Namen noch
+        Mieterdaten oder Ihre IP-Adresse — an den Suchdienst Nominatim der{" "}
         <strong>OpenStreetMap Foundation</strong> (Vereinigtes Königreich). Das geschieht, wenn Sie
-        die Karte öffnen oder die Bewertung eines Objekts aktualisieren, und je Adresse nur
-        einmal: Das Ergebnis (Koordinaten bzw. „nicht gefunden") speichern wir am Objekt; erst
-        nach einer Änderung der Adresse wird erneut gesucht. <em>Zweck:</em> Darstellung der
-        Standorte und Lagebezug der Bewertung. <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO
-        (von Ihnen genutzte Funktion). Für das Vereinigte Königreich besteht ein
-        Angemessenheitsbeschluss der EU-Kommission (Art. 45 DSGVO), zuletzt verlängert bis
-        27. Dezember 2031.
-      </p>
-      <p>
-        <strong>Kartendarstellung (CARTO).</strong> Die Kartenkacheln lädt Ihr Browser beim Öffnen der
-        Portfolio-Karte direkt von <strong>CARTO</strong> (CartoDB Inc., New York, USA). Dabei erhält
-        CARTO technisch bedingt Ihre <strong>IP-Adresse</strong>, Browserangaben und den angezeigten
-        Kartenausschnitt. Ohne Öffnen der Karte findet keine Verbindung zu CARTO statt.{" "}
-        <em>Zweck:</em> Anzeige der Karte. <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. f DSGVO
-        (berechtigtes Interesse an einer funktionsfähigen Kartendarstellung ohne eigenen
-        Kartenserver). CARTO ist nach dem EU-US Data Privacy Framework zertifiziert (Art. 45 DSGVO).
+        die Bewertung eines Objekts aktualisieren, und je Adresse nur einmal: Das Ergebnis
+        (Koordinaten bzw. „nicht gefunden“) speichern wir am Objekt; erst nach einer Änderung der
+        Adresse wird erneut gesucht. <em>Zweck:</em> Lagebezug der Bewertung.{" "}
+        <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO (von Ihnen genutzte Funktion). Für das
+        Vereinigte Königreich besteht ein Angemessenheitsbeschluss der EU-Kommission (Art. 45
+        DSGVO), zuletzt verlängert bis 27. Dezember 2031.
       </p>
       <p>
         <strong>Exposé-Import per Link (Jina AI).</strong> Fügen Sie den Link zu einem Online-Exposé
@@ -198,7 +188,7 @@ export default function DatenschutzPage() {
         <li><strong>Brevo</strong> (Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO (Anlage 2 zu den Nutzungsbedingungen, inkl. EU-Standardvertragsklauseln). Einzelne Unterauftragsverarbeiter von Brevo verarbeiten in Drittländern (Ziffer 5).</li>
       </ul>
       <p>
-        Daneben erhalten die in Ziffer 3 h genannten Dienste (OpenStreetMap Foundation, CARTO,
+        Daneben erhalten die in Ziffer 3 h genannten Dienste (OpenStreetMap Foundation,
         Jina AI) die dort beschriebenen Angaben, wenn Sie die jeweilige Funktion nutzen. Eine
         Übermittlung an sonstige Dritte findet nicht statt, außer Sie stoßen sie selbst an
         (z. B. Bank-Freigabelink) oder wir sind gesetzlich dazu verpflichtet.
@@ -209,9 +199,8 @@ export default function DatenschutzPage() {
         Soweit Daten in die USA übermittelt werden (Vercel, Anthropic, ggf. Google), erfolgt
         dies auf Grundlage der EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO)
         bzw. — soweit der Anbieter zertifiziert ist — des Angemessenheitsbeschlusses zum
-        EU-US Data Privacy Framework (Art. 45 DSGVO). Die Kartenkacheln von <strong>CARTO</strong>
-        (USA) stützen sich auf dessen Zertifizierung nach dem EU-US Data Privacy Framework; die
-        Verortung über die <strong>OpenStreetMap Foundation</strong> (Vereinigtes Königreich) auf den
+        EU-US Data Privacy Framework (Art. 45 DSGVO). Die Verortung über die{" "}
+        <strong>OpenStreetMap Foundation</strong> (Vereinigtes Königreich) stützt sich auf den
         Angemessenheitsbeschluss für das Vereinigte Königreich (Ziffer 3 h).
       </p>
       <p>

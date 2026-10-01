@@ -80,7 +80,6 @@ const ERLAUBTE_PRAEFIXE = [
   "/steuer",
   "/jahresbericht",
   "/termine",
-  "/karte", // Koordinaten fest im Schnappschuss (Migration 20260930150903)
   "/bewertung",
   "/afa-assistent",
   // Mit Beispieldaten seit Phase 3.
