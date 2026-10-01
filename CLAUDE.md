@@ -637,6 +637,11 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Phase 0 Betreiber-Entscheidungen (Zugang, 5 Vermieter begleiten, Anwalt) → Startseite
   schärfen → Aktivierung (Objekt-Check, Monatsmail) → CSV-Kontoauszug-Abgleich statt Open
   Banking → regelbasierter Portfolio-Check statt KI-Chat. **Vor neuen Funktionen dort nachsehen.**
+  ✅ **Phase 1 (Startseite) erledigt 01.10.2026:** Hero „Deine Immobilien. Ein System. Von überall.“
+  (geschützte Leerzeichen, sonst „Ein / System.“ — im Browser gesehen), Kennzahl „1–24 Einheiten“
+  statt „13+ Funktionen“, Abschnitt „Deine Daten gehören dir“ (`VERTRAUEN` in
+  `components/LandingPage.tsx`, jeder Satz per `tests/startseite.test.ts` an seinen Code-Beleg
+  gebunden), Fuß „derzeit kostenlos“ statt „kein Abo“.
 - **Externes Feedback vom 08.09.2026, geprüft und mit Plan: `docs/FEEDBACK-BEWERTUNG-2026-09.md`.**
   Zwölf Behauptungen, elf gegen den Code bestätigt (Speed Insights vs. „keine Analyse-Tools",
   Platzhalter in der Datenschutzerklärung, Demo-Text widerspricht Nur-Lesen, „Fristen &
