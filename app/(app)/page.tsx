@@ -52,7 +52,7 @@ export const metadata = {
   },
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage(seite: { searchParams: Promise<{ nl?: string }> }) {
   const supabase = await createClient();
   const user = await aktuellerNutzer();
 
@@ -85,7 +85,7 @@ export default async function DashboardPage() {
           nonce={nonce}
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <LandingPage />
+        <LandingPage nl={(await seite.searchParams).nl} />
       </>
     );
   }

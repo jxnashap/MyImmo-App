@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { REGISTRIERUNG_OFFEN } from "@/lib/preise";
 import StartCta from "@/components/StartCta";
+import StartBenachrichtigung from "@/components/landing/StartBenachrichtigung";
 import { ArrowRight, Plane, Database, Lock, Download, Trash2, ShieldCheck, UserCheck } from "lucide-react";
 import LandingShell from "@/components/landing/Shell";
 import QlxHero from "@/components/landing/QlxHero";
@@ -25,7 +26,7 @@ export const VERTRAUEN = [
   { ico: Trash2, t: "Kein Datenhandel", p: "Keine Werbung, kein Tracking, kein Verkauf. Dein Konto lässt sich jederzeit selbst löschen." },
 ] as const;
 
-export default function LandingPage() {
+export default function LandingPage({ nl }: { nl?: string } = {}) {
   const topFeatures = FEATURES.slice(0, 6);
 
   return (
@@ -397,6 +398,8 @@ export default function LandingPage() {
                 {!REGISTRIERUNG_OFFEN && <a href="/api/demo" className="qlx-btn-linie lp-btn-big">Demo ansehen</a>}
                 <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
               </div>
+              {/* Dezent: eine Textzeile, das Formular erst auf Klick. */}
+              {!REGISTRIERUNG_OFFEN && <StartBenachrichtigung nl={nl} />}
               <p className="qlx-hero-note" style={{ marginTop: 16 }}>
                 Keine Kreditkarte nötig · Datenbank in Frankfurt · derzeit kostenlos
               </p>

@@ -4,8 +4,9 @@ import { besucherIp, darfWeiter } from "@/lib/net/bremse";
 import { basisUrl } from "@/lib/net/basisUrl";
 import { brevoBereit, sendeMail } from "@/lib/mail/brevo";
 import {
-  EINWILLIGUNGSTEXT,
   TOKEN_STUNDEN,
+  einwilligungFuer,
+  zweckAus,
   bestaetigungsMail,
   istEmail,
   normalisiereEmail,
@@ -54,6 +55,9 @@ export async function POST(req: Request) {
     );
   }
 
+  // Wortlaut und Mail richten sich nach dem Zweck — gespeichert wird genau der
+  // Text, der neben dem Häkchen stand (Art. 7 Abs. 1 DSGVO).
+  const zweck = zweckAus(quelle);
   const token = neuesToken();
   const ablauf = new Date(Date.now() + TOKEN_STUNDEN * 3600 * 1000).toISOString();
 
@@ -85,7 +89,7 @@ export async function POST(req: Request) {
       token_hash: tokenHash(token),
       token_ablauf: ablauf,
       quelle: quelle || null,
-      einwilligungstext: EINWILLIGUNGSTEXT,
+      einwilligungstext: einwilligungFuer(zweck),
       angefordert_am: new Date().toISOString(),
       angefordert_ip: await besucherIp(),
       // Eine frühere Abmeldung wird durch die neue Anmeldung aufgehoben.
@@ -99,7 +103,7 @@ export async function POST(req: Request) {
   }
 
   const url = `${await basisUrl()}/api/newsletter/bestaetigen?token=${encodeURIComponent(token)}`;
-  const mail = bestaetigungsMail(url);
+  const mail = bestaetigungsMail(url, zweck);
   const gesendet = await sendeMail({ an: email, betreff: mail.betreff, html: mail.html, text: mail.text });
   if (!gesendet) {
     return NextResponse.json(

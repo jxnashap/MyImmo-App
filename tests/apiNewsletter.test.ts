@@ -120,6 +120,39 @@ describe("Anmelden", () => {
   });
 });
 
+describe("Startbenachrichtigung — eigener Wortlaut, eigene Mail, eigener Rückweg", () => {
+  it("quelle „start“ speichert den Start-Wortlaut und schickt die Start-Mail", async () => {
+    const { EINWILLIGUNGSTEXT_START } = await import("@/lib/newsletter");
+    const { db, mod } = await lade("@/app/api/newsletter/route", { antworten: { newsletter_anmeldungen: null } });
+    expect(await (await mod.POST(post({ email: "a@b.de", quelle: "start" }))).json()).toEqual({ ok: true });
+    const u = zugriff(db, "upsert")!.daten!;
+    expect(u.einwilligungstext).toBe(EINWILLIGUNGSTEXT_START);
+    expect(u.quelle).toBe("start");
+    const m = mails[0] as { betreff: string; text: string };
+    expect(m.betreff).toBe("Bitte bestätigen: Benachrichtigung zum Start von MyImmo");
+    expect(m.text).toContain("wenn MyImmo für alle startet");
+  });
+  it("jede andere Quelle behält den Vorlagen-Wortlaut und die Vorlagen-Mail", async () => {
+    const { EINWILLIGUNGSTEXT } = await import("@/lib/newsletter");
+    const { db, mod } = await lade("@/app/api/newsletter/route", { antworten: { newsletter_anmeldungen: null } });
+    await mod.POST(post({ email: "a@b.de", quelle: "vorlagen" }));
+    expect(zugriff(db, "upsert")!.daten!.einwilligungstext).toBe(EINWILLIGUNGSTEXT);
+    expect((mails[0] as { betreff: string }).betreff).toBe("Bitte bestätigen: MyImmo-Vorlagen");
+  });
+  it("die Bestätigung führt die Startanmeldung auf die Startseite zurück, die Vorlagen auf /vorlagen", async () => {
+    const zeile = { id: "n1", email: "a@b.de", token_ablauf: "2999-01-01T00:00:00Z", bestaetigt_am: null };
+    const get = () => new Request("https://x/api/newsletter/bestaetigen?token=tok");
+    const { mod } = await lade("@/app/api/newsletter/bestaetigen/route", { antworten: { newsletter_anmeldungen: { ...zeile, quelle: "start" } } });
+    const a = new URL((await mod.GET(get())).headers.get("location")!);
+    expect([a.pathname, a.searchParams.get("nl"), a.hash]).toEqual(["/", "ok", "#bald"]);
+    const { mod: mod2 } = await lade("@/app/api/newsletter/bestaetigen/route", { antworten: { newsletter_anmeldungen: { ...zeile, quelle: "vorlagen" } } });
+    expect(new URL((await mod2.GET(get())).headers.get("location")!).pathname).toBe("/vorlagen");
+    const { mod: mod3 } = await lade("@/app/api/newsletter/bestaetigen/route", { antworten: { newsletter_anmeldungen: { ...zeile, quelle: "start", token_ablauf: "2000-01-01T00:00:00Z" } } });
+    const c = new URL((await mod3.GET(get())).headers.get("location")!);
+    expect([c.pathname, c.searchParams.get("nl")]).toEqual(["/", "abgelaufen"]);
+  });
+});
+
 describe("Bestätigen", () => {
   const ZEILE = { id: "n1", email: "a@b.de", token_ablauf: "2999-01-01T00:00:00Z", bestaetigt_am: null };
   const get = (token = "tok") => new Request(`https://x/api/newsletter/bestaetigen?token=${token}`);

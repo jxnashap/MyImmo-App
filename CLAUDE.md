@@ -647,6 +647,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Testnutzer kommen über „Anmelden“. `REGISTRIERUNG_OFFEN = true` in `lib/preise.ts` stellt
   alles auf einmal zurück auf „Kostenlos starten“ als Link. `tests/auditPaket3.test.ts`.
   **Regel: Kein neuer Start-Knopf ohne `StartCta`.**
+  📬 **„Beim Start benachrichtigen“ (01.10.2026, Vorgabe des Betreibers: „dezent“):**
+  `components/landing/StartBenachrichtigung.tsx` — eine Textzeile im Schlussabschnitt
+  (Startseite + `Shell`), Formular erst auf Klick, nur bei `!REGISTRIERUNG_OFFEN`. Läuft über den
+  Vorlagen-Double-Opt-in mit `quelle: "start"`, aber mit EIGENEM Wortlaut
+  (`EINWILLIGUNGSTEXT_START`, gespeichert wie angezeigt), eigener Mail und Rückweg `/?nl=…#bald`.
+  **Beim Start:** Empfänger = `newsletter_anmeldungen` mit `quelle = 'start'`, bestätigt, nicht
+  abgemeldet. Kein eigenes Brevo-Attribut (ein im Konto nicht angelegtes Attribut kann den Eintrag scheitern lassen) — segmentieren
+  über die Datenbank. **Grenze:** Eine Adresse, die schon für Vorlagen bestätigt ist, bekommt
+  „schon eingetragen“ und behält den Vorlagen-Wortlaut (eine Zeile je Adresse); die
+  Startankündigung fällt dort unter „gelegentliche Hinweise für Vermieter“.
   ✅ **Phase 1 (Startseite) erledigt 01.10.2026:** Hero „Deine Immobilien. Ein System. Von überall.“
   (geschützte Leerzeichen, sonst „Ein / System.“ — im Browser gesehen), Kennzahl „1–24 Einheiten“
   statt „13+ Funktionen“, Abschnitt „Deine Daten gehören dir“ (`VERTRAUEN` in
