@@ -4,8 +4,13 @@
 // (Handwerker/Hausmeister) samt Aufträgen.
 // NICHT "Mieterportal" nennen: So heißt die Mieter-Oberfläche unter /portal.
 import Link from "next/link";
-import { MessageSquareText, UserRoundSearch, Wrench } from "lucide-react";
+import { MessageSquareText, UserRoundSearch, Wrench, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
+import { ladePortalDaten, vorschauUrl, type VorschauMieter } from "@/lib/portalDaten";
+import PortalAnsicht, { portalTab } from "@/components/PortalAnsicht";
+import PortalVorschauWahl from "@/components/PortalVorschauWahl";
+import Leer from "@/components/Leer";
 import AnliegenManager, { type AnliegenVermieterRow } from "@/components/AnliegenManager";
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
 import BewerbungenManager, { type BewerberLinkRow, type BewerbungRow } from "@/components/BewerbungenManager";
@@ -16,11 +21,11 @@ import { wartetAufVermieter } from "@/lib/zaehler";
 
 export default async function AnliegenPage(
   props0: {
-    searchParams: Promise<{ tab?: string; titel?: string; text?: string }>;
+    searchParams: Promise<{ tab?: string; titel?: string; text?: string; mieter?: string; portal?: string }>;
   }
 ) {
   const searchParams = await props0.searchParams;
-  const tab = ["bewerbungen", "service"].includes(searchParams.tab ?? "") ? (searchParams.tab as string) : "anliegen";
+  const tab = ["bewerbungen", "service", "vorschau"].includes(searchParams.tab ?? "") ? (searchParams.tab as string) : "anliegen";
 
   const supabase = await createClient();
   const [
@@ -29,10 +34,10 @@ export default async function AnliegenPage(
     { data: partnerRows }, { data: codeRows }, { data: auftragRows }, { data: firmenRows },
   ] = await Promise.all([
     supabase.from("anliegen").select("*").order("created_at", { ascending: false }),
-    supabase.from("mieter").select("id,vorname,nachname"),
+    supabase.from("mieter").select("id,vorname,nachname,prop_id,mietende"),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
     supabase.from("vermieter_anfragen").select("*").order("created_at", { ascending: false }).limit(100),
-    supabase.from("mieter_zugaenge").select("mieter_id"),
+    supabase.from("mieter_zugaenge").select("mieter_id,user_id"),
     supabase.from("bewerber_links").select("*").order("created_at", { ascending: false }),
     supabase.from("bewerbungen").select("*").order("created_at", { ascending: false }).limit(200),
     supabase.from("service_zugaenge").select("user_id,firma,email,created_at").order("created_at", { ascending: false }),
@@ -172,10 +177,34 @@ export default async function AnliegenPage(
   const offeneAuftraege = auftraege.filter((a) => a.status === "offen" || a.status === "freigabe").length;
   const freigabeAnfragen = wartetAufVermieter(auftraege);
 
+  // Mieterportal-Vorschau (01.10.2026, Wunsch des Betreibers): „So sieht dein
+  // Mieter das Portal" — mit den eigenen Daten, ohne zweites Konto. Gleicher
+  // Lader und gleiche Darstellung wie /portal (lib/portalDaten.ts,
+  // components/PortalAnsicht.tsx), Formulare nur zur Ansicht.
+  // Reihenfolge: verknüpfte Mieter zuerst (dort ist die Vorschau am
+  // aussagekräftigsten), dann laufende Verträge.
+  const vorschauListe: VorschauMieter[] = (mieter ?? [])
+    .map((m) => ({
+      id: m.id,
+      name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter",
+      objekt: objektName(m.prop_id),
+      verknuepft: verbundeneIds.has(m.id),
+      beendet: !!m.mietende && m.mietende < new Date().toISOString().slice(0, 10),
+    }))
+    .sort((a, b) => Number(b.verknuepft) - Number(a.verknuepft) || Number(a.beendet) - Number(b.beendet) || a.name.localeCompare(b.name, "de"))
+    .map(({ id, name, objekt, verknuepft }) => ({ id, name, objekt, verknuepft }));
+  // Nur ein Mieter aus der EIGENEN Liste — eine fremde ID im Link zeigt nichts.
+  const vorschauMieter = vorschauListe.find((m) => m.id === searchParams.mieter) ?? vorschauListe[0] ?? null;
+  const portalReiter = portalTab(searchParams.portal);
+  const vorschauDaten = tab === "vorschau" && vorschauMieter
+    ? await ladePortalDaten(supabase, { art: "vermieter", vermieterId: (await aktuellerNutzer())!.id, mieterId: vorschauMieter.id })
+    : null;
+
   const TABS = [
     { key: "anliegen", label: "Mieter-Anliegen", icon: MessageSquareText, badge: offen },
     { key: "bewerbungen", label: "Bewerbungen", icon: UserRoundSearch, badge: neueBewerbungen },
     { key: "service", label: "Service-Partner", icon: Wrench, badge: freigabeAnfragen },
+    { key: "vorschau", label: "Vorschau Mieter-Sicht", icon: Eye, badge: 0 },
   ] as const;
 
   return (
@@ -190,6 +219,8 @@ export default async function AnliegenPage(
           <div className="topbar-sub">
             {tab === "bewerbungen"
               ? `Selbstauskunft-Links & Bewerbungs-Eingang${bewerbungen.length > 0 ? ` · ${neueBewerbungen} neu von ${bewerbungen.length}` : ""}`
+              : tab === "vorschau"
+                ? "So sieht dein Mieter das Portal — mit deinen Daten, nur zur Ansicht"
               : tab === "service"
                 ? `Handwerker & Hausmeister verknüpfen, Aufträge vergeben${freigabeAnfragen > 0 ? ` · ${freigabeAnfragen} Freigabe-Anfrage${freigabeAnfragen > 1 ? "n" : ""} wartet` : auftraege.length > 0 ? ` · ${offeneAuftraege} offen von ${auftraege.length}` : ""}`
                 : `Meldungen deiner Mieter & deine Anfragen an sie${liste.length > 0 ? ` · ${offen} offen von ${liste.length}` : ""}`}
@@ -234,6 +265,45 @@ export default async function AnliegenPage(
             </div>
           </div>
         </>
+      )}
+
+      {tab === "vorschau" && (
+        vorschauMieter === null ? (
+          <Leer
+            icon={Eye}
+            art="nichts"
+            titel="Noch keine Mieter"
+            text="Die Vorschau zeigt das Mieterportal aus der Sicht eines deiner Mieter — lege zuerst einen Mieter an."
+            aktion={{ href: "/tenants/new", label: "Mieter anlegen" }}
+          />
+        ) : (
+          <>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <PortalVorschauWahl mieter={vorschauListe} aktuell={vorschauMieter.id} portal={portalReiter} />
+              {!vorschauDaten?.mieterKontoVerknuepft && (
+                <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                  {vorschauMieter.name} hat noch kein Konto — Anliegen und Zählerstände erscheinen erst nach
+                  der Einladung. <Link href={`/tenants/${vorschauMieter.id}`} style={{ color: "var(--gold)" }}>Einladen</Link>
+                </span>
+              )}
+            </div>
+            <div
+              className="portal-vorschau"
+              aria-label={`Vorschau: Mieterportal von ${vorschauMieter.name}`}
+              style={{ border: "1px solid var(--line)", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}
+            >
+              {vorschauDaten && (
+                <PortalAnsicht
+                  daten={vorschauDaten}
+                  tab={portalReiter}
+                  hrefFuer={(t) => vorschauUrl(vorschauMieter.id, t)}
+                  kopfzeile={`${vorschauMieter.name} · Ansicht des Mieters`}
+                  vorschau
+                />
+              )}
+            </div>
+          </>
+        )
       )}
 
       {tab === "bewerbungen" && (

@@ -160,12 +160,13 @@ describe("Demo: KEIN Link irgendwo in der App läuft unerklärt ins Leere", () =
   // Dateien, die NIE im Demo-Konto (einem Vermieter) rendern: Mieter-Portal
   // und Handwerker-Bereich. Der Test unten prüft die Behauptung selbst — die
   // Komponenten dürfen nur von diesen Seiten importiert werden.
+  // Seit der Mieterportal-Vorschau (01.10.2026) rendern AnfragenVomVermieter,
+  // AnliegenPortal und ZaehlerPortal AUCH beim Vermieter (über PortalAnsicht
+  // in /anliegen?tab=vorschau) — sie stehen deshalb NICHT mehr hier, ihre
+  // Links werden geprüft wie alle anderen.
   const ANDERE_ROLLE = [
     join("app", "(app)", "portal", "page.tsx"),
     join("app", "(app)", "service", "page.tsx"),
-    join("components", "AnfragenVomVermieter.tsx"),
-    join("components", "AnliegenPortal.tsx"),
-    join("components", "ZaehlerPortal.tsx"),
   ];
   const dateien = [...alleDateien("app/(app)"), ...alleDateien("components")].filter(
     // Die Startseite rendert nur für Abgemeldete — dort gibt es keine Demo.
