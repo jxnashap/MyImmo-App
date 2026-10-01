@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { KeyRound, Home, Wrench, Building2, ChevronRight, type LucideIcon } from "lucide-react";
 import BrandMark from "@/components/BrandMark";
-import { EARLY_ACCESS_MAILTO, EARLY_ACCESS_ZUSAGE, HILFE_MAILTO, REGISTRIERUNG_OFFEN } from "@/lib/preise";
+import { HILFE_MAILTO } from "@/lib/preise";
 
 type Rolle = {
   key: string;
@@ -110,24 +110,6 @@ export default function AnmeldenPage() {
           })}
         </div>
 
-        {/* Der Anfrageweg (Audit 01.10.2026, A5): Bis dahin fuehrte jeder Knopf
-            „Early-Access-Zugang anfragen" hierher — und von hier nur in ein
-            Formular mit Pflichtfeld „Zugangscode", ohne zu sagen, wo der
-            herkommt. Diese Karte ist die Antwort. */}
-        {!REGISTRIERUNG_OFFEN && (
-          <div
-            className="mt-5 rounded-xl border p-4 text-[13px] leading-relaxed"
-            style={{ background: "var(--gold-pale)", borderColor: "var(--line)", color: "var(--text)" }}
-          >
-            <strong>Noch keinen Zugangscode?</strong> MyImmo ist im Early Access — Vermieter
-            und Hausverwaltungen brauchen zur Registrierung einen Code.{" "}
-            <a href={EARLY_ACCESS_MAILTO} className="font-semibold hover:underline" style={{ color: "var(--gold)" }}>
-              Zugang per E-Mail anfragen
-            </a>
-            . {EARLY_ACCESS_ZUSAGE} Mieter und Handwerksbetriebe bekommen ihren Einladungscode
-            vom Vermieter.
-          </div>
-        )}
 
         <div
           className="mt-6 flex flex-wrap justify-center gap-4 border-t pt-4 text-[12px]"

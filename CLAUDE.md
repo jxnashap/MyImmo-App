@@ -637,6 +637,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Phase 0 Betreiber-Entscheidungen (Zugang, 5 Vermieter begleiten, Anwalt) → Startseite
   schärfen → Aktivierung (Objekt-Check, Monatsmail) → CSV-Kontoauszug-Abgleich statt Open
   Banking → regelbasierter Portfolio-Check statt KI-Chat. **Vor neuen Funktionen dort nachsehen.**
+  ⚠️ **KORREKTUR (Betreiber, gleicher Tag): Die 10 Vermieter-Konten mit Objekt sind
+  TESTKONTEN.** Es gibt noch keine echten Nutzer — MyImmo ist nicht gestartet. „5 Vermieter
+  begleiten“ entfällt; Bank/KI bleiben zu früh, jetzt mangels echter Nutzer.
+  🚪 **Anfrageweg ABGESCHAFFT (01.10.2026, Vorgabe des Betreibers):** Jeder Start-Knopf der
+  öffentlichen Strecke zeigt **„Coming soon“ — nicht klickbar** (`components/StartCta.tsx`,
+  `.start-bald { pointer-events: none }`), kein mailto, keine 24-h-Zusage, kein Menüpunkt, in
+  der Demo kein Knopf zur Registrierung. **Der Beta-Code bleibt im Registrierformular**;
+  Testnutzer kommen über „Anmelden“. `REGISTRIERUNG_OFFEN = true` in `lib/preise.ts` stellt
+  alles auf einmal zurück auf „Kostenlos starten“ als Link. `tests/auditPaket3.test.ts`.
+  **Regel: Kein neuer Start-Knopf ohne `StartCta`.**
   ✅ **Phase 1 (Startseite) erledigt 01.10.2026:** Hero „Deine Immobilien. Ein System. Von überall.“
   (geschützte Leerzeichen, sonst „Ein / System.“ — im Browser gesehen), Kennzahl „1–24 Einheiten“
   statt „13+ Funktionen“, Abschnitt „Deine Daten gehören dir“ (`VERTRAUEN` in

@@ -2762,3 +2762,8 @@ select:focus-visible, textarea:focus-visible {
 .qlx .lp-section-alt::before { top: 0; background: linear-gradient(var(--l-bg), transparent); }
 .qlx .lp-section-alt::after { bottom: 0; background: linear-gradient(transparent, var(--l-bg)); }
 .qlx .lp-section-alt > * { position: relative; z-index: 1; }
+
+/* „Coming soon“ statt Start-Knopf, solange die Registrierung geschlossen ist
+   (components/StartCta.tsx, 01.10.2026). Sieht aus wie der Knopf, ist aber
+   keiner: kein Zeiger, kein Hover-Anheben, nicht anklickbar. */
+.start-bald { cursor: default; pointer-events: none; user-select: none; }

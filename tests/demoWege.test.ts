@@ -220,8 +220,9 @@ describe("Demo: Oberfläche sagt die Wahrheit und hat einen Ausgang", () => {
     for (const q of [layout, leiste]) expect(q).not.toMatch(/alle Funktionen erkunden/);
   });
 
-  it("die Leiste hat Early-Access-Knopf und „Demo beenden“, beide melden ab", () => {
+  it("die Leiste hat „Demo beenden“ (und bei offener Registrierung den Start-Knopf), beide melden ab", () => {
     expect(leiste).toContain("{START_CTA}");
+    expect(leiste).toMatch(/\{REGISTRIERUNG_OFFEN && \(/);
     expect(leiste).toContain("Demo beenden");
     expect(leiste).toMatch(/demoVerlassen\(/);
     const sperre = readFileSync("components/DemoSperre.tsx", "utf8");

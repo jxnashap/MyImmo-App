@@ -5,7 +5,8 @@ import LandingShell from "@/components/landing/Shell";
 import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import { PLAENE, FAQ } from "@/components/landing/data";
-import { PREISE_SICHTBAR, START_CTA } from "@/lib/preise";
+import { PREISE_SICHTBAR } from "@/lib/preise";
+import StartCta from "@/components/StartCta";
 
 // Solange PREISE_SICHTBAR false ist (lib/preise.ts), nennt diese Seite KEINE
 // Betraege. Die Route bleibt trotzdem bestehen: sie ist verlinkt worden und
@@ -77,7 +78,7 @@ export default function PreisePage() {
                 <PartyPopper size={14} style={{ verticalAlign: "-2px" }} /> Early Access: Bezahltarife stehen noch nicht fest und werden rechtzeitig angekündigt. Dein Konto wird dabei nicht automatisch kostenpflichtig — du entscheidest selbst, ob und welchen Tarif du dann buchst, und behältst in jedem Fall Zugriff auf deine Daten und den vollständigen Datenexport.
               </div>
               <div className="lp-cta-row" style={{ marginTop: 26 }}>
-                <Link href="/anmelden" className="btn btn-gold lp-btn-big">{START_CTA}</Link>
+                <StartCta className="btn btn-gold lp-btn-big" />
                 <Link href="/funktionen" className="btn btn-ghost lp-btn-big">Funktionen ansehen</Link>
               </div>
             </>
