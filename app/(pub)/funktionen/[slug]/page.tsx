@@ -5,7 +5,7 @@ import LandingShell from "@/components/landing/Shell";
 import { FUNKTIONSSEITEN, funktionsseiteBySlug } from "@/lib/funktionen";
 import { ratgeberBySlug } from "@/lib/ratgeber";
 import { ArrowRight } from "lucide-react";
-import { START_CTA } from "@/lib/preise";
+import StartCta from "@/components/StartCta";
 import Brotkrumen from "@/components/landing/Brotkrumen";
 
 // Kein `dynamicParams = false` noetig: seit die oeffentliche Strecke ein
@@ -87,9 +87,9 @@ export default async function FunktionsSeite(props: { params: Promise<{ slug: st
           >
             <h3 style={{ fontSize: 17, margin: "0 0 8px", color: "var(--l-gold-ink)" }}>{f.cta.titel}</h3>
             <p style={{ fontSize: 14.5, lineHeight: 1.65, color: "var(--l-muted)", margin: "0 0 16px" }}>{f.cta.text}</p>
-            <Link href="/anmelden" className="btn btn-gold">
-              {START_CTA} <ArrowRight size={14} style={{ verticalAlign: "-2px" }} />
-            </Link>
+            <StartCta className="btn btn-gold">
+              {" "}<ArrowRight size={14} style={{ verticalAlign: "-2px" }} />
+            </StartCta>
           </div>
 
           {artikel.length > 0 && (

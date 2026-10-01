@@ -11,7 +11,7 @@
 // das CSS schaltet zentral — wie im Original über body.nav-open/.solid.
 
 import Link from "next/link";
-import { START_CTA, START_CTA_KURZ } from "@/lib/preise";
+import { REGISTRIERUNG_OFFEN, START_CTA, START_CTA_KURZ } from "@/lib/preise";
 import { useEffect, useState } from "react";
 
 export type QlxNavEintrag = { href: string; label: string };
@@ -87,10 +87,19 @@ export default function QlxHeader({
 
           <div className="qlx-header-cta">
             <Link href="/anmelden" className="qlx-btn-linie">Anmelden</Link>
-            <Link href="/anmelden" className="qlx-btn-hell" aria-label={START_CTA}>
-              <span className="qlx-cta-lang">{START_CTA}</span>
-              <span className="qlx-cta-kurz" aria-hidden>{START_CTA_KURZ}</span>
-            </Link>
+            {/* Geschlossene Registrierung: „Coming soon“ als Fläche, kein Link
+                (components/StartCta.tsx erklärt, warum). */}
+            {REGISTRIERUNG_OFFEN ? (
+              <Link href="/anmelden" className="qlx-btn-hell" aria-label={START_CTA}>
+                <span className="qlx-cta-lang">{START_CTA}</span>
+                <span className="qlx-cta-kurz" aria-hidden>{START_CTA_KURZ}</span>
+              </Link>
+            ) : (
+              <span className="qlx-btn-hell start-bald" aria-disabled="true" title="MyImmo startet bald">
+                <span className="qlx-cta-lang">{START_CTA}</span>
+                <span className="qlx-cta-kurz" aria-hidden>{START_CTA_KURZ}</span>
+              </span>
+            )}
           </div>
         </div>
       </header>
@@ -112,12 +121,14 @@ export default function QlxHeader({
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link href="/anmelden" onClick={zu} tabIndex={offen ? 0 : -1} style={{ fontStyle: "italic", color: "var(--l-gold-hell)" }}>
-                  <span className="qlx-nl-num">→</span>
-                  <span className="qlx-nl-label">{START_CTA}</span>
-                </Link>
-              </li>
+              {REGISTRIERUNG_OFFEN && (
+                <li>
+                  <Link href="/anmelden" onClick={zu} tabIndex={offen ? 0 : -1} style={{ fontStyle: "italic", color: "var(--l-gold-hell)" }}>
+                    <span className="qlx-nl-num">→</span>
+                    <span className="qlx-nl-label">{START_CTA}</span>
+                  </Link>
+                </li>
+              )}
             </ul>
             <div className="qlx-overlay-foot">
               <Link href="/agb" onClick={zu} tabIndex={offen ? 0 : -1}>AGB</Link>

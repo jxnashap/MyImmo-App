@@ -8,7 +8,7 @@ import BrandMark from "@/components/BrandMark";
 import { bereiteRegistrierungVor, pruefeEinladungscode } from "@/lib/actions/freischaltung";
 import { PASSWORT_LECK_HINWEIS, PASSWORT_MIN, PASSWORT_REGEL, passwortAblehnung, pruefePasswort } from "@/lib/passwort";
 import { RESET_ZIEL } from "@/lib/passwortWechsel";
-import { EARLY_ACCESS_MAILTO, EARLY_ACCESS_ZUSAGE, HILFE_MAILTO } from "@/lib/preise";
+import { HILFE_MAILTO } from "@/lib/preise";
 import { sicheresZiel } from "@/lib/flash";
 import MfaAbfrage from "@/components/MfaAbfrage";
 import { mussMfaNachholen } from "@/lib/auth/sitzung";
@@ -483,17 +483,6 @@ export default function LoginPage() {
             />
           )}
 
-          {/* Wo der Code herkommt — direkt am Feld, nicht erst in der Fehlermeldung
-              nach dem ersten Fehlversuch (Audit 01.10.2026, A5). */}
-          {mode === "signup" && rolle !== "mieter" && rolle !== "service" && (
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--muted)", margin: "-4px 0 0" }}>
-              Noch keinen Code?{" "}
-              <a href={EARLY_ACCESS_MAILTO} style={{ color: "var(--gold)" }} className="hover:underline">
-                Early-Access-Zugang per E-Mail anfragen
-              </a>
-              {" "}— {EARLY_ACCESS_ZUSAGE}
-            </p>
-          )}
 
           {mode === "signup" && (
             <label className="flex items-start gap-2 text-[13px]" style={{ color: "var(--muted)" }}>

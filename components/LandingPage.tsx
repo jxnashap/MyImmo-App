@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { START_CTA } from "@/lib/preise";
+import { REGISTRIERUNG_OFFEN } from "@/lib/preise";
+import StartCta from "@/components/StartCta";
 import { ArrowRight, Plane, Database, Lock, Download, Trash2, ShieldCheck, UserCheck } from "lucide-react";
 import LandingShell from "@/components/landing/Shell";
 import QlxHero from "@/components/landing/QlxHero";
@@ -50,7 +51,7 @@ export default function LandingPage() {
         kinder={
           <>
             <div className="lp-cta-row" style={{ justifyContent: "flex-start" }}>
-              <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">{START_CTA}</Link>
+              <StartCta className="qlx-btn-hell lp-btn-big" />
               {/* Demo ohne Anmeldung. Als eigener Knopf auf Wunsch des
                   Betreibers (29.08.2026) — vorher eine Textzeile darunter.
                   Bewusst ein <a> und kein <Link>: /api/demo ist ein Route
@@ -314,7 +315,7 @@ export default function LandingPage() {
               </p>
               <div className="lp-cta-row" style={{ marginTop: 22 }}>
                 {/* Landing-Button statt App-Button (.btn-gold gehört der App, nicht der .lp-Bühne) */}
-                <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">{START_CTA}</Link>
+                <StartCta className="qlx-btn-hell lp-btn-big" />
               </div>
             </>
           )}
@@ -386,11 +387,14 @@ export default function LandingPage() {
               <div className="lp-kicker">Bereit?</div>
               <h2 className="lp-h2">Dein Portfolio, endlich an einem Ort.</h2>
               <p className="lp-section-sub">
-                In wenigen Minuten eingerichtet — Objekt anlegen, Mieter erfassen, loslegen.
-                Kostenlos im Early Access, ohne Kreditkarte.
+                {REGISTRIERUNG_OFFEN
+                  ? "In wenigen Minuten eingerichtet — Objekt anlegen, Mieter erfassen, loslegen. Kostenlos im Early Access, ohne Kreditkarte."
+                  : "MyImmo öffnet bald für alle Vermieter. Bis dahin zeigt die Demo jede Funktion mit Beispieldaten — ohne Anmeldung."}
               </p>
               <div className="lp-cta-row" style={{ marginTop: 26 }}>
-                <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">{START_CTA}</Link>
+                <StartCta className="qlx-btn-hell lp-btn-big" />
+                {/* Ohne offene Registrierung ist die Demo der einzige Weg hinein. */}
+                {!REGISTRIERUNG_OFFEN && <a href="/api/demo" className="qlx-btn-linie lp-btn-big">Demo ansehen</a>}
                 <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
               </div>
               <p className="qlx-hero-note" style={{ marginTop: 16 }}>

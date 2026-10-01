@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { baueHeuteAufgaben, tageVor, type FristZeile } from "@/lib/heute";
 import { VERWALTEN, ABRECHNEN, PLANEN, ALLE_ZIELE } from "@/lib/nav";
-import { REGISTRIERUNG_OFFEN, START_CTA, ctaBeschriftung } from "@/lib/preise";
+import { REGISTRIERUNG_OFFEN, START_CTA } from "@/lib/preise";
 
 // „HEUTE WICHTIG" UND DIE NAVIGATION (08.09.2026, Feedback Befund 7 + 8).
 //
@@ -220,7 +220,7 @@ describe("Navigation: drei Gruppen statt elf gleichrangiger Punkte", () => {
 describe("Ehrliche Beschriftung, solange ein Zugangscode nötig ist", () => {
   it("der Start-Knopf verspricht keine offene Registrierung", () => {
     expect(REGISTRIERUNG_OFFEN).toBe(false);
-    expect(START_CTA).toMatch(/Early-Access/);
+    expect(START_CTA).toBe("Coming soon");
   });
 
   it("keine Landing-Datei schreibt die alte Beschriftung noch fest hin", () => {
@@ -246,10 +246,9 @@ describe("Ehrliche Beschriftung, solange ein Zugangscode nötig ist", () => {
       expect(q, p).not.toMatch(/cta:\s*"Kostenlos starten"/);
     }
     // Die Ratgeber-Daten duerfen sich eine Beschriftung WUENSCHEN — gerendert
-    // wird sie nur ueber ctaBeschriftung(), das bei geschlossener Registrierung
-    // START_CTA einsetzt.
-    expect(readFileSync("app/(pub)/ratgeber/[slug]/page.tsx", "utf8")).toContain("ctaBeschriftung(a.feature.cta)");
-    expect(ctaBeschriftung("Kostenlos ausprobieren")).toBe(START_CTA);
+    // wird sie nur ueber StartCta, das bei geschlossener Registrierung „Coming
+    // soon“ ohne Link zeigt.
+    expect(readFileSync("app/(pub)/ratgeber/[slug]/page.tsx", "utf8")).toContain("<StartCta href={a.feature.href} className=\"btn btn-gold\" wunsch={a.feature.cta}>");
   });
 
   it("die geführten Demo-Wege gehen über eine Weißliste, nicht über freie Pfade", () => {

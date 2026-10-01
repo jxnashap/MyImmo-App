@@ -27,36 +27,27 @@ export const PREISE_SICHTBAR = false;
 // „Kostenlos starten" eine Einladung, die an einer Tür endet: Wer klickt,
 // steht vor einem Feld, das er nicht ausfüllen kann.
 //
-//   false → CTA heißt „Early-Access-Zugang anfragen" und führt zu /anmelden.
-//   true  → „Kostenlos starten" (dann bitte auch BETA_CODE entfernen).
+//   false → JEDER Start-Knopf ist eine nicht klickbare Fläche „Coming soon“
+//           (`components/StartCta.tsx`). Seit 01.10.2026 (Vorgabe des
+//           Betreibers) gibt es KEINEN Anfrageweg mehr — kein mailto, keine
+//           24-h-Zusage. Wer einen Beta-Code hat, kommt über „Anmelden“ hinein.
+//   true  → „Kostenlos starten“ als Link (dann bitte auch BETA_CODE entfernen).
 //
 // Bewusst eine Konstante und keine Env-Abfrage: Die Landing wird zur Bauzeit
 // vorgerendert; ein serverseitiges `process.env` wäre dort ein stiller Default.
 export const REGISTRIERUNG_OFFEN = false;
 
 /** Beschriftung des Haupt-Knopfes auf der öffentlichen Strecke. */
-export const START_CTA = REGISTRIERUNG_OFFEN ? "Kostenlos starten" : "Early-Access-Zugang anfragen";
+export const START_CTA = REGISTRIERUNG_OFFEN ? "Kostenlos starten" : "Coming soon";
 /** Kurzform für enge Kopfzeilen (761–1.319 px). Die lange Form ist fast doppelt
  *  so breit wie das frühere „Kostenlos starten" und überlagerte dort das
  *  mittige Logo (gemessen 30.09.2026: bis zu 215 px Überlappung). */
-export const START_CTA_KURZ = REGISTRIERUNG_OFFEN ? "Kostenlos starten" : "Zugang anfragen";
+export const START_CTA_KURZ = REGISTRIERUNG_OFFEN ? "Kostenlos starten" : "Coming soon";
 
-/**
- * Jede Knopf-Beschriftung der oeffentlichen Strecke laeuft hier durch: Solange
- * ein Zugangscode noetig ist, heisst JEDER Start-Knopf wie `START_CTA` — egal
- * was die Seite sich gewuenscht hat. Bis 01.10.2026 trugen 20 Seiten weiter
- * „Kostenlos starten"/„Kostenlos ausprobieren" (Audit A5), obwohl der Weg am
- * Pflichtfeld „Zugangscode" endete.
- */
-export function ctaBeschriftung(wunsch: string): string {
-  return REGISTRIERUNG_OFFEN ? wunsch : START_CTA;
-}
+// Die Beschriftung rendert `components/StartCta.tsx` — dort, und nur dort, entscheidet
+// sich, ob der Start-Knopf ein Link ist oder „Coming soon“.
 
-/** Die EINE Adresse fuer Early-Access-Anfragen und Hilfe vor dem Login. */
+/** Die EINE Kontaktadresse vor dem Login (Hilfe & Kontakt). Einen Anfrageweg
+ *  für Zugangscodes gibt es seit 01.10.2026 nicht mehr (Vorgabe des Betreibers). */
 export const KONTAKT_EMAIL = "info@myimmoapp.de";
-export const EARLY_ACCESS_MAILTO =
-  `mailto:${KONTAKT_EMAIL}?subject=${encodeURIComponent("Early-Access-Zugang zu MyImmo")}` +
-  `&body=${encodeURIComponent("Hallo,\n\nich vermiete … Wohnung(en)/Objekt(e) und möchte MyImmo im Early Access nutzen.\n\nViele Grüße")}`;
 export const HILFE_MAILTO = `mailto:${KONTAKT_EMAIL}?subject=${encodeURIComponent("Hilfe beim Zugang zu MyImmo")}`;
-/** Was der Besucher nach der Anfrage erwarten darf — eine Zusage, keine Floskel. */
-export const EARLY_ACCESS_ZUSAGE = "Du bekommst den Zugangscode werktags innerhalb von 24 Stunden per E-Mail.";

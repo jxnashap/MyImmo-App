@@ -104,7 +104,7 @@ describe("Kopfzeile: Logo und Knöpfe überlappen nicht (761–1.319 px)", () =>
   it("der Knopf trägt beide Fassungen aus lib/preise.ts, keine hart eingetragene", () => {
     const h = readFileSync("components/landing/QlxHeader.tsx", "utf8");
     expect(h).toContain("{START_CTA_KURZ}");
-    expect(h).toContain('aria-label={START_CTA}');
+    expect(h).toContain("<span className=\"qlx-cta-lang\">{START_CTA}</span>");
   });
 });
 

@@ -7,6 +7,19 @@ ausgenommen, keine Inhalte gelesen).
 
 ---
 
+> ⚠️ **KORREKTUR (01.10.2026, Betreiber):** Die zehn Vermieter-Konten mit Objekt sind
+> **Testkonten** für die App-Funktionen, keine echten Nutzer. Die Zahlen in Abschnitt 2
+> belegen deshalb **kein Nutzungsproblem**, sondern dass MyImmo **noch nicht gestartet** ist:
+> Registrierung nur mit Beta-Code, keine öffentliche Anmeldung. Daraus folgt:
+> - **„Fünf Vermieter persönlich begleiten“ (Phase 0) entfällt** — es gibt sie nicht.
+> - Die Kernaussage bleibt, mit anderem Grund: Bank-Anbindung und KI sind jetzt zu früh,
+>   weil es **noch keine echten Nutzer** gibt, deren Bedarf sie belegen könnten.
+> - **Der Anfrageweg ist abgeschafft** (Entscheidung des Betreibers): Start-Knöpfe zeigen
+>   „Coming soon“, nicht klickbar (`components/StartCta.tsx`); der Beta-Code bleibt im
+>   Registrierformular. Phase 1 ist damit um diesen Punkt ergänzt.
+> - Die erste echte Messung beginnt mit dem Start. Bis dahin sind die Zahlen in Abschnitt 2
+>   ein Bild der Testdaten, kein Nutzerverhalten.
+
 ## 1. Kurzurteil
 
 Das Feedback beschreibt die Seite **korrekt** (Zitate, Zielgruppe, Workflow, Bankpaket,
