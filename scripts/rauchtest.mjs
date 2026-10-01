@@ -243,12 +243,34 @@ const WEGE = [
     // den Augen eines Mieters. In der Demo steht die verknüpfte Mieterin
     // (Sophie Berger) zuerst in der Auswahl — also muss ihre Wohnung da sein.
     schluessel: "portal-vorschau",
-    titel: "Mieterportal — Vorschau Mieter-Sicht",
+    titel: "Mieterportal — Ansicht Mieter (nur Demo)",
     pfad: "/anliegen?tab=vorschau",
-    erwartet: ["Vorschau Mieter-Sicht", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete", "Ansicht des Mieters"],
+    erwartet: ["Ansicht Mieter", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete", "Ansicht des Mieters"],
     async pruefe({ html }) {
       // Nur-Lesen: In der Vorschau darf kein Abmelde-Formular des Portals stehen.
       return html.includes("Mieter sieht hier") || html.includes("Mieterportal von") ? null : "Vorschau-Rahmen fehlt";
+    },
+  },
+  {
+    // Demo-Service (01.10.2026): drei verknüpfte Partner. Firmen und
+    // Beispielaufträge erscheinen erst mit dem ausstehenden Reset
+    // (supabase/ausstehend/demo_service_reset.sql) — geprüft wird deshalb nur,
+    // was ohne ihn schon stimmen muss.
+    schluessel: "service-partner",
+    titel: "Mieterportal — Service-Partner verknüpft",
+    pfad: "/anliegen?tab=service",
+    erwartet: ["Verknüpfte Service-Partner", "Hausmeisterservice Krause", "Sanitär Lindner GmbH", "Garten- &amp; Winterdienst Petersen"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "service-ansicht",
+    titel: "Mieterportal — Ansicht Service (nur Demo)",
+    pfad: "/anliegen?tab=vorschau-service",
+    erwartet: ["Ansicht Service", "Service-Portal", "Ansicht des Service-Partners", "Auftrag beantragen"],
+    async pruefe() {
+      return null;
     },
   },
   {
@@ -433,6 +455,38 @@ async function main() {
       { titel: "Mieter-Demo — Vermieter-Bereich bleibt zu", pfad: "/steuer", erwartet: [], zielPfad: "/portal" },
     ];
     for (const weg of MIETER_WEGE) {
+      let grund = null;
+      try {
+        const seite = await hole(weg.pfad);
+        const soll = weg.zielPfad ?? weg.pfad.split("?")[0];
+        if (seite.status >= 400) grund = `HTTP ${seite.status}`;
+        if (!grund && seite.endePfad !== soll) grund = `umgeleitet: ${seite.kette.join(" → ")}`;
+        if (!grund) {
+          const fehlt = weg.erwartet.filter((t) => !seite.html.includes(t));
+          if (fehlt.length) grund = `Text fehlt: ${fehlt.join(", ")}`;
+        }
+      } catch (e) {
+        grund = `Ausnahme: ${e.message}`;
+      }
+      ergebnisse.push({ weg, grund });
+      console.log(`${grund ? "✗" : "✓"} ${weg.titel}${grund ? `\n    ${grund}` : ""}`);
+    }
+  }
+
+  // --- Service-Sicht (01.10.2026) -----------------------------------------
+  // Dritte Anmeldung (3 von 6 je 300 s): als Demo-Hausmeister.
+  kekse.clear();
+  const serviceLogin = await hole("/api/demo?rolle=service");
+  if (serviceLogin.endePfad !== "/service") {
+    ergebnisse.push({ weg: { titel: "Service-Demo — Anmeldung" }, grund: `gelandet auf ${serviceLogin.kette.join(" → ")}` });
+    console.log(`✗ Service-Demo — Anmeldung\n    ${serviceLogin.kette.join(" → ")}`);
+  } else {
+    console.log("\n✓ Service-Demo — Anmeldung");
+    const SERVICE_WEGE = [
+      { titel: "Service-Portal — Aufträge", pfad: "/service", erwartet: ["Service-Portal", "Verknüpft mit 1 Auftraggeber", "Auftrag beantragen", "Firmenverzeichnis des Vermieters"] },
+      { titel: "Service-Demo — Vermieter-Bereich bleibt zu", pfad: "/steuer", erwartet: [], zielPfad: "/service" },
+    ];
+    for (const weg of SERVICE_WEGE) {
       let grund = null;
       try {
         const seite = await hole(weg.pfad);

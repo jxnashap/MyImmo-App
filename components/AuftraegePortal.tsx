@@ -21,6 +21,9 @@ export type PortalFirmaRow = {
 };
 export type AuftraggeberRow = { vermieter_id: string; label: string };
 
+/** Hinweis statt Absenden — Vorschau beim Vermieter und Demo-Hausmeister. */
+export const VORSCHAU_NICHT_GESENDET = "Nur Ansicht — in der Demo wird nichts gesendet.";
+
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   freigabe: { label: "Wartet auf Freigabe", cls: "badge-amber" },
   offen: { label: "Offen", cls: "badge-amber" },
@@ -78,7 +81,7 @@ function FirmenLinkAktionen({
   );
 }
 
-function Eintrag({ a, firmen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[] }) {
+function Eintrag({ a, firmen, vorschau }: { a: PortalAuftragRow; firmen: PortalFirmaRow[]; vorschau: boolean }) {
   const firma = a.firma_id ? firmen.find((f) => f.id === a.firma_id) ?? null : null;
   const [aktion, setAktion] = useState<null | "angenommen" | "erledigt" | "abgelehnt">(null);
   const [text, setText] = useState("");
@@ -177,8 +180,9 @@ function Eintrag({ a, firmen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[] 
                 </>
               )}
               {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+              {vorschau && <p style={{ fontSize: 11, color: "var(--muted)", margin: 0 }}>{VORSCHAU_NICHT_GESENDET}</p>}
               <div style={{ display: "flex", gap: 8 }}>
-                <button type="button" className="btn btn-gold" disabled={pending} onClick={() => senden(aktion)}>
+                <button type="button" className="btn btn-gold" disabled={pending || vorschau} onClick={() => { if (!vorschau) senden(aktion); }}>
                   {pending ? "…" : aktion === "angenommen" ? "Annahme senden" : aktion === "erledigt" ? "Als erledigt melden" : "Ablehnung senden"}
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={() => setAktion(null)}>Abbrechen</button>
@@ -207,7 +211,7 @@ function Eintrag({ a, firmen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[] 
   );
 }
 
-function AntragForm({ auftraggeber, firmen }: { auftraggeber: AuftraggeberRow[]; firmen: PortalFirmaRow[] }) {
+function AntragForm({ auftraggeber, firmen, vorschau }: { auftraggeber: AuftraggeberRow[]; firmen: PortalFirmaRow[]; vorschau: boolean }) {
   const [offen, setOffen] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -216,6 +220,7 @@ function AntragForm({ auftraggeber, firmen }: { auftraggeber: AuftraggeberRow[];
   const senden = (fd: FormData) =>
     startTransition(async () => {
       setFehler(null); setOk(false);
+      if (vorschau) return; // Vorschau: nie an den Server
       const r = await beantrageAuftrag(fd);
       if (r?.error) setFehler(r.error);
       else { setOk(true); setOffen(false); }
@@ -267,7 +272,8 @@ function AntragForm({ auftraggeber, firmen }: { auftraggeber: AuftraggeberRow[];
               <div className="form-group"><label>Beschreibung</label><textarea name="beschreibung" rows={3} maxLength={2000} placeholder="Problem, Dringlichkeit, betroffener Mieter …" /></div>
             </div>
             {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
-            <div><button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "…" : "Antrag an den Vermieter senden"}</button></div>
+            {vorschau && <p style={{ fontSize: 11, color: "var(--muted)", margin: 0 }}>{VORSCHAU_NICHT_GESENDET}</p>}
+            <div><button type="submit" className="btn btn-gold" disabled={pending || vorschau}>{pending ? "…" : "Antrag an den Vermieter senden"}</button></div>
           </form>
         )}
       </div>
@@ -276,17 +282,19 @@ function AntragForm({ auftraggeber, firmen }: { auftraggeber: AuftraggeberRow[];
 }
 
 export default function AuftraegePortal({
-  auftraege, firmen, auftraggeber,
+  auftraege, firmen, auftraggeber, vorschau = false,
 }: {
   auftraege: PortalAuftragRow[];
   firmen: PortalFirmaRow[];
   auftraggeber: AuftraggeberRow[];
+  /** Formulare ausfüllbar, Senden aus (Ansicht beim Vermieter, Demo). */
+  vorschau?: boolean;
 }) {
   const offene = auftraege.filter((a) => ["offen", "angenommen", "freigabe"].includes(a.status));
   const erledigte = auftraege.filter((a) => ["erledigt", "abgelehnt", "nicht_freigegeben"].includes(a.status));
   return (
     <>
-      <AntragForm auftraggeber={auftraggeber} firmen={firmen} />
+      <AntragForm auftraggeber={auftraggeber} firmen={firmen} vorschau={vorschau} />
 
       <div className="section">
         <div className="section-header">
@@ -300,7 +308,7 @@ export default function AuftraegePortal({
               Antrag freigibt, erscheint es hier.
             </p>
           ) : (
-            offene.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} />)
+            offene.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} />)
           )}
         </div>
       </div>
@@ -331,7 +339,7 @@ export default function AuftraegePortal({
         <div className="section">
           <div className="section-header"><h3>Abgeschlossen</h3></div>
           <div className="section-body">
-            {erledigte.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} />)}
+            {erledigte.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} />)}
           </div>
         </div>
       )}

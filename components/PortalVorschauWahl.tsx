@@ -11,7 +11,10 @@ export default function PortalVorschauWahl({ mieter, aktuell, portal }: { mieter
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
-    <label style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--muted)" }}>
+    // `data-demo-erlaubt`: DemoNurLesen schaltet in der Demo JEDES Auswahlfeld
+    // ab — auch diese reine Navigation. Ohne die Ausnahme war nur der erste
+    // Mieter zu sehen (gefunden 01.10.2026).
+    <label data-demo-erlaubt="" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--muted)" }}>
       Aus Sicht von
       <select
         className="input"

@@ -137,7 +137,7 @@ describe("Vorschau-Reiter und Nur-Lesen", () => {
 
   it("der Mieter kommt nur aus der eigenen Liste — eine fremde ID im Link fällt auf den ersten eigenen zurück", () => {
     expect(seite).toContain("vorschauListe.find((m) => m.id === searchParams.mieter) ?? vorschauListe[0] ?? null");
-    expect(seite).toContain('{ art: "vermieter", vermieterId: (await aktuellerNutzer())!.id, mieterId: vorschauMieter.id }');
+    expect(seite).toContain('{ art: "vermieter", vermieterId: user!.id, mieterId: vorschauMieter.id }');
   });
 
   it("die Vorschau rendert dieselbe Ansicht wie /portal, mit `vorschau`", () => {
