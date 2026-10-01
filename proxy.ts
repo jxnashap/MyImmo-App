@@ -131,6 +131,13 @@ export async function proxy(request: NextRequest) {
     const ziel = new URL("/login", request.url);
     const gewollt = `${pathname}${request.nextUrl.search}`;
     if (pathname !== "/") ziel.searchParams.set("next", gewollt);
+    // Lag ein Sitzungs-Cookie vor, das nicht mehr gilt (abgelaufen, Auffrischen
+    // gescheitert, anderswo beendet), sagt die Login-Seite das — statt den
+    // Nutzer kommentarlos vor das Formular zu stellen (Audit B30). Nur ein
+    // Hinweistext; die Anmeldung selbst haengt nicht daran.
+    if (request.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"))) {
+      ziel.searchParams.set("grund", "abgelaufen");
+    }
     const redirectResponse = NextResponse.redirect(ziel);
     redirectResponse.headers.set(
       CSP_REPORT_ONLY ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
