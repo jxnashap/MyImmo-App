@@ -261,18 +261,17 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 `tests/passwortReset.test.ts` + `tests/blockF.test.ts`, fünfzehn Mutationen geprüft.
 
 ### Zukunftsideen (notiert, nicht gebaut)
-- **NÄCHSTES VORHABEN (Wunsch des Betreibers, 01.10.2026): Reiter per Wischen wechseln.**
-  Im Mieterportal (`/portal`, Glas-Leiste oben) und im Vermieter-Mieterportal (`/anliegen`)
-  soll man nicht oben auf die Glas-Leiste tippen müssen, sondern „rüberwischen" können —
-  „genauso wie in den Einstellungen". **Vor dem Bau klären, was gemeint ist:** Die
-  Einstellungen haben KEIN Wischen über den Inhalt (keine Touch-Handler in
-  `SettingsView.tsx`), nur eine waagerecht scrollbare Reiterzeile (`settings-tabs`) — die
-  Glas-Leiste kann das unter 860 px bereits (`overflow-x: auto`, Snap). Gemeint ist also
-  vermutlich Wischen über den INHALT (links/rechts = nächster/voriger Reiter). Risiken dann:
-  Konflikt mit waagerecht scrollenden Tabellen/Diagrammen im Inhalt, mit der
-  Zurück-Geste von iOS/Android am Bildschirmrand, und die Reiter sind echte Links
-  (`?tab=`) — Wischen muss die URL mitziehen, sonst bricht „Zurück". Danach steht die
-  Startseite mit den Kartenfehlern an (wirbt mit „Karte mit allen Standorten").
+- ✅ **Reiter per Wischen (01.10.2026, Wunsch des Betreibers) — GEBAUT.** Wischen über den
+  INHALT wechselt den Reiter in `/portal` (auch in der „Ansicht Mieter") und `/anliegen`.
+  `lib/wischen.ts` (reine Entscheidung: ≥ 70 px, waagerecht ≥ 1,8× senkrecht, ≤ 700 ms,
+  nicht in den äußeren 28 px — dort liegt die System-Zurück-Geste; kein Umlauf am
+  Listenende) + `components/WischReiter.tsx` (navigiert per `router.push`, damit die Adresse
+  mitzieht; ignoriert Eingabefelder, waagerecht scrollbare Bereiche und `data-kein-wischen`;
+  verschachtelt hält der innere Bereich die Geste an). `tests/wischen.test.ts`, sechs
+  Mutationen rot. **Nicht im Browser auf einem echten Telefon geprüft** — das Gefühl der
+  Schwellen muss der Betreiber testen. Die Einstellungen haben (noch) kein Wischen; ihre
+  Reiter sind Zustand, keine Links. **Danach:** Startseite mit den Kartenfehlern (wirbt mit
+  „Karte mit allen Standorten").
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**

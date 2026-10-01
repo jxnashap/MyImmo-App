@@ -13,6 +13,7 @@ import DokumenteAnfrage from "@/components/DokumenteAnfrage";
 import ZaehlerPortal from "@/components/ZaehlerPortal";
 import AnfragenVomVermieter from "@/components/AnfragenVomVermieter";
 import type { PortalDaten } from "@/lib/portalDaten";
+import WischReiter from "@/components/WischReiter";
 
 export const PORTAL_TABS = [
   { key: "wohnung", label: "Wohnung", icon: Home },
@@ -101,6 +102,8 @@ export default function PortalAnsicht({
         </nav>
       </div>
 
+      {/* Wischen über den Inhalt wechselt den Reiter (01.10.2026). */}
+      <WischReiter reiter={PORTAL_TABS.map((t) => hrefFuer(t.key))} aktuell={PORTAL_TABS.findIndex((t) => t.key === tab)}>
       <main className={vorschau ? undefined : "fade-up"} style={{ maxWidth: 760, margin: "0 auto", padding: "8px 20px 40px" }}>
         {tab === "wohnung" && (
           <>
@@ -299,6 +302,7 @@ export default function PortalAnsicht({
           </>
         )}
       </main>
+      </WischReiter>
     </div>
   );
 }
