@@ -139,7 +139,13 @@ export default async function RootLayout({
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
         <body>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            {children}
+            {/* Mieter-Demo (01.10.2026): dieselben Höflichkeits-Schranken wie
+                in der Vermieter-App; die Datenbank sperrt ohnehin. */}
+            {istDemoKonto(user.email) && <DemoNurLesen />}
+            {istDemoKonto(user.email) && <DemoLeiste />}
+          </ToastProvider>
         </body>
       </html>
     );

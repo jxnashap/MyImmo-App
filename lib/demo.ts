@@ -37,9 +37,12 @@
 import { istOeffentlicheSeite } from "@/lib/oeffentlich";
 
 export const DEMO_EMAIL = "demo.vermieter@myimmo.test";
+/** Zweites Demo-Konto (01.10.2026): die Mieter-Sicht. Verknüpft mit Sophie
+ *  Berger (Migration 20261001150000); angelegt von /api/demo?rolle=mieter. */
+export const DEMO_MIETER_EMAIL = "demo.mieter@myimmo.test";
 
 export function istDemoKonto(email?: string | null): boolean {
-  return !!email && email === DEMO_EMAIL;
+  return !!email && (email === DEMO_EMAIL || email === DEMO_MIETER_EMAIL);
 }
 
 // Benutzbare Bereiche. Praefixe, damit Detailseiten (/properties/<id>) und
@@ -65,6 +68,10 @@ const ERLAUBTE_PRAEFIXE = [
   "/anliegen",
   "/archiv",
   "/hilfe", // Support muss immer erreichbar sein, auch in der Demo
+  // Mieter-Demo (01.10.2026): Portal und Konto-Seite. Ein Vermieter-Konto
+  // wird vom Layout ohnehin von /portal weggeleitet.
+  "/portal",
+  "/konto",
   // Einstellungen bewusst sichtbar (Vorgabe Betreiber 29.08.2026): Dort sieht
   // der Besucher das Profil "Max Mustermann" und findet den Support.
   // Aenderungen sind seit dem 30.08.2026 nicht mehr moeglich — der Bereich ist

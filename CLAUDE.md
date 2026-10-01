@@ -520,6 +520,22 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   (anlegen); `BetragChart` ebenso (Buckets alle 0 ≠ keine Punkte). **(C30)** Dashboard und
   `/termine` laden `staffel_intervall/betrag/prozent/stufen` — die Staffel-Logik in
   `mieterFristen` lief vorher nie.
+  🧑‍💼 **Demo-Mieter (01.10.2026) — das Mieterportal hat jetzt einen Rauchtest.** Bis dahin war
+  `/portal` der einzige Nutzerbereich ohne jede automatische Prüfung (kein Mieter-Konto; die
+  Audit-Agenten hatten die Reiterleiste mit CSS *nachgestellt*). Jetzt: zweites Demo-Konto
+  **`demo.mieter@myimmo.test`** (`DEMO_MIETER_EMAIL` in `lib/demo.ts`, Passwort =
+  `DEMO_PASSWORT`), angelegt von **`/api/demo?rolle=mieter`** per Service-Role (idempotent),
+  nach JEDEM Reset per `demo_mieter_verknuepfen()` (Migration `20261001150000`) mit Sophie
+  Berger (`f3fd40b4…`, Wohnung `d560ceb5…`) verknüpft — der Reset schreibt die Anliegen ohne
+  `mieter_user_id` neu, die Verknüpfung hängt das Beispiel-Anliegen wieder um. `ist_demo_nutzer()`
+  erkennt den Mieter über den signierten E-Mail-Claim (seine uid entsteht erst auf Vercel);
+  `istDemoKonto()` kennt beide Adressen; `/portal` und `/konto` stehen in `ERLAUBTE_PRAEFIXE`;
+  die Mieter-Shell zeigt `DemoNurLesen` + `DemoLeiste`. **Rauchtest:** zweite Anmeldung
+  (2 von 6 je 300 s), prüft Wohnung/Anliegen/Zahlungen/Dokumente/Zähler, `/konto` und dass
+  `/steuer` für den Mieter auf `/portal` endet. `tests/demoMieter.test.ts`, vier Mutationen rot.
+  **Falle:** `mieter_zugaenge` gehört NICHT zum Reset — die Verknüpfung überlebt ihn; die
+  Anliegen-Zuordnung nicht. Wer eine neue Mieter-Beispieltabelle anlegt, trägt sie in
+  `demo_mieter_verknuepfen()` nach.
   **Regel aus dem Audit: Eine
   SECURITY-DEFINER-RPC, die etwas freischaltet, darf nicht für `authenticated` ausführbar sein,
   wenn die Prüfung nur in der Action davor sitzt.**
