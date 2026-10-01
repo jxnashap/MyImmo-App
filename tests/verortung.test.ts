@@ -3,13 +3,12 @@
 // „nicht gefunden" und schickte dieselbe Anfrage bei jedem Aufruf erneut — laut
 // Nutzungsregeln ein Sperrgrund. Ein Zusatz wie „(EG)" ließ die Suche leer
 // laufen (live gegen Nominatim mit einer öffentlichen Adresse belegt).
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   bereinigeAdresse, zerlegeAdresse, geocodeAdresse, sollVerorten, geoAenderung, koordinaten,
-  GEO_ZURUECKSETZEN, GEDROSSELT_PAUSE_MS, GEOCODE_PAUSE_MS, ordneFuerKarte,
+  GEO_ZURUECKSETZEN, GEDROSSELT_PAUSE_MS, GEOCODE_PAUSE_MS,
 } from "@/lib/geocode";
-import { fakeSupabase, mockeNextUndSupabase } from "./stubs/actionHarness";
 
 const lies = (p: string) => readFileSync(p, "utf8");
 
@@ -118,90 +117,7 @@ describe("geoAenderung und Zurücksetzen", () => {
   });
 });
 
-describe("ordneFuerKarte — jedes Objekt in genau einer Gruppe, mit Grund", () => {
-  const jetzt = Date.parse("2026-10-01T12:00:00Z");
-  const z = (id: string, x: Record<string, unknown>) =>
-    ({ id, bezeichnung: id, typ: null, wert: null, adresse: "Unter den Linden 77, 10117 Berlin", lat: null, lng: null, ...x });
-  it("verortet / offen / nicht gefunden / ohne Adresse / pausiert", () => {
-    const g = ordneFuerKarte([
-      z("a", { lat: 52.5, lng: 13.4 }),
-      z("b", {}),
-      z("c", { geo_status: "nicht_gefunden" }),
-      z("d", { adresse: null }),
-      z("e", { geo_status: "gedrosselt", geo_versucht_am: new Date(jetzt - 60_000).toISOString() }),
-      z("f", { latitude: 48.1, longitude: 11.5 }),
-    ] as never, jetzt);
-    expect(g.verortet.map((o) => o.id)).toEqual(["a", "f"]);
-    expect(g.offen.map((o) => o.id)).toEqual(["b"]);
-    expect(g.nichtGefunden.map((o) => o.id)).toEqual(["c"]);
-    expect(g.ohneAdresse.map((o) => o.id)).toEqual(["d"]);
-    expect(g.pausiert.map((o) => o.id)).toEqual(["e"]);
-  });
-  it("Normalfall: alles verortet → nur die Karte, keine Hinweise", () => {
-    const g = ordneFuerKarte([z("a", { lat: 1, lng: 2 })] as never, jetzt);
-    expect([g.offen, g.nichtGefunden, g.ohneAdresse, g.pausiert].every((l) => l.length === 0)).toBe(true);
-  });
-});
-
-describe("/api/karte/verorten", () => {
-  beforeEach(() => vi.resetModules());
-  afterEach(() => {
-    vi.unstubAllGlobals();
-    for (const m of ["next/cache", "next/navigation", "@/lib/supabase/server", "@/lib/supabase/admin", "@/lib/net/bremse"]) vi.doUnmock(m);
-  });
-
-  async function rufe(zeile: Record<string, unknown> | null, fetchAntwort: Response | null = null) {
-    vi.resetModules();
-    const { db, client } = fakeSupabase({ antwortFolge: { "properties:select": [zeile] , "properties:update": [{ id: "obj-1" }] } });
-    mockeNextUndSupabase(client);
-    vi.doMock("@/lib/net/bremse", () => ({ darfWeiter: async () => true }));
-    const f = vi.fn(async () => fetchAntwort ?? antwort(200, []));
-    vi.stubGlobal("fetch", f);
-    const { POST } = await import("@/app/api/karte/verorten/route");
-    const res = await POST(new Request("http://x/api/karte/verorten", { method: "POST", body: JSON.stringify({ id: "obj-1" }) }));
-    return { db, f, json: await res.json(), status: res.status };
-  }
-
-  it("liest nur das EIGENE Objekt", async () => {
-    const { db } = await rufe({ id: "obj-1", adresse: "Unter den Linden 77, 10117 Berlin", lat: 1, lng: 2 });
-    const sel = db.zugriffe.find((z) => z.tabelle === "properties" && z.op === "select")!;
-    expect(sel.filter).toEqual(expect.arrayContaining(["eq:id=obj-1", "eq:user_id=nutzer-1"]));
-  });
-  it("„nicht gefunden“ gemerkt → keine Anfrage an Nominatim", async () => {
-    const { f, json } = await rufe({ id: "obj-1", adresse: "Unter den Linden 77, 10117 Berlin", lat: null, lng: null, geo_status: "nicht_gefunden" });
-    expect(f).not.toHaveBeenCalled();
-    expect(json).toEqual({ art: "uebersprungen" });
-  });
-  it("429 → Status „gedrosselt“ wird gespeichert und gemeldet", async () => {
-    const { db, json } = await rufe({ id: "obj-1", adresse: "Unter den Linden 77, 10117 Berlin", lat: null, lng: null }, antwort(429, null));
-    expect(json).toEqual({ art: "gedrosselt" });
-    const upd = db.zugriffe.find((z) => z.tabelle === "properties" && z.op === "update")!;
-    expect(upd.daten).toMatchObject({ geo_status: "gedrosselt" });
-    expect(upd.filter).toEqual(expect.arrayContaining(["eq:id=obj-1", "eq:user_id=nutzer-1"]));
-  });
-  it("Treffer → Koordinaten und „ok“ in der Zeile", async () => {
-    const { db, json } = await rufe({ id: "obj-1", adresse: "Unter den Linden 77, 10117 Berlin", lat: null, lng: null }, antwort(200, [{ lat: "52.516", lon: "13.38" }]));
-    expect(json).toEqual({ art: "treffer", lat: 52.516, lng: 13.38 });
-    expect(db.zugriffe.find((z) => z.op === "update")!.daten).toMatchObject({ lat: 52.516, lng: 13.38, geo_status: "ok" });
-  });
-});
-
 describe("Einbindung", () => {
-  it("die Kartenseite verortet NICHT mehr im Server-Render; der Browser stoppt bei Drosselung", () => {
-    const seite = lies("app/(app)/karte/page.tsx");
-    expect(seite).not.toContain("geocodeAdresse(");
-    expect(seite).toContain("ordneFuerKarte(alle as KartenZeile[])");
-    expect(seite).toContain('.eq("user_id", user?.id ?? "")');
-    const k = lies("components/KarteVerortung.tsx");
-    expect(k).toContain('fetch("/api/karte/verorten"');
-    expect(k).toMatch(/else if \(art === "gedrosselt"\) \{\s*setGedrosselt\(true\);\s*return;/);
-    expect(k).toContain("setTimeout(r, GEOCODE_PAUSE_MS)");
-  });
-  it("die Karte entsteht einmal; neue Marker zeichnen nur die Ebene neu", () => {
-    const k = lies("components/PortfolioKarte.tsx");
-    expect(k).toMatch(/useEffect\(\(\) => \{\s*let aktiv = true;[\s\S]*?\}, \[\]\);/);
-    expect(k).toContain("ebene.clearLayers();");
-  });
   it("Bewertung und Cron laufen über dieselbe Verortung; der Cron nur, wenn BORIS an ist", () => {
     const b = lies("lib/actions/bewertung.ts");
     expect(b).toContain('from "@/lib/geocode"');
@@ -211,10 +127,12 @@ describe("Einbindung", () => {
     expect(c).toContain("if (borisAktiv && geoBudget > 0 && sollVerorten(p, Date.now())) {");
     expect(c).toContain(".update(geoAenderung(erg, new Date().toISOString()))");
   });
-  it("Datenschutzerklärung nennt Nominatim, CARTO und Jina AI (Audit B9)", () => {
+  it("Datenschutzerklärung nennt Nominatim und Jina AI (Audit B9), CARTO nicht mehr", () => {
     const d = lies("app/(pub)/datenschutz/page.tsx");
-    for (const t of ["OpenStreetMap Foundation", "CartoDB Inc.", "Jina AI GmbH", "27. Dezember 2031", "Data Privacy Framework"]) {
+    for (const t of ["OpenStreetMap Foundation", "Jina AI GmbH", "27. Dezember 2031"]) {
       expect(d, t).toContain(t);
     }
+    // Die Karte ist entfernt — dann darf CARTO auch nicht mehr als Empfänger dastehen.
+    expect(d).not.toContain("CARTO");
   });
 });

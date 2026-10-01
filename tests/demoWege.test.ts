@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
   DEMO_BEREICHE,
@@ -273,17 +273,24 @@ function alleDateien(dir: string): string[] {
   });
 }
 
-describe("Dashboard ohne Karte (01.10.2026, Entscheidung des Betreibers)", () => {
-  // Die Karte zeigte nur Objekte, deren Adresse schon auf /karte aufgelöst war
-  // (live 7 von 21) und passte nicht zur Seite. Die Kartenseite selbst bleibt —
-  // und braucht dann einen Weg dorthin, denn sie steht in keiner Navigation.
-  it("das Dashboard rendert keine Karte mehr", () => {
+describe("Keine Karte (01.10.2026, Entscheidung des Betreibers)", () => {
+  // Erst vom Dashboard genommen, am selben Tag auch die Kartenseite: Sie zeigte
+  // nur einen Teil der Objekte und passte optisch nicht. Kein toter Link darf
+  // bleiben, und keine Werbeaussage darf sie noch versprechen.
+  it("weder Dashboard noch Objektliste verweisen auf eine Karte", () => {
     const quelle = readFileSync("app/(app)/page.tsx", "utf8");
     expect(quelle).not.toContain("PortfolioKarte");
     expect(quelle).not.toContain("Karte aktivieren");
+    expect(readFileSync("app/(app)/properties/page.tsx", "utf8")).not.toContain('href="/karte"');
+    expect(demoDarfRoute("/karte")).toBe(false);
   });
-  it("die Kartenseite bleibt erreichbar — über die Objektliste", () => {
-    expect(readFileSync("app/(app)/properties/page.tsx", "utf8")).toContain('<Link href="/karte"');
-    expect(demoDarfRoute("/karte")).toBe(true);
+  it("die Startseite verspricht keine Karte mehr", () => {
+    expect(readFileSync("components/LandingPage.tsx", "utf8")).not.toContain("Karte mit allen Standorten");
+  });
+  it("Kartenseite, Verortungs-Route und Leaflet-Bausteine sind weg", () => {
+    for (const p of ["app/(app)/karte/page.tsx", "app/api/karte/verorten/route.ts", "components/PortfolioKarte.tsx", "components/KarteVerortung.tsx"]) {
+      expect(existsSync(p), p).toBe(false);
+    }
+    expect(readFileSync("app/globals.css", "utf8")).not.toContain(".leaflet-");
   });
 });

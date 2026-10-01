@@ -2339,13 +2339,6 @@ select:focus-visible, textarea:focus-visible {
 .qlx-hero-medium video[poster] { opacity: 1; } /* mit echtem Poster kein Schwarzblitz */
 .qlx-hero-medium.qlx-playing video[poster] { opacity: 1; }
 
-/* Leaflet-Bedienelemente im App-Stil: folgen beiden Themes statt des
-   hellen Leaflet-Defaults (im Dunkelmodus vorher weisse Inseln). */
-.leaflet-control-zoom a { background: var(--bg2) !important; color: var(--text) !important; border-color: var(--line) !important; }
-.leaflet-control-zoom a:hover { background: var(--bg3) !important; }
-.leaflet-control-attribution { background: color-mix(in srgb, var(--bg2) 85%, transparent) !important; color: var(--muted) !important; }
-.leaflet-control-attribution a { color: var(--muted) !important; }
-
 /* NK-Briefvorschau: am Handy scrollt die Kostentabelle im Blatt, statt
    Spalten zusammenzuquetschen; der Druck (@media print) bleibt unberuehrt. */
 @media (max-width: 640px) {

@@ -36,7 +36,6 @@ describe("demoDarfRoute — was sichtbar bleibt", () => {
     "/steuer",
     "/jahresbericht",
     "/termine",
-    "/karte",
     "/bewertung",
     "/afa-assistent",
     "/tenants/abc/nk",

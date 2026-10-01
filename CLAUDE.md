@@ -287,28 +287,24 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   **Glas-Leiste zentriert (Vorgabe des Betreibers, gleicher Tag):** `components/GlassLeiste.tsx`
   + `lib/glasLeiste.ts` → der offene Reiter steht unter 860 px in der Mitte der Leiste — beim
   Laden sofort (`useLayoutEffect`, kein Sprung), bei jedem Wechsel weich; `tests/glasLeiste.test.ts`.
-  ✅ **Kartenfehler behoben (01.10.2026), `tests/verortung.test.ts`, 13 Mutationen rot.**
-  Live gezählt: nur **7 von 23** echten Objekten verortet. **Gemessen statt vermutet:** Nominatim
-  antwortet nach wenigen Anfragen mit **429**; die App hielt das für „nicht gefunden“ und schickte
-  dieselbe Anfrage bei JEDEM Kartenaufruf erneut — laut Nutzungsregeln wörtlich ein Sperrgrund
-  („Clients sending repeatedly the same query may be classified as faulty and blocked“). Dazu: je
-  Aufruf nur drei Objekte, immer in derselben Reihenfolge → dauerhaft scheiternde blockierten den
-  Rest; „(EG)“ u. ä. ließ die Suche leer laufen (mit öffentlicher Adresse belegt); DREI Stellen
-  verorteten unabhängig in zwei Spaltenpaare. **Jetzt:** `lib/geocode.ts` ist die EINE Verortung
-  (Bereinigung, `treffer/leer/gedrosselt`, strukturierter Zweitversuch, `sollVerorten`,
-  `geoAenderung`); `properties.geo_status`/`geo_versucht_am` (Migration `20261001200000`) merken
-  das Ergebnis — „nicht gefunden“ erst nach Adressänderung neu, „gedrosselt“ nach 6 h. `/karte`
-  rendert sofort, der Browser verortet einzeln über `/api/karte/verorten` (1,1 s Abstand, stoppt
-  bei Drosselung, Bremse je Konto + gesamt), Marker erscheinen nach und nach; darunter steht, was
-  fehlt und warum, mit Link zum Korrigieren. Die Karte entsteht einmal, nur die Marker-Ebene wird
-  neu gezeichnet. **Cron verortet nur noch, wenn BORIS an ist** (sonst gingen Adressen ALLER Konten
-  hinaus, ohne Abnehmer). **Datenschutz Ziffer 3 h** nennt jetzt Nominatim (UK, Angemessenheits-
-  beschluss bis 27.12.2031), CARTO (USA, DPF-zertifiziert laut eigener Erklärung) und Jina AI
-  (Berlin, Teil von Elastic) — Audit B9 erledigt. **Regel: Nie eine externe Anfrage wiederholen,
-  deren Ergebnis schon bekannt ist; 429/5xx sind „später“, nicht „gibt es nicht“.**
-  **Offen und nur messbar, nicht vorhersagbar:** ob der öffentliche Nominatim-Dienst von Vercel
-  aus dauerhaft genug durchlässt. Nach einigen Kartenaufrufen `geo_status` zählen; überwiegt
-  `gedrosselt`, braucht es einen Geocoder mit Vertrag (Kosten → Betreiber-Entscheidung).
+  🗺️ **Karte ENTFERNT (01.10.2026, Entscheidung des Betreibers: „Raus mit der Karte“).**
+  Erst vom Dashboard (#367), dann auch `/karte`, `/api/karte/verorten`, `PortfolioKarte`,
+  Leaflet (Paket + CSS), der Knopf auf `/properties`, der Demo-Pfad, der Rauchtest-Weg, CARTO
+  aus der Datenschutzerklärung und „Karte mit allen Standorten“ von der Startseite (jetzt
+  „Restschuld je Objekt auf einen Blick“ — steht so im Bild darüber). `tests/demoWege.test.ts`
+  hält fest, dass nichts davon zurückkommt. **Davor am selben Tag (#375) gemessen und behoben,
+  und das BLEIBT:** `lib/geocode.ts` ist die EINE Verortung (Marktwert-Schätzung + Wert-Cron):
+  Nominatim antwortet unter Last mit **429**, die App hielt das für „nicht gefunden“ und fragte
+  dieselbe Adresse immer wieder — laut Nutzungsregeln ein Sperrgrund. Jetzt `treffer/leer/
+  gedrosselt`, Bereinigung („(EG)“ ließ die Suche leer laufen), strukturierter Zweitversuch,
+  Ergebnis in `properties.geo_status`/`geo_versucht_am` (Migration `20261001200000`) — „nicht
+  gefunden“ erst nach Adressänderung neu, „gedrosselt“ nach 6 h. Der **Cron verortet nur, wenn
+  BORIS an ist** (sonst gingen Adressen ALLER Konten hinaus, ohne Abnehmer). Datenschutz
+  Ziffer 3 h nennt Nominatim (UK, Angemessenheitsbeschluss bis 27.12.2031) und Jina AI (Audit
+  B9). `tests/verortung.test.ts`. **Regel: Nie eine externe Anfrage wiederholen, deren Ergebnis
+  schon bekannt ist; 429/5xx sind „später“, nicht „gibt es nicht“.**
+  **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
+  die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
@@ -358,7 +354,7 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   DEFINER scheiterte die SERVICE-ROLE (Demo-Reset, Wert-Cron, Zugriffsbremse). In einer
   zurückgerollten Transaktion bewiesen: Demo wirft, fremdes Konto schreibt, Reset läuft.
   (2) **Routen** — `demoDarfRoute`. FREI: Dashboard, Objekte, Mieter, Ein-/Ausgaben, Kauf/
-  Verkauf, **Mietkonto, Verbrauch, Kredite, Steuer, Jahresbericht, Termine, Karte, Marktwert,
+  Verkauf, **Mietkonto, Verbrauch, Kredite, Steuer, Jahresbericht, Termine, Marktwert,
   AfA, NK-Abrechnung, Übergabeprotokoll, seit Phase 3 auch Mieterportal und Archiv** +
   LESENDE API-Routen (Anlage-V-/Jahresbericht-PDF, DATEV, CSV, Kreditantrag, Datei-Ansicht).
   GESPERRT: Makler (keine Beispieldaten — leere Seite wirbt schlechter als der Sperr-Dialog),
