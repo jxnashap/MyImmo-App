@@ -34,12 +34,12 @@ describe("Demo-Mieter ist ein Demo-Konto", () => {
 describe("/api/demo?rolle=mieter", () => {
   const route = lies("app/api/demo/route.ts");
   it("legt das Konto idempotent an, verknüpft nach dem Reset, meldet als Mieter an und landet im Portal", () => {
-    expect(route).toContain('searchParams.get("rolle") === "mieter"');
+    expect(route).toContain('const alsMieter = rolle === "mieter";');
     expect(route).toContain("admin.auth.admin.createUser({");
     expect(route).toContain("email_confirm: true");
     expect(route).toContain('admin.rpc("demo_mieter_verknuepfen")');
-    expect(route).toContain("email: alsMieter ? DEMO_MIETER_EMAIL : DEMO_EMAIL,");
-    expect(route).toContain('const gewaehlt = alsMieter ? "/portal"');
+    expect(route).toContain("email: alsMieter ? DEMO_MIETER_EMAIL : alsService ? DEMO_SERVICE_EMAIL : DEMO_EMAIL,");
+    expect(route).toContain('const gewaehlt = alsMieter ? "/portal" : alsService ? "/service"');
   });
   it("die Verknüpfung läuft auch beim Vermieter-Start — der Reset entfernt sie sonst aus den Anliegen", () => {
     // Der Aufruf steht auf eigener Zeile im else-Zweig (4 Leerzeichen) — nicht

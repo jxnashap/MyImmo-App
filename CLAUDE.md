@@ -554,6 +554,34 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   kommt in `ladePortalDaten`, nie direkt in eine der beiden Seiten.** Die drei
   Portal-Komponenten stehen seitdem NICHT mehr in der Ausnahmeliste von
   `tests/demoWege.test.ts` — sie rendern jetzt auch beim (Demo-)Vermieter.
+  🔧 **Demo-Service + „Ansichten nur in der Demo" (01.10.2026).** Drei verknüpfte
+  Service-Konten (`DEMO_SERVICE_KONTEN` in `lib/demo.ts`, Hausmeister ist das
+  Anmeldekonto, `/api/demo?rolle=service` → `/service`), angelegt und verknüpft VOR dem
+  Reset über `demo_service_verknuepfen()` (gibt fehlende Konten zurück). **Warum vor dem
+  Reset:** Der Trigger `auftraege_service_spaltenschutz` setzt `service_user_id`,
+  `mieter_id`, `prop_id` … bei jedem UPDATE zurück, das nicht der Vermieter selbst
+  macht — die Service-Role ist es nicht. Aufträge bekommen ihren Partner deshalb beim
+  EINFÜGEN (Schnappschuss-Spalte `service_email`). Schnappschuss: 5 Firmen, 6 Aufträge,
+  1 Firmen-Zusage (Migration `20261001180100`).
+  ⏳ **AUSSTEHEND: `supabase/ausstehend/demo_service_reset.sql`** — der Reset, der Firmen
+  und Aufträge tatsächlich in die Demo schreibt. **Braucht die Bestätigung des
+  Betreibers:** Die Supabase-Schnittstelle verlangt für jede Migration mit `delete` einen
+  Bestätigungsdialog; ohne Zuschauer läuft sie in den 60-s-Timeout (dreimal belegt, auch
+  wenn `delete` nur im Funktionstext steht). **Nicht umgehen** (z. B. Schlüsselwort
+  zerlegen) — die Schranke ist genau dafür da. Nach dem Anwenden Datei nach
+  `supabase/migrations/20261001180200_demo_service_reset.sql` verschieben, README-Zeile.
+  **Lehre:** Ein Timeout bei `apply_migration` ist kein Netzfehler, wenn die Anfrage
+  `delete` enthält — erst nach `pg_stat_activity` sehen (nichts hing), dann den Inhalt
+  eingrenzen (kleine Abfragen gingen, jede mit `delete` nicht).
+  **Ansichten:** `ANSICHTEN_NUR_DEMO = true` + `ansichtenSichtbar(email)` in `lib/demo.ts`
+  — „Ansicht Mieter" und „Ansicht Service" im Mieterportal NUR für Demo-Konten (Vorgabe des
+  Betreibers), auch nicht per Adresse erreichbar. Service-Ansicht: `lib/servicePortalDaten.ts`
+  + `components/ServicePortalAnsicht.tsx` (EIN Lader, EINE Darstellung für `/service` und
+  die Ansicht). **Ausfüllen ja, Senden nein:** `AuftraegePortal vorschau` und
+  `ServiceManager demo` — Formulare bedienbar (`data-demo-erlaubt`), Senden-Knopf aus mit
+  `VORSCHAU_NICHT_GESENDET`. **Dabei gefunden:** Die Mieter-Auswahl der Vorschau war in der
+  Demo gesperrt (DemoNurLesen schaltet JEDES `select` ab) → `data-demo-erlaubt` am Label.
+  `tests/demoService.test.ts`, neun Mutationen rot (eine erst nach Nachschärfen).
   **Regel aus dem Audit: Eine
   SECURITY-DEFINER-RPC, die etwas freischaltet, darf nicht für `authenticated` ausführbar sein,
   wenn die Prüfung nur in der Action davor sitzt.**

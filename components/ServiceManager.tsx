@@ -18,6 +18,7 @@ import { datum } from "@/lib/format";
 import { teilbarerLink } from "@/lib/appUrl";
 import { useToast } from "@/components/Toast";
 import { actionFehler } from "@/lib/actionErgebnis";
+import { VORSCHAU_NICHT_GESENDET } from "@/components/AuftraegePortal";
 
 export type ServicePartnerRow = { user_id: string; firma: string | null; email: string | null; created_at: string };
 export type ServiceCodeRow = { code: string; gueltig_bis: string };
@@ -269,7 +270,7 @@ function LinkKopierButton({ token }: { token: string }) {
 }
 
 export default function ServiceManager({
-  partner, codes, auftraege, properties, firmen, mieterListe, initialTitel, initialText,
+  partner, codes, auftraege, properties, firmen, mieterListe, initialTitel, initialText, demo = false,
 }: {
   partner: ServicePartnerRow[];
   codes: ServiceCodeRow[];
@@ -279,6 +280,8 @@ export default function ServiceManager({
   mieterListe: MieterOption[];
   initialTitel?: string;
   initialText?: string;
+  /** Demo (01.10.2026): „Auftrag vergeben" ausfüllbar, Senden aus. */
+  demo?: boolean;
 }) {
   const [fehler, setFehler] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -287,6 +290,7 @@ export default function ServiceManager({
   const senden = (fd: FormData) =>
     startTransition(async () => {
       setFehler(null); setOk(false);
+      if (demo) return; // Demo: nie an den Server
       const r = await erstelleAuftrag(fd);
       if (r?.error) setFehler(r.error);
       else setOk(true);
@@ -343,7 +347,10 @@ export default function ServiceManager({
         <div className="section">
           <div className="section-header"><h3>Auftrag vergeben</h3></div>
           <div className="section-body">
-            <form action={senden} style={{ display: "grid", gap: 10 }}>
+            {/* `data-demo-erlaubt`: In der Demo soll der Besucher sehen, was
+                sich auswählen lässt (Partner, Objekt, Mieter-Kontakt) — die
+                Felder bleiben bedienbar, nur das Senden ist aus. */}
+            <form action={senden} style={{ display: "grid", gap: 10 }} {...(demo ? { "data-demo-erlaubt": "" } : {})}>
               <div className="form-row">
                 <div className="form-group">
                   <label>Service-Partner *</label>
@@ -391,7 +398,8 @@ export default function ServiceManager({
               </div>
               {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
               {ok && <p style={{ fontSize: 12, color: "var(--green)", margin: 0 }}>Auftrag gesendet ✓</p>}
-              <div><button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "…" : "Auftrag senden"}</button></div>
+              {demo && <p style={{ fontSize: 11, color: "var(--muted)", margin: 0 }}>{VORSCHAU_NICHT_GESENDET}</p>}
+              <div><button type="submit" className="btn btn-gold" disabled={pending || demo}>{pending ? "…" : "Auftrag senden"}</button></div>
             </form>
           </div>
         </div>

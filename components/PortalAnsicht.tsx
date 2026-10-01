@@ -80,7 +80,7 @@ export default function PortalAnsicht({
               Konto
             </Link>
             <form action="/auth/signout" method="post">
-              <button type="submit" className="btn btn-ghost" style={{ fontSize: 12 }}>Abmelden</button>
+              <button type="submit" className="btn btn-ghost" style={{ fontSize: 12 }} data-demo-erlaubt="">Abmelden</button>
             </form>
           </div>
         )}

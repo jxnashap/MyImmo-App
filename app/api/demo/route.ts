@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { darfWeiter } from "@/lib/net/bremse";
-import { DEMO_EMAIL, DEMO_MIETER_EMAIL, DEMO_ZIELE } from "@/lib/demo";
+import { DEMO_EMAIL, DEMO_MIETER_EMAIL, DEMO_SERVICE_EMAIL, DEMO_ZIELE } from "@/lib/demo";
 
 // Oeffentlicher Demo-Zugang: setzt den Demo-Bestand zurueck und meldet den
 // Besucher am Demo-Konto an. Danach steht die volle App mit 6 Objekten,
@@ -59,7 +59,10 @@ export async function GET(request: Request) {
   // Service-Role angelegt (gleiches Passwort) und nach jedem Reset mit der
   // Demo-Mieterin verknüpft (`demo_mieter_verknuepfen`, Migration
   // 20261001150000) — der Reset schreibt die Anliegen ohne mieter_user_id neu.
-  const alsMieter = new URL(request.url).searchParams.get("rolle") === "mieter";
+  const rolle = new URL(request.url).searchParams.get("rolle");
+  const alsMieter = rolle === "mieter";
+  // Service-Sicht (01.10.2026): `?rolle=service` meldet als Hausmeister an.
+  const alsService = rolle === "service";
 
   let resetStatus: "ok" | "kein-key" | "fehler" = "ok";
   const admin = createAdminClient();
@@ -67,6 +70,25 @@ export async function GET(request: Request) {
     resetStatus = "kein-key";
     console.error("Demo-Reset uebersprungen: SUPABASE_SERVICE_ROLE_KEY fehlt.");
   } else {
+    // Service-Partner VOR dem Reset: Der Reset ordnet die Beispiel-Aufträge
+    // über die E-Mail ihrem Partner zu — fehlt das Konto, bliebe der Auftrag
+    // ohne Partner. Ein späteres UPDATE ginge nicht: der Trigger
+    // auftraege_service_spaltenschutz setzt service_user_id zurück, wenn
+    // nicht der Vermieter selbst schreibt. Die Funktion nennt die fehlenden
+    // Konten; nur dann wird angelegt (sonst kostete jeder Start drei Aufrufe).
+    const { data: fehlend, error: sFehler } = await admin.rpc("demo_service_verknuepfen");
+    if (sFehler) console.error("Demo-Service verknuepfen fehlgeschlagen:", sFehler.message);
+    else if (Array.isArray(fehlend) && fehlend.length > 0) {
+      for (const email of fehlend as string[]) {
+        const { error: anlegeFehler } = await admin.auth.admin.createUser({ email, password: passwort, email_confirm: true });
+        if (anlegeFehler && !/already|exists/i.test(anlegeFehler.message)) {
+          console.error("Demo-Service-Konto anlegen fehlgeschlagen:", anlegeFehler.message);
+        }
+      }
+      const { error: s2Fehler } = await admin.rpc("demo_service_verknuepfen");
+      if (s2Fehler) console.error("Demo-Service verknuepfen fehlgeschlagen:", s2Fehler.message);
+    }
+
     const { error: resetFehler } = await admin.rpc("demo_zuruecksetzen");
     if (resetFehler) {
       // Nicht abbrechen: Ein fehlgeschlagener Reset ist aergerlich, aber die
@@ -98,7 +120,7 @@ export async function GET(request: Request) {
   // 2. Anmelden — schreibt die Session-Cookies ueber den Server-Client.
   const supabase = await createClient();
   const { data: login, error: loginFehler } = await supabase.auth.signInWithPassword({
-    email: alsMieter ? DEMO_MIETER_EMAIL : DEMO_EMAIL,
+    email: alsMieter ? DEMO_MIETER_EMAIL : alsService ? DEMO_SERVICE_EMAIL : DEMO_EMAIL,
     password: passwort,
   });
   if (loginFehler) {
@@ -122,7 +144,7 @@ export async function GET(request: Request) {
   // `Object.hasOwn`, nicht `DEMO_ZIELE[weg]`: `?weg=constructor` fände sonst
   // über den Prototyp eine Funktion und leitete auf deren Quelltext weiter.
   const weg = new URL(request.url).searchParams.get("weg") ?? "";
-  const gewaehlt = alsMieter ? "/portal" : Object.hasOwn(DEMO_ZIELE, weg) ? DEMO_ZIELE[weg] : "/";
+  const gewaehlt = alsMieter ? "/portal" : alsService ? "/service" : Object.hasOwn(DEMO_ZIELE, weg) ? DEMO_ZIELE[weg] : "/";
   const basis = gewaehlt === "/" ? "/?demo=1" : `${gewaehlt}?demo=1`;
   const ziel_url = resetStatus === "ok" ? basis : `${basis}&reset=${resetStatus}`;
   return NextResponse.redirect(new URL(ziel_url, ziel));

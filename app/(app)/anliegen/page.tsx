@@ -10,6 +10,10 @@ import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { ladePortalDaten, vorschauUrl, type VorschauMieter } from "@/lib/portalDaten";
 import PortalAnsicht, { portalTab } from "@/components/PortalAnsicht";
 import PortalVorschauWahl from "@/components/PortalVorschauWahl";
+import ServicePortalAnsicht from "@/components/ServicePortalAnsicht";
+import ServiceVorschauWahl from "@/components/ServiceVorschauWahl";
+import { ladeServicePortalDaten, type VorschauPartner } from "@/lib/servicePortalDaten";
+import { ansichtenSichtbar, istDemoKonto } from "@/lib/demo";
 import Leer from "@/components/Leer";
 import AnliegenManager, { type AnliegenVermieterRow } from "@/components/AnliegenManager";
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
@@ -21,11 +25,18 @@ import { wartetAufVermieter } from "@/lib/zaehler";
 
 export default async function AnliegenPage(
   props0: {
-    searchParams: Promise<{ tab?: string; titel?: string; text?: string; mieter?: string; portal?: string }>;
+    searchParams: Promise<{ tab?: string; titel?: string; text?: string; mieter?: string; portal?: string; partner?: string }>;
   }
 ) {
   const searchParams = await props0.searchParams;
-  const tab = ["bewerbungen", "service", "vorschau"].includes(searchParams.tab ?? "") ? (searchParams.tab as string) : "anliegen";
+  const user = await aktuellerNutzer();
+  // „Ansicht Mieter" / „Ansicht Service" gibt es nur in der Demo
+  // (ANSICHTEN_NUR_DEMO in lib/demo.ts). Ein echter Vermieter, der die
+  // Adresse von Hand eingibt, landet bei den Anliegen.
+  const ansichten = ansichtenSichtbar(user?.email);
+  const erlaubteTabs = ["bewerbungen", "service", ...(ansichten ? ["vorschau", "vorschau-service"] : [])];
+  const tab = erlaubteTabs.includes(searchParams.tab ?? "") ? (searchParams.tab as string) : "anliegen";
+  const demo = istDemoKonto(user?.email);
 
   const supabase = await createClient();
   const [
@@ -197,15 +208,35 @@ export default async function AnliegenPage(
   const vorschauMieter = vorschauListe.find((m) => m.id === searchParams.mieter) ?? vorschauListe[0] ?? null;
   const portalReiter = portalTab(searchParams.portal);
   const vorschauDaten = tab === "vorschau" && vorschauMieter
-    ? await ladePortalDaten(supabase, { art: "vermieter", vermieterId: (await aktuellerNutzer())!.id, mieterId: vorschauMieter.id })
+    ? await ladePortalDaten(supabase, { art: "vermieter", vermieterId: user!.id, mieterId: vorschauMieter.id })
+    : null;
+
+  // Ansicht Service (01.10.2026, nur Demo): das Service-Portal mit den Augen
+  // eines verknüpften Partners. Partner mit offenen Aufträgen zuerst.
+  const partnerListe: VorschauPartner[] = partner
+    .map((p) => ({
+      id: p.user_id,
+      name: p.firma || p.email || "Service-Partner",
+      offen: auftraege.filter((a) => a.partnerName === (p.firma || p.email || "Partner") && ["offen", "angenommen", "freigabe"].includes(a.status)).length,
+    }))
+    .sort((a, b) => b.offen - a.offen || a.name.localeCompare(b.name, "de"));
+  // Nur ein Partner aus der EIGENEN Liste.
+  const vorschauPartner = partnerListe.find((p) => p.id === searchParams.partner) ?? partnerListe[0] ?? null;
+  const serviceDaten = tab === "vorschau-service" && vorschauPartner
+    ? await ladeServicePortalDaten(supabase, { art: "vermieter", vermieterId: user!.id, serviceUserId: vorschauPartner.id })
     : null;
 
   const TABS = [
     { key: "anliegen", label: "Mieter-Anliegen", icon: MessageSquareText, badge: offen },
     { key: "bewerbungen", label: "Bewerbungen", icon: UserRoundSearch, badge: neueBewerbungen },
     { key: "service", label: "Service-Partner", icon: Wrench, badge: freigabeAnfragen },
-    { key: "vorschau", label: "Vorschau Mieter-Sicht", icon: Eye, badge: 0 },
-  ] as const;
+    ...(ansichten
+      ? ([
+          { key: "vorschau", label: "Ansicht Mieter", icon: Eye, badge: 0 },
+          { key: "vorschau-service", label: "Ansicht Service", icon: Eye, badge: 0 },
+        ] as const)
+      : []),
+  ];
 
   return (
     <div className="fade-up">
@@ -221,6 +252,8 @@ export default async function AnliegenPage(
               ? `Selbstauskunft-Links & Bewerbungs-Eingang${bewerbungen.length > 0 ? ` · ${neueBewerbungen} neu von ${bewerbungen.length}` : ""}`
               : tab === "vorschau"
                 ? "So sieht dein Mieter das Portal — mit deinen Daten, nur zur Ansicht"
+              : tab === "vorschau-service"
+                ? "So sieht dein Hausmeister oder Handwerker das Service-Portal — Formulare zum Ausprobieren, gesendet wird nichts"
               : tab === "service"
                 ? `Handwerker & Hausmeister verknüpfen, Aufträge vergeben${freigabeAnfragen > 0 ? ` · ${freigabeAnfragen} Freigabe-Anfrage${freigabeAnfragen > 1 ? "n" : ""} wartet` : auftraege.length > 0 ? ` · ${offeneAuftraege} offen von ${auftraege.length}` : ""}`
                 : `Meldungen deiner Mieter & deine Anfragen an sie${liste.length > 0 ? ` · ${offen} offen von ${liste.length}` : ""}`}
@@ -306,6 +339,38 @@ export default async function AnliegenPage(
         )
       )}
 
+      {tab === "vorschau-service" && (
+        vorschauPartner === null ? (
+          <Leer
+            icon={Eye}
+            art="nichts"
+            titel="Noch kein Service-Partner"
+            text="Die Ansicht zeigt das Service-Portal aus der Sicht eines verknüpften Hausmeisters oder Handwerkers — verknüpfe zuerst einen Partner."
+            aktion={{ href: "/anliegen?tab=service", label: "Service-Partner" }}
+          />
+        ) : (
+          <>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <ServiceVorschauWahl partner={partnerListe} aktuell={vorschauPartner.id} />
+            </div>
+            <div
+              className="portal-vorschau"
+              aria-label={`Ansicht: Service-Portal von ${vorschauPartner.name}`}
+              style={{ border: "1px solid var(--line)", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}
+            >
+              {serviceDaten && (
+                <ServicePortalAnsicht
+                  daten={serviceDaten}
+                  kopfzeile={`${vorschauPartner.name} · Ansicht des Service-Partners`}
+                  vorschau
+                  ansichtImVermieterKonto
+                />
+              )}
+            </div>
+          </>
+        )
+      )}
+
       {tab === "bewerbungen" && (
         <BewerbungenManager links={links} bewerbungen={bewerbungen} properties={props ?? []} />
       )}
@@ -318,6 +383,7 @@ export default async function AnliegenPage(
           properties={props ?? []}
           firmen={firmen}
           mieterListe={(mieter ?? []).map((m) => ({ id: m.id, name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }))}
+          demo={demo}
           initialTitel={searchParams.titel}
           initialText={searchParams.text}
         />

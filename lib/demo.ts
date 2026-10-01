@@ -40,9 +40,28 @@ export const DEMO_EMAIL = "demo.vermieter@myimmo.test";
 /** Zweites Demo-Konto (01.10.2026): die Mieter-Sicht. Verknüpft mit Sophie
  *  Berger (Migration 20261001150000); angelegt von /api/demo?rolle=mieter. */
 export const DEMO_MIETER_EMAIL = "demo.mieter@myimmo.test";
+/** Service-Konten (01.10.2026): drei verknüpfte Partner, angemeldet wird als
+ *  Hausmeister. Angelegt von /api/demo, verknüpft über
+ *  demo_service_verknuepfen() (Migration 20261001180000). Die Liste muss mit
+ *  der Funktion und mit ist_demo_nutzer() übereinstimmen —
+ *  tests/demoService.test.ts prüft das. */
+export const DEMO_SERVICE_EMAIL = "demo.hausmeister@myimmo.test";
+export const DEMO_SERVICE_KONTEN = [DEMO_SERVICE_EMAIL, "demo.sanitaer@myimmo.test", "demo.garten@myimmo.test"] as const;
 
 export function istDemoKonto(email?: string | null): boolean {
-  return !!email && (email === DEMO_EMAIL || email === DEMO_MIETER_EMAIL);
+  return !!email && (email === DEMO_EMAIL || email === DEMO_MIETER_EMAIL || (DEMO_SERVICE_KONTEN as readonly string[]).includes(email));
+}
+
+/**
+ * Die Reiter „Ansicht Mieter" und „Ansicht Service" im Mieterportal des
+ * Vermieters (01.10.2026, Vorgabe des Betreibers): NUR in der Demo. Dort
+ * zeigen sie dem Besucher die Gegenseite ohne zweite Anmeldung. Für echte
+ * Vermieter bleiben sie aus — ein Schalter, falls das später anders
+ * entschieden wird.
+ */
+export const ANSICHTEN_NUR_DEMO = true;
+export function ansichtenSichtbar(email?: string | null): boolean {
+  return !ANSICHTEN_NUR_DEMO || istDemoKonto(email);
 }
 
 // Benutzbare Bereiche. Praefixe, damit Detailseiten (/properties/<id>) und
@@ -72,6 +91,7 @@ const ERLAUBTE_PRAEFIXE = [
   // wird vom Layout ohnehin von /portal weggeleitet.
   "/portal",
   "/konto",
+  "/service", // Service-Demo (01.10.2026); ein Vermieter wird vom Layout weggeleitet
   // Einstellungen bewusst sichtbar (Vorgabe Betreiber 29.08.2026): Dort sieht
   // der Besucher das Profil "Max Mustermann" und findet den Support.
   // Aenderungen sind seit dem 30.08.2026 nicht mehr moeglich — der Bereich ist
