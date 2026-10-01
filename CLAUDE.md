@@ -630,6 +630,13 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   **Regel aus dem Audit: Eine
   SECURITY-DEFINER-RPC, die etwas freischaltet, darf nicht für `authenticated` ausführbar sein,
   wenn die Prüfung nur in der Action davor sitzt.**
+- **Externes Feedback vom 01.10.2026 (Vision „Betriebssystem für private Vermieter“, Bank +
+  KI): `docs/FEEDBACK-BEWERTUNG-2026-10.md`.** Kern: Die Seite beschreibt es richtig, der
+  Plan passt nicht — **Nutzungsproblem, kein Funktionsproblem** (21 echte Konten, 4 in 30
+  Tagen angemeldet, 7 neue Buchungen in 30 Tagen über alle, 1 Mieter im Portal). Plan:
+  Phase 0 Betreiber-Entscheidungen (Zugang, 5 Vermieter begleiten, Anwalt) → Startseite
+  schärfen → Aktivierung (Objekt-Check, Monatsmail) → CSV-Kontoauszug-Abgleich statt Open
+  Banking → regelbasierter Portfolio-Check statt KI-Chat. **Vor neuen Funktionen dort nachsehen.**
 - **Externes Feedback vom 08.09.2026, geprüft und mit Plan: `docs/FEEDBACK-BEWERTUNG-2026-09.md`.**
   Zwölf Behauptungen, elf gegen den Code bestätigt (Speed Insights vs. „keine Analyse-Tools",
   Platzhalter in der Datenschutzerklärung, Demo-Text widerspricht Nur-Lesen, „Fristen &
