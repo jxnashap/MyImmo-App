@@ -27,6 +27,10 @@
   auf fällige Prüfungen sehen** (Steuersätze, Förderkonditionen, Anbieterverträge, Beispielzinsen,
   Marktdaten). Fällige Zeilen abarbeiten, bevor die eigentliche Aufgabe beginnt; das Ergebnis
   eintragen — auch „unverändert" ist ein Prüfergebnis.
+- 💡 **IDEEN → Memory-Repo `jxnashap/memory`, Datei `02 - MyImmo/myimmoideen.md`** (Branch `main`).
+  Nennt der Nutzer eine Idee zu MyImmo, wird sie DORT eingetragen (Datum, Status 💡, seine
+  Worte, nicht bewerten). **Vor jedem eigenen Vorschlag dort nachsehen** — zurückgestellte
+  und verworfene Ideen stehen mit Grund da. Zugriff: `add_repo` jxnashap/memory.
 - **Neue Erkenntnisse gehören dorthin**, nicht in den Chatverlauf: Wer einen Fehler behebt,
   eine Anbindung klärt oder eine Konvention festlegt, trägt sie im selben PR nach.
 
@@ -239,6 +243,8 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 `tests/passwortReset.test.ts` + `tests/blockF.test.ts`, fünfzehn Mutationen geprüft.
 
 ### Zukunftsideen (notiert, nicht gebaut)
+> **Vollständige Ideenliste mit Status: Memory-Repo `02 - MyImmo/myimmoideen.md`.**
+> Die Einträge hier unten sind die ausführlichen Begründungen zu zwei davon.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
