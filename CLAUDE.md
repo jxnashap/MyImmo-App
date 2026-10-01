@@ -261,17 +261,23 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 `tests/passwortReset.test.ts` + `tests/blockF.test.ts`, fünfzehn Mutationen geprüft.
 
 ### Zukunftsideen (notiert, nicht gebaut)
-- ✅ **Reiter per Wischen (01.10.2026, Wunsch des Betreibers) — GEBAUT.** Wischen über den
-  INHALT wechselt den Reiter in `/portal` (auch in der „Ansicht Mieter") und `/anliegen`.
-  `lib/wischen.ts` (reine Entscheidung: ≥ 70 px, waagerecht ≥ 1,8× senkrecht, ≤ 700 ms,
-  nicht in den äußeren 28 px — dort liegt die System-Zurück-Geste; kein Umlauf am
-  Listenende) + `components/WischReiter.tsx` (navigiert per `router.push`, damit die Adresse
-  mitzieht; ignoriert Eingabefelder, waagerecht scrollbare Bereiche und `data-kein-wischen`;
-  verschachtelt hält der innere Bereich die Geste an). `tests/wischen.test.ts`, sechs
-  Mutationen rot. **Nicht im Browser auf einem echten Telefon geprüft** — das Gefühl der
-  Schwellen muss der Betreiber testen. Die Einstellungen haben (noch) kein Wischen; ihre
-  Reiter sind Zustand, keine Links. **Danach:** Startseite mit den Kartenfehlern (wirbt mit
-  „Karte mit allen Standorten").
+- ✅ **Reiter per Wischen (01.10.2026, Wunsch des Betreibers) — GEBAUT, zweite Fassung
+  am selben Tag („muss viel flüssiger sein").** Der INHALT folgt dem Finger, der
+  Nachbar-Reiter gleitet daneben herein, beim Loslassen gleitet er zu Ende (260 ms,
+  `--ease-out-stark`) oder schnappt zurück; ERST DANN `router.push` (Adresse zieht mit,
+  „Zurück" bleibt heil). `lib/wischen.ts` (reine Entscheidung: weit ≥ ¼ Breite ODER schnell
+  ≥ 0,5 px/ms ab 40 px; waagerecht ≥ 1,8× senkrecht; Achse ab 10 px festgelegt; Rand 28 px
+  dem System überlassen; Gummiband ⅓ am Listenende; kein Umlauf) +
+  `components/WischReiter.tsx` (`reiter: { href, label, inhalt? }[]`; `touch-action: pan-y`,
+  der Browser scrollt senkrecht selbst; Eingabefelder, waagerecht scrollbare Bereiche und
+  `data-kein-wischen` ausgenommen; Nachbarn `inert`; Rückfall-Timer, falls `transitionend`
+  ausbleibt; bei `prefers-reduced-motion` kein Gleiten). **`/portal` bringt alle fünf
+  Inhalte mit** (die Daten liegen ohnehin vor), **`/anliegen` nur den aktiven** — die
+  Nachbarn gleiten als Platzhalter „wird geladen …" herein, bis der Server liefert (alle
+  Reiter vorzuladen hieße ~8 Abfragen je Aufruf für die Ansichten). `tests/wischen.test.ts`.
+  **Nicht auf einem echten Telefon geprüft** — Schwellen und Gefühl muss der Betreiber
+  testen. Die Einstellungen haben kein Wischen; ihre Reiter sind Zustand, keine Links.
+  **Danach:** Startseite mit den Kartenfehlern (wirbt mit „Karte mit allen Standorten").
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
@@ -574,21 +580,17 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   macht — die Service-Role ist es nicht. Aufträge bekommen ihren Partner deshalb beim
   EINFÜGEN (Schnappschuss-Spalte `service_email`). Schnappschuss: 5 Firmen, 6 Aufträge,
   1 Firmen-Zusage (Migration `20261001180100`).
-  ⏳ **AUSSTEHEND: `supabase/ausstehend/demo_service_reset.sql`** — auch MIT Betreiber
-  in der Sitzung lief `apply_migration` in den Timeout (01.10.2026: der Dialog erreichte ihn
-  in der Cloud-Sitzung nicht). Weg jetzt: Betreiber führt die Datei im Supabase-Dashboard
-  (SQL Editor) selbst aus; danach prüfen (`pg_get_functiondef` enthält
-  `auftrag_rueckmeldungen`), Datei verschieben, README-Zeile „manuell im SQL-Editor".
-  Ursprünglich: — der Reset, der Firmen
-  und Aufträge tatsächlich in die Demo schreibt. **Braucht die Bestätigung des
-  Betreibers:** Die Supabase-Schnittstelle verlangt für jede Migration mit `delete` einen
-  Bestätigungsdialog; ohne Zuschauer läuft sie in den 60-s-Timeout (dreimal belegt, auch
-  wenn `delete` nur im Funktionstext steht). **Nicht umgehen** (z. B. Schlüsselwort
-  zerlegen) — die Schranke ist genau dafür da. Nach dem Anwenden Datei nach
-  `supabase/migrations/20261001180200_demo_service_reset.sql` verschieben, README-Zeile.
+  ✅ **Reset angewendet (01.10.2026, Betreiber im SQL-Editor):** Migration
+  `20261001180200_demo_service_reset.sql` — `apply_migration` lief auch MIT Betreiber in
+  der Sitzung in den Timeout, weil der `delete`-Bestätigungsdialog der Supabase-
+  Schnittstelle den Betreiber in der Cloud-Sitzung nicht erreichte (dreimal belegt, auch
+  wenn `delete` nur im Funktionstext steht). **Nicht umgangen** (z. B. Schlüsselwort
+  zerlegen) — die Schranke ist genau dafür da; Weg bei Wiederholung: Datei im SQL-Editor
+  ausführen, danach `pg_get_functiondef` prüfen, README-Zeile „manuell im SQL-Editor".
   **Lehre:** Ein Timeout bei `apply_migration` ist kein Netzfehler, wenn die Anfrage
   `delete` enthält — erst nach `pg_stat_activity` sehen (nichts hing), dann den Inhalt
-  eingrenzen (kleine Abfragen gingen, jede mit `delete` nicht).
+  eingrenzen (kleine Abfragen gingen, jede mit `delete` nicht). Der Rauchtest prüft seitdem
+  Firmen („Heizung & Sanitär Böhm") und Aufträge („Dachrinne verstopft") in beiden Sichten.
   **Ansichten:** `ANSICHTEN_NUR_DEMO = true` + `ansichtenSichtbar(email)` in `lib/demo.ts`
   — „Ansicht Mieter" und „Ansicht Service" im Mieterportal NUR für Demo-Konten (Vorgabe des
   Betreibers), auch nicht per Adresse erreichbar. Service-Ansicht: `lib/servicePortalDaten.ts`

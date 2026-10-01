@@ -239,6 +239,111 @@ export default async function AnliegenPage(
       : []),
   ];
 
+  const inhalt = (
+    <>
+        {tab === "anliegen" && (
+          <>
+            <VermieterAnfragen anfragen={anfragen} mieter={verbundeneMieter} />
+            <div className="section">
+              <div className="section-header"><h3>Meldungen deiner Mieter</h3></div>
+              <div className="section-body">
+                <AnliegenManager rows={liste} />
+              </div>
+            </div>
+          </>
+        )}
+
+        {tab === "vorschau" && (
+          vorschauMieter === null ? (
+            <Leer
+              icon={Eye}
+              art="nichts"
+              titel="Noch keine Mieter"
+              text="Die Vorschau zeigt das Mieterportal aus der Sicht eines deiner Mieter — lege zuerst einen Mieter an."
+              aktion={{ href: "/tenants/new", label: "Mieter anlegen" }}
+            />
+          ) : (
+            <>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <PortalVorschauWahl mieter={vorschauListe} aktuell={vorschauMieter.id} portal={portalReiter} />
+                {!vorschauDaten?.mieterKontoVerknuepft && (
+                  <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                    {vorschauMieter.name} hat noch kein Konto — Anliegen und Zählerstände erscheinen erst nach
+                    der Einladung. <Link href={`/tenants/${vorschauMieter.id}`} style={{ color: "var(--gold)" }}>Einladen</Link>
+                  </span>
+                )}
+              </div>
+              <div
+                className="portal-vorschau"
+                aria-label={`Vorschau: Mieterportal von ${vorschauMieter.name}`}
+                style={{ border: "1px solid var(--line)", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}
+              >
+                {vorschauDaten && (
+                  <PortalAnsicht
+                    daten={vorschauDaten}
+                    tab={portalReiter}
+                    hrefFuer={(t) => vorschauUrl(vorschauMieter.id, t)}
+                    kopfzeile={`${vorschauMieter.name} · Ansicht des Mieters`}
+                    vorschau
+                  />
+                )}
+              </div>
+            </>
+          )
+        )}
+
+        {tab === "vorschau-service" && (
+          vorschauPartner === null ? (
+            <Leer
+              icon={Eye}
+              art="nichts"
+              titel="Noch kein Service-Partner"
+              text="Die Ansicht zeigt das Service-Portal aus der Sicht eines verknüpften Hausmeisters oder Handwerkers — verknüpfe zuerst einen Partner."
+              aktion={{ href: "/anliegen?tab=service", label: "Service-Partner" }}
+            />
+          ) : (
+            <>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <ServiceVorschauWahl partner={partnerListe} aktuell={vorschauPartner.id} />
+              </div>
+              <div
+                className="portal-vorschau"
+                aria-label={`Ansicht: Service-Portal von ${vorschauPartner.name}`}
+                style={{ border: "1px solid var(--line)", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}
+              >
+                {serviceDaten && (
+                  <ServicePortalAnsicht
+                    daten={serviceDaten}
+                    kopfzeile={`${vorschauPartner.name} · Ansicht des Service-Partners`}
+                    vorschau
+                    ansichtImVermieterKonto
+                  />
+                )}
+              </div>
+            </>
+          )
+        )}
+
+        {tab === "bewerbungen" && (
+          <BewerbungenManager links={links} bewerbungen={bewerbungen} properties={props ?? []} />
+        )}
+
+        {tab === "service" && (
+          <ServiceManager
+            partner={partner}
+            codes={codes}
+            auftraege={auftraege}
+            properties={props ?? []}
+            firmen={firmen}
+            mieterListe={(mieter ?? []).map((m) => ({ id: m.id, name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }))}
+            demo={demo}
+            initialTitel={searchParams.titel}
+            initialText={searchParams.text}
+          />
+        )}
+    </>
+  );
+
   return (
     <div className="fade-up">
       <div className="topbar">
@@ -289,112 +394,15 @@ export default async function AnliegenPage(
         })}
       </nav>
 
-      {/* Wischen über den Inhalt wechselt den Reiter (01.10.2026). In der
-          Ansicht Mieter wischt man die Reiter des Mieterportals — der innere
-          Bereich hält die Geste an. */}
-      <WischReiter reiter={TABS.map((t) => `/anliegen?tab=${t.key}`)} aktuell={TABS.findIndex((t) => t.key === tab)}>
-
-      {tab === "anliegen" && (
-        <>
-          <VermieterAnfragen anfragen={anfragen} mieter={verbundeneMieter} />
-          <div className="section">
-            <div className="section-header"><h3>Meldungen deiner Mieter</h3></div>
-            <div className="section-body">
-              <AnliegenManager rows={liste} />
-            </div>
-          </div>
-        </>
-      )}
-
-      {tab === "vorschau" && (
-        vorschauMieter === null ? (
-          <Leer
-            icon={Eye}
-            art="nichts"
-            titel="Noch keine Mieter"
-            text="Die Vorschau zeigt das Mieterportal aus der Sicht eines deiner Mieter — lege zuerst einen Mieter an."
-            aktion={{ href: "/tenants/new", label: "Mieter anlegen" }}
-          />
-        ) : (
-          <>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 14 }}>
-              <PortalVorschauWahl mieter={vorschauListe} aktuell={vorschauMieter.id} portal={portalReiter} />
-              {!vorschauDaten?.mieterKontoVerknuepft && (
-                <span style={{ fontSize: 12, color: "var(--muted)" }}>
-                  {vorschauMieter.name} hat noch kein Konto — Anliegen und Zählerstände erscheinen erst nach
-                  der Einladung. <Link href={`/tenants/${vorschauMieter.id}`} style={{ color: "var(--gold)" }}>Einladen</Link>
-                </span>
-              )}
-            </div>
-            <div
-              className="portal-vorschau"
-              aria-label={`Vorschau: Mieterportal von ${vorschauMieter.name}`}
-              style={{ border: "1px solid var(--line)", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}
-            >
-              {vorschauDaten && (
-                <PortalAnsicht
-                  daten={vorschauDaten}
-                  tab={portalReiter}
-                  hrefFuer={(t) => vorschauUrl(vorschauMieter.id, t)}
-                  kopfzeile={`${vorschauMieter.name} · Ansicht des Mieters`}
-                  vorschau
-                />
-              )}
-            </div>
-          </>
-        )
-      )}
-
-      {tab === "vorschau-service" && (
-        vorschauPartner === null ? (
-          <Leer
-            icon={Eye}
-            art="nichts"
-            titel="Noch kein Service-Partner"
-            text="Die Ansicht zeigt das Service-Portal aus der Sicht eines verknüpften Hausmeisters oder Handwerkers — verknüpfe zuerst einen Partner."
-            aktion={{ href: "/anliegen?tab=service", label: "Service-Partner" }}
-          />
-        ) : (
-          <>
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 14 }}>
-              <ServiceVorschauWahl partner={partnerListe} aktuell={vorschauPartner.id} />
-            </div>
-            <div
-              className="portal-vorschau"
-              aria-label={`Ansicht: Service-Portal von ${vorschauPartner.name}`}
-              style={{ border: "1px solid var(--line)", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 2px rgba(0,0,0,.04)" }}
-            >
-              {serviceDaten && (
-                <ServicePortalAnsicht
-                  daten={serviceDaten}
-                  kopfzeile={`${vorschauPartner.name} · Ansicht des Service-Partners`}
-                  vorschau
-                  ansichtImVermieterKonto
-                />
-              )}
-            </div>
-          </>
-        )
-      )}
-
-      {tab === "bewerbungen" && (
-        <BewerbungenManager links={links} bewerbungen={bewerbungen} properties={props ?? []} />
-      )}
-
-      {tab === "service" && (
-        <ServiceManager
-          partner={partner}
-          codes={codes}
-          auftraege={auftraege}
-          properties={props ?? []}
-          firmen={firmen}
-          mieterListe={(mieter ?? []).map((m) => ({ id: m.id, name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }))}
-          demo={demo}
-          initialTitel={searchParams.titel}
-          initialText={searchParams.text}
-        />
-      )}
-      </WischReiter>
+      {/* Wischen über den Inhalt wechselt den Reiter (01.10.2026). Nur der
+          aktive Reiter ist geladen — die Nachbarn gleiten als Platzhalter
+          herein, bis der Server die Seite liefert. In der Ansicht Mieter
+          wischt man die Reiter des Mieterportals; der innere Bereich hält
+          die Geste an. */}
+      <WischReiter
+        aktuell={TABS.findIndex((t) => t.key === tab)}
+        reiter={TABS.map((t) => ({ href: `/anliegen?tab=${t.key}`, label: t.label, inhalt: t.key === tab ? inhalt : undefined }))}
+      />
     </div>
   );
 }
