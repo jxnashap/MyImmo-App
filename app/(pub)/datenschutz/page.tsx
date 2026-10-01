@@ -134,7 +134,13 @@ export default function DatenschutzPage() {
         haben. Bleibt die Bestätigung aus, verfällt der Link nach 72 Stunden.
       </p>
       <p>
-        <em>Zweck:</em> Versand der angeforderten Vorlagen und Hinweise.{" "}
+        Dasselbe Verfahren gilt für die <strong>Benachrichtigung zum Start</strong> auf der
+        Startseite: Dort willigen Sie ein, per E-Mail zu erfahren, wenn MyImmo für alle startet,
+        und danach gelegentliche Hinweise für Vermieter zu erhalten. Gespeichert wird zusätzlich,
+        über welches der beiden Formulare Sie sich angemeldet haben.
+      </p>
+      <p>
+        <em>Zweck:</em> Versand der angeforderten Vorlagen und Hinweise bzw. der Startankündigung.{" "}
         <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung) — für den
         Einwilligungsnachweis zusätzlich Art. 6 Abs. 1 lit. c i. V. m. Art. 7 Abs. 1 DSGVO.{" "}
         <em>Empfänger:</em> <strong>Brevo</strong> (Sendinblue SAS, 7 rue de Madrid, 75008 Paris,
