@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { istDemoKonto, demoDarfRoute } from "@/lib/demo";
 import { istOeffentlicheSeite } from "@/lib/oeffentlich";
+import { FAKTOR_COOKIE, FAKTOR_SEKUNDEN, faktorNachweisGueltig, hatBestaetigtenFaktor, mfaAusgenommen, stelleFaktorNachweisAus } from "@/lib/auth/faktorNachweis";
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
@@ -147,6 +148,63 @@ export async function proxy(request: NextRequest) {
     return redirectResponse;
   }
 
+  // ---- Zwei-Faktor-Schranke für ALLE Wege (Audit 01.10.2026, A3) ----
+  //
+  // Bis dahin saß das 2FA-Gate nur im Seiten-Layout: Server-Actions (POST),
+  // API-Routen und Vorab-Ladungen liefen mit einer aal1-Sitzung (Passwort
+  // allein) daran vorbei. Hier passiert jede Anfrage — außer den Pfaden, auf
+  // denen der zweite Schritt nachgeholt wird (`mfaAusgenommen`).
+  //
+  // `aal` kommt aus dem SIGNIERTEN Token. Ob das Konto einen Faktor hat, weiß
+  // nur der Auth-Server; das Ergebnis „keiner" wird zehn Minuten signiert im
+  // Cookie gemerkt (lib/auth/faktorNachweis.ts), „einer" nie.
+  // Fail-closed: Antwortet der Auth-Server nicht, gilt die Sitzung als beendet.
+  let faktorNachweisSetzen: string | null = null;
+  if (user && !mfaAusgenommen(pathname) && claims?.aal !== "aal2") {
+    const nachweis = request.cookies.get(FAKTOR_COOKIE)?.value;
+    if (!faktorNachweisGueltig(nachweis, user.id)) {
+      const {
+        data: { user: geprueft },
+        error: nutzerFehler,
+      } = await supabase.auth.getUser();
+      const sperren = nutzerFehler || !geprueft || geprueft.id !== user.id || hatBestaetigtenFaktor(geprueft.factors);
+      if (sperren) {
+        const grund = nutzerFehler || !geprueft ? "abgelaufen" : "mfa";
+        if (request.method !== "GET" || pathname.startsWith("/api/")) {
+          const text =
+            grund === "mfa"
+              ? "Zweiter Faktor erforderlich — bitte melde dich neu an und bestätige den Code."
+              : "Sitzung abgelaufen — bitte neu anmelden.";
+          const abgelehnt = NextResponse.json({ error: text, fehler: text, mfa: grund === "mfa" }, { status: 403 });
+          abgelehnt.headers.set(
+            CSP_REPORT_ONLY ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
+            csp,
+          );
+          abgelehnt.headers.set("X-Content-Type-Options", "nosniff");
+          return abgelehnt;
+        }
+        const ziel = new URL("/login", request.url);
+        if (grund === "mfa") ziel.searchParams.set("mfa", "1");
+        else ziel.searchParams.set("grund", "abgelaufen");
+        if (pathname !== "/") ziel.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+        const weiter = NextResponse.redirect(ziel);
+        weiter.headers.set(
+          CSP_REPORT_ONLY ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
+          csp,
+        );
+        weiter.headers.set("X-Content-Type-Options", "nosniff");
+        // Ein alter Nachweis darf eine jetzt gesperrte Sitzung nicht wiederbeleben.
+        weiter.cookies.set({ name: FAKTOR_COOKIE, value: "", maxAge: 0, path: "/" });
+        return weiter;
+      }
+      try {
+        faktorNachweisSetzen = stelleFaktorNachweisAus(user.id);
+      } catch {
+        faktorNachweisSetzen = null; // ohne DATA_ENCRYPTION_KEY: jedes Mal nachfragen
+      }
+    }
+  }
+
   // Demo-Konto: nur der freigegebene Ausschnitt. Die Seitenleiste graut den
   // Rest zwar aus, aber wer die Adresse kennt, tippt sie ein — deshalb hier
   // serverseitig abweisen.
@@ -206,6 +264,17 @@ export async function proxy(request: NextRequest) {
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  if (faktorNachweisSetzen) {
+    response.cookies.set({
+      name: FAKTOR_COOKIE,
+      value: faktorNachweisSetzen,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: request.nextUrl.protocol === "https:",
+      path: "/",
+      maxAge: FAKTOR_SEKUNDEN,
+    });
+  }
 
   return response;
 }

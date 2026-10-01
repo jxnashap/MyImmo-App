@@ -67,10 +67,10 @@ export type FakeDb = {
 };
 
 /** Ein unsignierter JWT mit `amr`-Zeitstempel — die Prüfung liest nur die Payload. */
-export function jwtMitAmr(vorSekunden: number, methode = "password"): string {
+export function jwtMitAmr(vorSekunden: number, methode = "password", aal = "aal1"): string {
   const ts = Math.floor(Date.now() / 1000) - vorSekunden;
   const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64url");
-  return `${b64({ alg: "none" })}.${b64({ sub: "nutzer-1", amr: [{ method: methode, timestamp: ts }] })}.sig`;
+  return `${b64({ alg: "none" })}.${b64({ sub: "nutzer-1", aal, amr: [{ method: methode, timestamp: ts }] })}.sig`;
 }
 
 /**
@@ -146,10 +146,35 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
       return { data: db.rpc[name] ?? null, error: gezielt ?? db.fehler };
     },
     auth: {
-      getUser: async () => ({ data: { user: { id: "nutzer-1", email: "test@example.org" } } }),
-      getSession: async () => ({ data: { session: { access_token: jwtMitAmr(db.amrVorSekunden) } }, error: null }),
+      // `db.aal` steuert beides wie der echte Server: `nextLevel === "aal2"` →
+      // `getUser` meldet einen bestätigten Faktor; `currentLevel` steht im Token.
+      // Das Sitzungs-Cookie (`session.user.factors`) sagt absichtlich das
+      // GEGENTEIL — wer es liest statt den Server, fällt im Test auf (Audit A2).
+      getUser: async () => ({
+        data: {
+          user: {
+            id: "nutzer-1",
+            email: "test@example.org",
+            factors: db.aal.nextLevel === "aal2" ? [{ id: "f1", factor_type: "totp", status: "verified" }] : [],
+          },
+        },
+        error: null,
+      }),
+      getSession: async () => ({
+        data: {
+          session: {
+            access_token: jwtMitAmr(db.amrVorSekunden, "password", db.aal.currentLevel),
+            user: { id: "nutzer-1", factors: db.aal.nextLevel === "aal2" ? [] : [{ id: "f1", factor_type: "totp", status: "verified" }] },
+          },
+        },
+        error: null,
+      }),
       mfa: {
-        getAuthenticatorAssuranceLevel: async () => ({ data: db.aal, error: null }),
+        // Ohne JWT-Argument liest die echte Bibliothek den Faktorstatus aus dem
+        // COOKIE — Server-Code darf das nicht mehr benutzen. Wer es tut, kracht hier.
+        getAuthenticatorAssuranceLevel: async () => {
+          throw new Error("getAuthenticatorAssuranceLevel() ist cookie-basiert — aalStandAus(user.factors, token) benutzen (Audit A2)");
+        },
       },
     },
     storage: {
