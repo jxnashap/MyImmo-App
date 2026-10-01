@@ -15,27 +15,46 @@ export default function BetragChart({
   cumulative = false,
   color = "var(--green)",
   caption,
+  heute,
 }: {
   points: RawPoint[];
   mode?: "area" | "bars";
   cumulative?: boolean;
   color?: string;
   caption?: string;
+  /** Stichtag `YYYY-MM-DD` vom Server (Europe/Berlin) — nie `new Date()` hier:
+   *  Server (UTC) und Browser (Ortszeit) kämen sonst am Monatsersten auf
+   *  verschiedene Monate → Hydration-Fehler (Audit A10). */
+  heute: string;
 }) {
   const { zeitraum } = useZeitraum();
 
+  // Zwei Sorten leer (Audit B27): GAR keine Buchungen → anlegen; Buchungen
+  // vorhanden, aber keine im Fenster → Zeitraum vergrößern. Vorher stand der
+  // Zeitraum-Hinweis nur im ersten Fall — wo er nichts nützt.
   if (!points || points.length === 0) {
+    return (
+      <Leer
+        art="nichts"
+        icon={BarChart3}
+        titel="Noch keine Buchungen"
+        text="Sobald Einnahmen und Ausgaben erfasst sind, zeigt diese Kurve ihren Saldo Monat für Monat."
+        aktion={{ href: "/cashflow/neu", label: "Erste Buchung erfassen" }}
+      />
+    );
+  }
+
+  const { gran, buckets } = aggregate(points, zeitraum, heute, { cumulative });
+  if (buckets.every((b) => b.value === 0)) {
     return (
       <Leer
         art="filter"
         icon={BarChart3}
         titel="Nichts im gewählten Zeitraum"
-        text="Für diesen Zeitraum sind keine Buchungen erfasst. Wähle oben einen größeren Zeitraum."
+        text="Es gibt Buchungen, aber keine in diesem Fenster. Wähle oben einen größeren Zeitraum."
       />
     );
   }
-
-  const { gran, buckets } = aggregate(points, zeitraum, new Date(), { cumulative });
   const werte = buckets.map((b) => b.value);
   const scale = niceScale(Math.min(0, ...werte), Math.max(0, ...werte), 5);
 

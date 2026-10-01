@@ -245,7 +245,7 @@ export default async function CashflowPage(
             <span style={{ fontSize: 12, color: "var(--muted)" }}>{einnahmen.length + kosten.length} Buchungen · Netto <span style={{ color: netto >= 0 ? "var(--green)" : "var(--red)" }}>{euro(netto)}</span></span>
           </div>
           <div className="section-body">
-            <CashflowListe einnahmen={einnahmen} kosten={kosten} properties={properties} tenants={tenants} />
+            <CashflowListe einnahmen={einnahmen} kosten={kosten} properties={properties} tenants={tenants} gefiltert={(einn?.length ?? 0) + (kost?.length ?? 0) > 0} />
           </div>
         </div>
       )}
@@ -256,7 +256,7 @@ export default async function CashflowPage(
             <span style={{ fontSize: 12, color: "var(--muted)" }}>{einnahmen.length} Buchungen · <span style={{ color: "var(--green)" }}>{euro(einnahmenTotal)}</span></span>
           </div>
           <div className="section-body">
-            <EinnahmenListe rows={einnahmen} properties={properties} tenants={tenants} />
+            <EinnahmenListe rows={einnahmen} properties={properties} tenants={tenants} gefiltert={(einn?.length ?? 0) > 0} />
           </div>
         </div>
       )}
@@ -267,7 +267,7 @@ export default async function CashflowPage(
             <span style={{ fontSize: 12, color: "var(--muted)" }}>{kosten.length} Buchungen · <span style={{ color: "var(--red)" }}>{euro(ausgabenTotal)}</span></span>
           </div>
           <div className="section-body">
-            <KostenListe rows={kosten} properties={properties} tenants={tenants} />
+            <KostenListe rows={kosten} properties={properties} tenants={tenants} gefiltert={(kost?.length ?? 0) > 0} />
           </div>
         </div>
       )}

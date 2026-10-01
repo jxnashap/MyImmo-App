@@ -5,7 +5,8 @@ import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, zahl, begruessung } from "@/lib/format";
 import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
-import { baueHeuteAufgaben, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
+import { baueHeuteAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
+import { heuteBerlin } from "@/lib/zeitraum";
 import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
 import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2 } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
@@ -95,7 +96,7 @@ export default async function DashboardPage() {
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
     supabase.from("kredite").select("*"),
-    supabase.from("mieter").select("id,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
+    supabase.from("mieter").select("id,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen"),
     supabase.from("bewertung_historie").select("immobilie_id,datum,marktwert"),
     supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
     supabase.from("termine").select("id,titel,datum,kategorie,erledigt").order("datum"),
@@ -120,6 +121,9 @@ export default async function DashboardPage() {
     vorname: string | null; nachname: string | null; einheit: string | null;
     mietbeginn: string | null; mietende: string | null; kuendigung: number | null;
     letzte_erhoehung: string | null; mietart: string | null; staffel_datum: string | null;
+    // Staffelplan (Audit C30): ohne diese Felder lief die Staffel-Logik in
+    // mieterFristen nie — „nächste Stufe" war immer das gespeicherte Datum.
+    staffel_intervall: string | null; staffel_betrag: number | null; staffel_prozent: number | null; staffel_stufen: number | null;
   };
   const mieterRows = (miet ?? []) as MieterRow[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
@@ -128,12 +132,14 @@ export default async function DashboardPage() {
 
   // Fristen & Aufgaben (Design-Handoff): nächste Termine aus denselben Quellen
   // wie /termine — abgeleitete Fristen + eigene, unerledigte Termine.
-  const heuteISO0 = new Date().toISOString().slice(0, 10);
+  // Stichtag in Europe/Berlin — nicht UTC (Audit A10): Bis 02:00 Uhr am
+  // Monatsersten zeigte das Dashboard sonst noch den Vormonat.
+  const heuteISO0 = heuteBerlin();
   // Untergrenze fuer die Liste. Fruehet wurde ab HEUTE gefiltert — genau das
   // Ueberfaellige, das man sehen muss, verschwand dadurch vom Dashboard,
   // waehrend /termine es als „Ueberfaellig" zaehlte. Jetzt sind auch die
   // letzten 90 Tage dabei (aelteres ist keine Frist mehr, sondern Altlast).
-  const abISO0 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+  const abISO0 = tageVor(heuteISO0, 90);
   const imFenster = (d: string) => d >= abISO0;
   type DashFrist = { datum: string; label: string; sub: string; warn: boolean };
   const ueberfaellig = (d: string) => d < heuteISO0;
@@ -193,7 +199,7 @@ export default async function DashboardPage() {
   const offeneMeldungen: OffeneMeldung[] = ((zaehlerRows ?? []) as { id: string; art: string | null; ablesedatum: string; mieter_id: string | null }[])
     .map((z) => ({ id: z.id, art: z.art, mieter: (z.mieter_id && mieterNameOf.get(z.mieter_id)) || "Mieter", datum: z.ablesedatum }));
 
-  const heuteAufgaben = baueHeuteAufgaben(
+  const alleHeuteAufgaben = baueHeuteAufgaben(
     {
       offeneMieten, anliegen: offeneAnliegen, meldungen: offeneMeldungen, fristen: fristListe,
       ohneKaufdatum: properties.filter((p) => !p.kaufdatum).map((p) => ({ id: p.id, name: p.bezeichnung })),
@@ -208,7 +214,13 @@ export default async function DashboardPage() {
         .map((k) => ({ id: k.id, name: k.bezeichnung || k.bank || "Kredit" })),
     },
     heuteISO0,
+    Infinity, // alle zählen — gekürzt wird unten, die Überschrift nennt die echte Zahl
   );
+  // Audit A8: „5 Sachen warten auf dich“ war die Länge des slice, nicht die
+  // Zahl der Aufgaben (≈ 25). Jetzt: echte Zahl in der Überschrift, die
+  // wichtigsten Zeilen in der Karte, der Rest unter „Alle“.
+  const HEUTE_ZEILEN = 6;
+  const heuteAufgaben = alleHeuteAufgaben.slice(0, HEUTE_ZEILEN);
   const AUFGABEN_ICON = { miete: ReceiptText, anliegen: MessageSquareText, zaehler: Zap, frist: CalendarDays, termin: CalendarDays, stammdaten: Building2 } as const;
 
   // Begrüßung nach Tageszeit (Europe/Berlin) + Vorname aus dem Vermieterprofil.
@@ -230,7 +242,7 @@ export default async function DashboardPage() {
     arr.push({ datum: h.datum, marktwert: h.marktwert });
     histNachObjekt.set(h.immobilie_id, arr);
   }
-  const heuteISO = now.toISOString().slice(0, 10);
+  const heuteISO = heuteISO0;
   const portfolioWert = portfolioWertReihe(
     properties.map((p) => ({
       kaufpreis: p.kaufpreis,
@@ -449,7 +461,7 @@ export default async function DashboardPage() {
           <ZeitraumControl />
         </div>
         <div className="section-body">
-          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" caption="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
+          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" heute={heuteISO0} caption="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
         </div>
       </div>
 
@@ -597,9 +609,9 @@ export default async function DashboardPage() {
             <div>
               <h3>Termine &amp; Aufgaben</h3>
               <div className="section-sub">
-                {heuteAufgaben.length === 0
+                {alleHeuteAufgaben.length === 0
                   ? "Nichts Offenes"
-                  : `${heuteAufgaben.length} ${heuteAufgaben.length === 1 ? "Sache wartet" : "Sachen warten"} auf dich`}
+                  : `${alleHeuteAufgaben.length} ${alleHeuteAufgaben.length === 1 ? "Sache wartet" : "Sachen warten"} auf dich${alleHeuteAufgaben.length > heuteAufgaben.length ? ` · die ${heuteAufgaben.length} wichtigsten hier` : ""}`}
               </div>
             </div>
             <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
@@ -622,7 +634,7 @@ export default async function DashboardPage() {
                       style={{ borderLeftColor: a.dringend ? "var(--red)" : "var(--gold)" }}
                     >
                       <Icon size={15} style={{ color: a.dringend ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
-                      <span style={{ flex: 1, minWidth: 0 }}>
+                      <span className="heute-label" style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ display: "block", fontSize: 13.5 }}>{a.label}</span>
                         <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{a.sub}</span>
                       </span>

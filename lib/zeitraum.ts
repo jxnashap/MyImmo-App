@@ -96,13 +96,30 @@ export function einnahmeDatum(e: { buchungsdatum?: string | null; soll_monat?: s
  * - Punkte nach dem laufenden Monat (Vorausbuchungen) zählen nicht
  * - zu wenig Historie ⇒ 0-Buckets, kein Fehler
  */
+/**
+ * Heutiges Datum in Europe/Berlin als `YYYY-MM-DD` — der EINE Stichtag für
+ * Server und Browser. Bis 01.10.2026 (Audit A10) rechnete das Dashboard den
+ * Monatsanker serverseitig in UTC und im Browser in Ortszeit: an jedem
+ * Monatsersten 00–02 Uhr ein Hydration-Fehler (#418, gemessen) und eine
+ * andere letzte Spalte. Die Zeitzone ist die der Nutzer, nicht die des
+ * Servers (Vercel läuft in UTC).
+ */
+export function heuteBerlin(jetzt: Date = new Date()): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(jetzt);
+}
+
 export function aggregate(
   points: RawPoint[],
   zeitraum: Zeitraum,
-  now: Date = new Date(),
+  now: Date | string = new Date(),
   opts: { cumulative?: boolean } = {}
 ): Aggregation {
-  const jetzt = now.getFullYear() * 12 + now.getMonth();
+  // Ein ISO-Datum (vom Server) zählt auf seinen ZAHLEN — ein Date-Objekt auf
+  // der Ortszeit des Prozesses (nur noch Rückfall für alte Aufrufer/Tests).
+  const jetzt =
+    typeof now === "string"
+      ? (monatsIndex(now) ?? new Date().getFullYear() * 12 + new Date().getMonth())
+      : now.getFullYear() * 12 + now.getMonth();
   const gueltig = points
     .map((p) => ({ i: monatsIndex(p.date), value: p.value }))
     .filter((p): p is { i: number; value: number } => p.i !== null && Number.isFinite(p.value));

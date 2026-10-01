@@ -16,11 +16,14 @@ import type { Einnahme, Kosten, Property, Tenant } from "@/lib/types";
 type Row = BuchungRow & { typ: "einnahme" | "ausgabe" };
 
 export default function CashflowListe({
+  gefiltert = false,
   einnahmen,
   kosten,
   properties,
   tenants,
 }: {
+  /** Es GIBT Daten, nur passt keine zu Filter/Zeitraum (Audit B27) — dann kein Anlegen-Hinweis. */
+  gefiltert?: boolean;
   einnahmen: Einnahme[];
   kosten: Kosten[];
   properties: Pick<Property, "id" | "bezeichnung">[];
@@ -82,7 +85,7 @@ export default function CashflowListe({
           );
         })}
         {rows.length === 0 && (
-          <tr><td colSpan={7}><div className="empty"><Banknote className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Buchungen</h4><p>Erfasse Einnahmen und Ausgaben über „＋ Buchung".</p></div></td></tr>
+          <tr><td colSpan={7}>{gefiltert ? <div className="empty"><Banknote className="empty-icon" size={36} color="var(--faint)" /><h4>Keine Buchungen im gewählten Zeitraum</h4><p>Es gibt Buchungen — nur nicht für dieses Jahr, Objekt oder diese Suche. Filter oben anpassen.</p></div> : <div className="empty"><Banknote className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Buchungen</h4><p>Erfasse Einnahmen und Ausgaben über „＋ Buchung".</p></div>}</td></tr>
         )}
       </ExpandableRows>
 
