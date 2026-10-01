@@ -277,6 +277,13 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Reiter vorzuladen hieße ~8 Abfragen je Aufruf für die Ansichten). `tests/wischen.test.ts`.
   **Nicht auf einem echten Telefon geprüft** — Schwellen und Gefühl muss der Betreiber
   testen. Die Einstellungen haben kein Wischen; ihre Reiter sind Zustand, keine Links.
+  **Dritte Fassung (gleicher Tag, Betreiber: Leiste dauert zu lange, Gleiten ruckartig, etwas
+  langsamer):** Beim Ziehen KEIN React-Render je Fingerbewegung — der Versatz geht per Ref
+  direkt ins `transform`; React setzt es nur in Ruhe und beim Gleiten (sonst überschriebe jeder
+  Render den Finger). Gleiten 380 ms `cubic-bezier(0.22,1,0.36,1)` — bewusst über der
+  300-ms-Regel, hier bewegt sich eine ganze Seite. **Leiste gekoppelt:** `WISCH_EREIGNIS`
+  (`myimmo:wisch`, an `document`, `detail.href`) beim Start des Gleitens → `GlassLeiste`
+  markiert den Ziel-Link sofort und rückt ihn in die Mitte, statt auf die Serverantwort zu warten.
   **Glas-Leiste zentriert (Vorgabe des Betreibers, gleicher Tag):** `components/GlassLeiste.tsx`
   + `lib/glasLeiste.ts` → der offene Reiter steht unter 860 px in der Mitte der Leiste — beim
   Laden sofort (`useLayoutEffect`, kein Sprung), bei jedem Wechsel weich; `tests/glasLeiste.test.ts`.
