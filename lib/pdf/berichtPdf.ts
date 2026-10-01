@@ -274,6 +274,8 @@ export type JahresberichtZeile = {
   zins: number;
   tilgung: number;
   cashflow: number;
+  /** Zins aus Restschuld × Zinssatz hochgerechnet (keine Buchungen) — sonst gebucht. */
+  zinsGeschaetzt?: boolean;
 };
 
 export async function buildJahresberichtPdf(
@@ -347,7 +349,19 @@ export async function buildJahresberichtPdf(
 
   c.text(ML, y, "Hinweis: Die Tilgung baut Vermögen auf und ist kein Aufwand — steuerlich zählt nur der Zinsanteil.", 8.5, c.font, MUTED);
   y -= 12;
-  c.text(ML, y, "Zins/Tilgung sind aus aktueller Restschuld × Zinssatz geschätzt (Näherung wie in der Steuer-Ansicht).", 8.5, c.font, MUTED);
+  // Bis 01.10.2026 behauptete die Fussnote pauschal "geschaetzt" — seit
+  // jahresZeile() sind es die GEBUCHTEN Zinsen, sobald welche vorliegen.
+  const geschaetzt = zeilen.filter((r) => r.zinsGeschaetzt).map((r) => r.name);
+  c.text(
+    ML,
+    y,
+    geschaetzt.length === 0
+      ? "Zins = Summe der gebuchten Schuldzinsen; Tilgung = Kreditrate − Zins."
+      : geschaetzt.length === zeilen.length
+        ? "Zins aus aktueller Restschuld × Zinssatz hochgerechnet (keine Zinsbuchungen) — für die Steuer die Zinsbescheinigung verwenden."
+        : `Zins gebucht; bei ${geschaetzt.join(", ")} aus Restschuld × Zinssatz hochgerechnet.`,
+    8.5, c.font, MUTED,
+  );
 
   fusszeile(c, 1, 1, "Cashflow-Auswertung - erstellt mit MyImmo");
   return doc.save();

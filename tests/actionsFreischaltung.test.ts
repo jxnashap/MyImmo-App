@@ -44,9 +44,13 @@ async function lade(init = {}, bremseDurchlassen = true) {
   vi.resetModules();
   mockeBremse(bremseDurchlassen);
   const { db, client } = fakeSupabase(init);
-  mockeNextUndSupabase(client);
+  // Eigener Admin-Client: Schreibvorgaenge per Service-Role landen in `adminDb`,
+  // solche ueber die Nutzer-Sitzung in `db` — nur so laesst sich pruefen, dass
+  // die Freischaltung NICHT ueber die (fuer Nutzer gesperrte) RPC/Tabelle laeuft.
+  const { db: adminDb, client: admin } = fakeSupabase(init);
+  mockeNextUndSupabase(client, admin);
   const mod = await import("@/lib/actions/freischaltung");
-  return { db, mod };
+  return { db, adminDb, mod };
 }
 
 // Ein Code mit genau den Eigenschaften, die den Fehler von 2026 ausgelöst
@@ -112,10 +116,14 @@ describe("Der Beta-Zugangscode wird exakt verglichen", () => {
 describe("Das Willkommens-Gate: zwei Code-Arten, zwei Schreibweisen", () => {
   it("der Beta-Code wird UNVERÄNDERT geprüft und schaltet frei", async () => {
     process.env.BETA_CODE = CODE;
-    const { db, mod } = await lade();
+    const { db, adminDb, mod } = await lade();
     const r = await mod.schalteKontoFrei(fd({ code: CODE, consent: "on" }));
     expect(r.ok).toBe(true);
-    expect(db.zugriffe.some((z) => z.tabelle === "rpc:konto_freischalten")).toBe(true);
+    // Per Service-Role direkt in die Tabelle — NICHT mehr ueber die RPC, die
+    // seit dem Audit (01.10.2026, A1) fuer Nutzer gesperrt ist.
+    const schreib = adminDb.zugriffe.find((z) => z.tabelle === "konto_freischaltung" && z.op === "upsert");
+    expect(schreib?.daten).toMatchObject({ user_id: "nutzer-1", quelle: "code", consent_agb: true });
+    expect(db.zugriffe.some((z) => z.tabelle === "konto_freischaltung" || z.tabelle.startsWith("rpc:"))).toBe(false);
   });
 
   it("ein Einladungscode wird grossgeschrieben eingelöst (MI-XXXX-XXXX)", async () => {
@@ -157,25 +165,25 @@ describe("Das Willkommens-Gate: zwei Code-Arten, zwei Schreibweisen", () => {
 describe("Registrierung vormerken: Prüfung und Vormerkung bleiben zusammen", () => {
   it("falscher Code → keine Vormerkung", async () => {
     process.env.BETA_CODE = CODE;
-    const { db, mod } = await lade();
+    const { db, adminDb, mod } = await lade();
     const r = await mod.bereiteRegistrierungVor("falsch", "a@b.de", true);
     expect(r.ok).toBe(false);
-    expect(db.zugriffe.some((z) => z.tabelle === "registrierung_freigaben")).toBe(false);
+    expect([...db.zugriffe, ...adminDb.zugriffe].some((z) => z.tabelle === "registrierung_freigaben")).toBe(false);
   });
 
   it("richtiger Code ohne Zustimmung → keine Vormerkung", async () => {
     process.env.BETA_CODE = CODE;
-    const { db, mod } = await lade();
+    const { db, adminDb, mod } = await lade();
     expect((await mod.bereiteRegistrierungVor(CODE, "a@b.de", false)).ok).toBe(false);
-    expect(db.zugriffe.some((z) => z.tabelle === "registrierung_freigaben")).toBe(false);
+    expect([...db.zugriffe, ...adminDb.zugriffe].some((z) => z.tabelle === "registrierung_freigaben")).toBe(false);
   });
 
   it("richtiger Code + Zustimmung → Vormerkung mit normalisierter Adresse", async () => {
     process.env.BETA_CODE = CODE;
-    const { db, mod } = await lade();
+    const { adminDb, mod } = await lade();
     const r = await mod.bereiteRegistrierungVor(CODE, "  Max.Muster@Example.DE ", true);
     expect(r).toEqual({ ok: true, vorgemerkt: true });
-    const zeile = db.zugriffe.find((z) => z.tabelle === "registrierung_freigaben");
+    const zeile = adminDb.zugriffe.find((z) => z.tabelle === "registrierung_freigaben");
     // Kleinschreibung ist hier Pflicht: Beim Einlösen wird über die Adresse
     // gesucht, und Supabase liefert die E-Mail kleingeschrieben.
     expect(zeile?.daten?.email).toBe("max.muster@example.de");
@@ -206,5 +214,32 @@ describe("Registrierung vormerken: Prüfung und Vormerkung bleiben zusammen", ()
     process.env.BETA_CODE = CODE;
     const { mod } = await lade();
     expect((await mod.bereiteRegistrierungVor(CODE, "   ", true)).ok).toBe(false);
+  });
+});
+
+describe("Einladungscode-Vorprüfung (Audit 01.10.2026, B2): Server-Action statt RPC", () => {
+  it("prüft per Service-Role gegen einladungscodes — Rolle, uneingelöst, gültig — und gibt nur ja/nein zurück", async () => {
+    const { db, adminDb, mod } = await lade({ antworten: { einladungscodes: { id: "e1" } } });
+    const r = await mod.pruefeEinladungscode("mi-abcd-2345", "mieter");
+    expect(r).toEqual({ ok: true });
+    expect(db.zugriffe).toEqual([]); // nichts ueber die Nutzer-Sitzung
+    const z = adminDb.zugriffe.find((x) => x.tabelle === "einladungscodes");
+    expect(z?.filter).toEqual(expect.arrayContaining(["eq:code=MI-ABCD-2345", "eq:rolle=mieter", "is:eingeloest_am=null"]));
+    expect(z?.filter.some((f) => f.startsWith("gt:gueltig_bis="))).toBe(true);
+    expect(db.zugriffe.some((x) => x.tabelle.startsWith("rpc:"))).toBe(false);
+  });
+
+  it("kein Treffer oder Datenbankfehler → ungültig, nie durchwinken", async () => {
+    const { mod } = await lade({ antworten: { einladungscodes: null } });
+    expect((await mod.pruefeEinladungscode("MI-XXXX-0000", "service")).ok).toBe(false);
+    const { mod: mod2 } = await lade({ antworten: { einladungscodes: { id: "e1" } }, fehler: { message: "kaputt" } });
+    expect((await mod2.pruefeEinladungscode("MI-XXXX-0000", "service")).ok).toBe(false);
+  });
+
+  it("greift die Bremse, wird nicht einmal gelesen", async () => {
+    const { db, adminDb, mod } = await lade({ antworten: { einladungscodes: { id: "e1" } } }, false);
+    const r = await mod.pruefeEinladungscode("MI-ABCD-2345", "mieter");
+    expect(r.ok).toBe(false);
+    expect([...db.zugriffe, ...adminDb.zugriffe]).toEqual([]);
   });
 });

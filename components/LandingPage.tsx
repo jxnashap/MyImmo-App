@@ -340,7 +340,7 @@ export default function LandingPage() {
                 <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
               </div>
               <p className="qlx-hero-note" style={{ marginTop: 16 }}>
-                Keine Kreditkarte nötig · Datenbank in Frankfurt · jederzeit kündbar
+                Keine Kreditkarte nötig · Datenbank in Frankfurt · kein Abo
               </p>
             </div>
           </Reveal>

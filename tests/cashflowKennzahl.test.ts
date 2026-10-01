@@ -155,7 +155,9 @@ describe("Warmmiete im Cashflow, Kaltmiete in Rendite und Steuer", () => {
   });
   it("die Rendite bleibt kalt", () => {
     expect(dashboard).toMatch(/bruttoRendite = totalWert > 0 \? \(\(totalMiete \* 12\)/);
-    expect(objekt).toMatch(/rendite = miete && wert \? \(miete \* 12/);
+    // Kalt UND auf den Kaufpreis (Audit 01.10.2026, B20) — die Beschriftung sagte
+    // „/ Kaufpreis“, gerechnet wurde mit dem Wert.
+    expect(objekt).toMatch(/rendite = miete && renditeBasis \? \(miete \* 12 \/ renditeBasis\)/);
   });
   it("die Anlage V trennt weiter Kaltmiete (Zeile 9) und Umlagen (Zeile 13)", () => {
     const q = readFileSync("lib/anlageV.ts", "utf8");

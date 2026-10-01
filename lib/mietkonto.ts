@@ -235,11 +235,12 @@ export type OffeneMiete = ErwarteterMonat & {
 
 /**
  * 3. Werktag eines Monats (§ 556b Abs. 1 BGB) als ISO-Datum.
- * Werktage sind Montag bis Samstag; der Sonntag zählt nicht. Gesetzliche
- * Feiertage bleiben bewusst unberücksichtigt — sie sind bundeslandabhängig,
- * und die Fälligkeit dadurch eher zu früh als zu spät anzusetzen wäre der
- * schlechtere Fehler. Ohne diese Rechnung würde die App bei einem Monat, der
- * am Wochenende beginnt, bis zu zwei Tage zu früh einen Rückstand melden.
+ * Werktage sind Montag bis Freitag. Der SAMSTAG zählt NICHT: Für die
+ * Mietzahlung ist er kein Werktag (BGH VIII ZR 129/09 zu § 556b BGB) — bis
+ * zum 01.10.2026 zählte die App ihn mit, und das Mahnschreiben nannte damit
+ * bis zu zwei Tage zu früh ein Fälligkeitsdatum. Gesetzliche Feiertage
+ * bleiben bewusst unberücksichtigt — sie sind bundeslandabhängig; die
+ * Fälligkeit dadurch eher zu früh anzusetzen wäre der schlechtere Fehler.
  */
 export function dritterWerktag(jahrMonat: string): string {
   const [j, m] = jahrMonat.split("-").map(Number);
@@ -247,7 +248,7 @@ export function dritterWerktag(jahrMonat: string): string {
   for (let tag = 1; tag <= 31; tag++) {
     const d = new Date(Date.UTC(j, m - 1, tag));
     if (d.getUTCMonth() !== m - 1) break; // Monatsende überschritten
-    if (d.getUTCDay() === 0) continue; // Sonntag ist kein Werktag
+    if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue; // Sa/So sind keine Werktage
     werktage += 1;
     if (werktage === 3) return `${jahrMonat}-${String(tag).padStart(2, "0")}`;
   }

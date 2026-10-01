@@ -92,8 +92,14 @@ export default function SettingsView({
   // (`?pw=schwach`, siehe app/login/page.tsx). Erst nach dem Mount lesen —
   // window existiert serverseitig nicht, und ein direkt gesetzter Tab wuerde
   // einen Hydration-Mismatch erzeugen.
+  // `?tab=` wurde bis 01.10.2026 ignoriert — der Login schickt nach einer
+  // Anmeldung per Wiederherstellungscode auf `?tab=sicherheit&mfa=neu`, die
+  // Berichtsrouten bei Tarifsperre auf `?tab=abo`; beide landeten auf "Profil".
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("pw") === "schwach") {
+    const q = new URLSearchParams(window.location.search);
+    const gewuenscht = q.get("tab");
+    if (gewuenscht && TABS.some((t) => t.key === gewuenscht)) setTab(gewuenscht as TabKey);
+    if (q.get("pw") === "schwach") {
       setTab("sicherheit");
       setPwHinweis(true);
     }

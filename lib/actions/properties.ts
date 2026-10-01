@@ -141,7 +141,7 @@ export async function createProperty(formData: FormData) {
   // der Objekte: So ist das Limit in lib/plan.ts definiert und so steht es
   // auf der Preisseite („bis 5 Einheiten").
   const einheiten = await pruefeEinheiten(supabase, Math.max(1, parsed.einheiten_anzahl ?? 1));
-  if (!einheiten.erlaubt) redirect(flashUrl("/properties", einheiten.meldung ?? "Tarif-Limit erreicht."));
+  if (!einheiten.erlaubt) redirect(flashUrl("/properties", einheiten.meldung ?? "Tarif-Limit erreicht.", "error"));
 
   const { data: neu, error } = await supabase
     .from("properties")

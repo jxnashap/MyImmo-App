@@ -461,6 +461,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Kreditfristen verdrängt, `og.png` hinter dem Login. **Bevor etwas davon als „offen" neu
   gefunden wird: dort nachsehen.** Lehren in Abschnitt 7 (u. a. `curl -I` täuscht beim
   Login-Gate; Cookie-Inhalte sind Nutzereingaben).
+  ✅ **Paket 1 + 2 erledigt 01.10.2026** (Migration `20261001090000_audit_paket1_rechte`,
+  `tests/auditPaket2.test.ts`): `konto_freischalten()`/`einladungscode_pruefen()` nur noch
+  Service-Role — die Action `schalteKontoFrei` schreibt selbst per Admin-Client,
+  `pruefeEinladungscode()` ersetzt den Browser-RPC-Aufruf (HMAC-Bremse statt IP-Klartext);
+  Einladungscodes an den Aussteller gebunden; `vermieter_anfragen` Spaltenschutz; `og.png`/Logo
+  öffentlich; Samstag kein Werktag (`dritterWerktag`); `/api/export` (JSON) GELÖSCHT;
+  `flashUrl(url, msg, "error")` für Fehler-Flashes; `?tab=` in den Einstellungen; Sitemap ohne
+  noindex-Seiten und ohne `lastModified` auf statischen Seiten. **Regel aus dem Audit: Eine
+  SECURITY-DEFINER-RPC, die etwas freischaltet, darf nicht für `authenticated` ausführbar sein,
+  wenn die Prüfung nur in der Action davor sitzt.**
 - **Externes Feedback vom 08.09.2026, geprüft und mit Plan: `docs/FEEDBACK-BEWERTUNG-2026-09.md`.**
   Zwölf Behauptungen, elf gegen den Code bestätigt (Speed Insights vs. „keine Analyse-Tools",
   Platzhalter in der Datenschutzerklärung, Demo-Text widerspricht Nur-Lesen, „Fristen &

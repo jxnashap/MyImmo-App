@@ -307,7 +307,7 @@ export default async function DashboardPage() {
     const schritte = [
       { nr: 1, titel: "Erstes Objekt anlegen", text: "Name, Adresse, Kaufpreis, Miete — mehr braucht es für den Start nicht.", href: "/properties/new", cta: "Objekt anlegen", erledigt: false },
       { nr: 2, titel: "Mieter erfassen", text: "Mit Kaltmiete und Mietbeginn — daraus entstehen Mietkonto und Abrechnungen.", href: "/tenants/new", cta: "Mieter anlegen", erledigt: mieterRows.length > 0 },
-      { nr: 3, titel: "Ein- & Ausgaben buchen", text: "Mieteingänge und Kosten festhalten — per Hand, CSV oder Kontoanbindung.", href: "/cashflow", cta: "Zu den Buchungen", erledigt: einnahmen.length + kosten.length > 0 },
+      { nr: 3, titel: "Ein- & Ausgaben buchen", text: "Mieteingänge und Kosten festhalten — per Hand, per CSV-Import oder als wiederkehrende Buchung.", href: "/cashflow", cta: "Zu den Buchungen", erledigt: einnahmen.length + kosten.length > 0 },
     ];
     return (
       <div className="fade-up">
