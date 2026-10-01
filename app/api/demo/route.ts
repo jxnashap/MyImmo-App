@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { darfWeiter } from "@/lib/net/bremse";
-import { DEMO_ZIELE } from "@/lib/demo";
+import { DEMO_EMAIL, DEMO_MIETER_EMAIL, DEMO_ZIELE } from "@/lib/demo";
 
 // Oeffentlicher Demo-Zugang: setzt den Demo-Bestand zurueck und meldet den
 // Besucher am Demo-Konto an. Danach steht die volle App mit 6 Objekten,
@@ -24,8 +24,6 @@ import { DEMO_ZIELE } from "@/lib/demo";
 // aber unmoeglich.
 
 export const dynamic = "force-dynamic";
-
-const DEMO_EMAIL = "demo.vermieter@myimmo.test";
 
 // Geführte Demo-Wege: Weißliste `DEMO_ZIELE` in `lib/demo.ts`, neben
 // `demoDarfRoute` — damit ein Test beide gegeneinander prüfen kann. Die erste
@@ -56,6 +54,13 @@ export async function GET(request: Request) {
   //    sei alles gut, obwohl gar nicht zurueckgesetzt wurde (der
   //    Service-Role-Key fehlte in Vercel). Ein `console.error`, das niemand
   //    liest, ist keine Fehlerbehandlung.
+  // Mieter-Sicht (01.10.2026): `?rolle=mieter` meldet am zweiten Demo-Konto
+  // an und landet im Mieterportal. Das Konto wird beim ersten Aufruf per
+  // Service-Role angelegt (gleiches Passwort) und nach jedem Reset mit der
+  // Demo-Mieterin verknüpft (`demo_mieter_verknuepfen`, Migration
+  // 20261001150000) — der Reset schreibt die Anliegen ohne mieter_user_id neu.
+  const alsMieter = new URL(request.url).searchParams.get("rolle") === "mieter";
+
   let resetStatus: "ok" | "kein-key" | "fehler" = "ok";
   const admin = createAdminClient();
   if (!admin) {
@@ -70,12 +75,30 @@ export async function GET(request: Request) {
       resetStatus = "fehler";
       console.error("Demo-Reset fehlgeschlagen:", resetFehler.message);
     }
+    if (alsMieter) {
+      // Anlegen ist idempotent: existiert das Konto, antwortet Supabase mit
+      // „already been registered" — das ist der Normalfall, kein Fehler.
+      const { error: anlegeFehler } = await admin.auth.admin.createUser({
+        email: DEMO_MIETER_EMAIL,
+        password: passwort,
+        email_confirm: true,
+      });
+      if (anlegeFehler && !/already|exists/i.test(anlegeFehler.message)) {
+        console.error("Demo-Mieter anlegen fehlgeschlagen:", anlegeFehler.message);
+      }
+    }
+    const { data: verknuepft, error: vFehler } = await admin.rpc("demo_mieter_verknuepfen");
+    if (vFehler) console.error("Demo-Mieter verknuepfen fehlgeschlagen:", vFehler.message);
+    else if (alsMieter && verknuepft === false) {
+      console.error("Demo-Mieter nicht verknuepft: Konto fehlt.");
+      return NextResponse.redirect(new URL("/?demo=fehler", ziel));
+    }
   }
 
   // 2. Anmelden — schreibt die Session-Cookies ueber den Server-Client.
   const supabase = await createClient();
   const { data: login, error: loginFehler } = await supabase.auth.signInWithPassword({
-    email: DEMO_EMAIL,
+    email: alsMieter ? DEMO_MIETER_EMAIL : DEMO_EMAIL,
     password: passwort,
   });
   if (loginFehler) {
@@ -99,7 +122,7 @@ export async function GET(request: Request) {
   // `Object.hasOwn`, nicht `DEMO_ZIELE[weg]`: `?weg=constructor` fände sonst
   // über den Prototyp eine Funktion und leitete auf deren Quelltext weiter.
   const weg = new URL(request.url).searchParams.get("weg") ?? "";
-  const gewaehlt = Object.hasOwn(DEMO_ZIELE, weg) ? DEMO_ZIELE[weg] : "/";
+  const gewaehlt = alsMieter ? "/portal" : Object.hasOwn(DEMO_ZIELE, weg) ? DEMO_ZIELE[weg] : "/";
   const basis = gewaehlt === "/" ? "/?demo=1" : `${gewaehlt}?demo=1`;
   const ziel_url = resetStatus === "ok" ? basis : `${basis}&reset=${resetStatus}`;
   return NextResponse.redirect(new URL(ziel_url, ziel));

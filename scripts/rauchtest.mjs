@@ -399,6 +399,45 @@ async function main() {
     console.log(`${grund ? "✗" : "✓"} ${weg.titel}${grund ? `\n    ${grund}` : ""}`);
   }
 
+  // --- Mieter-Sicht (01.10.2026) ------------------------------------------
+  // Zweite Anmeldung am Demo-Mieter (Bremse: 2 von 6 je 300 s). Das Portal
+  // war bis dahin der einzige Bereich ohne jede automatische Prüfung — und
+  // Paket 5 hatte es gerade umgebaut (Sichten statt Tabellen).
+  kekse.clear();
+  const mieterLogin = await hole("/api/demo?rolle=mieter");
+  if (mieterLogin.endePfad !== "/portal") {
+    ergebnisse.push({ weg: { titel: "Mieter-Demo — Anmeldung" }, grund: `gelandet auf ${mieterLogin.kette.join(" → ")}` });
+    console.log(`✗ Mieter-Demo — Anmeldung\n    ${mieterLogin.kette.join(" → ")}`);
+  } else {
+    console.log("\n✓ Mieter-Demo — Anmeldung");
+    const MIETER_WEGE = [
+      { titel: "Mieterportal — Wohnung (Sichten statt Tabellen)", pfad: "/portal", erwartet: ["Mieterportal", "Meine Wohnung", "Berger"] },
+      { titel: "Mieterportal — Anliegen", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<"] },
+      { titel: "Mieterportal — Zahlungen", pfad: "/portal?tab=zahlungen", erwartet: ["Mieterportal", ">Zahlungen<"] },
+      { titel: "Mieterportal — Dokumente", pfad: "/portal?tab=dokumente", erwartet: ["Mieterportal", ">Dokumente<"] },
+      { titel: "Mieterportal — Zähler", pfad: "/portal?tab=zaehler", erwartet: ["Mieterportal", "Zählerstand"] },
+      { titel: "Mieter-Konto — Einstellungen", pfad: "/konto", erwartet: ["Meine Einstellungen"] },
+      { titel: "Mieter-Demo — Vermieter-Bereich bleibt zu", pfad: "/steuer", erwartet: [], zielPfad: "/portal" },
+    ];
+    for (const weg of MIETER_WEGE) {
+      let grund = null;
+      try {
+        const seite = await hole(weg.pfad);
+        const soll = weg.zielPfad ?? weg.pfad.split("?")[0];
+        if (seite.status >= 400) grund = `HTTP ${seite.status}`;
+        if (!grund && seite.endePfad !== soll) grund = `umgeleitet: ${seite.kette.join(" → ")}`;
+        if (!grund) {
+          const fehlt = weg.erwartet.filter((t) => !seite.html.includes(t));
+          if (fehlt.length) grund = `Text fehlt: ${fehlt.join(", ")}`;
+        }
+      } catch (e) {
+        grund = `Ausnahme: ${e.message}`;
+      }
+      ergebnisse.push({ weg, grund });
+      console.log(`${grund ? "✗" : "✓"} ${weg.titel}${grund ? `\n    ${grund}` : ""}`);
+    }
+  }
+
   const rot = ergebnisse.filter((e) => e.grund);
   console.log(`\n${ergebnisse.length - rot.length}/${ergebnisse.length} Wege grün`);
   if (rot.length) {
