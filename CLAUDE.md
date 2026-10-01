@@ -468,7 +468,17 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Einladungscodes an den Aussteller gebunden; `vermieter_anfragen` Spaltenschutz; `og.png`/Logo
   öffentlich; Samstag kein Werktag (`dritterWerktag`); `/api/export` (JSON) GELÖSCHT;
   `flashUrl(url, msg, "error")` für Fehler-Flashes; `?tab=` in den Einstellungen; Sitemap ohne
-  noindex-Seiten und ohne `lastModified` auf statischen Seiten. **Regel aus dem Audit: Eine
+  noindex-Seiten und ohne `lastModified` auf statischen Seiten.
+  ✅ **Paket 3 erledigt 01.10.2026** (`tests/auditPaket3.test.ts`): `lib/preise.ts` hat jetzt
+  `KONTAKT_EMAIL`, `EARLY_ACCESS_MAILTO`, `HILFE_MAILTO`, `EARLY_ACCESS_ZUSAGE` und
+  **`ctaBeschriftung(wunsch)`** — JEDER Start-Knopf der öffentlichen Strecke läuft da durch
+  (Ratgeber-Daten dürfen sich eine Beschriftung wünschen, gerendert wird `START_CTA`, solange
+  `REGISTRIERUNG_OFFEN = false`; `tests/heute.test.ts` prüft alle (pub)-Seiten). `/anmelden`
+  und das Code-Feld im Registrierformular zeigen den Anfrageweg (mailto + 24-h-Zusage);
+  `/login`/`/anmelden` haben „Hilfe & Kontakt“. **Abmelde-Grund:** `AutoLogout` schickt
+  `/login?grund=inaktiv&min=N` bzw. `geschlossen`, der Proxy setzt `grund=abgelaufen`, wenn
+  ein `sb-…-auth-token`-Cookie da war, aber nicht mehr gilt; die Login-Seite erklärt alle drei.
+  **Regel aus dem Audit: Eine
   SECURITY-DEFINER-RPC, die etwas freischaltet, darf nicht für `authenticated` ausführbar sein,
   wenn die Prüfung nur in der Action davor sitzt.**
 - **Externes Feedback vom 08.09.2026, geprüft und mit Plan: `docs/FEEDBACK-BEWERTUNG-2026-09.md`.**
