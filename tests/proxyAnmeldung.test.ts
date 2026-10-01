@@ -166,3 +166,20 @@ describe("Proxy-Anmeldung über getClaims", () => {
     expect(aufrufe.length).toBe(nachErster);
   });
 });
+
+describe("Abgelaufene Sitzung bekommt einen Grund (Audit 01.10.2026, B30)", () => {
+  it("ungültiges Sitzungs-Cookie → /login?grund=abgelaufen, Ziel bleibt erhalten", async () => {
+    const r = await anfrage("/steuer", cookieFuer(await token({ exp: Math.floor(Date.now() / 1000) - 60 })));
+    expect(landetAufLogin(r)).toBe(true);
+    const ziel = new URL(r.headers.get("location") ?? "", "https://www.myimmoapp.de");
+    expect(ziel.searchParams.get("grund")).toBe("abgelaufen");
+    expect(ziel.searchParams.get("next")).toBe("/steuer");
+  });
+
+  it("ganz ohne Cookie: kein Grund — der Besucher war nie angemeldet", async () => {
+    const r = await anfrage("/steuer");
+    expect(landetAufLogin(r)).toBe(true);
+    const ziel = new URL(r.headers.get("location") ?? "", "https://www.myimmoapp.de");
+    expect(ziel.searchParams.get("grund")).toBeNull();
+  });
+});

@@ -40,3 +40,23 @@ export const START_CTA = REGISTRIERUNG_OFFEN ? "Kostenlos starten" : "Early-Acce
  *  so breit wie das frühere „Kostenlos starten" und überlagerte dort das
  *  mittige Logo (gemessen 30.09.2026: bis zu 215 px Überlappung). */
 export const START_CTA_KURZ = REGISTRIERUNG_OFFEN ? "Kostenlos starten" : "Zugang anfragen";
+
+/**
+ * Jede Knopf-Beschriftung der oeffentlichen Strecke laeuft hier durch: Solange
+ * ein Zugangscode noetig ist, heisst JEDER Start-Knopf wie `START_CTA` — egal
+ * was die Seite sich gewuenscht hat. Bis 01.10.2026 trugen 20 Seiten weiter
+ * „Kostenlos starten"/„Kostenlos ausprobieren" (Audit A5), obwohl der Weg am
+ * Pflichtfeld „Zugangscode" endete.
+ */
+export function ctaBeschriftung(wunsch: string): string {
+  return REGISTRIERUNG_OFFEN ? wunsch : START_CTA;
+}
+
+/** Die EINE Adresse fuer Early-Access-Anfragen und Hilfe vor dem Login. */
+export const KONTAKT_EMAIL = "info@myimmoapp.de";
+export const EARLY_ACCESS_MAILTO =
+  `mailto:${KONTAKT_EMAIL}?subject=${encodeURIComponent("Early-Access-Zugang zu MyImmo")}` +
+  `&body=${encodeURIComponent("Hallo,\n\nich vermiete … Wohnung(en)/Objekt(e) und möchte MyImmo im Early Access nutzen.\n\nViele Grüße")}`;
+export const HILFE_MAILTO = `mailto:${KONTAKT_EMAIL}?subject=${encodeURIComponent("Hilfe beim Zugang zu MyImmo")}`;
+/** Was der Besucher nach der Anfrage erwarten darf — eine Zusage, keine Floskel. */
+export const EARLY_ACCESS_ZUSAGE = "Du bekommst den Zugangscode werktags innerhalb von 24 Stunden per E-Mail.";

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ctaBeschriftung } from "@/lib/preise";
 import LandingShell from "@/components/landing/Shell";
 import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
@@ -91,7 +92,7 @@ export default async function VorlagenPage(props: { searchParams: Promise<{ nl?:
             <VerteilerForm quelle="vorlagen" />
           </div>
           <div className="lp-cta-row" style={{ marginTop: 28 }}>
-            <Link href="/anmelden" className="btn btn-gold lp-btn-big">Vorlagen kostenlos nutzen <ArrowRight size={15} style={{ verticalAlign: "-2px" }} /></Link>
+            <Link href="/anmelden" className="btn btn-gold lp-btn-big">{ctaBeschriftung("Vorlagen kostenlos nutzen")} <ArrowRight size={15} style={{ verticalAlign: "-2px" }} /></Link>
           </div>
           <p className="lp-section-sub" style={{ marginTop: 24, marginBottom: 0, fontSize: 12.5 }}>
             Alle Vorlagen werden mit deinen Daten personalisiert und lassen sich vor dem Export bearbeiten.

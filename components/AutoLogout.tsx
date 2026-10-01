@@ -48,16 +48,20 @@ export default function AutoLogout() {
       last.current = Date.now();
       alive();
     };
-    const logout = async () => {
+    // `grund` sagt der Login-Seite, WARUM der Nutzer dort steht (Audit B30) —
+    // vorher stand er kommentarlos vor dem Formular.
+    const logout = async (grund: "inaktiv" | "geschlossen") => {
       try {
         await createClient().auth.signOut();
       } catch {
         /* Session ggf. schon weg — Redirect reicht */
       }
-      window.location.href = "/login";
+      const q = new URLSearchParams({ grund });
+      if (grund === "inaktiv") q.set("min", String(min()));
+      window.location.href = `/login?${q.toString()}`;
     };
     const check = () => {
-      if (ms > 0 && Date.now() - last.current >= ms) logout();
+      if (ms > 0 && Date.now() - last.current >= ms) logout("inaktiv");
     };
 
     // „Beim Schließen abmelden": frischer Tab (kein Marker) + letzter Heartbeat
@@ -66,7 +70,7 @@ export default function AutoLogout() {
       const zuletzt = Number(localStorage.getItem(KEY_ALIVE) || "0");
       if (zuletzt > 0 && Date.now() - zuletzt > CLOSE_SCHWELLE_MS) {
         sessionStorage.setItem(KEY_TAB, "1");
-        logout();
+        logout("geschlossen");
         return;
       }
     }

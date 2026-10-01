@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { baueHeuteAufgaben, tageVor, type FristZeile } from "@/lib/heute";
 import { VERWALTEN, ABRECHNEN, PLANEN, ALLE_ZIELE } from "@/lib/nav";
-import { REGISTRIERUNG_OFFEN, START_CTA } from "@/lib/preise";
+import { REGISTRIERUNG_OFFEN, START_CTA, ctaBeschriftung } from "@/lib/preise";
 
 // „HEUTE WICHTIG" UND DIE NAVIGATION (08.09.2026, Feedback Befund 7 + 8).
 //
@@ -226,17 +226,30 @@ describe("Ehrliche Beschriftung, solange ein Zugangscode nötig ist", () => {
   it("keine Landing-Datei schreibt die alte Beschriftung noch fest hin", () => {
     // Wird das hier rot, hat jemand die Beschriftung wieder hart eingetragen —
     // und damit die Aussage von der Registrierung entkoppelt.
+    // Seit 01.10.2026 (Audit A5) die GANZE oeffentliche Strecke, nicht nur vier
+    // Landing-Dateien: 20 Seiten trugen weiter „Kostenlos starten" & Co.
     for (const p of [
       "components/LandingPage.tsx",
       "components/landing/QlxHeader.tsx",
       "components/landing/Shell.tsx",
       "components/landing/data.tsx",
+      "app/(pub)/preise/page.tsx",
+      "app/(pub)/vorlagen/page.tsx",
+      "app/(pub)/funktionen/[slug]/page.tsx",
+      "app/(pub)/ratgeber/[slug]/page.tsx",
     ]) {
       // Geprüft wird die BESCHRIFTUNG im JSX (>…<), nicht das Vorkommen des
       // Wortes: Ein Kommentar, der die alte Beschriftung erwähnt, ist harmlos.
-      expect(readFileSync(p, "utf8"), p).not.toMatch(/>\s*Kostenlos starten\s*</);
-      expect(readFileSync(p, "utf8"), p).not.toMatch(/cta:\s*"Kostenlos starten"/);
+      const q = readFileSync(p, "utf8");
+      expect(q, p).not.toMatch(/>\s*Kostenlos (starten|ausprobieren)\s*</);
+      expect(q, p).not.toMatch(/Kostenlos (starten|ausprobieren) <ArrowRight/);
+      expect(q, p).not.toMatch(/cta:\s*"Kostenlos starten"/);
     }
+    // Die Ratgeber-Daten duerfen sich eine Beschriftung WUENSCHEN — gerendert
+    // wird sie nur ueber ctaBeschriftung(), das bei geschlossener Registrierung
+    // START_CTA einsetzt.
+    expect(readFileSync("app/(pub)/ratgeber/[slug]/page.tsx", "utf8")).toContain("ctaBeschriftung(a.feature.cta)");
+    expect(ctaBeschriftung("Kostenlos ausprobieren")).toBe(START_CTA);
   });
 
   it("die geführten Demo-Wege gehen über eine Weißliste, nicht über freie Pfade", () => {
