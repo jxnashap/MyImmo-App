@@ -147,16 +147,24 @@ type KreditFristInput = {
 
 export function kreditFristen(k: KreditFristInput): Frist[] {
   const fristen: Frist[] = [];
+  const heute = new Date();
+  const tageBis = (d: Date) => Math.ceil((d.getTime() - heute.getTime()) / 86400000);
   if (k.zinsbindung) {
-    fristen.push({ label: "Zinsbindung endet", datum: k.zinsbindung, typ: "warn", kategorie: "Finanzierung" });
+    // Bis 01.10.2026 (Audit A8) waren BEIDE Kredit-Fristen immer `warn` —
+    // auf dem Dashboard damit immer „dringend", und mit drei Darlehen
+    // verdrängten „Zinsbindung endet 2031" & Co. die fällige Miete und das
+    // offene Anliegen. Dringend ist das Ende erst im letzten Jahr, die
+    // Vorbereitung erst, wenn ihr Zeitpunkt in zwei Monaten erreicht ist.
+    const ende = new Date(k.zinsbindung);
+    fristen.push({ label: "Zinsbindung endet", datum: k.zinsbindung, typ: tageBis(ende) <= 365 ? "warn" : "info", kategorie: "Finanzierung" });
     // Auch wenn der Vorlauf-Zeitpunkt schon verstrichen ist, anzeigen —
     // dann ist die Vorbereitung überfällig (Liste markiert das rot).
     const vorlauf = addMonate(new Date(k.zinsbindung), -12);
-    if (new Date(k.zinsbindung) >= new Date()) {
+    if (ende >= heute) {
       fristen.push({
         label: "Anschlussfinanzierung vorbereiten",
         datum: iso(vorlauf),
-        typ: "warn",
+        typ: tageBis(vorlauf) <= 60 ? "warn" : "info",
         kategorie: "Finanzierung",
         rechtsgrundlage: "Empfehlung: 12 Mon. Vorlauf (Finanztip/Interhyp)",
       });

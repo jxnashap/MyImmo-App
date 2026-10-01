@@ -497,6 +497,29 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   **(B3)** `<ZweiFaktor absichern={…}>` — Einrichten erst nach Re-Auth (`useReAuth` im
   `SicherheitPanel`). **Regel: `supabase.auth.mfa.getAuthenticatorAssuranceLevel()` ist im
   Server-Code verboten; `aalStandAus(user.factors, session.access_token)` benutzen.**
+  ✅ **Paket 5 + 6 erledigt 01.10.2026** (`tests/auditPaket56.test.ts`, sieben Mutationen rot):
+  **(A4)** Migration `20261001120000_mieter_sicht_spalten`: Zeilen-Policies
+  `properties_select_zugang`/`mieter_select_zugang` ENTFERNT; das Mieterportal liest die
+  Sichten **`mieter_portal`** (16 Spalten des Mietverhältnisses — ohne `notiz`, `miethistorie`,
+  `iban`, `kaution_bank`, `email`, `telefon`) und **`properties_portal`** (`id, bezeichnung,
+  adresse, typ`). Sichten laufen als Eigentümer (kein `security_invoker`), filtern selbst über
+  `mieter_zugaenge` auf `auth.uid()`, `security_barrier`. **Live als echter Mieter geprüft**
+  (`set_config('role','authenticated')` + JWT-Claims, zurückgerollt): Tabellen 0 Zeilen, Sichten
+  1, Tenant-Policies auf `einnahmen`/`anliegen` unverändert. **Regel: Ein Mieter liest nie eine
+  Vermieter-Tabelle direkt — nur eine Sicht mit den Spalten, die das Portal zeigt.**
+  **(A8)** `kreditFristen`: „Zinsbindung endet“ nur im letzten Jahr `warn`, „Anschlussfinanzierung
+  vorbereiten“ erst 60 Tage vor dem Vorlauf-Zeitpunkt; das Dashboard zählt ALLE Aufgaben
+  (`baueHeuteAufgaben(…, Infinity)`), zeigt die 6 wichtigsten und sagt „N Sachen · die 6
+  wichtigsten hier“. **(A9)** `lib/kauf/marktwert.ts`: `RND_MINDESTANTEIL = 0.3` (24 Jahre) mit
+  Hinweis in `unsicher` — Altbau 1911 ergab vorher 7.022 €. **(A10)** `heuteBerlin()` in
+  `lib/zeitraum.ts` ist der EINE Stichtag; `aggregate()` nimmt ein ISO-Datum (Zahlen, keine
+  Ortszeit), `BetragChart` bekommt `heute` als Prop — **Regel: In einer serverseitig
+  gerenderten Client-Komponente nie `new Date()` für eine Darstellung; den Stichtag vom Server
+  übergeben.** **(B24)** `.heute-zeile` wickelt < 560 px um (`.heute-label`). **(B27)** Die drei
+  Buchungslisten und die Objektliste unterscheiden `gefiltert` (Filter anpassen) von „nichts“
+  (anlegen); `BetragChart` ebenso (Buckets alle 0 ≠ keine Punkte). **(C30)** Dashboard und
+  `/termine` laden `staffel_intervall/betrag/prozent/stufen` — die Staffel-Logik in
+  `mieterFristen` lief vorher nie.
   **Regel aus dem Audit: Eine
   SECURITY-DEFINER-RPC, die etwas freischaltet, darf nicht für `authenticated` ausführbar sein,
   wenn die Prüfung nur in der Action davor sitzt.**

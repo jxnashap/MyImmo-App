@@ -14,10 +14,13 @@ import type { Kosten, Property, Tenant } from "@/lib/types";
 const KATEGORIEN = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
 
 export default function KostenListe({
+  gefiltert = false,
   rows,
   properties,
   tenants,
 }: {
+  /** Es GIBT Daten, nur passt keine zu Filter/Zeitraum (Audit B27) — dann kein Anlegen-Hinweis. */
+  gefiltert?: boolean;
   rows: Kosten[];
   properties: Pick<Property, "id" | "bezeichnung">[];
   tenants: Pick<Tenant, "id" | "vorname" | "nachname">[];
@@ -67,7 +70,7 @@ export default function KostenListe({
           );
         })}
         {rows.length === 0 && (
-          <tr><td colSpan={7}><div className="empty"><ClipboardList className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Ausgaben</h4><p>Erfasse Betriebskosten, Reparaturen oder Verwaltungskosten.</p></div></td></tr>
+          <tr><td colSpan={7}>{gefiltert ? <div className="empty"><ClipboardList className="empty-icon" size={36} color="var(--faint)" /><h4>Keine Ausgaben im gewählten Zeitraum</h4><p>Es gibt Ausgaben — nur nicht für dieses Jahr, Objekt oder diese Suche. Filter oben anpassen.</p></div> : <div className="empty"><ClipboardList className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Ausgaben</h4><p>Erfasse Betriebskosten, Reparaturen oder Verwaltungskosten.</p></div>}</td></tr>
         )}
       </ExpandableRows>
 

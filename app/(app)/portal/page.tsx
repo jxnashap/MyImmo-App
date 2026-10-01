@@ -39,13 +39,15 @@ export default async function PortalPage(
 
   const mieterIds = (zugaenge ?? []).map((z) => z.mieter_id);
   const { data: mieterRows } = mieterIds.length
-    ? await supabase.from("mieter").select("*").in("id", mieterIds)
+    // Sicht statt Tabelle (Audit 01.10.2026, A4): Ein Mieter sieht nur die
+    // Spalten seines Mietverhaeltnisses — nicht notiz, miethistorie, iban.
+    ? await supabase.from("mieter_portal").select("*").in("id", mieterIds)
     : { data: [] as Tenant[] };
   const propIds = Array.from(
     new Set((zugaenge ?? []).map((z) => z.prop_id).filter(Boolean))
   ) as string[];
   const { data: propRows } = propIds.length
-    ? await supabase.from("properties").select("id,bezeichnung,adresse").in("id", propIds)
+    ? await supabase.from("properties_portal").select("id,bezeichnung,adresse").in("id", propIds)
     : { data: [] as Pick<Property, "id" | "bezeichnung" | "adresse">[] };
   const propVon = (id: string | null) =>
     (propRows ?? []).find((p) => p.id === id) ?? null;

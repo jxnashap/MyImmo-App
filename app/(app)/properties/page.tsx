@@ -104,6 +104,11 @@ export default async function PropertiesPage(
           <div className="empty" style={{ gridColumn: "1/-1" }}>
             <Home className="empty-icon" size={36} color="var(--faint)" />
             <h4>{alle.length === 0 ? "Noch keine Immobilien" : "Keine Treffer"}</h4>
+            {alle.length > 0 ? (
+              <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6 }}>
+                Kein Objekt passt zu Suche oder Status-Filter — Filter oben anpassen.
+              </p>
+            ) : (
             <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6 }}>
               Lege oben dein erstes Objekt an, lies ein{" "}
               <Link href="/properties/import" style={{ color: "var(--gold)" }}>Exposé</Link>{" "}
@@ -112,6 +117,7 @@ export default async function PropertiesPage(
                 übernimm deine Daten aus vermietet.de, objego oder Excel (CSV)
               </Link>.
             </p>
+            )}
           </div>
         </div>
       ) : (

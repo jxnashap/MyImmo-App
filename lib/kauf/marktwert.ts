@@ -74,14 +74,33 @@ export function unsichereAngaben(e: MarktwertEingabe): string[] {
   return unsicher;
 }
 
+/**
+ * Untergrenze der Restnutzungsdauer: 30 % der Gesamtnutzungsdauer (24 Jahre
+ * bei Wohngebäuden). Bis 01.10.2026 (Audit A9) klemmte die Engine einen
+ * Altbau (BJ 1911) auf EIN Jahr Restnutzungsdauer — Barwertfaktor 0,97 —
+ * und der Kauf-Assistent zeigte „Marktwert € 7.022" für eine 245.000-€-
+ * Wohnung. Ein bewohntes, vermietetes Gebäude hat nach ImmoWertV 2021
+ * (Anl. 2, Modernisierungs-Anhebung) nie eine RND nahe null; der
+ * Modernisierungsgrad wird im Assistenten nicht erfasst, deshalb dieser
+ * pauschale Mindestwert — mit Hinweis im Ergebnis.
+ */
+export const RND_MINDESTANTEIL = 0.3;
+
 export function marktwert(e: MarktwertEingabe): MarktwertErgebnis {
   const jahr = new Date().getFullYear();
-  const rnd = e.baujahr > 0 ? restnutzungsdauer(e.baujahr, jahr, GND_WOHNGEBAEUDE) : GND_WOHNGEBAEUDE;
+  const rndRoh = e.baujahr > 0 ? restnutzungsdauer(e.baujahr, jahr, GND_WOHNGEBAEUDE) : GND_WOHNGEBAEUDE;
+  const rndMin = Math.round(GND_WOHNGEBAEUDE * RND_MINDESTANTEIL);
+  const rnd = Math.max(rndRoh, rndMin);
   const fehlt = fehlendeAngaben(e);
   const verfahren = e.nutzung === "vermietung" ? "ertragswert" : "sachwert";
   const verfahrenLabel = verfahren === "ertragswert" ? "Ertragswert (vermietet)" : "Sachwert (Bausubstanz)";
 
   const unsicher = unsichereAngaben(e);
+  if (rndRoh < rndMin) {
+    unsicher.push(
+      `Restnutzungsdauer — rechnerisch ${rndRoh} Jahre (Baujahr ${e.baujahr}); angesetzt sind mindestens ${rndMin} Jahre, weil Modernisierungen nicht erfasst sind. Bei einem sanierten Altbau liegt der Wert höher.`,
+    );
+  }
 
   if (fehlt.length > 0) {
     return { verfahren, verfahrenLabel, bereit: false, fehlend: fehlt, unsicher, ergebnis: null, restnutzungsdauer: rnd };
