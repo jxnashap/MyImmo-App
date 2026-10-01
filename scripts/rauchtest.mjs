@@ -411,7 +411,7 @@ async function main() {
   } else {
     console.log("\n✓ Mieter-Demo — Anmeldung");
     const MIETER_WEGE = [
-      { titel: "Mieterportal — Wohnung (Sichten statt Tabellen)", pfad: "/portal", erwartet: ["Mieterportal", "Meine Wohnung", "Berger"] },
+      { titel: "Mieterportal — Wohnung (Sichten statt Tabellen)", pfad: "/portal", erwartet: ["Mieterportal", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete"] },
       { titel: "Mieterportal — Anliegen", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<"] },
       { titel: "Mieterportal — Zahlungen", pfad: "/portal?tab=zahlungen", erwartet: ["Mieterportal", ">Zahlungen<"] },
       { titel: "Mieterportal — Dokumente", pfad: "/portal?tab=dokumente", erwartet: ["Mieterportal", ">Dokumente<"] },
