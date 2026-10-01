@@ -93,6 +93,9 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    für die Registrierung gilt dieselbe Server-Einstellung, dort nicht eigens probiert.
 6. **2FA einmal durchspielen** — einrichten, abmelden, mit Code anmelden, „Handy nicht zur
    Hand?" mit einem Wiederherstellungscode. Die Logik ist getestet, der Ablauf nie.
+   **Stand 01.10.2026: noch NICHT gemacht** (Betreiber bestätigt, bewusst auf der Liste
+   gelassen). Seit Paket 4 (Proxy-Gate, `mi_faktor`) ist der Durchlauf wichtiger als vorher:
+   Er ist der einzige Beleg, dass Login → Code → Weiterleitung mit dem neuen Gate zusammenspielt.
 
 **Ohne Eile:**
 7. **StBerG-Anfrage an den Anwalt** — `docs/compliance/StBerG-ANFRAGE.md` ist fertig.
