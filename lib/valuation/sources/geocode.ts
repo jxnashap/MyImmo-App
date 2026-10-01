@@ -1,30 +1,15 @@
-// Geocoding-Adapter: Adresse → lat/lng. Nutzt OpenStreetMap/Nominatim (kostenlos,
-// EU-gehostet). Nominatim-Policy: gültiger User-Agent, max ~1 Anfrage/Sekunde —
-// daher nur bei „Jetzt aktualisieren"/Cron mit Throttle einsetzen, nicht im Render.
-// Bei Fehlern: null → Aufrufer nutzt gespeicherte Koordinaten / manuelle Eingabe.
+// Geocoding-Adapter der Bewertung — seit 01.10.2026 nur noch eine dünne Hülle
+// um die EINE Verortung in lib/geocode.ts (Bereinigung, Drosselungs-Erkennung,
+// User-Agent). Wer das Ergebnis speichern will, nimmt `geocodeAdresse` +
+// `geoAenderung` direkt; diese Hülle bleibt für Aufrufer, die nur einen Punkt
+// brauchen.
+
+import { geocodeAdresse } from "@/lib/geocode";
 
 export type GeoTreffer = { lat: number; lng: number; quelle: string };
 
 export async function geocode(adresse: string | null | undefined): Promise<GeoTreffer | null> {
   if (process.env.VALUATION_GEOCODE_ENABLED === "false") return null;
-  const q = (adresse ?? "").trim();
-  if (q.length < 4) return null;
-  const url =
-    "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=de&q=" +
-    encodeURIComponent(q);
-  try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "MyImmo-App/1.0 (Immobilienbewertung; +https://www.myimmoapp.de)" },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as Array<{ lat: string; lon: string }>;
-    if (!Array.isArray(data) || data.length === 0) return null;
-    const lat = parseFloat(data[0].lat);
-    const lng = parseFloat(data[0].lon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-    return { lat, lng, quelle: "OpenStreetMap/Nominatim" };
-  } catch {
-    return null;
-  }
+  const erg = await geocodeAdresse(adresse ?? "");
+  return erg.art === "treffer" ? { lat: erg.lat, lng: erg.lng, quelle: "OpenStreetMap/Nominatim" } : null;
 }
