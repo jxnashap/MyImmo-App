@@ -483,7 +483,7 @@ async function main() {
   } else {
     console.log("\n✓ Service-Demo — Anmeldung");
     const SERVICE_WEGE = [
-      { titel: "Service-Portal — Aufträge", pfad: "/service", erwartet: ["Service-Portal", "Verknüpft mit 1 Auftraggeber", "Auftrag beantragen", "Firmenverzeichnis des Vermieters"] },
+      { titel: "Service-Portal — Aufträge", pfad: "/service", erwartet: ["Service-Portal", "1 Auftraggeber (seit", "Auftrag beantragen", "Firmenverzeichnis des Vermieters"] }, // React trennt Textteile mit <!-- --> — Marker ohne Übergang zwischen festem Text und {…}
       { titel: "Service-Demo — Vermieter-Bereich bleibt zu", pfad: "/steuer", erwartet: [], zielPfad: "/service" },
     ];
     for (const weg of SERVICE_WEGE) {
