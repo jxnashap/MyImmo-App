@@ -261,6 +261,18 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 `tests/passwortReset.test.ts` + `tests/blockF.test.ts`, fünfzehn Mutationen geprüft.
 
 ### Zukunftsideen (notiert, nicht gebaut)
+- **NÄCHSTES VORHABEN (Wunsch des Betreibers, 01.10.2026): Reiter per Wischen wechseln.**
+  Im Mieterportal (`/portal`, Glas-Leiste oben) und im Vermieter-Mieterportal (`/anliegen`)
+  soll man nicht oben auf die Glas-Leiste tippen müssen, sondern „rüberwischen" können —
+  „genauso wie in den Einstellungen". **Vor dem Bau klären, was gemeint ist:** Die
+  Einstellungen haben KEIN Wischen über den Inhalt (keine Touch-Handler in
+  `SettingsView.tsx`), nur eine waagerecht scrollbare Reiterzeile (`settings-tabs`) — die
+  Glas-Leiste kann das unter 860 px bereits (`overflow-x: auto`, Snap). Gemeint ist also
+  vermutlich Wischen über den INHALT (links/rechts = nächster/voriger Reiter). Risiken dann:
+  Konflikt mit waagerecht scrollenden Tabellen/Diagrammen im Inhalt, mit der
+  Zurück-Geste von iOS/Android am Bildschirmrand, und die Reiter sind echte Links
+  (`?tab=`) — Wischen muss die URL mitziehen, sonst bricht „Zurück". Danach steht die
+  Startseite mit den Kartenfehlern an (wirbt mit „Karte mit allen Standorten").
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
@@ -563,7 +575,12 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   macht — die Service-Role ist es nicht. Aufträge bekommen ihren Partner deshalb beim
   EINFÜGEN (Schnappschuss-Spalte `service_email`). Schnappschuss: 5 Firmen, 6 Aufträge,
   1 Firmen-Zusage (Migration `20261001180100`).
-  ⏳ **AUSSTEHEND: `supabase/ausstehend/demo_service_reset.sql`** — der Reset, der Firmen
+  ⏳ **AUSSTEHEND: `supabase/ausstehend/demo_service_reset.sql`** — auch MIT Betreiber
+  in der Sitzung lief `apply_migration` in den Timeout (01.10.2026: der Dialog erreichte ihn
+  in der Cloud-Sitzung nicht). Weg jetzt: Betreiber führt die Datei im Supabase-Dashboard
+  (SQL Editor) selbst aus; danach prüfen (`pg_get_functiondef` enthält
+  `auftrag_rueckmeldungen`), Datei verschieben, README-Zeile „manuell im SQL-Editor".
+  Ursprünglich: — der Reset, der Firmen
   und Aufträge tatsächlich in die Demo schreibt. **Braucht die Bestätigung des
   Betreibers:** Die Supabase-Schnittstelle verlangt für jede Migration mit `delete` einen
   Bestätigungsdialog; ohne Zuschauer läuft sie in den 60-s-Timeout (dreimal belegt, auch
