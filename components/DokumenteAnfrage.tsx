@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { FileText, FileCheck2, ReceiptText, FileQuestion, ClipboardCheck, Zap, BadgeEuro, type LucideIcon } from "lucide-react";
 import { erstelleAnliegen } from "@/lib/actions/anliegen";
 import type { AnliegenRow } from "@/components/AnliegenPortal";
+import VorschauHinweis from "@/components/VorschauHinweis";
 
 const VORLAGEN: { titel: string; hinweis: string; icon: LucideIcon }[] = [
   { titel: "Mietbescheinigung", hinweis: "z. B. für Amt, Bank oder neuen Vermieter", icon: FileCheck2 },
@@ -23,7 +24,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   erledigt: { label: "Erledigt", cls: "badge-green" },
 };
 
-export default function DokumenteAnfrage({ anfragen }: { anfragen: AnliegenRow[] }) {
+export default function DokumenteAnfrage({ anfragen, nurLesen = false }: { anfragen: AnliegenRow[]; nurLesen?: boolean }) {
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [notiz, setNotiz] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
@@ -48,7 +49,10 @@ export default function DokumenteAnfrage({ anfragen }: { anfragen: AnliegenRow[]
   return (
     <>
       <div className="section">
-        <div className="section-header"><h3>Dokument anfordern</h3></div>
+        <div className="section-header">
+          <h3>Dokument anfordern</h3>
+          {nurLesen && <VorschauHinweis was="Anfrage per Klick" />}
+        </div>
         <div className="section-body">
           <div className="grid-2" style={{ gap: 10 }}>
             {VORLAGEN.map((v) => {
@@ -58,6 +62,7 @@ export default function DokumenteAnfrage({ anfragen }: { anfragen: AnliegenRow[]
                 <button
                   key={v.titel}
                   type="button"
+                  disabled={nurLesen}
                   onClick={() => setGewaehlt(aktiv ? null : v.titel)}
                   className="role-tile"
                   style={{
@@ -77,7 +82,7 @@ export default function DokumenteAnfrage({ anfragen }: { anfragen: AnliegenRow[]
               );
             })}
           </div>
-          {gewaehlt && (
+          {gewaehlt && !nurLesen && (
             <div style={{ marginTop: 14, display: "grid", gap: 10, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}>
               <div style={{ fontSize: 13 }}>
                 Anfrage: <strong>{gewaehlt}</strong>

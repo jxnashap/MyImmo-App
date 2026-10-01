@@ -536,6 +536,21 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   **Falle:** `mieter_zugaenge` gehört NICHT zum Reset — die Verknüpfung überlebt ihn; die
   Anliegen-Zuordnung nicht. Wer eine neue Mieter-Beispieltabelle anlegt, trägt sie in
   `demo_mieter_verknuepfen()` nach.
+  👁️ **Mieterportal-Vorschau (01.10.2026, Wunsch des Betreibers):** Reiter „Vorschau
+  Mieter-Sicht" unter `/anliegen?tab=vorschau&mieter=…&portal=…` — der Vermieter sieht das
+  Portal mit den Augen eines eigenen Mieters, ohne zweites Konto. **EIN Lader, EINE
+  Darstellung:** `lib/portalDaten.ts` → `ladePortalDaten(db, quelle)` und
+  `components/PortalAnsicht.tsx`, benutzt von `/portal` UND der Vorschau. Die Filter, die
+  beim Mieter die RLS übernimmt (nur Miete/Nebenkosten, nur `mieter_freigabe`, nur die
+  Spalten der Sicht `MIETER_PORTAL_SPALTEN`), stehen AUSDRÜCKLICH in der Abfrage — beim
+  Vermieter sind sie die einzige Schranke, sonst zeigt die Vorschau mehr als das Portal.
+  Formulare laufen mit `nurLesen` (Platzhalter `VorschauHinweis`), Konto/Abmelden sind
+  Attrappen. Anliegen und Zählerstände hängen am KONTO des Mieters — ohne Einladung zeigt
+  die Vorschau sie (wahrheitsgemäß) leer und sagt es. `tests/portalVorschau.test.ts`,
+  elf Mutationen rot; Rauchtest-Weg `portal-vorschau`. **Regel: Eine neue Portal-Abfrage
+  kommt in `ladePortalDaten`, nie direkt in eine der beiden Seiten.** Die drei
+  Portal-Komponenten stehen seitdem NICHT mehr in der Ausnahmeliste von
+  `tests/demoWege.test.ts` — sie rendern jetzt auch beim (Demo-)Vermieter.
   **Regel aus dem Audit: Eine
   SECURITY-DEFINER-RPC, die etwas freischaltet, darf nicht für `authenticated` ausführbar sein,
   wenn die Prüfung nur in der Action davor sitzt.**

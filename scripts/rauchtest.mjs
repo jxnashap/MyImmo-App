@@ -239,6 +239,19 @@ const WEGE = [
     },
   },
   {
+    // Mieterportal-Vorschau (01.10.2026): Der Vermieter sieht das Portal mit
+    // den Augen eines Mieters. In der Demo steht die verknüpfte Mieterin
+    // (Sophie Berger) zuerst in der Auswahl — also muss ihre Wohnung da sein.
+    schluessel: "portal-vorschau",
+    titel: "Mieterportal — Vorschau Mieter-Sicht",
+    pfad: "/anliegen?tab=vorschau",
+    erwartet: ["Vorschau Mieter-Sicht", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete", "Ansicht des Mieters"],
+    async pruefe({ html }) {
+      // Nur-Lesen: In der Vorschau darf kein Abmelde-Formular des Portals stehen.
+      return html.includes("Mieter sieht hier") || html.includes("Mieterportal von") ? null : "Vorschau-Rahmen fehlt";
+    },
+  },
+  {
     schluessel: "archiv",
     titel: "Archiv — Beispiel-Einträge",
     pfad: "/archiv",
@@ -384,7 +397,7 @@ async function main() {
       // Ohne sie war dieses Skript falsch grün (siehe Kommentar bei `hole`).
       // Sie steht VOR der Textprüfung, damit der Grund die Umleitung nennt und
       // nicht ein fehlendes Wort.
-      if (!grund && seite.endePfad !== weg.pfad) {
+      if (!grund && seite.endePfad !== weg.pfad.split("?")[0]) {
         grund = `umgeleitet: ${seite.kette.join(" → ")}`;
       }
       if (!grund) {

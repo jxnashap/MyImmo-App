@@ -110,10 +110,14 @@ describe("B24/B27/C30: Dashboard-Zeile, Leerzustände, Staffelplan", () => {
 
 describe("Paket 5 (A4): Mieter sehen Sichten, keine Tabellen", () => {
   it("das Portal liest mieter_portal und properties_portal", () => {
-    const src = lies("app/(app)/portal/page.tsx");
+    // Seit der Vorschau (01.10.2026) liegen die Abfragen in lib/portalDaten.ts;
+    // die Seite ruft den Lader mit der Mieter-Quelle.
+    const seite = lies("app/(app)/portal/page.tsx");
+    expect(seite).toContain('ladePortalDaten(supabase, { art: "mieter", mieterUserId: user!.id })');
+    const src = lies("lib/portalDaten.ts");
     expect(src).toContain('from("mieter_portal")');
     expect(src).toContain('from("properties_portal")');
-    expect(src).not.toContain('from("mieter").select("*")');
+    expect(src).not.toContain('select("*")');
   });
   it("die Migration entfernt die Zeilen-Policies und gibt den Sichten nur dem angemeldeten Nutzer Leserecht", () => {
     const sql = lies("supabase/migrations/20261001120000_mieter_sicht_spalten.sql");
