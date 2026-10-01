@@ -66,18 +66,35 @@ describe("zielReiter", () => {
 
 describe("Einbindung", () => {
   const w = readFileSync("components/WischReiter.tsx", "utf8");
-  it("der Inhalt folgt dem Finger, das Gleiten läuft über transform mit Austritts-Kurve unter 300 ms", () => {
-    expect(w).toContain("setVersatz(wischVersatz(dx, ziel !== null))");
-    expect(w).toContain("transform: `translate3d(${versatz}px, 0, 0)`");
-    expect(w).toMatch(/export const GLEIT_MS = (\d+);/);
-    expect(Number(w.match(/export const GLEIT_MS = (\d+);/)![1])).toBeLessThan(300);
-    expect(w).toContain("`transform ${GLEIT_MS}ms var(--ease-out-stark)`");
+  it("der Inhalt folgt dem Finger OHNE React-Render je Bewegung; das Gleiten läuft über transform, ruhig und weich", () => {
+    // Dritte Fassung: Der Versatz geht beim Ziehen direkt ins DOM (Ref) — ein
+    // Render je touchmove war das Ruckeln. Dauer bewusst über 300 ms (ganze
+    // Seite bewegt sich, Vorgabe „etwas langsamer, smooth"), aber unter 450.
+    expect(w).toContain("gleis.current.style.transform = `translate3d(${wischVersatz(dx, ziel !== null)}px, 0, 0)`");
+    expect(w).not.toMatch(/setVersatz\(/);
+    const ms = Number(w.match(/export const GLEIT_MS = (\d+);/)![1]);
+    expect(ms).toBeGreaterThanOrEqual(300);
+    expect(ms).toBeLessThan(450);
+    expect(w).toContain('export const GLEIT_KURVE = "cubic-bezier(0.22, 1, 0.36, 1)";');
+    expect(w).toContain("`transform ${GLEIT_MS}ms ${GLEIT_KURVE}`");
+    // Beim Ziehen setzt React KEIN transform — sonst überschriebe jeder Render den Finger.
+    expect(w).toContain('...(phase === "zieht" ? {} : { transform:');
+  });
+  it("die Glas-Leiste erfährt das Ziel sofort beim Gleiten, nicht erst mit der Serverantwort", () => {
+    expect(w).toContain('export const WISCH_EREIGNIS = "myimmo:wisch";');
+    const gleiten = w.slice(w.indexOf("function gleiten("), w.indexOf("const gleisStil"));
+    expect(gleiten.indexOf("melde(reiter[zielIndex].href);")).toBeGreaterThan(0);
+    expect(gleiten.indexOf("melde(")).toBeLessThan(gleiten.indexOf("reduzierteBewegung()"));
+    const g = readFileSync("components/GlassLeiste.tsx", "utf8");
+    expect(g).toContain("document.addEventListener(WISCH_EREIGNIS, aufWisch);");
+    expect(g).toContain('ziel.classList.add("active");');
+    expect(g).toContain("zentriere(bar, ziel, false);");
   });
   it("navigiert erst NACH dem Gleiten über den Router — die Adresse zieht mit, „Zurück“ bleibt heil", () => {
     expect(w).toContain("router.push(reiter[ziel].href, { scroll: false })");
     expect(w).toContain("abschliessen(gleitZiel ?? angezeigt);");
     // Ohne Weg feuert kein transitionend — sonst bliebe die Phase hängen.
-    expect(w).toContain("if (zielVersatz === versatz) {");
+    expect(w).toContain("if (Math.abs(zielVersatz - aktuellerVersatz()) < 1) {");
     expect(w).toContain("GLEIT_MS + 80");
   });
   it("der Browser scrollt senkrecht selbst; Eingabefelder, waagerecht scrollbare Bereiche, Rand und Ausnahmen bleiben in Ruhe", () => {

@@ -23,7 +23,8 @@ describe("Einbindung", () => {
     const g = readFileSync("components/GlassLeiste.tsx", "utf8");
     expect(g).toContain('querySelector<HTMLElement>(".glass-item.active")');
     expect(g).toContain("}, [aktiv]);");
-    expect(g).toContain('behavior: sofort ? "auto" : "smooth"');
+    expect(g).toContain('behavior: ruhig ? "auto" : "smooth"');
+    expect(g).toContain("zentriere(bar, el, erstesMal.current);");
     expect(g).toContain("useLayoutEffect(");
     expect(readFileSync("components/PortalAnsicht.tsx", "utf8")).toContain('<GlassLeiste aktiv={tab} label="Portal-Bereiche">');
     expect(readFileSync("app/(app)/anliegen/page.tsx", "utf8")).toContain('<GlassLeiste aktiv={tab} label="Bereiche" style={{ marginBottom: 20 }}>');

@@ -1,10 +1,19 @@
 "use client";
 
-// Wischen über den Inhalt = nächster/voriger Reiter (01.10.2026, zweite
-// Fassung: „viel flüssiger"). Der Inhalt folgt dem Finger, der Nachbar-Reiter
-// gleitet daneben herein, beim Loslassen gleitet er zu Ende (oder zurück).
-// Erst DANN wird navigiert — die Adresse zieht mit, „Zurück" im Browser bleibt
-// heil. Die Entscheidung steckt in lib/wischen.ts.
+// Wischen über den Inhalt = nächster/voriger Reiter (01.10.2026, dritte
+// Fassung: „etwas langsamer, smooth" + Leiste gekoppelt). Der Inhalt folgt
+// dem Finger, der Nachbar-Reiter gleitet daneben herein, beim Loslassen
+// gleitet er zu Ende (oder zurück). Erst DANN wird navigiert — die Adresse
+// zieht mit, „Zurück" im Browser bleibt heil. Die Entscheidung steckt in
+// lib/wischen.ts.
+//
+// Flüssig, weil beim Ziehen KEIN React-Render je Fingerbewegung läuft: Der
+// Versatz wird direkt ins `transform` des Gleisels geschrieben (Ref); React
+// rendert nur beim Anfang des Zugs, beim Loslassen und beim Abschluss.
+//
+// Gekoppelt mit der Glas-Leiste: Sobald das Gleiten zum Ziel beginnt, meldet
+// `WISCH_EREIGNIS` den Ziel-Link — GlassLeiste markiert ihn sofort und rückt
+// ihn in die Mitte, statt auf die Antwort des Servers zu warten.
 //
 // Jeder Reiter bringt seinen Inhalt mit (`inhalt`). Fehlt er — der Vermieter-
 // Bereich lädt nur den aktiven Reiter —, gleitet ein Platzhalter mit dem Namen
@@ -25,8 +34,14 @@ import { RAND_PX, wischAchse, wischRichtung, wischVersatz, zielReiter } from "@/
 
 export type Reiter = { href: string; label: string; inhalt?: ReactNode };
 
-/** Dauer des Gleitens nach dem Loslassen — UI unter 300 ms, Austritts-Kurve. */
-export const GLEIT_MS = 260;
+/** Dauer des Gleitens nach dem Loslassen. Bewusst über der 300-ms-Regel für
+ *  Bedienelemente: Hier bewegt sich eine ganze Seite, und der Betreiber fand
+ *  260 ms ruckartig — 380 ms mit weichem Austritt las sich am Gerät ruhiger. */
+export const GLEIT_MS = 380;
+/** Weiche Austrittskurve: zügig los, lang ausrollend — kein Anschlag am Ende. */
+export const GLEIT_KURVE = "cubic-bezier(0.22, 1, 0.36, 1)";
+/** Ereignis an `document`: `detail.href` ist der Link des Reiters, der jetzt gilt. */
+export const WISCH_EREIGNIS = "myimmo:wisch";
 
 function blockiert(ziel: EventTarget | null, wurzel: HTMLElement): boolean {
   let el = ziel instanceof Element ? ziel : null;
@@ -45,19 +60,27 @@ function reduzierteBewegung(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+function melde(href: string) {
+  document.dispatchEvent(new CustomEvent(WISCH_EREIGNIS, { detail: { href } }));
+}
+
 type Zug = { x: number; y: number; t: number; achse: "x" | "y" | null };
 
 export default function WischReiter({ reiter, aktuell }: { reiter: Reiter[]; aktuell: number }) {
   const router = useRouter();
   const wurzel = useRef<HTMLDivElement>(null);
+  const gleis = useRef<HTMLDivElement>(null);
   const zug = useRef<Zug | null>(null);
   // Der Reiter, der gerade in der Fläche liegt. Nach einem Wisch steht er
   // schon auf dem Ziel, BEVOR der Server die Seite neu liefert — so springt
   // beim Eintreffen nichts.
   const [angezeigt, setAngezeigt] = useState(aktuell);
   const [vonServer, setVonServer] = useState(aktuell);
-  const [versatz, setVersatz] = useState(0);
   const [phase, setPhase] = useState<"ruhe" | "zieht" | "gleitet">("ruhe");
+  // Beim Ziehen: welcher Nachbar sichtbar ist (Vorzeichen des Zugs). Beim
+  // Gleiten: der Ziel-Versatz in px (React setzt ihn, die Transition läuft).
+  const [zugSeite, setZugSeite] = useState<-1 | 0 | 1>(0);
+  const [gleitVersatz, setGleitVersatz] = useState(0);
   const [gleitZiel, setGleitZiel] = useState<number | null>(null);
 
   // Der Server hat einen anderen Reiter geliefert (Tipp auf die Leiste,
@@ -65,13 +88,14 @@ export default function WischReiter({ reiter, aktuell }: { reiter: Reiter[]; akt
   if (vonServer !== aktuell) {
     setVonServer(aktuell);
     setAngezeigt(aktuell);
-    setVersatz(0);
     setPhase("ruhe");
+    setZugSeite(0);
+    setGleitVersatz(0);
     setGleitZiel(null);
   }
 
-  // Rückfall, falls `transitionend` ausbleibt (Tab im Hintergrund, Transition
-  // ohne Weg): Das Gleiten darf nie hängen bleiben.
+  // Rückfall, falls `transitionend` ausbleibt (Tab im Hintergrund): Das
+  // Gleiten darf nie hängen bleiben.
   useEffect(() => {
     if (phase !== "gleitet") return;
     const t = window.setTimeout(() => abschliessen(gleitZiel ?? angezeigt), GLEIT_MS + 80);
@@ -81,16 +105,51 @@ export default function WischReiter({ reiter, aktuell }: { reiter: Reiter[]; akt
 
   const breite = () => wurzel.current?.clientWidth || window.innerWidth;
   const richtungVon = (v: number): -1 | 0 | 1 => (v < 0 ? 1 : v > 0 ? -1 : 0);
+  const aktuellerVersatz = () => {
+    const m = gleis.current ? new DOMMatrixReadOnly(getComputedStyle(gleis.current).transform) : null;
+    return m ? m.m41 : 0;
+  };
 
   function abschliessen(ziel: number) {
     setPhase("ruhe");
-    setVersatz(0);
+    setZugSeite(0);
+    setGleitVersatz(0);
     setGleitZiel(null);
     if (ziel !== angezeigt) {
       setAngezeigt(ziel);
       router.push(reiter[ziel].href, { scroll: false });
     }
   }
+
+  // Zum Nachbarn (volle Breite) oder zurück auf 0 gleiten — über die
+  // CSS-Transition; `onTransitionEnd` schließt ab. Die Leiste erfährt das
+  // Ziel sofort, nicht erst mit der Serverantwort.
+  function gleiten(ziel: number | null, richtung: -1 | 0 | 1) {
+    const zielIndex = ziel ?? angezeigt;
+    melde(reiter[zielIndex].href);
+    if (reduzierteBewegung()) {
+      abschliessen(zielIndex);
+      return;
+    }
+    const zielVersatz = ziel === null ? 0 : -richtung * breite();
+    if (Math.abs(zielVersatz - aktuellerVersatz()) < 1) {
+      abschliessen(zielIndex); // kein Weg → keine Transition, kein transitionend
+      return;
+    }
+    setPhase("gleitet");
+    setGleitZiel(zielIndex);
+    setGleitVersatz(zielVersatz);
+  }
+
+  // Beim Ziehen bestimmt der Finger das transform direkt; React setzt es nur
+  // in Ruhe (0) und beim Gleiten (Ziel) — sonst würde jeder Render den
+  // Finger-Versatz überschreiben.
+  const gleisStil: CSSProperties = {
+    position: "relative",
+    willChange: "transform",
+    transition: phase === "gleitet" ? `transform ${GLEIT_MS}ms ${GLEIT_KURVE}` : "none",
+    ...(phase === "zieht" ? {} : { transform: `translate3d(${phase === "gleitet" ? gleitVersatz : 0}px, 0, 0)` }),
+  };
 
   return (
     <div
@@ -119,9 +178,11 @@ export default function WischReiter({ reiter, aktuell }: { reiter: Reiter[]; akt
         const dy = p.clientY - z.y;
         if (z.achse === null) z.achse = wischAchse(dx, dy);
         if (z.achse !== "x") return;
-        const ziel = zielReiter(reiter, angezeigt, richtungVon(dx));
+        const seite = richtungVon(dx);
+        const ziel = zielReiter(reiter, angezeigt, seite);
         if (phase !== "zieht") setPhase("zieht");
-        setVersatz(wischVersatz(dx, ziel !== null));
+        if (seite !== 0 && seite !== zugSeite) setZugSeite(seite);
+        if (gleis.current) gleis.current.style.transform = `translate3d(${wischVersatz(dx, ziel !== null)}px, 0, 0)`;
       }}
       onTouchEnd={(e) => {
         const z = zug.current;
@@ -131,40 +192,17 @@ export default function WischReiter({ reiter, aktuell }: { reiter: Reiter[]; akt
         if (z.achse !== "x") return;
         const p = e.changedTouches[0];
         const dx = p.clientX - z.x;
-        const b = breite();
-        const richtung = wischRichtung({ dx, dy: p.clientY - z.y, ms: e.timeStamp - z.t, startX: z.x, breite: b });
-        const ziel = zielReiter(reiter.map((_, i) => i), angezeigt, richtung);
-        if (reduzierteBewegung()) {
-          abschliessen(ziel ?? angezeigt);
-          return;
-        }
-        // Zu Ende gleiten: zum Nachbarn (volle Breite) oder zurück auf 0.
-        // Beides über die CSS-Transition; `onTransitionEnd` schließt ab.
-        const zielVersatz = ziel === null ? 0 : -richtung * b;
-        if (zielVersatz === versatz) {
-          abschliessen(ziel ?? angezeigt); // kein Weg → keine Transition, kein transitionend
-          return;
-        }
-        setPhase("gleitet");
-        setGleitZiel(ziel ?? angezeigt);
-        setVersatz(zielVersatz);
+        const richtung = wischRichtung({ dx, dy: p.clientY - z.y, ms: e.timeStamp - z.t, startX: z.x, breite: breite() });
+        gleiten(zielReiter(reiter.map((_, i) => i), angezeigt, richtung), richtung);
       }}
       onTouchCancel={() => {
         zug.current = null;
-        if (phase === "zieht") {
-          setPhase("gleitet");
-          setGleitZiel(angezeigt);
-          setVersatz(0);
-        }
+        if (phase === "zieht") gleiten(null, 0);
       }}
     >
       <div
-        style={{
-          position: "relative",
-          transform: `translate3d(${versatz}px, 0, 0)`,
-          transition: phase === "gleitet" ? `transform ${GLEIT_MS}ms var(--ease-out-stark)` : "none",
-          willChange: phase === "ruhe" ? undefined : "transform",
-        }}
+        ref={gleis}
+        style={gleisStil}
         onTransitionEnd={(e) => {
           if (e.target !== e.currentTarget || phase !== "gleitet") return;
           abschliessen(gleitZiel ?? angezeigt);
@@ -174,7 +212,8 @@ export default function WischReiter({ reiter, aktuell }: { reiter: Reiter[]; akt
           const rel = i - angezeigt;
           // Nur der Nachbar in Zugrichtung wird gezeigt; alle anderen bleiben
           // unsichtbar und für Tastatur/Vorleser gesperrt (`inert`).
-          const nachbar = Math.abs(rel) === 1 && phase !== "ruhe" && Math.sign(rel) === -Math.sign(versatz);
+          const seite = phase === "gleitet" ? richtungVon(gleitVersatz) : zugSeite;
+          const nachbar = Math.abs(rel) === 1 && phase !== "ruhe" && rel === seite;
           const stil: CSSProperties | undefined = rel === 0
             ? undefined
             : { position: "absolute", top: 0, left: `${rel * 100}%`, width: "100%", visibility: nachbar ? "visible" : "hidden" };
