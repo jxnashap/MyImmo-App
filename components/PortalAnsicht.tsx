@@ -15,6 +15,7 @@ import ZaehlerPortal from "@/components/ZaehlerPortal";
 import AnfragenVomVermieter from "@/components/AnfragenVomVermieter";
 import type { PortalDaten } from "@/lib/portalDaten";
 import WischReiter from "@/components/WischReiter";
+import GlassLeiste from "@/components/GlassLeiste";
 
 export const PORTAL_TABS = [
   { key: "wohnung", label: "Wohnung", icon: Home },
@@ -292,7 +293,7 @@ export default function PortalAnsicht({
       {/* Glass-Toolbar oben in der Mitte: Bereiche umschalten. In der Vorschau
           nicht sticky — sie säße sonst über der Vermieter-Topbar. */}
       <div className="portal-toolbar" style={vorschau ? { position: "static" } : undefined}>
-        <nav className="glass-bar" aria-label="Portal-Bereiche">
+        <GlassLeiste aktiv={tab} label="Portal-Bereiche">
           {PORTAL_TABS.map((t) => {
             const Icon = t.icon;
             return (
@@ -301,7 +302,7 @@ export default function PortalAnsicht({
               </Link>
             );
           })}
-        </nav>
+        </GlassLeiste>
       </div>
 
       {/* Wischen über den Inhalt wechselt den Reiter (01.10.2026). */}
