@@ -234,3 +234,34 @@ describe("Sensible Aktionen verlangen eine frische Anmeldung", () => {
     expect((await mod.GET()).status).toBe(200);
   });
 });
+
+describe("aalStandAus — Faktorstatus vom Server, nie aus dem Cookie (Audit 01.10.2026, A2)", () => {
+  const tokenMit = (aal?: string) => {
+    const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64url");
+    return `${b64({ alg: "none" })}.${b64(aal ? { sub: "u", aal } : { sub: "u" })}.sig`;
+  };
+  it("bestätigter Faktor + aal1-Token → nachholen; aal2-Token → nicht", async () => {
+    const { aalStandAus, mussMfaNachholen } = await import("@/lib/auth/sitzung");
+    const faktor = [{ status: "verified", factor_type: "totp" }];
+    expect(mussMfaNachholen(aalStandAus(faktor, tokenMit("aal1")))).toBe(true);
+    expect(mussMfaNachholen(aalStandAus(faktor, tokenMit("aal2")))).toBe(false);
+    expect(mussMfaNachholen(aalStandAus([{ status: "unverified" }], tokenMit("aal1")))).toBe(false);
+    expect(mussMfaNachholen(aalStandAus([], tokenMit("aal1")))).toBe(false);
+  });
+  it("FAIL-CLOSED: ohne aal-Claim gilt aal1 — ein Faktor-Konto muss dann nachholen", async () => {
+    const { aalStandAus, mussMfaNachholen } = await import("@/lib/auth/sitzung");
+    expect(mussMfaNachholen(aalStandAus([{ status: "verified" }], tokenMit()))).toBe(true);
+    expect(mussMfaNachholen(aalStandAus([{ status: "verified" }], null))).toBe(true);
+  });
+  it("pruefeFrischeAnmeldung fragt den Server (getUser) — das Cookie sagt im Prüfstand das Gegenteil und wird ignoriert", async () => {
+    vi.resetModules();
+    const { fakeSupabase } = await import("./stubs/actionHarness");
+    // Server: Faktor vorhanden, Token aal1 → mfa. (Cookie behauptet: kein Faktor.)
+    const { client } = fakeSupabase({ aal: { currentLevel: "aal1", nextLevel: "aal2" } });
+    const { pruefeFrischeAnmeldung } = await import("@/lib/auth/frisch");
+    expect(await pruefeFrischeAnmeldung(client as never)).toEqual({ ok: false, grund: "mfa" });
+    // Server: kein Faktor (Cookie behauptet: einer) → ok.
+    const { client: c2 } = fakeSupabase({});
+    expect(await pruefeFrischeAnmeldung(c2 as never)).toEqual({ ok: true });
+  });
+});

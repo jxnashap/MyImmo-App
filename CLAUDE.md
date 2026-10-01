@@ -478,6 +478,25 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   `/login`/`/anmelden` haben „Hilfe & Kontakt“. **Abmelde-Grund:** `AutoLogout` schickt
   `/login?grund=inaktiv&min=N` bzw. `geschlossen`, der Proxy setzt `grund=abgelaufen`, wenn
   ein `sb-…-auth-token`-Cookie da war, aber nicht mehr gilt; die Login-Seite erklärt alle drei.
+  ✅ **Paket 4 erledigt 01.10.2026 — 2FA ernst** (`lib/auth/faktorNachweis.ts`,
+  `aalStandAus()` in `lib/auth/sitzung.ts`, 10 neue Proxy-/2FA-Tests, neun Mutationen rot):
+  **(A2)** Der Faktorstatus kommt nur noch vom SERVER — `aalStandAus(user.factors, token)`
+  mit `user` aus `getUser()` und `aal` aus dem signierten Token. Layout (kein Zusatzaufruf,
+  `aktuellerNutzer()` liefert `factors` mit) und `pruefeFrischeAnmeldung()` nutzen es.
+  **Server-Code ruft `getAuthenticatorAssuranceLevel()` NIE mehr ohne JWT-Argument** — die
+  Bibliothek liest dann `session.user.factors` aus dem Cookie, das der Browser schreibt; der
+  Prüfstand wirft bei diesem Aufruf. **(A3)** `proxy.ts`: aal1-Sitzung auf jedem Pfad außer
+  `mfaAusgenommen()` (`/login`, `/auth/*`, statische Dateien) → einmal `getUser()`; Konto mit
+  bestätigtem Faktor → GET-Seite `/login?mfa=1&next=`, **POST/API 403 JSON `{ mfa: true }`**;
+  kein Faktor → signierter Nachweis `mi_faktor` (HMAC über `DATA_ENCRYPTION_KEY`, an die
+  Nutzer-ID gebunden, **10 min**) erspart die nächsten Nachfragen; positives Ergebnis wird nie
+  gemerkt; Auth-Server-Fehler → fail-closed (`grund=abgelaufen`). **In Kauf genommen:** Eine
+  fremde aal1-Sitzung mit frischem Nachweis läuft nach der Einrichtung eines Faktors bis zu
+  10 min weiter. **Nicht gelöst (bewusst, zweiter Schritt):** der PostgREST-Direktweg — RLS
+  kennt `aal` nicht; dafür bräuchte es Policies mit `auth.jwt()->>'aal'` auf 47 Tabellen.
+  **(B3)** `<ZweiFaktor absichern={…}>` — Einrichten erst nach Re-Auth (`useReAuth` im
+  `SicherheitPanel`). **Regel: `supabase.auth.mfa.getAuthenticatorAssuranceLevel()` ist im
+  Server-Code verboten; `aalStandAus(user.factors, session.access_token)` benutzen.**
   **Regel aus dem Audit: Eine
   SECURITY-DEFINER-RPC, die etwas freischaltet, darf nicht für `authenticated` ausführbar sein,
   wenn die Prüfung nur in der Action davor sitzt.**

@@ -24,7 +24,18 @@ import { unbestaetigteTotp } from "@/lib/auth/mfaFaktoren";
 
 type Faktor = { id: string; status: string; friendly_name?: string | null };
 
-export default function ZweiFaktor({ demo = false, istGoogle = false }: { demo?: boolean; istGoogle?: boolean }) {
+export default function ZweiFaktor({
+  demo = false,
+  istGoogle = false,
+  absichern,
+}: {
+  demo?: boolean;
+  istGoogle?: boolean;
+  /** Re-Auth vor dem Einrichten (Audit 01.10.2026, B3): Eine gestohlene Sitzung
+   *  darf keinen Faktor auf ein fremdes Gerät legen — das sperrte den Inhaber
+   *  dauerhaft aus (Passwort-Reset hilft dann nicht, der Login verlangt den Code). */
+  absichern?: (fn: () => void | Promise<void>) => void | Promise<void>;
+}) {
   const supabase = createClient();
   const toast = useToast();
   const [faktor, setFaktor] = useState<Faktor | null | undefined>(undefined); // undefined = lädt
@@ -217,7 +228,7 @@ export default function ZweiFaktor({ demo = false, istGoogle = false }: { demo?:
         </form>
       ) : (
         <fieldset disabled={gesperrt || busy} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-          <button type="button" className="btn btn-gold" onClick={starten}><ShieldCheck size={14} /> Zwei-Faktor einrichten</button>
+          <button type="button" className="btn btn-gold" onClick={() => (absichern ? absichern(starten) : starten())}><ShieldCheck size={14} /> Zwei-Faktor einrichten</button>
         </fieldset>
       )}
 

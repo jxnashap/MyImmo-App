@@ -465,6 +465,8 @@ function SicherheitPanel({ email, provider, ohnePasswort = false, demo = false, 
   const istGoogle = ohnePasswort;
   // Nur für den Hinweis in der 2FA-Karte: Kann man sich (auch) mit Google anmelden?
   const googleAnmeldung = !!provider && provider !== "email";
+  // Re-Auth vor der 2FA-Einrichtung (Audit B3) — derselbe Dialog wie beim Export.
+  const { absichern: absichernMfa, dialog: mfaDialog } = useReAuth(email, ohnePasswort);
   const [pw0, setPw0] = useState("");
   const [pw1, setPw1] = useState("");
   const [pw2, setPw2] = useState("");
@@ -570,7 +572,8 @@ function SicherheitPanel({ email, provider, ohnePasswort = false, demo = false, 
         </fieldset>
       </div>
 
-      <ZweiFaktor demo={demo} istGoogle={googleAnmeldung} />
+      <ZweiFaktor demo={demo} istGoogle={googleAnmeldung} absichern={absichernMfa} />
+      {mfaDialog}
       <SitzungenKarte lastSignIn={lastSignIn} demo={demo} />
       <AutoLogoutKarte />
     </div>

@@ -18,6 +18,29 @@ export function mussMfaNachholen(aal: AalStand | null | undefined): boolean {
   return !!aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2";
 }
 
+/**
+ * AAL-Stand aus SERVER-Daten — nicht aus dem Cookie.
+ *
+ * Bis 01.10.2026 (Audit A2) lieferte `supabase.auth.mfa.getAuthenticatorAssuranceLevel()`
+ * ohne JWT-Argument den `nextLevel` aus `session.user.factors` — und `session`
+ * ist das unsignierte JSON aus dem Sitzungs-Cookie, das der Browser selbst
+ * schreibt. Ein Cookie mit `factors: []` schaltete das 2FA-Gate ab (bewiesen).
+ *
+ * Deshalb hier: `faktoren` MUSS aus einer Server-Antwort kommen (`getUser()` →
+ * `user.factors`), `token` ist das signierte Access-Token (dessen `aal`-Claim
+ * trägt die Signatur des Auth-Servers; die Datenbank vertraut demselben Claim).
+ * Fail-closed: Ohne Token gilt die Sitzung als aal1.
+ */
+export function aalStandAus(
+  faktoren: ReadonlyArray<{ status?: string | null; factor_type?: string | null }> | null | undefined,
+  token: string | null | undefined,
+): AalStand {
+  const p = jwtPayload(token);
+  const currentLevel = typeof p?.aal === "string" ? (p.aal as string) : "aal1";
+  const bestaetigt = !!faktoren?.some((f) => f.status === "verified");
+  return { currentLevel, nextLevel: bestaetigt ? "aal2" : currentLevel };
+}
+
 /** Base64url-Payload eines JWT als Objekt — ohne Signaturprüfung (die macht Supabase). */
 export function jwtPayload(token: string | null | undefined): Record<string, unknown> | null {
   if (!token) return null;
