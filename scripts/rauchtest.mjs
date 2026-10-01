@@ -259,7 +259,8 @@ const WEGE = [
     schluessel: "service-partner",
     titel: "Mieterportal — Service-Partner verknüpft",
     pfad: "/anliegen?tab=service",
-    erwartet: ["Verknüpfte Service-Partner", "Hausmeisterservice Krause", "Sanitär Lindner GmbH", "Garten- &amp; Winterdienst Petersen"],
+    // Firmen und Aufträge kommen aus dem Reset (Migration 20261001180200) — ohne ihn fehlen sie still.
+    erwartet: ["Verknüpfte Service-Partner", "Hausmeisterservice Krause", "Sanitär Lindner GmbH", "Garten- &amp; Winterdienst Petersen", "Heizung &amp; Sanitär Böhm", "Dachrinne verstopft", "Hecke schneiden und Grünschnitt entsorgen"],
     async pruefe() {
       return null;
     },
@@ -483,7 +484,7 @@ async function main() {
   } else {
     console.log("\n✓ Service-Demo — Anmeldung");
     const SERVICE_WEGE = [
-      { titel: "Service-Portal — Aufträge", pfad: "/service", erwartet: ["Service-Portal", "1 Auftraggeber (seit", "Auftrag beantragen", "Firmenverzeichnis des Vermieters"] }, // React trennt Textteile mit <!-- --> — Marker ohne Übergang zwischen festem Text und {…}
+      { titel: "Service-Portal — Aufträge", pfad: "/service", erwartet: ["Service-Portal", "1 Auftraggeber (seit", "Auftrag beantragen", "Firmenverzeichnis des Vermieters", "Dachrinne verstopft", "Heizkörper im Bad prüfen", "Heizung &amp; Sanitär Böhm"] }, // React trennt Textteile mit <!-- --> — Marker ohne Übergang zwischen festem Text und {…}
       { titel: "Service-Demo — Vermieter-Bereich bleibt zu", pfad: "/steuer", erwartet: [], zielPfad: "/service" },
     ];
     for (const weg of SERVICE_WEGE) {

@@ -120,9 +120,13 @@ describe("Demo-Start und Migrationen", () => {
     expect(v).toBeLessThan(z);
     expect(r).toContain("for (const email of fehlend as string[])");
   });
-  it("der Seed enthält kein delete; der Reset liegt als ausstehend daneben", () => {
+  it("der Seed enthält kein delete; der Reset (manuell im SQL-Editor) liegt bei den Migrationen und ordnet den Partner über die E-Mail zu", () => {
     expect(lies("supabase/migrations/20261001180100_demo_service_seed.sql")).not.toMatch(/\bdelete\b/i);
-    expect(existsSync("supabase/ausstehend/demo_service_reset.sql")).toBe(true);
-    expect(lies("supabase/ausstehend/demo_service_reset.sql")).toContain("AUSSTEHEND");
+    expect(existsSync("supabase/ausstehend")).toBe(false);
+    const reset = lies("supabase/migrations/20261001180200_demo_service_reset.sql");
+    expect(reset).toContain("left join auth.users u on u.email = a.service_email");
+    expect(reset).toContain("insert into public.auftrag_rueckmeldungen");
+    expect(reset).toContain("'anliegen', 'notizen', 'zaehlerstand_meldungen', 'firmen'");
+    expect(lies("supabase/migrations/README.md")).toContain("| 20261001180200 | demo_service_reset |");
   });
 });

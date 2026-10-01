@@ -1,20 +1,12 @@
--- AUSSTEHEND (01.10.2026): braucht die Bestätigung des Betreibers.
+-- Demo-Service, Teil 3: der Reset schreibt Firmen, Aufträge und Rückmeldungen
+-- in die Demo (01.10.2026).
 --
--- Die Supabase-Schnittstelle verlangt für jede Migration, die das Wort
--- `delete` enthält, eine Bestätigung im Dialog. Der Reset löscht den
--- Demo-Bestand und legt ihn neu an, also enthält er es zwangsläufig. In einer
--- Sitzung ohne Zuschauer läuft die Anfrage in den Timeout (dreimal belegt).
--- Bewusst NICHT umgangen (etwa durch zerlegte Schlüsselwörter): Die Schranke
--- ist genau für solche Fälle da.
---
--- Anwenden: in einer Sitzung mit Betreiber per apply_migration (Name
--- `demo_service_reset`) und den Dialog bestätigen; danach diese Datei nach
--- supabase/migrations/20261001180200_demo_service_reset.sql verschieben und
--- im README eintragen.
---
--- Bis dahin: Die drei Partner sind verknüpft (Teil 1), Firmen und Aufträge
--- liegen im Schnappschuss (Teil 2), erscheinen in der Demo aber erst mit
--- diesem Reset.
+-- MANUELL IM SQL-EDITOR AUSGEFÜHRT (Betreiber, 01.10.2026): Die Supabase-
+-- Schnittstelle verlangt für jede Migration mit `delete` eine Bestätigung im
+-- Dialog; in der Cloud-Sitzung erreichte der Dialog den Betreiber nicht, die
+-- Anfrage lief in den Timeout. Nicht umgangen (etwa durch zerlegte
+-- Schlüsselwörter) — die Schranke ist für genau solche Fälle da. Nach dem
+-- Ausführen per `pg_get_functiondef` geprüft (enthält `auftrag_rueckmeldungen`).
 
 -- ---------------------------------------------------------------------------
 -- 4. Reset: Firmen über die allgemeine Schleife, Aufträge und Rückmeldungen
