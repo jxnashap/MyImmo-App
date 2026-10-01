@@ -87,7 +87,7 @@ describe("Demo: jeder angebotene Weg führt irgendwohin", () => {
       return varianten.map((v) => v.replace(/\$\{[^}]*\}/g, "x"));
     });
     expect(fest.length).toBeGreaterThan(5);
-    expect(fest).toContain("/karte"); // „Karte aktivieren" — war eine Sackgasse
+    expect(fest).toContain("/properties/new"); // „+ Immobilie" — war eine Sackgasse
     expect(vorlagen).toContain("/einnahmen/x/edit"); // der Erkenner muss sie sehen
     expect([...fest, ...vorlagen].filter(unerklaert)).toEqual([]);
   });
@@ -272,3 +272,18 @@ function alleDateien(dir: string): string[] {
     return statSync(p).isDirectory() ? alleDateien(p) : p.endsWith(".tsx") ? [p] : [];
   });
 }
+
+describe("Dashboard ohne Karte (01.10.2026, Entscheidung des Betreibers)", () => {
+  // Die Karte zeigte nur Objekte, deren Adresse schon auf /karte aufgelöst war
+  // (live 7 von 21) und passte nicht zur Seite. Die Kartenseite selbst bleibt —
+  // und braucht dann einen Weg dorthin, denn sie steht in keiner Navigation.
+  it("das Dashboard rendert keine Karte mehr", () => {
+    const quelle = readFileSync("app/(app)/page.tsx", "utf8");
+    expect(quelle).not.toContain("PortfolioKarte");
+    expect(quelle).not.toContain("Karte aktivieren");
+  });
+  it("die Kartenseite bleibt erreichbar — über die Objektliste", () => {
+    expect(readFileSync("app/(app)/properties/page.tsx", "utf8")).toContain('<Link href="/karte"');
+    expect(demoDarfRoute("/karte")).toBe(true);
+  });
+});

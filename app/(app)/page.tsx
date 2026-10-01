@@ -11,7 +11,6 @@ import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
 import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2 } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
-import PortfolioKarte, { type KartenObjekt } from "@/components/PortfolioKarte";
 import ZeitraumControl from "@/components/ZeitraumControl";
 import { portfolioWertReihe, wertzuwachsGgKaufpreis, type RohStand } from "@/lib/wert/verlauf";
 import { einnahmeDatum, type RawPoint } from "@/lib/zeitraum";
@@ -108,11 +107,6 @@ export default async function DashboardPage() {
   ]);
 
   const properties = (props ?? []) as Property[];
-  // Kleine Portfolio-Karte: nur Objekte, die bereits Koordinaten haben —
-  // das Dashboard geocodiert bewusst NICHT (kein externer Aufruf beim Laden).
-  const kartenObjekte: KartenObjekt[] = properties
-    .filter((p) => p.lat != null && p.lng != null)
-    .map((p) => ({ id: p.id, name: p.bezeichnung, adresse: p.adresse ?? "", typ: p.typ, wert: p.wert, lat: p.lat as number, lng: p.lng as number }));
   const einnahmen = (einn ?? []) as Einnahme[];
   const kosten = (kost ?? []) as Kosten[];
   const kredite = (kred ?? []) as Kredit[];
@@ -465,41 +459,10 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Koordinaten schreibt ausschließlich /karte beim Aufruf (das Dashboard
-          geocodiert bewusst nicht). Wer die Seite nie öffnet, hat nie
-          Koordinaten — und sah hier dauerhaft nichts, ohne zu ahnen, dass es
-          eine Karte gibt. Deshalb der Platzhalter mit dem Weg dorthin. */}
-      {kartenObjekte.length > 0 ? (
-        <div className="section mb-20">
-          <div className="section-header">
-            <div>
-              <h3>Standorte</h3>
-              <div className="section-sub">{kartenObjekte.length} von {properties.length} Objekt{properties.length === 1 ? "" : "en"} auf der Karte</div>
-            </div>
-            <Link href="/properties" className="btn btn-ghost btn-sm">Alle Objekte →</Link>
-          </div>
-          <div className="section-body" style={{ padding: 0 }}>
-            <PortfolioKarte objekte={kartenObjekte} hoehe="300px" />
-          </div>
-        </div>
-      ) : properties.some((p) => p.adresse) ? (
-        <div className="section mb-20">
-          <div className="section-header">
-            <div>
-              <h3>Standorte</h3>
-              <div className="section-sub">Karte noch nicht aktiviert</div>
-            </div>
-            <Link href="/karte" className="btn btn-ghost btn-sm">Karte aktivieren →</Link>
-          </div>
-          <div className="section-body">
-            <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
-              Deine Objekte haben noch keine Koordinaten. Beim ersten Aufruf der Kartenseite
-              werden die Adressen einmalig aufgelöst und gespeichert — danach erscheint die Karte
-              auch hier.
-            </p>
-          </div>
-        </div>
-      ) : null}
+      {/* Keine Karte auf dem Dashboard (01.10.2026, Entscheidung des Betreibers):
+          Sie zeigte nur Objekte, deren Adresse schon auf /karte aufgelöst war
+          (live 7 von 21), und passte optisch nicht zur Seite. Die Kartenseite
+          bleibt über die Navigation erreichbar. */}
 
       <div className="grid-2 mb-20">
         <div className="section" style={{ marginBottom: 0 }}>
