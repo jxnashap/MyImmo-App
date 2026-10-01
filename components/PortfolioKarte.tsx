@@ -6,6 +6,11 @@ import "leaflet/dist/leaflet.css";
 // Portfolio-Karte: alle Objekte mit Koordinaten auf einer CARTO-Basemap,
 // die dem App-Theme folgt (hell: voyager, dunkel: dark_all). Marker in Gold,
 // Popup mit Name/Adresse/Wert + Link zur Objektseite.
+//
+// Seit 01.10.2026 entsteht die Karte EINMAL; ändert sich die Objektliste (die
+// Verortung im Hintergrund liefert Marker nach), wird nur die Marker-Ebene
+// neu gezeichnet. Vorher baute jede Änderung die ganze Karte neu auf —
+// mit Nachladen erschiene sie bei jedem neuen Marker flackernd und neu gezoomt.
 
 export type KartenObjekt = {
   id: string;
@@ -19,11 +24,20 @@ export type KartenObjekt = {
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
 
+type Leaflet = typeof import("leaflet");
+
 export default function PortfolioKarte({ objekte, hoehe }: { objekte: KartenObjekt[]; hoehe?: string }) {
   const ref = useRef<HTMLDivElement>(null);
-
+  const karte = useRef<{ L: Leaflet; map: import("leaflet").Map; ebene: import("leaflet").LayerGroup } | null>(null);
+  // Neueste Objektliste für den asynchronen Aufbau — im Effekt gesetzt, nicht
+  // während des Renderns (React-Regel; der Aufbau liest sie erst danach).
+  const aktuelle = useRef(objekte);
   useEffect(() => {
-    let map: import("leaflet").Map | null = null;
+    aktuelle.current = objekte;
+  });
+
+  // Karte einmal aufbauen.
+  useEffect(() => {
     let aktiv = true;
     let aufraeumen: (() => void) | null = null;
 
@@ -31,7 +45,7 @@ export default function PortfolioKarte({ objekte, hoehe }: { objekte: KartenObje
       const L = (await import("leaflet")).default;
       if (!aktiv || !ref.current) return;
 
-      map = L.map(ref.current, {
+      const map = L.map(ref.current, {
         center: [51.16, 10.45], // Mitte Deutschlands
         zoom: 6,
         scrollWheelZoom: true,
@@ -56,47 +70,32 @@ export default function PortfolioKarte({ objekte, hoehe }: { objekte: KartenObje
       }).addTo(map);
       // Auf den Hell-/Dunkel-Umschalter reagieren (data-theme am <html>)
       const beobachter = new MutationObserver(() => {
-        if (!map) return;
         const neu = tileFuerTheme(istDunkel());
         if ((tiles as unknown as { _url?: string })._url !== neu) tiles.setUrl(neu);
       });
       beobachter.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-      aufraeumen = () => beobachter.disconnect();
 
-      const bounds: [number, number][] = [];
-      for (const o of objekte) {
-        bounds.push([o.lat, o.lng]);
-        const marker = L.circleMarker([o.lat, o.lng], {
-          radius: 9,
-          color: "#d4af5a",
-          weight: 2,
-          fillColor: "#d4af5a",
-          fillOpacity: 0.55,
-        }).addTo(map);
-        marker.bindPopup(
-          `<div style="font-family:inherit;min-width:180px">
-             <div style="font-weight:700;font-size:13px;margin-bottom:2px">${escapeHtml(o.name)}</div>
-             <div style="font-size:11.5px;opacity:.75">${escapeHtml(o.adresse)}</div>
-             ${o.typ ? `<div style="font-size:11px;opacity:.6;margin-top:2px">${escapeHtml(o.typ)}</div>` : ""}
-             ${o.wert ? `<div style="font-size:12.5px;font-weight:700;color:var(--gold);margin-top:5px">${eur(o.wert)}</div>` : ""}
-             <a href="/properties/${o.id}" style="display:inline-block;margin-top:7px;font-size:11.5px;color:var(--gold)">Zum Objekt →</a>
-           </div>`,
-        );
-      }
-      if (bounds.length === 1) {
-        map.setView(bounds[0], 13);
-      } else if (bounds.length > 1) {
-        map.fitBounds(bounds, { padding: [45, 45], maxZoom: 13 });
-      }
+      const ebene = L.layerGroup().addTo(map);
+      karte.current = { L, map, ebene };
+      zeichneMarker(karte.current, aktuelle.current, true);
+      aufraeumen = () => {
+        beobachter.disconnect();
+        map.remove();
+        karte.current = null;
+      };
     })();
 
     return () => {
       aktiv = false;
       aufraeumen?.();
-      map?.remove();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(objekte.map((o) => o.id + o.lat + o.lng))]);
+  }, []);
+
+  // Marker nachziehen, wenn Objekte dazukommen — ohne die Karte neu zu bauen.
+  const schluessel = objekte.map((o) => o.id + o.lat + o.lng).join("|");
+  useEffect(() => {
+    if (karte.current) zeichneMarker(karte.current, aktuelle.current, false);
+  }, [schluessel]);
 
   return (
     <div
@@ -111,6 +110,43 @@ export default function PortfolioKarte({ objekte, hoehe }: { objekte: KartenObje
       }}
     />
   );
+}
+
+function zeichneMarker(
+  k: { L: Leaflet; map: import("leaflet").Map; ebene: import("leaflet").LayerGroup },
+  objekte: KartenObjekt[],
+  erstesMal: boolean,
+) {
+  const { L, map, ebene } = k;
+  ebene.clearLayers();
+  const bounds: [number, number][] = [];
+  for (const o of objekte) {
+    bounds.push([o.lat, o.lng]);
+    L.circleMarker([o.lat, o.lng], {
+      radius: 9,
+      color: "#d4af5a",
+      weight: 2,
+      fillColor: "#d4af5a",
+      fillOpacity: 0.55,
+    })
+      .bindPopup(
+        `<div style="font-family:inherit;min-width:180px">
+           <div style="font-weight:700;font-size:13px;margin-bottom:2px">${escapeHtml(o.name)}</div>
+           <div style="font-size:11.5px;opacity:.75">${escapeHtml(o.adresse)}</div>
+           ${o.typ ? `<div style="font-size:11px;opacity:.6;margin-top:2px">${escapeHtml(o.typ)}</div>` : ""}
+           ${o.wert ? `<div style="font-size:12.5px;font-weight:700;color:var(--gold);margin-top:5px">${eur(o.wert)}</div>` : ""}
+           <a href="/properties/${encodeURIComponent(o.id)}" style="display:inline-block;margin-top:7px;font-size:11.5px;color:var(--gold)">Zum Objekt →</a>
+         </div>`,
+      )
+      .addTo(ebene);
+  }
+  // Ausschnitt anpassen — beim Nachladen weich, damit der neue Marker ins Bild gleitet.
+  const animiert = !erstesMal && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (bounds.length === 1) {
+    map.setView(bounds[0], 13, { animate: animiert });
+  } else if (bounds.length > 1) {
+    map.fitBounds(bounds, { padding: [45, 45], maxZoom: 13, animate: animiert });
+  }
 }
 
 function escapeHtml(s: string): string {
