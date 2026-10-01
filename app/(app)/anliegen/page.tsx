@@ -15,6 +15,7 @@ import ServiceVorschauWahl from "@/components/ServiceVorschauWahl";
 import { ladeServicePortalDaten, type VorschauPartner } from "@/lib/servicePortalDaten";
 import { ansichtenSichtbar, istDemoKonto } from "@/lib/demo";
 import Leer from "@/components/Leer";
+import WischReiter from "@/components/WischReiter";
 import AnliegenManager, { type AnliegenVermieterRow } from "@/components/AnliegenManager";
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
 import BewerbungenManager, { type BewerberLinkRow, type BewerbungRow } from "@/components/BewerbungenManager";
@@ -288,6 +289,11 @@ export default async function AnliegenPage(
         })}
       </nav>
 
+      {/* Wischen über den Inhalt wechselt den Reiter (01.10.2026). In der
+          Ansicht Mieter wischt man die Reiter des Mieterportals — der innere
+          Bereich hält die Geste an. */}
+      <WischReiter reiter={TABS.map((t) => `/anliegen?tab=${t.key}`)} aktuell={TABS.findIndex((t) => t.key === tab)}>
+
       {tab === "anliegen" && (
         <>
           <VermieterAnfragen anfragen={anfragen} mieter={verbundeneMieter} />
@@ -388,6 +394,7 @@ export default async function AnliegenPage(
           initialText={searchParams.text}
         />
       )}
+      </WischReiter>
     </div>
   );
 }
