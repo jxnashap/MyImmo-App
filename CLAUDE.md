@@ -277,6 +277,9 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Reiter vorzuladen hieße ~8 Abfragen je Aufruf für die Ansichten). `tests/wischen.test.ts`.
   **Nicht auf einem echten Telefon geprüft** — Schwellen und Gefühl muss der Betreiber
   testen. Die Einstellungen haben kein Wischen; ihre Reiter sind Zustand, keine Links.
+  **Glas-Leiste zentriert (Vorgabe des Betreibers, gleicher Tag):** `components/GlassLeiste.tsx`
+  + `lib/glasLeiste.ts` → der offene Reiter steht unter 860 px in der Mitte der Leiste — beim
+  Laden sofort (`useLayoutEffect`, kein Sprung), bei jedem Wechsel weich; `tests/glasLeiste.test.ts`.
   **Danach:** Startseite mit den Kartenfehlern (wirbt mit „Karte mit allen Standorten").
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).

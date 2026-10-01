@@ -16,6 +16,7 @@ import { ladeServicePortalDaten, type VorschauPartner } from "@/lib/servicePorta
 import { ansichtenSichtbar, istDemoKonto } from "@/lib/demo";
 import Leer from "@/components/Leer";
 import WischReiter from "@/components/WischReiter";
+import GlassLeiste from "@/components/GlassLeiste";
 import AnliegenManager, { type AnliegenVermieterRow } from "@/components/AnliegenManager";
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
 import BewerbungenManager, { type BewerberLinkRow, type BewerbungRow } from "@/components/BewerbungenManager";
@@ -368,7 +369,7 @@ export default async function AnliegenPage(
       </div>
 
       {/* Bereichs-Umschalter im Glass-Stil (wie im Mieter-Portal) */}
-      <nav className="glass-bar" aria-label="Bereiche" style={{ marginBottom: 20 }}>
+      <GlassLeiste aktiv={tab} label="Bereiche" style={{ marginBottom: 20 }}>
         {TABS.map((t) => {
           const Icon = t.icon;
           return (
@@ -392,7 +393,7 @@ export default async function AnliegenPage(
             </Link>
           );
         })}
-      </nav>
+      </GlassLeiste>
 
       {/* Wischen über den Inhalt wechselt den Reiter (01.10.2026). Nur der
           aktive Reiter ist geladen — die Nachbarn gleiten als Platzhalter
