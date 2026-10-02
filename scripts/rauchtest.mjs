@@ -427,7 +427,7 @@ async function main() {
     console.log("\n✓ Mieter-Demo — Anmeldung");
     const MIETER_WEGE = [
       { titel: "Mieterportal — Wohnung (Sichten statt Tabellen)", pfad: "/portal", erwartet: ["Mieterportal", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete"] },
-      { titel: "Mieterportal — Anliegen", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<"] },
+      { titel: "Mieterportal — Anliegen mit Verlauf", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<", ">Dein Vermieter<"] },
       { titel: "Mieterportal — Zahlungen", pfad: "/portal?tab=zahlungen", erwartet: ["Mieterportal", ">Zahlungen<"] },
       { titel: "Mieterportal — Dokumente", pfad: "/portal?tab=dokumente", erwartet: ["Mieterportal", ">Dokumente<"] },
       { titel: "Mieterportal — Zähler", pfad: "/portal?tab=zaehler", erwartet: ["Mieterportal", "Zählerstand"] },

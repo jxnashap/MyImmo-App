@@ -275,9 +275,14 @@ jede Funktion zweimal gebaut.
 **Fundamente (je ein eigener PR):**
 1. ✅ **Zustellung an eine Person** — allgemein für Dokumente, Mitteilungen und Bestätigungen
    (siehe Abschnitt 0).
-2. **Vorgänge mit Verlauf** — ein Anliegen bekommt eine Ereignisliste (Nachricht, Statuswechsel,
-   Termin, Auftrag; je mit Absenderrolle) statt des einen Feldes `antwort`. Mieter und Vermieter
-   sehen denselben Verlauf.
+2. ✅ **Vorgänge mit Verlauf** (02.10.2026, Migration `20261002160000`, `lib/vorgang.ts`,
+   `components/VorgangVerlauf.tsx`) — jedes Anliegen hat eine Ereignisliste (Nachricht,
+   Statuswechsel, Termin, Auftrag; je mit Absenderrolle) statt des einen Feldes `antwort`, das jede
+   neue Antwort überschrieb. **Der Mieter kann jetzt antworten** (vorher: nur ein neues Anliegen).
+   Status, Termine und Aufträge schreibt die Datenbank per Trigger mit, auch auf künftigen Wegen.
+   Aufträge erscheinen ohne Firma und Betrag (Geschäftsdaten des Vermieters). Kein Ändern, kein
+   Entfernen. Die Vermieter-Liste markiert „neue Nachricht vom Mieter“.
+   **Noch nicht:** „ungelesen“ je Seite (kommt mit den Benachrichtigungen, Schritt 3).
 
 **Danach, in dieser Reihenfolge:**
 3. E-Mail-Benachrichtigungen („Es liegt etwas für Sie bereit“ — kein Inhalt, kein Anhang; braucht Brevo).

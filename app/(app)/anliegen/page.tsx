@@ -3,6 +3,7 @@
 // der Bewerbungs-Eingang mit Selbstauskunft-Links, und die Service-Partner
 // (Handwerker/Hausmeister) samt Aufträgen.
 // NICHT "Mieterportal" nennen: So heißt die Mieter-Oberfläche unter /portal.
+import { ladeEreignisse } from "@/lib/vorgang";
 import Link from "next/link";
 import { MessageSquareText, UserRoundSearch, Wrench, Eye } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -76,6 +77,9 @@ export default async function AnliegenPage(
         .in("anliegen_id", (rows ?? []).map((a) => a.id))
     : { data: [] as { id: string; name: string; anliegen_id: string }[] };
 
+  // Verlauf je Anliegen (Nachrichten, Status, Termine, Aufträge) — lib/vorgang.ts.
+  const verlauf = await ladeEreignisse(supabase, (rows ?? []).map((a) => a.id));
+
   const mieterName = (id: string) => {
     const m = (mieter ?? []).find((x) => x.id === id);
     return m ? [m.vorname, m.nachname].filter(Boolean).join(" ") : "Mieter";
@@ -89,7 +93,7 @@ export default async function AnliegenPage(
     titel: a.titel,
     beschreibung: a.beschreibung,
     status: a.status,
-    antwort: a.antwort,
+    verlauf: verlauf.get(a.id) ?? [],
     created_at: a.created_at,
     mieterName: mieterName(a.mieter_id),
     objektName: objektName(a.prop_id),

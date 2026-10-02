@@ -230,8 +230,12 @@ describe("Termin in den Kalender übernehmen", () => {
 });
 
 describe("Bearbeiten durch den Vermieter", () => {
+  // Seit 02.10.2026 geht die Nachricht in den VERLAUF (anliegen_ereignisse), statt das
+  // Feld `antwort` zu überschreiben. Den Statuswechsel schreibt die Datenbank mit.
+  const EIGEN = { antworten: { anliegen: { id: "a-1" } } };
+
   it("nur die drei bekannten Status", async () => {
-    const { db, mod } = await lade();
+    const { db, mod } = await lade(EIGEN);
     for (const status of ["offen", "in_arbeit", "erledigt"]) {
       expect((await mod.bearbeiteAnliegen(fd({ id: "a-1", status }))).ok).toBe(true);
     }
@@ -241,17 +245,78 @@ describe("Bearbeiten durch den Vermieter", () => {
     expect(db.zugriffe.filter((z) => z.op === "update")).toHaveLength(3);
   });
 
-  it("bearbeitet wird nur das eigene Anliegen", async () => {
-    const { db, mod } = await lade();
-    await mod.bearbeiteAnliegen(fd({ id: "a-1", status: "erledigt", antwort: "Termin steht" }));
+  it("bearbeitet wird nur das eigene Anliegen; die Nachricht wird ein Verlaufseintrag", async () => {
+    const { db, mod } = await lade(EIGEN);
+    expect((await mod.bearbeiteAnliegen(fd({ id: "a-1", status: "erledigt", nachricht: "Termin steht" }))).ok).toBe(true);
     const upd = update(db)!;
     expect(upd.filter).toContain("eq:vermieter_id=nutzer-1");
-    expect(upd.daten).toMatchObject({ status: "erledigt", antwort: "Termin steht" });
+    expect(upd.daten).toEqual({ status: "erledigt", updated_at: expect.any(String) });
+    expect(insert(db, "anliegen_ereignisse")).toEqual({
+      anliegen_id: "a-1", autor_id: "nutzer-1", autor_rolle: "vermieter", art: "nachricht", text: "Termin steht",
+    });
   });
 
-  it("eine leere Antwort wird zu null, nicht zu ''", async () => {
-    const { db, mod } = await lade();
-    await mod.bearbeiteAnliegen(fd({ id: "a-1", status: "offen", antwort: "   " }));
-    expect(update(db)?.daten).toMatchObject({ antwort: null });
+  it("ohne Nachricht kein Verlaufseintrag (den Status schreibt die Datenbank mit)", async () => {
+    const { db, mod } = await lade(EIGEN);
+    await mod.bearbeiteAnliegen(fd({ id: "a-1", status: "offen", nachricht: "   " }));
+    expect(insert(db, "anliegen_ereignisse")).toBeUndefined();
+  });
+
+  it("scheitert die Nachricht, bleibt der Status stehen", async () => {
+    const { db, mod } = await lade({ ...EIGEN, fehlerBei: { "anliegen_ereignisse:insert": { message: "rls" } } });
+    expect((await mod.bearbeiteAnliegen(fd({ id: "a-1", status: "erledigt", nachricht: "Fertig" }))).error).toContain("nichts geändert");
+    expect(update(db)).toBeUndefined();
+  });
+
+  it("ein fremdes Anliegen (0 Zeilen) ist kein Erfolg", async () => {
+    const { mod } = await lade({ antworten: { anliegen: null } });
+    expect((await mod.bearbeiteAnliegen(fd({ id: "fremd", status: "erledigt" }))).error).toBeTruthy();
+  });
+
+  it("zu lange Nachricht: abgelehnt, nichts geschrieben", async () => {
+    const { db, mod } = await lade(EIGEN);
+    expect((await mod.bearbeiteAnliegen(fd({ id: "a-1", status: "offen", nachricht: "x".repeat(4001) }))).error).toContain("4000");
+    expect(db.zugriffe.filter((z) => z.op !== "select")).toEqual([]);
+  });
+});
+
+describe("Nachricht im Verlauf", () => {
+  const ANL = { id: "a-1", vermieter_id: "v-1", mieter_user_id: "nutzer-1" };
+
+  it("die Rolle kommt aus dem Anliegen: der Mieter schreibt als Mieter", async () => {
+    const { db, mod } = await lade({ antworten: { anliegen: ANL } });
+    expect(await mod.schreibeNachricht("a-1", "  Seit gestern kalt  ")).toEqual({ ok: true });
+    expect(insert(db, "anliegen_ereignisse")).toEqual({
+      anliegen_id: "a-1", autor_id: "nutzer-1", autor_rolle: "mieter", art: "nachricht", text: "Seit gestern kalt",
+    });
+  });
+
+  it("der Vermieter schreibt als Vermieter", async () => {
+    const { db, mod } = await lade({ antworten: { anliegen: { ...ANL, vermieter_id: "nutzer-1", mieter_user_id: "m-9" } } });
+    await mod.schreibeNachricht("a-1", "Komme Montag");
+    expect(insert(db, "anliegen_ereignisse")?.autor_rolle).toBe("vermieter");
+  });
+
+  it("weder Mieter noch Vermieter, nicht gefunden oder Abfragefehler: nichts geschrieben", async () => {
+    for (const init of [
+      { antworten: { anliegen: { ...ANL, mieter_user_id: "anderer" } } },
+      { antworten: { anliegen: null } },
+      { antworten: { anliegen: ANL }, fehlerBei: { "anliegen:select": { message: "x" } } },
+    ]) {
+      const { db, mod } = await lade(init);
+      expect((await mod.schreibeNachricht("a-1", "Hallo")).error).toBe("Anliegen nicht gefunden.");
+      expect(insert(db, "anliegen_ereignisse")).toBeUndefined();
+    }
+  });
+
+  it("leere Nachricht: abgelehnt ohne Datenbankzugriff", async () => {
+    const { db, mod } = await lade({ antworten: { anliegen: ANL } });
+    expect((await mod.schreibeNachricht("a-1", "   ")).error).toContain("Bitte eine Nachricht");
+    expect(db.zugriffe).toEqual([]);
+  });
+
+  it("Einfügen scheitert (z. B. Zugang abgelaufen): ehrliche Meldung", async () => {
+    const { mod } = await lade({ antworten: { anliegen: ANL }, fehlerBei: { "anliegen_ereignisse:insert": { message: "rls" } } });
+    expect((await mod.schreibeNachricht("a-1", "Hallo")).error).toContain("Portal-Zugang");
   });
 });

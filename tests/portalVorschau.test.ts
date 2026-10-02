@@ -74,8 +74,8 @@ describe("Lader in der Vorschau (Quelle: Vermieter)", () => {
     const { abfragen } = await lade();
     for (const a of abfragen) {
       const eigen = a.filter.some((f) => f === `eq:user_id="${V}"` || f === `eq:vermieter_id="${V}"`);
-      // anliegen_dateien hängt an Anliegen, die selbst schon gefiltert sind.
-      if (a.tabelle !== "anliegen_dateien") expect(eigen, a.tabelle).toBe(true);
+      // anliegen_dateien und der Verlauf hängen an Anliegen, die selbst schon gefiltert sind.
+      if (a.tabelle !== "anliegen_dateien" && a.tabelle !== "anliegen_ereignisse") expect(eigen, a.tabelle).toBe(true);
     }
   });
 
@@ -105,6 +105,17 @@ describe("Lader in der Vorschau (Quelle: Vermieter)", () => {
     expect(von("zustellungen")).toEqual([]);
     expect(von("notizen")).toEqual([]);
     expect(daten.freigegebeneDocs).toEqual([]);
+  });
+
+  it("der Verlauf wird nur zu den geladenen (eigenen) Anliegen geholt", async () => {
+    const { von, daten } = await lade({
+      anliegen_ereignisse: [
+        { id: "e2", anliegen_id: "a1", autor_rolle: "vermieter", art: "nachricht", text: "Komme Montag", status_neu: null, created_at: "2026-09-02T10:00:00Z" },
+        { id: "e1", anliegen_id: "a1", autor_rolle: "mieter", art: "nachricht", text: "Kalt", status_neu: null, created_at: "2026-09-01T10:00:00Z" },
+      ],
+    });
+    expect(von("anliegen_ereignisse")[0].filter).toContain(`in:anliegen_id=${JSON.stringify(["a1"])}`);
+    expect(daten.verlauf.a1.map((e) => e.id)).toEqual(["e1", "e2"]);
   });
 
   it("Anliegen und Zählerstände hängen am Konto des Mieters", async () => {

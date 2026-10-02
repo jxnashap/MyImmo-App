@@ -7,6 +7,8 @@ import { FileText, FileCheck2, ReceiptText, FileQuestion, ClipboardCheck, Zap, B
 import { erstelleAnliegen } from "@/lib/actions/anliegen";
 import type { AnliegenRow } from "@/components/AnliegenPortal";
 import VorschauHinweis from "@/components/VorschauHinweis";
+import VorgangVerlauf from "@/components/VorgangVerlauf";
+import type { Ereignis } from "@/lib/vorgang";
 
 const VORLAGEN: { titel: string; hinweis: string; icon: LucideIcon }[] = [
   { titel: "Mietbescheinigung", hinweis: "z. B. für Amt, Bank oder neuen Vermieter", icon: FileCheck2 },
@@ -24,7 +26,15 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   erledigt: { label: "Erledigt", cls: "badge-green" },
 };
 
-export default function DokumenteAnfrage({ anfragen, nurLesen = false }: { anfragen: AnliegenRow[]; nurLesen?: boolean }) {
+export default function DokumenteAnfrage({
+  anfragen,
+  verlauf = {},
+  nurLesen = false,
+}: {
+  anfragen: AnliegenRow[];
+  verlauf?: Record<string, Ereignis[]>;
+  nurLesen?: boolean;
+}) {
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [notiz, setNotiz] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
@@ -128,10 +138,10 @@ export default function DokumenteAnfrage({ anfragen, nurLesen = false }: { anfra
                   <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>
                     {new Date(a.created_at).toLocaleDateString("de-DE")}
                   </span>
-                  {a.antwort && (
-                    <p style={{ flexBasis: "100%", fontSize: 12, margin: 0, padding: "6px 10px", background: "var(--gold-pale)", borderLeft: "3px solid var(--gold)", borderRadius: 6 }}>
-                      {a.antwort}
-                    </p>
+                  {(verlauf[a.id] ?? []).length > 0 && (
+                    <div style={{ flexBasis: "100%" }}>
+                      <VorgangVerlauf anliegenId={a.id} ereignisse={verlauf[a.id]} sicht="mieter" nurLesen={nurLesen} antworten={a.status !== "erledigt"} />
+                    </div>
                   )}
                 </div>
               );

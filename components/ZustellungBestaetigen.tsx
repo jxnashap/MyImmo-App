@@ -20,11 +20,11 @@ export default function ZustellungBestaetigen({ zustellungId, nurLesen = false }
       className="btn btn-gold"
       style={{ fontSize: 11, padding: "4px 10px" }}
       disabled={pending}
-      title="Bestätigt, dass Sie das Dokument gelesen haben — keine Unterschrift, keine Zustimmung zum Inhalt"
+      title="Bestätigt, dass du das Dokument gelesen hast — keine Unterschrift, keine Zustimmung zum Inhalt"
       onClick={() => startTransition(async () => {
         const f = actionFehler(await bestaetigeZustellung(zustellungId));
         if (f) toast(f, "error");
-        else toast("Bestätigt — Ihr Vermieter sieht den Zeitpunkt.");
+        else toast("Bestätigt — dein Vermieter sieht den Zeitpunkt.");
       })}
     >
       <CheckCircle2 size={12} style={{ verticalAlign: "-2px" }} /> {pending ? "…" : "Gelesen und bestätigt"}
