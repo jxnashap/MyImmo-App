@@ -395,6 +395,10 @@ describe("Kleinsttext-Schalter --text-xs", () => {
     }
   });
 
+  it("steht auf 12px (Betreiber, 02.10.2026) — 11px war am Rand des Lesbaren", () => {
+    expect(css).toContain("--text-xs: 12px;");
+  });
+
   it("der Schalter ist genau einmal definiert — sonst waere er keiner", () => {
     expect(css.match(/--text-xs:/g)?.length).toBe(1);
   });

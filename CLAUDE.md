@@ -114,8 +114,10 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    **1 Tag**, mit Observability Plus 30 Tage; Build-Logs unbegrenzt je Deployment.
    `/datenschutz` 3 d sagt jetzt „nach einem Tag“. **Wird Observability Plus gebucht,
    muss dort 30 Tage stehen.**
-9. **11px → 12px**: Token `--text-xs` in `app/globals.css` umstellen, Seiten durchklicken,
-   bei Bruch eine Zeile zurück. Kein Test findet einen hässlichen Umbruch.
+9. **11px → 12px: Token UMGESTELLT 02.10.2026** (`--text-xs: 12px`, `.tz-rest` 84 → 92px).
+   **Offen: Betreiber klickt durch** (Dashboard-Kacheln, Badges, Formular-Labels, Objektkarten,
+   Termine, Briefvorschau, Befehlspalette) und meldet Umbrüche. Rückweg: eine Zeile in
+   `app/globals.css`. Folge: `--text-xs` = `--text-sm` = 12px, die Stufe dazwischen entfällt.
 10. **Brevo-Konto**: AVV-Restpunkte (neuere Fassung? Firmendaten? Empfängeradresse für
     Unterauftragsverarbeiter-Ankündigungen) — Details unter „AVV-Abschlussstand".
 11. ~~**Altes kurzes Passwort**~~ — Betreiber 02.10.2026: „Nein“ (Bedeutung — „nicht
