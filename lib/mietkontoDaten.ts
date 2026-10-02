@@ -4,6 +4,24 @@ import { sollFuerMonat, zuJahrMonat } from "@/lib/mietkonto";
 import { laeuftAm } from "@/lib/sollMiete";
 import type { MietkontoZeile, NacherfassungMieter } from "@/components/MietkontoBestaetigung";
 import type { Tenant, MietZeitraum, Property } from "@/lib/types";
+import { createHash } from "node:crypto";
+import { decryptNullable } from "@/lib/crypto/secure";
+import { normIban } from "@/lib/kontoauszug";
+
+/**
+ * SHA-256 der normalisierten Mieter-IBAN für den Kontoauszug-Abgleich (lib/kontoauszug.ts): Der
+ * Browser vergleicht Prüfsummen und bekommt die IBAN selbst nicht. Kein Geheimnisschutz (IBANs
+ * sind ratbar), sondern: keine Klartext-IBAN im ausgelieferten HTML. Entschlüsseln scheitert →
+ * null (ohne IBAN-Treffer, nicht ohne Seite).
+ */
+function ibanHash(verschluesselt: string | null | undefined): string | null {
+  try {
+    const iban = normIban(decryptNullable(verschluesselt));
+    return iban ? createHash("sha256").update(iban).digest("hex") : null;
+  } catch {
+    return null;
+  }
+}
 
 // Datenbeschaffung für das Mietkonto — von /mietkonto UND von der Karte in
 // „Ein- & Ausgaben" genutzt, damit beide Ansichten garantiert dieselben
@@ -79,6 +97,8 @@ export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
         mieterId: m.id,
         propId: m.prop_id,
         name,
+        nachname: m.nachname ?? null,
+        ibanHash: ibanHash(m.iban),
         objekt,
         mieter: {
           kaltmiete: m.kaltmiete,

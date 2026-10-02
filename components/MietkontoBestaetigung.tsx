@@ -1,5 +1,6 @@
 "use client";
-import { Rewind, Info, Check } from "lucide-react";
+import KontoauszugAbgleich from "@/components/KontoauszugAbgleich";
+import { Rewind, Info, Check, FileSpreadsheet } from "lucide-react";
 
 // Mietkonto: zwei Modi.
 // 1. „Monat bestätigen": pro Mieter eine Karte mit Soll-Betrag, editierbarem
@@ -40,6 +41,9 @@ export type NacherfassungMieter = {
   mieterId: string;
   propId: string | null;
   name: string;
+  /** Für den Kontoauszug-Abgleich (lib/kontoauszug.ts). */
+  nachname?: string | null;
+  ibanHash?: string | null;
   objekt: string;
   mieter: MietkontoMieter;
   zeitraeume: MietkontoZeitraum[];
@@ -92,7 +96,7 @@ export default function MietkontoBestaetigung({
   const router = useRouter();
   const toast = useToast();
   const [, startBuchen] = useTransition();
-  const [modus, setModus] = useState<"monat" | "nacherfassen">("monat");
+  const [modus, setModus] = useState<"monat" | "nacherfassen" | "kontoauszug">("monat");
 
   // ---------- Modus 1: Monat bestätigen ----------
   const [datum, setDatum] = useState<Record<string, string>>({});
@@ -277,9 +281,14 @@ export default function MietkontoBestaetigung({
         <button type="button" className={`settings-tab${modus === "nacherfassen" ? " active" : ""}`} onClick={() => setModus("nacherfassen")} hidden={kompakt}>
           <Rewind size={14} style={{ verticalAlign: "-2px" }} /> Nacherfassen ({offene.length})
         </button>
+        <button type="button" className={`settings-tab${modus === "kontoauszug" ? " active" : ""}`} onClick={() => setModus("kontoauszug")} hidden={kompakt}>
+          <FileSpreadsheet size={14} style={{ verticalAlign: "-2px" }} /> Kontoauszug abgleichen
+        </button>
       </div>
 
-      {modus === "monat" ? (
+      {modus === "kontoauszug" ? (
+        <KontoauszugAbgleich nacherfassung={nacherfassung} />
+      ) : modus === "monat" ? (
         <>
           {/* Fortschritt */}
           <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 18 }}>

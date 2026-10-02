@@ -127,7 +127,7 @@ Voraussetzung für alles Weitere — Automatisierung und KI rechnen nur mit gepf
   ziehen (aktive Konten, Buchungen/Monat, Mieter im Portal). Ausgangswert: 4 / 7 / 1.
 
 ### Phase 3 — Automatisierung ohne Bank-Abo (≈ 3–5 Tage)
-- **Kontoauszug-Abgleich per CSV-Datei:** Auszug aus dem Online-Banking hochladen →
+- ✅ **(gebaut 02.10.2026, `lib/kontoauszug.ts`, Mietkonto → „Kontoauszug abgleichen“; Datei bleibt im Browser)** **Kontoauszug-Abgleich per CSV-Datei:** Auszug aus dem Online-Banking hochladen →
   MyImmo schlägt je Zahlung vor, welche Soll-Miete sie ausgleicht (Betrag, Name, IBAN,
   Verwendungszweck) → bestätigen → gebucht im Mietkonto. Liefert 80 % von „Miete
   eingegangen?“ — **ohne AISP-Lizenz, ohne Kosten je Konto**, mit vorhandenen Bausteinen
