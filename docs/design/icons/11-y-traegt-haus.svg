@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg11" cx="50%" cy="42%" r="80%">
+      <stop offset="0%"   stop-color="#2B2B30"/>
+      <stop offset="55%"  stop-color="#17171A"/>
+      <stop offset="100%" stop-color="#0A0A0C"/>
+    </radialGradient>
+    <linearGradient id="au11" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F0CE72"/><stop offset="52%" stop-color="#D4A847"/>
+      <stop offset="100%" stop-color="#9E7207"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg11)"/>
+  <path d="M198,802 V446 L355,300 L512,446 L669,300 L826,446 V802 Z" fill="#101013" fill-opacity="0.85"/>
+  <path d="M198,802 V446 L355,300 L512,446 L669,300 L826,446 V802 Z" fill="none" stroke="url(#au11)" stroke-width="34"
+        stroke-linejoin="miter" stroke-miterlimit="10"/>
+  <path d="M414,446 L512,530 L610,446" fill="none" stroke="#FBE6A8" stroke-width="46"
+        stroke-linejoin="miter" stroke-linecap="butt"/>
+  <path d="M512,530 V802" fill="none" stroke="#FBE6A8" stroke-width="46" stroke-linecap="butt"/>
+  <path d="M198,802 H826" stroke="#9E7207" stroke-width="34" stroke-linecap="butt"/>
+</svg>

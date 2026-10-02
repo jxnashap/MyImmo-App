@@ -3,29 +3,51 @@
 > Zwei Ebenen unter „Finanz": **A) Geschäftsmodell/Monetarisierung** (was MyImmo kostet und
 > einbringt) und **B) der Finanzierungs-Assistent** (App-Feature). Beide hier zusammengefasst.
 > Bei Änderungen an einer der beiden: **diese Datei im selben PR mitaktualisieren** (Regel in `CLAUDE.md`).
-> Stand: 19.07.2026. Verwandt: [[MASTERPLAN]], [[BRIEFING]].
+> Stand: 30.09.2026 (Kostentabelle gegen die Anbieter-Preisseiten nachgezogen).
+> Verwandt: [[MASTERPLAN]], [[BRIEFING]], **[[KOSTENMODELL]]** (Betriebskosten nach
+> Nutzerzahl, durchgerechnet), [[BETEILIGUNG]], [[INVESTOR-GESPRAECH]].
 
 ---
 
 ## A) Geschäftsmodell / Monetarisierung
 
 ### Laufende Kosten (Betrieb)
-| Posten | Heute | Ab Skalierung |
+⚠️ **Korrektur 30.09.2026:** Diese Tabelle führte Supabase als „Free" und Vercel als
+„Hobby". Beide sind längst auf Pro (Supabase seit spätestens 08.09.2026 nachgewiesen,
+Vercel seit 29.07.2026). Wer hier abliest, unterschätzt die laufenden Kosten — und
+überschätzt zugleich, was noch zu tun ist.
+
+| Posten | Heute (30.09.2026) | Ab Skalierung |
 |---|---|---|
-| Supabase | Free | **Pro ~25 $/M** (Leaked-PW-Schutz, DPA-Komfort) |
-| Vercel | Hobby | **Pro 20 $/M** (kommerziell erlaubt, AVV, Cron) |
-| Anthropic API | pay-per-use (OCR/KI-Import) | skaliert mit Nutzung |
+| Supabase | **Pro, 25 $/M** — inkl. 8 GB Disk, 250 GB Egress, 100.000 MAU | +0,125 $/GB Disk, +0,09 $/GB Egress |
+| Vercel | **Pro, 20 $/M** — inkl. 1 TB Transfer, 10 Mio. CDN-Anfragen | +0,15 $/GB Transfer, +2 $/Mio. Anfragen |
+| Domains (.de/.com/.store) | ~45 €/Jahr | unverändert |
+| Anthropic API | pay-per-use (OCR/KI-Import) | ~4 ct je OCR-Aufruf, skaliert mit Nutzung |
+| Brevo | Free (300 Mails/Tag) | ab ~9 $/M bei mehr Volumen |
 | AWS Bedrock (optional) | aus | EU-KI-Verarbeitung, pay-per-use |
-| Enable Banking (geplant) | Sandbox (frei) | **Add-on/Business je Konto/Monat** |
+| Apple Developer | nicht gebucht | 99 $/Jahr ab iOS-Start |
+| ~~Enable Banking~~ | **entfällt** — Open Banking am 29.08.2026 aus der App entfernt | erst bei Wiederaufbau |
 | AVM (Marktwert) | — | **abgelehnt** (siehe unten) |
+
+**Summe heute: rund 51 € im Monat.** Der Deckungspunkt liegt damit bei **sieben
+zahlenden Kunden**. Vollständige Rechnung mit allen Annahmen und den Kosten bei
+100 / 1.000 / 10.000 Nutzern: **[[KOSTENMODELL]]** (erzeugt aus
+`scripts/gen-kostenmodell.mjs`).
 
 ### Einnahmen (geplant)
 - **Abo-Modell** für Vermieter — Tarife wie auf `/preise` (Kostenlos · Privat 7,99 €/M bzw.
-  79 €/J · Plus 12,99 €/M bzw. 129 €/J · Business auf Anfrage · Banking-Add-on separat).
+  79 €/J · Plus 12,99 €/M bzw. 129 €/J · Business auf Anfrage).
+  Das früher hier genannte Banking-Add-on entfällt — das Feature ist am 29.08.2026
+  aus der App entfernt worden.
 - **Bezahlsystem GEBAUT, aber INAKTIV (24.07.2026):** Anbieter-Entscheidung = **Paddle als
   Merchant of Record** (Paddle verkauft im eigenen Namen, übernimmt EU-USt/Rechnungen/
   Steuer-Compliance; Gebühr ~5 % + 0,50 $ — bewusst teurer als Stripe ~2 %, dafür kein
-  OSS-/USt-Aufwand beim Solo-Nebenerwerb). Umsetzung: Tabelle `abos` (RLS, nur Service-Role
+  OSS-/USt-Aufwand beim Solo-Nebenerwerb). ⚠️ **Offen, am 30.09.2026 auf Paddles
+  Preisseite gefunden:** Für Produkte **unter 10 $** verlangt Paddle eine
+  Sonderkondition — der Einstiegstarif liegt bei 7,99 €. Vor dem Scharfschalten
+  klären. Rechnerisch verliert ein Monatsabo zu 7,99 € rund **11 % an Paddle**
+  (5 % + 0,50 $ Fixgebühr, zwölfmal im Jahr), ein Jahresabo zu 79 € nur **5,6 %**
+  → Jahresabos aktiv bewerben. Umsetzung: Tabelle `abos` (RLS, nur Service-Role
   schreibt), Tarif-/Feature-Matrix `lib/plan.ts`, Paddle-Adapter `lib/billing/paddle.ts`,
   Webhook `/api/billing/webhook`, Abo-Tab in den Einstellungen. **Durchgesetzt wird erst mit
   Env `BILLING_ENFORCED=true`** — bis dahin Early Access (alles frei, wie auf /preise

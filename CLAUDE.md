@@ -8,6 +8,32 @@
 - Bei jeder Entscheidung des Nutzers zuerst die Risiken nennen, bevor zugestimmt wird.
 
 
+## Vault & Wissensspeicher (verbindlich)
+
+- **`docs/VAULT-REGELN.md` — Aufnahmeschwelle für die Vault. JEDER Chat hält sich daran.**
+  Kurzfassung: In `docs/` kommt nur, was (1) eine Entscheidung festhält, die sonst neu
+  getroffen werden müsste, (2) einen Fehler mit Ursache und Gegenprüfung dokumentiert,
+  (3) eine alternde Zahl/Frist/Vertragslage **mit Stand-Datum und Quelle** festhält,
+  (4) eine Konvention verbindlich macht oder (5) einen Ist-Stand belegt, der sonst falsch
+  eingeschätzt wird. **Nicht** hinein: Verlaufsprotokolle, Allgemeinwissen, Doppelungen,
+  Vermutungen im Indikativ, Zwischenstände, Rohdaten.
+  Vor dem Schreiben die vier Aufnahmefragen aus der Datei durchgehen.
+- **`docs/app-entwicklung/` — wiederverwendbares App-Bau-Wissen** (Vorgehen, Code-Regeln,
+  Design, Rechner, Anbindungen, Recht, volatile Kennzahlen, Fehlerkatalog).
+  Ziel: aus einer Ideenskizze eine App bauen, ohne Entscheidungen und Fallstricke neu zu
+  erarbeiten. Einstieg: `docs/app-entwicklung/00 App-Entwicklung Index.md`,
+  Ablauf für neue Apps: `09 Neue App bauen.md`.
+- **`docs/app-entwicklung/07 Volatile Kennzahlen und Pruefzyklus.md` — BEI JEDEM SESSIONSTART
+  auf fällige Prüfungen sehen** (Steuersätze, Förderkonditionen, Anbieterverträge, Beispielzinsen,
+  Marktdaten). Fällige Zeilen abarbeiten, bevor die eigentliche Aufgabe beginnt; das Ergebnis
+  eintragen — auch „unverändert" ist ein Prüfergebnis.
+- 💡 **IDEEN → Memory-Repo `jxnashap/memory`, Datei `02 - MyImmo/myimmoideen.md`** (Branch `main`).
+  Nennt der Nutzer eine Idee zu MyImmo, wird sie DORT eingetragen (Datum, Status 💡, seine
+  Worte, nicht bewerten). **Vor jedem eigenen Vorschlag dort nachsehen** — zurückgestellte
+  und verworfene Ideen stehen mit Grund da. Zugriff: `add_repo` jxnashap/memory.
+- **Neue Erkenntnisse gehören dorthin**, nicht in den Chatverlauf: Wer einen Fehler behebt,
+  eine Anbindung klärt oder eine Konvention festlegt, trägt sie im selben PR nach.
+
 ## Offene Punkte / Merkliste
 
 > **Vor dem Start: `docs/START-CHECKLISTE.md`** (04.09.2026) — alle offenen Punkte nach
@@ -275,6 +301,8 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 `tests/passwortReset.test.ts` + `tests/blockF.test.ts`, fünfzehn Mutationen geprüft.
 
 ### Zukunftsideen (notiert, nicht gebaut)
+> **Vollständige Ideenliste mit Status: Memory-Repo `02 - MyImmo/myimmoideen.md`.**
+> Die Einträge hier unten sind die ausführlichen Begründungen zu zwei davon.
 - ✅ **Reiter per Wischen (01.10.2026, Wunsch des Betreibers) — GEBAUT, zweite Fassung
   am selben Tag („muss viel flüssiger sein").** Der INHALT folgt dem Finger, der
   Nachbar-Reiter gleitet daneben herein, beim Loslassen gleitet er zu Ende (260 ms,
@@ -547,7 +575,7 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Verantwortlicher, nur Datenschutzerklärungs-Passus). **Größte Lücke: MyImmo muss den eigenen
   Nutzern einen AVV anbieten** (Vermieter = Verantwortliche für Mieterdaten) — /avv-Seite, AGB-
   Einbeziehung, anwaltlich prüfen. Plus Verarbeitungsverzeichnis Art. 30 Abs. 1+2 und TOM-Doku.
-- **Businessplan (aktuell, als PDF): `docs/business/MyImmo-Businessplan-2026-07.pdf`.** NICHT von
+- **Businessplan (aktuell, als PDF): `docs/business/MyImmo-Businessplan-2026-09.pdf`.** Die Juli-Fassung daneben ist überholt (führte die entfernte Konto-Anbindung als gebaut) — nicht herausgeben. NICHT von
   Hand neu bauen — der komplette Plan wird per Skript erzeugt: **`node scripts/gen-businessplan-pdf.mjs`**
   (Sekunden). Inhalt/Zahlen/„Stand"-Datum nur in der `SECTIONS`-Struktur des Skripts anpassen, dann
   neu erzeugen. Titelseite trägt die Dokument-Wortmarke (My+Immo), Design = MyImmo-Dokument-Stil.
@@ -834,6 +862,20 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 
 ### Benötigte Environment-Variablen (Vercel)
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `BETA_CODE` — **der Zugangscode für die Registrierung als Vermieter/Hausverwaltung**
+  (Early Access). Steht NUR in Vercel, nirgends im Repo. Nachsehen und ändern:
+  Vercel → Projekt → Settings → Environment Variables → `BETA_CODE`; nach dem Ändern
+  ist ein **Redeploy nötig**, sonst gilt weiter der alte Wert. Geprüft wird serverseitig
+  in `lib/actions/freischaltung.ts` (`pruefeBetaCode`), mit Bremse: 8 Versuche je 15 Minuten
+  und IP. Ist die Variable nicht gesetzt, schlägt JEDE Registrierung mit
+  „Die Registrierung ist derzeit nicht freigeschaltet" fehl.
+  ⚠️ Der Code kennt noch einen Rückfall auf `NEXT_PUBLIC_BETA_CODE` — diese Variante
+  **niemals setzen**: Alles mit `NEXT_PUBLIC_`-Präfix landet im ausgelieferten JavaScript,
+  der Code stünde dann für jeden im Quelltext. Am 27.08.2026 geprüft: In den 10 Bundles
+  der Login-Seite (629 KB) taucht kein Beta-Code auf, die Variante ist also nicht gesetzt.
+  NICHT zu verwechseln mit den **Einladungscodes** für Mieter/Dienstleister
+  (`MI-XXXX-XXXX` / `SV-XXXX-XXXX`) — die stehen in der Tabelle `einladungscodes`,
+  werden vom Vermieter in der App erzeugt und per RPC `einladungscode_pruefen` geprüft.
 - `ANTHROPIC_API_KEY` — für OCR / KI-Import (NK-Abrechnung auslesen, Objekt-Import)
 - `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` — E-Mail-Versand (Vorlagen-Verteiler, Double-Opt-in).
   Optional `BREVO_ABSENDER_NAME` (Default „MyImmo") und `BREVO_LIST_ID` (ohne sie wird der
@@ -1036,6 +1078,13 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).
+- 🟥 **CI braucht Node ≥ 22 (02.10.2026).** `@supabase/realtime-js` 2.108 verlangt natives
+  WebSocket; unter Node 20 wirft schon `createServerClient()` → 19 Tests in
+  `tests/proxyAnmeldung.test.ts` rot. `.github/workflows/ci.yml` stand auf Node 20 —
+  **`main` war dadurch mindestens fünf Pushes lang rot (#382–#386), ohne dass es auffiel**,
+  weil GitHub den Merge trotz roter CI zulässt. Behoben in #387 (Node 22). Produktion war
+  nie betroffen (Vercel läuft nicht auf Node 20). **Regel: Nach jedem Merge den CI-Lauf auf
+  `main` ansehen — „gemergt“ heißt nicht „grün“.**
 - 🔥 **`npm run rauchtest` (08.09.2026): sechs Kernwege gegen die LAUFENDE App.**
   Bis dahin hatte kein einziger der 1.167 Tests je eine Seite ausgeliefert — ein
   kaputter Import in einer Server-Komponente oder eine 500er-Seite blieb grün.

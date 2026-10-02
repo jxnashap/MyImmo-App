@@ -1,10 +1,14 @@
 // ============================================================================
 // MyImmo Businessplan — EINZIGE QUELLE. Nicht neu bauen, nur hier anpassen.
 //
-//   Aktualisieren:  Inhalt in `SECTIONS` unten editieren, "Stand: Juli 2026"
-//                   (Titelseite) + evtl. Zahlen anpassen.
+//   Aktualisieren:  Inhalt in `SECTIONS` unten editieren, STAND (unten)
+//                   anpassen + evtl. Zahlen.
 //   Erzeugen:       node scripts/gen-businessplan-pdf.mjs
-//                   -> docs/business/MyImmo-Businessplan-2026-07.pdf (Sekunden)
+//                   -> docs/business/MyImmo-Businessplan-2026-09.pdf (Sekunden)
+//
+//   REGEL: Kein Feature als "umgesetzt" beschreiben, ohne es im Code zu
+//   pruefen. Die Juli-Fassung fuehrte ein ganzes Kapitel ueber die
+//   Konto-Anbindung, die am 29.08.2026 entfernt worden war.
 //
 // Design = MyImmo-Dokument-Stil (Wortmarke My+Immo, goldene Linien/Tabellen,
 // Creme-Kästen). Zwei-Pass-Render: erst Kapitel-Seiten messen, dann Inhalts-
@@ -23,6 +27,7 @@ const BOX = rgb(0.972, 0.958, 0.928);    // Creme
 const ZEBRA = rgb(0.972, 0.968, 0.960);  // sehr helles Grau für Tabellen-Zebra
 const EMPH = rgb(0.965, 0.945, 0.90);    // Hervorhebungszeile (Summen)
 const WHITE = rgb(1, 1, 1);
+const STAND = "Stand: September 2026";
 const A4 = { w: 595.28, h: 841.89 };
 const ML = 62, MR = 62, RIGHT = A4.w - MR, CW = RIGHT - ML;
 
@@ -51,7 +56,20 @@ const SECTIONS = [
       "Plan: Jahr 1 ~ kostendeckend · Jahr 3 ~ 77.000 € Umsatz · ~52.000 € Ergebnis",
       "Start nebenberuflich/bootstrapped, ohne externes Kapital",
     ] } },
-    { p: "Der Plan ist bewusst konservativ und auf einen nebenberuflichen, eigenfinanzierten Start ausgelegt. Die Technik ist kein Engpass: Die App ist bereits als Web-Anwendung produktiv und deutlich tiefer gebaut als ein reines Verwaltungs-Tool – Verwaltung, Nebenkostenabrechnung, Steuer (Anlage V/DATEV/AfA), Marktwert-Schätzer, Kauf-Assistent, Mieter- und Service-Portal sowie die Bank-Anbindung (Konto-Abgleich) sind umgesetzt; letztere läuft gegen die Sandbox. Offen für den Bezahl-Start sind vor allem das Monetarisierungs-/Abo-System, die iOS-Veröffentlichung (Sign in with Apple, In-App-Abos, App Review), die anwaltliche Prüfung der Rechtsdokumente und die Produktivschaltung des Banking-Partners (Enable Banking). Gewerbe (Juli 2026) sowie die Auftragsverarbeitungs-Verträge (Supabase signiert, Anthropic archiviert) liegen vor." },
+    { p: "Der Plan ist bewusst konservativ und auf einen nebenberuflichen, eigenfinanzierten Start ausgelegt. Die Technik ist kein Engpass: Die App ist als Web-Anwendung produktiv und deutlich tiefer gebaut als ein reines Verwaltungs-Tool – Verwaltung, Nebenkostenabrechnung, Steuer (Anlage V/DATEV/AfA), Marktwert-Schätzer, Kauf-Assistent sowie Mieter- und Service-Portal sind umgesetzt. Offen für den Bezahl-Start sind das Scharfschalten des bereits gebauten Abo-Systems, die anwaltliche Prüfung der Rechtsdokumente und – als eigener, späterer Schritt – die iOS-Veröffentlichung. Gewerbe (Juli 2026) sowie die Auftragsverarbeitungs-Verträge (Supabase signiert, Anthropic archiviert) liegen vor." },
+    { h2: "Ist-Stand, ungeschminkt (30.09.2026)" },
+    { p: "Ein Businessplan, der den eigenen Stand schönt, ist wertlos. Deshalb die harten Zahlen zuerst:" },
+    { table: { head: ["Kennzahl", "Stand 30.09.2026"], widths: [CW * 0.62, CW * 0.38], align: ["l", "r"], zebra: true, rows: [
+      ["Zahlende Kunden", "0"],
+      ["Umsatz bisher", "0 €"],
+      ["Registrierte Konten", "22"],
+      ["davon mit Login in den letzten 30 Tagen", "4"],
+      ["Registrierung öffentlich möglich", "nein – nur mit Zugangscode"],
+      ["Preise auf der Website sichtbar", "nein"],
+      ["Produktivcode / Tests", "51.849 Zeilen / 1.228 grün"],
+      ["Laufende Betriebskosten", "~51 € / Monat"],
+    ] } },
+    { p: "Die niedrige Nutzerzahl ist keine Marktreaktion: Die Registrierung ist seit dem ersten Tag durch einen persönlich vergebenen Zugangscode gesperrt und die Tarife sind auf der Website ausgeblendet – beides bewusst, bis die rechtliche Freigabe vorliegt. Es hat also bislang keinen Test gegeben, ob der Markt das Produkt annimmt. Genau dieser Test ist der nächste Schritt." },
   ]},
 
   { n: 2, title: "Geschäftsidee & Produkt", body: [
@@ -67,7 +85,6 @@ const SECTIONS = [
       "Termine & Prüfpflichten: wiederkehrende Fristen, iCal-Export und ein gesetzlicher Prüfpflichten-Katalog je Objekt.",
       "Marktwert-Schätzer (ImmoWertV) und Kauf-Assistent mit Finanzierungs- und KfW-Förder-Übersicht.",
       "Mieter- und Service-Portal: Anliegen, Zählerstände mit Foto, Aufträge an Handwerker/Dienstleister.",
-      "Bank-Anbindung (PSD2, read-only): Konto-Umsätze mit erwarteten Mieten und Kosten abgleichen – vorschlagen und per Klick bestätigen.",
       "Belegarchiv, Dokument-Generator (Mahnung, Bescheinigungen), Datenexport (ZIP/CSV) und durchgängiges Dark-/Light-Design.",
     ] },
     { h2: "Alleinstellung (USP)" },
@@ -161,13 +178,13 @@ const SECTIONS = [
     { table: { head: ["Stärken", "Schwächen"], widths: [CW / 2, CW / 2], align: ["l", "l"], rows: [
       [[
         "App ist produktiv – tiefer Funktionsumfang bereits gebaut",
-        "Steuer/DATEV, NK (HKVO/§35a), Banking-Abgleich, Bewertung, Portale",
+        "Steuer/DATEV, NK (HKVO/§35a), Bewertung, Mieter- und Service-Portal",
         "Durchdachte Automatik & modernes, einfaches Design",
         "Sehr schlanke Kostenstruktur (bootstrapped)",
       ], [
         "Unbekannte Marke, kein Marketingbudget",
-        "Solo-/nebenberuflicher Betrieb",
-        "Monetarisierung/Bezahlsystem noch nicht live",
+        "Solo-Betrieb – einziger Entwickler, kein Ersatz",
+        "Kein zahlender Kunde, keine belegte Zahlungsbereitschaft",
         "Abhängig von Apple/Plattformregeln",
       ]],
     ] } },
@@ -203,7 +220,6 @@ const SECTIONS = [
     { ul: [
       "Web/PWA ist live; iOS-Release nach App Review (Beta über TestFlight).",
       "ASO/Content live, Feedback einsammeln, Conversion messen.",
-      "Banking produktiv schalten (Enable-Banking-Vertrag + Produktions-Keys), sobald der Bezahlbetrieb steht.",
     ] },
     { h2: "Phase 4 – Wachstum (2027–2028)" },
     { ul: [
@@ -238,7 +254,7 @@ const SECTIONS = [
       "Kumuliertes Ergebnis über 3 Jahre: ~71.500 € (vor kalkulatorischem Unternehmerlohn).",
       "Die eigene Arbeitszeit ist nicht eingepreist. Bei z. B. 1.500 €/Monat kalkulatorischem Lohn wäre erst ab ~Jahr 2/3 ein echter Gewinn erreichbar.",
       "Größter Stellhebel: Nutzerwachstum und Anteil margenstarker Web-Abos.",
-      "Die Bank-Anbindung (Enable Banking) verursacht laufende Kosten je Bankverbindung und wird als kostenpflichtiges Add-on weitergegeben – im Basisplan nicht enthalten.",
+      "Die Infrastrukturkosten sind gegenueber der Juli-Fassung nach unten korrigiert: nachgerechnet liegen sie bei rund 51 € im Monat und erreichen erst im vierstelligen Nutzerbereich dreistellige Betraege (Detailrechnung: docs/business/KOSTENMODELL.md).",
       "Der Firmen-Account (Business, ab 25 Einheiten) ist zusätzliches, umsatzstärkeres Potenzial und in diesen konservativen Zahlen noch nicht enthalten.",
     ] } },
     { p: "Der Kapitalbedarf ist gering: Die wichtigsten Anfangsausgaben (Gewerbe, Rechtsdokumente, Apple-Programm, Infrastruktur) liegen zusammen im niedrigen vierstelligen Bereich und können aus Eigenmitteln gedeckt werden – ein wesentlicher Vorteil des bootstrapped-Ansatzes." },
@@ -289,32 +305,26 @@ const SECTIONS = [
     ] } },
   ]},
 
-  { n: 12, title: "Bank-Paket & Konto-Anbindung (größtenteils umgesetzt)", body: [
-    { p: "Viele Vermieter beleihen ihre Immobilien, um neue Objekte zu finanzieren. Banken verlangen dafür stets aktuelle und vollständige Unterlagen – heute ein mühsamer Prozess mit Unterlagensuche, mehreren Terminen und ständigem Nachreichen. MyImmo erledigt das auf Knopfdruck." },
-    { i: "Stand Juli 2026: Der Konto-Abgleich (Umsätze zu Miet-/Kostenvorschlägen, „vorschlagen und bestätigen\"), die 90-Tage-PSD2-Reauth-Erinnerung sowie die Beleihungs-Unterlagen als Token-Link für die Bank sind bereits im Code umgesetzt; die Anbindung läuft gegen die Sandbox. Für den Produktivbetrieb fehlt nur die Freischaltung beim lizenzierten Open-Banking-Partner (Enable Banking) samt Vertrag und Produktions-Keys." },
-    { h2: "Bank-Ordner je Immobilie" },
-    { p: "Pro Immobilie stellt MyImmo automatisch einen vollständigen, stets aktuellen Unterlagen-Ordner zusammen, den der Vermieter direkt an die Bank schicken kann – gebündelt als Paket bzw. PDF. Typischer Inhalt:" },
-    { ul: [
-      "Grundbuchauszug, Teilungserklärung, Flurkarte/Lageplan.",
-      "Aktuelle Mietverträge, Mietaufstellung und Nachweis der Mieteinnahmen.",
-      "Nebenkostenabrechnungen und laufende Kosten.",
-      "Objektdaten (Lage, Baujahr, Wohnfläche), Fotos bzw. Exposé.",
-      "Aktuelle Cashflow- und Rendite-Auswertung direkt aus MyImmo.",
-    ] },
-    { h2: "Direkte Beleihungs- bzw. Kreditanfrage (Bank-Schnittstelle)" },
-    { p: "Perspektivisch entsteht eine Schnittstelle zur Bank: Der Vermieter stellt in der App eine Kredit- oder Beleihungsanfrage zusammen und übermittelt sie – etwa über das Online-Banking – direkt an seinen Berater. Die Bank erhält damit sofort alle aktuellen Daten in strukturierter, einheitlicher Form." },
-    { h2: "Konto-Anbindung: Einnahmen & Kosten automatisch buchen" },
-    { p: "Über eine Banking-Schnittstelle (Open Banking / PSD2) werden Zahlungseingänge und -ausgänge automatisch erkannt und in MyImmo gebucht, sobald sie auf dem Konto eingehen. Mieten und Kosten sind dadurch immer aktuell – ohne manuelles Erfassen – und bestätigen die wiederkehrenden Buchungen mit echten Kontodaten." },
-    { h2: "Nutzen" },
-    { table: { head: ["Profitiert", "Nutzen"], widths: [CW * 0.22, CW * 0.78], align: ["l", "l"], boldCol0: true, rows: [
-      ["Vermieter", "Keine Zettelwirtschaft, weniger Banktermine, nichts vergessen oder nachzureichen – alles kompakt und immer aktuell an einem Ort."],
-      ["Bank", "Sofort vollständige, einheitliche und aktuelle Daten → schnellere Bearbeitung und deutlich weniger Rückfragen."],
-      ["MyImmo", "Starker Bindungsfaktor (der Konto-Sync macht die App zum täglichen Werkzeug), klare Differenzierung und ein möglicher Kooperationskanal mit Banken."],
+  { n: 12, title: "Zur\u00fcckgestellt: Bank-Paket & Konto-Anbindung", body: [
+    { box: { title: "Korrektur gegen\u00fcber der Juli-Fassung", lines: [
+      "Die Juli-Fassung beschrieb dieses Kapitel als \"gr\u00f6\u00dftenteils umgesetzt\".",
+      "Das Feature war gebaut, ist aber am 29.08.2026 vollst\u00e4ndig aus der App entfernt worden.",
+      "Grund: Es ist nie live gelaufen und verursacht laufende Kosten je Bankverbindung.",
+      "Es steht hier nur noch als Zukunftsprojekt \u2013 nicht als Bestandteil des Produkts.",
     ] } },
-    { box: { title: "Hinweis zur Umsetzung", lines: [
-      "Bank-Ordner/Beleihungs-Unterlagen (Token-Link für die Bank) und der Konto-Abgleich sind bereits gebaut.",
-      "Für den Live-Betrieb der Konto-Anbindung braucht es den Vertrag mit dem lizenzierten Open-Banking-Partner (Enable Banking, PSD2/AISP) und die Produktions-Keys.",
-      "Laufende Kosten je Bankverbindung werden als kostenpflichtiges Add-on weitergegeben.",
+    { p: "Viele Vermieter beleihen ihre Immobilien, um neue Objekte zu finanzieren. Banken verlangen daf\u00fcr stets aktuelle und vollst\u00e4ndige Unterlagen \u2013 heute ein m\u00fchsamer Prozess mit Unterlagensuche, mehreren Terminen und st\u00e4ndigem Nachreichen. Der Bank-Ordner je Immobilie, der genau das b\u00fcndelt, ist in der App vorhanden und wird weiter gepflegt." },
+    { h2: "Was tats\u00e4chlich in der App ist" },
+    { ul: [
+      "Bank-Ordner je Immobilie: Unterlagen sammeln, als Token-Link f\u00fcr die Bank freigeben \u2013 umgesetzt.",
+      "Beleihungs-Auswertung und Cashflow-/Rendite-Zahlen direkt aus den eigenen Daten \u2013 umgesetzt.",
+      "Makler-Ordner mit Checkliste der sechs Kern-Dokumente \u2013 umgesetzt.",
+    ] },
+    { h2: "Was zur\u00fcckgestellt ist" },
+    { p: "Der automatische Konto-Abgleich \u00fcber eine Open-Banking-Schnittstelle (PSD2, nur lesend) war gebaut, lief aber nie gegen ein echtes Konto. Er wurde entfernt, weil er je Bankverbindung monatliche Kosten verursacht, die ohne zahlende Kunden nicht zu rechtfertigen sind. Konzept, Entscheidungen und Wiederherstellungsweg sind dokumentiert; der Code liegt in der Versionshistorie." },
+    { box: { title: "Wann das zur\u00fcckkommt", lines: [
+      "Erst wenn das Produkt Geld verdient \u2013 dann als kostenpflichtiges Zusatzmodul.",
+      "Voraussetzung: Vertrag mit einem lizenzierten Anbieter (AISP) plus Auftragsverarbeitungsvertrag.",
+      "Bis dahin werden Mieteing\u00e4nge \u00fcber das Mietkonto manuell abgeglichen \u2013 funktioniert, kostet den Vermieter aber Zeit.",
     ] } },
   ]},
 
@@ -363,14 +373,13 @@ const SECTIONS = [
   ]},
 
   { n: 14, title: "Fazit & nächste Schritte", body: [
-    { p: "MyImmo trifft einen großen, wachsenden Markt mit einem Produkt, das technisch bereits steht und sich klar im Mittelfeld zwischen Gratis-Tools und teurer Profi-Software positioniert. Bei vorsichtiger Planung ist das Vorhaben bereits ab Jahr 1 etwa kostendeckend und entwickelt sich bis Jahr 3 zu einem soliden Nebenerwerb mit Skalierungspotenzial – ganz ohne externes Kapital." },
-    { p: "Der kritische Pfad liegt nicht mehr im Funktionsaufbau, sondern in Monetarisierung, iOS-Veröffentlichung, rechtlicher Freigabe und im Aufbau verlässlichen Nutzerwachstums." },
-    { h2: "Empfohlene nächste Schritte" },
+    { p: "MyImmo trifft einen großen, wachsenden Markt mit einem Produkt, das technisch steht und sich klar im Mittelfeld zwischen Gratis-Tools und teurer Profi-Software positioniert. Die laufenden Betriebskosten sind mit rund 51 € im Monat so niedrig, dass bereits sieben zahlende Kunden sie decken." },
+    { p: "Ebenso klar ist die Kehrseite: Es gibt bis heute keinen einzigen zahlenden Kunden und damit keinen Beleg für Zahlungsbereitschaft. Der kritische Pfad liegt nicht mehr im Funktionsaufbau, sondern darin, die Tür zu öffnen und die ersten hundert echten Nutzer zu gewinnen. Das ist eine Vertriebs-, keine Technikaufgabe – und es ist der Punkt, an dem sich entscheidet, ob aus dem Gebauten ein Geschäft wird." },
+        { h2: "Empfohlene nächste Schritte" },
     { ol: [
       "Steuerliche Erfassung abschließen und die Rechtsdokumente (AGB, Nutzer-AVV) anwaltlich prüfen lassen (Gewerbe ist angemeldet, Impressum/Datenschutz bereits abgeglichen).",
       "Monetarisierung aufsetzen: Abo-/Bezahlsystem anbinden und erste Tarife live schalten.",
       "iOS-Veröffentlichung: „Sign in with Apple\", In-App-Abos und App Review (Konto-Löschung und Datenexport sind bereits umgesetzt).",
-      "Banking produktiv schalten: Enable-Banking-Vertrag und Produktions-Keys hinterlegen.",
       "Auf Basis echter Zahlen die Preise justieren und das Marketing schrittweise ausbauen.",
     ] },
     { h2: "Quellen & Annahmen" },
@@ -378,7 +387,8 @@ const SECTIONS = [
     { ul: [
       "Private Vermieter / Marktstruktur: IW Köln, Statista, Haus & Grund („Wohnen in Zahlen\").",
       "Wettbewerbspreise: immocloud, objego, vermietet.de sowie Vergleichsportale (hausverwaltungschecker.de, ohnehausverwaltung.de).",
-      "Produkt-/Statusangaben: interne MyImmo-Unterlagen (Ideensammlung, DSGVO-Checkliste).",
+      "Produkt-/Statusangaben: am 30.09.2026 gegen Code und Produktionsdatenbank geprüft, nicht aus älteren Unterlagen übernommen.",
+      "Betriebskosten: docs/business/KOSTENMODELL.md (Anbieterpreise am 30.09.2026 nachgelesen).",
     ] },
   ]},
 ];
@@ -596,7 +606,7 @@ async function build(tocMap) {
     page.drawLine({ start: { x: A4.w / 2 - 30, y: yLogo - 118 }, end: { x: A4.w / 2 + 30, y: yLogo - 118 }, thickness: 2, color: GOLD });
 
     center("Jonas Scharp", yLogo - 178, 11, bold, INK);
-    center("Stand: Juli 2026", yLogo - 196, 10, font, MUTED);
+    center(STAND, yLogo - 196, 10, font, MUTED);
     center("Status: Web-App live · Vorbereitung Bezahl-Launch und iOS App Store", yLogo - 214, 10, font, MUTED);
   }
 
@@ -670,5 +680,5 @@ const pass1 = await build(null);
 // Pass 2: mit Inhaltsverzeichnis-Seitenzahlen
 const pass2 = await build(pass1.chapterPages);
 
-fs.writeFileSync("docs/business/MyImmo-Businessplan-2026-07.pdf", await pass2.doc.save());
+fs.writeFileSync("docs/business/MyImmo-Businessplan-2026-09.pdf", await pass2.doc.save());
 console.log("fertig:", pass2.pageCount, "Seiten; Kapitel-Seiten:", JSON.stringify(pass1.chapterPages));

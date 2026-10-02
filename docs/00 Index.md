@@ -7,16 +7,41 @@
 >    Vault immer auf dem neuesten Stand — er *ist* die Projekt-Doku, kein Duplikat.
 
 ## 📌 Zuerst lesen
+- [[VAULT-REGELN]] — **was in diese Vault gehört und was nicht. Verbindlich für jeden Chat.**
 - [[BRIEFING]] — Onboarding in 5 Minuten (Stack, Konventionen, aktueller Stand, offene Punkte)
+
+## 🏗️ App-Entwicklung (wiederverwendbares Bau-Wissen)
+- [[00 App-Entwicklung Index]] — Einstieg in den Wissensspeicher
+- [[09 Neue App bauen]] — Ablauf, wenn aus einer Idee eine App werden soll
+- [[07 Volatile Kennzahlen und Pruefzyklus]] — **bei Sessionstart auf fällige Prüfungen sehen**
+- [[08 Fehlerkatalog]] — echte Fehler mit Ursache und Gegenprüfung
 
 ## 📚 Kern-Doku
 - [[PROJEKT-STATUS]] — Feature-Inventar
 - [[MASTERPLAN]] — Markt / Compliance / Steuer-Roadmap
 - [[FINANZKONZEPT]] — Geschäftsmodell **und** Finanzierungs-Assistent (Kosten, Preise, Recht)
 
+## 💼 Beteiligung & Investorengespräch (30.09.2026)
+- [[INVESTOR-GESPRAECH]] — **Gesprächsvorbereitung**: die Zahlen auswendig, die fünf
+  kritischen Fragen mit ehrlichen Antworten, was du IHN fragen musst
+- [[KOSTENMODELL]] — was der Betrieb bei 100 / 1.000 / 10.000 Nutzern kostet
+  (erzeugt aus `scripts/gen-kostenmodell.mjs`, Anbieterpreise nachgelesen)
+- [[BETEILIGUNG]] — Rechtsform, Anteile, Vesting, Wandeldarlehen, Trennungsfall
+- `business/MyImmo-Businessplan-2026-09.pdf` — **aktuelle Fassung.** Die Juli-Fassung
+  daneben ist überholt (beschreibt ein entferntes Feature als gebaut) — nicht mehr herausgeben.
+
 ## 🏦 Kauf-Tool (Kauf- & Finanzierungs-Assistent)
 - [[00 Kauf-Tool Übersicht]] — Fahrplan, Roadmap, Risiken
 - [[Kunden-Guide]] · [[Makler-Ordner]] · [[Bank-Ordner]] · [[KfW-Foerderung-2026]]
+
+## 🎓 Unterricht / Workshop
+- **Online-Fassung für die Klasse:** https://claude.ai/code/artifact/70a9c592-9fde-4132-ae06-c0e6cfef587f
+  (erst privat — vor dem Unterricht einmal über das Teilen-Menü freigeben)
+- `workshop/immobilien-workshop-online.html` — Quelle der Online-Fassung (interaktiv, mit Prüfung)
+- `workshop/immobilien-workshop.html` — Aufgabenblatt für die Klasse (drei Objekte, zwei Entscheidungen)
+- [[MENTIMETER]] — acht Fragen zum Abtippen in Mentimeter (Fragetyp, Optionen, Lösung)
+- `workshop/immobilien-workshop-loesung.html` — Musterlösung, Rechenweg, Bewertungsraster (**nur Lehrkraft**)
+- [[README]] in `docs/workshop/` — Rechengrundlage, Herkunft der Zahlen, Anpassen
 
 ## 📣 Marketing & Sichtbarkeit
 - [[SEO]] — Stand der Technik 2026 **+ Prüfung von MyImmo** (live gemessen)
@@ -48,7 +73,7 @@
 ## 🗺️ Schnell-Orientierung
 - **Live:** https://www.myimmoapp.de
 - **Repo:** `jxnashap/myimmo-app` · **Branch:** `claude/magical-feynman-l8w9s5`
-- **Stack:** Next.js 14 (App Router) · Supabase (RLS) · Vercel · TypeScript · vitest
+- **Stack:** Next.js 15 (App Router) · Supabase (RLS) · Vercel · TypeScript · vitest
 - **Arbeitsweise:** ehrlicher Sparringspartner, Risiken zuerst, Deutsch.
 
 ---
