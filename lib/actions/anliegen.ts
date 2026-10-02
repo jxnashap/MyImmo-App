@@ -1,9 +1,11 @@
 "use server";
 
 // Anliegen im Mieterportal (Etappe 2): Mieter erstellt Schaden/Dokument/Frage,
-// Vermieter setzt Status und antwortet. RLS sichert beide Seiten ab.
+// Vermieter setzt Status; beide schreiben Nachrichten in den Verlauf (seit 02.10.2026,
+// lib/vorgang.ts). RLS sichert beide Seiten ab.
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { pruefeNachricht } from "@/lib/vorgang";
 
 const TYPEN = ["schaden", "dokument", "frage"] as const;
 const STATI = ["offen", "in_arbeit", "erledigt"] as const;
@@ -165,6 +167,11 @@ export async function terminInKalender(id: string) {
   return { ok: true };
 }
 
+/**
+ * Vermieter: Status setzen und optional eine Nachricht in den Verlauf schreiben.
+ * Seit 02.10.2026 überschreibt die Nachricht nichts mehr (vorher: Feld `antwort`) —
+ * sie wird ein Eintrag im Verlauf. Den Statuswechsel schreibt die Datenbank mit.
+ */
 export async function bearbeiteAnliegen(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -174,15 +181,75 @@ export async function bearbeiteAnliegen(formData: FormData) {
 
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
-  const antwort = String(formData.get("antwort") ?? "").trim();
+  const nachricht = String(formData.get("nachricht") ?? "").trim();
   if (!id || !STATI.includes(status as (typeof STATI)[number])) return { error: "Ungültige Eingabe." };
+  if (nachricht) {
+    const p = pruefeNachricht(nachricht);
+    if (!p.ok) return { error: p.fehler };
+  }
 
-  const { error } = await supabase
+  // Erst die Nachricht: Scheitert sie, bleibt auch der Status stehen — sonst stünde
+  // „erledigt“ ohne die Erklärung dazu im Verlauf.
+  if (nachricht) {
+    const { error: nFehler } = await supabase.from("anliegen_ereignisse").insert({
+      anliegen_id: id,
+      autor_id: user.id,
+      autor_rolle: "vermieter",
+      art: "nachricht",
+      text: nachricht,
+    });
+    if (nFehler) return { error: "Nachricht konnte nicht gespeichert werden — nichts geändert." };
+  }
+
+  const { data, error } = await supabase
     .from("anliegen")
-    .update({ status, antwort: antwort || null, updated_at: new Date().toISOString() })
+    .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("vermieter_id", user.id);
-  if (error) return { error: "Konnte nicht gespeichert werden." };
+    .eq("vermieter_id", user.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) return { error: nachricht ? "Nachricht gesendet, Status aber nicht gespeichert." : "Konnte nicht gespeichert werden." };
+  revalidatePath("/anliegen");
+  revalidatePath("/portal");
+  return { ok: true };
+}
+
+/**
+ * Nachricht im Verlauf eines Anliegens — für Mieter UND Vermieter. Die Rolle kommt aus
+ * dem Anliegen selbst (wer ist wer), nie vom Browser; die Datenbank prüft sie erneut.
+ */
+export async function schreibeNachricht(anliegenId: string, text: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  const p = pruefeNachricht(text);
+  if (!p.ok) return { error: p.fehler };
+
+  const { data: a, error: aFehler } = await supabase
+    .from("anliegen")
+    .select("id,vermieter_id,mieter_user_id")
+    .eq("id", anliegenId)
+    .maybeSingle();
+  if (aFehler || !a) return { error: "Anliegen nicht gefunden." };
+  const rolle = a.vermieter_id === user.id ? "vermieter" : a.mieter_user_id === user.id ? "mieter" : null;
+  if (!rolle) return { error: "Anliegen nicht gefunden." };
+
+  const { error } = await supabase.from("anliegen_ereignisse").insert({
+    anliegen_id: anliegenId,
+    autor_id: user.id,
+    autor_rolle: rolle,
+    art: "nachricht",
+    text: p.text,
+  });
+  if (error) {
+    return {
+      error: rolle === "mieter"
+        ? "Nachricht konnte nicht gesendet werden. Ist dein Portal-Zugang noch aktiv?"
+        : "Nachricht konnte nicht gespeichert werden.",
+    };
+  }
   revalidatePath("/anliegen");
   revalidatePath("/portal");
   return { ok: true };

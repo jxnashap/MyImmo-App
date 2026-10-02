@@ -377,7 +377,13 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   passiert) — nur über eine SECURITY-DEFINER-Funktion. (3) Keine Fremdschlüssel mit `on delete`
   in Migrationen über `apply_migration` (Bestätigungsdialog). **Vereinbarter Ausbauplan,
   „KI im Portal“ (gemerkt, nicht jetzt) und Hausmeister/Minijob mit Risiken: Abschnitt 9 dort.**
-  Nächster Schritt: Vorgänge mit Verlauf (Anliegen-Ereignisse statt `antwort`).
+  ✅ **Vorgänge mit Verlauf gebaut 02.10.2026** (Migration `20261002160000`, `lib/vorgang.ts`,
+  `components/VorgangVerlauf.tsx` = EINE Darstellung für Portal, Vorschau und `/anliegen`).
+  `anliegen.antwort` wird nicht mehr geschrieben (Altbestand übernommen); Nachrichten über
+  `schreibeNachricht()` bzw. `bearbeiteAnliegen(…nachricht)`. **Regel: Status-, Termin- und
+  Auftragsereignisse NIE aus der App schreiben — das tun die Trigger** (sonst doppelt); die App
+  schreibt nur `art = 'nachricht'`. Trigger schreiben nur mit `auth.uid()` (Service-Role/Demo-Reset
+  erzeugt keine Einträge). Nächster Schritt laut Plan: E-Mail-Benachrichtigungen (braucht Brevo).
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das

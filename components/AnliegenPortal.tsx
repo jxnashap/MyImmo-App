@@ -1,12 +1,14 @@
 "use client";
 
 // Mieterportal: Anliegen erstellen (inkl. Foto-/PDF-Anhängen) + eigene
-// Anliegen mit Status/Antwort sehen. Terminkoordination: vom Vermieter
+// Anliegen mit Status und Verlauf (seit 02.10.2026, VorgangVerlauf) — der Mieter antwortet dort. Terminkoordination: vom Vermieter
 // vorgeschlagene Slots per Klick bestätigen.
 import { useRef, useState, useTransition } from "react";
 import { Wrench, FileText, MessageCircleQuestion, Plus, Paperclip, CalendarClock, type LucideIcon } from "lucide-react";
 import { erstelleAnliegen, bestaetigeAnliegenTermin } from "@/lib/actions/anliegen";
 import VorschauHinweis from "@/components/VorschauHinweis";
+import VorgangVerlauf from "@/components/VorgangVerlauf";
+import type { Ereignis } from "@/lib/vorgang";
 
 export type AnliegenRow = {
   id: string;
@@ -14,7 +16,6 @@ export type AnliegenRow = {
   titel: string;
   beschreibung: string | null;
   status: string;
-  antwort: string | null;
   created_at: string;
   termin_vorschlaege: string[] | null;
   termin_bestaetigt: string | null;
@@ -71,7 +72,7 @@ function TerminWahl({ a, nurLesen }: { a: AnliegenRow; nurLesen?: boolean }) {
       </div>
       {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", marginTop: 6 }}>{fehler}</p>}
       <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 8, marginBottom: 0 }}>
-        Passt keiner? Antworte deinem Vermieter über ein neues Anliegen oder telefonisch.
+        Passt keiner? Schreib es deinem Vermieter unten im Verlauf.
       </p>
     </div>
   );
@@ -114,11 +115,13 @@ export function AnhangLinks({ dateien }: { dateien: DateiRef[] }) {
 export default function AnliegenPortal({
   anliegen,
   dateien,
+  verlauf = {},
   standardTyp,
   nurLesen = false,
 }: {
   anliegen: AnliegenRow[];
   dateien: DateiRef[];
+  verlauf?: Record<string, Ereignis[]>;
   standardTyp?: string;
   /** Vorschau des Vermieters (01.10.2026): kein Formular, keine Termin-Knöpfe. */
   nurLesen?: boolean;
@@ -228,11 +231,7 @@ export default function AnliegenPortal({
                 )}
                 <AnhangLinks dateien={dateienVon(a.id)} />
                 <TerminWahl a={a} nurLesen={nurLesen} />
-                {a.antwort && (
-                  <p style={{ fontSize: 12, marginTop: 8, padding: "8px 10px", background: "var(--gold-pale)", borderLeft: "3px solid var(--gold)", borderRadius: 6 }}>
-                    <strong>Antwort deines Vermieters:</strong> {a.antwort}
-                  </p>
-                )}
+                <VorgangVerlauf anliegenId={a.id} ereignisse={verlauf[a.id] ?? []} sicht="mieter" nurLesen={nurLesen} />
               </div>
             );
           })

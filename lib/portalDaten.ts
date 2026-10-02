@@ -21,6 +21,7 @@ import type { AnliegenRow, DateiRef } from "@/components/AnliegenPortal";
 import type { ZaehlerMeldungRow } from "@/components/ZaehlerPortal";
 import type { PortalAnfrageRow } from "@/components/AnfragenVomVermieter";
 import { heuteBerlin } from "@/lib/zeitraum";
+import { ladeEreignisse, type Ereignis } from "@/lib/vorgang";
 
 /** Spalten der Sicht `mieter_portal` — identisch mit der Migration. */
 export const MIETER_PORTAL_SPALTEN =
@@ -72,6 +73,8 @@ export type PortalDaten = {
   wohnungen: { m: PortalMieter; p: PortalObjekt | null }[];
   anliegen: AnliegenRow[];
   dokumentAnfragen: AnliegenRow[];
+  /** Verlauf je Anliegen (Nachrichten, Status, Termine, Aufträge) — lib/vorgang.ts. */
+  verlauf: Record<string, Ereignis[]>;
   dateien: DateiRef[];
   freigegebeneDocs: PortalDokument[];
   vermieterAnfragen: PortalAnfrageRow[];
@@ -178,13 +181,16 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
   if (mieterUserId) {
     let q = supabase
       .from("anliegen")
-      .select("id,typ,titel,beschreibung,status,antwort,created_at,termin_vorschlaege,termin_bestaetigt")
+      .select("id,typ,titel,beschreibung,status,created_at,termin_vorschlaege,termin_bestaetigt")
       .eq("mieter_user_id", mieterUserId);
     if (alsV) q = q.eq("vermieter_id", alsV);
     const { data } = await q.order("created_at", { ascending: false });
     anliegen = (data ?? []) as AnliegenRow[];
   }
   const dokumentAnfragen = anliegen.filter((a) => a.typ === "dokument");
+  // Verlauf: nur zu den Anliegen, die oben schon (gefiltert) geladen wurden. Beim Mieter
+  // filtert zusätzlich die Datenbank über die Regeln von `anliegen`.
+  const verlauf = Object.fromEntries(await ladeEreignisse(supabase, anliegen.map((a) => a.id)));
 
   let dateien: DateiRef[] = [];
   if (anliegen.length) {
@@ -285,7 +291,7 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
   }
 
   return {
-    wohnungen, anliegen, dokumentAnfragen, dateien, freigegebeneDocs, vermieterAnfragen,
+    wohnungen, anliegen, dokumentAnfragen, verlauf, dateien, freigegebeneDocs, vermieterAnfragen,
     zaehlerMeldungen, zahlungen, jahr, summeJahr, belege,
     mieterKontoVerknuepft: mieterUserId !== null,
   };

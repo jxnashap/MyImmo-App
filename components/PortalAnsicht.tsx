@@ -46,7 +46,7 @@ export default function PortalAnsicht({
   kopfzeile: string | null | undefined;
   vorschau?: boolean;
 }) {
-  const { wohnungen, anliegen, dokumentAnfragen, dateien, freigegebeneDocs, vermieterAnfragen, zaehlerMeldungen, zahlungen, jahr, summeJahr, belege } = daten;
+  const { wohnungen, anliegen, dokumentAnfragen, verlauf, dateien, freigegebeneDocs, vermieterAnfragen, zaehlerMeldungen, zahlungen, jahr, summeJahr, belege } = daten;
   const keineWohnung = (
     <div className="section"><div className="section-body" style={{ fontSize: 12, color: "var(--muted)" }}>
       Erst mit verknüpfter Wohnung möglich — frage deinen Vermieter nach einem Einladungscode.
@@ -123,7 +123,7 @@ export default function PortalAnsicht({
         {wohnungen.length === 0 ? keineWohnung : (
           <>
             <AnfragenVomVermieter anfragen={vermieterAnfragen} nurLesen={vorschau} />
-            <AnliegenPortal anliegen={anliegen} dateien={dateien} nurLesen={vorschau} />
+            <AnliegenPortal anliegen={anliegen} dateien={dateien} verlauf={verlauf} nurLesen={vorschau} />
           </>
         )}
       </>
@@ -199,11 +199,11 @@ export default function PortalAnsicht({
                       <FileText size={14} color="var(--gold)" />
                       <span style={{ fontWeight: 600, color: "var(--text)" }}>{d.titel || d.datei_name || "Dokument"}</span>
                       {d.kategorie && <span className="badge badge-teal">{d.kategorie}</span>}
-                      <span style={{ color: "var(--muted)", marginLeft: "auto" }} title="Zeitpunkt der Zustellung an Sie">
+                      <span style={{ color: "var(--muted)", marginLeft: "auto" }} title="Zeitpunkt der Zustellung an dich">
                         {datum(d.zustellung.zugestellt_am)}
                       </span>
                       {d.zustellung.bestaetigung_noetig && (d.zustellung.bestaetigt_am
-                        ? <span className="badge badge-green" title="Von Ihnen bestätigt">bestätigt {datum(d.zustellung.bestaetigt_am)}</span>
+                        ? <span className="badge badge-green" title="Von dir bestätigt">bestätigt {datum(d.zustellung.bestaetigt_am)}</span>
                         : <ZustellungBestaetigen zustellungId={d.zustellung.id} nurLesen={vorschau} />)}
                       <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
                       <a href={`/archiv/${d.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
@@ -239,7 +239,7 @@ export default function PortalAnsicht({
                 )}
               </div>
             </div>
-            <DokumenteAnfrage anfragen={dokumentAnfragen} nurLesen={vorschau} />
+            <DokumenteAnfrage anfragen={dokumentAnfragen} verlauf={verlauf} nurLesen={vorschau} />
           </>
         )}
       </>

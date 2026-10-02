@@ -1,7 +1,7 @@
 "use client";
 
 // Vermieter-Seite /anliegen: eingegangene Mieter-Anliegen bearbeiten
-// (Status setzen + Antwort schreiben) + Terminkoordination: bis zu drei
+// (Status setzen + Nachricht in den Verlauf, seit 02.10.2026) + Terminkoordination: bis zu drei
 // Slots vorschlagen, der Mieter bestätigt einen im Portal.
 import Link from "next/link";
 import { useState, useTransition } from "react";
@@ -9,6 +9,8 @@ import { Wrench, FileText, MessageCircleQuestion, Save, Paperclip, CalendarClock
 import { bearbeiteAnliegen, schlageTermineVor, terminInKalender } from "@/lib/actions/anliegen";
 import { useToast } from "@/components/Toast";
 import { tastaturAktion } from "@/lib/a11y";
+import VorgangVerlauf from "@/components/VorgangVerlauf";
+import { NACHRICHT_MAX, type Ereignis } from "@/lib/vorgang";
 
 export type AnliegenVermieterRow = {
   id: string;
@@ -16,7 +18,7 @@ export type AnliegenVermieterRow = {
   titel: string;
   beschreibung: string | null;
   status: string;
-  antwort: string | null;
+  verlauf: Ereignis[];
   created_at: string;
   mieterName: string;
   objektName: string;
@@ -59,7 +61,7 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
       setFehler(null);
       const r = await bearbeiteAnliegen(fd);
       if (r?.error) setFehler(r.error);
-      else setOffen(false);
+      else toast("Gespeichert ✓");
     });
 
   const termineSenden = (fd: FormData) =>
@@ -113,6 +115,16 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
           ))}
         </div>
       )}
+      {offen ? (
+        <VorgangVerlauf anliegenId={a.id} ereignisse={a.verlauf} sicht="vermieter" antworten={false} />
+      ) : a.verlauf.length > 0 && (
+        <p style={{ fontSize: 11, color: "var(--faint)", margin: "4px 0 0" }}>
+          {a.verlauf.length} {a.verlauf.length === 1 ? "Eintrag" : "Einträge"} im Verlauf
+          {a.verlauf[a.verlauf.length - 1].autor_rolle === "mieter" && a.verlauf[a.verlauf.length - 1].art === "nachricht" && (
+            <span className="badge badge-amber" style={{ marginLeft: 6 }}>neue Nachricht vom Mieter</span>
+          )}
+        </p>
+      )}
       {offen && (
         <form action={speichern} style={{ display: "grid", gap: 8, marginTop: 10, padding: 12, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}>
           <input type="hidden" name="id" value={a.id} />
@@ -124,7 +136,7 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
               <option value="erledigt">Erledigt</option>
             </select>
           </div>
-          <textarea name="antwort" rows={2} maxLength={2000} defaultValue={a.antwort ?? ""} className="input" placeholder="Antwort an den Mieter (optional)" />
+          <textarea name="nachricht" rows={2} maxLength={NACHRICHT_MAX} className="input" placeholder="Nachricht an den Mieter (optional) — erscheint im Verlauf" />
           {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button type="submit" className="btn btn-gold" disabled={pending} style={{ fontSize: 12 }}>
