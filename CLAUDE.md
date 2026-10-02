@@ -91,7 +91,18 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    Supabase-Log: sechsmal `PUT /user` 422 „Password is known to be weak" beim Reset-Test
    („12345678" u. a.), danach ein sicheres Passwort angenommen. Belegt am Passwort-SETZEN;
    für die Registrierung gilt dieselbe Server-Einstellung, dort nicht eigens probiert.
-6. **2FA einmal durchspielen** — einrichten, abmelden, mit Code anmelden, „Handy nicht zur
+0. **Brevo-Zugang in Vercel eintragen (02.10.2026 gefunden, DRINGEND vor dem Start):**
+   `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` (in Brevo verifiziert, SPF/DKIM für
+   myimmoapp.de), optional `BREVO_LIST_ID`, danach **neu deployen**. Ohne sie endete jede
+   Anmeldung mit 503 „Versand gerade nicht verfügbar“ — `newsletter_anmeldungen` hatte
+   **0 Zeilen, nie eine** (auch der Vorlagen-Verteiler hat also nie funktioniert). Seit
+   02.10.2026 blenden Startseite, Unterseiten und `/vorlagen` die Formulare aus, solange
+   `brevoBereit()` falsch ist — nach dem Eintragen erscheinen sie von selbst.
+   **Danach testen:** eigene Adresse eintragen, Mail bestätigen → `/?nl=ok#bald`.
+6. ~~**2FA einmal durchspielen**~~ ✅ **vom Betreiber durchgespielt 02.10.2026** (Login →
+   Code → Weiterleitung mit dem Proxy-Gate funktioniert). Ebenso ✅ Passwortwechsel mit
+   FALSCHEM altem Passwort scheitert (Punkt 4 damit vollständig) und ✅ Wischen auf dem
+   echten Handy „klappt gut, so lassen“. Ursprünglicher Text: einrichten, abmelden, mit Code anmelden, „Handy nicht zur
    Hand?" mit einem Wiederherstellungscode. Die Logik ist getestet, der Ablauf nie.
    **Stand 01.10.2026: noch NICHT gemacht** (Betreiber bestätigt, bewusst auf der Liste
    gelassen). Seit Paket 4 (Proxy-Gate, `mi_faktor`) ist der Durchlauf wichtiger als vorher:
@@ -99,15 +110,16 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
 
 **Ohne Eile:**
 7. **StBerG-Anfrage an den Anwalt** — `docs/compliance/StBerG-ANFRAGE.md` ist fertig.
-8. **Vercel-Log-Aufbewahrung nachsehen** (Dashboard → Observability) und mir die Zahl geben;
-   sie fehlt als einzige konkrete Angabe in `/datenschutz` Ziffer 3 d. Weder Doku noch API
-   geben sie her — **keine Zahl erfinden**.
+8. ~~**Vercel-Log-Aufbewahrung**~~ ✅ **02.10.2026 (Betreiber):** Runtime-Logs auf Pro
+   **1 Tag**, mit Observability Plus 30 Tage; Build-Logs unbegrenzt je Deployment.
+   `/datenschutz` 3 d sagt jetzt „nach einem Tag“. **Wird Observability Plus gebucht,
+   muss dort 30 Tage stehen.**
 9. **11px → 12px**: Token `--text-xs` in `app/globals.css` umstellen, Seiten durchklicken,
    bei Bruch eine Zeile zurück. Kein Test findet einen hässlichen Umbruch.
 10. **Brevo-Konto**: AVV-Restpunkte (neuere Fassung? Firmendaten? Empfängeradresse für
     Unterauftragsverarbeiter-Ankündigungen) — Details unter „AVV-Abschlussstand".
-11. **Altes kurzes Passwort**: stichprobenhaft prüfen, ob sich ein Bestandskonto mit
-    weniger als 8 Zeichen noch anmelden kann.
+11. ~~**Altes kurzes Passwort**~~ — Betreiber 02.10.2026: „Nein“ (Bedeutung — „nicht
+    nötig“ oder „meldet sich nicht an“ — nachzufragen; ohne echte Nutzer ohnehin folgenlos).
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**

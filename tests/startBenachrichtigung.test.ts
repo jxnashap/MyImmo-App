@@ -38,12 +38,17 @@ describe("Einbindung", () => {
     expect(k).toContain("Beim Start per E-Mail benachrichtigen");
   });
   it("nur bei geschlossener Registrierung, auf der Startseite und im Schluss der Unterseiten", () => {
-    expect(lies("components/LandingPage.tsx")).toContain("{!REGISTRIERUNG_OFFEN && <StartBenachrichtigung nl={nl} />}");
-    expect(lies("components/landing/Shell.tsx")).toContain("{!REGISTRIERUNG_OFFEN && <StartBenachrichtigung />}");
+    expect(lies("components/LandingPage.tsx")).toContain("{!REGISTRIERUNG_OFFEN && brevoBereit() && <StartBenachrichtigung nl={nl} />}");
+    expect(lies("components/landing/Shell.tsx")).toContain("{!REGISTRIERUNG_OFFEN && brevoBereit() && <StartBenachrichtigung />}");
+    // Ohne Brevo-Zugang endet jede Anmeldung mit 503 — dann zeigt keine Seite ein Formular.
+    expect(lies("app/(pub)/vorlagen/page.tsx")).toContain("{brevoBereit() && <VerteilerForm quelle=\"vorlagen\" />}");
     expect(lies("app/(app)/page.tsx")).toContain("<LandingPage nl={(await seite.searchParams).nl} />");
   });
   it("jede Rückmeldung der Bestätigungsroute hat einen Text", () => {
     for (const s of ["ok", "abgelaufen", "fehler"]) expect(START_MELDUNG[s]?.text, s).toBeTruthy();
+  });
+  it("die Datenschutzerklärung nennt die Log-Aufbewahrung des Hosters (Betreiber, 02.10.2026)", () => {
+    expect(lies("app/(pub)/datenschutz/page.tsx")).toMatch(/nach\{" "\}\s*<strong>einem Tag<\/strong> automatisch gelöscht/);
   });
   it("die Datenschutzerklärung nennt die Startbenachrichtigung", () => {
     expect(lies("app/(pub)/datenschutz/page.tsx")).toContain("Benachrichtigung zum Start");
