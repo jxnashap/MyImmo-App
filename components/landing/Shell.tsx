@@ -2,6 +2,7 @@ import Link from "next/link";
 import { REGISTRIERUNG_OFFEN } from "@/lib/preise";
 import StartCta from "@/components/StartCta";
 import StartBenachrichtigung from "@/components/landing/StartBenachrichtigung";
+import { brevoBereit } from "@/lib/mail/brevo";
 import type { ReactNode } from "react";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 import QlxHeader from "@/components/landing/QlxHeader";
@@ -67,7 +68,7 @@ export default function LandingShell({
               <StartCta className="qlx-btn-hell lp-btn-big" />
               {!REGISTRIERUNG_OFFEN && <a href="/api/demo" className="qlx-btn-linie lp-btn-big">Demo ansehen</a>}
             </div>
-            {!REGISTRIERUNG_OFFEN && <StartBenachrichtigung />}
+            {!REGISTRIERUNG_OFFEN && brevoBereit() && <StartBenachrichtigung />}
           </div>
         </section>
       )}

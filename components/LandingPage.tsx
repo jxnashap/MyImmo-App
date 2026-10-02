@@ -2,6 +2,7 @@ import Link from "next/link";
 import { REGISTRIERUNG_OFFEN } from "@/lib/preise";
 import StartCta from "@/components/StartCta";
 import StartBenachrichtigung from "@/components/landing/StartBenachrichtigung";
+import { brevoBereit } from "@/lib/mail/brevo";
 import { ArrowRight, Plane, Database, Lock, Download, Trash2, ShieldCheck, UserCheck } from "lucide-react";
 import LandingShell from "@/components/landing/Shell";
 import QlxHero from "@/components/landing/QlxHero";
@@ -398,8 +399,9 @@ export default function LandingPage({ nl }: { nl?: string } = {}) {
                 {!REGISTRIERUNG_OFFEN && <a href="/api/demo" className="qlx-btn-linie lp-btn-big">Demo ansehen</a>}
                 <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
               </div>
-              {/* Dezent: eine Textzeile, das Formular erst auf Klick. */}
-              {!REGISTRIERUNG_OFFEN && <StartBenachrichtigung nl={nl} />}
+              {/* Dezent: eine Textzeile, das Formular erst auf Klick. Ohne Brevo-Zugang
+                  keine Zeile — ein Formular, das immer scheitert, ist schlechter als keins. */}
+              {!REGISTRIERUNG_OFFEN && brevoBereit() && <StartBenachrichtigung nl={nl} />}
               <p className="qlx-hero-note" style={{ marginTop: 16 }}>
                 Keine Kreditkarte nötig · Datenbank in Frankfurt · derzeit kostenlos
               </p>

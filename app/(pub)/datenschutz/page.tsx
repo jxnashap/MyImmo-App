@@ -23,7 +23,7 @@ export default function DatenschutzPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 1. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
+        Stand: 2. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
         Verarbeitung personenbezogener Daten bei Nutzung der Web-Anwendung MyImmo.
       </p>
 
@@ -85,22 +85,18 @@ export default function DatenschutzPage() {
         in Ihrem Auftrag (Art. 28 DSGVO, siehe AVV).
       </p>
 
-      {/* OFFEN (Betreiber, 08.09.2026): Die konkrete Aufbewahrungsdauer der Vercel-
-          Runtime-Logs steht weder in der oeffentlichen Doku noch war sie ueber die
-          API abfragbar. Sie ist im Vercel-Dashboard unter Observability -> Logs
-          bzw. im Plan-Vergleich abzulesen und gehoert dann HIER als konkrete Zahl
-          hinein (Art. 13 Abs. 2 lit. a DSGVO verlangt Dauer ODER Kriterien).
-          Bis dahin steht unten, was nachweislich stimmt — nicht "kurze Zeit",
-          was gar nichts aussagt. Keine Zahl erfinden. */}
+      {/* Aufbewahrung laut Betreiber (02.10.2026, Vercel-Plan Pro ohne Observability
+          Plus): Runtime-Logs 1 Tag. Wird Observability Plus gebucht, sind es 30 Tage —
+          dann HIER ändern. Build-Logs enthalten keine Besucherdaten. */}
       <H3>d) Server-Logs (Hosting)</H3>
       <p>
         Beim Aufruf der App verarbeitet unser Hoster technisch bedingt IP-Adresse,
         Datum/Uhrzeit, aufgerufene URL und Browserkennung. <em>Zweck:</em> Auslieferung,
         Stabilität und Sicherheit (z. B. Missbrauchsabwehr). <em>Rechtsgrundlage:</em> Art. 6
         Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb).{" "}
-        <em>Speicherdauer:</em> Wir legen <strong>keine eigenen Kopien</strong> dieser Logs an
-        und werten sie nicht aus; sie entstehen und verfallen automatisch in der Plattform des
-        Hosters nach dessen Voreinstellung, die wir nicht verlängern.
+        <em>Speicherdauer:</em> Die Laufzeit-Protokolle werden beim Hoster nach{" "}
+        <strong>einem Tag</strong> automatisch gelöscht. Wir legen <strong>keine eigenen
+        Kopien</strong> dieser Logs an und werten sie nicht aus.
       </p>
 
       <H3>e) KI-Funktionen (Beleg-/Dokumenterkennung)</H3>
