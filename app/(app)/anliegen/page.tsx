@@ -5,7 +5,8 @@
 // NICHT "Mieterportal" nennen: So heißt die Mieter-Oberfläche unter /portal.
 import { ladeEreignisse } from "@/lib/vorgang";
 import Link from "next/link";
-import { MessageSquareText, UserRoundSearch, Wrench, Eye } from "lucide-react";
+import { MessageSquareText, UserRoundSearch, Wrench, Eye, Megaphone } from "lucide-react";
+import HausManager, { type GesendeteMitteilung, type HausInfo } from "@/components/HausManager";
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { ladePortalDaten, vorschauUrl, type VorschauMieter } from "@/lib/portalDaten";
@@ -37,7 +38,7 @@ export default async function AnliegenPage(
   // (ANSICHTEN_NUR_DEMO in lib/demo.ts). Ein echter Vermieter, der die
   // Adresse von Hand eingibt, landet bei den Anliegen.
   const ansichten = ansichtenSichtbar(user?.email);
-  const erlaubteTabs = ["bewerbungen", "service", ...(ansichten ? ["vorschau", "vorschau-service"] : [])];
+  const erlaubteTabs = ["bewerbungen", "service", "haus", ...(ansichten ? ["vorschau", "vorschau-service"] : [])];
   const tab = erlaubteTabs.includes(searchParams.tab ?? "") ? (searchParams.tab as string) : "anliegen";
   const demo = istDemoKonto(user?.email);
 
@@ -51,7 +52,7 @@ export default async function AnliegenPage(
     supabase.from("mieter").select("id,vorname,nachname,prop_id,mietende"),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
     supabase.from("vermieter_anfragen").select("*").order("created_at", { ascending: false }).limit(100),
-    supabase.from("mieter_zugaenge").select("mieter_id,user_id"),
+    supabase.from("mieter_zugaenge").select("mieter_id,user_id,prop_id"),
     supabase.from("bewerber_links").select("*").order("created_at", { ascending: false }),
     supabase.from("bewerbungen").select("*").order("created_at", { ascending: false }).limit(200),
     supabase.from("service_zugaenge").select("user_id,firma,email,created_at").order("created_at", { ascending: false }),
@@ -232,10 +233,39 @@ export default async function AnliegenPage(
     ? await ladeServicePortalDaten(supabase, { art: "vermieter", vermieterId: user!.id, serviceUserId: vorschauPartner.id })
     : null;
 
+  // Mitteilungen & Haus (02.10.2026): nur laden, wenn der Reiter offen ist.
+  let hausDaten: { gesendet: GesendeteMitteilung[]; infos: HausInfo[]; objekte: { id: string; bezeichnung: string; verbunden: number }[] } | null = null;
+  if (tab === "haus" && user) {
+    const [{ data: zRows }, { data: iRows }] = await Promise.all([
+      supabase.from("zustellungen")
+        .select("gruppe,titel,nachricht,zugestellt_am,bestaetigung_noetig,bestaetigt_am,zurueckgezogen_am")
+        .eq("vermieter_id", user.id).eq("art", "mitteilung")
+        .order("zugestellt_am", { ascending: false }).limit(500),
+      supabase.from("gebaeude_infos").select("prop_id,hausmeister,notdienst,muell,hausordnung,sonstiges").eq("vermieter_id", user.id),
+    ]);
+    const gruppen = new Map<string, GesendeteMitteilung>();
+    for (const z of (zRows ?? []) as { gruppe: string | null; titel: string; nachricht: string; zugestellt_am: string; bestaetigung_noetig: boolean; bestaetigt_am: string | null; zurueckgezogen_am: string | null }[]) {
+      if (!z.gruppe) continue;
+      const g = gruppen.get(z.gruppe) ?? { gruppe: z.gruppe, titel: z.titel, nachricht: z.nachricht, zugestellt_am: z.zugestellt_am, empfaenger: 0, bestaetigt: 0, bestaetigung_noetig: z.bestaetigung_noetig, zurueckgezogen: true };
+      g.empfaenger += 1;
+      if (z.bestaetigt_am) g.bestaetigt += 1;
+      if (!z.zurueckgezogen_am) g.zurueckgezogen = false;
+      gruppen.set(z.gruppe, g);
+    }
+    const verbundenJe = new Map<string, number>();
+    for (const z of (zugaenge ?? []) as { prop_id: string | null }[]) if (z.prop_id) verbundenJe.set(z.prop_id, (verbundenJe.get(z.prop_id) ?? 0) + 1);
+    hausDaten = {
+      gesendet: Array.from(gruppen.values()).slice(0, 30),
+      infos: (iRows ?? []) as HausInfo[],
+      objekte: (props ?? []).map((p) => ({ id: p.id, bezeichnung: p.bezeichnung ?? "Objekt", verbunden: verbundenJe.get(p.id) ?? 0 })),
+    };
+  }
+
   const TABS = [
     { key: "anliegen", label: "Mieter-Anliegen", icon: MessageSquareText, badge: offen },
     { key: "bewerbungen", label: "Bewerbungen", icon: UserRoundSearch, badge: neueBewerbungen },
     { key: "service", label: "Service-Partner", icon: Wrench, badge: freigabeAnfragen },
+    { key: "haus", label: "Mitteilungen & Haus", icon: Megaphone, badge: 0 },
     ...(ansichten
       ? ([
           { key: "vorschau", label: "Ansicht Mieter", icon: Eye, badge: 0 },
@@ -329,6 +359,10 @@ export default async function AnliegenPage(
           )
         )}
 
+        {tab === "haus" && hausDaten && (
+          <HausManager objekte={hausDaten.objekte} gesendet={hausDaten.gesendet} infos={hausDaten.infos} />
+        )}
+
         {tab === "bewerbungen" && (
           <BewerbungenManager links={links} bewerbungen={bewerbungen} properties={props ?? []} />
         )}
@@ -365,6 +399,8 @@ export default async function AnliegenPage(
                 ? "So sieht dein Mieter das Portal — mit deinen Daten, nur zur Ansicht"
               : tab === "vorschau-service"
                 ? "So sieht dein Hausmeister oder Handwerker das Service-Portal — Formulare zum Ausprobieren, gesendet wird nichts"
+              : tab === "haus"
+                ? "Mitteilungen an deine Mieter und Infos zum Haus — sichtbar im Mieterportal"
               : tab === "service"
                 ? `Handwerker & Hausmeister verknüpfen, Aufträge vergeben${freigabeAnfragen > 0 ? ` · ${freigabeAnfragen} Freigabe-Anfrage${freigabeAnfragen > 1 ? "n" : ""} wartet` : auftraege.length > 0 ? ` · ${offeneAuftraege} offen von ${auftraege.length}` : ""}`
                 : `Meldungen deiner Mieter & deine Anfragen an sie${liste.length > 0 ? ` · ${offen} offen von ${liste.length}` : ""}`}

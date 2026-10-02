@@ -51,7 +51,7 @@ describe("Ansichten nur in der Demo (Vorgabe des Betreibers)", () => {
   });
   it("die Seite lässt die Reiter nur bei sichtbaren Ansichten zu — auch nicht per Adresse", () => {
     const seite = lies("app/(app)/anliegen/page.tsx");
-    expect(seite).toContain('const erlaubteTabs = ["bewerbungen", "service", ...(ansichten ? ["vorschau", "vorschau-service"] : [])];');
+    expect(seite).toContain('const erlaubteTabs = ["bewerbungen", "service", "haus", ...(ansichten ? ["vorschau", "vorschau-service"] : [])];');
     expect(seite).toContain('const tab = erlaubteTabs.includes(searchParams.tab ?? "") ? (searchParams.tab as string) : "anliegen";');
     expect(seite).toMatch(/\.\.\.\(ansichten\s*\?\s*\(\[/);
   });

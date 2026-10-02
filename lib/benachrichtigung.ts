@@ -25,17 +25,19 @@ export type BenachrichtigungsArt =
   | "nachricht_an_mieter" // Vermieter hat im Vorgang geschrieben
   | "termine" // Vermieter schlägt Termine vor
   | "anfrage" // Vermieter bittet um etwas (vermieter_anfragen)
+  | "mitteilung" // Vermieter an das Haus / alle Mieter
   | "anliegen_neu" // Mieter → Vermieter: neues Anliegen
   | "nachricht_an_vermieter" // Mieter hat im Vorgang geschrieben
   | "termin_bestaetigt"; // Mieter hat einen Termin gewählt
 
-const AN_MIETER = new Set<BenachrichtigungsArt>(["dokument", "nachricht_an_mieter", "termine", "anfrage"]);
+const AN_MIETER = new Set<BenachrichtigungsArt>(["dokument", "nachricht_an_mieter", "termine", "anfrage", "mitteilung"]);
 
 const WAS: Record<BenachrichtigungsArt, string> = {
   dokument: "Dein Vermieter hat dir ein Dokument bereitgestellt.",
   nachricht_an_mieter: "Dein Vermieter hat dir zu einem Anliegen geschrieben.",
   termine: "Dein Vermieter schlägt Termine vor — bitte wähle einen aus.",
   anfrage: "Dein Vermieter bittet dich um etwas.",
+  mitteilung: "Dein Vermieter hat eine Mitteilung an die Mieter geschickt.",
   anliegen_neu: "Ein Mieter hat ein neues Anliegen gemeldet.",
   nachricht_an_vermieter: "Ein Mieter hat dir zu einem Anliegen geschrieben.",
   termin_bestaetigt: "Ein Mieter hat einen Termin bestätigt.",

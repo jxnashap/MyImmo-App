@@ -86,6 +86,6 @@ describe("Anbindung", () => {
     expect(ansicht).toMatch(/<MieterAufgabenListe aufgaben=\{aufgaben\}/);
   });
   it("der Notfall-Kasten steht auf der Startseite UND im Anliegen-Reiter", () => {
-    expect(ansicht.match(/<NotfallKasten \/>/g)?.length).toBe(2);
+    expect(ansicht.match(/<NotfallKasten notdienste=\{notdienste\} \/>/g)?.length).toBe(2);
   });
 });

@@ -252,6 +252,13 @@ const WEGE = [
     },
   },
   {
+    // Mitteilungen & Haus (02.10.2026): Formular und Gebäude-Infos für den Vermieter.
+    schluessel: "haus",
+    titel: "Mieterportal — Mitteilungen & Haus",
+    pfad: "/anliegen?tab=haus",
+    erwartet: ["Mitteilung an Mieter", "Gebäude-Infos", "Alle Mieter mit Portal-Zugang"],
+  },
+  {
     // Demo-Service (01.10.2026): drei verknüpfte Partner. Firmen und
     // Beispielaufträge erscheinen erst mit dem ausstehenden Reset
     // (supabase/ausstehend/demo_service_reset.sql) — geprüft wird deshalb nur,

@@ -17,8 +17,12 @@ function Schritte({ art }: { art: NotfallArt }) {
   );
 }
 
-/** Einklappbarer Kasten „Notfall?“ — oben im Portal und im Anliegen-Reiter. */
-export function NotfallKasten() {
+/**
+ * Einklappbarer Kasten „Notfall?“ — oben im Portal und im Anliegen-Reiter.
+ * `notdienste`: was der Vermieter in den Gebäude-Infos als Notdienst hinterlegt hat —
+ * SEINE Angaben, deshalb ausdrücklich so beschriftet.
+ */
+export function NotfallKasten({ notdienste = [] }: { notdienste?: string[] }) {
   return (
     <details className="section" style={{ border: "1px solid var(--red)", padding: "10px 14px" }}>
       <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: 13, color: "var(--red)" }}>
@@ -29,6 +33,14 @@ export function NotfallKasten() {
         Das Portal ist kein Notdienst — dein Vermieter sieht eine Meldung nicht sofort.
       </p>
       {(["gas", "wasser", "strom"] as const).map((a) => <Schritte key={a} art={a} />)}
+      {notdienste.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ fontWeight: 600, fontSize: 12.5 }}>Notdienste laut deinem Vermieter</div>
+          {notdienste.map((n) => (
+            <p key={n} style={{ fontSize: 12.5, margin: "4px 0 0", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{n}</p>
+          ))}
+        </div>
+      )}
     </details>
   );
 }

@@ -309,7 +309,12 @@ jede Funktion zweimal gebaut.
    12 Monate Soll gegen bestätigte Zahlungen, mit derselben Soll-Rechnung wie beim Vermieter.
    **Bewusst ohne „Rückstand“** — Grundlage sind die Buchungen des Vermieters; „noch nicht
    bestätigt“ plus Weg „Schreib deinem Vermieter“. Ein Test hält den Wortlaut fest.
-   Mitteilungen an Haus/alle Mieter, Gebäude-Infos: folgen.
+   ✅ **Mitteilungen und Gebäude-Infos** (02.10.2026, Migration `20261002190000`,
+   `lib/actions/mitteilungen.ts`, Reiter „Mitteilungen & Haus“ unter `/anliegen`): Mitteilungen
+   laufen über `zustellungen` (art `mitteilung`, `gruppe`) — nur an aktive Konten eigener
+   Mieter, vorher die Zahl der Empfänger, optional „gelesen und bestätigt“, als Ganzes
+   zurückziehbar, Hinweis-Mail ohne Inhalt. Gebäude-Infos je Objekt; die Notdienste des
+   Vermieters erscheinen im Notfall-Kasten als SEINE Angabe.
 7. Kostengrenze: Aufträge bis X € ohne Rückfrage, darüber Freigabe durch den Vermieter —
    **zusammen mit „Angebote einholen“** (Handwerker-Anfragen Stufe 1, `HANDWERKER-ANFRAGEN.md`):
    MyImmo baut die Anfrage, der Handwerker bietet, der Vermieter wählt, der Mieter schlägt vor.
