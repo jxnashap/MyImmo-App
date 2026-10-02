@@ -286,9 +286,17 @@ jede Funktion zweimal gebaut.
 
 **Danach, in dieser Reihenfolge:**
 3. E-Mail-Benachrichtigungen („Es liegt etwas für Sie bereit“ — kein Inhalt, kein Anhang; braucht Brevo).
-4. Mieter-Startseite „Was muss ich erledigen?“ (offene Bestätigungen, Rückfragen, Termine).
-5. Geführte Schadensmeldung mit regelbasierten Rückfragen + **Notfall-Knopf, der zuerst auf 112
-   verweist** (Gas, Wasser, Feuer — MyImmo ist kein Notdienst).
+4. ✅ **Mieter-Startseite „Zu erledigen“** (02.10.2026, `lib/mieterAufgaben.ts`): zu bestätigende
+   und ungeöffnete Dokumente, Terminwahl, Antwort des Vermieters (14 Tage), offene Anfragen des
+   Vermieters mit Frist (≤ 3 Tage = dringend). Aus den ohnehin geladenen Daten, keine Abfrage mehr.
+5. ✅ **Geführte Schadensmeldung + Notfall** (02.10.2026, `lib/schadensmeldung.ts`,
+   `components/SchadenAssistent.tsx`, `components/NotfallHinweis.tsx`): Art → Rückfragen je Art
+   (regelbasiert, keine KI) → Raum, Seit wann, Erreichbarkeit, Fotos, Vorschau des Texts.
+   Gasgeruch, auslaufendes Wasser und verschmorte Elektrik zeigen ZUERST 112 und die
+   Sofortmaßnahme; Notfall-Kasten auf der Startseite und im Anliegen-Reiter. Keine erfundenen
+   Telefonnummern (Gas-Entstörung je Netzbetreiber verschieden). Kein neues Schema — Titel und
+   Beschreibung gehen über `erstelleAnliegen`.
+   **Nicht geprüft:** Bedienung auf einem echten Telefon (Knopfgrößen, Kamera-Upload).
 6. Mietkonto für den Mieter (Soll/Ist), Mitteilungen an Haus/alle Mieter, Gebäude-Infos.
 7. Kostengrenze: Aufträge bis X € ohne Rückfrage, darüber Freigabe durch den Vermieter —
    **zusammen mit „Angebote einholen“** (Handwerker-Anfragen Stufe 1, `HANDWERKER-ANFRAGEN.md`):

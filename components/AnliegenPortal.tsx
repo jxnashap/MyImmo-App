@@ -8,6 +8,7 @@ import { Wrench, FileText, MessageCircleQuestion, Plus, Paperclip, CalendarClock
 import { erstelleAnliegen, bestaetigeAnliegenTermin } from "@/lib/actions/anliegen";
 import VorschauHinweis from "@/components/VorschauHinweis";
 import VorgangVerlauf from "@/components/VorgangVerlauf";
+import SchadenAssistent from "@/components/SchadenAssistent";
 import type { Ereignis } from "@/lib/vorgang";
 
 export type AnliegenRow = {
@@ -127,6 +128,10 @@ export default function AnliegenPortal({
   nurLesen?: boolean;
 }) {
   const [offenForm, setOffenForm] = useState(false);
+  // Schäden laufen seit 02.10.2026 über den geführten Assistenten (Rückfragen + Notfall),
+  // Fragen und Dokument-Wünsche weiter über das kurze Formular.
+  const [assistent, setAssistent] = useState(false);
+  const [gemeldet, setGemeldet] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [dateiNamen, setDateiNamen] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
@@ -153,12 +158,25 @@ export default function AnliegenPortal({
         {nurLesen ? (
           <VorschauHinweis was="Neues Anliegen" />
         ) : (
-          <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => setOffenForm((o) => !o)}>
-            <Plus size={13} style={{ verticalAlign: "-2px" }} /> Neues Anliegen
-          </button>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => { setAssistent((o) => !o); setOffenForm(false); setGemeldet(false); }}>
+              <Wrench size={13} style={{ verticalAlign: "-2px" }} /> Schaden melden
+            </button>
+            <button type="button" className="btn btn-outline" style={{ fontSize: 12 }} onClick={() => { setOffenForm((o) => !o); setAssistent(false); }}>
+              <Plus size={13} style={{ verticalAlign: "-2px" }} /> Frage stellen
+            </button>
+          </div>
         )}
       </div>
       <div className="section-body">
+        {assistent && !nurLesen && (
+          <SchadenAssistent onFertig={() => { setAssistent(false); setGemeldet(true); }} onAbbruch={() => setAssistent(false)} />
+        )}
+        {gemeldet && (
+          <p role="status" style={{ fontSize: 12.5, color: "var(--green)", margin: "0 0 12px" }}>
+            Gemeldet — dein Vermieter sieht es jetzt. Antworten erscheinen unten im Verlauf.
+          </p>
+        )}
         {offenForm && !nurLesen && (
           <form
             ref={formRef}
@@ -167,8 +185,7 @@ export default function AnliegenPortal({
           >
             <div className="form-group">
               <label style={{ fontSize: 11, color: "var(--muted)" }}>Art des Anliegens</label>
-              <select name="typ" className="input" defaultValue={standardTyp ?? "schaden"}>
-                <option value="schaden">Schaden melden</option>
+              <select name="typ" className="input" defaultValue={standardTyp ?? "frage"}>
                 <option value="dokument">Dokument anfordern</option>
                 <option value="frage">Frage stellen</option>
               </select>

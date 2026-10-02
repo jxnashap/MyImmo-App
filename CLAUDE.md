@@ -411,7 +411,12 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   `schreibeNachricht()` bzw. `bearbeiteAnliegen(…nachricht)`. **Regel: Status-, Termin- und
   Auftragsereignisse NIE aus der App schreiben — das tun die Trigger** (sonst doppelt); die App
   schreibt nur `art = 'nachricht'`. Trigger schreiben nur mit `auth.uid()` (Service-Role/Demo-Reset
-  erzeugt keine Einträge). Nächster Schritt laut Plan: E-Mail-Benachrichtigungen (braucht Brevo).
+  erzeugt keine Einträge).
+  ✅ **Schritt 4 + 5 gebaut 02.10.2026:** Mieter-Startseite „Zu erledigen“ (`lib/mieterAufgaben.ts`,
+  rein, aus den Portal-Daten) und geführte Schadensmeldung (`lib/schadensmeldung.ts` +
+  `SchadenAssistent`) mit Notfall-Hinweis (`NotfallHinweis.tsx`). **Regel: In Notfall-Texten nie
+  eine Telefonnummer außer 112** — Entstörungsdienste sind regional verschieden; ein Test hält es
+  fest. Offen: Schritt 3 (Benachrichtigungen, braucht Brevo), 6, 7.
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
   (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor
