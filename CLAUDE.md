@@ -1342,7 +1342,12 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **REIHENFOLGE (08.09.2026 abends korrigiert, Vorgabe des Betreibers nach Live-Blick):**
   Kennzahlen und Verläufe ZUERST, „Termine & Aufgaben" ans ENDE der Seite. Das externe
   Feedback wollte das Gegenteil, #318/#320 hatten es so gebaut — am fertigen Dashboard
-  gesehen war es falsch. **Nicht wieder umdrehen**, `tests/heute.test.ts` hält es fest.
+  gesehen war es falsch. `tests/heute.test.ts` hält es fest.
+  **GEÄNDERT 02.10.2026 (eigene Idee des Betreibers):** Kennzahlen bleiben oben; darunter
+  ein zweispaltiger Block — links Buchungssaldo (halb so breit), rechts **„Neuigkeiten aus dem
+  Mieterportal“** (`lib/portalNeuigkeiten.ts`, letzte 14 Tage, nur was PASSIERT ist: Nachricht/
+  Termin vom Mieter, bestätigte Zustellung, Angebot, Firmen-Rückmeldung, Freigabe-Antrag,
+  Bewerbung — nie, was schon als Aufgabe dasteht) und darunter „Termine & Aufgaben“.
   Geblieben ist die Zusammenführung: vorher zwei Blöcke mit denselben Fristen, jetzt einer.
   **`lib/heute.ts` → `baueHeuteAufgaben()`** führt offene Mieten des laufenden Monats,
   offene Mieter-Anliegen, nicht übernommene Zählerstände und Fristen in EINER Liste

@@ -1,4 +1,5 @@
 import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
+import { bauePortalNeuigkeiten, NEUIGKEITEN_TAGE, type NeuigkeitArt } from "@/lib/portalNeuigkeiten";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -9,7 +10,7 @@ import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, global
 import { baueHeuteAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
-import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2 } from "lucide-react";
+import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
@@ -51,6 +52,11 @@ export const metadata = {
     description: OG_BESCHREIBUNG,
     images: ["/og.png"],
   },
+};
+
+const NEUIGKEIT_ICON: Record<NeuigkeitArt, typeof Bell> = {
+  nachricht: MessageSquareText, termin: CalendarCheck, dokument: FileCheck2, angebot: FileSignature,
+  firma: Wrench, freigabe: Bell, bewerbung: UserPlus,
 };
 
 export default async function DashboardPage(seite: { searchParams: Promise<{ nl?: string }> }) {
@@ -222,6 +228,36 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // wichtigsten Zeilen in der Karte, der Rest unter „Alle“.
   const HEUTE_ZEILEN = 6;
   const heuteAufgaben = alleHeuteAufgaben.slice(0, HEUTE_ZEILEN);
+
+  // Neuigkeiten aus dem Mieterportal (02.10.2026, Idee des Betreibers): was in den letzten
+  // NEUIGKEITEN_TAGE Tagen PASSIERT ist. Was eine Handlung verlangt, steht in den Aufgaben.
+  const seit = `${tageVor(heuteISO0, NEUIGKEITEN_TAGE)}T00:00:00Z`;
+  const [{ data: ereignisRows }, { data: zustellRows }, { data: angebotRows }, { data: rueckRows }, { data: auftragRows }, { data: bewerbungRows }] = await Promise.all([
+    supabase.from("anliegen_ereignisse").select("anliegen_id,autor_rolle,art,text,created_at").eq("autor_rolle", "mieter").gte("created_at", seit).order("created_at", { ascending: false }).limit(50),
+    supabase.from("zustellungen").select("titel,art,mieter_id,bestaetigt_am").eq("vermieter_id", user.id).gte("bestaetigt_am", seit).limit(50),
+    supabase.from("angebote").select("firma,betrag,created_at").gte("created_at", seit).limit(50),
+    supabase.from("auftrag_rueckmeldungen").select("art,firma,auftrag_id,created_at").gte("created_at", seit).limit(50),
+    supabase.from("auftraege").select("id,titel,status,created_at").eq("vermieter_id", user.id).order("created_at", { ascending: false }).limit(200),
+    supabase.from("bewerbungen").select("name,created_at,status").eq("user_id", user.id).eq("status", "neu").gte("created_at", seit).limit(50),
+  ]);
+  const ereignisListe = (ereignisRows ?? []) as { anliegen_id: string; autor_rolle: string; art: string; text: string | null; created_at: string }[];
+  const anliegenIds = [...new Set(ereignisListe.map((e) => e.anliegen_id))];
+  const { data: anliegenTitel } = anliegenIds.length
+    ? await supabase.from("anliegen").select("id,titel,mieter_name").in("id", anliegenIds)
+    : { data: [] };
+  const auftragListe = (auftragRows ?? []) as { id: string; titel: string; status: string; created_at: string }[];
+  const portalNeu = bauePortalNeuigkeiten({
+    ereignisse: ereignisListe,
+    anliegen: new Map(((anliegenTitel ?? []) as { id: string; titel: string | null; mieter_name: string | null }[])
+      .map((a) => [a.id, { titel: a.titel ?? "Anliegen", mieter: a.mieter_name ?? "Mieter" }])),
+    zustellungen: ((zustellRows ?? []) as { titel: string | null; art: string; mieter_id: string | null; bestaetigt_am: string | null }[])
+      .map((z) => ({ titel: z.titel, art: z.art, mieter: (z.mieter_id && mieterNameOf.get(z.mieter_id)) || "Mieter", bestaetigt_am: z.bestaetigt_am })),
+    angebote: ((angebotRows ?? []) as { firma: string; betrag: number; created_at: string }[]).map((g) => ({ ...g, betrag: Number(g.betrag) })),
+    rueckmeldungen: ((rueckRows ?? []) as { art: string; firma: string | null; auftrag_id: string; created_at: string }[])
+      .map((r) => ({ art: r.art, firma: r.firma, auftrag: auftragListe.find((a) => a.id === r.auftrag_id)?.titel ?? "Auftrag", created_at: r.created_at })),
+    freigaben: auftragListe.filter((a) => a.status === "freigabe").map((a) => ({ titel: a.titel, created_at: a.created_at })),
+    bewerbungen: ((bewerbungRows ?? []) as { name: string | null; created_at: string }[]),
+  }, heuteISO0);
   const AUFGABEN_ICON = { miete: ReceiptText, anliegen: MessageSquareText, zaehler: Zap, frist: CalendarDays, termin: CalendarDays, stammdaten: Building2 } as const;
 
   // Begrüßung nach Tageszeit (Europe/Berlin) + Vorname aus dem Vermieterprofil.
@@ -453,16 +489,107 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
         </div>
       )}
 
-      <div className="section mb-20">
-        <div className="section-header">
-          {/* „Buchungssaldo", nicht „Cashflow": Die Kurve summiert GEBUCHTE
-              Einnahmen und Ausgaben über den gewählten Zeitraum. Ihr Endwert
-              stand im Review neben dem Monats-Cashflow als „Widerspruch". */}
-          <h3>Buchungssaldo</h3>
-          <ZeitraumControl />
+      {/* Idee des Betreibers (02.10.2026): Grafik halb so breit, rechts daneben die
+          Neuigkeiten aus dem Mieterportal, darunter Termine & Aufgaben. Ersetzt die
+          Vorgabe vom 08.09.2026 („Aufgaben ans Ende“) — Kennzahlen bleiben oben. Unter
+          860 px untereinander (.grid-2), Grafik zuerst. */}
+      <div className="grid-2 mb-20" style={{ alignItems: "start" }}>
+      <div className="section" style={{ marginBottom: 0 }}>
+          <div className="section-header">
+            {/* „Buchungssaldo", nicht „Cashflow": Die Kurve summiert GEBUCHTE
+                Einnahmen und Ausgaben über den gewählten Zeitraum. Ihr Endwert
+                stand im Review neben dem Monats-Cashflow als „Widerspruch". */}
+            <h3>Buchungssaldo</h3>
+            <ZeitraumControl />
+          </div>
+          <div className="section-body">
+            <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" heute={heuteISO0} caption="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
+          </div>
         </div>
-        <div className="section-body">
-          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" heute={heuteISO0} caption="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
+        <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
+          <div className="section" style={{ marginBottom: 0 }}>
+            <div className="section-header">
+              <div>
+                <h3>Neuigkeiten aus dem Mieterportal</h3>
+                <div className="section-sub">
+                  {portalNeu.gesamt === 0 ? `Nichts Neues in den letzten ${NEUIGKEITEN_TAGE} Tagen` : `Letzte ${NEUIGKEITEN_TAGE} Tage${portalNeu.gesamt > portalNeu.liste.length ? ` · die ${portalNeu.liste.length} neuesten von ${portalNeu.gesamt}` : ""}`}
+                </div>
+              </div>
+              <Link href="/anliegen" className="btn btn-ghost btn-sm">Alle →</Link>
+            </div>
+            <div className="section-body">
+              {portalNeu.liste.length === 0 ? (
+                <p style={{ fontSize: 12.5, color: "var(--muted)", margin: 0 }}>
+                  Hier erscheint, was Mieter, Firmen und Hausmeister im Portal tun — Nachrichten, bestätigte Termine und Dokumente, Angebote, Rückmeldungen.
+                </p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {portalNeu.liste.map((n) => {
+                    const Icon = NEUIGKEIT_ICON[n.art];
+                    return (
+                      <Link key={`${n.art}-${n.zeit}-${n.text}`} href={n.href} className="heute-zeile" style={{ borderLeftColor: "var(--gold)" }}>
+                        <Icon size={15} style={{ color: "var(--gold)", flexShrink: 0 }} />
+                        <span className="heute-label" style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: "block", fontSize: 13.5 }}>{n.text}</span>
+                          <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{n.sub}</span>
+                        </span>
+                        <span style={{ fontSize: 11.5, color: "var(--faint)", whiteSpace: "nowrap" }}>{datum(n.zeit)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        <div className="section" style={{ marginBottom: 0 }}>
+            <div className="section-header">
+              <div>
+                <h3>Termine &amp; Aufgaben</h3>
+                <div className="section-sub">
+                  {alleHeuteAufgaben.length === 0
+                    ? "Nichts Offenes"
+                    : `${alleHeuteAufgaben.length} ${alleHeuteAufgaben.length === 1 ? "Sache wartet" : "Sachen warten"} auf dich${alleHeuteAufgaben.length > heuteAufgaben.length ? ` · die ${heuteAufgaben.length} wichtigsten hier` : ""}`}
+                </div>
+              </div>
+              <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
+            </div>
+            <div className="section-body">
+              {heuteAufgaben.length === 0 ? (
+                <div className="empty">
+                  <CheckCircle2 className="empty-icon" size={36} color="var(--green)" />
+                  <p>Alles erledigt. Keine offenen Mieten, Anliegen oder Fristen.</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {heuteAufgaben.map((a) => {
+                    const Icon = AUFGABEN_ICON[a.art];
+                    return (
+                      <Link
+                        key={`${a.art}-${a.href}-${a.label}-${a.sub}`}
+                        href={a.href}
+                        className="heute-zeile"
+                        style={{ borderLeftColor: a.dringend ? "var(--red)" : "var(--gold)" }}
+                      >
+                        <Icon size={15} style={{ color: a.dringend ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
+                        <span className="heute-label" style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: "block", fontSize: 13.5 }}>{a.label}</span>
+                          <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{a.sub}</span>
+                        </span>
+                        {/* Datum nur bei echten Fristen — bei einer offenen Miete
+                            waere der Monatserste eine Zahl ohne Aussage. */}
+                        {a.art === "frist" && (
+                          <span className={`badge ${a.dringend ? "badge-red" : "badge-teal"}`}>
+                            {ueberfaellig(a.datum) ? "überfällig · " : ""}{datum(a.datum)}
+                          </span>
+                        )}
+                        <span className="heute-aktion">{a.aktion} <ArrowRight size={13} /></span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -528,15 +655,11 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
         </div>
       </div>
 
-      {/* REIHENFOLGE, Stand 08.09.2026 abends: Kennzahlen und Verläufe zuerst,
-          Termine und Aufgaben ans Ende. Vorgabe des Betreibers, nachdem er die
-          umgekehrte Fassung (#320, aus dem externen Feedback) live gesehen hat —
-          eine gesehene Seite schlägt eine vermutete.
-          Die beiden Blöcke „Heute wichtig" und „Fristen & Aufgaben" sind dabei
-          zu EINEM zusammengefasst: Beide listeten dieselben Fristen, der eine
-          nur zusätzlich Mieten, Anliegen und Zählerstände. Geblieben ist die
-          reichere Fassung mit je einer Handlung je Zeile. */}
-      <div className="grid-2">
+      {/* REIHENFOLGE: Kennzahlen und Verläufe oben (08.09.2026). Termine & Aufgaben stehen seit
+          02.10.2026 rechts neben dem Buchungssaldo unter den Portal-Neuigkeiten (Idee des
+          Betreibers) — nicht mehr hier am Ende. „Heute wichtig“ und „Fristen & Aufgaben“
+          bleiben EIN Block. */}
+      <div>
         <div className="section" style={{ marginBottom: 0 }}>
           <div className="section-header">
             <div><h3>Letzte Buchungen</h3><div className="section-sub">Einnahmen und Ausgaben, zuletzt erfasst</div></div>
@@ -573,55 +696,6 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
           </div>
         </div>
 
-        <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header">
-            <div>
-              <h3>Termine &amp; Aufgaben</h3>
-              <div className="section-sub">
-                {alleHeuteAufgaben.length === 0
-                  ? "Nichts Offenes"
-                  : `${alleHeuteAufgaben.length} ${alleHeuteAufgaben.length === 1 ? "Sache wartet" : "Sachen warten"} auf dich${alleHeuteAufgaben.length > heuteAufgaben.length ? ` · die ${heuteAufgaben.length} wichtigsten hier` : ""}`}
-              </div>
-            </div>
-            <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
-          </div>
-          <div className="section-body">
-            {heuteAufgaben.length === 0 ? (
-              <div className="empty">
-                <CheckCircle2 className="empty-icon" size={36} color="var(--green)" />
-                <p>Alles erledigt. Keine offenen Mieten, Anliegen oder Fristen.</p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {heuteAufgaben.map((a) => {
-                  const Icon = AUFGABEN_ICON[a.art];
-                  return (
-                    <Link
-                      key={`${a.art}-${a.href}-${a.label}-${a.sub}`}
-                      href={a.href}
-                      className="heute-zeile"
-                      style={{ borderLeftColor: a.dringend ? "var(--red)" : "var(--gold)" }}
-                    >
-                      <Icon size={15} style={{ color: a.dringend ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
-                      <span className="heute-label" style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ display: "block", fontSize: 13.5 }}>{a.label}</span>
-                        <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{a.sub}</span>
-                      </span>
-                      {/* Datum nur bei echten Fristen — bei einer offenen Miete
-                          waere der Monatserste eine Zahl ohne Aussage. */}
-                      {a.art === "frist" && (
-                        <span className={`badge ${a.dringend ? "badge-red" : "badge-teal"}`}>
-                          {ueberfaellig(a.datum) ? "überfällig · " : ""}{datum(a.datum)}
-                        </span>
-                      )}
-                      <span className="heute-aktion">{a.aktion} <ArrowRight size={13} /></span>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
