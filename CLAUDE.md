@@ -1072,6 +1072,13 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 
 ## Build / Test
 - `npm run build` zum Verifizieren (braucht die NEXT_PUBLIC_SUPABASE_*-Variablen, Platzhalter genügen für den Build).
+- 🟥 **CI braucht Node ≥ 22 (02.10.2026).** `@supabase/realtime-js` 2.108 verlangt natives
+  WebSocket; unter Node 20 wirft schon `createServerClient()` → 19 Tests in
+  `tests/proxyAnmeldung.test.ts` rot. `.github/workflows/ci.yml` stand auf Node 20 —
+  **`main` war dadurch mindestens fünf Pushes lang rot (#382–#386), ohne dass es auffiel**,
+  weil GitHub den Merge trotz roter CI zulässt. Behoben in #387 (Node 22). Produktion war
+  nie betroffen (Vercel läuft nicht auf Node 20). **Regel: Nach jedem Merge den CI-Lauf auf
+  `main` ansehen — „gemergt“ heißt nicht „grün“.**
 - 🔥 **`npm run rauchtest` (08.09.2026): sechs Kernwege gegen die LAUFENDE App.**
   Bis dahin hatte kein einziger der 1.167 Tests je eine Seite ausgeliefert — ein
   kaputter Import in einer Server-Komponente oder eine 500er-Seite blieb grün.
