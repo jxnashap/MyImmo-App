@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { vorjahrUebernahme, type VorjahrPosition } from "@/lib/nkVorjahr";
 
 const AUFTEILUNGEN = ["voll", "flaeche", "zeit", "verbrauch", "gradtag", "hkvo"];
 const aufteilungOk = (v: unknown): string =>
@@ -213,4 +214,37 @@ export async function deletePosition(id: string, mieterId: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath(`/tenants/${mieterId}/edit`);
+}
+
+/**
+ * NK-Positionen des Vorjahres als Startpunkt übernehmen (02.10.2026). Nur wenn für das Jahr noch
+ * keine eigenen Positionen bestehen; Zählerstände und Lohnanteile bleiben leer (lib/nkVorjahr.ts).
+ */
+export async function uebernehmeVorjahresPositionen(mieterId: string, jahr: number): Promise<{ ok: true; anzahl: number } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  if (!Number.isInteger(jahr) || jahr < 2001 || jahr > 2100) return { error: "Ungültiges Jahr." };
+
+  const { data, error } = await supabase
+    .from("mieter_positionen")
+    .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,grundkosten_prozent,flaeche_gesamt,art_35a")
+    .eq("mieter_id", mieterId)
+    .eq("user_id", user.id)
+    .in("jahr", [jahr, jahr - 1]);
+  // Fehler → abbrechen: leer hieße sonst „noch nichts da“, und es käme eine zweite Liste dazu.
+  if (error) return { error: "Positionen konnten nicht gelesen werden." };
+
+  const u = vorjahrUebernahme((data ?? []) as VorjahrPosition[], jahr);
+  if (!u.moeglich) {
+    return { error: u.anzahl === 0 ? `Für ${jahr - 1} sind keine Positionen hinterlegt.` : `Für ${jahr} gibt es schon Positionen.` };
+  }
+  const { error: e2 } = await supabase
+    .from("mieter_positionen")
+    .insert(u.zeilen.map((z) => ({ ...z, user_id: user.id, mieter_id: mieterId })));
+  if (e2) return { error: "Die Positionen konnten nicht übernommen werden." };
+
+  revalidatePath(`/tenants/${mieterId}/nk`);
+  revalidatePath(`/tenants/${mieterId}/edit`);
+  return { ok: true, anzahl: u.anzahl };
 }

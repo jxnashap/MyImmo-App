@@ -29,6 +29,8 @@ import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMo
 import { laufzeitText } from "@/lib/kreditLaufzeit";
 import { sollKaltmiete, GARAGEN_TYPEN } from "@/lib/sollMiete";
 import MieteAngleichen from "@/components/MieteAngleichen";
+import ObjektCheckKarte from "@/components/ObjektCheckKarte";
+import { objektCheck } from "@/lib/objektCheck";
 
 type Kredit = {
   id: string; bezeichnung: string | null; bank: string | null; betrag: number | null;
@@ -277,10 +279,12 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
         ))}
       </div>
 
+      <ObjektCheckKarte check={objektCheck(p, tenants, kred.map((k) => ({ ...k, prop_id: p.id })), heuteISO)} />
+
       {/* Datenlücken, die Zahlen auf dieser Seite verfälschen (30.09.2026:
           bei den echten Konten hatten 20 von 23 Objekten kein Kaufdatum und
           6 eine Objekt-Miete, die nicht zu den Mietern passte). */}
-      {(soll.abweichung || soll.quelle === "beendet" || !p.kaufdatum) && (
+      {(soll.abweichung || soll.quelle === "beendet") && (
         <div className="section mb-20" style={{ borderColor: "var(--amber)" }}>
           <div className="section-body" style={{ display: "grid", gap: 12 }}>
             {soll.abweichung && (
@@ -301,16 +305,6 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
                 Alle Mieter dieses Objekts sind ausgezogen (oder ziehen erst ein) — die Soll-Miete ist deshalb 0 €
                 {p.miete ? `, nicht die ${euro(p.miete)} aus dem Objekt` : ""}. Status „{p.obj_status || "–"}“ prüfen oder
                 Nachmieter anlegen.
-              </div>
-            )}
-            {!p.kaufdatum && (
-              <div>
-                <strong>Kaufdatum fehlt.</strong>{" "}
-                Ohne Anschaffungsdatum läuft die AfA in der Anlage V auch im Kaufjahr voll, und die Spekulationsfrist
-                (§ 23 EStG) lässt sich nicht berechnen.
-                <div style={{ marginTop: 8 }}>
-                  <Link href={`/properties/${p.id}/edit`} className="btn btn-ghost btn-sm">Kaufdatum ergänzen</Link>
-                </div>
               </div>
             )}
           </div>

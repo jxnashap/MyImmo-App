@@ -3,7 +3,7 @@ import { euro } from "@/lib/format";
 import { berechneVerbilligt, type VerbilligtInput } from "@/lib/steuer/verbilligt";
 import { Gauge } from "lucide-react";
 
-export default function VerbilligtAmpel({ input }: { input: VerbilligtInput }) {
+export default function VerbilligtAmpel({ input, quelle = "mieter" }: { input: VerbilligtInput; quelle?: "mieter" | "objekt" }) {
   const e = berechneVerbilligt(input);
 
   if (e.status === "inaktiv") {
@@ -42,7 +42,7 @@ export default function VerbilligtAmpel({ input }: { input: VerbilligtInput }) {
           {e.hinweis}
         </p>
         <p style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 8, marginBottom: 0 }}>
-          Basis: ortsübliche Vergleichsmiete (€/m²) × Fläche, jeweils zzgl. NK-Vorauszahlung. Näherung, keine Steuerberatung.
+          Basis: ortsübliche Vergleichsmiete (€/m²){quelle === "objekt" ? " — aus der Angabe am Objekt, beim Mieter ist kein Mietspiegelwert hinterlegt" : ""} × Fläche, jeweils zzgl. NK-Vorauszahlung. Näherung, keine Steuerberatung.
         </p>
       </div>
     </div>

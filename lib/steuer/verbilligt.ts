@@ -69,3 +69,17 @@ export function berechneVerbilligt(input: VerbilligtInput): VerbilligtErgebnis {
 
   return { status, prozent, istWarm, vergleichWarm, hinweis };
 }
+
+/**
+ * Welche Vergleichsmiete gilt (02.10.2026): der Wert am Mieter (Mietspiegel der Wohnung) hat
+ * Vorrang; fehlt er, die Vergleichsmiete am Objekt. Vorher blieb die Ampel in diesem Fall
+ * unsichtbar, obwohl der Vermieter den Wert schon am Objekt gepflegt hatte.
+ */
+export function vergleichsmieteFuer(
+  mieterWert: number | null | undefined,
+  objektWert: number | null | undefined,
+): { wert: number; quelle: "mieter" | "objekt" } | null {
+  if (mieterWert != null && mieterWert > 0) return { wert: mieterWert, quelle: "mieter" };
+  if (objektWert != null && objektWert > 0) return { wert: objektWert, quelle: "objekt" };
+  return null;
+}

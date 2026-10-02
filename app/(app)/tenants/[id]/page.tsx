@@ -1,3 +1,4 @@
+import { vergleichsmieteFuer } from "@/lib/steuer/verbilligt";
 import Link from "next/link";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import { notFound } from "next/navigation";
@@ -108,10 +109,14 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
   };
 
   let propName = "–";
+  let objektVergleich: number | null = null;
   if (m.prop_id) {
-    const { data: p } = await supabase.from("properties").select("bezeichnung").eq("id", m.prop_id).single();
+    const { data: p } = await supabase.from("properties").select("bezeichnung,vergleichsmiete_m2").eq("id", m.prop_id).single();
     propName = (p as Pick<Property, "bezeichnung"> | null)?.bezeichnung ?? "–";
+    objektVergleich = (p as Pick<Property, "vergleichsmiete_m2"> | null)?.vergleichsmiete_m2 ?? null;
   }
+  // Mietspiegel am Mieter, sonst Vergleichsmiete am Objekt (lib/steuer/verbilligt.ts).
+  const vergleich = vergleichsmieteFuer(m.mietspiegel, objektVergleich);
 
   const fristen = mieterFristen(m);
   // Staffelplan: nur bei Staffelmiete mit Startdatum + Betrag ODER Prozent
@@ -197,15 +202,16 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
         </div>
       </div>
 
-      {m.mietspiegel != null && (m.mietspiegel ?? 0) > 0 && (
+      {vergleich && (
         <VerbilligtAmpel
           input={{
             kaltmiete: m.kaltmiete,
             nkVorauszahlung: m.nk_vorauszahlung,
             stellplatzMiete: m.stellplatz_miete ?? null,
-            vergleichKaltProM2: m.mietspiegel,
+            vergleichKaltProM2: vergleich.wert,
             flaeche: m.flaeche,
           }}
+          quelle={vergleich.quelle}
         />
       )}
 
