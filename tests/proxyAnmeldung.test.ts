@@ -255,7 +255,11 @@ describe("Zwei-Faktor-Schranke im Proxy (Audit 01.10.2026, A2/A3)", () => {
     expect(nutzerAufrufe()).toBe(1); // keine zweite Nachfrage
 
     // Manipulierter oder fremder Nachweis → wieder nachfragen.
-    const r3 = await proxy(new NextRequest("https://www.myimmoapp.de/tenants", { headers: { cookie: `${c}; mi_faktor=${nachweis!.slice(0, -1)}0` } }));
+    // Das letzte Zeichen IMMER ändern: Vorher wurde es durch „0“ ersetzt — war es schon
+    // eine „0“ (1 von 16 Läufen), blieb der Nachweis gültig und der Test flackerte rot.
+    const letztes = nachweis!.slice(-1);
+    const verfaelscht = `${nachweis!.slice(0, -1)}${letztes === "0" ? "1" : "0"}`;
+    const r3 = await proxy(new NextRequest("https://www.myimmoapp.de/tenants", { headers: { cookie: `${c}; mi_faktor=${verfaelscht}` } }));
     expect(r3.status).toBe(200);
     expect(nutzerAufrufe()).toBe(2);
   });

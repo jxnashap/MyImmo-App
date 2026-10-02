@@ -23,11 +23,15 @@ type Props = {
   mieterName?: string | null;
   /** Ist der Mailversand eingerichtet? Sonst gibt es einen fertigen Text zum Selbstverschicken. */
   mailVersand: boolean;
+  /** Ende des Portal-Zugangs (31.12. des Jahres nach dem Auszug), sonst null. */
+  zugangBis?: string | null;
+  /** Ist dieses Ende schon erreicht? (Vom Server berechnet, deutsche Zeit.) */
+  zugangAbgelaufen?: boolean;
 };
 
 const datumDe = (iso: string) => new Date(iso).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
 
-export default function MieterEinladung({ mieterId, zugang, aktiverCode, mieterEmail, mieterName, mailVersand }: Props) {
+export default function MieterEinladung({ mieterId, zugang, aktiverCode, mieterEmail, mieterName, mailVersand, zugangBis, zugangAbgelaufen }: Props) {
   const [pending, startTransition] = useTransition();
   const [fehler, setFehler] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<string | null>(null);
@@ -121,14 +125,23 @@ export default function MieterEinladung({ mieterId, zugang, aktiverCode, mieterE
   if (zugang && !formOffen) {
     return (
       <div>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "var(--green)" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: zugangAbgelaufen ? "var(--muted)" : "var(--green)" }}>
           <CheckCircle2 size={15} style={{ flexShrink: 0, marginTop: 2 }} />
           <span>
-            Verbunden mit{" "}
+            {zugangAbgelaufen ? "War verbunden mit" : "Verbunden mit"}{" "}
             <strong style={{ color: "var(--text)" }}>{zugang.email ?? "unbekannter Adresse"}</strong>
-            {" "}seit {datumDe(zugang.seit)}. Nur dieses Konto sieht freigegebene Dokumente.
+            {" "}seit {datumDe(zugang.seit)}.{" "}
+            {zugangAbgelaufen
+              ? `Der Zugang ist am ${datumDe(zugangBis!)} abgelaufen — das Konto sieht nichts mehr.`
+              : "Nur dieses Konto sieht freigegebene Dokumente."}
           </span>
         </div>
+        {zugangBis && !zugangAbgelaufen && (
+          <p style={{ fontSize: 12, color: "var(--muted)", margin: "6px 0 0 23px" }}>
+            Nach dem Auszug endet der Zugang automatisch am {datumDe(zugangBis)} — bis dahin muss
+            die Nebenkostenabrechnung für das Auszugsjahr zugegangen sein.
+          </p>
+        )}
         {!zugang.email && (
           <p style={{ fontSize: 12, color: "var(--muted)", margin: "6px 0 0 23px" }}>
             Diese Verknüpfung stammt von vor der Adress-Bindung. Wenn du nicht sicher bist, wer

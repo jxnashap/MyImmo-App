@@ -358,7 +358,14 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   nur über eine Bestätigungskarte, serverseitig GESPERRT ohne verbundenes Konto oder bei Jahr
   außerhalb der Mietzeit (`lib/mieterZugang.ts` → `pruefeZustellung()`). **Regel: Ein neuer Weg,
   der etwas ins Mieterportal stellt, ruft `pruefeZustellung()` serverseitig.** Offen: S1 (Tabelle
-  `zustellungen`), automatisches Zugangsende bei Auszug. Einladungsmail braucht Brevo (Punkt 0).
+  `zustellungen`). Einladungsmail braucht Brevo (Punkt 0).
+  ✅ **Zugangsende gebaut 02.10.2026 (Betreiber: „bis 31.12.“ des Folgejahres):** Migration
+  `20261002120000` — `mieter_zugang_aktiv()` ist die EINE Prüfung hinter sieben Regeln und beiden
+  Portal-Sichten; Belege nur aus der eigenen Mietzeit (`mieter_beleg_sichtbar()`), Vorschau
+  spiegelt das (`belegInMietzeit()` in `lib/portalDaten.ts`). **Regel: Eine neue Mieter-Regel
+  oder -Sicht prüft `mieter_zugang_aktiv()`, nie nur `mieter_zugaenge`.** Policies per
+  `ALTER POLICY` ändern — `DROP POLICY` lief über `apply_migration` in den Zeitüberlauf
+  (Bestätigungsdialog, siehe Demo-Service-Reset), ohne etwas anzuwenden.
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das
