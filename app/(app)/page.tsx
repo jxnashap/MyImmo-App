@@ -1,3 +1,4 @@
+import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -90,7 +91,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     );
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }, { data: vertreterRows }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
@@ -104,6 +105,8 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     supabase.from("anliegen").select("id,titel,status,created_at,mieter_name").eq("status", "offen").order("created_at"),
     supabase.from("zaehlerstand_meldungen").select("id,art,ablesedatum,mieter_id").is("uebernommen_am", null).order("ablesedatum"),
     supabase.from("miet_zeitraeume").select("*"),
+    // Vollmachten der Vertreter (Einstellungen → Vertreter) — nur was zum Ablauf nötig ist.
+    supabase.from("vertreter").select("id,vorname,nachname,gueltig_bis,widerrufen_am").not("gueltig_bis", "is", null),
   ]);
 
   const properties = (props ?? []) as Property[];
@@ -206,6 +209,10 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
       krediteOhneAuszahlung: kredite
         .filter((k) => !k.auszahlung_datum)
         .map((k) => ({ id: k.id, name: k.bezeichnung || k.bank || "Kredit" })),
+      vollmachten: ((vertreterRows ?? []) as { id: string; vorname: string | null; nachname: string; gueltig_bis: string; widerrufen_am: string | null }[])
+        .map((v) => ({ v, status: vollmachtStatus(v, heuteISO0) }))
+        .filter(({ status }) => status === "laeuft_ab" || status === "abgelaufen")
+        .map(({ v, status }) => ({ id: v.id, name: vertreterName(v), gueltigBis: v.gueltig_bis, abgelaufen: status === "abgelaufen" })),
     },
     heuteISO0,
     Infinity, // alle zählen — gekürzt wird unten, die Überschrift nennt die echte Zahl

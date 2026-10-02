@@ -9,6 +9,8 @@ import {
   buildKreditantragPdf, type KreditWunsch, type KreditAbsender,
 } from "@/lib/pdf/kreditantragPdf";
 import { baueKreditObjekt, type AuswahlEingang } from "@/lib/kauf/kreditantrag";
+import { kreditVertreter, VERTRETER_SPALTEN, type Vertreter } from "@/lib/vertreter";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,12 +61,15 @@ export async function POST(req: NextRequest) {
   // KreditantragButton) — die Daten stecken im Feld „daten" als JSON.
   // JSON-Bodies bleiben zusätzlich erlaubt (Direktaufrufe/Tests).
   let body: { auswahl?: AuswahlEingang | null; darlehen?: Partial<KreditWunsch> | null } = {};
+  let vertreterId = "";
   const typ = req.headers.get("content-type") ?? "";
   try {
     if (typ.includes("form")) {
       const form = await req.formData();
       const roh = form.get("daten");
       if (typeof roh === "string" && roh) body = JSON.parse(roh);
+      const vid = form.get("vertreterId");
+      if (typeof vid === "string") vertreterId = vid.trim();
     } else {
       body = await req.json();
     }
@@ -88,7 +93,19 @@ export async function POST(req: NextRequest) {
       }
     : null;
 
-  const pdf = await buildKreditantragPdf(absender, sa, objekt, wunsch);
+  // Bevollmächtigter (optional, ausdrücklich gewählt): nur der eigene, nur mit gültiger Vollmacht.
+  let vertreter = null;
+  if (vertreterId) {
+    if (!/^[0-9a-f-]{36}$/i.test(vertreterId)) return hinweisSeite("Der gewählte Vertreter ist ungültig.", 400);
+    const { data: v, error } = await supabase
+      .from("vertreter").select(VERTRETER_SPALTEN).eq("id", vertreterId).eq("user_id", user.id).maybeSingle();
+    if (error || !v) return hinweisSeite("Der gewählte Vertreter wurde nicht gefunden.", 404);
+    const k = kreditVertreter(v as unknown as Vertreter, heuteBerlin());
+    if ("fehler" in k) return hinweisSeite(`${k.fehler} Bitte in den Einstellungen → Vertreter prüfen.`, 400);
+    vertreter = k;
+  }
+
+  const pdf = await buildKreditantragPdf(absender, sa, objekt, wunsch, vertreter);
   return new NextResponse(Buffer.from(pdf), {
     status: 200,
     headers: {

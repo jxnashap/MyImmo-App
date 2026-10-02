@@ -32,6 +32,12 @@ export type KreditObjekt = {
   name: string; adresse: string; kaufpreis: number; gesamtInvest: number;
   eigenkapital: number; darlehen: number; kaltmiete: number;
 };
+/** Bevollmächtigter Vertreter (Einstellungen → Vertreter), aufbereitet von `kreditVertreter()`. */
+export type KreditVertreter = {
+  name: string; beziehung: string | null; geburt: string | null; anschrift: string | null;
+  kontakt: string | null; art: string; form: string; ausgestellt: string | null;
+  gueltigBis: string | null; beglaubigtDurch: string | null; umfang: string | null;
+};
 export type KreditWunsch = {
   darlehen: number; zinsbindung: number; anfangstilgung: number;
   sollzins: number; monatsrate: number; sondertilgung: boolean; prioritaet: string;
@@ -97,6 +103,22 @@ function fuss(c: Ctx, seite: number, gesamt: number) {
   c.right(RIGHT, 52, `Seite ${seite} von ${gesamt}`, 7.5, c.font, MUTED);
 }
 
+// Fließtext mit Umbruch (für den Umfang der Vollmacht) — Zeilenabstand 15 laut Dokument-Regeln.
+function absatz(c: Ctx, y: number, s: string, size = 9.5, breite = RIGHT - ML): number {
+  const woerter = sanitize(s).split(/\s+/).filter(Boolean);
+  let zeile = "";
+  for (const w of woerter) {
+    const probe = zeile ? `${zeile} ${w}` : w;
+    if (c.font.widthOfTextAtSize(probe, size) > breite && zeile) {
+      c.text(ML, y, zeile, size, c.font, INK);
+      y -= 15;
+      zeile = w;
+    } else zeile = probe;
+  }
+  if (zeile) { c.text(ML, y, zeile, size, c.font, INK); y -= 15; }
+  return y - 9;
+}
+
 // Abschnittsüberschrift
 function abschnitt(c: Ctx, y: number, s: string): number {
   c.text(ML, y, s, 11, c.bold, GOLD);
@@ -122,7 +144,9 @@ export async function buildKreditantragPdf(
   sa: SelbstauskunftDaten,
   objekt: KreditObjekt | null,
   wunsch: KreditWunsch | null,
+  vertreter: KreditVertreter | null = null,
 ): Promise<Uint8Array> {
+  const seiten = vertreter ? 3 : 2;
   const doc = await PDFDocument.create();
   doc.setTitle("Selbstauskunft & Finanzierungsanfrage");
   doc.setCreator("MyImmo");
@@ -162,7 +186,7 @@ export async function buildKreditantragPdf(
     ["Unterhalt / Sonstige", euro(sa.unterhalt + sa.sonstigeAusgaben)],
     ["Summe Ausgaben", euro(ausgaben)],
   ]);
-  fuss(c1, 1, 2);
+  fuss(c1, 1, seiten);
 
   // ===== Seite 2: Vermögen, Objekt, Finanzierungswunsch =====
   const c2 = await neueSeite(doc, absender, "Vermögen, Objekt & Finanzierungswunsch");
@@ -214,6 +238,39 @@ export async function buildKreditantragPdf(
   c2.text(ML, y - 12, "Ort, Datum", 8, c2.font, MUTED);
   c2.text(RIGHT - 200, y - 12, "Unterschrift", 8, c2.font, MUTED);
 
-  fuss(c2, 2, 2);
+  fuss(c2, 2, seiten);
+
+  // ===== Seite 3 (nur auf Wunsch): Bevollmächtigter =====
+  // Für Vermieter im Ausland: Die Bank soll vorab wissen, wer Originale vorlegt und den
+  // Darlehensvertrag unterschreibt. Der Scan der Vollmacht geht bewusst NICHT mit (oft mit
+  // Ausweiskopie) — vorgelegt wird das Original oder eine beglaubigte Kopie.
+  if (vertreter) {
+    const c3 = await neueSeite(doc, absender, "Bevollmächtigter Vertreter");
+    y = c3.y;
+    const nr = 5 + (objekt ? 1 : 0) + (wunsch ? 1 : 0);
+    y = abschnitt(c3, y, `${nr}. Vertreter`);
+    y = kvBox(c3, y, [
+      ["Name", vertreter.name],
+      ["Beziehung", vertreter.beziehung || "–"],
+      ["Geburtsdatum / -ort", vertreter.geburt || "–"],
+      ["Anschrift", vertreter.anschrift || "–"],
+      ["Kontakt", vertreter.kontakt || "–"],
+    ]);
+    y = abschnitt(c3, y, `${nr + 1}. Vollmacht`);
+    y = kvBox(c3, y, [
+      ["Art", vertreter.art],
+      ["Form", vertreter.form],
+      ["Ausgestellt am", vertreter.ausgestellt || "–"],
+      ["Gültig bis", vertreter.gueltigBis || "unbefristet"],
+      ["Beglaubigt durch", vertreter.beglaubigtDurch || "–"],
+    ]);
+    if (vertreter.umfang) {
+      c3.text(ML, y, "Umfang", 9, c3.bold, MUTED);
+      y = absatz(c3, y - 15, vertreter.umfang);
+    }
+    c3.text(ML, y, "Die Vollmacht wird im Original oder als beglaubigte Kopie vorgelegt. Ob sie für den", 8.5, c3.font, MUTED);
+    c3.text(ML, y - 12, "jeweiligen Zweck genügt, entscheidet die Bank bzw. der Notar.", 8.5, c3.font, MUTED);
+    fuss(c3, 3, 3);
+  }
   return doc.save();
 }

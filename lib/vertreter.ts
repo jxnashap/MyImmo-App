@@ -118,3 +118,35 @@ export function vollmachtHinweise(v: Vertreter, heute: string): Hinweis[] {
 export function vertreterName(v: Pick<Vertreter, "vorname" | "nachname">): string {
   return [v.vorname, v.nachname].filter(Boolean).join(" ");
 }
+
+/** Was der Kreditantrag über den Vertreter druckt — ohne Scan, mit lesbaren Daten. */
+export type KreditVertreterDaten = {
+  name: string; beziehung: string | null; geburt: string | null; anschrift: string | null;
+  kontakt: string | null; art: string; form: string; ausgestellt: string | null;
+  gueltigBis: string | null; beglaubigtDurch: string | null; umfang: string | null;
+};
+
+/**
+ * Bereitet einen Vertreter für den Kreditantrag auf. Eine widerrufene oder abgelaufene
+ * Vollmacht geht NICHT an die Bank — dort stünde sonst ein Bevollmächtigter, der keiner mehr ist.
+ */
+export function kreditVertreter(v: Vertreter, heute: string): KreditVertreterDaten | { fehler: string } {
+  const status = vollmachtStatus(v, heute);
+  if (status === "widerrufen") return { fehler: "Die Vollmacht dieses Vertreters ist widerrufen." };
+  if (status === "abgelaufen") return { fehler: "Die Vollmacht dieses Vertreters ist abgelaufen." };
+  const d = (s: string | null) => (s ? s.slice(0, 10).split("-").reverse().join(".") : null);
+  const geburt = [d(v.geburtsdatum), v.geburtsort].filter(Boolean).join(" in ") || null;
+  return {
+    name: vertreterName(v),
+    beziehung: v.beziehung,
+    geburt,
+    anschrift: [v.strasse, [v.plz, v.ort].filter(Boolean).join(" "), v.land].filter(Boolean).join(", ") || null,
+    kontakt: [v.telefon, v.email].filter(Boolean).join(" · ") || null,
+    art: VOLLMACHT_ARTEN[v.vollmacht_art] ?? v.vollmacht_art,
+    form: VOLLMACHT_FORMEN[v.vollmacht_form] ?? v.vollmacht_form,
+    ausgestellt: d(v.ausgestellt_am),
+    gueltigBis: d(v.gueltig_bis),
+    beglaubigtDurch: [v.beglaubigt_durch, v.apostille ? "mit Apostille" : null].filter(Boolean).join(" · ") || null,
+    umfang: v.umfang,
+  };
+}

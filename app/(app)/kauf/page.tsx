@@ -5,6 +5,8 @@ import KaufAssistent from "@/components/KaufAssistent";
 import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
 import { istDemoKonto } from "@/lib/demo";
 import { DEMO_SELBSTAUSKUNFT } from "@/lib/kauf/selbstauskunft";
+import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 export const metadata = { title: "Kauf-Assistent — MyImmo" };
 export const dynamic = "force-dynamic";
@@ -27,6 +29,14 @@ export default async function KaufPage() {
   // vorbelegt werden.
   const auskunft = demo ? DEMO_SELBSTAUSKUNFT : selbstauskunft;
 
+  // Vertreter für den Kreditantrag: nur gültige Vollmachten zur Auswahl (Server prüft erneut).
+  const { data: vRows } = await supabase
+    .from("vertreter").select("id,vorname,nachname,gueltig_bis,widerrufen_am").order("created_at");
+  const heute = heuteBerlin();
+  const vertreter = ((vRows ?? []) as { id: string; vorname: string | null; nachname: string; gueltig_bis: string | null; widerrufen_am: string | null }[])
+    .filter((v) => { const s = vollmachtStatus(v, heute); return s === "gueltig" || s === "laeuft_ab"; })
+    .map((v) => ({ id: v.id, name: vertreterName(v) }));
+
   return (
     <div className="fade-up">
       <div className="topbar">
@@ -37,7 +47,7 @@ export default async function KaufPage() {
         </div>
       </div>
       <hr className="topbar-rule" />
-      <KaufAssistent gespeichert={(rows ?? []) as Kalkulation[]} selbstauskunft={auskunft} demo={demo} />
+      <KaufAssistent gespeichert={(rows ?? []) as Kalkulation[]} selbstauskunft={auskunft} demo={demo} vertreter={vertreter} />
     </div>
   );
 }

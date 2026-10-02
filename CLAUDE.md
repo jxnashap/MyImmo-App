@@ -444,6 +444,8 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Scan) für Bank/Notar/Darlehensunterschrift, wenn der Vermieter im Ausland ist. **KEIN App-Zugang.**
   `lib/vertreter.ts`, Migration `20261002210000`. **Regel: Hinweise zur Vollmacht nie als
   Rechtsrat formulieren („meist … nachfragen“); feste Aussage nur § 29 GBO.**
+  Dazu: optional im **Kreditantrag-PDF** (Seite 3, ohne Scan, nur gültige Vollmacht) und als
+  **Dashboard-Aufgabe**, wenn die Vollmacht in ≤ 60 Tagen abläuft oder abgelaufen ist.
 - 🔑 **Vertreter-Zugang („Bevollmächtigter“) — `docs/zukunft/VERTRETER-ZUGANG.md`** (Idee Jonas,
   geklärt 02.10.2026: Funktion für Vermieter, kein Betreiberthema). Eigene Anmeldung mit Rechten
   und Protokoll statt geteiltem Passwort; Bank/Steuer/Löschen standardmäßig gesperrt. Berührt

@@ -34,6 +34,8 @@ export type OffenesAnliegen = { id: string; titel: string | null; mieter: string
 export type OffeneMeldung = { id: string; art: string | null; mieter: string; datum: string };
 export type FristZeile = { datum: string; label: string; sub: string; warn: boolean };
 export type ObjektOhneKaufdatum = { id: string; name: string };
+/** Vollmacht eines Vertreters, die bald abläuft oder abgelaufen ist (lib/vertreter.ts). */
+export type VollmachtZeile = { id: string; name: string; gueltigBis: string; abgelaufen: boolean };
 
 const monatLabel = (ym: string) => {
   const [j, m] = ym.split("-");
@@ -62,6 +64,8 @@ export function baueHeuteAufgaben(
     mieterOhneObjekt?: ObjektOhneKaufdatum[];
     /** Kredite ohne Auszahlungsdatum — keine Frist fürs Sonderkündigungsrecht (§ 489 BGB). */
     krediteOhneAuszahlung?: ObjektOhneKaufdatum[];
+    /** Vollmachten mit Status „läuft bald ab“ oder „abgelaufen“ (Einstellungen → Vertreter). */
+    vollmachten?: VollmachtZeile[];
   },
   heuteISO: string,
   grenze = 5,
@@ -117,6 +121,21 @@ export function baueHeuteAufgaben(
       aktion: "Termin öffnen",
       dringend: ueberfaellig || f.warn,
       datum: f.datum,
+    });
+  }
+
+  // Vollmacht des Vertreters (02.10.2026): Wer im Ausland lebt, merkt den Ablauf sonst erst,
+  // wenn die Bank die Unterschrift des Vertreters zurückweist. Abgelaufen = dringend.
+  for (const v of q.vollmachten ?? []) {
+    const bis = v.gueltigBis.slice(0, 10).split("-").reverse().join(".");
+    aufgaben.push({
+      art: "frist",
+      label: v.abgelaufen ? `Vollmacht abgelaufen: ${v.name}` : `Vollmacht läuft ab: ${v.name}`,
+      sub: v.abgelaufen ? `seit ${bis} — Bank und Notar akzeptieren sie nicht mehr` : `gültig bis ${bis}`,
+      href: "/einstellungen?tab=vertreter",
+      aktion: "Vollmacht ansehen",
+      dringend: v.abgelaufen,
+      datum: v.gueltigBis.slice(0, 10),
     });
   }
 

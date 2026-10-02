@@ -174,3 +174,83 @@ describe("Anbindung", () => {
     expect(readFileSync("components/SettingsView.tsx", "utf8")).toContain('{ key: "vertreter", label: "Vertreter"');
   });
 });
+
+describe("Dashboard-Aufgabe für Vollmachten", async () => {
+  const { baueHeuteAufgaben } = await import("@/lib/heute");
+  const leer = { offeneMieten: [], anliegen: [], meldungen: [], fristen: [] };
+
+  it("ohne Vollmachten keine Zeile (der Normalfall)", () => {
+    expect(baueHeuteAufgaben({ ...leer, vollmachten: [] }, HEUTE, 10)).toEqual([]);
+  });
+  it("abgelaufen: dringend und vor einer bald ablaufenden; Ziel ist der Vertreter-Reiter", () => {
+    const r = baueHeuteAufgaben({
+      ...leer,
+      vollmachten: [
+        { id: "a", name: "Max Muster", gueltigBis: "2026-11-01", abgelaufen: false },
+        { id: "b", name: "Eva Bank", gueltigBis: "2026-12-31", abgelaufen: true },
+      ],
+    }, HEUTE, 10);
+    expect(r.map((a) => [a.label, a.dringend])).toEqual([
+      ["Vollmacht abgelaufen: Eva Bank", true],
+      ["Vollmacht läuft ab: Max Muster", false],
+    ]);
+    expect(r[1].sub).toBe("gültig bis 01.11.2026");
+    expect(new Set(r.map((a) => a.href))).toEqual(new Set(["/einstellungen?tab=vertreter"]));
+  });
+  it("das Dashboard reicht nur „läuft ab“ und „abgelaufen“ weiter", () => {
+    const seite = readFileSync("app/(app)/page.tsx", "utf8");
+    expect(seite).toContain('status === "laeuft_ab" || status === "abgelaufen"');
+    expect(seite).toContain('from("vertreter").select("id,vorname,nachname,gueltig_bis,widerrufen_am")');
+  });
+});
+
+describe("Vertreter im Kreditantrag", async () => {
+  const { kreditVertreter } = await import("@/lib/vertreter");
+  const { buildKreditantragPdf } = await import("@/lib/pdf/kreditantragPdf");
+  const { LEERE_SELBSTAUSKUNFT } = await import("@/lib/kauf/selbstauskunft");
+  const { PDFDocument } = await import("pdf-lib");
+
+  it("widerrufene oder abgelaufene Vollmacht geht nicht an die Bank", () => {
+    expect(kreditVertreter(basis({ widerrufen_am: "2026-09-01" }), HEUTE)).toEqual({ fehler: "Die Vollmacht dieses Vertreters ist widerrufen." });
+    expect(kreditVertreter(basis({ gueltig_bis: "2026-10-01" }), HEUTE)).toEqual({ fehler: "Die Vollmacht dieses Vertreters ist abgelaufen." });
+    expect("fehler" in kreditVertreter(basis({ gueltig_bis: "2026-10-20" }), HEUTE)).toBe(false); // läuft ab, gilt aber noch
+  });
+  it("bereitet lesbar auf — Klartext statt Schlüssel, deutsche Daten", () => {
+    const k = kreditVertreter(basis({
+      geburtsdatum: "1980-05-04", geburtsort: "Lübeck", strasse: "Weg 1", plz: "23611", ort: "Bad Schwartau",
+      telefon: "0451 1", email: "m@x.de", ausgestellt_am: "2026-01-15", vollmacht_art: "darlehen",
+    }), HEUTE);
+    expect(k).toMatchObject({
+      name: "Max Muster", geburt: "04.05.1980 in Lübeck", anschrift: "Weg 1, 23611 Bad Schwartau",
+      kontakt: "0451 1 · m@x.de", art: "Vollmacht für Darlehensvertrag", form: "Unterschrift öffentlich beglaubigt (Notar/Konsulat)",
+      ausgestellt: "15.01.2026", gueltigBis: null, beglaubigtDurch: null,
+    });
+    expect(kreditVertreter(basis({ beglaubigt_durch: "Konsulat", apostille: true }), HEUTE)).toMatchObject({ beglaubigtDurch: "Konsulat · mit Apostille" });
+  });
+  it("mit Vertreter drei Seiten, ohne zwei", async () => {
+    const v = kreditVertreter(basis({ umfang: "Darlehensvertrag mit der Musterbank unterschreiben und Originale einreichen. ".repeat(6) }), HEUTE);
+    if ("fehler" in v) throw new Error(v.fehler);
+    const mit = await buildKreditantragPdf({ name: "E" }, LEERE_SELBSTAUSKUNFT, null, null, v);
+    const ohne = await buildKreditantragPdf({ name: "E" }, LEERE_SELBSTAUSKUNFT, null, null);
+    expect((await PDFDocument.load(mit)).getPageCount()).toBe(3);
+    expect((await PDFDocument.load(ohne)).getPageCount()).toBe(2);
+    // Fußzeile „Seite 1 von 3“ — alle deflate-gepackten Streams entpacken und den Text suchen.
+    const { inflateSync } = await import("node:zlib");
+    const roh = Buffer.from(mit);
+    let text = "";
+    let pos = 0;
+    while ((pos = roh.indexOf("stream\n", pos)) >= 0) {
+      const ende = roh.indexOf("endstream", pos);
+      if (ende < 0) break;
+      try { text += inflateSync(roh.subarray(pos + 7, ende)).toString("latin1"); } catch { /* kein Deflate */ }
+      pos = ende;
+    }
+    expect(text.toUpperCase()).toContain(Buffer.from("Seite 1 von 3").toString("hex").toUpperCase());
+  });
+  it("die Route nimmt nur den eigenen Vertreter und prüft die Vollmacht serverseitig", () => {
+    const r = readFileSync("app/api/kauf/kreditantrag/route.ts", "utf8");
+    expect(r).toContain('.eq("id", vertreterId).eq("user_id", user.id)');
+    expect(r).toContain("kreditVertreter(v as unknown as Vertreter, heuteBerlin())");
+    expect(readFileSync("components/kauf/KreditantragButton.tsx", "utf8")).toContain('<option value="">Ohne Vertreter</option>');
+  });
+});

@@ -64,6 +64,7 @@ describe("Demo: jeder angebotene Weg führt irgendwohin", () => {
         anliegen: [{ id: "a1", titel: "Heizung", mieter: "B", erstellt: "2026-09-01T00:00:00Z" }],
         meldungen: [{ id: "z1", art: "Wasser", mieter: "C", datum: "2026-09-01" }],
         fristen: [{ datum: "2026-10-01", label: "Frist", sub: "", warn: false }],
+        vollmachten: [{ id: "v1", name: "V", gueltigBis: "2026-10-15", abgelaufen: false }],
       },
       "2026-09-30",
       10,
