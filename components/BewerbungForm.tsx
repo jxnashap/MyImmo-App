@@ -119,7 +119,9 @@ export default function BewerbungForm({
 
   const dateiListe = (slot: string) => dateien.filter((d) => d.slot === slot);
 
-  const DateiZeilen = ({ slot }: { slot: string }) => (
+  // Renderfunktion statt Komponente: eine innen definierte Komponente wäre bei
+  // jedem Rendern ein neuer Typ, React würde die Zeilen jedes Mal neu aufbauen.
+  const dateiZeilen = (slot: string) => (
     <>
       {dateiListe(slot).map((d) => (
         <li
@@ -217,7 +219,7 @@ export default function BewerbungForm({
                     </div>
                     {daZahl > 0 && (
                       <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 }}>
-                        <DateiZeilen slot={s.slug} />
+                        {dateiZeilen(s.slug)}
                       </ul>
                     )}
                   </li>
@@ -246,7 +248,7 @@ export default function BewerbungForm({
           </div>
           {dateiListe(SLOT_SONSTIGES).length > 0 && (
             <ul style={{ listStyle: "none", margin: "4px 0 0", padding: 0, display: "grid", gap: 6 }}>
-              <DateiZeilen slot={SLOT_SONSTIGES} />
+              {dateiZeilen(SLOT_SONSTIGES)}
             </ul>
           )}
           {dateiFehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: "4px 0 0" }}>{dateiFehler}</p>}

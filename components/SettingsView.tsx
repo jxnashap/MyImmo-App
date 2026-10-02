@@ -64,6 +64,7 @@ export default function SettingsView({
   ibans,
   email,
   provider,
+  ohnePasswort = false,
   unterschrift,
   abo = null,
   einheiten = 0,
@@ -74,6 +75,8 @@ export default function SettingsView({
   ibans: Iban[];
   email?: string | null;
   provider?: string | null;
+  /** Konto hat kein Passwort (aus der Datenbank, nicht aus `provider` geraten). */
+  ohnePasswort?: boolean;
   unterschrift?: string | null;
   abo?: AboAnzeige;
   einheiten?: number;
@@ -89,8 +92,14 @@ export default function SettingsView({
   // (`?pw=schwach`, siehe app/login/page.tsx). Erst nach dem Mount lesen —
   // window existiert serverseitig nicht, und ein direkt gesetzter Tab wuerde
   // einen Hydration-Mismatch erzeugen.
+  // `?tab=` wurde bis 01.10.2026 ignoriert — der Login schickt nach einer
+  // Anmeldung per Wiederherstellungscode auf `?tab=sicherheit&mfa=neu`, die
+  // Berichtsrouten bei Tarifsperre auf `?tab=abo`; beide landeten auf "Profil".
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("pw") === "schwach") {
+    const q = new URLSearchParams(window.location.search);
+    const gewuenscht = q.get("tab");
+    if (gewuenscht && TABS.some((t) => t.key === gewuenscht)) setTab(gewuenscht as TabKey);
+    if (q.get("pw") === "schwach") {
       setTab("sicherheit");
       setPwHinweis(true);
     }
@@ -163,12 +172,12 @@ export default function SettingsView({
         {tab === "profil" && <ProfilPanel profil={profil} unterschrift={unterschrift ?? null} />}
         {tab === "bank" && <BankPanel ibans={ibans} />}
         {tab === "abo" && <AboPanel abo={abo} einheiten={einheiten} enforced={billingEnforced} />}
-        {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} demo={demoKonto} lastSignIn={lastSignIn} />}
-        {tab === "recht" && <RechtPanel email={email} provider={provider} />}
+        {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} ohnePasswort={ohnePasswort} demo={demoKonto} lastSignIn={lastSignIn} />}
+        {tab === "recht" && <RechtPanel email={email} ohnePasswort={ohnePasswort} />}
         {tab === "hilfe" && <HilfeInhalt />}
       </div>
 
-      <DangerZone email={email} provider={provider} />
+      <DangerZone email={email} ohnePasswort={ohnePasswort} />
     </div>
   );
 }
@@ -213,7 +222,14 @@ function ProfilPanel({ profil, unterschrift }: { profil: VermieterProfil | null;
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.set(k, v));
     start(async () => {
-      await saveVermieter(fd);
+      // `saveVermieter` WIRFT bei einem Fehler. Ohne try/catch reichte React
+      // das aus der Transition an die Fehlerseite weiter (30.09.2026).
+      try {
+        await saveVermieter(fd);
+      } catch {
+        toast("Speichern fehlgeschlagen.", "error");
+        return;
+      }
       toast("Gespeichert ✓");
       router.refresh();
     });
@@ -268,7 +284,7 @@ function SignaturPanel({ unterschrift }: { unterschrift: string | null }) {
     start(async () => {
       if (!neu) return;
       const r = await speichereUnterschrift(neu);
-      if (r?.error) toast(r.error);
+      if (r?.error) toast(r.error, "error");
       else {
         toast("Unterschrift gespeichert ✓");
         setZeichnen(false);
@@ -439,11 +455,18 @@ function BankPanel({ ibans }: { ibans: Iban[] }) {
 }
 
 // ---------- Sicherheit ----------
-function SicherheitPanel({ email, provider, demo = false, lastSignIn }: { email?: string | null; provider?: string | null; demo?: boolean; lastSignIn?: string | null }) {
+function SicherheitPanel({ email, provider, ohnePasswort = false, demo = false, lastSignIn }: { email?: string | null; provider?: string | null; ohnePasswort?: boolean; demo?: boolean; lastSignIn?: string | null }) {
   const supabase = createClient();
   const toast = useToast();
   const ref = useReveal(null);
-  const istGoogle = !!provider && provider !== "email";
+  // Entscheidend ist, ob das Konto ein Passwort HAT — nicht, wie es angelegt
+  // wurde. Ein Google-Konto mit später gesetztem Passwort bekommt das normale
+  // Formular (Fehler vom 30.09.2026, siehe `ohnePasswort` in lib/passwort.ts).
+  const istGoogle = ohnePasswort;
+  // Nur für den Hinweis in der 2FA-Karte: Kann man sich (auch) mit Google anmelden?
+  const googleAnmeldung = !!provider && provider !== "email";
+  // Re-Auth vor der 2FA-Einrichtung (Audit B3) — derselbe Dialog wie beim Export.
+  const { absichern: absichernMfa, dialog: mfaDialog } = useReAuth(email, ohnePasswort);
   const [pw0, setPw0] = useState("");
   const [pw1, setPw1] = useState("");
   const [pw2, setPw2] = useState("");
@@ -549,7 +572,8 @@ function SicherheitPanel({ email, provider, demo = false, lastSignIn }: { email?
         </fieldset>
       </div>
 
-      <ZweiFaktor demo={demo} istGoogle={istGoogle} />
+      <ZweiFaktor demo={demo} istGoogle={googleAnmeldung} absichern={absichernMfa} />
+      {mfaDialog}
       <SitzungenKarte lastSignIn={lastSignIn} demo={demo} />
       <AutoLogoutKarte />
     </div>
@@ -654,10 +678,10 @@ function AutoLogoutKarte() {
 }
 
 // ---------- Daten & Recht ----------
-function RechtPanel({ email, provider }: { email?: string | null; provider?: string | null }) {
+function RechtPanel({ email, ohnePasswort = false }: { email?: string | null; ohnePasswort?: boolean }) {
   // Vollexport und Kontolöschung verlangen eine frische Anmeldung (Feedback
   // 08.09., Befund 6): Der Server prüft, der Dialog lässt den Nutzer bestehen.
-  const { absichern, dialog } = useReAuth(email, !!provider && provider !== "email");
+  const { absichern, dialog } = useReAuth(email, ohnePasswort);
   const ref = useReveal(null);
 
   // Einführungs-Tour erneut starten: Event an die (im Layout gemountete) Tour
@@ -665,13 +689,6 @@ function RechtPanel({ email, provider }: { email?: string | null; provider?: str
   function tourStarten() {
     window.dispatchEvent(new Event(TOUR_EVENT));
   }
-  const RLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <Link href={href} className="bank-card" style={{ textDecoration: "none", color: "var(--text)" }}>
-      <FileText size={16} style={{ color: "var(--gold)" }} />
-      <span style={{ flex: 1, fontSize: 13.5 }}>{children}</span>
-      <ExternalLink size={14} style={{ color: "var(--muted)" }} />
-    </Link>
-  );
   return (
     <div ref={ref}>
       <div className="glass-card reveal">
@@ -817,8 +834,8 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
 }
 
 // ---------- Gefahrenzone + Lösch-Modal ----------
-function DangerZone({ email, provider }: { email?: string | null; provider?: string | null }) {
-  const { absichern, dialog } = useReAuth(email, !!provider && provider !== "email");
+function DangerZone({ email, ohnePasswort = false }: { email?: string | null; ohnePasswort?: boolean }) {
+  const { absichern, dialog } = useReAuth(email, ohnePasswort);
   const [open, setOpen] = useState(false);
   const loeschRef = useModalFokus<HTMLDivElement>(() => setOpen(false), open);
   const [confirmText, setConfirmText] = useState("");
@@ -882,5 +899,16 @@ function DangerZone({ email, provider }: { email?: string | null; provider?: str
         document.body,
       )}
     </div>
+  );
+}
+
+// Außerhalb der Panels, damit React sie nicht bei jedem Rendern neu erzeugt.
+function RLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className="bank-card" style={{ textDecoration: "none", color: "var(--text)" }}>
+      <FileText size={16} style={{ color: "var(--gold)" }} />
+      <span style={{ flex: 1, fontSize: 13.5 }}>{children}</span>
+      <ExternalLink size={14} style={{ color: "var(--muted)" }} />
+    </Link>
   );
 }

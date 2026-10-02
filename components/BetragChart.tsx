@@ -2,7 +2,7 @@
 import { BarChart3 } from "lucide-react";
 
 import { useZeitraum } from "./ZeitraumProvider";
-import { aggregate, niceScale, kurzTick, xTickLabel, type RawPoint } from "@/lib/zeitraum";
+import { aggregate, niceScale, kurzTick, xTickLabel, bucketTitel, type RawPoint } from "@/lib/zeitraum";
 import { euro } from "@/lib/format";
 import Leer from "@/components/Leer";
 
@@ -15,27 +15,46 @@ export default function BetragChart({
   cumulative = false,
   color = "var(--green)",
   caption,
+  heute,
 }: {
   points: RawPoint[];
   mode?: "area" | "bars";
   cumulative?: boolean;
   color?: string;
   caption?: string;
+  /** Stichtag `YYYY-MM-DD` vom Server (Europe/Berlin) — nie `new Date()` hier:
+   *  Server (UTC) und Browser (Ortszeit) kämen sonst am Monatsersten auf
+   *  verschiedene Monate → Hydration-Fehler (Audit A10). */
+  heute: string;
 }) {
   const { zeitraum } = useZeitraum();
 
+  // Zwei Sorten leer (Audit B27): GAR keine Buchungen → anlegen; Buchungen
+  // vorhanden, aber keine im Fenster → Zeitraum vergrößern. Vorher stand der
+  // Zeitraum-Hinweis nur im ersten Fall — wo er nichts nützt.
   if (!points || points.length === 0) {
+    return (
+      <Leer
+        art="nichts"
+        icon={BarChart3}
+        titel="Noch keine Buchungen"
+        text="Sobald Einnahmen und Ausgaben erfasst sind, zeigt diese Kurve ihren Saldo Monat für Monat."
+        aktion={{ href: "/cashflow/neu", label: "Erste Buchung erfassen" }}
+      />
+    );
+  }
+
+  const { gran, buckets } = aggregate(points, zeitraum, heute, { cumulative });
+  if (buckets.every((b) => b.value === 0)) {
     return (
       <Leer
         art="filter"
         icon={BarChart3}
         titel="Nichts im gewählten Zeitraum"
-        text="Für diesen Zeitraum sind keine Buchungen erfasst. Wähle oben einen größeren Zeitraum."
+        text="Es gibt Buchungen, aber keine in diesem Fenster. Wähle oben einen größeren Zeitraum."
       />
     );
   }
-
-  const { gran, buckets } = aggregate(points, zeitraum, new Date(), { cumulative });
   const werte = buckets.map((b) => b.value);
   const scale = niceScale(Math.min(0, ...werte), Math.max(0, ...werte), 5);
 
@@ -77,7 +96,7 @@ export default function BetragChart({
             <path d={linePath} fill="none" stroke={color} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" />
             {buckets.map((b, i) => (
               <circle key={i} cx={xLine(i).toFixed(1)} cy={yOf(b.value).toFixed(1)} r={n > 40 ? 0 : 2.5} fill={color}>
-                <title>{`${tooltipLabel(b.date, gran)}: ${euro(b.value)}`}</title>
+                <title>{`${bucketTitel(b.date, gran)}: ${euro(b.value)}`}</title>
               </circle>
             ))}
             {/* Endwert dauerhaft annotieren — auf Mobil ohne Hover ablesbar */}
@@ -98,7 +117,7 @@ export default function BetragChart({
             const h = Math.abs(yOf(b.value) - zeroY);
             return (
               <rect key={i} x={(xCenter(i) - barW / 2).toFixed(1)} y={top.toFixed(1)} width={barW.toFixed(1)} height={Math.max(0, h).toFixed(1)} rx="2" fill={color} opacity={b.value === 0 ? 0.15 : 0.85}>
-                <title>{`${tooltipLabel(b.date, gran)}: ${euro(b.value)}`}</title>
+                <title>{`${bucketTitel(b.date, gran)}: ${euro(b.value)}`}</title>
               </rect>
             );
           })
@@ -122,11 +141,4 @@ export default function BetragChart({
       )}
     </div>
   );
-}
-
-function tooltipLabel(iso: string, gran: "day" | "month" | "year"): string {
-  const d = new Date(iso);
-  if (gran === "year") return String(d.getFullYear());
-  if (gran === "month") return d.toLocaleDateString("de-DE", { month: "short", year: "numeric" });
-  return d.toLocaleDateString("de-DE", { day: "numeric", month: "numeric", year: "numeric" });
 }

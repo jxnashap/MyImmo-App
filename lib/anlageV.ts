@@ -95,6 +95,38 @@ function leereEin(): AnlageVEinnahmen {
   return { miete: 0, umlagen: 0, sonstige: 0, summe: 0 };
 }
 
+/** Mietvertrag, soweit die Plausibilitätsprüfung der Umlagen ihn braucht. */
+export type MieterNkVertrag = {
+  prop_id: string | null;
+  nk_vorauszahlung: number | string | null;
+  mietbeginn: string | null;
+  mietende: string | null;
+};
+
+/**
+ * NK-Vorauszahlungen, die laut Verträgen im Jahr fällig waren — Monat für
+ * Monat, ein Monat zählt, wenn der Vertrag an irgendeinem Tag darin lief.
+ * Datumsvergleich auf ISO-Text (Monatsgrenzen exklusiv über den Folgemonat).
+ */
+export function nkSollImJahr(mieter: MieterNkVertrag[], propId: string, jahr: number): number {
+  let summe = 0;
+  for (const m of mieter) {
+    if (m.prop_id !== propId) continue;
+    const nk = Number(m.nk_vorauszahlung);
+    if (!Number.isFinite(nk) || nk <= 0) continue;
+    const beginn = (m.mietbeginn ?? "").slice(0, 10);
+    const ende = (m.mietende ?? "").slice(0, 10);
+    for (let monat = 1; monat <= 12; monat++) {
+      const start = `${jahr}-${String(monat).padStart(2, "0")}-01`;
+      const folge = monat === 12 ? `${jahr + 1}-01-01` : `${jahr}-${String(monat + 1).padStart(2, "0")}-01`;
+      if (beginn && beginn >= folge) continue; // noch nicht eingezogen
+      if (ende && ende < start) continue; // schon ausgezogen
+      summe += nk;
+    }
+  }
+  return r2(summe);
+}
+
 export function berechneAnlageV(
   jahr: number,
   properties: Property[],
@@ -102,6 +134,8 @@ export function berechneAnlageV(
   kosten: Kosten[],
   kredite: Kredit[],
   afa: AfaParams,
+  /** Optional: Mietverträge für die Plausibilitätsprüfung der Umlagen. */
+  mieter: MieterNkVertrag[] = [],
 ): AnlageVErgebnis {
   // Eine Gruppe je Objekt, plus optional „ohne Objekt".
   const gruppen = new Map<string | null, AnlageVObjekt>();
@@ -154,6 +188,20 @@ export function berechneAnlageV(
   // AfA + Schuldzinsen je Objekt
   for (const p of properties) {
     const g = hole(p.id);
+
+    // Umlagen plausibel? (30.09.2026, Prüfung der echten Konten: 332 Miet-
+    // buchungen in 2 Konten waren reine Kaltmiete ohne NK-Anteil, obwohl die
+    // Mieter laut Vertrag NK vorauszahlen — und umlagefähige Kosten standen als
+    // Werbungskosten drin. Dann fehlen die Umlagen als Einnahme (Zeile 13), und
+    // der Überschuss ist zu niedrig.) Nur ein Hinweis: Ob die NK tatsächlich
+    // an den Vermieter gehen, weiß nur der Nutzer.
+    const nkSoll = nkSollImJahr(mieter, p.id, jahr);
+    if (nkSoll > 0 && g.einnahmen.umlagen < nkSoll * 0.5) {
+      const fmt = (n: number) => n.toLocaleString("de-DE", { maximumFractionDigits: 0 });
+      g.hinweise.push(
+        `Laut Mietverträgen waren ${jahr} rund ${fmt(nkSoll)} € Nebenkosten-Vorauszahlungen fällig, als Umlagen (Zeile 13) gebucht sind ${fmt(g.einnahmen.umlagen)} €. Sind die Mieten nur kalt gebucht? Dann fehlen die Umlagen als Einnahme, während umlagefähige Kosten als Werbungskosten abgezogen werden — der Überschuss wäre zu niedrig. Beim Buchen der Miete den NK-Anteil angeben (das Mietkonto tut das automatisch).`,
+      );
+    }
     const kaufpreis = Number(p.kaufpreis) || 0;
     // Gebäudeanteil: Objekt-Override → globaler Regler
     const gebAnteil = p.afa_gebaeudeanteil ?? afa.gebaeudeAnteil;

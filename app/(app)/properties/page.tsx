@@ -6,8 +6,9 @@ import DeleteButton from "@/components/DeleteButton";
 import type { Property, Kredit } from "@/lib/types";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { sortiereObjekte, SORT_OPTIONEN } from "@/lib/objektSortierung";
+import { sollKaltmiete } from "@/lib/sollMiete";
 import { objektUmfaenge, objektFolgenText } from "@/lib/loeschUmfang";
-import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Upload, Plus, X, Landmark, type LucideIcon } from "lucide-react";
+import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Upload, Plus, X, Landmark, MapPin, type LucideIcon } from "lucide-react";
 
 // Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
 const PROP_ICONS: Record<string, LucideIcon> = {
@@ -32,14 +33,18 @@ export default async function PropertiesPage(
 ) {
   const searchParams = await props.searchParams;
   const supabase = await createClient();
-  const [{ data }, { data: kred }, umfaenge] = await Promise.all([
+  const [{ data }, { data: kred }, { data: miet }, umfaenge] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("kredite").select("prop_id,restschuld"),
+    supabase.from("mieter").select("prop_id,kaltmiete,stellplatz_miete,mietbeginn,mietende"),
     // Was am Objekt haengt — gehoert VOR den Loeschklick (lib/loeschUmfang.ts).
     objektUmfaenge(),
   ]);
 
-  const alle = (data ?? []) as Property[];
+  // Miete je Objekt nach derselben Regel wie Dashboard und Objektseite
+  // (lib/sollMiete.ts) — auch für Rendite und Sortierung „nach Miete".
+  const heute = new Date().toISOString().slice(0, 10);
+  const alle = ((data ?? []) as Property[]).map((p) => ({ ...p, miete: sollKaltmiete(p, miet ?? [], heute).betrag }));
   const kredite = (kred ?? []) as Pick<Kredit, "prop_id" | "restschuld">[];
 
   const restMap = new Map<string, number>();
@@ -81,6 +86,11 @@ export default async function PropertiesPage(
               vermietet.de-Exportdatei hatte, klickte oben und landete in einem
               PDF/Link-Formular, das seine CSV nicht annimmt. Jetzt eindeutig
               benannt und beide Wege an derselben Stelle. */}
+          {/* Einziger Weg zur Kartenseite, seit die Karte vom Dashboard
+              genommen wurde (01.10.2026) — sie steht in keiner Navigation. */}
+          <Link href="/karte" className="btn btn-ghost" title="Alle Objekte auf einer Karte">
+            <MapPin size={14} style={{ verticalAlign: "-2px" }} /> Karte
+          </Link>
           <Link href="/properties/import" className="btn btn-ghost" title="Ein einzelnes Objekt aus einem Expose (PDF/Link/Text) auslesen">
             <Link2 size={14} style={{ verticalAlign: "-2px" }} /> Exposé auslesen
           </Link>
@@ -99,6 +109,11 @@ export default async function PropertiesPage(
           <div className="empty" style={{ gridColumn: "1/-1" }}>
             <Home className="empty-icon" size={36} color="var(--faint)" />
             <h4>{alle.length === 0 ? "Noch keine Immobilien" : "Keine Treffer"}</h4>
+            {alle.length > 0 ? (
+              <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6 }}>
+                Kein Objekt passt zu Suche oder Status-Filter — Filter oben anpassen.
+              </p>
+            ) : (
             <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6 }}>
               Lege oben dein erstes Objekt an, lies ein{" "}
               <Link href="/properties/import" style={{ color: "var(--gold)" }}>Exposé</Link>{" "}
@@ -107,6 +122,7 @@ export default async function PropertiesPage(
                 übernimm deine Daten aus vermietet.de, objego oder Excel (CSV)
               </Link>.
             </p>
+            )}
           </div>
         </div>
       ) : (

@@ -11,7 +11,7 @@
 // das CSS schaltet zentral — wie im Original über body.nav-open/.solid.
 
 import Link from "next/link";
-import { START_CTA } from "@/lib/preise";
+import { START_CTA, START_CTA_KURZ } from "@/lib/preise";
 import { useEffect, useState } from "react";
 
 export type QlxNavEintrag = { href: string; label: string };
@@ -87,7 +87,10 @@ export default function QlxHeader({
 
           <div className="qlx-header-cta">
             <Link href="/anmelden" className="qlx-btn-linie">Anmelden</Link>
-            <Link href="/anmelden" className="qlx-btn-hell">{START_CTA}</Link>
+            <Link href="/anmelden" className="qlx-btn-hell" aria-label={START_CTA}>
+              <span className="qlx-cta-lang">{START_CTA}</span>
+              <span className="qlx-cta-kurz" aria-hidden>{START_CTA_KURZ}</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -125,7 +128,7 @@ export default function QlxHeader({
           </nav>
           <div className="qlx-overlay-visual" aria-hidden>
             {/* eslint-disable-next-line @next/next/no-img-element -- dekoratives Panel */}
-            <img src="/landing/dashboard.webp" alt="" loading="lazy" />
+            <img src="/landing/dashboard.webp" alt="Vorschau des MyImmo-Dashboards" loading="lazy" />
           </div>
         </div>
       </div>

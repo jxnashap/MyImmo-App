@@ -12,7 +12,7 @@ export type Feature = { ico?: LucideIcon; t: string; p: string; soon?: boolean }
 
 export const FEATURES: Feature[] = [
   { ico: BarChart3, t: "Portfolio-Dashboard", p: "Wert, Cashflow, Rendite und Leerstand deines Bestands auf einen Blick — mit Verlaufs-Chart." },
-  { ico: Banknote, t: "Ein- & Ausgaben", p: "Mieten und Kosten je Objekt erfassen, Belege anhängen, Netto-Cashflow automatisch berechnet." },
+  { ico: Banknote, t: "Ein- & Ausgaben", p: "Mieten und Kosten je Objekt erfassen, Belege anhängen, Saldo und Monats-Cashflow automatisch berechnet." },
   { ico: ReceiptText, t: "Nebenkostenabrechnung", p: "Im klassischen Layout mit Gesamtkosten, Basis und Wohnungsanteil — die App rechnet den Mieteranteil selbst und erzeugt das fertige PDF." },
   { t: "Steuer, Anlage V & ELSTER", p: "Einkünfte aus V+V je Objekt mit AfA und Schuldzinsen — als ELSTER-Ausfüllhilfe Zeile für Zeile, PDF-Aufstellung und CSV." },
   { ico: MessageSquareText, t: "Mieterportal", p: "Mieter melden Schäden, Zählerstände und Anliegen direkt in der App — inklusive Bewerber-Verwaltung für freie Wohnungen." },
@@ -23,7 +23,7 @@ export const FEATURES: Feature[] = [
   { ico: FileText, t: "Dokument-Generator", p: "Mahnung, Mietbescheinigung, Übergabeprotokoll & Co. als fertige Brief-PDFs im eigenen Briefkopf — auf Wunsch e-signiert." },
   { ico: Folders, t: "Archiv & Bankpaket", p: "Verträge, Bescheide und Belege zentral abgelegt — plus Beleihungsordner mit Deckblatt fürs Bankgespräch." },
   { ico: Bot, t: "KI-Import & Kalkulatoren", p: "Exposé einfügen, Eckdaten werden ausgelesen. Kauf-Check mit Cashflow-, Rendite- und Vermögensrechnung." },
-  { ico: ShieldCheck, t: "Sicherheit & Datenschutz", p: "Daten in der EU, Bankdaten zusätzlich anwendungsseitig verschlüsselt (AES-256-GCM), voller Datenexport jederzeit." },
+  { ico: ShieldCheck, t: "Sicherheit & Datenschutz", p: "Datenbank in Frankfurt, Bankdaten zusätzlich anwendungsseitig verschlüsselt (AES-256-GCM), voller Datenexport jederzeit." },
 ];
 
 export const ROLLEN: { ico: LucideIcon; t: string; p: string }[] = [
@@ -79,10 +79,16 @@ export const PLAENE: Plan[] = [
   },
 ];
 
-export const VISION: { t: string; p: string; status: "bald" | "geplant" }[] = [
+// Roadmap. „fertig" nur für Funktionen, die es im Code gibt (tests/reviewRunde2
+// prüft die Komponenten). Bis 30.09.2026 stand „Geführtes Onboarding" hier als
+// GEPLANT — es existiert seit Juli (components/OnboardingTour.tsx). Eine
+// Roadmap ist ein öffentliches Versprechen: Neue Pläne kommen erst hinein,
+// wenn der Betreiber sie beschlossen hat.
+export const VISION: { t: string; p: string; status: "fertig" | "bald" | "geplant" }[] = [
+  { t: "Geführtes Onboarding", p: "Sechs Stationen vom ersten Objekt bis zur Anlage V — mit Direktlinks, überspringbar und jederzeit neu startbar.", status: "fertig" },
+  { t: "Zwei-Faktor-Anmeldung", p: "Anmeldung mit Code aus der Authenticator-App, Wiederherstellungscodes für den Notfall und erneute Bestätigung vor sensiblen Aktionen.", status: "fertig" },
   { t: "Steuerberater-Freigabe", p: "Fertige Unterlagen auf Knopfdruck prüfen lassen — Ergebnis in 1–3 Tagen, ohne Termin.", status: "geplant" },
   { t: "News für Vermieter", p: "Mietrecht, Steuer, Förderungen: kuratierte Meldungen aus seriösen Quellen, direkt in der App.", status: "geplant" },
-  { t: "Geführtes Onboarding", p: "Durchklickbarer Guide nach der Registrierung: Objekt anlegen → Mieter erfassen → erste Buchung.", status: "geplant" },
 ];
 
 export const FAQ = [

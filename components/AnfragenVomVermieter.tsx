@@ -9,6 +9,7 @@ import {
   MessageCircleQuestion, type LucideIcon,
 } from "lucide-react";
 import { beantworteVermieterAnfrage } from "@/lib/actions/vermieterAnfragen";
+import VorschauHinweis from "@/components/VorschauHinweis";
 
 export type PortalAnfrageRow = {
   id: string;
@@ -33,7 +34,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   abgelehnt: { label: "Abgelehnt", cls: "badge-red" },
 };
 
-function Eintrag({ a }: { a: PortalAnfrageRow }) {
+function Eintrag({ a, nurLesen }: { a: PortalAnfrageRow; nurLesen?: boolean }) {
   const [antwortOffen, setAntwortOffen] = useState<null | "erledigt" | "abgelehnt">(null);
   const [text, setText] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
@@ -71,7 +72,10 @@ function Eintrag({ a }: { a: PortalAnfrageRow }) {
           <strong>Deine Antwort:</strong> {a.antwort}
         </p>
       )}
-      {a.status === "offen" && (
+      {a.status === "offen" && nurLesen && (
+        <div style={{ marginTop: 8 }}><VorschauHinweis was="Erledigt / Antworten · Ablehnen" /></div>
+      )}
+      {a.status === "offen" && !nurLesen && (
         <div style={{ marginTop: 8 }}>
           {a.typ === "zaehlerstand" && (
             <Link href="/portal?tab=zaehler" className="btn btn-gold" style={{ fontSize: 11, padding: "5px 12px", marginRight: 6 }}>
@@ -106,7 +110,7 @@ function Eintrag({ a }: { a: PortalAnfrageRow }) {
   );
 }
 
-export default function AnfragenVomVermieter({ anfragen }: { anfragen: PortalAnfrageRow[] }) {
+export default function AnfragenVomVermieter({ anfragen, nurLesen = false }: { anfragen: PortalAnfrageRow[]; nurLesen?: boolean }) {
   if (anfragen.length === 0) return null;
   const offene = anfragen.filter((a) => a.status === "offen").length;
   return (
@@ -116,7 +120,7 @@ export default function AnfragenVomVermieter({ anfragen }: { anfragen: PortalAnf
         {offene > 0 && <span className="badge badge-amber">{offene} offen</span>}
       </div>
       <div className="section-body">
-        {anfragen.map((a) => <Eintrag key={a.id} a={a} />)}
+        {anfragen.map((a) => <Eintrag key={a.id} a={a} nurLesen={nurLesen} />)}
       </div>
     </div>
   );

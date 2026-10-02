@@ -10,6 +10,7 @@ import {
   berechneAnlageV,
   wertVon,
   type AnlageVObjekt,
+  type MieterNkVertrag,
 } from "@/lib/anlageV";
 import ElsterHilfe from "@/components/ElsterHilfe";
 import { csvZelleGequotet } from "@/lib/csv";
@@ -19,11 +20,14 @@ export default function AnlageVExport({
   einnahmen,
   kosten,
   kredite,
+  mieter = [],
 }: {
   properties: Property[];
   einnahmen: Einnahme[];
   kosten: Kosten[];
   kredite: Kredit[];
+  /** Mietverträge — nur für den Plausibilitätshinweis zu den Umlagen. */
+  mieter?: MieterNkVertrag[];
 }) {
   const aktuell = new Date().getFullYear();
   const jahre = [aktuell, aktuell - 1, aktuell - 2, aktuell - 3, aktuell - 4];
@@ -38,8 +42,8 @@ export default function AnlageVExport({
       berechneAnlageV(jahr, properties, einnahmen, kosten, kredite, {
         gebaeudeAnteil: parseFloat(gebaeudeAnteil.replace(",", ".")) || 0,
         satz: satz.trim() === "" ? null : (parseFloat(satz.replace(",", ".")) || 0),
-      }),
-    [jahr, properties, einnahmen, kosten, kredite, gebaeudeAnteil, satz],
+      }, mieter),
+    [jahr, properties, einnahmen, kosten, kredite, gebaeudeAnteil, satz, mieter],
   );
 
   const spalten = [...erg.objekte, erg.gesamt];

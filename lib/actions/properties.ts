@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { pruefeEinheiten } from "@/lib/planGate";
 import { flashUrl } from "@/lib/flash";
 import { protokolliereWert } from "@/lib/wert/protokoll";
+import { sollKaltmiete } from "@/lib/sollMiete";
 
 // Wandelt FormData in ein typisiertes Objekt um (Zahlen -> number | null)
 function parse(formData: FormData) {
@@ -140,7 +141,7 @@ export async function createProperty(formData: FormData) {
   // der Objekte: So ist das Limit in lib/plan.ts definiert und so steht es
   // auf der Preisseite („bis 5 Einheiten").
   const einheiten = await pruefeEinheiten(supabase, Math.max(1, parsed.einheiten_anzahl ?? 1));
-  if (!einheiten.erlaubt) redirect(flashUrl("/properties", einheiten.meldung ?? "Tarif-Limit erreicht."));
+  if (!einheiten.erlaubt) redirect(flashUrl("/properties", einheiten.meldung ?? "Tarif-Limit erreicht.", "error"));
 
   const { data: neu, error } = await supabase
     .from("properties")
@@ -274,5 +275,44 @@ export async function uebernehmeAfaGebaeudeanteil(
   revalidatePath(`/properties/${id}`);
   revalidatePath("/afa-assistent");
   revalidatePath("/steuer");
+  return { ok: true };
+}
+
+// Objektfeld „Miete" an die Summe der laufenden Mieter angleichen (Hinweis auf
+// der Objektseite, lib/sollMiete.ts). Der Betrag wird HIER neu berechnet und
+// nicht vom Client übernommen — sonst ließe sich über die Action jede
+// beliebige Miete setzen. Nur auf Klick, nie still.
+export async function gleicheObjektMieteAn(id: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const [{ data: prop, error: propFehler }, { data: mieter, error: mieterFehler }] = await Promise.all([
+    supabase.from("properties").select("id,typ,miete").eq("id", id).eq("user_id", user.id).maybeSingle(),
+    supabase.from("mieter").select("prop_id,kaltmiete,stellplatz_miete,mietbeginn,mietende").eq("prop_id", id).eq("user_id", user.id),
+  ]);
+  // Ladefehler ausdrücklich melden. (Ohne Mieterliste fiele die Regel zwar auf
+  // „keine Mieter“ und schriebe nichts — der Nutzer erführe dann aber einen
+  // falschen Grund.)
+  if (propFehler || mieterFehler) return { ok: false, error: "Objekt oder Mieter konnten nicht geladen werden." };
+  if (!prop) return { ok: false, error: "Objekt nicht gefunden." };
+
+  const soll = sollKaltmiete(prop, mieter ?? [], new Date().toISOString().slice(0, 10));
+  if (soll.quelle !== "mieter") return { ok: false, error: "Das Objekt hat keine laufenden Mieter." };
+
+  const { data, error } = await supabase
+    .from("properties")
+    .update({ miete: Math.round(soll.betrag * 100) / 100 })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) return { ok: false, error: error?.message ?? "Nicht gespeichert." };
+
+  revalidatePath(`/properties/${id}`);
+  revalidatePath("/properties");
+  revalidatePath("/");
   return { ok: true };
 }

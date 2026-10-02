@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ctaBeschriftung } from "@/lib/preise";
 import LandingShell from "@/components/landing/Shell";
 import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
@@ -12,7 +13,7 @@ import {
 export const metadata: Metadata = {
   title: "Kostenlose Vorlagen für Vermieter — MyImmo",
   description:
-    "Mieterhöhung, Kündigung, Mahnung, Wohnungsgeberbestätigung, Übergabeprotokoll und mehr — rechtssichere Vorlagen, in MyImmo mit einem Klick personalisiert als PDF.",
+    "Mieterhöhung, Kündigung, Mahnung, Wohnungsgeberbestätigung, Übergabeprotokoll und mehr — fertige Vorlagen für Vermieter, in MyImmo mit einem Klick personalisiert als PDF.",
   alternates: { canonical: "/vorlagen" },
   openGraph: { images: ["/og.png"] },
 };
@@ -51,7 +52,7 @@ export default async function VorlagenPage(props: { searchParams: Promise<{ nl?:
         slug="vorlagen"
         kompakt
         kicker="Vorlagen"
-        titel={<>Rechtssichere Vorlagen — <em>in Sekunden fertig</em></>}
+        titel={<>Vorlagen für Vermieter — <em>in Sekunden fertig</em></>}
         sub="Statt Word-Dokumente mühsam auszufüllen: Vorlage wählen, der Rest wird aus deinen Objekt- und Mieterdaten automatisch ergänzt — als sauberes PDF im Geschäftsbriefstil. Kostenlos im Early Access."
       />
       <section className="lp-section">
@@ -91,7 +92,7 @@ export default async function VorlagenPage(props: { searchParams: Promise<{ nl?:
             <VerteilerForm quelle="vorlagen" />
           </div>
           <div className="lp-cta-row" style={{ marginTop: 28 }}>
-            <Link href="/anmelden" className="btn btn-gold lp-btn-big">Vorlagen kostenlos nutzen <ArrowRight size={15} style={{ verticalAlign: "-2px" }} /></Link>
+            <Link href="/anmelden" className="btn btn-gold lp-btn-big">{ctaBeschriftung("Vorlagen kostenlos nutzen")} <ArrowRight size={15} style={{ verticalAlign: "-2px" }} /></Link>
           </div>
           <p className="lp-section-sub" style={{ marginTop: 24, marginBottom: 0, fontSize: 12.5 }}>
             Alle Vorlagen werden mit deinen Daten personalisiert und lassen sich vor dem Export bearbeiten.

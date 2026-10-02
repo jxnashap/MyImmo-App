@@ -21,7 +21,7 @@ export default function AvvPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Auftragsverarbeitungsvertrag (AVV)</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 24. Juli 2026 · Vereinbarung nach Art. 28 Abs. 3 DSGVO zwischen Ihnen als
+        Stand: 9. September 2026 · Vereinbarung nach Art. 28 Abs. 3 DSGVO zwischen Ihnen als
         Verantwortlichem und dem Betreiber von MyImmo als Auftragsverarbeiter. Sie wird mit
         der Registrierung bzw. der weiteren Nutzung der App Vertragsbestandteil.
       </p>

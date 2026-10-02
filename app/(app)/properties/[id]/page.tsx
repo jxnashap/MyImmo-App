@@ -25,11 +25,16 @@ import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
 import { BarChart3, Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
 import Leer from "@/components/Leer";
+import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, laufendeKosten } from "@/lib/cashflowKennzahl";
+import { laufzeitText } from "@/lib/kreditLaufzeit";
+import { sollKaltmiete, GARAGEN_TYPEN } from "@/lib/sollMiete";
+import MieteAngleichen from "@/components/MieteAngleichen";
 
 type Kredit = {
   id: string; bezeichnung: string | null; bank: string | null; betrag: number | null;
   restschuld: number | null; monatsrate: number | null; zinssatz: number | null;
   tilgungssatz: number | null; laufzeit: number | null; zinsbindung: string | null;
+  auszahlung_datum: string | null;
 };
 type Buchung = { id: string; betrag: number | null; buchungsdatum: string | null; kategorie: string | null };
 type Verbrauch = { id: string; buchungsdatum: string | null; art: string | null; menge: number | null; einheit: string | null; verbrauchkosten: number | null };
@@ -52,7 +57,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
       supabase.from("mieter").select("*").eq("prop_id", id).order("mietbeginn"),
       supabase.from("einnahmen").select("id,betrag,buchungsdatum,kategorie").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
       supabase.from("kosten").select("id,betrag,buchungsdatum,kategorie").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
-      supabase.from("kredite").select("id,bezeichnung,bank,betrag,restschuld,monatsrate,zinssatz,tilgungssatz,laufzeit,zinsbindung").eq("prop_id", id),
+      supabase.from("kredite").select("id,bezeichnung,bank,betrag,restschuld,monatsrate,zinssatz,tilgungssatz,laufzeit,zinsbindung,auszahlung_datum").eq("prop_id", id),
       supabase.from("verbrauch").select("id,buchungsdatum,art,menge,einheit,verbrauchkosten").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
       supabase.from("notizen").select("id,titel,kategorie,inhalt").eq("prop_id", id),
     ]);
@@ -91,21 +96,12 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   const totalKreditRate = kred.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
   const jahresEinnahmen = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
   const jahresKosten = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
-  // Monatliche Kosten für die Cashflow-Übersicht: Ø der LETZTEN 12 MONATE aus
-  // echten Buchungen — genau wie im Dashboard (app/page.tsx). Vorher wurde die
-  // Summe ALLER je erfassten Kosten durch 12 geteilt; wer sein Portfolio drei
-  // Jahre lang pflegt, sah dadurch einen dreifach zu hohen Monatswert, der auch
-  // noch dem Dashboard widersprach.
-  const jetzt = new Date();
-  const vor12Monaten = new Date(jetzt);
-  vor12Monaten.setFullYear(vor12Monaten.getFullYear() - 1);
-  const kosten12M = kosten
-    .filter((k) => {
-      const d = k.buchungsdatum ? new Date(k.buchungsdatum) : null;
-      return d && d >= vor12Monaten && d <= jetzt;
-    })
-    .reduce((s, k) => s + (k.betrag ?? 0), 0);
-  const monatsKosten = kosten12M / 12;
+  // Monatliche Kosten: dieselbe Rechnung wie auf dem Dashboard
+  // (lib/cashflowKennzahl.ts) — Ø der letzten 12 Monate MIT BUCHUNGEN, geteilt
+  // durch die Monate, die das Fenster wirklich umfasst. Vorher / 12 fest.
+  // Ohne Schuldzinsen-Buchungen — die stecken schon in der Kreditrate.
+  const kostenSchnitt = kostenSchnittMonat(laufendeKosten(kosten), [...einnahmen, ...kosten], new Date().toISOString().slice(0, 10));
+  const monatsKosten = kostenSchnitt.betrag;
   // Garagen-Objekte: Mieten liegen auf den einzelnen Mietern (je Einheit),
   // nicht auf p.miete — sonst zeigten KPIs/Cashflow/Rendite 0.
   // Nebenkosten-Verteiler nur bei mehreren Mietparteien anbieten.
@@ -114,10 +110,17 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
     einheiten_anzahl: p.einheiten_anzahl ?? null,
     mieterAnzahl: (mieter ?? []).length,
   });
-  const istGaragen = ["Garage / Stellplatz", "Garagenkomplex"].includes(p.typ ?? "");
-  const mieteAusMietern = tenants.reduce((s, t) => s + (t.kaltmiete ?? 0), 0);
-  const miete = istGaragen ? mieteAusMietern : (p.miete ?? 0);
-  const rendite = miete && wert ? (miete * 12 / wert) * 100 : 0;
+  const istGaragen = GARAGEN_TYPEN.includes(p.typ ?? "");
+  // Soll-Kaltmiete: laufende Mieter, sonst Objektfeld — dieselbe Regel wie
+  // Dashboard und Objektliste (lib/sollMiete.ts). Weichen beide ab, zeigt die
+  // Seite unten einen Hinweis statt still umzuschalten.
+  const soll = sollKaltmiete(p, tenants, new Date().toISOString().slice(0, 10));
+  const miete = soll.betrag;
+  // Bruttomietrendite auf den KAUFPREIS (Marktkonvention, wie der Kaufpreis-
+  // faktor daneben); nur ohne erfassten Kaufpreis auf den aktuellen Wert.
+  // Bis 01.10.2026 stand "/ Kaufpreis" dran, gerechnet wurde mit dem Wert.
+  const renditeBasis = p.kaufpreis || wert;
+  const rendite = miete && renditeBasis ? (miete * 12 / renditeBasis) * 100 : 0;
   const faktor = miete && p.kaufpreis ? p.kaufpreis / (miete * 12) : 0;
   // Empfohlene Instandhaltungsrücklage (Peterssche Formel): 1,5× Herstellungs-
   // kosten über 80 Jahre. Faustformel ohne Gewähr; als Herstellungskosten dient
@@ -127,14 +130,21 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   const petersBasis = (p.kaufpreis ?? wert ?? 0) * GEBAEUDEANTEIL;
   const petersJahr = petersBasis * 1.5 / 80;
   const petersM2 = p.flaeche && p.flaeche > 0 ? petersJahr / p.flaeche : 0;
-  const cashflowMo = miete - totalKreditRate;
+  // MIT laufenden Kosten (30.09.2026). Vorher „Miete − Kreditrate": Die
+  // Übersicht weiter unten auf DIESER Seite führte die Kosten als eigenen
+  // Posten, zog sie in der Kennzahl aber nicht ab — der Wert war zu gut und
+  // passte nicht zum Dashboard.
+  // Seit 30.09.2026 mit Warmmiete (Kaltmiete + NK-Vorauszahlungen laufender
+  // Verträge) — dieselbe Rechnung wie auf dem Dashboard, lib/cashflowKennzahl.ts.
+  const nkVorausMo = nkVorauszahlungenMonat(tenants, new Date().toISOString().slice(0, 10));
+  const cashflowMo = monatsCashflow({ warmmiete: miete + nkVorausMo, kreditraten: totalKreditRate, kostenSchnitt: monatsKosten });
   const cfStr = (cashflowMo >= 0 ? "+ " : "– ") + euro(Math.abs(cashflowMo));
 
   const kpis = [
     { lbl: "Aktueller Wert", val: euro(wert) },
     { lbl: "Kaltmiete / Mo.", val: miete ? euro(miete) : "–" },
     { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–" },
-    { lbl: "Cashflow / Mo.", val: cfStr, sub: cashflowMo >= 0 ? "positiv" : "negativ", col: cashflowMo >= 0 ? "var(--green)" : "var(--red)" },
+    { lbl: "Cashflow / Mo.", val: cfStr, sub: cashflowFormel(kostenSchnitt), col: cashflowMo >= 0 ? "var(--green)" : "var(--red)" },
   ];
 
   const stammRows: [string, React.ReactNode][] = [
@@ -153,12 +163,12 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   ];
 
   const kennzahlen = [
-    { lbl: "Bruttomietrendite", val: rendite > 0 ? prozent(rendite, 2) : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-neutral", note: "Jahreskaltmiete / Kaufpreis" },
+    { lbl: "Bruttomietrendite", val: rendite > 0 ? prozent(rendite, 2) : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-neutral", note: p.kaufpreis ? "Jahreskaltmiete / Kaufpreis" : "Jahreskaltmiete / aktueller Wert (kein Kaufpreis erfasst)" },
     { lbl: "Kaufpreisfaktor", val: faktor > 0 ? `${zahl(faktor, 1)}×` : "–", badge: faktor > 0 ? (faktor < 25 ? "badge-green" : faktor < 30 ? "badge-gold" : "badge-red") : "badge-neutral", note: "Kaufpreis / Jahreskaltmiete" },
     { lbl: "Instandhaltungsrücklage (empf.)", val: petersJahr > 0 ? euro(petersJahr) + "/Jahr" : "–", badge: "badge-neutral", note: petersM2 > 0 ? `Peterssche Formel · ${euro(petersM2)}/m²·Jahr` : "Peterssche Formel (Faustformel)" },
     { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-neutral", note: "Summe aller Darlehensraten" },
     { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–", badge: "badge-neutral", note: "Summe aller Darlehen" },
-    { lbl: "Cashflow / Mo.", val: cfStr, badge: cashflowMo >= 0 ? "badge-green" : "badge-red", note: "Miete minus Kreditrate" },
+    { lbl: "Cashflow / Mo.", val: cfStr, badge: cashflowMo >= 0 ? "badge-green" : "badge-red", note: cashflowFormel(kostenSchnitt) },
     { lbl: "Einnahmen gesamt", val: jahresEinnahmen > 0 ? euro(jahresEinnahmen) : "–", badge: "badge-green", note: "Alle erfassten Einnahmen" },
     { lbl: "Kosten gesamt", val: jahresKosten > 0 ? euro(jahresKosten) : "–", badge: "badge-red", note: "Alle erfassten Ausgaben" },
   ];
@@ -166,8 +176,9 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // Cashflow-Übersicht
   const cfItems = [
     { lbl: "Kaltmiete", val: miete, col: "var(--green)" },
+    { lbl: "NK-Vorauszahlungen", val: nkVorausMo, col: "var(--green)" },
     { lbl: "Kreditraten", val: totalKreditRate, col: "var(--red)" },
-    { lbl: "Laufende Kosten (Ø 12 Mon.)", val: monatsKosten, col: "var(--red)" },
+    { lbl: `Laufende Kosten (Ø ${kostenSchnitt.monate} Mon.)`, val: monatsKosten, col: "var(--red)" },
   ].filter((i) => i.val > 0);
   const cfMax = Math.max(1, ...cfItems.map((i) => i.val));
 
@@ -266,6 +277,46 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
         ))}
       </div>
 
+      {/* Datenlücken, die Zahlen auf dieser Seite verfälschen (30.09.2026:
+          bei den echten Konten hatten 20 von 23 Objekten kein Kaufdatum und
+          6 eine Objekt-Miete, die nicht zu den Mietern passte). */}
+      {(soll.abweichung || soll.quelle === "beendet" || !p.kaufdatum) && (
+        <div className="section mb-20" style={{ borderColor: "var(--amber)" }}>
+          <div className="section-body" style={{ display: "grid", gap: 12 }}>
+            {soll.abweichung && (
+              <div>
+                <strong>Miete passt nicht zu den Mietern.</strong>{" "}
+                Im Objekt stehen {euro(soll.abweichung.objekt)} Kaltmiete, die laufenden Mieter zahlen zusammen{" "}
+                {euro(soll.abweichung.mieter)}. Gerechnet wird mit den Mietern (wie im Mietkonto). Fehlen Mieter, lege sie an —
+                ist die Objekt-Miete veraltet, gleiche sie an.
+                <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <MieteAngleichen id={p.id} betrag={euro(soll.abweichung.mieter)} />
+                  <Link href={`/tenants/new?prop=${p.id}`} className="btn btn-ghost btn-sm">Mieter anlegen</Link>
+                </div>
+              </div>
+            )}
+            {soll.quelle === "beendet" && (
+              <div>
+                <strong>Kein laufender Mietvertrag.</strong>{" "}
+                Alle Mieter dieses Objekts sind ausgezogen (oder ziehen erst ein) — die Soll-Miete ist deshalb 0 €
+                {p.miete ? `, nicht die ${euro(p.miete)} aus dem Objekt` : ""}. Status „{p.obj_status || "–"}“ prüfen oder
+                Nachmieter anlegen.
+              </div>
+            )}
+            {!p.kaufdatum && (
+              <div>
+                <strong>Kaufdatum fehlt.</strong>{" "}
+                Ohne Anschaffungsdatum läuft die AfA in der Anlage V auch im Kaufjahr voll, und die Spekulationsfrist
+                (§ 23 EStG) lässt sich nicht berechnen.
+                <div style={{ marginTop: 8 }}>
+                  <Link href={`/properties/${p.id}/edit`} className="btn btn-ghost btn-sm">Kaufdatum ergänzen</Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Stammdaten + Kennzahlen */}
       <div className="grid-2 mb-20">
         <div id="stammdaten" data-anker className="section" style={{ marginBottom: 0 }}>
@@ -350,7 +401,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {istGaragen && (
               <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                {tenants.length}{p.einheiten_anzahl ? ` von ${p.einheiten_anzahl}` : ""} vermietet · Mieten gesamt {euro(mieteAusMietern)}
+                {tenants.length}{p.einheiten_anzahl ? ` von ${p.einheiten_anzahl}` : ""} vermietet · Mieten gesamt {euro(miete)}
               </span>
             )}
             <Link href={`/tenants/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Mieter</Link>
@@ -435,7 +486,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 8 }}>
                     <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
                     <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Rate/Mo.</div><div style={{ fontWeight: 600, fontSize: 13 }}>{euro(k.monatsrate)}</div></div>
-                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Volltilgung</div><div style={{ fontWeight: 600, fontSize: 13 }}>{k.laufzeit ?? "–"}</div></div>
+                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Laufzeit</div><div style={{ fontWeight: 600, fontSize: 13 }}>{laufzeitText(k.laufzeit, k.auszahlung_datum)}</div></div>
                   </div>
                   <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Getilgt: {tilgtPct != null ? `${tilgtPct}%` : "– (Restschuld nicht erfasst)"}</div>
                   <div className="progress-bar"><div className="progress-fill" style={{ width: `${tilgtPct ?? 0}%`, background: "var(--teal)" }} /></div>

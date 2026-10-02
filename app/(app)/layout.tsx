@@ -15,9 +15,10 @@ import { ZeitraumProvider } from "@/components/ZeitraumProvider";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { getRolle } from "@/lib/rolle";
 import { istFreigeschaltet } from "@/lib/freischaltung";
-import { mussMfaNachholen } from "@/lib/auth/sitzung";
+import { aalStandAus, mussMfaNachholen } from "@/lib/auth/sitzung";
 import { istDemoKonto } from "@/lib/demo";
 
 export const metadata: Metadata = {
@@ -45,15 +46,13 @@ export default async function RootLayout({
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
 
   if (!user) {
     // Ohne Sidebar — hier landen ALLE ausgeloggten Besucher, also die gesamte
     // Marketing-/Ratgeber-Strecke. Deshalb sitzt die Feldmessung hier.
     return (
-      <html lang="de" suppressHydrationWarning>
+      <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
         <head>
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
@@ -71,13 +70,27 @@ export default async function RootLayout({
   // Zwei-Faktor-Sperre: Konto verlangt aal2, Sitzung hat nur aal1 (Passwort
   // stimmt, Code fehlt) → nichts aus der App rendern, zurück zum zweiten
   // Schritt. /login und /auth bleiben erreichbar, sonst käme niemand mehr hin.
+  // Faktorstatus aus `user.factors` — `user` kommt von `getUser()` (Server),
+  // nicht aus dem Cookie (Audit 01.10.2026, A2). Kostet keinen weiteren Aufruf.
   if (!pathname.startsWith("/login") && !pathname.startsWith("/auth")) {
-    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (mussMfaNachholen(aal)) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (mussMfaNachholen(aalStandAus(user.factors, session?.access_token))) {
       redirect(`/login?mfa=1${pathname && pathname !== "/" ? `&next=${encodeURIComponent(pathname)}` : ""}`);
     }
   }
-  const rolle = await getRolle(supabase, user.id);
+  // Rolle und Freischaltung sind voneinander unabhängig → EIN Rundlauf statt
+  // zwei (Phase 5, 30.09.2026: Jede App-Seite brauchte ~400 ms Serverzeit,
+  // das Dashboard nicht mehr als /einstellungen — die Zeit steckte in den
+  // hintereinander laufenden Abfragen HIER, nicht in der Seite).
+  // Die Freischaltung wird mitgelesen, auch wenn der Pfad sie nicht braucht
+  // (/willkommen, öffentliche Seiten) — eine Abfrage, keine Wirkung: Die
+  // Entscheidung unten liest sie nur dort, wo sie vorher auch geprüft wurde.
+  const [rolle, freigeschaltet] = await Promise.all([
+    getRolle(supabase, user.id),
+    istFreigeschaltet(supabase, user.id),
+  ]);
   // Rechtstexte (/impressum, /datenschutz, /agb, /avv) laufen seit dem
   // Layout-Split ueber app/(pub)/ und kommen hier gar nicht mehr an. Uebrig
   // bleiben die Token-Seiten, die eine Datenbank brauchen und darum in der
@@ -90,7 +103,7 @@ export default async function RootLayout({
   // Zugangscode + Consent bestätigen, bevor die App nutzbar ist. Ohne
   // Freischaltung nur /willkommen (und öffentliche Seiten) erreichbar.
   if (!istOeffentlicheSeite && !pathname.startsWith("/willkommen")) {
-    if (!(await istFreigeschaltet(supabase, user.id))) {
+    if (!freigeschaltet) {
       // Bei der Registrierung wurde der Zugangscode bereits geprüft und die
       // Freischaltung vorgemerkt (siehe `bereiteRegistrierungVor`). Sie hier
       // einzulösen erspart dem Nutzer, denselben Code ein zweites Mal zu
@@ -104,7 +117,7 @@ export default async function RootLayout({
   // Willkommens-Gate ohne App-Shell rendern (keine Navigation vor Freischaltung).
   if (pathname.startsWith("/willkommen")) {
     return (
-      <html lang="de" suppressHydrationWarning>
+      <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
         <head>
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
@@ -121,12 +134,18 @@ export default async function RootLayout({
     const erlaubt = pathname.startsWith(heim) || pathname.startsWith("/konto") || istOeffentlicheSeite;
     if (!erlaubt) redirect(heim);
     return (
-      <html lang="de" suppressHydrationWarning>
+      <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
         <head>
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
         <body>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            {children}
+            {/* Mieter-Demo (01.10.2026): dieselben Höflichkeits-Schranken wie
+                in der Vermieter-App; die Datenbank sperrt ohnehin. */}
+            {istDemoKonto(user.email) && <DemoNurLesen />}
+            {istDemoKonto(user.email) && <DemoLeiste />}
+          </ToastProvider>
         </body>
       </html>
     );
@@ -140,7 +159,7 @@ export default async function RootLayout({
   // eigene Sidebar statt der Seite, die der Bewerber bekommt.
   if (istOeffentlicheSeite) {
     return (
-      <html lang="de" suppressHydrationWarning>
+      <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
         <head>
           <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
@@ -152,27 +171,24 @@ export default async function RootLayout({
     );
   }
 
-  const { data: props } = await supabase
-    .from("properties")
-    .select("id,bezeichnung,typ")
-    .order("bezeichnung");
+  // Die vier Abfragen für Navigation und Befehlspalette hängen nicht
+  // voneinander ab → parallel (vorher vier Rundläufe hintereinander).
   // Mieter für die Befehlspalette: „NK Müller" / „Mieterhöhung Müller" führt
   // direkt zur passenden Dokument-Seite dieses Mieters.
-  const { data: mieter } = await supabase
-    .from("mieter")
-    .select("id,vorname,nachname")
-    .order("nachname");
+  // Zähler für die Navigation (offene Anliegen/Bewerbungen, unbestätigte Mieteingänge)
+  const [{ data: props }, { data: mieter }, { data: profil }, neu] = await Promise.all([
+    supabase.from("properties").select("id,bezeichnung,typ").order("bezeichnung"),
+    supabase.from("mieter").select("id,vorname,nachname").order("nachname"),
+    supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
+    ladeNeuigkeiten(),
+  ]);
   const tenants = (mieter ?? []).map((m) => ({
     id: m.id as string,
     name: [m.vorname, m.nachname].filter(Boolean).join(" ").trim() || "Mieter",
   }));
-  const { data: profil } = await supabase
-    .from("vermieter_profil").select("name").limit(1).maybeSingle();
-  // Zähler für die Navigation (offene Anliegen/Bewerbungen, unbestätigte Mieteingänge)
-  const neu = await ladeNeuigkeiten();
 
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

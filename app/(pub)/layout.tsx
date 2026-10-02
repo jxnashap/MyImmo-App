@@ -16,7 +16,7 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default function OeffentlichesLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         {/* Als Datei statt inline — siehe public/theme.js (Nonce-frei). */}
         <script src="/theme.js" />

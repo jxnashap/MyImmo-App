@@ -23,7 +23,7 @@ export default function DatenschutzPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 29. August 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
+        Stand: 9. September 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
         Verarbeitung personenbezogener Daten bei Nutzung der Web-Anwendung MyImmo.
       </p>
 

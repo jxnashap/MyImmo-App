@@ -4,6 +4,7 @@
 import { useRef, useState, useTransition } from "react";
 import { Gauge, Plus, Paperclip, CheckCircle2, Clock } from "lucide-react";
 import { meldeZaehlerstand } from "@/lib/actions/zaehler";
+import VorschauHinweis from "@/components/VorschauHinweis";
 
 export type ZaehlerMeldungRow = {
   id: string;
@@ -22,7 +23,7 @@ const EINHEIT_JE_ART: Record<string, string> = {
   Strom: "kWh", Gas: "kWh", Wasser: "m³", Warmwasser: "m³", "Fernwärme": "kWh", "Öl": "l", Sonstiges: "",
 };
 
-export default function ZaehlerPortal({ meldungen }: { meldungen: ZaehlerMeldungRow[] }) {
+export default function ZaehlerPortal({ meldungen, nurLesen = false }: { meldungen: ZaehlerMeldungRow[]; nurLesen?: boolean }) {
   const [offenForm, setOffenForm] = useState(false);
   const [art, setArt] = useState("Strom");
   const [fehler, setFehler] = useState<string | null>(null);
@@ -44,12 +45,16 @@ export default function ZaehlerPortal({ meldungen }: { meldungen: ZaehlerMeldung
     <div className="section">
       <div className="section-header">
         <h3>Zählerstände</h3>
-        <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => setOffenForm((o) => !o)}>
-          <Plus size={13} style={{ verticalAlign: "-2px" }} /> Zählerstand melden
-        </button>
+        {nurLesen ? (
+          <VorschauHinweis was="Zählerstand melden" />
+        ) : (
+          <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => setOffenForm((o) => !o)}>
+            <Plus size={13} style={{ verticalAlign: "-2px" }} /> Zählerstand melden
+          </button>
+        )}
       </div>
       <div className="section-body">
-        {offenForm && (
+        {offenForm && !nurLesen && (
           <form
             ref={formRef}
             action={senden}

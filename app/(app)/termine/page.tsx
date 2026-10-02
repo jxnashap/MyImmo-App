@@ -42,7 +42,7 @@ export default async function TerminePage(
   const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
     supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum").order("bezeichnung"),
-    supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
+    supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen"),
     supabase.from("kredite").select("id,prop_id,bezeichnung,zinsbindung,auszahlung_datum"),
     supabase.from("frist_ausgeblendet").select("schluessel"),
   ]);

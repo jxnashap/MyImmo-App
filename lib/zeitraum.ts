@@ -1,12 +1,28 @@
-// Zentrale Logik für den globalen Zeitraum-Filter (1M · 1J · 5J · Max).
+// Zentrale Logik für den globalen Zeitraum-Filter (1J · 3J · 5J · Max).
 // Rein (keine React-/DOM-Abhängigkeit) und damit testbar.
+//
+// 30.09.2026 (Vorgabe des Betreibers): „1M" entfällt — Miete kommt einmal im
+// Monat, eine Tagesansicht zeigte 29 leere Tage und einen Ausschlag. Alles
+// rechnet jetzt MONATSWEISE; „Max" erst ab mehr als sechs Jahren Bestand
+// jahresweise (vorher immer — zwei Jahre Buchungen ergaben zwei Punkte).
+//
+// Datumsrechnung auf den ZAHLEN des ISO-Datums, nie über `new Date(iso)` mit
+// Ortszeit-Zugriffen: „2026-03-01" ist westlich von UTC sonst der 28. Februar
+// (dieselbe Falle wie `naechsteFaelligkeit`, siehe CLAUDE.md).
 
-export type Zeitraum = "1M" | "1J" | "5J" | "Max";
-export const ZEITRAEUME: Zeitraum[] = ["1M", "1J", "5J", "Max"];
-export const ZEITRAUM_LABEL: Record<Zeitraum, string> = { "1M": "1M", "1J": "1J", "5J": "5J", Max: "Max" };
+export type Zeitraum = "1J" | "3J" | "5J" | "Max";
+export const ZEITRAEUME: Zeitraum[] = ["1J", "3J", "5J", "Max"];
+export const ZEITRAUM_LABEL: Record<Zeitraum, string> = { "1J": "1J", "3J": "3J", "5J": "5J", Max: "Max" };
+const MONATE_JE_ZEITRAUM: Record<Exclude<Zeitraum, "Max">, number> = { "1J": 12, "3J": 36, "5J": 60 };
+/** Bis zu so vielen Monaten zeigt „Max" noch Monate, darüber Jahre. */
+export const MAX_MONATE_MONATSWEISE = 72;
+
+export function istZeitraum(s: unknown): s is Zeitraum {
+  return typeof s === "string" && (ZEITRAEUME as string[]).includes(s);
+}
 
 export type RawPoint = { date: string; value: number };
-export type Granularitaet = "day" | "month" | "year";
+export type Granularitaet = "month" | "year";
 export type Bucket = { date: string; value: number };
 export type Aggregation = { gran: Granularitaet; buckets: Bucket[] };
 
@@ -50,106 +66,117 @@ export function niceScale(min: number, max: number, maxTicks = 5): { min: number
   return { min: niceMin, max: niceMax, ticks, step };
 }
 
-// ---- Datums-Helfer ------------------------------------------------------
+// ---- Monats-Helfer auf Zahlen -------------------------------------------
 const pad = (n: number) => String(n).padStart(2, "0");
-const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-function startOfDay(d: Date) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
-
-function rangeStart(zeitraum: Zeitraum, now: Date, earliest: Date | null): { start: Date; gran: Granularitaet } {
-  switch (zeitraum) {
-    case "1M": {
-      // Tag klemmen, damit z. B. 31.03. − 1 Monat nicht in den März zurückrollt.
-      const letzterTagVormonat = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
-      return { start: startOfDay(new Date(now.getFullYear(), now.getMonth() - 1, Math.min(now.getDate(), letzterTagVormonat))), gran: "day" };
-    }
-    case "1J": return { start: new Date(now.getFullYear(), now.getMonth() - 11, 1), gran: "month" };
-    case "5J": return { start: new Date(now.getFullYear(), now.getMonth() - 59, 1), gran: "month" };
-    case "Max":
-    default: {
-      const y = earliest ? earliest.getFullYear() : now.getFullYear();
-      return { start: new Date(y, 0, 1), gran: "year" };
-    }
-  }
+/** Monatsindex (Jahr*12 + Monat-1) aus „YYYY-MM…", sonst null. */
+function monatsIndex(iso: string): number | null {
+  const m = /^(\d{4})-(\d{2})/.exec(iso ?? "");
+  if (!m) return null;
+  const jahr = Number(m[1]), monat = Number(m[2]);
+  if (monat < 1 || monat > 12) return null;
+  return jahr * 12 + (monat - 1);
 }
+const indexZuDatum = (i: number) => `${Math.floor(i / 12)}-${pad((i % 12) + 1)}-01`;
 
-function bucketKey(d: Date, gran: Granularitaet): string {
-  if (gran === "day") return isoDay(d);
-  if (gran === "month") return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-  return String(d.getFullYear());
-}
-
-// Erzeugt die (lückenlose) Bucket-Reihe von start bis now in der Granularität.
-function leereBuckets(start: Date, now: Date, gran: Granularitaet): { date: string; cursor: Date }[] {
-  const out: { date: string; cursor: Date }[] = [];
-  const d = new Date(start);
-  let guard = 0;
-  while (d <= now && guard++ < 5000) {
-    out.push({ date: isoDay(d), cursor: new Date(d) });
-    if (gran === "day") d.setDate(d.getDate() + 1);
-    else if (gran === "month") d.setMonth(d.getMonth() + 1);
-    else d.setFullYear(d.getFullYear() + 1);
-  }
-  return out;
+/**
+ * Datum, unter dem eine EINNAHME in der Grafik zählt: der Mietmonat
+ * (`soll_monat`), wenn bekannt — sonst das Buchungsdatum.
+ * Eine Januar-Miete, die am 2. Februar eingeht, gehört in den Januar; sonst
+ * steht der Januar leer und der Februar doppelt.
+ */
+export function einnahmeDatum(e: { buchungsdatum?: string | null; soll_monat?: string | null }): string | null {
+  if (e.soll_monat && /^\d{4}-(0[1-9]|1[0-2])$/.test(e.soll_monat)) return `${e.soll_monat}-01`;
+  return e.buchungsdatum ?? null;
 }
 
 /**
  * Aggregiert Rohpunkte (Datum + Betrag) auf den gewählten Zeitraum.
- * - kurze Zeiträume tageweise, lange monats-/jahresweise
- * - cumulative=true: laufende Summe inkl. Grundlinie aus der Historie vor dem Zeitraum
- * - zu wenig Historie ⇒ es werden einfach 0-Buckets gezeigt, kein Fehler
+ * - Monats-Buckets bis einschließlich des laufenden Monats
+ * - cumulative=true: laufende Summe, beginnt im Zeitraum bei 0
+ * - Punkte nach dem laufenden Monat (Vorausbuchungen) zählen nicht
+ * - zu wenig Historie ⇒ 0-Buckets, kein Fehler
  */
+/**
+ * Heutiges Datum in Europe/Berlin als `YYYY-MM-DD` — der EINE Stichtag für
+ * Server und Browser. Bis 01.10.2026 (Audit A10) rechnete das Dashboard den
+ * Monatsanker serverseitig in UTC und im Browser in Ortszeit: an jedem
+ * Monatsersten 00–02 Uhr ein Hydration-Fehler (#418, gemessen) und eine
+ * andere letzte Spalte. Die Zeitzone ist die der Nutzer, nicht die des
+ * Servers (Vercel läuft in UTC).
+ */
+export function heuteBerlin(jetzt: Date = new Date()): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(jetzt);
+}
+
 export function aggregate(
   points: RawPoint[],
   zeitraum: Zeitraum,
-  now: Date = new Date(),
+  now: Date | string = new Date(),
   opts: { cumulative?: boolean } = {}
 ): Aggregation {
-  const gueltig = points.filter((p) => p.date && !Number.isNaN(new Date(p.date).getTime()));
-  const sortiert = [...gueltig].sort((a, b) => a.date.localeCompare(b.date));
-  const earliest = sortiert.length ? new Date(sortiert[0].date) : null;
+  // Ein ISO-Datum (vom Server) zählt auf seinen ZAHLEN — ein Date-Objekt auf
+  // der Ortszeit des Prozesses (nur noch Rückfall für alte Aufrufer/Tests).
+  const jetzt =
+    typeof now === "string"
+      ? (monatsIndex(now) ?? new Date().getFullYear() * 12 + new Date().getMonth())
+      : now.getFullYear() * 12 + now.getMonth();
+  const gueltig = points
+    .map((p) => ({ i: monatsIndex(p.date), value: p.value }))
+    .filter((p): p is { i: number; value: number } => p.i !== null && Number.isFinite(p.value));
+  const fruehester = gueltig.length ? Math.min(...gueltig.map((p) => p.i)) : jetzt;
 
-  const { start, gran } = rangeStart(zeitraum, now, earliest);
-  const reihe = leereBuckets(start, now, gran);
-  const summen = new Map<string, number>();
-  for (const b of reihe) summen.set(bucketKey(b.cursor, gran), 0);
-
-  // Grundlinie: Summe aller Punkte VOR dem Zeitraum (nur bei cumulative relevant).
-  let basis = 0;
-  for (const p of gueltig) {
-    const d = new Date(p.date);
-    if (d < start) {
-      basis += p.value;
-      continue;
-    }
-    const key = bucketKey(d, gran);
-    if (summen.has(key)) summen.set(key, (summen.get(key) ?? 0) + p.value);
+  let gran: Granularitaet = "month";
+  let start: number;
+  if (zeitraum === "Max") {
+    start = Math.min(fruehester, jetzt);
+    if (jetzt - start + 1 > MAX_MONATE_MONATSWEISE) gran = "year";
+  } else {
+    start = jetzt - MONATE_JE_ZEITRAUM[zeitraum] + 1;
   }
 
-  let lauf = basis;
-  const buckets: Bucket[] = reihe.map((b) => {
-    const wert = summen.get(bucketKey(b.cursor, gran)) ?? 0;
-    if (opts.cumulative) {
-      lauf += wert;
-      return { date: b.date, value: lauf };
-    }
-    return { date: b.date, value: wert };
-  });
+  // Schlüssel je Bucket: Monatsindex, bei Jahren der Januar des Jahres.
+  const schluessel = (i: number) => (gran === "year" ? Math.floor(i / 12) * 12 : i);
+  const reihe: number[] = [];
+  for (let i = schluessel(start); i <= jetzt; i += gran === "year" ? 12 : 1) reihe.push(i);
+  const summen = new Map<number, number>(reihe.map((k) => [k, 0]));
 
+  // Punkte VOR dem Zeitraum zählen NICHT — auch nicht bei `cumulative`.
+  // Bis 30.09.2026 startete die kumulierte Linie beim Saldo aller früheren
+  // Buchungen („Grundlinie"); der Endwert hing dann davon ab, wann jemand mit
+  // dem Buchen angefangen hat (externes Review). Wer den Saldo seit Beginn
+  // will, wählt „Max".
+  for (const p of gueltig) {
+    if (p.i < start || p.i > jetzt) continue;
+    const k = schluessel(p.i);
+    if (summen.has(k)) summen.set(k, (summen.get(k) ?? 0) + p.value);
+  }
+
+  let lauf = 0;
+  const buckets: Bucket[] = reihe.map((k) => {
+    const wert = summen.get(k) ?? 0;
+    lauf += wert;
+    return { date: indexZuDatum(k), value: opts.cumulative ? lauf : wert };
+  });
   return { gran, buckets };
 }
 
 // ---- Achsenbeschriftung pro Bucket --------------------------------------
-// Liefert den X-Tick-Text — oder "" wenn dieser Bucket keinen Tick bekommt
-// (Ausdünnung bei vielen Datenpunkten).
+// Liefert den X-Tick-Text — oder "" wenn dieser Bucket keinen Tick bekommt.
 export function xTickLabel(buckets: Bucket[], i: number, gran: Granularitaet): string {
-  const d = new Date(buckets[i].date);
-  if (gran === "year") return String(d.getFullYear());
-  if (gran === "month") {
-    // 1J (≤14 Buckets): jeder Monat. 5J: nur Januar = Jahreswechsel.
-    if (buckets.length <= 14) return MONATE_KURZ[d.getMonth()];
-    return d.getMonth() === 0 ? String(d.getFullYear()) : "";
-  }
-  // Tage: auf ~8 Ticks ausdünnen.
-  const step = Math.max(1, Math.ceil(buckets.length / 8));
-  return i % step === 0 || i === buckets.length - 1 ? `${d.getDate()}.${d.getMonth() + 1}.` : "";
+  const idx = monatsIndex(buckets[i].date);
+  if (idx === null) return "";
+  const jahr = Math.floor(idx / 12), monat = idx % 12;
+  if (gran === "year") return String(jahr);
+  const n = buckets.length;
+  if (n <= 14) return MONATE_KURZ[monat]; // 1J: jeder Monat
+  if (n <= 40) return monat % 3 === 0 ? `${MONATE_KURZ[monat]} ${String(jahr).slice(2)}` : ""; // 3J: Quartale
+  return monat === 0 ? String(jahr) : ""; // 5J/Max: Jahreswechsel
+}
+
+/** Titel eines Buckets für den Tooltip: „Mär 2026" bzw. „2026". */
+export function bucketTitel(date: string, gran: Granularitaet): string {
+  const idx = monatsIndex(date);
+  if (idx === null) return date;
+  const jahr = Math.floor(idx / 12);
+  return gran === "year" ? String(jahr) : `${MONATE_KURZ[idx % 12]} ${jahr}`;
 }

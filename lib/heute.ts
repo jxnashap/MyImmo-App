@@ -11,7 +11,7 @@
 // Reine Funktion ohne Datenbank und ohne React: Was hier gerechnet wird, lässt
 // sich prüfen. Die Seite reicht nur die Zeilen herein.
 
-export type AufgabenArt = "miete" | "anliegen" | "zaehler" | "frist" | "termin";
+export type AufgabenArt = "miete" | "anliegen" | "zaehler" | "frist" | "termin" | "stammdaten";
 
 export type Aufgabe = {
   art: AufgabenArt;
@@ -33,6 +33,7 @@ export type OffeneMiete = { mieterId: string; name: string; objekt: string; mona
 export type OffenesAnliegen = { id: string; titel: string | null; mieter: string; erstellt: string };
 export type OffeneMeldung = { id: string; art: string | null; mieter: string; datum: string };
 export type FristZeile = { datum: string; label: string; sub: string; warn: boolean };
+export type ObjektOhneKaufdatum = { id: string; name: string };
 
 const monatLabel = (ym: string) => {
   const [j, m] = ym.split("-");
@@ -53,6 +54,14 @@ export function baueHeuteAufgaben(
     anliegen: OffenesAnliegen[];
     meldungen: OffeneMeldung[];
     fristen: FristZeile[];
+    /** Objekte ohne Kaufdatum — AfA und Spekulationsfrist rechnen sonst falsch. */
+    ohneKaufdatum?: ObjektOhneKaufdatum[];
+    /** Laufende Mieter ohne Mietbeginn — im Mietkonto unsichtbar (keine Soll-Miete). */
+    mieterOhneBeginn?: ObjektOhneKaufdatum[];
+    /** Mieter ohne Objekt — zählen in keiner Objekt-Miete. */
+    mieterOhneObjekt?: ObjektOhneKaufdatum[];
+    /** Kredite ohne Auszahlungsdatum — keine Frist fürs Sonderkündigungsrecht (§ 489 BGB). */
+    krediteOhneAuszahlung?: ObjektOhneKaufdatum[];
   },
   heuteISO: string,
   grenze = 5,
@@ -111,7 +120,51 @@ export function baueHeuteAufgaben(
     });
   }
 
-  const rang: Record<AufgabenArt, number> = { miete: 0, anliegen: 1, zaehler: 2, frist: 3, termin: 4 };
+  // Stammdaten-Lücken (30.09.2026, Prüfung der echten Konten): Jede Lücke
+  // verfälscht eine Zahl, ohne dass die App es sagte. EINE Sammelzeile je
+  // Lücke statt einer je Datensatz — sonst verdrängen zwanzig Stammdaten-
+  // Zeilen die Miete. Nie dringend und ans Ende sortiert: Es eilt nicht, es
+  // fällt nur auf.
+  //   Kaufdatum      20 von 23 Objekten → AfA im Kaufjahr voll, § 23 EStG unbekannt
+  //   Mietbeginn      3 Mieter          → im Mietkonto unsichtbar, nie „offen"
+  //   Objekt          3 Mieter          → in keiner Objekt-Miete
+  //   Auszahlung      6 von 8 Krediten  → keine Frist § 489 BGB (10 Jahre)
+  const luecke = (
+    liste: ObjektOhneKaufdatum[] | undefined,
+    einzeln: (e: ObjektOhneKaufdatum) => { label: string; href: string },
+    mehrere: (n: number) => { label: string; href: string },
+    sub: string,
+  ) => {
+    if (!liste || liste.length === 0) return;
+    const z = liste.length === 1 ? einzeln(liste[0]) : mehrere(liste.length);
+    aufgaben.push({ art: "stammdaten", ...z, sub, aktion: "Ergänzen", dringend: false, datum: "9999-12-31" });
+  };
+  luecke(
+    q.ohneKaufdatum,
+    (e) => ({ label: `Kaufdatum fehlt: ${e.name}`, href: `/properties/${e.id}` }),
+    (n) => ({ label: `Kaufdatum fehlt bei ${n} Objekten`, href: "/properties" }),
+    "für die AfA im Kaufjahr und die Spekulationsfrist",
+  );
+  luecke(
+    q.mieterOhneBeginn,
+    (e) => ({ label: `Mietbeginn fehlt: ${e.name}`, href: `/tenants/${e.id}/edit` }),
+    (n) => ({ label: `Mietbeginn fehlt bei ${n} Mietern`, href: "/tenants" }),
+    "ohne Mietbeginn erscheint die Miete nicht im Mietkonto",
+  );
+  luecke(
+    q.mieterOhneObjekt,
+    (e) => ({ label: `Mieter ohne Objekt: ${e.name}`, href: `/tenants/${e.id}/edit` }),
+    (n) => ({ label: `${n} Mieter ohne Objekt`, href: "/tenants" }),
+    "die Miete zählt in keinem Objekt",
+  );
+  luecke(
+    q.krediteOhneAuszahlung,
+    (e) => ({ label: `Auszahlungsdatum fehlt: ${e.name}`, href: `/kredite/${e.id}/edit` }),
+    (n) => ({ label: `Auszahlungsdatum fehlt bei ${n} Krediten`, href: "/kredite" }),
+    "für das Sonderkündigungsrecht nach 10 Jahren (§ 489 BGB)",
+  );
+
+  const rang: Record<AufgabenArt, number> = { miete: 0, anliegen: 1, zaehler: 2, frist: 3, termin: 4, stammdaten: 5 };
   aufgaben.sort((a, b) => {
     if (a.dringend !== b.dringend) return a.dringend ? -1 : 1;
     if (a.datum !== b.datum) return a.datum.localeCompare(b.datum);

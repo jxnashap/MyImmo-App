@@ -6,6 +6,7 @@ import { RATGEBER, RECHTSSTAND, ratgeberBySlug, ratgeberDatum } from "@/lib/ratg
 import Brotkrumen from "@/components/landing/Brotkrumen";
 import { BASIS_URL, ORGANISATION } from "@/lib/seo/jsonLd";
 import { ArrowRight, Clock } from "lucide-react";
+import { ctaBeschriftung } from "@/lib/preise";
 
 // Kein `dynamicParams = false` noetig: seit die oeffentliche Strecke ein
 // eigenes, statisches Root-Layout hat (app/(pub)/layout.tsx), wird nicht mehr
@@ -141,7 +142,7 @@ export default async function RatgeberArtikelSeite(props: { params: Promise<{ sl
             <div style={{ background: "var(--l-bg3)", border: "1px solid var(--l-gold)", borderRadius: 12, padding: "22px 24px", margin: "32px 0" }}>
               <h3 style={{ fontSize: 17, margin: "0 0 8px", color: "var(--l-gold-ink)" }}>{a.feature.titel}</h3>
               <p style={{ fontSize: 14.5, lineHeight: 1.65, color: "var(--l-muted)", margin: "0 0 16px" }}>{a.feature.text}</p>
-              <Link href={a.feature.href} className="btn btn-gold">{a.feature.cta} <ArrowRight size={14} style={{ verticalAlign: "-2px" }} /></Link>
+              <Link href={a.feature.href} className="btn btn-gold">{ctaBeschriftung(a.feature.cta)} <ArrowRight size={14} style={{ verticalAlign: "-2px" }} /></Link>
             </div>
           )}
 

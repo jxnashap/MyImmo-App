@@ -87,7 +87,7 @@ export default function SelbstauskunftForm({ initial }: { initial: Selbstauskunf
 
     const r = await speichereSelbstauskunft(daten);
     setSaving(false);
-    toast(r.ok ? "Selbstauskunft gespeichert." : (r.error ?? "Fehler beim Speichern."));
+    toast(r.ok ? "Selbstauskunft gespeichert." : (r.error ?? "Fehler beim Speichern."), r.ok ? "success" : "error");
     // Server-Daten neu laden → Machbarkeits-Ampel zieht die neuen Zahlen ohne Reload.
     if (r.ok) router.refresh();
   }

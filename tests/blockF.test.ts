@@ -102,7 +102,9 @@ describe("Passwortwechsel mit Bestätigung", () => {
   it("meldet ein geleaktes Passwort verständlich, statt englisch durchzureichen", async () => {
     const { client } = fakeClient();
     (client as unknown as { auth: { updateUser: unknown } }).auth.updateUser = async () => ({
-      error: { message: "Password is known to be weak and easy to guess, please choose a different one (pwned)" },
+      // Wörtlich aus dem Supabase-Log vom 30.09.2026. Die frühere Testfassung hängte
+      // „(pwned)" an — erfunden, und genau deshalb blieb der Fehler unentdeckt.
+      error: { message: "Password is known to be weak and easy to guess, please choose a different one." },
     });
     const erg = await wechslePasswort(client, basis);
     expect(erg.ok).toBe(false);

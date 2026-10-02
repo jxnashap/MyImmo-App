@@ -106,6 +106,7 @@ async function hole(pfad, tiefe = 0, kette = []) {
     url,
     endePfad: new URL(url).pathname,
     kette,
+    typ: antwort.headers.get("content-type") ?? "",
     html: await antwort.text(),
   };
 }
@@ -129,22 +130,22 @@ function ersterLink(html, praefix) {
 // WELCHE WEGE HIER STEHEN — und welche NICHT
 //
 // Das Demo-Konto ist Schaustück, nicht Sandkasten: `demoDarfRoute` in
-// lib/demo.ts gibt nur einen Teil der App frei. Mietkonto, Steuer/Anlage V,
-// Mieterportal, Archiv, Verbrauch und Termine sind gesperrt und werden auf das
-// Dashboard umgeleitet. Sie stehen deshalb NICHT als Kernweg hier — ein Test,
-// der sie über die Demo aufruft, prüft das Dashboard.
+// lib/demo.ts gibt nur einen Teil der App frei. Seit 30.09.2026 gehören die
+// KAUFGRÜNDE dazu — Mietkonto, Steuer/Anlage V, NK-Abrechnung, Kredite,
+// Verbrauch, Termine, Karte — und stehen deshalb jetzt als Kernwege hier.
+// Vorher waren sie gesperrt und damit von diesem Test UNGEPRÜFT.
 //
-// Diese Bereiche sind damit ungeprüft. Das ist keine Nachlässigkeit, sondern
-// die Folge einer bewussten Produktentscheidung; wer sie abdecken will,
-// braucht einen Rauchtest-Zugang mit einem eigenen (leeren) Vermieter-Konto.
-// Solange es den nicht gibt, deckt der Weg „demo-grenze" wenigstens ab, dass
-// die Sperre hält.
+// Seit Phase 3 auch Mieterportal und Archiv (Beispieldaten im Schnappschuss).
+// Weiterhin gesperrt: Makler-Unterlagen. Der Weg „demo-grenze" prüft, dass die
+// Sperre hält und die Weiterleitung den Bereich nennt.
 const WEGE = [
   {
     schluessel: "dashboard",
     titel: "Dashboard — Lage auf einen Blick",
     pfad: "/",
-    erwartet: ["Portfolio-Wert", "Termine &amp; Aufgaben"],
+    // „Buchungssaldo" und die Formel am Monats-Cashflow (Phase 4, Review
+    // 30.09.2026): Jede Cashflow-Zahl sagt, was sie ist.
+    erwartet: ["Portfolio-Wert", "Termine &amp; Aufgaben", "<h3>Buchungssaldo</h3>", "Warmmiete − Kreditraten − Ø Kosten", "Warmmiete / Mo.", "% ggü. Kaufpreis"],
     async pruefe({ html }) {
       // Vorgabe des Betreibers (#321): Kennzahlen VOR den Aufgaben. Der
       // Unit-Test prüft die Quelldatei — hier steht die ausgelieferte Seite.
@@ -213,8 +214,159 @@ const WEGE = [
     },
   },
   {
+    schluessel: "aktuell",
+    titel: "Demo-Daten reichen bis zum laufenden Monat",
+    pfad: "/cashflow",
+    erwartet: [],
+    async pruefe({ html }) {
+      // Review 30.09.2026: Die Buchungen endeten am 01.06.2026 — Ende
+      // September stand jeder Mieter als säumig da. Seit Migration
+      // 20260930154606 schreibt der Reset bis heute fort. UTC, weil die
+      // Datenbank `current_date` in UTC rechnet (sonst falsch rot um
+      // Mitternacht am Monatswechsel). Format wie `datum()` in lib/format.ts.
+      const jetzt = new Date();
+      const erster = `1.${jetzt.getUTCMonth() + 1}.${jetzt.getUTCFullYear()}`;
+      return html.includes(`>${erster}<`) ? null : `keine Buchung vom ${erster} — Demo-Daten veraltet?`;
+    },
+  },
+  {
+    schluessel: "mieterportal",
+    titel: "Mieterportal — Beispiel-Anliegen",
+    pfad: "/anliegen",
+    erwartet: ["Heizkörper im Bad wird nicht warm"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    // Mieterportal-Vorschau (01.10.2026): Der Vermieter sieht das Portal mit
+    // den Augen eines Mieters. In der Demo steht die verknüpfte Mieterin
+    // (Sophie Berger) zuerst in der Auswahl — also muss ihre Wohnung da sein.
+    schluessel: "portal-vorschau",
+    titel: "Mieterportal — Ansicht Mieter (nur Demo)",
+    pfad: "/anliegen?tab=vorschau",
+    erwartet: ["Ansicht Mieter", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete", "Ansicht des Mieters"],
+    async pruefe({ html }) {
+      // Nur-Lesen: In der Vorschau darf kein Abmelde-Formular des Portals stehen.
+      return html.includes("Mieter sieht hier") || html.includes("Mieterportal von") ? null : "Vorschau-Rahmen fehlt";
+    },
+  },
+  {
+    // Demo-Service (01.10.2026): drei verknüpfte Partner. Firmen und
+    // Beispielaufträge erscheinen erst mit dem ausstehenden Reset
+    // (supabase/ausstehend/demo_service_reset.sql) — geprüft wird deshalb nur,
+    // was ohne ihn schon stimmen muss.
+    schluessel: "service-partner",
+    titel: "Mieterportal — Service-Partner verknüpft",
+    pfad: "/anliegen?tab=service",
+    // Firmen und Aufträge kommen aus dem Reset (Migration 20261001180200) — ohne ihn fehlen sie still.
+    erwartet: ["Verknüpfte Service-Partner", "Hausmeisterservice Krause", "Sanitär Lindner GmbH", "Garten- &amp; Winterdienst Petersen", "Heizung &amp; Sanitär Böhm", "Dachrinne verstopft", "Hecke schneiden und Grünschnitt entsorgen"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "service-ansicht",
+    titel: "Mieterportal — Ansicht Service (nur Demo)",
+    pfad: "/anliegen?tab=vorschau-service",
+    erwartet: ["Ansicht Service", "Service-Portal", "Ansicht des Service-Partners", "Auftrag beantragen"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "archiv",
+    titel: "Archiv — Beispiel-Einträge",
+    pfad: "/archiv",
+    erwartet: ["Mietvertrag Weber"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "steuer",
+    titel: "Steuer — Anlage V",
+    pfad: "/steuer",
+    erwartet: ["Anlage V"],
+    async pruefe({ html }) {
+      return /€|&euro;/.test(html) ? null : "Steuerseite ohne Beträge";
+    },
+  },
+  {
+    schluessel: "anlage-v-pdf",
+    titel: "Anlage V als PDF — lesende API-Route",
+    pfad: "/api/berichte/anlage-v",
+    erwartet: [],
+    async pruefe({ typ }) {
+      return typ.includes("application/pdf") ? null : `kein PDF, sondern „${typ}"`;
+    },
+  },
+  {
+    schluessel: "csv-export",
+    titel: "CSV-Export der Buchungen — war in der Demo eine Sackgasse",
+    pfad: "/api/export/buchungen",
+    erwartet: [],
+    async pruefe({ typ }) {
+      return typ.includes("text/csv") ? null : `keine CSV, sondern „${typ}"`;
+    },
+  },
+  {
+    schluessel: "mietkonto",
+    titel: "Mietkonto — Soll und Ist je Mieter",
+    pfad: "/mietkonto",
+    erwartet: ["Verwaltung · Mietkonto"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "nk",
+    titel: "Nebenkostenabrechnung eines Mieters",
+    pfad: "/tenants",
+    erwartet: ["Mieter"],
+    async pruefe({ html }) {
+      const mieter = ersterLink(html, "/tenants/");
+      if (!mieter) return "kein Mieter in der Liste";
+      const seite = await hole(`${mieter}/nk`);
+      if (seite.status >= 400) return `HTTP ${seite.status}`;
+      if (seite.endePfad !== `${mieter}/nk`) return `umgeleitet auf ${seite.endePfad} — NK-Rechner wieder gesperrt?`;
+      if (!/Nebenkostenabrechnung/.test(seite.html)) return "NK-Seite ohne Überschrift";
+      return null;
+    },
+  },
+  {
+    schluessel: "kredite",
+    titel: "Kredite",
+    pfad: "/kredite",
+    erwartet: ["Kredite &amp; Finanzierung"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "karte",
+    titel: "Portfolio-Karte — Koordinaten im Schnappschuss",
+    pfad: "/karte",
+    erwartet: ["Portfolio-Karte"],
+    async pruefe({ html }) {
+      // Ohne gespeicherte Koordinaten geokodierte die Seite bei JEDEM
+      // Demo-Besuch neu.
+      //
+      // POSITIV prüfen, mit Sätzen, die NUR diese Seite schreibt. Die erste
+      // Fassung suchte /nicht gefunden/ im ganzen HTML und war falsch ROT: Der
+      // Ausdruck steckt im mitgeschickten Next-Code, nicht im Seiteninhalt.
+      // Dieselbe Lehre wie beim falsch grünen ersten Rauchtest, nur umgekehrt.
+      // (React trennt Textteile mit `<!-- -->` — deshalb die Lücken im Muster.)
+      const m = /(\d+)(?:<!-- -->|\s)+Objekte?(?:<!-- -->|\s)+auf der Karte/.exec(html);
+      if (!m) return "keine Angabe „N Objekte auf der Karte\"";
+      if (Number(m[1]) < 1) return "0 Objekte auf der Karte";
+      if (/beim nächsten Aufruf der Karte verortet/.test(html)) return "Objekte ohne Koordinaten — Schnappschuss unvollständig?";
+      return null;
+    },
+  },
+  {
     schluessel: "demo-grenze",
-    titel: "Demo-Grenze — gesperrte Bereiche bleiben gesperrt",
+    titel: "Demo-Grenze — gesperrte Bereiche bleiben gesperrt und nennen sich",
     pfad: "/",
     erwartet: [],
     async pruefe() {
@@ -222,13 +374,19 @@ const WEGE = [
       // Sperre unbemerkt weg, sähe ein Besucher Bereiche, in denen er Dinge
       // anklicken kann, die stumm an der RLS scheitern. Genau der Fall, den
       // lib/demo.ts als Grund für Ebene 2 nennt.
-      const gesperrt = ["/mietkonto", "/steuer", "/anliegen", "/archiv", "/verbrauch"];
+      const gesperrt = ["/makler"];
       const offen = [];
+      const stumm = [];
       for (const p of gesperrt) {
         const r = await hole(p);
         if (r.endePfad === p) offen.push(p);
+        // Ohne `bereich=` öffnet das Dashboard keinen Sperr-Dialog — der
+        // Besucher stünde wieder kommentarlos dort (Review 30.09.2026).
+        else if (!new URL(r.url).searchParams.get("bereich")) stumm.push(p);
       }
-      return offen.length ? `nicht mehr gesperrt: ${offen.join(", ")}` : null;
+      if (offen.length) return `nicht mehr gesperrt: ${offen.join(", ")}`;
+      if (stumm.length) return `Weiterleitung ohne bereich=: ${stumm.join(", ")}`;
+      return null;
     },
   },
 ];
@@ -262,7 +420,7 @@ async function main() {
       // Ohne sie war dieses Skript falsch grün (siehe Kommentar bei `hole`).
       // Sie steht VOR der Textprüfung, damit der Grund die Umleitung nennt und
       // nicht ein fehlendes Wort.
-      if (!grund && seite.endePfad !== weg.pfad) {
+      if (!grund && seite.endePfad !== weg.pfad.split("?")[0]) {
         grund = `umgeleitet: ${seite.kette.join(" → ")}`;
       }
       if (!grund) {
@@ -275,6 +433,77 @@ async function main() {
     }
     ergebnisse.push({ weg, grund });
     console.log(`${grund ? "✗" : "✓"} ${weg.titel}${grund ? `\n    ${grund}` : ""}`);
+  }
+
+  // --- Mieter-Sicht (01.10.2026) ------------------------------------------
+  // Zweite Anmeldung am Demo-Mieter (Bremse: 2 von 6 je 300 s). Das Portal
+  // war bis dahin der einzige Bereich ohne jede automatische Prüfung — und
+  // Paket 5 hatte es gerade umgebaut (Sichten statt Tabellen).
+  kekse.clear();
+  const mieterLogin = await hole("/api/demo?rolle=mieter");
+  if (mieterLogin.endePfad !== "/portal") {
+    ergebnisse.push({ weg: { titel: "Mieter-Demo — Anmeldung" }, grund: `gelandet auf ${mieterLogin.kette.join(" → ")}` });
+    console.log(`✗ Mieter-Demo — Anmeldung\n    ${mieterLogin.kette.join(" → ")}`);
+  } else {
+    console.log("\n✓ Mieter-Demo — Anmeldung");
+    const MIETER_WEGE = [
+      { titel: "Mieterportal — Wohnung (Sichten statt Tabellen)", pfad: "/portal", erwartet: ["Mieterportal", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete"] },
+      { titel: "Mieterportal — Anliegen", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<"] },
+      { titel: "Mieterportal — Zahlungen", pfad: "/portal?tab=zahlungen", erwartet: ["Mieterportal", ">Zahlungen<"] },
+      { titel: "Mieterportal — Dokumente", pfad: "/portal?tab=dokumente", erwartet: ["Mieterportal", ">Dokumente<"] },
+      { titel: "Mieterportal — Zähler", pfad: "/portal?tab=zaehler", erwartet: ["Mieterportal", "Zählerstand"] },
+      { titel: "Mieter-Konto — Einstellungen", pfad: "/konto", erwartet: ["Meine Einstellungen"] },
+      { titel: "Mieter-Demo — Vermieter-Bereich bleibt zu", pfad: "/steuer", erwartet: [], zielPfad: "/portal" },
+    ];
+    for (const weg of MIETER_WEGE) {
+      let grund = null;
+      try {
+        const seite = await hole(weg.pfad);
+        const soll = weg.zielPfad ?? weg.pfad.split("?")[0];
+        if (seite.status >= 400) grund = `HTTP ${seite.status}`;
+        if (!grund && seite.endePfad !== soll) grund = `umgeleitet: ${seite.kette.join(" → ")}`;
+        if (!grund) {
+          const fehlt = weg.erwartet.filter((t) => !seite.html.includes(t));
+          if (fehlt.length) grund = `Text fehlt: ${fehlt.join(", ")}`;
+        }
+      } catch (e) {
+        grund = `Ausnahme: ${e.message}`;
+      }
+      ergebnisse.push({ weg, grund });
+      console.log(`${grund ? "✗" : "✓"} ${weg.titel}${grund ? `\n    ${grund}` : ""}`);
+    }
+  }
+
+  // --- Service-Sicht (01.10.2026) -----------------------------------------
+  // Dritte Anmeldung (3 von 6 je 300 s): als Demo-Hausmeister.
+  kekse.clear();
+  const serviceLogin = await hole("/api/demo?rolle=service");
+  if (serviceLogin.endePfad !== "/service") {
+    ergebnisse.push({ weg: { titel: "Service-Demo — Anmeldung" }, grund: `gelandet auf ${serviceLogin.kette.join(" → ")}` });
+    console.log(`✗ Service-Demo — Anmeldung\n    ${serviceLogin.kette.join(" → ")}`);
+  } else {
+    console.log("\n✓ Service-Demo — Anmeldung");
+    const SERVICE_WEGE = [
+      { titel: "Service-Portal — Aufträge", pfad: "/service", erwartet: ["Service-Portal", "1 Auftraggeber (seit", "Auftrag beantragen", "Firmenverzeichnis des Vermieters", "Dachrinne verstopft", "Heizkörper im Bad prüfen", "Heizung &amp; Sanitär Böhm"] }, // React trennt Textteile mit <!-- --> — Marker ohne Übergang zwischen festem Text und {…}
+      { titel: "Service-Demo — Vermieter-Bereich bleibt zu", pfad: "/steuer", erwartet: [], zielPfad: "/service" },
+    ];
+    for (const weg of SERVICE_WEGE) {
+      let grund = null;
+      try {
+        const seite = await hole(weg.pfad);
+        const soll = weg.zielPfad ?? weg.pfad.split("?")[0];
+        if (seite.status >= 400) grund = `HTTP ${seite.status}`;
+        if (!grund && seite.endePfad !== soll) grund = `umgeleitet: ${seite.kette.join(" → ")}`;
+        if (!grund) {
+          const fehlt = weg.erwartet.filter((t) => !seite.html.includes(t));
+          if (fehlt.length) grund = `Text fehlt: ${fehlt.join(", ")}`;
+        }
+      } catch (e) {
+        grund = `Ausnahme: ${e.message}`;
+      }
+      ergebnisse.push({ weg, grund });
+      console.log(`${grund ? "✗" : "✓"} ${weg.titel}${grund ? `\n    ${grund}` : ""}`);
+    }
   }
 
   const rot = ergebnisse.filter((e) => e.grund);

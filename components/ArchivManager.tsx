@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Building2, User, Tag, X, Download, Eye, FileText, Image as ImageIcon, Paperclip, Archive, Home, Plus, SlidersHorizontal, Upload } from "lucide-react";
 import Select from "@/components/filters/Select";
 import RowDialog from "@/components/RowDialog";
+import { useToast } from "@/components/Toast";
 import { createDokument, updateDokument, deleteDokument } from "@/lib/actions/archiv";
 import type { ArchivDoc } from "@/app/(app)/archiv/page";
 import type { Property, Tenant } from "@/lib/types";
@@ -54,6 +55,7 @@ export default function ArchivManager({
     [mieter],
   );
 
+  const toast = useToast();
   const [fObjekt, setFObjekt] = useState("");
   const [fMieter, setFMieter] = useState("");
   const [fArt, setFArt] = useState("");
@@ -251,7 +253,17 @@ export default function ArchivManager({
       {offenDoc && (
         <RowDialog title="Dokument bearbeiten" onClose={() => setEditId(null)}>
           <form
-            action={async (fd) => { await updateDokument(offenDoc.id, fd); setEditId(null); }}
+            // update/deleteDokument WERFEN. Im Formular ersetzte der Fehler die
+            // Seite durch die Fehlerseite; im onClick verpuffte er als nicht
+            // abgefangenes Promise — das Löschen scheiterte STILL (30.09.2026).
+            action={async (fd) => {
+              try {
+                await updateDokument(offenDoc.id, fd);
+                setEditId(null);
+              } catch {
+                toast("Speichern fehlgeschlagen.", "error");
+              }
+            }}
             className="form-box"
             style={{ padding: 0, border: "none", background: "none", maxWidth: "none" }}
           >
@@ -289,7 +301,15 @@ export default function ArchivManager({
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={async () => { if (confirm(`„${offenDoc.titel || "Dokument"}" aus dem Archiv löschen?`)) { await deleteDokument(offenDoc.id); setEditId(null); } }}
+                onClick={async () => {
+                  if (!confirm(`„${offenDoc.titel || "Dokument"}" aus dem Archiv löschen?`)) return;
+                  try {
+                    await deleteDokument(offenDoc.id);
+                    setEditId(null);
+                  } catch {
+                    toast("Löschen fehlgeschlagen.", "error");
+                  }
+                }}
               >
                 Löschen
               </button>

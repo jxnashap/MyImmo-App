@@ -2,7 +2,7 @@
 // wandert in Sekunden Mieter → Hausmeister → Vermieter/Hausverwaltung → Firma.
 // Reines CSS (CSP-konform), Endlos-Schleife in 4 Phasen; bei
 // prefers-reduced-motion stehen alle Schritte statisch da.
-import { User, Wrench, Building2, Hammer, Camera, ClipboardList, CheckCircle2, CalendarClock } from "lucide-react";
+import { User, Wrench, Building2, Hammer, Camera, ClipboardList, CheckCircle2, CalendarClock, FileText } from "lucide-react";
 
 const SCHRITTE = [
   { ico: User, rolle: "Mieter", tat: "meldet den Schaden", detail: "mit Foto — 20 Sekunden", step: Camera },
@@ -16,7 +16,7 @@ export default function RollenFlow() {
     <div className="rf" aria-label="Ablauf einer Reparaturmeldung über die vier Rollen">
       <div className="rf-track" aria-hidden>
         <div className="rf-line" />
-        <div className="rf-doc">📄</div>
+        <div className="rf-doc"><FileText size={16} /></div>
       </div>
       <div className="rf-nodes">
         {SCHRITTE.map((s, i) => (

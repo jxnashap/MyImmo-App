@@ -68,26 +68,60 @@ Browser. Ich kann es nicht erledigen und nicht prüfen. **In jeder Session kurz 
 ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut vorzuschlagen.
 
 **Dringend — ein Kernweg hängt daran:**
-1. **Supabase → Authentication → URL Configuration.** Site URL muss
-   `https://www.myimmoapp.de` sein; `https://www.myimmoapp.de/auth/passwort` gehört in die
-   Redirect-URLs. **Dreimal gefragt, noch nicht beantwortet** — steht dort `localhost`,
-   sind auch die Registrierungs-Bestätigungsmails betroffen.
-2. **E-Mail-Vorlage „Reset Password" auf `token_hash` umstellen** (Authentication → Emails).
-   Die Standard-Vorlage schickt einen PKCE-`code`, der **nur im anfordernden Browser**
-   funktioniert — Mail am Handy öffnen scheitert zwangsläufig. Wortlaut steht in
-   `docs/BETREIBER-CHECKLISTE.md`.
-3. **„Passwort vergessen" testen und den `grund=`-Parameter aus der Adresszeile melden.**
-   Der Weg ist gebaut, aber **nie mit einer echten Mail erfolgreich durchlaufen**.
+1. ~~**Supabase → Authentication → URL Configuration.**~~ ✅ **ERLEDIGT UND GEPRÜFT
+   30.09.2026.** Site URL = `https://www.myimmoapp.de`; `…/auth/passwort` wird angenommen;
+   ein Platzhalter für die eigene Domain existiert (`www.myimmoapp.de/irgendwas` wird
+   angenommen); fremde Domains, `*.vercel.app`, Vercel-Vorschauen und `localhost` werden
+   **verworfen** — kein gefährlicher Platzhalter.
+   🔍 **Prüfverfahren (ohne Mail, ohne Dashboard):** `GET /auth/v1/authorize?provider=google
+   &redirect_to=<ziel>` mit Header `apikey: <publishable key>` → die `state`-UUID aus der
+   Google-Weiterleitung ist die ID einer Zeile in `auth.flow_state`; deren Spalte `referrer`
+   ist das, was Supabase ANGENOMMEN hat. Ein verworfenes Ziel fällt auf die Site URL zurück —
+   damit ist auch die Site URL auslesbar. Hinterlässt je Probe eine unvollendete
+   `flow_state`-Zeile ohne Nutzer (verfällt; nicht löschen, kein Schreiben ins Auth-Schema).
+2. ~~**E-Mail-Vorlage „Reset Password" auf `token_hash` umstellen**~~ ✅ **erledigt 30.09.2026
+   und durch Punkt 3 BELEGT** (Supabase-Log: `POST /verify` von unserem Server, Status 200).
+   Falle dabei: Die Vorlage enthielt `{{ .ConfirmationURL }}` ZWEIMAL (Knopf + Ersatzlink
+   „falls der Knopf nicht funktioniert"); zuerst war nur der Knopf umgestellt.
+   Die eigene Vorlage (46 Zeilen, gestaltet) blieb erhalten; nur jedes `{{ .ConfirmationURL }}`
+   wurde durch `{{ .SiteURL }}/auth/passwort?token_hash={{ .TokenHash }}&type=recovery`
+   ersetzt. **Beweis erst durch Punkt 3.** Merkmal am Link der Mail: beginnt er mit
+   `www.myimmoapp.de/auth/passwort?token_hash=`, greift die Vorlage; beginnt er mit
+   `…supabase.co/auth/v1/verify`, ist es noch die alte.
+3. ~~**„Passwort vergessen" testen**~~ ✅ **BELEGT 30.09.2026** durch einen echten Nutzer,
+   in den Supabase-Auth-Logs nachverfolgt: `recover` → `verify` (token_hash, 200) →
+   `PUT /user` 200 → `logout` 204 (globale Abmeldung greift). **Ob die Mail auf einem
+   anderen Gerät geöffnet wurde, ist aus den Logs nicht zu sehen** (gleiche IP = gleiches
+   Heimnetz). **Dabei gefunden und behoben:** Ein vom Leak-Schutz abgelehntes Passwort
+   („12345678") ergab „Bitte fordere einen neuen Link an" — die Erkennung suchte
+   `pwned|leaked`, Supabase schreibt „known to be weak". Der Tester forderte daraufhin
+   unnötig einen neuen Link an. Jetzt `passwortAblehnung()` in `lib/passwort.ts` (Fehlercode
+   zuerst, Text als Rückfall) an allen drei Stellen (Reset, Passwortwechsel, Registrierung),
+   und die Leak-Regel steht VOR der Eingabe da (`PASSWORT_LECK_HINWEIS`).
+   **Warum der Test grün war:** `tests/blockF.test.ts` benutzte eine AUSGEDACHTE
+   Supabase-Meldung mit angehängtem „(pwned)". **Regel: Fremde Fehlertexte in Tests nur
+   wörtlich aus einem echten Log übernehmen, nie formulieren.**
+   Nebenbefund: 8 s nach dem erfolgreichen `verify` ein zweites mit 403 `otp_expired`
+   (Doppel-Tipp oder Mail-Vorschau) — folgenlos, der erste war durch.
 
 **Danach, in dieser Reihenfolge:**
-4. **Die zwei restlichen Passwort-Schalter** („Secure password change", „Require current
-   password") — Voraussetzungen sind gebaut (PR #327), aber **erst nach Punkt 3**, und
-   unmittelbar danach erneut testen (siehe „Passwort vergessen", letzter Unterpunkt).
-5. **Leaked Password Protection: Gegenprobe.** Der Schalter ist an (09.09.2026), die
-   **Wirkung ist ungeprüft** — Registrierung mit „Password123!" muss scheitern. Am
-   29.07.2026 ging sie trotz gesetztem Schalter durch.
+4. ~~**Die zwei restlichen Passwort-Schalter**~~ ✅ **laut Betreiber seit Längerem an**
+   (genauer Zeitpunkt unbekannt). **Belegt 30.09.2026:** „Passwort vergessen" läuft MIT den
+   Schaltern durch (Supabase-Log 22:04 UTC: recover → verify 200 → PUT /user 200 → Anmeldung
+   mit neuem Passwort 200) — die offene Frage, ob „Require current password" den Reset
+   blockiert, ist damit beantwortet: **nein.** **Noch offen:** Passwortwechsel in den
+   Einstellungen mit FALSCHEM altem Passwort muss scheitern (kein Log-Beleg bisher).
+   **Falle beim Prüfen:** Aus fehlenden „reloading api"-Einträgen im Auth-Log auf „nicht
+   gespeichert" zu schließen, war falsch — das Log belegt nur den abgefragten Zeitraum.
+5. ~~**Leaked Password Protection: Gegenprobe.**~~ ✅ **WIRKT, belegt 30.09.2026** im
+   Supabase-Log: sechsmal `PUT /user` 422 „Password is known to be weak" beim Reset-Test
+   („12345678" u. a.), danach ein sicheres Passwort angenommen. Belegt am Passwort-SETZEN;
+   für die Registrierung gilt dieselbe Server-Einstellung, dort nicht eigens probiert.
 6. **2FA einmal durchspielen** — einrichten, abmelden, mit Code anmelden, „Handy nicht zur
    Hand?" mit einem Wiederherstellungscode. Die Logik ist getestet, der Ablauf nie.
+   **Stand 01.10.2026: noch NICHT gemacht** (Betreiber bestätigt, bewusst auf der Liste
+   gelassen). Seit Paket 4 (Proxy-Gate, `mi_faktor`) ist der Durchlauf wichtiger als vorher:
+   Er ist der einzige Beleg, dass Login → Code → Weiterleitung mit dem neuen Gate zusammenspielt.
 
 **Ohne Eile:**
 7. **StBerG-Anfrage an den Anwalt** — `docs/compliance/StBerG-ANFRAGE.md` ist fertig.
@@ -231,6 +265,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   mitschicken. Google-Konten bekommen stattdessen **`sendePasswortMail()`** (Einstellungen
   → Sicherheit und Mieter-/Service-Konto zeigen dort einen Knopf statt der Felder) — der
   Link erzeugt eine frische Sitzung und endet auf `/auth/passwort-neu`.
+  🐞 **„Google-Konto" hieß bis 30.09.2026: `app_metadata.provider !== "email"`** — das ist
+  der Anmeldeweg bei der ANLAGE und ändert sich nie. Ein am 26.06. über Google angelegtes
+  Konto, das per „Passwort vergessen" ein Passwort bekam, konnte es danach nicht ändern
+  („du meldest dich mit Google an"). Jetzt fragt die Seite die Datenbank:
+  RPC **`konto_hat_passwort()`** (Migration `20260930212305`, nur `authenticated`, ja/nein
+  für `auth.uid()`, in einer zurückgerollten Transaktion an drei Kontoarten geprüft) →
+  `ohnePasswort()` in `lib/passwort.ts`; `provider` nur noch als Rückfall und für den
+  2FA-Hinweis „gilt auch für Google". **Regel: Für „hat ein Passwort" nie `provider` oder
+  `identities` nehmen** — ein per Reset gesetztes Passwort legt KEINE `email`-Identität an
+  (live gesehen). `tests/kontoPasswort.test.ts`, drei Mutationen rot.
   **`RESET_ZIEL` in `lib/passwortWechsel.ts` ist die EINE Stelle für das Linkziel** —
   Login und Einstellungen hängen beide daran, damit sie nicht auseinanderlaufen.
 - 📋 **Reihenfolge beim Scharfschalten der beiden übrigen Supabase-Schalter:**
@@ -245,6 +289,33 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 ### Zukunftsideen (notiert, nicht gebaut)
 > **Vollständige Ideenliste mit Status: Memory-Repo `02 - MyImmo/myimmoideen.md`.**
 > Die Einträge hier unten sind die ausführlichen Begründungen zu zwei davon.
+- ✅ **Reiter per Wischen (01.10.2026, Wunsch des Betreibers) — GEBAUT, zweite Fassung
+  am selben Tag („muss viel flüssiger sein").** Der INHALT folgt dem Finger, der
+  Nachbar-Reiter gleitet daneben herein, beim Loslassen gleitet er zu Ende (260 ms,
+  `--ease-out-stark`) oder schnappt zurück; ERST DANN `router.push` (Adresse zieht mit,
+  „Zurück" bleibt heil). `lib/wischen.ts` (reine Entscheidung: weit ≥ ¼ Breite ODER schnell
+  ≥ 0,5 px/ms ab 40 px; waagerecht ≥ 1,8× senkrecht; Achse ab 10 px festgelegt; Rand 28 px
+  dem System überlassen; Gummiband ⅓ am Listenende; kein Umlauf) +
+  `components/WischReiter.tsx` (`reiter: { href, label, inhalt? }[]`; `touch-action: pan-y`,
+  der Browser scrollt senkrecht selbst; Eingabefelder, waagerecht scrollbare Bereiche und
+  `data-kein-wischen` ausgenommen; Nachbarn `inert`; Rückfall-Timer, falls `transitionend`
+  ausbleibt; bei `prefers-reduced-motion` kein Gleiten). **`/portal` bringt alle fünf
+  Inhalte mit** (die Daten liegen ohnehin vor), **`/anliegen` nur den aktiven** — die
+  Nachbarn gleiten als Platzhalter „wird geladen …" herein, bis der Server liefert (alle
+  Reiter vorzuladen hieße ~8 Abfragen je Aufruf für die Ansichten). `tests/wischen.test.ts`.
+  **Nicht auf einem echten Telefon geprüft** — Schwellen und Gefühl muss der Betreiber
+  testen. Die Einstellungen haben kein Wischen; ihre Reiter sind Zustand, keine Links.
+  **Dritte Fassung (gleicher Tag, Betreiber: Leiste dauert zu lange, Gleiten ruckartig, etwas
+  langsamer):** Beim Ziehen KEIN React-Render je Fingerbewegung — der Versatz geht per Ref
+  direkt ins `transform`; React setzt es nur in Ruhe und beim Gleiten (sonst überschriebe jeder
+  Render den Finger). Gleiten 380 ms `cubic-bezier(0.22,1,0.36,1)` — bewusst über der
+  300-ms-Regel, hier bewegt sich eine ganze Seite. **Leiste gekoppelt:** `WISCH_EREIGNIS`
+  (`myimmo:wisch`, an `document`, `detail.href`) beim Start des Gleitens → `GlassLeiste`
+  markiert den Ziel-Link sofort und rückt ihn in die Mitte, statt auf die Serverantwort zu warten.
+  **Glas-Leiste zentriert (Vorgabe des Betreibers, gleicher Tag):** `components/GlassLeiste.tsx`
+  + `lib/glasLeiste.ts` → der offene Reiter steht unter 860 px in der Mitte der Leiste — beim
+  Laden sofort (`useLayoutEffect`, kein Sprung), bei jedem Wechsel weich; `tests/glasLeiste.test.ts`.
+  **Danach:** Startseite mit den Kartenfehlern (wirbt mit „Karte mit allen Standorten").
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
@@ -282,20 +353,68 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   im selben PR mitziehen).
 
 ### Sonstiges (kein Geld)
-- **Demo-Konto ist seit 30.08.2026 NUR-LESEN.** Vorgabe des Betreibers: Schaustück, kein
-  Sandkasten. Drei Ebenen, alle drei nötig (Begründung in `lib/demo.ts`):
-  (1) **Datenbank** — restriktive RLS-Policies verweigern dem Demo-Konto jedes
-  INSERT/UPDATE/DELETE (Migration `20260830150000_demo_nur_lesen.sql`, Funktion
-  `public.ist_demo_nutzer()`). (2) **Routen** — `demoDarfRoute` sperrt NK-Rechner,
-  Protokoll, alle Bearbeiten-Formulare und **alle API-Routen außer `/api/demo`**;
-  die Middleware weist jetzt jede Methode ab, nicht nur GET. (3) **Oberfläche** —
-  `components/DemoNurLesen.tsx` macht Felder schreibgeschützt und Speichern-Knöpfe inaktiv.
-  **Warum Ebene 3 trotz Ebene 1 nötig ist:** Ein per RLS blockiertes UPDATE/DELETE wirft
-  KEINEN Fehler, es trifft null Zeilen — der Besucher hielte Ungespeichertes für gespeichert.
-  **Einzige Ausnahme:** das Mieterhöhungs-Dokument samt PDF (`data-demo-erlaubt` im
-  `DocGenerator`) — gespeichert wird dabei nichts.
-  **Beim Anlegen einer neuen Tabelle** greifen die Policies NICHT automatisch; die Migration
-  dann erneut ausführen (sie ist idempotent).
+- **Demo-Konto ist NUR-LESEN (seit 30.08.2026) — und zeigt seit 30.09.2026 die Kaufgründe.**
+  Vorgabe des Betreibers: Schaustück, kein Sandkasten. Drei Ebenen (Begründung `lib/demo.ts`):
+  (1) **Datenbank** — seit 30.09.2026 ein BEFORE-**Anweisungs**-Trigger `demo_schreibsperre`
+  auf jeder RLS-Tabelle (Migration `20260930150643`), der für das Demo-Konto einen FEHLER
+  wirft. Die restriktiven Policies (`20260830150000`) bleiben als zweite Linie.
+  **Warum der Trigger:** Die Policies filterten UPDATE/DELETE STILL weg (0 Zeilen, kein
+  Fehler — nachgemessen) → jede Action meldete „gespeichert". **Warum Anweisungs- statt
+  Zeilen-Trigger:** Ein Zeilen-Trigger feuert nie, weil die Policy keine Zeile durchlässt.
+  **Warum SECURITY DEFINER:** `ist_demo_nutzer()` darf nur `authenticated`/`anon` — ohne
+  DEFINER scheiterte die SERVICE-ROLE (Demo-Reset, Wert-Cron, Zugriffsbremse). In einer
+  zurückgerollten Transaktion bewiesen: Demo wirft, fremdes Konto schreibt, Reset läuft.
+  (2) **Routen** — `demoDarfRoute`. FREI: Dashboard, Objekte, Mieter, Ein-/Ausgaben, Kauf/
+  Verkauf, **Mietkonto, Verbrauch, Kredite, Steuer, Jahresbericht, Termine, Karte, Marktwert,
+  AfA, NK-Abrechnung, Übergabeprotokoll, seit Phase 3 auch Mieterportal und Archiv** +
+  LESENDE API-Routen (Anlage-V-/Jahresbericht-PDF, DATEV, CSV, Kreditantrag, Datei-Ansicht).
+  GESPERRT: Makler (keine Beispieldaten — leere Seite wirbt schlechter als der Sperr-Dialog),
+  Anlegen/Bearbeiten,
+  `/api/nk-ocr` + `/api/import-url` (**kosten je Aufruf Geld**), `/api/import`,
+  `/api/export/alles`. (3) **Oberfläche** — `DemoNurLesen.tsx`; seit dem Trigger Höflichkeit,
+  keine Sicherung mehr.
+  **Öffentliche Seiten: `lib/oeffentlich.ts` ist die EINE Liste** für Middleware UND
+  Klick-Abfang. Vorher stand sie nur in der Middleware → „Datenschutz" öffnete in der Demo
+  den Sperr-Dialog.
+  **Beim Anlegen einer neuen Tabelle** greifen Trigger UND Policies NICHT automatisch; beide
+  Migrationen erneut ausführen (idempotent).
+  **Koordinaten der 6 Demo-Objekte stehen fest im Schnappschuss** (`20260930150903`) —
+  sonst geokodierte `/karte` bei jedem Besuch neu (Nominatim-Regeln).
+- ⏳ **Demo-Daten laufen mit der Zeit mit (Phase 3, 30.09.2026, Migration `20260930154606`).**
+  Vorher endeten alle Buchungen am 01.06.2026 → Ende September stand jeder Mieter als säumig
+  da, und die Cashflow-Kennzahl schönte sich selbst (leere Monate senkten den Kostenschnitt).
+  `demo_zuruecksetzen(p_heute)` schreibt beim Demo-Start FORT, statt zu verschieben:
+  **Mieten aus dem Vormonat** (nur laufende Verträge — sonst zahlt eine geräumte Wohnung),
+  **Kosten aus dem Vorjahresmonat** (saisonal), **ganze Jahre** verschoben, sobald eines
+  vergangen ist (Anlage V bleibt ein volles Kalenderjahr — beim Verschieben um Monate
+  hätte 2025 nur neun Monate gehabt), **eine Miete des laufenden Monats bleibt offen**
+  (sonst zeigt die Aufgabenliste nichts). Anliegen und Zählermeldung werden tagesgenau auf
+  heute gezogen. **Nachgewiesen** in einer zurückgerollten Transaktion an fünf simulierten
+  Stichtagen bis 2028 — `p_heute` existiert genau dafür; `/api/demo` ruft ohne Argument.
+  **Mitbehoben:** Das „Reihenhaus Halle" stand als vermietet (1.150 €), der Mieter war zum
+  30.09.2025 ausgezogen → Phantom-Soll-Miete auf dem Dashboard. Jetzt Nachmieterin ab
+  01.11.2025. Dashboard-Cashflow der Demo damit **+518 €** statt +711 € — niedriger, aber wahr.
+  **Neue Tabelle in der Demo** braucht DREI Dinge: Trigger + Policies (zwei Migrationen
+  erneut ausführen), eine `demo_seed`-Kopie UND einen Eintrag in `tabellen` der
+  Reset-Funktion (Besitzspalte `vermieter_id` → auch in `besitz_vermieter`). Der Reset
+  überträgt nur gemeinsame Spalten; eine neue Spalte in `public` bricht ihn nicht mehr.
+  **KORRIGIERT 30.09.2026 (Migration `20260930162539`) — war KEIN Schönheitsfehler:** Die
+  Mietbuchungen hießen „Warmmiete …", trugen einen NK-Anteil, der Betrag war aber ~Kaltmiete
+  (Krüger 840 € mit 150 € NK → rechnerisch 690 € kalt). Das verfälschte Anlage V (Miete vs.
+  Umlagen) und NK-Abrechnung, nicht nur Summen. Jetzt Betrag = Kalt + NK (+ Stellplatz) des
+  Vertrags, NK-Anteil = Vorauszahlung. Dazu Kaufdaten (Steuer warnte „Kein
+  Anschaffungsdatum") und Kredit-Auszahlungen, aufeinander abgestimmt.
+  **Rauchtest-Weg `aktuell`** prüft live, dass eine Buchung vom 1. des laufenden Monats da ist.
+- 🔕 **Zwei Wächter, die die Demo mitgebracht hat, gelten für die ganze App (30.09.2026):**
+  `tests/toastTyp.test.ts` — **ein Fehler-Toast nennt seinen Typ**: `toast()` ist ohne
+  zweites Argument „success", 24 Stellen zeigten Fehlschläge mit grünem Haken.
+  `tests/aktionsAntwort.test.ts` — **keine verworfene Action-Antwort** (`await x();` als
+  Anweisung) für Actions, die `{ error }` zurückgeben; und **werfende** Actions stehen in
+  einem `try {` (sonst reicht React 19 den Fehler aus der Transition an die Fehlerseite
+  weiter, oder er verpufft im onClick). Welche Action wirft, leitet der Test aus
+  `lib/actions/` ab. **Fallstrick beim Bauen:** Die erste Fassung suchte das WORT `try` und
+  wurde vom Kommentar „Ohne try/catch …" darüber getäuscht — dritte Wiederholung derselben
+  Falle (Kommentare im Textmuster). **Das Konstrukt suchen, Kommentarzeilen auslassen.**
 - **ZURÜCKGESTELLT (30.08.2026, Entscheidung des Nutzers): Namentliche Autorenschaft der
   Ratgeber.** Im Article-Markup steht derzeit `author: Organization "MyImmo"` — bei
   Steuer- und Mietrechtsthemen (YMYL) das schwächste denkbare Vertrauenssignal und die
@@ -384,12 +503,144 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Verantwortlicher, nur Datenschutzerklärungs-Passus). **Größte Lücke: MyImmo muss den eigenen
   Nutzern einen AVV anbieten** (Vermieter = Verantwortliche für Mieterdaten) — /avv-Seite, AGB-
   Einbeziehung, anwaltlich prüfen. Plus Verarbeitungsverzeichnis Art. 30 Abs. 1+2 und TOM-Doku.
-- **Businessplan (aktuell, als PDF): `docs/business/MyImmo-Businessplan-2026-07.pdf`.** NICHT von
+- **Businessplan (aktuell, als PDF): `docs/business/MyImmo-Businessplan-2026-09.pdf`.** Die Juli-Fassung daneben ist überholt (führte die entfernte Konto-Anbindung als gebaut) — nicht herausgeben. NICHT von
   Hand neu bauen — der komplette Plan wird per Skript erzeugt: **`node scripts/gen-businessplan-pdf.mjs`**
   (Sekunden). Inhalt/Zahlen/„Stand"-Datum nur in der `SECTIONS`-Struktur des Skripts anpassen, dann
   neu erzeugen. Titelseite trägt die Dokument-Wortmarke (My+Immo), Design = MyImmo-Dokument-Stil.
 - **Masterplan (Markt/Compliance/Steuer-Features/Roadmap): `docs/MASTERPLAN.md`** (15.07.2026).
 - **Onboarding-Briefing (aktuell, für neue Chats/Sessions ZUERST lesen): `docs/BRIEFING.md`**.
+- 🔍 **Gesamt-Audit 01.10.2026: `docs/AUDIT-2026-10-01.md`** — sechs lesende Durchgänge (Links,
+  öffentliche Strecke, UX, Browser, Zahlen, adversarial) über Website, App, Datenbank; jede
+  A-Stelle selbst nachgeprüft. **12 A · 36 B · 40 C**, dedupliziert, mit PR-Paketen. Die vier
+  schwersten: `konto_freischalten()` ist per REST ohne Code aufrufbar (A1); das 2FA-Gate liest
+  die Faktorliste aus dem **Cookie** (A2) und Actions/Routen verlangen nur aal1 (A3); Mieter
+  lesen per REST die ganze Objekt-/Mieterzeile (A4). Dazu: Early-Access-Weg endet am Code-Feld
+  ohne Anfrageweg, AGB-Platzhalter live, werfende Formular-Actions, Dashboard-Aufgaben von
+  Kreditfristen verdrängt, `og.png` hinter dem Login. **Bevor etwas davon als „offen" neu
+  gefunden wird: dort nachsehen.** Lehren in Abschnitt 7 (u. a. `curl -I` täuscht beim
+  Login-Gate; Cookie-Inhalte sind Nutzereingaben).
+  ✅ **Paket 1 + 2 erledigt 01.10.2026** (Migration `20261001090000_audit_paket1_rechte`,
+  `tests/auditPaket2.test.ts`): `konto_freischalten()`/`einladungscode_pruefen()` nur noch
+  Service-Role — die Action `schalteKontoFrei` schreibt selbst per Admin-Client,
+  `pruefeEinladungscode()` ersetzt den Browser-RPC-Aufruf (HMAC-Bremse statt IP-Klartext);
+  Einladungscodes an den Aussteller gebunden; `vermieter_anfragen` Spaltenschutz; `og.png`/Logo
+  öffentlich; Samstag kein Werktag (`dritterWerktag`); `/api/export` (JSON) GELÖSCHT;
+  `flashUrl(url, msg, "error")` für Fehler-Flashes; `?tab=` in den Einstellungen; Sitemap ohne
+  noindex-Seiten und ohne `lastModified` auf statischen Seiten.
+  ✅ **Paket 3 erledigt 01.10.2026** (`tests/auditPaket3.test.ts`): `lib/preise.ts` hat jetzt
+  `KONTAKT_EMAIL`, `EARLY_ACCESS_MAILTO`, `HILFE_MAILTO`, `EARLY_ACCESS_ZUSAGE` und
+  **`ctaBeschriftung(wunsch)`** — JEDER Start-Knopf der öffentlichen Strecke läuft da durch
+  (Ratgeber-Daten dürfen sich eine Beschriftung wünschen, gerendert wird `START_CTA`, solange
+  `REGISTRIERUNG_OFFEN = false`; `tests/heute.test.ts` prüft alle (pub)-Seiten). `/anmelden`
+  und das Code-Feld im Registrierformular zeigen den Anfrageweg (mailto + 24-h-Zusage);
+  `/login`/`/anmelden` haben „Hilfe & Kontakt“. **Abmelde-Grund:** `AutoLogout` schickt
+  `/login?grund=inaktiv&min=N` bzw. `geschlossen`, der Proxy setzt `grund=abgelaufen`, wenn
+  ein `sb-…-auth-token`-Cookie da war, aber nicht mehr gilt; die Login-Seite erklärt alle drei.
+  ✅ **Paket 4 erledigt 01.10.2026 — 2FA ernst** (`lib/auth/faktorNachweis.ts`,
+  `aalStandAus()` in `lib/auth/sitzung.ts`, 10 neue Proxy-/2FA-Tests, neun Mutationen rot):
+  **(A2)** Der Faktorstatus kommt nur noch vom SERVER — `aalStandAus(user.factors, token)`
+  mit `user` aus `getUser()` und `aal` aus dem signierten Token. Layout (kein Zusatzaufruf,
+  `aktuellerNutzer()` liefert `factors` mit) und `pruefeFrischeAnmeldung()` nutzen es.
+  **Server-Code ruft `getAuthenticatorAssuranceLevel()` NIE mehr ohne JWT-Argument** — die
+  Bibliothek liest dann `session.user.factors` aus dem Cookie, das der Browser schreibt; der
+  Prüfstand wirft bei diesem Aufruf. **(A3)** `proxy.ts`: aal1-Sitzung auf jedem Pfad außer
+  `mfaAusgenommen()` (`/login`, `/auth/*`, statische Dateien) → einmal `getUser()`; Konto mit
+  bestätigtem Faktor → GET-Seite `/login?mfa=1&next=`, **POST/API 403 JSON `{ mfa: true }`**;
+  kein Faktor → signierter Nachweis `mi_faktor` (HMAC über `DATA_ENCRYPTION_KEY`, an die
+  Nutzer-ID gebunden, **10 min**) erspart die nächsten Nachfragen; positives Ergebnis wird nie
+  gemerkt; Auth-Server-Fehler → fail-closed (`grund=abgelaufen`). **In Kauf genommen:** Eine
+  fremde aal1-Sitzung mit frischem Nachweis läuft nach der Einrichtung eines Faktors bis zu
+  10 min weiter. **Nicht gelöst (bewusst, zweiter Schritt):** der PostgREST-Direktweg — RLS
+  kennt `aal` nicht; dafür bräuchte es Policies mit `auth.jwt()->>'aal'` auf 47 Tabellen.
+  **(B3)** `<ZweiFaktor absichern={…}>` — Einrichten erst nach Re-Auth (`useReAuth` im
+  `SicherheitPanel`). **Regel: `supabase.auth.mfa.getAuthenticatorAssuranceLevel()` ist im
+  Server-Code verboten; `aalStandAus(user.factors, session.access_token)` benutzen.**
+  ✅ **Paket 5 + 6 erledigt 01.10.2026** (`tests/auditPaket56.test.ts`, sieben Mutationen rot):
+  **(A4)** Migration `20261001120000_mieter_sicht_spalten`: Zeilen-Policies
+  `properties_select_zugang`/`mieter_select_zugang` ENTFERNT; das Mieterportal liest die
+  Sichten **`mieter_portal`** (16 Spalten des Mietverhältnisses — ohne `notiz`, `miethistorie`,
+  `iban`, `kaution_bank`, `email`, `telefon`) und **`properties_portal`** (`id, bezeichnung,
+  adresse, typ`). Sichten laufen als Eigentümer (kein `security_invoker`), filtern selbst über
+  `mieter_zugaenge` auf `auth.uid()`, `security_barrier`. **Live als echter Mieter geprüft**
+  (`set_config('role','authenticated')` + JWT-Claims, zurückgerollt): Tabellen 0 Zeilen, Sichten
+  1, Tenant-Policies auf `einnahmen`/`anliegen` unverändert. **Regel: Ein Mieter liest nie eine
+  Vermieter-Tabelle direkt — nur eine Sicht mit den Spalten, die das Portal zeigt.**
+  **(A8)** `kreditFristen`: „Zinsbindung endet“ nur im letzten Jahr `warn`, „Anschlussfinanzierung
+  vorbereiten“ erst 60 Tage vor dem Vorlauf-Zeitpunkt; das Dashboard zählt ALLE Aufgaben
+  (`baueHeuteAufgaben(…, Infinity)`), zeigt die 6 wichtigsten und sagt „N Sachen · die 6
+  wichtigsten hier“. **(A9)** `lib/kauf/marktwert.ts`: `RND_MINDESTANTEIL = 0.3` (24 Jahre) mit
+  Hinweis in `unsicher` — Altbau 1911 ergab vorher 7.022 €. **(A10)** `heuteBerlin()` in
+  `lib/zeitraum.ts` ist der EINE Stichtag; `aggregate()` nimmt ein ISO-Datum (Zahlen, keine
+  Ortszeit), `BetragChart` bekommt `heute` als Prop — **Regel: In einer serverseitig
+  gerenderten Client-Komponente nie `new Date()` für eine Darstellung; den Stichtag vom Server
+  übergeben.** **(B24)** `.heute-zeile` wickelt < 560 px um (`.heute-label`). **(B27)** Die drei
+  Buchungslisten und die Objektliste unterscheiden `gefiltert` (Filter anpassen) von „nichts“
+  (anlegen); `BetragChart` ebenso (Buckets alle 0 ≠ keine Punkte). **(C30)** Dashboard und
+  `/termine` laden `staffel_intervall/betrag/prozent/stufen` — die Staffel-Logik in
+  `mieterFristen` lief vorher nie.
+  🧑‍💼 **Demo-Mieter (01.10.2026) — das Mieterportal hat jetzt einen Rauchtest.** Bis dahin war
+  `/portal` der einzige Nutzerbereich ohne jede automatische Prüfung (kein Mieter-Konto; die
+  Audit-Agenten hatten die Reiterleiste mit CSS *nachgestellt*). Jetzt: zweites Demo-Konto
+  **`demo.mieter@myimmo.test`** (`DEMO_MIETER_EMAIL` in `lib/demo.ts`, Passwort =
+  `DEMO_PASSWORT`), angelegt von **`/api/demo?rolle=mieter`** per Service-Role (idempotent),
+  nach JEDEM Reset per `demo_mieter_verknuepfen()` (Migration `20261001150000`) mit Sophie
+  Berger (`f3fd40b4…`, Wohnung `d560ceb5…`) verknüpft — der Reset schreibt die Anliegen ohne
+  `mieter_user_id` neu, die Verknüpfung hängt das Beispiel-Anliegen wieder um. `ist_demo_nutzer()`
+  erkennt den Mieter über den signierten E-Mail-Claim (seine uid entsteht erst auf Vercel);
+  `istDemoKonto()` kennt beide Adressen; `/portal` und `/konto` stehen in `ERLAUBTE_PRAEFIXE`;
+  die Mieter-Shell zeigt `DemoNurLesen` + `DemoLeiste`. **Rauchtest:** zweite Anmeldung
+  (2 von 6 je 300 s), prüft Wohnung/Anliegen/Zahlungen/Dokumente/Zähler, `/konto` und dass
+  `/steuer` für den Mieter auf `/portal` endet. `tests/demoMieter.test.ts`, vier Mutationen rot.
+  **Falle:** `mieter_zugaenge` gehört NICHT zum Reset — die Verknüpfung überlebt ihn; die
+  Anliegen-Zuordnung nicht. Wer eine neue Mieter-Beispieltabelle anlegt, trägt sie in
+  `demo_mieter_verknuepfen()` nach.
+  👁️ **Mieterportal-Vorschau (01.10.2026, Wunsch des Betreibers):** Reiter „Vorschau
+  Mieter-Sicht" unter `/anliegen?tab=vorschau&mieter=…&portal=…` — der Vermieter sieht das
+  Portal mit den Augen eines eigenen Mieters, ohne zweites Konto. **EIN Lader, EINE
+  Darstellung:** `lib/portalDaten.ts` → `ladePortalDaten(db, quelle)` und
+  `components/PortalAnsicht.tsx`, benutzt von `/portal` UND der Vorschau. Die Filter, die
+  beim Mieter die RLS übernimmt (nur Miete/Nebenkosten, nur `mieter_freigabe`, nur die
+  Spalten der Sicht `MIETER_PORTAL_SPALTEN`), stehen AUSDRÜCKLICH in der Abfrage — beim
+  Vermieter sind sie die einzige Schranke, sonst zeigt die Vorschau mehr als das Portal.
+  Formulare laufen mit `nurLesen` (Platzhalter `VorschauHinweis`), Konto/Abmelden sind
+  Attrappen. Anliegen und Zählerstände hängen am KONTO des Mieters — ohne Einladung zeigt
+  die Vorschau sie (wahrheitsgemäß) leer und sagt es. `tests/portalVorschau.test.ts`,
+  elf Mutationen rot; Rauchtest-Weg `portal-vorschau`. **Regel: Eine neue Portal-Abfrage
+  kommt in `ladePortalDaten`, nie direkt in eine der beiden Seiten.** Die drei
+  Portal-Komponenten stehen seitdem NICHT mehr in der Ausnahmeliste von
+  `tests/demoWege.test.ts` — sie rendern jetzt auch beim (Demo-)Vermieter.
+  🔧 **Demo-Service + „Ansichten nur in der Demo" (01.10.2026).** Drei verknüpfte
+  Service-Konten (`DEMO_SERVICE_KONTEN` in `lib/demo.ts`, Hausmeister ist das
+  Anmeldekonto, `/api/demo?rolle=service` → `/service`), angelegt und verknüpft VOR dem
+  Reset über `demo_service_verknuepfen()` (gibt fehlende Konten zurück). **Warum vor dem
+  Reset:** Der Trigger `auftraege_service_spaltenschutz` setzt `service_user_id`,
+  `mieter_id`, `prop_id` … bei jedem UPDATE zurück, das nicht der Vermieter selbst
+  macht — die Service-Role ist es nicht. Aufträge bekommen ihren Partner deshalb beim
+  EINFÜGEN (Schnappschuss-Spalte `service_email`). Schnappschuss: 5 Firmen, 6 Aufträge,
+  1 Firmen-Zusage (Migration `20261001180100`).
+  ✅ **Reset angewendet (01.10.2026, Betreiber im SQL-Editor):** Migration
+  `20261001180200_demo_service_reset.sql` — `apply_migration` lief auch MIT Betreiber in
+  der Sitzung in den Timeout, weil der `delete`-Bestätigungsdialog der Supabase-
+  Schnittstelle den Betreiber in der Cloud-Sitzung nicht erreichte (dreimal belegt, auch
+  wenn `delete` nur im Funktionstext steht). **Nicht umgangen** (z. B. Schlüsselwort
+  zerlegen) — die Schranke ist genau dafür da; Weg bei Wiederholung: Datei im SQL-Editor
+  ausführen, danach `pg_get_functiondef` prüfen, README-Zeile „manuell im SQL-Editor".
+  **Lehre:** Ein Timeout bei `apply_migration` ist kein Netzfehler, wenn die Anfrage
+  `delete` enthält — erst nach `pg_stat_activity` sehen (nichts hing), dann den Inhalt
+  eingrenzen (kleine Abfragen gingen, jede mit `delete` nicht). Der Rauchtest prüft seitdem
+  Firmen („Heizung & Sanitär Böhm") und Aufträge („Dachrinne verstopft") in beiden Sichten.
+  **Ansichten:** `ANSICHTEN_NUR_DEMO = true` + `ansichtenSichtbar(email)` in `lib/demo.ts`
+  — „Ansicht Mieter" und „Ansicht Service" im Mieterportal NUR für Demo-Konten (Vorgabe des
+  Betreibers), auch nicht per Adresse erreichbar. Service-Ansicht: `lib/servicePortalDaten.ts`
+  + `components/ServicePortalAnsicht.tsx` (EIN Lader, EINE Darstellung für `/service` und
+  die Ansicht). **Ausfüllen ja, Senden nein:** `AuftraegePortal vorschau` und
+  `ServiceManager demo` — Formulare bedienbar (`data-demo-erlaubt`), Senden-Knopf aus mit
+  `VORSCHAU_NICHT_GESENDET`. **Dabei gefunden:** Die Mieter-Auswahl der Vorschau war in der
+  Demo gesperrt (DemoNurLesen schaltet JEDES `select` ab) → `data-demo-erlaubt` am Label.
+  `tests/demoService.test.ts`, neun Mutationen rot (eine erst nach Nachschärfen).
+  **Regel aus dem Audit: Eine
+  SECURITY-DEFINER-RPC, die etwas freischaltet, darf nicht für `authenticated` ausführbar sein,
+  wenn die Prüfung nur in der Action davor sitzt.**
 - **Externes Feedback vom 08.09.2026, geprüft und mit Plan: `docs/FEEDBACK-BEWERTUNG-2026-09.md`.**
   Zwölf Behauptungen, elf gegen den Code bestätigt (Speed Insights vs. „keine Analyse-Tools",
   Platzhalter in der Datenschutzerklärung, Demo-Text widerspricht Nur-Lesen, „Fristen &
@@ -602,6 +853,42 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   die MÜSSEN von `anon` aufrufbar sein, das ist ihr Zweck; sie prüfen das Token selbst.
 
 ## Sicherheit der Abhängigkeiten
+- ✅ **Next-16-Migration UMGESETZT (30.09.2026): Next 16.3.8, React 19.2.8.** Die hohe
+  `postcss`-Meldung ist damit geschlossen; `npm audit` meldet nur noch 3 Befunde, **alle nur
+  Entwicklung** (vitest < 4.1.11, `brace-expansion` im ESLint-Baum). Details:
+  `docs/SICHERHEIT-ABHAENGIGKEITEN.md`, Abschnitt 30.09.2026.
+  **Was sich im Code geändert hat:** (1) **`middleware.ts` heißt jetzt `proxy.ts`**, die
+  Funktion `proxy` — Laufzeit Node statt Edge (für uns folgenlos: `btoa`/`crypto.randomUUID`
+  gibt es dort, Funktion und Datenbank liegen in Frankfurt). Alle Verweise „Middleware" in
+  Kommentaren meinen diese Datei. (2) **`data-scroll-behavior="smooth"` an jedem `<html>`**
+  (beide Root-Layouts, sechs Stellen): `globals.css` setzt `scroll-behavior: smooth`, und
+  Next 16 schaltet das beim Seitenwechsel NICHT mehr selbst ab — ohne das Attribut würde
+  jeder Seitenwechsel sichtbar nach oben scrollen. (3) **Turbopack** baut jetzt (Standard,
+  kein eigenes Webpack im Projekt). (4) **ESLint eigenständig** (`eslint.config.mjs`,
+  `npm run lint` = `eslint .`).
+  **Geprüft:** tsc, 1.331 Tests, Turbopack-Build; Routentabelle gegen Next 15 verglichen
+  (keine Seite von statisch auf dynamisch gerutscht); lokaler Server gegen die Live-Seite:
+  gleiche Weiterleitungen (Login, Recovery-Links, `/auth/callback`), gleiche Header, jedes
+  Inline-Skript mit Nonce; im Browser alle öffentlichen Seiten hydriert, keine CSP-Fehler,
+  weiche Navigation. Der angemeldete Teil nur über den Rauchtest nach dem Deploy (Chromium
+  erreicht Supabase aus der Remote-Umgebung nicht).
+  **Live nach dem Deploy (PR #347):** Rauchtest 16/16 grün; CSP-Nonce kommt weiter aus dem
+  Proxy; TTFB unverändert im Rahmen der Streuung (min 393–480 ms, Median 533–621 ms);
+  Seiten 5–6 KB kleiner. **Rückfall, falls nötig:** Vercel Instant Rollback auf den letzten
+  Next-15-Stand `dpl_LRgMzU1c5Kb47uKKjht63FFQCaLp`.
+  **Falle beim Prüfen (erneut):** `pkill -f "[n]ext start"` in DERSELBEN Befehlszeile wie
+  `npx next start …` trifft die eigene Shell (Exit 144) — das Muster schützt nur, wenn der
+  Text nicht woanders in der Zeile steht. Aufräumen und Starten in getrennte Aufrufe.
+  🧹 **Lint-Altlast, erster Lauf überhaupt: 93 Fehler, 39 Warnungen** (552 Dateien).
+  Größte Posten: `react/no-unescaped-entities` 40 (Anführungszeichen im JSX-Text, harmlos),
+  `react-hooks/set-state-in-effect` 25, `@typescript-eslint/no-explicit-any` 12,
+  `react-hooks/purity` 4. ✅ `react-hooks/static-components` 7 → 0 (30.09.2026, jetzt
+  **86 Fehler**): `Block` (Bewerbungs-Steckbrief), `RLink` (Einstellungen) auf Modulebene,
+  `DateiZeilen` (BewerbungForm) als Renderfunktion. **Kein echter Fehler dahinter** — die
+  Steckbrief-Seite ist eine Server-Komponente, die beiden anderen ohne eigenen Zustand;
+  es war Hygiene. **Regel: Komponenten nie innerhalb einer Komponente definieren.**
+  Blockiert nichts (Next 16 lintet beim Build nicht mehr) — **als eigenes Vorhaben abarbeiten,
+  nicht nebenbei.**
 - ✅ **Next-15-Migration UMGESETZT (01.09.2026): Next 15.5.25 / React 19.2.8.** Plan samt
   Umsetzungsbericht: **`docs/zukunft/NEXTJS-15-MIGRATION.md`**; Befundlage:
   **`docs/SICHERHEIT-ABHAENGIGKEITEN.md`**. Alle 21 next-Meldungen geschlossen (25 → 4).
@@ -621,6 +908,10 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Angreifer bestimmt; **CSS-Uploads gibt es nicht** (geprüft). **KEIN npm-`override`.**
   **Neu:** `npm audit` nennt als Behebung **next@16.3.4** — die Next-16-Migration ist damit
   der einzige Weg, diese Meldung zu schließen.
+- ⚠️ **Stand 30.09.2026: `npm install` geht wieder TEILWEISE** — `next@16`, ESLint und
+  `undici` ließen sich installieren; `npm audit fix` und `vitest@4.1.11` scheitern weiter am
+  selben Arborist-Fehler. Nach jeder Installation die Lockdatei auf verlorene Pakete prüfen
+  (Paketzahl vorher/nachher). Historie:
 - ⛔ **`npm install` funktioniert in der Remote-Umgebung NICHT** (10.09.2026):
   `Cannot read properties of null (reading 'edgesOut')` in Arborist `buildIdealTree` — bei
   jedem Weg, auch mit `--package-lock-only` und nach `rm -rf node_modules`. **Nur `npm ci`
@@ -632,13 +923,11 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Offen für den nächsten Rechner:** `npm install -D vitest@^4.1.11` (schließt
   `GHSA-82fw-gwwq-j7x9`, moderat, **nur Entwicklung** — wer Testcode bestimmt, hat ohnehin
   Schreibrechte am Repo).
-- 🧹 **`npm run lint` hat NIE gelint** (10.09.2026 gefunden). Es gibt keine
+- 🧹 ~~**`npm run lint` hat NIE gelint**~~ ✅ eingerichtet mit Next 16 (30.09.2026, siehe oben). Historie: (10.09.2026 gefunden). Es gibt keine
   ESLint-Konfiguration im Repo (kein `.eslintrc*`, kein `eslint.config.*`) — `next lint`
   startet deshalb den interaktiven Einrichtungsdialog. **Nicht nebenbei reparieren:**
   Next 16 entfernt `next lint`; die Einrichtung gehört als eigenständiges
   `eslint.config.mjs` in dieselbe Migration.
-- **Next 16 ist ein eigenes, späteres Vorhaben** — verlangt `middleware.ts` → `proxy.ts`
-  (dort **kein Edge-Runtime**), Turbopack als Standard, Wegfall von `next lint`.
 - **Scanner (kostenlos, ohne Konto):** `osv-scanner scan source --lockfile=package-lock.json`
   (`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest`). Vor jedem größeren
   Release laufen lassen, mindestens monatlich. Neue Befunde in der genannten Datei bewerten,
@@ -704,6 +993,11 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   „Text kommt vor" war also erfüllt, ohne dass die Seite je geladen wurde.
   **Regel: Bei jeder HTTP-Prüfung zuerst feststellen, WO man gelandet ist
   (`endePfad`), erst dann den Inhalt ansehen.** Sonst prüft man die Menüleiste.
+  **Und umgekehrt (30.09.2026, falsch ROT):** Die Kartenprüfung suchte `/nicht gefunden/`
+  im ganzen HTML — der Ausdruck steckt im mitgeschickten Next-Code, nicht auf der Seite.
+  **Regel: positiv prüfen, mit Sätzen, die NUR diese Seite schreibt** (dort: „N Objekte
+  auf der Karte"; React trennt Textteile mit `<!-- -->`). Seit Phase 2 deckt der Test
+  auch Steuer, Anlage-V-PDF, CSV, Mietkonto, NK, Kredite und Karte ab (13 Wege).
   **Ungeprüft bleiben** Mietkonto, Steuer, Mieterportal, Archiv, Verbrauch,
   Termine — die Demo gibt sie bewusst nicht frei. Der Weg `demo-grenze` deckt
   stattdessen ab, dass die Sperre hält (fällt sie weg, klickt ein Besucher in
@@ -912,10 +1206,11 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   gleichrangige Punkte unter „Verwaltung"). „Planen" ist ein `<details>` — eingeklappt,
   aber nicht versteckt, und automatisch offen, wenn man darin arbeitet. `ALLE_ZIELE` ist
   die Liste für die Command-Palette; `VERWALTUNG`/`KALKULATOR` sind Übergangsnamen.
-  **Geführte Demo-Wege:** Weißliste `DEMO_ZIELE`, seit 30.09.2026 in `lib/demo.ts` und
-  **derzeit LEER** — alle drei Wege (`miete|nk|schaden`) führten in gesperrte Bereiche und
-  sind ausgebaut, bis Phase 2 ihre Ziele freigibt. Kein freier Pfad-Parameter (das wäre eine
-  offene Weiterleitung auf der eigenen Domain).
+  **Geführte Demo-Wege:** Weißliste `DEMO_ZIELE` in `lib/demo.ts` — `miete` → /mietkonto,
+  `nk` → /tenants, `steuer` → /steuer, `schaden` → /anliegen. Die erste Fassung (08.09.)
+  führte in gesperrte Bereiche; `tests/demoWege.test.ts` verlangt jetzt, dass jedes Ziel frei
+  ist. Kein freier Pfad-Parameter (das
+  wäre eine offene Weiterleitung auf der eigenen Domain).
 - 🚪 **Demo: jeder Klick führt irgendwohin (30.09.2026, externes Review).** Die Demo war an
   den gelobten Stellen kaputt: Die Aufgabenliste des Dashboards verlinkte NUR auf gesperrte
   Bereiche, ebenso „Karte aktivieren", „+ Immobilie" und jede Zeile unter „Letzte
@@ -930,9 +1225,170 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   rechnet gegen `demoDarfRoute` und wird sonst rot (elf Mutationen geprüft).
   **Der Vorgänger-Test prüfte nur, OB die Links auf der Startseite stehen** — und hielt
   damit drei Sackgassen fest. Ein Test, der eine Schreibweise prüft, schützt kein Verhalten.
-  **Offen (Phase 2–5 des Plans):** Kaufgründe (Steuer, NK, Mietkonto …) nur-lesend
-  freischalten, Demo-Daten relativ zum heutigen Datum, Cashflow-Kennzahlen beschriften und
-  das Ø-Kosten-Fenster reparieren (schönt sich bei Datenlücken selbst), Ladezeit messen.
+  **Phase 2–5 erledigt 30.09.2026.**
+- ⏱️ **Phase 5: Ladezeit GEMESSEN, nicht vermutet (30.09.2026, PR #338).** Live, Demo-Konto,
+  TTFB je 10 Aufrufe, Messpunkt in den USA (Edge `iad1`, Funktion `fra1`):
+  | Seite | vorher min/median | nachher min/median |
+  |---|---|---|
+  | `/` Dashboard | 573 / 785 ms | 444 / 711 ms |
+  | `/einstellungen` | 523 / 743 ms | 414 / 596 ms |
+  | `/tenants` | 545 / 709 ms | 402 / 568 ms |
+  Untergrenze dynamische Seite ohne Anmeldung (`/login`): ~170–185 ms; statisch ~50 ms.
+  **Befund, der die eigene Hypothese widerlegte:** Das Dashboard war NICHT langsamer als
+  `/einstellungen`. Die Zeit steckte im gemeinsamen **Layout** (sieben Aufrufe
+  hintereinander) → jetzt drei Stufen (getUser → Rolle+Freischaltung → vier Datenabfragen
+  parallel). Gewinn ~110–140 ms (Minima), im Median kleiner als die Netzstreuung.
+  Funktionen UND Datenbank liegen in Frankfurt — ein Regionen-Problem gibt es nicht.
+  **Grenzen der Messung:** Aus Deutschland nicht messbar; die Edge-Middleware läuft beim
+  Nutzer, ihr `getUser` geht von hier über den Atlantik → für deutsche Nutzer ist die Zeit
+  eher kürzer. Browser-Zeit (JS, Hydration) nicht gemessen (Chromium kommt hier nicht durch
+  den Proxy). Vercel-Observability liefert für das Projekt nichts (404).
+  ✅ **(1) erledigt 30.09.2026:** `lib/supabase/nutzer.ts` → `aktuellerNutzer()` (React
+  `cache`, gilt je Anfrage) in Layout + 11 Seiten; bleibt `getUser()`, nie `getSession()`
+  (`tests/nutzerCache.test.ts`). **`/auth/passwort-neu` bewusst ausgenommen** (setzt ein
+  Passwort ohne das alte). **Regel: Neue Server-Seiten holen den Nutzer über
+  `aktuellerNutzer()`, nicht über ein eigenes `supabase.auth.getUser()`.**
+  ✅ **(2) erledigt 30.09.2026: Proxy `getUser` → `getClaims`.** Anlass: In den Supabase-Logs
+  erzeugte EIN Seitenaufruf ~40 `GET /user` in zwei Sekunden (Vorab-Laden der Links, je
+  Anfrage Proxy + Layout). Das Projekt signiert bereits mit **ES256** (JWKS
+  `kid 5b81f0f9…`, am echten Demo-Token nachgesehen) → Signatur wird lokal geprüft,
+  Schlüsselsatz modulweit 10 min im Speicher. **In Kauf genommen:** Eine anderswo beendete
+  Sitzung erkennt der Proxy erst bei Token-Ablauf (≤ 1 h) — die Datenbank (RLS) nimmt das
+  Token bis dahin ohnehin an, die Seiten fragen über `aktuellerNutzer()` weiter beim
+  Auth-Server. **Fail-closed:** fremde Signatur, abgelaufen, HS256 ohne Server-Bestätigung,
+  Schlüsselsatz nicht erreichbar → nicht angemeldet. `tests/proxyAnmeldung.test.ts` mit
+  ECHTEN ES256-Schlüsseln und der echten Bibliothek (nur das Netz ersetzt), 9 Tests,
+  5 Mutationen rot — darunter **`allowExpired`**, das erst ein Test fing, der ein
+  abgelaufenes Token mit gefälschtem `expires_at` im Cookie einreicht (das Cookie ist
+  frei setzbar; ohne diesen Fall war die Ablaufprüfung ungetestet). Zusätzlich lokal
+  gegen das echte Supabase: gültige Demo-Sitzung 200, Demo-Sperre greift, manipulierte
+  Signatur → Login. **Regel: Im Proxy nie `getSession()`-Daten als Anmeldung werten —
+  nur `getClaims()` (geprüft) oder `getUser()`.** Messskript-Muster: einmal `/api/demo`, dann N× GET mit Cookie, TTFB
+  über `performance.now()` bis zu den Antwortköpfen; `x-vercel-id` zeigt Edge::Funktion.
+- 📈 **Dashboard-Grafik: 1J · 3J · 5J · Max, monatsweise, Mieten im Mietmonat (30.09.2026,
+  Vorgabe des Betreibers).** „1M" ist WEG — Miete kommt einmal im Monat, die Tagesansicht
+  zeigte 29 leere Tage und einen Ausschlag. `lib/zeitraum.ts` rechnet jetzt ausschließlich
+  auf den ZAHLEN des ISO-Datums (Monatsindex), nie mehr `new Date(iso)` + Ortszeit: Ein
+  Monatserster („2026-03-01") rutschte westlich von UTC in den Vormonat — genau das Datum,
+  an dem Mieten gebucht werden (Mutation M2 unter `TZ=America/New_York` belegt es).
+  **Einnahmen zählen im Mietmonat** (`einnahmeDatum()`: `soll_monat` schlägt
+  `buchungsdatum`) — sonst steht bei einer am 2. Februar gezahlten Januar-Miete der Januar
+  leer und der Februar doppelt. Live-Bestand: 148 von 633 Einnahmen haben `soll_monat`,
+  bisher 0 abweichend — der Fall ist also noch nicht eingetreten, aber die Nacherfassung
+  erzeugt genau ihn. **„Max"** zeigt Monate, solange der Bestand ≤ 72 Monate ist
+  (`MAX_MONATE_MONATSWEISE`), sonst Jahre; vorher immer Jahre → zwei Jahre Buchungen waren
+  zwei Punkte. Vorausbuchungen nach dem laufenden Monat zählen nicht. Gespeicherte
+  Altwahl „1M" im localStorage fällt über `istZeitraum()` auf „1J" zurück.
+  `tests/zeitraum.test.ts`, 19 Tests, 5 Mutationen rot; M5 („Grundlinie zurück") ist
+  gleichwertig — Buckets vor dem Zeitraum existieren nicht, `summen.has()` fängt es ohnehin.
+- 🔁 **Zweite Review-Runde (30.09.2026), `tests/reviewRunde2.test.ts`, acht Mutationen:**
+  (1) **Buchungssaldo-Diagramm** startete bei „12 Monate" beim Saldo ALLER früheren
+  Buchungen (`lib/zeitraum.ts`, „Grundlinie") → Endwert 100.182 € passte zu nichts. Jetzt ab
+  0 im Zeitraum; „Max" zeigt weiter seit Beginn. `/cashflow`-Kachel sagt „Ohne Tilgung ·
+  Zinsen nur, soweit gebucht" (Tilgung ist gar keine Kostenkategorie).
+  (2) **Kredit-Laufzeit:** Das Formular fragte „bis (Jahr)", ALLE 4 echten Nutzer trugen eine
+  Dauer ein (live gezählt). Jetzt „Gesamtlaufzeit (Jahre)"; `lib/kreditLaufzeit.ts` zeigt
+  Dauer („30 Jahre · bis 2051") UND Alt-Endjahre (≥ 1900 → „bis 2042") richtig an.
+  (3) **Nacherfassung** startete beim ältesten Mietvertrag (Demo: 299 offene Monate; ein
+  Vermieter mit Mietern seit 2015 sähe 600) → Voreinstellung jetzt Januar des Vorjahres
+  (`standardStartNacherfassung` in `lib/mietkonto.ts`), früher wählbar wie bisher.
+  (4) **„100 % Daten in der EU" auf der Startseite widersprach `/datenschutz`** (nennt USA:
+  Vercel, Anthropic) → irreführend (§ 5 UWG). Überall ersetzt durch das Belegte: „Datenbank
+  in Frankfurt". **Regel: Keine Werbeaussage, die der Datenschutzerklärung widerspricht.**
+  (5) **Header 761–1.200 px:** Logo und Knöpfe überlappten bis 215 px, seit der CTA
+  „Early-Access-Zugang anfragen" heißt. Gemessen in Chromium gegen **localhost** (das geht,
+  nur externe Seiten nicht). Stufen: < 1.320 Kurzform `START_CTA_KURZ` + ohne Unterzeile,
+  < 900 nur „Anmelden". Danach ≥ 46 px Abstand bis 1.920 px.
+  **Fallstrick beim Messen:** Ein alter `next start` hielt Port 3100, der neue brach mit
+  EADDRINUSE ab, und der alte lieferte HTML mit CSS-Verweisen aus dem gelöschten `.next` →
+  unsinnige Messwerte. Und `pkill -f "next start …"` trifft die eigene Shell — Muster mit
+  `[n]ext` schreiben.
+  (6) **Roadmap** führte „Geführtes Onboarding" als GEPLANT, obwohl es seit Juli existiert.
+  Jetzt Stufen „Umgesetzt / In Arbeit / Geplant"; „Umgesetzt" nur mit Komponente als Beleg.
+  **Neue Pläne kommen erst hinein, wenn der Betreiber sie beschlossen hat.**
+  **Nicht gemacht, braucht den Betreiber:** Gründer-Abschnitt (Inhalte), Kundenstimmen (es
+  gibt keine echten — **niemals erfinden**).
+- 🔎 **Echte Konten gegen die Demo-Fehler geprüft (30.09.2026), `tests/datenluecken.test.ts`,
+  13 Mutationen.** Die Demo-Fehler waren DATEN-Fehler — dieselben Lücken fanden sich bei
+  echten Nutzern (10 Konten, 23 Objekte; nur Zählungen ausgewertet, Demo ausgenommen):
+  (1) **Soll-Miete:** Bei 6 Objekten wich das Objektfeld „Miete" von den laufenden Mietern
+  ab; gegen die gebuchten Mieten stimmten 3× die Mieter, 0× das Objektfeld; eines hatte
+  gar keine Objekt-Miete (Dashboard 0 €, obwohl 1.450 €/Monat eingingen). Dazu ein
+  „Phantom-Soll" (nur beendete Mieter). **Regel jetzt `lib/sollMiete.ts` → `sollKaltmiete()`**
+  für Dashboard, Objektseite UND Objektliste: laufende Mieter → deren Kaltmiete; nur
+  beendete/künftige → 0; gar keine Mieter → Objektfeld. **Nie still:** Weichen Objektfeld
+  und Mieter ab, zeigt die Objektseite beide Zahlen + Knopf „Objekt-Miete angleichen"
+  (`gleicheObjektMieteAn`, rechnet serverseitig neu — kein Betrag vom Client). Grund: Ein
+  Mehrfamilienhaus mit nur teilweise angelegten Mietern (echt: 2.080 € vs. 780 €) verlöre
+  sonst ohne Hinweis Miete. Bewertung/Beleihung nutzen weiter das Objektfeld (Eingabe).
+  (2) **Kaufdatum fehlte bei 20 von 23 Objekten** → AfA im Kaufjahr voll, Spekulationsfrist
+  unbekannt; gewarnt wurde nur auf der Steuerseite. Jetzt EINE Sammel-Aufgabe in
+  `baueHeuteAufgaben` (`ohneKaufdatum`, Art `stammdaten`, nie dringend, ans Ende) + Hinweis
+  auf der Objektseite. Kein Pflichtfeld (Import kennt das Datum oft nicht).
+  (3) **Umlagen fehlten (2 Konten, 332 Buchungen):** Mieten nur kalt gebucht, kein NK-Anteil,
+  obwohl die Verträge NK-Vorauszahlungen haben — und umlagefähige Kosten als Werbungskosten
+  → Überschuss zu niedrig. `berechneAnlageV(..., mieter)` + `nkSollImJahr()` → Hinweis, wenn
+  gebuchte Umlagen < 50 % des Vertrags-Solls. Steuerseite UND Anlage-V-PDF übergeben die
+  Verträge; ohne sie (alte Aufrufer) kein Hinweis. **Nur Hinweis, keine Datenänderung** —
+  ob NK an den Vermieter gehen, weiß nur der Nutzer.
+  **Nicht angefasst:** fremde Daten. Die App korrigiert nichts selbst, sie zeigt es an.
+  **Zweiter Schub (gleicher Tag):** drei weitere stille Lücken, gleiches Muster (Sammel-
+  Aufgabe `stammdaten` + Hinweis dort, wo die Lücke wirkt; Helfer `luecke()` in `lib/heute.ts`):
+  **Mieter ohne Mietbeginn** (3) waren im Mietkonto UNSICHTBAR — `sollFuerMonat` liefert
+  ohne Beginn nie ein Soll, also nie „offen", nie Nacherfassung; die Soll-Miete zählte sie
+  aber. Jetzt nennt `/mietkonto` sie (`ladeMietkonto().ohneMietbeginn`).
+  **Mieter ohne Objekt** (3): Ihre NK flossen in die Warmmiete, ihre Kaltmiete in keine
+  Objekt-Miete → NK-Summe jetzt nur über Mieter mit Objekt.
+  **Kredite ohne Auszahlungsdatum** (6 von 8): keine Frist fürs Sonderkündigungsrecht
+  (§ 489 BGB, `lib/fristen.ts`) und kein Laufzeitende → Hinweis auf der Kreditkarte.
+  **Test-Falle (N2):** Kein Test übergab LEERE Listen — genau das tut das Dashboard bei
+  jedem gepflegten Konto; die Mutation hätte „Kaufdatum fehlt bei 0 Objekten" gezeigt.
+  **Regel: Den Normalfall (alles in Ordnung) ausdrücklich testen, nicht nur die Lücke.**
+- 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
+  (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
+  daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,
+  Kaltmiete und Rendite stehen darunter → Warmmiete − Kosten = Cashflow, sichtbar.
+  (2) **„+754,9 % seit Anschaffung"** war erster gegen letzten Punkt der Portfolio-Reihe —
+  jeder Zukauf zählte als Wertsteigerung. Jetzt `wertzuwachsGgKaufpreis()` (lib/wert/verlauf.ts):
+  Σ heutiger Wert gegen Σ Kaufpreis, nur Objekte mit BEIDEM → Demo **+11,9 % ggü. Kaufpreis**.
+  (3) **Schuldzinsen doppelt abgezogen:** Die Anlage V rät, Zinsen als Kosten „Schuldzinsen"
+  zu buchen; der Cashflow zieht aber die volle Kreditrate ab, die sie schon enthält.
+  `laufendeKosten()` (lib/cashflowKennzahl.ts) nimmt sie vor dem Kostenschnitt heraus
+  (Dashboard + Objektseite). Live noch nie eingetreten (0 Schuldzinsen-Buchungen).
+  **Regel: Kosten, die in der Kreditrate stecken, gehören nie zusätzlich in „laufende Kosten".**
+  (4) **Jahresbericht-PDF rechnete anders als die Seite** (Kopfkommentar behauptete
+  „identisch"): Zinsen doppelt, Zinsanteil immer geschätzt. Beide jetzt über
+  `jahresZeile()` in `lib/jahresberichtZeile.ts`.
+  (5) **Demo ohne Zinsbuchungen** → Steuer zeigte „aus Restschuld hochgerechnet". Migration
+  `20260930174605`: 4 Darlehen × 18 Monate im Schnappschuss, der Reset schreibt fort. Die
+  Steuerseite zeigt standardmäßig das VORJAHR (`AnlageVExport`, `aktuell - 1`), das in der
+  Demo immer voll gebucht ist.
+  **Test-Falle, die M4 aufdeckte:** Gebuchte Zinsen = Schätzung (3.000 = 100.000 × 3 %) —
+  der Test konnte „gebucht schlägt geschätzt" gar nicht unterscheiden. Testwerte so wählen,
+  dass die zu unterscheidenden Wege VERSCHIEDENE Ergebnisse liefern.
+- 💶 **Cashflow: EINE Rechnung, jede Zahl sagt, was sie ist (Phase 4, 30.09.2026).**
+  `lib/cashflowKennzahl.ts` → `kostenSchnittMonat()` + `monatsCashflow()` + `cashflowFormel()`,
+  benutzt von Dashboard UND Objektseite. **Drei Fehler, die dort steckten:**
+  (1) Der Kostenschnitt war „letzte 12 Monate / 12" — ein Nutzer mit drei Monaten Buchungen
+  sah ein VIERTEL seiner Kosten (Test rechnet es nach: 25 € statt 100 €), einer mit Lücke am
+  Ende ebenfalls zu wenig. Jetzt: Fenster = letzte 12 Monate MIT Buchungen, geteilt durch
+  die tatsächliche Monatszahl. **Nicht** durch „Monate mit Kosten" teilen — Grundsteuer
+  fällt nur in 4 Monaten an, der Schnitt wäre dreifach zu hoch. Lücken MITTEN im Zeitraum
+  bleiben ungelöst (bewusst).
+  (2) Die **Objektseite** rechnete „Miete − Kreditrate" OHNE Kosten, obwohl die Übersicht
+  darunter die Kosten als Posten führte; die Summe der Objekte ergab nicht das Dashboard.
+  (3) Vier Zahlen hießen „Cashflow". Jetzt: Monats-Cashflow mit Formel an der Zahl;
+  Dashboard-Verlauf und `/cashflow`-KPI heißen **„Buchungssaldo"**; „Einnahmen / Mo." heißt
+  „Kaltmiete / Mo." (es ist die Soll-Miete, keine Buchung); Jahresbericht-Spalte mit Formel.
+  **ENTSCHIEDEN 30.09.2026 (Betreiber): WARMmiete.** Monats-Cashflow = Soll-Kaltmiete +
+  NK-Vorauszahlungen laufender Verträge (`nkVorauszahlungenMonat()`) − Kreditraten − Ø Kosten.
+  Vorher zählte nur die Kaltmiete, abgezogen wurden aber ALLE Kosten inkl. umlagefähiger —
+  Demo +518 € mit 4 von 6 Objekten rot, jetzt +1.548 €. **Die Steuer berührt das NICHT:**
+  Anlage V rechnet aus Buchungen (`lib/anlageV.ts`: Betrag − `nk_anteil` → Zeile 9,
+  `nk_anteil` → Zeile 13). **Rendite und Kaufpreisfaktor bleiben KALT** (Marktkonvention).
+  Nicht enthalten: Stellplatzmieten außerhalb von Garagen-Objekten (Doppelzählung nicht
+  auszuschließen) und NK-Nachzahlungen/-Erstattungen. `tests/cashflowKennzahl.test.ts`,
+  16 Mutationen geprüft.
   **`START_CTA` in `lib/preise.ts`:** Solange `REGISTRIERUNG_OFFEN = false` (Zugangscode
   nötig), heißt der Knopf „Early-Access-Zugang anfragen" statt „Kostenlos starten". Ein
   Test hält fest, dass keine Landing-Datei die Beschriftung wieder hart einträgt.
@@ -954,6 +1410,16 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Demo-Konto:** Oberfläche sperrt die Einrichtung, `/api/demo` räumt Faktoren beim Start
   ab — ein Besucher, der dem geteilten Konto per API einen Faktor anhängt, sperrte sonst
   alle anderen aus.
+  🐞 **2FA dauerhaft blockiert (30.09.2026, Supabase-Log):** Neunmal „A factor with the
+  friendly name "MyImmo" … already exists". Die Aufräumschleife suchte unbestätigte Faktoren
+  in `listFactors().totp` — dort liegen in supabase-js **nur bestätigte**
+  (`GoTrueClient.js`, `_listFactors`: `if (factor.status === 'verified') data[type].push`).
+  Wer die Einrichtung ohne „Abbrechen" verließ, kam nie wieder hinein. Jetzt
+  `unbestaetigteTotp()` (`lib/auth/mfaFaktoren.ts`, über `.all`), aufgeräumt beim Laden UND
+  vor jedem `enroll()`. `tests/mfaFaktoren.test.ts` prüft gegen die ECHTE Bibliothek (nur
+  `getUser` ersetzt), vier Mutationen rot. **Regel: Bei `listFactors()` für unbestätigte
+  Faktoren immer `.all` lesen.** Live lag genau ein solcher Rest (1 Konto) — er wird beim
+  nächsten Öffnen von Einstellungen → Sicherheit automatisch entfernt.
   **Auto-Abmeldung:** Standard jetzt 30 Minuten (`STANDARD_MIN` in `AutoLogout.tsx`); wer
   „Aus“ gewählt hat, behält es.
   **Prüfstand:** `db.amrVorSekunden` (Alter der Anmeldung) und `db.aal` steuern die

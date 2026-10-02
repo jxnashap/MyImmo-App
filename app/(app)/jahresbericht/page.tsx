@@ -4,6 +4,7 @@ import { euro } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
+import { jahresZeile } from "@/lib/jahresberichtZeile";
 
 export default async function JahresberichtPage(
   props0: {
@@ -26,39 +27,19 @@ export default async function JahresberichtPage(
   const kosten = (kost ?? []) as Kosten[];
   const kredite = (kred ?? []) as Kredit[];
 
-  const inYear = (d: string | null) => !!d && d.startsWith(String(year));
 
   const heute = new Date();
   const aktuellesJahr = heute.getFullYear();
   // Raten: vergangene Jahre = 12 Monate, laufendes Jahr = verstrichene Monate, Zukunft = 12 (Projektion)
   const monate = year < aktuellesJahr ? 12 : year > aktuellesJahr ? 12 : heute.getMonth() + 1;
 
-  const rows = properties.map((p) => {
-    const e = einnahmen.filter((x) => x.prop_id === p.id && inYear(x.buchungsdatum)).reduce((s, x) => s + (x.betrag ?? 0), 0);
-    const propKosten = kosten.filter((x) => x.prop_id === p.id && inYear(x.buchungsdatum));
-    // Gebuchte Schuldzinsen gehoeren NICHT in die Spalte „Laufende Kosten":
-    // Zins und Tilgung stehen als eigene Spalten daneben und die Kreditrate
-    // geht separat in den Cashflow ein. Vorher wurden sie doppelt abgezogen —
-    // einmal als Kostenbuchung, einmal als Teil der Rate.
-    const gebuchteZinsen = propKosten
-      .filter((x) => x.kategorie === "Schuldzinsen")
-      .reduce((s, x) => s + (x.betrag ?? 0), 0);
-    const k = propKosten.reduce((s, x) => s + (x.betrag ?? 0), 0) - gebuchteZinsen;
-    const propKredite = kredite.filter((x) => x.prop_id === p.id);
-    // Zinsanteil: gebucht schlaegt geschaetzt (wie in der Anlage V). Die
-    // Naeherung „aktuelle Restschuld × Zinssatz" beschreibt HEUTE, nicht das
-    // Berichtsjahr.
-    const geschaetzterZins = propKredite.reduce(
-      (s, kr) => s + (((kr.restschuld ?? 0) * (kr.zinssatz ?? 0)) / 100 / 12) * monate,
-      0,
-    );
-    const zins = gebuchteZinsen > 0 ? gebuchteZinsen : geschaetzterZins;
-    const zinsGeschaetzt = gebuchteZinsen <= 0 && geschaetzterZins > 0;
-    const rate = propKredite.reduce((s, kr) => s + (kr.monatsrate ?? 0) * monate, 0);
-    const tilgung = Math.max(0, rate - zins);
-    const cashflow = e - k - rate;
-    return { id: p.id, name: p.bezeichnung, e, k, zins, zinsGeschaetzt, tilgung, cashflow };
-  });
+  // Rechnung gemeinsam mit dem PDF (lib/jahresberichtZeile.ts) — vorher
+  // rechnete das PDF anders und zog gebuchte Zinsen doppelt ab.
+  const rows = properties.map((p) => ({
+    id: p.id,
+    name: p.bezeichnung,
+    ...jahresZeile(p.id, year, monate, { einnahmen, kosten, kredite }),
+  }));
 
   const sum = rows.reduce(
     (a, r) => ({
@@ -123,7 +104,7 @@ export default async function JahresberichtPage(
                 <th style={{ textAlign: "right" }} title="Laufende Kosten aus deinen Kosten-Buchungen (Bewirtschaftung)">Laufende Kosten</th>
                 <th style={{ textAlign: "right" }} title="Gebuchte Schuldzinsen des Jahres; ohne Buchung geschätzt aus Restschuld × Zinssatz (mit ~ markiert)">Zins</th>
                 <th style={{ textAlign: "right" }}>Tilgung</th>
-                <th style={{ textAlign: "right" }}>Cashflow</th>
+                <th style={{ textAlign: "right" }} title="Einnahmen − laufende Kosten − Kreditraten (Zins + Tilgung) des Jahres, aus deinen Buchungen">Cashflow</th>
               </tr>
             </thead>
             <tbody>

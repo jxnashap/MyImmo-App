@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, ShieldOff, KeyRound, Copy, Check, TriangleAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
+import { actionFehler } from "@/lib/actionErgebnis";
 import {
   erzeugeWiederherstellungscodes,
   loescheWiederherstellungscodes,
   zaehleWiederherstellungscodes,
 } from "@/lib/actions/mfa";
+import { unbestaetigteTotp } from "@/lib/auth/mfaFaktoren";
 
 // Zwei-Faktor-Anmeldung per Authenticator-App (TOTP) — Einstellungen → Sicherheit.
 //
@@ -22,7 +24,18 @@ import {
 
 type Faktor = { id: string; status: string; friendly_name?: string | null };
 
-export default function ZweiFaktor({ demo = false, istGoogle = false }: { demo?: boolean; istGoogle?: boolean }) {
+export default function ZweiFaktor({
+  demo = false,
+  istGoogle = false,
+  absichern,
+}: {
+  demo?: boolean;
+  istGoogle?: boolean;
+  /** Re-Auth vor dem Einrichten (Audit 01.10.2026, B3): Eine gestohlene Sitzung
+   *  darf keinen Faktor auf ein fremdes Gerät legen — das sperrte den Inhaber
+   *  dauerhaft aus (Passwort-Reset hilft dann nicht, der Login verlangt den Code). */
+  absichern?: (fn: () => void | Promise<void>) => void | Promise<void>;
+}) {
   const supabase = createClient();
   const toast = useToast();
   const [faktor, setFaktor] = useState<Faktor | null | undefined>(undefined); // undefined = lädt
@@ -43,10 +56,17 @@ export default function ZweiFaktor({ demo = false, istGoogle = false }: { demo?:
     const { data } = await supabase.auth.mfa.listFactors();
     const totp = (data?.totp ?? []).find((f) => f.status === "verified") ?? null;
     setFaktor(totp ? { id: totp.id, status: totp.status, friendly_name: totp.friendly_name } : null);
-    // Unverifizierte Reste einer abgebrochenen Einrichtung aufräumen — sonst
-    // meldet Supabase beim nächsten enroll() „already exists".
-    for (const f of data?.totp ?? []) if (f.status !== "verified") await supabase.auth.mfa.unenroll({ factorId: f.id });
+    await raeumeAuf(data);
     setCodesUebrig(await zaehleWiederherstellungscodes());
+  }
+
+  // Unbestätigte Reste einer abgebrochenen Einrichtung entfernen — sonst meldet
+  // Supabase beim nächsten enroll() „already exists". Sie stehen NUR in `.all`
+  // (siehe lib/auth/mfaFaktoren.ts; die frühere Schleife über `.totp` fand nie
+  // einen und blockierte 2FA dauerhaft).
+  async function raeumeAuf(data?: Parameters<typeof unbestaetigteTotp>[0]) {
+    const liste = data ?? (await supabase.auth.mfa.listFactors()).data;
+    for (const id of unbestaetigteTotp(liste)) await supabase.auth.mfa.unenroll({ factorId: id });
   }
   useEffect(() => {
     void laden();
@@ -56,6 +76,9 @@ export default function ZweiFaktor({ demo = false, istGoogle = false }: { demo?:
   async function starten() {
     setFehler(null);
     setBusy(true);
+    // Auch HIER aufräumen: Ein Rest kann seit dem Laden entstanden sein
+    // (zweiter Tab, Neuladen mitten in der Einrichtung).
+    await raeumeAuf();
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "MyImmo" });
     setBusy(false);
     if (error || !data) return setFehler(error?.message ?? "Einrichtung konnte nicht gestartet werden.");
@@ -99,12 +122,19 @@ export default function ZweiFaktor({ demo = false, istGoogle = false }: { demo?:
       setBusy(false);
       return setFehler("Abschalten fehlgeschlagen.");
     }
-    await loescheWiederherstellungscodes();
+    // Antwort auswerten (30.09.2026): Der Faktor ist zu diesem Zeitpunkt schon
+    // weg — scheitert nur das Aufräumen der Codes, ist 2FA trotzdem aus. Das
+    // gehört gesagt, statt es zu verschweigen.
+    const codesWeg = await loescheWiederherstellungscodes();
     setAusCode("");
     setBusy(false);
     setNeueCodes(null);
     await laden();
-    toast("Zwei-Faktor-Anmeldung ist aus.");
+    if (actionFehler(codesWeg)) {
+      toast("Zwei-Faktor-Anmeldung ist aus. Die alten Wiederherstellungscodes ließen sich nicht löschen — sie sind ohne zweiten Faktor wirkungslos.", "info");
+    } else {
+      toast("Zwei-Faktor-Anmeldung ist aus.");
+    }
   }
 
   async function codesNeu() {
@@ -198,7 +228,7 @@ export default function ZweiFaktor({ demo = false, istGoogle = false }: { demo?:
         </form>
       ) : (
         <fieldset disabled={gesperrt || busy} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-          <button type="button" className="btn btn-gold" onClick={starten}><ShieldCheck size={14} /> Zwei-Faktor einrichten</button>
+          <button type="button" className="btn btn-gold" onClick={() => (absichern ? absichern(starten) : starten())}><ShieldCheck size={14} /> Zwei-Faktor einrichten</button>
         </fieldset>
       )}
 

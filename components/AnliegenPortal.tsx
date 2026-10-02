@@ -6,6 +6,7 @@
 import { useRef, useState, useTransition } from "react";
 import { Wrench, FileText, MessageCircleQuestion, Plus, Paperclip, CalendarClock, type LucideIcon } from "lucide-react";
 import { erstelleAnliegen, bestaetigeAnliegenTermin } from "@/lib/actions/anliegen";
+import VorschauHinweis from "@/components/VorschauHinweis";
 
 export type AnliegenRow = {
   id: string;
@@ -27,7 +28,7 @@ const slotLabel = (s: string) => {
     : `${d.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}, ${d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr`;
 };
 
-function TerminWahl({ a }: { a: AnliegenRow }) {
+function TerminWahl({ a, nurLesen }: { a: AnliegenRow; nurLesen?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [fehler, setFehler] = useState<string | null>(null);
   const slots = a.termin_vorschlaege ?? [];
@@ -55,7 +56,7 @@ function TerminWahl({ a }: { a: AnliegenRow }) {
             type="button"
             className="btn btn-outline"
             style={{ fontSize: 12 }}
-            disabled={pending}
+            disabled={pending || nurLesen}
             onClick={() =>
               startTransition(async () => {
                 setFehler(null);
@@ -114,10 +115,13 @@ export default function AnliegenPortal({
   anliegen,
   dateien,
   standardTyp,
+  nurLesen = false,
 }: {
   anliegen: AnliegenRow[];
   dateien: DateiRef[];
   standardTyp?: string;
+  /** Vorschau des Vermieters (01.10.2026): kein Formular, keine Termin-Knöpfe. */
+  nurLesen?: boolean;
 }) {
   const [offenForm, setOffenForm] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -143,12 +147,16 @@ export default function AnliegenPortal({
     <div className="section">
       <div className="section-header">
         <h3>Meine Anliegen</h3>
-        <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => setOffenForm((o) => !o)}>
-          <Plus size={13} style={{ verticalAlign: "-2px" }} /> Neues Anliegen
-        </button>
+        {nurLesen ? (
+          <VorschauHinweis was="Neues Anliegen" />
+        ) : (
+          <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => setOffenForm((o) => !o)}>
+            <Plus size={13} style={{ verticalAlign: "-2px" }} /> Neues Anliegen
+          </button>
+        )}
       </div>
       <div className="section-body">
-        {offenForm && (
+        {offenForm && !nurLesen && (
           <form
             ref={formRef}
             action={senden}
@@ -219,7 +227,7 @@ export default function AnliegenPortal({
                   <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, whiteSpace: "pre-wrap" }}>{a.beschreibung}</p>
                 )}
                 <AnhangLinks dateien={dateienVon(a.id)} />
-                <TerminWahl a={a} />
+                <TerminWahl a={a} nurLesen={nurLesen} />
                 {a.antwort && (
                   <p style={{ fontSize: 12, marginTop: 8, padding: "8px 10px", background: "var(--gold-pale)", borderLeft: "3px solid var(--gold)", borderRadius: 6 }}>
                     <strong>Antwort deines Vermieters:</strong> {a.antwort}

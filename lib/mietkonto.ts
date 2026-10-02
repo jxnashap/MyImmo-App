@@ -62,6 +62,29 @@ export function ymPlus(ym: string, n: number): string {
   return `${jj}-${String(mm).padStart(2, "0")}`;
 }
 
+/**
+ * Voreingestellter Startmonat der Nacherfassung.
+ *
+ * Der spätere von: frühester Mietbeginn · Januar des VORJAHRES.
+ *
+ * VORHER (bis 30.09.2026): frühester Mietbeginn, bis zu zehn Jahre zurück.
+ * Wer beim Einrichten Mieter seit 2015 anlegte, sah beim ersten Blick ins
+ * Mietkonto „Nacherfassen (600)" — in der Demo waren es 299, weil der
+ * älteste Vertrag von 2018 ist und ab 2025 gebucht wurde. Das Review nannte
+ * es abschreckend, und es ist auch nicht die Aufgabe: Für die Anlage V zählt
+ * das Vorjahr. Wer weiter zurück will, stellt den Startmonat früher ein (bis
+ * zehn Jahre, unverändert).
+ */
+export function standardStartNacherfassung(mietbeginne: (string | null | undefined)[], aktuellerMonat: string): string {
+  const vorjahrJanuar = `${Number(aktuellerMonat.slice(0, 4)) - 1}-01`;
+  const beginne = mietbeginne
+    .map((b) => (b ?? "").slice(0, 7))
+    .filter((ym) => YM.test(ym))
+    .sort();
+  const fruehester = beginne[0];
+  return fruehester && fruehester > vorjahrJanuar ? fruehester : vorjahrJanuar;
+}
+
 const rund2 = (n: number) => Math.round(n * 100) / 100;
 
 // -------------------------------------------------------------- Soll-Miete ----
@@ -212,11 +235,12 @@ export type OffeneMiete = ErwarteterMonat & {
 
 /**
  * 3. Werktag eines Monats (§ 556b Abs. 1 BGB) als ISO-Datum.
- * Werktage sind Montag bis Samstag; der Sonntag zählt nicht. Gesetzliche
- * Feiertage bleiben bewusst unberücksichtigt — sie sind bundeslandabhängig,
- * und die Fälligkeit dadurch eher zu früh als zu spät anzusetzen wäre der
- * schlechtere Fehler. Ohne diese Rechnung würde die App bei einem Monat, der
- * am Wochenende beginnt, bis zu zwei Tage zu früh einen Rückstand melden.
+ * Werktage sind Montag bis Freitag. Der SAMSTAG zählt NICHT: Für die
+ * Mietzahlung ist er kein Werktag (BGH VIII ZR 129/09 zu § 556b BGB) — bis
+ * zum 01.10.2026 zählte die App ihn mit, und das Mahnschreiben nannte damit
+ * bis zu zwei Tage zu früh ein Fälligkeitsdatum. Gesetzliche Feiertage
+ * bleiben bewusst unberücksichtigt — sie sind bundeslandabhängig; die
+ * Fälligkeit dadurch eher zu früh anzusetzen wäre der schlechtere Fehler.
  */
 export function dritterWerktag(jahrMonat: string): string {
   const [j, m] = jahrMonat.split("-").map(Number);
@@ -224,7 +248,7 @@ export function dritterWerktag(jahrMonat: string): string {
   for (let tag = 1; tag <= 31; tag++) {
     const d = new Date(Date.UTC(j, m - 1, tag));
     if (d.getUTCMonth() !== m - 1) break; // Monatsende überschritten
-    if (d.getUTCDay() === 0) continue; // Sonntag ist kein Werktag
+    if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue; // Sa/So sind keine Werktage
     werktage += 1;
     if (werktage === 3) return `${jahrMonat}-${String(tag).padStart(2, "0")}`;
   }

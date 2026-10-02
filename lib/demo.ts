@@ -1,34 +1,67 @@
 // Regeln fuer das oeffentliche Demo-Konto.
 //
 // Die Demo ist ein SCHAUSTUECK, kein Sandkasten (Vorgabe Betreiber 30.08.2026):
-// Dashboard, Immobilien, Mieter, Ein- & Ausgaben und die Kauf-/Verkauf-Rechner
-// sind zu sehen, aber nichts ist bearbeitbar. Alles andere bleibt in der
-// Navigation SICHTBAR und gesperrt — ein Interessent soll sehen, was er
-// bekommt, wenn er sich anmeldet.
+// Man sieht alles, bearbeitet nichts.
+//
+// Seit 30.09.2026 (Phase 2 nach dem externen Review) sind auch die
+// KAUFGRUENDE frei — Steuer/Anlage V, Nebenkostenabrechnung, Mietkonto,
+// Kredite, Jahresbericht. Vorher waren genau die Funktionen gesperrt, mit
+// denen die Startseite wirbt; wer „Demo ansehen" klickte, fand sie nicht.
+// Seit Phase 3 (30.09.2026) auch Mieterportal und Archiv: Der Schnappschuss
+// enthaelt jetzt Beispiel-Anliegen, Archiv-Eintraege und eine Zaehlermeldung
+// (Migration 20260930154606), und die Daten laufen bis heute mit.
+// Gesperrt bleiben Makler-Unterlagen (keine Beispieldaten — eine leere Seite
+// wirbt schlechter als der Sperr-Dialog) sowie Anlegen und Bearbeiten.
 //
 // Einzige Ausnahme: das Mieterhoehungs-Dokument samt PDF. Es ist das Beispiel
 // zum Selbstzusammenstellen — gespeichert wird dabei nichts.
 //
 // DREI Ebenen, und alle drei werden gebraucht:
-//   1. Datenbank — restriktive RLS-Policies verweigern dem Demo-Konto jedes
-//      INSERT/UPDATE/DELETE (Migration 20260830150000). Das ist die einzige
-//      Ebene, die auch dann haelt, wenn jemand die naechste Server-Action
-//      vergisst oder direkt gegen PostgREST spricht.
-//   2. Route — `demoDarfRoute` unten, durchgesetzt in `middleware.ts`.
+//   1. Datenbank — ein Anweisungs-Trigger wirft fuer das Demo-Konto bei jedem
+//      INSERT/UPDATE/DELETE einen FEHLER (Migration 20260930150643); die
+//      restriktiven RLS-Policies (20260830150000) bleiben als zweite Linie.
+//      Das ist die einzige Ebene, die auch dann haelt, wenn jemand die
+//      naechste Server-Action vergisst oder direkt gegen PostgREST spricht.
+//      Der Trigger ist noetig, weil die Policies UPDATE/DELETE nur STILL
+//      wegfiltern — die Action meldete „gespeichert", obwohl nichts geschah.
+//   2. Route — `demoDarfRoute` unten, durchgesetzt in `proxy.ts` (bis Next 15: `middleware.ts`).
 //   3. Oberflaeche — `components/DemoNurLesen.tsx` macht Felder schreibgeschuetzt
-//      und Speichern-Knoepfe inaktiv. NOETIG, obwohl (1) schon sperrt: Ein per
-//      RLS blockiertes UPDATE wirft KEINEN Fehler, es trifft null Zeilen. Ohne
-//      Ebene 3 klickt der Besucher auf Speichern, bekommt keine Meldung und
-//      glaubt, es sei gespeichert.
+//      und Speichern-Knoepfe inaktiv. Seit dem Trigger in (1) ist sie keine
+//      Sicherung mehr, sondern Hoeflichkeit: Wer gar nicht erst tippen kann,
+//      muss sich keine Fehlermeldung durchlesen.
 //
 // `components/Sidebar.tsx` graut gesperrte Eintraege aus (Schloss),
-// `middleware.ts` weist gesperrte Adressen serverseitig ab. Das Ausgrauen
+// `proxy.ts` weist gesperrte Adressen serverseitig ab. Das Ausgrauen
 // allein waere reine Optik: Wer die Adresse kennt, tippt sie ein.
 
+import { istOeffentlicheSeite } from "@/lib/oeffentlich";
+
 export const DEMO_EMAIL = "demo.vermieter@myimmo.test";
+/** Zweites Demo-Konto (01.10.2026): die Mieter-Sicht. Verknüpft mit Sophie
+ *  Berger (Migration 20261001150000); angelegt von /api/demo?rolle=mieter. */
+export const DEMO_MIETER_EMAIL = "demo.mieter@myimmo.test";
+/** Service-Konten (01.10.2026): drei verknüpfte Partner, angemeldet wird als
+ *  Hausmeister. Angelegt von /api/demo, verknüpft über
+ *  demo_service_verknuepfen() (Migration 20261001180000). Die Liste muss mit
+ *  der Funktion und mit ist_demo_nutzer() übereinstimmen —
+ *  tests/demoService.test.ts prüft das. */
+export const DEMO_SERVICE_EMAIL = "demo.hausmeister@myimmo.test";
+export const DEMO_SERVICE_KONTEN = [DEMO_SERVICE_EMAIL, "demo.sanitaer@myimmo.test", "demo.garten@myimmo.test"] as const;
 
 export function istDemoKonto(email?: string | null): boolean {
-  return !!email && email === DEMO_EMAIL;
+  return !!email && (email === DEMO_EMAIL || email === DEMO_MIETER_EMAIL || (DEMO_SERVICE_KONTEN as readonly string[]).includes(email));
+}
+
+/**
+ * Die Reiter „Ansicht Mieter" und „Ansicht Service" im Mieterportal des
+ * Vermieters (01.10.2026, Vorgabe des Betreibers): NUR in der Demo. Dort
+ * zeigen sie dem Besucher die Gegenseite ohne zweite Anmeldung. Für echte
+ * Vermieter bleiben sie aus — ein Schalter, falls das später anders
+ * entschieden wird.
+ */
+export const ANSICHTEN_NUR_DEMO = true;
+export function ansichtenSichtbar(email?: string | null): boolean {
+  return !ANSICHTEN_NUR_DEMO || istDemoKonto(email);
 }
 
 // Benutzbare Bereiche. Praefixe, damit Detailseiten (/properties/<id>) und
@@ -39,7 +72,26 @@ const ERLAUBTE_PRAEFIXE = [
   "/cashflow",
   "/kauf",
   "/verkauf",
+  // Die Kaufgruende (seit 30.09.2026). Alle haben Beispieldaten; `/termine`
+  // leitet Fristen aus Mietern, Krediten und Objekten ab.
+  "/mietkonto",
+  "/verbrauch",
+  "/kredite",
+  "/steuer",
+  "/jahresbericht",
+  "/termine",
+  "/karte", // Koordinaten fest im Schnappschuss (Migration 20260930150903)
+  "/bewertung",
+  "/afa-assistent",
+  // Mit Beispieldaten seit Phase 3.
+  "/anliegen",
+  "/archiv",
   "/hilfe", // Support muss immer erreichbar sein, auch in der Demo
+  // Mieter-Demo (01.10.2026): Portal und Konto-Seite. Ein Vermieter-Konto
+  // wird vom Layout ohnehin von /portal weggeleitet.
+  "/portal",
+  "/konto",
+  "/service", // Service-Demo (01.10.2026); ein Vermieter wird vom Layout weggeleitet
   // Einstellungen bewusst sichtbar (Vorgabe Betreiber 29.08.2026): Dort sieht
   // der Besucher das Profil "Max Mustermann" und findet den Support.
   // Aenderungen sind seit dem 30.08.2026 nicht mehr moeglich — der Bereich ist
@@ -58,14 +110,35 @@ const IMMER_ERLAUBT = [
   "/auth/",
   "/landing/",
   "/fonts/",
+  // LESENDE API-Routen der freigegebenen Bereiche: PDF/CSV aus vorhandenen
+  // Daten, kein Schreibvorgang, kein KI-Aufruf, keine „frische Anmeldung".
+  // Ohne sie liefen „Anlage V als PDF", „DATEV-Export" und der CSV-Export auf
+  // /cashflow stumm aufs Dashboard zurueck.
+  // NICHT hierher: /api/nk-ocr, /api/import-url (kosten Geld je Aufruf),
+  // /api/import (schreibt), /api/export/alles (verlangt frische Anmeldung).
+  "/api/berichte/anlage-v",
+  "/api/berichte/jahresbericht",
+  "/api/export/datev",
+  "/api/export/buchungen",
+  "/api/kauf/kreditantrag", // POST, aber nur ein PDF aus der Selbstauskunft
+  // Hochgeladene Dateien ANSEHEN (GET, eigene Daten, ueber `dateiKopf()`):
+  // Zaehlerfoto auf /verbrauch, Anhang eines Anliegens.
+  "/api/zaehler-foto",
+  "/api/anliegen-datei",
 ];
 
-// Ausnahmen INNERHALB der erlaubten Praefixe. Ohne sie waere z. B. der
-// NK-Rechner unter `/tenants/<id>/nk` mitfreigegeben, weil `/tenants` erlaubt
-// ist. Reihenfolge zaehlt: erst freigegeben, dann gesperrt.
+// Einzelne lesende Routen ausserhalb der freien Praefixe.
+const LESEND_ERLAUBT: RegExp[] = [
+  // Beleg einer Buchung — verlinkt aus der Buchungsliste auf /cashflow. Nur
+  // `rechnung`: `/kosten/<id>/edit` ist ein Formular und bleibt gesperrt.
+  /^\/kosten\/[^/]+\/rechnung$/,
+];
+
+// Ausnahmen INNERHALB der erlaubten Praefixe: Anlegen und Bearbeiten.
+// NK-Rechner und Uebergabeprotokoll standen bis 30.09.2026 auch hier — sie
+// sind Kaufgruende und jetzt frei; was sie speichern wollen, scheitert laut
+// am Datenbank-Trigger. Reihenfolge zaehlt: erst freigegeben, dann gesperrt.
 const GESPERRT_TROTZ_PRAEFIX: RegExp[] = [
-  /^\/tenants\/[^/]+\/nk(\/|$)/,          // Nebenkostenabrechnung (Rechner + PDF)
-  /^\/tenants\/[^/]+\/protokoll(\/|$)/,   // Uebergabeprotokoll
   /^\/tenants\/[^/]+\/edit(\/|$)/,        // Bearbeiten-Formulare: nichts zu speichern
   /^\/tenants\/new$/,
   /^\/properties\/[^/]+\/edit(\/|$)/,
@@ -81,17 +154,13 @@ const DOKUMENT_ERLAUBT = /^\/tenants\/[^/]+\/dokument(\/pdf)?$/;
 export function demoDarfRoute(pathname: string): boolean {
   if (pathname === "/") return true; // Dashboard
   if (DOKUMENT_ERLAUBT.test(pathname)) return true;
+  if (LESEND_ERLAUBT.some((r) => r.test(pathname))) return true;
   if (IMMER_ERLAUBT.some((p) => pathname === p || pathname.startsWith(`${p}/`) || (p.endsWith("/") && pathname.startsWith(p)))) return true;
   if (GESPERRT_TROTZ_PRAEFIX.some((r) => r.test(pathname))) return false;
   return ERLAUBTE_PRAEFIXE.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
 }
-
-// Die Kalkulatoren, die in der Demo NICHT rechnen sollen. Sie stehen hier
-// getrennt, weil sie in der Seitenleiste zwar gesperrt, aber unter einer
-// eigenen Ueberschrift gefuehrt werden.
-export const DEMO_GESPERRTE_KALKULATOREN = ["/bewertung", "/afa-assistent"];
 
 // ---------------------------------------------------------------------------
 // Was ein gesperrter Bereich kann — Text fuer den Sperr-Dialog.
@@ -109,62 +178,15 @@ export const DEMO_GESPERRTE_KALKULATOREN = ["/bewertung", "/afa-assistent"];
 export type DemoBereich = { titel: string; text: string };
 
 export const DEMO_BEREICHE: Record<string, DemoBereich> = {
-  "/mietkonto": {
-    titel: "Mietkonto",
-    text: "Soll und Ist je Mieter und Monat. Offene Mieten fallen auf, bevor du sie suchen musst, und ein Klick verbucht den Eingang in Cashflow und Anlage V.",
-  },
-  "/anliegen": {
-    titel: "Mieterportal",
-    text: "Mieter melden Schäden und Zählerstände selbst, mit Foto. Du siehst den Stand je Anliegen und beauftragst Handwerker direkt aus der Meldung.",
-  },
-  "/verbrauch": {
-    titel: "Verbrauch",
-    text: "Zählerstände je Einheit, auch von Mietern gemeldet. Sie fließen direkt in die Heiz- und Nebenkostenabrechnung.",
-  },
-  "/kredite": {
-    titel: "Kredite",
-    text: "Restschuld, Zinsbindung und Tilgungsplan je Darlehen, mit Warnung, bevor eine Zinsbindung ausläuft.",
-  },
-  "/steuer": {
-    titel: "Steuer",
-    text: "Anlage V je Objekt mit AfA, Werbungskosten und ELSTER-Hilfe, dazu der DATEV-Export für deinen Steuerberater.",
-  },
-  "/jahresbericht": {
-    titel: "Jahresbericht",
-    text: "Das Jahr je Objekt auf einer Seite: Einnahmen, Kosten, Zinsen, Tilgung und Rendite, als PDF.",
-  },
-  "/archiv": {
-    titel: "Archiv",
-    text: "Verträge, Belege und Bescheide je Objekt, auffindbar und mit Ablauffristen.",
-  },
-  "/bewertung": {
-    titel: "Marktwert-Schätzer",
-    text: "Schätzt den Verkehrswert nach dem Vergleichs- und Ertragswertverfahren der ImmoWertV.",
-  },
-  "/afa-assistent": {
-    titel: "AfA-Assistent",
-    text: "Ermittelt den Gebäudeanteil und die Abschreibung, die in die Anlage V gehört.",
-  },
-  "/termine": {
-    titel: "Termine & Fristen",
-    text: "Kündigungsfristen, Mieterhöhungen, Zinsbindungen und Wartungen an einer Stelle, mit Erinnerung.",
-  },
-  "/karte": {
-    titel: "Portfolio-Karte",
-    text: "Alle Objekte auf einer Karte, mit Wert und Miete je Standort.",
+  // Verlinkt aus dem Kauf-Assistenten. Ohne Beispieldaten.
+  "/makler": {
+    titel: "Makler-Unterlagen",
+    text: "Exposé, Grundbuchauszug, Teilungserklärung und Protokolle je Kaufobjekt an einer Stelle, mit Prüfliste, was noch fehlt.",
   },
 };
 
 // Unterseiten mit eigenem Text — vor den Praefixen oben gepruefte Muster.
 const DEMO_BEREICHE_MUSTER: [RegExp, DemoBereich][] = [
-  [/^\/tenants\/[^/]+\/nk(\/|$)/, {
-    titel: "Nebenkostenabrechnung",
-    text: "Umlage nach BetrKV und HeizkostenV je Mieter, mit Zählerständen und Vorauszahlungen, als fertiges PDF zum Versand.",
-  }],
-  [/^\/tenants\/[^/]+\/protokoll(\/|$)/, {
-    titel: "Übergabeprotokoll",
-    text: "Protokoll für Ein- und Auszug mit Zählerständen, Schlüsseln und Mängeln, zum Unterschreiben auf dem Handy.",
-  }],
   // Anlegen/Bearbeiten: „+ Immobilie" oben auf dem Dashboard und jede Zeile
   // unter „Letzte Buchungen" (→ /einnahmen/<id>/edit) führen hierher.
   [/\/(new|edit)(\/|$)/, {
@@ -199,17 +221,22 @@ export function demoSperrZiel(href: string, herkunft: string): string | null {
     return null;
   }
   if (url.origin !== new URL(herkunft).origin) return null;
-  return demoDarfRoute(url.pathname) ? null : url.pathname;
+  // Oeffentliche Seiten (Impressum, Datenschutz …) laesst die Middleware
+  // auch der Demo durch — der Abfang darf sie nicht fuer gesperrt halten.
+  if (istOeffentlicheSeite(url.pathname) || demoDarfRoute(url.pathname)) return null;
+  return url.pathname;
 }
 
 // Gefuehrte Demo-Einstiege (`/api/demo?weg=…`). WEISSLISTE, kein freier Pfad —
 // sonst waere der Parameter eine offene Weiterleitung auf der eigenen Domain.
 //
-// LEER seit 30.09.2026. Die drei Wege vom 08.09. fuehrten ALLE ins Leere:
-// `miete` → /mietkonto und `schaden` → /anliegen waren gesperrt, und `nk`
-// landete auf der Mieterliste, waehrend die Abrechnung selbst gesperrt war.
-// Der Test damals pruefte nur, OB die Links auf der Startseite stehen, nicht,
-// ob sie in der Demo aufgehen. Sie kommen zurueck, sobald ihre Ziele frei
-// sind — `tests/demoWege.test.ts` verlangt dann, dass jedes Ziel
+// Die ersten drei Wege (08.09.2026) fuehrten ALLE ins Leere: Ihre Ziele waren
+// in der Demo gesperrt. Der Test pruefte nur, OB die Links auf der Startseite
+// stehen. Jetzt verlangt `tests/demoWege.test.ts`, dass jedes Ziel
 // `demoDarfRoute` besteht.
-export const DEMO_ZIELE: Record<string, string> = {};
+export const DEMO_ZIELE: Record<string, string> = {
+  miete: "/mietkonto",
+  nk: "/tenants", // je Mieter der Knopf „NK" — die Abrechnung braucht eine Mieter-ID
+  steuer: "/steuer",
+  schaden: "/anliegen", // seit Phase 3 mit Beispiel-Anliegen
+};

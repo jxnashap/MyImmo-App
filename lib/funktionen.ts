@@ -37,10 +37,10 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
     kicker: "Nebenkosten",
     sub: "Umlageschlüssel je Kostenart, Heizkosten nach Verordnung, Mieterwechsel tagegenau — am Ende ein PDF, das die vier Pflichtangaben von sich aus enthält.",
     problem: {
-      h: "Warum über 80 Prozent der Abrechnungen fehlerhaft sind",
+      h: "Warum so viele Abrechnungen fehlerhaft sind",
       p: [
         "Eine Nebenkostenabrechnung ist keine schwierige Rechnung. Sie ist eine Rechnung mit vielen Nebenbedingungen: Jede Kostenart braucht den passenden Verteilerschlüssel, Heizung und Warmwasser folgen einer eigenen Verordnung, ein Mieterwechsel muss tagegenau aufgeteilt werden, und formell verlangt der Bundesgerichtshof vier Mindestangaben, ohne die alles unwirksam ist.",
-        "In einer Tabellenkalkulation passt jeder dieser Punkte einzeln — bis einer vergessen wird. Genau daran scheitern die meisten Abrechnungen, und die durchschnittliche Korrektur liegt bei mehreren hundert Euro.",
+        "In einer Tabellenkalkulation passt jeder dieser Punkte einzeln — bis einer vergessen wird. Genau daran scheitern Abrechnungen — und eine Korrektur kostet schnell einen dreistelligen Betrag je Mieter.",
       ],
     },
     abschnitte: [
@@ -155,14 +155,14 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
           "Sollstellung je Mietverhältnis aus Kaltmiete und Vorauszahlung, mit Wirkung ab dem richtigen Monat bei jeder Anpassung.",
           "Zahlungseingänge werden gegen das Soll gestellt; offene Posten stehen mit Betrag und Monat da.",
           "Der Rückstands-Wächter meldet sich, sobald eine Miete ausbleibt — nicht erst am Jahresende.",
-          "Nachzahlungen und Guthaben aus der Nebenkostenabrechnung laufen ins selbe Konto, statt daneben zu liegen.",
+          "Nachzahlungen und Guthaben aus der Nebenkostenabrechnung buchen Sie als eigene Einnahme oder Ausgabe — sie stehen damit in derselben Übersicht wie die Mieten.",
           "Mahnung und Zahlungserinnerung als fertige Brief-PDFs im eigenen Briefkopf.",
         ],
       },
       {
         h: "Kaution getrennt geführt",
         p: [
-          "Die Kaution beträgt höchstens drei Nettokaltmieten, der Mieter darf sie in drei Raten zahlen, und sie ist getrennt von Ihrem Vermögen anzulegen. MyImmo führt Betrag, Raten und Anlageort je Mietverhältnis — samt Bankverbindung, die wie alle Bankdaten zusätzlich verschlüsselt gespeichert wird.",
+          "Die Kaution beträgt höchstens drei Nettokaltmieten, der Mieter darf sie in drei Raten zahlen, und sie ist getrennt von Ihrem Vermögen anzulegen. MyImmo führt Betrag, Stand (ausstehend, teilweise, vollständig) und Anlageort je Mietverhältnis — samt Bankverbindung, die wie alle Bankdaten zusätzlich verschlüsselt gespeichert wird.",
           "Beim Auszug steht damit fest, was einbehalten wurde und warum. Das ist die Unterlage, die im Streitfall zählt.",
         ],
       },

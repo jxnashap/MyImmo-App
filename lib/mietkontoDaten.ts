@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { sollFuerMonat, zuJahrMonat } from "@/lib/mietkonto";
+import { laeuftAm } from "@/lib/sollMiete";
 import type { MietkontoZeile, NacherfassungMieter } from "@/components/MietkontoBestaetigung";
 import type { Tenant, MietZeitraum, Property } from "@/lib/types";
 
@@ -11,6 +12,12 @@ import type { Tenant, MietZeitraum, Property } from "@/lib/types";
 export type MietkontoDaten = {
   zeilen: MietkontoZeile[];
   nacherfassung: NacherfassungMieter[];
+  /**
+   * Laufende Mieter OHNE Mietbeginn. `sollFuerMonat` liefert für sie nie eine
+   * Soll-Miete — sie fehlen im Mietkonto still (30.09.2026: 3 echte Mieter).
+   * Die Seite nennt sie, statt sie wegzulassen.
+   */
+  ohneMietbeginn: { id: string; name: string }[];
 };
 
 export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
@@ -92,5 +99,10 @@ export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
     }
   }
 
-  return { zeilen, nacherfassung };
+  const heute = new Date().toISOString().slice(0, 10);
+  const ohneMietbeginn = mieter
+    .filter((m) => !m.mietbeginn && laeuftAm(m, heute))
+    .map((m) => ({ id: m.id, name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }));
+
+  return { zeilen, nacherfassung, ohneMietbeginn };
 }

@@ -64,11 +64,11 @@ export function mieterFristen(m: MieterFristInput): Frist[] {
     }
   }
 
-  // Nächste mögliche Mieterhöhung: 12 Monate nach letzter (Kappungsgrenze §558)
+  // Nächste mögliche Mieterhöhung: 12 Monate nach der letzten (Jahressperrfrist, § 558 Abs. 1 S. 2 BGB — die Kappungsgrenze ist Abs. 3)
   if (m.letzte_erhoehung) {
     const next = addMonate(new Date(m.letzte_erhoehung), 12);
     const nTage = Math.ceil((next.getTime() - heute.getTime()) / 86400000);
-    fristen.push({ label: "Nächste Mieterhöhung möglich", datum: iso(next), typ: nTage <= 0 ? "ok" : "info", kategorie: "Miete", rechtsgrundlage: "§ 558 BGB (Kappungsgrenze)" });
+    fristen.push({ label: "Nächste Mieterhöhung möglich", datum: iso(next), typ: nTage <= 0 ? "ok" : "info", kategorie: "Miete", rechtsgrundlage: "§ 558 Abs. 1 BGB (Jahressperrfrist)" });
   } else if (m.mietbeginn) {
     const next = addMonate(new Date(m.mietbeginn), 12);
     if (next < heute) fristen.push({ label: "Mieterhöhung möglich (keine bisher)", datum: null, typ: "ok", kategorie: "Miete", rechtsgrundlage: "§ 558 BGB" });
@@ -147,16 +147,24 @@ type KreditFristInput = {
 
 export function kreditFristen(k: KreditFristInput): Frist[] {
   const fristen: Frist[] = [];
+  const heute = new Date();
+  const tageBis = (d: Date) => Math.ceil((d.getTime() - heute.getTime()) / 86400000);
   if (k.zinsbindung) {
-    fristen.push({ label: "Zinsbindung endet", datum: k.zinsbindung, typ: "warn", kategorie: "Finanzierung" });
+    // Bis 01.10.2026 (Audit A8) waren BEIDE Kredit-Fristen immer `warn` —
+    // auf dem Dashboard damit immer „dringend", und mit drei Darlehen
+    // verdrängten „Zinsbindung endet 2031" & Co. die fällige Miete und das
+    // offene Anliegen. Dringend ist das Ende erst im letzten Jahr, die
+    // Vorbereitung erst, wenn ihr Zeitpunkt in zwei Monaten erreicht ist.
+    const ende = new Date(k.zinsbindung);
+    fristen.push({ label: "Zinsbindung endet", datum: k.zinsbindung, typ: tageBis(ende) <= 365 ? "warn" : "info", kategorie: "Finanzierung" });
     // Auch wenn der Vorlauf-Zeitpunkt schon verstrichen ist, anzeigen —
     // dann ist die Vorbereitung überfällig (Liste markiert das rot).
     const vorlauf = addMonate(new Date(k.zinsbindung), -12);
-    if (new Date(k.zinsbindung) >= new Date()) {
+    if (ende >= heute) {
       fristen.push({
         label: "Anschlussfinanzierung vorbereiten",
         datum: iso(vorlauf),
-        typ: "warn",
+        typ: tageBis(vorlauf) <= 60 ? "warn" : "info",
         kategorie: "Finanzierung",
         rechtsgrundlage: "Empfehlung: 12 Mon. Vorlauf (Finanztip/Interhyp)",
       });

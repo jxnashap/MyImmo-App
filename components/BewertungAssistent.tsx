@@ -133,7 +133,7 @@ export default function BewertungAssistent({
         toast("Marktwert am Objekt gespeichert — sichtbar im Verkauf-Assistenten.");
         router.refresh();
       } else {
-        toast(res.error);
+        toast(res.error, "error");
       }
     });
   }

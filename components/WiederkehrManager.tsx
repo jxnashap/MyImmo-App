@@ -74,7 +74,7 @@ export default function WiederkehrManager({
         setPropId(""); setMieterId(""); setBeschreibung("");
         router.refresh();
       } else {
-        toast(res.error ?? "Speichern fehlgeschlagen.");
+        toast(res.error ?? "Speichern fehlgeschlagen.", "error");
       }
     });
   };
@@ -86,7 +86,7 @@ export default function WiederkehrManager({
         toast(res.anzahl > 0 ? `${res.anzahl} Buchung${res.anzahl === 1 ? "" : "en"} erzeugt ✓` : "Nichts Offenes zu erzeugen.");
         router.refresh();
       } else {
-        toast(res.error ?? "Erzeugen fehlgeschlagen.");
+        toast(res.error ?? "Erzeugen fehlgeschlagen.", "error");
       }
     });
   };
@@ -112,7 +112,7 @@ export default function WiederkehrManager({
     start(async () => {
       const res = await setVorlageAktiv(v.id, !v.aktiv);
       if (res.ok) router.refresh();
-      else toast(res.error ?? "Fehler.");
+      else toast(res.error ?? "Fehler.", "error");
     });
   };
 
@@ -121,7 +121,7 @@ export default function WiederkehrManager({
     start(async () => {
       const res = await deleteVorlage(v.id);
       if (res.ok) { toast("Vorlage gelöscht ✓"); router.refresh(); }
-      else toast(res.error ?? "Löschen fehlgeschlagen.");
+      else toast(res.error ?? "Löschen fehlgeschlagen.", "error");
     });
   };
 

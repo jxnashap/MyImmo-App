@@ -5,9 +5,10 @@ import Link from "next/link";
 import { ArrowLeft, KeyRound, Home, Wrench, Building2, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
-import { bereiteRegistrierungVor } from "@/lib/actions/freischaltung";
-import { PASSWORT_MIN, PASSWORT_REGEL, pruefePasswort } from "@/lib/passwort";
+import { bereiteRegistrierungVor, pruefeEinladungscode } from "@/lib/actions/freischaltung";
+import { PASSWORT_LECK_HINWEIS, PASSWORT_MIN, PASSWORT_REGEL, passwortAblehnung, pruefePasswort } from "@/lib/passwort";
 import { RESET_ZIEL } from "@/lib/passwortWechsel";
+import { EARLY_ACCESS_MAILTO, EARLY_ACCESS_ZUSAGE, HILFE_MAILTO } from "@/lib/preise";
 import { sicheresZiel } from "@/lib/flash";
 import MfaAbfrage from "@/components/MfaAbfrage";
 import { mussMfaNachholen } from "@/lib/auth/sitzung";
@@ -79,6 +80,17 @@ export default function LoginPage() {
     // Google-Anmeldung mit falscher Rolle abgebrochen (siehe /auth/callback).
     if (params.get("info") === "passwort-neu") {
       setInfo("Dein Passwort wurde geändert. Melde dich jetzt damit an.");
+    }
+    // Warum steht der Nutzer hier? Bis 01.10.2026 stand er nach Auto-Abmeldung
+    // oder Token-Ablauf kommentarlos vor dem Formular („Ist die App abgestürzt?").
+    const grund = params.get("grund");
+    if (grund === "inaktiv") {
+      const min = params.get("min");
+      setInfo(`Du warst ${min ? `${min} Minuten` : "eine Weile"} inaktiv — zur Sicherheit wurdest du abgemeldet. Alles Gespeicherte ist noch da.`);
+    } else if (grund === "geschlossen") {
+      setInfo("Der Browser war geschlossen — nach deiner Einstellung wurdest du dabei abgemeldet.");
+    } else if (grund === "abgelaufen") {
+      setInfo("Deine Sitzung ist abgelaufen. Melde dich bitte neu an — du landest danach wieder dort, wo du warst.");
     }
     const fehlerArt = params.get("fehler");
     if (fehlerArt === "rolle") {
@@ -212,12 +224,11 @@ export default function LoginPage() {
     } else if (rolle === "mieter" || rolle === "service") {
       // Mieter/Service-Registrierung: Einladungscode des Vermieters.
       const eingabe = code.trim().toUpperCase();
-      const { data: gueltig, error: rpcError } = await supabase.rpc("einladungscode_pruefen", {
-        p_code: eingabe,
-        p_rolle: rolle, // Code muss zur gewählten Rolle passen (MI ≠ SV)
-      });
-      if (rpcError || !gueltig) {
-        setError("Dieser Einladungscode ist ungültig oder abgelaufen. Bitte frage den Vermieter nach einem neuen Code.");
+      // Serverseitig (HMAC-Bremse, Service-Role) — die fruehere RPC aus dem
+      // Browser schrieb die IP im Klartext in die Zugriffsbremse.
+      const gueltig = await pruefeEinladungscode(eingabe, rolle);
+      if (!gueltig.ok) {
+        setError(gueltig.fehler ?? "Dieser Einladungscode ist ungültig oder abgelaufen.");
         setLoading(false);
         return;
       }
@@ -238,7 +249,7 @@ export default function LoginPage() {
               : { rolle: "service", einladungscode: eingabe, firma: firma.trim() },
         },
       });
-      if (error) setError(uebersetze(error.message));
+      if (error) setError(passwortAblehnung(error) ?? uebersetze(error.message));
       else
         setInfo(
           rolle === "mieter"
@@ -270,7 +281,7 @@ export default function LoginPage() {
         password,
         options: rolle === "hausverwaltung" ? { data: { rolle: "hausverwaltung" } } : undefined,
       });
-      if (error) setError(uebersetze(error.message));
+      if (error) setError(passwortAblehnung(error) ?? uebersetze(error.message));
       else
         setInfo(
           "Fast geschafft — bestätige jetzt die E-Mail in deinem Postfach. " +
@@ -409,6 +420,11 @@ export default function LoginPage() {
             className="input w-full text-[15px]"
             style={{ padding: "12px 14px" }}
           />
+          {mode === "signup" && (
+            <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.45, margin: "-4px 2px 0" }}>
+              {PASSWORT_LECK_HINWEIS}.
+            </p>
+          )}
 
           {/* Registrierung: zweite Eingabe gegen Tippfehler — ein falsch
               getipptes Passwort fiele sonst erst beim nächsten Login auf. */}
@@ -465,6 +481,18 @@ export default function LoginPage() {
               className="input w-full text-[15px]"
               style={{ padding: "12px 14px" }}
             />
+          )}
+
+          {/* Wo der Code herkommt — direkt am Feld, nicht erst in der Fehlermeldung
+              nach dem ersten Fehlversuch (Audit 01.10.2026, A5). */}
+          {mode === "signup" && rolle !== "mieter" && rolle !== "service" && (
+            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--muted)", margin: "-4px 0 0" }}>
+              Noch keinen Code?{" "}
+              <a href={EARLY_ACCESS_MAILTO} style={{ color: "var(--gold)" }} className="hover:underline">
+                Early-Access-Zugang per E-Mail anfragen
+              </a>
+              {" "}— {EARLY_ACCESS_ZUSAGE}
+            </p>
           )}
 
           {mode === "signup" && (
@@ -578,6 +606,7 @@ export default function LoginPage() {
           className="mt-6 flex justify-center gap-4 border-t pt-4 text-[12px]"
           style={{ borderColor: "var(--line)", color: "var(--muted)" }}
         >
+          <a href={HILFE_MAILTO} className="hover:underline">Hilfe &amp; Kontakt</a>
           <Link href="/agb" className="hover:underline">AGB</Link>
           <Link href="/datenschutz" className="hover:underline">Datenschutz</Link>
           <Link href="/avv" className="hover:underline">AVV</Link>

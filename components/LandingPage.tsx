@@ -42,12 +42,20 @@ export default function LandingPage() {
               <a href="/api/demo" className="qlx-btn-linie lp-btn-big">Demo ansehen</a>
               <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
             </div>
-            {/* Die geführten Demo-Wege („Miete prüfen" …) sind seit 30.09.2026
-                ausgebaut: Alle drei führten in der Demo in gesperrte Bereiche.
-                Sie kommen zurück, wenn ihre Ziele freigegeben sind — siehe
-                `DEMO_ZIELE` in lib/demo.ts. */}
+            {/* Drei geführte Wege statt „schau dich mal um": Jeder Link
+                landet DORT, wo die Frage beantwortet wird. Weißliste
+                `DEMO_ZIELE` in lib/demo.ts; tests/demoWege.test.ts verlangt,
+                dass jedes Ziel in der Demo frei ist — die erste Fassung führte
+                in gesperrte Bereiche. */}
+            <p className="qlx-demo-wege">
+              <span>Direkt ausprobieren:</span>
+              <a href="/api/demo?weg=miete">Miete prüfen</a>
+              <a href="/api/demo?weg=nk">Nebenkosten abrechnen</a>
+              <a href="/api/demo?weg=steuer">Anlage V ansehen</a>
+              <a href="/api/demo?weg=schaden">Schaden verfolgen</a>
+            </p>
             <p className="qlx-hero-note">
-              Demo ohne Anmeldung · Beispieldaten, Speichern ist dort nicht möglich · Daten in der EU
+              Demo ohne Anmeldung · Beispieldaten, Speichern ist dort nicht möglich · Datenbank in Frankfurt
             </p>
           </>
         }
@@ -66,7 +74,12 @@ export default function LandingPage() {
           <div className="lp-stats">
             <div className="lp-stat"><div className="z">{FEATURES.length}+</div><div className="t">Funktionen — vom Mietvertrag bis ELSTER</div></div>
             <div className="lp-stat"><div className="z">4</div><div className="t">Rollen: Vermieter, Mieter, Hausmeister, Verwaltung</div></div>
-            <div className="lp-stat"><div className="z">100 %</div><div className="t">Daten in der EU, Bankdaten AES-256-verschlüsselt</div></div>
+            {/* Nicht „100 % Daten in der EU" (bis 30.09.2026): Die eigene
+                Datenschutzerklärung nennt Übermittlungen in die USA (Vercel-Logs,
+                Anthropic bei der KI-Auslese). Eine Werbeaussage, die ihr
+                widerspricht, ist irreführend (§ 5 UWG). Belegt ist der Standort
+                der Datenbank: Supabase eu-central-1. */}
+            <div className="lp-stat"><div className="z">Frankfurt</div><div className="t">Standort der Datenbank, Bankdaten zusätzlich AES-256-verschlüsselt</div></div>
             <div className="lp-stat"><div className="z">0 €</div><div className="t">im Early Access — voller Funktionsumfang</div></div>
           </div>
         </div>
@@ -327,7 +340,7 @@ export default function LandingPage() {
                 <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
               </div>
               <p className="qlx-hero-note" style={{ marginTop: 16 }}>
-                Keine Kreditkarte nötig · Daten in der EU · jederzeit kündbar
+                Keine Kreditkarte nötig · Datenbank in Frankfurt · kein Abo
               </p>
             </div>
           </Reveal>

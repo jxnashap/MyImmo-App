@@ -84,7 +84,7 @@ export default async function KreditEditPage(
               Start für das Sonderkündigungsrecht nach 10 Jahren (§ 489 BGB).</span>
           </div>
           <div className="form-group"><label>Zinsbindung bis</label><input type="date" name="zinsbindung" defaultValue={k.zinsbindung ?? ""} /></div>
-          <div className="form-group"><label>Gesamtlaufzeit bis (Jahr)</label><input type="number" name="laufzeit" defaultValue={k.laufzeit ?? ""} /></div>
+          <div className="form-group"><label>Gesamtlaufzeit (Jahre)</label><input type="number" name="laufzeit" defaultValue={k.laufzeit ?? ""} /></div>
         </div>
 
         <div className="form-actions">

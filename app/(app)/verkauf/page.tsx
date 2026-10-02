@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { istDemoKonto } from "@/lib/demo";
 import VerkaufAssistent from "@/components/VerkaufAssistent";
 import type { VerkaufObjekt } from "@/components/VerkaufRechner";
@@ -21,7 +22,7 @@ export default async function VerkaufPage() {
       .order("datum", { ascending: false }),
   ]);
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
   const demo = istDemoKonto(user?.email);
 
   const restschuld = new Map<string, number>();

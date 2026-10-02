@@ -52,7 +52,7 @@ export default function VisionPage() {
           </Reveal>
 
           <h2 className="lp-h2" style={{ marginTop: 64 }}>Die Roadmap</h2>
-          <p className="lp-section-sub">Was als Nächstes kommt — ehrlich unterteilt in „in Arbeit" und „geplant".</p>
+          <p className="lp-section-sub">Was schon umgesetzt ist und was als Nächstes kommt — ehrlich unterteilt in „umgesetzt", „in Arbeit" und „geplant".</p>
           <div className="lp-cards3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
             {VISION.map((v, i) => (
               <Reveal key={v.t} delay={i * 70}>
@@ -60,8 +60,8 @@ export default function VisionPage() {
                   <div className="lp-card" style={{ height: "100%" }}>
                     {/* „Geplant" ist nichts Negatives — neutral statt des roten
                         .lp-vorher-Defaults; „In Arbeit" im AA-sicheren Gold. */}
-                    <span className="lp-vorher" style={{ color: v.status === "bald" ? "var(--l-gold-ink)" : "var(--l-muted)" }}>
-                      {v.status === "bald" ? "In Arbeit" : "Geplant"}
+                    <span className="lp-vorher" style={{ color: v.status === "geplant" ? "var(--l-muted)" : "var(--l-gold-ink)" }}>
+                      {v.status === "fertig" ? "Umgesetzt" : v.status === "bald" ? "In Arbeit" : "Geplant"}
                     </span>
                     <h3>{v.t}</h3>
                     <p>{v.p}</p>

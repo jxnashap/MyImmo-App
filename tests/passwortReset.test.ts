@@ -141,7 +141,7 @@ describe("Verdrahtung des Reset-Wegs", () => {
     // Ein Konto mit Zwei-Faktor muss sein Passwort auch dann zuruecksetzen
     // koennen, wenn der zweite Faktor in dieser Sitzung noch nicht bestaetigt
     // ist. Sonst waere der Rueckweg erneut versperrt.
-    const mw = lies("middleware.ts");
+    const mw = lies("proxy.ts");
     expect(mw).toMatch(/pathname\.startsWith\("\/auth"\)/);
     const layout = lies("app/(app)/layout.tsx");
     expect(layout).toMatch(/!pathname\.startsWith\("\/auth"\)/);
@@ -158,7 +158,7 @@ describe("Verdrahtung des Reset-Wegs", () => {
 // eine Dashboard-Einstellung, die im Code nicht sichtbar ist; der Rückweg ins
 // Konto darf nicht daran hängen.
 describe("Rückfall: Reset-Merkmale landen woanders", () => {
-  const mw = readFileSync(join(process.cwd(), "middleware.ts"), "utf8");
+  const mw = readFileSync(join(process.cwd(), "proxy.ts"), "utf8");
 
   it("die Middleware leitet Recovery-Merkmale zur Einlöse-Route", () => {
     expect(mw).toMatch(/type"\) === "recovery"/);

@@ -1,28 +1,31 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, zahl, begruessung } from "@/lib/format";
 import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
-import { baueHeuteAufgaben, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
+import { baueHeuteAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
+import { heuteBerlin } from "@/lib/zeitraum";
 import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
-import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2 } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
-import PortfolioKarte, { type KartenObjekt } from "@/components/PortfolioKarte";
 import ZeitraumControl from "@/components/ZeitraumControl";
-import { portfolioWertReihe, veraenderungProzent, type RohStand } from "@/lib/wert/verlauf";
-import type { RawPoint } from "@/lib/zeitraum";
+import { portfolioWertReihe, wertzuwachsGgKaufpreis, type RohStand } from "@/lib/wert/verlauf";
+import { einnahmeDatum, type RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { ORGANISATION } from "@/lib/seo/jsonLd";
 import Leer from "@/components/Leer";
+import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, laufendeKosten } from "@/lib/cashflowKennzahl";
+import { sollKaltmiete, laeuftAm } from "@/lib/sollMiete";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
 // metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
 const OG_TITEL = "MyImmo — Immobilienverwaltung für private Vermieter";
 const OG_BESCHREIBUNG =
-  "Nebenkostenabrechnung, Anlage V, Mieten, Kredite und dein Team in einer App. Für private Vermieter mit 1–24 Einheiten — Daten in der EU, aktuell im Early Access kostenlos.";
+  "Nebenkostenabrechnung, Anlage V, Mieten, Kredite und dein Team in einer App. Für private Vermieter mit 1–24 Einheiten — Datenbank in Frankfurt, aktuell im Early Access kostenlos.";
 
 export const metadata = {
   title: OG_TITEL,
@@ -51,9 +54,7 @@ export const metadata = {
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
 
   if (!user) {
     // Structured Data (JSON-LD) für Google — als SoftwareApplication + Anbieter.
@@ -94,7 +95,7 @@ export default async function DashboardPage() {
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
     supabase.from("kredite").select("*"),
-    supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
+    supabase.from("mieter").select("id,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen"),
     supabase.from("bewertung_historie").select("immobilie_id,datum,marktwert"),
     supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
     supabase.from("termine").select("id,titel,datum,kategorie,erledigt").order("datum"),
@@ -106,19 +107,17 @@ export default async function DashboardPage() {
   ]);
 
   const properties = (props ?? []) as Property[];
-  // Kleine Portfolio-Karte: nur Objekte, die bereits Koordinaten haben —
-  // das Dashboard geocodiert bewusst NICHT (kein externer Aufruf beim Laden).
-  const kartenObjekte: KartenObjekt[] = properties
-    .filter((p) => p.lat != null && p.lng != null)
-    .map((p) => ({ id: p.id, name: p.bezeichnung, adresse: p.adresse ?? "", typ: p.typ, wert: p.wert, lat: p.lat as number, lng: p.lng as number }));
   const einnahmen = (einn ?? []) as Einnahme[];
   const kosten = (kost ?? []) as Kosten[];
   const kredite = (kred ?? []) as Kredit[];
   type MieterRow = {
-    id: string; prop_id: string | null; kaltmiete: number | null; stellplatz_miete: number | null;
+    id: string; prop_id: string | null; kaltmiete: number | null; nk_vorauszahlung: number | null; stellplatz_miete: number | null;
     vorname: string | null; nachname: string | null; einheit: string | null;
     mietbeginn: string | null; mietende: string | null; kuendigung: number | null;
     letzte_erhoehung: string | null; mietart: string | null; staffel_datum: string | null;
+    // Staffelplan (Audit C30): ohne diese Felder lief die Staffel-Logik in
+    // mieterFristen nie — „nächste Stufe" war immer das gespeicherte Datum.
+    staffel_intervall: string | null; staffel_betrag: number | null; staffel_prozent: number | null; staffel_stufen: number | null;
   };
   const mieterRows = (miet ?? []) as MieterRow[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
@@ -127,12 +126,14 @@ export default async function DashboardPage() {
 
   // Fristen & Aufgaben (Design-Handoff): nächste Termine aus denselben Quellen
   // wie /termine — abgeleitete Fristen + eigene, unerledigte Termine.
-  const heuteISO0 = new Date().toISOString().slice(0, 10);
+  // Stichtag in Europe/Berlin — nicht UTC (Audit A10): Bis 02:00 Uhr am
+  // Monatsersten zeigte das Dashboard sonst noch den Vormonat.
+  const heuteISO0 = heuteBerlin();
   // Untergrenze fuer die Liste. Fruehet wurde ab HEUTE gefiltert — genau das
   // Ueberfaellige, das man sehen muss, verschwand dadurch vom Dashboard,
   // waehrend /termine es als „Ueberfaellig" zaehlte. Jetzt sind auch die
   // letzten 90 Tage dabei (aelteres ist keine Frist mehr, sondern Altlast).
-  const abISO0 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+  const abISO0 = tageVor(heuteISO0, 90);
   const imFenster = (d: string) => d >= abISO0;
   type DashFrist = { datum: string; label: string; sub: string; warn: boolean };
   const ueberfaellig = (d: string) => d < heuteISO0;
@@ -192,11 +193,29 @@ export default async function DashboardPage() {
   const offeneMeldungen: OffeneMeldung[] = ((zaehlerRows ?? []) as { id: string; art: string | null; ablesedatum: string; mieter_id: string | null }[])
     .map((z) => ({ id: z.id, art: z.art, mieter: (z.mieter_id && mieterNameOf.get(z.mieter_id)) || "Mieter", datum: z.ablesedatum }));
 
-  const heuteAufgaben = baueHeuteAufgaben(
-    { offeneMieten, anliegen: offeneAnliegen, meldungen: offeneMeldungen, fristen: fristListe },
+  const alleHeuteAufgaben = baueHeuteAufgaben(
+    {
+      offeneMieten, anliegen: offeneAnliegen, meldungen: offeneMeldungen, fristen: fristListe,
+      ohneKaufdatum: properties.filter((p) => !p.kaufdatum).map((p) => ({ id: p.id, name: p.bezeichnung })),
+      mieterOhneBeginn: mieterRows
+        .filter((m) => !m.mietbeginn && laeuftAm(m, heuteISO0))
+        .map((m) => ({ id: m.id, name: mieterNameOf.get(m.id) ?? "Mieter" })),
+      mieterOhneObjekt: mieterRows
+        .filter((m) => !m.prop_id && laeuftAm(m, heuteISO0))
+        .map((m) => ({ id: m.id, name: mieterNameOf.get(m.id) ?? "Mieter" })),
+      krediteOhneAuszahlung: kredite
+        .filter((k) => !k.auszahlung_datum)
+        .map((k) => ({ id: k.id, name: k.bezeichnung || k.bank || "Kredit" })),
+    },
     heuteISO0,
+    Infinity, // alle zählen — gekürzt wird unten, die Überschrift nennt die echte Zahl
   );
-  const AUFGABEN_ICON = { miete: ReceiptText, anliegen: MessageSquareText, zaehler: Zap, frist: CalendarDays, termin: CalendarDays } as const;
+  // Audit A8: „5 Sachen warten auf dich“ war die Länge des slice, nicht die
+  // Zahl der Aufgaben (≈ 25). Jetzt: echte Zahl in der Überschrift, die
+  // wichtigsten Zeilen in der Karte, der Rest unter „Alle“.
+  const HEUTE_ZEILEN = 6;
+  const heuteAufgaben = alleHeuteAufgaben.slice(0, HEUTE_ZEILEN);
+  const AUFGABEN_ICON = { miete: ReceiptText, anliegen: MessageSquareText, zaehler: Zap, frist: CalendarDays, termin: CalendarDays, stammdaten: Building2 } as const;
 
   // Begrüßung nach Tageszeit (Europe/Berlin) + Vorname aus dem Vermieterprofil.
   // Die Stundenermittlung steckt in lib/format (getestet) — die frühere
@@ -217,7 +236,7 @@ export default async function DashboardPage() {
     arr.push({ datum: h.datum, marktwert: h.marktwert });
     histNachObjekt.set(h.immobilie_id, arr);
   }
-  const heuteISO = now.toISOString().slice(0, 10);
+  const heuteISO = heuteISO0;
   const portfolioWert = portfolioWertReihe(
     properties.map((p) => ({
       kaufpreis: p.kaufpreis,
@@ -228,26 +247,31 @@ export default async function DashboardPage() {
       heute: heuteISO,
     })),
   );
-  const portfolioWertProzent = veraenderungProzent(portfolioWert);
-  // Soll-Kaltmiete/Mo.: Garagen-Objekte führen ihre Mieten auf den einzelnen
-  // Mietern (je Einheit), nicht auf property.miete — wie auf der Objektseite.
-  const GARAGEN_TYPEN = ["Garage / Stellplatz", "Garagenkomplex"];
-  const mieteVonMietern = (propId: string) =>
-    mieterRows.filter((m) => m.prop_id === propId).reduce((s, m) => s + (m.kaltmiete ?? 0) + (m.stellplatz_miete ?? 0), 0);
-  const totalMiete = properties.reduce(
-    (s, p) => s + (GARAGEN_TYPEN.includes(p.typ ?? "") ? mieteVonMietern(p.id) : (p.miete ?? 0)),
-    0,
-  );
+  // „seit Anschaffung" = heutiger Wert gegen Kaufpreise, NICHT erster gegen
+  // letzten Punkt der Reihe (der zählte jeden Zukauf als Wertsteigerung —
+  // Demo +754,9 % statt +11,9 %). Begründung in lib/wert/verlauf.ts.
+  const wertzuwachs = wertzuwachsGgKaufpreis(properties.map((p) => ({ kaufpreis: p.kaufpreis, aktuellerWert: p.wert })));
+  const portfolioWertProzent = wertzuwachs?.prozent ?? null;
+  // Soll-Kaltmiete/Mo.: aus den laufenden Mietern, sonst aus dem Objektfeld —
+  // dieselbe Regel wie Objektseite und Objektliste (lib/sollMiete.ts).
+  const totalMiete = properties.reduce((s, p) => s + sollKaltmiete(p, mieterRows, heuteISO).betrag, 0);
   const kreditRates = kredite.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
-  // Laufende Kosten: Ø der letzten 12 Monate aus echten Buchungen — statt nur
-  // des aktuellen Kalendermonats (der zu Monatsbeginn fast immer 0 € zeigte).
-  const vor12M = new Date(now); vor12M.setFullYear(vor12M.getFullYear() - 1);
-  const koLetzte12M = kosten
-    .filter((k) => { const d = k.buchungsdatum ? new Date(k.buchungsdatum) : null; return d && d >= vor12M && d <= now; })
-    .reduce((s, k) => s + (k.betrag ?? 0), 0);
-  const monatKosten = Math.round(koLetzte12M / 12);
+  // Laufende Kosten: Ø der letzten 12 Monate MIT BUCHUNGEN, geteilt durch die
+  // Monate, die das Fenster wirklich umfasst — Begründung in
+  // lib/cashflowKennzahl.ts (vorher / 12 fest: Neue Nutzer sahen einen Bruchteil
+  // ihrer Kosten). Dieselbe Rechnung steht auf der Objektseite.
+  // Schuldzinsen-Buchungen zählen hier NICHT — sie stecken schon in der
+  // Kreditrate (lib/cashflowKennzahl.ts, `laufendeKosten`).
+  const kostenSchnitt = kostenSchnittMonat(laufendeKosten(kosten), [...einnahmen, ...kosten], heuteISO);
+  const monatKosten = Math.round(kostenSchnitt.betrag);
   const totalKosten = kreditRates + monatKosten;
-  const cashflow = totalMiete - totalKosten;
+  // Warmmiete = Soll-Kaltmiete + NK-Vorauszahlungen laufender Verträge —
+  // Begründung in lib/cashflowKennzahl.ts. Die Rendite bleibt kalt.
+  // NK nur von Mietern, die zu einem Objekt gehören — deren Kaltmiete zählt
+  // in totalMiete; ein Mieter ohne Objekt stünde sonst nur halb im Cashflow.
+  const objektIds = new Set(properties.map((p) => p.id));
+  const warmmiete = totalMiete + nkVorauszahlungenMonat(mieterRows.filter((m) => m.prop_id && objektIds.has(m.prop_id)), heuteISO);
+  const cashflow = monatsCashflow({ warmmiete, kreditraten: kreditRates, kostenSchnitt: monatKosten });
   const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
   // Leerstandsquote: nur vermietbare Objekte (Status "Vermietet"/"Leer");
   // Benchmark: 2–5 % gesund, >10 % kritisch.
@@ -257,19 +281,23 @@ export default async function DashboardPage() {
   const leerstand = vermietbar.length > 0 ? (leerCount / vermietbar.length) * 100 : 0;
   const leerFarbe = leerstand <= 5 ? "var(--green)" : leerstand <= 10 ? "var(--amber)" : "var(--red)";
 
-  // Cashflow-Entwicklung: kumulierter Cashflow (Einnahmen − Ausgaben) aus echten
+  // Buchungssaldo: aufsummierte gebuchte Einnahmen − Ausgaben aus echten
   // Buchungen; Zeitraum wird clientseitig per Segmented-Control gefiltert.
   const portfolioPoints: RawPoint[] = [
-    ...einnahmen.filter((e) => e.buchungsdatum).map((e) => ({ date: e.buchungsdatum as string, value: e.betrag ?? 0 })),
+    // Mieten im Mietmonat (`soll_monat`), nicht im Monat des Zahlungseingangs.
+    ...einnahmen.flatMap((e) => {
+      const date = einnahmeDatum(e as { buchungsdatum?: string | null; soll_monat?: string | null });
+      return date ? [{ date, value: e.betrag ?? 0 }] : [];
+    }),
     ...kosten.filter((k) => k.buchungsdatum).map((k) => ({ date: k.buchungsdatum as string, value: -(k.betrag ?? 0) })),
   ];
 
   // Einnahmen vs. Ausgaben
-  const balkenMax = Math.max(totalMiete, totalKosten, 1);
+  const balkenMax = Math.max(warmmiete, totalKosten, 1);
   const balken = [
-    { lbl: "Einnahmen", val: totalMiete, col: "var(--green)" },
+    { lbl: "Warmmiete", val: warmmiete, col: "var(--green)" },
     { lbl: "Kredite", val: kreditRates, col: "var(--red)" },
-    { lbl: "Kosten Ø/Mo.", val: monatKosten, col: "var(--red)" },
+    { lbl: `Kosten Ø ${kostenSchnitt.monate} Mon.`, val: monatKosten, col: "var(--red)" },
   ];
 
   // Letzte Transaktionen
@@ -285,7 +313,7 @@ export default async function DashboardPage() {
     const schritte = [
       { nr: 1, titel: "Erstes Objekt anlegen", text: "Name, Adresse, Kaufpreis, Miete — mehr braucht es für den Start nicht.", href: "/properties/new", cta: "Objekt anlegen", erledigt: false },
       { nr: 2, titel: "Mieter erfassen", text: "Mit Kaltmiete und Mietbeginn — daraus entstehen Mietkonto und Abrechnungen.", href: "/tenants/new", cta: "Mieter anlegen", erledigt: mieterRows.length > 0 },
-      { nr: 3, titel: "Ein- & Ausgaben buchen", text: "Mieteingänge und Kosten festhalten — per Hand, CSV oder Kontoanbindung.", href: "/cashflow", cta: "Zu den Buchungen", erledigt: einnahmen.length + kosten.length > 0 },
+      { nr: 3, titel: "Ein- & Ausgaben buchen", text: "Mieteingänge und Kosten festhalten — per Hand, per CSV-Import oder als wiederkehrende Buchung.", href: "/cashflow", cta: "Zu den Buchungen", erledigt: einnahmen.length + kosten.length > 0 },
     ];
     return (
       <div className="fade-up">
@@ -364,19 +392,27 @@ export default async function DashboardPage() {
           <div className="kpi-sub"><span className="badge badge-teal">{properties.length} Objekt{properties.length === 1 ? "" : "e"}</span></div>
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
-          <div className="kpi-label">Einnahmen / Mo.</div>
-          <div className="kpi-value">{euro(totalMiete)}</div>
-          <div className="kpi-sub">{bruttoRendite > 0 ? <span className="badge badge-gold">{bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Brutto-Rendite</span> : "Kaltmiete gesamt"}</div>
+          {/* WARMmiete, weil der Cashflow daneben mit ihr rechnet: Die drei
+              Kacheln ergeben zusammen die Rechnung Warmmiete − Kosten =
+              Cashflow (Review 30.09.2026 — mit „Kaltmiete 5.930" hier kam
+              beim Nachrechnen 518 € statt 1.548 € heraus). Kaltmiete und
+              Rendite stehen darunter; die Rendite bleibt kalt. */}
+          <div className="kpi-label">Warmmiete / Mo.</div>
+          <div className="kpi-value">{euro(warmmiete)}</div>
+          <div className="kpi-sub">Kaltmiete {euro(totalMiete)}{bruttoRendite > 0 ? <> · <span className="badge badge-gold">{bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Brutto-Rendite</span></> : null}</div>
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Kosten / Mo.</div>
           <div className="kpi-value">{euro(totalKosten)}</div>
-          <div className="kpi-sub">Kredit + laufend (Ø 12 Mon.)</div>
+          <div className="kpi-sub">Kreditraten + Ø Kosten ({kostenSchnitt.monate === 1 ? "1 Monat" : `${kostenSchnitt.monate} Monate`})</div>
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Cashflow / Mo.</div>
           <div className="kpi-value" style={{ color: cashflow >= 0 ? "var(--green)" : "var(--red)" }}>{cashflow >= 0 ? "+ " : "− "}{euro(Math.abs(cashflow))}</div>
-          <div className="kpi-sub"><span className={`badge ${cashflow >= 0 ? "badge-green" : "badge-red"}`}>{cashflow >= 0 ? "Positiver Cashflow" : "Negativer Cashflow"}</span></div>
+          {/* Die Formel steht an der Zahl — vorher hieß hier nur „Positiver
+              Cashflow", und niemand konnte sie vom Buchungssaldo darunter
+              unterscheiden. */}
+          <div className="kpi-sub">{cashflowFormel(kostenSchnitt)}</div>
         </Link>
         <Link href="/properties" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Leerstandsquote</div>
@@ -397,14 +433,14 @@ export default async function DashboardPage() {
             <h3>Portfolio-Wertentwicklung</h3>
             {portfolioWertProzent != null && (
               <span className={`badge ${portfolioWertProzent >= 0 ? "badge-green" : "badge-red"}`}>
-                {portfolioWertProzent >= 0 ? "+" : ""}{portfolioWertProzent.toLocaleString("de-DE")} % seit Anschaffung
+                {portfolioWertProzent >= 0 ? "+" : ""}{portfolioWertProzent.toLocaleString("de-DE")} % ggü. Kaufpreis
               </span>
             )}
           </div>
           <div className="section-body">
             <WertVerlaufChart
               punkte={portfolioWert}
-              caption="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte."
+              caption="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte. Die Kurve springt bei jedem Kauf — ein Zukauf ist kein Wertzuwachs. Der Prozentwert vergleicht den heutigen Wert mit den Kaufpreisen."
             />
           </div>
         </div>
@@ -412,49 +448,21 @@ export default async function DashboardPage() {
 
       <div className="section mb-20">
         <div className="section-header">
-          <h3>Cashflow-Entwicklung</h3>
+          {/* „Buchungssaldo", nicht „Cashflow": Die Kurve summiert GEBUCHTE
+              Einnahmen und Ausgaben über den gewählten Zeitraum. Ihr Endwert
+              stand im Review neben dem Monats-Cashflow als „Widerspruch". */}
+          <h3>Buchungssaldo</h3>
           <ZeitraumControl />
         </div>
         <div className="section-body">
-          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" caption="Kumulierter Cashflow (Einnahmen − Ausgaben)" />
+          <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" heute={heuteISO0} caption="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
         </div>
       </div>
 
-      {/* Koordinaten schreibt ausschließlich /karte beim Aufruf (das Dashboard
-          geocodiert bewusst nicht). Wer die Seite nie öffnet, hat nie
-          Koordinaten — und sah hier dauerhaft nichts, ohne zu ahnen, dass es
-          eine Karte gibt. Deshalb der Platzhalter mit dem Weg dorthin. */}
-      {kartenObjekte.length > 0 ? (
-        <div className="section mb-20">
-          <div className="section-header">
-            <div>
-              <h3>Standorte</h3>
-              <div className="section-sub">{kartenObjekte.length} von {properties.length} Objekt{properties.length === 1 ? "" : "en"} auf der Karte</div>
-            </div>
-            <Link href="/properties" className="btn btn-ghost btn-sm">Alle Objekte →</Link>
-          </div>
-          <div className="section-body" style={{ padding: 0 }}>
-            <PortfolioKarte objekte={kartenObjekte} hoehe="300px" />
-          </div>
-        </div>
-      ) : properties.some((p) => p.adresse) ? (
-        <div className="section mb-20">
-          <div className="section-header">
-            <div>
-              <h3>Standorte</h3>
-              <div className="section-sub">Karte noch nicht aktiviert</div>
-            </div>
-            <Link href="/karte" className="btn btn-ghost btn-sm">Karte aktivieren →</Link>
-          </div>
-          <div className="section-body">
-            <p style={{ fontSize: 13, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
-              Deine Objekte haben noch keine Koordinaten. Beim ersten Aufruf der Kartenseite
-              werden die Adressen einmalig aufgelöst und gespeichert — danach erscheint die Karte
-              auch hier.
-            </p>
-          </div>
-        </div>
-      ) : null}
+      {/* Keine Karte auf dem Dashboard (01.10.2026, Entscheidung des Betreibers):
+          Sie zeigte nur Objekte, deren Adresse schon auf /karte aufgelöst war
+          (live 7 von 21), und passte optisch nicht zur Seite. Die Kartenseite
+          bleibt über die Navigation erreichbar. */}
 
       <div className="grid-2 mb-20">
         <div className="section" style={{ marginBottom: 0 }}>
@@ -564,9 +572,9 @@ export default async function DashboardPage() {
             <div>
               <h3>Termine &amp; Aufgaben</h3>
               <div className="section-sub">
-                {heuteAufgaben.length === 0
+                {alleHeuteAufgaben.length === 0
                   ? "Nichts Offenes"
-                  : `${heuteAufgaben.length} ${heuteAufgaben.length === 1 ? "Sache wartet" : "Sachen warten"} auf dich`}
+                  : `${alleHeuteAufgaben.length} ${alleHeuteAufgaben.length === 1 ? "Sache wartet" : "Sachen warten"} auf dich${alleHeuteAufgaben.length > heuteAufgaben.length ? ` · die ${heuteAufgaben.length} wichtigsten hier` : ""}`}
               </div>
             </div>
             <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
@@ -589,7 +597,7 @@ export default async function DashboardPage() {
                       style={{ borderLeftColor: a.dringend ? "var(--red)" : "var(--gold)" }}
                     >
                       <Icon size={15} style={{ color: a.dringend ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
-                      <span style={{ flex: 1, minWidth: 0 }}>
+                      <span className="heute-label" style={{ flex: 1, minWidth: 0 }}>
                         <span style={{ display: "block", fontSize: 13.5 }}>{a.label}</span>
                         <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{a.sub}</span>
                       </span>

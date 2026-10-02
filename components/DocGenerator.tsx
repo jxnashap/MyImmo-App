@@ -418,7 +418,7 @@ export default function DocGenerator({
             onClick={() =>
               startAblegen(async () => {
                 const res = await speichereBrief(tenant.id, { art, datum, betrag, grund, ibanId, vName, vAdr, text: vorlageText, signieren: signieren ? "1" : "" });
-                toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.");
+                toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.", res.ok ? "success" : "error");
               })
             }
           >

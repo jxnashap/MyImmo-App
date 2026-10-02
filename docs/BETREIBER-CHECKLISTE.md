@@ -1,6 +1,6 @@
 # Betreiber-Checkliste
 
-Stand **10.09.2026**. Alles hier ist **kein Code** — ein Dashboard, ein Anwalt oder ein
+Stand **30.09.2026**. Alles hier ist **kein Code** — ein Dashboard, ein Anwalt oder ein
 Blick in einen Browser. Claude kann es weder erledigen noch nachprüfen.
 
 Kurzfassung mit Reihenfolge steht in `CLAUDE.md` unter „👤 NUR DER BETREIBER".
@@ -8,7 +8,10 @@ Hier stehen die Wortlaute und die Begründungen.
 
 ---
 
-## 1. Supabase: URL-Konfiguration ⚠️ dringend
+## 1. Supabase: URL-Konfiguration ✅ erledigt und geprüft (30.09.2026)
+
+> Von außen nachgewiesen (Verfahren in `CLAUDE.md`, Betreiber-Punkt 1): Site URL stimmt,
+> `/auth/passwort` wird angenommen, fremde Domains und `localhost` werden verworfen.
 
 **Authentication → URL Configuration**
 
@@ -26,7 +29,10 @@ die Site URL. Steht die noch auf `http://localhost:3000`, führt jeder Mail-Link
 
 ---
 
-## 2. Supabase: E-Mail-Vorlage „Reset Password" ⚠️ dringend
+## 2. Supabase: E-Mail-Vorlage „Reset Password" ✅ erledigt und belegt (30.09.2026)
+
+**Ungeprüft**, bis Punkt 3 mit echter Mail durchläuft. Die gestaltete Vorlage blieb erhalten;
+ersetzt wurde nur jedes `{{ .ConfirmationURL }}` durch die Adresse aus dem Beispiel unten.
 
 **Authentication → Emails → Reset Password**
 
@@ -47,7 +53,7 @@ Setzt voraus, dass die **Site URL** (Punkt 1) stimmt — die Vorlage baut den Li
 
 ---
 
-## 3. „Passwort vergessen" testen ⚠️ dringend
+## 3. „Passwort vergessen" testen ✅ belegt (30.09.2026, echter Nutzer, Supabase-Log)
 
 Der Weg ist gebaut (PR #325–#328), aber **nie mit einer echten Mail erfolgreich
 durchlaufen**. Nur der Test zeigt, ob er hält.
@@ -69,7 +75,7 @@ Bitte **beide Fälle** durchspielen: Mail auf demselben Gerät öffnen, und Mail
 
 ---
 
-## 4. Die zwei restlichen Passwort-Schalter
+## 4. Die zwei restlichen Passwort-Schalter ✅ an; Reset läuft damit (Log 30.09.2026) — offen: Wechsel mit falschem Passwort muss scheitern
 
 **Authentication → Sign In / Providers → Email → Password Security**
 
@@ -87,7 +93,7 @@ immer noch deutlich mehr als vorher.
 
 ---
 
-## 5. Leaked Password Protection: Gegenprobe
+## 5. Leaked Password Protection: Gegenprobe ✅ wirkt (30.09.2026, Supabase-Log: 422 „known to be weak")
 
 Der Schalter ist seit 09.09.2026 an. **Die Wirkung ist ungeprüft.**
 

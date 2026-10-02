@@ -1,16 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
 import AnlageVExport from "@/components/AnlageVExport";
 import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
+import type { MieterNkVertrag } from "@/lib/anlageV";
 
 export const dynamic = "force-dynamic";
 
 export default async function SteuerPage() {
   const supabase = await createClient();
-  const [{ data: props }, { data: ein }, { data: kos }, { data: kre }] = await Promise.all([
+  const [{ data: props }, { data: ein }, { data: kos }, { data: kre }, { data: mie }] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("einnahmen").select("id,prop_id,buchungsdatum,kategorie,betrag,nk_anteil"),
     supabase.from("kosten").select("id,prop_id,buchungsdatum,kategorie,betrag"),
     supabase.from("kredite").select("id,prop_id,restschuld,zinssatz"),
+    // Nur für die Plausibilitätsprüfung der Umlagen (lib/anlageV.ts).
+    supabase.from("mieter").select("prop_id,nk_vorauszahlung,mietbeginn,mietende"),
   ]);
 
   return (
@@ -19,6 +22,7 @@ export default async function SteuerPage() {
       einnahmen={(ein ?? []) as Einnahme[]}
       kosten={(kos ?? []) as Kosten[]}
       kredite={(kre ?? []) as Kredit[]}
+      mieter={(mie ?? []) as MieterNkVertrag[]}
     />
   );
 }

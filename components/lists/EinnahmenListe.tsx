@@ -13,10 +13,13 @@ import type { Einnahme, Property, Tenant } from "@/lib/types";
 const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
 
 export default function EinnahmenListe({
+  gefiltert = false,
   rows,
   properties,
   tenants,
 }: {
+  /** Es GIBT Daten, nur passt keine zu Filter/Zeitraum (Audit B27) — dann kein Anlegen-Hinweis. */
+  gefiltert?: boolean;
   rows: Einnahme[];
   properties: Pick<Property, "id" | "bezeichnung">[];
   tenants: Pick<Tenant, "id" | "vorname" | "nachname">[];
@@ -47,7 +50,7 @@ export default function EinnahmenListe({
           </tr>
         ))}
         {rows.length === 0 && (
-          <tr><td colSpan={5}><div className="empty"><Wallet className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Einnahmen</h4><p>Erfasse Mietzahlungen, Kautionen oder sonstige Erträge.</p></div></td></tr>
+          <tr><td colSpan={5}>{gefiltert ? <div className="empty"><Wallet className="empty-icon" size={36} color="var(--faint)" /><h4>Keine Einnahmen im gewählten Zeitraum</h4><p>Es gibt Einnahmen — nur nicht für dieses Jahr, Objekt oder diese Suche. Filter oben anpassen.</p></div> : <div className="empty"><Wallet className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Einnahmen</h4><p>Erfasse Mietzahlungen, Kautionen oder sonstige Erträge.</p></div>}</td></tr>
         )}
       </ExpandableRows>
 

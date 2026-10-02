@@ -74,15 +74,23 @@ export default function MietZeitraeume({
     if (!r.von) return;
     startSave(async () => {
       const res = await updateMietZeitraum(r.id, mieterId, fd(r));
-      toast(res.ok ? "Gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.");
+      // Typ ausdrücklich: toast() ist ohne zweites Argument „success" — ein
+      // Fehlschlag erschien sonst mit grünem Haken.
+      if (res.ok) toast("Gespeichert ✓", "success");
+      else toast(res.error ?? "Speichern fehlgeschlagen.", "error");
       if (res.ok) router.refresh();
     });
   };
 
+  // Die Zeile verschwindet sofort; die Antwort wird aber AUSGEWERTET. Vorher
+  // wurde sie verworfen: Scheiterte das Löschen, tauchte die Zeile beim
+  // Neuladen kommentarlos wieder auf (30.09.2026 gefunden — in der Demo wirft
+  // jetzt jeder Schreibversuch einen Fehler, und der muss sichtbar werden).
   const loesche = (id: string) => {
     setRows((rs) => rs.filter((r) => r.id !== id));
     startSave(async () => {
-      await deleteMietZeitraum(id, mieterId);
+      const res = await deleteMietZeitraum(id, mieterId);
+      if (!res.ok) toast(res.error ?? "Löschen fehlgeschlagen.", "error");
       router.refresh();
     });
   };
@@ -91,7 +99,8 @@ export default function MietZeitraeume({
     if (!neu.von || adding) return;
     startAdd(async () => {
       const res = await createMietZeitraum(mieterId, fd(neu));
-      toast(res.ok ? "Zeitraum hinzugefügt ✓" : res.error ?? "Speichern fehlgeschlagen.");
+      if (res.ok) toast("Zeitraum hinzugefügt ✓", "success");
+      else toast(res.error ?? "Speichern fehlgeschlagen.", "error");
       if (res.ok) {
         setNeu(leer);
         router.refresh();

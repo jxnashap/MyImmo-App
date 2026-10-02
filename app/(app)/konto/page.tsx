@@ -2,7 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import KontoVerwaltung from "@/components/KontoVerwaltung";
+import { ohnePasswort } from "@/lib/passwort";
 
 // Konto-Einstellungen für MIETER und SERVICE.
 //
@@ -15,16 +17,13 @@ export const dynamic = "force-dynamic";
 
 export default async function KontoSeite() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await aktuellerNutzer();
   if (!user) redirect("/login");
 
-  const { data: rolleRow } = await supabase
-    .from("nutzer_rollen")
-    .select("rolle")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [{ data: rolleRow }, passwortAntwort] = await Promise.all([
+    supabase.from("nutzer_rollen").select("rolle").eq("user_id", user.id).maybeSingle(),
+    supabase.rpc("konto_hat_passwort"),
+  ]);
   const rolle = (rolleRow?.rolle ?? "vermieter") as string;
 
   if (rolle !== "mieter" && rolle !== "service") redirect("/einstellungen");
@@ -43,7 +42,7 @@ export default async function KontoSeite() {
         </div>
       </div>
 
-      <KontoVerwaltung email={user.email ?? "—"} rolle={rolle as "mieter" | "service"} provider={user.app_metadata?.provider} />
+      <KontoVerwaltung email={user.email ?? "—"} rolle={rolle as "mieter" | "service"} ohnePasswort={ohnePasswort(passwortAntwort, user.app_metadata?.provider)} />
     </div>
   );
 }
