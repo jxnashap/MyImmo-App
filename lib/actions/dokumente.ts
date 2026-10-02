@@ -13,10 +13,9 @@ import {
   type BriefFields,
   type ProtokollFields,
 } from "@/lib/pdf/erzeugen";
-import { pruefeZustellung, type ZustellPruefung } from "@/lib/mieterZugang";
-import { heuteBerlin } from "@/lib/zeitraum";
+import { ladeZustellLage, zustelle, type Empfaenger } from "@/lib/zustellung";
 
-export type DokumentResult = { ok: boolean; error?: string };
+export type DokumentResult = { ok: boolean; error?: string; zugestelltAn?: string[] };
 
 async function archiviere(opts: {
   userId: string;
@@ -25,8 +24,8 @@ async function archiviere(opts: {
   titel: string;
   dateiname: string;
   pdf: Uint8Array;
-  /** direkt im Mieterportal sichtbar machen */
-  mieterFreigabe?: boolean;
+  /** direkt im Mieterportal zustellen — an genau diese Konten (lib/zustellung.ts) */
+  zustellenAn?: Empfaenger[];
 }): Promise<DokumentResult> {
   const supabase = await createClient();
 
@@ -43,7 +42,7 @@ async function archiviere(opts: {
   const dateiData =
     "data:application/pdf;base64," + Buffer.from(opts.pdf).toString("base64");
 
-  const { error } = await supabase.from("notizen").insert({
+  const { data: neu, error } = await supabase.from("notizen").insert({
     user_id: opts.userId,
     mieter_id: opts.mieterId,
     prop_id: mieter.prop_id ?? null,
@@ -53,13 +52,26 @@ async function archiviere(opts: {
     datei_type: "application/pdf",
     datei_size: opts.pdf.length,
     datei_data: dateiData,
-    mieter_freigabe: opts.mieterFreigabe ?? false,
-  });
-  if (error) return { ok: false, error: "Speichern im Archiv fehlgeschlagen." };
+    // Nur noch Merkmal „war zum Zustellen gedacht“ — sichtbar macht es allein eine
+    // Zeile in `zustellungen` (Migration 20261002140000).
+    mieter_freigabe: !!opts.zustellenAn,
+  }).select("id").single();
+  if (error || !neu) return { ok: false, error: "Speichern im Archiv fehlgeschlagen." };
 
   revalidatePath("/archiv");
   revalidatePath(`/tenants/${opts.mieterId}`);
-  return { ok: true };
+  if (!opts.zustellenAn) return { ok: true };
+
+  const z = await zustelle(supabase, {
+    userId: opts.userId,
+    mieterId: opts.mieterId,
+    notizId: (neu as { id: string }).id,
+    titel: opts.titel,
+    empfaenger: opts.zustellenAn,
+  });
+  revalidatePath("/portal");
+  if (!z.ok) return { ok: false, error: `Im Archiv gespeichert, aber nicht zugestellt: ${z.error}` };
+  return { ok: true, zugestelltAn: z.an };
 }
 
 export async function speichereBrief(
@@ -103,10 +115,12 @@ export async function speichereNk(
   // „im Mieterportal zugestellt“ auch ohne verbundenes Konto — der Vermieter glaubte
   // die Frist nach § 556 Abs. 3 BGB gewahrt, und niemand hatte etwas erhalten.
   // Dieselbe Prüfung zeigt der Dialog vorher an; hier ist sie die Schranke.
+  let zustellenAn: Empfaenger[] | undefined;
   if (zustellen) {
-    const lage = await zustellLage(supabase, user.id, mieterId, abrJahr);
+    const lage = await ladeZustellLage(supabase, user.id, mieterId, { jahr: abrJahr });
     if ("error" in lage) return { ok: false, error: lage.error };
     if (lage.sperre) return { ok: false, error: lage.sperre };
+    zustellenAn = lage.empfaenger;
   }
 
   try {
@@ -119,52 +133,12 @@ export async function speichereNk(
       titel: doc.titel,
       dateiname: doc.dateiname,
       pdf: doc.pdf,
-      mieterFreigabe: zustellen,
+      zustellenAn,
     });
   } catch (e) {
     console.error("speichereNk:", e);
     return { ok: false, error: "PDF konnte nicht erzeugt werden." };
   }
-}
-
-/**
- * Alles, was die Zustell-Prüfung braucht — aus der Datenbank, nie vom Browser.
- * Fehler bei einer Abfrage = keine Zustellung (fail-closed): Ein leeres Ergebnis sähe
- * sonst aus wie „kein Hindernis“.
- */
-async function zustellLage(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-  mieterId: string,
-  jahr: number,
-): Promise<ZustellPruefung | { error: string }> {
-  const [m, z, n] = await Promise.all([
-    supabase.from("mieter").select("mietbeginn,mietende").eq("id", mieterId).eq("user_id", userId).maybeSingle(),
-    supabase.from("mieter_zugaenge").select("email").eq("mieter_id", mieterId).eq("vermieter_id", userId).limit(1),
-    supabase
-      .from("notizen")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("mieter_id", mieterId)
-      .eq("kategorie", "Nebenkostenabrechnung")
-      .eq("titel", `Nebenkostenabrechnung ${jahr}`)
-      .eq("mieter_freigabe", true)
-      .limit(1),
-  ]);
-  if (m.error || z.error || n.error || !m.data) {
-    return { error: "Zustellung konnte nicht geprüft werden — nichts zugestellt. Bitte erneut versuchen." };
-  }
-  const zug = (z.data ?? []) as { email: string | null }[];
-  const mieter = m.data as { mietbeginn: string | null; mietende: string | null };
-  return pruefeZustellung({
-    verbunden: zug.length > 0,
-    email: zug[0]?.email ?? null,
-    mietbeginn: mieter.mietbeginn ?? null,
-    mietende: mieter.mietende ?? null,
-    jahr,
-    schonZugestellt: ((n.data ?? []) as unknown[]).length > 0,
-    heute: heuteBerlin(),
-  });
 }
 
 export async function speichereProtokoll(

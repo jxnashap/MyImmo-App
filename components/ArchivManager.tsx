@@ -261,7 +261,9 @@ export default function ArchivManager({
                 await updateDokument(offenDoc.id, fd);
                 setEditId(null);
               } catch {
-                toast("Speichern fehlgeschlagen.", "error");
+                // Die Server-Meldung kommt in Produktion nicht an (Next schwärzt geworfene
+                // Fehler) — deshalb nennt der Text den häufigsten Grund selbst.
+                toast("Speichern fehlgeschlagen. Ist das Dokument im Mieterportal zugestellt, bleiben Datei, Mieter und Objekt fest — erst auf der Mieterseite zurückziehen.", "error");
               }
             }}
             className="form-box"
@@ -307,7 +309,7 @@ export default function ArchivManager({
                     await deleteDokument(offenDoc.id);
                     setEditId(null);
                   } catch {
-                    toast("Löschen fehlgeschlagen.", "error");
+                    toast("Löschen fehlgeschlagen. Ist das Dokument im Mieterportal zugestellt, erst auf der Mieterseite zurückziehen.", "error");
                   }
                 }}
               >

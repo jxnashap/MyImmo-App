@@ -15,6 +15,7 @@ import ZaehlerPortal from "@/components/ZaehlerPortal";
 import AnfragenVomVermieter from "@/components/AnfragenVomVermieter";
 import type { PortalDaten } from "@/lib/portalDaten";
 import WischReiter from "@/components/WischReiter";
+import ZustellungBestaetigen from "@/components/ZustellungBestaetigen";
 import GlassLeiste from "@/components/GlassLeiste";
 
 export const PORTAL_TABS = [
@@ -189,16 +190,21 @@ export default function PortalAnsicht({
               <div className="section-body">
                 {freigegebeneDocs.length === 0 ? (
                   <p style={{ fontSize: 12, color: "var(--faint)" }}>
-                    Noch keine Dokumente freigegeben — dein Vermieter kann dir hier z. B.
+                    Noch keine Dokumente zugestellt — dein Vermieter kann dir hier z. B.
                     Mietvertrag, NK-Abrechnung oder den Energieausweis bereitstellen.
                   </p>
                 ) : (
                   freigegebeneDocs.map((d) => (
-                    <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                    <div key={d.zustellung.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
                       <FileText size={14} color="var(--gold)" />
                       <span style={{ fontWeight: 600, color: "var(--text)" }}>{d.titel || d.datei_name || "Dokument"}</span>
                       {d.kategorie && <span className="badge badge-teal">{d.kategorie}</span>}
-                      <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{d.created_at ? datum(d.created_at) : ""}</span>
+                      <span style={{ color: "var(--muted)", marginLeft: "auto" }} title="Zeitpunkt der Zustellung an Sie">
+                        {datum(d.zustellung.zugestellt_am)}
+                      </span>
+                      {d.zustellung.bestaetigung_noetig && (d.zustellung.bestaetigt_am
+                        ? <span className="badge badge-green" title="Von Ihnen bestätigt">bestätigt {datum(d.zustellung.bestaetigt_am)}</span>
+                        : <ZustellungBestaetigen zustellungId={d.zustellung.id} nurLesen={vorschau} />)}
                       <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
                       <a href={`/archiv/${d.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
                     </div>
