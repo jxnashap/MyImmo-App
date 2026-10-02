@@ -219,8 +219,8 @@ describe("Registrierung vormerken: Prüfung und Vormerkung bleiben zusammen", ()
 
 describe("Einladungscode-Vorprüfung (Audit 01.10.2026, B2): Server-Action statt RPC", () => {
   it("prüft per Service-Role gegen einladungscodes — Rolle, uneingelöst, gültig — und gibt nur ja/nein zurück", async () => {
-    const { db, adminDb, mod } = await lade({ antworten: { einladungscodes: { id: "e1" } } });
-    const r = await mod.pruefeEinladungscode("mi-abcd-2345", "mieter");
+    const { db, adminDb, mod } = await lade({ antworten: { einladungscodes: { id: "e1", email: "anna@example.org" } } });
+    const r = await mod.pruefeEinladungscode("mi-abcd-2345", "mieter", " Anna@Example.org ");
     expect(r).toEqual({ ok: true });
     expect(db.zugriffe).toEqual([]); // nichts ueber die Nutzer-Sitzung
     const z = adminDb.zugriffe.find((x) => x.tabelle === "einladungscodes");
@@ -234,6 +234,19 @@ describe("Einladungscode-Vorprüfung (Audit 01.10.2026, B2): Server-Action statt
     expect((await mod.pruefeEinladungscode("MI-XXXX-0000", "service")).ok).toBe(false);
     const { mod: mod2 } = await lade({ antworten: { einladungscodes: { id: "e1" } }, fehler: { message: "kaputt" } });
     expect((await mod2.pruefeEinladungscode("MI-XXXX-0000", "service")).ok).toBe(false);
+  });
+
+  it("Mieter-Einladung: nur mit der eingeladenen Adresse (02.10.2026)", async () => {
+    const { mod } = await lade({ antworten: { einladungscodes: { id: "e1", email: "anna@example.org" } } });
+    const r = await mod.pruefeEinladungscode("MI-ABCD-2345", "mieter", "fremd@example.org");
+    expect(r.ok).toBe(false);
+    expect(r.fehler).toContain("andere E-Mail-Adresse");
+    // Alte Einladung ohne Adresse gilt nicht mehr.
+    const { mod: mod2 } = await lade({ antworten: { einladungscodes: { id: "e1", email: null } } });
+    expect((await mod2.pruefeEinladungscode("MI-ABCD-2345", "mieter", "anna@example.org")).ok).toBe(false);
+    // Service-Codes bleiben ungebunden.
+    const { mod: mod3 } = await lade({ antworten: { einladungscodes: { id: "e1", email: null } } });
+    expect((await mod3.pruefeEinladungscode("SV-ABCD-2345", "service")).ok).toBe(true);
   });
 
   it("greift die Bremse, wird nicht einmal gelesen", async () => {

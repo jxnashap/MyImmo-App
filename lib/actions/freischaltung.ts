@@ -183,13 +183,14 @@ export async function bereiteRegistrierungVor(
 export async function pruefeEinladungscode(
   code: string,
   rolle: "mieter" | "service",
+  email?: string,
 ): Promise<{ ok: boolean; fehler?: string }> {
   if (!(await darfWeiter("einladungscode", 10, 600))) return { ok: false, fehler: ZU_VIELE };
   const admin = createAdminClient();
   if (!admin) return { ok: false, fehler: "Die Prüfung ist derzeit nicht möglich — bitte später erneut versuchen." };
   const { data, error } = await admin
     .from("einladungscodes")
-    .select("id")
+    .select("id,email")
     .eq("code", code.trim().toUpperCase())
     .eq("rolle", rolle) // Code muss zur gewählten Rolle passen (MI ≠ SV)
     .is("eingeloest_am", null)
@@ -200,6 +201,21 @@ export async function pruefeEinladungscode(
       ok: false,
       fehler: "Dieser Einladungscode ist ungültig oder abgelaufen. Bitte frage den Vermieter nach einem neuen Code.",
     };
+  }
+  // Mieter-Einladungen gelten seit 02.10.2026 nur für EINE Adresse (Migration
+  // 20261002100000). Die Datenbank prüft das beim Einlösen ohnehin — hier wird
+  // es nur VOR dem Registrieren gesagt, statt dass ein Konto ohne Wohnung entsteht.
+  if (rolle === "mieter") {
+    const gebunden = (data as { email?: string | null }).email ?? null;
+    if (!gebunden) {
+      return { ok: false, fehler: "Diese Einladung ist veraltet. Bitte frage deinen Vermieter nach einer neuen." };
+    }
+    if ((email ?? "").trim().toLowerCase() !== gebunden) {
+      return {
+        ok: false,
+        fehler: "Diese Einladung gilt für eine andere E-Mail-Adresse. Bitte registriere dich mit der Adresse, an die die Einladung ging.",
+      };
+    }
   }
   return { ok: true };
 }

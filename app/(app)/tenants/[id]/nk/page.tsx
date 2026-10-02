@@ -11,6 +11,7 @@ import BriefBlatt from "@/components/BriefBlatt";
 import NkSpeichernButton from "@/components/NkSpeichernButton";
 import NkCo2Panel from "@/components/NkCo2Panel";
 import NkOcrUpload from "@/components/NkOcrUpload";
+import { pruefeZustellung } from "@/lib/mieterZugang";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,29 @@ export default async function NkPage(
   );
   const vermieter = vermieterAus(profil, ibanRow ? decryptIbanRow(ibanRow) : null);
 
+  // Für den Zustell-Dialog: WER die Abrechnung im Portal sähe. Dieselbe Prüfung
+  // wiederholt die Action serverseitig — hier ist sie nur die Anzeige.
+  const [{ data: zugaenge }, { data: schonDa }] = await Promise.all([
+    supabase.from("mieter_zugaenge").select("email").eq("mieter_id", params.id).limit(1),
+    supabase
+      .from("notizen")
+      .select("id")
+      .eq("mieter_id", params.id)
+      .eq("kategorie", "Nebenkostenabrechnung")
+      .eq("titel", `Nebenkostenabrechnung ${jahr}`)
+      .eq("mieter_freigabe", true)
+      .limit(1),
+  ]);
+  const portalEmail = ((zugaenge ?? []) as { email: string | null }[])[0]?.email ?? null;
+  const zustellung = pruefeZustellung({
+    verbunden: (zugaenge ?? []).length > 0,
+    email: portalEmail,
+    mietbeginn: tenant.mietbeginn ?? null,
+    mietende: tenant.mietende ?? null,
+    jahr,
+    schonZugestellt: (schonDa ?? []).length > 0,
+  });
+
   const aktuell = new Date().getFullYear();
   const jahre = [aktuell, aktuell - 1, aktuell - 2, aktuell - 3, aktuell - 4];
   const guthaben = a.saldo >= 0;
@@ -129,7 +153,17 @@ export default async function NkPage(
           <a href={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`} className="btn btn-ghost">
             Als PDF herunterladen
           </a>
-          <NkSpeichernButton mieterId={params.id} jahr={jahr} />
+          <NkSpeichernButton
+            mieterId={params.id}
+            jahr={jahr}
+            empfaenger={{
+              name: a.mieterName,
+              wohnung: [a.objekt, a.einheit ? `Einheit ${a.einheit}` : null].filter(Boolean).join(" · ") || null,
+              email: portalEmail,
+              mietzeit: `${tenant.mietbeginn ? deDatum(tenant.mietbeginn) : "?"} – ${tenant.mietende ? deDatum(tenant.mietende) : "heute"}`,
+            }}
+            pruefung={zustellung}
+          />
         </div>
       </div>
 

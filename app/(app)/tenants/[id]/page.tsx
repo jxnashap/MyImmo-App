@@ -12,6 +12,7 @@ import type { Tenant, Property, MietZeitraum } from "@/lib/types";
 import MietZeitraeume from "@/components/MietZeitraeume";
 import VerbilligtAmpel from "@/components/VerbilligtAmpel";
 import MieterEinladung from "@/components/MieterEinladung";
+import { brevoBereit } from "@/lib/mail/brevo";
 import FreigabeToggle from "@/components/FreigabeToggle";
 import { decryptNullable } from "@/lib/crypto/secure";
 import { ReceiptText, FileText, KeyRound, Pencil, Trash2, TriangleAlert } from "lucide-react";
@@ -51,7 +52,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
   // Mieterportal-Zugang: aktiver Einladungscode + bereits verbundenes Konto
   const { data: aktiverCode } = await supabase
     .from("einladungscodes")
-    .select("code,gueltig_bis")
+    .select("code,gueltig_bis,email")
     .eq("mieter_id", params.id)
     .is("eingeloest_am", null)
     .gt("gueltig_bis", new Date().toISOString())
@@ -60,7 +61,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
     .maybeSingle();
   const { data: zugang } = await supabase
     .from("mieter_zugaenge")
-    .select("user_id")
+    .select("email,created_at")
     .eq("mieter_id", params.id)
     .limit(1)
     .maybeSingle();
@@ -219,11 +220,11 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
         <div className="section-body">
           <MieterEinladung
             mieterId={params.id}
-            verbunden={!!zugang}
-            aktiverCode={aktiverCode ?? null}
+            zugang={zugang ? { email: (zugang.email as string | null) ?? null, seit: zugang.created_at as string } : null}
+            aktiverCode={aktiverCode ? { code: aktiverCode.code, gueltig_bis: aktiverCode.gueltig_bis, email: (aktiverCode.email as string | null) ?? null } : null}
             mieterName={[m.vorname, m.nachname].filter(Boolean).join(" ") || null}
             mieterEmail={m.email ?? null}
-            objekt={[propName, m.einheit].filter((x) => x && x !== "–").join(", ") || null}
+            mailVersand={brevoBereit()}
           />
         </div>
       </div>
