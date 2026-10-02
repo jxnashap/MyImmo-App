@@ -4,6 +4,26 @@ Stand 02.10.2026. Idee von Jonas (Memory-Repo, „Bevollmächtigter für Geschä
 Deutschland“). Geklärt am selben Tag: gemeint ist eine **Funktion für Vermieter** — ein
 Vermieter (z. B. im Ausland) gibt einer Vertrauensperson Zugriff auf seine Objekte in MyImmo.
 
+## ✅ Stand 02.10.2026: Vertreter als STAMMDATEN gebaut — nicht als Zugang
+
+Präzisiert vom Betreiber am selben Tag: Der Fall ist der Vermieter im Ausland, der einen
+Kreditantrag stellt; die Bank verlangt Originale, und bei der Unterschrift des Darlehens handelt
+ein Vertreter in Deutschland. Gebraucht wird also zuerst ein **Reiter „Vertreter“ in den
+Einstellungen** mit Name, Anschrift, Kontakt, Geburtsdaten und der Vollmacht (Art, Form,
+Beglaubigung/Apostille, Gültigkeit, Widerruf, wo das Original liegt, Scan) — gebaut:
+`lib/vertreter.ts` (Status + Hinweise, rein), `lib/actions/vertreter.ts`,
+`components/VertreterPanel.tsx`, Datei-Route `/einstellungen/vertreter/[id]` (`dateiKopf()`),
+Migration `20261002210000`, `tests/vertreter.test.ts`.
+**Regeln:** MyImmo formuliert keine Vollmacht und beurteilt nicht, ob sie reicht — Hinweise
+sagen „meist … nachfragen“; die einzige feste Aussage ist § 29 GBO (Grundbuch braucht
+mindestens öffentliche Beglaubigung). Der Reiter sagt ausdrücklich, dass der Vertreter
+**keinen Zugang** bekommt.
+**Naheliegender nächster Schritt (nicht gebaut):** Vertreter im Kreditantrag-/Beleihungs-PDF
+als Bevollmächtigten aufführen; ablaufende Vollmacht als Aufgabe auf dem Dashboard.
+
+Der Rest dieser Datei beschreibt den späteren **App-Zugang** für eine Vertrauensperson — weiter
+offen, weiter mit allen Risiken unten.
+
 ## Was es sein soll
 
 Ein Vermieter lädt eine Person per E-Mail ein (dieselbe Adress-Bindung wie bei der

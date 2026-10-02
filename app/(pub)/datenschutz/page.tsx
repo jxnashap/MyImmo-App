@@ -79,7 +79,8 @@ export default function DatenschutzPage() {
       <H3>c) Mieterdaten (Daten Dritter)</H3>
       <p>
         Namen, Kontaktdaten, Mietverhältnis-, Kautions- und Abrechnungsdaten Ihrer Mieter,
-        die Sie erfassen. Hierfür sind Sie Verantwortlicher (Rechtsgrundlage in Ihrem
+        die Sie erfassen, sowie Angaben zu Personen, die Sie als Vertreter hinterlegen (Name,
+        Anschrift, Kontakt, Geburtsdaten, Vollmacht samt Scan). Hierfür sind Sie Verantwortlicher (Rechtsgrundlage in Ihrem
         Verhältnis zum Mieter regelmäßig Art. 6 Abs. 1 lit. b und c DSGVO — Mietvertrag,
         Betriebskostenabrechnung, steuerliche Pflichten); wir verarbeiten sie ausschließlich
         in Ihrem Auftrag (Art. 28 DSGVO, siehe AVV).

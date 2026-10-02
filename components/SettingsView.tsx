@@ -8,7 +8,7 @@ import Link from "next/link";
 import {
   User, Landmark, ShieldCheck, FileText, Download, Upload, Trash2, Plus, Star,
   Lock, ExternalLink, X, Check, TriangleAlert, PenLine, Sparkles, CreditCard,
-  PartyPopper, LifeBuoy, type LucideIcon,
+  PartyPopper, LifeBuoy, UserCheck, type LucideIcon,
 } from "lucide-react";
 import { TOUR_EVENT } from "@/components/OnboardingTour";
 import SignaturPad from "@/components/SignaturPad";
@@ -27,6 +27,8 @@ import { isValidIban, normalizeIban } from "@/lib/iban";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 import { wechslePasswort, sendePasswortMail } from "@/lib/passwortWechsel";
 import HilfeInhalt from "@/components/HilfeInhalt";
+import VertreterPanel from "@/components/VertreterPanel";
+import type { Vertreter } from "@/lib/vertreter";
 import { istDemoKonto } from "@/lib/demo";
 import { PASSWORT_REGEL } from "@/lib/passwort";
 import type { VermieterProfil, Iban } from "@/lib/types";
@@ -43,13 +45,14 @@ export type AboAnzeige = {
   hatPortal: boolean;
 } | null;
 
-type TabKey = "profil" | "bank" | "abo" | "sicherheit" | "recht" | "hilfe";
+type TabKey = "profil" | "bank" | "vertreter" | "abo" | "sicherheit" | "recht" | "hilfe";
 // Der Abo-Tab hängt am selben Schalter wie alle anderen Preis-Stellen: Solange
 // die Tarife app-weit ausgeblendet sind (PREISE_SICHTBAR=false, Bezahlsystem
 // inaktiv), erscheint kein verwaister Abrechnungsbereich, der nichts tut.
 const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   { key: "profil", label: "Profil", icon: User },
   { key: "bank", label: "Bankkonten", icon: Landmark },
+  { key: "vertreter", label: "Vertreter", icon: UserCheck },
   ...(PREISE_SICHTBAR ? [{ key: "abo" as const, label: "Abo", icon: CreditCard }] : []),
   { key: "sicherheit", label: "Sicherheit", icon: ShieldCheck },
   { key: "recht", label: "Daten & Recht", icon: FileText },
@@ -72,6 +75,8 @@ export default function SettingsView({
   billingEnforced = false,
   lastSignIn = null,
   benachrichtigungenAus = false,
+  vertreter = [],
+  heute = "",
 }: {
   profil: VermieterProfil | null;
   ibans: Iban[];
@@ -85,6 +90,10 @@ export default function SettingsView({
   billingEnforced?: boolean;
   lastSignIn?: string | null;
   benachrichtigungenAus?: boolean;
+  /** Vertreter mit Vollmacht (ohne Scan-Inhalt). */
+  vertreter?: Vertreter[];
+  /** Stichtag Europe/Berlin vom Server (Gültigkeit der Vollmacht). */
+  heute?: string;
 }) {
   const demoKonto = istDemoKonto(email);
   const [tab, setTab] = useState<TabKey>("profil");
@@ -174,6 +183,7 @@ export default function SettingsView({
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} key={tab} className="set-panel">
         {tab === "profil" && <ProfilPanel profil={profil} unterschrift={unterschrift ?? null} />}
         {tab === "bank" && <BankPanel ibans={ibans} />}
+        {tab === "vertreter" && <VertreterPanel vertreter={vertreter} heute={heute} demo={demoKonto} />}
         {tab === "abo" && <AboPanel abo={abo} einheiten={einheiten} enforced={billingEnforced} />}
         {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} ohnePasswort={ohnePasswort} demo={demoKonto} lastSignIn={lastSignIn} benachrichtigungenAus={benachrichtigungenAus} />}
         {tab === "recht" && <RechtPanel email={email} ohnePasswort={ohnePasswort} />}
