@@ -146,13 +146,24 @@ describe("baueHeuteAufgaben()", () => {
   });
 });
 
-describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026)", () => {
-  // Das externe Feedback wollte die Aufgaben ganz oben; der Betreiber hat die
-  // Seite danach LIVE gesehen und das Gegenteil entschieden: Kennzahlen und
-  // Verläufe zuerst, Termine und Aufgaben ans Ende. Eine gesehene Seite schlägt
-  // eine vermutete — dieser Test hält die Entscheidung fest, damit sie nicht
-  // beim nächsten Feedback-Durchlauf still zurückgedreht wird.
+describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026 / 02.10.2026)", () => {
+  // 08.09.2026: Kennzahlen und Verläufe zuerst (gegen das externe Feedback, nach Live-Blick).
+  // 02.10.2026, eigene Idee des Betreibers: Buchungssaldo halb so breit, rechts daneben die
+  // Neuigkeiten aus dem Mieterportal, darunter Termine & Aufgaben. Die Kennzahlen bleiben oben.
   const seite = readFileSync("app/(app)/page.tsx", "utf8");
+
+  it("Buchungssaldo | Neuigkeiten über Aufgaben — in EINEM zweispaltigen Block", () => {
+    const block = seite.indexOf('<div className="grid-2 mb-20" style={{ alignItems: "start" }}>');
+    const saldo = seite.indexOf("<h3>Buchungssaldo</h3>");
+    const neu = seite.indexOf("<h3>Neuigkeiten aus dem Mieterportal</h3>");
+    const aufgaben = seite.indexOf("<h3>Termine &amp; Aufgaben</h3>");
+    const danach = seite.indexOf("<h3>Einnahmen vs. Ausgaben</h3>");
+    for (const [n, i] of Object.entries({ block, saldo, neu, aufgaben, danach })) expect(i, n).toBeGreaterThan(0);
+    expect(block).toBeLessThan(saldo);
+    expect(saldo).toBeLessThan(neu);
+    expect(neu).toBeLessThan(aufgaben);
+    expect(aufgaben).toBeLessThan(danach); // die Aufgaben stehen nicht mehr am Seitenende
+  });
 
   it("die Kennzahlen stehen vor den Aufgaben", () => {
     const kpis = seite.indexOf('staffel grid-5');
