@@ -435,6 +435,11 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor
   (§ 535/§ 536a BGB); Erlösmodell OFFEN. Stufe 1 „Angebote einholen“ mit der Kostengrenze;
   regionales Verzeichnis erst bei Dichte und nach Anwalt (P2B, DSA, UWG, Gewerbeanmeldung).
+- ✅ **Einstellungen → Vertreter (02.10.2026, Vorgabe des Betreibers):** Stammdaten einer
+  Vertrauensperson + Vollmacht (Art, Form, Beglaubigung/Apostille, Gültigkeit, Widerruf, Original,
+  Scan) für Bank/Notar/Darlehensunterschrift, wenn der Vermieter im Ausland ist. **KEIN App-Zugang.**
+  `lib/vertreter.ts`, Migration `20261002210000`. **Regel: Hinweise zur Vollmacht nie als
+  Rechtsrat formulieren („meist … nachfragen“); feste Aussage nur § 29 GBO.**
 - 🔑 **Vertreter-Zugang („Bevollmächtigter“) — `docs/zukunft/VERTRETER-ZUGANG.md`** (Idee Jonas,
   geklärt 02.10.2026: Funktion für Vermieter, kein Betreiberthema). Eigene Anmeldung mit Rechten
   und Protokoll statt geteiltem Passwort; Bank/Steuer/Löschen standardmäßig gesperrt. Berührt

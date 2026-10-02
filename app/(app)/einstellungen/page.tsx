@@ -5,12 +5,14 @@ import { decryptIbanRow } from "@/lib/ibanData";
 import { ohnePasswort } from "@/lib/passwort";
 import { billingAktiv, getAbo, zaehleEinheiten, PLAN_NAMEN, effektiverPlan } from "@/lib/plan";
 import type { VermieterProfil, Iban } from "@/lib/types";
+import { VERTRETER_SPALTEN, type Vertreter } from "@/lib/vertreter";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 export const dynamic = "force-dynamic";
 
 export default async function EinstellungenPage() {
   const supabase = await createClient();
-  const [{ data }, { data: ibanRows }, user, { data: signatur }, abo, einheiten, passwortAntwort] = await Promise.all([
+  const [{ data }, { data: ibanRows }, user, { data: signatur }, abo, einheiten, passwortAntwort, { data: vertreterRows }] = await Promise.all([
     supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
     supabase.from("ibans").select("*").order("created_at", { ascending: true }),
     aktuellerNutzer(),
@@ -18,6 +20,8 @@ export default async function EinstellungenPage() {
     getAbo(supabase),
     zaehleEinheiten(supabase),
     supabase.rpc("konto_hat_passwort"),
+    // Ohne datei_data (Base64) — der Scan kommt einzeln über /einstellungen/vertreter/[id].
+    supabase.from("vertreter").select(VERTRETER_SPALTEN).order("created_at", { ascending: true }),
   ]);
 
   return (
@@ -41,6 +45,8 @@ export default async function EinstellungenPage() {
       } : null}
       einheiten={einheiten}
       billingEnforced={billingAktiv()}
+      vertreter={(vertreterRows ?? []) as unknown as Vertreter[]}
+      heute={heuteBerlin()}
     />
   );
 }
