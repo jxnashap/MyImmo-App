@@ -1,3 +1,5 @@
+import NkVorjahrHilfe from "@/components/NkVorjahrHilfe";
+import { vorjahrUebernahme, vorauszahlungsVorschlag, gleicheBetraegeWieVorjahr, type VorjahrPosition } from "@/lib/nkVorjahr";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -183,6 +185,15 @@ export default async function NkPage(
       {/* Upload direkt an der Abrechnung: Die Karte stand bisher nur auf der
           Bearbeiten-Seite — wer hier die leere Abrechnung sah, fand den Weg
           nicht. no-print: gehört nicht in den Brief. */}
+      <NkVorjahrHilfe
+        mieterId={params.id}
+        jahr={jahr}
+        uebernahme={vorjahrUebernahme((positions ?? []) as VorjahrPosition[], jahr)}
+        vorschlag={a.monate > 0 && a.positionen.length > 0 ? vorauszahlungsVorschlag(a.kostenNachCo2, a.monate, a.nkVorauszahlungMonat) : null}
+        aktuellMonat={a.nkVorauszahlungMonat}
+        nurVorjahrsBetraege={gleicheBetraegeWieVorjahr((positions ?? []) as VorjahrPosition[], jahr)}
+      />
+
       <div className="no-print" style={{ maxWidth: "210mm", margin: "0 auto" }}>
         <NkOcrUpload
           mieterId={params.id}

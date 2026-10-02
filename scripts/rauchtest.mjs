@@ -176,6 +176,7 @@ const WEGE = [
       if (detail.status >= 400) return `Detailseite ${link}: HTTP ${detail.status}`;
       if (detail.endePfad !== link) return `Detailseite ${link} umgeleitet auf ${detail.endePfad}`;
       if (!/Kaufpreis|Wert|Miete/.test(detail.html)) return `Detailseite ${link} ohne Objektdaten`;
+      if (!detail.html.includes("Objekt-Check")) return `Detailseite ${link} ohne Objekt-Check`;
       return null;
     },
   },
@@ -307,7 +308,7 @@ const WEGE = [
     schluessel: "steuer",
     titel: "Steuer — Anlage V",
     pfad: "/steuer",
-    erwartet: ["Anlage V"],
+    erwartet: ["Anlage V", "Steuer-Wächter"],
     async pruefe({ html }) {
       return /€|&euro;/.test(html) ? null : "Steuerseite ohne Beträge";
     },
@@ -358,7 +359,7 @@ const WEGE = [
     schluessel: "kredite",
     titel: "Kredite",
     pfad: "/kredite",
-    erwartet: ["Kredite &amp; Finanzierung"],
+    erwartet: ["Kredite &amp; Finanzierung", "Beleihungsauslauf je Objekt"],
     async pruefe() {
       return null;
     },

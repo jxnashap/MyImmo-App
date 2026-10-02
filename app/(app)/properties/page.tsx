@@ -1,3 +1,4 @@
+import { objektCheck, type CheckMieter } from "@/lib/objektCheck";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro, prozent } from "@/lib/format";
@@ -35,8 +36,8 @@ export default async function PropertiesPage(
   const supabase = await createClient();
   const [{ data }, { data: kred }, { data: miet }, umfaenge] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
-    supabase.from("kredite").select("prop_id,restschuld"),
-    supabase.from("mieter").select("prop_id,kaltmiete,stellplatz_miete,mietbeginn,mietende"),
+    supabase.from("kredite").select("id,prop_id,restschuld,auszahlung_datum"),
+    supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete,mietbeginn,mietende"),
     // Was am Objekt haengt — gehoert VOR den Loeschklick (lib/loeschUmfang.ts).
     objektUmfaenge(),
   ]);
@@ -45,7 +46,7 @@ export default async function PropertiesPage(
   // (lib/sollMiete.ts) — auch für Rendite und Sortierung „nach Miete".
   const heute = new Date().toISOString().slice(0, 10);
   const alle = ((data ?? []) as Property[]).map((p) => ({ ...p, miete: sollKaltmiete(p, miet ?? [], heute).betrag }));
-  const kredite = (kred ?? []) as Pick<Kredit, "prop_id" | "restschuld">[];
+  const kredite = (kred ?? []) as Pick<Kredit, "id" | "prop_id" | "restschuld" | "auszahlung_datum">[];
 
   const restMap = new Map<string, number>();
   for (const k of kredite) {
@@ -136,11 +137,17 @@ export default async function PropertiesPage(
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="prop-card-name" style={{ color: "var(--text)" }}>{p.bezeichnung}</div>
                     <div className="prop-card-addr">{p.adresse || p.typ || "—"}</div>
-                    {p.obj_status && (
-                      <div style={{ marginTop: 5 }}>
-                        <span className={`badge ${statusBadge(p.obj_status)}`}>{p.obj_status}</span>
-                      </div>
-                    )}
+                    {(() => {
+                      // Objekt-Check (lib/objektCheck.ts): „8/10“ neben dem Status, nur wenn etwas fehlt.
+                      const c = objektCheck(p, (miet ?? []) as CheckMieter[], kredite, heute);
+                      if (!p.obj_status && c.fehlend.length === 0) return null;
+                      return (
+                        <div style={{ marginTop: 5, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {p.obj_status && <span className={`badge ${statusBadge(p.obj_status)}`}>{p.obj_status}</span>}
+                          {c.fehlend.length > 0 && <span className="badge badge-neutral" title={`Fehlt: ${c.fehlend.map((f) => f.label).join(", ")}`}>{c.erfuellt}/{c.gesamt} Angaben</span>}
+                        </div>
+                      );
+                    })()}
                   </div>
                   <span className="prop-card-above">
                     <DeleteButton

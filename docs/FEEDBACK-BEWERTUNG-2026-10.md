@@ -116,7 +116,7 @@ Produkt ist breit genug. Was fehlt, ist der Beleg, dass zehn Vermieter es jeden 
 
 ### Phase 2 — Aktivierung: von „angelegt“ zu „gepflegt“ (≈ 2–4 Tage)
 Voraussetzung für alles Weitere — Automatisierung und KI rechnen nur mit gepflegten Daten.
-- **Objekt-Check je Objekt:** sichtbarer Fortschritt „8 von 10 Angaben“ (Kaufdatum,
+- ✅ **(gebaut 02.10.2026, `lib/objektCheck.ts`)** **Objekt-Check je Objekt:** sichtbarer Fortschritt „8 von 10 Angaben“ (Kaufdatum,
   Kaufpreis, Mieter mit Mietbeginn, Kredit mit Auszahlung …) mit Direktlinks. Die
   Datenlücken-Erkennung existiert schon (`lib/heute.ts`, Art `stammdaten`); es fehlt die
   Darstellung als Ziel statt als Aufgabe ganz unten.

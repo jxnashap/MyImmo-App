@@ -14,6 +14,7 @@ import {
 } from "@/lib/anlageV";
 import ElsterHilfe from "@/components/ElsterHilfe";
 import { csvZelleGequotet } from "@/lib/csv";
+import { anlageVVergleich } from "@/lib/steuer/waechter";
 
 export default function AnlageVExport({
   properties,
@@ -21,6 +22,7 @@ export default function AnlageVExport({
   kosten,
   kredite,
   mieter = [],
+  waechter = null,
 }: {
   properties: Property[];
   einnahmen: Einnahme[];
@@ -28,6 +30,8 @@ export default function AnlageVExport({
   kredite: Kredit[];
   /** Mietverträge — nur für den Plausibilitätshinweis zu den Umlagen. */
   mieter?: MieterNkVertrag[];
+  /** Steuer-Wächter über alle Objekte (Server-Komponente), steht unter dem Seitenkopf. */
+  waechter?: React.ReactNode;
 }) {
   const aktuell = new Date().getFullYear();
   const jahre = [aktuell, aktuell - 1, aktuell - 2, aktuell - 3, aktuell - 4];
@@ -45,6 +49,18 @@ export default function AnlageVExport({
       }, mieter),
     [jahr, properties, einnahmen, kosten, kredite, gebaeudeAnteil, satz, mieter],
   );
+
+  // Vorjahresvergleich (02.10.2026): dieselbe Rechnung für jahr − 1, nur die Summen.
+  const ergVorjahr = useMemo(
+    () =>
+      berechneAnlageV(jahr - 1, properties, einnahmen, kosten, kredite, {
+        gebaeudeAnteil: parseFloat(gebaeudeAnteil.replace(",", ".")) || 0,
+        satz: satz.trim() === "" ? null : (parseFloat(satz.replace(",", ".")) || 0),
+      }, mieter),
+    [jahr, properties, einnahmen, kosten, kredite, gebaeudeAnteil, satz, mieter],
+  );
+  const vergleich = anlageVVergleich(erg.gesamt, ergVorjahr.gesamt);
+  const vorjahrLeer = ergVorjahr.gesamt.einnahmen.summe === 0 && ergVorjahr.gesamt.werbungskosten.summe === 0;
 
   const spalten = [...erg.objekte, erg.gesamt];
   const einnahmePos = ANLAGE_V_POSITIONEN.filter((p) => p.bereich === "einnahme");
@@ -116,6 +132,7 @@ export default function AnlageVExport({
         </div>
       </div>
       <hr className="topbar-rule" />
+      {waechter}
 
       {/* Warnung: Objekte ohne Kaufpreis → keine Gebäude-AfA (stille Verlust-Lücke) */}
       {(() => {
@@ -193,6 +210,38 @@ export default function AnlageVExport({
               color={erg.gesamt.ueberschuss >= 0 ? "var(--gold-fill)" : "var(--red)"}
             />
           </div>
+
+          {/* Vorjahresvergleich — fällt auf, was sich gegenüber dem Vorjahr bewegt hat. */}
+          {!vorjahrLeer && (
+            <details className="section mb-20">
+              <summary className="section-header" style={{ cursor: "pointer" }}>
+                <h3>Vergleich mit {jahr - 1}</h3>
+                <span style={{ fontSize: 11.5, color: "var(--muted)" }}>
+                  Überschuss {eur2(ergVorjahr.gesamt.ueberschuss)} → {eur2(erg.gesamt.ueberschuss)}
+                </span>
+              </summary>
+              <div className="section-body">
+                <div className="table-scroll"><table style={{ fontSize: 12, minWidth: 420 }}>
+                  <thead><tr><th>Position</th><th style={{ textAlign: "right" }}>{jahr - 1}</th><th style={{ textAlign: "right" }}>{jahr}</th><th style={{ textAlign: "right" }}>Veränderung</th></tr></thead>
+                  <tbody>
+                    {vergleich.map((z) => (
+                      <tr key={z.label} style={z.label === "Überschuss" ? { fontWeight: 700 } : undefined}>
+                        <td>{z.label}</td>
+                        <td style={{ textAlign: "right" }}>{eur2(z.vorjahr)}</td>
+                        <td style={{ textAlign: "right" }}>{eur2(z.jahr)}</td>
+                        <td style={{ textAlign: "right", color: "var(--muted)", whiteSpace: "nowrap" }}>
+                          {z.delta === 0 ? "–" : `${z.delta > 0 ? "+" : "−"} ${eur2(Math.abs(z.delta))}${z.prozent != null ? ` (${z.prozent > 0 ? "+" : ""}${z.prozent.toLocaleString("de-DE")} %)` : " (neu)"}`}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table></div>
+                <p style={{ fontSize: 11, color: "var(--faint)", margin: "8px 0 0" }}>
+                  Große Sprünge sind oft fehlende oder doppelte Buchungen — ein Blick lohnt vor der Abgabe.
+                </p>
+              </div>
+            </details>
+          )}
 
           {/* Aufstellung */}
           {ansicht === "uebersicht" && (

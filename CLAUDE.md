@@ -446,6 +446,17 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Rechtsrat formulieren („meist … nachfragen“); feste Aussage nur § 29 GBO.**
   Dazu: optional im **Kreditantrag-PDF** (Seite 3, ohne Scan, nur gültige Vollmacht) und als
   **Dashboard-Aufgabe**, wenn die Vollmacht in ≤ 60 Tagen abläuft oder abgelaufen ist.
+- 🧰 **Ausbau-Paket 02.10.2026 (Recherche „stärkste Funktionen“, Betreiber: „mach 1 bis 6“)** —
+  `tests/ausbauPaket.test.ts`: (1) **Steuer-Wächter** auf `/steuer` (15 %-Grenze + Spekulationsfrist
+  für ALLE Objekte, `lib/steuer/waechter.ts`) und Anlage V **im Vergleich zum Vorjahr**;
+  (2) **Objekt-Check** „x von y Angaben“ (`lib/objektCheck.ts`, nur was etwas berechnet; was nicht
+  gilt, zählt nicht) auf Objektseite + Objektliste; (3) **NK aus dem Vorjahr übernehmen** (ohne
+  Zählerstände/Lohnanteil) + **Vorauszahlungsvorschlag** § 560 Abs. 4 BGB (`lib/nkVorjahr.ts`);
+  (4) Mahnung aus offenem Monat **gab es schon** (`RueckstandWaechter`) — nicht doppelt gebaut;
+  (5) **Beleihungsauslauf + freie Grundschuld** je Objekt auf `/kredite` (`lib/beleihungsauslauf.ts`,
+  Wert = Schätzung, ausdrücklich „keine Bankbewertung“); (6) Mietspiegel-Ampel fällt auf die
+  Vergleichsmiete des Objekts zurück (`vergleichsmieteFuer`). Marktrecherche dazu: Wettbewerb
+  läuft über Vertrauen (Preissprünge, Datenverlust), nicht über Funktionen.
 - 🔑 **Vertreter-Zugang („Bevollmächtigter“) — `docs/zukunft/VERTRETER-ZUGANG.md`** (Idee Jonas,
   geklärt 02.10.2026: Funktion für Vermieter, kein Betreiberthema). Eigene Anmeldung mit Rechten
   und Protokoll statt geteiltem Passwort; Bank/Steuer/Löschen standardmäßig gesperrt. Berührt
