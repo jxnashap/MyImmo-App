@@ -322,6 +322,7 @@ jede Funktion zweimal gebaut.
    Service; der Hausmeister schätzt im Antrag; ≤ Grenze → sofort „offen“ mit Badge „automatisch
    freigegeben“, sonst/ohne Schätzung Freigabe wie bisher. Die DATENBANK prüft dieselbe Regel.
    **Grenze:** Die Schätzung stammt vom Hausmeister — die Rechnung kann höher ausfallen.
+   ✅ **7b „Angebote einholen“ gebaut 02.10.2026** — Details in `HANDWERKER-ANFRAGEN.md` Stufe 1.
 8. Danach, als eigenes Vorhaben: **Vertreter-Zugang** (`VERTRETER-ZUGANG.md`) — berührt jede
    Tabelle, deshalb nicht zwischen die Portal-Schritte.
 

@@ -435,6 +435,10 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor
   (§ 535/§ 536a BGB); Erlösmodell OFFEN. Stufe 1 „Angebote einholen“ mit der Kostengrenze;
   regionales Verzeichnis erst bei Dichte und nach Anwalt (P2B, DSA, UWG, Gewerbeanmeldung).
+  ✅ **Stufe 1 + Kostengrenze gebaut 02.10.2026** (#394 + Folge-PR): Anfrage je Firma mit Link
+  `/angebot/<token>` (öffentlich, 30 Tage, ≤ 3 Angebote), Mail-Entwurf statt Brevo, „Beauftragen“
+  → Auftrag ohne Service-Konto. **Regel: Mieter-Kontakt nie in die Anfrage, nur beim Beauftragen
+  mit Haken.**
 - ✅ **Einstellungen → Vertreter (02.10.2026, Vorgabe des Betreibers):** Stammdaten einer
   Vertrauensperson + Vollmacht (Art, Form, Beglaubigung/Apostille, Gültigkeit, Widerruf, Original,
   Scan) für Bank/Notar/Darlehensunterschrift, wenn der Vermieter im Ausland ist. **KEIN App-Zugang.**
