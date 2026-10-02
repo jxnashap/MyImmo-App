@@ -412,6 +412,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Auftragsereignisse NIE aus der App schreiben — das tun die Trigger** (sonst doppelt); die App
   schreibt nur `art = 'nachricht'`. Trigger schreiben nur mit `auth.uid()` (Service-Role/Demo-Reset
   erzeugt keine Einträge). Nächster Schritt laut Plan: E-Mail-Benachrichtigungen (braucht Brevo).
+- 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
+  (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
+  (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor
+  (§ 535/§ 536a BGB); Erlösmodell OFFEN. Stufe 1 „Angebote einholen“ mit der Kostengrenze;
+  regionales Verzeichnis erst bei Dichte und nach Anwalt (P2B, DSA, UWG, Gewerbeanmeldung).
+- 🔑 **Vertreter-Zugang („Bevollmächtigter“) — `docs/zukunft/VERTRETER-ZUGANG.md`** (Idee Jonas,
+  geklärt 02.10.2026: Funktion für Vermieter, kein Betreiberthema). Eigene Anmeldung mit Rechten
+  und Protokoll statt geteiltem Passwort; Bank/Steuer/Löschen standardmäßig gesperrt. Berührt
+  alle RLS-Regeln → erst Prototyp an einer Tabelle, nach dem Mieterportal-Ausbau, zusammen mit
+  den Team-Zugängen des Business-Accounts.
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das

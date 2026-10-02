@@ -290,7 +290,11 @@ jede Funktion zweimal gebaut.
 5. Geführte Schadensmeldung mit regelbasierten Rückfragen + **Notfall-Knopf, der zuerst auf 112
    verweist** (Gas, Wasser, Feuer — MyImmo ist kein Notdienst).
 6. Mietkonto für den Mieter (Soll/Ist), Mitteilungen an Haus/alle Mieter, Gebäude-Infos.
-7. Kostengrenze: Aufträge bis X € ohne Rückfrage, darüber Freigabe durch den Vermieter.
+7. Kostengrenze: Aufträge bis X € ohne Rückfrage, darüber Freigabe durch den Vermieter —
+   **zusammen mit „Angebote einholen“** (Handwerker-Anfragen Stufe 1, `HANDWERKER-ANFRAGEN.md`):
+   MyImmo baut die Anfrage, der Handwerker bietet, der Vermieter wählt, der Mieter schlägt vor.
+8. Danach, als eigenes Vorhaben: **Vertreter-Zugang** (`VERTRETER-ZUGANG.md`) — berührt jede
+   Tabelle, deshalb nicht zwischen die Portal-Schritte.
 
 **Unterschrift:** nur **„gelesen und bestätigt“** (Zeitpunkt eines Klicks, `bestaetigt_am`) —
 keine elektronische Signatur, keine Willenserklärung über das Portal.
