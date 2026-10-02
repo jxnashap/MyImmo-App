@@ -154,8 +154,20 @@ export async function beantrageAuftrag(formData: FormData) {
   const objekt = String(formData.get("objekt") ?? "").trim();
   const firmaId = String(formData.get("firmaId") ?? "").trim();
   const termin = String(formData.get("termin") ?? "").trim();
+  const schaetzungRoh = String(formData.get("kostenSchaetzung") ?? "").trim();
   if (!vermieterId) return { error: "Bitte den Auftraggeber wählen." };
   if (!titel) return { error: "Bitte angeben, was gemacht werden muss." };
+  const schaetzung = schaetzungRoh ? parseBetrag(schaetzungRoh) : null;
+  if (schaetzungRoh && schaetzung == null) return { error: "Bitte die geschätzten Kosten als Betrag angeben (z. B. 250 oder 1.250,00)." };
+
+  // Kostengrenze des Auftraggebers (02.10.2026): bis zu dieser Summe ist der Auftrag ohne
+  // Rückfrage freigegeben. Die Datenbank prüft dasselbe noch einmal (Einfüge-Regel). Scheitert
+  // die Abfrage, bleibt es bei der Freigabe durch den Vermieter — nie umgekehrt.
+  let unterGrenze = false;
+  if (schaetzung != null) {
+    const { data: grenze, error: gFehler } = await supabase.rpc("auftrag_kostengrenze", { p_vermieter: vermieterId });
+    unterGrenze = !gFehler && typeof grenze === "number" && schaetzung <= grenze;
+  }
 
   // Vorgeschlagene Firma muss zum gewählten Auftraggeber gehören.
   let firmaOk: string | null = null;
@@ -174,13 +186,15 @@ export async function beantrageAuftrag(formData: FormData) {
     titel: titel.slice(0, 200),
     beschreibung: beschreibung.slice(0, 2000) || null,
     termin: termin || null,
-    status: "freigabe",
+    kosten_schaetzung: schaetzung,
+    status: unterGrenze ? "offen" : "freigabe",
+    auto_freigegeben: unterGrenze,
     erstellt_von: "service",
   });
   if (error) return { error: "Antrag konnte nicht gespeichert werden." };
   revalidatePath("/service");
   revalidatePath("/anliegen");
-  return { ok: true };
+  return { ok: true, freigegeben: unterGrenze };
 }
 
 /** Vermieter: beantragten Auftrag freigeben oder ablehnen. Optional wird
@@ -416,5 +430,26 @@ export async function loescheAuftrag(id: string) {
   if (error) return { error: "Auftrag konnte nicht gelöscht werden." };
   revalidatePath("/anliegen");
   revalidatePath("/service");
+  return { ok: true };
+}
+
+/** Vermieter: Kostengrenze für Hausmeister-Anträge setzen (leer = keine, alles braucht Freigabe). */
+export async function setzeKostengrenze(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  const roh = String(formData.get("kostengrenze") ?? "").trim();
+  const grenze = roh ? parseBetrag(roh) : null;
+  if (roh && (grenze == null || grenze > 100000)) return { error: "Bitte einen Betrag bis 100.000 € angeben." };
+
+  const { data, error } = await supabase
+    .from("vermieter_profil")
+    .upsert({ user_id: user.id, kostengrenze: grenze }, { onConflict: "user_id" })
+    .select("user_id")
+    .maybeSingle();
+  if (error || !data) return { error: "Kostengrenze konnte nicht gespeichert werden." };
+  revalidatePath("/anliegen");
   return { ok: true };
 }

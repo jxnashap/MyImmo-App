@@ -10,6 +10,7 @@ import {
 import {
   erzeugeServiceCode, widerrufeServiceCode, entferneServicePartner,
   erstelleAuftrag, loescheAuftrag, entscheideAuftrag, uebernimmAuftragAlsKosten,
+  setzeKostengrenze,
 } from "@/lib/actions/service";
 import { erstelleFirma, loescheFirma } from "@/lib/actions/firmen";
 import { GEWERKE } from "@/lib/gewerke";
@@ -34,6 +35,8 @@ export type AuftragRow = {
   mieterName: string | null; public_token: string;
   betrag: number | null; lohnanteil: number | null;
   rechnung_name: string | null; kosten_id: string | null;
+  /** Schätzung des Hausmeisters beim Antrag; `auto_freigegeben` = lag in der Kostengrenze. */
+  kosten_schaetzung?: number | null; auto_freigegeben?: boolean;
   /** Rueckmeldungen der Firma ueber den oeffentlichen Auftrags-Link. */
   rueckmeldungen?: FirmenRueckmeldung[];
 };
@@ -223,6 +226,43 @@ function FirmenSektion({ firmen }: { firmen: FirmaRow[] }) {
   );
 }
 
+const euro = (n: number) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+
+/** Kostengrenze: Anträge des Hausmeisters bis zu diesem Betrag sind ohne Rückfrage frei. */
+function KostengrenzeSektion({ grenze, demo }: { grenze: number | null; demo: boolean }) {
+  const [pending, startTransition] = useTransition();
+  const toast = useToast();
+  const speichern = (fd: FormData) =>
+    startTransition(async () => {
+      if (demo) return;
+      const f = actionFehler(await setzeKostengrenze(fd));
+      if (f) toast(f, "error");
+      else toast("Kostengrenze gespeichert.");
+    });
+  return (
+    <div className="section">
+      <div className="section-header"><h3>Kostengrenze für Hausmeister-Anträge</h3></div>
+      <div className="section-body">
+        <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 10px", lineHeight: 1.6 }}>
+          Beantragt dein Hausmeister einen Auftrag und schätzt die Kosten bis zu diesem Betrag,
+          ist er sofort freigegeben — du siehst ihn trotzdem in der Liste. Darüber, oder ohne
+          Schätzung, entscheidest du wie bisher. Die Schätzung stammt vom Hausmeister; die
+          Rechnung kann davon abweichen. Leer lassen = jeder Antrag braucht deine Freigabe.
+        </p>
+        <form action={speichern} style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap" }} data-demo-erlaubt>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Grenze (€)</label>
+            <input name="kostengrenze" inputMode="decimal" maxLength={12} defaultValue={grenze == null ? "" : String(grenze).replace(".", ",")} placeholder="z. B. 300" style={{ width: 140 }} />
+          </div>
+          <button type="submit" className="btn btn-outline" style={{ fontSize: 12 }} disabled={pending || demo}>{pending ? "…" : "Speichern"}</button>
+          {grenze != null && <span style={{ fontSize: 11, color: "var(--muted)" }}>aktuell {euro(grenze)}</span>}
+        </form>
+        {demo && <p style={{ fontSize: 11, color: "var(--muted)", margin: "6px 0 0" }}>{VORSCHAU_NICHT_GESENDET}</p>}
+      </div>
+    </div>
+  );
+}
+
 function FreigabeButtons({ id, mieterListe }: { id: string; mieterListe: MieterOption[] }) {
   const [pending, startTransition] = useTransition();
   const toast = useToast();
@@ -270,7 +310,7 @@ function LinkKopierButton({ token }: { token: string }) {
 }
 
 export default function ServiceManager({
-  partner, codes, auftraege, properties, firmen, mieterListe, initialTitel, initialText, demo = false,
+  partner, codes, auftraege, properties, firmen, mieterListe, initialTitel, initialText, demo = false, kostengrenze = null,
 }: {
   partner: ServicePartnerRow[];
   codes: ServiceCodeRow[];
@@ -282,6 +322,8 @@ export default function ServiceManager({
   initialText?: string;
   /** Demo (01.10.2026): „Auftrag vergeben" ausfüllbar, Senden aus. */
   demo?: boolean;
+  /** vermieter_profil.kostengrenze (null = keine). */
+  kostengrenze?: number | null;
 }) {
   const [fehler, setFehler] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -301,6 +343,8 @@ export default function ServiceManager({
       <CodeSektion codes={codes} />
 
       <FirmenSektion firmen={firmen} />
+
+      {partner.length > 0 && <KostengrenzeSektion grenze={kostengrenze} demo={demo} />}
 
       <div className="section">
         <div className="section-header"><h3>Verknüpfte Service-Partner</h3></div>
@@ -426,6 +470,8 @@ export default function ServiceManager({
                     <span className={`badge ${s.cls}`}>{s.label}</span>
                     <span className="badge badge-neutral">{a.partnerName}</span>
                     {a.erstellt_von === "service" && <span className="badge badge-blue">vom Hausmeister beantragt</span>}
+                    {a.auto_freigegeben && <span className="badge badge-amber" title="Lag innerhalb deiner Kostengrenze — ohne Rückfrage freigegeben">automatisch freigegeben</span>}
+                    {a.kosten_schaetzung != null && <span style={{ fontSize: 11, color: "var(--muted)" }}>Schätzung {euro(a.kosten_schaetzung)}</span>}
                     {a.firmaName && <span className="badge badge-teal">{a.firmaName}</span>}
                     {a.mieterName && <span className="badge badge-green" title="Mieter-Kontakt wird über den Firmen-Link geteilt">Kontakt: {a.mieterName}</span>}
                     {a.mieterName && (a.status === "offen" || a.status === "angenommen") && <LinkKopierButton token={a.public_token} />}

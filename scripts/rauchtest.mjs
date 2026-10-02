@@ -257,6 +257,10 @@ const WEGE = [
     titel: "Mieterportal — Mitteilungen & Haus",
     pfad: "/anliegen?tab=haus",
     erwartet: ["Mitteilung an Mieter", "Gebäude-Infos", "Alle Mieter mit Portal-Zugang"],
+    // Die Demo hat eine verbundene Mieterin — das Formular darf nicht „niemand“ melden.
+    async pruefe({ html }) {
+      return html.includes("Hier sieht es niemand") ? "Demo-Mieterin fehlt als Empfängerin" : null;
+    },
   },
   {
     // Demo-Service (01.10.2026): drei verknüpfte Partner. Firmen und
