@@ -16,6 +16,10 @@ import AnfragenVomVermieter from "@/components/AnfragenVomVermieter";
 import type { PortalDaten } from "@/lib/portalDaten";
 import WischReiter from "@/components/WischReiter";
 import ZustellungBestaetigen from "@/components/ZustellungBestaetigen";
+import MieterAufgabenListe from "@/components/MieterAufgabenListe";
+import { NotfallKasten } from "@/components/NotfallHinweis";
+import { baueMieterAufgaben } from "@/lib/mieterAufgaben";
+import { heuteBerlin } from "@/lib/zeitraum";
 import GlassLeiste from "@/components/GlassLeiste";
 
 export const PORTAL_TABS = [
@@ -53,6 +57,9 @@ export default function PortalAnsicht({
     </div></div>
   );
 
+  // „Was muss ich erledigen?“ — aus den ohnehin geladenen Daten (lib/mieterAufgaben.ts).
+  const aufgaben = baueMieterAufgaben(daten, heuteBerlin());
+
   // Jeder Reiter bringt seinen Inhalt mit — der Wisch-Bereich zeigt den
   // aktiven und lässt den Nachbarn hereingleiten (WischReiter).
   const inhalte: Record<PortalTab, ReactNode> = {
@@ -76,7 +83,10 @@ export default function PortalAnsicht({
             </div>
           </div>
         ) : (
-          wohnungen.map(({ m, p }) => (
+          <>
+          <MieterAufgabenListe aufgaben={aufgaben} hrefFuer={hrefFuer} />
+          <NotfallKasten />
+          {wohnungen.map(({ m, p }) => (
             <div key={m.id} className="section">
               <div className="section-header">
                 <h3><Home size={15} style={{ verticalAlign: "-2px" }} /> {p?.bezeichnung ?? "Wohnung"}{m.einheit ? ` · ${m.einheit}` : ""}</h3>
@@ -107,7 +117,8 @@ export default function PortalAnsicht({
                 </div>
               </div>
             </div>
-          ))
+          ))}
+          </>
         )}
       </>
     ),
@@ -117,11 +128,12 @@ export default function PortalAnsicht({
         <div className="topbar" style={{ marginBottom: 20 }}>
           <div>
             <div className="topbar-title">Anliegen</div>
-            <div className="topbar-sub">Schäden melden, Fragen stellen — mit Fotos/PDF als Anhang</div>
+            <div className="topbar-sub">Schäden melden (geführt, mit Fotos), Fragen stellen — mit Verlauf</div>
           </div>
         </div>
         {wohnungen.length === 0 ? keineWohnung : (
           <>
+            <NotfallKasten />
             <AnfragenVomVermieter anfragen={vermieterAnfragen} nurLesen={vorschau} />
             <AnliegenPortal anliegen={anliegen} dateien={dateien} verlauf={verlauf} nurLesen={vorschau} />
           </>
