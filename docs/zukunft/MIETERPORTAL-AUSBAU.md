@@ -21,9 +21,15 @@ Nebenkostenabrechnung nicht versehentlich an die falsche Person senden.**
   Warnungen: unbekannte Adresse (Altverknüpfung), Jahr schon zugestellt.
 - Tests: `tests/mieterZugang.test.ts`, elf Mutationen (eine gleichwertig).
 
+**02.10.2026 — Zugangsende gebaut** (Entscheidung des Betreibers: bis 31.12. des Folgejahres):
+Ein Ex-Mieter sieht sein Portal nach dem Auszug noch bis zum 31.12. des Jahres danach, dann
+nichts mehr — in der Datenbank zeitgesteuert, ohne Aufräum-Job (Migration `20261002120000`).
+Belege nur noch aus der eigenen Mietzeit (F2 geschlossen, F6 teilweise). Zustellen nach Ablauf
+gesperrt; die Mieterseite nennt das Enddatum.
+
 **Noch offen:** S1 (Zustellungen als eigene Tabelle — bis dahin hängt ein Dokument weiter an der
 Mieter-ZEILE, F1/F4 sind also erst durch „trennen“ beherrschbar, nicht strukturell gelöst),
-S4, S6, S7, S8, S9, automatisches Zugangsende.
+S4, S6, S7 (Reichweite im Schalter), S8, S9.
 
 ## 1. Kurzfazit
 

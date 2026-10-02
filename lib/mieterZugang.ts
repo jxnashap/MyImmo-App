@@ -22,6 +22,18 @@ export function pruefeEinladungsAdresse(
   return { ok: true, email: a };
 }
 
+/**
+ * Bis wann ein Ex-Mieter sein Portal noch sieht: 31.12. des Jahres NACH dem Auszug
+ * (Entscheidung des Betreibers, 02.10.2026) — so lange muss die NK-Abrechnung für das
+ * Auszugsjahr zugehen (§ 556 Abs. 3 BGB). Spiegelt `mieter_zugang_endet()` in der
+ * Datenbank (Migration 20261002120000), die es tatsächlich durchsetzt.
+ */
+export function zugangEndet(mietende: string | null | undefined): string | null {
+  if (!mietende) return null;
+  const jahr = Number(mietende.slice(0, 4));
+  return Number.isFinite(jahr) ? `${jahr + 1}-12-31` : null;
+}
+
 export type ZustellLage = {
   /** Gibt es ein Portal-Konto, das mit diesem Mieter verknüpft ist? */
   verbunden: boolean;
@@ -32,6 +44,8 @@ export type ZustellLage = {
   jahr: number;
   /** Ist für dieses Jahr schon eine Abrechnung im Portal sichtbar? */
   schonZugestellt: boolean;
+  /** Stichtag (ISO, deutsche Zeit) — für das Zugangsende nach dem Auszug. */
+  heute: string;
 };
 
 export type ZustellPruefung = { sperre: string | null; warnungen: string[] };
@@ -47,6 +61,14 @@ export function pruefeZustellung(l: ZustellLage): ZustellPruefung {
       sperre:
         "Dieser Mieter hat kein verbundenes Portal-Konto — die Abrechnung würde niemand sehen. " +
         "Bitte nur speichern und per Post oder E-Mail zustellen.",
+      warnungen,
+    };
+  }
+  const ende = zugangEndet(l.mietende);
+  if (ende && l.heute.slice(0, 10) > ende) {
+    const [j, m, t] = ende.split("-");
+    return {
+      sperre: `Der Portal-Zugang dieses Ex-Mieters ist am ${t}.${m}.${j} abgelaufen — er sieht nichts mehr. Bitte per Post oder E-Mail zustellen.`,
       warnungen,
     };
   }

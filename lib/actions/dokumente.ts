@@ -14,6 +14,7 @@ import {
   type ProtokollFields,
 } from "@/lib/pdf/erzeugen";
 import { pruefeZustellung, type ZustellPruefung } from "@/lib/mieterZugang";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 export type DokumentResult = { ok: boolean; error?: string };
 
@@ -162,6 +163,7 @@ async function zustellLage(
     mietende: mieter.mietende ?? null,
     jahr,
     schonZugestellt: ((n.data ?? []) as unknown[]).length > 0,
+    heute: heuteBerlin(),
   });
 }
 

@@ -86,6 +86,15 @@ export type PortalQuelle =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (tabelle: string) => any };
 
+/** Liegt ein Beleg in der Mietzeit dieses Mietverhältnisses (ganze Kalenderjahre)? */
+export function belegInMietzeit(datum: string | null, m: Pick<PortalMieter, "mietbeginn" | "mietende">): boolean {
+  if (!datum) return true;
+  const d = datum.slice(0, 10);
+  if (m.mietbeginn && d < `${m.mietbeginn.slice(0, 4)}-01-01`) return false;
+  if (m.mietende && d > `${m.mietende.slice(0, 4)}-12-31`) return false;
+  return true;
+}
+
 export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promise<PortalDaten> {
   let mieterRows: PortalMieter[] = [];
   let propRows: PortalObjekt[] = [];
@@ -237,6 +246,10 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
     if (alsV) q = q.eq("user_id", alsV);
     const { data } = await q.order("buchungsdatum", { ascending: false }).limit(200);
     belege = (data ?? []) as PortalBeleg[];
+    // Nur Belege aus der eigenen Mietzeit (1.1. des Einzugsjahres bis 31.12. des
+    // Auszugsjahres) — beim Mieter erzwingt das die Datenbank (`mieter_beleg_sichtbar`,
+    // Migration 20261002120000), in der Vorschau steht es hier, sonst zeigte sie mehr.
+    belege = belege.filter((b) => wohnungen.some(({ m }) => belegInMietzeit(b.buchungsdatum, m)));
   }
 
   return {

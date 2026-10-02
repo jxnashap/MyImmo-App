@@ -13,6 +13,8 @@ import MietZeitraeume from "@/components/MietZeitraeume";
 import VerbilligtAmpel from "@/components/VerbilligtAmpel";
 import MieterEinladung from "@/components/MieterEinladung";
 import { brevoBereit } from "@/lib/mail/brevo";
+import { zugangEndet } from "@/lib/mieterZugang";
+import { heuteBerlin } from "@/lib/zeitraum";
 import FreigabeToggle from "@/components/FreigabeToggle";
 import { decryptNullable } from "@/lib/crypto/secure";
 import { ReceiptText, FileText, KeyRound, Pencil, Trash2, TriangleAlert } from "lucide-react";
@@ -225,6 +227,8 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
             mieterName={[m.vorname, m.nachname].filter(Boolean).join(" ") || null}
             mieterEmail={m.email ?? null}
             mailVersand={brevoBereit()}
+            zugangBis={zugangEndet(m.mietende)}
+            zugangAbgelaufen={!!zugangEndet(m.mietende) && heuteBerlin() > zugangEndet(m.mietende)!}
           />
         </div>
       </div>

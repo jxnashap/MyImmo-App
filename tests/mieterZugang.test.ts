@@ -19,7 +19,7 @@ describe("Adresse doppelt eingeben", () => {
 
 describe("Zustell-Prüfung", () => {
   const basis: ZustellLage = {
-    verbunden: true, email: "anna@example.org", mietbeginn: "2021-03-01", mietende: null, jahr: 2025, schonZugestellt: false,
+    verbunden: true, email: "anna@example.org", mietbeginn: "2021-03-01", mietende: null, jahr: 2025, schonZugestellt: false, heute: "2026-10-02",
   };
   it("Normalfall: frei, ohne Warnung", () => {
     expect(pruefeZustellung(basis)).toEqual({ sperre: null, warnungen: [] });
@@ -29,7 +29,8 @@ describe("Zustell-Prüfung", () => {
   });
   it("Abrechnungsjahr außerhalb der Mietzeit: gesperrt", () => {
     expect(pruefeZustellung({ ...basis, mietbeginn: "2026-01-01" }).sperre).toContain("beginnt erst nach 2025");
-    expect(pruefeZustellung({ ...basis, mietende: "2024-12-31" }).sperre).toContain("endete vor 2025");
+    // Stichtag noch im Nachlauf, sonst greift zuerst das Zugangsende.
+    expect(pruefeZustellung({ ...basis, mietende: "2024-12-31", heute: "2025-06-01" }).sperre).toContain("endete vor 2025");
     // Randtage gehören dazu.
     expect(pruefeZustellung({ ...basis, mietbeginn: "2025-12-31" }).sperre).toBeNull();
     expect(pruefeZustellung({ ...basis, mietende: "2025-01-01" }).sperre).toBeNull();
@@ -183,5 +184,53 @@ describe("Datenbank und Oberfläche", () => {
     const k = lies("components/NkSpeichernButton.tsx");
     expect(k.match(/speichern\(true\)/g)?.length).toBe(1);
     expect(k).toContain("{!pruefung.sperre && (");
+  });
+});
+
+// ---------- Zugangsende (Betreiber 02.10.2026: bis 31.12. des Folgejahres) ----------
+import { zugangEndet } from "@/lib/mieterZugang";
+import { belegInMietzeit } from "@/lib/portalDaten";
+
+describe("Zugang endet nach dem Auszug", () => {
+  const basis: ZustellLage = {
+    verbunden: true, email: "anna@example.org", mietbeginn: "2021-03-01", mietende: "2025-04-30", jahr: 2025, schonZugestellt: false, heute: "2026-10-02",
+  };
+  it("31.12. des Jahres NACH dem Auszug; ohne Mietende kein Ende", () => {
+    expect(zugangEndet("2025-04-30")).toBe("2026-12-31");
+    expect(zugangEndet("2025-12-31")).toBe("2026-12-31");
+    expect(zugangEndet(null)).toBeNull();
+  });
+  it("im Nachlauf darf zugestellt werden — genau dafür gibt es ihn", () => {
+    expect(pruefeZustellung(basis).sperre).toBeNull();
+    expect(pruefeZustellung({ ...basis, heute: "2026-12-31" }).sperre).toBeNull();
+  });
+  it("ab dem 1.1. des übernächsten Jahres: gesperrt", () => {
+    expect(pruefeZustellung({ ...basis, heute: "2027-01-01" }).sperre).toContain("am 31.12.2026 abgelaufen");
+  });
+  it("Belege nur aus der eigenen Mietzeit, in ganzen Kalenderjahren", () => {
+    const m = { mietbeginn: "2021-03-01", mietende: "2025-04-30" };
+    expect(belegInMietzeit("2021-01-15", m)).toBe(true); // Jahresabrechnung 2021 umfasst Januar
+    expect(belegInMietzeit("2020-12-31", m)).toBe(false);
+    expect(belegInMietzeit("2025-11-30", m)).toBe(true);
+    expect(belegInMietzeit("2026-01-01", m)).toBe(false);
+    expect(belegInMietzeit("2030-01-01", { mietbeginn: "2021-03-01", mietende: null })).toBe(true);
+  });
+});
+
+describe("Zugangsende in der Datenbank", () => {
+  const sql = lies("supabase/migrations/20261002120000_zugang_endet.sql");
+  const ohneKommentare = sql.split("\n").filter((z) => !z.trim().startsWith("--")).join("\n");
+  it("eine Prüffunktion für alle sieben Regeln und beide Sichten", () => {
+    expect(ohneKommentare.match(/alter policy /g)?.length).toBe(7);
+    expect(ohneKommentare.match(/public\.mieter_zugang_aktiv\(/g)!.length).toBeGreaterThanOrEqual(9);
+    expect(ohneKommentare).toContain("where public.mieter_zugang_aktiv(m.id);");
+    expect(ohneKommentare).toContain("public.mieter_beleg_sichtbar(prop_id, buchungsdatum)");
+  });
+  it("Ende = 31.12. des Folgejahres, Stichtag in deutscher Zeit", () => {
+    expect(ohneKommentare).toContain("make_date(extract(year from p_mietende)::int + 1, 12, 31)");
+    expect(ohneKommentare).toContain("(now() at time zone 'Europe/Berlin')::date <= public.mieter_zugang_endet(m.mietende)");
+  });
+  it("ohne DROP und DELETE (die Supabase-Rückfrage erreicht den Betreiber nicht)", () => {
+    expect(ohneKommentare.toLowerCase()).not.toMatch(/\b(drop|delete)\b/);
   });
 });

@@ -12,6 +12,7 @@ import NkSpeichernButton from "@/components/NkSpeichernButton";
 import NkCo2Panel from "@/components/NkCo2Panel";
 import NkOcrUpload from "@/components/NkOcrUpload";
 import { pruefeZustellung } from "@/lib/mieterZugang";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +102,7 @@ export default async function NkPage(
     mietende: tenant.mietende ?? null,
     jahr,
     schonZugestellt: (schonDa ?? []).length > 0,
+    heute: heuteBerlin(),
   });
 
   const aktuell = new Date().getFullYear();
