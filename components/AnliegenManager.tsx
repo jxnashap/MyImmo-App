@@ -11,6 +11,17 @@ import { useToast } from "@/components/Toast";
 import { tastaturAktion } from "@/lib/a11y";
 import VorgangVerlauf from "@/components/VorgangVerlauf";
 import { NACHRICHT_MAX, type Ereignis } from "@/lib/vorgang";
+import AngeboteEinholen, { type AngebotFirma } from "@/components/AngeboteEinholen";
+import type { Angebotsanfrage } from "@/lib/angebote";
+
+/** Daten für „Angebote einholen“ — einmal je Seite geladen, je Vorgang gefiltert. */
+export type AngebotKontext = {
+  firmen: AngebotFirma[];
+  anfragen: Record<string, Angebotsanfrage[]>;
+  kostengrenze: number | null;
+  auftragTokens: Record<string, string>;
+  absender: string | null;
+};
 
 export type AnliegenVermieterRow = {
   id: string;
@@ -25,6 +36,8 @@ export type AnliegenVermieterRow = {
   dateien: { id: string; name: string }[];
   terminVorschlaege: string[];
   terminBestaetigt: string | null;
+  /** Mieter-Zeile des Vorgangs (für „Kontakt teilen“ beim Beauftragen). */
+  mieterId?: string | null;
 };
 
 // "2026-07-22T14:30" → "Mi., 22.07.2026, 14:30 Uhr"
@@ -47,7 +60,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   erledigt: { label: "Erledigt", cls: "badge-green" },
 };
 
-function Eintrag({ a }: { a: AnliegenVermieterRow }) {
+function Eintrag({ a, angebote }: { a: AnliegenVermieterRow; angebote?: AngebotKontext }) {
   const [offen, setOffen] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -152,6 +165,19 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
           </div>
         </form>
       )}
+      {offen && angebote && a.typ === "schaden" && (
+        <AngeboteEinholen
+          anliegenId={a.id}
+          titel={a.titel}
+          beschreibung={a.beschreibung}
+          firmen={angebote.firmen}
+          anfragen={angebote.anfragen[a.id] ?? []}
+          kostengrenze={angebote.kostengrenze}
+          auftragTokens={angebote.auftragTokens}
+          mieterKontakt={!!a.mieterId}
+          absender={angebote.absender}
+        />
+      )}
       {offen && (
         <div style={{ marginTop: 8, padding: 12, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}>
           <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
@@ -192,7 +218,7 @@ function Eintrag({ a }: { a: AnliegenVermieterRow }) {
   );
 }
 
-export default function AnliegenManager({ rows }: { rows: AnliegenVermieterRow[] }) {
+export default function AnliegenManager({ rows, angebote }: { rows: AnliegenVermieterRow[]; angebote?: AngebotKontext }) {
   if (rows.length === 0) {
     return (
       <p style={{ fontSize: 12, color: "var(--faint)" }}>
@@ -203,7 +229,7 @@ export default function AnliegenManager({ rows }: { rows: AnliegenVermieterRow[]
   return (
     <div>
       {rows.map((a) => (
-        <Eintrag key={a.id} a={a} />
+        <Eintrag key={a.id} a={a} angebote={angebote} />
       ))}
     </div>
   );

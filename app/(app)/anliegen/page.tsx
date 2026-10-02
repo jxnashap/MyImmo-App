@@ -19,7 +19,8 @@ import { ansichtenSichtbar, istDemoKonto } from "@/lib/demo";
 import Leer from "@/components/Leer";
 import WischReiter from "@/components/WischReiter";
 import GlassLeiste from "@/components/GlassLeiste";
-import AnliegenManager, { type AnliegenVermieterRow } from "@/components/AnliegenManager";
+import AnliegenManager, { type AnliegenVermieterRow, type AngebotKontext } from "@/components/AnliegenManager";
+import type { Angebot, Angebotsanfrage } from "@/lib/angebote";
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
 import BewerbungenManager, { type BewerberLinkRow, type BewerbungRow } from "@/components/BewerbungenManager";
 import ServiceManager, { type ServicePartnerRow, type ServiceCodeRow, type AuftragRow, type FirmaRow, type FirmenRueckmeldung } from "@/components/ServiceManager";
@@ -101,6 +102,7 @@ export default async function AnliegenPage(
     dateien: (dateiRows ?? []).filter((d) => d.anliegen_id === a.id).map((d) => ({ id: d.id, name: d.name })),
     terminVorschlaege: Array.isArray(a.termin_vorschlaege) ? (a.termin_vorschlaege as string[]) : [],
     terminBestaetigt: a.termin_bestaetigt ?? null,
+    mieterId: a.mieter_id ?? null,
   }));
 
   const offen = liste.filter((a) => a.status !== "erledigt").length;
@@ -237,9 +239,36 @@ export default async function AnliegenPage(
 
   // Kostengrenze für Hausmeister-Anträge (02.10.2026) — nur im Service-Reiter gebraucht.
   let kostengrenze: number | null = null;
-  if (tab === "service" && user) {
-    const { data: profil } = await supabase.from("vermieter_profil").select("kostengrenze").eq("user_id", user.id).maybeSingle();
+  let absenderName: string | null = null;
+  if ((tab === "service" || tab === "anliegen") && user) {
+    const { data: profil } = await supabase.from("vermieter_profil").select("kostengrenze,name").eq("user_id", user.id).maybeSingle();
     kostengrenze = profil?.kostengrenze == null ? null : Number(profil.kostengrenze);
+    absenderName = profil?.name ?? null;
+  }
+
+  // „Angebote einholen“ (02.10.2026): Anfragen + Angebote nur im Anliegen-Reiter laden.
+  let angebotKontext: AngebotKontext | undefined;
+  if (tab === "anliegen" && user) {
+    const [{ data: qRows }, { data: gRows }] = await Promise.all([
+      supabase.from("angebotsanfragen")
+        .select("id,anliegen_id,firma_id,status,public_token,token_ablauf,auftrag_id,created_at")
+        .eq("vermieter_id", user.id).order("created_at", { ascending: true }).limit(500),
+      supabase.from("angebote").select("id,anfrage_id,firma,kontakt,betrag,termin,nachricht,created_at").limit(1500),
+    ]);
+    const anfragenJe: Record<string, Angebotsanfrage[]> = {};
+    for (const q of (qRows ?? []) as Omit<Angebotsanfrage, "angebote">[]) {
+      const angebote = ((gRows ?? []) as Angebot[])
+        .filter((g) => g.anfrage_id === q.id)
+        .map((g) => ({ ...g, betrag: Number(g.betrag) }));
+      (anfragenJe[q.anliegen_id] ??= []).push({ ...q, angebote });
+    }
+    angebotKontext = {
+      firmen: firmen.map((f) => ({ id: f.id, name: f.name, gewerk: f.gewerk, email: f.email })),
+      anfragen: anfragenJe,
+      kostengrenze,
+      auftragTokens: Object.fromEntries(((auftragRows ?? []) as { id: string; public_token: string }[]).map((a) => [a.id, a.public_token])),
+      absender: absenderName,
+    };
   }
 
   // Mitteilungen & Haus (02.10.2026): nur laden, wenn der Reiter offen ist.
@@ -291,7 +320,7 @@ export default async function AnliegenPage(
             <div className="section">
               <div className="section-header"><h3>Meldungen deiner Mieter</h3></div>
               <div className="section-body">
-                <AnliegenManager rows={liste} />
+                <AnliegenManager rows={liste} angebote={angebotKontext} />
               </div>
             </div>
           </>

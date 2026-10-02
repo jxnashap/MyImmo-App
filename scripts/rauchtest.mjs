@@ -140,6 +140,15 @@ function ersterLink(html, praefix) {
 // Sperre hält und die Weiterleitung den Bereich nennt.
 const WEGE = [
   {
+    // Öffentliche Angebotsseite (02.10.2026): ohne gültigen Link „nicht mehr gültig“ — und
+    // NICHT auf /login umgeleitet (stünde sie nicht in lib/oeffentlich.ts, käme keine Firma hin).
+    schluessel: "angebot",
+    titel: "Angebotsanfrage — öffentliche Seite ohne Login",
+    pfad: "/angebot/00000000-0000-4000-8000-000000000000",
+    erwartet: ["Angebotsanfrage", "Link nicht mehr gültig"],
+    async pruefe() { return null; },
+  },
+  {
     schluessel: "dashboard",
     titel: "Dashboard — Lage auf einen Blick",
     pfad: "/",

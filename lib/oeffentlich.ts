@@ -30,6 +30,7 @@ export function istOeffentlicheSeite(pathname: string): boolean {
     pathname.startsWith("/beleihung/") ||
     pathname.startsWith("/bewerben/") || // öffentliche Bewerber-Selbstauskunft
     pathname.startsWith("/auftrag/") || // öffentlicher Firmen-Link (Terminabsprache)
+    pathname.startsWith("/angebot/") || // öffentliche Angebotsanfrage an eine Firma
     pathname === "/impressum" ||
     pathname === "/agb" ||
     pathname === "/avv" || // im Login-Consent verlinkt — muss ohne Login lesbar sein

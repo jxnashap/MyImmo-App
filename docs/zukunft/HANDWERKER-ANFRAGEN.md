@@ -47,6 +47,19 @@ schon gibt: Firmenliste je Vermieter (`firmen`), Aufträge mit öffentlichem Lin
 6. Kommt mit der **Kostengrenze** aus dem Mieterportal-Plan: Angebote bis X € kann der Vermieter
    vorab freigeben.
 
+✅ **Gebaut 02.10.2026** (Migration `20261002200000`, `lib/angebote.ts`, `lib/actions/angebote.ts`,
+`components/AngeboteEinholen.tsx`, öffentliche Seite `/angebot/[token]`, `tests/angebote.test.ts`):
+Punkte 1, 2, 4 (ohne PDF — Betrag, Termin, Text), 5, 6 (Badge „innerhalb deiner Kostengrenze“;
+die automatische Freigabe gilt nur für Hausmeister-Anträge). **Abweichungen, bewusst:** Versand
+NICHT über Brevo, sondern je Firma Mail-Entwurf (`mailto:`) + Link zum Kopieren — der Vermieter
+schreibt aus seinem eigenen Postfach, und Brevo ist noch nicht eingerichtet. Keine Fotos in der
+Anfrage (Anliegen-Dateien sind Mieterdaten; erst mit eigener Auswahl nachrüsten). Beauftragen legt
+einen Auftrag OHNE Service-Konto an (`service_user_id` null, `firma_id` gesetzt) und liefert den
+bekannten Link `/auftrag/<token>`; die übrigen offenen Anfragen werden „nicht gewählt“.
+**Nicht gebaut:** Mail an den Vermieter bei neuem Angebot (er sieht es im Vorgang), Mieter-
+Vorschlag „Ich kenne einen Handwerker“. **Regel: Die Anfrage-Tabelle hat keine Mieter-Spalte —
+so bleibt es; Mieter-Kontakt geht nur beim Beauftragen und nur mit Haken.**
+
 Mieter-Seite: Bei einer Schadensmeldung optional „Ich kenne einen Handwerker“ (Name, Kontakt) —
 ein Vorschlag, keine Beauftragung.
 
