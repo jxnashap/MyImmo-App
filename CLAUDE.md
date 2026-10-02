@@ -421,7 +421,15 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   art, bezug)`). **Regeln:** (1) Eine Hinweis-Mail nennt NIE Titel oder Inhalt — `benachrichtigungsMail`
   nimmt bewusst nur `(art, basis)`. (2) Die Adresse kommt aus dem Auth-Konto, nie vom Aufrufer.
   (3) Benachrichtigen erst NACH erfolgreichem Speichern, und ein Versandfehler lässt die Action nie
-  scheitern. Abbestellen: `user_metadata.benachrichtigungen_aus`. Offen: Schritt 6, 7.
+  scheitern. Abbestellen: `user_metadata.benachrichtigungen_aus`.
+  ✅ **Schritt 6 gebaut 02.10.2026:** Mietkonto für den Mieter (`lib/mieterKonto.ts`, Sicht
+  `miet_zeitraeume_portal`) — **Regel: Im Portal nie „Rückstand“/„schuldest“; Grundlage sind die
+  Buchungen des Vermieters** (Test hält es fest). Mitteilungen (`zustellungen` art `mitteilung`,
+  `gruppe`) und Gebäude-Infos (`gebaeude_infos`). **Falle:** Ein Prüf-SQL mit `update … set …` OHNE
+  `where` lief über `execute_sql` in den Bestätigungsdialog (Zeitüberlauf) — immer mit WHERE prüfen.
+  **Falle:** Eine „use server“-Datei darf NUR async-Funktionen exportieren (Konstanten brechen den
+  Turbopack-Build, vitest merkt es nicht) — `tests/useServerExporte.test.ts` wacht jetzt darüber.
+  Offen: Schritt 7.
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
   (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor

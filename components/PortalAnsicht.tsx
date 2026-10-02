@@ -18,6 +18,8 @@ import WischReiter from "@/components/WischReiter";
 import ZustellungBestaetigen from "@/components/ZustellungBestaetigen";
 import MieterAufgabenListe from "@/components/MieterAufgabenListe";
 import MieterKontoTabelle from "@/components/MieterKontoTabelle";
+import MitteilungenListe from "@/components/MitteilungenListe";
+import HausInfosKarte from "@/components/HausInfosKarte";
 import { NotfallKasten } from "@/components/NotfallHinweis";
 import { baueMieterAufgaben } from "@/lib/mieterAufgaben";
 import { heuteBerlin } from "@/lib/zeitraum";
@@ -60,6 +62,9 @@ export default function PortalAnsicht({
 
   // „Was muss ich erledigen?“ — aus den ohnehin geladenen Daten (lib/mieterAufgaben.ts).
   const aufgaben = baueMieterAufgaben(daten, heuteBerlin());
+  const notdienste = Array.from(new Set(
+    Object.values(daten.hausInfos).map((h) => (h.notdienst ?? "").trim()).filter(Boolean),
+  ));
 
   // Jeder Reiter bringt seinen Inhalt mit — der Wisch-Bereich zeigt den
   // aktiven und lässt den Nachbarn hereingleiten (WischReiter).
@@ -86,7 +91,8 @@ export default function PortalAnsicht({
         ) : (
           <>
           <MieterAufgabenListe aufgaben={aufgaben} hrefFuer={hrefFuer} />
-          <NotfallKasten />
+          <NotfallKasten notdienste={notdienste} />
+          <MitteilungenListe mitteilungen={daten.mitteilungen} nurLesen={vorschau} />
           {wohnungen.map(({ m, p }) => (
             <div key={m.id} className="section">
               <div className="section-header">
@@ -119,6 +125,9 @@ export default function PortalAnsicht({
               </div>
             </div>
           ))}
+          {wohnungen.map(({ m, p }) => p?.id ? (
+            <HausInfosKarte key={`haus-${m.id}`} info={daten.hausInfos[p.id]} titel={wohnungen.length > 1 ? p.bezeichnung ?? "" : ""} />
+          ) : null)}
           </>
         )}
       </>
@@ -134,7 +143,7 @@ export default function PortalAnsicht({
         </div>
         {wohnungen.length === 0 ? keineWohnung : (
           <>
-            <NotfallKasten />
+            <NotfallKasten notdienste={notdienste} />
             <AnfragenVomVermieter anfragen={vermieterAnfragen} nurLesen={vorschau} />
             <AnliegenPortal anliegen={anliegen} dateien={dateien} verlauf={verlauf} nurLesen={vorschau} />
           </>

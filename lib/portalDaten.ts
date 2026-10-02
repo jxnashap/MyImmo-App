@@ -63,6 +63,25 @@ export type PortalZustellung = {
   bestaetigung_noetig: boolean;
   bestaetigt_am: string | null;
 };
+export type PortalMitteilung = {
+  id: string;
+  titel: string | null;
+  nachricht: string | null;
+  zugestellt_am: string;
+  bestaetigung_noetig: boolean;
+  bestaetigt_am: string | null;
+};
+export type GebaeudeInfo = {
+  prop_id: string;
+  hausmeister: string | null;
+  notdienst: string | null;
+  muell: string | null;
+  hausordnung: string | null;
+  sonstiges: string | null;
+  updated_at: string;
+};
+export const GEBAEUDE_SPALTEN = "prop_id,hausmeister,notdienst,muell,hausordnung,sonstiges,updated_at";
+
 export type PortalDokument = {
   id: string;
   titel: string | null;
@@ -88,6 +107,10 @@ export type PortalDaten = {
   jahr: number;
   summeJahr: number;
   belege: PortalBeleg[];
+  /** Mitteilungen des Vermieters an dieses Konto (Zustellungen art = 'mitteilung'). */
+  mitteilungen: PortalMitteilung[];
+  /** Gebäude-Infos je Objekt-ID (Hausmeister, Notdienst, Müll, Hausordnung …). */
+  hausInfos: Record<string, GebaeudeInfo>;
   /** Mietkonto je Mieter-ID, neuester Monat zuerst (lib/mieterKonto.ts). */
   konto: Record<string, KontoMonat[]>;
   /** Nur in der Vorschau: hat der Mieter schon ein verknüpftes Konto? */
@@ -280,6 +303,30 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
     .filter((z) => (z.buchungsdatum ?? "").startsWith(String(jahr)))
     .reduce((s, z) => s + (z.betrag ?? 0), 0);
 
+  // Mitteilungen: nur eigene, nicht zurückgezogene Zustellungen an DIESES Konto (wie Dokumente).
+  let mitteilungen: PortalMitteilung[] = [];
+  if (mieterIds.length && mieterUserId) {
+    let q = supabase
+      .from("zustellungen")
+      .select("id,titel,nachricht,zugestellt_am,bestaetigung_noetig,bestaetigt_am")
+      .eq("empfaenger_user_id", mieterUserId)
+      .in("mieter_id", mieterIds)
+      .eq("art", "mitteilung")
+      .is("zurueckgezogen_am", null);
+    if (alsV) q = q.eq("vermieter_id", alsV);
+    const { data } = await q.order("zugestellt_am", { ascending: false }).limit(20);
+    mitteilungen = (data ?? []) as PortalMitteilung[];
+  }
+
+  // Gebäude-Infos der eigenen Objekte. Beim Mieter filtert die Datenbank (aktiver Zugang).
+  const hausInfos: Record<string, GebaeudeInfo> = {};
+  if (propIds.length) {
+    let q = supabase.from("gebaeude_infos").select(GEBAEUDE_SPALTEN).in("prop_id", propIds);
+    if (alsV) q = q.eq("vermieter_id", alsV);
+    const { data } = await q;
+    for (const g of (data ?? []) as GebaeudeInfo[]) hausInfos[g.prop_id] = g;
+  }
+
   // Mietkonto je Wohnung: Soll aus dem Vertrag + Miet-Zeiträumen, Ist aus den bestätigten
   // Zahlungen (lib/mieterKonto.ts). Der Mieter liest die Zeiträume über die Sicht
   // `miet_zeitraeume_portal` (Migration 20261002180000), die Vorschau aus der eigenen Tabelle.
@@ -319,7 +366,7 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
 
   return {
     wohnungen, anliegen, dokumentAnfragen, verlauf, dateien, freigegebeneDocs, vermieterAnfragen,
-    zaehlerMeldungen, zahlungen, jahr, summeJahr, belege, konto,
+    zaehlerMeldungen, zahlungen, jahr, summeJahr, belege, konto, mitteilungen, hausInfos,
     mieterKontoVerknuepft: mieterUserId !== null,
   };
 }

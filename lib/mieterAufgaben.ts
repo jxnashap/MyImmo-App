@@ -11,7 +11,7 @@ export type MieterAufgabe = {
   id: string;
   titel: string;
   text: string;
-  tab: "anliegen" | "dokumente" | "zaehler";
+  tab: "wohnung" | "anliegen" | "dokumente" | "zaehler";
   dringend: boolean;
   /** Sortierschlüssel (ISO). */
   wann: string;
@@ -30,7 +30,11 @@ const tageZwischen = (von: string, bis: string) =>
 
 const de = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`;
 
-type Eingabe = Pick<PortalDaten, "freigegebeneDocs" | "anliegen" | "verlauf" | "vermieterAnfragen">;
+type Eingabe = Pick<PortalDaten, "freigegebeneDocs" | "anliegen" | "verlauf" | "vermieterAnfragen"> &
+  Partial<Pick<PortalDaten, "mitteilungen">>;
+
+/** Wie lange eine Mitteilung als „neu“ oben steht. */
+export const MITTEILUNG_TAGE = 7;
 
 export function baueMieterAufgaben(d: Eingabe, heute: string): MieterAufgabe[] {
   const liste: MieterAufgabe[] = [];
@@ -49,6 +53,22 @@ export function baueMieterAufgaben(d: Eingabe, heute: string): MieterAufgabe[] {
         id: `neu:${z.id}`, titel: `Neues Dokument: ${titel}`,
         text: `Zugestellt am ${de(z.zugestellt_am)} — noch nicht geöffnet.`,
         tab: "dokumente", dringend: false, wann: z.zugestellt_am,
+      });
+    }
+  }
+
+  for (const mt of d.mitteilungen ?? []) {
+    if (mt.bestaetigung_noetig && !mt.bestaetigt_am) {
+      liste.push({
+        id: `mitteilung-bestaetigen:${mt.id}`, titel: `Bitte bestätigen: ${mt.titel ?? "Mitteilung"}`,
+        text: "Mitteilung deines Vermieters — „gelesen und bestätigt“, keine Unterschrift.",
+        tab: "wohnung", dringend: true, wann: mt.zugestellt_am,
+      });
+    } else if (tageZwischen(mt.zugestellt_am.slice(0, 10), heute) <= MITTEILUNG_TAGE) {
+      liste.push({
+        id: `mitteilung:${mt.id}`, titel: `Mitteilung: ${mt.titel ?? ""}`.trim(),
+        text: `Von deinem Vermieter, ${de(mt.zugestellt_am.slice(0, 10))}.`,
+        tab: "wohnung", dringend: false, wann: mt.zugestellt_am,
       });
     }
   }
