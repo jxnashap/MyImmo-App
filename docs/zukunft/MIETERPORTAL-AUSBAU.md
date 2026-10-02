@@ -305,7 +305,11 @@ jede Funktion zweimal gebaut.
    Telefonnummern (Gas-Entstörung je Netzbetreiber verschieden). Kein neues Schema — Titel und
    Beschreibung gehen über `erstelleAnliegen`.
    **Nicht geprüft:** Bedienung auf einem echten Telefon (Knopfgrößen, Kamera-Upload).
-6. Mietkonto für den Mieter (Soll/Ist), Mitteilungen an Haus/alle Mieter, Gebäude-Infos.
+6. ✅ **Mietkonto für den Mieter** (02.10.2026, `lib/mieterKonto.ts`, Sicht `miet_zeitraeume_portal`):
+   12 Monate Soll gegen bestätigte Zahlungen, mit derselben Soll-Rechnung wie beim Vermieter.
+   **Bewusst ohne „Rückstand“** — Grundlage sind die Buchungen des Vermieters; „noch nicht
+   bestätigt“ plus Weg „Schreib deinem Vermieter“. Ein Test hält den Wortlaut fest.
+   Mitteilungen an Haus/alle Mieter, Gebäude-Infos: folgen.
 7. Kostengrenze: Aufträge bis X € ohne Rückfrage, darüber Freigabe durch den Vermieter —
    **zusammen mit „Angebote einholen“** (Handwerker-Anfragen Stufe 1, `HANDWERKER-ANFRAGEN.md`):
    MyImmo baut die Anfrage, der Handwerker bietet, der Vermieter wählt, der Mieter schlägt vor.
