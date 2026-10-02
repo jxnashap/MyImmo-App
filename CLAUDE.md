@@ -457,6 +457,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Wert = Schätzung, ausdrücklich „keine Bankbewertung“); (6) Mietspiegel-Ampel fällt auf die
   Vergleichsmiete des Objekts zurück (`vergleichsmieteFuer`). Marktrecherche dazu: Wettbewerb
   läuft über Vertrauen (Preissprünge, Datenverlust), nicht über Funktionen.
+- 🏦 **Kontoauszug-Abgleich per CSV (02.10.2026, Plan 01.10. Phase 3)** — Mietkonto → Reiter
+  „Kontoauszug abgleichen“, `lib/kontoauszug.ts` + `components/KontoauszugAbgleich.tsx`.
+  **Die Datei wird NUR im Browser gelesen** (enthält fremde Zahlungen); gebucht wird über
+  `bestaetigeMehrere` (Dublettenschutz je Mietmonat). Kopfzeile per Spaltennamen gesucht
+  (Sparkasse, DKB, ING, comdirect …; Vorspann übersprungen; UTF-8, sonst Windows-1252).
+  **Regel: Betrag allein ist KEINE Zuordnung** — IBAN (+3), Nachname ≥ 3 Zeichen (+2), Betrag =
+  offenes Soll (+2); ab 4 „sicher“ (vorausgewählt), 3 „Vorschlag“, Gleichstand zweier Mieter nie
+  „sicher“. Mieter-IBAN geht nur als SHA-256 in den Browser (`ibanHash` in `lib/mietkontoDaten.ts`).
+  **Nicht an echten Bank-Exporten geprüft** — Beispiel-CSVs in `tests/kontoauszug.test.ts` sind
+  nachgebaut. Meldet ein Nutzer ein unbekanntes Format, die Spaltennamen in `ALIASE` ergänzen.
 - 🔑 **Vertreter-Zugang („Bevollmächtigter“) — `docs/zukunft/VERTRETER-ZUGANG.md`** (Idee Jonas,
   geklärt 02.10.2026: Funktion für Vermieter, kein Betreiberthema). Eigene Anmeldung mit Rechten
   und Protokoll statt geteiltem Passwort; Bank/Steuer/Löschen standardmäßig gesperrt. Berührt
