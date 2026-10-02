@@ -6,6 +6,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { pruefeNachricht } from "@/lib/vorgang";
+import { benachrichtige } from "@/lib/benachrichtigung";
 
 const TYPEN = ["schaden", "dokument", "frage"] as const;
 const STATI = ["offen", "in_arbeit", "erledigt"] as const;
@@ -74,6 +75,8 @@ export async function erstelleAnliegen(formData: FormData) {
     if (fehlerDatei) return { error: `Anliegen gespeichert, aber „${f.name}" konnte nicht hochgeladen werden.` };
   }
 
+  await benachrichtige(zugang.vermieter_id, "anliegen_neu", neu.id);
+
   revalidatePath("/portal");
   revalidatePath("/anliegen");
   return { ok: true };
@@ -100,7 +103,7 @@ export async function schlageTermineVor(formData: FormData) {
   if (!id) return { error: "Ungültige Eingabe." };
   if (slots.length === 0) return { error: "Bitte mindestens einen Termin angeben." };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("anliegen")
     .update({
       termin_vorschlaege: slots,
@@ -109,8 +112,11 @@ export async function schlageTermineVor(formData: FormData) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
-    .eq("vermieter_id", user.id);
+    .eq("vermieter_id", user.id)
+    .select("mieter_user_id")
+    .maybeSingle();
   if (error) return { error: "Termine konnten nicht gespeichert werden." };
+  await benachrichtige((data as { mieter_user_id?: string } | null)?.mieter_user_id, "termine", id);
   revalidatePath("/anliegen");
   revalidatePath("/portal");
   return { ok: true };
@@ -126,12 +132,15 @@ export async function bestaetigeAnliegenTermin(id: string, slot: string) {
   if (!user) return { error: "Nicht angemeldet." };
   if (!id || !SLOT_RE.test(slot)) return { error: "Ungültige Eingabe." };
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("anliegen")
     .update({ termin_bestaetigt: slot.slice(0, 16), updated_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("mieter_user_id", user.id);
+    .eq("mieter_user_id", user.id)
+    .select("vermieter_id")
+    .maybeSingle();
   if (error) return { error: "Termin konnte nicht bestätigt werden." };
+  await benachrichtige((data as { vermieter_id?: string } | null)?.vermieter_id, "termin_bestaetigt", id);
   revalidatePath("/portal");
   revalidatePath("/anliegen");
   return { ok: true };
@@ -206,9 +215,10 @@ export async function bearbeiteAnliegen(formData: FormData) {
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("vermieter_id", user.id)
-    .select("id")
+    .select("id,mieter_user_id")
     .maybeSingle();
   if (error || !data) return { error: nachricht ? "Nachricht gesendet, Status aber nicht gespeichert." : "Konnte nicht gespeichert werden." };
+  if (nachricht) await benachrichtige((data as { mieter_user_id?: string }).mieter_user_id, "nachricht_an_mieter", id);
   revalidatePath("/anliegen");
   revalidatePath("/portal");
   return { ok: true };
@@ -250,6 +260,11 @@ export async function schreibeNachricht(anliegenId: string, text: string) {
         : "Nachricht konnte nicht gespeichert werden.",
     };
   }
+  await benachrichtige(
+    rolle === "mieter" ? a.vermieter_id : a.mieter_user_id,
+    rolle === "mieter" ? "nachricht_an_vermieter" : "nachricht_an_mieter",
+    anliegenId,
+  );
   revalidatePath("/anliegen");
   revalidatePath("/portal");
   return { ok: true };

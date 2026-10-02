@@ -416,7 +416,12 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   rein, aus den Portal-Daten) und geführte Schadensmeldung (`lib/schadensmeldung.ts` +
   `SchadenAssistent`) mit Notfall-Hinweis (`NotfallHinweis.tsx`). **Regel: In Notfall-Texten nie
   eine Telefonnummer außer 112** — Entstörungsdienste sind regional verschieden; ein Test hält es
-  fest. Offen: Schritt 3 (Benachrichtigungen, braucht Brevo), 6, 7.
+  fest.
+  ✅ **Schritt 3 gebaut 02.10.2026: Hinweis-Mails** (`lib/benachrichtigung.ts` → `benachrichtige(userId,
+  art, bezug)`). **Regeln:** (1) Eine Hinweis-Mail nennt NIE Titel oder Inhalt — `benachrichtigungsMail`
+  nimmt bewusst nur `(art, basis)`. (2) Die Adresse kommt aus dem Auth-Konto, nie vom Aufrufer.
+  (3) Benachrichtigen erst NACH erfolgreichem Speichern, und ein Versandfehler lässt die Action nie
+  scheitern. Abbestellen: `user_metadata.benachrichtigungen_aus`. Offen: Schritt 6, 7.
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
   (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor

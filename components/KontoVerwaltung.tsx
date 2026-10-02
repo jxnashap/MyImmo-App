@@ -1,5 +1,6 @@
 "use client";
 
+import BenachrichtigungSchalter from "@/components/BenachrichtigungSchalter";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { KeyRound, Download, Trash2, Check, X, ShieldCheck } from "lucide-react";
@@ -20,8 +21,8 @@ import { useModalFokus } from "@/lib/modalFokus";
 // diese Nutzergruppe schlicht nicht ausübbar.
 
 export default function KontoVerwaltung({
-  email, rolle, ohnePasswort = false,
-}: { email: string; rolle: "mieter" | "service"; ohnePasswort?: boolean }) {
+  email, rolle, ohnePasswort = false, benachrichtigungenAus = false,
+}: { email: string; rolle: "mieter" | "service"; ohnePasswort?: boolean; benachrichtigungenAus?: boolean }) {
   const supabase = createClient();
 
   // Ob das Konto ein Passwort HAT — nicht, wie es angelegt wurde (siehe
@@ -82,6 +83,7 @@ export default function KontoVerwaltung({
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
+      {rolle === "mieter" && <BenachrichtigungSchalter aus={benachrichtigungenAus} mieter />}
       <div className="section" style={{ margin: 0 }}>
         <div className="section-header">
           <h3><ShieldCheck size={15} style={{ verticalAlign: "-2px" }} /> Mein Zugang</h3>

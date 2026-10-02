@@ -28,6 +28,7 @@ export default async function EinstellungenPage() {
       provider={user?.app_metadata?.provider}
       ohnePasswort={ohnePasswort(passwortAntwort, user?.app_metadata?.provider)}
       lastSignIn={user?.last_sign_in_at ?? null}
+      benachrichtigungenAus={user?.user_metadata?.benachrichtigungen_aus === true}
       unterschrift={signatur?.data ?? null}
       abo={abo ? {
         plan: effektiverPlan(abo),
