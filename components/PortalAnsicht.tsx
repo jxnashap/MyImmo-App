@@ -17,6 +17,7 @@ import type { PortalDaten } from "@/lib/portalDaten";
 import WischReiter from "@/components/WischReiter";
 import ZustellungBestaetigen from "@/components/ZustellungBestaetigen";
 import MieterAufgabenListe from "@/components/MieterAufgabenListe";
+import MieterKontoTabelle from "@/components/MieterKontoTabelle";
 import { NotfallKasten } from "@/components/NotfallHinweis";
 import { baueMieterAufgaben } from "@/lib/mieterAufgaben";
 import { heuteBerlin } from "@/lib/zeitraum";
@@ -150,6 +151,15 @@ export default function PortalAnsicht({
           </div>
         </div>
         {wohnungen.length === 0 ? keineWohnung : (
+          <>
+          {wohnungen.map(({ m, p }) => (
+            <MieterKontoTabelle
+              key={m.id}
+              titel={wohnungen.length > 1 ? `${p?.bezeichnung ?? "Wohnung"}${m.einheit ? ` · ${m.einheit}` : ""}` : ""}
+              monate={daten.konto[m.id] ?? []}
+              anliegenHref={hrefFuer("anliegen")}
+            />
+          ))}
           <div className="section">
             <div className="section-header">
               <h3><Banknote size={15} style={{ verticalAlign: "-2px" }} /> Zahlungsübersicht</h3>
@@ -183,6 +193,7 @@ export default function PortalAnsicht({
               )}
             </div>
           </div>
+          </>
         )}
       </>
     ),

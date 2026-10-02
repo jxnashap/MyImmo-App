@@ -22,6 +22,11 @@ import type { ZaehlerMeldungRow } from "@/components/ZaehlerPortal";
 import type { PortalAnfrageRow } from "@/components/AnfragenVomVermieter";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { ladeEreignisse, type Ereignis } from "@/lib/vorgang";
+import { mieterKonto, type KontoMonat } from "@/lib/mieterKonto";
+import type { MietkontoZeitraum } from "@/lib/mietkonto";
+
+/** Spalten der Sicht `miet_zeitraeume_portal` — mehr braucht das Soll nicht. */
+export const ZEITRAUM_SPALTEN = "mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete";
 
 /** Spalten der Sicht `mieter_portal` — identisch mit der Migration. */
 export const MIETER_PORTAL_SPALTEN =
@@ -66,7 +71,7 @@ export type PortalDokument = {
   created_at: string | null;
   zustellung: PortalZustellung;
 };
-export type PortalZahlung = { id: string; buchungsdatum: string | null; kategorie: string | null; betrag: number | null; beschreibung: string | null };
+export type PortalZahlung = { id: string; buchungsdatum: string | null; kategorie: string | null; betrag: number | null; beschreibung: string | null; mieter_id?: string | null; soll_monat?: string | null };
 export type PortalBeleg = PortalZahlung & { rechnung_name: string | null };
 
 export type PortalDaten = {
@@ -83,6 +88,8 @@ export type PortalDaten = {
   jahr: number;
   summeJahr: number;
   belege: PortalBeleg[];
+  /** Mietkonto je Mieter-ID, neuester Monat zuerst (lib/mieterKonto.ts). */
+  konto: Record<string, KontoMonat[]>;
   /** Nur in der Vorschau: hat der Mieter schon ein verknüpftes Konto? */
   mieterKontoVerknuepft: boolean;
 };
@@ -260,7 +267,7 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
   if (mieterIds.length) {
     let q = supabase
       .from("einnahmen")
-      .select("id,buchungsdatum,kategorie,betrag,beschreibung")
+      .select("id,buchungsdatum,kategorie,betrag,beschreibung,mieter_id,soll_monat")
       .in("mieter_id", mieterIds)
       .in("kategorie", [...PORTAL_ZAHLUNG_KATEGORIEN]);
     if (alsV) q = q.eq("user_id", alsV);
@@ -272,6 +279,26 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
   const summeJahr = zahlungen
     .filter((z) => (z.buchungsdatum ?? "").startsWith(String(jahr)))
     .reduce((s, z) => s + (z.betrag ?? 0), 0);
+
+  // Mietkonto je Wohnung: Soll aus dem Vertrag + Miet-Zeiträumen, Ist aus den bestätigten
+  // Zahlungen (lib/mieterKonto.ts). Der Mieter liest die Zeiträume über die Sicht
+  // `miet_zeitraeume_portal` (Migration 20261002180000), die Vorschau aus der eigenen Tabelle.
+  const konto: Record<string, KontoMonat[]> = {};
+  if (mieterIds.length) {
+    const { data: zr } = alsV
+      ? await supabase.from("miet_zeitraeume").select(ZEITRAUM_SPALTEN).in("mieter_id", mieterIds).eq("user_id", alsV)
+      : await supabase.from("miet_zeitraeume_portal").select(ZEITRAUM_SPALTEN).in("mieter_id", mieterIds);
+    const zeitraeume = (zr ?? []) as (MietkontoZeitraum & { mieter_id: string })[];
+    const heute = heuteBerlin();
+    for (const { m } of wohnungen) {
+      konto[m.id] = mieterKonto(
+        m,
+        zeitraeume.filter((z) => z.mieter_id === m.id),
+        zahlungen.filter((z) => z.mieter_id === m.id),
+        heute,
+      );
+    }
+  }
 
   // Vom Vermieter freigegebene Kosten-Belege (§ 556 Abs. 4 BGB Belegeinsicht)
   let belege: PortalBeleg[] = [];
@@ -292,7 +319,7 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
 
   return {
     wohnungen, anliegen, dokumentAnfragen, verlauf, dateien, freigegebeneDocs, vermieterAnfragen,
-    zaehlerMeldungen, zahlungen, jahr, summeJahr, belege,
+    zaehlerMeldungen, zahlungen, jahr, summeJahr, belege, konto,
     mieterKontoVerknuepft: mieterUserId !== null,
   };
 }

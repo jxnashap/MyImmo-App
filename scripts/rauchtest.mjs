@@ -428,7 +428,7 @@ async function main() {
     const MIETER_WEGE = [
       { titel: "Mieterportal — Wohnung, Zu erledigen, Notfall", pfad: "/portal", erwartet: ["Mieterportal", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete", ">Zu erledigen<", "zuerst hier"] },
       { titel: "Mieterportal — Anliegen mit Verlauf und Schadensmeldung", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<", ">Dein Vermieter<", "Schaden melden"] },
-      { titel: "Mieterportal — Zahlungen", pfad: "/portal?tab=zahlungen", erwartet: ["Mieterportal", ">Zahlungen<"] },
+      { titel: "Mieterportal — Zahlungen mit Mietkonto", pfad: "/portal?tab=zahlungen", erwartet: ["Mieterportal", ">Zahlungen<", "letzte 12 Monate", "bestätigt"] },
       { titel: "Mieterportal — Dokumente", pfad: "/portal?tab=dokumente", erwartet: ["Mieterportal", ">Dokumente<"] },
       { titel: "Mieterportal — Zähler", pfad: "/portal?tab=zaehler", erwartet: ["Mieterportal", "Zählerstand"] },
       { titel: "Mieter-Konto — Einstellungen", pfad: "/konto", erwartet: ["Meine Einstellungen"] },
