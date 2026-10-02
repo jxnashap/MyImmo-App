@@ -343,6 +343,15 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Unterverzeichnis derselben Domain (eine Domain, eine Autorität). Eine eigene Domain
   lohnt erst, wenn ein Land ein eigenes PRODUKT bekommt (z. B. österreichisches
   Mietrecht) — nicht für eine übersetzte Oberfläche.
+- 🔐 **Mieterportal: Ausbau + sicherer Zustellweg — `docs/zukunft/MIETERPORTAL-AUSBAU.md`**
+  (02.10.2026, Auftrag des Betreibers: „der Vermieter darf die NK-Abrechnung nicht versehentlich
+  an die falsche Person senden“). **Kern:** Dokumente gehen heute an eine Mieter-ZEILE, nicht an
+  eine Person; wer an der Zeile hängt, wechselt unbemerkt (Mieterwechsel in derselben Zeile),
+  endet nie (kein Trennen, kein Ende bei Auszug) und ist für den Vermieter unsichtbar (nur
+  „verbunden“, keine E-Mail). „Speichern & zustellen“ meldet Erfolg auch OHNE verbundenes Konto
+  (§ 556 Abs. 3 BGB-Frist!). Plan: Paket S (S1 Tabelle `zustellungen` an `empfaenger_user_id`,
+  S2 Zustell-Dialog mit harten Sperren, S3 E-Mail sichtbar + Trennen + Zugangsende …) VOR jedem
+  Ausbau. **Noch nichts gebaut** — wartet auf Freigabe und drei Betreiber-Fragen (Abschnitt 8).
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das
