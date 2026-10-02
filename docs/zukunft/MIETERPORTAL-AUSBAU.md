@@ -318,6 +318,10 @@ jede Funktion zweimal gebaut.
 7. Kostengrenze: Aufträge bis X € ohne Rückfrage, darüber Freigabe durch den Vermieter —
    **zusammen mit „Angebote einholen“** (Handwerker-Anfragen Stufe 1, `HANDWERKER-ANFRAGEN.md`):
    MyImmo baut die Anfrage, der Handwerker bietet, der Vermieter wählt, der Mieter schlägt vor.
+   ✅ **7a Kostengrenze gebaut 02.10.2026** (Migration `20261002200000`): Grenze in `/anliegen` →
+   Service; der Hausmeister schätzt im Antrag; ≤ Grenze → sofort „offen“ mit Badge „automatisch
+   freigegeben“, sonst/ohne Schätzung Freigabe wie bisher. Die DATENBANK prüft dieselbe Regel.
+   **Grenze:** Die Schätzung stammt vom Hausmeister — die Rechnung kann höher ausfallen.
 8. Danach, als eigenes Vorhaben: **Vertreter-Zugang** (`VERTRETER-ZUGANG.md`) — berührt jede
    Tabelle, deshalb nicht zwischen die Portal-Schritte.
 

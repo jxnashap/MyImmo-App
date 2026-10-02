@@ -169,6 +169,77 @@ describe("Antrag vom Handwerker: er darf sich nichts selbst freigeben", () => {
   });
 });
 
+describe("Kostengrenze (02.10.2026): bis zur Grenze ohne Rückfrage frei", () => {
+  const ANTRAG = { vermieterId: "v-1", titel: "Dachrinne" };
+
+  it("Schätzung innerhalb der Grenze → offen, automatisch freigegeben", async () => {
+    const { db, mod } = await lade({ rpc: { auftrag_kostengrenze: 300 } });
+    const r = await mod.beantrageAuftrag(fd({ ...ANTRAG, kostenSchaetzung: "250" }));
+    expect(r).toEqual({ ok: true, freigegeben: true });
+    expect(insert(db, "auftraege")).toMatchObject({ status: "offen", auto_freigegeben: true, kosten_schaetzung: 250 });
+  });
+
+  it("genau auf der Grenze zählt noch als innerhalb; deutscher Tausenderpunkt wird verstanden", async () => {
+    const { db, mod } = await lade({ rpc: { auftrag_kostengrenze: 1250 } });
+    await mod.beantrageAuftrag(fd({ ...ANTRAG, kostenSchaetzung: "1.250,00" }));
+    expect(insert(db, "auftraege")).toMatchObject({ status: "offen", kosten_schaetzung: 1250 });
+  });
+
+  it("über der Grenze → Freigabe nötig", async () => {
+    const { db, mod } = await lade({ rpc: { auftrag_kostengrenze: 300 } });
+    const r = await mod.beantrageAuftrag(fd({ ...ANTRAG, kostenSchaetzung: "300,01" }));
+    expect(r).toEqual({ ok: true, freigegeben: false });
+    expect(insert(db, "auftraege")).toMatchObject({ status: "freigabe", auto_freigegeben: false, kosten_schaetzung: 300.01 });
+  });
+
+  it("ohne Schätzung → Freigabe nötig, auch wenn eine Grenze besteht", async () => {
+    const { db, mod } = await lade({ rpc: { auftrag_kostengrenze: 300 } });
+    await mod.beantrageAuftrag(fd(ANTRAG));
+    expect(insert(db, "auftraege")).toMatchObject({ status: "freigabe", auto_freigegeben: false, kosten_schaetzung: null });
+  });
+
+  it("keine Grenze hinterlegt (null) → Freigabe nötig, auch bei 0 €", async () => {
+    const { db, mod } = await lade();
+    await mod.beantrageAuftrag(fd({ ...ANTRAG, kostenSchaetzung: "0" }));
+    expect(insert(db, "auftraege")).toMatchObject({ status: "freigabe", auto_freigegeben: false });
+  });
+
+  it("Abfrage der Grenze scheitert → Freigabe nötig (nie umgekehrt)", async () => {
+    const { db, mod } = await lade({ rpc: { auftrag_kostengrenze: 300 }, fehlerBei: { "rpc:auftrag_kostengrenze": { message: "kaputt" } } });
+    await mod.beantrageAuftrag(fd({ ...ANTRAG, kostenSchaetzung: "50" }));
+    expect(insert(db, "auftraege")).toMatchObject({ status: "freigabe", auto_freigegeben: false });
+  });
+
+  it("unlesbare oder negative Schätzung bricht ab, statt sie zu ignorieren", async () => {
+    for (const v of ["abc", "-50"]) {
+      const { db, mod } = await lade({ rpc: { auftrag_kostengrenze: 300 } });
+      const r = await mod.beantrageAuftrag(fd({ ...ANTRAG, kostenSchaetzung: v }));
+      expect(r.error).toContain("geschätzten Kosten");
+      expect(insert(db, "auftraege")).toBeUndefined();
+    }
+  });
+
+  it("setzeKostengrenze schreibt nur das eigene Profil; leer = keine Grenze", async () => {
+    const { db, mod } = await lade({ antworten: { vermieter_profil: { user_id: "nutzer-1" } } });
+    expect(await mod.setzeKostengrenze(fd({ kostengrenze: "1.000" }))).toEqual({ ok: true });
+    const up = db.zugriffe.find((z) => z.tabelle === "vermieter_profil" && z.op === "upsert");
+    expect(up?.daten).toEqual({ user_id: "nutzer-1", kostengrenze: 1000 });
+    const { db: db2, mod: mod2 } = await lade({ antworten: { vermieter_profil: { user_id: "nutzer-1" } } });
+    await mod2.setzeKostengrenze(fd({ kostengrenze: "" }));
+    expect(db2.zugriffe.find((z) => z.op === "upsert")?.daten).toEqual({ user_id: "nutzer-1", kostengrenze: null });
+  });
+
+  it("setzeKostengrenze: über 100.000 € oder Text wird abgelehnt, Schreibfehler gemeldet", async () => {
+    for (const v of ["100.000,01", "viel"]) {
+      const { db, mod } = await lade({ antworten: { vermieter_profil: { user_id: "nutzer-1" } } });
+      expect((await mod.setzeKostengrenze(fd({ kostengrenze: v }))).error).toContain("100.000");
+      expect(db.zugriffe.some((z) => z.op === "upsert")).toBe(false);
+    }
+    const { mod } = await lade({ antworten: { vermieter_profil: null } });
+    expect((await mod.setzeKostengrenze(fd({ kostengrenze: "300" }))).error).toContain("nicht gespeichert");
+  });
+});
+
 describe("Freigabe durch den Vermieter", () => {
   it("entschieden wird nur, was im Status „freigabe“ steht und einem gehört", async () => {
     const { db, mod } = await lade({ antworten: { auftraege: { id: "a1" } } });

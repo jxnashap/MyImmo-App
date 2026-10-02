@@ -58,7 +58,7 @@ export default async function AnliegenPage(
     supabase.from("service_zugaenge").select("user_id,firma,email,created_at").order("created_at", { ascending: false }),
     supabase.from("einladungscodes").select("code,gueltig_bis").eq("rolle", "service").is("eingeloest_am", null).gt("gueltig_bis", new Date().toISOString()).order("created_at", { ascending: false }),
     // rechnung_data (Base64) bewusst NICHT laden — nur Metadaten für die Liste.
-    supabase.from("auftraege").select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,service_user_id,erstellt_von,firma_id,mieter_id,public_token,betrag,lohnanteil,rechnung_name,kosten_id").order("created_at", { ascending: false }).limit(100),
+    supabase.from("auftraege").select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,service_user_id,erstellt_von,firma_id,mieter_id,public_token,betrag,lohnanteil,rechnung_name,kosten_id,kosten_schaetzung,auto_freigegeben").order("created_at", { ascending: false }).limit(100),
     supabase.from("firmen").select("id,name,gewerk,telefon,email,website,notiz").order("name"),
   ]);
 
@@ -187,6 +187,8 @@ export default async function AnliegenPage(
     lohnanteil: a.lohnanteil == null ? null : Number(a.lohnanteil),
     rechnung_name: a.rechnung_name ?? null,
     kosten_id: a.kosten_id ?? null,
+    kosten_schaetzung: a.kosten_schaetzung == null ? null : Number(a.kosten_schaetzung),
+    auto_freigegeben: a.auto_freigegeben === true,
     rueckmeldungen: rueckProAuftrag.get(a.id) ?? [],
   }));
   // Badge: nur was auf DICH wartet — dieselbe Definition wie in der
@@ -232,6 +234,13 @@ export default async function AnliegenPage(
   const serviceDaten = tab === "vorschau-service" && vorschauPartner
     ? await ladeServicePortalDaten(supabase, { art: "vermieter", vermieterId: user!.id, serviceUserId: vorschauPartner.id })
     : null;
+
+  // Kostengrenze für Hausmeister-Anträge (02.10.2026) — nur im Service-Reiter gebraucht.
+  let kostengrenze: number | null = null;
+  if (tab === "service" && user) {
+    const { data: profil } = await supabase.from("vermieter_profil").select("kostengrenze").eq("user_id", user.id).maybeSingle();
+    kostengrenze = profil?.kostengrenze == null ? null : Number(profil.kostengrenze);
+  }
 
   // Mitteilungen & Haus (02.10.2026): nur laden, wenn der Reiter offen ist.
   let hausDaten: { gesendet: GesendeteMitteilung[]; infos: HausInfo[]; objekte: { id: string; bezeichnung: string; verbunden: number }[] } | null = null;
@@ -376,6 +385,7 @@ export default async function AnliegenPage(
             firmen={firmen}
             mieterListe={(mieter ?? []).map((m) => ({ id: m.id, name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }))}
             demo={demo}
+            kostengrenze={kostengrenze}
             initialTitel={searchParams.titel}
             initialText={searchParams.text}
           />

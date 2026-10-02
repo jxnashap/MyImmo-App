@@ -214,33 +214,35 @@ function Eintrag({ a, firmen, vorschau }: { a: PortalAuftragRow; firmen: PortalF
 function AntragForm({ auftraggeber, firmen, vorschau }: { auftraggeber: AuftraggeberRow[]; firmen: PortalFirmaRow[]; vorschau: boolean }) {
   const [offen, setOffen] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
+  const [ok, setOk] = useState<null | "freigegeben" | "wartet">(null);
   const [pending, startTransition] = useTransition();
 
   const senden = (fd: FormData) =>
     startTransition(async () => {
-      setFehler(null); setOk(false);
+      setFehler(null); setOk(null);
       if (vorschau) return; // Vorschau: nie an den Server
       const r = await beantrageAuftrag(fd);
       if (r?.error) setFehler(r.error);
-      else { setOk(true); setOffen(false); }
+      else { setOk(r?.freigegeben ? "freigegeben" : "wartet"); setOffen(false); }
     });
 
   return (
     <div className="section">
       <div className="section-header">
         <h3><SendHorizonal size={15} style={{ verticalAlign: "-2px" }} /> Auftrag beantragen</h3>
-        <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => { setOffen(!offen); setOk(false); }}>
+        <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => { setOffen(!offen); setOk(null); }}>
           {offen ? "Abbrechen" : "Neuer Antrag"}
         </button>
       </div>
       <div className="section-body">
         <p style={{ fontSize: 12, color: "var(--muted)", margin: 0 }}>
           Du hast etwas entdeckt, das gemacht werden muss? Beschreibe es hier — der Vermieter
-          bekommt die Anfrage in seinem Portal und gibt den Auftrag frei. Danach rufst du die
-          passende Firma an und stimmst den Termin direkt mit dem Mieter ab.
+          bekommt die Anfrage in seinem Portal und gibt den Auftrag frei. Liegen die geschätzten
+          Kosten innerhalb der Grenze, die er festgelegt hat, ist der Auftrag sofort freigegeben.
+          Danach rufst du die passende Firma an und stimmst den Termin direkt mit dem Mieter ab.
         </p>
-        {ok && <p style={{ fontSize: 12, color: "var(--green)", marginTop: 8 }}>Antrag gesendet — wartet auf Freigabe des Vermieters ✓</p>}
+        {ok === "wartet" && <p style={{ fontSize: 12, color: "var(--green)", marginTop: 8 }}>Antrag gesendet — wartet auf Freigabe des Vermieters ✓</p>}
+        {ok === "freigegeben" && <p style={{ fontSize: 12, color: "var(--green)", marginTop: 8 }}>Innerhalb der Kostengrenze — der Auftrag ist freigegeben und steht unten als offen ✓</p>}
         {offen && (
           <form action={senden} style={{ display: "grid", gap: 10, marginTop: 12, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}>
             {auftraggeber.length === 1 ? (
@@ -267,6 +269,15 @@ function AntragForm({ auftraggeber, firmen, vorschau }: { auftraggeber: Auftragg
                 </select>
               </div>
               <div className="form-group"><label>Wunschtermin</label><input type="date" name="termin" /></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Geschätzte Kosten (€)</label>
+                <input name="kostenSchaetzung" inputMode="decimal" maxLength={20} placeholder="z. B. 250" />
+              </div>
+              <div className="form-group" style={{ fontSize: 11, color: "var(--muted)", alignSelf: "end" }}>
+                Ohne Schätzung entscheidet immer der Vermieter.
+              </div>
             </div>
             <div className="form-row single">
               <div className="form-group"><label>Beschreibung</label><textarea name="beschreibung" rows={3} maxLength={2000} placeholder="Problem, Dringlichkeit, betroffener Mieter …" /></div>
