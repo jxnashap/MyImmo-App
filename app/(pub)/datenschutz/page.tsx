@@ -23,7 +23,7 @@ export default function DatenschutzPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 9. September 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
+        Stand: 2. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
         Verarbeitung personenbezogener Daten bei Nutzung der Web-Anwendung MyImmo.
       </p>
 
@@ -85,22 +85,18 @@ export default function DatenschutzPage() {
         in Ihrem Auftrag (Art. 28 DSGVO, siehe AVV).
       </p>
 
-      {/* OFFEN (Betreiber, 08.09.2026): Die konkrete Aufbewahrungsdauer der Vercel-
-          Runtime-Logs steht weder in der oeffentlichen Doku noch war sie ueber die
-          API abfragbar. Sie ist im Vercel-Dashboard unter Observability -> Logs
-          bzw. im Plan-Vergleich abzulesen und gehoert dann HIER als konkrete Zahl
-          hinein (Art. 13 Abs. 2 lit. a DSGVO verlangt Dauer ODER Kriterien).
-          Bis dahin steht unten, was nachweislich stimmt — nicht "kurze Zeit",
-          was gar nichts aussagt. Keine Zahl erfinden. */}
+      {/* Aufbewahrung laut Betreiber (02.10.2026, Vercel-Plan Pro ohne Observability
+          Plus): Runtime-Logs 1 Tag. Wird Observability Plus gebucht, sind es 30 Tage —
+          dann HIER ändern. Build-Logs enthalten keine Besucherdaten. */}
       <H3>d) Server-Logs (Hosting)</H3>
       <p>
         Beim Aufruf der App verarbeitet unser Hoster technisch bedingt IP-Adresse,
         Datum/Uhrzeit, aufgerufene URL und Browserkennung. <em>Zweck:</em> Auslieferung,
         Stabilität und Sicherheit (z. B. Missbrauchsabwehr). <em>Rechtsgrundlage:</em> Art. 6
         Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb).{" "}
-        <em>Speicherdauer:</em> Wir legen <strong>keine eigenen Kopien</strong> dieser Logs an
-        und werten sie nicht aus; sie entstehen und verfallen automatisch in der Plattform des
-        Hosters nach dessen Voreinstellung, die wir nicht verlängern.
+        <em>Speicherdauer:</em> Die Laufzeit-Protokolle werden beim Hoster nach{" "}
+        <strong>einem Tag</strong> automatisch gelöscht. Wir legen <strong>keine eigenen
+        Kopien</strong> dieser Logs an und werten sie nicht aus.
       </p>
 
       <H3>e) KI-Funktionen (Beleg-/Dokumenterkennung)</H3>
@@ -134,7 +130,13 @@ export default function DatenschutzPage() {
         haben. Bleibt die Bestätigung aus, verfällt der Link nach 72 Stunden.
       </p>
       <p>
-        <em>Zweck:</em> Versand der angeforderten Vorlagen und Hinweise.{" "}
+        Dasselbe Verfahren gilt für die <strong>Benachrichtigung zum Start</strong> auf der
+        Startseite: Dort willigen Sie ein, per E-Mail zu erfahren, wenn MyImmo für alle startet,
+        und danach gelegentliche Hinweise für Vermieter zu erhalten. Gespeichert wird zusätzlich,
+        über welches der beiden Formulare Sie sich angemeldet haben.
+      </p>
+      <p>
+        <em>Zweck:</em> Versand der angeforderten Vorlagen und Hinweise bzw. der Startankündigung.{" "}
         <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. a DSGVO (Einwilligung) — für den
         Einwilligungsnachweis zusätzlich Art. 6 Abs. 1 lit. c i. V. m. Art. 7 Abs. 1 DSGVO.{" "}
         <em>Empfänger:</em> <strong>Brevo</strong> (Sendinblue SAS, 7 rue de Madrid, 75008 Paris,
@@ -155,6 +157,29 @@ export default function DatenschutzPage() {
         ist freiwillig; die Nutzung von MyImmo hängt nicht davon ab.
       </p>
 
+      <H3>h) Marktwert-Schätzung und Exposé-Import (externe Dienste)</H3>
+      <p>
+        <strong>Verortung der Objektadresse (OpenStreetMap/Nominatim).</strong> Damit die
+        Marktwert-Schätzung eines Objekts einen Lagebezug erhält, übermittelt unser Server die{" "}
+        <strong>Adresse des Objekts</strong> — sonst nichts, insbesondere weder Ihren Namen noch
+        Mieterdaten oder Ihre IP-Adresse — an den Suchdienst Nominatim der{" "}
+        <strong>OpenStreetMap Foundation</strong> (Vereinigtes Königreich). Das geschieht, wenn Sie
+        die Bewertung eines Objekts aktualisieren, und je Adresse nur einmal: Das Ergebnis
+        (Koordinaten bzw. „nicht gefunden“) speichern wir am Objekt; erst nach einer Änderung der
+        Adresse wird erneut gesucht. <em>Zweck:</em> Lagebezug der Bewertung.{" "}
+        <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO (von Ihnen genutzte Funktion). Für das
+        Vereinigte Königreich besteht ein Angemessenheitsbeschluss der EU-Kommission (Art. 45
+        DSGVO), zuletzt verlängert bis 27. Dezember 2031.
+      </p>
+      <p>
+        <strong>Exposé-Import per Link (Jina AI).</strong> Fügen Sie den Link zu einem Online-Exposé
+        ein und lässt sich die Seite nicht direkt lesen, übergibt unser Server den{" "}
+        <strong>Link</strong> an den Lesedienst der <strong>Jina AI GmbH</strong> (Berlin; seit 2025
+        Teil von Elastic), der die öffentliche Seite abruft und als Text zurückgibt. Übermittelt
+        wird nur der Link. <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO; die Nutzung ist
+        freiwillig.
+      </p>
+
       <H2>4. Empfänger und Auftragsverarbeiter (Subprozessoren)</H2>
       <p>Wir setzen folgende Dienstleister mit Verträgen nach Art. 28 DSGVO ein:</p>
       <ul style={{ paddingLeft: 20, listStyle: "disc" }}>
@@ -162,11 +187,13 @@ export default function DatenschutzPage() {
         <li><strong>Vercel Inc.</strong>, USA (Hosting/Auslieferung der App) — DPA inkl. EU-Standardvertragsklauseln; technische Logs können in den USA verarbeitet werden.</li>
         <li><strong>Anthropic PBC</strong>, USA (KI-Auswertung, nur bei aktiver Nutzung) — DPA inkl. EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
         <li><strong>Google Ireland Ltd.</strong> — ausschließlich bei „Login mit Google" (Ziffer 3 b). Schriftarten werden nicht von Google geladen (Ziffer 7).</li>
-        <li><strong>Brevo</strong> (Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO (Anlage 2 zu den Nutzungsbedingungen, inkl. EU-Standardvertragsklauseln). Einzelne Unterauftragsverarbeiter von Brevo verarbeiten in Drittländern (Ziffer 5).</li>
+        <li><strong>Brevo</strong> (Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g) und der Einladungen ins Mieterportal, die ein Vermieter an die von ihm eingetragene Adresse seines Mieters schicken lässt; Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO (Anlage 2 zu den Nutzungsbedingungen, inkl. EU-Standardvertragsklauseln). Einzelne Unterauftragsverarbeiter von Brevo verarbeiten in Drittländern (Ziffer 5).</li>
       </ul>
       <p>
-        Eine Übermittlung an sonstige Dritte findet nicht statt, außer Sie stoßen sie selbst
-        an (z. B. Bank-Freigabelink) oder wir sind gesetzlich dazu verpflichtet.
+        Daneben erhalten die in Ziffer 3 h genannten Dienste (OpenStreetMap Foundation,
+        Jina AI) die dort beschriebenen Angaben, wenn Sie die jeweilige Funktion nutzen. Eine
+        Übermittlung an sonstige Dritte findet nicht statt, außer Sie stoßen sie selbst an
+        (z. B. Bank-Freigabelink) oder wir sind gesetzlich dazu verpflichtet.
       </p>
 
       <H2>5. Drittlandübermittlung</H2>
@@ -174,7 +201,9 @@ export default function DatenschutzPage() {
         Soweit Daten in die USA übermittelt werden (Vercel, Anthropic, ggf. Google), erfolgt
         dies auf Grundlage der EU-Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO)
         bzw. — soweit der Anbieter zertifiziert ist — des Angemessenheitsbeschlusses zum
-        EU-US Data Privacy Framework (Art. 45 DSGVO).
+        EU-US Data Privacy Framework (Art. 45 DSGVO). Die Verortung über die{" "}
+        <strong>OpenStreetMap Foundation</strong> (Vereinigtes Königreich) stützt sich auf den
+        Angemessenheitsbeschluss für das Vereinigte Königreich (Ziffer 3 h).
       </p>
       <p>
         Bei <strong>Brevo</strong> (Vorlagen-Verteiler) liegt der Vertragspartner in der EU;

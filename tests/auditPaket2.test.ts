@@ -92,7 +92,8 @@ describe("A6/B8/B10: Rechtstexte", () => {
   });
   it("Stand-Daten entsprechen der letzten inhaltlichen Aenderung", () => {
     expect(agb).toContain("Stand: 1. Oktober 2026");
-    expect(lies("app/(pub)/datenschutz/page.tsx")).toContain("Stand: 9. September 2026");
+    // 02.10.2026: Ziffer 3 d (Log-Aufbewahrung beim Hoster: ein Tag) ergänzt.
+    expect(lies("app/(pub)/datenschutz/page.tsx")).toContain("Stand: 2. Oktober 2026");
     expect(lies("app/(pub)/avv/page.tsx")).toContain("Stand: 9. September 2026");
   });
 });

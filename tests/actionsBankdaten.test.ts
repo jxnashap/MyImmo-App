@@ -169,7 +169,7 @@ describe("Einladungscodes für das Mieterportal", () => {
     const codes: string[] = [];
     for (let i = 0; i < 40; i++) {
       db.zugriffe.length = 0;
-      await mod.erzeugeEinladungscode("m1");
+      await mod.erzeugeEinladungscode("m1", "anna@example.org", "anna@example.org");
       codes.push(String(schrieb(db, "einladungscodes")?.code));
     }
     for (const c of codes) {
@@ -182,7 +182,7 @@ describe("Einladungscodes für das Mieterportal", () => {
 
   it("ein fremder Mieter wird abgelehnt", async () => {
     const { db, mod } = await lade("@/lib/actions/einladung", { antworten: { mieter: null } });
-    const r = await mod.erzeugeEinladungscode("fremd");
+    const r = await mod.erzeugeEinladungscode("fremd", "anna@example.org", "anna@example.org");
     expect(r.error).toContain("nicht gefunden");
     expect(db.zugriffe.some((z) => z.tabelle === "einladungscodes" && z.op === "insert")).toBe(false);
   });
@@ -191,7 +191,7 @@ describe("Einladungscodes für das Mieterportal", () => {
     const { db, mod } = await lade("@/lib/actions/einladung", {
       antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
     });
-    await mod.erzeugeEinladungscode("m1");
+    await mod.erzeugeEinladungscode("m1", "anna@example.org", "anna@example.org");
     const abfrage = db.zugriffe.find((z) => z.tabelle === "mieter");
     expect(abfrage?.filter).toContain("eq:user_id=nutzer-1");
   });
@@ -202,7 +202,7 @@ describe("Einladungscodes für das Mieterportal", () => {
     const { db, mod } = await lade("@/lib/actions/einladung", {
       antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
     });
-    await mod.erzeugeEinladungscode("m1");
+    await mod.erzeugeEinladungscode("m1", "anna@example.org", "anna@example.org");
     const loeschung = db.zugriffe.find((z) => z.tabelle === "einladungscodes" && z.op === "delete");
     expect(loeschung?.filter).toContain("is:eingeloest_am=null");
     expect(loeschung?.filter).toContain("eq:vermieter_id=nutzer-1");
@@ -222,7 +222,7 @@ describe("Einladungscodes für das Mieterportal", () => {
     const { db, mod } = await lade("@/lib/actions/einladung", {
       antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
     });
-    await mod.erzeugeEinladungscode("m1");
+    await mod.erzeugeEinladungscode("m1", "anna@example.org", "anna@example.org");
     expect(db.zugriffe.some((z) => z.tabelle === "abos")).toBe(false);
   });
 });

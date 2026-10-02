@@ -117,7 +117,18 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    Supabase-Log: sechsmal `PUT /user` 422 „Password is known to be weak" beim Reset-Test
    („12345678" u. a.), danach ein sicheres Passwort angenommen. Belegt am Passwort-SETZEN;
    für die Registrierung gilt dieselbe Server-Einstellung, dort nicht eigens probiert.
-6. **2FA einmal durchspielen** — einrichten, abmelden, mit Code anmelden, „Handy nicht zur
+0. **Brevo-Zugang in Vercel eintragen (02.10.2026 gefunden, DRINGEND vor dem Start):**
+   `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` (in Brevo verifiziert, SPF/DKIM für
+   myimmoapp.de), optional `BREVO_LIST_ID`, danach **neu deployen**. Ohne sie endete jede
+   Anmeldung mit 503 „Versand gerade nicht verfügbar“ — `newsletter_anmeldungen` hatte
+   **0 Zeilen, nie eine** (auch der Vorlagen-Verteiler hat also nie funktioniert). Seit
+   02.10.2026 blenden Startseite, Unterseiten und `/vorlagen` die Formulare aus, solange
+   `brevoBereit()` falsch ist — nach dem Eintragen erscheinen sie von selbst.
+   **Danach testen:** eigene Adresse eintragen, Mail bestätigen → `/?nl=ok#bald`.
+6. ~~**2FA einmal durchspielen**~~ ✅ **vom Betreiber durchgespielt 02.10.2026** (Login →
+   Code → Weiterleitung mit dem Proxy-Gate funktioniert). Ebenso ✅ Passwortwechsel mit
+   FALSCHEM altem Passwort scheitert (Punkt 4 damit vollständig) und ✅ Wischen auf dem
+   echten Handy „klappt gut, so lassen“. Ursprünglicher Text: einrichten, abmelden, mit Code anmelden, „Handy nicht zur
    Hand?" mit einem Wiederherstellungscode. Die Logik ist getestet, der Ablauf nie.
    **Stand 01.10.2026: noch NICHT gemacht** (Betreiber bestätigt, bewusst auf der Liste
    gelassen). Seit Paket 4 (Proxy-Gate, `mi_faktor`) ist der Durchlauf wichtiger als vorher:
@@ -125,15 +136,18 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
 
 **Ohne Eile:**
 7. **StBerG-Anfrage an den Anwalt** — `docs/compliance/StBerG-ANFRAGE.md` ist fertig.
-8. **Vercel-Log-Aufbewahrung nachsehen** (Dashboard → Observability) und mir die Zahl geben;
-   sie fehlt als einzige konkrete Angabe in `/datenschutz` Ziffer 3 d. Weder Doku noch API
-   geben sie her — **keine Zahl erfinden**.
-9. **11px → 12px**: Token `--text-xs` in `app/globals.css` umstellen, Seiten durchklicken,
-   bei Bruch eine Zeile zurück. Kein Test findet einen hässlichen Umbruch.
+8. ~~**Vercel-Log-Aufbewahrung**~~ ✅ **02.10.2026 (Betreiber):** Runtime-Logs auf Pro
+   **1 Tag**, mit Observability Plus 30 Tage; Build-Logs unbegrenzt je Deployment.
+   `/datenschutz` 3 d sagt jetzt „nach einem Tag“. **Wird Observability Plus gebucht,
+   muss dort 30 Tage stehen.**
+9. **11px → 12px: Token UMGESTELLT 02.10.2026** (`--text-xs: 12px`, `.tz-rest` 84 → 92px).
+   **Offen: Betreiber klickt durch** (Dashboard-Kacheln, Badges, Formular-Labels, Objektkarten,
+   Termine, Briefvorschau, Befehlspalette) und meldet Umbrüche. Rückweg: eine Zeile in
+   `app/globals.css`. Folge: `--text-xs` = `--text-sm` = 12px, die Stufe dazwischen entfällt.
 10. **Brevo-Konto**: AVV-Restpunkte (neuere Fassung? Firmendaten? Empfängeradresse für
     Unterauftragsverarbeiter-Ankündigungen) — Details unter „AVV-Abschlussstand".
-11. **Altes kurzes Passwort**: stichprobenhaft prüfen, ob sich ein Bestandskonto mit
-    weniger als 8 Zeichen noch anmelden kann.
+11. ~~**Altes kurzes Passwort**~~ — Betreiber 02.10.2026: „Nein“ (Bedeutung — „nicht
+    nötig“ oder „meldet sich nicht an“ — nachzufragen; ohne echte Nutzer ohnehin folgenlos).
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**
@@ -315,7 +329,24 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   **Glas-Leiste zentriert (Vorgabe des Betreibers, gleicher Tag):** `components/GlassLeiste.tsx`
   + `lib/glasLeiste.ts` → der offene Reiter steht unter 860 px in der Mitte der Leiste — beim
   Laden sofort (`useLayoutEffect`, kein Sprung), bei jedem Wechsel weich; `tests/glasLeiste.test.ts`.
-  **Danach:** Startseite mit den Kartenfehlern (wirbt mit „Karte mit allen Standorten").
+  🗺️ **Karte ENTFERNT (01.10.2026, Entscheidung des Betreibers: „Raus mit der Karte“).**
+  Erst vom Dashboard (#367), dann auch `/karte`, `/api/karte/verorten`, `PortfolioKarte`,
+  Leaflet (Paket + CSS), der Knopf auf `/properties`, der Demo-Pfad, der Rauchtest-Weg, CARTO
+  aus der Datenschutzerklärung und „Karte mit allen Standorten“ von der Startseite (jetzt
+  „Restschuld je Objekt auf einen Blick“ — steht so im Bild darüber). `tests/demoWege.test.ts`
+  hält fest, dass nichts davon zurückkommt. **Davor am selben Tag (#375) gemessen und behoben,
+  und das BLEIBT:** `lib/geocode.ts` ist die EINE Verortung (Marktwert-Schätzung + Wert-Cron):
+  Nominatim antwortet unter Last mit **429**, die App hielt das für „nicht gefunden“ und fragte
+  dieselbe Adresse immer wieder — laut Nutzungsregeln ein Sperrgrund. Jetzt `treffer/leer/
+  gedrosselt`, Bereinigung („(EG)“ ließ die Suche leer laufen), strukturierter Zweitversuch,
+  Ergebnis in `properties.geo_status`/`geo_versucht_am` (Migration `20261001200000`) — „nicht
+  gefunden“ erst nach Adressänderung neu, „gedrosselt“ nach 6 h. Der **Cron verortet nur, wenn
+  BORIS an ist** (sonst gingen Adressen ALLER Konten hinaus, ohne Abnehmer). Datenschutz
+  Ziffer 3 h nennt Nominatim (UK, Angemessenheitsbeschluss bis 27.12.2031) und Jina AI (Audit
+  B9). `tests/verortung.test.ts`. **Regel: Nie eine externe Anfrage wiederholen, deren Ergebnis
+  schon bekannt ist; 429/5xx sind „später“, nicht „gibt es nicht“.**
+  **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
+  die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
@@ -340,6 +371,41 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Unterverzeichnis derselben Domain (eine Domain, eine Autorität). Eine eigene Domain
   lohnt erst, wenn ein Land ein eigenes PRODUKT bekommt (z. B. österreichisches
   Mietrecht) — nicht für eine übersetzte Oberfläche.
+- 🔐 **Mieterportal: Ausbau + sicherer Zustellweg — `docs/zukunft/MIETERPORTAL-AUSBAU.md`**
+  (02.10.2026, Auftrag des Betreibers: „der Vermieter darf die NK-Abrechnung nicht versehentlich
+  an die falsche Person senden“). **Kern:** Dokumente gehen heute an eine Mieter-ZEILE, nicht an
+  eine Person; wer an der Zeile hängt, wechselt unbemerkt (Mieterwechsel in derselben Zeile),
+  endet nie (kein Trennen, kein Ende bei Auszug) und ist für den Vermieter unsichtbar (nur
+  „verbunden“, keine E-Mail). „Speichern & zustellen“ meldet Erfolg auch OHNE verbundenes Konto
+  (§ 556 Abs. 3 BGB-Frist!). Plan: Paket S (S1 Tabelle `zustellungen` an `empfaenger_user_id`,
+  S2 Zustell-Dialog mit harten Sperren, S3 E-Mail sichtbar + Trennen + Zugangsende …) VOR jedem
+  Ausbau. ✅ **Schritt 1 gebaut 02.10.2026:** Einladung an eine E-Mail-Adresse gebunden
+  (Doppeleingabe, Mail an genau diese Adresse, DB verknüpft nur bei gleicher BESTÄTIGTER Adresse
+  — Migration `20261002100000`, in zurückgerollter Transaktion bewiesen); Mieterseite zeigt die
+  verbundene Adresse + „Zugang trennen“ / „E-Mail ändern“ (= trennen + neu einladen); NK-Zustellen
+  nur über eine Bestätigungskarte, serverseitig GESPERRT ohne verbundenes Konto oder bei Jahr
+  außerhalb der Mietzeit (`lib/mieterZugang.ts` → `pruefeZustellung()`). **Regel: Ein neuer Weg,
+  der etwas ins Mieterportal stellt, ruft `pruefeZustellung()` serverseitig.** Offen: S1 (Tabelle
+  `zustellungen`). Einladungsmail braucht Brevo (Punkt 0).
+  ✅ **Zugangsende gebaut 02.10.2026 (Betreiber: „bis 31.12.“ des Folgejahres):** Migration
+  `20261002120000` — `mieter_zugang_aktiv()` ist die EINE Prüfung hinter sieben Regeln und beiden
+  Portal-Sichten; Belege nur aus der eigenen Mietzeit (`mieter_beleg_sichtbar()`), Vorschau
+  spiegelt das (`belegInMietzeit()` in `lib/portalDaten.ts`). **Regel: Eine neue Mieter-Regel
+  oder -Sicht prüft `mieter_zugang_aktiv()`, nie nur `mieter_zugaenge`.** Policies per
+  `ALTER POLICY` ändern — `DROP POLICY` lief über `apply_migration` in den Zeitüberlauf
+  (Bestätigungsdialog, siehe Demo-Service-Reset), ohne etwas anzuwenden.
+  ✅ **S1 gebaut 02.10.2026: Zustellung an eine PERSON** (Migrationen `20261002140000/141000`,
+  `lib/zustellung.ts` = EINE Stelle für Lage + Zustellen, `lib/actions/zustellung.ts`). Der Mieter
+  sieht ein Archiv-Dokument nur noch über eine eigene, aktive Zeile in `zustellungen`;
+  `notizen.mieter_freigabe` entscheidet NICHTS mehr (nur noch Merkmal). Abruf setzt die
+  Datei-Route (`zustellung_abgerufen`), „gelesen und bestätigt“ ist ein Klick, keine Unterschrift.
+  **Regeln:** (1) Ein neuer Weg, der etwas ins Portal stellt, schreibt eine Zeile in
+  `zustellungen` über `ladeZustellLage()` + `zustelle()` — nie einen Freigabe-Schalter.
+  (2) Eine Policy auf `zustellungen` liest `notizen` nie direkt (42P17-Rekursion, im Nachweis
+  passiert) — nur über eine SECURITY-DEFINER-Funktion. (3) Keine Fremdschlüssel mit `on delete`
+  in Migrationen über `apply_migration` (Bestätigungsdialog). **Vereinbarter Ausbauplan,
+  „KI im Portal“ (gemerkt, nicht jetzt) und Hausmeister/Minijob mit Risiken: Abschnitt 9 dort.**
+  Nächster Schritt: Vorgänge mit Verlauf (Anliegen-Ereignisse statt `antwort`).
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das
@@ -365,7 +431,7 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   DEFINER scheiterte die SERVICE-ROLE (Demo-Reset, Wert-Cron, Zugriffsbremse). In einer
   zurückgerollten Transaktion bewiesen: Demo wirft, fremdes Konto schreibt, Reset läuft.
   (2) **Routen** — `demoDarfRoute`. FREI: Dashboard, Objekte, Mieter, Ein-/Ausgaben, Kauf/
-  Verkauf, **Mietkonto, Verbrauch, Kredite, Steuer, Jahresbericht, Termine, Karte, Marktwert,
+  Verkauf, **Mietkonto, Verbrauch, Kredite, Steuer, Jahresbericht, Termine, Marktwert,
   AfA, NK-Abrechnung, Übergabeprotokoll, seit Phase 3 auch Mieterportal und Archiv** +
   LESENDE API-Routen (Anlage-V-/Jahresbericht-PDF, DATEV, CSV, Kreditantrag, Datei-Ansicht).
   GESPERRT: Makler (keine Beispieldaten — leere Seite wirbt schlechter als der Sperr-Dialog),
@@ -641,6 +707,38 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   **Regel aus dem Audit: Eine
   SECURITY-DEFINER-RPC, die etwas freischaltet, darf nicht für `authenticated` ausführbar sein,
   wenn die Prüfung nur in der Action davor sitzt.**
+- **Externes Feedback vom 01.10.2026 (Vision „Betriebssystem für private Vermieter“, Bank +
+  KI): `docs/FEEDBACK-BEWERTUNG-2026-10.md`.** Kern: Die Seite beschreibt es richtig, der
+  Plan passt nicht — **Nutzungsproblem, kein Funktionsproblem** (21 echte Konten, 4 in 30
+  Tagen angemeldet, 7 neue Buchungen in 30 Tagen über alle, 1 Mieter im Portal). Plan:
+  Phase 0 Betreiber-Entscheidungen (Zugang, 5 Vermieter begleiten, Anwalt) → Startseite
+  schärfen → Aktivierung (Objekt-Check, Monatsmail) → CSV-Kontoauszug-Abgleich statt Open
+  Banking → regelbasierter Portfolio-Check statt KI-Chat. **Vor neuen Funktionen dort nachsehen.**
+  ⚠️ **KORREKTUR (Betreiber, gleicher Tag): Die 10 Vermieter-Konten mit Objekt sind
+  TESTKONTEN.** Es gibt noch keine echten Nutzer — MyImmo ist nicht gestartet. „5 Vermieter
+  begleiten“ entfällt; Bank/KI bleiben zu früh, jetzt mangels echter Nutzer.
+  🚪 **Anfrageweg ABGESCHAFFT (01.10.2026, Vorgabe des Betreibers):** Jeder Start-Knopf der
+  öffentlichen Strecke zeigt **„Coming soon“ — nicht klickbar** (`components/StartCta.tsx`,
+  `.start-bald { pointer-events: none }`), kein mailto, keine 24-h-Zusage, kein Menüpunkt, in
+  der Demo kein Knopf zur Registrierung. **Der Beta-Code bleibt im Registrierformular**;
+  Testnutzer kommen über „Anmelden“. `REGISTRIERUNG_OFFEN = true` in `lib/preise.ts` stellt
+  alles auf einmal zurück auf „Kostenlos starten“ als Link. `tests/auditPaket3.test.ts`.
+  **Regel: Kein neuer Start-Knopf ohne `StartCta`.**
+  📬 **„Beim Start benachrichtigen“ (01.10.2026, Vorgabe des Betreibers: „dezent“):**
+  `components/landing/StartBenachrichtigung.tsx` — eine Textzeile im Schlussabschnitt
+  (Startseite + `Shell`), Formular erst auf Klick, nur bei `!REGISTRIERUNG_OFFEN`. Läuft über den
+  Vorlagen-Double-Opt-in mit `quelle: "start"`, aber mit EIGENEM Wortlaut
+  (`EINWILLIGUNGSTEXT_START`, gespeichert wie angezeigt), eigener Mail und Rückweg `/?nl=…#bald`.
+  **Beim Start:** Empfänger = `newsletter_anmeldungen` mit `quelle = 'start'`, bestätigt, nicht
+  abgemeldet. Kein eigenes Brevo-Attribut (ein im Konto nicht angelegtes Attribut kann den Eintrag scheitern lassen) — segmentieren
+  über die Datenbank. **Grenze:** Eine Adresse, die schon für Vorlagen bestätigt ist, bekommt
+  „schon eingetragen“ und behält den Vorlagen-Wortlaut (eine Zeile je Adresse); die
+  Startankündigung fällt dort unter „gelegentliche Hinweise für Vermieter“.
+  ✅ **Phase 1 (Startseite) erledigt 01.10.2026:** Hero „Deine Immobilien. Ein System. Von überall.“
+  (geschützte Leerzeichen, sonst „Ein / System.“ — im Browser gesehen), Kennzahl „1–24 Einheiten“
+  statt „13+ Funktionen“, Abschnitt „Deine Daten gehören dir“ (`VERTRAUEN` in
+  `components/LandingPage.tsx`, jeder Satz per `tests/startseite.test.ts` an seinen Code-Beleg
+  gebunden), Fuß „derzeit kostenlos“ statt „kein Abo“.
 - **Externes Feedback vom 08.09.2026, geprüft und mit Plan: `docs/FEEDBACK-BEWERTUNG-2026-09.md`.**
   Zwölf Behauptungen, elf gegen den Code bestätigt (Speed Insights vs. „keine Analyse-Tools",
   Platzhalter in der Datenschutzerklärung, Demo-Text widerspricht Nur-Lesen, „Fristen &

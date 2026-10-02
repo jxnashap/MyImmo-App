@@ -12,7 +12,10 @@ import type { Tenant, Property, MietZeitraum } from "@/lib/types";
 import MietZeitraeume from "@/components/MietZeitraeume";
 import VerbilligtAmpel from "@/components/VerbilligtAmpel";
 import MieterEinladung from "@/components/MieterEinladung";
-import FreigabeToggle from "@/components/FreigabeToggle";
+import { brevoBereit } from "@/lib/mail/brevo";
+import { zugangEndet, pruefeZustellung } from "@/lib/mieterZugang";
+import { heuteBerlin } from "@/lib/zeitraum";
+import DokumentZustellung, { type ZustellZeile } from "@/components/DokumentZustellung";
 import { decryptNullable } from "@/lib/crypto/secure";
 import { ReceiptText, FileText, KeyRound, Pencil, Trash2, TriangleAlert } from "lucide-react";
 
@@ -43,15 +46,27 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
   // Gespeicherte Dokumente (Archiv-Einträge dieses Mieters)
   const { data: doks } = await supabase
     .from("notizen")
-    .select("id,titel,kategorie,datei_name,created_at,mieter_freigabe")
+    .select("id,titel,kategorie,datei_name,created_at")
     .eq("mieter_id", params.id)
     .order("created_at", { ascending: false });
   const dokumente = doks ?? [];
 
+  // Zustellungen ins Mieterportal (an wen, wann, abgerufen?) — je Dokument.
+  const { data: zustRows } = await supabase
+    .from("zustellungen")
+    .select("id,notiz_id,empfaenger_email,zugestellt_am,gelesen_am,bestaetigung_noetig,bestaetigt_am,zurueckgezogen_am")
+    .eq("mieter_id", params.id)
+    .order("zugestellt_am", { ascending: false });
+  const zustellungenJe = new Map<string, ZustellZeile[]>();
+  for (const z of (zustRows ?? []) as (ZustellZeile & { notiz_id: string | null })[]) {
+    if (!z.notiz_id) continue;
+    zustellungenJe.set(z.notiz_id, [...(zustellungenJe.get(z.notiz_id) ?? []), z]);
+  }
+
   // Mieterportal-Zugang: aktiver Einladungscode + bereits verbundenes Konto
   const { data: aktiverCode } = await supabase
     .from("einladungscodes")
-    .select("code,gueltig_bis")
+    .select("code,gueltig_bis,email")
     .eq("mieter_id", params.id)
     .is("eingeloest_am", null)
     .gt("gueltig_bis", new Date().toISOString())
@@ -60,10 +75,25 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
     .maybeSingle();
   const { data: zugang } = await supabase
     .from("mieter_zugaenge")
-    .select("user_id")
+    .select("email,created_at")
     .eq("mieter_id", params.id)
     .limit(1)
     .maybeSingle();
+
+  // Anzeige der Zustell-Karte; dieselbe Prüfung wiederholt `stelleDokumentZu` serverseitig.
+  const mieterAnzeige = [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter";
+  const zustellPruefung = {
+    ...pruefeZustellung({
+      verbunden: !!zugang,
+      email: (zugang?.email as string | null) ?? null,
+      mietbeginn: m.mietbeginn ?? null,
+      mietende: m.mietende ?? null,
+      jahr: null,
+      schonZugestellt: false,
+      heute: heuteBerlin(),
+    }),
+    email: (zugang?.email as string | null) ?? null,
+  };
 
   // Loeschumfang fuer die Rueckfrage: NK-Positionen und Miet-Zeitraeume gehen
   // per Cascade mit, gebuchte Mieten verlieren ihre Zuordnung.
@@ -219,11 +249,13 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
         <div className="section-body">
           <MieterEinladung
             mieterId={params.id}
-            verbunden={!!zugang}
-            aktiverCode={aktiverCode ?? null}
+            zugang={zugang ? { email: (zugang.email as string | null) ?? null, seit: zugang.created_at as string } : null}
+            aktiverCode={aktiverCode ? { code: aktiverCode.code, gueltig_bis: aktiverCode.gueltig_bis, email: (aktiverCode.email as string | null) ?? null } : null}
             mieterName={[m.vorname, m.nachname].filter(Boolean).join(" ") || null}
             mieterEmail={m.email ?? null}
-            objekt={[propName, m.einheit].filter((x) => x && x !== "–").join(", ") || null}
+            mailVersand={brevoBereit()}
+            zugangBis={zugangEndet(m.mietende)}
+            zugangAbgelaufen={!!zugangEndet(m.mietende) && heuteBerlin() > zugangEndet(m.mietende)!}
           />
         </div>
       </div>
@@ -235,11 +267,10 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
             <div style={{ color: "var(--faint)", fontSize: 12 }}>Noch keine Dokumente gespeichert.</div>
           ) : (
             dokumente.map((n) => (
-              <div key={n.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "7px 0", borderBottom: "1px solid var(--line)" }}>
+              <div key={n.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, fontSize: 12, padding: "7px 0", borderBottom: "1px solid var(--line)" }}>
                 <span style={{ fontWeight: 500, color: "var(--text)" }}>{n.titel || n.datei_name || "Dokument"}</span>
                 {n.kategorie && <span className="badge badge-teal">{n.kategorie}</span>}
                 <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{n.created_at ? datum(n.created_at) : ""}</span>
-                <FreigabeToggle notizId={n.id} freigegeben={!!n.mieter_freigabe} />
                 {n.datei_name ? (
                   <>
                     <a href={`/archiv/${n.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
@@ -248,6 +279,15 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
                 ) : (
                   <span style={{ fontSize: 11, color: "var(--muted)" }}>ohne Datei</span>
                 )}
+                <DokumentZustellung
+                  notizId={n.id}
+                  mieterId={m.id}
+                  titel={n.titel || n.datei_name || "Dokument"}
+                  hatDatei={!!n.datei_name}
+                  mieterName={mieterAnzeige}
+                  pruefung={zustellPruefung}
+                  zustellungen={zustellungenJe.get(n.id) ?? []}
+                />
               </div>
             ))
           )}

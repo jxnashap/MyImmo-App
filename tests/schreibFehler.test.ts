@@ -225,7 +225,7 @@ describe("Neuer Mieter-Einladungscode", () => {
       antworten: { mieter: { id: "mieter-1", prop_id: "obj-1", user_id: "nutzer-1" } },
       fehlerBei: { "einladungscodes:delete": FEHLER },
     });
-    const r = await mod.erzeugeEinladungscode("mieter-1");
+    const r = await mod.erzeugeEinladungscode("mieter-1", "anna@example.org", "anna@example.org");
     expect(r.error).toBeTruthy();
     expect(db.zugriffe.some((x) => x.tabelle === "einladungscodes" && x.op === "insert")).toBe(false);
   });
@@ -235,7 +235,7 @@ describe("Neuer Mieter-Einladungscode", () => {
       antworten: { mieter: { id: "mieter-1", prop_id: "obj-1", user_id: "nutzer-1" } },
       antwortFolge: { "einladungscodes:insert": [{ code: "MI-1234-5678", gueltig_bis: "2026-12-31" }] },
     });
-    const r = await mod.erzeugeEinladungscode("mieter-1");
+    const r = await mod.erzeugeEinladungscode("mieter-1", "anna@example.org", "anna@example.org");
     expect(r.code).toBe("MI-1234-5678");
     const ops = db.zugriffe.filter((x) => x.tabelle === "einladungscodes").map((x) => x.op);
     expect(ops).toEqual(["delete", "insert"]);

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ctaBeschriftung } from "@/lib/preise";
+import StartCta from "@/components/StartCta";
 import LandingShell from "@/components/landing/Shell";
 import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import VerteilerForm from "@/components/landing/VerteilerForm";
+import { brevoBereit } from "@/lib/mail/brevo";
 import {
   FileText, BellRing, AlertTriangle, DoorClosed, Wrench, Receipt,
   BadgeCheck, ClipboardCheck, ScrollText, HandCoins, ArrowRight,
@@ -89,10 +89,11 @@ export default async function VorlagenPage(props: { searchParams: Promise<{ nl?:
             })}
           </div>
           <div style={{ maxWidth: 640, margin: "36px auto 0" }}>
-            <VerteilerForm quelle="vorlagen" />
+            {/* Ohne Brevo-Zugang kein Formular, das immer mit 503 endet. */}
+            {brevoBereit() && <VerteilerForm quelle="vorlagen" />}
           </div>
           <div className="lp-cta-row" style={{ marginTop: 28 }}>
-            <Link href="/anmelden" className="btn btn-gold lp-btn-big">{ctaBeschriftung("Vorlagen kostenlos nutzen")} <ArrowRight size={15} style={{ verticalAlign: "-2px" }} /></Link>
+            <StartCta className="btn btn-gold lp-btn-big" wunsch="Vorlagen kostenlos nutzen">{" "}<ArrowRight size={15} style={{ verticalAlign: "-2px" }} /></StartCta>
           </div>
           <p className="lp-section-sub" style={{ marginTop: 24, marginBottom: 0, fontSize: 12.5 }}>
             Alle Vorlagen werden mit deinen Daten personalisiert und lassen sich vor dem Export bearbeiten.

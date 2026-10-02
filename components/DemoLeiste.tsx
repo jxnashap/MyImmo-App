@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { START_CTA } from "@/lib/preise";
+import { REGISTRIERUNG_OFFEN, START_CTA } from "@/lib/preise";
 import { DEMO_CTA_ZIEL, demoVerlassen } from "@/components/DemoSperre";
 
 /**
@@ -32,9 +32,12 @@ export default function DemoLeiste() {
         Schloss zeigen, was mit eigenem Zugang dazukommt.
       </span>
       <span className="demo-leiste-knoepfe">
-        <button type="button" className="btn btn-gold btn-sm" disabled={unterwegs} onClick={() => geh(DEMO_CTA_ZIEL)}>
-          {START_CTA}
-        </button>
+        {/* Ohne offene Registrierung kein Weg zur Registrierung (Vorgabe 01.10.2026). */}
+        {REGISTRIERUNG_OFFEN && (
+          <button type="button" className="btn btn-gold btn-sm" disabled={unterwegs} onClick={() => geh(DEMO_CTA_ZIEL)}>
+            {START_CTA}
+          </button>
+        )}
         <button type="button" className="btn btn-ghost btn-sm" disabled={unterwegs} onClick={() => geh("/")}>
           Demo beenden
         </button>

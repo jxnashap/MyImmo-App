@@ -1,5 +1,6 @@
 "use server";
 
+import { GEO_ZURUECKSETZEN } from "@/lib/geocode";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -179,10 +180,11 @@ export async function updateProperty(id: string, formData: FormData) {
   // KI-Import erkannte Notiz.
   const felder: Record<string, unknown> = { ...parsed };
   if (!formData.has("notiz_import")) delete felder.notiz_import;
-  // Adresse geändert → gecachte Koordinaten verwerfen; die Portfolio-Karte
-  // geocodiert beim nächsten Aufruf neu.
+  // Adresse geändert → gecachte Koordinaten UND das gemerkte Suchergebnis
+  // verwerfen (auch „nicht gefunden" gilt nur für die alte Adresse); die
+  // Marktwert-Schätzung verortet beim nächsten „Aktualisieren“ neu (lib/geocode.ts).
   const { data: alt } = await supabase.from("properties").select("adresse").eq("id", id).single();
-  const koordReset = alt && (alt.adresse ?? null) !== parsed.adresse ? { lat: null, lng: null } : {};
+  const koordReset = alt && (alt.adresse ?? null) !== parsed.adresse ? GEO_ZURUECKSETZEN : {};
   const { error } = await supabase.from("properties").update({ ...felder, ...koordReset }).eq("id", id);
   if (error) throw new Error(error.message);
 

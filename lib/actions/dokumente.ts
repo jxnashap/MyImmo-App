@@ -13,8 +13,9 @@ import {
   type BriefFields,
   type ProtokollFields,
 } from "@/lib/pdf/erzeugen";
+import { ladeZustellLage, zustelle, type Empfaenger } from "@/lib/zustellung";
 
-export type DokumentResult = { ok: boolean; error?: string };
+export type DokumentResult = { ok: boolean; error?: string; zugestelltAn?: string[] };
 
 async function archiviere(opts: {
   userId: string;
@@ -23,8 +24,8 @@ async function archiviere(opts: {
   titel: string;
   dateiname: string;
   pdf: Uint8Array;
-  /** direkt im Mieterportal sichtbar machen */
-  mieterFreigabe?: boolean;
+  /** direkt im Mieterportal zustellen — an genau diese Konten (lib/zustellung.ts) */
+  zustellenAn?: Empfaenger[];
 }): Promise<DokumentResult> {
   const supabase = await createClient();
 
@@ -41,7 +42,7 @@ async function archiviere(opts: {
   const dateiData =
     "data:application/pdf;base64," + Buffer.from(opts.pdf).toString("base64");
 
-  const { error } = await supabase.from("notizen").insert({
+  const { data: neu, error } = await supabase.from("notizen").insert({
     user_id: opts.userId,
     mieter_id: opts.mieterId,
     prop_id: mieter.prop_id ?? null,
@@ -51,13 +52,26 @@ async function archiviere(opts: {
     datei_type: "application/pdf",
     datei_size: opts.pdf.length,
     datei_data: dateiData,
-    mieter_freigabe: opts.mieterFreigabe ?? false,
-  });
-  if (error) return { ok: false, error: "Speichern im Archiv fehlgeschlagen." };
+    // Nur noch Merkmal „war zum Zustellen gedacht“ — sichtbar macht es allein eine
+    // Zeile in `zustellungen` (Migration 20261002140000).
+    mieter_freigabe: !!opts.zustellenAn,
+  }).select("id").single();
+  if (error || !neu) return { ok: false, error: "Speichern im Archiv fehlgeschlagen." };
 
   revalidatePath("/archiv");
   revalidatePath(`/tenants/${opts.mieterId}`);
-  return { ok: true };
+  if (!opts.zustellenAn) return { ok: true };
+
+  const z = await zustelle(supabase, {
+    userId: opts.userId,
+    mieterId: opts.mieterId,
+    notizId: (neu as { id: string }).id,
+    titel: opts.titel,
+    empfaenger: opts.zustellenAn,
+  });
+  revalidatePath("/portal");
+  if (!z.ok) return { ok: false, error: `Im Archiv gespeichert, aber nicht zugestellt: ${z.error}` };
+  return { ok: true, zugestelltAn: z.an };
 }
 
 export async function speichereBrief(
@@ -94,8 +108,23 @@ export async function speichereNk(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
 
+  const abrJahr = Number(jahr) || new Date().getFullYear() - 1;
+
+  // Zustellen nur, wenn es jemand sehen kann und die Abrechnung zum Mietverhältnis
+  // passt (docs/zukunft/MIETERPORTAL-AUSBAU.md, F5). Vorher meldete die Oberfläche
+  // „im Mieterportal zugestellt“ auch ohne verbundenes Konto — der Vermieter glaubte
+  // die Frist nach § 556 Abs. 3 BGB gewahrt, und niemand hatte etwas erhalten.
+  // Dieselbe Prüfung zeigt der Dialog vorher an; hier ist sie die Schranke.
+  let zustellenAn: Empfaenger[] | undefined;
+  if (zustellen) {
+    const lage = await ladeZustellLage(supabase, user.id, mieterId, { jahr: abrJahr });
+    if ("error" in lage) return { ok: false, error: lage.error };
+    if (lage.sperre) return { ok: false, error: lage.sperre };
+    zustellenAn = lage.empfaenger;
+  }
+
   try {
-    const doc = await erzeugeNkPdf(supabase, mieterId, Number(jahr) || new Date().getFullYear() - 1);
+    const doc = await erzeugeNkPdf(supabase, mieterId, abrJahr);
     if (!doc) return { ok: false, error: "Mieter nicht gefunden." };
     return archiviere({
       userId: user.id,
@@ -104,7 +133,7 @@ export async function speichereNk(
       titel: doc.titel,
       dateiname: doc.dateiname,
       pdf: doc.pdf,
-      mieterFreigabe: zustellen,
+      zustellenAn,
     });
   } catch (e) {
     console.error("speichereNk:", e);

@@ -8,7 +8,7 @@ import BrandMark from "@/components/BrandMark";
 import { bereiteRegistrierungVor, pruefeEinladungscode } from "@/lib/actions/freischaltung";
 import { PASSWORT_LECK_HINWEIS, PASSWORT_MIN, PASSWORT_REGEL, passwortAblehnung, pruefePasswort } from "@/lib/passwort";
 import { RESET_ZIEL } from "@/lib/passwortWechsel";
-import { EARLY_ACCESS_MAILTO, EARLY_ACCESS_ZUSAGE, HILFE_MAILTO } from "@/lib/preise";
+import { HILFE_MAILTO } from "@/lib/preise";
 import { sicheresZiel } from "@/lib/flash";
 import MfaAbfrage from "@/components/MfaAbfrage";
 import { mussMfaNachholen } from "@/lib/auth/sitzung";
@@ -124,6 +124,14 @@ export default function LoginPage() {
     }
     const r = params.get("rolle");
     if (r && ROLLEN[r]) setRolle(r);
+    // Link aus der Einladungsmail (lib/actions/einladung.ts): Code vorausfüllen
+    // und direkt die Registrierung zeigen. Nur der Code steht im Link — die
+    // Adresse NICHT (sie landete sonst in Server-Logs); der Mieter tippt sie.
+    const einladung = params.get("einladung");
+    if (einladung && /^MI-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(einladung)) {
+      setCode(einladung.toUpperCase());
+      setMode("signup");
+    }
     // Open-Redirect verhindern: nur app-interne Pfade — dieselbe Pruefung wie
     // bei den back-Redirects der Server-Actions (lib/flash.ts).
     const n = params.get("next");
@@ -226,7 +234,7 @@ export default function LoginPage() {
       const eingabe = code.trim().toUpperCase();
       // Serverseitig (HMAC-Bremse, Service-Role) — die fruehere RPC aus dem
       // Browser schrieb die IP im Klartext in die Zugriffsbremse.
-      const gueltig = await pruefeEinladungscode(eingabe, rolle);
+      const gueltig = await pruefeEinladungscode(eingabe, rolle, email);
       if (!gueltig.ok) {
         setError(gueltig.fehler ?? "Dieser Einladungscode ist ungültig oder abgelaufen.");
         setLoading(false);
@@ -483,17 +491,6 @@ export default function LoginPage() {
             />
           )}
 
-          {/* Wo der Code herkommt — direkt am Feld, nicht erst in der Fehlermeldung
-              nach dem ersten Fehlversuch (Audit 01.10.2026, A5). */}
-          {mode === "signup" && rolle !== "mieter" && rolle !== "service" && (
-            <p className="text-[12.5px] leading-relaxed" style={{ color: "var(--muted)", margin: "-4px 0 0" }}>
-              Noch keinen Code?{" "}
-              <a href={EARLY_ACCESS_MAILTO} style={{ color: "var(--gold)" }} className="hover:underline">
-                Early-Access-Zugang per E-Mail anfragen
-              </a>
-              {" "}— {EARLY_ACCESS_ZUSAGE}
-            </p>
-          )}
 
           {mode === "signup" && (
             <label className="flex items-start gap-2 text-[13px]" style={{ color: "var(--muted)" }}>

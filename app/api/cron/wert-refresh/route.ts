@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { holeIndexReihe } from "@/lib/wert/hpi";
 import { fortschreibeKaufpreis } from "@/lib/wert/fortschreibung";
 import { protokolliereWert } from "@/lib/wert/protokoll";
-import { geocode } from "@/lib/valuation/sources/geocode";
+import { geocodeAdresse, geoAenderung, koordinaten, sollVerorten, type GeoZeile } from "@/lib/geocode";
 import { bodenrichtwertAbrufen } from "@/lib/valuation/sources/boris";
 
 // Automatischer Portfolio-Wert-Refresh (alle ~2 Wochen per GitHub-Action-Cron).
@@ -65,7 +65,7 @@ async function handle(req: Request) {
   const owner = process.env.OWNER_USER_ID?.trim() || null;
   let query = supabase
     .from("properties")
-    .select("id,user_id,kaufpreis,kaufdatum,marktwert_aktuell,adresse,latitude,longitude,bodenrichtwert");
+    .select("id,user_id,kaufpreis,kaufdatum,marktwert_aktuell,adresse,lat,lng,latitude,longitude,geo_status,geo_versucht_am,bodenrichtwert");
   if (owner) query = query.eq("user_id", owner);
   const { data: props, error } = await query;
   if (error) {
@@ -81,12 +81,12 @@ async function handle(req: Request) {
   let geokodiert = 0;
   let bodenrichtwerte = 0;
   let geoBudget = GEOCODE_PRO_LAUF;
+  const borisAktiv = process.env.VALUATION_BORIS_ENABLED === "true" && !!process.env.BORIS_ENDPOINT_URL;
 
-  for (const p of (props ?? []) as {
+  for (const p of (props ?? []) as ({
     id: string; user_id: string; kaufpreis: number | null; kaufdatum: string | null;
-    marktwert_aktuell: number | null; adresse: string | null;
-    latitude: number | null; longitude: number | null; bodenrichtwert: number | null;
-  }[]) {
+    marktwert_aktuell: number | null; bodenrichtwert: number | null;
+  } & GeoZeile)[]) {
     // --- 1) Index-Fortschreibung → geschätzter Marktwert ---
     const f = fortschreibeKaufpreis(p.kaufpreis, p.kaufdatum ?? null, hpi.reihe);
     if (f) {
@@ -121,22 +121,29 @@ async function handle(req: Request) {
     }
 
     // --- 2) Regionale Eingaben best-effort frisch halten (nicht fatal) ---
-    let lat = p.latitude;
-    let lng = p.longitude;
+    // Verortet wird NUR, wenn BORIS an ist — die Koordinaten haben im Cron
+    // keinen anderen Abnehmer. Ohne diese Bedingung gingen die Adressen ALLER
+    // Konten an Nominatim, auch von Nutzern, die die Karte nie öffnen
+    // (Datenminimierung, 01.10.2026).
+    const gespeichert = koordinaten(p);
+    let lat = gespeichert?.lat ?? null;
+    let lng = gespeichert?.lng ?? null;
     try {
-      if ((lat == null || lng == null) && p.adresse && geoBudget > 0) {
+      if (borisAktiv && geoBudget > 0 && sollVerorten(p, Date.now())) {
         geoBudget--;
-        const g = await geocode(p.adresse);
-        if (g) {
-          lat = g.lat;
-          lng = g.lng;
-          const { error: geoFehler } = await supabase
-            .from("properties")
-            .update({ latitude: lat, longitude: lng })
-            .eq("id", p.id)
-            .eq("user_id", p.user_id);
-          if (geoFehler) fehlgeschlagen++;
-          else geokodiert++;
+        const erg = await geocodeAdresse(p.adresse as string, sleep);
+        // Auch „nicht gefunden"/„gedrosselt" wird gemerkt — sonst ginge dieselbe
+        // Anfrage bei jedem Lauf erneut hinaus (Nominatim-Policy).
+        const { error: geoFehler } = await supabase
+          .from("properties")
+          .update(geoAenderung(erg, new Date().toISOString()))
+          .eq("id", p.id)
+          .eq("user_id", p.user_id);
+        if (geoFehler) fehlgeschlagen++;
+        else if (erg.art === "treffer") {
+          lat = erg.lat;
+          lng = erg.lng;
+          geokodiert++;
         }
         await sleep(GEOCODE_PAUSE_MS); // Nominatim-Policy respektieren
       }
@@ -170,6 +177,6 @@ async function handle(req: Request) {
     fehlgeschlagen,
     geokodiert,
     bodenrichtwerte,
-    borisAktiv: process.env.VALUATION_BORIS_ENABLED === "true" && !!process.env.BORIS_ENDPOINT_URL,
+    borisAktiv,
   });
 }

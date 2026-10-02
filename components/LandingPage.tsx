@@ -1,6 +1,9 @@
 import Link from "next/link";
-import { START_CTA } from "@/lib/preise";
-import { ArrowRight, Plane } from "lucide-react";
+import { REGISTRIERUNG_OFFEN } from "@/lib/preise";
+import StartCta from "@/components/StartCta";
+import StartBenachrichtigung from "@/components/landing/StartBenachrichtigung";
+import { brevoBereit } from "@/lib/mail/brevo";
+import { ArrowRight, Plane, Database, Lock, Download, Trash2, ShieldCheck, UserCheck } from "lucide-react";
 import LandingShell from "@/components/landing/Shell";
 import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
@@ -14,7 +17,17 @@ import { PREISE_SICHTBAR } from "@/lib/preise";
 // Excel-Vergleich, Prozess-Schritte, ehrlicher Social Proof, klare CTAs).
 // Details liegen auf /funktionen, /preise und /vision.
 
-export default function LandingPage() {
+// Vertrauensabschnitt — nur Sätze, die der Code oder die Datenschutzerklärung belegt.
+export const VERTRAUEN = [
+  { ico: Database, t: "Datenbank in Frankfurt", p: "Deine Daten liegen in einem Rechenzentrum in Frankfurt am Main (AWS eu-central-1)." },
+  { ico: Lock, t: "Bankdaten doppelt geschützt", p: "IBAN und Kontoinhaber werden zusätzlich verschlüsselt (AES-256-GCM); der Schlüssel liegt außerhalb der Datenbank." },
+  { ico: UserCheck, t: "Jeder sieht nur seins", p: "Mieter sehen ihr eigenes Mietverhältnis, Handwerker nur ihren Auftrag — nie deinen Bestand." },
+  { ico: ShieldCheck, t: "Zwei-Faktor-Anmeldung", p: "Auf Wunsch schützt ein Code aus deiner Authenticator-App das Konto zusätzlich zum Passwort." },
+  { ico: Download, t: "Alles exportierbar", p: "Ein Klick in den Einstellungen liefert alle deine Daten als ZIP — du bist nicht an MyImmo gebunden." },
+  { ico: Trash2, t: "Kein Datenhandel", p: "Keine Werbung, kein Tracking, kein Verkauf. Dein Konto lässt sich jederzeit selbst löschen." },
+] as const;
+
+export default function LandingPage({ nl }: { nl?: string } = {}) {
   const topFeatures = FEATURES.slice(0, 6);
 
   return (
@@ -23,17 +36,24 @@ export default function LandingPage() {
       <QlxHero
         slug="start"
         kicker="Privates Immobilien-Management"
-        titel={<>Vermieten ohne Papierkram. <em>Von überall.</em></>}
+        // Hero seit 01.10.2026 (Feedback-Bewertung, docs/FEEDBACK-BEWERTUNG-2026-10.md):
+        // Zielgruppe UND Alleinstellung in einem Satz. „Von überall.“ bleibt — es
+        // ist das einzige Merkmal, das kein Wettbewerber hat (/vision). Nicht
+        // messbar (keine Analyse-Tools), also eine bewusste Urteilsentscheidung.
+        // Geschütztes Leerzeichen in „Ein System“: Sonst bricht der Titel als
+        // „Ein / System.“ um und trennt den Kernbegriff (im Browser gesehen).
+        titel={<>Deine Immobilien. Ein System. <em>Von überall.</em></>}
         sub={
           <>
-            Nebenkostenabrechnung, Anlage V, Mieten und dein ganzes Team — Mieter, Hausmeister,
-            Handwerker — in einer aufgeräumten App. Für private Vermieter mit 1–24 Einheiten.
+            Für private Vermieter mit mehr als ein paar Wohnungen, aber ohne Hausverwaltung:
+            Mieten, Nebenkosten, Anlage V, Kredite und dein Team — Mieter, Hausmeister,
+            Handwerker — an einem Ort. Für 1–24 Einheiten.
           </>
         }
         kinder={
           <>
             <div className="lp-cta-row" style={{ justifyContent: "flex-start" }}>
-              <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">{START_CTA}</Link>
+              <StartCta className="qlx-btn-hell lp-btn-big" />
               {/* Demo ohne Anmeldung. Als eigener Knopf auf Wunsch des
                   Betreibers (29.08.2026) — vorher eine Textzeile darunter.
                   Bewusst ein <a> und kein <Link>: /api/demo ist ein Route
@@ -72,7 +92,10 @@ export default function LandingPage() {
               (globals.css, versetzte animation-range) — ein gemeinsamer
               Reveal-Block darueber wuerde sie zu einem Block verschmelzen. */}
           <div className="lp-stats">
-            <div className="lp-stat"><div className="z">{FEATURES.length}+</div><div className="t">Funktionen — vom Mietvertrag bis ELSTER</div></div>
+            {/* Nicht mehr „13+ Funktionen" (01.10.2026): Eine Funktionszahl verkauft
+                Software, keine Entlastung. Die Zielgruppe in einer Zahl sagt
+                dem Besucher sofort, ob er gemeint ist. */}
+            <div className="lp-stat"><div className="z">1–24</div><div className="t">Einheiten — für private Vermieter ohne Hausverwaltung</div></div>
             <div className="lp-stat"><div className="z">4</div><div className="t">Rollen: Vermieter, Mieter, Hausmeister, Verwaltung</div></div>
             {/* Nicht „100 % Daten in der EU" (bis 30.09.2026): Die eigene
                 Datenschutzerklärung nennt Übermittlungen in die USA (Vercel-Logs,
@@ -152,7 +175,7 @@ export default function LandingPage() {
                 <ul>
                   <li>Portfolio-Wert und Cashflow laufend berechnet</li>
                   <li>Status je Objekt: vermietet, leer, in Sanierung</li>
-                  <li>Karte mit allen Standorten</li>
+                  <li>Restschuld je Objekt auf einen Blick</li>
                 </ul>
               </div>
               <Shot src="/landing/immobilien.webp" alt="Immobilien-Übersicht mit Wert, Miete und Rendite je Objekt" />
@@ -294,10 +317,44 @@ export default function LandingPage() {
               </p>
               <div className="lp-cta-row" style={{ marginTop: 22 }}>
                 {/* Landing-Button statt App-Button (.btn-gold gehört der App, nicht der .lp-Bühne) */}
-                <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">{START_CTA}</Link>
+                <StartCta className="qlx-btn-hell lp-btn-big" />
               </div>
             </>
           )}
+        </div>
+      </section>
+
+      {/* ---------- Vertrauen ----------
+           Seit 01.10.2026 (Feedback-Bewertung). JEDER Satz ist belegt — keine
+           Werbeaussage, die der Datenschutzerklärung widerspricht (§ 5 UWG; die
+           Falle „100 % Daten in der EU" vom 30.09.2026). Belege:
+           Datenbank → Datenschutz Ziffer 2/4 (Supabase eu-central-1) ·
+           Verschlüsselung → lib/crypto/secure.ts · Export → /api/export/alles ·
+           Löschen → deleteAccount · Zwei-Faktor → components/ZweiFaktor.tsx ·
+           Mieter-Sichten → Migration 20261001120000. tests/startseite.test.ts. */}
+      <section className="lp-section">
+        <div className="lp-inner">
+          <div className="lp-kopf-editorial">
+            <div className="lp-kicker">Sicherheit</div>
+            <h2 className="lp-h2">Deine Daten gehören dir</h2>
+            <p className="lp-section-sub">
+              Mietverträge, Kontodaten, Steuerzahlen — was du hier ablegst, ist vertraulich. So gehen wir damit um.
+            </p>
+          </div>
+          <div className="lp-features lp-features--drei">
+            {VERTRAUEN.map((v, i) => (
+              <Reveal key={v.t} delay={i * 60}>
+                <div className="lp-feature" style={{ height: "100%" }}>
+                  <div className="ico"><v.ico size={20} /></div>
+                  <h3>{v.t}</h3>
+                  <p>{v.p}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <div style={{ textAlign: "center", marginTop: 26 }}>
+            <Link href="/datenschutz" className="lp-mehr">Datenschutzerklärung lesen <ArrowRight size={14} /></Link>
+          </div>
         </div>
       </section>
 
@@ -332,15 +389,21 @@ export default function LandingPage() {
               <div className="lp-kicker">Bereit?</div>
               <h2 className="lp-h2">Dein Portfolio, endlich an einem Ort.</h2>
               <p className="lp-section-sub">
-                In wenigen Minuten eingerichtet — Objekt anlegen, Mieter erfassen, loslegen.
-                Kostenlos im Early Access, ohne Kreditkarte.
+                {REGISTRIERUNG_OFFEN
+                  ? "In wenigen Minuten eingerichtet — Objekt anlegen, Mieter erfassen, loslegen. Kostenlos im Early Access, ohne Kreditkarte."
+                  : "MyImmo öffnet bald für alle Vermieter. Bis dahin zeigt die Demo jede Funktion mit Beispieldaten — ohne Anmeldung."}
               </p>
               <div className="lp-cta-row" style={{ marginTop: 26 }}>
-                <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">{START_CTA}</Link>
+                <StartCta className="qlx-btn-hell lp-btn-big" />
+                {/* Ohne offene Registrierung ist die Demo der einzige Weg hinein. */}
+                {!REGISTRIERUNG_OFFEN && <a href="/api/demo" className="qlx-btn-linie lp-btn-big">Demo ansehen</a>}
                 <Link href="/funktionen" className="qlx-btn-linie lp-btn-big">Alle Funktionen</Link>
               </div>
+              {/* Dezent: eine Textzeile, das Formular erst auf Klick. Ohne Brevo-Zugang
+                  keine Zeile — ein Formular, das immer scheitert, ist schlechter als keins. */}
+              {!REGISTRIERUNG_OFFEN && brevoBereit() && <StartBenachrichtigung nl={nl} />}
               <p className="qlx-hero-note" style={{ marginTop: 16 }}>
-                Keine Kreditkarte nötig · Datenbank in Frankfurt · kein Abo
+                Keine Kreditkarte nötig · Datenbank in Frankfurt · derzeit kostenlos
               </p>
             </div>
           </Reveal>

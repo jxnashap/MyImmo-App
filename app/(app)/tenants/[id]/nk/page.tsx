@@ -11,6 +11,9 @@ import BriefBlatt from "@/components/BriefBlatt";
 import NkSpeichernButton from "@/components/NkSpeichernButton";
 import NkCo2Panel from "@/components/NkCo2Panel";
 import NkOcrUpload from "@/components/NkOcrUpload";
+import type { ZustellPruefung } from "@/lib/mieterZugang";
+import { ladeZustellLage } from "@/lib/zustellung";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +82,18 @@ export default async function NkPage(
   );
   const vermieter = vermieterAus(profil, ibanRow ? decryptIbanRow(ibanRow) : null);
 
+  // Für den Zustell-Dialog: WER die Abrechnung im Portal sähe — dieselbe Funktion, die
+  // `speichereNk` als Schranke benutzt (lib/zustellung.ts). Scheitert die Prüfung, zeigt
+  // der Dialog eine Sperre statt eines Zustell-Knopfs.
+  const nutzer = await aktuellerNutzer();
+  const lage = nutzer
+    ? await ladeZustellLage(supabase, nutzer.id, params.id, { jahr })
+    : { error: "Nicht angemeldet." };
+  const zustellung: ZustellPruefung = "error" in lage
+    ? { sperre: lage.error, warnungen: [] }
+    : { sperre: lage.sperre, warnungen: lage.warnungen };
+  const portalEmail = "error" in lage ? null : lage.empfaenger.map((e) => e.email ?? "Adresse unbekannt").join(", ") || null;
+
   const aktuell = new Date().getFullYear();
   const jahre = [aktuell, aktuell - 1, aktuell - 2, aktuell - 3, aktuell - 4];
   const guthaben = a.saldo >= 0;
@@ -129,7 +144,17 @@ export default async function NkPage(
           <a href={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`} className="btn btn-ghost">
             Als PDF herunterladen
           </a>
-          <NkSpeichernButton mieterId={params.id} jahr={jahr} />
+          <NkSpeichernButton
+            mieterId={params.id}
+            jahr={jahr}
+            empfaenger={{
+              name: a.mieterName,
+              wohnung: [a.objekt, a.einheit ? `Einheit ${a.einheit}` : null].filter(Boolean).join(" · ") || null,
+              email: portalEmail,
+              mietzeit: `${tenant.mietbeginn ? deDatum(tenant.mietbeginn) : "?"} – ${tenant.mietende ? deDatum(tenant.mietende) : "heute"}`,
+            }}
+            pruefung={zustellung}
+          />
         </div>
       </div>
 

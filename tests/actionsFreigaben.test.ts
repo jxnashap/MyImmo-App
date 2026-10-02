@@ -7,8 +7,8 @@ import { fakeSupabase, mockeNextUndSupabase, fd } from "./stubs/actionHarness";
 //     Server-Action OHNE Login. Eine Bank antwortet über einen Freigabe-Link.
 //     Token-, Ablauf- und Mengenprüfung sitzen in der SECURITY-DEFINER-RPC;
 //     die Action davor ist Spam-Bremse und Eingabesieb.
-//   · lib/actions/archivFreigabe.ts — der Vermieter gibt Archiv-Dokumente und
-//     Belege fürs Mieterportal frei (§ 556 Abs. 4 BGB Belegeinsicht).
+//   · lib/actions/archivFreigabe.ts — der Vermieter gibt Belege fürs
+//     Mieterportal frei (Dokumente: tests/zustellungen.test.ts) (§ 556 Abs. 4 BGB Belegeinsicht).
 //
 // KEIN FUND in beiden Dateien. `archivFreigabe.ts` benutzt sogar das beste
 // Muster der Codebasis: `.update().select().maybeSingle()` mit `error || !data`
@@ -147,26 +147,10 @@ describe("Freigaben fürs Mieterportal", () => {
     return { db, spuren, mod };
   }
 
-  it("ein Archiv-Dokument wird nur am eigenen Konto umgestellt", async () => {
-    const { db, spuren, mod } = await lade({ antworten: { notizen: { mieter_id: "m1" } } });
-    const r = await mod.setzeMieterFreigabe("n1", true);
-    expect(r).toEqual({ ok: true });
-    const z = db.zugriffe.find((x) => x.tabelle === "notizen")!;
-    expect(z.op).toBe("update");
-    expect(z.daten).toEqual({ mieter_freigabe: true });
-    expect(z.filter).toContain("eq:id=n1");
-    expect(z.filter).toContain("eq:user_id=nutzer-1");
-    // Die Mieterseite wird neu geladen — sonst sähe der Vermieter dort den alten Stand.
-    expect(spuren.revalidiert).toContain("/tenants/m1");
-    expect(spuren.revalidiert).toContain("/portal");
-  });
-
   it("trifft das Update keine Zeile, gilt das als Fehler — nicht als Erfolg", async () => {
     // DAS ist das Muster, das den RLS-Treffer-Null sichtbar macht: Ein
     // fremdes oder gelöschtes Dokument liefert kein `data`, obwohl kein
     // `error` kommt.
-    const { mod } = await lade({ antworten: { notizen: null } });
-    expect(await mod.setzeMieterFreigabe("fremd", true)).toEqual({ error: "Freigabe konnte nicht geändert werden." });
     const { mod: mod2 } = await lade({ antworten: { kosten: null } });
     expect(await mod2.setzeBelegFreigabe("fremd", true)).toEqual({ error: "Freigabe konnte nicht geändert werden." });
   });
@@ -180,7 +164,7 @@ describe("Freigaben fürs Mieterportal", () => {
   });
 
   it("ein Datenbankfehler wird gemeldet", async () => {
-    const { mod } = await lade({ antworten: { notizen: { mieter_id: "m1" } }, fehler: { message: "boom" } });
-    expect(await mod.setzeMieterFreigabe("n1", true)).toEqual({ error: "Freigabe konnte nicht geändert werden." });
+    const { mod } = await lade({ antworten: { kosten: { id: "k1" } }, fehler: { message: "boom" } });
+    expect(await mod.setzeBelegFreigabe("k1", true)).toEqual({ error: "Freigabe konnte nicht geändert werden." });
   });
 });

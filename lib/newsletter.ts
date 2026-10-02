@@ -12,6 +12,23 @@ export const EINWILLIGUNGSTEXT =
   "Ich möchte die MyImmo-Vorlagen und gelegentliche Hinweise für Vermieter per E-Mail erhalten. " +
   "Die Einwilligung kann ich jederzeit über den Abmeldelink in jeder E-Mail widerrufen.";
 
+/**
+ * Zweite Anmeldeart (01.10.2026): „Beim Start benachrichtigen“, solange die
+ * Registrierung geschlossen ist. Eigener Wortlaut, weil der Zweck ein anderer
+ * ist — wer sich für Vorlagen einträgt, hat nicht in eine Startankündigung
+ * eingewilligt und umgekehrt. Gespeichert wird genau der angezeigte Text.
+ */
+export const EINWILLIGUNGSTEXT_START =
+  "Ich möchte per E-Mail erfahren, wenn MyImmo für alle startet, und danach gelegentliche Hinweise für Vermieter erhalten. " +
+  "Die Einwilligung kann ich jederzeit über den Abmeldelink in jeder E-Mail widerrufen.";
+
+/** Kennung der Startanmeldung im Feld `quelle` — danach richten sich Wortlaut, Mail und Rückweg. */
+export const QUELLE_START = "start";
+
+export type Zweck = "vorlagen" | "start";
+export const zweckAus = (quelle: string | null | undefined): Zweck => (quelle === QUELLE_START ? "start" : "vorlagen");
+export const einwilligungFuer = (zweck: Zweck): string => (zweck === "start" ? EINWILLIGUNGSTEXT_START : EINWILLIGUNGSTEXT);
+
 /** Gültigkeitsdauer des Bestätigungslinks. */
 export const TOKEN_STUNDEN = 72;
 
@@ -37,13 +54,16 @@ export function istEmail(roh: string): boolean {
 /** Vergleichsform: Groß-/Kleinschreibung spielt bei Adressen praktisch keine Rolle. */
 export const normalisiereEmail = (roh: string): string => roh.trim().toLowerCase();
 
-export function bestaetigungsMail(bestaetigenUrl: string): { betreff: string; html: string; text: string } {
-  const betreff = "Bitte bestätigen: MyImmo-Vorlagen";
+export function bestaetigungsMail(bestaetigenUrl: string, zweck: Zweck = "vorlagen"): { betreff: string; html: string; text: string } {
+  const start = zweck === "start";
+  const betreff = start ? "Bitte bestätigen: Benachrichtigung zum Start von MyImmo" : "Bitte bestätigen: MyImmo-Vorlagen";
+  const worum = start
+    ? "dass wir Ihnen Bescheid geben dürfen, wenn MyImmo für alle startet, und Ihnen danach gelegentliche Hinweise für Vermieter schicken dürfen"
+    : "dass Sie die MyImmo-Vorlagen und gelegentliche Hinweise für Vermieter per E-Mail erhalten möchten";
   const text = [
     "Fast geschafft.",
     "",
-    "Bitte bestätigen Sie mit einem Klick, dass Sie die MyImmo-Vorlagen und",
-    "gelegentliche Hinweise für Vermieter per E-Mail erhalten möchten:",
+    `Bitte bestätigen Sie mit einem Klick, ${worum}:`,
     "",
     bestaetigenUrl,
     "",
@@ -68,8 +88,7 @@ export function bestaetigungsMail(bestaetigenUrl: string): { betreff: string; ht
     </div>
     <h1 style="font-size:19px;margin:0 0 12px">Fast geschafft</h1>
     <p style="font-size:15px;line-height:1.65;color:#6b675e;margin:0 0 20px">
-      Bitte bestätigen Sie mit einem Klick, dass Sie die MyImmo-Vorlagen und gelegentliche
-      Hinweise für Vermieter per E-Mail erhalten möchten.
+      Bitte bestätigen Sie mit einem Klick, ${worum}.
     </p>
     <p style="margin:0 0 22px">
       <a href="${bestaetigenUrl}" style="display:inline-block;background:#b8902b;color:#1a1a17;text-decoration:none;font-weight:bold;font-size:15px;padding:12px 22px;border-radius:8px">

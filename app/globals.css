@@ -171,18 +171,19 @@
      Die Landing benutzt ihn BEWUSST NICHT: Sie ist per Token-Freeze auf ihrer
      Quiet-Luxury-Palette eingefroren, dort stehen die 11px fest im Code.
 
-     STAND 08.09.2026: bewusst noch 11px — die Umstellung auf 12px ist offen
-     (Design-Runde 2), aber sie will angesehen werden: `.tz-rest` hat eine
-     feste Breite von 84px, Badges und Kpi-Labels sind in Grossbuchstaben mit
-     Sperrung gesetzt. Ein Pixel mehr kann dort umbrechen. Also: umstellen,
-     Seiten durchklicken, und wenn etwas bricht, hier eine Zeile zurueck.
+     STAND 02.10.2026: auf 12px umgestellt (Freigabe des Betreibers). Der
+     Betreiber klickt die Seiten am Handy und am Rechner durch — Badges und
+     Kpi-Labels sind in Grossbuchstaben mit Sperrung gesetzt und koennen
+     umbrechen. Bricht etwas Grundsaetzliches: hier eine Zeile zurueck auf 11px.
+     `.tz-rest` (Restspalte der Termine) wurde dabei mitwachsend von 84 auf
+     92px verbreitert (84 x 12/11 = 91,6), damit Betraege nicht umbrechen.
 
      ACHTUNG, damit die Erwartung stimmt: Dieser Schalter deckt die 16 Regeln
      der App-Oberflaeche ab — NICHT die rund 356 Stellen, an denen Komponenten
      `fontSize: 11` direkt im JSX stehen haben. Die brauchen je eine eigene
      Entscheidung; ein pauschales Ersetzen waere falsch, weil viele „11px" im
      Code Abstaende sind (`padding: 11px 13px`) und keine Schriftgroessen. */
-  --text-xs: 11px; --text-sm: 12px; --text-base: 14px; --text-md: 16px;
+  --text-xs: 12px; --text-sm: 12px; --text-base: 14px; --text-md: 16px;
   --text-lg: 18px; --text-xl: 24px; --text-2xl: 30px;
   --text-3xl: 36px; --text-display: 48px;
   --lh-tight: 1.2; --lh: 1.43;
@@ -834,7 +835,7 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 .tz-punkt { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin: 0 5px; }
 .tz-datum { width: 96px; flex-shrink: 0; font-size: 12px; color: var(--muted); }
 .tz-text { flex: 1; min-width: 0; }
-.tz-rest { font-size: var(--text-xs); width: 84px; text-align: right; flex-shrink: 0; }
+.tz-rest { font-size: var(--text-xs); width: 92px; text-align: right; flex-shrink: 0; }
 
 @media (max-width: 640px) {
   /* Zwei Zeilen: oben Punkt + Titel, darunter Datum, Restzeit, Kategorie und
@@ -2339,13 +2340,6 @@ select:focus-visible, textarea:focus-visible {
 .qlx-hero-medium video[poster] { opacity: 1; } /* mit echtem Poster kein Schwarzblitz */
 .qlx-hero-medium.qlx-playing video[poster] { opacity: 1; }
 
-/* Leaflet-Bedienelemente im App-Stil: folgen beiden Themes statt des
-   hellen Leaflet-Defaults (im Dunkelmodus vorher weisse Inseln). */
-.leaflet-control-zoom a { background: var(--bg2) !important; color: var(--text) !important; border-color: var(--line) !important; }
-.leaflet-control-zoom a:hover { background: var(--bg3) !important; }
-.leaflet-control-attribution { background: color-mix(in srgb, var(--bg2) 85%, transparent) !important; color: var(--muted) !important; }
-.leaflet-control-attribution a { color: var(--muted) !important; }
-
 /* NK-Briefvorschau: am Handy scrollt die Kostentabelle im Blatt, statt
    Spalten zusammenzuquetschen; der Druck (@media print) bleibt unberuehrt. */
 @media (max-width: 640px) {
@@ -2769,3 +2763,8 @@ select:focus-visible, textarea:focus-visible {
 .qlx .lp-section-alt::before { top: 0; background: linear-gradient(var(--l-bg), transparent); }
 .qlx .lp-section-alt::after { bottom: 0; background: linear-gradient(transparent, var(--l-bg)); }
 .qlx .lp-section-alt > * { position: relative; z-index: 1; }
+
+/* „Coming soon“ statt Start-Knopf, solange die Registrierung geschlossen ist
+   (components/StartCta.tsx, 01.10.2026). Sieht aus wie der Knopf, ist aber
+   keiner: kein Zeiger, kein Hover-Anheben, nicht anklickbar. */
+.start-bald { cursor: default; pointer-events: none; user-select: none; }

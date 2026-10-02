@@ -7,7 +7,7 @@ import { Lock, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useModalFokus } from "@/lib/modalFokus";
 import { demoBereich, demoSperrZiel, type DemoBereich } from "@/lib/demo";
-import { START_CTA } from "@/lib/preise";
+import { REGISTRIERUNG_OFFEN, START_CTA } from "@/lib/preise";
 
 /** Wohin der Early-Access-Knopf führt — dieselbe Seite wie auf der Landing. */
 export const DEMO_CTA_ZIEL = "/anmelden";
@@ -129,17 +129,19 @@ function SperrDialog({ bereich, onClose }: { bereich: DemoBereich; onClose: () =
           Zugang arbeitest du hier mit deinen Daten.
         </p>
         <div className="demo-sperre-knoepfe">
-          <button
-            type="button"
-            className="btn btn-gold"
-            disabled={unterwegs}
-            onClick={() => {
-              setUnterwegs(true);
-              void demoVerlassen(DEMO_CTA_ZIEL);
-            }}
-          >
-            {START_CTA}
-          </button>
+          {REGISTRIERUNG_OFFEN && (
+            <button
+              type="button"
+              className="btn btn-gold"
+              disabled={unterwegs}
+              onClick={() => {
+                setUnterwegs(true);
+                void demoVerlassen(DEMO_CTA_ZIEL);
+              }}
+            >
+              {START_CTA}
+            </button>
+          )}
           <button type="button" className="btn btn-ghost" onClick={onClose}>
             Weiter umsehen
           </button>

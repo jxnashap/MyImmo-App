@@ -9,7 +9,7 @@
 // etwas Ähnliches. Zwei getrennte Abfragesätze liefen nach dem nächsten
 // Umbau auseinander, und niemand würde es merken. Deshalb stehen die
 // Filter, die beim Mieter die RLS übernimmt (nur Miete/Nebenkosten, nur
-// freigegebene Belege und Dokumente), hier AUSDRÜCKLICH in der Abfrage —
+// freigegebene Belege, nur an dieses Konto zugestellte Dokumente), hier AUSDRÜCKLICH in der Abfrage —
 // für beide Blickwinkel. Beim Mieter sind sie redundant, beim Vermieter
 // sind sie die einzige Schranke; `tests/portalVorschau.test.ts` prüft sie.
 //
@@ -49,7 +49,22 @@ export type PortalMieter = {
   mietart: string | null;
 };
 export type PortalObjekt = { id: string; bezeichnung: string | null; adresse: string | null };
-export type PortalDokument = { id: string; titel: string | null; kategorie: string | null; datei_name: string | null; created_at: string | null };
+export type PortalZustellung = {
+  id: string;
+  notiz_id: string | null;
+  zugestellt_am: string;
+  gelesen_am: string | null;
+  bestaetigung_noetig: boolean;
+  bestaetigt_am: string | null;
+};
+export type PortalDokument = {
+  id: string;
+  titel: string | null;
+  kategorie: string | null;
+  datei_name: string | null;
+  created_at: string | null;
+  zustellung: PortalZustellung;
+};
 export type PortalZahlung = { id: string; buchungsdatum: string | null; kategorie: string | null; betrag: number | null; beschreibung: string | null };
 export type PortalBeleg = PortalZahlung & { rechnung_name: string | null };
 
@@ -85,6 +100,15 @@ export type PortalQuelle =
 // der Attrappe aus tests/stubs/actionHarness.ts.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = { from: (tabelle: string) => any };
+
+/** Liegt ein Beleg in der Mietzeit dieses Mietverhältnisses (ganze Kalenderjahre)? */
+export function belegInMietzeit(datum: string | null, m: Pick<PortalMieter, "mietbeginn" | "mietende">): boolean {
+  if (!datum) return true;
+  const d = datum.slice(0, 10);
+  if (m.mietbeginn && d < `${m.mietbeginn.slice(0, 4)}-01-01`) return false;
+  if (m.mietende && d > `${m.mietende.slice(0, 4)}-12-31`) return false;
+  return true;
+}
 
 export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promise<PortalDaten> {
   let mieterRows: PortalMieter[] = [];
@@ -171,17 +195,34 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
     dateien = (data ?? []) as DateiRef[];
   }
 
-  // Vom Vermieter freigegebene Archiv-Dokumente (RLS beim Mieter: nur mieter_freigabe)
+  // Zugestellte Archiv-Dokumente (seit 02.10.2026): nur über eine eigene, nicht
+  // zurückgezogene Zustellung an GENAU dieses Konto — nicht mehr alles, was an der
+  // Mieter-Zeile hängt. Beim Mieter erzwingt das die Datenbank (Policies auf
+  // `zustellungen` und `notizen`), in der Vorschau steht es hier. Ohne verknüpftes
+  // Konto ist die Liste leer — es ist ja niemandem etwas zugestellt.
   let freigegebeneDocs: PortalDokument[] = [];
-  if (mieterIds.length) {
-    let q = supabase
-      .from("notizen")
-      .select("id,titel,kategorie,datei_name,created_at")
+  if (mieterIds.length && mieterUserId) {
+    let zq = supabase
+      .from("zustellungen")
+      .select("id,notiz_id,zugestellt_am,gelesen_am,bestaetigung_noetig,bestaetigt_am")
+      .eq("empfaenger_user_id", mieterUserId)
       .in("mieter_id", mieterIds)
-      .eq("mieter_freigabe", true);
-    if (alsV) q = q.eq("user_id", alsV);
-    const { data } = await q.order("created_at", { ascending: false });
-    freigegebeneDocs = (data ?? []) as PortalDokument[];
+      .eq("art", "dokument")
+      .is("zurueckgezogen_am", null);
+    if (alsV) zq = zq.eq("vermieter_id", alsV);
+    const { data: zust } = await zq.order("zugestellt_am", { ascending: false });
+    const zeilen = (zust ?? []) as PortalZustellung[];
+    const ids = zeilen.map((z) => z.notiz_id).filter((x): x is string => !!x);
+    if (ids.length) {
+      let nq = supabase.from("notizen").select("id,titel,kategorie,datei_name,created_at").in("id", ids);
+      if (alsV) nq = nq.eq("user_id", alsV);
+      const { data } = await nq;
+      const notizen = new Map(((data ?? []) as Omit<PortalDokument, "zustellung">[]).map((n) => [n.id, n]));
+      freigegebeneDocs = zeilen.flatMap((z) => {
+        const n = z.notiz_id ? notizen.get(z.notiz_id) : undefined;
+        return n ? [{ ...n, zustellung: z }] : [];
+      });
+    }
   }
 
   let vermieterAnfragen: PortalAnfrageRow[] = [];
@@ -237,6 +278,10 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
     if (alsV) q = q.eq("user_id", alsV);
     const { data } = await q.order("buchungsdatum", { ascending: false }).limit(200);
     belege = (data ?? []) as PortalBeleg[];
+    // Nur Belege aus der eigenen Mietzeit (1.1. des Einzugsjahres bis 31.12. des
+    // Auszugsjahres) — beim Mieter erzwingt das die Datenbank (`mieter_beleg_sichtbar`,
+    // Migration 20261002120000), in der Vorschau steht es hier, sonst zeigte sie mehr.
+    belege = belege.filter((b) => wohnungen.some(({ m }) => belegInMietzeit(b.buchungsdatum, m)));
   }
 
   return {

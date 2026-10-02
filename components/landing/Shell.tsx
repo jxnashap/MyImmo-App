@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { START_CTA } from "@/lib/preise";
+import { REGISTRIERUNG_OFFEN } from "@/lib/preise";
+import StartCta from "@/components/StartCta";
+import StartBenachrichtigung from "@/components/landing/StartBenachrichtigung";
+import { brevoBereit } from "@/lib/mail/brevo";
 import type { ReactNode } from "react";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 import QlxHeader from "@/components/landing/QlxHeader";
@@ -50,11 +53,22 @@ export default function LandingShell({
       {!ohneSchlussCta && (
         <section className="lp-final">
           <div className="lp-inner">
-            <h2 className="lp-h2">In 2 Minuten <em>startklar</em></h2>
-            <p className="lp-section-sub">Konto anlegen, erstes Objekt erfassen — den Rest übernimmt MyImmo.</p>
+            {REGISTRIERUNG_OFFEN ? (
+              <>
+                <h2 className="lp-h2">In 2 Minuten <em>startklar</em></h2>
+                <p className="lp-section-sub">Konto anlegen, erstes Objekt erfassen — den Rest übernimmt MyImmo.</p>
+              </>
+            ) : (
+              <>
+                <h2 className="lp-h2">Bald <em>für alle</em></h2>
+                <p className="lp-section-sub">MyImmo öffnet bald für alle Vermieter. Bis dahin zeigt die Demo jede Funktion mit Beispieldaten.</p>
+              </>
+            )}
             <div className="lp-cta-row">
-              <Link href="/anmelden" className="qlx-btn-hell lp-btn-big">{START_CTA}</Link>
+              <StartCta className="qlx-btn-hell lp-btn-big" />
+              {!REGISTRIERUNG_OFFEN && <a href="/api/demo" className="qlx-btn-linie lp-btn-big">Demo ansehen</a>}
             </div>
+            {!REGISTRIERUNG_OFFEN && brevoBereit() && <StartBenachrichtigung />}
           </div>
         </section>
       )}

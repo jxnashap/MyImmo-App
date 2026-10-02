@@ -52,6 +52,7 @@
 - [[START-CHECKLISTE]] — was vor dem Start ansteht, nach Dringlichkeit sortiert (04.09.2026)
 - [[AUDIT-2026-10-01]] — **Gesamt-Audit 01.10.2026**: Links, UX, Browser, Zahlen, Sicherheit — 12 A · 36 B · 40 C, mit PR-Paketen
 - [[FEEDBACK-BEWERTUNG-2026-09]] — externes Feedback vom 08.09.2026, geprüft, mit Plan
+- [[FEEDBACK-BEWERTUNG-2026-10]] — externes Feedback vom 01.10.2026 (Vision „Betriebssystem für Vermieter“), gegen Nutzungszahlen geprüft, mit Plan
 
 ## ⚖️ Compliance
 - [[SICHERHEIT-ABHAENGIGKEITEN]] — OSV-Scanner-Befund, Bewertung, Next.js-14-Ende
@@ -61,6 +62,7 @@
 - [[anthropic-dpa-archiv]] — archiviertes Anthropic-DPA
 
 ## 🔮 Zukunftsprojekte (notiert, nicht gebaut)
+- [[MIETERPORTAL-AUSBAU]] — Bestandsaufnahme, acht Wege zur Fehlzustellung, sicherer Zustellweg + Ausbau (02.10.2026)
 - [[STRATEGIE-REITER]] — Ankaufsstrategie: wann ist das nächste Objekt finanzierbar? (Idee 30.08.2026)
 - [[OPEN-BANKING]] — Konto-Anbindung, zurückgestellt 29.08.2026 (Code in der Git-Historie)
 

@@ -8,7 +8,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { geocode } from "@/lib/valuation/sources/geocode";
+import { geocodeAdresse, geoAenderung, koordinaten, sollVerorten } from "@/lib/geocode";
 import { bodenrichtwertAbrufen } from "@/lib/valuation/sources/boris";
 import { eigenbestandComparables, is24Comparables, type Vergleichsangebot } from "@/lib/valuation/sources/comparables";
 import { bewerten, type Kennzahlen, type Verfahren } from "@/lib/valuation/bewerten";
@@ -39,12 +39,17 @@ export async function refreshBewertung(propId: string, formData: FormData) {
   const vf = String(formData.get("bewertungsverfahren") ?? "");
   const verfahrenOverride = (vf === "vergleich" || vf === "ertrag" || vf === "sach") ? (vf as Verfahren) : null;
 
-  // 1) Geocoding (nur wenn Koordinaten fehlen).
-  let lat: number | null = prop.latitude;
-  let lng: number | null = prop.longitude;
-  if ((lat == null || lng == null) && prop.adresse) {
-    const g = await geocode(prop.adresse);
-    if (g) { lat = g.lat; lng = g.lng; }
+  // 1) Geocoding über die EINE Verortung (lib/geocode.ts): gespeicherte
+  // Koordinaten zuerst; gefragt wird nur, wenn `sollVerorten` es erlaubt — eine
+  // nicht gefundene Adresse geht nicht bei jedem Klick erneut an Nominatim.
+  const gespeichert = koordinaten(prop);
+  let lat: number | null = gespeichert?.lat ?? null;
+  let lng: number | null = gespeichert?.lng ?? null;
+  let geoSpalten: Record<string, unknown> = {};
+  if (process.env.VALUATION_GEOCODE_ENABLED !== "false" && sollVerorten(prop, Date.now())) {
+    const erg = await geocodeAdresse(prop.adresse as string);
+    geoSpalten = geoAenderung(erg, new Date().toISOString());
+    if (erg.art === "treffer") { lat = erg.lat; lng = erg.lng; }
   }
 
   // 2) Bodenrichtwert: manuell > gespeichert > Auto-Abruf (best effort).
@@ -60,10 +65,15 @@ export async function refreshBewertung(propId: string, formData: FormData) {
   let comps: Vergleichsangebot[] = [];
   if (lat != null && lng != null) {
     const { data: others } = await supabase
-      .from("properties").select("id,typ,flaeche,zimmer,wert,latitude,longitude").eq("user_id", user.id);
+      .from("properties").select("id,typ,flaeche,zimmer,wert,lat,lng,latitude,longitude").eq("user_id", user.id);
+    // Vergleichsobjekte: dieselbe Regel für Koordinaten wie oben (lat/lng zuerst).
+    const andere = (others ?? []).map((o) => {
+      const k = koordinaten(o as never);
+      return { ...o, latitude: k?.lat ?? null, longitude: k?.lng ?? null };
+    });
     comps = eigenbestandComparables(
       { id: propId, typ: prop.typ, flaeche: prop.flaeche, latitude: lat, longitude: lng },
-      (others ?? []) as never[], 5,
+      andere as never[], 5,
     );
     const is24 = await is24Comparables(lat, lng, { typ: prop.typ, flaeche: prop.flaeche });
     comps = [...comps, ...is24];
@@ -98,7 +108,7 @@ export async function refreshBewertung(propId: string, formData: FormData) {
   // „Aktualisiert", während der berechnete Marktwert nirgends steht. So halten
   // es `createTermin`/`updateTermin` auch.
   const { error: propFehler } = await supabase.from("properties").update({
-    latitude: lat, longitude: lng,
+    ...geoSpalten,
     bodenrichtwert: brw, bodenrichtwert_stichtag: brwStichtag,
     liegenschaftszins: kennzahlen.liegenschaftszinsProzent,
     restnutzungsdauer: kennzahlen.restnutzungsdauer,
