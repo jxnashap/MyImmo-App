@@ -351,7 +351,14 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   „verbunden“, keine E-Mail). „Speichern & zustellen“ meldet Erfolg auch OHNE verbundenes Konto
   (§ 556 Abs. 3 BGB-Frist!). Plan: Paket S (S1 Tabelle `zustellungen` an `empfaenger_user_id`,
   S2 Zustell-Dialog mit harten Sperren, S3 E-Mail sichtbar + Trennen + Zugangsende …) VOR jedem
-  Ausbau. **Noch nichts gebaut** — wartet auf Freigabe und drei Betreiber-Fragen (Abschnitt 8).
+  Ausbau. ✅ **Schritt 1 gebaut 02.10.2026:** Einladung an eine E-Mail-Adresse gebunden
+  (Doppeleingabe, Mail an genau diese Adresse, DB verknüpft nur bei gleicher BESTÄTIGTER Adresse
+  — Migration `20261002100000`, in zurückgerollter Transaktion bewiesen); Mieterseite zeigt die
+  verbundene Adresse + „Zugang trennen“ / „E-Mail ändern“ (= trennen + neu einladen); NK-Zustellen
+  nur über eine Bestätigungskarte, serverseitig GESPERRT ohne verbundenes Konto oder bei Jahr
+  außerhalb der Mietzeit (`lib/mieterZugang.ts` → `pruefeZustellung()`). **Regel: Ein neuer Weg,
+  der etwas ins Mieterportal stellt, ruft `pruefeZustellung()` serverseitig.** Offen: S1 (Tabelle
+  `zustellungen`), automatisches Zugangsende bei Auszug. Einladungsmail braucht Brevo (Punkt 0).
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das

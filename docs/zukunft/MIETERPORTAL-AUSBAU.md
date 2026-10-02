@@ -4,6 +4,27 @@ Stand 02.10.2026. Gegen Code und Datenbank geprüft (Policies, Funktionen, Zähl
 Inhalte gelesen). Auftrag des Betreibers: Das Portal ausbauen, und **der Vermieter darf eine
 Nebenkostenabrechnung nicht versehentlich an die falsche Person senden.**
 
+## 0. Umsetzungsstand
+
+**02.10.2026 — Schritt 1 gebaut** (Vorgabe des Betreibers: Einladung an eine E-Mail-Adresse):
+- **F3 geschlossen:** Der Vermieter trägt die Adresse des Mieters zweimal ein (Einfügen im
+  zweiten Feld gesperrt), MyImmo schickt die Einladung genau dorthin (sobald Brevo eingerichtet
+  ist; sonst fertiger Text), und **nur ein Konto mit genau dieser bestätigten Adresse** wird
+  verknüpft — in der Datenbank erzwungen (Migration `20261002100000`), nicht nur im Formular.
+  Damit entfällt S5 (Vermieter bestätigt jede Verknüpfung): Die Adress-Bindung ist die Bestätigung.
+- **S3 teilweise:** Die Mieterseite zeigt, WER verbunden ist (Adresse, seit wann), mit
+  „Zugang trennen“ und „E-Mail-Adresse ändern“ (= trennen + neu einladen; erst nach erneuter
+  Registrierung sieht der Mieter wieder etwas). Automatisches Ende bei Auszug: noch offen.
+- **F5 geschlossen, S2 gebaut:** „Ins Mieterportal zustellen…“ öffnet eine Karte mit Name,
+  Wohnung, Mietzeit und Portal-Adresse. **Gesperrt** ohne verbundenes Konto und bei einem
+  Abrechnungsjahr außerhalb der Mietzeit — im Server, nicht nur in der Oberfläche.
+  Warnungen: unbekannte Adresse (Altverknüpfung), Jahr schon zugestellt.
+- Tests: `tests/mieterZugang.test.ts`, elf Mutationen (eine gleichwertig).
+
+**Noch offen:** S1 (Zustellungen als eigene Tabelle — bis dahin hängt ein Dokument weiter an der
+Mieter-ZEILE, F1/F4 sind also erst durch „trennen“ beherrschbar, nicht strukturell gelöst),
+S4, S6, S7, S8, S9, automatisches Zugangsende.
+
 ## 1. Kurzfazit
 
 Das Portal ist inhaltlich stark (Wohnung, Anliegen mit Fotos und Terminen, Zahlungen, Dokumente,

@@ -107,7 +107,7 @@ describe("Die drei Dokumentarten", () => {
   });
 
   it("die NK-Abrechnung kann direkt ins Mieterportal zugestellt werden — nur wenn gewollt", async () => {
-    const { db, mod } = await lade();
+    const { db, mod } = await lade({ antworten: { mieter: { prop_id: "obj-1" }, mieter_zugaenge: [{ email: "anna@example.org" }] } });
     await mod.speichereNk("m1", 2025, true);
     expect(archivEintrag(db)).toMatchObject({ kategorie: "Nebenkostenabrechnung", mieter_freigabe: true });
     const { db: db2, mod: mod2 } = await lade();

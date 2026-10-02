@@ -124,6 +124,14 @@ export default function LoginPage() {
     }
     const r = params.get("rolle");
     if (r && ROLLEN[r]) setRolle(r);
+    // Link aus der Einladungsmail (lib/actions/einladung.ts): Code vorausfüllen
+    // und direkt die Registrierung zeigen. Nur der Code steht im Link — die
+    // Adresse NICHT (sie landete sonst in Server-Logs); der Mieter tippt sie.
+    const einladung = params.get("einladung");
+    if (einladung && /^MI-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(einladung)) {
+      setCode(einladung.toUpperCase());
+      setMode("signup");
+    }
     // Open-Redirect verhindern: nur app-interne Pfade — dieselbe Pruefung wie
     // bei den back-Redirects der Server-Actions (lib/flash.ts).
     const n = params.get("next");
@@ -226,7 +234,7 @@ export default function LoginPage() {
       const eingabe = code.trim().toUpperCase();
       // Serverseitig (HMAC-Bremse, Service-Role) — die fruehere RPC aus dem
       // Browser schrieb die IP im Klartext in die Zugriffsbremse.
-      const gueltig = await pruefeEinladungscode(eingabe, rolle);
+      const gueltig = await pruefeEinladungscode(eingabe, rolle, email);
       if (!gueltig.ok) {
         setError(gueltig.fehler ?? "Dieser Einladungscode ist ungültig oder abgelaufen.");
         setLoading(false);
