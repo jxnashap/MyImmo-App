@@ -13,7 +13,7 @@ import MachbarkeitKarte from "@/components/kauf/MachbarkeitKarte";
 import DarlehenWizard from "@/components/kauf/DarlehenWizard";
 import FoerderCheck from "@/components/kauf/FoerderCheck";
 import FinanzierungsVorschlaege from "@/components/kauf/FinanzierungsVorschlaege";
-import KreditantragButton from "@/components/kauf/KreditantragButton";
+import KreditantragButton, { type KreditVertreterOption } from "@/components/kauf/KreditantragButton";
 import { KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
 import { KAUF_DARLEHEN_KEY, type DarlehenAuswahl } from "@/lib/kauf/darlehen";
 import { eigenkapitalGesamt, haushaltsNetto, type SelbstauskunftDaten } from "@/lib/kauf/selbstauskunft";
@@ -36,9 +36,11 @@ const DARLEHEN: { name: string; text: string; warn?: boolean }[] = [
 ];
 
 export default function KaufAssistent({
-  gespeichert = [], selbstauskunft = null, demo = false,
+  gespeichert = [], selbstauskunft = null, demo = false, vertreter = [],
 }: {
   gespeichert?: Kalkulation[]; selbstauskunft?: SelbstauskunftDaten | null;
+  /** Vertreter mit gültiger Vollmacht (Einstellungen → Vertreter) für den Kreditantrag. */
+  vertreter?: KreditVertreterOption[];
   /** Oeffentliche Demo: fester Beispielstand, keine Eingaben. */
   demo?: boolean;
 }) {
@@ -313,7 +315,7 @@ export default function KaufAssistent({
               Fasst deine Selbstauskunft, das gewählte Objekt und deinen Finanzierungswunsch in einem
               PDF zusammen — fertig zum Ausdrucken, Unterschreiben und <strong>selbst</strong> an die Bank geben.
             </p>
-            <KreditantragButton />
+            <KreditantragButton vertreter={vertreter} />
           </div>
         </>
       ),

@@ -18,8 +18,13 @@ Migration `20261002210000`, `tests/vertreter.test.ts`.
 sagen „meist … nachfragen“; die einzige feste Aussage ist § 29 GBO (Grundbuch braucht
 mindestens öffentliche Beglaubigung). Der Reiter sagt ausdrücklich, dass der Vertreter
 **keinen Zugang** bekommt.
-**Naheliegender nächster Schritt (nicht gebaut):** Vertreter im Kreditantrag-/Beleihungs-PDF
-als Bevollmächtigten aufführen; ablaufende Vollmacht als Aufgabe auf dem Dashboard.
+✅ **Gebaut am selben Tag (Folge-PR):** Im Kauf-Assistenten wählt man am Knopf „Kreditantrag“
+optional einen Vertreter → das PDF bekommt Seite 3 „Bevollmächtigter Vertreter“ (Person,
+Vollmacht, Umfang; **ohne Scan** — oft mit Ausweiskopie). Nur eigene Vertreter, widerrufene oder
+abgelaufene Vollmachten lehnt die Route ab (`kreditVertreter()`). Dashboard: „Vollmacht läuft
+ab“ (≤ 60 Tage) bzw. „abgelaufen“ (dringend) unter Termine & Aufgaben. **Nicht gebaut:** Vertreter
+im Beleihungsordner (objektbezogen, öffentlicher Freigabe-Link — dort bewusst nicht ohne eigene
+Entscheidung).
 
 Der Rest dieser Datei beschreibt den späteren **App-Zugang** für eine Vertrauensperson — weiter
 offen, weiter mit allen Risiken unten.

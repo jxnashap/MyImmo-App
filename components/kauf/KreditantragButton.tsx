@@ -21,7 +21,10 @@ function lies(key: string): unknown {
   try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : null; } catch { return null; }
 }
 
-export default function KreditantragButton() {
+/** Vertreter mit gültiger Vollmacht, die im PDF als Bevollmächtigter erscheinen dürfen. */
+export type KreditVertreterOption = { id: string; name: string };
+
+export default function KreditantragButton({ vertreter = [] }: { vertreter?: KreditVertreterOption[] }) {
   // Das PDF entsteht in einem NEUEN Tab — die Ursprungsseite bleibt sonst völlig
   // unverändert und der Klick fühlt sich wirkungslos an. Deshalb kurz „Erzeugt…"
   // zeigen und danach wieder freigeben (ein Ende des fremden Tabs sieht man nicht).
@@ -40,9 +43,16 @@ export default function KreditantragButton() {
         setLaeuft(true);
         setTimeout(() => setLaeuft(false), 2500);
       }}
-      style={{ display: "inline-flex" }}
+      style={{ display: "inline-flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}
     >
       <input type="hidden" name="daten" defaultValue="" />
+      {/* Bevollmächtigter nur auf ausdrückliche Wahl — es sind Daten einer dritten Person. */}
+      {vertreter.length > 0 && (
+        <select name="vertreterId" className="input" defaultValue="" style={{ width: "auto", fontSize: 12, marginRight: 8 }} aria-label="Bevollmächtigten Vertreter aufführen">
+          <option value="">Ohne Vertreter</option>
+          {vertreter.map((v) => <option key={v.id} value={v.id}>Mit Vertreter: {v.name}</option>)}
+        </select>
+      )}
       <button type="submit" className="btn btn-gold" style={{ fontSize: 13 }} disabled={laeuft} aria-busy={laeuft}>
         <FileText size={14} style={{ verticalAlign: "-2px" }} />{" "}
         {laeuft ? "Erzeugt…" : "Kreditantrag / Selbstauskunft als PDF"}
