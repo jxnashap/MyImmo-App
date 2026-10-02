@@ -84,10 +84,27 @@ describe("Lader in der Vorschau (Quelle: Vermieter)", () => {
     expect(von("einnahmen")[0].filter).toContain(`in:kategorie=${JSON.stringify([...PORTAL_ZAHLUNG_KATEGORIEN])}`);
   });
 
-  it("Belege und Dokumente nur, wenn für den Mieter freigegeben", async () => {
-    const { von } = await lade();
+  it("Belege nur, wenn freigegeben; Dokumente nur über eine aktive Zustellung an DIESES Konto", async () => {
+    const { von, daten } = await lade({
+      zustellungen: [{ id: "z1", notiz_id: "n1", zugestellt_am: "2026-09-01", gelesen_am: null, bestaetigung_noetig: false, bestaetigt_am: null }],
+      notizen: [{ id: "n1", titel: "NK 2025", kategorie: "Nebenkostenabrechnung", datei_name: "nk.pdf", created_at: "2026-08-01" }],
+    });
     expect(von("kosten")[0].filter).toContain("eq:mieter_freigabe=true");
-    expect(von("notizen")[0].filter).toContain("eq:mieter_freigabe=true");
+    const [z] = von("zustellungen");
+    expect(z.filter).toContain(`eq:empfaenger_user_id="konto-m"`);
+    expect(z.filter).toContain("is:zurueckgezogen_am=null");
+    expect(z.filter).toContain(`eq:vermieter_id="${V}"`);
+    // Das Dokument wird nur über die IDs der Zustellungen geholt — nicht über die Mieter-Zeile.
+    expect(von("notizen")[0].filter).toContain(`in:id=${JSON.stringify(["n1"])}`);
+    expect(von("notizen")[0].filter.some((f) => f.startsWith("in:mieter_id"))).toBe(false);
+    expect(daten.freigegebeneDocs.map((d) => [d.id, d.zustellung.id])).toEqual([["n1", "z1"]]);
+  });
+
+  it("ohne verknüpftes Konto: keine Dokumente — es ist niemandem etwas zugestellt", async () => {
+    const { von, daten } = await lade({ mieter_zugaenge: null, notizen: [{ id: "n1" }] });
+    expect(von("zustellungen")).toEqual([]);
+    expect(von("notizen")).toEqual([]);
+    expect(daten.freigegebeneDocs).toEqual([]);
   });
 
   it("Anliegen und Zählerstände hängen am Konto des Mieters", async () => {

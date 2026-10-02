@@ -27,7 +27,10 @@ async function lade(
   erzeuger: { brief?: Erzeuger | Error; nk?: Erzeuger | Error; protokoll?: Erzeuger | Error } = {},
 ) {
   vi.resetModules();
-  const { db, client } = fakeSupabase({ antworten: { mieter: { prop_id: "obj-1" } }, ...init });
+  const { db, client } = fakeSupabase({
+    antworten: { mieter: { prop_id: "obj-1" }, notizen: { id: "n-neu" }, zustellungen: [{ id: "z-neu" }] },
+    ...init,
+  });
   const spuren = mockeNextUndSupabase(client);
   const liefere = (e: Erzeuger | Error | undefined) => async () => {
     if (e instanceof Error) throw e;
@@ -107,8 +110,11 @@ describe("Die drei Dokumentarten", () => {
   });
 
   it("die NK-Abrechnung kann direkt ins Mieterportal zugestellt werden — nur wenn gewollt", async () => {
-    const { db, mod } = await lade({ antworten: { mieter: { prop_id: "obj-1" }, mieter_zugaenge: [{ email: "anna@example.org" }] } });
-    await mod.speichereNk("m1", 2025, true);
+    const { db, mod } = await lade({
+      antworten: { mieter: { prop_id: "obj-1" }, notizen: { id: "n-neu" }, mieter_zugaenge: [{ user_id: "konto-a", email: "anna@example.org" }], zustellungen: [{ id: "z1" }] },
+      antwortFolge: { "zustellungen:select": [[]] },
+    });
+    expect(await mod.speichereNk("m1", 2025, true)).toEqual({ ok: true, zugestelltAn: ["anna@example.org"] });
     expect(archivEintrag(db)).toMatchObject({ kategorie: "Nebenkostenabrechnung", mieter_freigabe: true });
     const { db: db2, mod: mod2 } = await lade();
     await mod2.speichereNk("m1", 2025);

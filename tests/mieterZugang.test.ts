@@ -79,7 +79,11 @@ async function lade(modul: string, init: Parameters<typeof fakeSupabase>[0] = {}
   return { db, mod };
 }
 
-const MIETER = { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1", mietbeginn: "2021-03-01", mietende: null } };
+const MIETER = {
+  mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1", mietbeginn: "2021-03-01", mietende: null },
+  notizen: { id: "n-neu" },
+  zustellungen: [{ id: "z1" }],
+};
 // Funktion statt Konstante: Die Attrappe räumt die Folge ab (shift) — eine geteilte
 // Liste wäre nach dem ersten Test leer.
 const code = () => ({ "einladungscodes:insert": [{ code: "MI-ABCD-2345", gueltig_bis: "2026-10-16T10:00:00Z" }] });

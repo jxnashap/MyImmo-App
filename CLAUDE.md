@@ -366,6 +366,18 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   oder -Sicht prüft `mieter_zugang_aktiv()`, nie nur `mieter_zugaenge`.** Policies per
   `ALTER POLICY` ändern — `DROP POLICY` lief über `apply_migration` in den Zeitüberlauf
   (Bestätigungsdialog, siehe Demo-Service-Reset), ohne etwas anzuwenden.
+  ✅ **S1 gebaut 02.10.2026: Zustellung an eine PERSON** (Migrationen `20261002140000/141000`,
+  `lib/zustellung.ts` = EINE Stelle für Lage + Zustellen, `lib/actions/zustellung.ts`). Der Mieter
+  sieht ein Archiv-Dokument nur noch über eine eigene, aktive Zeile in `zustellungen`;
+  `notizen.mieter_freigabe` entscheidet NICHTS mehr (nur noch Merkmal). Abruf setzt die
+  Datei-Route (`zustellung_abgerufen`), „gelesen und bestätigt“ ist ein Klick, keine Unterschrift.
+  **Regeln:** (1) Ein neuer Weg, der etwas ins Portal stellt, schreibt eine Zeile in
+  `zustellungen` über `ladeZustellLage()` + `zustelle()` — nie einen Freigabe-Schalter.
+  (2) Eine Policy auf `zustellungen` liest `notizen` nie direkt (42P17-Rekursion, im Nachweis
+  passiert) — nur über eine SECURITY-DEFINER-Funktion. (3) Keine Fremdschlüssel mit `on delete`
+  in Migrationen über `apply_migration` (Bestätigungsdialog). **Vereinbarter Ausbauplan,
+  „KI im Portal“ (gemerkt, nicht jetzt) und Hausmeister/Minijob mit Risiken: Abschnitt 9 dort.**
+  Nächster Schritt: Vorgänge mit Verlauf (Anliegen-Ereignisse statt `antwort`).
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das

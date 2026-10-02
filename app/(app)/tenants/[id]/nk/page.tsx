@@ -11,8 +11,9 @@ import BriefBlatt from "@/components/BriefBlatt";
 import NkSpeichernButton from "@/components/NkSpeichernButton";
 import NkCo2Panel from "@/components/NkCo2Panel";
 import NkOcrUpload from "@/components/NkOcrUpload";
-import { pruefeZustellung } from "@/lib/mieterZugang";
-import { heuteBerlin } from "@/lib/zeitraum";
+import type { ZustellPruefung } from "@/lib/mieterZugang";
+import { ladeZustellLage } from "@/lib/zustellung";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 
 export const dynamic = "force-dynamic";
 
@@ -81,29 +82,17 @@ export default async function NkPage(
   );
   const vermieter = vermieterAus(profil, ibanRow ? decryptIbanRow(ibanRow) : null);
 
-  // Für den Zustell-Dialog: WER die Abrechnung im Portal sähe. Dieselbe Prüfung
-  // wiederholt die Action serverseitig — hier ist sie nur die Anzeige.
-  const [{ data: zugaenge }, { data: schonDa }] = await Promise.all([
-    supabase.from("mieter_zugaenge").select("email").eq("mieter_id", params.id).limit(1),
-    supabase
-      .from("notizen")
-      .select("id")
-      .eq("mieter_id", params.id)
-      .eq("kategorie", "Nebenkostenabrechnung")
-      .eq("titel", `Nebenkostenabrechnung ${jahr}`)
-      .eq("mieter_freigabe", true)
-      .limit(1),
-  ]);
-  const portalEmail = ((zugaenge ?? []) as { email: string | null }[])[0]?.email ?? null;
-  const zustellung = pruefeZustellung({
-    verbunden: (zugaenge ?? []).length > 0,
-    email: portalEmail,
-    mietbeginn: tenant.mietbeginn ?? null,
-    mietende: tenant.mietende ?? null,
-    jahr,
-    schonZugestellt: (schonDa ?? []).length > 0,
-    heute: heuteBerlin(),
-  });
+  // Für den Zustell-Dialog: WER die Abrechnung im Portal sähe — dieselbe Funktion, die
+  // `speichereNk` als Schranke benutzt (lib/zustellung.ts). Scheitert die Prüfung, zeigt
+  // der Dialog eine Sperre statt eines Zustell-Knopfs.
+  const nutzer = await aktuellerNutzer();
+  const lage = nutzer
+    ? await ladeZustellLage(supabase, nutzer.id, params.id, { jahr })
+    : { error: "Nicht angemeldet." };
+  const zustellung: ZustellPruefung = "error" in lage
+    ? { sperre: lage.error, warnungen: [] }
+    : { sperre: lage.sperre, warnungen: lage.warnungen };
+  const portalEmail = "error" in lage ? null : lage.empfaenger.map((e) => e.email ?? "Adresse unbekannt").join(", ") || null;
 
   const aktuell = new Date().getFullYear();
   const jahre = [aktuell, aktuell - 1, aktuell - 2, aktuell - 3, aktuell - 4];

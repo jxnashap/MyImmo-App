@@ -41,8 +41,9 @@ export type ZustellLage = {
   email: string | null;
   mietbeginn: string | null;
   mietende: string | null;
-  jahr: number;
-  /** Ist für dieses Jahr schon eine Abrechnung im Portal sichtbar? */
+  /** Abrechnungsjahr — nur bei der NK-Abrechnung; null bei anderen Dokumenten (kein Jahresbezug). */
+  jahr: number | null;
+  /** Ist für dieses Jahr (bzw. dieses Dokument) schon eine aktive Zustellung da? */
   schonZugestellt: boolean;
   /** Stichtag (ISO, deutsche Zeit) — für das Zugangsende nach dem Auszug. */
   heute: string;
@@ -51,7 +52,8 @@ export type ZustellLage = {
 export type ZustellPruefung = { sperre: string | null; warnungen: string[] };
 
 /**
- * Darf eine NK-Abrechnung ins Mieterportal zugestellt werden?
+ * Darf ein Dokument (NK-Abrechnung oder ein anderes Archiv-Dokument) ins Mieterportal
+ * zugestellt werden?
  * Sperre = geht nicht (der Server lehnt ab). Warnungen = Dialog zeigt sie an.
  */
 export function pruefeZustellung(l: ZustellLage): ZustellPruefung {
@@ -59,7 +61,7 @@ export function pruefeZustellung(l: ZustellLage): ZustellPruefung {
   if (!l.verbunden) {
     return {
       sperre:
-        "Dieser Mieter hat kein verbundenes Portal-Konto — die Abrechnung würde niemand sehen. " +
+        "Dieser Mieter hat kein verbundenes Portal-Konto — das Dokument würde niemand sehen. " +
         "Bitte nur speichern und per Post oder E-Mail zustellen.",
       warnungen,
     };
@@ -72,18 +74,20 @@ export function pruefeZustellung(l: ZustellLage): ZustellPruefung {
       warnungen,
     };
   }
-  const von = `${l.jahr}-01-01`;
-  const bis = `${l.jahr}-12-31`;
-  if (l.mietbeginn && l.mietbeginn.slice(0, 10) > bis) {
-    return { sperre: `Das Mietverhältnis beginnt erst nach ${l.jahr} — diese Abrechnung gehört nicht zu diesem Mieter.`, warnungen };
-  }
-  if (l.mietende && l.mietende.slice(0, 10) < von) {
-    return { sperre: `Das Mietverhältnis endete vor ${l.jahr} — diese Abrechnung gehört nicht zu diesem Mieter.`, warnungen };
+  if (l.jahr !== null) {
+    const von = `${l.jahr}-01-01`;
+    const bis = `${l.jahr}-12-31`;
+    if (l.mietbeginn && l.mietbeginn.slice(0, 10) > bis) {
+      return { sperre: `Das Mietverhältnis beginnt erst nach ${l.jahr} — diese Abrechnung gehört nicht zu diesem Mieter.`, warnungen };
+    }
+    if (l.mietende && l.mietende.slice(0, 10) < von) {
+      return { sperre: `Das Mietverhältnis endete vor ${l.jahr} — diese Abrechnung gehört nicht zu diesem Mieter.`, warnungen };
+    }
   }
   if (!l.email) {
     warnungen.push("Das Portal-Konto wurde vor der Adress-Bindung verknüpft — die Adresse ist unbekannt. Bitte auf der Mieterseite prüfen.");
   }
-  if (l.schonZugestellt) {
+  if (l.schonZugestellt && l.jahr !== null) {
     warnungen.push(`Für ${l.jahr} ist bereits eine Abrechnung im Portal sichtbar. Eine zweite stiftet Verwirrung — vorher die alte zurückziehen?`);
   }
   return { sperre: null, warnungen };

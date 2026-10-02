@@ -73,6 +73,21 @@ export async function updateDokument(id: string, fd: FormData) {
 
 export async function deleteDokument(id: string) {
   const { supabase, userId } = await uid();
+  // Ein zugestelltes Dokument bleibt, solange die Zustellung aktiv ist (02.10.2026):
+  // Sonst verschwände es still aus dem Portal des Mieters. Erst zurückziehen — das
+  // Protokoll der Zustellung bleibt danach auch ohne Dokument erhalten.
+  // Fehler der Abfrage = nicht löschen (ein leeres Ergebnis sähe aus wie „nicht zugestellt“).
+  const { data: aktiv, error: zFehler } = await supabase
+    .from("zustellungen")
+    .select("id")
+    .eq("vermieter_id", userId)
+    .eq("notiz_id", id)
+    .is("zurueckgezogen_am", null)
+    .limit(1);
+  if (zFehler) throw new Error("Zustellungen konnten nicht geprüft werden — nichts gelöscht.");
+  if ((aktiv ?? []).length > 0) {
+    throw new Error("Dieses Dokument ist im Mieterportal zugestellt. Bitte zuerst auf der Mieterseite zurückziehen.");
+  }
   // user_id im Filter wie in den übrigen Actions — ein RLS-Treffer-Null sähe
   // sonst wie ein gelungenes Löschen aus.
   const { error } = await supabase.from("notizen").delete().eq("id", id).eq("user_id", userId);

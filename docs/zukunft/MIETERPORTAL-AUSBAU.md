@@ -27,9 +27,35 @@ nichts mehr — in der Datenbank zeitgesteuert, ohne Aufräum-Job (Migration `20
 Belege nur noch aus der eigenen Mietzeit (F2 geschlossen, F6 teilweise). Zustellen nach Ablauf
 gesperrt; die Mieterseite nennt das Enddatum.
 
-**Noch offen:** S1 (Zustellungen als eigene Tabelle — bis dahin hängt ein Dokument weiter an der
-Mieter-ZEILE, F1/F4 sind also erst durch „trennen“ beherrschbar, nicht strukturell gelöst),
-S4, S6, S7 (Reichweite im Schalter), S8, S9.
+**02.10.2026 — S1 gebaut: Zustellung an eine Person** (Migrationen `20261002140000` +
+`20261002141000`, `lib/zustellung.ts`, `lib/actions/zustellung.ts`, `tests/zustellungen.test.ts`):
+- Tabelle **`zustellungen`**: an welches KONTO (`empfaenger_user_id`) und welche Adresse
+  (Schnappschuss), wann, von wem; `gelesen_am` (erster Abruf, gesetzt von der Datei-Route),
+  `bestaetigung_noetig`/`bestaetigt_am` („gelesen und bestätigt“, keine Unterschrift),
+  `zurueckgezogen_am`. Allgemein gebaut (`art` dokument / mitteilung / bestaetigung) — die
+  Mitteilungen bauen darauf auf.
+- Der Mieter sieht ein Archiv-Dokument **nur noch über eine eigene, aktive Zustellung vom eigenen
+  Vermieter** (Policy auf `notizen` umgestellt; F1, F4 für Dokumente und F7 geschlossen).
+  `notizen.mieter_freigabe` entscheidet nichts mehr.
+- Einfügen nur an ein Konto, das JETZT mit dem eigenen Mieter verknüpft ist, mit nicht
+  abgelaufenem Zugang, nur ein eigenes Dokument desselben Mieters, **Zeitpunkt = jetzt (±5 min,
+  keine Rückdatierung — es geht um Fristen)**. Ändern nur über drei Funktionen (abgerufen /
+  bestätigen / zurückziehen), Entfernen gar nicht: Das Protokoll ist der Nachweis (F8, A2).
+- **S6:** Datei, Mieter und Objekt eines zugestellten Dokuments sind gesperrt (Trigger);
+  Löschen verweigert die App, bis zurückgezogen ist. **S9:** Zurückziehen mit Hinweis auf
+  Art. 33 DSGVO, wenn schon abgerufen.
+- Mieterseite: je Dokument „Zugestellt an … am … · abgerufen … · bestätigt …“, „Zurückziehen“,
+  „Ins Mieterportal zustellen…“ mit Karte (Empfänger, Sperren, Warnungen, Bestätigung anfordern).
+- Bestand übernommen: 3 von 4 Freigaben (die vierte hatte kein verknüpftes Konto — sie sah
+  niemand). Zeitpunkt = Anlage des Dokuments; der echte Freigabezeitpunkt war nie gespeichert.
+- In einer zurückgerollten Transaktion bewiesen (Vermieter, Mieter, Fremder, Demo-Mieter).
+  **Dabei gefunden:** Die erste Fassung der Einfüge-Regel las `notizen`, deren Mieter-Regel
+  `zustellungen` liest → 42P17 (Rekursion) bei JEDEM Einfügen. Behoben über
+  `zustellung_notiz_passt()` mit Eigentümerrechten.
+- **Bewusst ohne Fremdschlüssel** auf `notizen`/`mieter`: `on delete …` löst den
+  Bestätigungsdialog von `apply_migration` aus, und das Protokoll soll das Dokument überleben.
+
+**Noch offen:** S4, S7 (Reichweite im Schalter), Vorschau berücksichtigt abgelaufenen Zugang nicht.
 
 ## 1. Kurzfazit
 
@@ -238,3 +264,58 @@ Dokument eines *anderen* Mieters nie erscheint.
 - Genügt Bereitstellung im Portal + E-Mail-Hinweis + Abrufnachweis als Zugang der
   NK-Abrechnung (§ 556 Abs. 3 BGB)? Welche Einwilligung braucht es dafür?
 - Verantwortung von MyImmo (Auftragsverarbeiter) bei einer produktbedingten Fehlzustellung.
+
+## 9. Vereinbarter Ausbauplan (Betreiber, 02.10.2026)
+
+Grundlage: eine externe Vision (Mieter-Dashboard, geführte Schadensmeldung, KI-Assistent,
+Vorgänge mit Verlauf, Mieterakte, Mitteilungen, Gebäude-Infos, Notfall, Unterschriften,
+Hausmeister-Automatik). Entscheidung: **erst zwei Fundamente, dann die Oberfläche** — sonst wird
+jede Funktion zweimal gebaut.
+
+**Fundamente (je ein eigener PR):**
+1. ✅ **Zustellung an eine Person** — allgemein für Dokumente, Mitteilungen und Bestätigungen
+   (siehe Abschnitt 0).
+2. **Vorgänge mit Verlauf** — ein Anliegen bekommt eine Ereignisliste (Nachricht, Statuswechsel,
+   Termin, Auftrag; je mit Absenderrolle) statt des einen Feldes `antwort`. Mieter und Vermieter
+   sehen denselben Verlauf.
+
+**Danach, in dieser Reihenfolge:**
+3. E-Mail-Benachrichtigungen („Es liegt etwas für Sie bereit“ — kein Inhalt, kein Anhang; braucht Brevo).
+4. Mieter-Startseite „Was muss ich erledigen?“ (offene Bestätigungen, Rückfragen, Termine).
+5. Geführte Schadensmeldung mit regelbasierten Rückfragen + **Notfall-Knopf, der zuerst auf 112
+   verweist** (Gas, Wasser, Feuer — MyImmo ist kein Notdienst).
+6. Mietkonto für den Mieter (Soll/Ist), Mitteilungen an Haus/alle Mieter, Gebäude-Infos.
+7. Kostengrenze: Aufträge bis X € ohne Rückfrage, darüber Freigabe durch den Vermieter.
+
+**Unterschrift:** nur **„gelesen und bestätigt“** (Zeitpunkt eines Klicks, `bestaetigt_am`) —
+keine elektronische Signatur, keine Willenserklärung über das Portal.
+
+**🧠 KI im Portal — gemerkt, nicht jetzt.** Wunsch des Betreibers. Zuerst regelbasierte
+Rückfragen (Schritt 5): vorhersehbar, prüfbar, ohne Kosten je Anfrage, ohne Drittland-Transfer.
+Wiederaufnehmen, wenn echte Mieter Anliegen schreiben und sichtbar wird, wo Regeln nicht reichen.
+Risiken dann: Haftung für falsche Ratschläge (z. B. „Selbst reparieren“ bei Gas/Strom), Kosten je
+Nachricht, Datenschutz (Mieter-Texte an einen KI-Dienst → AVV, Bedrock Frankfurt nutzen),
+Erwartung einer Sofortantwort.
+
+**🔧 Hausmeister — optional, nie Pflicht.** Idee des Betreibers: Vermieter beschäftigen einen
+Handwerker nebenberuflich (Minijob), der sich um 5–10 Objekte kümmert und Kleines in
+Eigenleistung erledigt; Größeres oder Unklares geht ins Firmenverzeichnis. Die Service-Rolle
+(`/service`, Aufträge, Firmenverzeichnis) trägt das schon. **Risiken, bevor die App dafür wirbt:**
+- **Minijob ist eine Anstellung beim Vermieter:** Anmeldung bei der Minijob-Zentrale
+  (Haushaltsscheck gilt NICHT — Arbeit an vermieteten Objekten ist gewerblich bzw.
+  Vermögensverwaltung), Pauschalabgaben, **gesetzliche Unfallversicherung** (zuständige
+  Berufsgenossenschaft — für Hausmeister meist die BG BAU; vor Ort klären), Lohnkosten
+  sind Werbungskosten. Ohne Anmeldung: Schwarzarbeit, und bei einem Unfall haftet der Vermieter.
+- **Gas, Strom, Trinkwasser, Schornstein: nur Fachbetrieb** (Eintragung in das
+  Installateurverzeichnis des Netzbetreibers, DVGW-/VDE-Regeln). Die App muss solche Aufträge beim Hausmeister sperren oder
+  deutlich warnen.
+- **Scheinselbständigkeit**, wenn er stattdessen als „Selbständiger“ für mehrere Vermieter
+  rechnet, aber weisungsgebunden und ohne eigenes Unternehmerrisiko arbeitet (Statusfeststellung
+  § 7a SGB IV); umgekehrt: Wer mehrere Minijobs hat, überschreitet schnell die Grenze.
+- **Handwerksrecht:** Wiederkehrende Arbeiten eines zulassungspflichtigen Handwerks (z. B.
+  Installateur) als Selbständiger brauchen eine Eintragung in die Handwerksrolle.
+- **MyImmo vermittelt nicht** — keine Provision, keine Arbeitnehmerüberlassung. Wer verdient,
+  bewegt sich sonst in Richtung Arbeitsvermittlung.
+→ Gehört als Frage auf die Anwaltsliste (zusammen mit Steuerberater), bevor die App eine
+„Hausmeister finden“-Funktion bekommt. Bis dahin: Der Vermieter lädt seinen eigenen Hausmeister
+ein; die App erklärt die Pflichten in einem Satz und verweist auf die Minijob-Zentrale.
