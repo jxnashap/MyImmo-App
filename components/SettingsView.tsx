@@ -1,5 +1,6 @@
 "use client";
 
+import BenachrichtigungSchalter from "@/components/BenachrichtigungSchalter";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -70,6 +71,7 @@ export default function SettingsView({
   einheiten = 0,
   billingEnforced = false,
   lastSignIn = null,
+  benachrichtigungenAus = false,
 }: {
   profil: VermieterProfil | null;
   ibans: Iban[];
@@ -82,6 +84,7 @@ export default function SettingsView({
   einheiten?: number;
   billingEnforced?: boolean;
   lastSignIn?: string | null;
+  benachrichtigungenAus?: boolean;
 }) {
   const demoKonto = istDemoKonto(email);
   const [tab, setTab] = useState<TabKey>("profil");
@@ -172,7 +175,7 @@ export default function SettingsView({
         {tab === "profil" && <ProfilPanel profil={profil} unterschrift={unterschrift ?? null} />}
         {tab === "bank" && <BankPanel ibans={ibans} />}
         {tab === "abo" && <AboPanel abo={abo} einheiten={einheiten} enforced={billingEnforced} />}
-        {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} ohnePasswort={ohnePasswort} demo={demoKonto} lastSignIn={lastSignIn} />}
+        {tab === "sicherheit" && <SicherheitPanel email={email} provider={provider} ohnePasswort={ohnePasswort} demo={demoKonto} lastSignIn={lastSignIn} benachrichtigungenAus={benachrichtigungenAus} />}
         {tab === "recht" && <RechtPanel email={email} ohnePasswort={ohnePasswort} />}
         {tab === "hilfe" && <HilfeInhalt />}
       </div>
@@ -455,7 +458,7 @@ function BankPanel({ ibans }: { ibans: Iban[] }) {
 }
 
 // ---------- Sicherheit ----------
-function SicherheitPanel({ email, provider, ohnePasswort = false, demo = false, lastSignIn }: { email?: string | null; provider?: string | null; ohnePasswort?: boolean; demo?: boolean; lastSignIn?: string | null }) {
+function SicherheitPanel({ email, provider, ohnePasswort = false, demo = false, lastSignIn, benachrichtigungenAus = false }: { email?: string | null; provider?: string | null; ohnePasswort?: boolean; demo?: boolean; lastSignIn?: string | null; benachrichtigungenAus?: boolean }) {
   const supabase = createClient();
   const toast = useToast();
   const ref = useReveal(null);
@@ -575,6 +578,7 @@ function SicherheitPanel({ email, provider, ohnePasswort = false, demo = false, 
       <ZweiFaktor demo={demo} istGoogle={googleAnmeldung} absichern={absichernMfa} />
       {mfaDialog}
       <SitzungenKarte lastSignIn={lastSignIn} demo={demo} />
+      <div style={{ marginTop: 16 }}><BenachrichtigungSchalter aus={benachrichtigungenAus} mieter={false} /></div>
       <AutoLogoutKarte />
     </div>
   );

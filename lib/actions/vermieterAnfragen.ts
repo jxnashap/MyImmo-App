@@ -2,6 +2,7 @@
 
 // Anfragen des Vermieters an den Mieter (Zählerstand, Zutritt, Zustimmung
 // Mieterhöhung, Personenzahl, …) — Gegenrichtung zum Anliegen-System.
+import { benachrichtige } from "@/lib/benachrichtigung";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
@@ -48,6 +49,16 @@ export async function erstelleVermieterAnfrage(formData: FormData) {
     faellig_bis: faelligBis || null,
   });
   if (error) return { error: "Anfrage konnte nicht gespeichert werden." };
+
+  // Hinweis-Mail an das (die) verbundene(n) Konto(en) dieses Mieters — beste Mühe.
+  // Scheitert die Abfrage, geht keine Mail raus (die Anfrage steht trotzdem im Portal).
+  const { data: konten } = await supabase
+    .from("mieter_zugaenge")
+    .select("user_id")
+    .eq("mieter_id", mieterId)
+    .eq("vermieter_id", user.id);
+  for (const k of (konten ?? []) as { user_id: string }[]) await benachrichtige(k.user_id, "anfrage", mieterId);
+
   revalidatePath("/anliegen");
   revalidatePath("/portal");
   return { ok: true };

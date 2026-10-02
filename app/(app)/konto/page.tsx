@@ -42,7 +42,7 @@ export default async function KontoSeite() {
         </div>
       </div>
 
-      <KontoVerwaltung email={user.email ?? "—"} rolle={rolle as "mieter" | "service"} ohnePasswort={ohnePasswort(passwortAntwort, user.app_metadata?.provider)} />
+      <KontoVerwaltung email={user.email ?? "—"} rolle={rolle as "mieter" | "service"} ohnePasswort={ohnePasswort(passwortAntwort, user.app_metadata?.provider)} benachrichtigungenAus={user.user_metadata?.benachrichtigungen_aus === true} />
     </div>
   );
 }

@@ -285,7 +285,15 @@ jede Funktion zweimal gebaut.
    **Noch nicht:** „ungelesen“ je Seite (kommt mit den Benachrichtigungen, Schritt 3).
 
 **Danach, in dieser Reihenfolge:**
-3. E-Mail-Benachrichtigungen („Es liegt etwas für Sie bereit“ — kein Inhalt, kein Anhang; braucht Brevo).
+3. ✅ **E-Mail-Benachrichtigungen** (02.10.2026, `lib/benachrichtigung.ts`): „Es liegt etwas
+   bereit“ — **kein Titel, kein Inhalt, kein Anhang**, nur die Art und ein Link. An den Mieter:
+   Dokument zugestellt, Nachricht, Terminvorschläge, Anfrage des Vermieters. An den Vermieter:
+   neues Anliegen, Nachricht, Terminbestätigung. Adresse aus dem Auth-Konto (Service-Role), nie
+   vom Aufrufer; je Empfänger, Art und Bezug höchstens eine Mail in 10 Minuten; abschaltbar
+   (Mieter: Konto, Vermieter: Einstellungen → Sicherheit; `user_metadata.benachrichtigungen_aus`);
+   nie an Demo-Konten; ohne Brevo still nichts. Beste Mühe — scheitert der Versand, bleibt die
+   Handlung gültig. **Offen:** „ungelesen“ im Portal selbst; Zugangsnachweis (§ 556 Abs. 3) bleibt
+   eine Anwaltsfrage — eine Hinweis-Mail ist kein Zugang.
 4. ✅ **Mieter-Startseite „Zu erledigen“** (02.10.2026, `lib/mieterAufgaben.ts`): zu bestätigende
    und ungeöffnete Dokumente, Terminwahl, Antwort des Vermieters (14 Tage), offene Anfragen des
    Vermieters mit Frist (≤ 3 Tage = dringend). Aus den ohnehin geladenen Daten, keine Abfrage mehr.

@@ -10,6 +10,7 @@
 import type { createClient } from "@/lib/supabase/server";
 import { pruefeZustellung, type ZustellPruefung } from "@/lib/mieterZugang";
 import { heuteBerlin } from "@/lib/zeitraum";
+import { benachrichtige } from "@/lib/benachrichtigung";
 
 type Db = Awaited<ReturnType<typeof createClient>>;
 
@@ -110,5 +111,7 @@ export async function zustelle(
   if (error || !data || (data as unknown[]).length !== zeilen.length) {
     return { ok: false, error: "Zustellung fehlgeschlagen — das Dokument ist im Mieterportal NICHT sichtbar." };
   }
+  // Hinweis-Mail „es liegt etwas bereit“ — beste Mühe, die Zustellung steht schon.
+  for (const e of opts.empfaenger) await benachrichtige(e.userId, "dokument", opts.notizId);
   return { ok: true, an: opts.empfaenger.map((e) => e.email ?? "Portal-Konto") };
 }
