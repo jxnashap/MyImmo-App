@@ -43,6 +43,8 @@
 > 🚀 **Launch: `docs/LAUNCH-FUNDAMENT.md`** (03.10.2026) — Startstufen S1 Gratis / S2 Bezahlt / S3 Stores,
 > Wartezeiten (Anwalt, Play 12 × 14 Tage, DSA-Adresse), Fundament F1–F7, Betreiber-Liste. Löst den
 > 90-Tage-Plan im Memory ab. Erster Schritt dort: Brevo (die Warteliste hat 0 Einträge).
+> 📣 **Marketing: `docs/MARKETINGPLAN.md`** (03.10.2026) — Okt. 2026 – Juni 2027, ≈ 5 h/Woche
+> für Jonas, Kanäle mit Abbruchregel, Phasen A–D, Textvorlagen. Offen: Nebentätigkeit klären.
 >
 > ✅ **A5 erledigt (04.09.2026): Die Tarif-Schranken sind eingebaut.** Bis dahin war die
 > Matrix in `lib/plan.ts` zwar vollständig, `darfFeature()` und `einheitenLimit()` wurden

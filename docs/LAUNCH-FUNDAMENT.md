@@ -15,6 +15,7 @@ Verwandt:
 - `[[APP-STORE-RECHT]]`
 - `[[FEEDBACK-BEWERTUNG-2026-10]]`
 - `docs/marketing/INSTAGRAM.md`
+- `[[MARKETINGPLAN]]`: der Marketingplan mit Zeit, Ablauf und Zuständigkeit
 
 ---
 

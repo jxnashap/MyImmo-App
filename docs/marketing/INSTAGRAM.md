@@ -87,6 +87,10 @@ Leser → CTA („Link in der Bio") → 5–8 Hashtags. Rechtliches immer mit
 
 ## 6. Messkriterien (Test-Charakter!)
 
+> ⚠️ **Korrektur 03.10.2026:** „UTM in Vercel Analytics“ gibt es nicht (keine Analyse-Tools,
+> Datenschutz Ziffer 2), und die Registrierung ist geschlossen. Messung stattdessen: Bio-Link
+> `/?quelle=instagram` → Herkunft in der Warteliste (`[[MARKETINGPLAN]]` §0.3, §6).
+
 Nach **8 Wochen** (24 Posts) auswerten:
 - Reichweite/Post, Follower, Saves (Saves = wichtigster Indikator für Wissens-Content)
 - **Klicks auf den Bio-Link** (UTM in Vercel Analytics) und daraus **Registrierungen**
