@@ -118,6 +118,10 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    („12345678" u. a.), danach ein sicheres Passwort angenommen. Belegt am Passwort-SETZEN;
    für die Registrierung gilt dieselbe Server-Einstellung, dort nicht eigens probiert.
 0. **Brevo-Zugang in Vercel eintragen (02.10.2026 gefunden, DRINGEND vor dem Start):**
+   🟨 **03.10.2026: laut Betreiber eingetragen** (Projekt in Vercel 07:32 UTC geändert, danach
+   neu deployt). **Falle:** Eine Env-Änderung wirkt erst mit dem NÄCHSTEN Deployment — der
+   letzte Produktions-Build lag 3 Minuten davor, die Formulare blieben ausgeblendet.
+   Merkmal ohne Mailversand: Erscheint auf `/vorlagen` ein E-Mail-Feld, ist `brevoBereit()` wahr.
    `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` (in Brevo verifiziert, SPF/DKIM für
    myimmoapp.de), optional `BREVO_LIST_ID`, danach **neu deployen**. Ohne sie endete jede
    Anmeldung mit 503 „Versand gerade nicht verfügbar“ — `newsletter_anmeldungen` hatte
