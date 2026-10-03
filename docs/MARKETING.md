@@ -6,6 +6,8 @@ Ziel laut Betreiber: **Sichtbarkeit aufbauen UND zahlende Kunden gewinnen.**
 Redesign-Status: **offen, dauert noch** → alle Bildbestände müssen per Skript
 reproduzierbar sein.
 
+Startplan (Stufen, Wartezeiten, Fundament): `[[LAUNCH-FUNDAMENT]]` (03.10.2026).
+
 Verwandt: `[[BEZAHLSYSTEM]]` · `[[FINANZKONZEPT]]` · `[[MASTERPLAN]]` · `[[BRIEFING]]`
 
 ---

@@ -40,6 +40,10 @@
 > Dringlichkeit sortiert, frisch gegen den Code geprüft, mit einem Abschnitt „ausdrücklich
 > NICHT nötig".
 >
+> 🚀 **Launch: `docs/LAUNCH-FUNDAMENT.md`** (03.10.2026) — Startstufen S1 Gratis / S2 Bezahlt / S3 Stores,
+> Wartezeiten (Anwalt, Play 12 × 14 Tage, DSA-Adresse), Fundament F1–F7, Betreiber-Liste. Löst den
+> 90-Tage-Plan im Memory ab. Erster Schritt dort: Brevo (die Warteliste hat 0 Einträge).
+>
 > ✅ **A5 erledigt (04.09.2026): Die Tarif-Schranken sind eingebaut.** Bis dahin war die
 > Matrix in `lib/plan.ts` zwar vollständig, `darfFeature()` und `einheitenLimit()` wurden
 > aber an NULL Stellen aufgerufen — `BILLING_ENFORCED=true` wäre wirkungslos gewesen.
