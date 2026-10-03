@@ -367,6 +367,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   `/termine`: Liste nach Monaten gruppiert (`.tz-gruppe`, Überfällig zuerst), Monatsansicht zeigt
   UNTER dem Raster die Termine des Monats bzw. des gewählten Tags. Bearbeiten/Löschen auf dem
   Desktop blass bis Hover. **Regel: Neue Listen nehmen `.listen-zeile`, keine Textblöcke.**
+  **Zweiter Schub (gleicher Tag, „die ganze App so“):** Kredite (Kennzahlen oben, eine Zeile je
+  Darlehen, ALLE zwölf Felder im Dialog `Details`), Immobilien (Wert/Miete, Rendite/Restschuld je
+  Zeile; **Löschen nur noch auf der Objektseite** → `objektUmfaenge()` mit sechs Vollabfragen je
+  Listenaufruf entfiel), Mieter (laufend, darunter „Ausgezogen“; Telefon/Mail/Bearbeiten/NK auf
+  der Mieterseite), Archiv (Notiz nur als Tooltip und im Dialog), Mietkonto (Hinweis § 11 EStG
+  eingeklappt, offene Eingänge als Zeilen in EINER Karte). **Bewusst NICHT umgebaut:** Steuer,
+  Jahresbericht und die Buchungstabelle — Zahlenmatrizen gehören in Tabellen.
+  🐞 **Falle (am Handy gesehen):** `.badge` steht in `globals.css` NACH der Ausblende-Regel und
+  setzte `display` zurück; ein inline `display` an einer Zusatzspalte schlägt sie ebenfalls.
+  Jetzt `.listen-zeile .listen-zeile-extra`; `tests/kompakteListen.test.ts` hält beides fest.
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**

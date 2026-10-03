@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { X, TriangleAlert } from "lucide-react";
+import { TriangleAlert, Landmark, ChevronRight } from "lucide-react";
 import { euro, datum, zahl } from "@/lib/format";
 import { getRefinanzWarning } from "@/lib/fristen";
 import { updateKredit, deleteKredit } from "@/lib/actions/buchungen";
@@ -12,9 +12,58 @@ import { laufzeitText } from "@/lib/kreditLaufzeit";
 
 const SONDER = ["", "5% p.a.", "10% p.a.", "Nein", "Ja, unbegrenzt"];
 
-// Kredit-Liste: Karten wie gehabt, aber per Klick öffnet sich der Kredit in
-// einer Bubble (RowDialog) und wird dort inline bearbeitet — wie bei
-// Ausgaben/Einnahmen. Keine separate Bearbeiten-Seite mehr nötig.
+/** Kennzahlen eines Darlehens, aus den gespeicherten Feldern abgeleitet. */
+function kennzahlen(k: Kredit) {
+  const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? 0) / k.betrag) * 100))) : 100;
+  const moZins = k.restschuld ? (k.restschuld * (k.zinssatz ?? 0) / 100) / 12 : 0;
+  const moTilg = Math.max(0, (k.monatsrate ?? 0) - moZins);
+  return { getilgt: 100 - pct, moZins, moTilg };
+}
+
+/** Alle Felder eines Darlehens — oben im Dialog, damit die kompakte Zeile nichts verschluckt. */
+function Details({ k }: { k: Kredit }) {
+  const { getilgt, moZins, moTilg } = kennzahlen(k);
+  const warn = getRefinanzWarning(k.zinsbindung);
+  const feld = (lbl: string, val: React.ReactNode, farbe?: string) => (
+    <div><div className="kredit-field-lbl">{lbl}</div><div className="kredit-field-val" style={farbe ? { color: farbe } : undefined}>{val}</div></div>
+  );
+  return (
+    <div style={{ marginBottom: 18 }}>
+      {warn && (
+        <div style={{ background: warn.bg, borderLeft: `3px solid ${warn.color}`, padding: "8px 12px", fontSize: 12, color: warn.color, fontWeight: 500, borderRadius: 8, marginBottom: 12 }}>
+          <TriangleAlert size={13} style={{ verticalAlign: "-2px" }} /> Zinsbindung läuft ab: <strong>{datum(k.zinsbindung)}</strong>
+        </div>
+      )}
+      <div className="kredit-grid" style={{ marginBottom: 12 }}>
+        {feld("Urspr. Darlehen", euro(k.betrag))}
+        {feld("Restschuld", euro(k.restschuld))}
+        {feld("Rate / Monat", euro(k.monatsrate))}
+        {feld("Laufzeit", laufzeitText(k.laufzeit, k.auszahlung_datum))}
+        {feld("Zinsen / Mo.", euro(moZins), "var(--muted)")}
+        {feld("Tilgung / Mo.", euro(moTilg), "var(--green)")}
+        {feld("Tilgungssatz", k.tilgungssatz ? `${k.tilgungssatz}% p.a.` : "–")}
+        {feld("Zinsbindung", k.zinsbindung ? datum(k.zinsbindung) : "–", warn?.color)}
+        {feld("Grundschuld", k.grundschuld ? euro(k.grundschuld) : "–")}
+        {feld("Beleihungsauslauf", k.beleihung ? `${k.beleihung}%` : "–")}
+        {feld("Sondertilgung", k.sonder || "–")}
+        {feld("Getilgt", `${getilgt}%`)}
+      </div>
+      {/* Ohne Auszahlungsdatum fehlt die Frist fürs Sonderkündigungsrecht
+          (lib/fristen.ts, 10 Jahre nach Vollauszahlung) — und in den
+          Terminen steht dazu nichts (30.09.2026: 6 von 8 echten Krediten). */}
+      {!k.auszahlung_datum && (
+        <p style={{ fontSize: 12, color: "var(--muted)", margin: 0 }}>
+          <TriangleAlert size={12} style={{ verticalAlign: "-2px", color: "var(--amber)" }} /> Auszahlungsdatum fehlt — ohne es
+          berechnet MyImmo weder das Laufzeitende noch die Frist fürs Sonderkündigungsrecht nach 10 Jahren (§ 489 BGB).
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Kredit-Liste (03.10.2026): EINE Zeile je Darlehen — Bezeichnung, Objekt · Bank · Zinsbindung,
+// Tilgungsbalken, Restschuld und Rate. Ein Klick öffnet den Dialog mit allen Feldern und dem
+// Bearbeiten-Formular (vorher: vier Karten mit je zwölf Feldern untereinander).
 export default function KrediteListe({
   rows,
   properties,
@@ -25,83 +74,51 @@ export default function KrediteListe({
   const [openId, setOpenId] = useState<string | null>(null);
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
   const offen = rows.find((r) => r.id === openId) ?? null;
-  const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
     <>
-      {rows.map((k) => {
-        const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? 0) / k.betrag) * 100))) : 100;
-        const tilgtPct = 100 - pct;
-        const moZins = k.restschuld ? (k.restschuld * (k.zinssatz ?? 0) / 100) / 12 : 0;
-        const moTilg = (k.monatsrate ?? 0) - moZins;
-        const warn = getRefinanzWarning(k.zinsbindung);
-        return (
-          <div
-            key={k.id}
-            className="section row-click"
-            style={{ marginBottom: 14 }}
-            tabIndex={0}
-            role="button"
-            aria-label={`${k.bezeichnung || "Darlehen"} bearbeiten`}
-            onClick={() => setOpenId(k.id)}
-            onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setOpenId(k.id); } }}
-          >
-            {warn && (
-              <div style={{ background: warn.bg, borderLeft: `3px solid ${warn.color}`, padding: "8px 14px", fontSize: 12, color: warn.color, fontWeight: 500 }}>
-                <TriangleAlert size={13} style={{ verticalAlign: "-2px" }} /> Zinsbindung läuft ab: <strong>{datum(k.zinsbindung)}</strong>
-              </div>
-            )}
-            <div className="section-header">
-              <div>
-                <h3>{k.bezeichnung || k.bank || "Darlehen"}</h3>
-                <span style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"}{k.bank ? ` · ${k.bank}` : ""}{k.darlnr ? ` · Nr. ${k.darlnr}` : ""}</span>
-              </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {k.zinssatz != null && <span className="badge badge-gold">{zahl(k.zinssatz, 1)} % Zins</span>}
-                <span onClick={stop} style={{ display: "inline-flex" }}>
-                  <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
+      <div className="section">
+        <div className="section-header">
+          <div><h3>Darlehen</h3><div className="section-sub">{rows.length} Darlehen · Klick öffnet alle Angaben</div></div>
+        </div>
+        <div className="section-body listen">
+          {rows.map((k) => {
+            const { getilgt } = kennzahlen(k);
+            const warn = getRefinanzWarning(k.zinsbindung);
+            const sub = [
+              (k.prop_id && nameOf.get(k.prop_id)) || "ohne Objekt",
+              k.bank,
+              k.zinsbindung ? `Zinsbindung bis ${datum(k.zinsbindung)}` : null,
+            ].filter(Boolean).join(" · ");
+            return (
+              <button key={k.id} type="button" className="listen-zeile" onClick={() => setOpenId(k.id)}
+                aria-label={`${k.bezeichnung || "Darlehen"} öffnen`}>
+                <span className="listen-icon"><Landmark size={16} /></span>
+                <span className="listen-zeile-text">
+                  <span className="listen-zeile-titel">
+                    {k.bezeichnung || k.bank || "Darlehen"}
+                    {k.zinssatz != null && <span style={{ fontWeight: 400, color: "var(--muted)" }}> · {zahl(k.zinssatz, 1)} %</span>}
+                  </span>
+                  <span className="listen-zeile-sub" style={warn ? { color: warn.color } : undefined}>{sub}</span>
                 </span>
-              </div>
-            </div>
-            <div className="section-body">
-              <div className="kredit-grid" style={{ marginBottom: 14 }}>
-                <div><div className="kredit-field-lbl">Urspr. Darlehen</div><div className="kredit-field-val">{euro(k.betrag)}</div></div>
-                <div><div className="kredit-field-lbl">Restschuld</div><div className="kredit-field-val">{euro(k.restschuld)}</div></div>
-                <div><div className="kredit-field-lbl">Rate / Monat</div><div className="kredit-field-val">{euro(k.monatsrate)}</div></div>
-                <div><div className="kredit-field-lbl">Laufzeit</div><div className="kredit-field-val">{laufzeitText(k.laufzeit, k.auszahlung_datum)}</div></div>
-              </div>
-              {/* Ohne Auszahlungsdatum fehlt die Frist fürs Sonderkündigungsrecht
-                  (lib/fristen.ts, 10 Jahre nach Vollauszahlung) — und in den
-                  Terminen steht dazu nichts (30.09.2026: 6 von 8 echten Krediten). */}
-              {!k.auszahlung_datum && (
-                <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 14px" }}>
-                  <TriangleAlert size={12} style={{ verticalAlign: "-2px", color: "var(--amber)" }} /> Auszahlungsdatum fehlt — ohne es
-                  berechnet MyImmo weder das Laufzeitende noch die Frist fürs Sonderkündigungsrecht nach 10 Jahren (§ 489 BGB).
-                </p>
-              )}
-              <div className="kredit-grid" style={{ marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-                <div><div className="kredit-field-lbl">Zinsen / Mo.</div><div className="kredit-field-val" style={{ color: "var(--muted)" }}>{euro(moZins)}</div></div>
-                <div><div className="kredit-field-lbl">Tilgung / Mo.</div><div className="kredit-field-val" style={{ color: "var(--green)" }}>{euro(Math.max(0, moTilg))}</div></div>
-                <div><div className="kredit-field-lbl">Tilgungssatz</div><div className="kredit-field-val">{k.tilgungssatz ? `${k.tilgungssatz}% p.a.` : "–"}</div></div>
-                <div><div className="kredit-field-lbl">Zinsbindung</div><div className="kredit-field-val" style={{ color: warn ? warn.color : "inherit" }}>{k.zinsbindung ? datum(k.zinsbindung) : "–"}</div></div>
-              </div>
-              {(k.grundschuld || k.beleihung || k.sonder) && (
-                <div className="kredit-grid" style={{ marginBottom: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-                  <div><div className="kredit-field-lbl">Grundschuld</div><div className="kredit-field-val">{k.grundschuld ? euro(k.grundschuld) : "–"}</div></div>
-                  <div><div className="kredit-field-lbl">Beleihungsauslauf</div><div className="kredit-field-val">{k.beleihung ? `${k.beleihung}%` : "–"}</div></div>
-                  <div><div className="kredit-field-lbl">Darlehensnr.</div><div className="kredit-field-val" style={{ fontSize: 11 }}>{k.darlnr || "–"}</div></div>
-                  <div><div className="kredit-field-lbl">Sondertilgung</div><div className="kredit-field-val">{k.sonder || "–"}</div></div>
-                </div>
-              )}
-              <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 5 }}>Getilgt: <strong style={{ color: "var(--text)" }}>{tilgtPct}%</strong></div>
-              <div className="progress-bar" style={{ height: 8 }}><div className="progress-fill" style={{ width: `${tilgtPct}%`, background: "var(--teal)" }} /></div>
-            </div>
-          </div>
-        );
-      })}
+                {!k.auszahlung_datum && <span className="badge badge-amber listen-zeile-extra" title="Ohne Auszahlungsdatum fehlen Laufzeitende und Frist nach § 489 BGB">Auszahlung fehlt</span>}
+                {/* Kein inline `display` an der Zusatzspalte — er schlüge die Handy-Regel, die sie ausblendet. */}
+                <span className="listen-zeile-extra" title={`${getilgt} % getilgt`}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "var(--muted)" }}>
+                    <span className="mini-balken"><i style={{ width: `${getilgt}%` }} /></span>{getilgt} %
+                  </span>
+                </span>
+                <span className="listen-zeile-zahl"><b>{euro(k.restschuld)}</b><small>{euro(k.monatsrate)} / Mo.</small></span>
+                <ChevronRight size={16} color="var(--faint)" style={{ flexShrink: 0 }} />
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {offen && (
-        <RowDialog title="Darlehen bearbeiten" onClose={() => setOpenId(null)}>
+        <RowDialog title={offen.bezeichnung || "Darlehen"} onClose={() => setOpenId(null)}>
+          <Details k={offen} />
           <form action={updateKredit.bind(null, offen.id)} className="form-box" style={{ padding: 0, border: "none", background: "none", maxWidth: "none" }}>
             <input type="hidden" name="back" value="/kredite" />
 

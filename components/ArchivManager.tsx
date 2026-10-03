@@ -2,7 +2,7 @@
 import SubmitButton from "@/components/SubmitButton";
 
 import { useMemo, useState } from "react";
-import { Building2, User, Tag, X, Download, Eye, FileText, Image as ImageIcon, Paperclip, Archive, Home, Plus, SlidersHorizontal, Upload } from "lucide-react";
+import { Building2, User, Tag, X, Download, Eye, FileText, Image as ImageIcon, Paperclip, Archive, Plus, SlidersHorizontal, Upload } from "lucide-react";
 import Select from "@/components/filters/Select";
 import RowDialog from "@/components/RowDialog";
 import { useToast } from "@/components/Toast";
@@ -22,20 +22,8 @@ export const ARCHIV_ARTEN = [
   "Sonstiges",
 ];
 
-const ART_BADGE: Record<string, string> = {
-  "Mietvertrag": "badge-gold",
-  "Nebenkostenabrechnung": "badge-teal",
-  "Versicherung": "badge-green",
-  "Schreiben / Brief": "badge-teal",
-  "Übergabeprotokoll": "badge-gold",
-  "Rechnung": "badge-red",
-  "Grundbuch / Kauf": "badge-green",
-  "Energieausweis": "badge-teal",
-  "Sonstiges": "badge-teal",
-};
-
 const fileIcon = (type: string | null) =>
-  type === "application/pdf" ? <FileText size={22} /> : type?.startsWith("image/") ? <ImageIcon size={22} /> : <Paperclip size={22} />;
+  type === "application/pdf" ? <FileText size={16} /> : type?.startsWith("image/") ? <ImageIcon size={16} /> : <Paperclip size={16} />;
 
 const deDate = (s: string | null) =>
   s ? new Date(s).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
@@ -213,36 +201,34 @@ export default function ArchivManager({
         </div>
       ) : (
         <div className="section">
-          <div className="section-body" style={{ paddingTop: 4 }}>
+          {/* Eine Zeile je Dokument (03.10.2026): Titel, darunter Art · Objekt · Mieter; die Notiz
+              steht im Bearbeiten-Dialog und als Tooltip, nicht mehr als dritte Zeile. */}
+          <div className="section-body listen">
             {gefiltert.map((d) => (
               <div
                 key={d.id}
-                className="row-click"
+                className="listen-zeile"
+                style={{ cursor: "pointer" }}
                 tabIndex={0}
                 role="button"
                 aria-label="Dokument bearbeiten"
+                title={d.inhalt ?? undefined}
                 onClick={() => setEditId(d.id)}
                 onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setEditId(d.id); } }}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 8px", borderBottom: "1px solid var(--line)", borderRadius: 8 }}
               >
-                <div style={{ display: "flex", alignItems: "center", color: "var(--muted)" }}>{fileIcon(d.datei_type)}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 500, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {d.titel || d.datei_name || "Dokument"}
-                  </div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4, alignItems: "center" }}>
-                    {d.kategorie && <span className={`badge ${ART_BADGE[d.kategorie] || "badge-teal"}`}>{d.kategorie}</span>}
-                    {d.prop_id && propName.get(d.prop_id) && <span style={{ fontSize: 11, color: "var(--muted)" }}><Home size={11} style={{ verticalAlign: "-1px" }} /> {propName.get(d.prop_id)}</span>}
-                    {d.mieter_id && mieterName.get(d.mieter_id) && <span style={{ fontSize: 11, color: "var(--muted)" }}><User size={11} style={{ verticalAlign: "-1px" }} /> {mieterName.get(d.mieter_id)}</span>}
-                    <span style={{ fontSize: 11, color: "var(--faint)" }}>{deDate(d.created_at)}</span>
-                  </div>
-                  {d.inhalt && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{d.inhalt}</div>}
-                </div>
+                <span className="listen-icon">{fileIcon(d.datei_type)}</span>
+                <span className="listen-zeile-text">
+                  <span className="listen-zeile-titel">{d.titel || d.datei_name || "Dokument"}</span>
+                  <span className="listen-zeile-sub">
+                    {[d.kategorie, d.prop_id ? propName.get(d.prop_id) : null, d.mieter_id ? mieterName.get(d.mieter_id) : null].filter(Boolean).join(" · ") || "ohne Zuordnung"}
+                  </span>
+                </span>
+                <span className="listen-zeile-datum">{deDate(d.created_at)}</span>
                 {d.datei_name && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-                    <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5 }} title={d.datei_name}><Eye size={13} /> Öffnen</a>
-                    <a href={`/archiv/${d.id}/datei?download=1`} className="delete-btn" title="Herunterladen" style={{ color: "var(--muted)", display: "inline-grid", placeItems: "center" }}><Download size={14} /></a>
-                  </div>
+                  <span style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                    <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="delete-btn" title={`Öffnen: ${d.datei_name}`} aria-label="Datei öffnen" style={{ color: "var(--muted)", display: "inline-grid", placeItems: "center" }}><Eye size={15} /></a>
+                    <a href={`/archiv/${d.id}/datei?download=1`} className="delete-btn" title="Herunterladen" aria-label="Datei herunterladen" style={{ color: "var(--muted)", display: "inline-grid", placeItems: "center" }}><Download size={15} /></a>
+                  </span>
                 )}
               </div>
             ))}
