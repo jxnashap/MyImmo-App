@@ -96,7 +96,7 @@ export default function KaufAssistent({
     lade();
     window.addEventListener("focus", lade);
     return () => window.removeEventListener("focus", lade);
-  }, []);
+  }, [demo]);
 
   // Gewähltes Objekt aus dem Vergleich lesen (Schritt 2 „übernehmen"). Auf
   // Fokuswechsel neu laden, damit die Übernahme ohne Reload ankommt.
@@ -113,7 +113,7 @@ export default function KaufAssistent({
     lade();
     window.addEventListener("focus", lade);
     return () => window.removeEventListener("focus", lade);
-  }, [rechnerOffen]);
+  }, [rechnerOffen, demo]);
 
   // Eigenkapital aus der Selbstauskunft; Darlehensbedarf & Rate ergeben sich
   // erst aus der Finanzierung (nicht mehr im Objekt-Rechner).
@@ -174,7 +174,7 @@ export default function KaufAssistent({
             geschätzten <strong>Marktwert</strong> nach ImmoWertV (Vermietung → Ertragswert,
             Eigennutzung → Sachwert). <strong>Speichere</strong> jeden Kandidaten in deinen Ordner,
             öffne ihn später wieder zum Bearbeiten und vergleiche 3–5 über{" "}
-            <Scale size={13} style={{ verticalAlign: "-2px", margin: "0 3px" }} />„Vergleichen" — das
+            <Scale size={13} style={{ verticalAlign: "-2px", margin: "0 3px" }} />„Vergleichen&quot; — das
             beste bekommt eine Krone.
           </p>
           {!rechnerOffen ? (
@@ -233,7 +233,7 @@ export default function KaufAssistent({
           <div className="form-section-label" style={{ marginTop: 20 }}>Zwei Finanzierungs-Szenarien im Vergleich</div>
           <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
             Grafische Aufteilung deiner Gesamtinvestition in Eigenkapital, (optional) Förderkredit und Bankdarlehen —
-            einmal „solide" (mehr Eigenkapital), einmal „liquiditätsschonend" (mehr Puffer). Beide sind Rechenbeispiele, keine Empfehlung.
+            einmal „solide&quot; (mehr Eigenkapital), einmal „liquiditätsschonend&quot; (mehr Puffer). Beide sind Rechenbeispiele, keine Empfehlung.
           </p>
           {auswahl && auswahl.gesamtInvest > 0 ? (
             <FinanzierungsVorschlaege
@@ -306,7 +306,7 @@ export default function KaufAssistent({
           <p style={{ fontSize: 11.5, color: "var(--faint)", margin: "8px 0 0", display: "flex", gap: 7 }}>
             <Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />
             <span>Den <strong>Bank-Ordner</strong> (Beleihungsordner mit Kennblatt, Mietaufstellung, Freigabe-Link)
-              findest du objektbezogen auf der Seite des jeweiligen Objekts → Reiter „Beleihungsordner", sobald das
+              findest du objektbezogen auf der Seite des jeweiligen Objekts → Reiter „Beleihungsordner&quot;, sobald das
               Objekt in deinem Bestand ist.</span>
           </p>
           <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line)" }}>

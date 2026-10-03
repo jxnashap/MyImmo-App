@@ -128,7 +128,7 @@ function CodeSektion({ codes }: { codes: ServiceCodeRow[] }) {
       <div className="section-body">
         <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: alle.length ? 10 : 0 }}>
           Gib den Code an deinen Handwerker/Hausmeister — er registriert sich damit unter
-          „Service / Hausmeister" und ist dann mit dir verknüpft. Jeder Code gilt einmalig, 14 Tage.
+          „Service / Hausmeister&quot; und ist dann mit dir verknüpft. Jeder Code gilt einmalig, 14 Tage.
         </p>
         {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
         {alle.map((c) => (

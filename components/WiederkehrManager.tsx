@@ -6,7 +6,7 @@ import { Plus, Repeat, X, Pause, Play } from "lucide-react";
 // Buchungen mit Vorschau erzeugen (rückwirkend bis 10 Jahre). Die Engine läuft
 // clientseitig für die Vorschau; gebucht wird per Server-Action.
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { eur2, datum } from "@/lib/format";
 import { faelligeDaten, offeneDaten, ZYKLEN, ZYKLUS_LABEL, type Zyklus } from "@/lib/wiederkehr";
@@ -217,7 +217,7 @@ export default function WiederkehrManager({
           {vorlagen.length === 0 ? (
             <div className="empty" style={{ padding: 28 }}>
               <Repeat className="empty-icon" size={36} color="var(--faint)" />
-              <p>Noch keine wiederkehrenden Buchungen. Lege z. B. „Grundsteuer · jährlich" oder „Müllabfuhr · vierteljährlich" an.</p>
+              <p>Noch keine wiederkehrenden Buchungen. Lege z. B. „Grundsteuer · jährlich&quot; oder „Müllabfuhr · vierteljährlich&quot; an.</p>
             </div>
           ) : (
             vorlagen.map((v) => {

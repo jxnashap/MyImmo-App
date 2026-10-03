@@ -20,6 +20,7 @@ export function ZeitraumProvider({ children }: { children: React.ReactNode }) {
     try {
       const s = localStorage.getItem(KEY);
       // Ein gespeichertes „1M" (entfallen 30.09.2026) ist ungültig → bleibt „1J".
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
       if (istZeitraum(s)) setZ(s);
     } catch {
       /* localStorage nicht verfügbar */

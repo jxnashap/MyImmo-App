@@ -13,6 +13,7 @@ export function useCountUp(ziel: number, dauer = 500): number {
   const vonRef = useRef(ziel);
   const rafRef = useRef<number | undefined>(undefined);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- ohne Animation sofort den Zielwert setzen (reduzierte Bewegung)
     if (prefersReduced() || dauer <= 0) { setWert(ziel); vonRef.current = ziel; return; }
     const von = vonRef.current;
     const start = performance.now();

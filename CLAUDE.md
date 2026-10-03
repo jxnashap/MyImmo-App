@@ -1073,6 +1073,14 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   es war Hygiene. **Regel: Komponenten nie innerhalb einer Komponente definieren.**
   Blockiert nichts (Next 16 lintet beim Build nicht mehr) — **als eigenes Vorhaben abarbeiten,
   nicht nebenbei.**
+  ✅ **Abgebaut 03.10.2026: `npm run lint` = 0 Fehler, 0 Warnungen.** Anführungszeichen im
+  JSX-Text anzeigegleich als `&quot;`; `any`-Casts entfernt (der Supabase-Client ist untypisiert,
+  sie waren überflüssig); `Date.now()` im Render durch `heuteBerlin()`/Effekt ersetzt; Ref nicht
+  mehr im Render geschrieben. **29 Stellen bewusst markiert, nicht umgebaut** (je mit Grund im
+  Kommentar): 25× `set-state-in-effect` (Browserwert erst nach dem Mount lesen, Props→Bearbeitungs-
+  stand, Zurücksetzen beim Öffnen), 1× synchrones `theme.js` (sonst Flackern), 3× harte
+  Navigation (Abmelden, Freischaltung, Datei-Download). Unterstrich-Namen gelten als absichtlich
+  unbenutzt (`eslint.config.mjs`). **Regel: Neuer Code hält `npm run lint` bei 0.**
 - ✅ **Next-15-Migration UMGESETZT (01.09.2026): Next 15.5.25 / React 19.2.8.** Plan samt
   Umsetzungsbericht: **`docs/zukunft/NEXTJS-15-MIGRATION.md`**; Befundlage:
   **`docs/SICHERHEIT-ABHAENGIGKEITEN.md`**. Alle 21 next-Meldungen geschlossen (25 → 4).

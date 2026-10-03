@@ -14,6 +14,7 @@ export default function ThemeToggle({ variant = "full" }: { variant?: "full" | "
         (localStorage.getItem("theme") as Theme | null)) ||
       (document.documentElement.getAttribute("data-theme") as Theme | null);
     if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
       setTheme(saved);
       return;
     }

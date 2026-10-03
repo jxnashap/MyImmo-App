@@ -36,7 +36,7 @@ export default function AvvPage() {
         <strong>Verantwortlicher:</strong> die Nutzerin / der Nutzer des jeweiligen
         MyImmo-Kontos (Vermieter).<br />
         <strong>Auftragsverarbeiter:</strong> Jonas Scharp (MyImmo),
-        Ludwig-Jahn-Straße 42, 23611 Bad Schwartau („Betreiber").
+        Ludwig-Jahn-Straße 42, 23611 Bad Schwartau („Betreiber&quot;).
       </p>
       <p>
         Gegenstand ist die Bereitstellung der Web-Anwendung MyImmo zur Immobilien- und
@@ -130,7 +130,7 @@ export default function AvvPage() {
         <li><strong>Supabase Inc.</strong> — Datenbank, Authentifizierung, Datei-Speicher; Datenhaltung Frankfurt (AWS eu-central-1); DPA mit EU-Standardvertragsklauseln.</li>
         <li><strong>Vercel Inc.</strong> (USA) — Hosting/Auslieferung; DPA mit EU-Standardvertragsklauseln.</li>
         <li><strong>Anthropic PBC</strong> (USA) — KI-Auswertung, nur bei aktiver Nutzung durch den Verantwortlichen; DPA mit EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
-        <li><strong>Google Ireland Ltd.</strong> — ausschließlich „Login mit Google"; Schriftarten werden selbst gehostet.</li>
+        <li><strong>Google Ireland Ltd.</strong> — ausschließlich „Login mit Google&quot;; Schriftarten werden selbst gehostet.</li>
       </ul>
       <p>
         Über beabsichtigte Änderungen (Hinzufügen/Ersetzen) informiert der Betreiber vorab
@@ -201,7 +201,7 @@ export default function AvvPage() {
       <ul style={{ paddingLeft: 20 }}>
         <li><strong>Zugangs-/Zugriffskontrolle:</strong> Anmeldung mit E-Mail/Passwort (bcrypt-Hash) oder Google-OAuth; strikte Mandantentrennung je Konto auf Datenbankebene (Row Level Security); private Datei-Speicher mit Zugriff nur über kurzlebige signierte Links bzw. eigentümergebundene Richtlinien.</li>
         <li><strong>Übertragungskontrolle:</strong> ausschließlich TLS-verschlüsselte Verbindungen; Content-Security-Policy und Sicherheits-Header.</li>
-        <li><strong>Verschlüsselung:</strong> Speicherung bei Anbietern mit Verschlüsselung „at rest"; zusätzlich anwendungsseitige AES-256-GCM-Verschlüsselung von Bankverbindungsdaten mit Schlüssel außerhalb der Datenbank.</li>
+        <li><strong>Verschlüsselung:</strong> Speicherung bei Anbietern mit Verschlüsselung „at rest&quot;; zusätzlich anwendungsseitige AES-256-GCM-Verschlüsselung von Bankverbindungsdaten mit Schlüssel außerhalb der Datenbank.</li>
         <li><strong>Verfügbarkeitskontrolle:</strong> Betrieb bei professionellen Cloud-Anbietern mit redundanter Infrastruktur und turnusmäßigen Backups.</li>
         <li><strong>Trennungsgebot:</strong> Row Level Security stellt sicher, dass jedes Konto ausschließlich eigene Datensätze lesen und schreiben kann; Bank-Freigaben liefern nur explizit ausgewählte Dokumente über ablaufende, widerrufbare Token aus.</li>
         <li><strong>Eingabekontrolle:</strong> Änderungen erfolgen kontogebunden über authentifizierte Sitzungen; destruktive Aktionen erfordern Bestätigung. Selbstbedienungs-Eingaben von Mietern und Mietinteressenten (Zählerstände, Anliegen, Bewerbungen, Datei-Uploads) sind dem einladenden Verantwortlichen zugeordnet und nur diesem zugänglich.</li>

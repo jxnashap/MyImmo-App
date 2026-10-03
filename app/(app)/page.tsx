@@ -267,8 +267,6 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const vorname = ((profil as { name: string | null } | null)?.name ?? "").trim().split(/\s+/)[0] || null;
   const monatJahr = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric", timeZone: "Europe/Berlin" }).format(new Date());
 
-  const now = new Date();
-
   const totalWert = properties.reduce((s, p) => s + (p.wert ?? 0), 0);
 
   // Portfolio-Wertentwicklung: je Objekt Kaufpreis → erfasste Stände →
@@ -390,7 +388,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
             </div>
           ))}
           <p style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 16 }}>
-            Tipp: Die Einführungs-Tour zeigt dir alle Stationen — jederzeit über Einstellungen → „Daten &amp; Recht" startbar.
+            Tipp: Die Einführungs-Tour zeigt dir alle Stationen — jederzeit über Einstellungen → „Daten &amp; Recht&quot; startbar.
           </p>
         </div>
       </div>

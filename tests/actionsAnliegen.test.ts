@@ -79,7 +79,7 @@ describe("Wer der Empfänger ist, entscheidet der Zugang — nicht das Formular"
 
 describe("Typ und Betreff", () => {
   it("nur die drei bekannten Typen", async () => {
-    const { db, mod } = await lade(mitZugang());
+    const { mod } = await lade(mitZugang());
     for (const typ of ["schaden", "dokument", "frage"]) {
       expect((await mod.erstelleAnliegen(fd({ typ, titel: "X" }))).ok).toBe(true);
     }

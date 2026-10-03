@@ -22,6 +22,7 @@ export default function RowDialog({
   children: React.ReactNode;
 }) {
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Portal erst nach dem Mount — document fehlt beim Server-Rendern
   useEffect(() => setMounted(true), []);
   // `mounted` als Aktiv-Flag: vor dem Portal-Mount ist die Ref leer.
   const ref = useModalFokus<HTMLDivElement>(onClose, mounted);

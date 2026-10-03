@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 // Globaler Error-Boundary: fängt geworfene Fehler in allen Seiten/Server-Actions
 // ab und zeigt eine lesbare Karte statt des schwarzen "Application error"-Screens.
@@ -30,7 +31,7 @@ export default function Error({
           <button type="button" className="btn btn-gold" onClick={() => reset()}>
             Erneut versuchen
           </button>
-          <a href="/" className="btn btn-ghost">Zur Startseite</a>
+          <Link href="/" className="btn btn-ghost">Zur Startseite</Link>
         </div>
         {error.digest && (
           <div style={{ marginTop: 14, fontSize: 11, color: "var(--muted)" }}>Fehler-ID: {error.digest}</div>

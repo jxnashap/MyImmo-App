@@ -99,7 +99,7 @@ describe("Meldung anlegen", () => {
   });
 
   it("nur bekannte Zählerarten", async () => {
-    const { db, mod } = await lade();
+    const { mod } = await lade();
     for (const art of ["Strom", "Gas", "Wasser", "Warmwasser", "Fernwärme", "Öl", "Sonstiges"]) {
       expect((await mod.meldeZaehlerstand(fd({ art, stand: "100" }))).ok).toBe(true);
     }

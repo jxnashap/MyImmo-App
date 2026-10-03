@@ -87,7 +87,7 @@ export function zeichneAdressfeld(
   const x = ADRESSFELD.x;
   const ruecksende = (opts.ruecksende ?? "").trim();
   const vermerk = (opts.vermerk ?? []).filter(Boolean).slice(0, 5);
-  let empf = opts.empfaenger.filter(Boolean).slice(0, 6);
+  const empf = opts.empfaenger.filter(Boolean).slice(0, 6);
 
   // Schriftgröße ggf. verkleinern, damit 6 Zeilen sicher in die Anschriftzone
   // (max. 27,3 mm) passen — DIN: notfalls Größe/Umbruch anpassen.

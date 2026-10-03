@@ -1,7 +1,7 @@
 "use client";
 
 import BenachrichtigungSchalter from "@/components/BenachrichtigungSchalter";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { KeyRound, Download, Trash2, Check, X, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -159,6 +159,7 @@ export default function KontoVerwaltung({
             Alle Daten, die zu deinem Konto gehören, als ZIP mit CSV-Dateien — Auskunft und
             Datenübertragbarkeit nach Art. 15 und 20 DSGVO.
           </p>
+          {/* eslint-disable-next-line @next/next/no-location-assign-relative-destination -- Datei-Download über eine API-Route, keine Seite */}
           <button type="button" onClick={() => absichern(() => window.location.assign("/api/export/alles"))} className="btn btn-gold" style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Download size={14} /> Daten herunterladen
           </button>
