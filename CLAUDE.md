@@ -492,6 +492,51 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   und Protokoll statt geteiltem Passwort; Bank/Steuer/Löschen standardmäßig gesperrt. Berührt
   alle RLS-Regeln → erst Prototyp an einer Tabelle, nach dem Mieterportal-Ausbau, zusammen mit
   den Team-Zugängen des Business-Accounts.
+- 🎛️ **BETREIBER-COCKPIT `/cockpit` + AI Agency OS — GEBAUT (03.10.2026).**
+  Zwei Dinge, die zusammengehören. **Nicht zu verwechseln mit dem Dashboard `/`:**
+  das zeigt einem VERMIETER sein Portfolio, `/cockpit` zeigt MyImmo als Unternehmen.
+  **Zugang:** nur das Konto in `OWNER_USER_ID`, sonst **404** (nicht 403 — ein 403
+  bestätigt, dass die Seite existiert). **Ohne gesetzte Env sieht sie NIEMAND**
+  (`lib/cockpit/zugang.ts`, fail-closed). Demo ist automatisch ausgeschlossen,
+  `demoDarfRoute` ist eine Weißliste. Kein Nav-Eintrag — bewusst, weniger Fläche.
+  **Fünf Abschnitte:** die fünf Zahlen + Trichter · Betriebsbereitschaft · offene
+  Punkte, die einen Menschen brauchen · Prüfläufe/PRs · Agency (Budget, Vorgänge).
+  **Drei Regeln, die den Wert der Seite ausmachen:**
+  (1) **„nicht gemessen“ ist nicht 0.** Fehlt eine Quelle, sagt die Karte das und
+  erfindet keine Nullwerte (`besucher7t: null`, `mitMieter: null`).
+  (2) **Betriebsbereitschaft wird ZUR LAUFZEIT aus Env und Code gelesen**
+  (`lib/cockpit/betrieb.ts`), nicht aus einer Notiz. Was sich nicht messen lässt
+  (Anwalt, fremdes Dashboard, Durchklicken), steht getrennt in
+  `lib/cockpit/doku.ts` — **je Eintrag mit Stand-Datum und Quelle, sichtbar als
+  „aus der Doku“**. Erledigtes wird dort GELÖSCHT, nicht abgehakt.
+  (3) **`BESUCHER_MESSUNG_AKTIV` in `lib/cockpit/betrieb.ts` ist von Hand gepflegt
+  und bewacht:** `tests/cockpit.test.ts` wird rot, sobald ein Analytics-Paket in der
+  `package.json` steht, die Konstante aber noch `false` sagt. Beim Einschalten
+  **`/datenschutz` Ziffer 2 mitändern** („keine Analyse-Tools“).
+  **EINE Rechenstelle:** `lib/cockpit/trichter.ts` lädt den Trichter für das Cockpit
+  UND für `/api/intern/kennzahlen` (den n8n-Wochenbericht). Zwei Ladewege hätten
+  zwei Wahrheiten geliefert. Ausschluss ist **`@myimmo.test`**, nicht nur
+  `demo.vermieter@…` — seit 01.10.2026 gibt es Demo-Konten für Mieter und drei
+  Dienstleister unter derselben Domain.
+  **Rot ist destruktiv reserviert:** die Ampel hat `offen` (grau, „noch nicht dran“)
+  UND `kritisch` (rot, roter Prüflauf / gesprengtes Budget) getrennt. Jede Ampel
+  trägt Symbol und Wort — Farbe allein trägt nie eine Aussage.
+  **Agency-Seite:** `agency/` (6 Rollen-Prompts, Schema + RPC-Funktionen, vier
+  n8n-Workflows, Skripte), Einrichtung in 8 Schritten in **`agency/README.md`**.
+  Bewertung des 29-Agenten-Entwurfs, Fahrplan und **Abbruchkriterien**:
+  **`docs/zukunft/AI-AGENCY-OS.md`** (v0.2 = sechs Rollen statt 29).
+  **Drei Regeln dort, die nicht aufgeweicht werden dürfen:** (a) Die Agency bekommt
+  ein EIGENES Supabase-Projekt — n8n braucht einen Service-Role-Key, der RLS
+  umgeht; im Produktionsprojekt läge der gesamte Mieter-/Vermieterbestand offen.
+  (b) Kennzahlen nur über `/api/intern/kennzahlen` (nur Aggregate, `CRON_SECRET`).
+  (c) n8n schreibt NIE in die Produktion und schreibt keinen Code — die Rolle „Bau“
+  liefert eine Spezifikation, daraus wird nach Freigabe ein GitHub-Issue.
+  **Der Monatsdeckel steht bewusst auf 0** (`agency.einstellungen`): ohne bewusst
+  gesetzte USD-Zahl startet kein Vorgang. Modellpreise in `agency.preise` pflegen —
+  ein unbekanntes Modell wird abgelehnt statt mit 0 gebucht.
+  **Gemeinsamer Helfer:** `lib/net/geheimnis.ts` (`geheimnisGleich`, `bearerStimmt`)
+  — vorher lag der zeitkonstante Vergleich als Kopie in der Cron-Route. Wer eine neue
+  geschützte Route baut, nimmt ihn von dort. **Geheimnisse nie als Query-Parameter.**
 - **Strategie-Reiter: regelmäßig Immobilien erwerben** (Idee des Nutzers, 30.08.2026).
   Konzept, Risiken und Fahrplan: **`docs/zukunft/STRATEGIE-REITER.md`**.
   Kurz: Ein eigener Bereich, in dem der Vermieter seine Ankaufsstrategie führt — wann ist das
@@ -967,6 +1012,18 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 - `DATA_ENCRYPTION_KEY` — 32 Byte base64 (`openssl rand -base64 32`) für die App-Layer-
   Verschlüsselung der Bankdaten (IBAN/Inhaber, `lib/crypto/secure.ts`). **Schlüsselverlust =
   Bankdaten unwiederbringlich weg** → sicher sichern (Passwortmanager), nie ins Repo/Logs.
+
+#### Für das Betreiber-Cockpit (`/cockpit`) — alle optional, fail-soft
+- `OWNER_USER_ID` — **Pflicht für den Zugang.** Ohne sie sieht niemand das Cockpit
+  (dieselbe Variable wie beim Wert-Refresh-Cron).
+- `INTERN_AUSSCHLUSS` — optional, Komma-Liste eigener/Test-Konten (E-Mail, Domain oder
+  Präfix), die nicht als Kunden zählen. `@myimmo.test` und `@example.com` sind immer aus.
+- `GITHUB_TOKEN` — optional, Fine-grained mit **Lesezugriff auf dieses Repo**. Zeigt
+  Prüfläufe auf `main` und offene PRs. Ohne ihn sagt die Karte „nicht verbunden“ statt
+  Grün zu raten. Optional `GITHUB_REPO` (Standard `jxnashap/myimmo-app`).
+- `AGENCY_SUPABASE_URL` + `AGENCY_SUPABASE_SERVICE_KEY` — das **eigene**
+  Agency-Projekt (NICHT das Produktionsprojekt). Zeigt Monatsbudget, offene Vorgänge
+  und abgelaufenes Gedächtnis. Einrichtung: `agency/README.md`.
 
 #### Für den Auto-Wert-Refresh (Cron, `/api/cron/wert-refresh`)
 - `CRON_SECRET` — beliebiges Geheimnis; schützt die Route. **Identisch** als GitHub-Repo-Secret
