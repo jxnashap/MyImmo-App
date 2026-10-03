@@ -28,8 +28,8 @@ an dem sich eine Prognose festmachen ließe.
 3. **Die Instagram-Messung kann so nicht funktionieren.**
    - `INSTAGRAM.md` misst „Klicks auf den Bio-Link (UTM in Vercel Analytics)“ und daraus „Registrierungen“.
    - Vercel Analytics gibt es nicht (Datenschutz Ziffer 2), und die Registrierung ist geschlossen.
-   - **Ersatz:** Der Bio-Link führt auf `/?quelle=instagram`, die Warteliste speichert die Herkunft (Baustein F1 in `[[LAUNCH-FUNDAMENT]]`).
-   - Bis das gebaut ist, misst der Test nur Saves und Reichweite in der Instagram-Statistik.
+   - **Ersatz (✅ gebaut 03.10.2026):** Der Bio-Link führt auf `www.myimmoapp.de/?von=instagram`, die Warteliste speichert die Herkunft (`lib/herkunft.ts`).
+   - **Grenze:** Gezählt wird nur, wer sich auf der Seite einträgt, auf der er angekommen ist. Kampagnen-Links deshalb immer auf eine Seite mit Formular setzen (Startseite, Ratgeber, `/vorlagen`).
 4. **Konflikt mit dem Arbeitgeber.**
    - Eine Bankausbildung und ein eigenes Gewerbe, das Vermieter anspricht, berühren die Nebentätigkeitsklausel und gegebenenfalls Kundenschutzregeln. Die Kunden der Bank sind genau die Zielgruppe.
    - **Vor jeder Ansprache im beruflichen Umfeld:** die Nebentätigkeit schriftlich genehmigen lassen (falls nicht schon geschehen).
@@ -73,7 +73,7 @@ Bis dahin gilt: „ohne Excel, mit Vorlage und Prüfung“.
 | **E-Mail (Warteliste, später Nutzer)** | alle | eigene Reichweite | 0,5 h (freigeben) | Mails, Abläufe | Öffnungsrate ≥ 30 % | Betreff/Takt ändern |
 | **Foren und Gruppen** (vermieter-forum, Facebook-Gruppen, immocation-Gemeinschaft) | A, B | Vertrauen, erste Nutzer | **1,5 h** (3 × 30 min) | Antwortbausteine zu häufigen Fragen | ≥ 5 Wartelisten-Einträge pro Monat mit Herkunft „forum“ | auf 1 × pro Woche senken |
 | **LinkedIn** (Gründer-Profil, nicht Firmenseite) | A, Partner | Gründergeschichte, Beirat-Netz, Steuerberater | **1 h** | 2 Posts pro Woche als Entwurf | Gespräche mit Partnern entstehen | 1 Post pro Woche |
-| **Instagram** (Test seit 29.08.) | A | Wissenskarten | **1 h** | 3 Bilder + Texte pro Woche | Saves steigen und ≥ 5 Wartelisten-Einträge mit `quelle=instagram` nach 8 Wochen | **einstellen**, Zeit an die Foren |
+| **Instagram** (Test seit 29.08.) | A | Wissenskarten | **1 h** | 3 Bilder + Texte pro Woche | Saves steigen und ≥ 5 Wartelisten-Einträge mit `herkunft = instagram` nach 8 Wochen | **einstellen**, Zeit an die Foren |
 | **Persönliches Netz + Beirat** | A, B | die ersten 20 Nutzer | **1 h** | Einladungstext, Gesprächsleitfaden | 20 Nutzer in Welle 1 | — |
 | **Vergleichsportale** | B, A | Listung ab dem Start | einmalig 1 h | Profiltexte (fertig) | — | — |
 | **Lokalpresse / Haus & Grund** | B | Anlass-Geschichte | nach Anlass | Pressetext, Vortragsfolien | 1 Bericht oder 1 Vortrag | — |
@@ -117,7 +117,7 @@ Voraussetzung: Brevo (`[[LAUNCH-FUNDAMENT]]` §6, Punkt 1).
 | KW | Jonas | Claude |
 |---|---|---|
 | 41 | Brevo eintragen · Social-Media-Namen sichern · Nebentätigkeit klären | Herkunftsmessung (F1), Wartelisten-Mail und Bestätigungstext prüfen |
-| 42 | Instagram: Stand prüfen, Bio-Link mit `?quelle=instagram` · erste Forenantworten | Ratgeber „Nebenkostenabrechnung 2025: Frist 31.12.2026, was jetzt zu tun ist“ + Checkliste als Vorlage gegen E-Mail |
+| 42 | Instagram: Stand prüfen, Bio-Link mit `?von=instagram` · erste Forenantworten | Ratgeber „Nebenkostenabrechnung 2025: Frist 31.12.2026, was jetzt zu tun ist“ + Checkliste als Vorlage gegen E-Mail |
 | 43 | LinkedIn: Gründerpost 1 (warum MyImmo, Anhang C) · Beirat: Liste mit 10 Namen | Rechner oder Prüfliste „Ist meine Abrechnung fristgerecht?“ (öffentlich, ohne Anmeldung) |
 | 44 | Instagram-Auswertung nach 8 Wochen (24.10.) → weiter oder einstellen | Instagram-Karussells aus den zwei Saisoninhalten |
 | 45–46 | Welle-1-Gespräche vereinbaren | Willkommens-Mails (F2), Startmail (Anhang A) |
@@ -185,13 +185,21 @@ Ein Messwert gilt erst, wenn er aus einer dieser Quellen kommt:
 
 | Kennzahl | Quelle | Wann |
 |---|---|---|
-| Wartelisten-Einträge nach Herkunft | `newsletter_anmeldungen.quelle` + Herkunftsmarke (F1) | wöchentlich |
+| Wartelisten-Einträge nach Herkunft | `newsletter_anmeldungen.herkunft` | wöchentlich |
 | Registrierungen nach Welle und Herkunft | Datenbank (F1) | wöchentlich |
 | **Aktivierung** (Objekt + Mieter + Buchung ≤ 7 Tage) | Datenbank (F1) | wöchentlich |
 | Aktiv nach 4 Wochen | Datenbank (F1) | monatlich |
 | Suchklicks, Positionen | Google Search Console | monatlich |
 | Öffnungen und Klicks der Mails | Brevo | je Versand |
 | Saves und Reichweite | Instagram-Statistik | wöchentlich |
+
+**Alle vier Datenbank-Zeilen liefert `scripts/sql/herkunft-bericht.sql`** (nur lesend; Stichtag
+`ab` auf den Tag des Gratis-Starts setzen, sonst zählen die Testkonten mit). Herkunft der
+Registrierung steht in `user_metadata.herkunft`; Google-Registrierungen erscheinen als „direkt“.
+
+**Link-Marken (verbindlich, damit die Zählung zusammenpasst):** `?von=instagram`, `?von=linkedin`,
+`?von=forum`, `?von=facebook`, `?von=welle1` / `welle2` / `welle3`, `?von=presse`,
+`?von=portal-<name>` für Vergleichsportale. Nur Kleinbuchstaben, Ziffern, `.`, `_`, `-`, höchstens 40 Zeichen.
 
 **Freitags 15 Minuten:** Zahlen ansehen und eine Sache für die nächste Woche ändern. Das ersetzt
 jede Marketing-Software.

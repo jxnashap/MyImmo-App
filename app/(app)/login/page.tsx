@@ -10,6 +10,7 @@ import { PASSWORT_LECK_HINWEIS, PASSWORT_MIN, PASSWORT_REGEL, passwortAblehnung,
 import { RESET_ZIEL } from "@/lib/passwortWechsel";
 import { HILFE_MAILTO } from "@/lib/preise";
 import { sicheresZiel } from "@/lib/flash";
+import { herkunftDieserSeite } from "@/lib/herkunft";
 import MfaAbfrage from "@/components/MfaAbfrage";
 import { mussMfaNachholen } from "@/lib/auth/sitzung";
 
@@ -284,10 +285,18 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
+      // Herkunftsmarke aus dem Link (`?von=welle1`), nur zum Zählen — siehe
+      // lib/herkunft.ts. Entscheidet über nichts, darf also aus den
+      // Metadaten kommen, die der Browser setzt.
+      const herkunft = herkunftDieserSeite();
+      const daten = {
+        ...(rolle === "hausverwaltung" ? { rolle: "hausverwaltung" } : {}),
+        ...(herkunft ? { herkunft } : {}),
+      };
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: rolle === "hausverwaltung" ? { data: { rolle: "hausverwaltung" } } : undefined,
+        options: Object.keys(daten).length ? { data: daten } : undefined,
       });
       if (error) setError(passwortAblehnung(error) ?? uebersetze(error.message));
       else
