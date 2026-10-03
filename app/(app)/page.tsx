@@ -10,7 +10,7 @@ import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, global
 import { baueHeuteAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
-import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck } from "lucide-react";
+import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck, ChevronRight } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
@@ -563,33 +563,34 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                   <p>Alles erledigt. Keine offenen Mieten, Anliegen oder Fristen.</p>
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="listen">
                   {heuteAufgaben.map((a) => {
+                    // EIN Eintrag je Aufgabe (03.10.2026, im Stil der Neuigkeiten): was, darunter wo; rechts das
+                    // Datum (nur bei echten Fristen — bei einer offenen Miete wäre der Monatserste
+                    // eine Zahl ohne Aussage). Dringendes erkennt man am roten Symbol und Datum.
                     const Icon = AUFGABEN_ICON[a.art];
+                    const farbe = a.dringend ? "var(--red)" : "var(--gold)";
                     return (
                       <Link
                         key={`${a.art}-${a.href}-${a.label}-${a.sub}`}
                         href={a.href}
-                        className="heute-zeile"
-                        style={{ borderLeftColor: a.dringend ? "var(--red)" : "var(--gold)" }}
+                        className="listen-zeile"
+                        title={`${a.label}${a.sub ? ` · ${a.sub}` : ""} — ${a.aktion}`}
                       >
-                        <Icon size={15} style={{ color: a.dringend ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
-                        <span className="heute-label" style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ display: "block", fontSize: 13.5 }}>{a.label}</span>
-                          <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>
-                            {/* Datum nur bei echten Fristen — bei einer offenen Miete wäre der
-                                Monatserste eine Zahl ohne Aussage. In der Unterzeile statt als
-                                eigenes Abzeichen (03.10.2026): In der schmaleren rechten Spalte
-                                brach sonst jede Zeile dreifach um. */}
-                            {a.art === "frist" && (
-                              <strong style={{ color: a.dringend ? "var(--red)" : "var(--teal)", fontWeight: 600 }}>
-                                {ueberfaellig(a.datum) ? "überfällig · " : ""}{datum(a.datum)}
-                              </strong>
-                            )}
-                            {a.art === "frist" && a.sub ? " · " : ""}{a.sub}
-                          </span>
+                        <Icon size={15} style={{ color: farbe, flexShrink: 0 }} />
+                        {/* Zwei kurze Zeilen statt einer: Viele Aufgaben heißen gleich („NK-Abrechnung
+                            2025 zustellen“) — erst Mieter/Objekt unterscheidet sie, und das darf nicht
+                            hinter „…“ verschwinden. */}
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span className="listen-zeile-titel" style={{ fontWeight: 500 }}>{a.label}</span>
+                          {a.sub && <span className="listen-zeile-sub">{a.sub}</span>}
                         </span>
-                        <span className="heute-aktion">{a.aktion} <ArrowRight size={13} /></span>
+                        {a.art === "frist" && (
+                          <span style={{ fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", color: a.dringend ? "var(--red)" : "var(--muted)" }}>
+                            {ueberfaellig(a.datum) ? "überfällig · " : ""}{datum(a.datum)}
+                          </span>
+                        )}
+                        <ChevronRight size={15} color="var(--faint)" style={{ flexShrink: 0 }} />
                       </Link>
                     );
                   })}
