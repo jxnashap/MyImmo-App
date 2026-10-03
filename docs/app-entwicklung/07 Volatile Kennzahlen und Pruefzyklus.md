@@ -31,7 +31,7 @@
 
 | Punkt | Stand | Geprüft | Intervall | Nächste Prüfung |
 |---|---|---|---|---|
-| **Brevo-AVV** (Anlage 2 der ToS) | 🟨 halb — DPA archiviert, Subprozessoren ausgewertet, Datenschutzerklärung angeglichen. **Offen (nur im Konto, Betreiber):** Rechtsdokumente prüfen, Firmendaten auf die Gewerbeanmeldung bringen | 30.08.2026 | bis erledigt: monatlich | **01.10.2026** |
+| **Brevo-AVV** (Anlage 2 der ToS) | 🟨 halb — DPA archiviert, Subprozessoren ausgewertet, Datenschutzerklärung angeglichen. **Offen (nur im Konto, Betreiber):** Rechtsdokumente prüfen, Firmendaten auf die Gewerbeanmeldung bringen | 30.08.2026 | bis erledigt: monatlich | **01.11.2026** — 03.10.2026: nicht prüfbar ohne Brevo-Konto, Betreiber gefragt |
 | **Supabase-DPA** | ✅ signiert (PandaDoc) | 24.07.2026 | jährlich | 24.07.2027 |
 | **Vercel-AVV** | ✅ automatisch über ToS (Pro) | 29.07.2026 | bei Plan-Wechsel | — |
 | **Anthropic-DPA** | ✅ archiviert, **SCC, kein DPF** | 15.07.2026 | jährlich | 15.07.2027 |
@@ -47,7 +47,7 @@
 | Punkt | Befund | Geprüft | Nächste Prüfung |
 |---|---|---|---|
 | **Supabase Mindest-Passwortlänge** | ✅ vom Nutzer auf 8 gesetzt — App und Dashboard stimmen wieder überein | 30.08.2026 | jährlich → **01.09.2027** |
-| **Leaked Password Protection** | Schalter **an** seit 09.09.2026 — Supabase ist entgegen älterer Notizen auf **Pro**, der Schutz kostet nichts extra. **Wirkung ungeprüft:** Registrierung mit „Password123!" muss scheitern | 09.09.2026 | **Gegenprobe offen** |
+| **Leaked Password Protection** | ✅ **wirkt** — Supabase-Log 30.09.2026: sechsmal `PUT /user` 422 „Password is known to be weak“ beim Reset; an der Registrierung nicht eigens probiert | 30.09.2026 | jährlich → **01.10.2027** |
 | **`NEXT_PUBLIC_BETA_CODE`** | nicht gesetzt (10 Bundles, 629 KB durchsucht) | 27.08.2026 | halbjährlich → **01.03.2027** |
 
 ## Preise und Pläne (verändern die Kalkulation)
@@ -55,8 +55,10 @@
 | Posten | Stand | Geprüft | Nächste Prüfung |
 |---|---|---|---|
 | Vercel Pro | aktiv | 29.07.2026 | jährlich |
-| Supabase Pro (~25 $/Monat) | nicht gebucht | 29.07.2026 | bei Bedarf |
+| Supabase Pro (~25 $/Monat) | **gebucht** (live abgefragt 08.09.2026, `plan: "pro"`) | 08.09.2026 | jährlich |
 | Apple Developer (99 $/Jahr) | nicht gebucht | — | vor App-Store-Launch |
+| **Apple-Provision EU** | IAP 26 % / 15 % (SBP, Abo ab Jahr 2) · Fremd-PSP 20 / 10 % · Web-Link 15 / 10 % · gilt seit 01.10.2026; iOS ohne IAP nur über 3.1.3(f) — `[[LAUNCH-FUNDAMENT]]` §5 | 03.10.2026 | halbjährlich | **01.04.2027** |
+| **Google Play Testpflicht** | persönliches Konto: 12 Tester × 14 Tage ununterbrochen; Organisationskonto ausgenommen (D-U-N-S) | 03.10.2026 | halbjährlich | **01.04.2027** |
 | Enable Banking je Konto/Monat | entfällt (Feature entfernt 29.08.2026) | 29.08.2026 | erst bei Wiederaufbau |
 
 ## Marktdaten (Beispiel- und Schulungszahlen)

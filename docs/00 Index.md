@@ -45,6 +45,7 @@
 
 ## 📣 Marketing & Sichtbarkeit
 - [[SEO]] — Stand der Technik 2026 **+ Prüfung von MyImmo** (live gemessen)
+- [[LAUNCH-FUNDAMENT]] — Startstufen S1–S3, Wartezeiten, Fundament F1–F7, Store-Fakten (03.10.2026)
 - [[MARKETING]] — Kanäle, Prioritäten, was sich lohnt
 - [[INSTAGRAM]] — Strategie, Profil, erste Post-Visuals (Test, zurückgestellt)
 

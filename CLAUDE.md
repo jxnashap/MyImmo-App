@@ -195,7 +195,10 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
   Tatsache, die sich ändert, und stand hier sechs Wochen als Notiz. Solche Aussagen
   vor dem Weiterverwenden **nachfragen, nicht nachlesen** (`get_organization`).
 - **„Sign in with Apple" nachrüsten, sobald die App in den iOS App Store geht.** Apple verlangt
-  das, sobald ein anderer Social-Login (Google) angeboten wird. Braucht Apple-Developer-Programm
+  (Guideline 4.8, nachgelesen 03.10.2026) neben Google-Login einen weiteren Login-Dienst, der nur
+  Name/E-Mail erhebt, die E-Mail verbergen lässt und nicht trackt — praktisch Sign in with Apple.
+  Abo ohne Apple-Provision geht nur über 3.1.3(f) (Gratis-Begleit-App, kein Kaufhinweis in der App);
+  Fahrplan: `docs/LAUNCH-FUNDAMENT.md`. Braucht Apple-Developer-Programm
   (99 $/Jahr), App-ID/Services-ID/Key + Provider-Config in Supabase. Aktuell reine Web-App → noch nicht nötig.
 - **App-Icon für den iOS App Store:** Das schwarze Kachel-Logo `public/myimmo_logo_2048.png`
   (2048×2048, goldenes Haus + Wortmarke) beim App-Store-Launch als App-Icon einspielen. Ist NICHT
