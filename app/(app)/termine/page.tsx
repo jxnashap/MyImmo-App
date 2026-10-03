@@ -190,69 +190,94 @@ export default async function TerminePage(
     return `/termine?${q.toString()}`;
   };
 
+  // Kompakte Terminzeile (03.10.2026, wie die Listen im Mieterportal und auf dem Dashboard):
+  // links Abhaken bzw. Farbpunkt der Kategorie, dann Titel und darunter Kategorie · Mieter ·
+  // Objekt, rechts Datum und Restzeit, ganz rechts die Aktionen. Die Rechtsgrundlage steht im
+  // Tooltip der Zeile — sie war die längste und am seltensten gebrauchte Angabe.
   const zeile = (e: Eintrag, i: number) => {
     const tage = tageBis(e.datum);
     const stil = KATEGORIE_STIL[e.kategorie] ?? KATEGORIE_STIL.Sonstiges;
     const aufgabe = e.typ !== "info" || e.quelle === "eigen";
     const farbe = e.erledigt ? "var(--green)" : e.typ === "warn" || (tage < 0 && aufgabe) ? "var(--red)" : e.typ === "ok" ? "var(--green)" : "var(--muted)";
+    // Nutzer tippen Kategorien auch klein („wartung") — angezeigt wird sie mit Großbuchstaben.
+    const kategorie = e.kategorie.charAt(0).toUpperCase() + e.kategorie.slice(1);
     return (
-      <div key={`${e.quelle}-${e.id ?? i}-${e.datum}`} className="termin-zeile" style={{ opacity: e.erledigt ? 0.6 : 1 }}>
-        {e.quelle === "eigen" && e.id ? (
-          <form action={toggleErledigt.bind(null, e.id)} style={{ display: "inline-flex" }}>
-            <button
-              type="submit"
-              className="tap44"
-              aria-label={e.erledigt ? "Termin wieder öffnen" : "Termin als erledigt abhaken"}
-              title={e.erledigt ? "Wieder öffnen" : "Als erledigt abhaken"}
-              style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${e.erledigt ? "var(--green)" : "var(--line2)"}`, background: e.erledigt ? "var(--green-dim)" : "transparent", color: "var(--green)", cursor: "pointer", display: "grid", placeItems: "center", fontSize: 11, lineHeight: 1, padding: 0 }}
-            >
-              {e.erledigt ? "✓" : ""}
-            </button>
-          </form>
-        ) : (
-          <div className="tz-punkt" style={{ background: stil.punkt }} title={e.kategorie} />
-        )}
-        <div className="tz-datum">{datum(e.datum)}</div>
-        <div className="tz-text">
-          <div style={{ fontWeight: 500, fontSize: 13, textDecoration: e.erledigt ? "line-through" : undefined }}>
-            {e.label}
-            {e.wiederkehrung && <span style={{ fontSize: 10.5, color: "var(--muted)", marginLeft: 6 }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[e.wiederkehrung] ?? e.wiederkehrung}</span>}
-          </div>
-          <div style={{ fontSize: 11, color: "var(--muted)" }} title={e.rechtsgrundlage}>
-            {[e.wer, e.wo].filter(Boolean).join(" · ")}
-            {e.rechtsgrundlage && <span style={{ color: "var(--faint)" }}>{[e.wer, e.wo].some(Boolean) ? " · " : ""}{e.rechtsgrundlage}</span>}
-          </div>
-        </div>
-        <span className="tz-rest" style={{ color: farbe }}>
-          {e.erledigt ? "erledigt" : tage < 0 ? (aufgabe ? `vor ${Math.abs(tage)} Tg.` : "erfolgt") : tage === 0 ? "heute" : `in ${tage} Tg.`}
+      <div key={`${e.quelle}-${e.id ?? i}-${e.datum}`} className="termin-zeile" style={{ opacity: e.erledigt ? 0.6 : 1 }} title={e.rechtsgrundlage || undefined}>
+        <span className="tz-markierung">
+          {e.quelle === "eigen" && e.id ? (
+            <form action={toggleErledigt.bind(null, e.id)} style={{ display: "inline-flex" }}>
+              <button
+                type="submit"
+                className="tap44"
+                aria-label={e.erledigt ? "Termin wieder öffnen" : "Termin als erledigt abhaken"}
+                title={e.erledigt ? "Wieder öffnen" : "Als erledigt abhaken"}
+                style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${e.erledigt ? "var(--green)" : "var(--line2)"}`, background: e.erledigt ? "var(--green-dim)" : "transparent", color: "var(--green)", cursor: "pointer", display: "grid", placeItems: "center", fontSize: 11, lineHeight: 1, padding: 0 }}
+              >
+                {e.erledigt ? "✓" : ""}
+              </button>
+            </form>
+          ) : (
+            <span className="tz-punkt" style={{ background: stil.punkt }} title={kategorie} />
+          )}
         </span>
-        {/* Nutzer tippen Kategorien auch klein ("wartung") — im Badge trotzdem
-            mit Großbuchstaben beginnen, wie die vordefinierten. */}
-        <span className={`badge ${stil.badge}`} style={{ flexShrink: 0 }}>{stil.icon} {e.kategorie.charAt(0).toUpperCase() + e.kategorie.slice(1)}</span>
-        {e.quelle === "eigen" && e.id ? (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <Link href={`/termine/${e.id}/edit`} className="delete-btn" title="Termin bearbeiten" style={{ color: "var(--muted)" }}><Pencil size={14} /></Link>
-            <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label={<X size={14} />} confirmText="Termin löschen?" />
+        <span className="tz-text">
+          <span className="listen-zeile-titel" style={{ textDecoration: e.erledigt ? "line-through" : undefined }}>
+            {e.label}
+            {e.wiederkehrung && <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 400, marginLeft: 6 }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[e.wiederkehrung] ?? e.wiederkehrung}</span>}
           </span>
-        ) : e.schluessel ? (
-          // Abgeleitete Fristen liessen sich weder abhaken noch loeschen — eine
-          // einmal verpasste Frist blieb fuer immer stehen. Ausblenden loescht
-          // nichts; die Frist ergibt sich weiter aus den Stammdaten.
-          <form action={(e.ausgeblendet ? zeigeFristWieder : blendeFristAus).bind(null, e.schluessel)} style={{ display: "inline-flex", flexShrink: 0 }}>
-            <button
-              type="submit"
-              className="delete-btn"
-              title={e.ausgeblendet ? "Wieder einblenden" : "Ausblenden — die Frist bleibt berechnet, verschwindet nur aus der Liste"}
-              style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "grid", placeItems: "center", width: 22 }}
-            >
-              {e.ausgeblendet ? <Eye size={14} /> : <EyeOff size={14} />}
-            </button>
-          </form>
-        ) : (
-          <span style={{ width: 22, flexShrink: 0 }} />
-        )}
+          <span className="listen-zeile-sub">{[`${stil.icon} ${kategorie}`, e.wer, e.wo].filter(Boolean).join(" · ")}</span>
+        </span>
+        <span className="tz-wann">
+          <span className="tz-wann-datum">{datum(e.datum)}</span>
+          <span className="tz-wann-rest" style={{ color: farbe }}>
+            {e.erledigt ? "erledigt" : tage < 0 ? (aufgabe ? `vor ${Math.abs(tage)} Tg.` : "erfolgt") : tage === 0 ? "heute" : `in ${tage} Tg.`}
+          </span>
+        </span>
+        <span className="tz-aktionen">
+          {e.quelle === "eigen" && e.id ? (
+            <>
+              <Link href={`/termine/${e.id}/edit`} className="delete-btn" title="Termin bearbeiten" aria-label="Termin bearbeiten" style={{ color: "var(--muted)" }}><Pencil size={14} /></Link>
+              <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label={<X size={14} />} confirmText="Termin löschen?" />
+            </>
+          ) : e.schluessel ? (
+            // Abgeleitete Fristen liessen sich weder abhaken noch loeschen — eine
+            // einmal verpasste Frist blieb fuer immer stehen. Ausblenden loescht
+            // nichts; die Frist ergibt sich weiter aus den Stammdaten.
+            <form action={(e.ausgeblendet ? zeigeFristWieder : blendeFristAus).bind(null, e.schluessel)} style={{ display: "inline-flex" }}>
+              <button
+                type="submit"
+                className="delete-btn"
+                aria-label={e.ausgeblendet ? "Wieder einblenden" : "Ausblenden"}
+                title={e.ausgeblendet ? "Wieder einblenden" : "Ausblenden — die Frist bleibt berechnet, verschwindet nur aus der Liste"}
+                style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "grid", placeItems: "center", width: 22 }}
+              >
+                {e.ausgeblendet ? <Eye size={14} /> : <EyeOff size={14} />}
+              </button>
+            </form>
+          ) : null}
+        </span>
       </div>
     );
+  };
+
+  // Liste nach Monaten gruppiert (03.10.2026): erst Überfälliges, dann je Monat eine
+  // Überschrift — liest sich wie eine Agenda statt wie eine lange Tabelle.
+  const monatsTitel = (iso: string) => {
+    const [y, m] = iso.split("-").map(Number);
+    return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("de-DE", { month: "long", year: "numeric", timeZone: "UTC" });
+  };
+  const gruppiert = (liste: Eintrag[]) => {
+    const out: React.ReactNode[] = [];
+    let letzter = "";
+    liste.forEach((e, i) => {
+      const m = e.datum.slice(0, 7);
+      if (m !== letzter) {
+        out.push(<div key={`m-${m}-${i}`} className="tz-gruppe">{monatsTitel(e.datum)}</div>);
+        letzter = m;
+      }
+      out.push(zeile(e, i));
+    });
+    return out;
   };
 
   return (
@@ -420,14 +445,24 @@ export default async function TerminePage(
                 );
               })}
             </div>
-            {gewaehlterTag && (
-              <div style={{ marginTop: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Termine am {datum(gewaehlterTag)}</div>
-                {(proTag.get(gewaehlterTag) ?? []).length === 0
-                  ? <div style={{ fontSize: 12, color: "var(--muted)" }}>Keine Termine an diesem Tag.</div>
-                  : (proTag.get(gewaehlterTag) ?? []).map(zeile)}
-              </div>
-            )}
+            {/* Unter dem Raster die Termine des Monats als Liste — oder, nach Klick auf einen
+                Tag, nur die dieses Tages (03.10.2026; vorher stand ohne Klick nichts da). */}
+            {(() => {
+              const liste = gewaehlterTag
+                ? proTag.get(gewaehlterTag) ?? []
+                : Array.from(proTag.entries()).sort(([a], [b]) => a.localeCompare(b)).flatMap(([, l]) => l);
+              return (
+                <div style={{ marginTop: 18 }}>
+                  <div className="tz-gruppe" style={{ paddingTop: 0 }}>
+                    {gewaehlterTag ? `Termine am ${datum(gewaehlterTag)}` : `Termine im ${monatsName}`}
+                    {gewaehlterTag && <Link href={linkMit({ tag: "" })} style={{ marginLeft: 10, color: "var(--gold)", textTransform: "none", letterSpacing: 0 }}>ganzer Monat</Link>}
+                  </div>
+                  {liste.length === 0
+                    ? <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{gewaehlterTag ? "Keine Termine an diesem Tag." : "Keine Termine in diesem Monat."}</div>
+                    : liste.map(zeile)}
+                </div>
+              );
+            })()}
           </div>
         </div>
       ) : (
@@ -464,17 +499,15 @@ export default async function TerminePage(
                 {(() => {
                   const ueber = sichtbar.filter((e) => tageBis(e.datum) < 0 && (e.typ !== "info" || e.quelle === "eigen"));
                   const vergangen = sichtbar.filter((e) => tageBis(e.datum) < 0 && !(e.typ !== "info" || e.quelle === "eigen"));
-                  const rest = [...sichtbar.filter((e) => tageBis(e.datum) >= 0), ...vergangen];
-                  if (ueber.length === 0) return rest.map(zeile);
+                  const kommend = sichtbar.filter((e) => tageBis(e.datum) >= 0);
                   return [
-                    <div key="h-ueber" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--amber)", fontWeight: 600, padding: "4px 0 8px" }}>
-                      Überfällig ({ueber.length})
-                    </div>,
-                    ...ueber.map(zeile),
-                    <div key="h-rest" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--muted)", fontWeight: 600, padding: "16px 0 8px" }}>
-                      Anstehend
-                    </div>,
-                    ...rest.map(zeile),
+                    ...(ueber.length > 0
+                      ? [<div key="h-ueber" className="tz-gruppe" style={{ color: "var(--red)" }}>Überfällig ({ueber.length})</div>, ...ueber.map(zeile)]
+                      : []),
+                    ...gruppiert(kommend),
+                    ...(vergangen.length > 0
+                      ? [<div key="h-vergangen" className="tz-gruppe">Vergangen</div>, ...vergangen.map(zeile)]
+                      : []),
                   ];
                 })()}
               </ExpandableList>

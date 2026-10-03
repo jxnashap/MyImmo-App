@@ -175,8 +175,8 @@
      Betreiber klickt die Seiten am Handy und am Rechner durch — Badges und
      Kpi-Labels sind in Grossbuchstaben mit Sperrung gesetzt und koennen
      umbrechen. Bricht etwas Grundsaetzliches: hier eine Zeile zurueck auf 11px.
-     `.tz-rest` (Restspalte der Termine) wurde dabei mitwachsend von 84 auf
-     92px verbreitert (84 x 12/11 = 91,6), damit Betraege nicht umbrechen.
+     Die feste Restspalte der Termine (`.tz-rest`, 92px) gibt es seit 03.10.2026 nicht
+     mehr — Datum und Restzeit stehen jetzt gestapelt rechts und brechen nicht um.
 
      ACHTUNG, damit die Erwartung stimmt: Dieser Schalter deckt die 16 Regeln
      der App-Oberflaeche ab — NICHT die rund 356 Stellen, an denen Komponenten
@@ -829,31 +829,29 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
    Auf dem Handy summierten sich Punkt, Datum (96px), Restzeit (84px), Badge
    und Aktion samt Abstaenden auf ~350px; die Textspalte dazwischen (flex:1)
    wurde auf NULL zusammengedrueckt und der Titel brach BUCHSTABENWEISE um.
-   Deshalb hier in CSS, damit sie unter 640px umbrechen kann.
+   Seit 03.10.2026 kompakt: Titel kürzt mit „…“, Datum und Restzeit stehen
+   gestapelt rechts — nichts mehr, das auf dem Handy umbrechen muss.
    ===================================================================== */
 .termin-zeile {
   display: flex; align-items: center; gap: 12px;
-  padding: 10px 0; border-bottom: 1px solid var(--line);
+  padding: 10px; margin: 0 -10px; border-radius: 12px; border-bottom: 1px solid var(--line);
+  transition: background-color 150ms var(--ease-out);
 }
-.tz-punkt { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin: 0 5px; }
-.tz-datum { width: 96px; flex-shrink: 0; font-size: 12px; color: var(--muted); }
+@media (hover: hover) and (pointer: fine) { .termin-zeile:hover { background: var(--bg3); } }
+.tz-markierung { width: 18px; display: grid; place-items: center; flex-shrink: 0; }
+.tz-punkt { width: 9px; height: 9px; border-radius: 50%; }
 .tz-text { flex: 1; min-width: 0; }
-.tz-rest { font-size: var(--text-xs); width: 92px; text-align: right; flex-shrink: 0; }
-
-@media (max-width: 640px) {
-  /* Zwei Zeilen: oben Punkt + Titel, darunter Datum, Restzeit, Kategorie und
-     die Aktion. Der Titel bekommt damit die volle Breite. */
-  .termin-zeile { flex-wrap: wrap; gap: 6px 10px; padding: 12px 0; }
-  .tz-text { flex: 1 1 100%; order: 1; }
-  /* Der Farbpunkt wandert sonst allein in eine eigene Zeile ueber dem Titel.
-     Er sagt dasselbe wie das Kategorie-Badge darunter (gleiche Farbe, gleiche
-     Bedeutung) — auf dem schmalen Schirm ist er reine Doppelung. */
-  .tz-punkt { display: none; }
-  .tz-datum { width: auto; order: 2; }
-  .tz-rest { width: auto; text-align: left; order: 3; }
-  .termin-zeile > .badge { order: 4; }
-  .termin-zeile > form, .termin-zeile > span:last-child { order: 5; margin-left: auto; }
+.tz-wann { display: grid; gap: 1px; text-align: right; flex-shrink: 0; }
+.tz-wann-datum { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.tz-wann-rest { font-size: var(--text-xs); white-space: nowrap; }
+.tz-aktionen { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; min-width: 22px; }
+/* Aktionen am Rechner zurückhaltend, beim Überfahren voll sichtbar; per Tastatur immer. */
+@media (hover: hover) and (pointer: fine) {
+  .tz-aktionen { opacity: .45; transition: opacity 150ms var(--ease-out); }
+  .termin-zeile:hover .tz-aktionen, .tz-aktionen:focus-within { opacity: 1; }
 }
+.tz-gruppe { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; padding: 16px 0 6px; }
+.tz-gruppe:first-child { padding-top: 2px; }
 
 /* Kleines Bedienelement (z. B. die 18px-Abhaken-Box in Termine) auf ein
    ~44px-Touchziel vergroessern, ohne die sichtbare Box zu veraendern. */
