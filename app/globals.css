@@ -492,18 +492,30 @@ button.listen-zeile { width: calc(100% + 20px); background: none; border: 0; bor
 a.kpi-card:active { transform: scale(.985); }
 /* Betonte KPI (z. B. Cashflow) — goldene Ruhefläche statt Inline-Styles */
 .kpi-card.highlight { background: var(--gold-pale); border-color: var(--gold-dim); }
-/* Verlauf + Trend unter der Kennzahl (03.10.2026, components/KpiVerlauf.tsx). Die Linie
-   füllt die Kartenbreite; Ziffern gleich breit, damit Zahlen beim Vergleichen nicht tanzen. */
+/* Kennzahlen als EINE Leiste (03.10.2026): eine Karte, fünf Felder mit Haarlinie dazwischen —
+   ruhiger als fünf einzelne Karten mit Badges und Linien. Unter 860 px zwei Spalten, das
+   letzte Feld über die volle Breite; Felder bleiben Links in den passenden Bereich. */
 .kpi-value { font-variant-numeric: tabular-nums; }
-.kpi-spark { display: block; width: 100%; height: 32px; margin-top: 12px; overflow: visible; }
-.kpi-trend { display: block; margin-top: 6px; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kpi-trend-gut { color: var(--green); }
-.kpi-trend-schlecht { color: var(--red); }
-.kpi-trend-neutral { color: var(--faint); font-weight: 500; }
-.kpi-trend-bezug { color: var(--faint); font-weight: 400; }
-.kpi-belegung { display: flex; gap: 3px; margin-top: 14px; }
-.kpi-belegung > span { flex: 1; height: 8px; border-radius: 3px; background: var(--green); opacity: .75; }
-.kpi-belegung > span.leer { background: var(--red); opacity: .85; }
+.kpi-leiste { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-1); overflow: hidden; }
+.kpi-feld { display: flex; flex-direction: column; gap: 4px; padding: 18px 20px; text-decoration: none; color: inherit; min-width: 0; transition: background-color 150ms var(--ease-out); }
+.kpi-feld + .kpi-feld { border-left: 1px solid var(--line); }
+.kpi-feld .kpi-label { margin-bottom: 2px; }
+/* Bis zu zwei Zeilen statt abgeschnitten — die Cashflow-Formel muss lesbar bleiben (Review 30.09.2026). */
+.kpi-feld .kpi-sub { font-size: 12px; line-height: 1.4; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.kpi-feld:active { background: var(--bg3); transition-duration: 0ms; }
+@media (hover: hover) and (pointer: fine) { .kpi-feld:hover { background: var(--bg3); } }
+@media (max-width: 860px) {
+  .kpi-leiste { grid-template-columns: 1fr 1fr; }
+  .kpi-feld + .kpi-feld { border-left: none; }
+  .kpi-feld { border-top: 1px solid var(--line); }
+  .kpi-feld:nth-child(-n+2) { border-top: none; }
+  .kpi-feld:nth-child(even) { border-left: 1px solid var(--line); }
+  .kpi-feld:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+/* Erklärung unter einer Grafik: eingeklappt, eine Zeile statt eines Absatzes. */
+.erklaer { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.erklaer > summary { cursor: pointer; user-select: none; color: var(--faint); width: fit-content; }
+.erklaer > p { margin: 6px 0 0; line-height: 1.55; }
 .kpi-label { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--track-caption); color: var(--muted); margin-bottom: 8px; }
 .kpi-value { font-family: var(--font-ui); font-weight: 600; font-size: 24px; color: var(--text); line-height: 1.1; letter-spacing: var(--track-heading); }
 .kpi-sub { font-size: var(--text-xs); color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }

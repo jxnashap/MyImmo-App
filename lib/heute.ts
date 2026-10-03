@@ -199,3 +199,32 @@ export function tageVor(iso: string, tage: number): string {
   const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) - tage));
   return d.toISOString().slice(0, 10);
 }
+
+export type GebuendelteAufgabe = Aufgabe & { anzahl: number };
+
+// GLEICHE AUFGABEN BÜNDELN (03.10.2026, Betreiber: „viel Neues wirkt unübersichtlich“).
+// Sechs Zeilen „NK-Abrechnung 2025 zustellen“ mit derselben Frist unterscheiden sich nur im
+// Mieter — sie werden EINE Zeile („6 Einträge · Anna Weber, Fatma Yılmaz, …“), die auf die
+// Terminliste führt, wo jeder einzeln steht. Zusammengefasst wird nur bei gleicher Art,
+// gleichem Titel UND gleichem Datum; die Reihenfolge bleibt die der ersten Zeile.
+export function buendleGleicheAufgaben(liste: Aufgabe[]): GebuendelteAufgabe[] {
+  const gruppen = new Map<string, Aufgabe[]>();
+  for (const a of liste) {
+    const k = `${a.art}|${a.label}|${a.datum}`;
+    const g = gruppen.get(k);
+    if (g) g.push(a);
+    else gruppen.set(k, [a]);
+  }
+  return [...gruppen.values()].map((g) => {
+    if (g.length === 1) return { ...g[0], anzahl: 1 };
+    const namen = g.map((a) => a.sub.split(" · ")[0]).filter(Boolean);
+    const vorne = namen.slice(0, 2).join(", ");
+    return {
+      ...g[0],
+      anzahl: g.length,
+      sub: `${g.length} Einträge · ${vorne}${namen.length > 2 ? ", …" : ""}`,
+      href: g[0].art === "frist" ? "/termine" : g[0].href,
+      dringend: g.some((a) => a.dringend),
+    };
+  });
+}

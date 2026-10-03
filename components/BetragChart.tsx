@@ -16,6 +16,7 @@ export default function BetragChart({
   cumulative = false,
   color = "var(--green)",
   caption,
+  erklaerung,
   heute,
   hoehe = 280,
 }: {
@@ -24,6 +25,8 @@ export default function BetragChart({
   cumulative?: boolean;
   color?: string;
   caption?: string;
+  /** Erklärung zur Rechnung — eingeklappt unter der Grafik statt als Absatz (03.10.2026). */
+  erklaerung?: string;
   /** Stichtag `YYYY-MM-DD` vom Server (Europe/Berlin) — nie `new Date()` hier:
    *  Server (UTC) und Browser (Ortszeit) kämen sonst am Monatsersten auf
    *  verschiedene Monate → Hydration-Fehler (Audit A10). */
@@ -152,6 +155,12 @@ export default function BetragChart({
 
       {caption && (
         <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "var(--muted)" }}>{caption}</div>
+      )}
+      {erklaerung && (
+        <details className="erklaer">
+          <summary>Wie wird das gerechnet?</summary>
+          <p>{erklaerung}</p>
+        </details>
       )}
     </div>
   );

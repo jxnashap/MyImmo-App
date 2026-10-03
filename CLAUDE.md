@@ -377,16 +377,18 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   🐞 **Falle (am Handy gesehen):** `.badge` steht in `globals.css` NACH der Ausblende-Regel und
   setzte `display` zurück; ein inline `display` an einer Zusatzspalte schlägt sie ebenfalls.
   Jetzt `.listen-zeile .listen-zeile-extra`; `tests/kompakteListen.test.ts` hält beides fest.
-  📈 **Kennzahlen mit Verlauf (03.10.2026, Betreiber: „moderner“ → „Kennzahlen lebendiger“ +
-  „spürbare Reaktionen“, erst Dashboard, dann ausrollen):** Warmmiete, Kosten und Cashflow
-  zeigen eine 12-Monats-Linie + „▲/▼ x € ggü. Vormonat“ (`lib/kpiVerlauf.ts`,
-  `components/KpiVerlauf.tsx`). **Regel: Die Linie zeigt DIESELBE Größe, mit denselben
-  Funktionen je Monatsende gerechnet; der letzte Punkt ist die Kachelzahl.** Annahme, die an
-  der Linie steht: Kreditraten von heute (keine Historie). **Portfoliowert bewusst OHNE
-  Verlauf** — Werte ändern sich am Erfassungstag (`marktwert_stand`), nicht am Markttag; die
-  erste Fassung zeigte in der Demo „▲ 11,9 % ggü. Vormonat“. Leerstand: Belegungsleiste.
-  Dazu: Lade-Skelett = Dashboard-Form (5 Kacheln, `.dash-haupt`), `.listen-zeile:active`.
-  `tests/kpiVerlauf.test.ts`, zehn Mutationen rot.
+  📈 **Kennzahlen mit Verlauf — gebaut, live (#413) und vom Betreiber VERWORFEN (03.10.2026):**
+  12-Monats-Linien + „▲/▼ ggü. Vormonat“ unter den Kacheln. Urteil: „wenig Veränderung und
+  wieder viel Neues, wirkt unübersichtlich“. **Lehre: „moderner“ heißt für den Betreiber
+  RUHIGER, nicht mehr Elemente.** Code entfernt (Historie: #413). Nebenbefund, der bleibt:
+  Portfoliowerte ändern sich am ERFASSUNGStag (`marktwert_stand`), nicht am Markttag — ein
+  „ggü. Vormonat“ darauf wäre eine Behauptung ohne Grundlage.
+  🧘 **Ruhigeres Dashboard (Entwurf 03.10.2026, wartet auf Freigabe des Betreibers):** Kennzahlen
+  als EINE Leiste (`.kpi-leiste`/`.kpi-feld`, Unterzeile bis 2 Zeilen statt abgeschnitten);
+  Erklärtexte der Grafiken eingeklappt (`erklaerung`-Prop → „Wie wird das gerechnet?“);
+  gleiche Aufgaben (Art + Titel + Datum) gebündelt (`buendleGleicheAufgaben` in `lib/heute.ts`,
+  „6 Einträge · Anna Weber, …“ → /termine); „Einnahmen vs. Ausgaben“ und „Aktuelle Kredite“
+  ENTFERNT (Doppelungen); Letzte Buchungen als `.listen-zeile`. Lade-Skelett in Leistenform.
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
