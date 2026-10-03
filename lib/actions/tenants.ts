@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { flashUrl, sicheresZiel } from "@/lib/flash";
 import { encrypt } from "@/lib/crypto/secure";
 import { normalizeIban } from "@/lib/iban";
+import { mieterwechselVerdacht } from "@/lib/mieterZugang";
+import { trenneMieterZugang } from "@/lib/actions/einladung";
 
 function parse(formData: FormData) {
   const num = (k: string) => {
@@ -85,9 +87,32 @@ export async function updateTenant(id: string, formData: FormData) {
   // die Bearbeiten-Seite füllt die IBAN entschlüsselt vor — ein Speichern
   // löscht also nichts, was nicht im Formular stand (anders als seinerzeit
   // `notiz_import` in properties.ts).
+  const neu = parse(formData);
+
+  // S4 (03.10.2026): Mieterwechsel in derselben Zeile. Hängt ein Portal-Konto an diesem
+  // Mieter und ändern sich Name oder Mietbeginn, entscheidet der Vermieter ausdrücklich:
+  // „korrektur“ (gleiche Person) oder „trennen“ (neuer Mieter — der alte Zugang endet).
+  // Die Oberfläche fragt vorher; hier wird es durchgesetzt, auch am Formular vorbei.
+  // Fail-closed: Ohne gesicherte Auskunft über den Zugang wird nicht gespeichert.
+  const [altRes, zugRes] = await Promise.all([
+    supabase.from("mieter").select("vorname,nachname,mietbeginn").eq("id", id).eq("user_id", user.id).maybeSingle(),
+    supabase.from("mieter_zugaenge").select("user_id").eq("mieter_id", id).eq("vermieter_id", user.id).limit(1),
+  ]);
+  if (altRes.error || zugRes.error) throw new Error("Mieter konnte nicht gespeichert werden — bitte erneut versuchen.");
+  const alt = altRes.data as { vorname: string | null; nachname: string | null; mietbeginn: string | null } | null;
+  if (alt && (zugRes.data ?? []).length > 0 && mieterwechselVerdacht(alt, neu)) {
+    const entscheidung = String(formData.get("mieterwechsel") ?? "");
+    if (entscheidung === "trennen") {
+      const r = await trenneMieterZugang(id);
+      if ("error" in r && r.error) throw new Error(r.error);
+    } else if (entscheidung !== "korrektur") {
+      redirect(flashUrl(`/tenants/${id}/edit`, "Name oder Mietbeginn geändert, und an diesem Mieter hängt ein Portal-Konto. Bitte angeben, ob es ein neuer Mieter ist — nichts wurde gespeichert.", "error"));
+    }
+  }
+
   const { error } = await supabase
     .from("mieter")
-    .update({ ...parse(formData), iban: ibanEnc(formData) })
+    .update({ ...neu, iban: ibanEnc(formData) })
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);

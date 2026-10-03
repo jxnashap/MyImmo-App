@@ -150,3 +150,47 @@ export function einladungsMail(opts: {
 </body></html>`;
   return { betreff, text, html };
 }
+
+/**
+ * S7 (03.10.2026): Für wie viele Portal-Konten wird ein freigegebener Beleg sichtbar?
+ * Spiegelt `mieter_beleg_sichtbar()` (Migration 20261002120000): Konto mit einem Mieter
+ * desselben Objekts, Zugang nicht abgelaufen, Belegdatum in dessen Mietzeit (ganze
+ * Kalenderjahre). Vorher sagte der Schalter nur „alle Mieter des Objekts“ — wie viele das
+ * sind und ob überhaupt jemand, blieb offen.
+ */
+export function belegReichweite(
+  beleg: { prop_id: string | null; buchungsdatum: string | null },
+  mieter: { id: string; prop_id: string | null; mietbeginn: string | null; mietende: string | null }[],
+  zugaenge: { mieter_id: string; user_id: string }[],
+  heute: string,
+): number {
+  if (!beleg.prop_id) return 0;
+  const d = beleg.buchungsdatum?.slice(0, 10) ?? null;
+  const konten = new Set<string>();
+  for (const z of zugaenge) {
+    const m = mieter.find((x) => x.id === z.mieter_id);
+    if (!m || m.prop_id !== beleg.prop_id) continue;
+    const ende = zugangEndet(m.mietende);
+    if (ende && heute > ende) continue;
+    if (d && m.mietbeginn && d < `${m.mietbeginn.slice(0, 4)}-01-01`) continue;
+    if (d && m.mietende && d > `${m.mietende.slice(0, 4)}-12-31`) continue;
+    konten.add(z.user_id);
+  }
+  return konten.size;
+}
+
+/**
+ * S4 (03.10.2026): Sieht eine Änderung an einer Mieter-Zeile nach einem NEUEN Mieter aus?
+ * Anderer Vor- oder Nachname oder anderer Mietbeginn. Hängt an der Zeile ein Portal-Konto,
+ * sähe der bisherige Mieter sonst alles, was künftig für den neuen bestimmt ist (F1).
+ * Groß-/Kleinschreibung und Leerzeichen zählen nicht — „anna “ → „Anna“ ist eine Korrektur.
+ * Ein bisher LEERES Feld zu füllen ist kein Wechsel.
+ */
+export function mieterwechselVerdacht(
+  alt: { vorname: string | null; nachname: string | null; mietbeginn: string | null },
+  neu: { vorname: string | null; nachname: string | null; mietbeginn: string | null },
+): boolean {
+  const n = (s: string | null) => (s ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+  const anders = (a: string | null, b: string | null) => n(a) !== "" && n(a) !== n(b);
+  return anders(alt.vorname, neu.vorname) || anders(alt.nachname, neu.nachname) || anders(alt.mietbeginn, neu.mietbeginn);
+}

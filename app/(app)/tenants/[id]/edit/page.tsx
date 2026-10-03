@@ -13,7 +13,7 @@ import { ReceiptText, Trash2 } from "lucide-react";
 export default async function EditTenantPage(props0: { params: Promise<{ id: string }> }) {
   const params = await props0.params;
   const supabase = await createClient();
-  const [{ data }, { data: props }, { data: positions }] = await Promise.all([
+  const [{ data }, { data: props }, { data: positions }, { data: zugang }] = await Promise.all([
     supabase.from("mieter").select("*").eq("id", params.id).single(),
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
     supabase
@@ -21,6 +21,8 @@ export default async function EditTenantPage(props0: { params: Promise<{ id: str
       .select("id,bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,grundkosten_prozent,flaeche_gesamt")
       .eq("mieter_id", params.id)
       .order("created_at"),
+    // S4: Hängt ein Portal-Konto an diesem Mieter? Dann fragt das Formular bei Namens-/Beginn-Änderung nach.
+    supabase.from("mieter_zugaenge").select("email").eq("mieter_id", params.id).limit(1),
   ]);
   if (!data) notFound();
   const tenant = data as Tenant;
@@ -40,7 +42,13 @@ export default async function EditTenantPage(props0: { params: Promise<{ id: str
         </div>
       </div>
 
-      <TenantForm action={update} tenant={{ ...tenant, iban: decryptNullable(tenant.iban) }} properties={props ?? []} submitLabel="Speichern" />
+      <TenantForm
+        action={update}
+        tenant={{ ...tenant, iban: decryptNullable(tenant.iban) }}
+        properties={props ?? []}
+        submitLabel="Speichern"
+        portalKonto={zugang?.[0] ? ((zugang[0] as { email: string | null }).email ?? "verbunden (Adresse unbekannt)") : null}
+      />
 
       <div style={{ marginTop: 24 }}>
         <PositionsManager mieterId={tenant.id} positions={(positions ?? []) as Position[]} />

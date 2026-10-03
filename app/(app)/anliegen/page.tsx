@@ -339,6 +339,13 @@ export default async function AnliegenPage(
             <>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 14 }}>
                 <PortalVorschauWahl mieter={vorschauListe} aktuell={vorschauMieter.id} portal={portalReiter} />
+                {vorschauDaten?.zugangBeendet && (
+                  <span role="status" style={{ fontSize: 12, color: "var(--amber)" }}>
+                    Der Portal-Zugang von {vorschauMieter.name} endete am{" "}
+                    {vorschauDaten.zugangBeendet.split("-").reverse().join(".")} (Auszug + Nachlauf) — der Mieter
+                    sieht seine Wohnung, Zahlungen und Dokumente nicht mehr.
+                  </span>
+                )}
                 {!vorschauDaten?.mieterKontoVerknuepft && (
                   <span style={{ fontSize: 12, color: "var(--muted)" }}>
                     {vorschauMieter.name} hat noch kein Konto — Anliegen und Zählerstände erscheinen erst nach
