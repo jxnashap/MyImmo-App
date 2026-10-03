@@ -127,7 +127,12 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    `BREVO_API_KEY` stand der NAME der zweiten Variable („BREVO_ABSENDER_EMAIL“) statt des
    Schlüssels, die zweite Variable fehlte ganz. Key = Name, Value = Inhalt; zwei getrennte
    Einträge. Das Projekt hat außerdem eine eigene Umgebung „claudeapi“ neben Production.
-   Korrigiert 03.10.2026, danach neu gebaut. **Regel: Nach jeder Env-Änderung neu bauen UND am
+   Korrigiert 03.10.2026, danach neu gebaut → Formular sichtbar, erste Zeile in
+   `newsletter_anmeldungen`. **Nächste Hürde (03.10.2026, OFFEN):** Brevo blockiert den
+   Versand („API-Aufruf von unbekannter IP“) — Vercel-Funktionen haben keine feste IP.
+   Lösung: Brevo → Sicherheit → Autorisierte IPs → Sperre aus (Risiko: Schlüssel gilt dann
+   von überall; Rotation bei Verdacht) oder Vercel Static IPs (kostet). Betreiber:
+   „machen wir später“. Bis dahin endet jede Anmeldung ohne Mail. **Regel: Nach jeder Env-Änderung neu bauen UND am
    Merkmal prüfen, nicht am Eintrag.**
    `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` (in Brevo verifiziert, SPF/DKIM für
    myimmoapp.de), optional `BREVO_LIST_ID`, danach **neu deployen**. Ohne sie endete jede
