@@ -459,7 +459,10 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Direktlink (`vorgangUrl()`), Mieter-Aufgaben ebenso (`MieterAufgabe.vorgang`). Merkmale und
   Adressen: `lib/anliegenListe.ts` (`tests/anliegenListe.test.ts`, vier Mutationen rot). Der
   Rauchtest öffnet jetzt auch die Detailansicht (`pruefeVorgang`). **Regel: Kein Verlauf und kein
-  Formular in einer Liste — dafür gibt es die Detailansicht.**
+  Formular in einer Liste — dafür gibt es die Detailansicht.** Gleicher Tag: auch „Termine &
+  Aufgaben“ auf dem Dashboard als `.listen-zeile` (Titel, darunter Mieter/Objekt — viele Aufgaben
+  heißen gleich, der Unterschied darf nicht hinter „…“ verschwinden; Fristdatum rechts, rot wenn
+  dringend). `.heute-zeile` ist entfernt.
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
   (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor

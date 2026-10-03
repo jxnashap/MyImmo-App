@@ -81,10 +81,15 @@ describe("A10: EIN Stichtag in Europe/Berlin für Server und Browser", () => {
 });
 
 describe("B24/B27/C30: Dashboard-Zeile, Leerzustände, Staffelplan", () => {
-  it("die Aufgabenzeile wickelt auf dem Handy um", () => {
+  it("die Aufgabenzeile bricht auf dem Handy nicht in viele Zeilen (seit 03.10.2026: Auslassungspunkte)", () => {
+    // B24: Der Titel bekam neben Badge + Aktion 34 px und brach in 9 Zeilen. Seit 03.10.2026 ist
+    // jede Aufgabe EINE `.listen-zeile`, der Titel kürzt mit „…“ statt umzubrechen.
     const css = lies("app/globals.css");
-    expect(css).toMatch(/@media \(max-width: 560px\) \{\s*\.heute-zeile \{ flex-wrap: wrap;/);
-    expect(lies("app/(app)/page.tsx")).toContain('className="heute-label"');
+    expect(css).toMatch(/\.listen-zeile-titel \{[^}]*white-space: nowrap;[^}]*text-overflow: ellipsis;/);
+    const seite = lies("app/(app)/page.tsx");
+    const block = seite.slice(seite.indexOf("heuteAufgaben.map"));
+    expect(block).toContain('className="listen-zeile"');
+    expect(block).toContain('className="listen-zeile-titel"');
   });
   it("Listen unterscheiden „gefiltert“ von „nichts“ — die Seite reicht es durch", () => {
     for (const p of ["components/lists/CashflowListe.tsx", "components/lists/EinnahmenListe.tsx", "components/lists/KostenListe.tsx"]) {
