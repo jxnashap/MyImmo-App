@@ -123,9 +123,11 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    letzte Produktions-Build lag 3 Minuten davor, die Formulare blieben ausgeblendet.
    Merkmal ohne Mailversand: Erscheint auf `/vorlagen` ein E-Mail-Feld, ist `brevoBereit()` wahr.
    **Auch der Build danach (07:34) zeigte kein Formular** — der erste Eintrag kam in
-   Production nicht an (Name, fehlende zweite Variable oder falsche Umgebung; das Projekt hat
-   neben Production/Preview eine eigene Umgebung „claudeapi“). Erst nach Korrektur durch den
-   Betreiber und einem weiteren Build. **Regel: Nach jeder Env-Änderung neu bauen UND am
+   Production nicht an. **Ursache (Screenshot des Betreibers):** Im Feld **Value** von
+   `BREVO_API_KEY` stand der NAME der zweiten Variable („BREVO_ABSENDER_EMAIL“) statt des
+   Schlüssels, die zweite Variable fehlte ganz. Key = Name, Value = Inhalt; zwei getrennte
+   Einträge. Das Projekt hat außerdem eine eigene Umgebung „claudeapi“ neben Production.
+   Korrigiert 03.10.2026, danach neu gebaut. **Regel: Nach jeder Env-Änderung neu bauen UND am
    Merkmal prüfen, nicht am Eintrag.**
    `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` (in Brevo verifiziert, SPF/DKIM für
    myimmoapp.de), optional `BREVO_LIST_ID`, danach **neu deployen**. Ohne sie endete jede
