@@ -156,7 +156,7 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    **1 Tag**, mit Observability Plus 30 Tage; Build-Logs unbegrenzt je Deployment.
    `/datenschutz` 3 d sagt jetzt „nach einem Tag“. **Wird Observability Plus gebucht,
    muss dort 30 Tage stehen.**
-9. **11px → 12px: Token UMGESTELLT 02.10.2026** (`--text-xs: 12px`, `.tz-rest` 84 → 92px).
+9. **11px → 12px: Token UMGESTELLT 02.10.2026** (`--text-xs: 12px`; `.tz-rest` gibt es seit 03.10.2026 nicht mehr — `/termine` hat keine feste Breite mehr).
    **Offen: Betreiber klickt durch** (Dashboard-Kacheln, Badges, Formular-Labels, Objektkarten,
    Termine, Briefvorschau, Befehlspalette) und meldet Umbrüche. Rückweg: eine Zeile in
    `app/globals.css`. Folge: `--text-xs` = `--text-sm` = 12px, die Stufe dazwischen entfällt.
@@ -361,6 +361,12 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Ziffer 3 h nennt Nominatim (UK, Angemessenheitsbeschluss bis 27.12.2031) und Jina AI (Audit
   B9). `tests/verortung.test.ts`. **Regel: Nie eine externe Anfrage wiederholen, deren Ergebnis
   schon bekannt ist; 429/5xx sind „später“, nicht „gibt es nicht“.**
+  📋 **Kompakte Listen (03.10.2026, Betreiber: „nicht so viel Text, funktionell“):** `.listen-zeile`
+  (eine Zeile je Eintrag, Titel mit Auslassung, Datum rechts, Chevron) für Anliegen (Vermieter
+  + Portal, Detail über `?vorgang=<id>`), Dashboard-Neuigkeiten, „Termine & Aufgaben“ und
+  `/termine`: Liste nach Monaten gruppiert (`.tz-gruppe`, Überfällig zuerst), Monatsansicht zeigt
+  UNTER dem Raster die Termine des Monats bzw. des gewählten Tags. Bearbeiten/Löschen auf dem
+  Desktop blass bis Hover. **Regel: Neue Listen nehmen `.listen-zeile`, keine Textblöcke.**
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
