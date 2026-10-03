@@ -27,37 +27,10 @@ export type ObjektUmfang = {
   mieter: number;
 };
 
-const leer: ObjektUmfang = { einnahmen: 0, kosten: 0, kredite: 0, dokumente: 0, verbrauch: 0, mieter: 0 };
 
-/** Löschumfang je Objekt — eine schlanke Abfrage je Tabelle (nur prop_id). */
-export async function objektUmfaenge(): Promise<Map<string, ObjektUmfang>> {
-  const supabase = await createClient();
-  const [einn, kost, kred, notiz, verbr, miet] = await Promise.all([
-    supabase.from("einnahmen").select("prop_id"),
-    supabase.from("kosten").select("prop_id"),
-    supabase.from("kredite").select("prop_id"),
-    supabase.from("notizen").select("prop_id"),
-    supabase.from("verbrauch").select("prop_id"),
-    supabase.from("mieter").select("prop_id"),
-  ]);
-
-  const map = new Map<string, ObjektUmfang>();
-  const zaehle = (rows: { prop_id: string | null }[] | null, feld: keyof ObjektUmfang) => {
-    for (const r of rows ?? []) {
-      if (!r.prop_id) continue;
-      const u = map.get(r.prop_id) ?? { ...leer };
-      u[feld] += 1;
-      map.set(r.prop_id, u);
-    }
-  };
-  zaehle(einn.data, "einnahmen");
-  zaehle(kost.data, "kosten");
-  zaehle(kred.data, "kredite");
-  zaehle(notiz.data, "dokumente");
-  zaehle(verbr.data, "verbrauch");
-  zaehle(miet.data, "mieter");
-  return map;
-}
+// `objektUmfaenge()` (Löschumfang für ALLE Objekte, sechs Tabellen-Abfragen) ist am 03.10.2026
+// entfallen: Die Objektliste hat keinen Löschknopf mehr, gelöscht wird nur noch auf der
+// Objektseite — und die zählt den Umfang ihres EINEN Objekts selbst.
 
 /** Ein Satz, der die Folgen benennt — leer, wenn nichts dranhängt. */
 export function objektFolgenText(u: ObjektUmfang | undefined): string {

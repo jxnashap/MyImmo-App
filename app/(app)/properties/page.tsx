@@ -2,14 +2,11 @@ import { objektCheck, type CheckMieter } from "@/lib/objektCheck";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro, prozent } from "@/lib/format";
-import { deleteProperty } from "@/lib/actions/properties";
-import DeleteButton from "@/components/DeleteButton";
 import type { Property, Kredit } from "@/lib/types";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { sortiereObjekte, SORT_OPTIONEN } from "@/lib/objektSortierung";
 import { sollKaltmiete } from "@/lib/sollMiete";
-import { objektUmfaenge, objektFolgenText } from "@/lib/loeschUmfang";
-import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Upload, Plus, X, Landmark, type LucideIcon } from "lucide-react";
+import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Upload, Plus, ChevronRight, type LucideIcon } from "lucide-react";
 
 // Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
 const PROP_ICONS: Record<string, LucideIcon> = {
@@ -34,12 +31,10 @@ export default async function PropertiesPage(
 ) {
   const searchParams = await props.searchParams;
   const supabase = await createClient();
-  const [{ data }, { data: kred }, { data: miet }, umfaenge] = await Promise.all([
+  const [{ data }, { data: kred }, { data: miet }] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("kredite").select("id,prop_id,restschuld,auszahlung_datum"),
     supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete,mietbeginn,mietende"),
-    // Was am Objekt haengt — gehoert VOR den Loeschklick (lib/loeschUmfang.ts).
-    objektUmfaenge(),
   ]);
 
   // Miete je Objekt nach derselben Regel wie Dashboard und Objektseite
@@ -122,67 +117,37 @@ export default async function PropertiesPage(
           </div>
         </div>
       ) : (
-        <div className="staffel prop-grid">
+        <div className="section">
+          <div className="section-body listen">
           {list.map((p) => {
             const wert = p.wert ?? p.kaufpreis ?? 0;
             const rendite = p.miete && wert ? ((p.miete * 12) / wert) * 100 : null;
             const rest = restMap.get(p.id) ?? 0;
+            const Icon = (p.typ && PROP_ICONS[p.typ]) || Home;
+            // Objekt-Check (lib/objektCheck.ts): „8/10“ neben dem Status, nur wenn etwas fehlt.
+            const c = objektCheck(p, (miet ?? []) as CheckMieter[], kredite, heute);
             return (
-              <div key={p.id} className="prop-card">
-                {/* Ganze Kachel klickbar: unsichtbarer Link über der Karte.
-                    Der Löschen-Knopf liegt darüber (z-index) und bleibt bedienbar. */}
-                <Link href={`/properties/${p.id}`} className="prop-card-link" aria-label={`${p.bezeichnung} öffnen`} />
-                <div className="prop-card-header">
-                  <div className="prop-icon" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>{(() => { const Icon = (p.typ && PROP_ICONS[p.typ]) || Home; return <Icon size={18} />; })()}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="prop-card-name" style={{ color: "var(--text)" }}>{p.bezeichnung}</div>
-                    <div className="prop-card-addr">{p.adresse || p.typ || "—"}</div>
-                    {(() => {
-                      // Objekt-Check (lib/objektCheck.ts): „8/10“ neben dem Status, nur wenn etwas fehlt.
-                      const c = objektCheck(p, (miet ?? []) as CheckMieter[], kredite, heute);
-                      if (!p.obj_status && c.fehlend.length === 0) return null;
-                      return (
-                        <div style={{ marginTop: 5, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          {p.obj_status && <span className={`badge ${statusBadge(p.obj_status)}`}>{p.obj_status}</span>}
-                          {c.fehlend.length > 0 && <span className="badge badge-neutral" title={`Fehlt: ${c.fehlend.map((f) => f.label).join(", ")}`}>{c.erfuellt}/{c.gesamt} Angaben</span>}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                  <span className="prop-card-above">
-                    <DeleteButton
-                      action={deleteProperty.bind(null, p.id)}
-                      confirmText={`„${p.bezeichnung}" wirklich löschen? ${objektFolgenText(umfaenge.get(p.id))}`.trim()}
-                      className="delete-btn"
-                      label={<X size={14} />}
-                    />
-                  </span>
-                </div>
-                <div className="prop-card-stats">
-                  <div className="prop-stat">
-                    <div className="prop-stat-val">{euro(wert)}</div>
-                    <div className="prop-stat-lbl">Wert</div>
-                  </div>
-                  <div className="prop-stat">
-                    <div className="prop-stat-val">{p.miete ? euro(p.miete) : "–"}</div>
-                    <div className="prop-stat-lbl">Miete/Mo</div>
-                  </div>
-                  <div className="prop-stat">
-                    <div className="prop-stat-val" style={{ color: "var(--teal)" }}>{rendite != null ? prozent(rendite, 2) : "–"}</div>
-                    <div className="prop-stat-lbl">Rendite</div>
-                  </div>
-                </div>
-                {rest > 0 && (
-                  <div style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", fontSize: 11, color: "var(--muted)" }}>
-                    <Landmark size={12} style={{ verticalAlign: "-2px" }} /> Restschuld: <strong style={{ color: "var(--text)" }}>{euro(rest)}</strong>
-                  </div>
-                )}
-                <div style={{ padding: "8px 14px", borderTop: "1px solid var(--line)", fontSize: 11, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4 }}>
-                  <span style={{ color: "var(--gold)" }}>→</span> Details anzeigen
-                </div>
-              </div>
+              <Link key={p.id} href={`/properties/${p.id}`} className="listen-zeile" aria-label={`${p.bezeichnung} öffnen`}>
+                <span className="listen-icon"><Icon size={16} /></span>
+                <span className="listen-zeile-text">
+                  <span className="listen-zeile-titel">{p.bezeichnung}</span>
+                  <span className="listen-zeile-sub">{p.adresse || p.typ || "—"}</span>
+                </span>
+                {c.fehlend.length > 0 && <span className="badge badge-neutral listen-zeile-extra" title={`Fehlt: ${c.fehlend.map((f) => f.label).join(", ")}`}>{c.erfuellt}/{c.gesamt} Angaben</span>}
+                {p.obj_status && <span className={`badge ${statusBadge(p.obj_status)} listen-zeile-extra`}>{p.obj_status}</span>}
+                <span className="listen-zeile-zahl listen-zeile-extra" title="Rendite (Kaltmiete × 12 ÷ Wert) und Restschuld">
+                  <b style={{ color: "var(--teal)" }}>{rendite != null ? prozent(rendite, 2) : "–"}</b>
+                  <small>{rest > 0 ? `${euro(rest)} Schuld` : "schuldenfrei"}</small>
+                </span>
+                <span className="listen-zeile-zahl">
+                  <b>{euro(wert)}</b>
+                  <small>{p.miete ? `${euro(p.miete)} / Mo.` : "keine Miete"}</small>
+                </span>
+                <ChevronRight size={16} color="var(--faint)" style={{ flexShrink: 0 }} />
+              </Link>
             );
           })}
+          </div>
         </div>
       )}
 

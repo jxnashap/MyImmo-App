@@ -444,9 +444,24 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 .listen-zeile-titel { display: block; font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .listen-zeile-sub { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
 .listen-zeile-datum { font-size: 12px; color: var(--faint); white-space: nowrap; }
+/* Dieselbe Zeile als Knopf (öffnet einen Dialog statt einer Seite) und mit Zahlenspalten
+   (Kredite, Objekte, Mieter — 03.10.2026, „die ganze App so“). */
+button.listen-zeile { width: calc(100% + 20px); background: none; border: 0; border-bottom: 1px solid var(--line); font: inherit; text-align: left; cursor: pointer; }
+.listen-zeile-text { flex: 1; min-width: 0; }
+.listen-zeile-zahl { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 84px; }
+.listen-zeile-zahl b { display: block; font-size: 13.5px; font-weight: 600; }
+.listen-zeile-zahl small { display: block; font-size: 11.5px; color: var(--muted); }
+.listen-icon { width: 32px; height: 32px; border-radius: 10px; background: var(--bg3); display: grid; place-items: center; flex-shrink: 0; color: var(--muted); }
+.mini-balken { width: 64px; height: 5px; border-radius: 3px; background: var(--bg3); overflow: hidden; flex-shrink: 0; }
+.mini-balken > i { display: block; height: 100%; background: var(--teal); }
 @media (max-width: 560px) {
-  .listen-zeile-datum, .listen-zeile-extra { display: none; }
+  /* Mit `.listen-zeile` davor: `.badge` steht weiter unten und setzte sonst `display` zurück
+     (am Handy standen „8/10 Angaben" und „Vermietet" trotzdem in der Zeile). */
+  .listen-zeile .listen-zeile-datum, .listen-zeile .listen-zeile-extra { display: none; }
+  .listen-zeile-zahl { min-width: 0; }
 }
+/* Mietkonto (03.10.2026): offene und bestätigte Eingänge als Zeilen in EINER Karte. */
+.mk-zeile + .mk-zeile { border-top: 1px solid var(--line); }
 /* Automatisch umbrechendes Kartenraster (Kandidaten-/Objektkarten) */
 .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
 .mb-16 { margin-bottom: 16px; }
@@ -850,8 +865,8 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
   .tz-aktionen { opacity: .45; transition: opacity 150ms var(--ease-out); }
   .termin-zeile:hover .tz-aktionen, .tz-aktionen:focus-within { opacity: 1; }
 }
-.tz-gruppe { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; padding: 16px 0 6px; }
-.tz-gruppe:first-child { padding-top: 2px; }
+.tz-gruppe, .listen-gruppe { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; padding: 16px 0 6px; }
+.tz-gruppe:first-child, .listen-gruppe:first-child { padding-top: 2px; }
 
 /* Kleines Bedienelement (z. B. die 18px-Abhaken-Box in Termine) auf ein
    ~44px-Touchziel vergroessern, ohne die sichtbare Box zu veraendern. */

@@ -39,6 +39,16 @@ export default async function KreditePage() {
     })),
     list,
   );
+  // Kennzahlen über alle Darlehen. Ø-Zins nach Restschuld gewichtet (ein kleines teures
+  // Darlehen soll den Schnitt nicht so stark ziehen wie ein großes).
+  const summeRest = list.reduce((s, k) => s + (k.restschuld ?? 0), 0);
+  const summeRate = list.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
+  const summeUrspr = list.reduce((s, k) => s + (k.betrag ?? 0), 0);
+  const gewichtet = list.filter((k) => k.zinssatz != null && (k.restschuld ?? 0) > 0);
+  const basis = gewichtet.reduce((s, k) => s + (k.restschuld ?? 0), 0);
+  const zinsSchnitt = basis > 0 ? gewichtet.reduce((s, k) => s + (k.zinssatz ?? 0) * (k.restschuld ?? 0), 0) / basis : null;
+  const getilgtGesamt = summeUrspr > 0 ? Math.round((1 - summeRest / summeUrspr) * 100) : null;
+
   const STUFE = {
     niedrig: { label: "niedrig", cls: "badge-green" },
     mittel: { label: "mittel", cls: "badge-amber" },
@@ -59,26 +69,45 @@ export default async function KreditePage() {
       </div>
       <hr className="topbar-rule" />
 
+      {list.length > 0 && (
+        <div className="staffel grid-4 mb-20">
+          <div className="kpi-card"><div className="kpi-label">Restschuld gesamt</div><div className="kpi-value">{euro(summeRest)}</div></div>
+          <div className="kpi-card"><div className="kpi-label">Raten / Monat</div><div className="kpi-value">{euro(summeRate)}</div></div>
+          <div className="kpi-card" title="Nach Restschuld gewichtet"><div className="kpi-label">Ø Zins</div><div className="kpi-value">{zinsSchnitt != null ? `${zahl(zinsSchnitt, 2)} %` : "–"}</div></div>
+          <div className="kpi-card" title="Restschuld gegen ursprüngliche Darlehenssumme"><div className="kpi-label">Getilgt</div><div className="kpi-value" style={{ color: "var(--green)" }}>{getilgtGesamt != null ? `${getilgtGesamt} %` : "–"}</div></div>
+        </div>
+      )}
+
       {warnungen.length > 0 && (
         <div className="section">
           <div className="section-header"><h3>Refinanzierungs-Kalender</h3><div className="section-sub">Zinsbindungen bald ablaufend</div></div>
           <div className="section-body">
-            {warnungen.map(({ k, w }) => (
-              <div key={k.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: w.color, flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Darlehen"}</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)" }}>{(k.prop_id && nameOf.get(k.prop_id)) || "–"} · {k.bank || ""} · {zahl(k.zinssatz ?? 0, 1)} %</div>
+            <div className="listen">
+              {warnungen.map(({ k, w }) => (
+                <div key={k.id} className="listen-zeile">
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: w.color, flexShrink: 0 }} />
+                  <span className="listen-zeile-text">
+                    <span className="listen-zeile-titel">{k.bezeichnung || "Darlehen"}</span>
+                    <span className="listen-zeile-sub">{(k.prop_id && nameOf.get(k.prop_id)) || "–"}{k.bank ? ` · ${k.bank}` : ""} · {zahl(k.zinssatz ?? 0, 1)} %</span>
+                  </span>
+                  <span className="listen-zeile-zahl"><b style={{ color: w.color }}>{datum(k.zinsbindung)}</b><small>{w.label}</small></span>
+                  <span className={`badge ${w.level === "warnung" ? "badge-amber" : "badge-red"}`}>{w.level === "abgelaufen" ? <><Siren size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />Abgelaufen</> : w.level === "kritisch" ? "Dringend" : "Bald"}</span>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: w.color }}>{w.label}</div>
-                  <div style={{ fontSize: 12, color: "var(--muted)" }}>bis: {datum(k.zinsbindung)}</div>
-                </div>
-                <span className={`badge ${w.level === "warnung" ? "badge-amber" : "badge-red"}`}>{w.level === "abgelaufen" ? <><Siren size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />Abgelaufen</> : w.level === "kritisch" ? <><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "var(--red)", marginRight: 5, verticalAlign: "-1px" }} />Dringend</> : <><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "var(--amber)", marginRight: 5, verticalAlign: "-1px" }} />Bald</>}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
+      )}
+
+      {list.length === 0 ? (
+        <Leer
+          icon={Landmark}
+          titel="Noch keine Darlehen"
+          text="Trage deine Finanzierungen ein — MyImmo rechnet daraus Restschuld, Zinsbindung und Tilgungsverlauf und erinnert rechtzeitig an das Ende der Zinsbindung."
+          aktion={{ href: "/kredite/new", label: "Darlehen anlegen" }}
+        />
+      ) : (
+        <KrediteListe rows={list} properties={properties} />
       )}
 
       {auslauf.length > 0 && (
@@ -116,16 +145,6 @@ export default async function KreditePage() {
         </div>
       )}
 
-      {list.length === 0 ? (
-        <Leer
-          icon={Landmark}
-          titel="Noch keine Darlehen"
-          text="Trage deine Finanzierungen ein — MyImmo rechnet daraus Restschuld, Zinsbindung und Tilgungsverlauf und erinnert rechtzeitig an das Ende der Zinsbindung."
-          aktion={{ href: "/kredite/new", label: "Darlehen anlegen" }}
-        />
-      ) : (
-        <KrediteListe rows={list} properties={properties} />
-      )}
     </div>
   );
 }

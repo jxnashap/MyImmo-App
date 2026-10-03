@@ -264,12 +264,15 @@ export default function MietkontoBestaetigung({
 
           {banner}
 
-          {/* Disclaimer (dezent, immer sichtbar) */}
-          <div className="glass-card" style={{ padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
-            Hinweis: MyImmo bucht nach dem von dir bestätigten Zahlungsdatum (Zufluss-/Abflussprinzip,
-            § 11 EStG; 10-Tage-Regel am Jahreswechsel für wiederkehrende Zahlungen). Keine
-            Steuerberatung, ohne Gewähr — im Zweifel Steuerberater fragen.
-          </div>
+          {/* Disclaimer: eingeklappt (03.10.2026) — vorher stand er als Kasten über jeder Ansicht. */}
+          <details className="glass-card" style={{ padding: "8px 16px", marginBottom: 14, fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
+            <summary style={{ cursor: "pointer", userSelect: "none" }}>Nach welchem Datum bucht MyImmo? (§ 11 EStG)</summary>
+            <div style={{ marginTop: 6 }}>
+              MyImmo bucht nach dem von dir bestätigten Zahlungsdatum (Zufluss-/Abflussprinzip,
+              § 11 EStG; 10-Tage-Regel am Jahreswechsel für wiederkehrende Zahlungen). Keine
+              Steuerberatung, ohne Gewähr — im Zweifel Steuerberater fragen.
+            </div>
+          </details>
         </>
       )}
 
@@ -291,8 +294,8 @@ export default function MietkontoBestaetigung({
       ) : modus === "monat" ? (
         <>
           {/* Fortschritt */}
-          <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 18 }}>
-            <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden>
+          {!kompakt && <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14, padding: "12px 18px" }}>
+            <svg width="48" height="48" viewBox="0 0 64 64" aria-hidden>
               <circle cx="32" cy="32" r={R} stroke="var(--line2)" strokeWidth="6" fill="none" />
               <circle
                 cx="32" cy="32" r={R}
@@ -320,22 +323,24 @@ export default function MietkontoBestaetigung({
                 {monat > aktuellerMonat && " Hinweis: Dieser Monat liegt in der Zukunft."}
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* Offene Eingänge oben — bestätigte rutschen nach unten in den
               Ausklapp-Bereich, damit die Arbeitsliste kurz bleibt. */}
+          {/* Eine Karte, eine Zeile je Mieter (03.10.2026) — vorher eine eigene Karte je Mieter. */}
+          {zeilen.some((z) => !(z.schonGebucht || frisch.has(z.mieterId))) && (
+          <div className="glass-card" style={{ padding: "2px 18px", marginBottom: 12 }}>
           {zeilen.filter((z) => !(z.schonGebucht || frisch.has(z.mieterId))).map((z) => {
             const ok = ebenGebucht.has(z.mieterId);
             const istFrisch = ok;
             return (
               <div
                 key={z.mieterId}
-                className={`glass-card${istFrisch ? " row-confirming" : ""}`}
+                className={`mk-zeile${istFrisch ? " row-confirming" : ""}`}
                 style={{
                   display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
-                  marginBottom: 12, padding: "16px 18px",
-                  border: ok ? "1px solid rgba(76,175,125,0.5)" : undefined,
-                  transition: "border-color 0.4s ease",
+                  padding: "12px 0",
+                  color: ok ? "var(--green)" : undefined,
                 }}
               >
                 <div style={{ minWidth: 180, flex: "1 1 180px" }}>
@@ -396,6 +401,8 @@ export default function MietkontoBestaetigung({
               </div>
             );
           })}
+          </div>
+          )}
 
           {/* Bestätigte Eingänge — eingeklappt unter den offenen. */}
           {bestaetigt > 0 && (
@@ -407,12 +414,10 @@ export default function MietkontoBestaetigung({
                   · {eur2(zeilen.filter((z) => z.schonGebucht || frisch.has(z.mieterId)).reduce((s, z) => s + z.gesamt, 0))} in {monatLabel(monat)}
                 </span>
               </summary>
-              <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+              <div style={{ marginTop: 6 }}>
                 {zeilen.filter((z) => z.schonGebucht || frisch.has(z.mieterId)).map((z) => (
-                  <div key={z.mieterId} style={{
-                    display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-                    padding: "10px 12px", borderRadius: 10,
-                    background: "var(--bg3)", border: "1px solid rgba(76,175,125,0.35)",
+                  <div key={z.mieterId} className="mk-zeile" style={{
+                    display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "8px 0",
                   }}>
                     <div style={{ minWidth: 160, flex: "1 1 160px" }}>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{z.name}</div>
