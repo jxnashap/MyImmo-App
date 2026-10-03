@@ -154,8 +154,8 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   if (d.absender.email) right(RIGHT, ry, d.absender.email, 8.5, font, MUTED);
 
   page.drawLine({
-    start: { x: 372, y: A4.h - 44 },
-    end: { x: 372, y: A4.h - 82 },
+    start: { x: A4.w / 2, y: A4.h - 44 },
+    end: { x: A4.w / 2, y: A4.h - 82 },
     thickness: 1,
     color: GOLD,
   });

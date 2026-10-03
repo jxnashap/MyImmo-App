@@ -185,8 +185,8 @@ export async function buildNkPdf(
 
   // ---- Goldener vertikaler Trennstrich ----
   page.drawLine({
-    start: { x: 372, y: A4.h - 44 },
-    end: { x: 372, y: A4.h - 82 },
+    start: { x: A4.w / 2, y: A4.h - 44 },
+    end: { x: A4.w / 2, y: A4.h - 82 },
     thickness: 1,
     color: GOLD,
   });
