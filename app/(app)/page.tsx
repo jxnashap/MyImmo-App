@@ -267,8 +267,6 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const vorname = ((profil as { name: string | null } | null)?.name ?? "").trim().split(/\s+/)[0] || null;
   const monatJahr = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric", timeZone: "Europe/Berlin" }).format(new Date());
 
-  const now = new Date();
-
   const totalWert = properties.reduce((s, p) => s + (p.wert ?? 0), 0);
 
   // Portfolio-Wertentwicklung: je Objekt Kaufpreis → erfasste Stände →
@@ -390,7 +388,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
             </div>
           ))}
           <p style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 16 }}>
-            Tipp: Die Einführungs-Tour zeigt dir alle Stationen — jederzeit über Einstellungen → „Daten &amp; Recht" startbar.
+            Tipp: Die Einführungs-Tour zeigt dir alle Stationen — jederzeit über Einstellungen → „Daten &amp; Recht&quot; startbar.
           </p>
         </div>
       </div>
@@ -470,31 +468,34 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
         </Link>
       </div>
 
-      {portfolioWert.length >= 2 && (
-        <div className="section mb-20">
-          <div className="section-header">
-            <h3>Portfolio-Wertentwicklung</h3>
-            {portfolioWertProzent != null && (
-              <span className={`badge ${portfolioWertProzent >= 0 ? "badge-green" : "badge-red"}`}>
-                {portfolioWertProzent >= 0 ? "+" : ""}{portfolioWertProzent.toLocaleString("de-DE")} % ggü. Kaufpreis
-              </span>
-            )}
+      {/* Hauptblock (03.10.2026, Betreiber: „Grafik viel zu klein, alles soll zusammenpassen“):
+          links, in der BREITEREN Spalte, beide Verläufe übereinander (Wert, darunter
+          Buchungssaldo) — gleiche Breite, gleiche Höhe, Schrift in echten Pixeln; rechts die
+          Neuigkeiten aus dem Mieterportal, darunter Termine & Aufgaben (Idee vom 02.10.2026).
+          So sind beide Spalten etwa gleich hoch statt einer Lücke unter einer kleinen Grafik.
+          Unter 860 px untereinander, Grafiken zuerst. */}
+      <div className="dash-haupt mb-20">
+        <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
+        {portfolioWert.length >= 2 && (
+          <div className="section" style={{ marginBottom: 0 }}>
+            <div className="section-header">
+              <h3>Portfolio-Wertentwicklung</h3>
+              {portfolioWertProzent != null && (
+                <span className={`badge ${portfolioWertProzent >= 0 ? "badge-green" : "badge-red"}`}>
+                  {portfolioWertProzent >= 0 ? "+" : ""}{portfolioWertProzent.toLocaleString("de-DE")} % ggü. Kaufpreis
+                </span>
+              )}
+            </div>
+            <div className="section-body">
+              <WertVerlaufChart
+                punkte={portfolioWert}
+                hoehe={260}
+                caption="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte. Die Kurve springt bei jedem Kauf — ein Zukauf ist kein Wertzuwachs. Der Prozentwert vergleicht den heutigen Wert mit den Kaufpreisen."
+              />
+            </div>
           </div>
-          <div className="section-body">
-            <WertVerlaufChart
-              punkte={portfolioWert}
-              caption="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte. Die Kurve springt bei jedem Kauf — ein Zukauf ist kein Wertzuwachs. Der Prozentwert vergleicht den heutigen Wert mit den Kaufpreisen."
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Idee des Betreibers (02.10.2026): Grafik halb so breit, rechts daneben die
-          Neuigkeiten aus dem Mieterportal, darunter Termine & Aufgaben. Ersetzt die
-          Vorgabe vom 08.09.2026 („Aufgaben ans Ende“) — Kennzahlen bleiben oben. Unter
-          860 px untereinander (.grid-2), Grafik zuerst. */}
-      <div className="grid-2 mb-20" style={{ alignItems: "start" }}>
-      <div className="section" style={{ marginBottom: 0 }}>
+        )}
+          <div className="section" style={{ marginBottom: 0 }}>
           <div className="section-header">
             {/* „Buchungssaldo", nicht „Cashflow": Die Kurve summiert GEBUCHTE
                 Einnahmen und Ausgaben über den gewählten Zeitraum. Ihr Endwert
@@ -503,8 +504,9 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
             <ZeitraumControl />
           </div>
           <div className="section-body">
-            <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" heute={heuteISO0} caption="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
+            <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" heute={heuteISO0} hoehe={260} caption="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
           </div>
+        </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
           <div className="section" style={{ marginBottom: 0 }}>
@@ -573,15 +575,19 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                         <Icon size={15} style={{ color: a.dringend ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
                         <span className="heute-label" style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ display: "block", fontSize: 13.5 }}>{a.label}</span>
-                          <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{a.sub}</span>
-                        </span>
-                        {/* Datum nur bei echten Fristen — bei einer offenen Miete
-                            waere der Monatserste eine Zahl ohne Aussage. */}
-                        {a.art === "frist" && (
-                          <span className={`badge ${a.dringend ? "badge-red" : "badge-teal"}`}>
-                            {ueberfaellig(a.datum) ? "überfällig · " : ""}{datum(a.datum)}
+                          <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>
+                            {/* Datum nur bei echten Fristen — bei einer offenen Miete wäre der
+                                Monatserste eine Zahl ohne Aussage. In der Unterzeile statt als
+                                eigenes Abzeichen (03.10.2026): In der schmaleren rechten Spalte
+                                brach sonst jede Zeile dreifach um. */}
+                            {a.art === "frist" && (
+                              <strong style={{ color: a.dringend ? "var(--red)" : "var(--teal)", fontWeight: 600 }}>
+                                {ueberfaellig(a.datum) ? "überfällig · " : ""}{datum(a.datum)}
+                              </strong>
+                            )}
+                            {a.art === "frist" && a.sub ? " · " : ""}{a.sub}
                           </span>
-                        )}
+                        </span>
                         <span className="heute-aktion">{a.aktion} <ArrowRight size={13} /></span>
                       </Link>
                     );
@@ -609,15 +615,25 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                 aktion={{ href: "/properties/new", label: "Erstes Objekt anlegen" }}
               />
             ) : (
-              balken.map((b) => (
-                <div key={b.lbl} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: "var(--muted)", width: 80, textAlign: "right" }}>{b.lbl}</div>
-                  <div style={{ flex: 1, height: 20, background: "var(--bg4)", borderRadius: 4, overflow: "hidden" }}>
-                    <div style={{ width: `${((b.val / balkenMax) * 100).toFixed(0)}%`, height: "100%", background: b.col, borderRadius: 4 }} />
+              <>
+                {balken.map((b) => (
+                  <div key={b.lbl} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                    <div style={{ fontSize: 12.5, color: "var(--muted)", width: 96, textAlign: "right" }}>{b.lbl}</div>
+                    <div style={{ flex: 1, height: 22, background: "var(--bg4)", borderRadius: 6, overflow: "hidden" }}>
+                      <div style={{ width: `${((b.val / balkenMax) * 100).toFixed(0)}%`, height: "100%", background: b.col, borderRadius: 6 }} />
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: b.col, width: 84, textAlign: "right" }}>{euro(b.val)}</div>
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: b.col, width: 70, textAlign: "right" }}>{euro(b.val)}</div>
+                ))}
+                {/* Ergebnis darunter: dieselbe Zahl wie die Cashflow-Kachel, als Summe der Balken. */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: "1px solid var(--line)", paddingTop: 12, marginTop: 4 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, width: 96, textAlign: "right" }}>Bleibt / Mo.</div>
+                  <div style={{ flex: 1, fontSize: 12, color: "var(--muted)" }}>Warmmiete − Kreditraten − Ø Kosten</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, width: 84, textAlign: "right", color: cashflow >= 0 ? "var(--green)" : "var(--red)" }}>
+                    {cashflow >= 0 ? "+ " : "− "}{euro(Math.abs(cashflow))}
+                  </div>
                 </div>
-              ))
+              </>
             )}
           </div>
         </div>

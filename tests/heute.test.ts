@@ -153,7 +153,8 @@ describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026 / 02
   const seite = readFileSync("app/(app)/page.tsx", "utf8");
 
   it("Buchungssaldo | Neuigkeiten über Aufgaben — in EINEM zweispaltigen Block", () => {
-    const block = seite.indexOf('<div className="grid-2 mb-20" style={{ alignItems: "start" }}>');
+    // 03.10.2026: eigener Block `dash-haupt` (Verläufe links breiter, Portal + Aufgaben rechts).
+    const block = seite.indexOf('<div className="dash-haupt mb-20">');
     const saldo = seite.indexOf("<h3>Buchungssaldo</h3>");
     const neu = seite.indexOf("<h3>Neuigkeiten aus dem Mieterportal</h3>");
     const aufgaben = seite.indexOf("<h3>Termine &amp; Aufgaben</h3>");

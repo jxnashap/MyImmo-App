@@ -63,6 +63,7 @@ export default function CommandPalette({ properties = [], tenants = [] }: { prop
   const panelRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Portal erst nach dem Mount — document fehlt beim Server-Rendern
   useEffect(() => setMounted(true), []);
 
   const items = useMemo<Item[]>(() => {
@@ -110,6 +111,7 @@ export default function CommandPalette({ properties = [], tenants = [] }: { prop
   }, [items, query, tenants]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Auswahl springt bei neuer Suche an den Anfang
     setActiveIdx(0);
   }, [query, open]);
 
@@ -140,6 +142,7 @@ export default function CommandPalette({ properties = [], tenants = [] }: { prop
     }
     document.body.style.overflow = "";
     shell?.removeAttribute("inert"); // erst inert weg ...
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Zurücksetzen beim Öffnen/Wechsel — gehört zum Effekt, der das Öffnen behandelt
     setQuery("");
     triggerRef.current?.focus?.(); // ... dann Fokus zurück an den Auslöser
   }, [open]);

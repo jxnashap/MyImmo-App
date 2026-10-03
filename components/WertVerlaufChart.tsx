@@ -1,10 +1,13 @@
+"use client";
 // Wertentwicklungs-Chart (Fläche + Linie) für Objekt- und Portfolio-Verlauf.
-// Server-Komponente: reines SVG, Tooltips über <title>. Datenpunkte kommen aus
+// Reines SVG, Tooltips über <title>; seit 03.10.2026 Client-Komponente, weil sie ihre
+// Breite misst (lib/hooks/useBreite.ts) — Schrift in echten Pixeln statt gestreckt. Datenpunkte kommen aus
 // lib/wert/verlauf (Kaufpreis → erfasste Stände → aktueller Wert).
 
 import { niceScale, kurzTick } from "@/lib/zeitraum";
 import { euro } from "@/lib/format";
 import type { WertPunkt } from "@/lib/wert/verlauf";
+import { useBreite } from "@/lib/hooks/useBreite";
 
 const tagLabel = (iso: string) => {
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -34,19 +37,23 @@ export default function WertVerlaufChart({
   punkte,
   color = "var(--gold)",
   caption,
+  hoehe = 280,
 }: {
   punkte: WertPunkt[];
   color?: string;
   caption?: string;
+  /** Höhe in Pixeln — fest, damit Spalten nebeneinander gleich hoch sind. */
+  hoehe?: number;
 }) {
+  const [rahmen, breite] = useBreite<HTMLDivElement>();
   if (!punkte || punkte.length < 2) return null;
 
   const werte = punkte.map((p) => p.marktwert);
   const scale = niceScale(Math.min(...werte), Math.max(...werte), 5);
 
-  // W bewusst schmal: Das SVG skaliert per viewBox, ein breiteres Koordinaten-
-  // system lässt die Achsenbeschriftung am Handy auf ~5 px schrumpfen.
-  const W = 560, H = 230, padL = 58, padR = 14, padT = 16, padB = 38;
+  // Koordinaten = Pixel (gemessene Breite). Vorher W = 560 per viewBox gestreckt: in voller
+  // Breite ~18-px-Achsen, in einer halben Spalte ~6 px.
+  const W = breite ?? 560, H = hoehe, padL = 58, padR = 14, padT = 18, padB = 38;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
   const n = punkte.length;
@@ -90,8 +97,9 @@ export default function WertVerlaufChart({
   const zeigeLabel = (i: number) => labelIdx.has(i);
 
   return (
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto" }} role="img" aria-label="Wertentwicklung">
+    <div ref={rahmen}>
+      {breite === null ? <div style={{ height: H }} aria-hidden /> : (
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }} role="img" aria-label="Wertentwicklung">
         {scale.ticks.map((t) => {
           const y = yOf(t);
           if (y < padT - 1 || y > baseY + 1) return null;
@@ -132,8 +140,9 @@ export default function WertVerlaufChart({
           ) : null,
         )}
       </svg>
+      )}
       {caption && (
-        <div style={{ marginTop: 4, fontSize: 11, color: "var(--muted)", textAlign: "center" }}>{caption}</div>
+        <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "var(--muted)" }}>{caption}</div>
       )}
     </div>
   );

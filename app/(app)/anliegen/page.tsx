@@ -69,7 +69,7 @@ export default async function AnliegenPage(
     ? await supabase
         .from("bewerbung_dateien")
         .select("id,name,groesse,slot,bewerbung_id")
-        .in("bewerbung_id", (bewerbungRows ?? []).map((b: any) => b.id))
+        .in("bewerbung_id", (bewerbungRows ?? []).map((b) => b.id))
     : { data: [] as { id: string; name: string; groesse: number; slot: string | null; bewerbung_id: string }[] };
 
   const { data: dateiRows } = (rows ?? []).length
@@ -107,7 +107,7 @@ export default async function AnliegenPage(
 
   const offen = liste.filter((a) => a.status !== "erledigt").length;
 
-  const anfragen: VermieterAnfrageRow[] = ((anfrageRows ?? []) as any[]).map((a) => ({
+  const anfragen: VermieterAnfrageRow[] = (anfrageRows ?? []).map((a) => ({
     id: a.id,
     typ: a.typ,
     titel: a.titel,
@@ -125,13 +125,13 @@ export default async function AnliegenPage(
     .filter((m) => verbundeneIds.has(m.id))
     .map((m) => ({ id: m.id, name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }));
 
-  const links: BewerberLinkRow[] = ((linkRows ?? []) as any[]).map((l) => ({
+  const links: BewerberLinkRow[] = (linkRows ?? []).map((l) => ({
     id: l.id, token: l.token, titel: l.titel, aktiv: l.aktiv, created_at: l.created_at,
     objektName: objektName(l.prop_id),
     anzeige: l.anzeige ?? null,
     dokumenteGewuenscht: Array.isArray(l.dokumente_gewuenscht) ? l.dokumente_gewuenscht : [],
   }));
-  const bewerbungen: BewerbungRow[] = ((bewerbungRows ?? []) as any[]).map((b) => ({
+  const bewerbungen: BewerbungRow[] = (bewerbungRows ?? []).map((b) => ({
     id: b.id, name: b.name, email: b.email, telefon: b.telefon, einzug_ab: b.einzug_ab,
     personen: b.personen, beruf: b.beruf, arbeitgeber: b.arbeitgeber,
     netto_einkommen: b.netto_einkommen == null ? null : Number(b.netto_einkommen),
@@ -144,15 +144,15 @@ export default async function AnliegenPage(
   }));
   const neueBewerbungen = bewerbungen.filter((b) => b.status === "neu").length;
 
-  const partner: ServicePartnerRow[] = ((partnerRows ?? []) as any[]).map((p) => ({
+  const partner: ServicePartnerRow[] = (partnerRows ?? []).map((p) => ({
     user_id: p.user_id, firma: p.firma, email: p.email, created_at: p.created_at,
   }));
   const partnerName = (id: string) => {
     const p = partner.find((x) => x.user_id === id);
     return p?.firma || p?.email || "Partner";
   };
-  const codes: ServiceCodeRow[] = ((codeRows ?? []) as any[]).map((c) => ({ code: c.code, gueltig_bis: c.gueltig_bis }));
-  const firmen: FirmaRow[] = ((firmenRows ?? []) as any[]).map((f) => ({
+  const codes: ServiceCodeRow[] = (codeRows ?? []).map((c) => ({ code: c.code, gueltig_bis: c.gueltig_bis }));
+  const firmen: FirmaRow[] = (firmenRows ?? []).map((f) => ({
     id: f.id, name: f.name, gewerk: f.gewerk, telefon: f.telefon,
     email: f.email, website: f.website, notiz: f.notiz,
   }));
@@ -177,7 +177,7 @@ export default async function AnliegenPage(
     rueckProAuftrag.set(r.auftrag_id, liste);
   }
 
-  const auftraege: AuftragRow[] = ((auftragRows ?? []) as any[]).map((a) => ({
+  const auftraege: AuftragRow[] = (auftragRows ?? []).map((a) => ({
     id: a.id, titel: a.titel, beschreibung: a.beschreibung, termin: a.termin,
     status: a.status, antwort: a.antwort, created_at: a.created_at,
     objekt_name: a.objekt_name, partnerName: partnerName(a.service_user_id),
@@ -339,6 +339,13 @@ export default async function AnliegenPage(
             <>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 14 }}>
                 <PortalVorschauWahl mieter={vorschauListe} aktuell={vorschauMieter.id} portal={portalReiter} />
+                {vorschauDaten?.zugangBeendet && (
+                  <span role="status" style={{ fontSize: 12, color: "var(--amber)" }}>
+                    Der Portal-Zugang von {vorschauMieter.name} endete am{" "}
+                    {vorschauDaten.zugangBeendet.split("-").reverse().join(".")} (Auszug + Nachlauf) — der Mieter
+                    sieht seine Wohnung, Zahlungen und Dokumente nicht mehr.
+                  </span>
+                )}
                 {!vorschauDaten?.mieterKontoVerknuepft && (
                   <span style={{ fontSize: 12, color: "var(--muted)" }}>
                     {vorschauMieter.name} hat noch kein Konto — Anliegen und Zählerstände erscheinen erst nach

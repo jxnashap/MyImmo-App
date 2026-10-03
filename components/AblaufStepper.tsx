@@ -25,7 +25,7 @@ export type StepperSchritt = {
 };
 
 function SchrittKarte({
-  n, letzte, icon: Icon, titel, hinweis, erledigt, auto, offen,
+  letzte, icon: Icon, titel, hinweis, erledigt, auto, offen,
   onToggleOffen, onToggleErledigt, children,
 }: {
   n: number; letzte?: boolean; icon: LucideIcon; titel: string; hinweis?: string;
@@ -142,6 +142,7 @@ export default function AblaufStepper({
         gespeichert = geparst as Record<number, boolean>;
       }
     } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
     setDone(gespeichert);
     // Standardmäßig den ersten noch nicht erledigten Schritt öffnen (Auto-
     // Erledigt mitzählen), sonst den letzten — damit man nie vor lauter

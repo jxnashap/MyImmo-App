@@ -43,6 +43,7 @@ export default function NkCo2Panel({
   );
   const [gewerbe, setGewerbe] = useState(!!gespeichert?.gewerbe);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lokaler Bearbeitungsstand übernimmt neue Server-Daten nach router.refresh()
     setKg(s(gespeichert?.co2_kg));
     setKosten(s(gespeichert?.co2_kosten));
     setFlaeche(gespeichert?.flaeche != null ? String(gespeichert.flaeche) : s(defaultFlaeche));

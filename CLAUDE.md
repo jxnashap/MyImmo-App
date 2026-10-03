@@ -127,7 +127,12 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    `BREVO_API_KEY` stand der NAME der zweiten Variable („BREVO_ABSENDER_EMAIL“) statt des
    Schlüssels, die zweite Variable fehlte ganz. Key = Name, Value = Inhalt; zwei getrennte
    Einträge. Das Projekt hat außerdem eine eigene Umgebung „claudeapi“ neben Production.
-   Korrigiert 03.10.2026, danach neu gebaut. **Regel: Nach jeder Env-Änderung neu bauen UND am
+   Korrigiert 03.10.2026, danach neu gebaut → Formular sichtbar, erste Zeile in
+   `newsletter_anmeldungen`. **Nächste Hürde (03.10.2026, OFFEN):** Brevo blockiert den
+   Versand („API-Aufruf von unbekannter IP“) — Vercel-Funktionen haben keine feste IP.
+   Lösung: Brevo → Sicherheit → Autorisierte IPs → Sperre aus (Risiko: Schlüssel gilt dann
+   von überall; Rotation bei Verdacht) oder Vercel Static IPs (kostet). Betreiber:
+   „machen wir später“. Bis dahin endet jede Anmeldung ohne Mail. **Regel: Nach jeder Env-Änderung neu bauen UND am
    Merkmal prüfen, nicht am Eintrag.**
    `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` (in Brevo verifiziert, SPF/DKIM für
    myimmoapp.de), optional `BREVO_LIST_ID`, danach **neu deployen**. Ohne sie endete jede
@@ -440,7 +445,11 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   `where` lief über `execute_sql` in den Bestätigungsdialog (Zeitüberlauf) — immer mit WHERE prüfen.
   **Falle:** Eine „use server“-Datei darf NUR async-Funktionen exportieren (Konstanten brechen den
   Turbopack-Build, vitest merkt es nicht) — `tests/useServerExporte.test.ts` wacht jetzt darüber.
-  Offen: Schritt 7.
+  Schritt 7 (Kostengrenze + Angebote) ist gebaut. ✅ **Paket S abgeschlossen 03.10.2026:** S4
+  (Rückfrage „neuer Mieter?“ bei Namens-/Beginn-Änderung mit Portal-Konto, serverseitig
+  erzwungen), S7 (Beleg-Freigabe nennt die Zahl der sehenden Konten), Vorschau nach
+  Zugangsende — Details im Plan, Abschnitt 0. Nächster Portal-Schritt laut Plan:
+  Vertreter-Zugang (eigenes Vorhaben).
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
   (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor
@@ -1121,6 +1130,14 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   es war Hygiene. **Regel: Komponenten nie innerhalb einer Komponente definieren.**
   Blockiert nichts (Next 16 lintet beim Build nicht mehr) — **als eigenes Vorhaben abarbeiten,
   nicht nebenbei.**
+  ✅ **Abgebaut 03.10.2026: `npm run lint` = 0 Fehler, 0 Warnungen.** Anführungszeichen im
+  JSX-Text anzeigegleich als `&quot;`; `any`-Casts entfernt (der Supabase-Client ist untypisiert,
+  sie waren überflüssig); `Date.now()` im Render durch `heuteBerlin()`/Effekt ersetzt; Ref nicht
+  mehr im Render geschrieben. **29 Stellen bewusst markiert, nicht umgebaut** (je mit Grund im
+  Kommentar): 25× `set-state-in-effect` (Browserwert erst nach dem Mount lesen, Props→Bearbeitungs-
+  stand, Zurücksetzen beim Öffnen), 1× synchrones `theme.js` (sonst Flackern), 3× harte
+  Navigation (Abmelden, Freischaltung, Datei-Download). Unterstrich-Namen gelten als absichtlich
+  unbenutzt (`eslint.config.mjs`). **Regel: Neuer Code hält `npm run lint` bei 0.**
 - ✅ **Next-15-Migration UMGESETZT (01.09.2026): Next 15.5.25 / React 19.2.8.** Plan samt
   Umsetzungsbericht: **`docs/zukunft/NEXTJS-15-MIGRATION.md`**; Befundlage:
   **`docs/SICHERHEIT-ABHAENGIGKEITEN.md`**. Alle 21 next-Meldungen geschlossen (25 → 4).
@@ -1438,6 +1455,15 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Termin vom Mieter, bestätigte Zustellung, Angebot, Firmen-Rückmeldung, Freigabe-Antrag,
   Bewerbung — nie, was schon als Aufgabe dasteht) und darunter „Termine & Aufgaben“.
   Geblieben ist die Zusammenführung: vorher zwei Blöcke mit denselben Fristen, jetzt einer.
+  **GEÄNDERT 03.10.2026 (Betreiber: „Grafik viel zu klein, alles soll zusammenpassen“):** Block
+  `.dash-haupt` (1,45 : 1) — links Portfolio-Wertentwicklung UND Buchungssaldo übereinander, je
+  260 px hoch; rechts Neuigkeiten, darunter Termine & Aufgaben (Fristdatum jetzt in der
+  Unterzeile, sonst brach jede Zeile dreifach um). „Einnahmen vs. Ausgaben“ endet mit „Bleibt /
+  Mo.“ (= Cashflow-Kachel). **Ursache der „zu kleinen Grafik“:** Beide Charts waren per viewBox
+  gestreckte SVGs — Schrift ~6 px in der halben Spalte, ~18 px in voller Breite. Jetzt messen
+  sie ihre Breite (`lib/hooks/useBreite.ts`) und zeichnen in echten Pixeln. **Regel: Kein
+  Diagramm mehr mit `width: 100%; height: auto` auf einer festen viewBox.** Im Browser
+  angesehen (1440/1180/390 px, lokaler Server mit Demo-Sitzung).
   **`lib/heute.ts` → `baueHeuteAufgaben()`** führt offene Mieten des laufenden Monats,
   offene Mieter-Anliegen, nicht übernommene Zählerstände und Fristen in EINER Liste
   zusammen — jede Zeile mit genau einem Ziel und einer Handlung. Reine Funktion, ohne

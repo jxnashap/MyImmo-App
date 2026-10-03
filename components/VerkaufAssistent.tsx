@@ -109,7 +109,7 @@ export default function VerkaufAssistent({
           <Link href="/tenants" className="btn btn-ghost" style={{ fontSize: 12 }}>Übergabeprotokoll (bei Mieter)</Link>
           <div style={{ fontSize: 11.5, color: "var(--faint)", display: "flex", gap: 7, marginTop: 12 }}>
             <TriangleAlert size={13} style={{ flexShrink: 0, marginTop: 1 }} />
-            <span>Bei einem vermieteten Objekt geht das Mietverhältnis auf den Käufer über („Kauf bricht nicht Miete", § 566 BGB). Steuerlich: Ausnahmen des § 23 EStG und die Drei-Objekt-Grenze mit dem Steuerberater klären.</span>
+            <span>Bei einem vermieteten Objekt geht das Mietverhältnis auf den Käufer über („Kauf bricht nicht Miete&quot;, § 566 BGB). Steuerlich: Ausnahmen des § 23 EStG und die Drei-Objekt-Grenze mit dem Steuerberater klären.</span>
           </div>
         </>
       ),

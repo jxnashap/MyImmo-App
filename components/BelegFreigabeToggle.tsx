@@ -18,11 +18,19 @@ export default function BelegFreigabeToggle({ kostenId, freigegeben }: { kostenI
       type="button"
       className="btn btn-ghost"
       style={{ fontSize: 11, padding: "3px 8px", color: freigegeben ? "var(--green)" : "var(--muted)" }}
-      title={freigegeben ? "Beleg ist für alle Mieter des Objekts sichtbar — Klick zum Zurückziehen" : "Beleg im Portal freigeben — sichtbar für ALLE Mieter dieses Objekts (Belegeinsicht)"}
+      title={freigegeben ? "Beleg ist für alle Mieter des Objekts sichtbar — Klick zum Zurückziehen" : "Beleg im Portal freigeben — sichtbar für alle verbundenen Mieter dieses Objekts, deren Mietzeit das Belegjahr umfasst (Belegeinsicht)"}
       disabled={pending}
       onClick={() => startTransition(async () => {
-        const f = actionFehler(await setzeBelegFreigabe(kostenId, !freigegeben));
-        if (f) toast(f, "error");
+        const r = await setzeBelegFreigabe(kostenId, !freigegeben);
+        const f = actionFehler(r);
+        if (f) return toast(f, "error");
+        // S7: sagen, WEM der Beleg jetzt angezeigt wird — „alle Mieter“ war zu unbestimmt.
+        if (!freigegeben && "sichtbarFuer" in r) {
+          const n = r.sichtbarFuer;
+          if (n === null) toast("Beleg freigegeben. Wie viele Mieter ihn sehen, ließ sich gerade nicht ermitteln.", "info");
+          else if (n === 0) toast("Beleg freigegeben — derzeit sieht ihn niemand: Kein Mieter dieses Objekts mit Mietzeit im Belegjahr hat ein verbundenes Konto.", "info");
+          else toast(`Beleg freigegeben — sichtbar für ${n} ${n === 1 ? "verbundenes Mieterkonto" : "verbundene Mieterkonten"} in diesem Objekt.`);
+        }
       })}
     >
       {freigegeben

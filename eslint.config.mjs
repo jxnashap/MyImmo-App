@@ -10,6 +10,16 @@ import nextTs from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    // Bewusst unbenutzte Platzhalter (Schnittstellen-Parameter, herausgefilterte
+    // Felder) tragen einen Unterstrich — so steht die Absicht im Namen.
+    rules: {
+      "@typescript-eslint/no-unused-vars": ["warn", {
+        argsIgnorePattern: "^_", varsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_",
+        caughtErrors: "none",
+      }],
+    },
+  },
   globalIgnores([
     ".next/**",
     "out/**",

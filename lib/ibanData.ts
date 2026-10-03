@@ -7,7 +7,7 @@ import { decrypt, decryptNullable } from "@/lib/crypto/secure";
 export function decryptIbanRow<
   T extends { iban?: string | null; inhaber?: string | null; iban_bidx?: string | null },
 >(row: T): T {
-  const { iban_bidx, ...rest } = row;
+  const { iban_bidx: _bidx, ...rest } = row;
   return {
     ...rest,
     iban: decrypt(row.iban ?? ""),

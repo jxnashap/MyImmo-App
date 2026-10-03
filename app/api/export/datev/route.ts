@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   const nameOf = new Map(((props ?? []) as { id: string; bezeichnung: string }[]).map((p) => [p.id, p.bezeichnung]));
   const propName = (id: string | null) => (id ? nameOf.get(id) ?? "" : "");
 
-  const buchungen = baueDatevBuchungen(jahr, (einnahmen ?? []) as any[], (kosten ?? []) as any[], propName);
+  const buchungen = baueDatevBuchungen(jahr, einnahmen ?? [], kosten ?? [], propName);
 
   const now = new Date();
   const p2 = (n: number) => String(n).padStart(2, "0");

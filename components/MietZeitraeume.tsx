@@ -59,6 +59,7 @@ export default function MietZeitraeume({
   const toast = useToast();
   const [, startSave] = useTransition();
   const [rows, setRows] = useState<RowState[]>(zeitraeume.map(toRow));
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- lokaler Bearbeitungsstand übernimmt neue Server-Daten nach router.refresh()
   useEffect(() => setRows(zeitraeume.map(toRow)), [zeitraeume]);
 
   const leer = { von: "", bis: "", kaltmiete: "", nk: "", stellplatz: "" };
@@ -137,7 +138,7 @@ export default function MietZeitraeume({
       <div className="section-body">
         {rows.length === 0 ? (
           <p style={{ color: "var(--faint)", fontSize: 12, marginBottom: 12 }}>
-            Noch keine Zeiträume. Lege z. B. „01/2021 – 12/2023 · 800 €" und „ab 01/2024 · 900 €" an —
+            Noch keine Zeiträume. Lege z. B. „01/2021 – 12/2023 · 800 €&quot; und „ab 01/2024 · 900 €&quot; an —
             die Monatsbestätigung nutzt dann automatisch den passenden Betrag.
           </p>
         ) : (

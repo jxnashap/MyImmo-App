@@ -62,7 +62,7 @@ export default function DatenschutzPage() {
       <H3>a) Konto und Login</H3>
       <p>
         E-Mail-Adresse, Passwort (nur als bcrypt-Hash gespeichert), Zeitpunkte von
-        Registrierung/Anmeldung. Bei <strong>„Login mit Google"</strong> erhalten wir von Google Ihre
+        Registrierung/Anmeldung. Bei <strong>„Login mit Google&quot;</strong> erhalten wir von Google Ihre
         E-Mail-Adresse und Konto-Kennung; die Anmeldung bei Google unterliegt deren
         Datenschutzerklärung. <em>Zweck:</em> Bereitstellung Ihres Kontos.{" "}
         <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO (Nutzungsvertrag).
@@ -187,7 +187,7 @@ export default function DatenschutzPage() {
         <li><strong>Supabase Inc.</strong> (Datenbank, Authentifizierung, Datei-Speicher) — Datenhaltung in Frankfurt (AWS eu-central-1); DPA inkl. EU-Standardvertragsklauseln.</li>
         <li><strong>Vercel Inc.</strong>, USA (Hosting/Auslieferung der App) — DPA inkl. EU-Standardvertragsklauseln; technische Logs können in den USA verarbeitet werden.</li>
         <li><strong>Anthropic PBC</strong>, USA (KI-Auswertung, nur bei aktiver Nutzung) — DPA inkl. EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
-        <li><strong>Google Ireland Ltd.</strong> — ausschließlich bei „Login mit Google" (Ziffer 3 b). Schriftarten werden nicht von Google geladen (Ziffer 7).</li>
+        <li><strong>Google Ireland Ltd.</strong> — ausschließlich bei „Login mit Google&quot; (Ziffer 3 b). Schriftarten werden nicht von Google geladen (Ziffer 7).</li>
         <li><strong>Brevo</strong> (Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g) der Einladungen ins Mieterportal, die ein Vermieter an die von ihm eingetragene Adresse seines Mieters schicken lässt, sowie der Hinweis-E-Mails aus dem Mieterportal („es liegt etwas Neues bereit“ — ohne Inhalt, Empfänger ist die Adresse des eigenen Kontos, im Konto abschaltbar); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO (Anlage 2 zu den Nutzungsbedingungen, inkl. EU-Standardvertragsklauseln). Einzelne Unterauftragsverarbeiter von Brevo verarbeiten in Drittländern (Ziffer 5).</li>
       </ul>
       <p>
@@ -226,7 +226,7 @@ export default function DatenschutzPage() {
 
       <H2>7. Schriftarten</H2>
       <p>
-        Die Schriftarten „Fraunces", „Outfit" und „Geist" werden lokal von unseren eigenen
+        Die Schriftarten „Fraunces&quot;, „Outfit&quot; und „Geist&quot; werden lokal von unseren eigenen
         Servern geladen (Self-Hosting). Es findet dabei <strong>keine</strong> Verbindung zu
         Google- oder anderen Drittanbieter-Servern statt; Ihre IP-Adresse wird nicht übermittelt.
       </p>
@@ -234,7 +234,7 @@ export default function DatenschutzPage() {
       <H2>8. Speicherdauer und Löschung</H2>
       <ul style={{ paddingLeft: 20, listStyle: "disc" }}>
         <li>Konto- und Verwaltungsdaten speichern wir, solange Ihr Konto besteht.</li>
-        <li>Sie können Ihr Konto jederzeit selbst löschen (Einstellungen → „Konto löschen"): Dabei werden alle Daten — Objekte, Mieter, Buchungen, Kredite, Dokumente, Belege im Datei-Speicher — sofort und vollständig aus der laufenden Datenbank entfernt.</li>
+        <li>Sie können Ihr Konto jederzeit selbst löschen (Einstellungen → „Konto löschen&quot;): Dabei werden alle Daten — Objekte, Mieter, Buchungen, Kredite, Dokumente, Belege im Datei-Speicher — sofort und vollständig aus der laufenden Datenbank entfernt.</li>
         <li>Bank-Freigabelinks laufen automatisch ab (7–30 Tage) und sind jederzeit widerrufbar.</li>
         <li>
           <strong>Backups:</strong> Unser Datenbank-Anbieter erstellt <strong>täglich</strong> eine

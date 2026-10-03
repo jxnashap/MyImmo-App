@@ -40,6 +40,7 @@ export default function Sidebar({
   const [rail, setRail] = useState(false);
   useEffect(() => {
     try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
       setRail(localStorage.getItem("rail") === "1");
     } catch {
       /* ignore */
@@ -59,6 +60,7 @@ export default function Sidebar({
   };
   // Drawer bei jedem Seitenwechsel schließen.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Drawer bei jedem Seitenwechsel schließen
     setOpen(false);
   }, [path]);
   // Scroll des Hintergrunds sperren, solange der Drawer offen ist.

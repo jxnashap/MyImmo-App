@@ -30,9 +30,11 @@ const KEY_TAB = "myimmo:autologout:tab"; // sessionStorage: Tab hat schon gelade
 const CLOSE_SCHWELLE_MS = 150000;
 
 export default function AutoLogout() {
-  const last = useRef(Date.now());
+  const last = useRef(0);
 
   useEffect(() => {
+    // Startzeit beim Mount (nicht im Render — Date.now() ist dort unrein).
+    last.current = Date.now();
     const min = () => Number(localStorage.getItem(KEY_MIN) || STANDARD_MIN);
     const onCl = () => localStorage.getItem(KEY_CLOSE) === "1";
     let ms = min() * 60000;
@@ -58,6 +60,7 @@ export default function AutoLogout() {
       }
       const q = new URLSearchParams({ grund });
       if (grund === "inaktiv") q.set("min", String(min()));
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- Abmelden braucht einen vollen Seitenwechsel (Sitzungs-Cookies)
       window.location.href = `/login?${q.toString()}`;
     };
     const check = () => {
