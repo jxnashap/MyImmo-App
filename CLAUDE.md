@@ -1398,6 +1398,15 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Termin vom Mieter, bestätigte Zustellung, Angebot, Firmen-Rückmeldung, Freigabe-Antrag,
   Bewerbung — nie, was schon als Aufgabe dasteht) und darunter „Termine & Aufgaben“.
   Geblieben ist die Zusammenführung: vorher zwei Blöcke mit denselben Fristen, jetzt einer.
+  **GEÄNDERT 03.10.2026 (Betreiber: „Grafik viel zu klein, alles soll zusammenpassen“):** Block
+  `.dash-haupt` (1,45 : 1) — links Portfolio-Wertentwicklung UND Buchungssaldo übereinander, je
+  260 px hoch; rechts Neuigkeiten, darunter Termine & Aufgaben (Fristdatum jetzt in der
+  Unterzeile, sonst brach jede Zeile dreifach um). „Einnahmen vs. Ausgaben“ endet mit „Bleibt /
+  Mo.“ (= Cashflow-Kachel). **Ursache der „zu kleinen Grafik“:** Beide Charts waren per viewBox
+  gestreckte SVGs — Schrift ~6 px in der halben Spalte, ~18 px in voller Breite. Jetzt messen
+  sie ihre Breite (`lib/hooks/useBreite.ts`) und zeichnen in echten Pixeln. **Regel: Kein
+  Diagramm mehr mit `width: 100%; height: auto` auf einer festen viewBox.** Im Browser
+  angesehen (1440/1180/390 px, lokaler Server mit Demo-Sitzung).
   **`lib/heute.ts` → `baueHeuteAufgaben()`** führt offene Mieten des laufenden Monats,
   offene Mieter-Anliegen, nicht übernommene Zählerstände und Fristen in EINER Liste
   zusammen — jede Zeile mit genau einem Ziel und einer Handlung. Reine Funktion, ohne
