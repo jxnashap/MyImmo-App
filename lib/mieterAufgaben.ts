@@ -12,6 +12,8 @@ export type MieterAufgabe = {
   titel: string;
   text: string;
   tab: "wohnung" | "anliegen" | "dokumente" | "zaehler";
+  /** Anliegen, das direkt geöffnet wird (Detailansicht, 03.10.2026). */
+  vorgang?: string;
   dringend: boolean;
   /** Sortierschlüssel (ISO). */
   wann: string;
@@ -80,7 +82,7 @@ export function baueMieterAufgaben(d: Eingabe, heute: string): MieterAufgabe[] {
       liste.push({
         id: `termin:${a.id}`, titel: `Termin wählen: ${a.titel}`,
         text: `Dein Vermieter schlägt ${slots.length === 1 ? "einen Termin" : `${slots.length} Termine`} vor.`,
-        tab: "anliegen", dringend: true, wann: a.created_at,
+        tab: "anliegen", vorgang: a.id, dringend: true, wann: a.created_at,
       });
       continue;
     }
@@ -92,7 +94,7 @@ export function baueMieterAufgaben(d: Eingabe, heute: string): MieterAufgabe[] {
     ) {
       liste.push({
         id: `antwort:${a.id}`, titel: `Antwort zu: ${a.titel}`,
-        text: "Dein Vermieter hat geschrieben.", tab: "anliegen", dringend: false, wann: letzte.created_at,
+        text: "Dein Vermieter hat geschrieben.", tab: "anliegen", vorgang: a.id, dringend: false, wann: letzte.created_at,
       });
     }
   }

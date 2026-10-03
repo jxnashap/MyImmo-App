@@ -3,13 +3,17 @@
 // Mieterportal: Anliegen erstellen (inkl. Foto-/PDF-Anhängen) + eigene
 // Anliegen mit Status und Verlauf (seit 02.10.2026, VorgangVerlauf) — der Mieter antwortet dort. Terminkoordination: vom Vermieter
 // vorgeschlagene Slots per Klick bestätigen.
+// Seit 03.10.2026: Liste mit EINER Zeile je Anliegen; ein Klick öffnet die Detailansicht
+// (`…&vorgang=<id>`) mit Meldung, Terminwahl und Verlauf samt Antwortfeld.
+import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
-import { Wrench, FileText, MessageCircleQuestion, Plus, Paperclip, CalendarClock, type LucideIcon } from "lucide-react";
+import { Wrench, FileText, MessageCircleQuestion, Plus, Paperclip, CalendarClock, ChevronRight, ArrowLeft, type LucideIcon } from "lucide-react";
 import { erstelleAnliegen, bestaetigeAnliegenTermin } from "@/lib/actions/anliegen";
 import VorschauHinweis from "@/components/VorschauHinweis";
 import VorgangVerlauf from "@/components/VorgangVerlauf";
 import SchadenAssistent from "@/components/SchadenAssistent";
 import type { Ereignis } from "@/lib/vorgang";
+import { mieterMerkmal, mitVorgang } from "@/lib/anliegenListe";
 
 export type AnliegenRow = {
   id: string;
@@ -113,12 +117,16 @@ export function AnhangLinks({ dateien }: { dateien: DateiRef[] }) {
   );
 }
 
+const datumKurz = (iso: string) => new Date(iso).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
+
 export default function AnliegenPortal({
   anliegen,
   dateien,
   verlauf = {},
   standardTyp,
   nurLesen = false,
+  listeHref,
+  vorgangId = null,
 }: {
   anliegen: AnliegenRow[];
   dateien: DateiRef[];
@@ -126,6 +134,10 @@ export default function AnliegenPortal({
   standardTyp?: string;
   /** Vorschau des Vermieters (01.10.2026): kein Formular, keine Termin-Knöpfe. */
   nurLesen?: boolean;
+  /** Adresse der Liste (`/portal?tab=anliegen` oder die Vorschau-URL) — Detail = `…&vorgang=<id>`. */
+  listeHref: string;
+  /** Geöffnetes Anliegen (Detailansicht), sonst die Liste. */
+  vorgangId?: string | null;
 }) {
   const [offenForm, setOffenForm] = useState(false);
   // Schäden laufen seit 02.10.2026 über den geführten Assistenten (Rückfragen + Notfall),
@@ -150,6 +162,50 @@ export default function AnliegenPortal({
     });
 
   const dateienVon = (id: string) => dateien.filter((d) => d.anliegen_id === id);
+  const detailHref = (id: string) => mitVorgang(listeHref, id);
+
+  const offenesAnliegen = vorgangId ? anliegen.find((a) => a.id === vorgangId) ?? null : null;
+  if (offenesAnliegen) {
+    const a = offenesAnliegen;
+    const t = TYP_META[a.typ] ?? TYP_META.frage;
+    const s = STATUS_META[a.status] ?? STATUS_META.offen;
+    const Icon = t.icon;
+    return (
+      <div>
+        <Link href={listeHref} className="btn btn-ghost btn-sm" style={{ marginBottom: 14, display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <ArrowLeft size={14} /> Alle Anliegen
+        </Link>
+        <div className="section">
+          <div className="section-body" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <span style={{ width: 38, height: 38, borderRadius: 12, background: "var(--gold-pale)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+              <Icon size={18} color="var(--gold)" />
+            </span>
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 650, margin: 0, overflowWrap: "anywhere" }}>{a.titel}</h2>
+              <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>Gemeldet am {datumKurz(a.created_at)}</div>
+            </div>
+            <span className={`badge ${s.cls}`} style={{ fontSize: 12.5 }}>{s.label}</span>
+          </div>
+        </div>
+        <TerminWahl a={a} nurLesen={nurLesen} />
+        <div className="section" style={{ marginTop: 14 }}>
+          <div className="section-header"><h3>Verlauf</h3></div>
+          <div className="section-body">
+            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 3 }}>
+              <strong style={{ color: "var(--text)" }}>Du</strong> · {datumKurz(a.created_at)}
+            </div>
+            <div style={{ padding: "8px 12px", background: "var(--bg3)", borderRadius: 10, fontSize: 13, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+              {a.beschreibung?.trim() || <span style={{ color: "var(--muted)" }}>Ohne Beschreibung.</span>}
+            </div>
+            <AnhangLinks dateien={dateienVon(a.id)} />
+            <div style={{ marginTop: 10 }}>
+              <VorgangVerlauf anliegenId={a.id} ereignisse={verlauf[a.id] ?? []} sicht="mieter" nurLesen={nurLesen} />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="section">
@@ -174,7 +230,7 @@ export default function AnliegenPortal({
         )}
         {gemeldet && (
           <p role="status" style={{ fontSize: 12.5, color: "var(--green)", margin: "0 0 12px" }}>
-            Gemeldet — dein Vermieter sieht es jetzt. Antworten erscheinen unten im Verlauf.
+            Gemeldet — dein Vermieter sieht es jetzt. Antworten findest du, wenn du das Anliegen öffnest.
           </p>
         )}
         {offenForm && !nurLesen && (
@@ -229,29 +285,26 @@ export default function AnliegenPortal({
             Noch keine Anliegen — melde Schäden, fordere Dokumente an oder stelle Fragen direkt an deinen Vermieter.
           </p>
         ) : (
-          anliegen.map((a) => {
-            const t = TYP_META[a.typ] ?? TYP_META.frage;
-            const s = STATUS_META[a.status] ?? STATUS_META.offen;
-            const Icon = t.icon;
-            return (
-              <div key={a.id} style={{ padding: "12px 0", borderBottom: "1px solid var(--line)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <Icon size={14} color="var(--gold)" />
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{a.titel}</span>
-                  <span className={`badge ${s.cls}`}>{s.label}</span>
-                  <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>
-                    {new Date(a.created_at).toLocaleDateString("de-DE")}
+          <div className="listen">
+            {anliegen.map((a) => {
+              const t = TYP_META[a.typ] ?? TYP_META.frage;
+              const s = STATUS_META[a.status] ?? STATUS_META.offen;
+              const Icon = t.icon;
+              const merkmal = mieterMerkmal(a, verlauf[a.id] ?? []);
+              return (
+                <Link key={a.id} href={detailHref(a.id)} className="listen-zeile">
+                  <Icon size={16} color="var(--gold)" style={{ flexShrink: 0 }} />
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span className="listen-zeile-titel">{a.titel}</span>
+                    <span className="listen-zeile-sub">Gemeldet am {datumKurz(a.created_at)}</span>
                   </span>
-                </div>
-                {a.beschreibung && (
-                  <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, whiteSpace: "pre-wrap" }}>{a.beschreibung}</p>
-                )}
-                <AnhangLinks dateien={dateienVon(a.id)} />
-                <TerminWahl a={a} nurLesen={nurLesen} />
-                <VorgangVerlauf anliegenId={a.id} ereignisse={verlauf[a.id] ?? []} sicht="mieter" nurLesen={nurLesen} />
-              </div>
-            );
-          })
+                  {merkmal && <span className={`badge ${merkmal.cls}`}>{merkmal.text}</span>}
+                  <span className={`badge ${s.cls}`}>{s.label}</span>
+                  <ChevronRight size={16} color="var(--faint)" style={{ flexShrink: 0 }} />
+                </Link>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

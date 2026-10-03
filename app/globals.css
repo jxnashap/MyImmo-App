@@ -434,6 +434,19 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 /* Dashboard-Hauptblock (03.10.2026): Verläufe links in der breiteren Spalte, Portal-
    Neuigkeiten und Aufgaben rechts. minmax(0, …), damit ein langer Text die Spalte nicht aufdrückt. */
 .dash-haupt { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+/* Kompakte Listenzeile (03.10.2026): EINE Zeile je Eintrag, Klick öffnet die Detailansicht —
+   Mieterportal (Vermieter + Mieter) und Dashboard-Neuigkeiten. */
+.listen { display: flex; flex-direction: column; }
+.listen-zeile { display: flex; align-items: center; gap: 10px; padding: 11px 10px; margin: 0 -10px; border-radius: 12px; text-decoration: none; color: inherit; border-bottom: 1px solid var(--line); transition: background-color 150ms var(--ease-out); }
+.listen-zeile:last-child { border-bottom: none; }
+.listen-zeile:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+@media (hover: hover) and (pointer: fine) { .listen-zeile:hover { background: var(--bg3); } }
+.listen-zeile-titel { display: block; font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.listen-zeile-sub { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.listen-zeile-datum { font-size: 12px; color: var(--faint); white-space: nowrap; }
+@media (max-width: 560px) {
+  .listen-zeile-datum, .listen-zeile-extra { display: none; }
+}
 /* Automatisch umbrechendes Kartenraster (Kandidaten-/Objektkarten) */
 .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
 .mb-16 { margin-bottom: 16px; }

@@ -525,17 +525,18 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                   Hier erscheint, was Mieter, Firmen und Hausmeister im Portal tun — Nachrichten, bestätigte Termine und Dokumente, Angebote, Rückmeldungen.
                 </p>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                // EINE Zeile je Neuigkeit (03.10.2026): Was passiert ist · worum es geht, Datum rechts.
+                // Klick führt direkt zum Vorgang (Nachricht/Termin → Detailansicht des Anliegens).
+                <div className="listen">
                   {portalNeu.liste.map((n) => {
                     const Icon = NEUIGKEIT_ICON[n.art];
                     return (
-                      <Link key={`${n.art}-${n.zeit}-${n.text}`} href={n.href} className="heute-zeile" style={{ borderLeftColor: "var(--gold)" }}>
+                      <Link key={`${n.art}-${n.zeit}-${n.text}`} href={n.href} className="listen-zeile" title={`${n.text} · ${n.sub}`}>
                         <Icon size={15} style={{ color: "var(--gold)", flexShrink: 0 }} />
-                        <span className="heute-label" style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ display: "block", fontSize: 13.5 }}>{n.text}</span>
-                          <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{n.sub}</span>
+                        <span className="listen-zeile-titel" style={{ flex: 1, minWidth: 0, fontWeight: 500 }}>
+                          {n.text}<span style={{ color: "var(--muted)", fontWeight: 400 }}> · {n.sub}</span>
                         </span>
-                        <span style={{ fontSize: 11.5, color: "var(--faint)", whiteSpace: "nowrap" }}>{datum(n.zeit)}</span>
+                        <span className="listen-zeile-datum">{datum(n.zeit)}</span>
                       </Link>
                     );
                   })}

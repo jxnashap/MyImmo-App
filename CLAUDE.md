@@ -450,6 +450,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   erzwungen), S7 (Beleg-Freigabe nennt die Zahl der sehenden Konten), Vorschau nach
   Zugangsende — Details im Plan, Abschnitt 0. Nächster Portal-Schritt laut Plan:
   Vertreter-Zugang (eigenes Vorhaben).
+  📋 **Listen statt Textwände (03.10.2026, Betreiber: „nicht so viel Text, Anliegen öffnen, eigene
+  Seite“):** Vermieter-Liste (`/anliegen`) und Mieter-Liste (`/portal?tab=anliegen`) zeigen je
+  Anliegen EINE Zeile (`.listen-zeile`: Titel, Mieter·Objekt bzw. Datum, höchstens ein Merkmal
+  wie „Neue Nachricht“/„Termin wählen“, Status). Ein Klick öffnet `?vorgang=<id>` — beim
+  Vermieter links Meldung + Verlauf + Antwort/Status, rechts Termin, Angebote, Weiterleiten; beim
+  Mieter Meldung, Terminwahl, Verlauf mit Antwortfeld. Dashboard-Neuigkeiten einzeilig und mit
+  Direktlink (`vorgangUrl()`), Mieter-Aufgaben ebenso (`MieterAufgabe.vorgang`). Merkmale und
+  Adressen: `lib/anliegenListe.ts` (`tests/anliegenListe.test.ts`, vier Mutationen rot). Der
+  Rauchtest öffnet jetzt auch die Detailansicht (`pruefeVorgang`). **Regel: Kein Verlauf und kein
+  Formular in einer Liste — dafür gibt es die Detailansicht.**
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
   (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor

@@ -138,6 +138,16 @@ function ersterLink(html, praefix) {
 // Seit Phase 3 auch Mieterportal und Archiv (Beispieldaten im Schnappschuss).
 // Weiterhin gesperrt: Makler-Unterlagen. Der Weg „demo-grenze" prüft, dass die
 // Sperre hält und die Weiterleitung den Bereich nennt.
+/** Detailansicht des ersten Anliegens einer Liste öffnen (`…vorgang=<id>`) und Texte prüfen. */
+async function pruefeVorgang(seite, erwartet) {
+  const m = /href="([^"]*vorgang=[^"]+)"/.exec(seite.html);
+  if (!m) return "kein Link auf eine Detailansicht (vorgang=) in der Liste";
+  const detail = await hole(m[1].replace(/&amp;/g, "&"));
+  if (detail.status >= 400) return `Detailansicht HTTP ${detail.status}`;
+  const fehlt = erwartet.filter((t) => !detail.html.includes(t));
+  return fehlt.length ? `Detailansicht: Text fehlt: ${fehlt.join(", ")}` : null;
+}
+
 const WEGE = [
   {
     // Öffentliche Angebotsseite (02.10.2026): ohne gültigen Link „nicht mehr gültig“ — und
@@ -241,11 +251,13 @@ const WEGE = [
   },
   {
     schluessel: "mieterportal",
-    titel: "Mieterportal — Beispiel-Anliegen",
+    titel: "Mieterportal — Beispiel-Anliegen (Liste + Detailansicht)",
     pfad: "/anliegen",
-    erwartet: ["Heizkörper im Bad wird nicht warm"],
-    async pruefe() {
-      return null;
+    erwartet: ["Heizkörper im Bad wird nicht warm", "listen-zeile"],
+    // Seit 03.10.2026 öffnet jede Zeile eine Detailansicht (`?vorgang=<id>`) — die Liste zeigt
+    // keinen Verlauf mehr. Geprüft wird also auch die Detailseite des ersten Anliegens.
+    async pruefe(seite) {
+      return pruefeVorgang(seite, ["Alle Meldungen", ">Verlauf<", "Antwort an den Mieter"]);
     },
   },
   {
@@ -448,7 +460,7 @@ async function main() {
     console.log("\n✓ Mieter-Demo — Anmeldung");
     const MIETER_WEGE = [
       { titel: "Mieterportal — Wohnung, Zu erledigen, Notfall", pfad: "/portal", erwartet: ["Mieterportal", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete", ">Zu erledigen<", "zuerst hier"] },
-      { titel: "Mieterportal — Anliegen mit Verlauf und Schadensmeldung", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<", ">Dein Vermieter<", "Schaden melden"] },
+      { titel: "Mieterportal — Anliegen (Liste) und Schadensmeldung", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<", "Schaden melden", "listen-zeile"], detail: [">Dein Vermieter<", "Alle Anliegen", ">Verlauf<"] },
       { titel: "Mieterportal — Zahlungen mit Mietkonto", pfad: "/portal?tab=zahlungen", erwartet: ["Mieterportal", ">Zahlungen<", "letzte 12 Monate", "bestätigt"] },
       { titel: "Mieterportal — Dokumente", pfad: "/portal?tab=dokumente", erwartet: ["Mieterportal", ">Dokumente<"] },
       { titel: "Mieterportal — Zähler", pfad: "/portal?tab=zaehler", erwartet: ["Mieterportal", "Zählerstand"] },
@@ -466,6 +478,7 @@ async function main() {
           const fehlt = weg.erwartet.filter((t) => !seite.html.includes(t));
           if (fehlt.length) grund = `Text fehlt: ${fehlt.join(", ")}`;
         }
+        if (!grund && weg.detail) grund = await pruefeVorgang(seite, weg.detail);
       } catch (e) {
         grund = `Ausnahme: ${e.message}`;
       }
@@ -498,6 +511,7 @@ async function main() {
           const fehlt = weg.erwartet.filter((t) => !seite.html.includes(t));
           if (fehlt.length) grund = `Text fehlt: ${fehlt.join(", ")}`;
         }
+        if (!grund && weg.detail) grund = await pruefeVorgang(seite, weg.detail);
       } catch (e) {
         grund = `Ausnahme: ${e.message}`;
       }
