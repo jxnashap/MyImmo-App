@@ -44,6 +44,7 @@ export default function PortalAnsicht({
   hrefFuer,
   kopfzeile,
   vorschau = false,
+  vorgang = null,
 }: {
   daten: PortalDaten;
   tab: PortalTab;
@@ -52,6 +53,8 @@ export default function PortalAnsicht({
   /** Zeile unter „Meine Wohnung": die E-Mail des Mieters, in der Vorschau sein Name. */
   kopfzeile: string | null | undefined;
   vorschau?: boolean;
+  /** Geöffnetes Anliegen (`…&vorgang=<id>`, 03.10.2026) — dann zeigt der Reiter dessen Detailansicht. */
+  vorgang?: string | null;
 }) {
   const { wohnungen, anliegen, dokumentAnfragen, verlauf, dateien, freigegebeneDocs, vermieterAnfragen, zaehlerMeldungen, zahlungen, jahr, summeJahr, belege } = daten;
   const keineWohnung = (
@@ -141,11 +144,13 @@ export default function PortalAnsicht({
             <div className="topbar-sub">Schäden melden (geführt, mit Fotos), Fragen stellen — mit Verlauf</div>
           </div>
         </div>
-        {wohnungen.length === 0 ? keineWohnung : (
+        {wohnungen.length === 0 ? keineWohnung : vorgang && anliegen.some((a) => a.id === vorgang) ? (
+          <AnliegenPortal anliegen={anliegen} dateien={dateien} verlauf={verlauf} nurLesen={vorschau} listeHref={hrefFuer("anliegen")} vorgangId={vorgang} />
+        ) : (
           <>
             <NotfallKasten notdienste={notdienste} />
+            <AnliegenPortal anliegen={anliegen} dateien={dateien} verlauf={verlauf} nurLesen={vorschau} listeHref={hrefFuer("anliegen")} />
             <AnfragenVomVermieter anfragen={vermieterAnfragen} nurLesen={vorschau} />
-            <AnliegenPortal anliegen={anliegen} dateien={dateien} verlauf={verlauf} nurLesen={vorschau} />
           </>
         )}
       </>

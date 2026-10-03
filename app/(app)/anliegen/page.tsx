@@ -19,7 +19,7 @@ import { ansichtenSichtbar, istDemoKonto } from "@/lib/demo";
 import Leer from "@/components/Leer";
 import WischReiter from "@/components/WischReiter";
 import GlassLeiste from "@/components/GlassLeiste";
-import AnliegenManager, { type AnliegenVermieterRow, type AngebotKontext } from "@/components/AnliegenManager";
+import AnliegenManager, { AnliegenDetail, type AnliegenVermieterRow, type AngebotKontext } from "@/components/AnliegenManager";
 import type { Angebot, Angebotsanfrage } from "@/lib/angebote";
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
 import BewerbungenManager, { type BewerberLinkRow, type BewerbungRow } from "@/components/BewerbungenManager";
@@ -30,7 +30,7 @@ import { wartetAufVermieter } from "@/lib/zaehler";
 
 export default async function AnliegenPage(
   props0: {
-    searchParams: Promise<{ tab?: string; titel?: string; text?: string; mieter?: string; portal?: string; partner?: string }>;
+    searchParams: Promise<{ tab?: string; titel?: string; text?: string; mieter?: string; portal?: string; partner?: string; vorgang?: string }>;
   }
 ) {
   const searchParams = await props0.searchParams;
@@ -104,6 +104,8 @@ export default async function AnliegenPage(
     terminBestaetigt: a.termin_bestaetigt ?? null,
     mieterId: a.mieter_id ?? null,
   }));
+  // `?vorgang=<id>` öffnet die Detailansicht — nur ein eigenes Anliegen aus der geladenen Liste.
+  const vorgang = searchParams.vorgang ? liste.find((a) => a.id === searchParams.vorgang) ?? null : null;
 
   const offen = liste.filter((a) => a.status !== "erledigt").length;
 
@@ -314,17 +316,25 @@ export default async function AnliegenPage(
 
   const inhalt = (
     <>
-        {tab === "anliegen" && (
+        {tab === "anliegen" && (vorgang ? (
+          // Detailansicht eines Anliegens (03.10.2026): eigene Seite statt Aufklappen in der Liste.
+          <AnliegenDetail a={vorgang} angebote={angebotKontext} />
+        ) : (
           <>
-            <VermieterAnfragen anfragen={anfragen} mieter={verbundeneMieter} />
             <div className="section">
-              <div className="section-header"><h3>Meldungen deiner Mieter</h3></div>
+              <div className="section-header">
+                <div>
+                  <h3>Meldungen deiner Mieter</h3>
+                  <div className="section-sub">Antippen öffnet Verlauf, Antwort und Termin</div>
+                </div>
+              </div>
               <div className="section-body">
-                <AnliegenManager rows={liste} angebote={angebotKontext} />
+                <AnliegenManager rows={liste} />
               </div>
             </div>
+            <VermieterAnfragen anfragen={anfragen} mieter={verbundeneMieter} />
           </>
-        )}
+        ))}
 
         {tab === "vorschau" && (
           vorschauMieter === null ? (
@@ -364,6 +374,7 @@ export default async function AnliegenPage(
                     tab={portalReiter}
                     hrefFuer={(t) => vorschauUrl(vorschauMieter.id, t)}
                     kopfzeile={`${vorschauMieter.name} · Ansicht des Mieters`}
+                    vorgang={searchParams.vorgang ?? null}
                     vorschau
                   />
                 )}

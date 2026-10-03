@@ -8,6 +8,8 @@
 // steht, was PASSIERT ist — Nachricht vom Mieter, Termin bestätigt, Dokument bestätigt,
 // Angebot eingegangen, Rückmeldung einer Firma, Antrag des Hausmeisters, neue Bewerbung.
 
+import { vorgangUrl } from "@/lib/anliegenListe";
+
 export type NeuigkeitArt = "nachricht" | "termin" | "dokument" | "angebot" | "firma" | "freigabe" | "bewerbung";
 
 export type Neuigkeit = {
@@ -62,9 +64,9 @@ export function bauePortalNeuigkeiten(q: NeuigkeitenQuelle, heute: string, grenz
     if (e.autor_rolle !== "mieter" || !neu(e.created_at)) continue;
     const a = q.anliegen.get(e.anliegen_id);
     if (e.art === "nachricht") {
-      out.push({ art: "nachricht", text: `Nachricht von ${a?.mieter ?? "Mieter"}`, sub: a?.titel ?? "Anliegen", href: "/anliegen", zeit: e.created_at });
+      out.push({ art: "nachricht", text: `Nachricht von ${a?.mieter ?? "Mieter"}`, sub: a?.titel ?? "Anliegen", href: vorgangUrl(e.anliegen_id), zeit: e.created_at });
     } else if (e.art === "termin") {
-      out.push({ art: "termin", text: e.text ?? "Termin bestätigt", sub: [a?.mieter, a?.titel].filter(Boolean).join(" · "), href: "/anliegen", zeit: e.created_at });
+      out.push({ art: "termin", text: e.text ?? "Termin bestätigt", sub: [a?.mieter, a?.titel].filter(Boolean).join(" · "), href: vorgangUrl(e.anliegen_id), zeit: e.created_at });
     }
   }
   for (const z of q.zustellungen) {

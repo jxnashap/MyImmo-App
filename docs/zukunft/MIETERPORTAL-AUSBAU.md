@@ -68,6 +68,11 @@ gesperrt; die Mieterseite nennt das Enddatum.
   Zahlungen, Dokumente oder Belege (wie die Sichten beim Mieter) und nennt das Enddatum.
 **Offen bleibt nur S7 optional „Beleg nur für eine Wohnung“** — erst bei Bedarf.
 
+**03.10.2026 — Oberfläche: Liste + Detailansicht.** Auf Wunsch des Betreibers („nicht so viel
+Text“) zeigen beide Anliegen-Listen nur noch eine Zeile je Vorgang; Verlauf, Antworten, Termine
+und Angebote stehen in der Detailansicht `?vorgang=<id>`. Gleiche Daten, gleiche Lader — nur die
+Darstellung ist getrennt (`lib/anliegenListe.ts`).
+
 ## 1. Kurzfazit
 
 Das Portal ist inhaltlich stark (Wohnung, Anliegen mit Fotos und Terminen, Zahlungen, Dokumente,

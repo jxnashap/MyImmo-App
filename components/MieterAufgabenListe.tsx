@@ -1,6 +1,7 @@
 // Mieter-Startseite „Was muss ich erledigen?“ (02.10.2026). Server-Komponente; die
 // Entscheidung, was hier steht, liegt in lib/mieterAufgaben.ts.
 import Link from "next/link";
+import { mitVorgang } from "@/lib/anliegenListe";
 import { CheckCircle2, CircleAlert, ChevronRight } from "lucide-react";
 import type { MieterAufgabe } from "@/lib/mieterAufgaben";
 
@@ -27,7 +28,7 @@ export default function MieterAufgabenListe({
           <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
             {aufgaben.map((a) => (
               <li key={a.id} style={{ borderBottom: "1px solid var(--line)" }}>
-                <Link href={hrefFuer(a.tab)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", textDecoration: "none", color: "inherit" }}>
+                <Link href={a.vorgang ? mitVorgang(hrefFuer(a.tab), a.vorgang) : hrefFuer(a.tab)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", textDecoration: "none", color: "inherit" }}>
                   {a.dringend
                     ? <CircleAlert size={15} color="var(--gold)" style={{ flexShrink: 0 }} />
                     : <ChevronRight size={15} color="var(--muted)" style={{ flexShrink: 0 }} />}

@@ -211,6 +211,6 @@ describe("Anbindung", () => {
     expect(seite).not.toMatch(/mieter_(name|telefon|email)/);
   });
   it("der Vorgang zeigt „Angebote einholen“ nur bei Schäden", () => {
-    expect(readFileSync("components/AnliegenManager.tsx", "utf8")).toContain('offen && angebote && a.typ === "schaden"');
+    expect(readFileSync("components/AnliegenManager.tsx", "utf8")).toContain('angebote && a.typ === "schaden"');
   });
 });
