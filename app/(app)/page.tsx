@@ -1,6 +1,8 @@
 import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
 import { bauePortalNeuigkeiten, NEUIGKEITEN_TAGE, type NeuigkeitArt } from "@/lib/portalNeuigkeiten";
 import Link from "next/link";
+import { Sparkline, TrendHinweis } from "@/components/KpiVerlauf";
+import { kpiReihen, monatsStichtage, trendVormonat, trendTon } from "@/lib/kpiVerlauf";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
@@ -314,6 +316,18 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const warmmiete = totalMiete + nkVorauszahlungenMonat(mieterRows.filter((m) => m.prop_id && objektIds.has(m.prop_id)), heuteISO);
   const cashflow = monatsCashflow({ warmmiete, kreditraten: kreditRates, kostenSchnitt: monatKosten });
   const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
+  // Verläufe unter den Kennzahlen (03.10.2026): dieselbe Rechnung zu den letzten
+  // 12 Monatsenden — Begründung und die eine Annahme (Kreditraten von heute) in
+  // lib/kpiVerlauf.ts. Der letzte Punkt ist die angezeigte Zahl.
+  const kpi = kpiReihen(
+    {
+      objekte: properties, mieter: mieterRows, kosten: laufendeKosten(kosten),
+      alle: [...einnahmen, ...kosten], kreditraten: kreditRates, wertReihe: portfolioWert,
+    },
+    monatsStichtage(heuteISO, 12),
+  );
+  const SPARK_TITEL = "Verlauf der letzten 12 Monate";
+  const SPARK_TITEL_RATEN = "Verlauf der letzten 12 Monate · Kreditraten zum heutigen Stand";
   // Leerstandsquote: nur vermietbare Objekte (Status "Vermietet"/"Leer");
   // Benchmark: 2–5 % gesund, >10 % kritisch.
   const status = (p: { obj_status: string | null }) => (p.obj_status ?? "").trim().toLowerCase();
@@ -431,6 +445,10 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
           <div className="kpi-label">Portfolio-Wert</div>
           <div className="kpi-value">{euro(totalWert)}</div>
           <div className="kpi-sub"><span className="badge badge-teal">{properties.length} Objekt{properties.length === 1 ? "" : "e"}</span></div>
+          {/* KEIN Verlauf hier: Ein Objektwert ändert sich im Datenbestand an dem Tag, an dem er
+              ERFASST wird (marktwert_stand), nicht wenn er am Markt steigt. „▲ 11,9 % ggü.
+              Vormonat“ stand in der Demo, weil alle Werte heute datiert sind — eine Behauptung,
+              die die Daten nicht tragen. Die Wertkurve unten zeigt die Stände mit Datum. */}
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           {/* WARMmiete, weil der Cashflow daneben mit ihr rechnet: Die drei
@@ -441,11 +459,15 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
           <div className="kpi-label">Warmmiete / Mo.</div>
           <div className="kpi-value">{euro(warmmiete)}</div>
           <div className="kpi-sub">Kaltmiete {euro(totalMiete)}{bruttoRendite > 0 ? <> · <span className="badge badge-gold">{bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Brutto-Rendite</span></> : null}</div>
+          <Sparkline werte={kpi.warmmiete} ton={trendTon(trendVormonat(kpi.warmmiete), true)} titel={SPARK_TITEL} />
+          <TrendHinweis trend={trendVormonat(kpi.warmmiete)} steigendIstGut />
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Kosten / Mo.</div>
           <div className="kpi-value">{euro(totalKosten)}</div>
           <div className="kpi-sub">Kreditraten + Ø Kosten ({kostenSchnitt.monate === 1 ? "1 Monat" : `${kostenSchnitt.monate} Monate`})</div>
+          <Sparkline werte={kpi.kosten} ton={trendTon(trendVormonat(kpi.kosten), false)} titel={SPARK_TITEL_RATEN} />
+          <TrendHinweis trend={trendVormonat(kpi.kosten)} steigendIstGut={false} />
         </Link>
         <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Cashflow / Mo.</div>
@@ -454,6 +476,8 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
               Cashflow", und niemand konnte sie vom Buchungssaldo darunter
               unterscheiden. */}
           <div className="kpi-sub">{cashflowFormel(kostenSchnitt)}</div>
+          <Sparkline werte={kpi.cashflow} ton={trendTon(trendVormonat(kpi.cashflow), true)} titel={SPARK_TITEL_RATEN} />
+          <TrendHinweis trend={trendVormonat(kpi.cashflow)} steigendIstGut />
         </Link>
         <Link href="/properties" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
           <div className="kpi-label">Leerstandsquote</div>
@@ -465,6 +489,12 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
               ? <span className="badge badge-neutral">{leerCount} von {vermietbar.length} leer</span>
               : <span style={{ color: "var(--muted)" }}>Status je Objekt hinterlegen</span>}
           </div>
+          {/* Belegung als Leiste: ein Feld je vermietbarem Objekt, leer = rot. */}
+          {vermietbar.length > 0 && (
+            <div className="kpi-belegung" aria-hidden>
+              {vermietbar.map((p) => <span key={p.id} className={status(p) === "leer" ? "leer" : ""} />)}
+            </div>
+          )}
         </Link>
       </div>
 
