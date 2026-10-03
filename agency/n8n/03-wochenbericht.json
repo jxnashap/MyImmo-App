@@ -1,0 +1,245 @@
+{
+  "name": "AI Agency · 03 Wochenbericht",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "n-0030",
+      "name": "Montag 07:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -620,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== HIER ANPASSEN (der einzige Ort je Workflow) =====\nconst cfg = {\n  supabaseUrl:  'https://DEIN-AGENCY-REF.supabase.co',\n  auditorUrl:   'https://DEIN-N8N/webhook/agency-auditor',\n  freigabeUrl:  'https://DEIN-N8N/webhook/agency-freigabe',\n  kennzahlenUrl:'https://www.myimmoapp.de/api/intern/kennzahlen',\n  mailAn:       'DEINE@MAIL.DE',\n  mailVon:      'agency@myimmoapp.de',\n  mailVonName:  'MyImmo Agency',\n  githubRepo:   'jxnashap/myimmo-app',\n};\n// =======================================================\nreturn [{ json: cfg }];"
+      },
+      "id": "n-0031",
+      "name": "Konfiguration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.kennzahlenUrl }}",
+        "options": {
+          "timeout": 60000
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "n-0032",
+      "name": "MyImmo-Kennzahlen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -180,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "MYIMMO_CRON",
+          "name": "MyImmo CRON_SECRET"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Konfiguration').first().json.supabaseUrl }}/rest/v1/rpc/agency_budget",
+        "options": {
+          "timeout": 300000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({}) }}"
+      },
+      "id": "n-0033",
+      "name": "Budget",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        40,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AGENCY_SUPABASE",
+          "name": "Agency Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const k = $('MyImmo-Kennzahlen').first().json;\nconst b = $input.first().json;\n\n// Nicht gemessen ist NICHT null-gleich-Ergebnis. Wer beides gleich darstellt,\n// hält eine Lücke für einen Wert.\nconst z = (w, einheit = '') => (w === null || w === undefined) ? 'nicht gemessen' : w + einheit;\n\nconst zeilen = [\n  ['1 · Besucher (7 Tage)',        z(k.besucher7t)],\n  ['2 · Neue externe Konten (7 T)', z(k.neueKonten7t)],\n  ['3 · Aktivierung (Konto→Objekt)', z(k.aktivierungsquote, ' %') + '  (' + k.mitObjekt + ' von ' + k.externeKonten + ')'],\n  ['4 · Rückkehrer (2. Tag)',      z(k.rueckkehrerquote, ' %') + '  (' + k.rueckkehrer + ' von ' + k.externeKonten + ')'],\n  ['5 · Zahlende Kunden',          z(k.zahlendeKunden)],\n  ['    Ausgaben Monat',           z(b.ausgaben_monat_usd, ' USD') + ' von ' + z(b.deckel_usd, ' USD')],\n];\n\n// Abbruchkriterien aus docs/zukunft/AI-AGENCY-OS.md 4.4 — sie stehen hier im\n// Code, damit sie jede Woche geprüft werden und nicht nur im Dokument stehen.\nconst warnungen = [];\nif (k.aktivierungsquote !== null && k.aktivierungsquote < 40)\n  warnungen.push('Aktivierung unter 40 % — Onboarding ist das Problem, keine neuen Funktionen.');\nif (k.rueckkehrerquote !== null && k.rueckkehrerquote < 25)\n  warnungen.push('Rückkehrer unter 25 % — das Produkt löst kein wiederkehrendes Problem. Positionierung prüfen.');\nif (b.budget_ok === false)\n  warnungen.push('Monatsdeckel erreicht — die Agency ist gesperrt, bis der Monat wechselt oder der Deckel steigt.');\nif (k.besucher7t === null)\n  warnungen.push('Zahl 1 fehlt weiterhin: @vercel/analytics ist nicht installiert.');\n\nconst breite = Math.max(...zeilen.map(r => r[0].length));\nconst text = zeilen.map(r => r[0].padEnd(breite + 2) + r[1]).join('\\n');\n\nconst html = '<div style=\"font-family:system-ui,sans-serif;max-width:680px\">'\n  + '<h2 style=\"font-weight:600\">Wochenbericht MyImmo</h2>'\n  + '<pre style=\"white-space:pre-wrap;font:14px ui-monospace,monospace\">' + text + '</pre>'\n  + (warnungen.length\n      ? '<div style=\"border-left:3px solid #D4A847;padding:8px 14px;background:#fbf7ec\">'\n        + warnungen.map(w => '<p style=\"margin:6px 0\">' + w + '</p>').join('') + '</div>'\n      : '<p style=\"color:#666\">Keine Schwelle verletzt.</p>')\n  + '<p style=\"color:#666;font-size:12px\">Stand ' + (k.stand ?? '') + '</p></div>';\n\nreturn [{ json: { kennzahlen: { ...k, budget: b }, text, html, warnungen,\n  betreff: '[Agency] Wochenbericht — ' + z(k.zahlendeKunden) + ' zahlend, '\n    + z(k.rueckkehrerquote, ' %') + ' Rückkehrer' } }];"
+      },
+      "id": "n-0034",
+      "name": "Bericht bauen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Konfiguration').first().json.supabaseUrl }}/rest/v1/rpc/agency_bericht_speichern",
+        "options": {
+          "timeout": 300000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_kennzahlen: $json.kennzahlen, p_text: $json.text }) }}"
+      },
+      "id": "n-0035",
+      "name": "Bericht speichern",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AGENCY_SUPABASE",
+          "name": "Agency Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "options": {
+          "timeout": 300000
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ sender: { email: $('Konfiguration').first().json.mailVon, name: $('Konfiguration').first().json.mailVonName }, to: [{ email: $('Konfiguration').first().json.mailAn }], subject: $('Bericht bauen').first().json.betreff, htmlContent: $('Bericht bauen').first().json.html }) }}"
+      },
+      "id": "n-0036",
+      "name": "E-Mail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BREVO_KEY",
+          "name": "Brevo api-key"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Montag 07:00": {
+      "main": [
+        [
+          {
+            "node": "Konfiguration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konfiguration": {
+      "main": [
+        [
+          {
+            "node": "MyImmo-Kennzahlen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MyImmo-Kennzahlen": {
+      "main": [
+        [
+          {
+            "node": "Budget",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Budget": {
+      "main": [
+        [
+          {
+            "node": "Bericht bauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bericht bauen": {
+      "main": [
+        [
+          {
+            "node": "Bericht speichern",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bericht speichern": {
+      "main": [
+        [
+          {
+            "node": "E-Mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "myimmo-agency"
+  },
+  "tags": []
+}

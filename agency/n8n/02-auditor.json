@@ -1,0 +1,391 @@
+{
+  "name": "AI Agency · 02 Auditor",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agency-auditor",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n-0017",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        300
+      ],
+      "webhookId": "agency-agency-auditor"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== HIER ANPASSEN (der einzige Ort je Workflow) =====\nconst cfg = {\n  supabaseUrl:  'https://DEIN-AGENCY-REF.supabase.co',\n  auditorUrl:   'https://DEIN-N8N/webhook/agency-auditor',\n  freigabeUrl:  'https://DEIN-N8N/webhook/agency-freigabe',\n  kennzahlenUrl:'https://www.myimmoapp.de/api/intern/kennzahlen',\n  mailAn:       'DEINE@MAIL.DE',\n  mailVon:      'agency@myimmoapp.de',\n  mailVonName:  'MyImmo Agency',\n  githubRepo:   'jxnashap/myimmo-app',\n};\n// =======================================================\nconst e = $input.first().json.body ?? {};\nreturn [{ json: { ...cfg, ...e } }];"
+      },
+      "id": "n-0018",
+      "name": "Konfiguration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c-0019",
+              "leftValue": "={{ $json.audit_pflicht }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "n-0020",
+      "name": "Audit nötig?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Unterhalb der Pflichtschwelle wird nicht geprüft — Governance, die bei\n// jedem Vorgang läuft, wird bald gar nicht mehr gelebt.\nreturn [{ json: { urteil: 'PASS', uebersprungen: true } }];"
+      },
+      "id": "n-0021",
+      "name": "Übersprungen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "n-0022",
+      "name": "Antwort übersprungen",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        260,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Konfiguration').first().json.supabaseUrl }}/rest/v1/rpc/agency_rolle",
+        "options": {
+          "timeout": 300000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_schluessel: 'auditor' }) }}"
+      },
+      "id": "n-0023",
+      "name": "Rolle holen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        40,
+        160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AGENCY_SUPABASE",
+          "name": "Agency Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const k = $('Konfiguration').first().json;\nconst r = $input.first().json;\nif (!r || r.ok !== true) { throw new Error('Rolle \"auditor\" nicht in der Datenbank — rollen-laden.mjs ausführen.'); }\n\nconst auftrag = [\n  'ZU PRÜFENDER VORGANG',\n  'TITEL: ' + k.titel,\n  'ZIEL: ' + k.ziel,\n  'RISIKOSTUFE: ' + k.risiko,\n  '',\n  '--- ERGEBNIS DES VORGANGS ---',\n  k.ergebnis,\n].join('\\n');\n\nreturn [{ json: { anfrage: {\n  model: r.modell,\n  max_tokens: r.max_tokens,\n  system: r.prompt,\n  thinking: { type: 'adaptive' },\n  output_config: {\n    effort: r.effort,\n    format: {\n      type: 'json_schema',\n      schema: {\n        type: 'object',\n        properties: {\n          urteil:               { type: 'string', enum: ['PASS','REVISE','FAIL'] },\n          befund:               { type: 'string' },\n          annahme_als_tatsache: { type: 'string' },\n          fehlende_evidenz:     { type: 'string' },\n          billigstes_experiment:{ type: 'string' },\n        },\n        required: ['urteil','befund','annahme_als_tatsache','fehlende_evidenz','billigstes_experiment'],\n        additionalProperties: false,\n      },\n    },\n  },\n  messages: [{ role: 'user', content: auftrag }],\n}, modell: r.modell } }];"
+      },
+      "id": "n-0024",
+      "name": "Auftrag bauen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "options": {
+          "timeout": 600000
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.anfrage) }}"
+      },
+      "id": "n-0025",
+      "name": "Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        160
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ANTHROPIC_KEY",
+          "name": "Anthropic x-api-key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst text = (r.content || []).filter(b => b.type === 'text').map(b => b.text).join('');\nlet u;\ntry { u = JSON.parse(text); }\ncatch (e) { throw new Error('Auditor-Antwort war kein JSON: ' + text.slice(0, 300)); }\nif (!['PASS','REVISE','FAIL'].includes(u.urteil)) {\n  throw new Error('Unzulässiges Urteil: ' + u.urteil);\n}\nreturn [{ json: { ...u,\n  uebersprungen: false,\n  tokens_ein: r.usage?.input_tokens ?? 0,\n  tokens_aus: r.usage?.output_tokens ?? 0,\n  tokens_cache: r.usage?.cache_read_input_tokens ?? 0,\n} }];"
+      },
+      "id": "n-0026",
+      "name": "Urteil lesen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Konfiguration').first().json.supabaseUrl }}/rest/v1/rpc/agency_lauf_buchen",
+        "options": {
+          "timeout": 300000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_vorgang: $('Konfiguration').first().json.vorgang_id, p_rolle: 'auditor', p_modell: $('Auftrag bauen').first().json.modell, p_tokens_ein: $json.tokens_ein, p_tokens_aus: $json.tokens_aus, p_tokens_cache: $json.tokens_cache }) }}"
+      },
+      "id": "n-0027",
+      "name": "Lauf buchen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AGENCY_SUPABASE",
+          "name": "Agency Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Konfiguration').first().json.supabaseUrl }}/rest/v1/rpc/agency_audit_buchen",
+        "options": {
+          "timeout": 300000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_vorgang: $('Konfiguration').first().json.vorgang_id, p_urteil: $('Urteil lesen').first().json.urteil, p_befund: $('Urteil lesen').first().json.befund, p_fehlende_evidenz: $('Urteil lesen').first().json.fehlende_evidenz, p_billigstes_experiment: $('Urteil lesen').first().json.billigstes_experiment }) }}"
+      },
+      "id": "n-0028",
+      "name": "Audit buchen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AGENCY_SUPABASE",
+          "name": "Agency Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($('Urteil lesen').first().json) }}",
+        "options": {}
+      },
+      "id": "n-0029",
+      "name": "Antwort",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        160
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Konfiguration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konfiguration": {
+      "main": [
+        [
+          {
+            "node": "Audit nötig?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit nötig?": {
+      "main": [
+        [
+          {
+            "node": "Rolle holen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Übersprungen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Übersprungen": {
+      "main": [
+        [
+          {
+            "node": "Antwort übersprungen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rolle holen": {
+      "main": [
+        [
+          {
+            "node": "Auftrag bauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auftrag bauen": {
+      "main": [
+        [
+          {
+            "node": "Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude": {
+      "main": [
+        [
+          {
+            "node": "Urteil lesen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Urteil lesen": {
+      "main": [
+        [
+          {
+            "node": "Lauf buchen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lauf buchen": {
+      "main": [
+        [
+          {
+            "node": "Audit buchen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audit buchen": {
+      "main": [
+        [
+          {
+            "node": "Antwort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "myimmo-agency"
+  },
+  "tags": []
+}
