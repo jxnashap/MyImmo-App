@@ -106,8 +106,8 @@ export async function buildProtokollPdf(d: ProtokollDaten): Promise<Uint8Array> 
   if (d.vermieterName) right(RIGHT, yTop - 2, d.vermieterName, 10, bold, INK);
 
   page.drawLine({
-    start: { x: 372, y: A4.h - 44 },
-    end: { x: 372, y: A4.h - 82 },
+    start: { x: A4.w / 2, y: A4.h - 44 },
+    end: { x: A4.w / 2, y: A4.h - 82 },
     thickness: 1,
     color: GOLD,
   });

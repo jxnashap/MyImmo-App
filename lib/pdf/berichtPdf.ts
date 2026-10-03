@@ -93,7 +93,7 @@ async function neueSeite(doc: PDFDocument, absender: BerichtAbsender, titelZeile
     ry -= 13;
   }
   if (absender.email) right(RIGHT, ry, absender.email, 8.5, font, MUTED);
-  page.drawLine({ start: { x: 372, y: A4.h - 44 }, end: { x: 372, y: A4.h - 82 }, thickness: 1, color: GOLD });
+  page.drawLine({ start: { x: A4.w / 2, y: A4.h - 44 }, end: { x: A4.w / 2, y: A4.h - 82 }, thickness: 1, color: GOLD });
   hline(A4.h - 96, ML, RIGHT, GOLD, 0.8);
 
   // Titel + Datum
