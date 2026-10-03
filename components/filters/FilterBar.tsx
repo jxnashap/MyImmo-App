@@ -24,6 +24,7 @@ function SearchField({ value, placeholder, ariaLabel, onCommit }: {
 }) {
   const [text, setText] = useState(value);
   const t = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Suchfeld folgt einem extern zurückgesetzten Filter
   useEffect(() => setText(value), [value]); // extern zurückgesetzt (Chip-X / Zurücksetzen)
   return (
     <input

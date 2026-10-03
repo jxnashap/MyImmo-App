@@ -8,5 +8,5 @@
     var t = localStorage.getItem("theme");
     if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
     if (localStorage.getItem("rail") === "1") document.documentElement.setAttribute("data-rail", "1");
-  } catch (e) {}
+  } catch {}
 })();

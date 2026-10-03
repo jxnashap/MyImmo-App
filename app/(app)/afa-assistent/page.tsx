@@ -12,7 +12,7 @@ export default async function AfaAssistentPage() {
     .select("id,bezeichnung,kaufpreis,flaeche,grundstuecksflaeche,bodenrichtwert,baujahr,afa_gebaeudeanteil")
     .order("bezeichnung");
 
-  const objekte: AfaObjekt[] = ((props ?? []) as any[]).map((p) => ({
+  const objekte: AfaObjekt[] = (props ?? []).map((p) => ({
     id: p.id,
     bezeichnung: p.bezeichnung ?? "Objekt",
     kaufpreis: p.kaufpreis != null ? Number(p.kaufpreis) : null,

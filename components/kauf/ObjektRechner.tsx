@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Home, Building2, Save, Scale, Crown, Trash2, ArrowRight, Landmark, Check, FolderOpen, Pencil, Plus } from "lucide-react";
+import { Home, Building2, Save, Scale, Crown, Trash2, ArrowRight, Landmark, FolderOpen, Pencil, Plus } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { zahlDe0 } from "@/lib/zahl";
 import KalkImport from "@/components/kalkulator/KalkImport";
@@ -540,7 +540,7 @@ export default function ObjektRechner({
           </div>
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 12 }}>
             Speichere jedes Objekt und vergleiche 3–5 Kandidaten — das beste bekommt eine Krone. Die Finanzierung
-            rechnest du im Schritt „Finanzierung" aus.
+            rechnest du im Schritt „Finanzierung&quot; aus.
           </p>
         </div>
       </div>
@@ -623,7 +623,7 @@ export default function ObjektRechner({
               übernimm es für die Finanzierung.
             </p>
             {liste.length === 0 ? (
-              <p style={{ color: "var(--muted)", fontSize: 13 }}>Noch nichts gespeichert. Objekt eingeben und „Objekt speichern".</p>
+              <p style={{ color: "var(--muted)", fontSize: 13 }}>Noch nichts gespeichert. Objekt eingeben und „Objekt speichern&quot;.</p>
             ) : (
               <>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>

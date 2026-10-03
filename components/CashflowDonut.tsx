@@ -11,7 +11,7 @@
 // Hover lässt das Segment in seiner eigenen Farbe sanft glühen.
 // Wechsel per Toggle und horizontalem Swipe. prefers-reduced-motion wird respektiert.
 
-import { useEffect, useMemo, useRef, useState, useId } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { euro, prozent } from "@/lib/format";
 
 type Kat = [string, number];
@@ -60,7 +60,6 @@ export default function CashflowDonut({
   ausKat: Kat[];
   netto: number;
 }) {
-  const uid = useId().replace(/[:]/g, "");
   const [side, setSide] = useState<null | "ein" | "aus">(null); // null = Overview
   const [hover, setHover] = useState<string | null>(null);
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null); // Hover (flüchtig)
@@ -69,9 +68,11 @@ export default function CashflowDonut({
   const [reduce, setReduce] = useState(false);
   const [grown, setGrown] = useState(false); // steuert die Einfahr-Animation je Ebene
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
     setReduce(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
   }, []);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Einfahr-Animation je Ebene neu starten
     if (reduce) { setGrown(true); return; }
     setGrown(false);
     let raf2 = 0;
@@ -105,11 +106,11 @@ export default function CashflowDonut({
   const C = 2 * Math.PI * R;
   const gapPx = segs.length > 1 ? 6 : 0;
 
-  let acc = 0;
+  // Startanteil je Segment = Summe der Anteile davor (ohne Variable, die im map wächst).
+  const anteile = segs.map((s) => (total > 0 ? s.value / total : 0));
   const arcs = segs.map((s, i) => {
-    const frac = total > 0 ? s.value / total : 0;
-    const start = acc;
-    acc += frac;
+    const frac = anteile[i];
+    const start = anteile.slice(0, i).reduce((a, b) => a + b, 0);
     const seg = frac * C;
     const dash = Math.max(seg - gapPx, 0.001);
     const gapDeg = (gapPx / C) * 360;

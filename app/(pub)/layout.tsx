@@ -18,7 +18,9 @@ export default function OeffentlichesLayout({ children }: { children: React.Reac
   return (
     <html lang="de" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
-        {/* Als Datei statt inline — siehe public/theme.js (Nonce-frei). */}
+        {/* Als Datei statt inline — siehe public/theme.js (Nonce-frei). Bewusst synchron:
+            Es setzt das Farbschema VOR dem ersten Zeichnen, sonst flackert die Seite. */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src="/theme.js" />
       </head>
       <body>

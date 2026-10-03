@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
+import { heuteBerlin } from "@/lib/zeitraum";
 import { mieterFristen, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
 import {
   createTermin, createVorlageTermin, deleteTermin, toggleErledigt,
@@ -132,7 +133,7 @@ export default async function TerminePage(
   // Tagen" sie mitzählte. Rollierend „nächste 12 Monate" plus alles
   // Überfällige — das entspricht dem, wonach man auf dieser Seite sucht.
   if (jahr === "rollierend") {
-    const heuteMs = Date.now();
+    const heuteMs = Date.parse(heuteBerlin());
     const in12M = heuteMs + 365 * 86400000;
     sichtbar = sichtbar.filter((e) => {
       const t = new Date(e.datum).getTime();

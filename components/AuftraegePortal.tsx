@@ -3,7 +3,7 @@
 // Service-Portal: erhaltene Aufträge annehmen, erledigen oder ablehnen
 // (mit optionaler Rückmeldung an den Vermieter).
 import { useEffect, useState, useTransition } from "react";
-import { Wrench, CalendarDays, Building2, Phone, Mail, Globe, SendHorizonal, Copy, Check, Link2 } from "lucide-react";
+import { Wrench, CalendarDays, Building2, Phone, Mail, Globe, SendHorizonal, Check, Link2 } from "lucide-react";
 import { beantworteAuftrag, beantrageAuftrag } from "@/lib/actions/service";
 import { datum } from "@/lib/format";
 import { teilbarerLink } from "@/lib/appUrl";
@@ -57,6 +57,7 @@ function FirmenLinkAktionen({
   // Link auf einer Vorschau-/Fallback-Domain erzeugt, bekaeme der Handwerker
   // genau diese Adresse (siehe lib/appUrl.ts).
   const [link, setLink] = useState("");
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Link erst nach dem Mount bauen (teilbarerLink braucht den Browser)
   useEffect(() => { setLink(teilbarerLink(`/auftrag/${token}`)); }, [token]);
   const betreff = `Auftragsanfrage: ${titel}${objekt ? ` (${objekt})` : ""}`;
   const text =

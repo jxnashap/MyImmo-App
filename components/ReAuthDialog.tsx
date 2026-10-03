@@ -51,6 +51,7 @@ export default function ReAuthDialog({
 
   useEffect(() => {
     if (!offen) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Zurücksetzen beim Öffnen/Wechsel — gehört zum Effekt, der das Öffnen behandelt
     setEingabe("");
     setFehler(null);
     void (async () => {
@@ -122,7 +123,7 @@ export default function ReAuthDialog({
                 inputMode={modus === "totp" ? "numeric" : undefined}
                 autoComplete={modus === "totp" ? "one-time-code" : "current-password"}
                 value={eingabe}
-                onChange={(e) => { setEingabe(e.target.value); fehler && setFehler(null); }}
+                onChange={(e) => { setEingabe(e.target.value); if (fehler) setFehler(null); }}
                 autoFocus
                 required
               />

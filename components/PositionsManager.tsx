@@ -101,6 +101,7 @@ export default function PositionsManager({
   const [, startSave] = useTransition();
   const [rows, setRows] = useState<RowState[]>(positions.map(toRow));
   // Server-Refresh (revalidatePath/router.refresh) synct den lokalen Stand.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- lokaler Bearbeitungsstand übernimmt neue Server-Daten nach router.refresh()
   useEffect(() => setRows(positions.map(toRow)), [positions]);
 
   // Neue-Zeile-Eingaben (immer leer nach dem Hinzufügen)

@@ -15,6 +15,7 @@ export default function FreischaltForm({ email }: { email?: string | null }) {
       setFehler(null);
       const r = await schalteKontoFrei(fd);
       if (!r.ok) setFehler(r.fehler ?? "Freischaltung fehlgeschlagen.");
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- bewusst hart: der Server soll die Freischaltung sofort sehen
       else window.location.assign("/"); // harte Navigation: Server sieht Freischaltung sofort
     });
 

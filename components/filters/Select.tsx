@@ -30,6 +30,7 @@ export default function Select({
 
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Zurücksetzen beim Öffnen/Wechsel — gehört zum Effekt, der das Öffnen behandelt
     setActive(Math.max(0, options.findIndex((o) => o.value === value)));
     const onDown = (e: MouseEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);

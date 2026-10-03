@@ -56,7 +56,7 @@ export default function HilfeInhalt() {
             Werktags <strong style={{ color: "var(--text)" }}>innerhalb von 24 Stunden</strong>. An
             Wochenenden und Feiertagen kann es länger dauern. Geht etwas gar nicht mehr — du kommst
             nicht in dein Konto oder Daten fehlen — schreib{" "}
-            <strong style={{ color: "var(--text)" }}>„dringend"</strong> in den Betreff.
+            <strong style={{ color: "var(--text)" }}>„dringend&quot;</strong> in den Betreff.
           </p>
         </div>
       </div>

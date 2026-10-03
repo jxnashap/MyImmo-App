@@ -62,7 +62,7 @@ export default function MfaAbfrage({ onErfolg, onAbbruch }: { onErfolg: (wiederh
         autoComplete="one-time-code"
         placeholder={modus === "code" ? "123456" : "ABCD-EFGH"}
         value={eingabe}
-        onChange={(e) => { setEingabe(e.target.value); fehler && setFehler(null); }}
+        onChange={(e) => { setEingabe(e.target.value); if (fehler) setFehler(null); }}
         autoFocus
         required
       />

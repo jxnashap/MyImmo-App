@@ -42,7 +42,6 @@ describe("berechneVerbilligt (§ 21 Abs. 2 EStG)", () => {
 
   it("gelb zwischen 50 und 66 %", () => {
     // Ist-Kalt 500 → Warm 650 / 950 = 68 %? nein. Setze Vergleich höher.
-    const r = berechneVerbilligt({ ...basis, kaltmiete: 450, vergleichKaltProM2: 14 });
     // Vergleichskalt 1120, Warm-Ist 600, Warm-Vgl 1270 → 47 % → rot; justiere:
     const r2 = berechneVerbilligt({ kaltmiete: 560, nkVorauszahlung: 0, vergleichKaltProM2: 10, flaeche: 100 });
     // Warm-Ist 560 / Warm-Vgl 1000 = 56 %
