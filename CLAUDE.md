@@ -445,7 +445,11 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   `where` lief über `execute_sql` in den Bestätigungsdialog (Zeitüberlauf) — immer mit WHERE prüfen.
   **Falle:** Eine „use server“-Datei darf NUR async-Funktionen exportieren (Konstanten brechen den
   Turbopack-Build, vitest merkt es nicht) — `tests/useServerExporte.test.ts` wacht jetzt darüber.
-  Offen: Schritt 7.
+  Schritt 7 (Kostengrenze + Angebote) ist gebaut. ✅ **Paket S abgeschlossen 03.10.2026:** S4
+  (Rückfrage „neuer Mieter?“ bei Namens-/Beginn-Änderung mit Portal-Konto, serverseitig
+  erzwungen), S7 (Beleg-Freigabe nennt die Zahl der sehenden Konten), Vorschau nach
+  Zugangsende — Details im Plan, Abschnitt 0. Nächster Portal-Schritt laut Plan:
+  Vertreter-Zugang (eigenes Vorhaben).
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
   (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor

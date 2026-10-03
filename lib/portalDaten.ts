@@ -24,6 +24,7 @@ import { heuteBerlin } from "@/lib/zeitraum";
 import { ladeEreignisse, type Ereignis } from "@/lib/vorgang";
 import { mieterKonto, type KontoMonat } from "@/lib/mieterKonto";
 import type { MietkontoZeitraum } from "@/lib/mietkonto";
+import { zugangEndet } from "@/lib/mieterZugang";
 
 /** Spalten der Sicht `miet_zeitraeume_portal` — mehr braucht das Soll nicht. */
 export const ZEITRAUM_SPALTEN = "mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete";
@@ -115,6 +116,8 @@ export type PortalDaten = {
   konto: Record<string, KontoMonat[]>;
   /** Nur in der Vorschau: hat der Mieter schon ein verknüpftes Konto? */
   mieterKontoVerknuepft: boolean;
+  /** Nur in der Vorschau: Datum, an dem der Portal-Zugang endete (Auszug + Nachlauf), sonst null. */
+  zugangBeendet: string | null;
 };
 
 /** Eintrag der Mieter-Auswahl in der Vorschau. */
@@ -147,6 +150,7 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
   let mieterRows: PortalMieter[] = [];
   let propRows: PortalObjekt[] = [];
   let mieterUserId: string | null = null;
+  let zugangBeendet: string | null = null;
 
   if (quelle.art === "mieter") {
     mieterUserId = quelle.mieterUserId;
@@ -175,7 +179,17 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
       .eq("id", quelle.mieterId)
       .maybeSingle();
     mieterRows = m ? [m as PortalMieter] : [];
-    const propId = (m as PortalMieter | null)?.prop_id ?? null;
+    // Zugang abgelaufen (31.12. des Jahres nach dem Auszug)? Dann liefern die Sichten
+    // `mieter_portal`/`properties_portal` dem Mieter nichts mehr (`mieter_zugang_aktiv()`,
+    // Migration 20261002120000) — und damit auch keine Zahlungen, Dokumente, Belege.
+    // Die Vorschau zeigt dasselbe, statt ein Portal vorzuspiegeln, das es nicht mehr gibt.
+    // Eigene Anliegen und Zählermeldungen hängen am Konto und bleiben, wie beim Mieter.
+    const ende = zugangEndet((m as PortalMieter | null)?.mietende);
+    if (ende && heuteBerlin() > ende) {
+      zugangBeendet = ende;
+      mieterRows = [];
+    }
+    const propId = mieterRows[0]?.prop_id ?? null;
     if (propId) {
       const { data } = await supabase
         .from("properties")
@@ -368,5 +382,6 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
     wohnungen, anliegen, dokumentAnfragen, verlauf, dateien, freigegebeneDocs, vermieterAnfragen,
     zaehlerMeldungen, zahlungen, jahr, summeJahr, belege, konto, mitteilungen, hausInfos,
     mieterKontoVerknuepft: mieterUserId !== null,
+    zugangBeendet,
   };
 }
