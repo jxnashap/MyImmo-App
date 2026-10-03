@@ -377,6 +377,16 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   🐞 **Falle (am Handy gesehen):** `.badge` steht in `globals.css` NACH der Ausblende-Regel und
   setzte `display` zurück; ein inline `display` an einer Zusatzspalte schlägt sie ebenfalls.
   Jetzt `.listen-zeile .listen-zeile-extra`; `tests/kompakteListen.test.ts` hält beides fest.
+  📈 **Kennzahlen mit Verlauf (03.10.2026, Betreiber: „moderner“ → „Kennzahlen lebendiger“ +
+  „spürbare Reaktionen“, erst Dashboard, dann ausrollen):** Warmmiete, Kosten und Cashflow
+  zeigen eine 12-Monats-Linie + „▲/▼ x € ggü. Vormonat“ (`lib/kpiVerlauf.ts`,
+  `components/KpiVerlauf.tsx`). **Regel: Die Linie zeigt DIESELBE Größe, mit denselben
+  Funktionen je Monatsende gerechnet; der letzte Punkt ist die Kachelzahl.** Annahme, die an
+  der Linie steht: Kreditraten von heute (keine Historie). **Portfoliowert bewusst OHNE
+  Verlauf** — Werte ändern sich am Erfassungstag (`marktwert_stand`), nicht am Markttag; die
+  erste Fassung zeigte in der Demo „▲ 11,9 % ggü. Vormonat“. Leerstand: Belegungsleiste.
+  Dazu: Lade-Skelett = Dashboard-Form (5 Kacheln, `.dash-haupt`), `.listen-zeile:active`.
+  `tests/kpiVerlauf.test.ts`, zehn Mutationen rot.
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
