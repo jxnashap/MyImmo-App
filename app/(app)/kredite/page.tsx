@@ -7,6 +7,8 @@ import { decryptKreditRow } from "@/lib/kreditData";
 import type { Kredit, Property } from "@/lib/types";
 import { Plus, Siren, Landmark } from "lucide-react";
 import Leer from "@/components/Leer";
+import SchuldenUhr from "@/components/SchuldenUhr";
+import { schuldenStand } from "@/lib/schuldenStand";
 import { euro } from "@/lib/format";
 import { beleihungsauslauf } from "@/lib/beleihungsauslauf";
 import { holeIndexReihe } from "@/lib/wert/hpi";
@@ -41,13 +43,10 @@ export default async function KreditePage() {
   );
   // Kennzahlen über alle Darlehen. Ø-Zins nach Restschuld gewichtet (ein kleines teures
   // Darlehen soll den Schnitt nicht so stark ziehen wie ein großes).
-  const summeRest = list.reduce((s, k) => s + (k.restschuld ?? 0), 0);
   const summeRate = list.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
-  const summeUrspr = list.reduce((s, k) => s + (k.betrag ?? 0), 0);
   const gewichtet = list.filter((k) => k.zinssatz != null && (k.restschuld ?? 0) > 0);
   const basis = gewichtet.reduce((s, k) => s + (k.restschuld ?? 0), 0);
   const zinsSchnitt = basis > 0 ? gewichtet.reduce((s, k) => s + (k.zinssatz ?? 0) * (k.restschuld ?? 0), 0) / basis : null;
-  const getilgtGesamt = summeUrspr > 0 ? Math.round((1 - summeRest / summeUrspr) * 100) : null;
 
   const STUFE = {
     niedrig: { label: "niedrig", cls: "badge-green" },
@@ -69,12 +68,13 @@ export default async function KreditePage() {
       </div>
       <hr className="topbar-rule" />
 
+      {/* Schulden-Uhr (04.10.2026): eine Zeile über den Krediten statt vier Kacheln. */}
       {list.length > 0 && (
-        <div className="staffel grid-4 mb-20">
-          <div className="kpi-card"><div className="kpi-label">Restschuld gesamt</div><div className="kpi-value">{euro(summeRest)}</div></div>
-          <div className="kpi-card"><div className="kpi-label">Raten / Monat</div><div className="kpi-value">{euro(summeRate)}</div></div>
-          <div className="kpi-card" title="Nach Restschuld gewichtet"><div className="kpi-label">Ø Zins</div><div className="kpi-value">{zinsSchnitt != null ? `${zahl(zinsSchnitt, 2)} %` : "–"}</div></div>
-          <div className="kpi-card" title="Restschuld gegen ursprüngliche Darlehenssumme"><div className="kpi-label">Getilgt</div><div className="kpi-value" style={{ color: "var(--green)" }}>{getilgtGesamt != null ? `${getilgtGesamt} %` : "–"}</div></div>
+        <div className="mb-20">
+          <SchuldenUhr
+            stand={schuldenStand(list)}
+            zusatz={`Raten ${euro(summeRate)} / Mo.${zinsSchnitt != null ? ` · Ø Zins ${zahl(zinsSchnitt, 2)} %` : ""}`}
+          />
         </div>
       )}
 

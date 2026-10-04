@@ -512,6 +512,22 @@ a.kpi-card:active { transform: scale(.985); }
   .kpi-feld:nth-child(even) { border-left: 1px solid var(--line); }
   .kpi-feld:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
+/* Schulden-Uhr (04.10.2026): eine Zeile — Zahl links, Balken abbezahlt/offen, Tilgung rechts. */
+.schulden-uhr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 28px; align-items: center; background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-1); padding: 18px 22px; }
+.section-body > .schulden-uhr { border: none; box-shadow: none; padding: 0 0 16px; border-radius: 0; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.su-kopf, .su-rechts { display: flex; flex-direction: column; gap: 3px; }
+.su-rechts { text-align: right; }
+.su-zahl { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.su-zusatz { font-size: 12px; color: var(--muted); }
+.su-tilgung { font-size: 16px; font-weight: 650; color: var(--green); font-variant-numeric: tabular-nums; }
+.su-balken { height: 10px; border-radius: 6px; background: var(--bg4); overflow: hidden; }
+.su-balken > i { display: block; height: 100%; border-radius: 6px; background: var(--green); }
+.su-legende { display: flex; justify-content: space-between; gap: 12px; margin-top: 7px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.su-legende b { color: var(--text); font-weight: 600; }
+@media (max-width: 640px) {
+  .schulden-uhr { grid-template-columns: 1fr auto; gap: 14px 18px; }
+  .su-mitte { grid-column: 1 / -1; grid-row: 2; }
+}
 /* Erklärung unter einer Grafik: eingeklappt, eine Zeile statt eines Absatzes. */
 .erklaer { margin-top: 8px; font-size: 12px; color: var(--muted); }
 .erklaer > summary { cursor: pointer; user-select: none; color: var(--faint); width: fit-content; }

@@ -387,8 +387,15 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   als EINE Leiste (`.kpi-leiste`/`.kpi-feld`, Unterzeile bis 2 Zeilen statt abgeschnitten);
   Erklärtexte der Grafiken eingeklappt (`erklaerung`-Prop → „Wie wird das gerechnet?“);
   gleiche Aufgaben (Art + Titel + Datum) gebündelt (`buendleGleicheAufgaben` in `lib/heute.ts`,
-  „6 Einträge · Anna Weber, …“ → /termine); „Einnahmen vs. Ausgaben“ und „Aktuelle Kredite“
-  ENTFERNT (Doppelungen); Letzte Buchungen als `.listen-zeile`. Lade-Skelett in Leistenform.
+  „6 Einträge · Anna Weber, …“ → /termine); „Einnahmen vs. Ausgaben“ ENTFERNT (Doppelung);
+  Letzte Buchungen als `.listen-zeile`. Lade-Skelett in Leistenform.
+  💳 **Schulden-Uhr (04.10.2026, Wunsch des Betreibers):** eine Zeile über den Krediten — auf
+  `/kredite` (statt der vier Kacheln) und im Dashboard-Block „Kredite“ (bleibt, mit drei
+  Darlehen als Zeilen): Schulden gesamt, Balken abbezahlt/offen, Tilgung je Monat
+  (`lib/schuldenStand.ts`, `components/SchuldenUhr.tsx`, `tests/schuldenStand.test.ts`).
+  **Bewusst KEIN Sekundenzähler:** `restschuld` ist ein eingetragener Stand, MyImmo schreibt ihn
+  nicht fort — ein tickender Zähler täuschte Genauigkeit vor. Kredit ohne Ursprungsbetrag zählt
+  als „nichts getilgt“ (sonst stiege der Prozentwert durch ein leeres Feld).
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**

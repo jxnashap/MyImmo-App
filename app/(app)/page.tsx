@@ -1,6 +1,8 @@
 import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
 import { bauePortalNeuigkeiten, NEUIGKEITEN_TAGE, type NeuigkeitArt } from "@/lib/portalNeuigkeiten";
 import Link from "next/link";
+import SchuldenUhr from "@/components/SchuldenUhr";
+import { schuldenStand } from "@/lib/schuldenStand";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
@@ -10,7 +12,7 @@ import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, global
 import { baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
-import { CalendarDays, Plus, TriangleAlert,  Banknote, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck, ChevronRight } from "lucide-react";
+import { CalendarDays, Plus, TriangleAlert, Landmark, Banknote, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck, ChevronRight } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
@@ -593,10 +595,37 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
           Dashboard genommen, am selben Tag auch die Kartenseite /karte — sie
           zeigte nur einen Teil der Objekte und passte optisch nicht. */}
 
-      {/* „Einnahmen vs. Ausgaben“ und „Aktuelle Kredite“ sind ENTFALLEN (03.10.2026): Das eine
-          wiederholte die Kennzahlen-Leiste Zahl für Zahl (Warmmiete, Raten, Ø Kosten, Bleibt),
-          das andere stand vollständig unter /kredite; eine auslaufende Zinsbindung meldet das
-          Banner oben und „Termine & Aufgaben“. */}
+      {/* „Einnahmen vs. Ausgaben“ ist ENTFALLEN (03.10.2026): Es wiederholte die Kennzahlen-Leiste
+          Zahl für Zahl. Die Kredite bleiben (Wunsch des Betreibers 04.10.2026) — mit der
+          Schulden-Uhr als Kopfzeile und den Darlehen als kompakte Zeilen. */}
+      {kredite.length > 0 && (
+        <div className="section mb-20">
+          <div className="section-header">
+            <h3>Kredite</h3>
+            <Link href="/kredite" className="btn btn-ghost btn-sm">{kredite.length > 3 ? `Alle ${kredite.length} →` : "Öffnen →"}</Link>
+          </div>
+          <div className="section-body">
+            <SchuldenUhr stand={schuldenStand(kredite)} />
+            <div className="listen">
+              {kredite.slice(0, 3).map((k) => (
+                <Link key={k.id} href="/kredite" className="listen-zeile">
+                  <span className="listen-icon"><Landmark size={16} /></span>
+                  <span className="listen-zeile-text">
+                    <span className="listen-zeile-titel">
+                      {k.bezeichnung || k.bank || "Darlehen"}
+                      {k.zinssatz != null && <span style={{ fontWeight: 400, color: "var(--muted)" }}> · {k.zinssatz.toLocaleString("de-DE", { maximumFractionDigits: 2 })} %</span>}
+                    </span>
+                    <span className="listen-zeile-sub">{[(k.prop_id && nameOf.get(k.prop_id)) || null, k.bank].filter(Boolean).join(" · ") || "ohne Objekt"}</span>
+                  </span>
+                  <span className="listen-zeile-zahl"><b>{euro(k.restschuld)}</b><small>{euro(k.monatsrate)} / Mo.</small></span>
+                  <ChevronRight size={16} color="var(--faint)" style={{ flexShrink: 0 }} />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* REIHENFOLGE: Kennzahlen und Verläufe oben (08.09.2026). Termine & Aufgaben stehen seit
           02.10.2026 rechts neben dem Buchungssaldo unter den Portal-Neuigkeiten (Idee des
