@@ -155,7 +155,8 @@ describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026 / 02
   it("Buchungssaldo | Neuigkeiten über Aufgaben — in EINEM zweispaltigen Block", () => {
     // 03.10.2026: eigener Block `dash-haupt` (Verläufe links breiter, Portal + Aufgaben rechts).
     const block = seite.indexOf('<div className="dash-haupt mb-20">');
-    const saldo = seite.indexOf("<h3>Buchungssaldo</h3>");
+    // 04.10.2026: Die Verläufe sind EINE Karte mit Umschalter (`DiagrammWechsel`).
+    const saldo = seite.indexOf('titel: "Buchungssaldo"');
     const neu = seite.indexOf("<h3>Neuigkeiten aus dem Mieterportal</h3>");
     const aufgaben = seite.indexOf("<h3>Termine &amp; Aufgaben</h3>");
     // „Einnahmen vs. Ausgaben“ ist seit 03.10.2026 entfallen (wiederholte die Kennzahlen).
@@ -181,10 +182,23 @@ describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026 / 02
     // stand als „Cashflow" neben dem Monats-Cashflow). Der Titel muss DA sein —
     // `indexOf` liefert sonst -1, und -1 ist immer „davor": Die erste Fassung
     // wäre nach der Umbenennung still grün geblieben.
-    for (const chart of ["Portfolio-Wertentwicklung", "<h3>Buchungssaldo</h3>"]) {
+    // Seit 04.10.2026 als Ansichten EINER Karte (`DiagrammWechsel`), Titel als `titel:`.
+    for (const chart of ['titel: "Portfolio-Wert"', 'titel: "Buchungssaldo"']) {
       expect(seite.indexOf(chart), chart).toBeGreaterThan(0);
       expect(seite.indexOf(chart), chart).toBeLessThan(aufgaben);
     }
+  });
+
+  it("die Verläufe stehen in EINER Karte mit Umschalter — Portfolio-Wert zuerst", () => {
+    const wechsel = seite.indexOf("<DiagrammWechsel");
+    const wert = seite.indexOf('schluessel: "wert"');
+    const saldo = seite.indexOf('schluessel: "saldo"');
+    expect(wechsel).toBeGreaterThan(0);
+    expect(wechsel).toBeLessThan(wert);
+    expect(wert).toBeLessThan(saldo);
+    // keine zweite, feste Diagramm-Karte daneben
+    expect(seite.match(/<BetragChart/g)?.length).toBe(1);
+    expect(seite.match(/<WertVerlaufChart/g)?.length).toBe(1);
   });
 
   it("es gibt nur EINEN Aufgaben-Block — nicht zwei mit denselben Fristen", () => {

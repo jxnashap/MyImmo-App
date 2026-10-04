@@ -16,6 +16,7 @@ import { CalendarDays, Plus, TriangleAlert, Landmark, Banknote, ReceiptText, Mes
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
+import DiagrammWechsel from "@/components/DiagrammWechsel";
 import { portfolioWertReihe, wertzuwachsGgKaufpreis, type RohStand } from "@/lib/wert/verlauf";
 import { einnahmeDatum, type RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
@@ -466,37 +467,39 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
           Unter 860 px untereinander, Grafiken zuerst. */}
       <div className="dash-haupt mb-20">
         <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
-        {portfolioWert.length >= 2 && (
-          <div className="section" style={{ marginBottom: 0 }}>
-            <div className="section-header">
-              <h3>Portfolio-Wertentwicklung</h3>
-              {portfolioWertProzent != null && (
+        {/* EINE Grafik-Karte mit Umschalter oben links (04.10.2026, Wunsch des Betreibers) statt
+            zwei Karten untereinander. „Buchungssaldo“, nicht „Cashflow“: Die Kurve summiert
+            GEBUCHTE Einnahmen und Ausgaben (Review 30.09.2026). Die Wertkurve gibt es erst ab zwei
+            Punkten — sonst ist der Saldo die einzige Ansicht. */}
+        <DiagrammWechsel
+          speicherSchluessel="myimmo:dashboard-grafik"
+          ansichten={[
+            ...(portfolioWert.length >= 2 ? [{
+              schluessel: "wert",
+              titel: "Portfolio-Wert",
+              rechts: portfolioWertProzent != null ? (
                 <span className={`badge ${portfolioWertProzent >= 0 ? "badge-green" : "badge-red"}`}>
                   {portfolioWertProzent >= 0 ? "+" : ""}{portfolioWertProzent.toLocaleString("de-DE")} % ggü. Kaufpreis
                 </span>
-              )}
-            </div>
-            <div className="section-body">
-              <WertVerlaufChart
-                punkte={portfolioWert}
-                hoehe={260}
-                erklaerung="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte. Die Kurve springt bei jedem Kauf — ein Zukauf ist kein Wertzuwachs. Der Prozentwert vergleicht den heutigen Wert mit den Kaufpreisen."
-              />
-            </div>
-          </div>
-        )}
-          <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header">
-            {/* „Buchungssaldo", nicht „Cashflow": Die Kurve summiert GEBUCHTE
-                Einnahmen und Ausgaben über den gewählten Zeitraum. Ihr Endwert
-                stand im Review neben dem Monats-Cashflow als „Widerspruch". */}
-            <h3>Buchungssaldo</h3>
-            <ZeitraumControl />
-          </div>
-          <div className="section-body">
-            <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" heute={heuteISO0} hoehe={260} erklaerung="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
-          </div>
-        </div>
+              ) : undefined,
+              inhalt: (
+                <WertVerlaufChart
+                  punkte={portfolioWert}
+                  hoehe={320}
+                  erklaerung="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte. Die Kurve springt bei jedem Kauf — ein Zukauf ist kein Wertzuwachs. Der Prozentwert vergleicht den heutigen Wert mit den Kaufpreisen."
+                />
+              ),
+            }] : []),
+            {
+              schluessel: "saldo",
+              titel: "Buchungssaldo",
+              rechts: <ZeitraumControl />,
+              inhalt: (
+                <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" heute={heuteISO0} hoehe={320} erklaerung="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
+              ),
+            },
+          ]}
+        />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
           <div className="section" style={{ marginBottom: 0 }}>

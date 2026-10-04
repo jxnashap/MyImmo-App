@@ -396,6 +396,11 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   **Bewusst KEIN Sekundenzähler:** `restschuld` ist ein eingetragener Stand, MyImmo schreibt ihn
   nicht fort — ein tickender Zähler täuschte Genauigkeit vor. Kredit ohne Ursprungsbetrag zählt
   als „nichts getilgt“ (sonst stiege der Prozentwert durch ein leeres Feld).
+  🔀 **Grafik-Umschalter (04.10.2026, Wunsch des Betreibers):** Portfolio-Wert und Buchungssaldo
+  sind EINE Karte (`components/DiagrammWechsel.tsx`, 320 px hoch), Wahl oben links als
+  überschriftartige Reiter (`.diagramm-wahl`, bewusst kein zweiter goldener Segment-Schalter
+  neben 1J/3J/5J/Max). Gemerkt je Browser (`myimmo:dashboard-grafik`, try/catch). Der Server
+  rendert immer die ERSTE Ansicht — der Rauchtest prüft deshalb `>Buchungssaldo<` (Reiter), nicht `<h3>`.
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**

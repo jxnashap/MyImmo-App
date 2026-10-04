@@ -164,7 +164,7 @@ const WEGE = [
     pfad: "/",
     // „Buchungssaldo" und die Formel am Monats-Cashflow (Phase 4, Review
     // 30.09.2026): Jede Cashflow-Zahl sagt, was sie ist.
-    erwartet: ["Portfolio-Wert", "Termine &amp; Aufgaben", "<h3>Buchungssaldo</h3>", "Neuigkeiten aus dem Mieterportal", "Warmmiete − Kreditraten − Ø Kosten", "Warmmiete / Mo.", "% ggü. Kaufpreis"],
+    erwartet: ["Portfolio-Wert", "Termine &amp; Aufgaben", ">Buchungssaldo<", "Neuigkeiten aus dem Mieterportal", "Warmmiete − Kreditraten − Ø Kosten", "Warmmiete / Mo.", "% ggü. Kaufpreis"],
     async pruefe({ html }) {
       // Vorgabe des Betreibers (#321): Kennzahlen VOR den Aufgaben. Der
       // Unit-Test prüft die Quelldatei — hier steht die ausgelieferte Seite.
