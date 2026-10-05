@@ -3,7 +3,7 @@ import { REGISTRIERUNG_OFFEN } from "@/lib/preise";
 import StartCta from "@/components/StartCta";
 import StartBenachrichtigung from "@/components/landing/StartBenachrichtigung";
 import { brevoBereit } from "@/lib/mail/brevo";
-import { ArrowRight, Plane, Database, Lock, Download, Trash2, ShieldCheck, UserCheck } from "lucide-react";
+import { ArrowRight, Plane, Database, Lock, Download, Trash2, ShieldCheck, UserCheck, Landmark, Briefcase, UserPlus, Wrench } from "lucide-react";
 import LandingShell from "@/components/landing/Shell";
 import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
@@ -25,6 +25,45 @@ export const VERTRAUEN = [
   { ico: ShieldCheck, t: "Zwei-Faktor-Anmeldung", p: "Auf Wunsch schützt ein Code aus deiner Authenticator-App das Konto zusätzlich zum Passwort." },
   { ico: Download, t: "Alles exportierbar", p: "Ein Klick in den Einstellungen liefert alle deine Daten als ZIP — du bist nicht an MyImmo gebunden." },
   { ico: Trash2, t: "Kein Datenhandel", p: "Keine Werbung, kein Tracking, kein Verkauf. Dein Konto lässt sich jederzeit selbst löschen." },
+] as const;
+
+// „Ein Link statt Aktenordner“ (05.10.2026, Wunsch des Betreibers): Wer Unterlagen von dir
+// will, bekommt einen Ordner oder einen Link. Jeder Punkt ist an seinen Beleg gebunden
+// (tests/startseite.test.ts) — der Makler-Ordner hat bewusst KEINEN Link-Satz, weil es dort
+// keinen Freigabe-Link gibt, nur Download je Dokument.
+export const ORDNER = [
+  {
+    ico: Landmark, wer: "Für die Bank", t: "Beleihungsordner je Objekt",
+    punkte: [
+      "Checkliste passt sich an: Eigentumswohnung, vermietet, selbstständig",
+      "Kennblatt, Mietaufstellung und NK-Abrechnung erzeugt MyImmo aus deinen Daten",
+      "Freigabe-Link für 7, 14 oder 30 Tage — jederzeit widerrufbar, die Bank antwortet direkt darüber",
+    ],
+  },
+  {
+    ico: Briefcase, wer: "Für den Makler", t: "Käufer-Ordner",
+    punkte: [
+      "Finanzierungsbestätigung, Eigenkapital, SCHUFA, Einkommen — abhaken mit Fortschritt",
+      "Käufer-Selbstauskunft als PDF aus deinen gespeicherten Angaben",
+      "Jedes Dokument einzeln herunterladen und dem Makler schicken",
+    ],
+  },
+  {
+    ico: UserPlus, wer: "Für Mietinteressenten", t: "Bewerbungs-Link je Wohnung",
+    punkte: [
+      "Oben der Steckbrief der Wohnung, darunter Selbstauskunft und Unterlagen",
+      "Bewerber brauchen kein Konto",
+      "Favorit markieren, ablehnen, alte Absagen auf einen Klick löschen",
+    ],
+  },
+  {
+    ico: Wrench, wer: "Für Handwerker", t: "Angebots- und Auftrags-Link",
+    punkte: [
+      "Angebot anfragen: Die Firma antwortet mit Betrag und frühestem Termin",
+      "Auftrag mit allen Details — Kontakt des Mieters nur, wenn du ihn freigibst",
+      "Kein Konto, keine App für die Firma",
+    ],
+  },
 ] as const;
 
 export default function LandingPage({ nl }: { nl?: string } = {}) {
@@ -141,7 +180,8 @@ export default function LandingPage({ nl }: { nl?: string } = {}) {
                   <tr><td>Mieteingang prüfen</td><td className="schlecht">Kontoauszüge durchgehen</td><td className="gut">Mietkonto zeigt offene Monate auf einen Blick</td></tr>
                   <tr><td>Schadensmeldung</td><td className="schlecht">Anruf, Rückruf, Zettel, nochmal Anruf</td><td className="gut">Mieter meldet mit Foto, Hausmeister übernimmt, du gibst frei</td></tr>
                   <tr><td>Fristen</td><td className="schlecht">Im Hinterkopf oder im Papierkalender</td><td className="gut">Werden automatisch aus deinen Daten abgeleitet</td></tr>
-                  <tr><td>Unterlagen fürs Bankgespräch</td><td className="schlecht">Aktenordner zusammensuchen</td><td className="gut">Beleihungsordner mit Deckblatt auf Knopfdruck</td></tr>
+                  <tr><td>Unterlagen fürs Bankgespräch</td><td className="schlecht">Aktenordner zusammensuchen</td><td className="gut">Beleihungsordner mit Deckblatt — als Link für die Bank</td></tr>
+                  <tr><td>Wohnung neu vermieten</td><td className="schlecht">Dutzende Mails mit Anhängen</td><td className="gut">Ein Bewerbungs-Link, alle Bewerbungen an einem Ort</td></tr>
                 </tbody>
               </table>
             </div>
@@ -211,6 +251,37 @@ export default function LandingPage({ nl }: { nl?: string } = {}) {
               <Shot src="/landing/steuer.webp" alt="Steuer-Ansicht mit Anlage-V-Aufstellung je Objekt" />
             </div>
           </Reveal>
+        </div>
+      </section>
+
+      {/* ---------- Ordner & Links für alle, die Unterlagen wollen ---------- */}
+      <section className="lp-section lp-section-alt">
+        <div className="lp-inner">
+          <div className="lp-kopf-editorial">
+            <div className="lp-kicker">Unterlagen teilen</div>
+            <h2 className="lp-h2">Ein Link statt Aktenordner</h2>
+            <p className="lp-section-sub">
+              Bank, Makler, Bewerber, Handwerker — jeder bekommt genau das, was er braucht.
+              Nicht mehr, und ohne dass du Anhänge zusammensuchst.
+            </p>
+          </div>
+          <div className="lp-features lp-ordner">
+            {ORDNER.map((o, i) => (
+              <Reveal key={o.t} delay={i * 60}>
+                <div className="lp-feature" style={{ height: "100%" }}>
+                  <div className="ico"><o.ico size={20} /></div>
+                  <div className="lp-ordner-wer">{o.wer}</div>
+                  <h3>{o.t}</h3>
+                  <ul className="lp-ordner-liste">
+                    {o.punkte.map((p) => <li key={p}>{p}</li>)}
+                  </ul>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <p className="lp-ordner-fuss">
+            Alle Links sind persönlich, erscheinen in keiner Suchmaschine und zeigen nur, was du freigibst.
+          </p>
         </div>
       </section>
 

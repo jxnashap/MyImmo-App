@@ -5,7 +5,7 @@
 // etwas verspricht, das es nicht mehr gibt (§ 5 UWG).
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
-import { VERTRAUEN } from "@/components/LandingPage";
+import { VERTRAUEN, ORDNER } from "@/components/LandingPage";
 
 const lies = (p: string) => readFileSync(p, "utf8");
 const lp = lies("components/LandingPage.tsx");
@@ -64,5 +64,65 @@ describe("Vertrauensabschnitt — jeder Satz belegt", () => {
   it("„kein Tracking“ deckt sich mit der Datenschutzerklärung", () => {
     expect(text).toContain("kein Tracking");
     expect(lies("app/(pub)/datenschutz/page.tsx")).toContain("Kein Tracking, keine Analyse-Tools");
+  });
+});
+
+describe("„Ein Link statt Aktenordner“ — jede Zeile belegt (05.10.2026)", () => {
+  const text = (wer: string) => {
+    const o = ORDNER.find((x) => x.wer === wer);
+    expect(o, wer).toBeTruthy();
+    return `${o!.t} ${o!.punkte.join(" ")}`;
+  };
+
+  it("vier Empfänger, gerendert vor dem Vier-Schritte-Abschnitt", () => {
+    expect(ORDNER.map((o) => o.wer)).toEqual(["Für die Bank", "Für den Makler", "Für Mietinteressenten", "Für Handwerker"]);
+    const i = lp.indexOf("Ein Link statt Aktenordner");
+    expect(i).toBeGreaterThan(0);
+    expect(i).toBeLessThan(lp.indexOf("---------- Prozess in 4 Schritten ----------"));
+  });
+
+  it("Bank: angepasste Checkliste, erzeugte Unterlagen, 7/14/30 Tage, widerrufbar, Rückmeldung", () => {
+    const t = text("Für die Bank");
+    const bel = lies("lib/beleihung.ts");
+    for (const p of ['"etw"', '"vermietet"', '"selbststaendig"', 'auto: "kennblatt"', 'auto: "mietaufstellung"', 'auto: "nk"']) {
+      expect(bel, p).toContain(p);
+    }
+    expect(t).toContain("7, 14 oder 30 Tage");
+    const act = lies("lib/actions/beleihung.ts");
+    expect(act).toContain("[7, 14, 30].includes(tageAblauf)");
+    expect(act).toContain("export async function widerrufeFreigabe(");
+    expect(existsSync("components/BankRueckmeldungForm.tsx")).toBe(true);
+  });
+
+  it("Makler: Checkliste und Selbstauskunft-PDF — aber KEIN Link-Versprechen", () => {
+    const t = text("Für den Makler");
+    const mk = lies("lib/makler.ts");
+    for (const k of ["finanzierungsbestaetigung", "eigenkapitalnachweis", "schufa_bonitaet", "einkommensnachweise"]) expect(mk).toContain(k);
+    expect(lies("lib/actions/makler.ts")).toContain("buildKaeuferSelbstauskunftPdf");
+    expect(lies("components/MaklerOrdner.tsx")).toContain("?download=1");
+    // Einen Freigabe-Link für Makler gibt es nicht — die Startseite darf keinen versprechen.
+    expect(t).not.toMatch(/Link/);
+  });
+
+  it("Bewerber: öffentliche Seite ohne Login, Status, Absagen löschen", () => {
+    expect(text("Für Mietinteressenten")).toContain("kein Konto");
+    expect(lies("app/(app)/bewerben/[token]/page.tsx")).toContain("ÖFFENTLICHE Bewerbungs-Seite");
+    const b = lies("lib/actions/bewerber.ts");
+    expect(b).toContain('status: "neu" | "favorit" | "abgelehnt"');
+    expect(b).toContain("export async function loescheAlteAbgelehnteBewerbungen(");
+  });
+
+  it("Handwerker: Angebots- und Auftrags-Link ohne Login, Mieterkontakt nur auf Freigabe", () => {
+    expect(lies("app/(app)/angebot/[token]/page.tsx")).toContain("kein Login");
+    const auf = lies("app/(app)/auftrag/[token]/page.tsx");
+    expect(auf).toContain("kein Login");
+    expect(auf).toContain("nur wenn der Vermieter den");
+  });
+
+  it("„erscheinen in keiner Suchmaschine“: alle vier öffentlichen Seiten sind noindex", () => {
+    expect(lp).toContain("erscheinen in keiner Suchmaschine");
+    for (const s of ["beleihung", "bewerben", "angebot", "auftrag"]) {
+      expect(lies(`app/(app)/${s}/[token]/page.tsx`), s).toContain("robots: { index: false, follow: false }");
+    }
   });
 });

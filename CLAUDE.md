@@ -936,6 +936,12 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   über die Datenbank. **Grenze:** Eine Adresse, die schon für Vorlagen bestätigt ist, bekommt
   „schon eingetragen“ und behält den Vorlagen-Wortlaut (eine Zeile je Adresse); die
   Startankündigung fällt dort unter „gelegentliche Hinweise für Vermieter“.
+  🔗 **„Ein Link statt Aktenordner“ (05.10.2026, Wunsch des Betreibers):** Startseiten-Abschnitt
+  vor den vier Schritten — Bank (Beleihungsordner, Freigabe-Link 7/14/30 Tage), Makler
+  (Käufer-Ordner), Bewerber (Link je Wohnung), Handwerker (Angebots-/Auftrags-Link); dazu eine
+  Excel-Zeile „Wohnung neu vermieten“. `ORDNER` in `components/LandingPage.tsx`, jede Zeile per
+  `tests/startseite.test.ts` an den Code gebunden. **Der Makler-Ordner hat KEINEN Freigabe-Link**
+  (nur Download je Dokument) — der Test verbietet das Wort „Link“ in dieser Karte.
   ✅ **Phase 1 (Startseite) erledigt 01.10.2026:** Hero „Deine Immobilien. Ein System. Von überall.“
   (geschützte Leerzeichen, sonst „Ein / System.“ — im Browser gesehen), Kennzahl „1–24 Einheiten“
   statt „13+ Funktionen“, Abschnitt „Deine Daten gehören dir“ (`VERTRAUEN` in
