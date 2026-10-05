@@ -503,6 +503,17 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Aufgaben“ auf dem Dashboard als `.listen-zeile` (Titel, darunter Mieter/Objekt — viele Aufgaben
   heißen gleich, der Unterschied darf nicht hinter „…“ verschwinden; Fristdatum rechts, rot wenn
   dringend). `.heute-zeile` ist entfernt.
+- ✉️ **Mahnung/Zahlungserinnerung versenden (05.10.2026, Vorgabe des Betreibers: „wir halten uns
+  aus dem Mailverkehr raus“).** Brief-Generator → „An den Mieter senden“ (`components/BriefVersand.tsx`):
+  **Per Mail** = PDF erzeugen, am Handy über „Teilen“ direkt angehängt, sonst Download + `mailto:`
+  mit Empfänger/Betreff/Text (`briefMailLink` in `lib/mahnung.ts`; Anhang muss der Vermieter selbst
+  anfügen — mailto kann keine Anhänge). **Ins Mieterportal** = Bestätigungskarte
+  (`pruefeBriefZustellung`) → `speichereBrief(…, { zustellen, bestaetigung })` mit derselben
+  Schranke wie die NK-Abrechnung. Dashboard: neben „Mieteingang … offen“ der Knopf „Erinnerung
+  schreiben“ — erst NACH dem dritten Werktag (`mieteUeberfaellig`), nie in einem Bündel; das
+  Mietkonto zeigt Erinnerung/Mahnung ebenfalls erst ab dem Folgetag. **Regeln:** (1) MyImmo
+  verschickt Briefe an Mieter NIE über Brevo. (2) Eine Adresse kommt nur in den mailto-Link, wenn
+  sie dem einfachen Muster entspricht (kein `?bcc=` durch die Hintertür). `tests/mahnung.test.ts`.
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
   (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor

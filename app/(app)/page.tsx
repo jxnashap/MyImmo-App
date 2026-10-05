@@ -190,12 +190,14 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     .filter((m) => !gebuchtDiesenMonat.has(m.id as string))
     // Nur Mieter, für die dieser Monat überhaupt eine Soll-Miete hat
     // (Einzug/Auszug, Miet-Zeiträume) — sonst stünde jeder Altmieter hier.
-    .filter((m) => erwarteteMonate(m as never, zeitraeumeVon(m.id as string), laufenderMonat, laufenderMonat).length > 0)
-    .map((m) => ({
+    .map((m) => ({ m, soll: erwarteteMonate(m as never, zeitraeumeVon(m.id as string), laufenderMonat, laufenderMonat)[0] }))
+    .filter(({ soll }) => !!soll)
+    .map(({ m, soll }) => ({
       mieterId: m.id as string,
       name: mieterNameOf.get(m.id as string) ?? "Mieter",
       objekt: (m.prop_id && nameOf.get(m.prop_id)) || "",
       monat: laufenderMonat,
+      betrag: soll.gesamt,
     }));
 
   const offeneAnliegen: OffenesAnliegen[] = ((anlRows ?? []) as { id: string; titel: string | null; created_at: string; mieter_name: string | null }[])
@@ -563,11 +565,12 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                     // eine Zahl ohne Aussage). Dringendes erkennt man am roten Symbol und Datum.
                     const Icon = AUFGABEN_ICON[a.art];
                     const farbe = a.dringend ? "var(--red)" : "var(--gold)";
-                    return (
+                    const zeile = (
                       <Link
                         key={`${a.art}-${a.href}-${a.label}-${a.sub}`}
                         href={a.href}
                         className="listen-zeile"
+                        style={a.neben ? { flex: 1, minWidth: 0 } : undefined}
                         title={`${a.label}${a.sub ? ` · ${a.sub}` : ""} — ${a.aktion}`}
                       >
                         <Icon size={15} style={{ color: farbe, flexShrink: 0 }} />
@@ -585,6 +588,15 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                         )}
                         <ChevronRight size={15} color="var(--faint)" style={{ flexShrink: 0 }} />
                       </Link>
+                    );
+                    // Überfällige Miete: die Erinnerung als eigener Knopf NEBEN der Zeile — ein Link
+                    // im Link wäre ungültiges HTML (lib/mahnung.ts baut Ziel, Betrag und Frist).
+                    if (!a.neben) return zeile;
+                    return (
+                      <div key={`${a.art}-${a.href}-${a.label}-${a.sub}`} className="aufgabe-mit-aktion">
+                        {zeile}
+                        <Link href={a.neben.href} className="btn btn-ghost aufgabe-aktion">{a.neben.label}</Link>
+                      </div>
                     );
                   })}
                 </div>

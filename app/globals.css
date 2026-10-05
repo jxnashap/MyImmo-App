@@ -449,6 +449,15 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 .listen-zeile-datum { font-size: 12px; color: var(--faint); white-space: nowrap; }
 /* Dieselbe Zeile als Knopf (öffnet einen Dialog statt einer Seite) und mit Zahlenspalten
    (Kredite, Objekte, Mieter — 03.10.2026, „die ganze App so“). */
+/* Aufgabe mit zweiter Handlung (überfällige Miete → „Erinnerung schreiben“, lib/mahnung.ts). */
+/* Versand eines Briefs (components/BriefVersand.tsx): Mail aus dem eigenen Programm oder Mieterportal. */
+.versand-box { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg2); }
+.versand-hinweis { font-size: 12px; color: var(--muted); margin: 8px 0 0; line-height: 1.5; }
+.versand-karte { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--bg3); border: 1px solid var(--line2); font-size: 13px; line-height: 1.5; }
+.versand-fehler { color: var(--red); }
+.aufgabe-mit-aktion { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+.aufgabe-mit-aktion > .listen-zeile { border-bottom: 0; margin-right: 0; }
+.aufgabe-aktion { font-size: 12px; padding: 5px 10px; white-space: nowrap; flex-shrink: 0; color: var(--red); }
 button.listen-zeile { width: calc(100% + 20px); background: none; border: 0; border-bottom: 1px solid var(--line); font: inherit; text-align: left; cursor: pointer; }
 .listen-zeile-text { flex: 1; min-width: 0; }
 .listen-zeile-zahl { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 84px; }
