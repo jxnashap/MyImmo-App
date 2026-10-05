@@ -7,6 +7,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { MAKLER_COOKIE, maklerCodeHash } from "@/lib/maklerCode";
+import { FREIGABE_PFAD } from "@/lib/freigabeCode";
 import { istMaklerCodeFormat, normalisiereMaklerCode } from "@/lib/makler";
 
 export async function meldeMaklerAn(token: string, code: string): Promise<{ ok: true } | { error: string }> {
@@ -25,7 +26,7 @@ export async function meldeMaklerAn(token: string, code: string): Promise<{ ok: 
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: `/makler-link/${token}`,
+    path: FREIGABE_PFAD.makler(token),
     maxAge: 31 * 24 * 3600, // Ablauf des Links prüft ohnehin die Datenbank
   });
   return { ok: true };

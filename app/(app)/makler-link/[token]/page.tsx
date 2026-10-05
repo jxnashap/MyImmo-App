@@ -7,7 +7,8 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { MAKLER_COOKIE } from "@/lib/maklerCode";
-import MaklerCodeFormular from "@/components/MaklerCodeFormular";
+import ZugangsCodeFormular from "@/components/ZugangsCodeFormular";
+import { meldeMaklerAn } from "@/lib/actions/maklerLinkPublic";
 import { MAKLER_CHECKLISTE } from "@/lib/makler";
 import { Lock, FileText } from "lucide-react";
 import OeffentlicheFusszeile from "@/components/OeffentlicheFusszeile";
@@ -64,7 +65,7 @@ export default async function MaklerLinkSeite(props: { params: Promise<{ token: 
     return (
       <div style={{ maxWidth: 560, margin: "60px auto", padding: 24 }}>
         <Kopf />
-        <MaklerCodeFormular token={params.token} gesperrt={status === "gesperrt"} />
+        <ZugangsCodeFormular token={params.token} gesperrt={status === "gesperrt"} anmelden={meldeMaklerAn} />
       </div>
     );
   }
