@@ -7,7 +7,7 @@
 // WIE ERHOBEN (05.10.2026): Preise von den Produktseiten (schema.org-Preis, ohne Streichpreis) bei
 // OBI, toom und Globus, je mit zweiter Quelle zur Gegenprüfung. Hornbach und Bauhaus blockieren
 // automatische Abrufe — dort nichts übernommen. Verbrauch aus den technischen Merkblättern der
-// Hersteller; Knauf, Alpina und Henkel stichprobenhaft selbst nachgelesen.
+// Hersteller; Knauf, Alpina, Henkel und Lugato stichprobenhaft selbst nachgelesen.
 // Verschnitt (lib/sanierung/rechner.ts) ist eine Annahme, keine Herstellerangabe.
 
 import type { Katalog } from "@/lib/sanierung/rechner";
@@ -150,5 +150,79 @@ export const KATALOG: Katalog = {
     verbrauch: { min: 1, max: 1 },
     preis: 8.99,
     quelle: { preis: "OBI 8,99 €, toom vergleichbar 10,99 €", verbrauch: "Raumumfang", stand: KATALOG_STAND },
+  },
+  // https://www.obi.de/p/1473271/bodenfliese-feinsteinzeug-iron-grey-grau-glasiert-matt-60-cm-x-60-cm (28,78 € / 1,44 m²)
+  // Vergleich: https://www.globus-baumarkt.de/p/bodenfliese-feinsteinzeug-beton-60-x-60-cm-grau-0776057961/ 17,99 €/m²,
+  // toom Metro 60 × 60 17,99 €/m². Eine identische Fliese bei zwei Märkten gibt es nicht — nur die Spanne.
+  // Für Wände gilt derselbe Preis; Steingut-Wandfliesen kosten bei OBI/Globus 9,99–22,99 €/m².
+  fliese: {
+    id: "fliese",
+    name: "Fliesen (Feinsteinzeug 60 × 60)",
+    produkt: "OBI Iron grey 60 × 60 cm",
+    einheit: "m²",
+    gebinde: 1.44,
+    gebindeName: "Paket 1,44 m²",
+    verbrauch: { min: 1, max: 1 },
+    preis: 28.78,
+    quelle: {
+      preis: "OBI 28,78 € je Paket (19,99 €/m²); vergleichbar Globus und toom je 17,99 €/m², üblich rund 18–23 €/m²",
+      verbrauch: "Fliesenfläche",
+      stand: KATALOG_STAND,
+    },
+  },
+  // https://www.obi.de/p/1766096/pci-flexmoertel-fliesenkleber-25-kg · toom 54,99 €
+  // PCI Merkblatt 9/25: „ca. 2,8 kg/m²“ bei Zahnung 8 mm, „ca. 3,6 kg/m²“ bei 10 mm (leicht profilierte Fliesen).
+  // Für Großformate verlangt die Praxis oft zusätzlich Kleber auf der Fliesenrückseite — dafür nennt PCI keine Zahl.
+  fliesenkleber: {
+    id: "fliesenkleber",
+    name: "Fliesenkleber (Flex)",
+    produkt: "PCI Flexmörtel 25 kg",
+    einheit: "kg",
+    gebinde: 25,
+    gebindeName: "Sack 25 kg",
+    verbrauch: { min: 2.8, max: 3.6 },
+    preis: 48.99,
+    quelle: {
+      preis: "OBI 48,99 €, toom 54,99 €",
+      verbrauch: "PCI: ca. 2,8 kg/m² (Zahnung 8 mm) bis 3,6 kg/m² (10 mm); große Fliesen brauchen eher mehr",
+      stand: KATALOG_STAND,
+    },
+  },
+  // https://www.obi.de/p/8242257/lugato-fugenmoertel-fugengrau-5-kg-zementgrau (Marktplatz-Preis; Hornbach 9,95 € nur aus
+  // einer Suchzusammenfassung). Lugato Merkblatt 08/2026 (https://www.lugato.de/fileadmin/user_upload/fg_tm_DE_rz.pdf):
+  // 30 × 60 cm, 10 mm dick, Fuge 5 mm → „ca. 0,41 kg/m²“; 60 × 60 cm, 10 mm, Fuge 3 mm → „ca. 0,16 kg/m²“.
+  fugenmoertel: {
+    id: "fugenmoertel",
+    name: "Fugenmörtel",
+    produkt: "Lugato Fugengrau 5 kg",
+    einheit: "kg",
+    gebinde: 5,
+    gebindeName: "Eimer 5 kg",
+    verbrauch: { min: 0.16, max: 0.41 },
+    preis: 9.99,
+    quelle: {
+      preis: "OBI 9,99 €, Hornbach rund 9,95 €",
+      verbrauch: "Lugato: ca. 0,16 kg/m² (60 × 60, Fuge 3 mm) bis 0,41 kg/m² (30 × 60, Fuge 5 mm); bei Fußbodenheizung empfiehlt Lugato einen flexiblen Fugenmörtel",
+      stand: KATALOG_STAND,
+    },
+  },
+  // https://www.obi.de/p/1892728/knauf-sanitaer-silikon-weiss-300-ml · toom 11,99 € (andere EAN)
+  // Knauf Datenblatt 09/2026 (https://bilder.obi.de/a61db67b-d0ee-4f0a-bea4-0fe9c08ddc23/document.pdf):
+  // „Verbrauch Fugenmeter pro Kartusche bei 6 x 6 mm Fugenbreite = 8 m“ (ein älteres toom-Blatt nennt 12 m — 300 ml ÷ 36 ml/m
+  // ergibt 8,3 m, deshalb 8 m).
+  silikon: {
+    id: "silikon",
+    name: "Sanitär-Silikon",
+    produkt: "Knauf Sanitär-Silikon 300 ml",
+    einheit: "m",
+    gebinde: 8,
+    gebindeName: "Kartusche 300 ml",
+    verbrauch: { min: 1, max: 1 },
+    preis: 11.79,
+    quelle: {
+      preis: "OBI 11,79 €, toom 11,99 €",
+      verbrauch: "Knauf: 8 m Fuge je Kartusche bei 6 × 6 mm — gerechnet für die Fuge zwischen Boden und Wand",
+      stand: KATALOG_STAND,
+    },
   },
 };

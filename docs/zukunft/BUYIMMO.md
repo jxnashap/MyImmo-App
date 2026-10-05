@@ -79,6 +79,17 @@ dieselbe Fläche gefliest UND gestrichen. Öffnungen zählen anteilig zur Fliese
 gleichmäßig über die Höhe verteilt). Verschnitt Fliese 10–15 % ist eine Annahme. Der Fliesenpreis
 schwankt je Fliese stark — der Katalogwert ist eine einfache Standardfliese, die Oberfläche bittet
 um den eigenen Preis.
+Katalog (Stand 05.10.2026, URLs in `lib/sanierung/katalog.ts`): Feinsteinzeug 60 × 60 OBI 28,78 € je
+1,44 m² (üblich 18–23 €/m²) · PCI Flexmörtel 25 kg 48,99 €, **2,8–3,6 kg/m²** (Zahnung 8–10 mm laut
+PCI) · Lugato Fugengrau 5 kg 9,99 €, **0,16–0,41 kg/m²** (Lugato-Tabelle: 60 × 60/3 mm bis
+30 × 60/5 mm) · Knauf Sanitär-Silikon 11,79 €, **8 m je Kartusche** (Datenblatt 09/2026; ein älteres
+Blatt sagt 12 m — 300 ml ÷ 36 ml/m ergibt 8,3 m). **Grenzen:** Wandfliesen werden mit dem Preis der
+Bodenfliese gerechnet (Steingut-Wandfliesen 9,99–22,99 €/m²); für Großformate verlangt die Praxis
+oft zusätzlich Kleber auf der Rückseite — dafür nennt PCI keine Zahl; Silikon läuft über den ganzen
+Umfang, auch über die Türbreite (rechnet leicht zu viel). Im Browser gegen eine Handrechnung
+geprüft (Bad 2,5 × 2 m, Fliesen bis 1,20 m: 532–620 € Material).
+**Raum kopieren** (gleicher Tag): Knopf an jedem Raum, die Kopie steht direkt darunter
+(„… (Kopie)“) — für gleich große Zimmer. Gebinde werden weiter über ALLE Räume gerundet.
 
 **Übergabe an den Kauf-Assistenten (gebaut 05.10.2026):** Knopf „… in den Kauf-Assistenten“
 → `/kauf?sanierung=<obere Spanne>` (`lib/sanierung/uebergabe.ts`: nur ganze Euro, 1 bis 10 Mio.,

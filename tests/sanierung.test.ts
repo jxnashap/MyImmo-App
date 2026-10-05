@@ -207,7 +207,7 @@ describe("Eingabe: Formular → Rechnung, Entwurf aus dem Browser", () => {
   it("liest Komma und Punkt, leere Felder als 0; leerer Preis = Katalog, „0“ ist ein Preis", async () => {
     const { zuEingabe } = await import("@/lib/sanierung/eingabe");
     const e = zuEingabe({
-      raeume: [{ id: "a", name: "Küche", laenge: "3,45", breite: "2.8", hoehe: "", oeffnungen: "1,5", massnahmen: ["spachteln"] }],
+      raeume: [{ id: "a", name: "Küche", laenge: "3,45", breite: "2.8", hoehe: "", oeffnungen: "1,5", fliesenhoehe: "", massnahmen: ["spachteln"] }],
       lohn: [{ id: "l", bezeichnung: "Ich", stunden: "100", satz: "30,50" }],
       eigene: [{ id: "p", bezeichnung: "Bad", betrag: "8.000" }],
       preise: { wandfarbe: "", spachtel: "0", tiefengrund: "19,99" },
