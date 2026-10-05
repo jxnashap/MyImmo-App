@@ -23,6 +23,7 @@ import AnliegenManager, { AnliegenDetail, type AnliegenVermieterRow, type Angebo
 import type { Angebot, Angebotsanfrage } from "@/lib/angebote";
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
 import BewerbungenManager, { type BewerberLinkRow, type BewerbungRow } from "@/components/BewerbungenManager";
+import { AUFTRAG_NOTIZ_SPALTEN, notizenJeAuftrag, type AuftragNotiz } from "@/lib/auftragNotizen";
 import ServiceManager, { type ServicePartnerRow, type ServiceCodeRow, type AuftragRow, type FirmaRow, type FirmenRueckmeldung } from "@/components/ServiceManager";
 
 type FirmenRueckmeldungRow = FirmenRueckmeldung & { auftrag_id: string };
@@ -59,7 +60,7 @@ export default async function AnliegenPage(
     supabase.from("service_zugaenge").select("user_id,firma,email,created_at,rolle").order("created_at", { ascending: false }),
     supabase.from("einladungscodes").select("code,gueltig_bis").eq("rolle", "service").is("eingeloest_am", null).gt("gueltig_bis", new Date().toISOString()).order("created_at", { ascending: false }),
     // rechnung_data (Base64) bewusst NICHT laden — nur Metadaten für die Liste.
-    supabase.from("auftraege").select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,service_user_id,erstellt_von,firma_id,mieter_id,public_token,betrag,lohnanteil,rechnung_name,kosten_id,kosten_schaetzung,auto_freigegeben").order("created_at", { ascending: false }).limit(100),
+    supabase.from("auftraege").select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,service_user_id,erstellt_von,firma_id,mieter_id,public_token,betrag,lohnanteil,rechnung_name,kosten_id,kosten_schaetzung,auto_freigegeben,vorgeschlagene_firma_id").order("created_at", { ascending: false }).limit(100),
     supabase.from("firmen").select("id,name,gewerk,telefon,email,website,notiz").order("name"),
     // Welcher Partner betreut welche Objekte (Migration 20261005100000).
     supabase.from("service_objekte").select("service_user_id,prop_id"),
@@ -184,6 +185,11 @@ export default async function AnliegenPage(
     rueckProAuftrag.set(r.auftrag_id, liste);
   }
 
+  // Verlauf der Aufträge (Notizen, Fotos des Hausmeisters) — ohne Bilddaten.
+  const { data: notizRows } = auftragIds.length
+    ? await supabase.from("auftrag_notizen").select(AUFTRAG_NOTIZ_SPALTEN).in("auftrag_id", auftragIds).order("created_at")
+    : { data: [] };
+  const notizenJe = notizenJeAuftrag((notizRows ?? []) as AuftragNotiz[]);
   const auftraege: AuftragRow[] = (auftragRows ?? []).map((a) => ({
     id: a.id, titel: a.titel, beschreibung: a.beschreibung, termin: a.termin,
     status: a.status, antwort: a.antwort, created_at: a.created_at,
@@ -199,6 +205,8 @@ export default async function AnliegenPage(
     kosten_schaetzung: a.kosten_schaetzung == null ? null : Number(a.kosten_schaetzung),
     auto_freigegeben: a.auto_freigegeben === true,
     rueckmeldungen: rueckProAuftrag.get(a.id) ?? [],
+    vorgeschlageneFirma: firmen.find((f) => f.id === a.vorgeschlagene_firma_id)?.name ?? null,
+    notizen: notizenJe.get(a.id) ?? [],
   }));
   // Badge: nur was auf DICH wartet — dieselbe Definition wie in der
   // Seitenleiste (lib/neuigkeiten.ts). Aufträge im Status „offen" liegen beim

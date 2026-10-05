@@ -7,6 +7,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { zahlDe } from "@/lib/zahl";
+import { fachbetriebPflicht } from "@/lib/fachbetriebPflicht";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // ohne 0/O, 1/I/L
 
@@ -348,11 +349,27 @@ export async function entscheideAuftrag(id: string, freigeben: boolean, mieterId
     mieterOk = m.id;
   }
 
+  // Vorschlag des Hausmeisters („Fachbetrieb nötig“) wird mit der Freigabe zur Firma des
+  // Auftrags — nur, wenn die Firma zum eigenen Verzeichnis gehört und noch keine gesetzt ist.
+  let firmaAusVorschlag: string | null = null;
+  if (freigeben) {
+    const { data: a, error: aFehler } = await supabase
+      .from("auftraege").select("firma_id,vorgeschlagene_firma_id").eq("id", id).eq("vermieter_id", user.id).maybeSingle();
+    if (aFehler || !a) return { error: "Auftrag nicht gefunden." };
+    if (!a.firma_id && a.vorgeschlagene_firma_id) {
+      const { data: f, error: fFehler } = await supabase
+        .from("firmen").select("id").eq("id", a.vorgeschlagene_firma_id).eq("user_id", user.id).maybeSingle();
+      if (fFehler) return { error: "Vorgeschlagene Firma konnte nicht geprüft werden — nichts freigegeben." };
+      firmaAusVorschlag = f?.id ?? null;
+    }
+  }
+
   const { data, error } = await supabase
     .from("auftraege")
     .update({
       status: freigeben ? "offen" : "nicht_freigegeben",
       ...(mieterOk ? { mieter_id: mieterOk } : {}),
+      ...(firmaAusVorschlag ? { firma_id: firmaAusVorschlag } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -419,6 +436,15 @@ export async function beantworteAuftrag(formData: FormData) {
   };
 
   if (status === "erledigt") {
+    // Gas, Strom, Trinkwasser, Schornstein: „selbst erledigt“ gibt es dort nicht — erst mit
+    // einem (vom Vermieter freigegebenen) Fachbetrieb am Auftrag (lib/fachbetriebPflicht.ts).
+    const { data: a, error: aFehler } = await supabase
+      .from("auftraege").select("titel,beschreibung,firma_id").eq("id", id).eq("service_user_id", user.id).maybeSingle();
+    if (aFehler || !a) return { error: "Auftrag nicht gefunden." };
+    const pflicht = fachbetriebPflicht(a.titel, a.beschreibung);
+    if (pflicht && !a.firma_id) {
+      return { error: `${pflicht.grund} Bitte „Fachbetrieb nötig“ wählen — der Vermieter gibt die Firma frei.` };
+    }
     const betrag = parseBetrag(String(formData.get("betrag") ?? ""));
     const lohnanteil = parseBetrag(String(formData.get("lohnanteil") ?? ""));
     if (lohnanteil != null && betrag == null) return { error: "Lohnanteil ohne Gesamtbetrag — bitte auch den Betrag angeben." };
@@ -583,6 +609,88 @@ export async function setzeKostengrenze(formData: FormData) {
     .select("user_id")
     .maybeSingle();
   if (error || !data) return { error: "Kostengrenze konnte nicht gespeichert werden." };
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
+// Fotos am Auftrag: gleiche Grenzen wie die Datenbank (Migration 20261005110000).
+const FOTO_MAX = 4 * 1024 * 1024;
+const FOTO_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+
+/**
+ * Notiz oder Foto am Auftrag (05.10.2026) — vom Vermieter oder vom Partner, dem der Auftrag
+ * gehört. Die Rolle ergibt sich aus dem Auftrag, nie aus dem Formular.
+ */
+export async function fuegeAuftragNotizHinzu(formData: FormData): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const auftragId = String(formData.get("auftragId") ?? "");
+  const text = String(formData.get("text") ?? "").trim().slice(0, 2000);
+  const foto = formData.get("foto");
+  const hatFoto = foto instanceof File && foto.size > 0;
+  if (!auftragId) return { error: "Auftrag fehlt." };
+  if (!text && !hatFoto) return { error: "Bitte eine Notiz schreiben oder ein Foto wählen." };
+  if (hatFoto && foto.size > FOTO_MAX) return { error: "Das Foto ist größer als 4 MB." };
+  if (hatFoto && !FOTO_MIME.includes(foto.type)) return { error: "Nur Fotos (JPG, PNG, WebP, HEIC)." };
+
+  const { data: a, error: aFehler } = await supabase
+    .from("auftraege").select("vermieter_id,service_user_id").eq("id", auftragId).maybeSingle();
+  if (aFehler || !a) return { error: "Auftrag nicht gefunden." };
+  const rolle = a.vermieter_id === user.id ? "vermieter" : a.service_user_id === user.id ? "service" : null;
+  if (!rolle) return { error: "Auftrag nicht gefunden." };
+
+  const { error } = await supabase.from("auftrag_notizen").insert({
+    auftrag_id: auftragId,
+    vermieter_id: a.vermieter_id,
+    autor_id: user.id,
+    autor_rolle: rolle,
+    art: hatFoto ? "foto" : "notiz",
+    text: text || null,
+    ...(hatFoto
+      ? {
+          datei_name: foto.name.slice(0, 200),
+          datei_type: foto.type,
+          datei_size: foto.size,
+          datei_data: Buffer.from(await foto.arrayBuffer()).toString("base64"),
+        }
+      : {}),
+  });
+  if (error) return { error: "Notiz konnte nicht gespeichert werden." };
+  revalidatePath("/service");
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
+/**
+ * Hausmeister: „Kann ich nicht selbst — Fachbetrieb nötig“ (05.10.2026). Er SCHLÄGT eine Firma
+ * vor (Entscheidung des Betreibers: nie selbst beauftragen); der Auftrag geht zurück in die
+ * Freigabe, der Vermieter entscheidet. Die Datenbank prüft Rolle, Status und Firma.
+ */
+export async function meldeFachbetriebNoetig(formData: FormData): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const auftragId = String(formData.get("auftragId") ?? "");
+  const firmaId = String(formData.get("firmaId") ?? "").trim() || null;
+  const text = String(formData.get("text") ?? "").trim();
+  const schaetzungRoh = String(formData.get("kostenSchaetzung") ?? "").trim();
+  const schaetzung = schaetzungRoh ? parseBetrag(schaetzungRoh) : null;
+  if (!auftragId) return { error: "Auftrag fehlt." };
+  if (text.length < 3) return { error: "Bitte kurz begründen, warum ein Fachbetrieb nötig ist." };
+  if (schaetzungRoh && schaetzung == null) return { error: "Bitte die geschätzten Kosten als Betrag angeben (z. B. 280)." };
+
+  const { data, error } = await supabase.rpc("auftrag_fachbetrieb_vorschlagen", {
+    p_auftrag: auftragId,
+    p_firma: firmaId,
+    p_schaetzung: schaetzung,
+    p_text: text.slice(0, 2000),
+  });
+  if (error) return { error: error.code === "22023" ? error.message : "Vorschlag konnte nicht gesendet werden." };
+  if (data !== true) return { error: "Nur möglich, solange der Auftrag offen oder angenommen ist — und nur als Hausmeister." };
+  revalidatePath("/service");
   revalidatePath("/anliegen");
   return { ok: true };
 }

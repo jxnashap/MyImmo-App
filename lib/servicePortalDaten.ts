@@ -11,9 +11,10 @@
 // Partner. tests/demoService.test.ts prüft sie.
 import type { PortalAuftragRow, PortalFirmaRow, AuftraggeberRow } from "@/components/AuftraegePortal";
 import { datum } from "@/lib/format";
+import { AUFTRAG_NOTIZ_SPALTEN, notizenJeAuftrag, type AuftragNotiz } from "@/lib/auftragNotizen";
 
 export const SERVICE_AUFTRAG_SPALTEN =
-  "id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,vermieter_name,erstellt_von,firma_id,mieter_id,public_token,vermieter_id";
+  "id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,vermieter_name,erstellt_von,firma_id,mieter_id,public_token,vermieter_id,vorgeschlagene_firma_id";
 export const SERVICE_FIRMA_SPALTEN = "id,name,gewerk,telefon,email,website,notiz";
 
 /** Rolle je Verknüpfung (Migration 20261005100000): Hausmeister betreut Objekte und stellt
@@ -83,7 +84,17 @@ export async function ladeServicePortalDaten(supabase: Db, quelle: ServiceQuelle
     objekte = (objektRows ?? []) as ServiceObjekt[];
   }
 
-  const auftraege = (auftragRows ?? []) as (PortalAuftragRow & { vermieter_id?: string })[];
+  const roh = (auftragRows ?? []) as (PortalAuftragRow & { vermieter_id?: string })[];
+  // Verlauf (Notizen, Fotos) der geladenen Aufträge — ohne Bilddaten; die liefert die Route.
+  let notizen: AuftragNotiz[] = [];
+  if (roh.length > 0) {
+    let nq = supabase.from("auftrag_notizen").select(AUFTRAG_NOTIZ_SPALTEN).in("auftrag_id", roh.map((a) => a.id));
+    if (alsV) nq = nq.eq("vermieter_id", alsV);
+    const { data: nRows } = await nq.order("created_at");
+    notizen = (nRows ?? []) as AuftragNotiz[];
+  }
+  const jeAuftrag = notizenJeAuftrag(notizen);
+  const auftraege = roh.map((a) => ({ ...a, notizen: jeAuftrag.get(a.id) ?? [] }));
   const z = (zugaenge ?? []) as ServicePortalDaten["zugaenge"];
   // Anzeigename je Auftraggeber: der denormalisierte Vermietername aus einem
   // Auftrag (der Partner hat keinen RLS-Zugriff auf vermieter_profil).

@@ -20,6 +20,8 @@ import { teilbarerLink } from "@/lib/appUrl";
 import { useToast } from "@/components/Toast";
 import { actionFehler } from "@/lib/actionErgebnis";
 import { VORSCHAU_NICHT_GESENDET } from "@/components/AuftraegePortal";
+import AuftragVerlauf from "@/components/AuftragVerlauf";
+import type { AuftragNotiz } from "@/lib/auftragNotizen";
 
 export type ServicePartnerRow = {
   user_id: string; firma: string | null; email: string | null; created_at: string;
@@ -45,6 +47,10 @@ export type AuftragRow = {
   kosten_schaetzung?: number | null; auto_freigegeben?: boolean;
   /** Rueckmeldungen der Firma ueber den oeffentlichen Auftrags-Link. */
   rueckmeldungen?: FirmenRueckmeldung[];
+  /** Firma, die der Hausmeister mit „Fachbetrieb nötig“ vorschlägt (wird mit der Freigabe übernommen). */
+  vorgeschlageneFirma?: string | null;
+  /** Verlauf: Notizen und Fotos (lib/auftragNotizen.ts). */
+  notizen?: AuftragNotiz[];
 };
 export type FirmenRueckmeldung = {
   id: string; art: "zusage" | "absage" | "rueckfrage";
@@ -590,6 +596,11 @@ export default function ServiceManager({
                     <DeleteButton action={() => loescheAuftrag(a.id)} className="delete-btn" label={<Trash2 size={13} />} confirmText="Auftrag löschen?" />
                   </div>
                   {a.beschreibung && <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, whiteSpace: "pre-wrap" }}>{a.beschreibung}</p>}
+                  {a.status === "freigabe" && a.vorgeschlageneFirma && (
+                    <p style={{ fontSize: 12, marginTop: 6 }}>
+                      Vorschlag des Hausmeisters: <span className="badge badge-teal">{a.vorgeschlageneFirma}</span> — wird mit der Freigabe zur Firma des Auftrags.
+                    </p>
+                  )}
                   {a.status === "freigabe" && (
                     <div style={{ marginTop: 8 }}>
                       <FreigabeButtons id={a.id} mieterListe={mieterListe} />
@@ -620,6 +631,14 @@ export default function ServiceManager({
                     );
                   })}
                   <KostenUebernahme a={a} />
+                  <AuftragVerlauf
+                    auftragId={a.id}
+                    notizen={a.notizen ?? []}
+                    ich="vermieter"
+                    partnerName={a.partnerName}
+                    offen={["freigabe", "offen", "angenommen"].includes(a.status)}
+                    vorschau={demo}
+                  />
                 </div>
               );
             })

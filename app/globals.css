@@ -450,6 +450,23 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 /* Dieselbe Zeile als Knopf (öffnet einen Dialog statt einer Seite) und mit Zahlenspalten
    (Kredite, Objekte, Mieter — 03.10.2026, „die ganze App so“). */
 /* Aufgabe mit zweiter Handlung (überfällige Miete → „Erinnerung schreiben“, lib/mahnung.ts). */
+/* Verlauf eines Service-Auftrags (components/AuftragVerlauf.tsx). */
+.auftrag-verlauf { margin-top: 10px; }
+.auftrag-verlauf ul { list-style: none; margin: 0 0 8px; padding: 0 0 0 10px; border-left: 2px solid var(--line); display: grid; gap: 8px; }
+.auftrag-verlauf li { font-size: 12px; display: grid; gap: 3px; }
+.auftrag-verlauf li.ist-fachbetrieb { color: var(--text); }
+.av-kopf { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.av-kopf strong { color: var(--text); }
+.av-datum { margin-left: auto; color: var(--faint); font-size: 11px; }
+.av-text { white-space: pre-wrap; line-height: 1.5; }
+.av-foto img { display: block; max-width: min(240px, 100%); max-height: 180px; border-radius: 10px; border: 1px solid var(--line); object-fit: cover; }
+.av-eingabe { display: grid; gap: 6px; }
+.av-eingabe textarea { font-size: 13px; min-height: 0; }
+.av-knoepfe { display: flex; gap: 8px; justify-content: flex-end; }
+.av-foto-knopf { font-size: 12px; cursor: pointer; }
+.av-fehler { font-size: 12px; color: var(--red); margin: 0; }
+.fachbetrieb-form { display: grid; gap: 8px; padding: 12px; border-radius: 10px; background: var(--bg3); border: 1px solid var(--line); }
+.pflicht-hinweis { font-size: 12px; margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: var(--red-dim, rgba(220,38,38,.08)); color: var(--red); line-height: 1.5; }
 /* Partner-Verwaltung (components/ServiceManager.tsx): eine Zeile je Partner, aufklappbar. */
 .partner-zeile { border-bottom: 1px solid var(--line); }
 .partner-zeile > summary { display: flex; align-items: center; gap: 10px; padding: 11px 0; cursor: pointer; list-style: none; }

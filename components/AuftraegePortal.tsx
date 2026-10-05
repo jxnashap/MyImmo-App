@@ -4,9 +4,12 @@
 // (mit optionaler Rückmeldung an den Vermieter).
 import { useEffect, useState, useTransition } from "react";
 import { Wrench, CalendarDays, Building2, Phone, Mail, Globe, SendHorizonal, Check, Link2 } from "lucide-react";
-import { beantworteAuftrag, beantrageAuftrag } from "@/lib/actions/service";
+import { beantworteAuftrag, beantrageAuftrag, meldeFachbetriebNoetig } from "@/lib/actions/service";
 import { datum } from "@/lib/format";
 import { teilbarerLink } from "@/lib/appUrl";
+import { fachbetriebPflicht } from "@/lib/fachbetriebPflicht";
+import type { AuftragNotiz } from "@/lib/auftragNotizen";
+import AuftragVerlauf from "@/components/AuftragVerlauf";
 
 export type PortalAuftragRow = {
   id: string; titel: string; beschreibung: string | null; termin: string | null;
@@ -14,6 +17,11 @@ export type PortalAuftragRow = {
   objekt_name: string | null; vermieter_name: string | null;
   erstellt_von?: string | null; firma_id?: string | null;
   mieter_id?: string | null; public_token?: string | null;
+  vermieter_id?: string;
+  /** Firma, die der Hausmeister mit „Fachbetrieb nötig“ vorgeschlagen hat. */
+  vorgeschlagene_firma_id?: string | null;
+  /** Verlauf: Notizen und Fotos (lib/auftragNotizen.ts). */
+  notizen?: AuftragNotiz[];
 };
 export type PortalFirmaRow = {
   id: string; name: string; gewerk: string | null; telefon: string | null;
@@ -89,8 +97,55 @@ function FirmenLinkAktionen({
   );
 }
 
-function Eintrag({ a, firmen, vorschau }: { a: PortalAuftragRow; firmen: PortalFirmaRow[]; vorschau: boolean }) {
+/** „Kann ich nicht selbst — Fachbetrieb nötig“: Firma VORSCHLAGEN, der Vermieter entscheidet. */
+function FachbetriebForm({ a, firmen, vorschau, fertig }: { a: PortalAuftragRow; firmen: PortalFirmaRow[]; vorschau: boolean; fertig: () => void }) {
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const senden = (fd: FormData) =>
+    startTransition(async () => {
+      setFehler(null);
+      if (vorschau) return;
+      try {
+        const r = await meldeFachbetriebNoetig(fd);
+        if ("error" in r) setFehler(r.error);
+        else fertig();
+      } catch {
+        setFehler("Konnte nicht gesendet werden.");
+      }
+    });
+  return (
+    <form action={senden} className="fachbetrieb-form">
+      <input type="hidden" name="auftragId" value={a.id} />
+      <div style={{ fontSize: 12, fontWeight: 600 }}>Fachbetrieb nötig — Vorschlag an den Vermieter</div>
+      <textarea name="text" rows={2} maxLength={2000} required placeholder="Warum? z. B. Therme zeigt Störung F28, Gasgeruch, Leitung in der Wand" />
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <select name="firmaId" defaultValue="" style={{ flex: "1 1 200px" }}>
+          <option value="">– Firma vorschlagen (optional) –</option>
+          {firmen.map((f) => <option key={f.id} value={f.id}>{f.name}{f.gewerk ? ` (${f.gewerk})` : ""}</option>)}
+        </select>
+        <input name="kostenSchaetzung" inputMode="decimal" maxLength={20} placeholder="Kosten ca. (€)" style={{ flex: "0 1 140px" }} />
+      </div>
+      <p style={{ fontSize: 11, color: "var(--muted)", margin: 0 }}>
+        Du beauftragst nicht selbst: Der Vermieter gibt frei, lehnt ab oder fragt nach. Danach meldest du dich bei der Firma.
+      </p>
+      {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
+      {vorschau && <p style={{ fontSize: 11, color: "var(--muted)", margin: 0 }}>{VORSCHAU_NICHT_GESENDET}</p>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="submit" className="btn btn-gold" disabled={pending || vorschau}>{pending ? "…" : "Vorschlag senden"}</button>
+        <button type="button" className="btn btn-ghost" onClick={fertig}>Abbrechen</button>
+      </div>
+    </form>
+  );
+}
+
+function Eintrag({ a, firmen, vorschau, darfVorschlagen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[]; vorschau: boolean; darfVorschlagen: boolean }) {
   const firma = a.firma_id ? firmen.find((f) => f.id === a.firma_id) ?? null : null;
+  const vorgeschlagen = !firma && a.vorgeschlagene_firma_id ? firmen.find((f) => f.id === a.vorgeschlagene_firma_id) ?? null : null;
+  // Gas, Strom, Trinkwasser, Schornstein: „selbst erledigt“ gibt es nicht, solange keine Firma am
+  // Auftrag hängt (der Server prüft dasselbe — lib/fachbetriebPflicht.ts).
+  const pflicht = fachbetriebPflicht(a.titel, a.beschreibung);
+  const selbstGesperrt = !!pflicht && !a.firma_id;
+  const [fachbetrieb, setFachbetrieb] = useState(false);
   const [aktion, setAktion] = useState<null | "angenommen" | "erledigt" | "abgelehnt">(null);
   const [text, setText] = useState("");
   const [betrag, setBetrag] = useState("");
@@ -138,7 +193,16 @@ function Eintrag({ a, firmen, vorschau }: { a: PortalAuftragRow; firmen: PortalF
           <FirmaKontakt f={firma} />
         </div>
       )}
-      {(a.status === "offen" || a.status === "angenommen") && a.erstellt_von === "service" && firma && (
+      {a.status === "freigabe" && vorgeschlagen && (
+        <p style={{ fontSize: 12, marginTop: 6, color: "var(--muted)" }}>Dein Vorschlag: <strong>{vorgeschlagen.name}</strong> — wartet auf den Vermieter.</p>
+      )}
+      {selbstGesperrt && (a.status === "offen" || a.status === "angenommen") && (
+        <p className="pflicht-hinweis" role="note">
+          <strong>Nur Fachbetrieb ({pflicht.bereich}).</strong> {pflicht.grund} Bitte nicht selbst daran arbeiten —
+          {darfVorschlagen ? " „Fachbetrieb nötig“ wählen." : " melde dich beim Vermieter."}
+        </p>
+      )}
+      {(a.status === "offen" || a.status === "angenommen") && firma && (
         <p style={{ fontSize: 12, marginTop: 6, padding: "6px 10px", background: "var(--green-dim)", color: "var(--green)", borderRadius: 6 }}>
           {a.mieter_id
             ? "Vom Vermieter freigegeben — jetzt die Firma anrufen oder ihr den Auftrags-Link per E-Mail schicken; den Termin stimmt die Firma direkt mit dem Mieter ab."
@@ -197,24 +261,42 @@ function Eintrag({ a, firmen, vorschau }: { a: PortalAuftragRow; firmen: PortalF
               </div>
             </div>
           ) : (
+            fachbetrieb ? (
+              <FachbetriebForm a={a} firmen={firmen} vorschau={vorschau} fertig={() => setFachbetrieb(false)} />
+            ) : (
             <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
               {a.status === "offen" && (
                 <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--blue)" }} onClick={() => setAktion("angenommen")}>
                   Annehmen
                 </button>
               )}
-              <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--green)" }} onClick={() => setAktion("erledigt")}>
-                Erledigt melden
-              </button>
+              {!selbstGesperrt && (
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--green)" }} onClick={() => setAktion("erledigt")}>
+                  {firma ? "Erledigt melden" : "Selbst erledigt"}
+                </button>
+              )}
+              {darfVorschlagen && !firma && (
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--amber)" }} onClick={() => setFachbetrieb(true)}>
+                  Fachbetrieb nötig
+                </button>
+              )}
               {a.status === "offen" && (
                 <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--red)" }} onClick={() => setAktion("abgelehnt")}>
                   Ablehnen
                 </button>
               )}
             </span>
+            )
           )}
         </div>
       )}
+      <AuftragVerlauf
+        auftragId={a.id}
+        notizen={a.notizen ?? []}
+        ich="service"
+        offen={["freigabe", "offen", "angenommen"].includes(a.status)}
+        vorschau={vorschau}
+      />
     </div>
   );
 }
@@ -354,6 +436,10 @@ export default function AuftraegePortal({
   const erledigte = auftraege.filter((a) => ["erledigt", "abgelehnt", "nicht_freigegeben"].includes(a.status));
   // Anträge stellt nur ein Hausmeister — die Datenbank prüft dieselbe Rolle.
   const alsHausmeister = auftraggeber.filter((a) => (a.rolle ?? "hausmeister") === "hausmeister");
+  const hausmeisterBei = new Set(alsHausmeister.map((a) => a.vermieter_id));
+  // Ohne Vermieter-ID (ältere Zeilen) zählt die einzige Verknüpfung.
+  const darf = (a: PortalAuftragRow) =>
+    a.vermieter_id ? hausmeisterBei.has(a.vermieter_id) : alsHausmeister.length === auftraggeber.length && alsHausmeister.length > 0;
   return (
     <>
       {alsHausmeister.length > 0 ? (
@@ -379,7 +465,7 @@ export default function AuftraegePortal({
               Antrag freigibt, erscheint es hier.
             </p>
           ) : (
-            offene.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} />)
+            offene.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} darfVorschlagen={darf(a)} />)
           )}
         </div>
       </div>
@@ -412,7 +498,7 @@ export default function AuftraegePortal({
         <div className="section">
           <div className="section-header"><h3>Abgeschlossen</h3></div>
           <div className="section-body">
-            {erledigte.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} />)}
+            {erledigte.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} darfVorschlagen={false} />)}
           </div>
         </div>
       )}

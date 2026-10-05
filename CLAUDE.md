@@ -517,9 +517,19 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Objekte nur über `service_objekte_portal`. (2) Neue Rechte eines Partners hängen an
   `service_zugaenge.rolle`, nie an „ist verknüpft“. (3) Demo-Sperren auf einer neuen Tabelle NICHT
   als `for all` anlegen, wenn die Demo dort Daten LESEN soll (sperrt sonst auch SELECT — so
-  passiert, `20261005102000`). **Offen (Schritt 2 + 3):** Verlauf mit Fotos/Notizen am Auftrag,
-  „selbst erledigt“ vs. „Fachbetrieb nötig“, Sperre Gas/Strom/Trinkwasser/Schornstein,
-  Freigabe mit Rückfrage.
+  passiert, `20261005102000`).
+  ✅ **Schritt 2 (gleicher Tag, Migration `20261005110000`):** Verlauf am Auftrag
+  (`auftrag_notizen`, `components/AuftragVerlauf.tsx` = EINE Darstellung für Portal und Vermieter;
+  Fotos über `/api/auftrag-foto/[id]` mit `dateiKopf()`; Spalten ohne Bilddaten in
+  `lib/auftragNotizen.ts`). „Fachbetrieb nötig“ = RPC `auftrag_fachbetrieb_vorschlagen` → Status
+  `freigabe` + `vorgeschlagene_firma_id` (eigene Spalte, weil der Spaltenschutz `firma_id` dem
+  Vermieter vorbehält); `entscheideAuftrag` übernimmt den Vorschlag nur, wenn die Firma im eigenen
+  Verzeichnis steht. **Gas/Strom/Trinkwasser/Schornstein:** `lib/fachbetriebPflicht.ts`
+  (Stichworte — „Wasserhahn tropft“ fällt NICHT darunter) → kein „Selbst erledigt“ ohne Firma am
+  Auftrag, Oberfläche UND `beantworteAuftrag`. **Grenze:** Stichwortliste, kein Verständnis — fehlt
+  das Wort im Text, greift die Sperre nicht. `tests/auftragVerlauf.test.ts`, elf Mutationen rot.
+  **Regel: Ein Wert, den ein Server-Lader braucht, steht nie in einer "use client"-Datei** (käme dort
+  nur als Verweis an) — deshalb `lib/auftragNotizen.ts`. **Offen (Schritt 3):** Freigabe mit Rückfrage.
 - ✉️ **Mahnung/Zahlungserinnerung versenden (05.10.2026, Vorgabe des Betreibers: „wir halten uns
   aus dem Mailverkehr raus“).** Brief-Generator → „An den Mieter senden“ (`components/BriefVersand.tsx`):
   **Per Mail** = PDF erzeugen, am Handy über „Teilen“ direkt angehängt, sonst Download + `mailto:`
