@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Copy, Plus, Trash2 } from "lucide-react";
 import { euro } from "@/lib/format";
 import {
   MASSNAHMEN,
@@ -27,6 +27,7 @@ import {
 import {
   entwurfAus,
   leererEntwurf,
+  mitKopie,
   neuerRaum,
   zuEingabe,
   type Entwurf,
@@ -106,6 +107,7 @@ export default function SanierungsRechner({ katalog, stand }: { katalog: Katalog
               kannEntfernen={entwurf.raeume.length > 1}
               aendern={(teil) => setRaum(r.id, teil)}
               entfernen={() => setEntwurf((e) => ({ ...e, raeume: e.raeume.filter((x) => x.id !== r.id) }))}
+              kopieren={() => setEntwurf((e) => ({ ...e, raeume: mitKopie(e.raeume, r.id, neueId()) }))}
             />
           ))}
           <button
@@ -286,11 +288,13 @@ function RaumKarte({
   kannEntfernen,
   aendern,
   entfernen,
+  kopieren,
 }: {
   raum: RaumFeld;
   kannEntfernen: boolean;
   aendern: (teil: Partial<RaumFeld>) => void;
   entfernen: () => void;
+  kopieren: () => void;
 }) {
   const f = flaechen({
     laenge: zahlDe0(raum.laenge),
@@ -308,6 +312,9 @@ function RaumKarte({
     <div className="sanierung-raum">
       <div className="sanierung-raum-kopf">
         <input className="input sanierung-raum-name" aria-label="Name des Raums" value={raum.name} onChange={(e) => aendern({ name: e.target.value })} />
+        <button type="button" className="btn btn-ghost btn-sm" aria-label={`${raum.name || "Raum"} kopieren`} title="Raum kopieren" onClick={kopieren}>
+          <Copy size={14} />
+        </button>
         {kannEntfernen && (
           <button type="button" className="btn btn-ghost btn-sm" aria-label={`${raum.name || "Raum"} entfernen`} onClick={entfernen}>
             <Trash2 size={14} />

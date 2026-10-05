@@ -37,6 +37,18 @@ export function neuerRaum(id: string, nummer: number): RaumFeld {
   return { id, name: `Raum ${nummer}`, laenge: "", breite: "", hoehe: STANDARD_HOEHE, oeffnungen: "", fliesenhoehe: "", massnahmen: [] };
 }
 
+/**
+ * Raum kopieren (Besichtigung: Zimmer gleichen sich oft) — alle Maße und Maßnahmen, neuer Name,
+ * neue Kennung; die Kopie steht direkt hinter dem Original.
+ */
+export function mitKopie(raeume: RaumFeld[], id: string, neueId: string): RaumFeld[] {
+  const i = raeume.findIndex((r) => r.id === id);
+  if (i < 0) return raeume;
+  const original = raeume[i];
+  const kopie: RaumFeld = { ...original, id: neueId, name: `${original.name || "Raum"} (Kopie)`, massnahmen: [...original.massnahmen] };
+  return [...raeume.slice(0, i + 1), kopie, ...raeume.slice(i + 1)];
+}
+
 /** Start: ein Raum und eine leere Zeile Arbeitszeit — der Lohnrechner soll sofort zu sehen sein. */
 export function leererEntwurf(id: string): Entwurf {
   return {

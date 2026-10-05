@@ -246,3 +246,17 @@ describe("Demo", () => {
     }
   });
 });
+
+describe("Raum kopieren", () => {
+  it("Kopie direkt hinter dem Original, alle Maße und Maßnahmen, neue Kennung — Original unverändert", async () => {
+    const { mitKopie } = await import("@/lib/sanierung/eingabe");
+    const r = (id: string, name: string) => ({ id, name, laenge: "4", breite: "3", hoehe: "2,50", oeffnungen: "2", fliesenhoehe: "1,2", massnahmen: ["wand_fliesen" as const] });
+    const vorher = [r("a", "Bad"), r("b", "Flur")];
+    const nachher = mitKopie(vorher, "a", "neu");
+    expect(nachher.map((x) => x.id)).toEqual(["a", "neu", "b"]);
+    expect(nachher[1]).toMatchObject({ name: "Bad (Kopie)", laenge: "4", fliesenhoehe: "1,2", massnahmen: ["wand_fliesen"] });
+    // Eigene Liste: Ändern der Kopie verändert das Original nicht.
+    expect(nachher[1].massnahmen).not.toBe(vorher[0].massnahmen);
+    expect(mitKopie(vorher, "gibt-es-nicht", "x")).toBe(vorher);
+  });
+});
