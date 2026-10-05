@@ -11,6 +11,11 @@ export type KaufAuswahl = {
   adresse: string;
   kp: number;
   gesamtInvest: number;
+  /**
+   * Davon Sanierung (seit 05.10.2026, aus dem Sanierungsrechner). Nebenkosten = Gesamt − Kaufpreis
+   * − Sanierung — ohne das Feld galt die Sanierung überall als Nebenkosten. Ältere Auswahlen: fehlt → 0.
+   */
+  sanierung?: number;
   eigenkapital: number;
   darlehen: number;
   rate: number;        // Monatsrate gesamt
@@ -19,6 +24,24 @@ export type KaufAuswahl = {
   nutzung: "eigennutzen" | "vermieten"; // gemappt aus ObjektRechner (für KfW-Matching)
   gewaehltAm: string;  // ISO-Datum (nur zur Anzeige)
 };
+
+/** Gespeicherte Kaufprüfung → Auswahl für Finanzierung und Kreditantrag (summary = Snapshot des Rechners). */
+export function auswahlAus(
+  k: { id: string; name: string; data?: Record<string, string> | null; summary?: Record<string, number> | null },
+  heute: string,
+): KaufAuswahl {
+  const s = k.summary ?? {};
+  return {
+    kalkId: k.id, name: k.name, adresse: k.data?.adresse ?? "",
+    kp: s.kp ?? 0, gesamtInvest: s.gesamtInvest ?? 0,
+    // Ohne dieses Feld galt die Sanierung in Finanzierung, Ampel und Kreditantrag als Nebenkosten.
+    sanierung: s.sanierung ?? 0,
+    eigenkapital: 0, darlehen: 0, rate: 0, kaltmiete: s.kaltmiete ?? 0, cfNetto: 0,
+    // summarySnapshot: nutzung = vermietung ? 1 : 0
+    nutzung: s.nutzung === 1 ? "vermieten" : "eigennutzen",
+    gewaehltAm: heute,
+  };
+}
 
 // ===== Objekt-Scoring für den Vergleich =====
 // Punkt je Kennzahl, in der ein Objekt (unter den verglichenen) am besten ist.

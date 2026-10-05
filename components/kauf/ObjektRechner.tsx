@@ -7,9 +7,11 @@ import { useToast } from "@/components/Toast";
 import { zahlDe0 } from "@/lib/zahl";
 import KalkImport from "@/components/kalkulator/KalkImport";
 import { saveKalkulation, deleteKalkulation, updateKalkulation } from "@/lib/actions/kalkulation";
-import { bestesObjekt, KAUF_AUSWAHL_KEY, type KaufAuswahl, type VglMetrik } from "@/lib/kauf/auswahl";
-import { BUNDESLAENDER } from "@/lib/kalk";
+import { auswahlAus, bestesObjekt, KAUF_AUSWAHL_KEY, type VglMetrik } from "@/lib/kauf/auswahl";
+import { sanierungBeimLaden } from "@/lib/sanierung/uebergabe";
+import { BUNDESLAENDER, MAKLER_STANDARD_PROZENT, kaufnebenkostenSatz } from "@/lib/kalk";
 import { HAUS_DISCLAIMER } from "@/lib/kauf/hausbewertung";
+import { anschaffungsnahVorKauf } from "@/lib/steuer/anschaffungsnah";
 import { marktwert as rechneMarktwert, preisUrteil } from "@/lib/kauf/marktwert";
 import { belastbarkeit } from "@/lib/kauf/belastbarkeit";
 import { NHK_TYPEN } from "@/lib/bewertung/immowertv";
@@ -84,8 +86,12 @@ const DEMO_START = {
 };
 
 export default function ObjektRechner({
-  gespeichert = [], demo = false,
-}: { gespeichert?: Kalkulation[]; demo?: boolean }) {
+  gespeichert = [], demo = false, sanierungStart = null,
+}: {
+  gespeichert?: Kalkulation[]; demo?: boolean;
+  /** Aus dem Sanierungsrechner übergeben (`/kauf?sanierung=…`, lib/sanierung/uebergabe.ts). */
+  sanierungStart?: number | null;
+}) {
   const toast = useToast();
   const [liste, setListe] = useState<Kalkulation[]>(gespeichert);
 
@@ -94,8 +100,16 @@ export default function ObjektRechner({
   const [kaufpreis, setKaufpreis] = useState(demo ? DEMO_START.kaufpreis : "");
   const [flaeche, setFlaeche] = useState(demo ? DEMO_START.flaeche : "");
   const [bundesland, setBundesland] = useState("0.05");
-  const [makler, setMakler] = useState("3.57");
+  // EIN Standardwert mit dem Fahrplan-Rechner (lib/kalk.ts), nicht hier fest.
+  const MAKLER_STANDARD = String(MAKLER_STANDARD_PROZENT);
+  const [makler, setMakler] = useState(MAKLER_STANDARD);
   const [maklerBeruehrt, setMaklerBeruehrt] = useState(false); // für Belastbarkeits-Score
+  // Sanierung / Renovierung (BuyImmo, 05.10.2026): von Hand oder aus dem Sanierungsrechner.
+  const [sanierung, setSanierung] = useState(sanierungStart ? String(sanierungStart) : "");
+  // Ein aus dem Sanierungsrechner übergebener Betrag gilt, bis er verbraucht ist — auch wenn der
+  // Nutzer danach eine gespeicherte Kaufprüfung zum Bearbeiten lädt (Review 05.10.2026: sonst ging
+  // der Betrag beim „Bearbeiten“ still verloren).
+  const [uebergabeOffen, setUebergabeOffen] = useState(sanierungStart != null && sanierungStart > 0);
   // Nutzung
   const [nutzung, setNutzung] = useState<"vermietung" | "eigennutzung">("vermietung");
   const [kaltmiete, setKaltmiete] = useState(demo ? DEMO_START.kaltmiete : "");
@@ -133,9 +147,15 @@ export default function ObjektRechner({
   // und machte aus 0,035 die Zahl 35, also 3500 % Grunderwerbsteuer.
   // `makler` dagegen ist ein Freitextfeld und bleibt bei num()/zahlDe0.
   const grestSatz = Number(bundesland) || 0;
-  const nkSatz = grestSatz + num(makler) / 100 + 0.02; // + Notar/Grundbuch ~2 %
+  const nkSatz = kaufnebenkostenSatz(grestSatz, num(makler)); // + Notar/Grundbuch (lib/kalk.ts)
   const nebenkosten = kp * nkSatz;
-  const gesamtInvest = kp + nebenkosten;
+  // Sanierung gehört zur Investition: Sie fließt in Nettorendite und Darlehensbedarf (Schritt
+  // „Finanzierung“). Vor dem 05.10.2026 fehlte sie hier ganz — wer renovieren musste, sah eine
+  // zu hohe Rendite und einen zu kleinen Kreditbedarf.
+  const sanierungBetrag = Math.max(0, num(sanierung));
+  const gesamtInvest = kp + nebenkosten + sanierungBetrag;
+  const investNotiz = `inkl. ${eur(nebenkosten)} Nebenkosten${sanierungBetrag > 0 ? ` + ${eur(sanierungBetrag)} Sanierung` : ""}`;
+  const fuenfzehn = nutzung === "vermietung" ? anschaffungsnahVorKauf(kp, sanierungBetrag) : null;
   const preisM2 = kp > 0 && fl > 0 ? kp / fl : 0;
 
   const vermietung = nutzung === "vermietung";
@@ -170,7 +190,7 @@ export default function ObjektRechner({
 
   const tiles: Tile[] = vermietung
     ? [
-        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: `inkl. ${eur(nebenkosten)} Nebenkosten`, braucht: "Kaufpreis eintragen" },
+        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: investNotiz, braucht: "Kaufpreis eintragen" },
         { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "", braucht: "Kaufpreis + Wohnfläche" },
         { label: "Bruttorendite", wert: brutto > 0 ? pct(brutto) : "", farbe: urteil?.farbe, note: urteil?.text, braucht: "Kaltmiete eintragen" },
         { label: "Nettorendite", wert: nettomiet > 0 ? pct(nettomiet) : "", note: `nach ${num(bewirt)} % Bewirtschaftung`, braucht: "Kaltmiete eintragen" },
@@ -178,7 +198,7 @@ export default function ObjektRechner({
         { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil?.text ?? mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
       ]
     : [
-        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: `inkl. ${eur(nebenkosten)} Nebenkosten`, braucht: "Kaufpreis eintragen" },
+        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: investNotiz, braucht: "Kaufpreis eintragen" },
         { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "", braucht: "Kaufpreis + Wohnfläche" },
         { label: "Laufende Kosten", wert: num(hausgeld) > 0 ? eur(num(hausgeld)) + "/Mo" : "", note: "Hausgeld / Bewirtschaftung", braucht: "Laufende Kosten eintragen" },
         { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil?.text ?? mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
@@ -188,13 +208,13 @@ export default function ObjektRechner({
   // Speichern verloren, die Wiedervorlage hätte sie nicht zurückholen können.
   function eingabenSnapshot(): Record<string, string> {
     return {
-      adresse, kaufpreis, flaeche, bundesland, makler, nutzung, kaltmiete, bewirt, hausgeld,
+      adresse, kaufpreis, flaeche, bundesland, makler, sanierung, nutzung, kaltmiete, bewirt, hausgeld,
       objektTyp, grundFlaeche, bodenrichtwert, baujahr, gebTyp, ausstattung,
       bpiFaktor, regionalFaktor, lz, anzahlWhg, swFaktor,
     };
   }
   function summarySnapshot(): Record<string, number> {
-    return { kp, gesamtInvest, preisM2, brutto, nettomiet, faktor, kaltmiete: num(kaltmiete), nutzung: vermietung ? 1 : 0, marktwert: mwWert };
+    return { kp, gesamtInvest, sanierung: sanierungBetrag, preisM2, brutto, nettomiet, faktor, kaltmiete: num(kaltmiete), nutzung: vermietung ? 1 : 0, marktwert: mwWert };
   }
 
   // Wiedervorlage: gespeichertes Objekt zurück in die Maske holen.
@@ -202,7 +222,14 @@ export default function ObjektRechner({
     const d = k.data ?? {};
     const g = (key: string, fallback = "") => d[key] ?? fallback;
     setAdresse(g("adresse")); setKaufpreis(g("kaufpreis")); setFlaeche(g("flaeche"));
-    setBundesland(g("bundesland", "0.05")); setMakler(g("makler", "3.57")); setMaklerBeruehrt(true);
+    setBundesland(g("bundesland", "0.05")); setMakler(g("makler", MAKLER_STANDARD)); setMaklerBeruehrt(true);
+    // Ältere Kaufprüfungen haben das Feld nicht → leer. Ein offener Betrag aus dem Rechner gewinnt.
+    const s = sanierungBeimLaden(g("sanierung"), uebergabeOffen ? sanierungStart : null);
+    setSanierung(s.wert);
+    if (s.verbraucht) {
+      setUebergabeOffen(false);
+      toast(`Sanierung ${eur(Number(s.wert))} aus dem Sanierungsrechner übernommen${g("sanierung") ? ` (gespeichert war ${eur(Number(g("sanierung")) || 0)})` : ""}.`);
+    }
     setNutzung(g("nutzung") === "eigennutzung" ? "eigennutzung" : "vermietung");
     setKaltmiete(g("kaltmiete")); setBewirt(g("bewirt", "20")); setHausgeld(g("hausgeld"));
     setObjektTyp(g("objektTyp") === "haus" ? "haus" : "wohnung");
@@ -218,7 +245,7 @@ export default function ObjektRechner({
 
   function neuesObjekt() {
     setBearbeiteId(null);
-    setAdresse(""); setKaufpreis(""); setFlaeche(""); setKaltmiete(""); setHausgeld("");
+    setAdresse(""); setKaufpreis(""); setFlaeche(""); setKaltmiete(""); setHausgeld(""); setSanierung(""); setUebergabeOffen(false);
     setGrundFlaeche(""); setBodenrichtwert(""); setBaujahr("");
     toast("Maske geleert — neues Objekt erfassen.");
   }
@@ -269,15 +296,7 @@ export default function ObjektRechner({
   }
 
   function uebernehmen(k: Kalkulation) {
-    const s = k.summary ?? {};
-    const a: KaufAuswahl = {
-      kalkId: k.id, name: k.name, adresse: k.data?.adresse ?? "",
-      kp: s.kp ?? 0, gesamtInvest: s.gesamtInvest ?? 0, eigenkapital: 0,
-      darlehen: 0, rate: 0, kaltmiete: s.kaltmiete ?? 0, cfNetto: 0,
-      // summarySnapshot: nutzung = vermietung ? 1 : 0
-      nutzung: s.nutzung === 1 ? "vermieten" : "eigennutzen",
-      gewaehltAm: new Date().toISOString().slice(0, 10),
-    };
+    const a = auswahlAus(k, new Date().toISOString().slice(0, 10));
     try { localStorage.setItem(KAUF_AUSWAHL_KEY, JSON.stringify(a)); } catch { /* ignore */ }
     toast(`„${k.name}“ für die Finanzierung übernommen.`);
     setShowCompare(false);
@@ -351,11 +370,19 @@ export default function ObjektRechner({
               <input
                 type="checkbox"
                 checked={num(makler) === 0}
-                onChange={(e) => { setMakler(e.target.checked ? "0" : "3.57"); setMaklerBeruehrt(true); }}
+                onChange={(e) => { setMakler(e.target.checked ? "0" : MAKLER_STANDARD); setMaklerBeruehrt(true); }}
                 style={{ width: 15, height: 15, accentColor: "var(--gold)", cursor: "pointer" }}
               />
               Provisionsfrei (keine Maklercourtage)
             </label>
+            {/* Sanierung (BuyImmo, 05.10.2026) — fließt in die Gesamtinvestition. */}
+            <div style={{ display: "grid", gap: 4 }}>
+              {F("Sanierung / Renovierung (€)", sanierung, setSanierung, "0")}
+              {/* Neuer Tab: Die Maske hier ist nicht gespeichert — ein Seitenwechsel verlöre alle Eingaben. */}
+              <a href="/sanierung" target="_blank" rel="noopener" style={{ fontSize: 11.5, color: "var(--gold)", textDecoration: "none" }}>
+                Mit dem Sanierungsrechner ermitteln (neuer Tab) →
+              </a>
+            </div>
             {/* Objekttyp: Haus schaltet den Substanzwert-Block (Bodenwert + Gebäude) frei. */}
             <div style={{ display: "flex", gap: 4, padding: 4, borderRadius: 12, background: "var(--bg3)", border: "1px solid var(--line)" }}>
               {([["wohnung", "Wohnung", Building2], ["haus", "Haus", Home]] as const).map(([id, label, Icon]) => {
@@ -418,7 +445,7 @@ export default function ObjektRechner({
               <span style={{ fontWeight: 400, color: "var(--faint)" }}> — Makler & Bewirtschaftung (Defaults sind gesetzt)</span>
             </summary>
             <div style={{ padding: "2px 14px 14px", display: "grid", gap: 11 }}>
-              {F("Maklercourtage (%) · provisionsfrei = 0", makler, (v) => { setMakler(v); setMaklerBeruehrt(true); }, "3.57")}
+              {F("Maklercourtage (%) · provisionsfrei = 0", makler, (v) => { setMakler(v); setMaklerBeruehrt(true); }, MAKLER_STANDARD)}
               {vermietung && F("Bewirtschaftung (% der Miete)", bewirt, setBewirt, "20")}
               <p style={{ fontSize: 11, color: "var(--faint)", margin: 0 }}>
                 Lässt du das zu, rechnet MyImmo mit konservativen Defaults weiter — Bewirtschaftung
@@ -538,6 +565,14 @@ export default function ObjektRechner({
               );
             })}
           </div>
+          {/* 15-%-Grenze vor dem Kauf (§ 6 Abs. 1 Nr. 1a EStG) — dieselbe Basis wie der Steuer-Wächter. */}
+          {fuenfzehn && (
+            <p style={{ fontSize: 11.5, marginTop: 12, marginBottom: 0, color: fuenfzehn.ueber ? "var(--amber)" : "var(--faint)" }}>
+              {fuenfzehn.ueber
+                ? `Die Sanierung liegt über 15 % des Gebäudeanteils (Grenze ${eur(fuenfzehn.grenze)} bei 80 % Gebäudeanteil). Fällt sie in die ersten drei Jahre nach dem Kauf, ist sie steuerlich nur über die AfA absetzbar, nicht sofort (§ 6 Abs. 1 Nr. 1a EStG, Grenze netto). Mit dem Steuerberater klären.`
+                : `Unter der 15-%-Grenze für die ersten drei Jahre nach dem Kauf (${eur(fuenfzehn.grenze)} bei 80 % Gebäudeanteil, § 6 Abs. 1 Nr. 1a EStG).`}
+            </p>
+          )}
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 12 }}>
             Speichere jedes Objekt und vergleiche 3–5 Kandidaten — das beste bekommt eine Krone. Die Finanzierung
             rechnest du im Schritt „Finanzierung&quot; aus.

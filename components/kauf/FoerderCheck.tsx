@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Building2, Home, ExternalLink, Landmark, Info, TriangleAlert } from "lucide-react";
 import {
-  filterProgramme, LANDESBANKEN, type Nutzung, type Vorhaben,
+  filterProgramme, FOERDER_STAND, LANDESBANKEN, type Nutzung, type Vorhaben,
 } from "@/lib/kauf/foerderung";
 
 const VORHABEN: { id: Vorhaben; label: string }[] = [
@@ -122,7 +122,7 @@ export default function FoerderCheck() {
 
       <div style={{ display: "flex", gap: 7, fontSize: 10.5, color: "var(--faint)" }}>
         <Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />
-        <span>Stand 2026 — Programme und Konditionen ändern sich; vor dem Antrag beim Träger prüfen. Wichtig: Förderanträge fast immer <strong>vor</strong> Kaufvertrag bzw. Vorhabensbeginn stellen.</span>
+        <span>Stand: {FOERDER_STAND} — Programme und Konditionen ändern sich; vor dem Antrag beim Träger prüfen. Wichtig: Förderanträge fast immer <strong>vor</strong> Kaufvertrag bzw. Vorhabensbeginn stellen.</span>
       </div>
     </div>
   );

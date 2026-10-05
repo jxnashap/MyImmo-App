@@ -12,7 +12,9 @@ export type MachbarkeitInput = {
   darlehen: number;        // Darlehensbedarf
   rate: number;            // geplante Monatsrate gesamt
   kaufpreis: number;
-  gesamtInvest: number;    // Kaufpreis + Nebenkosten + Extras
+  gesamtInvest: number;    // Kaufpreis + Nebenkosten + Sanierung
+  /** Davon Sanierung — zählt NICHT als Nebenkosten (fehlt → 0). */
+  sanierung?: number;
   kaltmieteNeu: number;    // Nettokaltmiete des neuen Objekts (bei Vermietung)
   // aus der Selbstauskunft
   haushaltsNetto: number;      // Netto ohne Mieteinnahmen
@@ -109,7 +111,7 @@ export function pruefeMachbarkeit(i: MachbarkeitInput): MachbarkeitErgebnis {
   // 4) Eigenkapital-Deckung
   if (i.gesamtInvest > 0) {
     const benoetigt = Math.max(0, i.gesamtInvest - i.darlehen);
-    const nebenkosten = Math.max(0, i.gesamtInvest - i.kaufpreis);
+    const nebenkosten = Math.max(0, i.gesamtInvest - i.kaufpreis - Math.max(0, Number(i.sanierung) || 0));
     const ampel: Ampel = i.eigenkapital >= benoetigt ? "gruen" : i.eigenkapital >= nebenkosten ? "gelb" : "rot";
     checks.push({
       key: "ek",

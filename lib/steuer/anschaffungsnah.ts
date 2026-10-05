@@ -14,7 +14,9 @@
 //   jährlich übliche Erhaltungsarbeiten sind gesetzlich ausgenommen, werden hier
 //   aber nicht herausgerechnet (Nutzer entscheidet).
 
-const GEBAEUDEANTEIL_STANDARD = 80; // % — wie im Objektformular ("Standard 80")
+export const GEBAEUDEANTEIL_STANDARD = 80; // % — wie im Objektformular ("Standard 80")
+/** 15 % der Gebäude-Anschaffungskosten (§ 6 Abs. 1 Nr. 1a EStG) — EINE Stelle für Wächter und Kauf-Rechner. */
+export const ANSCHAFFUNGSNAH_GRENZE = 0.15;
 
 /** Kostenkategorien, die als Instandsetzung/Modernisierung in die 15 %-Prüfung fallen. */
 export const ANSCHAFFUNGSNAH_KATEGORIEN = ["Reparatur", "Instandhaltung", "Modernisierung"];
@@ -73,7 +75,7 @@ export function berechneAnschaffungsnah(
     ? objekt.gebaeudeanteilProzent
     : GEBAEUDEANTEIL_STANDARD;
   const gebaeudeAK = objekt.kaufpreis && objekt.kaufpreis > 0 ? rund2(objekt.kaufpreis * anteil / 100) : 0;
-  const grenze = rund2(gebaeudeAK * 0.15);
+  const grenze = rund2(gebaeudeAK * ANSCHAFFUNGSNAH_GRENZE);
 
   const leer: AnschaffungsnahErgebnis = {
     status: "inaktiv", gebaeudeAK, grenze, kostenImFenster: 0,
@@ -120,5 +122,35 @@ export function berechneAnschaffungsnah(
   return {
     status, gebaeudeAK, grenze, kostenImFenster, ausgeschoepftProzent,
     fensterVon: von, fensterBis: bis, monateVerbleibend, hinweis,
+  };
+}
+
+export type AnschaffungsnahVorKauf = {
+  gebaeudeAK: number;
+  grenze: number;
+  /** Geplante Sanierung in % der Gebäude-Anschaffungskosten (eine Nachkommastelle). */
+  prozentVomGebaeude: number;
+  ueber: boolean;
+};
+
+/**
+ * Vor dem Kauf (Kauf-Assistent, BuyImmo 05.10.2026): Läge die geplante Sanierung, in den ersten
+ * drei Jahren ausgeführt, über der 15-%-Grenze? Dieselbe Basis wie der Wächter oben (Kaufpreis ×
+ * Gebäudeanteil, Standard 80 %, brutto = eher zu früh gewarnt). Ohne Kaufpreis oder Sanierung: null.
+ */
+export function anschaffungsnahVorKauf(
+  kaufpreis: number,
+  sanierung: number,
+  gebaeudeanteilProzent: number | null = null,
+): AnschaffungsnahVorKauf | null {
+  if (!(kaufpreis > 0) || !(sanierung > 0)) return null;
+  const anteil = gebaeudeanteilProzent && gebaeudeanteilProzent > 0 ? gebaeudeanteilProzent : GEBAEUDEANTEIL_STANDARD;
+  const gebaeudeAK = rund2((kaufpreis * anteil) / 100);
+  const grenze = rund2(gebaeudeAK * ANSCHAFFUNGSNAH_GRENZE);
+  return {
+    gebaeudeAK,
+    grenze,
+    prozentVomGebaeude: Math.round((sanierung / gebaeudeAK) * 1000) / 10,
+    ueber: sanierung > grenze,
   };
 }

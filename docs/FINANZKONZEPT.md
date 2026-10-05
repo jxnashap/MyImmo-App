@@ -39,6 +39,19 @@ zahlenden Kunden**. Vollständige Rechnung mit allen Annahmen und den Kosten bei
   79 €/J · Plus 12,99 €/M bzw. 129 €/J · Business auf Anfrage).
   Das früher hier genannte Banking-Add-on entfällt — das Feature ist am 29.08.2026
   aus der App entfernt worden.
+- **BuyImmo als eigener Tarif, 19,99 €/Monat (Entscheidung Betreiber 05.10.2026).** BuyImmo ist
+  der Bereich „Bestandsaufbau“ (Kauf, Finanzierung, Sanierungsrechner, Verkauf; `docs/zukunft/BUYIMMO.md`).
+  Zielgruppe: junge Erwachsene, die sich einen Bestand aufbauen wollen. **Noch NICHT in
+  `lib/plan.ts`** — drei Punkte sind offen und ändern die Matrix:
+  1. ⚠️ **Überschneidung mit Plus:** Plus (12,99 €) enthält laut `FEATURE_AB_PLAN` schon
+     `kalkulatoren` (Kauf/Verkauf/Bewertung) und `beleihung` (Beleihungsordner). Ohne Neuordnung
+     verkauft BuyImmo für 19,99 €, was Plus für 12,99 € enthält.
+  2. **Allein oder mit Verwaltung?** Wer noch nichts besitzt, braucht MyImmo nicht; wer gekauft hat,
+     braucht beides. Bündel, Aufpreis oder zwei getrennte Abos?
+  3. **Jahrespreis** und ob der Sanierungsrechner auch ohne Abo nutzbar bleibt (Einstieg).
+  Rechnerisch gehen bei 19,99 € monatlich **rund 7 %** an Paddle (5 % + 0,50 $). **Risiko:** Ein
+  Kauf dauert Monate, danach braucht man BuyImmo bis zum nächsten Objekt nicht — ein
+  „Kaufphasen-Abo“ mit hoher Kündigungsrate. Wirkungslos, solange `BILLING_ENFORCED` nicht gesetzt ist.
 - **Bezahlsystem GEBAUT, aber INAKTIV (24.07.2026):** Anbieter-Entscheidung = **Paddle als
   Merchant of Record** (Paddle verkauft im eigenen Namen, übernimmt EU-USt/Rechnungen/
   Steuer-Compliance; Gebühr ~5 % + 0,50 $ — bewusst teurer als Stripe ~2 %, dafür kein

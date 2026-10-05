@@ -316,6 +316,41 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   „Secure password change".
 `tests/passwortReset.test.ts` + `tests/blockF.test.ts`, fünfzehn Mutationen geprüft.
 
+### 🏗️ BuyImmo — zweiter Bereich (05.10.2026, Vorgabe des Betreibers)
+„MyImmo als automatisierte Verwaltung, BuyImmo als aktive Kommandozentrale für den
+Immobilienaufbau“ — **eine Codebasis, ein Konto**, gewechselt am Logo oben links
+(`components/BereichWechsel.tsx`). Der Bereich folgt allein aus der Adresse (`lib/bereich.ts`);
+Einstellungen/Hilfe/Objekte behalten den letzten. BuyImmo: `/aufbau` (Kommandozentrale,
+`lib/aufbau.ts`), Kauf, Makler-Ordner, Verkauf, Marktwert, AfA. **Regeln:** (1) Neue
+BuyImmo-Seite → `AUFBAUEN`/`RECHNEN` in `lib/nav.ts`. (2) Alte Adressen (`/kauf` …) nie
+umbenennen. (3) Zahlen der Kommandozentrale nur aus bestehenden Regeln (Dashboard,
+`/kredite`). (4) Keine Kaufempfehlung vor der § 34i-Klärung. Offen (Aufmaß, Fahrplan, Marke):
+**`docs/zukunft/BUYIMMO.md`**. `tests/bereich.test.ts` + `tests/aufbau.test.ts`, elf Mutationen rot.
+**Sanierungsrechner `/sanierung` (05.10.2026, Stufe 1):** Räume → Flächen → Material VON–BIS →
+ganze Gebinde über ALLE Räume gerundet; Arbeitszeit = Stunden × Satz, den der Nutzer einträgt
+(BuyImmo schätzt keinen Lohn); eigene Posten. `lib/sanierung/` (Katalog als Parameter, Preise mit
+Quelle + Stand in `katalog.ts`, Prüfzyklus in `07 Volatile Kennzahlen`), Entwurf nur im Browser.
+`tests/sanierung.test.ts`. **Fliesen:** Boden + Wand bis Fliesenhöhe; geflieste Wand wird von
+Spachteln/Tapete/Farbe ABGEZOGEN (`fliesenwand` in `flaechen()`). **Förderung:** Förderart je eigenem
+Posten → `lib/sanierung/foerderung.ts` (BAFA 15 %, KfW 458 30 %, Experte 50 %, Grenzen je Wohneinheit,
+Heizungsgrenze sinkt ab 01.02.2027 datumsgenau); Zuschuss NIE von der Summe für den Kauf-Assistenten
+abgezogen; Raum-Maßnahmen nie förderfähig. **Regel: Bei Förderprogrammen zuerst nach einer
+Richtlinienänderung suchen** (der Fördercheck stand bis 05.10.2026 vor der BEG-Reform vom 21.07.2026 —
+Korrektur in `docs/kauf/KfW-Foerderung-2026.md`). **Fahrplan `/fahrplan`** (`lib/fahrplan.ts`): neun Schritte, Haken nur
+wo die App es aus den Daten weiß, Kaufnebenkosten über `kaufnebenkosten()` in `lib/kalk.ts` (EINE
+Regel mit dem Kauf-Rechner); ein Test sucht Empfehlungs-Formulierungen. Beide Rechner sind in der
+Demo bedienbar (`data-demo-erlaubt`, schreiben nichts). **Sanierung → Kauf-Assistent:** `/kauf?sanierung=…`
+(`lib/sanierung/uebergabe.ts`), Feld „Sanierung / Renovierung“ im Objekt-Rechner, steckt in der
+Gesamtinvestition; 15-%-Hinweis über `anschaffungsnahVorKauf()` (eine Grenze mit dem Steuer-Wächter).
+**Review vor dem Merge (#418, `tests/reviewBuyImmo.test.ts`) — Regeln daraus:** (1) **Nebenkosten =
+Gesamtinvestition − Kaufpreis − Sanierung** (Ampel, Finanzierungsvorschläge und Kreditantrag hielten
+40.000 € Renovierung für Nebenkosten); die Auswahl trägt `sanierung` mit (`auswahlAus()`). (2) **Meter
+mit `massDe()`, nie `zahlDe0()`** — „4.125“ vom Laser wurde zu 4.125 m. (3) Eigenleistung zählt zur
+Summe, nicht in die Übergabe. Details `docs/zukunft/BUYIMMO.md`.
+**Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
+(`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
+kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
+
 ### Zukunftsideen (notiert, nicht gebaut)
 > **Vollständige Ideenliste mit Status: Memory-Repo `02 - MyImmo/myimmoideen.md`.**
 > Die Einträge hier unten sind die ausführlichen Begründungen zu zwei davon.
@@ -1223,6 +1258,10 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Falle beim Prüfen (erneut):** `pkill -f "[n]ext start"` in DERSELBEN Befehlszeile wie
   `npx next start …` trifft die eigene Shell (Exit 144) — das Muster schützt nur, wenn der
   Text nicht woanders in der Zeile steht. Aufräumen und Starten in getrennte Aufrufe.
+  **Und (05.10.2026):** Der laufende Server heißt im Prozess `next-server (v16.x)` — `pkill -f
+  "[n]ext start"` trifft ihn GAR NICHT. Der neue Start scheitert dann still an EADDRINUSE, der alte
+  liefert HTML mit Verweisen auf gelöschte Chunks (Seite ohne CSS und JS). Beenden mit
+  `pkill -f "[n]ext-server"`, danach im Server-Log „Ready“ prüfen.
   🧹 **Lint-Altlast, erster Lauf überhaupt: 93 Fehler, 39 Warnungen** (552 Dateien).
   Größte Posten: `react/no-unescaped-entities` 40 (Anführungszeichen im JSX-Text, harmlos),
   `react-hooks/set-state-in-effect` 25, `@typescript-eslint/no-explicit-any` 12,

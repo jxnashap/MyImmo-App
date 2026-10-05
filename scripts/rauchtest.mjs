@@ -377,6 +377,35 @@ const WEGE = [
     },
   },
   {
+    // BuyImmo (05.10.2026): Sätze, die NUR die Kommandozentrale schreibt — „Kommandozentrale“
+    // allein stünde auch in der Seitenleiste jeder BuyImmo-Seite.
+    schluessel: "aufbau",
+    titel: "BuyImmo — Kommandozentrale",
+    pfad: "/aufbau",
+    erwartet: ["Eigenkapital im Bestand", "Bereit für Bank und Makler", "Buy<span>Immo</span>"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "sanierung",
+    titel: "BuyImmo — Sanierungsrechner",
+    pfad: "/sanierung",
+    erwartet: ["Sanierungsrechner", "Fenster + Türen m²", "Woher die Zahlen kommen", "Stunden × dein Stundensatz"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "fahrplan",
+    titel: "BuyImmo — Fahrplan",
+    pfad: "/fahrplan",
+    erwartet: ["Dein Weg zum Objekt", "Was BuyImmo prüfen kann", "Kaufnebenkosten", "§ 311b BGB"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
     schluessel: "demo-grenze",
     titel: "Demo-Grenze — gesperrte Bereiche bleiben gesperrt und nennen sich",
     pfad: "/",

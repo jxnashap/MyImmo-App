@@ -36,18 +36,22 @@ const DARLEHEN: { name: string; text: string; warn?: boolean }[] = [
 ];
 
 export default function KaufAssistent({
-  gespeichert = [], selbstauskunft = null, demo = false, vertreter = [],
+  gespeichert = [], selbstauskunft = null, demo = false, vertreter = [], sanierungStart = null,
 }: {
   gespeichert?: Kalkulation[]; selbstauskunft?: SelbstauskunftDaten | null;
   /** Vertreter mit gültiger Vollmacht (Einstellungen → Vertreter) für den Kreditantrag. */
   vertreter?: KreditVertreterOption[];
   /** Oeffentliche Demo: fester Beispielstand, keine Eingaben. */
   demo?: boolean;
+  /** Aus dem Sanierungsrechner (`/kauf?sanierung=…`) — öffnet den Objekt-Rechner mit dem Betrag. */
+  sanierungStart?: number | null;
 }) {
   // In der Demo von Anfang an aufgeklappt: Die Aufklapp-Knoepfe liegen im
   // gesperrten Bereich (fieldset disabled) und waeren dort nicht bedienbar —
   // der Besucher haette den Rechner sonst nie zu Gesicht bekommen.
-  const [rechnerOffen, setRechnerOffen] = useState(demo);
+  // Kommt man aus dem Sanierungsrechner, ist der Rechner offen — sonst stünde der Betrag in einem
+  // zugeklappten Formular, und man müsste ihn suchen.
+  const [rechnerOffen, setRechnerOffen] = useState(demo || sanierungStart != null);
   const [saOffen, setSaOffen] = useState(demo);
   // In der Demo stehen Objektwahl und Darlehenswunsch von Anfang an fest.
   // Beide leben sonst im localStorage und werden ueber die (gesperrten)
@@ -149,6 +153,7 @@ export default function KaufAssistent({
         rate,
         kaufpreis: auswahl.kp,
         gesamtInvest: auswahl.gesamtInvest,
+        sanierung: auswahl.sanierung ?? 0,
         kaltmieteNeu: auswahl.kaltmiete,
         haushaltsNetto: selbstauskunft ? haushaltsNetto(selbstauskunft) : 0,
         mieteinnahmenBestehend: selbstauskunft?.mieteinnahmen ?? 0,
@@ -183,7 +188,7 @@ export default function KaufAssistent({
             </button>
           ) : (
             <div style={{ marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-              <ObjektRechner gespeichert={gespeichert} demo={demo} />
+              <ObjektRechner gespeichert={gespeichert} demo={demo} sanierungStart={sanierungStart} />
             </div>
           )}
         </>
@@ -237,7 +242,7 @@ export default function KaufAssistent({
           </p>
           {auswahl && auswahl.gesamtInvest > 0 ? (
             <FinanzierungsVorschlaege
-              gesamtInvest={auswahl.gesamtInvest} kaufpreis={auswahl.kp} ekVorhanden={ekVorhanden}
+              gesamtInvest={auswahl.gesamtInvest} kaufpreis={auswahl.kp} sanierung={auswahl.sanierung ?? 0} ekVorhanden={ekVorhanden}
               nutzung={auswahl.nutzung} kinder={selbstauskunft?.kinder ?? 0} zveJahr={selbstauskunft?.zveHaushaltJahr ?? 0}
             />
           ) : (
@@ -393,7 +398,12 @@ export default function KaufAssistent({
           ändern. Mit einem eigenen Konto rechnest du hier mit deinen Zahlen.
         </div>
       )}
-      <AblaufStepper schritte={schritte} storageKey="myimmo_kauf_fortschritt" gesperrt={demo} />
+      <AblaufStepper
+        schritte={schritte}
+        storageKey="myimmo_kauf_fortschritt"
+        gesperrt={demo}
+        startSchritt={sanierungStart != null ? 0 : undefined}
+      />
     </>
   );
 }

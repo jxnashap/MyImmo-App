@@ -21,6 +21,8 @@
 |---|---|---|---|---|---|
 | **Grunderwerbsteuer je Bundesland** | `lib/kalk.ts` (`BUNDESLAENDER`) | Landesgesetze | 26.08.2026 | halbjährlich | **01.03.2027** |
 | **KfW-308-Konditionen** | `lib/kauf/foerderung.ts`, `docs/kauf/KfW-Foerderung-2026.md`, `tests/foerderung.test.ts` | kfw.de Produktseite | ✅ 28.08.2026 — Höchstbeträge 140/160/180 Tsd. €, EH 85 EE auch per Einzelmaßnahmen; `KFW_STAND = "08/2026"` | jährlich | **01.08.2027** |
+| **BEG: BAFA-Einzelmaßnahmen, KfW 458, KfW 261, KfW 159/455-B** | `lib/kauf/foerderung.ts` (`FOERDER_STAND`), `lib/sanierung/foerderung.ts`, `docs/kauf/KfW-Foerderung-2026.md`, `tests/sanierungFoerderung.test.ts` | Richtlinien BEG EM/WG (Bundesanzeiger), kfw.de „Anpassungen 2026“ + Produktseiten, bafa.de Gebäudehülle. **WebFetch geht dort, curl mit Browser-Kennung ebenfalls** | ✅ 05.10.2026 — **Reform zum 21.07.2026**: BAFA 15 %, Grenze 30/15/8 Tsd. € je WE (iSFP 60/30/15, +5 Pp nur darüber); KfW 458 Grund 30 %, Höchstkosten 28.000 € (1. WE), Effizienzbonus weg; 261 Tilgungszuschuss −10 Pp; 455-B ausgeschöpft | **feste Termine:** 01.02.2027 (458: Klimabonus −4 Pp, Höchstkosten −750 €), Q1 2027 (Wärmepumpe 15 % + Wertschöpfungsbonus, WPB-Bonus BAFA) | **01.02.2027** |
+| **§ 35c EStG** (Selbstnutzer, 20 %, max. 40.000 €) | `lib/kauf/foerderung.ts` | gesetze-im-internet.de § 35c + § 52 Abs. 35a | ✅ 05.10.2026 — unverändert, gilt für Maßnahmen bis 31.12.2029 | jährlich | **01.10.2027** |
 | **Fernablesepflicht / § 5 HeizkostenV** | `lib/ratgeber.ts` (Artikel `heizkostenabrechnung-…`) | HeizkostenV | — | einmalig | **ab 01.01.2027 entschärfen** |
 | **§ 82b EStG, AfA-Sätze** | `lib/steuer/` | EStG | — | jährlich zum Steuerjahr | **01.02.2027** |
 | **Next.js-Hauptversion** | `package.json`, `next.config.*` | Release-Notes / EOL-Plan | ✅ 16.3.8 seit 30.09.2026 (Migration von 15, `package.json` geprüft 03.10.2026) | halbjährlich | **01.03.2027** |
@@ -67,6 +69,7 @@
 | Lübeck Häuser ⌀ | ~3.163 €/m² | dito | 26.08.2026 | halbjährlich |
 | Lübeck Kaltmiete ⌀ | ~11,04 €/m² (einfache Lagen 9,87) | dito | 26.08.2026 | halbjährlich |
 | Beispiel-Sollzins | 3,80 % p. a. | Marktüblichkeit | 26.08.2026 | **quartalsweise** |
+| Baumarktpreise + Materialverbrauch (Sanierungsrechner, `lib/sanierung/katalog.ts`) | 13 Materialien, z. B. Alpinaweiß 10 l 54,99 €, PCI Flexmörtel 25 kg 48,99 € | Produktseiten OBI/toom/Globus, Merkblätter Knauf/MEM/Alpina/Henkel/Erfurt/PCI/Lugato (URLs im Code); Hornbach/Bauhaus blockieren Abrufe. **OBI antwortet WebFetch mit 404** — `curl` mit Browser-User-Agent liefert die Seite, Preis im JSON-Feld `"price"`, ohne Streichpreis = `NO_STRIKE_PRICE` | 05.10.2026 | halbjährlich → **01.04.2027** |
 
 **Zinsen altern am schnellsten.** Ein Beispielzins, der zwei Jahre alt ist, macht
 jede Beispielrechnung unglaubwürdig.
