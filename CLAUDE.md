@@ -316,6 +316,18 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   „Secure password change".
 `tests/passwortReset.test.ts` + `tests/blockF.test.ts`, fünfzehn Mutationen geprüft.
 
+### 🏗️ BuyImmo — zweiter Bereich (05.10.2026, Vorgabe des Betreibers)
+„MyImmo als automatisierte Verwaltung, BuyImmo als aktive Kommandozentrale für den
+Immobilienaufbau“ — **eine Codebasis, ein Konto**, gewechselt am Logo oben links
+(`components/BereichWechsel.tsx`). Der Bereich folgt allein aus der Adresse (`lib/bereich.ts`);
+Einstellungen/Hilfe/Objekte behalten den letzten. BuyImmo: `/aufbau` (Kommandozentrale,
+`lib/aufbau.ts`), Kauf, Makler-Ordner, Verkauf, Marktwert, AfA. **Regeln:** (1) Neue
+BuyImmo-Seite → `AUFBAUEN`/`RECHNEN` in `lib/nav.ts`. (2) Alte Adressen (`/kauf` …) nie
+umbenennen. (3) Zahlen der Kommandozentrale nur aus bestehenden Regeln (Dashboard,
+`/kredite`). (4) Keine Kaufempfehlung vor der § 34i-Klärung. Offen (Sanierungsrechner: Material
+oder Lohn? Preise, Aufmaß, Strategie, Tarif, Marke): **`docs/zukunft/BUYIMMO.md`**.
+`tests/bereich.test.ts` + `tests/aufbau.test.ts`, elf Mutationen rot.
+
 ### Zukunftsideen (notiert, nicht gebaut)
 > **Vollständige Ideenliste mit Status: Memory-Repo `02 - MyImmo/myimmoideen.md`.**
 > Die Einträge hier unten sind die ausführlichen Begründungen zu zwei davon.

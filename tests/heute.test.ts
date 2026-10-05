@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type FristZeile } from "@/lib/heute";
-import { VERWALTEN, ABRECHNEN, PLANEN, ALLE_ZIELE } from "@/lib/nav";
+import { VERWALTEN, ABRECHNEN, AUFBAUEN, RECHNEN, ALLE_ZIELE } from "@/lib/nav";
 import { REGISTRIERUNG_OFFEN, START_CTA } from "@/lib/preise";
 
 // „HEUTE WICHTIG" UND DIE NAVIGATION (08.09.2026, Feedback Befund 7 + 8).
@@ -213,34 +213,31 @@ describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026 / 02
   });
 });
 
-describe("Navigation: drei Gruppen statt elf gleichrangiger Punkte", () => {
-  it("die drei Gruppen sind überschneidungsfrei und vollständig", () => {
-    const alle = [...VERWALTEN, ...ABRECHNEN, ...PLANEN].map((n) => n.href);
+// Seit 05.10.2026 zwei Bereiche (MyImmo verwaltet, BuyImmo baut auf) mit je zwei Gruppen —
+// die Bereichslogik selbst prüft tests/bereich.test.ts. Hier bleibt der ursprüngliche Befund:
+// keine lange Liste gleichrangiger Punkte.
+describe("Navigation: kurze Gruppen statt elf gleichrangiger Punkte", () => {
+  const GRUPPEN = [["Verwalten", VERWALTEN], ["Abrechnen", ABRECHNEN], ["Aufbauen", AUFBAUEN], ["Rechnen", RECHNEN]] as const;
+
+  it("die Gruppen sind überschneidungsfrei und vollständig", () => {
+    const alle = GRUPPEN.flatMap(([, g]) => g.map((n) => n.href));
     expect(new Set(alle).size).toBe(alle.length);
     expect(ALLE_ZIELE.map((n) => n.href).sort()).toEqual([...alle].sort());
   });
 
   it("keine Gruppe ist länger als sechs Punkte — das war der Befund", () => {
-    for (const [name, g] of [["Verwalten", VERWALTEN], ["Abrechnen", ABRECHNEN], ["Planen", PLANEN]] as const) {
+    for (const [name, g] of GRUPPEN) {
       expect(g.length, name).toBeLessThanOrEqual(6);
       expect(g.length, name).toBeGreaterThan(0);
     }
   });
 
-  it("das Tägliche liegt in Verwalten, das Rechnerische in Abrechnen", () => {
+  it("das Tägliche liegt in Verwalten, das Rechnerische in Abrechnen, der Kauf in BuyImmo", () => {
     expect(VERWALTEN.map((n) => n.href)).toContain("/");
     expect(VERWALTEN.map((n) => n.href)).toContain("/tenants");
     expect(ABRECHNEN.map((n) => n.href)).toContain("/steuer");
     expect(ABRECHNEN.map((n) => n.href)).toContain("/mietkonto");
-    expect(PLANEN.map((n) => n.href)).toContain("/kauf");
-  });
-
-  it("die Sidebar rendert alle drei Gruppen und klappt nur Planen ein", () => {
-    const s = readFileSync("components/Sidebar.tsx", "utf8");
-    for (const g of ["VERWALTEN.map", "ABRECHNEN.map", "PLANEN.map"]) expect(s).toContain(g);
-    expect(s).toContain("<details");
-    // Wer gerade in einem Planen-Bereich arbeitet, findet die Gruppe offen vor.
-    expect(s).toContain("open={PLANEN.some((n) => isActive(n.href))}");
+    expect(AUFBAUEN.map((n) => n.href)).toContain("/kauf");
   });
 });
 

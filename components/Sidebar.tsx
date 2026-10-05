@@ -5,7 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import CommandPalette from "@/components/ui/CommandPalette";
-import { VERWALTEN, ABRECHNEN, PLANEN, PROP_ICONS, type NavItem } from "@/lib/nav";
+import { PROP_ICONS, type NavItem } from "@/lib/nav";
+import { BEREICHE, eigenerBereich, type Bereich } from "@/lib/bereich";
+import BereichWechsel from "@/components/BereichWechsel";
 import { istDemoKonto, demoDarfRoute } from "@/lib/demo";
 import { Home, Power, PanelLeftClose, PanelLeftOpen, Settings, Lock } from "lucide-react";
 
@@ -35,6 +37,14 @@ export default function Sidebar({
     ((teile[0]?.[0] ?? "") + (teile[1]?.[0] ?? "")).toUpperCase() || name.slice(0, 2).toUpperCase();
   const vorname = teile[0] ?? "";
   const [open, setOpen] = useState(false);
+  // MyImmo oder BuyImmo — folgt der Adresse (lib/bereich.ts). Gemeinsame Seiten
+  // (Einstellungen, Objekt-Detail) behalten den Bereich, aus dem man kam. Nachgezogen
+  // WÄHREND des Renderns (React-Muster „Zustand an Props anpassen“), nicht im Effekt —
+  // sonst stünde nach jedem Wechsel einen Augenblick lang die falsche Navigation da.
+  const eigener = eigenerBereich(path);
+  const [letzter, setLetzter] = useState<Bereich>(eigener ?? "verwaltung");
+  if (eigener && eigener !== letzter) setLetzter(eigener);
+  const bereich = eigener ?? letzter;
   // Ein-/Ausklapp-Zustand (Icon-Rail, nur Desktop). Persistiert wie das Theme
   // in localStorage + Attribut am <html> (kein Flackern, siehe app/layout.tsx).
   const [rail, setRail] = useState(false);
@@ -137,8 +147,8 @@ export default function Sidebar({
           <span />
           <span />
         </button>
-        <Link href="/" className="mobile-logo">
-          My<span>Immo</span>
+        <Link href={BEREICHE[bereich].start} className="mobile-logo">
+          {BEREICHE[bereich].marke}<span>Immo</span>
         </Link>
         <ThemeToggle variant="icon" />
       </div>
@@ -149,14 +159,8 @@ export default function Sidebar({
 
       <aside className={"sidebar" + (open ? " open" : "")}>
       <div className="sidebar-logo">
-        <Link href="/" style={{ textDecoration: "none" }} className="sidebar-brand">
-          {/* Ausgeklappt: Wortmarke. Eingeklappt (Rail): automatisch das App-Icon,
-              damit „MyImmo" nicht auf 68px zusammengequetscht wird. */}
-          <h1 className="brand-wordmark">My<span>Immo</span></h1>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/myimmo_logo_2048.png" alt="MyImmo" className="brand-icon" width={38} height={38} />
-        </Link>
-        <p>Immobilien-Management</p>
+        {/* Logo = Umschalter MyImmo ↔ BuyImmo (05.10.2026). */}
+        <BereichWechsel bereich={bereich} />
         <div className="sidebar-userrow" style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
           {/* Avatar = Button zu den Einstellungen (ersetzt das Zahnrad).
               Im Rail bleibt NUR dieser Kreis stehen (Name/Mail/Theme/Logout aus). */}
@@ -189,24 +193,15 @@ export default function Sidebar({
       {/* <aside> allein meldet "complementary" — die Links brauchen ein
           echtes navigation-Landmark, damit Screenreader sie anspringen können. */}
       <nav aria-label="Hauptnavigation">
-      <div className="sidebar-section">
-        <div className="sidebar-section-label">Heute verwalten</div>
-        {VERWALTEN.map(navLink)}
-      </div>
-
-      <div className="sidebar-section">
-        <div className="sidebar-section-label">Abrechnen</div>
-        {ABRECHNEN.map(navLink)}
-      </div>
-
-      {/* „Planen" ist eingeklappt, aber nicht versteckt: <details> braucht kein
-          JavaScript, merkt sich den Zustand nicht (bewusst — sonst wäre die
-          Sidebar bei jedem Nutzer anders lang) und ist per Tastatur bedienbar.
-          Wer hier drin arbeitet, klappt einmal auf. */}
-      <details className="sidebar-section" open={PLANEN.some((n) => isActive(n.href))}>
-        <summary className="sidebar-section-label sidebar-gruppe">Planen</summary>
-        {PLANEN.map(navLink)}
-      </details>
+      {/* Die Gruppen des offenen Bereichs. Seit der Teilung (05.10.2026) hat jeder Bereich
+          höchstens sechs Punkte je Gruppe — das frühere eingeklappte „Planen“ ist nach
+          BuyImmo gezogen und braucht kein <details> mehr. */}
+      {BEREICHE[bereich].gruppen.map((g) => (
+        <div key={g.titel} className="sidebar-section">
+          <div className="sidebar-section-label">{g.titel}</div>
+          {g.ziele.map(navLink)}
+        </div>
+      ))}
 
       <div className="sidebar-section">
         <Link href="/einstellungen" className={`nav-item${isActive("/einstellungen") ? " active" : ""}`} title="Einstellungen">

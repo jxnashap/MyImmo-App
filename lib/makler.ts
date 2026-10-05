@@ -66,3 +66,13 @@ export type MaklerDok = {
 export function istMaklerKey(key: string): boolean {
   return MAKLER_CHECKLISTE.some((i) => i.key === key);
 }
+
+/**
+ * Wie viele Punkte der Checkliste erledigt sind — EINE Regel für den Ordner selbst und die
+ * BuyImmo-Kommandozentrale. Zählt nur Schlüssel der Checkliste (Altzeilen mit unbekanntem
+ * Schlüssel nicht) und jeden Punkt höchstens einmal.
+ */
+export function maklerErledigt(docs: { item_key: string; status: string | null }[]): number {
+  const fertig = new Set(docs.filter((d) => d.status === "erledigt").map((d) => d.item_key));
+  return MAKLER_CHECKLISTE.filter((i) => fertig.has(i.key)).length;
+}

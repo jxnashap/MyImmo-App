@@ -8,7 +8,7 @@
 import { useMemo, useRef, useState, useTransition } from "react";
 import { FolderClosed, Upload, Eye, Download, X, Check, TriangleAlert, Info, Bot } from "lucide-react";
 import { useToast } from "@/components/Toast";
-import { MAKLER_CHECKLISTE, type MaklerDok, type MaklerItem } from "@/lib/makler";
+import { MAKLER_CHECKLISTE, maklerErledigt, type MaklerDok, type MaklerItem } from "@/lib/makler";
 import {
   setMaklerStatus, setMaklerDatum, uploadMaklerDatei, removeMaklerDatei, generiereMaklerDokument,
 } from "@/lib/actions/makler";
@@ -40,10 +40,7 @@ export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }:
   const [pending, start] = useTransition();
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const erledigt = useMemo(
-    () => MAKLER_CHECKLISTE.filter((i) => docs[i.key]?.status === "erledigt").length,
-    [docs],
-  );
+  const erledigt = useMemo(() => maklerErledigt(Object.values(docs)), [docs]);
   const total = MAKLER_CHECKLISTE.length;
   const pct = Math.round((erledigt / total) * 100);
 

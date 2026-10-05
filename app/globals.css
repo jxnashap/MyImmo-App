@@ -332,8 +332,28 @@ p, h1, h2, h3, li, td, th, span, div { overflow-wrap: break-word; }
    modus (Override oben) wieder mit dezenter Fläche. */
 .sidebar { background: #fafafa; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .sidebar-logo { padding: 24px 20px 18px; border-bottom: 1px solid var(--line); }
-.sidebar-logo h1 { font-family: 'Fraunces', serif; font-size: 20px; color: var(--gold); letter-spacing: -0.3px; }
-.sidebar-logo h1 span { font-style: italic; font-weight: 300; }
+.sidebar-logo .brand-wordmark { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; line-height: 1.2; color: var(--gold); letter-spacing: -0.3px; }
+.sidebar-logo .brand-wordmark span { font-style: italic; font-weight: 300; }
+/* Umschalter MyImmo ↔ BuyImmo am Logo (05.10.2026, components/BereichWechsel.tsx).
+   Doppelpfeil + Bereichsname darunter, sonst erkennt niemand das Logo als Schalter. */
+.bereich-wechsel { position: relative; }
+.bereich-knopf { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 4px 6px; margin: -4px -6px; border-radius: 10px; cursor: pointer; color: inherit; font: inherit; transition: background-color 150ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .bereich-knopf:hover { background: var(--bg3); } }
+.bereich-knopf:active { background: var(--bg3); transition-duration: 0ms; }
+.bereich-knopf:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.bereich-pfeil { color: var(--muted); flex-shrink: 0; }
+.bereich-menue { position: absolute; top: calc(100% + 8px); left: -8px; right: -8px; z-index: 40; display: flex; flex-direction: column; gap: 2px; padding: 6px; background: var(--bg2); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-2); transform-origin: top left; animation: bereichAuf 160ms var(--ease-out-stark); }
+@keyframes bereichAuf { from { opacity: 0; transform: translateY(-4px) scale(.97); } }
+@media (prefers-reduced-motion: reduce) { .bereich-menue { animation: none; } }
+.bereich-eintrag { display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; border-radius: 10px; text-decoration: none; color: inherit; transition: background-color 150ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .bereich-eintrag:hover { background: var(--bg3); } }
+.bereich-eintrag:active { background: var(--bg3); transition-duration: 0ms; }
+.bereich-eintrag:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.bereich-eintrag.aktiv { background: var(--gold-pale); }
+.bereich-eintrag-kopf { display: flex; align-items: center; gap: 8px; }
+.sidebar-logo .bereich-eintrag .brand-wordmark { font-size: 16px; }
+.bereich-haken { margin-left: auto; align-self: center; color: var(--gold); flex-shrink: 0; }
+.bereich-eintrag-text { font-size: 12px; line-height: 1.4; color: var(--muted); }
 .sidebar-logo p { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.07em; text-transform: uppercase; }
 /* App-Icon nur im eingeklappten Rail (siehe Rail-Media-Query unten). */
 .sidebar-logo .brand-icon { display: none; border-radius: 9px; }
@@ -538,6 +558,8 @@ a.kpi-card:active { transform: scale(.985); }
 .kpi-leiste { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-1); overflow: hidden; }
 .kpi-feld { display: flex; flex-direction: column; gap: 4px; padding: 18px 20px; text-decoration: none; color: inherit; min-width: 0; transition: background-color 150ms var(--ease-out); }
 .kpi-feld + .kpi-feld { border-left: 1px solid var(--line); }
+/* Vier statt fünf Felder (BuyImmo-Kommandozentrale, 05.10.2026); unter 860 px gilt die Regel unten. */
+.kpi-leiste-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .kpi-feld .kpi-label { margin-bottom: 2px; }
 /* Bis zu zwei Zeilen statt abgeschnitten — die Cashflow-Formel muss lesbar bleiben (Review 30.09.2026). */
 .kpi-feld .kpi-sub { font-size: 12px; line-height: 1.4; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1956,8 +1978,14 @@ select:focus-visible, textarea:focus-visible {
   [data-rail="1"] .cmdk-trigger { justify-content: center; padding: 8px; }
   /* Rail-Kopf: Wortmarke raus, App-Icon rein — sonst wird „MyImmo" gequetscht. */
   [data-rail="1"] .sidebar-logo { padding: 16px 0 14px; text-align: center; }
-  [data-rail="1"] .sidebar-logo .brand-wordmark { display: none; }
-  [data-rail="1"] .sidebar-logo .brand-icon { display: inline-block; margin: 0 auto; }
+  /* Nur die Wortmarke IM KNOPF — die im offenen Umschalter-Menü bleibt stehen. */
+  [data-rail="1"] .bereich-knopf > .brand-wordmark,
+  [data-rail="1"] .bereich-pfeil { display: none; }
+  [data-rail="1"] .bereich-knopf > .brand-icon { display: inline-block; margin: 0 auto; }
+  [data-rail="1"] .bereich-knopf { margin: 0; padding: 0; }
+  /* Im 68px-Rail hätte das Menü keinen Platz und die Seitenleiste schneidet seitlich ab
+     (overflow-y: auto). Fest neben der Leiste — die Leiste hat hier kein transform. */
+  [data-rail="1"] .bereich-menue { position: fixed; top: 12px; left: 76px; right: auto; width: 268px; text-align: left; }
   /* Nutzerzeile im Rail: nur der Initialen-Kreis bleibt (Name, Mail, Theme,
      Logout ausgeblendet — passen nicht in 68px und wirkten „verrückt"). */
   [data-rail="1"] .sidebar-userrow > :not(.avatar-link) { display: none; }

@@ -72,6 +72,8 @@ const ERLAUBTE_PRAEFIXE = [
   "/cashflow",
   "/kauf",
   "/verkauf",
+  // BuyImmo-Kommandozentrale (05.10.2026): nur lesend, zeigt Bestand, Kaufprüfungen, Unterlagen.
+  "/aufbau",
   // Die Kaufgruende (seit 30.09.2026). Alle haben Beispieldaten; `/termine`
   // leitet Fristen aus Mietern, Krediten und Objekten ab.
   "/mietkonto",
