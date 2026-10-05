@@ -1,0 +1,495 @@
+{
+  "name": "AI Agency · 01 Vorgang",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agency-vorgang",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "n-0001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        300
+      ],
+      "webhookId": "agency-agency-vorgang"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== HIER ANPASSEN (der einzige Ort je Workflow) =====\nconst cfg = {\n  supabaseUrl:  'https://DEIN-AGENCY-REF.supabase.co',\n  auditorUrl:   'https://DEIN-N8N/webhook/agency-auditor',\n  freigabeUrl:  'https://DEIN-N8N/webhook/agency-freigabe',\n  kennzahlenUrl:'https://www.myimmoapp.de/api/intern/kennzahlen',\n  mailAn:       'DEINE@MAIL.DE',\n  mailVon:      'agency@myimmoapp.de',\n  mailVonName:  'MyImmo Agency',\n  githubRepo:   'jxnashap/myimmo-app',\n};\n// =======================================================\n\n// Eingang aus dem Webhook: { titel, ziel, rolle, risiko?, kontext? }\nconst eingang = $input.first().json.body ?? {};\nif (!eingang.titel || !eingang.ziel || !eingang.rolle) {\n  throw new Error('Pflichtfelder fehlen: titel, ziel, rolle');\n}\nreturn [{ json: { ...cfg, eingang } }];"
+      },
+      "id": "n-0002",
+      "name": "Konfiguration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Konfiguration').first().json.supabaseUrl }}/rest/v1/rpc/agency_vorgang_neu",
+        "options": {
+          "timeout": 300000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_titel: $json.eingang.titel, p_ziel: $json.eingang.ziel, p_rolle: $json.eingang.rolle, p_risiko: $json.eingang.risiko || 'niedrig', p_kontext: $json.eingang.kontext || null, p_quelle: 'n8n' }) }}"
+      },
+      "id": "n-0003",
+      "name": "Vorgang anlegen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -180,
+        300
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AGENCY_SUPABASE",
+          "name": "Agency Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c-0004",
+              "leftValue": "={{ $json.budget_ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "n-0005",
+      "name": "Budget frei?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        40,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Der Deckel warnt nicht, er stoppt (Verfassung, Abschnitt Finanzdisziplin).\nconst v = $input.first().json;\nreturn [{ json: { ok: false, gestoppt: true, grund: v.fehler || 'Budget erschöpft',\n  ausgaben_usd: v.ausgaben_usd ?? null, deckel_usd: v.deckel_usd ?? null } }];"
+      },
+      "id": "n-0006",
+      "name": "Budget-Stopp",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "n-0007",
+      "name": "Antwort Stopp",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const v = $('Vorgang anlegen').first().json;\nconst e = $('Konfiguration').first().json.eingang;\n\nconst auftrag = [\n  'VORGANG #' + v.nr,\n  'TITEL: ' + e.titel,\n  'ZIEL: ' + e.ziel,\n  'RISIKOSTUFE: ' + v.risiko,\n  e.kontext ? 'KONTEXT:\\n' + e.kontext : null,\n].filter(Boolean).join('\\n\\n');\n\nreturn [{ json: { anfrage: {\n  model: v.rolle.modell,\n  max_tokens: v.rolle.max_tokens,\n  system: v.rolle.prompt,\n  thinking: { type: 'adaptive' },\n  output_config: { effort: v.rolle.effort },\n  messages: [{ role: 'user', content: auftrag }],\n} } }];"
+      },
+      "id": "n-0008",
+      "name": "Auftrag bauen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "options": {
+          "timeout": 600000
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.anfrage) }}"
+      },
+      "id": "n-0009",
+      "name": "Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        160
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ANTHROPIC_KEY",
+          "name": "Anthropic x-api-key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nif (r.stop_reason === 'refusal') {\n  throw new Error('Modell hat die Anfrage abgelehnt (stop_reason=refusal).');\n}\nconst text = (r.content || []).filter(b => b.type === 'text').map(b => b.text).join('\\n\\n');\nreturn [{ json: {\n  text,\n  stop_reason: r.stop_reason ?? null,\n  abgeschnitten: r.stop_reason === 'max_tokens',\n  tokens_ein: r.usage?.input_tokens ?? 0,\n  tokens_aus: r.usage?.output_tokens ?? 0,\n  tokens_cache: r.usage?.cache_read_input_tokens ?? 0,\n} }];"
+      },
+      "id": "n-0010",
+      "name": "Ergebnis lesen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        700,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Konfiguration').first().json.supabaseUrl }}/rest/v1/rpc/agency_lauf_buchen",
+        "options": {
+          "timeout": 300000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_vorgang: $('Vorgang anlegen').first().json.vorgang_id, p_rolle: $('Vorgang anlegen').first().json.rolle.schluessel, p_modell: $('Vorgang anlegen').first().json.rolle.modell, p_tokens_ein: $json.tokens_ein, p_tokens_aus: $json.tokens_aus, p_tokens_cache: $json.tokens_cache, p_ergebnis: $json.text }) }}"
+      },
+      "id": "n-0011",
+      "name": "Lauf buchen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AGENCY_SUPABASE",
+          "name": "Agency Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Konfiguration').first().json.auditorUrl }}",
+        "options": {
+          "timeout": 600000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ vorgang_id: $('Vorgang anlegen').first().json.vorgang_id, audit_pflicht: $('Vorgang anlegen').first().json.audit_pflicht, titel: $('Konfiguration').first().json.eingang.titel, ziel: $('Konfiguration').first().json.eingang.ziel, risiko: $('Vorgang anlegen').first().json.risiko, ergebnis: $('Ergebnis lesen').first().json.text }) }}"
+      },
+      "id": "n-0012",
+      "name": "Auditor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1140,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const v   = $('Vorgang anlegen').first().json;\nconst cfg = $('Konfiguration').first().json;\nconst erg = $('Ergebnis lesen').first().json;\nconst buch= $('Lauf buchen').first().json;\nconst aud = $input.first().json;\n\nconst urteil = aud.urteil ?? 'PASS';\nconst freigabeNoetig = v.freigabe_pflicht && urteil === 'PASS';\n\n// FAIL beendet den Vorgang — die Datenbank hat den Status bereits gesetzt.\nconst status = urteil === 'FAIL' ? 'gestoppt'\n             : freigabeNoetig    ? 'wartet_auf_freigabe'\n             :                     'fertig';\n\nconst link = (e) => cfg.freigabeUrl + '?vorgang=' + v.vorgang_id\n           + '&token=' + v.freigabe_token + '&entscheidung=' + e;\n\nconst kopf = [\n  'Vorgang #' + v.nr + ' · ' + cfg.eingang.titel,\n  'Rolle: ' + v.rolle.name + ' (' + v.rolle.modell + ') · Risiko: ' + v.risiko,\n  'Audit: ' + urteil + (aud.uebersprungen ? ' (nicht erforderlich)' : ''),\n  'Kosten: ' + (buch.kosten_usd ?? '?') + ' USD · Monat: ' + (buch.ausgaben_monat_usd ?? '?')\n    + ' von ' + (buch.deckel_usd ?? '?') + ' USD',\n].join('\\n');\n\nconst auditBlock = aud.uebersprungen ? '' : [\n  '', '--- AUDIT ---',\n  'Urteil: ' + urteil,\n  aud.befund ? 'Befund: ' + aud.befund : null,\n  aud.fehlende_evidenz ? 'Fehlende Evidenz: ' + aud.fehlende_evidenz : null,\n  aud.billigstes_experiment ? 'Billigstes Experiment: ' + aud.billigstes_experiment : null,\n].filter(x => x !== null).join('\\n');\n\nconst htmlText = (s) => String(s)\n  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\n\nconst knoepfe = freigabeNoetig\n  ? '<p><a href=\"' + link('ja') + '\" style=\"background:#D4A847;color:#0F0F0E;padding:10px 18px;'\n    + 'border-radius:18px;text-decoration:none;font-weight:600\">Freigeben</a>'\n    + '&nbsp;&nbsp;<a href=\"' + link('nein') + '\" style=\"padding:10px 18px;border-radius:18px;'\n    + 'border:1px solid #e5e5e5;text-decoration:none;color:#0F0F0E\">Ablehnen</a></p>'\n  : '';\n\nconst html = '<div style=\"font-family:system-ui,sans-serif;max-width:680px\">'\n  + '<pre style=\"white-space:pre-wrap;font:inherit\">' + htmlText(kopf) + '</pre>'\n  + knoepfe\n  + '<hr style=\"border:0;border-top:1px solid #e5e5e5\">'\n  + '<pre style=\"white-space:pre-wrap;font:inherit\">' + htmlText(erg.text) + '</pre>'\n  + (auditBlock ? '<pre style=\"white-space:pre-wrap;font:inherit;color:#666\">'\n      + htmlText(auditBlock) + '</pre>' : '')\n  + '</div>';\n\nreturn [{ json: {\n  vorgang_id: v.vorgang_id, nr: v.nr, status, urteil,\n  freigabe_noetig: freigabeNoetig,\n  abgeschnitten: erg.abgeschnitten,\n  kosten_usd: buch.kosten_usd ?? null,\n  budget_rest_usd: buch.budget_rest_usd ?? null,\n  betreff: '[Agency #' + v.nr + '] ' + cfg.eingang.titel + ' — ' + status,\n  html, text: erg.text,\n} }];"
+      },
+      "id": "n-0013",
+      "name": "Abschluss",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Konfiguration').first().json.supabaseUrl }}/rest/v1/rpc/agency_status_setzen",
+        "options": {
+          "timeout": 300000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_vorgang: $json.vorgang_id, p_status: $json.status, p_notiz: 'Audit: ' + $json.urteil }) }}"
+      },
+      "id": "n-0014",
+      "name": "Status setzen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1580,
+        160
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "AGENCY_SUPABASE",
+          "name": "Agency Supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "options": {
+          "timeout": 300000
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ sender: { email: $('Konfiguration').first().json.mailVon, name: $('Konfiguration').first().json.mailVonName }, to: [{ email: $('Konfiguration').first().json.mailAn }], subject: $('Abschluss').first().json.betreff, htmlContent: $('Abschluss').first().json.html }) }}"
+      },
+      "id": "n-0015",
+      "name": "E-Mail an Jonas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        160
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "BREVO_KEY",
+          "name": "Brevo api-key"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($('Abschluss').first().json) }}",
+        "options": {}
+      },
+      "id": "n-0016",
+      "name": "Antwort",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2020,
+        160
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Konfiguration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konfiguration": {
+      "main": [
+        [
+          {
+            "node": "Vorgang anlegen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vorgang anlegen": {
+      "main": [
+        [
+          {
+            "node": "Budget frei?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Budget frei?": {
+      "main": [
+        [
+          {
+            "node": "Auftrag bauen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Budget-Stopp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Budget-Stopp": {
+      "main": [
+        [
+          {
+            "node": "Antwort Stopp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auftrag bauen": {
+      "main": [
+        [
+          {
+            "node": "Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude": {
+      "main": [
+        [
+          {
+            "node": "Ergebnis lesen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ergebnis lesen": {
+      "main": [
+        [
+          {
+            "node": "Lauf buchen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lauf buchen": {
+      "main": [
+        [
+          {
+            "node": "Auditor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auditor": {
+      "main": [
+        [
+          {
+            "node": "Abschluss",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Abschluss": {
+      "main": [
+        [
+          {
+            "node": "Status setzen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status setzen": {
+      "main": [
+        [
+          {
+            "node": "E-Mail an Jonas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-Mail an Jonas": {
+      "main": [
+        [
+          {
+            "node": "Antwort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "myimmo-agency"
+  },
+  "tags": []
+}

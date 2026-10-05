@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { geheimnisGleich } from "@/lib/net/geheimnis";
 import { holeIndexReihe } from "@/lib/wert/hpi";
 import { fortschreibeKaufpreis } from "@/lib/wert/fortschreibung";
 import { protokolliereWert } from "@/lib/wert/protokoll";
@@ -31,13 +31,6 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // damit die Route im Zeitbudget bleibt; der Rest kommt beim nächsten Lauf dran.
 const GEOCODE_PAUSE_MS = 1100;
 const GEOCODE_PRO_LAUF = 8;
-
-/** Vergleich in konstanter Zeit — die Länge verrät sonst schon etwas. */
-function geheimnisGleich(a: string, b: string): boolean {
-  const x = Buffer.from(a);
-  const y = Buffer.from(b);
-  return x.length === y.length && timingSafeEqual(x, y);
-}
 
 export async function GET(req: Request) {
   return handle(req);

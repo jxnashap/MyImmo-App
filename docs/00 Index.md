@@ -65,6 +65,8 @@
 - [[MIETERPORTAL-AUSBAU]] — Bestandsaufnahme, acht Wege zur Fehlzustellung, sicherer Zustellweg + Ausbau (02.10.2026)
 - [[HANDWERKER-ANFRAGEN]] — Angebote einholen, später Handwerkerportal; Entscheidungen + Risiken (02.10.2026)
 - [[VERTRETER-ZUGANG]] — Bevollmächtigter mit eigener Anmeldung, Rechten und Protokoll (Plan 02.10.2026)
+- [[AI-AGENCY-OS]] — Firmen-Verfassung bewertet (29 → 6 Rollen), n8n-Umsetzung + Betreiber-Cockpit `/cockpit` (03.10.2026)
+  · Einrichtung: `agency/README.md` im Repo-Wurzelverzeichnis
 - [[STRATEGIE-REITER]] — Ankaufsstrategie: wann ist das nächste Objekt finanzierbar? (Idee 30.08.2026)
 - [[OPEN-BANKING]] — Konto-Anbindung, zurückgestellt 29.08.2026 (Code in der Git-Historie)
 
