@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { fakeSupabase, mockeNextUndSupabase } from "./stubs/actionHarness";
-import { maklerVorauswahl, maklerLinkPfad, MAKLER_CHECKLISTE } from "@/lib/makler";
+import { maklerVorauswahl, maklerLinkPfad, MAKLER_CHECKLISTE, maklerMailLink, normalisiereMaklerCode, istMaklerCodeFormat } from "@/lib/makler";
 import { abrufeJeLink, abrufZusammenfassung } from "@/lib/freigabeAbrufe";
 import { istOeffentlicheSeite } from "@/lib/oeffentlich";
 
@@ -11,8 +11,11 @@ import { istOeffentlicheSeite } from "@/lib/oeffentlich";
 // Punkte nicht vorausgewählt, Widerruf ohne Rückweg — und jeder Abruf landet im Protokoll.
 
 beforeEach(() => vi.resetModules());
+const KEY = process.env.DATA_ENCRYPTION_KEY;
+beforeEach(() => { process.env.DATA_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString("base64"); });
 afterEach(() => {
-  for (const m of ["next/cache", "next/navigation", "@/lib/supabase/server", "@/lib/supabase/admin"]) vi.doUnmock(m);
+  for (const m of ["next/cache", "next/navigation", "next/headers", "@/lib/supabase/server", "@/lib/supabase/admin"]) vi.doUnmock(m);
+  if (KEY === undefined) delete process.env.DATA_ENCRYPTION_KEY; else process.env.DATA_ENCRYPTION_KEY = KEY;
 });
 
 const FREIGABE = { token: "t-1", item_keys: ["schufa_bonitaet"], ablauf: "2026-10-19T00:00:00Z", aktiv: true, created_at: null };
@@ -39,16 +42,16 @@ const eingefuegt = (db: { zugriffe: { tabelle: string; op: string; daten?: unkno
 describe("Makler-Link erstellen", () => {
   it("nur bekannte Punkte, und nur solche mit Datei", async () => {
     const { db, mod } = await lade();
-    await mod.createMaklerFreigabe(["schufa_bonitaet", "finanzierungsbestaetigung", "erfunden", "../x"], 14);
+    await mod.createMaklerFreigabe(["schufa_bonitaet", "finanzierungsbestaetigung", "erfunden", "../x"], 14, "m@makler.de");
     expect(eingefuegt(db)).toMatchObject({ user_id: "nutzer-1", item_keys: ["schufa_bonitaet"] });
   });
 
   it("ohne gültigen Punkt kein Datenbankzugriff, ohne Datei kein Link", async () => {
     const a = await lade();
-    await expect(a.mod.createMaklerFreigabe(["erfunden"], 14)).rejects.toThrow("mindestens ein Dokument");
+    await expect(a.mod.createMaklerFreigabe(["erfunden"], 14, "m@makler.de")).rejects.toThrow("mindestens ein Dokument");
     expect(a.db.zugriffe).toEqual([]);
     const b = await lade();
-    await expect(b.mod.createMaklerFreigabe(["finanzierungsbestaetigung"], 14)).rejects.toThrow("keine Datei");
+    await expect(b.mod.createMaklerFreigabe(["finanzierungsbestaetigung"], 14, "m@makler.de")).rejects.toThrow("keine Datei");
     expect(eingefuegt(b.db)).toBeUndefined();
   });
 
@@ -56,7 +59,7 @@ describe("Makler-Link erstellen", () => {
     for (const [ein, soll] of [[7, 7], [30, 30], [90, 14], [0, 14]] as const) {
       const { db, mod } = await lade();
       const vorher = Date.now();
-      await mod.createMaklerFreigabe(["schufa_bonitaet"], ein);
+      await mod.createMaklerFreigabe(["schufa_bonitaet"], ein, "m@makler.de");
       const tage = Math.round((new Date(String(eingefuegt(db)?.ablauf)).getTime() - vorher) / 86_400_000);
       expect(tage, `Eingabe ${ein}`).toBe(soll);
     }
@@ -64,14 +67,96 @@ describe("Makler-Link erstellen", () => {
 
   it("verlangt eine frische Anmeldung — vor dem Anlegen", async () => {
     const { db, mod } = await lade({ amrVorSekunden: 3 * 3600 });
-    await expect(mod.createMaklerFreigabe(["schufa_bonitaet"], 14)).rejects.toThrow();
+    await expect(mod.createMaklerFreigabe(["schufa_bonitaet"], 14, "m@makler.de")).rejects.toThrow();
     expect(eingefuegt(db)).toBeUndefined();
   });
 
   it("ein Lesefehler legt keinen Link an (fail-closed)", async () => {
     const { db, mod } = await lade({ fehlerBei: { "makler_dokumente:select": { message: "kaputt" } } });
-    await expect(mod.createMaklerFreigabe(["schufa_bonitaet"], 14)).rejects.toThrow("kaputt");
+    await expect(mod.createMaklerFreigabe(["schufa_bonitaet"], 14, "m@makler.de")).rejects.toThrow("kaputt");
     expect(eingefuegt(db)).toBeUndefined();
+  });
+});
+
+describe("Zugangscode und Empfänger (seit 05.10.2026)", () => {
+  it("der Code kommt EINMAL zurück, gespeichert wird nur sein Hash — an den Token gebunden", async () => {
+    const { db, mod } = await lade();
+    const r = await mod.createMaklerFreigabe(["schufa_bonitaet"], 14, "  M@Makler.de ");
+    expect(r.code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    const ein = eingefuegt(db)!;
+    expect(ein.empfaenger_email).toBe("m@makler.de");
+    expect(String(ein.code_hash)).toMatch(/^[0-9a-f]{64}$/);
+    expect(JSON.stringify(ein)).not.toContain(r.code.replace("-", ""));
+    expect(JSON.stringify(ein)).not.toContain(r.code);
+    const { maklerCodeHash } = await import("@/lib/maklerCode");
+    expect(ein.code_hash).toBe(maklerCodeHash(String(ein.token), r.code));
+    expect(maklerCodeHash("00000000-0000-0000-0000-000000000000", r.code)).not.toBe(ein.code_hash);
+  });
+
+  it("ohne gültige Makler-Adresse kein Link — auch nicht mit Hintertür im mailto", async () => {
+    for (const a of ["", "keine-mail", "a@b.de?bcc=x@y.de", "a b@c.de"]) {
+      const { db, mod } = await lade();
+      await expect(mod.createMaklerFreigabe(["schufa_bonitaet"], 14, a), a).rejects.toThrow("E-Mail");
+      expect(eingefuegt(db)).toBeUndefined();
+    }
+  });
+
+  it("zwei Links bekommen verschiedene Codes", async () => {
+    const a = await lade(); const r1 = await a.mod.createMaklerFreigabe(["schufa_bonitaet"], 14, "m@makler.de");
+    const b = await lade(); const r2 = await b.mod.createMaklerFreigabe(["schufa_bonitaet"], 14, "m@makler.de");
+    expect(r1.code).not.toBe(r2.code);
+  });
+
+  it("die vorbereitete Mail: Empfänger, Betreff, Link, Code, Ablauf", () => {
+    const m = maklerMailLink({ an: "m@makler.de", link: "https://x/makler-link/t", code: "ABCD-EF23", ablauf: "2026-10-19T10:00:00Z" });
+    expect(m.startsWith("mailto:m@makler.de?subject=")).toBe(true);
+    const text = decodeURIComponent(m.slice(m.indexOf("&body=") + 6));
+    expect(text).toContain("https://x/makler-link/t");
+    expect(text).toContain("Zugangscode: ABCD-EF23");
+    expect(text).toContain("19.10.2026");
+    expect(maklerMailLink({ an: "a@b.de?bcc=x@y.de", link: "l", code: "c", ablauf: "2026-10-19" })).toMatch(/^mailto:\?subject=/);
+  });
+
+  it("Code-Eingabe ist tolerant gegenüber Schreibweise, aber nicht gegenüber Länge", () => {
+    expect(normalisiereMaklerCode(" abcd-ef23 ")).toBe("ABCDEF23");
+    expect(istMaklerCodeFormat("ABCDEF23")).toBe(true);
+    expect(istMaklerCodeFormat("ABCDEF2")).toBe(false);
+    expect(istMaklerCodeFormat("ABCDEF2O")).toBe(false); // O gibt es im Alphabet nicht
+  });
+});
+
+describe("Anmeldung des Maklers", () => {
+  const T = "11111111-2222-3333-4444-555555555555";
+  async function ladeAnmeldung(rpcAntwort: unknown) {
+    vi.resetModules();
+    const gesetzt: { name: string; wert: string; opt: Record<string, unknown> }[] = [];
+    vi.doMock("next/headers", () => ({ cookies: async () => ({ set: (name: string, wert: string, opt: Record<string, unknown>) => gesetzt.push({ name, wert, opt }), get: () => undefined }) }));
+    const { db, client } = fakeSupabase({ rpc: { makler_public_anmelden: rpcAntwort } });
+    mockeNextUndSupabase(client);
+    const mod = await import("@/lib/actions/maklerLinkPublic");
+    return { db, mod, gesetzt };
+  }
+  it("richtiger Code: Cookie mit dem Hash, nur für diesen Link, httpOnly", async () => {
+    const { mod, gesetzt } = await ladeAnmeldung("ok");
+    expect(await mod.meldeMaklerAn(T, "abcd-ef23")).toEqual({ ok: true });
+    const { maklerCodeHash } = await import("@/lib/maklerCode");
+    expect(gesetzt).toHaveLength(1);
+    expect(gesetzt[0].wert).toBe(maklerCodeHash(T, "ABCDEF23"));
+    expect(gesetzt[0].opt).toMatchObject({ httpOnly: true, path: `/makler-link/${T}` });
+  });
+  it("falscher oder gesperrter Code: kein Cookie, klare Meldung", async () => {
+    for (const [antwort, text] of [["falsch", "stimmt nicht"], ["gesperrt", "Zu viele"], [null, "abgelaufen"]] as const) {
+      const { mod, gesetzt } = await ladeAnmeldung(antwort);
+      const r = await mod.meldeMaklerAn(T, "ABCD-EF23");
+      expect("error" in r && r.error, String(antwort)).toContain(text);
+      expect(gesetzt).toEqual([]);
+    }
+  });
+  it("Unsinn erreicht die Datenbank gar nicht", async () => {
+    const { db, mod } = await ladeAnmeldung("ok");
+    expect("error" in (await mod.meldeMaklerAn("kein-token", "ABCD-EF23"))).toBe(true);
+    expect("error" in (await mod.meldeMaklerAn(T, "123"))).toBe(true);
+    expect(db.zugriffe).toEqual([]);
   });
 });
 
@@ -163,6 +248,24 @@ describe("Öffentliche Seite und Datenbank", () => {
     expect(manuell).toContain("MANUELL IM SUPABASE-SQL-EDITOR");
     expect(manuell).toMatch(/delete from public\.freigabe_abrufe\s+where user_id = uid/);
     expect(manuell).toMatch(/delete from public\.makler_freigaben\s+where user_id = uid/);
+  });
+
+  it("Code-Pflicht in der Datenbank: alte Funktionen ohne Code stillgelegt, neue verlangen den Hash", () => {
+    const neu = readFileSync("supabase/migrations/20261005170000_makler_link_code.sql", "utf8");
+    const c = neu.split("\n").filter((z) => !z.trim().startsWith("--")).join("\n");
+    expect(neu).not.toMatch(/\b(delete|drop)\b/i);
+    expect(c).toMatch(/revoke all on function public\.makler_public_info\(uuid\) from public, anon, authenticated/);
+    expect(c).toMatch(/revoke all on function public\.makler_public_datei\(uuid, text\) from public, anon, authenticated/);
+    expect(c).toMatch(/and code_hash is not null and code_hash = p_code_hash/);
+    expect(c).toContain("fehlversuche >= 10");
+    expect(c).toMatch(/code_hash is not null and char_length\(code_hash\) = 64\s+and empfaenger_email is not null/);
+    // Seite und Datei-Route rufen nur noch die Fassungen MIT Hash.
+    const seite = readFileSync("app/(app)/makler-link/[token]/page.tsx", "utf8");
+    const route = readFileSync("app/(app)/makler-link/[token]/datei/[key]/route.ts", "utf8");
+    expect(seite).toContain("p_code_hash: hash");
+    expect(route).toContain("p_code_hash: hash");
+    expect(route).toContain("if (!hash || !/^[0-9a-f]{64}$/.test(hash))");
+    expect(route).toContain('return new NextResponse("Bitte zuerst den Zugangscode eingeben", { status: 403 })');
   });
 
   it("Rückfall für den Bank-Link liegt bereit", () => {

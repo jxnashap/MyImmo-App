@@ -44,7 +44,7 @@ export const ORDNER = [
     punkte: [
       "Finanzierungsbestätigung, Selbstauskunft, SCHUFA — abhaken mit Fortschritt",
       "Käufer-Selbstauskunft als PDF aus deinen gespeicherten Angaben",
-      "Download-Link für 7, 14 oder 30 Tage — Ausweis und Einkommen nur, wenn du sie bewusst anhakst",
+      "Download-Link mit Zugangscode für 7, 14 oder 30 Tage — Ausweis und Einkommen nur, wenn du sie bewusst anhakst",
     ],
   },
   {

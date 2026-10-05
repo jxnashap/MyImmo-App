@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/crypto/secure";
 import { pruefeFrischeAnmeldung, REAUTH_MELDUNG } from "@/lib/auth/frisch";
+import { erzeugeMaklerCode, maklerCodeHash } from "@/lib/maklerCode";
+import { EMAIL } from "@/lib/mahnung";
 import { MAKLER_CHECKLISTE, istMaklerKey, type MaklerDok } from "@/lib/makler";
 import { buildKaeuferSelbstauskunftPdf } from "@/lib/pdf/kaeuferPdf";
 import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
@@ -187,14 +189,23 @@ export type MaklerFreigabe = {
   ablauf: string;
   aktiv: boolean;
   created_at: string | null;
+  empfaenger_email: string | null;
 };
 
-const FREIGABE_FELDER = "token,item_keys,ablauf,aktiv,created_at";
+const FREIGABE_FELDER = "token,item_keys,ablauf,aktiv,created_at,empfaenger_email";
 
-export async function createMaklerFreigabe(itemKeys: string[], tageAblauf: number): Promise<MaklerFreigabe> {
+// Seit 05.10.2026 mit Zugangscode und Empfänger: Der Code wird hier erzeugt, EINMAL zurückgegeben
+// (für die vorbereitete Mail und die Anzeige) und nur als HMAC gespeichert.
+export async function createMaklerFreigabe(
+  itemKeys: string[],
+  tageAblauf: number,
+  empfaengerEmail: string,
+): Promise<{ freigabe: MaklerFreigabe; code: string }> {
   const keys = [...new Set(itemKeys)].filter((k) => istMaklerKey(k));
   if (!keys.length) throw new Error("Bitte mindestens ein Dokument auswählen.");
   const tage = [7, 14, 30].includes(tageAblauf) ? tageAblauf : 14;
+  const email = String(empfaengerEmail ?? "").trim().toLowerCase();
+  if (!EMAIL.test(email) || email.length > 200) throw new Error("Bitte eine gültige E-Mail-Adresse des Maklers eintragen.");
 
   const { supabase, userId } = await uid();
   // Der Link öffnet Ausweis- und Bonitätsunterlagen für jeden, der ihn hat — wie beim Bank-Link
@@ -212,17 +223,22 @@ export async function createMaklerFreigabe(itemKeys: string[], tageAblauf: numbe
   const mitDatei = keys.filter((k) => (vorhanden ?? []).some((d) => d.item_key === k && !!d.datei_name));
   if (!mitDatei.length) throw new Error("Zu den gewählten Punkten ist noch keine Datei hinterlegt.");
 
+  const token = crypto.randomUUID();
+  const code = erzeugeMaklerCode();
   const { data, error } = await supabase
     .from("makler_freigaben")
     .insert({
+      token,
       user_id: userId,
       item_keys: mitDatei,
       ablauf: new Date(Date.now() + tage * 24 * 3600 * 1000).toISOString(),
+      empfaenger_email: email,
+      code_hash: maklerCodeHash(token, code),
     })
     .select(FREIGABE_FELDER)
     .single();
   if (error) throw new Error(error.message);
-  return data as MaklerFreigabe;
+  return { freigabe: data as MaklerFreigabe, code };
 }
 
 // Widerrufen: der Link ist sofort ungültig. Wieder aktivieren lässt die Datenbank nicht zu.

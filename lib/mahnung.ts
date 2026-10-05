@@ -50,7 +50,7 @@ export function zahlungsBriefUrl(o: {
 
 // Bewusst schlicht: Eine Adresse, die hier nicht passt, landet NICHT im Link — lieber ein
 // leeres An-Feld als ein Link, der eine fremde Zeichenkette (z. B. „?bcc=…“) mitträgt.
-const EMAIL = /^[^\s@?&#,;<>"]+@[^\s@?&#,;<>"]+\.[^\s@?&#,;<>"]+$/;
+export const EMAIL = /^[^\s@?&#,;<>"]+@[^\s@?&#,;<>"]+\.[^\s@?&#,;<>"]+$/;
 
 /**
  * `mailto:`-Link für die vorbereitete Mail. Das PDF hängt NICHT daran — ein mailto-Link
