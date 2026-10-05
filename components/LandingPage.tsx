@@ -29,8 +29,7 @@ export const VERTRAUEN = [
 
 // „Ein Link statt Aktenordner“ (05.10.2026, Wunsch des Betreibers): Wer Unterlagen von dir
 // will, bekommt einen Ordner oder einen Link. Jeder Punkt ist an seinen Beleg gebunden
-// (tests/startseite.test.ts) — der Makler-Ordner hat bewusst KEINEN Link-Satz, weil es dort
-// keinen Freigabe-Link gibt, nur Download je Dokument.
+// (tests/startseite.test.ts). Der Makler-Link kam am selben Tag dazu (Migration 20261005160000).
 export const ORDNER = [
   {
     ico: Landmark, wer: "Für die Bank", t: "Beleihungsordner je Objekt",
@@ -41,11 +40,11 @@ export const ORDNER = [
     ],
   },
   {
-    ico: Briefcase, wer: "Für den Makler", t: "Käufer-Ordner",
+    ico: Briefcase, wer: "Für den Makler", t: "Käufer-Ordner mit Link",
     punkte: [
-      "Finanzierungsbestätigung, Eigenkapital, SCHUFA, Einkommen — abhaken mit Fortschritt",
+      "Finanzierungsbestätigung, Selbstauskunft, SCHUFA — abhaken mit Fortschritt",
       "Käufer-Selbstauskunft als PDF aus deinen gespeicherten Angaben",
-      "Jedes Dokument einzeln herunterladen und dem Makler schicken",
+      "Download-Link für 7, 14 oder 30 Tage — Ausweis und Einkommen nur, wenn du sie bewusst anhakst",
     ],
   },
   {

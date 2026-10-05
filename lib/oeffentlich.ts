@@ -28,6 +28,7 @@ export function istOeffentlicheSeite(pathname: string): boolean {
     pathname === "/anmelden" || // Rollen-Auswahl vor dem Login
     pathname.startsWith("/auth") ||
     pathname.startsWith("/beleihung/") ||
+    pathname.startsWith("/makler-link/") || // Käuferunterlagen für den Makler (05.10.2026)
     pathname.startsWith("/bewerben/") || // öffentliche Bewerber-Selbstauskunft
     pathname.startsWith("/auftrag/") || // öffentlicher Firmen-Link (Terminabsprache)
     pathname.startsWith("/angebot/") || // öffentliche Angebotsanfrage an eine Firma

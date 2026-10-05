@@ -12,6 +12,9 @@ import { MAKLER_CHECKLISTE, maklerErledigt, type MaklerDok, type MaklerItem } fr
 import {
   setMaklerStatus, setMaklerDatum, uploadMaklerDatei, removeMaklerDatei, generiereMaklerDokument,
 } from "@/lib/actions/makler";
+import type { MaklerFreigabe } from "@/lib/actions/makler";
+import MaklerLink from "@/components/MaklerLink";
+import type { Abruf } from "@/lib/freigabeAbrufe";
 
 const LEER = (key: string): MaklerDok => ({
   item_key: key, status: "offen", notiz: null, datum: null,
@@ -29,7 +32,12 @@ const BADGE: Record<MaklerDok["status"], { label: string; bg: string; fg: string
   erledigt: { label: "Erledigt", bg: "rgba(74,157,111,0.15)", fg: "var(--green, #4a9d6f)" },
 };
 
-export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }: { initialDocs: MaklerDok[]; hatSelbstauskunft?: boolean }) {
+export default function MaklerOrdner({
+  initialDocs, hatSelbstauskunft = false, freigaben = [], abrufe = [], jetzt,
+}: {
+  initialDocs: MaklerDok[]; hatSelbstauskunft?: boolean;
+  freigaben?: MaklerFreigabe[]; abrufe?: Abruf[]; jetzt: string;
+}) {
   const toast = useToast();
   const [docs, setDocs] = useState<Record<string, MaklerDok>>(() => {
     const m: Record<string, MaklerDok> = {};
@@ -199,10 +207,13 @@ export default function MaklerOrdner({ initialDocs, hatSelbstauskunft = false }:
         })}
       </div>
 
+      <MaklerLink docs={docs} initialFreigaben={freigaben} abrufe={abrufe} jetzt={jetzt} />
+
       <p style={{ fontSize: 10.5, color: "var(--faint)", margin: 0, display: "flex", gap: 7 }}>
         <Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />
         <span>Deine Dokumente sind über die Zugriffskontrolle (RLS) nur deinem Konto zugänglich. Du gibst sie
-          selbst an Makler/Verkäufer weiter — MyImmo verschickt nichts automatisch.</span>
+          selbst weiter — als Datei oder über einen Link, den du erstellst und widerrufen kannst.
+          MyImmo verschickt nichts automatisch.</span>
       </p>
     </div>
   );

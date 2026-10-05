@@ -76,3 +76,14 @@ export function maklerErledigt(docs: { item_key: string; status: string | null }
   const fertig = new Set(docs.filter((d) => d.status === "erledigt").map((d) => d.item_key));
   return MAKLER_CHECKLISTE.filter((i) => fertig.has(i.key)).length;
 }
+
+// ===== Makler-Link (05.10.2026) =====
+export const maklerLinkPfad = (token: string) => `/makler-link/${token}`;
+
+/** Vorauswahl beim Erstellen: alles mit Datei, außer den datensparsamen Punkten
+ *  (Eigenkapital, Einkommen, Ausweis) — die muss man bewusst anhaken. */
+export function maklerVorauswahl(docs: Record<string, Pick<MaklerDok, "datei_name"> | undefined>): Set<string> {
+  return new Set(
+    MAKLER_CHECKLISTE.filter((i) => !!docs[i.key]?.datei_name && !i.datensparsam).map((i) => i.key),
+  );
+}

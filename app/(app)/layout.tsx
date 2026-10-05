@@ -95,7 +95,7 @@ export default async function RootLayout({
   // Layout-Split ueber app/(pub)/ und kommen hier gar nicht mehr an. Uebrig
   // bleiben die Token-Seiten, die eine Datenbank brauchen und darum in der
   // App-Strecke bleiben muessen.
-  const istOeffentlicheSeite = ["/bewerben", "/beleihung", "/auftrag", "/angebot"].some((p) =>
+  const istOeffentlicheSeite = ["/bewerben", "/beleihung", "/auftrag", "/angebot", "/makler-link"].some((p) =>
     pathname.startsWith(p)
   );
 
