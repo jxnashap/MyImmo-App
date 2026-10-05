@@ -330,7 +330,8 @@ umbenennen. (3) Zahlen der Kommandozentrale nur aus bestehenden Regeln (Dashboar
 ganze Gebinde über ALLE Räume gerundet; Arbeitszeit = Stunden × Satz, den der Nutzer einträgt
 (BuyImmo schätzt keinen Lohn); eigene Posten. `lib/sanierung/` (Katalog als Parameter, Preise mit
 Quelle + Stand in `katalog.ts`, Prüfzyklus in `07 Volatile Kennzahlen`), Entwurf nur im Browser.
-`tests/sanierung.test.ts`. **Fahrplan `/fahrplan`** (`lib/fahrplan.ts`): neun Schritte, Haken nur
+`tests/sanierung.test.ts`. **Fliesen:** Boden + Wand bis Fliesenhöhe; geflieste Wand wird von
+Spachteln/Tapete/Farbe ABGEZOGEN (`fliesenwand` in `flaechen()`). **Fahrplan `/fahrplan`** (`lib/fahrplan.ts`): neun Schritte, Haken nur
 wo die App es aus den Daten weiß, Kaufnebenkosten über `kaufnebenkosten()` in `lib/kalk.ts` (EINE
 Regel mit dem Kauf-Rechner); ein Test sucht Empfehlungs-Formulierungen. Beide Rechner sind in der
 Demo bedienbar (`data-demo-erlaubt`, schreiben nichts). **Sanierung → Kauf-Assistent:** `/kauf?sanierung=…`

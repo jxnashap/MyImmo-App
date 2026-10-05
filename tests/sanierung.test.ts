@@ -31,6 +31,10 @@ const K: Katalog = {
   vinyl: mat("vinyl", "m²", 2, 1, 1, 40),
   trittschall: mat("trittschall", "m²", 10, 1, 1, 15),
   sockelleiste: mat("sockelleiste", "m", 2.5, 1, 1, 5),
+  fliese: mat("fliese", "m²", 1.44, 1, 1, 30),
+  fliesenkleber: mat("fliesenkleber", "kg", 25, 3, 4, 20),
+  fugenmoertel: mat("fugenmoertel", "kg", 5, 0.3, 0.6, 10),
+  silikon: mat("silikon", "m", 12, 1, 1, 8),
 };
 
 // A: 4 × 3 × 2,5 m, 4 m² Fenster/Tür → Umfang 14, Wand 14 × 2,5 − 4 = 31, Decke/Boden 12.
@@ -44,12 +48,13 @@ const B = (massnahmen: Raum["massnahmen"] = []): Raum => ({
 
 describe("flaechen", () => {
   it("Wand = Umfang × Höhe − Öffnungen, Decke = Boden = Länge × Breite", () => {
-    expect(flaechen(A())).toEqual({ wand: 31, decke: 12, boden: 12, umfang: 14 });
+    // Ohne Fliesenhöhe: bis zur Decke → Fliesenwand = Wand.
+    expect(flaechen(A())).toEqual({ wand: 31, decke: 12, boden: 12, umfang: 14, fliesenwand: 31 });
   });
 
   it("nie negativ: Öffnungen größer als die Wand, negative oder leere Maße", () => {
     expect(flaechen({ laenge: 2, breite: 2, hoehe: 1, oeffnungen: 100 }).wand).toBe(0);
-    expect(flaechen({ laenge: -3, breite: Number.NaN, hoehe: 2.5, oeffnungen: -1 })).toEqual({ wand: 0, decke: 0, boden: 0, umfang: 0 });
+    expect(flaechen({ laenge: -3, breite: Number.NaN, hoehe: 2.5, oeffnungen: -1 })).toEqual({ wand: 0, decke: 0, boden: 0, umfang: 0, fliesenwand: 0 });
   });
 });
 
@@ -143,7 +148,39 @@ describe("berechneSanierung", () => {
   });
 
   it("Flächensumme über alle Räume zur Kontrolle", () => {
-    expect(berechneSanierung({ raeume: [A(), B()] }, K).flaechen).toEqual({ wand: 73, decke: 32, boden: 32, umfang: 32 });
+    // Ohne „Wände fliesen“ zählt keine Fliesenwand.
+    expect(berechneSanierung({ raeume: [A(), B()] }, K).flaechen).toEqual({ wand: 73, decke: 32, boden: 32, umfang: 32, fliesenwand: 0 });
+  });
+});
+
+describe("Fliesen", () => {
+  it("Fliesenhöhe: Umfang × Höhe minus der Öffnungsanteil in dieser Höhe; nie über der Raumhöhe", () => {
+    // A bis 1,20 m: 14 × 1,2 = 16,8 − 4 m² × (1,2 / 2,5) = 16,8 − 1,92 = 14,88
+    expect(flaechen({ ...A(), fliesenhoehe: 1.2 }).fliesenwand).toBe(14.88);
+    expect(flaechen({ ...A(), fliesenhoehe: 3 }).fliesenwand).toBe(31); // gedeckelt auf 2,5 m
+  });
+
+  it("Wand bis 1,20 m gefliest, darüber gestrichen: Farbe nur auf dem Rest — nicht doppelt", () => {
+    const r = berechneSanierung({ raeume: [{ ...A(["wand_fliesen", "wand_streichen"]), fliesenhoehe: 1.2 }] }, K);
+    const z = (id: MaterialId) => r.material.find((x) => x.material.id === id)!;
+    // Rest = 31 − 14,88 = 16,12 m² · 0,12 · 2 = 3,87 l (ohne Abzug wären es 7,44 l)
+    expect(z("wandfarbe").menge.min).toBe(3.87);
+    // Fliese 14,88 × 1,10 = 16,37 m² → 12 Pakete à 1,44; × 1,15 = 17,11 → 12
+    expect(z("fliese").gebinde).toEqual({ min: 12, max: 12 });
+    // Kleber 14,88 × 3 = 44,64 kg → 2 Säcke; × 4 = 59,52 → 3
+    expect(z("fliesenkleber").gebinde).toEqual({ min: 2, max: 3 });
+    expect(r.flaechen.wand).toBe(16.12);
+    expect(r.flaechen.fliesenwand).toBe(14.88);
+  });
+
+  it("Boden fliesen: Fliese mit Verschnitt, Kleber, Fuge, Silikon über den Umfang", () => {
+    const r = berechneSanierung({ raeume: [B(["boden_fliesen"])] }, K);
+    const z = (id: MaterialId) => r.material.find((x) => x.material.id === id)!;
+    expect(z("fliese").menge).toEqual({ min: 22, max: 23 }); // 20 × 1,10 … × 1,15
+    expect(z("fugenmoertel").gebinde).toEqual({ min: 2, max: 3 }); // 6 kg … 12 kg à 5 kg
+    expect(z("silikon").gebinde).toEqual({ min: 2, max: 2 }); // 18 m à 12 m je Kartusche
+    // Kein Wandfliesen gewählt → keine Fliesenwand in der Summe, Wand unverändert.
+    expect(r.flaechen).toMatchObject({ wand: 42, fliesenwand: 0 });
   });
 });
 

@@ -582,6 +582,7 @@ a.kpi-card:active { transform: scale(.985); }
 .sanierung-raum-name { flex: 1; min-width: 0; font-weight: 600; }
 .sanierung-masse { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .sanierung-klein { font-size: 12px; color: var(--muted); }
+.sanierung-fliesenhoehe { max-width: 260px; }
 .massnahmen-wahl { display: flex; flex-wrap: wrap; gap: 6px; }
 .massnahme-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 12.5px; cursor: pointer; user-select: none; transition: background-color 150ms var(--ease-out), border-color 150ms var(--ease-out); }
 .massnahme-chip input { margin: 0; accent-color: var(--gold-fill); }

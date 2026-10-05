@@ -15,6 +15,8 @@ export type RaumFeld = {
   breite: string;
   hoehe: string;
   oeffnungen: string;
+  /** Nur bei „Wände fliesen“: bis zu welcher Höhe (leer = bis zur Decke). */
+  fliesenhoehe: string;
   massnahmen: MassnahmeId[];
 };
 export type LohnFeld = { id: string; bezeichnung: string; stunden: string; satz: string };
@@ -32,7 +34,7 @@ export type Entwurf = {
 export const STANDARD_HOEHE = "2,50";
 
 export function neuerRaum(id: string, nummer: number): RaumFeld {
-  return { id, name: `Raum ${nummer}`, laenge: "", breite: "", hoehe: STANDARD_HOEHE, oeffnungen: "", massnahmen: [] };
+  return { id, name: `Raum ${nummer}`, laenge: "", breite: "", hoehe: STANDARD_HOEHE, oeffnungen: "", fliesenhoehe: "", massnahmen: [] };
 }
 
 /** Start: ein Raum und eine leere Zeile Arbeitszeit — der Lohnrechner soll sofort zu sehen sein. */
@@ -60,6 +62,7 @@ export function zuEingabe(e: Entwurf): SanierungEingabe {
       breite: zahlDe0(r.breite),
       hoehe: zahlDe0(r.hoehe),
       oeffnungen: zahlDe0(r.oeffnungen),
+      fliesenhoehe: zahlDe0(r.fliesenhoehe),
       massnahmen: r.massnahmen,
     })),
     preise,
@@ -91,6 +94,8 @@ export function entwurfAus(roh: unknown): Entwurf | null {
       breite: text(r.breite, 20),
       hoehe: text(r.hoehe, 20),
       oeffnungen: text(r.oeffnungen, 20),
+      // Ältere Entwürfe kennen das Feld nicht → leer = bis zur Decke.
+      fliesenhoehe: text(r.fliesenhoehe, 20),
       massnahmen: liste(r.massnahmen).filter((m): m is MassnahmeId => typeof m === "string" && MASSNAHME_IDS.has(m)),
     };
   });

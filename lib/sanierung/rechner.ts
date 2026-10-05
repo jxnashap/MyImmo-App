@@ -26,7 +26,11 @@ export type MaterialId =
   | "laminat"
   | "vinyl"
   | "trittschall"
-  | "sockelleiste";
+  | "sockelleiste"
+  | "fliese"
+  | "fliesenkleber"
+  | "fugenmoertel"
+  | "silikon";
 
 export type Spanne = { min: number; max: number };
 
@@ -49,7 +53,12 @@ export type Material = {
 
 export type Katalog = Record<MaterialId, Material>;
 
-export type FlaechenArt = "wand" | "decke" | "boden" | "umfang";
+/**
+ * `fliesenwand` = Umfang × Fliesenhöhe (abzüglich des Anteils der Öffnungen, der in diese Höhe
+ * fällt). Wird in einem Raum die Wand gefliest, ist `wand` für Spachteln, Tapezieren und Streichen
+ * nur noch der Rest darüber — sonst würde dieselbe Fläche gefliest UND gestrichen.
+ */
+export type FlaechenArt = "wand" | "decke" | "boden" | "umfang" | "fliesenwand";
 
 export type MassnahmeId =
   | "spachteln"
@@ -58,7 +67,9 @@ export type MassnahmeId =
   | "wand_streichen"
   | "decke_streichen"
   | "laminat"
-  | "vinyl";
+  | "vinyl"
+  | "boden_fliesen"
+  | "wand_fliesen";
 
 type Bedarf = {
   material: MaterialId;
@@ -75,6 +86,7 @@ export type Massnahme = { id: MassnahmeId; label: string; bedarf: Bedarf[]; hinw
 export const VERSCHNITT_BODEN: Spanne = { min: 0.05, max: 0.1 };
 export const VERSCHNITT_TAPETE: Spanne = { min: 0.1, max: 0.15 };
 export const VERSCHNITT_LEISTE: Spanne = { min: 0.05, max: 0.1 };
+export const VERSCHNITT_FLIESE: Spanne = { min: 0.1, max: 0.15 };
 
 export const MASSNAHMEN: Massnahme[] = [
   {
@@ -126,6 +138,27 @@ export const MASSNAHMEN: Massnahme[] = [
     ],
     hinweis: "Ohne Trittschall — viele Klick-Vinyls haben ihn eingebaut. Sonst Laminat-Trittschall dazurechnen.",
   },
+  {
+    id: "boden_fliesen",
+    label: "Boden fliesen",
+    bedarf: [
+      { material: "fliese", flaechen: ["boden"], zuschlag: VERSCHNITT_FLIESE },
+      { material: "fliesenkleber", flaechen: ["boden"] },
+      { material: "fugenmoertel", flaechen: ["boden"] },
+      { material: "silikon", flaechen: ["umfang"] },
+    ],
+    hinweis: "Silikon für die Anschlussfuge Boden–Wand über den ganzen Umfang. Fliesenpreis schwankt stark — eigenen Preis eintragen.",
+  },
+  {
+    id: "wand_fliesen",
+    label: "Wände fliesen",
+    bedarf: [
+      { material: "fliese", flaechen: ["fliesenwand"], zuschlag: VERSCHNITT_FLIESE },
+      { material: "fliesenkleber", flaechen: ["fliesenwand"] },
+      { material: "fugenmoertel", flaechen: ["fliesenwand"] },
+    ],
+    hinweis: "Bis zur Fliesenhöhe; darüber zählt die Wand für Spachteln, Tapezieren und Streichen weiter.",
+  },
 ];
 
 export type Raum = {
@@ -137,6 +170,8 @@ export type Raum = {
   hoehe: number;
   /** Fenster und Türen in m² — wird von der Wandfläche abgezogen. */
   oeffnungen: number;
+  /** Bis zu welcher Höhe die Wand gefliest wird (m); fehlt sie oder ist 0: bis zur Decke. */
+  fliesenhoehe?: number;
   massnahmen: MassnahmeId[];
 };
 
@@ -145,15 +180,21 @@ export type Flaechen = Record<FlaechenArt, number>;
 const pos = (v: number) => (Number.isFinite(v) && v > 0 ? v : 0);
 const rund2 = (v: number) => Math.round(v * 100) / 100;
 
-export function flaechen(r: Pick<Raum, "laenge" | "breite" | "hoehe" | "oeffnungen">): Flaechen {
+export function flaechen(r: Pick<Raum, "laenge" | "breite" | "hoehe" | "oeffnungen" | "fliesenhoehe">): Flaechen {
   const l = pos(r.laenge);
   const b = pos(r.breite);
+  const h = pos(r.hoehe);
   const umfang = 2 * (l + b);
+  // Fliesenhöhe nie über der Raumhöhe; ohne Angabe bis zur Decke. Von den Öffnungen zählt der
+  // Anteil, der in die geflieste Höhe fällt (Näherung: gleichmäßig über die Höhe verteilt).
+  const fh = pos(r.fliesenhoehe ?? 0) > 0 ? Math.min(pos(r.fliesenhoehe ?? 0), h) : h;
+  const anteil = h > 0 ? fh / h : 0;
   return {
-    wand: rund2(Math.max(0, umfang * pos(r.hoehe) - pos(r.oeffnungen))),
+    wand: rund2(Math.max(0, umfang * h - pos(r.oeffnungen))),
     decke: rund2(l * b),
     boden: rund2(l * b),
     umfang: rund2(umfang),
+    fliesenwand: rund2(Math.max(0, umfang * fh - pos(r.oeffnungen) * anteil)),
   };
 }
 
@@ -198,10 +239,13 @@ export function gebindeFuer(menge: number, jeGebinde: number): number {
 
 export function berechneSanierung(eingabe: SanierungEingabe, katalog: Katalog): SanierungErgebnis {
   const mengen = new Map<MaterialId, Spanne>();
-  const summe: Flaechen = { wand: 0, decke: 0, boden: 0, umfang: 0 };
+  const summe: Flaechen = { wand: 0, decke: 0, boden: 0, umfang: 0, fliesenwand: 0 };
 
   for (const raum of eingabe.raeume) {
-    const f = flaechen(raum);
+    const roh = flaechen(raum);
+    // Geflieste Wand wird nicht auch noch gespachtelt, tapeziert oder gestrichen.
+    const wandGefliest = raum.massnahmen.includes("wand_fliesen");
+    const f: Flaechen = wandGefliest ? { ...roh, wand: rund2(Math.max(0, roh.wand - roh.fliesenwand)) } : { ...roh, fliesenwand: 0 };
     for (const k of Object.keys(summe) as FlaechenArt[]) summe[k] = rund2(summe[k] + f[k]);
     // Jede Maßnahme zählt je Raum einmal, auch wenn sie doppelt angehakt ankommt.
     for (const id of new Set(raum.massnahmen)) {

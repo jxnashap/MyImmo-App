@@ -106,6 +106,8 @@ export default async function AufbauPage() {
                   const s = k.summary ?? {};
                   const teile = [
                     s.kp > 0 ? euro(s.kp) : null,
+                    // Seit 05.10.2026 speichert der Kauf-Rechner die Sanierung mit (ältere Prüfungen: kein Feld).
+                    s.sanierung > 0 ? `+ ${euro(s.sanierung)} Sanierung` : null,
                     s.brutto > 0 ? `${s.brutto.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % brutto` : null,
                   ].filter(Boolean);
                   return (

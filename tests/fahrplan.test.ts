@@ -94,3 +94,14 @@ describe("kaufnebenkosten — EINE Regel für Kauf-Rechner und Fahrplan", () => 
     expect(rechner).not.toMatch(/\+\s*0\.02\b/);
   });
 });
+
+describe("Fahrplan bleibt bei der Wahrheit", () => {
+  it("nennt die Übergabe der Sanierung an den Kauf-Assistenten, nicht mehr „kommt noch nicht“", () => {
+    const station = fahrplan(LEER).find((s) => s.id === "durchrechnen")!;
+    const text = station.punkte.join(" ");
+    expect(text).not.toMatch(/noch nicht automatisch/);
+    expect(text).toMatch(/in den Kauf-Assistenten/);
+    // Der Knopf, auf den der Text verweist, existiert wirklich.
+    expect(readFileSync("components/SanierungsRechner.tsx", "utf8")).toContain("in den Kauf-Assistenten");
+  });
+});

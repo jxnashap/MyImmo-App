@@ -95,7 +95,8 @@ export function fahrplan(d: FahrplanDaten): Station[] {
       id: "durchrechnen",
       titel: "Durchrechnen",
       satz: "Kaufpreis, Nebenkosten, Miete, Finanzierung: Was bleibt im Monat? Jedes gespeicherte Objekt lässt sich mit den anderen vergleichen.",
-      punkte: ["Die Sanierungskosten kommen noch nicht automatisch in den Kauf-Assistenten — rechne sie dazu"],
+      // Seit 05.10.2026 übergibt der Sanierungsrechner seinen Betrag per Knopf (lib/sanierung/uebergabe.ts).
+      punkte: ["Sanierungskosten: im Sanierungsrechner auf „in den Kauf-Assistenten“ tippen — sie zählen dann zur Gesamtinvestition"],
       ziel: { href: "/kauf", label: "Kauf-Assistent" },
       status:
         d.kaufpruefungen > 0

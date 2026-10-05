@@ -297,7 +297,9 @@ function RaumKarte({
     breite: zahlDe0(raum.breite),
     hoehe: zahlDe0(raum.hoehe),
     oeffnungen: zahlDe0(raum.oeffnungen),
+    fliesenhoehe: zahlDe0(raum.fliesenhoehe),
   });
+  const wandGefliest = raum.massnahmen.includes("wand_fliesen");
   const umschalten = (id: MassnahmeId) =>
     aendern({ massnahmen: raum.massnahmen.includes(id) ? raum.massnahmen.filter((m) => m !== id) : [...raum.massnahmen, id] });
   const hinweise = MASSNAHMEN.filter((m) => m.hinweis && raum.massnahmen.includes(m.id));
@@ -329,7 +331,15 @@ function RaumKarte({
       </div>
       <div className="sanierung-klein">
         Wand {zahl(f.wand, 1)} m² · Decke {zahl(f.decke, 1)} m² · Boden {zahl(f.boden, 1)} m² · Umfang {zahl(f.umfang, 1)} m
+        {/* Dieselbe Aufteilung wie im Rechenkern: Fliesen bis zur Fliesenhöhe, der Rest darüber. */}
+        {wandGefliest && ` · davon gefliest ${zahl(f.fliesenwand, 1)} m², darüber ${zahl(Math.max(0, f.wand - f.fliesenwand), 1)} m²`}
       </div>
+      {wandGefliest && (
+        <div className="form-group sanierung-fliesenhoehe">
+          <label htmlFor={`${raum.id}-fliesenhoehe`}>Fliesenhöhe m (leer = bis zur Decke)</label>
+          <input id={`${raum.id}-fliesenhoehe`} inputMode="decimal" placeholder="z. B. 1,20" value={raum.fliesenhoehe} onChange={(e) => aendern({ fliesenhoehe: e.target.value })} />
+        </div>
+      )}
       <div className="massnahmen-wahl" role="group" aria-label={`Maßnahmen in ${raum.name || "diesem Raum"}`}>
         {MASSNAHMEN.map((m) => (
           <label key={m.id} className="massnahme-chip">

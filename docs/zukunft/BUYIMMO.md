@@ -72,6 +72,14 @@ Raufaser nicht); Spachtel-Schichtdicke 0,5–1 mm ist eine Annahme; Verschnitt i
 `apply_migration` in den Bestätigungsdialog → Betreiber im SQL-Editor).
 **Demo:** Sanierungs- und Nebenkostenrechner sind bedienbar (`data-demo-erlaubt`) — sie schreiben
 nichts in die Datenbank; ein Test hält fest, dass sie keine Server-Action aufrufen.
+**Fliesen (gebaut 05.10.2026, „erstmal ausbauen“):** „Boden fliesen“ (Fliese, Flexkleber, Fugenmörtel,
+Silikon über den Umfang) und „Wände fliesen“ bis zu einer **Fliesenhöhe je Raum** (leer = bis zur
+Decke). **Die geflieste Wand wird von Spachteln, Tapezieren und Streichen abgezogen** — sonst wäre
+dieselbe Fläche gefliest UND gestrichen. Öffnungen zählen anteilig zur Fliesenhöhe (Näherung:
+gleichmäßig über die Höhe verteilt). Verschnitt Fliese 10–15 % ist eine Annahme. Der Fliesenpreis
+schwankt je Fliese stark — der Katalogwert ist eine einfache Standardfliese, die Oberfläche bittet
+um den eigenen Preis.
+
 **Übergabe an den Kauf-Assistenten (gebaut 05.10.2026):** Knopf „… in den Kauf-Assistenten“
 → `/kauf?sanierung=<obere Spanne>` (`lib/sanierung/uebergabe.ts`: nur ganze Euro, 1 bis 10 Mio.,
 sonst ignoriert) → der Objekt-Rechner öffnet in Schritt 1 mit dem Feld **„Sanierung / Renovierung“**.
