@@ -244,6 +244,10 @@ describe("Demo", () => {
       // Die Freigabe ist nur vertretbar, solange nichts an den Server geht.
       expect(s, datei).not.toMatch(/lib\/actions|fetch\(|createClient/);
     }
+    // Die Seiten und das Ergebnis des Guides liegen in eigenen Dateien — für sie gilt dasselbe.
+    for (const datei of ["components/sanierung/GuideSeiten.tsx", "components/sanierung/GuideErgebnis.tsx"]) {
+      expect(readFileSync(datei, "utf8"), datei).not.toMatch(/lib\/actions|fetch\(|createClient/);
+    }
   });
 });
 

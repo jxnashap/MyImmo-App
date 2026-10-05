@@ -1,6 +1,6 @@
 # Sanierungs-Guide (BuyImmo) — Plan
 
-> **Stand 05.10.2026 · Status: Stufe A gebaut (Preiskatalog, Zustand-Baukasten, Kostenzeilen, Nutzungsdauern — Abschnitt 12), der Guide selbst noch nicht.** Auftrag von Jonas (wörtlich im
+> **Stand 05.10.2026 · Status: Stufe A (Preiskatalog) und Stufe B (Guide, Übersicht, Ergebnis — Abschnitt 12) gebaut; Speichern/Vorlagen (C) offen.** Auftrag von Jonas (wörtlich im
 > Memory-Repo, `02 - MyImmo/myimmoideen.md`): ein geführter Ablauf, „Mischung Sanierungsrechner
 > und Kauf-Assistent“ — Name, Adresse, Seite für Seite immer detaillierter; als Vorlage
 > speicherbar; zusätzlich als Übersicht zum Ausfüllen; beim Wiedereinstieg nur die Seiten, auf
@@ -306,7 +306,7 @@ füllt es aus `kaufnebenkosten()` (`lib/kalk.ts`), der Steuer-Wächter weist hin
 | Stufe | Inhalt | Braucht |
 |---|---|---|
 | A | ✅ **gebaut 05.10.2026:** Einheitspreise (`lib/sanierung/arbeiten.ts`), Zustand-Baukasten (`zustand.ts`), Kostenzeilen mit Herkunft und Portal-Anteil (`kostenzeilen.ts`), BBSR-Nutzungsdauern (`nutzungsdauer.ts`), Prüfzyklus-Zeilen. **Offen in A:** zweite Qualitätsstufe je Baumarkt-Material (neue Preise nötig) | — |
-| B | Datenmodell, `offeneSeiten()`, Guide + Übersicht, Zustand-Baukasten, Kostenzeilen mit Herkunft, Grobschätzung ab Seite 6, Asbest-/WEG-Hinweise, Einkaufszettel + Reihenfolge | nichts in der DB (Browser-Entwurf wie heute) |
+| B | ✅ **gebaut 05.10.2026** — siehe „Stufe B: was gebaut ist“ unten | nichts in der DB (Browser-Entwurf wie heute) |
 | C | Speichern + Vorlagen (Tabelle) — **nach dem Merge von #418**; SQL legt Jonas im SQL-Editor an | Migration, `delete_own_account()`, Demo-Sperre |
 | D | Gesamtauswertung mit Kaufprüfung (`kalk_id`) | Stufe C |
 | E | Haus (Gebäudehülle, GModG-Pflichten als Posten mit Frist) | Entscheidung 3: später |
@@ -315,3 +315,36 @@ füllt es aus `kaufnebenkosten()` (`lib/kalk.ts`), der Steuer-Wächter weist hin
 **Nebenbefund (gleiche Recherche):** Die App nennt „§ 79 GEG“ (Energieausweis-Frist,
 `lib/fristen.ts`, `components/PropertyForm.tsx`, `lib/types.ts`) — inhaltlich richtig, Name
 veraltet → „§ 79 GModG“.
+
+### Stufe B: was gebaut ist (05.10.2026)
+
+- **EIN Entwurf, drei Ansichten** (`/sanierung`): Schritt für Schritt · Übersicht · Ergebnis.
+  `?ansicht=uebersicht|ergebnis` öffnet direkt. Seiten: `components/sanierung/GuideSeiten.tsx`
+  (eine Darstellung je Seite für Guide UND Übersicht), Ergebnis: `GuideErgebnis.tsx`.
+- **`offeneSeiten()`** (`lib/sanierung/guide.ts`) ist die EINE Lückenfunktion. Wiedereinstieg mit
+  angefangenem Entwurf → nur offene Seiten (auch eine, die erst durch neue Räume nötig wurde);
+  nichts offen → „Alles ausgefüllt“. „Weiß ich nicht“/„noch nicht gemessen“ machen eine Seite fertig;
+  vorgeschlagene Maßnahmen erst, wenn gesehen.
+- **Auswertung** (`lib/sanierung/auswertung.ts`): Grobschätzung **ab den Räumen** (ohne Räume keine
+  Summe aus dem Nichts) — nicht gemessene Räume teilen sich die Restfläche, quadratisch, 2,50 m.
+  Annahmen gehen in die vorsichtige Richtung (Zustand offen = mittel, Wer offen = Handwerker,
+  Tapete/Wandfliesen unbekannt = muss runter, Baujahr offen = vor 1993) und stehen alle im Ergebnis.
+- **Handwerker** (Entscheidung 4): Maler je m² inkl. Material (Material fällt weg; Raufaser
+  „tapezieren und streichen“ in einer Zeile), Boden/Fliesen nur Arbeit (Material bleibt).
+- **Ausschlüsse gegen Doppelzählung** (`ENTHALTEN_IN`): „Elektrik komplett“ enthält laut Quelle
+  Sicherungskasten, Steckdosen und Schalter (dazu FI); „Bad komplett“ ersetzt Fliesen im Bad und die
+  Ausstattung. **Dabei gefunden:** Stufe A kreuzte bei „schlecht“ Elektrik komplett UND
+  Unterverteilung an (doppelt) — in #423 korrigiert.
+- **Ohne belegten Preis keine Zahl:** Asbest (vor 1993, PVC/Platten oder unbekannt) und PAK-Parkett-
+  kleber (vor 1970) sind offene Posten „nicht in der Summe“; Rauchwarnmelder stehen mit Anzahl, aber
+  „Preis offen“ auf dem Einkaufszettel (Produktseiten nur per JavaScript lesbar, kein zweiter Beleg);
+  Abdichtung (DIN 18534) als Hinweis ohne Preis. **Puffer:** wählt der Nutzer (0/10/15/20 % oder
+  eigener Wert) — für „15–20 %“ fand sich nur ein Zitat in Sekundärquellen, keine Primärquelle der
+  Verbraucherzentrale.
+- **Förderung:** Fenster und Wärmepumpe aus „Technik“ zählen automatisch in die Zuschuss-Schätzung
+  (von–bis), nie von der Summe abgezogen. Nutzung wird einmal gefragt (Seite „Ziel“).
+- **Bewusst noch nicht:** „günstig oder langlebig“ (braucht die zweite Preisstufe je Material aus
+  Stufe A — eine Frage, die nichts bewirkt, wäre irreführend); Zimmerzahl (die Räume-Seite zählt);
+  Haus (Stufe E); Speichern/Vorlagen (Stufe C, SQL).
+- Tests: `tests/sanierungGuide.test.ts` (42 Tests, 34 Mutationen rot), im Browser durchgeklickt
+  (1440 und 390 px, lokaler Server mit Demo-Sitzung).

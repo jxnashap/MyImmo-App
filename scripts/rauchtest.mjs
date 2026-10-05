@@ -391,7 +391,8 @@ const WEGE = [
     schluessel: "sanierung",
     titel: "BuyImmo — Sanierungsrechner",
     pfad: "/sanierung",
-    erwartet: ["Sanierungsrechner", "Fenster + Türen m²", "Woher die Zahlen kommen", "Stunden × dein Stundensatz"],
+    // Der Server rendert die Startansicht des Guides (der Entwurf liegt erst im Browser).
+    erwartet: ["Sanierungsrechner", "Schritt für Schritt", "Wie soll das Projekt heißen?", "Eine Schätzung, kein Kostenvoranschlag"],
     async pruefe() {
       return null;
     },

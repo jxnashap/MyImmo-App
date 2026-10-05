@@ -338,6 +338,13 @@ describe("Auswertung: Zustand-Baukasten", () => {
     expect(a.hinweise.map((h) => h.id)).not.toContain("abdichtung");
   });
 
+  it("ganz neues Projekt: keine Summe aus dem Nichts — die Grobschätzung beginnt mit den Räumen", () => {
+    const a = auswerten(leererEntwurf("x"), KATALOG);
+    expect(a.zeilen).toEqual([]);
+    expect(a.gesamt).toEqual({ min: 0, max: 0 });
+    expect(a.annahmen.join(" ")).not.toMatch(/Zustand/);
+  });
+
   it("noch nicht gewählter Zustand: „mittel“ als Annahme — so gibt es früh eine Grobschätzung", () => {
     const e = fertig();
     e.gewerke.heizung = { zustand: "", arbeiten: [] };

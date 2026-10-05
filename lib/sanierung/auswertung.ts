@@ -243,6 +243,9 @@ function zustandsArbeiten(e: Entwurf, annahmen: string[]): { gewerk: string; id:
     const feld = e.gewerke[g.gewerk];
     let ids: readonly ArbeitId[];
     if (feld.zustand === "") {
+      // Grobschätzung erst ab den Räumen (Abschnitt 5 im Plan): Ohne jede Angabe zur Wohnung
+      // ergäbe „mittel“ eine Summe aus dem Nichts.
+      if (e.raeume.length === 0) continue;
       ids = vorauswahl(g.gewerk, null, etw);
       if (ids.length > 0) annahmen.push(`${g.titel}: Zustand noch nicht gewählt — „mittel“ angenommen`);
     } else {
