@@ -134,7 +134,7 @@ describe("Zustand-Baukasten", () => {
   it("„weiß ich nicht“ → mittlerer Zustand als Annahme", () => {
     expect(ZUSTAND_ANNAHME).toBe("mittel");
     expect(vorauswahl("elektrik", null, false)).toEqual(vorauswahl("elektrik", "mittel", false));
-    expect(vorauswahl("elektrik", "schlecht", false)).toEqual(["elektrik_komplett", "unterverteilung_erneuern"]);
+    expect(vorauswahl("elektrik", "schlecht", false)).toEqual(["elektrik_komplett"]);
   });
 
   it("Eigentumswohnung: Fenster sind Sache der Gemeinschaft — keine eigenen Kosten, aber ein Prüfpunkt", () => {
@@ -144,7 +144,16 @@ describe("Zustand-Baukasten", () => {
     expect(gemeinschaftsPruefpunkte(true)[0].hinweis).toMatch(/Sonderumlage/);
     expect(gemeinschaftsPruefpunkte(false)).toEqual([]);
     // Elektrik bleibt bei der ETW eigene Sache.
-    expect(vorauswahl("elektrik", "schlecht", true)).toEqual(["elektrik_komplett", "unterverteilung_erneuern"]);
+    expect(vorauswahl("elektrik", "schlecht", true)).toEqual(["elektrik_komplett"]);
+  });
+
+  it("„Elektrik komplett“ enthält den Sicherungskasten — „schlecht“ kreuzt ihn nicht ein zweites Mal an", () => {
+    // Die Regel hängt am Wortlaut der Quelle, nicht an einer Vermutung.
+    expect(ARBEITEN.elektrik_komplett.quellen.some((q) => q.zitat.includes("Neuer Sicherungskasten"))).toBe(true);
+    for (const z of ["gut", "mittel", "schlecht"] as const) {
+      const v = vorauswahl("elektrik", z, false);
+      expect(v.includes("elektrik_komplett") && v.includes("unterverteilung_erneuern"), z).toBe(false);
+    }
   });
 
   it("Arbeiten zum Ankreuzen je Gewerk", () => {

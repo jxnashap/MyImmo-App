@@ -50,7 +50,9 @@ export const ZUSTAND_GEWERKE: ZustandGewerk[] = [
     vorauswahl: {
       gut: [],
       mittel: ["fi_nachruesten", "schalter_steckdose_tauschen", "e_check"],
-      schlecht: ["elektrik_komplett", "unterverteilung_erneuern"],
+      // Nur „komplett“: Die Quelle zählt den neuen Sicherungskasten dazu („Neuer Sicherungskasten, neue
+      // Leitungen in allen Räumen, neue Steckdosen und Schalter“) — die Unterverteilung extra wäre doppelt.
+      schlecht: ["elektrik_komplett"],
     },
     gemeinschaftBeiEtw: false,
     etwHinweis: "Leitungen in der Wohnung sind meist Sondereigentum; Steigleitung und Hausanschluss gehören der Gemeinschaft.",

@@ -185,7 +185,7 @@ export const ARBEITEN: Record<ArbeitId, Arbeit> = {
   elektrik_komplett: {
     id: "elektrik_komplett", gewerk: "elektrik", label: "Elektrik komplett erneuern (Altbau)",
     einheit: "je m² Wohnfläche", mengenbasis: "wohnflaeche", inklMaterial: true, nurFachbetrieb: true,
-    hinweis: "Malerarbeiten nach dem Verputzen sind nicht enthalten.",
+    hinweis: "Enthält Sicherungskasten, Leitungen, Steckdosen und Schalter — die nicht zusätzlich rechnen. Malerarbeiten nach dem Verputzen sind nicht enthalten.",
     quellen: [
       { ...AG, von: 78, bis: 171, mwst: "unklar", umgerechnet: "7.000 € / 90 m² bis 12.000 € / 70 m²", zitat: "3-Zimmer (70–90 m²) 7.000–12.000 € … Neuer Sicherungskasten, neue Leitungen in allen Räumen, neue Steckdosen und Schalter, Stemm- und Verputzarbeiten" },
       { name: "Sparkasse, Ratgeber Modernisierungskosten (ohne Quellenangabe)", url: "https://www.sparkasse.de/pk/ratgeber/wohnen/immobilie-modernisieren/modernisierungskosten.html", stand: "ohne Datum", art: "portal", von: 100, bis: 170, mwst: "unklar", zitat: "Erneuerung der Elektrik Je nach Aufwand circa 100 bis 170 Euro pro Quadratmeter" },

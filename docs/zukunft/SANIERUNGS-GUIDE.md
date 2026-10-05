@@ -24,7 +24,9 @@
    Preis je m² aus Quellen, überschreibbar — wie bei den Fachbetrieb-Posten. **Eigenleistung bleibt
    Stunden × eigener Satz.** Ändert die frühere Regel „BuyImmo schätzt keinen Lohn“ (BUYIMMO.md)
    für den Handwerker-Fall.
-5. **Gekauftes Objekt nach MyImmo übernehmen** (Idee 05.10.2026, Abschnitt 11).
+5. **Gekauftes Objekt nach MyImmo übernehmen** (Idee 05.10.2026, Abschnitt 11). Rückfrage
+   „gekauft oder verkauft?“ beantwortet: **gekauft** („Gekaufte können übernommen werden“, Jonas
+   05.10.2026).
 
 ## 1. Risiken zuerst
 
@@ -76,7 +78,7 @@ der Nutzer kann an- und abwählen. Jede Arbeit = Menge × Einheitspreis-Spanne �
 
 | Gewerk | Anzeichen (sichtbar) | gut → vorgekreuzt | mittel → vorgekreuzt | schlecht → vorgekreuzt | Menge aus |
 |---|---|---|---|---|---|
-| Elektrik | Sicherungsautomaten oder Schraubsicherungen? FI-Schalter mit Prüftaste „T“ da? Steckdosen mit Schutzkontakt (Metallbügel)? Wenige Steckdosen, überall Mehrfachstecker? | nichts | FI nachrüsten · Schalter/Steckdosen tauschen · E-Check | Elektrik komplett erneuern · Unterverteilung | Stückzahlen je Raum (Seite 9) bzw. Wohnfläche |
+| Elektrik | Sicherungsautomaten oder Schraubsicherungen? FI-Schalter mit Prüftaste „T“ da? Steckdosen mit Schutzkontakt (Metallbügel)? Wenige Steckdosen, überall Mehrfachstecker? | nichts | FI nachrüsten · Schalter/Steckdosen tauschen · E-Check | Elektrik komplett erneuern (enthält laut Quelle den Sicherungskasten — Unterverteilung nicht zusätzlich) | Stückzahlen je Raum (Seite 9) bzw. Wohnfläche |
 | Bad | Fliesen gerissen/hohl? Schimmel in Fugen? Braunes Wasser beim ersten Aufdrehen? Wanne/WC sehr alt? | nichts | WC, Waschtisch, Armaturen tauschen · Silikon | Bad komplett (inkl. Leitungen) · ggf. Wanne → Dusche | Badfläche (Seite 7), Stückzahl |
 | Heizung (Wohnung) | Heizkörper alt/rostig? Thermostatköpfe fehlen? Etagenheizung — Alter laut Typenschild | nichts | Thermostatventile tauschen | Heizkörper tauschen · Heizungstausch (✅ Förderung) | Heizkörper je Raum |
 | Fenster | Einfachverglasung? Verzogen, zieht? | nichts | Beschläge/Dichtungen | Fenster tauschen (✅ Förderung) | Fenster je Raum (Seite 7) |
