@@ -28,7 +28,7 @@ export function TopbarSkeleton() {
   );
 }
 
-export function KpiGridSkeleton({ n = 4, verlauf = false }: { n?: number; verlauf?: boolean }) {
+export function KpiGridSkeleton({ n = 4 }: { n?: number }) {
   return (
     <div className={`${n === 5 ? "grid-5" : "grid-4"} mb-20`}>
       {Array.from({ length: n }).map((_, i) => (
@@ -36,8 +36,21 @@ export function KpiGridSkeleton({ n = 4, verlauf = false }: { n?: number; verlau
           <Skeleton w={80} h={10} />
           <Skeleton w={110} h={24} style={{ marginTop: 12 }} />
           <Skeleton w={60} h={11} style={{ marginTop: 10 }} />
-          {/* Platz der Verlaufslinie (Dashboard), damit die Karte beim Laden nicht springt. */}
-          {verlauf && <Skeleton w="100%" h={32} style={{ marginTop: 10 }} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Platzhalter für die Kennzahlen-Leiste des Dashboards (eine Karte, fünf Felder). */
+export function KpiLeisteSkeleton() {
+  return (
+    <div className="kpi-leiste mb-20">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="kpi-feld">
+          <Skeleton w={80} h={10} />
+          <Skeleton w={110} h={24} style={{ marginTop: 6 }} />
+          <Skeleton w={90} h={11} style={{ marginTop: 6 }} />
         </div>
       ))}
     </div>

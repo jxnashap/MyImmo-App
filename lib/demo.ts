@@ -124,6 +124,7 @@ const IMMER_ERLAUBT = [
   // Zaehlerfoto auf /verbrauch, Anhang eines Anliegens.
   "/api/zaehler-foto",
   "/api/anliegen-datei",
+  "/api/auftrag-foto", // Foto im Verlauf eines Service-Auftrags (05.10.2026)
 ];
 
 // Einzelne lesende Routen ausserhalb der freien Praefixe.

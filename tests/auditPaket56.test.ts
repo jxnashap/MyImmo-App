@@ -32,7 +32,7 @@ describe("A8: Kredit-Fristen sind nur dringend, wenn sie anstehen", () => {
     const src = lies("app/(app)/page.tsx");
     expect(src).toContain("const alleHeuteAufgaben = baueHeuteAufgaben(");
     expect(src).toMatch(/heuteISO0,\n\s+Infinity,/);
-    expect(src).toContain("alleHeuteAufgaben.slice(0, HEUTE_ZEILEN)");
+    expect(src).toContain("buendleGleicheAufgaben(alleHeuteAufgaben).slice(0, HEUTE_ZEILEN)"); // seit 03.10.2026 gebündelt
     expect(src).toContain("${alleHeuteAufgaben.length} ${alleHeuteAufgaben.length === 1");
   });
 });

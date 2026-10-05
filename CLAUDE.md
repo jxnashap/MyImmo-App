@@ -377,16 +377,30 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   🐞 **Falle (am Handy gesehen):** `.badge` steht in `globals.css` NACH der Ausblende-Regel und
   setzte `display` zurück; ein inline `display` an einer Zusatzspalte schlägt sie ebenfalls.
   Jetzt `.listen-zeile .listen-zeile-extra`; `tests/kompakteListen.test.ts` hält beides fest.
-  📈 **Kennzahlen mit Verlauf (03.10.2026, Betreiber: „moderner“ → „Kennzahlen lebendiger“ +
-  „spürbare Reaktionen“, erst Dashboard, dann ausrollen):** Warmmiete, Kosten und Cashflow
-  zeigen eine 12-Monats-Linie + „▲/▼ x € ggü. Vormonat“ (`lib/kpiVerlauf.ts`,
-  `components/KpiVerlauf.tsx`). **Regel: Die Linie zeigt DIESELBE Größe, mit denselben
-  Funktionen je Monatsende gerechnet; der letzte Punkt ist die Kachelzahl.** Annahme, die an
-  der Linie steht: Kreditraten von heute (keine Historie). **Portfoliowert bewusst OHNE
-  Verlauf** — Werte ändern sich am Erfassungstag (`marktwert_stand`), nicht am Markttag; die
-  erste Fassung zeigte in der Demo „▲ 11,9 % ggü. Vormonat“. Leerstand: Belegungsleiste.
-  Dazu: Lade-Skelett = Dashboard-Form (5 Kacheln, `.dash-haupt`), `.listen-zeile:active`.
-  `tests/kpiVerlauf.test.ts`, zehn Mutationen rot.
+  📈 **Kennzahlen mit Verlauf — gebaut, live (#413) und vom Betreiber VERWORFEN (03.10.2026):**
+  12-Monats-Linien + „▲/▼ ggü. Vormonat“ unter den Kacheln. Urteil: „wenig Veränderung und
+  wieder viel Neues, wirkt unübersichtlich“. **Lehre: „moderner“ heißt für den Betreiber
+  RUHIGER, nicht mehr Elemente.** Code entfernt (Historie: #413). Nebenbefund, der bleibt:
+  Portfoliowerte ändern sich am ERFASSUNGStag (`marktwert_stand`), nicht am Markttag — ein
+  „ggü. Vormonat“ darauf wäre eine Behauptung ohne Grundlage.
+  🧘 **Ruhigeres Dashboard (Entwurf 03.10.2026, wartet auf Freigabe des Betreibers):** Kennzahlen
+  als EINE Leiste (`.kpi-leiste`/`.kpi-feld`, Unterzeile bis 2 Zeilen statt abgeschnitten);
+  Erklärtexte der Grafiken eingeklappt (`erklaerung`-Prop → „Wie wird das gerechnet?“);
+  gleiche Aufgaben (Art + Titel + Datum) gebündelt (`buendleGleicheAufgaben` in `lib/heute.ts`,
+  „6 Einträge · Anna Weber, …“ → /termine); „Einnahmen vs. Ausgaben“ ENTFERNT (Doppelung);
+  Letzte Buchungen als `.listen-zeile`. Lade-Skelett in Leistenform.
+  💳 **Schulden-Uhr (04.10.2026, Wunsch des Betreibers):** eine Zeile über den Krediten — auf
+  `/kredite` (statt der vier Kacheln) und im Dashboard-Block „Kredite“ (bleibt, mit drei
+  Darlehen als Zeilen): Schulden gesamt, Balken abbezahlt/offen, Tilgung je Monat
+  (`lib/schuldenStand.ts`, `components/SchuldenUhr.tsx`, `tests/schuldenStand.test.ts`).
+  **Bewusst KEIN Sekundenzähler:** `restschuld` ist ein eingetragener Stand, MyImmo schreibt ihn
+  nicht fort — ein tickender Zähler täuschte Genauigkeit vor. Kredit ohne Ursprungsbetrag zählt
+  als „nichts getilgt“ (sonst stiege der Prozentwert durch ein leeres Feld).
+  🔀 **Grafik-Umschalter (04.10.2026, Wunsch des Betreibers):** Portfolio-Wert und Buchungssaldo
+  sind EINE Karte (`components/DiagrammWechsel.tsx`, 320 px hoch), Wahl oben links als
+  überschriftartige Reiter (`.diagramm-wahl`, bewusst kein zweiter goldener Segment-Schalter
+  neben 1J/3J/5J/Max). Gemerkt je Browser (`myimmo:dashboard-grafik`, try/catch). Der Server
+  rendert immer die ERSTE Ansicht — der Rauchtest prüft deshalb `>Buchungssaldo<` (Reiter), nicht `<h3>`.
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
@@ -489,6 +503,69 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Aufgaben“ auf dem Dashboard als `.listen-zeile` (Titel, darunter Mieter/Objekt — viele Aufgaben
   heißen gleich, der Unterschied darf nicht hinter „…“ verschwinden; Fristdatum rechts, rot wenn
   dringend). `.heute-zeile` ist entfernt.
+- 🧰 **Hausmeister & Servicepartner, Schritt 1 gebaut (05.10.2026, Idee im Memory-Repo).**
+  Entscheidungen des Betreibers: Hausmeister darf Fachbetriebe nur VORSCHLAGEN (nie selbst
+  beauftragen); Fachbetrieb ohne Konto, nur per Auftrags-Link; Rollen mit Konto: Vermieter,
+  **Hausmeister** (betreut zugewiesene Objekte, stellt Anträge, sieht das Firmenverzeichnis),
+  **Dienstleister** (sieht nur Aufträge, die ihm gegeben werden). Migrationen `20261005100000/
+  101000/102000`: `service_zugaenge.rolle` + RPC `service_rolle_setzen`, Tabelle `service_objekte`,
+  Sicht `service_objekte_portal` (Bezeichnung/Adresse — nie die `properties`-Zeile), Antrag nur als
+  Hausmeister und nur für zugewiesene Objekte (DB-Regel), Firmenverzeichnis nur für Hausmeister.
+  Vermieter: `/anliegen?tab=service` → je Partner aufklappbar Rolle, Objekte, „Partner wechseln“
+  (`uebergebeServicePartner`: nur OFFENE Aufträge + wahlweise Objekte; Erledigtes bleibt beim
+  alten). `tests/serviceObjekte.test.ts`, neun Mutationen rot. **Regeln:** (1) Ein Partner liest
+  Objekte nur über `service_objekte_portal`. (2) Neue Rechte eines Partners hängen an
+  `service_zugaenge.rolle`, nie an „ist verknüpft“. (3) Demo-Sperren auf einer neuen Tabelle NICHT
+  als `for all` anlegen, wenn die Demo dort Daten LESEN soll (sperrt sonst auch SELECT — so
+  passiert, `20261005102000`).
+  ✅ **Schritt 2 (gleicher Tag, Migration `20261005110000`):** Verlauf am Auftrag
+  (`auftrag_notizen`, `components/AuftragVerlauf.tsx` = EINE Darstellung für Portal und Vermieter;
+  Fotos über `/api/auftrag-foto/[id]` mit `dateiKopf()`; Spalten ohne Bilddaten in
+  `lib/auftragNotizen.ts`). „Fachbetrieb nötig“ = RPC `auftrag_fachbetrieb_vorschlagen` → Status
+  `freigabe` + `vorgeschlagene_firma_id` (eigene Spalte, weil der Spaltenschutz `firma_id` dem
+  Vermieter vorbehält); `entscheideAuftrag` übernimmt den Vorschlag nur, wenn die Firma im eigenen
+  Verzeichnis steht. **Gas/Strom/Trinkwasser/Schornstein:** `lib/fachbetriebPflicht.ts`
+  (Stichworte — „Wasserhahn tropft“ fällt NICHT darunter) → kein „Selbst erledigt“ ohne Firma am
+  Auftrag, Oberfläche UND `beantworteAuftrag`. **Grenze:** Stichwortliste, kein Verständnis — fehlt
+  das Wort im Text, greift die Sperre nicht. `tests/auftragVerlauf.test.ts`, elf Mutationen rot.
+  **Regel: Ein Wert, den ein Server-Lader braucht, steht nie in einer "use client"-Datei** (käme dort
+  nur als Verweis an) — deshalb `lib/auftragNotizen.ts`.
+  ✅ **Schritt 3 (gleicher Tag, Migration `20261005120000`):** Freigabe mit **[Freigeben]
+  [Ablehnen] [Rückfrage]** — Rückfrage = Vermieter-Notiz mit `rueckfrage = true`, Auftrag bleibt in
+  der Freigabe, der Hausmeister antwortet im Verlauf (`rueckfrageOffen()` in
+  `lib/auftragNotizen.ts`: offen bis zum nächsten Eintrag des Partners; Badges „Rückfrage offen“ /
+  „Hausmeister hat geantwortet“). Dashboard-Neuigkeiten: „Hausmeister: Fachbetrieb nötig“, Fotos
+  und Notizen des Hausmeisters (Art `hausmeister`). `tests/auftragVerlauf.test.ts`, sieben weitere
+  Mutationen rot. **Bewusst nicht:** Hinweis-Mail an den Vermieter (Brevo versendet noch nicht),
+  Servicepartner-Netzwerk/Marktplatz (nur vorbereitet: Auftrag geht an Konto ODER Firma).
+  🔒 **Nacharbeit vor dem Livegang (gleicher Tag, nach externer Prüfung):**
+  (1) ⚠️ **Kontolöschung war unvollständig** — `delete_own_account()` kannte sieben neuere Tabellen
+  nicht (keine mit Kaskade): Fotos, Vollmacht-Scans, Mieter-Adressen blieben liegen. Neue Fassung
+  in `20261005130000` — ✅ **vom Betreiber im SQL-Editor ausgeführt 05.10.2026**, danach geprüft (alle acht Tabellen in der Funktion, Demo-Löschsperre aktiv).
+  **Regel: Jede neue Tabelle mit Konto-Bezug braucht eine Kaskade auf `auth.users` ODER eine
+  Zeile in `delete_own_account()` — `tests/kontoloeschung.test.ts` wird sonst rot.**
+  (2) **Tätigkeit je Auftrag** (`lib/taetigkeiten.ts`, `TaetigkeitWahl`, Migration
+  `20261005140000`): „Selbst erledigt“ nur bei erlaubten Tätigkeiten, Stichworte bleiben zweites
+  Netz; die Tätigkeit ist durch den Spaltenschutz für den Partner unveränderlich. **Fehler dabei
+  gefunden und behoben:** Die Sperre galt für ALLE Partner — ein Sanitärbetrieb (Dienstleister)
+  hätte seinen Heizungsauftrag nicht abschließen können. Jetzt nur Hausmeister
+  (`selbstErledigtErlaubt`, EINE Regel für Oberfläche und Server; Rolle unlesbar → streng).
+  (3) **„Neu seit deinem letzten Besuch“** (`lib/serviceNeu.ts`, `GesehenMelden`, Migration
+  `20261005150000`): Neuer Auftrag, Freigegeben, Nicht freigegeben, Rückfrage, Nachricht — der
+  Besuch wird erst nach 3 s gemeldet, nie in Vorschau/Demo. (4) **Rückfall-Datei**
+  `scripts/sql/rueckfall-hausmeister-2026-10-05.sql`: stellt nur die zwei Regeln mit geändertem
+  Verhalten zurück; alles andere ist rein hinzugefügt.
+- ✉️ **Mahnung/Zahlungserinnerung versenden (05.10.2026, Vorgabe des Betreibers: „wir halten uns
+  aus dem Mailverkehr raus“).** Brief-Generator → „An den Mieter senden“ (`components/BriefVersand.tsx`):
+  **Per Mail** = PDF erzeugen, am Handy über „Teilen“ direkt angehängt, sonst Download + `mailto:`
+  mit Empfänger/Betreff/Text (`briefMailLink` in `lib/mahnung.ts`; Anhang muss der Vermieter selbst
+  anfügen — mailto kann keine Anhänge). **Ins Mieterportal** = Bestätigungskarte
+  (`pruefeBriefZustellung`) → `speichereBrief(…, { zustellen, bestaetigung })` mit derselben
+  Schranke wie die NK-Abrechnung. Dashboard: neben „Mieteingang … offen“ der Knopf „Erinnerung
+  schreiben“ — erst NACH dem dritten Werktag (`mieteUeberfaellig`), nie in einem Bündel; das
+  Mietkonto zeigt Erinnerung/Mahnung ebenfalls erst ab dem Folgetag. **Regeln:** (1) MyImmo
+  verschickt Briefe an Mieter NIE über Brevo. (2) Eine Adresse kommt nur in den mailto-Link, wenn
+  sie dem einfachen Muster entspricht (kein `?bcc=` durch die Hintertür). `tests/mahnung.test.ts`.
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
   (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor

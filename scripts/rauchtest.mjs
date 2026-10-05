@@ -164,7 +164,7 @@ const WEGE = [
     pfad: "/",
     // „Buchungssaldo" und die Formel am Monats-Cashflow (Phase 4, Review
     // 30.09.2026): Jede Cashflow-Zahl sagt, was sie ist.
-    erwartet: ["Portfolio-Wert", "Termine &amp; Aufgaben", "<h3>Buchungssaldo</h3>", "Neuigkeiten aus dem Mieterportal", "Warmmiete − Kreditraten − Ø Kosten", "Warmmiete / Mo.", "% ggü. Kaufpreis"],
+    erwartet: ["Portfolio-Wert", "Termine &amp; Aufgaben", ">Buchungssaldo<", "Neuigkeiten aus dem Mieterportal", "Warmmiete − Kreditraten − Ø Kosten", "Warmmiete / Mo.", "% ggü. Kaufpreis"],
     async pruefe({ html }) {
       // Vorgabe des Betreibers (#321): Kennzahlen VOR den Aufgaben. Der
       // Unit-Test prüft die Quelldatei — hier steht die ausgelieferte Seite.
@@ -293,7 +293,7 @@ const WEGE = [
     titel: "Mieterportal — Service-Partner verknüpft",
     pfad: "/anliegen?tab=service",
     // Firmen und Aufträge kommen aus dem Reset (Migration 20261001180200) — ohne ihn fehlen sie still.
-    erwartet: ["Verknüpfte Service-Partner", "Hausmeisterservice Krause", "Sanitär Lindner GmbH", "Garten- &amp; Winterdienst Petersen", "Heizung &amp; Sanitär Böhm", "Dachrinne verstopft", "Hecke schneiden und Grünschnitt entsorgen"],
+    erwartet: ["Verknüpfte Service-Partner", "Hausmeisterservice Krause", "Dienstleister — sieht nur Aufträge", "Sanitär Lindner GmbH", "Garten- &amp; Winterdienst Petersen", "Heizung &amp; Sanitär Böhm", "Dachrinne verstopft", "Hecke schneiden und Grünschnitt entsorgen"],
     async pruefe() {
       return null;
     },
@@ -497,7 +497,7 @@ async function main() {
   } else {
     console.log("\n✓ Service-Demo — Anmeldung");
     const SERVICE_WEGE = [
-      { titel: "Service-Portal — Aufträge", pfad: "/service", erwartet: ["Service-Portal", "1 Auftraggeber (seit", "Auftrag beantragen", "Firmenverzeichnis des Vermieters", "Dachrinne verstopft", "Heizkörper im Bad prüfen", "Heizung &amp; Sanitär Böhm"] }, // React trennt Textteile mit <!-- --> — Marker ohne Übergang zwischen festem Text und {…}
+      { titel: "Service-Portal — Aufträge", pfad: "/service", erwartet: ["Service-Portal", "1 Auftraggeber (seit", "Auftrag beantragen", "Firmenverzeichnis des Vermieters", "Dachrinne verstopft", "Heizkörper im Bad prüfen", "Heizung &amp; Sanitär Böhm", "Deine Objekte", "Reihenhaus Halle"] }, // React trennt Textteile mit <!-- --> — Marker ohne Übergang zwischen festem Text und {…}
       { titel: "Service-Demo — Vermieter-Bereich bleibt zu", pfad: "/steuer", erwartet: [], zielPfad: "/service" },
     ];
     for (const weg of SERVICE_WEGE) {

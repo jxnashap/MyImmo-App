@@ -79,7 +79,7 @@ describe("Einladungscodes für Service-Partner", () => {
 });
 
 describe("Auftrag vom Vermieter: drei Zugehörigkeitsprüfungen", () => {
-  const AUFTRAG = { serviceUserId: "sv-1", titel: "Heizung defekt" };
+  const AUFTRAG = { serviceUserId: "sv-1", titel: "Heizung defekt", taetigkeit: "heizung" };
 
   it("ohne verknüpften Partner entsteht kein Auftrag", async () => {
     const { db, mod } = await lade({ antworten: { service_zugaenge: null } });
@@ -130,7 +130,7 @@ describe("Auftrag vom Vermieter: drei Zugehörigkeitsprüfungen", () => {
 });
 
 describe("Antrag vom Handwerker: er darf sich nichts selbst freigeben", () => {
-  const ANTRAG = { vermieterId: "v-1", titel: "Dach reparieren" };
+  const ANTRAG = { vermieterId: "v-1", titel: "Dach reparieren", taetigkeit: "dach" };
 
   it("ein Antrag entsteht IMMER im Status „freigabe“", async () => {
     // Das ist die eigentliche Schranke: Der Handwerker legt an, der Vermieter
@@ -170,7 +170,7 @@ describe("Antrag vom Handwerker: er darf sich nichts selbst freigeben", () => {
 });
 
 describe("Kostengrenze (02.10.2026): bis zur Grenze ohne Rückfrage frei", () => {
-  const ANTRAG = { vermieterId: "v-1", titel: "Dachrinne" };
+  const ANTRAG = { vermieterId: "v-1", titel: "Dachrinne", taetigkeit: "rinne" };
 
   it("Schätzung innerhalb der Grenze → offen, automatisch freigegeben", async () => {
     const { db, mod } = await lade({ rpc: { auftrag_kostengrenze: 300 } });

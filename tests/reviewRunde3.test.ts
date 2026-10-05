@@ -118,7 +118,8 @@ describe("Jahresbericht: Seite und PDF rechnen dasselbe", () => {
 describe("Dashboard-Kacheln lassen sich nachrechnen", () => {
   const q = readFileSync("app/(app)/page.tsx", "utf8");
   it("die Einnahmen-Kachel zeigt die Warmmiete, mit der der Cashflow rechnet", () => {
-    expect(q).toMatch(/kpi-label">Warmmiete \/ Mo\.<\/div>\s*<div className="kpi-value">\{euro\(warmmiete\)\}/);
+    // Seit 03.10.2026 Felder einer Leiste (span statt div).
+    expect(q).toMatch(/kpi-label">Warmmiete \/ Mo\.<\/span>\s*<span className="kpi-value">\{euro\(warmmiete\)\}/);
     expect(q).not.toMatch(/kpi-label">Kaltmiete \/ Mo\./);
   });
   it("Kosten-Kachel = Kreditraten + Ø Kosten, Cashflow = Warmmiete − dieselben Teile", () => {

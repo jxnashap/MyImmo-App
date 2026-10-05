@@ -4,9 +4,14 @@
 // (mit optionaler Rückmeldung an den Vermieter).
 import { useEffect, useState, useTransition } from "react";
 import { Wrench, CalendarDays, Building2, Phone, Mail, Globe, SendHorizonal, Check, Link2 } from "lucide-react";
-import { beantworteAuftrag, beantrageAuftrag } from "@/lib/actions/service";
+import { beantworteAuftrag, beantrageAuftrag, meldeFachbetriebNoetig } from "@/lib/actions/service";
 import { datum } from "@/lib/format";
 import { teilbarerLink } from "@/lib/appUrl";
+import { selbstErledigtErlaubt, taetigkeit as taetigkeitVon } from "@/lib/taetigkeiten";
+import TaetigkeitWahl from "@/components/TaetigkeitWahl";
+import { neuSeit, type NeuGrund } from "@/lib/serviceNeu";
+import { rueckfrageOffen, type AuftragNotiz } from "@/lib/auftragNotizen";
+import AuftragVerlauf from "@/components/AuftragVerlauf";
 
 export type PortalAuftragRow = {
   id: string; titel: string; beschreibung: string | null; termin: string | null;
@@ -14,12 +19,27 @@ export type PortalAuftragRow = {
   objekt_name: string | null; vermieter_name: string | null;
   erstellt_von?: string | null; firma_id?: string | null;
   mieter_id?: string | null; public_token?: string | null;
+  vermieter_id?: string;
+  /** Firma, die der Hausmeister mit „Fachbetrieb nötig“ vorgeschlagen hat. */
+  vorgeschlagene_firma_id?: string | null;
+  /** Verlauf: Notizen und Fotos (lib/auftragNotizen.ts). */
+  notizen?: AuftragNotiz[];
+  /** Art der Arbeit (lib/taetigkeiten.ts). */
+  taetigkeit?: string | null;
+  updated_at?: string | null;
 };
 export type PortalFirmaRow = {
   id: string; name: string; gewerk: string | null; telefon: string | null;
   email: string | null; website: string | null; notiz: string | null;
 };
-export type AuftraggeberRow = { vermieter_id: string; label: string };
+export type AuftraggeberRow = {
+  vermieter_id: string;
+  label: string;
+  /** Nur als Hausmeister kann er Anträge stellen (Migration 20261005100000). */
+  rolle?: "hausmeister" | "dienstleister";
+};
+/** Zugewiesenes Objekt (Sicht `service_objekte_portal`). */
+export type PortalObjektRow = { id: string; bezeichnung: string; adresse: string | null; vermieter_id: string };
 
 /** Hinweis statt Absenden — Vorschau beim Vermieter und Demo-Hausmeister. */
 export const VORSCHAU_NICHT_GESENDET = "Nur Ansicht — in der Demo wird nichts gesendet.";
@@ -82,8 +102,59 @@ function FirmenLinkAktionen({
   );
 }
 
-function Eintrag({ a, firmen, vorschau }: { a: PortalAuftragRow; firmen: PortalFirmaRow[]; vorschau: boolean }) {
+/** „Kann ich nicht selbst — Fachbetrieb nötig“: Firma VORSCHLAGEN, der Vermieter entscheidet. */
+function FachbetriebForm({ a, firmen, vorschau, fertig }: { a: PortalAuftragRow; firmen: PortalFirmaRow[]; vorschau: boolean; fertig: () => void }) {
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const senden = (fd: FormData) =>
+    startTransition(async () => {
+      setFehler(null);
+      if (vorschau) return;
+      try {
+        const r = await meldeFachbetriebNoetig(fd);
+        if ("error" in r) setFehler(r.error);
+        else fertig();
+      } catch {
+        setFehler("Konnte nicht gesendet werden.");
+      }
+    });
+  return (
+    <form action={senden} className="fachbetrieb-form">
+      <input type="hidden" name="auftragId" value={a.id} />
+      <div style={{ fontSize: 12, fontWeight: 600 }}>Fachbetrieb nötig — Vorschlag an den Vermieter</div>
+      <textarea name="text" rows={2} maxLength={2000} required placeholder="Warum? z. B. Therme zeigt Störung F28, Gasgeruch, Leitung in der Wand" />
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <select name="firmaId" defaultValue="" style={{ flex: "1 1 200px" }}>
+          <option value="">– Firma vorschlagen (optional) –</option>
+          {firmen.map((f) => <option key={f.id} value={f.id}>{f.name}{f.gewerk ? ` (${f.gewerk})` : ""}</option>)}
+        </select>
+        <input name="kostenSchaetzung" inputMode="decimal" maxLength={20} placeholder="Kosten ca. (€)" style={{ flex: "0 1 140px" }} />
+      </div>
+      <p style={{ fontSize: 11, color: "var(--muted)", margin: 0 }}>
+        Du beauftragst nicht selbst: Der Vermieter gibt frei, lehnt ab oder fragt nach. Danach meldest du dich bei der Firma.
+      </p>
+      {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
+      {vorschau && <p style={{ fontSize: 11, color: "var(--muted)", margin: 0 }}>{VORSCHAU_NICHT_GESENDET}</p>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="submit" className="btn btn-gold" disabled={pending || vorschau}>{pending ? "…" : "Vorschlag senden"}</button>
+        <button type="button" className="btn btn-ghost" onClick={fertig}>Abbrechen</button>
+      </div>
+    </form>
+  );
+}
+
+function Eintrag({ a, firmen, vorschau, darfVorschlagen, neu = null }: { a: PortalAuftragRow; firmen: PortalFirmaRow[]; vorschau: boolean; darfVorschlagen: boolean; neu?: NeuGrund | null }) {
   const firma = a.firma_id ? firmen.find((f) => f.id === a.firma_id) ?? null : null;
+  const vorgeschlagen = !firma && a.vorgeschlagene_firma_id ? firmen.find((f) => f.id === a.vorgeschlagene_firma_id) ?? null : null;
+  // „Selbst erledigt“ nur bei erlaubten Tätigkeiten und ohne Gas/Strom/Wasser/Schornstein-Stichwort;
+  // gilt nur dem Hausmeister (lib/taetigkeiten.ts — der Server prüft dieselbe Regel).
+  const pruefung = selbstErledigtErlaubt({
+    rolle: darfVorschlagen ? "hausmeister" : "dienstleister",
+    taetigkeit: a.taetigkeit, titel: a.titel, beschreibung: a.beschreibung, firmaId: a.firma_id,
+  });
+  const selbstGesperrt = !pruefung.erlaubt;
+  const art = taetigkeitVon(a.taetigkeit);
+  const [fachbetrieb, setFachbetrieb] = useState(false);
   const [aktion, setAktion] = useState<null | "angenommen" | "erledigt" | "abgelehnt">(null);
   const [text, setText] = useState("");
   const [betrag, setBetrag] = useState("");
@@ -115,7 +186,9 @@ function Eintrag({ a, firmen, vorschau }: { a: PortalAuftragRow; firmen: PortalF
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <Wrench size={14} color="var(--gold)" />
         <span style={{ fontWeight: 600 }}>{a.titel}</span>
+        {neu && <span className="badge badge-gold neu-merkmal">Neu · {neu}</span>}
         <span className={`badge ${s.cls}`}>{s.label}</span>
+        {art && <span className={`badge ${art.selbst ? "badge-neutral" : "badge-amber"}`}>{art.label}</span>}
         {a.vermieter_name && <span className="badge badge-neutral">{a.vermieter_name}</span>}
         {a.termin && (
           <span style={{ fontSize: 11, color: "var(--muted)" }}>
@@ -131,7 +204,24 @@ function Eintrag({ a, firmen, vorschau }: { a: PortalAuftragRow; firmen: PortalF
           <FirmaKontakt f={firma} />
         </div>
       )}
-      {(a.status === "offen" || a.status === "angenommen") && a.erstellt_von === "service" && firma && (
+      {(() => {
+        const frage = rueckfrageOffen(a.notizen ?? []);
+        return frage && a.status === "freigabe" ? (
+          <p className="rueckfrage-hinweis" role="note">
+            <strong>Rückfrage des Vermieters:</strong> {frage.text} — bitte unten im Verlauf antworten.
+          </p>
+        ) : null;
+      })()}
+      {a.status === "freigabe" && vorgeschlagen && (
+        <p style={{ fontSize: 12, marginTop: 6, color: "var(--muted)" }}>Dein Vorschlag: <strong>{vorgeschlagen.name}</strong> — wartet auf den Vermieter.</p>
+      )}
+      {selbstGesperrt && (a.status === "offen" || a.status === "angenommen") && (
+        <p className="pflicht-hinweis" role="note">
+          <strong>Nur Fachbetrieb.</strong> {!pruefung.erlaubt && pruefung.grund} Bitte nicht selbst daran arbeiten —
+          {darfVorschlagen ? " „Fachbetrieb nötig“ wählen." : " melde dich beim Vermieter."}
+        </p>
+      )}
+      {(a.status === "offen" || a.status === "angenommen") && firma && (
         <p style={{ fontSize: 12, marginTop: 6, padding: "6px 10px", background: "var(--green-dim)", color: "var(--green)", borderRadius: 6 }}>
           {a.mieter_id
             ? "Vom Vermieter freigegeben — jetzt die Firma anrufen oder ihr den Auftrags-Link per E-Mail schicken; den Termin stimmt die Firma direkt mit dem Mieter ab."
@@ -190,33 +280,56 @@ function Eintrag({ a, firmen, vorschau }: { a: PortalAuftragRow; firmen: PortalF
               </div>
             </div>
           ) : (
+            fachbetrieb ? (
+              <FachbetriebForm a={a} firmen={firmen} vorschau={vorschau} fertig={() => setFachbetrieb(false)} />
+            ) : (
             <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
               {a.status === "offen" && (
                 <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--blue)" }} onClick={() => setAktion("angenommen")}>
                   Annehmen
                 </button>
               )}
-              <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--green)" }} onClick={() => setAktion("erledigt")}>
-                Erledigt melden
-              </button>
+              {!selbstGesperrt && (
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--green)" }} onClick={() => setAktion("erledigt")}>
+                  {firma ? "Erledigt melden" : "Selbst erledigt"}
+                </button>
+              )}
+              {darfVorschlagen && !firma && (
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--amber)" }} onClick={() => setFachbetrieb(true)}>
+                  Fachbetrieb nötig
+                </button>
+              )}
               {a.status === "offen" && (
                 <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--red)" }} onClick={() => setAktion("abgelehnt")}>
                   Ablehnen
                 </button>
               )}
             </span>
+            )
           )}
         </div>
       )}
+      <AuftragVerlauf
+        auftragId={a.id}
+        notizen={a.notizen ?? []}
+        ich="service"
+        offen={["freigabe", "offen", "angenommen"].includes(a.status)}
+        vorschau={vorschau}
+      />
     </div>
   );
 }
 
-function AntragForm({ auftraggeber, firmen, vorschau }: { auftraggeber: AuftraggeberRow[]; firmen: PortalFirmaRow[]; vorschau: boolean }) {
+function AntragForm({
+  auftraggeber, firmen, objekte, vorschau,
+}: { auftraggeber: AuftraggeberRow[]; firmen: PortalFirmaRow[]; objekte: PortalObjektRow[]; vorschau: boolean }) {
   const [offen, setOffen] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [ok, setOk] = useState<null | "freigegeben" | "wartet">(null);
   const [pending, startTransition] = useTransition();
+  const [vermieterId, setVermieterId] = useState(auftraggeber.length === 1 ? auftraggeber[0].vermieter_id : "");
+  // Nur Objekte des gewählten Auftraggebers — und nur die, die er zugewiesen hat.
+  const seineObjekte = objekte.filter((o) => o.vermieter_id === vermieterId);
 
   const senden = (fd: FormData) =>
     startTransition(async () => {
@@ -251,15 +364,26 @@ function AntragForm({ auftraggeber, firmen, vorschau }: { auftraggeber: Auftragg
             ) : (
               <div className="form-group">
                 <label>Auftraggeber *</label>
-                <select name="vermieterId" required defaultValue="">
+                <select name="vermieterId" required value={vermieterId} onChange={(e) => setVermieterId(e.target.value)}>
                   <option value="" disabled>– wählen –</option>
                   {auftraggeber.map((v) => <option key={v.vermieter_id} value={v.vermieter_id}>{v.label}</option>)}
                 </select>
               </div>
             )}
             <div className="form-row">
-              <div className="form-group"><label>Was muss gemacht werden? *</label><input name="titel" required maxLength={200} placeholder="z. B. Dachrinne verstopft, Haus Lindenstraße" /></div>
-              <div className="form-group"><label>Objekt / Wohnung</label><input name="objekt" maxLength={200} placeholder="z. B. Lindenstraße 12, EG links" /></div>
+              <div className="form-group"><label>Was muss gemacht werden? *</label><input name="titel" required maxLength={200} placeholder="z. B. Dachrinne verstopft" /></div>
+              <div className="form-group"><label>Art der Arbeit *</label><TaetigkeitWahl /></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Objekt</label>
+                {/* Nur zugewiesene Objekte — die Datenbank lehnt jedes andere ab. */}
+                <select name="propId" defaultValue="" key={vermieterId}>
+                  <option value="">{seineObjekte.length === 0 ? "– kein Objekt zugewiesen –" : "– allgemein, kein bestimmtes Objekt –"}</option>
+                  {seineObjekte.map((o) => <option key={o.id} value={o.id}>{o.bezeichnung}{o.adresse ? ` · ${o.adresse}` : ""}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label>Wo genau?</label><input name="objekt" maxLength={200} placeholder="z. B. EG links, Keller, Dach" /></div>
             </div>
             <div className="form-row">
               <div className="form-group">
@@ -293,25 +417,76 @@ function AntragForm({ auftraggeber, firmen, vorschau }: { auftraggeber: Auftragg
   );
 }
 
+/** Die Objekte, die der Vermieter dem Hausmeister zugewiesen hat — eine Zeile je Objekt. */
+function ObjektListe({ objekte, mehrereAuftraggeber, auftraggeber }: { objekte: PortalObjektRow[]; mehrereAuftraggeber: boolean; auftraggeber: AuftraggeberRow[] }) {
+  if (objekte.length === 0) return null;
+  const name = (id: string) => auftraggeber.find((a) => a.vermieter_id === id)?.label ?? "";
+  return (
+    <div className="section">
+      <div className="section-header">
+        <h3><Building2 size={15} style={{ verticalAlign: "-2px" }} /> Deine Objekte</h3>
+        <span className="badge badge-neutral">{objekte.length}</span>
+      </div>
+      <div className="section-body">
+        {objekte.map((o) => (
+          <div key={o.id} className="listen-zeile" style={{ cursor: "default" }}>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span className="listen-zeile-titel" style={{ fontWeight: 500 }}>{o.bezeichnung}</span>
+              <span className="listen-zeile-sub">{[o.adresse, mehrereAuftraggeber ? name(o.vermieter_id) : null].filter(Boolean).join(" · ")}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AuftraegePortal({
-  auftraege, firmen, auftraggeber, vorschau = false,
+  auftraege, firmen, auftraggeber, objekte = [], seitJe = {}, vorschau = false,
 }: {
   auftraege: PortalAuftragRow[];
   firmen: PortalFirmaRow[];
   auftraggeber: AuftraggeberRow[];
+  /** Zugewiesene Objekte (nur Hausmeister). */
+  objekte?: PortalObjektRow[];
+  /** Je Auftraggeber: ab wann etwas „neu“ ist (lib/serviceNeu.ts). Fehlt er, wird nichts markiert. */
+  seitJe?: Record<string, string>;
   /** Formulare ausfüllbar, Senden aus (Ansicht beim Vermieter, Demo). */
   vorschau?: boolean;
 }) {
   const offene = auftraege.filter((a) => ["offen", "angenommen", "freigabe"].includes(a.status));
   const erledigte = auftraege.filter((a) => ["erledigt", "abgelehnt", "nicht_freigegeben"].includes(a.status));
+  // Anträge stellt nur ein Hausmeister — die Datenbank prüft dieselbe Rolle.
+  const alsHausmeister = auftraggeber.filter((a) => (a.rolle ?? "hausmeister") === "hausmeister");
+  const hausmeisterBei = new Set(alsHausmeister.map((a) => a.vermieter_id));
+  // Ohne Vermieter-ID (ältere Zeilen) zählt die einzige Verknüpfung.
+  const darf = (a: PortalAuftragRow) =>
+    a.vermieter_id ? hausmeisterBei.has(a.vermieter_id) : alsHausmeister.length === auftraggeber.length && alsHausmeister.length > 0;
+  const neuVon = (a: PortalAuftragRow) => {
+    const seit = a.vermieter_id ? seitJe[a.vermieter_id] : undefined;
+    return seit ? neuSeit(a, seit) : null;
+  };
+  const anzahlNeu = auftraege.filter((a) => neuVon(a)).length;
   return (
     <>
-      <AntragForm auftraggeber={auftraggeber} firmen={firmen} vorschau={vorschau} />
+      {alsHausmeister.length > 0 ? (
+        <AntragForm auftraggeber={alsHausmeister} firmen={firmen} objekte={objekte} vorschau={vorschau} />
+      ) : (
+        <p className="dienstleister-hinweis">
+          Als Dienstleister siehst du hier die Aufträge, die dir gegeben werden — mit Termin,
+          Ort und Ansprechpartner. Neue Arbeiten beauftragt der Vermieter.
+        </p>
+      )}
+
+      <ObjektListe objekte={objekte} mehrereAuftraggeber={auftraggeber.length > 1} auftraggeber={auftraggeber} />
 
       <div className="section">
         <div className="section-header">
           <h3>Aktuelle Aufträge</h3>
-          {offene.length > 0 && <span className="badge badge-amber">{offene.length}</span>}
+          <span style={{ display: "inline-flex", gap: 6 }}>
+            {anzahlNeu > 0 && <span className="badge badge-gold">{anzahlNeu} neu seit deinem letzten Besuch</span>}
+            {offene.length > 0 && <span className="badge badge-amber">{offene.length}</span>}
+          </span>
         </div>
         <div className="section-body">
           {offene.length === 0 ? (
@@ -320,11 +495,12 @@ export default function AuftraegePortal({
               Antrag freigibt, erscheint es hier.
             </p>
           ) : (
-            offene.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} />)
+            offene.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} darfVorschlagen={darf(a)} neu={neuVon(a)} />)
           )}
         </div>
       </div>
 
+      {alsHausmeister.length > 0 && (
       <div className="section">
         <div className="section-header"><h3><Building2 size={15} style={{ verticalAlign: "-2px" }} /> Firmenverzeichnis des Vermieters</h3></div>
         <div className="section-body">
@@ -346,12 +522,13 @@ export default function AuftraegePortal({
           )}
         </div>
       </div>
+      )}
 
       {erledigte.length > 0 && (
         <div className="section">
           <div className="section-header"><h3>Abgeschlossen</h3></div>
           <div className="section-body">
-            {erledigte.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} />)}
+            {erledigte.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} darfVorschlagen={false} neu={neuVon(a)} />)}
           </div>
         </div>
       )}

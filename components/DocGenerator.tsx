@@ -2,6 +2,7 @@
 import { Save, FileText } from "lucide-react";
 
 import BriefBlatt from "@/components/BriefBlatt";
+import BriefVersand from "@/components/BriefVersand";
 import SubmitButton from "@/components/SubmitButton";
 
 import { useState, useTransition } from "react";
@@ -151,6 +152,8 @@ export default function DocGenerator({
       "",
   );
   const titel = TITEL[art];
+  // Dieselben Felder für PDF-Download, Archiv und Versand (BriefVersand).
+  const felder = { art, datum, betrag, grund, ibanId, vName, vAdr, text: vorlageText, signieren: signieren ? "1" : "" };
 
 
   return (
@@ -417,7 +420,7 @@ export default function DocGenerator({
             disabled={ablegen}
             onClick={() =>
               startAblegen(async () => {
-                const res = await speichereBrief(tenant.id, { art, datum, betrag, grund, ibanId, vName, vAdr, text: vorlageText, signieren: signieren ? "1" : "" });
+                const res = await speichereBrief(tenant.id, felder);
                 toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.", res.ok ? "success" : "error");
               })
             }
@@ -426,6 +429,14 @@ export default function DocGenerator({
           </button>
           <SubmitButton><FileText size={14} style={{ verticalAlign: "-2px" }} /> Als PDF herunterladen</SubmitButton>
         </form>
+        <BriefVersand
+          mieterId={tenant.id}
+          email={tenant.email}
+          mieterName={mieterName}
+          betreff={titel}
+          absender={vName}
+          felder={felder}
+        />
       </div>
     </div>
   );

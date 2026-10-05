@@ -37,11 +37,14 @@ export default function WertVerlaufChart({
   punkte,
   color = "var(--gold)",
   caption,
+  erklaerung,
   hoehe = 280,
 }: {
   punkte: WertPunkt[];
   color?: string;
   caption?: string;
+  /** Erklärung zur Rechnung — eingeklappt unter der Grafik statt als Absatz (03.10.2026). */
+  erklaerung?: string;
   /** Höhe in Pixeln — fest, damit Spalten nebeneinander gleich hoch sind. */
   hoehe?: number;
 }) {
@@ -143,6 +146,12 @@ export default function WertVerlaufChart({
       )}
       {caption && (
         <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "var(--muted)" }}>{caption}</div>
+      )}
+      {erklaerung && (
+        <details className="erklaer">
+          <summary>Wie wird das gerechnet?</summary>
+          <p>{erklaerung}</p>
+        </details>
       )}
     </div>
   );

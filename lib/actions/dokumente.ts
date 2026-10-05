@@ -26,6 +26,8 @@ async function archiviere(opts: {
   pdf: Uint8Array;
   /** direkt im Mieterportal zustellen — an genau diese Konten (lib/zustellung.ts) */
   zustellenAn?: Empfaenger[];
+  /** Mieter soll „gelesen und bestätigt“ klicken. */
+  bestaetigung?: boolean;
 }): Promise<DokumentResult> {
   const supabase = await createClient();
 
@@ -68,19 +70,47 @@ async function archiviere(opts: {
     notizId: (neu as { id: string }).id,
     titel: opts.titel,
     empfaenger: opts.zustellenAn,
+    bestaetigung: !!opts.bestaetigung,
   });
   revalidatePath("/portal");
   if (!z.ok) return { ok: false, error: `Im Archiv gespeichert, aber nicht zugestellt: ${z.error}` };
   return { ok: true, zugestelltAn: z.an };
 }
 
+export type BriefZustellLage = { sperre: string | null; warnungen: string[]; an: string[] } | { error: string };
+
+/**
+ * Wer bekäme den Brief im Mieterportal? Für die Bestätigungskarte VOR dem Zustellen
+ * (05.10.2026, Mahnung „ins Portal stellen“). Dieselbe Prüfung wie bei der NK-Abrechnung;
+ * `speichereBrief(…, { zustellen: true })` wiederholt sie als Schranke.
+ */
+export async function pruefeBriefZustellung(mieterId: string): Promise<BriefZustellLage> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  const lage = await ladeZustellLage(supabase, user.id, mieterId, { jahr: null });
+  if ("error" in lage) return { error: lage.error };
+  return { sperre: lage.sperre, warnungen: lage.warnungen, an: lage.empfaenger.map((e) => e.email ?? "Portal-Konto") };
+}
+
 export async function speichereBrief(
   mieterId: string,
   fields: BriefFields,
+  versand: { zustellen?: boolean; bestaetigung?: boolean } = {},
 ): Promise<DokumentResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  // Zustellen nur nach derselben Prüfung wie bei der NK-Abrechnung — die Karte im Browser
+  // zeigt sie an, hier ist sie die Schranke (kein verbundenes Konto → nichts zustellen).
+  let zustellenAn: Empfaenger[] | undefined;
+  if (versand.zustellen) {
+    const lage = await ladeZustellLage(supabase, user.id, mieterId, { jahr: null });
+    if ("error" in lage) return { ok: false, error: lage.error };
+    if (lage.sperre) return { ok: false, error: lage.sperre };
+    zustellenAn = lage.empfaenger;
+  }
 
   try {
     const doc = await erzeugeBriefPdf(supabase, user.id, mieterId, fields);
@@ -92,6 +122,8 @@ export async function speichereBrief(
       titel: doc.titel,
       dateiname: doc.dateiname,
       pdf: doc.pdf,
+      zustellenAn,
+      bestaetigung: versand.bestaetigung,
     });
   } catch (e) {
     console.error("speichereBrief:", e);

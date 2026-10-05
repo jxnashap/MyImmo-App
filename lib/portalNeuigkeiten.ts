@@ -10,7 +10,7 @@
 
 import { vorgangUrl } from "@/lib/anliegenListe";
 
-export type NeuigkeitArt = "nachricht" | "termin" | "dokument" | "angebot" | "firma" | "freigabe" | "bewerbung";
+export type NeuigkeitArt = "nachricht" | "termin" | "dokument" | "angebot" | "firma" | "freigabe" | "bewerbung" | "hausmeister";
 
 export type Neuigkeit = {
   art: NeuigkeitArt;
@@ -32,8 +32,10 @@ export type NeuigkeitenQuelle = {
   angebote: { firma: string; betrag: number; created_at: string }[];
   /** Rückmeldungen von Firmen über den Auftrags-Link. */
   rueckmeldungen: { art: string; firma: string | null; auftrag: string; created_at: string }[];
-  /** Aufträge des Hausmeisters, die auf Freigabe warten. */
-  freigaben: { titel: string; created_at: string }[];
+  /** Aufträge des Hausmeisters, die auf Freigabe warten (`fachbetrieb`: er schlägt eine Firma vor). */
+  freigaben: { titel: string; created_at: string; fachbetrieb?: boolean }[];
+  /** Notizen und Fotos des Hausmeisters am Auftrag (05.10.2026). Fehlt bei älteren Aufrufern. */
+  hausmeister?: { art: string; auftrag: string; created_at: string }[];
   /** Neue Bewerbungen (status „neu“). */
   bewerbungen: { name: string | null; created_at: string }[];
 };
@@ -88,7 +90,17 @@ export function bauePortalNeuigkeiten(q: NeuigkeitenQuelle, heute: string, grenz
     out.push({ art: "firma", text: `${r.firma ?? "Firma"} ${RUECKMELDUNG[r.art] ?? "hat geantwortet"}`, sub: r.auftrag, href: "/anliegen?tab=service", zeit: r.created_at });
   }
   for (const f of q.freigaben) {
-    out.push({ art: "freigabe", text: "Hausmeister bittet um Freigabe", sub: f.titel, href: "/anliegen?tab=service", zeit: f.created_at });
+    out.push({
+      art: "freigabe",
+      text: f.fachbetrieb ? "Hausmeister: Fachbetrieb nötig" : "Hausmeister bittet um Freigabe",
+      sub: f.titel,
+      href: "/anliegen?tab=service",
+      zeit: f.created_at,
+    });
+  }
+  for (const h of q.hausmeister ?? []) {
+    if (!neu(h.created_at)) continue;
+    out.push({ art: "hausmeister", text: h.art === "foto" ? "Hausmeister hat ein Foto angehängt" : "Notiz vom Hausmeister", sub: h.auftrag, href: "/anliegen?tab=service", zeit: h.created_at });
   }
   for (const b of q.bewerbungen) {
     if (!neu(b.created_at)) continue;
