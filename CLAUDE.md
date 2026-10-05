@@ -210,7 +210,7 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
   „Selbst bewohnt“, cent-genau; Konto über `abos.provider_subscription_id`, sonst
   `custom_data.user_id`; jeder Fehler → 500 (Paddle stellt erneut zu). **Betreiber: in der
   Webhook-Destination `transaction.completed` mit abonnieren** und **vor dem Bezahlstart
-  `supabase/migrations/20261005170000_kontoloeschung_abo_zahlungen.sql` im SQL-Editor ausführen**
+  `supabase/migrations/20261005190000_kontoloeschung_abo_zahlungen.sql` im SQL-Editor ausführen**
   (Kontolöschung erfasst `abo_zahlungen`; noch nicht ausgeführt, bis dahin 0 Zeilen, folgenlos). Dazu `/preise` + Preis-Teaser:
   „Als Werbungskosten absetzbar — und automatisch gebucht“ (`lib/absetzbar.ts`, nur mit
   `PREISE_SICHTBAR`). **Regel: Nie „kostenlos, weil absetzbar“** — gespart wird der
@@ -978,6 +978,33 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Mutationen rot. **Regel: Eine neue öffentliche Datei-Route über einen Token schreibt ins
   Abruf-Protokoll (`freigabe_abruf_merken`).** Nebenbei korrigiert: Der Demo-Dialog beschrieb den
   Makler-Ordner als Exposé/Grundbuch-Sammlung (das ist der Beleihungsordner).
+  🔑 **Zugangscode + vorbereitete Mail (gleicher Tag, Vorgabe des Betreibers):** Beim Erstellen
+  die E-Mail des Maklers; danach „Mail an … öffnen“ = `mailto:` mit Empfänger, Betreff, Link UND
+  Code (`maklerMailLink` in `lib/makler.ts`) — **MyImmo verschickt nichts, kein Brevo.** Der
+  Makler gibt den Code auf `/makler-link/<token>` ein (`MaklerCodeFormular`,
+  `lib/actions/maklerLinkPublic.ts`), danach httpOnly-Cookie mit dem Hash, Pfad nur dieser Link.
+  Gespeichert nur `code_hash` = HMAC(Token + Code) (`lib/maklerCode.ts`); die Datenbank liefert
+  Inhalte nur mit dem Hash, sperrt nach 10 Fehlversuchen (Migration `20261005170000`).
+  **Grenze, bewusst so entschieden:** Stehen Link und Code in derselben Mail, hilft der Code nur
+  gegen einen allein weitergegebenen Link — die Oberfläche empfiehlt, den Code getrennt (SMS) zu
+  schicken. **Der Code wird nur einmal angezeigt;** verloren = neuer Link.
+  🏦 **Bank-Link genauso (gleicher Tag, Betreiber: „Bank auch“, Migration `20261005180000`):**
+  E-Mail des Beraters, Code, `zugangsMailLink` (`lib/zugangsMail.ts`, gemeinsam für beide);
+  Seite, Datei UND Rückmeldung der Bank nur mit Hash (Cookie `mi_bank`, Pfad `/beleihung/<token>`).
+  Gemeinsame Bausteine: `lib/freigabeCode.ts` (Hash = HMAC über **Art** + Token + Code — ein
+  Makler-Code passt nie auf einen Bank-Link), `components/ZugangsCodeFormular.tsx`.
+  **Ohne `DATA_ENCRYPTION_KEY` lässt sich kein Link erstellen** (fail-closed, gewollt).
+  🐞 **Am Handy gemeldet (05.10.2026): „Keine E-Mail-Adresse bekannt.“** beim Erstellen eines
+  Makler-/Bank-Links — beide rufen `useReAuth()` OHNE E-Mail auf, der Dialog konnte das Passwort
+  nie prüfen (beim Bank-Link vermutlich seit 08.09.2026, nie bemerkt). Jetzt holt
+  `ReAuthDialog` E-Mail und „ohne Passwort“ (`konto_hat_passwort`) selbst, wenn der Aufrufer sie
+  nicht übergibt. `tests/reAuthEmail.test.ts`.
+  **Regel: Ein neuer öffentlicher Freigabe-Link bekommt dasselbe Verfahren — keine Inhalte über
+  den Token allein.** **Bewusst OHNE Code (Betreiber 05.10.2026: „Bewerber egal“):** der
+  Bewerbungs-Link — er zeigt nur den Steckbrief, den der Vermieter selbst öffentlich macht, und
+  nimmt Daten entgegen statt sie herauszugeben. Offen, nicht entschieden: der Auftrags-Link für
+  Firmen (zeigt den Mieterkontakt, wenn freigegeben). Die Rückfall-Datei für das Bank-Protokoll stellt seitdem die Code-Fassung
+  her (die alte hätte die Unterlagen wieder ohne Code geöffnet).
   Beide Listen zeigen auch widerrufene/abgelaufene Links (blass, ohne Knöpfe) — wer aus Sorge
   widerruft, will gerade dann das Protokoll sehen (vorher zeigte der Bank-Ordner nur aktive).
   ✅ **Phase 1 (Startseite) erledigt 01.10.2026:** Hero „Deine Immobilien. Ein System. Von überall.“

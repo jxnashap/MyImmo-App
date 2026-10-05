@@ -125,6 +125,11 @@ export default function DatenschutzPage() {
         ausgewählten Unterlagen für Inhaber des Links bis zum Ablauf bzw. Widerruf abrufbar.
         Auswahl, Laufzeit (höchstens 30 Tage) und Widerruf liegen bei Ihnen. Rückmeldungen der
         Bank (Name, Institut, Kontakt, Nachricht) werden Ihrem Konto zugeordnet gespeichert.
+        Für einen solchen Link tragen Sie die E-Mail-Adresse der Bank bzw. des Maklers ein; sie wird
+        beim Link gespeichert und in die vorbereitete E-Mail übernommen, die Sie selbst aus Ihrem
+        Mailprogramm versenden — MyImmo verschickt dabei nichts. Der Empfänger öffnet die Unterlagen
+        mit einem Zugangscode aus dieser E-Mail; gespeichert wird nur ein nicht umkehrbarer Prüfwert
+        des Codes.
         Jeder Abruf einer Datei über einen solchen Link wird für Sie protokolliert — gespeichert
         werden nur Zeitpunkt und Dokument, keine IP-Adresse und keine Angaben zur abrufenden
         Person. Das Protokoll sehen nur Sie; es wird mit Ihrem Konto gelöscht.

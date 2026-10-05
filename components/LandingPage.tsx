@@ -37,7 +37,7 @@ export const ORDNER = [
     punkte: [
       "Checkliste passt sich an: Eigentumswohnung, vermietet, selbstständig",
       "Kennblatt, Mietaufstellung und NK-Abrechnung erzeugt MyImmo aus deinen Daten",
-      "Freigabe-Link für 7, 14 oder 30 Tage — jederzeit widerrufbar, die Bank antwortet direkt darüber",
+      "Freigabe-Link mit Zugangscode für 7, 14 oder 30 Tage — widerrufbar, die Bank antwortet direkt darüber",
     ],
   },
   {
@@ -45,7 +45,7 @@ export const ORDNER = [
     punkte: [
       "Finanzierungsbestätigung, Selbstauskunft, SCHUFA — abhaken mit Fortschritt",
       "Käufer-Selbstauskunft als PDF aus deinen gespeicherten Angaben",
-      "Download-Link für 7, 14 oder 30 Tage — Ausweis und Einkommen nur, wenn du sie bewusst anhakst",
+      "Download-Link mit Zugangscode für 7, 14 oder 30 Tage — Ausweis und Einkommen nur, wenn du sie bewusst anhakst",
     ],
   },
   {

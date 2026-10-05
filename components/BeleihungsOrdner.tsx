@@ -32,6 +32,7 @@ import {
 import { teilbarerLink } from "@/lib/appUrl";
 import { useModalFokus } from "@/lib/modalFokus";
 import { abrufeJeLink, abrufZusammenfassung, type Abruf } from "@/lib/freigabeAbrufe";
+import { zugangsMailLink } from "@/lib/zugangsMail";
 
 export type Rueckmeldung = {
   id: string;
@@ -102,7 +103,9 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
   const [shareBusy, setShareBusy] = useState(false);
   // Bank-Freigabe verlangt eine frische Anmeldung (Server prüft, Dialog holt nach).
   const { absichern: freigabeAbsichern, dialog: reAuthDialog } = useReAuth();
-  const [neuerLink, setNeuerLink] = useState<string | null>(null);
+  // Nach dem Erstellen: Link, einmalig angezeigter Code, Empfänger (05.10.2026).
+  const [neuerLink, setNeuerLink] = useState<{ link: string; code: string; an: string; ablauf: string } | null>(null);
+  const [bankEmail, setBankEmail] = useState("");
   const [modusKauf, setModusKauf] = useState(false);
   const [selbst, setSelbst] = useState(false);
   const [busy, setBusy] = useState<string | null>(null); // item_key der laufenden Aktion
@@ -386,7 +389,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
               <div key={f.token} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--line)", flexWrap: "wrap", opacity: f.aktiv && !abgelaufen ? 1 : 0.65 }}>
                 <div style={{ flex: "1 1 240px", minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    /beleihung/{f.token.slice(0, 8)}… · {f.item_keys.length} Dokument{f.item_keys.length === 1 ? "" : "e"}
+                    {f.empfaenger_email ?? `/beleihung/${f.token.slice(0, 8)}…`} · {f.item_keys.length} Dokument{f.item_keys.length === 1 ? "" : "e"}
                   </div>
                   <div style={{ fontSize: 11, color: abgelaufen ? "var(--red)" : "var(--muted)" }}>
                     {!f.aktiv ? "Widerrufen" : <>{abgelaufen ? "Abgelaufen am " : "Gültig bis "}{new Date(f.ablauf).toLocaleDateString("de-DE")}</>}
@@ -477,21 +480,39 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
 
             {neuerLink ? (
               <>
+                <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>Zugangscode — wird nur jetzt angezeigt:</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                  <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: "0.12em", fontFamily: "ui-monospace, monospace" }}>{neuerLink.code}</span>
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => { navigator.clipboard.writeText(neuerLink.code).then(() => toast("Code kopiert.")); }}>
+                    <Copy size={12} /> Code kopieren
+                  </button>
+                </div>
                 <div style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 10, padding: "10px 12px", fontSize: 12, wordBreak: "break-all", marginBottom: 12 }}>
-                  {neuerLink}
+                  {neuerLink.link}
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => { navigator.clipboard.writeText(neuerLink).then(() => toast("Link kopiert.")); }}>
-                    <Copy size={13} /> Kopieren
-                  </button>
                   <a
-                    className="btn btn-ghost" style={{ fontSize: 12 }}
-                    href={`mailto:?subject=${encodeURIComponent(`Finanzierungsunterlagen ${objektName}`)}&body=${encodeURIComponent(`Guten Tag,\n\nüber folgenden Link finden Sie die Unterlagen zum Objekt ${objektName}:\n${neuerLink}\n\nDer Link ist zeitlich begrenzt gültig. Über das Formular auf der Seite können Sie sich direkt zurückmelden.\n\nMit freundlichen Grüßen`)}`}
+                    className="btn btn-gold" style={{ fontSize: 12 }}
+                    href={zugangsMailLink({
+                      an: neuerLink.an,
+                      betreff: `Finanzierungsunterlagen ${objektName}`,
+                      einleitung: `über folgenden Link finden Sie die Unterlagen zum Objekt ${objektName}. Über das Formular auf der Seite können Sie sich direkt zurückmelden.`,
+                      link: neuerLink.link,
+                      code: neuerLink.code,
+                      ablauf: neuerLink.ablauf,
+                    })}
                   >
-                    <Mail size={13} /> Per E-Mail
+                    <Mail size={13} /> Mail an {neuerLink.an} öffnen
                   </a>
+                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => { navigator.clipboard.writeText(neuerLink.link).then(() => toast("Link kopiert.")); }}>
+                    <Copy size={13} /> Link kopieren
+                  </button>
                   <button type="button" className="btn btn-ghost" style={{ fontSize: 12, marginLeft: "auto" }} onClick={() => setShowShare(false)}>Schließen</button>
                 </div>
+                <p style={{ fontSize: 11.5, color: "var(--muted)", margin: "10px 0 0", lineHeight: 1.5 }}>
+                  Die Mail öffnet sich in deinem Mailprogramm mit Link und Code — du kannst sie ändern oder direkt senden.
+                  Sicherer: die Code-Zeile aus der Mail löschen und den Code getrennt schicken (SMS, Anruf). Wer nur den Link hat, sieht nichts.
+                </p>
               </>
             ) : (
               <>
@@ -523,6 +544,10 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                     <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> Bonitätsunterlagen enthalten persönliche/finanzielle Daten — nur bewusst teilen.
                   </div>
                 )}
+                <div className="field" style={{ marginBottom: 10 }}>
+                  <label>E-Mail der Bank / des Beraters</label>
+                  <input type="email" value={bankEmail} onChange={(e) => setBankEmail(e.target.value)} placeholder="berater@bank.de" autoComplete="off" />
+                </div>
                 <div className="field" style={{ marginBottom: 14 }}>
                   <label>Link gültig für</label>
                   <select value={shareTage} onChange={(e) => setShareTage(e.target.value)}>
@@ -535,13 +560,13 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                   <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setShowShare(false)}>Abbrechen</button>
                   <button
                     type="button" className="btn btn-gold" style={{ fontSize: 12 }}
-                    disabled={shareBusy || shareKeys.size === 0}
+                    disabled={shareBusy || shareKeys.size === 0 || !bankEmail.includes("@")}
                     onClick={() => freigabeAbsichern(async () => {
                       setShareBusy(true);
                       try {
-                        const f = await createFreigabe(propId, Array.from(shareKeys), angabenObjekt, Number(shareTage));
+                        const { freigabe: f, code } = await createFreigabe(propId, Array.from(shareKeys), angabenObjekt, Number(shareTage), bankEmail);
                         setFreigaben((prev) => [f, ...prev]);
-                        setNeuerLink(teilbarerLink(`/beleihung/${f.token}`));
+                        setNeuerLink({ link: teilbarerLink(`/beleihung/${f.token}`), code, an: f.empfaenger_email ?? bankEmail, ablauf: f.ablauf });
                       } catch (e) {
                         toast(e instanceof Error ? e.message : "Freigabe fehlgeschlagen.", "error");
                       } finally { setShareBusy(false); }

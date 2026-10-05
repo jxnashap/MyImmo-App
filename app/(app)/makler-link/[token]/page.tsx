@@ -1,9 +1,14 @@
-// ÖFFENTLICHE Seite für den Makler (05.10.2026, kein Login): die Unterlagen, die ein
+// ÖFFENTLICHE Seite für den Makler (05.10.2026, kein Konto): die Unterlagen, die ein
 // Kaufinteressent aus seinem Makler-Ordner freigegeben hat — nur Download, keine Rückmeldung.
-// Datenzugriff ausschließlich über die SECURITY-DEFINER-Funktion `makler_public_info`
-// (Token-Prüfung in der Datenbank). Jeder Datei-Abruf landet im Abruf-Protokoll des Eigentümers.
+// Erst nach dem Zugangscode aus der Mail (Cookie mit dem Code-Hash, siehe
+// lib/actions/maklerLinkPublic.ts); ohne ihn zeigt die Seite nur das Code-Formular.
+// Datenzugriff ausschließlich über SECURITY-DEFINER-Funktionen, die Token UND Hash prüfen.
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { MAKLER_COOKIE } from "@/lib/maklerCode";
+import ZugangsCodeFormular from "@/components/ZugangsCodeFormular";
+import { meldeMaklerAn } from "@/lib/actions/maklerLinkPublic";
 import { MAKLER_CHECKLISTE } from "@/lib/makler";
 import { Lock, FileText } from "lucide-react";
 import OeffentlicheFusszeile from "@/components/OeffentlicheFusszeile";
@@ -42,9 +47,27 @@ export default async function MaklerLinkSeite(props: { params: Promise<{ token: 
   const params = await props.params;
   const supabase = await createClient();
   let info: Info | null = null;
+  let status: string | null = null;
   if (/^[0-9a-f-]{36}$/i.test(params.token)) {
-    const { data } = await supabase.rpc("makler_public_info", { p_token: params.token });
-    info = (data as Info | null) ?? null;
+    const hash = (await cookies()).get(MAKLER_COOKIE)?.value;
+    if (hash) {
+      const { data } = await supabase.rpc("makler_public_info", { p_token: params.token, p_code_hash: hash });
+      info = (data as Info | null) ?? null;
+    }
+    if (!info) {
+      const { data } = await supabase.rpc("makler_public_status", { p_token: params.token });
+      status = (data as string | null) ?? null;
+    }
+  }
+
+  // Link gültig, aber (noch) kein richtiger Code → Code-Formular.
+  if (!info && status) {
+    return (
+      <div style={{ maxWidth: 560, margin: "60px auto", padding: 24 }}>
+        <Kopf />
+        <ZugangsCodeFormular token={params.token} gesperrt={status === "gesperrt"} anmelden={meldeMaklerAn} />
+      </div>
+    );
   }
 
   if (!info) {

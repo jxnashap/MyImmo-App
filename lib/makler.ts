@@ -1,3 +1,5 @@
+import { zugangsMailLink, zugangsMailText } from "@/lib/zugangsMail";
+
 // Makler-Ordner: schlanke Checkliste der Dokumente, mit denen sich ein
 // Kaufinteressent gegenüber Makler/Verkäufer als seriöser, finanzierungs-
 // sicherer Käufer zeigt. Bewusst nur 6 Kern-Dokumente — und mit
@@ -77,3 +79,32 @@ export function maklerVorauswahl(docs: Record<string, Pick<MaklerDok, "datei_nam
     MAKLER_CHECKLISTE.filter((i) => !!docs[i.key]?.datei_name && !i.datensparsam).map((i) => i.key),
   );
 }
+
+// ===== Zugangscode und vorbereitete Mail (05.10.2026, Vorgabe des Betreibers) =====
+// MyImmo verschickt nichts: Die Mail öffnet sich im Mailprogramm des Kunden — Empfänger
+// (die eingetragene Makler-Adresse), Betreff, Link und Code sind vorausgefüllt, er kann alles
+// ändern oder direkt senden. Der Code steht nur in dieser Mail und einmal auf dem Bildschirm;
+// gespeichert wird nur sein HMAC (lib/maklerCode.ts).
+
+/** Ohne 0/O, 1/I/L — der Makler tippt den Code ab. */
+export const MAKLER_CODE_ZEICHEN = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+/** Eingabe vereinheitlichen: Groß, ohne Leer-/Bindestriche. „abcd-efgh“ → „ABCDEFGH“. */
+export function normalisiereMaklerCode(eingabe: string): string {
+  return eingabe.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+export function istMaklerCodeFormat(norm: string): boolean {
+  return norm.length === 8 && [...norm].every((z) => MAKLER_CODE_ZEICHEN.includes(z));
+}
+
+export function maklerMailText(o: { link: string; code: string; ablauf: string; absender?: string | null }): string {
+  return zugangsMailText({ ...o, an: null, betreff: MAKLER_BETREFF, einleitung: MAKLER_EINLEITUNG });
+}
+
+/** `mailto:` mit Empfänger nur, wenn die Adresse dem einfachen Muster entspricht (kein `?bcc=`). */
+export function maklerMailLink(o: { an: string | null; link: string; code: string; ablauf: string; absender?: string | null }): string {
+  return zugangsMailLink({ ...o, betreff: MAKLER_BETREFF, einleitung: MAKLER_EINLEITUNG });
+}
+const MAKLER_BETREFF = "Meine Unterlagen als Kaufinteressent";
+const MAKLER_EINLEITUNG = "über folgenden Link finden Sie meine Unterlagen als Kaufinteressent:";
