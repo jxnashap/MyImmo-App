@@ -199,6 +199,16 @@ export function flaechen(r: Pick<Raum, "laenge" | "breite" | "hoehe" | "oeffnung
 }
 
 /**
+ * Flächen, auf die die Maßnahmen eines Raums wirken: Wird die Wand gefliest, zählt für Spachteln,
+ * Tapezieren und Streichen nur der Rest darüber — sonst würde dieselbe Fläche gefliest UND
+ * gestrichen. Ohne „Wände fliesen“ ist die Fliesenwand 0. EINE Regel für Material und Handwerker.
+ */
+export function wirksameFlaechen(raum: Pick<Raum, "laenge" | "breite" | "hoehe" | "oeffnungen" | "fliesenhoehe" | "massnahmen">): Flaechen {
+  const roh = flaechen(raum);
+  return raum.massnahmen.includes("wand_fliesen") ? { ...roh, wand: rund2(Math.max(0, roh.wand - roh.fliesenwand)) } : { ...roh, fliesenwand: 0 };
+}
+
+/**
  * `eigenleistung`: eigene Arbeit — sie hat einen Wert (steht in `gesamt`), aber es fließt kein Geld.
  * Deshalb geht sie NICHT in den Kauf-Assistenten (Darlehen, 15-%-Grenze; Review 05.10.2026).
  */
@@ -248,10 +258,7 @@ export function berechneSanierung(eingabe: SanierungEingabe, katalog: Katalog): 
   const summe: Flaechen = { wand: 0, decke: 0, boden: 0, umfang: 0, fliesenwand: 0 };
 
   for (const raum of eingabe.raeume) {
-    const roh = flaechen(raum);
-    // Geflieste Wand wird nicht auch noch gespachtelt, tapeziert oder gestrichen.
-    const wandGefliest = raum.massnahmen.includes("wand_fliesen");
-    const f: Flaechen = wandGefliest ? { ...roh, wand: rund2(Math.max(0, roh.wand - roh.fliesenwand)) } : { ...roh, fliesenwand: 0 };
+    const f = wirksameFlaechen(raum);
     for (const k of Object.keys(summe) as FlaechenArt[]) summe[k] = rund2(summe[k] + f[k]);
     // Jede Maßnahme zählt je Raum einmal, auch wenn sie doppelt angehakt ankommt.
     for (const id of new Set(raum.massnahmen)) {
