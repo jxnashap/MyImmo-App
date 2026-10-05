@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import { Home, Building2, Save, Scale, Crown, Trash2, ArrowRight, Landmark, FolderOpen, Pencil, Plus } from "lucide-react";
 import { useToast } from "@/components/Toast";
@@ -10,6 +11,7 @@ import { saveKalkulation, deleteKalkulation, updateKalkulation } from "@/lib/act
 import { bestesObjekt, KAUF_AUSWAHL_KEY, type KaufAuswahl, type VglMetrik } from "@/lib/kauf/auswahl";
 import { BUNDESLAENDER, kaufnebenkostenSatz } from "@/lib/kalk";
 import { HAUS_DISCLAIMER } from "@/lib/kauf/hausbewertung";
+import { anschaffungsnahVorKauf } from "@/lib/steuer/anschaffungsnah";
 import { marktwert as rechneMarktwert, preisUrteil } from "@/lib/kauf/marktwert";
 import { belastbarkeit } from "@/lib/kauf/belastbarkeit";
 import { NHK_TYPEN } from "@/lib/bewertung/immowertv";
@@ -84,8 +86,12 @@ const DEMO_START = {
 };
 
 export default function ObjektRechner({
-  gespeichert = [], demo = false,
-}: { gespeichert?: Kalkulation[]; demo?: boolean }) {
+  gespeichert = [], demo = false, sanierungStart = null,
+}: {
+  gespeichert?: Kalkulation[]; demo?: boolean;
+  /** Aus dem Sanierungsrechner übergeben (`/kauf?sanierung=…`, lib/sanierung/uebergabe.ts). */
+  sanierungStart?: number | null;
+}) {
   const toast = useToast();
   const [liste, setListe] = useState<Kalkulation[]>(gespeichert);
 
@@ -96,6 +102,8 @@ export default function ObjektRechner({
   const [bundesland, setBundesland] = useState("0.05");
   const [makler, setMakler] = useState("3.57");
   const [maklerBeruehrt, setMaklerBeruehrt] = useState(false); // für Belastbarkeits-Score
+  // Sanierung / Renovierung (BuyImmo, 05.10.2026): von Hand oder aus dem Sanierungsrechner.
+  const [sanierung, setSanierung] = useState(sanierungStart ? String(sanierungStart) : "");
   // Nutzung
   const [nutzung, setNutzung] = useState<"vermietung" | "eigennutzung">("vermietung");
   const [kaltmiete, setKaltmiete] = useState(demo ? DEMO_START.kaltmiete : "");
@@ -135,7 +143,13 @@ export default function ObjektRechner({
   const grestSatz = Number(bundesland) || 0;
   const nkSatz = kaufnebenkostenSatz(grestSatz, num(makler)); // + Notar/Grundbuch (lib/kalk.ts)
   const nebenkosten = kp * nkSatz;
-  const gesamtInvest = kp + nebenkosten;
+  // Sanierung gehört zur Investition: Sie fließt in Nettorendite und Darlehensbedarf (Schritt
+  // „Finanzierung“). Vor dem 05.10.2026 fehlte sie hier ganz — wer renovieren musste, sah eine
+  // zu hohe Rendite und einen zu kleinen Kreditbedarf.
+  const sanierungBetrag = Math.max(0, num(sanierung));
+  const gesamtInvest = kp + nebenkosten + sanierungBetrag;
+  const investNotiz = `inkl. ${eur(nebenkosten)} Nebenkosten${sanierungBetrag > 0 ? ` + ${eur(sanierungBetrag)} Sanierung` : ""}`;
+  const fuenfzehn = nutzung === "vermietung" ? anschaffungsnahVorKauf(kp, sanierungBetrag) : null;
   const preisM2 = kp > 0 && fl > 0 ? kp / fl : 0;
 
   const vermietung = nutzung === "vermietung";
@@ -170,7 +184,7 @@ export default function ObjektRechner({
 
   const tiles: Tile[] = vermietung
     ? [
-        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: `inkl. ${eur(nebenkosten)} Nebenkosten`, braucht: "Kaufpreis eintragen" },
+        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: investNotiz, braucht: "Kaufpreis eintragen" },
         { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "", braucht: "Kaufpreis + Wohnfläche" },
         { label: "Bruttorendite", wert: brutto > 0 ? pct(brutto) : "", farbe: urteil?.farbe, note: urteil?.text, braucht: "Kaltmiete eintragen" },
         { label: "Nettorendite", wert: nettomiet > 0 ? pct(nettomiet) : "", note: `nach ${num(bewirt)} % Bewirtschaftung`, braucht: "Kaltmiete eintragen" },
@@ -178,7 +192,7 @@ export default function ObjektRechner({
         { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil?.text ?? mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
       ]
     : [
-        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: `inkl. ${eur(nebenkosten)} Nebenkosten`, braucht: "Kaufpreis eintragen" },
+        { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: investNotiz, braucht: "Kaufpreis eintragen" },
         { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "", braucht: "Kaufpreis + Wohnfläche" },
         { label: "Laufende Kosten", wert: num(hausgeld) > 0 ? eur(num(hausgeld)) + "/Mo" : "", note: "Hausgeld / Bewirtschaftung", braucht: "Laufende Kosten eintragen" },
         { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil?.text ?? mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
@@ -188,13 +202,13 @@ export default function ObjektRechner({
   // Speichern verloren, die Wiedervorlage hätte sie nicht zurückholen können.
   function eingabenSnapshot(): Record<string, string> {
     return {
-      adresse, kaufpreis, flaeche, bundesland, makler, nutzung, kaltmiete, bewirt, hausgeld,
+      adresse, kaufpreis, flaeche, bundesland, makler, sanierung, nutzung, kaltmiete, bewirt, hausgeld,
       objektTyp, grundFlaeche, bodenrichtwert, baujahr, gebTyp, ausstattung,
       bpiFaktor, regionalFaktor, lz, anzahlWhg, swFaktor,
     };
   }
   function summarySnapshot(): Record<string, number> {
-    return { kp, gesamtInvest, preisM2, brutto, nettomiet, faktor, kaltmiete: num(kaltmiete), nutzung: vermietung ? 1 : 0, marktwert: mwWert };
+    return { kp, gesamtInvest, sanierung: sanierungBetrag, preisM2, brutto, nettomiet, faktor, kaltmiete: num(kaltmiete), nutzung: vermietung ? 1 : 0, marktwert: mwWert };
   }
 
   // Wiedervorlage: gespeichertes Objekt zurück in die Maske holen.
@@ -203,6 +217,7 @@ export default function ObjektRechner({
     const g = (key: string, fallback = "") => d[key] ?? fallback;
     setAdresse(g("adresse")); setKaufpreis(g("kaufpreis")); setFlaeche(g("flaeche"));
     setBundesland(g("bundesland", "0.05")); setMakler(g("makler", "3.57")); setMaklerBeruehrt(true);
+    setSanierung(g("sanierung")); // ältere Kaufprüfungen haben das Feld nicht → leer
     setNutzung(g("nutzung") === "eigennutzung" ? "eigennutzung" : "vermietung");
     setKaltmiete(g("kaltmiete")); setBewirt(g("bewirt", "20")); setHausgeld(g("hausgeld"));
     setObjektTyp(g("objektTyp") === "haus" ? "haus" : "wohnung");
@@ -218,7 +233,7 @@ export default function ObjektRechner({
 
   function neuesObjekt() {
     setBearbeiteId(null);
-    setAdresse(""); setKaufpreis(""); setFlaeche(""); setKaltmiete(""); setHausgeld("");
+    setAdresse(""); setKaufpreis(""); setFlaeche(""); setKaltmiete(""); setHausgeld(""); setSanierung("");
     setGrundFlaeche(""); setBodenrichtwert(""); setBaujahr("");
     toast("Maske geleert — neues Objekt erfassen.");
   }
@@ -356,6 +371,13 @@ export default function ObjektRechner({
               />
               Provisionsfrei (keine Maklercourtage)
             </label>
+            {/* Sanierung (BuyImmo, 05.10.2026) — fließt in die Gesamtinvestition. */}
+            <div style={{ display: "grid", gap: 4 }}>
+              {F("Sanierung / Renovierung (€)", sanierung, setSanierung, "0")}
+              <Link href="/sanierung" style={{ fontSize: 11.5, color: "var(--gold)", textDecoration: "none" }}>
+                Mit dem Sanierungsrechner ermitteln →
+              </Link>
+            </div>
             {/* Objekttyp: Haus schaltet den Substanzwert-Block (Bodenwert + Gebäude) frei. */}
             <div style={{ display: "flex", gap: 4, padding: 4, borderRadius: 12, background: "var(--bg3)", border: "1px solid var(--line)" }}>
               {([["wohnung", "Wohnung", Building2], ["haus", "Haus", Home]] as const).map(([id, label, Icon]) => {
@@ -538,6 +560,14 @@ export default function ObjektRechner({
               );
             })}
           </div>
+          {/* 15-%-Grenze vor dem Kauf (§ 6 Abs. 1 Nr. 1a EStG) — dieselbe Basis wie der Steuer-Wächter. */}
+          {fuenfzehn && (
+            <p style={{ fontSize: 11.5, marginTop: 12, marginBottom: 0, color: fuenfzehn.ueber ? "var(--amber)" : "var(--faint)" }}>
+              {fuenfzehn.ueber
+                ? `Die Sanierung liegt über 15 % des Gebäudeanteils (Grenze ${eur(fuenfzehn.grenze)} bei 80 % Gebäudeanteil). Fällt sie in die ersten drei Jahre nach dem Kauf, ist sie steuerlich nur über die AfA absetzbar, nicht sofort (§ 6 Abs. 1 Nr. 1a EStG, Grenze netto). Mit dem Steuerberater klären.`
+                : `Unter der 15-%-Grenze für die ersten drei Jahre nach dem Kauf (${eur(fuenfzehn.grenze)} bei 80 % Gebäudeanteil, § 6 Abs. 1 Nr. 1a EStG).`}
+            </p>
+          )}
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 12 }}>
             Speichere jedes Objekt und vergleiche 3–5 Kandidaten — das beste bekommt eine Krone. Die Finanzierung
             rechnest du im Schritt „Finanzierung&quot; aus.

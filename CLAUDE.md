@@ -333,7 +333,10 @@ Quelle + Stand in `katalog.ts`, Prüfzyklus in `07 Volatile Kennzahlen`), Entwur
 `tests/sanierung.test.ts`. **Fahrplan `/fahrplan`** (`lib/fahrplan.ts`): neun Schritte, Haken nur
 wo die App es aus den Daten weiß, Kaufnebenkosten über `kaufnebenkosten()` in `lib/kalk.ts` (EINE
 Regel mit dem Kauf-Rechner); ein Test sucht Empfehlungs-Formulierungen. Beide Rechner sind in der
-Demo bedienbar (`data-demo-erlaubt`, schreiben nichts). **Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
+Demo bedienbar (`data-demo-erlaubt`, schreiben nichts). **Sanierung → Kauf-Assistent:** `/kauf?sanierung=…`
+(`lib/sanierung/uebergabe.ts`), Feld „Sanierung / Renovierung“ im Objekt-Rechner, steckt in der
+Gesamtinvestition; 15-%-Hinweis über `anschaffungsnahVorKauf()` (eine Grenze mit dem Steuer-Wächter).
+**Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
 (`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
 kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
 

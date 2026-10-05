@@ -9,7 +9,8 @@
 // sagt die Seite auch.
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Plus, Trash2 } from "lucide-react";
 import { euro } from "@/lib/format";
 import {
   MASSNAHMEN,
@@ -34,6 +35,7 @@ import {
   type RaumFeld,
 } from "@/lib/sanierung/eingabe";
 import { zahlDe0 } from "@/lib/zahl";
+import { kaufLinkMitSanierung } from "@/lib/sanierung/uebergabe";
 
 const SPEICHER = "buyimmo:sanierung-entwurf";
 const START_ID = "start";
@@ -252,6 +254,12 @@ export default function SanierungsRechner({ katalog, stand }: { katalog: Katalog
           <span>Arbeitszeit {euro(ergebnis.lohn)}{zeitGesamt > 0 ? ` (${zahl(zeitGesamt, 1)} Std.)` : ""}</span>
           <span>Eigene Posten {euro(ergebnis.eigene)}</span>
         </div>
+        {/* Obere Spanne in die Kaufprüfung — lieber zu viel eingeplant als zu wenig. */}
+        {ergebnis.gesamt.max > 0 && (
+          <Link href={kaufLinkMitSanierung(ergebnis.gesamt.max)} className="btn btn-gold btn-sm sanierung-uebernehmen">
+            {euro(ergebnis.gesamt.max)} in den Kauf-Assistenten <ArrowRight size={14} aria-hidden />
+          </Link>
+        )}
       </div>
 
       <div className="sanierung-fuss">

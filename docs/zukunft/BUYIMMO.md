@@ -72,8 +72,15 @@ Raufaser nicht); Spachtel-Schichtdicke 0,5–1 mm ist eine Annahme; Verschnitt i
 `apply_migration` in den Bestätigungsdialog → Betreiber im SQL-Editor).
 **Demo:** Sanierungs- und Nebenkostenrechner sind bedienbar (`data-demo-erlaubt`) — sie schreiben
 nichts in die Datenbank; ein Test hält fest, dass sie keine Server-Action aufrufen.
-**Nächste Stufe:** Ergebnis an eine Kaufprüfung hängen → Sanierung im Gesamtinvest und im
-15-%-Wächter.
+**Übergabe an den Kauf-Assistenten (gebaut 05.10.2026):** Knopf „… in den Kauf-Assistenten“
+→ `/kauf?sanierung=<obere Spanne>` (`lib/sanierung/uebergabe.ts`: nur ganze Euro, 1 bis 10 Mio.,
+sonst ignoriert) → der Objekt-Rechner öffnet in Schritt 1 mit dem Feld **„Sanierung / Renovierung“**.
+Die Sanierung steckt jetzt in der **Gesamtinvestition** (damit in Nettorendite und Darlehensbedarf),
+wird mit der Kaufprüfung gespeichert und bei der Wiedervorlage geladen. Darunter der **15-%-Hinweis**
+vor dem Kauf: `anschaffungsnahVorKauf()` mit derselben Grenze wie der Steuer-Wächter
+(`ANSCHAFFUNGSNAH_GRENZE`, Gebäudeanteil 80 %, brutto). `tests/sanierungUebergabe.test.ts`
+rendert den Kauf-Rechner. **Vorher fehlte die Sanierung im Kauf-Rechner ganz** — wer renovieren
+musste, sah eine zu hohe Nettorendite und einen zu kleinen Kreditbedarf.
 
 ### Verworfene Alternativen — mit Grund
 

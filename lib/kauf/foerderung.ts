@@ -144,8 +144,9 @@ export function filterProgramme(nutzung: Nutzung, vorhaben: Vorhaben): Programm[
 // Auto-Förderkredit für den Finanzierungs-Stack (Kaufpreis-Segment).
 // § 34i GewO: reine Rechnung/Information — "kommt laut deinen Angaben in Frage",
 // KEINE Empfehlung, KEINE Vermittlung. Nur KfW-KREDITE, die den Kaufpreis
-// mitfinanzieren (nicht Zuschüsse 458/BAFA; nicht Sanierungskredite 261/159,
-// da gesamtInvest keine Sanierungskosten enthält).
+// mitfinanzieren (nicht Zuschüsse 458/BAFA; nicht Sanierungskredite 261/159 — die setzen ein
+// Effizienzhaus-Ziel voraus, das eine Renovierung nicht automatisch erfüllt; seit 05.10.2026 kann
+// gesamtInvest Sanierungskosten aus dem Sanierungsrechner enthalten, das ändert daran nichts).
 // Beträge: Stand 08/2026 — KfW 308 zum 03.08.2026 angehoben (140/160/180 Tsd.
 // statt 100/125/150 Tsd.), Sanierungsziel alternativ über kombinierte
 // Einzelmaßnahmen erfüllbar. Quelle: kfw.de-Produktseite 308, geprüft 28.08.2026.
