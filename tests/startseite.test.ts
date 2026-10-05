@@ -94,14 +94,21 @@ describe("„Ein Link statt Aktenordner“ — jede Zeile belegt (05.10.2026)", 
     expect(existsSync("components/BankRueckmeldungForm.tsx")).toBe(true);
   });
 
-  it("Makler: Checkliste und Selbstauskunft-PDF — aber KEIN Link-Versprechen", () => {
+  it("Makler: Checkliste, Selbstauskunft-PDF und ein Link, der wirklich existiert", () => {
     const t = text("Für den Makler");
     const mk = lies("lib/makler.ts");
-    for (const k of ["finanzierungsbestaetigung", "eigenkapitalnachweis", "schufa_bonitaet", "einkommensnachweise"]) expect(mk).toContain(k);
+    for (const k of ["finanzierungsbestaetigung", "kaeufer_selbstauskunft", "schufa_bonitaet"]) expect(mk).toContain(k);
     expect(lies("lib/actions/makler.ts")).toContain("buildKaeuferSelbstauskunftPdf");
-    expect(lies("components/MaklerOrdner.tsx")).toContain("?download=1");
-    // Einen Freigabe-Link für Makler gibt es nicht — die Startseite darf keinen versprechen.
-    expect(t).not.toMatch(/Link/);
+    // „Link für 7, 14 oder 30 Tage“: die Aktion kennt genau diese Laufzeiten, die Seite existiert.
+    expect(t).toContain("7, 14 oder 30 Tage");
+    expect(lies("lib/actions/makler.ts")).toContain("[7, 14, 30].includes(tageAblauf)");
+    expect(existsSync("app/(app)/makler-link/[token]/page.tsx")).toBe(true);
+    // „Ausweis und Einkommen nur, wenn du sie bewusst anhakst“: beide sind datensparsam markiert
+    // und damit nicht in der Vorauswahl.
+    expect(t).toMatch(/Ausweis und Einkommen nur, wenn du sie bewusst anhakst/);
+    expect(mk).toMatch(/key: "ausweis",[\s\S]*?datensparsam: true/);
+    expect(mk).toMatch(/key: "einkommensnachweise",[\s\S]*?datensparsam: true/);
+    expect(mk).toContain("!i.datensparsam");
   });
 
   it("Bewerber: öffentliche Seite ohne Login, Status, Absagen löschen", () => {
@@ -121,7 +128,7 @@ describe("„Ein Link statt Aktenordner“ — jede Zeile belegt (05.10.2026)", 
 
   it("„erscheinen in keiner Suchmaschine“: alle vier öffentlichen Seiten sind noindex", () => {
     expect(lp).toContain("erscheinen in keiner Suchmaschine");
-    for (const s of ["beleihung", "bewerben", "angebot", "auftrag"]) {
+    for (const s of ["beleihung", "bewerben", "angebot", "auftrag", "makler-link"]) {
       expect(lies(`app/(app)/${s}/[token]/page.tsx`), s).toContain("robots: { index: false, follow: false }");
     }
   });

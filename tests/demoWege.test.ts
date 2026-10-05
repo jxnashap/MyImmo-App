@@ -146,7 +146,7 @@ describe("demoSperrZiel: welche Links der Klick-Abfang übernimmt", () => {
   });
 
   it("gesperrte Bereiche und Formulare bekommen ihren eigenen Text", () => {
-    expect(demoBereich("/makler").titel).toBe("Makler-Unterlagen");
+    expect(demoBereich("/makler").titel).toBe("Makler-Ordner");
     expect(demoBereich("/tenants/abc/edit").titel).toBe("Anlegen und bearbeiten");
     // Präfix-Grenze: /maklerin ist nicht /makler.
     expect(demoBereich("/maklerin").titel).toBe(ERSATZ);
