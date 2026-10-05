@@ -7,10 +7,13 @@
 // Der Entwurf liegt NUR in diesem Browser (localStorage, in try/catch): Wer bei der Besichtigung
 // am Handy misst, verliert beim Neuladen nichts. Ins Konto gespeichert wird (noch) nicht — das
 // sagt die Seite auch.
+//
+// Förderung: geschätzter Zuschuss nur für eigene Posten mit Förderart (lib/sanierung/foerderung.ts).
+// Er steckt NICHT in der Summe für den Kauf-Assistenten — sicher ist er erst mit der Zusage.
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Copy, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Copy, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { euro } from "@/lib/format";
 import {
   MASSNAHMEN,
@@ -28,15 +31,19 @@ import {
   entwurfAus,
   leererEntwurf,
   mitKopie,
+  neuerPosten,
   neuerRaum,
   zuEingabe,
+  zuFoerderEingabe,
   type Entwurf,
+  type FoerderFelder,
   type LohnFeld,
   type PostenFeld,
   type RaumFeld,
 } from "@/lib/sanierung/eingabe";
 import { zahlDe0 } from "@/lib/zahl";
 import { kaufLinkMitSanierung } from "@/lib/sanierung/uebergabe";
+import { FOERDER_ARTEN, FOERDER_STAND_SANIERUNG, berechneFoerderung, type FoerderArt } from "@/lib/sanierung/foerderung";
 
 const SPEICHER = "buyimmo:sanierung-entwurf";
 const START_ID = "start";
@@ -49,7 +56,7 @@ const prozent = (s: Spanne) => `${zahl(s.min * 100, 0)}–${zahl(s.max * 100, 0)
 const neueId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 
-export default function SanierungsRechner({ katalog, stand }: { katalog: Katalog; stand: string }) {
+export default function SanierungsRechner({ katalog, stand, heute }: { katalog: Katalog; stand: string; heute: string }) {
   const [entwurf, setEntwurf] = useState<Entwurf>(() => leererEntwurf(START_ID));
   const [geladen, setGeladen] = useState(false);
   const [leeren, setLeeren] = useState(false);
@@ -77,6 +84,8 @@ export default function SanierungsRechner({ katalog, stand }: { katalog: Katalog
   }, [entwurf, geladen]);
 
   const ergebnis = useMemo(() => berechneSanierung(zuEingabe(entwurf), katalog), [entwurf, katalog]);
+  const foerderung = useMemo(() => berechneFoerderung(zuFoerderEingabe(entwurf, heute)), [entwurf, heute]);
+  const hatFoerderPosten = entwurf.eigene.some((p) => p.foerderung !== "keine");
 
   const setRaum = (id: string, teil: Partial<RaumFeld>) =>
     setEntwurf((e) => ({ ...e, raeume: e.raeume.map((r) => (r.id === id ? { ...r, ...teil } : r)) }));
@@ -85,6 +94,7 @@ export default function SanierungsRechner({ katalog, stand }: { katalog: Katalog
   const setPosten = (id: string, teil: Partial<PostenFeld>) =>
     setEntwurf((e) => ({ ...e, eigene: e.eigene.map((p) => (p.id === id ? { ...p, ...teil } : p)) }));
   const setPreis = (id: MaterialId, wert: string) => setEntwurf((e) => ({ ...e, preise: { ...e.preise, [id]: wert } }));
+  const setFoerder = (teil: Partial<FoerderFelder>) => setEntwurf((e) => ({ ...e, foerder: { ...e.foerder, ...teil } }));
 
   const zeitGesamt = entwurf.lohn.reduce((s, l) => s + zahlDe0(l.stunden), 0);
 
@@ -237,12 +247,118 @@ export default function SanierungsRechner({ katalog, stand }: { katalog: Katalog
                 <button type="button" className="btn btn-ghost btn-sm" aria-label="Posten entfernen" onClick={() => setEntwurf((e) => ({ ...e, eigene: e.eigene.filter((x) => x.id !== p.id) }))}>
                   <Trash2 size={14} />
                 </button>
+                <select
+                  className="input sanierung-foerderart"
+                  aria-label={`Förderung für ${p.bezeichnung || "diesen Posten"}`}
+                  value={p.foerderung}
+                  onChange={(e) => setPosten(p.id, { foerderung: e.target.value as FoerderArt })}
+                >
+                  {FOERDER_ARTEN.map((a) => (
+                    <option key={a.id} value={a.id}>{a.label}</option>
+                  ))}
+                </select>
               </div>
             ))}
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEntwurf((e) => ({ ...e, eigene: [...e.eigene, { id: neueId(), bezeichnung: "", betrag: "" }] }))}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEntwurf((e) => ({ ...e, eigene: [...e.eigene, neuerPosten(neueId())] }))}>
               <Plus size={14} /> Posten
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="section-header">
+          <div>
+            <h3>Förderung</h3>
+            <div className="section-sub">Geschätzter Zuschuss für Dämmung, Fenster, Lüftung und Heizung — Stand {FOERDER_STAND_SANIERUNG}</div>
+          </div>
+        </div>
+        <div className="section-body sanierung-foerderung">
+          <div className="sanierung-frist" role="note">
+            <TriangleAlert size={16} aria-hidden />
+            <span>
+              <strong>Erst beantragen, dann beauftragen.</strong> Gefördert wird nur, wenn der Antrag steht, bevor du einen
+              Handwerker beauftragst oder Material kaufst. Ein Vertrag mit der Bedingung „nur bei Förderzusage“ ist erlaubt.
+            </span>
+          </div>
+          <div className="sanierung-foerder-wahl">
+            <div className="form-group">
+              <label htmlFor="foerder-we">Betroffene Wohneinheiten</label>
+              <input id="foerder-we" inputMode="numeric" value={entwurf.foerder.wohneinheiten} onChange={(e) => setFoerder({ wohneinheiten: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label htmlFor="foerder-nutzung">Nutzung</label>
+              <select id="foerder-nutzung" className="input" value={entwurf.foerder.nutzung} onChange={(e) => setFoerder({ nutzung: e.target.value === "eigennutzen" ? "eigennutzen" : "vermieten" })}>
+                <option value="vermieten">Ich vermiete</option>
+                <option value="eigennutzen">Ich wohne selbst darin</option>
+              </select>
+            </div>
+            <label className="massnahme-chip sanierung-isfp">
+              <input type="checkbox" checked={entwurf.foerder.isfp} onChange={(e) => setFoerder({ isfp: e.target.checked })} />
+              Mit Sanierungsfahrplan (iSFP)
+            </label>
+          </div>
+          {!hatFoerderPosten ? (
+            <p className="sanierung-leer">
+              Spachteln, Streichen, Böden und Fliesen werden nicht gefördert. Trag Dämmung, Fenster oder Heizung als eigenen
+              Posten ein und wähle dort die Förderart.
+            </p>
+          ) : (
+            <>
+              {foerderung.toepfe.length > 0 && (
+                <div className="table-scroll">
+                  <table className="sanierung-tabelle">
+                    <thead>
+                      <tr>
+                        <th>Programm</th>
+                        <th style={{ textAlign: "right" }}>Förderfähig</th>
+                        <th style={{ textAlign: "right" }}>Zuschuss</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {foerderung.toepfe.map((t) => (
+                        <tr key={t.programm}>
+                          <td>
+                            <div>{t.programm}</div>
+                            <div className="sanierung-klein zahl">Kosten {euro(t.kosten)}</div>
+                          </td>
+                          <td className="zahl" style={{ textAlign: "right" }}>{euro(t.foerderfaehig)}</td>
+                          <td className="zahl" style={{ textAlign: "right" }}>{euro(t.zuschuss)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={2} style={{ fontWeight: 600 }}>Möglicher Zuschuss</td>
+                        <td className="zahl" style={{ textAlign: "right", fontWeight: 600 }}>{euro(foerderung.zuschuss)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+              {(foerderung.ausgeschlossen.length > 0 || foerderung.hinweise.length > 0) && (
+                <ul className="sanierung-hinweise">
+                  {foerderung.ausgeschlossen.map((a) => (
+                    <li key={a.id}>{a.bezeichnung || "Posten"}: {a.grund}.</li>
+                  ))}
+                  {foerderung.hinweise.map((h) => (
+                    <li key={h}>{h}</li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+          <details className="sanierung-quellen">
+            <summary>Bedingungen und Quellen</summary>
+            <ul>
+              <li><strong>BAFA</strong> (Dämmung, Fenster, Außentüren, Lüftung, Heizungsoptimierung): 15 %, förderfähig je Gebäude und Jahr bis 30.000 € für die erste Wohneinheit, je 15.000 € für die zweite bis sechste, je 8.000 € ab der siebten. Mit Sanierungsfahrplan doppelt so viel, und 5 Prozentpunkte mehr auf den Teil über der normalen Grenze. Mindestens 300 € je Maßnahme.</li>
+              <li><strong>KfW 458</strong> (neue Heizung): 30 % Grundförderung, förderfähig bis 28.000 € für die erste Wohneinheit (sinkt ab 01.02.2027 halbjährlich um 750 €). Boni nur für Selbstnutzer.</li>
+              <li><strong>Energieeffizienz-Experte</strong>: Pflicht bei Dämmung, Fenstern und Lüftung; seine Planung und Begleitung wird zu 50 % gefördert (bis 5.000 € beim Ein-/Zweifamilienhaus, sonst 2.000 € je Wohneinheit, höchstens 20.000 €).</li>
+              <li><strong>Eigenleistung</strong>: gefördert wird nur das Material, und nur wenn ein Experte oder Fachbetrieb die fachgerechte Ausführung bestätigt.</li>
+              <li>Gebäude mindestens 5 Jahre alt; 10 Jahre zweckentsprechend nutzen. Wer zum Vorsteuerabzug berechtigt ist, bekommt nur auf die Nettokosten.</li>
+              <li>Quellen: Richtlinie BEG EM vom 17.08.2026 (BAnz AT 27.08.2026 B1), bafa.de „Gebäudehülle“, kfw.de/458 und „Anpassungen 2026“. Eine Schätzung — verbindlich ist nur die Zusage.</li>
+            </ul>
+          </details>
         </div>
       </div>
 
@@ -255,6 +371,7 @@ export default function SanierungsRechner({ katalog, stand }: { katalog: Katalog
           <span>Material {spanne(ergebnis.materialKosten, euro)}</span>
           <span>Arbeitszeit {euro(ergebnis.lohn)}{zeitGesamt > 0 ? ` (${zahl(zeitGesamt, 1)} Std.)` : ""}</span>
           <span>Eigene Posten {euro(ergebnis.eigene)}</span>
+          {foerderung.zuschuss > 0 && <span>Möglicher Zuschuss {euro(foerderung.zuschuss)} (nicht abgezogen)</span>}
         </div>
         {/* Obere Spanne in die Kaufprüfung — lieber zu viel eingeplant als zu wenig. */}
         {ergebnis.gesamt.max > 0 && (

@@ -7,6 +7,7 @@
 
 import { zahlDe0 } from "@/lib/zahl";
 import { MASSNAHMEN, type MassnahmeId, type MaterialId, type SanierungEingabe } from "@/lib/sanierung/rechner";
+import { istFoerderArt, type FoerderArt, type FoerderEingabe, type Nutzung } from "@/lib/sanierung/foerderung";
 
 export type RaumFeld = {
   id: string;
@@ -20,7 +21,9 @@ export type RaumFeld = {
   massnahmen: MassnahmeId[];
 };
 export type LohnFeld = { id: string; bezeichnung: string; stunden: string; satz: string };
-export type PostenFeld = { id: string; bezeichnung: string; betrag: string };
+export type PostenFeld = { id: string; bezeichnung: string; betrag: string; foerderung: FoerderArt };
+/** Angaben für die Zuschuss-Schätzung (lib/sanierung/foerderung.ts). */
+export type FoerderFelder = { wohneinheiten: string; isfp: boolean; nutzung: Nutzung };
 
 export type Entwurf = {
   raeume: RaumFeld[];
@@ -28,7 +31,12 @@ export type Entwurf = {
   eigene: PostenFeld[];
   /** Eigene Preise je Gebinde; leer = Katalogpreis. */
   preise: Partial<Record<MaterialId, string>>;
+  foerder: FoerderFelder;
 };
+
+/** BuyImmo richtet sich an Leute, die vermieten — und an eine Eigentumswohnung (1 Einheit). */
+export const STANDARD_FOERDER: FoerderFelder = { wohneinheiten: "1", isfp: false, nutzung: "vermieten" };
+export const neuerPosten = (id: string): PostenFeld => ({ id, bezeichnung: "", betrag: "", foerderung: "keine" });
 
 /** Übliche Raumhöhe im Bestand als Vorschlag — der Nutzer überschreibt sie mit dem Maßband. */
 export const STANDARD_HOEHE = "2,50";
@@ -56,6 +64,19 @@ export function leererEntwurf(id: string): Entwurf {
     lohn: [{ id: `${id}-lohn`, bezeichnung: "Eigene Arbeit", stunden: "", satz: "" }],
     eigene: [],
     preise: {},
+    foerder: { ...STANDARD_FOERDER },
+  };
+}
+
+/** Formular → Zuschuss-Schätzung. Nur Posten mit einer Förderart zählen dort. */
+export function zuFoerderEingabe(e: Entwurf, stichtag: string): FoerderEingabe {
+  const we = Math.floor(zahlDe0(e.foerder.wohneinheiten));
+  return {
+    posten: e.eigene.map((p) => ({ id: p.id, bezeichnung: p.bezeichnung, betrag: zahlDe0(p.betrag), art: p.foerderung })),
+    wohneinheiten: we >= 1 ? we : 1,
+    isfp: e.foerder.isfp,
+    nutzung: e.foerder.nutzung,
+    stichtag,
   };
 }
 
@@ -117,11 +138,18 @@ export function entwurfAus(roh: unknown): Entwurf | null {
   });
   const eigene = liste(o.eigene).map((x, i): PostenFeld => {
     const p = obj(x);
-    return { id: id(p.id, `p${i}`), bezeichnung: text(p.bezeichnung, 80), betrag: text(p.betrag, 20) };
+    // Ältere Entwürfe kennen die Förderart nicht → „keine“; Unbekanntes ebenso.
+    return { id: id(p.id, `p${i}`), bezeichnung: text(p.bezeichnung, 80), betrag: text(p.betrag, 20), foerderung: istFoerderArt(p.foerderung) ? p.foerderung : "keine" };
   });
   const preise: Partial<Record<MaterialId, string>> = {};
   for (const [k, v] of Object.entries(obj(o.preise))) {
     if (typeof v === "string") preise[k as MaterialId] = v.slice(0, 20);
   }
-  return { raeume, lohn, eigene, preise };
+  const f = obj(o.foerder);
+  const foerder: FoerderFelder = {
+    wohneinheiten: typeof f.wohneinheiten === "string" ? f.wohneinheiten.slice(0, 4) : STANDARD_FOERDER.wohneinheiten,
+    isfp: f.isfp === true,
+    nutzung: f.nutzung === "eigennutzen" ? "eigennutzen" : "vermieten",
+  };
+  return { raeume, lohn, eigene, preise, foerder };
 }

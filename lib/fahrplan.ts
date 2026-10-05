@@ -87,7 +87,12 @@ export function fahrplan(d: FahrplanDaten): Station[] {
       id: "besichtigen",
       titel: "Besichtigen und ausmessen",
       satz: "Räume ausmessen und anhaken, was gemacht werden muss — so weißt du vor dem Angebot, was die Renovierung kostet.",
-      punkte: ["Raumhöhe und Fenster mitmessen", "Fotos von Fenstern, Heizung, Elektrik und Bad"],
+      punkte: [
+        "Raumhöhe und Fenster mitmessen",
+        "Fotos von Fenstern, Heizung, Elektrik und Bad",
+        // Seit 05.10.2026 schätzt der Sanierungsrechner den Zuschuss (lib/sanierung/foerderung.ts).
+        "Dämmung, Fenster und Heizung können gefördert werden — aber nur, wenn der Antrag vor dem Handwerkervertrag steht (Sanierungsrechner → Förderung)",
+      ],
       ziel: { href: "/sanierung", label: "Sanierungsrechner" },
       status: null,
     },

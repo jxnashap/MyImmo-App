@@ -331,7 +331,12 @@ ganze Gebinde über ALLE Räume gerundet; Arbeitszeit = Stunden × Satz, den der
 (BuyImmo schätzt keinen Lohn); eigene Posten. `lib/sanierung/` (Katalog als Parameter, Preise mit
 Quelle + Stand in `katalog.ts`, Prüfzyklus in `07 Volatile Kennzahlen`), Entwurf nur im Browser.
 `tests/sanierung.test.ts`. **Fliesen:** Boden + Wand bis Fliesenhöhe; geflieste Wand wird von
-Spachteln/Tapete/Farbe ABGEZOGEN (`fliesenwand` in `flaechen()`). **Fahrplan `/fahrplan`** (`lib/fahrplan.ts`): neun Schritte, Haken nur
+Spachteln/Tapete/Farbe ABGEZOGEN (`fliesenwand` in `flaechen()`). **Förderung:** Förderart je eigenem
+Posten → `lib/sanierung/foerderung.ts` (BAFA 15 %, KfW 458 30 %, Experte 50 %, Grenzen je Wohneinheit,
+Heizungsgrenze sinkt ab 01.02.2027 datumsgenau); Zuschuss NIE von der Summe für den Kauf-Assistenten
+abgezogen; Raum-Maßnahmen nie förderfähig. **Regel: Bei Förderprogrammen zuerst nach einer
+Richtlinienänderung suchen** (der Fördercheck stand bis 05.10.2026 vor der BEG-Reform vom 21.07.2026 —
+Korrektur in `docs/kauf/KfW-Foerderung-2026.md`). **Fahrplan `/fahrplan`** (`lib/fahrplan.ts`): neun Schritte, Haken nur
 wo die App es aus den Daten weiß, Kaufnebenkosten über `kaufnebenkosten()` in `lib/kalk.ts` (EINE
 Regel mit dem Kauf-Rechner); ein Test sucht Empfehlungs-Formulierungen. Beide Rechner sind in der
 Demo bedienbar (`data-demo-erlaubt`, schreiben nichts). **Sanierung → Kauf-Assistent:** `/kauf?sanierung=…`
@@ -1243,6 +1248,10 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Falle beim Prüfen (erneut):** `pkill -f "[n]ext start"` in DERSELBEN Befehlszeile wie
   `npx next start …` trifft die eigene Shell (Exit 144) — das Muster schützt nur, wenn der
   Text nicht woanders in der Zeile steht. Aufräumen und Starten in getrennte Aufrufe.
+  **Und (05.10.2026):** Der laufende Server heißt im Prozess `next-server (v16.x)` — `pkill -f
+  "[n]ext start"` trifft ihn GAR NICHT. Der neue Start scheitert dann still an EADDRINUSE, der alte
+  liefert HTML mit Verweisen auf gelöschte Chunks (Seite ohne CSS und JS). Beenden mit
+  `pkill -f "[n]ext-server"`, danach im Server-Log „Ready“ prüfen.
   🧹 **Lint-Altlast, erster Lauf überhaupt: 93 Fehler, 39 Warnungen** (552 Dateien).
   Größte Posten: `react/no-unescaped-entities` 40 (Anführungszeichen im JSX-Text, harmlos),
   `react-hooks/set-state-in-effect` 25, `@typescript-eslint/no-explicit-any` 12,

@@ -91,6 +91,23 @@ geprüft (Bad 2,5 × 2 m, Fliesen bis 1,20 m: 532–620 € Material).
 **Raum kopieren** (gleicher Tag): Knopf an jedem Raum, die Kopie steht direkt darunter
 („… (Kopie)“) — für gleich große Zimmer. Gebinde werden weiter über ALLE Räume gerundet.
 
+**Förderung (gebaut 05.10.2026, Betreiber: „auch Förderprogramme einbeziehen“):** Jeder eigene
+Posten bekommt eine Förderart (Dämmung/Fenster, Lüftung, Heizungsoptimierung → BAFA 15 %; neue
+Heizung → KfW 458, 30 % Grundförderung; Energieberater-Begleitung → 50 %). `lib/sanierung/foerderung.ts`
+rechnet mit den Höchstgrenzen je **betroffener** Wohneinheit (BAFA 30.000/15.000/8.000 €, mit iSFP doppelt
+und +5 Prozentpunkte nur auf den Teil darüber; Heizung 28.000 € für die erste Wohneinheit, **ab 01.02.2027
+halbjährlich −750 € — datumsgenau aus der Richtlinie, Stichtag vom Server**), 300 € Mindestinvestition,
+Heizungsoptimierung nur bis 5 Einheiten. **Entscheidungen:** (1) Die Raum-Maßnahmen (Spachteln, Streichen,
+Böden, Fliesen) sind nie förderfähig — Förderung hängt nur an eigenen Posten. (2) Der Zuschuss wird
+**nicht** von der Summe für den Kauf-Assistenten abgezogen — sicher ist er erst mit der Zusage, und
+finanzieren muss man vorher. (3) Die lauteste Zeile ist die Fristenfalle „Erst beantragen, dann
+beauftragen“ (Antrag vor Handwerkervertrag UND vor Materialkauf). (4) Boni der KfW 458 für Selbstnutzer,
+KfW 261 und § 35c werden nicht gerechnet, nur genannt. Grenzen: Vorsteuerabzug (netto statt brutto) und
+die 60-%-Kumulierungsgrenze sind nur Text; Landesprogramme fehlen. `tests/sanierungFoerderung.test.ts`,
+13 Mutationen rot. **Dabei gefunden:** Der Fördercheck im Kauf-Assistenten und
+`docs/kauf/KfW-Foerderung-2026.md` standen noch vor der BEG-Reform vom 21.07.2026 (Effizienzbonus,
+alte Tilgungszuschüsse) — korrigiert, Korrekturnotiz dort.
+
 **Übergabe an den Kauf-Assistenten (gebaut 05.10.2026):** Knopf „… in den Kauf-Assistenten“
 → `/kauf?sanierung=<obere Spanne>` (`lib/sanierung/uebergabe.ts`: nur ganze Euro, 1 bis 10 Mio.,
 sonst ignoriert) → der Objekt-Rechner öffnet in Schritt 1 mit dem Feld **„Sanierung / Renovierung“**.
