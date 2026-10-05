@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Lock, ShieldCheck, TriangleAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { sitzungIstFrisch } from "@/lib/actions/mfa";
+import { ohnePasswort } from "@/lib/passwort";
 
 // Erneute Anmeldung vor sensiblen Aktionen (Vollexport, Kontolöschung,
 // Bank-Freigabe). Der Server prüft die Frische selbst (lib/auth/frisch.ts);
@@ -30,8 +31,8 @@ export async function frischePruefen(): Promise<true | ReAuthGrund> {
 export default function ReAuthDialog({
   offen,
   grund,
-  email,
-  istGoogle = false,
+  email: emailProp,
+  istGoogle: istGoogleProp = false,
   onErfolg,
   onAbbruch,
 }: {
@@ -48,6 +49,12 @@ export default function ReAuthDialog({
   const [eingabe, setEingabe] = useState("");
   const [busy, setBusy] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
+  // Aufrufer ohne Kontodaten (Makler-Link, Bank-Freigabe) übergeben keine
+  // E-Mail. Dann holt der Dialog sie selbst — sonst endete das Passwort-Feld
+  // in „Keine E-Mail-Adresse bekannt“ (05.10.2026 am Handy gemeldet).
+  const [konto, setKonto] = useState<{ email: string | null; ohnePasswort: boolean } | null>(null);
+  const email = emailProp ?? konto?.email ?? null;
+  const istGoogle = emailProp ? istGoogleProp : (konto?.ohnePasswort ?? istGoogleProp);
 
   useEffect(() => {
     if (!offen) return;
@@ -55,12 +62,19 @@ export default function ReAuthDialog({
     setEingabe("");
     setFehler(null);
     void (async () => {
+      let ohnePw = istGoogleProp;
+      if (!emailProp) {
+        const { data: u } = await supabase.auth.getUser();
+        const antwort = await supabase.rpc("konto_hat_passwort");
+        ohnePw = ohnePasswort(antwort, u.user?.app_metadata?.provider);
+        setKonto({ email: u.user?.email ?? null, ohnePasswort: ohnePw });
+      }
       const { data } = await supabase.auth.mfa.listFactors();
       const totp = (data?.totp ?? []).some((f) => f.status === "verified");
       setHatTotp(totp);
       // 2FA-Konten bestätigen mit dem Code — der ist frischer als ein Passwort
       // und stellt zugleich aal2 her. Ohne 2FA bleibt das Passwort.
-      setModus(totp || grund === "mfa" || istGoogle ? "totp" : "passwort");
+      setModus(totp || grund === "mfa" || ohnePw ? "totp" : "passwort");
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offen, grund]);
