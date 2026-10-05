@@ -60,6 +60,7 @@ export default function AuftragVerlauf({
                 {n.art === "fachbetrieb" ? <Wrench size={12} /> : n.art === "foto" ? <Camera size={12} /> : <MessageSquare size={12} />}
                 <strong>{wer(n.autor_rolle)}</strong>
                 {n.art === "fachbetrieb" && <span className="badge badge-amber">Fachbetrieb nötig</span>}
+                {n.rueckfrage && <span className="badge badge-amber">Rückfrage</span>}
                 <span className="av-datum">{datum(n.created_at)}</span>
               </span>
               {n.text && <span className="av-text">{n.text}</span>}

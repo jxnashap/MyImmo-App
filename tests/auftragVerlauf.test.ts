@@ -162,3 +162,53 @@ describe("Oberfläche, Route, Migration", () => {
     expect(readFileSync("supabase/migrations/20261005110000_auftrag_verlauf.sql", "utf8")).not.toMatch(/\b(delete|drop)\b/i);
   });
 });
+
+// Schritt 3 (05.10.2026): Freigabe mit [Freigeben] [Ablehnen] [Rückfrage] + Status an den Vermieter.
+import { rueckfrageOffen, type AuftragNotiz } from "@/lib/auftragNotizen";
+import { bauePortalNeuigkeiten } from "@/lib/portalNeuigkeiten";
+
+describe("Rückfrage", () => {
+  const n = (autor_rolle: "vermieter" | "service", rueckfrage = false, text = "x"): AuftragNotiz =>
+    ({ id: Math.random().toString(), auftrag_id: "a1", autor_rolle, art: "notiz", text, datei_name: null, datei_type: null, created_at: "2026-10-05", rueckfrage });
+
+  it("offen, bis der Hausmeister danach etwas schreibt", () => {
+    expect(rueckfrageOffen([])).toBeNull();
+    expect(rueckfrageOffen([n("vermieter", true, "Zweites Angebot?")])?.text).toBe("Zweites Angebot?");
+    expect(rueckfrageOffen([n("vermieter", true), n("service")])).toBeNull();
+    expect(rueckfrageOffen([n("service"), n("vermieter", true)])).not.toBeNull();
+    expect(rueckfrageOffen([n("vermieter")])).toBeNull(); // gewöhnliche Notiz ist keine Rückfrage
+  });
+
+  it("nur zu einem Antrag in der Freigabe, nur eigene Aufträge", async () => {
+    const ok = await lade({ antworten: { auftraege: { id: "a1", status: "freigabe" } } });
+    expect(await ok.mod.stelleRueckfrage(fd({ auftragId: "a1", text: "Zweites Angebot?" }))).toEqual({ ok: true });
+    expect(zugriffe(ok.db, "auftrag_notizen", "insert")[0].daten).toMatchObject({ autor_rolle: "vermieter", rueckfrage: true, vermieter_id: "nutzer-1" });
+    expect(zugriffe(ok.db, "auftraege", "select")[0].filter).toContain("eq:vermieter_id=nutzer-1");
+
+    const zuSpaet = await lade({ antworten: { auftraege: { id: "a1", status: "offen" } } });
+    expect(fehlerVon(await zuSpaet.mod.stelleRueckfrage(fd({ auftragId: "a1", text: "Frage?" })))).toMatch(/nur, solange/);
+    expect(zugriffe(zuSpaet.db, "auftrag_notizen", "insert")).toHaveLength(0);
+
+    const fremd = await lade({ antworten: { auftraege: null } });
+    expect(fehlerVon(await fremd.mod.stelleRueckfrage(fd({ auftragId: "a1", text: "Frage?" })))).toBe("Auftrag nicht gefunden.");
+  });
+
+  it("drei Knöpfe bei der Freigabe, Rückfrage sichtbar beim Hausmeister", () => {
+    const sm = readFileSync("components/ServiceManager.tsx", "utf8");
+    expect(sm).toMatch(/> Freigeben/);
+    expect(sm).toMatch(/Ablehnen\s*<\/button>\s*<button[^>]*onClick=\{\(\) => setFrage\(""\)\}/);
+    expect(readFileSync("components/AuftraegePortal.tsx", "utf8")).toMatch(/className="rueckfrage-hinweis"/);
+  });
+});
+
+describe("Status an den Vermieter (Dashboard-Neuigkeiten)", () => {
+  const leer = { ereignisse: [], anliegen: new Map(), zustellungen: [], angebote: [], rueckmeldungen: [], bewerbungen: [] };
+  it("Fachbetrieb-Vorschlag und Fotos des Hausmeisters erscheinen", () => {
+    const { liste } = bauePortalNeuigkeiten({
+      ...leer,
+      freigaben: [{ titel: "Therme", created_at: "2026-10-05T08:00:00Z", fachbetrieb: true }, { titel: "Rinne", created_at: "2026-10-04T08:00:00Z" }],
+      hausmeister: [{ art: "foto", auftrag: "Rinne", created_at: "2026-10-05T09:00:00Z" }, { art: "notiz", auftrag: "Alt", created_at: "2026-08-01T09:00:00Z" }],
+    }, "2026-10-05");
+    expect(liste.map((x) => x.text)).toEqual(["Hausmeister hat ein Foto angehängt", "Hausmeister: Fachbetrieb nötig", "Hausmeister bittet um Freigabe"]);
+  });
+});

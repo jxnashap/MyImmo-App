@@ -466,6 +466,7 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 .av-foto-knopf { font-size: 12px; cursor: pointer; }
 .av-fehler { font-size: 12px; color: var(--red); margin: 0; }
 .fachbetrieb-form { display: grid; gap: 8px; padding: 12px; border-radius: 10px; background: var(--bg3); border: 1px solid var(--line); }
+.rueckfrage-hinweis { font-size: 12px; margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: var(--gold-pale); border-left: 3px solid var(--gold); line-height: 1.5; }
 .pflicht-hinweis { font-size: 12px; margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: var(--red-dim, rgba(220,38,38,.08)); color: var(--red); line-height: 1.5; }
 /* Partner-Verwaltung (components/ServiceManager.tsx): eine Zeile je Partner, aufklappbar. */
 .partner-zeile { border-bottom: 1px solid var(--line); }

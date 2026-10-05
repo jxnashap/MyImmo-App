@@ -8,7 +8,7 @@ import { beantworteAuftrag, beantrageAuftrag, meldeFachbetriebNoetig } from "@/l
 import { datum } from "@/lib/format";
 import { teilbarerLink } from "@/lib/appUrl";
 import { fachbetriebPflicht } from "@/lib/fachbetriebPflicht";
-import type { AuftragNotiz } from "@/lib/auftragNotizen";
+import { rueckfrageOffen, type AuftragNotiz } from "@/lib/auftragNotizen";
 import AuftragVerlauf from "@/components/AuftragVerlauf";
 
 export type PortalAuftragRow = {
@@ -193,6 +193,14 @@ function Eintrag({ a, firmen, vorschau, darfVorschlagen }: { a: PortalAuftragRow
           <FirmaKontakt f={firma} />
         </div>
       )}
+      {(() => {
+        const frage = rueckfrageOffen(a.notizen ?? []);
+        return frage && a.status === "freigabe" ? (
+          <p className="rueckfrage-hinweis" role="note">
+            <strong>Rückfrage des Vermieters:</strong> {frage.text} — bitte unten im Verlauf antworten.
+          </p>
+        ) : null;
+      })()}
       {a.status === "freigabe" && vorgeschlagen && (
         <p style={{ fontSize: 12, marginTop: 6, color: "var(--muted)" }}>Dein Vorschlag: <strong>{vorgeschlagen.name}</strong> — wartet auf den Vermieter.</p>
       )}

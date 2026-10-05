@@ -529,7 +529,15 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Auftrag, Oberfläche UND `beantworteAuftrag`. **Grenze:** Stichwortliste, kein Verständnis — fehlt
   das Wort im Text, greift die Sperre nicht. `tests/auftragVerlauf.test.ts`, elf Mutationen rot.
   **Regel: Ein Wert, den ein Server-Lader braucht, steht nie in einer "use client"-Datei** (käme dort
-  nur als Verweis an) — deshalb `lib/auftragNotizen.ts`. **Offen (Schritt 3):** Freigabe mit Rückfrage.
+  nur als Verweis an) — deshalb `lib/auftragNotizen.ts`.
+  ✅ **Schritt 3 (gleicher Tag, Migration `20261005120000`):** Freigabe mit **[Freigeben]
+  [Ablehnen] [Rückfrage]** — Rückfrage = Vermieter-Notiz mit `rueckfrage = true`, Auftrag bleibt in
+  der Freigabe, der Hausmeister antwortet im Verlauf (`rueckfrageOffen()` in
+  `lib/auftragNotizen.ts`: offen bis zum nächsten Eintrag des Partners; Badges „Rückfrage offen“ /
+  „Hausmeister hat geantwortet“). Dashboard-Neuigkeiten: „Hausmeister: Fachbetrieb nötig“, Fotos
+  und Notizen des Hausmeisters (Art `hausmeister`). `tests/auftragVerlauf.test.ts`, sieben weitere
+  Mutationen rot. **Bewusst nicht:** Hinweis-Mail an den Vermieter (Brevo versendet noch nicht),
+  Servicepartner-Netzwerk/Marktplatz (nur vorbereitet: Auftrag geht an Konto ODER Firma).
 - ✉️ **Mahnung/Zahlungserinnerung versenden (05.10.2026, Vorgabe des Betreibers: „wir halten uns
   aus dem Mailverkehr raus“).** Brief-Generator → „An den Mieter senden“ (`components/BriefVersand.tsx`):
   **Per Mail** = PDF erzeugen, am Handy über „Teilen“ direkt angehängt, sonst Download + `mailto:`

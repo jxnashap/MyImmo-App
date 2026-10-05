@@ -58,7 +58,7 @@ export const metadata = {
 
 const NEUIGKEIT_ICON: Record<NeuigkeitArt, typeof Bell> = {
   nachricht: MessageSquareText, termin: CalendarCheck, dokument: FileCheck2, angebot: FileSignature,
-  firma: Wrench, freigabe: Bell, bewerbung: UserPlus,
+  firma: Wrench, freigabe: Bell, bewerbung: UserPlus, hausmeister: Wrench,
 };
 
 export default async function DashboardPage(seite: { searchParams: Promise<{ nl?: string }> }) {
@@ -237,20 +237,22 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // Neuigkeiten aus dem Mieterportal (02.10.2026, Idee des Betreibers): was in den letzten
   // NEUIGKEITEN_TAGE Tagen PASSIERT ist. Was eine Handlung verlangt, steht in den Aufgaben.
   const seit = `${tageVor(heuteISO0, NEUIGKEITEN_TAGE)}T00:00:00Z`;
-  const [{ data: ereignisRows }, { data: zustellRows }, { data: angebotRows }, { data: rueckRows }, { data: auftragRows }, { data: bewerbungRows }] = await Promise.all([
+  const [{ data: ereignisRows }, { data: zustellRows }, { data: angebotRows }, { data: rueckRows }, { data: auftragRows }, { data: bewerbungRows }, { data: hmNotizRows }] = await Promise.all([
     supabase.from("anliegen_ereignisse").select("anliegen_id,autor_rolle,art,text,created_at").eq("autor_rolle", "mieter").gte("created_at", seit).order("created_at", { ascending: false }).limit(50),
     supabase.from("zustellungen").select("titel,art,mieter_id,bestaetigt_am").eq("vermieter_id", user.id).gte("bestaetigt_am", seit).limit(50),
     supabase.from("angebote").select("firma,betrag,created_at").gte("created_at", seit).limit(50),
     supabase.from("auftrag_rueckmeldungen").select("art,firma,auftrag_id,created_at").gte("created_at", seit).limit(50),
-    supabase.from("auftraege").select("id,titel,status,created_at").eq("vermieter_id", user.id).order("created_at", { ascending: false }).limit(200),
+    supabase.from("auftraege").select("id,titel,status,created_at,vorgeschlagene_firma_id").eq("vermieter_id", user.id).order("created_at", { ascending: false }).limit(200),
     supabase.from("bewerbungen").select("name,created_at,status").eq("user_id", user.id).eq("status", "neu").gte("created_at", seit).limit(50),
+    // Notizen und Fotos des Hausmeisters am Auftrag (05.10.2026) — ohne Bilddaten.
+    supabase.from("auftrag_notizen").select("auftrag_id,art,created_at").eq("vermieter_id", user.id).eq("autor_rolle", "service").gte("created_at", seit).order("created_at", { ascending: false }).limit(50),
   ]);
   const ereignisListe = (ereignisRows ?? []) as { anliegen_id: string; autor_rolle: string; art: string; text: string | null; created_at: string }[];
   const anliegenIds = [...new Set(ereignisListe.map((e) => e.anliegen_id))];
   const { data: anliegenTitel } = anliegenIds.length
     ? await supabase.from("anliegen").select("id,titel,mieter_name").in("id", anliegenIds)
     : { data: [] };
-  const auftragListe = (auftragRows ?? []) as { id: string; titel: string; status: string; created_at: string }[];
+  const auftragListe = (auftragRows ?? []) as { id: string; titel: string; status: string; created_at: string; vorgeschlagene_firma_id: string | null }[];
   const portalNeu = bauePortalNeuigkeiten({
     ereignisse: ereignisListe,
     anliegen: new Map(((anliegenTitel ?? []) as { id: string; titel: string | null; mieter_name: string | null }[])
@@ -260,7 +262,10 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     angebote: ((angebotRows ?? []) as { firma: string; betrag: number; created_at: string }[]).map((g) => ({ ...g, betrag: Number(g.betrag) })),
     rueckmeldungen: ((rueckRows ?? []) as { art: string; firma: string | null; auftrag_id: string; created_at: string }[])
       .map((r) => ({ art: r.art, firma: r.firma, auftrag: auftragListe.find((a) => a.id === r.auftrag_id)?.titel ?? "Auftrag", created_at: r.created_at })),
-    freigaben: auftragListe.filter((a) => a.status === "freigabe").map((a) => ({ titel: a.titel, created_at: a.created_at })),
+    freigaben: auftragListe.filter((a) => a.status === "freigabe").map((a) => ({ titel: a.titel, created_at: a.created_at, fachbetrieb: !!a.vorgeschlagene_firma_id })),
+    hausmeister: ((hmNotizRows ?? []) as { auftrag_id: string; art: string; created_at: string }[])
+      .filter((n) => n.art !== "fachbetrieb") // steht schon als Freigabe-Bitte da
+      .map((n) => ({ art: n.art, auftrag: auftragListe.find((a) => a.id === n.auftrag_id)?.titel ?? "Auftrag", created_at: n.created_at })),
     bewerbungen: ((bewerbungRows ?? []) as { name: string | null; created_at: string }[]),
   }, heuteISO0);
   const AUFGABEN_ICON = { miete: ReceiptText, anliegen: MessageSquareText, zaehler: Zap, frist: CalendarDays, termin: CalendarDays, stammdaten: Building2 } as const;

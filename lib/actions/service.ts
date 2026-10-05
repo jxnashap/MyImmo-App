@@ -694,3 +694,36 @@ export async function meldeFachbetriebNoetig(formData: FormData): Promise<{ ok: 
   revalidatePath("/anliegen");
   return { ok: true };
 }
+
+/**
+ * Vermieter: Rückfrage zu einem Antrag (05.10.2026) — dritter Weg neben Freigeben und Ablehnen.
+ * Der Auftrag bleibt in der Freigabe; der Hausmeister antwortet im Verlauf.
+ */
+export async function stelleRueckfrage(formData: FormData): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  const auftragId = String(formData.get("auftragId") ?? "");
+  const text = String(formData.get("text") ?? "").trim();
+  if (!auftragId) return { error: "Auftrag fehlt." };
+  if (text.length < 3) return { error: "Bitte die Frage formulieren." };
+
+  const { data: a, error: aFehler } = await supabase
+    .from("auftraege").select("id,status").eq("id", auftragId).eq("vermieter_id", user.id).maybeSingle();
+  if (aFehler || !a) return { error: "Auftrag nicht gefunden." };
+  if (a.status !== "freigabe") return { error: "Rückfragen gibt es nur, solange der Antrag auf deine Freigabe wartet." };
+
+  const { error } = await supabase.from("auftrag_notizen").insert({
+    auftrag_id: auftragId,
+    vermieter_id: user.id,
+    autor_id: user.id,
+    autor_rolle: "vermieter",
+    art: "notiz",
+    text: text.slice(0, 2000),
+    rueckfrage: true,
+  });
+  if (error) return { error: "Rückfrage konnte nicht gespeichert werden." };
+  revalidatePath("/anliegen");
+  revalidatePath("/service");
+  return { ok: true };
+}

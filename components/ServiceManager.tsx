@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import {
   erzeugeServiceCode, widerrufeServiceCode, entferneServicePartner, setzeServicePartner, uebergebeServicePartner,
-  erstelleAuftrag, loescheAuftrag, entscheideAuftrag, uebernimmAuftragAlsKosten,
+  erstelleAuftrag, loescheAuftrag, entscheideAuftrag, uebernimmAuftragAlsKosten, stelleRueckfrage,
   setzeKostengrenze,
 } from "@/lib/actions/service";
 import { erstelleFirma, loescheFirma } from "@/lib/actions/firmen";
@@ -21,7 +21,7 @@ import { useToast } from "@/components/Toast";
 import { actionFehler } from "@/lib/actionErgebnis";
 import { VORSCHAU_NICHT_GESENDET } from "@/components/AuftraegePortal";
 import AuftragVerlauf from "@/components/AuftragVerlauf";
-import type { AuftragNotiz } from "@/lib/auftragNotizen";
+import { rueckfrageOffen, type AuftragNotiz } from "@/lib/auftragNotizen";
 
 export type ServicePartnerRow = {
   user_id: string; firma: string | null; email: string | null; created_at: string;
@@ -275,10 +275,36 @@ function KostengrenzeSektion({ grenze, demo }: { grenze: number | null; demo: bo
   );
 }
 
-function FreigabeButtons({ id, mieterListe }: { id: string; mieterListe: MieterOption[] }) {
+function FreigabeButtons({ id, mieterListe, demo = false }: { id: string; mieterListe: MieterOption[]; demo?: boolean }) {
   const [pending, startTransition] = useTransition();
   const toast = useToast();
   const [mieterId, setMieterId] = useState("");
+  const [frage, setFrage] = useState<string | null>(null);
+  const rueckfrage = () =>
+    startTransition(async () => {
+      if (demo || frage === null) return;
+      try {
+        const fd = new FormData();
+        fd.set("auftragId", id);
+        fd.set("text", frage);
+        const r = await stelleRueckfrage(fd);
+        if ("error" in r) toast(r.error, "error");
+        else { toast("Rückfrage an den Hausmeister gesendet ✓", "success"); setFrage(null); }
+      } catch {
+        toast("Rückfrage fehlgeschlagen.", "error");
+      }
+    });
+  if (frage !== null) {
+    return (
+      <div style={{ display: "grid", gap: 8, padding: 10, borderRadius: 10, background: "var(--bg3)", border: "1px solid var(--line2)" }}>
+        <textarea className="input" rows={2} maxLength={2000} value={frage} onChange={(e) => setFrage(e.target.value)} placeholder="z. B. Gibt es ein zweites Angebot? Reicht eine Reparatur statt Austausch?" autoFocus />
+        <div style={{ display: "flex", gap: 8 }}>
+          <button type="button" className="btn btn-outline" style={{ fontSize: 11, padding: "5px 12px" }} disabled={pending || demo || frage.trim().length < 3} onClick={rueckfrage}>Rückfrage senden</button>
+          <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px" }} onClick={() => setFrage(null)}>Abbrechen</button>
+        </div>
+      </div>
+    );
+  }
   const entscheiden = (freigeben: boolean) =>
     startTransition(async () => {
       // Antwort auswerten — sonst bleibt „Mieter nicht gefunden" ungesagt.
@@ -298,6 +324,9 @@ function FreigabeButtons({ id, mieterListe }: { id: string; mieterListe: MieterO
       </button>
       <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--red)" }} disabled={pending} onClick={() => entscheiden(false)}>
         Ablehnen
+      </button>
+      <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--amber)" }} disabled={pending} onClick={() => setFrage("")}>
+        Rückfrage
       </button>
     </div>
   );
@@ -585,6 +614,8 @@ export default function ServiceManager({
                     <span className={`badge ${s.cls}`}>{s.label}</span>
                     <span className="badge badge-neutral">{a.partnerName}</span>
                     {a.erstellt_von === "service" && <span className="badge badge-blue">vom Hausmeister beantragt</span>}
+                    {a.status === "freigabe" && rueckfrageOffen(a.notizen ?? []) && <span className="badge badge-amber">Rückfrage offen</span>}
+                    {a.status === "freigabe" && !rueckfrageOffen(a.notizen ?? []) && (a.notizen ?? []).some((n) => n.rueckfrage) && <span className="badge badge-green">Hausmeister hat geantwortet</span>}
                     {a.auto_freigegeben && <span className="badge badge-amber" title="Lag innerhalb deiner Kostengrenze — ohne Rückfrage freigegeben">automatisch freigegeben</span>}
                     {a.kosten_schaetzung != null && <span style={{ fontSize: 11, color: "var(--muted)" }}>Schätzung {euro(a.kosten_schaetzung)}</span>}
                     {a.firmaName && <span className="badge badge-teal">{a.firmaName}</span>}
@@ -603,7 +634,7 @@ export default function ServiceManager({
                   )}
                   {a.status === "freigabe" && (
                     <div style={{ marginTop: 8 }}>
-                      <FreigabeButtons id={a.id} mieterListe={mieterListe} />
+                      <FreigabeButtons id={a.id} mieterListe={mieterListe} demo={demo} />
                     </div>
                   )}
                   {a.antwort && (
