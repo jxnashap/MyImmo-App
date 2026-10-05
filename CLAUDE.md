@@ -972,6 +972,16 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   Mutationen rot. **Regel: Eine neue öffentliche Datei-Route über einen Token schreibt ins
   Abruf-Protokoll (`freigabe_abruf_merken`).** Nebenbei korrigiert: Der Demo-Dialog beschrieb den
   Makler-Ordner als Exposé/Grundbuch-Sammlung (das ist der Beleihungsordner).
+  🔑 **Zugangscode + vorbereitete Mail (gleicher Tag, Vorgabe des Betreibers):** Beim Erstellen
+  die E-Mail des Maklers; danach „Mail an … öffnen“ = `mailto:` mit Empfänger, Betreff, Link UND
+  Code (`maklerMailLink` in `lib/makler.ts`) — **MyImmo verschickt nichts, kein Brevo.** Der
+  Makler gibt den Code auf `/makler-link/<token>` ein (`MaklerCodeFormular`,
+  `lib/actions/maklerLinkPublic.ts`), danach httpOnly-Cookie mit dem Hash, Pfad nur dieser Link.
+  Gespeichert nur `code_hash` = HMAC(Token + Code) (`lib/maklerCode.ts`); die Datenbank liefert
+  Inhalte nur mit dem Hash, sperrt nach 10 Fehlversuchen (Migration `20261005170000`).
+  **Grenze, bewusst so entschieden:** Stehen Link und Code in derselben Mail, hilft der Code nur
+  gegen einen allein weitergegebenen Link — die Oberfläche empfiehlt, den Code getrennt (SMS) zu
+  schicken. **Der Code wird nur einmal angezeigt;** verloren = neuer Link.
   Beide Listen zeigen auch widerrufene/abgelaufene Links (blass, ohne Knöpfe) — wer aus Sorge
   widerruft, will gerade dann das Protokoll sehen (vorher zeigte der Bank-Ordner nur aktive).
   ✅ **Phase 1 (Startseite) erledigt 01.10.2026:** Hero „Deine Immobilien. Ein System. Von überall.“
