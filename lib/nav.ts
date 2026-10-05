@@ -4,7 +4,7 @@ import {
   BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
   TrendingUp, MessageSquareText,
   Building2, Building, Store, TreePalm, Sprout, Percent, Compass, Handshake, Scale,
-  Gauge, FolderCheck, PaintRoller,
+  Gauge, FolderCheck, PaintRoller, Route,
   type LucideIcon,
 } from "lucide-react";
 
@@ -47,6 +47,7 @@ export const ABRECHNEN: NavItem[] = [
 // ihre Adressen sind UNVERÄNDERT, damit kein Link, Lesezeichen oder Demo-Weg bricht.
 export const AUFBAUEN: NavItem[] = [
   { href: "/aufbau", label: "Kommandozentrale", icon: Gauge },
+  { href: "/fahrplan", label: "Fahrplan", icon: Route },
   { href: "/kauf", label: "Kauf-Assistent", icon: Compass },
   { href: "/makler", label: "Makler-Ordner", icon: FolderCheck },
   { href: "/verkauf", label: "Verkauf-Assistent", icon: Handshake },

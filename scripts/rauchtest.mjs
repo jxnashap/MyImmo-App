@@ -397,6 +397,15 @@ const WEGE = [
     },
   },
   {
+    schluessel: "fahrplan",
+    titel: "BuyImmo — Fahrplan",
+    pfad: "/fahrplan",
+    erwartet: ["Dein Weg zum Objekt", "Was BuyImmo prüfen kann", "Kaufnebenkosten", "§ 311b BGB"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
     schluessel: "demo-grenze",
     titel: "Demo-Grenze — gesperrte Bereiche bleiben gesperrt und nennen sich",
     pfad: "/",

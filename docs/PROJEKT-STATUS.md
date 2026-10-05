@@ -162,9 +162,11 @@ Wieder aufbauen, sobald das Produkt Geld verdient.
 
 ### BuyImmo — Bestandsaufbau (seit 05.10.2026)
 Zweiter Bereich, gewechselt am Logo oben links: Kommandozentrale `/aufbau` (Bestand,
-Eigenkapital, freie Grundschuld, Kaufprüfungen, Unterlagen) plus Kauf-/Verkauf-Assistent,
-Makler-Ordner, Marktwert-Schätzer, AfA-Assistent. **Nicht gebaut:** Sanierungsrechner,
-Strategie. Details: `docs/zukunft/BUYIMMO.md`.
+Eigenkapital, freie Grundschuld, Kaufprüfungen, Unterlagen), **Fahrplan** `/fahrplan` (neun
+Schritte + Kaufnebenkosten-Rechner), **Sanierungsrechner** `/sanierung` (Material von–bis,
+Arbeitszeit, eigene Posten; Entwurf nur im Browser) plus Kauf-/Verkauf-Assistent, Makler-Ordner,
+Marktwert-Schätzer, AfA-Assistent. **Nicht gebaut:** Sanierung an Kaufprüfung hängen, Aufmaß per
+Grundriss-KI, Tarif in `lib/plan.ts`. Details: `docs/zukunft/BUYIMMO.md`.
 
 ### Kalkulatoren
 Roter Faden (Kauf-Kalkulation), Cockpit, Bankgespräch, KI-Objekt-Import (URL/Exposé/PDF → Anthropic).

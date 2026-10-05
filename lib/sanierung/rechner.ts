@@ -100,6 +100,7 @@ export const MASSNAHMEN: Massnahme[] = [
     id: "wand_streichen",
     label: "Wände streichen (2 Anstriche)",
     bedarf: [{ material: "wandfarbe", flaechen: ["wand"], lagen: 2 }],
+    hinweis: "Farbverbrauch für glatten Untergrund — auf Raufaser braucht es mehr, der Hersteller nennt keine Zahl.",
   },
   {
     id: "decke_streichen",

@@ -67,6 +67,7 @@
 | Lübeck Häuser ⌀ | ~3.163 €/m² | dito | 26.08.2026 | halbjährlich |
 | Lübeck Kaltmiete ⌀ | ~11,04 €/m² (einfache Lagen 9,87) | dito | 26.08.2026 | halbjährlich |
 | Beispiel-Sollzins | 3,80 % p. a. | Marktüblichkeit | 26.08.2026 | **quartalsweise** |
+| Baumarktpreise + Materialverbrauch (Sanierungsrechner, `lib/sanierung/katalog.ts`) | 9 Materialien, z. B. Alpinaweiß 10 l 54,99 € | Produktseiten OBI/toom/Globus, Merkblätter Knauf/MEM/Alpina/Henkel/Erfurt (URLs im Code); Hornbach/Bauhaus blockieren Abrufe | 05.10.2026 | halbjährlich → **01.04.2027** |
 
 **Zinsen altern am schnellsten.** Ein Beispielzins, der zwei Jahre alt ist, macht
 jede Beispielrechnung unglaubwürdig.

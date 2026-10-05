@@ -197,3 +197,15 @@ describe("Eingabe: Formular → Rechnung, Entwurf aus dem Browser", () => {
     expect(e.preise).toEqual({ wandfarbe: "45" });
   });
 });
+
+describe("Demo", () => {
+  it("Sanierungs- und Nebenkostenrechner bleiben in der Demo bedienbar (sie speichern nichts in der Datenbank)", async () => {
+    const { readFileSync } = await import("node:fs");
+    for (const datei of ["components/SanierungsRechner.tsx", "components/NebenkostenRechner.tsx"]) {
+      const s = readFileSync(datei, "utf8");
+      expect(s, datei).toMatch(/<div className="(sanierung|nk-rechner)" data-demo-erlaubt>/);
+      // Die Freigabe ist nur vertretbar, solange nichts an den Server geht.
+      expect(s, datei).not.toMatch(/lib\/actions|fetch\(|createClient/);
+    }
+  });
+});

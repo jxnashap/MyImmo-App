@@ -8,7 +8,7 @@ import { zahlDe0 } from "@/lib/zahl";
 import KalkImport from "@/components/kalkulator/KalkImport";
 import { saveKalkulation, deleteKalkulation, updateKalkulation } from "@/lib/actions/kalkulation";
 import { bestesObjekt, KAUF_AUSWAHL_KEY, type KaufAuswahl, type VglMetrik } from "@/lib/kauf/auswahl";
-import { BUNDESLAENDER } from "@/lib/kalk";
+import { BUNDESLAENDER, kaufnebenkostenSatz } from "@/lib/kalk";
 import { HAUS_DISCLAIMER } from "@/lib/kauf/hausbewertung";
 import { marktwert as rechneMarktwert, preisUrteil } from "@/lib/kauf/marktwert";
 import { belastbarkeit } from "@/lib/kauf/belastbarkeit";
@@ -133,7 +133,7 @@ export default function ObjektRechner({
   // und machte aus 0,035 die Zahl 35, also 3500 % Grunderwerbsteuer.
   // `makler` dagegen ist ein Freitextfeld und bleibt bei num()/zahlDe0.
   const grestSatz = Number(bundesland) || 0;
-  const nkSatz = grestSatz + num(makler) / 100 + 0.02; // + Notar/Grundbuch ~2 %
+  const nkSatz = kaufnebenkostenSatz(grestSatz, num(makler)); // + Notar/Grundbuch (lib/kalk.ts)
   const nebenkosten = kp * nkSatz;
   const gesamtInvest = kp + nebenkosten;
   const preisM2 = kp > 0 && fl > 0 ? kp / fl : 0;

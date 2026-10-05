@@ -39,6 +39,8 @@ const SPEICHER = "buyimmo:sanierung-entwurf";
 const START_ID = "start";
 
 const zahl = (n: number, stellen = 2) => n.toLocaleString("de-DE", { maximumFractionDigits: stellen });
+/** Preise immer mit zwei Nachkommastellen — „19,40“, nicht „19,4“. */
+const geld = (n: number) => n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const spanne = (s: Spanne, fmt: (n: number) => string) => (s.min === s.max ? fmt(s.min) : `${fmt(s.min)} – ${fmt(s.max)}`);
 const prozent = (s: Spanne) => `${zahl(s.min * 100, 0)}–${zahl(s.max * 100, 0)} %`;
 const neueId = () =>
@@ -83,8 +85,10 @@ export default function SanierungsRechner({ katalog, stand }: { katalog: Katalog
 
   const zeitGesamt = entwurf.lohn.reduce((s, l) => s + zahlDe0(l.stunden), 0);
 
+  // `data-demo-erlaubt`: In der Demo bleibt der Rechner bedienbar — er schreibt nichts in die
+  // Datenbank, der Entwurf liegt nur im Browser des Besuchers (DemoNurLesen sperrt sonst jedes Feld).
   return (
-    <div className="sanierung">
+    <div className="sanierung" data-demo-erlaubt>
       <div className="section">
         <div className="section-header">
           <div>
@@ -148,7 +152,7 @@ export default function SanierungsRechner({ katalog, stand }: { katalog: Katalog
                           className="input sanierung-preis"
                           inputMode="decimal"
                           aria-label={`Preis je Gebinde ${z.material.name}`}
-                          placeholder={zahl(z.material.preis)}
+                          placeholder={geld(z.material.preis)}
                           value={entwurf.preise[z.material.id] ?? ""}
                           onChange={(e) => setPreis(z.material.id, e.target.value)}
                         />
@@ -171,8 +175,12 @@ export default function SanierungsRechner({ katalog, stand }: { katalog: Katalog
             <ul>
               {Object.values(katalog).map((m) => (
                 <li key={m.id}>
-                  <strong>{m.name}</strong> ({m.produkt}): {zahl(m.preis)} € je {m.gebindeName} — {m.quelle.preis}. Verbrauch{" "}
-                  {spanne(m.verbrauch, (n) => zahl(n, 3))} {m.einheit} je {m.einheit === "m" ? "m" : "m²"} — {m.quelle.verbrauch}. Stand {m.quelle.stand}.
+                  <strong>{m.name}</strong> ({m.produkt}): {geld(m.preis)} € je {m.gebindeName} — {m.quelle.preis}.{" "}
+                  {/* „1 m² je m²“ (Tapete, Boden) sagt nichts — dann nur die Quelle. */}
+                  {m.verbrauch.min === 1 && m.verbrauch.max === 1
+                    ? `Menge: ${m.quelle.verbrauch}.`
+                    : `Verbrauch ${spanne(m.verbrauch, (n) => zahl(n, 3))} ${m.einheit} je m² — ${m.quelle.verbrauch}.`}{" "}
+                  Stand {m.quelle.stand}.
                 </li>
               ))}
               <li>

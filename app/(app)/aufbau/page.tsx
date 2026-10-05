@@ -2,10 +2,11 @@ import Link from "next/link";
 import { ChevronRight, ClipboardCheck, FileUser, FolderCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
-import { bestandLage, type AufbauKredit, type AufbauObjekt } from "@/lib/aufbau";
+import { bestandLage } from "@/lib/aufbau";
+import { ladeAufbauDaten } from "@/lib/aufbauDaten";
 import { MAKLER_CHECKLISTE, maklerErledigt } from "@/lib/makler";
-import { istDemoKonto } from "@/lib/demo";
 import { datum, euro } from "@/lib/format";
+import { heuteBerlin } from "@/lib/zeitraum";
 import Leer from "@/components/Leer";
 
 export const metadata = { title: "Kommandozentrale — BuyImmo" };
@@ -20,27 +21,15 @@ export const dynamic = "force-dynamic";
 
 const MAX_KAUFPRUEFUNGEN = 5;
 
-type KalkZeile = { id: string; name: string; summary: Record<string, number> | null; created_at: string };
-
 export default async function AufbauPage() {
   const supabase = await createClient();
   const user = await aktuellerNutzer();
-  const uid = user?.id ?? "";
+  const d = await ladeAufbauDaten(supabase, user, heuteBerlin());
 
-  const [{ data: props }, { data: kred }, { data: kalk }, { data: makler }, { data: sa }] = await Promise.all([
-    supabase.from("properties").select("id,bezeichnung,wert,kaufpreis").eq("user_id", uid),
-    supabase.from("kredite").select("prop_id,betrag,restschuld,monatsrate,zinssatz,grundschuld").eq("user_id", uid),
-    supabase.from("kalkulationen").select("id,name,summary,created_at").eq("user_id", uid).order("created_at", { ascending: false }),
-    supabase.from("makler_dokumente").select("item_key,status").eq("user_id", uid),
-    supabase.from("selbstauskunft").select("user_id").eq("user_id", uid).maybeSingle(),
-  ]);
-
-  const lage = bestandLage((props ?? []) as AufbauObjekt[], (kred ?? []) as AufbauKredit[]);
-  const kaufpruefungen = (kalk ?? []) as KalkZeile[];
-  // In der Demo steht im Kauf-Assistenten eine Beispiel-Selbstauskunft (lib/kauf/selbstauskunft.ts)
-  // — hier dasselbe Bild, sonst widersprächen sich die beiden Seiten.
-  const hatSelbstauskunft = !!sa || istDemoKonto(user?.email);
-  const maklerFertig = maklerErledigt((makler ?? []) as { item_key: string; status: string | null }[]);
+  const lage = bestandLage(d.objekte, d.kredite);
+  const kaufpruefungen = d.kaufpruefungen;
+  const hatSelbstauskunft = d.hatSelbstauskunft;
+  const maklerFertig = maklerErledigt(d.makler);
   const maklerGesamt = MAKLER_CHECKLISTE.length;
 
   return (
@@ -51,6 +40,7 @@ export default async function AufbauPage() {
           <div className="topbar-title">Kommandozentrale</div>
           <div className="topbar-sub">Was du für das nächste Objekt in der Hand hast — aus deinen MyImmo-Daten</div>
         </div>
+        <Link href="/fahrplan" className="btn btn-ghost btn-sm">Fahrplan zum nächsten Objekt →</Link>
       </div>
       <hr className="topbar-rule" />
 

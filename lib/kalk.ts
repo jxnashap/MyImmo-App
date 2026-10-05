@@ -86,3 +86,35 @@ export const BUNDESLAENDER = [
 ];
 
 export const num = (s: string) => parseFloat(s) || 0;
+
+// Kaufnebenkosten — EINE Regel für den Kauf-Rechner und den BuyImmo-Fahrplan (05.10.2026).
+// Notar + Grundbuch als Pauschale, Makler-Käuferanteil als Vorschlag; beide altern →
+// docs/app-entwicklung/07 Volatile Kennzahlen und Pruefzyklus.md.
+/** Notar und Grundbuch zusammen, Anteil am Kaufpreis (Pauschale, keine Gebührenrechnung). */
+export const NOTAR_GRUNDBUCH_SATZ = 0.02;
+/** Käuferanteil der Maklerprovision bei hälftiger Teilung, in Prozent (Vorschlag im Rechner). */
+export const MAKLER_STANDARD_PROZENT = 3.57;
+
+/** Nebenkosten-Satz: Grunderwerbsteuer (Anteil, z. B. 0.05) + Makler (Prozent) + Notar/Grundbuch. */
+export function kaufnebenkostenSatz(grestSatz: number, maklerProzent: number): number {
+  return grestSatz + maklerProzent / 100 + NOTAR_GRUNDBUCH_SATZ;
+}
+
+export type Kaufnebenkosten = { grunderwerbsteuer: number; notarGrundbuch: number; makler: number; summe: number; satz: number };
+
+/** Kaufnebenkosten in Euro, aufgeteilt. Negative oder fehlende Eingaben zählen als 0. */
+export function kaufnebenkosten(kaufpreis: number, grestSatz: number, maklerProzent: number): Kaufnebenkosten {
+  const kp = Number.isFinite(kaufpreis) && kaufpreis > 0 ? kaufpreis : 0;
+  const g = Number.isFinite(grestSatz) && grestSatz > 0 ? grestSatz : 0;
+  const m = Number.isFinite(maklerProzent) && maklerProzent > 0 ? maklerProzent : 0;
+  const grunderwerbsteuer = kp * g;
+  const notarGrundbuch = kp * NOTAR_GRUNDBUCH_SATZ;
+  const makler = kp * (m / 100);
+  return {
+    grunderwerbsteuer,
+    notarGrundbuch,
+    makler,
+    summe: grunderwerbsteuer + notarGrundbuch + makler,
+    satz: kaufnebenkostenSatz(g, m),
+  };
+}

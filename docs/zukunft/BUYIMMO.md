@@ -1,7 +1,7 @@
 # BuyImmo — zweiter Bereich neben MyImmo
 
-**Stand:** 05.10.2026 · **Status:** Grundgerüst gebaut (Umschalter, Navigation, Kommandozentrale),
-Sanierungsrechner Stufe 1 (Material + Arbeitszeit) gebaut, Fahrplan offen.
+**Stand:** 05.10.2026 · **Status:** gebaut: Umschalter, Navigation, Kommandozentrale (`/aufbau`),
+Fahrplan (`/fahrplan`), Sanierungsrechner Stufe 1 (`/sanierung`, Material + Arbeitszeit).
 
 ## Die Entscheidung (Betreiber, 05.10.2026)
 
@@ -38,7 +38,7 @@ Sanierungsrechner Stufe 1 (Material + Arbeitszeit) gebaut, Fahrplan offen.
    Vertreter-Reiter mit Vollmacht existiert (Einstellungen → Vertreter). Werbung ohne diesen
    Zusatz wäre irreführend (§ 5 UWG).
 
-### „Strategie“ heißt: Fahrplan, keine Empfehlung (Vorschlag 05.10.2026, wartet auf Freigabe)
+### „Strategie“ heißt: Fahrplan, keine Empfehlung (gebaut 05.10.2026, Betreiber: „dann Fahrplan“)
 
 Ein geführter Weg zum ersten bzw. nächsten Objekt — **allgemeines Wissen + eigene Zahlen +
 Fortschritt**, ohne Urteil über die Person:
@@ -47,6 +47,33 @@ Eigenkapital & Schufa → Selbstauskunft → Finanzierungsbestätigung → Suche
 → Übergabe → Objekt in MyImmo. Jeder Schritt erklärt, was nötig ist, und zeigt, was schon
 erledigt ist (aus den vorhandenen Daten). **Nicht:** „Mit deinem Einkommen kannst du X € kaufen“
 — das ist Darlehensberatung und bleibt draußen, bis der Anwalt § 34i geklärt hat.
+
+**Umsetzung:** `lib/fahrplan.ts` (neun Schritte, Status NUR wo die App es aus den Daten weiß:
+Selbstauskunft, Finanzierungsbestätigung, Makler-Ordner, Kaufprüfungen; Vertreter und Bestand als
+Hinweis; Besichtigung und Notar ohne Haken), darüber der Kaufnebenkosten-Rechner
+(`components/NebenkostenRechner.tsx`) mit **derselben Regel wie der Kauf-Rechner**
+(`kaufnebenkosten()`/`kaufnebenkostenSatz()` in `lib/kalk.ts` — vorher stand die 2-%-Pauschale
+direkt in `ObjektRechner.tsx`). Daten über `lib/aufbauDaten.ts` (ein Lader für Kommandozentrale
+und Fahrplan). `tests/fahrplan.test.ts` sucht nach Empfehlungs-Formulierungen („empfehl“,
+„solltest“, „kannst dir … leisten“) und prüft, dass jedes Ziel eine echte Seite ist.
+
+### Sanierungsrechner Stufe 1 (gebaut 05.10.2026)
+
+Räume (Länge, Breite, Höhe, Fenster/Türen) → Flächen → Maßnahmen (spachteln, grundieren,
+tapezieren, Wände/Decke streichen, Laminat, Vinyl) → Material **von–bis** → ganze Gebinde über
+**alle** Räume gerundet → Kosten. Arbeitszeit = Stunden × Satz, den der Nutzer einträgt; eigene
+Posten (z. B. Bad laut Angebot). Preise je Gebinde überschreibbar. `lib/sanierung/` (Katalog als
+Parameter), `tests/sanierung.test.ts`. **Preise:** `lib/sanierung/katalog.ts`, je Material Quelle
+und zweite Quelle (OBI/toom/Globus), Verbrauch aus Herstellerblättern; Prüfzyklus in
+`07 Volatile Kennzahlen`. **Grenzen:** Wandfarbe nur für glatten Untergrund (Alpina beziffert
+Raufaser nicht); Spachtel-Schichtdicke 0,5–1 mm ist eine Annahme; Verschnitt ist eine Annahme.
+**Entwurf nur im Browser** — kein Speichern ins Konto (eine neue Tabelle bräuchte
+`delete_own_account()`/Kaskade, und Migrationen mit `delete`/`on delete` laufen über
+`apply_migration` in den Bestätigungsdialog → Betreiber im SQL-Editor).
+**Demo:** Sanierungs- und Nebenkostenrechner sind bedienbar (`data-demo-erlaubt`) — sie schreiben
+nichts in die Datenbank; ein Test hält fest, dass sie keine Server-Action aufrufen.
+**Nächste Stufe:** Ergebnis an eine Kaufprüfung hängen → Sanierung im Gesamtinvest und im
+15-%-Wächter.
 
 ### Verworfene Alternativen — mit Grund
 
