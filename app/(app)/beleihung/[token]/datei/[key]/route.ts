@@ -1,9 +1,11 @@
 // Öffentliche Datei-Auslieferung für Bank-Freigaben: ausschließlich über die
-// SECURITY-DEFINER-RPC (prüft Token + aktiv + Ablauf + item_key ∈ item_keys).
+// SECURITY-DEFINER-RPC (prüft Token + aktiv + Ablauf + item_key ∈ item_keys + Code-Hash aus
+// dem Cookie seit 05.10.2026, und schreibt den Abruf ins Protokoll).
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { dateiKopf } from "@/lib/net/dateiKopf";
 import { decrypt } from "@/lib/crypto/secure";
+import { FREIGABE_COOKIE } from "@/lib/freigabeCode";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,10 +18,15 @@ export async function GET(
   if (!/^[0-9a-f-]{36}$/i.test(params.token)) {
     return new NextResponse("Ungültiger Link", { status: 404 });
   }
+  const hash = req.cookies.get(FREIGABE_COOKIE.bank)?.value;
+  if (!hash || !/^[0-9a-f]{64}$/.test(hash)) {
+    return new NextResponse("Bitte zuerst den Zugangscode eingeben", { status: 403 });
+  }
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("beleihung_public_datei", {
     p_token: params.token,
     p_item_key: params.key,
+    p_code_hash: hash,
   });
   const d = Array.isArray(data) ? data[0] : data;
   if (error || !d?.datei_data) {

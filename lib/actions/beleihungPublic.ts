@@ -5,8 +5,10 @@
 // begrenzung passieren in der SECURITY-DEFINER-RPC (DB); zusätzlich hier ein
 // einfaches IP-Rate-Limit als Spam-Bremse auf Prozess-Ebene.
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { FREIGABE_COOKIE, FREIGABE_PFAD, freigabeCodeHash } from "@/lib/freigabeCode";
+import { istMaklerCodeFormat, normalisiereMaklerCode } from "@/lib/makler";
 
 // Best-effort-Limiter je Serverless-Instanz: max. 5 Rückmeldungen / 10 Min / IP.
 const hits = new Map<string, number[]>();
@@ -53,8 +55,13 @@ export async function sendeBankRueckmeldung(
     .filter(Boolean)
     .slice(0, 30);
 
+  // Seit 05.10.2026 nur nach dem Zugangscode: Der Hash kommt aus dem Cookie der Anmeldung.
+  const hash = (await cookies()).get(FREIGABE_COOKIE.bank)?.value;
+  if (!hash) return { ok: false, fehler: "Bitte die Seite neu laden und den Zugangscode eingeben." };
+
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("beleihung_public_rueckmeldung", {
+    p_code_hash: hash,
     p_token: token,
     p_name: name,
     p_bank: String(fd.get("bank") ?? "").trim(),
@@ -64,5 +71,30 @@ export async function sendeBankRueckmeldung(
   });
   if (error) return { ok: false, fehler: "Senden fehlgeschlagen — bitte später erneut versuchen." };
   if (data !== true) return { ok: false, fehler: "Dieser Link ist abgelaufen oder wurde widerrufen." };
+  return { ok: true };
+}
+
+// Anmeldung der BANK auf /beleihung/<token> (05.10.2026): Code hashen, die Datenbank vergleicht
+// und zählt Fehlversuche (`beleihung_public_anmelden`, Sperre nach 10). Bei Erfolg httpOnly-Cookie
+// mit dem Hash, nur für den Pfad dieses Links.
+export async function meldeBankAn(token: string, code: string): Promise<{ ok: true } | { error: string }> {
+  if (!/^[0-9a-f-]{36}$/i.test(String(token))) return { error: "Ungültiger Link." };
+  const norm = normalisiereMaklerCode(String(code ?? ""));
+  if (!istMaklerCodeFormat(norm)) return { error: "Der Code hat 8 Zeichen, z. B. ABCD-EF23." };
+
+  const hash = freigabeCodeHash("bank", token, norm);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("beleihung_public_anmelden", { p_token: token, p_code_hash: hash });
+  if (error) return { error: "Anmeldung gerade nicht möglich. Bitte später erneut versuchen." };
+  if (data === "gesperrt") return { error: "Zu viele falsche Versuche. Bitte beim Eigentümer einen neuen Link anfordern." };
+  if (data !== "ok") return { error: data === "falsch" ? "Der Code stimmt nicht." : "Link abgelaufen oder ungültig." };
+
+  (await cookies()).set(FREIGABE_COOKIE.bank, hash, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: FREIGABE_PFAD.bank(token),
+    maxAge: 31 * 24 * 3600,
+  });
   return { ok: true };
 }

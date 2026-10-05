@@ -272,3 +272,74 @@ describe("Öffentliche Seite und Datenbank", () => {
     expect(existsSync("scripts/sql/rueckfall-bank-link-protokoll-2026-10-05.sql")).toBe(true);
   });
 });
+
+describe("Bank-Link: Anmeldung, Rückmeldung und Seiten (05.10.2026)", () => {
+  const T = "11111111-2222-3333-4444-555555555555";
+  async function ladeBank(init: Parameters<typeof fakeSupabase>[0], cookie?: string) {
+    vi.resetModules();
+    const gesetzt: { name: string; wert: string; opt: Record<string, unknown> }[] = [];
+    vi.doMock("next/headers", () => ({
+      cookies: async () => ({
+        set: (name: string, wert: string, opt: Record<string, unknown>) => gesetzt.push({ name, wert, opt }),
+        get: (name: string) => (cookie && name === "mi_bank" ? { value: cookie } : undefined),
+      }),
+      headers: async () => new Headers({ "x-forwarded-for": `10.0.0.${Math.floor(Math.random() * 250)}` }),
+    }));
+    const { db, client } = fakeSupabase(init);
+    mockeNextUndSupabase(client);
+    const mod = await import("@/lib/actions/beleihungPublic");
+    return { db, mod, gesetzt };
+  }
+
+  it("richtiger Code: Cookie mi_bank mit Bank-Hash, nur für /beleihung/<token>", async () => {
+    const { mod, gesetzt } = await ladeBank({ rpc: { beleihung_public_anmelden: "ok" } });
+    expect(await mod.meldeBankAn(T, "abcd-ef23")).toEqual({ ok: true });
+    const { freigabeCodeHash } = await import("@/lib/freigabeCode");
+    expect(gesetzt[0]).toMatchObject({ name: "mi_bank", wert: freigabeCodeHash("bank", T, "ABCDEF23") });
+    expect(gesetzt[0].opt).toMatchObject({ httpOnly: true, path: `/beleihung/${T}` });
+  });
+
+  it("falscher/gesperrter Code: kein Cookie", async () => {
+    for (const a of ["falsch", "gesperrt", null]) {
+      const { mod, gesetzt } = await ladeBank({ rpc: { beleihung_public_anmelden: a } });
+      expect("error" in (await mod.meldeBankAn(T, "ABCD-EF23"))).toBe(true);
+      expect(gesetzt).toEqual([]);
+    }
+  });
+
+  it("Rückmeldung nur mit Code-Cookie — ohne erreicht sie die Datenbank nicht", async () => {
+    const f = new FormData(); f.set("name", "Frau Berg"); f.set("nachricht", "Bitte Grundbuch nachreichen");
+    const ohne = await ladeBank({ rpc: { beleihung_public_rueckmeldung: true } });
+    expect((await ohne.mod.sendeBankRueckmeldung(T, f)).ok).toBe(false);
+    expect(ohne.db.zugriffe).toEqual([]);
+    const mit = await ladeBank({ rpc: { beleihung_public_rueckmeldung: true } }, "a".repeat(64));
+    expect((await mit.mod.sendeBankRueckmeldung(T, f)).ok).toBe(true);
+  });
+
+  it("Bank-Seite und Datei-Route: nur mit Hash, Datei ohne Cookie 403", () => {
+    const seite = readFileSync("app/(app)/beleihung/[token]/page.tsx", "utf8");
+    const route = readFileSync("app/(app)/beleihung/[token]/datei/[key]/route.ts", "utf8");
+    expect(seite).toContain('rpc("beleihung_public_info", { p_token: params.token, p_code_hash: hash })');
+    expect(seite).toContain("anmelden={meldeBankAn}");
+    expect(route).toContain("p_code_hash: hash");
+    expect(route).toContain("if (!hash || !/^[0-9a-f]{64}$/.test(hash)) {");
+    expect(route).toContain('return new NextResponse("Bitte zuerst den Zugangscode eingeben", { status: 403 })');
+  });
+
+  it("Datenbank: Bank-Fassungen ohne Code stillgelegt, Rückmeldung verlangt den Hash", () => {
+    const sql = readFileSync("supabase/migrations/20261005180000_bank_link_code.sql", "utf8");
+    const c = sql.split("\n").filter((z) => !z.trim().startsWith("--")).join("\n");
+    expect(sql).not.toMatch(/\b(delete|drop)\b/i);
+    for (const sig of ["beleihung_public_info\\(uuid\\)", "beleihung_public_datei\\(uuid, text\\)", "beleihung_public_rueckmeldung\\(uuid, text, text, text, text, text\\[\\]\\)"]) {
+      expect(c, sig).toMatch(new RegExp(`revoke all on function public\\.${sig} from public, anon, authenticated`));
+    }
+    expect((c.match(/code_hash is not null and code_hash = p_code_hash/g) ?? []).length).toBe(3);
+    expect(c).toContain("freigabe_braucht_code");
+  });
+
+  it("der alte Rückfall öffnet keinen Zugang ohne Code mehr", () => {
+    const r = readFileSync("scripts/sql/rueckfall-bank-link-protokoll-2026-10-05.sql", "utf8");
+    expect(r).toContain("p_code_hash text");
+    expect(r).not.toMatch(/beleihung_public_datei\(p_token uuid, p_item_key text\)\s*\n\s*returns/);
+  });
+});

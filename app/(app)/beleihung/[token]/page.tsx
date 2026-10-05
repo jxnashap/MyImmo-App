@@ -1,8 +1,14 @@
 // ÖFFENTLICHE Freigabe-Seite für die Bank (kein Login): Objekt-Kennblatt,
 // Wunsch-Konditionen, freigegebene Dokumente + Rückmeldungs-Formular.
 // Datenzugriff ausschließlich über die SECURITY-DEFINER-RPC (Token-Prüfung).
+// Seit 05.10.2026 erst nach dem Zugangscode aus der Mail (Cookie mit dem Code-Hash); ohne ihn
+// zeigt die Seite nur das Code-Formular — wie der Makler-Link.
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { FREIGABE_COOKIE } from "@/lib/freigabeCode";
+import ZugangsCodeFormular from "@/components/ZugangsCodeFormular";
+import { meldeBankAn } from "@/lib/actions/beleihungPublic";
 import BankRueckmeldungForm from "@/components/BankRueckmeldungForm";
 import { BELEIHUNG_CHECKLISTE } from "@/lib/beleihung";
 import { Lock, FileText } from "lucide-react";
@@ -52,9 +58,27 @@ export default async function BankFreigabeSeite(props: { params: Promise<{ token
   const params = await props.params;
   const supabase = await createClient();
   let info: Info | null = null;
+  let status: string | null = null;
   if (/^[0-9a-f-]{36}$/i.test(params.token)) {
-    const { data } = await supabase.rpc("beleihung_public_info", { p_token: params.token });
-    info = (data as Info | null) ?? null;
+    const hash = (await cookies()).get(FREIGABE_COOKIE.bank)?.value;
+    if (hash) {
+      const { data } = await supabase.rpc("beleihung_public_info", { p_token: params.token, p_code_hash: hash });
+      info = (data as Info | null) ?? null;
+    }
+    if (!info) {
+      const { data } = await supabase.rpc("beleihung_public_status", { p_token: params.token });
+      status = (data as string | null) ?? null;
+    }
+  }
+
+  // Link gültig, aber (noch) kein richtiger Code → Code-Formular.
+  if (!info && status) {
+    return (
+      <div style={{ maxWidth: 560, margin: "60px auto", padding: 24 }}>
+        <Kopf />
+        <ZugangsCodeFormular token={params.token} gesperrt={status === "gesperrt"} anmelden={meldeBankAn} />
+      </div>
+    );
   }
 
   if (!info) {

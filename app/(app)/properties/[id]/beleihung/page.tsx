@@ -32,7 +32,7 @@ export default async function BeleihungPage(props: { params: Promise<{ id: strin
         .eq("prop_id", params.id),
       supabase
         .from("beleihung_freigaben")
-        .select("token,item_keys,ablauf,aktiv,created_at")
+        .select("token,item_keys,ablauf,aktiv,created_at,empfaenger_email")
         .eq("prop_id", params.id)
         .order("created_at", { ascending: false }),
     ]);

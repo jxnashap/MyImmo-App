@@ -1,13 +1,20 @@
 "use client";
 
-// Code-Eingabe des Maklers auf /makler-link/<token> (05.10.2026). Der Code steht in der Mail des
-// Kaufinteressenten; nach richtiger Eingabe lädt die Seite neu und zeigt die Dokumente.
+// Code-Eingabe auf den öffentlichen Freigabe-Seiten (Makler /makler-link/<token>, Bank
+// /beleihung/<token>; 05.10.2026). Der Code steht in der Mail, mit der der Link kam; nach
+// richtiger Eingabe lädt die Seite neu und zeigt die Unterlagen. Die Anmeldung ist eine
+// Server-Action je Link-Art, die die Seite hereinreicht.
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
-import { meldeMaklerAn } from "@/lib/actions/maklerLinkPublic";
 
-export default function MaklerCodeFormular({ token, gesperrt }: { token: string; gesperrt: boolean }) {
+export default function ZugangsCodeFormular({
+  token, gesperrt, anmelden,
+}: {
+  token: string;
+  gesperrt: boolean;
+  anmelden: (token: string, code: string) => Promise<{ ok: true } | { error: string }>;
+}) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [fehler, setFehler] = useState<string | null>(
@@ -18,7 +25,7 @@ export default function MaklerCodeFormular({ token, gesperrt }: { token: string;
   function absenden(e: React.FormEvent) {
     e.preventDefault();
     start(async () => {
-      const r = await meldeMaklerAn(token, code);
+      const r = await anmelden(token, code);
       if ("error" in r) { setFehler(r.error); return; }
       router.refresh();
     });

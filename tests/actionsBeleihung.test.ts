@@ -132,10 +132,33 @@ describe("Dateien: Grenze und Verschlüsselung", () => {
 
 describe("Freigabe-Links für die Bank", () => {
   const FREIGABE = { token: "abc", item_keys: ["grundbuch"], ablauf: "2026-09-18", aktiv: true, created_at: null };
+  // Der Zugangscode wird mit DATA_ENCRYPTION_KEY gehasht (seit 05.10.2026) — ohne Schlüssel kein Link.
+  beforeEach(() => { process.env.DATA_ENCRYPTION_KEY = Buffer.alloc(32, 9).toString("base64"); });
+
+  it("Code einmal zurück, gespeichert nur der Hash, an Bank-Art und Token gebunden", async () => {
+    const { db, mod } = await lade({ antworten: { beleihung_freigaben: FREIGABE } });
+    const r = await mod.createFreigabe("p1", ["grundbuch"], {}, 14, " Berater@Bank.de ");
+    expect(r.code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    const ein = db.zugriffe.find((z) => z.op === "insert")?.daten as Record<string, unknown>;
+    expect(ein.empfaenger_email).toBe("berater@bank.de");
+    expect(JSON.stringify(ein)).not.toContain(r.code);
+    const { freigabeCodeHash } = await import("@/lib/freigabeCode");
+    expect(ein.code_hash).toBe(freigabeCodeHash("bank", String(ein.token), r.code));
+    // Derselbe Code als Makler-Hash passt NICHT (Art gehört in den Hash).
+    expect(freigabeCodeHash("makler", String(ein.token), r.code)).not.toBe(ein.code_hash);
+  });
+
+  it("ohne gültige Bank-Adresse kein Link", async () => {
+    for (const a of ["", "bank", "a@b.de?bcc=x@y.de"]) {
+      const { db, mod } = await lade({ antworten: { beleihung_freigaben: FREIGABE } });
+      await expect(mod.createFreigabe("p1", ["grundbuch"], {}, 14, a), a).rejects.toThrow("E-Mail");
+      expect(db.zugriffe.find((z) => z.op === "insert")).toBeUndefined();
+    }
+  });
 
   it("unbekannte Dokumentschlüssel werden herausgefiltert", async () => {
     const { db, mod } = await lade({ antworten: { beleihung_freigaben: FREIGABE } });
-    await mod.createFreigabe("p1", ["grundbuch", "erfunden", "../../etc/passwd"], {}, 14);
+    await mod.createFreigabe("p1", ["grundbuch", "erfunden", "../../etc/passwd"], {}, 14, "b@bank.de");
     expect(db.zugriffe.find((z) => z.op === "insert")?.daten).toMatchObject({ item_keys: ["grundbuch"] });
   });
 
@@ -143,7 +166,7 @@ describe("Freigabe-Links für die Bank", () => {
     // Ein Link ohne Dokumente wäre harmlos — einer, der versehentlich alles
     // freigibt, nicht. Deshalb hier lieber ein Fehler.
     const { db, mod } = await lade({ antworten: { beleihung_freigaben: FREIGABE } });
-    await expect(mod.createFreigabe("p1", ["erfunden"], {}, 14)).rejects.toThrow("mindestens ein Dokument");
+    await expect(mod.createFreigabe("p1", ["erfunden"], {}, 14, "b@bank.de")).rejects.toThrow("mindestens ein Dokument");
     expect(db.zugriffe).toEqual([]);
   });
 
@@ -152,7 +175,7 @@ describe("Freigabe-Links für die Bank", () => {
       vi.resetModules();
       const { db, mod } = await lade({ antworten: { beleihung_freigaben: FREIGABE } });
       const vorher = Date.now();
-      await mod.createFreigabe("p1", ["grundbuch"], {}, eingabe);
+      await mod.createFreigabe("p1", ["grundbuch"], {}, eingabe, "b@bank.de");
       const ablauf = new Date(String((db.zugriffe.find((z) => z.op === "insert")?.daten as never)["ablauf"])).getTime();
       const tage = Math.round((ablauf - vorher) / (24 * 3600 * 1000));
       expect(tage).toBe(erwartetTage);
@@ -171,7 +194,7 @@ describe("Freigabe-Links für die Bank", () => {
 
   it("die Freigabe hängt am angemeldeten Nutzer", async () => {
     const { db, mod } = await lade({ antworten: { beleihung_freigaben: FREIGABE } });
-    await mod.createFreigabe("p1", ["grundbuch"], { wunschzins: "3,4" }, 14);
+    await mod.createFreigabe("p1", ["grundbuch"], { wunschzins: "3,4" }, 14, "b@bank.de");
     expect(db.zugriffe.find((z) => z.op === "insert")?.daten).toMatchObject({
       user_id: "nutzer-1",
       prop_id: "p1",

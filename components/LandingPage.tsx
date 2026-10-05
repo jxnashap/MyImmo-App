@@ -36,7 +36,7 @@ export const ORDNER = [
     punkte: [
       "Checkliste passt sich an: Eigentumswohnung, vermietet, selbstständig",
       "Kennblatt, Mietaufstellung und NK-Abrechnung erzeugt MyImmo aus deinen Daten",
-      "Freigabe-Link für 7, 14 oder 30 Tage — jederzeit widerrufbar, die Bank antwortet direkt darüber",
+      "Freigabe-Link mit Zugangscode für 7, 14 oder 30 Tage — widerrufbar, die Bank antwortet direkt darüber",
     ],
   },
   {

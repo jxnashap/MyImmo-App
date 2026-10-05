@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { pruefeFrischeAnmeldung, REAUTH_MELDUNG } from "@/lib/auth/frisch";
+import { erzeugeFreigabeCode, freigabeCodeHash } from "@/lib/freigabeCode";
+import { EMAIL } from "@/lib/mahnung";
 import { encrypt } from "@/lib/crypto/secure";
 import { BELEIHUNG_CHECKLISTE, type BelDok } from "@/lib/beleihung";
 import { berechneNk, type NkRawPosition } from "@/lib/nk";
@@ -295,6 +297,7 @@ export type Freigabe = {
   ablauf: string;
   aktiv: boolean;
   created_at: string | null;
+  empfaenger_email?: string | null;
 };
 
 // Freigabe erstellen: Eigentümer wählt Dokumente + Ablauf; Angaben (Wunsch-
@@ -304,29 +307,39 @@ export async function createFreigabe(
   itemKeys: string[],
   angaben: Record<string, string>,
   tageAblauf: number,
-): Promise<Freigabe> {
+  empfaengerEmail: string,
+): Promise<{ freigabe: Freigabe; code: string }> {
   const keys = itemKeys.filter((k) => BELEIHUNG_CHECKLISTE.some((i) => i.key === k));
   if (!keys.length) throw new Error("Bitte mindestens ein Dokument auswählen.");
   const tage = [7, 14, 30].includes(tageAblauf) ? tageAblauf : 14;
+  // Seit 05.10.2026 mit Empfänger und Zugangscode (wie der Makler-Link): Der Code geht EINMAL an
+  // die Oberfläche (vorbereitete Mail), gespeichert wird nur sein HMAC.
+  const email = String(empfaengerEmail ?? "").trim().toLowerCase();
+  if (!EMAIL.test(email) || email.length > 200) throw new Error("Bitte eine gültige E-Mail-Adresse der Bank eintragen.");
 
   const { supabase, userId } = await uid();
   // Ein Freigabe-Link öffnet Gehaltsabrechnungen und Ausweis für jeden, der
   // ihn hat — frische Anmeldung verlangen (08.09.2026).
   const frisch = await pruefeFrischeAnmeldung(supabase);
   if (!frisch.ok) throw new Error(REAUTH_MELDUNG);
+  const token = crypto.randomUUID();
+  const code = erzeugeFreigabeCode();
   const { data, error } = await supabase
     .from("beleihung_freigaben")
     .insert({
+      token,
       user_id: userId,
       prop_id: propId,
       item_keys: keys,
       angaben,
       ablauf: new Date(Date.now() + tage * 24 * 3600 * 1000).toISOString(),
+      empfaenger_email: email,
+      code_hash: freigabeCodeHash("bank", token, code),
     })
-    .select("token,item_keys,ablauf,aktiv,created_at")
+    .select("token,item_keys,ablauf,aktiv,created_at,empfaenger_email")
     .single();
   if (error) throw new Error(error.message);
-  return data as Freigabe;
+  return { freigabe: data as Freigabe, code };
 }
 
 // Freigabe widerrufen (owner-scoped über RLS).

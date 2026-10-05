@@ -1,4 +1,4 @@
-import { EMAIL } from "@/lib/mahnung";
+import { zugangsMailLink, zugangsMailText } from "@/lib/zugangsMail";
 
 // Makler-Ordner: schlanke Checkliste der Dokumente, mit denen sich ein
 // Kaufinteressent gegenüber Makler/Verkäufer als seriöser, finanzierungs-
@@ -99,25 +99,12 @@ export function istMaklerCodeFormat(norm: string): boolean {
 }
 
 export function maklerMailText(o: { link: string; code: string; ablauf: string; absender?: string | null }): string {
-  const bis = new Date(o.ablauf).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
-  const gruss = o.absender?.trim() ? `Mit freundlichen Grüßen\n${o.absender.trim()}` : "Mit freundlichen Grüßen";
-  return [
-    "Guten Tag,",
-    "",
-    "über folgenden Link finden Sie meine Unterlagen als Kaufinteressent:",
-    o.link,
-    "",
-    `Zugangscode: ${o.code}`,
-    "",
-    `Der Link gilt bis ${bis}. Bitte leiten Sie Link und Code nicht weiter.`,
-    "",
-    gruss,
-  ].join("\n");
+  return zugangsMailText({ ...o, an: null, betreff: MAKLER_BETREFF, einleitung: MAKLER_EINLEITUNG });
 }
 
 /** `mailto:` mit Empfänger nur, wenn die Adresse dem einfachen Muster entspricht (kein `?bcc=`). */
 export function maklerMailLink(o: { an: string | null; link: string; code: string; ablauf: string; absender?: string | null }): string {
-  const an = o.an && EMAIL.test(o.an.trim()) ? o.an.trim() : "";
-  const betreff = "Meine Unterlagen als Kaufinteressent";
-  return `mailto:${an}?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(maklerMailText(o).replace(/\n/g, "\r\n"))}`;
+  return zugangsMailLink({ ...o, betreff: MAKLER_BETREFF, einleitung: MAKLER_EINLEITUNG });
 }
+const MAKLER_BETREFF = "Meine Unterlagen als Kaufinteressent";
+const MAKLER_EINLEITUNG = "über folgenden Link finden Sie meine Unterlagen als Kaufinteressent:";
