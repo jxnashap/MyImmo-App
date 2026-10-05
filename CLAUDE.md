@@ -503,6 +503,23 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Aufgaben“ auf dem Dashboard als `.listen-zeile` (Titel, darunter Mieter/Objekt — viele Aufgaben
   heißen gleich, der Unterschied darf nicht hinter „…“ verschwinden; Fristdatum rechts, rot wenn
   dringend). `.heute-zeile` ist entfernt.
+- 🧰 **Hausmeister & Servicepartner, Schritt 1 gebaut (05.10.2026, Idee im Memory-Repo).**
+  Entscheidungen des Betreibers: Hausmeister darf Fachbetriebe nur VORSCHLAGEN (nie selbst
+  beauftragen); Fachbetrieb ohne Konto, nur per Auftrags-Link; Rollen mit Konto: Vermieter,
+  **Hausmeister** (betreut zugewiesene Objekte, stellt Anträge, sieht das Firmenverzeichnis),
+  **Dienstleister** (sieht nur Aufträge, die ihm gegeben werden). Migrationen `20261005100000/
+  101000/102000`: `service_zugaenge.rolle` + RPC `service_rolle_setzen`, Tabelle `service_objekte`,
+  Sicht `service_objekte_portal` (Bezeichnung/Adresse — nie die `properties`-Zeile), Antrag nur als
+  Hausmeister und nur für zugewiesene Objekte (DB-Regel), Firmenverzeichnis nur für Hausmeister.
+  Vermieter: `/anliegen?tab=service` → je Partner aufklappbar Rolle, Objekte, „Partner wechseln“
+  (`uebergebeServicePartner`: nur OFFENE Aufträge + wahlweise Objekte; Erledigtes bleibt beim
+  alten). `tests/serviceObjekte.test.ts`, neun Mutationen rot. **Regeln:** (1) Ein Partner liest
+  Objekte nur über `service_objekte_portal`. (2) Neue Rechte eines Partners hängen an
+  `service_zugaenge.rolle`, nie an „ist verknüpft“. (3) Demo-Sperren auf einer neuen Tabelle NICHT
+  als `for all` anlegen, wenn die Demo dort Daten LESEN soll (sperrt sonst auch SELECT — so
+  passiert, `20261005102000`). **Offen (Schritt 2 + 3):** Verlauf mit Fotos/Notizen am Auftrag,
+  „selbst erledigt“ vs. „Fachbetrieb nötig“, Sperre Gas/Strom/Trinkwasser/Schornstein,
+  Freigabe mit Rückfrage.
 - ✉️ **Mahnung/Zahlungserinnerung versenden (05.10.2026, Vorgabe des Betreibers: „wir halten uns
   aus dem Mailverkehr raus“).** Brief-Generator → „An den Mieter senden“ (`components/BriefVersand.tsx`):
   **Per Mail** = PDF erzeugen, am Handy über „Teilen“ direkt angehängt, sonst Download + `mailto:`

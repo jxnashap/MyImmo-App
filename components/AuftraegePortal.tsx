@@ -19,7 +19,14 @@ export type PortalFirmaRow = {
   id: string; name: string; gewerk: string | null; telefon: string | null;
   email: string | null; website: string | null; notiz: string | null;
 };
-export type AuftraggeberRow = { vermieter_id: string; label: string };
+export type AuftraggeberRow = {
+  vermieter_id: string;
+  label: string;
+  /** Nur als Hausmeister kann er Anträge stellen (Migration 20261005100000). */
+  rolle?: "hausmeister" | "dienstleister";
+};
+/** Zugewiesenes Objekt (Sicht `service_objekte_portal`). */
+export type PortalObjektRow = { id: string; bezeichnung: string; adresse: string | null; vermieter_id: string };
 
 /** Hinweis statt Absenden — Vorschau beim Vermieter und Demo-Hausmeister. */
 export const VORSCHAU_NICHT_GESENDET = "Nur Ansicht — in der Demo wird nichts gesendet.";
@@ -212,11 +219,16 @@ function Eintrag({ a, firmen, vorschau }: { a: PortalAuftragRow; firmen: PortalF
   );
 }
 
-function AntragForm({ auftraggeber, firmen, vorschau }: { auftraggeber: AuftraggeberRow[]; firmen: PortalFirmaRow[]; vorschau: boolean }) {
+function AntragForm({
+  auftraggeber, firmen, objekte, vorschau,
+}: { auftraggeber: AuftraggeberRow[]; firmen: PortalFirmaRow[]; objekte: PortalObjektRow[]; vorschau: boolean }) {
   const [offen, setOffen] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [ok, setOk] = useState<null | "freigegeben" | "wartet">(null);
   const [pending, startTransition] = useTransition();
+  const [vermieterId, setVermieterId] = useState(auftraggeber.length === 1 ? auftraggeber[0].vermieter_id : "");
+  // Nur Objekte des gewählten Auftraggebers — und nur die, die er zugewiesen hat.
+  const seineObjekte = objekte.filter((o) => o.vermieter_id === vermieterId);
 
   const senden = (fd: FormData) =>
     startTransition(async () => {
@@ -251,15 +263,25 @@ function AntragForm({ auftraggeber, firmen, vorschau }: { auftraggeber: Auftragg
             ) : (
               <div className="form-group">
                 <label>Auftraggeber *</label>
-                <select name="vermieterId" required defaultValue="">
+                <select name="vermieterId" required value={vermieterId} onChange={(e) => setVermieterId(e.target.value)}>
                   <option value="" disabled>– wählen –</option>
                   {auftraggeber.map((v) => <option key={v.vermieter_id} value={v.vermieter_id}>{v.label}</option>)}
                 </select>
               </div>
             )}
+            <div className="form-row single">
+              <div className="form-group"><label>Was muss gemacht werden? *</label><input name="titel" required maxLength={200} placeholder="z. B. Dachrinne verstopft" /></div>
+            </div>
             <div className="form-row">
-              <div className="form-group"><label>Was muss gemacht werden? *</label><input name="titel" required maxLength={200} placeholder="z. B. Dachrinne verstopft, Haus Lindenstraße" /></div>
-              <div className="form-group"><label>Objekt / Wohnung</label><input name="objekt" maxLength={200} placeholder="z. B. Lindenstraße 12, EG links" /></div>
+              <div className="form-group">
+                <label>Objekt</label>
+                {/* Nur zugewiesene Objekte — die Datenbank lehnt jedes andere ab. */}
+                <select name="propId" defaultValue="" key={vermieterId}>
+                  <option value="">{seineObjekte.length === 0 ? "– kein Objekt zugewiesen –" : "– allgemein, kein bestimmtes Objekt –"}</option>
+                  {seineObjekte.map((o) => <option key={o.id} value={o.id}>{o.bezeichnung}{o.adresse ? ` · ${o.adresse}` : ""}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label>Wo genau?</label><input name="objekt" maxLength={200} placeholder="z. B. EG links, Keller, Dach" /></div>
             </div>
             <div className="form-row">
               <div className="form-group">
@@ -293,20 +315,57 @@ function AntragForm({ auftraggeber, firmen, vorschau }: { auftraggeber: Auftragg
   );
 }
 
+/** Die Objekte, die der Vermieter dem Hausmeister zugewiesen hat — eine Zeile je Objekt. */
+function ObjektListe({ objekte, mehrereAuftraggeber, auftraggeber }: { objekte: PortalObjektRow[]; mehrereAuftraggeber: boolean; auftraggeber: AuftraggeberRow[] }) {
+  if (objekte.length === 0) return null;
+  const name = (id: string) => auftraggeber.find((a) => a.vermieter_id === id)?.label ?? "";
+  return (
+    <div className="section">
+      <div className="section-header">
+        <h3><Building2 size={15} style={{ verticalAlign: "-2px" }} /> Deine Objekte</h3>
+        <span className="badge badge-neutral">{objekte.length}</span>
+      </div>
+      <div className="section-body">
+        {objekte.map((o) => (
+          <div key={o.id} className="listen-zeile" style={{ cursor: "default" }}>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span className="listen-zeile-titel" style={{ fontWeight: 500 }}>{o.bezeichnung}</span>
+              <span className="listen-zeile-sub">{[o.adresse, mehrereAuftraggeber ? name(o.vermieter_id) : null].filter(Boolean).join(" · ")}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AuftraegePortal({
-  auftraege, firmen, auftraggeber, vorschau = false,
+  auftraege, firmen, auftraggeber, objekte = [], vorschau = false,
 }: {
   auftraege: PortalAuftragRow[];
   firmen: PortalFirmaRow[];
   auftraggeber: AuftraggeberRow[];
+  /** Zugewiesene Objekte (nur Hausmeister). */
+  objekte?: PortalObjektRow[];
   /** Formulare ausfüllbar, Senden aus (Ansicht beim Vermieter, Demo). */
   vorschau?: boolean;
 }) {
   const offene = auftraege.filter((a) => ["offen", "angenommen", "freigabe"].includes(a.status));
   const erledigte = auftraege.filter((a) => ["erledigt", "abgelehnt", "nicht_freigegeben"].includes(a.status));
+  // Anträge stellt nur ein Hausmeister — die Datenbank prüft dieselbe Rolle.
+  const alsHausmeister = auftraggeber.filter((a) => (a.rolle ?? "hausmeister") === "hausmeister");
   return (
     <>
-      <AntragForm auftraggeber={auftraggeber} firmen={firmen} vorschau={vorschau} />
+      {alsHausmeister.length > 0 ? (
+        <AntragForm auftraggeber={alsHausmeister} firmen={firmen} objekte={objekte} vorschau={vorschau} />
+      ) : (
+        <p className="dienstleister-hinweis">
+          Als Dienstleister siehst du hier die Aufträge, die dir gegeben werden — mit Termin,
+          Ort und Ansprechpartner. Neue Arbeiten beauftragt der Vermieter.
+        </p>
+      )}
+
+      <ObjektListe objekte={objekte} mehrereAuftraggeber={auftraggeber.length > 1} auftraggeber={auftraggeber} />
 
       <div className="section">
         <div className="section-header">
@@ -325,6 +384,7 @@ export default function AuftraegePortal({
         </div>
       </div>
 
+      {alsHausmeister.length > 0 && (
       <div className="section">
         <div className="section-header"><h3><Building2 size={15} style={{ verticalAlign: "-2px" }} /> Firmenverzeichnis des Vermieters</h3></div>
         <div className="section-body">
@@ -346,6 +406,7 @@ export default function AuftraegePortal({
           )}
         </div>
       </div>
+      )}
 
       {erledigte.length > 0 && (
         <div className="section">

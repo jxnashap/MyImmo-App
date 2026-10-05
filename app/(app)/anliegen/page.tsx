@@ -47,7 +47,7 @@ export default async function AnliegenPage(
   const [
     { data: rows }, { data: mieter }, { data: props }, { data: anfrageRows }, { data: zugaenge },
     { data: linkRows }, { data: bewerbungRows },
-    { data: partnerRows }, { data: codeRows }, { data: auftragRows }, { data: firmenRows },
+    { data: partnerRows }, { data: codeRows }, { data: auftragRows }, { data: firmenRows }, { data: zuordnungRows },
   ] = await Promise.all([
     supabase.from("anliegen").select("*").order("created_at", { ascending: false }),
     supabase.from("mieter").select("id,vorname,nachname,prop_id,mietende"),
@@ -56,11 +56,13 @@ export default async function AnliegenPage(
     supabase.from("mieter_zugaenge").select("mieter_id,user_id,prop_id"),
     supabase.from("bewerber_links").select("*").order("created_at", { ascending: false }),
     supabase.from("bewerbungen").select("*").order("created_at", { ascending: false }).limit(200),
-    supabase.from("service_zugaenge").select("user_id,firma,email,created_at").order("created_at", { ascending: false }),
+    supabase.from("service_zugaenge").select("user_id,firma,email,created_at,rolle").order("created_at", { ascending: false }),
     supabase.from("einladungscodes").select("code,gueltig_bis").eq("rolle", "service").is("eingeloest_am", null).gt("gueltig_bis", new Date().toISOString()).order("created_at", { ascending: false }),
     // rechnung_data (Base64) bewusst NICHT laden — nur Metadaten für die Liste.
     supabase.from("auftraege").select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,service_user_id,erstellt_von,firma_id,mieter_id,public_token,betrag,lohnanteil,rechnung_name,kosten_id,kosten_schaetzung,auto_freigegeben").order("created_at", { ascending: false }).limit(100),
     supabase.from("firmen").select("id,name,gewerk,telefon,email,website,notiz").order("name"),
+    // Welcher Partner betreut welche Objekte (Migration 20261005100000).
+    supabase.from("service_objekte").select("service_user_id,prop_id"),
   ]);
 
   // Bewerbungs-Dokumente: nur Metadaten (ohne Base64-data) für die Liste —
@@ -146,8 +148,11 @@ export default async function AnliegenPage(
   }));
   const neueBewerbungen = bewerbungen.filter((b) => b.status === "neu").length;
 
+  const zuordnung = (zuordnungRows ?? []) as { service_user_id: string; prop_id: string }[];
   const partner: ServicePartnerRow[] = (partnerRows ?? []).map((p) => ({
     user_id: p.user_id, firma: p.firma, email: p.email, created_at: p.created_at,
+    rolle: p.rolle === "dienstleister" ? "dienstleister" : "hausmeister",
+    objekte: zuordnung.filter((z) => z.service_user_id === p.user_id).map((z) => z.prop_id),
   }));
   const partnerName = (id: string) => {
     const p = partner.find((x) => x.user_id === id);

@@ -8,7 +8,7 @@ import {
   Building2, Phone, Mail, Globe, ShieldCheck,
 } from "lucide-react";
 import {
-  erzeugeServiceCode, widerrufeServiceCode, entferneServicePartner,
+  erzeugeServiceCode, widerrufeServiceCode, entferneServicePartner, setzeServicePartner, uebergebeServicePartner,
   erstelleAuftrag, loescheAuftrag, entscheideAuftrag, uebernimmAuftragAlsKosten,
   setzeKostengrenze,
 } from "@/lib/actions/service";
@@ -21,7 +21,13 @@ import { useToast } from "@/components/Toast";
 import { actionFehler } from "@/lib/actionErgebnis";
 import { VORSCHAU_NICHT_GESENDET } from "@/components/AuftraegePortal";
 
-export type ServicePartnerRow = { user_id: string; firma: string | null; email: string | null; created_at: string };
+export type ServicePartnerRow = {
+  user_id: string; firma: string | null; email: string | null; created_at: string;
+  /** Hausmeister betreut Objekte und stellt Anträge; Dienstleister sieht nur seine Aufträge. */
+  rolle: "hausmeister" | "dienstleister";
+  /** IDs der zugewiesenen Objekte (`service_objekte`). */
+  objekte: string[];
+};
 export type ServiceCodeRow = { code: string; gueltig_bis: string };
 export type FirmaRow = {
   id: string; name: string; gewerk: string | null; telefon: string | null;
@@ -309,6 +315,117 @@ function LinkKopierButton({ token }: { token: string }) {
   );
 }
 
+const ROLLEN_TEXT: Record<ServicePartnerRow["rolle"], string> = {
+  hausmeister: "Hausmeister",
+  dienstleister: "Dienstleister",
+};
+
+// Ein Partner: Rolle, betreute Objekte, Übergabe an einen anderen Partner, Trennen
+// (05.10.2026). Aufgeklappt nur bei Bedarf — die Liste bleibt eine Zeile je Partner.
+function PartnerZeile({
+  p, alle, properties, demo,
+}: { p: ServicePartnerRow; alle: ServicePartnerRow[]; properties: { id: string; bezeichnung: string }[]; demo: boolean }) {
+  const [rolle, setRolle] = useState(p.rolle);
+  const [pending, startTransition] = useTransition();
+  const toast = useToast();
+  const name = p.firma || p.email || "Service-Partner";
+  const andere = alle.filter((x) => x.user_id !== p.user_id);
+  const objektNamen = properties.filter((o) => p.objekte.includes(o.id)).map((o) => o.bezeichnung);
+
+  const speichern = (fd: FormData) =>
+    startTransition(async () => {
+      if (demo) return;
+      try {
+        const r = await setzeServicePartner(fd);
+        if ("error" in r) toast(r.error, "error");
+        else toast(`${name}: gespeichert ✓`, "success");
+      } catch {
+        toast("Speichern fehlgeschlagen.", "error");
+      }
+    });
+  const uebergeben = (fd: FormData) =>
+    startTransition(async () => {
+      if (demo) return;
+      try {
+        const r = await uebergebeServicePartner(fd);
+        if ("error" in r) toast(r.error, "error");
+        else toast(`Übergeben: ${r.auftraege} offene Aufträge${r.objekte ? `, ${r.objekte} Objekte` : ""} ✓`, "success");
+      } catch {
+        toast("Übergabe fehlgeschlagen.", "error");
+      }
+    });
+
+  return (
+    <details className="partner-zeile">
+      <summary>
+        <Wrench size={14} color="var(--gold)" style={{ flexShrink: 0 }} />
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span className="listen-zeile-titel" style={{ fontWeight: 600 }}>{name}</span>
+          <span className="listen-zeile-sub">
+            {[ROLLEN_TEXT[p.rolle], p.rolle === "hausmeister" ? (objektNamen.length ? objektNamen.join(", ") : "noch keine Objekte") : null, p.firma && p.email ? p.email : null]
+              .filter(Boolean).join(" · ")}
+          </span>
+        </span>
+        <span style={{ fontSize: 11, color: "var(--faint)", whiteSpace: "nowrap" }}>seit {datum(p.created_at)}</span>
+      </summary>
+      <div className="partner-inhalt">
+        <form action={speichern} style={{ display: "grid", gap: 10 }}>
+          <input type="hidden" name="serviceUserId" value={p.user_id} />
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Rolle</label>
+            <select name="rolle" value={rolle} onChange={(e) => setRolle(e.target.value as ServicePartnerRow["rolle"])}>
+              <option value="hausmeister">Hausmeister — betreut Objekte, stellt Anträge</option>
+              <option value="dienstleister">Dienstleister — sieht nur Aufträge, die du ihm gibst</option>
+            </select>
+          </div>
+          {rolle === "hausmeister" && (
+            <fieldset className="partner-objekte">
+              <legend>Betreute Objekte — er sieht nur diese (Name und Adresse, keine Zahlen)</legend>
+              {properties.length === 0 ? (
+                <span style={{ fontSize: 12, color: "var(--faint)" }}>Noch keine Objekte angelegt.</span>
+              ) : (
+                properties.map((o) => (
+                  <label key={o.id}>
+                    <input type="checkbox" name="objekt" value={o.id} defaultChecked={p.objekte.includes(o.id)} /> {o.bezeichnung}
+                  </label>
+                ))
+              )}
+            </fieldset>
+          )}
+          {demo && <p style={{ fontSize: 11, color: "var(--muted)", margin: 0 }}>{VORSCHAU_NICHT_GESENDET}</p>}
+          <div><button type="submit" className="btn btn-gold" disabled={pending || demo}>{pending ? "…" : "Speichern"}</button></div>
+        </form>
+
+        {andere.length > 0 && (
+          <form action={uebergeben} className="partner-uebergabe">
+            <input type="hidden" name="alt" value={p.user_id} />
+            <div style={{ fontSize: 12, fontWeight: 600 }}>Partner wechseln</div>
+            <p style={{ fontSize: 12, color: "var(--muted)", margin: 0 }}>
+              Offene Aufträge (beantragt, offen, angenommen) gehen an den neuen Partner. Erledigte bleiben hier.
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <select name="neu" required defaultValue="" style={{ flex: "1 1 200px" }}>
+                <option value="" disabled>– an wen? –</option>
+                {andere.map((x) => <option key={x.user_id} value={x.user_id}>{x.firma || x.email || "Partner"} ({ROLLEN_TEXT[x.rolle]})</option>)}
+              </select>
+              {p.objekte.length > 0 && (
+                <label style={{ fontSize: 12, display: "flex", gap: 6, alignItems: "center" }}>
+                  <input type="checkbox" name="mitObjekten" value="1" defaultChecked /> auch die {p.objekte.length} Objekte
+                </label>
+              )}
+              <button type="submit" className="btn btn-outline" disabled={pending || demo}>Übergeben</button>
+            </div>
+          </form>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <DeleteButton action={() => entferneServicePartner(p.user_id)} className="btn btn-ghost" label={<><Trash2 size={13} style={{ verticalAlign: "-2px" }} /> Verknüpfung lösen</>} confirmText="Verknüpfung zu diesem Partner lösen? Er sieht danach keine Objekte und Aufträge von dir mehr." />
+        </div>
+      </div>
+    </details>
+  );
+}
+
 export default function ServiceManager({
   partner, codes, auftraege, properties, firmen, mieterListe, initialTitel, initialText, demo = false, kostengrenze = null,
 }: {
@@ -347,22 +464,14 @@ export default function ServiceManager({
       {partner.length > 0 && <KostengrenzeSektion grenze={kostengrenze} demo={demo} />}
 
       <div className="section">
-        <div className="section-header"><h3>Verknüpfte Service-Partner</h3></div>
+        <div className="section-header"><h3>Verknüpfte Service-Partner</h3><span style={{ fontSize: 12, color: "var(--muted)" }}>Antippen: Rolle, Objekte, Wechsel</span></div>
         <div className="section-body">
           {partner.length === 0 ? (
             <p style={{ fontSize: 12, color: "var(--faint)" }}>
               Noch kein Partner verknüpft — erzeuge oben einen Code und gib ihn weiter.
             </p>
           ) : (
-            partner.map((p) => (
-              <div key={p.user_id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>
-                <Wrench size={14} color="var(--gold)" />
-                <span style={{ fontWeight: 600 }}>{p.firma || p.email || "Service-Partner"}</span>
-                {p.firma && p.email && <span style={{ fontSize: 11, color: "var(--muted)" }}>{p.email}</span>}
-                <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>seit {datum(p.created_at)}</span>
-                <DeleteButton action={() => entferneServicePartner(p.user_id)} className="delete-btn" label={<Trash2 size={13} />} confirmText="Verknüpfung zu diesem Partner lösen?" />
-              </div>
-            ))
+            partner.map((p) => <PartnerZeile key={p.user_id} p={p} alle={partner} properties={properties} demo={demo} />)
           )}
         </div>
       </div>

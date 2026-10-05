@@ -25,7 +25,7 @@ export default function ServicePortalAnsicht({
   /** Konto/Abmelden nur andeuten — dort wäre es das Konto des VERMIETERS. */
   ansichtImVermieterKonto?: boolean;
 }) {
-  const { zugaenge, auftraege, firmen, auftraggeber } = daten;
+  const { zugaenge, auftraege, firmen, auftraggeber, objekte } = daten;
   return (
     <div
       style={{ minHeight: ansichtImVermieterKonto ? undefined : "100vh", background: "var(--bg)", color: "var(--text)" }}
@@ -85,7 +85,7 @@ export default function ServicePortalAnsicht({
                 ? `1 Auftraggeber (seit ${datum(zugaenge[0].created_at)})`
                 : `${zugaenge.length} Auftraggebern`} — neue Aufträge erscheinen automatisch.
             </p>
-            <AuftraegePortal auftraege={auftraege} firmen={firmen} auftraggeber={auftraggeber} vorschau={vorschau} />
+            <AuftraegePortal auftraege={auftraege} firmen={firmen} auftraggeber={auftraggeber} objekte={objekte} vorschau={vorschau} />
           </>
         )}
       </main>

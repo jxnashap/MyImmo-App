@@ -71,8 +71,128 @@ export async function entferneServicePartner(serviceUserId: string) {
     .eq("vermieter_id", user.id)
     .eq("user_id", serviceUserId);
   if (error) return { error: "Verknüpfung konnte nicht gelöst werden — der Zugriff besteht weiter." };
+  // Zuordnungen mit entfernen. Sichtbar wären sie ohnehin nicht mehr (Regel und Sicht verlangen
+  // eine bestehende Verknüpfung) — aber ein erneut eingeladener Partner bekäme sonst alte Objekte zurück.
+  const { error: oFehler } = await supabase
+    .from("service_objekte")
+    .delete()
+    .eq("vermieter_id", user.id)
+    .eq("service_user_id", serviceUserId);
+  if (oFehler) return { error: "Verknüpfung gelöst, aber die Objekt-Zuordnung blieb gespeichert — bitte erneut versuchen." };
   revalidatePath("/anliegen");
   return { ok: true };
+}
+
+const ROLLEN = ["hausmeister", "dienstleister"] as const;
+const OFFENE_STATUS = ["freigabe", "offen", "angenommen"];
+
+/**
+ * Vermieter: Rolle und Objekte eines Partners festlegen (05.10.2026).
+ * Hausmeister betreut die angehakten Objekte; ein Dienstleister hat keine Objekte (er sieht nur,
+ * was ihm beauftragt wird) — seine Zuordnungen werden deshalb entfernt.
+ */
+export async function setzeServicePartner(formData: FormData): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const serviceUserId = String(formData.get("serviceUserId") ?? "");
+  const rolle = String(formData.get("rolle") ?? "");
+  if (!(ROLLEN as readonly string[]).includes(rolle)) return { error: "Bitte eine Rolle wählen." };
+  const gewuenscht = rolle === "hausmeister"
+    ? [...new Set(formData.getAll("objekt").map(String).filter(Boolean))]
+    : [];
+
+  const { data: gesetzt, error: rFehler } = await supabase.rpc("service_rolle_setzen", { p_user: serviceUserId, p_rolle: rolle });
+  if (rFehler || gesetzt !== true) return { error: "Service-Partner nicht gefunden." };
+
+  // Nur eigene Objekte — die Datenbank prüft es ebenfalls; hier für eine klare Meldung.
+  if (gewuenscht.length > 0) {
+    const { data: eigene, error: pFehler } = await supabase
+      .from("properties").select("id").eq("user_id", user.id).in("id", gewuenscht);
+    if (pFehler) return { error: "Objekte konnten nicht geprüft werden — nichts geändert." };
+    if ((eigene ?? []).length !== gewuenscht.length) return { error: "Mindestens ein Objekt gehört nicht zu deinem Konto." };
+  }
+
+  // Fail-closed: Ohne den aktuellen Stand wüssten wir nicht, was zu entfernen ist.
+  const { data: jetzt, error: jFehler } = await supabase
+    .from("service_objekte").select("prop_id").eq("vermieter_id", user.id).eq("service_user_id", serviceUserId);
+  if (jFehler) return { error: "Zuordnung konnte nicht gelesen werden — nichts geändert." };
+  const vorhanden = new Set(((jetzt ?? []) as { prop_id: string }[]).map((r) => r.prop_id));
+  const neu = gewuenscht.filter((id) => !vorhanden.has(id));
+  const weg = [...vorhanden].filter((id) => !gewuenscht.includes(id));
+
+  if (neu.length > 0) {
+    const { error } = await supabase
+      .from("service_objekte")
+      .insert(neu.map((prop_id) => ({ vermieter_id: user.id, service_user_id: serviceUserId, prop_id })));
+    if (error) return { error: "Objekte konnten nicht zugewiesen werden." };
+  }
+  if (weg.length > 0) {
+    const { error } = await supabase
+      .from("service_objekte")
+      .delete()
+      .eq("vermieter_id", user.id)
+      .eq("service_user_id", serviceUserId)
+      .in("prop_id", weg);
+    if (error) return { error: "Objekte konnten nicht entfernt werden — der Partner sieht sie weiterhin." };
+  }
+  revalidatePath("/anliegen");
+  revalidatePath("/service");
+  return { ok: true };
+}
+
+/**
+ * Vermieter: Hausmeister wechseln (05.10.2026). Offene Aufträge (Freigabe, offen, angenommen)
+ * und — auf Wunsch — die Objekte gehen an den neuen Partner. Erledigte bleiben beim alten
+ * (das ist seine Arbeit und der Nachweis dafür).
+ */
+export async function uebergebeServicePartner(formData: FormData): Promise<{ ok: true; auftraege: number; objekte: number } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const alt = String(formData.get("alt") ?? "");
+  const neu = String(formData.get("neu") ?? "");
+  const mitObjekten = formData.get("mitObjekten") === "1";
+  if (!alt || !neu || alt === neu) return { error: "Bitte einen anderen Partner wählen." };
+
+  const { data: beide, error: zFehler } = await supabase
+    .from("service_zugaenge").select("user_id,rolle").eq("vermieter_id", user.id).in("user_id", [alt, neu]);
+  if (zFehler) return { error: "Partner konnten nicht geprüft werden — nichts übergeben." };
+  const neuZugang = ((beide ?? []) as { user_id: string; rolle: string }[]).find((z) => z.user_id === neu);
+  if ((beide ?? []).length !== 2 || !neuZugang) return { error: "Beide Partner müssen mit deinem Konto verknüpft sein." };
+
+  const { data: verschoben, error: aFehler } = await supabase
+    .from("auftraege")
+    .update({ service_user_id: neu })
+    .eq("vermieter_id", user.id)
+    .eq("service_user_id", alt)
+    .in("status", OFFENE_STATUS)
+    .select("id");
+  if (aFehler) return { error: "Aufträge konnten nicht übergeben werden." };
+
+  let objekte = 0;
+  if (mitObjekten) {
+    if (neuZugang.rolle !== "hausmeister") return { error: "Objekte gehen nur an einen Hausmeister — die Aufträge wurden übergeben." };
+    const { data: altObj, error: oFehler } = await supabase
+      .from("service_objekte").select("prop_id").eq("vermieter_id", user.id).eq("service_user_id", alt);
+    if (oFehler) return { error: "Aufträge übergeben, Objekte nicht — bitte erneut versuchen." };
+    const ids = ((altObj ?? []) as { prop_id: string }[]).map((r) => r.prop_id);
+    if (ids.length > 0) {
+      const { error: insFehler } = await supabase
+        .from("service_objekte")
+        .upsert(ids.map((prop_id) => ({ vermieter_id: user.id, service_user_id: neu, prop_id })), { onConflict: "service_user_id,prop_id", ignoreDuplicates: true });
+      if (insFehler) return { error: "Aufträge übergeben, Objekte nicht — bitte erneut versuchen." };
+      const { error: delFehler } = await supabase
+        .from("service_objekte").delete().eq("vermieter_id", user.id).eq("service_user_id", alt);
+      if (delFehler) return { error: "Objekte übergeben, aber beim bisherigen Partner nicht entfernt — er sieht sie weiterhin." };
+    }
+    objekte = ids.length;
+  }
+  revalidatePath("/anliegen");
+  revalidatePath("/service");
+  return { ok: true, auftraege: (verschoben ?? []).length, objekte };
 }
 
 /** Vermieter: Auftrag an einen verknüpften Service-Partner erstellen. */
@@ -152,6 +272,7 @@ export async function beantrageAuftrag(formData: FormData) {
   const titel = String(formData.get("titel") ?? "").trim();
   const beschreibung = String(formData.get("beschreibung") ?? "").trim();
   const objekt = String(formData.get("objekt") ?? "").trim();
+  const propId = String(formData.get("propId") ?? "").trim();
   const firmaId = String(formData.get("firmaId") ?? "").trim();
   const termin = String(formData.get("termin") ?? "").trim();
   const schaetzungRoh = String(formData.get("kostenSchaetzung") ?? "").trim();
@@ -169,6 +290,17 @@ export async function beantrageAuftrag(formData: FormData) {
     unterGrenze = !gFehler && typeof grenze === "number" && schaetzung <= grenze;
   }
 
+  // Objekt: nur eines, das der Vermieter ihm zugewiesen hat (Sicht `service_objekte_portal`).
+  // Die Datenbank prüft dasselbe beim Einfügen — hier entsteht der lesbare Objektname.
+  let objektName: string | null = objekt || null;
+  if (propId) {
+    const { data: o, error: oFehler } = await supabase
+      .from("service_objekte_portal").select("id,bezeichnung,adresse").eq("id", propId).eq("vermieter_id", vermieterId).maybeSingle();
+    if (oFehler || !o) return { error: "Dieses Objekt ist dir nicht zugewiesen." };
+    const name = [o.bezeichnung, o.adresse].filter(Boolean).join(", ");
+    objektName = objekt ? `${name} — ${objekt}` : name;
+  }
+
   // Vorgeschlagene Firma muss zum gewählten Auftraggeber gehören.
   let firmaOk: string | null = null;
   if (firmaId) {
@@ -182,7 +314,8 @@ export async function beantrageAuftrag(formData: FormData) {
     vermieter_id: vermieterId,
     service_user_id: user.id,
     firma_id: firmaOk,
-    objekt_name: objekt || null,
+    prop_id: propId || null,
+    objekt_name: objektName ? objektName.slice(0, 300) : null,
     titel: titel.slice(0, 200),
     beschreibung: beschreibung.slice(0, 2000) || null,
     termin: termin || null,
