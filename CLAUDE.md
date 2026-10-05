@@ -993,7 +993,10 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   Makler-Code passt nie auf einen Bank-Link), `components/ZugangsCodeFormular.tsx`.
   **Ohne `DATA_ENCRYPTION_KEY` lässt sich kein Link erstellen** (fail-closed, gewollt).
   **Regel: Ein neuer öffentlicher Freigabe-Link bekommt dasselbe Verfahren — keine Inhalte über
-  den Token allein.** Die Rückfall-Datei für das Bank-Protokoll stellt seitdem die Code-Fassung
+  den Token allein.** **Bewusst OHNE Code (Betreiber 05.10.2026: „Bewerber egal“):** der
+  Bewerbungs-Link — er zeigt nur den Steckbrief, den der Vermieter selbst öffentlich macht, und
+  nimmt Daten entgegen statt sie herauszugeben. Offen, nicht entschieden: der Auftrags-Link für
+  Firmen (zeigt den Mieterkontakt, wenn freigegeben). Die Rückfall-Datei für das Bank-Protokoll stellt seitdem die Code-Fassung
   her (die alte hätte die Unterlagen wieder ohne Code geöffnet).
   Beide Listen zeigen auch widerrufene/abgelaufene Links (blass, ohne Knöpfe) — wer aus Sorge
   widerruft, will gerade dann das Protokoll sehen (vorher zeigte der Bank-Ordner nur aktive).
