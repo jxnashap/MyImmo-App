@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import BeleihungsOrdner from "@/components/BeleihungsOrdner";
 import type { BelDok } from "@/lib/beleihung";
 import type { Freigabe } from "@/lib/actions/beleihung";
+import { ABRUF_SPALTEN, type Abruf } from "@/lib/freigabeAbrufe";
 
 export const dynamic = "force-dynamic";
 
@@ -39,13 +40,23 @@ export default async function BeleihungPage(props: { params: Promise<{ id: strin
 
   // Rückmeldungen der Bank zu den Freigaben dieses Objekts (RLS: nur eigene).
   const tokens = (freigaben ?? []).map((f) => f.token);
-  const { data: rueckmeldungen } = tokens.length
-    ? await supabase
-        .from("beleihung_rueckmeldungen")
-        .select("id,token,name,bank,kontakt,nachricht,fehlend,created_at")
-        .in("token", tokens)
-        .order("created_at", { ascending: false })
-    : { data: [] };
+  // Dazu das Abruf-Protokoll (05.10.2026): wann welches Dokument über einen Link geladen wurde.
+  const [{ data: rueckmeldungen }, { data: abrufe }] = tokens.length
+    ? await Promise.all([
+        supabase
+          .from("beleihung_rueckmeldungen")
+          .select("id,token,name,bank,kontakt,nachricht,fehlend,created_at")
+          .in("token", tokens)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("freigabe_abrufe")
+          .select(ABRUF_SPALTEN)
+          .eq("art", "bank")
+          .in("token", tokens)
+          .order("abgerufen_am", { ascending: false })
+          .limit(300),
+      ])
+    : [{ data: [] }, { data: [] }];
 
   const hatMieter = (mieter ?? []).some((m) => !m.mietende || new Date(m.mietende) >= new Date());
   const restschuld = (kredite ?? []).reduce((s, k) => s + (k.restschuld ?? k.betrag ?? 0), 0);
@@ -60,6 +71,7 @@ export default async function BeleihungPage(props: { params: Promise<{ id: strin
       initialDocs={(docs ?? []) as BelDok[]}
       initialFreigaben={(freigaben ?? []) as Freigabe[]}
       rueckmeldungen={(rueckmeldungen ?? []) as never[]}
+      abrufe={(abrufe ?? []) as Abruf[]}
       defaults={{
         darlehen: restschuld > 0 ? String(Math.round(restschuld)) : prop.kaufpreis ? String(Math.round(prop.kaufpreis)) : "",
         wunschrate: rate > 0 ? String(Math.round(rate)) : "",

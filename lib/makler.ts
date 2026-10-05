@@ -66,3 +66,14 @@ export type MaklerDok = {
 export function istMaklerKey(key: string): boolean {
   return MAKLER_CHECKLISTE.some((i) => i.key === key);
 }
+
+// ===== Makler-Link (05.10.2026) =====
+export const maklerLinkPfad = (token: string) => `/makler-link/${token}`;
+
+/** Vorauswahl beim Erstellen: alles mit Datei, außer den datensparsamen Punkten
+ *  (Eigenkapital, Einkommen, Ausweis) — die muss man bewusst anhaken. */
+export function maklerVorauswahl(docs: Record<string, Pick<MaklerDok, "datei_name"> | undefined>): Set<string> {
+  return new Set(
+    MAKLER_CHECKLISTE.filter((i) => !!docs[i.key]?.datei_name && !i.datensparsam).map((i) => i.key),
+  );
+}

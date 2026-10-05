@@ -940,8 +940,19 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   vor den vier Schritten — Bank (Beleihungsordner, Freigabe-Link 7/14/30 Tage), Makler
   (Käufer-Ordner), Bewerber (Link je Wohnung), Handwerker (Angebots-/Auftrags-Link); dazu eine
   Excel-Zeile „Wohnung neu vermieten“. `ORDNER` in `components/LandingPage.tsx`, jede Zeile per
-  `tests/startseite.test.ts` an den Code gebunden. **Der Makler-Ordner hat KEINEN Freigabe-Link**
-  (nur Download je Dokument) — der Test verbietet das Wort „Link“ in dieser Karte.
+  `tests/startseite.test.ts` an den Code gebunden.
+  🔗 **Makler-Link + Abruf-Protokoll (gleicher Tag, Betreiber: „mach beides“):** Makler-Ordner →
+  „Link für den Makler“ (`components/MaklerLink.tsx`): Auswahl, 7/14/30 Tage, frische Anmeldung,
+  widerrufbar; öffentliche Seite `/makler-link/<token>` (nur Download). **Ausweis, Einkommen,
+  Eigenkapital sind NIE vorausgewählt** (`maklerVorauswahl` in `lib/makler.ts`). **Jeder Datei-Abruf
+  über Bank- ODER Makler-Link** steht in `freigabe_abrufe` (Zeitpunkt + Dokument, keine IP,
+  60-s-Bündelung) und wird beim Link angezeigt (`lib/freigabeAbrufe.ts`). Migration `20261005160000`
+  (live), Kontolöschung `20261005161000` ✅ vom Betreiber im SQL-Editor ausgeführt und geprüft. `tests/maklerLink.test.ts`, neun
+  Mutationen rot. **Regel: Eine neue öffentliche Datei-Route über einen Token schreibt ins
+  Abruf-Protokoll (`freigabe_abruf_merken`).** Nebenbei korrigiert: Der Demo-Dialog beschrieb den
+  Makler-Ordner als Exposé/Grundbuch-Sammlung (das ist der Beleihungsordner).
+  Beide Listen zeigen auch widerrufene/abgelaufene Links (blass, ohne Knöpfe) — wer aus Sorge
+  widerruft, will gerade dann das Protokoll sehen (vorher zeigte der Bank-Ordner nur aktive).
   ✅ **Phase 1 (Startseite) erledigt 01.10.2026:** Hero „Deine Immobilien. Ein System. Von überall.“
   (geschützte Leerzeichen, sonst „Ein / System.“ — im Browser gesehen), Kennzahl „1–24 Einheiten“
   statt „13+ Funktionen“, Abschnitt „Deine Daten gehören dir“ (`VERTRAUEN` in

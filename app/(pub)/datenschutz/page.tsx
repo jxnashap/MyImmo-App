@@ -112,12 +112,15 @@ export default function DatenschutzPage() {
         erforderlich sind.
       </p>
 
-      <H3>f) Bank-Freigabelinks (Beleihungsordner)</H3>
+      <H3>f) Freigabelinks für Bank und Makler (Beleihungs- und Makler-Ordner)</H3>
       <p>
-        Erstellen Sie einen Freigabelink für eine Bank, sind die von Ihnen ausgewählten
-        Unterlagen für Inhaber des Links bis zum Ablauf bzw. Widerruf abrufbar. Auswahl,
-        Laufzeit und Widerruf liegen bei Ihnen. Rückmeldungen der Bank (Name, Institut,
-        Kontakt, Nachricht) werden Ihrem Konto zugeordnet gespeichert.
+        Erstellen Sie einen Freigabelink für eine Bank oder einen Makler, sind die von Ihnen
+        ausgewählten Unterlagen für Inhaber des Links bis zum Ablauf bzw. Widerruf abrufbar.
+        Auswahl, Laufzeit (höchstens 30 Tage) und Widerruf liegen bei Ihnen. Rückmeldungen der
+        Bank (Name, Institut, Kontakt, Nachricht) werden Ihrem Konto zugeordnet gespeichert.
+        Jeder Abruf einer Datei über einen solchen Link wird für Sie protokolliert — gespeichert
+        werden nur Zeitpunkt und Dokument, keine IP-Adresse und keine Angaben zur abrufenden
+        Person. Das Protokoll sehen nur Sie; es wird mit Ihrem Konto gelöscht.
       </p>
 
       <H3>g) Vorlagen-Verteiler / E-Mail-Hinweise (freiwillig)</H3>

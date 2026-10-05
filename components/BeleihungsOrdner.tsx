@@ -31,6 +31,7 @@ import {
 } from "@/lib/actions/beleihung";
 import { teilbarerLink } from "@/lib/appUrl";
 import { useModalFokus } from "@/lib/modalFokus";
+import { abrufeJeLink, abrufZusammenfassung, type Abruf } from "@/lib/freigabeAbrufe";
 
 export type Rueckmeldung = {
   id: string;
@@ -51,6 +52,8 @@ type Props = {
   initialDocs: BelDok[];
   initialFreigaben: Freigabe[];
   rueckmeldungen: Rueckmeldung[];
+  /** Abruf-Protokoll der Bank-Links (05.10.2026). */
+  abrufe?: Abruf[];
   defaults: { darlehen: string; wunschrate: string; eigenkapital: string };
 };
 
@@ -85,7 +88,7 @@ function Ring({ done, total }: { done: number; total: number }) {
   );
 }
 
-export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter, initialDocs, initialFreigaben, rueckmeldungen, defaults }: Props) {
+export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter, initialDocs, initialFreigaben, rueckmeldungen, abrufe = [], defaults }: Props) {
   const toast = useToast();
   const [docs, setDocs] = useState<Record<string, BelDok>>(
     Object.fromEntries(initialDocs.map((d) => [d.item_key, d])),
@@ -104,6 +107,8 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
   const [selbst, setSelbst] = useState(false);
   const [busy, setBusy] = useState<string | null>(null); // item_key der laufenden Aktion
   const [dragKey, setDragKey] = useState<string | null>(null);
+  const [protokoll, setProtokoll] = useState<string | null>(null);
+  const abrufeJe = useMemo(() => abrufeJeLink(abrufe), [abrufe]);
 
   // Angaben & Wunsch-Konditionen (fließen ins Deckblatt-PDF)
   const [darlehen, setDarlehen] = useState(defaults.darlehen);
@@ -369,24 +374,41 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
         </div>
       </div>
 
-      {/* Aktive Freigaben */}
-      {freigaben.some((f) => f.aktiv) && (
+      {/* Freigabe-Links — auch widerrufene, damit ihr Abruf-Protokoll sichtbar bleibt (05.10.2026):
+          Wer einen Link aus Sorge widerruft, will gerade dann wissen, was schon geladen wurde. */}
+      {freigaben.length > 0 && (
         <div className="section" style={{ marginBottom: 18 }}>
-          <div className="section-header"><h3>Aktive Freigaben</h3></div>
-          {freigaben.filter((f) => f.aktiv).map((f) => {
+          <div className="section-header"><h3>Freigabe-Links</h3></div>
+          {freigaben.slice(0, 10).map((f) => {
             const abgelaufen = new Date(f.ablauf) < new Date();
             const anz = rueckmeldungen.filter((r) => r.token === f.token).length;
             return (
-              <div key={f.token} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--line)", flexWrap: "wrap" }}>
+              <div key={f.token} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", borderBottom: "1px solid var(--line)", flexWrap: "wrap", opacity: f.aktiv && !abgelaufen ? 1 : 0.65 }}>
                 <div style={{ flex: "1 1 240px", minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     /beleihung/{f.token.slice(0, 8)}… · {f.item_keys.length} Dokument{f.item_keys.length === 1 ? "" : "e"}
                   </div>
                   <div style={{ fontSize: 11, color: abgelaufen ? "var(--red)" : "var(--muted)" }}>
-                    {abgelaufen ? "Abgelaufen am " : "Gültig bis "}{new Date(f.ablauf).toLocaleDateString("de-DE")}
+                    {!f.aktiv ? "Widerrufen" : <>{abgelaufen ? "Abgelaufen am " : "Gültig bis "}{new Date(f.ablauf).toLocaleDateString("de-DE")}</>}
                     {anz > 0 && <> · <span style={{ color: "var(--gold)" }}>{anz} Rückmeldung{anz === 1 ? "" : "en"}</span></>}
                   </div>
+                  <button type="button" onClick={() => setProtokoll(protokoll === f.token ? null : f.token)}
+                    disabled={!abrufeJe.get(f.token)?.length}
+                    style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 11, color: abrufeJe.get(f.token)?.length ? "var(--gold)" : "var(--muted)" }}>
+                    {abrufZusammenfassung(abrufeJe.get(f.token))}
+                  </button>
+                  {protokoll === f.token && (
+                    <ul style={{ margin: "6px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 3 }}>
+                      {(abrufeJe.get(f.token) ?? []).map((a, n) => (
+                        <li key={n} style={{ fontSize: 11.5, color: "var(--muted)", display: "flex", gap: 8 }}>
+                          <span style={{ minWidth: 118 }}>{new Date(a.abgerufen_am).toLocaleString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                          <span style={{ color: "var(--text)" }}>{BELEIHUNG_CHECKLISTE.find((i) => i.key === a.item_key)?.label ?? a.item_key}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
+                {f.aktiv && !abgelaufen && <>
                 <button type="button" className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => kopiereLink(f.token)}><Copy size={12} /> Kopieren</button>
                 <button
                   type="button" className="btn btn-ghost" style={{ fontSize: 11, color: "var(--red)" }}
@@ -400,6 +422,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                 >
                   <X size={12} /> Widerrufen
                 </button>
+                </>}
               </div>
             );
           })}

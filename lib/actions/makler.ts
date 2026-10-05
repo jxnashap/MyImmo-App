@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { encrypt } from "@/lib/crypto/secure";
+import { pruefeFrischeAnmeldung, REAUTH_MELDUNG } from "@/lib/auth/frisch";
 import { MAKLER_CHECKLISTE, istMaklerKey, type MaklerDok } from "@/lib/makler";
 import { buildKaeuferSelbstauskunftPdf } from "@/lib/pdf/kaeuferPdf";
 import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
@@ -174,4 +175,65 @@ export async function removeMaklerDatei(itemKey: string): Promise<MaklerDok> {
     .single();
   if (error) throw new Error(error.message);
   return data as MaklerDok;
+}
+
+// ===== Freigabe-Link für den Makler (05.10.2026, Migration 20261005160000) =====
+// Gegenstück zum Bank-Link. Lesen nur über `makler_public_info`/`makler_public_datei` (Token,
+// aktiv, Ablauf in der Datenbank geprüft); jeder Datei-Abruf landet im Abruf-Protokoll.
+
+export type MaklerFreigabe = {
+  token: string;
+  item_keys: string[];
+  ablauf: string;
+  aktiv: boolean;
+  created_at: string | null;
+};
+
+const FREIGABE_FELDER = "token,item_keys,ablauf,aktiv,created_at";
+
+export async function createMaklerFreigabe(itemKeys: string[], tageAblauf: number): Promise<MaklerFreigabe> {
+  const keys = [...new Set(itemKeys)].filter((k) => istMaklerKey(k));
+  if (!keys.length) throw new Error("Bitte mindestens ein Dokument auswählen.");
+  const tage = [7, 14, 30].includes(tageAblauf) ? tageAblauf : 14;
+
+  const { supabase, userId } = await uid();
+  // Der Link öffnet Ausweis- und Bonitätsunterlagen für jeden, der ihn hat — wie beim Bank-Link
+  // eine frische Anmeldung verlangen.
+  const frisch = await pruefeFrischeAnmeldung(supabase);
+  if (!frisch.ok) throw new Error(REAUTH_MELDUNG);
+
+  // Nur Dokumente, die wirklich eine Datei haben — sonst verspricht der Link etwas Leeres.
+  const { data: vorhanden, error: lesefehler } = await supabase
+    .from("makler_dokumente")
+    .select("item_key,datei_name")
+    .eq("user_id", userId)
+    .in("item_key", keys);
+  if (lesefehler) throw new Error(lesefehler.message);
+  const mitDatei = keys.filter((k) => (vorhanden ?? []).some((d) => d.item_key === k && !!d.datei_name));
+  if (!mitDatei.length) throw new Error("Zu den gewählten Punkten ist noch keine Datei hinterlegt.");
+
+  const { data, error } = await supabase
+    .from("makler_freigaben")
+    .insert({
+      user_id: userId,
+      item_keys: mitDatei,
+      ablauf: new Date(Date.now() + tage * 24 * 3600 * 1000).toISOString(),
+    })
+    .select(FREIGABE_FELDER)
+    .single();
+  if (error) throw new Error(error.message);
+  return data as MaklerFreigabe;
+}
+
+// Widerrufen: der Link ist sofort ungültig. Wieder aktivieren lässt die Datenbank nicht zu.
+export async function widerrufeMaklerFreigabe(token: string): Promise<void> {
+  const { supabase, userId } = await uid();
+  const { data, error } = await supabase
+    .from("makler_freigaben")
+    .update({ aktiv: false })
+    .eq("token", token)
+    .eq("user_id", userId)
+    .select("token")
+    .maybeSingle();
+  if (error || !data) throw new Error(error?.message ?? "Link nicht gefunden.");
 }
