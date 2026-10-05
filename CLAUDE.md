@@ -328,7 +328,8 @@ umbenennen. (3) Zahlen der Kommandozentrale nur aus bestehenden Regeln (Dashboar
 **`docs/zukunft/BUYIMMO.md`**. `tests/bereich.test.ts` + `tests/aufbau.test.ts`, elf Mutationen rot.
 **Sanierungsrechner `/sanierung` (05.10.2026, Stufe 1):** Räume → Flächen → Material VON–BIS →
 ganze Gebinde über ALLE Räume gerundet; Arbeitszeit = Stunden × Satz, den der Nutzer einträgt
-(BuyImmo schätzt keinen Lohn); eigene Posten. `lib/sanierung/` (Katalog als Parameter, Preise mit
+(BuyImmo schätzt keinen Lohn — **außer** der Nutzer wählt „Handwerker“: dann Preise je Einheit aus
+`lib/sanierung/arbeiten.ts`, Entscheidung 05.10.2026); eigene Posten. `lib/sanierung/` (Katalog als Parameter, Preise mit
 Quelle + Stand in `katalog.ts`, Prüfzyklus in `07 Volatile Kennzahlen`), Entwurf nur im Browser.
 `tests/sanierung.test.ts`. **Fliesen:** Boden + Wand bis Fliesenhöhe; geflieste Wand wird von
 Spachteln/Tapete/Farbe ABGEZOGEN (`fliesenwand` in `flaechen()`). **Förderung:** Förderart je eigenem
@@ -347,6 +348,12 @@ Gesamtinvestition − Kaufpreis − Sanierung** (Ampel, Finanzierungsvorschläge
 40.000 € Renovierung für Nebenkosten); die Auswahl trägt `sanierung` mit (`auswahlAus()`). (2) **Meter
 mit `massDe()`, nie `zahlDe0()`** — „4.125“ vom Laser wurde zu 4.125 m. (3) Eigenleistung zählt zur
 Summe, nicht in die Übergabe. Details `docs/zukunft/BUYIMMO.md`.
+**Sanierungs-Guide (Plan + Stufe A, 05.10.2026): `docs/zukunft/SANIERUNGS-GUIDE.md`.** Geführt Seite für
+Seite, Zustand je Gewerk kreuzt Arbeiten vor, Fachbetrieb-Kosten werden mitgerechnet (überschreibbar),
+ETW: Fenster & Co. = Gemeinschaft (Prüfpunkt Sonderumlage). Katalog `lib/sanierung/arbeiten.ts` —
+**Regel: jede Zahl steht wörtlich im Feld `zitat` ihrer Quelle (Test prüft es), mindestens zwei
+unabhängige Quellen, brutto; Werte nie aus einer Zusammenfassung übernehmen** (lag dreimal daneben).
+**GEG heißt seit 29.07.2026 GModG**; die 30-Jahre-Kessel-Austauschpflicht (§ 72) ist weggefallen.
 **Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
 (`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
 kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
