@@ -7,7 +7,9 @@ import { Wrench, CalendarDays, Building2, Phone, Mail, Globe, SendHorizonal, Che
 import { beantworteAuftrag, beantrageAuftrag, meldeFachbetriebNoetig } from "@/lib/actions/service";
 import { datum } from "@/lib/format";
 import { teilbarerLink } from "@/lib/appUrl";
-import { fachbetriebPflicht } from "@/lib/fachbetriebPflicht";
+import { selbstErledigtErlaubt, taetigkeit as taetigkeitVon } from "@/lib/taetigkeiten";
+import TaetigkeitWahl from "@/components/TaetigkeitWahl";
+import { neuSeit, type NeuGrund } from "@/lib/serviceNeu";
 import { rueckfrageOffen, type AuftragNotiz } from "@/lib/auftragNotizen";
 import AuftragVerlauf from "@/components/AuftragVerlauf";
 
@@ -22,6 +24,9 @@ export type PortalAuftragRow = {
   vorgeschlagene_firma_id?: string | null;
   /** Verlauf: Notizen und Fotos (lib/auftragNotizen.ts). */
   notizen?: AuftragNotiz[];
+  /** Art der Arbeit (lib/taetigkeiten.ts). */
+  taetigkeit?: string | null;
+  updated_at?: string | null;
 };
 export type PortalFirmaRow = {
   id: string; name: string; gewerk: string | null; telefon: string | null;
@@ -138,13 +143,17 @@ function FachbetriebForm({ a, firmen, vorschau, fertig }: { a: PortalAuftragRow;
   );
 }
 
-function Eintrag({ a, firmen, vorschau, darfVorschlagen }: { a: PortalAuftragRow; firmen: PortalFirmaRow[]; vorschau: boolean; darfVorschlagen: boolean }) {
+function Eintrag({ a, firmen, vorschau, darfVorschlagen, neu = null }: { a: PortalAuftragRow; firmen: PortalFirmaRow[]; vorschau: boolean; darfVorschlagen: boolean; neu?: NeuGrund | null }) {
   const firma = a.firma_id ? firmen.find((f) => f.id === a.firma_id) ?? null : null;
   const vorgeschlagen = !firma && a.vorgeschlagene_firma_id ? firmen.find((f) => f.id === a.vorgeschlagene_firma_id) ?? null : null;
-  // Gas, Strom, Trinkwasser, Schornstein: „selbst erledigt“ gibt es nicht, solange keine Firma am
-  // Auftrag hängt (der Server prüft dasselbe — lib/fachbetriebPflicht.ts).
-  const pflicht = fachbetriebPflicht(a.titel, a.beschreibung);
-  const selbstGesperrt = !!pflicht && !a.firma_id;
+  // „Selbst erledigt“ nur bei erlaubten Tätigkeiten und ohne Gas/Strom/Wasser/Schornstein-Stichwort;
+  // gilt nur dem Hausmeister (lib/taetigkeiten.ts — der Server prüft dieselbe Regel).
+  const pruefung = selbstErledigtErlaubt({
+    rolle: darfVorschlagen ? "hausmeister" : "dienstleister",
+    taetigkeit: a.taetigkeit, titel: a.titel, beschreibung: a.beschreibung, firmaId: a.firma_id,
+  });
+  const selbstGesperrt = !pruefung.erlaubt;
+  const art = taetigkeitVon(a.taetigkeit);
   const [fachbetrieb, setFachbetrieb] = useState(false);
   const [aktion, setAktion] = useState<null | "angenommen" | "erledigt" | "abgelehnt">(null);
   const [text, setText] = useState("");
@@ -177,7 +186,9 @@ function Eintrag({ a, firmen, vorschau, darfVorschlagen }: { a: PortalAuftragRow
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <Wrench size={14} color="var(--gold)" />
         <span style={{ fontWeight: 600 }}>{a.titel}</span>
+        {neu && <span className="badge badge-gold neu-merkmal">Neu · {neu}</span>}
         <span className={`badge ${s.cls}`}>{s.label}</span>
+        {art && <span className={`badge ${art.selbst ? "badge-neutral" : "badge-amber"}`}>{art.label}</span>}
         {a.vermieter_name && <span className="badge badge-neutral">{a.vermieter_name}</span>}
         {a.termin && (
           <span style={{ fontSize: 11, color: "var(--muted)" }}>
@@ -206,7 +217,7 @@ function Eintrag({ a, firmen, vorschau, darfVorschlagen }: { a: PortalAuftragRow
       )}
       {selbstGesperrt && (a.status === "offen" || a.status === "angenommen") && (
         <p className="pflicht-hinweis" role="note">
-          <strong>Nur Fachbetrieb ({pflicht.bereich}).</strong> {pflicht.grund} Bitte nicht selbst daran arbeiten —
+          <strong>Nur Fachbetrieb.</strong> {!pruefung.erlaubt && pruefung.grund} Bitte nicht selbst daran arbeiten —
           {darfVorschlagen ? " „Fachbetrieb nötig“ wählen." : " melde dich beim Vermieter."}
         </p>
       )}
@@ -359,8 +370,9 @@ function AntragForm({
                 </select>
               </div>
             )}
-            <div className="form-row single">
+            <div className="form-row">
               <div className="form-group"><label>Was muss gemacht werden? *</label><input name="titel" required maxLength={200} placeholder="z. B. Dachrinne verstopft" /></div>
+              <div className="form-group"><label>Art der Arbeit *</label><TaetigkeitWahl /></div>
             </div>
             <div className="form-row">
               <div className="form-group">
@@ -430,13 +442,15 @@ function ObjektListe({ objekte, mehrereAuftraggeber, auftraggeber }: { objekte: 
 }
 
 export default function AuftraegePortal({
-  auftraege, firmen, auftraggeber, objekte = [], vorschau = false,
+  auftraege, firmen, auftraggeber, objekte = [], seitJe = {}, vorschau = false,
 }: {
   auftraege: PortalAuftragRow[];
   firmen: PortalFirmaRow[];
   auftraggeber: AuftraggeberRow[];
   /** Zugewiesene Objekte (nur Hausmeister). */
   objekte?: PortalObjektRow[];
+  /** Je Auftraggeber: ab wann etwas „neu“ ist (lib/serviceNeu.ts). Fehlt er, wird nichts markiert. */
+  seitJe?: Record<string, string>;
   /** Formulare ausfüllbar, Senden aus (Ansicht beim Vermieter, Demo). */
   vorschau?: boolean;
 }) {
@@ -448,6 +462,11 @@ export default function AuftraegePortal({
   // Ohne Vermieter-ID (ältere Zeilen) zählt die einzige Verknüpfung.
   const darf = (a: PortalAuftragRow) =>
     a.vermieter_id ? hausmeisterBei.has(a.vermieter_id) : alsHausmeister.length === auftraggeber.length && alsHausmeister.length > 0;
+  const neuVon = (a: PortalAuftragRow) => {
+    const seit = a.vermieter_id ? seitJe[a.vermieter_id] : undefined;
+    return seit ? neuSeit(a, seit) : null;
+  };
+  const anzahlNeu = auftraege.filter((a) => neuVon(a)).length;
   return (
     <>
       {alsHausmeister.length > 0 ? (
@@ -464,7 +483,10 @@ export default function AuftraegePortal({
       <div className="section">
         <div className="section-header">
           <h3>Aktuelle Aufträge</h3>
-          {offene.length > 0 && <span className="badge badge-amber">{offene.length}</span>}
+          <span style={{ display: "inline-flex", gap: 6 }}>
+            {anzahlNeu > 0 && <span className="badge badge-gold">{anzahlNeu} neu seit deinem letzten Besuch</span>}
+            {offene.length > 0 && <span className="badge badge-amber">{offene.length}</span>}
+          </span>
         </div>
         <div className="section-body">
           {offene.length === 0 ? (
@@ -473,7 +495,7 @@ export default function AuftraegePortal({
               Antrag freigibt, erscheint es hier.
             </p>
           ) : (
-            offene.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} darfVorschlagen={darf(a)} />)
+            offene.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} darfVorschlagen={darf(a)} neu={neuVon(a)} />)
           )}
         </div>
       </div>
@@ -506,7 +528,7 @@ export default function AuftraegePortal({
         <div className="section">
           <div className="section-header"><h3>Abgeschlossen</h3></div>
           <div className="section-body">
-            {erledigte.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} darfVorschlagen={false} />)}
+            {erledigte.map((a) => <Eintrag key={a.id} a={a} firmen={firmen} vorschau={vorschau} darfVorschlagen={false} neu={neuVon(a)} />)}
           </div>
         </div>
       )}

@@ -11,10 +11,12 @@
 // Partner. tests/demoService.test.ts prüft sie.
 import type { PortalAuftragRow, PortalFirmaRow, AuftraggeberRow } from "@/components/AuftraegePortal";
 import { datum } from "@/lib/format";
+import { heuteBerlin } from "@/lib/zeitraum";
+import { seitFuerVergleich } from "@/lib/serviceNeu";
 import { AUFTRAG_NOTIZ_SPALTEN, notizenJeAuftrag, type AuftragNotiz } from "@/lib/auftragNotizen";
 
 export const SERVICE_AUFTRAG_SPALTEN =
-  "id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,vermieter_name,erstellt_von,firma_id,mieter_id,public_token,vermieter_id,vorgeschlagene_firma_id";
+  "id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,vermieter_name,erstellt_von,firma_id,mieter_id,public_token,vermieter_id,vorgeschlagene_firma_id,taetigkeit,updated_at";
 export const SERVICE_FIRMA_SPALTEN = "id,name,gewerk,telefon,email,website,notiz";
 
 /** Rolle je Verknüpfung (Migration 20261005100000): Hausmeister betreut Objekte und stellt
@@ -24,7 +26,9 @@ export type ServiceRolle = "hausmeister" | "dienstleister";
 export type ServiceObjekt = { id: string; bezeichnung: string; adresse: string | null; vermieter_id: string };
 
 export type ServicePortalDaten = {
-  zugaenge: { vermieter_id: string; firma: string | null; created_at: string; rolle: ServiceRolle }[];
+  zugaenge: { vermieter_id: string; firma: string | null; created_at: string; rolle: ServiceRolle; zuletzt_gesehen_am?: string | null }[];
+  /** Je Auftraggeber: ab wann etwas als „neu“ gilt (lib/serviceNeu.ts). */
+  seitJe: Record<string, string>;
   objekte: ServiceObjekt[];
   auftraege: PortalAuftragRow[];
   firmen: PortalFirmaRow[];
@@ -49,7 +53,7 @@ type Db = { from: (tabelle: string) => any };
 export async function ladeServicePortalDaten(supabase: Db, quelle: ServiceQuelle): Promise<ServicePortalDaten> {
   const alsV = quelle.art === "vermieter" ? quelle.vermieterId : null;
 
-  let zq = supabase.from("service_zugaenge").select("vermieter_id,firma,created_at,rolle").eq("user_id", quelle.serviceUserId);
+  let zq = supabase.from("service_zugaenge").select("vermieter_id,firma,created_at,rolle,zuletzt_gesehen_am").eq("user_id", quelle.serviceUserId);
   if (alsV) zq = zq.eq("vermieter_id", alsV);
 
   let aq = supabase.from("auftraege").select(SERVICE_AUFTRAG_SPALTEN).eq("service_user_id", quelle.serviceUserId);
@@ -110,5 +114,8 @@ export async function ladeServicePortalDaten(supabase: Db, quelle: ServiceQuelle
   const alsHausmeister = new Set(z.filter((zz) => zz.rolle !== "dienstleister").map((zz) => zz.vermieter_id));
   const firmen = alsV && !alsHausmeister.has(alsV) ? [] : ((firmenRows ?? []) as PortalFirmaRow[]);
 
-  return { zugaenge: z, objekte, auftraege, firmen, auftraggeber };
+  const heute = heuteBerlin();
+  const seitJe = Object.fromEntries(z.map((zz) => [zz.vermieter_id, seitFuerVergleich(zz.zuletzt_gesehen_am, heute)]));
+
+  return { zugaenge: z, objekte, auftraege, firmen, auftraggeber, seitJe };
 }

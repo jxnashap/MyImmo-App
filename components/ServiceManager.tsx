@@ -21,6 +21,8 @@ import { useToast } from "@/components/Toast";
 import { actionFehler } from "@/lib/actionErgebnis";
 import { VORSCHAU_NICHT_GESENDET } from "@/components/AuftraegePortal";
 import AuftragVerlauf from "@/components/AuftragVerlauf";
+import TaetigkeitWahl from "@/components/TaetigkeitWahl";
+import { taetigkeit as taetigkeitVon } from "@/lib/taetigkeiten";
 import { rueckfrageOffen, type AuftragNotiz } from "@/lib/auftragNotizen";
 
 export type ServicePartnerRow = {
@@ -51,6 +53,8 @@ export type AuftragRow = {
   vorgeschlageneFirma?: string | null;
   /** Verlauf: Notizen und Fotos (lib/auftragNotizen.ts). */
   notizen?: AuftragNotiz[];
+  /** Art der Arbeit (lib/taetigkeiten.ts); bei Aufträgen vor dem 05.10.2026 leer. */
+  taetigkeit?: string | null;
 };
 export type FirmenRueckmeldung = {
   id: string; art: "zusage" | "absage" | "rueckfrage";
@@ -561,6 +565,10 @@ export default function ServiceManager({
                   <input name="titel" required maxLength={200} defaultValue={initialTitel ?? ""} placeholder="z. B. Wasserhahn Küche tropft" />
                 </div>
                 <div className="form-group">
+                  <label>Art der Arbeit *</label>
+                  <TaetigkeitWahl />
+                </div>
+                <div className="form-group">
                   <label>Wunschtermin</label>
                   <input type="date" name="termin" />
                 </div>
@@ -613,6 +621,7 @@ export default function ServiceManager({
                     <span style={{ fontWeight: 600 }}>{a.titel}</span>
                     <span className={`badge ${s.cls}`}>{s.label}</span>
                     <span className="badge badge-neutral">{a.partnerName}</span>
+                    {taetigkeitVon(a.taetigkeit) && <span className={`badge ${taetigkeitVon(a.taetigkeit)!.selbst ? "badge-neutral" : "badge-amber"}`}>{taetigkeitVon(a.taetigkeit)!.label}</span>}
                     {a.erstellt_von === "service" && <span className="badge badge-blue">vom Hausmeister beantragt</span>}
                     {a.status === "freigabe" && rueckfrageOffen(a.notizen ?? []) && <span className="badge badge-amber">Rückfrage offen</span>}
                     {a.status === "freigabe" && !rueckfrageOffen(a.notizen ?? []) && (a.notizen ?? []).some((n) => n.rueckfrage) && <span className="badge badge-green">Hausmeister hat geantwortet</span>}

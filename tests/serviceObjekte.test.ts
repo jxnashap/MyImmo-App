@@ -151,7 +151,7 @@ describe("Trennen räumt die Zuordnung mit ab", () => {
 describe("Antrag des Hausmeisters mit Objekt", () => {
   it("ein zugewiesenes Objekt: prop_id und lesbarer Name landen im Auftrag", async () => {
     const { db, mod } = await lade({ antworten: { service_objekte_portal: { id: "p1", bezeichnung: "Haus A", adresse: "Weg 1" } } });
-    const r = await mod.beantrageAuftrag(fd({ vermieterId: "v1", titel: "Rinne", propId: "p1", objekt: "Dach" }));
+    const r = await mod.beantrageAuftrag(fd({ vermieterId: "v1", titel: "Rinne", taetigkeit: "rinne", propId: "p1", objekt: "Dach" }));
     expect(r).toMatchObject({ ok: true });
     expect(zugriffe(db, "auftraege", "insert")[0].daten).toMatchObject({ prop_id: "p1", objekt_name: "Haus A, Weg 1 — Dach" });
     expect(zugriffe(db, "service_objekte_portal", "select")[0].filter).toEqual(expect.arrayContaining(["eq:id=p1", "eq:vermieter_id=v1"]));
@@ -159,14 +159,14 @@ describe("Antrag des Hausmeisters mit Objekt", () => {
 
   it("ein NICHT zugewiesenes Objekt: kein Auftrag", async () => {
     const { db, mod } = await lade({ antworten: { service_objekte_portal: null } });
-    const r = await mod.beantrageAuftrag(fd({ vermieterId: "v1", titel: "Rinne", propId: "p9" }));
+    const r = await mod.beantrageAuftrag(fd({ vermieterId: "v1", titel: "Rinne", taetigkeit: "rinne", propId: "p9" }));
     expect(r).toEqual({ error: "Dieses Objekt ist dir nicht zugewiesen." });
     expect(zugriffe(db, "auftraege", "insert")).toHaveLength(0);
   });
 
   it("ohne Objekt bleibt der Antrag möglich (allgemein)", async () => {
     const { db, mod } = await lade();
-    await mod.beantrageAuftrag(fd({ vermieterId: "v1", titel: "Werkzeug", objekt: "Keller" }));
+    await mod.beantrageAuftrag(fd({ vermieterId: "v1", titel: "Werkzeug", taetigkeit: "sonstiges", objekt: "Keller" }));
     expect(zugriffe(db, "auftraege", "insert")[0].daten).toMatchObject({ prop_id: null, objekt_name: "Keller" });
   });
 });

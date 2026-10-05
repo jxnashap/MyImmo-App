@@ -538,6 +538,23 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   und Notizen des Hausmeisters (Art `hausmeister`). `tests/auftragVerlauf.test.ts`, sieben weitere
   Mutationen rot. **Bewusst nicht:** Hinweis-Mail an den Vermieter (Brevo versendet noch nicht),
   Servicepartner-Netzwerk/Marktplatz (nur vorbereitet: Auftrag geht an Konto ODER Firma).
+  🔒 **Nacharbeit vor dem Livegang (gleicher Tag, nach externer Prüfung):**
+  (1) ⚠️ **Kontolöschung war unvollständig** — `delete_own_account()` kannte sieben neuere Tabellen
+  nicht (keine mit Kaskade): Fotos, Vollmacht-Scans, Mieter-Adressen blieben liegen. Neue Fassung
+  in `20261005130000` — **muss der Betreiber im SQL-Editor ausführen** (enthält `delete`).
+  **Regel: Jede neue Tabelle mit Konto-Bezug braucht eine Kaskade auf `auth.users` ODER eine
+  Zeile in `delete_own_account()` — `tests/kontoloeschung.test.ts` wird sonst rot.**
+  (2) **Tätigkeit je Auftrag** (`lib/taetigkeiten.ts`, `TaetigkeitWahl`, Migration
+  `20261005140000`): „Selbst erledigt“ nur bei erlaubten Tätigkeiten, Stichworte bleiben zweites
+  Netz; die Tätigkeit ist durch den Spaltenschutz für den Partner unveränderlich. **Fehler dabei
+  gefunden und behoben:** Die Sperre galt für ALLE Partner — ein Sanitärbetrieb (Dienstleister)
+  hätte seinen Heizungsauftrag nicht abschließen können. Jetzt nur Hausmeister
+  (`selbstErledigtErlaubt`, EINE Regel für Oberfläche und Server; Rolle unlesbar → streng).
+  (3) **„Neu seit deinem letzten Besuch“** (`lib/serviceNeu.ts`, `GesehenMelden`, Migration
+  `20261005150000`): Neuer Auftrag, Freigegeben, Nicht freigegeben, Rückfrage, Nachricht — der
+  Besuch wird erst nach 3 s gemeldet, nie in Vorschau/Demo. (4) **Rückfall-Datei**
+  `scripts/sql/rueckfall-hausmeister-2026-10-05.sql`: stellt nur die zwei Regeln mit geändertem
+  Verhalten zurück; alles andere ist rein hinzugefügt.
 - ✉️ **Mahnung/Zahlungserinnerung versenden (05.10.2026, Vorgabe des Betreibers: „wir halten uns
   aus dem Mailverkehr raus“).** Brief-Generator → „An den Mieter senden“ (`components/BriefVersand.tsx`):
   **Per Mail** = PDF erzeugen, am Handy über „Teilen“ direkt angehängt, sonst Download + `mailto:`

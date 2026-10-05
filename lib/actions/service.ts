@@ -7,7 +7,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { zahlDe } from "@/lib/zahl";
-import { fachbetriebPflicht } from "@/lib/fachbetriebPflicht";
+import { selbstErledigtErlaubt, TAETIGKEIT_KEYS } from "@/lib/taetigkeiten";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // ohne 0/O, 1/I/L
 
@@ -211,8 +211,10 @@ export async function erstelleAuftrag(formData: FormData) {
   const termin = String(formData.get("termin") ?? "").trim();
   const anliegenId = String(formData.get("anliegenId") ?? "").trim();
   const mieterId = String(formData.get("mieterId") ?? "").trim();
+  const taetigkeit = String(formData.get("taetigkeit") ?? "").trim();
   if (!serviceUserId) return { error: "Bitte einen Service-Partner wählen." };
   if (!titel) return { error: "Bitte einen Betreff angeben." };
+  if (!TAETIGKEIT_KEYS.includes(taetigkeit)) return { error: "Bitte die Art der Arbeit wählen." };
 
   // Mieter-Kontakt nur teilen, wenn der Mieter dem Vermieter gehört (Opt-in).
   let mieterOk: string | null = null;
@@ -253,6 +255,7 @@ export async function erstelleAuftrag(formData: FormData) {
     beschreibung: beschreibung || null,
     termin: termin || null,
     mieter_id: mieterOk,
+    taetigkeit,
   });
   if (error) return { error: "Auftrag konnte nicht gespeichert werden." };
   revalidatePath("/anliegen");
@@ -277,8 +280,10 @@ export async function beantrageAuftrag(formData: FormData) {
   const firmaId = String(formData.get("firmaId") ?? "").trim();
   const termin = String(formData.get("termin") ?? "").trim();
   const schaetzungRoh = String(formData.get("kostenSchaetzung") ?? "").trim();
+  const taetigkeit = String(formData.get("taetigkeit") ?? "").trim();
   if (!vermieterId) return { error: "Bitte den Auftraggeber wählen." };
   if (!titel) return { error: "Bitte angeben, was gemacht werden muss." };
+  if (!TAETIGKEIT_KEYS.includes(taetigkeit)) return { error: "Bitte die Art der Arbeit wählen." };
   const schaetzung = schaetzungRoh ? parseBetrag(schaetzungRoh) : null;
   if (schaetzungRoh && schaetzung == null) return { error: "Bitte die geschätzten Kosten als Betrag angeben (z. B. 250 oder 1.250,00)." };
 
@@ -321,6 +326,7 @@ export async function beantrageAuftrag(formData: FormData) {
     beschreibung: beschreibung.slice(0, 2000) || null,
     termin: termin || null,
     kosten_schaetzung: schaetzung,
+    taetigkeit,
     status: unterGrenze ? "offen" : "freigabe",
     auto_freigegeben: unterGrenze,
     erstellt_von: "service",
@@ -439,11 +445,18 @@ export async function beantworteAuftrag(formData: FormData) {
     // Gas, Strom, Trinkwasser, Schornstein: „selbst erledigt“ gibt es dort nicht — erst mit
     // einem (vom Vermieter freigegebenen) Fachbetrieb am Auftrag (lib/fachbetriebPflicht.ts).
     const { data: a, error: aFehler } = await supabase
-      .from("auftraege").select("titel,beschreibung,firma_id").eq("id", id).eq("service_user_id", user.id).maybeSingle();
+      .from("auftraege").select("titel,beschreibung,firma_id,taetigkeit,vermieter_id").eq("id", id).eq("service_user_id", user.id).maybeSingle();
     if (aFehler || !a) return { error: "Auftrag nicht gefunden." };
-    const pflicht = fachbetriebPflicht(a.titel, a.beschreibung);
-    if (pflicht && !a.firma_id) {
-      return { error: `${pflicht.grund} Bitte „Fachbetrieb nötig“ wählen — der Vermieter gibt die Firma frei.` };
+    // Die Sperre gilt dem HAUSMEISTER — ein Dienstleister ist selbst der Fachbetrieb.
+    // Ohne lesbare Rolle gilt die strengere Regel (fail-closed).
+    const { data: z } = await supabase
+      .from("service_zugaenge").select("rolle").eq("user_id", user.id).eq("vermieter_id", a.vermieter_id).maybeSingle();
+    const pruefung = selbstErledigtErlaubt({
+      rolle: z?.rolle === "dienstleister" ? "dienstleister" : "hausmeister",
+      taetigkeit: a.taetigkeit, titel: a.titel, beschreibung: a.beschreibung, firmaId: a.firma_id,
+    });
+    if (!pruefung.erlaubt) {
+      return { error: `${pruefung.grund} Bitte „Fachbetrieb nötig“ wählen — der Vermieter gibt die Firma frei.` };
     }
     const betrag = parseBetrag(String(formData.get("betrag") ?? ""));
     const lohnanteil = parseBetrag(String(formData.get("lohnanteil") ?? ""));
@@ -726,4 +739,14 @@ export async function stelleRueckfrage(formData: FormData): Promise<{ ok: true }
   revalidatePath("/anliegen");
   revalidatePath("/service");
   return { ok: true };
+}
+
+/** Service-Portal geöffnet: „zuletzt gesehen“ setzen (05.10.2026). Beste Mühe — scheitert es,
+ *  bleibt die Markierung „neu“ einfach stehen; kein Fehler für den Partner. */
+export async function markiereServiceGesehen(): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+  const { error } = await supabase.rpc("service_gesehen");
+  return { ok: !error };
 }
