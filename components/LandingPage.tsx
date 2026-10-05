@@ -11,6 +11,7 @@ import Tilt from "@/components/landing/Tilt";
 import RollenFlow from "@/components/landing/RollenFlow";
 import { FEATURES, PLAENE, FAQ, SOON_BADGE, Shot } from "@/components/landing/data";
 import { PREISE_SICHTBAR } from "@/lib/preise";
+import AbsetzbarHinweis from "@/components/landing/AbsetzbarHinweis";
 
 // Kompakte Startseite für ausgeloggte Besucher — helles Vertrauens-Design
 // nach den Mustern erfolgreicher Vermieter-SaaS (Problem→Lösung,
@@ -305,6 +306,7 @@ export default function LandingPage({ nl }: { nl?: string } = {}) {
               <div style={{ textAlign: "center", marginTop: 26 }}>
                 <Link href="/preise" className="lp-mehr">Tarife im Detail vergleichen <ArrowRight size={14} /></Link>
               </div>
+              <AbsetzbarHinweis />
             </>
           ) : (
             <>

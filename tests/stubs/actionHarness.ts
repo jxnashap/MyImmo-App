@@ -139,9 +139,9 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
     from: (tabelle: string) => kette(tabelle),
     rpc: async (
       name: string,
-      _args?: unknown,
+      args?: unknown,
     ): Promise<{ data: unknown; error: FakeDb["fehler"] }> => {
-      db.zugriffe.push({ tabelle: `rpc:${name}`, op: "rpc", filter: [] });
+      db.zugriffe.push({ tabelle: `rpc:${name}`, op: "rpc", filter: [], daten: args as Record<string, unknown> | undefined });
       const gezielt: FakeDb["fehler"] = db.fehlerBei[`rpc:${name}`] ?? null;
       return { data: db.rpc[name] ?? null, error: gezielt ?? db.fehler };
     },

@@ -188,6 +188,16 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
   anwaltlich → Paddle-Konto/Preise/Webhook → Env → Sandbox-Test → `BILLING_ENFORCED=true` +
   /preise-Early-Access-Banner raus → Feature-Gates in den Actions). Steuerhinweis: MoR =
   Paddle ist der Kunde (Reverse-Charge) → bei Kleinunternehmer-Frage berücksichtigen.
+  🧾 **Abo-Zahlung als Kostenbuchung (05.10.2026):** `transaction.completed` (EUR, > 0) →
+  `lib/billing/aboBuchung.ts` → SQL `abo_zahlung_buchen` (nur service_role) bucht GENAU EINMAL je
+  Transaktion Kosten „Verwaltung“ (Anlage V Zeile 46), nach Einheiten auf Objekte außer
+  „Selbst bewohnt“, cent-genau; Konto über `abos.provider_subscription_id`, sonst
+  `custom_data.user_id`; jeder Fehler → 500 (Paddle stellt erneut zu). **Betreiber: in der
+  Webhook-Destination `transaction.completed` mit abonnieren.** Dazu `/preise` + Preis-Teaser:
+  „Als Werbungskosten absetzbar — und automatisch gebucht“ (`lib/absetzbar.ts`, nur mit
+  `PREISE_SICHTBAR`). **Regel: Nie „kostenlos, weil absetzbar“** — gespart wird der
+  Grenzsteuersatz, nicht der Betrag (§ 5 UWG); `tests/absetzbar.test.ts` hält es fest.
+  `tests/aboBuchung.test.ts`, acht Mutationen rot.
 - ⚠️ **KORREKTUR 08.09.2026: Supabase ist auf PRO, nicht auf Free.** Live abgefragt
   (Organisation `wkxmbevawmmifleiggrs`, `plan: "pro"`). Der Eintrag hier behauptete
   seit dem 29.07.2026 das Gegenteil und hat zwei Punkte falsch eingeordnet:

@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parsePaddleEvent, verifyPaddleSignature } from "@/lib/billing/paddle";
+import { aboKostenZeilen, parseAboZahlung, type AboZahlung } from "@/lib/billing/aboBuchung";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,8 +45,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ fehler: "Ungültiges JSON" }, { status: 400 });
   }
 
+  // Bezahlte Rechnung → Kosten „Verwaltung“ in den Büchern des Vermieters
+  // (Anlage V Zeile 46). Eigener Weg, eigener Ausgang — siehe bucheAboZahlung.
+  const zahlung = parseAboZahlung(payload);
+  if (zahlung) return bucheAboZahlung(zahlung);
+
   const update = parsePaddleEvent(payload);
-  // Fremde/irrelevante Events (z. B. transaction.*, unbekannte Preis-IDs)
+  // Fremde/irrelevante Events (z. B. übrige transaction.*, unbekannte Preis-IDs)
   // bewusst mit 200 quittieren, sonst wiederholt Paddle die Zustellung endlos.
   if (!update) return NextResponse.json({ ignoriert: true });
 
@@ -73,4 +79,50 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ fehler: "Speichern fehlgeschlagen" }, { status: 500 });
 
   return NextResponse.json({ ok: true });
+}
+
+// Bucht eine bezahlte MyImmo-Rechnung als Kosten (lib/billing/aboBuchung.ts).
+// Genau einmal je Transaktion: `abo_zahlung_buchen` legt Merker und Zeilen in
+// EINER Datenbank-Transaktion an. Jeder Fehler endet mit 500 — Paddle stellt
+// dann erneut zu, und die Wiederholung ist dank Merker ungefährlich.
+async function bucheAboZahlung(z: AboZahlung) {
+  const admin = createAdminClient();
+  if (!admin) return NextResponse.json({ fehler: "Service-Role fehlt" }, { status: 503 });
+
+  // Zuordnung: Verlängerungen über die Subscription (custom_data ist dort
+  // nicht verlässlich), der Erstkauf über custom_data.user_id, das
+  // erstelleCheckoutUrl serverseitig setzt. Beides ist von Paddle signiert.
+  let userId: string | null = null;
+  if (z.subscriptionId) {
+    const { data, error } = await admin
+      .from("abos")
+      .select("user_id")
+      .eq("provider_subscription_id", z.subscriptionId)
+      .maybeSingle();
+    if (error) return NextResponse.json({ fehler: "Abo nicht lesbar" }, { status: 500 });
+    userId = (data as { user_id: string } | null)?.user_id ?? null;
+  }
+  userId ??= z.userIdHinweis;
+  // Kommt die Zahlung vor dem subscription.*-Event an, kennt die Datenbank das
+  // Abo noch nicht: 500, Paddle stellt später erneut zu.
+  if (!userId) return NextResponse.json({ fehler: "Zahlung keinem Konto zuzuordnen" }, { status: 500 });
+
+  const { data: objekte, error: objektFehler } = await admin
+    .from("properties")
+    .select("id, einheiten_anzahl, obj_status")
+    .eq("user_id", userId)
+    .order("created_at");
+  // Fehler auswerten: Leer hieße „keine Objekte" — und die Rechnung landete
+  // ohne Objekt statt verteilt.
+  if (objektFehler) return NextResponse.json({ fehler: "Objekte nicht lesbar" }, { status: 500 });
+
+  const zeilen = aboKostenZeilen(z, (objekte ?? []) as { id: string; einheiten_anzahl: number | null; obj_status: string | null }[]);
+  const { data: neu, error } = await admin.rpc("abo_zahlung_buchen", {
+    p_user: userId,
+    p_transaktion: z.transaktionId,
+    p_cent: z.cent,
+    p_zeilen: zeilen,
+  });
+  if (error) return NextResponse.json({ fehler: "Buchung fehlgeschlagen" }, { status: 500 });
+  return NextResponse.json({ ok: true, gebucht: neu === true });
 }

@@ -55,6 +55,10 @@ an dem sich eine Prognose festmachen ließe.
 **Überall gleich:** Hero „Deine Immobilien. Ein System. Von überall.“ und die belegten
 Vertrauenssätze („Datenbank in Frankfurt“, Bankdaten verschlüsselt, Export, Löschen).
 
+**Erst ab Bezahlstart (S2):** „Als Werbungskosten absetzbar — und automatisch gebucht“
+(Wortlaut nur aus `lib/absetzbar.ts`). **Nie** „quasi kostenlos, weil absetzbar“ — siehe
+`[[FINANZKONZEPT]]`, Finanz-Entscheidungen.
+
 **Nie:**
 - „KI-gestützt“, „All-in-One“, „100 % EU“ (§ 5 UWG, siehe `CLAUDE.md`);
 - erfundene Kundenstimmen;

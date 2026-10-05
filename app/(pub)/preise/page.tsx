@@ -7,6 +7,7 @@ import Reveal from "@/components/landing/Reveal";
 import { PLAENE, FAQ } from "@/components/landing/data";
 import { PREISE_SICHTBAR } from "@/lib/preise";
 import StartCta from "@/components/StartCta";
+import AbsetzbarHinweis from "@/components/landing/AbsetzbarHinweis";
 
 // Solange PREISE_SICHTBAR false ist (lib/preise.ts), nennt diese Seite KEINE
 // Betraege. Die Route bleibt trotzdem bestehen: sie ist verlinkt worden und
@@ -67,6 +68,7 @@ export default function PreisePage() {
                   </Reveal>
                 ))}
               </div>
+              <AbsetzbarHinweis />
             </>
           ) : (
             <>
