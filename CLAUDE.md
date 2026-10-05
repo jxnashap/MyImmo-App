@@ -967,6 +967,11 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Gemeinsame Bausteine: `lib/freigabeCode.ts` (Hash = HMAC über **Art** + Token + Code — ein
   Makler-Code passt nie auf einen Bank-Link), `components/ZugangsCodeFormular.tsx`.
   **Ohne `DATA_ENCRYPTION_KEY` lässt sich kein Link erstellen** (fail-closed, gewollt).
+  🐞 **Am Handy gemeldet (05.10.2026): „Keine E-Mail-Adresse bekannt.“** beim Erstellen eines
+  Makler-/Bank-Links — beide rufen `useReAuth()` OHNE E-Mail auf, der Dialog konnte das Passwort
+  nie prüfen (beim Bank-Link vermutlich seit 08.09.2026, nie bemerkt). Jetzt holt
+  `ReAuthDialog` E-Mail und „ohne Passwort“ (`konto_hat_passwort`) selbst, wenn der Aufrufer sie
+  nicht übergibt. `tests/reAuthEmail.test.ts`.
   **Regel: Ein neuer öffentlicher Freigabe-Link bekommt dasselbe Verfahren — keine Inhalte über
   den Token allein.** **Bewusst OHNE Code (Betreiber 05.10.2026: „Bewerber egal“):** der
   Bewerbungs-Link — er zeigt nur den Steckbrief, den der Vermieter selbst öffentlich macht, und
