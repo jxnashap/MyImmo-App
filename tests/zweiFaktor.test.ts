@@ -211,7 +211,7 @@ describe("Sensible Aktionen verlangen eine frische Anmeldung", () => {
     const { db, client } = fakeSupabase({ amrVorSekunden: 3600 });
     mockeNextUndSupabase(client);
     const mod = await import("@/lib/actions/beleihung");
-    await expect(mod.createFreigabe("p1", ["grundbuch"], {}, 14)).rejects.toThrow(/frische Anmeldung/);
+    await expect(mod.createFreigabe("p1", ["grundbuch"], {}, 14, "b@bank.de")).rejects.toThrow(/frische Anmeldung/);
     expect(zugriff(db, "beleihung_freigaben", "insert")).toBeUndefined();
   });
 

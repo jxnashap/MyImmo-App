@@ -961,6 +961,15 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   **Grenze, bewusst so entschieden:** Stehen Link und Code in derselben Mail, hilft der Code nur
   gegen einen allein weitergegebenen Link — die Oberfläche empfiehlt, den Code getrennt (SMS) zu
   schicken. **Der Code wird nur einmal angezeigt;** verloren = neuer Link.
+  🏦 **Bank-Link genauso (gleicher Tag, Betreiber: „Bank auch“, Migration `20261005180000`):**
+  E-Mail des Beraters, Code, `zugangsMailLink` (`lib/zugangsMail.ts`, gemeinsam für beide);
+  Seite, Datei UND Rückmeldung der Bank nur mit Hash (Cookie `mi_bank`, Pfad `/beleihung/<token>`).
+  Gemeinsame Bausteine: `lib/freigabeCode.ts` (Hash = HMAC über **Art** + Token + Code — ein
+  Makler-Code passt nie auf einen Bank-Link), `components/ZugangsCodeFormular.tsx`.
+  **Ohne `DATA_ENCRYPTION_KEY` lässt sich kein Link erstellen** (fail-closed, gewollt).
+  **Regel: Ein neuer öffentlicher Freigabe-Link bekommt dasselbe Verfahren — keine Inhalte über
+  den Token allein.** Die Rückfall-Datei für das Bank-Protokoll stellt seitdem die Code-Fassung
+  her (die alte hätte die Unterlagen wieder ohne Code geöffnet).
   Beide Listen zeigen auch widerrufene/abgelaufene Links (blass, ohne Knöpfe) — wer aus Sorge
   widerruft, will gerade dann das Protokoll sehen (vorher zeigte der Bank-Ordner nur aktive).
   ✅ **Phase 1 (Startseite) erledigt 01.10.2026:** Hero „Deine Immobilien. Ein System. Von überall.“

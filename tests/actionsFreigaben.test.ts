@@ -24,6 +24,8 @@ function mockeHeaders(ip: string) {
   aktuelleIp = ip;
   vi.doMock("next/headers", () => ({
     headers: async () => new Map([["x-forwarded-for", aktuelleIp]]) as never,
+    // Seit 05.10.2026 nur nach dem Zugangscode: Die Bank ist hier schon angemeldet.
+    cookies: async () => ({ get: (n: string) => (n === "mi_bank" ? { value: "a".repeat(64) } : undefined) }) as never,
   }));
 }
 
