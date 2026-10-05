@@ -324,9 +324,15 @@ Einstellungen/Hilfe/Objekte behalten den letzten. BuyImmo: `/aufbau` (Kommandoze
 `lib/aufbau.ts`), Kauf, Makler-Ordner, Verkauf, Marktwert, AfA. **Regeln:** (1) Neue
 BuyImmo-Seite → `AUFBAUEN`/`RECHNEN` in `lib/nav.ts`. (2) Alte Adressen (`/kauf` …) nie
 umbenennen. (3) Zahlen der Kommandozentrale nur aus bestehenden Regeln (Dashboard,
-`/kredite`). (4) Keine Kaufempfehlung vor der § 34i-Klärung. Offen (Sanierungsrechner: Material
-oder Lohn? Preise, Aufmaß, Strategie, Tarif, Marke): **`docs/zukunft/BUYIMMO.md`**.
-`tests/bereich.test.ts` + `tests/aufbau.test.ts`, elf Mutationen rot.
+`/kredite`). (4) Keine Kaufempfehlung vor der § 34i-Klärung. Offen (Aufmaß, Fahrplan, Marke):
+**`docs/zukunft/BUYIMMO.md`**. `tests/bereich.test.ts` + `tests/aufbau.test.ts`, elf Mutationen rot.
+**Sanierungsrechner `/sanierung` (05.10.2026, Stufe 1):** Räume → Flächen → Material VON–BIS →
+ganze Gebinde über ALLE Räume gerundet; Arbeitszeit = Stunden × Satz, den der Nutzer einträgt
+(BuyImmo schätzt keinen Lohn); eigene Posten. `lib/sanierung/` (Katalog als Parameter, Preise mit
+Quelle + Stand in `katalog.ts`, Prüfzyklus in `07 Volatile Kennzahlen`), Entwurf nur im Browser.
+`tests/sanierung.test.ts`. **Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
+(`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
+kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
 
 ### Zukunftsideen (notiert, nicht gebaut)
 > **Vollständige Ideenliste mit Status: Memory-Repo `02 - MyImmo/myimmoideen.md`.**

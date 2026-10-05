@@ -388,6 +388,15 @@ const WEGE = [
     },
   },
   {
+    schluessel: "sanierung",
+    titel: "BuyImmo — Sanierungsrechner",
+    pfad: "/sanierung",
+    erwartet: ["Sanierungsrechner", "Fenster + Türen m²", "Woher die Zahlen kommen", "Stunden × dein Stundensatz"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
     schluessel: "demo-grenze",
     titel: "Demo-Grenze — gesperrte Bereiche bleiben gesperrt und nennen sich",
     pfad: "/",

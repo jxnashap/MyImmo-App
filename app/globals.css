@@ -573,6 +573,49 @@ a.kpi-card:active { transform: scale(.985); }
   .kpi-feld:nth-child(even) { border-left: 1px solid var(--line); }
   .kpi-feld:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
+/* Sanierungsrechner (BuyImmo, 05.10.2026, components/SanierungsRechner.tsx). Wird bei der
+   Besichtigung am Handy benutzt — deshalb Maße 2-spaltig unter 560 px und 16px-Felder bei Touch
+   (iOS zoomt sonst bei jedem Antippen eines kleineren Feldes in die Seite). */
+.sanierung-raeume { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.sanierung-raum { width: 100%; display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg2); }
+.sanierung-raum-kopf { display: flex; gap: 8px; align-items: center; }
+.sanierung-raum-name { flex: 1; min-width: 0; font-weight: 600; }
+.sanierung-masse { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.sanierung-klein { font-size: 12px; color: var(--muted); }
+.massnahmen-wahl { display: flex; flex-wrap: wrap; gap: 6px; }
+.massnahme-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 12.5px; cursor: pointer; user-select: none; transition: background-color 150ms var(--ease-out), border-color 150ms var(--ease-out); }
+.massnahme-chip input { margin: 0; accent-color: var(--gold-fill); }
+.massnahme-chip:has(input:checked) { background: var(--gold-pale); border-color: var(--gold); }
+.massnahme-chip:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .massnahme-chip:not(:has(input:checked)):hover { background: var(--bg3); } }
+.sanierung-hinweise { margin: 0; padding-left: 18px; font-size: 12px; color: var(--muted); }
+.sanierung-leer { margin: 0; font-size: 12.5px; color: var(--muted); }
+.sanierung .zahl { font-variant-numeric: tabular-nums; }
+.sanierung-tabelle td { white-space: nowrap; }
+.sanierung-tabelle td:first-child { white-space: normal; min-width: 150px; }
+.sanierung-preis { width: 96px; padding: 6px 10px; }
+.sanierung-quellen { margin-top: 14px; font-size: 12px; color: var(--muted); }
+.sanierung-quellen summary { cursor: pointer; }
+.sanierung-quellen ul { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.sanierung-unten { align-items: start; margin-bottom: 18px; }
+.sanierung-zeile { display: grid; grid-template-columns: minmax(0, 1fr) 72px 80px 84px auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+.sanierung-zeile-posten { grid-template-columns: minmax(0, 1fr) 110px auto; }
+.sanierung-zeile .input { width: 100%; min-width: 0; }
+.sanierung-betrag { text-align: right; font-size: 13px; white-space: nowrap; }
+.sanierung-summe { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; padding: 18px 22px; margin-bottom: 14px; background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-1); }
+.sanierung-summe-zahl { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.sanierung-summe-teile { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sanierung-fuss { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); }
+.sanierung-fuss p { margin: 0; max-width: 620px; }
+.sanierung-leeren { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 560px) {
+  .sanierung-masse { grid-template-columns: 1fr 1fr; }
+  .sanierung-zeile { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; }
+  .sanierung-zeile > :first-child { grid-column: 1 / -1; }
+  .sanierung-zeile-posten { grid-template-columns: minmax(0, 1fr) 110px auto; }
+  .sanierung-zeile-posten > :first-child { grid-column: auto; }
+}
+@media (pointer: coarse) { .sanierung input { font-size: 16px; } }
 /* Schulden-Uhr (04.10.2026): eine Zeile — Zahl links, Balken abbezahlt/offen, Tilgung rechts. */
 .schulden-uhr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 28px; align-items: center; background: var(--bg2); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-1); padding: 18px 22px; }
 .section-body > .schulden-uhr { border: none; box-shadow: none; padding: 0 0 16px; border-radius: 0; border-bottom: 1px solid var(--line); margin-bottom: 4px; }

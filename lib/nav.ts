@@ -4,7 +4,7 @@ import {
   BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
   TrendingUp, MessageSquareText,
   Building2, Building, Store, TreePalm, Sprout, Percent, Compass, Handshake, Scale,
-  Gauge, FolderCheck,
+  Gauge, FolderCheck, PaintRoller,
   type LucideIcon,
 } from "lucide-react";
 
@@ -53,6 +53,7 @@ export const AUFBAUEN: NavItem[] = [
 ];
 
 export const RECHNEN: NavItem[] = [
+  { href: "/sanierung", label: "Sanierungsrechner", icon: PaintRoller },
   { href: "/bewertung", label: "Marktwert-Schätzer", icon: TrendingUp },
   { href: "/afa-assistent", label: "AfA-Assistent", icon: Percent },
 ];

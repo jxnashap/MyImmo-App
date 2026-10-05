@@ -1,7 +1,7 @@
 # BuyImmo — zweiter Bereich neben MyImmo
 
 **Stand:** 05.10.2026 · **Status:** Grundgerüst gebaut (Umschalter, Navigation, Kommandozentrale),
-Sanierungsrechner und Strategie offen.
+Sanierungsrechner Stufe 1 (Material + Arbeitszeit) gebaut, Fahrplan offen.
 
 ## Die Entscheidung (Betreiber, 05.10.2026)
 
@@ -12,6 +12,41 @@ Sanierungsrechner und Strategie offen.
   Mietkonto, Verbrauch, Kredite, Steuer, Jahresbericht, Archiv.
 - **BuyImmo** = Bestandsaufbau: Kommandozentrale (`/aufbau`), Kauf-Assistent, Makler-Ordner,
   Verkauf-Assistent, Marktwert-Schätzer, AfA-Assistent. Geplant: Sanierungsrechner, Strategie.
+
+### Zielgruppe, Tarif, Vision (Betreiber, 05.10.2026)
+
+- **Tarif:** eigener Tarif **19,99 €/Monat** — offene Punkte (Überschneidung mit Plus!) in
+  `docs/FINANZKONZEPT.md`. Noch nicht in `lib/plan.ts`.
+- **Zielgruppe:** junge Leute, die „Bock auf Immobilien“ haben und einen Bestand aufbauen wollen.
+  BuyImmo soll **leiten**: was brauche ich, welche Voraussetzungen, was muss ich beachten —
+  „spielerisch einen Einblick geben, wie man Immobilien kauft“.
+- **Vision:** Beleihungsordner an die Bank, die Bank weiß Bescheid — „im Urlaub einen Cocktail
+  schlürfen und gleichzeitig eine Immobilie in Deutschland kaufen“. MyImmo verwaltet danach
+  den Bestand automatisiert.
+
+**Risiken dazu — vor jeder Werbung damit:**
+1. **Nur ab 18.** Die AGB verlangen Volljährigkeit (`/agb`), Minderjährige können weder kaufen
+   noch finanzieren. In Texten „junge Erwachsene“, nie „Jugendliche“; Werbung, die sich an
+   Minderjährige richtet, ist ohnehin heikel (UWG). **Anwalt.**
+2. **„Spielerisch“ + Kredit:** Junge, unerfahrene Käufer zu einem kreditfinanzierten Kauf zu
+   führen, ist der Teil mit dem höchsten Haftungs- und Rufrisiko. Leiten heißt erklären und
+   rechnen — nie „du kannst dir das leisten“ oder „kauf jetzt“ (§ 34i GewO, Anwaltsliste).
+3. **„Vom Urlaub aus kaufen“ ist als Versprechen so nicht haltbar.** Der Kaufvertrag braucht den
+   Notar — persönlich oder über einen Vertreter mit beglaubigter Vollmacht (§ 29 GBO). Ob eine
+   Online-Beurkundung für Grundstückskäufe inzwischen möglich ist: **nicht geprüft**. Ehrlich und
+   trotzdem stark: „fast alles von unterwegs — den Notartermin übernimmt dein Vertreter“; der
+   Vertreter-Reiter mit Vollmacht existiert (Einstellungen → Vertreter). Werbung ohne diesen
+   Zusatz wäre irreführend (§ 5 UWG).
+
+### „Strategie“ heißt: Fahrplan, keine Empfehlung (Vorschlag 05.10.2026, wartet auf Freigabe)
+
+Ein geführter Weg zum ersten bzw. nächsten Objekt — **allgemeines Wissen + eigene Zahlen +
+Fortschritt**, ohne Urteil über die Person:
+Eigenkapital & Schufa → Selbstauskunft → Finanzierungsbestätigung → Suche & Besichtigung
+(Sanierungsrechner) → Kaufprüfung → Beleihungsordner an die Bank → Notar (selbst oder Vertreter)
+→ Übergabe → Objekt in MyImmo. Jeder Schritt erklärt, was nötig ist, und zeigt, was schon
+erledigt ist (aus den vorhandenen Daten). **Nicht:** „Mit deinem Einkommen kannst du X € kaufen“
+— das ist Darlehensberatung und bleibt draußen, bis der Anwalt § 34i geklärt hat.
 
 ### Verworfene Alternativen — mit Grund
 
@@ -59,11 +94,11 @@ Sanierungsrechner und Strategie offen.
 
 | Punkt | Warum er die Arbeit ändert |
 |---|---|
-| **Sanierungsrechner: nur Material (Eigenleistung) oder mit Handwerkerlohn?** | Lohn dominiert die Kosten; ein reiner Materialrechner („kg Spachtelmasse") ist genau, aber der kleinste Posten. Große Posten (Bad, Elektrik, Heizung, Fenster) nur als Spanne, nie als Einzelzahl. |
+| ~~Sanierungsrechner: Material oder Lohn?~~ | ✅ **Entschieden 05.10.2026:** Material, dazu ein Lohnrechner, in den der Nutzer Stunden und seinen Stundensatz selbst einträgt — BuyImmo schätzt keinen Lohn. Große Posten (Bad, Elektrik) trägt der Nutzer als eigene Posten ein. |
 | **Preise** | Baumarktseiten auslesen ist verworfen (Nutzungsbedingungen, wie bei den Portalen). Start: eigene Preis- und Verbrauchstabelle mit Quelle und Stand-Datum, vom Nutzer überschreibbar, Eintrag in `07 Volatile Kennzahlen`. Partner-Produktdaten (Affiliate) **nicht geprüft** — erst klären, dann ggf. Werbekennzeichnung + Datenschutzerklärung. |
 | **Ausmessen bei der Besichtigung** | Kenntnisstand, nicht am Gerät geprüft: Eine Web-App erreicht weder LiDAR (nur native iOS-App) noch Bluetooth-Laser in Safari. Start: Grundriss aus dem Exposé per KI, vor Ort von Hand korrigieren. Ohne Netz (Keller) speichert die App heute nicht. |
 | **Strategie** | `STRATEGIE-REITER.md` — Anwalt zu § 34i GewO **vor** dem Bau; Szenarien statt einer Zahl. |
 | **Ergebnis ist eine Schätzung** | Kein Kostenvoranschlag — dieselbe Grenze wie bei den Handwerker-Anfragen. |
-| **Tarif** | Ist BuyImmo ein Plus-Merkmal? Dann `docs/FINANZKONZEPT.md` und `lib/plan.ts` im selben PR. |
+| **Tarif** | 19,99 € entschieden; Abgrenzung zu Plus und Bündel offen — `docs/FINANZKONZEPT.md`. |
 | **Marke** | „BuyImmo" vor öffentlicher Nutzung auf Markenrecht und Domain prüfen (nicht geschehen). |
 | **Demo** | Die Demo hat keine gespeicherten Kaufprüfungen → die Kommandozentrale zeigt dort einen Leerzustand. Beispiel-Kalkulationen bräuchten eine `demo_seed`-Kopie + Eintrag in der Reset-Funktion. |
