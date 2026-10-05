@@ -153,6 +153,7 @@ export default function KaufAssistent({
         rate,
         kaufpreis: auswahl.kp,
         gesamtInvest: auswahl.gesamtInvest,
+        sanierung: auswahl.sanierung ?? 0,
         kaltmieteNeu: auswahl.kaltmiete,
         haushaltsNetto: selbstauskunft ? haushaltsNetto(selbstauskunft) : 0,
         mieteinnahmenBestehend: selbstauskunft?.mieteinnahmen ?? 0,
@@ -241,7 +242,7 @@ export default function KaufAssistent({
           </p>
           {auswahl && auswahl.gesamtInvest > 0 ? (
             <FinanzierungsVorschlaege
-              gesamtInvest={auswahl.gesamtInvest} kaufpreis={auswahl.kp} ekVorhanden={ekVorhanden}
+              gesamtInvest={auswahl.gesamtInvest} kaufpreis={auswahl.kp} sanierung={auswahl.sanierung ?? 0} ekVorhanden={ekVorhanden}
               nutzung={auswahl.nutzung} kinder={selbstauskunft?.kinder ?? 0} zveJahr={selbstauskunft?.zveHaushaltJahr ?? 0}
             />
           ) : (

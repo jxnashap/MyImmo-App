@@ -56,7 +56,7 @@ export const PROGRAMME: Programm[] = [
     text: "Zuschuss für eine neue klimafreundliche Heizung (Wärmepumpe & Co.) — Grundförderung 30 %, Selbstnutzer mit Boni bis 70 % (80 % bei niedrigem Einkommen).",
     bedingung: "das Gebäude mindestens 5 Jahre alt ist und du eine erneuerbare Heizung einbaust — Antrag vor Auftragsvergabe (Vertrag mit aufschiebender Bedingung).",
     // kfw.de/458 + „Anpassungen 2026“ (geprüft 05.10.2026): „Der Effizienzbonus entfällt zum 21.07.2026.“
-    hinweis: "Vermieter erhalten nur die Grundförderung von 30 % (der Effizienzbonus ist seit 21.07.2026 entfallen); förderfähig sind höchstens 28.000 € für die erste Wohneinheit. Gehört das Haus einer GbR: KfW 459.",
+    hinweis: "Vermieter erhalten nur die Grundförderung von 30 % (der Effizienzbonus ist seit 21.07.2026 entfallen); förderfähig sind höchstens 28.000 € für die erste Wohneinheit (sinkt ab 01.02.2027 halbjährlich um 750 €). Gehört das Haus einer GbR: KfW 459.",
     url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/F%C3%B6rderprodukte/Heizungsf%C3%B6rderung-f%C3%BCr-Privatpersonen-Wohngeb%C3%A4ude-(458)/",
   },
   {

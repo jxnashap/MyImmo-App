@@ -58,7 +58,11 @@ export default async function AufbauPage() {
           <span className="kpi-label">Restschuld</span>
           <span className="kpi-value">{euro(lage.restschuld)}</span>
           <span className="kpi-sub">
-            {lage.restschuldProzent != null ? `${lage.restschuldProzent.toLocaleString("de-DE")} % vom Wert` : "Wert fehlt"}
+            {lage.restschuldProzent != null
+              ? `${lage.restschuldProzent.toLocaleString("de-DE")} % vom Wert`
+              : lage.ohneWert > 0 && lage.wert > 0
+                ? "kein % — Werte fehlen"
+                : "Wert fehlt"}
           </span>
         </Link>
         {/* Unterzeile kurz halten: Am Handy schneidet die Leiste nach zwei Zeilen ab, und der

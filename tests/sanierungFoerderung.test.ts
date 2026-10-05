@@ -24,6 +24,7 @@ const ein = (p: FoerderPosten[], teil: Partial<FoerderEingabe> = {}): FoerderEin
   wohneinheiten: 1,
   isfp: false,
   nutzung: "vermieten",
+  gebaeude: "mfh",
   stichtag: "2026-10-05",
   ...teil,
 });
@@ -58,11 +59,13 @@ describe("Höchstgrenzen nach Wohneinheiten", () => {
     expect(grenzeHeizung(2, "2026-10-05")).toBe(43_000); // kfw.de-Beispiel: 28.000 + 15.000
   });
 
-  it("Experte: 5.000 € bis zwei Wohneinheiten, sonst 2.000 € je Einheit, höchstens 20.000 €", () => {
-    expect(grenzeExperte(1)).toBe(5_000);
-    expect(grenzeExperte(2)).toBe(5_000);
-    expect(grenzeExperte(4)).toBe(8_000);
-    expect(grenzeExperte(12)).toBe(20_000);
+  it("Experte: Ein-/Zweifamilienhaus 5.000 €, Mehrfamilienhaus 2.000 € je Einheit, höchstens 20.000 €", () => {
+    expect(grenzeExperte(1, "haus")).toBe(5_000);
+    expect(grenzeExperte(2, "haus")).toBe(5_000);
+    // Eigentumswohnung im Mehrfamilienhaus: die GEBÄUDEART zählt, nicht die eine betroffene Einheit.
+    expect(grenzeExperte(1, "mfh")).toBe(2_000);
+    expect(grenzeExperte(4, "mfh")).toBe(8_000);
+    expect(grenzeExperte(12, "mfh")).toBe(20_000);
   });
 });
 
@@ -89,7 +92,8 @@ describe("Zuschuss", () => {
   });
 
   it("Experte zu 50 %, gedeckelt", () => {
-    expect(topf(ein([posten("experte", 8_000)]), "BAFA Experte")).toMatchObject({ foerderfaehig: 5_000, zuschuss: 2_500 });
+    expect(topf(ein([posten("experte", 8_000)], { gebaeude: "haus" }), "BAFA Experte")).toMatchObject({ foerderfaehig: 5_000, zuschuss: 2_500 });
+    expect(topf(ein([posten("experte", 8_000)]), "BAFA Experte")).toMatchObject({ foerderfaehig: 2_000, zuschuss: 1_000 }); // Wohnung im MFH
   });
 
   it("unter 300 € und Heizungsoptimierung über 5 Einheiten zählen nicht — mit Grund", () => {
@@ -138,16 +142,17 @@ describe("Entwurf", () => {
       foerder: { wohneinheiten: "3", isfp: "true", nutzung: "irgendwas" },
     })!;
     expect(e.eigene.map((p) => p.foerderung)).toEqual(["huelle", "keine", "keine"]);
-    expect(e.foerder).toEqual({ wohneinheiten: "3", isfp: false, nutzung: "vermieten" }); // „true“ als Text ist kein Haken
-    expect(entwurfAus({ raeume: [] })!.foerder).toEqual({ wohneinheiten: "1", isfp: false, nutzung: "vermieten" });
+    expect(e.foerder).toEqual({ wohneinheiten: "3", isfp: false, nutzung: "vermieten", gebaeude: "mfh" }); // „true“ als Text ist kein Haken
+    expect(entwurfAus({ raeume: [] })!.foerder).toEqual({ wohneinheiten: "1", isfp: false, nutzung: "vermieten", gebaeude: "mfh" });
+    expect(entwurfAus({ raeume: [], foerder: { gebaeude: "haus" } })!.foerder.gebaeude).toBe("haus");
   });
 
   it("Formular → Schätzung: deutscher Tausenderpunkt, leere Einheiten = 1", () => {
     const e = { ...leererEntwurf("x"), eigene: [{ id: "p", bezeichnung: "Fenster", betrag: "12.500", foerderung: "huelle" as const }] };
-    const f = zuFoerderEingabe({ ...e, foerder: { wohneinheiten: "", isfp: false, nutzung: "vermieten" } }, "2026-10-05");
+    const f = zuFoerderEingabe({ ...e, foerder: { wohneinheiten: "", isfp: false, nutzung: "vermieten", gebaeude: "mfh" } }, "2026-10-05");
     expect(f.posten[0]).toMatchObject({ betrag: 12_500, art: "huelle" });
     expect(f.wohneinheiten).toBe(1);
-    expect(zuFoerderEingabe({ ...e, foerder: { wohneinheiten: "4", isfp: true, nutzung: "eigennutzen" } }, "2026-10-05")).toMatchObject({ wohneinheiten: 4, isfp: true, nutzung: "eigennutzen" });
+    expect(zuFoerderEingabe({ ...e, foerder: { wohneinheiten: "4", isfp: true, nutzung: "eigennutzen", gebaeude: "haus" } }, "2026-10-05")).toMatchObject({ wohneinheiten: 4, isfp: true, nutzung: "eigennutzen", gebaeude: "haus" });
   });
 });
 
@@ -188,7 +193,7 @@ describe("Oberfläche", () => {
 
   it("der Kauf-Assistent bekommt die Summe VOR Zuschuss — der ist erst mit der Zusage sicher", () => {
     const s = readFileSync("components/SanierungsRechner.tsx", "utf8");
-    expect(s).toContain("kaufLinkMitSanierung(ergebnis.gesamt.max)");
+    expect(s).toContain("kaufLinkMitSanierung(fuerKauf)");
     expect(s).not.toMatch(/kaufLinkMitSanierung\([^)]*zuschuss/);
     expect(s).toContain("(nicht abgezogen)");
   });

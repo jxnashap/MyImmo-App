@@ -30,6 +30,7 @@ export default async function FahrplanPage() {
     makler: d.makler,
     kaufpruefungen: d.kaufpruefungen.length,
     vertreterGueltig: d.vertreterGueltig,
+    vertreterGrundbuch: d.vertreterGrundbuch,
     objekte: d.objekte.length,
   });
   const stand = fortschritt(stationen);
@@ -62,7 +63,7 @@ export default async function FahrplanPage() {
           <div>
             <h3>Dein Weg zum Objekt</h3>
             <div className="section-sub">
-              Was BuyImmo prüfen kann: {stand.erledigt} von {stand.pruefbar} erledigt. Besichtigung und Notar kennt nur du.
+              Was BuyImmo prüfen kann: {stand.erledigt} von {stand.pruefbar} erledigt. Besichtigung und Notar kennst nur du.
             </div>
           </div>
         </div>

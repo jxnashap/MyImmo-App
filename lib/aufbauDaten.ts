@@ -8,6 +8,13 @@ import type { AufbauKredit, AufbauObjekt } from "@/lib/aufbau";
 import { istDemoKonto } from "@/lib/demo";
 import { vollmachtStatus } from "@/lib/vertreter";
 
+type VertreterZeile = { gueltig_bis: string | null; widerrufen_am: string | null; vollmacht_art: string | null; vollmacht_form: string | null };
+/** Dieselbe Auswahl wie im Kauf-Assistenten: gültig oder bald ablaufend. */
+const vollmachtLaeuft = (v: VertreterZeile, heute: string) => {
+  const s = vollmachtStatus(v, heute);
+  return s === "gueltig" || s === "laeuft_ab";
+};
+
 export type Kaufpruefung = { id: string; name: string; summary: Record<string, number> | null; created_at: string };
 
 export type AufbauDaten = {
@@ -17,6 +24,8 @@ export type AufbauDaten = {
   makler: { item_key: string; status: string | null }[];
   hatSelbstauskunft: boolean;
   vertreterGueltig: boolean;
+  /** Gültige General-/Grundbuchvollmacht, öffentlich beglaubigt oder beurkundet (§ 29 GBO). */
+  vertreterGrundbuch: boolean;
 };
 
 export async function ladeAufbauDaten(
@@ -31,7 +40,7 @@ export async function ladeAufbauDaten(
     db.from("kalkulationen").select("id,name,summary,created_at").eq("user_id", uid).order("created_at", { ascending: false }),
     db.from("makler_dokumente").select("item_key,status").eq("user_id", uid),
     db.from("selbstauskunft").select("user_id").eq("user_id", uid).maybeSingle(),
-    db.from("vertreter").select("gueltig_bis,widerrufen_am").eq("user_id", uid),
+    db.from("vertreter").select("gueltig_bis,widerrufen_am,vollmacht_art,vollmacht_form").eq("user_id", uid),
   ]);
 
   return {
@@ -42,10 +51,12 @@ export async function ladeAufbauDaten(
     // In der Demo steht im Kauf-Assistenten eine Beispiel-Selbstauskunft (lib/kauf/selbstauskunft.ts) —
     // hier dasselbe Bild, sonst widersprächen sich die Seiten.
     hatSelbstauskunft: !!sa || istDemoKonto(user?.email),
-    // Dieselbe Auswahl wie im Kauf-Assistenten: gültig oder bald ablaufend.
-    vertreterGueltig: ((vert ?? []) as { gueltig_bis: string | null; widerrufen_am: string | null }[]).some((v) => {
-      const s = vollmachtStatus(v, heute);
-      return s === "gueltig" || s === "laeuft_ab";
-    }),
+    vertreterGueltig: ((vert ?? []) as VertreterZeile[]).some((v) => vollmachtLaeuft(v, heute)),
+    vertreterGrundbuch: ((vert ?? []) as VertreterZeile[]).some(
+      (v) =>
+        vollmachtLaeuft(v, heute) &&
+        (v.vollmacht_art === "grundbuch" || v.vollmacht_art === "general") &&
+        (v.vollmacht_form === "beglaubigt" || v.vollmacht_form === "beurkundet"),
+    ),
   };
 }

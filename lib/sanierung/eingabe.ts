@@ -5,9 +5,9 @@
 // Der Entwurf liegt nur im Browser (localStorage) — `entwurfAus()` prüft ihn beim Laden, weil
 // dort alles stehen kann: ein alter Stand, ein halber, oder Fremdes.
 
-import { zahlDe0 } from "@/lib/zahl";
+import { zahlDe, zahlDe0 } from "@/lib/zahl";
 import { MASSNAHMEN, type MassnahmeId, type MaterialId, type SanierungEingabe } from "@/lib/sanierung/rechner";
-import { istFoerderArt, type FoerderArt, type FoerderEingabe, type Nutzung } from "@/lib/sanierung/foerderung";
+import { istFoerderArt, type FoerderArt, type FoerderEingabe, type Gebaeude, type Nutzung } from "@/lib/sanierung/foerderung";
 
 export type RaumFeld = {
   id: string;
@@ -20,10 +20,10 @@ export type RaumFeld = {
   fliesenhoehe: string;
   massnahmen: MassnahmeId[];
 };
-export type LohnFeld = { id: string; bezeichnung: string; stunden: string; satz: string };
+export type LohnFeld = { id: string; bezeichnung: string; stunden: string; satz: string; eigenleistung: boolean };
 export type PostenFeld = { id: string; bezeichnung: string; betrag: string; foerderung: FoerderArt };
 /** Angaben für die Zuschuss-Schätzung (lib/sanierung/foerderung.ts). */
-export type FoerderFelder = { wohneinheiten: string; isfp: boolean; nutzung: Nutzung };
+export type FoerderFelder = { wohneinheiten: string; isfp: boolean; nutzung: Nutzung; gebaeude: Gebaeude };
 
 export type Entwurf = {
   raeume: RaumFeld[];
@@ -35,7 +35,7 @@ export type Entwurf = {
 };
 
 /** BuyImmo richtet sich an Leute, die vermieten — und an eine Eigentumswohnung (1 Einheit). */
-export const STANDARD_FOERDER: FoerderFelder = { wohneinheiten: "1", isfp: false, nutzung: "vermieten" };
+export const STANDARD_FOERDER: FoerderFelder = { wohneinheiten: "1", isfp: false, nutzung: "vermieten", gebaeude: "mfh" };
 export const neuerPosten = (id: string): PostenFeld => ({ id, bezeichnung: "", betrag: "", foerderung: "keine" });
 
 /** Übliche Raumhöhe im Bestand als Vorschlag — der Nutzer überschreibt sie mit dem Maßband. */
@@ -61,11 +61,24 @@ export function mitKopie(raeume: RaumFeld[], id: string, neueId: string): RaumFe
 export function leererEntwurf(id: string): Entwurf {
   return {
     raeume: [neuerRaum(id, 1)],
-    lohn: [{ id: `${id}-lohn`, bezeichnung: "Eigene Arbeit", stunden: "", satz: "" }],
+    lohn: [{ id: `${id}-lohn`, bezeichnung: "Eigene Arbeit", stunden: "", satz: "", eigenleistung: true }],
     eigene: [],
     preise: {},
     foerder: { ...STANDARD_FOERDER },
   };
+}
+
+/**
+ * Raummaße in Metern lesen. NICHT `zahlDe0()`: Das liest einen Punkt vor drei Ziffern als
+ * Tausenderpunkt — „4.125“ vom Lasermessgerät würde zu 4.125 m (Review 05.10.2026; dieselbe Regel
+ * wie bei Zählerständen in CLAUDE.md). Meter haben keine Tausender: Komma oder Punkt ist immer die
+ * Dezimalstelle; alles andere (zwei Trennzeichen, Buchstaben) zählt als 0.
+ */
+export function massDe(eingabe: string | null | undefined): number {
+  const roh = (eingabe ?? "").trim().replace(/\s/g, "");
+  if (!/^\d*[.,]?\d*$/.test(roh)) return 0;
+  const n = Number(roh.replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 /** Formular → Zuschuss-Schätzung. Nur Posten mit einer Förderart zählen dort. */
@@ -76,6 +89,7 @@ export function zuFoerderEingabe(e: Entwurf, stichtag: string): FoerderEingabe {
     wohneinheiten: we >= 1 ? we : 1,
     isfp: e.foerder.isfp,
     nutzung: e.foerder.nutzung,
+    gebaeude: e.foerder.gebaeude,
     stichtag,
   };
 }
@@ -84,22 +98,24 @@ export function zuFoerderEingabe(e: Entwurf, stichtag: string): FoerderEingabe {
 export function zuEingabe(e: Entwurf): SanierungEingabe {
   const preise: Partial<Record<MaterialId, number>> = {};
   for (const [id, wert] of Object.entries(e.preise) as [MaterialId, string | undefined][]) {
-    // Leeres Feld = Katalogpreis. „0“ ist ein echter Preis (Material ist schon da).
-    if (wert != null && wert.trim() !== "") preise[id] = zahlDe0(wert);
+    // Leeres Feld = Katalogpreis. „0“ ist ein echter Preis (Material ist schon da). Was sich nicht
+    // lesen lässt („54,-“, „ca. 20“), bleibt beim Katalogpreis — sonst wäre das Material gratis.
+    const n = wert != null && wert.trim() !== "" ? zahlDe(wert) : null;
+    if (n != null && n >= 0) preise[id] = n;
   }
   return {
     raeume: e.raeume.map((r) => ({
       id: r.id,
       name: r.name,
-      laenge: zahlDe0(r.laenge),
-      breite: zahlDe0(r.breite),
-      hoehe: zahlDe0(r.hoehe),
-      oeffnungen: zahlDe0(r.oeffnungen),
-      fliesenhoehe: zahlDe0(r.fliesenhoehe),
+      laenge: massDe(r.laenge),
+      breite: massDe(r.breite),
+      hoehe: massDe(r.hoehe),
+      oeffnungen: massDe(r.oeffnungen),
+      fliesenhoehe: massDe(r.fliesenhoehe),
       massnahmen: r.massnahmen,
     })),
     preise,
-    lohn: e.lohn.map((l) => ({ bezeichnung: l.bezeichnung, stunden: zahlDe0(l.stunden), satz: zahlDe0(l.satz) })),
+    lohn: e.lohn.map((l) => ({ bezeichnung: l.bezeichnung, stunden: zahlDe0(l.stunden), satz: zahlDe0(l.satz), eigenleistung: l.eigenleistung })),
     eigene: e.eigene.map((p) => ({ bezeichnung: p.bezeichnung, betrag: zahlDe0(p.betrag) })),
   };
 }
@@ -134,7 +150,7 @@ export function entwurfAus(roh: unknown): Entwurf | null {
   });
   const lohn = liste(o.lohn).map((x, i): LohnFeld => {
     const l = obj(x);
-    return { id: id(l.id, `l${i}`), bezeichnung: text(l.bezeichnung, 80), stunden: text(l.stunden, 20), satz: text(l.satz, 20) };
+    return { id: id(l.id, `l${i}`), bezeichnung: text(l.bezeichnung, 80), stunden: text(l.stunden, 20), satz: text(l.satz, 20), eigenleistung: l.eigenleistung === true };
   });
   const eigene = liste(o.eigene).map((x, i): PostenFeld => {
     const p = obj(x);
@@ -150,6 +166,7 @@ export function entwurfAus(roh: unknown): Entwurf | null {
     wohneinheiten: typeof f.wohneinheiten === "string" ? f.wohneinheiten.slice(0, 4) : STANDARD_FOERDER.wohneinheiten,
     isfp: f.isfp === true,
     nutzung: f.nutzung === "eigennutzen" ? "eigennutzen" : "vermieten",
+    gebaeude: f.gebaeude === "haus" ? "haus" : "mfh",
   };
   return { raeume, lohn, eigene, preise, foerder };
 }

@@ -164,7 +164,7 @@ Wieder aufbauen, sobald das Produkt Geld verdient.
 Zweiter Bereich, gewechselt am Logo oben links: Kommandozentrale `/aufbau` (Bestand,
 Eigenkapital, freie Grundschuld, Kaufprüfungen, Unterlagen), **Fahrplan** `/fahrplan` (neun
 Schritte + Kaufnebenkosten-Rechner), **Sanierungsrechner** `/sanierung` (Material von–bis inkl.
-Fliesen für Boden und Wand, Räume kopierbar, Arbeitszeit, eigene Posten, geschätzter Zuschuss für
+Fliesen für Boden und Wand, Räume kopierbar, Arbeitszeit mit Eigenleistung, eigene Posten, geschätzter Zuschuss für
 energetische Posten (BAFA/KfW 458, Stand BEG-Reform 21.07.2026); Entwurf nur im Browser;
 Betrag geht per Knopf in die Gesamtinvestition des Kauf-Assistenten) plus Kauf-/Verkauf-Assistent,
 Makler-Ordner, Marktwert-Schätzer, AfA-Assistent. **Nicht gebaut:** Aufmaß per Grundriss-KI,

@@ -19,6 +19,8 @@ export type FahrplanDaten = {
   kaufpruefungen: number;
   /** Mindestens ein Vertreter mit gültiger (oder bald ablaufender) Vollmacht. */
   vertreterGueltig: boolean;
+  /** Gültige General- oder Grundbuchvollmacht, öffentlich beglaubigt oder beurkundet (§ 29 GBO). */
+  vertreterGrundbuch?: boolean;
   objekte: number;
 };
 
@@ -125,7 +127,12 @@ export function fahrplan(d: FahrplanDaten): Station[] {
       satz: "Den Kaufvertrag beurkundet ein Notar (§ 311b BGB). Kannst du nicht selbst hin, unterschreibt ein Vertreter mit Vollmacht.",
       punkte: ["Fürs Grundbuch muss die Vollmacht öffentlich beglaubigt sein (§ 29 GBO)", "Vertreter und Vollmacht in den Einstellungen hinterlegen"],
       ziel: { href: "/einstellungen?tab=vertreter", label: "Vertreter" },
-      status: d.vertreterGueltig ? { art: "info", text: "Vertreter mit gültiger Vollmacht hinterlegt" } : null,
+      // Review 05.10.2026: „gültig“ allein reicht fürs Grundbuch nicht — Art und Form zählen.
+      status: d.vertreterGrundbuch
+        ? { art: "info", text: "Vertreter mit beglaubigter Grundbuch- bzw. Generalvollmacht hinterlegt" }
+        : d.vertreterGueltig
+          ? { art: "info", text: "Vertreter hinterlegt — fürs Grundbuch muss die Vollmacht öffentlich beglaubigt sein" }
+          : null,
     },
     {
       id: "uebergabe",

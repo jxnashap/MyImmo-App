@@ -16,6 +16,18 @@ export function kaufLinkMitSanierung(betrag: number): string {
   return euro > 0 ? `/kauf?${SANIERUNG_PARAM}=${euro}` : "/kauf";
 }
 
+/**
+ * Gespeicherte Kaufprüfung laden, während noch ein Betrag aus dem Sanierungsrechner offen ist: Der
+ * übergebene Betrag gewinnt (der Nutzer kam gerade mit ihm), danach ist er verbraucht. Ohne offenen
+ * Betrag bleibt der gespeicherte Wert. Review 05.10.2026: vorher überschrieb „Bearbeiten“ ihn still.
+ */
+export function sanierungBeimLaden(gespeichert: string, offeneUebergabe: number | null): { wert: string; verbraucht: boolean } {
+  if (offeneUebergabe != null && Number.isFinite(offeneUebergabe) && offeneUebergabe > 0) {
+    return { wert: String(offeneUebergabe), verbraucht: true };
+  }
+  return { wert: gespeichert, verbraucht: false };
+}
+
 /** Betrag aus der Adresse lesen — nur Ziffern, 1 bis SANIERUNG_MAX; sonst null. */
 export function sanierungAusParam(wert: string | string[] | undefined): number | null {
   const roh = Array.isArray(wert) ? wert[0] : wert;

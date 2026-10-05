@@ -118,6 +118,31 @@ vor dem Kauf: `anschaffungsnahVorKauf()` mit derselben Grenze wie der Steuer-Wä
 rendert den Kauf-Rechner. **Vorher fehlte die Sanierung im Kauf-Rechner ganz** — wer renovieren
 musste, sah eine zu hohe Nettorendite und einen zu kleinen Kreditbedarf.
 
+**Review vor dem Merge (05.10.2026, PR #418): 15 Befunde, 14 behoben, `tests/reviewBuyImmo.test.ts`,
+13 Mutationen rot.** Die folgenreichsten:
+- **Sanierung galt als Kaufnebenkosten.** Nebenkosten wurden als „Gesamtinvestition − Kaufpreis“
+  gerechnet — seit die Sanierung darin steckt, hielten Finanzierungsvorschläge, Eigenkapital-Ampel
+  und Kreditantrag 40.000 € Renovierung für Nebenkosten (Ampel rot statt gelb, Warnung „deckt nicht
+  einmal die Kaufnebenkosten“). Jetzt trägt die Auswahl `sanierung` mit (`auswahlAus()`), alle drei
+  ziehen sie ab, und der Kreditantrag sagt der Bank „Gesamtinvestition (inkl. NK und Sanierung)“ +
+  „davon Sanierung“. **Regel: Nebenkosten = Gesamtinvestition − Kaufpreis − Sanierung.**
+- **Raummaße „4.125“ wurden zu 4.125 m** (`zahlDe0` liest den Punkt vor drei Ziffern als Tausender).
+  Jetzt `massDe()` in `lib/sanierung/eingabe.ts`: Komma oder Punkt ist immer die Dezimalstelle.
+- **Eigene Arbeit ging als Ausgabe in den Kauf-Assistenten** (60 h × 40 € = 2.400 € Kreditbedarf, der
+  nie anfällt). Jetzt Haken „Eigenleistung“ je Zeile (Startzeile „Eigene Arbeit“ angehakt): zählt zur
+  Summe, nicht in die Übergabe.
+- **„Bearbeiten“ einer gespeicherten Kaufprüfung verwarf den übergebenen Betrag**
+  (`sanierungBeimLaden()`); der Link zum Rechner öffnet jetzt einen neuen Tab (die Maske ist nicht
+  gespeichert).
+- **Unlesbarer eigener Preis („54,-“) machte das Material gratis** → Katalogpreis; „0“ bleibt ein Preis.
+- **Experten-Grenze:** 5.000 € gelten nur fürs Ein-/Zweifamilienhaus — eine Wohnung im
+  Mehrfamilienhaus bekam sie mit. Jetzt Auswahl „Gebäude“ (Standard Mehrfamilienhaus: 2.000 € je WE).
+- **Kommandozentrale:** kein Restschuld-% mehr, wenn ein Objekt keinen Wert hat (seine Schulden
+  zählten, sein Wert nicht). **Fahrplan:** „passende Vollmacht“ nur bei laufender, öffentlich
+  beglaubigter Grundbuch-/Generalvollmacht (§ 29 GBO).
+- Bewusst belassen: der Bundesland-Standard „5 %“ Grunderwerbsteuer im Kauf-Rechner (gehört zur
+  Bundesland-Auswahl, eigener Befund wäre ein anderes Vorhaben).
+
 ### Verworfene Alternativen — mit Grund
 
 | Weg | Warum nicht (jetzt) |

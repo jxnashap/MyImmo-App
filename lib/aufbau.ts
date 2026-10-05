@@ -32,7 +32,10 @@ export type BestandLage = {
   ohneWert: number;
   wert: number;
   restschuld: number;
-  /** Restschuld in % vom Portfolio-Wert (eine Nachkommastelle), null ohne Wert. */
+  /**
+   * Restschuld in % vom Portfolio-Wert (eine Nachkommastelle). null ohne Wert UND wenn ein Objekt
+   * keinen Wert hat — dessen Schulden zählen, sein Wert nicht; der Prozentsatz wäre zu hoch.
+   */
   restschuldProzent: number | null;
   eigenkapital: number;
   /** Σ Grundschuld über der Restschuld je Objekt; null, wenn nirgends eine eingetragen ist. */
@@ -57,7 +60,7 @@ export function bestandLage(objekte: AufbauObjekt[], kredite: AufbauKredit[]): B
     ohneWert,
     wert,
     restschuld,
-    restschuldProzent: wert > 0 ? Math.round((restschuld / wert) * 1000) / 10 : null,
+    restschuldProzent: wert > 0 && ohneWert === 0 ? Math.round((restschuld / wert) * 1000) / 10 : null,
     eigenkapital: wert - restschuld,
     freieGrundschuld: frei.length ? frei.reduce((s, v) => s + v, 0) : null,
   };

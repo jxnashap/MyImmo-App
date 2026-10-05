@@ -31,7 +31,8 @@ export const FOERDER_ARTEN: { id: FoerderArt; label: string }[] = [
 const ARTEN = new Set<string>(FOERDER_ARTEN.map((a) => a.id));
 export const istFoerderArt = (v: unknown): v is FoerderArt => typeof v === "string" && ARTEN.has(v);
 
-export const FOERDER_STAND_SANIERUNG = "BEG-Reform 21.07.2026, geprüft 05.10.2026";
+// EINE Stand-Angabe mit dem Fördercheck im Kauf-Assistenten (Review 05.10.2026: vorher zwei Konstanten).
+export { FOERDER_STAND as FOERDER_STAND_SANIERUNG } from "@/lib/kauf/foerderung";
 
 /** BAFA BEG EM: „Der Grundfördersatz beträgt 15 % der förderfähigen Ausgaben.“ */
 export const BAFA_SATZ = 0.15;
@@ -69,10 +70,16 @@ export function heizungErsteWohneinheit(stichtag: string): number {
 }
 /** KfW 458: erste WE (siehe oben) / je 15.000 € zweite bis sechste / je 8.000 € ab der siebten — je Gebäude insgesamt. */
 export const grenzeHeizung = (we: number, stichtag: string) => staffel(we, heizungErsteWohneinheit(stichtag), 15_000, 8_000);
-/** Experte: 5.000 € beim Ein-/Zweifamilienhaus, sonst 2.000 € je Wohneinheit, höchstens 20.000 €. */
-export function grenzeExperte(we: number): number {
+export type Gebaeude = "haus" | "mfh";
+/**
+ * Experte: „5 000 Euro bei Ein- und Zweifamilienhäusern, und bei Mehrfamilienhäusern mit drei oder
+ * mehr Wohneinheiten auf 2 000 Euro pro Wohneinheit, insgesamt auf maximal 20 000 Euro“ (BEG EM
+ * Nr. 8.3.1 b). Es zählt die GEBÄUDEART, nicht die Zahl der betroffenen Einheiten (Review
+ * 05.10.2026: eine Eigentumswohnung im Mehrfamilienhaus bekam sonst die 5.000-€-Grenze).
+ */
+export function grenzeExperte(we: number, gebaeude: Gebaeude): number {
   const n = Number.isFinite(we) ? Math.max(1, Math.floor(we)) : 1;
-  return n <= 2 ? 5_000 : Math.min(2_000 * n, 20_000);
+  return gebaeude === "haus" ? 5_000 : Math.min(2_000 * n, 20_000);
 }
 
 export type FoerderPosten = { id: string; bezeichnung: string; betrag: number; art: FoerderArt };
@@ -82,6 +89,8 @@ export type FoerderEingabe = {
   wohneinheiten: number;
   isfp: boolean;
   nutzung: Nutzung;
+  /** Ein-/Zweifamilienhaus oder Mehrfamilienhaus — nur für die Experten-Grenze. */
+  gebaeude: Gebaeude;
   /** Heute als ISO-Datum (vom Server) — die Heizungsgrenze sinkt ab 2027 halbjährlich. */
   stichtag: string;
 };
@@ -153,7 +162,7 @@ export function berechneFoerderung(e: FoerderEingabe): FoerderErgebnis {
 
   const expKosten = summe(["experte"]);
   if (expKosten > 0) {
-    const grenze = grenzeExperte(we);
+    const grenze = grenzeExperte(we, e.gebaeude);
     const foerderfaehig = Math.min(expKosten, grenze);
     toepfe.push({ programm: "BAFA Experte", kosten: rund2(expKosten), foerderfaehig: rund2(foerderfaehig), grenze, zuschuss: rund2(EXPERTE_SATZ * foerderfaehig) });
   }

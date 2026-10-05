@@ -30,10 +30,11 @@ describe("fahrplan — Status nur aus Daten", () => {
       makler: MAKLER_CHECKLISTE.map((i) => ({ item_key: i.key, status: "erledigt" })),
       kaufpruefungen: 2,
       vertreterGueltig: true,
+      vertreterGrundbuch: true,
       objekte: 1,
     };
     expect(status(d, "durchrechnen")?.text).toBe("2 Objekte gespeichert");
-    expect(status(d, "notar")).toEqual({ art: "info", text: "Vertreter mit gültiger Vollmacht hinterlegt" });
+    expect(status(d, "notar")).toEqual({ art: "info", text: "Vertreter mit beglaubigter Grundbuch- bzw. Generalvollmacht hinterlegt" });
     expect(status(d, "uebergabe")?.text).toBe("1 Objekt im Bestand");
     expect(fortschritt(fahrplan(d))).toEqual({ erledigt: 4, pruefbar: 4 });
   });

@@ -208,10 +208,10 @@ describe("Eingabe: Formular → Rechnung, Entwurf aus dem Browser", () => {
     const { zuEingabe } = await import("@/lib/sanierung/eingabe");
     const e = zuEingabe({
       raeume: [{ id: "a", name: "Küche", laenge: "3,45", breite: "2.8", hoehe: "", oeffnungen: "1,5", fliesenhoehe: "", massnahmen: ["spachteln"] }],
-      lohn: [{ id: "l", bezeichnung: "Ich", stunden: "100", satz: "30,50" }],
+      lohn: [{ id: "l", bezeichnung: "Ich", stunden: "100", satz: "30,50", eigenleistung: false }],
       eigene: [{ id: "p", bezeichnung: "Bad", betrag: "8.000", foerderung: "keine" }],
       preise: { wandfarbe: "", spachtel: "0", tiefengrund: "19,99" },
-      foerder: { wohneinheiten: "1", isfp: false, nutzung: "vermieten" },
+      foerder: { wohneinheiten: "1", isfp: false, nutzung: "vermieten", gebaeude: "mfh" },
     });
     expect(e.raeume[0]).toMatchObject({ laenge: 3.45, breite: 2.8, hoehe: 0, oeffnungen: 1.5 });
     expect(e.lohn![0]).toMatchObject({ stunden: 100, satz: 30.5 });

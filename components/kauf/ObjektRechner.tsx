@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { createPortal } from "react-dom";
 import { Home, Building2, Save, Scale, Crown, Trash2, ArrowRight, Landmark, FolderOpen, Pencil, Plus } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { zahlDe0 } from "@/lib/zahl";
 import KalkImport from "@/components/kalkulator/KalkImport";
 import { saveKalkulation, deleteKalkulation, updateKalkulation } from "@/lib/actions/kalkulation";
-import { bestesObjekt, KAUF_AUSWAHL_KEY, type KaufAuswahl, type VglMetrik } from "@/lib/kauf/auswahl";
-import { BUNDESLAENDER, kaufnebenkostenSatz } from "@/lib/kalk";
+import { auswahlAus, bestesObjekt, KAUF_AUSWAHL_KEY, type VglMetrik } from "@/lib/kauf/auswahl";
+import { sanierungBeimLaden } from "@/lib/sanierung/uebergabe";
+import { BUNDESLAENDER, MAKLER_STANDARD_PROZENT, kaufnebenkostenSatz } from "@/lib/kalk";
 import { HAUS_DISCLAIMER } from "@/lib/kauf/hausbewertung";
 import { anschaffungsnahVorKauf } from "@/lib/steuer/anschaffungsnah";
 import { marktwert as rechneMarktwert, preisUrteil } from "@/lib/kauf/marktwert";
@@ -100,10 +100,16 @@ export default function ObjektRechner({
   const [kaufpreis, setKaufpreis] = useState(demo ? DEMO_START.kaufpreis : "");
   const [flaeche, setFlaeche] = useState(demo ? DEMO_START.flaeche : "");
   const [bundesland, setBundesland] = useState("0.05");
-  const [makler, setMakler] = useState("3.57");
+  // EIN Standardwert mit dem Fahrplan-Rechner (lib/kalk.ts), nicht hier fest.
+  const MAKLER_STANDARD = String(MAKLER_STANDARD_PROZENT);
+  const [makler, setMakler] = useState(MAKLER_STANDARD);
   const [maklerBeruehrt, setMaklerBeruehrt] = useState(false); // für Belastbarkeits-Score
   // Sanierung / Renovierung (BuyImmo, 05.10.2026): von Hand oder aus dem Sanierungsrechner.
   const [sanierung, setSanierung] = useState(sanierungStart ? String(sanierungStart) : "");
+  // Ein aus dem Sanierungsrechner übergebener Betrag gilt, bis er verbraucht ist — auch wenn der
+  // Nutzer danach eine gespeicherte Kaufprüfung zum Bearbeiten lädt (Review 05.10.2026: sonst ging
+  // der Betrag beim „Bearbeiten“ still verloren).
+  const [uebergabeOffen, setUebergabeOffen] = useState(sanierungStart != null && sanierungStart > 0);
   // Nutzung
   const [nutzung, setNutzung] = useState<"vermietung" | "eigennutzung">("vermietung");
   const [kaltmiete, setKaltmiete] = useState(demo ? DEMO_START.kaltmiete : "");
@@ -216,8 +222,14 @@ export default function ObjektRechner({
     const d = k.data ?? {};
     const g = (key: string, fallback = "") => d[key] ?? fallback;
     setAdresse(g("adresse")); setKaufpreis(g("kaufpreis")); setFlaeche(g("flaeche"));
-    setBundesland(g("bundesland", "0.05")); setMakler(g("makler", "3.57")); setMaklerBeruehrt(true);
-    setSanierung(g("sanierung")); // ältere Kaufprüfungen haben das Feld nicht → leer
+    setBundesland(g("bundesland", "0.05")); setMakler(g("makler", MAKLER_STANDARD)); setMaklerBeruehrt(true);
+    // Ältere Kaufprüfungen haben das Feld nicht → leer. Ein offener Betrag aus dem Rechner gewinnt.
+    const s = sanierungBeimLaden(g("sanierung"), uebergabeOffen ? sanierungStart : null);
+    setSanierung(s.wert);
+    if (s.verbraucht) {
+      setUebergabeOffen(false);
+      toast(`Sanierung ${eur(Number(s.wert))} aus dem Sanierungsrechner übernommen${g("sanierung") ? ` (gespeichert war ${eur(Number(g("sanierung")) || 0)})` : ""}.`);
+    }
     setNutzung(g("nutzung") === "eigennutzung" ? "eigennutzung" : "vermietung");
     setKaltmiete(g("kaltmiete")); setBewirt(g("bewirt", "20")); setHausgeld(g("hausgeld"));
     setObjektTyp(g("objektTyp") === "haus" ? "haus" : "wohnung");
@@ -233,7 +245,7 @@ export default function ObjektRechner({
 
   function neuesObjekt() {
     setBearbeiteId(null);
-    setAdresse(""); setKaufpreis(""); setFlaeche(""); setKaltmiete(""); setHausgeld(""); setSanierung("");
+    setAdresse(""); setKaufpreis(""); setFlaeche(""); setKaltmiete(""); setHausgeld(""); setSanierung(""); setUebergabeOffen(false);
     setGrundFlaeche(""); setBodenrichtwert(""); setBaujahr("");
     toast("Maske geleert — neues Objekt erfassen.");
   }
@@ -284,15 +296,7 @@ export default function ObjektRechner({
   }
 
   function uebernehmen(k: Kalkulation) {
-    const s = k.summary ?? {};
-    const a: KaufAuswahl = {
-      kalkId: k.id, name: k.name, adresse: k.data?.adresse ?? "",
-      kp: s.kp ?? 0, gesamtInvest: s.gesamtInvest ?? 0, eigenkapital: 0,
-      darlehen: 0, rate: 0, kaltmiete: s.kaltmiete ?? 0, cfNetto: 0,
-      // summarySnapshot: nutzung = vermietung ? 1 : 0
-      nutzung: s.nutzung === 1 ? "vermieten" : "eigennutzen",
-      gewaehltAm: new Date().toISOString().slice(0, 10),
-    };
+    const a = auswahlAus(k, new Date().toISOString().slice(0, 10));
     try { localStorage.setItem(KAUF_AUSWAHL_KEY, JSON.stringify(a)); } catch { /* ignore */ }
     toast(`„${k.name}“ für die Finanzierung übernommen.`);
     setShowCompare(false);
@@ -366,7 +370,7 @@ export default function ObjektRechner({
               <input
                 type="checkbox"
                 checked={num(makler) === 0}
-                onChange={(e) => { setMakler(e.target.checked ? "0" : "3.57"); setMaklerBeruehrt(true); }}
+                onChange={(e) => { setMakler(e.target.checked ? "0" : MAKLER_STANDARD); setMaklerBeruehrt(true); }}
                 style={{ width: 15, height: 15, accentColor: "var(--gold)", cursor: "pointer" }}
               />
               Provisionsfrei (keine Maklercourtage)
@@ -374,9 +378,10 @@ export default function ObjektRechner({
             {/* Sanierung (BuyImmo, 05.10.2026) — fließt in die Gesamtinvestition. */}
             <div style={{ display: "grid", gap: 4 }}>
               {F("Sanierung / Renovierung (€)", sanierung, setSanierung, "0")}
-              <Link href="/sanierung" style={{ fontSize: 11.5, color: "var(--gold)", textDecoration: "none" }}>
-                Mit dem Sanierungsrechner ermitteln →
-              </Link>
+              {/* Neuer Tab: Die Maske hier ist nicht gespeichert — ein Seitenwechsel verlöre alle Eingaben. */}
+              <a href="/sanierung" target="_blank" rel="noopener" style={{ fontSize: 11.5, color: "var(--gold)", textDecoration: "none" }}>
+                Mit dem Sanierungsrechner ermitteln (neuer Tab) →
+              </a>
             </div>
             {/* Objekttyp: Haus schaltet den Substanzwert-Block (Bodenwert + Gebäude) frei. */}
             <div style={{ display: "flex", gap: 4, padding: 4, borderRadius: 12, background: "var(--bg3)", border: "1px solid var(--line)" }}>
@@ -440,7 +445,7 @@ export default function ObjektRechner({
               <span style={{ fontWeight: 400, color: "var(--faint)" }}> — Makler & Bewirtschaftung (Defaults sind gesetzt)</span>
             </summary>
             <div style={{ padding: "2px 14px 14px", display: "grid", gap: 11 }}>
-              {F("Maklercourtage (%) · provisionsfrei = 0", makler, (v) => { setMakler(v); setMaklerBeruehrt(true); }, "3.57")}
+              {F("Maklercourtage (%) · provisionsfrei = 0", makler, (v) => { setMakler(v); setMaklerBeruehrt(true); }, MAKLER_STANDARD)}
               {vermietung && F("Bewirtschaftung (% der Miete)", bewirt, setBewirt, "20")}
               <p style={{ fontSize: 11, color: "var(--faint)", margin: 0 }}>
                 Lässt du das zu, rechnet MyImmo mit konservativen Defaults weiter — Bewirtschaftung

@@ -41,6 +41,9 @@ export default function BereichWechsel({ bereich }: { bereich: Bereich }) {
 
   return (
     <div className="bereich-wechsel" ref={huelle}>
+      {/* Die Wortmarke war das einzige <h1> der App-Seiten (Seitentitel sind .topbar-title-divs) —
+          der Knopf steht deshalb IN der Überschrift, statt sie zu ersetzen. */}
+      <h1 className="bereich-titel">
       <button
         ref={knopf}
         type="button"
@@ -61,6 +64,7 @@ export default function BereichWechsel({ bereich }: { bereich: Bereich }) {
         <img src="/myimmo_logo_2048.png" alt="" className="brand-icon" width={38} height={38} />
         <ChevronsUpDown size={14} className="bereich-pfeil" aria-hidden />
       </button>
+      </h1>
       <p>{info.zusatz}</p>
 
       {offen && (

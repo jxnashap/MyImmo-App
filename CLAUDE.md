@@ -342,6 +342,11 @@ Regel mit dem Kauf-Rechner); ein Test sucht Empfehlungs-Formulierungen. Beide Re
 Demo bedienbar (`data-demo-erlaubt`, schreiben nichts). **Sanierung → Kauf-Assistent:** `/kauf?sanierung=…`
 (`lib/sanierung/uebergabe.ts`), Feld „Sanierung / Renovierung“ im Objekt-Rechner, steckt in der
 Gesamtinvestition; 15-%-Hinweis über `anschaffungsnahVorKauf()` (eine Grenze mit dem Steuer-Wächter).
+**Review vor dem Merge (#418, `tests/reviewBuyImmo.test.ts`) — Regeln daraus:** (1) **Nebenkosten =
+Gesamtinvestition − Kaufpreis − Sanierung** (Ampel, Finanzierungsvorschläge und Kreditantrag hielten
+40.000 € Renovierung für Nebenkosten); die Auswahl trägt `sanierung` mit (`auswahlAus()`). (2) **Meter
+mit `massDe()`, nie `zahlDe0()`** — „4.125“ vom Laser wurde zu 4.125 m. (3) Eigenleistung zählt zur
+Summe, nicht in die Übergabe. Details `docs/zukunft/BUYIMMO.md`.
 **Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
 (`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
 kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**

@@ -18,6 +18,7 @@ import { euro } from "@/lib/format";
 import {
   MASSNAHMEN,
   VERSCHNITT_BODEN,
+  VERSCHNITT_FLIESE,
   VERSCHNITT_LEISTE,
   VERSCHNITT_TAPETE,
   berechneSanierung,
@@ -30,6 +31,7 @@ import {
 import {
   entwurfAus,
   leererEntwurf,
+  massDe,
   mitKopie,
   neuerPosten,
   neuerRaum,
@@ -86,6 +88,8 @@ export default function SanierungsRechner({ katalog, stand, heute }: { katalog: 
   const ergebnis = useMemo(() => berechneSanierung(zuEingabe(entwurf), katalog), [entwurf, katalog]);
   const foerderung = useMemo(() => berechneFoerderung(zuFoerderEingabe(entwurf, heute)), [entwurf, heute]);
   const hatFoerderPosten = entwurf.eigene.some((p) => p.foerderung !== "keine");
+  // In den Kauf-Assistenten: obere Spanne OHNE eigene Arbeit (kein Geld) und VOR Zuschuss (unsicher).
+  const fuerKauf = Math.max(0, ergebnis.gesamt.max - ergebnis.lohnEigen);
 
   const setRaum = (id: string, teil: Partial<RaumFeld>) =>
     setEntwurf((e) => ({ ...e, raeume: e.raeume.map((r) => (r.id === id ? { ...r, ...teil } : r)) }));
@@ -199,7 +203,7 @@ export default function SanierungsRechner({ katalog, stand, heute }: { katalog: 
               ))}
               <li>
                 <strong>Verschnitt</strong> ist eine Annahme von BuyImmo, keine Herstellerangabe: Boden {prozent(VERSCHNITT_BODEN)},
-                Tapete {prozent(VERSCHNITT_TAPETE)}, Sockelleisten {prozent(VERSCHNITT_LEISTE)}.
+                Fliesen {prozent(VERSCHNITT_FLIESE)}, Tapete {prozent(VERSCHNITT_TAPETE)}, Sockelleisten {prozent(VERSCHNITT_LEISTE)}.
               </li>
             </ul>
           </details>
@@ -224,9 +228,13 @@ export default function SanierungsRechner({ katalog, stand, heute }: { katalog: 
                 <button type="button" className="btn btn-ghost btn-sm" aria-label="Zeile entfernen" onClick={() => setEntwurf((e) => ({ ...e, lohn: e.lohn.filter((x) => x.id !== l.id) }))}>
                   <Trash2 size={14} />
                 </button>
+                <label className="sanierung-eigen">
+                  <input type="checkbox" checked={l.eigenleistung} onChange={(e) => setLohn(l.id, { eigenleistung: e.target.checked })} />
+                  Eigenleistung — kostet kein Geld, geht nicht in den Kauf-Assistenten
+                </label>
               </div>
             ))}
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEntwurf((e) => ({ ...e, lohn: [...e.lohn, { id: neueId(), bezeichnung: "", stunden: "", satz: "" }] }))}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEntwurf((e) => ({ ...e, lohn: [...e.lohn, { id: neueId(), bezeichnung: "", stunden: "", satz: "", eigenleistung: false }] }))}>
               <Plus size={14} /> Zeile
             </button>
           </div>
@@ -291,6 +299,13 @@ export default function SanierungsRechner({ katalog, stand, heute }: { katalog: 
               <select id="foerder-nutzung" className="input" value={entwurf.foerder.nutzung} onChange={(e) => setFoerder({ nutzung: e.target.value === "eigennutzen" ? "eigennutzen" : "vermieten" })}>
                 <option value="vermieten">Ich vermiete</option>
                 <option value="eigennutzen">Ich wohne selbst darin</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label htmlFor="foerder-gebaeude">Gebäude</label>
+              <select id="foerder-gebaeude" className="input" value={entwurf.foerder.gebaeude} onChange={(e) => setFoerder({ gebaeude: e.target.value === "haus" ? "haus" : "mfh" })}>
+                <option value="mfh">Mehrfamilienhaus</option>
+                <option value="haus">Ein-/Zweifamilienhaus</option>
               </select>
             </div>
             <label className="massnahme-chip sanierung-isfp">
@@ -371,12 +386,13 @@ export default function SanierungsRechner({ katalog, stand, heute }: { katalog: 
           <span>Material {spanne(ergebnis.materialKosten, euro)}</span>
           <span>Arbeitszeit {euro(ergebnis.lohn)}{zeitGesamt > 0 ? ` (${zahl(zeitGesamt, 1)} Std.)` : ""}</span>
           <span>Eigene Posten {euro(ergebnis.eigene)}</span>
+          {ergebnis.lohnEigen > 0 && <span>davon Eigenleistung {euro(ergebnis.lohnEigen)} (nicht in den Kauf-Assistenten)</span>}
           {foerderung.zuschuss > 0 && <span>Möglicher Zuschuss {euro(foerderung.zuschuss)} (nicht abgezogen)</span>}
         </div>
         {/* Obere Spanne in die Kaufprüfung — lieber zu viel eingeplant als zu wenig. */}
-        {ergebnis.gesamt.max > 0 && (
-          <Link href={kaufLinkMitSanierung(ergebnis.gesamt.max)} className="btn btn-gold btn-sm sanierung-uebernehmen">
-            {euro(ergebnis.gesamt.max)} in den Kauf-Assistenten <ArrowRight size={14} aria-hidden />
+        {fuerKauf > 0 && (
+          <Link href={kaufLinkMitSanierung(fuerKauf)} className="btn btn-gold btn-sm sanierung-uebernehmen">
+            {euro(fuerKauf)} in den Kauf-Assistenten <ArrowRight size={14} aria-hidden />
           </Link>
         )}
       </div>
@@ -413,12 +429,13 @@ function RaumKarte({
   entfernen: () => void;
   kopieren: () => void;
 }) {
+  // Dieselbe Lesart wie die Rechnung (massDe) — sonst zeigte die Flächenzeile etwas anderes.
   const f = flaechen({
-    laenge: zahlDe0(raum.laenge),
-    breite: zahlDe0(raum.breite),
-    hoehe: zahlDe0(raum.hoehe),
-    oeffnungen: zahlDe0(raum.oeffnungen),
-    fliesenhoehe: zahlDe0(raum.fliesenhoehe),
+    laenge: massDe(raum.laenge),
+    breite: massDe(raum.breite),
+    hoehe: massDe(raum.hoehe),
+    oeffnungen: massDe(raum.oeffnungen),
+    fliesenhoehe: massDe(raum.fliesenhoehe),
   });
   const wandGefliest = raum.massnahmen.includes("wand_fliesen");
   const umschalten = (id: MassnahmeId) =>

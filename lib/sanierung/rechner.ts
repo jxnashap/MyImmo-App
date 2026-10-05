@@ -198,7 +198,11 @@ export function flaechen(r: Pick<Raum, "laenge" | "breite" | "hoehe" | "oeffnung
   };
 }
 
-export type LohnPosten = { bezeichnung: string; stunden: number; satz: number };
+/**
+ * `eigenleistung`: eigene Arbeit — sie hat einen Wert (steht in `gesamt`), aber es fließt kein Geld.
+ * Deshalb geht sie NICHT in den Kauf-Assistenten (Darlehen, 15-%-Grenze; Review 05.10.2026).
+ */
+export type LohnPosten = { bezeichnung: string; stunden: number; satz: number; eigenleistung?: boolean };
 export type EigenerPosten = { bezeichnung: string; betrag: number };
 
 export type SanierungEingabe = {
@@ -225,6 +229,8 @@ export type SanierungErgebnis = {
   material: MaterialZeile[];
   materialKosten: Spanne;
   lohn: number;
+  /** Davon eigene Arbeit (kein Geldabfluss). */
+  lohnEigen: number;
   eigene: number;
   gesamt: Spanne;
   /** Summe der Flächen aller Räume — zur Kontrolle in der Oberfläche. */
@@ -291,12 +297,14 @@ export function berechneSanierung(eingabe: SanierungEingabe, katalog: Katalog): 
     max: rund2(material.reduce((s, z) => s + z.kosten.max, 0)),
   };
   const lohn = rund2((eingabe.lohn ?? []).reduce((s, p) => s + pos(p.stunden) * pos(p.satz), 0));
+  const lohnEigen = rund2((eingabe.lohn ?? []).filter((p) => p.eigenleistung).reduce((s, p) => s + pos(p.stunden) * pos(p.satz), 0));
   const eigene = rund2((eingabe.eigene ?? []).reduce((s, p) => s + pos(p.betrag), 0));
 
   return {
     material,
     materialKosten,
     lohn,
+    lohnEigen,
     eigene,
     gesamt: { min: rund2(materialKosten.min + lohn + eigene), max: rund2(materialKosten.max + lohn + eigene) },
     flaechen: summe,
