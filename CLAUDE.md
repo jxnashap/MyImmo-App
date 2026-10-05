@@ -541,7 +541,7 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   🔒 **Nacharbeit vor dem Livegang (gleicher Tag, nach externer Prüfung):**
   (1) ⚠️ **Kontolöschung war unvollständig** — `delete_own_account()` kannte sieben neuere Tabellen
   nicht (keine mit Kaskade): Fotos, Vollmacht-Scans, Mieter-Adressen blieben liegen. Neue Fassung
-  in `20261005130000` — **muss der Betreiber im SQL-Editor ausführen** (enthält `delete`).
+  in `20261005130000` — ✅ **vom Betreiber im SQL-Editor ausgeführt 05.10.2026**, danach geprüft (alle acht Tabellen in der Funktion, Demo-Löschsperre aktiv).
   **Regel: Jede neue Tabelle mit Konto-Bezug braucht eine Kaskade auf `auth.users` ODER eine
   Zeile in `delete_own_account()` — `tests/kontoloeschung.test.ts` wird sonst rot.**
   (2) **Tätigkeit je Auftrag** (`lib/taetigkeiten.ts`, `TaetigkeitWahl`, Migration
