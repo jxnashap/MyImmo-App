@@ -148,3 +148,51 @@ describe("Die drei Dokumentarten", () => {
     expect(gesehen).toEqual([new Date().getFullYear() - 1, 2023]);
   });
 });
+
+// 05.10.2026: Brief (z. B. Mahnung) wahlweise ins Mieterportal — mit derselben Schranke wie die
+// NK-Abrechnung. Ohne verbundenes Konto darf NICHTS zugestellt werden (und auch nichts als
+// „zugestellt“ gemeldet).
+describe("Brief ins Mieterportal (Mahnung)", () => {
+  const MIT_KONTO = {
+    antworten: { mieter: { prop_id: "obj-1" }, notizen: { id: "n-neu" }, mieter_zugaenge: [{ user_id: "konto-a", email: "anna@example.org" }], zustellungen: [{ id: "z1" }] },
+  };
+  const zustellZeilen = (db: { zugriffe: { tabelle: string; op: string; daten?: unknown }[] }) =>
+    db.zugriffe.filter((z) => z.tabelle === "zustellungen" && z.op === "insert").flatMap((z) => z.daten as Record<string, unknown>[]);
+
+  it("mit verbundenem Konto: archiviert UND zugestellt, Lesebestätigung wie gewählt", async () => {
+    const { db, mod } = await lade(MIT_KONTO);
+    expect(await mod.speichereBrief("m1", {} as never, { zustellen: true, bestaetigung: true })).toEqual({ ok: true, zugestelltAn: ["anna@example.org"] });
+    expect(archivEintrag(db)).toMatchObject({ kategorie: "Schreiben / Brief", mieter_freigabe: true });
+    expect(zustellZeilen(db)).toEqual([expect.objectContaining({ empfaenger_user_id: "konto-a", bestaetigung_noetig: true, art: "dokument" })]);
+  });
+
+  it("ohne verbundenes Konto: gesperrt — kein Archiv-Eintrag, keine Zustellung", async () => {
+    const { db, mod } = await lade({ antworten: { mieter: { prop_id: "obj-1" }, mieter_zugaenge: [] } });
+    const r = await mod.speichereBrief("m1", {} as never, { zustellen: true });
+    expect(r.ok).toBe(false);
+    expect(r.error).toMatch(/kein verbundenes Portal-Konto/);
+    expect(archivEintrag(db)).toBeUndefined();
+    expect(zustellZeilen(db)).toEqual([]);
+  });
+
+  it("scheitert die Prüfung, wird nicht zugestellt (fail-closed)", async () => {
+    const { db, mod } = await lade({ ...MIT_KONTO, fehlerBei: { mieter_zugaenge: { message: "kaputt" } } });
+    const r = await mod.speichereBrief("m1", {} as never, { zustellen: true });
+    expect(r.ok).toBe(false);
+    expect(archivEintrag(db)).toBeUndefined();
+  });
+
+  it("ohne Versandwunsch bleibt alles wie bisher: nur Archiv, keine Zustellung", async () => {
+    const { db, mod } = await lade(MIT_KONTO);
+    expect(await mod.speichereBrief("m1", {} as never)).toEqual({ ok: true });
+    expect(zustellZeilen(db)).toEqual([]);
+  });
+
+  it("die Vorab-Prüfung nennt Empfänger bzw. Sperre", async () => {
+    const { mod } = await lade(MIT_KONTO);
+    expect(await mod.pruefeBriefZustellung("m1")).toEqual({ sperre: null, warnungen: [], an: ["anna@example.org"] });
+    const { mod: mod2 } = await lade({ antworten: { mieter: { prop_id: "obj-1" }, mieter_zugaenge: [] } });
+    const r = await mod2.pruefeBriefZustellung("m1");
+    expect("sperre" in r && r.sperre).toMatch(/kein verbundenes Portal-Konto/);
+  });
+});

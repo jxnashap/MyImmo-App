@@ -157,10 +157,37 @@ describe("Freigaben fürs Mieterportal", () => {
 
   it("ein Beleg wird ebenso nur am eigenen Konto umgestellt — und wieder zurück", async () => {
     const { db, mod } = await lade({ antworten: { kosten: { id: "k1" } } });
-    expect(await mod.setzeBelegFreigabe("k1", false)).toEqual({ ok: true });
+    expect(await mod.setzeBelegFreigabe("k1", false)).toEqual({ ok: true, sichtbarFuer: 0 });
     const z = db.zugriffe.find((x) => x.tabelle === "kosten")!;
     expect(z.daten).toEqual({ mieter_freigabe: false });
     expect(z.filter).toContain("eq:user_id=nutzer-1");
+  });
+
+  it("S7: die Freigabe nennt, für wie viele verbundene Mieterkonten der Beleg sichtbar wird", async () => {
+    const { db, mod } = await lade({
+      antworten: {
+        kosten: { id: "k1", prop_id: "p1", buchungsdatum: "2025-05-01" },
+        mieter: [
+          { id: "a", prop_id: "p1", mietbeginn: "2020-01-01", mietende: null },
+          { id: "b", prop_id: "p1", mietbeginn: "2026-04-01", mietende: null },
+        ],
+        mieter_zugaenge: [{ mieter_id: "a", user_id: "u-a" }, { mieter_id: "b", user_id: "u-b" }],
+      },
+    });
+    expect(await mod.setzeBelegFreigabe("k1", true)).toEqual({ ok: true, sichtbarFuer: 1 });
+    // Gezählt wird nur unter den EIGENEN Mietern/Zugängen dieses Objekts.
+    const m = db.zugriffe.find((x) => x.tabelle === "mieter")!;
+    expect(m.filter).toEqual(expect.arrayContaining(["eq:user_id=nutzer-1", "eq:prop_id=p1"]));
+    const z = db.zugriffe.find((x) => x.tabelle === "mieter_zugaenge")!;
+    expect(z.filter).toEqual(expect.arrayContaining(["eq:vermieter_id=nutzer-1", "eq:prop_id=p1"]));
+  });
+
+  it("S7: scheitert die Zählung, gilt die Freigabe trotzdem — ohne erfundene Zahl", async () => {
+    const { mod } = await lade({
+      antworten: { kosten: { id: "k1", prop_id: "p1", buchungsdatum: "2025-05-01" } },
+      fehlerBei: { mieter_zugaenge: { message: "boom" } },
+    });
+    expect(await mod.setzeBelegFreigabe("k1", true)).toEqual({ ok: true, sichtbarFuer: null });
   });
 
   it("ein Datenbankfehler wird gemeldet", async () => {

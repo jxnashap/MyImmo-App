@@ -124,6 +124,7 @@ const IMMER_ERLAUBT = [
   // Zaehlerfoto auf /verbrauch, Anhang eines Anliegens.
   "/api/zaehler-foto",
   "/api/anliegen-datei",
+  "/api/auftrag-foto", // Foto im Verlauf eines Service-Auftrags (05.10.2026)
 ];
 
 // Einzelne lesende Routen ausserhalb der freien Praefixe.
@@ -179,8 +180,10 @@ export type DemoBereich = { titel: string; text: string };
 export const DEMO_BEREICHE: Record<string, DemoBereich> = {
   // Verlinkt aus dem Kauf-Assistenten. Ohne Beispieldaten.
   "/makler": {
-    titel: "Makler-Unterlagen",
-    text: "Exposé, Grundbuchauszug, Teilungserklärung und Protokolle je Kaufobjekt an einer Stelle, mit Prüfliste, was noch fehlt.",
+    // Bis 05.10.2026 stand hier „Exposé, Grundbuchauszug, Teilungserklärung … je Kaufobjekt“ —
+    // das ist der Bank-/Beleihungsordner, nicht der Makler-Ordner.
+    titel: "Makler-Ordner",
+    text: "Deine Käuferunterlagen für Makler und Verkäufer: Finanzierungsbestätigung, Selbstauskunft, SCHUFA — abhaken, als PDF erzeugen und per zeitlich begrenztem Link teilen.",
   },
 };
 

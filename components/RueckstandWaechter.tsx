@@ -5,7 +5,9 @@ import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
 import AufklappSection from "@/components/AufklappSection";
 import { createClient } from "@/lib/supabase/server";
-import { euro, datum as deDatum } from "@/lib/format";
+import { euro } from "@/lib/format";
+import { zahlungsBriefUrl } from "@/lib/mahnung";
+import { heuteBerlin } from "@/lib/zeitraum";
 import { offeneMieten, monatLabel, type MietkontoMieter, type MietkontoZeitraum } from "@/lib/mietkonto";
 
 type MieterRow = MietkontoMieter & { id: string; vorname: string | null; nachname: string | null; prop_id: string | null };
@@ -33,6 +35,7 @@ export default async function RueckstandWaechter() {
   });
 
   if (offene.length === 0) return null;
+  const heuteISO = heuteBerlin();
   offene.sort((a, b) => b.tageOffen - a.tageOffen);
 
   // Ein neu angelegter Mieter mit Mietbeginn in der Vergangenheit erzeugt
@@ -74,13 +77,10 @@ export default async function RueckstandWaechter() {
           </p>
         )}
         {aktuell.map((o) => {
-          // Faellig ist der DRITTE WERKTAG (§ 556b BGB) — genau danach rechnet
-          // auch `offeneMieten()`. Der pauschale „3. des Monats" im Mahntext
-          // wich davon ab und nannte dem Mieter ein falsches Datum.
-          const grund = `Es handelt sich um die Miete für ${monatLabel(o.jahrMonat)} (fällig am ${deDatum(o.faelligSeit)}, drittem Werktag des Monats, § 556b BGB).`;
-          const zahlbarBis = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-          const q = (art: string) =>
-            `/tenants/${o.mieterId}/dokument?art=${art}&betrag=${o.gesamt}&datum=${zahlbarBis}&grund=${encodeURIComponent(grund)}`;
+          // Fällig ist der DRITTE WERKTAG (§ 556b BGB) — Text und Frist baut lib/mahnung.ts,
+          // dieselbe Stelle wie die Aufgabe „Mieteingang offen“ auf dem Dashboard.
+          const q = (art: "zahlungserinnerung" | "mahnung") =>
+            zahlungsBriefUrl({ mieterId: o.mieterId, jahrMonat: o.jahrMonat, betrag: o.gesamt, heuteISO, art });
           return (
             <div
               key={`${o.mieterId}-${o.jahrMonat}`}
@@ -92,10 +92,12 @@ export default async function RueckstandWaechter() {
               <span className={`badge ${o.tageOffen > 14 ? "badge-red" : "badge-amber"}`}>
                 {o.tageOffen === 0 ? "heute fällig" : `${o.tageOffen} Tag${o.tageOffen === 1 ? "" : "e"} überfällig`}
               </span>
-              <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+              {/* Am Fälligkeitstag selbst ist noch nichts versäumt (Verzug ab dem Folgetag) —
+                  dieselbe Grenze wie „Erinnerung schreiben“ auf dem Dashboard (mieteUeberfaellig). */}
+              {o.tageOffen > 0 && <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
                 <Link href={q("zahlungserinnerung")} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Zahlungserinnerung</Link>
                 <Link href={q("mahnung")} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px", color: "var(--red)" }}>Mahnung</Link>
-              </span>
+              </span>}
             </div>
           );
         })}

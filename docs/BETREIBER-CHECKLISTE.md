@@ -140,7 +140,7 @@ Art. 13 Abs. 2 lit. a DSGVO will Dauer **oder** Kriterien; besser wäre die Zahl
 
 `app/globals.css`, Token `--text-xs` auf `12px`, dann Seiten durchklicken.
 
-Bricht etwas — `.tz-rest` hat eine feste Breite von 84px, Badges und Kpi-Labels sind in
+Bricht etwas — Badges und Kpi-Labels sind in
 gesperrten Großbuchstaben gesetzt — **eine Zeile zurück**.
 
 **Kein Test findet einen hässlichen Umbruch.** Das muss jemand ansehen.

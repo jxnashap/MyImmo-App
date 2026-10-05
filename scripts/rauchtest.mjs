@@ -138,6 +138,16 @@ function ersterLink(html, praefix) {
 // Seit Phase 3 auch Mieterportal und Archiv (Beispieldaten im Schnappschuss).
 // Weiterhin gesperrt: Makler-Unterlagen. Der Weg „demo-grenze" prüft, dass die
 // Sperre hält und die Weiterleitung den Bereich nennt.
+/** Detailansicht des ersten Anliegens einer Liste öffnen (`…vorgang=<id>`) und Texte prüfen. */
+async function pruefeVorgang(seite, erwartet) {
+  const m = /href="([^"]*vorgang=[^"]+)"/.exec(seite.html);
+  if (!m) return "kein Link auf eine Detailansicht (vorgang=) in der Liste";
+  const detail = await hole(m[1].replace(/&amp;/g, "&"));
+  if (detail.status >= 400) return `Detailansicht HTTP ${detail.status}`;
+  const fehlt = erwartet.filter((t) => !detail.html.includes(t));
+  return fehlt.length ? `Detailansicht: Text fehlt: ${fehlt.join(", ")}` : null;
+}
+
 const WEGE = [
   {
     // Öffentliche Angebotsseite (02.10.2026): ohne gültigen Link „nicht mehr gültig“ — und
@@ -154,7 +164,7 @@ const WEGE = [
     pfad: "/",
     // „Buchungssaldo" und die Formel am Monats-Cashflow (Phase 4, Review
     // 30.09.2026): Jede Cashflow-Zahl sagt, was sie ist.
-    erwartet: ["Portfolio-Wert", "Termine &amp; Aufgaben", "<h3>Buchungssaldo</h3>", "Neuigkeiten aus dem Mieterportal", "Warmmiete − Kreditraten − Ø Kosten", "Warmmiete / Mo.", "% ggü. Kaufpreis"],
+    erwartet: ["Portfolio-Wert", "Termine &amp; Aufgaben", ">Buchungssaldo<", "Neuigkeiten aus dem Mieterportal", "Warmmiete − Kreditraten − Ø Kosten", "Warmmiete / Mo.", "% ggü. Kaufpreis"],
     async pruefe({ html }) {
       // Vorgabe des Betreibers (#321): Kennzahlen VOR den Aufgaben. Der
       // Unit-Test prüft die Quelldatei — hier steht die ausgelieferte Seite.
@@ -241,11 +251,13 @@ const WEGE = [
   },
   {
     schluessel: "mieterportal",
-    titel: "Mieterportal — Beispiel-Anliegen",
+    titel: "Mieterportal — Beispiel-Anliegen (Liste + Detailansicht)",
     pfad: "/anliegen",
-    erwartet: ["Heizkörper im Bad wird nicht warm"],
-    async pruefe() {
-      return null;
+    erwartet: ["Heizkörper im Bad wird nicht warm", "listen-zeile"],
+    // Seit 03.10.2026 öffnet jede Zeile eine Detailansicht (`?vorgang=<id>`) — die Liste zeigt
+    // keinen Verlauf mehr. Geprüft wird also auch die Detailseite des ersten Anliegens.
+    async pruefe(seite) {
+      return pruefeVorgang(seite, ["Alle Meldungen", ">Verlauf<", "Antwort an den Mieter"]);
     },
   },
   {
@@ -281,7 +293,7 @@ const WEGE = [
     titel: "Mieterportal — Service-Partner verknüpft",
     pfad: "/anliegen?tab=service",
     // Firmen und Aufträge kommen aus dem Reset (Migration 20261001180200) — ohne ihn fehlen sie still.
-    erwartet: ["Verknüpfte Service-Partner", "Hausmeisterservice Krause", "Sanitär Lindner GmbH", "Garten- &amp; Winterdienst Petersen", "Heizung &amp; Sanitär Böhm", "Dachrinne verstopft", "Hecke schneiden und Grünschnitt entsorgen"],
+    erwartet: ["Verknüpfte Service-Partner", "Hausmeisterservice Krause", "Dienstleister — sieht nur Aufträge", "Sanitär Lindner GmbH", "Garten- &amp; Winterdienst Petersen", "Heizung &amp; Sanitär Böhm", "Dachrinne verstopft", "Hecke schneiden und Grünschnitt entsorgen"],
     async pruefe() {
       return null;
     },
@@ -448,7 +460,7 @@ async function main() {
     console.log("\n✓ Mieter-Demo — Anmeldung");
     const MIETER_WEGE = [
       { titel: "Mieterportal — Wohnung, Zu erledigen, Notfall", pfad: "/portal", erwartet: ["Mieterportal", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete", ">Zu erledigen<", "zuerst hier"] },
-      { titel: "Mieterportal — Anliegen mit Verlauf und Schadensmeldung", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<", ">Dein Vermieter<", "Schaden melden"] },
+      { titel: "Mieterportal — Anliegen (Liste) und Schadensmeldung", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<", "Schaden melden", "listen-zeile"], detail: [">Dein Vermieter<", "Alle Anliegen", ">Verlauf<"] },
       { titel: "Mieterportal — Zahlungen mit Mietkonto", pfad: "/portal?tab=zahlungen", erwartet: ["Mieterportal", ">Zahlungen<", "letzte 12 Monate", "bestätigt"] },
       { titel: "Mieterportal — Dokumente", pfad: "/portal?tab=dokumente", erwartet: ["Mieterportal", ">Dokumente<"] },
       { titel: "Mieterportal — Zähler", pfad: "/portal?tab=zaehler", erwartet: ["Mieterportal", "Zählerstand"] },
@@ -466,6 +478,7 @@ async function main() {
           const fehlt = weg.erwartet.filter((t) => !seite.html.includes(t));
           if (fehlt.length) grund = `Text fehlt: ${fehlt.join(", ")}`;
         }
+        if (!grund && weg.detail) grund = await pruefeVorgang(seite, weg.detail);
       } catch (e) {
         grund = `Ausnahme: ${e.message}`;
       }
@@ -484,7 +497,7 @@ async function main() {
   } else {
     console.log("\n✓ Service-Demo — Anmeldung");
     const SERVICE_WEGE = [
-      { titel: "Service-Portal — Aufträge", pfad: "/service", erwartet: ["Service-Portal", "1 Auftraggeber (seit", "Auftrag beantragen", "Firmenverzeichnis des Vermieters", "Dachrinne verstopft", "Heizkörper im Bad prüfen", "Heizung &amp; Sanitär Böhm"] }, // React trennt Textteile mit <!-- --> — Marker ohne Übergang zwischen festem Text und {…}
+      { titel: "Service-Portal — Aufträge", pfad: "/service", erwartet: ["Service-Portal", "1 Auftraggeber (seit", "Auftrag beantragen", "Firmenverzeichnis des Vermieters", "Dachrinne verstopft", "Heizkörper im Bad prüfen", "Heizung &amp; Sanitär Böhm", "Deine Objekte", "Reihenhaus Halle"] }, // React trennt Textteile mit <!-- --> — Marker ohne Übergang zwischen festem Text und {…}
       { titel: "Service-Demo — Vermieter-Bereich bleibt zu", pfad: "/steuer", erwartet: [], zielPfad: "/service" },
     ];
     for (const weg of SERVICE_WEGE) {
@@ -498,6 +511,7 @@ async function main() {
           const fehlt = weg.erwartet.filter((t) => !seite.html.includes(t));
           if (fehlt.length) grund = `Text fehlt: ${fehlt.join(", ")}`;
         }
+        if (!grund && weg.detail) grund = await pruefeVorgang(seite, weg.detail);
       } catch (e) {
         grund = `Ausnahme: ${e.message}`;
       }

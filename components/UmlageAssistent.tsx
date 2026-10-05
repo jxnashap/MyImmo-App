@@ -329,7 +329,7 @@ export default function UmlageAssistent({
           )}
           {fehlendeFlaeche && mieter.length > 0 && (
             <div style={{ fontSize: 11, color: "var(--amber)", marginTop: 10 }}>
-              Hinweis: Mindestens ein Mieter hat keine Fläche — Positionen nach „Fläche" lassen sich erst nach Eingabe der m² korrekt verteilen.
+              Hinweis: Mindestens ein Mieter hat keine Fläche — Positionen nach „Fläche&quot; lassen sich erst nach Eingabe der m² korrekt verteilen.
             </div>
           )}
         </div>

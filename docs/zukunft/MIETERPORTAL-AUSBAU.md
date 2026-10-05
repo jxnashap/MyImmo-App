@@ -55,7 +55,23 @@ gesperrt; die Mieterseite nennt das Enddatum.
 - **Bewusst ohne Fremdschlüssel** auf `notizen`/`mieter`: `on delete …` löst den
   Bestätigungsdialog von `apply_migration` aus, und das Protokoll soll das Dokument überleben.
 
-**Noch offen:** S4, S7 (Reichweite im Schalter), Vorschau berücksichtigt abgelaufenen Zugang nicht.
+**03.10.2026 — Paket S abgeschlossen** (`tests/mieterportalRest.test.ts`, 13 Mutationen):
+- **S4:** Ändert der Vermieter Name oder Mietbeginn eines Mieters mit Portal-Konto, fragt das
+  Formular „Ist das ein neuer Mieter?“ — *Zugang trennen und speichern* / *nur korrigiert*.
+  `updateTenant` setzt das durch (ohne Entscheidung: nichts gespeichert; Zugang nicht lesbar:
+  nichts gespeichert). Schreibweise („ berger “ → „Berger“) und ein bisher leeres Feld zählen
+  nicht (`mieterwechselVerdacht()` in `lib/mieterZugang.ts`).
+- **S7:** Die Beleg-Freigabe nennt, für wie viele verbundene Konten der Beleg sichtbar wird —
+  dieselbe Regel wie `mieter_beleg_sichtbar()` (`belegReichweite()`); bei 0 sagt sie, dass ihn
+  niemand sieht. Scheitert die Zählung, gilt die Freigabe trotzdem, ohne erfundene Zahl.
+- **Vorschau nach Zugangsende:** Ist der Zugang abgelaufen, zeigt die Vorschau weder Wohnung noch
+  Zahlungen, Dokumente oder Belege (wie die Sichten beim Mieter) und nennt das Enddatum.
+**Offen bleibt nur S7 optional „Beleg nur für eine Wohnung“** — erst bei Bedarf.
+
+**03.10.2026 — Oberfläche: Liste + Detailansicht.** Auf Wunsch des Betreibers („nicht so viel
+Text“) zeigen beide Anliegen-Listen nur noch eine Zeile je Vorgang; Verlauf, Antworten, Termine
+und Angebote stehen in der Detailansicht `?vorgang=<id>`. Gleiche Daten, gleiche Lader — nur die
+Darstellung ist getrennt (`lib/anliegenListe.ts`).
 
 ## 1. Kurzfazit
 

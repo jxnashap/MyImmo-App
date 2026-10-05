@@ -30,7 +30,7 @@ export function TopbarSkeleton() {
 
 export function KpiGridSkeleton({ n = 4 }: { n?: number }) {
   return (
-    <div className="grid-4 mb-20">
+    <div className={`${n === 5 ? "grid-5" : "grid-4"} mb-20`}>
       {Array.from({ length: n }).map((_, i) => (
         <div key={i} className="kpi-card">
           <Skeleton w={80} h={10} />
@@ -38,6 +38,31 @@ export function KpiGridSkeleton({ n = 4 }: { n?: number }) {
           <Skeleton w={60} h={11} style={{ marginTop: 10 }} />
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Platzhalter für die Kennzahlen-Leiste des Dashboards (eine Karte, fünf Felder). */
+export function KpiLeisteSkeleton() {
+  return (
+    <div className="kpi-leiste mb-20">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="kpi-feld">
+          <Skeleton w={80} h={10} />
+          <Skeleton w={110} h={24} style={{ marginTop: 6 }} />
+          <Skeleton w={90} h={11} style={{ marginTop: 6 }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Platzhalter für eine Diagramm-Karte (Dashboard-Verläufe, 260 px hoch). */
+export function ChartSkeleton({ hoehe = 260 }: { hoehe?: number }) {
+  return (
+    <div className="section">
+      <div className="section-header"><Skeleton w={180} h={14} /></div>
+      <div className="section-body"><Skeleton w="100%" h={hoehe} r={12} /></div>
     </div>
   );
 }

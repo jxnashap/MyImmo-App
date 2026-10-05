@@ -36,7 +36,7 @@ export default function AgbPage() {
         Ludwig-Jahn-Straße 42, 23611 Bad Schwartau, E-Mail: info@myimmoapp.de
         (siehe <Link href="/impressum" style={{ color: "var(--gold)" }}>Impressum</Link>).
         Diese AGB gelten für alle Verträge über die Nutzung der Web-Anwendung MyImmo
-        („Dienst"). Abweichende Bedingungen des Nutzers finden keine Anwendung.
+        („Dienst&quot;). Abweichende Bedingungen des Nutzers finden keine Anwendung.
       </p>
 
       <H2>2. Leistungsbeschreibung</H2>
@@ -109,7 +109,7 @@ export default function AgbPage() {
       <H2>8. Laufzeit und Kündigung</H2>
       <p>
         Der Nutzungsvertrag läuft auf unbestimmte Zeit. Der Nutzer kann jederzeit ohne
-        Frist kündigen — durch Löschung des Kontos in den Einstellungen („Konto löschen")
+        Frist kündigen — durch Löschung des Kontos in den Einstellungen („Konto löschen&quot;)
         oder über den Kündigungsweg des jeweiligen Bezahlkanals; bei Bezahltarifen endet
         der Zugang zum Bezahltarif zum Ende des bereits bezahlten Zeitraums. Der Anbieter
         kann den kostenlosen Dienst mit einer Frist von 4 Wochen kündigen; das Recht zur

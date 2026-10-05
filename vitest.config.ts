@@ -13,5 +13,9 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
     environment: "node",
+    // Standard sind 5 s. Tests, die eine Route samt Abhängigkeiten zum ersten Mal importieren,
+    // brauchten unter Last im vollen Lauf 5,0–5,6 s (allein 1,2 s) und fielen sporadisch aus —
+    // ein Zeitlimit, kein Fehler im Code. 20 s lässt echte Hänger weiterhin scheitern.
+    testTimeout: 20_000,
   },
 });

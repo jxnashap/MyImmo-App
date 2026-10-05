@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { baueHeuteAufgaben, tageVor, type FristZeile } from "@/lib/heute";
+import { baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type FristZeile } from "@/lib/heute";
 import { VERWALTEN, ABRECHNEN, PLANEN, ALLE_ZIELE } from "@/lib/nav";
 import { REGISTRIERUNG_OFFEN, START_CTA } from "@/lib/preise";
 
@@ -153,11 +153,14 @@ describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026 / 02
   const seite = readFileSync("app/(app)/page.tsx", "utf8");
 
   it("Buchungssaldo | Neuigkeiten über Aufgaben — in EINEM zweispaltigen Block", () => {
-    const block = seite.indexOf('<div className="grid-2 mb-20" style={{ alignItems: "start" }}>');
-    const saldo = seite.indexOf("<h3>Buchungssaldo</h3>");
+    // 03.10.2026: eigener Block `dash-haupt` (Verläufe links breiter, Portal + Aufgaben rechts).
+    const block = seite.indexOf('<div className="dash-haupt mb-20">');
+    // 04.10.2026: Die Verläufe sind EINE Karte mit Umschalter (`DiagrammWechsel`).
+    const saldo = seite.indexOf('titel: "Buchungssaldo"');
     const neu = seite.indexOf("<h3>Neuigkeiten aus dem Mieterportal</h3>");
     const aufgaben = seite.indexOf("<h3>Termine &amp; Aufgaben</h3>");
-    const danach = seite.indexOf("<h3>Einnahmen vs. Ausgaben</h3>");
+    // „Einnahmen vs. Ausgaben“ ist seit 03.10.2026 entfallen (wiederholte die Kennzahlen).
+    const danach = seite.indexOf("<h3>Letzte Buchungen</h3>");
     for (const [n, i] of Object.entries({ block, saldo, neu, aufgaben, danach })) expect(i, n).toBeGreaterThan(0);
     expect(block).toBeLessThan(saldo);
     expect(saldo).toBeLessThan(neu);
@@ -166,7 +169,7 @@ describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026 / 02
   });
 
   it("die Kennzahlen stehen vor den Aufgaben", () => {
-    const kpis = seite.indexOf('staffel grid-5');
+    const kpis = seite.indexOf('className="kpi-leiste');
     const aufgaben = seite.indexOf("Termine &amp; Aufgaben");
     expect(kpis).toBeGreaterThan(0);
     expect(aufgaben).toBeGreaterThan(0);
@@ -179,10 +182,23 @@ describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026 / 02
     // stand als „Cashflow" neben dem Monats-Cashflow). Der Titel muss DA sein —
     // `indexOf` liefert sonst -1, und -1 ist immer „davor": Die erste Fassung
     // wäre nach der Umbenennung still grün geblieben.
-    for (const chart of ["Portfolio-Wertentwicklung", "<h3>Buchungssaldo</h3>"]) {
+    // Seit 04.10.2026 als Ansichten EINER Karte (`DiagrammWechsel`), Titel als `titel:`.
+    for (const chart of ['titel: "Portfolio-Wert"', 'titel: "Buchungssaldo"']) {
       expect(seite.indexOf(chart), chart).toBeGreaterThan(0);
       expect(seite.indexOf(chart), chart).toBeLessThan(aufgaben);
     }
+  });
+
+  it("die Verläufe stehen in EINER Karte mit Umschalter — Portfolio-Wert zuerst", () => {
+    const wechsel = seite.indexOf("<DiagrammWechsel");
+    const wert = seite.indexOf('schluessel: "wert"');
+    const saldo = seite.indexOf('schluessel: "saldo"');
+    expect(wechsel).toBeGreaterThan(0);
+    expect(wechsel).toBeLessThan(wert);
+    expect(wert).toBeLessThan(saldo);
+    // keine zweite, feste Diagramm-Karte daneben
+    expect(seite.match(/<BetragChart/g)?.length).toBe(1);
+    expect(seite.match(/<WertVerlaufChart/g)?.length).toBe(1);
   });
 
   it("es gibt nur EINEN Aufgaben-Block — nicht zwei mit denselben Fristen", () => {
@@ -271,5 +287,38 @@ describe("Ehrliche Beschriftung, solange ein Zugangscode nötig ist", () => {
     // Startseite STEHEN. Sie hielt damit drei Sackgassen fest: Alle drei Ziele
     // waren in der Demo gesperrt. Ob ein Weg aufgeht, prüft jetzt
     // tests/demoWege.test.ts gegen `demoDarfRoute`.
+  });
+});
+
+describe("Gleiche Aufgaben bündeln (03.10.2026)", () => {
+  const a = (label: string, sub: string, datum = "2026-12-31", dringend = false) =>
+    ({ art: "frist" as const, label, sub, href: "/tenants/x", aktion: "öffnen", dringend, datum });
+
+  it("gleicher Titel + gleiches Datum → eine Zeile mit Anzahl und Namen", () => {
+    const r = buendleGleicheAufgaben([
+      a("NK zustellen", "Anna Weber · Haus A"),
+      a("NK zustellen", "Fatma Yılmaz · Haus B", "2026-12-31", true),
+      a("NK zustellen", "Tom Krüger · Haus C"),
+    ]);
+    expect(r).toHaveLength(1);
+    expect(r[0].anzahl).toBe(3);
+    expect(r[0].sub).toBe("3 Einträge · Anna Weber, Fatma Yılmaz, …");
+    expect(r[0].href).toBe("/termine");
+    expect(r[0].dringend).toBe(true);
+  });
+
+  it("anderes Datum oder anderer Titel bleibt getrennt, Reihenfolge bleibt", () => {
+    const r = buendleGleicheAufgaben([
+      a("Grundsteuer", "Alle Objekte", "2026-11-15"),
+      a("NK zustellen", "Anna Weber"),
+      a("Grundsteuer", "Alle Objekte", "2027-02-15"),
+    ]);
+    expect(r.map((x) => [x.label, x.anzahl])).toEqual([["Grundsteuer", 1], ["NK zustellen", 1], ["Grundsteuer", 1]]);
+    expect(r[1].sub).toBe("Anna Weber");
+    expect(r[1].href).toBe("/tenants/x");
+  });
+
+  it("das Dashboard bündelt vor dem Kürzen auf sechs Zeilen", () => {
+    expect(readFileSync("app/(app)/page.tsx", "utf8")).toContain("buendleGleicheAufgaben(alleHeuteAufgaben).slice(0, HEUTE_ZEILEN)");
   });
 });

@@ -1,25 +1,27 @@
 import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
 import { bauePortalNeuigkeiten, NEUIGKEITEN_TAGE, type NeuigkeitArt } from "@/lib/portalNeuigkeiten";
 import Link from "next/link";
+import SchuldenUhr from "@/components/SchuldenUhr";
+import { schuldenStand } from "@/lib/schuldenStand";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import LandingPage from "@/components/LandingPage";
-import { euro, datum, zahl, begruessung } from "@/lib/format";
+import { euro, datum, begruessung } from "@/lib/format";
 import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
-import { baueHeuteAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
+import { baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
-import { CalendarDays, Plus, TriangleAlert, BarChart3, Landmark, Banknote, ArrowRight, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck } from "lucide-react";
+import { CalendarDays, Plus, TriangleAlert, Landmark, Banknote, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck, ChevronRight } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
 import ZeitraumControl from "@/components/ZeitraumControl";
+import DiagrammWechsel from "@/components/DiagrammWechsel";
 import { portfolioWertReihe, wertzuwachsGgKaufpreis, type RohStand } from "@/lib/wert/verlauf";
 import { einnahmeDatum, type RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { ORGANISATION } from "@/lib/seo/jsonLd";
-import Leer from "@/components/Leer";
 import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, laufendeKosten } from "@/lib/cashflowKennzahl";
 import { sollKaltmiete, laeuftAm } from "@/lib/sollMiete";
 
@@ -56,7 +58,7 @@ export const metadata = {
 
 const NEUIGKEIT_ICON: Record<NeuigkeitArt, typeof Bell> = {
   nachricht: MessageSquareText, termin: CalendarCheck, dokument: FileCheck2, angebot: FileSignature,
-  firma: Wrench, freigabe: Bell, bewerbung: UserPlus,
+  firma: Wrench, freigabe: Bell, bewerbung: UserPlus, hausmeister: Wrench,
 };
 
 export default async function DashboardPage(seite: { searchParams: Promise<{ nl?: string }> }) {
@@ -188,12 +190,14 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     .filter((m) => !gebuchtDiesenMonat.has(m.id as string))
     // Nur Mieter, für die dieser Monat überhaupt eine Soll-Miete hat
     // (Einzug/Auszug, Miet-Zeiträume) — sonst stünde jeder Altmieter hier.
-    .filter((m) => erwarteteMonate(m as never, zeitraeumeVon(m.id as string), laufenderMonat, laufenderMonat).length > 0)
-    .map((m) => ({
+    .map((m) => ({ m, soll: erwarteteMonate(m as never, zeitraeumeVon(m.id as string), laufenderMonat, laufenderMonat)[0] }))
+    .filter(({ soll }) => !!soll)
+    .map(({ m, soll }) => ({
       mieterId: m.id as string,
       name: mieterNameOf.get(m.id as string) ?? "Mieter",
       objekt: (m.prop_id && nameOf.get(m.prop_id)) || "",
       monat: laufenderMonat,
+      betrag: soll.gesamt,
     }));
 
   const offeneAnliegen: OffenesAnliegen[] = ((anlRows ?? []) as { id: string; titel: string | null; created_at: string; mieter_name: string | null }[])
@@ -227,25 +231,28 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // Zahl der Aufgaben (≈ 25). Jetzt: echte Zahl in der Überschrift, die
   // wichtigsten Zeilen in der Karte, der Rest unter „Alle“.
   const HEUTE_ZEILEN = 6;
-  const heuteAufgaben = alleHeuteAufgaben.slice(0, HEUTE_ZEILEN);
+  // Gleiche Aufgaben (Titel + Datum) als EINE Zeile — lib/heute.ts, `buendleGleicheAufgaben`.
+  const heuteAufgaben = buendleGleicheAufgaben(alleHeuteAufgaben).slice(0, HEUTE_ZEILEN);
 
   // Neuigkeiten aus dem Mieterportal (02.10.2026, Idee des Betreibers): was in den letzten
   // NEUIGKEITEN_TAGE Tagen PASSIERT ist. Was eine Handlung verlangt, steht in den Aufgaben.
   const seit = `${tageVor(heuteISO0, NEUIGKEITEN_TAGE)}T00:00:00Z`;
-  const [{ data: ereignisRows }, { data: zustellRows }, { data: angebotRows }, { data: rueckRows }, { data: auftragRows }, { data: bewerbungRows }] = await Promise.all([
+  const [{ data: ereignisRows }, { data: zustellRows }, { data: angebotRows }, { data: rueckRows }, { data: auftragRows }, { data: bewerbungRows }, { data: hmNotizRows }] = await Promise.all([
     supabase.from("anliegen_ereignisse").select("anliegen_id,autor_rolle,art,text,created_at").eq("autor_rolle", "mieter").gte("created_at", seit).order("created_at", { ascending: false }).limit(50),
     supabase.from("zustellungen").select("titel,art,mieter_id,bestaetigt_am").eq("vermieter_id", user.id).gte("bestaetigt_am", seit).limit(50),
     supabase.from("angebote").select("firma,betrag,created_at").gte("created_at", seit).limit(50),
     supabase.from("auftrag_rueckmeldungen").select("art,firma,auftrag_id,created_at").gte("created_at", seit).limit(50),
-    supabase.from("auftraege").select("id,titel,status,created_at").eq("vermieter_id", user.id).order("created_at", { ascending: false }).limit(200),
+    supabase.from("auftraege").select("id,titel,status,created_at,vorgeschlagene_firma_id").eq("vermieter_id", user.id).order("created_at", { ascending: false }).limit(200),
     supabase.from("bewerbungen").select("name,created_at,status").eq("user_id", user.id).eq("status", "neu").gte("created_at", seit).limit(50),
+    // Notizen und Fotos des Hausmeisters am Auftrag (05.10.2026) — ohne Bilddaten.
+    supabase.from("auftrag_notizen").select("auftrag_id,art,created_at").eq("vermieter_id", user.id).eq("autor_rolle", "service").gte("created_at", seit).order("created_at", { ascending: false }).limit(50),
   ]);
   const ereignisListe = (ereignisRows ?? []) as { anliegen_id: string; autor_rolle: string; art: string; text: string | null; created_at: string }[];
   const anliegenIds = [...new Set(ereignisListe.map((e) => e.anliegen_id))];
   const { data: anliegenTitel } = anliegenIds.length
     ? await supabase.from("anliegen").select("id,titel,mieter_name").in("id", anliegenIds)
     : { data: [] };
-  const auftragListe = (auftragRows ?? []) as { id: string; titel: string; status: string; created_at: string }[];
+  const auftragListe = (auftragRows ?? []) as { id: string; titel: string; status: string; created_at: string; vorgeschlagene_firma_id: string | null }[];
   const portalNeu = bauePortalNeuigkeiten({
     ereignisse: ereignisListe,
     anliegen: new Map(((anliegenTitel ?? []) as { id: string; titel: string | null; mieter_name: string | null }[])
@@ -255,7 +262,10 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     angebote: ((angebotRows ?? []) as { firma: string; betrag: number; created_at: string }[]).map((g) => ({ ...g, betrag: Number(g.betrag) })),
     rueckmeldungen: ((rueckRows ?? []) as { art: string; firma: string | null; auftrag_id: string; created_at: string }[])
       .map((r) => ({ art: r.art, firma: r.firma, auftrag: auftragListe.find((a) => a.id === r.auftrag_id)?.titel ?? "Auftrag", created_at: r.created_at })),
-    freigaben: auftragListe.filter((a) => a.status === "freigabe").map((a) => ({ titel: a.titel, created_at: a.created_at })),
+    freigaben: auftragListe.filter((a) => a.status === "freigabe").map((a) => ({ titel: a.titel, created_at: a.created_at, fachbetrieb: !!a.vorgeschlagene_firma_id })),
+    hausmeister: ((hmNotizRows ?? []) as { auftrag_id: string; art: string; created_at: string }[])
+      .filter((n) => n.art !== "fachbetrieb") // steht schon als Freigabe-Bitte da
+      .map((n) => ({ art: n.art, auftrag: auftragListe.find((a) => a.id === n.auftrag_id)?.titel ?? "Auftrag", created_at: n.created_at })),
     bewerbungen: ((bewerbungRows ?? []) as { name: string | null; created_at: string }[]),
   }, heuteISO0);
   const AUFGABEN_ICON = { miete: ReceiptText, anliegen: MessageSquareText, zaehler: Zap, frist: CalendarDays, termin: CalendarDays, stammdaten: Building2 } as const;
@@ -266,8 +276,6 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const gruss = begruessung();
   const vorname = ((profil as { name: string | null } | null)?.name ?? "").trim().split(/\s+/)[0] || null;
   const monatJahr = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric", timeZone: "Europe/Berlin" }).format(new Date());
-
-  const now = new Date();
 
   const totalWert = properties.reduce((s, p) => s + (p.wert ?? 0), 0);
 
@@ -335,13 +343,6 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     ...kosten.filter((k) => k.buchungsdatum).map((k) => ({ date: k.buchungsdatum as string, value: -(k.betrag ?? 0) })),
   ];
 
-  // Einnahmen vs. Ausgaben
-  const balkenMax = Math.max(warmmiete, totalKosten, 1);
-  const balken = [
-    { lbl: "Warmmiete", val: warmmiete, col: "var(--green)" },
-    { lbl: "Kredite", val: kreditRates, col: "var(--red)" },
-    { lbl: `Kosten Ø ${kostenSchnitt.monate} Mon.`, val: monatKosten, col: "var(--red)" },
-  ];
 
   // Letzte Transaktionen
   const trans = [
@@ -390,7 +391,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
             </div>
           ))}
           <p style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 16 }}>
-            Tipp: Die Einführungs-Tour zeigt dir alle Stationen — jederzeit über Einstellungen → „Daten &amp; Recht" startbar.
+            Tipp: Die Einführungs-Tour zeigt dir alle Stationen — jederzeit über Einstellungen → „Daten &amp; Recht&quot; startbar.
           </p>
         </div>
       </div>
@@ -427,84 +428,85 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
       )}
 
 
-      {/* KPIs sind Deep-Links in den passenden Kontext (spart 1–2 Klicks je Absprung) */}
-      <div className="staffel grid-5 mb-20">
-        <Link href="/properties" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
-          <div className="kpi-label">Portfolio-Wert</div>
-          <div className="kpi-value">{euro(totalWert)}</div>
-          <div className="kpi-sub"><span className="badge badge-teal">{properties.length} Objekt{properties.length === 1 ? "" : "e"}</span></div>
+      {/* KENNZAHLEN ALS EINE LEISTE (03.10.2026, Betreiber nach den Verlaufslinien: „wenig
+          Veränderung und wieder viel Neues, unübersichtlich“). Vorher fünf Karten mit Badges,
+          Linien und Trendzeilen; jetzt EINE Karte, fünf Felder mit Trennlinie — je Feld Name,
+          Zahl, eine kurze Zeile. Warmmiete − Kosten = Cashflow bleibt nachrechenbar
+          (Review 30.09.2026). Jedes Feld ist weiterhin ein Link in den passenden Bereich. */}
+      <div className="kpi-leiste staffel mb-20">
+        <Link href="/properties" className="kpi-feld">
+          <span className="kpi-label">Portfolio-Wert</span>
+          <span className="kpi-value">{euro(totalWert)}</span>
+          {/* „% ggü. Kaufpreis“ steht an der Wertkurve darunter — hier nicht doppelt. */}
+          <span className="kpi-sub">{properties.length} Objekt{properties.length === 1 ? "" : "e"}</span>
         </Link>
-        <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
-          {/* WARMmiete, weil der Cashflow daneben mit ihr rechnet: Die drei
-              Kacheln ergeben zusammen die Rechnung Warmmiete − Kosten =
-              Cashflow (Review 30.09.2026 — mit „Kaltmiete 5.930" hier kam
-              beim Nachrechnen 518 € statt 1.548 € heraus). Kaltmiete und
-              Rendite stehen darunter; die Rendite bleibt kalt. */}
-          <div className="kpi-label">Warmmiete / Mo.</div>
-          <div className="kpi-value">{euro(warmmiete)}</div>
-          <div className="kpi-sub">Kaltmiete {euro(totalMiete)}{bruttoRendite > 0 ? <> · <span className="badge badge-gold">{bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Brutto-Rendite</span></> : null}</div>
+        {/* WARMmiete, weil der Cashflow daneben mit ihr rechnet (Review 30.09.2026). */}
+        <Link href="/cashflow" className="kpi-feld">
+          <span className="kpi-label">Warmmiete / Mo.</span>
+          <span className="kpi-value">{euro(warmmiete)}</span>
+          <span className="kpi-sub">Kalt {euro(totalMiete)}{bruttoRendite > 0 ? ` · ${bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Rendite` : ""}</span>
         </Link>
-        <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
-          <div className="kpi-label">Kosten / Mo.</div>
-          <div className="kpi-value">{euro(totalKosten)}</div>
-          <div className="kpi-sub">Kreditraten + Ø Kosten ({kostenSchnitt.monate === 1 ? "1 Monat" : `${kostenSchnitt.monate} Monate`})</div>
+        <Link href="/cashflow" className="kpi-feld">
+          <span className="kpi-label">Kosten / Mo.</span>
+          <span className="kpi-value">{euro(totalKosten)}</span>
+          <span className="kpi-sub">Raten {euro(kreditRates)} · Ø Kosten {euro(monatKosten)}</span>
         </Link>
-        <Link href="/cashflow" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
-          <div className="kpi-label">Cashflow / Mo.</div>
-          <div className="kpi-value" style={{ color: cashflow >= 0 ? "var(--green)" : "var(--red)" }}>{cashflow >= 0 ? "+ " : "− "}{euro(Math.abs(cashflow))}</div>
-          {/* Die Formel steht an der Zahl — vorher hieß hier nur „Positiver
-              Cashflow", und niemand konnte sie vom Buchungssaldo darunter
-              unterscheiden. */}
-          <div className="kpi-sub">{cashflowFormel(kostenSchnitt)}</div>
+        <Link href="/cashflow" className="kpi-feld">
+          <span className="kpi-label">Cashflow / Mo.</span>
+          <span className="kpi-value" style={{ color: cashflow >= 0 ? "var(--green)" : "var(--red)" }}>{cashflow >= 0 ? "+ " : "− "}{euro(Math.abs(cashflow))}</span>
+          {/* Die Formel steht an der Zahl (Review 30.09.2026). */}
+          <span className="kpi-sub">{cashflowFormel(kostenSchnitt)}</span>
         </Link>
-        <Link href="/properties" className="kpi-card" style={{ textDecoration: "none", color: "inherit" }}>
-          <div className="kpi-label">Leerstandsquote</div>
-          <div className="kpi-value" style={{ color: vermietbar.length ? leerFarbe : "var(--muted)" }}>
+        <Link href="/properties" className="kpi-feld">
+          <span className="kpi-label">Leerstand</span>
+          <span className="kpi-value" style={{ color: vermietbar.length ? leerFarbe : "var(--muted)" }}>
             {vermietbar.length ? leerstand.toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " %" : "–"}
-          </div>
-          <div className="kpi-sub">
-            {vermietbar.length
-              ? <span className="badge badge-neutral">{leerCount} von {vermietbar.length} leer</span>
-              : <span style={{ color: "var(--muted)" }}>Status je Objekt hinterlegen</span>}
-          </div>
+          </span>
+          <span className="kpi-sub">{vermietbar.length ? `${leerCount} von ${vermietbar.length} leer` : "Status je Objekt hinterlegen"}</span>
         </Link>
       </div>
 
-      {portfolioWert.length >= 2 && (
-        <div className="section mb-20">
-          <div className="section-header">
-            <h3>Portfolio-Wertentwicklung</h3>
-            {portfolioWertProzent != null && (
-              <span className={`badge ${portfolioWertProzent >= 0 ? "badge-green" : "badge-red"}`}>
-                {portfolioWertProzent >= 0 ? "+" : ""}{portfolioWertProzent.toLocaleString("de-DE")} % ggü. Kaufpreis
-              </span>
-            )}
-          </div>
-          <div className="section-body">
-            <WertVerlaufChart
-              punkte={portfolioWert}
-              caption="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte. Die Kurve springt bei jedem Kauf — ein Zukauf ist kein Wertzuwachs. Der Prozentwert vergleicht den heutigen Wert mit den Kaufpreisen."
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Idee des Betreibers (02.10.2026): Grafik halb so breit, rechts daneben die
-          Neuigkeiten aus dem Mieterportal, darunter Termine & Aufgaben. Ersetzt die
-          Vorgabe vom 08.09.2026 („Aufgaben ans Ende“) — Kennzahlen bleiben oben. Unter
-          860 px untereinander (.grid-2), Grafik zuerst. */}
-      <div className="grid-2 mb-20" style={{ alignItems: "start" }}>
-      <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header">
-            {/* „Buchungssaldo", nicht „Cashflow": Die Kurve summiert GEBUCHTE
-                Einnahmen und Ausgaben über den gewählten Zeitraum. Ihr Endwert
-                stand im Review neben dem Monats-Cashflow als „Widerspruch". */}
-            <h3>Buchungssaldo</h3>
-            <ZeitraumControl />
-          </div>
-          <div className="section-body">
-            <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" heute={heuteISO0} caption="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
-          </div>
+      {/* Hauptblock (03.10.2026, Betreiber: „Grafik viel zu klein, alles soll zusammenpassen“):
+          links, in der BREITEREN Spalte, beide Verläufe übereinander (Wert, darunter
+          Buchungssaldo) — gleiche Breite, gleiche Höhe, Schrift in echten Pixeln; rechts die
+          Neuigkeiten aus dem Mieterportal, darunter Termine & Aufgaben (Idee vom 02.10.2026).
+          So sind beide Spalten etwa gleich hoch statt einer Lücke unter einer kleinen Grafik.
+          Unter 860 px untereinander, Grafiken zuerst. */}
+      <div className="dash-haupt mb-20">
+        <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
+        {/* EINE Grafik-Karte mit Umschalter oben links (04.10.2026, Wunsch des Betreibers) statt
+            zwei Karten untereinander. „Buchungssaldo“, nicht „Cashflow“: Die Kurve summiert
+            GEBUCHTE Einnahmen und Ausgaben (Review 30.09.2026). Die Wertkurve gibt es erst ab zwei
+            Punkten — sonst ist der Saldo die einzige Ansicht. */}
+        <DiagrammWechsel
+          speicherSchluessel="myimmo:dashboard-grafik"
+          ansichten={[
+            ...(portfolioWert.length >= 2 ? [{
+              schluessel: "wert",
+              titel: "Portfolio-Wert",
+              rechts: portfolioWertProzent != null ? (
+                <span className={`badge ${portfolioWertProzent >= 0 ? "badge-green" : "badge-red"}`}>
+                  {portfolioWertProzent >= 0 ? "+" : ""}{portfolioWertProzent.toLocaleString("de-DE")} % ggü. Kaufpreis
+                </span>
+              ) : undefined,
+              inhalt: (
+                <WertVerlaufChart
+                  punkte={portfolioWert}
+                  hoehe={320}
+                  erklaerung="Summe aus Kaufpreisen (Anschaffung) und den erfassten Wert-Aktualisierungen aller Objekte. Die Kurve springt bei jedem Kauf — ein Zukauf ist kein Wertzuwachs. Der Prozentwert vergleicht den heutigen Wert mit den Kaufpreisen."
+                />
+              ),
+            }] : []),
+            {
+              schluessel: "saldo",
+              titel: "Buchungssaldo",
+              rechts: <ZeitraumControl />,
+              inhalt: (
+                <BetragChart points={portfolioPoints} mode="area" cumulative color="var(--gold)" heute={heuteISO0} hoehe={320} erklaerung="Gebuchte Einnahmen minus gebuchte Ausgaben im gewählten Zeitraum, ab 0 aufsummiert. Ohne Tilgung; Zinsen nur, soweit als „Schuldzinsen“ gebucht — der Monats-Cashflow oben zieht dagegen die volle Kreditrate ab." />
+              ),
+            },
+          ]}
+        />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
           <div className="section" style={{ marginBottom: 0 }}>
@@ -523,17 +525,18 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                   Hier erscheint, was Mieter, Firmen und Hausmeister im Portal tun — Nachrichten, bestätigte Termine und Dokumente, Angebote, Rückmeldungen.
                 </p>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                // EINE Zeile je Neuigkeit (03.10.2026): Was passiert ist · worum es geht, Datum rechts.
+                // Klick führt direkt zum Vorgang (Nachricht/Termin → Detailansicht des Anliegens).
+                <div className="listen">
                   {portalNeu.liste.map((n) => {
                     const Icon = NEUIGKEIT_ICON[n.art];
                     return (
-                      <Link key={`${n.art}-${n.zeit}-${n.text}`} href={n.href} className="heute-zeile" style={{ borderLeftColor: "var(--gold)" }}>
+                      <Link key={`${n.art}-${n.zeit}-${n.text}`} href={n.href} className="listen-zeile" title={`${n.text} · ${n.sub}`}>
                         <Icon size={15} style={{ color: "var(--gold)", flexShrink: 0 }} />
-                        <span className="heute-label" style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ display: "block", fontSize: 13.5 }}>{n.text}</span>
-                          <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{n.sub}</span>
+                        <span className="listen-zeile-titel" style={{ flex: 1, minWidth: 0, fontWeight: 500 }}>
+                          {n.text}<span style={{ color: "var(--muted)", fontWeight: 400 }}> · {n.sub}</span>
                         </span>
-                        <span style={{ fontSize: 11.5, color: "var(--faint)", whiteSpace: "nowrap" }}>{datum(n.zeit)}</span>
+                        <span className="listen-zeile-datum">{datum(n.zeit)}</span>
                       </Link>
                     );
                   })}
@@ -560,30 +563,45 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                   <p>Alles erledigt. Keine offenen Mieten, Anliegen oder Fristen.</p>
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="listen">
                   {heuteAufgaben.map((a) => {
+                    // EIN Eintrag je Aufgabe (03.10.2026, im Stil der Neuigkeiten): was, darunter wo; rechts das
+                    // Datum (nur bei echten Fristen — bei einer offenen Miete wäre der Monatserste
+                    // eine Zahl ohne Aussage). Dringendes erkennt man am roten Symbol und Datum.
                     const Icon = AUFGABEN_ICON[a.art];
-                    return (
+                    const farbe = a.dringend ? "var(--red)" : "var(--gold)";
+                    const zeile = (
                       <Link
                         key={`${a.art}-${a.href}-${a.label}-${a.sub}`}
                         href={a.href}
-                        className="heute-zeile"
-                        style={{ borderLeftColor: a.dringend ? "var(--red)" : "var(--gold)" }}
+                        className="listen-zeile"
+                        style={a.neben ? { flex: 1, minWidth: 0 } : undefined}
+                        title={`${a.label}${a.sub ? ` · ${a.sub}` : ""} — ${a.aktion}`}
                       >
-                        <Icon size={15} style={{ color: a.dringend ? "var(--red)" : "var(--gold)", flexShrink: 0 }} />
-                        <span className="heute-label" style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ display: "block", fontSize: 13.5 }}>{a.label}</span>
-                          <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)", marginTop: 1 }}>{a.sub}</span>
+                        <Icon size={15} style={{ color: farbe, flexShrink: 0 }} />
+                        {/* Zwei kurze Zeilen statt einer: Viele Aufgaben heißen gleich („NK-Abrechnung
+                            2025 zustellen“) — erst Mieter/Objekt unterscheidet sie, und das darf nicht
+                            hinter „…“ verschwinden. */}
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span className="listen-zeile-titel" style={{ fontWeight: 500 }}>{a.label}</span>
+                          {a.sub && <span className="listen-zeile-sub">{a.sub}</span>}
                         </span>
-                        {/* Datum nur bei echten Fristen — bei einer offenen Miete
-                            waere der Monatserste eine Zahl ohne Aussage. */}
                         {a.art === "frist" && (
-                          <span className={`badge ${a.dringend ? "badge-red" : "badge-teal"}`}>
+                          <span style={{ fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", color: a.dringend ? "var(--red)" : "var(--muted)" }}>
                             {ueberfaellig(a.datum) ? "überfällig · " : ""}{datum(a.datum)}
                           </span>
                         )}
-                        <span className="heute-aktion">{a.aktion} <ArrowRight size={13} /></span>
+                        <ChevronRight size={15} color="var(--faint)" style={{ flexShrink: 0 }} />
                       </Link>
+                    );
+                    // Überfällige Miete: die Erinnerung als eigener Knopf NEBEN der Zeile — ein Link
+                    // im Link wäre ungültiges HTML (lib/mahnung.ts baut Ziel, Betrag und Frist).
+                    if (!a.neben) return zeile;
+                    return (
+                      <div key={`${a.art}-${a.href}-${a.label}-${a.sub}`} className="aufgabe-mit-aktion">
+                        {zeile}
+                        <Link href={a.neben.href} className="btn btn-ghost aufgabe-aktion">{a.neben.label}</Link>
+                      </div>
                     );
                   })}
                 </div>
@@ -597,63 +615,37 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
           Dashboard genommen, am selben Tag auch die Kartenseite /karte — sie
           zeigte nur einen Teil der Objekte und passte optisch nicht. */}
 
-      <div className="grid-2 mb-20">
-        <div className="section" style={{ marginBottom: 0 }}>
-          <div className="section-header"><h3>Einnahmen vs. Ausgaben</h3></div>
-          <div className="section-body">
-            {properties.length === 0 ? (
-              <Leer
-                icon={BarChart3}
-                titel="Noch keine Auswertung"
-                text="Sobald das erste Objekt angelegt ist, stehen hier Einnahmen und Ausgaben nebeneinander."
-                aktion={{ href: "/properties/new", label: "Erstes Objekt anlegen" }}
-              />
-            ) : (
-              balken.map((b) => (
-                <div key={b.lbl} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: "var(--muted)", width: 80, textAlign: "right" }}>{b.lbl}</div>
-                  <div style={{ flex: 1, height: 20, background: "var(--bg4)", borderRadius: 4, overflow: "hidden" }}>
-                    <div style={{ width: `${((b.val / balkenMax) * 100).toFixed(0)}%`, height: "100%", background: b.col, borderRadius: 4 }} />
-                  </div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: b.col, width: 70, textAlign: "right" }}>{euro(b.val)}</div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="section" style={{ marginBottom: 0 }}>
+      {/* „Einnahmen vs. Ausgaben“ ist ENTFALLEN (03.10.2026): Es wiederholte die Kennzahlen-Leiste
+          Zahl für Zahl. Die Kredite bleiben (Wunsch des Betreibers 04.10.2026) — mit der
+          Schulden-Uhr als Kopfzeile und den Darlehen als kompakte Zeilen. */}
+      {kredite.length > 0 && (
+        <div className="section mb-20">
           <div className="section-header">
-            <h3>Aktuelle Kredite</h3>
-            {kredite.length > 3 && <Link href="/kredite" className="btn btn-ghost" style={{ fontSize: 11 }}>Alle {kredite.length} →</Link>}
+            <h3>Kredite</h3>
+            <Link href="/kredite" className="btn btn-ghost btn-sm">{kredite.length > 3 ? `Alle ${kredite.length} →` : "Öffnen →"}</Link>
           </div>
           <div className="section-body">
-            {kredite.length === 0 ? (
-              <div className="empty">
-                <Landmark className="empty-icon" size={36} color="var(--faint)" /><p>Finanzierungen mit Restschuld und Zinsbindung — MyImmo erinnert rechtzeitig, bevor eine Bindung ausläuft.</p>
-                <Link href="/kredite/new" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 8 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Kredit anlegen</Link>
-              </div>
-            ) : (
-              kredite.slice(0, 3).map((k) => {
-                const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? k.betrag) / k.betrag) * 100))) : 100;
-                return (
-                  <Link key={k.id} href="/kredite" style={{ display: "block", textDecoration: "none", color: "inherit", borderLeft: "3px solid var(--gold)", padding: "10px 14px", background: "var(--gold-pale)", borderRadius: "0 8px 8px 0", marginBottom: 8 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                      <strong style={{ fontSize: 13 }}>{k.bezeichnung || k.bank || "Darlehen"}</strong>
-                      {k.zinssatz != null && <span className="badge badge-gold">{zahl(k.zinssatz, 1)} %</span>}
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>
-                      <span>Restschuld: <strong style={{ color: "var(--text)" }}>{euro(k.restschuld)}</strong></span>
-                      <span>Rate: <strong style={{ color: "var(--text)" }}>{euro(k.monatsrate)}/Mo</strong></span>
-                    </div>
-                    <div className="progress-bar"><div className="progress-fill" style={{ width: `${100 - pct}%`, background: "var(--teal)" }} /></div>
-                  </Link>
-                );
-              })
-            )}
+            <SchuldenUhr stand={schuldenStand(kredite)} />
+            <div className="listen">
+              {kredite.slice(0, 3).map((k) => (
+                <Link key={k.id} href="/kredite" className="listen-zeile">
+                  <span className="listen-icon"><Landmark size={16} /></span>
+                  <span className="listen-zeile-text">
+                    <span className="listen-zeile-titel">
+                      {k.bezeichnung || k.bank || "Darlehen"}
+                      {k.zinssatz != null && <span style={{ fontWeight: 400, color: "var(--muted)" }}> · {k.zinssatz.toLocaleString("de-DE", { maximumFractionDigits: 2 })} %</span>}
+                    </span>
+                    <span className="listen-zeile-sub">{[(k.prop_id && nameOf.get(k.prop_id)) || null, k.bank].filter(Boolean).join(" · ") || "ohne Objekt"}</span>
+                  </span>
+                  <span className="listen-zeile-zahl"><b>{euro(k.restschuld)}</b><small>{euro(k.monatsrate)} / Mo.</small></span>
+                  <ChevronRight size={16} color="var(--faint)" style={{ flexShrink: 0 }} />
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
 
       {/* REIHENFOLGE: Kennzahlen und Verläufe oben (08.09.2026). Termine & Aufgaben stehen seit
           02.10.2026 rechts neben dem Buchungssaldo unter den Portal-Neuigkeiten (Idee des
@@ -672,26 +664,21 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                 <Link href="/cashflow/neu" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 8 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Erste Buchung erfassen</Link>
               </div>
             ) : (
-              <div className="table-scroll"><table>
-                <thead><tr><th>Datum</th><th>Beschreibung</th><th style={{ textAlign: "right" }}>Betrag</th></tr></thead>
-                <tbody>
-                  {trans.map((t) => {
-                    const isEin = t._typ === "einnahme";
-                    const objName = t.prop_id ? nameOf.get(t.prop_id) : null;
-                    return (
-                      <tr key={`${t._typ}-${t.id}`}>
-                        <td style={{ whiteSpace: "nowrap" }}>{datum(t.buchungsdatum)}</td>
-                        <td style={{ color: "var(--muted)" }}>
-                          <Link href={`/${isEin ? "einnahmen" : "kosten"}/${t.id}/edit`} style={{ color: "inherit", textDecoration: "none" }}>
-                            {[t.beschreibung || t.kategorie || "Buchung", objName].filter(Boolean).join(" — ")}
-                          </Link>
-                        </td>
-                        <td style={{ textAlign: "right", fontWeight: 600, whiteSpace: "nowrap", color: isEin ? "var(--green)" : "var(--red)" }}>{isEin ? "+ " : "− "}{euro(t.betrag)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table></div>
+              <div className="listen">
+                {trans.map((t) => {
+                  const isEin = t._typ === "einnahme";
+                  const objName = t.prop_id ? nameOf.get(t.prop_id) : null;
+                  return (
+                    <Link key={`${t._typ}-${t.id}`} href={`/${isEin ? "einnahmen" : "kosten"}/${t.id}/edit`} className="listen-zeile">
+                      <span className="listen-zeile-text">
+                        <span className="listen-zeile-titel" style={{ fontWeight: 500 }}>{t.beschreibung || t.kategorie || "Buchung"}</span>
+                        <span className="listen-zeile-sub">{[datum(t.buchungsdatum), objName].filter(Boolean).join(" · ")}</span>
+                      </span>
+                      <span className="listen-zeile-zahl"><b style={{ color: isEin ? "var(--green)" : "var(--red)" }}>{isEin ? "+ " : "− "}{euro(t.betrag)}</b></span>
+                    </Link>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>

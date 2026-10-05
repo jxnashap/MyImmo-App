@@ -101,6 +101,7 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
     try {
       if (localStorage.getItem(TOUR_FORCE_KEY) === "1") {
         localStorage.removeItem(TOUR_FORCE_KEY);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
         setI(0);
         setOffen(true);
         return;

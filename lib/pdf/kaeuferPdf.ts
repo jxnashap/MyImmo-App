@@ -80,7 +80,7 @@ export async function buildKaeuferSelbstauskunftPdf(
   let ry = yTop - 16;
   if (absender.adresse) { right(RIGHT, ry, absender.adresse.split(/,\s*/).join(" · "), 8.5, font, MUTED); ry -= 13; }
   if (absender.email) right(RIGHT, ry, absender.email, 8.5, font, MUTED);
-  page.drawLine({ start: { x: 372, y: A4.h - 44 }, end: { x: 372, y: A4.h - 82 }, thickness: 1, color: GOLD });
+  page.drawLine({ start: { x: A4.w / 2, y: A4.h - 44 }, end: { x: A4.w / 2, y: A4.h - 82 }, thickness: 1, color: GOLD });
   hline(A4.h - 96, ML, RIGHT, GOLD, 0.8);
 
   let y = A4.h - 128;

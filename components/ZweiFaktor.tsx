@@ -69,6 +69,7 @@ export default function ZweiFaktor({
     for (const id of unbestaetigteTotp(liste)) await supabase.auth.mfa.unenroll({ factorId: id });
   }
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Faktoren nach dem Mount laden
     void laden();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -194,7 +195,7 @@ export default function ZweiFaktor({
           <form onSubmit={abschalten} className="set-grid">
             <label className="set-field">
               <span>Zum Abschalten: aktueller Code aus der App</span>
-              <input className="set-input" inputMode="numeric" autoComplete="one-time-code" value={ausCode} onChange={(e) => { setAusCode(e.target.value); fehler && setFehler(null); }} placeholder="123456" />
+              <input className="set-input" inputMode="numeric" autoComplete="one-time-code" value={ausCode} onChange={(e) => { setAusCode(e.target.value); if (fehler) setFehler(null); }} placeholder="123456" />
             </label>
             <div className="set-field" style={{ justifyContent: "flex-end" }}>
               <span>&nbsp;</span>
@@ -216,7 +217,7 @@ export default function ZweiFaktor({
           </div>
           <label className="set-field">
             <span>Code aus der App</span>
-            <input className="set-input" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(e) => { setCode(e.target.value); fehler && setFehler(null); }} placeholder="123456" autoFocus />
+            <input className="set-input" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(e) => { setCode(e.target.value); if (fehler) setFehler(null); }} placeholder="123456" autoFocus />
           </label>
           <div className="set-field" style={{ justifyContent: "flex-end" }}>
             <span>&nbsp;</span>

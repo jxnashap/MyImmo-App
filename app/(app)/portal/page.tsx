@@ -12,7 +12,7 @@ import PortalAnsicht, { portalTab } from "@/components/PortalAnsicht";
 
 export default async function PortalPage(
   props: {
-    searchParams: Promise<{ tab?: string }>;
+    searchParams: Promise<{ tab?: string; vorgang?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -28,6 +28,7 @@ export default async function PortalPage(
       tab={tab}
       hrefFuer={(t) => `/portal?tab=${t}`}
       kopfzeile={user?.email}
+      vorgang={searchParams.vorgang ?? null}
     />
   );
 }

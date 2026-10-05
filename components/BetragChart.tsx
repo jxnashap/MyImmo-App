@@ -5,6 +5,7 @@ import { useZeitraum } from "./ZeitraumProvider";
 import { aggregate, niceScale, kurzTick, xTickLabel, bucketTitel, type RawPoint } from "@/lib/zeitraum";
 import { euro } from "@/lib/format";
 import Leer from "@/components/Leer";
+import { useBreite } from "@/lib/hooks/useBreite";
 
 // Wiederverwendbarer Betrags-Chart mit globalem Zeitraum-Filter.
 // mode "area"  → Linie/Fläche (z. B. kumulierte Portfolio-Entwicklung)
@@ -15,19 +16,26 @@ export default function BetragChart({
   cumulative = false,
   color = "var(--green)",
   caption,
+  erklaerung,
   heute,
+  hoehe = 280,
 }: {
   points: RawPoint[];
   mode?: "area" | "bars";
   cumulative?: boolean;
   color?: string;
   caption?: string;
+  /** Erklärung zur Rechnung — eingeklappt unter der Grafik statt als Absatz (03.10.2026). */
+  erklaerung?: string;
   /** Stichtag `YYYY-MM-DD` vom Server (Europe/Berlin) — nie `new Date()` hier:
    *  Server (UTC) und Browser (Ortszeit) kämen sonst am Monatsersten auf
    *  verschiedene Monate → Hydration-Fehler (Audit A10). */
   heute: string;
+  /** Höhe in Pixeln — fest, damit Spalten nebeneinander gleich hoch sind. */
+  hoehe?: number;
 }) {
   const { zeitraum } = useZeitraum();
+  const [rahmen, breite] = useBreite<HTMLDivElement>();
 
   // Zwei Sorten leer (Audit B27): GAR keine Buchungen → anlegen; Buchungen
   // vorhanden, aber keine im Fenster → Zeitraum vergrößern. Vorher stand der
@@ -58,7 +66,9 @@ export default function BetragChart({
   const werte = buckets.map((b) => b.value);
   const scale = niceScale(Math.min(0, ...werte), Math.max(0, ...werte), 5);
 
-  const W = 660, H = 250, padL = 56, padR = 16, padT = 16, padB = 46;
+  // Koordinaten = Pixel (siehe lib/hooks/useBreite.ts). Vor dem Messen ein Platzhalter
+  // in der richtigen Höhe, damit nichts springt.
+  const W = breite ?? 600, H = hoehe, padL = 56, padR = 16, padT = 18, padB = 46;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
   const n = buckets.length;
@@ -75,9 +85,15 @@ export default function BetragChart({
   const areaPath = `${linePath} L${xLine(n - 1).toFixed(1)},${zeroY.toFixed(1)} L${xLine(0).toFixed(1)},${zeroY.toFixed(1)} Z`;
   const barW = Math.max(1, Math.min(28, slot * 0.62));
 
+  // X-Beschriftung nach Platz ausdünnen: höchstens ein Label je ~44 px.
+  const labelIdx = buckets.map((_, i) => i).filter((i) => xTickLabel(buckets, i, gran));
+  const jedesK = Math.max(1, Math.ceil((labelIdx.length * 44) / plotW));
+  const zeigeX = new Set(labelIdx.filter((_, j) => j % jedesK === 0));
+
   return (
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto" }} role="img" aria-label="Betragsverlauf">
+    <div ref={rahmen}>
+      {breite === null ? <div style={{ height: H }} aria-hidden /> : (
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }} role="img" aria-label="Betragsverlauf">
         {/* Gitterlinien + Y-Ticks */}
         {scale.ticks.map((t) => {
           const y = yOf(t);
@@ -126,7 +142,7 @@ export default function BetragChart({
         {/* X-Ticks */}
         {buckets.map((b, i) => {
           const label = xTickLabel(buckets, i, gran);
-          if (!label) return null;
+          if (!label || !zeigeX.has(i)) return null;
           const x = mode === "bars" ? xCenter(i) : xLine(i);
           return <text key={`x${i}`} x={x.toFixed(1)} y={H - padB + 16} textAnchor="middle" fontSize="11.5" fill="var(--muted)">{label}</text>;
         })}
@@ -135,9 +151,16 @@ export default function BetragChart({
         <text x={padL + plotW / 2} y={H - 6} textAnchor="middle" fontSize="11.5" fill="var(--faint)">Zeitraum</text>
         <text x={14} y={padT + plotH / 2} textAnchor="middle" fontSize="11.5" fill="var(--faint)" transform={`rotate(-90 14 ${padT + plotH / 2})`}>Betrag (€)</text>
       </svg>
+      )}
 
       {caption && (
-        <div style={{ marginTop: 4, fontSize: 11, color: "var(--muted)", textAlign: "center" }}>{caption}</div>
+        <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "var(--muted)" }}>{caption}</div>
+      )}
+      {erklaerung && (
+        <details className="erklaer">
+          <summary>Wie wird das gerechnet?</summary>
+          <p>{erklaerung}</p>
+        </details>
       )}
     </div>
   );

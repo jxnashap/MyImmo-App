@@ -111,6 +111,7 @@ export default function SettingsView({
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     const gewuenscht = q.get("tab");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
     if (gewuenscht && TABS.some((t) => t.key === gewuenscht)) setTab(gewuenscht as TabKey);
     if (q.get("pw") === "schwach") {
       setTab("sicherheit");
@@ -559,7 +560,7 @@ function SicherheitPanel({ email, provider, ohnePasswort = false, demo = false, 
           {(
             <label className="set-field span2">
               <span>Aktuelles Passwort</span>
-              <input className="set-input" type="password" value={pw0} autoComplete="current-password" onChange={(e) => { setPw0(e.target.value); err && setErr(null); }} />
+              <input className="set-input" type="password" value={pw0} autoComplete="current-password" onChange={(e) => { setPw0(e.target.value); if (err) setErr(null); }} />
               <span style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 4 }}>
                 Zur Bestätigung — damit niemand über eine offene Sitzung dein Passwort ändern kann.
               </span>
@@ -567,11 +568,11 @@ function SicherheitPanel({ email, provider, ohnePasswort = false, demo = false, 
           )}
           <label className="set-field">
             <span>Neues Passwort</span>
-            <input className="set-input" type="password" value={pw1} autoComplete="new-password" onChange={(e) => { setPw1(e.target.value); err && setErr(null); }} />
+            <input className="set-input" type="password" value={pw1} autoComplete="new-password" onChange={(e) => { setPw1(e.target.value); if (err) setErr(null); }} />
           </label>
           <label className="set-field">
             <span>Wiederholen</span>
-            <input className="set-input" type="password" value={pw2} autoComplete="new-password" onChange={(e) => { setPw2(e.target.value); err && setErr(null); }} />
+            <input className="set-input" type="password" value={pw2} autoComplete="new-password" onChange={(e) => { setPw2(e.target.value); if (err) setErr(null); }} />
           </label>
           {err && (
             <div className="span2" role="alert" style={{ background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", color: "var(--red)", borderRadius: 10, padding: "9px 12px", fontSize: 13 }}>
@@ -632,6 +633,7 @@ function AutoLogoutKarte() {
   const [beimSchliessen, setBeimSchliessen] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
     setMinuten(localStorage.getItem(KEY_MIN) || STANDARD_MIN);
     setBeimSchliessen(localStorage.getItem(KEY_CLOSE) === "1");
   }, []);
@@ -683,7 +685,7 @@ function AutoLogoutKarte() {
         </label>
         <p className="span2" style={{ fontSize: 11.5, color: "var(--muted)", margin: 0, lineHeight: 1.5 }}>
           Der Timer wirkt auf diesem Gerät und ist die Garantie: Wer länger als die gewählte
-          Zeit weg war, wird beim Zurückkehren sofort abgemeldet. „Beim Schließen" meldet dich
+          Zeit weg war, wird beim Zurückkehren sofort abgemeldet. „Beim Schließen&quot; meldet dich
           ab, sobald du den Browser nach dem Schließen wieder öffnest — Reloads und normale
           Navigation bleiben angemeldet.
         </p>
@@ -726,6 +728,7 @@ function RechtPanel({ email, ohnePasswort = false }: { email?: string | null; oh
         <h2><Download size={16} /> Meine Daten exportieren</h2>
         <p className="sub">Lade jederzeit ALLE deine Daten herunter (inkl. Mieter, Buchungen und Dokumente) – ohne Sperrfrist, DSGVO-Recht auf Datenübertragbarkeit. Das ZIP enthält alle Tabellen als CSV und JSON plus die Dateien; die Buchungen gibt es zusätzlich als einzelne CSV für Excel/Steuerberater.</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {/* eslint-disable-next-line @next/next/no-location-assign-relative-destination -- Datei-Download über eine API-Route, keine Seite */}
           <button type="button" onClick={() => absichern(() => window.location.assign("/api/export/alles"))} className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Download size={15} /> Alle Daten inkl. Dateien (ZIP)
           </button>

@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Wrench } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import AuftraegePortal from "@/components/AuftraegePortal";
+import GesehenMelden from "@/components/GesehenMelden";
 import { datum } from "@/lib/format";
 import type { ServicePortalDaten } from "@/lib/servicePortalDaten";
 
@@ -25,7 +26,7 @@ export default function ServicePortalAnsicht({
   /** Konto/Abmelden nur andeuten — dort wäre es das Konto des VERMIETERS. */
   ansichtImVermieterKonto?: boolean;
 }) {
-  const { zugaenge, auftraege, firmen, auftraggeber } = daten;
+  const { zugaenge, auftraege, firmen, auftraggeber, objekte, seitJe } = daten;
   return (
     <div
       style={{ minHeight: ansichtImVermieterKonto ? undefined : "100vh", background: "var(--bg)", color: "var(--text)" }}
@@ -85,7 +86,8 @@ export default function ServicePortalAnsicht({
                 ? `1 Auftraggeber (seit ${datum(zugaenge[0].created_at)})`
                 : `${zugaenge.length} Auftraggebern`} — neue Aufträge erscheinen automatisch.
             </p>
-            <AuftraegePortal auftraege={auftraege} firmen={firmen} auftraggeber={auftraggeber} vorschau={vorschau} />
+            <AuftraegePortal auftraege={auftraege} firmen={firmen} auftraggeber={auftraggeber} objekte={objekte} seitJe={seitJe} vorschau={vorschau} />
+            {!vorschau && !ansichtImVermieterKonto && <GesehenMelden />}
           </>
         )}
       </main>

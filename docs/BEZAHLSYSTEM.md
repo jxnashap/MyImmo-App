@@ -65,6 +65,8 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
    Events `subscription.activated/created/updated/canceled/past_due/paused/resumed`
    **und `transaction.completed`** — ohne dieses Event entsteht keine Kostenbuchung, und
    der Satz „automatisch in der Anlage V“ auf `/preise` stimmt nicht.
+   **Vorher im SQL-Editor:** `supabase/migrations/20261005170000_kontoloeschung_abo_zahlungen.sql`
+   (die Kontolöschung muss `abo_zahlungen` mitlöschen; über die Schnittstelle blockiert).
    Secret notieren.
 6. **Vercel-Env setzen:** `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`,
    `PADDLE_ENV=production` (vorher `sandbox`), `PADDLE_PRICE_PRIVAT_MONAT`,

@@ -11,6 +11,8 @@
 // Reine Funktion ohne Datenbank und ohne React: Was hier gerechnet wird, lässt
 // sich prüfen. Die Seite reicht nur die Zeilen herein.
 
+import { mieteUeberfaellig, zahlungsBriefUrl } from "@/lib/mahnung";
+
 export type AufgabenArt = "miete" | "anliegen" | "zaehler" | "frist" | "termin" | "stammdaten";
 
 export type Aufgabe = {
@@ -27,9 +29,21 @@ export type Aufgabe = {
   dringend: boolean;
   /** Sortierschlüssel: ISO-Datum. Ohne Datum (z. B. offene Miete) das Fenster-Ende. */
   datum: string;
+  /**
+   * Zweite, ausdrückliche Handlung neben der Zeile (05.10.2026): bei überfälliger Miete
+   * „Erinnerung schreiben“ → vorausgefüllter Brief (lib/mahnung.ts). Nie in einem Bündel.
+   */
+  neben?: { label: string; href: string };
 };
 
-export type OffeneMiete = { mieterId: string; name: string; objekt: string; monat: string };
+export type OffeneMiete = {
+  mieterId: string;
+  name: string;
+  objekt: string;
+  monat: string;
+  /** Soll des Monats (warm). Ohne Betrag gibt es keinen Erinnerungs-Knopf. */
+  betrag?: number;
+};
 export type OffenesAnliegen = { id: string; titel: string | null; mieter: string; erstellt: string };
 export type OffeneMeldung = { id: string; art: string | null; mieter: string; datum: string };
 export type FristZeile = { datum: string; label: string; sub: string; warn: boolean };
@@ -83,6 +97,15 @@ export function baueHeuteAufgaben(
       // Ab dem 5. des Monats ist eine offene Miete keine Formsache mehr.
       dringend: Number(heuteISO.slice(8, 10)) >= 5,
       datum: `${m.monat}-01`,
+      // Erst NACH der Fälligkeit (3. Werktag, § 556b BGB) — vorher wäre jede Erinnerung verfrüht.
+      // Die Zeile selbst führt weiter ins Mietkonto (vielleicht ist das Geld ja da).
+      neben:
+        m.betrag && m.betrag > 0 && mieteUeberfaellig(m.monat, heuteISO)
+          ? {
+              label: "Erinnerung schreiben",
+              href: zahlungsBriefUrl({ mieterId: m.mieterId, jahrMonat: m.monat, betrag: m.betrag, heuteISO, art: "zahlungserinnerung" }),
+            }
+          : undefined,
     });
   }
 
@@ -198,4 +221,35 @@ export function tageVor(iso: string, tage: number): string {
   if (!m) return iso;
   const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) - tage));
   return d.toISOString().slice(0, 10);
+}
+
+export type GebuendelteAufgabe = Aufgabe & { anzahl: number };
+
+// GLEICHE AUFGABEN BÜNDELN (03.10.2026, Betreiber: „viel Neues wirkt unübersichtlich“).
+// Sechs Zeilen „NK-Abrechnung 2025 zustellen“ mit derselben Frist unterscheiden sich nur im
+// Mieter — sie werden EINE Zeile („6 Einträge · Anna Weber, Fatma Yılmaz, …“), die auf die
+// Terminliste führt, wo jeder einzeln steht. Zusammengefasst wird nur bei gleicher Art,
+// gleichem Titel UND gleichem Datum; die Reihenfolge bleibt die der ersten Zeile.
+export function buendleGleicheAufgaben(liste: Aufgabe[]): GebuendelteAufgabe[] {
+  const gruppen = new Map<string, Aufgabe[]>();
+  for (const a of liste) {
+    const k = `${a.art}|${a.label}|${a.datum}`;
+    const g = gruppen.get(k);
+    if (g) g.push(a);
+    else gruppen.set(k, [a]);
+  }
+  return [...gruppen.values()].map((g) => {
+    if (g.length === 1) return { ...g[0], anzahl: 1 };
+    const namen = g.map((a) => a.sub.split(" · ")[0]).filter(Boolean);
+    const vorne = namen.slice(0, 2).join(", ");
+    return {
+      ...g[0],
+      anzahl: g.length,
+      sub: `${g.length} Einträge · ${vorne}${namen.length > 2 ? ", …" : ""}`,
+      href: g[0].art === "frist" ? "/termine" : g[0].href,
+      dringend: g.some((a) => a.dringend),
+      // Ein Bündel hat keinen einzelnen Mieter — die Erinnerung gibt es im Mietkonto je Zeile.
+      neben: undefined,
+    };
+  });
 }

@@ -52,7 +52,7 @@ export default function VisionPage() {
           </Reveal>
 
           <h2 className="lp-h2" style={{ marginTop: 64 }}>Die Roadmap</h2>
-          <p className="lp-section-sub">Was schon umgesetzt ist und was als Nächstes kommt — ehrlich unterteilt in „umgesetzt", „in Arbeit" und „geplant".</p>
+          <p className="lp-section-sub">Was schon umgesetzt ist und was als Nächstes kommt — ehrlich unterteilt in „umgesetzt&quot;, „in Arbeit&quot; und „geplant&quot;.</p>
           <div className="lp-cards3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
             {VISION.map((v, i) => (
               <Reveal key={v.t} delay={i * 70}>

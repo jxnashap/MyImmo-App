@@ -189,7 +189,7 @@ describe("Dashboard und Objektseite rechnen dieselbe Zahl", () => {
   });
 
   it("der Buchungssaldo heißt nicht mehr „Cashflow“", () => {
-    expect(dashboard).toContain("<h3>Buchungssaldo</h3>");
+    expect(dashboard).toContain('titel: "Buchungssaldo"'); // Ansicht im Grafik-Umschalter (04.10.2026)
     expect(dashboard).not.toMatch(/caption="Kumulierter Cashflow/);
     expect(readFileSync("app/(app)/cashflow/page.tsx", "utf8")).toMatch(/kpi-label">Buchungssaldo/);
   });

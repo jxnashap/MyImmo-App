@@ -47,7 +47,7 @@ export default async function VerbrauchPage(
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
   ];
 
-  const meldungen: ZaehlerMeldungVermieter[] = ((meldRows ?? []) as any[]).map((m) => ({
+  const meldungen: ZaehlerMeldungVermieter[] = (meldRows ?? []).map((m) => ({
     id: m.id,
     art: m.art,
     zaehlernummer: m.zaehlernummer,

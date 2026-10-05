@@ -42,7 +42,6 @@ function sanitize(s) {
 const tracked = (s) => s.split("").join(" ");
 
 // ---- Inhalt ----
-const NUTZER = "die Nutzerin / der Nutzer";
 const SECTIONS = [
   { n: 1, title: "Zusammenfassung", body: [
     { p: "MyImmo ist eine Web-App (iOS-Version in Vorbereitung), mit der private Vermieter ihre Immobilien vollständig digital verwalten: Einnahmen und Ausgaben, Mieter und Mietverhältnisse, Verbrauch, Kredite, die jährliche Nebenkostenabrechnung sowie die steuerliche Anlage V – in einer aufgeräumten, modernen Oberfläche mit automatischer Wiederkehr-Logik für Mieten und regelmäßige Kosten." },

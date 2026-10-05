@@ -102,7 +102,7 @@ export default function MarktwertCard({
           <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 8, background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", fontSize: 12, color: "var(--text)" }}>
             <strong style={{ color: "var(--gold)" }}>Für die Berechnung fehlen noch:</strong> {erg.fehlend.join(" · ")}
             <div style={{ color: "var(--muted)", marginTop: 4 }}>
-              Trage sie unten ein (aus BORIS-Portal / Marktbericht deiner Gemeinde in ~2 Min. ablesbar) und klicke „Jetzt aktualisieren".
+              Trage sie unten ein (aus BORIS-Portal / Marktbericht deiner Gemeinde in ~2 Min. ablesbar) und klicke „Jetzt aktualisieren&quot;.
             </div>
           </div>
         )}

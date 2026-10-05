@@ -7,6 +7,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { zahlDe } from "@/lib/zahl";
+import { selbstErledigtErlaubt, TAETIGKEIT_KEYS } from "@/lib/taetigkeiten";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // ohne 0/O, 1/I/L
 
@@ -71,8 +72,128 @@ export async function entferneServicePartner(serviceUserId: string) {
     .eq("vermieter_id", user.id)
     .eq("user_id", serviceUserId);
   if (error) return { error: "Verknüpfung konnte nicht gelöst werden — der Zugriff besteht weiter." };
+  // Zuordnungen mit entfernen. Sichtbar wären sie ohnehin nicht mehr (Regel und Sicht verlangen
+  // eine bestehende Verknüpfung) — aber ein erneut eingeladener Partner bekäme sonst alte Objekte zurück.
+  const { error: oFehler } = await supabase
+    .from("service_objekte")
+    .delete()
+    .eq("vermieter_id", user.id)
+    .eq("service_user_id", serviceUserId);
+  if (oFehler) return { error: "Verknüpfung gelöst, aber die Objekt-Zuordnung blieb gespeichert — bitte erneut versuchen." };
   revalidatePath("/anliegen");
   return { ok: true };
+}
+
+const ROLLEN = ["hausmeister", "dienstleister"] as const;
+const OFFENE_STATUS = ["freigabe", "offen", "angenommen"];
+
+/**
+ * Vermieter: Rolle und Objekte eines Partners festlegen (05.10.2026).
+ * Hausmeister betreut die angehakten Objekte; ein Dienstleister hat keine Objekte (er sieht nur,
+ * was ihm beauftragt wird) — seine Zuordnungen werden deshalb entfernt.
+ */
+export async function setzeServicePartner(formData: FormData): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const serviceUserId = String(formData.get("serviceUserId") ?? "");
+  const rolle = String(formData.get("rolle") ?? "");
+  if (!(ROLLEN as readonly string[]).includes(rolle)) return { error: "Bitte eine Rolle wählen." };
+  const gewuenscht = rolle === "hausmeister"
+    ? [...new Set(formData.getAll("objekt").map(String).filter(Boolean))]
+    : [];
+
+  const { data: gesetzt, error: rFehler } = await supabase.rpc("service_rolle_setzen", { p_user: serviceUserId, p_rolle: rolle });
+  if (rFehler || gesetzt !== true) return { error: "Service-Partner nicht gefunden." };
+
+  // Nur eigene Objekte — die Datenbank prüft es ebenfalls; hier für eine klare Meldung.
+  if (gewuenscht.length > 0) {
+    const { data: eigene, error: pFehler } = await supabase
+      .from("properties").select("id").eq("user_id", user.id).in("id", gewuenscht);
+    if (pFehler) return { error: "Objekte konnten nicht geprüft werden — nichts geändert." };
+    if ((eigene ?? []).length !== gewuenscht.length) return { error: "Mindestens ein Objekt gehört nicht zu deinem Konto." };
+  }
+
+  // Fail-closed: Ohne den aktuellen Stand wüssten wir nicht, was zu entfernen ist.
+  const { data: jetzt, error: jFehler } = await supabase
+    .from("service_objekte").select("prop_id").eq("vermieter_id", user.id).eq("service_user_id", serviceUserId);
+  if (jFehler) return { error: "Zuordnung konnte nicht gelesen werden — nichts geändert." };
+  const vorhanden = new Set(((jetzt ?? []) as { prop_id: string }[]).map((r) => r.prop_id));
+  const neu = gewuenscht.filter((id) => !vorhanden.has(id));
+  const weg = [...vorhanden].filter((id) => !gewuenscht.includes(id));
+
+  if (neu.length > 0) {
+    const { error } = await supabase
+      .from("service_objekte")
+      .insert(neu.map((prop_id) => ({ vermieter_id: user.id, service_user_id: serviceUserId, prop_id })));
+    if (error) return { error: "Objekte konnten nicht zugewiesen werden." };
+  }
+  if (weg.length > 0) {
+    const { error } = await supabase
+      .from("service_objekte")
+      .delete()
+      .eq("vermieter_id", user.id)
+      .eq("service_user_id", serviceUserId)
+      .in("prop_id", weg);
+    if (error) return { error: "Objekte konnten nicht entfernt werden — der Partner sieht sie weiterhin." };
+  }
+  revalidatePath("/anliegen");
+  revalidatePath("/service");
+  return { ok: true };
+}
+
+/**
+ * Vermieter: Hausmeister wechseln (05.10.2026). Offene Aufträge (Freigabe, offen, angenommen)
+ * und — auf Wunsch — die Objekte gehen an den neuen Partner. Erledigte bleiben beim alten
+ * (das ist seine Arbeit und der Nachweis dafür).
+ */
+export async function uebergebeServicePartner(formData: FormData): Promise<{ ok: true; auftraege: number; objekte: number } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const alt = String(formData.get("alt") ?? "");
+  const neu = String(formData.get("neu") ?? "");
+  const mitObjekten = formData.get("mitObjekten") === "1";
+  if (!alt || !neu || alt === neu) return { error: "Bitte einen anderen Partner wählen." };
+
+  const { data: beide, error: zFehler } = await supabase
+    .from("service_zugaenge").select("user_id,rolle").eq("vermieter_id", user.id).in("user_id", [alt, neu]);
+  if (zFehler) return { error: "Partner konnten nicht geprüft werden — nichts übergeben." };
+  const neuZugang = ((beide ?? []) as { user_id: string; rolle: string }[]).find((z) => z.user_id === neu);
+  if ((beide ?? []).length !== 2 || !neuZugang) return { error: "Beide Partner müssen mit deinem Konto verknüpft sein." };
+
+  const { data: verschoben, error: aFehler } = await supabase
+    .from("auftraege")
+    .update({ service_user_id: neu })
+    .eq("vermieter_id", user.id)
+    .eq("service_user_id", alt)
+    .in("status", OFFENE_STATUS)
+    .select("id");
+  if (aFehler) return { error: "Aufträge konnten nicht übergeben werden." };
+
+  let objekte = 0;
+  if (mitObjekten) {
+    if (neuZugang.rolle !== "hausmeister") return { error: "Objekte gehen nur an einen Hausmeister — die Aufträge wurden übergeben." };
+    const { data: altObj, error: oFehler } = await supabase
+      .from("service_objekte").select("prop_id").eq("vermieter_id", user.id).eq("service_user_id", alt);
+    if (oFehler) return { error: "Aufträge übergeben, Objekte nicht — bitte erneut versuchen." };
+    const ids = ((altObj ?? []) as { prop_id: string }[]).map((r) => r.prop_id);
+    if (ids.length > 0) {
+      const { error: insFehler } = await supabase
+        .from("service_objekte")
+        .upsert(ids.map((prop_id) => ({ vermieter_id: user.id, service_user_id: neu, prop_id })), { onConflict: "service_user_id,prop_id", ignoreDuplicates: true });
+      if (insFehler) return { error: "Aufträge übergeben, Objekte nicht — bitte erneut versuchen." };
+      const { error: delFehler } = await supabase
+        .from("service_objekte").delete().eq("vermieter_id", user.id).eq("service_user_id", alt);
+      if (delFehler) return { error: "Objekte übergeben, aber beim bisherigen Partner nicht entfernt — er sieht sie weiterhin." };
+    }
+    objekte = ids.length;
+  }
+  revalidatePath("/anliegen");
+  revalidatePath("/service");
+  return { ok: true, auftraege: (verschoben ?? []).length, objekte };
 }
 
 /** Vermieter: Auftrag an einen verknüpften Service-Partner erstellen. */
@@ -90,8 +211,10 @@ export async function erstelleAuftrag(formData: FormData) {
   const termin = String(formData.get("termin") ?? "").trim();
   const anliegenId = String(formData.get("anliegenId") ?? "").trim();
   const mieterId = String(formData.get("mieterId") ?? "").trim();
+  const taetigkeit = String(formData.get("taetigkeit") ?? "").trim();
   if (!serviceUserId) return { error: "Bitte einen Service-Partner wählen." };
   if (!titel) return { error: "Bitte einen Betreff angeben." };
+  if (!TAETIGKEIT_KEYS.includes(taetigkeit)) return { error: "Bitte die Art der Arbeit wählen." };
 
   // Mieter-Kontakt nur teilen, wenn der Mieter dem Vermieter gehört (Opt-in).
   let mieterOk: string | null = null;
@@ -132,6 +255,7 @@ export async function erstelleAuftrag(formData: FormData) {
     beschreibung: beschreibung || null,
     termin: termin || null,
     mieter_id: mieterOk,
+    taetigkeit,
   });
   if (error) return { error: "Auftrag konnte nicht gespeichert werden." };
   revalidatePath("/anliegen");
@@ -152,11 +276,14 @@ export async function beantrageAuftrag(formData: FormData) {
   const titel = String(formData.get("titel") ?? "").trim();
   const beschreibung = String(formData.get("beschreibung") ?? "").trim();
   const objekt = String(formData.get("objekt") ?? "").trim();
+  const propId = String(formData.get("propId") ?? "").trim();
   const firmaId = String(formData.get("firmaId") ?? "").trim();
   const termin = String(formData.get("termin") ?? "").trim();
   const schaetzungRoh = String(formData.get("kostenSchaetzung") ?? "").trim();
+  const taetigkeit = String(formData.get("taetigkeit") ?? "").trim();
   if (!vermieterId) return { error: "Bitte den Auftraggeber wählen." };
   if (!titel) return { error: "Bitte angeben, was gemacht werden muss." };
+  if (!TAETIGKEIT_KEYS.includes(taetigkeit)) return { error: "Bitte die Art der Arbeit wählen." };
   const schaetzung = schaetzungRoh ? parseBetrag(schaetzungRoh) : null;
   if (schaetzungRoh && schaetzung == null) return { error: "Bitte die geschätzten Kosten als Betrag angeben (z. B. 250 oder 1.250,00)." };
 
@@ -167,6 +294,17 @@ export async function beantrageAuftrag(formData: FormData) {
   if (schaetzung != null) {
     const { data: grenze, error: gFehler } = await supabase.rpc("auftrag_kostengrenze", { p_vermieter: vermieterId });
     unterGrenze = !gFehler && typeof grenze === "number" && schaetzung <= grenze;
+  }
+
+  // Objekt: nur eines, das der Vermieter ihm zugewiesen hat (Sicht `service_objekte_portal`).
+  // Die Datenbank prüft dasselbe beim Einfügen — hier entsteht der lesbare Objektname.
+  let objektName: string | null = objekt || null;
+  if (propId) {
+    const { data: o, error: oFehler } = await supabase
+      .from("service_objekte_portal").select("id,bezeichnung,adresse").eq("id", propId).eq("vermieter_id", vermieterId).maybeSingle();
+    if (oFehler || !o) return { error: "Dieses Objekt ist dir nicht zugewiesen." };
+    const name = [o.bezeichnung, o.adresse].filter(Boolean).join(", ");
+    objektName = objekt ? `${name} — ${objekt}` : name;
   }
 
   // Vorgeschlagene Firma muss zum gewählten Auftraggeber gehören.
@@ -182,11 +320,13 @@ export async function beantrageAuftrag(formData: FormData) {
     vermieter_id: vermieterId,
     service_user_id: user.id,
     firma_id: firmaOk,
-    objekt_name: objekt || null,
+    prop_id: propId || null,
+    objekt_name: objektName ? objektName.slice(0, 300) : null,
     titel: titel.slice(0, 200),
     beschreibung: beschreibung.slice(0, 2000) || null,
     termin: termin || null,
     kosten_schaetzung: schaetzung,
+    taetigkeit,
     status: unterGrenze ? "offen" : "freigabe",
     auto_freigegeben: unterGrenze,
     erstellt_von: "service",
@@ -215,11 +355,27 @@ export async function entscheideAuftrag(id: string, freigeben: boolean, mieterId
     mieterOk = m.id;
   }
 
+  // Vorschlag des Hausmeisters („Fachbetrieb nötig“) wird mit der Freigabe zur Firma des
+  // Auftrags — nur, wenn die Firma zum eigenen Verzeichnis gehört und noch keine gesetzt ist.
+  let firmaAusVorschlag: string | null = null;
+  if (freigeben) {
+    const { data: a, error: aFehler } = await supabase
+      .from("auftraege").select("firma_id,vorgeschlagene_firma_id").eq("id", id).eq("vermieter_id", user.id).maybeSingle();
+    if (aFehler || !a) return { error: "Auftrag nicht gefunden." };
+    if (!a.firma_id && a.vorgeschlagene_firma_id) {
+      const { data: f, error: fFehler } = await supabase
+        .from("firmen").select("id").eq("id", a.vorgeschlagene_firma_id).eq("user_id", user.id).maybeSingle();
+      if (fFehler) return { error: "Vorgeschlagene Firma konnte nicht geprüft werden — nichts freigegeben." };
+      firmaAusVorschlag = f?.id ?? null;
+    }
+  }
+
   const { data, error } = await supabase
     .from("auftraege")
     .update({
       status: freigeben ? "offen" : "nicht_freigegeben",
       ...(mieterOk ? { mieter_id: mieterOk } : {}),
+      ...(firmaAusVorschlag ? { firma_id: firmaAusVorschlag } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -286,6 +442,22 @@ export async function beantworteAuftrag(formData: FormData) {
   };
 
   if (status === "erledigt") {
+    // Gas, Strom, Trinkwasser, Schornstein: „selbst erledigt“ gibt es dort nicht — erst mit
+    // einem (vom Vermieter freigegebenen) Fachbetrieb am Auftrag (lib/fachbetriebPflicht.ts).
+    const { data: a, error: aFehler } = await supabase
+      .from("auftraege").select("titel,beschreibung,firma_id,taetigkeit,vermieter_id").eq("id", id).eq("service_user_id", user.id).maybeSingle();
+    if (aFehler || !a) return { error: "Auftrag nicht gefunden." };
+    // Die Sperre gilt dem HAUSMEISTER — ein Dienstleister ist selbst der Fachbetrieb.
+    // Ohne lesbare Rolle gilt die strengere Regel (fail-closed).
+    const { data: z } = await supabase
+      .from("service_zugaenge").select("rolle").eq("user_id", user.id).eq("vermieter_id", a.vermieter_id).maybeSingle();
+    const pruefung = selbstErledigtErlaubt({
+      rolle: z?.rolle === "dienstleister" ? "dienstleister" : "hausmeister",
+      taetigkeit: a.taetigkeit, titel: a.titel, beschreibung: a.beschreibung, firmaId: a.firma_id,
+    });
+    if (!pruefung.erlaubt) {
+      return { error: `${pruefung.grund} Bitte „Fachbetrieb nötig“ wählen — der Vermieter gibt die Firma frei.` };
+    }
     const betrag = parseBetrag(String(formData.get("betrag") ?? ""));
     const lohnanteil = parseBetrag(String(formData.get("lohnanteil") ?? ""));
     if (lohnanteil != null && betrag == null) return { error: "Lohnanteil ohne Gesamtbetrag — bitte auch den Betrag angeben." };
@@ -452,4 +624,129 @@ export async function setzeKostengrenze(formData: FormData) {
   if (error || !data) return { error: "Kostengrenze konnte nicht gespeichert werden." };
   revalidatePath("/anliegen");
   return { ok: true };
+}
+
+// Fotos am Auftrag: gleiche Grenzen wie die Datenbank (Migration 20261005110000).
+const FOTO_MAX = 4 * 1024 * 1024;
+const FOTO_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+
+/**
+ * Notiz oder Foto am Auftrag (05.10.2026) — vom Vermieter oder vom Partner, dem der Auftrag
+ * gehört. Die Rolle ergibt sich aus dem Auftrag, nie aus dem Formular.
+ */
+export async function fuegeAuftragNotizHinzu(formData: FormData): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const auftragId = String(formData.get("auftragId") ?? "");
+  const text = String(formData.get("text") ?? "").trim().slice(0, 2000);
+  const foto = formData.get("foto");
+  const hatFoto = foto instanceof File && foto.size > 0;
+  if (!auftragId) return { error: "Auftrag fehlt." };
+  if (!text && !hatFoto) return { error: "Bitte eine Notiz schreiben oder ein Foto wählen." };
+  if (hatFoto && foto.size > FOTO_MAX) return { error: "Das Foto ist größer als 4 MB." };
+  if (hatFoto && !FOTO_MIME.includes(foto.type)) return { error: "Nur Fotos (JPG, PNG, WebP, HEIC)." };
+
+  const { data: a, error: aFehler } = await supabase
+    .from("auftraege").select("vermieter_id,service_user_id").eq("id", auftragId).maybeSingle();
+  if (aFehler || !a) return { error: "Auftrag nicht gefunden." };
+  const rolle = a.vermieter_id === user.id ? "vermieter" : a.service_user_id === user.id ? "service" : null;
+  if (!rolle) return { error: "Auftrag nicht gefunden." };
+
+  const { error } = await supabase.from("auftrag_notizen").insert({
+    auftrag_id: auftragId,
+    vermieter_id: a.vermieter_id,
+    autor_id: user.id,
+    autor_rolle: rolle,
+    art: hatFoto ? "foto" : "notiz",
+    text: text || null,
+    ...(hatFoto
+      ? {
+          datei_name: foto.name.slice(0, 200),
+          datei_type: foto.type,
+          datei_size: foto.size,
+          datei_data: Buffer.from(await foto.arrayBuffer()).toString("base64"),
+        }
+      : {}),
+  });
+  if (error) return { error: "Notiz konnte nicht gespeichert werden." };
+  revalidatePath("/service");
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
+/**
+ * Hausmeister: „Kann ich nicht selbst — Fachbetrieb nötig“ (05.10.2026). Er SCHLÄGT eine Firma
+ * vor (Entscheidung des Betreibers: nie selbst beauftragen); der Auftrag geht zurück in die
+ * Freigabe, der Vermieter entscheidet. Die Datenbank prüft Rolle, Status und Firma.
+ */
+export async function meldeFachbetriebNoetig(formData: FormData): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const auftragId = String(formData.get("auftragId") ?? "");
+  const firmaId = String(formData.get("firmaId") ?? "").trim() || null;
+  const text = String(formData.get("text") ?? "").trim();
+  const schaetzungRoh = String(formData.get("kostenSchaetzung") ?? "").trim();
+  const schaetzung = schaetzungRoh ? parseBetrag(schaetzungRoh) : null;
+  if (!auftragId) return { error: "Auftrag fehlt." };
+  if (text.length < 3) return { error: "Bitte kurz begründen, warum ein Fachbetrieb nötig ist." };
+  if (schaetzungRoh && schaetzung == null) return { error: "Bitte die geschätzten Kosten als Betrag angeben (z. B. 280)." };
+
+  const { data, error } = await supabase.rpc("auftrag_fachbetrieb_vorschlagen", {
+    p_auftrag: auftragId,
+    p_firma: firmaId,
+    p_schaetzung: schaetzung,
+    p_text: text.slice(0, 2000),
+  });
+  if (error) return { error: error.code === "22023" ? error.message : "Vorschlag konnte nicht gesendet werden." };
+  if (data !== true) return { error: "Nur möglich, solange der Auftrag offen oder angenommen ist — und nur als Hausmeister." };
+  revalidatePath("/service");
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
+/**
+ * Vermieter: Rückfrage zu einem Antrag (05.10.2026) — dritter Weg neben Freigeben und Ablehnen.
+ * Der Auftrag bleibt in der Freigabe; der Hausmeister antwortet im Verlauf.
+ */
+export async function stelleRueckfrage(formData: FormData): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  const auftragId = String(formData.get("auftragId") ?? "");
+  const text = String(formData.get("text") ?? "").trim();
+  if (!auftragId) return { error: "Auftrag fehlt." };
+  if (text.length < 3) return { error: "Bitte die Frage formulieren." };
+
+  const { data: a, error: aFehler } = await supabase
+    .from("auftraege").select("id,status").eq("id", auftragId).eq("vermieter_id", user.id).maybeSingle();
+  if (aFehler || !a) return { error: "Auftrag nicht gefunden." };
+  if (a.status !== "freigabe") return { error: "Rückfragen gibt es nur, solange der Antrag auf deine Freigabe wartet." };
+
+  const { error } = await supabase.from("auftrag_notizen").insert({
+    auftrag_id: auftragId,
+    vermieter_id: user.id,
+    autor_id: user.id,
+    autor_rolle: "vermieter",
+    art: "notiz",
+    text: text.slice(0, 2000),
+    rueckfrage: true,
+  });
+  if (error) return { error: "Rückfrage konnte nicht gespeichert werden." };
+  revalidatePath("/anliegen");
+  revalidatePath("/service");
+  return { ok: true };
+}
+
+/** Service-Portal geöffnet: „zuletzt gesehen“ setzen (05.10.2026). Beste Mühe — scheitert es,
+ *  bleibt die Markierung „neu“ einfach stehen; kein Fehler für den Partner. */
+export async function markiereServiceGesehen(): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+  const { error } = await supabase.rpc("service_gesehen");
+  return { ok: !error };
 }

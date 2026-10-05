@@ -1,7 +1,8 @@
 "use client";
 import { TriangleAlert } from "lucide-react";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { mieterwechselVerdacht } from "@/lib/mieterZugang";
 import type { Tenant, Property } from "@/lib/types";
 import SubmitButton from "@/components/SubmitButton";
 
@@ -23,6 +24,7 @@ export default function TenantForm({
   submitLabel,
   propInitial = "",
   back,
+  portalKonto = null,
 }: {
   action: (formData: FormData) => void;
   tenant?: Tenant;
@@ -31,12 +33,38 @@ export default function TenantForm({
   propInitial?: string;
   /** Wohin nach dem Speichern zurueck (z. B. die Objektseite, von der man kam). */
   back?: string;
+  /** E-Mail des verbundenen Portal-Kontos (S4: Rückfrage bei Mieterwechsel), sonst null. */
+  portalKonto?: string | null;
 }) {
   const [mietart, setMietart] = useState((tenant?.mietart as string) || "standard");
   const v = (k: keyof Tenant) => (tenant?.[k] as string | number | null) ?? "";
 
+  // S4: Name oder Mietbeginn eines Mieters mit Portal-Konto geändert? Erst fragen —
+  // sonst sähe der bisherige Mieter alles, was künftig für den neuen bestimmt ist.
+  // Der Server setzt dieselbe Regel durch (lib/actions/tenants.ts).
+  const formRef = useRef<HTMLFormElement>(null);
+  const [entscheidung, setEntscheidung] = useState("");
+  const [frage, setFrage] = useState(false);
+  const pruefeWechsel = (e: React.FormEvent<HTMLFormElement>) => {
+    if (!tenant || !portalKonto || entscheidung) return;
+    const f = new FormData(e.currentTarget);
+    const wert = (k: string) => (String(f.get(k) ?? "") || null);
+    const alt = { vorname: tenant.vorname ?? null, nachname: tenant.nachname ?? null, mietbeginn: (tenant.mietbeginn as string | null) ?? null };
+    if (mieterwechselVerdacht(alt, { vorname: wert("vorname"), nachname: wert("nachname"), mietbeginn: wert("mietbeginn") })) {
+      e.preventDefault();
+      setFrage(true);
+    }
+  };
+  const entscheide = (wahl: "korrektur" | "trennen") => {
+    setEntscheidung(wahl);
+    setFrage(false);
+    // Nach dem Rendern abschicken, damit das versteckte Feld den neuen Wert trägt.
+    setTimeout(() => formRef.current?.requestSubmit(), 0);
+  };
+
   return (
-    <form action={action} className="form-box" style={{ maxWidth: 640 }}>
+    <form ref={formRef} action={action} onSubmit={pruefeWechsel} className="form-box" style={{ maxWidth: 640 }}>
+      {entscheidung && <input type="hidden" name="mieterwechsel" value={entscheidung} />}
       {/* Rueckweg mitgeben, damit der Nutzer nach dem Speichern dort landet, wo
           er angefangen hat (z. B. auf der Objektseite) — nicht in der Liste. */}
       {back && <input type="hidden" name="back" value={back} />}
@@ -145,6 +173,22 @@ export default function TenantForm({
           </small>
         </div>
       </div>
+
+      {frage && (
+        <div role="alertdialog" aria-label="Neuer Mieter?" className="glass-card" style={{ padding: "14px 16px", margin: "8px 0 4px", borderLeft: "3px solid var(--amber)" }}>
+          <strong style={{ fontSize: 13.5 }}>Ist das ein neuer Mieter?</strong>
+          <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "6px 0 10px", lineHeight: 1.55 }}>
+            Du hast Name oder Mietbeginn geändert. Mit diesem Mieter ist das Portal-Konto <strong>{portalKonto}</strong> verbunden.
+            Ist es eine andere Person, sähe der bisherige Mieter sonst alles, was du künftig zustellst — dann den Zugang trennen
+            und den neuen Mieter einladen (besser noch: den neuen Mieter als eigenen Eintrag anlegen).
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button type="button" className="btn btn-gold" onClick={() => entscheide("trennen")}>Neuer Mieter — Zugang trennen und speichern</button>
+            <button type="button" className="btn btn-ghost" onClick={() => entscheide("korrektur")}>Gleiche Person, nur korrigiert</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setFrage(false)}>Abbrechen</button>
+          </div>
+        </div>
+      )}
 
       <div className="form-actions">
         <SubmitButton>{submitLabel}</SubmitButton>

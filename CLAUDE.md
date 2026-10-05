@@ -130,6 +130,22 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    („12345678" u. a.), danach ein sicheres Passwort angenommen. Belegt am Passwort-SETZEN;
    für die Registrierung gilt dieselbe Server-Einstellung, dort nicht eigens probiert.
 0. **Brevo-Zugang in Vercel eintragen (02.10.2026 gefunden, DRINGEND vor dem Start):**
+   🟨 **03.10.2026: laut Betreiber eingetragen** (Projekt in Vercel 07:32 UTC geändert, danach
+   neu deployt). **Falle:** Eine Env-Änderung wirkt erst mit dem NÄCHSTEN Deployment — der
+   letzte Produktions-Build lag 3 Minuten davor, die Formulare blieben ausgeblendet.
+   Merkmal ohne Mailversand: Erscheint auf `/vorlagen` ein E-Mail-Feld, ist `brevoBereit()` wahr.
+   **Auch der Build danach (07:34) zeigte kein Formular** — der erste Eintrag kam in
+   Production nicht an. **Ursache (Screenshot des Betreibers):** Im Feld **Value** von
+   `BREVO_API_KEY` stand der NAME der zweiten Variable („BREVO_ABSENDER_EMAIL“) statt des
+   Schlüssels, die zweite Variable fehlte ganz. Key = Name, Value = Inhalt; zwei getrennte
+   Einträge. Das Projekt hat außerdem eine eigene Umgebung „claudeapi“ neben Production.
+   Korrigiert 03.10.2026, danach neu gebaut → Formular sichtbar, erste Zeile in
+   `newsletter_anmeldungen`. **Nächste Hürde (03.10.2026, OFFEN):** Brevo blockiert den
+   Versand („API-Aufruf von unbekannter IP“) — Vercel-Funktionen haben keine feste IP.
+   Lösung: Brevo → Sicherheit → Autorisierte IPs → Sperre aus (Risiko: Schlüssel gilt dann
+   von überall; Rotation bei Verdacht) oder Vercel Static IPs (kostet). Betreiber:
+   „machen wir später“. Bis dahin endet jede Anmeldung ohne Mail. **Regel: Nach jeder Env-Änderung neu bauen UND am
+   Merkmal prüfen, nicht am Eintrag.**
    `BREVO_API_KEY` + `BREVO_ABSENDER_EMAIL` (in Brevo verifiziert, SPF/DKIM für
    myimmoapp.de), optional `BREVO_LIST_ID`, danach **neu deployen**. Ohne sie endete jede
    Anmeldung mit 503 „Versand gerade nicht verfügbar“ — `newsletter_anmeldungen` hatte
@@ -152,7 +168,7 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    **1 Tag**, mit Observability Plus 30 Tage; Build-Logs unbegrenzt je Deployment.
    `/datenschutz` 3 d sagt jetzt „nach einem Tag“. **Wird Observability Plus gebucht,
    muss dort 30 Tage stehen.**
-9. **11px → 12px: Token UMGESTELLT 02.10.2026** (`--text-xs: 12px`, `.tz-rest` 84 → 92px).
+9. **11px → 12px: Token UMGESTELLT 02.10.2026** (`--text-xs: 12px`; `.tz-rest` gibt es seit 03.10.2026 nicht mehr — `/termine` hat keine feste Breite mehr).
    **Offen: Betreiber klickt durch** (Dashboard-Kacheln, Badges, Formular-Labels, Objektkarten,
    Termine, Briefvorschau, Befehlspalette) und meldet Umbrüche. Rückweg: eine Zeile in
    `app/globals.css`. Folge: `--text-xs` = `--text-sm` = 12px, die Stufe dazwischen entfällt.
@@ -193,7 +209,9 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
   Transaktion Kosten „Verwaltung“ (Anlage V Zeile 46), nach Einheiten auf Objekte außer
   „Selbst bewohnt“, cent-genau; Konto über `abos.provider_subscription_id`, sonst
   `custom_data.user_id`; jeder Fehler → 500 (Paddle stellt erneut zu). **Betreiber: in der
-  Webhook-Destination `transaction.completed` mit abonnieren.** Dazu `/preise` + Preis-Teaser:
+  Webhook-Destination `transaction.completed` mit abonnieren** und **vor dem Bezahlstart
+  `supabase/migrations/20261005170000_kontoloeschung_abo_zahlungen.sql` im SQL-Editor ausführen**
+  (Kontolöschung erfasst `abo_zahlungen`; noch nicht ausgeführt, bis dahin 0 Zeilen, folgenlos). Dazu `/preise` + Preis-Teaser:
   „Als Werbungskosten absetzbar — und automatisch gebucht“ (`lib/absetzbar.ts`, nur mit
   `PREISE_SICHTBAR`). **Regel: Nie „kostenlos, weil absetzbar“** — gespart wird der
   Grenzsteuersatz, nicht der Betrag (§ 5 UWG); `tests/absetzbar.test.ts` hält es fest.
@@ -370,6 +388,46 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Ziffer 3 h nennt Nominatim (UK, Angemessenheitsbeschluss bis 27.12.2031) und Jina AI (Audit
   B9). `tests/verortung.test.ts`. **Regel: Nie eine externe Anfrage wiederholen, deren Ergebnis
   schon bekannt ist; 429/5xx sind „später“, nicht „gibt es nicht“.**
+  📋 **Kompakte Listen (03.10.2026, Betreiber: „nicht so viel Text, funktionell“):** `.listen-zeile`
+  (eine Zeile je Eintrag, Titel mit Auslassung, Datum rechts, Chevron) für Anliegen (Vermieter
+  + Portal, Detail über `?vorgang=<id>`), Dashboard-Neuigkeiten, „Termine & Aufgaben“ und
+  `/termine`: Liste nach Monaten gruppiert (`.tz-gruppe`, Überfällig zuerst), Monatsansicht zeigt
+  UNTER dem Raster die Termine des Monats bzw. des gewählten Tags. Bearbeiten/Löschen auf dem
+  Desktop blass bis Hover. **Regel: Neue Listen nehmen `.listen-zeile`, keine Textblöcke.**
+  **Zweiter Schub (gleicher Tag, „die ganze App so“):** Kredite (Kennzahlen oben, eine Zeile je
+  Darlehen, ALLE zwölf Felder im Dialog `Details`), Immobilien (Wert/Miete, Rendite/Restschuld je
+  Zeile; **Löschen nur noch auf der Objektseite** → `objektUmfaenge()` mit sechs Vollabfragen je
+  Listenaufruf entfiel), Mieter (laufend, darunter „Ausgezogen“; Telefon/Mail/Bearbeiten/NK auf
+  der Mieterseite), Archiv (Notiz nur als Tooltip und im Dialog), Mietkonto (Hinweis § 11 EStG
+  eingeklappt, offene Eingänge als Zeilen in EINER Karte). **Bewusst NICHT umgebaut:** Steuer,
+  Jahresbericht und die Buchungstabelle — Zahlenmatrizen gehören in Tabellen.
+  🐞 **Falle (am Handy gesehen):** `.badge` steht in `globals.css` NACH der Ausblende-Regel und
+  setzte `display` zurück; ein inline `display` an einer Zusatzspalte schlägt sie ebenfalls.
+  Jetzt `.listen-zeile .listen-zeile-extra`; `tests/kompakteListen.test.ts` hält beides fest.
+  📈 **Kennzahlen mit Verlauf — gebaut, live (#413) und vom Betreiber VERWORFEN (03.10.2026):**
+  12-Monats-Linien + „▲/▼ ggü. Vormonat“ unter den Kacheln. Urteil: „wenig Veränderung und
+  wieder viel Neues, wirkt unübersichtlich“. **Lehre: „moderner“ heißt für den Betreiber
+  RUHIGER, nicht mehr Elemente.** Code entfernt (Historie: #413). Nebenbefund, der bleibt:
+  Portfoliowerte ändern sich am ERFASSUNGStag (`marktwert_stand`), nicht am Markttag — ein
+  „ggü. Vormonat“ darauf wäre eine Behauptung ohne Grundlage.
+  🧘 **Ruhigeres Dashboard (Entwurf 03.10.2026, wartet auf Freigabe des Betreibers):** Kennzahlen
+  als EINE Leiste (`.kpi-leiste`/`.kpi-feld`, Unterzeile bis 2 Zeilen statt abgeschnitten);
+  Erklärtexte der Grafiken eingeklappt (`erklaerung`-Prop → „Wie wird das gerechnet?“);
+  gleiche Aufgaben (Art + Titel + Datum) gebündelt (`buendleGleicheAufgaben` in `lib/heute.ts`,
+  „6 Einträge · Anna Weber, …“ → /termine); „Einnahmen vs. Ausgaben“ ENTFERNT (Doppelung);
+  Letzte Buchungen als `.listen-zeile`. Lade-Skelett in Leistenform.
+  💳 **Schulden-Uhr (04.10.2026, Wunsch des Betreibers):** eine Zeile über den Krediten — auf
+  `/kredite` (statt der vier Kacheln) und im Dashboard-Block „Kredite“ (bleibt, mit drei
+  Darlehen als Zeilen): Schulden gesamt, Balken abbezahlt/offen, Tilgung je Monat
+  (`lib/schuldenStand.ts`, `components/SchuldenUhr.tsx`, `tests/schuldenStand.test.ts`).
+  **Bewusst KEIN Sekundenzähler:** `restschuld` ist ein eingetragener Stand, MyImmo schreibt ihn
+  nicht fort — ein tickender Zähler täuschte Genauigkeit vor. Kredit ohne Ursprungsbetrag zählt
+  als „nichts getilgt“ (sonst stiege der Prozentwert durch ein leeres Feld).
+  🔀 **Grafik-Umschalter (04.10.2026, Wunsch des Betreibers):** Portfolio-Wert und Buchungssaldo
+  sind EINE Karte (`components/DiagrammWechsel.tsx`, 320 px hoch), Wahl oben links als
+  überschriftartige Reiter (`.diagramm-wahl`, bewusst kein zweiter goldener Segment-Schalter
+  neben 1J/3J/5J/Max). Gemerkt je Browser (`myimmo:dashboard-grafik`, try/catch). Der Server
+  rendert immer die ERSTE Ansicht — der Rauchtest prüft deshalb `>Buchungssaldo<` (Reiter), nicht `<h3>`.
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
@@ -454,7 +512,87 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   `where` lief über `execute_sql` in den Bestätigungsdialog (Zeitüberlauf) — immer mit WHERE prüfen.
   **Falle:** Eine „use server“-Datei darf NUR async-Funktionen exportieren (Konstanten brechen den
   Turbopack-Build, vitest merkt es nicht) — `tests/useServerExporte.test.ts` wacht jetzt darüber.
-  Offen: Schritt 7.
+  Schritt 7 (Kostengrenze + Angebote) ist gebaut. ✅ **Paket S abgeschlossen 03.10.2026:** S4
+  (Rückfrage „neuer Mieter?“ bei Namens-/Beginn-Änderung mit Portal-Konto, serverseitig
+  erzwungen), S7 (Beleg-Freigabe nennt die Zahl der sehenden Konten), Vorschau nach
+  Zugangsende — Details im Plan, Abschnitt 0. Nächster Portal-Schritt laut Plan:
+  Vertreter-Zugang (eigenes Vorhaben).
+  📋 **Listen statt Textwände (03.10.2026, Betreiber: „nicht so viel Text, Anliegen öffnen, eigene
+  Seite“):** Vermieter-Liste (`/anliegen`) und Mieter-Liste (`/portal?tab=anliegen`) zeigen je
+  Anliegen EINE Zeile (`.listen-zeile`: Titel, Mieter·Objekt bzw. Datum, höchstens ein Merkmal
+  wie „Neue Nachricht“/„Termin wählen“, Status). Ein Klick öffnet `?vorgang=<id>` — beim
+  Vermieter links Meldung + Verlauf + Antwort/Status, rechts Termin, Angebote, Weiterleiten; beim
+  Mieter Meldung, Terminwahl, Verlauf mit Antwortfeld. Dashboard-Neuigkeiten einzeilig und mit
+  Direktlink (`vorgangUrl()`), Mieter-Aufgaben ebenso (`MieterAufgabe.vorgang`). Merkmale und
+  Adressen: `lib/anliegenListe.ts` (`tests/anliegenListe.test.ts`, vier Mutationen rot). Der
+  Rauchtest öffnet jetzt auch die Detailansicht (`pruefeVorgang`). **Regel: Kein Verlauf und kein
+  Formular in einer Liste — dafür gibt es die Detailansicht.** Gleicher Tag: auch „Termine &
+  Aufgaben“ auf dem Dashboard als `.listen-zeile` (Titel, darunter Mieter/Objekt — viele Aufgaben
+  heißen gleich, der Unterschied darf nicht hinter „…“ verschwinden; Fristdatum rechts, rot wenn
+  dringend). `.heute-zeile` ist entfernt.
+- 🧰 **Hausmeister & Servicepartner, Schritt 1 gebaut (05.10.2026, Idee im Memory-Repo).**
+  Entscheidungen des Betreibers: Hausmeister darf Fachbetriebe nur VORSCHLAGEN (nie selbst
+  beauftragen); Fachbetrieb ohne Konto, nur per Auftrags-Link; Rollen mit Konto: Vermieter,
+  **Hausmeister** (betreut zugewiesene Objekte, stellt Anträge, sieht das Firmenverzeichnis),
+  **Dienstleister** (sieht nur Aufträge, die ihm gegeben werden). Migrationen `20261005100000/
+  101000/102000`: `service_zugaenge.rolle` + RPC `service_rolle_setzen`, Tabelle `service_objekte`,
+  Sicht `service_objekte_portal` (Bezeichnung/Adresse — nie die `properties`-Zeile), Antrag nur als
+  Hausmeister und nur für zugewiesene Objekte (DB-Regel), Firmenverzeichnis nur für Hausmeister.
+  Vermieter: `/anliegen?tab=service` → je Partner aufklappbar Rolle, Objekte, „Partner wechseln“
+  (`uebergebeServicePartner`: nur OFFENE Aufträge + wahlweise Objekte; Erledigtes bleibt beim
+  alten). `tests/serviceObjekte.test.ts`, neun Mutationen rot. **Regeln:** (1) Ein Partner liest
+  Objekte nur über `service_objekte_portal`. (2) Neue Rechte eines Partners hängen an
+  `service_zugaenge.rolle`, nie an „ist verknüpft“. (3) Demo-Sperren auf einer neuen Tabelle NICHT
+  als `for all` anlegen, wenn die Demo dort Daten LESEN soll (sperrt sonst auch SELECT — so
+  passiert, `20261005102000`).
+  ✅ **Schritt 2 (gleicher Tag, Migration `20261005110000`):** Verlauf am Auftrag
+  (`auftrag_notizen`, `components/AuftragVerlauf.tsx` = EINE Darstellung für Portal und Vermieter;
+  Fotos über `/api/auftrag-foto/[id]` mit `dateiKopf()`; Spalten ohne Bilddaten in
+  `lib/auftragNotizen.ts`). „Fachbetrieb nötig“ = RPC `auftrag_fachbetrieb_vorschlagen` → Status
+  `freigabe` + `vorgeschlagene_firma_id` (eigene Spalte, weil der Spaltenschutz `firma_id` dem
+  Vermieter vorbehält); `entscheideAuftrag` übernimmt den Vorschlag nur, wenn die Firma im eigenen
+  Verzeichnis steht. **Gas/Strom/Trinkwasser/Schornstein:** `lib/fachbetriebPflicht.ts`
+  (Stichworte — „Wasserhahn tropft“ fällt NICHT darunter) → kein „Selbst erledigt“ ohne Firma am
+  Auftrag, Oberfläche UND `beantworteAuftrag`. **Grenze:** Stichwortliste, kein Verständnis — fehlt
+  das Wort im Text, greift die Sperre nicht. `tests/auftragVerlauf.test.ts`, elf Mutationen rot.
+  **Regel: Ein Wert, den ein Server-Lader braucht, steht nie in einer "use client"-Datei** (käme dort
+  nur als Verweis an) — deshalb `lib/auftragNotizen.ts`.
+  ✅ **Schritt 3 (gleicher Tag, Migration `20261005120000`):** Freigabe mit **[Freigeben]
+  [Ablehnen] [Rückfrage]** — Rückfrage = Vermieter-Notiz mit `rueckfrage = true`, Auftrag bleibt in
+  der Freigabe, der Hausmeister antwortet im Verlauf (`rueckfrageOffen()` in
+  `lib/auftragNotizen.ts`: offen bis zum nächsten Eintrag des Partners; Badges „Rückfrage offen“ /
+  „Hausmeister hat geantwortet“). Dashboard-Neuigkeiten: „Hausmeister: Fachbetrieb nötig“, Fotos
+  und Notizen des Hausmeisters (Art `hausmeister`). `tests/auftragVerlauf.test.ts`, sieben weitere
+  Mutationen rot. **Bewusst nicht:** Hinweis-Mail an den Vermieter (Brevo versendet noch nicht),
+  Servicepartner-Netzwerk/Marktplatz (nur vorbereitet: Auftrag geht an Konto ODER Firma).
+  🔒 **Nacharbeit vor dem Livegang (gleicher Tag, nach externer Prüfung):**
+  (1) ⚠️ **Kontolöschung war unvollständig** — `delete_own_account()` kannte sieben neuere Tabellen
+  nicht (keine mit Kaskade): Fotos, Vollmacht-Scans, Mieter-Adressen blieben liegen. Neue Fassung
+  in `20261005130000` — ✅ **vom Betreiber im SQL-Editor ausgeführt 05.10.2026**, danach geprüft (alle acht Tabellen in der Funktion, Demo-Löschsperre aktiv).
+  **Regel: Jede neue Tabelle mit Konto-Bezug braucht eine Kaskade auf `auth.users` ODER eine
+  Zeile in `delete_own_account()` — `tests/kontoloeschung.test.ts` wird sonst rot.**
+  (2) **Tätigkeit je Auftrag** (`lib/taetigkeiten.ts`, `TaetigkeitWahl`, Migration
+  `20261005140000`): „Selbst erledigt“ nur bei erlaubten Tätigkeiten, Stichworte bleiben zweites
+  Netz; die Tätigkeit ist durch den Spaltenschutz für den Partner unveränderlich. **Fehler dabei
+  gefunden und behoben:** Die Sperre galt für ALLE Partner — ein Sanitärbetrieb (Dienstleister)
+  hätte seinen Heizungsauftrag nicht abschließen können. Jetzt nur Hausmeister
+  (`selbstErledigtErlaubt`, EINE Regel für Oberfläche und Server; Rolle unlesbar → streng).
+  (3) **„Neu seit deinem letzten Besuch“** (`lib/serviceNeu.ts`, `GesehenMelden`, Migration
+  `20261005150000`): Neuer Auftrag, Freigegeben, Nicht freigegeben, Rückfrage, Nachricht — der
+  Besuch wird erst nach 3 s gemeldet, nie in Vorschau/Demo. (4) **Rückfall-Datei**
+  `scripts/sql/rueckfall-hausmeister-2026-10-05.sql`: stellt nur die zwei Regeln mit geändertem
+  Verhalten zurück; alles andere ist rein hinzugefügt.
+- ✉️ **Mahnung/Zahlungserinnerung versenden (05.10.2026, Vorgabe des Betreibers: „wir halten uns
+  aus dem Mailverkehr raus“).** Brief-Generator → „An den Mieter senden“ (`components/BriefVersand.tsx`):
+  **Per Mail** = PDF erzeugen, am Handy über „Teilen“ direkt angehängt, sonst Download + `mailto:`
+  mit Empfänger/Betreff/Text (`briefMailLink` in `lib/mahnung.ts`; Anhang muss der Vermieter selbst
+  anfügen — mailto kann keine Anhänge). **Ins Mieterportal** = Bestätigungskarte
+  (`pruefeBriefZustellung`) → `speichereBrief(…, { zustellen, bestaetigung })` mit derselben
+  Schranke wie die NK-Abrechnung. Dashboard: neben „Mieteingang … offen“ der Knopf „Erinnerung
+  schreiben“ — erst NACH dem dritten Werktag (`mieteUeberfaellig`), nie in einem Bündel; das
+  Mietkonto zeigt Erinnerung/Mahnung ebenfalls erst ab dem Folgetag. **Regeln:** (1) MyImmo
+  verschickt Briefe an Mieter NIE über Brevo. (2) Eine Adresse kommt nur in den mailto-Link, wenn
+  sie dem einfachen Muster entspricht (kein `?bcc=` durch die Hintertür). `tests/mahnung.test.ts`.
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
   (Idee Jonas, Plan 02.10.2026). Entschieden: MyImmo baut die ANFRAGE, der Handwerker bietet
   (kein eigener Kostenvoranschlag — Preishaftung); der VERMIETER wählt, der Mieter schlägt vor
@@ -825,6 +963,23 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   über die Datenbank. **Grenze:** Eine Adresse, die schon für Vorlagen bestätigt ist, bekommt
   „schon eingetragen“ und behält den Vorlagen-Wortlaut (eine Zeile je Adresse); die
   Startankündigung fällt dort unter „gelegentliche Hinweise für Vermieter“.
+  🔗 **„Ein Link statt Aktenordner“ (05.10.2026, Wunsch des Betreibers):** Startseiten-Abschnitt
+  vor den vier Schritten — Bank (Beleihungsordner, Freigabe-Link 7/14/30 Tage), Makler
+  (Käufer-Ordner), Bewerber (Link je Wohnung), Handwerker (Angebots-/Auftrags-Link); dazu eine
+  Excel-Zeile „Wohnung neu vermieten“. `ORDNER` in `components/LandingPage.tsx`, jede Zeile per
+  `tests/startseite.test.ts` an den Code gebunden.
+  🔗 **Makler-Link + Abruf-Protokoll (gleicher Tag, Betreiber: „mach beides“):** Makler-Ordner →
+  „Link für den Makler“ (`components/MaklerLink.tsx`): Auswahl, 7/14/30 Tage, frische Anmeldung,
+  widerrufbar; öffentliche Seite `/makler-link/<token>` (nur Download). **Ausweis, Einkommen,
+  Eigenkapital sind NIE vorausgewählt** (`maklerVorauswahl` in `lib/makler.ts`). **Jeder Datei-Abruf
+  über Bank- ODER Makler-Link** steht in `freigabe_abrufe` (Zeitpunkt + Dokument, keine IP,
+  60-s-Bündelung) und wird beim Link angezeigt (`lib/freigabeAbrufe.ts`). Migration `20261005160000`
+  (live), Kontolöschung `20261005161000` ✅ vom Betreiber im SQL-Editor ausgeführt und geprüft. `tests/maklerLink.test.ts`, neun
+  Mutationen rot. **Regel: Eine neue öffentliche Datei-Route über einen Token schreibt ins
+  Abruf-Protokoll (`freigabe_abruf_merken`).** Nebenbei korrigiert: Der Demo-Dialog beschrieb den
+  Makler-Ordner als Exposé/Grundbuch-Sammlung (das ist der Beleihungsordner).
+  Beide Listen zeigen auch widerrufene/abgelaufene Links (blass, ohne Knöpfe) — wer aus Sorge
+  widerruft, will gerade dann das Protokoll sehen (vorher zeigte der Bank-Ordner nur aktive).
   ✅ **Phase 1 (Startseite) erledigt 01.10.2026:** Hero „Deine Immobilien. Ein System. Von überall.“
   (geschützte Leerzeichen, sonst „Ein / System.“ — im Browser gesehen), Kennzahl „1–24 Einheiten“
   statt „13+ Funktionen“, Abschnitt „Deine Daten gehören dir“ (`VERTRAUEN` in
@@ -1078,6 +1233,14 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   es war Hygiene. **Regel: Komponenten nie innerhalb einer Komponente definieren.**
   Blockiert nichts (Next 16 lintet beim Build nicht mehr) — **als eigenes Vorhaben abarbeiten,
   nicht nebenbei.**
+  ✅ **Abgebaut 03.10.2026: `npm run lint` = 0 Fehler, 0 Warnungen.** Anführungszeichen im
+  JSX-Text anzeigegleich als `&quot;`; `any`-Casts entfernt (der Supabase-Client ist untypisiert,
+  sie waren überflüssig); `Date.now()` im Render durch `heuteBerlin()`/Effekt ersetzt; Ref nicht
+  mehr im Render geschrieben. **29 Stellen bewusst markiert, nicht umgebaut** (je mit Grund im
+  Kommentar): 25× `set-state-in-effect` (Browserwert erst nach dem Mount lesen, Props→Bearbeitungs-
+  stand, Zurücksetzen beim Öffnen), 1× synchrones `theme.js` (sonst Flackern), 3× harte
+  Navigation (Abmelden, Freischaltung, Datei-Download). Unterstrich-Namen gelten als absichtlich
+  unbenutzt (`eslint.config.mjs`). **Regel: Neuer Code hält `npm run lint` bei 0.**
 - ✅ **Next-15-Migration UMGESETZT (01.09.2026): Next 15.5.25 / React 19.2.8.** Plan samt
   Umsetzungsbericht: **`docs/zukunft/NEXTJS-15-MIGRATION.md`**; Befundlage:
   **`docs/SICHERHEIT-ABHAENGIGKEITEN.md`**. Alle 21 next-Meldungen geschlossen (25 → 4).
@@ -1395,6 +1558,15 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Termin vom Mieter, bestätigte Zustellung, Angebot, Firmen-Rückmeldung, Freigabe-Antrag,
   Bewerbung — nie, was schon als Aufgabe dasteht) und darunter „Termine & Aufgaben“.
   Geblieben ist die Zusammenführung: vorher zwei Blöcke mit denselben Fristen, jetzt einer.
+  **GEÄNDERT 03.10.2026 (Betreiber: „Grafik viel zu klein, alles soll zusammenpassen“):** Block
+  `.dash-haupt` (1,45 : 1) — links Portfolio-Wertentwicklung UND Buchungssaldo übereinander, je
+  260 px hoch; rechts Neuigkeiten, darunter Termine & Aufgaben (Fristdatum jetzt in der
+  Unterzeile, sonst brach jede Zeile dreifach um). „Einnahmen vs. Ausgaben“ endet mit „Bleibt /
+  Mo.“ (= Cashflow-Kachel). **Ursache der „zu kleinen Grafik“:** Beide Charts waren per viewBox
+  gestreckte SVGs — Schrift ~6 px in der halben Spalte, ~18 px in voller Breite. Jetzt messen
+  sie ihre Breite (`lib/hooks/useBreite.ts`) und zeichnen in echten Pixeln. **Regel: Kein
+  Diagramm mehr mit `width: 100%; height: auto` auf einer festen viewBox.** Im Browser
+  angesehen (1440/1180/390 px, lokaler Server mit Demo-Sitzung).
   **`lib/heute.ts` → `baueHeuteAufgaben()`** führt offene Mieten des laufenden Monats,
   offene Mieter-Anliegen, nicht übernommene Zählerstände und Fristen in EINER Liste
   zusammen — jede Zeile mit genau einem Ziel und einer Handlung. Reine Funktion, ohne

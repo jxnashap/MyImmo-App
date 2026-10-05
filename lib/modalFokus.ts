@@ -33,7 +33,9 @@ export function useModalFokus<T extends HTMLElement>(onClose: () => void, aktiv 
   // In einer Ref, damit ein neu erzeugtes onClose den Effekt nicht neu startet
   // und dabei den Fokus zurücksetzt.
   const schliessen = useRef(onClose);
-  schliessen.current = onClose;
+  useEffect(() => {
+    schliessen.current = onClose;
+  });
 
   useEffect(() => {
     if (!aktiv) return;

@@ -60,6 +60,7 @@ export default function DemoSperre() {
   const gesperrt = sp.get("demo") === "gesperrt" ? sp.get("bereich") ?? "" : null;
   useEffect(() => {
     if (gesperrt === null) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Rückkehr aus dem Proxy: Dialog öffnen und den Parameter aus der Adresse entfernen
     setOffen(demoBereich(gesperrt));
     const params = new URLSearchParams(Array.from(sp.entries()));
     params.delete("demo");

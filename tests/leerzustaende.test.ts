@@ -18,7 +18,6 @@ import { join } from "node:path";
 //
 // AUSNAHMEN sind erlaubt, aber sie müssen hier namentlich stehen — mit Grund.
 
-const WURZELN = ["app", "components"];
 
 /** Dateien mit handgebautem `className="empty"` — der Baustein wird nicht mitgezählt. */
 function sammle(dir: string, raus: { pfad: string; quelle: string }[] = []) {

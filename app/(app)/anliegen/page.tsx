@@ -19,10 +19,11 @@ import { ansichtenSichtbar, istDemoKonto } from "@/lib/demo";
 import Leer from "@/components/Leer";
 import WischReiter from "@/components/WischReiter";
 import GlassLeiste from "@/components/GlassLeiste";
-import AnliegenManager, { type AnliegenVermieterRow, type AngebotKontext } from "@/components/AnliegenManager";
+import AnliegenManager, { AnliegenDetail, type AnliegenVermieterRow, type AngebotKontext } from "@/components/AnliegenManager";
 import type { Angebot, Angebotsanfrage } from "@/lib/angebote";
 import VermieterAnfragen, { type VermieterAnfrageRow } from "@/components/VermieterAnfragen";
 import BewerbungenManager, { type BewerberLinkRow, type BewerbungRow } from "@/components/BewerbungenManager";
+import { AUFTRAG_NOTIZ_SPALTEN, notizenJeAuftrag, type AuftragNotiz } from "@/lib/auftragNotizen";
 import ServiceManager, { type ServicePartnerRow, type ServiceCodeRow, type AuftragRow, type FirmaRow, type FirmenRueckmeldung } from "@/components/ServiceManager";
 
 type FirmenRueckmeldungRow = FirmenRueckmeldung & { auftrag_id: string };
@@ -30,7 +31,7 @@ import { wartetAufVermieter } from "@/lib/zaehler";
 
 export default async function AnliegenPage(
   props0: {
-    searchParams: Promise<{ tab?: string; titel?: string; text?: string; mieter?: string; portal?: string; partner?: string }>;
+    searchParams: Promise<{ tab?: string; titel?: string; text?: string; mieter?: string; portal?: string; partner?: string; vorgang?: string }>;
   }
 ) {
   const searchParams = await props0.searchParams;
@@ -47,7 +48,7 @@ export default async function AnliegenPage(
   const [
     { data: rows }, { data: mieter }, { data: props }, { data: anfrageRows }, { data: zugaenge },
     { data: linkRows }, { data: bewerbungRows },
-    { data: partnerRows }, { data: codeRows }, { data: auftragRows }, { data: firmenRows },
+    { data: partnerRows }, { data: codeRows }, { data: auftragRows }, { data: firmenRows }, { data: zuordnungRows },
   ] = await Promise.all([
     supabase.from("anliegen").select("*").order("created_at", { ascending: false }),
     supabase.from("mieter").select("id,vorname,nachname,prop_id,mietende"),
@@ -56,11 +57,13 @@ export default async function AnliegenPage(
     supabase.from("mieter_zugaenge").select("mieter_id,user_id,prop_id"),
     supabase.from("bewerber_links").select("*").order("created_at", { ascending: false }),
     supabase.from("bewerbungen").select("*").order("created_at", { ascending: false }).limit(200),
-    supabase.from("service_zugaenge").select("user_id,firma,email,created_at").order("created_at", { ascending: false }),
+    supabase.from("service_zugaenge").select("user_id,firma,email,created_at,rolle").order("created_at", { ascending: false }),
     supabase.from("einladungscodes").select("code,gueltig_bis").eq("rolle", "service").is("eingeloest_am", null).gt("gueltig_bis", new Date().toISOString()).order("created_at", { ascending: false }),
     // rechnung_data (Base64) bewusst NICHT laden — nur Metadaten für die Liste.
-    supabase.from("auftraege").select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,service_user_id,erstellt_von,firma_id,mieter_id,public_token,betrag,lohnanteil,rechnung_name,kosten_id,kosten_schaetzung,auto_freigegeben").order("created_at", { ascending: false }).limit(100),
+    supabase.from("auftraege").select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,service_user_id,erstellt_von,firma_id,mieter_id,public_token,betrag,lohnanteil,rechnung_name,kosten_id,kosten_schaetzung,auto_freigegeben,vorgeschlagene_firma_id,taetigkeit").order("created_at", { ascending: false }).limit(100),
     supabase.from("firmen").select("id,name,gewerk,telefon,email,website,notiz").order("name"),
+    // Welcher Partner betreut welche Objekte (Migration 20261005100000).
+    supabase.from("service_objekte").select("service_user_id,prop_id"),
   ]);
 
   // Bewerbungs-Dokumente: nur Metadaten (ohne Base64-data) für die Liste —
@@ -69,7 +72,7 @@ export default async function AnliegenPage(
     ? await supabase
         .from("bewerbung_dateien")
         .select("id,name,groesse,slot,bewerbung_id")
-        .in("bewerbung_id", (bewerbungRows ?? []).map((b: any) => b.id))
+        .in("bewerbung_id", (bewerbungRows ?? []).map((b) => b.id))
     : { data: [] as { id: string; name: string; groesse: number; slot: string | null; bewerbung_id: string }[] };
 
   const { data: dateiRows } = (rows ?? []).length
@@ -104,10 +107,12 @@ export default async function AnliegenPage(
     terminBestaetigt: a.termin_bestaetigt ?? null,
     mieterId: a.mieter_id ?? null,
   }));
+  // `?vorgang=<id>` öffnet die Detailansicht — nur ein eigenes Anliegen aus der geladenen Liste.
+  const vorgang = searchParams.vorgang ? liste.find((a) => a.id === searchParams.vorgang) ?? null : null;
 
   const offen = liste.filter((a) => a.status !== "erledigt").length;
 
-  const anfragen: VermieterAnfrageRow[] = ((anfrageRows ?? []) as any[]).map((a) => ({
+  const anfragen: VermieterAnfrageRow[] = (anfrageRows ?? []).map((a) => ({
     id: a.id,
     typ: a.typ,
     titel: a.titel,
@@ -125,13 +130,13 @@ export default async function AnliegenPage(
     .filter((m) => verbundeneIds.has(m.id))
     .map((m) => ({ id: m.id, name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }));
 
-  const links: BewerberLinkRow[] = ((linkRows ?? []) as any[]).map((l) => ({
+  const links: BewerberLinkRow[] = (linkRows ?? []).map((l) => ({
     id: l.id, token: l.token, titel: l.titel, aktiv: l.aktiv, created_at: l.created_at,
     objektName: objektName(l.prop_id),
     anzeige: l.anzeige ?? null,
     dokumenteGewuenscht: Array.isArray(l.dokumente_gewuenscht) ? l.dokumente_gewuenscht : [],
   }));
-  const bewerbungen: BewerbungRow[] = ((bewerbungRows ?? []) as any[]).map((b) => ({
+  const bewerbungen: BewerbungRow[] = (bewerbungRows ?? []).map((b) => ({
     id: b.id, name: b.name, email: b.email, telefon: b.telefon, einzug_ab: b.einzug_ab,
     personen: b.personen, beruf: b.beruf, arbeitgeber: b.arbeitgeber,
     netto_einkommen: b.netto_einkommen == null ? null : Number(b.netto_einkommen),
@@ -144,15 +149,18 @@ export default async function AnliegenPage(
   }));
   const neueBewerbungen = bewerbungen.filter((b) => b.status === "neu").length;
 
-  const partner: ServicePartnerRow[] = ((partnerRows ?? []) as any[]).map((p) => ({
+  const zuordnung = (zuordnungRows ?? []) as { service_user_id: string; prop_id: string }[];
+  const partner: ServicePartnerRow[] = (partnerRows ?? []).map((p) => ({
     user_id: p.user_id, firma: p.firma, email: p.email, created_at: p.created_at,
+    rolle: p.rolle === "dienstleister" ? "dienstleister" : "hausmeister",
+    objekte: zuordnung.filter((z) => z.service_user_id === p.user_id).map((z) => z.prop_id),
   }));
   const partnerName = (id: string) => {
     const p = partner.find((x) => x.user_id === id);
     return p?.firma || p?.email || "Partner";
   };
-  const codes: ServiceCodeRow[] = ((codeRows ?? []) as any[]).map((c) => ({ code: c.code, gueltig_bis: c.gueltig_bis }));
-  const firmen: FirmaRow[] = ((firmenRows ?? []) as any[]).map((f) => ({
+  const codes: ServiceCodeRow[] = (codeRows ?? []).map((c) => ({ code: c.code, gueltig_bis: c.gueltig_bis }));
+  const firmen: FirmaRow[] = (firmenRows ?? []).map((f) => ({
     id: f.id, name: f.name, gewerk: f.gewerk, telefon: f.telefon,
     email: f.email, website: f.website, notiz: f.notiz,
   }));
@@ -177,7 +185,12 @@ export default async function AnliegenPage(
     rueckProAuftrag.set(r.auftrag_id, liste);
   }
 
-  const auftraege: AuftragRow[] = ((auftragRows ?? []) as any[]).map((a) => ({
+  // Verlauf der Aufträge (Notizen, Fotos des Hausmeisters) — ohne Bilddaten.
+  const { data: notizRows } = auftragIds.length
+    ? await supabase.from("auftrag_notizen").select(AUFTRAG_NOTIZ_SPALTEN).in("auftrag_id", auftragIds).order("created_at")
+    : { data: [] };
+  const notizenJe = notizenJeAuftrag((notizRows ?? []) as AuftragNotiz[]);
+  const auftraege: AuftragRow[] = (auftragRows ?? []).map((a) => ({
     id: a.id, titel: a.titel, beschreibung: a.beschreibung, termin: a.termin,
     status: a.status, antwort: a.antwort, created_at: a.created_at,
     objekt_name: a.objekt_name, partnerName: partnerName(a.service_user_id),
@@ -192,6 +205,9 @@ export default async function AnliegenPage(
     kosten_schaetzung: a.kosten_schaetzung == null ? null : Number(a.kosten_schaetzung),
     auto_freigegeben: a.auto_freigegeben === true,
     rueckmeldungen: rueckProAuftrag.get(a.id) ?? [],
+    vorgeschlageneFirma: firmen.find((f) => f.id === a.vorgeschlagene_firma_id)?.name ?? null,
+    notizen: notizenJe.get(a.id) ?? [],
+    taetigkeit: a.taetigkeit ?? null,
   }));
   // Badge: nur was auf DICH wartet — dieselbe Definition wie in der
   // Seitenleiste (lib/neuigkeiten.ts). Aufträge im Status „offen" liegen beim
@@ -314,17 +330,25 @@ export default async function AnliegenPage(
 
   const inhalt = (
     <>
-        {tab === "anliegen" && (
+        {tab === "anliegen" && (vorgang ? (
+          // Detailansicht eines Anliegens (03.10.2026): eigene Seite statt Aufklappen in der Liste.
+          <AnliegenDetail a={vorgang} angebote={angebotKontext} />
+        ) : (
           <>
-            <VermieterAnfragen anfragen={anfragen} mieter={verbundeneMieter} />
             <div className="section">
-              <div className="section-header"><h3>Meldungen deiner Mieter</h3></div>
+              <div className="section-header">
+                <div>
+                  <h3>Meldungen deiner Mieter</h3>
+                  <div className="section-sub">Antippen öffnet Verlauf, Antwort und Termin</div>
+                </div>
+              </div>
               <div className="section-body">
-                <AnliegenManager rows={liste} angebote={angebotKontext} />
+                <AnliegenManager rows={liste} />
               </div>
             </div>
+            <VermieterAnfragen anfragen={anfragen} mieter={verbundeneMieter} />
           </>
-        )}
+        ))}
 
         {tab === "vorschau" && (
           vorschauMieter === null ? (
@@ -339,6 +363,13 @@ export default async function AnliegenPage(
             <>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 14 }}>
                 <PortalVorschauWahl mieter={vorschauListe} aktuell={vorschauMieter.id} portal={portalReiter} />
+                {vorschauDaten?.zugangBeendet && (
+                  <span role="status" style={{ fontSize: 12, color: "var(--amber)" }}>
+                    Der Portal-Zugang von {vorschauMieter.name} endete am{" "}
+                    {vorschauDaten.zugangBeendet.split("-").reverse().join(".")} (Auszug + Nachlauf) — der Mieter
+                    sieht seine Wohnung, Zahlungen und Dokumente nicht mehr.
+                  </span>
+                )}
                 {!vorschauDaten?.mieterKontoVerknuepft && (
                   <span style={{ fontSize: 12, color: "var(--muted)" }}>
                     {vorschauMieter.name} hat noch kein Konto — Anliegen und Zählerstände erscheinen erst nach
@@ -357,6 +388,7 @@ export default async function AnliegenPage(
                     tab={portalReiter}
                     hrefFuer={(t) => vorschauUrl(vorschauMieter.id, t)}
                     kopfzeile={`${vorschauMieter.name} · Ansicht des Mieters`}
+                    vorgang={searchParams.vorgang ?? null}
                     vorschau
                   />
                 )}

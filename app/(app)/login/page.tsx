@@ -76,6 +76,7 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.has("geloescht")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
       setInfo("Dein Konto und alle Daten wurden gelöscht.");
     }
     // Google-Anmeldung mit falscher Rolle abgebrochen (siehe /auth/callback).
@@ -493,7 +494,7 @@ export default function LoginPage() {
               value={code}
               onChange={(e) => {
                 setCode(e.target.value);
-                error && setError(null);
+                if (error) setError(null);
               }}
               className="input w-full text-[15px]"
               style={{ padding: "12px 14px" }}
@@ -508,7 +509,7 @@ export default function LoginPage() {
                 checked={consent}
                 onChange={(e) => {
                   setConsent(e.target.checked);
-                  error && setError(null);
+                  if (error) setError(null);
                 }}
                 style={{ marginTop: 3 }}
               />
