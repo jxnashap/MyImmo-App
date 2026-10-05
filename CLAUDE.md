@@ -947,7 +947,7 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   Eigenkapital sind NIE vorausgewählt** (`maklerVorauswahl` in `lib/makler.ts`). **Jeder Datei-Abruf
   über Bank- ODER Makler-Link** steht in `freigabe_abrufe` (Zeitpunkt + Dokument, keine IP,
   60-s-Bündelung) und wird beim Link angezeigt (`lib/freigabeAbrufe.ts`). Migration `20261005160000`
-  (live), Kontolöschung `20261005161000` **nur im SQL-Editor**. `tests/maklerLink.test.ts`, neun
+  (live), Kontolöschung `20261005161000` ✅ vom Betreiber im SQL-Editor ausgeführt und geprüft. `tests/maklerLink.test.ts`, neun
   Mutationen rot. **Regel: Eine neue öffentliche Datei-Route über einen Token schreibt ins
   Abruf-Protokoll (`freigabe_abruf_merken`).** Nebenbei korrigiert: Der Demo-Dialog beschrieb den
   Makler-Ordner als Exposé/Grundbuch-Sammlung (das ist der Beleihungsordner).
