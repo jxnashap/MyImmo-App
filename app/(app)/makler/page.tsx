@@ -22,7 +22,7 @@ export default async function MaklerPage() {
       : Promise.resolve({ data: null }),
     // Makler-Links + Abruf-Protokoll (05.10.2026). RLS: nur eigene; der Filter steht trotzdem da.
     user
-      ? supabase.from("makler_freigaben").select("token,item_keys,ablauf,aktiv,created_at")
+      ? supabase.from("makler_freigaben").select("token,item_keys,ablauf,aktiv,created_at,empfaenger_email")
           .eq("user_id", user.id).order("created_at", { ascending: false }).limit(10)
       : Promise.resolve({ data: [] }),
     user
