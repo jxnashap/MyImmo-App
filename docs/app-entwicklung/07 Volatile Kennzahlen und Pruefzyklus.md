@@ -29,7 +29,7 @@
 | **§ 82b EStG, AfA-Sätze** | `lib/steuer/` | EStG | — | jährlich zum Steuerjahr | **01.02.2027** |
 | **Next.js-Hauptversion** | `package.json`, `next.config.*` | Release-Notes / EOL-Plan | ✅ 16.3.8 seit 30.09.2026 (Migration von 15, `package.json` geprüft 03.10.2026) | halbjährlich | **01.03.2027** |
 | **Notar-/Grundbuchpauschale (2 %)** | `lib/kalk.ts` | GNotKG, Marktüblichkeit | 26.08.2026 | jährlich | **01.09.2027** |
-| **Maklerprovision (3,57 % Käuferanteil)** | `lib/kalk.ts` | Marktüblichkeit, Teilungsgebot | 26.08.2026 | jährlich | **01.09.2027** |
+| **Maklerprovision (3,57 % Käuferanteil)** | `lib/kalk.ts`; auch Standard für Kauf- und Verkaufskosten in `lib/strategie.ts` | Marktüblichkeit, Teilungsgebot | 26.08.2026 | jährlich | **01.09.2027** |
 
 ## Anbieter / Verträge
 
@@ -72,7 +72,7 @@
 | Lübeck ETW ⌀ | ~3.559 €/m² (Spanne 2.407–4.712) | Portalauswertungen | 26.08.2026 | halbjährlich |
 | Lübeck Häuser ⌀ | ~3.163 €/m² | dito | 26.08.2026 | halbjährlich |
 | Lübeck Kaltmiete ⌀ | ~11,04 €/m² (einfache Lagen 9,87) | dito | 26.08.2026 | halbjährlich |
-| Beispiel-Sollzins | 3,80 % p. a. | Marktüblichkeit | 26.08.2026 | **quartalsweise** |
+| Beispiel-Sollzins (`beispielZins()` in `lib/kauf/darlehen.ts`; auch Standardzins der Strategie `/strategie`) | 3,80 % p. a. | Marktüblichkeit | 26.08.2026 | **quartalsweise** → **26.11.2026** |
 | Baumarktpreise + Materialverbrauch (Sanierungsrechner, `lib/sanierung/katalog.ts`) | 13 Materialien, z. B. Alpinaweiß 10 l 54,99 €, PCI Flexmörtel 25 kg 48,99 € | Produktseiten OBI/toom/Globus, Merkblätter Knauf/MEM/Alpina/Henkel/Erfurt/PCI/Lugato (URLs im Code); Hornbach/Bauhaus blockieren Abrufe. **OBI antwortet WebFetch mit 404** — `curl` mit Browser-User-Agent liefert die Seite, Preis im JSON-Feld `"price"`, ohne Streichpreis = `NO_STRIKE_PRICE` | 05.10.2026 | halbjährlich → **01.04.2027** |
 | Handwerker- und Fachbetriebspreise (Sanierungs-Guide, `lib/sanierung/arbeiten.ts`) | 28 Arbeiten, z. B. FI nachrüsten 150–385 €, Bad komplett 900–3.500 €/m², Maler streichen 8–16 €/m² (brutto) | Portale (Blauarbeit, Aroundhome, AuftragsGlück, Angebots-Meister …) + BKI-Mittelwerte über schwaebisch-hall.de + co2online/Verbraucherzentrale; **jede Zahl wörtlich im Feld `zitat`**, ein Test prüft das. **MyHammer sperrt Abrufe (403).** Zusammenfassungen (WebFetch) lasen Zahlen falsch — nur `curl` + Volltext | 05.10.2026 | halbjährlich → **01.04.2027**; fortschreiben mit Destatis-Baupreisindex (ab KW 43/2026 nur GENESIS-Online) |
 | Nutzungsdauern von Bauteilen (`lib/sanierung/nutzungsdauer.ts`) | 23 Bauteile, z. B. Laminat NK 31 15 J., NK 32/33 20 J., Anstrich Klasse 1 20 J. | BBSR-Datei `26.03.13_BBSR_Nutzungdsdauern.xlsx` (Werte-Stand 04.11.2025), nachhaltigesbauen.de | 05.10.2026 | jährlich → **01.10.2027** |

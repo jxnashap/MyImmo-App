@@ -6,7 +6,6 @@ import {
   Landmark, FolderClosed, FileCheck2, TriangleAlert,
   Calculator, Scale, Crown, ClipboardList, Info, Check,
 } from "lucide-react";
-import ObjektRechner from "@/components/kauf/ObjektRechner";
 import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
 import SelbstauskunftForm from "@/components/kauf/SelbstauskunftForm";
 import MachbarkeitKarte from "@/components/kauf/MachbarkeitKarte";
@@ -21,11 +20,10 @@ import { pruefeMachbarkeit } from "@/lib/kauf/machbarkeit";
 import { fmtE } from "@/lib/kalk";
 import type { Kalkulation } from "@/lib/types";
 
-// Kauf-Assistent: geführtes Ablaufschema vom gefundenen Objekt bis zur
-// Finanzierungsanfrage. Der Objekt-Rechner (Cockpit, inkl. Speichern +
-// Vergleich mehrerer Kandidaten) ist als Schritt eingebettet — Roter Faden
-// und Cockpit gibt es nicht mehr als eigene Reiter. Rein informativ/rechnend,
-// keine Darlehensvermittlung (§ 34i GewO).
+// Kauf-Assistent = Kaufweg Schritt 3 „Finanzierung“ (Umbau 06.10.2026): vom gewählten Objekt bis
+// zur Finanzierungsanfrage. Den Objekt-Rechner mit Vergleich gibt es seit dem Umbau als eigene
+// Seite (Schritt 1, /vergleich) — hier steht nur noch, welches Objekt dort gewählt ist. Rein
+// informativ/rechnend, keine Darlehensvermittlung (§ 34i GewO).
 
 const DARLEHEN: { name: string; text: string; warn?: boolean }[] = [
   { name: "Annuitätendarlehen", text: "Konstante Rate aus Zins + Tilgung. Der Standard für fast alle Fälle — planbar, flexibel (Sondertilgung, Tilgungswechsel)." },
@@ -36,22 +34,16 @@ const DARLEHEN: { name: string; text: string; warn?: boolean }[] = [
 ];
 
 export default function KaufAssistent({
-  gespeichert = [], selbstauskunft = null, demo = false, vertreter = [], sanierungStart = null,
+  gespeichert = [], selbstauskunft = null, demo = false, vertreter = [],
 }: {
   gespeichert?: Kalkulation[]; selbstauskunft?: SelbstauskunftDaten | null;
   /** Vertreter mit gültiger Vollmacht (Einstellungen → Vertreter) für den Kreditantrag. */
   vertreter?: KreditVertreterOption[];
   /** Oeffentliche Demo: fester Beispielstand, keine Eingaben. */
   demo?: boolean;
-  /** Aus dem Sanierungsrechner (`/kauf?sanierung=…`) — öffnet den Objekt-Rechner mit dem Betrag. */
-  sanierungStart?: number | null;
 }) {
   // In der Demo von Anfang an aufgeklappt: Die Aufklapp-Knoepfe liegen im
-  // gesperrten Bereich (fieldset disabled) und waeren dort nicht bedienbar —
-  // der Besucher haette den Rechner sonst nie zu Gesicht bekommen.
-  // Kommt man aus dem Sanierungsrechner, ist der Rechner offen — sonst stünde der Betrag in einem
-  // zugeklappten Formular, und man müsste ihn suchen.
-  const [rechnerOffen, setRechnerOffen] = useState(demo || sanierungStart != null);
+  // gesperrten Bereich (fieldset disabled) und waeren dort nicht bedienbar.
   const [saOffen, setSaOffen] = useState(demo);
   // In der Demo stehen Objektwahl und Darlehenswunsch von Anfang an fest.
   // Beide leben sonst im localStorage und werden ueber die (gesperrten)
@@ -117,7 +109,7 @@ export default function KaufAssistent({
     lade();
     window.addEventListener("focus", lade);
     return () => window.removeEventListener("focus", lade);
-  }, [rechnerOffen, demo]);
+  }, [demo]);
 
   // Eigenkapital aus der Selbstauskunft; Darlehensbedarf & Rate ergeben sich
   // erst aus der Finanzierung (nicht mehr im Objekt-Rechner).
@@ -141,7 +133,7 @@ export default function KaufAssistent({
   ) : (
     <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--line)", marginBottom: 14, fontSize: 12, color: "var(--muted)" }}>
       <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-      <span>Noch kein Objekt gewählt. Rechne in Schritt 1 deine Kandidaten durch, vergleiche sie und übernimm das beste — die Zahlen erscheinen dann hier.</span>
+      <span>Noch kein Objekt gewählt. Rechne in Schritt 1 „Objekte vergleichen“ deine Kandidaten durch und wähle eines für die Finanzierung — die Zahlen erscheinen dann hier.</span>
     </div>
   );
 
@@ -168,29 +160,19 @@ export default function KaufAssistent({
   const schritte: StepperSchritt[] = [
     {
       icon: Calculator,
-      titel: "Objekt bewerten, durchrechnen & vergleichen",
-      hinweis: "Grundwerte eintragen — Rendite, Preis/m² und Marktwert sehen, Kandidaten vergleichen.",
-      autoErledigt: gespeichert.length > 0,
+      titel: "Dein Objekt aus Schritt 1",
+      hinweis: "Das Objekt, das du im Vergleich für die Finanzierung gewählt hast — mit Gesamtinvestition und Sanierung.",
+      autoErledigt: !!auswahl && auswahl.kp > 0,
       inhalt: (
         <>
+          {gewaehltesObjekt}
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
-            Ein Formular für beides: Trag die Grundwerte ein und wähle <strong>Vermieten</strong> oder{" "}
-            <strong>Eigennutzung</strong> — du siehst sofort Rendite, Preis/m², Kaufpreisfaktor und den
-            geschätzten <strong>Marktwert</strong> nach ImmoWertV (Vermietung → Ertragswert,
-            Eigennutzung → Sachwert). <strong>Speichere</strong> jeden Kandidaten in deinen Ordner,
-            öffne ihn später wieder zum Bearbeiten und vergleiche 3–5 über{" "}
-            <Scale size={13} style={{ verticalAlign: "-2px", margin: "0 3px" }} />„Vergleichen&quot; — das
-            beste bekommt eine Krone.
+            Kandidaten eintragen, durchrechnen und vergleichen gehört zu Schritt 1. Dort wählst du das Objekt, mit dem du hier
+            weiterrechnest; die Sanierung aus der Besichtigung steckt schon in der Gesamtinvestition.
           </p>
-          {!rechnerOffen ? (
-            <button type="button" className="btn btn-ghost" style={{ fontSize: 13 }} onClick={() => setRechnerOffen(true)}>
-              <Calculator size={14} style={{ verticalAlign: "-2px" }} /> Objekt-Rechner öffnen
-            </button>
-          ) : (
-            <div style={{ marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-              <ObjektRechner gespeichert={gespeichert} demo={demo} sanierungStart={sanierungStart} />
-            </div>
-          )}
+          <Link href="/vergleich" className="btn btn-ghost" style={{ fontSize: 13 }}>
+            <Scale size={14} style={{ verticalAlign: "-2px" }} /> Zu Schritt 1: Objekte vergleichen
+          </Link>
         </>
       ),
     },
@@ -248,7 +230,7 @@ export default function KaufAssistent({
           ) : (
             <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 14px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--line)", fontSize: 12, color: "var(--muted)" }}>
               <TriangleAlert size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>Sobald du in Schritt 1 ein Objekt übernommen hast, erscheinen hier zwei grafische Finanzierungs-Szenarien.</span>
+              <span>Sobald du in Schritt 1 ein Objekt für die Finanzierung gewählt hast, erscheinen hier zwei grafische Finanzierungs-Szenarien.</span>
             </div>
           )}
 
@@ -356,8 +338,7 @@ export default function KaufAssistent({
         </summary>
         <div style={{ padding: "0 16px 14px", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}>
           <ol style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 4 }}>
-            <li><strong>Bewerten:</strong> Marktwert schätzen und mit dem Kaufpreis vergleichen.</li>
-            <li><strong>Durchrechnen:</strong> 3–5 Objekte eingeben, speichern und vergleichen — das beste bekommt eine Krone; übernimm es für die Finanzierung.</li>
+            <li><strong>Objekt wählen (Schritt 1):</strong> Kandidaten durchrechnen, bis zu fünf nebeneinander vergleichen, eines für die Finanzierung wählen.</li>
             <li><strong>Selbstauskunft:</strong> Einnahmen, Ausgaben, Eigenkapital und Kredite einmal erfassen (verschlüsselt).</li>
             <li><strong>Finanzierung &amp; Förderung:</strong> Beispiel-Konfiguration rechnen, in Frage kommende Förderprogramme ansehen.</li>
             <li><strong>Mappe für die Bank:</strong> Unterlagen sammeln, Kreditantrag erzeugen und <strong>selbst</strong> an deine Bank(en) geben.</li>
@@ -402,7 +383,6 @@ export default function KaufAssistent({
         schritte={schritte}
         storageKey="myimmo_kauf_fortschritt"
         gesperrt={demo}
-        startSchritt={sanierungStart != null ? 0 : undefined}
       />
     </>
   );

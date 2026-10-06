@@ -387,3 +387,14 @@ veraltet → „§ 79 GModG“.
   Vorschlag. **Nicht im Browser geprüft:** Speichern, Liste, Konflikt — die Tabelle existiert live erst
   nach dem SQL, und die Sitzung hier ist das Demo-Konto. Nach dem SQL: Live-Prüfung in einer
   zurückgerollten Transaktion als Rolle `authenticated`.
+
+### Umbau 06.10.2026: Lern-App und Besichtigung je Kandidat
+Der Guide ist Schritt 2 des Kaufwegs („Besichtigen & Sanieren“, [[BUYIMMO-WEG]]). Zwei Änderungen:
+(1) **Lern-App:** Eine Auswahl, die eine Seite fertig macht, führt nach 450 ms von selbst weiter
+(`autoWeiter()`, nur `eckdaten`/`ziel`/`arbeit`/`abschluss`, nie beim Korrigieren); in Textfeldern
+ist Enter = Weiter. (2) **Je Kandidat:** `/sanierung?objekt=<id>` übernimmt Name, Adresse, Fläche,
+Baujahr und Ziel aus der eigenen Kaufprüfung, `Entwurf.kaufObjekt` merkt sich den Kandidaten, die
+Summe geht an genau ihn zurück (`/vergleich?sanierung=…&objekt=…`). Damit ist Abschnitt 9
+(„Projekt hängt an einer Kaufprüfung“) für den Browser-Entwurf umgesetzt; gespeicherte Projekte
+tragen den Bezug im Entwurf, die Spalte `kalk_id` wird noch nicht geschrieben.
+Tests: `tests/umbauBuyImmo.test.ts`.

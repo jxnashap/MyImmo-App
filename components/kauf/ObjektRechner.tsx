@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { createPortal } from "react-dom";
-import { Home, Building2, Save, Scale, Crown, Trash2, ArrowRight, Landmark, FolderOpen, Pencil, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Home, Building2, Save, Scale, Landmark, Plus } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { zahlDe0 } from "@/lib/zahl";
 import KalkImport from "@/components/kalkulator/KalkImport";
 import { saveKalkulation, deleteKalkulation, updateKalkulation } from "@/lib/actions/kalkulation";
-import { auswahlAus, bestesObjekt, KAUF_AUSWAHL_KEY, type VglMetrik } from "@/lib/kauf/auswahl";
+import { auswahlAus, KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
 import { sanierungBeimLaden } from "@/lib/sanierung/uebergabe";
 import { BUNDESLAENDER, MAKLER_STANDARD_PROZENT, kaufnebenkostenSatz } from "@/lib/kalk";
 import { HAUS_DISCLAIMER } from "@/lib/kauf/hausbewertung";
@@ -17,23 +16,12 @@ import { belastbarkeit } from "@/lib/kauf/belastbarkeit";
 import { NHK_TYPEN } from "@/lib/bewertung/immowertv";
 import { useCountUp } from "@/lib/hooks/useCountUp";
 import type { Kalkulation } from "@/lib/types";
-import { useModalFokus } from "@/lib/modalFokus";
+import ObjektVergleich, { VERGLEICH_MAX } from "@/components/kauf/ObjektVergleich";
 
 const eur = (n: number) => "€ " + Math.round(n || 0).toLocaleString("de-DE");
 const pct = (n: number, d = 1) => (n || 0).toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d }) + " %";
 const fmt1 = (n: number) => (n || 0).toLocaleString("de-DE", { maximumFractionDigits: 1 });
 const num = zahlDe0;
-
-// Vergleichs-Kennzahlen (ohne Finanzierung — die kommt erst in Schritt 4).
-const CMP: { key: string; label: string; fmt: (v: number) => string; better: "high" | "low" | "none" }[] = [
-  { key: "kp", label: "Kaufpreis", fmt: eur, better: "low" },
-  { key: "preisM2", label: "Preis / m²", fmt: (v) => (v > 0 ? eur(v) + "/m²" : "–"), better: "low" },
-  { key: "brutto", label: "Bruttorendite", fmt: (v) => (v > 0 ? pct(v) : "–"), better: "high" },
-  { key: "nettomiet", label: "Nettorendite", fmt: (v) => (v > 0 ? pct(v) : "–"), better: "high" },
-  { key: "faktor", label: "Kaufpreisfaktor", fmt: (v) => (v > 0 ? fmt1(v) + "×" : "–"), better: "low" },
-  { key: "marktwert", label: "Marktwert (geschätzt)", fmt: (v) => (v > 0 ? eur(v) : "–"), better: "high" },
-];
-const CMP_METRIK: VglMetrik[] = CMP.map((m) => ({ key: m.key, better: m.better }));
 
 // Positive, nicht abschreckende Bewertung der Bruttorendite (kein Rot).
 function renditeUrteil(brutto: number): { text: string; farbe: string } {
@@ -86,11 +74,13 @@ const DEMO_START = {
 };
 
 export default function ObjektRechner({
-  gespeichert = [], demo = false, sanierungStart = null,
+  gespeichert = [], demo = false, sanierungStart = null, startObjektId = null,
 }: {
   gespeichert?: Kalkulation[]; demo?: boolean;
-  /** Aus dem Sanierungsrechner übergeben (`/kauf?sanierung=…`, lib/sanierung/uebergabe.ts). */
+  /** Aus dem Sanierungs-Guide übergeben (`/vergleich?sanierung=…`, lib/sanierung/uebergabe.ts). */
   sanierungStart?: number | null;
+  /** Kaufprüfung, für die die Besichtigung lief (`&objekt=…`) — wird zum Bearbeiten geöffnet. */
+  startObjektId?: string | null;
 }) {
   const toast = useToast();
   const [liste, setListe] = useState<Kalkulation[]>(gespeichert);
@@ -134,11 +124,11 @@ export default function ObjektRechner({
   // Wiedervorlage: gesetzt = ein gespeichertes Objekt wird bearbeitet.
   const [bearbeiteId, setBearbeiteId] = useState<string | null>(null);
 
-  // Speichern / Vergleich
+  // Speichern / Vergleich (Kaufweg Schritt 1): die neuesten Kandidaten stehen von Anfang an nebeneinander.
   const [saving, setSaving] = useState(false);
-  const [showCompare, setShowCompare] = useState(false);
-  const vergleichRef = useModalFokus<HTMLDivElement>(() => setShowCompare(false), showCompare);
-  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [compareIds, setCompareIds] = useState<string[]>(() => gespeichert.slice(0, VERGLEICH_MAX).map((k) => k.id));
+  // Für die Finanzierung gewähltes Objekt — liegt im Browser (lib/kauf/auswahl.ts), erst nach dem Mount lesbar.
+  const [gewaehltId, setGewaehltId] = useState<string | null>(null);
 
   const kp = num(kaufpreis), fl = num(flaeche);
   // ACHTUNG: `bundesland` ist KEINE Nutzereingabe, sondern der Maschinenwert der
@@ -238,7 +228,6 @@ export default function ObjektRechner({
     setBpiFaktor(g("bpiFaktor", "1.9")); setRegionalFaktor(g("regionalFaktor", "1.0"));
     setLz(g("lz", "3.5")); setAnzahlWhg(g("anzahlWhg", "1")); setSwFaktor(g("swFaktor", "1.0"));
     setBearbeiteId(k.id);
-    setShowCompare(false);
     toast(`„${k.name}" zum Bearbeiten geladen.`);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -262,6 +251,8 @@ export default function ObjektRechner({
         const neu = await saveKalkulation(adresse || "Objekt", eingabenSnapshot(), summarySnapshot());
         setListe((p) => [neu, ...p]);
         setBearbeiteId(neu.id);
+        // Neue Kandidaten kommen in den Vergleich, solange Platz ist.
+        setCompareIds((c) => (c.length < VERGLEICH_MAX ? [...c, neu.id] : c));
         toast("Objekt im Ordner gespeichert — du kannst es jederzeit wieder öffnen.");
       }
     } catch {
@@ -280,38 +271,39 @@ export default function ObjektRechner({
     } catch { toast("Löschen fehlgeschlagen.", "error"); }
   }
 
-  function toggleCompare(id: string) {
-    setCompareIds((c) => (c.includes(id) ? c.filter((x) => x !== id) : c.length >= 5 ? c : [...c, id]));
-  }
-
-  const cmpSel = compareIds.map((id) => liste.find((k) => k.id === id)).filter(Boolean) as Kalkulation[];
-  const vergleich = bestesObjekt(cmpSel.map((k) => ({ id: k.id, summary: k.summary })), CMP_METRIK);
-
-  function bestWert(key: string, better: "high" | "low" | "none"): number | null {
-    if (better === "none" || cmpSel.length < 2) return null;
-    const vals = cmpSel.map((k) => k.summary?.[key]).filter((v): v is number => typeof v === "number" && v > 0);
-    if (vals.length < 2) return null;
-    const best = better === "high" ? Math.max(...vals) : Math.min(...vals);
-    return vals.every((v) => v === best) ? null : best;
-  }
-
   function uebernehmen(k: Kalkulation) {
     const a = auswahlAus(k, new Date().toISOString().slice(0, 10));
     try { localStorage.setItem(KAUF_AUSWAHL_KEY, JSON.stringify(a)); } catch { /* ignore */ }
-    toast(`„${k.name}“ für die Finanzierung übernommen.`);
-    setShowCompare(false);
+    setGewaehltId(k.id);
+    toast(`„${k.name}“ für die Finanzierung gewählt — weiter mit der Besichtigung oder in Schritt 3.`);
   }
+
+  // Nach dem Mount: gewähltes Objekt aus dem Browser lesen und ggf. die Kaufprüfung öffnen, für die
+  // die Besichtigung lief (Sanierungs-Guide → „in den Vergleich“). Nur einmal.
+  useEffect(() => {
+    try {
+      const roh = localStorage.getItem(KAUF_AUSWAHL_KEY);
+      const a = roh ? (JSON.parse(roh) as KaufAuswahl) : null;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen (Hydration)
+      if (a?.kalkId) setGewaehltId(a.kalkId);
+    } catch { /* ignore */ }
+    const start = startObjektId ? liste.find((k) => k.id === startObjektId) : null;
+    if (start) bearbeiten(start);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const F = (label: string, value: string, set: (v: string) => void, ph?: string, mode: "decimal" | "text" | "numeric" = "decimal") => (
     <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
       <span style={{ color: "var(--muted)" }}>{label}</span>
       <input value={value} onChange={(e) => set(e.target.value)} placeholder={ph} inputMode={mode === "text" ? undefined : mode}
-        style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 14 }} />
+        style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 14, width: "100%", minWidth: 0, boxSizing: "border-box" }} />
     </label>
   );
 
   return (
-    <div style={{ display: "grid", gap: 18 }}>
+    // minmax(0, 1fr): Seit der Rechner auf der Seite steht (nicht mehr im Fenster), darf keine Mindestbreite
+    // eines Felds die Spalte über den Handy-Bildschirm drücken — sonst schneidet die Seite rechts ab.
+    <div style={{ display: "grid", gap: 18, gridTemplateColumns: "minmax(0, 1fr)" }}>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontSize: 12, color: bearbeiteId ? "var(--gold)" : "var(--faint)" }}>
           {bearbeiteId ? `Du bearbeitest „${liste.find((k) => k.id === bearbeiteId)?.name ?? "Objekt"}"` : "Neues Objekt"}
@@ -322,9 +314,9 @@ export default function ObjektRechner({
               <Plus size={14} /> Neues Objekt
             </button>
           )}
-          <button type="button" className="btn btn-ghost" style={{ fontSize: 12.5 }} onClick={() => { setCompareIds([]); setShowCompare(true); }}>
-            <Scale size={14} /> Vergleichen ({liste.length})
-          </button>
+          <a href="#vergleich" className="btn btn-ghost" style={{ fontSize: 12.5 }}>
+            <Scale size={14} /> Zum Vergleich ({liste.length})
+          </a>
           <button type="button" className="btn btn-gold" style={{ fontSize: 12.5 }} onClick={speichern} disabled={saving}>
             <Save size={14} /> {saving ? "Speichert…" : bearbeiteId ? "Änderungen speichern" : "Im Ordner speichern"}
           </button>
@@ -352,14 +344,14 @@ export default function ObjektRechner({
           {/* Kernwerte — immer sichtbar; reichen für die vollständige Grundrechnung */}
           <div style={{ display: "grid", gap: 11 }}>
             {F("Adresse / Bezeichnung", adresse, setAdresse, "Musterstr. 1, Musterstadt", "text")}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 11 }}>
               {F("Kaufpreis (€)", kaufpreis, setKaufpreis, "250000")}
               {F("Wohnfläche (m²)", flaeche, setFlaeche, "75")}
             </div>
             <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
               <span style={{ color: "var(--muted)" }}>Bundesland (Grunderwerbst.)</span>
               <select value={bundesland} onChange={(e) => setBundesland(e.target.value)}
-                style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13 }}>
+                style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13, width: "100%", minWidth: 0, boxSizing: "border-box" }}>
                 {BUNDESLAENDER.map((b, i) => <option key={i} value={b.v}>{b.l}</option>)}
               </select>
             </label>
@@ -378,9 +370,10 @@ export default function ObjektRechner({
             {/* Sanierung (BuyImmo, 05.10.2026) — fließt in die Gesamtinvestition. */}
             <div style={{ display: "grid", gap: 4 }}>
               {F("Sanierung / Renovierung (€)", sanierung, setSanierung, "0")}
-              {/* Neuer Tab: Die Maske hier ist nicht gespeichert — ein Seitenwechsel verlöre alle Eingaben. */}
+              {/* Neuer Tab: Die Maske hier ist nicht gespeichert — ein Seitenwechsel verlöre alle Eingaben.
+                  Für einen gespeicherten Kandidaten führt „Besichtigen“ im Vergleich unten direkt hin. */}
               <a href="/sanierung" target="_blank" rel="noopener" style={{ fontSize: 11.5, color: "var(--gold)", textDecoration: "none" }}>
-                Mit dem Sanierungsrechner ermitteln (neuer Tab) →
+                Mit dem Sanierungs-Guide ermitteln (neuer Tab) →
               </a>
             </div>
             {/* Objekttyp: Haus schaltet den Substanzwert-Block (Bodenwert + Gebäude) frei. */}
@@ -464,16 +457,16 @@ export default function ObjektRechner({
                 <span style={{ fontWeight: 400, color: "var(--faint)" }}> — überschlägig, kein Gutachten</span>
               </summary>
               <div style={{ padding: "2px 14px 14px", display: "grid", gap: 11 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 11 }}>
                   {F("Grundstücksfläche (m²)", grundFlaeche, setGrundFlaeche, "500")}
                   {F("Bodenrichtwert (€/m², BORIS)", bodenrichtwert, setBodenrichtwert, "300")}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 11 }}>
                   {F("Baujahr", baujahr, setBaujahr, "1998")}
                   <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
                     <span style={{ color: "var(--muted)" }}>Gebäudetyp</span>
                     <select value={gebTyp} onChange={(e) => setGebTyp(e.target.value)}
-                      style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13 }}>
+                      style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13, width: "100%", minWidth: 0, boxSizing: "border-box" }}>
                       {NHK_TYPEN.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
                     </select>
                   </label>
@@ -486,13 +479,13 @@ export default function ObjektRechner({
                   </label>
                 )}
                 {nutzung === "vermietung" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 11 }}>
                     {F("Liegenschaftszins (% p. a.)", lz, setLz, "3.5")}
                     {F("Anzahl Wohneinheiten", anzahlWhg, setAnzahlWhg, "1", "numeric")}
                   </div>
                 )}
                 {nutzung === "eigennutzung" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 11 }}>
                     {F("Sachwertfaktor", swFaktor, setSwFaktor, "1.0")}
                     {F("Baupreisindex", bpiFaktor, setBpiFaktor, "1.9")}
                   </div>
@@ -574,177 +567,22 @@ export default function ObjektRechner({
             </p>
           )}
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 12 }}>
-            Speichere jedes Objekt und vergleiche 3–5 Kandidaten — das beste bekommt eine Krone. Die Finanzierung
+            Speichere jedes Objekt und vergleiche bis zu fünf Kandidaten — die Krone zählt nur Bestwerte. Die Finanzierung
             rechnest du im Schritt „Finanzierung&quot; aus.
           </p>
         </div>
       </div>
 
-      {/* Ordner: gespeicherte Kauf-Objekte — getrennt von den Bewertungen der
-          Bestandsimmobilien (die liegen am jeweiligen Objekt). */}
-      <div className="section" style={{ marginBottom: 0 }}>
-        <div className="section-header">
-          <div>
-            <h3><FolderOpen size={15} style={{ verticalAlign: "-2px" }} /> Ordner: deine Kauf-Objekte</h3>
-            <div className="section-sub">
-              {liste.length === 0 ? "Noch nichts gespeichert" : `${liste.length} gespeichert · zum Bearbeiten öffnen oder vergleichen`}
-            </div>
-          </div>
-          {liste.length >= 2 && (
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setCompareIds([]); setShowCompare(true); }}>
-              <Scale size={13} /> Vergleichen
-            </button>
-          )}
-        </div>
-        <div className="section-body">
-          {liste.length === 0 ? (
-            <div className="empty">
-              <FolderOpen className="empty-icon" size={32} color="var(--faint)" />
-              <p>Rechne oben ein Objekt durch und speichere es — hier sammeln sich deine Kaufkandidaten und lassen sich jederzeit wieder öffnen.</p>
-            </div>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Objekt</th>
-                  <th style={{ textAlign: "right" }}>Kaufpreis</th>
-                  <th style={{ textAlign: "right" }}>Marktwert</th>
-                  <th style={{ textAlign: "right" }}>Rendite</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {liste.map((k) => {
-                  const sm = k.summary ?? {};
-                  const aktiv = k.id === bearbeiteId;
-                  return (
-                    <tr key={k.id} style={aktiv ? { background: "var(--gold-pale)" } : undefined}>
-                      <td style={{ fontWeight: aktiv ? 600 : 400 }}>{k.name}</td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{sm.kp > 0 ? eur(sm.kp) : "–"}</td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{sm.marktwert > 0 ? eur(sm.marktwert) : "–"}</td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{sm.brutto > 0 ? pct(sm.brutto) : "–"}</td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                        <button type="button" className="btn btn-ghost btn-sm" style={{ marginRight: 6 }} onClick={() => bearbeiten(k)}>
-                          <Pencil size={13} /> Bearbeiten
-                        </button>
-                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => loeschen(k.id)} title="Löschen">
-                          <Trash2 size={13} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-
-      {/* Vergleich-Modal */}
-      {showCompare && typeof document !== "undefined" && createPortal(
-        <div className="modal-overlay" onClick={() => setShowCompare(false)}>
-          <div
-            ref={vergleichRef}
-            className="modal-sheet wide"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="objekte-vergleichen-titel"
-            tabIndex={-1}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 id="objekte-vergleichen-titel" style={{ marginBottom: 6 }}>Objekte vergleichen</h3>
-            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14 }}>
-              Bis zu 5 gespeicherte Objekte wählen. Das Objekt mit den meisten besten Kennzahlen bekommt die Krone —
-              übernimm es für die Finanzierung.
-            </p>
-            {liste.length === 0 ? (
-              <p style={{ color: "var(--muted)", fontSize: 13 }}>Noch nichts gespeichert. Objekt eingeben und „Objekt speichern&quot;.</p>
-            ) : (
-              <>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-                  {liste.map((k) => {
-                    const sel = compareIds.includes(k.id);
-                    const disabled = !sel && compareIds.length >= 5;
-                    return (
-                      <span key={k.id} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        <button onClick={() => toggleCompare(k.id)} disabled={disabled}
-                          style={{ padding: "6px 10px", borderRadius: 8, cursor: disabled ? "default" : "pointer", fontSize: 12.5,
-                            border: `1px solid ${sel ? "var(--gold)" : "var(--line2)"}`, background: sel ? "var(--gold-pale, rgba(212,175,90,0.12))" : "var(--bg3)",
-                            color: sel ? "var(--gold)" : "var(--muted)", opacity: disabled ? 0.4 : 1 }}>
-                          {sel ? "✓ " : ""}{k.name}
-                        </button>
-                        <button onClick={() => loeschen(k.id)} title="Löschen" style={{ border: "none", background: "none", cursor: "pointer", color: "var(--faint)", padding: 2 }}>
-                          <Trash2 size={13} />
-                        </button>
-                      </span>
-                    );
-                  })}
-                </div>
-                {cmpSel.length >= 2 ? (
-                  <div style={{ overflowX: "auto" }}>
-                    <table className="cmp-table">
-                      <thead>
-                        <tr>
-                          <th>Kennzahl</th>
-                          {cmpSel.map((k) => {
-                            const sieger = vergleich.eindeutig && vergleich.id === k.id;
-                            return (
-                              <th key={k.id} style={{ textAlign: "right", color: sieger ? "var(--gold)" : undefined }}>
-                                {sieger && <Crown size={13} style={{ verticalAlign: "-2px", marginRight: 3 }} />}{k.name}
-                                <div style={{ fontSize: 10.5, fontWeight: 500, color: "var(--muted)" }}>{vergleich.punkte[k.id] ?? 0} Bestwerte</div>
-                              </th>
-                            );
-                          })}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {CMP.map((m) => {
-                          const best = bestWert(m.key, m.better);
-                          return (
-                            <tr key={m.key}>
-                              <td style={{ color: "var(--muted)" }}>{m.label}</td>
-                              {cmpSel.map((k) => {
-                                const v = k.summary?.[m.key];
-                                const isBest = best != null && typeof v === "number" && v === best;
-                                return (
-                                  <td key={k.id} style={{ textAlign: "right", fontWeight: isBest ? 700 : 500, color: isBest ? "var(--green)" : undefined }}>
-                                    {typeof v === "number" ? m.fmt(v) : "–"}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td />
-                          {cmpSel.map((k) => {
-                            const sieger = vergleich.eindeutig && vergleich.id === k.id;
-                            return (
-                              <td key={k.id} style={{ textAlign: "right", paddingTop: 10 }}>
-                                <button type="button" className={`btn ${sieger ? "btn-gold" : "btn-ghost"}`} style={{ fontSize: 11.5 }} onClick={() => uebernehmen(k)}>
-                                  übernehmen <ArrowRight size={12} style={{ verticalAlign: "-2px" }} />
-                                </button>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                ) : (
-                  <p style={{ fontSize: 13, color: "var(--faint)" }}>Mindestens 2 Objekte wählen, um zu vergleichen.</p>
-                )}
-              </>
-            )}
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
-              <button className="btn btn-ghost" onClick={() => setShowCompare(false)}>Schließen</button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+      <ObjektVergleich
+        liste={liste}
+        auswahl={compareIds}
+        setAuswahl={setCompareIds}
+        bearbeiteId={bearbeiteId}
+        gewaehltId={gewaehltId}
+        onBearbeiten={bearbeiten}
+        onLoeschen={loeschen}
+        onWaehlen={uebernehmen}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type FristZeile } from "@/lib/heute";
-import { VERWALTEN, ABRECHNEN, AUFBAUEN, RECHNEN, ALLE_ZIELE } from "@/lib/nav";
+import { VERWALTEN, ABRECHNEN, UEBERBLICK, WEG, WERKZEUGE, ALLE_ZIELE } from "@/lib/nav";
 import { REGISTRIERUNG_OFFEN, START_CTA } from "@/lib/preise";
 
 // „HEUTE WICHTIG" UND DIE NAVIGATION (08.09.2026, Feedback Befund 7 + 8).
@@ -217,7 +217,7 @@ describe("Reihenfolge auf dem Dashboard (Vorgabe des Betreibers, 08.09.2026 / 02
 // die Bereichslogik selbst prüft tests/bereich.test.ts. Hier bleibt der ursprüngliche Befund:
 // keine lange Liste gleichrangiger Punkte.
 describe("Navigation: kurze Gruppen statt elf gleichrangiger Punkte", () => {
-  const GRUPPEN = [["Verwalten", VERWALTEN], ["Abrechnen", ABRECHNEN], ["Aufbauen", AUFBAUEN], ["Rechnen", RECHNEN]] as const;
+  const GRUPPEN = [["Verwalten", VERWALTEN], ["Abrechnen", ABRECHNEN], ["Überblick", UEBERBLICK], ["Weg", WEG], ["Werkzeuge", WERKZEUGE]] as const;
 
   it("die Gruppen sind überschneidungsfrei und vollständig", () => {
     const alle = GRUPPEN.flatMap(([, g]) => g.map((n) => n.href));
@@ -237,7 +237,7 @@ describe("Navigation: kurze Gruppen statt elf gleichrangiger Punkte", () => {
     expect(VERWALTEN.map((n) => n.href)).toContain("/tenants");
     expect(ABRECHNEN.map((n) => n.href)).toContain("/steuer");
     expect(ABRECHNEN.map((n) => n.href)).toContain("/mietkonto");
-    expect(AUFBAUEN.map((n) => n.href)).toContain("/kauf");
+    expect(WEG.map((n) => n.href)).toContain("/kauf");
   });
 });
 

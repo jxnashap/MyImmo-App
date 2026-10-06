@@ -4,11 +4,13 @@ import {
   BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
   TrendingUp, MessageSquareText,
   Building2, Building, Store, TreePalm, Sprout, Percent, Compass, Handshake, Scale,
-  Gauge, FolderCheck, PaintRoller, Route,
+  Gauge, FolderCheck, PaintRoller, Route, Network, Columns3, Stamp,
   type LucideIcon,
 } from "lucide-react";
+import { KAUFWEG, type WegSchrittId } from "@/lib/kaufweg";
 
-export type NavItem = { href: string; label: string; icon?: LucideIcon; paragraph?: boolean };
+/** `schritt`: Nummer im Kaufweg — die Seitenleiste zeigt dann die Zahl statt des Symbols. */
+export type NavItem = { href: string; label: string; icon?: LucideIcon; paragraph?: boolean; schritt?: number };
 
 // DREI GRUPPEN STATT ZWEI (08.09.2026, Feedback Befund 8). Vorher lagen elf
 // gleichrangige Punkte unter „Verwaltung" — für einen Vermieter mit zwei
@@ -45,22 +47,34 @@ export const ABRECHNEN: NavItem[] = [
 // (`components/BereichWechsel.tsx`); welcher Bereich offen ist, folgt allein aus der
 // Adresse (`lib/bereich.ts`). Die früheren „Planen“-Punkte sind nach BuyImmo gezogen —
 // ihre Adressen sind UNVERÄNDERT, damit kein Link, Lesezeichen oder Demo-Weg bricht.
-export const AUFBAUEN: NavItem[] = [
-  { href: "/aufbau", label: "Kommandozentrale", icon: Gauge },
+// UMBAU 06.10.2026 (Vorgabe Jonas): BuyImmo führt einen Anfänger Schritt für Schritt zum Kauf —
+// „dass es so in der Reihenfolge links auch in den Reitern ist“. Oben Cockpit und Strategie, dann
+// der Kaufweg mit Nummern (EINE Quelle: lib/kaufweg.ts), unten die Werkzeuge. Alle früheren
+// Adressen (/kauf, /makler, /fahrplan …) bleiben gültig.
+export const UEBERBLICK: NavItem[] = [
+  { href: "/aufbau", label: "Cockpit", icon: Gauge },
+  { href: "/strategie", label: "Strategie", icon: Network },
+];
+
+const WEG_ICON: Record<WegSchrittId, LucideIcon> = {
+  vergleichen: Columns3,
+  besichtigen: PaintRoller,
+  finanzieren: Compass,
+  unterlagen: FolderCheck,
+  abschluss: Stamp,
+};
+
+export const WEG: NavItem[] = KAUFWEG.map((s) => ({ href: s.href, label: s.titel, icon: WEG_ICON[s.id], schritt: s.nr }));
+
+export const WERKZEUGE: NavItem[] = [
   { href: "/fahrplan", label: "Fahrplan", icon: Route },
-  { href: "/kauf", label: "Kauf-Assistent", icon: Compass },
-  { href: "/makler", label: "Makler-Ordner", icon: FolderCheck },
+  { href: "/bewertung", label: "Marktwert-Schätzer", icon: TrendingUp },
+  { href: "/afa-assistent", label: "AfA-Assistent", icon: Percent },
   { href: "/verkauf", label: "Verkauf-Assistent", icon: Handshake },
 ];
 
-export const RECHNEN: NavItem[] = [
-  { href: "/sanierung", label: "Sanierungsrechner", icon: PaintRoller },
-  { href: "/bewertung", label: "Marktwert-Schätzer", icon: TrendingUp },
-  { href: "/afa-assistent", label: "AfA-Assistent", icon: Percent },
-];
-
 /** Alle Ziele in einer Liste — die Command-Palette sucht über BEIDE Bereiche. */
-export const ALLE_ZIELE: NavItem[] = [...VERWALTEN, ...ABRECHNEN, ...AUFBAUEN, ...RECHNEN];
+export const ALLE_ZIELE: NavItem[] = [...VERWALTEN, ...ABRECHNEN, ...UEBERBLICK, ...WEG, ...WERKZEUGE];
 
 /** @deprecated Übergangsname, damit ältere Importe nicht brechen. */
 export const VERWALTUNG = VERWALTEN;

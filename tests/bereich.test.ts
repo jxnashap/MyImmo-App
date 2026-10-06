@@ -9,7 +9,7 @@ import {
   eigenerBereich,
   pfadGehoertZu,
 } from "@/lib/bereich";
-import { AUFBAUEN, RECHNEN } from "@/lib/nav";
+import { UEBERBLICK, WEG, WERKZEUGE } from "@/lib/nav";
 import { demoDarfRoute } from "@/lib/demo";
 
 // MyImmo ↔ BuyImmo (05.10.2026): Welcher Bereich offen ist, folgt allein aus der Adresse;
@@ -62,8 +62,8 @@ describe("Bereich folgt der Adresse", () => {
   });
 
   it("die früheren „Planen“-Adressen sind unverändert und liegen jetzt in BuyImmo", () => {
-    const aufbau = [...AUFBAUEN, ...RECHNEN].map((n) => n.href);
-    for (const p of ["/kauf", "/verkauf", "/bewertung", "/afa-assistent"]) {
+    const aufbau = [...UEBERBLICK, ...WEG, ...WERKZEUGE].map((n) => n.href);
+    for (const p of ["/kauf", "/verkauf", "/bewertung", "/afa-assistent", "/makler", "/fahrplan", "/sanierung"]) {
       expect(aufbau, p).toContain(p);
       expect(eigenerBereich(p), p).toBe("aufbau");
     }
