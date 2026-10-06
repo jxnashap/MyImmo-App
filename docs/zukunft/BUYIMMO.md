@@ -198,4 +198,4 @@ musste, sah eine zu hohe Nettorendite und einen zu kleinen Kreditbedarf.
 | **Ergebnis ist eine Schätzung** | Kein Kostenvoranschlag — dieselbe Grenze wie bei den Handwerker-Anfragen. |
 | **Tarif** | 19,99 € entschieden; Abgrenzung zu Plus und Bündel offen — `docs/FINANZKONZEPT.md`. |
 | **Marke** | „BuyImmo" vor öffentlicher Nutzung auf Markenrecht und Domain prüfen (nicht geschehen). |
-| **Demo** | Die Demo hat keine gespeicherten Kaufprüfungen → Cockpit und Schritt 1 (Vergleich) zeigen dort einen Leerzustand, „Besichtigen“ je Kandidat ist nicht zu sehen. Beispiel-Kalkulationen bräuchten eine `demo_seed`-Kopie + Eintrag in der Reset-Funktion — Produktionsdaten, nur mit Ja des Betreibers. |
+| ~~**Demo**~~ | ✅ Seit 06.10.2026 vier Beispiel-Kandidaten im Vergleich (Migration `20261006064806`, nicht im Reset, Kennzahlen aus `objektKennzahlen()`) — [[BUYIMMO-WEG]], Risiko 6. |

@@ -414,8 +414,11 @@ die Kapitalquelle, vorsichtiges Szenario, Plan nur im Browser — **gebaut vor d
 (Auftrag), Anwalt vor dem öffentlichen Start.** **Regeln:** (1) Neuer Schritt/Station nur in
 `KAUFWEG`. (2) Kein Text der Strategie rät (Test). (3) Der Rechner auf `/vergleich` braucht
 `minmax(0, 1fr)` — am Handy schnitt er sonst rechts ab. `tests/kaufweg.test.ts`,
-`tests/strategie.test.ts`, `tests/umbauBuyImmo.test.ts`, 30 Mutationen rot. **Offen:** Demo zeigt
-Schritt 1 leer (Beispiel-Kandidaten = Produktionsdaten → nur mit Ja).
+`tests/strategie.test.ts`, `tests/umbauBuyImmo.test.ts`, 30 Mutationen rot. **Demo-Kandidaten
+(06.10.2026, Ja des Betreibers):** vier Beispiel-Kaufprüfungen, Migration `20261006064806`, **nicht im
+Demo-Reset** (der fasst `kalkulationen` nicht an; Demo kann nicht schreiben). (4) Kennzahlen einer
+Kaufprüfung nur über `objektKennzahlen()` (`lib/kauf/objektKennzahlen.ts`) — Rechner UND Demo-Zeilen;
+`tests/demoKandidaten.test.ts` rechnet nach und vergleicht die Feldliste mit `eingabenSnapshot()`.
 **Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
 (`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
 kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**

@@ -393,7 +393,21 @@ const WEGE = [
     schluessel: "vergleich",
     titel: "BuyImmo — Schritt 1: Objekte vergleichen",
     pfad: "/vergleich",
-    erwartet: ["Kandidaten eintragen, durchrechnen und nebeneinanderlegen", 'aria-current="step"><b>1</b>', "Deine Kandidaten im Vergleich"],
+    // Beispiel-Kandidaten der Demo (Migration 20261006064806): Tabelle mit „Besichtigen“-Link je Kandidat.
+    erwartet: [
+      "Kandidaten eintragen, durchrechnen und nebeneinanderlegen", 'aria-current="step"><b>1</b>', "Deine Kandidaten im Vergleich",
+      "Altbau-ETW, Halle-Paulusviertel (Beispiel)", 'href="/sanierung?objekt=175142b1-5b5b-4787-b732-7e5ca9809cef"',
+    ],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    // Kaufweg 1 → 2: Der Server lädt die eigene Kaufprüfung und gibt sie an den Guide (Name im Seitenzustand).
+    schluessel: "besichtigung",
+    titel: "BuyImmo — Besichtigung für einen Kandidaten",
+    pfad: "/sanierung?objekt=175142b1-5b5b-4787-b732-7e5ca9809cef",
+    erwartet: ['aria-current="step"><b>2</b>', "Altbau-ETW, Halle-Paulusviertel (Beispiel)"],
     async pruefe() {
       return null;
     },

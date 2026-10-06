@@ -133,8 +133,14 @@ describe("Objekte vergleichen", () => {
     expect(html).toContain("Gesamtinvestition");
     expect(html).toContain("für die Finanzierung gewählt");
     // Halle hat 5 von 6 gezählten Bestwerten (Kaufpreis, Preis/m², Brutto, Netto, Faktor) → Krone.
-    expect(html).toMatch(/aria-label="meiste Bestwerte"[\s\S]*?Halle/);
-    expect(html).toContain("5 Bestwerte");
+    // Die Krone steht in DERSELBEN Kopfzelle wie Halle — in der Zeile der Bestwerte, nicht vor dem Namen.
+    const kopf = html.slice(html.indexOf("<thead>"), html.indexOf("</thead>")).split("<th").slice(1);
+    const mitKrone = kopf.filter((z) => z.includes('aria-label="meiste Bestwerte"'));
+    expect(mitKrone).toHaveLength(1);
+    expect(mitKrone[0]).toContain("Halle");
+    const namen = [...html.matchAll(/<span class="vergleich-name">([\s\S]*?)<\/span>/g)].map((m) => m[1]);
+    expect(namen).toEqual(["Leipzig", "Halle"]); // nur der Name — kein Symbol davor, das an den Zellrand rutscht
+    expect(mitKrone[0]).toMatch(/<span class="vergleich-punkte"><svg[^>]*aria-label="meiste Bestwerte"[\s\S]*?<\/svg>5(<!-- -->)? Bestwerte<\/span>/);
   });
 
   it("der Vergleich ist kein Fenster mehr, und der Kauf-Assistent bettet den Rechner nicht mehr ein", () => {
