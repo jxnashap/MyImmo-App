@@ -60,6 +60,7 @@
 - [[SICHERHEIT-ABHAENGIGKEITEN]] — OSV-Scanner-Befund, Bewertung, Next.js-14-Ende
 - [[NEXTJS-15-MIGRATION]] — Umstieg auf Next.js 15.5 ✅ umgesetzt 01.09.2026 (Plan + Bericht)
 - [[AVV-STATUS]] — DSGVO / AVV je Anbieter
+- [[MAILANBIETER-VERGLEICH]] — Brevo oder deutscher Anbieter (rapidmail, CleverReach, MailBridge), Stand 06.10.2026
 - [[APP-STORE-RECHT]] — App/Play Store: Gesetze, Store-Regeln, Gebühren **+ Prüfung von MyImmo**
 - [[anthropic-dpa-archiv]] — archiviertes Anthropic-DPA
 
