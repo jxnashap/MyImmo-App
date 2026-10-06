@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { herkunftDieserSeite } from "@/lib/herkunft";
 import { ArrowRight, Check } from "lucide-react";
 import { EINWILLIGUNGSTEXT } from "@/lib/newsletter";
 
@@ -26,7 +27,7 @@ export default function VerteilerForm({ quelle = "vorlagen" }: { quelle?: string
       const res = await fetch("/api/newsletter", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, quelle }),
+        body: JSON.stringify({ email, quelle, herkunft: herkunftDieserSeite() }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {

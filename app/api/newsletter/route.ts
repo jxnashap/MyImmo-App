@@ -12,6 +12,7 @@ import {
   normalisiereEmail,
 } from "@/lib/newsletter";
 import { neuesToken, tokenHash } from "@/lib/newsletterToken";
+import { normalisiereHerkunft } from "@/lib/herkunft";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,10 +24,13 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   let email = "";
   let quelle = "";
+  let herkunft: string | null = null;
   try {
-    const body = (await req.json()) as { email?: unknown; quelle?: unknown };
+    const body = (await req.json()) as { email?: unknown; quelle?: unknown; herkunft?: unknown };
     email = typeof body.email === "string" ? body.email : "";
     quelle = typeof body.quelle === "string" ? body.quelle.slice(0, 60) : "";
+    // Kommt aus der Adresszeile des Besuchers — nur als harmlose Kennung übernehmen.
+    herkunft = normalisiereHerkunft(body.herkunft);
   } catch {
     return NextResponse.json({ fehler: "Ungültige Anfrage." }, { status: 400 });
   }
@@ -94,6 +98,9 @@ export async function POST(req: Request) {
       angefordert_ip: await besucherIp(),
       // Eine frühere Abmeldung wird durch die neue Anmeldung aufgehoben.
       abgemeldet_am: null,
+      // Nur mitschicken, wenn vorhanden: Ein zweiter Versuch ohne Marke soll
+      // die Herkunft des ersten nicht mit null überschreiben.
+      ...(herkunft ? { herkunft } : {}),
     },
     { onConflict: "email" },
   );

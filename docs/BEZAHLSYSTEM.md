@@ -22,7 +22,8 @@
 | Abo-Tabelle | `supabase/migrations/20260724180000_create_abos.sql` | 1 Zeile je Nutzer; RLS: Nutzer liest nur, **nur Service-Role schreibt** |
 | Tarif-Logik | `lib/plan.ts` | Feature-Matrix je Tarif, Einheiten-Limits, `darfFeature()`, `billingAktiv()` |
 | Paddle-Adapter | `lib/billing/paddle.ts` | Signaturprüfung, Event-Parsing, Checkout-URL, Kundenportal |
-| Webhook | `app/api/billing/webhook/route.ts` | `subscription.*` → Upsert `abos` (503-No-op ohne Secret) |
+| Webhook | `app/api/billing/webhook/route.ts` | `subscription.*` → Upsert `abos` (503-No-op ohne Secret); `transaction.completed` → Kostenbuchung (siehe unten) |
+| Abo als Kosten | `lib/billing/aboBuchung.ts`, SQL `abo_zahlung_buchen` (Migration `20261005142945`) | jede bezahlte Euro-Rechnung GENAU EINMAL als Kosten „Verwaltung“ (Anlage V Zeile 46), nach Einheiten auf die Objekte außer selbst bewohnten; Merker `abo_zahlungen` |
 | Server-Actions | `lib/actions/billing.ts` | `starteCheckout()`, `oeffneAboPortal()` |
 | UI | `components/SettingsView.tsx` (Tab „Abo") | Early-Access-Karte; nach Aktivierung Upgrade-Buttons + Portal |
 | Tests | `tests/plan.test.ts`, `tests/paddleWebhook.test.ts` | Matrix, Status-Mapping, HMAC-Signatur |
@@ -61,14 +62,22 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
    **Default Payment Link**-Domain setzen (Checkout-Einstellungen → sonst liefert die API
    keine `checkout.url`).
 5. **Webhook-Destination** anlegen: `https://www.myimmoapp.de/api/billing/webhook`,
-   Events `subscription.activated/created/updated/canceled/past_due/paused/resumed`.
+   Events `subscription.activated/created/updated/canceled/past_due/paused/resumed`
+   **und `transaction.completed`** — ohne dieses Event entsteht keine Kostenbuchung, und
+   der Satz „automatisch in der Anlage V“ auf `/preise` stimmt nicht.
+   **Vorher im SQL-Editor:** `supabase/migrations/20261005190000_kontoloeschung_abo_zahlungen.sql`
+   (die Kontolöschung muss `abo_zahlungen` mitlöschen; über die Schnittstelle blockiert).
    Secret notieren.
 6. **Vercel-Env setzen:** `PADDLE_API_KEY`, `PADDLE_WEBHOOK_SECRET`,
    `PADDLE_ENV=production` (vorher `sandbox`), `PADDLE_PRICE_PRIVAT_MONAT`,
    `PADDLE_PRICE_PRIVAT_JAHR`, `PADDLE_PRICE_PLUS_MONAT`, `PADDLE_PRICE_PLUS_JAHR`.
    (`SUPABASE_SERVICE_ROLE_KEY` muss gesetzt sein — braucht der Webhook.)
 7. **End-to-End in der Sandbox testen:** Checkout → Webhook kommt an → `abos`-Zeile
-   entsteht → Abo-Tab zeigt den Tarif → Kündigung im Portal → Status `gekuendigt`.
+   entsteht → Abo-Tab zeigt den Tarif → **unter „Ein- & Ausgaben“ steht eine Kosten-
+   buchung „MyImmo-Abo · Rechnung txn_…“** (Webhook in Paddle erneut zustellen → es bleibt
+   EINE) → Kündigung im Portal → Status `gekuendigt`.
+   **Nicht abgedeckt:** Erstattungen/Gutschriften bucht der Nutzer selbst zurück; ein
+   Abschalten der automatischen Buchung gibt es nicht (Buchung ist änder- und löschbar).
 8. **Datenschutzerklärung ergänzen (PFLICHT vor dem ersten Checkout):** Paddle-Passus
    aufnehmen — Paddle ist als Merchant of Record **eigenständig Verantwortlicher**
    (wie Google beim Login, KEIN AVV nötig): Empfänger von Name/E-Mail/Zahlungsdaten,

@@ -40,6 +40,18 @@
 > Dringlichkeit sortiert, frisch gegen den Code geprüft, mit einem Abschnitt „ausdrücklich
 > NICHT nötig".
 >
+> 🚀 **Launch: `docs/LAUNCH-FUNDAMENT.md`** (03.10.2026) — Startstufen S1 Gratis / S2 Bezahlt / S3 Stores,
+> Wartezeiten (Anwalt, Play 12 × 14 Tage, DSA-Adresse), Fundament F1–F7, Betreiber-Liste. Löst den
+> 90-Tage-Plan im Memory ab. Erster Schritt dort: Brevo (die Warteliste hat 0 Einträge).
+> 📣 **Marketing: `docs/MARKETINGPLAN.md`** (03.10.2026) — Okt. 2026 – Juni 2027, ≈ 5 h/Woche
+> für Jonas, Kanäle mit Abbruchregel, Phasen A–D, Textvorlagen. Offen: Nebentätigkeit klären.
+> 🧭 **Herkunftsmessung gebaut 03.10.2026** (`lib/herkunft.ts`): `?von=…` bzw. `?utm_source=…` wird bei
+> Warteliste (`newsletter_anmeldungen.herkunft`, CHECK) und Vermieter-Registrierung
+> (`user_metadata.herkunft`) mitgespeichert; Bericht `scripts/sql/herkunft-bericht.sql`.
+> **Regel: Die Marke nie im Browser speichern** (kein Cookie/Storage — § 25 TDDDG, Datenschutz
+> Ziffer 2); sie wird nur aus der Adresse der Seite gelesen, auf der das Formular steht.
+> `tests/herkunft.test.ts`, fünf Mutationen rot.
+>
 > ✅ **A5 erledigt (04.09.2026): Die Tarif-Schranken sind eingebaut.** Bis dahin war die
 > Matrix in `lib/plan.ts` zwar vollständig, `darfFeature()` und `einheitenLimit()` wurden
 > aber an NULL Stellen aufgerufen — `BILLING_ENFORCED=true` wäre wirkungslos gewesen.
@@ -196,6 +208,18 @@ SQL-Editor ausführen (Speichern/Vorlagen im Sanierungs-Guide + Verknüpfung „
   anwaltlich → Paddle-Konto/Preise/Webhook → Env → Sandbox-Test → `BILLING_ENFORCED=true` +
   /preise-Early-Access-Banner raus → Feature-Gates in den Actions). Steuerhinweis: MoR =
   Paddle ist der Kunde (Reverse-Charge) → bei Kleinunternehmer-Frage berücksichtigen.
+  🧾 **Abo-Zahlung als Kostenbuchung (05.10.2026):** `transaction.completed` (EUR, > 0) →
+  `lib/billing/aboBuchung.ts` → SQL `abo_zahlung_buchen` (nur service_role) bucht GENAU EINMAL je
+  Transaktion Kosten „Verwaltung“ (Anlage V Zeile 46), nach Einheiten auf Objekte außer
+  „Selbst bewohnt“, cent-genau; Konto über `abos.provider_subscription_id`, sonst
+  `custom_data.user_id`; jeder Fehler → 500 (Paddle stellt erneut zu). **Betreiber: in der
+  Webhook-Destination `transaction.completed` mit abonnieren** und **vor dem Bezahlstart
+  `supabase/migrations/20261005190000_kontoloeschung_abo_zahlungen.sql` im SQL-Editor ausführen**
+  (Kontolöschung erfasst `abo_zahlungen`; noch nicht ausgeführt, bis dahin 0 Zeilen, folgenlos). Dazu `/preise` + Preis-Teaser:
+  „Als Werbungskosten absetzbar — und automatisch gebucht“ (`lib/absetzbar.ts`, nur mit
+  `PREISE_SICHTBAR`). **Regel: Nie „kostenlos, weil absetzbar“** — gespart wird der
+  Grenzsteuersatz, nicht der Betrag (§ 5 UWG); `tests/absetzbar.test.ts` hält es fest.
+  `tests/aboBuchung.test.ts`, acht Mutationen rot.
 - ⚠️ **KORREKTUR 08.09.2026: Supabase ist auf PRO, nicht auf Free.** Live abgefragt
   (Organisation `wkxmbevawmmifleiggrs`, `plan: "pro"`). Der Eintrag hier behauptete
   seit dem 29.07.2026 das Gegenteil und hat zwei Punkte falsch eingeordnet:
@@ -215,7 +239,10 @@ SQL-Editor ausführen (Speichern/Vorlagen im Sanierungs-Guide + Verknüpfung „
   Tatsache, die sich ändert, und stand hier sechs Wochen als Notiz. Solche Aussagen
   vor dem Weiterverwenden **nachfragen, nicht nachlesen** (`get_organization`).
 - **„Sign in with Apple" nachrüsten, sobald die App in den iOS App Store geht.** Apple verlangt
-  das, sobald ein anderer Social-Login (Google) angeboten wird. Braucht Apple-Developer-Programm
+  (Guideline 4.8, nachgelesen 03.10.2026) neben Google-Login einen weiteren Login-Dienst, der nur
+  Name/E-Mail erhebt, die E-Mail verbergen lässt und nicht trackt — praktisch Sign in with Apple.
+  Abo ohne Apple-Provision geht nur über 3.1.3(f) (Gratis-Begleit-App, kein Kaufhinweis in der App);
+  Fahrplan: `docs/LAUNCH-FUNDAMENT.md`. Braucht Apple-Developer-Programm
   (99 $/Jahr), App-ID/Services-ID/Key + Provider-Config in Supabase. Aktuell reine Web-App → noch nicht nötig.
 - **App-Icon für den iOS App Store:** Das schwarze Kachel-Logo `public/myimmo_logo_2048.png`
   (2048×2048, goldenes Haus + Wortmarke) beim App-Store-Launch als App-Icon einspielen. Ist NICHT

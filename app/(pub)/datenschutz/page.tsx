@@ -23,7 +23,7 @@ export default function DatenschutzPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 2. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
+        Stand: 3. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
         Verarbeitung personenbezogener Daten bei Nutzung der Web-Anwendung MyImmo.
       </p>
 
@@ -66,6 +66,13 @@ export default function DatenschutzPage() {
         E-Mail-Adresse und Konto-Kennung; die Anmeldung bei Google unterliegt deren
         Datenschutzerklärung. <em>Zweck:</em> Bereitstellung Ihres Kontos.{" "}
         <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO (Nutzungsvertrag).
+      </p>
+      <p>
+        Registrieren Sie sich über einen Link mit <strong>Herkunftsangabe</strong> (z. B.{" "}
+        <code>?von=welle1</code>), wird diese Kennung beim Konto gespeichert, um zu zählen, über
+        welche Wege Vermieter zu MyImmo finden. Sie wird nur aus der Adresse der Seite gelesen
+        und nicht auf Ihrem Gerät gespeichert. <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. f
+        DSGVO; gelöscht wird sie mit dem Konto.
       </p>
 
       <H3>b) Von Ihnen erfasste Verwaltungsdaten</H3>
@@ -143,6 +150,15 @@ export default function DatenschutzPage() {
         Startseite: Dort willigen Sie ein, per E-Mail zu erfahren, wenn MyImmo für alle startet,
         und danach gelegentliche Hinweise für Vermieter zu erhalten. Gespeichert wird zusätzlich,
         über welches der beiden Formulare Sie sich angemeldet haben.
+      </p>
+      <p>
+        Enthält der Link, über den Sie die Seite aufgerufen haben, eine{" "}
+        <strong>Herkunftsangabe</strong> (z. B. <code>?von=instagram</code>), speichern wir diese
+        kurze Kennung mit Ihrer Anmeldung. Sie wird nur aus der Adresse der Seite gelesen, nicht
+        auf Ihrem Gerät gespeichert, nicht an Brevo übermittelt und nur gezählt — um zu sehen,
+        welche Hinweise auf MyImmo Leser erreichen. <em>Rechtsgrundlage:</em> Art. 6 Abs. 1
+        lit. f DSGVO (berechtigtes Interesse an der Auswertung der eigenen Werbewege);
+        gelöscht wird sie zusammen mit dem Eintrag.
       </p>
       <p>
         <em>Zweck:</em> Versand der angeforderten Vorlagen und Hinweise bzw. der Startankündigung.{" "}

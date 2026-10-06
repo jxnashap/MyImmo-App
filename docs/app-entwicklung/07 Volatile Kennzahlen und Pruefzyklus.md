@@ -61,6 +61,8 @@
 | Vercel Pro | aktiv | 29.07.2026 | jährlich |
 | Supabase Pro (~25 $/Monat) | **gebucht** — live abgefragt 08.09.2026 (`plan: "pro"`); die Zeile stand vorher falsch auf „nicht gebucht“ | 08.09.2026 | jährlich |
 | Apple Developer (99 $/Jahr) | nicht gebucht | — | vor App-Store-Launch |
+| **Apple-Provision EU** | IAP 26 % / 15 % (SBP, Abo ab Jahr 2) · Fremd-PSP 20 / 10 % · Web-Link 15 / 10 % · gilt seit 01.10.2026; iOS ohne IAP nur über 3.1.3(f) — `[[LAUNCH-FUNDAMENT]]` §5 | 03.10.2026 | halbjährlich | **01.04.2027** |
+| **Google Play Testpflicht** | persönliches Konto: 12 Tester × 14 Tage ununterbrochen; Organisationskonto ausgenommen (D-U-N-S) | 03.10.2026 | halbjährlich | **01.04.2027** |
 | Enable Banking je Konto/Monat | entfällt (Feature entfernt 29.08.2026) | 29.08.2026 | erst bei Wiederaufbau |
 
 ## Marktdaten (Beispiel- und Schulungszahlen)

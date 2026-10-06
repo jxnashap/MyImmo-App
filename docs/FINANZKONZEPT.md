@@ -73,6 +73,13 @@ zahlenden Kunden**. Vollständige Rechnung mit allen Annahmen und den Kosten bei
 - Rollen: normale Vermieter + Hausverwaltung (eigene Codes).
 
 ### Wichtigste Finanz-Entscheidungen
+- **„Quasi kostenlos, weil absetzbar“ → ABGELEHNT (05.10.2026).** Absetzbar spart den
+  Grenzsteuersatz, nicht den Betrag (7,99 € kosten bei 30 % netto ≈ 5,59 €, unter dem
+  Grundfreibetrag 7,99 €); „kostenlos“ für ein Produkt mit Preis ist irreführend (§ 5 UWG).
+  **Stattdessen:** bei den Preisen „Als Werbungskosten absetzbar — und automatisch gebucht“
+  mit Rechenbeispiel (`lib/absetzbar.ts`, nur mit `PREISE_SICHTBAR`), und jede bezahlte
+  Rechnung wird wirklich als Kosten „Verwaltung“ gebucht (`lib/billing/aboBuchung.ts`).
+  Steueraussage in der Werbung → gehört zur StBerG-Anfrage an den Anwalt.
 - **Bezahltes AVM (Sprengnetter/PriceHubble) → ABGELEHNT.** Vertriebsgebunden, laufende
   Kosten je Bewertung, AVV nötig. Code-seitig vorbereitet (Quellen-Stub), aber nicht angebunden.
 - **Stattdessen: automatischer Wert-Refresh aus frei-legalen Quellen** — **MVP gebaut** (19.07.2026):

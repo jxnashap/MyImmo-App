@@ -25,6 +25,7 @@ import { deleteAccount } from "@/lib/actions/account";
 import { starteCheckout, oeffneAboPortal } from "@/lib/actions/billing";
 import { isValidIban, normalizeIban } from "@/lib/iban";
 import { PREISE_SICHTBAR } from "@/lib/preise";
+import { ABO_BUCHUNG_HINWEIS } from "@/lib/billing/aboBuchung";
 import { wechslePasswort, sendePasswortMail } from "@/lib/passwortWechsel";
 import HilfeInhalt from "@/components/HilfeInhalt";
 import VertreterPanel from "@/components/VertreterPanel";
@@ -829,6 +830,7 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
             <div className="glass-card reveal">
               <h2><Star size={16} /> Tarif wählen</h2>
               <p className="sub">Abrechnung und Rechnungen laufen über unseren Zahlungsanbieter Paddle; die Zahlung ist jederzeit im Kundenportal kündbar.</p>
+              <p className="sub">{ABO_BUCHUNG_HINWEIS}</p>
               <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                 <button type="button" className={`btn ${zyklus === "monat" ? "btn-gold" : "btn-ghost"}`} onClick={() => setZyklus("monat")}>Monatlich</button>
                 <button type="button" className={`btn ${zyklus === "jahr" ? "btn-gold" : "btn-ghost"}`} onClick={() => setZyklus("jahr")}>Jährlich (≈ 2 Monate gespart)</button>

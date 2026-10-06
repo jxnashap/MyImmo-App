@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { herkunftDieserSeite } from "@/lib/herkunft";
 import { EINWILLIGUNGSTEXT_START, QUELLE_START } from "@/lib/newsletter";
 
 // „Beim Start benachrichtigen“ (01.10.2026, Vorgabe des Betreibers: „dezent“).
@@ -40,7 +41,7 @@ export default function StartBenachrichtigung({ nl }: { nl?: string }) {
       const res = await fetch("/api/newsletter", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, quelle: QUELLE_START }),
+        body: JSON.stringify({ email, quelle: QUELLE_START, herkunft: herkunftDieserSeite() }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
