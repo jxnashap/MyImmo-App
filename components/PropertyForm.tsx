@@ -182,7 +182,7 @@ export default function PropertyForm({
             <label>Energieausweis ausgestellt am</label>
             <input type="date" name="energieausweis_datum" defaultValue={v("energieausweis_datum")} />
             <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>
-              10 Jahre gültig (§ 79 GEG) — Erinnerung erscheint automatisch im Kalender.</span>
+              10 Jahre gültig (§ 79 GModG) — Erinnerung erscheint automatisch im Kalender.</span>
           </div>
         </div>
       )}

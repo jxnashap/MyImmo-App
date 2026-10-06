@@ -189,7 +189,7 @@ musste, sah eine zu hohe Nettorendite und einen zu kleinen Kreditbedarf.
 
 | Punkt | Warum er die Arbeit ändert |
 |---|---|
-| ~~Sanierungsrechner: Material oder Lohn?~~ | ✅ **Entschieden 05.10.2026:** Material, dazu ein Lohnrechner, in den der Nutzer Stunden und seinen Stundensatz selbst einträgt — BuyImmo schätzt keinen Lohn. Große Posten (Bad, Elektrik) trägt der Nutzer als eigene Posten ein. |
+| ~~Sanierungsrechner: Material oder Lohn?~~ | ✅ **Entschieden 05.10.2026:** Material, dazu ein Lohnrechner, in den der Nutzer Stunden und seinen Stundensatz selbst einträgt. **Später am selben Tag erweitert (Sanierungs-Guide):** Wählt der Nutzer „Handwerker“ oder geht es um Fachbetrieb-Arbeiten (Elektrik, Bad, Heizung), rechnet der Guide mit Einheitspreisen aus `lib/sanierung/arbeiten.ts` — überschreibbar; Eigenleistung bleibt Stunden × eigener Satz. Plan: `SANIERUNGS-GUIDE.md`. |
 | **Preise** | Baumarktseiten auslesen ist verworfen (Nutzungsbedingungen, wie bei den Portalen). Start: eigene Preis- und Verbrauchstabelle mit Quelle und Stand-Datum, vom Nutzer überschreibbar, Eintrag in `07 Volatile Kennzahlen`. Partner-Produktdaten (Affiliate) **nicht geprüft** — erst klären, dann ggf. Werbekennzeichnung + Datenschutzerklärung. |
 | **Ausmessen bei der Besichtigung** | Kenntnisstand, nicht am Gerät geprüft: Eine Web-App erreicht weder LiDAR (nur native iOS-App) noch Bluetooth-Laser in Safari. Start: Grundriss aus dem Exposé per KI, vor Ort von Hand korrigieren. Ohne Netz (Keller) speichert die App heute nicht. |
 | **Strategie** | `STRATEGIE-REITER.md` — Anwalt zu § 34i GewO **vor** dem Bau; Szenarien statt einer Zahl. |

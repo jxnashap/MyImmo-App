@@ -231,7 +231,7 @@ export function objektFristen(p: ObjektFristInput): Frist[] {
       datum: iso(ablauf),
       typ: ablauf <= new Date() ? "warn" : "info",
       kategorie: "Sonstiges",
-      rechtsgrundlage: "§ 79 Abs. 3 GEG (10 Jahre gültig)",
+      rechtsgrundlage: "§ 79 Abs. 3 GModG (10 Jahre gültig)",
     });
   }
   return fristen;
