@@ -213,9 +213,9 @@ SQL-Editor ausführen (Speichern/Vorlagen im Sanierungs-Guide + Verknüpfung „
   Transaktion Kosten „Verwaltung“ (Anlage V Zeile 46), nach Einheiten auf Objekte außer
   „Selbst bewohnt“, cent-genau; Konto über `abos.provider_subscription_id`, sonst
   `custom_data.user_id`; jeder Fehler → 500 (Paddle stellt erneut zu). **Betreiber: in der
-  Webhook-Destination `transaction.completed` mit abonnieren** und **vor dem Bezahlstart
-  `supabase/migrations/20261005190000_kontoloeschung_abo_zahlungen.sql` im SQL-Editor ausführen**
-  (Kontolöschung erfasst `abo_zahlungen`; noch nicht ausgeführt, bis dahin 0 Zeilen, folgenlos). Dazu `/preise` + Preis-Teaser:
+  Webhook-Destination `transaction.completed` mit abonnieren**. Kontolöschung erfasst `abo_zahlungen`
+  (`20261005190000`, ✅ vom Betreiber im SQL-Editor ausgeführt 06.10.2026, live geprüft: Funktionstext
+  gleich der Datei). Dazu `/preise` + Preis-Teaser:
   „Als Werbungskosten absetzbar — und automatisch gebucht“ (`lib/absetzbar.ts`, nur mit
   `PREISE_SICHTBAR`). **Regel: Nie „kostenlos, weil absetzbar“** — gespart wird der
   Grenzsteuersatz, nicht der Betrag (§ 5 UWG); `tests/absetzbar.test.ts` hält es fest.
