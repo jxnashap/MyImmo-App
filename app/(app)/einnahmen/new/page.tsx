@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createEinnahme } from "@/lib/actions/buchungen";
 import type { Property, Tenant } from "@/lib/types";
 
-const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
+import { EINNAHME_KATEGORIEN } from "@/lib/kategorien";
 
 export default async function NeueEinnahmePage(props: { searchParams: Promise<{ prop?: string; back?: string }> }) {
   const searchParams = await props.searchParams;
@@ -42,7 +42,7 @@ export default async function NeueEinnahmePage(props: { searchParams: Promise<{ 
         </div>
         <div className="form-row">
           <div className="form-group"><label>Kategorie</label>
-            <select name="kategorie" defaultValue="Miete">{KATEGORIEN.map((k) => <option key={k}>{k}</option>)}</select>
+            <select name="kategorie" defaultValue="Miete">{EINNAHME_KATEGORIEN.map((k) => <option key={k}>{k}</option>)}</select>
           </div>
           <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" placeholder="1200" required /></div>
         </div>

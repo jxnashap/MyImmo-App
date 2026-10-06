@@ -17,9 +17,7 @@ import {
   deleteKosten,
 } from "@/lib/actions/buchungen";
 import type { Property, Tenant } from "@/lib/types";
-
-const EIN_KAT = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
-const AUS_KAT = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Schuldzinsen", "Hausgeld / WEG", "Makler", "Sonstiges"];
+import { EINNAHME_KATEGORIEN, KOSTEN_KATEGORIEN, kategorieOptionen } from "@/lib/kategorien";
 
 // Vereinigte Zeile (Einnahme ∪ Kosten) fürs Bearbeiten.
 export type BuchungRow = {
@@ -65,7 +63,7 @@ export default function BuchungForm({
       ? createEinnahme
       : createKosten;
 
-  const KAT = typ === "einnahme" ? EIN_KAT : AUS_KAT;
+  const KAT = kategorieOptionen(typ === "einnahme" ? EINNAHME_KATEGORIEN : KOSTEN_KATEGORIEN, row?.kategorie);
 
   return (
     <form action={action} className="form-box" style={imDialog ? { padding: 0, border: "none", background: "none", maxWidth: "none" } : undefined}>

@@ -9,9 +9,9 @@ import DeleteButton from "@/components/DeleteButton";
 import SubmitButton from "@/components/SubmitButton";
 import RowDialog from "@/components/RowDialog";
 import BelegFreigabeToggle from "@/components/BelegFreigabeToggle";
+import { KOSTEN_KATEGORIEN, kategorieOptionen } from "@/lib/kategorien";
 import type { Kosten, Property, Tenant } from "@/lib/types";
 
-const KATEGORIEN = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
 
 export default function KostenListe({
   gefiltert = false,
@@ -89,7 +89,7 @@ export default function KostenListe({
             </div>
             <div className="form-row">
               <div className="form-group"><label>Kategorie</label>
-                <select name="kategorie" defaultValue={offen.kategorie ?? "Reparatur"}>{KATEGORIEN.map((c) => <option key={c}>{c}</option>)}</select>
+                <select name="kategorie" defaultValue={offen.kategorie ?? "Reparatur"}>{kategorieOptionen(KOSTEN_KATEGORIEN, offen.kategorie).map((c) => <option key={c}>{c}</option>)}</select>
               </div>
               <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" defaultValue={offen.betrag ?? ""} required /></div>
             </div>

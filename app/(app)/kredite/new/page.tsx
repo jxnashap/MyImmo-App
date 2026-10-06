@@ -58,7 +58,7 @@ export default async function NeuerKreditPage(props: { searchParams: Promise<{ p
           <div className="form-group"><label>Tilgungssatz (% p.a.)</label><input type="number" step="0.01" name="tilgungssatz" placeholder="2.0" /></div>
         </div>
         <div className="form-row">
-          <div className="form-group"><label>Monatliche Rate (€)</label><input type="number" step="0.01" name="monatsrate" placeholder="850" /></div>
+          <div className="form-group"><label>Monatliche Rate (€) — laut Darlehensvertrag</label><input type="number" step="0.01" min="0.01" name="monatsrate" placeholder="850" required /></div>
           <div className="form-group"><label>Sondertilgung möglich</label>
             <select name="sonder" defaultValue="">{SONDER.map((s) => <option key={s} value={s}>{s || "Nicht bekannt"}</option>)}</select>
           </div>

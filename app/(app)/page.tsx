@@ -9,6 +9,7 @@ import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, begruessung } from "@/lib/format";
 import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
+import { fristSchluessel } from "@/lib/termine";
 import { baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
@@ -99,7 +100,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     );
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }, { data: vertreterRows }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }, { data: vertreterRows }, { data: verstecktRows }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
@@ -115,6 +116,9 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     supabase.from("miet_zeitraeume").select("*"),
     // Vollmachten der Vertreter (Einstellungen → Vertreter) — nur was zum Ablauf nötig ist.
     supabase.from("vertreter").select("id,vorname,nachname,gueltig_bis,widerrufen_am").not("gueltig_bis", "is", null),
+    // In /termine ausgeblendete Fristen — sonst stand eine ausgeblendete Frist hier weiter,
+    // und ihr Link führte auf eine Seite, auf der sie fehlte (Audit 06.10.2026, A3).
+    supabase.from("frist_ausgeblendet").select("schluessel"),
   ]);
 
   const properties = (props ?? []) as Property[];
@@ -149,17 +153,21 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   type DashFrist = { datum: string; label: string; sub: string; warn: boolean };
   const ueberfaellig = (d: string) => d < heuteISO0;
   const fristListe: DashFrist[] = [];
+  const versteckt = new Set(((verstecktRows ?? []) as { schluessel: string }[]).map((v) => v.schluessel));
+  // Gleicher Schlüssel wie in /termine (Quelle | Datum | Bezeichnung).
+  const sichtbar = (quelle: string, f: { datum: string | null; label: string }) =>
+    !!f.datum && imFenster(f.datum) && !versteckt.has(fristSchluessel(quelle, f.datum, f.label));
   for (const m of mieterRows) {
     const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
-    for (const f of mieterFristen(m)) if (f.datum && imFenster(f.datum))
+    for (const f of mieterFristen(m)) if (sichtbar("mieter", f) && f.datum)
       fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo].filter(Boolean).join(" · "), warn: f.typ === "warn" });
   }
-  for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (f.datum && imFenster(f.datum))
+  for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (sichtbar("kredit", f) && f.datum)
     fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Darlehen", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn" });
-  for (const p of properties) for (const f of objektFristen(p)) if (f.datum && imFenster(f.datum))
+  for (const p of properties) for (const f of objektFristen(p)) if (sichtbar("objekt", f) && f.datum)
     fristListe.push({ datum: f.datum, label: f.label, sub: p.bezeichnung, warn: f.typ === "warn" });
-  for (const f of globaleFristen()) if (f.datum && imFenster(f.datum))
+  for (const f of globaleFristen()) if (sichtbar("steuer", f) && f.datum)
     fristListe.push({ datum: f.datum, label: f.label, sub: "Alle Objekte", warn: f.typ === "warn" });
   for (const t of (term ?? []) as { id: string; titel: string | null; datum: string | null; kategorie: string | null; erledigt: boolean | null }[])
     if (t.datum && imFenster(t.datum) && !t.erledigt)

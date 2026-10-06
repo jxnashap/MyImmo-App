@@ -72,6 +72,7 @@ async function autoBuchungen(
     betrag: number | null,
     aktivSoll: boolean,
     beschreibung: string,
+    neuAnlegen = true,
   ) => {
     // Leer = „noch keine Vorlage". Eine fehlgeschlagene Abfrage sieht genauso
     // aus und legte eine ZWEITE Miet-Vorlage an — die Miete stünde doppelt im
@@ -92,6 +93,7 @@ async function autoBuchungen(
     // trotzdem „gespeichert" gemeldet.
     if (aktivSoll && betrag && betrag > 0) {
       if (!vorhanden) {
+        if (!neuAnlegen) return true;
         const { error } = await supabase.from("wiederkehrende_buchungen").insert({
           user_id: userId, art, prop_id: propId, kategorie, betrag,
           beschreibung, zyklus: "monatlich", start_datum: heute, ende_datum: null, aktiv: true,
@@ -112,9 +114,14 @@ async function autoBuchungen(
     return true;
   };
 
+  // Miete: KEINE neue Vorlage mehr (Audit 06.10.2026, A5). Die Vorlage bucht ohne Mieter,
+  // ohne NK-Anteil und ohne Mietmonat — das Mietkonto erkannte diese Buchungen nicht und
+  // meldete den Monat weiter „offen“; wer dort nachbuchte, hatte die Miete doppelt im
+  // Cashflow und in der Anlage V. Mieten laufen über das Mietkonto (je Mieter, warm).
+  // Eine BESTEHENDE Vorlage wird weiter gepflegt bzw. abgeschaltet — nichts verschwindet still.
   const miete = await pflegeVorlage(
     "einnahme", "Miete", p.miete, p.obj_status === "Vermietet",
-    `Kaltmiete ${p.bezeichnung} (automatisch)`,
+    `Kaltmiete ${p.bezeichnung} (automatisch)`, false,
   );
   const hausgeld = await pflegeVorlage(
     "kosten", "Hausgeld / WEG", p.hausgeld, true,

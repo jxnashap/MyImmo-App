@@ -8,9 +8,9 @@ import ExpandableRows from "@/components/ExpandableRows";
 import DeleteButton from "@/components/DeleteButton";
 import SubmitButton from "@/components/SubmitButton";
 import RowDialog from "@/components/RowDialog";
+import { EINNAHME_KATEGORIEN, kategorieOptionen } from "@/lib/kategorien";
 import type { Einnahme, Property, Tenant } from "@/lib/types";
 
-const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
 
 export default function EinnahmenListe({
   gefiltert = false,
@@ -69,7 +69,7 @@ export default function EinnahmenListe({
                 </div>
                 <div className="form-row">
                   <div className="form-group"><label>Kategorie</label>
-                    <select name="kategorie" defaultValue={offen.kategorie ?? "Miete"}>{KATEGORIEN.map((k) => <option key={k}>{k}</option>)}</select>
+                    <select name="kategorie" defaultValue={offen.kategorie ?? "Miete"}>{kategorieOptionen(EINNAHME_KATEGORIEN, offen.kategorie).map((k) => <option key={k}>{k}</option>)}</select>
                   </div>
                   <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" defaultValue={offen.betrag ?? ""} required /></div>
                 </div>
