@@ -15,7 +15,7 @@ const vollmachtLaeuft = (v: VertreterZeile, heute: string) => {
   return s === "gueltig" || s === "laeuft_ab";
 };
 
-export type Kaufpruefung = { id: string; name: string; summary: Record<string, number> | null; created_at: string };
+export type Kaufpruefung = { id: string; name: string; summary: Record<string, number> | null; created_at: string; uebernommen_prop_id?: string | null };
 
 export type AufbauDaten = {
   objekte: AufbauObjekt[];
@@ -37,7 +37,7 @@ export async function ladeAufbauDaten(
   const [{ data: props }, { data: kred }, { data: kalk }, { data: makler }, { data: sa }, { data: vert }] = await Promise.all([
     db.from("properties").select("id,bezeichnung,wert,kaufpreis,kaufdatum").eq("user_id", uid),
     db.from("kredite").select("prop_id,betrag,restschuld,monatsrate,zinssatz,grundschuld").eq("user_id", uid),
-    db.from("kalkulationen").select("id,name,summary,created_at").eq("user_id", uid).order("created_at", { ascending: false }),
+    db.from("kalkulationen").select("id,name,summary,created_at,uebernommen_prop_id").eq("user_id", uid).order("created_at", { ascending: false }),
     db.from("makler_dokumente").select("item_key,status").eq("user_id", uid),
     db.from("selbstauskunft").select("user_id").eq("user_id", uid).maybeSingle(),
     db.from("vertreter").select("gueltig_bis,widerrufen_am,vollmacht_art,vollmacht_form").eq("user_id", uid),

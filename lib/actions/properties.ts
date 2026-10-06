@@ -134,6 +134,8 @@ async function autoBuchungen(
 /** Zusatz für die Erfolgsmeldung, wenn die Vorlagen-Pflege scheiterte. */
 const VORLAGEN_HINWEIS =
   " Die automatischen Buchungsvorlagen konnten nicht aktualisiert werden — bitte auf /cashflow prüfen.";
+const KAUFPRUEFUNG_HINWEIS =
+  " Die Kaufprüfung ließ sich nicht mit dem Objekt verknüpfen (vielleicht schon übernommen) — sie steht in BuyImmo weiter als offen.";
 
 export async function createProperty(formData: FormData) {
   const supabase = await createClient();
@@ -161,6 +163,24 @@ export async function createProperty(formData: FormData) {
 
   const vorlagenOk = neu?.id ? await autoBuchungen(supabase, user.id, neu.id, parsed) : true;
 
+  // Paket E (06.10.2026): Aus einer Kaufprüfung angelegt → die Prüfung mit dem Objekt verknüpfen,
+  // damit sie nicht ein zweites Mal übernommen wird. Nur die eigene, noch nicht übernommene
+  // (der Trigger `kalkulation_uebernahme_pruefen` prüft zusätzlich, dass das Objekt dem Konto
+  // gehört). Scheitert das, bleibt das Objekt angelegt — der Nutzer erfährt es im Hinweis.
+  const ausKalk = String(formData.get("aus_kalkulation") ?? "").trim();
+  let verknuepft = true;
+  if (neu?.id && ausKalk) {
+    const { data: kalk, error: kalkFehler } = await supabase
+      .from("kalkulationen")
+      .update({ uebernommen_prop_id: neu.id })
+      .eq("id", ausKalk)
+      .eq("user_id", user.id)
+      .is("uebernommen_prop_id", null)
+      .select("id")
+      .maybeSingle();
+    verknuepft = !kalkFehler && !!kalk;
+  }
+
   revalidatePath("/properties");
   revalidatePath("/");
   revalidatePath("/cashflow");
@@ -169,7 +189,7 @@ export async function createProperty(formData: FormData) {
   redirect(
     flashUrl(
       neu?.id ? `/properties/${neu.id}` : "/properties",
-      "Immobilie angelegt." + (vorlagenOk ? "" : VORLAGEN_HINWEIS),
+      "Immobilie angelegt." + (vorlagenOk ? "" : VORLAGEN_HINWEIS) + (verknuepft ? "" : KAUFPRUEFUNG_HINWEIS),
     ),
   );
 }
