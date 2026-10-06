@@ -2,9 +2,12 @@ import SanierungsRechner, { type Ansicht } from "@/components/SanierungsRechner"
 import { KATALOG, KATALOG_STAND } from "@/lib/sanierung/katalog";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
+import { createClient } from "@/lib/supabase/server";
+import { kaufpruefungStart, type KaufpruefungStart } from "@/lib/sanierung/uebergabe";
 import { istDemoKonto } from "@/lib/demo";
+import WegKopf from "@/components/aufbau/WegKopf";
 
-export const metadata = { title: "Sanierungsrechner — BuyImmo" };
+export const metadata = { title: "Besichtigen & Sanieren — BuyImmo" };
 
 // Sanierungsrechner (BuyImmo, 05.10.2026) mit Guide (Stufe B): Schritt für Schritt, Übersicht und
 // Ergebnis über EINEM Entwurf — Material von–bis, Handwerker- und Fachbetrieb-Preise mit Quelle,
@@ -16,20 +19,30 @@ export const metadata = { title: "Sanierungsrechner — BuyImmo" };
 // `?ansicht=uebersicht|ergebnis` öffnet direkt diese Ansicht (sonst die zuletzt benutzte).
 const ANSICHTEN: Ansicht[] = ["guide", "uebersicht", "ergebnis"];
 
-export default async function SanierungPage({ searchParams }: { searchParams: Promise<{ ansicht?: string | string[] }> }) {
-  const [{ ansicht }, user] = await Promise.all([searchParams, aktuellerNutzer()]);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export default async function SanierungPage({ searchParams }: { searchParams: Promise<{ ansicht?: string | string[]; objekt?: string | string[] }> }) {
+  const [{ ansicht, objekt }, user] = await Promise.all([searchParams, aktuellerNutzer()]);
+  // `?objekt=<id>` aus dem Vergleich (Kaufweg 1 → 2): nur eine eigene Kaufprüfung, sonst nichts.
+  let kaufpruefung: KaufpruefungStart | null = null;
+  if (typeof objekt === "string" && UUID.test(objekt) && user) {
+    const supabase = await createClient();
+    const { data } = await supabase.from("kalkulationen").select("id,name,data").eq("id", objekt).eq("user_id", user.id).maybeSingle();
+    if (data) kaufpruefung = kaufpruefungStart(data as { id: string; name: string; data: Record<string, string> | null });
+  }
   const start = typeof ansicht === "string" && (ANSICHTEN as string[]).includes(ansicht) ? (ansicht as Ansicht) : undefined;
   return (
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">BuyImmo · Rechnen</div>
-          <div className="topbar-title">Sanierungsrechner</div>
+          <div className="topbar-kicker">BuyImmo · Schritt 2</div>
+          <div className="topbar-title">Besichtigen & Sanieren</div>
           <div className="topbar-sub">Schritt für Schritt von der Wohnung zur Kostenaufstellung und zum Einkaufszettel</div>
         </div>
       </div>
       <hr className="topbar-rule" />
-      <SanierungsRechner katalog={KATALOG} stand={KATALOG_STAND} heute={heuteBerlin()} ansicht={start} demo={istDemoKonto(user?.email)} />
+      <WegKopf schritt="besichtigen" />
+      <SanierungsRechner katalog={KATALOG} stand={KATALOG_STAND} heute={heuteBerlin()} ansicht={start} demo={istDemoKonto(user?.email)} kaufpruefung={kaufpruefung} />
     </div>
   );
 }

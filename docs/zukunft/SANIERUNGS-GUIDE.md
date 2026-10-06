@@ -1,6 +1,6 @@
 # Sanierungs-Guide (BuyImmo) — Plan
 
-> **Stand 06.10.2026 · Status: Stufe A (Preiskatalog), B (Guide, Übersicht, Ergebnis) und C (Speichern, Vorlagen — Abschnitt 12) gebaut. Die Migration `20261006050000` ist seit 06.10.2026 ausgeführt und live geprüft — C ist aktiv.** Auftrag von Jonas (wörtlich im
+> **Stand 06.10.2026 · Status: Stufe A (Preiskatalog), B (Guide, Übersicht, Ergebnis) und C (Speichern, Vorlagen — Abschnitt 12) gebaut. Das SQL für C (`20261006050000`) hat Jonas am 06.10.2026 ausgeführt; live geprüft.** Auftrag von Jonas (wörtlich im
 > Memory-Repo, `02 - MyImmo/myimmoideen.md`): ein geführter Ablauf, „Mischung Sanierungsrechner
 > und Kauf-Assistent“ — Name, Adresse, Seite für Seite immer detaillierter; als Vorlage
 > speicherbar; zusätzlich als Übersicht zum Ausfüllen; beim Wiedereinstieg nur die Seiten, auf
@@ -307,7 +307,7 @@ füllt es aus `kaufnebenkosten()` (`lib/kalk.ts`), der Steuer-Wächter weist hin
 |---|---|---|
 | A | ✅ **gebaut 05.10.2026:** Einheitspreise (`lib/sanierung/arbeiten.ts`), Zustand-Baukasten (`zustand.ts`), Kostenzeilen mit Herkunft und Portal-Anteil (`kostenzeilen.ts`), BBSR-Nutzungsdauern (`nutzungsdauer.ts`), Prüfzyklus-Zeilen. **Offen in A:** zweite Qualitätsstufe je Baumarkt-Material (neue Preise nötig) | — |
 | B | ✅ **gebaut 05.10.2026** — siehe „Stufe B: was gebaut ist“ unten | nichts in der DB (Browser-Entwurf wie heute) |
-| C | ✅ **gebaut 06.10.2026** — siehe „Stufe C: was gebaut ist“ unten; **SQL ausgeführt + live geprüft 06.10.2026** | Migration `20261006050000` (Kaskade auf `auth.users`, Demo-Sperre) |
+| C | ✅ **gebaut 06.10.2026** — siehe „Stufe C: was gebaut ist“ unten; **SQL ausgeführt (Jonas) und live geprüft 06.10.2026** | Migration `20261006050000` (Kaskade auf `auth.users`, Demo-Sperre) |
 | D | Gesamtauswertung mit Kaufprüfung (`kalk_id`) | Stufe C |
 | E | Haus (Gebäudehülle, GModG-Pflichten als Posten mit Frist) | Entscheidung 3: später |
 | F | Strategie-Abgleich | Anwalt (§ 34i) |
@@ -351,7 +351,7 @@ veraltet → „§ 79 GModG“.
 
 ### Stufe C: was gebaut ist (06.10.2026)
 
-- **Tabelle `sanierungsprojekte`** (Migration `20261006050000`, **im SQL-Editor**, idempotent): `art`
+- **Tabelle `sanierungsprojekte`** (Migration `20261006050000`, im SQL-Editor ausgeführt 06.10.2026, idempotent): `art`
   projekt/vorlage, `daten` jsonb (≤ 256 KB in der DB, die App bremst bei 200 KB), `kalk_id`/`prop_id`
   für Stufe D und Abschnitt 11 (Policy: nur auf EIGENE Zeilen), höchstens **200 Zeilen je Konto**
   (Trigger, Fehlercode 54000), Kaskade auf `auth.users`, Demo weder lesen noch schreiben (Policy +
@@ -384,6 +384,18 @@ veraltet → „§ 79 GModG“.
   gespeicherter Entwurf hätte beliebig wachsen können. Jetzt nur Materialien aus dem Katalog.
 - Tests: `tests/sanierungProjekte.test.ts` + `tests/actionsSanierungsprojekte.test.ts` (49 Tests,
   35 Mutationen rot). Im Browser (1440/390 px, Demo-Sitzung): Leiste, Rückfrage, Vorlage → Räume mit
-  Vorschlag. **Nicht im Browser geprüft:** Speichern, Liste, Konflikt — die Tabelle existiert live erst
-  nach dem SQL, und die Sitzung hier ist das Demo-Konto. Nach dem SQL: Live-Prüfung in einer
-  zurückgerollten Transaktion als Rolle `authenticated`.
+  Vorschlag. **Datenbank live geprüft 06.10.2026** (22 Prüfungen als Rolle `authenticated`, zurückgerollt —
+  Befund in `supabase/migrations/README.md`). **Weiter nicht im Browser geprüft:** Speichern, Liste,
+  Konflikt über die Oberfläche — die Sitzung hier ist das Demo-Konto, das nichts speichert. Den ersten
+  echten Speichervorgang macht ein Nutzerkonto.
+
+### Umbau 06.10.2026: Lern-App und Besichtigung je Kandidat
+Der Guide ist Schritt 2 des Kaufwegs („Besichtigen & Sanieren“, [[BUYIMMO-WEG]]). Zwei Änderungen:
+(1) **Lern-App:** Eine Auswahl, die eine Seite fertig macht, führt nach 450 ms von selbst weiter
+(`autoWeiter()`, nur `eckdaten`/`ziel`/`arbeit`/`abschluss`, nie beim Korrigieren); in Textfeldern
+ist Enter = Weiter. (2) **Je Kandidat:** `/sanierung?objekt=<id>` übernimmt Name, Adresse, Fläche,
+Baujahr und Ziel aus der eigenen Kaufprüfung, `Entwurf.kaufObjekt` merkt sich den Kandidaten, die
+Summe geht an genau ihn zurück (`/vergleich?sanierung=…&objekt=…`). Damit ist Abschnitt 9
+(„Projekt hängt an einer Kaufprüfung“) für den Browser-Entwurf umgesetzt; gespeicherte Projekte
+tragen den Bezug im Entwurf, die Spalte `kalk_id` wird noch nicht geschrieben.
+Tests: `tests/umbauBuyImmo.test.ts`.

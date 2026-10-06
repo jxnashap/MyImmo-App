@@ -17,16 +17,16 @@
 // der Technik-Seite. Er steckt NICHT in der Summe für den Kauf-Assistenten — sicher ist er erst
 // mit der Zusage.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { euro } from "@/lib/format";
 import type { Katalog } from "@/lib/sanierung/rechner";
 import { entwurfAus, leererEntwurf, zuFoerderEingabe, type Entwurf } from "@/lib/sanierung/eingabe";
-import { kaufLinkMitSanierung } from "@/lib/sanierung/uebergabe";
+import { entwurfFuerKaufpruefung, kaufLinkMitSanierung, type KaufpruefungStart } from "@/lib/sanierung/uebergabe";
 import { berechneFoerderung } from "@/lib/sanierung/foerderung";
 import { auswerten, foerderPosten } from "@/lib/sanierung/auswertung";
-import { SEITEN, bestaetigeMassnahmen, offeneSeiten, seiteNach, seiteNoetig, type SeiteId } from "@/lib/sanierung/guide";
+import { AUTO_WEITER_MS, SEITEN, autoWeiter, bestaetigeMassnahmen, offeneSeiten, seiteNach, seiteNoetig, type SeiteId } from "@/lib/sanierung/guide";
 import { SEITEN_INHALT, type Aendern } from "@/components/sanierung/GuideSeiten";
 import GuideErgebnis, { spanne } from "@/components/sanierung/GuideErgebnis";
 import ProjektLeiste, { type ProjektStand } from "@/components/sanierung/ProjektLeiste";
@@ -62,6 +62,7 @@ export default function SanierungsRechner({
   heute,
   ansicht: startAnsicht,
   demo = false,
+  kaufpruefung = null,
 }: {
   katalog: Katalog;
   stand: string;
@@ -69,6 +70,8 @@ export default function SanierungsRechner({
   ansicht?: Ansicht;
   /** Demo-Konto: kein Speichern ins Konto (die Datenbank lehnt es ohnehin ab). */
   demo?: boolean;
+  /** Aus dem Vergleich (`/sanierung?objekt=<id>`, Kaufweg 1 → 2): die Kaufprüfung, die besichtigt wird. */
+  kaufpruefung?: KaufpruefungStart | null;
 }) {
   const [entwurf, setEntwurf] = useState<Entwurf>(() => leererEntwurf(START_ID));
   const [geladen, setGeladen] = useState(false);
@@ -76,6 +79,8 @@ export default function SanierungsRechner({
   const [seite, setSeite] = useState<SeiteId>("projekt");
   const [nurOffene, setNurOffene] = useState(false);
   const [projekt, setProjekt] = useState<ProjektStand | null>(null);
+  // Besichtigung für einen Kandidaten, während ein anderer Entwurf offen ist: erst fragen.
+  const [objektAngebot, setObjektAngebot] = useState<KaufpruefungStart | null>(null);
 
   const aendern: Aendern = (f) => setEntwurf(f);
   const offene = useMemo(() => offeneSeiten(entwurf), [entwurf]);
@@ -107,14 +112,26 @@ export default function SanierungsRechner({
     } catch {
       /* kaputter oder gesperrter Speicher: mit leerem Entwurf weiter */
     }
-    const start = e ?? leererEntwurf(START_ID);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen (Hydration)
-    if (e) setEntwurf(e);
+    let start = e ?? leererEntwurf(START_ID);
+    // Kaufweg 1 → 2: Besichtigung für einen Kandidaten. Ein leerer Entwurf wird direkt ersetzt (nichts
+    // geht verloren), ein angefangener für ein anderes Objekt nur nach Rückfrage.
+    let fuerObjekt = false;
+    if (kaufpruefung && start.kaufObjekt !== kaufpruefung.id) {
+      if (istNeu(start)) {
+        start = entwurfFuerKaufpruefung(kaufpruefung, neueId());
+        fuerObjekt = true;
+        p = null;
+      } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen (Hydration)
+        setObjektAngebot(kaufpruefung);
+      }
+    }
+    if (e || fuerObjekt) setEntwurf(start);
     // Ein gemerktes Projekt ohne Entwurf gehört zu nichts mehr.
     if (e && p) setProjekt(p);
     const wahl = startAnsicht ?? gemerkt;
-    if (wahl === "uebersicht" || wahl === "ergebnis") setAnsicht(wahl);
-    else starteGuide(start);
+    if (!fuerObjekt && (wahl === "uebersicht" || wahl === "ergebnis")) setAnsicht(wahl);
+    else starteGuide(start, fuerObjekt);
     setGeladen(true);
     // Nur beim ersten Laden — danach führt der Nutzer.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -140,7 +157,7 @@ export default function SanierungsRechner({
     }),
     [entwurf, heute, a],
   );
-  // In den Kauf-Assistenten: obere Spanne MIT Puffer, OHNE Eigenleistung (kein Geld) und VOR Zuschuss (unsicher).
+  // In den Vergleich (Kaufprüfung): obere Spanne MIT Puffer, OHNE Eigenleistung (kein Geld) und VOR Zuschuss (unsicher).
   const fuerKauf = Math.max(0, a.gesamt.max);
 
   const props = { e: entwurf, aendern, auswertung: a, neueId };
@@ -175,6 +192,33 @@ export default function SanierungsRechner({
     setAnsicht("guide");
   };
 
+  // Lern-App-Ablauf (Jonas, 06.10.2026): Macht eine AUSWAHL (Radio) die Seite fertig, geht es nach
+  // kurzer Pause von selbst weiter (`autoWeiter` in lib/sanierung/guide.ts entscheidet, welche Seiten).
+  // Textfelder springen nie weg — dort geht es mit Enter oder „Weiter“.
+  const auswahlRef = useRef(false);
+  const vorherRef = useRef(entwurf);
+  const weiterRef = useRef(weiter);
+  const seiteRef = useRef(seite);
+  useEffect(() => {
+    weiterRef.current = weiter;
+    seiteRef.current = seite;
+  });
+  useEffect(() => {
+    const vorher = vorherRef.current;
+    vorherRef.current = entwurf;
+    const durchAuswahl = auswahlRef.current;
+    auswahlRef.current = false;
+    if (!durchAuswahl || ansicht !== "guide" || !autoWeiter(seite, vorher, entwurf)) return;
+    const geplant = seite;
+    const t = setTimeout(() => {
+      // Hat der Nutzer in der Pause selbst die Seite gewechselt, nicht hinterherspringen.
+      if (seiteRef.current === geplant) weiterRef.current();
+    }, AUTO_WEITER_MS);
+    return () => clearTimeout(t);
+    // Nur auf Änderungen am Entwurf reagieren — Seite und Ansicht werden beim Auslösen gelesen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entwurf]);
+
   const aktuelleSeite = seiteNach(seite);
   const Inhalt = SEITEN_INHALT[seite];
   const fehltHier = offene.find((o) => o.seite === seite)?.fehlt ?? [];
@@ -186,6 +230,20 @@ export default function SanierungsRechner({
   return (
     <div className="sanierung" data-demo-erlaubt>
       {geladen && <ProjektLeiste entwurf={entwurf} projekt={projekt} setProjekt={setProjekt} ersetze={ersetze} neueId={neueId} demo={demo} />}
+      {objektAngebot && (
+        <div className="projekt-rueckfrage no-print" role="alert">
+          <span>
+            Besichtigung für „{objektAngebot.name}“ starten? Dein aktueller Entwurf „{entwurf.projekt.name.trim() || "ohne Namen"}“ wird
+            ersetzt{projekt ? " — gespeichert bleibt er im Konto." : " und ist nicht gespeichert."}
+          </span>
+          <span className="projekt-knoepfe">
+            <button type="button" className="btn btn-gold btn-sm" onClick={() => { const k = objektAngebot; setObjektAngebot(null); setProjekt(null); ersetze(entwurfFuerKaufpruefung(k, neueId()), true); }}>
+              Für „{objektAngebot.name}“ neu anfangen
+            </button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setObjektAngebot(null)}>Beim aktuellen bleiben</button>
+          </span>
+        </div>
+      )}
       <div className="guide-kopf no-print">
         <div className="tabs" role="tablist" aria-label="Ansicht">
           {ANSICHTEN.map((x) => (
@@ -238,7 +296,13 @@ export default function SanierungsRechner({
                   <button type="button" className="btn-link" onClick={() => setNurOffene(false)}>Alle Seiten zeigen</button>
                 </div>
               )}
-              <div className="section-body guide-inhalt">
+              {/* Formular nur für Enter = Weiter; gespeichert wird nichts per Absenden. onChange merkt sich, ob
+                  die letzte Änderung eine Auswahl war (Radio) — nur dann darf der Guide von selbst weiter. */}
+              <form
+                className="section-body guide-inhalt"
+                onSubmit={(ev) => { ev.preventDefault(); weiter(); }}
+                onChange={(ev) => { const t: EventTarget = ev.target; if (t instanceof HTMLInputElement && t.type === "radio") auswahlRef.current = true; }}
+              >
                 <Inhalt {...props} />
                 {fehltHier.length > 0 && (
                   <div className="guide-fehlt-liste sanierung-klein">
@@ -249,11 +313,11 @@ export default function SanierungsRechner({
                   <button type="button" className="btn btn-ghost btn-sm" disabled={!vorige()} onClick={() => { const v = vorige(); if (v) setSeite(v); }}>
                     <ArrowLeft size={14} aria-hidden /> Zurück
                   </button>
-                  <button type="button" className="btn btn-gold btn-sm" onClick={weiter}>
+                  <button type="submit" className="btn btn-gold btn-sm">
                     {naechste() ? "Weiter" : "Zum Ergebnis"} <ArrowRight size={14} aria-hidden />
                   </button>
                 </div>
-              </div>
+              </form>
             </>
           )}
         </div>
@@ -295,15 +359,16 @@ export default function SanierungsRechner({
             {a.material.length > 0 && <span>Material {spanne(a.materialKosten, euro)}</span>}
             {a.zeilen.length > 0 && <span>Arbeiten {spanne(a.zeilenKosten, euro)}</span>}
             {a.pufferProzent > 0 && <span>Puffer {spanne(a.puffer, euro)}</span>}
-            {a.eigenleistung > 0 && <span>Eigenleistung {euro(a.eigenleistung)} (kein Geld, nicht in den Kauf-Assistenten)</span>}
+            {a.eigenleistung > 0 && <span>Eigenleistung {euro(a.eigenleistung)} (kein Geld, nicht in die Kaufprüfung)</span>}
             {foerderung.bis.zuschuss > 0 && <span>Möglicher Zuschuss {spanne({ min: foerderung.von.zuschuss, max: foerderung.bis.zuschuss }, euro)} (nicht abgezogen)</span>}
             {a.offen.length > 0 && <span>{a.offen.length} Posten ohne Preis (nicht in der Summe)</span>}
             {a.budget && <span>Budget {euro(a.budget.betrag)}: {a.budget.lage === "darunter" ? "reicht" : a.budget.lage === "innerhalb" ? "liegt in der Spanne" : "reicht nicht"}</span>}
           </div>
-          {/* Obere Spanne in die Kaufprüfung — lieber zu viel eingeplant als zu wenig. */}
+          {/* Obere Spanne in die Kaufprüfung (Schritt 1) — lieber zu viel eingeplant als zu wenig. Lief die
+              Besichtigung für einen Kandidaten, öffnet der Vergleich genau diesen. */}
           {fuerKauf > 0 && (
-            <Link href={kaufLinkMitSanierung(fuerKauf)} className="btn btn-gold btn-sm sanierung-uebernehmen">
-              {euro(fuerKauf)} in den Kauf-Assistenten <ArrowRight size={14} aria-hidden />
+            <Link href={kaufLinkMitSanierung(fuerKauf, entwurf.kaufObjekt)} className="btn btn-gold btn-sm sanierung-uebernehmen">
+              {euro(fuerKauf)} in den Vergleich <ArrowRight size={14} aria-hidden />
             </Link>
           )}
         </div>

@@ -11,6 +11,8 @@ import { MAKLER_COOKIE } from "@/lib/maklerCode";
 import ZugangsCodeFormular from "@/components/ZugangsCodeFormular";
 import { meldeMaklerAn } from "@/lib/actions/maklerLinkPublic";
 import DateiZurueckSchicken, { type GesendeteDatei } from "@/components/DateiZurueckSchicken";
+import TerminVorschlagen from "@/components/TerminVorschlagen";
+import type { OeffentlicherTermin } from "@/lib/freigabeTermin";
 import { MAKLER_CHECKLISTE } from "@/lib/makler";
 import { Lock, FileText } from "lucide-react";
 import OeffentlicheFusszeile from "@/components/OeffentlicheFusszeile";
@@ -51,15 +53,18 @@ export default async function MaklerLinkSeite(props: { params: Promise<{ token: 
   let info: Info | null = null;
   let status: string | null = null;
   let gesendet: GesendeteDatei[] = [];
+  let termine: OeffentlicherTermin[] = [];
   if (/^[0-9a-f-]{36}$/i.test(params.token)) {
     const hash = (await cookies()).get(MAKLER_COOKIE)?.value;
     if (hash) {
-      const [{ data }, { data: eingang }] = await Promise.all([
+      const [{ data }, { data: eingang }, { data: termin }] = await Promise.all([
         supabase.rpc("makler_public_info", { p_token: params.token, p_code_hash: hash }),
         supabase.rpc("freigabe_public_eingang", { p_art: "makler", p_token: params.token, p_code_hash: hash }),
+        supabase.rpc("freigabe_public_termine", { p_art: "makler", p_token: params.token, p_code_hash: hash }),
       ]);
       info = (data as Info | null) ?? null;
       gesendet = (eingang as GesendeteDatei[] | null) ?? [];
+      termine = (termin as OeffentlicherTermin[] | null) ?? [];
     }
     if (!info) {
       const { data } = await supabase.rpc("makler_public_status", { p_token: params.token });
@@ -123,6 +128,11 @@ export default async function MaklerLinkSeite(props: { params: Promise<{ token: 
             <a className="btn btn-ghost" style={{ fontSize: 11.5 }} href={`/makler-link/${params.token}/datei/${d.item_key}?download=1`}>Download</a>
           </div>
         ))}
+      </div>
+
+      <div className="section" style={{ marginBottom: 18 }}>
+        <div className="section-header"><h3>Termin vereinbaren</h3></div>
+        <TerminVorschlagen art="makler" token={params.token} termine={termine} />
       </div>
 
       <div className="section" style={{ marginBottom: 18 }}>

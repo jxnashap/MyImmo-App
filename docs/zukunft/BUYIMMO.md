@@ -158,8 +158,9 @@ musste, sah eine zu hohe Nettorendite und einen zu kleinen Kreditbedarf.
   localStorage): Lesezeichen und „Zurück" funktionieren, Server und Browser rendern dieselbe
   Navigation. **Gemeinsame Seiten** (`GEMEINSAME_PFADE`: Einstellungen, Hilfe, Objekte)
   behalten den Bereich, aus dem man kam; beim ersten Aufruf ist es MyImmo.
-- **`lib/nav.ts`** — vier Gruppen: `VERWALTEN` + `ABRECHNEN` (MyImmo), `AUFBAUEN` + `RECHNEN`
-  (BuyImmo). Das frühere eingeklappte „Planen" ist aufgelöst.
+- **`lib/nav.ts`** — MyImmo: `VERWALTEN` + `ABRECHNEN`. BuyImmo seit dem Umbau 06.10.2026:
+  `UEBERBLICK` (Cockpit, Strategie) · `WEG` (fünf nummerierte Schritte aus `lib/kaufweg.ts`) ·
+  `WERKZEUGE` — Details [[BUYIMMO-WEG]]. Das frühere eingeklappte „Planen" ist aufgelöst.
 - **`components/BereichWechsel.tsx`** — Wortmarke **Buy*Immo*** / **My*Immo*** mit Doppelpfeil und
   Bereichsname darunter. **Risiko, deshalb so gebaut:** Ein Logo allein erkennt kaum jemand als
   Schalter. Im eingeklappten Rail öffnet das Menü fest neben der Leiste (die Leiste schneidet
@@ -172,8 +173,9 @@ musste, sah eine zu hohe Nettorendite und einen zu kleinen Kreditbedarf.
 
 ## Regeln
 
-1. **Eine neue BuyImmo-Seite kommt in `AUFBAUEN` oder `RECHNEN`** (`lib/nav.ts`) — der Bereich
-   folgt dann von selbst. Eine Seite, die zu beiden gehört, kommt in `GEMEINSAME_PFADE`.
+1. **Eine neue BuyImmo-Seite kommt in `UEBERBLICK`, `WERKZEUGE` oder — als Schritt — in `KAUFWEG`**
+   (`lib/kaufweg.ts`, daraus `WEG`) — der Bereich folgt dann von selbst. Eine Seite, die zu beiden
+   gehört, kommt in `GEMEINSAME_PFADE`.
 2. **Bestehende Adressen nie umbenennen** (`/kauf`, `/verkauf`, `/bewertung`, `/afa-assistent`,
    `/makler`) — Demo-Wege, Rauchtest, Lesezeichen und Verweise hängen daran.
 3. **Keine Zahl in der Kommandozentrale mit eigener Regel.** Jede Größe, die es in MyImmo schon
@@ -192,8 +194,8 @@ musste, sah eine zu hohe Nettorendite und einen zu kleinen Kreditbedarf.
 | ~~Sanierungsrechner: Material oder Lohn?~~ | ✅ **Entschieden 05.10.2026:** Material, dazu ein Lohnrechner, in den der Nutzer Stunden und seinen Stundensatz selbst einträgt. **Später am selben Tag erweitert (Sanierungs-Guide):** Wählt der Nutzer „Handwerker“ oder geht es um Fachbetrieb-Arbeiten (Elektrik, Bad, Heizung), rechnet der Guide mit Einheitspreisen aus `lib/sanierung/arbeiten.ts` — überschreibbar; Eigenleistung bleibt Stunden × eigener Satz. Plan: `SANIERUNGS-GUIDE.md`. |
 | **Preise** | Baumarktseiten auslesen ist verworfen (Nutzungsbedingungen, wie bei den Portalen). Start: eigene Preis- und Verbrauchstabelle mit Quelle und Stand-Datum, vom Nutzer überschreibbar, Eintrag in `07 Volatile Kennzahlen`. Partner-Produktdaten (Affiliate) **nicht geprüft** — erst klären, dann ggf. Werbekennzeichnung + Datenschutzerklärung. |
 | **Ausmessen bei der Besichtigung** | Kenntnisstand, nicht am Gerät geprüft: Eine Web-App erreicht weder LiDAR (nur native iOS-App) noch Bluetooth-Laser in Safari. Start: Grundriss aus dem Exposé per KI, vor Ort von Hand korrigieren. Ohne Netz (Keller) speichert die App heute nicht. |
-| **Strategie** | `STRATEGIE-REITER.md` — Anwalt zu § 34i GewO **vor** dem Bau; Szenarien statt einer Zahl. |
+| **Strategie** | Am 06.10.2026 als Rechner gebaut (`/strategie`, [[BUYIMMO-WEG]]) — der Anwalt zu § 34i GewO ist damit **vor dem öffentlichen Start** offen, nicht mehr vor dem Bau. Szenarien statt einer Zahl sind umgesetzt. |
 | **Ergebnis ist eine Schätzung** | Kein Kostenvoranschlag — dieselbe Grenze wie bei den Handwerker-Anfragen. |
 | **Tarif** | 19,99 € entschieden; Abgrenzung zu Plus und Bündel offen — `docs/FINANZKONZEPT.md`. |
 | **Marke** | „BuyImmo" vor öffentlicher Nutzung auf Markenrecht und Domain prüfen (nicht geschehen). |
-| **Demo** | Die Demo hat keine gespeicherten Kaufprüfungen → die Kommandozentrale zeigt dort einen Leerzustand. Beispiel-Kalkulationen bräuchten eine `demo_seed`-Kopie + Eintrag in der Reset-Funktion. |
+| ~~**Demo**~~ | ✅ Seit 06.10.2026 vier Beispiel-Kandidaten im Vergleich (Migration `20261006064806`, nicht im Reset, Kennzahlen aus `objektKennzahlen()`) — [[BUYIMMO-WEG]], Risiko 6. |

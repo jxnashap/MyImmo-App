@@ -9,6 +9,8 @@ import type { Freigabe } from "@/lib/actions/beleihung";
 import { ABRUF_SPALTEN, type Abruf } from "@/lib/freigabeAbrufe";
 import FreigabeEingang from "@/components/FreigabeEingang";
 import { EINGANG_SPALTEN, type EingangZeile } from "@/lib/freigabeEingang";
+import FreigabeTermine from "@/components/FreigabeTermine";
+import { TERMIN_SPALTEN, type FreigabeTerminZeile } from "@/lib/freigabeTermin";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +46,8 @@ export default async function BeleihungPage(props: { params: Promise<{ id: strin
   const tokens = (freigaben ?? []).map((f) => f.token);
   // Dazu das Abruf-Protokoll (05.10.2026): wann welches Dokument über einen Link geladen wurde.
   // Und der Eingang (06.10.2026): Dateien, die die Bank über einen dieser Links geschickt hat.
-  const [{ data: rueckmeldungen }, { data: abrufe }, { data: eingang }] = tokens.length
+  // Und Termine (06.10.2026): Vorschläge oder Rückrufbitte der Bank.
+  const [{ data: rueckmeldungen }, { data: abrufe }, { data: eingang }, { data: termine }] = tokens.length
     ? await Promise.all([
         supabase
           .from("beleihung_rueckmeldungen")
@@ -65,8 +68,15 @@ export default async function BeleihungPage(props: { params: Promise<{ id: strin
           .in("token", tokens)
           .order("created_at", { ascending: false })
           .limit(100),
+        supabase
+          .from("freigabe_termine")
+          .select(TERMIN_SPALTEN)
+          .eq("art", "bank")
+          .in("token", tokens)
+          .order("created_at", { ascending: false })
+          .limit(30),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
   const eingangZeilen = (eingang ?? []) as EingangZeile[];
   const eingangNeu = eingangZeilen.some((z) => z.status === "neu");
   // Nur zeigen, wenn es je einen Link gab — vorher kann nichts eingehen.
@@ -78,6 +88,7 @@ export default async function BeleihungPage(props: { params: Promise<{ id: strin
 
   return (
     <>
+    <FreigabeTermine zeilen={(termine ?? []) as FreigabeTerminZeile[]} wer="der Bank" jetzt={new Date().toISOString()} />
     {eingangNeu && eingangBlock}
     <BeleihungsOrdner
       propId={prop.id}

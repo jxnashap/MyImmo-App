@@ -7,9 +7,11 @@ import { istDemoKonto } from "@/lib/demo";
 import { DEMO_SELBSTAUSKUNFT } from "@/lib/kauf/selbstauskunft";
 import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
 import { heuteBerlin } from "@/lib/zeitraum";
-import { SANIERUNG_PARAM, sanierungAusParam } from "@/lib/sanierung/uebergabe";
+import { redirect } from "next/navigation";
+import { SANIERUNG_PARAM, kaufLinkMitSanierung, sanierungAusParam } from "@/lib/sanierung/uebergabe";
+import WegKopf from "@/components/aufbau/WegKopf";
 
-export const metadata = { title: "Kauf-Assistent — MyImmo" };
+export const metadata = { title: "Finanzierung — BuyImmo" };
 export const dynamic = "force-dynamic";
 
 // Kauf-Assistent: geführter Ablauf inkl. eingebettetem Objekt-Rechner
@@ -17,9 +19,11 @@ export const dynamic = "force-dynamic";
 // Selbstauskunft werden hier serverseitig geladen und an den Client-Stepper
 // übergeben.
 export default async function KaufPage(props: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const supabase = await createClient();
-  // Betrag aus dem Sanierungsrechner (BuyImmo). Die Adresse ist Nutzereingabe → streng gelesen.
+  // Alte Links aus dem Sanierungsrechner (`/kauf?sanierung=…`): Der Objekt-Rechner ist seit dem Umbau
+  // (06.10.2026) Schritt 1 unter /vergleich — dorthin, mit demselben (streng gelesenen) Betrag.
   const sanierungStart = sanierungAusParam((await props.searchParams)[SANIERUNG_PARAM]);
+  if (sanierungStart != null) redirect(kaufLinkMitSanierung(sanierungStart));
+  const supabase = await createClient();
   const { data: rows } = await supabase
     .from("kalkulationen")
     .select("*")
@@ -44,18 +48,18 @@ export default async function KaufPage(props: { searchParams: Promise<Record<str
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Kalkulator · Kauf</div>
-          <div className="topbar-title">Kauf-Assistent</div>
-          <div className="topbar-sub">Vom gefundenen Objekt bis zur Finanzierungsanfrage — Schritt für Schritt</div>
+          <div className="topbar-kicker">BuyImmo · Schritt 3</div>
+          <div className="topbar-title">Finanzierung</div>
+          <div className="topbar-sub">Vom gewählten Objekt bis zur Finanzierungsanfrage — Kauf-Assistent</div>
         </div>
       </div>
       <hr className="topbar-rule" />
+      <WegKopf schritt="finanzieren" />
       <KaufAssistent
         gespeichert={(rows ?? []) as Kalkulation[]}
         selbstauskunft={auskunft}
         demo={demo}
         vertreter={vertreter}
-        sanierungStart={sanierungStart}
       />
     </div>
   );

@@ -1,6 +1,8 @@
 // BuyImmo-Fahrplan (05.10.2026, Vorgabe des Betreibers): BuyImmo soll junge Käufer LEITEN — was
 // brauche ich, welche Voraussetzungen, was muss ich beachten — Schritt für Schritt bis zum Objekt,
-// das danach MyImmo verwaltet.
+// das danach MyImmo verwaltet. Seit dem Umbau (06.10.2026) stehen die Stationen in der Reihenfolge
+// des Kaufwegs (lib/kaufweg.ts: vergleichen → besichtigen → finanzieren → Unterlagen → Notar); jede
+// Station gehört dort zu genau einem Schritt.
 //
 // GRENZE (docs/zukunft/BUYIMMO.md): Der Fahrplan erklärt und zeigt Fortschritt. Er urteilt nicht
 // über die Person („du kannst dir X leisten“, „kauf jetzt“) — das wäre Darlehensberatung
@@ -44,6 +46,32 @@ export function fahrplan(d: FahrplanDaten): Station[] {
 
   return [
     {
+      id: "durchrechnen",
+      titel: "Durchrechnen und vergleichen",
+      satz: "Kaufpreis, Nebenkosten, Miete: Was bringt jeder Kandidat? Gespeicherte Objekte stehen nebeneinander, bis eines übrig bleibt.",
+      // Seit 05.10.2026 übergibt der Sanierungs-Guide seinen Betrag per Knopf (lib/sanierung/uebergabe.ts),
+      // seit 06.10.2026 an das Objekt, für das die Besichtigung lief.
+      punkte: ["Sanierungskosten: im Sanierungs-Guide auf „in den Vergleich“ tippen — sie zählen dann zur Gesamtinvestition des Objekts"],
+      ziel: { href: "/vergleich", label: "Objekte vergleichen" },
+      status:
+        d.kaufpruefungen > 0
+          ? { art: "erledigt", text: `${d.kaufpruefungen} Objekt${d.kaufpruefungen === 1 ? "" : "e"} gespeichert` }
+          : { art: "offen", text: "noch keins gespeichert" },
+    },
+    {
+      id: "besichtigen",
+      titel: "Besichtigen und ausmessen",
+      satz: "Räume ausmessen und anhaken, was gemacht werden muss — so weißt du vor dem Angebot, was die Renovierung kostet.",
+      punkte: [
+        "Raumhöhe und Fenster mitmessen",
+        "Fotos von Fenstern, Heizung, Elektrik und Bad",
+        // Seit 05.10.2026 schätzt der Sanierungsrechner den Zuschuss (lib/sanierung/foerderung.ts).
+        "Dämmung, Fenster und Heizung können gefördert werden — aber nur, wenn der Antrag vor dem Handwerkervertrag steht (Sanierungsrechner → Förderung)",
+      ],
+      ziel: { href: "/sanierung", label: "Sanierungs-Guide" },
+      status: null,
+    },
+    {
       id: "kassensturz",
       titel: "Kassensturz",
       satz: "Wie viel Eigenkapital hast du, was bleibt im Monat übrig, was steht bei der SCHUFA über dich?",
@@ -86,36 +114,11 @@ export function fahrplan(d: FahrplanDaten): Station[] {
           : { art: maklerFertig > 0 ? "teilweise" : "offen", text: `${maklerFertig} von ${maklerGesamt}` },
     },
     {
-      id: "besichtigen",
-      titel: "Besichtigen und ausmessen",
-      satz: "Räume ausmessen und anhaken, was gemacht werden muss — so weißt du vor dem Angebot, was die Renovierung kostet.",
-      punkte: [
-        "Raumhöhe und Fenster mitmessen",
-        "Fotos von Fenstern, Heizung, Elektrik und Bad",
-        // Seit 05.10.2026 schätzt der Sanierungsrechner den Zuschuss (lib/sanierung/foerderung.ts).
-        "Dämmung, Fenster und Heizung können gefördert werden — aber nur, wenn der Antrag vor dem Handwerkervertrag steht (Sanierungsrechner → Förderung)",
-      ],
-      ziel: { href: "/sanierung", label: "Sanierungsrechner" },
-      status: null,
-    },
-    {
-      id: "durchrechnen",
-      titel: "Durchrechnen",
-      satz: "Kaufpreis, Nebenkosten, Miete, Finanzierung: Was bleibt im Monat? Jedes gespeicherte Objekt lässt sich mit den anderen vergleichen.",
-      // Seit 05.10.2026 übergibt der Sanierungsrechner seinen Betrag per Knopf (lib/sanierung/uebergabe.ts).
-      punkte: ["Sanierungskosten: im Sanierungsrechner auf „in den Kauf-Assistenten“ tippen — sie zählen dann zur Gesamtinvestition"],
-      ziel: { href: "/kauf", label: "Kauf-Assistent" },
-      status:
-        d.kaufpruefungen > 0
-          ? { art: "erledigt", text: `${d.kaufpruefungen} Objekt${d.kaufpruefungen === 1 ? "" : "e"} gespeichert` }
-          : { art: "offen", text: "noch keins gespeichert" },
-    },
-    {
       id: "beantragen",
       titel: "Finanzierung beantragen",
       satz: "Steht die Entscheidung, gehen Kreditantrag und Objektunterlagen an die Bank.",
       punkte: [
-        "Kreditantrag als PDF aus dem Kauf-Assistenten",
+        "Kreditantrag als PDF aus Schritt 3 (Finanzierung)",
         "Grundbuchauszug, Grundrisse, Energieausweis, Kaufvertragsentwurf im Beleihungsordner des Objekts sammeln und der Bank als Link schicken",
       ],
       ziel: { href: "/kauf", label: "Kreditantrag" },

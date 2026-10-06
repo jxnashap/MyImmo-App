@@ -68,8 +68,9 @@
 - [[MIETERPORTAL-AUSBAU]] — Bestandsaufnahme, acht Wege zur Fehlzustellung, sicherer Zustellweg + Ausbau (02.10.2026)
 - [[HANDWERKER-ANFRAGEN]] — Angebote einholen, später Handwerkerportal; Entscheidungen + Risiken (02.10.2026)
 - [[VERTRETER-ZUGANG]] — Bevollmächtigter mit eigener Anmeldung, Rechten und Protokoll (Plan 02.10.2026)
-- [[STRATEGIE-REITER]] — Ankaufsstrategie: wann ist das nächste Objekt finanzierbar? (Idee 30.08.2026)
+- [[STRATEGIE-REITER]] — Ankaufsstrategie: Risiken und Grenzen (Idee 30.08.2026; als Rechner gebaut 06.10.2026 → [[BUYIMMO-WEG]])
 - [[BUYIMMO]] — zweiter Bereich „Bestandsaufbau“ neben MyImmo: Entscheidung, Regeln, offene Fragen (05.10.2026)
+- [[BUYIMMO-WEG]] — Umbau: fünf Schritte zum Kauf, Vergleich, Besichtigung je Kandidat, Lern-App-Guide, Strategie mit Stammbaum (06.10.2026)
 - [[OPEN-BANKING]] — Konto-Anbindung, zurückgestellt 29.08.2026 (Code in der Git-Historie)
 
 ## 🛠️ Technik

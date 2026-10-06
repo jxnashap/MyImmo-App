@@ -78,6 +78,11 @@ const ERLAUBTE_PRAEFIXE = [
   "/sanierung",
   // Fahrplan: liest nur, zeigt Schritte und Status aus den Beispieldaten.
   "/fahrplan",
+  // Kaufweg (Umbau 06.10.2026): Schritt 1 (Vergleich, Rechner wie im Kauf-Assistenten — in der Demo
+  // mit festen Werten), Schritt 5 (nur Text und Status) und die Strategie (Rechner, Plan nur im Browser).
+  "/vergleich",
+  "/abschluss",
+  "/strategie",
   // Die Kaufgruende (seit 30.09.2026). Alle haben Beispieldaten; `/termine`
   // leitet Fristen aus Mietern, Krediten und Objekten ab.
   "/mietkonto",

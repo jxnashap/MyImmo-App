@@ -15,8 +15,9 @@ const status = (d: FahrplanDaten, id: string) => fahrplan(d).find((s) => s.id ==
 describe("fahrplan — Status nur aus Daten", () => {
   it("neues Konto: prüfbare Schritte offen, unprüfbare ohne Status", () => {
     const s = fahrplan(LEER);
+    // Reihenfolge des Kaufwegs (Umbau 06.10.2026, lib/kaufweg.ts): vergleichen → besichtigen → finanzieren → …
     expect(s.map((x) => x.id)).toEqual([
-      "kassensturz", "selbstauskunft", "finanzierung", "unterlagen", "besichtigen", "durchrechnen", "beantragen", "notar", "uebergabe",
+      "durchrechnen", "besichtigen", "kassensturz", "selbstauskunft", "finanzierung", "unterlagen", "beantragen", "notar", "uebergabe",
     ]);
     expect(status(LEER, "selbstauskunft")?.art).toBe("offen");
     expect(status(LEER, "unterlagen")).toEqual({ art: "offen", text: `0 von ${MAKLER_CHECKLISTE.length}` });
@@ -90,19 +91,23 @@ describe("kaufnebenkosten — EINE Regel für Kauf-Rechner und Fahrplan", () => 
 
   it("der Kauf-Rechner rechnet mit derselben Funktion", () => {
     expect(kaufnebenkostenSatz(0.05, 3.57)).toBeCloseTo(0.1057, 6);
+    // Seit 06.10.2026 rechnet der Objekt-Rechner über lib/kauf/objektKennzahlen.ts (auch für die Demo-Kandidaten).
     const rechner = readFileSync("components/kauf/ObjektRechner.tsx", "utf8");
-    expect(rechner).toContain("kaufnebenkostenSatz(grestSatz, num(makler))");
+    const kennzahlen = readFileSync("lib/kauf/objektKennzahlen.ts", "utf8");
+    expect(rechner).toContain("objektKennzahlen({");
+    expect(kennzahlen).toContain("kaufnebenkostenSatz(grestSatz, num(e.makler))");
     expect(rechner).not.toMatch(/\+\s*0\.02\b/);
+    expect(kennzahlen).not.toMatch(/\+\s*0\.02\b/);
   });
 });
 
 describe("Fahrplan bleibt bei der Wahrheit", () => {
-  it("nennt die Übergabe der Sanierung an den Kauf-Assistenten, nicht mehr „kommt noch nicht“", () => {
+  it("nennt die Übergabe der Sanierung an den Vergleich, nicht mehr „kommt noch nicht“", () => {
     const station = fahrplan(LEER).find((s) => s.id === "durchrechnen")!;
     const text = station.punkte.join(" ");
     expect(text).not.toMatch(/noch nicht automatisch/);
-    expect(text).toMatch(/in den Kauf-Assistenten/);
+    expect(text).toMatch(/in den Vergleich/);
     // Der Knopf, auf den der Text verweist, existiert wirklich.
-    expect(readFileSync("components/SanierungsRechner.tsx", "utf8")).toContain("in den Kauf-Assistenten");
+    expect(readFileSync("components/SanierungsRechner.tsx", "utf8")).toContain("in den Vergleich");
   });
 });

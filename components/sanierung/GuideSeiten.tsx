@@ -476,7 +476,7 @@ function PostenSeite({ e, aendern, neueId }: SeitenProps) {
             <button type="button" className="btn btn-ghost btn-sm" aria-label="Zeile entfernen" onClick={() => aendern((d) => ({ ...d, lohn: d.lohn.filter((x) => x.id !== l.id) }))}><Trash2 size={14} /></button>
             <label className="sanierung-eigen">
               <input type="checkbox" checked={l.eigenleistung} onChange={(x) => setLohn(l.id, { eigenleistung: x.target.checked })} />
-              Eigenleistung — kostet kein Geld, geht nicht in den Kauf-Assistenten
+              Eigenleistung — kostet kein Geld, geht nicht in die Kaufprüfung
             </label>
           </div>
         ))}

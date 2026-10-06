@@ -167,6 +167,26 @@ export function offeneSeiten(e: Entwurf): OffeneSeite[] {
     .filter((o) => o.fehlt.length > 0);
 }
 
+// ---- Lern-App-Ablauf (Umbau 06.10.2026, Jonas: „Wenn man eine Frage richtig beantwortet hat, öffnet
+// sich direkt die nächste Seite“) ----------------------------------------------------------------
+
+/**
+ * Seiten, die nach einer AUSWAHL von selbst weitergehen. Nur reine Auswahlseiten — nie eine Seite, auf
+ * der eine Wahl weitere Felder oder Hinweise aufklappt (Maßnahmen, Ist-Zustand mit Asbest-Hinweis,
+ * Technik mit vorgekreuzten Arbeiten): dort muss man sehen, was die Wahl ausgelöst hat.
+ */
+export const AUTO_WEITER: SeiteId[] = ["eckdaten", "ziel", "arbeit", "abschluss"];
+/** Kurz warten, damit man die gewählte Antwort noch sieht. */
+export const AUTO_WEITER_MS = 450;
+
+/**
+ * Weiter ohne Klick? Nur, wenn die Seite durch DIESE Änderung fertig wurde — wer eine schon fertige
+ * Seite noch einmal aufruft und eine Antwort ändert, will korrigieren, nicht weggeschickt werden.
+ */
+export function autoWeiter(seite: SeiteId, vorher: Entwurf, nachher: Entwurf): boolean {
+  return AUTO_WEITER.includes(seite) && fehlendeAngaben(seite, vorher).length > 0 && fehlendeAngaben(seite, nachher).length === 0;
+}
+
 /** Seitenfolge des Guides: alle nötigen Seiten — oder beim Wiedereinstieg nur die offenen. */
 export function guideFolge(e: Entwurf, nurOffene: boolean): SeiteId[] {
   if (nurOffene) return offeneSeiten(e).map((o) => o.seite);

@@ -2,7 +2,7 @@
 
 > Zweck: Ein anderer Chat/eine neue Session versteht MyImmo in 5 Minuten.
 > Reihenfolge zum Einlesen: **diese Datei → `CLAUDE.md` → `docs/PROJEKT-STATUS.md` → `docs/MASTERPLAN.md`**.
-> Stand: **30.09.2026**.
+> Stand: **06.10.2026** (BuyImmo ergänzt; der Rest unverändert seit 30.09.2026).
 
 ## Was ist MyImmo
 Deutschsprachige **Immobilienverwaltung für private Vermieter** (SaaS). Objekte, Mieter,
@@ -136,6 +136,14 @@ echten Daten zählen** (nur Zählungen, nichts angesehen oder verändert).
   (Minima), im Median innerhalb der Netzstreuung — ehrlich: nicht sicher nachweisbar.
 - **Next 16** (siehe Stack). Schließt die hohe `postcss`-Meldung; `npm audit` meldet nur
   noch 3 Befunde, alle nur Entwicklung.
+
+### 05./06.10.2026 — BuyImmo, der zweite Bereich
+Gewechselt am Logo oben links: **MyImmo verwaltet, BuyImmo führt zum nächsten Kauf** — eine
+Codebasis, ein Konto. Seit dem Umbau 06.10.2026 ein Weg in fünf nummerierten Schritten
+(`lib/kaufweg.ts`): Objekte vergleichen → Besichtigen & Sanieren (Sanierungs-Guide mit belegtem
+Preiskatalog, je Kandidat) → Finanzierung → Angebot & Unterlagen → Notar & Übergabe; darüber
+Cockpit und **Strategie** (Rechner mit Stammbaum, keine Empfehlung — § 34i GewO ist anwaltlich
+offen). Einstieg: `docs/zukunft/BUYIMMO.md`, `BUYIMMO-WEG.md`, `SANIERUNGS-GUIDE.md`.
 
 ## Offene Punkte / Entscheidungen (Merkliste)
 - **Design- & Layout-Überarbeitung** — **Runde 1 umgesetzt (20.08.2026)**: „Frosted Paper"

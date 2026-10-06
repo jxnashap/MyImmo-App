@@ -116,11 +116,10 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    Nebenbefund: 8 s nach dem erfolgreichen `verify` ein zweites mit 403 `otp_expired`
    (Doppel-Tipp oder Mail-Vorschau) — folgenlos, der erste war durch.
 
-~~**Für BuyImmo (06.10.2026):** `20261006050000_sanierungsprojekte.sql` im SQL-Editor~~ ✅ **ausgeführt
-und live geprüft 06.10.2026**: alle Objekte wie in der Datei, REST kennt die Tabelle (200 statt
-PGRST205), zurückgerollter Test mit zwei echten Konten 11/11 (fremdes Objekt/fremde Kaufprüfung 42501,
-leerer Name/falsche Art 23514, Übernahme auf fremdes Objekt 42501, doppelte Übernahme 23505,
-Grenze 200 → 54000, fremdes Konto sieht 0). Danach 0 Zeilen.
+~~**Für BuyImmo (06.10.2026):** `supabase/migrations/20261006050000_sanierungsprojekte.sql` im
+SQL-Editor ausführen.~~ ✅ **Vom Betreiber ausgeführt und live geprüft 06.10.2026** (Speichern/Vorlagen
+im Sanierungs-Guide + Verknüpfung „Kaufprüfung → übernommenes Objekt“) — Befund in
+`supabase/migrations/README.md`.
 
 **Danach, in dieser Reihenfolge:**
 4. ~~**Die zwei restlichen Passwort-Schalter**~~ ✅ **laut Betreiber seit Längerem an**
@@ -353,9 +352,10 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 „MyImmo als automatisierte Verwaltung, BuyImmo als aktive Kommandozentrale für den
 Immobilienaufbau“ — **eine Codebasis, ein Konto**, gewechselt am Logo oben links
 (`components/BereichWechsel.tsx`). Der Bereich folgt allein aus der Adresse (`lib/bereich.ts`);
-Einstellungen/Hilfe/Objekte behalten den letzten. BuyImmo: `/aufbau` (Kommandozentrale,
+Einstellungen/Hilfe/Objekte behalten den letzten. BuyImmo: `/aufbau` (Cockpit,
 `lib/aufbau.ts`), Kauf, Makler-Ordner, Verkauf, Marktwert, AfA. **Regeln:** (1) Neue
-BuyImmo-Seite → `AUFBAUEN`/`RECHNEN` in `lib/nav.ts`. (2) Alte Adressen (`/kauf` …) nie
+BuyImmo-Seite → `UEBERBLICK`/`WERKZEUGE` in `lib/nav.ts` oder als Schritt in `KAUFWEG`
+(`lib/kaufweg.ts`). (2) Alte Adressen (`/kauf` …) nie
 umbenennen. (3) Zahlen der Kommandozentrale nur aus bestehenden Regeln (Dashboard,
 `/kredite`). (4) Keine Kaufempfehlung vor der § 34i-Klärung. Offen (Aufmaß, Fahrplan, Marke):
 **`docs/zukunft/BUYIMMO.md`**. `tests/bereich.test.ts` + `tests/aufbau.test.ts`, elf Mutationen rot.
@@ -394,13 +394,31 @@ Entwurf; `offeneSeiten()` (`lib/sanierung/guide.ts`) ist die EINE Lückenfunktio
 vorsichtig ANGENOMMEN und steht in `annahmen` — nie still 0. (3) Ohne belegten Preis keine Zahl:
 offener Posten oder „Preis offen“. (4) Eine Arbeit, die eine andere enthält, gehört in `ENTHALTEN_IN`.
 **Stufe C gebaut (06.10.2026): Speichern + Vorlagen** — Tabelle `sanierungsprojekte`, Migration
-`20261006050000` ✅ **im SQL-Editor ausgeführt und live geprüft 06.10.2026** (die Projektleiste zeigt
-„kommt in Kürze“ nur, solange die Tabelle fehlt — schaltet sich von selbst frei). Actions `lib/actions/sanierungsprojekte.ts`, Leiste `components/sanierung/ProjektLeiste.tsx`,
+`20261006050000` ✅ **vom Betreiber im SQL-Editor ausgeführt und live geprüft 06.10.2026** (fehlt die
+Tabelle, zeigt die Projektleiste „kommt in Kürze“ — das erkennt die Action selbst, kein Schalter). Actions `lib/actions/sanierungsprojekte.ts`, Leiste `components/sanierung/ProjektLeiste.tsx`,
 Logik `lib/sanierung/projekte.ts`. **Regeln:** (1) Gespeichert wird nur, was `entwurfAus()`/`vorlageAus()`
 durchlässt — ein neues Entwurfsfeld gehört in den Parser, sonst geht es beim Speichern verloren.
 (2) Eine Vorlage trägt Entscheidungen, nie die Wohnung; Technik nur mit angekreuzter Arbeit.
 (3) Überschreiben nur gegen den bekannten `updated_at` (zwei Geräte), sonst `konflikt`.
 `tests/sanierungProjekte.test.ts` + `tests/actionsSanierungsprojekte.test.ts`, 35 Mutationen rot.
+**🧭 Umbau 06.10.2026 — der Weg zum Kauf (`docs/zukunft/BUYIMMO-WEG.md`, Vorgabe Jonas):** fünf
+Schritte, EINE Liste `KAUFWEG` in `lib/kaufweg.ts` → Seitenleiste nummeriert (Überblick: Cockpit,
+Strategie · Dein Weg zum Kauf 1–5 · Werkzeuge), `<WegKopf schritt=… />` auf jeder Schritt-Seite,
+Cockpit, Fahrplan-Gruppen: 1 `/vergleich` (Rechner + Tabelle, bis fünf) · 2 `/sanierung`
+(„Besichtigen & Sanieren“, `?objekt=<id>` übernimmt die eigene Kaufprüfung, Summe zurück an genau
+sie) · 3 `/kauf` („Finanzierung“; `/kauf?sanierung=` leitet auf den Vergleich) · 4 `/makler` ·
+5 `/abschluss`. **Lern-App:** `autoWeiter()` nur auf `eckdaten/ziel/arbeit/abschluss`, nur
+unvollständig → vollständig, nie beim Korrigieren; Enter = Weiter. **Strategie `/strategie`:**
+Rechner (`lib/strategie.ts`), Taktiken Erspartes/Nebenkosten/Voll/Beleihung/Verkauf, Stammbaum über
+die Kapitalquelle, vorsichtiges Szenario, Plan nur im Browser — **gebaut vor der § 34i-Klärung
+(Auftrag), Anwalt vor dem öffentlichen Start.** **Regeln:** (1) Neuer Schritt/Station nur in
+`KAUFWEG`. (2) Kein Text der Strategie rät (Test). (3) Der Rechner auf `/vergleich` braucht
+`minmax(0, 1fr)` — am Handy schnitt er sonst rechts ab. `tests/kaufweg.test.ts`,
+`tests/strategie.test.ts`, `tests/umbauBuyImmo.test.ts`, 30 Mutationen rot. **Demo-Kandidaten
+(06.10.2026, Ja des Betreibers):** vier Beispiel-Kaufprüfungen, Migration `20261006064806`, **nicht im
+Demo-Reset** (der fasst `kalkulationen` nicht an; Demo kann nicht schreiben). (4) Kennzahlen einer
+Kaufprüfung nur über `objektKennzahlen()` (`lib/kauf/objektKennzahlen.ts`) — Rechner UND Demo-Zeilen;
+`tests/demoKandidaten.test.ts` rechnet nach und vergleicht die Feldliste mit `eingabenSnapshot()`.
 **Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
 (`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
 kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
@@ -1078,10 +1096,22 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   RPC `freigabe_eingang_uebernehmen` (Archiv-Eintrag + Eingang leeren in EINER Transaktion),
   Verwerfen leert die Datei. DB-Schranken: PDF/JPEG/PNG/WebP, ≤ 8 MB, je Link 10/h, 30 gesamt,
   80 MB; keine Insert-Policy für Nutzer. In zurückgerollter Transaktion bewiesen.
-  ⚠️ **Offen (Betreiber): `20261006091000` im SQL-Editor ausführen** (Kontolöschung, enthält
+  ✅ **`20261006091000` ausgeführt (06.10.2026), danach überholt durch `20261006121000`** (Kontolöschung, enthält
   `delete`; schließt `20261005190000` Abo-Zahlungen mit ein). Stand 06.10.2026 live geprüft:
   `20261005190000` ist ausgeführt, `20261006091000` NOCH NICHT (`freigabe_eingang` fehlt in der Funktion). `tests/freigabeEingang.test.ts`, sieben Mutationen rot. **Regel: Was Fremde ohne
   Konto hochladen, geht nie direkt in die Unterlagen — immer über einen Eingang mit Entscheidung.**
+  📅 **Termin über Bank-/Makler-Link (06.10.2026, Vorgabe des Betreibers: „1–3 Termine zur Auswahl
+  oder Telefonnummer hinterlassen“, Migration `20261006120000`):** `components/TerminVorschlagen.tsx`
+  (Link-Seite), `components/FreigabeTermine.tsx` (Beleihungsordner bzw. `/makler`, oben, Anker
+  `#termin`), Dashboard-Neuigkeit „Bank schlägt 2 Termine vor“ / „bittet um Rückruf“. Bestätigen =
+  RPC `freigabe_termin_bestaetigen` (Status + Eintrag in `termine` in EINER Transaktion; bei
+  Vorschlägen nur ein vorgeschlagener Zeitpunkt), „Keiner passt“ → Bank schlägt neu vor; Rückruf →
+  vereinbarten Termin eintragen oder „ohne Termin erledigt“. Je Link EIN offener Vorschlag, 10 gesamt,
+  ≤ 180 Tage. `.ics` im Browser (`terminIcs`, `IcsKnopf`). **Regel: `datetime-local` ist Berliner
+  Ortszeit — immer über `berlinZuIso()` (lib/freigabeTermin.ts), nie `new Date(lokal)` auf dem
+  Server (UTC).** `tests/freigabeTermin.test.ts`, neun Mutationen rot, auch unter `TZ=America/New_York`.
+  ✅ **`20261006121000` vom Betreiber im SQL-Editor ausgeführt 06.10.2026**, live geprüft: Kontolöschung
+  kennt `freigabe_termine`, `freigabe_eingang`, `abo_zahlungen`, `makler_freigaben`.
   **Regel: Ein neuer öffentlicher Freigabe-Link bekommt dasselbe Verfahren — keine Inhalte über
   den Token allein.** **Bewusst OHNE Code (Betreiber 05.10.2026: „Bewerber egal“):** der
   Bewerbungs-Link — er zeigt nur den Steckbrief, den der Vermieter selbst öffentlich macht, und

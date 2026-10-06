@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { ladeAufbauDaten } from "@/lib/aufbauDaten";
-import { fahrplan, fortschritt, type StationStatus } from "@/lib/fahrplan";
+import { fahrplan, fortschritt } from "@/lib/fahrplan";
+import { KAUFWEG } from "@/lib/kaufweg";
+import StationListe from "@/components/aufbau/StationListe";
 import { heuteBerlin } from "@/lib/zeitraum";
 import NebenkostenRechner from "@/components/NebenkostenRechner";
 
@@ -13,13 +14,8 @@ export const dynamic = "force-dynamic";
 // BuyImmo-Fahrplan (05.10.2026): der geführte Weg zum ersten bzw. nächsten Objekt. Was jeder
 // Schritt braucht, und — nur wo BuyImmo es aus den Daten weiß — wie weit du bist. Keine
 // Empfehlung, kein Urteil über die Person (lib/fahrplan.ts, docs/zukunft/BUYIMMO.md).
-
-const BADGE: Record<StationStatus["art"], string> = {
-  erledigt: "badge-green",
-  teilweise: "badge-amber",
-  offen: "badge-neutral",
-  info: "badge-neutral",
-};
+// Seit dem Umbau (06.10.2026) die ausführliche Checkliste zum Kaufweg: Stationen gruppiert nach den
+// fünf Schritten der Seitenleiste (lib/kaufweg.ts).
 
 export default async function FahrplanPage() {
   const supabase = await createClient();
@@ -50,7 +46,7 @@ export default async function FahrplanPage() {
         <div className="section-header">
           <div>
             <h3>Was du zusätzlich zum Kaufpreis brauchst</h3>
-            <div className="section-sub">Kaufnebenkosten — mit derselben Rechnung wie im Kauf-Assistenten</div>
+            <div className="section-sub">Kaufnebenkosten — mit derselben Rechnung wie in Schritt 1 (Objekte vergleichen)</div>
           </div>
         </div>
         <div className="section-body">
@@ -68,32 +64,18 @@ export default async function FahrplanPage() {
           </div>
         </div>
         <div className="section-body">
-          <ol className="fahrplan">
-            {stationen.map((s, i) => (
-              <li key={s.id} className={`fahrplan-station${s.status?.art === "erledigt" ? " fertig" : ""}`}>
-                <span className="fahrplan-nummer" aria-hidden>{i + 1}</span>
-                <div className="fahrplan-inhalt">
-                  <div className="fahrplan-kopf">
-                    <h4>{s.titel}</h4>
-                    {s.status && <span className={`badge ${BADGE[s.status.art]}`}>{s.status.text}</span>}
-                  </div>
-                  <p>{s.satz}</p>
-                  {s.punkte.length > 0 && (
-                    <ul>
-                      {s.punkte.map((p) => (
-                        <li key={p}>{p}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {s.ziel && (
-                    <Link href={s.ziel.href} className="fahrplan-link">
-                      {s.ziel.label} <ChevronRight size={14} aria-hidden />
-                    </Link>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ol>
+          {KAUFWEG.map((w) => {
+            const eigene = stationen.filter((st) => w.stationen.includes(st.id));
+            const start = stationen.findIndex((st) => st.id === eigene[0]?.id) + 1;
+            return (
+              <div key={w.id} className="fahrplan-gruppe">
+                <h4 className="fahrplan-gruppe-titel">
+                  <Link href={w.href}>Schritt {w.nr} · {w.titel}</Link>
+                </h4>
+                <StationListe stationen={eigene} start={start} />
+              </div>
+            );
+          })}
         </div>
       </div>
 

@@ -5,11 +5,13 @@ import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { bestandLage } from "@/lib/aufbau";
 import { ladeAufbauDaten } from "@/lib/aufbauDaten";
 import { MAKLER_CHECKLISTE, maklerErledigt } from "@/lib/makler";
+import { fahrplan } from "@/lib/fahrplan";
+import { KAUFWEG, schrittStand } from "@/lib/kaufweg";
 import { datum, euro } from "@/lib/format";
 import { heuteBerlin } from "@/lib/zeitraum";
 import Leer from "@/components/Leer";
 
-export const metadata = { title: "Kommandozentrale — BuyImmo" };
+export const metadata = { title: "Cockpit — BuyImmo" };
 export const dynamic = "force-dynamic";
 
 // BuyImmo-Kommandozentrale (05.10.2026, Vorgabe des Betreibers): MyImmo verwaltet, BuyImmo
@@ -18,6 +20,11 @@ export const dynamic = "force-dynamic";
 // („du kannst kaufen“) — die Grenze zur Beratung (§ 34i GewO) ist anwaltlich offen, siehe
 // docs/zukunft/BUYIMMO.md. Die Zahlen rechnet `lib/aufbau.ts` mit den Regeln von Dashboard
 // und /kredite, damit dieselbe Größe nicht zweimal verschieden dasteht.
+// Umbau 06.10.2026 (Jonas: „Cockpit oben, darunter Strategie“): heißt jetzt Cockpit und zeigt den
+// Kaufweg mit Stand — EINE Quelle für die Schritte: lib/kaufweg.ts, Stand aus lib/fahrplan.ts.
+
+const STAND_TEXT = { erledigt: "erledigt", teilweise: "angefangen", offen: "offen", info: "" } as const;
+const STAND_BADGE = { erledigt: "badge-green", teilweise: "badge-amber", offen: "badge-neutral", info: "badge-neutral" } as const;
 
 const MAX_KAUFPRUEFUNGEN = 5;
 
@@ -31,16 +38,24 @@ export default async function AufbauPage() {
   const hatSelbstauskunft = d.hatSelbstauskunft;
   const maklerFertig = maklerErledigt(d.makler);
   const maklerGesamt = MAKLER_CHECKLISTE.length;
+  const stationen = fahrplan({
+    hatSelbstauskunft,
+    makler: d.makler,
+    kaufpruefungen: kaufpruefungen.length,
+    vertreterGueltig: d.vertreterGueltig,
+    vertreterGrundbuch: d.vertreterGrundbuch,
+    objekte: d.objekte.length,
+  });
 
   return (
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">BuyImmo · Bestandsaufbau</div>
-          <div className="topbar-title">Kommandozentrale</div>
+          <div className="topbar-kicker">BuyImmo · Überblick</div>
+          <div className="topbar-title">Cockpit</div>
           <div className="topbar-sub">Was du für das nächste Objekt in der Hand hast — aus deinen MyImmo-Daten</div>
         </div>
-        <Link href="/fahrplan" className="btn btn-ghost btn-sm">Fahrplan zum nächsten Objekt →</Link>
+        <Link href="/strategie" className="btn btn-ghost btn-sm">Strategie planen →</Link>
       </div>
       <hr className="topbar-rule" />
 
@@ -83,26 +98,54 @@ export default async function AufbauPage() {
         </Link>
       </div>
 
+      <div className="section">
+        <div className="section-header">
+          <div>
+            <h3>Dein Weg zum Kauf</h3>
+            <div className="section-sub">Fünf Schritte, in der Reihenfolge der Seitenleiste. Einen Haken gibt es nur, wo BuyImmo es aus deinen Daten weiß.</div>
+          </div>
+          <Link href="/fahrplan" className="btn btn-ghost btn-sm">Alle Punkte als Checkliste →</Link>
+        </div>
+        <div className="section-body">
+          <div className="listen">
+            {KAUFWEG.map((w) => {
+              const stand = schrittStand(w, stationen);
+              return (
+                <Link key={w.id} href={w.href} className="listen-zeile">
+                  <span className="weg-nummer" aria-hidden>{w.nr}</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span className="listen-zeile-titel">{w.titel}</span>
+                    <span className="listen-zeile-sub">{w.satz}</span>
+                  </span>
+                  {stand && <span className={`badge ${STAND_BADGE[stand]}`}>{STAND_TEXT[stand]}</span>}
+                  <ChevronRight size={15} style={{ color: "var(--faint)", flexShrink: 0 }} aria-hidden />
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       <div className="grid-2" style={{ alignItems: "start" }}>
         <div className="section" style={{ marginBottom: 0 }}>
           <div className="section-header">
             <div>
-              <h3>Kaufprüfungen</h3>
+              <h3>Deine Kandidaten</h3>
               <div className="section-sub">
                 {kaufpruefungen.length > MAX_KAUFPRUEFUNGEN
                   ? `Die ${MAX_KAUFPRUEFUNGEN} neuesten von ${kaufpruefungen.length}`
-                  : "Im Kauf-Assistenten gespeicherte Objekte"}
+                  : "In Schritt 1 gespeicherte Objekte"}
               </div>
             </div>
-            <Link href="/kauf" className="btn btn-ghost btn-sm">Kauf-Assistent →</Link>
+            <Link href="/vergleich" className="btn btn-ghost btn-sm">Vergleichen →</Link>
           </div>
           <div className="section-body">
             {kaufpruefungen.length === 0 ? (
               <Leer
                 icon={ClipboardCheck}
-                titel="Noch keine Kaufprüfung"
-                text="Im Kauf-Assistenten rechnest du ein Objekt durch und speicherst es — hier stehen dann alle nebeneinander."
-                aktion={{ href: "/kauf", label: "Objekt durchrechnen" }}
+                titel="Noch kein Kandidat"
+                text="In Schritt 1 trägst du Objekte aus Anzeigen ein, rechnest sie durch und speicherst sie — hier stehen dann die neuesten."
+                aktion={{ href: "/vergleich", label: "Objekt eintragen" }}
               />
             ) : (
               <div className="listen">
@@ -115,7 +158,7 @@ export default async function AufbauPage() {
                     s.brutto > 0 ? `${s.brutto.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % brutto` : null,
                   ].filter(Boolean);
                   return (
-                    <Link key={k.id} href="/kauf" className="listen-zeile" title={k.name}>
+                    <Link key={k.id} href="/vergleich" className="listen-zeile" title={k.name}>
                       <ClipboardCheck size={15} style={{ color: "var(--gold)", flexShrink: 0 }} aria-hidden />
                       <span style={{ flex: 1, minWidth: 0 }}>
                         <span className="listen-zeile-titel">{k.name}</span>
