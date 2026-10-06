@@ -18,9 +18,11 @@ import {
 } from "@/lib/actions/wiederkehr";
 import { useToast } from "@/components/Toast";
 import type { WiederkehrVorlage } from "@/lib/types";
+import { EINNAHME_KATEGORIEN, KOSTEN_KATEGORIEN } from "@/lib/kategorien";
 
-const KOSTEN_KAT = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Schuldzinsen", "Hausgeld / WEG", "Makler", "Sonstiges"];
-const EINNAHME_KAT = ["Miete", "Nebenkostenabrechnung", "Sonstiges"];
+// Kaution wiederholt sich nicht — sonst dieselben Listen wie überall (lib/kategorien.ts).
+const KOSTEN_KAT: readonly string[] = KOSTEN_KATEGORIEN;
+const EINNAHME_KAT = EINNAHME_KATEGORIEN.filter((k) => k !== "Kaution");
 
 type VorlageMitStatus = WiederkehrVorlage & { gebuchteDaten: string[] };
 

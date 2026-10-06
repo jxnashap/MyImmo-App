@@ -184,4 +184,22 @@ describe("Buchungsvorlagen beim Objekt-Speichern", () => {
     // Und der Nutzer erfährt davon.
     expect(decodeURIComponent(spuren.redirects.at(-1)!)).toMatch(/Buchungsvorlagen konnten nicht/);
   });
+
+  it("legt KEINE neue Miet-Vorlage an — Mieten laufen über das Mietkonto (A5)", async () => {
+    const { db, spuren, mod } = await lade({ antworten: { wiederkehrende_buchungen: [] } });
+    await fangeRedirect(() => mod.updateProperty("obj-1", fd({ bezeichnung: "Haus A", obj_status: "Vermietet", miete: "800", hausgeld: "250" })));
+    // Kein Fehlschlag gemeldet — „keine neue Vorlage“ ist gewollt, kein Fehler.
+    expect(decodeURIComponent(spuren.redirects.at(-1)!)).not.toMatch(/Buchungsvorlagen konnten nicht/);
+    const inserts = db.zugriffe.filter((x) => x.tabelle === "wiederkehrende_buchungen" && x.op === "insert");
+    expect(inserts.map((x) => x.daten?.kategorie)).toEqual(["Hausgeld / WEG"]);
+  });
+
+  it("eine BESTEHENDE Miet-Vorlage wird weiter gepflegt (neuer Betrag)", async () => {
+    const { db, mod } = await lade({
+      antwortFolge: { "wiederkehrende_buchungen:select": [[{ id: "v1", betrag: 700, aktiv: true }], []] },
+    });
+    await fangeRedirect(() => mod.updateProperty("obj-1", fd({ bezeichnung: "Haus A", obj_status: "Vermietet", miete: "800" })));
+    const upd = db.zugriffe.find((x) => x.tabelle === "wiederkehrende_buchungen" && x.op === "update");
+    expect(upd?.daten).toMatchObject({ betrag: 800, aktiv: true });
+  });
 });

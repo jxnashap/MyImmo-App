@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { updateEinnahme } from "@/lib/actions/buchungen";
 import type { Property, Tenant, Einnahme } from "@/lib/types";
 
-const KATEGORIEN = ["Miete", "Kaution", "Nebenkostenabrechnung", "Sonstiges"];
+import { EINNAHME_KATEGORIEN, kategorieOptionen } from "@/lib/kategorien";
 
 export default async function EinnahmeEditPage(
   props: { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }
@@ -47,7 +47,7 @@ export default async function EinnahmeEditPage(
         </div>
         <div className="form-row">
           <div className="form-group"><label>Kategorie</label>
-            <select name="kategorie" defaultValue={e.kategorie ?? "Miete"}>{KATEGORIEN.map((k) => <option key={k}>{k}</option>)}</select>
+            <select name="kategorie" defaultValue={e.kategorie ?? "Miete"}>{kategorieOptionen(EINNAHME_KATEGORIEN, e.kategorie).map((k) => <option key={k}>{k}</option>)}</select>
           </div>
           <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" defaultValue={e.betrag ?? ""} required /></div>
         </div>

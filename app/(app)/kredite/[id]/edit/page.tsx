@@ -67,7 +67,7 @@ export default async function KreditEditPage(
           <div className="form-group"><label>Tilgungssatz (% p.a.)</label><input type="number" step="0.01" name="tilgungssatz" defaultValue={k.tilgungssatz ?? ""} /></div>
         </div>
         <div className="form-row">
-          <div className="form-group"><label>Monatliche Rate (€)</label><input type="number" step="0.01" name="monatsrate" defaultValue={k.monatsrate ?? ""} /></div>
+          <div className="form-group"><label>Monatliche Rate (€) — laut Darlehensvertrag</label><input type="number" step="0.01" min="0.01" name="monatsrate" defaultValue={k.monatsrate ?? ""} required /></div>
           <div className="form-group"><label>Sondertilgung möglich</label>
             <select name="sonder" defaultValue={k.sonder ?? ""}>
               {SONDER.map((s) => <option key={s} value={s}>{s || "Nicht bekannt"}</option>)}

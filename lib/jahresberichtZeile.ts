@@ -37,8 +37,10 @@ export function jahresZeile(
   daten: { einnahmen: Buchung[]; kosten: Buchung[]; kredite: Darlehen[] },
 ): JahresZeile {
   const imJahr = (d: string | null) => !!d && d.startsWith(String(jahr));
+  // Kaution zählt nicht (06.10.2026): Sie gehört dem Mieter und geht zurück — die Anlage V
+  // schließt sie ebenso aus (lib/anlageV.ts). Vorher stand sie hier als Einnahme.
   const e = daten.einnahmen
-    .filter((x) => x.prop_id === propId && imJahr(x.buchungsdatum))
+    .filter((x) => x.prop_id === propId && imJahr(x.buchungsdatum) && x.kategorie !== "Kaution")
     .reduce((s, x) => s + (x.betrag ?? 0), 0);
   const propKosten = daten.kosten.filter((x) => x.prop_id === propId && imJahr(x.buchungsdatum));
   const laufend = laufendeKosten(propKosten);

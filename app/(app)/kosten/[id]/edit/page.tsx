@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { updateKosten } from "@/lib/actions/buchungen";
 import type { Property, Tenant, Kosten } from "@/lib/types";
 
-const KATEGORIEN = ["Reparatur", "Instandhaltung", "Verwaltung", "Versicherung", "Grundsteuer", "Hausgeld / WEG", "Makler", "Sonstiges"];
+import { KOSTEN_KATEGORIEN, kategorieOptionen } from "@/lib/kategorien";
 
 export default async function KostenEditPage(
   props: { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }
@@ -47,7 +47,7 @@ export default async function KostenEditPage(
         </div>
         <div className="form-row">
           <div className="form-group"><label>Kategorie</label>
-            <select name="kategorie" defaultValue={k.kategorie ?? "Reparatur"}>{KATEGORIEN.map((c) => <option key={c}>{c}</option>)}</select>
+            <select name="kategorie" defaultValue={k.kategorie ?? "Reparatur"}>{kategorieOptionen(KOSTEN_KATEGORIEN, k.kategorie).map((c) => <option key={c}>{c}</option>)}</select>
           </div>
           <div className="form-group"><label>Betrag (€) *</label><input type="number" step="0.01" min="0.01" name="betrag" defaultValue={k.betrag ?? ""} required /></div>
         </div>

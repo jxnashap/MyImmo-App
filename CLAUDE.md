@@ -1581,7 +1581,9 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Regel oben.** `meldeZaehlerstand` in `lib/actions/zaehler.ts` las den Stand mit
   `parseFloat(s.replace(",", "."))`; das ersetzt nur das **erste** Komma und lässt Punkte
   stehen → aus „14.382,5" wurde 14,382. Der Wert geht über die Übernahme als Differenz in
-  die Verbrauchsbuchung und damit in die **NK-Abrechnung des Mieters**.
+  die Verbrauchsbuchung (`verbrauch`, je Objekt). ⚠️ **Korrektur 06.10.2026 (Verknüpfungs-Audit):**
+  Von dort geht er NICHT in die NK-Abrechnung — die rechnet nur mit dem von Hand
+  eingetragenen `verbrauch_mieter` der Positionen (Paket C in `docs/AUDIT-2026-10-06-verknuepfung.md`).
   **WICHTIG — hier ist `zahlDe()` die FALSCHE Lösung:** Gas- und Wasserzähler haben regulär
   drei Nachkommastellen („5123.456" m³); `zahlDe()` deutet den Punkt vor drei Ziffern als
   Tausenderpunkt und macht daraus 5.123.456. Behoben wurde deshalb nur der eindeutige Fall
@@ -1866,6 +1868,20 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Test-Falle (N2):** Kein Test übergab LEERE Listen — genau das tut das Dashboard bei
   jedem gepflegten Konto; die Mutation hätte „Kaufdatum fehlt bei 0 Objekten" gezeigt.
   **Regel: Den Normalfall (alles in Ordnung) ausdrücklich testen, nicht nur die Lücke.**
+- 🔗 **Verknüpfungs-Audit 06.10.2026: `docs/AUDIT-2026-10-06-verknuepfung.md`** (Vorgabe des
+  Betreibers: „keine neuen Funktionen, optimieren und verknüpfen“). 33 Funde in Paketen A–E:
+  Doppel-Eingaben, Sackgassen, ungenutzte Daten, doppelte Rechnungen. **Vor „das fehlt noch“ dort
+  nachsehen.** ✅ **Paket A erledigt** (`tests/paketA.test.ts`, acht Mutationen rot):
+  (1) **`lib/kategorien.ts` ist die EINE Kategorienliste** — vorher acht Kopien; der
+  Bearbeiten-Dialog der Kostenliste kannte „Schuldzinsen“ nicht, und ein `<select>`, dessen Wert
+  in keiner Option steht, zeigt die ERSTE → still „Reparatur“ (Anlage V + Cashflow falsch). Live
+  standen außerdem Import-Kategorien („Müll“, „Gartenpflege“, „Kaltmiete“) in keiner Liste.
+  **Regel: Ein Bearbeiten-Feld für eine Kategorie nimmt `kategorieOptionen(liste, gespeichert)`.**
+  (2) Jahresbericht ohne Kaution (wie Anlage V). (3) Dashboard lässt in `/termine` ausgeblendete
+  Fristen weg (gleicher `fristSchluessel`). (4) **Kreditrate ist Pflicht** — bewusst KEINE
+  errechnete Ersatzrate: live passten nur 2 von 11 Raten zur Formel Betrag × (Zins + Tilgung).
+  (5) **Objekte legen keine NEUE Miet-Vorlage mehr an** (ohne Mieter, NK-Anteil, Mietmonat → das
+  Mietkonto meldete „offen“, Doppelbuchung lag nahe); bestehende werden weiter gepflegt.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,
