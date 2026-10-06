@@ -22,7 +22,7 @@ Aufwand S/M/L.
 | A4 | Kredit ohne Monatsrate zählte mit 0 € (Cashflow zu hoch). Live: 0 von 12 Krediten betroffen; nur 2 von 11 Raten passen zur Annuitätenformel → **keine** Ersatzrate, sondern Pflichtfeld. | UD | `required` |
 | A5 | Objekt „Vermietet“ legte eine Miet-Vorlage ohne Mieter/NK/Mietmonat an → Mietkonto „offen“, Doppelbuchung naheliegend. Live: 1 Vorlage. | DR | keine NEUE Vorlage; bestehende gepflegt |
 
-## Paket B — eine Soll-Miete statt zwei (B1, B3, B4 ✅ erledigt 06.10.2026; B2, B5–B7 offen)
+## Paket B — eine Soll-Miete statt zwei ✅ erledigt 06.10.2026
 
 **Gebaut:** `lib/sollAb.ts` (`planeMietaenderung`, `abWannFragen`, `mitGeltendenBetraegen`),
 `vertragswerte()` in `lib/mietkonto.ts` als EINE Regel, `lib/mietaenderung.ts` (schreibt den Plan),
@@ -31,6 +31,14 @@ Rückfrage „Ab wann gilt der neue Betrag?“ im Mieterformular (serverseitig e
 Objektliste, „Objekt-Miete angleichen“ und Briefe rechnen mit der Miete des laufenden Monats.
 `tests/paketB.test.ts`, 14 Mutationen rot. Live-Stand vorher: 2 Zeiträume bei 32 Mietern —
 der Umbau trifft fast nur künftige Änderungen.
+
+**Rest (zweiter PR):** B2 Staffel → „Stufen ins Mietkonto übernehmen“ (`uebernehmeStaffel`, je
+Stufe ein Zeitraum, idempotent). B5 Teilzahlung: `gezahltImMonat()` + `TEILZAHLUNG_TOLERANZ` (1 €)
+in Wächter, Dashboard und Mietkonto („teilweise · offen x €“); die Nacherfassung bleibt bei „irgendeine
+Buchung“ (sonst Doppelvorschlag). Live: 15 von 415 Miet-Monaten liegen unter dem Soll. B6 Feld
+„Mietmonat“ + Objekt aus dem Mieter vorbelegt. B7 Hinweis aufs Mietkonto bei einer Miet-Vorlage.
+**Geändert gegenüber dem Kern:** `setzeMieteAb` schreibt nur noch Zeiträume, nicht die Mieterfelder
+(die bleiben Grundwert des Staffelplans). `tests/paketB2.test.ts`, neun Mutationen rot.
 
 Gemeinsame Wurzel: Es fehlt „Soll ab Datum“. Mietkonto, Wächter und offene Mieten rechnen mit
 `miet_zeitraeume`; Kacheln, Objektseite und Briefe mit den Feldern am Mieter.

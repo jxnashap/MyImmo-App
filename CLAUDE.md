@@ -1890,8 +1890,14 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Vorher überschrieb das Formular die Felder, und das Mietkonto rechnete RÜCKWIRKEND mit dem neuen
   Betrag. § 560-Anpassung: „Ins Mietkonto übernehmen“ → `setzeMieteAb()`. **Regel: Wer eine
   „aktuelle Miete“ anzeigt, nimmt `mitGeltendenBetraegen(mieter, zeitraeume, monat)`, nie die
-  Mieterfelder allein.** Offen: Staffel → Zeiträume (B2), Teilzahlung (B5), Mietmonat bei
-  manueller Einnahme (B6), Wiederkehr-Miete (B7). `tests/paketB.test.ts`, 14 Mutationen rot.
+  Mieterfelder allein.** `tests/paketB.test.ts`, 14 Mutationen rot.
+  ✅ **Paket B, Rest:** Staffel → „Stufen ins Mietkonto übernehmen“; **Teilzahlung**: offen ist, was
+  mehr als `TEILZAHLUNG_TOLERANZ` (1 €) unter dem Soll liegt (`gezahltImMonat()`), in Wächter,
+  Dashboard, Mietkonto — die Nacherfassung (`dedup`) bleibt bewusst bei „irgendeine Buchung“
+  (sonst schlüge sie einen teilbezahlten Monat VOLL vor = Doppelbuchung); Feld „Mietmonat“ bei
+  manueller Einnahme (nur geschrieben, wenn das Formular es hat); Hinweis bei Miet-Vorlagen.
+  **`setzeMieteAb`/`uebernehmeStaffel` schreiben nur Zeiträume, nie die Mieterfelder** (Grundwert
+  des Staffelplans). `tests/paketB2.test.ts`, neun Mutationen rot.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

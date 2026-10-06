@@ -33,7 +33,7 @@ export default async function CashflowPage(
   ]);
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
-  const tenants = (miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname">[];
+  const tenants = (miet ?? []) as (Pick<Tenant, "id" | "vorname" | "nachname"> & { prop_id: string | null })[];
 
   // ---- Wiederkehrende Buchungen (ausklappbarer Bereich) ----
   const wkVorlagen = (vRows ?? []) as WiederkehrVorlage[];

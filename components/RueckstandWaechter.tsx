@@ -19,7 +19,7 @@ export default async function RueckstandWaechter() {
       .from("mieter")
       .select("id,vorname,nachname,prop_id,mietbeginn,mietende,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
     supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
-    supabase.from("einnahmen").select("mieter_id,buchungsdatum,kategorie,soll_monat").eq("kategorie", "Miete"),
+    supabase.from("einnahmen").select("mieter_id,buchungsdatum,kategorie,soll_monat,betrag").eq("kategorie", "Miete"),
   ]);
 
   const offene = ((mieterRows ?? []) as MieterRow[]).flatMap((m) => {
@@ -47,8 +47,8 @@ export default async function RueckstandWaechter() {
   const ALT_AB_TAGEN = 62; // rund zwei Monate
   const aktuell = offene.filter((o) => o.tageOffen <= ALT_AB_TAGEN);
   const alt = offene.filter((o) => o.tageOffen > ALT_AB_TAGEN);
-  const summeAktuell = aktuell.reduce((s, o) => s + o.gesamt, 0);
-  const summeAlt = alt.reduce((s, o) => s + o.gesamt, 0);
+  const summeAktuell = aktuell.reduce((s, o) => s + o.rest, 0);
+  const summeAlt = alt.reduce((s, o) => s + o.rest, 0);
   const alarm = aktuell.length > 0;
 
   const untertitel = alarm
@@ -80,7 +80,7 @@ export default async function RueckstandWaechter() {
           // Fällig ist der DRITTE WERKTAG (§ 556b BGB) — Text und Frist baut lib/mahnung.ts,
           // dieselbe Stelle wie die Aufgabe „Mieteingang offen“ auf dem Dashboard.
           const q = (art: "zahlungserinnerung" | "mahnung") =>
-            zahlungsBriefUrl({ mieterId: o.mieterId, jahrMonat: o.jahrMonat, betrag: o.gesamt, heuteISO, art });
+            zahlungsBriefUrl({ mieterId: o.mieterId, jahrMonat: o.jahrMonat, betrag: o.rest, heuteISO, art });
           return (
             <div
               key={`${o.mieterId}-${o.jahrMonat}`}
@@ -88,7 +88,8 @@ export default async function RueckstandWaechter() {
             >
               <Link href={`/tenants/${o.mieterId}`} style={{ fontWeight: 600, color: "var(--text)" }}>{o.mieterName}</Link>
               <span style={{ color: "var(--muted)" }}>{monatLabel(o.jahrMonat)}</span>
-              <span style={{ color: "var(--red)", fontWeight: 600 }}>{euro(o.gesamt)}</span>
+              <span style={{ color: "var(--red)", fontWeight: 600 }}>{euro(o.rest)}</span>
+              {o.gezahlt > 0 && <span style={{ color: "var(--muted)", fontSize: 12 }}>Teilzahlung: {euro(o.gezahlt)} von {euro(o.gesamt)}</span>}
               <span className={`badge ${o.tageOffen > 14 ? "badge-red" : "badge-amber"}`}>
                 {o.tageOffen === 0 ? "heute fällig" : `${o.tageOffen} Tag${o.tageOffen === 1 ? "" : "e"} überfällig`}
               </span>
@@ -118,8 +119,8 @@ export default async function RueckstandWaechter() {
               >
                 <Link href={`/tenants/${o.mieterId}`} style={{ fontWeight: 600, color: "var(--text)" }}>{o.mieterName}</Link>
                 <span style={{ color: "var(--muted)" }}>{monatLabel(o.jahrMonat)}</span>
-                <span style={{ fontWeight: 600 }}>{euro(o.gesamt)}</span>
-                <span className="badge">nicht bestätigt</span>
+                <span style={{ fontWeight: 600 }}>{euro(o.rest)}</span>
+                <span className="badge">{o.gezahlt > 0 ? `teilweise (${euro(o.gezahlt)} von ${euro(o.gesamt)})` : "nicht bestätigt"}</span>
                 <span style={{ marginLeft: "auto" }}>
                   <Link href={`/mietkonto?monat=${o.jahrMonat}`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>
                     Im Mietkonto bestätigen

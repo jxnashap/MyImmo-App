@@ -30,6 +30,7 @@ export type BuchungRow = {
   beschreibung: string | null;
   nk_anteil?: number | null;
   rechnung_name?: string | null;
+  soll_monat?: string | null;
 };
 
 export default function BuchungForm({
@@ -43,7 +44,7 @@ export default function BuchungForm({
   imDialog = false,
 }: {
   properties: Pick<Property, "id" | "bezeichnung">[];
-  tenants: Pick<Tenant, "id" | "vorname" | "nachname">[];
+  tenants: (Pick<Tenant, "id" | "vorname" | "nachname"> & { prop_id?: string | null })[];
   back?: string;
   typInitial?: "einnahme" | "ausgabe";
   propInitial?: string;
@@ -54,6 +55,13 @@ export default function BuchungForm({
 }) {
   const [typ, setTyp] = useState<"einnahme" | "ausgabe">(typInitial);
   const isEdit = !!row;
+  // Paket B (06.10.2026): Der Mieter kennt sein Objekt — wer ihn wählt, muss das Objekt nicht
+  // ein zweites Mal suchen (nur vorbelegen, wenn noch keins gewählt ist).
+  const [propId, setPropId] = useState(row?.prop_id ?? propInitial);
+  const mieterGewaehlt = (id: string) => {
+    const t = tenants.find((x) => x.id === id);
+    if (t?.prop_id && !propId) setPropId(t.prop_id);
+  };
 
   const action = isEdit
     ? typ === "einnahme"
@@ -104,7 +112,7 @@ export default function BuchungForm({
         </div>
         <div className="form-group">
           <label>Immobilie *</label>
-          <select name="prop_id" required defaultValue={row?.prop_id ?? propInitial}>
+          <select name="prop_id" required value={propId} onChange={(e) => setPropId(e.target.value)}>
             <option value="">— wählen —</option>
             {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
           </select>
@@ -128,7 +136,7 @@ export default function BuchungForm({
       <div className="form-row">
         <div className="form-group">
           <label>Mieter</label>
-          <select name="mieter_id" defaultValue={row?.mieter_id ?? ""}>
+          <select name="mieter_id" defaultValue={row?.mieter_id ?? ""} onChange={(e) => mieterGewaehlt(e.target.value)}>
             <option value="">– Kein Mieter –</option>
             {tenants.map((t) => (
               <option key={t.id} value={t.id}>{`${t.vorname ?? ""} ${t.nachname ?? ""}`.trim() || "—"}</option>
@@ -150,7 +158,13 @@ export default function BuchungForm({
               In „Miete&quot; enthalten – Anlage V Zeile 13.
             </span>
           </div>
-          <div className="form-group" />
+          <div className="form-group">
+            <label>Mietmonat</label>
+            <input type="month" name="soll_monat" defaultValue={row?.soll_monat ?? ""} />
+            <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>
+              Für welchen Monat gezahlt wurde. Leer = Monat des Datums. Wichtig, wenn die Januar-Miete erst im Februar eingeht.
+            </span>
+          </div>
         </div>
       )}
 

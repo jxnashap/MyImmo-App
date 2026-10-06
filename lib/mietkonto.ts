@@ -222,7 +222,27 @@ export type DedupEinnahme = {
   /** Zugeordneter Miet-Monat (YYYY-MM) — schlägt den Monat des Buchungsdatums,
    *  damit verspätete Zahlungen den richtigen Monat schließen. */
   soll_monat?: string | null;
+  /** Betrag der Buchung. Fehlt er (alte Aufrufer), zählt die Buchung als voll bezahlt. */
+  betrag?: number | null;
 };
+
+/** Unter diesem Fehlbetrag gilt ein Monat als bezahlt (Rundung, Bankgebühr). */
+export const TEILZAHLUNG_TOLERANZ = 1;
+
+/**
+ * Gezahlter Betrag eines Monats aus den Miet-Buchungen (soll_monat, sonst Buchungsmonat).
+ * `null` = mindestens eine Buchung ohne Betrag (dann gilt der Monat als bezahlt, wie bisher).
+ */
+export function gezahltImMonat(einnahmen: DedupEinnahme[], jahrMonat: string): number | null {
+  let summe = 0;
+  for (const e of einnahmen) {
+    if ((e.kategorie ?? "").toLowerCase() !== "miete") continue;
+    if ((e.soll_monat ?? zuJahrMonat(e.buchungsdatum)) !== jahrMonat) continue;
+    if (e.betrag == null) return null;
+    summe += Number(e.betrag) || 0;
+  }
+  return Math.round(summe * 100) / 100;
+}
 
 /**
  * Markiert erwartete Monate als "schonGebucht", wenn für den Kalendermonat
@@ -249,6 +269,10 @@ export type OffeneMiete = ErwarteterMonat & {
   /** Fälligkeit: 3. Werktag des Monats (§ 556b Abs. 1 BGB) */
   faelligSeit: string;
   tageOffen: number;
+  /** Schon gezahlt (Teilzahlung), sonst 0. */
+  gezahlt: number;
+  /** Was fehlt: Soll − gezahlt. */
+  rest: number;
 };
 
 /**
@@ -283,8 +307,15 @@ export function monatLabel(ym: string): string {
 
 /**
  * Offene (unbestätigte) Miet-Monate der letzten 12 Monate — der
- * Rückstands-Wächter. Ein Monat gilt als offen, wenn keine Miet-Einnahme
- * gebucht ist und die Fälligkeit (3. Werktag, § 556b BGB) erreicht wurde.
+ * Rückstands-Wächter. Ein Monat gilt als offen, wenn die gebuchten Miet-Einnahmen
+ * das Soll um mehr als TEILZAHLUNG_TOLERANZ unterschreiten (keine Buchung = 0 gezahlt)
+ * und die Fälligkeit (3. Werktag, § 556b BGB) erreicht wurde.
+ *
+ * Teilzahlung (Paket B, 06.10.2026): Vorher galt ein Monat mit IRGENDEINER Buchung als
+ * bezahlt — zahlte ein Mieter 400 von 900 €, sah er im Portal „teilweise“, der Vermieter
+ * nichts. Die Nacherfassung (`dedup`) bleibt bei „irgendeine Buchung“: Sie schlägt ganze
+ * Monate vor, und ein zweiter voller Vorschlag für einen teilbezahlten Monat wäre eine
+ * Doppelbuchung.
  */
 export function offeneMieten(
   mieter: MietkontoMieter,
@@ -293,15 +324,17 @@ export function offeneMieten(
   heute: Date = new Date(),
 ): OffeneMiete[] {
   const heuteYm = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}`;
-  const mitStatus = dedup(erwarteteMonate(mieter, zeitraeume, ymPlus(heuteYm, -11), heuteYm, heute), einnahmen);
+  const erwartet = erwarteteMonate(mieter, zeitraeume, ymPlus(heuteYm, -11), heuteYm, heute);
   const offene: OffeneMiete[] = [];
-  for (const m of mitStatus) {
-    if (m.schonGebucht || m.gesamt <= 0) continue;
+  for (const m of erwartet) {
+    if (m.gesamt <= 0) continue;
+    const gezahlt = gezahltImMonat(einnahmen, m.jahrMonat);
+    if (gezahlt == null || gezahlt >= m.gesamt - TEILZAHLUNG_TOLERANZ) continue;
     const faelligIso = dritterWerktag(m.jahrMonat);
     const faellig = new Date(`${faelligIso}T00:00:00`);
     const tage = Math.floor((heute.getTime() - faellig.getTime()) / 86400000);
     if (tage < 0) continue; // aktueller Monat, noch nicht fällig
-    offene.push({ ...m, faelligSeit: faelligIso, tageOffen: tage });
+    offene.push({ ...m, faelligSeit: faelligIso, tageOffen: tage, gezahlt, rest: Math.round((m.gesamt - gezahlt) * 100) / 100 });
   }
   return offene;
 }

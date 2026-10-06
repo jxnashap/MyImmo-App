@@ -87,7 +87,8 @@ describe("Dashboard: „Erinnerung schreiben“ neben der offenen Miete", () => 
 
   it("das Dashboard reicht den Betrag herein und zeigt den Knopf neben (nicht in) der Zeile", () => {
     const seite = readFileSync("app/(app)/page.tsx", "utf8");
-    expect(seite).toMatch(/betrag: soll\.gesamt/);
+    // Seit Paket B (Teilzahlung) der offene REST, nicht das volle Soll.
+    expect(seite).toMatch(/betrag: Math\.round\(\(soll\.gesamt - \(gezahlt \?\? 0\)\) \* 100\) \/ 100/);
     expect(seite).toMatch(/className="aufgabe-mit-aktion"/);
     expect(seite).toMatch(/href=\{a\.neben\.href\}/);
   });

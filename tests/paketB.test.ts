@@ -211,7 +211,8 @@ describe("setzeMieteAb — NK-Anpassung ins Mietkonto", () => {
     const ins = ops(db, "miet_zeitraeume", "insert").flatMap((z) => (Array.isArray(z.daten) ? z.daten : [z.daten])) as Record<string, unknown>[];
     expect(ins.at(-1)).toMatchObject({ von: "2026-12-01", bis: null, kaltmiete: 800, nk_vorauszahlung: 175 });
     expect(ins[0]).toMatchObject({ von: "2024-03-01", bis: "2026-11-01", nk_vorauszahlung: 150 });
-    expect(ops(db, "mieter", "update")[0].daten).toMatchObject({ nk_vorauszahlung: 175, kaltmiete: 800 });
+    // Die Felder am Mieter bleiben der Grundwert (Staffelplan rechnet darauf) — nur Zeiträume.
+    expect(ops(db, "mieter", "update")).toHaveLength(0);
   });
 
   it("ungültiger Monat oder negativer Betrag: nichts geschrieben", async () => {

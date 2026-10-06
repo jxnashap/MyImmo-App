@@ -50,6 +50,17 @@ function nkAnteil(fd: FormData): number | null {
   return nk;
 }
 
+// Mietmonat (Paket B, 06.10.2026): YYYY-MM aus dem Monatsfeld. Nur mitschreiben, wenn das
+// Formular das Feld HAT — andere Formulare (Listen-Dialog) schicken es nicht und dürften einen
+// gespeicherten Mietmonat sonst nicht still löschen.
+function sollMonat(fd: FormData): { soll_monat?: string | null } {
+  if (!fd.has("soll_monat")) return {};
+  const v = String(fd.get("soll_monat") ?? "").trim();
+  if (!v) return { soll_monat: null };
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(v)) throw new Error("Mietmonat bitte als Monat angeben.");
+  return { soll_monat: v };
+}
+
 export async function createEinnahme(fd: FormData) {
   const { supabase, userId } = await uid();
   const { error } = await supabase.from("einnahmen").insert({
@@ -61,6 +72,7 @@ export async function createEinnahme(fd: FormData) {
     betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
     nk_anteil: nkAnteil(fd),
+    ...sollMonat(fd),
   });
   if (error) throw new Error(error.message);
   done(fd, "/einnahmen");
@@ -75,6 +87,7 @@ export async function updateEinnahme(id: string, fd: FormData) {
     betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
     nk_anteil: nkAnteil(fd),
+    ...sollMonat(fd),
   }).eq("id", id);
   if (error) throw new Error(error.message);
   done(fd, "/einnahmen");

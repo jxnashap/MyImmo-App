@@ -7,6 +7,7 @@ import { mieterFolgenText } from "@/lib/loeschUmfang";
 import { euro, eur2, datum } from "@/lib/format";
 import { mieterFristen } from "@/lib/fristen";
 import { staffelPlan } from "@/lib/staffel";
+import StaffelUebernehmen from "@/components/StaffelUebernehmen";
 import { deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
 import type { Tenant, Property, MietZeitraum } from "@/lib/types";
@@ -137,6 +138,9 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
       : [];
   const heuteIso = new Date().toISOString().split("T")[0];
   const naechsteStufe = plan.find((st) => st.datum >= heuteIso)?.datum;
+  // Stufe schon als Miet-Zeitraum hinterlegt? (gleicher Monat, gleiche Kaltmiete — wie uebernehmeStaffel)
+  const imMietkonto = new Set(zeitraeume.map((z) => `${z.von.slice(0, 7)}|${Number(z.kaltmiete)}`));
+  const stufeImMietkonto = (st: { datum: string; miete: number }) => imMietkonto.has(`${st.datum.slice(0, 7)}|${st.miete}`);
   const mieterIban = decryptNullable(m.iban);
   const fmtIban = (x: string) => x.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
   const mietart = m.mietart === "staffel" ? "Staffelmiete" : m.mietart === "index" ? "Indexmiete" : "Standard";
@@ -225,6 +229,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
               {staffelTyp === "prozent" ? `+${(m.staffel_prozent ?? 0).toLocaleString("de-DE")} % je Stufe` : `+${euro(m.staffel_betrag)} je Stufe`}
               {" · "}alle {Number(m.staffel_intervall) || 12} Monate
             </span>
+            <StaffelUebernehmen mieterId={params.id} offen={plan.filter((st) => !stufeImMietkonto(st)).length} />
           </div>
           <div className="section-body">
             <div className="table-scroll"><table>
@@ -234,7 +239,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
                   const kommend = st.datum === naechsteStufe;
                   return (
                     <tr key={st.datum} style={kommend ? { background: "var(--gold-pale)" } : undefined}>
-                      <td style={{ fontWeight: kommend ? 600 : 400 }}>{datum(st.datum)}{kommend && <span className="badge badge-gold" style={{ marginLeft: 8 }}>nächste Stufe</span>}</td>
+                      <td style={{ fontWeight: kommend ? 600 : 400 }}>{datum(st.datum)}{kommend && <span className="badge badge-gold" style={{ marginLeft: 8 }}>nächste Stufe</span>}{stufeImMietkonto(st) && <span className="badge" style={{ marginLeft: 8 }}>im Mietkonto</span>}</td>
                       <td style={{ fontWeight: 600 }}>{eur2(st.miete)}</td>
                       <td style={{ color: "var(--green)" }}>+ {eur2(st.delta)}</td>
                     </tr>
