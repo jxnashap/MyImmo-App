@@ -237,7 +237,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // Neuigkeiten aus dem Mieterportal (02.10.2026, Idee des Betreibers): was in den letzten
   // NEUIGKEITEN_TAGE Tagen PASSIERT ist. Was eine Handlung verlangt, steht in den Aufgaben.
   const seit = `${tageVor(heuteISO0, NEUIGKEITEN_TAGE)}T00:00:00Z`;
-  const [{ data: ereignisRows }, { data: zustellRows }, { data: angebotRows }, { data: rueckRows }, { data: auftragRows }, { data: bewerbungRows }, { data: hmNotizRows }, { data: eingangRows }] = await Promise.all([
+  const [{ data: ereignisRows }, { data: zustellRows }, { data: angebotRows }, { data: rueckRows }, { data: auftragRows }, { data: bewerbungRows }, { data: hmNotizRows }, { data: eingangRows }, { data: terminRows }] = await Promise.all([
     supabase.from("anliegen_ereignisse").select("anliegen_id,autor_rolle,art,text,created_at").eq("autor_rolle", "mieter").gte("created_at", seit).order("created_at", { ascending: false }).limit(50),
     supabase.from("zustellungen").select("titel,art,mieter_id,bestaetigt_am").eq("vermieter_id", user.id).gte("bestaetigt_am", seit).limit(50),
     supabase.from("angebote").select("firma,betrag,created_at").gte("created_at", seit).limit(50),
@@ -248,9 +248,12 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     supabase.from("auftrag_notizen").select("auftrag_id,art,created_at").eq("vermieter_id", user.id).eq("autor_rolle", "service").gte("created_at", seit).order("created_at", { ascending: false }).limit(50),
     // Rücklauf über Bank-/Makler-Link (06.10.2026) — nur Unentschiedenes, ohne Dateiinhalt.
     supabase.from("freigabe_eingang").select("art,token,absender,datei_name,created_at").eq("user_id", user.id).eq("status", "neu").order("created_at", { ascending: false }).limit(20),
+    // Termin über Bank-/Makler-Link (06.10.2026) — nur offene.
+    supabase.from("freigabe_termine").select("art,token,modus,vorschlaege,name,created_at").eq("user_id", user.id).eq("status", "offen").order("created_at", { ascending: false }).limit(20),
   ]);
+  const terminListe = (terminRows ?? []) as { art: "bank" | "makler"; token: string; modus: "termine" | "rueckruf"; vorschlaege: string[] | null; name: string | null; created_at: string }[];
   const eingangListe = (eingangRows ?? []) as { art: "bank" | "makler"; token: string; absender: string | null; datei_name: string; created_at: string }[];
-  const bankTokens = [...new Set(eingangListe.filter((e) => e.art === "bank").map((e) => e.token))];
+  const bankTokens = [...new Set([...eingangListe, ...terminListe].filter((e) => e.art === "bank").map((e) => e.token))];
   const { data: bankLinks } = bankTokens.length
     ? await supabase.from("beleihung_freigaben").select("token,prop_id").eq("user_id", user.id).in("token", bankTokens)
     : { data: [] };
@@ -275,6 +278,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
       .filter((n) => n.art !== "fachbetrieb") // steht schon als Freigabe-Bitte da
       .map((n) => ({ art: n.art, auftrag: auftragListe.find((a) => a.id === n.auftrag_id)?.titel ?? "Auftrag", created_at: n.created_at })),
     bewerbungen: ((bewerbungRows ?? []) as { name: string | null; created_at: string }[]),
+    termine: terminListe.map((t) => ({ art: t.art, propId: propVonToken.get(t.token) ?? null, modus: t.modus, anzahl: (t.vorschlaege ?? []).length, name: t.name, created_at: t.created_at })),
     eingang: eingangListe.map((e) => ({ art: e.art, propId: propVonToken.get(e.token) ?? null, absender: e.absender, datei_name: e.datei_name, created_at: e.created_at })),
   }, heuteISO0);
   const AUFGABEN_ICON = { miete: ReceiptText, anliegen: MessageSquareText, zaehler: Zap, frist: CalendarDays, termin: CalendarDays, stammdaten: Building2 } as const;
