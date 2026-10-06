@@ -84,7 +84,7 @@ describe("Übergabe aus dem Sanierungsrechner", () => {
     expect(s).toMatch(/href="\/sanierung" target="_blank"/);
   });
 
-  it("Eigenleistung zählt zur Summe, aber nicht in den Kauf-Assistenten", () => {
+  it("Eigenleistung zählt zur Summe, aber nicht in die Kaufprüfung", () => {
     const e = { ...leererEntwurf("x"), lohn: [
       { id: "a", bezeichnung: "Ich", stunden: "60", satz: "40", eigenleistung: true },
       { id: "b", bezeichnung: "Fliesenleger", stunden: "10", satz: "50", eigenleistung: false },
@@ -96,7 +96,7 @@ describe("Übergabe aus dem Sanierungsrechner", () => {
     // Seit dem Guide (Stufe B): `gesamt` der Auswertung enthält die Eigenleistung gar nicht erst
     // (tests/sanierungGuide.test.ts prüft das an Zahlen) — übergeben wird die obere Spanne davon.
     expect(s).toContain("const fuerKauf = Math.max(0, a.gesamt.max);");
-    expect(s).toContain("kaufLinkMitSanierung(fuerKauf)");
+    expect(s).toContain("kaufLinkMitSanierung(fuerKauf, entwurf.kaufObjekt)");
     const g = auswerten({ ...leererEntwurf("z"), lohn: e.lohn, projekt: { ...leererEntwurf("z").projekt, puffer: "0" } }, KATALOG);
     expect(g.eigenleistung).toBe(2_400);
     expect(g.gesamt.max).toBe(500);

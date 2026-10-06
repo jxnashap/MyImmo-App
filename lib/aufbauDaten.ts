@@ -1,4 +1,4 @@
-// EIN Lader für die BuyImmo-Seiten Kommandozentrale (/aufbau) und Fahrplan (/fahrplan) — damit
+// EIN Lader für die BuyImmo-Seiten Cockpit (/aufbau), Fahrplan, Notar & Übergabe und Strategie — damit
 // beide dieselben Abfragen und dieselbe Lesart haben (z. B. „Selbstauskunft vorhanden“ in der
 // Demo). Jede Abfrage filtert ausdrücklich auf das eigene Konto; RLS ist die zweite Linie.
 // Nur lesend, nur für die Anzeige.
@@ -35,7 +35,7 @@ export async function ladeAufbauDaten(
 ): Promise<AufbauDaten> {
   const uid = user?.id ?? "";
   const [{ data: props }, { data: kred }, { data: kalk }, { data: makler }, { data: sa }, { data: vert }] = await Promise.all([
-    db.from("properties").select("id,bezeichnung,wert,kaufpreis").eq("user_id", uid),
+    db.from("properties").select("id,bezeichnung,wert,kaufpreis,kaufdatum").eq("user_id", uid),
     db.from("kredite").select("prop_id,betrag,restschuld,monatsrate,zinssatz,grundschuld").eq("user_id", uid),
     db.from("kalkulationen").select("id,name,summary,created_at").eq("user_id", uid).order("created_at", { ascending: false }),
     db.from("makler_dokumente").select("item_key,status").eq("user_id", uid),

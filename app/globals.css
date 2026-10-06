@@ -371,6 +371,7 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 /* inset box-shadow statt border: kein 1px-Layout-Shift beim Aktiv-Wechsel */
 .nav-item.active { background: var(--gold-pale); color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold-dim); }
 .nav-item .icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+.nav-item .nav-schritt { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; border: 1px solid currentColor; font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
 /* Zähler am Navigationseintrag (offene Anliegen, unbestätigte Mieteingänge) */
 .nav-badge {
   margin-left: auto; flex-shrink: 0;
@@ -610,6 +611,72 @@ a.kpi-card:active { transform: scale(.985); }
 .sanierung-uebernehmen { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 .sanierung-fuss { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); }
 .sanierung-fuss p { margin: 0; max-width: 620px; }
+/* Kaufweg (BuyImmo, 06.10.2026): Schritt-Kopf auf jeder Schritt-Seite */
+.weg-nummer { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; font-size: 12px; font-weight: 700; color: var(--gold); background: var(--gold-pale); font-variant-numeric: tabular-nums; }
+.weg-kopf { border: 1px solid var(--line); border-radius: 18px; background: var(--bg2); padding: 12px 14px; margin-bottom: 16px; }
+.weg-punkte { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; }
+.weg-punkt a, .weg-punkt span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; font-size: 12px; color: var(--muted); text-decoration: none; border: 1px solid transparent; }
+.weg-punkt a:hover { color: var(--text); background: var(--bg3); }
+.weg-punkt b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line2, var(--line)); font-size: 11px; font-variant-numeric: tabular-nums; }
+.weg-punkt.aktiv span { color: var(--gold); background: var(--gold-pale); border-color: var(--gold-dim); font-weight: 600; }
+.weg-punkt.aktiv b { border-color: currentColor; }
+.weg-zeile { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; margin-top: 10px; }
+.weg-zeile p { margin: 0; font-size: 13px; color: var(--muted); max-width: 680px; }
+.weg-weiter { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; color: var(--gold); text-decoration: none; white-space: nowrap; }
+.weg-weiter:hover { text-decoration: underline; }
+.weg-achten { margin-top: 8px; }
+.weg-achten summary { font-size: 12.5px; cursor: pointer; color: var(--text); }
+.weg-achten ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+@media (max-width: 560px) {
+  .weg-punkt:not(.aktiv) .weg-punkt-titel { display: none; }
+  .weg-punkt a { padding-right: 4px; }
+}
+
+/* Objekte vergleichen (Kaufweg Schritt 1) */
+.vergleich-scroll { overflow-x: auto; }
+.vergleich-tabelle th, .vergleich-tabelle td { text-align: right; padding: 8px 10px; vertical-align: top; white-space: nowrap; }
+.vergleich-tabelle th:first-child, .vergleich-tabelle tbody th { text-align: left; color: var(--muted); font-weight: 500; }
+/* Am Handy scrollt die Tabelle waagerecht — die Kennzahl-Spalte bleibt stehen. */
+.vergleich-tabelle thead th:first-child, .vergleich-tabelle tbody th, .vergleich-tabelle tfoot td:first-child { position: sticky; left: 0; z-index: 1; background: var(--bg2); }
+@media (max-width: 600px) { .vergleich-tabelle tbody th, .vergleich-tabelle thead th:first-child { white-space: normal; overflow-wrap: normal; word-break: normal; hyphens: auto; min-width: 112px; max-width: 128px; } }
+.vergleich-name { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; white-space: normal; }
+.vergleich-name svg { color: var(--gold); }
+.vergleich-punkte { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+.vergleich-aktiv { background: var(--gold-pale); }
+.vergleich-best { color: var(--green); font-weight: 700; }
+.vergleich-aktionen { white-space: normal !important; }
+/* Eigene Spalte: `.btn` steht später in der Datei und setzte `display` sonst zurück. */
+.vergleich-knoepfe { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.vergleich-klein { display: flex; gap: 10px; font-size: 12px; }
+.vergleich-klein .btn-link { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); text-decoration: none; }
+
+/* Strategie (BuyImmo) */
+.strategie-felder { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 14px; }
+.strategie-felder .form-group { display: grid; gap: 4px; margin: 0; }
+.strategie-felder .form-group > span { font-size: 12px; color: var(--muted); }
+.strategie-felder small { font-size: 11.5px; color: var(--faint); }
+.strategie-taktiken { display: grid; gap: 0; }
+.strategie-risiken { margin: 4px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--muted); display: grid; gap: 3px; }
+.strategie-kauf { border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 10px; display: grid; gap: 8px; }
+.strategie-kauf > .btn { justify-self: start; }
+.strategie-grenze { margin: 0; }
+.strategie-jahre .negativ { color: var(--red); }
+.baum, .baum ul { list-style: none; margin: 0; padding: 0; }
+.baum ul { margin-left: 14px; padding-left: 16px; border-left: 2px solid var(--line); }
+.baum li { position: relative; padding-top: 10px; }
+.baum ul > li::before { content: ""; position: absolute; left: -16px; top: 28px; width: 14px; border-top: 2px solid var(--line); }
+.baum-knoten { border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; background: var(--bg2); max-width: 720px; }
+.baum-knoten.wurzel { background: var(--gold-pale); border-color: var(--gold-dim); }
+.baum-knoten.bestand { background: var(--bg3); }
+.baum-knoten.offen { border-style: dashed; }
+.baum-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.baum-jahr { font-size: 12px; font-weight: 700; color: var(--gold); }
+.baum-zeile { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.baum-hinweis { color: var(--amber); }
+.baum-status { font-weight: 600; }
+.baum-status.gedeckt { color: var(--green); }
+.baum-status.luecke { color: var(--red); }
+
 /* Projektleiste des Sanierungs-Guides (Stufe C) */
 .projekt-leiste { border: 1px solid var(--line); border-radius: 18px; background: var(--bg2); padding: 10px 14px; margin-bottom: 14px; }
 .projekt-leiste-kopf { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
@@ -725,6 +792,10 @@ a.kpi-card:active { transform: scale(.985); }
 .fahrplan-kopf { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .fahrplan-kopf h4 { margin: 0; font-size: 14px; font-weight: 600; }
 .fahrplan-inhalt p { margin: 0; font-size: 13px; line-height: 1.5; }
+.fahrplan-gruppe + .fahrplan-gruppe { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.fahrplan-gruppe-titel { margin: 0 0 10px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.fahrplan-gruppe-titel a { color: var(--gold); text-decoration: none; }
+.fahrplan-gruppe-titel a:hover { text-decoration: underline; }
 .fahrplan-inhalt ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; color: var(--muted); }
 .fahrplan-link { display: inline-flex; align-items: center; gap: 2px; align-self: flex-start; font-size: 12.5px; font-weight: 600; color: var(--gold); text-decoration: none; }
 @media (hover: hover) and (pointer: fine) { .fahrplan-link:hover { text-decoration: underline; } }

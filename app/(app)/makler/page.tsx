@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import MaklerOrdner from "@/components/MaklerOrdner";
+import WegKopf from "@/components/aufbau/WegKopf";
 import type { MaklerDok } from "@/lib/makler";
 import type { MaklerFreigabe } from "@/lib/actions/makler";
 import { ABRUF_SPALTEN, type Abruf } from "@/lib/freigabeAbrufe";
@@ -45,6 +46,8 @@ export default async function MaklerPage() {
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 0 40px" }}>
+      {/* Kaufweg Schritt 4 (Umbau 06.10.2026): Angebot & Unterlagen. */}
+      <WegKopf schritt="unterlagen" />
       {eingangNeu && eingangBlock}
       <MaklerOrdner
         initialDocs={(docs ?? []) as MaklerDok[]}

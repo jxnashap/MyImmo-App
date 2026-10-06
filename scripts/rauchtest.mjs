@@ -377,22 +377,60 @@ const WEGE = [
     },
   },
   {
-    // BuyImmo (05.10.2026): Sätze, die NUR die Kommandozentrale schreibt — „Kommandozentrale“
-    // allein stünde auch in der Seitenleiste jeder BuyImmo-Seite.
+    // BuyImmo (05.10.2026, Umbau 06.10.2026): Sätze, die NUR das Cockpit schreibt — „Cockpit“ und
+    // „Dein Weg zum Kauf“ allein stünden auch in der Seitenleiste jeder BuyImmo-Seite.
     schluessel: "aufbau",
-    titel: "BuyImmo — Kommandozentrale",
+    titel: "BuyImmo — Cockpit",
     pfad: "/aufbau",
-    erwartet: ["Eigenkapital im Bestand", "Bereit für Bank und Makler", "Buy<span>Immo</span>"],
+    erwartet: ["Eigenkapital im Bestand", "Bereit für Bank und Makler", "Alle Punkte als Checkliste", "Buy<span>Immo</span>"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    // Schritt-Kopf: Nur auf der Seite des Schritts trägt sein Punkt aria-current (React zerlegt
+    // „Schritt {n} von 5“ mit <!-- --> — deshalb dieses Merkmal).
+    schluessel: "vergleich",
+    titel: "BuyImmo — Schritt 1: Objekte vergleichen",
+    pfad: "/vergleich",
+    erwartet: ["Kandidaten eintragen, durchrechnen und nebeneinanderlegen", 'aria-current="step"><b>1</b>', "Deine Kandidaten im Vergleich"],
     async pruefe() {
       return null;
     },
   },
   {
     schluessel: "sanierung",
-    titel: "BuyImmo — Sanierungsrechner",
+    titel: "BuyImmo — Schritt 2: Besichtigen & Sanieren",
     pfad: "/sanierung",
     // Der Server rendert die Startansicht des Guides (der Entwurf liegt erst im Browser).
-    erwartet: ["Sanierungsrechner", "Schritt für Schritt", "Wie soll das Projekt heißen?", "Eine Schätzung, kein Kostenvoranschlag"],
+    erwartet: ['aria-current="step"><b>2</b>', "Schritt für Schritt", "Wie soll das Projekt heißen?", "Eine Schätzung, kein Kostenvoranschlag"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "kauf",
+    titel: "BuyImmo — Schritt 3: Finanzierung",
+    pfad: "/kauf",
+    erwartet: ['aria-current="step"><b>3</b>', "Dein Objekt aus Schritt 1"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "abschluss",
+    titel: "BuyImmo — Schritt 5: Notar & Übergabe",
+    pfad: "/abschluss",
+    erwartet: ['aria-current="step"><b>5</b>', "§ 29 GBO", "Zum Cockpit"],
+    async pruefe() {
+      return null;
+    },
+  },
+  {
+    schluessel: "strategie",
+    titel: "BuyImmo — Strategie",
+    pfad: "/strategie",
+    erwartet: ["Deine Käufe der nächsten zehn Jahre", "Beleihung eines Objekts", "keine Anlage- oder Finanzierungsberatung"],
     async pruefe() {
       return null;
     },
@@ -401,7 +439,7 @@ const WEGE = [
     schluessel: "fahrplan",
     titel: "BuyImmo — Fahrplan",
     pfad: "/fahrplan",
-    erwartet: ["Dein Weg zum Objekt", "Was BuyImmo prüfen kann", "Kaufnebenkosten", "§ 311b BGB"],
+    erwartet: ["Dein Weg zum Objekt", "Was BuyImmo prüfen kann", "Objekte vergleichen</a></h4>", "§ 311b BGB"],
     async pruefe() {
       return null;
     },

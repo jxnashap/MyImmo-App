@@ -86,6 +86,17 @@ export default function Sidebar({
 
   const demo = istDemoKonto(userEmail);
 
+  // Kaufweg (BuyImmo, 06.10.2026): Schritte zeigen ihre Nummer statt eines Symbols — die
+  // Reihenfolge links ist der Weg. Im eingeklappten Rail bleibt die Zahl als Kreis stehen.
+  const navSymbol = (n: NavItem) =>
+    n.schritt ? (
+      <span className="icon nav-schritt" aria-hidden>{n.schritt}</span>
+    ) : (
+      <span className="icon" style={n.paragraph ? { color: "var(--gold)", fontWeight: 700 } : { display: "inline-flex", alignItems: "center" }}>
+        {n.paragraph || !n.icon ? "§" : <n.icon size={15} />}
+      </span>
+    );
+
   const navLink = (n: NavItem) => {
     const anzahl = badges[n.href] ?? 0;
 
@@ -100,9 +111,7 @@ export default function Sidebar({
     if (demo && !demoDarfRoute(n.href)) {
       return (
         <a key={n.href} href={n.href} className="nav-item nav-gesperrt">
-          <span className="icon" style={{ display: "inline-flex", alignItems: "center" }}>
-            {n.paragraph || !n.icon ? "§" : <n.icon size={15} />}
-          </span>
+          {navSymbol(n)}
           <span className="nav-label">{n.label}</span>
           <span className="sr-only"> (in der Demo gesperrt)</span>
           <Lock size={12} style={{ marginLeft: "auto", flexShrink: 0 }} aria-hidden />
@@ -121,9 +130,7 @@ export default function Sidebar({
         // Monat unbestaetigte Mieten — die heissen auch nach Wochen noch so.
         title={anzahl > 0 ? `${n.label} — ${anzahl} offen` : n.label}
       >
-        <span className="icon" style={n.paragraph ? { color: "var(--gold)", fontWeight: 700 } : { display: "inline-flex", alignItems: "center" }}>
-          {n.paragraph || !n.icon ? "§" : <n.icon size={15} />}
-        </span>
+        {navSymbol(n)}
         <span className="nav-label">{n.label}</span>
         {anzahl > 0 && (
           <span className="nav-badge" aria-label={`${anzahl} offen`}>{anzahl > 99 ? "99+" : anzahl}</span>

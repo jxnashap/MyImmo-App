@@ -16,7 +16,8 @@
 import { beleihungsauslauf } from "@/lib/beleihungsauslauf";
 import { schuldenStand } from "@/lib/schuldenStand";
 
-export type AufbauObjekt = { id: string; bezeichnung: string; wert: number | null; kaufpreis: number | null };
+/** `kaufdatum` nur für die Strategie (Zehnjahresfrist beim Verkauf) — die Rechnungen hier brauchen es nicht. */
+export type AufbauObjekt = { id: string; bezeichnung: string; wert: number | null; kaufpreis: number | null; kaufdatum?: string | null };
 export type AufbauKredit = {
   prop_id: string | null;
   betrag: number | null;

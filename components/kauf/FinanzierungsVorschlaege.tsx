@@ -95,7 +95,7 @@ export default function FinanzierungsVorschlaege({
       <div className="empty" style={{ padding: "28px 20px" }}>
         <div className="empty-icon" aria-hidden="true">📊</div>
         <h4>Noch kein Objekt übernommen</h4>
-        <p>Rechne in Schritt 2 deine Kandidaten durch und übernimm das beste — dann erscheinen hier zwei grafische Finanzierungs-Szenarien.</p>
+        <p>Wähle in Schritt 1 (Objekte vergleichen) einen Kandidaten für die Finanzierung — dann erscheinen hier zwei grafische Finanzierungs-Szenarien.</p>
       </div>
     );
   }

@@ -106,7 +106,7 @@ export default function MaklerOrdner({
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <FolderClosed size={22} color="var(--gold)" />
           <div>
-            <div className="topbar-kicker" style={{ marginBottom: 4 }}>Kalkulator · Kaufunterlagen</div>
+            <div className="topbar-kicker" style={{ marginBottom: 4 }}>BuyImmo · Schritt 4</div>
             <div className="topbar-title" style={{ fontSize: 24 }}>Makler-Ordner</div>
             <div className="topbar-sub">Dein Käufer-Paket für Makler &amp; Verkäufer</div>
           </div>

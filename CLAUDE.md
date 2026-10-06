@@ -351,9 +351,10 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
 „MyImmo als automatisierte Verwaltung, BuyImmo als aktive Kommandozentrale für den
 Immobilienaufbau“ — **eine Codebasis, ein Konto**, gewechselt am Logo oben links
 (`components/BereichWechsel.tsx`). Der Bereich folgt allein aus der Adresse (`lib/bereich.ts`);
-Einstellungen/Hilfe/Objekte behalten den letzten. BuyImmo: `/aufbau` (Kommandozentrale,
+Einstellungen/Hilfe/Objekte behalten den letzten. BuyImmo: `/aufbau` (Cockpit,
 `lib/aufbau.ts`), Kauf, Makler-Ordner, Verkauf, Marktwert, AfA. **Regeln:** (1) Neue
-BuyImmo-Seite → `AUFBAUEN`/`RECHNEN` in `lib/nav.ts`. (2) Alte Adressen (`/kauf` …) nie
+BuyImmo-Seite → `UEBERBLICK`/`WERKZEUGE` in `lib/nav.ts` oder als Schritt in `KAUFWEG`
+(`lib/kaufweg.ts`). (2) Alte Adressen (`/kauf` …) nie
 umbenennen. (3) Zahlen der Kommandozentrale nur aus bestehenden Regeln (Dashboard,
 `/kredite`). (4) Keine Kaufempfehlung vor der § 34i-Klärung. Offen (Aufmaß, Fahrplan, Marke):
 **`docs/zukunft/BUYIMMO.md`**. `tests/bereich.test.ts` + `tests/aufbau.test.ts`, elf Mutationen rot.
@@ -399,6 +400,21 @@ durchlässt — ein neues Entwurfsfeld gehört in den Parser, sonst geht es beim
 (2) Eine Vorlage trägt Entscheidungen, nie die Wohnung; Technik nur mit angekreuzter Arbeit.
 (3) Überschreiben nur gegen den bekannten `updated_at` (zwei Geräte), sonst `konflikt`.
 `tests/sanierungProjekte.test.ts` + `tests/actionsSanierungsprojekte.test.ts`, 35 Mutationen rot.
+**🧭 Umbau 06.10.2026 — der Weg zum Kauf (`docs/zukunft/BUYIMMO-WEG.md`, Vorgabe Jonas):** fünf
+Schritte, EINE Liste `KAUFWEG` in `lib/kaufweg.ts` → Seitenleiste nummeriert (Überblick: Cockpit,
+Strategie · Dein Weg zum Kauf 1–5 · Werkzeuge), `<WegKopf schritt=… />` auf jeder Schritt-Seite,
+Cockpit, Fahrplan-Gruppen: 1 `/vergleich` (Rechner + Tabelle, bis fünf) · 2 `/sanierung`
+(„Besichtigen & Sanieren“, `?objekt=<id>` übernimmt die eigene Kaufprüfung, Summe zurück an genau
+sie) · 3 `/kauf` („Finanzierung“; `/kauf?sanierung=` leitet auf den Vergleich) · 4 `/makler` ·
+5 `/abschluss`. **Lern-App:** `autoWeiter()` nur auf `eckdaten/ziel/arbeit/abschluss`, nur
+unvollständig → vollständig, nie beim Korrigieren; Enter = Weiter. **Strategie `/strategie`:**
+Rechner (`lib/strategie.ts`), Taktiken Erspartes/Nebenkosten/Voll/Beleihung/Verkauf, Stammbaum über
+die Kapitalquelle, vorsichtiges Szenario, Plan nur im Browser — **gebaut vor der § 34i-Klärung
+(Auftrag), Anwalt vor dem öffentlichen Start.** **Regeln:** (1) Neuer Schritt/Station nur in
+`KAUFWEG`. (2) Kein Text der Strategie rät (Test). (3) Der Rechner auf `/vergleich` braucht
+`minmax(0, 1fr)` — am Handy schnitt er sonst rechts ab. `tests/kaufweg.test.ts`,
+`tests/strategie.test.ts`, `tests/umbauBuyImmo.test.ts`, 30 Mutationen rot. **Offen:** Demo zeigt
+Schritt 1 leer (Beispiel-Kandidaten = Produktionsdaten → nur mit Ja).
 **Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
 (`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
 kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**

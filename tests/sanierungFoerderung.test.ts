@@ -192,9 +192,9 @@ describe("Oberfläche", () => {
     expect(html).toContain("Spachteln, Streichen, Böden und Fliesen werden nicht gefördert.");
   });
 
-  it("der Kauf-Assistent bekommt die Summe VOR Zuschuss — der ist erst mit der Zusage sicher", () => {
+  it("die Kaufprüfung bekommt die Summe VOR Zuschuss — der ist erst mit der Zusage sicher", () => {
     const s = readFileSync("components/SanierungsRechner.tsx", "utf8");
-    expect(s).toContain("kaufLinkMitSanierung(fuerKauf)");
+    expect(s).toContain("kaufLinkMitSanierung(fuerKauf, entwurf.kaufObjekt)");
     expect(s).not.toMatch(/kaufLinkMitSanierung\([^)]*zuschuss/);
     expect(s).toContain("(nicht abgezogen)");
   });

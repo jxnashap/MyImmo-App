@@ -126,6 +126,11 @@ export type Entwurf = {
    * Fehlt ein Typ, gilt der eingebaute Vorschlag (`vorschlagMassnahmen`); `[]` heißt „nichts“.
    */
   vorschlagJeTyp: Partial<Record<RaumTyp, MassnahmeId[]>>;
+  /**
+   * Kaufprüfung (`kalkulationen.id`), für die diese Besichtigung läuft — Kaufweg Schritt 1 → 2
+   * (Umbau 06.10.2026). Leer = ohne Bezug. Die Summe geht dann an genau dieses Objekt zurück.
+   */
+  kaufObjekt: string;
 };
 
 export const leeresProjekt = (): ProjektFelder => ({
@@ -188,6 +193,7 @@ export function leererEntwurf(id: string): Entwurf {
     arbeitPreise: {},
     abgehakt: [],
     vorschlagJeTyp: {},
+    kaufObjekt: "",
   };
 }
 
@@ -360,6 +366,7 @@ export function entwurfAus(roh: unknown): Entwurf | null {
     arbeitPreise: arbeitTexte(o.arbeitPreise),
     abgehakt: liste(o.abgehakt).filter((a): a is string => typeof a === "string" && a.length <= 64).slice(0, 50),
     vorschlagJeTyp: massnahmenJeTypAus(o.vorschlagJeTyp),
+    kaufObjekt: typeof o.kaufObjekt === "string" && /^[0-9a-f-]{36}$/i.test(o.kaufObjekt) ? o.kaufObjekt : "",
   };
 }
 

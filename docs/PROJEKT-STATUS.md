@@ -161,9 +161,15 @@ Wieder aufbauen, sobald das Produkt Geld verdient.
   merkt den Fortschritt, über Einstellungen neu startbar.
 
 ### BuyImmo — Bestandsaufbau (seit 05.10.2026)
-Zweiter Bereich, gewechselt am Logo oben links: Kommandozentrale `/aufbau` (Bestand,
-Eigenkapital, freie Grundschuld, Kaufprüfungen, Unterlagen), **Fahrplan** `/fahrplan` (neun
-Schritte + Kaufnebenkosten-Rechner), **Sanierungsrechner** `/sanierung` (Material von–bis inkl.
+Zweiter Bereich, gewechselt am Logo oben links. **Seit dem Umbau 06.10.2026 ein Weg in fünf
+Schritten** (Seitenleiste nummeriert, Kopf auf jeder Schritt-Seite, `lib/kaufweg.ts`):
+1 **Objekte vergleichen** `/vergleich` (Rechner + Tabelle, bis fünf nebeneinander) · 2 **Besichtigen
+& Sanieren** `/sanierung` (Guide je Kandidat, Lern-App-Weiter) · 3 **Finanzierung** `/kauf` ·
+4 **Angebot & Unterlagen** `/makler` · 5 **Notar & Übergabe** `/abschluss`. Darüber **Cockpit**
+`/aufbau` (Bestand, Eigenkapital, freie Grundschuld, Stand der fünf Schritte, Kandidaten, Unterlagen)
+und **Strategie** `/strategie` (Rechner: Käufe der nächsten zehn Jahre mit Taktik, Stammbaum,
+vorsichtiges Szenario; Plan nur im Browser). Details `docs/zukunft/BUYIMMO-WEG.md`.
+**Fahrplan** `/fahrplan` (neun Stationen nach den fünf Schritten gruppiert + Kaufnebenkosten-Rechner), **Sanierungsrechner** `/sanierung` (Material von–bis inkl.
 Fliesen für Boden und Wand, Räume kopierbar, Arbeitszeit mit Eigenleistung, eigene Posten, geschätzter Zuschuss für
 energetische Posten (BAFA/KfW 458, Stand BEG-Reform 21.07.2026); seit 05./06.10.2026 als Guide
 (Schritt für Schritt · Übersicht · Ergebnis) mit Speichern ins Konto und Vorlagen — Speichern wirkt

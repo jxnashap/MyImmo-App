@@ -8,11 +8,19 @@ import { anschaffungsnahVorKauf, berechneAnschaffungsnah } from "@/lib/steuer/an
 // und in den 15-%-Hinweis. Geprüft gegen die reinen Funktionen UND den gerenderten Kauf-Rechner.
 
 describe("Übergabe über die Adresse", () => {
-  it("Link: ganze Euro aufgerundet, ohne Betrag kein Parameter, Obergrenze", () => {
-    expect(kaufLinkMitSanierung(10361.4)).toBe("/kauf?sanierung=10362");
-    expect(kaufLinkMitSanierung(0)).toBe("/kauf");
-    expect(kaufLinkMitSanierung(Number.NaN)).toBe("/kauf");
-    expect(kaufLinkMitSanierung(SANIERUNG_MAX * 3)).toBe(`/kauf?sanierung=${SANIERUNG_MAX}`);
+  it("Link: ganze Euro aufgerundet, ohne Betrag kein Parameter, Obergrenze — seit dem Umbau in den Vergleich", () => {
+    expect(kaufLinkMitSanierung(10361.4)).toBe("/vergleich?sanierung=10362");
+    expect(kaufLinkMitSanierung(0)).toBe("/vergleich");
+    expect(kaufLinkMitSanierung(Number.NaN)).toBe("/vergleich");
+    expect(kaufLinkMitSanierung(SANIERUNG_MAX * 3)).toBe(`/vergleich?sanierung=${SANIERUNG_MAX}`);
+  });
+
+  it("mit Kaufprüfung: deren Kennung kommt mit — nur eine echte UUID, sonst nichts", () => {
+    const id = "0f8fad5b-d9cb-469f-a165-70867728950e";
+    expect(kaufLinkMitSanierung(500, id)).toBe(`/vergleich?sanierung=500&objekt=${id}`);
+    expect(kaufLinkMitSanierung(0, id)).toBe(`/vergleich?objekt=${id}`);
+    expect(kaufLinkMitSanierung(500, "x&bcc=1")).toBe("/vergleich?sanierung=500");
+    expect(kaufLinkMitSanierung(500, "")).toBe("/vergleich?sanierung=500");
   });
 
   it("Lesen: nur ganze positive Euro bis zur Obergrenze — alles andere wird ignoriert", () => {

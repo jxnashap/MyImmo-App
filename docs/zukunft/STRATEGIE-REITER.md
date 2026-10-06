@@ -1,6 +1,9 @@
 # Strategie-Reiter — regelmäßig Immobilien erwerben
 
-**Status:** Idee, notiert am 30.08.2026 (Nutzer). Nichts gebaut, nichts entschieden.
+**Status:** Idee, notiert am 30.08.2026 (Nutzer). **Am 06.10.2026 als Rechner gebaut** (`/strategie`,
+Auftrag des Betreibers: Stammbaum mit wählbaren Taktiken) — **ohne** die anwaltliche Klärung, die
+unten „vor dem Bau“ verlangt war. Was gebaut ist, wie die Grenze gezogen ist und was offen bleibt:
+[[BUYIMMO-WEG]]. Die Risiken unten gelten weiter; Punkt 1 ist vor dem öffentlichen Start zu klären.
 **Seit 05.10.2026:** gehört in den Bereich **BuyImmo** (`docs/zukunft/BUYIMMO.md`) — der Betreiber
 will dort „Strategien erstellen, wie man seinen Bestand aufbaut“. Die Risiken unten gelten unverändert.
 

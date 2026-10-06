@@ -13,7 +13,7 @@
 //
 // Reine Funktionen, ohne React und ohne Browser — prüfbar in `tests/bereich.test.ts`.
 
-import { ABRECHNEN, AUFBAUEN, RECHNEN, VERWALTEN, type NavItem } from "@/lib/nav";
+import { ABRECHNEN, UEBERBLICK, VERWALTEN, WEG, WERKZEUGE, type NavItem } from "@/lib/nav";
 
 export type Bereich = "verwaltung" | "aufbau";
 
@@ -50,8 +50,9 @@ export const BEREICHE: Record<Bereich, BereichInfo> = {
     beschreibung: "Bestandsaufbau: kaufen, finanzieren, verkaufen",
     start: "/aufbau",
     gruppen: [
-      { titel: "Bestand aufbauen", ziele: AUFBAUEN },
-      { titel: "Rechnen", ziele: RECHNEN },
+      { titel: "Überblick", ziele: UEBERBLICK },
+      { titel: "Dein Weg zum Kauf", ziele: WEG },
+      { titel: "Werkzeuge", ziele: WERKZEUGE },
     ],
   },
 };
