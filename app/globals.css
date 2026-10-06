@@ -628,6 +628,68 @@ a.kpi-card:active { transform: scale(.985); }
   .sanierung-zeile-posten > :first-child { grid-column: auto; }
 }
 @media (pointer: coarse) { .sanierung input, .sanierung select { font-size: 16px; } }
+/* Sanierungs-Guide (Stufe B): drei Ansichten über EINEM Entwurf — ruhig, eine Frage je Bildschirm. */
+.guide-kopf { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }
+.guide-kopf .tabs { flex-wrap: wrap; }
+.guide-badge { margin-left: 6px; padding: 0 7px; }
+.guide-stand { font-size: 12.5px; color: var(--muted); }
+.guide-schritt { font-size: var(--text-xs); color: var(--muted); margin-bottom: 4px; }
+.guide-fortschritt { height: 3px; margin: 0 22px; background: var(--bg3); border-radius: 999px; overflow: hidden; }
+.guide-fortschritt > div { height: 100%; background: var(--gold-fill); border-radius: 999px; transition: width 220ms var(--ease-out-stark); }
+.guide-wiedereinstieg { margin: 10px 22px 0; }
+.guide-inhalt { display: flex; flex-direction: column; gap: 14px; }
+.guide-frage { display: flex; flex-direction: column; gap: 8px; }
+.guide-frage-titel { font-weight: 600; font-size: 13.5px; }
+.guide-feld { max-width: 420px; margin-bottom: 0; }
+.guide-felder { display: flex; flex-wrap: wrap; gap: 10px 14px; }
+.guide-felder .form-group { width: 200px; max-width: 100%; margin-bottom: 0; }
+.guide-nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-top: 6px; }
+.guide-fertig { display: flex; gap: 12px; align-items: flex-start; }
+.guide-fertig > svg { flex-shrink: 0; color: var(--green); margin-top: 2px; }
+.guide-fertig .guide-nav { justify-content: flex-start; margin-top: 12px; }
+.guide-fehlt-liste { padding: 8px 12px; border-radius: 12px; background: var(--bg3); }
+.guide-fehlt { color: var(--gold); }
+.guide-optional { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.guide-badge-knopf { cursor: pointer; font-family: var(--font-ui); }
+.guide-zaehler-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 16px; }
+.guide-zaehler { display: grid; grid-template-columns: minmax(0, 1fr) auto 28px auto; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 14px; font-size: 13px; }
+.guide-zaehler-zahl { text-align: center; font-weight: 600; }
+.guide-raum-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.guide-arbeiten { display: flex; flex-direction: column; gap: 10px; }
+.guide-arbeit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.guide-arbeit-felder { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; width: 100%; padding-left: 28px; }
+.guide-mini { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.guide-puffer { width: 110px; padding: 6px 10px; }
+.guide-ergebnis { display: flex; flex-direction: column; gap: 16px; }
+.guide-teilsummen { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.guide-quellen { margin-top: 4px; }
+.guide-quellen a { color: inherit; }
+.guide-liste { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 1.45; }
+.guide-einkauf-gruppe { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.guide-einkauf-zeile { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: baseline; font-size: 13px; cursor: pointer; }
+.guide-einkauf-zeile input { accent-color: var(--gold-fill); }
+.guide-einkauf-zeile:has(input:checked) > span:not(.sanierung-betrag) { text-decoration: line-through; color: var(--muted); }
+.btn-link { border: 0; padding: 0; background: none; color: var(--gold); font: inherit; text-decoration: underline; cursor: pointer; }
+@media (max-width: 560px) {
+  .guide-fortschritt { margin: 0 16px; }
+  .guide-wiedereinstieg { margin: 10px 16px 0; }
+  .guide-arbeit-felder { padding-left: 0; }
+  /* Kostentabellen: gestapelt statt seitlich scrollen — die Kosten bleiben ohne Wischen sichtbar. */
+  .guide-tabelle, .guide-tabelle tbody, .guide-tabelle tfoot { display: block; width: 100%; }
+  .guide-tabelle thead { display: none; }
+  .guide-tabelle tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .guide-tabelle td { display: block; padding: 0 !important; border: 0 !important; white-space: normal !important; }
+  .guide-tabelle td:first-child { grid-column: 1 / -1; }
+  .guide-tabelle td[data-label]::before { content: attr(data-label); display: block; font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+  .guide-tabelle-arbeiten tbody tr { grid-template-columns: auto auto minmax(0, 1fr); }
+  .guide-tabelle tfoot tr { grid-template-columns: 1fr auto; border-bottom: 0; }
+  .guide-tabelle tfoot td:first-child { grid-column: auto; }
+}
+/* Einkaufszettel drucken: nur der Zettel (gesetzt vom Knopf, entfernt nach dem Druck). */
+@media print {
+  html[data-druck="einkauf"] .sanierung > :not(.guide-einkauf),
+  html[data-druck="einkauf"] .topbar-rule { display: none !important; }
+}
 /* BuyImmo-Fahrplan (05.10.2026, app/(app)/fahrplan): nummerierte Schritte, Status nur wo bekannt,
    darüber der Kaufnebenkosten-Rechner (components/NebenkostenRechner.tsx). */
 .fahrplan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }

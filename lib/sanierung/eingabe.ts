@@ -4,10 +4,75 @@
 // mit `zahlDe0()` wie in den anderen Rechnern (Komma oder Punkt, deutscher Tausenderpunkt).
 // Der Entwurf liegt nur im Browser (localStorage) — `entwurfAus()` prüft ihn beim Laden, weil
 // dort alles stehen kann: ein alter Stand, ein halber, oder Fremdes.
+//
+// Sanierungs-Guide (Stufe B, docs/zukunft/SANIERUNGS-GUIDE.md): EIN Entwurf für Guide UND Übersicht
+// — Projekt, Raumtyp, Ist-Zustand je Raum, Zustand je Gewerk. Welche Seite offen ist, steht in
+// lib/sanierung/guide.ts, was daraus folgt in lib/sanierung/auswertung.ts.
 
 import { zahlDe, zahlDe0 } from "@/lib/zahl";
 import { MASSNAHMEN, type MassnahmeId, type MaterialId, type SanierungEingabe } from "@/lib/sanierung/rechner";
 import { istFoerderArt, type FoerderArt, type FoerderEingabe, type Gebaeude, type Nutzung } from "@/lib/sanierung/foerderung";
+import { ARBEITEN, type ArbeitId } from "@/lib/sanierung/arbeiten";
+import { ZUSTAND_GEWERKE, type Zustand, type ZustandGewerk } from "@/lib/sanierung/zustand";
+
+export type RaumTyp = "wohnen" | "schlafen" | "kind" | "kueche" | "bad" | "wc" | "flur" | "abstell";
+export const RAUM_TYPEN: { id: RaumTyp; label: string }[] = [
+  { id: "wohnen", label: "Wohnzimmer" },
+  { id: "schlafen", label: "Schlafzimmer" },
+  { id: "kind", label: "Kinderzimmer" },
+  { id: "kueche", label: "Küche" },
+  { id: "bad", label: "Bad" },
+  { id: "wc", label: "WC" },
+  { id: "flur", label: "Flur" },
+  { id: "abstell", label: "Abstellraum" },
+];
+const RAUM_TYP_IDS = new Set<string>(RAUM_TYPEN.map((t) => t.id));
+
+/** Drei Antworten auf eine Frage zum Ist-Zustand; „unbekannt“ wird zur Annahme. */
+export type Wissen = "ja" | "nein" | "unbekannt";
+/** Was heute auf dem Boden liegt. „keiner“ = Estrich/Rohboden. */
+export type Altbelag = "keiner" | "teppich" | "laminat_vinyl" | "pvc" | "fliesen" | "parkett" | "unbekannt";
+export const ALTBELAEGE: { id: Altbelag; label: string }[] = [
+  { id: "teppich", label: "Teppich" },
+  { id: "laminat_vinyl", label: "Laminat oder Klick-Vinyl" },
+  { id: "pvc", label: "PVC, Vinyl geklebt, Bodenplatten" },
+  { id: "fliesen", label: "Fliesen" },
+  { id: "parkett", label: "Parkett oder Dielen" },
+  { id: "keiner", label: "Kein Belag (Estrich)" },
+  { id: "unbekannt", label: "Weiß ich nicht" },
+];
+const ALTBELAG_IDS = new Set<string>(ALTBELAEGE.map((a) => a.id));
+
+/** Wer die Maler-, Boden- und Fliesenarbeiten macht (Entscheidung 4: Handwerker → Preis je m²). */
+export type Wer = "selbst" | "handwerker";
+export type WerGewerk = "maler" | "boden" | "fliesen";
+export const WER_GEWERKE: { id: WerGewerk; label: string }[] = [
+  { id: "maler", label: "Wände und Decken (Maler)" },
+  { id: "boden", label: "Boden (Laminat, Vinyl)" },
+  { id: "fliesen", label: "Fliesen" },
+];
+
+export type Entsorgung = "keine" | "bauschutt" | "mischabfall" | "beide" | "unbekannt";
+
+export type ProjektFelder = {
+  name: string;
+  adresse: string;
+  /** Eigentumswohnung: Fenster & Co. sind Sache der Gemeinschaft (Risiko 9 im Plan). */
+  etw: "" | "ja" | "nein";
+  baujahr: string;
+  baujahrUnbekannt: boolean;
+  wohnflaeche: string;
+  nutzung: "" | Nutzung;
+  /** Optional — nur zum Vergleich im Ergebnis. */
+  budget: string;
+  wer: Record<WerGewerk, "" | Wer>;
+  /** Puffer für Unvorhergesehenes in Prozent — entscheidet der Nutzer (keine belegte Faustregel). */
+  puffer: string;
+  entsorgung: "" | Entsorgung;
+};
+
+export type ZustandGewerkId = ZustandGewerk["gewerk"];
+export type GewerkFeld = { zustand: "" | Zustand | "unbekannt"; arbeiten: ArbeitId[] };
 
 export type RaumFeld = {
   id: string;
@@ -19,7 +84,22 @@ export type RaumFeld = {
   /** Nur bei „Wände fliesen“: bis zu welcher Höhe (leer = bis zur Decke). */
   fliesenhoehe: string;
   massnahmen: MassnahmeId[];
+  typ: "" | RaumTyp;
+  /** „Noch nicht gemessen“ — die Auswertung verteilt dann die Wohnfläche (Annahme). */
+  masseGeschaetzt: boolean;
+  /** Die vorgeschlagenen Maßnahmen hat der Nutzer gesehen — sonst bleibt die Seite offen. */
+  massnahmenBestaetigt: boolean;
+  /** Ist-Zustand: alte Tapete, die runter muss? */
+  tapeteRunter: "" | Wissen;
+  altbelag: "" | Altbelag;
+  /** Muss der alte Bodenbelag raus? (nur bei neuem Boden gefragt) */
+  belagRaus: "" | "ja" | "nein";
+  /** Alte Wandfliesen, die runter müssen? (nur bei „Wände fliesen“) */
+  wandfliesenRaus: "" | Wissen;
 };
+/** Was die Rechnung von einem Raum braucht — Maße und Maßnahmen (ohne Typ und Ist-Zustand). */
+export type RaumMasse = Pick<RaumFeld, "id" | "name" | "laenge" | "breite" | "hoehe" | "oeffnungen" | "fliesenhoehe" | "massnahmen">;
+
 export type LohnFeld = { id: string; bezeichnung: string; stunden: string; satz: string; eigenleistung: boolean };
 export type PostenFeld = { id: string; bezeichnung: string; betrag: string; foerderung: FoerderArt };
 /** Angaben für die Zuschuss-Schätzung (lib/sanierung/foerderung.ts). */
@@ -32,7 +112,32 @@ export type Entwurf = {
   /** Eigene Preise je Gebinde; leer = Katalogpreis. */
   preise: Partial<Record<MaterialId, string>>;
   foerder: FoerderFelder;
+  projekt: ProjektFelder;
+  gewerke: Record<ZustandGewerkId, GewerkFeld>;
+  /** Eigene Menge je Arbeit (überschreibt den Vorschlag aus Räumen und Wohnfläche). */
+  arbeitMengen: Partial<Record<ArbeitId, string>>;
+  /** Eigener Betrag je Arbeit (z. B. Angebot) — ersetzt die Spanne der ganzen Zeile. */
+  arbeitPreise: Partial<Record<ArbeitId, string>>;
+  /** Abgehakte Zeilen des Einkaufszettels. */
+  abgehakt: string[];
 };
+
+export const leeresProjekt = (): ProjektFelder => ({
+  name: "",
+  adresse: "",
+  etw: "",
+  baujahr: "",
+  baujahrUnbekannt: false,
+  wohnflaeche: "",
+  nutzung: "",
+  budget: "",
+  wer: { maler: "", boden: "", fliesen: "" },
+  puffer: "",
+  entsorgung: "",
+});
+
+export const leereGewerke = (): Record<ZustandGewerkId, GewerkFeld> =>
+  Object.fromEntries(ZUSTAND_GEWERKE.map((g) => [g.gewerk, { zustand: "", arbeiten: [] }])) as unknown as Record<ZustandGewerkId, GewerkFeld>;
 
 /** BuyImmo richtet sich an Leute, die vermieten — und an eine Eigentumswohnung (1 Einheit). */
 export const STANDARD_FOERDER: FoerderFelder = { wohneinheiten: "1", isfp: false, nutzung: "vermieten", gebaeude: "mfh" };
@@ -42,30 +147,59 @@ export const neuerPosten = (id: string): PostenFeld => ({ id, bezeichnung: "", b
 export const STANDARD_HOEHE = "2,50";
 
 export function neuerRaum(id: string, nummer: number): RaumFeld {
-  return { id, name: `Raum ${nummer}`, laenge: "", breite: "", hoehe: STANDARD_HOEHE, oeffnungen: "", fliesenhoehe: "", massnahmen: [] };
+  return {
+    id, name: `Raum ${nummer}`, laenge: "", breite: "", hoehe: STANDARD_HOEHE, oeffnungen: "", fliesenhoehe: "", massnahmen: [],
+    typ: "", masseGeschaetzt: false, massnahmenBestaetigt: false, tapeteRunter: "", altbelag: "", belagRaus: "", wandfliesenRaus: "",
+  };
 }
 
 /**
  * Raum kopieren (Besichtigung: Zimmer gleichen sich oft) — alle Maße und Maßnahmen, neuer Name,
  * neue Kennung; die Kopie steht direkt hinter dem Original.
  */
-export function mitKopie(raeume: RaumFeld[], id: string, neueId: string): RaumFeld[] {
+export function mitKopie<R extends RaumMasse>(raeume: R[], id: string, neueId: string): R[] {
   const i = raeume.findIndex((r) => r.id === id);
   if (i < 0) return raeume;
   const original = raeume[i];
-  const kopie: RaumFeld = { ...original, id: neueId, name: `${original.name || "Raum"} (Kopie)`, massnahmen: [...original.massnahmen] };
+  const kopie: R = { ...original, id: neueId, name: `${original.name || "Raum"} (Kopie)`, massnahmen: [...original.massnahmen] };
   return [...raeume.slice(0, i + 1), kopie, ...raeume.slice(i + 1)];
 }
 
-/** Start: ein Raum und eine leere Zeile Arbeitszeit — der Lohnrechner soll sofort zu sehen sein. */
+/**
+ * Start: noch kein Raum (die Räume entstehen im Guide aus Typ + Anzahl) und eine leere Zeile
+ * Arbeitszeit als Eigenleistung — der Lohnrechner soll in der Übersicht sofort zu sehen sein.
+ */
 export function leererEntwurf(id: string): Entwurf {
   return {
-    raeume: [neuerRaum(id, 1)],
+    raeume: [],
     lohn: [{ id: `${id}-lohn`, bezeichnung: "Eigene Arbeit", stunden: "", satz: "", eigenleistung: true }],
     eigene: [],
     preise: {},
     foerder: { ...STANDARD_FOERDER },
+    projekt: leeresProjekt(),
+    gewerke: leereGewerke(),
+    arbeitMengen: {},
+    arbeitPreise: {},
+    abgehakt: [],
   };
+}
+
+/**
+ * Menge oder Prozent aus einem Textfeld: leer oder unlesbar → `null` (fehlt), sonst die Zahl ≥ 0.
+ * Wie `massDe()` ohne Tausenderpunkt — Mengen hier sind Stück, Meter, m² oder Prozent.
+ */
+export function mengeAus(eingabe: string | null | undefined): number | null {
+  const roh = (eingabe ?? "").trim().replace(/\s/g, "");
+  if (roh === "" || !/^\d*[.,]?\d*$/.test(roh) || !/\d/.test(roh)) return null;
+  const n = Number(roh.replace(",", "."));
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+/** Geldbetrag aus einem Textfeld (deutscher Tausenderpunkt erlaubt): leer oder unlesbar → `null`. */
+export function betragAus(eingabe: string | null | undefined): number | null {
+  if (eingabe == null || eingabe.trim() === "") return null;
+  const n = zahlDe(eingabe);
+  return n != null && n >= 0 ? n : null;
 }
 
 /**
@@ -81,21 +215,29 @@ export function massDe(eingabe: string | null | undefined): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/** Formular → Zuschuss-Schätzung. Nur Posten mit einer Förderart zählen dort. */
-export function zuFoerderEingabe(e: Entwurf, stichtag: string): FoerderEingabe {
+/**
+ * Formular → Zuschuss-Schätzung. Nur Posten mit einer Förderart zählen dort. `zusatz`: förderfähige
+ * Kostenzeilen aus dem Guide (Fenster, Wärmepumpe) — so muss sie niemand doppelt eintragen.
+ * Die Nutzung kommt aus dem Projekt, wenn sie dort gewählt ist (eine Frage, nicht zwei).
+ */
+export function zuFoerderEingabe(
+  e: Entwurf,
+  stichtag: string,
+  zusatz: { id: string; bezeichnung: string; betrag: number; art: FoerderArt }[] = [],
+): FoerderEingabe {
   const we = Math.floor(zahlDe0(e.foerder.wohneinheiten));
   return {
-    posten: e.eigene.map((p) => ({ id: p.id, bezeichnung: p.bezeichnung, betrag: zahlDe0(p.betrag), art: p.foerderung })),
+    posten: [...e.eigene.map((p) => ({ id: p.id, bezeichnung: p.bezeichnung, betrag: zahlDe0(p.betrag), art: p.foerderung })), ...zusatz],
     wohneinheiten: we >= 1 ? we : 1,
     isfp: e.foerder.isfp,
-    nutzung: e.foerder.nutzung,
+    nutzung: e.projekt.nutzung || e.foerder.nutzung,
     gebaeude: e.foerder.gebaeude,
     stichtag,
   };
 }
 
 /** Formular → Rechnung. Leere oder unsinnige Felder zählen als 0. */
-export function zuEingabe(e: Entwurf): SanierungEingabe {
+export function zuEingabe(e: Pick<Entwurf, "lohn" | "eigene" | "preise"> & { raeume: RaumMasse[] }): SanierungEingabe {
   const preise: Partial<Record<MaterialId, number>> = {};
   for (const [id, wert] of Object.entries(e.preise) as [MaterialId, string | undefined][]) {
     // Leeres Feld = Katalogpreis. „0“ ist ein echter Preis (Material ist schon da). Was sich nicht
@@ -136,6 +278,7 @@ export function entwurfAus(roh: unknown): Entwurf | null {
   if (!Array.isArray(o.raeume)) return null;
   const raeume = liste(o.raeume).map((x, i): RaumFeld => {
     const r = obj(x);
+    const massnahmen = liste(r.massnahmen).filter((m): m is MassnahmeId => typeof m === "string" && MASSNAHME_IDS.has(m));
     return {
       id: id(r.id, `r${i}`),
       name: text(r.name, 60),
@@ -145,7 +288,15 @@ export function entwurfAus(roh: unknown): Entwurf | null {
       oeffnungen: text(r.oeffnungen, 20),
       // Ältere Entwürfe kennen das Feld nicht → leer = bis zur Decke.
       fliesenhoehe: text(r.fliesenhoehe, 20),
-      massnahmen: liste(r.massnahmen).filter((m): m is MassnahmeId => typeof m === "string" && MASSNAHME_IDS.has(m)),
+      massnahmen,
+      typ: typeof r.typ === "string" && RAUM_TYP_IDS.has(r.typ) ? (r.typ as RaumTyp) : "",
+      masseGeschaetzt: r.masseGeschaetzt === true,
+      // Entwürfe aus dem Rechner vor dem Guide: Wer dort Maßnahmen angehakt hat, hat sie gewählt.
+      massnahmenBestaetigt: r.massnahmenBestaetigt === true || (r.massnahmenBestaetigt === undefined && massnahmen.length > 0),
+      tapeteRunter: wissen(r.tapeteRunter),
+      altbelag: typeof r.altbelag === "string" && ALTBELAG_IDS.has(r.altbelag) ? (r.altbelag as Altbelag) : "",
+      belagRaus: r.belagRaus === "ja" || r.belagRaus === "nein" ? r.belagRaus : "",
+      wandfliesenRaus: wissen(r.wandfliesenRaus),
     };
   });
   const lohn = liste(o.lohn).map((x, i): LohnFeld => {
@@ -168,5 +319,46 @@ export function entwurfAus(roh: unknown): Entwurf | null {
     nutzung: f.nutzung === "eigennutzen" ? "eigennutzen" : "vermieten",
     gebaeude: f.gebaeude === "haus" ? "haus" : "mfh",
   };
-  return { raeume, lohn, eigene, preise, foerder };
+  const pr = obj(o.projekt);
+  const w = obj(pr.wer);
+  const wer = (v: unknown): "" | Wer => (v === "selbst" || v === "handwerker" ? v : "");
+  const projekt: ProjektFelder = {
+    name: text(pr.name, 80),
+    adresse: text(pr.adresse, 160),
+    etw: pr.etw === "ja" || pr.etw === "nein" ? pr.etw : "",
+    baujahr: text(pr.baujahr, 4),
+    baujahrUnbekannt: pr.baujahrUnbekannt === true,
+    wohnflaeche: text(pr.wohnflaeche, 10),
+    nutzung: pr.nutzung === "vermieten" || pr.nutzung === "eigennutzen" ? pr.nutzung : "",
+    budget: text(pr.budget, 20),
+    wer: { maler: wer(w.maler), boden: wer(w.boden), fliesen: wer(w.fliesen) },
+    puffer: text(pr.puffer, 6),
+    entsorgung: typeof pr.entsorgung === "string" && ENTSORGUNG_IDS.has(pr.entsorgung) ? (pr.entsorgung as Entsorgung) : "",
+  };
+  const g = obj(o.gewerke);
+  const gewerke = leereGewerke();
+  for (const zg of ZUSTAND_GEWERKE) {
+    const x = obj(g[zg.gewerk]);
+    const z = x.zustand;
+    gewerke[zg.gewerk] = {
+      zustand: z === "gut" || z === "mittel" || z === "schlecht" || z === "unbekannt" ? z : "",
+      // Nur Arbeiten, die es gibt und die zu diesem Gewerk gehören.
+      arbeiten: liste(x.arbeiten).filter((a): a is ArbeitId => istArbeit(a) && ARBEITEN[a].gewerk === zg.gewerk),
+    };
+  }
+  return {
+    raeume, lohn, eigene, preise, foerder, projekt, gewerke,
+    arbeitMengen: arbeitTexte(o.arbeitMengen),
+    arbeitPreise: arbeitTexte(o.arbeitPreise),
+    abgehakt: liste(o.abgehakt).filter((a): a is string => typeof a === "string" && a.length <= 64).slice(0, 50),
+  };
+}
+
+const ENTSORGUNG_IDS = new Set<string>(["keine", "bauschutt", "mischabfall", "beide", "unbekannt"]);
+const istArbeit = (v: unknown): v is ArbeitId => typeof v === "string" && Object.prototype.hasOwnProperty.call(ARBEITEN, v);
+const wissen = (v: unknown): "" | Wissen => (v === "ja" || v === "nein" || v === "unbekannt" ? v : "");
+function arbeitTexte(v: unknown): Partial<Record<ArbeitId, string>> {
+  const aus: Partial<Record<ArbeitId, string>> = {};
+  for (const [k, x] of Object.entries(obj(v))) if (istArbeit(k) && typeof x === "string") aus[k] = x.slice(0, 20);
+  return aus;
 }

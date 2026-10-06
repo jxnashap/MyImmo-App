@@ -354,6 +354,12 @@ ETW: Fenster & Co. = Gemeinschaft (Prüfpunkt Sonderumlage). Katalog `lib/sanier
 **Regel: jede Zahl steht wörtlich im Feld `zitat` ihrer Quelle (Test prüft es), mindestens zwei
 unabhängige Quellen, brutto; Werte nie aus einer Zusammenfassung übernehmen** (lag dreimal daneben).
 **GEG heißt seit 29.07.2026 GModG**; die 30-Jahre-Kessel-Austauschpflicht (§ 72) ist weggefallen.
+**Stufe B gebaut (05.10.2026):** `/sanierung` = Schritt für Schritt · Übersicht · Ergebnis über EINEM
+Entwurf; `offeneSeiten()` (`lib/sanierung/guide.ts`) ist die EINE Lückenfunktion, `auswerten()`
+(`lib/sanierung/auswertung.ts`) die EINE Rechnung. **Regeln:** (1) Neue Frage → Feld im Entwurf +
+`fehlendeAngaben()` + Seite in `GuideSeiten.tsx` (nie eine zweite Darstellung). (2) Fehlendes wird
+vorsichtig ANGENOMMEN und steht in `annahmen` — nie still 0. (3) Ohne belegten Preis keine Zahl:
+offener Posten oder „Preis offen“. (4) Eine Arbeit, die eine andere enthält, gehört in `ENTHALTEN_IN`.
 **Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
 (`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
 kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**

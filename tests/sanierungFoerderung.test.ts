@@ -186,7 +186,8 @@ describe("Oberfläche", () => {
   it("Fristenfalle steht da; ohne Förderposten der Satz, dass Kosmetik nicht gefördert wird", async () => {
     const { default: SanierungsRechner } = await import("@/components/SanierungsRechner");
     const { KATALOG, KATALOG_STAND } = await import("@/lib/sanierung/katalog");
-    const html = renderToStaticMarkup(createElement(SanierungsRechner, { katalog: KATALOG, stand: KATALOG_STAND, heute: "2026-10-05" }));
+    // Die Förderung steht in der Übersicht (und im Guide auf ihrer Seite) — die Übersicht zeigt alle Seiten.
+    const html = renderToStaticMarkup(createElement(SanierungsRechner, { katalog: KATALOG, stand: KATALOG_STAND, heute: "2026-10-05", ansicht: "uebersicht" }));
     expect(html).toContain("Erst beantragen, dann beauftragen.");
     expect(html).toContain("Spachteln, Streichen, Böden und Fliesen werden nicht gefördert.");
   });

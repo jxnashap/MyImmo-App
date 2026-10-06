@@ -8,6 +8,7 @@ import { objektZeilen } from "@/lib/pdf/kreditantragPdf";
 import { auswahlAus } from "@/lib/kauf/auswahl";
 import { sanierungBeimLaden } from "@/lib/sanierung/uebergabe";
 import { massDe, zuEingabe, leererEntwurf } from "@/lib/sanierung/eingabe";
+import { auswerten } from "@/lib/sanierung/auswertung";
 import { berechneSanierung } from "@/lib/sanierung/rechner";
 import { KATALOG } from "@/lib/sanierung/katalog";
 import { bestandLage } from "@/lib/aufbau";
@@ -92,8 +93,13 @@ describe("Übergabe aus dem Sanierungsrechner", () => {
     expect(r.lohn).toBe(2_900);
     expect(r.lohnEigen).toBe(2_400);
     const s = readFileSync("components/SanierungsRechner.tsx", "utf8");
-    expect(s).toContain("const fuerKauf = Math.max(0, ergebnis.gesamt.max - ergebnis.lohnEigen);");
+    // Seit dem Guide (Stufe B): `gesamt` der Auswertung enthält die Eigenleistung gar nicht erst
+    // (tests/sanierungGuide.test.ts prüft das an Zahlen) — übergeben wird die obere Spanne davon.
+    expect(s).toContain("const fuerKauf = Math.max(0, a.gesamt.max);");
     expect(s).toContain("kaufLinkMitSanierung(fuerKauf)");
+    const g = auswerten({ ...leererEntwurf("z"), lohn: e.lohn, projekt: { ...leererEntwurf("z").projekt, puffer: "0" } }, KATALOG);
+    expect(g.eigenleistung).toBe(2_400);
+    expect(g.gesamt.max).toBe(500);
     // Der Startentwurf trägt die eigene Arbeit als Eigenleistung.
     expect(leererEntwurf("y").lohn[0]).toMatchObject({ bezeichnung: "Eigene Arbeit", eigenleistung: true });
   });
@@ -135,7 +141,7 @@ describe("Kommandozentrale und Fahrplan", () => {
 
   it("Grammatik und Verschnitt-Offenlegung", () => {
     expect(readFileSync("app/(app)/fahrplan/page.tsx", "utf8")).toContain("kennst nur du");
-    expect(readFileSync("components/SanierungsRechner.tsx", "utf8")).toContain("Fliesen {prozent(VERSCHNITT_FLIESE)}");
+    expect(readFileSync("components/sanierung/GuideErgebnis.tsx", "utf8")).toContain("Fliesen {prozent(VERSCHNITT_FLIESE)}");
   });
 
   it("die Wortmarke bleibt die Überschrift der App-Seiten (h1 um den Umschalter)", async () => {
