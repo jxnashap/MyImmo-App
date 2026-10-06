@@ -13,7 +13,7 @@ import { fristSchluessel } from "@/lib/termine";
 import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
-import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
+import { erwarteteMonate, gezahltImMonat, TEILZAHLUNG_TOLERANZ } from "@/lib/mietkonto";
 import { CalendarDays, Plus, TriangleAlert, Landmark, Banknote, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck, ChevronRight, Inbox } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
@@ -182,31 +182,26 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const mieterNameOf = new Map(
     mieterRows.map((m) => [m.id as string, [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter"]),
   );
-  // Schon gebuchte Mieten des laufenden Monats (Miet-Kategorie, mit Mieter).
-  const gebuchtDiesenMonat = new Set(
-    ((einn ?? []) as Einnahme[])
-      // `soll_monat` steht im Typ noch nicht (Altbestand hat es nicht) — der
-      // Fallback auf das Buchungsdatum ist derselbe wie im Mietkonto.
-      .filter((e) => {
-        const soll = (e as { soll_monat?: string | null }).soll_monat ?? zuJahrMonat(e.buchungsdatum);
-        return e.kategorie === "Miete" && e.mieter_id && soll === laufenderMonat;
-      })
-      .map((e) => String(e.mieter_id)),
-  );
+  // Gezahlt im laufenden Monat je Mieter (Miet-Kategorie). Teilzahlung (Paket B, 06.10.2026):
+  // offen bleibt, was unter dem Soll liegt — dieselbe Regel wie der Rückstands-Wächter
+  // (gezahltImMonat, TEILZAHLUNG_TOLERANZ in lib/mietkonto.ts).
+  const mietEinnahmenVon = (id: string) =>
+    ((einn ?? []) as (Einnahme & { soll_monat?: string | null })[]).filter((e) => e.mieter_id === id);
   const zeitraeumeVon = (id: string) =>
     ((mzRows ?? []) as { mieter_id: string }[]).filter((z) => z.mieter_id === id) as never[];
   const offeneMieten: OffeneMiete[] = mieterRows
-    .filter((m) => !gebuchtDiesenMonat.has(m.id as string))
     // Nur Mieter, für die dieser Monat überhaupt eine Soll-Miete hat
     // (Einzug/Auszug, Miet-Zeiträume) — sonst stünde jeder Altmieter hier.
     .map((m) => ({ m, soll: erwarteteMonate(m as never, zeitraeumeVon(m.id as string), laufenderMonat, laufenderMonat)[0] }))
     .filter(({ soll }) => !!soll)
-    .map(({ m, soll }) => ({
+    .map(({ m, soll }) => ({ m, soll, gezahlt: gezahltImMonat(mietEinnahmenVon(m.id as string), laufenderMonat) }))
+    .filter(({ soll, gezahlt }) => gezahlt != null && gezahlt < soll.gesamt - TEILZAHLUNG_TOLERANZ)
+    .map(({ m, soll, gezahlt }) => ({
       mieterId: m.id as string,
       name: mieterNameOf.get(m.id as string) ?? "Mieter",
       objekt: (m.prop_id && nameOf.get(m.prop_id)) || "",
       monat: laufenderMonat,
-      betrag: soll.gesamt,
+      betrag: Math.round((soll.gesamt - (gezahlt ?? 0)) * 100) / 100,
     }));
 
   const offeneAnliegen: OffenesAnliegen[] = ((anlRows ?? []) as { id: string; titel: string | null; created_at: string; mieter_name: string | null }[])

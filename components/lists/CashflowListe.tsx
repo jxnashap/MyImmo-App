@@ -27,7 +27,7 @@ export default function CashflowListe({
   einnahmen: Einnahme[];
   kosten: Kosten[];
   properties: Pick<Property, "id" | "bezeichnung">[];
-  tenants: Pick<Tenant, "id" | "vorname" | "nachname">[];
+  tenants: (Pick<Tenant, "id" | "vorname" | "nachname"> & { prop_id?: string | null })[];
 }) {
   const [open, setOpen] = useState<Row | null>(null);
   const nameOf = new Map(properties.map((p) => [p.id, p.bezeichnung] as const));

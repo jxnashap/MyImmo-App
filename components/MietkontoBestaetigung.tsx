@@ -17,6 +17,7 @@ import {
   standardStartNacherfassung,
   erwarteteMonate,
   dedup,
+  TEILZAHLUNG_TOLERANZ,
   type MietkontoMieter,
   type MietkontoZeitraum,
 } from "@/lib/mietkonto";
@@ -33,6 +34,8 @@ export type MietkontoZeile = {
   stellplatz: number;
   gesamt: number;
   schonGebucht: boolean;
+  /** Gebuchter Betrag des Monats (null = unbekannt). Liegt er unter dem Soll: Teilzahlung. */
+  gezahlt?: number | null;
   /** Gesetzt, wenn Ein-/Auszug mitten im Monat lag — Betrag ist anteilig. */
   anteilig?: { tage: number; tageImMonat: number };
 };
@@ -424,9 +427,16 @@ export default function MietkontoBestaetigung({
                       <div style={{ fontSize: 11.5, color: "var(--muted)" }}>{z.objekt}</div>
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>{eur2(z.gesamt)}</div>
-                    <span style={{ marginLeft: "auto", color: "var(--green)", fontSize: 12.5, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
-                      <Check size={14} /> bestätigt
-                    </span>
+                    {/* Teilzahlung (Paket B): bestätigt, aber unter dem Soll — der Rest steht im Rückstands-Wächter. */}
+                    {z.schonGebucht && z.gezahlt != null && z.gezahlt < z.gesamt - TEILZAHLUNG_TOLERANZ ? (
+                      <span style={{ marginLeft: "auto", color: "var(--amber)", fontSize: 12.5, fontWeight: 600 }}>
+                        teilweise: {eur2(z.gezahlt)} · offen {eur2(z.gesamt - z.gezahlt)}
+                      </span>
+                    ) : (
+                      <span style={{ marginLeft: "auto", color: "var(--green)", fontSize: 12.5, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
+                        <Check size={14} /> bestätigt
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

@@ -198,6 +198,15 @@ export default function WiederkehrManager({
               {adding ? "Speichert…" : <><Plus size={14} style={{ verticalAlign: "-2px" }} /> Vorlage</>}
             </button>
           </div>
+          {/* Paket B (06.10.2026): Eine Miet-Vorlage bucht einen festen Betrag ohne NK-Anteil und
+              Mietmonat — das Mietkonto erkennt ohne Mieter nichts, Erhöhungen gehen verloren. */}
+          {art === "einnahme" && kategorie === "Miete" && (
+            <p style={{ fontSize: 12, color: "var(--amber)", margin: "8px 0 0", lineHeight: 1.5 }}>
+              Mieten am besten im <a href="/mietkonto" style={{ color: "var(--gold)" }}>Mietkonto</a> bestätigen: Dort
+              rechnet MyImmo mit Mieterhöhungen, trennt die Nebenkosten (Anlage V Zeile 13) und kennt den Mietmonat.
+              Eine Vorlage bucht nur einen festen Betrag{mieterId ? "" : " — und ohne Mieter zählt das Mietkonto sie gar nicht"}.
+            </p>
+          )}
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 10 }}>
             Das Datum ist der tatsächliche Zahltag (§ 11 EStG). Beim Erzeugen wird für jeden fälligen Termin eine
             Buchung angelegt — bereits erzeugte Termine werden übersprungen. Ohne Gewähr, keine Steuerberatung.

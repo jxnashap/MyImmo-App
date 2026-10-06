@@ -13,7 +13,7 @@ export default async function NeueBuchungPage(
   const supabase = await createClient();
   const [{ data: props }, { data: miet }] = await Promise.all([
     supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
-    supabase.from("mieter").select("id,vorname,nachname").order("nachname"),
+    supabase.from("mieter").select("id,vorname,nachname,prop_id").order("nachname"),
   ]);
 
   return (
@@ -27,7 +27,7 @@ export default async function NeueBuchungPage(
 
       <BuchungForm
         properties={(props ?? []) as Pick<Property, "id" | "bezeichnung">[]}
-        tenants={(miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname">[]}
+        tenants={(miet ?? []) as (Pick<Tenant, "id" | "vorname" | "nachname"> & { prop_id: string | null })[]}
         back="/cashflow"
         typInitial={searchParams.typ === "ausgabe" ? "ausgabe" : "einnahme"}
         propInitial={searchParams.prop ?? ""}

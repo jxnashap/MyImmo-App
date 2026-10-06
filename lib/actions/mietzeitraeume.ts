@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { vertragswerte } from "@/lib/mietkonto";
 import { planeMietaenderung, type Betraege, type ZeitraumZeile } from "@/lib/sollAb";
 import { schreibeMietaenderung } from "@/lib/mietaenderung";
+import { staffelPlan } from "@/lib/staffel";
 
 export type MietZeitraumResult = { ok: boolean; error?: string };
 
@@ -104,6 +105,9 @@ export async function deleteMietZeitraum(id: string, mieterId: string): Promise<
  * Neue Beträge ab einem Monat (Paket B, 06.10.2026) — z. B. die angepasste NK-Vorauszahlung
  * nach § 560 Abs. 4 BGB. Nicht genannte Beträge bleiben, wie sie in diesem Monat gelten.
  * Frühere Monate behalten ihre Werte (planeMietaenderung schließt Lücken mit den alten).
+ *
+ * Schreibt NUR Miet-Zeiträume, nicht die Felder am Mieter: Die bleiben der Grundwert, auf dem
+ * z. B. der Staffelplan rechnet. Was in einem Monat gilt, sagt `vertragswerte()`.
  */
 export async function setzeMieteAb(
   mieterId: string,
@@ -112,39 +116,89 @@ export async function setzeMieteAb(
 ): Promise<MietZeitraumResult> {
   const { supabase, userId } = await uid();
   if (!userId) return { ok: false, error: "Nicht angemeldet." };
-  if (!/^\d{4}-\d{2}$/.test(abYm)) return { ok: false, error: "Bitte einen Monat angeben." };
-  for (const v of Object.values(aenderung)) {
-    if (v != null && (!Number.isFinite(v) || v < 0)) return { ok: false, error: "Ungültiger Betrag." };
-  }
-
-  const [mRes, zRes] = await Promise.all([
-    supabase.from("mieter").select("prop_id,mietbeginn,kaltmiete,nk_vorauszahlung,stellplatz_miete").eq("id", mieterId).eq("user_id", userId).maybeSingle(),
-    supabase.from("miet_zeitraeume").select("id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete").eq("mieter_id", mieterId).eq("user_id", userId),
-  ]);
-  if (mRes.error || zRes.error || !mRes.data) return { ok: false, error: "Mieter nicht gefunden." };
-  const m = mRes.data as { prop_id: string | null; mietbeginn: string | null } & Betraege;
-  const zr = (zRes.data ?? []) as ZeitraumZeile[];
-  if (!m.mietbeginn) return { ok: false, error: "Ohne Mietbeginn kennt das Mietkonto kein Soll — bitte zuerst den Mietbeginn eintragen." };
-
-  const jetzt = vertragswerte(m, zr, abYm);
-  const neu: Betraege = {
-    kaltmiete: aenderung.kaltmiete ?? jetzt.kaltmiete,
-    nk_vorauszahlung: aenderung.nk_vorauszahlung ?? jetzt.nk,
-    stellplatz_miete: aenderung.stellplatz_miete ?? jetzt.stellplatz,
-  };
-  const alt: Betraege = { kaltmiete: m.kaltmiete, nk_vorauszahlung: m.nk_vorauszahlung, stellplatz_miete: m.stellplatz_miete };
-  const plan = planeMietaenderung({ mietbeginn: m.mietbeginn, alt, neu, zeitraeume: zr, abYm });
-  if (!plan.neu && !plan.ersetzen) return { ok: false, error: "Der Monat liegt am oder vor dem Mietbeginn — dann im Mieter selbst ändern." };
-
-  const r = await schreibeMietaenderung(supabase, { userId, mieterId, propId: m.prop_id, plan });
-  if ("error" in r) return { ok: false, error: r.error };
-
-  // Die Felder am Mieter tragen den neuesten Stand (wie beim Speichern des Formulars).
-  const { error } = await supabase.from("mieter").update(neu).eq("id", mieterId).eq("user_id", userId);
-  if (error) return { ok: false, error: "Zeitraum gespeichert, Mieter-Stammdaten nicht — bitte den Mieter prüfen." };
-
+  const r = await mieteAbAnwenden(supabase, userId, mieterId, [{ abYm, aenderung }]);
+  if (!r.ok) return r;
   revalidatePath(`/tenants/${mieterId}`);
   revalidatePath("/mietkonto");
   revalidatePath("/");
+  return { ok: true };
+}
+
+/**
+ * Staffelmiete ins Mietkonto (Paket B, 06.10.2026): jede Stufe des Staffelplans als Miet-Zeitraum
+ * ab ihrem Monat. Vorher erzeugte der Plan nur eine Frist — das Soll blieb die Anfangsmiete.
+ * Stufen, die schon als Zeitraum mit genau dieser Kaltmiete beginnen, werden übersprungen
+ * (mehrfaches Klicken ändert nichts). Rechnung: `staffelPlan()` wie auf der Mieterseite.
+ */
+export async function uebernehmeStaffel(mieterId: string): Promise<MietZeitraumResult & { stufen?: number }> {
+  const { supabase, userId } = await uid();
+  if (!userId) return { ok: false, error: "Nicht angemeldet." };
+  const [mRes, zRes] = await Promise.all([
+    supabase.from("mieter").select("mietart,kaltmiete,staffel_datum,staffel_intervall,staffel_typ,staffel_betrag,staffel_prozent,staffel_stufen").eq("id", mieterId).eq("user_id", userId).maybeSingle(),
+    supabase.from("miet_zeitraeume").select("von,kaltmiete").eq("mieter_id", mieterId).eq("user_id", userId),
+  ]);
+  if (mRes.error || zRes.error || !mRes.data) return { ok: false, error: "Mieter nicht gefunden." };
+  const m = mRes.data as {
+    mietart: string | null; kaltmiete: number | null; staffel_datum: string | null; staffel_intervall: string | null;
+    staffel_typ: string | null; staffel_betrag: number | null; staffel_prozent: number | null; staffel_stufen: number | null;
+  };
+  if ((m.mietart ?? "").toLowerCase() !== "staffel" || !m.staffel_datum) return { ok: false, error: "Kein Staffelplan hinterlegt." };
+  const plan = staffelPlan({
+    startMiete: Number(m.kaltmiete) || 0,
+    startDatum: m.staffel_datum,
+    intervallMonate: Number(m.staffel_intervall) || 12,
+    typ: m.staffel_typ === "prozent" ? "prozent" : "betrag",
+    betrag: m.staffel_betrag,
+    prozent: m.staffel_prozent,
+    stufen: m.staffel_stufen ?? 0,
+  });
+  if (plan.length === 0) return { ok: false, error: "Der Staffelplan ist unvollständig (Betrag oder Prozent fehlt)." };
+  const vorhanden = new Set(((zRes.data ?? []) as { von: string; kaltmiete: number | null }[]).map((z) => `${z.von.slice(0, 7)}|${Number(z.kaltmiete)}`));
+  const offen = plan.filter((st) => !vorhanden.has(`${st.datum.slice(0, 7)}|${st.miete}`));
+  if (offen.length === 0) return { ok: true, stufen: 0 };
+
+  const r = await mieteAbAnwenden(supabase, userId, mieterId, offen.map((st) => ({ abYm: st.datum.slice(0, 7), aenderung: { kaltmiete: st.miete } })));
+  if (!r.ok) return r;
+  revalidatePath(`/tenants/${mieterId}`);
+  revalidatePath("/mietkonto");
+  revalidatePath("/");
+  return { ok: true, stufen: offen.length };
+}
+
+/** Wendet Änderungen nacheinander an (aufsteigend nach Monat), liest dazwischen neu. */
+async function mieteAbAnwenden(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  mieterId: string,
+  schritte: { abYm: string; aenderung: Partial<Betraege> }[],
+): Promise<MietZeitraumResult> {
+  for (const { abYm, aenderung } of schritte) {
+    if (!/^\d{4}-\d{2}$/.test(abYm)) return { ok: false, error: "Bitte einen Monat angeben." };
+    for (const v of Object.values(aenderung)) {
+      if (v != null && (!Number.isFinite(v) || v < 0)) return { ok: false, error: "Ungültiger Betrag." };
+    }
+  }
+  for (const { abYm, aenderung } of [...schritte].sort((a, b) => a.abYm.localeCompare(b.abYm))) {
+    const [mRes, zRes] = await Promise.all([
+      supabase.from("mieter").select("prop_id,mietbeginn,kaltmiete,nk_vorauszahlung,stellplatz_miete").eq("id", mieterId).eq("user_id", userId).maybeSingle(),
+      supabase.from("miet_zeitraeume").select("id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete").eq("mieter_id", mieterId).eq("user_id", userId),
+    ]);
+    if (mRes.error || zRes.error || !mRes.data) return { ok: false, error: "Mieter nicht gefunden." };
+    const m = mRes.data as { prop_id: string | null; mietbeginn: string | null } & Betraege;
+    const zr = (zRes.data ?? []) as ZeitraumZeile[];
+    if (!m.mietbeginn) return { ok: false, error: "Ohne Mietbeginn kennt das Mietkonto kein Soll — bitte zuerst den Mietbeginn eintragen." };
+
+    const jetzt = vertragswerte(m, zr, abYm);
+    const neu: Betraege = {
+      kaltmiete: aenderung.kaltmiete ?? jetzt.kaltmiete,
+      nk_vorauszahlung: aenderung.nk_vorauszahlung ?? jetzt.nk,
+      stellplatz_miete: aenderung.stellplatz_miete ?? jetzt.stellplatz,
+    };
+    const alt: Betraege = { kaltmiete: m.kaltmiete, nk_vorauszahlung: m.nk_vorauszahlung, stellplatz_miete: m.stellplatz_miete };
+    const plan = planeMietaenderung({ mietbeginn: m.mietbeginn, alt, neu, zeitraeume: zr, abYm });
+    if (!plan.neu && !plan.ersetzen) return { ok: false, error: "Der Monat liegt am oder vor dem Mietbeginn — dann im Mieter selbst ändern." };
+    const r = await schreibeMietaenderung(supabase, { userId, mieterId, propId: m.prop_id, plan });
+    if ("error" in r) return { ok: false, error: r.error };
+  }
   return { ok: true };
 }
