@@ -62,7 +62,7 @@ export function adressZeilen(addr: string | null | undefined): string[] {
 // Umlagefähigkeit nach BetrKV §2 — wie in der alten App
 export function istUmlagefaehig(kat: string | null): "ja" | "nein" | "unklar" {
   // Voll umlagefähige BetrKV-§2-Kategorien. Hinweis: "Versicherung" meint Sach-/Haftpflicht.
-  const ja = ["Grundsteuer", "Versicherung", "Müll", "Abwasser", "Wasser", "Hausmeister", "Aufzug", "Allgemeinstrom", "Gartenpflege", "Straßenreinigung"];
+  const ja = ["Grundsteuer", "Versicherung", "Müll", "Abwasser", "Wasser", "Wasser / Abwasser", "Hausmeister", "Aufzug", "Allgemeinstrom", "Gartenpflege", "Straßenreinigung", "Heizung", "Schornsteinfeger"];
   const nein = ["Reparatur", "Instandhaltung", "Verwaltung", "Makler"];
   // "Hausgeld / WEG" bewusst NICHT hier: enthält nicht-umlagefähige Anteile
   // (Verwaltung + Instandhaltungsrücklage, § 1 Abs. 2 BetrKV) → muss aufgeteilt/geprüft werden.

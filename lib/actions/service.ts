@@ -1,5 +1,6 @@
 "use server";
 
+import { UEBERNAHME_KATEGORIEN } from "@/lib/kategorien";
 // Service-Rolle (Businessplan Kap. 14): Vermieter lädt Service-Partner
 // (Handwerker/Hausmeister) per Code ein und vergibt Aufträge; der Partner
 // arbeitet sie im schlanken Service-Portal ab.
@@ -493,8 +494,6 @@ export async function beantworteAuftrag(formData: FormData) {
   return { ok: true };
 }
 
-// Kategorien, in die ein Auftrag übernommen werden darf (Kosten-Formular).
-const UEBERNAHME_KATEGORIEN = ["Reparatur", "Instandhaltung", "Modernisierung", "Verwaltung", "Sonstiges"];
 
 /** Vermieter: erledigten Auftrag als Kosten-Buchung übernehmen (Betrag,
  *  Rechnung als Anhang, Lohnanteil dokumentiert in der Notiz — für die
@@ -508,7 +507,13 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
 
   const id = String(formData.get("id") ?? "");
   const kat = String(formData.get("kategorie") ?? "Reparatur");
-  const kategorie = UEBERNAHME_KATEGORIEN.includes(kat) ? kat : "Reparatur";
+  const kategorie = (UEBERNAHME_KATEGORIEN as readonly string[]).includes(kat) ? kat : "Reparatur";
+  // Rechnungsdatum (Paket C, 06.10.2026): Vorher galt der Tag des Klicks — ein Dezember-Auftrag,
+  // der im Januar übernommen wurde, rutschte ins nächste Steuer- und Abrechnungsjahr.
+  const datumRoh = String(formData.get("buchungsdatum") ?? "").trim();
+  const buchungsdatum = /^\d{4}-\d{2}-\d{2}$/.test(datumRoh) && !Number.isNaN(Date.parse(datumRoh))
+    ? datumRoh
+    : new Date().toISOString().slice(0, 10);
   if (!id) return { error: "Ungültige Eingabe." };
 
   const { data: a } = await supabase
@@ -560,7 +565,7 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
     .insert({
       user_id: user.id,
       prop_id: a.prop_id ?? null,
-      buchungsdatum: new Date().toISOString().slice(0, 10),
+      buchungsdatum,
       kategorie,
       betrag: Number(a.betrag),
       beschreibung: a.titel.slice(0, 200),

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
 import { heuteBerlin } from "@/lib/zeitraum";
-import { mieterFristen, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
+import { mieterFristen, nkErstellteJahre, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
 import {
   createTermin, createVorlageTermin, deleteTermin, toggleErledigt,
   blendeFristAus, zeigeFristWieder,
@@ -40,12 +40,13 @@ export default async function TerminePage(
 ) {
   const searchParams = await props0.searchParams;
   const supabase = await createClient();
-  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }] = await Promise.all([
+  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }, { data: nkNotizen }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
     supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum").order("bezeichnung"),
     supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen"),
     supabase.from("kredite").select("id,prop_id,bezeichnung,zinsbindung,auszahlung_datum"),
     supabase.from("frist_ausgeblendet").select("schluessel"),
+    supabase.from("notizen").select("mieter_id,titel").eq("kategorie", "Nebenkostenabrechnung"),
   ]);
 
   const properties = (props ?? []) as (Pick<Property, "id" | "bezeichnung" | "typ"> & { energieausweis_datum: string | null })[];
@@ -55,12 +56,13 @@ export default async function TerminePage(
   const kredite = (kred ?? []) as (Kredit & { auszahlung_datum: string | null })[];
   const mieterName = new Map(mieter.map((m) => [m.id, [m.vorname, m.nachname].filter(Boolean).join(" ")]));
 
+  const nkJahre = nkErstellteJahre((nkNotizen ?? []) as { mieter_id: string | null; titel: string | null }[]);
   const eintraege: Eintrag[] = [];
 
   for (const m of mieter) {
     const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
-    for (const f of mieterFristen(m)) {
+    for (const f of mieterFristen(m, { nkErstellt: nkJahre.get(m.id) })) {
       if (!f.datum) continue;
       eintraege.push({ datum: f.datum, label: f.label, wer, wo, quelle: "mieter", typ: f.typ, kategorie: f.kategorie ?? "Miete", rechtsgrundlage: f.rechtsgrundlage });
     }

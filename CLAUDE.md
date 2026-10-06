@@ -1898,6 +1898,13 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   manueller Einnahme (nur geschrieben, wenn das Formular es hat); Hinweis bei Miet-Vorlagen.
   **`setzeMieteAb`/`uebernehmeStaffel` schreiben nur Zeiträume, nie die Mieterfelder** (Grundwert
   des Staffelplans). `tests/paketB2.test.ts`, neun Mutationen rot.
+  ✅ **Paket C (NK-Kreislauf):** `BETRIEBSKOSTEN_KATEGORIEN` (Müll, Wasser/Abwasser, Hausmeister …)
+  sind buchbar und in `KOSTEN_BUCKET`/`istUmlagefaehig`; **`nkAusBuchungen()` ist die EINE Regel
+  „welche Buchungen gehören in die NK“** (Verteiler + NK-Seite, nie still übernommen, Hausgeld nur
+  genannt); Zählerstände je Zählernummer als Hinweis (`zaehlerSpanne()`); Frist „NK zustellen“ auch
+  für Ausgezogene, entfällt bei archivierter Abrechnung (`mieterFristen(m, { nkErstellt })` — **jeder
+  Aufrufer reicht `nkErstellteJahre()` durch**); „Nachzahlung buchen“; Auftrag → Kosten mit
+  Rechnungsdatum. `tests/paketC.test.ts`, 13 Mutationen rot.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

@@ -20,8 +20,8 @@ function dateien(dir: string, aus: string[] = []): string[] {
 
 describe("A1 — eine Kategorienliste, und Bearbeiten ändert nichts still", () => {
   it("eine unbekannte gespeicherte Kategorie bleibt beim Bearbeiten wählbar (vorne)", () => {
-    expect(kategorieOptionen(KOSTEN_KATEGORIEN, "Müll")[0]).toBe("Müll");
-    expect(kategorieOptionen(KOSTEN_KATEGORIEN, "Müll")).toHaveLength(KOSTEN_KATEGORIEN.length + 1);
+    expect(kategorieOptionen(KOSTEN_KATEGORIEN, "Bankgebühren")[0]).toBe("Bankgebühren");
+    expect(kategorieOptionen(KOSTEN_KATEGORIEN, "Bankgebühren")).toHaveLength(KOSTEN_KATEGORIEN.length + 1);
   });
 
   it("eine bekannte Kategorie wird nicht verdoppelt, leer ergibt die Liste", () => {

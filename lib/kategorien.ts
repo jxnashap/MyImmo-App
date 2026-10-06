@@ -7,6 +7,24 @@
 // Live gab es außerdem Kategorien aus Importen („Müll“, „Gartenpflege“, „Kaltmiete“ …),
 // die in keiner Liste standen — sie gingen beim Bearbeiten genauso verloren.
 
+/**
+ * Umlagefähige Betriebskosten (§ 2 BetrKV), die man als eigene Kategorie bucht (Paket C,
+ * 06.10.2026). Vorher kannte keine Liste sie — wer Müll oder Hausmeister buchte, wählte
+ * „Sonstiges“, und die NK-Abrechnung konnte die Buchung nicht als umlagefähig erkennen.
+ * Die Namen „Müll“, „Gartenpflege“, „Straßenreinigung“ stehen so schon im Bestand (Importe).
+ */
+export const BETRIEBSKOSTEN_KATEGORIEN = [
+  "Müll",
+  "Wasser / Abwasser",
+  "Allgemeinstrom",
+  "Heizung",
+  "Hausmeister",
+  "Gartenpflege",
+  "Straßenreinigung",
+  "Schornsteinfeger",
+  "Aufzug",
+] as const;
+
 /** Kategorien für Ausgaben. Jede hat eine Zeile in `KOSTEN_BUCKET` (lib/anlageV.ts). */
 export const KOSTEN_KATEGORIEN = [
   "Reparatur",
@@ -17,6 +35,22 @@ export const KOSTEN_KATEGORIEN = [
   "Schuldzinsen",
   "Hausgeld / WEG",
   "Makler",
+  ...BETRIEBSKOSTEN_KATEGORIEN,
+  "Sonstiges",
+] as const;
+
+/**
+ * Kategorien, in die ein erledigter Handwerker-/Hausmeister-Auftrag als Kosten übernommen
+ * werden darf. Seit Paket C (06.10.2026) auch umlagefähige Betriebskosten (Hausmeister,
+ * Gartenpflege …) — vorher landete ein solcher Auftrag zwangsläufig unter „Reparatur“ und
+ * erreichte die NK-Abrechnung nie.
+ */
+export const UEBERNAHME_KATEGORIEN = [
+  "Reparatur",
+  "Instandhaltung",
+  "Modernisierung",
+  "Verwaltung",
+  ...BETRIEBSKOSTEN_KATEGORIEN,
   "Sonstiges",
 ] as const;
 

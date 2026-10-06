@@ -11,13 +11,15 @@ export default async function UmlagePage(props: { params: Promise<{ id: string }
   const supabase = await createClient();
   const id = params.id;
 
-  const [{ data: prop }, { data: mieter }] = await Promise.all([
+  const [{ data: prop }, { data: mieter }, { data: kosten }] = await Promise.all([
     supabase.from("properties").select("id,bezeichnung,flaeche,typ,einheiten_anzahl").eq("id", id).single(),
     supabase
       .from("mieter")
       .select("id,vorname,nachname,einheit,flaeche,mietbeginn,mietende")
       .eq("prop_id", id)
       .order("mietbeginn"),
+    // Paket C: gebuchte Kosten des Objekts — umlagefähige bietet der Verteiler zur Übernahme an.
+    supabase.from("kosten").select("prop_id,buchungsdatum,kategorie,betrag").eq("prop_id", id),
   ]);
 
   if (!prop) notFound();
@@ -91,6 +93,7 @@ export default async function UmlagePage(props: { params: Promise<{ id: string }
         propFlaeche={prop.flaeche}
         mieter={tenants}
         jahrDefault={new Date().getFullYear() - 1}
+        gebuchteKosten={kosten ?? []}
       />
     </div>
   );

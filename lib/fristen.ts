@@ -31,7 +31,7 @@ type MieterFristInput = {
 // lokale Variante verschob Sommer-Termine um einen Tag nach vorn.
 
 // Abgeleitete Fristen eines Mieters (Mietbeginn, -ende, Kündigungsfrist, nächste Erhöhung).
-export function mieterFristen(m: MieterFristInput): Frist[] {
+export function mieterFristen(m: MieterFristInput, opts: { nkErstellt?: number[] } = {}): Frist[] {
   const fristen: Frist[] = [];
   const heute = new Date();
 
@@ -76,10 +76,14 @@ export function mieterFristen(m: MieterFristInput): Frist[] {
 
   // NK-Abrechnung des Vorjahres: Zustellung bis 12 Monate nach Ende des
   // Abrechnungszeitraums (Kalenderjahr) → 31.12. des aktuellen Jahres.
-  // Nur für laufende Mietverhältnisse.
-  const aktiv = !m.mietende || new Date(m.mietende) >= heute;
-  if (aktiv && m.mietbeginn) {
-    const jahr = heute.getFullYear();
+  // Paket C (06.10.2026): Auch wer im Vorjahr oder in diesem Jahr AUSGEZOGEN ist, bekommt
+  // seine Abrechnung für das Vorjahr — vorher galt die Frist nur für laufende Verträge, und
+  // gerade diese Abrechnung wird leicht vergessen. Ist sie schon erstellt (im Archiv), entfällt
+  // die Frist; ob sie auch ZUGESTELLT wurde, kann MyImmo bei Post/Mail nicht wissen.
+  const jahrJetzt = heute.getFullYear();
+  const lebteImVorjahr = !m.mietende || m.mietende >= `${jahrJetzt - 1}-01-01`;
+  if (lebteImVorjahr && m.mietbeginn && !(opts.nkErstellt ?? []).includes(jahrJetzt - 1)) {
+    const jahr = jahrJetzt;
     const vorjahr = jahr - 1;
     // Nur wenn der Mieter im Vorjahr schon Mieter war.
     if (new Date(m.mietbeginn) < new Date(`${jahr}-01-01`)) {
@@ -258,4 +262,18 @@ export function getRefinanzWarning(zinsbindung: string | null): RefinanzWarnung 
   if (diffMonths <= 12) return { level: "kritisch", months: diffMonths, label: `In ${diffMonths} Monat${diffMonths === 1 ? "" : "en"}`, color: "var(--red)", bg: "var(--red-dim)" };
   if (diffMonths <= 24) return { level: "warnung", months: diffMonths, label: `In ${diffMonths} Monaten`, color: "var(--amber)", bg: "rgba(240,160,48,0.1)" };
   return null;
+}
+
+/**
+ * Jahre, für die je Mieter eine NK-Abrechnung im Archiv liegt (Titel „Nebenkostenabrechnung 2025“,
+ * so schreibt ihn `erzeugeNkPdf`). Für `mieterFristen(m, { nkErstellt })`.
+ */
+export function nkErstellteJahre(notizen: { mieter_id: string | null; titel: string | null }[]): Map<string, number[]> {
+  const out = new Map<string, number[]>();
+  for (const n of notizen) {
+    const j = /Nebenkostenabrechnung (\d{4})/.exec(n.titel ?? "")?.[1];
+    if (!n.mieter_id || !j) continue;
+    out.set(n.mieter_id, [...(out.get(n.mieter_id) ?? []), Number(j)]);
+  }
+  return out;
 }

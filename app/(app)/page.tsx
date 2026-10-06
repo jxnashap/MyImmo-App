@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, begruessung } from "@/lib/format";
-import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
+import { getRefinanzWarning, nkErstellteJahre, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
 import { fristSchluessel } from "@/lib/termine";
 import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
@@ -101,7 +101,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     );
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }, { data: vertreterRows }, { data: verstecktRows }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }, { data: vertreterRows }, { data: verstecktRows }, { data: nkNotizen }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
@@ -120,6 +120,8 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     // In /termine ausgeblendete Fristen — sonst stand eine ausgeblendete Frist hier weiter,
     // und ihr Link führte auf eine Seite, auf der sie fehlte (Audit 06.10.2026, A3).
     supabase.from("frist_ausgeblendet").select("schluessel"),
+    // Paket C: erstellte NK-Abrechnungen — die Frist „NK zustellen“ entfällt dann.
+    supabase.from("notizen").select("mieter_id,titel").eq("kategorie", "Nebenkostenabrechnung"),
   ]);
 
   const properties = (props ?? []) as Property[];
@@ -153,6 +155,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const imFenster = (d: string) => d >= abISO0;
   type DashFrist = { datum: string; label: string; sub: string; warn: boolean };
   const ueberfaellig = (d: string) => d < heuteISO0;
+  const nkJahre = nkErstellteJahre((nkNotizen ?? []) as { mieter_id: string | null; titel: string | null }[]);
   const fristListe: DashFrist[] = [];
   const versteckt = new Set(((verstecktRows ?? []) as { schluessel: string }[]).map((v) => v.schluessel));
   // Gleicher Schlüssel wie in /termine (Quelle | Datum | Bezeichnung).
@@ -161,7 +164,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   for (const m of mieterRows) {
     const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
-    for (const f of mieterFristen(m)) if (sichtbar("mieter", f) && f.datum)
+    for (const f of mieterFristen(m, { nkErstellt: nkJahre.get(m.id) })) if (sichtbar("mieter", f) && f.datum)
       fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo].filter(Boolean).join(" · "), warn: f.typ === "warn" });
   }
   for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (sichtbar("kredit", f) && f.datum)

@@ -2,7 +2,7 @@
 // (VEVENT, ganztägig). Vorlauf_tage wird als VALARM-Erinnerung abgebildet.
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { mieterFristen, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
+import { mieterFristen, nkErstellteJahre, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,14 +18,16 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.url));
 
-  const [{ data: term }, { data: props }, { data: miet }, { data: kred }] = await Promise.all([
+  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: nkNotizen }] = await Promise.all([
     supabase.from("termine").select("*").eq("erledigt", false).order("datum"),
     supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum"),
     supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum"),
     supabase.from("kredite").select("id,prop_id,bezeichnung,zinsbindung,auszahlung_datum"),
+    supabase.from("notizen").select("mieter_id,titel").eq("kategorie", "Nebenkostenabrechnung"),
   ]);
 
   const nameOf = new Map((props ?? []).map((p) => [p.id, p.bezeichnung as string]));
+  const nkJahre = nkErstellteJahre((nkNotizen ?? []) as { mieter_id: string | null; titel: string | null }[]);
   const heute = new Date();
   const grenze = new Date(heute.getFullYear() - 1, 0, 1); // ab letztem Jahr
 
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
   for (const m of miet ?? []) {
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
     const wo = (m.prop_id && nameOf.get(m.prop_id)) || "";
-    mieterFristen(m).forEach((f, i) =>
+    mieterFristen(m, { nkErstellt: nkJahre.get(m.id) }).forEach((f, i) =>
       add(f.datum, f.label, [wer, wo, f.rechtsgrundlage].filter(Boolean).join(" · "), `mieter-${m.id}-${i}@myimmo`),
     );
   }

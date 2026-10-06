@@ -15,6 +15,7 @@ import {
 import { verteileNebenkosten } from "@/lib/actions/umlage";
 import { useToast } from "@/components/Toast";
 import { zahlDe0 } from "@/lib/zahl";
+import { nkAusBuchungen, type KostenBuchung } from "@/lib/nkAusBuchungen";
 
 type MieterIn = {
   id: string;
@@ -60,12 +61,15 @@ export default function UmlageAssistent({
   propFlaeche,
   mieter,
   jahrDefault,
+  gebuchteKosten = [],
 }: {
   propId: string;
   propName: string;
   propFlaeche: number | null;
   mieter: MieterIn[];
   jahrDefault: number;
+  /** Kosten-Buchungen dieses Objekts (Paket C): umlagefähige werden zur Übernahme angeboten. */
+  gebuchteKosten?: KostenBuchung[];
 }) {
   const aktuell = new Date().getFullYear();
   const jahre = [aktuell, aktuell - 1, aktuell - 2, aktuell - 3, aktuell - 4];
@@ -242,6 +246,26 @@ export default function UmlageAssistent({
     }
   }
 
+  // Paket C (06.10.2026): gebuchte umlagefähige Kosten des Jahres als Vorschlag — vorher
+  // wurden sie hier ein zweites Mal von Hand eingetippt. Vorhandene Beträge bleiben stehen.
+  const ausBuchungen = nkAusBuchungen(gebuchteKosten, propId, jahr);
+  function buchungenUebernehmen() {
+    const neu = zeilen.map((z) => ({ ...z }));
+    let n = 0;
+    for (const v of ausBuchungen.vorschlaege) {
+      const i = neu.findIndex((z) => z.bezeichnung.trim().toLowerCase() === v.bezeichnung.toLowerCase());
+      if (i >= 0) {
+        if (!neu[i].betrag.trim()) { neu[i].betrag = String(v.betrag); n++; }
+      } else {
+        neu.push({ bezeichnung: v.bezeichnung, betrag: String(v.betrag), schluessel: "flaeche", lohn: "", art35a: "" });
+        n++;
+      }
+    }
+    setZeilen(neu);
+    setStatus("idle");
+    toast(n > 0 ? `${n} Position(en) aus den Buchungen ${jahr} übernommen — bitte prüfen.` : "Alles schon eingetragen.", "success");
+  }
+
   async function speichern() {
     setStatus("saving");
     try {
@@ -400,6 +424,20 @@ export default function UmlageAssistent({
               PDF/Bild der Hausverwaltung — die erkannten Positionen werden unten eingetragen.
             </span>
           </div>
+          {ausBuchungen.vorschlaege.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12, paddingBottom: 12, borderBottom: "1px solid var(--line)", fontSize: 12 }}>
+              <span style={{ flex: 1, minWidth: 220, color: "var(--muted)" }}>
+                Unter Ausgaben {jahr} gebucht (umlagefähig):{" "}
+                {ausBuchungen.vorschlaege.map((v) => `${v.bezeichnung} ${eur2(v.betrag)}`).join(" · ")}
+                {ausBuchungen.unklar.length > 0 && (
+                  <> — nicht übernommen: {ausBuchungen.unklar.map((u) => `${u.kategorie} ${eur2(u.betrag)}`).join(", ")} (nur teilweise umlagefähig, z. B. laut Hausgeldabrechnung)</>
+                )}
+              </span>
+              <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={buchungenUebernehmen}>
+                Aus Buchungen übernehmen
+              </button>
+            </div>
+          )}
           {ocrError && (
             <div role="alert" style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
               <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {ocrError}

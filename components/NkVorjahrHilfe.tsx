@@ -5,16 +5,18 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CopyPlus, Lightbulb } from "lucide-react";
+import { CopyPlus, Lightbulb, Receipt, Gauge } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { actionFehler } from "@/lib/actionErgebnis";
 import { uebernehmeVorjahresPositionen } from "@/lib/actions/positions";
 import { setzeMieteAb } from "@/lib/actions/mietzeitraeume";
+import { uebernehmeGebuchteKosten } from "@/lib/actions/positions";
+import type { ZaehlerSpanne } from "@/lib/zaehlerSpanne";
 
 const eur = (n: number) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
 export default function NkVorjahrHilfe({
-  mieterId, jahr, uebernahme, vorschlag, aktuellMonat, nurVorjahrsBetraege, naechsterMonat,
+  mieterId, jahr, uebernahme, vorschlag, aktuellMonat, nurVorjahrsBetraege, naechsterMonat, ausBuchungen = null, zaehler = [],
 }: {
   mieterId: string;
   jahr: number;
@@ -25,6 +27,10 @@ export default function NkVorjahrHilfe({
   nurVorjahrsBetraege: boolean;
   /** Vorschlag für „gilt ab“ (YYYY-MM), vom Server — nie `new Date()` im Render. */
   naechsterMonat: string;
+  /** Paket C: gebuchte umlagefähige Kosten, die noch nicht als Position da sind. */
+  ausBuchungen?: { anzahl: number; text: string; verteilerHref: string | null } | null;
+  /** Paket C: gemeldete Zählerstände des Mieters im Jahr (zum Übertragen in Verbrauchs-Positionen). */
+  zaehler?: ZaehlerSpanne[];
 }) {
   const [abMonat, setAbMonat] = useState(naechsterMonat);
   const [uebernommen, setUebernommen] = useState(false);
@@ -60,7 +66,19 @@ export default function NkVorjahrHilfe({
       }
     });
 
-  if (!uebernahme.moeglich && !vorschlag && !nurVorjahrsBetraege) return null;
+  const buchungenUebernehmen = () =>
+    startTransition(async () => {
+      try {
+        const f = actionFehler(await uebernehmeGebuchteKosten(mieterId, jahr));
+        if (f) return toast(f, "error");
+        toast(`Gebuchte Kosten ${jahr} als Positionen übernommen — bitte prüfen.`);
+        router.refresh();
+      } catch {
+        toast("Übernahme fehlgeschlagen.", "error");
+      }
+    });
+
+  if (!uebernahme.moeglich && !vorschlag && !nurVorjahrsBetraege && !ausBuchungen && zaehler.length === 0) return null;
 
   const grund = vorschlag
     ? `Anpassung der Nebenkostenvorauszahlung nach der Abrechnung ${jahr} (§ 560 Abs. 4 BGB): künftig ${eur(vorschlag.vorschlag)} monatlich statt bisher ${eur(aktuellMonat)}.`
@@ -79,6 +97,41 @@ export default function NkVorjahrHilfe({
             <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} disabled={pending} onClick={uebernehmen}>
               {pending ? "…" : "Aus Vorjahr übernehmen"}
             </button>
+          </div>
+        </div>
+      )}
+      {ausBuchungen && (
+        <div className="section" style={{ marginBottom: 0 }}>
+          <div className="section-body" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", fontSize: 12.5 }}>
+            <Receipt size={16} color="var(--gold)" />
+            <span style={{ flex: 1, minWidth: 220 }}>
+              Unter Ausgaben {jahr} gebucht und umlagefähig, aber noch nicht in der Abrechnung: <strong>{ausBuchungen.text}</strong>
+            </span>
+            {ausBuchungen.verteilerHref ? (
+              <Link href={ausBuchungen.verteilerHref} className="btn btn-ghost" style={{ fontSize: 12 }}>Im Verteiler übernehmen</Link>
+            ) : (
+              <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} disabled={pending} onClick={buchungenUebernehmen}>
+                {pending ? "…" : `${ausBuchungen.anzahl} übernehmen`}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {zaehler.length > 0 && (
+        <div className="section" style={{ marginBottom: 0 }}>
+          <div className="section-body" style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 12.5, alignItems: "flex-start" }}>
+            <Gauge size={16} color="var(--gold)" />
+            <div style={{ flex: 1, minWidth: 220 }}>
+              Vom Mieter gemeldete Zählerstände — für Verbrauchs-Positionen („Verbrauch Mieter“):
+              {zaehler.map((z) => (
+                <div key={`${z.art}-${z.zaehlernummer}-${z.einheit}`} style={{ marginTop: 4 }}>
+                  <strong>{z.art}{z.zaehlernummer ? ` (Nr. ${z.zaehlernummer})` : ""}</strong>: {z.von.stand.toLocaleString("de-DE")} ({new Date(z.von.datum).toLocaleDateString("de-DE", { timeZone: "UTC" })}) →{" "}
+                  {z.bis.stand.toLocaleString("de-DE")} ({new Date(z.bis.datum).toLocaleDateString("de-DE", { timeZone: "UTC" })}) ={" "}
+                  <strong>{z.verbrauch.toLocaleString("de-DE")} {z.einheit ?? ""}</strong>
+                  {!z.ganzesJahr && <span style={{ color: "var(--amber)" }}> · deckt nicht das ganze Jahr ab</span>}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
