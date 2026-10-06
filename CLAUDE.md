@@ -1088,7 +1088,7 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   RPC `freigabe_eingang_uebernehmen` (Archiv-Eintrag + Eingang leeren in EINER Transaktion),
   Verwerfen leert die Datei. DB-Schranken: PDF/JPEG/PNG/WebP, ≤ 8 MB, je Link 10/h, 30 gesamt,
   80 MB; keine Insert-Policy für Nutzer. In zurückgerollter Transaktion bewiesen.
-  ⚠️ **Überholt durch `20261006121000` (enthält sie): `20261006091000` im SQL-Editor ausführen** (Kontolöschung, enthält
+  ✅ **`20261006091000` ausgeführt (06.10.2026), danach überholt durch `20261006121000`** (Kontolöschung, enthält
   `delete`; schließt `20261005190000` Abo-Zahlungen mit ein). Stand 06.10.2026 live geprüft:
   `20261005190000` ist ausgeführt, `20261006091000` NOCH NICHT (`freigabe_eingang` fehlt in der Funktion). `tests/freigabeEingang.test.ts`, sieben Mutationen rot. **Regel: Was Fremde ohne
   Konto hochladen, geht nie direkt in die Unterlagen — immer über einen Eingang mit Entscheidung.**
@@ -1102,8 +1102,8 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   ≤ 180 Tage. `.ics` im Browser (`terminIcs`, `IcsKnopf`). **Regel: `datetime-local` ist Berliner
   Ortszeit — immer über `berlinZuIso()` (lib/freigabeTermin.ts), nie `new Date(lokal)` auf dem
   Server (UTC).** `tests/freigabeTermin.test.ts`, neun Mutationen rot, auch unter `TZ=America/New_York`.
-  ⚠️ **Offen (Betreiber): `20261006121000` im SQL-Editor** — enthält `freigabe_termine` UND alles aus
-  `20261006091000`; nur diese eine Datei ausführen.
+  ✅ **`20261006121000` vom Betreiber im SQL-Editor ausgeführt 06.10.2026**, live geprüft: Kontolöschung
+  kennt `freigabe_termine`, `freigabe_eingang`, `abo_zahlungen`, `makler_freigaben`.
   **Regel: Ein neuer öffentlicher Freigabe-Link bekommt dasselbe Verfahren — keine Inhalte über
   den Token allein.** **Bewusst OHNE Code (Betreiber 05.10.2026: „Bewerber egal“):** der
   Bewerbungs-Link — er zeigt nur den Steckbrief, den der Vermieter selbst öffentlich macht, und
