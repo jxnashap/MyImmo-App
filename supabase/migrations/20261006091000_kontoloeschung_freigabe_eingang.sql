@@ -6,7 +6,7 @@
 --
 -- Kontolöschung für den Eingang über Bank-/Makler-Link (20261006090000). Die Tabelle hat bewusst
 -- KEINEN Fremdschlüssel mit Kaskade. Baut auf 20261005190000 (Abo-Zahlungen) auf und enthält
--- dessen Änderung — diese Datei ERSETZT sie also; es genügt, nur diese hier auszuführen.
+-- dessen Änderung — sie nimmt nichts davon zurück, auch wenn 20261005190000 schon lief.
 
 create or replace function public.delete_own_account()
  returns void

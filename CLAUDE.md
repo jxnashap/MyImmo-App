@@ -1069,7 +1069,8 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   Verwerfen leert die Datei. DB-Schranken: PDF/JPEG/PNG/WebP, ≤ 8 MB, je Link 10/h, 30 gesamt,
   80 MB; keine Insert-Policy für Nutzer. In zurückgerollter Transaktion bewiesen.
   ⚠️ **Offen (Betreiber): `20261006091000` im SQL-Editor ausführen** (Kontolöschung, enthält
-  `delete`; schließt `20261005190000` Abo-Zahlungen mit ein — NUR diese eine Datei ausführen). `tests/freigabeEingang.test.ts`, sieben Mutationen rot. **Regel: Was Fremde ohne
+  `delete`; schließt `20261005190000` Abo-Zahlungen mit ein). Stand 06.10.2026 live geprüft:
+  `20261005190000` ist ausgeführt, `20261006091000` NOCH NICHT (`freigabe_eingang` fehlt in der Funktion). `tests/freigabeEingang.test.ts`, sieben Mutationen rot. **Regel: Was Fremde ohne
   Konto hochladen, geht nie direkt in die Unterlagen — immer über einen Eingang mit Entscheidung.**
   **Regel: Ein neuer öffentlicher Freigabe-Link bekommt dasselbe Verfahren — keine Inhalte über
   den Token allein.** **Bewusst OHNE Code (Betreiber 05.10.2026: „Bewerber egal“):** der
