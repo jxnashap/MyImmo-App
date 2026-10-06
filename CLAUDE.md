@@ -116,6 +116,10 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    Nebenbefund: 8 s nach dem erfolgreichen `verify` ein zweites mit 403 `otp_expired`
    (Doppel-Tipp oder Mail-Vorschau) — folgenlos, der erste war durch.
 
+**Für BuyImmo (06.10.2026):** `supabase/migrations/20261006050000_sanierungsprojekte.sql` im
+SQL-Editor ausführen (Speichern/Vorlagen im Sanierungs-Guide + Verknüpfung „Kaufprüfung →
+übernommenes Objekt“). Idempotent. Danach prüfe ich live (lesend + zurückgerollter Test).
+
 **Danach, in dieser Reihenfolge:**
 4. ~~**Die zwei restlichen Passwort-Schalter**~~ ✅ **laut Betreiber seit Längerem an**
    (genauer Zeitpunkt unbekannt). **Belegt 30.09.2026:** „Passwort vergessen" läuft MIT den
@@ -342,6 +346,62 @@ verlangt das **alte**, also genau das, was der Nutzer vergessen hat.
   geht dieser Schalter wieder aus — die Absicherung leisten dann (1) oben plus
   „Secure password change".
 `tests/passwortReset.test.ts` + `tests/blockF.test.ts`, fünfzehn Mutationen geprüft.
+
+### 🏗️ BuyImmo — zweiter Bereich (05.10.2026, Vorgabe des Betreibers)
+„MyImmo als automatisierte Verwaltung, BuyImmo als aktive Kommandozentrale für den
+Immobilienaufbau“ — **eine Codebasis, ein Konto**, gewechselt am Logo oben links
+(`components/BereichWechsel.tsx`). Der Bereich folgt allein aus der Adresse (`lib/bereich.ts`);
+Einstellungen/Hilfe/Objekte behalten den letzten. BuyImmo: `/aufbau` (Kommandozentrale,
+`lib/aufbau.ts`), Kauf, Makler-Ordner, Verkauf, Marktwert, AfA. **Regeln:** (1) Neue
+BuyImmo-Seite → `AUFBAUEN`/`RECHNEN` in `lib/nav.ts`. (2) Alte Adressen (`/kauf` …) nie
+umbenennen. (3) Zahlen der Kommandozentrale nur aus bestehenden Regeln (Dashboard,
+`/kredite`). (4) Keine Kaufempfehlung vor der § 34i-Klärung. Offen (Aufmaß, Fahrplan, Marke):
+**`docs/zukunft/BUYIMMO.md`**. `tests/bereich.test.ts` + `tests/aufbau.test.ts`, elf Mutationen rot.
+**Sanierungsrechner `/sanierung` (05.10.2026, Stufe 1):** Räume → Flächen → Material VON–BIS →
+ganze Gebinde über ALLE Räume gerundet; Arbeitszeit = Stunden × Satz, den der Nutzer einträgt
+(BuyImmo schätzt keinen Lohn — **außer** der Nutzer wählt „Handwerker“: dann Preise je Einheit aus
+`lib/sanierung/arbeiten.ts`, Entscheidung 05.10.2026); eigene Posten. `lib/sanierung/` (Katalog als Parameter, Preise mit
+Quelle + Stand in `katalog.ts`, Prüfzyklus in `07 Volatile Kennzahlen`), Entwurf nur im Browser.
+`tests/sanierung.test.ts`. **Fliesen:** Boden + Wand bis Fliesenhöhe; geflieste Wand wird von
+Spachteln/Tapete/Farbe ABGEZOGEN (`fliesenwand` in `flaechen()`). **Förderung:** Förderart je eigenem
+Posten → `lib/sanierung/foerderung.ts` (BAFA 15 %, KfW 458 30 %, Experte 50 %, Grenzen je Wohneinheit,
+Heizungsgrenze sinkt ab 01.02.2027 datumsgenau); Zuschuss NIE von der Summe für den Kauf-Assistenten
+abgezogen; Raum-Maßnahmen nie förderfähig. **Regel: Bei Förderprogrammen zuerst nach einer
+Richtlinienänderung suchen** (der Fördercheck stand bis 05.10.2026 vor der BEG-Reform vom 21.07.2026 —
+Korrektur in `docs/kauf/KfW-Foerderung-2026.md`). **Fahrplan `/fahrplan`** (`lib/fahrplan.ts`): neun Schritte, Haken nur
+wo die App es aus den Daten weiß, Kaufnebenkosten über `kaufnebenkosten()` in `lib/kalk.ts` (EINE
+Regel mit dem Kauf-Rechner); ein Test sucht Empfehlungs-Formulierungen. Beide Rechner sind in der
+Demo bedienbar (`data-demo-erlaubt`, schreiben nichts). **Sanierung → Kauf-Assistent:** `/kauf?sanierung=…`
+(`lib/sanierung/uebergabe.ts`), Feld „Sanierung / Renovierung“ im Objekt-Rechner, steckt in der
+Gesamtinvestition; 15-%-Hinweis über `anschaffungsnahVorKauf()` (eine Grenze mit dem Steuer-Wächter).
+**Review vor dem Merge (#418, `tests/reviewBuyImmo.test.ts`) — Regeln daraus:** (1) **Nebenkosten =
+Gesamtinvestition − Kaufpreis − Sanierung** (Ampel, Finanzierungsvorschläge und Kreditantrag hielten
+40.000 € Renovierung für Nebenkosten); die Auswahl trägt `sanierung` mit (`auswahlAus()`). (2) **Meter
+mit `massDe()`, nie `zahlDe0()`** — „4.125“ vom Laser wurde zu 4.125 m. (3) Eigenleistung zählt zur
+Summe, nicht in die Übergabe. Details `docs/zukunft/BUYIMMO.md`.
+**Sanierungs-Guide (Plan + Stufe A, 05.10.2026): `docs/zukunft/SANIERUNGS-GUIDE.md`.** Geführt Seite für
+Seite, Zustand je Gewerk kreuzt Arbeiten vor, Fachbetrieb-Kosten werden mitgerechnet (überschreibbar),
+ETW: Fenster & Co. = Gemeinschaft (Prüfpunkt Sonderumlage). Katalog `lib/sanierung/arbeiten.ts` —
+**Regel: jede Zahl steht wörtlich im Feld `zitat` ihrer Quelle (Test prüft es), mindestens zwei
+unabhängige Quellen, brutto; Werte nie aus einer Zusammenfassung übernehmen** (lag dreimal daneben).
+**GEG heißt seit 29.07.2026 GModG**; die 30-Jahre-Kessel-Austauschpflicht (§ 72) ist weggefallen.
+**Stufe B gebaut (05.10.2026):** `/sanierung` = Schritt für Schritt · Übersicht · Ergebnis über EINEM
+Entwurf; `offeneSeiten()` (`lib/sanierung/guide.ts`) ist die EINE Lückenfunktion, `auswerten()`
+(`lib/sanierung/auswertung.ts`) die EINE Rechnung. **Regeln:** (1) Neue Frage → Feld im Entwurf +
+`fehlendeAngaben()` + Seite in `GuideSeiten.tsx` (nie eine zweite Darstellung). (2) Fehlendes wird
+vorsichtig ANGENOMMEN und steht in `annahmen` — nie still 0. (3) Ohne belegten Preis keine Zahl:
+offener Posten oder „Preis offen“. (4) Eine Arbeit, die eine andere enthält, gehört in `ENTHALTEN_IN`.
+**Stufe C gebaut (06.10.2026): Speichern + Vorlagen** — Tabelle `sanierungsprojekte`, Migration
+`20261006050000` **läuft im SQL-Editor (Betreiber, noch offen)**; bis dahin zeigt die Projektleiste
+„kommt in Kürze“. Actions `lib/actions/sanierungsprojekte.ts`, Leiste `components/sanierung/ProjektLeiste.tsx`,
+Logik `lib/sanierung/projekte.ts`. **Regeln:** (1) Gespeichert wird nur, was `entwurfAus()`/`vorlageAus()`
+durchlässt — ein neues Entwurfsfeld gehört in den Parser, sonst geht es beim Speichern verloren.
+(2) Eine Vorlage trägt Entscheidungen, nie die Wohnung; Technik nur mit angekreuzter Arbeit.
+(3) Überschreiben nur gegen den bekannten `updated_at` (zwei Geräte), sonst `konflikt`.
+`tests/sanierungProjekte.test.ts` + `tests/actionsSanierungsprojekte.test.ts`, 35 Mutationen rot.
+**Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
+(`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
+kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
 
 ### Zukunftsideen (notiert, nicht gebaut)
 > **Vollständige Ideenliste mit Status: Memory-Repo `02 - MyImmo/myimmoideen.md`.**
@@ -1250,6 +1310,10 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Falle beim Prüfen (erneut):** `pkill -f "[n]ext start"` in DERSELBEN Befehlszeile wie
   `npx next start …` trifft die eigene Shell (Exit 144) — das Muster schützt nur, wenn der
   Text nicht woanders in der Zeile steht. Aufräumen und Starten in getrennte Aufrufe.
+  **Und (05.10.2026):** Der laufende Server heißt im Prozess `next-server (v16.x)` — `pkill -f
+  "[n]ext start"` trifft ihn GAR NICHT. Der neue Start scheitert dann still an EADDRINUSE, der alte
+  liefert HTML mit Verweisen auf gelöschte Chunks (Seite ohne CSS und JS). Beenden mit
+  `pkill -f "[n]ext-server"`, danach im Server-Log „Ready“ prüfen.
   🧹 **Lint-Altlast, erster Lauf überhaupt: 93 Fehler, 39 Warnungen** (552 Dateien).
   Größte Posten: `react/no-unescaped-entities` 40 (Anführungszeichen im JSX-Text, harmlos),
   `react-hooks/set-state-in-effect` 25, `@typescript-eslint/no-explicit-any` 12,

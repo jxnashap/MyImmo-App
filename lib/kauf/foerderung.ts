@@ -1,7 +1,13 @@
 // Interaktiver Fördercheck: Programme nach Nutzung (vermieten/eigennutzen),
-// Vorhaben und Bundesland filtern. Stand 2026 — Konditionen ändern sich oft,
-// deshalb überall "vor Antrag prüfen". Wichtig: Förderanträge müssen i. d. R.
-// VOR Vorhabensbeginn gestellt werden.
+// Vorhaben und Bundesland filtern. Konditionen ändern sich oft, deshalb überall
+// "vor Antrag prüfen". Wichtig: Förderanträge müssen i. d. R. VOR Vorhabensbeginn
+// gestellt werden.
+//
+// ALTERT: Die BEG (KfW 261/458, BAFA BEG EM) wurde zum 21.07.2026 umgestellt (Richtlinien
+// „vom 17. August 2026“). Prüfzyklus: docs/app-entwicklung/07 Volatile Kennzahlen …
+
+/** Stand der Konditionen von KfW 261/458, BAFA BEG EM und § 35c (gegen kfw.de/bafa.de geprüft). */
+export const FOERDER_STAND = "BEG-Reform 21.07.2026, geprüft 05.10.2026";
 
 export type Nutzung = "vermieten" | "eigennutzen";
 export type Vorhaben = "kauf_bestand" | "neubau" | "sanierung" | "heizung";
@@ -35,9 +41,11 @@ export const PROGRAMME: Programm[] = [
     name: "KfW 261 – Wohngebäude: Sanierung zum Effizienzhaus",
     traeger: "KfW", art: "kredit",
     fuer: ["vermieten", "eigennutzen"], vorhaben: ["sanierung", "kauf_bestand"],
-    text: "Kredit mit Tilgungszuschuss für die Komplettsanierung zum Effizienzhaus — auch beim Kauf frisch sanierten Bestands.",
-    bedingung: "du ein Bestandsgebäude auf mindestens Effizienzhaus 85 (oder Denkmal) sanierst — Selbstnutzer wie Vermieter, der Tilgungszuschuss steigt mit dem Zielstandard.",
-    hinweis: "Energieeffizienz-Experte (dena-Liste) ist Pflicht.",
+    text: "Kredit bis 150.000 € je Wohneinheit für die Komplettsanierung zum Effizienzhaus, teils mit Tilgungszuschuss — auch beim Kauf frisch sanierten Bestands.",
+    bedingung: "du ein Bestandsgebäude auf ein Effizienzhaus der EE- oder NH-Klasse sanierst (mind. 65 % erneuerbare Wärme bzw. Nachhaltigkeits-Klasse) — Selbstnutzer wie Vermieter.",
+    // kfw.de/261 (geprüft 05.10.2026): „mit Ausnahme der Effizienzhaus-Stufen 70 Erneuerbare-Energien
+    // und 85 Erneuerbare-Energien – einen Tilgungszuschuss“; seit 21.07.2026 je 10 Prozentpunkte weniger.
+    hinweis: "Energieeffizienz-Experte (dena-Liste) ist Pflicht. Tilgungszuschuss seit 21.07.2026: EH 40 EE 10 %, EH 55 EE 5 %, EH 70 EE und 85 EE keiner, Denkmal EE 5 % — NH-Klasse je 5 Prozentpunkte mehr.",
     url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/F%C3%B6rderprodukte/Bundesf%C3%B6rderung-f%C3%BCr-effiziente-Geb%C3%A4ude-Wohngeb%C3%A4ude-Kredit-(261-262)/",
   },
   {
@@ -45,9 +53,10 @@ export const PROGRAMME: Programm[] = [
     name: "KfW 458 – Heizungsförderung (Zuschuss)",
     traeger: "KfW", art: "zuschuss",
     fuer: ["vermieten", "eigennutzen"], vorhaben: ["heizung", "sanierung"],
-    text: "Zuschuss für den Tausch auf Wärmepumpe & Co. — Basis 30 %, mit Boni bis 70 % (Selbstnutzer).",
+    text: "Zuschuss für eine neue klimafreundliche Heizung (Wärmepumpe & Co.) — Grundförderung 30 %, Selbstnutzer mit Boni bis 70 % (80 % bei niedrigem Einkommen).",
     bedingung: "das Gebäude mindestens 5 Jahre alt ist und du eine erneuerbare Heizung einbaust — Antrag vor Auftragsvergabe (Vertrag mit aufschiebender Bedingung).",
-    hinweis: "Vermieter erhalten nur die Grundförderung (~30–35 %), keine Einkommens-/Speed-Boni.",
+    // kfw.de/458 + „Anpassungen 2026“ (geprüft 05.10.2026): „Der Effizienzbonus entfällt zum 21.07.2026.“
+    hinweis: "Vermieter erhalten nur die Grundförderung von 30 % (der Effizienzbonus ist seit 21.07.2026 entfallen); förderfähig sind höchstens 28.000 € für die erste Wohneinheit (sinkt ab 01.02.2027 halbjährlich um 750 €). Gehört das Haus einer GbR: KfW 459.",
     url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/F%C3%B6rderprodukte/Heizungsf%C3%B6rderung-f%C3%BCr-Privatpersonen-Wohngeb%C3%A4ude-(458)/",
   },
   {
@@ -55,9 +64,11 @@ export const PROGRAMME: Programm[] = [
     name: "BAFA BEG EM – Einzelmaßnahmen (Dämmung, Fenster, Anlagentechnik)",
     traeger: "BAFA", art: "zuschuss",
     fuer: ["vermieten", "eigennutzen"], vorhaben: ["sanierung"],
-    text: "Zuschuss (i. d. R. 15–20 %) für Gebäudehülle und Anlagentechnik außer Heizung.",
+    text: "Zuschuss 15 % für Dämmung, Fenster/Außentüren, Lüftung und Heizungsoptimierung — förderfähig bis 30.000 € für die erste Wohneinheit je Jahr.",
     bedingung: "das Gebäude mindestens 5 Jahre alt ist, du an Hülle/Technik (nicht Heizung → KfW 458) saniert und einen Energieeffizienz-Experten einbindest — Selbstnutzer wie Vermieter.",
-    hinweis: "Antrag vor Beauftragung; Energieeffizienz-Experte nötig; iSFP-Bonus möglich.",
+    // bafa.de Gebäudehülle (geprüft 05.10.2026): „Der Grundfördersatz beträgt 15 %“; Höchstgrenze
+    // 30.000 / 15.000 / 8.000 € (mit iSFP 60.000 / 30.000 / 15.000 €).
+    hinweis: "Antrag mit bedingtem Vertrag vor der Beauftragung; Energieeffizienz-Experte nötig. Mit Sanierungsfahrplan (iSFP) höhere Grenze und 5 Prozentpunkte mehr auf den Teil darüber. Eigenleistung: nur Material, mit Bestätigung.",
     url: "https://www.bafa.de/DE/Energie/Effiziente_Gebaeude/effiziente_gebaeude_node.html",
   },
   {
@@ -101,6 +112,8 @@ export const PROGRAMME: Programm[] = [
     fuer: ["vermieten", "eigennutzen"], vorhaben: ["sanierung"],
     text: "Bis 50.000 € Kredit für Barrierereduzierung (Bad, Aufzug, Zugänge) — unabhängig vom Alter.",
     bedingung: "du Barrieren reduzierst (bodengleiche Dusche, Türverbreiterung, Aufzug, Zugänge) — altersunabhängig, Selbstnutzer wie Vermieter, Antrag vor Vorhabensbeginn.",
+    // kfw.de/455-B (geprüft 05.10.2026): „Diesen Zuschuss können Sie nicht mehr beantragen.“
+    hinweis: "Nur als Kredit — der Zuschuss 455-B ist laut KfW derzeit ausgeschöpft.",
     url: "https://www.kfw.de/inlandsfoerderung/Privatpersonen/Bestehende-Immobilie/F%C3%B6rderprodukte/Altersgerecht-Umbauen-(159)/",
   },
   {
@@ -144,8 +157,9 @@ export function filterProgramme(nutzung: Nutzung, vorhaben: Vorhaben): Programm[
 // Auto-Förderkredit für den Finanzierungs-Stack (Kaufpreis-Segment).
 // § 34i GewO: reine Rechnung/Information — "kommt laut deinen Angaben in Frage",
 // KEINE Empfehlung, KEINE Vermittlung. Nur KfW-KREDITE, die den Kaufpreis
-// mitfinanzieren (nicht Zuschüsse 458/BAFA; nicht Sanierungskredite 261/159,
-// da gesamtInvest keine Sanierungskosten enthält).
+// mitfinanzieren (nicht Zuschüsse 458/BAFA; nicht Sanierungskredite 261/159 — die setzen ein
+// Effizienzhaus-Ziel voraus, das eine Renovierung nicht automatisch erfüllt; seit 05.10.2026 kann
+// gesamtInvest Sanierungskosten aus dem Sanierungsrechner enthalten, das ändert daran nichts).
 // Beträge: Stand 08/2026 — KfW 308 zum 03.08.2026 angehoben (140/160/180 Tsd.
 // statt 100/125/150 Tsd.), Sanierungsziel alternativ über kombinierte
 // Einzelmaßnahmen erfüllbar. Quelle: kfw.de-Produktseite 308, geprüft 28.08.2026.

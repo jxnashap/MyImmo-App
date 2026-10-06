@@ -50,13 +50,15 @@ const SZENARIEN: Szenario[] = [
 const KLASSEN: Energieklasse[] = ["A+", "A", "B", "C", "D", "E", "F", "G", "H"];
 
 export default function FinanzierungsVorschlaege({
-  gesamtInvest, kaufpreis, ekVorhanden,
+  gesamtInvest, kaufpreis, sanierung = 0, ekVorhanden,
   nutzung, kinder = 0, zveJahr = 0,
 }: {
-  gesamtInvest: number; kaufpreis: number; ekVorhanden: number;
+  gesamtInvest: number; kaufpreis: number; sanierung?: number; ekVorhanden: number;
   nutzung?: Nutzung; kinder?: number; zveJahr?: number;
 }) {
-  const nebenkosten = Math.max(0, gesamtInvest - kaufpreis);
+  // Die Gesamtinvestition enthält seit 05.10.2026 auch die Sanierung — sie ist KEINE Nebenkosten.
+  const sanierungBetrag = Math.max(0, Number(sanierung) || 0);
+  const nebenkosten = Math.max(0, gesamtInvest - kaufpreis - sanierungBetrag);
   const [ekInput, setEkInput] = useState(String(Math.round(ekVorhanden) || ""));
   const [manuellInput, setManuellInput] = useState("");
   const [zinsbindung, setZinsbindung] = useState(10);
@@ -119,6 +121,7 @@ export default function FinanzierungsVorschlaege({
         <div style={{ fontSize: 11.5, color: "var(--faint)", marginLeft: "auto", alignSelf: "flex-end" }}>
           Gesamtinvestition <strong style={{ color: "var(--text)" }}>{fmtE(gesamtInvest)}</strong>
           {nebenkosten > 0 && <> · davon {fmtE(nebenkosten)} Nebenkosten</>}
+          {sanierungBetrag > 0 && <> · {fmtE(sanierungBetrag)} Sanierung</>}
         </div>
       </div>
 

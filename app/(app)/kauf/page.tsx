@@ -7,6 +7,7 @@ import { istDemoKonto } from "@/lib/demo";
 import { DEMO_SELBSTAUSKUNFT } from "@/lib/kauf/selbstauskunft";
 import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
 import { heuteBerlin } from "@/lib/zeitraum";
+import { SANIERUNG_PARAM, sanierungAusParam } from "@/lib/sanierung/uebergabe";
 
 export const metadata = { title: "Kauf-Assistent — MyImmo" };
 export const dynamic = "force-dynamic";
@@ -15,8 +16,10 @@ export const dynamic = "force-dynamic";
 // (früher „Cockpit"/„Roter Faden"). Die gespeicherten Kalkulationen und die
 // Selbstauskunft werden hier serverseitig geladen und an den Client-Stepper
 // übergeben.
-export default async function KaufPage() {
+export default async function KaufPage(props: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const supabase = await createClient();
+  // Betrag aus dem Sanierungsrechner (BuyImmo). Die Adresse ist Nutzereingabe → streng gelesen.
+  const sanierungStart = sanierungAusParam((await props.searchParams)[SANIERUNG_PARAM]);
   const { data: rows } = await supabase
     .from("kalkulationen")
     .select("*")
@@ -47,7 +50,13 @@ export default async function KaufPage() {
         </div>
       </div>
       <hr className="topbar-rule" />
-      <KaufAssistent gespeichert={(rows ?? []) as Kalkulation[]} selbstauskunft={auskunft} demo={demo} vertreter={vertreter} />
+      <KaufAssistent
+        gespeichert={(rows ?? []) as Kalkulation[]}
+        selbstauskunft={auskunft}
+        demo={demo}
+        vertreter={vertreter}
+        sanierungStart={sanierungStart}
+      />
     </div>
   );
 }

@@ -33,6 +33,7 @@ export function baueKreditObjekt(
     adresse: auswahl.adresse ?? "",
     kaufpreis,
     gesamtInvest,
+    sanierung: Math.max(0, Number(auswahl.sanierung) || 0),
     eigenkapital,
     darlehen: wunschDarlehen > 0 ? wunschDarlehen : Math.max(0, gesamtInvest - eigenkapital),
     kaltmiete: Number(auswahl.kaltmiete) || 0,

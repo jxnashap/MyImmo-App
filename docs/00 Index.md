@@ -68,6 +68,7 @@
 - [[HANDWERKER-ANFRAGEN]] — Angebote einholen, später Handwerkerportal; Entscheidungen + Risiken (02.10.2026)
 - [[VERTRETER-ZUGANG]] — Bevollmächtigter mit eigener Anmeldung, Rechten und Protokoll (Plan 02.10.2026)
 - [[STRATEGIE-REITER]] — Ankaufsstrategie: wann ist das nächste Objekt finanzierbar? (Idee 30.08.2026)
+- [[BUYIMMO]] — zweiter Bereich „Bestandsaufbau“ neben MyImmo: Entscheidung, Regeln, offene Fragen (05.10.2026)
 - [[OPEN-BANKING]] — Konto-Anbindung, zurückgestellt 29.08.2026 (Code in der Git-Historie)
 
 ## 🛠️ Technik

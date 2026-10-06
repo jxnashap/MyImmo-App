@@ -1,6 +1,8 @@
 # Strategie-Reiter — regelmäßig Immobilien erwerben
 
 **Status:** Idee, notiert am 30.08.2026 (Nutzer). Nichts gebaut, nichts entschieden.
+**Seit 05.10.2026:** gehört in den Bereich **BuyImmo** (`docs/zukunft/BUYIMMO.md`) — der Betreiber
+will dort „Strategien erstellen, wie man seinen Bestand aufbaut“. Die Risiken unten gelten unverändert.
 
 ## Die Idee in einem Satz
 

@@ -39,6 +39,8 @@ const KASKADE = new Set([
   "makler_dokumente", "mfa_wiederherstellung", "mieter_zugaenge", "nk_co2", "nutzer_rollen",
   "selbstauskunft", "service_zugaenge", "unterschriften", "vermieter_anfragen",
   "wiederkehrende_buchungen", "zaehlerstand_meldungen",
+  // Kaskade per Migration 20261006050000 (im SQL-Editor; lokal gegen PostgreSQL 16 geprüft).
+  "sanierungsprojekte",
 ]);
 
 const AUSNAHMEN: Record<string, string> = {

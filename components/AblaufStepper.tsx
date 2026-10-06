@@ -108,9 +108,14 @@ function SchrittKarte({
 }
 
 export default function AblaufStepper({
-  schritte, storageKey, gesperrt = false,
+  schritte, storageKey, gesperrt = false, startSchritt,
 }: {
   schritte: StepperSchritt[]; storageKey: string;
+  /**
+   * Diesen Schritt (0-basiert) beim Laden öffnen statt des ersten offenen — z. B. Schritt 1 des
+   * Kauf-Assistenten, wenn man mit einem Betrag aus dem Sanierungsrechner ankommt.
+   */
+  startSchritt?: number;
   /**
    * Nur-Lesen-Modus (oeffentliche Demo): Der Ablauf bleibt vollstaendig
    * durchklickbar, aber jede Eingabe im Schritt-Inhalt ist tot.
@@ -148,7 +153,11 @@ export default function AblaufStepper({
     // Erledigt mitzählen), sonst den letzten — damit man nie vor lauter
     // zugeklappten Karten steht.
     const ersterOffen = schritte.findIndex((s, i) => !gespeichert[i + 1] && !s.autoErledigt);
-    setOffen({ [(ersterOffen === -1 ? schritte.length - 1 : ersterOffen) + 1]: true });
+    const start =
+      startSchritt != null && startSchritt >= 0 && startSchritt < schritte.length
+        ? startSchritt
+        : ersterOffen === -1 ? schritte.length - 1 : ersterOffen;
+    setOffen({ [start + 1]: true });
     setGeladen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);

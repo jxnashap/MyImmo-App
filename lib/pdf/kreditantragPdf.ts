@@ -31,6 +31,8 @@ export type KreditAbsender = { name: string; adresse?: string | null; email?: st
 export type KreditObjekt = {
   name: string; adresse: string; kaufpreis: number; gesamtInvest: number;
   eigenkapital: number; darlehen: number; kaltmiete: number;
+  /** Davon Sanierung (fehlt → 0) — die Bank soll sehen, dass die Gesamtsumme sie enthält. */
+  sanierung?: number;
 };
 /** Bevollmächtigter Vertreter (Einstellungen → Vertreter), aufbereitet von `kreditVertreter()`. */
 export type KreditVertreter = {
@@ -139,6 +141,27 @@ function kvBox(c: Ctx, y: number, rows: [string, string][]): number {
   return y - boxH - 16;
 }
 
+/**
+ * Zeilen des Objektteils. Enthält die Gesamtinvestition eine Sanierung, sagt das Etikett es und
+ * nennt den Betrag — sonst läse die Bank „inkl. NK“ und hielte die Sanierung für Nebenkosten.
+ */
+export function objektZeilen(objekt: KreditObjekt): [string, string][] {
+  const sanierung = Math.max(0, objekt.sanierung ?? 0);
+  return [
+    ["Objekt", objekt.name || "–"],
+    ["Adresse", objekt.adresse || "–"],
+    ["Kaufpreis", euro(objekt.kaufpreis)],
+    ...(sanierung > 0
+      ? ([
+          ["Gesamtinvestition (inkl. NK und Sanierung)", euro(objekt.gesamtInvest)],
+          ["davon Sanierung / Renovierung", euro(sanierung)],
+        ] as [string, string][])
+      : ([["Gesamtinvestition (inkl. NK)", euro(objekt.gesamtInvest)]] as [string, string][])),
+    ["Eingesetztes Eigenkapital", euro(objekt.eigenkapital)],
+    ["Nettokaltmiete (bei Vermietung)", objekt.kaltmiete > 0 ? euro(objekt.kaltmiete) + " / Monat" : "–"],
+  ];
+}
+
 export async function buildKreditantragPdf(
   absender: KreditAbsender,
   sa: SelbstauskunftDaten,
@@ -205,14 +228,7 @@ export async function buildKreditantragPdf(
 
   if (objekt) {
     y = abschnitt(c2, y, "5. Objekt");
-    y = kvBox(c2, y, [
-      ["Objekt", objekt.name || "–"],
-      ["Adresse", objekt.adresse || "–"],
-      ["Kaufpreis", euro(objekt.kaufpreis)],
-      ["Gesamtinvestition (inkl. NK)", euro(objekt.gesamtInvest)],
-      ["Eingesetztes Eigenkapital", euro(objekt.eigenkapital)],
-      ["Nettokaltmiete (bei Vermietung)", objekt.kaltmiete > 0 ? euro(objekt.kaltmiete) + " / Monat" : "–"],
-    ]);
+    y = kvBox(c2, y, objektZeilen(objekt));
   }
 
   if (wunsch) {

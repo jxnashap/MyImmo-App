@@ -19,7 +19,7 @@ export type Property = {
   obj_status: string | null;  // z.B. "Vermietet", "Leer"
   zimmer: number | null;
   energieklasse: string | null;
-  energieausweis_datum: string | null; // Ausstellungsdatum → § 79 GEG (10 J. gültig)
+  energieausweis_datum: string | null; // Ausstellungsdatum → § 79 GModG, vorher GEG (10 J. gültig)
   afa_methode: string | null;        // 'auto' | 'degressiv' | 'manuell' | 'keine' (Grundstück)
   afa_start_jahr: number | null;     // degressiv: 1. AfA-Jahr
   afa_betrag: number | null;         // manuell: fester AfA-Betrag €/Jahr (§ 7b / § 7i/7h)

@@ -128,6 +128,11 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
         return k;
       };
     }
+    // `.match({ spalte: wert, … })` = mehrere `.eq` — genauso protokolliert.
+    k.match = (werte: Record<string, unknown>) => {
+      for (const [a, b] of Object.entries(werte)) z.filter.push(`eq:${a}=${String(b)}`);
+      return k;
+    };
     k.single = async () => antwort();
     k.maybeSingle = async () => antwort();
     // `await supabase.from(...).insert(...)` ohne Kettenende muss auch gehen.

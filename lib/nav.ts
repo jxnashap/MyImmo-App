@@ -4,6 +4,7 @@ import {
   BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
   TrendingUp, MessageSquareText,
   Building2, Building, Store, TreePalm, Sprout, Percent, Compass, Handshake, Scale,
+  Gauge, FolderCheck, PaintRoller, Route,
   type LucideIcon,
 } from "lucide-react";
 
@@ -38,20 +39,31 @@ export const ABRECHNEN: NavItem[] = [
   { href: "/archiv", label: "Archiv", icon: Archive },
 ];
 
-export const PLANEN: NavItem[] = [
+// ZWEI BEREICHE (05.10.2026, Vorgabe des Betreibers): MyImmo ist die automatisierte
+// Verwaltung (VERWALTEN + ABRECHNEN), BuyImmo die aktive Kommandozentrale für den
+// Bestandsaufbau (AUFBAUEN + RECHNEN). Gewechselt wird oben links am Logo
+// (`components/BereichWechsel.tsx`); welcher Bereich offen ist, folgt allein aus der
+// Adresse (`lib/bereich.ts`). Die früheren „Planen“-Punkte sind nach BuyImmo gezogen —
+// ihre Adressen sind UNVERÄNDERT, damit kein Link, Lesezeichen oder Demo-Weg bricht.
+export const AUFBAUEN: NavItem[] = [
+  { href: "/aufbau", label: "Kommandozentrale", icon: Gauge },
+  { href: "/fahrplan", label: "Fahrplan", icon: Route },
   { href: "/kauf", label: "Kauf-Assistent", icon: Compass },
+  { href: "/makler", label: "Makler-Ordner", icon: FolderCheck },
   { href: "/verkauf", label: "Verkauf-Assistent", icon: Handshake },
+];
+
+export const RECHNEN: NavItem[] = [
+  { href: "/sanierung", label: "Sanierungsrechner", icon: PaintRoller },
   { href: "/bewertung", label: "Marktwert-Schätzer", icon: TrendingUp },
   { href: "/afa-assistent", label: "AfA-Assistent", icon: Percent },
 ];
 
-/** Alle Ziele in einer Liste — die Command-Palette sucht über alles. */
-export const ALLE_ZIELE: NavItem[] = [...VERWALTEN, ...ABRECHNEN, ...PLANEN];
+/** Alle Ziele in einer Liste — die Command-Palette sucht über BEIDE Bereiche. */
+export const ALLE_ZIELE: NavItem[] = [...VERWALTEN, ...ABRECHNEN, ...AUFBAUEN, ...RECHNEN];
 
-/** @deprecated Übergangsnamen, damit ältere Importe nicht brechen. */
+/** @deprecated Übergangsname, damit ältere Importe nicht brechen. */
 export const VERWALTUNG = VERWALTEN;
-/** @deprecated */
-export const KALKULATOR = PLANEN;
 
 // Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
 export const PROP_ICONS: Record<string, LucideIcon> = {

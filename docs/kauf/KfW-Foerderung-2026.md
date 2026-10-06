@@ -2,11 +2,13 @@
 title: KfW-Foerderung-2026
 ---
 
-> Recherche 20.07.2026 (nur kfw.de / bafa.de / Gesetzestext), **KfW 308 am 28.08.2026 gegen die Produktseite nachgezogen** (Reform zum 03.08.2026); KfW 300/297/298/124/261 dabei gegengeprüft und unverändert. Umsetzung: `lib/kauf/foerderung.ts` (filterProgramme). Verwandt: [[00 Kauf-Tool Übersicht]], [[Bank-Ordner]].
+> Recherche 20.07.2026 (nur kfw.de / bafa.de / Gesetzestext), **KfW 308 am 28.08.2026 gegen die Produktseite nachgezogen** (Reform zum 03.08.2026). **KfW 261, 458 und BAFA BEG EM am 05.10.2026 auf die BEG-Reform vom 21.07.2026 nachgezogen** (siehe Korrektur unten). Umsetzung: `lib/kauf/foerderung.ts` (filterProgramme, `FOERDER_STAND`) und `lib/sanierung/foerderung.ts` (Zuschuss-Schätzung im Sanierungsrechner). Verwandt: [[00 Kauf-Tool Übersicht]], [[Bank-Ordner]].
+
+> ⚠️ **Korrektur 05.10.2026:** Hier stand seit dem 28.08.2026, KfW 261 sei „gegengeprüft und unverändert“. **Das war falsch.** Die BEG wurde zum **21.07.2026** umgestellt (Richtlinien BEG EM und BEG WG „vom 17. August 2026“, BAnz AT 27.08.2026 B1 bzw. 02.09.2026 B1, rückwirkend in Kraft). Die Tilgungszuschüsse von KfW 261 sanken um 10 Prozentpunkte, der Effizienzbonus bei KfW 458 fiel weg, die BAFA-Höchstgrenzen für Mehrfamilienhäuser sanken. **Ursache:** Geprüft wurden die Beträge auf den Produktseiten, nicht die Seite „Anpassungen 2026“ der KfW und nicht das Datum der Richtlinie. **Regel: Bei Förderprogrammen zuerst nach einer Richtlinienänderung suchen (Bundesanzeiger, „Anpassungen“-Seite des Trägers), dann die Zahlen lesen.**
 
 # Staatliche Förderprogramme 2026 — Wohnimmobilie kaufen, bauen, sanieren
 
-**Stand: 28.08.2026 (KfW 308; übrige Programme 20.07.2026). Quellen: ausschließlich kfw.de und bafa.de (Zinsen: tagesaktuell/kapitalmarktorientiert, auf den KfW-Seiten nur als Platzhalter „–,–– %" ausgewiesen; die Bank nennt den Zins bei Zusage). § 35c aus dem Gesetzestext.**
+**Stand: 05.10.2026 (KfW 261, 458, BAFA BEG EM, § 35c, KfW 159), 28.08.2026 (KfW 308), 20.07.2026 (KfW 124, 300, 297/298 — nicht erneut geprüft). Quellen: ausschließlich kfw.de und bafa.de (Zinsen: tagesaktuell/kapitalmarktorientiert, auf den KfW-Seiten nur als Platzhalter „–,–– %" ausgewiesen; die Bank nennt den Zins bei Zusage). § 35c aus dem Gesetzestext.**
 
 > **Rechtlicher Hinweis (§ 34i GewO):** MyImmo rechnet, sortiert und zeigt an, welche Programme **laut deinen Angaben in Frage kommen** — das ist eine reine Information/Vorauswahl, **keine Empfehlung und keine Vermittlung** eines Finanzierungs- oder Förderprodukts. **Du entscheidest selbst**, ob und wo du einen Antrag stellst. Steuerliche Aussagen (z. B. § 35c) sind **keine Steuerberatung**.
 
@@ -22,9 +24,9 @@ title: KfW-Foerderung-2026
 | **KfW 300** WEF Neubau | KfW (Kredit, zinsverbilligt) | Neubau/Ersterwerb | **170.000–270.000 €** je Kinder/QNG | **Ja**, ≥50 %, min. 5 J. | **≤ 90.000 €** +10.000 €/weit. Kind | **≥1 Kind < 18** | **Effizienzhaus 40**, keine fossile/Biomasse-Heizung | **Ja** |
 | **KfW 308** „Jung kauft Alt" | KfW (Kredit, zinsverbilligt) | Kauf Bestand + Sanierung | **140.000–180.000 €** je Kinder (seit 03.08.2026) | **Ja**, ≥50 % | **≤ 90.000 €** +10.000 €/weit. Kind | **≥1 Kind < 18** | Gebäude Klasse **F/G/H**, Sanierung auf EH 85 EE **oder** kombinierte Einzelmaßnahmen in 4,5 J. | **Ja** |
 | **KfW 297/298** Klimafr. Neubau | KfW (Kredit) | Neubau/Erstkauf | bis **100.000 €** (mit QNG **150.000 €**)/WE | 297 Selbstnutzung, **298 auch Vermietung** | keine | keine | **Effizienzhaus 40**, keine fossile Heizung | **Ja** |
-| **KfW 261** Wohngebäude Sanierung | KfW (Kredit + Tilgungszuschuss) | Sanierung zum Effizienzhaus | bis **120.000 €** (mit EE/NH-Klasse **150.000 €**)/WE, Zuschuss **5–45 %** | **Selbstnutzer UND Vermieter** | keine | keine | Ziel **EH 85 … 40** oder Denkmal; **Energieberater Pflicht** | **Ja** |
-| **KfW 458** Heizungsförderung | KfW (Zuschuss) | Heizungstausch (Wärmepumpe etc.) | **30–70 %** von max. 30.000 € (EFH) | Selbstnutzer **und** Vermieter | nur für **Einkommensbonus**: ≤ 40.000 € | — | Bestandsgebäude ≥ 5 J.; erneuerbare Heizung | **Ja** (mit aufschieb. Bedingung) |
-| **BAFA BEG EM** Einzelmaßnahmen | BAFA (Zuschuss) | Dämmung, Fenster, Anlagentechnik | **15 %** (+5 % iSFP) von max. **30.000 €** (mit iSFP **60.000 €**)/WE·Jahr | Selbstnutzer **und** Vermieter | keine | keine | Gebäude ≥ 5 J.; **Energieberater Pflicht** | **Ja** |
+| **KfW 261** Wohngebäude Sanierung | KfW (Kredit + Tilgungszuschuss) | Sanierung zum Effizienzhaus | bis **150.000 €**/WE, Tilgungszuschuss **0–15 %** (+ Boni) | **Selbstnutzer UND Vermieter** | keine | keine | nur noch **EE- oder NH-Klasse** (EH 40/55/70/85/Denkmal); **Energieberater Pflicht** | **Ja** |
+| **KfW 458** Heizungsförderung | KfW (Zuschuss) | Heizungstausch (Wärmepumpe etc.) | **30 %** (Selbstnutzer mit Boni bis **70 %**, bei niedrigem Einkommen **80 %**) von max. **28.000 €** (1. WE) | Selbstnutzer **und** Vermieter (GbR: KfW 459) | nur für **Einkommensbonus**: ≤ 50.000 € | — | Bestandsgebäude ≥ 5 J.; erneuerbare Heizung | **Ja** (mit bedingtem Vertrag) |
+| **BAFA BEG EM** Einzelmaßnahmen | BAFA (Zuschuss) | Dämmung, Fenster, Anlagentechnik, Heizungsoptimierung | **15 %** von max. **30.000 €** (1. WE), **15.000 €** (2.–6.), **8.000 €** (ab 7.) je Gebäude·Jahr; mit iSFP doppelt so hohe Grenze und +5 Pp auf den Teil darüber | Selbstnutzer **und** Vermieter | keine | keine | Gebäude ≥ 5 J.; **Energieberater Pflicht** (Hülle, Anlagentechnik) | **Ja** |
 | **§ 35c EStG** Steuerbonus | Finanzamt (Steuerermäßigung) | energet. Sanierung | **20 %** über 3 Jahre, max. **40.000 €**/Objekt | **nur selbstgenutzt** | keine | keine | Gebäude **> 10 J.**; Fachunternehmer-Bescheinigung | nein (aber **keine Doppelförderung** mit BAFA/KfW) |
 
 ---
@@ -50,25 +52,26 @@ title: KfW-Foerderung-2026
 **Kommt in Frage, wenn:** das Gebäude **Effizienzhaus 40** erfüllt und **nicht mit Öl/Gas** (QNG-Variante: auch nicht Biomasse) beheizt wird, und der Antrag **vor Baubeginn** liegt. **297 = Selbstnutzer, 298 = auch Vermieter/Unternehmen** — also die Alternative zu 300/124, wenn keine Kinder/über Einkommensgrenze **oder** vermietet werden soll.
 
 ### KfW 261 — Wohngebäude-Kredit (Sanierung zum Effizienzhaus)
-**Gefördert:** Komplettsanierung eines Bestandsgebäudes zum Effizienzhaus, Kredit bis **120.000 €/WE** (mit EE- oder Nachhaltigkeits-Klasse **150.000 €/WE**) **plus Tilgungszuschuss** (wird nicht zurückgezahlt):
+**Gefördert:** Komplettsanierung eines Bestandsgebäudes zum Effizienzhaus, Kredit bis **150.000 €/WE** **plus Tilgungszuschuss** (wird nicht zurückgezahlt). **Seit 21.07.2026** gibt es nur noch Stufen mit EE- oder Nachhaltigkeits-Klasse, die Zuschüsse sind je 10 Prozentpunkte niedriger (kfw.de/261, geprüft 05.10.2026):
 
-| Stufe | Zuschuss | Stufe mit EE-Klasse | Zuschuss |
-|---|---|---|---|
-| EH 85 / Denkmal | 5 % | EH 85 EE / Denkmal EE | 10 % |
-| EH 70 | 10 % | EH 70 EE | 15 % |
-| EH 55 | 15 % | EH 55 EE | 20 % |
-| EH 40 | 20 % | EH 40 EE | 25 % |
+| Stufe | EE-Klasse | NH-Klasse |
+|---|---|---|
+| EH 40 | 10 % | 15 % |
+| EH 55 | 5 % | 10 % |
+| EH 70 | — | 5 % |
+| EH 85 | — | 5 % |
+| Denkmal | 5 % | 10 % |
 
-Zusatz: **+10 %-Punkte** WPB-Bonus (Worst Performing Building), **+15 %-Punkte** serielle Sanierung.
-**Kommt in Frage, wenn:** du ein Bestandsgebäude auf **mind. Effizienzhaus 85** (oder Denkmal) sanierst, einen **Energieeffizienz-Experten** einbindest und **vor Baubeginn** beantragst. **Selbstnutzer und Vermieter** gleichermaßen.
+Zusatz: **+10 Prozentpunkte** WPB-Bonus (Worst Performing Building, EH 40/55/70), serielle Sanierung **+15** (EH 40/55) bzw. **+5** (EH 70), kumulierbar. **Ergänzungskredit für Einzelmaßnahmen:** KfW 359 (bis 120.000 €/WE, nur mit BAFA-Zusage) für alle, KfW 358 mit Zinsvorteil nur für Selbstnutzer bis 90.000 € Haushaltseinkommen.
+**Kommt in Frage, wenn:** du ein Bestandsgebäude auf ein Effizienzhaus der **EE- oder NH-Klasse** sanierst, einen **Energieeffizienz-Experten** einbindest und **vor Baubeginn** beantragst. **Selbstnutzer und Vermieter** gleichermaßen.
 
 ### KfW 458 — Heizungsförderung (Zuschuss)
-**Gefördert:** Austausch alter Heizung gegen Wärmepumpe, Biomasse, Solarthermie, Wärmenetzanschluss u. a. Max. förderfähige Kosten: EFH 30.000 € (Mehrfamilienhaus gestaffelt).
-Bausteine (kumulierbar, **gedeckelt auf 70 %**): Grundförderung **30 %** + Klimageschwindigkeitsbonus **20 %** (bei Tausch alter Heizung, nur Selbstnutzer) + Einkommensbonus **30 %** (nur bei **Haushaltseinkommen ≤ 40.000 €**, Selbstnutzer) + Effizienzbonus **5 %** (bestimmte Wärmepumpen).
+**Gefördert:** Austausch alter Heizung gegen Wärmepumpe, Biomasse, Solarthermie, Wärmenetzanschluss u. a. Max. förderfähige Kosten **seit 21.07.2026**: **28.000 €** für die erste Wohneinheit, je 15.000 € für die 2.–6., je 8.000 € ab der 7. — **je Gebäude insgesamt**; für die erste Wohneinheit ab 01.02.2027 halbjährlich 750 € weniger.
+Bausteine (kumulierbar, **gedeckelt auf 70 %**, bei Einkommen bis 30.000 € **80 %**): Grundförderung **30 %** + Klimageschwindigkeitsbonus **16 %** (nur Selbstnutzer; sinkt ab 01.02.2027 halbjährlich um 4 Pp, ab 01.08.2028 null) + Einkommensbonus **40 / 30 / 10 %** (Haushaltseinkommen bis 30.000 / 40.000 / 50.000 €, Familienzuschlag 10.000 €, nur Selbstnutzer). **Effizienzbonus seit 21.07.2026 entfallen.** Ab Q1 2027 geplant: Wärmepumpe 15 % Grundförderung + 15 % Wertschöpfungsbonus nur bei EU-Herkunft.
 **Kommt in Frage, wenn:** Bestandsgebäude (**≥ 5 Jahre**), du eine förderfähige erneuerbare Heizung einbaust und **vor Auftragsvergabe** beantragst (Vertrag mit aufschiebender Bedingung). Einkommens-/Klimabonus nur für **Selbstnutzer**.
 
 ### BAFA — BEG Einzelmaßnahmen (BEG EM, Zuschuss)
-**Gefördert (über BAFA, nicht KfW — das ist die Nicht-Heizung-Hälfte):** Dämmung (Wand/Dach/Decke/Boden), Fenster/Außentüren, sommerlicher Wärmeschutz, Anlagentechnik außer Heizung, Heizungsoptimierung. Fördersatz **15 %** (+ **5 % iSFP-Bonus**), max. förderfähige Kosten **30.000 €/WE·Jahr** (mit iSFP **60.000 €**).
+**Gefördert (über BAFA, nicht KfW — das ist die Nicht-Heizung-Hälfte):** Dämmung (Wand/Dach/Decke/Boden), Fenster/Außentüren, sommerlicher Wärmeschutz, Anlagentechnik außer Heizung, Heizungsoptimierung. Fördersatz **15 %**; max. förderfähige Kosten **seit 21.07.2026** je Gebäude und Kalenderjahr **30.000 €** (1. WE), je **15.000 €** (2.–6. WE), je **8.000 €** (ab 7. WE); mit iSFP **60.000 / 30.000 / 15.000 €**, und **+5 Prozentpunkte nur auf den Teil über der Grenze ohne iSFP** (vorher auf alles). Mindestinvestition 300 € je Maßnahme. Energieberater-Begleitung 50 % (förderfähig bis 5.000 € beim Ein-/Zweifamilienhaus, sonst 2.000 € je WE, höchstens 20.000 €). **Eigenleistung:** nur Material, wenn ein Energieeffizienz-Experte oder Fachunternehmer die fachgerechte Ausführung bestätigt. Nicht mehr parallel zu KfW 261 (drei Jahre Sperre).
 **Kommt in Frage, wenn:** Gebäude **≥ 5 Jahre**, **Energieeffizienz-Experte** eingebunden und Antrag **vor Vorhabenbeginn**. **Selbstnutzer und Vermieter** förderfähig. Merke: **Heizungstausch → KfW 458, Gebäudehülle/Technik → BAFA.**
 
 ### § 35c EStG — Steuerermäßigung für energetische Sanierung
@@ -96,3 +99,5 @@ Bausteine (kumulierbar, **gedeckelt auf 70 %**): Grundförderung **30 %** + Klim
 - https://www.bafa.de/DE/Energie/Effiziente_Gebaeude/Sanierung_Wohngebaeude/Gebaeudehuelle/gebaeudehuelle_node.html
 - https://www.bafa.de/DE/Energie/Effiziente_Gebaeude/Sanierung_Wohngebaeude/Einzelmassnahmen/einzelmassnahmen_node.html
 - https://www.gesetze-im-internet.de/estg/__35c.html
+- https://www.kfw.de/inlandsfoerderung/Bundesf%C3%B6rderung-f%C3%BCr-effiziente-Geb%C3%A4ude/Anpassungen-2026/ (Änderungen zum 21.07.2026)
+- Richtlinie BEG EM vom 17.08.2026, BAnz AT 27.08.2026 B1; Richtlinie BEG WG vom 17.08.2026, BAnz AT 02.09.2026 B1
