@@ -610,7 +610,30 @@ a.kpi-card:active { transform: scale(.985); }
 .sanierung-uebernehmen { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 .sanierung-fuss { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); }
 .sanierung-fuss p { margin: 0; max-width: 620px; }
-.sanierung-leeren { display: inline-flex; align-items: center; gap: 6px; }
+/* Projektleiste des Sanierungs-Guides (Stufe C) */
+.projekt-leiste { border: 1px solid var(--line); border-radius: 18px; background: var(--bg2); padding: 10px 14px; margin-bottom: 14px; }
+.projekt-leiste-kopf { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
+.projekt-leiste-name { display: flex; flex-direction: column; min-width: 0; }
+.projekt-leiste-name strong { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.projekt-leiste-knoepfe { display: flex; flex-wrap: wrap; gap: 6px; }
+.projekt-rueckfrage, .projekt-meldung { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 10px; font-size: 13px; }
+.projekt-rueckfrage { padding: 8px 10px; border-radius: 12px; background: var(--bg3); }
+.projekt-meldung { color: var(--muted); }
+.projekt-meldung.fehler { color: var(--red); }
+.projekt-knoepfe { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; }
+.projekt-panel { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 4px; }
+.projekt-gruppe { padding: 8px 0; }
+.projekt-gruppe h4 { margin: 4px 0 6px; font-size: 13px; }
+.projekt-gruppe > p { margin: 0 0 6px; }
+.projekt-zeile { cursor: default; }
+.projekt-beschreibung { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; white-space: normal; }
+.projekt-offen { margin-left: 6px; vertical-align: middle; }
+.projekt-vorlage-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.projekt-vorlage-form .input { flex: 1 1 220px; min-width: 0; }
+@media (max-width: 560px) {
+  .projekt-zeile { flex-wrap: wrap; }
+  .projekt-zeile .projekt-knoepfe { width: 100%; }
+}
 .sanierung-zeile-posten .sanierung-foerderart { grid-column: 1 / -1; font-size: 12.5px; padding: 6px 10px; }
 .sanierung-eigen { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); margin-top: -2px; }
 .sanierung-foerderung { display: flex; flex-direction: column; gap: 12px; }

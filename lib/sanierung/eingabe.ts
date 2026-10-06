@@ -14,6 +14,7 @@ import { MASSNAHMEN, type MassnahmeId, type MaterialId, type SanierungEingabe } 
 import { istFoerderArt, type FoerderArt, type FoerderEingabe, type Gebaeude, type Nutzung } from "@/lib/sanierung/foerderung";
 import { ARBEITEN, type ArbeitId } from "@/lib/sanierung/arbeiten";
 import { ZUSTAND_GEWERKE, type Zustand, type ZustandGewerk } from "@/lib/sanierung/zustand";
+import { KATALOG } from "@/lib/sanierung/katalog";
 
 export type RaumTyp = "wohnen" | "schlafen" | "kind" | "kueche" | "bad" | "wc" | "flur" | "abstell";
 export const RAUM_TYPEN: { id: RaumTyp; label: string }[] = [
@@ -120,6 +121,11 @@ export type Entwurf = {
   arbeitPreise: Partial<Record<ArbeitId, string>>;
   /** Abgehakte Zeilen des Einkaufszettels. */
   abgehakt: string[];
+  /**
+   * Maßnahmen, die ein neuer Raum je Typ vorgeschlagen bekommt — aus einer Vorlage (Stufe C).
+   * Fehlt ein Typ, gilt der eingebaute Vorschlag (`vorschlagMassnahmen`); `[]` heißt „nichts“.
+   */
+  vorschlagJeTyp: Partial<Record<RaumTyp, MassnahmeId[]>>;
 };
 
 export const leeresProjekt = (): ProjektFelder => ({
@@ -181,6 +187,7 @@ export function leererEntwurf(id: string): Entwurf {
     arbeitMengen: {},
     arbeitPreise: {},
     abgehakt: [],
+    vorschlagJeTyp: {},
   };
 }
 
@@ -310,7 +317,8 @@ export function entwurfAus(roh: unknown): Entwurf | null {
   });
   const preise: Partial<Record<MaterialId, string>> = {};
   for (const [k, v] of Object.entries(obj(o.preise))) {
-    if (typeof v === "string") preise[k as MaterialId] = v.slice(0, 20);
+    // Nur Materialien aus dem Katalog — sonst wüchse ein gespeicherter Entwurf mit beliebigen Schlüsseln.
+    if (typeof v === "string" && Object.prototype.hasOwnProperty.call(KATALOG, k)) preise[k as MaterialId] = v.slice(0, 20);
   }
   const f = obj(o.foerder);
   const foerder: FoerderFelder = {
@@ -351,7 +359,18 @@ export function entwurfAus(roh: unknown): Entwurf | null {
     arbeitMengen: arbeitTexte(o.arbeitMengen),
     arbeitPreise: arbeitTexte(o.arbeitPreise),
     abgehakt: liste(o.abgehakt).filter((a): a is string => typeof a === "string" && a.length <= 64).slice(0, 50),
+    vorschlagJeTyp: massnahmenJeTypAus(o.vorschlagJeTyp),
   };
+}
+
+/** Maßnahmen je Raumtyp prüfen (Entwurf und Vorlage): nur bekannte Typen und Maßnahmen, keine doppelten. */
+export function massnahmenJeTypAus(v: unknown): Partial<Record<RaumTyp, MassnahmeId[]>> {
+  const aus: Partial<Record<RaumTyp, MassnahmeId[]>> = {};
+  for (const [k, x] of Object.entries(obj(v))) {
+    if (!RAUM_TYP_IDS.has(k) || !Array.isArray(x)) continue;
+    aus[k as RaumTyp] = [...new Set(liste(x).filter((m): m is MassnahmeId => typeof m === "string" && MASSNAHME_IDS.has(m)))];
+  }
+  return aus;
 }
 
 const ENTSORGUNG_IDS = new Set<string>(["keine", "bauschutt", "mischabfall", "beide", "unbekannt"]);

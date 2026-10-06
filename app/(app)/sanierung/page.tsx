@@ -1,12 +1,15 @@
 import SanierungsRechner, { type Ansicht } from "@/components/SanierungsRechner";
 import { KATALOG, KATALOG_STAND } from "@/lib/sanierung/katalog";
 import { heuteBerlin } from "@/lib/zeitraum";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
+import { istDemoKonto } from "@/lib/demo";
 
 export const metadata = { title: "Sanierungsrechner — BuyImmo" };
 
 // Sanierungsrechner (BuyImmo, 05.10.2026) mit Guide (Stufe B): Schritt für Schritt, Übersicht und
 // Ergebnis über EINEM Entwurf — Material von–bis, Handwerker- und Fachbetrieb-Preise mit Quelle,
-// Arbeitszeit nach eigenem Stundensatz, eigene Posten. Keine Datenbank — der Entwurf liegt im Browser.
+// Arbeitszeit nach eigenem Stundensatz, eigene Posten. Der Entwurf liegt im Browser; gespeichert wird
+// über die Projektleiste in `sanierungsprojekte` (Stufe C) — im Demo-Konto nicht.
 // Förderung: lib/sanierung/foerderung.ts — der Stichtag kommt vom Server (die Heizungsgrenze sinkt
 // ab 2027 halbjährlich; keine Ortszeit im Browser).
 // Rechnung: lib/sanierung/auswertung.ts, Preise mit Quelle: lib/sanierung/katalog.ts + arbeiten.ts.
@@ -14,7 +17,7 @@ export const metadata = { title: "Sanierungsrechner — BuyImmo" };
 const ANSICHTEN: Ansicht[] = ["guide", "uebersicht", "ergebnis"];
 
 export default async function SanierungPage({ searchParams }: { searchParams: Promise<{ ansicht?: string | string[] }> }) {
-  const { ansicht } = await searchParams;
+  const [{ ansicht }, user] = await Promise.all([searchParams, aktuellerNutzer()]);
   const start = typeof ansicht === "string" && (ANSICHTEN as string[]).includes(ansicht) ? (ansicht as Ansicht) : undefined;
   return (
     <div className="fade-up">
@@ -26,7 +29,7 @@ export default async function SanierungPage({ searchParams }: { searchParams: Pr
         </div>
       </div>
       <hr className="topbar-rule" />
-      <SanierungsRechner katalog={KATALOG} stand={KATALOG_STAND} heute={heuteBerlin()} ansicht={start} />
+      <SanierungsRechner katalog={KATALOG} stand={KATALOG_STAND} heute={heuteBerlin()} ansicht={start} demo={istDemoKonto(user?.email)} />
     </div>
   );
 }
