@@ -1,6 +1,6 @@
 # Sanierungs-Guide (BuyImmo) — Plan
 
-> **Stand 05.10.2026 · Status: Stufe A (Preiskatalog) und Stufe B (Guide, Übersicht, Ergebnis — Abschnitt 12) gebaut; Speichern/Vorlagen (C) offen.** Auftrag von Jonas (wörtlich im
+> **Stand 06.10.2026 · Status: Stufe A (Preiskatalog), B (Guide, Übersicht, Ergebnis) und C (Speichern, Vorlagen — Abschnitt 12) gebaut. C wirkt erst, wenn Jonas `supabase/migrations/20261006050000_sanierungsprojekte.sql` im SQL-Editor ausgeführt hat.** Auftrag von Jonas (wörtlich im
 > Memory-Repo, `02 - MyImmo/myimmoideen.md`): ein geführter Ablauf, „Mischung Sanierungsrechner
 > und Kauf-Assistent“ — Name, Adresse, Seite für Seite immer detaillierter; als Vorlage
 > speicherbar; zusätzlich als Übersicht zum Ausfüllen; beim Wiedereinstieg nur die Seiten, auf
@@ -307,7 +307,7 @@ füllt es aus `kaufnebenkosten()` (`lib/kalk.ts`), der Steuer-Wächter weist hin
 |---|---|---|
 | A | ✅ **gebaut 05.10.2026:** Einheitspreise (`lib/sanierung/arbeiten.ts`), Zustand-Baukasten (`zustand.ts`), Kostenzeilen mit Herkunft und Portal-Anteil (`kostenzeilen.ts`), BBSR-Nutzungsdauern (`nutzungsdauer.ts`), Prüfzyklus-Zeilen. **Offen in A:** zweite Qualitätsstufe je Baumarkt-Material (neue Preise nötig) | — |
 | B | ✅ **gebaut 05.10.2026** — siehe „Stufe B: was gebaut ist“ unten | nichts in der DB (Browser-Entwurf wie heute) |
-| C | Speichern + Vorlagen (Tabelle) — **nach dem Merge von #418**; SQL legt Jonas im SQL-Editor an | Migration, `delete_own_account()`, Demo-Sperre |
+| C | ✅ **gebaut 06.10.2026** — siehe „Stufe C: was gebaut ist“ unten; **SQL führt Jonas im SQL-Editor aus** | Migration `20261006050000` (Kaskade auf `auth.users`, Demo-Sperre) |
 | D | Gesamtauswertung mit Kaufprüfung (`kalk_id`) | Stufe C |
 | E | Haus (Gebäudehülle, GModG-Pflichten als Posten mit Frist) | Entscheidung 3: später |
 | F | Strategie-Abgleich | Anwalt (§ 34i) |
@@ -348,3 +348,42 @@ veraltet → „§ 79 GModG“.
   Haus (Stufe E); Speichern/Vorlagen (Stufe C, SQL).
 - Tests: `tests/sanierungGuide.test.ts` (42 Tests, 34 Mutationen rot), im Browser durchgeklickt
   (1440 und 390 px, lokaler Server mit Demo-Sitzung).
+
+### Stufe C: was gebaut ist (06.10.2026)
+
+- **Tabelle `sanierungsprojekte`** (Migration `20261006050000`, **im SQL-Editor**, idempotent): `art`
+  projekt/vorlage, `daten` jsonb (≤ 256 KB in der DB, die App bremst bei 200 KB), `kalk_id`/`prop_id`
+  für Stufe D und Abschnitt 11 (Policy: nur auf EIGENE Zeilen), höchstens **200 Zeilen je Konto**
+  (Trigger, Fehlercode 54000), Kaskade auf `auth.users`, Demo weder lesen noch schreiben (Policy +
+  Anweisungs-Trigger). Dieselbe Datei legt `kalkulationen.uebernommen_prop_id` an (Abschnitt 11, nur
+  eigenes Objekt, höchstens einmal). Lokal in PostgreSQL 16 mit Stubs geprüft (16 Fälle).
+- **Actions** `lib/actions/sanierungsprojekte.ts`: Was gespeichert wird, prüfen dieselben Funktionen
+  wie beim Laden aus dem Browser (`entwurfAus`, `vorlageAus`) — ein Aufruf am Formular vorbei speichert
+  nichts Fremdes. **Zwei Geräte:** Überschrieben wird nur gegen den bekannten `updated_at`; hat ein
+  anderes Gerät inzwischen gespeichert → `konflikt` mit drei Wegen (neueren Stand laden · als Kopie ·
+  trotzdem überschreiben). Fehlt die Tabelle noch (`PGRST205`/`42P01`), sagt die Leiste „kommt in
+  Kürze“, statt einen kaputten Knopf zu zeigen.
+- **Projektleiste** (`components/sanierung/ProjektLeiste.tsx`): Speichern · Neu · „Projekte &
+  Vorlagen“. Bevor ein Entwurf ersetzt wird, fragt sie, wenn Ungespeichertes verloren ginge. Welches
+  Projekt offen ist, merkt sich der Browser (`buyimmo:sanierung-projekt`). Demo: kein Speichern, die
+  mitgelieferten Vorlagen gehen trotzdem (sie stehen im Code).
+- **Vorlage = Entscheidungen, nie die Wohnung** (`lib/sanierung/projekte.ts`): Maßnahmen je Raumart
+  (die des ERSTEN Raums dieser Art — eine Vereinigung schlüge in jedem Raum alles vor), Technik **nur
+  wo etwas angekreuzt ist**, wer arbeitet, Entsorgung, Puffer, Ziel, eigene Materialpreise. Nicht:
+  Name, Adresse, Baujahr, ETW, Wohnfläche, Räume/Maße, Ist-Zustand, Mengen, Angebote, eigene Posten,
+  Stunden, Förderangaben. **Warum Technik ohne Kreuz nicht mitkommt:** „gut, nichts zu tun“ ist eine
+  Aussage über die alte Wohnung — übernommen stünde bei der nächsten „Automaten und FI vorhanden“,
+  ohne dass jemand nachgesehen hat.
+- **Neues Projekt aus Vorlage:** Der Entwurf bekommt `vorschlagJeTyp`; neue Räume übernehmen ihn
+  (`vorschlagFuer()`), müssen aber auf „Maßnahmen“ angesehen werden. `[]` heißt „nichts
+  vorschlagen“. Der Guide startet mit nur den offenen Seiten.
+- **Mitgelieferte Vorlagen** (Mieterwechsel · Bad neu · Altbau-Wohnung komplett): Vorschläge ohne
+  Puffer, ohne „wer“, ohne Preise — dafür gibt es keine Quelle. „Altbau komplett“ legt Elektrik, Bad
+  und Türen fest und fragt Heizung, Fenster, Küche ab (Fenster sind bei der ETW Gemeinschaft).
+- **Dabei gefunden und behoben:** `entwurfAus()` übernahm Materialpreise unter JEDEM Schlüssel — ein
+  gespeicherter Entwurf hätte beliebig wachsen können. Jetzt nur Materialien aus dem Katalog.
+- Tests: `tests/sanierungProjekte.test.ts` + `tests/actionsSanierungsprojekte.test.ts` (49 Tests,
+  35 Mutationen rot). Im Browser (1440/390 px, Demo-Sitzung): Leiste, Rückfrage, Vorlage → Räume mit
+  Vorschlag. **Nicht im Browser geprüft:** Speichern, Liste, Konflikt — die Tabelle existiert live erst
+  nach dem SQL, und die Sitzung hier ist das Demo-Konto. Nach dem SQL: Live-Prüfung in einer
+  zurückgerollten Transaktion als Rolle `authenticated`.

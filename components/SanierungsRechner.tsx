@@ -8,9 +8,10 @@
 // Wiedereinstieg (Auftrag Jonas, 05.10.2026): Wer mit einem angefangenen Entwurf in den Guide geht,
 // bekommt nur die Seiten, auf denen noch etwas fehlt — „auch wenn nur eine Zahl fehlt“.
 //
-// Der Entwurf liegt NUR in diesem Browser (localStorage, in try/catch): Wer bei der Besichtigung
-// am Handy misst, verliert beim Neuladen nichts. Ins Konto gespeichert wird (noch) nicht — das
-// sagt die Seite auch.
+// Der Entwurf liegt im Browser (localStorage, in try/catch): Wer bei der Besichtigung am Handy misst,
+// verliert beim Neuladen nichts. Ins Konto gespeichert wird über die Projektleiste (Stufe C,
+// components/sanierung/ProjektLeiste.tsx) — dann ist er auf jedem Gerät zu öffnen. Welches
+// gespeicherte Projekt offen ist, merkt sich der Browser ebenfalls (`PROJEKT_SPEICHER`).
 //
 // Förderung: geschätzter Zuschuss für eigene Posten mit Förderart und für Fenster/Wärmepumpe aus
 // der Technik-Seite. Er steckt NICHT in der Summe für den Kauf-Assistenten — sicher ist er erst
@@ -28,9 +29,16 @@ import { auswerten, foerderPosten } from "@/lib/sanierung/auswertung";
 import { SEITEN, bestaetigeMassnahmen, offeneSeiten, seiteNach, seiteNoetig, type SeiteId } from "@/lib/sanierung/guide";
 import { SEITEN_INHALT, type Aendern } from "@/components/sanierung/GuideSeiten";
 import GuideErgebnis, { spanne } from "@/components/sanierung/GuideErgebnis";
+import ProjektLeiste, { type ProjektStand } from "@/components/sanierung/ProjektLeiste";
 
 const SPEICHER = "buyimmo:sanierung-entwurf";
 const ANSICHT_SPEICHER = "buyimmo:sanierung-ansicht";
+const PROJEKT_SPEICHER = "buyimmo:sanierung-projekt";
+
+function projektStandAus(roh: unknown): ProjektStand | null {
+  const o = roh && typeof roh === "object" ? (roh as Record<string, unknown>) : {};
+  return typeof o.id === "string" && typeof o.stand === "string" && typeof o.json === "string" ? { id: o.id, stand: o.stand, json: o.json } : null;
+}
 const START_ID = "start";
 
 export type Ansicht = "guide" | "uebersicht" | "ergebnis";
@@ -48,22 +56,38 @@ const istNeu = (e: Entwurf) => e.raeume.length === 0 && !e.projekt.name.trim() &
 
 const index = (id: SeiteId) => SEITEN.findIndex((s) => s.id === id);
 
-export default function SanierungsRechner({ katalog, stand, heute, ansicht: startAnsicht }: { katalog: Katalog; stand: string; heute: string; ansicht?: Ansicht }) {
+export default function SanierungsRechner({
+  katalog,
+  stand,
+  heute,
+  ansicht: startAnsicht,
+  demo = false,
+}: {
+  katalog: Katalog;
+  stand: string;
+  heute: string;
+  ansicht?: Ansicht;
+  /** Demo-Konto: kein Speichern ins Konto (die Datenbank lehnt es ohnehin ab). */
+  demo?: boolean;
+}) {
   const [entwurf, setEntwurf] = useState<Entwurf>(() => leererEntwurf(START_ID));
   const [geladen, setGeladen] = useState(false);
   const [ansicht, setAnsicht] = useState<Ansicht>(startAnsicht ?? "guide");
   const [seite, setSeite] = useState<SeiteId>("projekt");
   const [nurOffene, setNurOffene] = useState(false);
-  const [leeren, setLeeren] = useState(false);
+  const [projekt, setProjekt] = useState<ProjektStand | null>(null);
 
   const aendern: Aendern = (f) => setEntwurf(f);
   const offene = useMemo(() => offeneSeiten(entwurf), [entwurf]);
   const istOffen = (id: SeiteId) => offene.some((o) => o.seite === id);
 
-  /** In den Guide: neu → alle Seiten; angefangen → nur die offenen; nichts offen → Hinweis „fertig“. */
-  const starteGuide = (e: Entwurf) => {
+  /**
+   * In den Guide: neu → alle Seiten; angefangen → nur die offenen; nichts offen → Hinweis „fertig“.
+   * `nurOffeneErzwingen`: aus einer Vorlage — die Entscheidungen stehen schon, gefragt wird nur der Rest.
+   */
+  const starteGuide = (e: Entwurf, nurOffeneErzwingen = false) => {
     const offen = offeneSeiten(e);
-    const nur = !istNeu(e);
+    const nur = nurOffeneErzwingen || !istNeu(e);
     setNurOffene(nur);
     setSeite(nur && offen.length > 0 ? offen[0].seite : "projekt");
     setAnsicht("guide");
@@ -73,16 +97,21 @@ export default function SanierungsRechner({ katalog, stand, heute, ansicht: star
   useEffect(() => {
     let e: Entwurf | null = null;
     let gemerkt: string | null = null;
+    let p: ProjektStand | null = null;
     try {
       const roh = localStorage.getItem(SPEICHER);
       e = roh ? entwurfAus(JSON.parse(roh)) : null;
       gemerkt = localStorage.getItem(ANSICHT_SPEICHER);
+      const rohP = localStorage.getItem(PROJEKT_SPEICHER);
+      p = rohP ? projektStandAus(JSON.parse(rohP)) : null;
     } catch {
       /* kaputter oder gesperrter Speicher: mit leerem Entwurf weiter */
     }
     const start = e ?? leererEntwurf(START_ID);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen (Hydration)
     if (e) setEntwurf(e);
+    // Ein gemerktes Projekt ohne Entwurf gehört zu nichts mehr.
+    if (e && p) setProjekt(p);
     const wahl = startAnsicht ?? gemerkt;
     if (wahl === "uebersicht" || wahl === "ergebnis") setAnsicht(wahl);
     else starteGuide(start);
@@ -96,10 +125,12 @@ export default function SanierungsRechner({ katalog, stand, heute, ansicht: star
     try {
       localStorage.setItem(SPEICHER, JSON.stringify(entwurf));
       localStorage.setItem(ANSICHT_SPEICHER, ansicht);
+      if (projekt) localStorage.setItem(PROJEKT_SPEICHER, JSON.stringify(projekt));
+      else localStorage.removeItem(PROJEKT_SPEICHER);
     } catch {
       /* privates Fenster o. Ä. — die Rechnung funktioniert trotzdem */
     }
-  }, [entwurf, ansicht, geladen]);
+  }, [entwurf, ansicht, projekt, geladen]);
 
   const a = useMemo(() => auswerten(entwurf, katalog), [entwurf, katalog]);
   const foerderung = useMemo(
@@ -113,6 +144,11 @@ export default function SanierungsRechner({ katalog, stand, heute, ansicht: star
   const fuerKauf = Math.max(0, a.gesamt.max);
 
   const props = { e: entwurf, aendern, auswertung: a, neueId };
+  /** Entwurf ersetzen (Projekt geöffnet, Vorlage gewählt, neu) und in den Guide. */
+  const ersetze = (neu: Entwurf, nurOffeneErzwingen: boolean) => {
+    setEntwurf(neu);
+    starteGuide(neu, nurOffeneErzwingen);
+  };
 
   // ---- Guide-Navigation ------------------------------------------------------------------------
   const noetig = SEITEN.filter((s) => seiteNoetig(s.id, entwurf)).map((s) => s.id);
@@ -149,6 +185,7 @@ export default function SanierungsRechner({ katalog, stand, heute, ansicht: star
   // Datenbank, der Entwurf liegt nur im Browser des Besuchers (DemoNurLesen sperrt sonst jedes Feld).
   return (
     <div className="sanierung" data-demo-erlaubt>
+      {geladen && <ProjektLeiste entwurf={entwurf} projekt={projekt} setProjekt={setProjekt} ersetze={ersetze} neueId={neueId} demo={demo} />}
       <div className="guide-kopf no-print">
         <div className="tabs" role="tablist" aria-label="Ansicht">
           {ANSICHTEN.map((x) => (
@@ -274,18 +311,9 @@ export default function SanierungsRechner({ katalog, stand, heute, ansicht: star
 
       <div className="sanierung-fuss no-print">
         <p>
-          Eine Schätzung, kein Kostenvoranschlag. Dein Entwurf liegt nur in diesem Browser — auf einem anderen Gerät
-          siehst du ihn nicht.
+          Eine Schätzung, kein Kostenvoranschlag. Solange du nicht speicherst, liegt dein Entwurf nur in diesem Browser —
+          auf einem anderen Gerät siehst du ihn erst nach „Speichern“.
         </p>
-        {leeren ? (
-          <span className="sanierung-leeren">
-            Alles löschen?{" "}
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { const neu = leererEntwurf(neueId()); setEntwurf(neu); setLeeren(false); starteGuide(neu); }}>Ja, neu anfangen</button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setLeeren(false)}>Nein</button>
-          </span>
-        ) : (
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setLeeren(true)}>Neu anfangen</button>
-        )}
       </div>
     </div>
   );

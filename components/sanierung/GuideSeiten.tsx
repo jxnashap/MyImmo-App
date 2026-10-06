@@ -32,6 +32,7 @@ import {
   mitTyp,
   relevanteGewerke,
   setzeAnzahl,
+  vorschlagFuer,
   type SeiteId,
 } from "@/lib/sanierung/guide";
 import { altbauRisiko, mengeVorschlag, raeumeMitMassen, type Auswertung } from "@/lib/sanierung/auswertung";
@@ -170,7 +171,7 @@ function RaeumeSeite({ e, aendern, neueId }: SeitenProps) {
       <div className="guide-zaehler-liste">
         {RAUM_TYPEN.map((t) => {
           const n = e.raeume.filter((r) => r.typ === t.id).length;
-          const setzen = (anzahl: number) => aendern((d) => ({ ...d, raeume: setzeAnzahl(d.raeume, t.id, anzahl, neueId).raeume }));
+          const setzen = (anzahl: number) => aendern((d) => ({ ...d, raeume: setzeAnzahl(d.raeume, t.id, anzahl, neueId, vorschlagFuer(d, t.id)).raeume }));
           return (
             <div key={t.id} className="guide-zaehler">
               <span>{t.label}</span>
@@ -187,7 +188,7 @@ function RaeumeSeite({ e, aendern, neueId }: SeitenProps) {
           {ohneTyp.map((r) => (
             <div key={r.id} className="guide-feld form-group">
               <label htmlFor={`${r.id}-typ`}>{r.name || "Raum"}</label>
-              <select id={`${r.id}-typ`} className="input" value="" onChange={(x) => aendern((d) => ({ ...d, raeume: mitTyp(d.raeume, r.id, x.target.value as RaumTyp) }))}>
+              <select id={`${r.id}-typ`} className="input" value="" onChange={(x) => { const typ = x.target.value as RaumTyp; aendern((d) => ({ ...d, raeume: mitTyp(d.raeume, r.id, typ, vorschlagFuer(d, typ)) })); }}>
                 <option value="" disabled>Art wählen</option>
                 {RAUM_TYPEN.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
               </select>

@@ -184,6 +184,11 @@ export function vorschlagMassnahmen(typ: RaumTyp): MassnahmeId[] {
   return typ === "bad" ? ["decke_streichen"] : ["wand_streichen", "decke_streichen"];
 }
 
+/** Vorschlag für einen neuen Raum dieses Typs: aus der Vorlage des Projekts, sonst der eingebaute. */
+export function vorschlagFuer(e: Pick<Entwurf, "vorschlagJeTyp">, typ: RaumTyp): MassnahmeId[] {
+  return [...(e.vorschlagJeTyp[typ] ?? vorschlagMassnahmen(typ))];
+}
+
 const typLabel = (typ: RaumTyp) => RAUM_TYPEN.find((t) => t.id === typ)!.label;
 
 /** Name für den n-ten Raum eines Typs: „Schlafzimmer“, „Schlafzimmer 2“ … */
@@ -195,7 +200,7 @@ export function raumName(typ: RaumTyp, nummer: number): string {
  * Typ eines Raums setzen. Noch nicht bestätigte Maßnahmen folgen dem neuen Typ; ein Name, den der
  * Nutzer nicht selbst vergeben hat („Raum 3“ oder leer), wird zum Typnamen.
  */
-export function mitTyp(raeume: RaumFeld[], id: string, typ: RaumTyp): RaumFeld[] {
+export function mitTyp(raeume: RaumFeld[], id: string, typ: RaumTyp, vorschlag: MassnahmeId[] = vorschlagMassnahmen(typ)): RaumFeld[] {
   return raeume.map((r) => {
     if (r.id !== id) return r;
     const autoName = r.name.trim() === "" || /^Raum \d+$/.test(r.name.trim());
@@ -204,7 +209,7 @@ export function mitTyp(raeume: RaumFeld[], id: string, typ: RaumTyp): RaumFeld[]
       ...r,
       typ,
       name: autoName ? raumName(typ, nummer) : r.name,
-      massnahmen: r.massnahmenBestaetigt ? r.massnahmen : vorschlagMassnahmen(typ),
+      massnahmen: r.massnahmenBestaetigt ? r.massnahmen : [...vorschlag],
     };
   });
 }
@@ -214,13 +219,19 @@ export function mitTyp(raeume: RaumFeld[], id: string, typ: RaumTyp): RaumFeld[]
  * Vorschlag; weniger → von hinten nur Räume ohne Maße entfernen — eingetragene Maße gehen nie
  * stillschweigend verloren (`gesperrt` zählt, was stehen bleiben musste).
  */
-export function setzeAnzahl(raeume: RaumFeld[], typ: RaumTyp, anzahl: number, neueId: () => string): { raeume: RaumFeld[]; gesperrt: number } {
+export function setzeAnzahl(
+  raeume: RaumFeld[],
+  typ: RaumTyp,
+  anzahl: number,
+  neueId: () => string,
+  vorschlag: MassnahmeId[] = vorschlagMassnahmen(typ),
+): { raeume: RaumFeld[]; gesperrt: number } {
   const ziel = Math.max(0, Math.min(20, Math.floor(anzahl)));
   const vom = raeume.filter((r) => r.typ === typ);
   if (ziel > vom.length) {
     const neu: RaumFeld[] = [];
     for (let n = vom.length + 1; n <= ziel; n++) {
-      neu.push({ ...neuerRaum(neueId(), n), typ, name: raumName(typ, n), massnahmen: vorschlagMassnahmen(typ) });
+      neu.push({ ...neuerRaum(neueId(), n), typ, name: raumName(typ, n), massnahmen: [...vorschlag] });
     }
     // Neue Räume hinter den letzten ihres Typs — sonst hinten an.
     const letzter = raeume.map((r) => r.typ).lastIndexOf(typ);
