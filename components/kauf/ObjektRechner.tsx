@@ -20,6 +20,21 @@ import type { Kalkulation } from "@/lib/types";
 import ObjektVergleich, { VERGLEICH_MAX } from "@/components/kauf/ObjektVergleich";
 
 const eur = (n: number) => "€ " + Math.round(n || 0).toLocaleString("de-DE");
+
+/** Beschriftung der Rechenschritte aus lib/bewertung/immowertv.ts (`details`).
+ *  Unbekannte Schlüssel erscheinen roh — lieber sichtbar als verschluckt. */
+const DETAIL_LABEL: Record<string, { label: string; geld?: boolean }> = {
+  rohertrag: { label: "Rohertrag (€/Jahr)", geld: true },
+  bewirtschaftungskosten: { label: "Bewirtschaftungskosten (€/Jahr)", geld: true },
+  reinertrag: { label: "Reinertrag (€/Jahr)", geld: true },
+  bodenwert: { label: "Bodenwert", geld: true },
+  barwertfaktor: { label: "Barwertfaktor" },
+  normalherstellungskosten2010: { label: "Normalherstellungskosten 2010 (€/m²)", geld: true },
+  herstellungskostenHeute: { label: "Herstellungskosten heute (€/m²)", geld: true },
+  bruttogrundflaeche: { label: "Brutto-Grundfläche (m²)" },
+  gebaeudesachwert: { label: "Gebäudesachwert", geld: true },
+  vorlaeufigerSachwert: { label: "Vorläufiger Sachwert", geld: true },
+};
 const pct = (n: number, d = 1) => (n || 0).toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d }) + " %";
 const fmt1 = (n: number) => (n || 0).toLocaleString("de-DE", { maximumFractionDigits: 1 });
 const num = zahlDe0;
@@ -160,13 +175,13 @@ export default function ObjektRechner({
         { label: "Bruttorendite", wert: brutto > 0 ? pct(brutto) : "", farbe: urteil?.farbe, note: urteil?.text, braucht: "Kaltmiete eintragen" },
         { label: "Nettorendite", wert: nettomiet > 0 ? pct(nettomiet) : "", note: `nach ${num(bewirt)} % Bewirtschaftung`, braucht: "Kaltmiete eintragen" },
         { label: "Kaufpreisfaktor", wert: faktor > 0 ? fmt1(faktor) + "×" : "", note: "Jahresmieten bis zur Amortisation", braucht: "Kaufpreis + Kaltmiete" },
-        { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil?.text ?? mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
+        { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil ? `Kaufpreis ${mwUrteil.text}` : mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
       ]
     : [
         { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: investNotiz, braucht: "Kaufpreis eintragen" },
         { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "", braucht: "Kaufpreis + Wohnfläche" },
         { label: "Laufende Kosten", wert: num(hausgeld) > 0 ? eur(num(hausgeld)) + "/Mo" : "", note: "Hausgeld / Bewirtschaftung", braucht: "Laufende Kosten eintragen" },
-        { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil?.text ?? mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
+        { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil ? `Kaufpreis ${mwUrteil.text}` : mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
       ];
 
   // Alle Eingaben sichern — auch die Bewertungsfelder. Vorher gingen sie beim
@@ -410,13 +425,13 @@ export default function ObjektRechner({
           <details style={{ borderRadius: 12, border: "1px solid var(--line)", background: "var(--bg3)" }}>
             <summary style={{ cursor: "pointer", userSelect: "none", padding: "11px 14px", fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>
               Optional: Ergebnis verfeinern
-              <span style={{ fontWeight: 400, color: "var(--faint)" }}> — Makler & Bewirtschaftung (Defaults sind gesetzt)</span>
+              <span style={{ fontWeight: 400, color: "var(--faint)" }}> — Makler & Bewirtschaftung (Standardwerte sind gesetzt)</span>
             </summary>
             <div style={{ padding: "2px 14px 14px", display: "grid", gap: 11 }}>
               {F("Maklercourtage (%) · provisionsfrei = 0", makler, (v) => { setMakler(v); setMaklerBeruehrt(true); }, MAKLER_STANDARD)}
               {vermietung && F("Bewirtschaftung (% der Miete)", bewirt, setBewirt, "20")}
               <p style={{ fontSize: 11, color: "var(--faint)", margin: 0 }}>
-                Lässt du das zu, rechnet MyImmo mit konservativen Defaults weiter — Bewirtschaftung
+                Lässt du den Bereich zugeklappt, rechnet MyImmo mit vorsichtigen Standardwerten weiter — Bewirtschaftung
                 (20 %) schmälert die Nettorendite realistisch. Ohne Aufklappen bleibt die Grundrechnung korrekt.
               </p>
             </div>
@@ -427,8 +442,8 @@ export default function ObjektRechner({
               und den separaten Schritt „Objekt bewerten". */}
           {true && (
             <details style={{ borderRadius: 12, border: "1px solid var(--line)", background: "var(--bg3)" }}>
-              <summary style={{ cursor: "pointer", userSelect: "none", padding: "11px 14px", fontSize: 12.5, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: 7 }}>
-                <Landmark size={14} color="var(--gold)" /> Marktwert-Einschätzung — {mw.verfahrenLabel}
+              <summary style={{ cursor: "pointer", userSelect: "none", padding: "11px 14px", fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>
+                <Landmark size={14} color="var(--gold)" style={{ display: "inline-block", verticalAlign: "-2px", marginRight: 4 }} /> Marktwert-Einschätzung — {mw.verfahrenLabel}
                 <span style={{ fontWeight: 400, color: "var(--faint)" }}> — überschlägig, kein Gutachten</span>
               </summary>
               <div style={{ padding: "2px 14px 14px", display: "grid", gap: 11 }}>
@@ -470,17 +485,17 @@ export default function ObjektRechner({
                 {mw.bereit && mw.ergebnis ? (
                   <div style={{ display: "grid", gap: 6, padding: "11px 13px", borderRadius: 10, background: "var(--bg2)", border: "1px solid var(--gold-dim, var(--line))" }}>
                     {Object.entries(mw.ergebnis.details).map(([k, v]) => (
-                      <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                        <span style={{ color: "var(--muted)" }}>{k}</span>
-                        <strong style={{ color: "var(--text)" }}>{v.toLocaleString("de-DE")}</strong>
+                      <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 12 }}>
+                        <span style={{ color: "var(--muted)", minWidth: 0 }}>{DETAIL_LABEL[k]?.label ?? k}</span>
+                        <strong style={{ color: "var(--text)", whiteSpace: "nowrap" }}>{DETAIL_LABEL[k]?.geld ? eur(v) : v.toLocaleString("de-DE")}</strong>
                       </div>
                     ))}
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13.5, paddingTop: 6, borderTop: "1px solid var(--line)" }}>
                       <span style={{ color: "var(--text)", fontWeight: 600 }}>Geschätzter Marktwert</span>
                       <strong style={{ color: "var(--gold)" }}>{eur(mw.ergebnis.wert)}</strong>
                     </div>
-                    <div style={{ fontSize: 10.5, color: "var(--faint)" }}>
-                      Spanne {eur(mw.ergebnis.min)} – {eur(mw.ergebnis.max)} · Restnutzungsdauer {mw.restnutzungsdauer} J.
+                    <div style={{ fontSize: 11, color: "var(--faint)" }}>
+                      Spanne {eur(mw.ergebnis.min)} – {eur(mw.ergebnis.max)} · Restnutzungsdauer{"\u00a0"}{mw.restnutzungsdauer}{"\u00a0"}Jahre
                     </div>
                     {mwUrteil && (
                       <div style={{ fontSize: 11.5, color: mwUrteil.farbe, fontWeight: mwUrteil.vorlaeufig ? 400 : 500 }}>
@@ -488,10 +503,10 @@ export default function ObjektRechner({
                       </div>
                     )}
                     {mw.ergebnis.warnungen.map((h, i) => (
-                      <div key={i} style={{ fontSize: 10.5, color: "var(--amber)" }}>⚠ {h}</div>
+                      <div key={i} style={{ fontSize: 11, color: "var(--amber)" }}>⚠ {h}</div>
                     ))}
                     {mw.unsicher.map((h) => (
-                      <div key={h} style={{ fontSize: 10.5, color: "var(--amber)" }}>⚠ Fehlt: {h}</div>
+                      <div key={h} style={{ fontSize: 11, color: "var(--amber)" }}>⚠ Fehlt: {h}</div>
                     ))}
                   </div>
                 ) : (
@@ -500,7 +515,7 @@ export default function ObjektRechner({
                     {" "}Den Bodenrichtwert findest du amtlich bei <span style={{ color: "var(--muted)" }}>bodenrichtwerte-boris.de</span>.
                   </div>
                 )}
-                <p style={{ fontSize: 10, color: "var(--faint)", margin: 0 }}>{HAUS_DISCLAIMER}</p>
+                <p style={{ fontSize: 11, color: "var(--faint)", margin: 0 }}>{HAUS_DISCLAIMER}</p>
               </div>
             </details>
           )}
@@ -526,7 +541,7 @@ export default function ObjektRechner({
                   ) : (
                     <>
                       <div style={{ fontSize: 22, fontWeight: 700, marginTop: 3, color: t.farbe ?? (t.gold ? "var(--gold)" : "var(--text)") }}>{t.wert}</div>
-                      {t.note && <div style={{ fontSize: 10.5, color: t.farbe ?? "var(--faint)", marginTop: 3 }}>{t.note}</div>}
+                      {t.note && <div style={{ fontSize: 11, color: t.farbe ?? "var(--faint)", marginTop: 3 }}>{t.note}</div>}
                     </>
                   )}
                 </div>

@@ -57,9 +57,9 @@ function FirmaKontakt({ f }: { f: PortalFirmaRow }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
       <span className="badge badge-teal">{f.name}</span>
-      {f.telefon && <a href={`tel:${f.telefon.replace(/\s/g, "")}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Phone size={11} style={{ verticalAlign: "-1px" }} /> {f.telefon}</a>}
-      {f.email && <a href={`mailto:${f.email}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Mail size={11} style={{ verticalAlign: "-1px" }} /> {f.email}</a>}
-      {f.website && <a href={f.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Globe size={11} style={{ verticalAlign: "-1px" }} /> Website</a>}
+      {f.telefon && <a href={`tel:${f.telefon.replace(/\s/g, "")}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Phone size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> {f.telefon}</a>}
+      {f.email && <a href={`mailto:${f.email}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Mail size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> {f.email}</a>}
+      {f.website && <a href={f.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Globe size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> Website</a>}
     </span>
   );
 }
@@ -88,12 +88,12 @@ function FirmenLinkAktionen({
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
       <a
         href={`mailto:${encodeURIComponent(firma?.email ?? "")}?subject=${encodeURIComponent(betreff)}&body=${encodeURIComponent(text)}`}
-        className="btn btn-outline" style={{ fontSize: 11, padding: "5px 12px", textDecoration: "none" }}
+        className="btn btn-outline" style={{ fontSize: 12, minHeight: 36, padding: "6px 12px", textDecoration: "none" }}
       >
         <Mail size={12} style={{ verticalAlign: "-2px" }} /> Per E-Mail an die Firma
       </a>
       <button
-        type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px" }}
+        type="button" className="btn btn-ghost" style={{ fontSize: 12, minHeight: 36, padding: "6px 12px" }}
         onClick={async () => { await navigator.clipboard.writeText(link); setKopiert(true); setTimeout(() => setKopiert(false), 1600); }}
       >
         {kopiert ? <><Check size={12} style={{ verticalAlign: "-2px" }} /> Kopiert</> : <><Link2 size={12} style={{ verticalAlign: "-2px" }} /> Link kopieren</>}
@@ -186,18 +186,21 @@ function Eintrag({ a, firmen, vorschau, darfVorschlagen, neu = null }: { a: Port
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <Wrench size={14} color="var(--gold)" />
         <span style={{ fontWeight: 600 }}>{a.titel}</span>
-        {neu && <span className="badge badge-gold neu-merkmal">Neu · {neu}</span>}
+        {neu && <span className="badge badge-gold neu-merkmal">{neu === "Neuer Auftrag" ? "Neu" : `Neu · ${neu}`}</span>}
         <span className={`badge ${s.cls}`}>{s.label}</span>
         {art && <span className={`badge ${art.selbst ? "badge-neutral" : "badge-amber"}`}>{art.label}</span>}
         {a.vermieter_name && <span className="badge badge-neutral">{a.vermieter_name}</span>}
         {a.termin && (
-          <span style={{ fontSize: 11, color: "var(--muted)" }}>
-            <CalendarDays size={11} style={{ verticalAlign: "-1px" }} /> Wunschtermin {datum(a.termin)}
+          <span style={{ fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>
+            <CalendarDays size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> Wunschtermin {datum(a.termin)}
           </span>
         )}
-        <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>{datum(a.created_at)}</span>
       </div>
-      {a.objekt_name && <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>Objekt: {a.objekt_name}</p>}
+      {/* Datum beschriftet und in der Objekt-Zeile (06.10.2026) — allein rechts in der
+          Merkmal-Zeile war es leicht mit dem Wunschtermin zu verwechseln. */}
+      <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
+        {[a.objekt_name ? `Objekt: ${a.objekt_name}` : null, `gemeldet ${datum(a.created_at)}`].filter(Boolean).join(" · ")}
+      </p>
       {a.beschreibung && <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, whiteSpace: "pre-wrap" }}>{a.beschreibung}</p>}
       {firma && (
         <div style={{ marginTop: 6 }}>
@@ -239,7 +242,7 @@ function Eintrag({ a, firmen, vorschau, darfVorschlagen, neu = null }: { a: Port
       {(a.status === "offen" || a.status === "angenommen") && (
         <div style={{ marginTop: 8 }}>
           {aktion ? (
-            <div style={{ display: "grid", gap: 8, padding: 12, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 8, padding: 12, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}>
               <textarea
                 rows={2} maxLength={1000} className="input" value={text} onChange={(e) => setText(e.target.value)}
                 placeholder={aktion === "abgelehnt" ? "Kurze Begründung (empfohlen)" : "Rückmeldung an den Vermieter (optional, z. B. Termin oder Materialbedarf)"}
@@ -247,11 +250,11 @@ function Eintrag({ a, firmen, vorschau, darfVorschlagen, neu = null }: { a: Port
               {aktion === "erledigt" && (
                 <>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)", flex: 1, minWidth: 130 }}>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)", flex: 1, minWidth: 120 }}>
                       Rechnungsbetrag (€, optional)
                       <input className="input" inputMode="decimal" value={betrag} onChange={(e) => setBetrag(e.target.value)} placeholder="z. B. 245,50" />
                     </label>
-                    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)", flex: 1, minWidth: 130 }}>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)", flex: 1, minWidth: 120 }}>
                       davon Arbeits-/Lohnanteil (€)
                       <input className="input" inputMode="decimal" value={lohn} onChange={(e) => setLohn(e.target.value)} placeholder="z. B. 180,00" />
                     </label>
@@ -259,7 +262,7 @@ function Eintrag({ a, firmen, vorschau, darfVorschlagen, neu = null }: { a: Port
                   <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
                     Rechnung anhängen (PDF/Foto, max. 4 MB)
                     <input
-                      type="file" className="input"
+                      type="file" className="input" style={{ minWidth: 0, width: "100%" }}
                       accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
                       onChange={(e) => setRechnung(e.target.files?.[0] ?? null)}
                     />
@@ -285,22 +288,22 @@ function Eintrag({ a, firmen, vorschau, darfVorschlagen, neu = null }: { a: Port
             ) : (
             <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
               {a.status === "offen" && (
-                <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--blue)" }} onClick={() => setAktion("angenommen")}>
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 12, minHeight: 36, padding: "6px 12px", color: "var(--blue)" }} onClick={() => setAktion("angenommen")}>
                   Annehmen
                 </button>
               )}
               {!selbstGesperrt && (
-                <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--green)" }} onClick={() => setAktion("erledigt")}>
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 12, minHeight: 36, padding: "6px 12px", color: "var(--green)" }} onClick={() => setAktion("erledigt")}>
                   {firma ? "Erledigt melden" : "Selbst erledigt"}
                 </button>
               )}
               {darfVorschlagen && !firma && (
-                <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--amber)" }} onClick={() => setFachbetrieb(true)}>
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 12, minHeight: 36, padding: "6px 12px", color: "var(--amber)" }} onClick={() => setFachbetrieb(true)}>
                   Fachbetrieb nötig
                 </button>
               )}
               {a.status === "offen" && (
-                <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "5px 12px", color: "var(--red)" }} onClick={() => setAktion("abgelehnt")}>
+                <button type="button" className="btn btn-ghost" style={{ fontSize: 12, minHeight: 36, padding: "6px 12px", color: "var(--red)" }} onClick={() => setAktion("abgelehnt")}>
                   Ablehnen
                 </button>
               )}
@@ -379,7 +382,7 @@ function AntragForm({
                 <label>Objekt</label>
                 {/* Nur zugewiesene Objekte — die Datenbank lehnt jedes andere ab. */}
                 <select name="propId" defaultValue="" key={vermieterId}>
-                  <option value="">{seineObjekte.length === 0 ? "– kein Objekt zugewiesen –" : "– allgemein, kein bestimmtes Objekt –"}</option>
+                  <option value="">{seineObjekte.length === 0 ? "– kein Objekt zugewiesen –" : "– kein bestimmtes Objekt –"}</option>
                   {seineObjekte.map((o) => <option key={o.id} value={o.id}>{o.bezeichnung}{o.adresse ? ` · ${o.adresse}` : ""}</option>)}
                 </select>
               </div>
@@ -513,9 +516,9 @@ export default function AuftraegePortal({
               <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>
                 <span style={{ fontWeight: 600 }}>{f.name}</span>
                 {f.gewerk && <span className="badge badge-teal">{f.gewerk}</span>}
-                {f.telefon && <a href={`tel:${f.telefon.replace(/\s/g, "")}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Phone size={11} style={{ verticalAlign: "-1px" }} /> {f.telefon}</a>}
-                {f.email && <a href={`mailto:${f.email}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Mail size={11} style={{ verticalAlign: "-1px" }} /> {f.email}</a>}
-                {f.website && <a href={f.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Globe size={11} style={{ verticalAlign: "-1px" }} /> Website</a>}
+                {f.telefon && <a href={`tel:${f.telefon.replace(/\s/g, "")}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Phone size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> {f.telefon}</a>}
+                {f.email && <a href={`mailto:${f.email}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Mail size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> {f.email}</a>}
+                {f.website && <a href={f.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Globe size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> Website</a>}
                 {f.notiz && <span style={{ fontSize: 11, color: "var(--muted)" }}>{f.notiz}</span>}
               </div>
             ))

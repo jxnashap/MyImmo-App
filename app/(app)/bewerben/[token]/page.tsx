@@ -56,7 +56,7 @@ function Block({ titel, zeilen }: { titel: string; zeilen: [string, string | nul
   if (da.length === 0) return null;
   return (
     <div style={{ flex: "1 1 240px", minWidth: 220 }}>
-      <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>{titel}</div>
+      <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>{titel}</div>
       <div style={{ display: "grid", gap: 0 }}>
         {da.map(([k, v]) => (
           <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "5px 0", borderBottom: "1px solid var(--line)", fontSize: 12.5 }}>
@@ -113,7 +113,7 @@ function Steckbrief({ info }: { info: Info }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
             {kacheln.filter((k) => k.wert).map((k) => (
               <div key={k.label} style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", textAlign: "center" }}>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--muted)" }}>{k.label}</div>
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--muted)" }}>{k.label}</div>
                 <div style={{ fontSize: 18, fontWeight: 600, marginTop: 3, letterSpacing: "-0.01em" }}>
                   {k.label === "Kaltmiete" && <BadgeEuro size={14} color="var(--gold)" style={{ verticalAlign: "-2px", marginRight: 5 }} />}
                   {k.wert}
@@ -131,7 +131,7 @@ function Steckbrief({ info }: { info: Info }) {
 
         {ausstattung.length > 0 && (
           <div>
-            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>Ausstattung</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>Ausstattung</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {ausstattung.map((t) => <span key={t} className="badge badge-gold">{t}</span>)}
             </div>
@@ -140,13 +140,13 @@ function Steckbrief({ info }: { info: Info }) {
 
         {a.beschreibung && (
           <div>
-            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>Objektbeschreibung</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>Objektbeschreibung</div>
             <p style={{ fontSize: 12.5, color: "var(--text)", whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.6 }}>{a.beschreibung}</p>
           </div>
         )}
         {a.lage && (
           <div>
-            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>Lage</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>Lage</div>
             <p style={{ fontSize: 12.5, color: "var(--muted)", whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.6 }}>{a.lage}</p>
           </div>
         )}
@@ -170,7 +170,7 @@ export default async function BewerbenSeite(props: { params: Promise<{ token: st
         <Kopf />
         <div className="section">
           <div className="section-body" style={{ textAlign: "center", padding: "40px 20px" }}>
-            <Lock size={36} color="var(--faint)" />
+            <Lock size={36} color="var(--faint)" style={{ margin: "0 auto" }} />
             <p style={{ marginTop: 12, fontSize: 14, fontWeight: 600 }}>Link nicht mehr gültig</p>
             <p style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
               Dieser Bewerbungs-Link wurde deaktiviert oder existiert nicht.

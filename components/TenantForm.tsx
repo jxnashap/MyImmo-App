@@ -2,6 +2,7 @@
 import { TriangleAlert } from "lucide-react";
 
 import { useRef, useState } from "react";
+import { normMietart } from "@/lib/mietart";
 import { mieterwechselVerdacht } from "@/lib/mieterZugang";
 import { abWannFragen } from "@/lib/sollAb";
 import { ymPlus } from "@/lib/mietkonto";
@@ -41,7 +42,7 @@ export default function TenantForm({
   /** Neuer Mieter: Werte aus dem Objekt (nur bei einer Wohneinheit, siehe /tenants/new). */
   vorbelegung?: { flaeche: number | null; kaltmiete: number | null };
 }) {
-  const [mietart, setMietart] = useState((tenant?.mietart as string) || "standard");
+  const [mietart, setMietart] = useState<string>(normMietart(tenant?.mietart as string | null));
   const v = (k: keyof Tenant) => (tenant?.[k] as string | number | null) ?? "";
 
   // S4: Name oder Mietbeginn eines Mieters mit Portal-Konto geändert? Erst fragen —

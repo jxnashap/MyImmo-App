@@ -9,20 +9,24 @@
 
 const ERSATZ: Record<string, string> = {
   "ı": "i", "İ": "I", "ł": "l", "Ł": "L", "đ": "d", "Đ": "D", "ħ": "h", "Ħ": "H", "ŋ": "n", "Ŋ": "N",
-  "ſ": "s", "ĸ": "k", "œ": "oe", "Œ": "OE", "ẞ": "SS",
-  "‘": "'", "’": "'", "‚": "'", "′": "'", "‹": "'", "›": "'",
-  "“": '"', "”": '"', "„": '"', "″": '"',
-  "–": "-", "—": "-", "−": "-", "‐": "-", "‑": "-", "‒": "-",
-  "…": "...", "→": "->", "←": "<-", "≤": "<=", "≥": ">=", "≈": "~", "•": "·", "✓": "x",
+  "ſ": "s", "ĸ": "k", "ẞ": "SS",
+  // Deutsche Anführungszeichen, Gedankenstriche, „…“ und „•“ kennt WinAnsi — sie bleiben (geprüft
+  // mit widthOfTextAtSize, tests/pdfZeichen.test.ts). Ersetzt wird nur, was WinAnsi fehlt.
+  "′": "'", "″": '"',
+  "−": "-", "‐": "-", "‑": "-", "‒": "-",
+  "→": "->", "←": "<-", "≤": "<=", "≥": ">=", "≈": "~", "✓": "x",
   " ": " ", " ": " ", " ": " ", " ": " ", "­": "", "​": "",
 };
+
+/** Zeichen, die WinAnsi im Block 0x80–0x9F zusätzlich zu Latin-1 hat. */
+const WINANSI_EXTRA = new Set(Array.from("€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ"));
 
 /** Ein einzelnes Zeichen, das Helvetica/Times (WinAnsi) darstellen kann. */
 function ersetze(c: string): string {
   if (c in ERSATZ) return ERSATZ[c];
   const code = c.charCodeAt(0);
-  // Latin-1 ohne den Steuerzeichen-Block 0x80–0x9F; € liegt in WinAnsi auf 0x80.
-  if (c === "€" || code < 0x80 || (code >= 0xa0 && code <= 0xff)) return c;
+  // Latin-1 ohne den Steuerzeichen-Block 0x80–0x9F, dazu die WinAnsi-Zeichen dieses Blocks.
+  if (WINANSI_EXTRA.has(c) || code < 0x80 || (code >= 0xa0 && code <= 0xff)) return c;
   const basis = c.normalize("NFKD").replace(/[̀-ͯ]/g, "");
   if (basis && [...basis].every((b) => b.charCodeAt(0) < 0x80 || (b.charCodeAt(0) >= 0xa0 && b.charCodeAt(0) <= 0xff))) return basis;
   return "?";

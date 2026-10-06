@@ -309,7 +309,7 @@ export default function MietkontoBestaetigung({
                 transform="rotate(-90 32 32)"
                 style={{ transition: "stroke-dashoffset 0.6s ease, stroke 0.4s ease" }}
               />
-              <text x="32" y="37" textAnchor="middle" fontSize="14" fontWeight="700" fill="var(--text)">
+              <text x="32" y="38" textAnchor="middle" fontSize={gesamt >= 10 ? 14 : 17} fontWeight="700" fill="var(--text)">
                 {gesamt > 0 ? `${bestaetigt}/${gesamt}` : "–"}
               </text>
             </svg>
@@ -410,11 +410,15 @@ export default function MietkontoBestaetigung({
           {/* Bestätigte Eingänge — eingeklappt unter den offenen. */}
           {bestaetigt > 0 && (
             <details className="glass-card" style={{ marginBottom: 12, padding: "12px 18px" }}>
-              <summary style={{ cursor: "pointer", userSelect: "none", fontSize: 13.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
-                <Haken />
-                Bestätigte Eingänge ({bestaetigt})
+              <summary style={{ cursor: "pointer", userSelect: "none", fontSize: 13.5, fontWeight: 600, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "2px 8px" }}>
+                {/* Titel und Summe sind je EIN Flex-Element: Am Handy rutscht die Summe als Ganzes in
+                    die nächste Zeile, statt beide zu schmalen Spalten zu quetschen. */}
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+                  <Haken />
+                  Bestätigte Eingänge ({bestaetigt})
+                </span>
                 <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: 12 }}>
-                  · {eur2(zeilen.filter((z) => z.schonGebucht || frisch.has(z.mieterId)).reduce((s, z) => s + z.gesamt, 0))} in {monatLabel(monat)}
+                  · {eur2(zeilen.filter((z) => z.schonGebucht || frisch.has(z.mieterId)).reduce((s, z) => s + z.gesamt, 0))} im {monatLabel(monat)}
                 </span>
               </summary>
               <div style={{ marginTop: 6 }}>

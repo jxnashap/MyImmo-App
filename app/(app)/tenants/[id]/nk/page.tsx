@@ -24,6 +24,10 @@ import { zaehlerSpanne, type ZaehlerMeldung } from "@/lib/zaehlerSpanne";
 
 export const dynamic = "force-dynamic";
 
+// Spalte „Ihr Anteil“: Abstand zur Textspalte davor und am Handy rechts
+// festgehalten, während die übrigen Spalten waagerecht scrollen.
+const ANTEIL_SPALTE: import("react").CSSProperties = { paddingLeft: 12, position: "sticky", right: 0, background: "#ffffff" };
+
 const formatIban = (s: string) =>
   s.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
 
@@ -149,10 +153,10 @@ export default async function NkPage(
     <div className="fade-up">
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href={`/tenants/${params.id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>
+          <Link href={`/tenants/${params.id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>
             ← Zurück
           </Link>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div className="topbar-title">Nebenkostenabrechnung {jahr}</div>
             <div className="topbar-sub">{a.mieterName}</div>
           </div>
@@ -293,14 +297,17 @@ export default async function NkPage(
             Kostenart, Verteilerschlüssel mit Erläuterung (Rechenweg als
             Unterzeile), Anteilsberechnung — der Vorauszahlungsabzug folgt im
             Summenblock. Bei direkt erfassten Mieteranteilen (ohne Aufteilung)
-            gibt es keine Gebäude-Gesamtkosten; dort steht ein Strich. */}
+            gibt es keine Gebäude-Gesamtkosten; dort steht ein Strich.
+            Am Handy scrollt die Tabelle waagerecht (.brief-scroll); „Ihr Anteil“
+            klebt dabei rechts (sticky), damit der Betrag je Position immer zu
+            sehen ist. Ohne Scrollen (Desktop, Druck) wirkt sticky nicht. */}
         <div className="brief-scroll"><table style={{ marginTop: 8, minWidth: 460 }}>
           <thead>
             <tr>
               <th>Umlagefähige Position</th>
-              <th className="zahl">Gesamtkosten</th>
+              <th className="zahl" style={{ paddingRight: 14 }}>Gesamtkosten</th>
               <th>Umlageschlüssel</th>
-              <th className="zahl">Ihr Anteil</th>
+              <th className="zahl" style={ANTEIL_SPALTE}>Ihr Anteil</th>
             </tr>
           </thead>
           <tbody>
@@ -314,7 +321,7 @@ export default async function NkPage(
               a.positionen.map((p, i) => (
                 <tr key={i}>
                   <td>{p.bezeichnung}</td>
-                  <td className="zahl brief-muted">{p.basis != null ? eur2(p.basis) : "—"}</td>
+                  <td className="zahl brief-muted" style={{ paddingRight: 14 }}>{p.basis != null ? eur2(p.basis) : "—"}</td>
                   <td className="brief-muted">
                     {p.umlageschluessel || "—"}
                     {p.faktorText && (
@@ -323,7 +330,7 @@ export default async function NkPage(
                       </div>
                     )}
                   </td>
-                  <td className="zahl">{eur2(p.betrag)}</td>
+                  <td className="zahl" style={ANTEIL_SPALTE}>{eur2(p.betrag)}</td>
                 </tr>
               ))
             )}
@@ -335,7 +342,7 @@ export default async function NkPage(
             <div style={{ fontWeight: 700, fontSize: 12 }}>
               CO₂-Kostenaufteilung nach CO2KostAufG
             </div>
-            <p className="brief-muted" style={{ fontSize: 10.5, margin: "4px 0 6px" }}>
+            <p className="brief-muted" style={{ fontSize: 11, margin: "4px 0 6px" }}>
               Spezifischer CO₂-Ausstoß: {String(a.co2.spez).replace(".", ",")} kg/m² und Jahr
               {a.co2.gewerbe
                 ? " · Gewerbe/Nichtwohngebäude: pauschale Aufteilung 50/50"
@@ -386,7 +393,7 @@ export default async function NkPage(
         </div>
 
         {a.ausgenommen.length > 0 && (
-          <p className="brief-muted" style={{ fontSize: 10.5, marginTop: 14 }}>
+          <p className="brief-muted" style={{ fontSize: 11, marginTop: 14 }}>
             Nicht umlagefähig (nicht berechnet): {a.ausgenommen.map((p) => p.bezeichnung).join(", ")}
           </p>
         )}

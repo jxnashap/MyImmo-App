@@ -253,7 +253,7 @@ export default async function TerminePage(
         <span className="tz-wann">
           <span className="tz-wann-datum">{datum(e.datum)}</span>
           <span className="tz-wann-rest" style={{ color: farbe }}>
-            {e.erledigt ? "erledigt" : tage < 0 ? (aufgabe ? `vor ${Math.abs(tage)} Tg.` : "erfolgt") : tage === 0 ? "heute" : `in ${tage} Tg.`}
+            {e.erledigt ? "erledigt" : tage < 0 ? (aufgabe ? `vor ${Math.abs(tage).toLocaleString("de-DE")}\u00a0Tg.` : "erfolgt") : tage === 0 ? "heute" : `in ${tage.toLocaleString("de-DE")}\u00a0Tg.`}
           </span>
         </span>
         <span className="tz-aktionen">
@@ -438,7 +438,7 @@ export default async function TerminePage(
           <div className="section-body">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
               {["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].map((w) => (
-                <div key={w} style={{ fontSize: 10.5, color: "var(--muted)", textAlign: "center", padding: "2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>{w}</div>
+                <div key={w} style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", padding: "2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>{w}</div>
               ))}
               {Array.from({ length: startWochentag }).map((_, i) => <div key={`leer-${i}`} />)}
               {Array.from({ length: tageImMonat }).map((_, i) => {

@@ -65,7 +65,7 @@ export default function KostenListe({
                   <span style={{ color: "var(--faint)", fontSize: 12 }}>–</span>
                 )}
               </td>
-              <td style={{ fontWeight: 600, color: "var(--red)" }}>{euro(k.betrag)}</td>
+              <td style={{ fontWeight: 600, color: "var(--red)", whiteSpace: "nowrap" }}>{euro(k.betrag)}</td>
             </tr>
           );
         })}
@@ -76,7 +76,7 @@ export default function KostenListe({
 
       {offen && (
         <RowDialog title="Ausgabe bearbeiten" onClose={() => setOpenId(null)}>
-          <form action={updateKosten.bind(null, offen.id)} className="form-box" style={{ padding: 0, border: "none", background: "none", maxWidth: "none" }}>
+          <form action={updateKosten.bind(null, offen.id)} className="form-box" style={{ padding: 0, border: "none", background: "none", boxShadow: "none", maxWidth: "none" }}>
             <input type="hidden" name="back" value="/kosten" />
             <div className="form-row">
               <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" defaultValue={offen.buchungsdatum ?? ""} required /></div>

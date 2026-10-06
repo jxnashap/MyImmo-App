@@ -128,7 +128,7 @@ export default function AuftragRueckmeldung({ token }: { token: string }) {
         <button type="submit" className="btn btn-gold" disabled={laeuft} style={{ justifySelf: "start" }}>
           {laeuft ? "Wird gesendet…" : "Rückmeldung senden"}
         </button>
-        <p style={{ margin: 0, fontSize: 10.5, color: "var(--faint)" }}>
+        <p style={{ margin: 0, fontSize: 11, color: "var(--faint)" }}>
           Ihre Angaben gehen ausschließlich an den Auftraggeber und dienen der Abwicklung
           dieses Auftrags.
         </p>

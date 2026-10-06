@@ -20,7 +20,7 @@ export default async function EditPropertyPage(props: { params: Promise<{ id: st
     <div className="fade-up">
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href={`/properties/${property.id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
+          <Link href={`/properties/${property.id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
           <div><div className="topbar-title">{property.bezeichnung}</div><div className="topbar-sub">Objekt bearbeiten</div></div>
         </div>
         <DeleteButton action={deleteProperty.bind(null, property.id)} className="btn btn-ghost" label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>} confirmText={`„${property.bezeichnung}" wirklich löschen?`} />

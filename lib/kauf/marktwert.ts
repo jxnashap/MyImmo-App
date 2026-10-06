@@ -98,7 +98,7 @@ export function marktwert(e: MarktwertEingabe): MarktwertErgebnis {
   const unsicher = unsichereAngaben(e);
   if (rndRoh < rndMin) {
     unsicher.push(
-      `Restnutzungsdauer — rechnerisch ${rndRoh} Jahre (Baujahr ${e.baujahr}); angesetzt sind mindestens ${rndMin} Jahre, weil Modernisierungen nicht erfasst sind. Bei einem sanierten Altbau liegt der Wert höher.`,
+      `Restnutzungsdauer — ${rndRoh <= 0 ? "rechnerisch keine mehr" : `rechnerisch ${rndRoh} ${rndRoh === 1 ? "Jahr" : "Jahre"}`} (Baujahr ${e.baujahr}); angesetzt sind mindestens ${rndMin} Jahre, weil Modernisierungen nicht erfasst sind. Bei einem sanierten Altbau liegt der Wert höher.`,
     );
   }
 

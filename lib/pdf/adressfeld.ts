@@ -13,6 +13,7 @@
 
 import { rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { adressZeilen } from "@/lib/format";
+import { pdfText } from "@/lib/pdf/zeichen";
 
 const MM = 2.8346;
 const PAGE_H = 841.89; // A4-Höhe in pt
@@ -30,18 +31,8 @@ export const ADRESSFELD = {
   bottomY: PAGE_H - 90 * MM,        // 586,78 — Unterkante Feld (= 45 mm hoch)
 } as const;
 
-// WinAnsi-sichere Bereinigung (Umlaute/€ bleiben, exotische Zeichen → ?).
-function sanitize(s: string): string {
-  return (s ?? "")
-    .replace(/[‘’‚′]/g, "'")
-    .replace(/[“”„″]/g, '"')
-    .replace(/[–—]/g, "-")
-    .replace(/…/g, "...")
-    .replace(/ /g, " ")
-    .split("")
-    .map((c) => (c.charCodeAt(0) > 255 && c !== "€" ? "?" : c))
-    .join("");
-}
+// WinAnsi-sichere Bereinigung: EINE Regel für alle PDF-Builder (lib/pdf/zeichen.ts).
+const sanitize = pdfText;
 
 // Baut die Anschriftzeilen nach DIN 5008 aus Name + Adressfeld eines Datensatzes:
 //   Name/Firma · (Zusatz) · Straße + Hausnummer · PLZ + Ort  (keine Leerzeile).

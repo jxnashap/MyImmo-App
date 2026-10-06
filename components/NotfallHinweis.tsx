@@ -10,8 +10,8 @@ function Schritte({ art }: { art: NotfallArt }) {
   return (
     <div style={{ marginTop: 8 }}>
       <div style={{ fontWeight: 600, fontSize: 12.5 }}>{n.titel}</div>
-      <ol style={{ margin: "4px 0 0", paddingLeft: 18, fontSize: 12.5, lineHeight: 1.55 }}>
-        {n.schritte.map((s) => <li key={s}>{s}</li>)}
+      <ol style={{ margin: "4px 0 0", paddingLeft: 20, listStyle: "decimal", fontSize: 12.5, lineHeight: 1.55 }}>
+        {n.schritte.map((s, i) => <li key={s} style={{ marginTop: i === 0 ? 0 : 3 }}>{s}</li>)}
       </ol>
     </div>
   );
@@ -29,7 +29,7 @@ export function NotfallKasten({ notdienste = [] }: { notdienste?: string[] }) {
         <Siren size={14} style={{ verticalAlign: "-2px" }} /> Notfall? Feuer, Gasgeruch, Wasserrohrbruch — zuerst hier
       </summary>
       <p style={{ fontSize: 12.5, margin: "8px 0 0" }}>
-        <strong>Bei Feuer, Rauch, Verletzten oder akuter Gefahr: sofort <a href="tel:112">112</a>.</strong>{" "}
+        <strong>Bei Feuer, Rauch, Verletzten oder akuter Gefahr: sofort <a href="tel:112" style={{ display: "inline-block", padding: "6px 4px", margin: "-6px -4px" }}>112</a>.</strong>{" "}
         Das Portal ist kein Notdienst — dein Vermieter sieht eine Meldung nicht sofort.
       </p>
       {(["gas", "wasser", "strom"] as const).map((a) => <Schritte key={a} art={a} />)}
@@ -55,7 +55,7 @@ export function NotfallSofort({ art }: { art: NotfallArt }) {
       <Schritte art={art} />
       {art !== "allgemein" && (
         <p style={{ fontSize: 12.5, margin: "8px 0 0" }}>
-          Bei Feuer, Rauch oder Verletzten: <a href="tel:112"><strong>112</strong></a>.
+          Bei Feuer, Rauch oder Verletzten: <a href="tel:112" style={{ display: "inline-block", padding: "6px 4px", margin: "-6px -4px" }}><strong>112</strong></a>.
         </p>
       )}
     </div>

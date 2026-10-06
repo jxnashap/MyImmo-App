@@ -7,6 +7,7 @@ import Brotkrumen from "@/components/landing/Brotkrumen";
 import { BASIS_URL, ORGANISATION } from "@/lib/seo/jsonLd";
 import { ArrowRight, Clock } from "lucide-react";
 import StartCta from "@/components/StartCta";
+import { schuetzeUmbrueche as u } from "@/lib/umbruchSchutz";
 
 // Kein `dynamicParams = false` noetig: seit die oeffentliche Strecke ein
 // eigenes, statisches Root-Layout hat (app/(pub)/layout.tsx), wird nicht mehr
@@ -73,19 +74,19 @@ export default async function RatgeberArtikelSeite(props: { params: Promise<{ sl
         <div className="lp-inner" style={{ maxWidth: 760 }}>
           <Brotkrumen stufen={stufen} />
           <div className="lp-kicker" style={{ marginTop: 18, textAlign: "left" }}>{a.kategorie}</div>
-          <h1 className="lp-h2" style={{ fontSize: "clamp(27px, 3.8vw, 38px)", textAlign: "left" }}>{a.titel}</h1>
+          <h1 className="lp-h2" style={{ fontSize: "clamp(27px, 3.8vw, 38px)", textAlign: "left" }}>{u(a.titel)}</h1>
           {/* Rechtsstand sichtbar: Bei Steuer- und Mietrechtsthemen entscheidet
               der Leser daran, ob er sich auf den Text noch verlassen kann.
               Steht bewusst gleichberechtigt neben Datum und Lesezeit und nicht
               versteckt im Fussbereich. */}
           <div style={{ fontSize: 12.5, color: "var(--l-muted)", marginBottom: 24, lineHeight: 1.7 }}>
-            <Clock size={12} style={{ verticalAlign: "-2px" }} /> {a.lesezeit} Min Lesezeit · {ratgeberDatum(a.datum)}
+            <Clock size={12} style={{ display: "inline", verticalAlign: "-2px" }} /> {a.lesezeit} Min Lesezeit · {ratgeberDatum(a.datum)}
             {a.aktualisiert && <> · aktualisiert {ratgeberDatum(a.aktualisiert)}</>}
             <br />
             Rechtsstand: {a.rechtsstand ?? RECHTSSTAND}
           </div>
 
-          <p style={{ fontSize: 16, lineHeight: 1.7, color: "var(--l-ink)", marginBottom: 28, fontWeight: 500 }}>{a.intro}</p>
+          <p style={{ fontSize: 16, lineHeight: 1.7, color: "var(--l-ink)", marginBottom: 28, fontWeight: 500 }}>{u(a.intro)}</p>
 
           {/* Kurzcheck vor dem Text: konkreter Beispielfall statt abstrakter
               Zielgruppenansage. Wer sich nicht wiedererkennt, spart sich die
@@ -102,21 +103,21 @@ export default async function RatgeberArtikelSeite(props: { params: Promise<{ sl
               }}
             >
               <div className="lp-vorher" style={{ color: "var(--l-gold-ink)", marginBottom: 8 }}>
-                Kurzcheck — ist das dein Fall?
+                Kurzcheck — ist das Ihr Fall?
               </div>
               <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--l-ink)", margin: "0 0 12px" }}>
-                {a.kurzcheck.fall}
+                {u(a.kurzcheck.fall)}
               </p>
               <ul style={{ paddingLeft: 20, margin: "0 0 4px", listStyle: "disc" }}>
                 {a.kurzcheck.passt.map((li, k) => (
                   <li key={k} style={{ fontSize: 14.5, lineHeight: 1.7, color: "var(--l-muted)", marginBottom: 4 }}>
-                    {li}
+                    {u(li)}
                   </li>
                 ))}
               </ul>
               {a.kurzcheck.nichtNoetig && (
                 <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "var(--l-muted)", margin: "10px 0 0" }}>
-                  {a.kurzcheck.nichtNoetig}
+                  {u(a.kurzcheck.nichtNoetig)}
                 </p>
               )}
             </aside>
@@ -124,14 +125,14 @@ export default async function RatgeberArtikelSeite(props: { params: Promise<{ sl
 
           {a.sektionen.map((s, i) => (
             <section key={i} style={{ marginBottom: 24 }}>
-              {s.h && <h2 style={{ fontSize: 19, margin: "0 0 10px" }}>{s.h}</h2>}
+              {s.h && <h2 style={{ fontSize: 19, margin: "0 0 10px" }}>{u(s.h)}</h2>}
               {s.p?.map((para, k) => (
-                <p key={k} style={{ fontSize: 15, lineHeight: 1.75, color: "var(--l-muted)", margin: "0 0 12px" }}>{para}</p>
+                <p key={k} style={{ fontSize: 15, lineHeight: 1.75, color: "var(--l-muted)", margin: "0 0 12px" }}>{u(para)}</p>
               ))}
               {s.liste && (
                 <ul style={{ paddingLeft: 20, margin: "4px 0 12px", listStyle: "disc" }}>
                   {s.liste.map((li, k) => (
-                    <li key={k} style={{ fontSize: 15, lineHeight: 1.7, color: "var(--l-muted)", marginBottom: 6 }}>{li}</li>
+                    <li key={k} style={{ fontSize: 15, lineHeight: 1.7, color: "var(--l-muted)", marginBottom: 6 }}>{u(li)}</li>
                   ))}
                 </ul>
               )}
@@ -141,8 +142,8 @@ export default async function RatgeberArtikelSeite(props: { params: Promise<{ sl
           {a.feature && (
             <div style={{ background: "var(--l-bg3)", border: "1px solid var(--l-gold)", borderRadius: 12, padding: "22px 24px", margin: "32px 0" }}>
               <h3 style={{ fontSize: 17, margin: "0 0 8px", color: "var(--l-gold-ink)" }}>{a.feature.titel}</h3>
-              <p style={{ fontSize: 14.5, lineHeight: 1.65, color: "var(--l-muted)", margin: "0 0 16px" }}>{a.feature.text}</p>
-              <StartCta href={a.feature.href} className="btn btn-gold" wunsch={a.feature.cta}>{" "}<ArrowRight size={14} style={{ verticalAlign: "-2px" }} /></StartCta>
+              <p style={{ fontSize: 14.5, lineHeight: 1.65, color: "var(--l-muted)", margin: "0 0 16px" }}>{u(a.feature.text)}</p>
+              <StartCta href={a.feature.href} className="btn btn-gold" wunsch={a.feature.cta}>{" "}<ArrowRight size={14} style={{ display: "inline", verticalAlign: "-2px" }} /></StartCta>
             </div>
           )}
 
@@ -157,7 +158,7 @@ export default async function RatgeberArtikelSeite(props: { params: Promise<{ sl
               {weitere.map((w) => (
                 <Link key={w.slug} href={`/ratgeber/${w.slug}`} className="lp-card" style={{ textDecoration: "none", padding: "16px 18px" }}>
                   <span className="lp-vorher" style={{ color: "var(--l-gold-dark)" }}>{w.kategorie}</span>
-                  <h3 style={{ fontSize: 15, margin: "2px 0 0" }}>{w.titel}</h3>
+                  <h3 style={{ fontSize: 15, margin: "2px 0 0" }}>{u(w.titel)}</h3>
                 </Link>
               ))}
             </div>

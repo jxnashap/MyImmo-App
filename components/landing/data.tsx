@@ -85,7 +85,7 @@ export const PLAENE: Plan[] = [
 // Roadmap ist ein öffentliches Versprechen: Neue Pläne kommen erst hinein,
 // wenn der Betreiber sie beschlossen hat.
 export const VISION: { t: string; p: string; status: "fertig" | "bald" | "geplant" }[] = [
-  { t: "Geführtes Onboarding", p: "Sechs Stationen vom ersten Objekt bis zur Anlage V — mit Direktlinks, überspringbar und jederzeit neu startbar.", status: "fertig" },
+  { t: "Geführtes Onboarding", p: "Eine geführte Tour vom ersten Objekt bis zur Anlage V — mit Direktlinks, überspringbar und jederzeit neu startbar.", status: "fertig" },
   { t: "Zwei-Faktor-Anmeldung", p: "Anmeldung mit Code aus der Authenticator-App, Wiederherstellungscodes für den Notfall und erneute Bestätigung vor sensiblen Aktionen.", status: "fertig" },
   { t: "Steuerberater-Freigabe", p: "Fertige Unterlagen auf Knopfdruck prüfen lassen — Ergebnis in 1–3 Tagen, ohne Termin.", status: "geplant" },
   { t: "News für Vermieter", p: "Mietrecht, Steuer, Förderungen: kuratierte Meldungen aus seriösen Quellen, direkt in der App.", status: "geplant" },
@@ -143,7 +143,7 @@ export function Shot({ src, alt, buehne }: { src: string; alt: string; buehne?: 
 }
 
 export const SOON_BADGE = (
-  <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.4, color: "var(--l-gold-ink)", border: "1px solid var(--gold-dim)", background: "var(--gold-pale)", borderRadius: 999, padding: "2px 8px", marginLeft: 8, verticalAlign: "2px", whiteSpace: "nowrap" }}>
+  <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.4, color: "var(--l-gold-ink)", border: "1px solid var(--gold-dim)", background: "var(--gold-pale)", borderRadius: 999, padding: "2px 8px", marginLeft: 8, verticalAlign: "2px", whiteSpace: "nowrap" }}>
     BALD
   </span>
 );

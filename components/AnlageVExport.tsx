@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { Printer, Download, ReceiptText, Landmark, FileSpreadsheet } from "lucide-react";
 import { eur2 } from "@/lib/format";
 import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
@@ -15,6 +15,10 @@ import {
 import ElsterHilfe from "@/components/ElsterHilfe";
 import { csvZelleGequotet } from "@/lib/csv";
 import { anlageVVergleich } from "@/lib/steuer/waechter";
+
+// Am Handy scrollt die Aufstellung waagerecht (6 Objekte ≈ 1.200 px) — die Positionsspalte bleibt
+// stehen, sonst sah man nach dem Wischen Beträge ohne Zeilenbezeichnung.
+const ERSTE_SPALTE: CSSProperties = { position: "sticky", left: 0, zIndex: 1, background: "var(--bg2)" };
 
 export default function AnlageVExport({
   properties,
@@ -60,7 +64,12 @@ export default function AnlageVExport({
     [jahr, properties, einnahmen, kosten, kredite, gebaeudeAnteil, satz, mieter],
   );
   const vergleich = anlageVVergleich(erg.gesamt, ergVorjahr.gesamt);
-  const vorjahrLeer = ergVorjahr.gesamt.einnahmen.summe === 0 && ergVorjahr.gesamt.werbungskosten.summe === 0;
+  // „Leer" heißt: keine Einnahme und keine GEBUCHTEN Kosten im Vorjahr. Die Werbungskosten taugen
+  // dafür nicht — sie enthalten die berechnete AfA und die Zinsschätzung und sind deshalb nie 0,
+  // sobald ein Objekt mit Kredit existiert (Scheinverlust „-55.852 €" im Vergleich, Scan 06.10.2026).
+  const vorjahrLeer =
+    ergVorjahr.gesamt.einnahmen.summe === 0 &&
+    !kosten.some((k) => (k.buchungsdatum ?? "").startsWith(`${jahr - 1}-`));
 
   const spalten = [...erg.objekte, erg.gesamt];
   const einnahmePos = ANLAGE_V_POSITIONEN.filter((p) => p.bereich === "einnahme");
@@ -190,7 +199,7 @@ export default function AnlageVExport({
             </div>
           </div>
           <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 360, lineHeight: 1.5 }}>
-            AfA = Kaufpreis × Gebäudeanteil × Satz. Typisch: 2 % (Baujahr ab 1925), 2,5 % (älter), 3 % (Neubau ab 2023). Anpassen, falls dein Bescheid abweicht. AfA-Methode je Objekt im Objekt-Formular einstellbar; die globalen Regler gelten für Objekte auf „automatisch&quot;.
+            AfA = Kaufpreis × Gebäudeanteil × Satz. Typisch: 2 % (Baujahr ab 1925), 2,5 % (älter), 3 % (Neubau ab 2023). Anpassen, falls dein Bescheid abweicht. AfA-Methode je Objekt im Objekt-Formular einstellbar; die globalen Regler gelten für Objekte auf „automatisch“.
             {" "}<a href="/afa-assistent" style={{ color: "var(--gold)", textDecoration: "underline", whiteSpace: "nowrap" }}>AfA optimieren →</a>
           </div>
         </div>
@@ -266,12 +275,12 @@ export default function AnlageVExport({
               <table style={{ fontSize: 12, minWidth: 520 }}>
                 <thead>
                   <tr>
-                    <th style={{ minWidth: 220 }}>Position</th>
+                    <th style={{ ...ERSTE_SPALTE, minWidth: "min(220px, 40vw)" }}>Position</th>
                     {spalten.map((o) => (
                       <th key={o.propId ?? "gesamt"} style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                         {o.propId === null && o.name.startsWith("Gesamt") ? "Gesamt" : o.name}
                         {o.propId && (
-                          <div style={{ fontWeight: 400, fontSize: 10, color: "var(--muted)" }}>
+                          <div style={{ fontWeight: 400, fontSize: 11, color: "var(--muted)" }}>
                             {o.afaMethode === "degressiv" ? "AfA degressiv 5 %"
                               : o.afaMethode === "manuell" ? "AfA manuell"
                               : o.afaMethode === "keine" ? "keine AfA"
@@ -283,36 +292,36 @@ export default function AnlageVExport({
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td colSpan={spalten.length + 1} style={{ fontWeight: 700, color: "var(--green)", paddingTop: 8 }}>Einnahmen</td></tr>
+                  <tr><td colSpan={spalten.length + 1} style={{ fontWeight: 700, color: "var(--green)", paddingTop: 8 }}><span style={{ position: "sticky", left: 12, display: "inline-block" }}>Einnahmen</span></td></tr>
                   {einnahmePos.map((p) => (
                     <tr key={p.key}>
-                      <td style={{ paddingLeft: 12, color: "var(--muted)" }}>{p.label}</td>
+                      <td style={{ ...ERSTE_SPALTE, paddingLeft: 12, color: "var(--muted)" }}>{p.label}</td>
                       {spalten.map((o) => num(o, p.key, o === erg.gesamt))}
                     </tr>
                   ))}
                   <tr>
-                    <td style={{ fontWeight: 600 }}>Summe Einnahmen</td>
+                    <td style={{ ...ERSTE_SPALTE, fontWeight: 600 }}>Summe Einnahmen</td>
                     {spalten.map((o) => (
                       <td key={o.propId ?? "g"} style={{ textAlign: "right", fontWeight: 700, background: o === erg.gesamt ? "var(--bg3)" : undefined }}>{eur2(o.einnahmen.summe)}</td>
                     ))}
                   </tr>
 
-                  <tr><td colSpan={spalten.length + 1} style={{ fontWeight: 700, paddingTop: 10 }}>Werbungskosten</td></tr>
+                  <tr><td colSpan={spalten.length + 1} style={{ fontWeight: 700, paddingTop: 10 }}><span style={{ position: "sticky", left: 12, display: "inline-block" }}>Werbungskosten</span></td></tr>
                   {wkPos.map((p) => (
                     <tr key={p.key}>
-                      <td style={{ paddingLeft: 12, color: "var(--muted)" }}>{p.label}</td>
+                      <td style={{ ...ERSTE_SPALTE, paddingLeft: 12, color: "var(--muted)" }}>{p.label}</td>
                       {spalten.map((o) => num(o, p.key, o === erg.gesamt))}
                     </tr>
                   ))}
                   <tr>
-                    <td style={{ fontWeight: 600 }}>Summe Werbungskosten</td>
+                    <td style={{ ...ERSTE_SPALTE, fontWeight: 600 }}>Summe Werbungskosten</td>
                     {spalten.map((o) => (
                       <td key={o.propId ?? "g"} style={{ textAlign: "right", fontWeight: 700, background: o === erg.gesamt ? "var(--bg3)" : undefined }}>{eur2(o.werbungskosten.summe)}</td>
                     ))}
                   </tr>
 
                   <tr style={{ borderTop: "2px solid var(--line2)" }}>
-                    <td style={{ fontWeight: 700 }}>Überschuss / Verlust</td>
+                    <td style={{ ...ERSTE_SPALTE, fontWeight: 700 }}>Überschuss / Verlust</td>
                     {spalten.map((o) => (
                       <td key={o.propId ?? "g"} style={{ textAlign: "right", fontWeight: 700, color: o.ueberschuss >= 0 ? "var(--gold-fill)" : "var(--red)", background: o === erg.gesamt ? "var(--bg3)" : undefined }}>
                         {eur2(o.ueberschuss)}

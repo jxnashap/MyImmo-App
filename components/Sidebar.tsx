@@ -181,7 +181,7 @@ export default function Sidebar({
             {vorname && (
               <div className="sidebar-username" style={{ fontSize: 12.5, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{vorname}</div>
             )}
-            <div className="sidebar-useremail" style={{ fontSize: 10, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={userEmail ?? ""}>
+            <div className="sidebar-useremail" style={{ fontSize: 11, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={userEmail ?? ""}>
               {userEmail ?? "–"}
             </div>
           </div>

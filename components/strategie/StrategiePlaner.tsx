@@ -203,7 +203,7 @@ export default function StrategiePlaner({
             </label>
           </div>
           {bestand.length > 0 && (
-            <p className="sanierung-klein">
+            <p className="sanierung-klein" style={{ marginTop: 10 }}>
               Dein Bestand aus MyImmo: {objektZahl} {objektZahl === 1 ? "Objekt" : "Objekte"}, Wert {euro(bestandWert)},
               Schulden {euro(bestandSchulden)}. Er kann Kapital geben (Beleihung, Verkauf).
             </p>

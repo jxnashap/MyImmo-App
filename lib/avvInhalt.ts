@@ -40,7 +40,7 @@ export const AVV_BLOECKE: AvvBlock[] = [
     p: "Gegenstand ist die Bereitstellung der Web-Anwendung MyImmo zur Immobilien- und Mietverwaltung, in der der Verantwortliche personenbezogene Daten Dritter (insbesondere seiner Mieter und Mietinteressenten) speichert und verarbeitet. Die Vereinbarung gilt für die Dauer des Nutzungsverhältnisses und endet mit der Löschung des Kontos.",
   },
   {
-    note: "Nicht Gegenstand dieser Fassung: Die treuhänderische Verwaltung fremder Immobilienbestände durch gewerbliche Hausverwaltungen (Mehrmandanten-Verwaltung) wird – vor ihrer produktiven Nutzung – durch eine gesonderte Ergänzung dieses Vertrags geregelt.",
+    note: "Nicht Gegenstand dieser Fassung: Die treuhänderische Verwaltung fremder Immobilienbestände durch gewerbliche Hausverwaltungen (Mehrmandanten-Verwaltung) wird — vor ihrer produktiven Nutzung — durch eine gesonderte Ergänzung dieses Vertrags geregelt.",
   },
 
   { h: "2. Art und Zweck der Verarbeitung" },

@@ -114,7 +114,7 @@ function EckdatenSeite({ e, aendern }: SeitenProps) {
           <input id="g-baujahr" className="input" inputMode="numeric" placeholder="z. B. 1972" disabled={p.baujahrUnbekannt} value={p.baujahr} onChange={(x) => setP({ baujahr: x.target.value.replace(/\D/g, "").slice(0, 4) })} />
         </div>
         <div className="form-group">
-          <label htmlFor="g-wohnflaeche">Wohnfläche m²</label>
+          <label htmlFor="g-wohnflaeche">Wohnfläche <span style={{ textTransform: "none" }}>(m²)</span></label>
           <input id="g-wohnflaeche" className="input" inputMode="decimal" value={p.wohnflaeche} onChange={(x) => setP({ wohnflaeche: x.target.value })} />
         </div>
       </div>
@@ -217,14 +217,15 @@ function MasseSeite({ e, aendern, neueId, auswertung }: SeitenProps) {
             <div className="sanierung-masse">
               {(
                 [
-                  ["laenge", "Länge m"],
-                  ["breite", "Breite m"],
-                  ["hoehe", "Höhe m"],
-                  ["oeffnungen", "Fenster + Türen m²"],
+                  ["laenge", "Länge", "m"],
+                  ["breite", "Breite", "m"],
+                  ["hoehe", "Höhe", "m"],
+                  ["oeffnungen", "Fenster/Türen", "m²"],
                 ] as const
-              ).map(([feld, label]) => (
-                <div className="form-group" key={feld}>
-                  <label htmlFor={`${r.id}-${feld}`}>{label}</label>
+              ).map(([feld, label, einheit]) => (
+                <div className="form-group" key={feld} style={{ justifyContent: "flex-end" }}>
+                  {/* Einheit nicht in Großbuchstaben: „M“ ist kein Zeichen für Meter. */}
+                  <label htmlFor={`${r.id}-${feld}`}>{label} <span style={{ textTransform: "none" }}>({einheit})</span></label>
                   <input id={`${r.id}-${feld}`} inputMode="decimal" value={r[feld]} onChange={(x) => setRaum(aendern, r.id, { [feld]: x.target.value })} />
                 </div>
               ))}
@@ -355,12 +356,12 @@ export function ArbeitFelder({ id, e, aendern, vorschlag }: { id: ArbeitId; e: E
   const a = ARBEITEN[id];
   return (
     <div className="guide-arbeit-felder">
-      <label className="guide-mini">
+      <label className="guide-mini" style={{ display: "grid", gap: 4 }}>
         Menge ({a.einheit.replace(/^je /, "")})
         <input className="input sanierung-preis" inputMode="decimal" placeholder={vorschlag ? zahl(vorschlag.menge, 2) : "eintragen"} value={e.arbeitMengen[id] ?? ""} onChange={(x) => aendern((d) => ({ ...d, arbeitMengen: { ...d.arbeitMengen, [id]: x.target.value } }))} />
       </label>
-      <label className="guide-mini">
-        Angebot €
+      <label className="guide-mini" style={{ display: "grid", gap: 4 }}>
+        Angebot (€)
         <input className="input sanierung-preis" inputMode="decimal" placeholder="optional" value={e.arbeitPreise[id] ?? ""} onChange={(x) => aendern((d) => ({ ...d, arbeitPreise: { ...d.arbeitPreise, [id]: x.target.value } }))} />
       </label>
       {vorschlag?.annahme && <span className="sanierung-klein">Vorschlag: {vorschlag.annahme}</span>}

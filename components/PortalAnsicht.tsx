@@ -161,7 +161,7 @@ export default function PortalAnsicht({
         <div className="topbar" style={{ marginBottom: 20 }}>
           <div>
             <div className="topbar-title">Zahlungen</div>
-            <div className="topbar-sub">Vom Vermieter bestätigte Miet- &amp; Nebenkostenzahlungen (§ 368 BGB)</div>
+            <div className="topbar-sub">Vom Vermieter bestätigte Miet- &amp; Nebenkostenzahlungen (§ 368 BGB)</div>
           </div>
         </div>
         {wohnungen.length === 0 ? keineWohnung : (
@@ -193,15 +193,16 @@ export default function PortalAnsicht({
                 <>
                   {zahlungen.map((z) => (
                     <div key={z.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
-                      <span style={{ color: "var(--muted)", minWidth: 74 }}>{z.buchungsdatum ? datum(z.buchungsdatum) : "–"}</span>
-                      <span className={`badge ${z.kategorie === "Miete" ? "badge-green" : "badge-teal"}`}>{z.kategorie ?? "Zahlung"}</span>
-                      {z.beschreibung && <span style={{ color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{z.beschreibung}</span>}
-                      <span style={{ fontWeight: 600, color: "var(--green)", marginLeft: "auto" }}>{euro(z.betrag)}</span>
+                      <span style={{ color: "var(--muted)", minWidth: 74, flexShrink: 0 }}>{z.buchungsdatum ? datum(z.buchungsdatum) : "–"}</span>
+                      <span className={`badge ${z.kategorie === "Miete" ? "badge-green" : "badge-teal"}`} style={{ flexShrink: 0 }}>{z.kategorie ?? "Zahlung"}</span>
+                      {/* Beschreibung nimmt den Rest und kürzt sich — der Betrag bricht nie um („€" / „1.070"). */}
+                      <span style={{ flex: 1, minWidth: 0, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{z.beschreibung ?? ""}</span>
+                      <span style={{ fontWeight: 600, color: "var(--green)", whiteSpace: "nowrap", flexShrink: 0 }}>{euro(z.betrag)}</span>
                     </div>
                   ))}
                   <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 10 }}>
                     Diese Übersicht zeigt alle Zahlungen, die dein Vermieter verbucht hat.
-                    Eine förmliche Mietquittung (§ 368 BGB) kannst du unter „Dokumente“ anfordern.
+                    Eine förmliche Mietquittung (§ 368 BGB) kannst du unter „Dokumente“ anfordern.
                   </p>
                 </>
               )}
@@ -227,7 +228,7 @@ export default function PortalAnsicht({
               <div className="section-body">
                 {freigegebeneDocs.length === 0 ? (
                   <p style={{ fontSize: 12, color: "var(--faint)" }}>
-                    Noch keine Dokumente zugestellt — dein Vermieter kann dir hier z. B.
+                    Noch keine Dokumente zugestellt — dein Vermieter kann dir hier z. B.
                     Mietvertrag, NK-Abrechnung oder den Energieausweis bereitstellen.
                   </p>
                 ) : (

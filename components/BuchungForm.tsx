@@ -86,7 +86,8 @@ export default function BuchungForm({
     <form action={action} className="form-box" style={imDialog ? { padding: 0, border: "none", background: "none", maxWidth: "none" } : undefined}>
       {!imDialog && (
         <>
-          <h3>{isEdit ? "Buchung bearbeiten" : "Neue Buchung"}</h3>
+          {/* „Neue Buchung“ trägt schon der Seitentitel von /cashflow/neu — nicht doppelt. */}
+          {isEdit && <h3>Buchung bearbeiten</h3>}
           <p>{typ === "einnahme" ? "Miete und sonstige Erträge" : "Kosten und Ausgaben"}</p>
         </>
       )}
@@ -122,7 +123,7 @@ export default function BuchungForm({
         <div className="form-group">
           <label>Immobilie *</label>
           <select name="prop_id" required value={propId} onChange={(e) => setPropId(e.target.value)}>
-            <option value="">— wählen —</option>
+            <option value="">– wählen –</option>
             {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
           </select>
         </div>
@@ -146,7 +147,7 @@ export default function BuchungForm({
         <div className="form-group">
           <label>Mieter</label>
           <select name="mieter_id" defaultValue={row?.mieter_id ?? mieterInitial ?? ""} onChange={(e) => mieterGewaehlt(e.target.value)}>
-            <option value="">– Kein Mieter –</option>
+            <option value="">– kein Mieter –</option>
             {tenants.map((t) => (
               <option key={t.id} value={t.id}>{`${t.vorname ?? ""} ${t.nachname ?? ""}`.trim() || "—"}</option>
             ))}
@@ -164,7 +165,7 @@ export default function BuchungForm({
             <label>davon Nebenkosten-Vorauszahlung (€)</label>
             <input type="number" step="0.01" min="0" name="nk_anteil" defaultValue={row?.nk_anteil ?? ""} placeholder="z. B. 160" />
             <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>
-              In „Miete&quot; enthalten – Anlage V Zeile 13.
+              In „Miete“ enthalten – Anlage V Zeile 13.
             </span>
           </div>
           <div className="form-group">

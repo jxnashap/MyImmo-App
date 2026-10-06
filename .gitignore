@@ -21,3 +21,4 @@ tsconfig.tsbuildinfo
 
 # erzeugte Marketing-Screenshots (scripts/screenshots.mjs) — jederzeit neu baubar
 /docs/marketing/screenshots/
+.scan/

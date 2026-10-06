@@ -130,7 +130,7 @@ export default function VermieterAnfragen({
                     </span>
                     <span style={{ minWidth: 0 }}>
                       <span style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>{v.label}</span>
-                      <span style={{ display: "block", fontSize: 10.5, color: "var(--muted)" }}>{v.hinweis}</span>
+                      <span style={{ display: "block", fontSize: 11, color: "var(--muted)" }}>{v.hinweis}</span>
                     </span>
                   </button>
                 );

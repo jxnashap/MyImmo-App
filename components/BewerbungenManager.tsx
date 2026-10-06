@@ -141,7 +141,7 @@ function LinkZeile({ l }: { l: BewerberLinkRow }) {
 
   const feld = (name: string, label: string, wert: unknown, breit = 90, typ = "text") => (
     <label style={{ display: "grid", gap: 3, fontSize: 11 }}>
-      <span style={{ color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: 10 }}>{label}</span>
+      <span style={{ color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: 11 }}>{label}</span>
       <input name={name} type={typ} defaultValue={wert == null ? "" : String(wert)} className="input" style={{ width: breit, padding: "6px 9px", fontSize: 12 }} />
     </label>
   );
@@ -215,11 +215,11 @@ function LinkZeile({ l }: { l: BewerberLinkRow }) {
           </div>
           <div style={{ display: "grid", gap: 8 }}>
             <label style={{ display: "grid", gap: 3, fontSize: 11 }}>
-              <span style={{ color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: 10 }}>Objektbeschreibung</span>
+              <span style={{ color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: 11 }}>Objektbeschreibung</span>
               <textarea name="beschreibung" rows={3} maxLength={2000} defaultValue={a.beschreibung ?? ""} className="input" style={{ width: "100%", fontSize: 12 }} />
             </label>
             <label style={{ display: "grid", gap: 3, fontSize: 11 }}>
-              <span style={{ color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: 10 }}>Lage</span>
+              <span style={{ color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontSize: 11 }}>Lage</span>
               <textarea name="lage" rows={2} maxLength={1000} defaultValue={a.lage ?? ""} className="input" style={{ width: "100%", fontSize: 12 }} />
             </label>
           </div>

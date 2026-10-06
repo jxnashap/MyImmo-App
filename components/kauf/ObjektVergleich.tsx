@@ -39,6 +39,14 @@ export function bestWert(objekte: Kalkulation[], key: string, better: VglMetrik[
   return vals.every((v) => v === best) ? null : best;
 }
 
+/** „1 Bestwert“, sonst „n Bestwerte“ — als EIN Textknoten (kein `<!-- -->` dazwischen). */
+function bestwerteText(n: number): string {
+  return `${n} ${n === 1 ? "Bestwert" : "Bestwerte"}`;
+}
+
+/** Textknöpfe in der Tabelle waren nur ~17 px hoch — zu klein zum Tippen. */
+const TIPPZIEL = { minHeight: 32, display: "inline-flex", alignItems: "center", gap: 4, padding: "0 6px" } as const;
+
 export default function ObjektVergleich({
   liste,
   auswahl,
@@ -116,7 +124,7 @@ export default function ObjektVergleich({
                           {sel.length >= 2 && (
                             <span className="vergleich-punkte">
                               {krone && <Crown size={12} aria-label="meiste Bestwerte" />}
-                              {sieger.punkte[k.id] ?? 0} Bestwerte
+                              {bestwerteText(sieger.punkte[k.id] ?? 0)}
                             </span>
                           )}
                           {k.id === gewaehltId && <span className="badge badge-gold">für die Finanzierung gewählt</span>}
@@ -157,10 +165,10 @@ export default function ObjektVergleich({
                             {k.id === gewaehltId ? "Gewählt" : "Für die Finanzierung wählen"}
                           </button>
                           <span className="vergleich-klein">
-                            <button type="button" className="btn-link" onClick={() => onBearbeiten(k)}>
+                            <button type="button" className="btn-link" style={TIPPZIEL} onClick={() => onBearbeiten(k)}>
                               <Pencil size={12} aria-hidden /> Bearbeiten
                             </button>
-                            <button type="button" className="btn-link" onClick={() => onLoeschen(k.id)} aria-label={`${k.name} löschen`}>
+                            <button type="button" className="btn-link" style={TIPPZIEL} onClick={() => onLoeschen(k.id)} aria-label={`${k.name} löschen`}>
                               <Trash2 size={12} aria-hidden /> Löschen
                             </button>
                           </span>

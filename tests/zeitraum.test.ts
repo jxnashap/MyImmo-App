@@ -2,20 +2,29 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { kurzTick, niceScale, aggregate, einnahmeDatum, xTickLabel, bucketTitel, istZeitraum, ZEITRAEUME, type RawPoint } from "@/lib/zeitraum";
 
-describe("kurzTick — k-Format für Achsen", () => {
+describe("kurzTick — deutsche Kürzel für Achsen", () => {
   it("schreibt Werte unter 1000 aus", () => {
     expect(kurzTick(850)).toBe("850");
     expect(kurzTick(0)).toBe("0");
     expect(kurzTick(999)).toBe("999");
   });
-  it("kürzt ab 1000 mit k", () => {
-    expect(kurzTick(1000)).toBe("1k");
-    expect(kurzTick(1500)).toBe("1,5k");
-    expect(kurzTick(12000)).toBe("12k");
-    expect(kurzTick(250000)).toBe("250k");
+  // Vorher „2000k“ für 2 Mio. € — englisches Kürzel, ungewohnt (Scan 06.10.2026).
+  it("kürzt ab 1000 mit Tsd.", () => {
+    expect(kurzTick(1000)).toBe("1 Tsd.");
+    expect(kurzTick(1500)).toBe("1,5 Tsd.");
+    expect(kurzTick(12000)).toBe("12 Tsd.");
+    expect(kurzTick(250000)).toBe("250 Tsd.");
+  });
+  it("kürzt ab 1 Mio. mit Mio.", () => {
+    expect(kurzTick(1_000_000)).toBe("1 Mio.");
+    expect(kurzTick(1_500_000)).toBe("1,5 Mio.");
+    expect(kurzTick(2_000_000)).toBe("2 Mio.");
+    // Achsenschritt 250 Tsd.: nicht auf „1,3 Mio.“ runden.
+    expect(kurzTick(1_250_000)).toBe("1,25 Mio.");
+    expect(kurzTick(1_750_000)).toBe("1,75 Mio.");
   });
   it("behandelt negative Werte", () => {
-    expect(kurzTick(-2000)).toBe("−2k");
+    expect(kurzTick(-2000)).toBe("−2 Tsd.");
   });
 });
 

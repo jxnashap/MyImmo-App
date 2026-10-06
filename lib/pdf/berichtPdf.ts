@@ -5,6 +5,7 @@
 // Summenzeilen fett, Endergebnis mit Doppellinie (Buchhaltungs-Konvention).
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { pdfText } from "@/lib/pdf/zeichen";
 import { ANLAGE_V_POSITIONEN, wertVon, type AnlageVErgebnis, type AnlageVObjekt } from "@/lib/anlageV";
 
 const GOLD = rgb(0.722, 0.565, 0.169);
@@ -20,18 +21,6 @@ const ML = 56;
 const MR = 56;
 const RIGHT = A4.w - MR;
 
-function sanitize(s: string): string {
-  return (s ?? "")
-    .replace(/[‘’‚′]/g, "'")
-    .replace(/[“”„″]/g, '"')
-    .replace(/[–—]/g, "-")
-    .replace(/…/g, "...")
-    .replace(/ /g, " ")
-    .split("")
-    .map((c) => (c.charCodeAt(0) > 255 && c !== "€" ? "?" : c))
-    .join("");
-}
-
 // Feste zwei Dezimalen, Tausenderpunkt — € nur in Kopf-/Summenzeilen,
 // damit die Ziffern in der Spalte exakt untereinander stehen.
 const zahl = (n: number) =>
@@ -41,7 +30,7 @@ const eur = (n: number) => `${zahl(n)} €`;
 const tracked = (s: string) => s.split("").join(" ");
 
 function fit(f: PDFFont, s: string, size: number, maxW: number): string {
-  let str = sanitize(s);
+  let str = pdfText(s);
   if (f.widthOfTextAtSize(str, size) <= maxW) return str;
   while (str.length > 1 && f.widthOfTextAtSize(str + "...", size) > maxW) str = str.slice(0, -1);
   return str + "...";
@@ -71,9 +60,9 @@ async function neueSeite(doc: PDFDocument, absender: BerichtAbsender, titelZeile
   const serifI = await doc.embedFont(StandardFonts.TimesRomanItalic);
 
   const text: Ctx["text"] = (x, y, s, size = 10, f = font, color = INK) =>
-    page.drawText(sanitize(s), { x, y, size, font: f, color });
+    page.drawText(pdfText(s), { x, y, size, font: f, color });
   const right: Ctx["right"] = (xR, y, s, size = 10, f = font, color = INK) => {
-    const ss = sanitize(s);
+    const ss = pdfText(s);
     page.drawText(ss, { x: xR - f.widthOfTextAtSize(ss, size), y, size, font: f, color });
   };
   const hline: Ctx["hline"] = (y, x0 = ML, x1 = RIGHT, color = LINE, t = 0.8) =>
@@ -113,7 +102,40 @@ function fusszeile(c: Ctx, seite: number, gesamt: number, hinweis?: string) {
   c.right(RIGHT, 52, `Seite ${seite} von ${gesamt}`, 7.5, c.font, MUTED);
 }
 
+// Fließtext mit Umbruch auf die Satzspiegelbreite — Hinweise und Fußnoten waren einzelne
+// drawText-Zeilen und ragten bei längeren Varianten in den rechten Rand.
+function absatz(c: Ctx, y: number, s: string, size = 8.5, lh = 12): number {
+  const woerter = pdfText(s).split(/\s+/).filter(Boolean);
+  let zeile = "";
+  for (const w of woerter) {
+    const probe = zeile ? `${zeile} ${w}` : w;
+    if (zeile && c.font.widthOfTextAtSize(probe, size) > RIGHT - ML) {
+      c.text(ML, y, zeile, size, c.font, MUTED);
+      y -= lh;
+      zeile = w;
+    } else zeile = probe;
+  }
+  if (zeile) { c.text(ML, y, zeile, size, c.font, MUTED); y -= lh; }
+  return y;
+}
+
 // ================================================================ Anlage V ===
+
+// Zeilenhöhe der Objekt-Kontenblätter. 16,5 ließ nie zwei Blöcke auf eine Seite
+// (je ~317 pt bei ~606 pt Satzspiegel) — 6 Objekte ergaben 7 halb leere Seiten.
+const AV_ROW = 14.5;
+
+/** Höhe, die objektBlock() für ein Objekt verbraucht (inkl. Abstand danach) — gerechnet, nicht geschätzt. */
+function objektBlockHoehe(o: AnlageVObjekt): number {
+  const nEin = ANLAGE_V_POSITIONEN.filter((p) => p.bereich === "einnahme").length;
+  const nWk = ANLAGE_V_POSITIONEN.filter((p) => p.bereich === "wk").length;
+  const kopf = 13 + (o.adresse ? 13 : 0) + 4;
+  const tabelle = 5 + AV_ROW // Kopfzeile
+    + AV_ROW * (1 + nEin + 1) + 6 // Einnahmen
+    + AV_ROW * (1 + nWk + 1) + 4 // Werbungskosten
+    + AV_ROW + 8; // Ergebnis
+  return kopf + tabelle + 10;
+}
 
 // Doppellinie unter dem Endergebnis (Buchhaltungs-Stil).
 function doppellinie(c: Ctx, y: number, x0: number, x1: number) {
@@ -129,20 +151,20 @@ function doppellinie(c: Ctx, y: number, x0: number, x1: number) {
 function objektBlock(c: Ctx, yStart: number, o: AnlageVObjekt): number {
   const einnahmePos = ANLAGE_V_POSITIONEN.filter((p) => p.bereich === "einnahme");
   const wkPos = ANLAGE_V_POSITIONEN.filter((p) => p.bereich === "wk");
-  const ROW = 16.5;
+  const ROW = AV_ROW;
   const xBetrag = RIGHT;
   let y = yStart;
 
   // Objekt-Kopf
-  c.text(ML, y, o.name, 11.5, c.bold, INK);
   const afaInfo =
     o.afaMethode === "degressiv" ? "AfA degressiv 5 % p.a."
       : o.afaMethode === "manuell" ? "AfA manuell"
       : o.afaMethode === "keine" ? "keine AfA (z. B. Grundstück)"
       : `AfA linear ${o.afaSatz.toLocaleString("de-DE")} % p.a.`;
+  c.text(ML, y, fit(c.bold, o.name, 11.5, RIGHT - ML - c.font.widthOfTextAtSize(pdfText(afaInfo), 8.5) - 16), 11.5, c.bold, INK);
   c.right(RIGHT, y, afaInfo, 8.5, c.font, MUTED);
   y -= 13;
-  if (o.adresse) { c.text(ML, y, o.adresse, 8.5, c.font, MUTED); y -= 13; }
+  if (o.adresse) { c.text(ML, y, fit(c.font, o.adresse, 8.5, RIGHT - ML), 8.5, c.font, MUTED); y -= 13; }
   y -= 4;
 
   // Tabellenkopf: Position | Betrag (EUR) — Linie nur darunter
@@ -170,7 +192,9 @@ function objektBlock(c: Ctx, yStart: number, o: AnlageVObjekt): number {
   // Werbungskosten
   c.text(ML, y, "Werbungskosten", 9.5, c.bold, RED);
   y -= ROW;
-  wkPos.forEach((p, i) => zeile(p.label, wertVon(o, p.key), { indent: true, zebra: i % 2 === 0 }));
+  // Geschätzte Schuldzinsen im Blatt kennzeichnen — der Hinweis auf Seite 1 verweist darauf.
+  wkPos.forEach((p, i) =>
+    zeile(p.key === "schuldzinsen" && o.schuldzinsenGeschaetzt ? `${p.label} (geschätzt)` : p.label, wertVon(o, p.key), { indent: true, zebra: i % 2 === 0 }));
   c.hline(y + ROW - 6, ML, RIGHT, LINE, 0.6);
   zeile("Summe Werbungskosten (Zeile 51)", o.werbungskosten.summe, { bold: true });
   y -= 4;
@@ -225,33 +249,26 @@ export async function buildAnlageVPdf(
   doppellinie(c, y - 5.5, ML, RIGHT);
   y -= 34;
 
-  c.text(ML, y, "Auf den Folgeseiten steht je Objekt die vollständige Aufstellung mit den Zeilen der Anlage V —", 8.5, c.font, MUTED);
-  y -= 12;
-  c.text(ML, y, "in ELSTER ist je Objekt eine eigene Anlage V auszufüllen.", 8.5, c.font, MUTED);
-  y -= 20;
+  y = absatz(c, y, "Auf den Folgeseiten steht je Objekt die vollständige Aufstellung mit den Zeilen der Anlage V — in ELSTER ist je Objekt eine eigene Anlage V auszufüllen.");
+  y -= 8;
   // Der Text behauptete pauschal, die Schuldzinsen seien geschaetzt. Sind sie
   // gebucht, stimmt das nicht — und der Vermieter haelt einen korrekten Wert
   // faelschlich fuer unbrauchbar.
   const zinsenGeschaetzt = erg.objekte.some((o) => o.schuldzinsenGeschaetzt);
-  c.text(
-    ML,
+  absatz(
+    c,
     y,
-    zinsenGeschaetzt
-      ? "Hinweise: Wo keine Schuldzinsen gebucht sind, sind sie aus Restschuld × Zinssatz geschätzt (im Blatt markiert). Kautionen gelten als"
-      : "Hinweise: Die Schuldzinsen stammen aus gebuchten Ausgaben. Kautionen gelten als",
-    8.5,
-    c.font,
-    MUTED,
+    (zinsenGeschaetzt
+      ? "Hinweise: Wo keine Schuldzinsen gebucht sind, sind sie aus Restschuld × Zinssatz geschätzt (im Blatt markiert)."
+      : "Hinweise: Die Schuldzinsen stammen aus gebuchten Ausgaben.")
+      + " Kautionen gelten als durchlaufende Posten und sind nicht enthalten. Hilfestellung zur Anlage V — keine Steuerberatung.",
   );
-  y -= 12;
-  c.text(ML, y, "durchlaufende Posten und sind nicht enthalten. Hilfestellung zur Anlage V — keine Steuerberatung.", 8.5, c.font, MUTED);
 
   // Folgeseiten: je Objekt ein Kontenblatt (2 Objekte je Seite, wenn Platz)
-  const BLOCK_H = 330; // konservative Blockhöhe eines Objekt-Kontenblatts
   let yCur = 0;
   let offen = false;
   for (const o of erg.objekte) {
-    if (!offen || yCur < 64 + BLOCK_H) {
+    if (!offen || yCur - objektBlockHoehe(o) < 72) {
       c = await neueSeite(doc, absender, titel);
       seiten.push(c);
       yCur = c.y;
@@ -301,9 +318,13 @@ export async function buildJahresberichtPdf(
   y -= 16;
 
   const ROW = 16.5;
+  // Namensbreite aus der breitesten Zahl der ersten Spalte — fest 128 pt überlappte ab
+  // sechsstelligen Jahreseinnahmen.
+  const breitesteZahl = Math.max(0, ...zeilen.map((r) => c.font.widthOfTextAtSize(zahl(r.einnahmen), 9.2)));
+  const nameBreite = Math.min(150, cols[0] - ML - breitesteZahl - 10);
   zeilen.forEach((r, i) => {
     if (i % 2 === 0) c.rect(ML - 4, y - 4.5, RIGHT - ML + 8, 14, ROW_BG);
-    c.text(ML, y, fit(c.font, r.name, 9, 128), 9, c.font, INK);
+    c.text(ML, y, fit(c.font, r.name, 9, nameBreite), 9, c.font, INK);
     c.right(cols[0], y, zahl(r.einnahmen), 9.2, c.font, INK);
     c.right(cols[1], y, zahl(r.bewirtschaftung), 9.2, c.font, INK);
     c.right(cols[2], y, zahl(r.zins), 9.2, c.font, INK);
@@ -347,20 +368,18 @@ export async function buildJahresberichtPdf(
   kpi(2, "CASHFLOW", eur(sum.cashflow), sum.cashflow >= 0 ? GOLD : RED);
   y -= boxH + 18;
 
-  c.text(ML, y, "Hinweis: Die Tilgung baut Vermögen auf und ist kein Aufwand — steuerlich zählt nur der Zinsanteil.", 8.5, c.font, MUTED);
-  y -= 12;
+  y = absatz(c, y, "Hinweis: Die Tilgung baut Vermögen auf und ist kein Aufwand — steuerlich zählt nur der Zinsanteil.");
   // Bis 01.10.2026 behauptete die Fussnote pauschal "geschaetzt" — seit
   // jahresZeile() sind es die GEBUCHTEN Zinsen, sobald welche vorliegen.
   const geschaetzt = zeilen.filter((r) => r.zinsGeschaetzt).map((r) => r.name);
-  c.text(
-    ML,
+  absatz(
+    c,
     y,
     geschaetzt.length === 0
-      ? "Zins = Summe der gebuchten Schuldzinsen; Tilgung = Kreditrate − Zins."
+      ? "Zins = Summe der gebuchten Schuldzinsen; Tilgung = Kreditrate - Zins."
       : geschaetzt.length === zeilen.length
         ? "Zins aus aktueller Restschuld × Zinssatz hochgerechnet (keine Zinsbuchungen) — für die Steuer die Zinsbescheinigung verwenden."
         : `Zins gebucht; bei ${geschaetzt.join(", ")} aus Restschuld × Zinssatz hochgerechnet.`,
-    8.5, c.font, MUTED,
   );
 
   fusszeile(c, 1, 1, "Cashflow-Auswertung - erstellt mit MyImmo");

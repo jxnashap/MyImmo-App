@@ -13,6 +13,13 @@ import {
   DEFAULT_VORLAGEN,
   PLATZHALTER,
   ART_ZEIGT_BETRAG,
+  ART_ZEIGT_KONTO,
+  ART_BETRAG_RUECKFALL,
+  BETRAG_LABEL,
+  DATUM_LABEL,
+  briefDatum,
+  fehlendePlatzhalter,
+  satzanfangGross,
   fuelleVorlage,
   ART_BESCHEINIGUNG,
   type DocArt,
@@ -27,8 +34,8 @@ const fmtIban = (s: string) => s.replace(/(.{4})/g, "$1 ").trim();
 const eur = (n: number) =>
   new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) +
   " €";
-const deDate = (s: string) =>
-  s ? new Date(s).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" }) : "";
+// Gleiche Schreibweise wie im PDF (lib/pdf/erzeugen.ts): „6. Oktober 2026“.
+const deDate = briefDatum;
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -73,16 +80,12 @@ export default function DocGenerator({
   const toast = useToast();
 
   const zeigtBetrag = ART_ZEIGT_BETRAG.includes(art);
+  const zeigtKonto = ART_ZEIGT_KONTO.includes(art);
   const selectedIban = ibans.find((x) => x.id === ibanId) ?? null;
-  const betragLabel = art === "mieterhoehung" ? "Neue Kaltmiete (€)" : "Offener Betrag (€)";
-  const datumLabel =
-    art === "mieterhoehung"
-      ? "Wirksam ab"
-      : art === "kuendigung"
-        ? "Kündigung zum"
-        : art === "reparatur"
-          ? "Termin der Arbeiten"
-          : "Zahlbar bis";
+  const betragLabel = BETRAG_LABEL[art] ?? "Betrag (€)";
+  const datumLabel = DATUM_LABEL[art] ?? "Datum";
+  // Datumsfeld nur, wenn die Vorlage das Datum auch benutzt.
+  const zeigtDatum = vorlageText.includes("{{datum}}");
 
   function wechselArt(v: DocArt) {
     setArt(v);
@@ -116,12 +119,11 @@ export default function DocGenerator({
     ? `${property.bezeichnung}${tenant.einheit ? ", " + tenant.einheit : ""}${property.adresse ? ", " + property.adresse : ""}`
     : "–";
   const miete = tenant.kaltmiete ?? 0;
-  const betragNum = parseFloat(betrag) || 0;
-  const fallbackMiete = art === "zahlungserinnerung" || art === "mahnung";
-  const effBetrag = betragNum > 0 ? betragNum : fallbackMiete ? miete : 0;
-
   const nkvz = tenant.nk_vorauszahlung ?? 0;
   const warm = miete + nkvz + (tenant.stellplatz_miete ?? 0);
+  const betragNum = parseFloat(betrag) || 0; // type="number"
+  // Wie im PDF: ohne Eingabe die geschuldete Warmmiete.
+  const effBetrag = betragNum > 0 ? betragNum : ART_BETRAG_RUECKFALL.includes(art) ? warm : 0;
   const werte: Record<string, string> = {
     mieter: mieterName || "–",
     objekt,
@@ -136,7 +138,13 @@ export default function DocGenerator({
     vermieter: vName || "–",
   };
   const istBescheinigung = ART_BESCHEINIGUNG.includes(art);
-  const absaetze = fuelleVorlage(vorlageText, werte);
+  const gefuellt = fuelleVorlage(vorlageText, werte);
+  const absaetze = istBescheinigung ? satzanfangGross(gefuellt) : gefuellt;
+  // Leere Platzhalter ergäben halbe Sätze („bis spätestens zu begleichen“) — dann kein PDF.
+  const fehlend = fehlendePlatzhalter(vorlageText, werte);
+  const fehlendText = fehlend
+    .map((k) => (k === "datum" ? datumLabel : k === "betrag" ? betragLabel.replace(" (€)", "") : PLATZHALTER.find((p) => p.key === k)?.label ?? k))
+    .join(", ");
 
   // --- Vorschau-Daten ---
   const absName = vName || "–";
@@ -167,7 +175,7 @@ export default function DocGenerator({
       {/* ---------- Eingaben + Vorlagen-Editor ---------- */}
       <div className="form-box no-print" style={{ maxWidth: 460, flex: "1 1 420px" }}>
         <h3>Dokument erstellen</h3>
-        <p>Brief an den Mieter — Vorschau rechts, dann als PDF herunterladen.</p>
+        <p>Brief an den Mieter — Vorschau prüfen, dann als PDF herunterladen.</p>
 
         {!vermieter && (
           <div
@@ -197,10 +205,18 @@ export default function DocGenerator({
               ))}
             </select>
           </div>
-          <div className="form-group">
-            <label>{datumLabel}</label>
-            <input type="date" value={datum} onChange={(e) => setDatum(e.target.value)} />
-          </div>
+          {zeigtDatum && (
+            <div className="form-group">
+              <label>{datumLabel}</label>
+              <input
+                type="date"
+                value={datum}
+                onChange={(e) => setDatum(e.target.value)}
+                aria-invalid={fehlend.includes("datum") || undefined}
+                style={fehlend.includes("datum") ? { borderColor: "var(--red)" } : undefined}
+              />
+            </div>
+          )}
         </div>
         {zeigtBetrag && (
           <div className="form-row single">
@@ -269,7 +285,7 @@ export default function DocGenerator({
           {saveState === "error" && <span style={{ fontSize: 12, color: "var(--red)" }}>Fehler beim Speichern</span>}
         </div>
 
-        {zeigtBetrag && (
+        {zeigtKonto && (
           <>
             <div className="form-section-label">Zahlungskonto (optional)</div>
             {ibans.length === 0 ? (
@@ -351,7 +367,7 @@ export default function DocGenerator({
         <BriefBlatt
           absenderName={absName}
           absenderZeile={[vAdr ? vAdr.split(/,\s*/).join(" · ") : null, vermieter?.email].filter(Boolean).join(" · ") || null}
-          ruecksende={[vName, vAdr].filter(Boolean).join(", ") || null}
+          ruecksende={null /* wie im PDF: kein Rücksendevermerk im Adressfeld */}
           vermerk="Vertrauliches Dokument"
           empfaenger={[mieterName || "–", ...empfZeilen]}
           ortDatum={ortDatum}
@@ -367,7 +383,7 @@ export default function DocGenerator({
             absaetze.map((p, i) => <p key={i}>{p}</p>)
           )}
 
-          {zeigtBetrag && selectedIban && (
+          {zeigtKonto && selectedIban && (
             <div className="brief-konto">
               <div style={{ fontWeight: 700 }}>Bitte überweisen Sie auf folgendes Konto:</div>
               <div style={{ marginTop: 4 }}>{selectedIban.inhaber || absName}</div>
@@ -414,10 +430,15 @@ export default function DocGenerator({
               Tipp: In den Einstellungen eine E-Signatur hinterlegen, um PDFs digital zu unterschreiben.
             </span>
           )}
+          {fehlend.length > 0 && (
+            <span role="status" style={{ flexBasis: "100%", fontSize: 12, color: "var(--red)" }}>
+              Bitte noch ausfüllen: {fehlendText}. Sonst entsteht ein unvollständiger Satz.
+            </span>
+          )}
           <button
             type="button"
             className="btn btn-outline"
-            disabled={ablegen}
+            disabled={ablegen || fehlend.length > 0}
             onClick={() =>
               startAblegen(async () => {
                 const res = await speichereBrief(tenant.id, felder);
@@ -427,16 +448,22 @@ export default function DocGenerator({
           >
             {ablegen ? "Speichert…" : <><Save size={14} style={{ verticalAlign: "-2px" }} /> Im Archiv ablegen</>}
           </button>
-          <SubmitButton><FileText size={14} style={{ verticalAlign: "-2px" }} /> Als PDF herunterladen</SubmitButton>
+          {fehlend.length > 0 ? (
+            <button type="button" className="btn btn-gold" disabled><FileText size={14} style={{ verticalAlign: "-2px" }} /> Als PDF herunterladen</button>
+          ) : (
+            <SubmitButton><FileText size={14} style={{ verticalAlign: "-2px" }} /> Als PDF herunterladen</SubmitButton>
+          )}
         </form>
-        <BriefVersand
-          mieterId={tenant.id}
-          email={tenant.email}
-          mieterName={mieterName}
-          betreff={titel}
-          absender={vName}
-          felder={felder}
-        />
+        {fehlend.length === 0 && (
+          <BriefVersand
+            mieterId={tenant.id}
+            email={tenant.email}
+            mieterName={mieterName}
+            betreff={titel}
+            absender={vName}
+            felder={felder}
+          />
+        )}
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ export default async function NewTenantPage(props0: { searchParams: Promise<{ pr
     <div className="fade-up">
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href={back} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
+          <Link href={back} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
           <div><div className="topbar-title">Neuer Mieter</div></div>
         </div>
       </div>

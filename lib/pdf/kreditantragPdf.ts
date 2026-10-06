@@ -4,6 +4,8 @@
 // SELBST an seine Bank(en) gibt. Keine Vermittlung, keine Beratung.
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { pdfText } from "@/lib/pdf/zeichen";
+import { monatDe, umbrechen } from "@/lib/pdf/umbruch";
 import {
   eigenkapitalGesamt, haushaltsNetto, type SelbstauskunftDaten,
 } from "@/lib/kauf/selbstauskunft";
@@ -17,12 +19,6 @@ const BOX_BG = rgb(0.97, 0.96, 0.94);
 const A4 = { w: 595.28, h: 841.89 };
 const ML = 56, MR = 56, RIGHT = A4.w - MR;
 
-function sanitize(s: string): string {
-  return (s ?? "")
-    .replace(/[‘’‚′]/g, "'").replace(/[“”„″]/g, '"').replace(/[–—]/g, "-")
-    .replace(/…/g, "...").replace(/ /g, " ")
-    .split("").map((c) => (c.charCodeAt(0) > 255 && c !== "€" ? "?" : c)).join("");
-}
 const euro = (n: number) => `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(Math.round(n || 0))} €`;
 const tracked = (s: string) => s.split("").join(" ");
 const deDate = (d: Date) => d.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
@@ -51,9 +47,13 @@ const PRIO_LABEL: Record<string, string> = {
   schnell_schuldenfrei: "Schnell schuldenfrei",
   zinssicherheit: "Maximale Zinssicherheit",
 };
+// Schreibweise wie im Formular (components/kauf/SelbstauskunftForm.tsx) und in kaeuferPdf.ts.
 const BESCH_LABEL: Record<string, string> = {
   angestellt: "Angestellt", selbststaendig: "Selbstständig", beamter: "Beamt:in",
   rentner: "Rentner:in", sonstiges: "Sonstiges",
+};
+const BEFR_LABEL: Record<string, string> = {
+  unbefristet: "unbefristet", befristet: "befristet", probezeit: "in Probezeit",
 };
 
 type Ctx = {
@@ -71,9 +71,9 @@ async function neueSeite(doc: PDFDocument, absender: KreditAbsender, titel: stri
   const serifI = await doc.embedFont(StandardFonts.TimesRomanItalic);
 
   const text: Ctx["text"] = (x, y, s, size = 10, f = font, color = INK) =>
-    page.drawText(sanitize(s), { x, y, size, font: f, color });
+    page.drawText(pdfText(s), { x, y, size, font: f, color });
   const right: Ctx["right"] = (xR, y, s, size = 10, f = font, color = INK) => {
-    const ss = sanitize(s);
+    const ss = pdfText(s);
     page.drawText(ss, { x: xR - f.widthOfTextAtSize(ss, size), y, size, font: f, color });
   };
   const hline: Ctx["hline"] = (y, x0 = ML, x1 = RIGHT, color = LINE, t = 0.8) =>
@@ -107,7 +107,7 @@ function fuss(c: Ctx, seite: number, gesamt: number) {
 
 // Fließtext mit Umbruch (für den Umfang der Vollmacht) — Zeilenabstand 15 laut Dokument-Regeln.
 function absatz(c: Ctx, y: number, s: string, size = 9.5, breite = RIGHT - ML): number {
-  const woerter = sanitize(s).split(/\s+/).filter(Boolean);
+  const woerter = pdfText(s).split(/\s+/).filter(Boolean);
   let zeile = "";
   for (const w of woerter) {
     const probe = zeile ? `${zeile} ${w}` : w;
@@ -127,16 +127,23 @@ function abschnitt(c: Ctx, y: number, s: string): number {
   return y - 20;
 }
 
-// zweispaltige Label/Wert-Box
+const KV_ZEILE = 17;
+const KV_FOLGEZEILE = 12;
+
+// zweispaltige Label/Wert-Box — lange Werte (Arbeitgeber, Adresse) brechen auf zwei Zeilen um.
 function kvBox(c: Ctx, y: number, rows: [string, string][]): number {
-  const boxH = rows.length * 17 + 16;
+  const gesetzt = rows.map(([l, v]) => {
+    const frei = RIGHT - 14 - (ML + 14 + c.font.widthOfTextAtSize(pdfText(l), 9) + 12);
+    return { l, zeilen: umbrechen(c.bold, v, 9.5, frei) };
+  });
+  const boxH = gesetzt.reduce((h, r) => h + KV_ZEILE + (r.zeilen.length - 1) * KV_FOLGEZEILE, 0) + 16;
   c.page.drawRectangle({ x: ML, y: y - boxH, width: RIGHT - ML, height: boxH, color: BOX_BG });
   c.page.drawRectangle({ x: ML, y: y - boxH, width: 2.5, height: boxH, color: GOLD });
   let ky = y - 19;
-  for (const [l, v] of rows) {
-    c.text(ML + 14, ky, l, 9, c.font, MUTED);
-    c.right(RIGHT - 14, ky, v, 9.5, c.bold, INK);
-    ky -= 17;
+  for (const r of gesetzt) {
+    c.text(ML + 14, ky, r.l, 9, c.font, MUTED);
+    r.zeilen.forEach((z, i) => c.right(RIGHT - 14, ky - i * KV_FOLGEZEILE, z, 9.5, c.bold, INK));
+    ky -= KV_ZEILE + (r.zeilen.length - 1) * KV_FOLGEZEILE;
   }
   return y - boxH - 16;
 }
@@ -186,7 +193,7 @@ export async function buildKreditantragPdf(
     ["Staatsangehörigkeit", sa.staatsangehoerigkeit || "–"],
     ["Beschäftigung", BESCH_LABEL[sa.beschaeftigung] || sa.beschaeftigung],
     ["Beruf / Arbeitgeber", [sa.beruf, sa.arbeitgeber].filter(Boolean).join(" · ") || "–"],
-    ["Beschäftigt seit / Anstellung", [sa.beschaeftigtSeit, sa.befristung].filter(Boolean).join(" · ") || "–"],
+    ["Beschäftigt seit / Anstellung", [monatDe(sa.beschaeftigtSeit), BEFR_LABEL[sa.befristung] || sa.befristung].filter(Boolean).join(" · ") || "–"],
   ]);
 
   const netto = haushaltsNetto(sa);

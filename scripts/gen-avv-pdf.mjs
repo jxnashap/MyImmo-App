@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import fs from "fs";
+import { pdfText } from "../lib/pdf/zeichen.ts";
 
 const GOLD = rgb(0.722, 0.565, 0.169);
 const INK = rgb(0.13, 0.13, 0.12);
@@ -9,13 +10,12 @@ const BOX = rgb(0.97, 0.96, 0.94);
 const A4 = { w: 595.28, h: 841.89 };
 const ML = 56, MR = 56, RIGHT = A4.w - MR;
 
+// Zeichen-Bereinigung über die EINE Stelle lib/pdf/zeichen.ts. Typografische Anführungszeichen,
+// Gedankenstriche und Auslassungspunkte kann WinAnsi (Helvetica) darstellen — die bleiben stehen;
+// vorher wurden daraus „ - “ und gerade "…" (Design-Scan 06.10.2026).
+const WINANSI_TYPO = new Set(["„", "“", "”", "‚", "‘", "’", "–", "—", "…"]);
 function sanitize(s) {
-  return (s ?? "").replace(/[‘’‚′]/g, "'").replace(/[“”„″]/g, '"').replace(/[–—]/g, "-").replace(/…/g, "...").replace(/ /g, " ")
-    .split("").map((c) => {
-      if (c.charCodeAt(0) <= 255 || c === "€") return c;
-      const b = c.normalize("NFKD").replace(/[̀-ͯ]/g, "");
-      return b.length && b.charCodeAt(0) <= 255 ? b : "?";
-    }).join("");
+  return Array.from(s ?? "", (c) => (WINANSI_TYPO.has(c) ? c : pdfText(c))).join("");
 }
 const tracked = (s) => s.split("").join(" ");
 
@@ -123,7 +123,8 @@ kopf(false);
 
 for (const blk of AVV) {
   if (blk.h) {
-    raum(34);
+    // Überschrift nie allein am Seitenende: mindestens drei Zeilen Text müssen noch passen.
+    raum(34 + 3 * LH);
     y -= 10;
     page.drawText(sanitize(blk.h), { x: ML, y, size: 11.5, font: bold, color: INK }); y -= 5;
     page.drawLine({ start: { x: ML, y }, end: { x: RIGHT, y }, thickness: 1.2, color: GOLD }); y -= 17;

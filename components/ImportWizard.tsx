@@ -116,7 +116,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
                 {loading === "pdf" ? <><Hourglass size={14} style={{ verticalAlign: "-2px" }} /> Liest PDF…</> : "PDF auslesen"}
               </button>
             </div>
-            <span style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 3 }}>Max. 20 MB. Auch gescannte Exposés werden gelesen.</span>
+            <span style={{ fontSize: 11, color: "var(--faint)", marginTop: 3 }}>Max. 20 MB. Auch gescannte Exposés werden gelesen.</span>
           </div>
 
           {/* Weg 2: Link zum Inserat. */}

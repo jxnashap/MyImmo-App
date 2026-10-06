@@ -296,10 +296,16 @@ export default function AnliegenPortal({
                   <Icon size={16} color="var(--gold)" style={{ flexShrink: 0 }} />
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span className="listen-zeile-titel">{a.titel}</span>
-                    <span className="listen-zeile-sub">Gemeldet am {datumKurz(a.created_at)}</span>
+                    {/* Höchstens EIN Merkmal neben dem Titel (06.10.2026): Mit zwei
+                        Badges blieben am Handy ~7 Zeichen für Titel und Datum.
+                        Gibt es ein Merkmal, steht der Status in der Unterzeile. */}
+                    <span className="listen-zeile-sub">
+                      {merkmal ? `${s.label} · gemeldet ${datumKurz(a.created_at)}` : `Gemeldet am ${datumKurz(a.created_at)}`}
+                    </span>
                   </span>
-                  {merkmal && <span className={`badge ${merkmal.cls}`}>{merkmal.text}</span>}
-                  <span className={`badge ${s.cls}`}>{s.label}</span>
+                  {merkmal
+                    ? <span className={`badge ${merkmal.cls}`} style={{ flexShrink: 0 }}>{merkmal.text}</span>
+                    : <span className={`badge ${s.cls}`} style={{ flexShrink: 0 }}>{s.label}</span>}
                   <ChevronRight size={16} color="var(--faint)" style={{ flexShrink: 0 }} />
                 </Link>
               );

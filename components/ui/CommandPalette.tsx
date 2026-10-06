@@ -224,7 +224,7 @@ export default function CommandPalette({ properties = [], tenants = [] }: { prop
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={onInputKeyDown}
-                  placeholder={'Suchen… z. B. „NK Müller" oder „Mieterhöhung Müller"'}
+                  placeholder="Suchen… z. B. „NK Müller“ oder „Mieterhöhung Müller“"
                   role="combobox"
                   aria-expanded="true"
                   aria-controls="cmdk-listbox"

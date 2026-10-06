@@ -7,6 +7,7 @@ import { ratgeberBySlug } from "@/lib/ratgeber";
 import { ArrowRight } from "lucide-react";
 import StartCta from "@/components/StartCta";
 import Brotkrumen from "@/components/landing/Brotkrumen";
+import { schuetzeUmbrueche as u } from "@/lib/umbruchSchutz";
 
 // Kein `dynamicParams = false` noetig: seit die oeffentliche Strecke ein
 // eigenes, statisches Root-Layout hat (app/(pub)/layout.tsx), wird nicht mehr
@@ -41,7 +42,9 @@ export default async function FunktionsSeite(props: { params: Promise<{ slug: st
   const stufen = [
     { name: "Start", pfad: "" },
     { name: "Funktionen", pfad: "/funktionen" },
-    { name: f.titel, pfad: `/funktionen/${f.slug}` },
+    // Kurzname statt des vollen Titels: Der stand direkt über der H1 doppelt
+    // und brach am Handy um (sichtbare Leiste und JSON-LD bleiben gleich).
+    { name: f.kicker, pfad: `/funktionen/${f.slug}` },
   ];
 
   return (
@@ -88,7 +91,7 @@ export default async function FunktionsSeite(props: { params: Promise<{ slug: st
             <h3 style={{ fontSize: 17, margin: "0 0 8px", color: "var(--l-gold-ink)" }}>{f.cta.titel}</h3>
             <p style={{ fontSize: 14.5, lineHeight: 1.65, color: "var(--l-muted)", margin: "0 0 16px" }}>{f.cta.text}</p>
             <StartCta className="btn btn-gold">
-              {" "}<ArrowRight size={14} style={{ verticalAlign: "-2px" }} />
+              {" "}<ArrowRight size={14} style={{ display: "inline", verticalAlign: "-2px" }} />
             </StartCta>
           </div>
 
@@ -104,8 +107,8 @@ export default async function FunktionsSeite(props: { params: Promise<{ slug: st
                     style={{ textDecoration: "none", padding: "16px 18px" }}
                   >
                     <span className="lp-vorher" style={{ color: "var(--l-gold-ink)" }}>{r!.kategorie}</span>
-                    <h3 style={{ fontSize: 15, margin: "2px 0 4px" }}>{r!.titel}</h3>
-                    <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--l-muted)", margin: 0 }}>{r!.beschreibung}</p>
+                    <h3 style={{ fontSize: 15, margin: "2px 0 4px" }}>{u(r!.titel)}</h3>
+                    <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--l-muted)", margin: 0 }}>{u(r!.beschreibung)}</p>
                   </Link>
                 ))}
               </div>

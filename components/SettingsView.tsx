@@ -119,6 +119,23 @@ export default function SettingsView({
     }
   }, []);
 
+  // Die Reiterleiste rollt am Handy waagerecht. Ein über `?tab=` oder per Pfeiltaste
+  // geöffneter Reiter soll sichtbar sein — sonst ist „Support“ offen, die Leiste zeigt
+  // aber weiter „Profil“. Nur die Leiste rollt (scrollLeft), nie die Seite; beim ersten
+  // Mal ohne Gleiten, danach weich (außer bei reduzierter Bewegung).
+  const ersterTabScroll = useRef(true);
+  useEffect(() => {
+    const leiste = tabsRef.current;
+    const knopf = leiste?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!leiste || !knopf || leiste.scrollWidth <= leiste.clientWidth) { ersterTabScroll.current = false; return; }
+    const l = leiste.getBoundingClientRect();
+    const k = knopf.getBoundingClientRect();
+    const ziel = leiste.scrollLeft + (k.left - l.left) - (l.width - k.width) / 2;
+    const ruhig = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    leiste.scrollTo({ left: Math.max(0, ziel), behavior: ersterTabScroll.current || ruhig ? "auto" : "smooth" });
+    ersterTabScroll.current = false;
+  }, [tab]);
+
   // Pfeiltasten-Navigation der Tabs (Barrierefreiheit).
   function onTabKey(e: React.KeyboardEvent, i: number) {
     if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
@@ -372,7 +389,7 @@ function BankPanel({ ibans }: { ibans: Iban[] }) {
     const fd = new FormData(form);
     const iban = normalizeIban(String(fd.get("iban") ?? ""));
     if (!String(fd.get("kontoname") ?? "").trim()) return setError("Bitte eine Bezeichnung angeben.");
-    if (!isValidIban(iban)) return setError("Die IBAN ist nicht korrekt – bitte prüfen.");
+    if (!isValidIban(iban)) return setError("Die IBAN ist nicht korrekt — bitte prüfen.");
     if (ibans.some((x) => normalizeIban(x.iban) === iban)) return setError("Diese IBAN ist bereits hinterlegt.");
     setSaving(true);
     try {
@@ -420,7 +437,7 @@ function BankPanel({ ibans }: { ibans: Iban[] }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ fontSize: 13.5, fontWeight: 600 }}>{x.kontoname}</span>
-                    {x.standard && <span className="badge badge-gold" style={{ fontSize: 10, display: "inline-flex", alignItems: "center", gap: 3 }}><Star size={10} /> Standard</span>}
+                    {x.standard && <span className="badge badge-gold" style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Star size={11} /> Standard</span>}
                   </div>
                   {x.inhaber && <div style={{ fontSize: 11.5, color: "var(--muted)" }}>{x.inhaber}</div>}
                   <div className="bank-iban" style={{ marginTop: 2 }}>{fmtIban(x.iban)}</div>
@@ -524,7 +541,7 @@ function SicherheitPanel({ email, provider, ohnePasswort = false, demo = false, 
         <h2><Lock size={16} /> Passwort ändern</h2>
         <p className="sub">
           Ändere das Passwort für dein Konto{email ? ` (${email})` : ""}.
-          {istGoogle && " Du meldest dich aktuell mit Google an – hier kannst du zusätzlich ein Passwort setzen, um dich auch per E-Mail anzumelden."}
+          {istGoogle && " Du meldest dich aktuell mit Google an — hier kannst du zusätzlich ein Passwort setzen, um dich auch per E-Mail anzumelden."}
         </p>
         {demo && (
           <div
@@ -686,8 +703,8 @@ function AutoLogoutKarte() {
         <p className="span2" style={{ fontSize: 11.5, color: "var(--muted)", margin: 0, lineHeight: 1.5 }}>
           Der Timer wirkt auf diesem Gerät und ist die Garantie: Wer länger als die gewählte
           Zeit weg war, wird beim Zurückkehren sofort abgemeldet. „Beim Schließen&quot; meldet dich
-          ab, sobald du den Browser nach dem Schließen wieder öffnest — Reloads und normale
-          Navigation bleiben angemeldet.
+          ab, sobald du den Browser nach dem Schließen wieder öffnest — neu laden und
+          weiterklicken meldet dich nicht ab.
         </p>
       </div>
     </div>
@@ -710,7 +727,7 @@ function RechtPanel({ email, ohnePasswort = false }: { email?: string | null; oh
     <div ref={ref}>
       <div className="glass-card reveal">
         <h2><Sparkles size={16} /> Einführungs-Tour</h2>
-        <p className="sub">Die kurze Tour durch die App (Objekt anlegen → Mieter → Buchungen → Mietkonto → Archiv → Steuer) jederzeit noch einmal ansehen.</p>
+        <p className="sub">Die kurze Tour durch die App (Objekt anlegen → Mieter → Darlehen → Buchungen → Mietkonto → Archiv → Steuer) jederzeit noch einmal ansehen.</p>
         <button type="button" className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }} onClick={tourStarten}>
           <Sparkles size={15} /> Tour erneut starten
         </button>
@@ -726,7 +743,7 @@ function RechtPanel({ email, ohnePasswort = false }: { email?: string | null; oh
 
       <div className="glass-card reveal">
         <h2><Download size={16} /> Meine Daten exportieren</h2>
-        <p className="sub">Lade jederzeit ALLE deine Daten herunter (inkl. Mieter, Buchungen und Dokumente) – ohne Sperrfrist, DSGVO-Recht auf Datenübertragbarkeit. Das ZIP enthält alle Tabellen als CSV und JSON plus die Dateien; die Buchungen gibt es zusätzlich als einzelne CSV für Excel/Steuerberater.</p>
+        <p className="sub">Lade jederzeit ALLE deine Daten herunter (inkl. Mieter, Buchungen und Dokumente) — ohne Sperrfrist, DSGVO-Recht auf Datenübertragbarkeit. Das ZIP enthält alle Tabellen als CSV und JSON plus die Dateien; die Buchungen gibt es zusätzlich als einzelne CSV für Excel/Steuerberater.</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {/* eslint-disable-next-line @next/next/no-location-assign-relative-destination -- Datei-Download über eine API-Route, keine Seite */}
           <button type="button" onClick={() => absichern(() => window.location.assign("/api/export/alles"))} className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -865,7 +882,9 @@ function DangerZone({ email, ohnePasswort = false }: { email?: string | null; oh
   return (
     <div className="danger-zone">
       {dialog}
-      <button type="button" className="danger-link" onClick={() => setOpen(true)}>Konto löschen</button>
+      {/* Größere Tippfläche bei gleichem Platz (Padding hoch, Margin gleicht aus); „MyImmo-Konto“,
+          weil der Link auf dem Reiter Bankkonten sonst wie „Bankkonto löschen“ gelesen wird. */}
+      <button type="button" className="danger-link" style={{ padding: "8px 4px", margin: "-8px -4px" }} onClick={() => setOpen(true)}>MyImmo-Konto löschen</button>
 
       {open && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
@@ -885,7 +904,7 @@ function DangerZone({ email, ohnePasswort = false }: { email?: string | null; oh
               <button type="button" className="icon-btn" onClick={() => setOpen(false)} title="Schließen"><X size={16} /></button>
             </div>
             <p style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
-              Löscht dein Konto und <strong style={{ color: "var(--text)" }}>unwiderruflich</strong> alle Daten – Immobilien, Mieter, Buchungen, Kredite, Dokumente und Einstellungen. Exportiere vorher bei Bedarf deine Daten.
+              Löscht dein Konto und <strong style={{ color: "var(--text)" }}>unwiderruflich</strong> alle Daten — Immobilien, Mieter, Buchungen, Kredite, Dokumente und Einstellungen. Exportiere vorher bei Bedarf deine Daten.
             </p>
             <form
               action={() =>

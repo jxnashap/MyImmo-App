@@ -256,7 +256,7 @@ export default function SanierungsRechner({
               onClick={() => (x.id === "guide" ? starteGuide(entwurf) : setAnsicht(x.id))}
             >
               {x.label}
-              {x.id === "uebersicht" && offene.length > 0 && <span className="badge badge-gold guide-badge">{offene.length} offen</span>}
+              {x.id === "uebersicht" && offene.length > 0 && <span className="badge badge-gold guide-badge" title={`${offene.length} ${offene.length === 1 ? "Seite" : "Seiten"} offen`}>{offene.length}<span className="sr-only"> offen</span></span>}
             </button>
           ))}
         </div>
@@ -306,7 +306,8 @@ export default function SanierungsRechner({
                 <Inhalt {...props} />
                 {fehltHier.length > 0 && (
                   <div className="guide-fehlt-liste sanierung-klein">
-                    Noch offen: {fehltHier.join(" · ")}
+                    {/* „Zustand: Innentüren“ bleibt zusammen; lange Einträge dürfen weiter umbrechen. */}
+                    Noch offen: {fehltHier.map((f) => f.replace(/: /g, ":\u00a0")).join(" · ")}
                   </div>
                 )}
                 <div className="guide-nav">
@@ -340,7 +341,7 @@ export default function SanierungsRechner({
                   </button>
                 )}
               </div>
-              <div className="section-body">
+              <div className="section-body guide-inhalt">
                 <SeitenInhalt {...props} />
               </div>
             </div>

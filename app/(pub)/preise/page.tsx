@@ -77,7 +77,9 @@ export default function PreisePage() {
                 Testphase, die abläuft, und es wird keine Zahlungsmethode hinterlegt.
               </p>
               <div className="lp-early">
-                <PartyPopper size={14} style={{ verticalAlign: "-2px" }} /> Early Access: Bezahltarife stehen noch nicht fest und werden rechtzeitig angekündigt. Dein Konto wird dabei nicht automatisch kostenpflichtig — du entscheidest selbst, ob und welchen Tarif du dann buchst, und behältst in jedem Fall Zugriff auf deine Daten und den vollständigen Datenexport.
+                {/* .lp-early ist ein Flex-Container — ohne flexShrink: 0 drückte der Text das Icon am Handy zu einem Punkt. */}
+                <PartyPopper size={14} style={{ flexShrink: 0 }} />
+                <span>Early Access: Bezahltarife stehen noch nicht fest und werden rechtzeitig angekündigt. Dein Konto wird dabei nicht automatisch kostenpflichtig — du entscheidest selbst, ob und welchen Tarif du dann buchst, und behältst in jedem Fall Zugriff auf deine Daten und den vollständigen Datenexport.</span>
               </div>
               <div className="lp-cta-row" style={{ marginTop: 26 }}>
                 <StartCta className="btn btn-gold lp-btn-big" />

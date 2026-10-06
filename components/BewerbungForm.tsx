@@ -56,8 +56,8 @@ export default function BewerbungForm({
     const probleme: string[] = [];
     for (const f of Array.from(liste)) {
       if (neu.length >= MAX_DATEIEN) { probleme.push(`Maximal ${MAX_DATEIEN} Dokumente.`); break; }
-      if (!TYPEN.has(f.type)) { probleme.push(`„${f.name}": nur PDF, JPG, PNG oder WebP.`); continue; }
-      if (f.size > MAX_BYTES) { probleme.push(`„${f.name}" ist größer als 6 MB.`); continue; }
+      if (!TYPEN.has(f.type)) { probleme.push(`„${f.name}“: nur PDF, JPG, PNG oder WebP.`); continue; }
+      if (f.size > MAX_BYTES) { probleme.push(`„${f.name}“ ist größer als 6 MB.`); continue; }
       if (neu.some((d) => d.file.name === f.name && d.file.size === f.size)) continue;
       neu.push({ file: f, slot });
     }
@@ -106,9 +106,9 @@ export default function BewerbungForm({
           dfd.set("slot", dateien[i].slot);
           try {
             const u = await haengeBewerbungDateiAn(token, r.bewerbungId, dfd);
-            if (!u.ok) warnungen.push(`„${dateien[i].file.name}" konnte nicht hochgeladen werden (${u.fehler ?? "Fehler"}).`);
+            if (!u.ok) warnungen.push(`„${dateien[i].file.name}“ konnte nicht hochgeladen werden (${u.fehler ?? "Fehler"}).`);
           } catch {
-            warnungen.push(`„${dateien[i].file.name}" konnte nicht hochgeladen werden.`);
+            warnungen.push(`„${dateien[i].file.name}“ konnte nicht hochgeladen werden.`);
           }
         }
       }

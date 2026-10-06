@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import { AVV_BLOECKE, AVV_HINWEIS, AVV_STAND, type AvvBlock } from "@/lib/avvInhalt";
+import { schuetzeUmbrueche } from "@/lib/umbruchSchutz";
 
 export const metadata = {
   title: "Auftragsverarbeitungsvertrag (AVV) — MyImmo",
@@ -11,25 +12,29 @@ const H2 = ({ children }: { children: React.ReactNode }) => (
   <h2 style={{ fontSize: 18, marginTop: 28, marginBottom: 8 }}>{children}</h2>
 );
 
-const KLEIN = { fontSize: 13.5, color: "var(--muted)" } as const;
+// Preflight setzt Absatz-Abstände auf 0 — ohne eigenen Abstand klebten die
+// Vertragsabsätze am Handy aneinander.
+const ABSATZ = { margin: "0 0 12px" } as const;
+const KLEIN = { ...ABSATZ, fontSize: 13.5, color: "var(--muted)" } as const;
 
-/** `**fett**` → <strong>. Mehr Auszeichnung kennt der Vertragstext nicht. */
+/** `**fett**` → <strong>. Mehr Auszeichnung kennt der Vertragstext nicht.
+ *  Geschützte Leerzeichen nur in der Darstellung („§ 28“, „Art. 6“) — der Wortlaut bleibt. */
 function Text({ s }: { s: string }) {
   return (
     <>
-      {s.split(/\*\*(.+?)\*\*/g).map((teil, i) => (i % 2 ? <strong key={i}>{teil}</strong> : teil))}
+      {schuetzeUmbrueche(s).split(/\*\*(.+?)\*\*/g).map((teil, i) => (i % 2 ? <strong key={i}>{teil}</strong> : teil))}
     </>
   );
 }
 
 function Block({ b }: { b: AvvBlock }) {
   if ("h" in b) return <H2>{b.h}</H2>;
-  if ("p" in b) return <p><Text s={b.p} /></p>;
-  if ("b" in b) return <p><strong>{b.b}</strong></p>;
+  if ("p" in b) return <p style={ABSATZ}><Text s={b.p} /></p>;
+  if ("b" in b) return <p style={ABSATZ}><strong>{b.b}</strong></p>;
   if ("note" in b) return <p style={KLEIN}><Text s={b.note} /></p>;
   if ("kv" in b)
     return (
-      <p>
+      <p style={ABSATZ}>
         {b.kv.map(([k, v], i) => (
           <span key={k}>
             {i > 0 && <br />}
@@ -40,9 +45,9 @@ function Block({ b }: { b: AvvBlock }) {
     );
   if ("ul" in b)
     return (
-      <ul style={{ paddingLeft: 20 }}>
+      <ul style={{ paddingLeft: 20, margin: "0 0 12px", listStyle: "disc" }}>
         {b.ul.map((t) => (
-          <li key={t}><Text s={t} /></li>
+          <li key={t} style={{ marginBottom: 6 }}><Text s={t} /></li>
         ))}
       </ul>
     );
@@ -56,7 +61,8 @@ export default function AvvPage() {
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 20px", lineHeight: 1.65 }}>
       <BackLink />
-      <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Auftragsverarbeitungsvertrag (AVV)</h1>
+      {/* Weiche Trennstellen: Das lange Wort brach am Handy sonst mitten im Wort ohne Strich. */}
+      <h1 style={{ fontSize: "clamp(22px, 6.5vw, 28px)", margin: "16px 0 8px" }}>Auftrags&shy;verarbeitungs&shy;vertrag (AVV)</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
         Stand: {AVV_STAND} · Vereinbarung nach Art. 28 Abs. 3 DSGVO zwischen Ihnen als
         Verantwortlichem und dem Betreiber von MyImmo als Auftragsverarbeiter. Sie wird mit

@@ -29,17 +29,26 @@ export type Aggregation = { gran: Granularitaet; buckets: Bucket[] };
 const MONATE_KURZ = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
 // ---- Zahlen-Kurzformat für Achsen-Ticks ---------------------------------
-// >= 1000 → „1k", „1,5k", „12k", „250k"; darunter ausgeschrieben („850").
+// Deutsche Kürzel: ab 1 Mio. „1 Mio.“, „1,5 Mio.“; ab 1.000 „1 Tsd.“, „250 Tsd.“;
+// darunter ausgeschrieben („850“). Früher „2000k“ — für 2 Mio. € ungewohnt.
+// Bei Mio. zwei Nachkommastellen: Achsenschritte von 250 Tsd. ergäben sonst
+// „1,3 Mio.“ für 1,25 Mio. — eine falsche Achsenbeschriftung.
+function kurzZahl(x: number, stellen = 1): string {
+  const f = 10 ** stellen;
+  const gerundet = Math.round(x * f) / f;
+  return gerundet.toLocaleString("de-DE", { maximumFractionDigits: stellen, useGrouping: false });
+}
+
 export function kurzTick(v: number): string {
   const neg = v < 0;
   const a = Math.abs(v);
   let s: string;
   if (a < 1000) {
     s = String(Math.round(a));
+  } else if (a < 1_000_000) {
+    s = kurzZahl(a / 1000) + " Tsd.";
   } else {
-    const k = a / 1000;
-    const gerundet = Math.round(k * 10) / 10;
-    s = (Number.isInteger(gerundet) ? String(gerundet) : gerundet.toFixed(1).replace(".", ",")) + "k";
+    s = kurzZahl(a / 1_000_000, 2) + " Mio.";
   }
   return (neg ? "−" : "") + s;
 }

@@ -1,6 +1,7 @@
 // Fristen-Logik aus der ursprünglichen App — typisiert für das Supabase-Schema.
 
 import { iso, addMonate } from "@/lib/datum";
+import { normMietart } from "@/lib/mietart";
 
 export type FristKategorie =
   | "Miete" | "Betriebskosten" | "Finanzierung" | "Steuer" | "Wartung" | "WEG" | "Versicherung" | "Sonstiges";
@@ -36,6 +37,10 @@ export function mieterFristen(m: MieterFristInput, opts: { nkErstellt?: number[]
   const heute = new Date();
 
   if (m.mietbeginn) fristen.push({ label: "Mietbeginn", datum: m.mietbeginn, typ: "info", kategorie: "Miete" });
+  // Mieterhöhung, Staffel und Index gelten nur für einen laufenden Vertrag —
+  // ein ausgezogener Mieter bekam sonst „Mieterhöhung möglich“ (Scan 06.10.2026).
+  const laufend = !m.mietende || m.mietende >= iso(heute);
+  const mietart = normMietart(m.mietart);
 
   // Wohnungsgeberbestätigung: binnen 2 Wochen nach Einzug ausstellen
   // (§ 19 BMG, Bußgeld bis 1.000 €). Nur solange die Frist noch läuft.
@@ -56,7 +61,8 @@ export function mieterFristen(m: MieterFristInput, opts: { nkErstellt?: number[]
   if (m.mietende) {
     const ende = new Date(m.mietende);
     const tage = Math.ceil((ende.getTime() - heute.getTime()) / 86400000);
-    fristen.push({ label: "Mietende", datum: m.mietende, typ: tage < 90 ? "warn" : "info", kategorie: "Miete" });
+    // Nur ein BEVORSTEHENDES Mietende ist eine Warnung; ein vergangenes ist Information.
+    fristen.push({ label: "Mietende", datum: m.mietende, typ: tage >= 0 && tage < 90 ? "warn" : "info", kategorie: "Miete" });
     if (m.kuendigung) {
       const kFrist = addMonate(ende, -m.kuendigung);
       const kTage = Math.ceil((kFrist.getTime() - heute.getTime()) / 86400000);
@@ -65,7 +71,9 @@ export function mieterFristen(m: MieterFristInput, opts: { nkErstellt?: number[]
   }
 
   // Nächste mögliche Mieterhöhung: 12 Monate nach der letzten (Jahressperrfrist, § 558 Abs. 1 S. 2 BGB — die Kappungsgrenze ist Abs. 3)
-  if (m.letzte_erhoehung) {
+  if (!laufend) {
+    // kein Erhöhungs-Hinweis nach Vertragsende
+  } else if (m.letzte_erhoehung) {
     const next = addMonate(new Date(m.letzte_erhoehung), 12);
     const nTage = Math.ceil((next.getTime() - heute.getTime()) / 86400000);
     fristen.push({ label: "Nächste Mieterhöhung möglich", datum: iso(next), typ: nTage <= 0 ? "ok" : "info", kategorie: "Miete", rechtsgrundlage: "§ 558 Abs. 1 BGB (Jahressperrfrist)" });
@@ -102,7 +110,7 @@ export function mieterFristen(m: MieterFristInput, opts: { nkErstellt?: number[]
   // Staffelmiete: nächste Anpassungsstufe. Liegt ein Staffelplan vor
   // (Intervall + Betrag/Prozent), wird die NÄCHSTE Stufe ab heute genutzt —
   // sonst wie bisher das gepflegte Datum.
-  if ((m.mietart ?? "").toLowerCase() === "staffel" && m.staffel_datum) {
+  if (laufend && mietart === "staffel" && m.staffel_datum) {
     let stichtag = m.staffel_datum;
     const intervall = Number(m.staffel_intervall) || 12;
     const hatPlan = (m.staffel_betrag ?? 0) > 0 || (m.staffel_prozent ?? 0) > 0;
@@ -126,7 +134,7 @@ export function mieterFristen(m: MieterFristInput, opts: { nkErstellt?: number[]
   }
 
   // Indexmiete: frühestens 12 Monate nach letzter Anpassung prüfen.
-  if ((m.mietart ?? "").toLowerCase() === "index") {
+  if (laufend && mietart === "index") {
     const basis = m.letzte_erhoehung || m.mietbeginn;
     if (basis) {
       const next = addMonate(new Date(basis), 12);

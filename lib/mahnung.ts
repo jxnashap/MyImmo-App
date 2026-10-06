@@ -8,7 +8,6 @@
 // Vermieters vor — Absender, „Gesendet“-Ordner und damit der Nachweis bleiben bei ihm.
 // Reine Funktionen ohne Datenbank und ohne React.
 import { dritterWerktag, monatLabel } from "@/lib/mietkonto";
-import { datum as deDatum } from "@/lib/format";
 
 export type ZahlungsBriefArt = "zahlungserinnerung" | "mahnung";
 
@@ -38,7 +37,9 @@ export function zahlungsBriefUrl(o: {
   art: ZahlungsBriefArt;
 }): string {
   const faellig = dritterWerktag(o.jahrMonat);
-  const grund = `Es handelt sich um die Miete für ${monatLabel(o.jahrMonat)} (fällig am ${deDatum(faellig)}, drittem Werktag des Monats, § 556b BGB).`;
+  // Datum ausgeschrieben wie die übrigen Briefdaten („5. Oktober 2026“), Apposition mit Artikel.
+  const faelligText = `${Number(faellig.slice(8, 10))}. ${monatLabel(faellig.slice(0, 7))}`;
+  const grund = `Es handelt sich um die Miete für ${monatLabel(o.jahrMonat)} (fällig am ${faelligText}, dem dritten Werktag des Monats, § 556b BGB).`;
   const q = new URLSearchParams({
     art: o.art,
     betrag: String(o.betrag),

@@ -133,7 +133,7 @@ export default async function JahresberichtPage(
         </div>
       </div>
 
-      <p style={{ fontSize: 11, color: "var(--muted)" }}>„PDF-Bericht&quot; erzeugt den Jahresbericht als Dokument im MyImmo-Briefkopf — zum Ablegen, Versenden oder für den Steuerberater.</p>
+      <p style={{ fontSize: 11, color: "var(--muted)" }}>„PDF-Bericht“ erzeugt den Jahresbericht als Dokument im MyImmo-Briefkopf — zum Ablegen, Versenden oder für den Steuerberater.</p>
     </div>
   );
 }

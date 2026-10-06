@@ -15,7 +15,7 @@ describe("pdfText()", () => {
   });
   it("Satzzeichen außerhalb WinAnsi werden ersetzt", () => {
     expect(pdfText("Kreditrate − Zins")).toBe("Kreditrate - Zins");
-    expect(pdfText("„Text“ – … ≥ 3")).toBe('"Text" - ... >= 3');
+    expect(pdfText("„Text“ – … ≥ 3")).toBe("„Text“ – … >= 3");
     expect(pdfText("1 234 €")).toBe("1 234 €");
   });
   it("nur wo nichts hilft, kommt „?“", () => {

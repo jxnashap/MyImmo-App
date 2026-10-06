@@ -146,7 +146,7 @@ export default function DarlehenWizard({
           </div>
         </div>
       </div>
-      <div style={{ fontSize: 10.5, color: "var(--faint)" }}>
+      <div style={{ fontSize: 11, color: "var(--faint)" }}>
         Beispielrechnung mit angenommenem Sollzins — die echten Konditionen bekommst du von der Bank.
         MyImmo gibt keine Finanzierungsempfehlung und vermittelt keine Darlehen.
       </div>

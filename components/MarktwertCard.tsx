@@ -67,7 +67,7 @@ export default function MarktwertCard({
     <div className="section mb-20">
       <div className="section-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h3><span style={{ color: "var(--gold)", marginRight: 6 }}>⌂</span>Marktwert (ImmoWertV)</h3>
-        <span className={`badge ${hatWert ? "badge-neutral" : "badge-muted"}`} style={{ fontSize: 10 }}>
+        <span className={`badge ${hatWert ? "badge-neutral" : "badge-muted"}`} style={{ fontSize: 11 }}>
           {hatWert ? "automatisch aktualisiert" : "noch keine Berechnung"}
         </span>
       </div>
@@ -84,9 +84,9 @@ export default function MarktwertCard({
               </div>
             )}
             <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <span className="badge badge-gold" style={{ fontSize: 10 }}>{VERFAHREN_LABEL[erg.verfahren]}</span>
+              <span className="badge badge-gold" style={{ fontSize: "var(--text-xs)" }}>{VERFAHREN_LABEL[erg.verfahren]}</span>
               <span>Stand: {marktwertStand ? datum(marktwertStand) : "noch nicht berechnet"}</span>
-              {erg.mietwert != null && <span>· ortsübl. Miete ≈ {euro(erg.mietwert)}/Mo.</span>}
+              {erg.mietwert != null && <span>ortsübl. Miete ≈&nbsp;{euro(erg.mietwert)}/Mo.</span>}
             </div>
           </div>
           {historie.length >= 2 && (
@@ -102,7 +102,7 @@ export default function MarktwertCard({
           <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 8, background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", fontSize: 12, color: "var(--text)" }}>
             <strong style={{ color: "var(--gold)" }}>Für die Berechnung fehlen noch:</strong> {erg.fehlend.join(" · ")}
             <div style={{ color: "var(--muted)", marginTop: 4 }}>
-              Trage sie unten ein (aus BORIS-Portal / Marktbericht deiner Gemeinde in ~2 Min. ablesbar) und klicke „Jetzt aktualisieren&quot;.
+              Trage sie unten ein (aus BORIS-Portal / Marktbericht deiner Gemeinde in ~2 Min. ablesbar) und klicke „Jetzt aktualisieren“.
             </div>
           </div>
         )}
@@ -118,11 +118,12 @@ export default function MarktwertCard({
             <div className="form-group" style={{ margin: 0 }}>
               <label style={{ fontSize: 11, color: "var(--muted)" }}>Verfahren</label>
               <select name="bewertungsverfahren" className="input" defaultValue={defaults.bewertungsverfahren ?? ""}>
-                <option value="">Automatisch (nach Nutzung)</option>
+                <option value="">Automatisch</option>
                 <option value="vergleich">Vergleichswert</option>
                 <option value="ertrag">Ertragswert</option>
                 <option value="sach">Sachwert</option>
               </select>
+              <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 4 }}>Automatisch: nach Nutzung des Objekts</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, flexWrap: "wrap" }}>

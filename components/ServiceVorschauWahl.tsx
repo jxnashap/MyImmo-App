@@ -11,11 +11,11 @@ export default function ServiceVorschauWahl({ partner, aktuell }: { partner: Vor
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
-    <label data-demo-erlaubt="" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--muted)" }}>
-      Aus Sicht von
+    <label data-demo-erlaubt="" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, maxWidth: "100%", fontSize: 12, color: "var(--muted)" }}>
+      <span style={{ whiteSpace: "nowrap" }}>Aus Sicht von</span>
       <select
         className="input"
-        style={{ width: "auto", fontSize: 12, padding: "6px 10px" }}
+        style={{ width: "auto", flex: "0 1 auto", minWidth: 0, maxWidth: "100%", fontSize: 12, padding: "6px 10px" }}
         value={aktuell}
         disabled={pending}
         onChange={(e) => startTransition(() => router.push(serviceVorschauUrl(e.target.value)))}

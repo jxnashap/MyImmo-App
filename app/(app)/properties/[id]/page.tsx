@@ -145,7 +145,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // Verträge) — dieselbe Rechnung wie auf dem Dashboard, lib/cashflowKennzahl.ts.
   const nkVorausMo = nkVorauszahlungenMonat(tenantsJetzt, heuteIso);
   const cashflowMo = monatsCashflow({ warmmiete: miete + nkVorausMo, kreditraten: totalKreditRate, kostenSchnitt: monatsKosten });
-  const cfStr = (cashflowMo >= 0 ? "+ " : "– ") + euro(Math.abs(cashflowMo));
+  const cfStr = (cashflowMo >= 0 ? "+\u00a0" : "–\u00a0") + euro(Math.abs(cashflowMo));
 
   const kpis = [
     { lbl: "Aktueller Wert", val: euro(wert) },
@@ -164,7 +164,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
     ["Kaufpreis", p.kaufpreis ? euro(p.kaufpreis) : "–"],
     ["Aktueller Wert", euro(wert)],
     ["Energieklasse", p.energieklasse || "–"],
-    ["Hausgeld / Mo.", p.hausgeld ? `${euro(p.hausgeld)}/Mo` : "–"],
+    ["Hausgeld / Mo.", p.hausgeld ? euro(p.hausgeld) : "–"],
     ["Status", p.obj_status || "–"],
     ["Notiz", p.notiz_import || "–"],
   ];
@@ -232,8 +232,8 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
       <Breadcrumbs items={[{ label: "Immobilien", href: "/properties" }, { label: p.bezeichnung }]} />
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href="/properties" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
-          <div>
+          <Link href="/properties" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
+          <div style={{ minWidth: 0 }}>
             <div className="topbar-title">{p.bezeichnung}</div>
             <div className="topbar-sub">{(p.adresse || p.typ || "")}{p.obj_status ? ` · ${p.obj_status}` : ""}</div>
           </div>
@@ -246,7 +246,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
               per Cascade alle Buchungen, Darlehen und Archiv-Dokumente. */}
           <DeleteButton
             action={deleteProperty.bind(null, id)}
-            confirmText={`„${p.bezeichnung}" wirklich löschen? ${objektFolgenText({
+            confirmText={`„${p.bezeichnung}“ wirklich löschen? ${objektFolgenText({
               einnahmen: einnahmen.length, kosten: kosten.length, kredite: kred.length,
               dokumente: notizen.length, verbrauch: verbrauch.length, mieter: tenants.length,
             })}`.trim()}
@@ -339,12 +339,12 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
           <div className="section-body">
             <div style={{ display: "flex", flexDirection: "column" }}>
               {kennzahlen.map((k) => (
-                <div key={k.lbl} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
-                  <div>
+                <div key={k.lbl} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 500 }}>{k.lbl}</div>
                     <div style={{ fontSize: 11, color: "var(--muted)" }}>{k.note}</div>
                   </div>
-                  <span className={`badge ${k.badge}`} style={{ fontSize: 12 }}>{k.val}</span>
+                  <span className={`badge ${k.badge}`} style={{ fontSize: 12, whiteSpace: "nowrap", flexShrink: 0 }}>{k.val}</span>
                 </div>
               ))}
             </div>
@@ -380,7 +380,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
             <h3>Wertentwicklung</h3>
             {wertReiheProzent != null && (
               <span className={`badge ${wertReiheProzent >= 0 ? "badge-green" : "badge-red"}`}>
-                {wertReiheProzent >= 0 ? "+" : ""}{wertReiheProzent.toLocaleString("de-DE")} % seit Anschaffung
+                {wertReiheProzent >= 0 ? "+" : ""}{wertReiheProzent.toLocaleString("de-DE", { maximumFractionDigits: 1 })}&nbsp;% seit Kauf
               </span>
             )}
           </div>
@@ -480,7 +480,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Darlehen"}</div>
                       <div style={{ fontSize: 11, color: "var(--muted)" }}>{k.bank || "–"} · {zahl(k.zinssatz ?? 0, 1)} % Zins · {zahl(k.tilgungssatz ?? 0, 1)} % Tilgung</div>
                     </div>
-                    <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}" löschen?`} />
+                    <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}“ löschen?`} />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 8 }}>
                     <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
@@ -512,7 +512,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
               <div className="section-header">
                 <h3><Landmark size={15} style={{ verticalAlign: "-2px" }} /> Spekulationsfrist (§ 23 EStG)</h3>
                 <span className={`badge ${spekulation.steuerfrei ? "badge-green" : "badge-neutral"}`}>
-                  {spekulation.steuerfrei ? "steuerfrei verkaufbar" : `noch ${spekulation.jahreVerbleibend} J.`}
+                  {spekulation.steuerfrei ? "steuerfrei verkaufbar" : `noch ${spekulation.jahreVerbleibend.toLocaleString("de-DE", { maximumFractionDigits: 1 })}\u00a0J.`}
                 </span>
               </div>
               <div className="section-body">
@@ -523,7 +523,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
                     <>Steuerfrei verkaufbar ab <strong>{datum(spekulation.steuerfreiAb!)}</strong> — bis dahin wäre der Gewinn zu versteuern.</>
                   )}
                 </div>
-                <p style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>
                   Ab dem 4. Verkauf innerhalb von 5 Jahren droht gewerblicher Grundstückshandel. In Anspruch genommene AfA erhöht den steuerpflichtigen Gewinn. Näherung, keine Steuerberatung.
                 </p>
               </div>
@@ -556,20 +556,24 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--amber)", marginBottom: 10 }}>
                   Gesamt: {euro(verbrauch.reduce((s, v) => s + (v.verbrauchkosten ?? 0), 0))}
                 </div>
-                <div className="table-scroll"><table style={{ fontSize: 12 }}>
-                  <thead><tr><th>Datum</th><th>Art</th><th>Menge</th><th>Kosten</th><th></th></tr></thead>
-                  <tbody>
-                    {verbrauch.slice(0, 8).map((v) => (
-                      <tr key={v.id}>
-                        <td>{datum(v.buchungsdatum)}</td>
-                        <td>{(() => { const Icon = v.art ? ART_ICONS[v.art] : undefined; return Icon ? <Icon size={13} style={{ verticalAlign: "-2px" }} /> : null; })()} {v.art}</td>
-                        <td>{v.menge ?? "–"} {v.einheit}</td>
-                        <td style={{ fontWeight: 600 }}>{euro(v.verbrauchkosten)}</td>
-                        <td style={{ textAlign: "right" }}><DeleteButton action={deleteVerbrauch.bind(null, v.id)} className="delete-btn" label={<X size={14} />} confirmText="Eintrag löschen?" /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table></div>
+                {/* Eine Zeile je Eintrag statt Tabelle: Am Handy lag das × sonst außerhalb der Scrollbox. */}
+                <div>
+                  {verbrauch.slice(0, 8).map((v) => {
+                    const Icon = v.art ? ART_ICONS[v.art] : undefined;
+                    const menge = v.menge != null ? `${Number(v.menge).toLocaleString("de-DE", { maximumFractionDigits: 3 })}${v.einheit ? `\u00a0${v.einheit}` : ""}` : null;
+                    return (
+                      <div key={v.id} className="listen-zeile" style={{ cursor: "default" }}>
+                        {Icon ? <Icon size={14} style={{ flexShrink: 0, color: "var(--muted)" }} /> : null}
+                        <span className="listen-zeile-text">
+                          <span className="listen-zeile-titel">{v.art || "Verbrauch"}</span>
+                          <span className="listen-zeile-sub">{datum(v.buchungsdatum)}{menge ? ` · ${menge}` : ""}</span>
+                        </span>
+                        <span className="listen-zeile-zahl"><b>{euro(v.verbrauchkosten)}</b></span>
+                        <DeleteButton action={deleteVerbrauch.bind(null, v.id)} className="delete-btn" label={<X size={14} />} confirmText="Eintrag löschen?" />
+                      </div>
+                    );
+                  })}
+                </div>
               </>
             )}
           </div>

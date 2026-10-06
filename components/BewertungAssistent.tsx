@@ -28,6 +28,8 @@ import { useToast } from "@/components/Toast";
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
 const STANDARD = ["1 – sehr einfach", "2 – einfach", "3 – mittel", "4 – gehoben", "5 – hochwertig"];
 const num = zahlDe0;
+// Vorbelegungen in deutscher Schreibweise („3,2“ statt „3.2“) — zahlDe0 liest beides.
+const deText = (n: number) => String(n).replace(".", ",");
 
 export default function BewertungAssistent({
   imKaufFlow = false, onGespeichert, objekte = [],
@@ -48,13 +50,13 @@ export default function BewertungAssistent({
   const [miete, setMiete] = useState("");
   const [whg, setWhg] = useState("1");
   const [istEtw, setIstEtw] = useState(false);
-  const [lz, setLz] = useState(String(LZ_DEFAULT.mfh));
+  const [lz, setLz] = useState(deText(LZ_DEFAULT.mfh));
   // Sachwert
   const [typ, setTyp] = useState("efh");
   const [stufe, setStufe] = useState("3");
-  const [bpi, setBpi] = useState("1.9");
-  const [regio, setRegio] = useState("1.0");
-  const [swf, setSwf] = useState("1.0");
+  const [bpi, setBpi] = useState("1,9");
+  const [regio, setRegio] = useState("1,0");
+  const [swf, setSwf] = useState("1,0");
   const [modernisiert, setModernisiert] = useState(false);
 
   const borisUrl = useMemo(() => BORIS_LAENDER.find((b) => b.land === land)?.url ?? BORIS_D.url, [land]);
@@ -106,14 +108,14 @@ export default function BewertungAssistent({
     setZielObjekt(id);
     const o = objekte.find((x) => x.id === id);
     if (!o) return;
-    if (o.flaeche && o.flaeche > 0) setFlaeche(String(o.flaeche));
-    if (o.grundstuecksflaeche && o.grundstuecksflaeche > 0) setGrund(String(o.grundstuecksflaeche));
+    if (o.flaeche && o.flaeche > 0) setFlaeche(deText(o.flaeche));
+    if (o.grundstuecksflaeche && o.grundstuecksflaeche > 0) setGrund(deText(o.grundstuecksflaeche));
     if (o.baujahr && o.baujahr > 0) setBaujahr(String(o.baujahr));
-    if (o.jahresmiete && o.jahresmiete > 0) { setMiete(String(o.jahresmiete)); setZweck("kapitalanlage"); }
-    if (o.kaufpreis && o.kaufpreis > 0) setKaufpreis(String(o.kaufpreis));
+    if (o.jahresmiete && o.jahresmiete > 0) { setMiete(deText(o.jahresmiete)); setZweck("kapitalanlage"); }
+    if (o.kaufpreis && o.kaufpreis > 0) setKaufpreis(deText(o.kaufpreis));
     if (o.einheiten && o.einheiten > 0) setWhg(String(o.einheiten));
     setIstEtw(o.typ === "Eigentumswohnung");
-    toast(`Daten aus „${o.name}" übernommen — du kannst sie überschreiben.`);
+    toast(`Daten aus „${o.name}“ übernommen — du kannst sie überschreiben.`);
   }
   const [zielDatum, setZielDatum] = useState(heuteIso);
   const [sichern, startSichern] = useTransition();
@@ -154,7 +156,7 @@ export default function BewertungAssistent({
                 <option value="">– ohne Objekt rechnen –</option>
                 {objekte.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
-              <span style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 3 }}>
+              <span style={{ fontSize: 11, color: "var(--faint)", marginTop: 3 }}>
                 Übernimmt Wohnfläche, Grundstück, Baujahr, Miete und Kaufpreis aus dem gespeicherten Objekt — alles überschreibbar.
               </span>
             </div>
@@ -207,7 +209,7 @@ export default function BewertungAssistent({
                 <label>Jahresnettokaltmiete (€)</label>
                 <input value={miete} onChange={(e) => setMiete(e.target.value)} inputMode="decimal" placeholder="z. B. 8.520 (= 710 €/Monat)" />
                 {num(miete) > 0 && (
-                  <span style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 3 }}>
+                  <span style={{ fontSize: 11, color: "var(--faint)", marginTop: 3 }}>
                     entspricht {eur(num(miete) / 12)} pro Monat — ohne Nebenkosten
                   </span>
                 )}
@@ -335,7 +337,7 @@ export default function BewertungAssistent({
                           <option value="">– bitte wählen –</option>
                           {objekte.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
                         </select>
-                        <span style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 3 }}>Nur Bestandsimmobilien — Kaufobjekte rechnest du im Kauf-Assistenten.</span>
+                        <span style={{ fontSize: 11, color: "var(--faint)", marginTop: 3 }}>Nur Bestandsimmobilien — Kaufobjekte rechnest du im Kauf-Assistenten.</span>
                       </div>
                       <div className="form-group">
                         <label>Datum</label>

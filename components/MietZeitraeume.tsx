@@ -132,13 +132,13 @@ export default function MietZeitraeume({
       <div className="section-header">
         <h3>Miet-Zeiträume</h3>
         <span style={{ fontSize: 11, color: "var(--muted)" }}>
-          unterschiedliche Miete je Zeitraum — Basis für die Monatsbestätigung
+          Unterschiedliche Miete je Zeitraum – Grundlage für die Monatsbestätigung
         </span>
       </div>
       <div className="section-body">
         {rows.length === 0 ? (
           <p style={{ color: "var(--faint)", fontSize: 12, marginBottom: 12 }}>
-            Noch keine Zeiträume. Lege z. B. „01/2021 – 12/2023 · 800 €&quot; und „ab 01/2024 · 900 €&quot; an —
+            Noch keine Zeiträume. Lege z. B. „01/2021 – 12/2023 · 800 €“ und „ab 01/2024 · 900 €“ an —
             die Monatsbestätigung nutzt dann automatisch den passenden Betrag.
           </p>
         ) : (

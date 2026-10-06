@@ -71,9 +71,13 @@ export default async function KreditePage() {
       {/* Schulden-Uhr (04.10.2026): eine Zeile über den Krediten statt vier Kacheln. */}
       {list.length > 0 && (
         <div className="mb-20">
+          {/* Geschützte Leerzeichen innerhalb der Teile: Am Handy darf nur am „·“ umbrochen werden, nie „Ø Zins“ / „3,09 %“. */}
           <SchuldenUhr
             stand={schuldenStand(list)}
-            zusatz={`Raten ${euro(summeRate)} / Mo.${zinsSchnitt != null ? ` · Ø Zins ${zahl(zinsSchnitt, 2)} %` : ""}`}
+            zusatz={[`Raten ${euro(summeRate)} / Mo.`, zinsSchnitt != null ? `Ø Zins ${zahl(zinsSchnitt, 2)} %` : null]
+              .filter((t): t is string => t != null)
+              .map((t) => t.replace(/ /g, "\u00a0"))
+              .join(" · ")}
           />
         </div>
       )}
@@ -117,19 +121,21 @@ export default async function KreditePage() {
           </div>
           <div className="section-body">
             <div className="table-scroll"><table style={{ fontSize: 12, minWidth: 560 }}>
-              <thead><tr><th>Objekt</th><th style={{ textAlign: "right" }}>Restschuld</th><th style={{ textAlign: "right" }}>Wert (Schätzung)</th><th style={{ textAlign: "right" }}>Auslauf</th><th style={{ textAlign: "right" }}>Freie Grundschuld</th></tr></thead>
+              {/* „Auslauf“ steht direkt hinter dem Objekt: Am Handy ist die Tabelle breiter als der
+                Schirm, und die Kennzahl, um die es geht, soll ohne Wischen zu sehen sein. */}
+              <thead><tr><th>Objekt</th><th style={{ textAlign: "right" }}>Auslauf</th><th style={{ textAlign: "right" }}>Restschuld</th><th style={{ textAlign: "right" }}>Wert (Schätzung)</th><th style={{ textAlign: "right" }}>Freie Grundschuld</th></tr></thead>
               <tbody>
                 {auslauf.map((z) => (
                   <tr key={z.propId}>
                     <td><Link href={`/properties/${z.propId}`}>{z.name}</Link>{z.kredite > 1 && <span style={{ color: "var(--faint)" }}> · {z.kredite} Darlehen</span>}</td>
-                    <td style={{ textAlign: "right" }}>{euro(z.restschuld)}</td>
-                    <td style={{ textAlign: "right" }} title={z.wertQuelle ? QUELLE[z.wertQuelle] : undefined}>
-                      {z.wert != null ? euro(z.wert) : "–"}
-                      {z.wertQuelle && z.wertQuelle !== "gepflegt" && <div style={{ fontSize: 10.5, color: "var(--faint)" }}>{QUELLE[z.wertQuelle]}</div>}
-                    </td>
                     <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                      {z.auslaufProzent != null && <span style={{ marginRight: 6 }}>{z.auslaufProzent.toLocaleString("de-DE")} %</span>}
+                      {z.auslaufProzent != null && <span style={{ marginRight: 6 }}>{z.auslaufProzent.toLocaleString("de-DE")}&nbsp;%</span>}
                       <span className={`badge ${STUFE[z.stufe].cls}`}>{STUFE[z.stufe].label}</span>
+                    </td>
+                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>{euro(z.restschuld)}</td>
+                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }} title={z.wertQuelle ? QUELLE[z.wertQuelle] : undefined}>
+                      {z.wert != null ? euro(z.wert) : "–"}
+                      {z.wertQuelle && z.wertQuelle !== "gepflegt" && <div style={{ fontSize: "var(--text-xs)", color: "var(--faint)", whiteSpace: "normal" }}>{QUELLE[z.wertQuelle]}</div>}
                     </td>
                     <td style={{ textAlign: "right" }}>{z.freieGrundschuld == null ? <span style={{ color: "var(--faint)" }}>nicht eingetragen</span> : euro(z.freieGrundschuld)}</td>
                   </tr>

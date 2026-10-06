@@ -33,7 +33,7 @@ export default async function NewPropertyPage(props: { searchParams: Promise<{ a
     <div className="fade-up">
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href={aus ? "/abschluss" : "/properties"} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
+          <Link href={aus ? "/abschluss" : "/properties"} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
           <div><div className="topbar-title">Neues Objekt</div></div>
         </div>
         {/* Paket D: Tour und Start-Checkliste empfehlen den KI-Import — die Seite selbst hatte keinen Weg dorthin. */}
