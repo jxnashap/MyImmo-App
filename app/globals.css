@@ -507,6 +507,8 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 .versand-hinweis { font-size: 12px; color: var(--muted); margin: 8px 0 0; line-height: 1.5; }
 .versand-karte { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--bg3); border: 1px solid var(--line2); font-size: 13px; line-height: 1.5; }
 .versand-fehler { color: var(--red); }
+/* Vorbelegtes Formular (Paket E: Kaufprüfung → Objekt, Finanzierungswunsch → Darlehen). */
+.vorbelegt-hinweis { max-width: 640px; margin: 0 0 16px; padding: 10px 14px; border-radius: 12px; background: var(--bg3); border: 1px solid var(--line2); font-size: 13px; line-height: 1.5; }
 .aufgabe-mit-aktion { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
 .aufgabe-mit-aktion > .listen-zeile { border-bottom: 0; margin-right: 0; }
 .aufgabe-aktion { font-size: 12px; padding: 5px 10px; white-space: nowrap; flex-shrink: 0; color: var(--red); }

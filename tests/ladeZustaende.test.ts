@@ -27,7 +27,6 @@ const OHNE_LADEZUSTAND: Record<string, string> = {
   bewerbungen: "Nur ein redirect() auf /anliegen — es gibt nichts zu rendern.",
   hilfe: "Statischer Text aus components/HilfeInhalt.tsx, kein Datenzugriff.",
   "properties/import": "Rahmen um einen Client-Wizard, keine Server-Daten.",
-  "properties/new": "Rahmen um ein Client-Formular, keine Server-Daten.",
 };
 
 type Seite = { pfad: string; datei: string; quelle: string };

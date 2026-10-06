@@ -119,7 +119,28 @@ Ursprüngliche Funde:
 - Kontoauszug-Abgleich: Abbuchungen und fremde Eingänge ohne Weg zur Buchung.
 - Beleihungsauslauf doppelt: Formularfeld UND berechnet (`app/(app)/kredite/new`, `lib/beleihungsauslauf.ts`).
 
-## Paket E — BuyImmo → MyImmo (offen, M–L)
+## Paket E — BuyImmo → MyImmo ✅ erledigt 06.10.2026 (Import-Doppel offen)
+
+**Gebaut:** (E1) `/abschluss` listet die eigenen Kaufprüfungen: „Als Objekt anlegen“ →
+`/properties/new?aus=<id>` belegt Name, Typ (Wohnung → ETW, Haus → EFH/MFH nach Einheiten), Adresse,
+Kaufpreis, Fläche, Grundstück (nur Haus), Baujahr (nur plausibel), Miete und Status vor
+(`objektAusKaufpruefung()`, `lib/kauf/objektAusKaufpruefung.ts`); `createProperty` setzt danach
+`kalkulationen.uebernommen_prop_id` — nur an der eigenen, noch offenen Prüfung. Scheitert das, bleibt das
+Objekt angelegt, mit Hinweis. Eine übernommene Prüfung wird nicht ein zweites Mal vorbelegt, die Zeile
+führt dann zum Objekt. Kaufdatum bleibt leer (steht im Kaufvertrag, nicht in der Prüfung). Das
+Feld „Laufende Kosten / Hausgeld“ der Eigennutzung wird NICHT übernommen (zwei Dinge in einem Feld).
+(E2) Finanzierungswunsch → „Darlehen aus dem Finanzierungswunsch eintragen“ auf `/abschluss`:
+`/kredite/new` mit Betrag, Zins, Tilgung vorbelegt (`lib/kauf/darlehenUebergabe.ts`, Werte mit
+Bereichsprüfung). **Die Monatsrate wird bewusst NICHT vorbelegt** — sie war eine Beispielrechnung; seit A4
+ist sie Pflicht und kommt aus dem Vertrag. Sie steht nur als Hinweis am Feld, ebenso die gewünschte
+Zinsbindung. `tests/paketE.test.ts`, 15 Mutationen rot.
+**Offen:** Der Exposé-KI-Import steht weiter doppelt (`ImportWizard` fürs Objekt, `KalkImport` für die
+Kaufprüfung). Beide rufen dieselben Endpunkte; seit E1 ist der Weg „Prüfung → Objekt“ ohnehin
+durchgehend, ein Zusammenlegen wäre Umbau ohne neuen Nutzen. **Grenze:** Der Wunsch liegt nur im
+Browser, in dem er gewählt wurde — auf einem anderen Gerät erscheint der Knopf nicht.
+
+Ursprüngliche Funde:
+
 
 - Gekauftes Objekt wird neu getippt; `kalkulationen.uebernommen_prop_id` existiert, ungenutzt
   (`lib/fahrplan.ts:145` → leeres `/properties/new`).

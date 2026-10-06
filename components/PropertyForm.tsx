@@ -66,21 +66,29 @@ export default function PropertyForm({
   action,
   property,
   submitLabel,
+  vorbelegung,
+  ausKalkulation,
 }: {
   action: (formData: FormData) => void;
   property?: Property;
   submitLabel: string;
+  /** Neuanlage aus einer Kaufprüfung (Paket E): Vorgaben, die der Nutzer im Formular prüft. */
+  vorbelegung?: Partial<Property>;
+  /** ID der Kaufprüfung — createProperty verknüpft sie nach dem Anlegen mit dem Objekt. */
+  ausKalkulation?: string;
 }) {
-  const v = (k: keyof Property) => (property?.[k] as string | number | null) ?? "";
+  // Beim Bearbeiten gilt allein das gespeicherte Objekt; die Vorbelegung nur bei der Neuanlage.
+  const quelle: Partial<Property> | undefined = property ?? vorbelegung;
+  const v = (k: keyof Property) => (quelle?.[k] as string | number | null) ?? "";
 
-  const initialTyp = (property?.typ as string) || "Eigentumswohnung";
+  const initialTyp = (quelle?.typ as string) || "Eigentumswohnung";
   const [typ, setTyp] = useState(initialTyp);
   // Status ist kontrolliert, damit die Vorgabe bei Typwechsel (nur Neuanlage) mitzieht.
-  const [status, setStatus] = useState((property?.obj_status as string) || (CONFIG[initialTyp] ?? fallback).status);
+  const [status, setStatus] = useState((quelle?.obj_status as string) || (CONFIG[initialTyp] ?? fallback).status);
   // Zweistufig: Neuanlage zeigt nur die Basisfelder, Details auf Klick.
   // Beim Bearbeiten sind die Details offen. Eingeklappte Felder bleiben im DOM
   // (display:none) — sie senden weiterhin mit, nichts geht beim Speichern verloren.
-  const [detailsOffen, setDetailsOffen] = useState(!!property);
+  const [detailsOffen, setDetailsOffen] = useState(!!property || !!vorbelegung);
 
   const cfg = CONFIG[typ] ?? fallback;
 
@@ -91,6 +99,7 @@ export default function PropertyForm({
 
   return (
     <form action={action} className="form-box" style={{ maxWidth: 640 }}>
+      {!property && ausKalkulation && <input type="hidden" name="aus_kalkulation" value={ausKalkulation} />}
       <h3>{property ? "Immobilie bearbeiten" : "Immobilie erfassen"}</h3>
       <p>{property ? "Objektdaten aktualisieren." : "Neues Objekt zum Portfolio hinzufügen."}</p>
 

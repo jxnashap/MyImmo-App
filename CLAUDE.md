@@ -1912,6 +1912,12 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Archiv-Kopie; Tour (jetzt sieben Stationen) und Start-Checkliste mit Darlehen; Vollmacht-Ablauf in
   `/termine`. **Regel: Eine neue abgeleitete Frist bekommt ihr Ziel über `fristZiel()`, nie ein festes
   `/termine`.** `tests/paketD.test.ts`, 14 Mutationen rot.
+  ✅ **Paket E (BuyImmo → MyImmo):** `/abschluss` → „Als Objekt anlegen“ = `/properties/new?aus=<id>`,
+  vorbelegt über **`objektAusKaufpruefung()`** (`lib/kauf/objektAusKaufpruefung.ts`); `createProperty`
+  setzt `kalkulationen.uebernommen_prop_id` (nur eigene, noch offene Prüfung; Fehler → Objekt bleibt,
+  Hinweis). Finanzierungswunsch → `/kredite/new?betrag=&zins=&tilgung=` (`lib/kauf/darlehenUebergabe.ts`).
+  **Regel: Eine Vorbelegung aus einer Schätzung belegt nie die Kreditrate vor** — die kommt aus dem
+  Vertrag (A4); Schätzwerte nur als Hinweis am Feld. `tests/paketE.test.ts`, 15 Mutationen rot.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,
