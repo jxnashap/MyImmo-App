@@ -1088,10 +1088,22 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   RPC `freigabe_eingang_uebernehmen` (Archiv-Eintrag + Eingang leeren in EINER Transaktion),
   Verwerfen leert die Datei. DB-Schranken: PDF/JPEG/PNG/WebP, ≤ 8 MB, je Link 10/h, 30 gesamt,
   80 MB; keine Insert-Policy für Nutzer. In zurückgerollter Transaktion bewiesen.
-  ⚠️ **Offen (Betreiber): `20261006091000` im SQL-Editor ausführen** (Kontolöschung, enthält
+  ✅ **`20261006091000` ausgeführt (06.10.2026), danach überholt durch `20261006121000`** (Kontolöschung, enthält
   `delete`; schließt `20261005190000` Abo-Zahlungen mit ein). Stand 06.10.2026 live geprüft:
   `20261005190000` ist ausgeführt, `20261006091000` NOCH NICHT (`freigabe_eingang` fehlt in der Funktion). `tests/freigabeEingang.test.ts`, sieben Mutationen rot. **Regel: Was Fremde ohne
   Konto hochladen, geht nie direkt in die Unterlagen — immer über einen Eingang mit Entscheidung.**
+  📅 **Termin über Bank-/Makler-Link (06.10.2026, Vorgabe des Betreibers: „1–3 Termine zur Auswahl
+  oder Telefonnummer hinterlassen“, Migration `20261006120000`):** `components/TerminVorschlagen.tsx`
+  (Link-Seite), `components/FreigabeTermine.tsx` (Beleihungsordner bzw. `/makler`, oben, Anker
+  `#termin`), Dashboard-Neuigkeit „Bank schlägt 2 Termine vor“ / „bittet um Rückruf“. Bestätigen =
+  RPC `freigabe_termin_bestaetigen` (Status + Eintrag in `termine` in EINER Transaktion; bei
+  Vorschlägen nur ein vorgeschlagener Zeitpunkt), „Keiner passt“ → Bank schlägt neu vor; Rückruf →
+  vereinbarten Termin eintragen oder „ohne Termin erledigt“. Je Link EIN offener Vorschlag, 10 gesamt,
+  ≤ 180 Tage. `.ics` im Browser (`terminIcs`, `IcsKnopf`). **Regel: `datetime-local` ist Berliner
+  Ortszeit — immer über `berlinZuIso()` (lib/freigabeTermin.ts), nie `new Date(lokal)` auf dem
+  Server (UTC).** `tests/freigabeTermin.test.ts`, neun Mutationen rot, auch unter `TZ=America/New_York`.
+  ✅ **`20261006121000` vom Betreiber im SQL-Editor ausgeführt 06.10.2026**, live geprüft: Kontolöschung
+  kennt `freigabe_termine`, `freigabe_eingang`, `abo_zahlungen`, `makler_freigaben`.
   **Regel: Ein neuer öffentlicher Freigabe-Link bekommt dasselbe Verfahren — keine Inhalte über
   den Token allein.** **Bewusst OHNE Code (Betreiber 05.10.2026: „Bewerber egal“):** der
   Bewerbungs-Link — er zeigt nur den Steckbrief, den der Vermieter selbst öffentlich macht, und

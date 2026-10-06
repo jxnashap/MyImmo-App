@@ -9,6 +9,8 @@ import type { MaklerFreigabe } from "@/lib/actions/makler";
 import { ABRUF_SPALTEN, type Abruf } from "@/lib/freigabeAbrufe";
 import FreigabeEingang from "@/components/FreigabeEingang";
 import { EINGANG_SPALTEN, type EingangZeile } from "@/lib/freigabeEingang";
+import FreigabeTermine from "@/components/FreigabeTermine";
+import { TERMIN_SPALTEN, type FreigabeTerminZeile } from "@/lib/freigabeTermin";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +20,7 @@ export default async function MaklerPage() {
 
   // Existenz der Selbstauskunft prüfen (für den „Aus MyImmo erzeugen"-Button) —
   // ohne den verschlüsselten Blob zu entschlüsseln.
-  const [{ data: docs }, { data: sa }, { data: freigaben }, { data: abrufe }, { data: eingang }] = await Promise.all([
+  const [{ data: docs }, { data: sa }, { data: freigaben }, { data: abrufe }, { data: eingang }, { data: termine }] = await Promise.all([
     supabase.from("makler_dokumente").select("item_key,status,notiz,datum,datei_name,datei_type,datei_size"),
     user
       ? supabase.from("selbstauskunft").select("user_id").eq("user_id", user.id).maybeSingle()
@@ -37,6 +39,11 @@ export default async function MaklerPage() {
       ? supabase.from("freigabe_eingang").select(EINGANG_SPALTEN)
           .eq("user_id", user.id).eq("art", "makler").order("created_at", { ascending: false }).limit(100)
       : Promise.resolve({ data: [] }),
+    // Termine (06.10.2026): Vorschläge oder Rückrufbitte des Maklers.
+    user
+      ? supabase.from("freigabe_termine").select(TERMIN_SPALTEN)
+          .eq("user_id", user.id).eq("art", "makler").order("created_at", { ascending: false }).limit(30)
+      : Promise.resolve({ data: [] }),
   ]);
   const eingangZeilen = (eingang ?? []) as EingangZeile[];
   const eingangNeu = eingangZeilen.some((z) => z.status === "neu");
@@ -48,6 +55,7 @@ export default async function MaklerPage() {
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 0 40px" }}>
       {/* Kaufweg Schritt 4 (Umbau 06.10.2026): Angebot & Unterlagen. */}
       <WegKopf schritt="unterlagen" />
+      <FreigabeTermine zeilen={(termine ?? []) as FreigabeTerminZeile[]} wer="dem Makler" jetzt={new Date().toISOString()} />
       {eingangNeu && eingangBlock}
       <MaklerOrdner
         initialDocs={(docs ?? []) as MaklerDok[]}

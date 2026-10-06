@@ -10,6 +10,7 @@
 
 import { vorgangUrl } from "@/lib/anliegenListe";
 import { eingangOrt } from "@/lib/freigabeEingang";
+import { terminOrt } from "@/lib/freigabeTermin";
 
 export type NeuigkeitArt = "nachricht" | "termin" | "dokument" | "angebot" | "firma" | "freigabe" | "bewerbung" | "hausmeister" | "eingang";
 
@@ -42,6 +43,8 @@ export type NeuigkeitenQuelle = {
    * sind (06.10.2026). Wie die Freigaben ohne Altersgrenze — sie warten auf den Eigentümer.
    */
   eingang?: { art: "bank" | "makler"; propId: string | null; absender: string | null; datei_name: string; created_at: string }[];
+  /** Offene Terminvorschläge / Rückrufbitten über Bank-/Makler-Link (06.10.2026), ohne Altersgrenze. */
+  termine?: { art: "bank" | "makler"; propId: string | null; modus: "termine" | "rueckruf"; anzahl: number; name: string | null; created_at: string }[];
   /** Neue Bewerbungen (status „neu“). */
   bewerbungen: { name: string | null; created_at: string }[];
 };
@@ -116,6 +119,16 @@ export function bauePortalNeuigkeiten(q: NeuigkeitenQuelle, heute: string, grenz
       sub: e.datei_name,
       href: eingangOrt(e.art, e.propId),
       zeit: e.created_at,
+    });
+  }
+  for (const t of q.termine ?? []) {
+    const wer = t.art === "bank" ? "Bank" : "Makler";
+    out.push({
+      art: "termin",
+      text: t.modus === "rueckruf" ? `${wer} bittet um Rückruf` : `${wer} schlägt ${t.anzahl === 1 ? "einen Termin" : `${t.anzahl} Termine`} vor`,
+      sub: t.name ?? "Termin wählen",
+      href: terminOrt(t.art, t.propId),
+      zeit: t.created_at,
     });
   }
   for (const b of q.bewerbungen) {

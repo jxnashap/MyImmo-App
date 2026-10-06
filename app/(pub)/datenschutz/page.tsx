@@ -138,6 +138,10 @@ export default function DatenschutzPage() {
         übernehmen sie in Ihr Archiv oder verwerfen sie — in beiden Fällen wird die Datei im
         Eingang gelöscht. Der Absender sieht über den Link nur Dateiname, Zeitpunkt und ob die
         Datei übernommen wurde.
+        Ebenfalls über den Link können Bank bzw. Makler einen Termin vereinbaren: Sie schlagen bis
+        zu drei Zeitpunkte vor oder hinterlassen eine Telefonnummer für einen Rückruf, optional mit
+        Name, Ort und Notiz. Diese Angaben sehen nur Sie; bestätigen Sie einen Termin, wird er in
+        Ihren Terminkalender in MyImmo eingetragen. Alles wird mit Ihrem Konto gelöscht.
       </p>
 
       <H3>g) Vorlagen-Verteiler / E-Mail-Hinweise (freiwillig)</H3>
