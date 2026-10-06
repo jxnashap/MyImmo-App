@@ -10,6 +10,7 @@ import { FREIGABE_COOKIE } from "@/lib/freigabeCode";
 import ZugangsCodeFormular from "@/components/ZugangsCodeFormular";
 import { meldeBankAn } from "@/lib/actions/beleihungPublic";
 import BankRueckmeldungForm from "@/components/BankRueckmeldungForm";
+import DateiZurueckSchicken, { type GesendeteDatei } from "@/components/DateiZurueckSchicken";
 import { BELEIHUNG_CHECKLISTE } from "@/lib/beleihung";
 import { Lock, FileText } from "lucide-react";
 import OeffentlicheFusszeile from "@/components/OeffentlicheFusszeile";
@@ -59,11 +60,16 @@ export default async function BankFreigabeSeite(props: { params: Promise<{ token
   const supabase = await createClient();
   let info: Info | null = null;
   let status: string | null = null;
+  let gesendet: GesendeteDatei[] = [];
   if (/^[0-9a-f-]{36}$/i.test(params.token)) {
     const hash = (await cookies()).get(FREIGABE_COOKIE.bank)?.value;
     if (hash) {
-      const { data } = await supabase.rpc("beleihung_public_info", { p_token: params.token, p_code_hash: hash });
+      const [{ data }, { data: eingang }] = await Promise.all([
+        supabase.rpc("beleihung_public_info", { p_token: params.token, p_code_hash: hash }),
+        supabase.rpc("freigabe_public_eingang", { p_art: "bank", p_token: params.token, p_code_hash: hash }),
+      ]);
       info = (data as Info | null) ?? null;
+      gesendet = (eingang as GesendeteDatei[] | null) ?? [];
     }
     if (!info) {
       const { data } = await supabase.rpc("beleihung_public_status", { p_token: params.token });
@@ -176,6 +182,11 @@ export default async function BankFreigabeSeite(props: { params: Promise<{ token
             <a className="btn btn-ghost" style={{ fontSize: 11.5 }} href={`/beleihung/${params.token}/datei/${d.item_key}?download=1`}>Download</a>
           </div>
         ))}
+      </div>
+
+      <div className="section" style={{ marginBottom: 18 }}>
+        <div className="section-header"><h3>Dokument zurückschicken</h3></div>
+        <DateiZurueckSchicken art="bank" token={params.token} gesendet={gesendet} />
       </div>
 
       <div className="section">

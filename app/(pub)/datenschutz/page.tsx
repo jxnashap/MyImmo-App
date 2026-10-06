@@ -133,6 +133,11 @@ export default function DatenschutzPage() {
         Jeder Abruf einer Datei über einen solchen Link wird für Sie protokolliert — gespeichert
         werden nur Zeitpunkt und Dokument, keine IP-Adresse und keine Angaben zur abrufenden
         Person. Das Protokoll sehen nur Sie; es wird mit Ihrem Konto gelöscht.
+        Über denselben Link können Bank bzw. Makler Ihnen Dateien zurückschicken (PDF oder Bild,
+        optional mit Name und kurzer Notiz). Sie landen in einem Eingang Ihres Kontos; Sie
+        übernehmen sie in Ihr Archiv oder verwerfen sie — in beiden Fällen wird die Datei im
+        Eingang gelöscht. Der Absender sieht über den Link nur Dateiname, Zeitpunkt und ob die
+        Datei übernommen wurde.
       </p>
 
       <H3>g) Vorlagen-Verteiler / E-Mail-Hinweise (freiwillig)</H3>
