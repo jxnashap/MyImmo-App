@@ -1,6 +1,6 @@
 # Sanierungs-Guide (BuyImmo) — Plan
 
-> **Stand 06.10.2026 · Status: Stufe A (Preiskatalog), B (Guide, Übersicht, Ergebnis) und C (Speichern, Vorlagen — Abschnitt 12) gebaut. C wirkt erst, wenn Jonas `supabase/migrations/20261006050000_sanierungsprojekte.sql` im SQL-Editor ausgeführt hat.** Auftrag von Jonas (wörtlich im
+> **Stand 06.10.2026 · Status: Stufe A (Preiskatalog), B (Guide, Übersicht, Ergebnis) und C (Speichern, Vorlagen — Abschnitt 12) gebaut. Die Migration `20261006050000` ist seit 06.10.2026 ausgeführt und live geprüft — C ist aktiv.** Auftrag von Jonas (wörtlich im
 > Memory-Repo, `02 - MyImmo/myimmoideen.md`): ein geführter Ablauf, „Mischung Sanierungsrechner
 > und Kauf-Assistent“ — Name, Adresse, Seite für Seite immer detaillierter; als Vorlage
 > speicherbar; zusätzlich als Übersicht zum Ausfüllen; beim Wiedereinstieg nur die Seiten, auf
@@ -307,7 +307,7 @@ füllt es aus `kaufnebenkosten()` (`lib/kalk.ts`), der Steuer-Wächter weist hin
 |---|---|---|
 | A | ✅ **gebaut 05.10.2026:** Einheitspreise (`lib/sanierung/arbeiten.ts`), Zustand-Baukasten (`zustand.ts`), Kostenzeilen mit Herkunft und Portal-Anteil (`kostenzeilen.ts`), BBSR-Nutzungsdauern (`nutzungsdauer.ts`), Prüfzyklus-Zeilen. **Offen in A:** zweite Qualitätsstufe je Baumarkt-Material (neue Preise nötig) | — |
 | B | ✅ **gebaut 05.10.2026** — siehe „Stufe B: was gebaut ist“ unten | nichts in der DB (Browser-Entwurf wie heute) |
-| C | ✅ **gebaut 06.10.2026** — siehe „Stufe C: was gebaut ist“ unten; **SQL führt Jonas im SQL-Editor aus** | Migration `20261006050000` (Kaskade auf `auth.users`, Demo-Sperre) |
+| C | ✅ **gebaut 06.10.2026** — siehe „Stufe C: was gebaut ist“ unten; **SQL ausgeführt + live geprüft 06.10.2026** | Migration `20261006050000` (Kaskade auf `auth.users`, Demo-Sperre) |
 | D | Gesamtauswertung mit Kaufprüfung (`kalk_id`) | Stufe C |
 | E | Haus (Gebäudehülle, GModG-Pflichten als Posten mit Frist) | Entscheidung 3: später |
 | F | Strategie-Abgleich | Anwalt (§ 34i) |

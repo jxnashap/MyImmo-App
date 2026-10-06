@@ -94,7 +94,8 @@ describe("A6/B8/B10: Rechtstexte", () => {
     expect(agb).toContain("Stand: 1. Oktober 2026");
     // 03.10.2026: Herkunftsangabe bei Anmeldung und Registrierung (Ziffer 3 a, 3 g).
     expect(lies("app/(pub)/datenschutz/page.tsx")).toContain("Stand: 3. Oktober 2026");
-    expect(lies("app/(pub)/avv/page.tsx")).toContain("Stand: 9. September 2026");
+    // 06.10.2026: AVV-Text in lib/avvInhalt.ts (eine Quelle für Seite und PDF), Brevo ergänzt.
+    expect(lies("lib/avvInhalt.ts")).toContain('AVV_STAND = "6. Oktober 2026"');
   });
 });
 

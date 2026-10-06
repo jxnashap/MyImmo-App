@@ -64,7 +64,7 @@ Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterpri
   **`proxy.ts` statt `middleware.ts`** (Next 16, Laufzeit Node). `createClient()` ist async.
   Rückfallpunkt Next 15: Vercel-Deployment `dpl_LRgMzU1c5Kb47uKKjht63FFQCaLp`.
 - **Supabase** `kozhxrvyilkchjpcuwcm` (eu-central-1, **Pro**): Postgres + Auth (E-Mail, Google, TOTP-2FA), RLS auf allen 47 Tabellen.
-  Dateien als **Base64 in Tabellenspalten** (kein Storage-Bucket).
+  Dateien als **Base64 in Tabellenspalten**; nur Kosten-Belege im privaten Storage-Bucket `belege` (Korrektur 06.10.2026).
 - **Vercel** (Plan **Pro**, Repo `jxnashap/myimmo-app`, Branch `main` → Auto-Deploy).
   Live: **https://www.myimmoapp.de** (Apex leitet auf www; `my-immo-app.vercel.app` nur noch Fallback).
 - Env: `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`, `ANTHROPIC_API_KEY` (OCR/KI-Import),
@@ -166,8 +166,8 @@ Eigenkapital, freie Grundschuld, Kaufprüfungen, Unterlagen), **Fahrplan** `/fah
 Schritte + Kaufnebenkosten-Rechner), **Sanierungsrechner** `/sanierung` (Material von–bis inkl.
 Fliesen für Boden und Wand, Räume kopierbar, Arbeitszeit mit Eigenleistung, eigene Posten, geschätzter Zuschuss für
 energetische Posten (BAFA/KfW 458, Stand BEG-Reform 21.07.2026); seit 05./06.10.2026 als Guide
-(Schritt für Schritt · Übersicht · Ergebnis) mit Speichern ins Konto und Vorlagen — Speichern wirkt
-erst nach der Migration `20261006050000` im SQL-Editor, bis dahin bleibt der Entwurf im Browser;
+(Schritt für Schritt · Übersicht · Ergebnis) mit Speichern ins Konto und Vorlagen — Speichern ist
+seit 06.10.2026 aktiv (Migration `20261006050000` ausgeführt und geprüft);
 Betrag geht per Knopf in die Gesamtinvestition des Kauf-Assistenten) plus Kauf-/Verkauf-Assistent,
 Makler-Ordner, Marktwert-Schätzer, AfA-Assistent. **Nicht gebaut:** Aufmaß per Grundriss-KI,
 Tarif in `lib/plan.ts`. Details: `docs/zukunft/BUYIMMO.md`.

@@ -65,6 +65,51 @@ describe("Konto löschen", () => {
     expect(ziel).toBe("/login?geloescht=1");
   });
 
+  // Beleg-Dateien (Bucket „belege“, Pfad <uid>/…) — delete_own_account() erreicht den
+  // Storage nicht; bis 06.10.2026 blieben sie nach der Kontolöschung liegen.
+  it("löscht die eigenen Beleg-Dateien VOR dem Konto, und nur die eigenen", async () => {
+    const { db, mod } = await lade("@/lib/actions/account", {
+      antworten: { abos: null },
+      dateien: { belege: ["nutzer-1/a.pdf", "nutzer-1/b.jpg", "anderer/c.pdf"] },
+    });
+    await fangeRedirect(() => mod.deleteAccount());
+    expect(db.dateien.belege).toEqual(["anderer/c.pdf"]);
+    expect(geloescht(db)).toBe(true);
+  });
+
+  it("räumt auch mehr Dateien ab, als ein Abruf liefert", async () => {
+    const viele = Array.from({ length: 250 }, (_, i) => `nutzer-1/d${i}.pdf`);
+    const { db, mod } = await lade("@/lib/actions/account", { antworten: { abos: null }, dateien: { belege: viele } });
+    await fangeRedirect(() => mod.deleteAccount());
+    expect(db.dateien.belege).toEqual([]);
+    expect(geloescht(db)).toBe(true);
+  });
+
+  it("scheitert das Auflisten der Dateien, wird das Konto NICHT gelöscht", async () => {
+    const { db, mod, signOut } = await lade("@/lib/actions/account", {
+      antworten: { abos: null },
+      dateien: { belege: ["nutzer-1/a.pdf"] },
+      fehlerBei: { "storage:belege:list": { message: "kaputt" } },
+    });
+    const r = await mod.deleteAccount();
+    expect(r).toMatchObject({ ok: false });
+    expect(geloescht(db)).toBe(false);
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it("scheitert das Entfernen der Dateien, wird das Konto NICHT gelöscht", async () => {
+    const { db, mod } = await lade("@/lib/actions/account", {
+      antworten: { abos: null },
+      dateien: { belege: ["nutzer-1/a.pdf"] },
+      fehlerBei: { "storage:belege:remove": { message: "kaputt" } },
+    });
+    const r = await mod.deleteAccount();
+    expect(r).toMatchObject({ ok: false });
+    expect(geloescht(db)).toBe(false);
+    // Sofort aufhören, nicht bis zur Durchgangsgrenze weiterprobieren.
+    expect(db.storageAufrufe.filter((a) => a === "belege:remove")).toHaveLength(1);
+  });
+
   it("die Abo-Abfrage ist auf das eigene Konto eingeschränkt", async () => {
     const { db, mod } = await lade("@/lib/actions/account", { antworten: { abos: null } });
     await fangeRedirect(() => mod.deleteAccount());

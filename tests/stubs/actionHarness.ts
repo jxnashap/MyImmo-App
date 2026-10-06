@@ -64,6 +64,14 @@ export type FakeDb = {
    */
   amrVorSekunden: number;
   aal: { currentLevel: string; nextLevel: string };
+  /**
+   * Dateien im Storage je Bucket, als volle Pfade (`<uid>/<name>`). `list()` liefert
+   * sie, `remove()` entfernt sie wieder. Fehler gezielt über `fehlerBei`:
+   * `"storage:<bucket>:list"` bzw. `"storage:<bucket>:remove"`.
+   */
+  dateien: Record<string, string[]>;
+  /** Mitschrift der Storage-Aufrufe, z. B. `"belege:list"`, `"belege:remove"`. */
+  storageAufrufe: string[];
 };
 
 /** Ein unsignierter JWT mit `amr`-Zeitstempel — die Prüfung liest nur die Payload. */
@@ -91,6 +99,8 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
     rpc: {},
     amrVorSekunden: 0,
     aal: { currentLevel: "aal1", nextLevel: "aal1" },
+    dateien: {},
+    storageAufrufe: [],
     ...init,
   };
 
@@ -183,14 +193,28 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
       },
     },
     storage: {
-      from: (_bucket: string) => ({
+      from: (bucket: string) => ({
         upload: async (pfad: string) => {
           storage.hochgeladen.push(pfad);
           return { error: db.fehler };
         },
+        list: async (ordner: string, opt: { limit?: number; offset?: number } = {}) => {
+          db.storageAufrufe.push(`${bucket}:list`);
+          const fehler = db.fehlerBei[`storage:${bucket}:list`] ?? null;
+          if (fehler) return { data: null, error: fehler };
+          const namen = (db.dateien[bucket] ?? [])
+            .filter((p) => p.startsWith(`${ordner}/`))
+            .map((p) => ({ name: p.slice(ordner.length + 1) }));
+          const ab = opt.offset ?? 0;
+          return { data: namen.slice(ab, ab + (opt.limit ?? 100)), error: null };
+        },
         remove: async (pfade: string[]) => {
+          db.storageAufrufe.push(`${bucket}:remove`);
+          const fehler = db.fehlerBei[`storage:${bucket}:remove`] ?? null;
+          if (fehler) return { data: null, error: fehler };
           storage.entfernt.push(...pfade);
-          return { error: null };
+          db.dateien[bucket] = (db.dateien[bucket] ?? []).filter((p) => !pfade.includes(p));
+          return { data: [], error: null };
         },
       }),
     },

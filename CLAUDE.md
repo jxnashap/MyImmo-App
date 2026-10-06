@@ -116,9 +116,11 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    Nebenbefund: 8 s nach dem erfolgreichen `verify` ein zweites mit 403 `otp_expired`
    (Doppel-Tipp oder Mail-Vorschau) — folgenlos, der erste war durch.
 
-**Für BuyImmo (06.10.2026):** `supabase/migrations/20261006050000_sanierungsprojekte.sql` im
-SQL-Editor ausführen (Speichern/Vorlagen im Sanierungs-Guide + Verknüpfung „Kaufprüfung →
-übernommenes Objekt“). Idempotent. Danach prüfe ich live (lesend + zurückgerollter Test).
+~~**Für BuyImmo (06.10.2026):** `20261006050000_sanierungsprojekte.sql` im SQL-Editor~~ ✅ **ausgeführt
+und live geprüft 06.10.2026**: alle Objekte wie in der Datei, REST kennt die Tabelle (200 statt
+PGRST205), zurückgerollter Test mit zwei echten Konten 11/11 (fremdes Objekt/fremde Kaufprüfung 42501,
+leerer Name/falsche Art 23514, Übernahme auf fremdes Objekt 42501, doppelte Übernahme 23505,
+Grenze 200 → 54000, fremdes Konto sieht 0). Danach 0 Zeilen.
 
 **Danach, in dieser Reihenfolge:**
 4. ~~**Die zwei restlichen Passwort-Schalter**~~ ✅ **laut Betreiber seit Längerem an**
@@ -392,8 +394,8 @@ Entwurf; `offeneSeiten()` (`lib/sanierung/guide.ts`) ist die EINE Lückenfunktio
 vorsichtig ANGENOMMEN und steht in `annahmen` — nie still 0. (3) Ohne belegten Preis keine Zahl:
 offener Posten oder „Preis offen“. (4) Eine Arbeit, die eine andere enthält, gehört in `ENTHALTEN_IN`.
 **Stufe C gebaut (06.10.2026): Speichern + Vorlagen** — Tabelle `sanierungsprojekte`, Migration
-`20261006050000` **läuft im SQL-Editor (Betreiber, noch offen)**; bis dahin zeigt die Projektleiste
-„kommt in Kürze“. Actions `lib/actions/sanierungsprojekte.ts`, Leiste `components/sanierung/ProjektLeiste.tsx`,
+`20261006050000` ✅ **im SQL-Editor ausgeführt und live geprüft 06.10.2026** (die Projektleiste zeigt
+„kommt in Kürze“ nur, solange die Tabelle fehlt — schaltet sich von selbst frei). Actions `lib/actions/sanierungsprojekte.ts`, Leiste `components/sanierung/ProjektLeiste.tsx`,
 Logik `lib/sanierung/projekte.ts`. **Regeln:** (1) Gespeichert wird nur, was `entwurfAus()`/`vorlageAus()`
 durchlässt — ein neues Entwurfsfeld gehört in den Parser, sonst geht es beim Speichern verloren.
 (2) Eine Vorlage trägt Entscheidungen, nie die Wohnung; Technik nur mit angekreuzter Arbeit.
@@ -858,6 +860,14 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   Verantwortlicher, nur Datenschutzerklärungs-Passus). **Größte Lücke: MyImmo muss den eigenen
   Nutzern einen AVV anbieten** (Vermieter = Verantwortliche für Mieterdaten) — /avv-Seite, AGB-
   Einbeziehung, anwaltlich prüfen. Plus Verarbeitungsverzeichnis Art. 30 Abs. 1+2 und TOM-Doku.
+  📄 **Nutzer-AVV überarbeitet 06.10.2026:** Text in **`lib/avvInhalt.ts` = EINE Quelle** für `/avv` UND
+  das PDF (`node --experimental-strip-types scripts/gen-avv-pdf.mjs` → `docs/compliance/avv-nutzer-vertrag-<Stand>.pdf`).
+  Vorher zwei Texte, die auseinanderliefen (PDF mit Enable Banking, Seite ohne Brevo). Brevo ergänzt, Google/Paddle
+  als eigenständig Verantwortliche aus der Genehmigungsliste, Nominatim/Jina als „externe Dienste ohne
+  Mieterdaten“ offen benannt, Funktionen seit 09.09. und TOM nachgezogen. **Regel: Neuer Dienst, der Daten
+  aus der App bekommt, oder neue Funktion mit Daten Dritter → `lib/avvInhalt.ts` + PDF neu erzeugen;
+  bei echten Nutzern neue Subauftragsverarbeiter VORAB ankündigen (Ziffer 7, 14 Tage).**
+  `tests/avvInhalt.test.ts`. Anwaltsfragen dazu: `docs/compliance/AVV-STATUS.md`.
 - **Businessplan (aktuell, als PDF): `docs/business/MyImmo-Businessplan-2026-09.pdf`.** Die Juli-Fassung daneben ist überholt (führte die entfernte Konto-Anbindung als gebaut) — nicht herausgeben. NICHT von
   Hand neu bauen — der komplette Plan wird per Skript erzeugt: **`node scripts/gen-businessplan-pdf.mjs`**
   (Sekunden). Inhalt/Zahlen/„Stand"-Datum nur in der `SECTIONS`-Struktur des Skripts anpassen, dann
@@ -1259,7 +1269,12 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 - **Migrations-Regel (19.07.2026):** Jede Schemaänderung via `apply_migration` UND als Datei
   `supabase/migrations/<version>_<name>.sql` im selben PR committen (Regeln + Historie-Index:
   `supabase/migrations/README.md`). Kein DDL über `execute_sql`.
-- Dateien (Belege, Archiv-Dokumente) werden als Base64 in Tabellenspalten gespeichert — **kein Storage-Bucket** nötig.
+- Dateien (Archiv-Dokumente, Fotos, Scans) liegen als Base64 in Tabellenspalten. ⚠️ **KORREKTUR 06.10.2026:
+  Es GIBT einen Storage-Bucket** — `belege` (privat, 15 MB) für Kosten-Belege (`lib/actions/buchungen.ts`,
+  Abruf über signierte Links mit 60 s). `delete_own_account()` erreicht ihn NICHT; bis 06.10.2026 blieben die
+  Belege nach einer Kontolöschung liegen. Jetzt leert `deleteAccount` den Ordner `<uid>/` VOR der Funktion
+  (scheitert das, bleibt das Konto bestehen). **Regel: Ein neuer Bucket braucht eine Löschung in
+  `lib/actions/account.ts`** — `tests/kontoloeschung.test.ts` sucht alle `storage.from("…")` und wird sonst rot.
 - 🔑 **`revoke ... from anon, authenticated` allein wirkt im `public`-Schema NICHT** (08.09.2026
   am eigenen Leib erlebt). Supabase vergibt `EXECUTE` dort an die Rolle **PUBLIC**; anon und
   authenticated erben es von da. Nach jedem Revoke `proacl` nachsehen: Steht dort weiter ein
