@@ -5,7 +5,7 @@ import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
 import AufklappSection from "@/components/AufklappSection";
 import { createClient } from "@/lib/supabase/server";
-import { euro } from "@/lib/format";
+import { eur2 } from "@/lib/format";
 import { zahlungsBriefUrl } from "@/lib/mahnung";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { offeneMieten, monatLabel, type MietkontoMieter, type MietkontoZeitraum } from "@/lib/mietkonto";
@@ -52,9 +52,9 @@ export default async function RueckstandWaechter() {
   const alarm = aktuell.length > 0;
 
   const untertitel = alarm
-    ? `${aktuell.length} Monat${aktuell.length === 1 ? "" : "e"} überfällig · ${euro(summeAktuell)}` +
+    ? `${aktuell.length} Monat${aktuell.length === 1 ? "" : "e"} überfällig · ${eur2(summeAktuell)}` +
       (alt.length > 0 ? ` · dazu ${alt.length} ältere ohne Bestätigung` : "")
-    : `${alt.length} ältere${alt.length === 1 ? "r" : ""} Monat${alt.length === 1 ? "" : "e"} nie bestätigt · ${euro(summeAlt)}`;
+    : `${alt.length} ältere${alt.length === 1 ? "r" : ""} Monat${alt.length === 1 ? "" : "e"} nie bestätigt · ${eur2(summeAlt)}`;
 
   return (
     <AufklappSection
@@ -88,8 +88,8 @@ export default async function RueckstandWaechter() {
             >
               <Link href={`/tenants/${o.mieterId}`} style={{ fontWeight: 600, color: "var(--text)" }}>{o.mieterName}</Link>
               <span style={{ color: "var(--muted)" }}>{monatLabel(o.jahrMonat)}</span>
-              <span style={{ color: "var(--red)", fontWeight: 600 }}>{euro(o.rest)}</span>
-              {o.gezahlt > 0 && <span style={{ color: "var(--muted)", fontSize: 12 }}>Teilzahlung: {euro(o.gezahlt)} von {euro(o.gesamt)}</span>}
+              <span style={{ color: "var(--red)", fontWeight: 600 }}>{eur2(o.rest)}</span>
+              {o.gezahlt > 0 && <span style={{ color: "var(--muted)", fontSize: 12 }}>Teilzahlung: {eur2(o.gezahlt)} von {eur2(o.gesamt)}</span>}
               <span className={`badge ${o.tageOffen > 14 ? "badge-red" : "badge-amber"}`}>
                 {o.tageOffen === 0 ? "heute fällig" : `${o.tageOffen} Tag${o.tageOffen === 1 ? "" : "e"} überfällig`}
               </span>
@@ -107,7 +107,7 @@ export default async function RueckstandWaechter() {
           <div style={{ marginTop: alarm ? 14 : 0, paddingTop: alarm ? 12 : 0, borderTop: alarm ? "1px solid var(--line)" : undefined }}>
             {alarm && (
               <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px", lineHeight: 1.55 }}>
-                <strong>Ältere Monate ohne Bestätigung</strong> ({euro(summeAlt)}) — meist aus einem
+                <strong>Ältere Monate ohne Bestätigung</strong> ({eur2(summeAlt)}) — meist aus einem
                 rückwirkend angelegten Mietverhältnis. Ob sie bezahlt wurden, weiß MyImmo nicht;
                 bestätige sie im Mietkonto, dann verschwinden sie hier.
               </p>
@@ -119,8 +119,8 @@ export default async function RueckstandWaechter() {
               >
                 <Link href={`/tenants/${o.mieterId}`} style={{ fontWeight: 600, color: "var(--text)" }}>{o.mieterName}</Link>
                 <span style={{ color: "var(--muted)" }}>{monatLabel(o.jahrMonat)}</span>
-                <span style={{ fontWeight: 600 }}>{euro(o.rest)}</span>
-                <span className="badge">{o.gezahlt > 0 ? `teilweise (${euro(o.gezahlt)} von ${euro(o.gesamt)})` : "nicht bestätigt"}</span>
+                <span style={{ fontWeight: 600 }}>{eur2(o.rest)}</span>
+                <span className="badge">{o.gezahlt > 0 ? `teilweise (${eur2(o.gezahlt)} von ${eur2(o.gesamt)})` : "nicht bestätigt"}</span>
                 <span style={{ marginLeft: "auto" }}>
                   <Link href={`/mietkonto?monat=${o.jahrMonat}`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>
                     Im Mietkonto bestätigen

@@ -54,7 +54,7 @@ export default async function AngebotPublicSeite(props: { params: Promise<{ toke
         <Kopf />
         <div className="section">
           <div className="section-body" style={{ textAlign: "center", padding: "40px 20px" }}>
-            <Lock size={36} color="var(--faint)" />
+            <Lock size={36} color="var(--faint)" style={{ margin: "0 auto" }} />
             <p style={{ marginTop: 12, fontSize: 14, fontWeight: 600 }}>Link nicht mehr gültig</p>
             <p style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
               Diese Anfrage wurde vergeben, zurückgezogen — oder der Link ist abgelaufen

@@ -12,6 +12,9 @@ import { laufzeitText } from "@/lib/kreditLaufzeit";
 
 const SONDER = ["", "5% p.a.", "10% p.a.", "Nein", "Ja, unbegrenzt"];
 
+/** „2,5 %" — deutsch, bis zu zwei Nachkommastellen, geschütztes Leerzeichen vor %. */
+const pz = (n: number) => `${n.toLocaleString("de-DE", { maximumFractionDigits: 2 })}\u00a0%`;
+
 /** Kennzahlen eines Darlehens, aus den gespeicherten Feldern abgeleitet. */
 function kennzahlen(k: Kredit) {
   const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? 0) / k.betrag) * 100))) : 100;
@@ -41,12 +44,12 @@ function Details({ k }: { k: Kredit }) {
         {feld("Laufzeit", laufzeitText(k.laufzeit, k.auszahlung_datum))}
         {feld("Zinsen / Mo.", euro(moZins), "var(--muted)")}
         {feld("Tilgung / Mo.", euro(moTilg), "var(--green)")}
-        {feld("Tilgungssatz", k.tilgungssatz ? `${k.tilgungssatz}% p.a.` : "–")}
+        {feld("Tilgungssatz", k.tilgungssatz ? `${pz(k.tilgungssatz)} p.a.` : "–")}
         {feld("Zinsbindung", k.zinsbindung ? datum(k.zinsbindung) : "–", warn?.color)}
         {feld("Grundschuld", k.grundschuld ? euro(k.grundschuld) : "–")}
-        {feld("Beleihungsauslauf", k.beleihung ? `${k.beleihung}%` : "–")}
+        {feld("Beleihungsauslauf", k.beleihung ? pz(k.beleihung) : "–")}
         {feld("Sondertilgung", k.sonder || "–")}
-        {feld("Getilgt", `${getilgt}%`)}
+        {feld("Getilgt", pz(getilgt))}
       </div>
       {/* Ohne Auszahlungsdatum fehlt die Frist fürs Sonderkündigungsrecht
           (lib/fristen.ts, 10 Jahre nach Vollauszahlung) — und in den
@@ -119,7 +122,7 @@ export default function KrediteListe({
       {offen && (
         <RowDialog title={offen.bezeichnung || "Darlehen"} onClose={() => setOpenId(null)}>
           <Details k={offen} />
-          <form action={updateKredit.bind(null, offen.id)} className="form-box" style={{ padding: 0, border: "none", background: "none", maxWidth: "none" }}>
+          <form action={updateKredit.bind(null, offen.id)} className="form-box" style={{ padding: 0, border: "none", background: "none", boxShadow: "none", maxWidth: "none" }}>
             <input type="hidden" name="back" value="/kredite" />
 
             <div className="form-section-label">Grunddaten</div>

@@ -46,7 +46,7 @@ export default function EinnahmenListe({
             <td style={{ color: "var(--muted)" }}>{e.prop_id ? nameOf.get(e.prop_id) ?? "–" : "–"}</td>
             <td>{e.kategorie ? <span className="badge badge-green">{e.kategorie}</span> : "–"}</td>
             <td style={{ color: "var(--muted)" }}>{e.beschreibung ?? ""}</td>
-            <td style={{ fontWeight: 600, color: "var(--green)" }}>{euro(e.betrag)}</td>
+            <td style={{ fontWeight: 600, color: "var(--green)", whiteSpace: "nowrap" }}>{euro(e.betrag)}</td>
           </tr>
         ))}
         {rows.length === 0 && (
@@ -56,7 +56,7 @@ export default function EinnahmenListe({
 
       {offen && (
         <RowDialog title="Einnahme bearbeiten" onClose={() => setOpenId(null)}>
-              <form action={updateEinnahme.bind(null, offen.id)} className="form-box" style={{ padding: 0, border: "none", background: "none", maxWidth: "none" }}>
+              <form action={updateEinnahme.bind(null, offen.id)} className="form-box" style={{ padding: 0, border: "none", background: "none", boxShadow: "none", maxWidth: "none" }}>
                 <input type="hidden" name="back" value="/einnahmen" />
                 <div className="form-row">
                   <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" defaultValue={offen.buchungsdatum ?? ""} required /></div>

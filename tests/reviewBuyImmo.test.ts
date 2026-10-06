@@ -62,8 +62,8 @@ describe("Finanzierungsvorschläge", () => {
   it("nennen die echten Nebenkosten und warnen nicht, wenn das Eigenkapital sie deckt", async () => {
     const { default: F } = await import("@/components/kauf/FinanzierungsVorschlaege");
     const html = renderToStaticMarkup(createElement(F, { gesamtInvest: 316_425, kaufpreis: 250_000, sanierung: 40_000, ekVorhanden: 50_000 }));
-    expect(html).toMatch(/davon (<!-- -->)?€ 26\.425(<!-- -->)? Nebenkosten/);
-    expect(html).toMatch(/€ 40\.000(<!-- -->)? Sanierung/);
+    expect(html).toMatch(/davon (<!-- -->)?€\u00A026\.425(<!-- -->)? Nebenkosten/);
+    expect(html).toMatch(/€\u00A040\.000(<!-- -->)? Sanierung/);
     expect(html).not.toContain("deckt nicht einmal die Kaufnebenkosten");
     // Gegenprobe: ohne Sanierungsangabe hält er 66.425 € für Nebenkosten und warnt.
     const alt = renderToStaticMarkup(createElement(F, { gesamtInvest: 316_425, kaufpreis: 250_000, ekVorhanden: 50_000 }));

@@ -212,11 +212,14 @@ export default function WischReiter({ reiter, aktuell }: { reiter: Reiter[]; akt
           const rel = i - angezeigt;
           // Nur der Nachbar in Zugrichtung wird gezeigt; alle anderen bleiben
           // unsichtbar und für Tastatur/Vorleser gesperrt (`inert`).
+          // `display: none` statt `visibility: hidden` (06.10.2026): Unsichtbare,
+          // aber absolut positionierte Reiter bestimmten die Scrollhöhe mit —
+          // unter kurzen Reitern lagen rund 1.000 px leere Fläche.
           const seite = phase === "gleitet" ? richtungVon(gleitVersatz) : zugSeite;
           const nachbar = Math.abs(rel) === 1 && phase !== "ruhe" && rel === seite;
           const stil: CSSProperties | undefined = rel === 0
             ? undefined
-            : { position: "absolute", top: 0, left: `${rel * 100}%`, width: "100%", visibility: nachbar ? "visible" : "hidden" };
+            : { position: "absolute", top: 0, left: `${rel * 100}%`, width: "100%", display: nachbar ? undefined : "none" };
           return (
             <div key={r.href} style={stil} inert={rel !== 0} aria-hidden={rel !== 0}>
               {r.inhalt ?? (

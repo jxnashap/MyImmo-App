@@ -21,7 +21,7 @@ export default async function NeueBuchungPage(
     <div className="fade-up">
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href="/cashflow" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
+          <Link href="/cashflow" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
           <div><div className="topbar-title">Neue Buchung</div></div>
         </div>
       </div>

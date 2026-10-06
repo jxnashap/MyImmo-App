@@ -48,8 +48,67 @@ export const TITEL: Record<DocArt, string> = {
 // stattdessen Unterschriftszeile des Vermieters/Wohnungsgebers.
 export const ART_BESCHEINIGUNG: DocArt[] = ["wohnungsgeber", "mietbescheinigung", "mietquittung"];
 
-// Dokumentarten, bei denen ein Betrag + Zahlungskonto sinnvoll ist.
+// Dokumentarten mit Betragsfeld.
 export const ART_ZEIGT_BETRAG: DocArt[] = ["mieterhoehung", "zahlungserinnerung", "mahnung", "mietquittung"];
+
+// Dokumentarten, die zur ZAHLUNG auffordern — nur dort gehört der Kasten „Bitte überweisen Sie
+// auf folgendes Konto“ hin. Eine Quittung bestätigt eine erhaltene Zahlung, ein
+// Mieterhöhungsverlangen bittet um Zustimmung; beide fordern nichts an (Design-Scan 06.10.2026).
+export const ART_ZEIGT_KONTO: DocArt[] = ["zahlungserinnerung", "mahnung"];
+
+// Beschriftung des Betragsfelds je Art.
+export const BETRAG_LABEL: Partial<Record<DocArt, string>> = {
+  mieterhoehung: "Neue Kaltmiete (€)",
+  zahlungserinnerung: "Offener Betrag (€)",
+  mahnung: "Offener Betrag (€)",
+  mietquittung: "Erhaltener Betrag (€)",
+};
+
+// Bedeutung von {{datum}} je Art — sonst schlicht „Datum“ (eigene Vorlagen).
+export const DATUM_LABEL: Partial<Record<DocArt, string>> = {
+  mieterhoehung: "Wirksam ab",
+  zahlungserinnerung: "Zahlbar bis",
+  mahnung: "Zahlbar bis",
+  kuendigung: "Kündigung zum",
+  reparatur: "Termin der Arbeiten",
+  mietquittung: "Zahlung erhalten am",
+};
+
+// Arten, bei denen ohne eingegebenen Betrag die Warmmiete laut Vertrag eingesetzt wird.
+// Geschuldet ist die Warmmiete (kalt + NK + Stellplatz), nicht die Kaltmiete.
+export const ART_BETRAG_RUECKFALL: DocArt[] = ["zahlungserinnerung", "mahnung", "mietquittung"];
+
+const MONATE_LANG = [
+  "Januar", "Februar", "März", "April", "Mai", "Juni",
+  "Juli", "August", "September", "Oktober", "November", "Dezember",
+];
+
+/** „2026-10-06“ → „6. Oktober 2026“ (DIN 5008, ohne führende Null) aus den Zahlen des ISO-Textes
+ *  — kein Date-Objekt, damit Vorschau (Browser) und PDF (Server) denselben Tag zeigen. */
+export function briefDatum(iso: string | null | undefined): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? "");
+  if (!m) return "";
+  return `${Number(m[3])}. ${MONATE_LANG[Number(m[2]) - 1] ?? m[2]} ${m[1]}`;
+}
+
+/** Ersten Buchstaben großschreiben — Bescheinigungen haben keine Anrede, ihr Text beginnt einen Satz
+ *  (auch bei schon gespeicherten eigenen Vorlagen, die noch mit „hiermit …“ anfangen). */
+export function satzanfangGross(absaetze: string[]): string[] {
+  if (!absaetze.length) return absaetze;
+  const [erster, ...rest] = absaetze;
+  return [erster.charAt(0).toLocaleUpperCase("de-DE") + erster.slice(1), ...rest];
+}
+
+/** Platzhalter, die die Vorlage benutzt, für die aber kein Wert vorliegt. {{grund}} ist optional. */
+export function fehlendePlatzhalter(text: string, werte: Record<string, string>): string[] {
+  const fehlend = new Set<string>();
+  for (const [, k] of (text ?? "").matchAll(/\{\{(\w+)\}\}/g)) {
+    if (k === "grund") continue;
+    const w = (werte[k] ?? "").trim();
+    if (!w || w === "–") fehlend.add(k);
+  }
+  return [...fehlend];
+}
 
 // Verfügbare Platzhalter (für die Hilfe-Anzeige im Editor).
 export const PLATZHALTER: { key: string; label: string }[] = [
@@ -129,7 +188,7 @@ Wohnungsgeber: {{vermieter}}
 
 Diese Bestätigung dient ausschließlich der Vorlage bei der Meldebehörde (Anmeldung nach § 17 BMG). Hinweis: Das Ausstellen einer solchen Bestätigung ohne tatsächlichen Einzug ist verboten (§ 19 Abs. 6 BMG).`,
 
-  mietbescheinigung: `hiermit wird bescheinigt, dass {{mieter}} seit dem {{mietbeginn}} Mieter/in der folgenden Wohnung ist:
+  mietbescheinigung: `Hiermit wird bescheinigt, dass {{mieter}} seit dem {{mietbeginn}} Mieter/in der folgenden Wohnung ist:
 
 {{objekt}}
 
@@ -139,7 +198,7 @@ Die monatliche Kaltmiete beträgt {{miete}}, die Nebenkosten-Vorauszahlung {{nkv
 
 Diese Bescheinigung wird auf Wunsch des Mieters zur Vorlage bei Behörden, Banken oder Vermietern ausgestellt.`,
 
-  mietquittung: `hiermit wird bestätigt, dass {{mieter}} für das Mietobjekt {{objekt}} die Mietzahlung in Höhe von {{betrag}} geleistet hat (Zahlung erhalten am {{datum}}).
+  mietquittung: `Hiermit wird bestätigt, dass {{mieter}} für das Mietobjekt {{objekt}} die Mietzahlung in Höhe von {{betrag}} geleistet hat (Zahlung erhalten am {{datum}}).
 
 {{grund}}
 

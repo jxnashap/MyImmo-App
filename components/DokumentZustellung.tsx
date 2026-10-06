@@ -73,22 +73,24 @@ export default function DokumentZustellung({
         <div key={z.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
           <span className="badge badge-green">Zugestellt</span>
           <span>an <strong style={{ color: "var(--text)" }}>{z.empfaenger_email ?? "Portal-Konto"}</strong> am {datum(z.zugestellt_am)}</span>
-          <span>· {z.gelesen_am ? `abgerufen ${datum(z.gelesen_am)}` : "noch nicht abgerufen"}</span>
-          {z.bestaetigung_noetig && <span>· {z.bestaetigt_am ? `bestätigt ${datum(z.bestaetigt_am)}` : "Bestätigung offen"}</span>}
+          {/* Kein führendes „·“: Bricht die Zeile um, begann die neue sonst mit dem Punkt.
+              Der Abstand (gap) trennt die Angaben. */}
+          <span>{z.gelesen_am ? `abgerufen ${datum(z.gelesen_am)}` : "noch nicht abgerufen"}</span>
+          {z.bestaetigung_noetig && <span>{z.bestaetigt_am ? `bestätigt ${datum(z.bestaetigt_am)}` : "Bestätigung offen"}</span>}
           {rueckfrage === z.id ? (
-            <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+            <span style={{ display: "inline-flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
               {z.gelesen_am && (
                 <span style={{ color: "var(--red)" }} title="Art. 33 DSGVO">
                   Bereits abgerufen — ging es an die falsche Person, prüfe die Meldepflicht (72 h).
                 </span>
               )}
-              <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "3px 8px", color: "var(--red)" }} disabled={pending} onClick={() => zurueckziehen(z.id)}>
+              <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "6px 10px", minHeight: 32, color: "var(--red)" }} disabled={pending} onClick={() => zurueckziehen(z.id)}>
                 {pending ? "…" : "Ja, zurückziehen"}
               </button>
-              <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "3px 8px" }} disabled={pending} onClick={() => setRueckfrage(null)}>Abbrechen</button>
+              <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "6px 10px", minHeight: 32 }} disabled={pending} onClick={() => setRueckfrage(null)}>Abbrechen</button>
             </span>
           ) : (
-            <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "3px 8px" }} disabled={pending} onClick={() => setRueckfrage(z.id)}>
+            <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "6px 10px", minHeight: 32 }} disabled={pending} onClick={() => setRueckfrage(z.id)}>
               <Undo2 size={11} style={{ verticalAlign: "-1px" }} /> Zurückziehen
             </button>
           )}
@@ -103,7 +105,7 @@ export default function DokumentZustellung({
 
       {aktiv.length === 0 && hatDatei && (
         <div>
-          <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "3px 8px" }} disabled={pending} onClick={() => setOffen((o) => !o)}>
+          <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "6px 10px", minHeight: 32 }} disabled={pending} onClick={() => setOffen((o) => !o)}>
             <Send size={11} style={{ verticalAlign: "-1px" }} /> Ins Mieterportal zustellen…
           </button>
           {offen && (

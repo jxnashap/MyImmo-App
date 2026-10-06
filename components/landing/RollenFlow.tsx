@@ -8,7 +8,7 @@ const SCHRITTE = [
   { ico: User, rolle: "Mieter", tat: "meldet den Schaden", detail: "mit Foto — 20 Sekunden", step: Camera },
   { ico: Wrench, rolle: "Hausmeister", tat: "erstellt den Auftrag", detail: "wählt die Firma aus dem Verzeichnis", step: ClipboardList },
   { ico: Building2, rolle: "Vermieter / Verwaltung", tat: "gibt frei", detail: "ein Klick — auch vom Strand", step: CheckCircle2 },
-  { ico: Hammer, rolle: "Handwerksfirma", tat: "bekommt den Termin-Link", detail: "mit Kontakt des Mieters", step: CalendarClock },
+  { ico: Hammer, rolle: "Handwerksfirma", tat: "bekommt den Termin‑Link", detail: "mit Kontakt des Mieters", step: CalendarClock },
 ] as const;
 
 export default function RollenFlow() {

@@ -46,7 +46,7 @@ export default function SteuerWaechter({ zeilen }: { zeilen: WaechterZeile[] }) 
                         <span className={`badge ${b!.cls}`}>{b!.label}</span>
                         {(a.status === "ok" || a.status === "warnung" || a.status === "ueberschritten") && (
                           <span style={{ color: "var(--muted)", marginLeft: 6 }}>
-                            {euro(a.kostenImFenster)} von {euro(a.grenze)} · bis {datum(a.fensterBis!)}
+                            {euro(a.kostenImFenster)} von {euro(a.grenze)} · bis&nbsp;{datum(a.fensterBis!)}
                           </span>
                         )}
                       </>
@@ -55,7 +55,7 @@ export default function SteuerWaechter({ zeilen }: { zeilen: WaechterZeile[] }) 
                   <td>
                     {!s.aktiv ? <span style={{ color: "var(--faint)" }}>Kaufdatum fehlt</span>
                       : s.steuerfrei ? <span className="badge badge-green">steuerfrei seit {datum(s.steuerfreiAb!)}</span>
-                      : <span style={{ color: z.achtung ? "var(--text)" : "var(--muted)" }}>steuerfrei ab {datum(s.steuerfreiAb!)} · noch {s.tageVerbleibend.toLocaleString("de-DE")} Tage</span>}
+                      : <span style={{ color: z.achtung ? "var(--text)" : "var(--muted)" }}>steuerfrei ab&nbsp;{datum(s.steuerfreiAb!)} · noch&nbsp;{s.tageVerbleibend.toLocaleString("de-DE")}&nbsp;Tage</span>}
                   </td>
                 </tr>
               );

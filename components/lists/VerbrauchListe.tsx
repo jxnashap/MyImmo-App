@@ -26,6 +26,19 @@ export default function VerbrauchListe({
   const nameOf = new Map(properties.map((p) => [p.id, p.bezeichnung] as const));
   const offen = rows.find((r) => r.id === openId) ?? null;
 
+  // Leer: OHNE Tabelle. In der 560 px breiten Scroll-Tabelle wurde der Leerzustand auf 560 px
+  // zentriert und war am Handy rechts abgeschnitten (Design-Scan 06.10.2026).
+  if (rows.length === 0) {
+    return (
+      <Leer
+        icon={Zap}
+        titel="Noch kein Verbrauch erfasst"
+        text="Zählerstände für Strom, Gas, Wasser und Heizung. Die NK-Abrechnung zeigt sie je Zähler zum Übertragen an — den Verbrauch je Mietpartei trägst du dort ein."
+        aktion={{ href: "/verbrauch/new", label: "Verbrauch erfassen" }}
+      />
+    );
+  }
+
   return (
     <div className="table-scroll"><table className="list-table">
       <thead><tr><th>Datum</th><th>Immobilie</th><th>Art</th><th>Menge</th><th>Einheit</th><th>Kosten</th></tr></thead>
@@ -46,24 +59,14 @@ export default function VerbrauchListe({
             {/* "1400" ohne Tausenderpunkt war nicht ueberschlagbar — de-DE-Format, bis zu 2 Dezimalstellen nur wenn erfasst. */}
             <td style={{ fontVariantNumeric: "tabular-nums" }}>{v.menge == null ? "–" : v.menge.toLocaleString("de-DE", { maximumFractionDigits: 2 })}</td>
             <td style={{ color: "var(--muted)" }}>{v.einheit ?? ""}</td>
-            <td style={{ fontWeight: 600 }}>{euro(v.verbrauchkosten)}</td>
+            <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{euro(v.verbrauchkosten)}</td>
           </tr>
         ))}
-        {rows.length === 0 && (
-          <tr><td colSpan={6}>
-            <Leer
-              icon={Zap}
-              titel="Noch kein Verbrauch erfasst"
-              text="Zählerstände für Strom, Gas, Wasser und Heizung. Sie sind die Grundlage der Nebenkostenabrechnung — ohne sie lässt sich nichts verbrauchsabhängig umlegen."
-              aktion={{ href: "/verbrauch/new", label: "Verbrauch erfassen" }}
-            />
-          </td></tr>
-        )}
       </ExpandableRows>
 
       {offen && (
         <RowDialog title="Verbrauch bearbeiten" onClose={() => setOpenId(null)}>
-          <form action={updateVerbrauch.bind(null, offen.id)} className="form-box" style={{ padding: 0, border: "none", background: "none", maxWidth: "none" }}>
+          <form action={updateVerbrauch.bind(null, offen.id)} className="form-box" style={{ padding: 0, border: "none", background: "none", boxShadow: "none", maxWidth: "none" }}>
             <input type="hidden" name="back" value="/verbrauch" />
             <div className="form-row">
               <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" defaultValue={offen.buchungsdatum ?? ""} required /></div>

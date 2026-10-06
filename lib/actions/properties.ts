@@ -300,7 +300,11 @@ export async function uebernehmeAfaGebaeudeanteil(
     .from("properties")
     .update({ afa_gebaeudeanteil: Math.round(prozent * 10) / 10 })
     .eq("id", id);
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    // Rohe Postgres-Meldung nur ins Server-Log, nicht in die Oberfläche (englisch, technisch).
+    console.error("uebernehmeAfaGebaeudeanteil:", error.message);
+    return { ok: false, error: "Speichern fehlgeschlagen. Bitte erneut versuchen." };
+  }
 
   revalidatePath(`/properties/${id}`);
   revalidatePath("/afa-assistent");

@@ -73,7 +73,7 @@ export default function VerkaufRechner({
               {objekte.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
             </select>
             {objId && (
-              <span style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 3 }}>
+              <span style={{ fontSize: 11, color: "var(--faint)", marginTop: 3 }}>
                 Übernommen: aktueller Wert als Verkaufspreis-Vorschlag, Kaufpreis/-datum, Restschuld. AfA &amp; Kosten bitte selbst ergänzen.
               </span>
             )}

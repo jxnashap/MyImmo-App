@@ -133,7 +133,7 @@ export const RATGEBER: RatgeberArtikel[] = [
         h: "Schritt 5: Vorauszahlungen abziehen",
         p: [
           "Der Mieter hat monatlich 200 € vorausgezahlt, im Jahr also 2.400 €. Gegenüber dem Anteil von 2.189,60 € ergibt das ein Guthaben von 210,40 € zugunsten des Mieters.",
-          "Zieht ein Mieter unterjährig ein oder aus, wird nicht geschätzt, sondern tagegenau nach Belegungszeit aufgeteilt. Bei verbrauchsabhängigen Positionen ist eine Zwischenablesung der sauberere Weg; ohne sie greift die Gradtagszahlen-Methode der Heizkostenverordnung.",
+          "Zieht ein Mieter unterjährig ein oder aus, wird nicht geschätzt, sondern taggenau nach Belegungszeit aufgeteilt. Bei verbrauchsabhängigen Positionen ist eine Zwischenablesung der sauberere Weg; ohne sie greift die Gradtagszahlen-Methode der Heizkostenverordnung.",
           "Prüfen Sie zum Schluss, ob die Vorauszahlung für das laufende Jahr noch passt. Eine Anpassung ist nach § 560 Abs. 4 BGB zulässig, aber nur auf Grundlage einer wirksamen Abrechnung und nur in angemessener Höhe.",
         ],
       },
@@ -152,7 +152,7 @@ export const RATGEBER: RatgeberArtikel[] = [
           "Nicht umlagefähige Positionen enthalten, allen voran Verwaltungskosten und Reparaturen.",
           "Verteilerschlüssel nicht genannt oder nicht erläutert — eine der vier Pflichtangaben.",
           "Heizkosten vollständig nach Fläche verteilt, statt 50 bis 70 Prozent nach Verbrauch. Der Mieter darf dann um 15 Prozent kürzen (§ 12 HeizkostenV).",
-          "Mieterwechsel pauschal halbiert statt tagegenau gerechnet.",
+          "Mieterwechsel pauschal halbiert statt taggenau gerechnet.",
         ],
       },
       {
@@ -165,7 +165,7 @@ export const RATGEBER: RatgeberArtikel[] = [
     feature: {
       titel: "Die Abrechnung in MyImmo erstellen",
       text:
-        "Der Umlage-Assistent führt genau durch diese sechs Schritte: Kosten erfassen, Schlüssel je Position wählen, Mieterwechsel tagegenau abrechnen, Vorauszahlungen abziehen. Am Ende steht eine fertige PDF-Abrechnung mit ausgewiesenem Rechenweg, Verteilerschlüssel und § 35a-Ausweis für Ihre Mieter — die vier Pflichtangaben sind dabei fest eingebaut.",
+        "Der Umlage-Assistent führt genau durch diese sechs Schritte: Kosten erfassen, Schlüssel je Position wählen, Mieterwechsel taggenau abrechnen, Vorauszahlungen abziehen. Am Ende steht eine fertige PDF-Abrechnung mit ausgewiesenem Rechenweg, Verteilerschlüssel und § 35a-Ausweis für Ihre Mieter — die vier Pflichtangaben sind dabei fest eingebaut.",
       href: "/anmelden",
       cta: "Kostenlos ausprobieren",
     },
@@ -182,7 +182,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       fall:
         "Vier Wohnungen, 1.200 € Müllgebühren im Jahr — und die Frage, ob die vierköpfige Familie mehr zahlen muss als der Single in der gleich großen Wohnung.",
       passt: [
-        "Ihr Mietvertrag sagt zum Verteilerschlüssel nichts oder nur den Satz nach Wohnfläche.",
+        "Ihr Mietvertrag sagt zum Verteilerschlüssel nichts oder nur „nach Wohnfläche“.",
         "Sie wollen einen Schlüssel wechseln und wissen nicht, ob Sie das einseitig dürfen.",
         "Sie haben Leerstand im Haus oder eine Gewerbeeinheit im Erdgeschoss.",
       ],
@@ -335,7 +335,7 @@ export const RATGEBER: RatgeberArtikel[] = [
     feature: {
       titel: "Heizkosten in MyImmo",
       text:
-        "Verbrauchswerte je Einheit erfassen, die Spanne zwischen 50 und 70 Prozent einmal festlegen, den Rest nach Fläche verteilen — die Aufteilung übernimmt der Umlage-Assistent, inklusive tagegenauer Abrechnung bei Mieterwechsel. Der Rechenweg steht in der fertigen PDF-Abrechnung.",
+        "Verbrauchswerte je Einheit erfassen, die Spanne zwischen 50 und 70 Prozent einmal festlegen, den Rest nach Fläche verteilen — die Aufteilung übernimmt der Umlage-Assistent, inklusive taggenauer Abrechnung bei Mieterwechsel. Der Rechenweg steht in der fertigen PDF-Abrechnung.",
       href: "/anmelden",
       cta: "Kostenlos ausprobieren",
     },
@@ -683,7 +683,7 @@ export const RATGEBER: RatgeberArtikel[] = [
           "Ansatz nach § 13d ErbStG: 90 % von 500.000 € = 450.000 €.",
           "Abzüglich Freibetrag 400.000 € → steuerpflichtiger Erwerb 50.000 €.",
           "Steuerklasse I, Satz 7 % → rund 3.500 € Erbschaftsteuer.",
-          "Ohne den 10-%-Abschlag wären 100.000 € steuerpflichtig und der Satz läge in der nächsten Stufe — der Abschlag ist also mehr wert als die 50.000 € Bemessungsgrundlage vermuten lassen.",
+          "Ohne den 10-%-Abschlag wären 100.000 € steuerpflichtig und der Satz läge in der nächsten Stufe — der Abschlag ist also mehr wert, als die 50.000 € Bemessungsgrundlage vermuten lassen.",
         ],
       },
       {
@@ -1189,7 +1189,7 @@ export const RATGEBER: RatgeberArtikel[] = [
         h: "Schritt 4: Übertragen",
         p: [
           "Für Objekte und Mieter gibt es in MyImmo einen CSV-Import (Einstellungen → Daten & Recht → Import). Sie laden den Export Ihres bisherigen Anbieters oder eine Excel-Tabelle hoch, ordnen die Spalten den MyImmo-Feldern zu — ein Vorschlag kommt automatisch, weil die üblichen Spaltennamen hinterlegt sind — sehen eine Vorschau und bestätigen erst dann. Ohne diesen letzten Klick wird nichts geschrieben.",
-          "Übernommen werden dabei die Stammdaten: bei Objekten unter anderem Bezeichnung, Adresse, Typ, Kaufpreis und -datum, Fläche, Baujahr, Miete und Hausgeld; bei Mietern Name, Objektzuordnung, Kaltmiete, Nebenkostenvorauszahlung, Kaution sowie Miet- und Auszugsdatum.",
+          "Übernommen werden dabei die Stammdaten: bei Objekten unter anderem Bezeichnung, Adresse, Typ, Kaufpreis und -datum, Fläche, Baujahr, Miete und Hausgeld; bei Mietern Name, Objektzuordnung, Kaltmiete, Nebenkostenvorauszahlung, Kaution sowie Mietbeginn und Auszugsdatum.",
           "Einzelne Objekte gehen auch ohne Tabelle: Der Exposé-Import liest eine Verkaufsanzeige als PDF, Link oder eingefügten Text aus und füllt die Felder vor.",
           "Was der Import nicht mitbringt, tragen Sie nach: laufende Buchungen, Kredite, Dokumente und vor allem die Abschreibungswerte — Bemessungsgrundlage, Satz und bereits abgezogene Jahre. Gerade die sind mühsam zu rekonstruieren und stehen selten in einem Export.",
           "Realistisch sind damit für die Stammdaten Minuten statt Stunden; der Rest bleibt Handarbeit und lohnt die Sorgfalt, weil Sie dabei jeden Wert einmal prüfen.",
@@ -1278,7 +1278,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Der richtige Umlageschlüssel",
         p: [
-          "Ohne abweichende Vereinbarung wird nach Wohnfläche umgelegt (§ 556a BGB). Heizung und Warmwasser sind eine Ausnahme: Nach der Heizkostenverordnung müssen 50–70 % verbrauchsabhängig abgerechnet werden. Bei unterjährigem Mieterwechsel wird tagegenau nach Belegungszeit aufgeteilt.",
+          "Ohne abweichende Vereinbarung wird nach Wohnfläche umgelegt (§ 556a BGB). Heizung und Warmwasser sind eine Ausnahme: Nach der Heizkostenverordnung müssen 50–70 % verbrauchsabhängig abgerechnet werden. Bei unterjährigem Mieterwechsel wird taggenau nach Belegungszeit aufgeteilt.",
         ],
       },
       {
@@ -1291,7 +1291,7 @@ export const RATGEBER: RatgeberArtikel[] = [
     feature: {
       titel: "NK-Abrechnung mit MyImmo",
       text:
-        "Der Umlage-Assistent verteilt jede Position cent-genau nach Fläche oder Einheit, rechnet unterjährige Mieterwechsel tagegenau ab und erzeugt eine fertige Abrechnung als PDF — inklusive § 35a-Ausweis für Ihre Mieter.",
+        "Der Umlage-Assistent verteilt jede Position cent-genau nach Fläche oder Einheit, rechnet unterjährige Mieterwechsel taggenau ab und erzeugt eine fertige Abrechnung als PDF — inklusive § 35a-Ausweis für Ihre Mieter.",
       href: "/anmelden",
       cta: "Kostenlos ausprobieren",
     },
@@ -1319,7 +1319,7 @@ export const RATGEBER: RatgeberArtikel[] = [
         "Bei einer Bruttomiete ohne Betriebskostenumlage bleibt die Grundsteuer bei Ihnen — dann ist der Artikel nur zur Einordnung interessant.",
     },
     intro:
-      "Seit dem 1.1.2025 gilt die reformierte Grundsteuer. Die Aufregung um die Reform hat sich gelegt, zwei Fragen sind geblieben: Welcher Betrag gehört in welche Abrechnung — und was passiert mit dem Geld, wenn der Bescheid noch angefochten ist?",
+      "Seit dem 01.01.2025 gilt die reformierte Grundsteuer. Die Aufregung um die Reform hat sich gelegt, zwei Fragen sind geblieben: Welcher Betrag gehört in welche Abrechnung — und was passiert mit dem Geld, wenn der Bescheid noch angefochten ist?",
     sektionen: [
       {
         h: "Grundsteuer bleibt voll umlagefähig",

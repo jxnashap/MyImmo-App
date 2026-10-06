@@ -60,7 +60,7 @@ export default function ZaehlerPortal({ meldungen, nurLesen = false }: { meldung
             action={senden}
             style={{ display: "grid", gap: 10, marginBottom: 18, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}
           >
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))", gap: 10 }}>
               <div className="form-group">
                 <label style={{ fontSize: 11, color: "var(--muted)" }}>Zähler</label>
                 <select name="art" className="input" value={art} onChange={(e) => setArt(e.target.value)}>
@@ -83,9 +83,9 @@ export default function ZaehlerPortal({ meldungen, nurLesen = false }: { meldung
                 <label style={{ fontSize: 11, color: "var(--muted)" }}>Ablesedatum</label>
                 <input name="ablesedatum" type="date" className="input" defaultValue={new Date().toISOString().slice(0, 10)} />
               </div>
-              <div className="form-group">
+              <div className="form-group" style={{ gridColumn: "1 / -1", minWidth: 0 }}>
                 <label style={{ fontSize: 11, color: "var(--muted)" }}>Foto vom Zähler (empfohlen)</label>
-                <input name="foto" type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="input" />
+                <input name="foto" type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="input" style={{ minWidth: 0, width: "100%" }} />
               </div>
             </div>
             <textarea name="notiz" rows={2} maxLength={500} className="input" placeholder="Anmerkung (optional)" />

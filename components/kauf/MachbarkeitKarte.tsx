@@ -48,7 +48,7 @@ export default function MachbarkeitKarte({ ergebnis }: { ergebnis: MachbarkeitEr
         </div>
       )}
 
-      <div style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 12 }}>
+      <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 12 }}>
         Marktübliche Faustwerte, keine Zusage und keine Finanzberatung — jede Bank rechnet anders.
       </div>
     </div>

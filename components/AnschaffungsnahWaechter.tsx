@@ -67,7 +67,7 @@ export default function AnschaffungsnahWaechter({ e }: { e: AnschaffungsnahErgeb
         <p style={{ fontSize: 12, color: e.status === "ok" || e.status === "abgelaufen" ? "var(--muted)" : farbe, marginTop: 10, marginBottom: 0, lineHeight: 1.5 }}>
           {e.hinweis}
         </p>
-        <p style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 8, marginBottom: 0 }}>
+        <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 8, marginBottom: 0 }}>
           Basis: Gebäude-Anschaffungskosten {euro(e.gebaeudeAK)} (Kaufpreis × Gebäudeanteil). Zählt Reparatur/Instandhaltung/Modernisierung.
           Ohne Netto-/USt-Trennung — Näherung, keine Steuerberatung.
         </p>

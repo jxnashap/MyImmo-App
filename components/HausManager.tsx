@@ -72,28 +72,28 @@ export default function HausManager({ objekte, gesendet, infos }: { objekte: Hau
         <div className="section-header"><h3><Megaphone size={15} style={{ verticalAlign: "-2px" }} /> Mitteilung an Mieter</h3></div>
         <div className="section-body">
           <form action={senden} style={{ display: "grid", gap: 10 }}>
-            <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-              An
-              <select name="ziel" className="input" value={ziel} onChange={(e) => setZiel(e.target.value)}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label htmlFor="haus-ziel">An</label>
+              <select id="haus-ziel" name="ziel" className="input" value={ziel} onChange={(e) => setZiel(e.target.value)}>
                 <option value="alle">Alle Mieter mit Portal-Zugang</option>
                 {objekte.map((o) => <option key={o.id} value={o.id}>{o.bezeichnung} ({o.verbunden})</option>)}
               </select>
-            </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-              Betreff *
-              <input name="titel" className="input" required maxLength={120} placeholder="z. B. Wasser am Montag abgestellt" />
-            </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-              Text *
-              <textarea name="nachricht" className="input" required rows={4} maxLength={4000} />
-            </label>
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label htmlFor="haus-titel">Betreff *</label>
+              <input id="haus-titel" name="titel" className="input" required maxLength={120} placeholder="z. B. Wasser am Montag abgestellt" />
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label htmlFor="haus-text">Text *</label>
+              <textarea id="haus-text" name="nachricht" className="input" required rows={4} maxLength={4000} />
+            </div>
             <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12.5 }}>
               <input type="checkbox" name="bestaetigung" /> Mieter sollen „gelesen und bestätigt“ klicken (keine Unterschrift)
             </label>
             <p style={{ fontSize: 12, color: anzahl === 0 ? "var(--red)" : "var(--muted)", margin: 0 }}>
               {anzahl === 0
                 ? "Hier sieht es niemand — kein Mieter mit Portal-Zugang."
-                : `Sichtbar für ${anzahl} Mieter. Gehen nur an Konten mit aktivem Zugang; die E-Mail-Hinweise nennen keinen Inhalt.`}
+                : `Sichtbar für ${anzahl} Mieter. Mitteilungen gehen nur an Konten mit aktivem Zugang; die E-Mail-Hinweise nennen keinen Inhalt.`}
             </p>
             <div>
               <button type="submit" className="btn btn-gold" disabled={pending || anzahl === 0}>{pending ? "…" : "Mitteilung senden"}</button>
@@ -136,18 +136,18 @@ export default function HausManager({ objekte, gesendet, infos }: { objekte: Hau
             <p style={{ fontSize: 12, color: "var(--faint)", margin: 0 }}>Lege zuerst ein Objekt an — die Infos gelten je Haus.</p>
           ) : (
             <form key={infoObjekt} action={infoSpeichern} style={{ display: "grid", gap: 10 }}>
-              <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-                Objekt
-                <select name="prop_id" className="input" value={infoObjekt} onChange={(e) => setInfoObjekt(e.target.value)}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label htmlFor="haus-info-objekt">Objekt</label>
+                <select id="haus-info-objekt" name="prop_id" className="input" value={infoObjekt} onChange={(e) => setInfoObjekt(e.target.value)}>
                   {objekte.map((o) => <option key={o.id} value={o.id}>{o.bezeichnung}</option>)}
                 </select>
-              </label>
+              </div>
               {INFO_FELDER.map((f) => (
-                <label key={f.key} style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-                  {f.label}
-                  <textarea name={f.key} className="input" rows={f.zeilen} maxLength={f.max} defaultValue={info?.[f.key] ?? ""} />
-                  {f.hinweis && <span style={{ fontSize: 11 }}>{f.hinweis}</span>}
-                </label>
+                <div key={f.key} className="form-group" style={{ margin: 0 }}>
+                  <label htmlFor={`haus-info-${f.key}`}>{f.label}</label>
+                  <textarea id={`haus-info-${f.key}`} name={f.key} className="input" rows={f.zeilen} maxLength={f.max} defaultValue={info?.[f.key] ?? ""} />
+                  {f.hinweis && <span style={{ display: "block", fontSize: 11, color: "var(--muted)", marginTop: 4 }}>{f.hinweis}</span>}
+                </div>
               ))}
               <p style={{ fontSize: 12, color: "var(--muted)", margin: 0 }}>
                 Sichtbar für die Mieter dieses Objekts mit aktivem Portal-Zugang. Keine privaten Daten anderer Mieter eintragen.

@@ -45,7 +45,7 @@ export default function IndexwertKarte({
             <Check size={13} style={{ verticalAlign: "-2px" }} /> Als aktuellen Wert übernehmen
           </button>
         </form>
-        <div style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 10 }}>
+        <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 10 }}>
           Indexierte Schätzung (bundesweiter Index, keine regionale Lage) — kein Marktwert/Gutachten.
           Quelle: {HPI_QUELLE.name}, {HPI_QUELLE.basis}, {HPI_QUELLE.lizenz}{live ? "" : ` · Offline-Stand ${HPI_QUELLE.snapshotStand}`}.
         </div>

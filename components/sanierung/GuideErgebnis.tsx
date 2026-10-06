@@ -215,7 +215,7 @@ export default function GuideErgebnis({
               <ul>
                 {Object.values(katalog).map((m) => (
                   <li key={m.id}>
-                    <strong>{m.name}</strong> ({m.produkt}): {geld(m.preis)} € je {m.gebindeName} — {m.quelle.preis}.{" "}
+                    <strong>{m.name}</strong> ({m.produkt}): €{"\u00a0"}{geld(m.preis)} je {m.gebindeName} — {m.quelle.preis}.{" "}
                     {/* „1 m² je m²“ (Tapete, Boden) sagt nichts — dann nur die Quelle. */}
                     {m.verbrauch.min === 1 && m.verbrauch.max === 1
                       ? `Menge: ${m.quelle.verbrauch}.`

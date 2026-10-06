@@ -39,7 +39,7 @@ export default function FunktionenPage() {
                 <h3 style={{ fontSize: 16, margin: "2px 0 6px" }}>{f.titel}</h3>
                 <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--l-muted)", margin: "0 0 8px" }}>{f.beschreibung}</p>
                 <span style={{ fontSize: 13, color: "var(--l-gold-ink)", fontWeight: 600, whiteSpace: "nowrap" }}>
-                  Mehr dazu <ArrowRight size={12} style={{ verticalAlign: "-1px" }} />
+                  Mehr dazu <ArrowRight size={12} style={{ display: "inline", verticalAlign: "-1px" }} />
                 </span>
               </Link>
             ))}

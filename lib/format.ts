@@ -16,11 +16,16 @@ export const eur2 = (n: number | null | undefined) =>
         minimumFractionDigits: 2,
       }).format(n);
 
-// „€ 860.000" — Schreibweise wie in der ursprünglichen App (Symbol vorne, gerundet)
-export const euro = (n: number | null | undefined) =>
-  n == null
-    ? "–"
-    : "€ " + new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(Math.round(n));
+// „€ 860.000" — Schreibweise wie in der ursprünglichen App (Symbol vorne, gerundet).
+// Zwischen „€" und Zahl steht ein GESCHÜTZTES Leerzeichen (U+00A0): Mit einem normalen brach der
+// Browser in schmalen Spalten um („€" / „9.000", Design-Scan 06.10.2026). Negative Beträge mit dem
+// Minus VOR dem Symbol („-€ 450" statt „€ -450").
+export const euro = (n: number | null | undefined) => {
+  if (n == null) return "–";
+  const r = Math.round(n);
+  const betrag = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(Math.abs(r));
+  return (r < 0 ? "-" : "") + "€\u00a0" + betrag;
+};
 
 // Datum „2008-08-02" -> „2.8.2008" (de-DE, ohne führende Nullen).
 // Reine Datums-Strings werden OHNE Date-Objekt zerlegt — new Date("YYYY-MM-DD")

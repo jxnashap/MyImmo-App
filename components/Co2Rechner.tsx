@@ -104,51 +104,55 @@ export default function Co2Rechner({ defaultFlaeche }: { defaultFlaeche?: number
                   <div key={i} style={{ flex: 1, textAlign: "center" }}>
                     <div
                       style={{
-                        height: aktiv ? 16 : 8,
+                        // Feste Höhe, inaktive Stufen per scaleY halbiert — animiert wird nur transform/opacity.
+                        height: 16,
+                        transform: aktiv ? "none" : "scaleY(.5)",
+                        transformOrigin: "bottom",
                         borderRadius: 4,
                         background: STUFEN_FARBEN[i],
                         opacity: gewerbe ? 0.25 : aktiv ? 1 : 0.35,
                         outline: aktiv ? "2px solid var(--text)" : "none",
                         outlineOffset: 1,
-                        transition: "all .15s ease",
+                        transition: "transform .15s var(--ease-out-stark), opacity .15s var(--ease-out-stark)",
                       }}
                     />
-                    <div style={{ fontSize: 9.5, color: aktiv ? "var(--text)" : "var(--faint)", marginTop: 4, fontWeight: aktiv ? 600 : 400 }}>
-                      {s.max == null ? `≥${s.min}` : `${s.min}–${s.max}`}
+                    {/* Nur die Untergrenze je Stufe — „22–27“ brach bei 360 px zweizeilig um. */}
+                    <div style={{ fontSize: 11, whiteSpace: "nowrap", color: aktiv ? "var(--text)" : "var(--faint)", marginTop: 4, fontWeight: aktiv ? 600 : 400 }}>
+                      {s.max == null ? `≥${s.min}` : s.min}
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 2 }}>
-              kg CO₂ / m² · Jahr {gewerbe ? "— bei Gewerbe gilt pauschal 50/50" : ""}
+            <div style={{ fontSize: "var(--text-xs)", color: "var(--faint)", marginTop: 2 }}>
+              Stufen ab … kg CO₂ / m² · Jahr {gewerbe ? "— bei Gewerbe gilt pauschal 50/50" : ""}
             </div>
           </div>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <div className="glass-card" style={{ padding: "10px 14px", minWidth: 150 }}>
-              <div style={{ fontSize: 10.5, color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".5px" }}>Spez. Ausstoß</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".5px" }}>Spez. Ausstoß</div>
               <div style={{ fontSize: 17, fontWeight: 600 }}>{String(ergebnis.spez).replace(".", ",")} kg/m²·a</div>
             </div>
             <div className="glass-card" style={{ padding: "10px 14px", minWidth: 150 }}>
-              <div style={{ fontSize: 10.5, color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".5px" }}>CO₂-Kosten gesamt</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".5px" }}>CO₂-Kosten gesamt</div>
               <div style={{ fontSize: 17, fontWeight: 600 }}>
                 {eur2(ergebnis.kostenGesamt)}
                 {geschaetzt && (
-                  <span style={{ fontSize: 10.5, color: "var(--gold)", marginLeft: 6 }}>
+                  <span style={{ fontSize: "var(--text-xs)", color: "var(--gold)", marginLeft: 6 }}>
                     geschätzt ({CO2_PREIS[Number(jahr)] ?? "—"} €/t)
                   </span>
                 )}
               </div>
             </div>
             <div className="glass-card" style={{ padding: "10px 14px", minWidth: 150 }}>
-              <div style={{ fontSize: 10.5, color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".5px" }}>Ihr Anteil (Vermieter)</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".5px" }}>Anteil Vermieter</div>
               <div style={{ fontSize: 17, fontWeight: 600, color: "var(--red)" }}>
                 {eur2(ergebnis.vermieterAnteil)} <span style={{ fontSize: 12, color: "var(--muted)" }}>({ergebnis.vermieterProzent} %)</span>
               </div>
             </div>
             <div className="glass-card" style={{ padding: "10px 14px", minWidth: 150 }}>
-              <div style={{ fontSize: 10.5, color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".5px" }}>Umlegbar auf Mieter</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".5px" }}>Umlegbar auf Mieter</div>
               <div style={{ fontSize: 17, fontWeight: 600, color: "var(--green)" }}>
                 {eur2(ergebnis.mieterAnteil)} <span style={{ fontSize: 12, color: "var(--muted)" }}>({ergebnis.mieterProzent} %)</span>
               </div>
@@ -162,7 +166,7 @@ export default function Co2Rechner({ defaultFlaeche }: { defaultFlaeche?: number
         Selbstversorgung der Mieter (z. B. Gasetagenheizung) müssen diese ihren
         Erstattungsanspruch innerhalb von 12 Monaten nach Rechnungserhalt geltend machen.
       </p>
-      <p style={{ fontSize: 10.5, color: "var(--faint)", margin: "4px 0 0" }}>
+      <p style={{ fontSize: "var(--text-xs)", color: "var(--faint)", margin: "4px 0 0" }}>
         Vereinfachte Berechnung nach CO2KostAufG — keine Steuer- oder Rechtsberatung.
       </p>
     </div>

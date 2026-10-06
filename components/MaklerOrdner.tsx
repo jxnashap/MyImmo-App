@@ -155,7 +155,7 @@ export default function MaklerOrdner({
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text)" }}>{item.label}</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: b.bg, color: b.fg }}>{b.label}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: b.bg, color: b.fg }}>{b.label}</span>
                   </div>
                   <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 3, lineHeight: 1.45 }}>{item.hinweis}</div>
 
@@ -171,7 +171,7 @@ export default function MaklerOrdner({
                     {d.datei_name ? (
                       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 10px", borderRadius: 8, background: "var(--bg3)", border: "1px solid var(--line)" }}>
                         <span style={{ fontSize: 11.5, color: "var(--text)", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.datei_name}</span>
-                        {d.datei_size ? <span style={{ fontSize: 10.5, color: "var(--faint)" }}>{fmtSize(d.datei_size)}</span> : null}
+                        {d.datei_size ? <span style={{ fontSize: 11, color: "var(--faint)" }}>{fmtSize(d.datei_size)}</span> : null}
                         <a href={`/makler/datei/${item.key}`} target="_blank" rel="noopener noreferrer" title="Ansehen" style={{ color: "var(--muted)", display: "grid", placeItems: "center" }}><Eye size={14} /></a>
                         <a href={`/makler/datei/${item.key}?download=1`} title="Herunterladen" style={{ color: "var(--muted)", display: "grid", placeItems: "center" }}><Download size={14} /></a>
                         <button type="button" onClick={() => onRemove(item)} disabled={pending} title="Entfernen" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "grid", placeItems: "center", padding: 0 }}><X size={14} /></button>
@@ -209,7 +209,7 @@ export default function MaklerOrdner({
 
       <MaklerLink docs={docs} initialFreigaben={freigaben} abrufe={abrufe} jetzt={jetzt} />
 
-      <p style={{ fontSize: 10.5, color: "var(--faint)", margin: 0, display: "flex", gap: 7 }}>
+      <p style={{ fontSize: 11, color: "var(--faint)", margin: 0, display: "flex", gap: 7 }}>
         <Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />
         <span>Deine Dokumente sind über die Zugriffskontrolle (RLS) nur deinem Konto zugänglich. Du gibst sie
           selbst weiter — als Datei oder über einen Link, den du erstellst und widerrufen kannst.

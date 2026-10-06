@@ -66,6 +66,22 @@ export const ORDNER = [
   },
 ] as const;
 
+// Excel-Vergleich: Aufgabe · mit Excel & Ordnern · mit MyImmo.
+const EXCEL_VERGLEICH = [
+  ["Nebenkostenabrechnung", "Ein Wochenende rechnen, Formel-Fehler inklusive", "Positionen erfasst → fertiges PDF, Anteil automatisch gerechnet"],
+  ["Anlage V", "Belege suchen, Zeilen raten", "Buchungen sind den ELSTER-Zeilen schon zugeordnet"],
+  ["Mieteingang prüfen", "Kontoauszüge durchgehen", "Mietkonto zeigt offene Monate auf einen Blick"],
+  ["Schadensmeldung", "Anruf, Rückruf, Zettel, nochmal Anruf", "Mieter meldet mit Foto, Hausmeister übernimmt, du gibst frei"],
+  ["Fristen", "Im Hinterkopf oder im Papierkalender", "Werden automatisch aus deinen Daten abgeleitet"],
+  ["Unterlagen fürs Bankgespräch", "Aktenordner zusammensuchen", "Beleihungsordner mit Deckblatt — als Link für die Bank"],
+  ["Wohnung neu vermieten", "Dutzende Mails mit Anhängen", "Ein Bewerbungs-Link, alle Bewerbungen an einem Ort"],
+] as const;
+// Basis 180 px je Spalte: drei passen ab ~540 px Inhaltsbreite nebeneinander,
+// zwei nie auf ein Handy (≤ 342 px) — dort steht jede Zelle in eigener Zeile.
+const XL_FLEX = ["0.8 1 180px", "1 1 180px", "1 1 180px"] as const;
+const XL_ZEILE = { display: "flex", flexWrap: "wrap", padding: "6px 0", borderBottom: "1px solid var(--l-line)" } as const;
+const XL_ZELLE = { display: "block", padding: "6px 16px", borderBottom: "none", minWidth: 0 } as const;
+
 export default function LandingPage({ nl }: { nl?: string } = {}) {
   const topFeatures = FEATURES.slice(0, 6);
 
@@ -151,7 +167,7 @@ export default function LandingPage({ nl }: { nl?: string } = {}) {
       <section className="lp-section lp-section-alt">
         <div className="lp-inner">
           <div className="lp-kicker">So arbeitet dein Team</div>
-          <h2 className="lp-h2">Vom Tropfen unterm Waschbecken zum Termin — in Sekunden</h2>
+          <h2 className="lp-h2">Vom Tropfen unterm Waschbecken zum Termin — in Sekunden</h2>
           <p className="lp-section-sub">
             Schau zu, wie eine Schadensmeldung durch die vier Rollen läuft. Kein Anrufbeantworter,
             keine Zettel, keine Telefonkette.
@@ -169,19 +185,28 @@ export default function LandingPage({ nl }: { nl?: string } = {}) {
             <p className="lp-section-sub">Die ehrliche Gegenüberstellung — Aufgabe für Aufgabe.</p>
           </div>
           <Reveal>
+            {/* Am Handy (Inhalt < ~560 px) passen drei Spalten nicht nebeneinander —
+                vorher lag „Mit MyImmo“ rechts außerhalb des Bildes. Jede Zeile ist
+                deshalb ein umbrechender Flex-Container: breit drei Spalten wie eine
+                Tabelle, schmal untereinander (Aufgabe · Excel · MyImmo), der Kopf
+                liest sich dann als Legende. Ohne Medienabfrage. */}
             <div className="xl-scroll">
               <table className="xl-tab">
                 <thead>
-                  <tr><th>Aufgabe</th><th>Mit Excel & Ordnern</th><th>Mit MyImmo</th></tr>
+                  <tr style={{ ...XL_ZEILE, background: "var(--l-bg3)" }}>
+                    {["Aufgabe", "Mit Excel & Ordnern", "Mit MyImmo"].map((t, i) => (
+                      <th key={t} style={{ ...XL_ZELLE, flex: XL_FLEX[i] }}>{t}</th>
+                    ))}
+                  </tr>
                 </thead>
                 <tbody>
-                  <tr><td>Nebenkostenabrechnung</td><td className="schlecht">Ein Wochenende rechnen, Formel-Fehler inklusive</td><td className="gut">Positionen erfasst → fertiges PDF, Anteil automatisch gerechnet</td></tr>
-                  <tr><td>Anlage V</td><td className="schlecht">Belege suchen, Zeilen raten</td><td className="gut">Buchungen sind den ELSTER-Zeilen schon zugeordnet</td></tr>
-                  <tr><td>Mieteingang prüfen</td><td className="schlecht">Kontoauszüge durchgehen</td><td className="gut">Mietkonto zeigt offene Monate auf einen Blick</td></tr>
-                  <tr><td>Schadensmeldung</td><td className="schlecht">Anruf, Rückruf, Zettel, nochmal Anruf</td><td className="gut">Mieter meldet mit Foto, Hausmeister übernimmt, du gibst frei</td></tr>
-                  <tr><td>Fristen</td><td className="schlecht">Im Hinterkopf oder im Papierkalender</td><td className="gut">Werden automatisch aus deinen Daten abgeleitet</td></tr>
-                  <tr><td>Unterlagen fürs Bankgespräch</td><td className="schlecht">Aktenordner zusammensuchen</td><td className="gut">Beleihungsordner mit Deckblatt — als Link für die Bank</td></tr>
-                  <tr><td>Wohnung neu vermieten</td><td className="schlecht">Dutzende Mails mit Anhängen</td><td className="gut">Ein Bewerbungs-Link, alle Bewerbungen an einem Ort</td></tr>
+                  {EXCEL_VERGLEICH.map(([aufgabe, excel, myimmo], z) => (
+                    <tr key={aufgabe} style={z === EXCEL_VERGLEICH.length - 1 ? { ...XL_ZEILE, borderBottom: "none" } : XL_ZEILE}>
+                      <td style={{ ...XL_ZELLE, flex: XL_FLEX[0] }}>{aufgabe}</td>
+                      <td className="schlecht" style={{ ...XL_ZELLE, flex: XL_FLEX[1] }}>{excel}</td>
+                      <td className="gut" style={{ ...XL_ZELLE, flex: XL_FLEX[2] }}>{myimmo}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -475,7 +500,10 @@ export default function LandingPage({ nl }: { nl?: string } = {}) {
                   keine Zeile — ein Formular, das immer scheitert, ist schlechter als keins. */}
               {!REGISTRIERUNG_OFFEN && brevoBereit() && <StartBenachrichtigung nl={nl} />}
               <p className="qlx-hero-note" style={{ marginTop: 16 }}>
-                Keine Kreditkarte nötig · Datenbank in Frankfurt · derzeit kostenlos
+                {/* Umbruch nur an den „·“ — sonst stand „kostenlos“ am Handy allein. */}
+                <span style={{ whiteSpace: "nowrap" }}>Keine Kreditkarte nötig</span> ·{" "}
+                <span style={{ whiteSpace: "nowrap" }}>Datenbank in Frankfurt</span> ·{" "}
+                <span style={{ whiteSpace: "nowrap" }}>derzeit kostenlos</span>
               </p>
             </div>
           </Reveal>

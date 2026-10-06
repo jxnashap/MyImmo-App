@@ -32,12 +32,12 @@ export default function BenachrichtigungSchalter({ aus: anfangsAus, mieter }: { 
             }}
           />
           <span>
-            E-Mail, wenn im Mieterportal etwas Neues für mich bereitliegt
+            E‑Mail, wenn im Mieterportal etwas Neues für mich bereitliegt
             <span style={{ display: "block", fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
               {mieter
                 ? "Neue Dokumente, Nachrichten und Terminvorschläge deines Vermieters."
                 : "Neue Anliegen, Nachrichten und Terminbestätigungen deiner Mieter."}{" "}
-              Die E-Mail nennt keinen Inhalt — den siehst du nur nach der Anmeldung.
+              Die E‑Mail nennt keinen Inhalt — den siehst du nur nach der Anmeldung.
             </span>
           </span>
         </label>

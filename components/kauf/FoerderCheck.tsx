@@ -93,7 +93,7 @@ export default function FoerderCheck() {
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <span style={{ fontSize: 13, fontWeight: 600 }}>{p.name}</span>
               <span className={`badge ${ART_BADGE[p.art].cls}`}>{ART_BADGE[p.art].label}</span>
-              <span style={{ fontSize: 10.5, color: "var(--faint)", marginLeft: "auto" }}><ExternalLink size={11} style={{ verticalAlign: "-1px" }} /> {p.traeger}</span>
+              <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}><ExternalLink size={11} style={{ verticalAlign: "-1px" }} /> {p.traeger}</span>
             </div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 3 }}>{p.text}</div>
             {p.bedingung && (
@@ -120,7 +120,7 @@ export default function FoerderCheck() {
         </a>
       )}
 
-      <div style={{ display: "flex", gap: 7, fontSize: 10.5, color: "var(--faint)" }}>
+      <div style={{ display: "flex", gap: 7, fontSize: 11, color: "var(--faint)" }}>
         <Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />
         <span>Stand: {FOERDER_STAND} — Programme und Konditionen ändern sich; vor dem Antrag beim Träger prüfen. Wichtig: Förderanträge fast immer <strong>vor</strong> Kaufvertrag bzw. Vorhabensbeginn stellen.</span>
       </div>

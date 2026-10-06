@@ -474,7 +474,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
         <Link href="/cashflow" className="kpi-feld">
           <span className="kpi-label">Kosten / Mo.</span>
           <span className="kpi-value">{euro(totalKosten)}</span>
-          <span className="kpi-sub">Raten {euro(kreditRates)} · Ø Kosten {euro(monatKosten)}</span>
+          <span className="kpi-sub">Raten {euro(kreditRates)} · Ø&nbsp;Kosten {euro(monatKosten)}</span>
         </Link>
         <Link href="/cashflow" className="kpi-feld">
           <span className="kpi-label">Cashflow / Mo.</span>
@@ -658,9 +658,10 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                   <span className="listen-zeile-text">
                     <span className="listen-zeile-titel">
                       {k.bezeichnung || k.bank || "Darlehen"}
-                      {k.zinssatz != null && <span style={{ fontWeight: 400, color: "var(--muted)" }}> · {k.zinssatz.toLocaleString("de-DE", { maximumFractionDigits: 2 })} %</span>}
                     </span>
-                    <span className="listen-zeile-sub">{[(k.prop_id && nameOf.get(k.prop_id)) || null, k.bank].filter(Boolean).join(" · ") || "ohne Objekt"}</span>
+                    {/* Zinssatz vorn in der Unterzeile: im Titel fiel er am Handy hinter die Auslassung,
+                        obwohl er das Merkmal ist, an dem man gleich benannte Darlehen unterscheidet. */}
+                    <span className="listen-zeile-sub">{[k.zinssatz != null ? `${k.zinssatz.toLocaleString("de-DE", { maximumFractionDigits: 2 })}\u00a0%` : null, (k.prop_id && nameOf.get(k.prop_id)) || null, k.bank].filter(Boolean).join(" · ") || "ohne Objekt"}</span>
                   </span>
                   <span className="listen-zeile-zahl"><b>{euro(k.restschuld)}</b><small>{euro(k.monatsrate)} / Mo.</small></span>
                   <ChevronRight size={16} color="var(--faint)" style={{ flexShrink: 0 }} />

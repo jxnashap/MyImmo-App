@@ -232,9 +232,9 @@ function FirmenSektion({ firmen }: { firmen: FirmaRow[] }) {
               <Building2 size={14} color="var(--gold)" />
               <span style={{ fontWeight: 600 }}>{f.name}</span>
               {f.gewerk && <span className="badge badge-teal">{f.gewerk}</span>}
-              {f.telefon && <a href={`tel:${f.telefon.replace(/\s/g, "")}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Phone size={11} style={{ verticalAlign: "-1px" }} /> {f.telefon}</a>}
-              {f.email && <a href={`mailto:${f.email}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Mail size={11} style={{ verticalAlign: "-1px" }} /> {f.email}</a>}
-              {f.website && <a href={f.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Globe size={11} style={{ verticalAlign: "-1px" }} /> Website</a>}
+              {f.telefon && <a href={`tel:${f.telefon.replace(/\s/g, "")}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Phone size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> {f.telefon}</a>}
+              {f.email && <a href={`mailto:${f.email}`} style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Mail size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> {f.email}</a>}
+              {f.website && <a href={f.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none" }}><Globe size={11} style={{ display: "inline", verticalAlign: "-1px" }} /> Website</a>}
               {f.notiz && <span style={{ fontSize: 11, color: "var(--muted)" }}>{f.notiz}</span>}
               <span style={{ marginLeft: "auto" }}>
                 <DeleteButton action={() => loescheFirma(f.id)} className="delete-btn" label={<Trash2 size={13} />} confirmText="Firma aus dem Verzeichnis löschen?" />
@@ -621,9 +621,17 @@ export default function ServiceManager({
               const s = STATUS_META[a.status] ?? STATUS_META.offen;
               return (
                 <div key={a.id} style={{ padding: "10px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <UserRound size={14} color="var(--gold)" />
-                    <span style={{ fontWeight: 600 }}>{a.titel}</span>
+                  {/* Drei Zeilen statt einer Wickel-Zeile (06.10.2026): Am Handy stand
+                      das Icon sonst allein über dem Titel und der Papierkorb allein unten.
+                      1) Icon + Titel + Löschen, 2) Merkmale, 3) Objekt · Termin · Datum. */}
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <UserRound size={14} color="var(--gold)" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <span style={{ fontWeight: 600, flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>{a.titel}</span>
+                    <span style={{ flexShrink: 0 }}>
+                      <DeleteButton action={() => loescheAuftrag(a.id)} className="delete-btn" label={<Trash2 size={13} />} confirmText="Auftrag löschen?" />
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
                     <span className={`badge ${s.cls}`}>{s.label}</span>
                     <span className="badge badge-neutral">{a.partnerName}</span>
                     {taetigkeitVon(a.taetigkeit) && <span className={`badge ${taetigkeitVon(a.taetigkeit)!.selbst ? "badge-neutral" : "badge-amber"}`}>{taetigkeitVon(a.taetigkeit)!.label}</span>}
@@ -635,10 +643,9 @@ export default function ServiceManager({
                     {a.firmaName && <span className="badge badge-teal">{a.firmaName}</span>}
                     {a.mieterName && <span className="badge badge-green" title="Mieter-Kontakt wird über den Firmen-Link geteilt">Kontakt: {a.mieterName}</span>}
                     {a.mieterName && (a.status === "offen" || a.status === "angenommen") && <LinkKopierButton token={a.public_token} />}
-                    {a.objekt_name && <span style={{ fontSize: 11, color: "var(--muted)" }}>{a.objekt_name}</span>}
-                    {a.termin && <span style={{ fontSize: 11, color: "var(--muted)" }}>Termin {datum(a.termin)}</span>}
-                    <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>{datum(a.created_at)}</span>
-                    <DeleteButton action={() => loescheAuftrag(a.id)} className="delete-btn" label={<Trash2 size={13} />} confirmText="Auftrag löschen?" />
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
+                    {[a.objekt_name, a.termin ? `Termin ${datum(a.termin)}` : null, `angelegt ${datum(a.created_at)}`].filter(Boolean).join(" · ")}
                   </div>
                   {a.beschreibung && <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, whiteSpace: "pre-wrap" }}>{a.beschreibung}</p>}
                   {a.status === "freigabe" && a.vorgeschlageneFirma && (
@@ -671,7 +678,7 @@ export default function ServiceManager({
                         {r.termin ? ` · Termin ${datum(r.termin)}` : ""}
                         {r.kontakt && <div style={{ color: "var(--muted)" }}>Rückruf: {r.kontakt}</div>}
                         {r.nachricht && <div style={{ whiteSpace: "pre-wrap", marginTop: 2 }}>{r.nachricht}</div>}
-                        <div style={{ color: "var(--faint)", fontSize: 10.5, marginTop: 2 }}>{datum(r.created_at)}</div>
+                        <div style={{ color: "var(--faint)", fontSize: 11, marginTop: 2 }}>{datum(r.created_at)}</div>
                       </div>
                     );
                   })}

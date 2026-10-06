@@ -1,7 +1,7 @@
 "use client";
 import { Hourglass, FileText, TriangleAlert, X, Plus, Save } from "lucide-react";
 
-import { Fragment, useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { eur2 } from "@/lib/format";
 import { belegung, jahresTage } from "@/lib/nk";
@@ -40,6 +40,13 @@ const VORLAGEN = [
   "Schornsteinfeger",
   "Heizung",
 ];
+
+// Gemeinsame Flex-Werte für Kopf und Positionszeilen (Desktop: eine Reihe,
+// Verhältnis wie früher 42/22/24 %; schmal: Umbruch statt Quetschen).
+const FLEX_POSITION: CSSProperties = { flex: "3 1 200px", minWidth: 0 };
+const FLEX_BETRAG: CSSProperties = { flex: "1.5 1 100px", minWidth: 0 };
+const FLEX_VERTEILUNG: CSSProperties = { flex: "1.7 1 150px", minWidth: 0 };
+const FLEX_KNOEPFE: CSSProperties = { flex: "0 0 auto", marginLeft: "auto" };
 
 // Fünf häufigste Betriebskosten als Startvorschlag (nur Werte eintragen).
 const DEFAULT_ZEILEN: ZeileUI[] = [
@@ -88,7 +95,7 @@ export default function UmlageAssistent({
   const [ocrInfo, setOcrInfo] = useState<string | null>(null);
 
   // Pointer-basiertes Verschieben (Maus + Finger)
-  const rowsRef = useRef<(HTMLTableRowElement | null)[]>([]);
+  const rowsRef = useRef<(HTMLDivElement | null)[]>([]);
   const dragFrom = useRef<number | null>(null);
   const toast = useToast();
 
@@ -338,7 +345,7 @@ export default function UmlageAssistent({
                         placeholder="m²"
                       />
                       <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                        {anteil ? anteil.anteilProzent.toFixed(1) : "0"}%
+                        {(anteil ? anteil.anteilProzent : 0).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}&nbsp;%
                       </span>
                     </div>
                     {zeitanteilig && (
@@ -353,7 +360,7 @@ export default function UmlageAssistent({
           )}
           {fehlendeFlaeche && mieter.length > 0 && (
             <div style={{ fontSize: 11, color: "var(--amber)", marginTop: 10 }}>
-              Hinweis: Mindestens ein Mieter hat keine Fläche — Positionen nach „Fläche&quot; lassen sich erst nach Eingabe der m² korrekt verteilen.
+              Hinweis: Mindestens ein Mieter hat keine Fläche — Positionen nach „Fläche“ lassen sich erst nach Eingabe der m² korrekt verteilen.
             </div>
           )}
         </div>
@@ -447,29 +454,33 @@ export default function UmlageAssistent({
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>✓ {ocrInfo}</div>
           )}
 
-          <div className="table-scroll"><table style={{ fontSize: 13 }}>
-            <thead>
-              <tr>
-                <th style={{ width: 24 }}></th>
-                <th style={{ width: "42%" }}>Position</th>
-                <th style={{ width: "22%" }}>Gesamtbetrag (€)</th>
-                <th style={{ width: "24%" }}>Verteilung</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
+          {/* Positionen als umbrechende Zeilen statt Tabelle (Scan 06.10.2026): In der
+              Tabelle wurden die Felder am Handy auf einen Buchstaben gequetscht und
+              ▼/× lagen außerhalb der Scrollbox. Auf dem Desktop stehen die Felder
+              weiter in einer Reihe; schmal bricht Betrag/Verteilung in eine eigene
+              Zeile, die Knöpfe ebenso. Der Kopf nutzt dieselben Flex-Werte. */}
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em", paddingBottom: 6, borderBottom: "1px solid var(--line)" }}>
+            <span style={{ width: 20, flexShrink: 0 }} />
+            <span style={FLEX_POSITION}>Position</span>
+            <span style={FLEX_BETRAG}>Gesamtbetrag (€)</span>
+            <span style={FLEX_VERTEILUNG}>Verteilung</span>
+            <span style={FLEX_KNOEPFE} />
+          </div>
+          <div style={{ fontSize: 13 }}>
               {zeilen.map((z, i) => (
-                <Fragment key={i}>
-                <tr
+                <div
+                  key={i}
                   ref={(el) => {
                     rowsRef.current[i] = el;
                   }}
                   style={{
+                    padding: "8px 0",
+                    borderBottom: "1px solid var(--line)",
                     opacity: dragIdx === i ? 0.5 : 1,
                     background: dragIdx === i ? "var(--bg3)" : undefined,
                   }}
                 >
-                  <td>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
                     <span
                       onPointerDown={(e) => onHandleDown(e, i)}
                       onPointerMove={onHandleMove}
@@ -484,86 +495,79 @@ export default function UmlageAssistent({
                         fontSize: 16,
                         display: "inline-block",
                         padding: "4px 2px",
+                        width: 20,
+                        flexShrink: 0,
+                        textAlign: "center",
                       }}
                     >
                       ⠿
                     </span>
-                  </td>
-                  <td style={{ paddingRight: 8 }}>
                     <input
                       className="input"
-                      style={{ width: "100%" }}
+                      style={FLEX_POSITION}
+                      aria-label="Position"
                       list="umlage-vorlagen"
                       value={z.bezeichnung}
                       onChange={(e) => setZeile(i, { bezeichnung: e.target.value })}
                       placeholder="z. B. Grundsteuer"
                     />
-                  </td>
-                  <td style={{ paddingRight: 8 }}>
                     <input
                       className="input"
-                      style={{ width: "100%" }}
+                      style={FLEX_BETRAG}
+                      aria-label="Gesamtbetrag (€)"
                       type="number"
                       step="0.01"
                       value={z.betrag}
                       onChange={(e) => setZeile(i, { betrag: e.target.value })}
                       placeholder="0,00"
                     />
-                  </td>
-                  <td style={{ paddingRight: 8 }}>
                     <select
                       className="input"
-                      style={{ width: "100%" }}
+                      style={FLEX_VERTEILUNG}
+                      aria-label="Verteilung"
                       value={z.schluessel}
                       onChange={(e) => setZeile(i, { schluessel: e.target.value as UmlageSchluessel })}
                     >
                       <option value="flaeche">nach Fläche (m²)</option>
                       <option value="gleich">gleichmäßig je Einheit</option>
                     </select>
-                  </td>
-                  <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                    <button type="button" className="delete-btn" title="nach oben" onClick={() => move(i, i - 1)} disabled={i === 0}>
-                      ▲
-                    </button>
-                    <button type="button" className="delete-btn" title="nach unten" onClick={() => move(i, i + 1)} disabled={i === zeilen.length - 1}>
-                      ▼
-                    </button>
-                    <button type="button" className="delete-btn" title="Position entfernen" onClick={() => removeZeile(i)}>
-                      <X size={14} />
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td></td>
-                  <td colSpan={4} style={{ paddingBottom: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 11.5, color: "var(--muted)" }}>
-                      <span title="§ 35a EStG: Arbeits-/Lohnkosten, die der Mieter steuerlich absetzen kann (ohne Material).">davon Arbeitskosten (§ 35a):</span>
-                      <input
-                        className="input"
-                        style={{ width: 100 }}
-                        type="number"
-                        step="0.01"
-                        value={z.lohn}
-                        onChange={(e) => setZeile(i, { lohn: e.target.value })}
-                        placeholder="€ (optional)"
-                      />
-                      <select
-                        className="input"
-                        style={{ width: 190 }}
-                        value={z.art35a}
-                        onChange={(e) => setZeile(i, { art35a: e.target.value as Art35a })}
-                      >
-                        <option value="">— kein § 35a-Ausweis —</option>
-                        <option value="haushaltsnah">haushaltsnahe Dienstleistung</option>
-                        <option value="handwerker">Handwerkerleistung</option>
-                      </select>
-                    </div>
-                  </td>
-                </tr>
-                </Fragment>
+                    <span style={{ ...FLEX_KNOEPFE, whiteSpace: "nowrap", textAlign: "right" }}>
+                      <button type="button" className="delete-btn" title="nach oben" aria-label="nach oben" onClick={() => move(i, i - 1)} disabled={i === 0}>
+                        ▲
+                      </button>
+                      <button type="button" className="delete-btn" title="nach unten" aria-label="nach unten" onClick={() => move(i, i + 1)} disabled={i === zeilen.length - 1}>
+                        ▼
+                      </button>
+                      <button type="button" className="delete-btn" title="Position entfernen" aria-label="Position entfernen" onClick={() => removeZeile(i)}>
+                        <X size={14} />
+                      </button>
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 11.5, color: "var(--muted)", marginTop: 6, paddingLeft: 28 }}>
+                    <span title="§ 35a EStG: Arbeits-/Lohnkosten, die der Mieter steuerlich absetzen kann (ohne Material).">davon Arbeitskosten (§ 35a):</span>
+                    <input
+                      className="input"
+                      style={{ width: 110, maxWidth: "100%" }}
+                      type="number"
+                      step="0.01"
+                      value={z.lohn}
+                      onChange={(e) => setZeile(i, { lohn: e.target.value })}
+                      placeholder="€ (optional)"
+                    />
+                    <select
+                      className="input"
+                      style={{ width: "100%", maxWidth: 260, flex: "1 1 200px", minWidth: 0 }}
+                      value={z.art35a}
+                      onChange={(e) => setZeile(i, { art35a: e.target.value as Art35a })}
+                    >
+                      <option value="">– kein § 35a-Ausweis –</option>
+                      <option value="haushaltsnah">haushaltsnahe Dienstleistung</option>
+                      <option value="handwerker">Handwerkerleistung</option>
+                    </select>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table></div>
+          </div>
           <datalist id="umlage-vorlagen">
             {VORLAGEN.map((v) => (
               <option key={v} value={v} />

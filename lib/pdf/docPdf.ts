@@ -12,6 +12,8 @@ import {
   type PDFImage,
 } from "pdf-lib";
 import { adressfeldZeilen, zeichneAdressfeld } from "@/lib/pdf/adressfeld";
+import { pdfText } from "@/lib/pdf/zeichen";
+import { brichUm } from "@/lib/pdf/zeilenumbruch";
 
 export type BriefAbsender = {
   name: string;
@@ -51,23 +53,8 @@ const RIGHT = A4.w - MR;
 const LH = 14; // Zeilenhöhe
 const PG = 8; // Absatzabstand
 
-function sanitize(s: string): string {
-  return (s ?? "")
-    .replace(/[‘’‚′]/g, "'")
-    .replace(/[“”„″]/g, '"')
-    .replace(/[–—]/g, "-")
-    .replace(/…/g, "...")
-    .replace(/ /g, " ")
-    .split("")
-    .map((c) => {
-      if (c.charCodeAt(0) <= 255 || c === "€") return c; // Latin-1 (ä/ö/ü/ß …) + € bleiben
-      // Außerhalb WinAnsi: Akzente abstreifen (Č→C, ș→s) statt "?";
-      // erst wenn auch das nicht geht (z. B. Kyrillisch), Fallback "?".
-      const basis = c.normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
-      return basis.length && basis.charCodeAt(0) <= 255 ? basis : "?";
-    })
-    .join("");
-}
+// WinAnsi-sichere Bereinigung: EINE Regel für alle PDF-Builder (lib/pdf/zeichen.ts).
+const sanitize = pdfText;
 
 const formatIban = (s: string) =>
   s.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
@@ -75,7 +62,8 @@ const formatIban = (s: string) =>
 const tracked = (s: string) => s.split("").join(" ");
 
 function deDate(d: Date): string {
-  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
+  // DIN 5008: ausgeschriebenes Datum ohne führende Null („6. Oktober 2026“).
+  return d.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Berlin" });
 }
 
 export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
@@ -113,21 +101,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   const hline = (y: number, x0 = ML, x1 = RIGHT, color = LINE, thickness = 0.8) =>
     page.drawLine({ start: { x: x0, y }, end: { x: x1, y }, thickness, color });
 
-  const wrap = (s: string, size: number, maxW: number, f: PDFFont = font) => {
-    const words = sanitize(s).split(" ");
-    const lines: string[] = [];
-    let cur = "";
-    for (const w of words) {
-      const t = cur ? `${cur} ${w}` : w;
-      if (f.widthOfTextAtSize(t, size) <= maxW) cur = t;
-      else {
-        if (cur) lines.push(cur);
-        cur = w;
-      }
-    }
-    if (cur) lines.push(cur);
-    return lines.length ? lines : [""];
-  };
+  const wrap = (s: string, size: number, maxW: number, f: PDFFont = font) => brichUm(s, size, maxW, f);
 
   // Seitenumbruch: reicht der Platz nicht, neue Seite beginnen (84 = Fußzeile).
   const neueSeiteWennNoetig = (yAktuell: number, benoetigt: number): number => {
@@ -195,7 +169,12 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
     // Betreff + Objekt
     if (commit) text(ML, y, d.titel, 12.5, bold, INK);
     y -= 15;
-    if (commit) text(ML, y, `Mietobjekt: ${d.objekt}`, 9, font, MUTED);
+    // Umbrechen statt in den rechten Rand laufen (Bezeichnung, Einheit, Adresse).
+    const objektZeilen = wrap(`Mietobjekt: ${d.objekt}`, 9, RIGHT - ML);
+    objektZeilen.forEach((ln, i) => {
+      if (commit) text(ML, y, ln, 9, font, MUTED);
+      if (i < objektZeilen.length - 1) y -= 11;
+    });
     y -= 9;
     if (commit) hline(y, ML, ML + 300, GOLD, 1);
     y -= 24;
@@ -206,15 +185,22 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
       y -= 20;
     }
 
-    // Absätze
-    for (const para of d.absaetze) {
-      for (const ln of wrap(para, 10.5, RIGHT - ML)) {
-        if (commit) y = neueSeiteWennNoetig(y, LH);
+    // Platz für Grußformel + Unterschrift (bzw. Unterschriftszeile) bis zur letzten Grundlinie.
+    const grussHoehe = 6 + (d.bescheinigung ? 40 + 12 : 46);
+    const kontoBlock = kontoLines.length ? kontoH + 14 : 0;
+
+    // Absätze. Die LETZTE Textzeile wandert zusammen mit Konto-Kasten und Grußformel —
+    // so steht der Gruß nie allein auf einer Folgeseite.
+    d.absaetze.forEach((para, pi) => {
+      const zeilen = wrap(para, 10.5, RIGHT - ML);
+      zeilen.forEach((ln, li) => {
+        const letzte = pi === d.absaetze.length - 1 && li === zeilen.length - 1;
+        if (commit) y = neueSeiteWennNoetig(y, letzte ? LH + PG + kontoBlock + grussHoehe : LH);
         if (commit) text(ML, y, ln, 10.5, font, INK);
         y -= LH;
-      }
+      });
       y -= PG;
-    }
+    });
 
     // Zahlungskonto-Box
     if (kontoLines.length) {
@@ -235,7 +221,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
     }
 
     // Grußformel + Unterschrift (Bescheinigung: nur Unterschriftszeile)
-    if (commit) y = neueSeiteWennNoetig(y, 80);
+    if (commit) y = neueSeiteWennNoetig(y, grussHoehe);
     y -= 6;
     if (d.bescheinigung) {
       y -= 40; // Platz für die (E-)Unterschrift

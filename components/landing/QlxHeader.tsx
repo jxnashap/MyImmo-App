@@ -121,6 +121,14 @@ export default function QlxHeader({
                   </Link>
                 </li>
               ))}
+              {/* Immer da: Unter 761 px ist „Anmelden“ im Kopf ausgeblendet —
+                  ohne diesen Eintrag gäbe es am Handy keinen Weg ins Konto. */}
+              <li>
+                <Link href="/anmelden" onClick={zu} tabIndex={offen ? 0 : -1}>
+                  <span className="qlx-nl-num">→</span>
+                  <span className="qlx-nl-label">Anmelden</span>
+                </Link>
+              </li>
               {REGISTRIERUNG_OFFEN && (
                 <li>
                   <Link href="/anmelden" onClick={zu} tabIndex={offen ? 0 : -1} style={{ fontStyle: "italic", color: "var(--l-gold-hell)" }}>

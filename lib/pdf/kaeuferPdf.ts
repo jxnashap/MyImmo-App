@@ -4,6 +4,8 @@
 // gegenüber dem Makler. Es ist das eigene Vorstellungs-Dokument des Käufers.
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
+import { pdfText } from "@/lib/pdf/zeichen";
+import { monatDe, umbrechen } from "@/lib/pdf/umbruch";
 import type { SelbstauskunftDaten } from "@/lib/kauf/selbstauskunft";
 import { eigenkapitalGesamt, haushaltsNetto } from "@/lib/kauf/selbstauskunft";
 
@@ -18,17 +20,6 @@ const ML = 56;
 const MR = 56;
 const RIGHT = A4.w - MR;
 
-function sanitize(s: string): string {
-  return (s ?? "")
-    .replace(/[‘’‚′]/g, "'")
-    .replace(/[“”„″]/g, '"')
-    .replace(/[–—]/g, "-")
-    .replace(/…/g, "...")
-    .replace(/ /g, " ")
-    .split("")
-    .map((c) => (c.charCodeAt(0) > 255 && c !== "€" ? "?" : c))
-    .join("");
-}
 
 function euro(n: number): string {
   return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(Math.round(n))} €`;
@@ -38,9 +29,10 @@ function deDate(d: Date): string {
   return d.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" });
 }
 
+// Schreibweise wie im Formular (components/kauf/SelbstauskunftForm.tsx) und im Kreditantrag.
 const BESCH_LABEL: Record<string, string> = {
-  angestellt: "Angestellt", selbststaendig: "Selbstständig", beamter: "Beamter/Beamtin",
-  rentner: "Rentner/in", sonstiges: "Sonstiges",
+  angestellt: "Angestellt", selbststaendig: "Selbstständig", beamter: "Beamt:in",
+  rentner: "Rentner:in", sonstiges: "Sonstiges",
 };
 const BEFR_LABEL: Record<string, string> = {
   unbefristet: "unbefristet", befristet: "befristet", probezeit: "in Probezeit",
@@ -63,9 +55,9 @@ export async function buildKaeuferSelbstauskunftPdf(
   const serifI = await doc.embedFont(StandardFonts.TimesRomanItalic);
 
   const text = (x: number, y: number, s: string, size = 10, f: PDFFont = font, color = INK) =>
-    page.drawText(sanitize(s), { x, y, size, font: f, color });
+    page.drawText(pdfText(s), { x, y, size, font: f, color });
   const right = (xR: number, y: number, s: string, size = 10, f: PDFFont = font, color = INK) => {
-    const ss = sanitize(s);
+    const ss = pdfText(s);
     page.drawText(ss, { x: xR - f.widthOfTextAtSize(ss, size), y, size, font: f, color });
   };
   const hline = (y: number, x0 = ML, x1 = RIGHT, color = LINE, t = 0.8) =>
@@ -97,10 +89,14 @@ export async function buildKaeuferSelbstauskunftPdf(
   const colW = (RIGHT - ML - 24) / 2;
   const L = { x0: ML, x1: ML + colW };
   const R = { x0: ML + colW + 24, x1: RIGHT };
+  // Wert rechtsbündig; passt er nicht neben das Label, bricht er auf bis zu zwei Zeilen um
+  // (danach „...“). Vorher überdeckte ein langer Arbeitgeber das Label und lief über den Rand.
   const kv = (yy: number, label: string, wert: string, col: { x0: number; x1: number }): number => {
     text(col.x0, yy, label, 9, font, MUTED);
-    right(col.x1, yy, wert, 9.5, bold, INK);
-    return yy - 17;
+    const frei = col.x1 - col.x0 - font.widthOfTextAtSize(pdfText(label), 9) - 10;
+    const zeilen = umbrechen(bold, wert, 9.5, frei);
+    zeilen.forEach((z, i) => right(col.x1, yy - i * 12, z, 9.5, bold, INK));
+    return yy - 17 - (zeilen.length - 1) * 12;
   };
 
   text(ML, y, "1. Person", 11, bold, GOLD);
@@ -109,7 +105,7 @@ export async function buildKaeuferSelbstauskunftPdf(
   yL = kv(yL, "Beschäftigung", BESCH_LABEL[d.beschaeftigung] || "–", L);
   yL = kv(yL, "Beruf", d.beruf || "–", L);
   yL = kv(yL, "Arbeitgeber", d.arbeitgeber || "–", L);
-  yL = kv(yL, "Beschäftigt seit", d.beschaeftigtSeit ? `${d.beschaeftigtSeit} (${BEFR_LABEL[d.befristung] || d.befristung})` : "–", L);
+  yL = kv(yL, "Beschäftigt seit", d.beschaeftigtSeit ? `${monatDe(d.beschaeftigtSeit)} (${BEFR_LABEL[d.befristung] || d.befristung})` : "–", L);
   yR = kv(yR, "Familienstand", d.familienstand || "–", R);
   yR = kv(yR, "Kinder", String(d.kinder ?? 0), R);
   yR = kv(yR, "Haushaltsgröße", `${d.anzahlPersonen} Person(en)`, R);

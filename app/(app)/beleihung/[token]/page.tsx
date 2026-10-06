@@ -97,7 +97,7 @@ export default async function BankFreigabeSeite(props: { params: Promise<{ token
       <div style={{ maxWidth: 560, margin: "80px auto", padding: 24 }}>
         <Kopf />
         <div className="section" style={{ padding: 32, textAlign: "center" }}>
-          <div style={{ marginBottom: 10 }}><Lock size={30} color="var(--muted)" /></div>
+          <div style={{ marginBottom: 10 }}><Lock size={30} color="var(--muted)" style={{ margin: "0 auto" }} /></div>
           <h1 style={{ fontSize: 19, marginBottom: 8 }}>Link abgelaufen oder ungültig</h1>
           <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
             Diese Freigabe wurde widerrufen oder ist abgelaufen. Bitte fordern Sie beim
@@ -204,7 +204,7 @@ export default async function BankFreigabeSeite(props: { params: Promise<{ token
         <BankRueckmeldungForm token={params.token} />
       </div>
 
-      <p style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 22, lineHeight: 1.6 }}>
+      <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 22, lineHeight: 1.6 }}>
         Diese Seite ist eine zeitlich begrenzte, private Freigabe. Die Inhalte sind vertraulich zu behandeln
         und nur für die Finanzierungsprüfung bestimmt. Erstellt mit MyImmo.
       </p>

@@ -255,7 +255,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
             mit Tooltip, den am Handy niemand sieht. Ein kurzes „Stand" davor
             sagt in jeder Zeile, welches Datum gemeint ist. */}
         <label
-          style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10.5, color: "var(--muted)", whiteSpace: "nowrap" }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "var(--text-xs)", color: "var(--muted)", whiteSpace: "nowrap" }}
           title="Datum, das auf dem Dokument steht (Ausstellung bzw. Stichtag) — optional"
         >
           Stand

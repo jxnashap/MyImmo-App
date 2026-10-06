@@ -5,6 +5,7 @@ import QlxHero from "@/components/landing/QlxHero";
 import Reveal from "@/components/landing/Reveal";
 import { RATGEBER, ratgeberDatum } from "@/lib/ratgeber";
 import { ArrowRight, Clock } from "lucide-react";
+import { schuetzeUmbrueche as u } from "@/lib/umbruchSchutz";
 
 export const metadata: Metadata = {
   title: "Ratgeber für Vermieter — MyImmo",
@@ -31,11 +32,11 @@ export default function RatgeberIndex() {
               <Reveal key={a.slug} delay={i * 60} className="lp-reveal-fill">
                 <Link href={`/ratgeber/${a.slug}`} className="lp-card" style={{ display: "flex", flexDirection: "column", height: "100%", textDecoration: "none" }}>
                   <span className="lp-vorher" style={{ color: "var(--l-gold-dark)" }}>{a.kategorie}</span>
-                  <h3 style={{ marginBottom: 8 }}>{a.titel}</h3>
-                  <p style={{ flex: 1 }}>{a.beschreibung}</p>
+                  <h3 style={{ marginBottom: 8 }}>{u(a.titel)}</h3>
+                  <p style={{ flex: 1 }}>{u(a.beschreibung)}</p>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, fontSize: 12, color: "var(--l-faint)" }}>
-                    <span><Clock size={12} style={{ verticalAlign: "-2px" }} /> {a.lesezeit} Min · {ratgeberDatum(a.datum)}</span>
-                    <span style={{ color: "var(--l-gold-dark)", fontWeight: 600 }}>Lesen <ArrowRight size={12} style={{ verticalAlign: "-2px" }} /></span>
+                    <span><Clock size={12} style={{ display: "inline", verticalAlign: "-2px" }} /> {a.lesezeit} Min · {ratgeberDatum(a.datum)}</span>
+                    <span style={{ color: "var(--l-gold-dark)", fontWeight: 600 }}>Lesen <ArrowRight size={12} style={{ display: "inline", verticalAlign: "-2px" }} /></span>
                   </div>
                 </Link>
               </Reveal>

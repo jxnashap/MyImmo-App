@@ -473,8 +473,8 @@ export default async function AnliegenPage(
               : tab === "haus"
                 ? "Mitteilungen an deine Mieter und Infos zum Haus — sichtbar im Mieterportal"
               : tab === "service"
-                ? `Handwerker & Hausmeister verknüpfen, Aufträge vergeben${freigabeAnfragen > 0 ? ` · ${freigabeAnfragen} Freigabe-Anfrage${freigabeAnfragen > 1 ? "n" : ""} wartet` : auftraege.length > 0 ? ` · ${offeneAuftraege} offen von ${auftraege.length}` : ""}`
-                : `Meldungen deiner Mieter & deine Anfragen an sie${liste.length > 0 ? ` · ${offen} offen von ${liste.length}` : ""}`}
+                ? `Handwerker & Hausmeister verknüpfen, Aufträge vergeben${freigabeAnfragen > 0 ? ` · ${freigabeAnfragen} Freigabe-Anfrage${freigabeAnfragen > 1 ? "n warten" : " wartet"}` : auftraege.length > 0 ? ` · ${offeneAuftraege}\u00a0von ${auftraege.length}\u00a0offen` : ""}`
+                : `Meldungen deiner Mieter & deine Anfragen an sie${liste.length > 0 ? ` · ${offen}\u00a0von ${liste.length}\u00a0offen` : ""}`}
           </div>
         </div>
       </div>
@@ -493,7 +493,7 @@ export default async function AnliegenPage(
                 <span
                   className={tab === t.key ? "badge" : "badge badge-amber"}
                   style={{
-                    fontSize: 10,
+                    fontSize: 11,
                     padding: "1px 7px",
                     ...(tab === t.key ? { background: "rgba(0,0,0,.14)", color: "inherit" } : {}),
                   }}

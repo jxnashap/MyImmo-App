@@ -9,6 +9,7 @@ import { useState, useTransition } from "react";
 import { speichereProtokoll } from "@/lib/actions/dokumente";
 import { useToast } from "@/components/Toast";
 import type { Tenant, Property, VermieterProfil } from "@/lib/types";
+import { protokollDatum } from "@/lib/protokollDatum";
 
 const ZUSTAENDE = ["einwandfrei", "leichte Gebrauchsspuren", "Mängel (siehe Notiz)"];
 const START_RAEUME = ["Wohnzimmer", "Schlafzimmer", "Küche", "Bad", "Flur"];
@@ -32,7 +33,7 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
   const objekt = property ? `${property.bezeichnung}${tenant.einheit ? ", " + tenant.einheit : ""}${property.adresse ? ", " + property.adresse : ""}` : "–";
   const vName = vermieter?.name ?? "";
   const titel = `Wohnungsübergabeprotokoll (${typ === "einzug" ? "Einzug" : "Auszug"})`;
-  const d = datum ? new Date(datum).toLocaleDateString("de-DE") : "";
+  const d = datum ? protokollDatum(datum) : ""; // gleiche Schreibweise wie das PDF
   const gefuellteRaeume = raeume.filter((r) => r.name.trim());
   const [ablegen, startAblegen] = useTransition();
   const toast = useToast();
@@ -42,7 +43,7 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
       {/* ---------- Eingaben (nicht im Druck) ---------- */}
       <div className="form-box no-print" style={{ maxWidth: 460, flex: "1 1 420px" }}>
         <h3>Übergabeprotokoll</h3>
-        <p>Zählerstände, Schlüssel und Raumzustände — rechts entsteht das druckfertige Blatt.</p>
+        <p>Zählerstände, Schlüssel und Raumzustände — in der Vorschau entsteht das druckfertige Blatt.</p>
 
         <div className="form-row">
           <div className="form-group"><label>Art</label><select value={typ} onChange={(e) => setTyp(e.target.value as "einzug" | "auszug")}><option value="einzug">Einzug</option><option value="auszug">Auszug</option></select></div>
@@ -61,11 +62,13 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
 
         <div className="form-section-label">Räume &amp; Zustand</div>
         {raeume.map((r, i) => (
-          <div key={i} className="form-row" style={{ gridTemplateColumns: "1fr 1fr auto", alignItems: "end" }}>
-            <div className="form-group"><label>Raum</label><input value={r.name} onChange={(e) => setRaum(i, "name", e.target.value)} /></div>
-            <div className="form-group"><label>Zustand</label><select value={r.zustand} onChange={(e) => setRaum(i, "zustand", e.target.value)}>{ZUSTAENDE.map((z) => <option key={z}>{z}</option>)}</select></div>
-            <button type="button" className="delete-btn" onClick={() => delRaum(i)} style={{ marginBottom: 9 }}><X size={14} /></button>
-            <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Anmerkung / Mängel</label><input value={r.notiz} onChange={(e) => setRaum(i, "notiz", e.target.value)} /></div>
+          // Flex statt festem Raster: Auf dem Handy steht der Raum allein in der Zeile, der
+          // Zustand darunter in voller Breite (vorher wurde „einwandfrei“ abgeschnitten).
+          <div key={i} className="form-row" style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div className="form-group" style={{ flex: "1 1 140px" }}><label>Raum</label><input value={r.name} onChange={(e) => setRaum(i, "name", e.target.value)} /></div>
+            <div className="form-group" style={{ flex: "1 1 180px" }}><label>Zustand</label><select value={r.zustand} onChange={(e) => setRaum(i, "zustand", e.target.value)}>{ZUSTAENDE.map((z) => <option key={z}>{z}</option>)}</select></div>
+            <button type="button" className="delete-btn" aria-label="Raum entfernen" onClick={() => delRaum(i)} style={{ marginBottom: 9, flex: "0 0 auto" }}><X size={14} /></button>
+            <div className="form-group" style={{ flex: "1 1 100%" }}><label>Anmerkung / Mängel</label><input value={r.notiz} onChange={(e) => setRaum(i, "notiz", e.target.value)} /></div>
           </div>
         ))}
         <button type="button" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 4 }} onClick={addRaum}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Raum</button>

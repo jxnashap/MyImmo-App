@@ -200,7 +200,7 @@ export default function MarktwertEinschaetzungen({
             </div>
           )}
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 12 }}>
-            Eigene Einschätzungen erscheinen auch in der Wertentwicklung des Objekts. „Übernehmen&quot; setzt den Wert als aktuellen Marktwert —
+            Eigene Einschätzungen erscheinen auch in der Wertentwicklung des Objekts. „Übernehmen“ setzt den Wert als aktuellen Marktwert —
             automatisch erzeugte Stände (Index, ImmoWertV) bleiben zum Vergleich stehen.
           </p>
         </div>

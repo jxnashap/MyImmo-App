@@ -23,7 +23,8 @@ describe("Hero und Kennzahlen", () => {
   });
   it("kein „kein Abo“ — die FAQ kündigt ein Abo an", () => {
     expect(lp).not.toMatch(/·\s*kein Abo/);
-    expect(lp).toContain("Datenbank in Frankfurt · derzeit kostenlos");
+    // Seit 06.10.2026 je Teil ein nowrap-Span (Umbruch nur an den „·“) — geprüft wird der Wortlaut.
+    expect(lp).toMatch(/Datenbank in Frankfurt<\/span> ·\{" "\}\s*<span[^>]*>derzeit kostenlos/);
   });
   it("keine Versprechen für Funktionen, die es nicht gibt", () => {
     for (const w of ["Bankanbindung", "Bankkonto verbinden", "MyImmo AI", "KI-Assistent", "Copilot"]) {

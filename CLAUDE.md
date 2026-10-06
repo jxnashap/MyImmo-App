@@ -1918,6 +1918,13 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Hinweis). Finanzierungswunsch → `/kredite/new?betrag=&zins=&tilgung=` (`lib/kauf/darlehenUebergabe.ts`).
   **Regel: Eine Vorbelegung aus einer Schätzung belegt nie die Kreditrate vor** — die kommt aus dem
   Vertrag (A4); Schätzwerte nur als Hinweis am Feld. `tests/paketE.test.ts`, 15 Mutationen rot.
+- 📱 **Design-/Layout-Scan 06.10.2026: `docs/AUDIT-2026-10-06-design.md`** (20 Agenten, Live-Seiten bei
+  360/390 px + PDFs, 256 bestätigte Funde, behoben in 9 Dateigruppen). **Regeln:** `euro()`/`fmtE()` mit
+  geschütztem Leerzeichen (im JSX-Text `&nbsp;`, nie `\u00A0`); PDF-Text nur über **`pdfText()`**
+  (`lib/pdf/zeichen.ts`); Grußformel nie allein auf einer Folgeseite (Platzbedarf rechnen, nicht pauschal
+  reservieren); Mietart nur über **`normMietart()`**; keine Schrift unter 11 px; Raster mit `minmax(0,1fr)`.
+  **Werkzeug: `scripts/designscan/`** (Live-Seite im Handyformat rendern; Chromium braucht den Umweg über
+  `route.fetch`, weil es dem Proxy-Zertifikat nicht vertraut). Offene Betreiber-Entscheidungen dort.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

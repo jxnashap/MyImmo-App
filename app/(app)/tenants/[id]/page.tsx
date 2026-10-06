@@ -7,6 +7,7 @@ import { mieterFolgenText } from "@/lib/loeschUmfang";
 import { euro, eur2, datum } from "@/lib/format";
 import { mieterFristen, nkErstellteJahre } from "@/lib/fristen";
 import { staffelPlan } from "@/lib/staffel";
+import { normMietart, MIETART_LABEL } from "@/lib/mietart";
 import StaffelUebernehmen from "@/components/StaffelUebernehmen";
 import { deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
@@ -123,7 +124,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
   // Staffelplan: nur bei Staffelmiete mit Startdatum + Betrag ODER Prozent
   const staffelTyp = m.staffel_typ === "prozent" ? ("prozent" as const) : ("betrag" as const);
   const plan =
-    (m.mietart ?? "").toLowerCase() === "staffel" &&
+    normMietart(m.mietart) === "staffel" &&
     m.staffel_datum &&
     ((m.staffel_betrag ?? 0) > 0 || (m.staffel_prozent ?? 0) > 0)
       ? staffelPlan({
@@ -143,7 +144,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
   const stufeImMietkonto = (st: { datum: string; miete: number }) => imMietkonto.has(`${st.datum.slice(0, 7)}|${st.miete}`);
   const mieterIban = decryptNullable(m.iban);
   const fmtIban = (x: string) => x.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
-  const mietart = m.mietart === "staffel" ? "Staffelmiete" : m.mietart === "index" ? "Indexmiete" : "Standard";
+  const mietart = MIETART_LABEL[normMietart(m.mietart)];
   const kautionTxt = m.kaution_status === "ja" ? "✓ Vollständig" : m.kaution_status === "teilweise" ? "Teilweise" : <><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> Ausstehend</>;
   const kautionCol = m.kaution_status === "ja" ? "var(--green)" : "var(--amber)";
 
@@ -152,8 +153,8 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
       <Breadcrumbs items={[{ label: "Mieter", href: "/tenants" }, { label: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }]} />
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href="/tenants" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
-          <div>
+          <Link href="/tenants" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
+          <div style={{ minWidth: 0 }}>
             <div className="topbar-title">{[m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter"}</div>
             <div className="topbar-sub">{propName}{m.einheit ? ` · ${m.einheit}` : ""}</div>
           </div>
@@ -165,7 +166,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
           <Link href={`/tenants/${m.id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}><Pencil size={14} style={{ verticalAlign: "-2px" }} /> Bearbeiten</Link>
           {/* An einem Mieter haengen Miet-Zeitraeume und NK-Positionen — die
               Grundlage jeder Abrechnung. Das gehoert in die Rueckfrage. */}
-          <DeleteButton action={deleteTenant.bind(null, m.id)} className="btn btn-ghost" label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>} confirmText={`„${[m.vorname, m.nachname].filter(Boolean).join(" ")}" wirklich löschen? ${mieterFolgenText(loeschUmfang)}`.trim()} />
+          <DeleteButton action={deleteTenant.bind(null, m.id)} className="btn btn-ghost" label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>} confirmText={`„${[m.vorname, m.nachname].filter(Boolean).join(" ")}“ wirklich löschen? ${mieterFolgenText(loeschUmfang)}`.trim()} />
         </div>
       </div>
 
@@ -174,7 +175,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
         <div className="section-body">
           {/* Klasse statt Inline-Style: Ein Inline-`gridTemplateColumns`
               überschreibt die Mobile-Regel in globals.css (Inline gewinnt), die
-              Seite blieb auf dem Telefon dreispaltig und Beträge wie „€ 1.250"
+              Seite blieb auf dem Telefon dreispaltig und Beträge wie „€ 1.250“
               brachen um oder erzwangen Seiten-Scroll. */}
           <div className="grid-kacheln">
             <Kachel label="Kaltmiete / Mo." value={euro(m.kaltmiete)} color="var(--green)" />
@@ -193,7 +194,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
             <Kachel label="Letzte Mieterhöhung" value={m.letzte_erhoehung ? datum(m.letzte_erhoehung) : "–"} />
             {m.staffel_datum && <Kachel label="Nächste Erhöhung" value={datum(m.staffel_datum)} color="var(--amber)" />}
             <Kachel label="Kaution" value={m.kaution ? euro(m.kaution) : "–"} />
-            <Kachel label="Kaution Status" value={kautionTxt} color={kautionCol} />
+            <Kachel label="Kautionsstatus" value={kautionTxt} color={kautionCol} />
             <Kachel label="Wohnfläche" value={m.flaeche ? `${m.flaeche} m²` : "–"} />
             <Kachel label="Telefon" value={m.telefon} />
             <Kachel label="E-Mail" value={m.email} />
@@ -314,9 +315,9 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
             fristen.map((f, i) => {
               const farbe = f.typ === "warn" ? "var(--red)" : f.typ === "ok" ? "var(--green)" : "var(--muted)";
               return (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
-                  <span style={{ color: farbe }}>{f.typ === "warn" ? <><TriangleAlert size={12} style={{ verticalAlign: "-2px" }} />{" "}</> : f.typ === "ok" ? "✓ " : ""}{f.label}</span>
-                  <span style={{ color: "var(--text)", fontWeight: 500 }}>{f.datum ? datum(f.datum) : "jetzt"}</span>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 12, padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
+                  <span style={{ color: farbe, display: "inline-flex", alignItems: "center", gap: 4, minWidth: 0 }}>{f.typ === "warn" ? <TriangleAlert size={12} style={{ flexShrink: 0 }} /> : f.typ === "ok" ? "✓" : null}<span>{f.label}</span></span>
+                  <span style={{ color: "var(--text)", fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 }}>{f.datum ? datum(f.datum) : "jetzt"}</span>
                 </div>
               );
             })

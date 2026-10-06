@@ -208,7 +208,7 @@ export default function AfaAssistent({ objekte, startObjekt }: { objekte: AfaObj
               </p>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ fontSize: 12 }}>
-                  <thead><tr><th>Jahr</th><th>Degressiv (5 %)</th><th>Linear ({linearSatz} %)</th><th>Optimal</th></tr></thead>
+                  <thead><tr><th>Jahr</th><th>Degressiv (5&nbsp;%)</th><th>Linear ({linearSatz}&nbsp;%)</th><th>Optimal</th></tr></thead>
                   <tbody>
                     {/* Der Plan reicht bis Jahr 15, die Tabelle zeigte pauschal 12 —
                         bei einem Wechseljahr von 13–15 argumentierte der Text über

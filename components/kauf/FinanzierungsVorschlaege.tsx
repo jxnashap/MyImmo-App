@@ -107,7 +107,7 @@ export default function FinanzierungsVorschlaege({
         <label style={{ display: "grid", gap: 4, fontSize: 11.5, color: "var(--muted)" }}>
           Verfügbares Eigenkapital (€)
           <input value={ekInput} onChange={(e) => setEkInput(e.target.value)} inputMode="numeric" placeholder="z. B. 80000"
-            style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13, color: "var(--text)", width: 150 }} />
+            style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13, color: "var(--text)", width: 150, maxWidth: "100%" }} />
         </label>
         <label style={{ display: "grid", gap: 4, fontSize: 11.5, color: "var(--muted)" }}>
           Zinsbindung
@@ -127,9 +127,9 @@ export default function FinanzierungsVorschlaege({
 
       {/* Förderung einbeziehen (optional, aufklappbar) */}
       <details open style={{ borderRadius: 12, border: "1px solid var(--line)", background: "var(--bg3)" }}>
-        <summary style={{ cursor: "pointer", userSelect: "none", padding: "10px 13px", fontSize: 12.5, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: 7 }}>
-          <Sparkles size={14} color="var(--green, #4a9d6f)" /> KfW-Förderkredit automatisch prüfen
-          <span style={{ fontWeight: 400, color: "var(--faint)" }}>— je genauer die Angaben, desto passender</span>
+        <summary style={{ cursor: "pointer", userSelect: "none", padding: "10px 13px", fontSize: 12.5, fontWeight: 600, color: "var(--text)" }}>
+          <Sparkles size={14} color="var(--green, #4a9d6f)" style={{ display: "inline-block", verticalAlign: "-2px", marginRight: 4 }} /> KfW-Förderkredit automatisch prüfen
+          <span style={{ fontWeight: 400, color: "var(--faint)" }}> — je genauer die Angaben, desto passender</span>
         </summary>
         <div style={{ padding: "2px 13px 13px", display: "grid", gap: 10 }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--muted)", cursor: "pointer" }}>
@@ -210,7 +210,7 @@ export default function FinanzierungsVorschlaege({
               <label style={{ display: "grid", gap: 4, fontSize: 11.5, color: "var(--muted)" }}>
                 Anderer Förderkredit (€) — z. B. Landesförderbank, optional
                 <input value={manuellInput} onChange={(e) => setManuellInput(e.target.value)} inputMode="numeric" placeholder="0"
-                  style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 12.5, color: "var(--text)", width: 200 }} />
+                  style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 12.5, color: "var(--text)", width: 200, maxWidth: "100%" }} />
               </label>
             </>
           )}
@@ -226,7 +226,7 @@ export default function FinanzierungsVorschlaege({
       )}
 
       {/* Zwei optisch identische Karten (§ 34i: keine wird hervorgehoben) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: 12 }}>
         {SZENARIEN.map((s) => {
           const ekEin = Math.min(ek, gesamtInvest);
           const ekUsed = Math.min(s.ekEinsatz(ekEin, nebenkosten), gesamtInvest);
@@ -263,15 +263,15 @@ export default function FinanzierungsVorschlaege({
                 {seg.map((x) => (
                   <div key={x.label} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11.5 }}>
                     <span style={{ width: 10, height: 10, borderRadius: 2, background: x.farbe, flexShrink: 0 }} />
-                    <span style={{ color: "var(--muted)" }}>{x.label}</span>
-                    <span style={{ marginLeft: "auto", fontWeight: 600, color: "var(--text)" }}>{fmtE(x.wert)}</span>
-                    <span style={{ color: "var(--faint)", width: 42, textAlign: "right" }}>{Math.round((x.wert / gesamtInvest) * 100)} %</span>
+                    <span style={{ color: "var(--muted)", minWidth: 0 }}>{x.label}</span>
+                    <span style={{ marginLeft: "auto", fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" }}>{fmtE(x.wert)}</span>
+                    <span style={{ color: "var(--faint)", width: 42, flexShrink: 0, textAlign: "right", whiteSpace: "nowrap" }}>{Math.round((x.wert / gesamtInvest) * 100)} %</span>
                   </div>
                 ))}
               </div>
 
               {/* Kennzahlen des Bankdarlehens */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 13, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 8, marginTop: 13, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
                 {[
                   { l: "Monatsrate (Bankdarlehen)", w: fmtE(konfig.monatsrate) },
                   { l: "Anfangstilgung", w: konfig.anfangstilgung.toLocaleString("de-DE") + " %" },
@@ -281,12 +281,12 @@ export default function FinanzierungsVorschlaege({
                   { l: "Liquiditätspuffer (EK)", w: fmtE(puffer) },
                 ].map((k) => (
                   <div key={k.l}>
-                    <div style={{ fontSize: 10.5, color: "var(--muted)" }}>{k.l}</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginTop: 1 }}>{k.w}</div>
+                    <div style={{ fontSize: 11, color: "var(--muted)" }}>{k.l}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)", marginTop: 1, whiteSpace: "nowrap" }}>{k.w}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ fontSize: 10.5, color: "var(--faint)", marginTop: 10 }}>
+              <div style={{ fontSize: 11, color: "var(--faint)", marginTop: 10 }}>
                 Sollzins {sollzins.toLocaleString("de-DE")} % (Beispiel — echten Zins nennt die Bank).
                 {kfwSeg > 0 && " Die Monatsrate zeigt nur das Bankdarlehen — zzgl. KfW-Rate (Konditionen von KfW/Hausbank)."}
               </div>

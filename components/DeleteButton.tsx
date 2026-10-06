@@ -72,7 +72,7 @@ export default function DeleteButton({
           <button
             type="button"
             className="btn btn-ghost"
-            style={{ fontSize: 12, padding: "5px 10px", color: "var(--red)", borderColor: "var(--red)", whiteSpace: "nowrap" }}
+            style={{ fontSize: 12, padding: "6px 12px", minHeight: 34, color: "var(--red)", borderColor: "var(--red)", whiteSpace: "nowrap" }}
             onClick={run}
           >
             Ja, löschen
@@ -80,7 +80,7 @@ export default function DeleteButton({
           <button
             type="button"
             className="btn btn-ghost"
-            style={{ fontSize: 12, padding: "5px 10px", whiteSpace: "nowrap" }}
+            style={{ fontSize: 12, padding: "6px 12px", minHeight: 34, whiteSpace: "nowrap" }}
             onClick={() => setConfirming(false)}
           >
             Abbrechen

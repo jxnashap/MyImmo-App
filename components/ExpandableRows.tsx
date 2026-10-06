@@ -27,9 +27,14 @@ export default function ExpandableRows({
       {hidden > 0 && (
         <tr className="no-hover">
           <td colSpan={cols} style={{ textAlign: "center", paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-            <button type="button" className="btn btn-ghost" onClick={() => setOpen((o) => !o)}>
-              {open ? "▴ Weniger anzeigen" : `▾ ${hidden} ${label} anzeigen`}
-            </button>
+            {/* Am Handy ist die Tabelle breiter als der Bildschirm (min-width 560 px) — der Knopf
+                bleibt angeheftet und in der SICHTBAREN Breite zentriert, statt rechts abgeschnitten
+                zu werden. Auf dem Desktop ist die Zelle schmaler als der Bildschirm: unverändert. */}
+            <div style={{ position: "sticky", left: 0, width: "min(100%, calc(100vw - 72px))" }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setOpen((o) => !o)}>
+                {open ? "▴ Weniger anzeigen" : `▾ ${hidden} ${label} anzeigen`}
+              </button>
+            </div>
           </td>
         </tr>
       )}

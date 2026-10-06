@@ -37,7 +37,7 @@ export default async function UmlagePage(props: { params: Promise<{ id: string }
       <div className="fade-up">
         <div className="topbar">
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Link href={`/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px" }}>← Zurück</Link>
+            <Link href={`/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
             <div>
               <div className="topbar-title">Nebenkosten verteilen</div>
               <div className="topbar-sub">{prop.bezeichnung}</div>

@@ -2,7 +2,7 @@
 
 export const fmt = (n: number, dec = 0) =>
   (Number.isFinite(n) ? n : 0).toLocaleString("de-DE", { minimumFractionDigits: dec, maximumFractionDigits: dec });
-export const fmtE = (n: number) => "€ " + fmt(Math.round(Number.isFinite(n) ? n : 0));
+export const fmtE = (n: number) => "€\u00A0" + fmt(Math.round(Number.isFinite(n) ? n : 0));
 export const pct = (n: number, dec = 2) => fmt(n, dec) + " %";
 
 // Grenzsteuersatz nach § 32a EStG — Tarif 2026 (marginaler Satz, exakt aus den Tarifformeln).

@@ -377,7 +377,7 @@ export default function PositionsManager({
                       </div>
                     )}
                     {AUFTEILUNG_HINWEIS[r.aufteilung] && (
-                      <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3, maxWidth: 190 }}>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3, maxWidth: 190 }}>
                         {AUFTEILUNG_HINWEIS[r.aufteilung]}
                       </div>
                     )}

@@ -89,8 +89,8 @@ export default function KontoVerwaltung({
           <h3><ShieldCheck size={15} style={{ verticalAlign: "-2px" }} /> Mein Zugang</h3>
         </div>
         <div className="section-body" style={{ fontSize: 13.5, color: "var(--muted)" }}>
-          Angemeldet als <strong style={{ color: "var(--text)" }}>{email}</strong> ·{" "}
-          {rolle === "mieter" ? "Mieter-Konto" : "Service-Konto"}
+          Angemeldet als <strong style={{ color: "var(--text)", overflowWrap: "anywhere" }}>{email}</strong>{" "}
+          <span style={{ whiteSpace: "nowrap" }}>· {rolle === "mieter" ? "Mieter-Konto" : "Service-Konto"}</span>
         </div>
       </div>
 
@@ -155,7 +155,7 @@ export default function KontoVerwaltung({
           <h3><Download size={15} style={{ verticalAlign: "-2px" }} /> Meine Daten exportieren</h3>
         </div>
         <div className="section-body">
-          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0, marginBottom: 12, lineHeight: 1.6 }}>
             Alle Daten, die zu deinem Konto gehören, als ZIP mit CSV-Dateien — Auskunft und
             Datenübertragbarkeit nach Art. 15 und 20 DSGVO.
           </p>
@@ -171,9 +171,9 @@ export default function KontoVerwaltung({
       <div className="section" style={{ margin: 0 }}>
         <div className="section-header"><h3>Rechtliches</h3></div>
         <div className="section-body" style={{ fontSize: 13, display: "flex", gap: 16, flexWrap: "wrap" }}>
-          <Link href="/datenschutz" style={{ color: "var(--gold)" }}>Datenschutz</Link>
-          <Link href="/agb" style={{ color: "var(--gold)" }}>AGB</Link>
-          <Link href="/impressum" style={{ color: "var(--gold)" }}>Impressum</Link>
+          <Link href="/datenschutz" style={{ color: "var(--gold)", display: "inline-block", padding: "8px 0" }}>Datenschutz</Link>
+          <Link href="/agb" style={{ color: "var(--gold)", display: "inline-block", padding: "8px 0" }}>AGB</Link>
+          <Link href="/impressum" style={{ color: "var(--gold)", display: "inline-block", padding: "8px 0" }}>Impressum</Link>
         </div>
       </div>
 
@@ -183,7 +183,7 @@ export default function KontoVerwaltung({
           <h3 style={{ color: "var(--red)" }}><Trash2 size={15} style={{ verticalAlign: "-2px" }} /> Konto löschen</h3>
         </div>
         <div className="section-body">
-          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0, marginBottom: 12, lineHeight: 1.6 }}>
             Löscht deinen Zugang unwiderruflich. {rolle === "mieter"
               ? "Dein Mietverhältnis bleibt davon unberührt — die Daten dazu führt dein Vermieter, er ist dafür verantwortlich. Deine Anliegen und gemeldeten Zählerstände bleiben in seiner Verwaltung stehen, verlieren aber die Verknüpfung zu deinem Zugang."
               : "Deine Aufträge bleiben beim jeweiligen Auftraggeber — er braucht sie als Nachweis zu seinen Kostenbuchungen. Sie verlieren die Verknüpfung zu deinem Zugang und tragen danach nur noch deinen Firmennamen."}

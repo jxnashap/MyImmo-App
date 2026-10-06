@@ -13,7 +13,10 @@ import { decryptNullable } from "@/lib/crypto/secure";
 import {
   TITEL,
   ART_BESCHEINIGUNG,
-  ART_ZEIGT_BETRAG,
+  ART_ZEIGT_KONTO,
+  ART_BETRAG_RUECKFALL,
+  briefDatum,
+  satzanfangGross,
   fuelleVorlage,
   vorlageFuer,
   type DocArt,
@@ -22,8 +25,8 @@ import {
 const eur = (n: number) =>
   new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) +
   " €";
-const deDate = (s: string) =>
-  s ? new Date(s).toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" }) : "";
+// DIN 5008: ausgeschrieben ohne führende Null, aus den Zahlen des ISO-Textes (= Vorschau).
+const deDate = briefDatum;
 
 const safe = (s: string) => (s || "Mieter").replace(/[^a-zA-Z0-9]+/g, "_");
 const fmtIbanAnzeige = (s: string) =>
@@ -87,12 +90,13 @@ export async function erzeugeBriefPdf(
     : "–";
 
   const kaltmiete = tenant.kaltmiete ?? 0;
-  const betragNum = parseFloat(f.betrag) || 0;
-  const fallbackMiete = art === "zahlungserinnerung" || art === "mahnung";
-  const effBetrag = betragNum > 0 ? betragNum : fallbackMiete ? kaltmiete : 0;
-
   const nkvz = tenant.nk_vorauszahlung ?? 0;
   const warm = kaltmiete + nkvz + (tenant.stellplatz_miete ?? 0);
+  // Betragsfeld ist type="number" (Punkt als Dezimaltrenner) — kein deutscher Freitext.
+  const betragNum = parseFloat(f.betrag) || 0;
+  // Ohne Eingabe die geschuldete WARMmiete (vorher Kaltmiete; Quittung blieb ganz leer).
+  const effBetrag = betragNum > 0 ? betragNum : ART_BETRAG_RUECKFALL.includes(art) ? warm : 0;
+
   const werte: Record<string, string> = {
     mieter: mieterName || "–",
     objekt,
@@ -108,10 +112,12 @@ export async function erzeugeBriefPdf(
   };
 
   const quelle = f.text.trim() ? f.text : vorlageFuer(art);
-  const absaetze = fuelleVorlage(quelle, werte);
+  const gefuellt = fuelleVorlage(quelle, werte);
+  const absaetze = ART_BESCHEINIGUNG.includes(art) ? satzanfangGross(gefuellt) : gefuellt;
 
   const ibanData = iban ? decryptIbanRow(iban) : null;
-  const konto = ART_ZEIGT_BETRAG.includes(art) && ibanData?.iban ? ibanData : null;
+  // Zahlungskasten nur, wo der Brief zur Zahlung auffordert (nicht Quittung/Mieterhöhung).
+  const konto = ART_ZEIGT_KONTO.includes(art) && ibanData?.iban ? ibanData : null;
   const absenderOrt = [profil?.plz, profil?.ort].filter(Boolean).join(" ") || null;
 
   // E-Signatur nur auf Wunsch laden und einbetten.

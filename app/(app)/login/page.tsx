@@ -34,7 +34,7 @@ function uebersetze(msg: string): string {
   // einer gueltigen Session (siehe handleSubmit). Ohne diesen Fall sah der
   // Nutzer die englische Rohmeldung.
   if (m.includes("weak") && m.includes("password"))
-    return `Dein Passwort erfuellt die aktuellen Sicherheitsregeln nicht mehr (${PASSWORT_REGEL}). Bitte aendere es gleich hier.`;
+    return `Dein Passwort erfüllt die aktuellen Sicherheitsregeln nicht mehr (${PASSWORT_REGEL}). Bitte ändere es gleich hier.`;
   if (m.includes("provider is not enabled")) return "Google-Login ist noch nicht aktiviert (in Supabase einrichten).";
   if (m.includes("rate limit") || m.includes("too many"))
     return "Zu viele Anfragen in kurzer Zeit — bitte in ein paar Minuten erneut versuchen (oder „Mit Google anmelden“).";
@@ -114,10 +114,11 @@ export default function LoginPage() {
           ? "Dieser Link lässt sich nur in dem Browser öffnen, in dem du das Zurücksetzen " +
               "angefordert hast. Fordere unten einen neuen an und öffne die E-Mail auf " +
               "demselben Gerät — oder klicke den Link erneut, falls du ihn schon einmal benutzt hast."
-          : grund === "ohne-token"
+          : // Betreiber: Tritt das wiederholt auf, nutzt die Supabase-Vorlage
+            // „Reset Password“ noch nicht `token_hash` (CLAUDE.md, Punkt 2).
+            grund === "ohne-token"
             ? "Der Link enthielt keine Kennung, die wir prüfen können. Bitte fordere unten " +
-              "einen neuen an. (Falls das erneut passiert: Die E-Mail-Vorlage in Supabase " +
-              "muss auf „token_hash“ umgestellt werden.)"
+              "einen neuen an. Falls das erneut passiert, schreib uns über „Hilfe & Kontakt“ unten."
             : "Der Link zum Zurücksetzen ist abgelaufen oder wurde schon benutzt. " +
               "Fordere unten einfach einen neuen an.",
       );
@@ -610,14 +611,14 @@ export default function LoginPage() {
         )}
 
         <div
-          className="mt-6 flex justify-center gap-4 border-t pt-4 text-[12px]"
+          className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 border-t pt-4 text-[12px]"
           style={{ borderColor: "var(--line)", color: "var(--muted)" }}
         >
-          <a href={HILFE_MAILTO} className="hover:underline">Hilfe &amp; Kontakt</a>
-          <Link href="/agb" className="hover:underline">AGB</Link>
-          <Link href="/datenschutz" className="hover:underline">Datenschutz</Link>
-          <Link href="/avv" className="hover:underline">AVV</Link>
-          <Link href="/impressum" className="hover:underline">Impressum</Link>
+          <a href={HILFE_MAILTO} className="hover:underline whitespace-nowrap py-1">Hilfe &amp; Kontakt</a>
+          <Link href="/agb" className="hover:underline whitespace-nowrap py-1">AGB</Link>
+          <Link href="/datenschutz" className="hover:underline whitespace-nowrap py-1">Datenschutz</Link>
+          <Link href="/avv" className="hover:underline whitespace-nowrap py-1">AVV</Link>
+          <Link href="/impressum" className="hover:underline whitespace-nowrap py-1">Impressum</Link>
         </div>
       </div>
     </div>
