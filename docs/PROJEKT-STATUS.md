@@ -172,8 +172,8 @@ vorsichtiges Szenario; Plan nur im Browser). Details `docs/zukunft/BUYIMMO-WEG.m
 **Fahrplan** `/fahrplan` (neun Stationen nach den fünf Schritten gruppiert + Kaufnebenkosten-Rechner), **Sanierungsrechner** `/sanierung` (Material von–bis inkl.
 Fliesen für Boden und Wand, Räume kopierbar, Arbeitszeit mit Eigenleistung, eigene Posten, geschätzter Zuschuss für
 energetische Posten (BAFA/KfW 458, Stand BEG-Reform 21.07.2026); seit 05./06.10.2026 als Guide
-(Schritt für Schritt · Übersicht · Ergebnis) mit Speichern ins Konto und Vorlagen — Speichern wirkt
-erst nach der Migration `20261006050000` im SQL-Editor, bis dahin bleibt der Entwurf im Browser;
+(Schritt für Schritt · Übersicht · Ergebnis) mit Speichern ins Konto und Vorlagen (Migration
+`20261006050000`, ausgeführt und live geprüft 06.10.2026);
 Betrag geht per Knopf in die Gesamtinvestition des Kauf-Assistenten) plus Kauf-/Verkauf-Assistent,
 Makler-Ordner, Marktwert-Schätzer, AfA-Assistent. **Nicht gebaut:** Aufmaß per Grundriss-KI,
 Tarif in `lib/plan.ts`. Details: `docs/zukunft/BUYIMMO.md`.
