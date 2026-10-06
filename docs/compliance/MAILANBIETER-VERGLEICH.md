@@ -1,7 +1,13 @@
 # Mailanbieter: Brevo oder ein deutscher Anbieter?
 
 Stand: 06.10.2026 · Anlass: Der Betreiber hält Brevo für DSGVO-bedenklich (Drittland-Weitergabe über
-Brevos Unterauftragsverarbeiter, siehe [[AVV-STATUS]]). **Noch nicht entschieden.**
+Brevos Unterauftragsverarbeiter, siehe [[AVV-STATUS]]).
+
+> ✅ **ENTSCHIEDEN 06.10.2026 (Betreiber): Brevo bleibt.** Kein deutscher Anbieter war ohne Abstriche
+> besser: CleverReach hat selbst AWS Inc. im AVV, rapidmail kann Einzelmails nur per SMTP und seine
+> Unterauftragsverarbeiter sind nur über eine Zweitquelle belegt, MailBridge zeigt keinen AVV.
+> **Nicht erneut vergleichen**, solange sich daran nichts ändert. Offen bleiben die Brevo-Punkte in
+> [[AVV-STATUS]] und die IP-Sperre (CLAUDE.md, Betreiber-Punkt 0).
 Preise und Vertragslagen altern — vor der Entscheidung die Zeilen mit Quelle erneut prüfen.
 
 ## Was MyImmo von einem Mailanbieter braucht
