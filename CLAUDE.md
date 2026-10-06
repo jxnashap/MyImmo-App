@@ -1059,6 +1059,19 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   nie prüfen (beim Bank-Link vermutlich seit 08.09.2026, nie bemerkt). Jetzt holt
   `ReAuthDialog` E-Mail und „ohne Passwort“ (`konto_hat_passwort`) selbst, wenn der Aufrufer sie
   nicht übergibt. `tests/reAuthEmail.test.ts`.
+  📥 **Rücklauf über Bank-/Makler-Link (06.10.2026, Wunsch des Betreibers, Migration
+  `20261006090000`):** Bank und Makler schicken über ihren Link Dateien zurück
+  (`components/DateiZurueckSchicken.tsx`, Action `schickeDateiZurueck` — nur mit Code-Cookie der
+  RICHTIGEN Art, Typ aus dem Dateikopf via `erkenneEingangTyp()`, nie aus Name/Browser). Sie landen
+  im **Eingang** (`freigabe_eingang`, `components/FreigabeEingang.tsx` auf Beleihungsordner bzw.
+  `/makler`, Dashboard-Neuigkeit „Bank hat ein Dokument geschickt“), NICHT im Archiv. Übernehmen =
+  RPC `freigabe_eingang_uebernehmen` (Archiv-Eintrag + Eingang leeren in EINER Transaktion),
+  Verwerfen leert die Datei. DB-Schranken: PDF/JPEG/PNG/WebP, ≤ 8 MB, je Link 10/h, 30 gesamt,
+  80 MB; keine Insert-Policy für Nutzer. In zurückgerollter Transaktion bewiesen.
+  ⚠️ **Offen (Betreiber): `20261006091000` im SQL-Editor ausführen** (Kontolöschung, enthält
+  `delete`; schließt `20261005190000` Abo-Zahlungen mit ein). Stand 06.10.2026 live geprüft:
+  `20261005190000` ist ausgeführt, `20261006091000` NOCH NICHT (`freigabe_eingang` fehlt in der Funktion). `tests/freigabeEingang.test.ts`, sieben Mutationen rot. **Regel: Was Fremde ohne
+  Konto hochladen, geht nie direkt in die Unterlagen — immer über einen Eingang mit Entscheidung.**
   **Regel: Ein neuer öffentlicher Freigabe-Link bekommt dasselbe Verfahren — keine Inhalte über
   den Token allein.** **Bewusst OHNE Code (Betreiber 05.10.2026: „Bewerber egal“):** der
   Bewerbungs-Link — er zeigt nur den Steckbrief, den der Vermieter selbst öffentlich macht, und

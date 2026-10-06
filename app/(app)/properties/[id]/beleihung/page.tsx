@@ -7,6 +7,8 @@ import BeleihungsOrdner from "@/components/BeleihungsOrdner";
 import type { BelDok } from "@/lib/beleihung";
 import type { Freigabe } from "@/lib/actions/beleihung";
 import { ABRUF_SPALTEN, type Abruf } from "@/lib/freigabeAbrufe";
+import FreigabeEingang from "@/components/FreigabeEingang";
+import { EINGANG_SPALTEN, type EingangZeile } from "@/lib/freigabeEingang";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +43,8 @@ export default async function BeleihungPage(props: { params: Promise<{ id: strin
   // Rückmeldungen der Bank zu den Freigaben dieses Objekts (RLS: nur eigene).
   const tokens = (freigaben ?? []).map((f) => f.token);
   // Dazu das Abruf-Protokoll (05.10.2026): wann welches Dokument über einen Link geladen wurde.
-  const [{ data: rueckmeldungen }, { data: abrufe }] = tokens.length
+  // Und der Eingang (06.10.2026): Dateien, die die Bank über einen dieser Links geschickt hat.
+  const [{ data: rueckmeldungen }, { data: abrufe }, { data: eingang }] = tokens.length
     ? await Promise.all([
         supabase
           .from("beleihung_rueckmeldungen")
@@ -55,14 +58,27 @@ export default async function BeleihungPage(props: { params: Promise<{ id: strin
           .in("token", tokens)
           .order("abgerufen_am", { ascending: false })
           .limit(300),
+        supabase
+          .from("freigabe_eingang")
+          .select(EINGANG_SPALTEN)
+          .eq("art", "bank")
+          .in("token", tokens)
+          .order("created_at", { ascending: false })
+          .limit(100),
       ])
-    : [{ data: [] }, { data: [] }];
+    : [{ data: [] }, { data: [] }, { data: [] }];
+  const eingangZeilen = (eingang ?? []) as EingangZeile[];
+  const eingangNeu = eingangZeilen.some((z) => z.status === "neu");
+  // Nur zeigen, wenn es je einen Link gab — vorher kann nichts eingehen.
+  const eingangBlock = tokens.length ? <FreigabeEingang zeilen={eingangZeilen} wer="der Bank" werNom="die Bank" /> : null;
 
   const hatMieter = (mieter ?? []).some((m) => !m.mietende || new Date(m.mietende) >= new Date());
   const restschuld = (kredite ?? []).reduce((s, k) => s + (k.restschuld ?? k.betrag ?? 0), 0);
   const rate = (kredite ?? []).reduce((s, k) => s + (k.monatsrate ?? 0), 0);
 
   return (
+    <>
+    {eingangNeu && eingangBlock}
     <BeleihungsOrdner
       propId={prop.id}
       objektName={prop.bezeichnung}
@@ -78,5 +94,7 @@ export default async function BeleihungPage(props: { params: Promise<{ id: strin
         eigenkapital: "",
       }}
     />
+    {!eingangNeu && eingangBlock}
+    </>
   );
 }

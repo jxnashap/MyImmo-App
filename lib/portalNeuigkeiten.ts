@@ -9,8 +9,9 @@
 // Angebot eingegangen, Rückmeldung einer Firma, Antrag des Hausmeisters, neue Bewerbung.
 
 import { vorgangUrl } from "@/lib/anliegenListe";
+import { eingangOrt } from "@/lib/freigabeEingang";
 
-export type NeuigkeitArt = "nachricht" | "termin" | "dokument" | "angebot" | "firma" | "freigabe" | "bewerbung" | "hausmeister";
+export type NeuigkeitArt = "nachricht" | "termin" | "dokument" | "angebot" | "firma" | "freigabe" | "bewerbung" | "hausmeister" | "eingang";
 
 export type Neuigkeit = {
   art: NeuigkeitArt;
@@ -36,6 +37,11 @@ export type NeuigkeitenQuelle = {
   freigaben: { titel: string; created_at: string; fachbetrieb?: boolean }[];
   /** Notizen und Fotos des Hausmeisters am Auftrag (05.10.2026). Fehlt bei älteren Aufrufern. */
   hausmeister?: { art: string; auftrag: string; created_at: string }[];
+  /**
+   * Dateien, die Bank oder Makler über ihren Link geschickt haben und die noch nicht entschieden
+   * sind (06.10.2026). Wie die Freigaben ohne Altersgrenze — sie warten auf den Eigentümer.
+   */
+  eingang?: { art: "bank" | "makler"; propId: string | null; absender: string | null; datei_name: string; created_at: string }[];
   /** Neue Bewerbungen (status „neu“). */
   bewerbungen: { name: string | null; created_at: string }[];
 };
@@ -101,6 +107,16 @@ export function bauePortalNeuigkeiten(q: NeuigkeitenQuelle, heute: string, grenz
   for (const h of q.hausmeister ?? []) {
     if (!neu(h.created_at)) continue;
     out.push({ art: "hausmeister", text: h.art === "foto" ? "Hausmeister hat ein Foto angehängt" : "Notiz vom Hausmeister", sub: h.auftrag, href: "/anliegen?tab=service", zeit: h.created_at });
+  }
+  for (const e of q.eingang ?? []) {
+    const wer = e.art === "bank" ? "Bank" : "Makler";
+    out.push({
+      art: "eingang",
+      text: `${wer} hat ein Dokument geschickt${e.absender ? ` (${e.absender})` : ""}`,
+      sub: e.datei_name,
+      href: eingangOrt(e.art, e.propId),
+      zeit: e.created_at,
+    });
   }
   for (const b of q.bewerbungen) {
     if (!neu(b.created_at)) continue;

@@ -131,6 +131,7 @@ const IMMER_ERLAUBT = [
   "/api/zaehler-foto",
   "/api/anliegen-datei",
   "/api/auftrag-foto", // Foto im Verlauf eines Service-Auftrags (05.10.2026)
+  "/api/freigabe-eingang", // Datei im Eingang von Bank/Makler ansehen (06.10.2026)
 ];
 
 // Einzelne lesende Routen ausserhalb der freien Praefixe.

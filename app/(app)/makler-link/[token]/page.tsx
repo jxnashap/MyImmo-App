@@ -1,5 +1,6 @@
 // ÖFFENTLICHE Seite für den Makler (05.10.2026, kein Konto): die Unterlagen, die ein
-// Kaufinteressent aus seinem Makler-Ordner freigegeben hat — nur Download, keine Rückmeldung.
+// Kaufinteressent aus seinem Makler-Ordner freigegeben hat — Download, seit 06.10.2026 auch
+// Rücklauf (Datei zurückschicken → Eingang des Eigentümers).
 // Erst nach dem Zugangscode aus der Mail (Cookie mit dem Code-Hash, siehe
 // lib/actions/maklerLinkPublic.ts); ohne ihn zeigt die Seite nur das Code-Formular.
 // Datenzugriff ausschließlich über SECURITY-DEFINER-Funktionen, die Token UND Hash prüfen.
@@ -9,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MAKLER_COOKIE } from "@/lib/maklerCode";
 import ZugangsCodeFormular from "@/components/ZugangsCodeFormular";
 import { meldeMaklerAn } from "@/lib/actions/maklerLinkPublic";
+import DateiZurueckSchicken, { type GesendeteDatei } from "@/components/DateiZurueckSchicken";
 import { MAKLER_CHECKLISTE } from "@/lib/makler";
 import { Lock, FileText } from "lucide-react";
 import OeffentlicheFusszeile from "@/components/OeffentlicheFusszeile";
@@ -48,11 +50,16 @@ export default async function MaklerLinkSeite(props: { params: Promise<{ token: 
   const supabase = await createClient();
   let info: Info | null = null;
   let status: string | null = null;
+  let gesendet: GesendeteDatei[] = [];
   if (/^[0-9a-f-]{36}$/i.test(params.token)) {
     const hash = (await cookies()).get(MAKLER_COOKIE)?.value;
     if (hash) {
-      const { data } = await supabase.rpc("makler_public_info", { p_token: params.token, p_code_hash: hash });
+      const [{ data }, { data: eingang }] = await Promise.all([
+        supabase.rpc("makler_public_info", { p_token: params.token, p_code_hash: hash }),
+        supabase.rpc("freigabe_public_eingang", { p_art: "makler", p_token: params.token, p_code_hash: hash }),
+      ]);
       info = (data as Info | null) ?? null;
+      gesendet = (eingang as GesendeteDatei[] | null) ?? [];
     }
     if (!info) {
       const { data } = await supabase.rpc("makler_public_status", { p_token: params.token });
@@ -116,6 +123,11 @@ export default async function MaklerLinkSeite(props: { params: Promise<{ token: 
             <a className="btn btn-ghost" style={{ fontSize: 11.5 }} href={`/makler-link/${params.token}/datei/${d.item_key}?download=1`}>Download</a>
           </div>
         ))}
+      </div>
+
+      <div className="section" style={{ marginBottom: 18 }}>
+        <div className="section-header"><h3>Dokument zurückschicken</h3></div>
+        <DateiZurueckSchicken art="makler" token={params.token} gesendet={gesendet} />
       </div>
 
       <p style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 22, lineHeight: 1.6 }}>
