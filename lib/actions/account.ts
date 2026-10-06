@@ -78,6 +78,15 @@ export async function deleteAccount(): Promise<LoeschErgebnis | void> {
     }
   }
 
+  // Beleg-Dateien im Storage-Bucket „belege“ (Pfad `<uid>/…`) erreicht delete_own_account()
+  // nicht — sie lagen nach einer Kontolöschung weiter dort (gefunden 06.10.2026 beim
+  // Überarbeiten des AVV, der ihre Löschung zusagt). Erst die Dateien, dann das Konto:
+  // Scheitert das Löschen der Dateien, bleibt das Konto bestehen und der Nutzer kann es
+  // erneut versuchen — umgekehrt blieben verwaiste Dateien ohne Konto zurück.
+  if (!(await loescheEigeneBelege(supabase, user.id))) {
+    return { ok: false, fehler: "Deine Beleg-Dateien konnten nicht gelöscht werden — das Konto wurde NICHT gelöscht. Bitte erneut versuchen." };
+  }
+
   const { error } = await supabase.rpc("delete_own_account");
   if (error) {
     return { ok: false, fehler: "Konto konnte nicht gelöscht werden: " + error.message };
@@ -86,4 +95,22 @@ export async function deleteAccount(): Promise<LoeschErgebnis | void> {
   // Session beenden (Cookies löschen) und zur Login-Seite.
   await supabase.auth.signOut();
   redirect("/login?geloescht=1");
+}
+
+const BELEG_BUCKET = "belege";
+const STAPEL = 100;
+/** Höchstens so viele Durchgänge — schützt vor einer Endlosschleife, falls Dateien nicht verschwinden. */
+const MAX_DURCHGAENGE = 200;
+
+/** Entfernt alle Dateien unter `<uid>/` im Beleg-Bucket. `false` bei jedem Fehler. */
+async function loescheEigeneBelege(supabase: Awaited<ReturnType<typeof createClient>>, uid: string): Promise<boolean> {
+  const bucket = supabase.storage.from(BELEG_BUCKET);
+  for (let i = 0; i < MAX_DURCHGAENGE; i++) {
+    const { data, error } = await bucket.list(uid, { limit: STAPEL, offset: 0 });
+    if (error || !data) return false;
+    if (data.length === 0) return true;
+    const { error: entfernFehler } = await bucket.remove(data.map((d) => `${uid}/${d.name}`));
+    if (entfernFehler) return false;
+  }
+  return false;
 }

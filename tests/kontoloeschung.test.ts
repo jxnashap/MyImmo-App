@@ -81,4 +81,24 @@ describe("Kontolöschung erfasst jede Tabelle", () => {
   it("Zuordnungen eines Partners gehen mit, wenn ER sein Konto löscht", () => {
     expect(funktion).toMatch(/delete from public\.service_objekte\s+where vermieter_id = uid or service_user_id = uid/);
   });
+
+  // Storage (06.10.2026): delete_own_account() erreicht keine Dateien in Storage-Buckets. Jeder
+  // Bucket, in den die App schreibt, muss in lib/actions/account.ts geleert werden — sonst
+  // bleiben die Dateien nach der Kontolöschung liegen (so beim Bucket „belege“ bis 06.10.2026).
+  it("jeder Storage-Bucket, in den die App schreibt, wird bei der Kontolöschung geleert", () => {
+    const quellen: string[] = [];
+    const lauf = (o: string) => {
+      for (const e of readdirSync(o, { withFileTypes: true })) {
+        const p = `${o}/${e.name}`;
+        if (e.isDirectory()) lauf(p);
+        else if (/\.tsx?$/.test(e.name)) quellen.push(readFileSync(p, "utf8"));
+      }
+    };
+    for (const o of ["lib", "app", "components"]) lauf(o);
+    const buckets = new Set(quellen.flatMap((q) => [...q.matchAll(/storage\.from\(\s*["']([^"']+)["']/g)].map((m) => m[1])));
+    expect(buckets.size, "Erkenner findet keinen Bucket — sucht er noch richtig?").toBeGreaterThan(0);
+    const konto = readFileSync("lib/actions/account.ts", "utf8");
+    const offen = [...buckets].filter((b) => !konto.includes(`"${b}"`));
+    expect(offen, `Buckets ohne Löschung bei Kontolöschung: ${offen.join(", ")}`).toEqual([]);
+  });
 });

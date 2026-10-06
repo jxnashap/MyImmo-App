@@ -878,6 +878,14 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   Verantwortlicher, nur Datenschutzerklärungs-Passus). **Größte Lücke: MyImmo muss den eigenen
   Nutzern einen AVV anbieten** (Vermieter = Verantwortliche für Mieterdaten) — /avv-Seite, AGB-
   Einbeziehung, anwaltlich prüfen. Plus Verarbeitungsverzeichnis Art. 30 Abs. 1+2 und TOM-Doku.
+  📄 **Nutzer-AVV überarbeitet 06.10.2026:** Text in **`lib/avvInhalt.ts` = EINE Quelle** für `/avv` UND
+  das PDF (`node --experimental-strip-types scripts/gen-avv-pdf.mjs` → `docs/compliance/avv-nutzer-vertrag-<Stand>.pdf`).
+  Vorher zwei Texte, die auseinanderliefen (PDF mit Enable Banking, Seite ohne Brevo). Brevo ergänzt, Google/Paddle
+  als eigenständig Verantwortliche aus der Genehmigungsliste, Nominatim/Jina als „externe Dienste ohne
+  Mieterdaten“ offen benannt, Funktionen seit 09.09. und TOM nachgezogen. **Regel: Neuer Dienst, der Daten
+  aus der App bekommt, oder neue Funktion mit Daten Dritter → `lib/avvInhalt.ts` + PDF neu erzeugen;
+  bei echten Nutzern neue Subauftragsverarbeiter VORAB ankündigen (Ziffer 7, 14 Tage).**
+  `tests/avvInhalt.test.ts`. Anwaltsfragen dazu: `docs/compliance/AVV-STATUS.md`.
 - **Businessplan (aktuell, als PDF): `docs/business/MyImmo-Businessplan-2026-09.pdf`.** Die Juli-Fassung daneben ist überholt (führte die entfernte Konto-Anbindung als gebaut) — nicht herausgeben. NICHT von
   Hand neu bauen — der komplette Plan wird per Skript erzeugt: **`node scripts/gen-businessplan-pdf.mjs`**
   (Sekunden). Inhalt/Zahlen/„Stand"-Datum nur in der `SECTIONS`-Struktur des Skripts anpassen, dann
@@ -1291,7 +1299,12 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
 - **Migrations-Regel (19.07.2026):** Jede Schemaänderung via `apply_migration` UND als Datei
   `supabase/migrations/<version>_<name>.sql` im selben PR committen (Regeln + Historie-Index:
   `supabase/migrations/README.md`). Kein DDL über `execute_sql`.
-- Dateien (Belege, Archiv-Dokumente) werden als Base64 in Tabellenspalten gespeichert — **kein Storage-Bucket** nötig.
+- Dateien (Archiv-Dokumente, Fotos, Scans) liegen als Base64 in Tabellenspalten. ⚠️ **KORREKTUR 06.10.2026:
+  Es GIBT einen Storage-Bucket** — `belege` (privat, 15 MB) für Kosten-Belege (`lib/actions/buchungen.ts`,
+  Abruf über signierte Links mit 60 s). `delete_own_account()` erreicht ihn NICHT; bis 06.10.2026 blieben die
+  Belege nach einer Kontolöschung liegen. Jetzt leert `deleteAccount` den Ordner `<uid>/` VOR der Funktion
+  (scheitert das, bleibt das Konto bestehen). **Regel: Ein neuer Bucket braucht eine Löschung in
+  `lib/actions/account.ts`** — `tests/kontoloeschung.test.ts` sucht alle `storage.from("…")` und wird sonst rot.
 - 🔑 **`revoke ... from anon, authenticated` allein wirkt im `public`-Schema NICHT** (08.09.2026
   am eigenen Leib erlebt). Supabase vergibt `EXECUTE` dort an die Rolle **PUBLIC**; anon und
   authenticated erben es von da. Nach jedem Revoke `proacl` nachsehen: Steht dort weiter ein

@@ -1,6 +1,6 @@
 # AVV-/DPA-Status & Abschluss-Checkliste
 
-Stand: 28.08.2026 · Ergänzt das AVV-Dossier und `docs/MASTERPLAN.md`.
+Stand: 06.10.2026 · Ergänzt das AVV-Dossier und `docs/MASTERPLAN.md`.
 Trägt den tatsächlichen Abschluss-/Erledigungsstand nach (Datum + „von wem").
 
 ## Status je Anbieter
@@ -11,10 +11,10 @@ Trägt den tatsächlichen Abschluss-/Erledigungsstand nach (Datum + „von wem")
 | **Supabase** | Auftragsverarbeiter (DB/Auth) | SCCs + TIA (kein DPF) | Dashboard → Org → Documents (PandaDoc) | ✅ **24.07.2026 signiert** (Jonas Scharp/Owner, PandaDoc; `supabase-dpa-signiert-2026-07-24.pdf` + `supabase-tia-2025-03-14.pdf`) |
 | **Vercel** | Auftragsverarbeiter (Hosting) | DPF ✓ + SCCs | automatisch in ToS ab Pro-Plan | ✅ **29.07.2026** — Konto ist auf Pro, AVV greift über die ToS |
 | **Google** | eigenständig Verantwortlicher (OAuth-Login) | DPF ✓ (Google LLC) | **kein AVV** — nur Datenschutzerklärungs-Passus | ✅ Passus vorhanden |
-| **Brevo** (Sendinblue SAS, Paris) | Auftragsverarbeiter (Vorlagen-Verteiler) | Vertragspartner in der EU; Drittland erst über Brevos **Unterauftragsverarbeiter** (Datadog USA, Zendesk/Convrrt USA, Support Indien) → **SCCs Module Two**, teils ergänzend DPF | **Anlage 2 („Annex 2 — DPA") zu den Nutzungsbedingungen**, gilt automatisch mit Vertragsschluss — **keine gesonderte Unterschrift** (im Volltext belegt) | 🟨 **teilweise erledigt 30.08.2026**: DPA archiviert (`brevo-dpa-archiv.md` + `brevo-dpa-2024-05-15.pdf`), Subprozessoren ausgewertet, Datenschutzerklärung korrigiert. **Offen (nur im Konto):** Rechtsdokumente prüfen, Firmendaten auf die Gewerbeanmeldung bringen |
+| **Brevo** (Sendinblue SAS, Paris) | Auftragsverarbeiter (Vorlagen-Verteiler) | Vertragspartner in der EU; Drittland erst über Brevos **Unterauftragsverarbeiter** (Datadog USA, Zendesk/Convrrt USA, Support Indien) → **SCCs Module Two**, teils ergänzend DPF | **Anlage 2 („Annex 2 — DPA") zu den Nutzungsbedingungen**, gilt automatisch mit Vertragsschluss — **keine gesonderte Unterschrift** (im Volltext belegt) | 🟨 **teilweise erledigt 30.08.2026**: DPA archiviert (`brevo-dpa-archiv.md` + `brevo-dpa-2024-05-15.pdf`), Subprozessoren ausgewertet, Datenschutzerklärung korrigiert. **Offen (nur im Konto):** Rechtsdokumente prüfen, Firmendaten auf die Gewerbeanmeldung bringen · **Anbieter bleibt (Entscheidung 06.10.2026, [[MAILANBIETER-VERGLEICH]])** |
 | ~~Enable Banking~~ | — | — | **Feature zurückgestellt (29.08.2026), aus der App entfernt** — kein AVV nötig, bis Open Banking wieder aufgebaut wird (`docs/zukunft/OPEN-BANKING.md`) | ⏸️ entfällt |
 | **Paddle** (Bezahlsystem, inaktiv) | **Merchant of Record = eigenständig Verantwortlicher**, kein AVV | — | vor dem ersten Checkout: Datenschutz-Passus statt AVV | ⬜ offen (erst bei Aktivierung, `docs/BEZAHLSYSTEM.md`) |
-| **MyImmo → Nutzer** | MyImmo = Auftragsverarbeiter der Vermieter | — | eigener AVV unter `/avv`, AGB-Einbeziehung | ⬜ anwaltlich prüfen |
+| **MyImmo → Nutzer** | MyImmo = Auftragsverarbeiter der Vermieter | — | eigener AVV unter `/avv`, AGB-Einbeziehung; Text in `lib/avvInhalt.ts` = EINE Quelle für Seite und PDF (`avv-nutzer-vertrag-2026-10-06.pdf`) | 🟨 **überarbeitet 06.10.2026** (Brevo ergänzt, Enable Banking aus dem PDF, Google aus der Genehmigungsliste, Funktionen seit 09.09. und TOM nachgezogen); ⬜ anwaltlich prüfen |
 
 ## Anthropic — erledigt (15.07.2026)
 - DPA-Kopie archiviert: `docs/compliance/anthropic-dpa-archiv.md`.
@@ -46,6 +46,16 @@ Danach in dieser Tabelle „Erledigt am" nachtragen.
       (Standard: minimale Speicherung / 30 Tage).
 - [x] ~~Vercel auf Pro upgraden~~ ✅ 29.07.2026 erledigt — DPA gilt über die ToS.
 - [ ] Eigenen Nutzer-AVV (`/avv`) + AGB anwaltlich prüfen lassen.
+      Seit 06.10.2026 zusätzlich für den Anwalt (Überarbeitung, siehe Tabelle oben):
+      (1) Sind Nominatim (nur Objektadresse) und Jina AI (nur Exposé-Link) richtig als „externe
+      Dienste ohne Zugriff auf Mieterdaten“ eingeordnet, oder Subauftragsverarbeiter mit Vertrag?
+      Mit Nominatim gibt es keinen Vertrag nach Art. 28. (2) Google und Paddle als eigenständig
+      Verantwortliche außerhalb der Genehmigungsliste. (3) Brevo ist neu in der Liste — bei echten
+      Nutzern wäre das nach Ziffer 7 vorab anzukündigen; am 06.10.2026 gab es nur Testkonten.
+- [ ] **Datenschutzerklärung Ziffer 4 an den AVV angleichen:** Sie führt Google unter
+      „Dienstleister mit Verträgen nach Art. 28 DSGVO“ — das widerspricht der eigenen Einordnung
+      (Google = eigenständig Verantwortlicher, kein AVV, Tabelle oben) und seit 06.10.2026 dem AVV.
+      Mit dem nächsten Stand der Datenschutzerklärung beheben.
 - [x] ~~Datenschutz-Passus für den Vorlagen-Verteiler (Brevo)~~ ✅ **28.08.2026** —
       `/datenschutz` Ziffer 3 g + Brevo in der Subprozessoren-Liste (Ziffer 4).
 - [x] ~~**Brevo-AVV** archivieren, Subprozessoren auswerten, Datenschutzerklärung angleichen~~

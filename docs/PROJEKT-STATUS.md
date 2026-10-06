@@ -64,7 +64,7 @@ Positionierung: **Automatik + Beweissicherung + Steuer-Wächter** statt Enterpri
   **`proxy.ts` statt `middleware.ts`** (Next 16, Laufzeit Node). `createClient()` ist async.
   Rückfallpunkt Next 15: Vercel-Deployment `dpl_LRgMzU1c5Kb47uKKjht63FFQCaLp`.
 - **Supabase** `kozhxrvyilkchjpcuwcm` (eu-central-1, **Pro**): Postgres + Auth (E-Mail, Google, TOTP-2FA), RLS auf allen 47 Tabellen.
-  Dateien als **Base64 in Tabellenspalten** (kein Storage-Bucket).
+  Dateien als **Base64 in Tabellenspalten**; nur Kosten-Belege im privaten Storage-Bucket `belege` (Korrektur 06.10.2026).
 - **Vercel** (Plan **Pro**, Repo `jxnashap/myimmo-app`, Branch `main` → Auto-Deploy).
   Live: **https://www.myimmoapp.de** (Apex leitet auf www; `my-immo-app.vercel.app` nur noch Fallback).
 - Env: `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`, `ANTHROPIC_API_KEY` (OCR/KI-Import),
