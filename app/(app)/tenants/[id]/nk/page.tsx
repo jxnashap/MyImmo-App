@@ -16,6 +16,8 @@ import NkOcrUpload from "@/components/NkOcrUpload";
 import type { ZustellPruefung } from "@/lib/mieterZugang";
 import { ladeZustellLage } from "@/lib/zustellung";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
+import { heuteBerlin } from "@/lib/zeitraum";
+import { ymPlus } from "@/lib/mietkonto";
 
 export const dynamic = "force-dynamic";
 
@@ -192,6 +194,7 @@ export default async function NkPage(
         vorschlag={a.monate > 0 && a.positionen.length > 0 ? vorauszahlungsVorschlag(a.kostenNachCo2, a.monate, a.nkVorauszahlungMonat) : null}
         aktuellMonat={a.nkVorauszahlungMonat}
         nurVorjahrsBetraege={gleicheBetraegeWieVorjahr((positions ?? []) as VorjahrPosition[], jahr)}
+        naechsterMonat={ymPlus(heuteBerlin().slice(0, 7), 1)}
       />
 
       <div className="no-print" style={{ maxWidth: "210mm", margin: "0 auto" }}>

@@ -10,6 +10,7 @@ import LandingPage from "@/components/LandingPage";
 import { euro, datum, begruessung } from "@/lib/format";
 import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
 import { fristSchluessel } from "@/lib/termine";
+import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { erwarteteMonate, zuJahrMonat } from "@/lib/mietkonto";
@@ -326,7 +327,10 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const portfolioWertProzent = wertzuwachs?.prozent ?? null;
   // Soll-Kaltmiete/Mo.: aus den laufenden Mietern, sonst aus dem Objektfeld —
   // dieselbe Regel wie Objektseite und Objektliste (lib/sollMiete.ts).
-  const totalMiete = properties.reduce((s, p) => s + sollKaltmiete(p, mieterRows, heuteISO).betrag, 0);
+  // Paket B (06.10.2026): mit den Beträgen, die DIESEN Monat gelten (Miet-Zeiträume vor dem
+  // Mieterfeld) — dieselbe Zahl wie im Mietkonto. Vorher blieb eine Erhöhung hier unsichtbar.
+  const mieterJetzt = mitGeltendenBetraegen(mieterRows, (mzRows ?? []) as never[], heuteISO.slice(0, 7));
+  const totalMiete = properties.reduce((s, p) => s + sollKaltmiete(p, mieterJetzt, heuteISO).betrag, 0);
   const kreditRates = kredite.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
   // Laufende Kosten: Ø der letzten 12 Monate MIT BUCHUNGEN, geteilt durch die
   // Monate, die das Fenster wirklich umfasst — Begründung in
@@ -342,7 +346,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // NK nur von Mietern, die zu einem Objekt gehören — deren Kaltmiete zählt
   // in totalMiete; ein Mieter ohne Objekt stünde sonst nur halb im Cashflow.
   const objektIds = new Set(properties.map((p) => p.id));
-  const warmmiete = totalMiete + nkVorauszahlungenMonat(mieterRows.filter((m) => m.prop_id && objektIds.has(m.prop_id)), heuteISO);
+  const warmmiete = totalMiete + nkVorauszahlungenMonat(mieterJetzt.filter((m) => m.prop_id && objektIds.has(m.prop_id)), heuteISO);
   const cashflow = monatsCashflow({ warmmiete, kreditraten: kreditRates, kostenSchnitt: monatKosten });
   const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
   // Leerstandsquote: nur vermietbare Objekte (Status "Vermietet"/"Leer");

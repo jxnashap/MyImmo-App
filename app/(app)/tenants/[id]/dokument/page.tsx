@@ -6,6 +6,8 @@ import DocGenerator from "@/components/DocGenerator";
 import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
 import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
+import { mitGeltendenBetraegen } from "@/lib/sollAb";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 export default async function DokumentPage(
   props: {
@@ -19,15 +21,18 @@ export default async function DokumentPage(
   const user = await aktuellerNutzer();
   const { data: m } = await supabase.from("mieter").select("*").eq("id", params.id).single();
   if (!m) notFound();
-  const tenant = m as Tenant;
-
-  const [{ data: prop }, { data: vp }, { data: ibanRows }, { data: vorlagenRows }, { data: signatur }] = await Promise.all([
-    tenant.prop_id ? supabase.from("properties").select("*").eq("id", tenant.prop_id).single() : Promise.resolve({ data: null }),
+  const roh = m as Tenant;
+  const [{ data: prop }, { data: vp }, { data: ibanRows }, { data: vorlagenRows }, { data: signatur }, { data: mz }] = await Promise.all([
+    roh.prop_id ? supabase.from("properties").select("*").eq("id", roh.prop_id).single() : Promise.resolve({ data: null }),
     user ? supabase.from("vermieter_profil").select("*").eq("user_id", user.id).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from("ibans").select("*").order("created_at", { ascending: true }),
     user ? supabase.from("dokument_vorlagen").select("art,text").eq("user_id", user.id) : Promise.resolve({ data: [] }),
     supabase.from("unterschriften").select("user_id").maybeSingle(),
+    supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete").eq("mieter_id", params.id),
   ]);
+  // Paket B: {miete} & Co. im Brief = die Beträge, die DIESEN Monat gelten — wie im Mietkonto.
+  // Vorher nahm der Brief das Mieterfeld; eine Erhöhung über einen Zeitraum fehlte darin.
+  const [tenant] = mitGeltendenBetraegen([roh], (mz ?? []) as never[], heuteBerlin().slice(0, 7));
 
   const vorlagen = Object.fromEntries(
     ((vorlagenRows as { art: string; text: string }[]) ?? []).map((r) => [r.art, r.text]),

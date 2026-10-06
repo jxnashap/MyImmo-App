@@ -2,18 +2,19 @@
 
 // NK-Seite (02.10.2026): „Positionen aus dem Vorjahr übernehmen“ und der Vorschlag für die neue
 // Vorauszahlung. Steht außerhalb des Briefes (no-print). Rechnung: lib/nkVorjahr.ts.
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CopyPlus, Lightbulb } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { actionFehler } from "@/lib/actionErgebnis";
 import { uebernehmeVorjahresPositionen } from "@/lib/actions/positions";
+import { setzeMieteAb } from "@/lib/actions/mietzeitraeume";
 
 const eur = (n: number) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
 export default function NkVorjahrHilfe({
-  mieterId, jahr, uebernahme, vorschlag, aktuellMonat, nurVorjahrsBetraege,
+  mieterId, jahr, uebernahme, vorschlag, aktuellMonat, nurVorjahrsBetraege, naechsterMonat,
 }: {
   mieterId: string;
   jahr: number;
@@ -22,7 +23,11 @@ export default function NkVorjahrHilfe({
   aktuellMonat: number;
   /** Positionen dieses Jahres wurden aus dem Vorjahr übernommen und haben noch Vorjahresbeträge. */
   nurVorjahrsBetraege: boolean;
+  /** Vorschlag für „gilt ab“ (YYYY-MM), vom Server — nie `new Date()` im Render. */
+  naechsterMonat: string;
 }) {
+  const [abMonat, setAbMonat] = useState(naechsterMonat);
+  const [uebernommen, setUebernommen] = useState(false);
   const [pending, startTransition] = useTransition();
   const toast = useToast();
   const router = useRouter();
@@ -33,6 +38,22 @@ export default function NkVorjahrHilfe({
         const f = actionFehler(await uebernehmeVorjahresPositionen(mieterId, jahr));
         if (f) return toast(f, "error");
         toast(`Positionen aus ${jahr - 1} übernommen — Beträge jetzt mit den Rechnungen ${jahr} abgleichen.`);
+        router.refresh();
+      } catch {
+        toast("Übernahme fehlgeschlagen.", "error");
+      }
+    });
+
+  // Paket B (06.10.2026): Die angepasste Vorauszahlung endete bisher im Brief — das Soll im
+  // Mietkonto blieb alt. Jetzt ab einem Monat übernehmen (frühere Monate bleiben).
+  const insMietkonto = () =>
+    startTransition(async () => {
+      if (!vorschlag) return;
+      try {
+        const r = await setzeMieteAb(mieterId, abMonat, { nk_vorauszahlung: vorschlag.vorschlag });
+        if (!r.ok) return toast(r.error ?? "Übernahme fehlgeschlagen.", "error");
+        setUebernommen(true);
+        toast("Neue Vorauszahlung im Mietkonto hinterlegt.");
         router.refresh();
       } catch {
         toast("Übernahme fehlgeschlagen.", "error");
@@ -83,6 +104,17 @@ export default function NkVorjahrHilfe({
             >
               Anpassung schreiben
             </Link>
+          </div>
+          <div className="section-body" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: 12.5, paddingTop: 0 }}>
+            <span style={{ flex: 1, minWidth: 220, color: "var(--muted)" }}>
+              Nach der Mitteilung an den Mieter: neue Vorauszahlung im Mietkonto ab
+            </span>
+            <input type="month" aria-label="Neue Vorauszahlung gilt ab" className="set-input" value={abMonat}
+              onChange={(e) => setAbMonat(e.target.value)} style={{ width: "auto" }} disabled={uebernommen} />
+            <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }}
+              disabled={pending || uebernommen || !/^\d{4}-\d{2}$/.test(abMonat)} onClick={insMietkonto}>
+              {uebernommen ? "Übernommen" : "Ins Mietkonto übernehmen"}
+            </button>
           </div>
         </div>
       )}

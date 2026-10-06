@@ -59,9 +59,9 @@ describe("Soll-Kaltmiete: Mieter vor Objektfeld", () => {
   });
 
   it("Dashboard, Objektseite und Objektliste rechnen alle mit der Regel", () => {
-    expect(readFileSync("app/(app)/page.tsx", "utf8")).toMatch(/totalMiete = properties\.reduce\(\(s, p\) => s \+ sollKaltmiete\(p, mieterRows, heuteISO\)\.betrag/);
+    expect(readFileSync("app/(app)/page.tsx", "utf8")).toMatch(/totalMiete = properties\.reduce\(\(s, p\) => s \+ sollKaltmiete\(p, mieterJetzt, heuteISO\)\.betrag/);
     expect(readFileSync("app/(app)/properties/[id]/page.tsx", "utf8")).toMatch(/const miete = soll\.betrag;/);
-    expect(readFileSync("app/(app)/properties/page.tsx", "utf8")).toMatch(/miete: sollKaltmiete\(p, miet \?\? \[\], heute\)\.betrag/);
+    expect(readFileSync("app/(app)/properties/page.tsx", "utf8")).toMatch(/miete: sollKaltmiete\(p, mietJetzt, heute\)\.betrag/);
   });
 
   it("die Objektseite zeigt die Abweichung, statt still umzuschalten", () => {
@@ -232,7 +232,7 @@ describe("Weitere Stammdaten-Lücken: Mietbeginn, Objekt, Auszahlungsdatum", () 
 
   it("Warmmiete: NK nur von Mietern mit Objekt (deren Kaltmiete zählt ja auch)", () => {
     expect(readFileSync("app/(app)/page.tsx", "utf8"))
-      .toMatch(/nkVorauszahlungenMonat\(mieterRows\.filter\(\(m\) => m\.prop_id && objektIds\.has\(m\.prop_id\)\), heuteISO\)/);
+      .toMatch(/nkVorauszahlungenMonat\(mieterJetzt\.filter\(\(m\) => m\.prop_id && objektIds\.has\(m\.prop_id\)\), heuteISO\)/);
   });
 
   it("das Mietkonto nennt die Mieter ohne Mietbeginn, statt sie still wegzulassen", () => {

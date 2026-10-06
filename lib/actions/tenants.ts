@@ -8,6 +8,9 @@ import { encrypt } from "@/lib/crypto/secure";
 import { normalizeIban } from "@/lib/iban";
 import { mieterwechselVerdacht } from "@/lib/mieterZugang";
 import { trenneMieterZugang } from "@/lib/actions/einladung";
+import { heuteBerlin } from "@/lib/zeitraum";
+import { abWannFragen, planeMietaenderung, type ZeitraumZeile } from "@/lib/sollAb";
+import { schreibeMietaenderung } from "@/lib/mietaenderung";
 
 function parse(formData: FormData) {
   const num = (k: string) => {
@@ -94,12 +97,16 @@ export async function updateTenant(id: string, formData: FormData) {
   // „korrektur“ (gleiche Person) oder „trennen“ (neuer Mieter — der alte Zugang endet).
   // Die Oberfläche fragt vorher; hier wird es durchgesetzt, auch am Formular vorbei.
   // Fail-closed: Ohne gesicherte Auskunft über den Zugang wird nicht gespeichert.
-  const [altRes, zugRes] = await Promise.all([
-    supabase.from("mieter").select("vorname,nachname,mietbeginn").eq("id", id).eq("user_id", user.id).maybeSingle(),
+  const [altRes, zugRes, zrRes] = await Promise.all([
+    supabase.from("mieter").select("vorname,nachname,mietbeginn,kaltmiete,nk_vorauszahlung,stellplatz_miete,prop_id").eq("id", id).eq("user_id", user.id).maybeSingle(),
     supabase.from("mieter_zugaenge").select("user_id").eq("mieter_id", id).eq("vermieter_id", user.id).limit(1),
+    supabase.from("miet_zeitraeume").select("id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete").eq("mieter_id", id).eq("user_id", user.id),
   ]);
-  if (altRes.error || zugRes.error) throw new Error("Mieter konnte nicht gespeichert werden — bitte erneut versuchen.");
-  const alt = altRes.data as { vorname: string | null; nachname: string | null; mietbeginn: string | null } | null;
+  if (altRes.error || zugRes.error || zrRes.error) throw new Error("Mieter konnte nicht gespeichert werden — bitte erneut versuchen.");
+  const alt = altRes.data as {
+    vorname: string | null; nachname: string | null; mietbeginn: string | null;
+    kaltmiete: number | null; nk_vorauszahlung: number | null; stellplatz_miete: number | null; prop_id: string | null;
+  } | null;
   if (alt && (zugRes.data ?? []).length > 0 && mieterwechselVerdacht(alt, neu)) {
     const entscheidung = String(formData.get("mieterwechsel") ?? "");
     if (entscheidung === "trennen") {
@@ -107,6 +114,31 @@ export async function updateTenant(id: string, formData: FormData) {
       if ("error" in r && r.error) throw new Error(r.error);
     } else if (entscheidung !== "korrektur") {
       redirect(flashUrl(`/tenants/${id}/edit`, "Name oder Mietbeginn geändert, und an diesem Mieter hängt ein Portal-Konto. Bitte angeben, ob es ein neuer Mieter ist — nichts wurde gespeichert.", "error"));
+    }
+  }
+
+  // Paket B (06.10.2026): Ändern sich Kaltmiete, NK-Vorauszahlung oder Stellplatzmiete eines
+  // laufenden Mietverhältnisses, gilt das erst AB einem Monat — sonst rechnete das Mietkonto
+  // rückwirkend mit dem neuen Betrag (Nacherfassung, Rückstand). „korrektur“ = Tippfehler,
+  // gilt seit Beginn. Die Oberfläche fragt vorher; hier wird es durchgesetzt.
+  if (alt) {
+    const altBetraege = { kaltmiete: alt.kaltmiete, nk_vorauszahlung: alt.nk_vorauszahlung, stellplatz_miete: alt.stellplatz_miete };
+    const neuBetraege = { kaltmiete: neu.kaltmiete, nk_vorauszahlung: neu.nk_vorauszahlung, stellplatz_miete: neu.stellplatz_miete };
+    if (abWannFragen(neu.mietbeginn ?? alt.mietbeginn, altBetraege, neuBetraege, heuteBerlin().slice(0, 7))) {
+      const ab = String(formData.get("miete_ab") ?? "");
+      if (/^\d{4}-\d{2}$/.test(ab)) {
+        const plan = planeMietaenderung({
+          mietbeginn: neu.mietbeginn ?? alt.mietbeginn,
+          alt: altBetraege,
+          neu: neuBetraege,
+          zeitraeume: (zrRes.data ?? []) as ZeitraumZeile[],
+          abYm: ab,
+        });
+        const r = await schreibeMietaenderung(supabase, { userId: user.id, mieterId: id, propId: neu.prop_id ?? alt.prop_id, plan });
+        if ("error" in r) redirect(flashUrl(`/tenants/${id}/edit`, r.error, "error"));
+      } else if (ab !== "korrektur") {
+        redirect(flashUrl(`/tenants/${id}/edit`, "Miete geändert — bitte angeben, ab welchem Monat der neue Betrag gilt. Nichts wurde gespeichert.", "error"));
+      }
     }
   }
 

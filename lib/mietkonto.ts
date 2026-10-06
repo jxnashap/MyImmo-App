@@ -96,6 +96,31 @@ export function tageImMonat(jahrMonat: string): number {
 }
 
 /**
+ * Vertragswerte (volle Monatsbeträge, ohne Tagesanteil und ohne Prüfung der Mietzeit)
+ * für einen Monat: Ein Miet-Zeitraum, der den Monat abdeckt, gewinnt (bei Überlappung
+ * der mit dem spätesten „von“), sonst die Felder am Mieter.
+ *
+ * Die EINE Regel für „welche Miete gilt in Monat X“ — Mietkonto, Dashboard, Objektseite
+ * und Briefe benutzen sie (Verknüpfungs-Audit 06.10.2026, Paket B). Vorher nahmen die
+ * Kacheln die Mieterfelder, das Mietkonto die Zeiträume: zwei Zahlen für eine Sache.
+ */
+export function vertragswerte(
+  mieter: Pick<MietkontoMieter, "kaltmiete" | "nk_vorauszahlung" | "stellplatz_miete">,
+  zeitraeume: MietkontoZeitraum[],
+  jahrMonat: string,
+): { kaltmiete: number; nk: number; stellplatz: number } {
+  const monatsanfang = `${jahrMonat}-01`;
+  const passend = zeitraeume
+    .filter((z) => z.von <= monatsanfang && (z.bis == null || z.bis >= monatsanfang))
+    .sort((a, b) => b.von.localeCompare(a.von))[0];
+  return {
+    kaltmiete: Number(passend ? passend.kaltmiete : mieter.kaltmiete) || 0,
+    nk: Number(passend ? passend.nk_vorauszahlung : mieter.nk_vorauszahlung) || 0,
+    stellplatz: Number(passend ? passend.stellplatz_miete : mieter.stellplatz_miete) || 0,
+  };
+}
+
+/**
  * Soll-Miete eines Mieters für einen Kalendermonat.
  * 1. Deckt ein Miet-Zeitraum den Monat ab (von <= Monatsanfang und
  *    (bis == null oder bis >= Monatsanfang)) → dessen Werte.
@@ -123,14 +148,7 @@ export function sollFuerMonat(
   if (endeYm && jahrMonat > endeYm) return null;
   if (!beginnYm) return null; // ohne Mietbeginn keine Soll-Miete
 
-  const monatsanfang = `${jahrMonat}-01`;
-  const passend = zeitraeume
-    .filter((z) => z.von <= monatsanfang && (z.bis == null || z.bis >= monatsanfang))
-    .sort((a, b) => b.von.localeCompare(a.von))[0];
-
-  const kaltmieteVoll = passend ? passend.kaltmiete ?? 0 : mieter.kaltmiete ?? 0;
-  const nkVoll = passend ? passend.nk_vorauszahlung ?? 0 : mieter.nk_vorauszahlung ?? 0;
-  const stellplatzVoll = passend ? passend.stellplatz_miete ?? 0 : mieter.stellplatz_miete ?? 0;
+  const { kaltmiete: kaltmieteVoll, nk: nkVoll, stellplatz: stellplatzVoll } = vertragswerte(mieter, zeitraeume, jahrMonat);
 
   // Belegte Tage im Monat — nur relevant im Beginn-/Endemonat.
   const gesamtTage = tageImMonat(jahrMonat);
