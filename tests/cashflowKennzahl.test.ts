@@ -150,7 +150,7 @@ describe("Warmmiete im Cashflow, Kaltmiete in Rendite und Steuer", () => {
   it("das Dashboard lädt die Vorauszahlung und rechnet sie ein", () => {
     expect(dashboard).toMatch(/select\("[^"]*nk_vorauszahlung[^"]*"\)/);
     // NK nur von Mietern mit Objekt (tests/datenluecken.test.ts).
-    expect(dashboard).toMatch(/warmmiete = totalMiete \+ nkVorauszahlungenMonat\(mieterRows\.filter\(/);
+    expect(dashboard).toMatch(/warmmiete = totalMiete \+ nkVorauszahlungenMonat\(mieterJetzt\.filter\(/);
     expect(dashboard).toMatch(/monatsCashflow\(\{ warmmiete, kreditraten: kreditRates, kostenSchnitt: monatKosten \}\)/);
   });
   it("die Rendite bleibt kalt", () => {

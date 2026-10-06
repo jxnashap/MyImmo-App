@@ -1882,6 +1882,16 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   errechnete Ersatzrate: live passten nur 2 von 11 Raten zur Formel Betrag × (Zins + Tilgung).
   (5) **Objekte legen keine NEUE Miet-Vorlage mehr an** (ohne Mieter, NK-Anteil, Mietmonat → das
   Mietkonto meldete „offen“, Doppelbuchung lag nahe); bestehende werden weiter gepflegt.
+  ✅ **Paket B, Kern (B1/B3/B4):** **`vertragswerte()` (lib/mietkonto.ts) ist die EINE Regel „welche
+  Miete gilt in Monat X“** (Zeitraum vor Mieterfeld). Ändert sich Kaltmiete/NK/Stellplatz eines
+  laufenden Mietverhältnisses, fragt das Formular „ab wann“ und `updateTenant` erzwingt es
+  (`miete_ab` = Monat oder `korrektur`); `planeMietaenderung()` (lib/sollAb.ts) hält die Vergangenheit
+  in `miet_zeitraeume` fest (Lücken mit den ALTEN Werten, laufende Zeiträume enden im Vormonat).
+  Vorher überschrieb das Formular die Felder, und das Mietkonto rechnete RÜCKWIRKEND mit dem neuen
+  Betrag. § 560-Anpassung: „Ins Mietkonto übernehmen“ → `setzeMieteAb()`. **Regel: Wer eine
+  „aktuelle Miete“ anzeigt, nimmt `mitGeltendenBetraegen(mieter, zeitraeume, monat)`, nie die
+  Mieterfelder allein.** Offen: Staffel → Zeiträume (B2), Teilzahlung (B5), Mietmonat bei
+  manueller Einnahme (B6), Wiederkehr-Miete (B7). `tests/paketB.test.ts`, 14 Mutationen rot.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

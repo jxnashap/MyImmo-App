@@ -1,5 +1,6 @@
 "use server";
 
+import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { GEO_ZURUECKSETZEN } from "@/lib/geocode";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -298,17 +299,21 @@ export async function gleicheObjektMieteAn(id: string): Promise<{ ok: boolean; e
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: prop, error: propFehler }, { data: mieter, error: mieterFehler }] = await Promise.all([
+  const [{ data: prop, error: propFehler }, { data: mieter, error: mieterFehler }, { data: mz, error: mzFehler }] = await Promise.all([
     supabase.from("properties").select("id,typ,miete").eq("id", id).eq("user_id", user.id).maybeSingle(),
-    supabase.from("mieter").select("prop_id,kaltmiete,stellplatz_miete,mietbeginn,mietende").eq("prop_id", id).eq("user_id", user.id),
+    supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete,mietbeginn,mietende").eq("prop_id", id).eq("user_id", user.id),
+    supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete").eq("user_id", user.id),
   ]);
   // Ladefehler ausdrücklich melden. (Ohne Mieterliste fiele die Regel zwar auf
   // „keine Mieter“ und schriebe nichts — der Nutzer erführe dann aber einen
   // falschen Grund.)
-  if (propFehler || mieterFehler) return { ok: false, error: "Objekt oder Mieter konnten nicht geladen werden." };
+  if (propFehler || mieterFehler || mzFehler) return { ok: false, error: "Objekt oder Mieter konnten nicht geladen werden." };
   if (!prop) return { ok: false, error: "Objekt nicht gefunden." };
 
-  const soll = sollKaltmiete(prop, mieter ?? [], new Date().toISOString().slice(0, 10));
+  const heute = new Date().toISOString().slice(0, 10);
+  // Dieselbe Miete wie Objektseite und Mietkonto (Paket B: Miet-Zeiträume des Monats).
+  const mieterJetzt = mitGeltendenBetraegen((mieter ?? []) as { id: string; prop_id: string | null; kaltmiete: number | null; stellplatz_miete: number | null; mietbeginn: string | null; mietende: string | null }[], (mz ?? []) as never[], heute.slice(0, 7));
+  const soll = sollKaltmiete(prop, mieterJetzt, heute);
   if (soll.quelle !== "mieter") return { ok: false, error: "Das Objekt hat keine laufenden Mieter." };
 
   const { data, error } = await supabase

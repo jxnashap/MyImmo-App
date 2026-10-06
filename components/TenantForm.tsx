@@ -3,6 +3,8 @@ import { TriangleAlert } from "lucide-react";
 
 import { useRef, useState } from "react";
 import { mieterwechselVerdacht } from "@/lib/mieterZugang";
+import { abWannFragen } from "@/lib/sollAb";
+import { ymPlus } from "@/lib/mietkonto";
 import type { Tenant, Property } from "@/lib/types";
 import SubmitButton from "@/components/SubmitButton";
 
@@ -45,15 +47,39 @@ export default function TenantForm({
   const formRef = useRef<HTMLFormElement>(null);
   const [entscheidung, setEntscheidung] = useState("");
   const [frage, setFrage] = useState(false);
+  // Paket B (06.10.2026): Ändert sich die Miete eines laufenden Mietverhältnisses, fragen,
+  // AB WANN — sonst rechnete das Mietkonto rückwirkend mit dem neuen Betrag. Der Server
+  // setzt dieselbe Regel durch (lib/actions/tenants.ts, abWannFragen in lib/sollAb.ts).
+  const [mieteAb, setMieteAb] = useState("");
+  const [abFrage, setAbFrage] = useState(false);
+  const [abMonat, setAbMonat] = useState("");
   const pruefeWechsel = (e: React.FormEvent<HTMLFormElement>) => {
-    if (!tenant || !portalKonto || entscheidung) return;
+    if (!tenant) return;
     const f = new FormData(e.currentTarget);
     const wert = (k: string) => (String(f.get(k) ?? "") || null);
     const alt = { vorname: tenant.vorname ?? null, nachname: tenant.nachname ?? null, mietbeginn: (tenant.mietbeginn as string | null) ?? null };
-    if (mieterwechselVerdacht(alt, { vorname: wert("vorname"), nachname: wert("nachname"), mietbeginn: wert("mietbeginn") })) {
+    if (portalKonto && !entscheidung && mieterwechselVerdacht(alt, { vorname: wert("vorname"), nachname: wert("nachname"), mietbeginn: wert("mietbeginn") })) {
       e.preventDefault();
       setFrage(true);
+      return;
     }
+    const zahl = (k: string) => (wert(k) == null ? null : Number(String(wert(k)).replace(",", ".")));
+    const aktuell = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" }).slice(0, 7);
+    if (!mieteAb && abWannFragen(
+      wert("mietbeginn") ?? alt.mietbeginn,
+      { kaltmiete: tenant.kaltmiete ?? null, nk_vorauszahlung: tenant.nk_vorauszahlung ?? null, stellplatz_miete: tenant.stellplatz_miete ?? null },
+      { kaltmiete: zahl("kaltmiete"), nk_vorauszahlung: zahl("nk_vorauszahlung"), stellplatz_miete: zahl("stellplatz_miete") },
+      aktuell,
+    )) {
+      e.preventDefault();
+      setAbMonat(ymPlus(aktuell, 1));
+      setAbFrage(true);
+    }
+  };
+  const bestaetigeAb = (wahl: string) => {
+    setMieteAb(wahl);
+    setAbFrage(false);
+    setTimeout(() => formRef.current?.requestSubmit(), 0);
   };
   const entscheide = (wahl: "korrektur" | "trennen") => {
     setEntscheidung(wahl);
@@ -65,6 +91,7 @@ export default function TenantForm({
   return (
     <form ref={formRef} action={action} onSubmit={pruefeWechsel} className="form-box" style={{ maxWidth: 640 }}>
       {entscheidung && <input type="hidden" name="mieterwechsel" value={entscheidung} />}
+      {mieteAb && <input type="hidden" name="miete_ab" value={mieteAb} />}
       {/* Rueckweg mitgeben, damit der Nutzer nach dem Speichern dort landet, wo
           er angefangen hat (z. B. auf der Objektseite) — nicht in der Liste. */}
       {back && <input type="hidden" name="back" value={back} />}
@@ -114,7 +141,7 @@ export default function TenantForm({
 
       <div className="form-section-label">Miete &amp; Kaution</div>
       <div className="form-row">
-        <div className="form-group"><label>Kaltmiete (€)</label><input type="number" step="0.01" name="kaltmiete" defaultValue={v("kaltmiete")} /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Basiswert. Für Mieterhöhungen/Staffeln die Miet-Zeiträume nutzen — die haben Vorrang.</span></div>
+        <div className="form-group"><label>Kaltmiete (€)</label><input type="number" step="0.01" name="kaltmiete" defaultValue={v("kaltmiete")} /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Ändert sich der Betrag, fragt MyImmo beim Speichern, ab welchem Monat er gilt — frühere Monate bleiben, wie sie waren.</span></div>
         <div className="form-group"><label>NK-Vorauszahlung (€)</label><input type="number" step="0.01" name="nk_vorauszahlung" defaultValue={v("nk_vorauszahlung")} /></div>
       </div>
       <div className="form-row">
@@ -186,6 +213,22 @@ export default function TenantForm({
             <button type="button" className="btn btn-gold" onClick={() => entscheide("trennen")}>Neuer Mieter — Zugang trennen und speichern</button>
             <button type="button" className="btn btn-ghost" onClick={() => entscheide("korrektur")}>Gleiche Person, nur korrigiert</button>
             <button type="button" className="btn btn-ghost" onClick={() => setFrage(false)}>Abbrechen</button>
+          </div>
+        </div>
+      )}
+
+      {abFrage && (
+        <div role="alertdialog" aria-label="Ab wann gilt die neue Miete?" className="glass-card" style={{ padding: "14px 16px", margin: "8px 0 4px", borderLeft: "3px solid var(--gold)" }}>
+          <strong style={{ fontSize: 13.5 }}>Ab wann gilt der neue Betrag?</strong>
+          <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "6px 0 10px", lineHeight: 1.55 }}>
+            Du hast Kaltmiete, NK-Vorauszahlung oder Stellplatzmiete geändert. Die Monate davor rechnet das
+            Mietkonto weiter mit dem bisherigen Betrag.
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <input type="month" aria-label="Gilt ab Monat" className="set-input" value={abMonat} onChange={(e) => setAbMonat(e.target.value)} style={{ width: "auto" }} />
+            <button type="button" className="btn btn-gold" disabled={!/^\d{4}-\d{2}$/.test(abMonat)} onClick={() => bestaetigeAb(abMonat)}>Ab diesem Monat speichern</button>
+            <button type="button" className="btn btn-ghost" onClick={() => bestaetigeAb("korrektur")}>Tippfehler — gilt seit Mietbeginn</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setAbFrage(false)}>Abbrechen</button>
           </div>
         </div>
       )}

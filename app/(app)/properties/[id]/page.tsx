@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { zeigeVerteiler } from "@/lib/umlage";
@@ -65,9 +66,11 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
     ]);
 
   // Bewertung: Historie + Comparables laden (separat, hängen an prop.id)
-  const [{ data: bewHist }, { data: vglAngebote }] = await Promise.all([
+  const [{ data: bewHist }, { data: vglAngebote }, { data: mzRows }] = await Promise.all([
     supabase.from("bewertung_historie").select("datum,marktwert").eq("immobilie_id", id).order("datum", { ascending: true }),
     supabase.from("vergleichsangebote").select("quelle,art,flaeche,zimmer,preis,preis_pro_qm,distanz_km").eq("immobilie_id", id).order("distanz_km", { ascending: true }),
+    // Paket B: Miet-Zeiträume der Mieter dieses Objekts — die aktuelle Miete ist die des Monats.
+    supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete").in("mieter_id", ((mieter ?? []) as { id: string }[]).map((m) => m.id)),
   ]);
 
   if (!prop) notFound();
@@ -116,7 +119,9 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // Soll-Kaltmiete: laufende Mieter, sonst Objektfeld — dieselbe Regel wie
   // Dashboard und Objektliste (lib/sollMiete.ts). Weichen beide ab, zeigt die
   // Seite unten einen Hinweis statt still umzuschalten.
-  const soll = sollKaltmiete(p, tenants, new Date().toISOString().slice(0, 10));
+  const heuteIso = new Date().toISOString().slice(0, 10);
+  const tenantsJetzt = mitGeltendenBetraegen(tenants, (mzRows ?? []) as never[], heuteIso.slice(0, 7));
+  const soll = sollKaltmiete(p, tenantsJetzt, heuteIso);
   const miete = soll.betrag;
   // Bruttomietrendite auf den KAUFPREIS (Marktkonvention, wie der Kaufpreis-
   // faktor daneben); nur ohne erfassten Kaufpreis auf den aktuellen Wert.
@@ -138,7 +143,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // passte nicht zum Dashboard.
   // Seit 30.09.2026 mit Warmmiete (Kaltmiete + NK-Vorauszahlungen laufender
   // Verträge) — dieselbe Rechnung wie auf dem Dashboard, lib/cashflowKennzahl.ts.
-  const nkVorausMo = nkVorauszahlungenMonat(tenants, new Date().toISOString().slice(0, 10));
+  const nkVorausMo = nkVorauszahlungenMonat(tenantsJetzt, heuteIso);
   const cashflowMo = monatsCashflow({ warmmiete: miete + nkVorausMo, kreditraten: totalKreditRate, kostenSchnitt: monatsKosten });
   const cfStr = (cashflowMo >= 0 ? "+ " : "– ") + euro(Math.abs(cashflowMo));
 

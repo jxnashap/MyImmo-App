@@ -1,4 +1,5 @@
 import { objektCheck, type CheckMieter } from "@/lib/objektCheck";
+import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { euro, prozent } from "@/lib/format";
@@ -31,16 +32,19 @@ export default async function PropertiesPage(
 ) {
   const searchParams = await props.searchParams;
   const supabase = await createClient();
-  const [{ data }, { data: kred }, { data: miet }] = await Promise.all([
+  const [{ data }, { data: kred }, { data: miet }, { data: mz }] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("kredite").select("id,prop_id,restschuld,auszahlung_datum"),
     supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete,mietbeginn,mietende"),
+    supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
   ]);
 
   // Miete je Objekt nach derselben Regel wie Dashboard und Objektseite
   // (lib/sollMiete.ts) — auch für Rendite und Sortierung „nach Miete".
   const heute = new Date().toISOString().slice(0, 10);
-  const alle = ((data ?? []) as Property[]).map((p) => ({ ...p, miete: sollKaltmiete(p, miet ?? [], heute).betrag }));
+  // Paket B: mit den Beträgen, die diesen Monat gelten (Miet-Zeiträume vor dem Mieterfeld).
+  const mietJetzt = mitGeltendenBetraegen((miet ?? []) as { id: string; prop_id: string | null; kaltmiete: number | null; stellplatz_miete: number | null; mietbeginn: string | null; mietende: string | null }[], (mz ?? []) as never[], heute.slice(0, 7));
+  const alle = ((data ?? []) as Property[]).map((p) => ({ ...p, miete: sollKaltmiete(p, mietJetzt, heute).betrag }));
   const kredite = (kred ?? []) as Pick<Kredit, "id" | "prop_id" | "restschuld" | "auszahlung_datum">[];
 
   const restMap = new Map<string, number>();
