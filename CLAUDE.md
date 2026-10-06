@@ -859,7 +859,7 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   er die Verschachtelung; eine Mutation hält das fest. **Dieselbe Falle wie bei
   `schreibFehler.test.ts` — Textmuster über JSX brauchen eine echte Klammerzählung.**
 - ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
-  `components/OnboardingTour.tsx` — sechs Stationen (Objekt → Mieter → Ein-/Ausgaben →
+  `components/OnboardingTour.tsx` — sieben Stationen (Objekt → Mieter → Darlehen → Ein-/Ausgaben →
   Mietkonto → Archiv → Steuer/Assistenten) mit Direktlinks. Öffnet sich automatisch,
   solange kein Objekt existiert und die Tour nie beendet wurde (`neuerNutzer` aus der
   Objektzahl im Root-Layout), ist überspringbar, merkt den Fortschritt und lässt sich über
@@ -1905,6 +1905,13 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   für Ausgezogene, entfällt bei archivierter Abrechnung (`mieterFristen(m, { nkErstellt })` — **jeder
   Aufrufer reicht `nkErstellteJahre()` durch**); „Nachzahlung buchen“; Auftrag → Kosten mit
   Rechnungsdatum. `tests/paketC.test.ts`, 13 Mutationen rot.
+  ✅ **Paket D (Wege und Links):** **`fristZiel(quelle, id, label)` in `lib/heute.ts` ist die EINE Regel,
+  wohin eine Frist führt** — Dashboard UND `/termine` (dort ist das Label ein Link). Anliegen-Aufgabe →
+  `vorgangUrl(id)`; Objekt-Check → `/afa-assistent?objekt=` bzw. `/tenants/new?prop=…&back=…`; neuer
+  Mieter übernimmt Fläche/Kaltmiete nur bei EINER Wohneinheit (`zeigeVerteiler`); Mahnung per Mail →
+  Archiv-Kopie; Tour (jetzt sieben Stationen) und Start-Checkliste mit Darlehen; Vollmacht-Ablauf in
+  `/termine`. **Regel: Eine neue abgeleitete Frist bekommt ihr Ziel über `fristZiel()`, nie ein festes
+  `/termine`.** `tests/paketD.test.ts`, 14 Mutationen rot.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 
 // AfA-Assistent (Kalkulator): degressiv-vs-linear-Vergleich, § 7b-Check,
 // § 82b-Verteilung und Kaufpreisaufteilung — mit Objekt-Vorbefüllung.
-export default async function AfaAssistentPage() {
+export default async function AfaAssistentPage(seite: { searchParams: Promise<{ objekt?: string }> }) {
+  const { objekt } = await seite.searchParams;
   const supabase = await createClient();
   const { data: props } = await supabase
     .from("properties")
@@ -35,7 +36,7 @@ export default async function AfaAssistentPage() {
         </div>
       </div>
       <hr className="topbar-rule" />
-      <AfaAssistent objekte={objekte} />
+      <AfaAssistent objekte={objekte} startObjekt={objekt} />
     </div>
   );
 }

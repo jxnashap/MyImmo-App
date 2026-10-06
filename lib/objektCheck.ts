@@ -42,10 +42,12 @@ export function objektCheck(p: CheckObjekt, mieter: CheckMieter[], kredite: Chec
     { schluessel: "baujahr", label: "Baujahr", grund: "AfA-Satz und Wertschätzung", href: bearbeiten, erfuellt: (p.baujahr ?? 0) > 0 },
   ];
   if (!grundstueck) {
-    punkte.push({ schluessel: "gebaeudeanteil", label: "Gebäudeanteil (AfA)", grund: "sonst rechnet die AfA mit pauschal 80 %", href: bearbeiten, erfuellt: (p.afa_gebaeudeanteil ?? 0) > 0 });
+    // Zum AfA-Assistenten, der den Anteil aus Kaufpreis, Grundstück und Bodenrichtwert rechnet
+    // und ihn am Objekt speichert — im Formular müsste man die Zahl raten (Paket D).
+    punkte.push({ schluessel: "gebaeudeanteil", label: "Gebäudeanteil (AfA)", grund: "sonst rechnet die AfA mit pauschal 80 %", href: `/afa-assistent?objekt=${p.id}`, erfuellt: (p.afa_gebaeudeanteil ?? 0) > 0 });
   }
   if (vermietet) {
-    punkte.push({ schluessel: "mieter", label: "Mieter angelegt", grund: "Soll-Miete, Mietkonto und NK-Abrechnung", href: "/tenants/new", erfuellt: eigeneMieter.length > 0 });
+    punkte.push({ schluessel: "mieter", label: "Mieter angelegt", grund: "Soll-Miete, Mietkonto und NK-Abrechnung", href: `/tenants/new?prop=${p.id}&back=/properties/${p.id}`, erfuellt: eigeneMieter.length > 0 });
     if (eigeneMieter.length > 0) {
       const ohne = eigeneMieter.filter((m) => !m.mietbeginn);
       punkte.push({

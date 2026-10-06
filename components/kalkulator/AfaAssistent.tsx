@@ -28,17 +28,20 @@ const numOr = (s: string, fallback = 0) => {
   return Number.isFinite(v) ? v : fallback;
 };
 
-export default function AfaAssistent({ objekte }: { objekte: AfaObjekt[] }) {
+export default function AfaAssistent({ objekte, startObjekt }: { objekte: AfaObjekt[]; startObjekt?: string }) {
+  // Paket D (06.10.2026): `?objekt=<id>` (z. B. aus „Gebäudeanteil fehlt“ im Objekt-Check) lädt
+  // das Objekt gleich — vorher führte der Hinweis ins Formular, und man musste die Zahl raten.
+  const o0 = startObjekt ? objekte.find((x) => x.id === startObjekt) : undefined;
   // Gemeinsame Eingaben (per Objekt vorbefüllbar)
-  const [kaufpreis, setKaufpreis] = useState("300000");
-  const [grundflaeche, setGrundflaeche] = useState("");
-  const [bodenrichtwert, setBodenrichtwert] = useState("");
-  const [wohnflaeche, setWohnflaeche] = useState("100");
-  const [baujahr, setBaujahr] = useState("2024");
+  const [kaufpreis, setKaufpreis] = useState(o0?.kaufpreis != null ? String(o0.kaufpreis) : "300000");
+  const [grundflaeche, setGrundflaeche] = useState(o0?.grundstuecksflaeche != null ? String(o0.grundstuecksflaeche) : "");
+  const [bodenrichtwert, setBodenrichtwert] = useState(o0?.bodenrichtwert != null ? String(o0.bodenrichtwert) : "");
+  const [wohnflaeche, setWohnflaeche] = useState(o0?.flaeche != null ? String(o0.flaeche) : "100");
+  const [baujahr, setBaujahr] = useState(o0?.baujahr != null ? String(o0.baujahr) : "2024");
 
   // Rückkanal: gewähltes Objekt merken, damit der ermittelte Gebäudeanteil
   // per Klick am Objekt gespeichert werden kann.
-  const [objektId, setObjektId] = useState("");
+  const [objektId, setObjektId] = useState(o0?.id ?? "");
   const [speichern, startSpeichern] = useTransition();
   const [gespeichertFuer, setGespeichertFuer] = useState<string | null>(null);
   const [speicherFehler, setSpeicherFehler] = useState<string | null>(null);

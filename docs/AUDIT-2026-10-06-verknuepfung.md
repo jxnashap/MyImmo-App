@@ -87,7 +87,25 @@ Ursprüngliche Funde:
 - **C4 (DE)** Lohnanteil eines Auftrags nur als Notiztext; Buchungsdatum = Übernahmetag statt
   Rechnungstag (`lib/actions/service.ts`).
 
-## Paket D — Wege und Links (offen, je S)
+## Paket D — Wege und Links ✅ erledigt 06.10.2026 (drei Punkte offen)
+
+**Gebaut:** `fristZiel()` (lib/heute.ts) = EINE Regel „wohin führt eine Frist“ für Dashboard und
+`/termine` (NK-Abrechnung → `/tenants/<id>/nk?jahr=…`, Mieter-/Objektfrist → deren Seite, Kredit,
+Steuer, Vollmacht); in `/termine` ist das Label jetzt ein Link. Anliegen-Aufgabe → `vorgangUrl(id)`.
+Objekt-Check: „Mieter anlegen“ mit `prop` + `back`, „Gebäudeanteil“ → `/afa-assistent?objekt=<id>`
+(der Assistent nimmt `?objekt=` an und belegt Kaufpreis, Flächen, Baujahr vor). Neuer Mieter an
+einem Objekt mit EINER Wohneinheit: Fläche und Kaltmiete aus dem Objekt vorbelegt (bei
+Mehrparteienhäusern nicht — dort sind es Summen). Mahnung „per Mail“ legt eine Kopie im Archiv ab
+(einmal je Briefstand; ein Archivfehler hält die Mail nicht auf). Tour und Start-Checkliste mit
+Station „Darlehen eintragen“; „Neues Objekt“ verlinkt den Exposé-Import. Vollmacht-Ablauf auch in
+`/termine` (widerrufene nicht). Beleihungsauslauf-Feld heißt „laut Bank“ mit Hinweis auf die eigene
+Rechnung. `tests/paketD.test.ts`, 14 Mutationen rot.
+**Offen, bewusst:** Zählermeldung → `/verbrauch` pauschal (die Seite hat keine Einzelansicht);
+CSV-Import setzt jedes Objekt „Vermietet“ (ohne Stichprobe echter Importdateien keine sichere Regel);
+Kontoauszug-Abbuchungen ohne Weg zur Buchung (wäre ein neuer Ablauf, eher neue Funktion).
+
+Ursprüngliche Funde:
+
 
 - Fristen verlinken pauschal `/termine`, nie das Ziel (Mieter-NK, Brief, Kredit) — `lib/heute.ts`.
 - Anliegen-Aufgabe → `/anliegen` statt `vorgangUrl(id)`; Zählermeldung → `/verbrauch` pauschal.

@@ -11,7 +11,7 @@ import { euro, datum, begruessung } from "@/lib/format";
 import { getRefinanzWarning, nkErstellteJahre, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
 import { fristSchluessel } from "@/lib/termine";
 import { mitGeltendenBetraegen } from "@/lib/sollAb";
-import { baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
+import { fristZiel, baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { erwarteteMonate, gezahltImMonat, TEILZAHLUNG_TOLERANZ } from "@/lib/mietkonto";
 import { CalendarDays, Plus, TriangleAlert, Landmark, Banknote, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck, ChevronRight, Inbox } from "lucide-react";
@@ -153,7 +153,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // letzten 90 Tage dabei (aelteres ist keine Frist mehr, sondern Altlast).
   const abISO0 = tageVor(heuteISO0, 90);
   const imFenster = (d: string) => d >= abISO0;
-  type DashFrist = { datum: string; label: string; sub: string; warn: boolean };
+  type DashFrist = { datum: string; label: string; sub: string; warn: boolean; href?: string };
   const ueberfaellig = (d: string) => d < heuteISO0;
   const nkJahre = nkErstellteJahre((nkNotizen ?? []) as { mieter_id: string | null; titel: string | null }[]);
   const fristListe: DashFrist[] = [];
@@ -165,14 +165,14 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
     for (const f of mieterFristen(m, { nkErstellt: nkJahre.get(m.id) })) if (sichtbar("mieter", f) && f.datum)
-      fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo].filter(Boolean).join(" · "), warn: f.typ === "warn" });
+      fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo].filter(Boolean).join(" · "), warn: f.typ === "warn", href: fristZiel("mieter", m.id, f.label) });
   }
   for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (sichtbar("kredit", f) && f.datum)
-    fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Darlehen", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn" });
+    fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Darlehen", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn", href: fristZiel("kredit", k.id, f.label) });
   for (const p of properties) for (const f of objektFristen(p)) if (sichtbar("objekt", f) && f.datum)
-    fristListe.push({ datum: f.datum, label: f.label, sub: p.bezeichnung, warn: f.typ === "warn" });
+    fristListe.push({ datum: f.datum, label: f.label, sub: p.bezeichnung, warn: f.typ === "warn", href: fristZiel("objekt", p.id, f.label) });
   for (const f of globaleFristen()) if (sichtbar("steuer", f) && f.datum)
-    fristListe.push({ datum: f.datum, label: f.label, sub: "Alle Objekte", warn: f.typ === "warn" });
+    fristListe.push({ datum: f.datum, label: f.label, sub: "Alle Objekte", warn: f.typ === "warn", href: fristZiel("steuer", null, f.label) });
   for (const t of (term ?? []) as { id: string; titel: string | null; datum: string | null; kategorie: string | null; erledigt: boolean | null }[])
     if (t.datum && imFenster(t.datum) && !t.erledigt)
       fristListe.push({ datum: t.datum, label: t.titel ?? "Termin", sub: t.kategorie ?? "Eigener Termin", warn: false });
@@ -380,14 +380,16 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     const schritte = [
       { nr: 1, titel: "Erstes Objekt anlegen", text: "Name, Adresse, Kaufpreis, Miete — mehr braucht es für den Start nicht.", href: "/properties/new", cta: "Objekt anlegen", erledigt: false },
       { nr: 2, titel: "Mieter erfassen", text: "Mit Kaltmiete und Mietbeginn — daraus entstehen Mietkonto und Abrechnungen.", href: "/tenants/new", cta: "Mieter anlegen", erledigt: mieterRows.length > 0 },
-      { nr: 3, titel: "Ein- & Ausgaben buchen", text: "Mieteingänge und Kosten festhalten — per Hand, per CSV-Import oder als wiederkehrende Buchung.", href: "/cashflow", cta: "Zu den Buchungen", erledigt: einnahmen.length + kosten.length > 0 },
+      // Paket D (06.10.2026): Ohne Darlehen fehlen Rate (Cashflow), Zinsbindung (Fristen) und Zinsanteil (Anlage V).
+      { nr: 3, titel: "Darlehen eintragen", text: "Falls finanziert: Rate, Zins und Zinsbindung — daraus folgen Cashflow nach Rate und die Erinnerung an das Ende der Zinsbindung.", href: "/kredite/new", cta: "Darlehen eintragen", erledigt: kredite.length > 0 },
+      { nr: 4, titel: "Ein- & Ausgaben buchen", text: "Mieteingänge und Kosten festhalten — per Hand, per CSV-Import oder als wiederkehrende Buchung.", href: "/cashflow", cta: "Zu den Buchungen", erledigt: einnahmen.length + kosten.length > 0 },
     ];
     return (
       <div className="fade-up">
         <div className="topbar">
           <div>
             <div className="topbar-title">Willkommen bei MyImmo</div>
-            <div className="topbar-sub">Drei Schritte, dann rechnet die App für dich</div>
+            <div className="topbar-sub">Vier Schritte, dann rechnet die App für dich</div>
           </div>
         </div>
         <div style={{ maxWidth: 560 }}>
