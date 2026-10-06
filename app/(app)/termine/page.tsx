@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
 import { heuteBerlin } from "@/lib/zeitraum";
+import { fristZiel } from "@/lib/heute";
+import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
 import { mieterFristen, nkErstellteJahre, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
 import {
   createTermin, createVorlageTermin, deleteTermin, toggleErledigt,
@@ -21,13 +23,15 @@ type Eintrag = {
   label: string;
   wer: string;
   wo: string;
-  quelle: "mieter" | "kredit" | "eigen" | "steuer" | "objekt";
+  quelle: "mieter" | "kredit" | "eigen" | "steuer" | "objekt" | "vertreter";
   typ: "info" | "warn" | "ok";
   kategorie: string;
   rechtsgrundlage?: string;
   erledigt?: boolean;
   wiederkehrung?: string | null;
   id?: string;
+  /** Nur abgeleitete Fristen: wohin die Frist führt (fristZiel, Paket D). */
+  ziel?: string;
   /** Nur abgeleitete Fristen: Schluessel zum Aus-/Einblenden. */
   schluessel?: string;
   ausgeblendet?: boolean;
@@ -40,13 +44,15 @@ export default async function TerminePage(
 ) {
   const searchParams = await props0.searchParams;
   const supabase = await createClient();
-  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }, { data: nkNotizen }] = await Promise.all([
+  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }, { data: nkNotizen }, { data: vertreterRows }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
     supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum").order("bezeichnung"),
     supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen"),
     supabase.from("kredite").select("id,prop_id,bezeichnung,zinsbindung,auszahlung_datum"),
     supabase.from("frist_ausgeblendet").select("schluessel"),
     supabase.from("notizen").select("mieter_id,titel").eq("kategorie", "Nebenkostenabrechnung"),
+    // Paket D (06.10.2026): Vollmacht-Ablauf stand nur auf dem Dashboard — im Kalender fehlte er.
+    supabase.from("vertreter").select("id,vorname,nachname,gueltig_bis,widerrufen_am").not("gueltig_bis", "is", null),
   ]);
 
   const properties = (props ?? []) as (Pick<Property, "id" | "bezeichnung" | "typ"> & { energieausweis_datum: string | null })[];
@@ -64,26 +70,41 @@ export default async function TerminePage(
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
     for (const f of mieterFristen(m, { nkErstellt: nkJahre.get(m.id) })) {
       if (!f.datum) continue;
-      eintraege.push({ datum: f.datum, label: f.label, wer, wo, quelle: "mieter", typ: f.typ, kategorie: f.kategorie ?? "Miete", rechtsgrundlage: f.rechtsgrundlage });
+      eintraege.push({ datum: f.datum, label: f.label, wer, wo, quelle: "mieter", typ: f.typ, kategorie: f.kategorie ?? "Miete", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("mieter", m.id, f.label) });
     }
   }
   for (const k of kredite) {
     const wo = (k.prop_id && nameOf.get(k.prop_id)) || "–";
     for (const f of kreditFristen(k)) {
       if (!f.datum) continue;
-      eintraege.push({ datum: f.datum, label: f.label, wer: k.bezeichnung ?? "Darlehen", wo, quelle: "kredit", typ: f.typ, kategorie: f.kategorie ?? "Finanzierung", rechtsgrundlage: f.rechtsgrundlage });
+      eintraege.push({ datum: f.datum, label: f.label, wer: k.bezeichnung ?? "Darlehen", wo, quelle: "kredit", typ: f.typ, kategorie: f.kategorie ?? "Finanzierung", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("kredit", k.id, f.label) });
     }
   }
   for (const p of properties) {
     for (const f of objektFristen(p)) {
       if (!f.datum) continue;
-      eintraege.push({ datum: f.datum, label: f.label, wer: "", wo: p.bezeichnung, quelle: "objekt", typ: f.typ, kategorie: f.kategorie ?? "Sonstiges", rechtsgrundlage: f.rechtsgrundlage });
+      eintraege.push({ datum: f.datum, label: f.label, wer: "", wo: p.bezeichnung, quelle: "objekt", typ: f.typ, kategorie: f.kategorie ?? "Sonstiges", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("objekt", p.id, f.label) });
     }
   }
   // Globale Steuer-Fristen (Grundsteuer-Raten, ESt-Erklärung)
   for (const f of globaleFristen()) {
     if (!f.datum) continue;
-    eintraege.push({ datum: f.datum, label: f.label, wer: "", wo: "Alle Objekte", quelle: "steuer", typ: f.typ, kategorie: f.kategorie ?? "Steuer", rechtsgrundlage: f.rechtsgrundlage });
+    eintraege.push({ datum: f.datum, label: f.label, wer: "", wo: "Alle Objekte", quelle: "steuer", typ: f.typ, kategorie: f.kategorie ?? "Steuer", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("steuer", null, f.label) });
+  }
+  const heuteISO = heuteBerlin();
+  for (const v of (vertreterRows ?? []) as { id: string; vorname: string | null; nachname: string; gueltig_bis: string; widerrufen_am: string | null }[]) {
+    const status = vollmachtStatus(v, heuteISO);
+    if (status === "widerrufen") continue;
+    eintraege.push({
+      datum: v.gueltig_bis.slice(0, 10),
+      label: "Vollmacht endet",
+      wer: vertreterName(v),
+      wo: "Vertreter",
+      quelle: "vertreter",
+      typ: status === "gueltig" ? "info" : "warn",
+      kategorie: "Sonstiges",
+      ziel: fristZiel("vertreter", v.id, "Vollmacht endet"),
+    });
   }
   for (const t of termine) {
     if (!t.datum) continue;
@@ -224,7 +245,7 @@ export default async function TerminePage(
         </span>
         <span className="tz-text">
           <span className="listen-zeile-titel" style={{ textDecoration: e.erledigt ? "line-through" : undefined }}>
-            {e.label}
+            {e.ziel ? <Link href={e.ziel} style={{ color: "inherit" }}>{e.label}</Link> : e.label}
             {e.wiederkehrung && <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 400, marginLeft: 6 }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[e.wiederkehrung] ?? e.wiederkehrung}</span>}
           </span>
           <span className="listen-zeile-sub">{[`${stil.icon} ${kategorie}`, e.wer, e.wo].filter(Boolean).join(" · ")}</span>

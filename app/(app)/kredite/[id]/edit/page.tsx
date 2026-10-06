@@ -58,7 +58,7 @@ export default async function KreditEditPage(
         </div>
         <div className="form-row">
           <div className="form-group"><label>Grundschuld (€)</label><input type="number" step="0.01" name="grundschuld" defaultValue={k.grundschuld ?? ""} /></div>
-          <div className="form-group"><label>Beleihungsauslauf (%)</label><input type="number" step="0.1" name="beleihung" defaultValue={k.beleihung ?? ""} /></div>
+          <div className="form-group"><label>Beleihungsauslauf laut Bank (%)</label><input type="number" step="0.1" name="beleihung" defaultValue={k.beleihung ?? ""} /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Nur zum Nachschlagen. MyImmo rechnet den Auslauf je Objekt selbst aus Restschuld und Wert (Übersicht unter Kredite).</span></div>
         </div>
 
         <div className="form-section-label">Konditionen</div>

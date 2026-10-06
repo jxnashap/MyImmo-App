@@ -4,12 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
-  Sparkles, Home, User, Banknote, ReceiptText, Archive, Compass, Settings,
+  Sparkles, Home, User, Landmark, Banknote, ReceiptText, Archive, Compass, Settings,
   ArrowRight, ArrowLeft, X, type LucideIcon,
 } from "lucide-react";
 
 // Onboarding-Tour für neue Nutzer: kurze, durchklickbare Vorstellung der
-// wichtigsten Stationen (Objekt → Mieter → Buchungen → Mietkonto → Archiv →
+// wichtigsten Stationen (Objekt → Mieter → Darlehen → Buchungen → Mietkonto → Archiv →
 // Steuer/Assistenten). Öffnet sich automatisch, solange noch kein Objekt
 // existiert und die Tour nie beendet wurde; jederzeit überspringbar und über
 // die Einstellungen erneut startbar.
@@ -51,8 +51,17 @@ const SCHRITTE: TourSchritt[] = [
     linkLabel: "Mieter anlegen",
   },
   {
+    // Paket D (06.10.2026): Ohne Darlehen fehlt die Rate im Cashflow, die Zinsbindung in den
+    // Fristen und der Zinsanteil in der Anlage V — die Tour ließ diese Station aus.
+    icon: Landmark,
+    titel: "3 · Darlehen eintragen",
+    text: "Hast du finanziert? Trag das Darlehen mit Rate, Zins und Zinsbindung ein. Daraus rechnet MyImmo den Cashflow nach Rate, erinnert rechtzeitig an das Ende der Zinsbindung und schätzt die Schuldzinsen für die Anlage V.",
+    href: "/kredite/new",
+    linkLabel: "Darlehen eintragen",
+  },
+  {
     icon: Banknote,
-    titel: "3 · Ein- & Ausgaben buchen",
+    titel: "4 · Ein- & Ausgaben buchen",
     // Die Kontoanbindung (Open Banking) wurde am 29.08.2026 komplett aus der App
     // entfernt — sie stand hier noch als Versprechen. Nicht wieder aufnehmen,
     // solange docs/zukunft/OPEN-BANKING.md ein Zukunftsprojekt beschreibt.
@@ -62,21 +71,21 @@ const SCHRITTE: TourSchritt[] = [
   },
   {
     icon: ReceiptText,
-    titel: "4 · Mietkonto im Blick",
+    titel: "5 · Mietkonto im Blick",
     text: "Das Mietkonto gleicht Soll und Ist je Mieter ab: Wer hat gezahlt, wer ist im Rückstand? Rückstände siehst du sofort — inklusive Verlauf.",
     href: "/mietkonto",
     linkLabel: "Zum Mietkonto",
   },
   {
     icon: Archive,
-    titel: "5 · Dokumente & Archiv",
+    titel: "6 · Dokumente & Archiv",
     text: "Mietverträge, Übergabeprotokolle, Nebenkostenabrechnungen: Vieles erzeugt MyImmo aus deinen Daten, alles andere legst du im Archiv ab — durchsuchbar und je Objekt sortiert.",
     href: "/archiv",
     linkLabel: "Zum Archiv",
   },
   {
     icon: Compass,
-    titel: "6 · Steuer & Assistenten",
+    titel: "7 · Steuer & Assistenten",
     text: "Anlage V, AfA, Spekulationsfrist — der Steuerbereich rechnet mit. Und wenn du kaufen oder verkaufen willst: Die Assistenten führen dich Schritt für Schritt bis zur fertigen Bank-Mappe.",
     href: "/steuer",
     linkLabel: "Zur Steuer",

@@ -66,7 +66,7 @@ describe("baueHeuteAufgaben()", () => {
       expect(x.aktion.length, x.label).toBeGreaterThan(3);
       expect(x.label.length, x.label).toBeGreaterThan(3);
     }
-    expect(a.map((x) => x.href).sort()).toEqual(["/anliegen", "/mietkonto?monat=2026-09", "/verbrauch"]);
+    expect(a.map((x) => x.href).sort()).toEqual(["/anliegen?vorgang=a1", "/mietkonto?monat=2026-09", "/verbrauch"]);
   });
 
   it("Dringendes steht oben — auch wenn es SPÄTER dran ist", () => {

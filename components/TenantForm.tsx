@@ -27,6 +27,7 @@ export default function TenantForm({
   propInitial = "",
   back,
   portalKonto = null,
+  vorbelegung,
 }: {
   action: (formData: FormData) => void;
   tenant?: Tenant;
@@ -37,6 +38,8 @@ export default function TenantForm({
   back?: string;
   /** E-Mail des verbundenen Portal-Kontos (S4: Rückfrage bei Mieterwechsel), sonst null. */
   portalKonto?: string | null;
+  /** Neuer Mieter: Werte aus dem Objekt (nur bei einer Wohneinheit, siehe /tenants/new). */
+  vorbelegung?: { flaeche: number | null; kaltmiete: number | null };
 }) {
   const [mietart, setMietart] = useState((tenant?.mietart as string) || "standard");
   const v = (k: keyof Tenant) => (tenant?.[k] as string | number | null) ?? "";
@@ -136,12 +139,12 @@ export default function TenantForm({
       </div>
       <div className="form-row">
         <div className="form-group"><label>Kündigungsfrist (Monate)</label><input type="number" name="kuendigung" defaultValue={tenant ? v("kuendigung") : "3"} placeholder="3" /></div>
-        <div className="form-group"><label>Wohnfläche (m²)</label><input type="number" step="0.01" name="flaeche" defaultValue={v("flaeche")} /></div>
+        <div className="form-group"><label>Wohnfläche (m²)</label><input type="number" step="0.01" name="flaeche" defaultValue={tenant ? v("flaeche") : (vorbelegung?.flaeche ?? "")} /></div>
       </div>
 
       <div className="form-section-label">Miete &amp; Kaution</div>
       <div className="form-row">
-        <div className="form-group"><label>Kaltmiete (€)</label><input type="number" step="0.01" name="kaltmiete" defaultValue={v("kaltmiete")} /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Ändert sich der Betrag, fragt MyImmo beim Speichern, ab welchem Monat er gilt — frühere Monate bleiben, wie sie waren.</span></div>
+        <div className="form-group"><label>Kaltmiete (€)</label><input type="number" step="0.01" name="kaltmiete" defaultValue={tenant ? v("kaltmiete") : (vorbelegung?.kaltmiete ?? "")} /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Ändert sich der Betrag, fragt MyImmo beim Speichern, ab welchem Monat er gilt — frühere Monate bleiben, wie sie waren.</span></div>
         <div className="form-group"><label>NK-Vorauszahlung (€)</label><input type="number" step="0.01" name="nk_vorauszahlung" defaultValue={v("nk_vorauszahlung")} /></div>
       </div>
       <div className="form-row">

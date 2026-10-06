@@ -11,6 +11,7 @@
 // Reine Funktion ohne Datenbank und ohne React: Was hier gerechnet wird, lässt
 // sich prüfen. Die Seite reicht nur die Zeilen herein.
 
+import { vorgangUrl } from "@/lib/anliegenListe";
 import { mieteUeberfaellig, zahlungsBriefUrl } from "@/lib/mahnung";
 
 export type AufgabenArt = "miete" | "anliegen" | "zaehler" | "frist" | "termin" | "stammdaten";
@@ -46,7 +47,25 @@ export type OffeneMiete = {
 };
 export type OffenesAnliegen = { id: string; titel: string | null; mieter: string; erstellt: string };
 export type OffeneMeldung = { id: string; art: string | null; mieter: string; datum: string };
-export type FristZeile = { datum: string; label: string; sub: string; warn: boolean };
+export type FristZeile = { datum: string; label: string; sub: string; warn: boolean; href?: string };
+
+/**
+ * Wohin eine abgeleitete Frist führt (Verknüpfungs-Audit 06.10.2026, Paket D). Vorher verlinkte
+ * jede Frist pauschal auf /termine — und dort hatten abgeleitete Fristen gar keinen Link: „NK-
+ * Abrechnung zustellen“ endete zwei Klicks später ohne Weg zur Abrechnung. EINE Regel für
+ * Dashboard und /termine.
+ */
+export function fristZiel(quelle: string, id: string | null | undefined, label: string): string {
+  if (quelle === "mieter" && id) {
+    const nk = /NK-Abrechnung (\d{4})/.exec(label)?.[1];
+    return nk ? `/tenants/${id}/nk?jahr=${nk}` : `/tenants/${id}`;
+  }
+  if (quelle === "objekt" && id) return `/properties/${id}`;
+  if (quelle === "kredit") return "/kredite";
+  if (quelle === "steuer") return "/steuer";
+  if (quelle === "vertreter") return "/einstellungen?tab=vertreter";
+  return "/termine";
+}
 export type ObjektOhneKaufdatum = { id: string; name: string };
 /** Vollmacht eines Vertreters, die bald abläuft oder abgelaufen ist (lib/vertreter.ts). */
 export type VollmachtZeile = { id: string; name: string; gueltigBis: string; abgelaufen: boolean };
@@ -114,7 +133,7 @@ export function baueHeuteAufgaben(
       art: "anliegen",
       label: a.titel?.trim() || "Neues Anliegen",
       sub: [a.mieter, "Mieter-Anliegen"].filter(Boolean).join(" · "),
-      href: "/anliegen",
+      href: vorgangUrl(a.id),
       aktion: "Anliegen öffnen",
       // Älter als 7 Tage unbeantwortet: Der Mieter wartet zu lange.
       dringend: a.erstellt.slice(0, 10) < tageVor(heuteISO, 7),
@@ -140,8 +159,8 @@ export function baueHeuteAufgaben(
       art: "frist",
       label: f.label,
       sub: f.sub,
-      href: "/termine",
-      aktion: "Termin öffnen",
+      href: f.href ?? "/termine",
+      aktion: f.href && f.href !== "/termine" ? "Öffnen" : "Termin öffnen",
       dringend: ueberfaellig || f.warn,
       datum: f.datum,
     });

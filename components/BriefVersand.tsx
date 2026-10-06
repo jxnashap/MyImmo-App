@@ -56,6 +56,10 @@ export default function BriefVersand({
   const [mail, setMail] = useState<MailStand | null>(null);
   const [portal, setPortal] = useState<PortalStand | null>(null);
   const [bestaetigung, setBestaetigung] = useState(true);
+  // Paket D (06.10.2026): Der Weg „per Mail“ hinterließ nichts — kein Archiv-Eintrag, kein Datum,
+  // und der Rückstands-Wächter bot dieselbe Erinnerung wieder an, ohne dass man sah, dass sie
+  // schon raus war. Jetzt eine Kopie im Archiv, einmal je Briefstand (nicht bei jedem Klick).
+  const [archiviertFuer, setArchiviertFuer] = useState<string | null>(null);
   const [stellt, startStellen] = useTransition();
   // Ändert sich der Brief nach dem Erzeugen, gilt das vorbereitete PDF nicht mehr.
   const schluessel = JSON.stringify(felder);
@@ -84,6 +88,19 @@ export default function BriefVersand({
     try {
       const datei = await pdfHolen();
       const link = briefMailLink({ an: email, betreff, mieterName, absender });
+      if (archiviertFuer !== schluessel) {
+        try {
+          const r = await speichereBrief(mieterId, felder);
+          if (r.ok) {
+            setArchiviertFuer(schluessel);
+            toast("Kopie im Archiv abgelegt.", "success");
+          } else {
+            toast(`Mail geht trotzdem — nur die Archiv-Kopie fehlt (${r.error ?? "Fehler"}).`, "info");
+          }
+        } catch {
+          toast("Mail geht trotzdem — nur die Archiv-Kopie fehlt.", "info");
+        }
+      }
       // Teilen braucht einen frischen Klick — nach dem Laden ist der erste verbraucht.
       // Deshalb ein zweiter Knopf statt `navigator.share` direkt hier.
       if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [datei] })) {

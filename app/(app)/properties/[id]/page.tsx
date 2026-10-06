@@ -300,7 +300,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
                 ist die Objekt-Miete veraltet, gleiche sie an.
                 <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <MieteAngleichen id={p.id} betrag={euro(soll.abweichung.mieter)} />
-                  <Link href={`/tenants/new?prop=${p.id}`} className="btn btn-ghost btn-sm">Mieter anlegen</Link>
+                  <Link href={`/tenants/new?prop=${p.id}&back=/properties/${p.id}`} className="btn btn-ghost btn-sm">Mieter anlegen</Link>
                 </div>
               </div>
             )}
