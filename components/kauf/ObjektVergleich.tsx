@@ -110,10 +110,15 @@ export default function ObjektVergleich({
                       const krone = sieger.eindeutig && sieger.id === k.id && sel.length >= 2;
                       return (
                         <th key={k.id} scope="col" className={k.id === bearbeiteId ? "vergleich-aktiv" : undefined}>
-                          <span className="vergleich-name">
-                            {krone && <Crown size={13} aria-label="meiste Bestwerte" />} {k.name}
-                          </span>
-                          {sel.length >= 2 && <span className="vergleich-punkte">{sieger.punkte[k.id] ?? 0} Bestwerte</span>}
+                          <span className="vergleich-name">{k.name}</span>
+                          {/* Krone in der Zeile der Bestwerte: neben einem umbrochenen Namen rutschte sie an den
+                              linken Zellrand und sah aus, als gehöre sie zur Spalte davor (Demo, 06.10.2026). */}
+                          {sel.length >= 2 && (
+                            <span className="vergleich-punkte">
+                              {krone && <Crown size={12} aria-label="meiste Bestwerte" />}
+                              {sieger.punkte[k.id] ?? 0} Bestwerte
+                            </span>
+                          )}
                           {k.id === gewaehltId && <span className="badge badge-gold">für die Finanzierung gewählt</span>}
                         </th>
                       );

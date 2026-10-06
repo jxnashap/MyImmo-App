@@ -33,10 +33,12 @@ Gehört zu [[BUYIMMO]]. Grenzen der Strategie: [[STRATEGIE-REITER]]. Guide: [[SA
    Migration im SQL-Editor bräuchte; nachrüsten, wenn Nutzer Pläne behalten wollen.
 5. **Lern-App-Weiter kann überraschen.** Die Seite wechselt nach einer Auswahl von selbst. Deshalb
    eng begrenzt (Regeln unten); im Browser am Handy geprüft, nicht auf einem echten Telefon.
-6. **Demo zeigt Schritt 1 leer.** Die Demo hat keine gespeicherten Kaufprüfungen und kann nichts
-   speichern → Vergleichstabelle und „Besichtigen“ für einen Kandidaten sind dort nicht zu sehen.
-   Beispiel-Kandidaten bräuchten Demo-Daten in der Produktionsdatenbank (`demo_seed` + Reset) —
-   **nur mit Ja des Betreibers.** Schritt 4 (`/makler`) ist in der Demo gesperrt (Entscheidung von
+6. ~~**Demo zeigt Schritt 1 leer.**~~ ✅ **Seit 06.10.2026 vier Beispiel-Kandidaten** (Ja des
+   Betreibers; Migration `20261006064806`). Ihre Kennzahlen kommen aus `lib/kauf/objektKennzahlen.ts`
+   — der Rechnung, die der Objekt-Rechner seitdem selbst benutzt; `tests/demoKandidaten.test.ts`
+   rechnet jede Zeile nach. **Nicht im Demo-Reset:** `kalkulationen` steht nicht in dessen
+   Tabellenliste, die Demo kann nicht schreiben — die Zeilen bleiben stehen. Kommt `kalkulationen` je
+   in den Reset, braucht es vorher eine `demo_seed`-Kopie. Schritt 4 (`/makler`) ist in der Demo gesperrt (Entscheidung von
    früher, keine Beispieldaten) — in der Seitenleiste steht deshalb mitten im Weg ein Schloss.
 
 ---
@@ -112,7 +114,12 @@ Selbstauskunft.
    sie nach einer Wahl etwas aufklappt oder ein Textfeld hat, das nach der Wahl noch fehlt.
 4. **Die Strategie rät nicht.** Keine Rangfolge, kein Urteil über die Person; neue Texte laufen
    durch den Test auf Empfehlungs-Formulierungen.
-5. **Der Rechner auf `/vergleich` darf am Handy nicht breiter werden als der Bildschirm:**
+5. **Die Kennzahlen einer Kaufprüfung rechnet nur `objektKennzahlen()`** (`lib/kauf/objektKennzahlen.ts`)
+   — Objekt-Rechner und Demo-Kandidaten. Ein neues Eingabefeld des Rechners gehört auch in die
+   Demo-Zeilen (der Test vergleicht die Feldliste mit `eingabenSnapshot()`).
+6. **Die Krone steht in der Zeile „N Bestwerte“, nie vor dem Namen** — neben einem umbrochenen Namen
+   rutschte sie an den linken Zellrand und sah aus, als gehöre sie zur Spalte davor (in der Demo gesehen).
+7. **Der Rechner auf `/vergleich` darf am Handy nicht breiter werden als der Bildschirm:**
    Raster mit `minmax(0, 1fr)`, Felder mit `minWidth: 0` (im alten Fenster fiel das nie auf, auf der
    Seite schnitt es rechts ab — im Browser bei 390 px gesehen).
 
@@ -121,6 +128,5 @@ Selbstauskunft.
 | Punkt | Warum |
 |---|---|
 | Anwalt: § 34i GewO / Anlageberatung | Risiko 1 — vor dem öffentlichen Start |
-| Demo-Kandidaten | Risiko 6 — braucht Ja des Betreibers (Produktionsdaten) |
 | Strategie-Plan im Konto speichern | Risiko 4 — eigene Tabelle, Migration im SQL-Editor |
 | Am echten Telefon prüfen | Lern-App-Weiter (Tempo 450 ms), Vergleichstabelle (waagerecht scrollbar) |

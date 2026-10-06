@@ -91,9 +91,13 @@ describe("kaufnebenkosten — EINE Regel für Kauf-Rechner und Fahrplan", () => 
 
   it("der Kauf-Rechner rechnet mit derselben Funktion", () => {
     expect(kaufnebenkostenSatz(0.05, 3.57)).toBeCloseTo(0.1057, 6);
+    // Seit 06.10.2026 rechnet der Objekt-Rechner über lib/kauf/objektKennzahlen.ts (auch für die Demo-Kandidaten).
     const rechner = readFileSync("components/kauf/ObjektRechner.tsx", "utf8");
-    expect(rechner).toContain("kaufnebenkostenSatz(grestSatz, num(makler))");
+    const kennzahlen = readFileSync("lib/kauf/objektKennzahlen.ts", "utf8");
+    expect(rechner).toContain("objektKennzahlen({");
+    expect(kennzahlen).toContain("kaufnebenkostenSatz(grestSatz, num(e.makler))");
     expect(rechner).not.toMatch(/\+\s*0\.02\b/);
+    expect(kennzahlen).not.toMatch(/\+\s*0\.02\b/);
   });
 });
 

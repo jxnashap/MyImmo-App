@@ -8,10 +8,11 @@ import KalkImport from "@/components/kalkulator/KalkImport";
 import { saveKalkulation, deleteKalkulation, updateKalkulation } from "@/lib/actions/kalkulation";
 import { auswahlAus, KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
 import { sanierungBeimLaden } from "@/lib/sanierung/uebergabe";
-import { BUNDESLAENDER, MAKLER_STANDARD_PROZENT, kaufnebenkostenSatz } from "@/lib/kalk";
+import { BUNDESLAENDER, MAKLER_STANDARD_PROZENT } from "@/lib/kalk";
+import { kennzahlenSummary, objektKennzahlen } from "@/lib/kauf/objektKennzahlen";
 import { HAUS_DISCLAIMER } from "@/lib/kauf/hausbewertung";
 import { anschaffungsnahVorKauf } from "@/lib/steuer/anschaffungsnah";
-import { marktwert as rechneMarktwert, preisUrteil } from "@/lib/kauf/marktwert";
+import { preisUrteil } from "@/lib/kauf/marktwert";
 import { belastbarkeit } from "@/lib/kauf/belastbarkeit";
 import { NHK_TYPEN } from "@/lib/bewertung/immowertv";
 import { useCountUp } from "@/lib/hooks/useCountUp";
@@ -130,44 +131,18 @@ export default function ObjektRechner({
   // Für die Finanzierung gewähltes Objekt — liegt im Browser (lib/kauf/auswahl.ts), erst nach dem Mount lesbar.
   const [gewaehltId, setGewaehltId] = useState<string | null>(null);
 
-  const kp = num(kaufpreis), fl = num(flaeche);
-  // ACHTUNG: `bundesland` ist KEINE Nutzereingabe, sondern der Maschinenwert der
-  // Auswahl ("0.035" = 3,5 % Grunderwerbsteuer). Solche Werte gehoeren nicht in
-  // den deutschen Zahlenparser — der hielt den Punkt fuer ein Tausendertrennzeichen
-  // und machte aus 0,035 die Zahl 35, also 3500 % Grunderwerbsteuer.
-  // `makler` dagegen ist ein Freitextfeld und bleibt bei num()/zahlDe0.
-  const grestSatz = Number(bundesland) || 0;
-  const nkSatz = kaufnebenkostenSatz(grestSatz, num(makler)); // + Notar/Grundbuch (lib/kalk.ts)
-  const nebenkosten = kp * nkSatz;
-  // Sanierung gehört zur Investition: Sie fließt in Nettorendite und Darlehensbedarf (Schritt
-  // „Finanzierung“). Vor dem 05.10.2026 fehlte sie hier ganz — wer renovieren musste, sah eine
-  // zu hohe Rendite und einen zu kleinen Kreditbedarf.
-  const sanierungBetrag = Math.max(0, num(sanierung));
-  const gesamtInvest = kp + nebenkosten + sanierungBetrag;
+  // EINE Rechnung mit den Beispiel-Kandidaten der Demo (lib/kauf/objektKennzahlen.ts) — hier nur Anzeige.
+  const kz = objektKennzahlen({
+    kaufpreis, flaeche, bundesland, makler, sanierung, nutzung, kaltmiete, bewirt,
+    objektTyp, grundFlaeche, bodenrichtwert, baujahr, gebTyp, ausstattung, bpiFaktor, regionalFaktor, lz, anzahlWhg, swFaktor,
+  });
+  const { kp, fl, nebenkosten, gesamtInvest, preisM2, vermietung, brutto, faktor, nettomiet, mw } = kz;
+  const sanierungBetrag = kz.sanierung;
   const investNotiz = `inkl. ${eur(nebenkosten)} Nebenkosten${sanierungBetrag > 0 ? ` + ${eur(sanierungBetrag)} Sanierung` : ""}`;
-  const fuenfzehn = nutzung === "vermietung" ? anschaffungsnahVorKauf(kp, sanierungBetrag) : null;
-  const preisM2 = kp > 0 && fl > 0 ? kp / fl : 0;
-
-  const vermietung = nutzung === "vermietung";
-  const jahresmiete = vermietung ? num(kaltmiete) * 12 : 0;
-  const brutto = vermietung && kp > 0 && jahresmiete > 0 ? (jahresmiete / kp) * 100 : 0;
-  const faktor = vermietung && jahresmiete > 0 ? kp / jahresmiete : 0;
-  const bewirtJahr = jahresmiete * (num(bewirt) / 100);
-  const nettomiet = vermietung && gesamtInvest > 0 && jahresmiete > 0 ? ((jahresmiete - bewirtJahr) / gesamtInvest) * 100 : 0;
+  const fuenfzehn = vermietung ? anschaffungsnahVorKauf(kp, sanierungBetrag) : null;
 
   const urteil = vermietung && brutto > 0 ? renditeUrteil(brutto) : null;
-
-  // Marktwert — Verfahren automatisch nach Nutzung (Vermietung → Ertragswert,
-  // Eigennutzung → Sachwert). Gilt für Wohnung UND Haus.
-  const mw = rechneMarktwert({
-    nutzung, objektTyp, wohnflaeche: fl, kaltmieteMonat: num(kaltmiete),
-    anzahlWohnungen: Math.round(num(anzahlWhg)) || 1,
-    grundFlaeche: num(grundFlaeche), bodenrichtwert: num(bodenrichtwert),
-    baujahr: Math.round(num(baujahr)), gebTyp, ausstattung: Math.round(num(ausstattung)),
-    bpiFaktor: num(bpiFaktor) || 1.9, regionalFaktor: num(regionalFaktor) || 1,
-    liegenschaftszins: num(lz) || 3.5, sachwertfaktor: num(swFaktor) || 1,
-  });
-  const mwWert = mw.ergebnis?.wert ?? 0;
+  const mwWert = kz.marktwert;
   // Unvollstaendige Schaetzung → kein belastbares Preisurteil (siehe preisUrteil).
   const mwUrteil = preisUrteil(mwWert, kp, mw.unsicher.length > 0);
 
@@ -204,7 +179,7 @@ export default function ObjektRechner({
     };
   }
   function summarySnapshot(): Record<string, number> {
-    return { kp, gesamtInvest, sanierung: sanierungBetrag, preisM2, brutto, nettomiet, faktor, kaltmiete: num(kaltmiete), nutzung: vermietung ? 1 : 0, marktwert: mwWert };
+    return kennzahlenSummary(kz);
   }
 
   // Wiedervorlage: gespeichertes Objekt zurück in die Maske holen.

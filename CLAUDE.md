@@ -116,9 +116,10 @@ ob etwas davon inzwischen erledigt ist** — dann hier abhaken statt es erneut v
    Nebenbefund: 8 s nach dem erfolgreichen `verify` ein zweites mit 403 `otp_expired`
    (Doppel-Tipp oder Mail-Vorschau) — folgenlos, der erste war durch.
 
-**Für BuyImmo (06.10.2026):** `supabase/migrations/20261006050000_sanierungsprojekte.sql` im
-SQL-Editor ausführen (Speichern/Vorlagen im Sanierungs-Guide + Verknüpfung „Kaufprüfung →
-übernommenes Objekt“). Idempotent. Danach prüfe ich live (lesend + zurückgerollter Test).
+~~**Für BuyImmo (06.10.2026):** `supabase/migrations/20261006050000_sanierungsprojekte.sql` im
+SQL-Editor ausführen.~~ ✅ **Vom Betreiber ausgeführt und live geprüft 06.10.2026** (Speichern/Vorlagen
+im Sanierungs-Guide + Verknüpfung „Kaufprüfung → übernommenes Objekt“) — Befund in
+`supabase/migrations/README.md`.
 
 **Danach, in dieser Reihenfolge:**
 4. ~~**Die zwei restlichen Passwort-Schalter**~~ ✅ **laut Betreiber seit Längerem an**
@@ -393,8 +394,8 @@ Entwurf; `offeneSeiten()` (`lib/sanierung/guide.ts`) ist die EINE Lückenfunktio
 vorsichtig ANGENOMMEN und steht in `annahmen` — nie still 0. (3) Ohne belegten Preis keine Zahl:
 offener Posten oder „Preis offen“. (4) Eine Arbeit, die eine andere enthält, gehört in `ENTHALTEN_IN`.
 **Stufe C gebaut (06.10.2026): Speichern + Vorlagen** — Tabelle `sanierungsprojekte`, Migration
-`20261006050000` **läuft im SQL-Editor (Betreiber, noch offen)**; bis dahin zeigt die Projektleiste
-„kommt in Kürze“. Actions `lib/actions/sanierungsprojekte.ts`, Leiste `components/sanierung/ProjektLeiste.tsx`,
+`20261006050000` ✅ **vom Betreiber im SQL-Editor ausgeführt und live geprüft 06.10.2026** (fehlt die
+Tabelle, zeigt die Projektleiste „kommt in Kürze“ — das erkennt die Action selbst, kein Schalter). Actions `lib/actions/sanierungsprojekte.ts`, Leiste `components/sanierung/ProjektLeiste.tsx`,
 Logik `lib/sanierung/projekte.ts`. **Regeln:** (1) Gespeichert wird nur, was `entwurfAus()`/`vorlageAus()`
 durchlässt — ein neues Entwurfsfeld gehört in den Parser, sonst geht es beim Speichern verloren.
 (2) Eine Vorlage trägt Entscheidungen, nie die Wohnung; Technik nur mit angekreuzter Arbeit.
@@ -413,8 +414,11 @@ die Kapitalquelle, vorsichtiges Szenario, Plan nur im Browser — **gebaut vor d
 (Auftrag), Anwalt vor dem öffentlichen Start.** **Regeln:** (1) Neuer Schritt/Station nur in
 `KAUFWEG`. (2) Kein Text der Strategie rät (Test). (3) Der Rechner auf `/vergleich` braucht
 `minmax(0, 1fr)` — am Handy schnitt er sonst rechts ab. `tests/kaufweg.test.ts`,
-`tests/strategie.test.ts`, `tests/umbauBuyImmo.test.ts`, 30 Mutationen rot. **Offen:** Demo zeigt
-Schritt 1 leer (Beispiel-Kandidaten = Produktionsdaten → nur mit Ja).
+`tests/strategie.test.ts`, `tests/umbauBuyImmo.test.ts`, 30 Mutationen rot. **Demo-Kandidaten
+(06.10.2026, Ja des Betreibers):** vier Beispiel-Kaufprüfungen, Migration `20261006064806`, **nicht im
+Demo-Reset** (der fasst `kalkulationen` nicht an; Demo kann nicht schreiben). (4) Kennzahlen einer
+Kaufprüfung nur über `objektKennzahlen()` (`lib/kauf/objektKennzahlen.ts`) — Rechner UND Demo-Zeilen;
+`tests/demoKandidaten.test.ts` rechnet nach und vergleicht die Feldliste mit `eingabenSnapshot()`.
 **Tarif 19,99 €/Monat entschieden, Abgrenzung zu Plus offen**
 (`docs/FINANZKONZEPT.md`). **Zielgruppe junge Erwachsene — nur ab 18 (AGB), „vom Urlaub aus
 kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
