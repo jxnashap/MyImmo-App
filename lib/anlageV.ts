@@ -86,6 +86,17 @@ const KOSTEN_BUCKET: Record<string, keyof Omit<AnlageVWerbungskosten, "afa" | "s
   "Hausgeld / WEG": "hausgeldSonstige",
   Sonstiges: "hausgeldSonstige",
   "CO₂-Kosten (Vermieteranteil)": "hausgeldSonstige",
+  // Umlagefähige Betriebskosten (lib/kategorien.ts, BETRIEBSKOSTEN_KATEGORIEN): beim Vermieter
+  // Werbungskosten unter „sonstige“; die Umlage des Mieters steht als Einnahme in Zeile 13.
+  Müll: "hausgeldSonstige",
+  "Wasser / Abwasser": "hausgeldSonstige",
+  Allgemeinstrom: "hausgeldSonstige",
+  Heizung: "hausgeldSonstige",
+  Hausmeister: "hausgeldSonstige",
+  Gartenpflege: "hausgeldSonstige",
+  Straßenreinigung: "hausgeldSonstige",
+  Schornsteinfeger: "hausgeldSonstige",
+  Aufzug: "hausgeldSonstige",
 };
 
 function leereWk(): AnlageVWerbungskosten {

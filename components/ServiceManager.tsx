@@ -2,6 +2,7 @@
 
 // Vermieter: Service-Partner einladen (SV-Code), Aufträge vergeben und
 // den Bearbeitungsstand sehen — Tab "Service" im Mieterportal.
+import { UEBERNAHME_KATEGORIEN } from "@/lib/kategorien";
 import { useState, useTransition } from "react";
 import {
   Wrench, Copy, Check, KeyRound, XCircle, UserRound, Trash2,
@@ -106,9 +107,13 @@ function KostenUebernahme({ a }: { a: AuftragRow }) {
         {Number(a.lohnanteil) > 0 && <span style={{ color: "var(--muted)" }}> · davon Lohn {eur(Number(a.lohnanteil))} (§ 35a)</span>}
         {a.rechnung_name && <span style={{ color: "var(--muted)" }}> · Rechnung: {a.rechnung_name}</span>}
       </span>
-      <select name="kategorie" className="input" defaultValue="Reparatur" style={{ fontSize: 12, padding: "4px 8px", width: "auto" }}>
-        {["Reparatur", "Instandhaltung", "Modernisierung", "Verwaltung", "Sonstiges"].map((k) => <option key={k}>{k}</option>)}
+      <select name="kategorie" className="input" defaultValue="Reparatur" aria-label="Kategorie" style={{ fontSize: 12, padding: "4px 8px", width: "auto" }}>
+        {UEBERNAHME_KATEGORIEN.map((k) => <option key={k}>{k}</option>)}
       </select>
+      <label style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}>
+        Rechnungsdatum
+        <input type="date" name="buchungsdatum" className="input" style={{ fontSize: 12, padding: "4px 8px", width: "auto" }} title="Leer = heute" />
+      </label>
       <button type="submit" className="btn btn-gold" disabled={pending} style={{ fontSize: 12 }}>
         {pending ? "…" : "Als Kosten übernehmen"}
       </button>

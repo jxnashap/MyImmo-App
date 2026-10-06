@@ -18,6 +18,9 @@ import { ladeZustellLage } from "@/lib/zustellung";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { ymPlus } from "@/lib/mietkonto";
+import { nkAusBuchungen } from "@/lib/nkAusBuchungen";
+import { zeigeVerteiler } from "@/lib/umlage";
+import { zaehlerSpanne, type ZaehlerMeldung } from "@/lib/zaehlerSpanne";
 
 export const dynamic = "force-dynamic";
 
@@ -46,12 +49,12 @@ export default async function NkPage(
 
   const jahr = Number(searchParams.jahr) || new Date().getFullYear() - 1;
 
-  const [{ data: property }, { data: positions }, { data: profil }, { data: ibanRow }, { data: co2Row }] =
+  const [{ data: property }, { data: positions }, { data: profil }, { data: ibanRow }, { data: co2Row }, { data: kostenRows }, { count: mieterImObjekt }, { data: zaehlerRows }] =
     await Promise.all([
       tenant.prop_id
         ? supabase
             .from("properties")
-            .select("bezeichnung,adresse,flaeche")
+            .select("bezeichnung,adresse,flaeche,typ,einheiten_anzahl")
             .eq("id", tenant.prop_id)
             .single()
         : Promise.resolve({ data: null }),
@@ -74,7 +77,29 @@ export default async function NkPage(
         .eq("mieter_id", params.id)
         .eq("jahr", jahr)
         .maybeSingle(),
+      // Paket C: gebuchte Kosten des Objekts im Jahr (Vorschlag „aus Buchungen übernehmen“),
+      // Zahl der Mietparteien (Verteiler oder direkt) und gemeldete Zählerstände des Mieters.
+      tenant.prop_id
+        ? supabase.from("kosten").select("prop_id,buchungsdatum,kategorie,betrag").eq("prop_id", tenant.prop_id)
+            .gte("buchungsdatum", `${jahr}-01-01`).lt("buchungsdatum", `${jahr + 1}-01-01`)
+        : Promise.resolve({ data: [] }),
+      tenant.prop_id
+        ? supabase.from("mieter").select("id", { count: "exact", head: true }).eq("prop_id", tenant.prop_id)
+        : Promise.resolve({ count: 0 }),
+      supabase.from("zaehlerstand_meldungen").select("art,zaehlernummer,stand,einheit,ablesedatum")
+        .eq("mieter_id", params.id).gte("ablesedatum", `${jahr - 1}-12-01`).lt("ablesedatum", `${jahr + 1}-02-01`)
+        .order("ablesedatum"),
     ]);
+  const ausBuchungen = tenant.prop_id ? nkAusBuchungen(kostenRows ?? [], tenant.prop_id, jahr) : { vorschlaege: [], unklar: [] };
+  const schonDa = new Set(((positions ?? []) as { bezeichnung: string; jahr: number | null }[])
+    .filter((p) => p.jahr === jahr).map((p) => p.bezeichnung.trim().toLowerCase()));
+  const offeneVorschlaege = ausBuchungen.vorschlaege.filter((v) => !schonDa.has(v.bezeichnung.toLowerCase()));
+  const mitVerteiler = zeigeVerteiler({
+    typ: (property as { typ?: string | null } | null)?.typ,
+    einheiten_anzahl: (property as { einheiten_anzahl?: number | null } | null)?.einheiten_anzahl ?? null,
+    mieterAnzahl: mieterImObjekt ?? 0,
+  });
+  const zaehlerImJahr = zaehlerSpanne((zaehlerRows ?? []) as ZaehlerMeldung[], jahr);
 
   const a = berechneNk(
     jahr,
@@ -159,6 +184,24 @@ export default async function NkPage(
             }}
             pruefung={zustellung}
           />
+          {/* Paket C (06.10.2026): Nachzahlung als Einnahme buchen, vorausgefüllt — vorher endete die
+              Abrechnung im Archiv, und der Saldo fehlte in Mietkonto und Anlage V (Zeile 13). */}
+          {a.saldo < -0.005 && a.positionen.length > 0 && (
+            <Link
+              href={`/cashflow/neu?${new URLSearchParams({
+                typ: "einnahme",
+                kategorie: "Nebenkostenabrechnung",
+                betrag: (Math.round(-a.saldo * 100) / 100).toFixed(2),
+                mieter: params.id,
+                ...(tenant.prop_id ? { prop: tenant.prop_id } : {}),
+                text: `Nachzahlung NK-Abrechnung ${jahr}`,
+              }).toString()}`}
+              className="btn btn-ghost"
+              title="Erst buchen, wenn das Geld eingegangen ist"
+            >
+              Nachzahlung buchen
+            </Link>
+          )}
         </div>
       </div>
 
@@ -195,6 +238,12 @@ export default async function NkPage(
         aktuellMonat={a.nkVorauszahlungMonat}
         nurVorjahrsBetraege={gleicheBetraegeWieVorjahr((positions ?? []) as VorjahrPosition[], jahr)}
         naechsterMonat={ymPlus(heuteBerlin().slice(0, 7), 1)}
+        ausBuchungen={offeneVorschlaege.length > 0 ? {
+          anzahl: offeneVorschlaege.length,
+          text: offeneVorschlaege.map((v) => `${v.bezeichnung} ${eur2(v.betrag)}`).join(" · "),
+          verteilerHref: mitVerteiler && tenant.prop_id ? `/properties/${tenant.prop_id}/umlage` : null,
+        } : null}
+        zaehler={zaehlerImJahr}
       />
 
       <div className="no-print" style={{ maxWidth: "210mm", margin: "0 auto" }}>

@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import BuchungForm from "@/components/BuchungForm";
+import { EINNAHME_KATEGORIEN, KOSTEN_KATEGORIEN } from "@/lib/kategorien";
 import type { Property, Tenant } from "@/lib/types";
 
 export default async function NeueBuchungPage(
   props0: {
-    searchParams: Promise<{ typ?: string; prop?: string }>;
+    searchParams: Promise<{ typ?: string; prop?: string; kategorie?: string; betrag?: string; mieter?: string; text?: string }>;
   }
 ) {
   const searchParams = await props0.searchParams;
@@ -32,6 +33,12 @@ export default async function NeueBuchungPage(
         typInitial={searchParams.typ === "ausgabe" ? "ausgabe" : "einnahme"}
         propInitial={searchParams.prop ?? ""}
         datumInitial={new Date().toISOString().slice(0, 10)}
+        // Vorbelegung aus Links (z. B. „Nachzahlung buchen“ auf der NK-Seite). Nur bekannte
+        // Kategorien, ein Betrag als Zahl und ein eigener Mieter — sonst leer wie bisher.
+        kategorieInitial={([...EINNAHME_KATEGORIEN, ...KOSTEN_KATEGORIEN] as readonly string[]).includes(searchParams.kategorie ?? "") ? searchParams.kategorie : undefined}
+        betragInitial={/^\d{1,7}(\.\d{1,2})?$/.test(searchParams.betrag ?? "") ? searchParams.betrag : undefined}
+        mieterInitial={(miet ?? []).some((m) => m.id === searchParams.mieter) ? searchParams.mieter : undefined}
+        beschreibungInitial={(searchParams.text ?? "").slice(0, 120) || undefined}
       />
     </div>
   );

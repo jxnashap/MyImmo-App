@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { mieterFolgenText } from "@/lib/loeschUmfang";
 import { euro, eur2, datum } from "@/lib/format";
-import { mieterFristen } from "@/lib/fristen";
+import { mieterFristen, nkErstellteJahre } from "@/lib/fristen";
 import { staffelPlan } from "@/lib/staffel";
 import StaffelUebernehmen from "@/components/StaffelUebernehmen";
 import { deleteTenant } from "@/lib/actions/tenants";
@@ -119,7 +119,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
   // Mietspiegel am Mieter, sonst Vergleichsmiete am Objekt (lib/steuer/verbilligt.ts).
   const vergleich = vergleichsmieteFuer(m.mietspiegel, objektVergleich);
 
-  const fristen = mieterFristen(m);
+  const fristen = mieterFristen(m, { nkErstellt: nkErstellteJahre(Array.from(dokumente, (d) => ({ mieter_id: params.id, titel: d.titel as string | null }))).get(params.id) });
   // Staffelplan: nur bei Staffelmiete mit Startdatum + Betrag ODER Prozent
   const staffelTyp = m.staffel_typ === "prozent" ? ("prozent" as const) : ("betrag" as const);
   const plan =

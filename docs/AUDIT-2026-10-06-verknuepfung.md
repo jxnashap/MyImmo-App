@@ -59,7 +59,24 @@ Gemeinsame Wurzel: Es fehlt „Soll ab Datum“. Mietkonto, Wächter und offene 
 **Risiko:** Eingriff ins Mietkonto. Vor dem Bau gegen echte Verläufe testen (Nacherfassung darf
 keine falschen offenen Posten erzeugen).
 
-## Paket C — NK-Kreislauf (offen, L)
+## Paket C — NK-Kreislauf ✅ erledigt 06.10.2026 (Lohnanteil offen)
+
+**Gebaut:** (C0) neun Betriebskosten-Kategorien (`BETRIEBSKOSTEN_KATEGORIEN` in `lib/kategorien.ts`:
+Müll, Wasser/Abwasser, Allgemeinstrom, Heizung, Hausmeister, Gartenpflege, Straßenreinigung,
+Schornsteinfeger, Aufzug) — **vorher konnte man umlagefähige Kosten gar nicht als solche buchen**,
+außer Grundsteuer/Versicherung; Anlage V Zeile „sonstige“. (C1) `nkAusBuchungen()` →
+Verteiler „Aus Buchungen übernehmen“ und NK-Seite „N übernehmen“ (`uebernehmeGebuchteKosten`,
+eine Mietpartei, unterjährig → Aufteilung „zeit“, keine Duplikate; Hausgeld/WEG nur genannt).
+(C2) NK-Seite zeigt gemeldete Zählerstände je Zähler(-nummer) mit Differenz (`zaehlerSpanne()`) —
+zum Übertragen, bewusst nicht automatisch (welcher Zähler zu welcher Position gehört, weiß nur der
+Vermieter). (C3) Frist „NK zustellen“ auch für im Vorjahr Ausgezogene, entfällt, sobald die
+Abrechnung im Archiv liegt (`nkErstellteJahre`); „Nachzahlung buchen“ füllt das Buchungsformular vor.
+(C4) Auftrag → Kosten mit Rechnungsdatum und Betriebskosten-Kategorien.
+**Offen:** Lohnanteil eines Auftrags in die NK (bräuchte eine Spalte an `kosten`); Guthaben wird nur
+angezeigt, nicht gebucht. **Grenze:** „Im Archiv“ heißt erstellt, nicht zugestellt (Post/Mail sieht
+MyImmo nicht). `tests/paketC.test.ts`, 13 Mutationen rot.
+
+Ursprüngliche Funde:
 
 - **C1 (DE)** Gebuchte umlagefähige Kosten werden in Verteiler/Positionen neu getippt — kein
   NK-Pfad liest `kosten` (`app/(app)/tenants/[id]/nk/page.tsx`, `components/UmlageAssistent.tsx`).

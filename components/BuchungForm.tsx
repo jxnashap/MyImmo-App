@@ -40,6 +40,10 @@ export default function BuchungForm({
   typInitial = "einnahme",
   propInitial = "",
   datumInitial = "",
+  kategorieInitial,
+  betragInitial,
+  mieterInitial,
+  beschreibungInitial,
   row,
   imDialog = false,
 }: {
@@ -49,6 +53,11 @@ export default function BuchungForm({
   typInitial?: "einnahme" | "ausgabe";
   propInitial?: string;
   datumInitial?: string;
+  /** Vorbelegung beim Anlegen (z. B. aus „Nachzahlung buchen“). */
+  kategorieInitial?: string;
+  betragInitial?: string;
+  mieterInitial?: string;
+  beschreibungInitial?: string;
   row?: BuchungRow;
   // Im RowDialog eingebettet: flache Optik, Titel kommt vom Dialog.
   imDialog?: boolean;
@@ -123,20 +132,20 @@ export default function BuchungForm({
         <div className="form-group">
           <label>Kategorie</label>
           {/* key erzwingt frisches defaultValue beim Typwechsel */}
-          <select key={typ} name="kategorie" defaultValue={row?.kategorie ?? (typ === "einnahme" ? "Miete" : "Reparatur")}>
+          <select key={typ} name="kategorie" defaultValue={row?.kategorie ?? kategorieInitial ?? (typ === "einnahme" ? "Miete" : "Reparatur")}>
             {KAT.map((k) => <option key={k}>{k}</option>)}
           </select>
         </div>
         <div className="form-group">
           <label>Betrag (€) *</label>
-          <input type="number" step="0.01" min="0.01" name="betrag" required defaultValue={row?.betrag ?? ""} placeholder="1200" />
+          <input type="number" step="0.01" min="0.01" name="betrag" required defaultValue={row?.betrag ?? betragInitial ?? ""} placeholder="1200" />
         </div>
       </div>
 
       <div className="form-row">
         <div className="form-group">
           <label>Mieter</label>
-          <select name="mieter_id" defaultValue={row?.mieter_id ?? ""} onChange={(e) => mieterGewaehlt(e.target.value)}>
+          <select name="mieter_id" defaultValue={row?.mieter_id ?? mieterInitial ?? ""} onChange={(e) => mieterGewaehlt(e.target.value)}>
             <option value="">– Kein Mieter –</option>
             {tenants.map((t) => (
               <option key={t.id} value={t.id}>{`${t.vorname ?? ""} ${t.nachname ?? ""}`.trim() || "—"}</option>
@@ -145,7 +154,7 @@ export default function BuchungForm({
         </div>
         <div className="form-group">
           <label>Beschreibung</label>
-          <input type="text" name="beschreibung" defaultValue={row?.beschreibung ?? ""} placeholder={typ === "einnahme" ? "z. B. Miete August" : "z. B. Handwerkerrechnung"} />
+          <input type="text" name="beschreibung" defaultValue={row?.beschreibung ?? beschreibungInitial ?? ""} placeholder={typ === "einnahme" ? "z. B. Miete August" : "z. B. Handwerkerrechnung"} />
         </div>
       </div>
 

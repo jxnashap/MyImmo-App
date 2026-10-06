@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { vorjahrUebernahme, type VorjahrPosition } from "@/lib/nkVorjahr";
+import { nkAusBuchungen } from "@/lib/nkAusBuchungen";
+import { belegung, jahresTage } from "@/lib/nk";
+import { zeigeVerteiler } from "@/lib/umlage";
 
 const AUFTEILUNGEN = ["voll", "flaeche", "zeit", "verbrauch", "gradtag", "hkvo"];
 const aufteilungOk = (v: unknown): string =>
@@ -247,4 +250,65 @@ export async function uebernehmeVorjahresPositionen(mieterId: string, jahr: numb
   revalidatePath(`/tenants/${mieterId}/nk`);
   revalidatePath(`/tenants/${mieterId}/edit`);
   return { ok: true, anzahl: u.anzahl };
+}
+
+/**
+ * Gebuchte umlagefähige Kosten des Objekts als Positionen übernehmen (Paket C, 06.10.2026) —
+ * für eine EINZELNE Mietpartei. Vorher tippte der Vermieter Grundsteuer, Müll & Co. hier ein
+ * zweites Mal. Bei mehreren Mietparteien verteilt der Verteiler (dort derselbe Vorschlag).
+ * Schon vorhandene Positionen gleichen Namens im Jahr bleiben unberührt (kein Duplikat).
+ * Unterjährige Mietzeit → Aufteilung „zeit“ (Jahreskosten nach Belegungstagen).
+ */
+export async function uebernehmeGebuchteKosten(
+  mieterId: string,
+  jahr: number,
+): Promise<{ ok: true; anzahl: number } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  if (!Number.isInteger(jahr) || jahr < 2001 || jahr > 2100) return { error: "Ungültiges Jahr." };
+
+  const { data: m, error: mErr } = await supabase
+    .from("mieter").select("prop_id,mietbeginn,mietende").eq("id", mieterId).eq("user_id", user.id).maybeSingle();
+  if (mErr || !m) return { error: "Mieter nicht gefunden." };
+  if (!m.prop_id) return { error: "Der Mieter ist keinem Objekt zugeordnet." };
+
+  const [pRes, nRes, kRes, posRes] = await Promise.all([
+    supabase.from("properties").select("typ,einheiten_anzahl").eq("id", m.prop_id).eq("user_id", user.id).maybeSingle(),
+    supabase.from("mieter").select("id", { count: "exact", head: true }).eq("prop_id", m.prop_id).eq("user_id", user.id),
+    supabase.from("kosten").select("prop_id,buchungsdatum,kategorie,betrag").eq("prop_id", m.prop_id).eq("user_id", user.id)
+      .gte("buchungsdatum", `${jahr}-01-01`).lt("buchungsdatum", `${jahr + 1}-01-01`),
+    supabase.from("mieter_positionen").select("bezeichnung").eq("mieter_id", mieterId).eq("user_id", user.id).eq("jahr", jahr),
+  ]);
+  // Jede Lücke hier hieße „nichts vorhanden“ → doppelte Positionen. Also abbrechen.
+  if (pRes.error || nRes.error || kRes.error || posRes.error) return { error: "Daten konnten nicht gelesen werden — nichts übernommen." };
+  if (zeigeVerteiler({ typ: pRes.data?.typ, einheiten_anzahl: pRes.data?.einheiten_anzahl ?? null, mieterAnzahl: nRes.count ?? 0 })) {
+    return { error: "Mehrere Mietparteien: bitte über „Nebenkosten verteilen“ am Objekt — dort stehen dieselben Buchungen zur Übernahme." };
+  }
+
+  const { vorschlaege } = nkAusBuchungen(kRes.data ?? [], m.prop_id, jahr);
+  const vorhanden = new Set(((posRes.data ?? []) as { bezeichnung: string }[]).map((p) => p.bezeichnung.trim().toLowerCase()));
+  const neu = vorschlaege.filter((v) => !vorhanden.has(v.bezeichnung.toLowerCase()));
+  if (neu.length === 0) return { ok: true, anzahl: 0 };
+
+  const b = belegung(jahr, m.mietbeginn, m.mietende);
+  const ganzesJahr = b.tage >= jahresTage(jahr);
+  const { error } = await supabase.from("mieter_positionen").insert(
+    neu.map((v) => ({
+      user_id: user.id,
+      mieter_id: mieterId,
+      bezeichnung: v.bezeichnung,
+      betrag: v.betrag,
+      jahr,
+      umlagefaehig: true,
+      umlageschluessel: ganzesJahr ? "Alleinnutzung" : "Belegungstage",
+      aufteilung: ganzesJahr ? "voll" : "zeit",
+      quelle: "buchungen",
+    })),
+  );
+  if (error) return { error: "Die Positionen konnten nicht übernommen werden." };
+
+  revalidatePath(`/tenants/${mieterId}/nk`);
+  revalidatePath(`/tenants/${mieterId}/edit`);
+  return { ok: true, anzahl: neu.length };
 }
