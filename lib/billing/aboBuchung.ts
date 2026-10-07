@@ -19,6 +19,7 @@
 //
 // NICHT abgedeckt: Erstattungen und Gutschriften (transaction.* mit negativem
 // Betrag bzw. adjustment.*). Die bucht der Nutzer selbst zurück.
+import { istSelbstBewohnt } from "@/lib/steuer/selbstBewohnt";
 
 export const ABO_KATEGORIE = "Verwaltung";
 export const ABO_BESCHREIBUNG = "MyImmo-Abo";
@@ -83,7 +84,7 @@ export type AboObjekt = { id: string; einheiten_anzahl?: number | null; obj_stat
 
 /** Selbst bewohnt → keine Werbungskosten. Alles andere (vermietet, leer, Ferien) zählt. */
 export function zaehltFuerAbo(o: AboObjekt): boolean {
-  return !/selbst\s*bewohnt/i.test(o.obj_status ?? "");
+  return !istSelbstBewohnt(o.obj_status);
 }
 
 /** Verteilt `cent` nach Einheiten, Summe exakt; Reihenfolge der Objekte bestimmt den Gleichstand. */

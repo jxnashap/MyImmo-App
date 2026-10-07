@@ -1955,7 +1955,17 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Kaskade von `properties` löschte sie bei jedem Demo-Start. Jetzt in `demo_seed` und in `tabellen` der
   Reset-Funktion (`20261007193000`, **im SQL-Editor**, sonst bleibt die Demo-Kostenliste leer); das Jahr
   wandert mit dem Reset. **Regel: Jede Tabelle mit Kaskade auf `properties`/`mieter` und Demo-Daten gehört
-  in den Reset — sonst ist sie nach dem nächsten Demo-Start leer.** Details `docs/zukunft/NK-NEU.md`.
+  in den Reset — sonst ist sie nach dem nächsten Demo-Start leer.**
+- 🧾 **Paket P1 der Gesamtprüfung (07.10.2026): Anlage V richtig** (`tests/paketP1.test.ts`, 10 Mutationen rot).
+  (A1) 15-%-Grenze: liegen Instandsetzungskosten im 3-Jahres-Fenster über 15 % der Gebäude-AK, ist die
+  Erhaltung des Jahres `erhaltungAnschaffungsnah` → Zeile 40, Summe und Ergebnis NICHT übertragbar, Hinweis;
+  **bewusst nicht umgebucht** (netto/„jährlich üblich“ beurteilt nur der Nutzer). (A2) **„Selbst bewohnt“ ist nie
+  in der Anlage V** — `istSelbstBewohnt()` (`lib/steuer/selbstBewohnt.ts`) ist die EINE Regel, auch für die
+  Abo-Buchung. (A3) Degressive AfA vom tatsächlichen Restwert (`degressivImJahr()` in `lib/steuer/afa.ts`).
+  (B2) Kaufmonat gilt nur im Kaufjahr; abweichendes AfA-Startjahr → volles Jahr + Hinweis. (B3) Zinsschätzung nur
+  für Monate, in denen das Darlehen lief — **`kreditMonateImJahr()` (`lib/kreditZeit.ts`) ist die Regel**
+  (Jahresbericht folgt mit P6). (B4) PDF kennzeichnet Summe/Ergebnis über `summenWarnung()` wie die ELSTER-Hilfe.
+  `afaSatzAusBaujahr` = `afaSatzNachFertigstellung` (eine Funktion). **Offen:** Zeilennummern (B1, Vordruck 2025). Details `docs/zukunft/NK-NEU.md`.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

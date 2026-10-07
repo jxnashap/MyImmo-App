@@ -6,6 +6,10 @@
 
 import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
 import { afaZeitanteil, monatVon } from "@/lib/steuer/afaZeitraum";
+import { afaSatzNachFertigstellung, degressivImJahr } from "@/lib/steuer/afa";
+import { berechneAnschaffungsnah, ANSCHAFFUNGSNAH_KATEGORIEN } from "@/lib/steuer/anschaffungsnah";
+import { istSelbstBewohnt } from "@/lib/steuer/selbstBewohnt";
+import { kreditMonateImJahr } from "@/lib/kreditZeit";
 
 export type AfaParams = {
   gebaeudeAnteil: number; // % des Kaufpreises, der auf das Gebäude entfällt
@@ -14,13 +18,11 @@ export type AfaParams = {
 
 export const AFA_DEFAULT: AfaParams = { gebaeudeAnteil: 80, satz: null };
 
-/** AfA-Satz nach Baujahr, § 7 Abs. 4 S. 1 Nr. 2 EStG. */
-export function afaSatzAusBaujahr(baujahr: number | null | undefined): number {
-  if (!baujahr) return 2; // unbekannt → Regelfall 2 %
-  if (baujahr >= 2023) return 3; // Neubau ab 2023
-  if (baujahr < 1925) return 2.5; // vor 1925
-  return 2; // 1925–2022
-}
+/**
+ * AfA-Satz nach Baujahr, § 7 Abs. 4 S. 1 Nr. 2 EStG — EINE Regel mit dem AfA-Assistenten
+ * (Gesamtprüfung 07.10.2026, Doppelberechnung 9). Das Baujahr steht für das Fertigstellungsjahr.
+ */
+export const afaSatzAusBaujahr = afaSatzNachFertigstellung;
 
 export type AnlageVEinnahmen = {
   miete: number; // Kaltmiete (Zeile 9)
@@ -56,6 +58,13 @@ export type AnlageVObjekt = {
    * in der Übersicht; für ELSTER zählt allein die Zinsbescheinigung der Bank.
    */
   schuldzinsenGeschaetzt: boolean;
+  /**
+   * true = im Jahr sind Instandsetzungskosten gebucht, und im 3-Jahres-Fenster nach dem Kauf ist die
+   * 15-%-Grenze überschritten (§ 6 Abs. 1 Nr. 1a EStG): Sie sind dann Herstellungskosten (AfA), nicht
+   * sofort abziehbare Erhaltung. Die App bucht nicht um — der Nutzer muss netto und „jährlich übliche“
+   * Arbeiten beurteilen —, die Zeile und die Summen gelten aber als nicht übertragbar.
+   */
+  erhaltungAnschaffungsnah?: boolean;
   /** Sachliche Hinweise zur Berechnung dieses Objekts (fehlende Angaben o. Ä.). */
   hinweise: string[];
 };
@@ -138,9 +147,23 @@ export function nkSollImJahr(mieter: MieterNkVertrag[], propId: string, jahr: nu
   return r2(summe);
 }
 
+/**
+ * Anschaffungsmonat für die AfA im Startjahr — nur, wenn das Kaufdatum IN diesem Jahr liegt
+ * (Gesamtprüfung 07.10.2026, B2). Vorher galt der Kaufmonat auch für ein abweichendes AfA-Startjahr:
+ * Kauf 15.11.2024 + Startjahr 2025 ergab 2/12 statt des vollen Jahres, ohne Hinweis.
+ */
+function startMonat(p: Property, startJahr: number, g: { hinweise: string[] }): number | null {
+  const kj = jahrVon(p.kaufdatum);
+  if (!Number.isFinite(kj)) return null;
+  if (kj === startJahr) return monatVon(p.kaufdatum);
+  const satz = `Das AfA-Startjahr ${startJahr} weicht vom Kaufjahr ${kj} ab — gerechnet wird ab Januar ${startJahr}. Bitte prüfen, ob das Startjahr stimmt (Anschaffung = Übergang von Besitz, Nutzen und Lasten).`;
+  if (!g.hinweise.includes(satz)) g.hinweise.push(satz);
+  return null;
+}
+
 export function berechneAnlageV(
   jahr: number,
-  properties: Property[],
+  alleProperties: Property[],
   einnahmen: Einnahme[],
   kosten: Kosten[],
   kredite: Kredit[],
@@ -170,12 +193,18 @@ export function berechneAnlageV(
     return gruppen.get(propId)!;
   };
 
+  // Selbst bewohnte Objekte gehören nicht in die Anlage V (keine Einkünfte nach § 21 EStG) — weder
+  // AfA noch Kosten noch Einnahmen (Gesamtprüfung 07.10.2026, A2).
+  const selbst = new Set(alleProperties.filter((p) => istSelbstBewohnt(p.obj_status)).map((p) => p.id));
+  const properties = alleProperties.filter((p) => !selbst.has(p.id));
+
   // Objekte mit Stammdaten immer anlegen (auch ohne Buchungen → für AfA).
   for (const p of properties) hole(p.id);
 
   // Einnahmen
   for (const e of einnahmen) {
     if (jahrVon(e.buchungsdatum) !== jahr) continue;
+    if (e.prop_id && selbst.has(e.prop_id)) continue;
     const betrag = Number(e.betrag) || 0;
     const g = hole(e.prop_id);
     if (e.kategorie === "Miete") {
@@ -190,6 +219,7 @@ export function berechneAnlageV(
   // Laufende Kosten
   for (const k of kosten) {
     if (jahrVon(k.buchungsdatum) !== jahr) continue;
+    if (k.prop_id && selbst.has(k.prop_id)) continue;
     const betrag = Number(k.betrag) || 0;
     const g = hole(k.prop_id);
     const bucket = (k.kategorie && KOSTEN_BUCKET[k.kategorie]) || "hausgeldSonstige";
@@ -244,11 +274,13 @@ export function berechneAnlageV(
           "Degressive AfA gewählt, aber kein AfA-Startjahr (Jahr der Anschaffung) hinterlegt — ohne dieses Jahr lässt sich der Restbuchwert nicht bestimmen. Bitte im Objekt ergänzen.",
         );
       } else {
-        // Zeitanteil: keine AfA vor der Anschaffung, im 1. Jahr monatsgenau.
-        const z = afaZeitanteil(jahr, start, monatVon(p.kaufdatum), null);
+        // Zeitanteil: keine AfA vor der Anschaffung, im 1. Jahr monatsgenau — danach 5 % vom
+        // TATSÄCHLICHEN Restwert (degressivImJahr, A3).
+        const monat = startMonat(p, start, g);
+        const z = afaZeitanteil(jahr, start, monat, null);
         if (z.hinweis) g.hinweise.push(z.hinweis);
-        const n = Math.max(0, jahr - start); // 0 = 1. AfA-Jahr
-        g.werbungskosten.afa = r2(g.afaBasis * 0.05 * Math.pow(0.95, n) * z.faktor);
+        const erstes = afaZeitanteil(start, start, monat, null).faktor;
+        g.werbungskosten.afa = degressivImJahr(g.afaBasis, start, jahr, erstes);
         g.afaSatz = 5;
       }
     } else {
@@ -259,7 +291,7 @@ export function berechneAnlageV(
       // Nutzungsdauer (bei 2 % also über 50 Jahre hinaus).
       const startLinear = p.afa_start_jahr ?? (Number.isFinite(jahrVon(p.kaufdatum)) ? jahrVon(p.kaufdatum) : null);
       const dauer = satz > 0 ? Math.round(100 / satz) : null;
-      const z = afaZeitanteil(jahr, startLinear, monatVon(p.kaufdatum), dauer);
+      const z = afaZeitanteil(jahr, startLinear, startLinear == null ? null : startMonat(p, startLinear, g), dauer);
       if (z.hinweis) g.hinweise.push(z.hinweis);
       g.werbungskosten.afa = r2(((g.afaBasis * satz) / 100) * z.faktor);
       if (startLinear == null && g.afaBasis > 0) {
@@ -277,10 +309,20 @@ export function berechneAnlageV(
     // „Schuldzinsen" gebucht, gelten die — sonst wird geschätzt und die Zeile
     // in der ELSTER-Hilfe als nicht übertragbar gekennzeichnet.
     const gebuchteZinsen = g.werbungskosten.schuldzinsen; // aus der Kosten-Schleife
+    // Nur für die Monate, in denen das Darlehen im Jahr lief (ab Auszahlung, ersatzweise Kauf; bis
+    // Laufzeitende) — Gesamtprüfung 07.10.2026, B3. Vorher stand jedes Jahr vor dem Kauf voll drin.
     const propKredite = kredite.filter((kr) => kr.prop_id === p.id);
+    let ohneStart = false;
     const geschaetzteZinsen = r2(
-      sum(propKredite.map((kr) => ((Number(kr.restschuld) || 0) * (Number(kr.zinssatz) || 0)) / 100)),
+      sum(propKredite.map((kr) => {
+        const zr = kreditMonateImJahr(kr, jahr, p.kaufdatum);
+        if (zr.ohneStart) ohneStart = true;
+        return (((Number(kr.restschuld) || 0) * (Number(kr.zinssatz) || 0)) / 100) * (zr.monate / 12);
+      })),
     );
+    if (ohneStart && geschaetzteZinsen > 0 && g.werbungskosten.schuldzinsen === 0) {
+      g.hinweise.push("Für ein Darlehen ist weder Auszahlungs- noch Kaufdatum hinterlegt — die Zinsschätzung nimmt das ganze Jahr an.");
+    }
     if (gebuchteZinsen > 0) {
       g.schuldzinsenGeschaetzt = false;
       // Eine einzige gebuchte Zinszahlung verdraengt die Hochrechnung komplett.
@@ -300,6 +342,29 @@ export function berechneAnlageV(
         "Die Schuldzinsen sind aus der heutigen Restschuld hochgerechnet und gelten nicht für das Steuerjahr. Für die Steuererklärung den Betrag aus der Zinsbescheinigung der Bank verwenden — oder die gezahlten Zinsen als Ausgabe der Kategorie Schuldzinsen buchen.",
       );
     }
+  }
+
+  // 15-%-Grenze (§ 6 Abs. 1 Nr. 1a EStG) — Gesamtprüfung 07.10.2026, A1. Vorher meldete der
+  // Steuer-Wächter „überschritten“, die Anlage V führte dieselben Kosten aber als sofort abziehbare
+  // Erhaltung (im Beispiel 19.600 € zu hohe Werbungskosten). Gleiche Rechnung wie der Wächter.
+  for (const p of properties) {
+    if ((p.typ ?? "") === "Grundstück" || !p.kaufdatum) continue;
+    const g = hole(p.id);
+    const eigene = kosten.filter((k) => k.prop_id === p.id);
+    const an = berechneAnschaffungsnah(
+      { kaufpreis: Number(p.kaufpreis) || null, gebaeudeanteilProzent: p.afa_gebaeudeanteil ?? null, kaufdatum: p.kaufdatum },
+      eigene.map((k) => ({ buchungsdatum: k.buchungsdatum, kategorie: k.kategorie, betrag: Number(k.betrag) || 0 })),
+    );
+    if (an.status !== "ueberschritten" || !an.fensterVon || !an.fensterBis) continue;
+    const imJahrImFenster = eigene.filter((k) =>
+      jahrVon(k.buchungsdatum) === jahr && ANSCHAFFUNGSNAH_KATEGORIEN.includes(k.kategorie ?? "") &&
+      (k.buchungsdatum ?? "") >= an.fensterVon! && (k.buchungsdatum ?? "") <= an.fensterBis!);
+    if (imJahrImFenster.length === 0) continue;
+    const fmt = (n: number) => n.toLocaleString("de-DE", { maximumFractionDigits: 0 });
+    g.erhaltungAnschaffungsnah = true;
+    g.hinweise.push(
+      `Instandsetzungskosten in den ersten drei Jahren nach dem Kauf liegen bei ${fmt(an.kostenImFenster)} € und damit über 15 % der Gebäude-Anschaffungskosten (${fmt(an.grenze)} €). Sie zählen dann zu den Herstellungskosten (§ 6 Abs. 1 Nr. 1a EStG) und sind nur über die AfA absetzbar, nicht sofort als Erhaltung. Die Grenze gilt netto; jährlich übliche Erhaltungsarbeiten zählen nicht mit — bitte mit dem Steuerberater klären, bevor du die Erhaltung überträgst.`,
+    );
   }
 
   // Summen je Objekt + Rundung
@@ -344,7 +409,13 @@ export function berechneAnlageV(
     afaSatz: 0,
     afaMethode: "auto",
     schuldzinsenGeschaetzt: sichtbar.some((g) => g.schuldzinsenGeschaetzt),
-    hinweise: [...new Set(sichtbar.flatMap((g) => g.hinweise))],
+    erhaltungAnschaffungsnah: sichtbar.some((g) => g.erhaltungAnschaffungsnah),
+    hinweise: [
+      ...new Set(sichtbar.flatMap((g) => g.hinweise)),
+      ...(selbst.size > 0
+        ? [`Selbst bewohnt und deshalb nicht in der Anlage V: ${alleProperties.filter((p) => selbst.has(p.id)).map((p) => p.bezeichnung).join(", ")}.`]
+        : []),
+    ],
   };
 
   return { jahr, objekte: sichtbar, gesamt };
@@ -391,6 +462,18 @@ export type ElsterZeile = {
 
 const SUMMEN_WARNUNG =
   "Enthält die geschätzten Schuldzinsen — nicht übertragen. Erst den Betrag aus der Zinsbescheinigung eintragen, ELSTER bildet die Summe dann selbst.";
+const ERHALTUNG_WARNUNG =
+  "15-%-Grenze nach dem Kauf überschritten — diese Kosten sind voraussichtlich Herstellungskosten (AfA), nicht sofort abziehbar. Erst mit dem Steuerberater klären.";
+
+/**
+ * Sind Summe der Werbungskosten und Ergebnis zum Übertragen geeignet? EINE Regel für ELSTER-Hilfe
+ * und PDF (Gesamtprüfung 07.10.2026, B4: das PDF wies Summe und Verlust ohne Kennzeichnung aus).
+ */
+export function summenWarnung(o: AnlageVObjekt): string | undefined {
+  if (o.schuldzinsenGeschaetzt) return SUMMEN_WARNUNG;
+  if (o.erhaltungAnschaffungsnah) return "Enthält Erhaltungsaufwand, der wegen der 15-%-Grenze voraussichtlich nicht sofort abziehbar ist — nicht übertragen, erst klären.";
+  return undefined;
+}
 
 export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
   const e = o.einnahmen;
@@ -411,7 +494,11 @@ export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
         ? "Nur Schätzung aus der heutigen Restschuld — nicht übertragen. Betrag der Zinsbescheinigung der Bank eintragen."
         : undefined,
     },
-    { zeile: "40", bezeichnung: "Erhaltungsaufwendungen (Reparatur/Instandhaltung)", betrag: w.erhaltung, bereich: "wk" },
+    {
+      zeile: "40", bezeichnung: "Erhaltungsaufwendungen (Reparatur/Instandhaltung)", betrag: w.erhaltung, bereich: "wk",
+      uebertragbar: !o.erhaltungAnschaffungsnah,
+      warnung: o.erhaltungAnschaffungsnah ? ERHALTUNG_WARNUNG : undefined,
+    },
     { zeile: "46", bezeichnung: "Verwaltungskosten", betrag: w.verwaltung, bereich: "wk" },
     { zeile: "47", bezeichnung: "Grundsteuer / öffentliche Lasten", betrag: w.grundsteuer, bereich: "wk" },
     { zeile: "47", bezeichnung: "Versicherungen", betrag: w.versicherung, bereich: "wk" },
@@ -424,16 +511,16 @@ export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
       // Die Summe enthaelt die geschaetzten Schuldzinsen. Sie als uebertragbar
       // auszuweisen, waehrend Zeile 37 durchgestrichen ist, ist widerspruechlich —
       // wer die Summe abtippt, uebertraegt die Schaetzung durch die Hintertuer.
-      uebertragbar: !o.schuldzinsenGeschaetzt,
-      warnung: o.schuldzinsenGeschaetzt ? SUMMEN_WARNUNG : undefined,
+      uebertragbar: !summenWarnung(o),
+      warnung: summenWarnung(o),
     },
     {
       zeile: "23/24",
       bezeichnung: o.ueberschuss >= 0 ? "Überschuss (Einkünfte)" : "Verlust",
       betrag: o.ueberschuss,
       bereich: "summe",
-      uebertragbar: !o.schuldzinsenGeschaetzt,
-      warnung: o.schuldzinsenGeschaetzt ? SUMMEN_WARNUNG : undefined,
+      uebertragbar: !summenWarnung(o),
+      warnung: summenWarnung(o),
     },
   ];
 }

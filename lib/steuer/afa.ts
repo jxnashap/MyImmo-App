@@ -243,3 +243,23 @@ export function kaufpreisAufteilung(
         : "Ohne Grundstücksfläche und Bodenrichtwert wird der volle Kaufpreis als Gebäude angesetzt — bitte Bodenwert ergänzen (BMF-Arbeitshilfe zur Kaufpreisaufteilung).",
   };
 }
+
+// ------------------------------------ 6) degressive AfA eines Steuerjahres ----
+
+/**
+ * Degressive AfA (§ 7 Abs. 5a EStG) für EIN Steuerjahr: 5 % vom jeweiligen Restwert; im
+ * Anschaffungsjahr zeitanteilig (`faktorErstesJahr`, § 7 Abs. 1 S. 4). Gesamtprüfung 07.10.2026, A3:
+ * Vorher rechnete die Anlage V `Basis × 0,05 × 0,95^n` — nach einem gezwölftelten ersten Jahr ist
+ * der Restwert aber höher als 0,95 × Basis; ab Jahr 2 kam zu wenig heraus (4.750 statt 4.958,33).
+ * Kein Wechsel zur linearen AfA (der Nutzer wählt die Methode selbst).
+ */
+export function degressivImJahr(basis: number, startJahr: number, jahr: number, faktorErstesJahr: number): number {
+  if (!(basis > 0) || jahr < startJahr) return 0;
+  let rest = basis;
+  let betrag = 0;
+  for (let j = startJahr; j <= jahr; j++) {
+    betrag = r2(rest * 0.05 * (j === startJahr ? faktorErstesJahr : 1));
+    rest = r2(rest - betrag);
+  }
+  return betrag;
+}
