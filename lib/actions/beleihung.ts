@@ -7,7 +7,8 @@ import { erzeugeFreigabeCode, freigabeCodeHash } from "@/lib/freigabeCode";
 import { EMAIL } from "@/lib/mahnung";
 import { encrypt } from "@/lib/crypto/secure";
 import { BELEIHUNG_CHECKLISTE, type BelDok } from "@/lib/beleihung";
-import { berechneNk, type NkRawPosition } from "@/lib/nk";
+import { berechneNk } from "@/lib/nk";
+import { ladeNkPositionen } from "@/lib/nkPositionen";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
 import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
 import {
@@ -244,12 +245,10 @@ export async function generiereBeleihungDokument(propId: string, itemKey: string
   // NK-Abrechnung: letztes abgeschlossenes Jahr, erster aktiver Mieter mit Positionen.
   const jahr = new Date().getFullYear() - 1;
   for (const m of mieterAktiv) {
-    const { data: positions } = await supabase
-      .from("mieter_positionen")
-      .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,grundkosten_prozent,flaeche_gesamt")
-      .eq("mieter_id", m.id)
-      .order("created_at");
-    const posJahr = (positions ?? []).filter((p) => p.jahr == null || p.jahr === jahr);
+    // Dieselbe Quelle wie NK-Seite und PDF (lib/nkPositionen.ts) — vorher eine eigene, kürzere
+    // Spaltenliste ohne § 35a.
+    const { positionen } = await ladeNkPositionen(supabase, { id: m.id, prop_id: propId }, jahr);
+    const posJahr = positionen.filter((p) => p.jahr == null || p.jahr === jahr);
     if (!posJahr.length) continue;
 
     const abrechnung = berechneNk(
@@ -265,7 +264,7 @@ export async function generiereBeleihungDokument(propId: string, itemKey: string
         nk_vorauszahlung: m.nk_vorauszahlung,
       },
       { bezeichnung: objekt.bezeichnung, adresse: objekt.adresse ?? null },
-      posJahr as NkRawPosition[],
+      posJahr,
       null,
       await ladeVorauszahlung(m.id, jahr),
     );

@@ -32,6 +32,11 @@ export type NkRawPosition = {
   flaeche_gesamt?: number | null;      // Gesamtwohnfläche ('flaeche' + HKVO-Grundkosten)
   lohnanteil?: number | null;       // § 35a: Arbeits-/Lohnkostenanteil (Mieteranteil)
   art_35a?: string | null;          // 'haushaltsnah' | 'handwerker'
+  // Nur 'objekt' (Stufe 1, lib/nkObjekt.ts): am Objekt fertig verteilter Anteil des Mieters;
+  // `betrag` ist dann der Gesamtbetrag des Hauses.
+  anteil?: number | null;
+  faktor_text?: string | null;
+  warnung?: string | null;
 };
 
 export type NkTenant = {
@@ -425,6 +430,12 @@ export function berechneNk(
       const basis = p.betrag ?? 0;
       const kopf = { bezeichnung: p.bezeichnung, umlageschluessel: p.umlageschluessel };
 
+      if (p.aufteilung === "objekt") {
+        // Am Objekt verteilt (lib/nkObjekt.ts) — Belegungstage und Leerstand sind dort schon
+        // eingerechnet; hier nur übernehmen.
+        return { ...kopf, betrag: rund2(p.anteil ?? 0), basis, faktorText: p.faktor_text ?? undefined };
+      }
+
       if (p.aufteilung === "zeit") {
         // Betrag = Jahresgesamtkosten → tagegenau nach Belegung aufteilen.
         return { ...kopf, ...zeitAnteil(basis) };
@@ -559,6 +570,7 @@ export function berechneNk(
   // Warnungen: Dinge, die die Abrechnung angreifbar machen und die der
   // Vermieter sehen MUSS, bevor er sie verschickt.
   const warnungen: string[] = [];
+  for (const w of new Set(relevant.map((p) => p.warnung).filter((w): w is string => !!w))) warnungen.push(w);
   if (vorauszahlung.luecke) {
     const l = vorauszahlung.luecke;
     warnungen.push(
@@ -587,7 +599,7 @@ export function berechneNk(
     // Ohne Positionen ist der Saldo die volle Vorauszahlung — der Brief endet
     // dann mit „Ihr Guthaben wird innerhalb von 14 Tagen erstattet".
     warnungen.push(
-      `Für ${jahr} sind keine umlagefähigen Positionen hinterlegt. Die Abrechnung weist deshalb die komplette Vorauszahlung als Guthaben aus — das willst du fast sicher nicht verschicken. Trage die Betriebskosten zuerst beim Mieter oder über den Nebenkosten-Verteiler ein.`,
+      `Für ${jahr} sind keine umlagefähigen Positionen hinterlegt. Die Abrechnung weist deshalb die komplette Vorauszahlung als Guthaben aus — das willst du fast sicher nicht verschicken. Trage die Betriebskosten zuerst ein — beim Mehrfamilienhaus unter „Nebenkosten“ am Objekt, sonst beim Mieter.`,
     );
   }
 

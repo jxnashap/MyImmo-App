@@ -3,7 +3,8 @@ import { vorjahrUebernahme, vorauszahlungsVorschlag, gleicheBetraegeWieVorjahr, 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { berechneNk, deDatum, NK_POSITION_SPALTEN, type NkRawPosition, type NkCo2Input } from "@/lib/nk";
+import { berechneNk, deDatum, type NkCo2Input } from "@/lib/nk";
+import { ladeNkPositionen } from "@/lib/nkPositionen";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
 import { eur2, adressZeilen } from "@/lib/format";
 import { vermieterAus } from "@/lib/pdf/nkPdf";
@@ -53,7 +54,7 @@ export default async function NkPage(
 
   const jahr = Number(searchParams.jahr) || new Date().getFullYear() - 1;
 
-  const [{ data: property }, { data: positions }, { data: profil }, { data: ibanRow }, { data: co2Row }, { data: kostenRows }, { count: mieterImObjekt }, { data: zaehlerRows }] =
+  const [{ data: property }, nkPos, { data: profil }, { data: ibanRow }, { data: co2Row }, { data: kostenRows }, { count: mieterImObjekt }, { data: zaehlerRows }] =
     await Promise.all([
       tenant.prop_id
         ? supabase
@@ -62,11 +63,8 @@ export default async function NkPage(
             .eq("id", tenant.prop_id)
             .single()
         : Promise.resolve({ data: null }),
-      supabase
-        .from("mieter_positionen")
-        .select(NK_POSITION_SPALTEN)
-        .eq("mieter_id", params.id)
-        .order("created_at"),
+      // Stufe 1: Kosten am Objekt schlagen die alten Positionen beim Mieter (lib/nkPositionen.ts).
+      ladeNkPositionen(supabase, tenant, jahr),
       supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
       supabase
         .from("ibans")
@@ -95,6 +93,7 @@ export default async function NkPage(
         .order("ablesedatum"),
     ]);
   const ausBuchungen = tenant.prop_id ? nkAusBuchungen(kostenRows ?? [], tenant.prop_id, jahr) : { vorschlaege: [], unklar: [] };
+  const positions = nkPos.mieterPositionen;
   const schonDa = new Set(((positions ?? []) as { bezeichnung: string; jahr: number | null }[])
     .filter((p) => p.jahr === jahr).map((p) => p.bezeichnung.trim().toLowerCase()));
   const offeneVorschlaege = ausBuchungen.vorschlaege.filter((v) => !schonDa.has(v.bezeichnung.toLowerCase()));
@@ -103,13 +102,18 @@ export default async function NkPage(
     einheiten_anzahl: (property as { einheiten_anzahl?: number | null } | null)?.einheiten_anzahl ?? null,
     mieterAnzahl: mieterImObjekt ?? 0,
   });
+  // Stufe 1 (07.10.2026): Beim Mehrfamilienhaus stehen die Kosten am OBJEKT — dort einmal mit dem
+  // Gesamtbetrag, verteilt auf alle Mieter. Die Werkzeuge, die Positionen beim Mieter anlegen
+  // (Vorjahr übernehmen, KI-Import, Buchungen), führen hier nicht mehr hin.
+  const amObjekt = mitVerteiler && !!tenant.prop_id && nkPos.objektBereit;
+  const objektNkHref = tenant.prop_id ? `/properties/${tenant.prop_id}/nebenkosten?jahr=${jahr}` : null;
   const zaehlerImJahr = zaehlerSpanne((zaehlerRows ?? []) as ZaehlerMeldung[], jahr);
 
   const a = berechneNk(
     jahr,
     tenant,
     property ?? null,
-    (positions ?? []) as NkRawPosition[],
+    nkPos.positionen,
     (co2Row ?? null) as NkCo2Input | null,
     await ladeVorauszahlung(params.id, jahr),
   );
@@ -176,9 +180,15 @@ export default async function NkPage(
           </form>
           {/* Stufe 0 (07.10.2026): Die Positionen lagen nur unter „Mieter bearbeiten“, ganz unten — von hier
               führte kein Weg dorthin. */}
-          <Link href={`/tenants/${params.id}/edit?jahr=${jahr}#positionen`} className="btn btn-ghost" style={{ fontSize: 12 }}>
-            Positionen bearbeiten
-          </Link>
+          {amObjekt && objektNkHref ? (
+            <Link href={objektNkHref} className="btn btn-ghost" style={{ fontSize: 12 }}>
+              Kosten am Objekt
+            </Link>
+          ) : (
+            <Link href={`/tenants/${params.id}/edit?jahr=${jahr}#positionen`} className="btn btn-ghost" style={{ fontSize: 12 }}>
+              Positionen bearbeiten
+            </Link>
+          )}
           <a href={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`} className="btn btn-ghost">
             Als PDF herunterladen
           </a>
@@ -222,6 +232,24 @@ export default async function NkPage(
         </div>
       )}
 
+      {amObjekt && objektNkHref && (
+        <div className="no-print" style={{ maxWidth: "210mm", margin: "0 auto 14px", background: "var(--bg2)", border: "1px solid var(--line)", borderRadius: 8, padding: "10px 14px", fontSize: 13 }}>
+          {nkPos.quelle === "objekt" ? (
+            <>
+              Die Kosten {jahr} kommen aus den <Link href={objektNkHref} style={{ color: "var(--gold)" }}>Nebenkosten des Objekts</Link> —
+              dort stehen sie einmal mit dem Gesamtbetrag und werden auf alle Mieter verteilt.
+              {nkPos.uebergangen > 0 && ` ${nkPos.uebergangen} ältere Position${nkPos.uebergangen === 1 ? "" : "en"} beim Mieter ${nkPos.uebergangen === 1 ? "zählt" : "zählen"} für ${jahr} nicht mehr.`}
+            </>
+          ) : (
+            <>
+              Beim Mehrfamilienhaus erfasst du die Kosten einmal am Objekt:{" "}
+              <Link href={objektNkHref} style={{ color: "var(--gold)" }}>Nebenkosten {jahr} öffnen</Link>.
+              {a.positionen.length > 0 && " Bis dort etwas steht, rechnet diese Abrechnung mit den Positionen beim Mieter."}
+            </>
+          )}
+        </div>
+      )}
+
       {a.warnungen.length > 0 && (
         <div
           className="no-print"
@@ -242,20 +270,20 @@ export default async function NkPage(
       <NkVorjahrHilfe
         mieterId={params.id}
         jahr={jahr}
-        uebernahme={vorjahrUebernahme((positions ?? []) as VorjahrPosition[], jahr)}
+        uebernahme={amObjekt ? { moeglich: false, anzahl: 0 } : vorjahrUebernahme((positions ?? []) as VorjahrPosition[], jahr)}
         vorschlag={a.monate > 0 && a.positionen.length > 0 ? vorauszahlungsVorschlag(a.kostenNachCo2, a.monate, a.nkVorauszahlungMonat) : null}
         aktuellMonat={a.nkVorauszahlungMonat}
         nurVorjahrsBetraege={gleicheBetraegeWieVorjahr((positions ?? []) as VorjahrPosition[], jahr)}
         naechsterMonat={ymPlus(heuteBerlin().slice(0, 7), 1)}
-        ausBuchungen={offeneVorschlaege.length > 0 ? {
+        ausBuchungen={!amObjekt && offeneVorschlaege.length > 0 ? {
           anzahl: offeneVorschlaege.length,
           text: offeneVorschlaege.map((v) => `${v.bezeichnung} ${eur2(v.betrag)}`).join(" · "),
-          verteilerHref: mitVerteiler && tenant.prop_id ? `/properties/${tenant.prop_id}/umlage` : null,
+          verteilerHref: mitVerteiler && tenant.prop_id ? `/properties/${tenant.prop_id}/nebenkosten?jahr=${jahr}` : null,
         } : null}
         zaehler={zaehlerImJahr}
       />
 
-      <div className="no-print" style={{ maxWidth: "210mm", margin: "0 auto" }}>
+      {!amObjekt && <div className="no-print" style={{ maxWidth: "210mm", margin: "0 auto" }}>
         <NkOcrUpload
           mieterId={params.id}
           jahr={jahr}
@@ -268,7 +296,7 @@ export default async function NkPage(
               aufteilung: p.aufteilung ?? null,
             }))}
         />
-      </div>
+      </div>}
 
       <NkCo2Panel
         mieterId={params.id}
@@ -417,8 +445,8 @@ export default async function NkPage(
       </BriefBlatt>
 
       <p className="no-print" style={{ maxWidth: "210mm", margin: "12px auto 0", fontSize: 11, color: "var(--faint)" }}>
-        Abrechnung nach §§ 556 ff. BGB i.V.m. BetrKV. Beträge stammen aus den Umlagepositionen des
-        Mieters. Ohne Gewähr.
+        Abrechnung nach §§ 556 ff. BGB i.V.m. BetrKV. Beträge stammen{" "}
+        {nkPos.quelle === "objekt" ? "aus den Nebenkosten des Objekts" : "aus den Umlagepositionen des Mieters"}. Ohne Gewähr.
       </p>
     </div>
   );

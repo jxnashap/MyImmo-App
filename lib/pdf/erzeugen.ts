@@ -6,7 +6,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildDocPdf } from "@/lib/pdf/docPdf";
 import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
 import { buildProtokollPdf, type ProtokollDaten } from "@/lib/pdf/protokollPdf";
-import { berechneNk, NK_POSITION_SPALTEN, type NkRawPosition, type NkCo2Input } from "@/lib/nk";
+import { berechneNk, type NkCo2Input } from "@/lib/nk";
+import { ladeNkPositionen } from "@/lib/nkPositionen";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
 import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
@@ -183,7 +184,7 @@ export async function erzeugeNkPdf(
     .single();
   if (!tenant) return null;
 
-  const [{ data: property }, { data: positions }, { data: profil }, { data: iban }, { data: co2Row }] =
+  const [{ data: property }, nkPos, { data: profil }, { data: iban }, { data: co2Row }] =
     await Promise.all([
       tenant.prop_id
         ? supabase
@@ -192,11 +193,8 @@ export async function erzeugeNkPdf(
             .eq("id", tenant.prop_id)
             .single()
         : Promise.resolve({ data: null }),
-      supabase
-        .from("mieter_positionen")
-        .select(NK_POSITION_SPALTEN)
-        .eq("mieter_id", mieterId)
-        .order("created_at"),
+      // Dieselbe Quelle wie die NK-Seite (lib/nkPositionen.ts): Kosten am Objekt oder Altbestand.
+      ladeNkPositionen(supabase, tenant, jahr),
       supabase
         .from("vermieter_profil")
         .select("name,strasse,plz,ort,email")
@@ -223,7 +221,7 @@ export async function erzeugeNkPdf(
     jahr,
     tenant,
     property ?? null,
-    (positions ?? []) as NkRawPosition[],
+    nkPos.positionen,
     (co2Row ?? null) as NkCo2Input | null,
     await ladeVorauszahlung(mieterId, jahr),
   );

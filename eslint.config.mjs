@@ -27,5 +27,7 @@ export default defineConfig([
     "next-env.d.ts",
     // Fremdcode: installierte Skills (MIT, emilkowalski/skills).
     ".agents/**",
+    // Arbeitsordner des Design-Scans (gitignored, scripts/designscan/).
+    ".scan/**",
   ]),
 ]);

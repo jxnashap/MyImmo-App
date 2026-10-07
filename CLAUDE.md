@@ -1933,6 +1933,15 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   beim Mieter schreibt `aufteilung: "voll"` statt null; „Positionen bearbeiten“ von der NK-Seite
   (`/tenants/<id>/edit?jahr=…#positionen`). **Regel: Wer Positionen für eine Rechnung lädt, nimmt
   `NK_POSITION_SPALTEN`.** `tests/nkStufe0.test.ts`, sechs Mutationen rot.
+  ✅ **Stufe 1 gebaut 07.10.2026: Nebenkosten am Objekt** (`/properties/<id>/nebenkosten`, nur MFH =
+  `zeigeVerteiler`). Rechnung `lib/nkObjekt.ts` (Fläche/Einheiten/MEA tagesgenau gegen das GANZE Haus →
+  Leerstand beim Vermieter; Personen = Personentage, leere Wohnung = 1 Person; Verbrauch gegen Hauptzähler;
+  „Betrag je Wohnung“; fehlt eine Angabe → nicht verteilen + Warnung). **Regel: Jede Abrechnung holt ihre
+  Positionen über `ladeNkPositionen()` (`lib/nkPositionen.ts`) — Kosten am Objekt ODER Altbestand beim
+  Mieter, nie gemischt.** ⚠️ **BETREIBER: Migration `20261007090000_nk_objekt.sql` im SQL-Editor
+  ausführen** (Kaskaden → Bestätigungsdialog); bis dahin „kommt in Kürze“, alter Verteiler bleibt, alles
+  rechnet wie vorher. Danach `UmlageAssistent` + `lib/actions/umlage.ts` entfernen. `tests/nkObjekt.test.ts`,
+  14 Mutationen rot. Details `docs/zukunft/NK-NEU.md`.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

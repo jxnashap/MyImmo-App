@@ -437,19 +437,19 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
         </div>
       </div>
 
-      {/* Nebenkosten-Verteiler — nur bei mehreren Mietparteien sinnvoll
-          (bei einer ETW/einem EFH gibt es nichts zu verteilen). */}
+      {/* Nebenkosten am Objekt (Stufe 1, 07.10.2026) — nur bei mehreren Mietparteien; bei einer
+          ETW/einem EFH bleibt die Abrechnung vorerst beim Mieter. */}
       {verteilerSichtbar && (
       <div id="nebenkosten" data-anker className="section mb-20">
         <div className="section-header">
-          <h3>Nebenkosten verteilen</h3>
-          <Link href={`/properties/${id}/umlage`} className="btn btn-gold" style={{ fontSize: 11 }}>Verteiler öffnen</Link>
+          <h3>Nebenkosten</h3>
+          <Link href={`/properties/${id}/nebenkosten`} className="btn btn-gold" style={{ fontSize: 11 }}>Nebenkosten öffnen</Link>
         </div>
         <div className="section-body">
           <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6 }}>
-            Gesamtkosten (Strom, Wasser, Grundsteuer …) <strong>einmal</strong> eingeben — der
-            Assistent teilt sie automatisch nach <strong>m²-Anteil</strong> auf alle Mieter auf und übernimmt die
-            Beträge direkt in deren einzelne NK-Abrechnung.
+            Jede Kostenart (Grundsteuer, Wasser, Müll …) <strong>einmal</strong> mit dem Betrag fürs ganze Haus
+            eintragen — MyImmo verteilt sie nach Fläche, Personen, Einheiten, MEA oder Verbrauch auf alle Mieter,
+            tagesgenau, Leerstand bleibt bei dir. Daraus entstehen alle Abrechnungen des Jahres.
           </div>
         </div>
       </div>

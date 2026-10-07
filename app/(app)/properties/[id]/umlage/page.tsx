@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { nkAmObjekt } from "@/lib/nkPositionen";
 import { createClient } from "@/lib/supabase/server";
 import UmlageAssistent from "@/components/UmlageAssistent";
 import { zeigeVerteiler } from "@/lib/umlage";
@@ -23,6 +24,11 @@ export default async function UmlagePage(props: { params: Promise<{ id: string }
   ]);
 
   if (!prop) notFound();
+
+  // Stufe 1 (07.10.2026): Beim Mehrfamilienhaus stehen die Nebenkosten jetzt am Objekt. Der alte
+  // Verteiler (schrieb fertige Anteile je Mieter, ohne Gesamtkosten) bleibt nur, solange die
+  // Tabellen fehlen — sonst gäbe es zwei Wege für dieselben Kosten.
+  if (await nkAmObjekt(supabase, id)) redirect(`/properties/${id}/nebenkosten`);
 
   // Der Verteiler lohnt nur bei mehreren Mietparteien — bei einer einzelnen
   // Einheit (ETW/EFH) gibt es nichts aufzuteilen. Direktaufrufe landen daher

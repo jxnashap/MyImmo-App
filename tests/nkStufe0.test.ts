@@ -27,9 +27,13 @@ describe("PDF und Bildschirm rechnen mit denselben Spalten", () => {
     for (const s of ["aufteilung", "verbrauch_mieter", "verbrauch_gesamt", "grundkosten_prozent", "flaeche_gesamt", "lohnanteil", "art_35a"])
       expect(NK_POSITION_SPALTEN.split(",")).toContain(s);
   });
-  it("NK-Seite und PDF-Erzeugung laden genau diese Liste", () => {
-    expect(lies("lib/pdf/erzeugen.ts")).toMatch(/from\("mieter_positionen"\)\s*\.select\(NK_POSITION_SPALTEN\)/);
-    expect(lies("app/(app)/tenants/[id]/nk/page.tsx")).toMatch(/from\("mieter_positionen"\)\s*\.select\(NK_POSITION_SPALTEN\)/);
+  it("NK-Seite, PDF und Beleihungs-Mappe laden über EINEN Lader, der genau diese Liste nimmt", () => {
+    // Stufe 1: lib/nkPositionen.ts entscheidet zwischen Kosten am Objekt und Altbestand.
+    expect(lies("lib/nkPositionen.ts")).toMatch(/from\("mieter_positionen"\)\s*\.select\(NK_POSITION_SPALTEN\)/);
+    for (const f of ["lib/pdf/erzeugen.ts", "app/(app)/tenants/[id]/nk/page.tsx", "lib/actions/beleihung.ts"]) {
+      expect(lies(f), f).toMatch(/ladeNkPositionen\(supabase,/);
+      expect(lies(f), f).not.toMatch(/from\("mieter_positionen"\)/);
+    }
   });
 });
 
