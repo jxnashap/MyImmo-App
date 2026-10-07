@@ -1,112 +1,76 @@
-# MyImmo — Immobilien-Management für Privatvermieter
+# MyImmo — Immobilienverwaltung für private Vermieter
 
-Next.js (App Router, TypeScript, Tailwind) + Supabase (Postgres, Auth, Storage).
-Dieses Grundgerüst ist der Start für die neue, modulare Version von MyImmo.
+Live: **https://www.myimmoapp.de** · Status: Early Access (Registrierung nur mit Zugangscode),
+öffentliche Demo auf der Startseite.
 
-## Vision (Phasenplan)
+Zwei Bereiche in einer App und einem Konto, gewechselt am Logo oben links:
 
-1. **Fundament** ← *du bist hier*: Datenmodell + Next.js-Gerüst + Auth + Portfolio-Übersicht
-2. **Kernverwaltung**: Objekte, Einheiten, Mieter, Mietverträge anlegen & bearbeiten
-3. **Dokumente**: Mahnung, Kündigung, Anschreiben als PDF generieren + an Mieter mailen
-4. **Betriebskosten**: Abrechnung hochladen → OCR → Positionen pro Mieter → Nebenkostenabrechnung → mailen
-5. **Bewertung**: Bodenrichtwerte + Marktdaten → laufende Neubewertung des Portfolios
+- **MyImmo** — die laufende Verwaltung: Objekte, Mieter, Mietkonto mit Soll/Ist,
+  Ein- und Ausgaben, Kredite, Nebenkostenabrechnung, Anlage V und Jahresbericht,
+  Briefe und PDFs, Termine und Fristen, Archiv. Dazu ein **Mieterportal**
+  (Dokumente, Anliegen, Zählerstände) und ein **Service-Portal** für Hausmeister
+  und Dienstleister.
+- **BuyImmo** — der Weg zum nächsten Kauf: Objektvergleich, Besichtigung und
+  Sanierungsrechner, Finanzierung, Makler- und Bank-Unterlagen per Freigabe-Link,
+  Abschluss.
 
-## Schnellstart (lokal)
+## Technik
+
+- **Next.js 16** (App Router, Turbopack, `proxy.ts`) · **React 19** · TypeScript · Tailwind
+- **Supabase** (Postgres mit Row-Level-Security auf allen Tabellen, Auth mit 2FA),
+  Region Frankfurt
+- **Vercel** — jeder Merge nach `main` deployt automatisch
+- **vitest** für Tests, ESLint (`npm run lint` muss 0 Fehler melden)
+
+## Lokal starten
+
+Node **22** oder neuer (CI läuft auf Node 22; unter Node 20 scheitert der Supabase-Client).
 
 ```bash
-# 1. Abhängigkeiten installieren
-npm install
-
-# 2. Umgebungsvariablen anlegen
-cp .env.local.example .env.local
-#    NEXT_PUBLIC_SUPABASE_URL und NEXT_PUBLIC_SUPABASE_ANON_KEY eintragen
-#    (Supabase Dashboard > Project Settings > API)
-#    Projekt: kozhxrvyilkchjpcuwcm
-
-# 3. Dev-Server starten
-npm run dev
-#    → http://localhost:3000
+npm ci
+# .env.local anlegen mit mindestens:
+#   NEXT_PUBLIC_SUPABASE_URL=...
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+npm run dev        # http://localhost:3000
 ```
 
-## Supabase
+Für `npm run build` genügen Platzhalter in den beiden Variablen. Welche weiteren
+Variablen es gibt und wofür (Zugangscode, KI, Mailversand, Verschlüsselung, Cron),
+steht in `CLAUDE.md` unter „Benötigte Environment-Variablen". Geheimnisse gehören
+nur in Vercel bzw. `.env.local`, nie ins Repo.
 
-> ⚠️ Die Datenbank existiert bereits und enthält echte Daten (9 Objekte,
-> 6 Mieter, Buchungen). **Kein Schema einspielen.** `supabase/schema.sql`
-> ist veraltet; die tatsächliche Struktur steht in `supabase/schema-reference.sql`.
+## Prüfen
 
-- **Tabellen**: `properties`, `mieter`, `einnahmen`, `kosten`, `kredite`,
-  `verbrauch`, `notizen`, `termine`, `ibans`. Besitzspalte überall `user_id`.
-- **RLS**: aktiv, Policy `auth.uid() = user_id` — jeder Vermieter sieht nur
-  seine eigenen Daten. Diese App setzt beim Anlegen `user_id` automatisch.
-- **Auth**: E-Mail-Login ist aktiv (`/login`).
-
-## Deploy auf Vercel
-
-1. Code in ein GitHub-Repo pushen.
-2. Auf https://vercel.com das Repo importieren (Framework wird automatisch als
-   Next.js erkannt).
-3. Die drei `NEXT_PUBLIC_*`-Variablen unter **Settings > Environment Variables**
-   eintragen.
-4. Jeder Push auf `main` deployt automatisch.
-
-## Projektstruktur
-
-```
-app/
-  layout.tsx              Layout + Navigation + Abmelden
-  page.tsx                Portfolio-Übersicht
-  login/page.tsx          Login / Registrierung
-  auth/signout/route.ts   Logout
-  properties/             Objekte: Liste, /new, /[id]/edit
-  tenants/                Mieter:  Liste, /new, /[id]/edit
-  globals.css
-components/
-  PropertyForm.tsx        Objekt-Formular
-  TenantForm.tsx          Mieter-Formular
-lib/
-  supabase/client.ts      Supabase-Client (Browser)
-  supabase/server.ts      Supabase-Client (Server)
-  actions/properties.ts   Server Actions (create/update/delete)
-  actions/tenants.ts      Server Actions (create/update/delete)
-  types.ts                TypeScript-Typen (= echtes Schema)
-middleware.ts             Session-Refresh
-supabase/
-  schema-reference.sql    Doku des bestehenden Schemas (nicht ausführen)
+```bash
+npx tsc --noEmit   # Typen
+npm run lint       # muss 0 Fehler / 0 Warnungen melden
+npm test           # alle Tests
+npm run build      # Produktions-Build
+npm run rauchtest  # Kernwege gegen die LIVE-App (setzt die Demo zurück, sparsam einsetzen)
 ```
 
-## Datenmodell (Kurzüberblick)
+## Aufbau
 
-`properties` (Objekt) ← `mieter` (über `prop_id`)
-`einnahmen` · `kosten` · `kredite` · `verbrauch` · `notizen` · `termine` · `ibans`
-(alle mit `prop_id` → `properties.id`)
+```
+app/(pub)/      Öffentliche Unterseiten: Funktionen, Ratgeber, Vorlagen, Rechtsseiten
+app/(app)/      App: Dashboard, Verwaltung, BuyImmo, Mieter- und Service-Portal, Login
+app/api/        Exporte, PDFs, Cron, Webhooks, Datei-Auslieferung
+components/     Oberfläche
+lib/            Fachlogik — Rechnungen überwiegend als reine, getestete Funktionen
+lib/actions/    Server Actions
+proxy.ts        Anmeldung, 2FA-Gate, Demo-Sperren, Sicherheits-Header
+supabase/migrations/   jede Schemaänderung als Datei (Regeln: README dort)
+tests/          vitest
+scripts/        PDF-Erzeugung, Rauchtest, Design-Scan
+docs/           Projektwissen (als Obsidian-Vault nutzbar, Start: docs/00 Index.md)
+```
 
-Jede Zeile gehört genau einem Vermieter (`user_id = auth.uid()`),
-abgesichert per Row-Level-Security.
+## Weiterlesen
 
-## Fertig
+- **`CLAUDE.md`** — Arbeitsregeln, bekannte Fallen, offene Punkte, Deployment
+- **`docs/BRIEFING.md`** — Kurzeinstieg in den Projektstand
+- **`docs/PROJEKT-STATUS.md`** — was gebaut ist, was inaktiv, was nur der Betreiber erledigen kann
+- **`supabase/migrations/README.md`** — Migrations-Regeln und Historie
 
-- ✅ Login / Registrierung (Supabase Auth)
-- ✅ Portfolio-Übersicht (Gesamtwert, Soll-Miete)
-- ✅ Objekte: anlegen, bearbeiten, löschen
-- ✅ **Objekt-Detailseite** im alten Look: KPIs, Kennzahlen (Preis/m², Faktor,
-  Bruttomietrendite), Mieter, Finanzierung/Kredite, Cashflow, Jahresübersicht
-- ✅ Mieter: anlegen, bearbeiten, löschen (mit Objekt-Zuordnung)
-- ✅ **Umlagepositionen pro Mieter**: individuelle Positionen (Müll, Abwasser,
-  Grundsteuer …) je Mieter, mit Umlageschlüssel und Umlagefähigkeit
-
-### Neue Tabelle (additiv, bereits angelegt)
-
-`mieter_positionen` — id, user_id, mieter_id → mieter, bezeichnung, betrag,
-umlageschluessel, jahr, umlagefaehig, created_at. RLS: `auth.uid() = user_id`.
-Per Migration `add_mieter_positionen` angewendet — bestehende Daten unberührt.
-
-## Nächste Schritte
-
-- Aus den Umlagepositionen die fertige **Nebenkostenabrechnung** je Mieter (PDF)
-- Dokumentengenerator (Mahnung, Kündigung, Anschreiben) + Mailversand
-- Betriebskosten-Upload + OCR → Positionen automatisch vorbefüllen
-- Laufende Bewertung (Bodenrichtwerte / Marktdaten)
-
-> Hinweis zur Bewertung: Bodenrichtwerte gibt es offiziell über die
-> BORIS-Portale der Bundesländer. Vergleichspreise aus Immobilienportalen
-> sind nicht frei/legal per API verfügbar — diese Phase bewusst später planen.
+`supabase/schema.sql` und `supabase/schema-reference.sql` sind alte Stände aus der
+Anfangszeit und **nicht** maßgeblich — das Schema ergibt sich aus den Migrationen.
