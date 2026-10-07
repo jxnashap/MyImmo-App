@@ -260,3 +260,9 @@ describe("Verdrahtung", () => {
     expect(s).not.toMatch(/as restrictive for all/);
   });
 });
+
+describe("Handy (360 px, live gesehen 07.10.2026)", () => {
+  it("Eingabefelder füllen ihre Rasterspalte — sonst ragt „Personen“ rechts hinaus", () => {
+    expect(lies("app/globals.css")).toMatch(/\.nk-formular-raster \.input, \.nk-mieter-zeile \.input, \.nk-werte \.input \{ width: 100%; min-width: 0;/);
+  });
+});
