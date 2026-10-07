@@ -15,6 +15,7 @@ import {
 } from "@/lib/nkObjekt";
 import { fehltNkTabelle, nkKostenAus, NK_OBJEKT_KOSTEN_SPALTEN } from "@/lib/nkPositionen";
 import { nkAusBuchungen } from "@/lib/nkAusBuchungen";
+import { zahlDe } from "@/lib/zahl";
 
 type Antwort = { ok: true; anzahl?: number } | { error: string };
 
@@ -47,7 +48,11 @@ const dbFehler = (e: { code?: string; message?: string } | null, standard: strin
 export async function speichereNkGrundlagen(
   propId: string,
   jahr: number,
-  eingabe: { flaecheGesamt: string; einheiten: string; meaGesamt: string; mieter: Record<string, { personen: string; mea: string }> },
+  eingabe: {
+    flaecheGesamt: string; einheiten: string; meaGesamt: string; mieter: Record<string, { personen: string; mea: string }>;
+    /** CO₂ laut Brennstoff-/Wärmerechnung für das ganze Gebäude (kg; Kosten in €; Gewerbe = 50/50). */
+    co2Kg?: string; co2Kosten?: string; co2Gewerbe?: boolean;
+  },
 ): Promise<Antwort> {
   if (!jahrOk(jahr)) return { error: "Ungültiges Jahr." };
   const z = await zugang(propId);
@@ -59,6 +64,11 @@ export async function speichereNkGrundlagen(
   if (eingabe.einheiten.trim() && (!einheiten || !Number.isInteger(einheiten) || einheiten > 999))
     return { error: "Wohneinheiten bitte als ganze Zahl." };
   if (eingabe.meaGesamt.trim() && !mea) return { error: "MEA gesamt ist keine gültige Zahl." };
+  // CO₂: kg ist eine Menge (mengeDe), die Kosten sind Geld (zahlDe).
+  const co2Kg = mengeDe(eingabe.co2Kg ?? "");
+  const co2Kosten = (eingabe.co2Kosten ?? "").trim() ? zahlDe(eingabe.co2Kosten ?? "") : null;
+  if ((eingabe.co2Kg ?? "").trim() && co2Kg == null) return { error: "CO₂-Menge ist keine gültige Zahl." };
+  if ((eingabe.co2Kosten ?? "").trim() && (co2Kosten == null || co2Kosten < 0)) return { error: "CO₂-Kosten sind kein gültiger Betrag." };
   const mieter: Record<string, { personen?: number; mea?: number }> = {};
   for (const [id, w] of Object.entries(eingabe.mieter ?? {})) {
     if (!z.mieterIds.has(id)) continue;
@@ -71,7 +81,10 @@ export async function speichereNkGrundlagen(
   const { data, error } = await z.supabase
     .from("nk_objekt_jahr")
     .upsert(
-      { user_id: z.user.id, prop_id: propId, jahr, flaeche_gesamt: flaeche || null, einheiten: einheiten || null, mea_gesamt: mea || null, mieter },
+      {
+        user_id: z.user.id, prop_id: propId, jahr, flaeche_gesamt: flaeche || null, einheiten: einheiten || null, mea_gesamt: mea || null, mieter,
+        co2_kg: co2Kg || null, co2_kosten: co2Kosten, co2_gewerbe: !!eingabe.co2Gewerbe,
+      },
       { onConflict: "prop_id,jahr" },
     )
     .select("id")

@@ -7,7 +7,7 @@ import { buildDocPdf } from "@/lib/pdf/docPdf";
 import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
 import { buildProtokollPdf, type ProtokollDaten } from "@/lib/pdf/protokollPdf";
 import { berechneNk, type NkCo2Input } from "@/lib/nk";
-import { ladeNkPositionen } from "@/lib/nkPositionen";
+import { ladeNkPositionen, nkCo2Argumente } from "@/lib/nkPositionen";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
 import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
@@ -217,13 +217,15 @@ export async function erzeugeNkPdf(
         .maybeSingle(),
     ]);
 
+  const co2Arg = nkCo2Argumente(nkPos, (co2Row ?? null) as NkCo2Input | null);
   const abrechnung = berechneNk(
     jahr,
     tenant,
     property ?? null,
     nkPos.positionen,
-    (co2Row ?? null) as NkCo2Input | null,
+    co2Arg.co2Input,
     await ladeVorauszahlung(mieterId, jahr),
+    co2Arg.opts,
   );
 
   const pdf = await buildNkPdf(

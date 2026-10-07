@@ -7,8 +7,8 @@ import { erzeugeFreigabeCode, freigabeCodeHash } from "@/lib/freigabeCode";
 import { EMAIL } from "@/lib/mahnung";
 import { encrypt } from "@/lib/crypto/secure";
 import { BELEIHUNG_CHECKLISTE, type BelDok } from "@/lib/beleihung";
-import { berechneNk } from "@/lib/nk";
-import { ladeNkPositionen } from "@/lib/nkPositionen";
+import { berechneNk, type NkCo2Input } from "@/lib/nk";
+import { ladeNkPositionen, nkCo2Argumente } from "@/lib/nkPositionen";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
 import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
 import {
@@ -247,9 +247,13 @@ export async function generiereBeleihungDokument(propId: string, itemKey: string
   for (const m of mieterAktiv) {
     // Dieselbe Quelle wie NK-Seite und PDF (lib/nkPositionen.ts) — vorher eine eigene, kürzere
     // Spaltenliste ohne § 35a.
-    const { positionen } = await ladeNkPositionen(supabase, { id: m.id, prop_id: propId }, jahr);
-    const posJahr = positionen.filter((p) => p.jahr == null || p.jahr === jahr);
+    const nkPos = await ladeNkPositionen(supabase, { id: m.id, prop_id: propId }, jahr);
+    const posJahr = nkPos.positionen.filter((p) => p.jahr == null || p.jahr === jahr);
     if (!posJahr.length) continue;
+    // CO₂ wie auf der NK-Seite (vorher fehlte die CO₂-Aufteilung in der Mappe ganz).
+    const { data: co2Row } = await supabase.from("nk_co2").select("co2_kg,co2_kosten,flaeche,gewerbe")
+      .eq("mieter_id", m.id).eq("jahr", jahr).maybeSingle();
+    const co2Arg = nkCo2Argumente(nkPos, (co2Row ?? null) as NkCo2Input | null);
 
     const abrechnung = berechneNk(
       jahr,
@@ -265,8 +269,9 @@ export async function generiereBeleihungDokument(propId: string, itemKey: string
       },
       { bezeichnung: objekt.bezeichnung, adresse: objekt.adresse ?? null },
       posJahr,
-      null,
+      co2Arg.co2Input,
       await ladeVorauszahlung(m.id, jahr),
+      co2Arg.opts,
     );
     const pdf = await buildNkPdf(abrechnung, vermieterAus(profil, null));
     const name = [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter";

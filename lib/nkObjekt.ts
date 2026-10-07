@@ -8,7 +8,7 @@
 // Reine Rechnung ohne Datenbank: dieselbe Funktion speist die Übersicht am Objekt, die
 // Abrechnung des einzelnen Mieters (lib/nk.ts, Aufteilung „objekt“) und das PDF.
 
-import { belegung, jahresTage } from "@/lib/nk";
+import { belegung, jahresTage, nkCo2Aus, type NkCo2 } from "@/lib/nk";
 import { verteileBetrag } from "@/lib/umlage";
 import { zahlDe } from "@/lib/zahl";
 
@@ -49,6 +49,22 @@ export type NkObjektBasis = {
   mea_gesamt: number | null;
   /** Je Mieter-ID: Personen und Miteigentumsanteile seiner Wohnung. */
   mieter?: Record<string, { personen?: number | null; mea?: number | null }> | null;
+  /** CO₂ laut Brennstoff-/Wärmerechnung für das GANZE Gebäude (CO2KostAufG). */
+  co2_kg?: number | null;
+  co2_kosten?: number | null;
+  co2_gewerbe?: boolean | null;
+};
+
+/** CO₂-Aufteilung des Gebäudes und die Gutschrift je Mieter. */
+export type NkObjektCo2 = {
+  /** Stufe und Beträge des Gebäudes (Fläche = Gesamtwohnfläche). */
+  gebaeude: NkCo2;
+  /** Gutschrift je Mieter-ID — Teil des Vermieteranteils nach dem Heizkostenanteil (§ 7 Abs. 1). */
+  gutschrift: Record<string, number>;
+  /** Teil des Vermieteranteils, der auf Leerstand entfällt (niemandem gutgeschrieben). */
+  leerstand: number;
+  /** Wonach verteilt wurde. */
+  grundlage: "heizkosten" | "flaeche";
 };
 
 export type NkObjektMieter = {
@@ -80,7 +96,14 @@ export type NkObjektErgebnis = {
   summeMieter: Record<string, number>;
   summeVermieter: number;
   summeGesamt: number;
+  /** null = kein CO₂ am Objekt erfasst. */
+  co2: NkObjektCo2 | null;
+  /** Warnungen, die keine einzelne Kostenart betreffen (z. B. CO₂). */
+  warnungen: string[];
 };
+
+/** Heiz- und Warmwasserkosten erkennen (dieselbe Regel wie der Standardschlüssel „je Wohnung“). */
+export const istHeizkosten = (bezeichnung: string) => /heiz|warmwasser|wärme|waerme|fernwärme|fernwaerme/i.test(bezeichnung);
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const zahl = (n: number) => new Intl.NumberFormat("de-DE", { maximumFractionDigits: 3 }).format(n);
@@ -93,7 +116,7 @@ const pos = (n: number | null | undefined) => (typeof n === "number" && Number.i
  */
 export function standardSchluessel(bezeichnung: string): NkSchluessel {
   const b = bezeichnung.toLowerCase();
-  if (/heiz|warmwasser|wärme|waerme|fernwärme|fernwaerme/.test(b)) return "direkt";
+  if (istHeizkosten(b)) return "direkt";
   return "flaeche";
 }
 
@@ -175,9 +198,13 @@ export function verteileObjektKosten(
       gewichte = mieter.map((m) => p(m.id) * m.tage);
       const belegt = mieter.reduce((s, m) => s + m.tage, 0);
       const leerTage = Math.max(0, pos(basis.einheiten) * JT - belegt);
+      // Mieter OHNE Personenzahl zählen wie eine leere Wohnung mit einer Person — ihr Anteil bleibt
+      // beim Vermieter (Audit 07.10.2026, A5: vorher zählten ihre Tage als „belegt“, aber mit 0
+      // Personen; ihr Anteil fiel still dem anderen Mieter zu, während die Warnung das Gegenteil sagte).
+      const ohnePersonenTage = mieter.filter((m) => !p(m.id)).reduce((s, m) => s + m.tage, 0);
       // Ohne Einheitenzahl ist der Leerstand unbekannt — dann lieber gar nicht verteilen, als ihn
       // still den Mietern aufzuerlegen.
-      nenner = pos(basis.einheiten) ? gewichte.reduce((a, b) => a + b, 0) + leerTage : 0;
+      nenner = pos(basis.einheiten) ? gewichte.reduce((a, b) => a + b, 0) + leerTage + ohnePersonenTage : 0;
       text = (i) => `${zahl(p(mieter[i].id))} Pers. × ${mieter[i].tage} Tage / ${zahl(nenner)} Personentage`;
       const ohne = mieter.filter((m) => !p(m.id)).map((m) => m.name);
       if (ohne.length) fehlt = `Personenzahl fehlt bei ${ohne.join(", ")} (Anteil bleibt beim Vermieter)`;
@@ -191,6 +218,9 @@ export function verteileObjektKosten(
       nenner = pos(k.nenner) || summe;
       text = (i) => `${zahl(v(mieter[i].id))}/${zahl(nenner)} Verbrauch`;
       const ohne = mieter.filter((m) => !v(m.id)).map((m) => m.name);
+      // Ohne Hauptzähler tragen die Mieter auch den Verbrauch leerer Wohnungen und der Gemeinschaft —
+      // das muss der Vermieter sehen (Audit 07.10.2026, C25: die Warnung war angekündigt, fehlte aber).
+      if (!pos(k.nenner)) fehlt = "Gesamtverbrauch laut Hauptzähler fehlt — verteilt wird nur der Verbrauch der Wohnungen, Leerstand und Allgemeinverbrauch tragen dann die Mieter";
       if (ohne.length) fehlt = `Verbrauch fehlt bei ${ohne.join(", ")}`;
       if (pos(k.nenner) && summe > pos(k.nenner)) fehlt = "Die Wohnungszähler ergeben mehr als der Gesamtverbrauch";
     }
@@ -217,6 +247,8 @@ export function verteileObjektKosten(
   const summeMieter: Record<string, number> = {};
   for (const m of mieter) summeMieter[m.id] = r2(positionen.reduce((s, p) => s + (p.anteile[m.id]?.betrag ?? 0), 0));
   const umlagefaehig = positionen.filter((p) => p.kosten.umlagefaehig);
+  const warnungen: string[] = [];
+  const co2 = co2AmObjekt(jahr, JT, basis, mieter, umlagefaehig, warnungen);
   return {
     jahr,
     jahresTage: JT,
@@ -225,7 +257,65 @@ export function verteileObjektKosten(
     summeMieter,
     summeVermieter: r2(umlagefaehig.reduce((s, p) => s + p.vermieter, 0)),
     summeGesamt: r2(umlagefaehig.reduce((s, p) => s + r2(pos(p.kosten.betrag)), 0)),
+    co2,
+    warnungen,
   };
+}
+
+/**
+ * CO₂-Kostenaufteilung im Mehrfamilienhaus (Audit 07.10.2026, A4). Vorher rechnete jeder Mieter
+ * für sich mit den Gebäudewerten und seiner Wohnfläche — zwei Mieter bekamen zusammen 418 €
+ * Gutschrift bei 220 € CO₂-Kosten. Richtig (§ 5 Abs. 1, § 7 Abs. 1 CO2KostAufG): Stufe aus dem
+ * Ausstoß des GEBÄUDES je m² Gesamtwohnfläche, der Vermieteranteil EINMAL, verteilt nach dem
+ * Anteil an den Heizkosten. Gibt es keine Heizkosten am Objekt, wird nach Wohnfläche × Tagen
+ * verteilt (mit Hinweis). Der Anteil leerer Wohnungen wird niemandem gutgeschrieben.
+ */
+function co2AmObjekt(
+  jahr: number,
+  JT: number,
+  basis: NkObjektBasis,
+  mieter: (NkObjektMieter & { tage: number })[],
+  umlage: NkVerteilteKosten[],
+  warnungen: string[],
+): NkObjektCo2 | null {
+  if (!(pos(basis.co2_kg) > 0)) return null;
+  const gebaeude = nkCo2Aus(
+    { co2_kg: pos(basis.co2_kg), co2_kosten: basis.co2_kosten ?? null, flaeche: pos(basis.flaeche_gesamt) || null, gewerbe: !!basis.co2_gewerbe },
+    jahr,
+  );
+  if (!gebaeude) {
+    warnungen.push(
+      !pos(basis.flaeche_gesamt)
+        ? "CO₂: Die Gesamtwohnfläche fehlt — ohne sie gibt es keine Stufe und keine Gutschrift nach CO2KostAufG."
+        : `CO₂: Für ${jahr} sind keine CO₂-Kosten eingetragen und kein Referenzpreis hinterlegt — die Gutschrift fehlt.`,
+    );
+    return null;
+  }
+  const heiz = umlage.filter((p) => istHeizkosten(p.kosten.bezeichnung) && pos(p.kosten.betrag) > 0);
+  let gewichte: number[];
+  let leer: number;
+  let grundlage: NkObjektCo2["grundlage"];
+  if (heiz.length > 0) {
+    grundlage = "heizkosten";
+    gewichte = mieter.map((m) => heiz.reduce((s, p) => s + (p.anteile[m.id]?.betrag ?? 0), 0));
+    leer = heiz.reduce((s, p) => s + p.vermieter, 0);
+  } else {
+    grundlage = "flaeche";
+    const fg = pos(basis.flaeche_gesamt);
+    gewichte = mieter.map((m) => pos(m.flaeche) * m.tage);
+    leer = Math.max(0, fg * JT - gewichte.reduce((a, b) => a + b, 0));
+    warnungen.push("CO₂: Am Objekt sind keine Heizkosten eingetragen — die Gutschrift wird ersatzweise nach Wohnfläche verteilt.");
+  }
+  const teile = verteileBetrag(gebaeude.vermieterAnteil, [...gewichte, leer]);
+  const gutschrift: Record<string, number> = {};
+  mieter.forEach((m, i) => { gutschrift[m.id] = teile[i]; });
+  return { gebaeude, gutschrift, leerstand: teile[teile.length - 1], grundlage };
+}
+
+/** Die CO₂-Aufteilung, wie sie in der Abrechnung EINES Mieters steht (Gebäudewerte + seine Gutschrift). */
+export function co2FuerMieter(e: NkObjektErgebnis, mieterId: string): NkCo2 | null {
+  if (!e.co2 || !e.mieter.some((m) => m.id === mieterId)) return null;
+  return { ...e.co2.gebaeude, gutschrift: e.co2.gutschrift[mieterId] ?? 0 };
 }
 
 /**

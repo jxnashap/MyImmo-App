@@ -6,6 +6,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { nkAmObjekt } from "@/lib/nkPositionen";
 import { co2Aufteilung } from "@/lib/co2";
 
 export type NkCo2Result = { ok: boolean; error?: string };
@@ -84,6 +85,10 @@ export async function bucheCo2Vermieteranteil(
     supabase.from("mieter").select("vorname,nachname,prop_id").eq("id", mieterId).single(),
   ]);
   if (!row || !tenant) return { ok: false, error: "Keine CO₂-Daten gespeichert." };
+  // Audit 07.10.2026, A4: Im Mehrfamilienhaus wäre das eine Buchung JE Mieter mit Gebäudewerten —
+  // der Vermieteranteil stünde mehrfach in den Werbungskosten. Dort gilt nur die Aufteilung am Objekt.
+  if (await nkAmObjekt(supabase, tenant.prop_id as string | null))
+    return { ok: false, error: "Im Mehrfamilienhaus wird CO₂ einmal am Objekt erfasst — hier nicht je Mieter buchen." };
   if (!(Number(row.co2_kg) > 0) || !(Number(row.flaeche) > 0))
     return { ok: false, error: "CO₂-Menge und Wohnfläche fehlen." };
 

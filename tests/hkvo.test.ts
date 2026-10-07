@@ -39,7 +39,7 @@ describe("berechneNk mit aufteilung 'hkvo'", () => {
   it("berechnet den HKVO-Anteil des Mieters", () => {
     const a = berechneNk(2024, tenant, null, [pos({})]);
     expect(a.positionen[0].betrag).toBe(1300);
-    expect(a.positionen[0].faktorText).toContain("§ 7 HeizkostenV");
+    expect(a.positionen[0].faktorText).toContain("§§ 7, 9b HeizkostenV");
   });
 
   it("fällt bei fehlenden HKVO-Daten auf tagegenau zurück (kein Absturz)", () => {

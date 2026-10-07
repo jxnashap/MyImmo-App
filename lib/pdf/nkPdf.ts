@@ -11,7 +11,7 @@ import {
   type PDFPage,
 } from "pdf-lib";
 import type { NkAbrechnung } from "@/lib/nk";
-import { deDatum } from "@/lib/nk";
+import { deDatum, co2Gutschrift, co2GutschriftSatz, vorauszahlungZusatz } from "@/lib/nk";
 import { adressfeldZeilen, zeichneAdressfeld, ADRESSFELD } from "@/lib/pdf/adressfeld";
 import { pdfText } from "@/lib/pdf/zeichen";
 import { brichUm } from "@/lib/pdf/zeilenumbruch";
@@ -293,12 +293,7 @@ export async function buildNkPdf(
   // ---- Höhe des Rests vorab: Summen, Ergebnis und Schluss sollen zusammenbleiben ----
   const guthaben = a.saldo >= 0;
   const hatKonto = !guthaben && !!vermieter.iban;
-  const vorauszahlungZusatz =
-    a.vorauszahlung.quelle === "gebucht"
-      ? "gebuchte Zahlungen"
-      : a.vorauszahlung.quelle === "historie"
-        ? "laut Miethistorie"
-        : `${a.monate} × ${euro(a.nkVorauszahlungMonat)}`;
+  const vzZusatz = vorauszahlungZusatz(a, euro);
   const summenHoehe = 16 + (a.co2 ? 32 : 0) + 16 + 11 + 3 + 20 + 22;
   const co2Text = a.co2
     ? `Spezifischer CO2-Ausstoß: ${String(a.co2.spez).replace(".", ",")} kg/m² und Jahr` +
@@ -309,7 +304,7 @@ export async function buildNkPdf(
       `CO2-Kosten gesamt: ${euro(a.co2.kostenGesamt)}` +
       (a.co2.geschaetzt ? " (geschätzt über BEHG-Referenzpreis)" : "") +
       ` — davon Mieteranteil ${euro(a.co2.mieterAnteil)} (in den Heizkosten enthalten), ` +
-      `Vermieteranteil ${euro(a.co2.vermieterAnteil)} (oben gutgeschrieben). ` +
+      `${co2GutschriftSatz(a.co2, euro).replace("(wird Ihnen gutgeschrieben)", "(oben gutgeschrieben)")}. ` +
       `Rechtsgrundlage: Kohlendioxidkostenaufteilungsgesetz (CO2KostAufG). Die Einstufung ` +
       `beruht auf den Angaben der Brennstoff-/Wärmelieferrechnung, ohne Gewähr.`
     : "";
@@ -375,7 +370,7 @@ export async function buildNkPdf(
   };
   sumLine("Summe umlagefähige Kosten", euro(a.umlageGesamt));
   if (a.co2) {
-    sumLine("CO2-Gutschrift Vermieteranteil", `- ${euro(a.co2.vermieterAnteil)}`, font, GREEN);
+    sumLine("CO2-Gutschrift Vermieteranteil", `- ${euro(co2Gutschrift(a.co2))}`, font, GREEN);
     sumLine("Von Ihnen zu tragende Kosten", euro(a.kostenNachCo2));
   }
   sumLine(
@@ -385,7 +380,7 @@ export async function buildNkPdf(
     euro(a.vorauszahlungGeleistet),
     font,
     INK,
-    vorauszahlungZusatz,
+    vzZusatz,
   );
   y -= 3;
   hline(y, sumLabel, RIGHT, INK, 0.8);

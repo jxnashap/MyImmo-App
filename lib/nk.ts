@@ -90,7 +90,16 @@ export type NkCo2 = {
   mieterAnteil: number;
   geschaetzt: boolean; // Kosten aus BEHG-Referenzpreis geschätzt
   gewerbe: boolean;
+  /**
+   * Mehrfamilienhaus (Stufe 1, Audit 07.10.2026, A4): Werte oben gelten für das GEBÄUDE; hier steht
+   * der Teil des Vermieteranteils, der diesem Mieter gutgeschrieben wird (§ 7 Abs. 1 CO2KostAufG,
+   * nach seinem Anteil an den Heizkosten). Fehlt das Feld, ist `vermieterAnteil` die Gutschrift.
+   */
+  gutschrift?: number;
 };
+
+/** Gutschrift dieses Mieters aus der CO₂-Aufteilung (Gebäude → Mieteranteil oder Einzelwohnung). */
+export const co2Gutschrift = (c: NkCo2 | null | undefined): number => (c ? (c.gutschrift ?? c.vermieterAnteil) : 0);
 
 // ---------------------------------------------------------------------------
 // Geleistete Vorauszahlungen
@@ -372,6 +381,13 @@ export type HkvoInput = {
   flaecheGesamt: number;
   verbrauchMieter: number;
   verbrauchGesamt: number;
+  /**
+   * Anteil des Jahres, den der Mieter belegt hat (0..1, Standard 1). Gilt NUR für die Grundkosten —
+   * der Verbrauch ist gemessen und schon zeitgenau (§ 9b Abs. 2 HeizkostenV: übrige Kosten bei
+   * Nutzerwechsel zeitanteilig oder nach Gradtagszahlen). Audit 07.10.2026, A6: Ein Einzug am 01.10.
+   * zahlte vorher die Grundkosten des ganzen Jahres (740 € statt 291 €).
+   */
+  zeitFaktor?: number;
 };
 
 export type HkvoErgebnis = {
@@ -392,7 +408,8 @@ export function hkvoAnteil(input: HkvoInput): HkvoErgebnis {
   const grundAnteil = grundProzent / 100;
   const grundTopf = input.gesamtkosten * grundAnteil;
   const verbrauchTopf = input.gesamtkosten * (1 - grundAnteil);
-  const grundkosten = input.flaecheGesamt > 0 ? rund2(grundTopf * (input.flaecheMieter / input.flaecheGesamt)) : 0;
+  const zeit = input.zeitFaktor == null ? 1 : Math.min(1, Math.max(0, input.zeitFaktor));
+  const grundkosten = input.flaecheGesamt > 0 ? rund2(grundTopf * (input.flaecheMieter / input.flaecheGesamt) * zeit) : 0;
   const verbrauchskosten = input.verbrauchGesamt > 0 ? rund2(verbrauchTopf * (input.verbrauchMieter / input.verbrauchGesamt)) : 0;
   return { grundkosten, verbrauchskosten, gesamt: rund2(grundkosten + verbrauchskosten), grundProzent };
 }
@@ -404,6 +421,11 @@ export function berechneNk(
   positionen: NkRawPosition[],
   co2Input?: NkCo2Input | null,
   vzInput?: NkVorauszahlungInput | null,
+  /**
+   * `co2`: fertige CO₂-Aufteilung vom Objekt (lib/nkObjekt.ts) — schlägt `co2Input`; `null` heißt
+   * „am Objekt erfasst, aber keine“. `hinweise`: weitere Warnungen des Aufrufers.
+   */
+  opts?: { co2?: NkCo2 | null; hinweise?: string[] },
 ): NkAbrechnung {
   // Belegungszeitraum zuerst — der Tage-Faktor gilt für 'zeit'-Positionen.
   const { von, bis, monate } = monateImJahr(jahr, tenant.mietbeginn, tenant.mietende);
@@ -489,15 +511,19 @@ export function berechneNk(
           // Ohne Flächen-/Verbrauchsdaten kein Absturz: tagegenauer Fallback.
           return { ...kopf, ...zeitAnteil(basis, " — HKVO-Daten fehlen") };
         }
+        const voll = faktor >= 1;
         const h = hkvoAnteil({
           gesamtkosten: basis, grundkostenProzent: gk,
           flaecheMieter: fm, flaecheGesamt: fg, verbrauchMieter: vm, verbrauchGesamt: vg,
+          zeitFaktor: faktor,
         });
         return {
           ...kopf,
           betrag: h.gesamt,
           basis,
-          faktorText: `Grundkosten ${h.grundProzent}% n. Fläche + Verbrauch ${100 - h.grundProzent}% (§ 7 HeizkostenV)`,
+          faktorText:
+            `Grundkosten ${h.grundProzent}% n. Fläche${voll ? "" : ` × ${tage}/${jahrestage} Tage`}` +
+            ` + Verbrauch ${100 - h.grundProzent}% (§§ 7, 9b HeizkostenV)`,
         };
       }
 
@@ -559,8 +585,8 @@ export function berechneNk(
   // CO₂-Gutschrift: Der Vermieteranteil mindert die Mieterlast. Der
   // Mieteranteil steckt bereits in den Heizkosten-Positionen — er wird nur
   // ausgewiesen, NICHT addiert (keine Doppelzählung).
-  const co2 = nkCo2Aus(co2Input, jahr);
-  const kostenNachCo2 = rund2(umlageGesamt - (co2?.vermieterAnteil ?? 0));
+  const co2 = opts?.co2 !== undefined ? opts.co2 : nkCo2Aus(co2Input, jahr);
+  const kostenNachCo2 = rund2(umlageGesamt - co2Gutschrift(co2));
 
   const nkVorauszahlungMonat = tenant.nk_vorauszahlung ?? 0;
   const vorauszahlung = vorauszahlungFuerJahr(jahr, tenant, monate, vzInput);
@@ -570,7 +596,7 @@ export function berechneNk(
   // Warnungen: Dinge, die die Abrechnung angreifbar machen und die der
   // Vermieter sehen MUSS, bevor er sie verschickt.
   const warnungen: string[] = [];
-  for (const w of new Set(relevant.map((p) => p.warnung).filter((w): w is string => !!w))) warnungen.push(w);
+  for (const w of new Set([...relevant.map((p) => p.warnung), ...(opts?.hinweise ?? [])].filter((w): w is string => !!w))) warnungen.push(w);
   if (vorauszahlung.luecke) {
     const l = vorauszahlung.luecke;
     warnungen.push(
@@ -634,4 +660,26 @@ export function berechneNk(
 export function deDatum(iso: string): string {
   const d = new Date(iso);
   return `${String(d.getUTCDate()).padStart(2, "0")}.${String(d.getUTCMonth() + 1).padStart(2, "0")}.${d.getUTCFullYear()}`;
+}
+
+/**
+ * Satzteil zur CO₂-Gutschrift — EINE Formulierung für Bildschirm und PDF. Im Mehrfamilienhaus
+ * stehen Gebäudewerte UND der Teil, der diesem Mieter gutgeschrieben wird (§ 7 Abs. 1 CO2KostAufG).
+ */
+export function co2GutschriftSatz(c: NkCo2, euro: (n: number) => string): string {
+  return c.gutschrift == null
+    ? `Vermieteranteil ${euro(c.vermieterAnteil)} (wird Ihnen gutgeschrieben)`
+    : `Vermieteranteil des Gebäudes ${euro(c.vermieterAnteil)}; davon entfallen nach Ihrem Anteil an den Heizkosten ${euro(c.gutschrift)} auf Sie (wird Ihnen gutgeschrieben)`;
+}
+
+/**
+ * Zusatz zur Vorauszahlungszeile. „m × Rate“ nur, wenn es den Betrag auch ergibt — bei Einzug
+ * mitten im Monat stand vorher „9 × 150,00 €“ neben 1.275,00 € (Audit 07.10.2026, B6).
+ */
+export function vorauszahlungZusatz(a: Pick<NkAbrechnung, "vorauszahlung" | "monate" | "nkVorauszahlungMonat">, euro: (n: number) => string): string {
+  if (a.vorauszahlung.quelle === "gebucht") return "gebuchte Zahlungen";
+  if (a.vorauszahlung.quelle === "historie") return "laut Miethistorie";
+  return Math.abs(a.monate * a.nkVorauszahlungMonat - a.vorauszahlung.betrag) < 0.005
+    ? `${a.monate} × ${euro(a.nkVorauszahlungMonat)}`
+    : `vereinbart, anteilig für ${a.monate} ${a.monate === 1 ? "Monat" : "Monate"}`;
 }
