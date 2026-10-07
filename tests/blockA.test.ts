@@ -1,9 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { sollFuerMonat, dritterWerktag, offeneMieten, type MietkontoZeitraum } from "@/lib/mietkonto";
-import { berechneNk, vorauszahlungFuerJahr, belegung, type NkTenant, type NkRawPosition } from "@/lib/nk";
+import { berechneNk, vorauszahlungFuerJahr, type NkTenant, type NkRawPosition } from "@/lib/nk";
 import { berechneVerkauf, SPEK_FREIGRENZE } from "@/lib/verkauf";
 import { berechneAnlageV, elsterZeilen } from "@/lib/anlageV";
-import { berechneUmlage, type UmlageZeile } from "@/lib/umlage";
 import { co2PreisBekannt } from "@/lib/co2";
 import { marktwert, type MarktwertEingabe } from "@/lib/kauf/marktwert";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
@@ -269,33 +268,6 @@ describe("Anlage V", () => {
   });
 });
 
-// ---------------------------------------- Zeitanteiligkeit vereinheitlicht ----
-
-describe("Verteiler und Abrechnung rechnen dieselbe Zeitanteiligkeit", () => {
-  it("Einzug am 20.03. ergibt im Verteiler denselben Faktor wie in der Abrechnung", () => {
-    const jahr = 2025;
-    const b = belegung(jahr, "2025-03-20", null);
-    expect(b.tage).toBe(287); // 20.03.–31.12.
-
-    const zeilen: UmlageZeile[] = [{ bezeichnung: "Müll", betrag: 1000, schluessel: "flaeche" }];
-    const r = berechneUmlage(
-      zeilen,
-      [{ id: "a", name: "A", flaeche: 100, monate: b.monate, tage: b.tage }],
-      { zeitanteilig: true, jahresTage: 365, referenzFlaeche: 100 },
-    );
-    // Tagesgenau: 287/365 = 78,63 % — nicht 10/12 = 83,3 %
-    expect(r.perMieter[0].summe).toBeCloseTo(1000 * (287 / 365), 1);
-    expect(r.perMieter[0].summe).toBeLessThan(1000 * (10 / 12));
-  });
-
-  it("ohne Tage bleibt das alte Monatsverfahren erhalten", () => {
-    const zeilen: UmlageZeile[] = [{ bezeichnung: "Müll", betrag: 120, schluessel: "flaeche" }];
-    const r = berechneUmlage(zeilen, [{ id: "a", name: "A", flaeche: 100, monate: 6 }], {
-      zeitanteilig: true, referenzFlaeche: 100,
-    });
-    expect(r.perMieter[0].summe).toBe(60);
-  });
-});
 
 // ------------------------------------------------ Marktwert-Vollständigkeit ----
 

@@ -33,8 +33,6 @@ describe("C1 — gebuchte Kosten → NK-Vorschlag", () => {
     expect(UEBERNAHME_KATEGORIEN as readonly string[]).toContain("Hausmeister");
   });
   it("Verteiler und NK-Seite bieten die Übernahme an", () => {
-    expect(readFileSync("components/UmlageAssistent.tsx", "utf8")).toMatch(/nkAusBuchungen\(gebuchteKosten, propId, jahr\)/);
-    expect(readFileSync("app/(app)/properties/[id]/umlage/page.tsx", "utf8")).toMatch(/gebuchteKosten=\{kosten \?\? \[\]\}/);
     // Stufe 1: beim Mehrfamilienhaus bietet die Objektseite die Übernahme an, nicht der Mieter.
     expect(readFileSync("app/(app)/tenants/[id]/nk/page.tsx", "utf8")).toMatch(/ausBuchungen=\{!amObjekt && offeneVorschlaege\.length > 0/);
     expect(readFileSync("app/(app)/properties/[id]/nebenkosten/page.tsx", "utf8")).toMatch(/nkAusBuchungen\(buchungen \?\? \[\], id, jahr\)/);

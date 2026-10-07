@@ -58,13 +58,6 @@ describe("KI-Import beim Mieter: neue Positionen ohne Gesamtfläche", () => {
   });
 });
 
-describe("KI-Import im Verteiler", () => {
-  const s = lies("components/UmlageAssistent.tsx");
-  it("übernimmt den Gesamtbetrag des Hauses (die Route liefert gesamt/anteil, kein betrag)", () => {
-    expect(s).toMatch(/betrag: typeof p\.gesamt === "number" && Number\.isFinite\(p\.gesamt\) \? String\(p\.gesamt\) : ""/);
-    expect(s).not.toMatch(/Number\.isFinite\(p\.betrag\)/);
-  });
-});
 
 describe("Weg zu den Positionen", () => {
   it("die NK-Seite verlinkt die Positionen mit ihrem Jahr und Sprungmarke", () => {

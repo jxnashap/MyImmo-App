@@ -257,7 +257,7 @@ describe("Middleware: gesperrte Aufrufe erklären sich", () => {
       "components/ImportWizard.tsx",
       "components/kalkulator/KalkImport.tsx",
       "components/NkOcrUpload.tsx",
-      "components/UmlageAssistent.tsx",
+      "components/nk/NkObjektEditor.tsx",
     ]) {
       expect(readFileSync(p, "utf8"), p).toMatch(/json\.error/);
     }

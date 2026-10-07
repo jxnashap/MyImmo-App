@@ -58,7 +58,7 @@ export default async function NebenkostenObjektPage(props: {
         <div className="section"><div className="section-body">
           <p style={{ fontSize: 13, color: "var(--muted)", margin: 0 }}>
             Die Nebenkosten am Objekt kommen in Kürze. Bis dahin erstellst du die Abrechnung wie bisher beim
-            jeweiligen Mieter oder über den <Link href={`/properties/${id}/umlage`} style={{ color: "var(--gold)" }}>Verteiler</Link>.
+            jeweiligen Mieter.
           </p>
         </div></div>
       </div>
@@ -188,7 +188,7 @@ export default async function NebenkostenObjektPage(props: {
               <Link key={m.id} href={`/tenants/${m.id}/nk?jahr=${jahr}`} className="listen-zeile">
                 <span className="listen-zeile-text">
                   <span className="listen-zeile-titel">{m.name}</span>
-                  <span className="listen-zeile-sub">
+                  <span className="listen-zeile-sub" style={{ whiteSpace: "normal" }}>
                     Kosten {eur2(a.kostenNachCo2)} · Vorauszahlung {eur2(a.vorauszahlungGeleistet)}{a.vorauszahlung.geschaetzt ? " (Soll)" : ""}
                     {a.warnungen.length > 0 ? ` · ${a.warnungen.length} Hinweis${a.warnungen.length === 1 ? "" : "e"}` : ""}
                   </span>
