@@ -56,7 +56,7 @@ export default async function NeuerKreditPage(props: { searchParams: Promise<{ p
         <div className="form-section-label">Beträge</div>
         <div className="form-row">
           <div className="form-group"><label>Urspr. Darlehenssumme (€) *</label><input type="number" step="0.01" name="betrag" placeholder="200000" required defaultValue={vb.betrag ?? undefined} /></div>
-          <div className="form-group"><label>Aktuelle Restschuld (€)</label><input type="number" step="0.01" name="restschuld" placeholder="180000" /></div>
+          <div className="form-group"><label>Aktuelle Restschuld (€)</label><input type="number" step="0.01" min="0" name="restschuld" placeholder="180000" /></div>
         </div>
         <div className="form-row">
           <div className="form-group"><label>Grundschuld (€)</label><input type="number" step="0.01" name="grundschuld" placeholder="220000" /></div>
@@ -69,7 +69,7 @@ export default async function NeuerKreditPage(props: { searchParams: Promise<{ p
           <div className="form-group"><label>Tilgungssatz (% p.a.)</label><input type="number" step="0.01" name="tilgungssatz" placeholder="2.0" defaultValue={vb.tilgungssatz ?? undefined} /></div>
         </div>
         <div className="form-row">
-          <div className="form-group"><label>Monatliche Rate (€) — laut Darlehensvertrag</label><input type="number" step="0.01" min="0.01" name="monatsrate" placeholder="850" required />{vb.rateWunsch != null && <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Beispielrechnung im Wunsch: ca. {eur(vb.rateWunsch)}. Bitte die Rate aus dem Vertrag eintragen.</span>}</div>
+          <div className="form-group"><label>Monatliche Rate (€) — laut Darlehensvertrag</label><input type="number" step="0.01" min="0" name="monatsrate" placeholder="850" required />{vb.rateWunsch != null && <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Beispielrechnung im Wunsch: ca. {eur(vb.rateWunsch)}. Bitte die Rate aus dem Vertrag eintragen.</span>}</div>
           <div className="form-group"><label>Sondertilgung möglich</label>
             <select name="sonder" defaultValue="">{SONDER.map((s) => <option key={s} value={s}>{s || "Nicht bekannt"}</option>)}</select>
           </div>

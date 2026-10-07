@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import AblaufStepper, { type StepperSchritt } from "@/components/AblaufStepper";
 import SelbstauskunftForm from "@/components/kauf/SelbstauskunftForm";
+import type { Bestand } from "@/lib/kauf/selbstauskunftBestand";
 import MachbarkeitKarte from "@/components/kauf/MachbarkeitKarte";
 import DarlehenWizard from "@/components/kauf/DarlehenWizard";
 import FoerderCheck from "@/components/kauf/FoerderCheck";
@@ -34,9 +35,11 @@ const DARLEHEN: { name: string; text: string; warn?: boolean }[] = [
 ];
 
 export default function KaufAssistent({
-  gespeichert = [], selbstauskunft = null, demo = false, vertreter = [],
+  gespeichert = [], selbstauskunft = null, demo = false, vertreter = [], bestand = null,
 }: {
   gespeichert?: Kalkulation[]; selbstauskunft?: SelbstauskunftDaten | null;
+  /** Kredite und Mieten in MyImmo — für den Abgleich mit der Selbstauskunft. */
+  bestand?: Bestand | null;
   /** Vertreter mit gültiger Vollmacht (Einstellungen → Vertreter) für den Kreditantrag. */
   vertreter?: KreditVertreterOption[];
   /** Oeffentliche Demo: fester Beispielstand, keine Eingaben. */
@@ -194,7 +197,7 @@ export default function KaufAssistent({
             </button>
           ) : (
             <div style={{ marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-              <SelbstauskunftForm initial={selbstauskunft} />
+              <SelbstauskunftForm initial={selbstauskunft} bestand={bestand} />
             </div>
           )}
         </>

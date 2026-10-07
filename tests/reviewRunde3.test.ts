@@ -95,7 +95,7 @@ describe("Jahresbericht: Seite und PDF rechnen dasselbe", () => {
 
   it("gebuchte Zinsen: nicht in den laufenden Kosten, dafür als Zinsanteil", () => {
     const z = jahresZeile("a", 2025, 12, daten);
-    expect(z).toEqual({ e: 12000, k: 1200, zins: 2800, zinsGeschaetzt: false, tilgung: 3200, cashflow: 4800 });
+    expect(z).toEqual({ e: 12000, k: 1200, zins: 2800, zinsGeschaetzt: false, tilgung: 3200, cashflow: 4800, kreditOhneStart: true });
   });
 
   it("ohne gebuchte Zinsen: geschätzt und so gekennzeichnet", () => {

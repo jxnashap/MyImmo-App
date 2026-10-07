@@ -38,7 +38,7 @@ export default async function JahresberichtPage(
   const rows = properties.map((p) => ({
     id: p.id,
     name: p.bezeichnung,
-    ...jahresZeile(p.id, year, monate, { einnahmen, kosten, kredite }),
+    ...jahresZeile(p.id, year, monate, { einnahmen, kosten, kredite, kaufdatum: p.kaufdatum }),
   }));
 
   const sum = rows.reduce(
@@ -133,6 +133,12 @@ export default async function JahresberichtPage(
         </div>
       </div>
 
+      {rows.some((r) => r.kreditOhneStart) && (
+        <p style={{ fontSize: 12, color: "var(--muted)" }}>
+          Mindestens ein Darlehen hat weder Auszahlungs- noch Kaufdatum — seine Raten sind für das ganze Jahr angenommen.
+          Trag das Auszahlungsdatum unter <Link href="/kredite">Kredite</Link> nach, dann zählen nur die Monate, in denen es lief.
+        </p>
+      )}
       <p style={{ fontSize: 11, color: "var(--muted)" }}>„PDF-Bericht“ erzeugt den Jahresbericht als Dokument im MyImmo-Briefkopf — zum Ablegen, Versenden oder für den Steuerberater.</p>
     </div>
   );

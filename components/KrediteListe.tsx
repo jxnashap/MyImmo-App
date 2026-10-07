@@ -1,4 +1,5 @@
 "use client";
+import { zinsUndTilgung, getilgtProzent, restschuldVon, rateVon, istGetilgt } from "@/lib/kredit";
 import { useState } from "react";
 import { TriangleAlert, Landmark, ChevronRight } from "lucide-react";
 import { euro, datum, zahl } from "@/lib/format";
@@ -15,12 +16,10 @@ const SONDER = ["", "5% p.a.", "10% p.a.", "Nein", "Ja, unbegrenzt"];
 /** „2,5 %" — deutsch, bis zu zwei Nachkommastellen, geschütztes Leerzeichen vor %. */
 const pz = (n: number) => `${n.toLocaleString("de-DE", { maximumFractionDigits: 2 })}\u00a0%`;
 
-/** Kennzahlen eines Darlehens, aus den gespeicherten Feldern abgeleitet. */
+/** Kennzahlen eines Darlehens — EINE Lesart für alle Seiten (lib/kredit.ts, Audit 07.10.2026). */
 function kennzahlen(k: Kredit) {
-  const pct = k.betrag && k.betrag > 0 ? Math.max(0, Math.min(100, Math.round(((k.restschuld ?? 0) / k.betrag) * 100))) : 100;
-  const moZins = k.restschuld ? (k.restschuld * (k.zinssatz ?? 0) / 100) / 12 : 0;
-  const moTilg = Math.max(0, (k.monatsrate ?? 0) - moZins);
-  return { getilgt: 100 - pct, moZins, moTilg };
+  const { zins, tilgung } = zinsUndTilgung(k);
+  return { getilgt: getilgtProzent(k), moZins: zins, moTilg: tilgung };
 }
 
 /** Alle Felder eines Darlehens — oben im Dialog, damit die kompakte Zeile nichts verschluckt. */
@@ -39,17 +38,17 @@ function Details({ k }: { k: Kredit }) {
       )}
       <div className="kredit-grid" style={{ marginBottom: 12 }}>
         {feld("Urspr. Darlehen", euro(k.betrag))}
-        {feld("Restschuld", euro(k.restschuld))}
-        {feld("Rate / Monat", euro(k.monatsrate))}
+        {feld("Restschuld", k.restschuld == null ? `${euro(restschuldVon(k))} (= Darlehenssumme)` : euro(restschuldVon(k)))}
+        {feld("Rate / Monat", istGetilgt(k) ? "getilgt" : euro(rateVon(k)))}
         {feld("Laufzeit", laufzeitText(k.laufzeit, k.auszahlung_datum))}
         {feld("Zinsen / Mo.", euro(moZins), "var(--muted)")}
         {feld("Tilgung / Mo.", euro(moTilg), "var(--green)")}
         {feld("Tilgungssatz", k.tilgungssatz ? `${pz(k.tilgungssatz)} p.a.` : "–")}
         {feld("Zinsbindung", k.zinsbindung ? datum(k.zinsbindung) : "–", warn?.color)}
         {feld("Grundschuld", k.grundschuld ? euro(k.grundschuld) : "–")}
-        {feld("Beleihungsauslauf", k.beleihung ? pz(k.beleihung) : "–")}
+        {feld("Beleihungsauslauf laut Bank", k.beleihung ? pz(k.beleihung) : "–")}
         {feld("Sondertilgung", k.sonder || "–")}
-        {feld("Getilgt", pz(getilgt))}
+        {feld("Getilgt", getilgt != null ? pz(getilgt) : "–")}
       </div>
       {/* Ohne Auszahlungsdatum fehlt die Frist fürs Sonderkündigungsrecht
           (lib/fristen.ts, 10 Jahre nach Vollauszahlung) — und in den
@@ -106,12 +105,14 @@ export default function KrediteListe({
                 </span>
                 {!k.auszahlung_datum && <span className="badge badge-amber listen-zeile-extra" title="Ohne Auszahlungsdatum fehlen Laufzeitende und Frist nach § 489 BGB">Auszahlung fehlt</span>}
                 {/* Kein inline `display` an der Zusatzspalte — er schlüge die Handy-Regel, die sie ausblendet. */}
-                <span className="listen-zeile-extra" title={`${getilgt} % getilgt`}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "var(--muted)" }}>
-                    <span className="mini-balken"><i style={{ width: `${getilgt}%` }} /></span>{getilgt} %
+                {getilgt != null && (
+                  <span className="listen-zeile-extra" title={`${getilgt} % getilgt`}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "var(--muted)" }}>
+                      <span className="mini-balken"><i style={{ width: `${getilgt}%` }} /></span>{getilgt} %
+                    </span>
                   </span>
-                </span>
-                <span className="listen-zeile-zahl"><b>{euro(k.restschuld)}</b><small>{euro(k.monatsrate)} / Mo.</small></span>
+                )}
+                <span className="listen-zeile-zahl"><b>{euro(restschuldVon(k))}</b><small>{istGetilgt(k) ? "getilgt" : `${euro(rateVon(k))} / Mo.`}</small></span>
                 <ChevronRight size={16} color="var(--faint)" style={{ flexShrink: 0 }} />
               </button>
             );
@@ -143,11 +144,12 @@ export default function KrediteListe({
             <div className="form-section-label">Beträge</div>
             <div className="form-row">
               <div className="form-group"><label>Urspr. Darlehenssumme (€) *</label><input type="number" step="0.01" name="betrag" defaultValue={offen.betrag ?? ""} required /></div>
-              <div className="form-group"><label>Aktuelle Restschuld (€)</label><input type="number" step="0.01" name="restschuld" defaultValue={offen.restschuld ?? ""} /></div>
+              <div className="form-group"><label>Aktuelle Restschuld (€)</label><input type="number" step="0.01" min="0" name="restschuld" defaultValue={offen.restschuld ?? ""} />
+                <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Laut letztem Kontoauszug. Leer = Darlehenssumme, 0 = abbezahlt.</span></div>
             </div>
             <div className="form-row">
               <div className="form-group"><label>Grundschuld (€)</label><input type="number" step="0.01" name="grundschuld" defaultValue={offen.grundschuld ?? ""} /></div>
-              <div className="form-group"><label>Beleihungsauslauf (%)</label><input type="number" step="0.1" name="beleihung" defaultValue={offen.beleihung ?? ""} /></div>
+              <div className="form-group"><label>Beleihungsauslauf laut Bank (%)</label><input type="number" step="0.1" name="beleihung" defaultValue={offen.beleihung ?? ""} /></div>
             </div>
 
             <div className="form-section-label">Konditionen</div>
@@ -156,7 +158,7 @@ export default function KrediteListe({
               <div className="form-group"><label>Tilgungssatz (% p.a.)</label><input type="number" step="0.01" name="tilgungssatz" defaultValue={offen.tilgungssatz ?? ""} /></div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label>Monatliche Rate (€)</label><input type="number" step="0.01" name="monatsrate" defaultValue={offen.monatsrate ?? ""} /></div>
+              <div className="form-group"><label>Monatliche Rate (€) *</label><input type="number" step="0.01" min="0" name="monatsrate" defaultValue={offen.monatsrate ?? ""} required /></div>
               <div className="form-group"><label>Sondertilgung möglich</label>
                 <select name="sonder" defaultValue={offen.sonder ?? ""}>
                   {SONDER.map((s) => <option key={s} value={s}>{s || "Nicht bekannt"}</option>)}

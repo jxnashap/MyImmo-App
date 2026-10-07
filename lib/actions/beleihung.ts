@@ -1,5 +1,6 @@
 "use server";
 
+import { summeRestschuld } from "@/lib/kredit";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { pruefeFrischeAnmeldung, REAUTH_MELDUNG } from "@/lib/auth/frisch";
@@ -158,7 +159,7 @@ async function ladeObjektDaten(supabase: Awaited<ReturnType<typeof createClient>
 
   const aktive = (mieter ?? []).filter((m) => !m.mietende || new Date(m.mietende) >= new Date());
   const mieteMo = aktive.reduce((s, m) => s + (m.kaltmiete ?? 0), 0);
-  const restschuld = (kredite ?? []).reduce((s, k) => s + (k.restschuld ?? k.betrag ?? 0), 0);
+  const restschuld = summeRestschuld(kredite ?? []);
 
   const objekt: BelObjektDaten = {
     bezeichnung: prop.bezeichnung,

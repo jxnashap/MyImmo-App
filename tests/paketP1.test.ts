@@ -108,7 +108,7 @@ describe("B3 — Zinsschätzung nur für Monate, in denen das Darlehen lief", ()
     expect(o.hinweise.join(" ")).toMatch(/ganze Jahr an/);
   });
   it("die Steuerseite lädt Auszahlung und Laufzeit", () => {
-    expect(readFileSync("app/(app)/steuer/page.tsx", "utf8")).toMatch(/select\("id,prop_id,restschuld,zinssatz,auszahlung_datum,laufzeit"\)/);
+    expect(readFileSync("app/(app)/steuer/page.tsx", "utf8")).toMatch(/select\("id,prop_id,betrag,restschuld,zinssatz,auszahlung_datum,laufzeit"\)/);
   });
 });
 

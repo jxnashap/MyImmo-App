@@ -1,3 +1,4 @@
+import { restschuldVon } from "@/lib/kredit";
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { istDemoKonto } from "@/lib/demo";
@@ -28,7 +29,7 @@ export default async function VerkaufPage() {
   const restschuld = new Map<string, number>();
   for (const k of kredite ?? []) {
     if (!k.prop_id) continue;
-    restschuld.set(k.prop_id, (restschuld.get(k.prop_id) ?? 0) + (k.restschuld ?? k.betrag ?? 0));
+    restschuld.set(k.prop_id, (restschuld.get(k.prop_id) ?? 0) + restschuldVon(k));
   }
   const objekte: VerkaufObjekt[] = (props ?? []).map((p) => ({
     id: p.id,

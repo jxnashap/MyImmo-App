@@ -1,3 +1,4 @@
+import { summeRaten, restschuldVon } from "@/lib/kredit";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { datum, zahl } from "@/lib/format";
@@ -43,10 +44,10 @@ export default async function KreditePage() {
   );
   // Kennzahlen über alle Darlehen. Ø-Zins nach Restschuld gewichtet (ein kleines teures
   // Darlehen soll den Schnitt nicht so stark ziehen wie ein großes).
-  const summeRate = list.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
-  const gewichtet = list.filter((k) => k.zinssatz != null && (k.restschuld ?? 0) > 0);
-  const basis = gewichtet.reduce((s, k) => s + (k.restschuld ?? 0), 0);
-  const zinsSchnitt = basis > 0 ? gewichtet.reduce((s, k) => s + (k.zinssatz ?? 0) * (k.restschuld ?? 0), 0) / basis : null;
+  const summeRate = summeRaten(list);
+  const gewichtet = list.filter((k) => k.zinssatz != null && restschuldVon(k) > 0);
+  const basis = gewichtet.reduce((s, k) => s + restschuldVon(k), 0);
+  const zinsSchnitt = basis > 0 ? gewichtet.reduce((s, k) => s + (k.zinssatz ?? 0) * restschuldVon(k), 0) / basis : null;
 
   const STUFE = {
     niedrig: { label: "niedrig", cls: "badge-green" },
@@ -62,7 +63,7 @@ export default async function KreditePage() {
         <div>
           <div className="topbar-kicker">Finanzierung · Darlehen</div>
           <div className="topbar-title">Kredite &amp; Finanzierung</div>
-          <div className="topbar-sub">Darlehen, Zinsbindung, Tilgungsplan</div>
+          <div className="topbar-sub">Darlehen, Zinsbindung, Restschuld laut deinem letzten Kontoauszug</div>
         </div>
         <Link href="/kredite/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Darlehen</Link>
       </div>
@@ -107,7 +108,7 @@ export default async function KreditePage() {
         <Leer
           icon={Landmark}
           titel="Noch keine Darlehen"
-          text="Trage deine Finanzierungen ein — MyImmo rechnet daraus Restschuld, Zinsbindung und Tilgungsverlauf und erinnert rechtzeitig an das Ende der Zinsbindung."
+          text="Trage deine Finanzierungen ein — mit der Restschuld laut letztem Kontoauszug. MyImmo zeigt daraus Raten, Zins- und Tilgungsanteil und erinnert rechtzeitig an das Ende der Zinsbindung. Die Restschuld schreibt MyImmo nicht selbst fort: Trag den neuen Stand ein, wenn der nächste Auszug kommt."
           aktion={{ href: "/kredite/new", label: "Darlehen anlegen" }}
         />
       ) : (

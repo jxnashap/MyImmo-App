@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   const monate = jahr < heute.getFullYear() ? 12 : jahr > heute.getFullYear() ? 12 : heute.getMonth() + 1;
 
   const zeilen: JahresberichtZeile[] = properties.map((p) => {
-    const z = jahresZeile(p.id, jahr, monate, { einnahmen, kosten, kredite });
+    const z = jahresZeile(p.id, jahr, monate, { einnahmen, kosten, kredite, kaufdatum: p.kaufdatum });
     return { name: p.bezeichnung, einnahmen: z.e, bewirtschaftung: z.k, zins: z.zins, tilgung: z.tilgung, cashflow: z.cashflow, zinsGeschaetzt: z.zinsGeschaetzt };
   });
 

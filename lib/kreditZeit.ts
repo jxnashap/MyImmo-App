@@ -21,9 +21,11 @@ export function kreditMonateImJahr(
   k: KreditZeitraumInput,
   jahr: number,
   ersatzStart?: string | null,
+  /** Nur Monate bis einschließlich diesem zählen (laufendes Jahr: der aktuelle Monat). */
+  bisMonat = 12,
 ): { monate: number; ohneStart: boolean } {
   const start = ym(k.auszahlung_datum) ?? ym(ersatzStart);
-  if (!start) return { monate: 12, ohneStart: true };
+  if (!start) return { monate: Math.max(0, Math.min(12, bisMonat)), ohneStart: true };
   if (jahr < start.j) return { monate: 0, ohneStart: false };
   const erster = jahr === start.j ? start.m : 1;
 
@@ -36,6 +38,6 @@ export function kreditMonateImJahr(
     ende = start.m === 1 ? { j: j - 1, m: 12 } : { j, m: start.m - 1 };
   }
   if (ende && jahr > ende.j) return { monate: 0, ohneStart: false };
-  const letzter = ende && jahr === ende.j ? ende.m : 12;
+  const letzter = Math.min(bisMonat, ende && jahr === ende.j ? ende.m : 12);
   return { monate: Math.max(0, letzter - erster + 1), ohneStart: false };
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { summeRestschuld, summeRaten, restschuldVon, rateVon, istGetilgt, getilgtProzent } from "@/lib/kredit";
 import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -97,8 +98,8 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // Indexierte Wertschätzung (amtlicher Häuserpreisindex; live gecacht, sonst Snapshot).
   const hpi = await holeIndexReihe();
   const indexwert = fortschreibeKaufpreis(p.kaufpreis, p.kaufdatum ?? null, hpi.reihe);
-  const totalRestschuld = kred.reduce((s, k) => s + (k.restschuld ?? 0), 0);
-  const totalKreditRate = kred.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
+  const totalRestschuld = summeRestschuld(kred);
+  const totalKreditRate = summeRaten(kred);
   const jahresEinnahmen = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
   const jahresKosten = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
   // Monatliche Kosten: dieselbe Rechnung wie auf dem Dashboard
@@ -470,9 +471,8 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
             />
           ) : (
             kred.map((k) => {
-              // Restschuld unbekannt → kein „100 % getilgt" vortäuschen.
-              const restBekannt = k.restschuld != null && k.betrag != null && k.betrag > 0;
-              const tilgtPct = restBekannt ? Math.max(0, Math.min(100, Math.round((1 - (k.restschuld as number) / (k.betrag as number)) * 100))) : null;
+              // Eine Lesart für alle Seiten (lib/kredit.ts): leere Restschuld = Darlehenssumme.
+              const tilgtPct = getilgtProzent(k);
               return (
                 <div key={k.id} style={{ padding: "14px 0", borderBottom: "1px solid var(--line)" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
@@ -483,11 +483,11 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
                     <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}“ löschen?`} />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 8 }}>
-                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(k.restschuld)}</div></div>
-                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Rate/Mo.</div><div style={{ fontWeight: 600, fontSize: 13 }}>{euro(k.monatsrate)}</div></div>
+                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(restschuldVon(k))}</div></div>
+                    <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Rate/Mo.</div><div style={{ fontWeight: 600, fontSize: 13 }}>{istGetilgt(k) ? "getilgt" : euro(rateVon(k))}</div></div>
                     <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Laufzeit</div><div style={{ fontWeight: 600, fontSize: 13 }}>{laufzeitText(k.laufzeit, k.auszahlung_datum)}</div></div>
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Getilgt: {tilgtPct != null ? `${tilgtPct}%` : "– (Restschuld nicht erfasst)"}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Getilgt: {tilgtPct != null ? `${tilgtPct}%` : "– (Darlehenssumme fehlt)"}</div>
                   <div className="progress-bar"><div className="progress-fill" style={{ width: `${tilgtPct ?? 0}%`, background: "var(--teal)" }} /></div>
                 </div>
               );
