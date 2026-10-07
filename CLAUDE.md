@@ -1952,9 +1952,11 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   (A6) HKVO-Grundkosten × Tage/Jahrestage (§ 9b). (C22) CO₂-Ausstoß auf eine Nachkommastelle.
   (C25) Verbrauch ohne Hauptzähler warnt. (B6) „m × Rate“ nur, wenn es den Betrag ergibt
   (`vorauszahlungZusatz()`). (B5) ⚠️ **KORREKTUR: Die Demo-NK am Objekt waren NICHT reset-fest** — die
-  Kaskade von `properties` löschte sie bei jedem Demo-Start. Jetzt in `demo_seed` und in `tabellen` der
-  Reset-Funktion (`20261007193000`, **im SQL-Editor**, sonst bleibt die Demo-Kostenliste leer); das Jahr
-  wandert mit dem Reset. **Regel: Jede Tabelle mit Kaskade auf `properties`/`mieter` und Demo-Daten gehört
+  Kaskade von `properties` löschte sie bei jedem Demo-Start. Jetzt in `demo_seed`, und die reine
+  Einfüge-Funktion `demo_nk_nachfuellen()` legt sie nach jedem Reset wieder an (`20261007210000`, per
+  apply_migration — der Umbau der Reset-Funktion war dem Betreiber im SQL-Editor zu lang); das Jahr wandert mit.
+  **Muster für künftige Demo-Tabellen: lieber eine kleine Einfüge-Funktion nach dem Reset als die
+  Reset-Funktion (mit Löschbefehlen) neu schreiben.** **Regel: Jede Tabelle mit Kaskade auf `properties`/`mieter` und Demo-Daten gehört
   in den Reset — sonst ist sie nach dem nächsten Demo-Start leer.**
 - 🧾 **Paket P1 der Gesamtprüfung (07.10.2026): Anlage V richtig** (`tests/paketP1.test.ts`, 10 Mutationen rot).
   (A1) 15-%-Grenze: liegen Instandsetzungskosten im 3-Jahres-Fenster über 15 % der Gebäude-AK, ist die

@@ -97,6 +97,10 @@ export async function GET(request: Request) {
       resetStatus = "fehler";
       console.error("Demo-Reset fehlgeschlagen:", resetFehler.message);
     }
+    // Nebenkosten am Objekt: Die Kaskade von `properties` leert sie beim Reset; diese reine
+    // Einfüge-Funktion legt das Beispiel wieder an (Migration 20261007210000, Audit B5).
+    const { error: nkFehler } = await admin.rpc("demo_nk_nachfuellen");
+    if (nkFehler) console.error("Demo-Nebenkosten nachfuellen fehlgeschlagen:", nkFehler.message);
     if (alsMieter) {
       // Anlegen ist idempotent: existiert das Konto, antwortet Supabase mit
       // „already been registered" — das ist der Normalfall, kein Fehler.
