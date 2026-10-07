@@ -170,7 +170,9 @@ describe("Gesamtkosten + Gesamtfläche = Flächen-Aufteilung", () => {
   it("ohne Gesamtfläche bleibt der Betrag der Wohnungsanteil", async () => {
     const { db, mod } = await lade();
     await mod.addPositionsBulk("m1", JSON.stringify([{ name: "Heizung", betrag: 200, gesamt: 4000 }]), 2025);
-    expect(insertZeilen(db)[0]).toMatchObject({ betrag: 200, aufteilung: null, flaeche_gesamt: null });
+    // „voll“ statt null (07.10.2026): Die Spalte ist NOT NULL — der Test hielt vorher den Fehler fest,
+    // an dem jeder solche Import in der Datenbank scheiterte.
+    expect(insertZeilen(db)[0]).toMatchObject({ betrag: 200, aufteilung: "voll", flaeche_gesamt: null });
   });
 
   it("nur Gesamtsumme ohne Einzelbetrag: die Gesamtsumme wird genommen", async () => {

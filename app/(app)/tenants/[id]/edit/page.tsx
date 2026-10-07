@@ -10,8 +10,12 @@ import DeleteButton from "@/components/DeleteButton";
 import type { Tenant } from "@/lib/types";
 import { ReceiptText, Trash2 } from "lucide-react";
 
-export default async function EditTenantPage(props0: { params: Promise<{ id: string }> }) {
+export default async function EditTenantPage(props0: { params: Promise<{ id: string }>; searchParams: Promise<{ jahr?: string }> }) {
   const params = await props0.params;
+  // Stufe 0 (07.10.2026): Die NK-Seite verlinkt hierher mit ihrem Jahr (?jahr=…#positionen) — neue
+  // Positionen und der Abrechnungs-Import landen dann in genau dem Jahr, das man gerade abrechnet.
+  const jahrParam = Number((await props0.searchParams).jahr);
+  const nkJahr = Number.isInteger(jahrParam) && jahrParam >= 2000 && jahrParam <= 2100 ? jahrParam : new Date().getFullYear() - 1;
   const supabase = await createClient();
   const [{ data }, { data: props }, { data: positions }, { data: zugang }] = await Promise.all([
     supabase.from("mieter").select("*").eq("id", params.id).single(),
@@ -51,14 +55,14 @@ export default async function EditTenantPage(props0: { params: Promise<{ id: str
       />
 
       <div style={{ marginTop: 24 }}>
-        <PositionsManager mieterId={tenant.id} positions={(positions ?? []) as Position[]} />
+        <PositionsManager mieterId={tenant.id} positions={(positions ?? []) as Position[]} startJahr={nkJahr} />
         {/* Vorjahr wie der Default der NK-Seite — der alte Upload speicherte
             ins laufende Kalenderjahr, wo die Abrechnung nie hinschaut. */}
         <NkOcrUpload
           mieterId={tenant.id}
-          jahr={new Date().getFullYear() - 1}
+          jahr={nkJahr}
           bestehend={(positions ?? [])
-            .filter((p) => (p.jahr == null || p.jahr === new Date().getFullYear() - 1) && p.umlagefaehig === true)
+            .filter((p) => (p.jahr == null || p.jahr === nkJahr) && p.umlagefaehig === true)
             .map((p) => ({ id: p.id, bezeichnung: p.bezeichnung, betrag: p.betrag, aufteilung: p.aufteilung ?? null }))}
         />
       </div>

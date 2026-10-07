@@ -3,7 +3,7 @@ import { vorjahrUebernahme, vorauszahlungsVorschlag, gleicheBetraegeWieVorjahr, 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { berechneNk, deDatum, type NkRawPosition, type NkCo2Input } from "@/lib/nk";
+import { berechneNk, deDatum, NK_POSITION_SPALTEN, type NkRawPosition, type NkCo2Input } from "@/lib/nk";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
 import { eur2, adressZeilen } from "@/lib/format";
 import { vermieterAus } from "@/lib/pdf/nkPdf";
@@ -64,7 +64,7 @@ export default async function NkPage(
         : Promise.resolve({ data: null }),
       supabase
         .from("mieter_positionen")
-        .select("id,bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,grundkosten_prozent,flaeche_gesamt,lohnanteil,art_35a")
+        .select(NK_POSITION_SPALTEN)
         .eq("mieter_id", params.id)
         .order("created_at"),
       supabase.from("vermieter_profil").select("*").limit(1).maybeSingle(),
@@ -174,6 +174,11 @@ export default async function NkPage(
             </select>
             <button className="btn btn-ghost" style={{ fontSize: 12 }}>Anzeigen</button>
           </form>
+          {/* Stufe 0 (07.10.2026): Die Positionen lagen nur unter „Mieter bearbeiten“, ganz unten — von hier
+              führte kein Weg dorthin. */}
+          <Link href={`/tenants/${params.id}/edit?jahr=${jahr}#positionen`} className="btn btn-ghost" style={{ fontSize: 12 }}>
+            Positionen bearbeiten
+          </Link>
           <a href={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`} className="btn btn-ghost">
             Als PDF herunterladen
           </a>

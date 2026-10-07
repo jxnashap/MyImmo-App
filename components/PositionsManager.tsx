@@ -92,9 +92,12 @@ const parseBetrag = (s: string): number | null => {
 export default function PositionsManager({
   mieterId,
   positions,
+  startJahr,
 }: {
   mieterId: string;
   positions: Position[];
+  /** Jahr für neue Positionen — wie die NK-Seite standardmäßig das Vorjahr (Stufe 0, 07.10.2026). */
+  startJahr?: number;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -107,7 +110,7 @@ export default function PositionsManager({
   // Neue-Zeile-Eingaben (immer leer nach dem Hinzufügen)
   const [nBez, setNBez] = useState("");
   const [nBetrag, setNBetrag] = useState("");
-  const [nJahr, setNJahr] = useState(JETZT);
+  const [nJahr, setNJahr] = useState(startJahr ?? JETZT - 1);
   const [nSchl, setNSchl] = useState("");
   const [nUml, setNUml] = useState(true);
   const [nAuf, setNAuf] = useState("voll");
@@ -203,19 +206,21 @@ export default function PositionsManager({
       }
       setNBez("");
       setNBetrag("");
-      setNJahr(JETZT);
+      // Das Jahr bleibt stehen: Man trägt meist mehrere Positionen desselben Jahres nacheinander ein.
       setNSchl("");
       setNUml(true);
       setNAuf("voll");
       setNVm("");
       setNVg("");
+      setNGk("");
+      setNFg("");
       toast("Position hinzugefügt ✓");
       router.refresh();
     });
   };
 
   return (
-    <div>
+    <div id="positionen" style={{ scrollMarginTop: 80 }}>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-xl">Umlagepositionen</h2>
         <span className="text-sm text-[var(--muted)]">

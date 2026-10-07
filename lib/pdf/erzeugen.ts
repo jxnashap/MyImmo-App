@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildDocPdf } from "@/lib/pdf/docPdf";
 import { buildNkPdf, vermieterAus } from "@/lib/pdf/nkPdf";
 import { buildProtokollPdf, type ProtokollDaten } from "@/lib/pdf/protokollPdf";
-import { berechneNk, type NkRawPosition, type NkCo2Input } from "@/lib/nk";
+import { berechneNk, NK_POSITION_SPALTEN, type NkRawPosition, type NkCo2Input } from "@/lib/nk";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
 import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
@@ -194,7 +194,7 @@ export async function erzeugeNkPdf(
         : Promise.resolve({ data: null }),
       supabase
         .from("mieter_positionen")
-        .select("bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt")
+        .select(NK_POSITION_SPALTEN)
         .eq("mieter_id", mieterId)
         .order("created_at"),
       supabase

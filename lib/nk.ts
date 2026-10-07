@@ -6,6 +6,15 @@
 import { co2Aufteilung, CO2_STUFEN, co2PreisBekannt } from "@/lib/co2";
 import { sollFuerMonat, ymPlus, type MietkontoZeitraum } from "@/lib/mietkonto";
 
+/**
+ * Spalten einer Umlageposition, die die Rechnung braucht — EINE Liste für die NK-Seite UND das PDF
+ * (Stufe 0, 07.10.2026). Vorher lud lib/pdf/erzeugen.ts vier Spalten weniger: Positionen mit
+ * Flächen- oder HeizkostenV-Aufteilung fielen im PDF auf „Tage“ zurück, und § 35a fehlte — das
+ * Dokument, das an den Mieter geht, rechnete anders als die Vorschau.
+ */
+export const NK_POSITION_SPALTEN =
+  "id,bezeichnung,betrag,umlageschluessel,umlagefaehig,jahr,aufteilung,verbrauch_mieter,verbrauch_gesamt,grundkosten_prozent,flaeche_gesamt,lohnanteil,art_35a";
+
 export type NkRawPosition = {
   bezeichnung: string;
   betrag: number | null;
