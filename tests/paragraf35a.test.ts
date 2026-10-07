@@ -1,44 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { berechneUmlage, type UmlageZeile, type UmlageMieter } from "@/lib/umlage";
 import { berechneNk, type NkRawPosition, type NkTenant } from "@/lib/nk";
 
-describe("Umlage: § 35a-Lohnanteil proportional verteilen", () => {
-  const mieter: UmlageMieter[] = [
-    { id: "a", name: "A", flaeche: 60 },
-    { id: "b", name: "B", flaeche: 40 },
-  ];
-
-  it("verteilt den Lohnanteil im selben Verhältnis wie den Betrag", () => {
-    const zeilen: UmlageZeile[] = [
-      { bezeichnung: "Hausmeister", betrag: 1000, schluessel: "flaeche", lohnanteil: 600, art35a: "haushaltsnah" },
-    ];
-    const r = berechneUmlage(zeilen, mieter);
-    const a = r.perMieter.find((m) => m.id === "a")!.positionen[0];
-    const b = r.perMieter.find((m) => m.id === "b")!.positionen[0];
-    expect(a.betrag).toBe(600); // 60 %
-    expect(b.betrag).toBe(400); // 40 %
-    expect(a.lohnanteil).toBe(360); // 60 % von 600
-    expect(b.lohnanteil).toBe(240); // 40 % von 600
-    expect(a.art35a).toBe("haushaltsnah");
-  });
-
-  it("cappt den Lohnanteil auf den Positionsbetrag", () => {
-    const zeilen: UmlageZeile[] = [
-      { bezeichnung: "X", betrag: 100, schluessel: "gleich", lohnanteil: 999, art35a: "handwerker" },
-    ];
-    const r = berechneUmlage(zeilen, mieter);
-    const summeLohn = r.perMieter.reduce((s, m) => s + (m.positionen[0].lohnanteil ?? 0), 0);
-    expect(summeLohn).toBe(100);
-  });
-
-  it("ohne art35a wird kein Lohnanteil ausgewiesen", () => {
-    const zeilen: UmlageZeile[] = [
-      { bezeichnung: "X", betrag: 100, schluessel: "gleich", lohnanteil: 50, art35a: "" },
-    ];
-    const r = berechneUmlage(zeilen, mieter);
-    expect(r.perMieter[0].positionen[0].art35a).toBeUndefined();
-  });
-});
 
 describe("berechneNk: § 35a-Ausweis aggregieren", () => {
   const tenant: NkTenant = {

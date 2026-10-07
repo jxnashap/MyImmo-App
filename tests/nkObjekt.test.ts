@@ -2,7 +2,7 @@
 // nachgerechnet; die Testwerte sind so gewählt, dass verschiedene Wege verschiedene Ergebnisse
 // liefern (Leerstand ≠ 0, unterjährige Belegung ≠ volles Jahr).
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import {
   verteileObjektKosten,
   positionenFuerMieter,
@@ -244,8 +244,10 @@ describe("Verdrahtung", () => {
     expect(s).toMatch(/if \(!daten\.bereit \|\| daten\.kosten\.length === 0\) return altbestand\(daten\.bereit\);/);
     expect(s).toMatch(/positionen: positionenFuerMieter\(e, mieter\.id\),\s*quelle: "objekt"/);
   });
-  it("der alte Verteiler leitet um, sobald die Kosten am Objekt erfasst werden", () => {
-    expect(lies("app/(app)/properties/[id]/umlage/page.tsx")).toMatch(/if \(await nkAmObjekt\(supabase, id\)\) redirect\(`\/properties\/\$\{id\}\/nebenkosten`\)/);
+  it("der alte Verteiler ist weg — seine Adresse führt auf die Nebenkosten am Objekt", () => {
+    expect(lies("app/(app)/properties/[id]/umlage/page.tsx")).toMatch(/redirect\(`\/properties\/\$\{id\}\/nebenkosten`\)/);
+    expect(existsSync("components/UmlageAssistent.tsx")).toBe(false);
+    expect(existsSync("lib/actions/umlage.ts")).toBe(false);
   });
   it("„Mieter bearbeiten“ zeigt beim Mehrfamilienhaus den Weg zum Objekt, Positionen nur als Altbestand", () => {
     const s = lies("app/(app)/tenants/[id]/edit/page.tsx");

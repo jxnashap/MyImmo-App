@@ -97,9 +97,16 @@ Gesamtbetrag als `basis`, Anteil fertig); sonst `mieter_positionen` (Altbestand)
 **Übergang:** Migration `20261007090000` läuft im SQL-Editor. Bis dahin: Objektseite zeigt „kommt in Kürze“,
 der alte Verteiler bleibt erreichbar, alle Abrechnungen rechnen wie bisher. Danach leitet `/umlage` auf
 `/nebenkosten` um (`nkAmObjekt()`), „Mieter bearbeiten“ zeigt beim MFH nur noch den Weg zum Objekt und die
-alten Positionen als aufklappbaren Altbestand. `UmlageAssistent.tsx` + `lib/actions/umlage.ts` sind danach
-toter Code — entfernen, sobald die Migration live geprüft ist.
+alten Positionen als aufklappbaren Altbestand. ✅ **Migration live (07.10.2026), alter Verteiler entfernt**
+(`UmlageAssistent.tsx`, `lib/actions/umlage.ts`, `berechneUmlage`); `/umlage` leitet auf `/nebenkosten`.
+Die RPC `umlage_positionen_ersetzen` liegt noch in der Datenbank, ungenutzt — beim nächsten SQL-Editor-Lauf
+mit entfernen.
 
-**Nicht in Stufe 1:** Demo-Beispieldaten (Demo zeigt eine leere Kostenliste), CO₂-Aufteilung am Objekt
+**Demo (07.10.2026, Migration `20261007113957`):** „Zweifamilienhaus Dresden“ hat Kosten 2025 mit jedem
+Schlüssel (nicht im Reset, feste IDs). **Grenze:** fest 2025 — ab 2027 zeigt die Seite 2026 leer.
+Live geprüft: Seite bei 360/390 px, Abrechnung Krüger 1.494,31 € / Guthaben 305,69 € (von Hand
+nachgerechnet), Einzel-PDF 2 Seiten (Gruß mit § 35a-Block auf Seite 2), Sammel-PDF 4 Seiten.
+
+**Nicht in Stufe 1:** CO₂-Aufteilung am Objekt
 (bleibt je Mieter), Zähler aus dem Portal (Stufe 2), ETW (Stufe 3), Einzelobjekte (bleiben beim Mieter).
 `tests/nkObjekt.test.ts`, 14 Mutationen rot.
