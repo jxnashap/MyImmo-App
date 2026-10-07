@@ -86,7 +86,7 @@ export async function addPositionsBulk(mieterId: string, positionenJson: string,
         betrag: alsFlaeche ? gesamt : (zahl(p.betrag) ?? gesamt),
         jahr: zielJahr,
         umlagefaehig: true,
-        aufteilung: alsFlaeche ? "flaeche" : null,
+        aufteilung: alsFlaeche ? "flaeche" : "voll",
         flaeche_gesamt: alsFlaeche ? flaecheGesamt : null,
         umlageschluessel: alsFlaeche ? "Fläche" : null,
       };
@@ -196,7 +196,7 @@ export async function uebernehmeNkOcr(
         betrag: zahl(p.betrag),
         jahr: zielJahr,
         umlagefaehig: true,
-        aufteilung: alsFlaeche ? "flaeche" : null,
+        aufteilung: alsFlaeche ? "flaeche" : "voll",
         flaeche_gesamt: alsFlaeche ? zahl(p.flaecheGesamt) : null,
         umlageschluessel: alsFlaeche ? "Fläche" : null,
       };

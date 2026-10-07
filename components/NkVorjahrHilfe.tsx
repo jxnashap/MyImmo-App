@@ -138,7 +138,7 @@ export default function NkVorjahrHilfe({
       {nurVorjahrsBetraege && (
         <p style={{ fontSize: 12, color: "var(--amber)", margin: 0 }}>
           Die Beträge der Positionen entsprechen noch genau {jahr - 1}. Vor dem Versand mit den Rechnungen für {jahr} abgleichen
-          (Positionen bearbeiten oder die Abrechnung der Hausverwaltung oben einlesen).
+          (<Link href={`/tenants/${mieterId}/edit?jahr=${jahr}#positionen`}>Positionen bearbeiten</Link> oder die Abrechnung der Hausverwaltung oben einlesen).
         </p>
       )}
       {vorschlag && (

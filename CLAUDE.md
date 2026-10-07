@@ -1925,6 +1925,14 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   reservieren); Mietart nur über **`normMietart()`**; keine Schrift unter 11 px; Raster mit `minmax(0,1fr)`.
   **Werkzeug: `scripts/designscan/`** (Live-Seite im Handyformat rendern; Chromium braucht den Umweg über
   `route.fetch`, weil es dem Proxy-Zertifikat nicht vertraut). Offene Betreiber-Entscheidungen dort.
+- 🧾 **NK neu: Positionen je OBJEKT statt je Mieter — `docs/zukunft/NK-NEU.md`** (Recherche + Plan
+  07.10.2026, Entscheidung Jonas: „pro Objekt“; ETW: Einzelabrechnung der Hausverwaltung ist schon
+  aufgeteilt, nur eigene Kosten wie Grundsteuer dazu, voreingestellt). ✅ **Stufe 0:** PDF und NK-Seite
+  laden dieselben Spalten (**`NK_POSITION_SPALTEN`** in `lib/nk.ts` — vorher rechnete das PDF Fläche/
+  HeizkostenV anders als die Vorschau und ließ § 35a weg); Verteiler-KI-Import liest `gesamt`; KI-Import
+  beim Mieter schreibt `aufteilung: "voll"` statt null; „Positionen bearbeiten“ von der NK-Seite
+  (`/tenants/<id>/edit?jahr=…#positionen`). **Regel: Wer Positionen für eine Rechnung lädt, nimmt
+  `NK_POSITION_SPALTEN`.** `tests/nkStufe0.test.ts`, sechs Mutationen rot.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

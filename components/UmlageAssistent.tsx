@@ -221,9 +221,14 @@ export default function UmlageAssistent({
         setOcrError(json.error || "Fehler beim Auslesen.");
         return;
       }
+      // Die Leseroute liefert je Position `gesamt` (Gebäude) und `anteil` (eine Wohnung). Der
+      // Verteiler verteilt GESAMTkosten — er las bis 07.10.2026 ein Feld `betrag`, das es nicht gibt,
+      // und alle Beträge blieben leer. Ohne Gesamtbetrag bleibt das Feld leer statt den Anteil
+      // einer Wohnung als Hauskosten zu verteilen.
       const list = (json.positionen ?? []).filter((p: { name?: string }) => p && p.name) as {
         name: string;
-        betrag: number;
+        gesamt: number | null;
+        anteil: number | null;
       }[];
       if (list.length === 0) {
         setOcrError("Keine umlagefähigen Positionen erkannt.");
@@ -231,7 +236,7 @@ export default function UmlageAssistent({
       }
       const neue: ZeileUI[] = list.map((p) => ({
         bezeichnung: p.name.trim(),
-        betrag: Number.isFinite(p.betrag) ? String(p.betrag) : "",
+        betrag: typeof p.gesamt === "number" && Number.isFinite(p.gesamt) ? String(p.gesamt) : "",
         schluessel: "flaeche",
         lohn: "",
         art35a: "",
@@ -242,7 +247,11 @@ export default function UmlageAssistent({
         const ergaenzt = neue.filter((z) => !vorhanden.has(z.bezeichnung.toLowerCase()));
         return [...behalten, ...ergaenzt];
       });
-      setOcrInfo(`${list.length} Position(en) übernommen — bitte Beträge & Schlüssel prüfen.`);
+      const ohneGesamt = list.filter((p) => !(typeof p.gesamt === "number" && Number.isFinite(p.gesamt))).length;
+      setOcrInfo(
+        `${list.length} Position(en) übernommen — bitte Beträge & Schlüssel prüfen.` +
+          (ohneGesamt ? ` Bei ${ohneGesamt} stand kein Gesamtbetrag fürs Haus in der Abrechnung — bitte eintragen.` : ""),
+      );
       setStatus("idle");
       toast(`${list.length} Position(en) aus der Abrechnung übernommen.`, "success");
     } catch (err) {

@@ -55,7 +55,10 @@ export default async function UmlagePage(props: { params: Promise<{ id: string }
               Die Nebenkostenabrechnung erstellst du hier direkt beim Mieter — dort trägst du die Kosten
               ein und legst fest, was umlagefähig ist.
             </p>
-            <Link href="/tenants" className="btn btn-gold" style={{ fontSize: 12 }}>Zu den Mietern</Link>
+            {/* Stufe 0: direkt zum einen Mieter statt zur Liste. */}
+            <Link href={(mieter ?? []).length === 1 ? `/tenants/${(mieter ?? [])[0].id}/nk` : "/tenants"} className="btn btn-gold" style={{ fontSize: 12 }}>
+              {(mieter ?? []).length === 1 ? "Zur Nebenkostenabrechnung" : "Zu den Mietern"}
+            </Link>
           </div>
         </div>
       </div>
