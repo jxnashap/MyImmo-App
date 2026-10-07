@@ -2,6 +2,7 @@
 // Deckblatt/Übersicht fürs Bankpaket — im hellen MyImmo-Briefstil (wie
 // docPdf.ts: Logo links, Absender rechts, goldener Trennstrich).
 
+import { auslaufVon } from "@/lib/beleihungsauslauf";
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { pdfText } from "@/lib/pdf/zeichen";
 
@@ -156,7 +157,7 @@ function objektKennzahlen(c: Ctx, yStart: number, o: BelObjektDaten): number {
   const L = { x0: ML, x1: ML + colW };
   const R = { x0: ML + colW + 24, x1: RIGHT };
   const mieteJahr = o.mieteMo * 12;
-  const beleihungsauslauf = o.wert && o.wert > 0 ? (o.restschuld / o.wert) * 100 : null;
+  const beleihungsauslauf = auslaufVon(o.restschuld, o.wert);
   const bruttoRendite = o.kaufpreis && o.kaufpreis > 0 ? (mieteJahr / o.kaufpreis) * 100 : null;
 
   // Objekt und Adresse über die volle Breite — in der halben Spalte fehlte sonst die PLZ/der Ort.

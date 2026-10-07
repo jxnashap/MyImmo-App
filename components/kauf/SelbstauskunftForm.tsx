@@ -10,6 +10,7 @@ import {
   type SelbstauskunftDaten, type Beschaeftigung, type Befristung,
 } from "@/lib/kauf/selbstauskunft";
 import { zahlDe0 } from "@/lib/zahl";
+import { selbstauskunftAbweichungen, type Bestand } from "@/lib/kauf/selbstauskunftBestand";
 
 const eur = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
 // Deutsche Schreibweise: "3.200" sind dreitausendzweihundert, nicht 3,2.
@@ -54,7 +55,7 @@ function toStrings(d: SelbstauskunftDaten): Record<string, string> {
   return o;
 }
 
-export default function SelbstauskunftForm({ initial }: { initial: SelbstauskunftDaten | null }) {
+export default function SelbstauskunftForm({ initial, bestand = null }: { initial: SelbstauskunftDaten | null; bestand?: Bestand | null }) {
   const toast = useToast();
   const router = useRouter();
   const [f, setF] = useState<Record<string, string>>(toStrings(initial ?? LEERE_SELBSTAUSKUNFT));
@@ -65,6 +66,15 @@ export default function SelbstauskunftForm({ initial }: { initial: Selbstauskunf
     einkommen: num(f.einkommen), einkommenPartner: num(f.einkommenPartner),
     kindergeld: num(f.kindergeld), sonstigeEinnahmen: num(f.sonstigeEinnahmen),
   } as SelbstauskunftDaten);
+  // Abgleich mit dem Bestand in MyImmo (Audit 07.10.2026, B21) — nur Hinweis, übernommen per Klick.
+  const abweichungen = bestand
+    ? selbstauskunftAbweichungen({ ratenKredite: num(f.ratenKredite), summeVerbindlichkeiten: num(f.summeVerbindlichkeiten), mieteinnahmen: num(f.mieteinnahmen) }, bestand)
+    : [];
+  const uebernehmen = () => setF((p) => {
+    const n = { ...p };
+    for (const a of abweichungen) n[a.feld] = String(a.bestand);
+    return n;
+  });
   const ek = eigenkapitalGesamt({
     bankguthaben: num(f.bankguthaben), wertpapiere: num(f.wertpapiere),
     bausparen: num(f.bausparen), sonstigesVermoegen: num(f.sonstigesVermoegen),
@@ -109,6 +119,21 @@ export default function SelbstauskunftForm({ initial }: { initial: Selbstauskunf
         <ShieldCheck size={14} color="var(--green)" style={{ flexShrink: 0, marginTop: 1 }} />
         <span>Diese Angaben werden <strong>verschlüsselt</strong> gespeichert (nur du kannst sie lesen) und dienen der Machbarkeitsprüfung und der Selbstauskunft für die Bank. Keine Weitergabe, keine Finanzberatung.</span>
       </div>
+
+      {abweichungen.length > 0 && (
+        <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(240,160,48,0.08)", border: "1px solid rgba(240,160,48,0.3)", fontSize: 12.5 }}>
+          <strong>Passt nicht zu deinem Bestand in MyImmo</strong>
+          <ul style={{ margin: "6px 0 8px", paddingLeft: 18 }}>
+            {abweichungen.map((a) => (
+              <li key={a.feld}>{a.label}: eingetragen {eur(a.eingetragen)}, in MyImmo {eur(a.bestand)}</li>
+            ))}
+          </ul>
+          <div style={{ color: "var(--muted)", marginBottom: 8 }}>
+            Die Bank vergleicht deine Angaben mit Kontoauszügen und Grundbuch. Private Kredite (Auto, Konsum) kennt MyImmo nicht — die kommen nach dem Übernehmen noch dazu.
+          </div>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={uebernehmen}>Werte aus MyImmo übernehmen</button>
+        </div>
+      )}
 
       <div>
         <div className="form-section-label">Person &amp; Beschäftigung</div>

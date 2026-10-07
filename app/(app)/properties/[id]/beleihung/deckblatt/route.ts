@@ -1,5 +1,6 @@
 // Deckblatt/Übersicht fürs Bankpaket als PDF: Objekt-Kennblatt +
 // Wunsch-Konditionen (Query-Parameter) + Checkliste als Anlagenverzeichnis.
+import { summeRestschuld } from "@/lib/kredit";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { BELEIHUNG_CHECKLISTE, BEL_GRUPPEN, itemSichtbar, type BelKontext } from "@/lib/beleihung";
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest, props: { params: Promise<{ id: strin
     kaufpreis: prop.kaufpreis,
     wert: prop.wert,
     mieteMo: mieteMo > 0 ? mieteMo : prop.miete ?? 0,
-    restschuld: (kredite ?? []).reduce((s, k) => s + (k.restschuld ?? k.betrag ?? 0), 0),
+    restschuld: summeRestschuld(kredite ?? []),
     hausgeld: prop.hausgeld,
   };
 

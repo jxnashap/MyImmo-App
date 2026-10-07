@@ -5,7 +5,10 @@
 // eingetragen hat — MyImmo schreibt ihn NICHT selbst fort. Deshalb tickt die „Uhr“ bewusst
 // nicht im Sekundentakt: Ein laufender Zähler würde eine Genauigkeit vortäuschen, die die
 // Daten nicht haben. Die Tilgung je Monat ist eine Näherung (Rate − Restschuld × Zins / 12),
-// dieselbe wie im Kredit-Dialog.
+// dieselbe wie im Kredit-Dialog — beides über lib/kredit.ts (eine Lesart: leere Restschuld =
+// Darlehenssumme, Restschuld 0 = getilgt ohne Rate; Audit 07.10.2026, B17/B18).
+
+import { restschuldVon, zinsUndTilgung } from "@/lib/kredit";
 
 export type KreditFuerStand = {
   betrag: number | null;
@@ -35,13 +38,12 @@ export function schuldenStand(kredite: KreditFuerStand[]): SchuldenStand {
   let ursprung = 0;
   let tilgungMonat = 0;
   for (const k of kredite) {
-    const rest = Math.max(0, n(k.restschuld));
+    const rest = restschuldVon(k);
     offen += rest;
     // Ohne Ursprungsbetrag zählt der Kredit als „noch nichts getilgt“ — sonst stiege der
     // Prozentwert, nur weil ein Feld leer ist.
     ursprung += n(k.betrag) > 0 ? Math.max(n(k.betrag), rest) : rest;
-    const zins = (rest * n(k.zinssatz)) / 100 / 12;
-    tilgungMonat += Math.max(0, n(k.monatsrate) - zins);
+    tilgungMonat += zinsUndTilgung(k).tilgung;
   }
   const getilgt = Math.max(0, ursprung - offen);
   return {

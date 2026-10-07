@@ -1966,6 +1966,20 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   für Monate, in denen das Darlehen lief — **`kreditMonateImJahr()` (`lib/kreditZeit.ts`) ist die Regel**
   (Jahresbericht folgt mit P6). (B4) PDF kennzeichnet Summe/Ergebnis über `summenWarnung()` wie die ELSTER-Hilfe.
   `afaSatzAusBaujahr` = `afaSatzNachFertigstellung` (eine Funktion). **Offen:** Zeilennummern (B1, Vordruck 2025). Details `docs/zukunft/NK-NEU.md`.
+- 🏦 **Paket P6 der Gesamtprüfung (07.10.2026): Kredite mit Zeit** (`tests/paketP6.test.ts`, 12 Mutationen rot).
+  **`lib/kredit.ts` ist die EINE Lesart eines Darlehens:** `restschuldVon()` (leer = Darlehenssumme — vorher
+  vier Lesarten, `updateKredit` speicherte null → „100 % getilgt“), `istGetilgt()`/`rateVon()` (Restschuld 0 =
+  keine Rate, keine Tilgung, B17), `zinsUndTilgung()` (Zins ganze Euro, Summe = Rate, C7), `getilgtProzent()`,
+  `summeRaten()`/`summeRestschuld()`. Auslauf über `auslaufVon()` (lib/beleihungsauslauf.ts) auch in PDF und
+  Bank-Link. **Jahresbericht** zählt Raten und Zinsschätzung nur in Monaten, in denen das Darlehen lief
+  (`kreditMonateImJahr(k, jahr, kaufdatum, bisMonat)`, dieselbe Regel wie Anlage V). **Rate Pflicht** auch im
+  Dialog und serverseitig (`pruefeKreditRate`), 0 € nur bei Restschuld 0. **§ 489:** Termin „Sonderkündigungsrecht“
+  nur, wenn die Zinsbindung über Auszahlung + 10 Jahre läuft (`sonderkuendigungNachZehnJahren()`), sonst Hinweis
+  Nr. 1 an „Zinsbindung endet“. **Selbstauskunft ↔ Bestand** (`lib/kauf/selbstauskunftBestand.ts`): Formular zeigt
+  Abweichungen (Raten/Restschuld als Untergrenze, Mieten beidseitig), übernimmt nur per Klick; Demo nimmt den
+  Demo-Bestand. **Regel: Wer Restschuld oder Rate liest, nimmt `lib/kredit.ts`** — ein Test sucht `restschuld ??`.
+  **Bewusst nicht:** Getilgte Darlehen behalten im Jahresbericht frühere Raten (Ablösedatum unbekannt); das
+  Kreditantrag-PDF prüft nicht selbst, es nimmt die gespeicherte Selbstauskunft.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

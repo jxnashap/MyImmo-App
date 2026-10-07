@@ -1,4 +1,5 @@
 import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
+import { summeRaten, restschuldVon, rateVon, istGetilgt } from "@/lib/kredit";
 import { bauePortalNeuigkeiten, NEUIGKEITEN_TAGE, type NeuigkeitArt } from "@/lib/portalNeuigkeiten";
 import Link from "next/link";
 import SchuldenUhr from "@/components/SchuldenUhr";
@@ -329,7 +330,8 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // Mieterfeld) — dieselbe Zahl wie im Mietkonto. Vorher blieb eine Erhöhung hier unsichtbar.
   const mieterJetzt = mitGeltendenBetraegen(mieterRows, (mzRows ?? []) as never[], heuteISO.slice(0, 7));
   const totalMiete = properties.reduce((s, p) => s + sollKaltmiete(p, mieterJetzt, heuteISO).betrag, 0);
-  const kreditRates = kredite.reduce((s, k) => s + (k.monatsrate ?? 0), 0);
+  // Getilgte Darlehen (Restschuld 0) zahlen keine Rate mehr (Audit 07.10.2026, B17).
+  const kreditRates = summeRaten(kredite);
   // Laufende Kosten: Ø der letzten 12 Monate MIT BUCHUNGEN, geteilt durch die
   // Monate, die das Fenster wirklich umfasst — Begründung in
   // lib/cashflowKennzahl.ts (vorher / 12 fest: Neue Nutzer sahen einen Bruchteil
@@ -663,7 +665,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                         obwohl er das Merkmal ist, an dem man gleich benannte Darlehen unterscheidet. */}
                     <span className="listen-zeile-sub">{[k.zinssatz != null ? `${k.zinssatz.toLocaleString("de-DE", { maximumFractionDigits: 2 })}\u00a0%` : null, (k.prop_id && nameOf.get(k.prop_id)) || null, k.bank].filter(Boolean).join(" · ") || "ohne Objekt"}</span>
                   </span>
-                  <span className="listen-zeile-zahl"><b>{euro(k.restschuld)}</b><small>{euro(k.monatsrate)} / Mo.</small></span>
+                  <span className="listen-zeile-zahl"><b>{euro(restschuldVon(k))}</b><small>{istGetilgt(k) ? "getilgt" : `${euro(rateVon(k))} / Mo.`}</small></span>
                   <ChevronRight size={16} color="var(--faint)" style={{ flexShrink: 0 }} />
                 </Link>
               ))}

@@ -1,6 +1,7 @@
 // Beleihungsordner eines Objekts: Checkliste aller Bank-Unterlagen mit
 // Upload/Abhaken/Fortschritt + „Aus MyImmo erzeugen" + Deckblatt-PDF +
 // Freigabe-Links für die Bank (Phase 2) inkl. Rückmeldungen.
+import { summeRestschuld, summeRaten } from "@/lib/kredit";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import BeleihungsOrdner from "@/components/BeleihungsOrdner";
@@ -83,8 +84,8 @@ export default async function BeleihungPage(props: { params: Promise<{ id: strin
   const eingangBlock = tokens.length ? <FreigabeEingang zeilen={eingangZeilen} wer="der Bank" werNom="die Bank" /> : null;
 
   const hatMieter = (mieter ?? []).some((m) => !m.mietende || new Date(m.mietende) >= new Date());
-  const restschuld = (kredite ?? []).reduce((s, k) => s + (k.restschuld ?? k.betrag ?? 0), 0);
-  const rate = (kredite ?? []).reduce((s, k) => s + (k.monatsrate ?? 0), 0);
+  const restschuld = summeRestschuld(kredite ?? []);
+  const rate = summeRaten(kredite ?? []);
 
   return (
     <>

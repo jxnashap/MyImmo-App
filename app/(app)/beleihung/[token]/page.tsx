@@ -3,6 +3,7 @@
 // Datenzugriff ausschließlich über die SECURITY-DEFINER-RPC (Token-Prüfung).
 // Seit 05.10.2026 erst nach dem Zugangscode aus der Mail (Cookie mit dem Code-Hash); ohne ihn
 // zeigt die Seite nur das Code-Formular — wie der Makler-Link.
+import { auslaufVon } from "@/lib/beleihungsauslauf";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -113,7 +114,8 @@ export default async function BankFreigabeSeite(props: { params: Promise<{ token
   const labelVon = new Map(BELEIHUNG_CHECKLISTE.map((i) => [i.key, i.label]));
   const mieteJahr = info.miete_mo * 12;
   const rendite = o.kaufpreis ? ((mieteJahr / o.kaufpreis) * 100).toFixed(2).replace(".", ",") + " %" : "–";
-  const auslauf = o.wert ? ((info.restschuld / o.wert) * 100).toFixed(1).replace(".", ",") + " %" : "–";
+  const ausl = auslaufVon(info.restschuld, o.wert);
+  const auslauf = ausl != null ? ausl.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "\u00a0%" : "–";
 
   const kv = (l: string, v: string) => (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid var(--line)", fontSize: 13 }}>

@@ -108,13 +108,13 @@ describe("Kredite: die Restschuld-Vorbelegung", () => {
     // Ohne diese Regel stünde ein frisches Darlehen mit Restschuld 0 da und
     // würde als „100 % getilgt" dargestellt.
     const { db, mod } = await lade();
-    await fangeRedirect(() => mod.createKredit(fd({ betrag: "300000" })));
+    await fangeRedirect(() => mod.createKredit(fd({ monatsrate: "900", betrag: "300000" })));
     expect(schrieb(db, "kredite")?.restschuld).toBe(300000);
   });
 
   it("eine angegebene Restschuld wird NICHT überschrieben", async () => {
     const { db, mod } = await lade();
-    await fangeRedirect(() => mod.createKredit(fd({ betrag: "300000", restschuld: "250000" })));
+    await fangeRedirect(() => mod.createKredit(fd({ monatsrate: "900", betrag: "300000", restschuld: "250000" })));
     expect(schrieb(db, "kredite")?.restschuld).toBe(250000);
   });
 
@@ -122,13 +122,13 @@ describe("Kredite: die Restschuld-Vorbelegung", () => {
     // Fallstrick: `num(...) ?? num("betrag")` greift bei null, nicht bei 0.
     // Dieser Test hält fest, dass das so gemeint ist.
     const { db, mod } = await lade();
-    await fangeRedirect(() => mod.createKredit(fd({ betrag: "300000", restschuld: "0" })));
+    await fangeRedirect(() => mod.createKredit(fd({ monatsrate: "900", betrag: "300000", restschuld: "0" })));
     expect(schrieb(db, "kredite")?.restschuld).toBe(0);
   });
 
   it("die Darlehensnummer wird verschlüsselt gespeichert, nie im Klartext", async () => {
     const { db, mod } = await lade();
-    await fangeRedirect(() => mod.createKredit(fd({ betrag: "1000", darlnr: "DN-4711-GEHEIM" })));
+    await fangeRedirect(() => mod.createKredit(fd({ monatsrate: "900", betrag: "1000", darlnr: "DN-4711-GEHEIM" })));
     const darlnr = schrieb(db, "kredite")?.darlnr as string;
     expect(darlnr).not.toContain("4711");
     expect(darlnr).not.toBe("DN-4711-GEHEIM");
@@ -136,7 +136,7 @@ describe("Kredite: die Restschuld-Vorbelegung", () => {
 
   it("ohne Darlehensnummer wird null gespeichert, kein Chiffretext von ''", async () => {
     const { db, mod } = await lade();
-    await fangeRedirect(() => mod.createKredit(fd({ betrag: "1000" })));
+    await fangeRedirect(() => mod.createKredit(fd({ monatsrate: "900", betrag: "1000" })));
     expect(schrieb(db, "kredite")?.darlnr).toBeNull();
   });
 });

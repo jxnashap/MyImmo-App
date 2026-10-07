@@ -20,13 +20,14 @@ describe("Kredite: die Zeile verschluckt nichts", () => {
   const q = lies("components/KrediteListe.tsx");
   it("der Dialog zeigt alle Felder der früheren Karte", () => {
     for (const f of ["Urspr. Darlehen", "Restschuld", "Rate / Monat", "Laufzeit", "Zinsen / Mo.", "Tilgung / Mo.",
-      "Tilgungssatz", "Zinsbindung", "Grundschuld", "Beleihungsauslauf", "Sondertilgung", "Getilgt"]) {
+      "Tilgungssatz", "Zinsbindung", "Grundschuld", "Beleihungsauslauf laut Bank", "Sondertilgung", "Getilgt"]) {
       expect(q, f).toContain(`feld("${f}"`);
     }
     expect(q).toContain("<Details k={offen} />");
   });
   it("die Zeile nennt Restschuld, Rate und fehlendes Auszahlungsdatum", () => {
-    expect(q).toMatch(/<b>\{euro\(k\.restschuld\)\}<\/b><small>\{euro\(k\.monatsrate\)\} \/ Mo\.<\/small>/);
+    // Seit P6 (07.10.2026) über lib/kredit.ts: leere Restschuld = Darlehenssumme, getilgt ohne Rate.
+    expect(q).toMatch(/<b>\{euro\(restschuldVon\(k\)\)\}<\/b><small>\{istGetilgt\(k\) \? "getilgt" : `\$\{euro\(rateVon\(k\)\)\} \/ Mo\.`\}<\/small>/);
     expect(q).toMatch(/\{!k\.auszahlung_datum && <span className="badge badge-amber listen-zeile-extra"/);
   });
 });

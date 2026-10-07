@@ -4,6 +4,7 @@
 // Kaufpreis geschätzt (Gebäudeanteil × Satz) und ist im UI editierbar.
 // Hinweis: Hilfestellung zur Steuererklärung, keine Steuerberatung.
 
+import { restschuldVon } from "@/lib/kredit";
 import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
 import { afaZeitanteil, monatVon } from "@/lib/steuer/afaZeitraum";
 import { afaSatzNachFertigstellung, degressivImJahr } from "@/lib/steuer/afa";
@@ -317,7 +318,7 @@ export function berechneAnlageV(
       sum(propKredite.map((kr) => {
         const zr = kreditMonateImJahr(kr, jahr, p.kaufdatum);
         if (zr.ohneStart) ohneStart = true;
-        return (((Number(kr.restschuld) || 0) * (Number(kr.zinssatz) || 0)) / 100) * (zr.monate / 12);
+        return ((restschuldVon(kr) * (Number(kr.zinssatz) || 0)) / 100) * (zr.monate / 12);
       })),
     );
     if (ohneStart && geschaetzteZinsen > 0 && g.werbungskosten.schuldzinsen === 0) {

@@ -9,9 +9,14 @@
 // damit verschiedene Cashflows für dasselbe Jahr.
 
 import { laufendeKosten } from "@/lib/cashflowKennzahl";
+import { kreditMonateImJahr } from "@/lib/kreditZeit";
+import { restschuldVon } from "@/lib/kredit";
 
 type Buchung = { prop_id: string | null; buchungsdatum: string | null; betrag: number | null; kategorie?: string | null };
-type Darlehen = { prop_id: string | null; restschuld: number | null; zinssatz: number | null; monatsrate: number | null };
+type Darlehen = {
+  prop_id: string | null; restschuld: number | null; betrag?: number | null; zinssatz: number | null; monatsrate: number | null;
+  auszahlung_datum?: string | null; laufzeit?: number | null;
+};
 
 export type JahresZeile = {
   /** Einnahmen des Jahres. */
@@ -24,17 +29,24 @@ export type JahresZeile = {
   tilgung: number;
   /** Einnahmen − laufende Kosten − Kreditraten. */
   cashflow: number;
+  /** Mindestens ein Darlehen ohne Auszahlungs- und Kaufdatum — ganzjährig angenommen. */
+  kreditOhneStart: boolean;
 };
 
 /**
  * @param monate Monate, für die Raten anfallen (vergangenes Jahr 12,
  *               laufendes Jahr die verstrichenen).
+ * @param daten.kaufdatum Ersatzstart für Darlehen ohne Auszahlungsdatum.
+ *
+ * Raten und Zinsschätzung zählen NUR für Monate, in denen das Darlehen lief (Audit 07.10.2026,
+ * B3): vorher standen für 2021 Raten von vier Darlehen, obwohl das Objekt erst 2023 gekauft wurde.
+ * Dieselbe Regel wie die Anlage V — `kreditMonateImJahr()` in lib/kreditZeit.ts.
  */
 export function jahresZeile(
   propId: string,
   jahr: number,
   monate: number,
-  daten: { einnahmen: Buchung[]; kosten: Buchung[]; kredite: Darlehen[] },
+  daten: { einnahmen: Buchung[]; kosten: Buchung[]; kredite: Darlehen[]; kaufdatum?: string | null },
 ): JahresZeile {
   const imJahr = (d: string | null) => !!d && d.startsWith(String(jahr));
   // Kaution zählt nicht (06.10.2026): Sie gehört dem Mieter und geht zurück — die Anlage V
@@ -47,15 +59,20 @@ export function jahresZeile(
   const k = laufend.reduce((s, x) => s + (x.betrag ?? 0), 0);
   const gebuchteZinsen = propKosten.reduce((s, x) => s + (x.betrag ?? 0), 0) - k;
 
-  const propKredite = daten.kredite.filter((x) => x.prop_id === propId);
+  const propKredite = daten.kredite
+    .filter((x) => x.prop_id === propId)
+    .map((kr) => ({ kr, zeit: kreditMonateImJahr(kr, jahr, daten.kaufdatum, monate) }));
   // Die Näherung „aktuelle Restschuld × Zinssatz" beschreibt HEUTE, nicht das
-  // Berichtsjahr — nur ein Rückfall, wenn nichts gebucht ist.
+  // Berichtsjahr — nur ein Rückfall, wenn nichts gebucht ist. Getilgte Darlehen
+  // (Restschuld 0) bekommen bewusst KEINE Sonderregel: Wann sie abbezahlt wurden,
+  // weiß MyImmo nicht — für frühere Jahre liefen ihre Raten noch.
   const geschaetzterZins = propKredite.reduce(
-    (s, kr) => s + (((kr.restschuld ?? 0) * (kr.zinssatz ?? 0)) / 100 / 12) * monate,
+    (s, { kr, zeit }) => s + ((restschuldVon(kr) * (kr.zinssatz ?? 0)) / 100 / 12) * zeit.monate,
     0,
   );
   const zins = gebuchteZinsen > 0 ? gebuchteZinsen : geschaetzterZins;
   const zinsGeschaetzt = gebuchteZinsen <= 0 && geschaetzterZins > 0;
-  const rate = propKredite.reduce((s, kr) => s + (kr.monatsrate ?? 0) * monate, 0);
-  return { e, k, zins, zinsGeschaetzt, tilgung: Math.max(0, rate - zins), cashflow: e - k - rate };
+  const rate = propKredite.reduce((s, { kr, zeit }) => s + (kr.monatsrate ?? 0) * zeit.monate, 0);
+  const kreditOhneStart = propKredite.some(({ zeit }) => zeit.ohneStart);
+  return { e, k, zins, zinsGeschaetzt, tilgung: Math.max(0, rate - zins), cashflow: e - k - rate, kreditOhneStart };
 }

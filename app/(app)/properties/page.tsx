@@ -1,3 +1,4 @@
+import { restschuldVon } from "@/lib/kredit";
 import { objektCheck, type CheckMieter } from "@/lib/objektCheck";
 import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import Link from "next/link";
@@ -34,7 +35,7 @@ export default async function PropertiesPage(
   const supabase = await createClient();
   const [{ data }, { data: kred }, { data: miet }, { data: mz }] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
-    supabase.from("kredite").select("id,prop_id,restschuld,auszahlung_datum"),
+    supabase.from("kredite").select("id,prop_id,restschuld,betrag,auszahlung_datum"),
     supabase.from("mieter").select("id,prop_id,kaltmiete,stellplatz_miete,mietbeginn,mietende"),
     supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
   ]);
@@ -45,12 +46,12 @@ export default async function PropertiesPage(
   // Paket B: mit den Beträgen, die diesen Monat gelten (Miet-Zeiträume vor dem Mieterfeld).
   const mietJetzt = mitGeltendenBetraegen((miet ?? []) as { id: string; prop_id: string | null; kaltmiete: number | null; stellplatz_miete: number | null; mietbeginn: string | null; mietende: string | null }[], (mz ?? []) as never[], heute.slice(0, 7));
   const alle = ((data ?? []) as Property[]).map((p) => ({ ...p, miete: sollKaltmiete(p, mietJetzt, heute).betrag }));
-  const kredite = (kred ?? []) as Pick<Kredit, "id" | "prop_id" | "restschuld" | "auszahlung_datum">[];
+  const kredite = (kred ?? []) as Pick<Kredit, "id" | "prop_id" | "restschuld" | "betrag" | "auszahlung_datum">[];
 
   const restMap = new Map<string, number>();
   for (const k of kredite) {
     if (!k.prop_id) continue;
-    restMap.set(k.prop_id, (restMap.get(k.prop_id) ?? 0) + (k.restschuld ?? 0));
+    restMap.set(k.prop_id, (restMap.get(k.prop_id) ?? 0) + restschuldVon(k));
   }
 
   // Suchen, filtern, sortieren — alles über die URL-Query (wie in den anderen Listen).

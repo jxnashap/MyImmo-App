@@ -157,6 +157,19 @@ type KreditFristInput = {
   auszahlung_datum?: string | null;
 };
 
+/**
+ * Gilt § 489 Abs. 1 Nr. 2 BGB (Kündigung 10 Jahre nach Vollauszahlung) als eigener Termin? Nur mit
+ * Auszahlungsdatum, und nur wenn keine Zinsbindung bekannt ist oder sie über diesen Zeitpunkt
+ * hinausläuft. Datumsvergleich auf den ISO-Zahlen, ohne Zeitzone.
+ */
+export function sonderkuendigungNachZehnJahren(k: { auszahlung_datum?: string | null; zinsbindung?: string | null }): boolean {
+  const a = /^(\d{4})-(\d{2})-(\d{2})/.exec(k.auszahlung_datum ?? "");
+  if (!a) return false;
+  const zehn = `${Number(a[1]) + 10}-${a[2]}-${a[3]}`;
+  const bindung = (k.zinsbindung ?? "").slice(0, 10);
+  return !bindung || bindung >= zehn;
+}
+
 export function kreditFristen(k: KreditFristInput): Frist[] {
   const fristen: Frist[] = [];
   const heute = new Date();
@@ -168,7 +181,12 @@ export function kreditFristen(k: KreditFristInput): Frist[] {
     // offene Anliegen. Dringend ist das Ende erst im letzten Jahr, die
     // Vorbereitung erst, wenn ihr Zeitpunkt in zwei Monaten erreicht ist.
     const ende = new Date(k.zinsbindung);
-    fristen.push({ label: "Zinsbindung endet", datum: k.zinsbindung, typ: tageBis(ende) <= 365 ? "warn" : "info", kategorie: "Finanzierung" });
+    fristen.push({
+      label: "Zinsbindung endet", datum: k.zinsbindung, typ: tageBis(ende) <= 365 ? "warn" : "info", kategorie: "Finanzierung",
+      // § 489 Abs. 1 Nr. 1 BGB: Endet die Bindung vor der Rückzahlung, ist das Darlehen mit einem
+      // Monat Frist frühestens zum Ende der Bindung kündbar.
+      ...(sonderkuendigungNachZehnJahren(k) ? {} : { rechtsgrundlage: "§ 489 Abs. 1 Nr. 1 BGB: kündbar mit 1 Monat Frist zum Ende der Zinsbindung" }),
+    });
     // Auch wenn der Vorlauf-Zeitpunkt schon verstrichen ist, anzeigen —
     // dann ist die Vorbereitung überfällig (Liste markiert das rot).
     const vorlauf = addMonate(new Date(k.zinsbindung), -12);
@@ -182,8 +200,12 @@ export function kreditFristen(k: KreditFristInput): Frist[] {
       });
     }
   }
-  // Sonderkündigungsrecht: 10 Jahre nach Vollauszahlung, Frist 6 Monate.
-  if (k.auszahlung_datum) {
+  // Sonderkündigungsrecht: 10 Jahre nach Vollauszahlung, Frist 6 Monate — nur, wenn die Zinsbindung
+  // LÄNGER läuft (Audit 07.10.2026, B20). Endet sie vorher, greift Nr. 1 (s. o.); ein Termin am Tag
+  // nach dem Bindungsende war falsch (drei von vier Demo-Darlehen: Bindung bis 31.3.2031,
+  // „Sonderkündigungsrecht 1.4.2031“). Nach einer Anschlussvereinbarung beginnen die zehn Jahre
+  // neu — das weiß MyImmo nur, wenn das Auszahlungsdatum entsprechend gepflegt ist.
+  if (k.auszahlung_datum && sonderkuendigungNachZehnJahren(k)) {
     const skr = addMonate(new Date(k.auszahlung_datum), 120);
     fristen.push({
       label: "Sonderkündigungsrecht (10 J. nach Auszahlung)",

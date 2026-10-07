@@ -222,7 +222,18 @@ export async function deleteVerbrauch(id: string) {
 }
 
 // ===== KREDITE =====
+// Rate ist Pflicht (Verknüpfungs-Audit A4) — auch im Bearbeiten-Dialog auf /kredite, der nur ein
+// Browser-`required` hatte (Gesamtprüfung 07.10.2026, B19). 0 € nur bei abbezahltem Darlehen
+// (Restschuld 0, B17). Wirft wie die übrigen Kredit-Actions; das Formular verhindert es vorher.
+function pruefeKreditRate(fd: FormData) {
+  const rate = num(fd, "monatsrate");
+  const rest = num(fd, "restschuld");
+  if (rate == null) throw new Error("Bitte die monatliche Rate laut Darlehensvertrag eintragen.");
+  if (rate < 0 || (rate === 0 && rest !== 0)) throw new Error("Eine Rate von 0 € gibt es nur bei einem abbezahlten Darlehen (Restschuld 0).");
+}
+
 export async function createKredit(fd: FormData) {
+  pruefeKreditRate(fd);
   const { supabase, userId } = await uid();
   const { error } = await supabase.from("kredite").insert({
     user_id: userId,
@@ -248,6 +259,7 @@ export async function createKredit(fd: FormData) {
   done(fd, "/kredite");
 }
 export async function updateKredit(id: string, fd: FormData) {
+  pruefeKreditRate(fd);
   const { supabase } = await uid();
   const { error } = await supabase.from("kredite").update({
     bezeichnung: str(fd, "bezeichnung"),
@@ -255,7 +267,9 @@ export async function updateKredit(id: string, fd: FormData) {
     bank: str(fd, "bank"),
     darlnr: encryptDarlnr(str(fd, "darlnr")),
     betrag: num(fd, "betrag"),
-    restschuld: num(fd, "restschuld"),
+    // Derselbe Rückfall wie beim Anlegen (Audit 07.10.2026, B18): Vorher wurde eine geleerte
+    // Restschuld als null gespeichert → „100 % getilgt“ auf /kredite, Auslauf 0 %.
+    restschuld: num(fd, "restschuld") ?? num(fd, "betrag"),
     grundschuld: num(fd, "grundschuld"),
     beleihung: num(fd, "beleihung"),
     zinssatz: num(fd, "zinssatz"),
