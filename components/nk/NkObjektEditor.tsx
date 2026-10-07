@@ -54,7 +54,10 @@ export default function NkObjektEditor(props: {
   jahr: number;
   jahresTage: number;
   mieter: EditorMieter[];
-  grundlagen: { flaecheGesamt: number | null; einheiten: number | null; meaGesamt: number | null; mieter: Record<string, { personen?: number | null; mea?: number | null }> };
+  grundlagen: {
+    flaecheGesamt: number | null; einheiten: number | null; meaGesamt: number | null; mieter: Record<string, { personen?: number | null; mea?: number | null }>;
+    co2Kg: number | null; co2Kosten: number | null; co2Gewerbe: boolean;
+  };
   kosten: EditorKosten[];
   vorschlaege: { buchungen: number; vorjahr: number };
 }) {
@@ -66,6 +69,9 @@ export default function NkObjektEditor(props: {
   const [fl, setFl] = useState(deZahl(g.flaecheGesamt));
   const [ein, setEin] = useState(deZahl(g.einheiten));
   const [mea, setMea] = useState(deZahl(g.meaGesamt));
+  const [co2Kg, setCo2Kg] = useState(deZahl(g.co2Kg));
+  const [co2Kosten, setCo2Kosten] = useState(deZahl(g.co2Kosten));
+  const [co2Gewerbe, setCo2Gewerbe] = useState(g.co2Gewerbe);
   const [jeMieter, setJeMieter] = useState<Record<string, { personen: string; mea: string }>>(
     Object.fromEntries(mieter.map((m) => [m.id, { personen: deZahl(g.mieter[m.id]?.personen), mea: deZahl(g.mieter[m.id]?.mea) }])),
   );
@@ -85,7 +91,7 @@ export default function NkObjektEditor(props: {
   function grundlagenSpeichern() {
     starte(async () => {
       try {
-        ergebnis(await speichereNkGrundlagen(propId, jahr, { flaecheGesamt: fl, einheiten: ein, meaGesamt: mea, mieter: jeMieter }), "Grundlagen gespeichert.");
+        ergebnis(await speichereNkGrundlagen(propId, jahr, { flaecheGesamt: fl, einheiten: ein, meaGesamt: mea, mieter: jeMieter, co2Kg, co2Kosten, co2Gewerbe }), "Grundlagen gespeichert.");
       } catch { toast("Speichern fehlgeschlagen.", "error"); }
     });
   }
@@ -242,6 +248,19 @@ export default function NkObjektEditor(props: {
             </label>
             <label>Miteigentumsanteile gesamt
               <input className="input" inputMode="decimal" value={mea} placeholder="nur bei Schlüssel MEA" onChange={(e) => setMea(e.target.value)} />
+            </label>
+          </div>
+          {/* CO2KostAufG: einmal für das ganze Gebäude, Werte aus der Brennstoff-/Wärmerechnung. */}
+          <div className="nk-formular-raster" style={{ marginTop: 10 }}>
+            <label>CO₂ des Gebäudes (kg, laut Brennstoffrechnung)
+              <input className="input" inputMode="decimal" value={co2Kg} placeholder="leer = keine CO₂-Aufteilung" onChange={(e) => setCo2Kg(e.target.value)} />
+            </label>
+            <label>CO₂-Kosten (€, laut Rechnung)
+              <input className="input" inputMode="decimal" value={co2Kosten} placeholder="leer = Schätzung über Referenzpreis" onChange={(e) => setCo2Kosten(e.target.value)} />
+            </label>
+            <label className="nk-haken">
+              <input type="checkbox" checked={co2Gewerbe} onChange={(e) => setCo2Gewerbe(e.target.checked)} />
+              Nichtwohngebäude (50/50)
             </label>
           </div>
           {mieter.length > 0 && (

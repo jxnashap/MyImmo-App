@@ -5,8 +5,9 @@ import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { eur2 } from "@/lib/format";
 import { berechneNk, type NkCo2Input } from "@/lib/nk";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
-import { ladeNkObjekt, basisMitStammdaten } from "@/lib/nkPositionen";
-import { verteileObjektKosten, positionenFuerMieter } from "@/lib/nkObjekt";
+import { ladeNkObjekt, basisMitStammdaten, nkCo2Argumente } from "@/lib/nkPositionen";
+import { verteileObjektKosten, positionenFuerMieter, co2FuerMieter } from "@/lib/nkObjekt";
+import { zeigeVerteiler } from "@/lib/umlage";
 import { nkAusBuchungen } from "@/lib/nkAusBuchungen";
 import NkObjektEditor from "@/components/nk/NkObjektEditor";
 
@@ -29,7 +30,7 @@ export default async function NebenkostenObjektPage(props: {
   const user = await aktuellerNutzer();
 
   const { data: prop } = await supabase
-    .from("properties").select("id,bezeichnung,flaeche,einheiten_anzahl").eq("id", id).eq("user_id", user?.id ?? "").maybeSingle();
+    .from("properties").select("id,bezeichnung,flaeche,einheiten_anzahl,typ").eq("id", id).eq("user_id", user?.id ?? "").maybeSingle();
   if (!prop) notFound();
 
   const daten = await ladeNkObjekt(supabase, id, jahr);
@@ -87,16 +88,19 @@ export default async function NebenkostenObjektPage(props: {
   const ausBuchungen = nkAusBuchungen(buchungen ?? [], id, jahr).vorschlaege.filter((v) => !vorhanden.has(v.bezeichnung.toLowerCase()));
 
   // Ergebnis je Mieter — dieselbe Rechnung wie die Abrechnung (berechneNk), inkl. CO₂ und Vorauszahlung.
+  const mfh = zeigeVerteiler({ typ: prop.typ as string | null, einheiten_anzahl: prop.einheiten_anzahl as number | null, mieterAnzahl: daten.mieter.length });
   const co2Je = new Map(((co2Rows ?? []) as (NkCo2Input & { mieter_id: string })[]).map((r) => [r.mieter_id, r]));
   const ergebnisse = daten.kosten.length === 0 ? [] : await Promise.all(
     e.mieter.map(async (m) => {
       const vz = ((vzRows ?? []) as { id: string; nk_vorauszahlung: number | null }[]).find((r) => r.id === m.id)?.nk_vorauszahlung ?? null;
       const t = { vorname: m.name, nachname: null, mieter_adresse: null, einheit: null, flaeche: m.flaeche, mietbeginn: m.mietbeginn, mietende: m.mietende, nk_vorauszahlung: vz };
-      const a = berechneNk(jahr, t, null, positionenFuerMieter(e, m.id), co2Je.get(m.id) ?? null, await ladeVorauszahlung(m.id, jahr));
+      // Dieselbe CO₂-Regel wie NK-Seite und PDF (nkCo2Argumente).
+      const c = nkCo2Argumente({ co2AmObjekt: mfh, co2: co2FuerMieter(e, m.id), hinweise: mfh ? e.warnungen : [] }, co2Je.get(m.id) ?? null);
+      const a = berechneNk(jahr, t, null, positionenFuerMieter(e, m.id), c.co2Input, await ladeVorauszahlung(m.id, jahr), c.opts);
       return { m, a };
     }),
   );
-  const warnungen = [...new Set(e.positionen.map((p) => p.warnung).filter((w): w is string => !!w))];
+  const warnungen = [...new Set([...e.positionen.map((p) => p.warnung), ...(mfh ? e.warnungen : [])].filter((w): w is string => !!w))];
   const umlage = e.positionen.filter((p) => p.kosten.umlagefaehig);
   const fehltGrund = !basis.flaeche_gesamt && daten.kosten.some((k) => k.schluessel === "flaeche");
 
@@ -118,7 +122,10 @@ export default async function NebenkostenObjektPage(props: {
         jahr={jahr}
         jahresTage={e.jahresTage}
         mieter={e.mieter.map((m) => ({ id: m.id, name: m.name, flaeche: m.flaeche, tage: m.tage }))}
-        grundlagen={{ flaecheGesamt: basis.flaeche_gesamt, einheiten: basis.einheiten, meaGesamt: basis.mea_gesamt, mieter: basis.mieter ?? {} }}
+        grundlagen={{
+          flaecheGesamt: basis.flaeche_gesamt, einheiten: basis.einheiten, meaGesamt: basis.mea_gesamt, mieter: basis.mieter ?? {},
+          co2Kg: basis.co2_kg ?? null, co2Kosten: basis.co2_kosten ?? null, co2Gewerbe: !!basis.co2_gewerbe,
+        }}
         kosten={daten.kosten.map((k) => ({
           id: k.id, bezeichnung: k.bezeichnung, betrag: k.betrag, schluessel: k.schluessel, umlagefaehig: k.umlagefaehig,
           lohnanteil: k.lohnanteil ?? null, art_35a: k.art_35a ?? null, nenner: k.nenner ?? null, werte: k.werte ?? {}, quelle: k.quelle,
@@ -161,6 +168,20 @@ export default async function NebenkostenObjektPage(props: {
                   ))}
                 </tbody>
                 <tfoot>
+                  {mfh && e.co2 && (
+                    <tr>
+                      <td>
+                        CO₂-Gutschrift
+                        <span className="nk-klein">
+                          Vermieteranteil {e.co2.gebaeude.vermieterProzent} % · {e.co2.grundlage === "heizkosten" ? "nach Heizkostenanteil" : "nach Wohnfläche"}
+                          {e.co2.leerstand > 0 ? ` · Leerstand ${eur2(e.co2.leerstand)}` : ""}
+                        </span>
+                      </td>
+                      <td>−{eur2(e.co2.gebaeude.vermieterAnteil)}</td>
+                      {e.mieter.map((m) => <td key={m.id}>−{eur2(e.co2!.gutschrift[m.id] ?? 0)}</td>)}
+                      <td>—</td>
+                    </tr>
+                  )}
                   <tr>
                     <td>Summe</td>
                     <td>{eur2(e.summeGesamt)}</td>

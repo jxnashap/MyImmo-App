@@ -241,7 +241,7 @@ describe("Server-Actions", () => {
 describe("Verdrahtung", () => {
   it("Altbestand und Objekt-Kosten mischen sich nie: Objekt-Kosten schlagen die Mieter-Positionen", () => {
     const s = lies("lib/nkPositionen.ts");
-    expect(s).toMatch(/if \(!daten\.bereit \|\| daten\.kosten\.length === 0\) return altbestand\(daten\.bereit\);/);
+    expect(s).toMatch(/if \(daten\.kosten\.length === 0\) \{\s*return \{ \.\.\.altbestand\(true\)/);
     expect(s).toMatch(/positionen: positionenFuerMieter\(e, mieter\.id\),\s*quelle: "objekt"/);
   });
   it("der alte Verteiler ist weg — seine Adresse führt auf die Nebenkosten am Objekt", () => {

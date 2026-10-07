@@ -1941,8 +1941,21 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   Mieter, nie gemischt.** ⚠️ **BETREIBER: Migration `20261007090000_nk_objekt.sql` im SQL-Editor
   ausführen** (Kaskaden → Bestätigungsdialog); bis dahin „kommt in Kürze“, alles
   rechnet wie vorher. ✅ **SQL vom Betreiber ausgeführt 07.10.2026; alter Verteiler entfernt** (`/umlage`
-  leitet um); Demo-Kosten 2025 am Zweifamilienhaus (`20261007113957`, nicht im Reset, fest 2025).
-  `tests/nkObjekt.test.ts`, 14 Mutationen rot. Details `docs/zukunft/NK-NEU.md`.
+  leitet um). `tests/nkObjekt.test.ts`, 14 Mutationen rot.
+  🔧 **Paket P2 der Gesamtprüfung (07.10.2026, `tests/paketP2.test.ts`, 11 Mutationen rot):**
+  (A4) **CO₂ im Mehrfamilienhaus einmal am Objekt** (`nk_objekt_jahr.co2_kg/co2_kosten/co2_gewerbe`,
+  Migration `20261007185134`): Stufe aus Gebäude-kg je m² GESAMTfläche, Vermieteranteil einmal, verteilt
+  nach Heizkostenanteil (§ 7 CO2KostAufG), Leerstand an niemanden. Vorher rechnete jeder Mieter mit
+  Gebäudewerten → 418 € Gutschrift bei 220 € Kosten, Buchung je Mieter mehrfach. **Regel: CO₂-Argumente
+  für `berechneNk` nur über `nkCo2Argumente()`** — im MFH zählt der Mieter-Block nicht, die Buchung je
+  Mieter ist gesperrt. (A5) Personenschlüssel: Mieter ohne Personenzahl = 1 Person beim Vermieter.
+  (A6) HKVO-Grundkosten × Tage/Jahrestage (§ 9b). (C22) CO₂-Ausstoß auf eine Nachkommastelle.
+  (C25) Verbrauch ohne Hauptzähler warnt. (B6) „m × Rate“ nur, wenn es den Betrag ergibt
+  (`vorauszahlungZusatz()`). (B5) ⚠️ **KORREKTUR: Die Demo-NK am Objekt waren NICHT reset-fest** — die
+  Kaskade von `properties` löschte sie bei jedem Demo-Start. Jetzt in `demo_seed` und in `tabellen` der
+  Reset-Funktion (`20261007193000`, **im SQL-Editor**, sonst bleibt die Demo-Kostenliste leer); das Jahr
+  wandert mit dem Reset. **Regel: Jede Tabelle mit Kaskade auf `properties`/`mieter` und Demo-Daten gehört
+  in den Reset — sonst ist sie nach dem nächsten Demo-Start leer.** Details `docs/zukunft/NK-NEU.md`.
 - 🔂 **Dritte Review-Runde (30.09.2026), `tests/reviewRunde3.test.ts`, acht Mutationen:**
   (1) **Kacheln ließen sich nicht nachrechnen:** „Kaltmiete 5.930" − „Kosten 5.412" = 518,
   daneben „Cashflow +1.548" (Warmmiete). Die Einnahmen-Kachel heißt jetzt **„Warmmiete / Mo."**,

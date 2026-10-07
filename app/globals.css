@@ -529,8 +529,8 @@ button.listen-zeile { width: calc(100% + 20px); background: none; border: 0; bor
 /* Nebenkosten am Objekt (Stufe 1, 07.10.2026): Formular, Mieter-Grundlagen, Verteilungstabelle. */
 .nk-formular { border: 1px solid var(--line2); border-radius: 14px; padding: 14px; margin: 8px 0; background: var(--bg3); }
 .nk-formular-raster { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 10px; align-items: end; }
-.nk-formular label, .nk-mieter-zeile label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
-.nk-formular label.nk-haken { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); padding-bottom: 8px; }
+.nk-formular label, .nk-formular-raster label, .nk-mieter-zeile label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+.nk-formular label.nk-haken, .nk-formular-raster label.nk-haken { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); padding-bottom: 8px; }
 .nk-werte { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 8px; margin-top: 10px; }
 .nk-werte-titel { grid-column: 1 / -1; font-size: 12px; font-weight: 600; }
 .nk-mieter-liste { margin-top: 14px; border-top: 1px solid var(--line); }

@@ -102,11 +102,23 @@ alten Positionen als aufklappbaren Altbestand. ✅ **Migration live (07.10.2026)
 Die RPC `umlage_positionen_ersetzen` liegt noch in der Datenbank, ungenutzt — beim nächsten SQL-Editor-Lauf
 mit entfernen.
 
-**Demo (07.10.2026, Migration `20261007113957`):** „Zweifamilienhaus Dresden“ hat Kosten 2025 mit jedem
-Schlüssel (nicht im Reset, feste IDs). **Grenze:** fest 2025 — ab 2027 zeigt die Seite 2026 leer.
+**Demo:** „Zweifamilienhaus Dresden“ hat Kosten mit jedem Schlüssel und CO₂. ⚠️ Die erste Fassung
+(`20261007113957`, „nicht im Reset“) war falsch — die Kaskade löschte sie beim nächsten Demo-Start. Seit
+`20261007193000` (SQL-Editor) stehen beide Tabellen im Demo-Reset; das Jahr wandert mit.
 Live geprüft: Seite bei 360/390 px, Abrechnung Krüger 1.494,31 € / Guthaben 305,69 € (von Hand
 nachgerechnet), Einzel-PDF 2 Seiten (Gruß mit § 35a-Block auf Seite 2), Sammel-PDF 4 Seiten.
 
 **Nicht in Stufe 1:** CO₂-Aufteilung am Objekt
 (bleibt je Mieter), Zähler aus dem Portal (Stufe 2), ETW (Stufe 3), Einzelobjekte (bleiben beim Mieter).
 `tests/nkObjekt.test.ts`, 14 Mutationen rot.
+
+## Gesamtprüfung 07.10.2026 — Paket P2 (behoben)
+
+- **CO₂ im MFH am Objekt** (`nk_objekt_jahr.co2_*`, `co2AmObjekt()` in `lib/nkObjekt.ts`): Stufe aus dem
+  Gebäude je m² Gesamtfläche (§ 5 Abs. 1 CO2KostAufG, auf eine Nachkommastelle), Vermieteranteil einmal,
+  verteilt nach Heizkostenanteil (§ 7 Abs. 1); ohne Heizkosten am Objekt nach Wohnfläche × Tagen mit Hinweis.
+  `nkCo2Argumente()` (lib/nkPositionen.ts) ist die EINE Regel für Seite, PDF, Beleihungs-Mappe, Objektseite.
+- Personenschlüssel: Mieter ohne Personenzahl zählen mit 1 Person beim Vermieter (vorher trug der andere
+  Mieter ihren Anteil).
+- HKVO-Altbestand: Grundkosten zeitanteilig (§ 9b HeizkostenV).
+- Verbrauch ohne Hauptzähler: Warnung.

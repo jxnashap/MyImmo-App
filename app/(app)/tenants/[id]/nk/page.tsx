@@ -3,8 +3,8 @@ import { vorjahrUebernahme, vorauszahlungsVorschlag, gleicheBetraegeWieVorjahr, 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { berechneNk, deDatum, type NkCo2Input } from "@/lib/nk";
-import { ladeNkPositionen } from "@/lib/nkPositionen";
+import { berechneNk, deDatum, co2Gutschrift, co2GutschriftSatz, vorauszahlungZusatz, type NkCo2Input } from "@/lib/nk";
+import { ladeNkPositionen, nkCo2Argumente } from "@/lib/nkPositionen";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
 import { eur2, adressZeilen } from "@/lib/format";
 import { vermieterAus } from "@/lib/pdf/nkPdf";
@@ -109,13 +109,16 @@ export default async function NkPage(
   const objektNkHref = tenant.prop_id ? `/properties/${tenant.prop_id}/nebenkosten?jahr=${jahr}` : null;
   const zaehlerImJahr = zaehlerSpanne((zaehlerRows ?? []) as ZaehlerMeldung[], jahr);
 
+  // CO₂: Einzelobjekt aus dem Mieter-Block, Mehrfamilienhaus nur vom Objekt (Audit 07.10.2026, A4).
+  const co2Arg = nkCo2Argumente(nkPos, (co2Row ?? null) as NkCo2Input | null);
   const a = berechneNk(
     jahr,
     tenant,
     property ?? null,
     nkPos.positionen,
-    (co2Row ?? null) as NkCo2Input | null,
+    co2Arg.co2Input,
     await ladeVorauszahlung(params.id, jahr),
+    co2Arg.opts,
   );
   const vermieter = vermieterAus(profil, ibanRow ? decryptIbanRow(ibanRow) : null);
 
@@ -298,12 +301,21 @@ export default async function NkPage(
         />
       </div>}
 
-      <NkCo2Panel
-        mieterId={params.id}
-        jahr={jahr}
-        gespeichert={(co2Row ?? null) as { co2_kg: number | null; co2_kosten: number | null; flaeche: number | null; gewerbe: boolean | null } | null}
-        defaultFlaeche={tenant.flaeche ?? (property as { flaeche?: number | null } | null)?.flaeche ?? null}
-      />
+      {/* Audit 07.10.2026, A4: Im Mehrfamilienhaus steht CO₂ einmal am Objekt — ein Block je Mieter
+          mit Gebäudewerten ergab eine mehrfache Gutschrift (und mehrfache Kostenbuchung). */}
+      {nkPos.co2AmObjekt ? (
+        <div className="no-print" style={{ maxWidth: "210mm", margin: "0 auto 14px", fontSize: 13, color: "var(--muted)" }}>
+          CO₂-Kosten nach CO2KostAufG trägst du für dieses Haus einmal am Objekt ein
+          {objektNkHref ? <> (<Link href={objektNkHref} style={{ color: "var(--gold)" }}>Nebenkosten {jahr} → Grundlagen</Link>)</> : null}.
+        </div>
+      ) : (
+        <NkCo2Panel
+          mieterId={params.id}
+          jahr={jahr}
+          gespeichert={(co2Row ?? null) as { co2_kg: number | null; co2_kosten: number | null; flaeche: number | null; gewerbe: boolean | null } | null}
+          defaultFlaeche={tenant.flaeche ?? (property as { flaeche?: number | null } | null)?.flaeche ?? null}
+        />
+      )}
 
       <BriefBlatt
         absenderName={vermieter.name}
@@ -383,8 +395,7 @@ export default async function NkPage(
               → Mieter {a.co2.mieterProzent} %, Vermieter {a.co2.vermieterProzent} %. CO₂-Kosten
               gesamt: {eur2(a.co2.kostenGesamt)}
               {a.co2.geschaetzt ? " (geschätzt über BEHG-Referenzpreis)" : ""} — davon Mieteranteil{" "}
-              {eur2(a.co2.mieterAnteil)} (in den Heizkosten enthalten), Vermieteranteil{" "}
-              {eur2(a.co2.vermieterAnteil)} (wird Ihnen nachfolgend gutgeschrieben). Einstufung auf
+              {eur2(a.co2.mieterAnteil)} (in den Heizkosten enthalten), {co2GutschriftSatz(a.co2, eur2)}. Einstufung auf
               Basis der Angaben der Brennstoff-/Wärmelieferrechnung, ohne Gewähr.
             </p>
           </div>
@@ -400,7 +411,7 @@ export default async function NkPage(
               <span className="brief-muted">
                 CO₂-Gutschrift Vermieteranteil ({a.co2.vermieterProzent} %)
               </span>
-              <span className="brief-gruen">− {eur2(a.co2.vermieterAnteil)}</span>
+              <span className="brief-gruen">− {eur2(co2Gutschrift(a.co2))}</span>
             </div>
           )}
           {a.co2 && (
@@ -411,11 +422,7 @@ export default async function NkPage(
           )}
           <div className="zeile">
             <span className="brief-muted">
-              {a.vorauszahlung.quelle === "gebucht"
-                ? "Geleistete Vorauszahlungen (gebuchte Zahlungen)"
-                : a.vorauszahlung.quelle === "historie"
-                  ? "Geleistete Vorauszahlungen (laut Miethistorie)"
-                  : `Vorauszahlung (${a.monate} × ${eur2(a.nkVorauszahlungMonat)})`}
+              {a.vorauszahlung.quelle === "stammdaten" ? "Vorauszahlung" : "Geleistete Vorauszahlungen"} ({vorauszahlungZusatz(a, eur2)})
             </span>
             <span>{eur2(a.vorauszahlungGeleistet)}</span>
           </div>

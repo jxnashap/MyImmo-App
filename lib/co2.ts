@@ -47,10 +47,14 @@ export const CO2_PREIS_BIS = Math.max(...Object.keys(CO2_PREIS).map(Number));
 
 const rund2 = (n: number) => Math.round(n * 100) / 100;
 
-/** Spezifischer Ausstoß in kg CO₂ je m² und Jahr (0 bei flaeche <= 0). */
+/**
+ * Spezifischer Ausstoß in kg CO₂ je m² und Jahr (0 bei flaeche <= 0), auf EINE Nachkommastelle
+ * gerundet — § 5 Abs. 1 Satz 3 CO2KostAufG (Audit 07.10.2026, C22): 11,96 → 12,0 fällt bereits in
+ * die Stufe 12 bis < 17, ungerundet in die Stufe darunter.
+ */
 export function spezAusstoss(co2Kg: number, flaeche: number): number {
   if (!(flaeche > 0) || !Number.isFinite(co2Kg)) return 0;
-  return co2Kg / flaeche;
+  return Math.round((co2Kg / flaeche) * 10) / 10;
 }
 
 /** Passende Stufe zum spezifischen Ausstoß (>= 52 → letzte Stufe). */

@@ -27,6 +27,12 @@ Alle Belegpfade unten beziehen sich auf `.scan/audit/`.
 
 ---
 
+## Umsetzungsstand
+
+| Paket | Stand |
+|---|---|
+| P2 NK richtig (A4, A5, A6, B5, B6, C22, C25) | ✅ gebaut 07.10.2026, `tests/paketP2.test.ts` (11 Mutationen rot); B5 wirkt erst nach Ausführen von `20261007193000` im SQL-Editor |
+
 ## 1. Zusammenfassung
 
 **Neue Befunde nach der Gegenprüfung: 8 × A · 60 × B · 61 × C.** Doppelt gemeldete Befunde aus mehreren
