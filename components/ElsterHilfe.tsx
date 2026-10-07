@@ -22,7 +22,7 @@ function ObjektBlock({ o, jahr }: { o: AnlageVObjekt; jahr: number }) {
     const body = zeilen
       .map((z) =>
         z.uebertragbar === false
-          ? `Zeile ${z.zeile}\t${z.bezeichnung}: NICHT ÜBERTRAGEN (${elsterBetrag(z.betrag)} € geschätzt) — ${z.warnung ?? ""}`
+          ? `Zeile ${z.zeile}\t${z.bezeichnung}: NICHT ÜBERTRAGEN (${elsterBetrag(z.betrag)} €) — ${z.warnung ?? ""}`
           : `Zeile ${z.zeile}\t${z.bezeichnung}: ${elsterBetrag(z.betrag)} €`,
       )
       .join("\n");

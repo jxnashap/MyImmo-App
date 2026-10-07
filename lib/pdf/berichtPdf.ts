@@ -6,7 +6,7 @@
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { pdfText } from "@/lib/pdf/zeichen";
-import { ANLAGE_V_POSITIONEN, wertVon, type AnlageVErgebnis, type AnlageVObjekt } from "@/lib/anlageV";
+import { ANLAGE_V_POSITIONEN, wertVon, summenWarnung, type AnlageVErgebnis, type AnlageVObjekt } from "@/lib/anlageV";
 
 const GOLD = rgb(0.722, 0.565, 0.169);
 const INK = rgb(0.13, 0.13, 0.12);
@@ -194,15 +194,21 @@ function objektBlock(c: Ctx, yStart: number, o: AnlageVObjekt): number {
   y -= ROW;
   // Geschätzte Schuldzinsen im Blatt kennzeichnen — der Hinweis auf Seite 1 verweist darauf.
   wkPos.forEach((p, i) =>
-    zeile(p.key === "schuldzinsen" && o.schuldzinsenGeschaetzt ? `${p.label} (geschätzt)` : p.label, wertVon(o, p.key), { indent: true, zebra: i % 2 === 0 }));
+    zeile(
+      p.key === "schuldzinsen" && o.schuldzinsenGeschaetzt ? `${p.label} (geschätzt)`
+        : p.key === "erhaltung" && o.erhaltungAnschaffungsnah ? `${p.label} (15-%-Grenze, prüfen)`
+          : p.label,
+      wertVon(o, p.key), { indent: true, zebra: i % 2 === 0 }));
   c.hline(y + ROW - 6, ML, RIGHT, LINE, 0.6);
-  zeile("Summe Werbungskosten (Zeile 51)", o.werbungskosten.summe, { bold: true });
+  // B4: Summe und Ergebnis tragen dieselbe Kennzeichnung wie in der ELSTER-Hilfe (summenWarnung).
+  const vorlaeufig = summenWarnung(o) ? " (vorläufig, nicht übertragen)" : "";
+  zeile(`Summe Werbungskosten (Zeile 51)${vorlaeufig}`, o.werbungskosten.summe, { bold: true });
   y -= 4;
 
   // Endergebnis mit Doppellinie
   c.hline(y + ROW - 6, ML, RIGHT, INK, 0.9);
   const positiv = o.ueberschuss >= 0;
-  c.text(ML, y, positiv ? "Überschuss (Einkünfte, Zeile 23/24)" : "Verlust (Zeile 23/24)", 9.8, c.bold, positiv ? INK : RED);
+  c.text(ML, y, `${positiv ? "Überschuss (Einkünfte, Zeile 23/24)" : "Verlust (Zeile 23/24)"}${vorlaeufig}`, 9.8, c.bold, positiv ? INK : RED);
   c.right(xBetrag, y, eur(o.ueberschuss), 9.8, c.bold, positiv ? GOLD : RED);
   doppellinie(c, y - 5.5, ML, RIGHT);
   y -= ROW + 8;

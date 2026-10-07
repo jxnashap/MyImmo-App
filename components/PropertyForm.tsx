@@ -213,8 +213,9 @@ export default function PropertyForm({
             </div>
           </div>
           <div className="form-row">
-            <div className="form-group"><label>Startjahr (nur degressiv)</label>
-              <input type="number" name="afa_start_jahr" defaultValue={v("afa_start_jahr")} placeholder="= Baujahr" />
+            {/* Gesamtprüfung 07.10.2026, B2: Das Feld gilt für lineare UND degressive AfA; leer = Jahr des Kaufdatums. */}
+            <div className="form-group"><label>AfA-Startjahr (Jahr der Anschaffung)</label>
+              <input type="number" name="afa_start_jahr" defaultValue={v("afa_start_jahr")} placeholder="leer = Jahr des Kaufdatums" />
             </div>
             <div className="form-group"><label>Manueller AfA-Betrag (€/Jahr, nur „manuell&quot;)</label>
               <input type="number" step="0.01" name="afa_betrag" defaultValue={v("afa_betrag")} placeholder="z. B. 7500" />

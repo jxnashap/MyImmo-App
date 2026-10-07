@@ -14,7 +14,7 @@ export default async function SteuerPage() {
     supabase.from("properties").select("*").order("bezeichnung"),
     supabase.from("einnahmen").select("id,prop_id,buchungsdatum,kategorie,betrag,nk_anteil"),
     supabase.from("kosten").select("id,prop_id,buchungsdatum,kategorie,betrag"),
-    supabase.from("kredite").select("id,prop_id,restschuld,zinssatz"),
+    supabase.from("kredite").select("id,prop_id,restschuld,zinssatz,auszahlung_datum,laufzeit"),
     // Nur für die Plausibilitätsprüfung der Umlagen (lib/anlageV.ts).
     supabase.from("mieter").select("prop_id,nk_vorauszahlung,mietbeginn,mietende"),
   ]);
