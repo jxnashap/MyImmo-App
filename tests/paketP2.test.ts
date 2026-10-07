@@ -129,13 +129,22 @@ describe("B6 — Vorauszahlung: „m × Rate“ nur, wenn es den Betrag ergibt",
   });
 });
 
-describe("B5 — Demo-Reset behält die Nebenkosten am Objekt", () => {
-  const sql = lies("supabase/migrations/20261007193000_demo_reset_nk_objekt.sql");
-  it("beide Tabellen stehen in der Reset-Liste NACH properties/mieter", () => {
-    expect(sql).toMatch(/'properties', 'mieter', 'einnahmen', 'kosten', 'mieter_positionen',\s*'nk_objekt_jahr', 'nk_objekt_kosten',/);
+describe("B5 — Demo-Start legt die Nebenkosten am Objekt wieder an", () => {
+  // Seit 20261007210000: eigene Einfüge-Funktion statt Umbau der Reset-Funktion (die enthält
+  // Löschbefehle → SQL-Editor; die Datei war zu lang zum Kopieren).
+  const sql = lies("supabase/migrations/20261007210000_demo_nk_nachfuellen.sql");
+  it("Funktion fügt nur ein und verschiebt das Jahr wie der Reset", () => {
+    expect(sql).not.toMatch(/\bdelete\b/i);
+    expect(sql).toMatch(/insert into public\.nk_objekt_kosten/);
+    expect(sql).toMatch(/s\.jahr \+ jahre/);
+    expect(sql).toMatch(/revoke execute on function public\.demo_nk_nachfuellen\(date\) from public, anon, authenticated/);
   });
   it("der Schnappschuss enthält das Beispiel samt CO₂", () => {
     expect(sql).toMatch(/insert into demo_seed\.nk_objekt_kosten/);
     expect(sql).toMatch(/4000, 220, false/);
+  });
+  it("/api/demo ruft sie NACH dem Reset", () => {
+    const r = lies("app/api/demo/route.ts");
+    expect(r.indexOf('rpc("demo_nk_nachfuellen")')).toBeGreaterThan(r.indexOf('rpc("demo_zuruecksetzen")'));
   });
 });

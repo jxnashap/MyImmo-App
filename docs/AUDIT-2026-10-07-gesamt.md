@@ -33,7 +33,7 @@ Alle Belegpfade unten beziehen sich auf `.scan/audit/`.
 |---|---|
 | P6 Kredite mit Zeit (B3 Jahresbericht-Teil, B17–B23, C7; Zusammenführungen 6, 7, 12) | ✅ gebaut 07.10.2026, `tests/paketP6.test.ts` (12 Mutationen rot). Kein Bank-Tilgungsplan als Referenzfall (keiner vorhanden) — Referenzfälle aus dem Bericht |
 | P1 Anlage V richtig (A1, A2, A3, B2, B3 Anlage-V-Teil, B4, Doppelberechnung 9; 8 teilweise) | ✅ gebaut 07.10.2026, `tests/paketP1.test.ts` (10 Mutationen rot). B1 (Zeilennummern) und der Jahresbericht-Teil von B3 offen (P6) |
-| P2 NK richtig (A4, A5, A6, B5, B6, C22, C25) | ✅ gebaut 07.10.2026, `tests/paketP2.test.ts` (11 Mutationen rot); B5 wirkt erst nach Ausführen von `20261007193000` im SQL-Editor |
+| P2 NK richtig (A4, A5, A6, B5, B6, C22, C25) | ✅ gebaut 07.10.2026, `tests/paketP2.test.ts` (11 Mutationen rot); B5 seit `20261007210000` live (Einfüge-Funktion nach dem Reset, kein SQL-Editor nötig) |
 
 ## 1. Zusammenfassung
 

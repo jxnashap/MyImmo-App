@@ -104,7 +104,7 @@ mit entfernen.
 
 **Demo:** „Zweifamilienhaus Dresden“ hat Kosten mit jedem Schlüssel und CO₂. ⚠️ Die erste Fassung
 (`20261007113957`, „nicht im Reset“) war falsch — die Kaskade löschte sie beim nächsten Demo-Start. Seit
-`20261007193000` (SQL-Editor) stehen beide Tabellen im Demo-Reset; das Jahr wandert mit.
+`20261007210000` legt `demo_nk_nachfuellen()` beide Tabellen nach jedem Demo-Reset wieder an; das Jahr wandert mit.
 Live geprüft: Seite bei 360/390 px, Abrechnung Krüger 1.494,31 € / Guthaben 305,69 € (von Hand
 nachgerechnet), Einzel-PDF 2 Seiten (Gruß mit § 35a-Block auf Seite 2), Sammel-PDF 4 Seiten.
 
