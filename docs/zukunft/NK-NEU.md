@@ -51,7 +51,7 @@ Kosten ein (Grundsteuer, ggf. Niederschlagsgebühr); die könnten voreingestellt
 EINMAL mit Gesamtbetrag; der Schlüssel hängt an der Kostenart (am Objekt voreingestellt); die App
 verteilt auf die Mieter. „Mieter bearbeiten“ verliert die Positionen; die Mieterseite zeigt den Anteil.
 
-1. **Stufe 1 — Abrechnung je Objekt (MFH):** Kostenliste (Vorschläge aus Buchungen, Vorjahr, KI-Import);
+1. ✅ **Stufe 1 gebaut 07.10.2026 (siehe unten) — Abrechnung je Objekt (MFH):** Kostenliste (Vorschläge aus Buchungen, Vorjahr, KI-Import);
    Schlüssel Fläche / Personen / Einheiten / MEA / Verbrauch / „Betrag je Wohnung“; Belegungstage aus
    Mietbeginn/-ende, Leerstand automatisch beim Vermieter; Übersicht Position × Mieter; alle Abrechnungen
    auf einmal. Bestehende `mieter_positionen` bleiben als Altbestand lesbar (alte Jahre nachvollziehbar).
@@ -71,3 +71,35 @@ volle HeizkostenV-Eigenrechnung aufwendig; KI-Erkennung „umlagefähig“ an ke
 Hausgeldabrechnung geprüft — immer nur Vorschlag. **Niederschlagswasser** steht bei ETW meist schon im
 Hausgeld (die WEG bekommt den Bescheid) — als eigene Kostenart nur, wo die Gemeinde den Eigentümer
 direkt veranlagt; sonst doppelt.
+
+## Stufe 1 — gebaut (07.10.2026)
+
+**Wo:** `/properties/<id>/nebenkosten?jahr=` (Objektseite → „Nebenkosten öffnen“, nur bei mehreren
+Mietparteien = `zeigeVerteiler`). Grundlagen (Gesamtwohnfläche, Einheiten, MEA gesamt; Personen und MEA je
+Mieter), Kostenarten (je einmal mit Gesamtbetrag; Vorschläge aus Buchungen, „wie Vorjahr“, KI-Import mit
+`gesamt`), Verteilung Position × Mieter mit Spalte „Vermieter“, Ergebnis je Mieter mit Vorauszahlung und
+Saldo, „Alle als ein PDF“ (`/properties/<id>/nebenkosten/pdf`).
+
+**Rechnung `lib/nkObjekt.ts` → `verteileObjektKosten()`** — cent-genau, Anteile + Vermieter = Gesamtbetrag:
+- Fläche: m² × Tage ÷ (Gesamtfläche × Jahrestage) · Einheiten: Tage ÷ (Einheiten × Jahrestage) ·
+  MEA: MEA × Tage ÷ (MEA gesamt × Jahrestage). **Nenner = ganzes Haus, ganzes Jahr** → Leerstand beim Vermieter.
+- Personen: Personentage; eine leere Wohnung zählt mit EINER Person (Vermieter). Ohne Einheitenzahl keine
+  Verteilung. **Entscheidung ohne Rechtsbeleg** — vorsichtige Lesart, damit Leerstand nie bei Mietern landet.
+- Verbrauch: gemessen, ohne Tage-Faktor, Nenner = Hauptzähler (leer = Summe der Wohnungen, dann Warnung).
+- Betrag je Wohnung („direkt“): genau der eingetragene Betrag (Messdienst), Rest beim Vermieter; Summe über
+  dem Gesamtbetrag → nicht verteilt.
+- Fehlt eine Angabe: NICHT verteilen, Warnung — nie still auf „Tage“ ausweichen (der Altbestand tat das).
+
+**EINE Quelle für jede Abrechnung: `lib/nkPositionen.ts` → `ladeNkPositionen()`** (NK-Seite, PDF,
+Beleihungs-Mappe). Kosten am Objekt für das Jahr vorhanden → nur diese (Aufteilung `objekt` in `lib/nk.ts`:
+Gesamtbetrag als `basis`, Anteil fertig); sonst `mieter_positionen` (Altbestand). **Nie gemischt.**
+
+**Übergang:** Migration `20261007090000` läuft im SQL-Editor. Bis dahin: Objektseite zeigt „kommt in Kürze“,
+der alte Verteiler bleibt erreichbar, alle Abrechnungen rechnen wie bisher. Danach leitet `/umlage` auf
+`/nebenkosten` um (`nkAmObjekt()`), „Mieter bearbeiten“ zeigt beim MFH nur noch den Weg zum Objekt und die
+alten Positionen als aufklappbaren Altbestand. `UmlageAssistent.tsx` + `lib/actions/umlage.ts` sind danach
+toter Code — entfernen, sobald die Migration live geprüft ist.
+
+**Nicht in Stufe 1:** Demo-Beispieldaten (Demo zeigt eine leere Kostenliste), CO₂-Aufteilung am Objekt
+(bleibt je Mieter), Zähler aus dem Portal (Stufe 2), ETW (Stufe 3), Einzelobjekte (bleiben beim Mieter).
+`tests/nkObjekt.test.ts`, 14 Mutationen rot.

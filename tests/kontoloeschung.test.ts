@@ -41,6 +41,9 @@ const KASKADE = new Set([
   "wiederkehrende_buchungen", "zaehlerstand_meldungen",
   // Kaskade per Migration 20261006050000 (im SQL-Editor; lokal gegen PostgreSQL 16 geprüft).
   "sanierungsprojekte",
+  // Kaskade auf auth.users UND properties per Migration 20261007090000 (im SQL-Editor; lokal gegen
+  // PostgreSQL 16 geprüft: Objekt gelöscht → Zeilen weg).
+  "nk_objekt_jahr", "nk_objekt_kosten",
 ]);
 
 const AUSNAHMEN: Record<string, string> = {

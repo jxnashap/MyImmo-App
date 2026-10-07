@@ -5,6 +5,7 @@ import { decryptNullable } from "@/lib/crypto/secure";
 import PositionsManager, { type Position } from "@/components/PositionsManager";
 import NkOcrUpload from "@/components/NkOcrUpload";
 import { createClient } from "@/lib/supabase/server";
+import { nkAmObjekt } from "@/lib/nkPositionen";
 import { updateTenant, deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
 import type { Tenant } from "@/lib/types";
@@ -30,6 +31,10 @@ export default async function EditTenantPage(props0: { params: Promise<{ id: str
   ]);
   if (!data) notFound();
   const tenant = data as Tenant;
+  // Stufe 1 (07.10.2026): Beim Mehrfamilienhaus stehen die Nebenkosten am Objekt — hier nur noch
+  // der Weg dorthin; die alten Positionen bleiben als Altbestand aufklappbar.
+  const amObjekt = await nkAmObjekt(supabase, tenant.prop_id);
+  const anzahlAlt = (positions ?? []).length;
 
   const update = updateTenant.bind(null, tenant.id);
 
@@ -54,7 +59,29 @@ export default async function EditTenantPage(props0: { params: Promise<{ id: str
         portalKonto={zugang?.[0] ? ((zugang[0] as { email: string | null }).email ?? "verbunden (Adresse unbekannt)") : null}
       />
 
-      <div style={{ marginTop: 24 }}>
+      {amObjekt && (
+        <div className="section" style={{ marginTop: 24 }}>
+          <div className="section-header">
+            <div>
+              <h3>Nebenkosten</h3>
+              <div className="section-sub">Die Kosten dieses Hauses stehen einmal am Objekt und werden auf alle Mieter verteilt.</div>
+            </div>
+            <Link href={`/properties/${tenant.prop_id}/nebenkosten?jahr=${nkJahr}`} className="btn btn-gold" style={{ fontSize: 12 }}>Nebenkosten {nkJahr} öffnen</Link>
+          </div>
+          {anzahlAlt > 0 && (
+            <details className="section-body">
+              <summary style={{ fontSize: 12.5, cursor: "pointer", color: "var(--muted)" }}>
+                Ältere Positionen bei diesem Mieter ({anzahlAlt}) — gelten nur für Jahre ohne Kosten am Objekt
+              </summary>
+              <div style={{ marginTop: 12 }}>
+                <PositionsManager mieterId={tenant.id} positions={(positions ?? []) as Position[]} startJahr={nkJahr} />
+              </div>
+            </details>
+          )}
+        </div>
+      )}
+
+      {!amObjekt && <div style={{ marginTop: 24 }}>
         <PositionsManager mieterId={tenant.id} positions={(positions ?? []) as Position[]} startJahr={nkJahr} />
         {/* Vorjahr wie der Default der NK-Seite — der alte Upload speicherte
             ins laufende Kalenderjahr, wo die Abrechnung nie hinschaut. */}
@@ -65,7 +92,7 @@ export default async function EditTenantPage(props0: { params: Promise<{ id: str
             .filter((p) => (p.jahr == null || p.jahr === nkJahr) && p.umlagefaehig === true)
             .map((p) => ({ id: p.id, bezeichnung: p.bezeichnung, betrag: p.betrag, aufteilung: p.aufteilung ?? null }))}
         />
-      </div>
+      </div>}
     </div>
   );
 }
