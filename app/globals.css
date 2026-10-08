@@ -507,6 +507,12 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 .versand-box { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg2); }
 .versand-hinweis { font-size: 12px; color: var(--muted); margin: 8px 0 0; line-height: 1.5; }
 .versand-karte { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: var(--bg3); border: 1px solid var(--line2); font-size: 13px; line-height: 1.5; }
+/* Brief-Generator (Gesamtprüfung P3): Hinweise, Fristvorschlag, Warnungen, Schriftform. */
+.brief-hinweis { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.brief-vorschlag { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--gold-pale); font-size: 12.5px; line-height: 1.45; }
+.brief-vorschlag .btn { font-size: 12px; padding: 4px 10px; }
+.brief-warnung { flex-basis: 100%; font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 8px; background: rgba(240,160,48,0.08); border: 1px solid rgba(240,160,48,0.3); }
+.brief-schriftform { flex-basis: 100%; font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 8px; background: rgba(220,60,60,0.06); border: 1px solid rgba(220,60,60,0.35); }
 .versand-fehler { color: var(--red); }
 /* Vorbelegtes Formular (Paket E: Kaufprüfung → Objekt, Finanzierungswunsch → Darlehen). */
 .vorbelegt-hinweis { max-width: 640px; margin: 0 0 16px; padding: 10px 14px; border-radius: 12px; background: var(--bg3); border: 1px solid var(--line2); font-size: 13px; line-height: 1.5; }

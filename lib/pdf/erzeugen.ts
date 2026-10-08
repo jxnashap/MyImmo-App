@@ -17,11 +17,25 @@ import {
   ART_ZEIGT_KONTO,
   ART_BETRAG_RUECKFALL,
   briefDatum,
+  fehlendePlatzhalter,
   satzanfangGross,
   fuelleVorlage,
   vorlageFuer,
   type DocArt,
 } from "@/lib/dokumentVorlagen";
+import {
+  alleMieter,
+  anrede,
+  briefAblehnung,
+  digitalGesperrt,
+  type BriefAbgelehnt,
+  empfaengerNamenZeilen,
+  mieterhoehungBasis,
+  namenAufzaehlung,
+  pruefeBrief,
+} from "@/lib/briefPruefung";
+import { vertragswerte, type MietkontoZeitraum } from "@/lib/mietkonto";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 const eur = (n: number) =>
   new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) +
@@ -52,8 +66,10 @@ export type BriefFields = {
   vName: string;
   vAdr: string;
   text: string;
-  /** "1" = gespeicherte E-Signatur ins PDF einbetten. */
+  /** "1" = gespeicherte E-Signatur ins PDF einbetten (nie bei Schriftform-Arten). */
   signieren?: string;
+  /** Zugang beim Mieter (ISO) — Grundlage der Fristen bei Kündigung und Mieterhöhung. */
+  zugang?: string;
 };
 
 export async function erzeugeBriefPdf(
@@ -61,17 +77,17 @@ export async function erzeugeBriefPdf(
   userId: string,
   mieterId: string,
   f: BriefFields,
-): Promise<ErzeugtesPdf | null> {
+): Promise<ErzeugtesPdf | BriefAbgelehnt | null> {
   const art = (f.art as DocArt) || "allgemein";
 
   const { data: tenant } = await supabase
     .from("mieter")
-    .select("vorname,nachname,mieter_adresse,einheit,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,mietbeginn,iban")
+    .select("vorname,nachname,weitere_mieter,mieter_adresse,einheit,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,mietbeginn,letzte_erhoehung,iban")
     .eq("id", mieterId)
     .single();
   if (!tenant) return null;
 
-  const [{ data: property }, { data: profil }, { data: iban }] = await Promise.all([
+  const [{ data: property }, { data: profil }, { data: iban }, { data: zr }] = await Promise.all([
     tenant.prop_id
       ? supabase.from("properties").select("bezeichnung,adresse").eq("id", tenant.prop_id).single()
       : Promise.resolve({ data: null }),
@@ -83,23 +99,30 @@ export async function erzeugeBriefPdf(
     f.ibanId
       ? supabase.from("ibans").select("kontoname,inhaber,iban").eq("id", f.ibanId).maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase.from("miet_zeitraeume").select("von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete").eq("mieter_id", mieterId),
   ]);
+  const zeitraeume = (zr ?? []) as MietkontoZeitraum[];
+  const heuteYm = heuteBerlin().slice(0, 7);
 
   const mieterName = `${tenant.vorname ?? ""} ${tenant.nachname ?? ""}`.trim();
+  // B44: alle Vertragspartner — Platzhalter {{mieter}}, Adressfeld und Anrede.
+  const namen = alleMieter(mieterName, tenant.weitere_mieter);
   const objekt = property
     ? `${property.bezeichnung}${tenant.einheit ? ", " + tenant.einheit : ""}${property.adresse ? ", " + property.adresse : ""}`
     : "–";
 
-  const kaltmiete = tenant.kaltmiete ?? 0;
-  const nkvz = tenant.nk_vorauszahlung ?? 0;
-  const warm = kaltmiete + nkvz + (tenant.stellplatz_miete ?? 0);
+  // Die Beträge, die DIESEN Monat gelten (Paket B) — wie die Vorschau (dokument/page.tsx).
+  const gilt = vertragswerte(tenant, zeitraeume, heuteYm);
+  const kaltmiete = gilt.kaltmiete;
+  const nkvz = gilt.nk;
+  const warm = kaltmiete + nkvz + gilt.stellplatz;
   // Betragsfeld ist type="number" (Punkt als Dezimaltrenner) — kein deutscher Freitext.
   const betragNum = parseFloat(f.betrag) || 0;
   // Ohne Eingabe die geschuldete WARMmiete (vorher Kaltmiete; Quittung blieb ganz leer).
   const effBetrag = betragNum > 0 ? betragNum : ART_BETRAG_RUECKFALL.includes(art) ? warm : 0;
 
   const werte: Record<string, string> = {
-    mieter: mieterName || "–",
+    mieter: namenAufzaehlung(namen) || "–",
     objekt,
     betrag: effBetrag > 0 ? eur(effBetrag) : "",
     miete: kaltmiete > 0 ? eur(kaltmiete) : "",
@@ -113,6 +136,26 @@ export async function erzeugeBriefPdf(
   };
 
   const quelle = f.text.trim() ? f.text : vorlageFuer(art);
+
+  // Gesamtprüfung P3: dieselbe Prüfung wie die Vorschau (DocGenerator) — hier die Schranke.
+  // Ohne Absender kein Brief (B42, § 126b BGB nennt den Erklärenden); kein Rückfall auf „MyImmo“.
+  const absenderName = (f.vName || profil?.name || "").trim();
+  const pruefung = pruefeBrief({
+    art,
+    text: quelle,
+    grund: f.grund,
+    vName: absenderName,
+    datum: f.datum,
+    zugang: f.zugang ?? "",
+    kuendigung: { ueberlassung: tenant.mietbeginn },
+    mieterhoehung: { ...mieterhoehungBasis(tenant, zeitraeume, f.datum, heuteYm), neueMiete: betragNum },
+    mieterAnzahl: namen.length,
+  });
+  const luecken = fehlendePlatzhalter(quelle, werte);
+  if (luecken.length) pruefung.fehlend.push(...luecken.map((k) => `{{${k}}}`));
+  const ablehnung = briefAblehnung(pruefung);
+  if (ablehnung.length) return { abgelehnt: ablehnung };
+
   const gefuellt = fuelleVorlage(quelle, werte);
   const absaetze = ART_BESCHEINIGUNG.includes(art) ? satzanfangGross(gefuellt) : gefuellt;
 
@@ -121,9 +164,10 @@ export async function erzeugeBriefPdf(
   const konto = ART_ZEIGT_KONTO.includes(art) && ibanData?.iban ? ibanData : null;
   const absenderOrt = [profil?.plz, profil?.ort].filter(Boolean).join(" ") || null;
 
-  // E-Signatur nur auf Wunsch laden und einbetten.
+  // E-Signatur nur auf Wunsch laden und einbetten — nie bei Schriftform (A8: eine eingebettete
+  // Bild-Unterschrift ist keine eigenhändige, § 126 BGB; die Kündigung wäre nichtig, § 125 BGB).
   let unterschriftPng: string | null = null;
-  if (f.signieren === "1") {
+  if (f.signieren === "1" && !digitalGesperrt(art)) {
     const { data: sig } = await supabase
       .from("unterschriften")
       .select("data")
@@ -135,12 +179,14 @@ export async function erzeugeBriefPdf(
   const pdf = await buildDocPdf({
     titel: TITEL[art] ?? "Schreiben",
     absender: {
-      name: f.vName || profil?.name || "MyImmo",
+      name: absenderName,
       adresse: f.vAdr || [profil?.strasse, absenderOrt].filter(Boolean).join(", ") || null,
       email: profil?.email ?? null,
       ort: profil?.ort ?? null,
     },
-    empfaengerName: mieterName || "–",
+    empfaengerName: namenAufzaehlung(namen) || "–",
+    empfaengerNamen: empfaengerNamenZeilen(namen),
+    anrede: anrede(namen),
     // Fallback ohne Objektnamen — der enthält oft selbst die Straße, sie stand
     // im Adressfeld dann doppelt (gleiches Muster wie im DocGenerator).
     empfaengerAdresse:

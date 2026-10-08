@@ -2016,6 +2016,23 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   (Test sucht alle Verzeichnisse). (B26) **`DemoNurLesen` sperrt nur Felder in einem ABSENDENDEN Formular** —
   Suche, Befehlspalette, Rechner, Steuerjahr sind bedienbar. **Regel: Ein Lese-Werkzeug nie in ein `<form>` mit
   POST/Action legen** (sonst sperrt die Demo es wieder); ein PDF-Formular, das nur liest, trägt `data-demo-erlaubt`.
+- ✉️ **Paket P3 der Gesamtprüfung (08.10.2026): Kündigung und Mieterhöhung** (`tests/paketP3.test.ts` +
+  `tests/paketP3Server.test.ts`, 32 Mutationen rot). **`pruefeBrief()` in `lib/briefPruefung.ts` ist die EINE Prüfung** für
+  Brief-Generator (Vorschau, sperrt Knöpfe) UND `erzeugeBriefPdf` (Schranke: Route 400, Archiv lehnt ab — `{ abgelehnt }`).
+  Absender Pflicht für JEDE Art (B42, kein Rückfall auf „MyImmo“); Begründung Pflicht bei Erhöhung/Kündigung
+  (`BEGRUENDUNGSMITTEL`, Lücken in [Klammern] sperren); Feld „Zugang beim Mieter“ (bewusst leer, nicht „heute“) trägt
+  die Fristen: § 573c mit `karenzTag()` (Samstag zählt, außer als dritter Werktag — BGH VIII ZR 206/04; nur bundesweite
+  Feiertage = sichere Seite), 5/8 Jahre bis zum Zugang gezählt + `sichererTermin` als Hinweis (Anwaltsfrage 3);
+  § 558b ab drittem Kalendermonat, Sperrfrist 1 Jahr/15 Monate (auch ab Mietbeginn), Kappung 20 % (15 % als Hinweis)
+  über `mieterhoehungBasis()` aus Mieterfeldern + Miet-Zeiträumen. **`SCHRIFTFORM` steuert Versand und E-Signatur:**
+  Kündigung = `pflicht` (kein BriefVersand, keine eingebettete Unterschrift, Portal-Zustellung serverseitig gesperrt),
+  Quittung/Wohnungsgeber = `ungeklaert` (nur Hinweis, Anwaltsfragen 5/6). **B44:** `mieter.weitere_mieter` (Migration
+  `20261008120000`), `alleMieter()`/`anrede()`/`empfaengerNamenZeilen()` für `{{mieter}}`, Adressfeld und Anrede (Vorschau
+  UND PDF). Nebenbei: Das PDF nahm die Mieterfelder, die Vorschau die geltenden Beträge — jetzt beide `vertragswerte()`.
+  **Regeln:** (1) Eine neue Brief-Art mit Rechtsfolge bekommt ihre Prüfung in `pruefeBrief()`, nie nur in der Oberfläche.
+  (2) Eine Art mit Schriftform kommt in `SCHRIFTFORM` — die Liste sperrt Mail, Portal und E-Signatur an einer Stelle.
+  (3) Empfänger und Anrede eines Briefs nie aus `vorname`/`nachname` allein, sondern über `alleMieter()`.
+  Wortlaut der Vorlagen steht auf der Anwaltsliste (Audit Abschnitt 10, Fragen 3–6).
 - 🏦 **Paket P6 der Gesamtprüfung (07.10.2026): Kredite mit Zeit** (`tests/paketP6.test.ts`, 12 Mutationen rot).
   **`lib/kredit.ts` ist die EINE Lesart eines Darlehens:** `restschuldVon()` (leer = Darlehenssumme — vorher
   vier Lesarten, `updateKredit` speicherte null → „100 % getilgt“), `istGetilgt()`/`rateVon()` (Restschuld 0 =

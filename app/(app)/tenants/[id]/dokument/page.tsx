@@ -32,7 +32,14 @@ export default async function DokumentPage(
   ]);
   // Paket B: {miete} & Co. im Brief = die Beträge, die DIESEN Monat gelten — wie im Mietkonto.
   // Vorher nahm der Brief das Mieterfeld; eine Erhöhung über einen Zeitraum fehlte darin.
-  const [tenant] = mitGeltendenBetraegen([roh], (mz ?? []) as never[], heuteBerlin().slice(0, 7));
+  const heute = heuteBerlin();
+  const [tenant] = mitGeltendenBetraegen([roh], (mz ?? []) as never[], heute.slice(0, 7));
+  // P3: Für Kappungsgrenze und Sperrfrist braucht die Prüfung den Verlauf — die Mieterfelder OHNE
+  // Zeitraum-Anpassung plus die Zeiträume (dieselbe Rechnung wie lib/pdf/erzeugen.ts).
+  const mietVerlauf = {
+    stand: { kaltmiete: roh.kaltmiete, nk_vorauszahlung: roh.nk_vorauszahlung, stellplatz_miete: roh.stellplatz_miete ?? null },
+    zeitraeume: ((mz ?? []) as { von: string; bis: string | null; kaltmiete: number | null; nk_vorauszahlung: number | null; stellplatz_miete: number | null }[]),
+  };
 
   const vorlagen = Object.fromEntries(
     ((vorlagenRows as { art: string; text: string }[]) ?? []).map((r) => [r.art, r.text]),
@@ -46,7 +53,7 @@ export default async function DokumentPage(
           <div><div className="topbar-title">Dokument erstellen</div><div className="topbar-sub">{[tenant.vorname, tenant.nachname].filter(Boolean).join(" ")}</div></div>
         </div>
       </div>
-      <DocGenerator tenant={{ ...tenant, iban: decryptNullable(tenant.iban) }} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={((ibanRows as Iban[]) ?? []).map(decryptIbanRow)} vorlagen={vorlagen} initial={{ art: searchParams.art, betrag: searchParams.betrag, datum: searchParams.datum, grund: searchParams.grund }} hatUnterschrift={!!signatur} />
+      <DocGenerator tenant={{ ...tenant, iban: decryptNullable(tenant.iban) }} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={((ibanRows as Iban[]) ?? []).map(decryptIbanRow)} vorlagen={vorlagen} initial={{ art: searchParams.art, betrag: searchParams.betrag, datum: searchParams.datum, grund: searchParams.grund }} hatUnterschrift={!!signatur} mietVerlauf={mietVerlauf} heute={heute} />
     </div>
   );
 }

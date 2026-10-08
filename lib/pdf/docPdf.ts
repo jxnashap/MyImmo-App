@@ -30,6 +30,10 @@ export type BriefDaten = {
   titel: string;
   absender: BriefAbsender;
   empfaengerName: string;
+  /** Mehrere Vertragspartner: je eine Zeile im Adressfeld (lib/briefPruefung.ts, B44). */
+  empfaengerNamen?: string[];
+  /** Anrede; ohne Angabe „Sehr geehrte/r <empfaengerName>,“. */
+  anrede?: string;
   empfaengerAdresse?: string | null;
   objekt: string;
   absaetze: string[];
@@ -60,6 +64,12 @@ const formatIban = (s: string) =>
   s.replace(/\s/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
 
 const tracked = (s: string) => s.split("").join(" ");
+
+/** Adressfeld: weitere Vertragspartner je eine Zeile vor dem letzten Namen samt Anschrift. */
+function empfaengerZeilen(d: Pick<BriefDaten, "empfaengerName" | "empfaengerNamen" | "empfaengerAdresse">): string[] {
+  const namen = d.empfaengerNamen?.length ? d.empfaengerNamen : [d.empfaengerName];
+  return [...namen.slice(0, -1), ...adressfeldZeilen(namen[namen.length - 1], d.empfaengerAdresse)];
+}
 
 function deDate(d: Date): string {
   // DIN 5008: ausgeschriebenes Datum ohne führende Null („6. Oktober 2026“).
@@ -155,7 +165,7 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
   // Zentrale, in jedem Brief-PDF identisch positionierte Empfängeranschrift.
   const feldBottom = zeichneAdressfeld(page, font, {
     vermerk: ["Vertrauliches Dokument"],
-    empfaenger: adressfeldZeilen(d.empfaengerName, d.empfaengerAdresse),
+    empfaenger: empfaengerZeilen(d),
   });
 
   // ---- Brieftext zeichnen/messen ab startY (UNTER dem Adressfeld) ----
@@ -181,7 +191,12 @@ export async function buildDocPdf(d: BriefDaten): Promise<Uint8Array> {
 
     // Anrede (bei Bescheinigungen entfällt sie)
     if (!d.bescheinigung) {
-      if (commit) text(ML, y, `Sehr geehrte/r ${d.empfaengerName},`, 10.5, font, INK);
+      // Mehrere Vertragspartner ergeben eine lange Anrede — umbrechen statt in den Rand laufen.
+      const anredeZeilen = wrap(d.anrede ?? `Sehr geehrte/r ${d.empfaengerName},`, 10.5, RIGHT - ML);
+      anredeZeilen.forEach((ln, i) => {
+        if (commit) text(ML, y, ln, 10.5, font, INK);
+        if (i < anredeZeilen.length - 1) y -= LH;
+      });
       y -= 20;
     }
 

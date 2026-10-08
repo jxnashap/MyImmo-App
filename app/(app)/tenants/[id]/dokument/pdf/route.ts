@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { featureSperre } from "@/lib/planGate";
 import { erzeugeBriefPdf } from "@/lib/pdf/erzeugen";
+import { istAbgelehnt } from "@/lib/briefPruefung";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,8 +35,13 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     vAdr: String(form.get("vAdr") ?? "").trim(),
     text: String(form.get("text") ?? ""),
     signieren: String(form.get("signieren") ?? ""),
+    zugang: String(form.get("zugang") ?? ""),
   });
   if (!doc) return new NextResponse("Mieter nicht gefunden", { status: 404 });
+  // Gesamtprüfung P3: Die Oberfläche sperrt den Knopf schon; das hier ist die Schranke.
+  if (istAbgelehnt(doc)) {
+    return new NextResponse(doc.abgelehnt.join("\n"), { status: 400, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  }
 
   return new NextResponse(Buffer.from(doc.pdf), {
     status: 200,

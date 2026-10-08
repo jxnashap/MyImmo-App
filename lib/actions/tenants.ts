@@ -50,6 +50,8 @@ function parse(formData: FormData) {
     staffel_prozent: num("staffel_prozent"),
     staffel_stufen: num("staffel_stufen"),
     notiz: str("notiz"),
+    // B44: weitere Vertragspartner (Freitext, Zeilen bleiben erhalten; DB-Grenze 600 Zeichen).
+    weitere_mieter: str("weitere_mieter")?.trim().slice(0, 600) || null,
   };
 }
 

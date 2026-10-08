@@ -107,6 +107,16 @@ export default function TenantForm({
         <div className="form-group"><label>Vorname *</label><input name="vorname" required defaultValue={v("vorname")} /></div>
         <div className="form-group"><label>Nachname *</label><input name="nachname" required defaultValue={v("nachname")} /></div>
       </div>
+      {/* Gesamtprüfung P3, B44: Mieterhöhung und Kündigung gehen an ALLE Vertragspartner. */}
+      <div className="form-row single">
+        <div className="form-group">
+          <label htmlFor="weitere_mieter">Weitere Mieter laut Vertrag</label>
+          <textarea id="weitere_mieter" name="weitere_mieter" rows={2} maxLength={600} defaultValue={v("weitere_mieter")} placeholder="z. B. Ben Weber — je Zeile ein Name" style={{ resize: "vertical" }} />
+          <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
+            Alle, die den Mietvertrag unterschrieben haben. Briefe wie Mieterhöhung und Kündigung richten sich dann an alle.
+          </div>
+        </div>
+      </div>
       <div className="form-row">
         <div className="form-group"><label>E-Mail</label><input type="email" name="email" defaultValue={v("email")} /></div>
         <div className="form-group"><label>Telefon</label><input name="telefon" defaultValue={v("telefon")} /></div>

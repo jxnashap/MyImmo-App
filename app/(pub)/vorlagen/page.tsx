@@ -19,10 +19,10 @@ export const metadata: Metadata = {
 };
 
 const VORLAGEN = [
-  { ico: FileText, t: "Mieterhöhung (§ 558 BGB)", p: "Mieterhöhungsverlangen bis zur ortsüblichen Vergleichsmiete — mit korrekter Begründung und Frist." },
+  { ico: FileText, t: "Mieterhöhung (§ 558 BGB)", p: "Mieterhöhungsverlangen bis zur ortsüblichen Vergleichsmiete — mit Bausteinen für die Begründung; Wirksamkeitstermin, Sperrfrist und Kappungsgrenze werden geprüft." },
   { ico: BellRing, t: "Zahlungserinnerung", p: "Freundliche Erinnerung bei ausstehender Miete, mit Betrag und Kontodaten vorausgefüllt." },
   { ico: AlertTriangle, t: "Mahnung", p: "Förmliche Mahnung mit Zahlungsfrist — der nächste Schritt nach der Erinnerung." },
-  { ico: DoorClosed, t: "Kündigung des Mietverhältnisses", p: "Ordentliche oder außerordentliche Kündigung mit den passenden Fristen." },
+  { ico: DoorClosed, t: "Kündigung des Mietverhältnisses", p: "Ordentliche Kündigung durch den Vermieter — frühester Termin nach § 573c BGB berechnet, Gründe und Widerspruchshinweis im Brief. Zum Ausdrucken und Unterschreiben." },
   { ico: Wrench, t: "Reparatur-Ankündigung", p: "Ankündigung von Instandhaltungs- oder Modernisierungsarbeiten mit Termin." },
   { ico: Receipt, t: "NK-Abrechnung — Anschreiben", p: "Begleitschreiben zur Nebenkostenabrechnung mit Saldo (Nachzahlung oder Guthaben)." },
   { ico: BadgeCheck, t: "Wohnungsgeberbestätigung (§ 19 BMG)", p: "Pflichtbescheinigung für die Anmeldung des Mieters beim Einwohnermeldeamt." },

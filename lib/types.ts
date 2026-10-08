@@ -51,6 +51,8 @@ export type Tenant = {
   prop_id: string | null;
   vorname: string | null;
   nachname: string | null;
+  /** Weitere Vertragspartner laut Mietvertrag (Freitext, je Zeile ein Name; P3, B44). */
+  weitere_mieter?: string | null;
   email: string | null;
   telefon: string | null;
   mieter_adresse: string | null;
