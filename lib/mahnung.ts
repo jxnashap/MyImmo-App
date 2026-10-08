@@ -7,17 +7,32 @@
 // uns aus dem Mailverkehr raus“). `briefMailLink` bereitet nur die Mail im Programm des
 // Vermieters vor — Absender, „Gesendet“-Ordner und damit der Nachweis bleiben bei ihm.
 // Reine Funktionen ohne Datenbank und ohne React.
-import { dritterWerktag, monatLabel } from "@/lib/mietkonto";
+import { monatLabel } from "@/lib/mietkonto";
+import { dritterWerktag, mieteUeberfaellig, LANDESFEIERTAG_HINWEIS } from "@/lib/mietStatus";
 
 export type ZahlungsBriefArt = "zahlungserinnerung" | "mahnung";
 
 /**
  * Ist die Miete dieses Monats überfällig? Fällig am DRITTEN WERKTAG (§ 556b Abs. 1 BGB,
- * `dritterWerktag`) — vorher wäre eine Zahlungserinnerung schlicht verfrüht.
+ * ohne Sa/So und bundesweite Feiertage) — die EINE Regel steht in lib/mietStatus.ts.
  */
-export function mieteUeberfaellig(jahrMonat: string, heuteISO: string): boolean {
-  return heuteISO.slice(0, 10) > dritterWerktag(jahrMonat);
+export { mieteUeberfaellig };
+
+/**
+ * Darf die Mahnung angeboten werden? Erst, wenn nach der Fälligkeit eine Zahlungserinnerung an
+ * diesen Mieter im Archiv liegt (Audit P7, B10): Vorher standen Erinnerung und Mahnung ab dem
+ * ersten Tag nebeneinander, und die Mahnung behauptete „trotz vorheriger Erinnerung“.
+ */
+export function mahnungMoeglich(
+  erinnerungen: { mieter_id: string | null; created_at: string }[],
+  mieterId: string,
+  faelligSeit: string,
+): boolean {
+  return erinnerungen.some((e) => e.mieter_id === mieterId && e.created_at.slice(0, 10) >= faelligSeit);
 }
+
+/** Archiv-Titel, unter dem eine Zahlungserinnerung abgelegt wird (lib/pdf/erzeugen.ts: „Zahlungserinnerung – Name“). */
+export const ERINNERUNG_TITEL_PRAEFIX = "Zahlungserinnerung";
 
 /** ISO-Datum + n Tage, auf den Zahlen gerechnet (keine Ortszeit). */
 function plusTage(iso: string, n: number): string {
@@ -39,7 +54,7 @@ export function zahlungsBriefUrl(o: {
   const faellig = dritterWerktag(o.jahrMonat);
   // Datum ausgeschrieben wie die übrigen Briefdaten („5. Oktober 2026“), Apposition mit Artikel.
   const faelligText = `${Number(faellig.slice(8, 10))}. ${monatLabel(faellig.slice(0, 7))}`;
-  const grund = `Es handelt sich um die Miete für ${monatLabel(o.jahrMonat)} (fällig am ${faelligText}, dem dritten Werktag des Monats, § 556b BGB).`;
+  const grund = `Es handelt sich um die Miete für ${monatLabel(o.jahrMonat)} (fällig am ${faelligText}, dem dritten Werktag des Monats, § 556b BGB). ${LANDESFEIERTAG_HINWEIS}`;
   const q = new URLSearchParams({
     art: o.art,
     betrag: String(o.betrag),

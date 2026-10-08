@@ -88,6 +88,7 @@ export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
         stellplatz: soll.stellplatz,
         gesamt: soll.gesamt,
         anteilig: soll.anteilig,
+        minderung: soll.minderung,
         schonGebucht: gebuchtProMieter.get(m.id)?.has(monat) ?? false,
         gezahlt: gezahltImMonat(einnahmen.filter((e) => e.mieter_id === m.id), monat),
       });
@@ -107,6 +108,7 @@ export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
           stellplatz_miete: m.stellplatz_miete ?? null,
           mietbeginn: m.mietbeginn,
           mietende: m.mietende,
+          minderungen: m.minderungen ?? [],
         },
         zeitraeume: zr.map((z) => ({
           von: z.von,

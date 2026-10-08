@@ -25,7 +25,9 @@ describe("mieterFristen nach Vertragsende", () => {
   });
   it("laufender Vertrag behält die Hinweise", () => {
     const f = mieterFristen({ ...basis, mietende: null, mietart: "Index" });
-    expect(f.some((x) => x.label === "Indexmiete prüfen")).toBe(true);
-    expect(f.some((x) => x.label.startsWith("Mieterhöhung möglich"))).toBe(true);
+    expect(f.some((x) => x.label === "Indexmiete prüfen" || x.label.startsWith("Indexanpassung möglich"))).toBe(true);
+    // § 558 gilt bei Indexmiete nicht (§ 557b Abs. 2 BGB, P7/B8) — nur bei normaler Miete.
+    expect(f.some((x) => x.label.startsWith("Mieterhöhung möglich"))).toBe(false);
+    expect(mieterFristen({ ...basis, mietende: null, mietart: null }).some((x) => x.label.startsWith("Mieterhöhung möglich"))).toBe(true);
   });
 });

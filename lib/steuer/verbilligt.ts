@@ -52,14 +52,18 @@ export function berechneVerbilligt(input: VerbilligtInput): VerbilligtErgebnis {
   // Stellplatz ist über die Kaltmiete bereits erfasst.
   const istWarm = rund2(kalt + nk);
   const vergleichWarm = rund2(vergleichKalt + nk);
-  const prozent = vergleichWarm > 0 ? rund2((istWarm / vergleichWarm) * 100) : 0;
+  // Grenzen UNGERUNDET vergleichen (Audit P7, C26): 659,95 / 1.000 = 65,995 % wurde vorher auf
+  // 66,00 % gerundet und galt als „voll entgeltlich“. Angezeigt wird abgeschnitten (65,99 %), damit
+  // die Zahl nie über der Grenze steht, die sie nicht erreicht.
+  const roh = vergleichWarm > 0 ? (istWarm / vergleichWarm) * 100 : 0;
+  const prozent = Math.floor(roh * 100 + 1e-9) / 100;
 
   let status: VerbilligtStatus;
   let hinweis: string;
-  if (prozent >= 66) {
+  if (roh >= 66) {
     status = "gruen";
     hinweis = "Voll entgeltlich (≥ 66 %). Die Werbungskosten sind zu 100 % abziehbar.";
-  } else if (prozent >= 50) {
+  } else if (roh >= 50) {
     status = "gelb";
     hinweis = "50–66 %: Voller Werbungskostenabzug nur bei positiver Totalüberschussprognose (30 Jahre), sonst anteilige Kürzung. Miete anheben schafft Sicherheit.";
   } else {

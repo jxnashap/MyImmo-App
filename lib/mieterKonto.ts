@@ -11,6 +11,7 @@
 // Das Soll rechnet DIESELBE Funktion wie das Mietkonto des Vermieters (`sollFuerMonat`),
 // mit den Miet-Zeiträumen aus der Sicht `miet_zeitraeume_portal`.
 import { sollFuerMonat, dritterWerktag, ymPlus, zuJahrMonat, type MietkontoMieter, type MietkontoZeitraum } from "@/lib/mietkonto";
+import { mieteBezahlt } from "@/lib/mietStatus";
 
 export type KontoZahlung = {
   buchungsdatum: string | null;
@@ -31,8 +32,9 @@ export type KontoMonat = {
 };
 
 export const KONTO_MONATE = 12;
-/** Abweichung, die noch als „bestätigt“ gilt (Rundung bei anteiligen Monaten). */
-const TOLERANZ = 0.5;
+// „Bestätigt“ über `mieteBezahlt` (lib/mietStatus.ts) — DIESELBE Toleranz wie beim Vermieter
+// (Audit P7, B11: vorher 0,50 € hier und 1,00 € dort → 999,20 € von 1.000 € hieß beim Vermieter
+// „bezahlt“, beim Mieter „teilweise“).
 
 const rund = (x: number) => Math.round(x * 100) / 100;
 
@@ -61,7 +63,7 @@ export function mieterKonto(
     const faellig = dritterWerktag(ym);
     const betrag = rund(ist.get(ym) ?? 0);
     let status: KontoStatus;
-    if (betrag >= soll.gesamt - TOLERANZ) status = "bestaetigt";
+    if (mieteBezahlt(soll.gesamt, betrag)) status = "bestaetigt";
     else if (betrag > 0) status = "teilweise";
     else if (heute < faellig) status = "noch_nicht_faellig";
     else status = "offen";

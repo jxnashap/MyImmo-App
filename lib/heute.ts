@@ -113,8 +113,10 @@ export function baueHeuteAufgaben(
       sub: [m.name, m.objekt].filter(Boolean).join(" · "),
       href: `/mietkonto?monat=${m.monat}`,
       aktion: "Miete bestätigen",
-      // Ab dem 5. des Monats ist eine offene Miete keine Formsache mehr.
-      dringend: Number(heuteISO.slice(8, 10)) >= 5,
+      // Dringend erst NACH der Fälligkeit (3. Werktag ohne Feiertage) — dieselbe Regel wie
+      // Rückstands-Wächter und Brief (lib/mietStatus.ts). Vorher „ab dem 5.“: am 05.10.2026, dem
+      // Fälligkeitstag selbst, stand die Miete schon rot da (Audit P7, B13).
+      dringend: mieteUeberfaellig(m.monat, heuteISO),
       datum: `${m.monat}-01`,
       // Erst NACH der Fälligkeit (3. Werktag, § 556b BGB) — vorher wäre jede Erinnerung verfrüht.
       // Die Zeile selbst führt weiter ins Mietkonto (vielleicht ist das Geld ja da).

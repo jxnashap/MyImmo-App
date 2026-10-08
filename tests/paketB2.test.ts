@@ -31,7 +31,8 @@ describe("B5 — Teilzahlung", () => {
     expect(w).toMatch(/select\("mieter_id,buchungsdatum,kategorie,soll_monat,betrag"\)/);
     expect(w).toMatch(/betrag: o\.rest/);
     const d = readFileSync("app/(app)/page.tsx", "utf8");
-    expect(d).toMatch(/gezahlt < soll\.gesamt - TEILZAHLUNG_TOLERANZ/);
+    // Seit P7: eine Regel für bezahlt/offen (lib/mietStatus.ts).
+    expect(d).toMatch(/!mieteBezahlt\(soll\.gesamt, gezahlt\)/);
     expect(readFileSync("lib/mietkontoDaten.ts", "utf8")).toMatch(/gezahlt: gezahltImMonat\(/);
   });
 });

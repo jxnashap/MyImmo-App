@@ -2,6 +2,7 @@
 
 import { iso, addMonate } from "@/lib/datum";
 import { normMietart } from "@/lib/mietart";
+import { naechsterWerktag } from "@/lib/mietStatus";
 
 export type FristKategorie =
   | "Miete" | "Betriebskosten" | "Finanzierung" | "Steuer" | "Wartung" | "WEG" | "Versicherung" | "Sonstiges";
@@ -32,7 +33,14 @@ type MieterFristInput = {
 // lokale Variante verschob Sommer-Termine um einen Tag nach vorn.
 
 // Abgeleitete Fristen eines Mieters (Mietbeginn, -ende, Kündigungsfrist, nächste Erhöhung).
-export function mieterFristen(m: MieterFristInput, opts: { nkErstellt?: number[] } = {}): Frist[] {
+export function mieterFristen(
+  m: MieterFristInput,
+  opts: {
+    nkErstellt?: number[];
+    /** Erste Monate („YYYY-MM“) der Miet-Zeiträume dieses Mieters — für verpasste Staffelstufen (B9). */
+    zeitraumMonate?: string[];
+  } = {},
+): Frist[] {
   const fristen: Frist[] = [];
   const heute = new Date();
 
@@ -71,7 +79,10 @@ export function mieterFristen(m: MieterFristInput, opts: { nkErstellt?: number[]
   }
 
   // Nächste mögliche Mieterhöhung: 12 Monate nach der letzten (Jahressperrfrist, § 558 Abs. 1 S. 2 BGB — die Kappungsgrenze ist Abs. 3)
-  if (!laufend) {
+  // NUR bei normaler Miete (Audit P7, B8): Bei Staffelmiete ist § 558 ausgeschlossen (§ 557a Abs. 2
+  // S. 2 BGB), bei Indexmiete ebenso (§ 557b Abs. 2 S. 3 BGB). Vorher stand „Mieterhöhung möglich“
+  // auch bei Index- und Staffelmietern.
+  if (!laufend || mietart !== "standard") {
     // kein Erhöhungs-Hinweis nach Vertragsende
   } else if (m.letzte_erhoehung) {
     const next = addMonate(new Date(m.letzte_erhoehung), 12);
@@ -123,6 +134,27 @@ export function mieterFristen(m: MieterFristInput, opts: { nkErstellt?: number[]
       }
       if (d >= heute) stichtag = iso(d);
     }
+    // Verstrichene Stufen, die nicht als Miet-Zeitraum hinterlegt sind (Audit P7, B9): Das Mietkonto
+    // rechnet dann weiter mit der alten Miete — ein Rückstand aus der Stufe bliebe unbemerkt.
+    if (hatPlan && opts.zeitraumMonate) {
+      const stufen = m.staffel_stufen && m.staffel_stufen > 0 ? m.staffel_stufen : 5;
+      const hinterlegt = new Set(opts.zeitraumMonate);
+      let d = new Date(m.staffel_datum);
+      for (let i = 0; i < stufen && d <= heute; i++) {
+        const ab = iso(d);
+        if (!hinterlegt.has(ab.slice(0, 7))) {
+          fristen.push({
+            label: "Staffelstufe nicht im Mietkonto",
+            datum: ab,
+            typ: "warn",
+            kategorie: "Miete",
+            rechtsgrundlage: "§ 557a BGB — Stufen auf der Mieterseite ins Mietkonto übernehmen",
+          });
+          break; // eine Meldung genügt, der Knopf übernimmt alle Stufen
+        }
+        d = addMonate(d, intervall);
+      }
+    }
     const tage = Math.ceil((new Date(stichtag).getTime() - heute.getTime()) / 86400000);
     fristen.push({
       label: "Staffelmiete-Anpassung",
@@ -138,17 +170,39 @@ export function mieterFristen(m: MieterFristInput, opts: { nkErstellt?: number[]
     const basis = m.letzte_erhoehung || m.mietbeginn;
     if (basis) {
       const next = addMonate(new Date(basis), 12);
-      fristen.push({
-        label: "Indexmiete prüfen",
-        datum: iso(next),
-        typ: next <= heute ? "ok" : "info",
-        kategorie: "Miete",
-        rechtsgrundlage: "§ 557b BGB (12-Monats-Sperrfrist)",
-      });
+      // Ist die Sperrfrist vorbei, gilt „seit …“ ohne Datum (Audit P7, C27): vorher blieb der Eintrag
+      // auf dem ersten Jahrestag stehen („1.1.2023 · vor 1.375 Tg.“).
+      if (next <= heute) {
+        fristen.push({
+          label: `Indexanpassung möglich (seit ${iso(next).split("-").reverse().join(".")})`,
+          datum: null,
+          typ: "ok",
+          kategorie: "Miete",
+          rechtsgrundlage: "§ 557b BGB (12-Monats-Sperrfrist)",
+        });
+      } else {
+        fristen.push({
+          label: "Indexmiete prüfen",
+          datum: iso(next),
+          typ: "info",
+          kategorie: "Miete",
+          rechtsgrundlage: "§ 557b BGB (12-Monats-Sperrfrist)",
+        });
+      }
     }
   }
 
   return fristen;
+}
+
+/** Erste Monate der Miet-Zeiträume je Mieter (für `mieterFristen(…, { zeitraumMonate })`). */
+export function zeitraumMonateJeMieter(rows: { mieter_id: string; von: string }[] | null | undefined): Map<string, string[]> {
+  const m = new Map<string, string[]>();
+  for (const r of rows ?? []) {
+    if (!r.mieter_id || !r.von) continue;
+    m.set(r.mieter_id, [...(m.get(r.mieter_id) ?? []), r.von.slice(0, 7)]);
+  }
+  return m;
 }
 
 // Abgeleitete Fristen eines Kredits.
@@ -238,8 +292,10 @@ export function globaleFristen(): Frist[] {
         rechtsgrundlage: "§ 28 GrStG",
       });
     }
-    // Einkommensteuererklärung des Vorjahres: 31.07. des Folgejahres
-    const est = `${j}-07-31`;
+    // Einkommensteuererklärung des Vorjahres: 31.07. des Folgejahres — fällt der Tag auf ein
+    // Wochenende oder einen Feiertag, endet die Frist am nächsten Werktag (§ 108 Abs. 3 AO; Audit
+    // P7, C40: 31.07.2027 ist ein Samstag → Montag, 02.08.2027).
+    const est = naechsterWerktag(`${j}-07-31`);
     if (new Date(est) >= heute) {
       fristen.push({
         label: `Einkommensteuererklärung ${j - 1}`,

@@ -17,12 +17,12 @@ import {
   standardStartNacherfassung,
   erwarteteMonate,
   dedup,
-  TEILZAHLUNG_TOLERANZ,
   type MietkontoMieter,
   type MietkontoZeitraum,
 } from "@/lib/mietkonto";
 import { bestaetigeMieteingang, bestaetigeMehrere, type BatchZeile } from "@/lib/actions/mietkonto";
 import { useToast } from "@/components/Toast";
+import { mieteBezahlt } from "@/lib/mietStatus";
 
 export type MietkontoZeile = {
   mieterId: string;
@@ -38,6 +38,8 @@ export type MietkontoZeile = {
   gezahlt?: number | null;
   /** Gesetzt, wenn Ein-/Auszug mitten im Monat lag — Betrag ist anteilig. */
   anteilig?: { tage: number; tageImMonat: number };
+  /** Mietminderung im Monat (§ 536 BGB) — `gesamt` ist bereits gekürzt. */
+  minderung?: { betrag: number; grund: string | null };
 };
 
 export type NacherfassungMieter = {
@@ -361,6 +363,11 @@ export default function MietkontoBestaetigung({
                       anteilig · {z.anteilig.tage}/{z.anteilig.tageImMonat} Tage belegt
                     </div>
                   )}
+                  {z.minderung && (
+                    <div style={{ fontSize: 11, color: "var(--amber)" }}>
+                      gemindert um {eur2(z.minderung.betrag)}{z.minderung.grund ? ` · ${z.minderung.grund}` : ""}
+                    </div>
+                  )}
                 </div>
 
                 {ok ? (
@@ -432,7 +439,7 @@ export default function MietkontoBestaetigung({
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>{eur2(z.gesamt)}</div>
                     {/* Teilzahlung (Paket B): bestätigt, aber unter dem Soll — der Rest steht im Rückstands-Wächter. */}
-                    {z.schonGebucht && z.gezahlt != null && z.gezahlt < z.gesamt - TEILZAHLUNG_TOLERANZ ? (
+                    {z.schonGebucht && z.gezahlt != null && !mieteBezahlt(z.gesamt, z.gezahlt) ? (
                       <span style={{ marginLeft: "auto", color: "var(--amber)", fontSize: 12.5, fontWeight: 600 }}>
                         teilweise: {eur2(z.gezahlt)} · offen {eur2(z.gesamt - z.gezahlt)}
                       </span>

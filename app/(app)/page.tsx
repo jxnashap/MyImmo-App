@@ -9,12 +9,13 @@ import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, begruessung } from "@/lib/format";
-import { getRefinanzWarning, nkErstellteJahre, mieterFristen, kreditFristen, objektFristen, globaleFristen } from "@/lib/fristen";
+import { getRefinanzWarning, nkErstellteJahre, mieterFristen, kreditFristen, objektFristen, globaleFristen, zeitraumMonateJeMieter } from "@/lib/fristen";
 import { fristSchluessel } from "@/lib/termine";
 import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { fristZiel, baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
-import { erwarteteMonate, gezahltImMonat, TEILZAHLUNG_TOLERANZ } from "@/lib/mietkonto";
+import { erwarteteMonate, gezahltImMonat, ymPlus } from "@/lib/mietkonto";
+import { mieteBezahlt, mietFaelligkeit } from "@/lib/mietStatus";
 import { CalendarDays, Plus, TriangleAlert, Landmark, Banknote, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck, ChevronRight, Inbox } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
@@ -107,7 +108,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
     supabase.from("kredite").select("*"),
-    supabase.from("mieter").select("id,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen"),
+    supabase.from("mieter").select("id,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen,minderungen"),
     supabase.from("bewertung_historie").select("immobilie_id,datum,marktwert"),
     supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
     supabase.from("termine").select("id,titel,datum,kategorie,erledigt").order("datum"),
@@ -162,10 +163,11 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // Gleicher Schlüssel wie in /termine (Quelle | Datum | Bezeichnung).
   const sichtbar = (quelle: string, f: { datum: string | null; label: string }) =>
     !!f.datum && imFenster(f.datum) && !versteckt.has(fristSchluessel(quelle, f.datum, f.label));
+  const zrMonate = zeitraumMonateJeMieter(mzRows as { mieter_id: string; von: string }[] | null);
   for (const m of mieterRows) {
     const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
-    for (const f of mieterFristen(m, { nkErstellt: nkJahre.get(m.id) })) if (sichtbar("mieter", f) && f.datum)
+    for (const f of mieterFristen(m, { nkErstellt: nkJahre.get(m.id), zeitraumMonate: zrMonate.get(m.id) ?? [] })) if (sichtbar("mieter", f) && f.datum)
       fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo].filter(Boolean).join(" · "), warn: f.typ === "warn", href: fristZiel("mieter", m.id, f.label) });
   }
   for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (sichtbar("kredit", f) && f.datum)
@@ -186,27 +188,28 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const mieterNameOf = new Map(
     mieterRows.map((m) => [m.id as string, [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter"]),
   );
-  // Gezahlt im laufenden Monat je Mieter (Miet-Kategorie). Teilzahlung (Paket B, 06.10.2026):
-  // offen bleibt, was unter dem Soll liegt — dieselbe Regel wie der Rückstands-Wächter
-  // (gezahltImMonat, TEILZAHLUNG_TOLERANZ in lib/mietkonto.ts).
+  // Offene Mieten (Miet-Kategorie): der laufende Monat UND überfällige Vormonate der letzten
+  // ~zwei Monate (Audit P7, B12 — vorher verschwand die offene Oktobermiete am 01.11. aus der Liste).
+  // Bezahlt/offen über mieteBezahlt (lib/mietStatus.ts) — dieselbe Regel wie Wächter und Portal.
   const mietEinnahmenVon = (id: string) =>
     ((einn ?? []) as (Einnahme & { soll_monat?: string | null })[]).filter((e) => e.mieter_id === id);
   const zeitraeumeVon = (id: string) =>
     ((mzRows ?? []) as { mieter_id: string }[]).filter((z) => z.mieter_id === id) as never[];
-  const offeneMieten: OffeneMiete[] = mieterRows
-    // Nur Mieter, für die dieser Monat überhaupt eine Soll-Miete hat
-    // (Einzug/Auszug, Miet-Zeiträume) — sonst stünde jeder Altmieter hier.
-    .map((m) => ({ m, soll: erwarteteMonate(m as never, zeitraeumeVon(m.id as string), laufenderMonat, laufenderMonat)[0] }))
-    .filter(({ soll }) => !!soll)
-    .map(({ m, soll }) => ({ m, soll, gezahlt: gezahltImMonat(mietEinnahmenVon(m.id as string), laufenderMonat) }))
-    .filter(({ soll, gezahlt }) => gezahlt != null && gezahlt < soll.gesamt - TEILZAHLUNG_TOLERANZ)
-    .map(({ m, soll, gezahlt }) => ({
-      mieterId: m.id as string,
-      name: mieterNameOf.get(m.id as string) ?? "Mieter",
-      objekt: (m.prop_id && nameOf.get(m.prop_id)) || "",
-      monat: laufenderMonat,
-      betrag: Math.round((soll.gesamt - (gezahlt ?? 0)) * 100) / 100,
-    }));
+  const offeneMieten: OffeneMiete[] = mieterRows.flatMap((m) => {
+    // Nur Monate, für die der Mieter eine Soll-Miete hat (Einzug/Auszug, Miet-Zeiträume, Minderung).
+    const monate = erwarteteMonate(m as never, zeitraeumeVon(m.id as string), ymPlus(laufenderMonat, -2), laufenderMonat);
+    return monate
+      .filter((soll) => soll.jahrMonat === laufenderMonat || (mietFaelligkeit(soll.jahrMonat, heuteISO0).tage <= 62))
+      .map((soll) => ({ soll, gezahlt: gezahltImMonat(mietEinnahmenVon(m.id as string), soll.jahrMonat) }))
+      .filter(({ soll, gezahlt }) => soll.gesamt > 0 && gezahlt != null && !mieteBezahlt(soll.gesamt, gezahlt))
+      .map(({ soll, gezahlt }) => ({
+        mieterId: m.id as string,
+        name: mieterNameOf.get(m.id as string) ?? "Mieter",
+        objekt: (m.prop_id && nameOf.get(m.prop_id)) || "",
+        monat: soll.jahrMonat,
+        betrag: Math.round((soll.gesamt - (gezahlt ?? 0)) * 100) / 100,
+      }));
+  });
 
   const offeneAnliegen: OffenesAnliegen[] = ((anlRows ?? []) as { id: string; titel: string | null; created_at: string; mieter_name: string | null }[])
     .map((a) => ({ id: a.id, titel: a.titel, mieter: a.mieter_name ?? "Mieter", erstellt: a.created_at }));

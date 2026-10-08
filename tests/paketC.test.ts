@@ -84,7 +84,7 @@ describe("C3 — Frist „NK zustellen“", () => {
   });
   it("Dashboard, /termine, iCal und Mieterseite reichen die Jahre durch", () => {
     for (const p of ["app/(app)/page.tsx", "app/(app)/termine/page.tsx", "app/(app)/termine/ical/route.ts", "app/(app)/tenants/[id]/page.tsx"]) {
-      expect(readFileSync(p, "utf8"), p).toMatch(/mieterFristen\(m, \{ nkErstellt: /);
+      expect(readFileSync(p, "utf8"), p).toMatch(/mieterFristen\(m, \{\s*nkErstellt: /);
     }
   });
   it("Nachzahlung buchen: Link vorausgefüllt, Ziel prüft Kategorie, Betrag und Mieter", () => {
