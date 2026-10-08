@@ -1,6 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { istDemoKonto, demoDarfRoute } from "@/lib/demo";
+import { istDemoKonto, demoDarfRoute, demoHeim } from "@/lib/demo";
 import { istOeffentlicheSeite } from "@/lib/oeffentlich";
 import { FAKTOR_COOKIE, FAKTOR_SEKUNDEN, faktorNachweisGueltig, hatBestaetigtenFaktor, mfaAusgenommen, stelleFaktorNachweisAus } from "@/lib/auth/faktorNachweis";
 
@@ -243,7 +243,9 @@ export async function proxy(request: NextRequest) {
     // Sperr-Dialog. Vorher las niemand `demo=gesperrt`, und der Besucher stand
     // ohne Erklärung wieder auf dem Dashboard. Der Wert wird nur als Schlüssel
     // für einen festen Text benutzt (`demoBereich`), nie als Ziel.
-    const ziel = new URL("/", request.url);
+    // Startseite DIESES Demo-Kontos (B55): Mieter und Service kamen vorher über `/` und die
+    // Weiterleitung des Layouts auf ihr Portal — `bereich` ging dabei verloren.
+    const ziel = new URL(demoHeim(user.email), request.url);
     ziel.searchParams.set("demo", "gesperrt");
     ziel.searchParams.set("bereich", pathname);
     const gesperrt = NextResponse.redirect(ziel);

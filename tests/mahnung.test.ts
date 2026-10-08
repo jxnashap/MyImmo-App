@@ -64,16 +64,17 @@ describe("Vorbereitete Mail (MyImmo verschickt nichts)", () => {
   });
 });
 
-describe("Dashboard: „Erinnerung schreiben“ neben der offenen Miete", () => {
+describe("Dashboard: „Dokument“ neben der überfälligen Miete", () => {
   const miete = (betrag?: number) => ({ mieterId: "m1", name: "Anna", objekt: "Haus", monat: "2026-10", betrag });
   const leer = { anliegen: [], meldungen: [], fristen: [] };
 
-  it("nach der Fälligkeit: Knopf mit vorausgefüllter Zahlungserinnerung", () => {
+  it("nach der Fälligkeit: Knopf „Dokument“ mit beiden vorausgefüllten Briefen", () => {
     const [a] = baueHeuteAufgaben({ ...leer, offeneMieten: [miete(900)] }, "2026-10-06", Infinity);
     expect(a.href).toBe("/mietkonto?monat=2026-10"); // die Zeile selbst bleibt beim Mietkonto
-    expect(a.neben?.label).toBe("Erinnerung schreiben");
-    expect(a.neben?.href).toContain("/tenants/m1/dokument?art=zahlungserinnerung");
-    expect(a.neben?.href).toContain("betrag=900");
+    expect(a.neben?.label).toBe("Dokument");
+    expect(a.neben?.wahl.erinnerung).toContain("/tenants/m1/dokument?art=zahlungserinnerung");
+    expect(a.neben?.wahl.mahnung).toContain("/tenants/m1/dokument?art=mahnung");
+    expect(a.neben?.wahl.erinnerung).toContain("betrag=900");
   });
 
   it("vor der Fälligkeit, ohne Betrag oder im Bündel: kein Knopf", () => {
@@ -91,12 +92,12 @@ describe("Dashboard: „Erinnerung schreiben“ neben der offenen Miete", () => 
     // Seit Paket B (Teilzahlung) der offene REST, nicht das volle Soll.
     expect(seite).toMatch(/betrag: Math\.round\(\(soll\.gesamt - \(gezahlt \?\? 0\)\) \* 100\) \/ 100/);
     expect(seite).toMatch(/className="aufgabe-mit-aktion"/);
-    expect(seite).toMatch(/href=\{a\.neben\.href\}/);
+    expect(seite).toMatch(/<BriefWahl wahl=\{a\.neben\.wahl\}/);
   });
 
-  it("Mietkonto und Dashboard bauen den Brief an EINER Stelle", () => {
-    expect(readFileSync("components/RueckstandWaechter.tsx", "utf8")).toMatch(/zahlungsBriefUrl\(/);
-    expect(readFileSync("lib/heute.ts", "utf8")).toMatch(/zahlungsBriefUrl\(/);
+  it("Mietkonto und Dashboard bauen die Auswahl an EINER Stelle", () => {
+    expect(readFileSync("components/RueckstandWaechter.tsx", "utf8")).toMatch(/zahlungsBriefWahl\(/);
+    expect(readFileSync("lib/heute.ts", "utf8")).toMatch(/zahlungsBriefWahl\(/);
   });
 
   it("im Mietkonto erst ab dem Tag NACH der Fälligkeit (nicht am Fälligkeitstag)", () => {

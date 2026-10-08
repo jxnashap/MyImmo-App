@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Lock, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useModalFokus } from "@/lib/modalFokus";
-import { demoBereich, demoSperrZiel, type DemoBereich } from "@/lib/demo";
+import { demoAktion, demoBereich, demoSperrZiel, type DemoBereich } from "@/lib/demo";
 import { REGISTRIERUNG_OFFEN, START_CTA } from "@/lib/preise";
 
 /** Wohin der Early-Access-Knopf führt — dieselbe Seite wie auf der Landing. */
@@ -23,7 +23,9 @@ export const DEMO_CTA_ZIEL = "/anmelden";
  */
 export async function demoVerlassen(ziel: string) {
   try {
-    await createClient().auth.signOut();
+    // NUR diese Sitzung (Audit P5, B52): Alle Demo-Besucher teilen ein Konto — global hätte
+    // jeden anderen Besucher mit abgemeldet.
+    await createClient().auth.signOut({ scope: "local" });
   } catch {
     /* Sitzung ggf. schon weg — die Navigation reicht dann */
   }
@@ -48,7 +50,8 @@ export async function demoVerlassen(ziel: string) {
  *     `/?demo=gesperrt&bereich=…` geschickt; dieselbe Komponente öffnet dann
  *     den Dialog. `bereich` dient nur als Schlüssel für einen festen Text.
  *
- * Nur im Demo-Konto eingebunden (`app/(app)/layout.tsx`).
+ * Nur im Demo-Konto eingebunden (`app/(app)/layout.tsx` — Vermieter-App UND seit P5/B55 die
+ * Hülle von Mieter- und Service-Portal).
  */
 export default function DemoSperre() {
   const [offen, setOffen] = useState<DemoBereich | null>(null);
@@ -74,6 +77,15 @@ export default function DemoSperre() {
   useEffect(() => {
     function beiKlick(e: MouseEvent) {
       if (e.defaultPrevented || e.button !== 0) return;
+      // (1a) Knöpfe, die schreiben würden (`data-demo-sperre`, Audit P5 B54/B55): erklären statt
+      // die Action zu starten. Läuft vor Reacts onClick (Capture-Phase auf document).
+      const knopf = (e.target as Element | null)?.closest?.("[data-demo-sperre]");
+      if (knopf) {
+        e.preventDefault();
+        e.stopPropagation();
+        setOffen(demoAktion(knopf.getAttribute("data-demo-sperre")));
+        return;
+      }
       // Strg-/Cmd-Klick öffnet einen neuen Tab — dort greift Weg (2).
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const link = (e.target as Element | null)?.closest?.("a[href]");

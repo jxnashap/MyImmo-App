@@ -142,8 +142,14 @@ export default async function RootLayout({
           <ToastProvider>
             {children}
             {/* Mieter-Demo (01.10.2026): dieselben Höflichkeits-Schranken wie
-                in der Vermieter-App; die Datenbank sperrt ohnehin. */}
+                in der Vermieter-App; die Datenbank sperrt ohnehin. Seit P5/B55 auch
+                der Sperr-Dialog — Export, Löschen und Senden erklären sich jetzt. */}
             {istDemoKonto(user.email) && <DemoNurLesen />}
+            {istDemoKonto(user.email) && (
+              <Suspense fallback={null}>
+                <DemoSperre />
+              </Suspense>
+            )}
             {istDemoKonto(user.email) && <DemoLeiste />}
           </ToastProvider>
         </body>

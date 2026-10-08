@@ -57,7 +57,7 @@ function TerminWahl({ a, nurLesen }: { a: AnliegenRow; nurLesen?: boolean }) {
       </p>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {slots.map((s) => (
-          <button
+          <button data-demo-sperre
             key={s}
             type="button"
             className="btn btn-outline"

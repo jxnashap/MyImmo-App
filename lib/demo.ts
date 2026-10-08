@@ -144,17 +144,24 @@ const LESEND_ERLAUBT: RegExp[] = [
   // Beleg einer Buchung — verlinkt aus der Buchungsliste auf /cashflow. Nur
   // `rechnung`: `/kosten/<id>/edit` ist ein Formular und bleibt gesperrt.
   /^\/kosten\/[^/]+\/rechnung$/,
+  // Alt-Adressen, die nur auf freie Ziele weiterleiten (Audit P5, C53): /bewerbungen →
+  // /anliegen?tab=bewerbungen, /einnahmen und /kosten → /cashflow. EXAKT, nicht als Präfix —
+  // /einnahmen/<id>/edit und /kosten/new bleiben gesperrt.
+  /^\/(bewerbungen|einnahmen|kosten)$/,
 ];
 
 // Ausnahmen INNERHALB der erlaubten Praefixe: Anlegen und Bearbeiten.
 // NK-Rechner und Uebergabeprotokoll standen bis 30.09.2026 auch hier — sie
 // sind Kaufgruende und jetzt frei; was sie speichern wollen, scheitert laut
 // am Datenbank-Trigger. Reihenfolge zaehlt: erst freigegeben, dann gesperrt.
+//
+// Seit 08.10.2026 (Audit P5, C22) für ALLE freien Bereiche, nicht nur Objekte und Mieter: Vorher
+// renderten /cashflow/neu, /kredite/new, /verbrauch/new, alle /…/edit und die Importe ihre
+// Formulare, während der Dialog „In der Demo lässt sich nichts anlegen“ sagte.
 const GESPERRT_TROTZ_PRAEFIX: RegExp[] = [
-  /^\/tenants\/[^/]+\/edit(\/|$)/,        // Bearbeiten-Formulare: nichts zu speichern
-  /^\/tenants\/new$/,
-  /^\/properties\/[^/]+\/edit(\/|$)/,
-  /^\/properties\/new$/,
+  /\/(new|neu)$/,          // Anlegen: /tenants/new, /cashflow/neu, /kredite/new, /verbrauch/new …
+  /\/edit(\/|$)/,          // Bearbeiten: /tenants/<id>/edit, /kredite/<id>/edit, /termine/<id>/edit …
+  /\/import$/,              // Importe: /properties/import, /einstellungen/import
 ];
 
 // Das Mieterhoehungs-Dokument ist die eine erlaubte Ausnahme — inklusive der
@@ -190,6 +197,11 @@ export function demoDarfRoute(pathname: string): boolean {
 export type DemoBereich = { titel: string; text: string };
 
 export const DEMO_BEREICHE: Record<string, DemoBereich> = {
+  // Datenexport (Einstellungen bzw. /konto) — direkt aufgerufen, kommt er über den Proxy hierher.
+  "/api/export/alles": {
+    titel: "Datenexport",
+    text: "Der Export enthält alle Daten eines Kontos als ZIP-Datei (Art. 15 und 20 DSGVO). Das Demo-Konto teilen sich alle Besucher — deshalb ist er hier abgeschaltet.",
+  },
   // Verlinkt aus dem Kauf-Assistenten. Ohne Beispieldaten.
   "/makler": {
     // Bis 05.10.2026 stand hier „Exposé, Grundbuchauszug, Teilungserklärung … je Kaufobjekt“ —
@@ -203,11 +215,52 @@ export const DEMO_BEREICHE: Record<string, DemoBereich> = {
 const DEMO_BEREICHE_MUSTER: [RegExp, DemoBereich][] = [
   // Anlegen/Bearbeiten: „+ Immobilie" oben auf dem Dashboard und jede Zeile
   // unter „Letzte Buchungen" (→ /einnahmen/<id>/edit) führen hierher.
-  [/\/(new|edit)(\/|$)/, {
+  [/\/(new|neu|edit|import)(\/|$)/, {
     titel: "Anlegen und bearbeiten",
     text: "In der Demo lässt sich nichts anlegen oder ändern, weil alle Besucher denselben Beispielbestand teilen. Mit eigenem Zugang erfasst du hier deine Objekte, Mieter und Buchungen.",
   }],
 ];
+
+// ---------------------------------------------------------------------------
+// Knöpfe, die in der Demo etwas SCHREIBEN würden (Audit P5, B54/B55).
+//
+// `DemoNurLesen` sperrt nur Absende-Knöpfe in Formularen. Ein Knopf mit eigenem
+// onClick (Speichern im Übergabeprotokoll, Schaden melden, Dokument anfragen,
+// Freigeben …) lief daran vorbei und endete in „Speichern fehlgeschlagen.“.
+// Jetzt trägt jeder solche Knopf `data-demo-sperre="<schlüssel>"`; DemoSperre
+// fängt den Klick ab und erklärt, statt die Action zu starten.
+// `tests/paketP5.test.ts` verlangt das Attribut an jedem Knopf, der eine
+// Server-Action direkt im onClick aufruft.
+export const DEMO_AKTIONEN: Record<string, DemoBereich> = {
+  speichern: {
+    titel: "In der Demo wird nichts gespeichert",
+    text: "Ansehen und ausfüllen geht — gespeichert, gesendet oder gelöscht wird in der Demo nichts, weil alle Besucher denselben Beispielbestand teilen. Mit eigenem Zugang steht die Funktion bereit.",
+  },
+  export: {
+    titel: "Datenexport",
+    text: "Der Export enthält alle Daten eines Kontos als ZIP-Datei (Art. 15 und 20 DSGVO). Das Demo-Konto teilen sich alle Besucher — deshalb ist er hier abgeschaltet.",
+  },
+  loeschen: {
+    titel: "Konto löschen",
+    text: "Das Demo-Konto lässt sich nicht löschen, es gehört allen Besuchern. Mit eigenem Zugang löschst du dein Konto hier jederzeit (Art. 17 DSGVO).",
+  },
+};
+
+/** Text für einen gesperrten Knopf; unbekannter Schlüssel → „speichern“. */
+export function demoAktion(schluessel: string | null | undefined): DemoBereich {
+  return DEMO_AKTIONEN[schluessel ?? ""] ?? DEMO_AKTIONEN.speichern;
+}
+
+/**
+ * Startseite eines Demo-Kontos — dorthin schickt der Proxy einen gesperrten Aufruf.
+ * Vorher immer `/`: Mieter und Service landeten über die Weiterleitung des Layouts auf
+ * /portal bzw. /service, und `bereich` ging unterwegs verloren (B55).
+ */
+export function demoHeim(email?: string | null): string {
+  if (email === DEMO_MIETER_EMAIL) return "/portal";
+  if (email && (DEMO_SERVICE_KONTEN as readonly string[]).includes(email)) return "/service";
+  return "/";
+}
 
 /** Text fuer einen gesperrten Pfad; allgemeiner Satz, wenn keiner hinterlegt ist. */
 export function demoBereich(pfad: string): DemoBereich {

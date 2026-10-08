@@ -14,7 +14,7 @@ export default function BelegFreigabeToggle({ kostenId, freigegeben }: { kostenI
   // Antwort AUSWERTEN (30.09.2026): Sie wurde verworfen — scheiterte die
   // Action, blieb der Schalter stumm stehen und niemand erfuhr es.
   return (
-    <button
+    <button data-demo-sperre
       type="button"
       className="btn btn-ghost"
       style={{ fontSize: 11, padding: "3px 8px", color: freigegeben ? "var(--green)" : "var(--muted)" }}

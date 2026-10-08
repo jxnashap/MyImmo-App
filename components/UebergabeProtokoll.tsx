@@ -74,7 +74,9 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
         <button type="button" className="btn btn-ghost" style={{ fontSize: 12, marginTop: 4 }} onClick={addRaum}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Raum</button>
 
         {/* PDF-Download: Route liefert attachment → Download ohne neues Fenster */}
-        <form action={`/tenants/${tenant.id}/protokoll/pdf`} method="POST" className="form-actions">
+        {/* data-demo-erlaubt: Das PDF liest nur und ist in der Demo bedienbar (Audit P5, B54);
+            „Speichern“ trägt data-demo-sperre und erklärt sich dort. */}
+        <form action={`/tenants/${tenant.id}/protokoll/pdf`} method="POST" className="form-actions" data-demo-erlaubt>
           <input type="hidden" name="typ" value={typ} />
           <input type="hidden" name="datum" value={datum} />
           <input type="hidden" name="strom" value={strom} />
@@ -82,7 +84,7 @@ export default function UebergabeProtokoll({ tenant, property, vermieter }: { te
           <input type="hidden" name="wasser" value={wasser} />
           <input type="hidden" name="schluessel" value={schluessel} />
           <input type="hidden" name="raeume" value={JSON.stringify(gefuellteRaeume)} />
-          <button
+          <button data-demo-sperre
             type="button"
             className="btn btn-outline"
             disabled={ablegen}

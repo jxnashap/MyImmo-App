@@ -166,7 +166,7 @@ export default function AfaAssistent({ objekte, startObjekt }: { objekte: AfaObj
               )}
               {objektId && !bodenwertFehlt && (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-                  <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={speichern}
+                  <button data-demo-sperre type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={speichern}
                     title="Speichert den Gebäudeanteil (%) am gewählten Objekt — fließt in Anlage V / AfA ein"
                     onClick={() => startSpeichern(async () => {
                       setSpeicherFehler(null);

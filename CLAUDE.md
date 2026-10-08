@@ -668,9 +668,13 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   mit Empfänger/Betreff/Text (`briefMailLink` in `lib/mahnung.ts`; Anhang muss der Vermieter selbst
   anfügen — mailto kann keine Anhänge). **Ins Mieterportal** = Bestätigungskarte
   (`pruefeBriefZustellung`) → `speichereBrief(…, { zustellen, bestaetigung })` mit derselben
-  Schranke wie die NK-Abrechnung. Dashboard: neben „Mieteingang … offen“ der Knopf „Erinnerung
-  schreiben“ — erst NACH dem dritten Werktag (`mieteUeberfaellig`), nie in einem Bündel; das
-  Mietkonto zeigt Erinnerung/Mahnung ebenfalls erst ab dem Folgetag. **Regeln:** (1) MyImmo
+  Schranke wie die NK-Abrechnung. **Seit 08.10.2026 (Betreiber): Knopf „Dokument“ → graue Auswahl im
+  Apple-Stil Zahlungserinnerung ODER Mahnung** (`components/BriefWahl.tsx`, am Handy Aktionsblatt von
+  unten, am Desktop am Knopf; `zahlungsBriefWahl()` in `lib/mahnung.ts` = EINE Stelle für Dashboard und
+  Mietkonto). Erst NACH dem dritten Werktag (`mieteUeberfaellig`), nie in einem Bündel; die Zeile heißt dann
+  „Miete … überfällig“ — **bewusst nicht „Mietverzug“** (MyImmo weiß nur „kein Eingang bestätigt“). Die
+  Mahnung ist immer wählbar; „Noch keine Zahlungserinnerung im Archiv“ ist nur Hinweis
+  (`erinnerungArchiviert()`), keine Sperre. **Regeln:** (1) MyImmo
   verschickt Briefe an Mieter NIE über Brevo. (2) Eine Adresse kommt nur in den mailto-Link, wenn
   sie dem einfachen Muster entspricht (kein `?bcc=` durch die Hintertür). `tests/mahnung.test.ts`.
 - 🔧 **Handwerker-Anfragen / Handwerkerportal — `docs/zukunft/HANDWERKER-ANFRAGEN.md`**
@@ -1973,8 +1977,9 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   bundesweite Feiertage (Osterformel; Landesfeiertage als Hinweis im Brief), `mietFaelligkeit()` (am 3. Werktag
   „fällig“, erst danach „überfällig“), `mieteBezahlt()` (Fehlbetrag < 1 € — auch im Portal, vorher 0,50 €),
   `naechsterWerktag()` (§ 108 Abs. 3 AO für die Steuer-Frist). `offeneMieten()` rechnet nach Berliner Datum;
-  Dashboard zeigt auch offene Vormonate (≤ 62 Tage) und ist erst NACH der Fälligkeit dringend. **Mahnung** erst
-  nach einer archivierten Zahlungserinnerung (`mahnungMoeglich()`), Vorlage ohne „trotz vorheriger Erinnerung“.
+  Dashboard zeigt auch offene Vormonate (≤ 62 Tage) und ist erst NACH der Fälligkeit dringend. **Mahnung**: Vorlage
+  ohne „trotz vorheriger Erinnerung“; die Sperre „erst nach einer Erinnerung“ ist seit 08.10.2026 wieder WEG
+  (Betreiber: Auswahl über „Dokument“, siehe Mahnung/Zahlungserinnerung oben).
   **§ 558** nur bei normaler Miete (Staffel/Index ausgeschlossen, auch Warnung im Brief-Generator); verpasste
   Staffelstufe ohne Miet-Zeitraum → Warn-Frist (`zeitraumMonate`); Indexmiete „Anpassung möglich (seit …)“.
   **Mietminderung** (`mieter.minderungen`, Mieterseite → „Mietminderung“, `sollFuerMonat` kürzt, Portal sieht sie).
@@ -1987,6 +1992,30 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   `permission denied`). Ob es je ausgenutzt wurde, lässt sich nicht feststellen (kein Änderungsprotokoll).
   **Regel: Jede neue Sicht bekommt im selben PR `revoke insert, update, delete … from public, anon, authenticated`**
   — `tests/paketP7.test.ts` sucht jede `create view` in den Migrationen und wird sonst rot.
+  🔒 **Nachtrag (08.10.2026, Betreiber: „Mieter gesperrt, nur lesen“):** Live nachgesehen — ein Mieter schreibt nur
+  noch: Anliegen melden (+ Fotos), Nachricht, Zählerstand, Termin bestätigen, Vermieter-Anfrage beantworten. Die
+  Spaltenschutz-Trigger auf `anliegen`/`vermieter_anfragen` sind seit `20261008090000` ERLAUBNISlisten
+  (`to_jsonb(new) - array[…]`), vorher Sperrlisten — eine neue Spalte wäre still beschreibbar gewesen.
+  **Regel: Spaltenschutz für Fremde (Mieter, Partner) immer als Erlaubnisliste.** `tests/briefWahl.test.ts`.
+- 🎭 **Paket P5 der Gesamtprüfung (08.10.2026): Demo-Sicherheit** (`tests/paketP5.test.ts`, 26 Mutationen rot).
+  (B52) **`signOut()` nie ohne Scope** — ohne Scope nimmt die Bibliothek `global`; ein „Abmelden“ im geteilten
+  Demo-Konto beendete die Sitzungen ALLER Besucher (19 an einem Vormittag). Jetzt überall `local`; `global` nur
+  `PasswortNeu`, `others` nur Einstellungen. Folge für echte Konten: Abmelden beendet nur noch dieses Gerät.
+  (B53) Öffentliche Links der Demo nehmen nichts an: `gehoert_demo()` in `auftrag_public_rueckmeldung` + Trigger
+  `demo_eingang_sperre` auf allen Eingangstabellen öffentlicher Links (`20261008100000`; service_role schreibt weiter).
+  **Regel: Eine neue Tabelle, in die ein öffentlicher Link schreibt, bekommt den Trigger `demo_eingang_sperre`.**
+  (B54) **Knöpfe, die eine Server-Action im onClick starten, tragen `data-demo-sperre`** (Wert `export`/`loeschen`
+  für eigene Texte) → `DemoSperre` erklärt statt zu starten; der Wächter (`tests/stubs/demoSchreibKnoepfe.ts`)
+  verlangt es für jeden DIREKTEN Aufruf. Was über eine Zwischenfunktion schreibt (~75 Knöpfe), scheitert an der
+  Datenbank — Fehler-Toasts bekommen in der Demo „In der Demo wird nichts gespeichert.“ (`mitDemoHinweis`,
+  Merkmal `data-demo` am `<html>`), Actions übersetzen `hint demo_nur_lesen` über `dbFehlerText()`
+  (`lib/demoFehler.ts`; NICHT jede 42501 — die meldet auch eine echte RLS-Policy). (B55) Sperr-Dialog auch in der
+  Portal-Hülle; der Proxy schickt Demo-Mieter/-Service auf IHRE Startseite (`demoHeim`), `bereich` bleibt.
+  (B56) Portal ohne Datei keine Knöpfe; die Datei-Route antwortet mit HTML statt Klartext. (C53) `/bewerbungen`,
+  `/einnahmen`, `/kosten` exakt frei. (C22) **Jede Seite …/new, …/neu, …/edit, …/import ist in der Demo gesperrt**
+  (Test sucht alle Verzeichnisse). (B26) **`DemoNurLesen` sperrt nur Felder in einem ABSENDENDEN Formular** —
+  Suche, Befehlspalette, Rechner, Steuerjahr sind bedienbar. **Regel: Ein Lese-Werkzeug nie in ein `<form>` mit
+  POST/Action legen** (sonst sperrt die Demo es wieder); ein PDF-Formular, das nur liest, trägt `data-demo-erlaubt`.
 - 🏦 **Paket P6 der Gesamtprüfung (07.10.2026): Kredite mit Zeit** (`tests/paketP6.test.ts`, 12 Mutationen rot).
   **`lib/kredit.ts` ist die EINE Lesart eines Darlehens:** `restschuldVon()` (leer = Darlehenssumme — vorher
   vier Lesarten, `updateKredit` speicherte null → „100 % getilgt“), `istGetilgt()`/`rateVon()` (Restschuld 0 =

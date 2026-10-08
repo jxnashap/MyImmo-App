@@ -1,12 +1,13 @@
 // Rückstands-Wächter (Server-Komponente): zeigt offene Miet-Monate der
-// letzten 12 Monate mit Ein-Klick-Sprung zur vorausgefüllten
-// Zahlungserinnerung bzw. Mahnung. Rendert nichts, wenn alles bezahlt ist.
+// letzten 12 Monate; „Dokument“ öffnet die Auswahl Zahlungserinnerung oder
+// Mahnung (components/BriefWahl.tsx). Rendert nichts, wenn alles bezahlt ist.
 import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
 import AufklappSection from "@/components/AufklappSection";
 import { createClient } from "@/lib/supabase/server";
 import { eur2 } from "@/lib/format";
-import { zahlungsBriefUrl, mahnungMoeglich, ERINNERUNG_TITEL_PRAEFIX } from "@/lib/mahnung";
+import { zahlungsBriefWahl, erinnerungArchiviert, ERINNERUNG_TITEL_PRAEFIX } from "@/lib/mahnung";
+import BriefWahl from "@/components/BriefWahl";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { offeneMieten, monatLabel, type MietkontoMieter, type MietkontoZeitraum } from "@/lib/mietkonto";
 
@@ -20,7 +21,7 @@ export default async function RueckstandWaechter() {
       .select("id,vorname,nachname,prop_id,mietbeginn,mietende,kaltmiete,nk_vorauszahlung,stellplatz_miete,minderungen"),
     supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
     supabase.from("einnahmen").select("mieter_id,buchungsdatum,kategorie,soll_monat,betrag").eq("kategorie", "Miete"),
-    // Archivierte Zahlungserinnerungen — erst danach wird die Mahnung angeboten (B10).
+    // Archivierte Zahlungserinnerungen — nur für den Hinweis unter „Mahnung“ in der Auswahl.
     supabase.from("notizen").select("mieter_id,created_at").ilike("titel", `${ERINNERUNG_TITEL_PRAEFIX}%`),
   ]);
   const erinnerungen = (erinnRows ?? []) as { mieter_id: string | null; created_at: string }[];
@@ -88,9 +89,15 @@ export default async function RueckstandWaechter() {
         )}
         {aktuell.map((o) => {
           // Fällig ist der DRITTE WERKTAG (§ 556b BGB) — Text und Frist baut lib/mahnung.ts,
-          // dieselbe Stelle wie die Aufgabe „Mieteingang offen“ auf dem Dashboard.
-          const q = (art: "zahlungserinnerung" | "mahnung") =>
-            zahlungsBriefUrl({ mieterId: o.mieterId, jahrMonat: o.jahrMonat, betrag: o.rest, heuteISO, art });
+          // dieselbe Stelle wie die Aufgabe auf dem Dashboard.
+          const wahl = zahlungsBriefWahl({
+            mieterId: o.mieterId,
+            mieterName: o.mieterName,
+            jahrMonat: o.jahrMonat,
+            betrag: o.rest,
+            heuteISO,
+            erinnerungArchiviert: erinnerungArchiviert(erinnerungen, o.mieterId, o.faelligSeit),
+          });
           return (
             <div
               key={`${o.mieterId}-${o.jahrMonat}`}
@@ -104,13 +111,9 @@ export default async function RueckstandWaechter() {
                 {o.tageOffen === 0 ? "heute fällig" : `${o.tageOffen} Tag${o.tageOffen === 1 ? "" : "e"} überfällig`}
               </span>
               {/* Am Fälligkeitstag selbst ist noch nichts versäumt (Verzug ab dem Folgetag) —
-                  dieselbe Grenze wie „Erinnerung schreiben“ auf dem Dashboard (mieteUeberfaellig). */}
-              {o.tageOffen > 0 && <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-                <Link href={q("zahlungserinnerung")} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Zahlungserinnerung</Link>
-                {/* Mahnung erst nach einer archivierten Erinnerung (B10). */}
-                {mahnungMoeglich(erinnerungen, o.mieterId, o.faelligSeit) && (
-                  <Link href={q("mahnung")} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px", color: "var(--red)" }}>Mahnung</Link>
-                )}
+                  dieselbe Grenze wie „Dokument“ auf dem Dashboard (mieteUeberfaellig). */}
+              {o.tageOffen > 0 && <span style={{ marginLeft: "auto" }}>
+                <BriefWahl wahl={wahl} />
               </span>}
             </div>
           );

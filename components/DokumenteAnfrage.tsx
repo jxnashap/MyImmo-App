@@ -107,7 +107,7 @@ export default function DokumenteAnfrage({
               />
               {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
               <div style={{ display: "flex", gap: 8 }}>
-                <button
+                <button data-demo-sperre
                   type="button"
                   className="btn btn-gold"
                   disabled={pending || (gewaehlt === "Sonstiges Dokument" && !notiz.trim())}

@@ -135,7 +135,7 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
 
           {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" className="btn btn-gold" disabled={pending} onClick={senden}>
+            <button data-demo-sperre type="button" className="btn btn-gold" disabled={pending} onClick={senden}>
               {pending ? "Wird gesendet …" : notfall ? "Zusätzlich an den Vermieter melden" : "Schaden melden"}
             </button>
             <button type="button" className="btn btn-ghost" onClick={onAbbruch}>Abbrechen</button>

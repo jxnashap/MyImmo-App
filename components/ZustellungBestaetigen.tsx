@@ -15,7 +15,7 @@ export default function ZustellungBestaetigen({ zustellungId, nurLesen = false }
   const toast = useToast();
   if (nurLesen) return <VorschauHinweis was="„Gelesen und bestätigt“" />;
   return (
-    <button
+    <button data-demo-sperre
       type="button"
       className="btn btn-gold"
       style={{ fontSize: 11, padding: "4px 10px" }}

@@ -3,6 +3,7 @@
 // Anliegen im Mieterportal (Etappe 2): Mieter erstellt Schaden/Dokument/Frage,
 // Vermieter setzt Status; beide schreiben Nachrichten in den Verlauf (seit 02.10.2026,
 // lib/vorgang.ts). RLS sichert beide Seiten ab.
+import { dbFehlerText } from "@/lib/demoFehler";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { pruefeNachricht } from "@/lib/vorgang";
@@ -61,7 +62,9 @@ export async function erstelleAnliegen(formData: FormData) {
     })
     .select("id")
     .single();
-  if (error || !neu) return { error: "Anliegen konnte nicht gespeichert werden." };
+  // Demo-Sperre sagt, warum (Audit P5, B54): Schaden melden und Dokument anfragen endeten in
+  // der Demo in „konnte nicht gespeichert werden“.
+  if (error || !neu) return { error: dbFehlerText(error, "Anliegen konnte nicht gespeichert werden.") };
 
   for (const f of dateien) {
     const b64 = Buffer.from(await f.arrayBuffer()).toString("base64");

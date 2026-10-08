@@ -16,6 +16,8 @@ import { fristZiel, baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type Off
 import { heuteBerlin } from "@/lib/zeitraum";
 import { erwarteteMonate, gezahltImMonat, ymPlus } from "@/lib/mietkonto";
 import { mieteBezahlt, mietFaelligkeit } from "@/lib/mietStatus";
+import { erinnerungArchiviert, ERINNERUNG_TITEL_PRAEFIX } from "@/lib/mahnung";
+import BriefWahl from "@/components/BriefWahl";
 import { CalendarDays, Plus, TriangleAlert, Landmark, Banknote, ReceiptText, MessageSquareText, Zap, CheckCircle2, Building2, Bell, FileCheck2, FileSignature, Wrench, UserPlus, CalendarCheck, ChevronRight, Inbox } from "lucide-react";
 import BetragChart from "@/components/BetragChart";
 import WertVerlaufChart from "@/components/WertVerlaufChart";
@@ -103,7 +105,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     );
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }, { data: vertreterRows }, { data: verstecktRows }, { data: nkNotizen }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }, { data: vertreterRows }, { data: verstecktRows }, { data: nkNotizen }, { data: erinnRows }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
@@ -124,6 +126,8 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     supabase.from("frist_ausgeblendet").select("schluessel"),
     // Paket C: erstellte NK-Abrechnungen — die Frist „NK zustellen“ entfällt dann.
     supabase.from("notizen").select("mieter_id,titel").eq("kategorie", "Nebenkostenabrechnung"),
+    // Archivierte Zahlungserinnerungen — nur für den Hinweis in der Auswahl „Dokument“.
+    supabase.from("notizen").select("mieter_id,created_at").ilike("titel", `${ERINNERUNG_TITEL_PRAEFIX}%`),
   ]);
 
   const properties = (props ?? []) as Property[];
@@ -208,6 +212,11 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
         objekt: (m.prop_id && nameOf.get(m.prop_id)) || "",
         monat: soll.jahrMonat,
         betrag: Math.round((soll.gesamt - (gezahlt ?? 0)) * 100) / 100,
+        erinnerungArchiviert: erinnerungArchiviert(
+          (erinnRows ?? []) as { mieter_id: string | null; created_at: string }[],
+          m.id as string,
+          mietFaelligkeit(soll.jahrMonat, heuteISO0).faellig,
+        ),
       }));
   });
 
@@ -624,13 +633,13 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                         <ChevronRight size={15} color="var(--faint)" style={{ flexShrink: 0 }} />
                       </Link>
                     );
-                    // Überfällige Miete: die Erinnerung als eigener Knopf NEBEN der Zeile — ein Link
-                    // im Link wäre ungültiges HTML (lib/mahnung.ts baut Ziel, Betrag und Frist).
+                    // Überfällige Miete: „Dokument“ als eigener Knopf NEBEN der Zeile (ein Knopf im Link
+                    // wäre ungültiges HTML) — öffnet die Auswahl Zahlungserinnerung/Mahnung.
                     if (!a.neben) return zeile;
                     return (
                       <div key={`${a.art}-${a.href}-${a.label}-${a.sub}`} className="aufgabe-mit-aktion">
                         {zeile}
-                        <Link href={a.neben.href} className="btn btn-ghost aufgabe-aktion">{a.neben.label}</Link>
+                        <BriefWahl wahl={a.neben.wahl} label={a.neben.label} className="btn btn-ghost aufgabe-aktion" />
                       </div>
                     );
                   })}

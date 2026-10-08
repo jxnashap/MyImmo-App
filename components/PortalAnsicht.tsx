@@ -243,8 +243,16 @@ export default function PortalAnsicht({
                       {d.zustellung.bestaetigung_noetig && (d.zustellung.bestaetigt_am
                         ? <span className="badge badge-green" title="Von dir bestätigt">bestätigt {datum(d.zustellung.bestaetigt_am)}</span>
                         : <ZustellungBestaetigen zustellungId={d.zustellung.id} nurLesen={vorschau} />)}
-                      <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
-                      <a href={`/archiv/${d.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
+                      {/* Nur mit Datei (Audit P5, B56): Ein Eintrag ohne Datei führte auf eine
+                          nackte 404-Seite — wie auf der Mieterseite (B23) keine Knöpfe ohne Datei. */}
+                      {d.datei_name ? (
+                        <>
+                          <a href={`/archiv/${d.id}/datei`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Ansehen</a>
+                          <a href={`/archiv/${d.id}/datei?download=1`} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Herunterladen</a>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: 11, color: "var(--faint)" }}>ohne Datei</span>
+                      )}
                     </div>
                   ))
                 )}

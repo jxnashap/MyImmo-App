@@ -54,7 +54,8 @@ export default function AutoLogout() {
     // vorher stand er kommentarlos vor dem Formular.
     const logout = async (grund: "inaktiv" | "geschlossen") => {
       try {
-        await createClient().auth.signOut();
+        // Nur diese Sitzung (B52) — die Auto-Abmeldung eines Geräts beendet nicht alle anderen.
+        await createClient().auth.signOut({ scope: "local" });
       } catch {
         /* Session ggf. schon weg — Redirect reicht */
       }

@@ -18,7 +18,9 @@ export async function GET(req: NextRequest, props: { params: Promise<{ id: strin
     .eq("id", params.id)
     .single();
 
-  if (!n?.datei_data) return new NextResponse("Keine Datei hinterlegt", { status: 404 });
+  // Ohne Datei eine lesbare Seite statt Klartext „Keine Datei hinterlegt“ (Audit P5, B56). Die
+  // Oberfläche zeigt ohne Datei keine Knöpfe mehr; das hier fängt alte Links und Lesezeichen.
+  if (!n?.datei_data) return keineDatei();
 
   // Abrufnachweis (02.10.2026): Öffnet ein Mieter ein ihm zugestelltes Dokument, hält
   // die Datenbank den ERSTEN Abruf fest — nur seine eigene Zustellung, nur einmal. Beim
@@ -42,4 +44,11 @@ export async function GET(req: NextRequest, props: { params: Promise<{ id: strin
       ...dateiKopf(n.datei_type, n.datei_name, req.nextUrl.searchParams.has("download")),
     },
   });
+}
+
+/** Kleine HTML-Seite für „keine Datei“ — ohne Inline-Stil/Skript (CSP), Status bleibt 404.
+ *  Nicht exportiert: Route-Dateien dürfen nur HTTP-Methoden und Segment-Konfiguration exportieren. */
+function keineDatei(): NextResponse {
+  const html = `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Keine Datei – MyImmo</title><meta name="robots" content="noindex"></head><body><main><h1>Keine Datei hinterlegt</h1><p>Zu diesem Eintrag gehört kein Dokument zum Ansehen oder Herunterladen — er besteht nur aus Text.</p><p><a href="/">Zurück zur Übersicht</a></p></main></body></html>`;
+  return new NextResponse(html, { status: 404, headers: { "Content-Type": "text/html; charset=utf-8", "X-Content-Type-Options": "nosniff" } });
 }

@@ -1,13 +1,15 @@
 // Zahlungserinnerung / Mahnung aus einer offenen Miete (05.10.2026, Wunsch des Betreibers).
 //
 // EINE Stelle für den Sprung „offene Miete → vorausgefüllter Brief“: benutzt vom
-// Rückstands-Wächter im Mietkonto UND von der Aufgabe „Mieteingang offen“ auf dem Dashboard.
+// Rückstands-Wächter im Mietkonto UND von der Aufgabe „Miete … überfällig“ auf dem Dashboard —
+// beide über die Auswahl „Dokument“ (zahlungsBriefWahl → components/BriefWahl.tsx).
 //
 // Versand: MyImmo verschickt die Mahnung NICHT selbst (Vorgabe des Betreibers: „wir halten
 // uns aus dem Mailverkehr raus“). `briefMailLink` bereitet nur die Mail im Programm des
 // Vermieters vor — Absender, „Gesendet“-Ordner und damit der Nachweis bleiben bei ihm.
 // Reine Funktionen ohne Datenbank und ohne React.
 import { monatLabel } from "@/lib/mietkonto";
+import { eur2 } from "@/lib/format";
 import { dritterWerktag, mieteUeberfaellig, LANDESFEIERTAG_HINWEIS } from "@/lib/mietStatus";
 
 export type ZahlungsBriefArt = "zahlungserinnerung" | "mahnung";
@@ -19,11 +21,13 @@ export type ZahlungsBriefArt = "zahlungserinnerung" | "mahnung";
 export { mieteUeberfaellig };
 
 /**
- * Darf die Mahnung angeboten werden? Erst, wenn nach der Fälligkeit eine Zahlungserinnerung an
- * diesen Mieter im Archiv liegt (Audit P7, B10): Vorher standen Erinnerung und Mahnung ab dem
- * ersten Tag nebeneinander, und die Mahnung behauptete „trotz vorheriger Erinnerung“.
+ * Liegt nach der Fälligkeit schon eine Zahlungserinnerung an diesen Mieter im Archiv?
+ * NUR ein Hinweis in der Auswahl, keine Sperre (Betreiber 08.10.2026: „Auswahl zwischen
+ * Zahlungserinnerung und Mahnung“). Die Mahnung ist immer wählbar: Bei einer kalendermäßig
+ * bestimmten Fälligkeit (3. Werktag) tritt Verzug ohne Mahnung ein (§ 286 Abs. 2 Nr. 1 BGB), und
+ * ihr Text behauptet seit P7 keine vorherige Erinnerung mehr (B10).
  */
-export function mahnungMoeglich(
+export function erinnerungArchiviert(
   erinnerungen: { mieter_id: string | null; created_at: string }[],
   mieterId: string,
   faelligSeit: string,
@@ -62,6 +66,34 @@ export function zahlungsBriefUrl(o: {
     grund,
   });
   return `/tenants/${o.mieterId}/dokument?${q.toString()}`;
+}
+
+/** Was die Auswahl „Dokument“ braucht: Kopfzeile, zwei vorausgefüllte Briefe, ein Hinweis. */
+export type ZahlungsBriefWahl = {
+  /** Kopf des Auswahlblatts: wer, welcher Monat, wie viel. */
+  titel: string;
+  erinnerung: string;
+  mahnung: string;
+  /** Liegt schon eine Zahlungserinnerung im Archiv? Nur Hinweis unter „Mahnung“, keine Sperre. */
+  erinnerungArchiviert: boolean;
+};
+
+/** EINE Stelle für die Auswahl Zahlungserinnerung/Mahnung — Dashboard UND Mietkonto. */
+export function zahlungsBriefWahl(o: {
+  mieterId: string;
+  mieterName: string;
+  jahrMonat: string;
+  betrag: number;
+  heuteISO: string;
+  erinnerungArchiviert: boolean;
+}): ZahlungsBriefWahl {
+  const basis = { mieterId: o.mieterId, jahrMonat: o.jahrMonat, betrag: o.betrag, heuteISO: o.heuteISO };
+  return {
+    titel: `${o.mieterName} · Miete ${monatLabel(o.jahrMonat)} · ${eur2(o.betrag)} offen`,
+    erinnerung: zahlungsBriefUrl({ ...basis, art: "zahlungserinnerung" }),
+    mahnung: zahlungsBriefUrl({ ...basis, art: "mahnung" }),
+    erinnerungArchiviert: o.erinnerungArchiviert,
+  };
 }
 
 // Bewusst schlicht: Eine Adresse, die hier nicht passt, landet NICHT im Link — lieber ein
