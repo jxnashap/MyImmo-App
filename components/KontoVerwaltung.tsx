@@ -159,8 +159,10 @@ export default function KontoVerwaltung({
             Alle Daten, die zu deinem Konto gehören, als ZIP mit CSV-Dateien — Auskunft und
             Datenübertragbarkeit nach Art. 15 und 20 DSGVO.
           </p>
+          {/* data-demo-sperre (Audit P5, B55): In der Demo erklärt ein Dialog, statt in die
+              erneute Anmeldung mit gesperrtem Feld zu laufen. */}
           {/* eslint-disable-next-line @next/next/no-location-assign-relative-destination -- Datei-Download über eine API-Route, keine Seite */}
-          <button type="button" onClick={() => absichern(() => window.location.assign("/api/export/alles"))} className="btn btn-gold" style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <button type="button" data-demo-sperre="export" onClick={() => absichern(() => window.location.assign("/api/export/alles"))} className="btn btn-gold" style={{ fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Download size={14} /> Daten herunterladen
           </button>
           {reAuthDialog}
@@ -188,7 +190,7 @@ export default function KontoVerwaltung({
               ? "Dein Mietverhältnis bleibt davon unberührt — die Daten dazu führt dein Vermieter, er ist dafür verantwortlich. Deine Anliegen und gemeldeten Zählerstände bleiben in seiner Verwaltung stehen, verlieren aber die Verknüpfung zu deinem Zugang."
               : "Deine Aufträge bleiben beim jeweiligen Auftraggeber — er braucht sie als Nachweis zu seinen Kostenbuchungen. Sie verlieren die Verknüpfung zu deinem Zugang und tragen danach nur noch deinen Firmennamen."}
           </p>
-          <button type="button" className="btn btn-ghost" style={{ fontSize: 13, color: "var(--red)" }} onClick={() => setOffen(true)}>
+          <button type="button" data-demo-sperre="loeschen" className="btn btn-ghost" style={{ fontSize: 13, color: "var(--red)" }} onClick={() => setOffen(true)}>
             Konto löschen
           </button>
         </div>

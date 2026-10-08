@@ -103,7 +103,7 @@ function DsgvoAufraeumen({ bewerbungen }: { bewerbungen: BewerbungRow[] }) {
           <strong>{alte.length}</strong> abgelehnte {alte.length === 1 ? "Bewerbung ist" : "Bewerbungen sind"} älter
           als 6 Monate — nach DSGVO sollten die Daten jetzt gelöscht werden (Dokumente werden mit entfernt).
         </span>
-        <button
+        <button data-demo-sperre
           type="button" className="btn btn-outline" style={{ marginLeft: "auto", fontSize: 12 }} disabled={pending}
           onClick={() => startTransition(async () => {
             // Antwort auswerten — die Action meldet „es wurde nichts gelöscht".
@@ -166,7 +166,7 @@ function LinkZeile({ l }: { l: BewerberLinkRow }) {
           >
             {kopiert ? <><Check size={12} style={{ verticalAlign: "-2px" }} /> Kopiert</> : <><Copy size={12} style={{ verticalAlign: "-2px" }} /> Link kopieren</>}
           </button>
-          <button
+          <button data-demo-sperre
             type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }} disabled={pending}
             onClick={() =>
               startTransition(async () => {

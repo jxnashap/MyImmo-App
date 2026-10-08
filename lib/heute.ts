@@ -12,7 +12,7 @@
 // sich prüfen. Die Seite reicht nur die Zeilen herein.
 
 import { vorgangUrl } from "@/lib/anliegenListe";
-import { mieteUeberfaellig, zahlungsBriefUrl } from "@/lib/mahnung";
+import { mieteUeberfaellig, zahlungsBriefWahl, type ZahlungsBriefWahl } from "@/lib/mahnung";
 
 export type AufgabenArt = "miete" | "anliegen" | "zaehler" | "frist" | "termin" | "stammdaten";
 
@@ -31,10 +31,11 @@ export type Aufgabe = {
   /** Sortierschlüssel: ISO-Datum. Ohne Datum (z. B. offene Miete) das Fenster-Ende. */
   datum: string;
   /**
-   * Zweite, ausdrückliche Handlung neben der Zeile (05.10.2026): bei überfälliger Miete
-   * „Erinnerung schreiben“ → vorausgefüllter Brief (lib/mahnung.ts). Nie in einem Bündel.
+   * Zweite, ausdrückliche Handlung neben der Zeile: bei überfälliger Miete der Knopf „Dokument“
+   * mit der Auswahl Zahlungserinnerung/Mahnung (components/BriefWahl.tsx, 08.10.2026; vorher nur
+   * „Erinnerung schreiben“). Nie in einem Bündel.
    */
-  neben?: { label: string; href: string };
+  neben?: { label: string; wahl: ZahlungsBriefWahl };
 };
 
 export type OffeneMiete = {
@@ -44,6 +45,8 @@ export type OffeneMiete = {
   monat: string;
   /** Soll des Monats (warm). Ohne Betrag gibt es keinen Erinnerungs-Knopf. */
   betrag?: number;
+  /** Liegt nach der Fälligkeit schon eine Zahlungserinnerung im Archiv? Nur Hinweis in der Auswahl. */
+  erinnerungArchiviert?: boolean;
 };
 export type OffenesAnliegen = { id: string; titel: string | null; mieter: string; erstellt: string };
 export type OffeneMeldung = { id: string; art: string | null; mieter: string; datum: string };
@@ -107,24 +110,34 @@ export function baueHeuteAufgaben(
 
   // Offene Miete des laufenden Monats: die häufigste tägliche Handlung.
   for (const m of q.offeneMieten) {
+    // Nach der Fälligkeit (3. Werktag ohne Feiertage) heißt die Zeile „überfällig“ und ist rot —
+    // dieselbe Regel wie Rückstands-Wächter und Brief (lib/mietStatus.ts). Vorher „ab dem 5.“: am
+    // 05.10.2026, dem Fälligkeitstag selbst, stand die Miete schon rot da (Audit P7, B13).
+    // Bewusst „überfällig“, nicht „Mietverzug“ (08.10.2026): MyImmo weiß nur, dass kein Eingang
+    // bestätigt ist — ob das Geld schon da ist oder gemindert wurde, weiß es nicht.
+    const ueberfaellig = mieteUeberfaellig(m.monat, heuteISO);
     aufgaben.push({
       art: "miete",
-      label: `Mieteingang ${monatLabel(m.monat)} offen`,
+      label: ueberfaellig ? `Miete ${monatLabel(m.monat)} überfällig` : `Mieteingang ${monatLabel(m.monat)} offen`,
       sub: [m.name, m.objekt].filter(Boolean).join(" · "),
       href: `/mietkonto?monat=${m.monat}`,
       aktion: "Miete bestätigen",
-      // Dringend erst NACH der Fälligkeit (3. Werktag ohne Feiertage) — dieselbe Regel wie
-      // Rückstands-Wächter und Brief (lib/mietStatus.ts). Vorher „ab dem 5.“: am 05.10.2026, dem
-      // Fälligkeitstag selbst, stand die Miete schon rot da (Audit P7, B13).
-      dringend: mieteUeberfaellig(m.monat, heuteISO),
+      dringend: ueberfaellig,
       datum: `${m.monat}-01`,
-      // Erst NACH der Fälligkeit (3. Werktag, § 556b BGB) — vorher wäre jede Erinnerung verfrüht.
-      // Die Zeile selbst führt weiter ins Mietkonto (vielleicht ist das Geld ja da).
+      // Erst NACH der Fälligkeit (§ 556b BGB) — vorher wäre jedes Schreiben verfrüht. Die Zeile
+      // selbst führt weiter ins Mietkonto (vielleicht ist das Geld ja da).
       neben:
-        m.betrag && m.betrag > 0 && mieteUeberfaellig(m.monat, heuteISO)
+        m.betrag && m.betrag > 0 && ueberfaellig
           ? {
-              label: "Erinnerung schreiben",
-              href: zahlungsBriefUrl({ mieterId: m.mieterId, jahrMonat: m.monat, betrag: m.betrag, heuteISO, art: "zahlungserinnerung" }),
+              label: "Dokument",
+              wahl: zahlungsBriefWahl({
+                mieterId: m.mieterId,
+                mieterName: m.name,
+                jahrMonat: m.monat,
+                betrag: m.betrag,
+                heuteISO,
+                erinnerungArchiviert: m.erinnerungArchiviert ?? false,
+              }),
             }
           : undefined,
     });

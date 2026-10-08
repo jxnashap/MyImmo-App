@@ -156,7 +156,7 @@ export default function LoginPage() {
     window.location.assign(wiederhergestellt ? "/einstellungen?tab=sicherheit&mfa=neu" : (nextUrl ?? "/"));
   };
   const mfaAbbrechen = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     setMfaOffen(false);
   };
 
@@ -211,7 +211,7 @@ export default function LoginPage() {
         .maybeSingle();
       const kontoRolle = rolleRow?.rolle ?? "vermieter";
       if (kontoRolle !== rolle) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         setFalscheRolle(kontoRolle);
         setError(
           `Diese Zugangsdaten gehören zu einem ${ROLLEN[kontoRolle].label}-Konto — die Anmeldung hier ist für ${ROLLEN[rolle].label} gedacht.`

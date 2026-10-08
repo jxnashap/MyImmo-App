@@ -227,7 +227,8 @@ describe("Demo: Oberfläche sagt die Wahrheit und hat einen Ausgang", () => {
     expect(leiste).toContain("Demo beenden");
     expect(leiste).toMatch(/demoVerlassen\(/);
     const sperre = readFileSync("components/DemoSperre.tsx", "utf8");
-    expect(sperre).toMatch(/signOut\(\)[\s\S]{0,200}location\.assign/);
+    // Nur DIESE Sitzung (Audit P5, B52) — global meldete alle Demo-Besucher mit ab.
+    expect(sperre).toMatch(/signOut\(\{ scope: "local" \}\)[\s\S]{0,200}location\.assign/);
   });
 
   it("Sperr-Dialog und Leiste sind im Layout eingebunden", () => {

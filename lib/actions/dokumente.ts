@@ -4,6 +4,7 @@
 // erzeugen DASSELBE PDF wie die Download-Routen (lib/pdf/erzeugen.ts) und
 // legen es als Archiv-Eintrag (Tabelle notizen) beim Mieter ab.
 
+import { dbFehlerText } from "@/lib/demoFehler";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -58,7 +59,8 @@ async function archiviere(opts: {
     // Zeile in `zustellungen` (Migration 20261002140000).
     mieter_freigabe: !!opts.zustellenAn,
   }).select("id").single();
-  if (error || !neu) return { ok: false, error: "Speichern im Archiv fehlgeschlagen." };
+  // Demo-Sperre sagt, warum (Audit P5, B54) — nicht „fehlgeschlagen“.
+  if (error || !neu) return { ok: false, error: dbFehlerText(error, "Speichern im Archiv fehlgeschlagen.") };
 
   revalidatePath("/archiv");
   revalidatePath(`/tenants/${opts.mieterId}`);

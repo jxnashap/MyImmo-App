@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { DEMO_MERKMAL } from "@/lib/demoFehler";
 
 /**
  * Macht die App im Demo-Konto schreibgeschützt — die sichtbare Ebene der
@@ -19,16 +20,30 @@ import { useEffect } from "react";
  * `components/LabelVerknuepfung.tsx`, weil viele Formulare erst nach einer
  * Interaktion im DOM erscheinen (Dialoge, aufklappbare Abschnitte).
  *
- * **Ausnahme:** Alles innerhalb eines Elements mit `data-demo-erlaubt` bleibt
- * bedienbar. Das trägt der Mieterhöhungs-Generator, das einzige in der Demo
- * freigegebene Werkzeug.
+ * **Ausnahmen:** Alles innerhalb eines Elements mit `data-demo-erlaubt` bleibt
+ * bedienbar (Brief-Generator, PDF-Formulare, Vorschau-Wahl …). Seit P5/B26 außerdem
+ * jedes Feld außerhalb eines absendenden Formulars — siehe `schreibFormular`.
  */
 export default function DemoNurLesen() {
   useEffect(() => {
     const HINWEIS = "In der Demo nicht bearbeitbar. Nach der Anmeldung verfügbar.";
+    // Merkmal für den Toast: Fehler beim Speichern bekommen in der Demo die Erklärung angehängt
+    // (lib/demoFehler.ts → mitDemoHinweis, Audit P5 B54).
+    document.documentElement.dataset[DEMO_MERKMAL] = "1";
 
     function erlaubt(el: Element): boolean {
       return !!el.closest("[data-demo-erlaubt]");
+    }
+
+    // Seit 08.10.2026 (Audit P5, B26): Gesperrt werden nur Felder in einem Formular, das etwas
+    // ABSENDET. Vorher war JEDES Feld schreibgeschützt — auch Suche, Befehlspalette, Steuerjahr,
+    // AfA-, Marktwert- und Verkaufsrechner, die nichts speichern. Gerade die Rechner sind das
+    // Verkaufsargument der Demo. Ein Formular mit method="get" (Filter) speichert ebenfalls nichts.
+    // Schreibknöpfe AUSSERHALB von Formularen tragen `data-demo-sperre` (DemoSperre erklärt sie);
+    // was dann noch durchrutscht, scheitert an der Datenbank und erklärt sich im Toast.
+    function schreibFormular(el: Element): boolean {
+      const f = el.closest("form");
+      return !!f && (f.getAttribute("method") ?? "").toLowerCase() !== "get";
     }
 
     function sperren(wurzel: ParentNode) {
@@ -37,7 +52,7 @@ export default function DemoNurLesen() {
       wurzel.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
         "input:not([data-demo-gesperrt]), textarea:not([data-demo-gesperrt])",
       ).forEach((el) => {
-        if (erlaubt(el)) return;
+        if (erlaubt(el) || !schreibFormular(el)) return;
         el.dataset.demoGesperrt = "1";
         const typ = (el as HTMLInputElement).type;
         if (typ === "checkbox" || typ === "radio" || typ === "file" || typ === "range") {
@@ -52,7 +67,7 @@ export default function DemoNurLesen() {
 
       // Auswahlfelder kennen kein readOnly.
       wurzel.querySelectorAll<HTMLSelectElement>("select:not([data-demo-gesperrt])").forEach((el) => {
-        if (erlaubt(el)) return;
+        if (erlaubt(el) || !schreibFormular(el)) return;
         el.dataset.demoGesperrt = "1";
         el.disabled = true;
         el.title = HINWEIS;
@@ -80,7 +95,10 @@ export default function DemoNurLesen() {
       }
     });
     beobachter.observe(document.body, { childList: true, subtree: true });
-    return () => beobachter.disconnect();
+    return () => {
+      beobachter.disconnect();
+      delete document.documentElement.dataset[DEMO_MERKMAL];
+    };
   }, []);
 
   return null;

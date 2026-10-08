@@ -49,7 +49,7 @@ export async function GET(request: Request) {
           const effektiv = kontoRolle ?? "vermieter";
 
           if (!istNeu && effektiv !== gewaehlt) {
-            await supabase.auth.signOut();
+            await supabase.auth.signOut({ scope: "local" });
             return NextResponse.redirect(
               `${origin}/login?fehler=rolle&konto=${encodeURIComponent(effektiv)}`,
             );

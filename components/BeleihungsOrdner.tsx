@@ -226,7 +226,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
             <span style={{ color: "var(--muted)", flexShrink: 0 }}>{fmtSize(d.datei_size)}</span>
             <a href={`/properties/${propId}/beleihung/datei/${item.key}`} target="_blank" rel="noopener noreferrer" title="Ansehen" style={{ display: "inline-grid", placeItems: "center", color: "var(--ink)" }}><Eye size={13} /></a>
             <a href={`/properties/${propId}/beleihung/datei/${item.key}?download=1`} title="Herunterladen" style={{ display: "inline-grid", placeItems: "center", color: "var(--ink)" }}><Download size={13} /></a>
-            <button type="button" title="Datei entfernen" onClick={() => run(item.key, () => removeBeleihungDatei(propId, item.key), "Datei entfernt.")} style={{ display: "inline-grid", placeItems: "center", background: "none", border: "none", cursor: "pointer", color: "var(--red)", padding: 0 }}><X size={13} /></button>
+            <button data-demo-sperre type="button" title="Datei entfernen" onClick={() => run(item.key, () => removeBeleihungDatei(propId, item.key), "Datei entfernt.")} style={{ display: "inline-grid", placeItems: "center", background: "none", border: "none", cursor: "pointer", color: "var(--red)", padding: 0 }}><X size={13} /></button>
           </span>
         ) : (
           <label className="btn btn-ghost" style={{ fontSize: 11, cursor: "pointer" }}>
@@ -241,7 +241,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
           </label>
         )}
         {item.auto && !hatDatei && (
-          <button
+          <button data-demo-sperre
             type="button"
             className="btn btn-outline"
             style={{ fontSize: 11 }}
@@ -413,7 +413,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                 </div>
                 {f.aktiv && !abgelaufen && <>
                 <button type="button" className="btn btn-ghost" style={{ fontSize: 11 }} onClick={() => kopiereLink(f.token)}><Copy size={12} /> Kopieren</button>
-                <button
+                <button data-demo-sperre
                   type="button" className="btn btn-ghost" style={{ fontSize: 11, color: "var(--red)" }}
                   onClick={async () => {
                     try {
@@ -558,7 +558,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                 </div>
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                   <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setShowShare(false)}>Abbrechen</button>
-                  <button
+                  <button data-demo-sperre
                     type="button" className="btn btn-gold" style={{ fontSize: 12 }}
                     disabled={shareBusy || shareKeys.size === 0 || !bankEmail.includes("@")}
                     onClick={() => freigabeAbsichern(async () => {

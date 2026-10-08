@@ -93,7 +93,7 @@ export async function deleteAccount(): Promise<LoeschErgebnis | void> {
   }
 
   // Session beenden (Cookies löschen) und zur Login-Seite.
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/login?geloescht=1");
 }
 

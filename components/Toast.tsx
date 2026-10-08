@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useState } from "react";
 import { TriangleAlert, Info, X } from "lucide-react";
+import { mitDemoHinweis, DEMO_MERKMAL } from "@/lib/demoFehler";
 
 type ToastType = "success" | "error" | "info";
 type ToastOpts = { onUndo?: () => void };
@@ -58,7 +59,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const toast = useCallback<ToastFn>(
     (msg, type = "success", opts) => {
       const id = ++counter;
-      setItems((xs) => [...xs, { id, msg, type, onUndo: opts?.onUndo }]);
+      // Demo (Audit P5, B54): Ein Fehler beim Speichern sagt dazu, warum — DemoNurLesen setzt das
+      // Merkmal am <html>. Lesen zur Laufzeit, nicht beim Rendern (kein Unterschied Server/Client).
+      const demo = typeof document !== "undefined" && document.documentElement.dataset[DEMO_MERKMAL] === "1";
+      const text = mitDemoHinweis(msg, type, demo);
+      setItems((xs) => [...xs, { id, msg: text, type, onUndo: opts?.onUndo }]);
       // Toasts mit Rückgängig-Aktion bleiben etwas länger sichtbar.
       setTimeout(() => remove(id), opts?.onUndo ? 7000 : 4200);
     },

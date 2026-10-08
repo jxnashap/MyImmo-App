@@ -10,6 +10,10 @@
 // Kein Login: geschrieben wird über die SECURITY-DEFINER-Funktion
 // `auftrag_public_rueckmeldung`, die den Token prüft (gültig, nicht abgelaufen)
 // und eine Mengenbremse je Auftrag hat.
+//
+// Demo (Audit P5, B53): Beispiel-Aufträge der Demo nehmen nichts an — Ausfüllen ja, Senden nein.
+// Die Datenbank lehnt ohnehin ab (gehoert_demo in der RPC + Trigger auf der Tabelle); die Seite
+// sagt es vorher, statt den Besucher in eine Fehlermeldung laufen zu lassen.
 import { useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { CheckCircle2, SendHorizonal } from "lucide-react";
@@ -22,7 +26,9 @@ const ARTEN: { wert: Art; label: string; hinweis: string }[] = [
   { wert: "absage", label: "Absagen", hinweis: "Sie können den Auftrag nicht übernehmen." },
 ];
 
-export default function AuftragRueckmeldung({ token }: { token: string }) {
+export const DEMO_AUFTRAG_HINWEIS = "Beispiel-Auftrag aus der Demo — Sie können das Formular ausfüllen, gesendet wird nichts.";
+
+export default function AuftragRueckmeldung({ token, demo = false }: { token: string; demo?: boolean }) {
   const [art, setArt] = useState<Art>("zusage");
   const [firma, setFirma] = useState("");
   const [kontakt, setKontakt] = useState("");
@@ -35,6 +41,10 @@ export default function AuftragRueckmeldung({ token }: { token: string }) {
   async function senden(e: React.FormEvent) {
     e.preventDefault();
     setFehler(null);
+    if (demo) {
+      setFehler(DEMO_AUFTRAG_HINWEIS);
+      return;
+    }
     if (!firma.trim()) {
       setFehler("Bitte geben Sie an, für welchen Betrieb Sie antworten.");
       return;
@@ -125,7 +135,8 @@ export default function AuftragRueckmeldung({ token }: { token: string }) {
 
         {fehler && <p role="alert" style={{ margin: 0, fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
 
-        <button type="submit" className="btn btn-gold" disabled={laeuft} style={{ justifySelf: "start" }}>
+        {demo && <p role="note" style={{ margin: 0, fontSize: 12, color: "var(--muted)" }}>{DEMO_AUFTRAG_HINWEIS}</p>}
+        <button type="submit" className="btn btn-gold" disabled={laeuft || demo} style={{ justifySelf: "start" }}>
           {laeuft ? "Wird gesendet…" : "Rückmeldung senden"}
         </button>
         <p style={{ margin: 0, fontSize: 11, color: "var(--faint)" }}>

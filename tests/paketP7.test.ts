@@ -8,7 +8,7 @@ import {
 import { offeneMieten, sollFuerMonat, minderungAus, type MietkontoMieter } from "@/lib/mietkonto";
 import { mieterKonto } from "@/lib/mieterKonto";
 import { baueHeuteAufgaben } from "@/lib/heute";
-import { mahnungMoeglich } from "@/lib/mahnung";
+import { erinnerungArchiviert } from "@/lib/mahnung";
 import { mieterFristen, globaleFristen } from "@/lib/fristen";
 import { gleicheAb, enthaeltWort } from "@/lib/kontoauszug";
 import { berechneVerbilligt } from "@/lib/steuer/verbilligt";
@@ -77,15 +77,16 @@ describe("B12 — offene Vormonatsmiete bleibt auf dem Dashboard", () => {
   });
 });
 
-describe("B10 — Mahnung erst nach einer Erinnerung, Text ohne Behauptung", () => {
-  it("ohne archivierte Erinnerung nach der Fälligkeit keine Mahnung", () => {
-    expect(mahnungMoeglich([], "m1", "2026-10-05")).toBe(false);
-    expect(mahnungMoeglich([{ mieter_id: "m1", created_at: "2026-09-10T10:00:00Z" }], "m1", "2026-10-05")).toBe(false);
-    expect(mahnungMoeglich([{ mieter_id: "m2", created_at: "2026-10-08T10:00:00Z" }], "m1", "2026-10-05")).toBe(false);
-    expect(mahnungMoeglich([{ mieter_id: "m1", created_at: "2026-10-08T10:00:00Z" }], "m1", "2026-10-05")).toBe(true);
+describe("B10 — Mahnung ohne Behauptung einer vorherigen Erinnerung", () => {
+  // 08.10.2026 (Betreiber): Die Mahnung ist wieder immer wählbar — keine Sperre mehr, nur ein Hinweis,
+  // ob eine Erinnerung im Archiv liegt (tests/briefWahl.test.ts). Der Text bleibt ohne Behauptung.
+  it("Hinweis: archivierte Erinnerung nach der Fälligkeit, beim richtigen Mieter", () => {
+    expect(erinnerungArchiviert([], "m1", "2026-10-05")).toBe(false);
+    expect(erinnerungArchiviert([{ mieter_id: "m1", created_at: "2026-09-10T10:00:00Z" }], "m1", "2026-10-05")).toBe(false);
+    expect(erinnerungArchiviert([{ mieter_id: "m2", created_at: "2026-10-08T10:00:00Z" }], "m1", "2026-10-05")).toBe(false);
+    expect(erinnerungArchiviert([{ mieter_id: "m1", created_at: "2026-10-08T10:00:00Z" }], "m1", "2026-10-05")).toBe(true);
   });
-  it("der Wächter fragt das ab, die Vorlage behauptet keine vorherige Erinnerung", () => {
-    expect(lies("components/RueckstandWaechter.tsx")).toMatch(/mahnungMoeglich\(erinnerungen, o\.mieterId, o\.faelligSeit\)/);
+  it("die Vorlage behauptet keine vorherige Erinnerung", () => {
     expect(DEFAULT_VORLAGEN.mahnung).not.toMatch(/trotz vorheriger/i);
   });
 });

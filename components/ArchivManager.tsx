@@ -287,7 +287,7 @@ export default function ArchivManager({
               </div>
             </div>
             <div className="form-actions" style={{ justifyContent: "space-between" }}>
-              <button
+              <button data-demo-sperre
                 type="button"
                 className="btn btn-ghost"
                 onClick={async () => {

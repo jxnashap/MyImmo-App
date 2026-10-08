@@ -24,6 +24,8 @@ type Info = {
   mieter_name: string | null;
   mieter_telefon: string | null;
   mieter_email: string | null;
+  /** Beispiel-Auftrag des Demo-Kontos (auftrag_public_info, P5/B53): Senden ist aus. */
+  demo?: boolean;
 };
 
 const deDate = (s: string) =>
@@ -117,7 +119,7 @@ export default async function AuftragPublicSeite(props: { params: Promise<{ toke
       )}
       {/* Rueckkanal: ohne ihn ist die Seite eine Einbahnstrasse — die Firma
           liest den Auftrag, der Vermieter erfaehrt nie, ob jemand kommt. */}
-      <AuftragRueckmeldung token={params.token} />
+      <AuftragRueckmeldung token={params.token} demo={info.demo === true} />
 
       <OeffentlicheFusszeile
         verantwortlicher={info.vermieter}

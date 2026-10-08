@@ -16,7 +16,7 @@ export default function StaffelUebernehmen({ mieterId, offen }: { mieterId: stri
     return <span style={{ fontSize: 12, color: "var(--green)" }}>Alle Stufen sind im Mietkonto hinterlegt.</span>;
   }
   return (
-    <button
+    <button data-demo-sperre
       type="button"
       className="btn btn-ghost"
       style={{ fontSize: 12 }}

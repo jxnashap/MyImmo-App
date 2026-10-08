@@ -472,7 +472,7 @@ details[open] > .sidebar-gruppe::after { transform: rotate(90deg); }
 .listen-zeile-datum { font-size: 12px; color: var(--faint); white-space: nowrap; }
 /* Dieselbe Zeile als Knopf (öffnet einen Dialog statt einer Seite) und mit Zahlenspalten
    (Kredite, Objekte, Mieter — 03.10.2026, „die ganze App so“). */
-/* Aufgabe mit zweiter Handlung (überfällige Miete → „Erinnerung schreiben“, lib/mahnung.ts). */
+/* Aufgabe mit zweiter Handlung (überfällige Miete → „Dokument“, components/BriefWahl.tsx). */
 /* Verlauf eines Service-Auftrags (components/AuftragVerlauf.tsx). */
 .auftrag-verlauf { margin-top: 10px; }
 .auftrag-verlauf ul { list-style: none; margin: 0 0 8px; padding: 0 0 0 10px; border-left: 2px solid var(--line); display: grid; gap: 8px; }
@@ -2917,6 +2917,106 @@ select:focus-visible, textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .step-dot.aktiv { animation: none; box-shadow: 0 0 0 3px var(--gold-pale); }
   .step-line-fill { animation: none; }
+}
+
+/* ===== Auswahl „Dokument“: Zahlungserinnerung oder Mahnung (components/BriefWahl.tsx) =====
+   08.10.2026, Vorgabe des Betreibers: grau, Apple-Design. Am Handy ein Aktionsblatt
+   von unten wie in iOS (gruppierte Wahl, darunter abgesetzt „Abbrechen“), am Desktop
+   ein kleines Blatt direkt am Knopf, Ursprung oben rechts. Nur transform/opacity,
+   ease-out, unter 300 ms; der Ausgang nimmt denselben Weg zurück. Das Blatt liegt
+   im Portal an <body> — .section schneidet mit overflow: hidden ab. */
+:root {
+  --wahl-flaeche: rgba(242, 242, 247, 0.92);
+  --wahl-solide: #f2f2f7;
+  --wahl-trenner: rgba(60, 60, 67, 0.2);
+  --wahl-druck: rgba(60, 60, 67, 0.12);
+  --wahl-text: #1c1c1e;
+  --wahl-sub: rgba(60, 60, 67, 0.68);
+}
+[data-theme="dark"] {
+  --wahl-flaeche: rgba(44, 44, 46, 0.92);
+  --wahl-solide: #2c2c2e;
+  --wahl-trenner: rgba(84, 84, 88, 0.6);
+  --wahl-druck: rgba(255, 255, 255, 0.1);
+  --wahl-text: #f5f5f7;
+  --wahl-sub: rgba(235, 235, 245, 0.62);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --wahl-flaeche: rgba(44, 44, 46, 0.92);
+    --wahl-solide: #2c2c2e;
+    --wahl-trenner: rgba(84, 84, 88, 0.6);
+    --wahl-druck: rgba(255, 255, 255, 0.1);
+    --wahl-text: #f5f5f7;
+    --wahl-sub: rgba(235, 235, 245, 0.62);
+  }
+}
+.briefwahl-knopf { font-size: 12px; padding: 5px 10px; gap: 5px; white-space: nowrap; }
+.briefwahl-schleier { position: fixed; inset: 0; z-index: 80; background: transparent; }
+.briefwahl-blatt {
+  position: fixed; z-index: 81; width: 284px;
+  display: flex; flex-direction: column; gap: 8px;
+  transform-origin: top right;
+  animation: briefwahlAuf 180ms var(--ease-out-stark);
+}
+.briefwahl-gruppe,
+.briefwahl-abbrechen {
+  background: var(--wahl-flaeche);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16), 0 0 0 0.5px var(--wahl-trenner);
+}
+.briefwahl-gruppe { overflow: hidden; }
+.briefwahl-titel { margin: 0; padding: 12px 16px 10px; font-size: 12px; line-height: 1.35; color: var(--wahl-sub); text-align: center; }
+.briefwahl-option {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  box-sizing: border-box; width: 100%; min-height: 52px; padding: 9px 16px;
+  border: 0; border-top: 0.5px solid var(--wahl-trenner);
+  background: transparent; color: var(--wahl-text);
+  font: inherit; font-size: 15px; text-align: center; text-decoration: none;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background-color 100ms ease-out;
+}
+/* Rückmeldung beim Drücken, nicht erst beim Loslassen. */
+.briefwahl-option:active { background: var(--wahl-druck); transition: none; }
+@media (hover: hover) and (pointer: fine) { .briefwahl-option:hover { background: var(--wahl-druck); } }
+.briefwahl-option:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.briefwahl-sub { font-size: 12px; color: var(--wahl-sub); }
+/* „Abbrechen“ ist zugleich Option (Schrift, Höhe) und eigene Fläche — die Klassenkombination
+   schlägt den durchsichtigen Hintergrund der Option; Drücken/Hover legt sich als Schicht darüber. */
+.briefwahl-option.briefwahl-abbrechen { border-top: 0; font-weight: 600; background-color: var(--wahl-flaeche); }
+.briefwahl-option.briefwahl-abbrechen:active { background-image: linear-gradient(var(--wahl-druck), var(--wahl-druck)); }
+@media (hover: hover) and (pointer: fine) {
+  .briefwahl-option.briefwahl-abbrechen:hover { background-color: var(--wahl-flaeche); background-image: linear-gradient(var(--wahl-druck), var(--wahl-druck)); }
+}
+.briefwahl-geht .briefwahl-blatt { animation: briefwahlZu 140ms var(--ease-out-stark) forwards; }
+@keyframes briefwahlAuf { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes briefwahlZu { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.96); } }
+@media (max-width: 560px) {
+  .briefwahl-schleier { background: rgba(0, 0, 0, 0.32); animation: briefwahlBlende 200ms var(--ease-out-stark); }
+  .briefwahl-geht .briefwahl-schleier { animation: briefwahlBlendeZu 200ms var(--ease-out-stark) forwards; }
+  .briefwahl-blatt {
+    top: auto !important; right: 8px !important; left: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom)); width: auto;
+    transform-origin: bottom center;
+    animation: briefwahlHoch 260ms var(--ease-out-stark);
+  }
+  .briefwahl-geht .briefwahl-blatt { animation: briefwahlRunter 200ms var(--ease-out-stark) forwards; }
+  .briefwahl-titel { font-size: 13px; padding: 14px 16px 12px; }
+  .briefwahl-option { min-height: 57px; font-size: 17px; }
+}
+@keyframes briefwahlHoch { from { transform: translateY(110%); } to { transform: none; } }
+@keyframes briefwahlRunter { from { transform: none; } to { transform: translateY(110%); } }
+@keyframes briefwahlBlende { from { opacity: 0; } to { opacity: 1; } }
+@keyframes briefwahlBlendeZu { from { opacity: 1; } to { opacity: 0; } }
+/* Reduzierte Bewegung: nur Überblenden, kein Gleiten und kein Skalieren. */
+@media (prefers-reduced-motion: reduce) {
+  .briefwahl-blatt { animation: briefwahlBlende 160ms ease-out; }
+  .briefwahl-geht .briefwahl-blatt { animation: briefwahlBlendeZu 160ms ease-out forwards; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .briefwahl-gruppe, .briefwahl-option.briefwahl-abbrechen { background-color: var(--wahl-solide); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* ===== Hover-Bewegung nur fuer echte Zeigegeraete (02.09.2026) =====

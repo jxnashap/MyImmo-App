@@ -444,7 +444,7 @@ export default function DocGenerator({
               Bitte noch ausfüllen: {fehlendText}. Sonst entsteht ein unvollständiger Satz.
             </span>
           )}
-          <button
+          <button data-demo-sperre
             type="button"
             className="btn btn-outline"
             disabled={ablegen || fehlend.length > 0}

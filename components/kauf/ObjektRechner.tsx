@@ -307,7 +307,7 @@ export default function ObjektRechner({
           <a href="#vergleich" className="btn btn-ghost" style={{ fontSize: 12.5 }}>
             <Scale size={14} /> Zum Vergleich ({liste.length})
           </a>
-          <button type="button" className="btn btn-gold" style={{ fontSize: 12.5 }} onClick={speichern} disabled={saving}>
+          <button data-demo-sperre type="button" className="btn btn-gold" style={{ fontSize: 12.5 }} onClick={speichern} disabled={saving}>
             <Save size={14} /> {saving ? "Speichert…" : bearbeiteId ? "Änderungen speichern" : "Im Ordner speichern"}
           </button>
         </div>

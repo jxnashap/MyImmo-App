@@ -12,7 +12,7 @@ export default function MieteAngleichen({ id, betrag }: { id: string; betrag: st
   const toast = useToast();
   const router = useRouter();
   return (
-    <button
+    <button data-demo-sperre
       type="button"
       className="btn btn-ghost btn-sm"
       disabled={laeuft}

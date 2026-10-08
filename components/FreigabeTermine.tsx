@@ -78,12 +78,12 @@ export default function FreigabeTermine({
           {z.modus === "termine" ? (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {z.vorschlaege.map((v) => (
-                <button key={v} className="btn btn-gold" style={{ fontSize: 12 }} disabled={busy === z.id}
+                <button data-demo-sperre key={v} className="btn btn-gold" style={{ fontSize: 12 }} disabled={busy === z.id}
                   onClick={() => los(z.id, () => bestaetigeFreigabeTermin(z.id, v, antwort[z.id] ?? ""), "Termin bestätigt und eingetragen.")}>
                   {terminText(v)}
                 </button>
               ))}
-              <button className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy === z.id}
+              <button data-demo-sperre className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy === z.id}
                 onClick={() => los(z.id, () => lehneFreigabeTerminAb(z.id, antwort[z.id] ?? ""), "Zurückgemeldet: keiner passt.")}>
                 Keiner passt
               </button>
@@ -92,11 +92,11 @@ export default function FreigabeTermine({
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <input type="datetime-local" className="set-input" step={900} aria-label="Vereinbarter Termin"
                 value={vereinbart[z.id] ?? ""} onChange={(e) => setVereinbart({ ...vereinbart, [z.id]: e.target.value })} />
-              <button className="btn btn-gold" style={{ fontSize: 12 }} disabled={busy === z.id || !vereinbart[z.id]}
+              <button data-demo-sperre className="btn btn-gold" style={{ fontSize: 12 }} disabled={busy === z.id || !vereinbart[z.id]}
                 onClick={() => los(z.id, () => bestaetigeFreigabeTermin(z.id, vereinbart[z.id], antwort[z.id] ?? ""), "Termin eingetragen.")}>
                 Vereinbarten Termin eintragen
               </button>
-              <button className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy === z.id}
+              <button data-demo-sperre className="btn btn-ghost" style={{ fontSize: 12 }} disabled={busy === z.id}
                 onClick={() => los(z.id, () => erledigeFreigabeRueckruf(z.id, antwort[z.id] ?? ""), "Als erledigt markiert.")}>
                 Ohne Termin erledigt
               </button>

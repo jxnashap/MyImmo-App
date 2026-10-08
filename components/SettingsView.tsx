@@ -339,7 +339,7 @@ function SignaturPanel({ unterschrift }: { unterschrift: string | null }) {
           <img src={unterschrift} alt="Gespeicherte Unterschrift" style={{ maxWidth: 240, maxHeight: 90, background: "#fff", borderRadius: 8, border: "1px solid var(--line)", padding: 6 }} />
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => setZeichnen(true)}>Neu zeichnen</button>
-            <button
+            <button data-demo-sperre
               type="button" className="btn btn-ghost" style={{ fontSize: 12, color: "var(--red)" }} disabled={pending}
               onClick={() => start(async () => {
                   const r = await loescheUnterschrift();
@@ -746,7 +746,7 @@ function RechtPanel({ email, ohnePasswort = false }: { email?: string | null; oh
         <p className="sub">Lade jederzeit ALLE deine Daten herunter (inkl. Mieter, Buchungen und Dokumente) — ohne Sperrfrist, DSGVO-Recht auf Datenübertragbarkeit. Das ZIP enthält alle Tabellen als CSV und JSON plus die Dateien; die Buchungen gibt es zusätzlich als einzelne CSV für Excel/Steuerberater.</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {/* eslint-disable-next-line @next/next/no-location-assign-relative-destination -- Datei-Download über eine API-Route, keine Seite */}
-          <button type="button" onClick={() => absichern(() => window.location.assign("/api/export/alles"))} className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <button type="button" data-demo-sperre="export" onClick={() => absichern(() => window.location.assign("/api/export/alles"))} className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <Download size={15} /> Alle Daten inkl. Dateien (ZIP)
           </button>
           {dialog}
@@ -884,7 +884,7 @@ function DangerZone({ email, ohnePasswort = false }: { email?: string | null; oh
       {dialog}
       {/* Größere Tippfläche bei gleichem Platz (Padding hoch, Margin gleicht aus); „MyImmo-Konto“,
           weil der Link auf dem Reiter Bankkonten sonst wie „Bankkonto löschen“ gelesen wird. */}
-      <button type="button" className="danger-link" style={{ padding: "8px 4px", margin: "-8px -4px" }} onClick={() => setOpen(true)}>MyImmo-Konto löschen</button>
+      <button type="button" data-demo-sperre="loeschen" className="danger-link" style={{ padding: "8px 4px", margin: "-8px -4px" }} onClick={() => setOpen(true)}>MyImmo-Konto löschen</button>
 
       {open && typeof document !== "undefined" && createPortal(
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
