@@ -15,6 +15,8 @@ import {
   type ProtokollFields,
 } from "@/lib/pdf/erzeugen";
 import { ladeZustellLage, zustelle, type Empfaenger } from "@/lib/zustellung";
+import { SCHRIFTFORM, digitalGesperrt, istAbgelehnt } from "@/lib/briefPruefung";
+import type { DocArt } from "@/lib/dokumentVorlagen";
 
 export type DokumentResult = { ok: boolean; error?: string; zugestelltAn?: string[] };
 
@@ -108,6 +110,9 @@ export async function speichereBrief(
   // zeigt sie an, hier ist sie die Schranke (kein verbundenes Konto → nichts zustellen).
   let zustellenAn: Empfaenger[] | undefined;
   if (versand.zustellen) {
+    // Schriftform (Gesamtprüfung P3, A8): Eine Kündigung im Portal wäre unwirksam (§ 568 Abs. 1,
+    // §§ 126, 125 BGB) — die Oberfläche zeigt den Weg gar nicht erst, hier ist die Schranke.
+    if (digitalGesperrt(fields.art)) return { ok: false, error: SCHRIFTFORM[fields.art as DocArt]?.text ?? "" };
     const lage = await ladeZustellLage(supabase, user.id, mieterId, { jahr: null });
     if ("error" in lage) return { ok: false, error: lage.error };
     if (lage.sperre) return { ok: false, error: lage.sperre };
@@ -117,6 +122,7 @@ export async function speichereBrief(
   try {
     const doc = await erzeugeBriefPdf(supabase, user.id, mieterId, fields);
     if (!doc) return { ok: false, error: "Mieter nicht gefunden." };
+    if (istAbgelehnt(doc)) return { ok: false, error: doc.abgelehnt.join(" ") };
     return archiviere({
       userId: user.id,
       mieterId,

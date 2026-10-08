@@ -99,7 +99,8 @@ export function satzanfangGross(absaetze: string[]): string[] {
   return [erster.charAt(0).toLocaleUpperCase("de-DE") + erster.slice(1), ...rest];
 }
 
-/** Platzhalter, die die Vorlage benutzt, für die aber kein Wert vorliegt. {{grund}} ist optional. */
+/** Platzhalter, die die Vorlage benutzt, für die aber kein Wert vorliegt. {{grund}} ist hier optional —
+ *  Pflicht ist er bei Mieterhöhung und Kündigung, das prüft `pruefeBrief()` (lib/briefPruefung.ts). */
 export function fehlendePlatzhalter(text: string, werte: Record<string, string>): string[] {
   const fehlend = new Set<string>();
   for (const [, k] of (text ?? "").matchAll(/\{\{(\w+)\}\}/g)) {
@@ -154,13 +155,18 @@ Ich fordere Sie auf, den offenen Betrag bis spätestens {{datum}} zu begleichen.
 
 Sollte die Zahlung nicht fristgerecht eingehen, behalte ich mir weitere rechtliche Schritte vor.`,
 
+  // Gesamtprüfung P3, A8: Gründe gehören ins Schreiben (§ 573 Abs. 3 BGB) — {{grund}} ist hier
+  // Pflicht (lib/briefPruefung.ts); der Hinweis nennt Form und Frist des Widerspruchs (§ 568 Abs. 2,
+  // § 574b BGB). Wortlaut steht auf der Anwaltsliste (Audit Abschnitt 10).
   kuendigung: `hiermit kündige ich das Mietverhältnis über die o. g. Wohnung ordentlich und fristgerecht zum {{datum}}.
+
+Die Kündigung stütze ich auf folgende Gründe (§ 573 Abs. 3 BGB):
 
 {{grund}}
 
 Ich bitte Sie, mir einen Termin zur Wohnungsübergabe vorzuschlagen. Die Wohnung ist besenrein und mit sämtlichen Schlüsseln zu übergeben.
 
-Hinweis: Sie haben das Recht, der Kündigung gemäß § 574 BGB zu widersprechen.`,
+Hinweis nach § 568 Abs. 2 BGB: Sie können der Kündigung widersprechen und die Fortsetzung des Mietverhältnisses verlangen, wenn die Beendigung für Sie, Ihre Familie oder einen anderen Angehörigen Ihres Haushalts eine Härte bedeuten würde, die auch unter Würdigung meiner berechtigten Interessen nicht zu rechtfertigen ist (§ 574 BGB). Der Widerspruch ist in Textform zu erklären und muss mir spätestens zwei Monate vor der Beendigung des Mietverhältnisses zugehen (§ 574b BGB).`,
 
   reparatur: `hiermit kündige ich Instandhaltungs- bzw. Reparaturarbeiten in der o. g. Wohnung an, geplant für den {{datum}}.
 

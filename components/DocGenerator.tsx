@@ -28,6 +28,23 @@ import {
 import { saveDokumentVorlage, resetDokumentVorlage } from "@/lib/actions/dokumentVorlagen";
 import { speichereBrief } from "@/lib/actions/dokumente";
 import { tastaturAktion } from "@/lib/a11y";
+import type { MietkontoZeitraum } from "@/lib/mietkonto";
+import {
+  BEGRUENDUNGSMITTEL,
+  BEGRUENDUNG_PFLICHT,
+  SCHRIFTFORM,
+  alleMieter,
+  anrede,
+  deDatum,
+  digitalGesperrt,
+  empfaengerNamenZeilen,
+  fruehestWirksam,
+  fruehesterKuendigungstermin,
+  istIsoDatum,
+  mieterhoehungBasis,
+  namenAufzaehlung,
+  pruefeBrief,
+} from "@/lib/briefPruefung";
 import { useToast } from "@/components/Toast";
 import { adressZeilen } from "@/lib/format";
 
@@ -48,6 +65,8 @@ export default function DocGenerator({
   vorlagen = {},
   initial,
   hatUnterschrift = false,
+  mietVerlauf,
+  heute: heuteIso,
 }: {
   tenant: Tenant;
   property: Property | null;
@@ -58,6 +77,13 @@ export default function DocGenerator({
   initial?: { art?: string; betrag?: string; datum?: string; grund?: string };
   /** true, wenn in den Einstellungen eine E-Signatur hinterlegt ist. */
   hatUnterschrift?: boolean;
+  /** Mieterfelder OHNE Zeitraum-Anpassung + Miet-Zeiträume — für Kappungsgrenze und Sperrfrist (P3). */
+  mietVerlauf?: {
+    stand: { kaltmiete: number | null; nk_vorauszahlung: number | null; stellplatz_miete: number | null };
+    zeitraeume: MietkontoZeitraum[];
+  };
+  /** Stichtag vom Server (Berlin), damit Vorschau und PDF denselben Tag sehen. */
+  heute?: string;
 }) {
   const initialAbsAdr = [
     vermieter?.strasse,
@@ -77,6 +103,9 @@ export default function DocGenerator({
   const [vorlageText, setVorlageText] = useState(vorlagen[startArt] ?? DEFAULT_VORLAGEN[startArt]);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [signieren, setSignieren] = useState(false);
+  // Zugang beim Mieter: Grundlage der Fristen (§ 573c, § 558b BGB). Bewusst leer — „heute“ wäre
+  // um den Monatsersten herum oft falsch, und ein zu früher Zugang ergäbe einen zu frühen Termin.
+  const [zugang, setZugang] = useState("");
   const [ablegen, startAblegen] = useTransition();
   const toast = useToast();
 
@@ -116,6 +145,9 @@ export default function DocGenerator({
 
   // --- Werte für Platzhalter (identisch zur PDF-Route) ---
   const mieterName = `${tenant.vorname ?? ""} ${tenant.nachname ?? ""}`.trim();
+  // B44: alle Vertragspartner — Platzhalter {{mieter}}, Adressfeld, Anrede (wie lib/pdf/erzeugen.ts).
+  const namen = alleMieter(mieterName, tenant.weitere_mieter);
+  const mieterText = namenAufzaehlung(namen);
   const objekt = property
     ? `${property.bezeichnung}${tenant.einheit ? ", " + tenant.einheit : ""}${property.adresse ? ", " + property.adresse : ""}`
     : "–";
@@ -126,7 +158,7 @@ export default function DocGenerator({
   // Wie im PDF: ohne Eingabe die geschuldete Warmmiete.
   const effBetrag = betragNum > 0 ? betragNum : ART_BETRAG_RUECKFALL.includes(art) ? warm : 0;
   const werte: Record<string, string> = {
-    mieter: mieterName || "–",
+    mieter: mieterText || "–",
     objekt,
     betrag: effBetrag > 0 ? eur(effBetrag) : "",
     miete: miete > 0 ? eur(miete) : "",
@@ -143,13 +175,42 @@ export default function DocGenerator({
   const absaetze = istBescheinigung ? satzanfangGross(gefuellt) : gefuellt;
   // Leere Platzhalter ergäben halbe Sätze („bis spätestens zu begleichen“) — dann kein PDF.
   const fehlend = fehlendePlatzhalter(vorlageText, werte);
-  const fehlendText = fehlend
-    .map((k) => (k === "datum" ? datumLabel : k === "betrag" ? betragLabel.replace(" (€)", "") : PLATZHALTER.find((p) => p.key === k)?.label ?? k))
-    .join(", ");
+  // Gesamtprüfung P3: DIESELBE Prüfung wie der Server (lib/pdf/erzeugen.ts) — Absender, Pflicht-
+  // Begründung, Zugang, Fristen, Kappungsgrenze. Fehler sperren PDF, Archiv und Versand.
+  const heuteYm = (heuteIso ?? new Date().toISOString()).slice(0, 7);
+  const pruefung = pruefeBrief({
+    art,
+    text: vorlageText,
+    grund,
+    vName,
+    datum,
+    zugang,
+    kuendigung: { ueberlassung: tenant.mietbeginn },
+    mieterhoehung: {
+      ...mieterhoehungBasis(
+        { ...(mietVerlauf?.stand ?? tenant), mietbeginn: tenant.mietbeginn, letzte_erhoehung: tenant.letzte_erhoehung },
+        mietVerlauf?.zeitraeume ?? [],
+        datum,
+        heuteYm,
+      ),
+      neueMiete: betragNum,
+    },
+    mieterAnzahl: namen.length,
+  });
+  const fehlendText = [
+    ...fehlend.map((k) => (k === "datum" ? datumLabel : k === "betrag" ? betragLabel.replace(" (€)", "") : PLATZHALTER.find((p) => p.key === k)?.label ?? k)),
+    ...pruefung.fehlend,
+  ].join(", ");
+  const blockiert = fehlend.length > 0 || pruefung.fehlend.length > 0 || pruefung.fehler.length > 0;
+  const pflichtGrund = BEGRUENDUNG_PFLICHT.includes(art);
+  const schriftform = SCHRIFTFORM[art];
+  const nurPapier = digitalGesperrt(art);
+  const kuendTermin = art === "kuendigung" && istIsoDatum(zugang) ? fruehesterKuendigungstermin(zugang, tenant.mietbeginn) : null;
+  const erhoehungAb = art === "mieterhoehung" && istIsoDatum(zugang) ? fruehestWirksam(zugang) : null;
 
   // --- Vorschau-Daten ---
   const absName = vName || "–";
-  const heute = deDate(new Date().toISOString());
+  const heute = deDate(heuteIso ?? new Date().toISOString());
   const ortDatum = (vermieter?.ort ? vermieter.ort.replace(/^\d{4,5}\s*/, "") + ", " : "") + heute;
   // Anschrift-Fallback OHNE Objektnamen: Der interne Name („ETW Lindenstraße 12")
   // enthält oft selbst die Straße — mit `objekt` als Fallback stand sie im
@@ -162,7 +223,7 @@ export default function DocGenerator({
   );
   const titel = TITEL[art];
   // Dieselben Felder für PDF-Download, Archiv und Versand (BriefVersand).
-  const felder = { art, datum, betrag, grund, ibanId, vName, vAdr, text: vorlageText, signieren: signieren ? "1" : "" };
+  const felder = { art, datum, betrag, grund, ibanId, vName, vAdr, text: vorlageText, signieren: signieren && !nurPapier ? "1" : "", zugang };
 
 
   return (
@@ -219,6 +280,48 @@ export default function DocGenerator({
             </div>
           )}
         </div>
+        {/* Gesamtprüfung P3: Fristen hängen am Zugang (§ 573c Abs. 1, § 558b Abs. 1 BGB). */}
+        {pflichtGrund && (
+          <div className="form-row single">
+            <div className="form-group">
+              <label htmlFor="brief-zugang">Zugang beim Mieter (voraussichtlich) *</label>
+              <input
+                id="brief-zugang"
+                type="date"
+                value={zugang}
+                onChange={(e) => setZugang(e.target.value)}
+                aria-invalid={pruefung.fehlend.includes("Zugang beim Mieter") || undefined}
+                style={pruefung.fehlend.includes("Zugang beim Mieter") ? { borderColor: "var(--red)" } : undefined}
+              />
+              <div className="brief-hinweis">
+                Der Tag, an dem der Brief beim Mieter ankommt — davon hängen die Fristen ab. Im Zweifel einen späteren Tag eintragen.
+              </div>
+              {kuendTermin && (
+                <div className="brief-vorschlag">
+                  <span>
+                    Frühestens zum <strong>{deDatum(kuendTermin.termin)}</strong> (Frist {kuendTermin.fristMonate} Monate, Zugang bis {deDatum(kuendTermin.zugangBis)})
+                  </span>
+                  {datum !== kuendTermin.termin && (
+                    <button type="button" className="btn btn-ghost" onClick={() => setDatum(kuendTermin.termin)}>Übernehmen</button>
+                  )}
+                  {kuendTermin.sichererTermin !== kuendTermin.termin && datum !== kuendTermin.sichererTermin && (
+                    <button type="button" className="btn btn-ghost" onClick={() => setDatum(kuendTermin.sichererTermin)}>
+                      {deDatum(kuendTermin.sichererTermin)} übernehmen
+                    </button>
+                  )}
+                </div>
+              )}
+              {erhoehungAb && (
+                <div className="brief-vorschlag">
+                  <span>Frühestens wirksam ab <strong>{deDatum(erhoehungAb)}</strong> (§ 558b Abs. 1 BGB)</span>
+                  {datum !== erhoehungAb && (
+                    <button type="button" className="btn btn-ghost" onClick={() => setDatum(erhoehungAb)}>Übernehmen</button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {/* § 558 gilt nicht bei Staffel- oder Indexmiete (§ 557a Abs. 2, § 557b Abs. 2 BGB; Audit P7, B8). */}
         {art === "mieterhoehung" && normMietart(tenant.mietart) !== "standard" && (
           <div role="note" style={{ fontSize: 12.5, marginBottom: 12, padding: "10px 14px", borderRadius: 8, background: "rgba(240,160,48,0.08)", border: "1px solid rgba(240,160,48,0.3)" }}>
@@ -242,13 +345,45 @@ export default function DocGenerator({
         )}
         <div className="form-row single">
           <div className="form-group">
-            <label>Begründung / Zusatztext (optional)</label>
+            <label htmlFor="brief-grund">
+              {art === "kuendigung" ? "Kündigungsgründe *" : art === "mieterhoehung" ? "Begründung *" : "Begründung / Zusatztext (optional)"}
+            </label>
+            {art === "mieterhoehung" && (
+              <select
+                aria-label="Begründungsmittel einfügen"
+                value=""
+                onChange={(e) => {
+                  const b = BEGRUENDUNGSMITTEL.find((x) => x.key === e.target.value);
+                  if (b) setGrund((g) => (g.trim() ? `${g.trim()}\n\n${b.text}` : b.text));
+                }}
+                style={{ marginBottom: 6 }}
+              >
+                <option value="">Begründungsmittel einfügen …</option>
+                {BEGRUENDUNGSMITTEL.map((b) => (
+                  <option key={b.key} value={b.key}>{b.label}</option>
+                ))}
+              </select>
+            )}
             <textarea
-              rows={2}
+              id="brief-grund"
+              rows={pflichtGrund ? 4 : 2}
               value={grund}
               onChange={(e) => setGrund(e.target.value)}
-              style={{ resize: "vertical" }}
+              aria-invalid={pruefung.fehlend.includes("Begründung") || undefined}
+              style={{ resize: "vertical", ...(pruefung.fehlend.includes("Begründung") ? { borderColor: "var(--red)" } : {}) }}
             />
+            {art === "mieterhoehung" && (
+              <div className="brief-hinweis">
+                Ohne Begründung ist das Verlangen unwirksam (§ 558a Abs. 1 BGB). Lücken in [eckigen Klammern] ausfüllen. Gibt es einen
+                qualifizierten Mietspiegel mit Angaben zu dieser Wohnung, gehören diese Angaben auch dann in den Brief, wenn du dich auf
+                ein anderes Mittel stützt (§ 558a Abs. 3 BGB).
+              </div>
+            )}
+            {art === "kuendigung" && (
+              <div className="brief-hinweis">
+                Die Gründe müssen im Schreiben stehen; andere zählen später nur, wenn sie nachträglich entstanden sind (§ 573 Abs. 3 BGB).
+              </div>
+            )}
           </div>
         </div>
 
@@ -378,12 +513,12 @@ export default function DocGenerator({
           absenderZeile={[vAdr ? vAdr.split(/,\s*/).join(" · ") : null, vermieter?.email].filter(Boolean).join(" · ") || null}
           ruecksende={null /* wie im PDF: kein Rücksendevermerk im Adressfeld */}
           vermerk="Vertrauliches Dokument"
-          empfaenger={[mieterName || "–", ...empfZeilen]}
+          empfaenger={[...empfaengerNamenZeilen(namen), ...empfZeilen]}
           ortDatum={ortDatum}
           betreff={titel}
           untertitel={`Mietobjekt: ${objekt}`}
         >
-          {!istBescheinigung && <p>Sehr geehrte/r {mieterName || "–"},</p>}
+          {!istBescheinigung && <p>{anrede(namen)}</p>}
           {absaetze.length === 0 ? (
             <p className="brief-muted" style={{ fontStyle: "italic" }}>
               (Noch kein Text — Felder ausfüllen oder Vorlage bearbeiten.)
@@ -428,8 +563,13 @@ export default function DocGenerator({
           <input type="hidden" name="vName" value={vName} />
           <input type="hidden" name="vAdr" value={vAdr} />
           <input type="hidden" name="text" value={vorlageText} />
-          <input type="hidden" name="signieren" value={signieren ? "1" : ""} />
-          {hatUnterschrift ? (
+          <input type="hidden" name="signieren" value={felder.signieren} />
+          <input type="hidden" name="zugang" value={zugang} />
+          {nurPapier ? (
+            <span style={{ fontSize: 11, color: "var(--faint)", marginRight: "auto" }}>
+              Ohne eingebettete Unterschrift — bitte ausdrucken und eigenhändig unterschreiben.
+            </span>
+          ) : hatUnterschrift ? (
             <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--muted)", marginRight: "auto", cursor: "pointer" }}>
               <input type="checkbox" checked={signieren} onChange={(e) => setSignieren(e.target.checked)} />
               Digital signieren (E-Signatur einbetten)
@@ -439,15 +579,24 @@ export default function DocGenerator({
               Tipp: In den Einstellungen eine E-Signatur hinterlegen, um PDFs digital zu unterschreiben.
             </span>
           )}
-          {fehlend.length > 0 && (
+          {fehlendText && (
             <span role="status" style={{ flexBasis: "100%", fontSize: 12, color: "var(--red)" }}>
-              Bitte noch ausfüllen: {fehlendText}. Sonst entsteht ein unvollständiger Satz.
+              Bitte noch ausfüllen: {fehlendText}.{fehlend.length > 0 ? " Sonst entsteht ein unvollständiger Satz." : ""}
             </span>
+          )}
+          {pruefung.fehler.map((t) => (
+            <span key={t} role="alert" style={{ flexBasis: "100%", fontSize: 12, color: "var(--red)" }}>{t}</span>
+          ))}
+          {pruefung.warnungen.map((t) => (
+            <span key={t} className="brief-warnung">{t}</span>
+          ))}
+          {schriftform && (
+            <span className={schriftform.stufe === "pflicht" ? "brief-schriftform" : "brief-warnung"}>{schriftform.text}</span>
           )}
           <button data-demo-sperre
             type="button"
             className="btn btn-outline"
-            disabled={ablegen || fehlend.length > 0}
+            disabled={ablegen || blockiert}
             onClick={() =>
               startAblegen(async () => {
                 const res = await speichereBrief(tenant.id, felder);
@@ -457,17 +606,18 @@ export default function DocGenerator({
           >
             {ablegen ? "Speichert…" : <><Save size={14} style={{ verticalAlign: "-2px" }} /> Im Archiv ablegen</>}
           </button>
-          {fehlend.length > 0 ? (
+          {blockiert ? (
             <button type="button" className="btn btn-gold" disabled><FileText size={14} style={{ verticalAlign: "-2px" }} /> Als PDF herunterladen</button>
           ) : (
             <SubmitButton><FileText size={14} style={{ verticalAlign: "-2px" }} /> Als PDF herunterladen</SubmitButton>
           )}
         </form>
-        {fehlend.length === 0 && (
+        {/* Schriftform-Arten (Kündigung) nie per Mail oder Portal — dort wären sie unwirksam (A8). */}
+        {!blockiert && !nurPapier && (
           <BriefVersand
             mieterId={tenant.id}
             email={tenant.email}
-            mieterName={mieterName}
+            mieterName={mieterText}
             betreff={titel}
             absender={vName}
             felder={felder}
