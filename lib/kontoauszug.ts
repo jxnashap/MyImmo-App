@@ -130,6 +130,18 @@ export function zielMonat(datum: string): string {
   return Number(datum.slice(8, 10)) >= 25 ? ymPlus(ym, 1) : ym;
 }
 
+/** Wörter, die im Verwendungszweck nie als Nachname zählen (Monate, Miet-Begriffe). */
+const ZWECK_WOERTER = new Set([
+  "januar", "februar", "märz", "maerz", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "dezember",
+  "miete", "mieter", "wohnung", "whg", "nebenkosten", "kaution", "kaltmiete", "warmmiete",
+]);
+
+/** Kommt `wort` als ganzes Wort (Buchstabengrenzen, auch Umlaute) im Text vor? */
+export function enthaeltWort(text: string, wort: string): boolean {
+  const esc = wort.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^\\p{L}])${esc}($|[^\\p{L}])`, "u").test(text);
+}
+
 /**
  * Ordnet Eingänge offenen Soll-Mieten zu. `ibanHashe` = SHA-256 der IBAN je Zahlung (im Browser
  * per crypto.subtle berechnet; hier als Map übergeben, damit die Funktion rein bleibt).
@@ -140,7 +152,6 @@ export function gleicheAb(zahlungen: Zahlung[], mieter: AbgleichMieter[], ibanHa
   const ohneZuordnung: Zahlung[] = [];
 
   for (const z of [...zahlungen].sort((a, b) => a.datum.localeCompare(b.datum))) {
-    const text = `${z.name} ${z.zweck}`.toLowerCase();
     let best: { m: AbgleichMieter; punkte: number; gruende: string[]; monat: OffenerMonat } | null = null;
     // Zwei Mieter gleich gut? Dann nie „sicher“ — der Vermieter entscheidet.
     let gleichstand = false;
@@ -152,8 +163,13 @@ export function gleicheAb(zahlungen: Zahlung[], mieter: AbgleichMieter[], ibanHa
       const gruende: string[] = [];
       const hz = ibanHashe.get(z.zeile);
       if (m.ibanHash && hz && m.ibanHash === hz) { punkte += 3; gruende.push("IBAN"); }
+      // Name nur als GANZES Wort (Audit P7, B14): Vorher fand „Mai“ in „Miete Mai 2026“ die Mieterin
+      // Kai Mai — zusammen mit dem Betrag 4 Punkte, also „sicher“ und vorausgewählt, obwohl Petra
+      // Schulz gezahlt hatte. Im Verwendungszweck zählen Monatsnamen und Miet-Wörter nicht als Name.
       const nn = (m.nachname ?? "").trim().toLowerCase();
-      if (nn.length >= 3 && text.includes(nn)) { punkte += 2; gruende.push("Name"); }
+      const imAuftraggeber = nn.length >= 3 && enthaeltWort(z.name.toLowerCase(), nn);
+      const imZweck = nn.length >= 3 && !ZWECK_WOERTER.has(nn) && enthaeltWort(z.zweck.toLowerCase(), nn);
+      if (imAuftraggeber || imZweck) { punkte += 2; gruende.push(imAuftraggeber ? "Name" : "Name im Zweck"); }
       const betragGleich = offen.some((o) => Math.abs(o.gesamt - z.betrag) < 0.005);
       if (betragGleich) { punkte += 2; gruende.push("Betrag"); }
       if (punkte < 3) continue;
@@ -180,7 +196,8 @@ export function gleicheAb(zahlungen: Zahlung[], mieter: AbgleichMieter[], ibanHa
       monate: best.m.offen,
       punkte: best.punkte,
       gruende: gleichstand ? [...best.gruende, "mehrdeutig"] : best.gruende,
-      stufe: best.punkte >= 4 && !gleichstand ? "sicher" : "vorschlag",
+      // „Sicher“ nur mit IBAN oder dem Namen im Auftraggeber — Betrag + Zweck allein beweisen nichts.
+      stufe: best.punkte >= 4 && !gleichstand && (best.gruende.includes("IBAN") || best.gruende.includes("Name")) ? "sicher" : "vorschlag",
       nkAnteil,
     });
   }

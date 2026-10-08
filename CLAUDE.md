@@ -1968,6 +1968,25 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   für Monate, in denen das Darlehen lief — **`kreditMonateImJahr()` (`lib/kreditZeit.ts`) ist die Regel**
   (Jahresbericht folgt mit P6). (B4) PDF kennzeichnet Summe/Ergebnis über `summenWarnung()` wie die ELSTER-Hilfe.
   `afaSatzAusBaujahr` = `afaSatzNachFertigstellung` (eine Funktion). **Offen:** Zeilennummern (B1, Vordruck 2025). Details `docs/zukunft/NK-NEU.md`.
+- 🗓️ **Paket P7 der Gesamtprüfung (08.10.2026): Mietkonto und Fristen** (`tests/paketP7.test.ts`, 17 Mutationen rot).
+  **`lib/mietStatus.ts` ist die EINE Regel für fällig/überfällig/bezahlt:** `dritterWerktag()` ohne Sa/So UND
+  bundesweite Feiertage (Osterformel; Landesfeiertage als Hinweis im Brief), `mietFaelligkeit()` (am 3. Werktag
+  „fällig“, erst danach „überfällig“), `mieteBezahlt()` (Fehlbetrag < 1 € — auch im Portal, vorher 0,50 €),
+  `naechsterWerktag()` (§ 108 Abs. 3 AO für die Steuer-Frist). `offeneMieten()` rechnet nach Berliner Datum;
+  Dashboard zeigt auch offene Vormonate (≤ 62 Tage) und ist erst NACH der Fälligkeit dringend. **Mahnung** erst
+  nach einer archivierten Zahlungserinnerung (`mahnungMoeglich()`), Vorlage ohne „trotz vorheriger Erinnerung“.
+  **§ 558** nur bei normaler Miete (Staffel/Index ausgeschlossen, auch Warnung im Brief-Generator); verpasste
+  Staffelstufe ohne Miet-Zeitraum → Warn-Frist (`zeitraumMonate`); Indexmiete „Anpassung möglich (seit …)“.
+  **Mietminderung** (`mieter.minderungen`, Mieterseite → „Mietminderung“, `sollFuerMonat` kürzt, Portal sieht sie).
+  Kontoauszug: Name nur als ganzes Wort, Monatsnamen im Zweck zählen nicht, „sicher“ nur mit IBAN/Auftraggeber.
+  Verbilligt-Ampel vergleicht ungerundet; Kaution > 3 Kaltmieten → Hinweis (`lib/kaution.ts`).
+  🔒 **SICHERHEITSFUND (A, dabei entdeckt): Portal-Sichten waren SCHREIBBAR.** Einfache Sichten über eine Tabelle
+  sind in Postgres automatisch aktualisierbar, `authenticated` hatte INSERT/UPDATE/DELETE, und als Eigentümer
+  laufend griff die RLS nicht — ein Mieter konnte Kaltmiete/Mietende seiner Zeile, das Objekt und die
+  Miet-Zeiträume ändern. Seit 01.10.2026 offen, 08.10.2026 geschlossen (`20261008081000`, live: Schreiben →
+  `permission denied`). Ob es je ausgenutzt wurde, lässt sich nicht feststellen (kein Änderungsprotokoll).
+  **Regel: Jede neue Sicht bekommt im selben PR `revoke insert, update, delete … from public, anon, authenticated`**
+  — `tests/paketP7.test.ts` sucht jede `create view` in den Migrationen und wird sonst rot.
 - 🏦 **Paket P6 der Gesamtprüfung (07.10.2026): Kredite mit Zeit** (`tests/paketP6.test.ts`, 12 Mutationen rot).
   **`lib/kredit.ts` ist die EINE Lesart eines Darlehens:** `restschuldVon()` (leer = Darlehenssumme — vorher
   vier Lesarten, `updateKredit` speicherte null → „100 % getilgt“), `istGetilgt()`/`rateVon()` (Restschuld 0 =

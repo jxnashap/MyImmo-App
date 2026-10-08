@@ -13,6 +13,8 @@ import { deleteTenant } from "@/lib/actions/tenants";
 import DeleteButton from "@/components/DeleteButton";
 import type { Tenant, Property, MietZeitraum } from "@/lib/types";
 import MietZeitraeume from "@/components/MietZeitraeume";
+import MietMinderung from "@/components/MietMinderung";
+import { kautionZuHoch, kautionHoechstbetrag } from "@/lib/kaution";
 import VerbilligtAmpel from "@/components/VerbilligtAmpel";
 import MieterEinladung from "@/components/MieterEinladung";
 import { brevoBereit } from "@/lib/mail/brevo";
@@ -120,7 +122,10 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
   // Mietspiegel am Mieter, sonst Vergleichsmiete am Objekt (lib/steuer/verbilligt.ts).
   const vergleich = vergleichsmieteFuer(m.mietspiegel, objektVergleich);
 
-  const fristen = mieterFristen(m, { nkErstellt: nkErstellteJahre(Array.from(dokumente, (d) => ({ mieter_id: params.id, titel: d.titel as string | null }))).get(params.id) });
+  const fristen = mieterFristen(m, {
+    nkErstellt: nkErstellteJahre(Array.from(dokumente, (d) => ({ mieter_id: params.id, titel: d.titel as string | null }))).get(params.id),
+    zeitraumMonate: zeitraeume.map((z) => z.von.slice(0, 7)),
+  });
   // Staffelplan: nur bei Staffelmiete mit Startdatum + Betrag ODER Prozent
   const staffelTyp = m.staffel_typ === "prozent" ? ("prozent" as const) : ("betrag" as const);
   const plan =
@@ -201,6 +206,12 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
             <Kachel label="Adresse" value={m.mieter_adresse} />
             {mieterIban && <Kachel label="Bankverbindung" value={fmtIban(mieterIban)} />}
           </div>
+          {kautionZuHoch(m.kaution, m.kaltmiete) && (
+            <p style={{ marginTop: 10, fontSize: 12, color: "var(--amber)" }}>
+              <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> Die Kaution ({euro(m.kaution)}) übersteigt drei
+              Nettokaltmieten ({euro(kautionHoechstbetrag(m.kaltmiete))}) — mehr darf nicht verlangt werden (§ 551 Abs. 1 BGB).
+            </p>
+          )}
           {m.notiz && (
             <div style={{ marginTop: 12, padding: 12, background: "var(--bg3)", borderRadius: 8, fontSize: 12, color: "var(--muted)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{m.notiz}</div>
           )}
@@ -221,6 +232,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
       )}
 
       <MietZeitraeume mieterId={params.id} zeitraeume={zeitraeume} />
+      <MietMinderung mieterId={params.id} minderungen={Array.isArray(m.minderungen) ? m.minderungen : []} />
 
       {plan.length > 0 && (
         <div className="section">

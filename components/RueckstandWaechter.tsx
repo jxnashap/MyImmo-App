@@ -6,7 +6,7 @@ import { TriangleAlert } from "lucide-react";
 import AufklappSection from "@/components/AufklappSection";
 import { createClient } from "@/lib/supabase/server";
 import { eur2 } from "@/lib/format";
-import { zahlungsBriefUrl } from "@/lib/mahnung";
+import { zahlungsBriefUrl, mahnungMoeglich, ERINNERUNG_TITEL_PRAEFIX } from "@/lib/mahnung";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { offeneMieten, monatLabel, type MietkontoMieter, type MietkontoZeitraum } from "@/lib/mietkonto";
 
@@ -14,20 +14,23 @@ type MieterRow = MietkontoMieter & { id: string; vorname: string | null; nachnam
 
 export default async function RueckstandWaechter() {
   const supabase = await createClient();
-  const [{ data: mieterRows }, { data: zrRows }, { data: einnRows }] = await Promise.all([
+  const [{ data: mieterRows }, { data: zrRows }, { data: einnRows }, { data: erinnRows }] = await Promise.all([
     supabase
       .from("mieter")
-      .select("id,vorname,nachname,prop_id,mietbeginn,mietende,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
+      .select("id,vorname,nachname,prop_id,mietbeginn,mietende,kaltmiete,nk_vorauszahlung,stellplatz_miete,minderungen"),
     supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
     supabase.from("einnahmen").select("mieter_id,buchungsdatum,kategorie,soll_monat,betrag").eq("kategorie", "Miete"),
+    // Archivierte Zahlungserinnerungen — erst danach wird die Mahnung angeboten (B10).
+    supabase.from("notizen").select("mieter_id,created_at").ilike("titel", `${ERINNERUNG_TITEL_PRAEFIX}%`),
   ]);
+  const erinnerungen = (erinnRows ?? []) as { mieter_id: string | null; created_at: string }[];
 
   const offene = ((mieterRows ?? []) as MieterRow[]).flatMap((m) => {
     const zeitraeume = ((zrRows ?? []) as (MietkontoZeitraum & { mieter_id: string })[]).filter(
       (z) => z.mieter_id === m.id,
     );
     const einnahmen = (einnRows ?? []).filter((e) => e.mieter_id === m.id);
-    return offeneMieten(m, zeitraeume, einnahmen).map((o) => ({
+    return offeneMieten(m, zeitraeume, einnahmen, heuteBerlin()).map((o) => ({
       ...o,
       mieterId: m.id,
       mieterName: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter",
@@ -50,9 +53,16 @@ export default async function RueckstandWaechter() {
   const summeAktuell = aktuell.reduce((s, o) => s + o.rest, 0);
   const summeAlt = alt.reduce((s, o) => s + o.rest, 0);
   const alarm = aktuell.length > 0;
+  // Am Fälligkeitstag selbst ist nichts überfällig (Audit P7, B13): getrennt zählen.
+  const ueberfaellig = aktuell.filter((o) => o.tageOffen > 0).length;
+  const heuteFaellig = aktuell.length - ueberfaellig;
+  const kopf = [
+    ueberfaellig > 0 ? `${ueberfaellig} Monat${ueberfaellig === 1 ? "" : "e"} überfällig` : null,
+    heuteFaellig > 0 ? `${heuteFaellig} heute fällig` : null,
+  ].filter(Boolean).join(" · ");
 
   const untertitel = alarm
-    ? `${aktuell.length} Monat${aktuell.length === 1 ? "" : "e"} überfällig · ${eur2(summeAktuell)}` +
+    ? `${kopf} · ${eur2(summeAktuell)}` +
       (alt.length > 0 ? ` · dazu ${alt.length} ältere ohne Bestätigung` : "")
     : `${alt.length} ältere${alt.length === 1 ? "r" : ""} Monat${alt.length === 1 ? "" : "e"} nie bestätigt · ${eur2(summeAlt)}`;
 
@@ -97,7 +107,10 @@ export default async function RueckstandWaechter() {
                   dieselbe Grenze wie „Erinnerung schreiben“ auf dem Dashboard (mieteUeberfaellig). */}
               {o.tageOffen > 0 && <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
                 <Link href={q("zahlungserinnerung")} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}>Zahlungserinnerung</Link>
-                <Link href={q("mahnung")} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px", color: "var(--red)" }}>Mahnung</Link>
+                {/* Mahnung erst nach einer archivierten Erinnerung (B10). */}
+                {mahnungMoeglich(erinnerungen, o.mieterId, o.faelligSeit) && (
+                  <Link href={q("mahnung")} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px", color: "var(--red)" }}>Mahnung</Link>
+                )}
               </span>}
             </div>
           );

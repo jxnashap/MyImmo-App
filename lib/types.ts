@@ -57,6 +57,8 @@ export type Tenant = {
   einheit: string | null;
   mietbeginn: string | null;
   mietende: string | null;
+  /** Mietminderungen (§ 536 BGB), siehe `Minderung` in lib/mietkonto.ts. */
+  minderungen?: import("@/lib/mietkonto").Minderung[] | null;
   kuendigung: number | null;        // Kündigungsfrist (Monate)
   kaltmiete: number | null;
   nk_vorauszahlung: number | null;  // Nebenkosten-Vorauszahlung

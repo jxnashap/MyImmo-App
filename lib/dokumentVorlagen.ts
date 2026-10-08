@@ -146,7 +146,7 @@ Sicherlich handelt es sich um ein Versehen. Ich bitte Sie, den offenen Betrag bi
 
 Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie es bitte als gegenstandslos.`,
 
-  mahnung: `trotz vorheriger Erinnerung ist die Mietzahlung in Höhe von {{betrag}} bislang nicht eingegangen. Hiermit mahne ich die offene Forderung an.
+  mahnung: `die Mietzahlung in Höhe von {{betrag}} ist bei mir bislang nicht eingegangen. Hiermit mahne ich die offene Forderung an.
 
 Ich fordere Sie auf, den offenen Betrag bis spätestens {{datum}} zu begleichen.
 

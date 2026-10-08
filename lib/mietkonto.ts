@@ -6,12 +6,33 @@
 // des tatsächlichen Geldeingangs. standardDatum ist deshalb nur ein VORSCHLAG
 // (1. des Monats) und beim Bestätigen editierbar. Keine Steuerberatung.
 
+import { TEILZAHLUNG_TOLERANZ, dritterWerktag, mieteBezahlt, mietFaelligkeit } from "@/lib/mietStatus";
+import { heuteBerlin } from "@/lib/zeitraum";
+// Fälligkeit und Toleranz liegen seit 07.10.2026 in lib/mietStatus.ts (eine Regel, Audit P7).
+export { TEILZAHLUNG_TOLERANZ, dritterWerktag };
+
+/**
+ * Mietminderung (§ 536 BGB) für einen Zeitraum — tritt kraft Gesetzes ein; ein geminderter Monat
+ * ist mit dem geminderten Betrag bezahlt, nicht „offen“ (Gesamtprüfung 07.10.2026, B15).
+ * Gespeichert als JSON-Liste am Mieter (`mieter.minderungen`). `prozent` ODER `betrag` (€/Monat).
+ */
+export type Minderung = {
+  von: string;        // YYYY-MM
+  bis: string | null; // YYYY-MM (einschließlich) oder null = läuft noch
+  prozent?: number | null;
+  betrag?: number | null;
+  grund?: string | null;
+  anliegen_id?: string | null;
+};
+
 export type MietkontoMieter = {
   kaltmiete: number | null;
   nk_vorauszahlung: number | null;
   stellplatz_miete?: number | null;
   mietbeginn: string | null; // ISO-Datum
   mietende: string | null;   // ISO-Datum oder null = unbefristet
+  /** Erfasste Mietminderungen (§ 536 BGB). */
+  minderungen?: Minderung[] | null;
 };
 
 export type MietkontoZeitraum = {
@@ -33,6 +54,8 @@ export type SollMiete = {
    * gekürzt; die Werte dienen der Anzeige („16/30 Tage").
    */
   anteilig?: { tage: number; tageImMonat: number };
+  /** Gesetzt, wenn eine Mietminderung den Monat betrifft: um diesen Betrag ist `gesamt` gekürzt. */
+  minderung?: { betrag: number; grund: string | null };
 };
 
 export type ErwarteterMonat = SollMiete & {
@@ -139,6 +162,60 @@ export function sollFuerMonat(
   zeitraeume: MietkontoZeitraum[],
   jahrMonat: string,
 ): SollMiete | null {
+  const soll = sollOhneMinderung(mieter, zeitraeume, jahrMonat);
+  if (!soll) return null;
+  const md = minderungImMonat(mieter.minderungen, jahrMonat);
+  if (!md) return soll;
+  // Minderung von der Bruttomiete (BGH VIII ZR 223/04), gekürzt zuerst an der Kaltmiete.
+  const betrag = rund2(Math.min(soll.gesamt, md.prozent != null ? (soll.gesamt * md.prozent) / 100 : md.betrag ?? 0));
+  if (betrag <= 0) return soll;
+  const kaltmiete = rund2(Math.max(0, soll.kaltmiete - betrag));
+  return { ...soll, kaltmiete, gesamt: rund2(soll.gesamt - betrag), minderung: { betrag, grund: md.grund ?? null } };
+}
+
+/**
+ * Prüft eine eingegebene Minderung. Prozent (0 < p ≤ 100) ODER Betrag (> 0), nie beides; von/bis als
+ * "YYYY-MM". Gibt die bereinigte Minderung oder einen Fehlertext zurück. EINE Prüfung für die Action.
+ */
+export function minderungAus(roh: {
+  von?: unknown; bis?: unknown; prozent?: unknown; betrag?: unknown; grund?: unknown; anliegen_id?: unknown;
+}): Minderung | { fehler: string } {
+  const ym = (v: unknown) => (typeof v === "string" && YM.test(v.slice(0, 7)) ? v.slice(0, 7) : null);
+  const zahl = (v: unknown) => {
+    if (v == null || v === "") return null;
+    const n = Number(String(v).replace(",", "."));
+    return Number.isFinite(n) ? n : NaN;
+  };
+  const von = ym(roh.von);
+  if (!von) return { fehler: "Bitte den ersten geminderten Monat angeben." };
+  const bis = roh.bis == null || roh.bis === "" ? null : ym(roh.bis);
+  if (roh.bis != null && roh.bis !== "" && !bis) return { fehler: "Der letzte Monat ist ungültig." };
+  if (bis && bis < von) return { fehler: "„Bis“ liegt vor „Von“." };
+  const prozent = zahl(roh.prozent);
+  const betrag = zahl(roh.betrag);
+  if (Number.isNaN(prozent) || Number.isNaN(betrag)) return { fehler: "Bitte eine Zahl angeben." };
+  if ((prozent == null) === (betrag == null)) return { fehler: "Bitte entweder Prozent oder einen Betrag je Monat angeben." };
+  if (prozent != null && !(prozent > 0 && prozent <= 100)) return { fehler: "Prozent zwischen 0 und 100." };
+  if (betrag != null && !(betrag > 0)) return { fehler: "Der Betrag muss größer als 0 sein." };
+  const grund = typeof roh.grund === "string" ? roh.grund.trim().slice(0, 200) || null : null;
+  const anliegen = typeof roh.anliegen_id === "string" && /^[0-9a-f-]{36}$/i.test(roh.anliegen_id) ? roh.anliegen_id : null;
+  return { von, bis, prozent: prozent ?? null, betrag: betrag != null ? rund2(betrag) : null, grund, anliegen_id: anliegen };
+}
+
+/** Die Minderung, die einen Monat betrifft (spätestes „von“ gewinnt). */
+export function minderungImMonat(minderungen: Minderung[] | null | undefined, jahrMonat: string): Minderung | null {
+  const passend = (minderungen ?? [])
+    .filter((m) => YM.test(m.von) && m.von <= jahrMonat && (m.bis == null || m.bis >= jahrMonat))
+    .filter((m) => (m.prozent != null && m.prozent > 0) || (m.betrag != null && m.betrag > 0))
+    .sort((a, b) => b.von.localeCompare(a.von));
+  return passend[0] ?? null;
+}
+
+function sollOhneMinderung(
+  mieter: MietkontoMieter,
+  zeitraeume: MietkontoZeitraum[],
+  jahrMonat: string,
+): SollMiete | null {
   if (!YM.test(jahrMonat)) return null;
 
   // Mietverhältnis aktiv? (Monat des Beginns/Endes zählt jeweils mit.)
@@ -226,8 +303,6 @@ export type DedupEinnahme = {
   betrag?: number | null;
 };
 
-/** Unter diesem Fehlbetrag gilt ein Monat als bezahlt (Rundung, Bankgebühr). */
-export const TEILZAHLUNG_TOLERANZ = 1;
 
 /**
  * Gezahlter Betrag eines Monats aus den Miet-Buchungen (soll_monat, sonst Buchungsmonat).
@@ -275,28 +350,6 @@ export type OffeneMiete = ErwarteterMonat & {
   rest: number;
 };
 
-/**
- * 3. Werktag eines Monats (§ 556b Abs. 1 BGB) als ISO-Datum.
- * Werktage sind Montag bis Freitag. Der SAMSTAG zählt NICHT: Für die
- * Mietzahlung ist er kein Werktag (BGH VIII ZR 129/09 zu § 556b BGB) — bis
- * zum 01.10.2026 zählte die App ihn mit, und das Mahnschreiben nannte damit
- * bis zu zwei Tage zu früh ein Fälligkeitsdatum. Gesetzliche Feiertage
- * bleiben bewusst unberücksichtigt — sie sind bundeslandabhängig; die
- * Fälligkeit dadurch eher zu früh anzusetzen wäre der schlechtere Fehler.
- */
-export function dritterWerktag(jahrMonat: string): string {
-  const [j, m] = jahrMonat.split("-").map(Number);
-  let werktage = 0;
-  for (let tag = 1; tag <= 31; tag++) {
-    const d = new Date(Date.UTC(j, m - 1, tag));
-    if (d.getUTCMonth() !== m - 1) break; // Monatsende überschritten
-    if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue; // Sa/So sind keine Werktage
-    werktage += 1;
-    if (werktage === 3) return `${jahrMonat}-${String(tag).padStart(2, "0")}`;
-  }
-  return `${jahrMonat}-03`;
-}
-
 const MONATE_DE = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 
 /** "2026-07" → "Juli 2026" */
@@ -321,20 +374,21 @@ export function offeneMieten(
   mieter: MietkontoMieter,
   zeitraeume: MietkontoZeitraum[],
   einnahmen: DedupEinnahme[],
-  heute: Date = new Date(),
+  heute: Date | string = new Date(),
 ): OffeneMiete[] {
-  const heuteYm = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}`;
-  const erwartet = erwarteteMonate(mieter, zeitraeume, ymPlus(heuteYm, -11), heuteYm, heute);
+  // Stichtag = Berliner Kalenderdatum (Audit P7, B13): vorher Server-Ortszeit — um 23:30 UTC
+  // war es in Berlin schon der nächste Tag, und „tageOffen“ hing an der Zeitzone des Servers.
+  const heuteISO = typeof heute === "string" ? heute.slice(0, 10) : heuteBerlin(heute);
+  const heuteYm = heuteISO.slice(0, 7);
+  const erwartet = erwarteteMonate(mieter, zeitraeume, ymPlus(heuteYm, -11), heuteYm, new Date(`${heuteISO}T12:00:00Z`));
   const offene: OffeneMiete[] = [];
   for (const m of erwartet) {
     if (m.gesamt <= 0) continue;
     const gezahlt = gezahltImMonat(einnahmen, m.jahrMonat);
-    if (gezahlt == null || gezahlt >= m.gesamt - TEILZAHLUNG_TOLERANZ) continue;
-    const faelligIso = dritterWerktag(m.jahrMonat);
-    const faellig = new Date(`${faelligIso}T00:00:00`);
-    const tage = Math.floor((heute.getTime() - faellig.getTime()) / 86400000);
-    if (tage < 0) continue; // aktueller Monat, noch nicht fällig
-    offene.push({ ...m, faelligSeit: faelligIso, tageOffen: tage, gezahlt, rest: Math.round((m.gesamt - gezahlt) * 100) / 100 });
+    if (gezahlt == null || mieteBezahlt(m.gesamt, gezahlt)) continue;
+    const f = mietFaelligkeit(m.jahrMonat, heuteISO);
+    if (f.stand === "nicht_faellig") continue; // aktueller Monat, noch nicht fällig
+    offene.push({ ...m, faelligSeit: f.faellig, tageOffen: f.tage, gezahlt, rest: Math.round((m.gesamt - gezahlt) * 100) / 100 });
   }
   return offene;
 }

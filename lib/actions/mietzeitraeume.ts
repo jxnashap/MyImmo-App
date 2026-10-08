@@ -6,7 +6,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { vertragswerte } from "@/lib/mietkonto";
+import { vertragswerte, minderungAus, type Minderung } from "@/lib/mietkonto";
 import { planeMietaenderung, type Betraege, type ZeitraumZeile } from "@/lib/sollAb";
 import { schreibeMietaenderung } from "@/lib/mietaenderung";
 import { staffelPlan } from "@/lib/staffel";
@@ -200,5 +200,53 @@ async function mieteAbAnwenden(
     const r = await schreibeMietaenderung(supabase, { userId, mieterId, propId: m.prop_id, plan });
     if ("error" in r) return { ok: false, error: r.error };
   }
+  return { ok: true };
+}
+
+// ------------------------------------------------------------- Mietminderung (§ 536 BGB) ----
+// Gesamtprüfung P7 / B15: Eine Minderung tritt kraft Gesetzes ein; ohne Erfassung zeigte MyImmo
+// jeden geminderten Monat als offen und bot eine Zahlungserinnerung an. Die Liste liegt am Mieter
+// (`mieter.minderungen`, Migration 20261007220000); Prüfung über `minderungAus` (lib/mietkonto.ts).
+
+async function ladeMinderungen(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, mieterId: string) {
+  const { data, error } = await supabase
+    .from("mieter").select("minderungen").eq("id", mieterId).eq("user_id", userId).maybeSingle();
+  if (error || !data) return null;
+  return (Array.isArray(data.minderungen) ? data.minderungen : []) as Minderung[];
+}
+
+export async function fuegeMinderungHinzu(mieterId: string, fd: FormData): Promise<MietZeitraumResult> {
+  const { supabase, userId } = await uid();
+  if (!userId) return { ok: false, error: "Nicht angemeldet." };
+  const m = minderungAus({
+    von: fd.get("von"), bis: fd.get("bis"), prozent: fd.get("prozent"), betrag: fd.get("betrag"),
+    grund: fd.get("grund"), anliegen_id: fd.get("anliegen_id"),
+  });
+  if ("fehler" in m) return { ok: false, error: m.fehler };
+  const liste = await ladeMinderungen(supabase, userId, mieterId);
+  if (!liste) return { ok: false, error: "Mieter nicht gefunden." };
+  if (liste.length >= 50) return { ok: false, error: "Zu viele Minderungen erfasst." };
+  const { data, error } = await supabase
+    .from("mieter").update({ minderungen: [...liste, m] }).eq("id", mieterId).eq("user_id", userId).select("id").maybeSingle();
+  if (error || !data) return { ok: false, error: "Minderung konnte nicht gespeichert werden." };
+  revalidatePath(`/tenants/${mieterId}`);
+  revalidatePath("/mietkonto");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function entferneMinderung(mieterId: string, index: number): Promise<MietZeitraumResult> {
+  const { supabase, userId } = await uid();
+  if (!userId) return { ok: false, error: "Nicht angemeldet." };
+  const liste = await ladeMinderungen(supabase, userId, mieterId);
+  if (!liste) return { ok: false, error: "Mieter nicht gefunden." };
+  if (!Number.isInteger(index) || index < 0 || index >= liste.length) return { ok: false, error: "Eintrag nicht gefunden." };
+  const neu = liste.filter((_, i) => i !== index);
+  const { data, error } = await supabase
+    .from("mieter").update({ minderungen: neu }).eq("id", mieterId).eq("user_id", userId).select("id").maybeSingle();
+  if (error || !data) return { ok: false, error: "Minderung konnte nicht entfernt werden." };
+  revalidatePath(`/tenants/${mieterId}`);
+  revalidatePath("/mietkonto");
+  revalidatePath("/");
   return { ok: true };
 }

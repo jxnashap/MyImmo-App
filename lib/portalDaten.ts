@@ -31,7 +31,7 @@ export const ZEITRAUM_SPALTEN = "mieter_id,von,bis,kaltmiete,nk_vorauszahlung,st
 
 /** Spalten der Sicht `mieter_portal` — identisch mit der Migration. */
 export const MIETER_PORTAL_SPALTEN =
-  "id,prop_id,vorname,nachname,einheit,flaeche,mietbeginn,mietende,kuendigung,kaltmiete,nk_vorauszahlung,stellplatz,stellplatz_miete,kaution,kaution_status,mietart";
+  "id,prop_id,vorname,nachname,einheit,flaeche,mietbeginn,mietende,kuendigung,kaltmiete,nk_vorauszahlung,stellplatz,stellplatz_miete,kaution,kaution_status,mietart,minderungen";
 /** Spalten, die das Portal vom Objekt zeigt (Teilmenge von `properties_portal`). */
 export const OBJEKT_PORTAL_SPALTEN = "id,bezeichnung,adresse";
 /** Was die RLS einem Mieter aus `einnahmen` gibt (Policy `einnahmen_select_mieter_zugang`). */
@@ -54,6 +54,8 @@ export type PortalMieter = {
   kaution: number | null;
   kaution_status: string | null;
   mietart: string | null;
+  /** Erfasste Mietminderungen (§ 536 BGB) — dieselbe Soll-Rechnung wie beim Vermieter. */
+  minderungen?: import("@/lib/mietkonto").Minderung[] | null;
 };
 export type PortalObjekt = { id: string; bezeichnung: string | null; adresse: string | null };
 export type PortalZustellung = {

@@ -63,9 +63,10 @@ describe("Lader in der Vorschau (Quelle: Vermieter)", () => {
     expect(m.filter).toContain(`eq:id="${M}"`);
   });
 
-  it("die Spaltenliste ist dieselbe wie in der Sicht mieter_portal (Migration)", () => {
-    const sql = readFileSync("supabase/migrations/20261001120000_mieter_sicht_spalten.sql", "utf8");
-    const block = /create or replace view public\.mieter_portal[\s\S]*?select ([\s\S]*?)\n\s*from public\.mieter m/.exec(sql)![1];
+  it("die Spaltenliste ist dieselbe wie in der Sicht mieter_portal (jüngste Migration)", () => {
+    // Seit 08.10.2026 (P7) mit `minderungen` — die Sicht wurde in 20261008080000 neu angelegt.
+    const sql = readFileSync("supabase/migrations/20261008080000_mieter_portal_minderungen.sql", "utf8");
+    const block = /create or replace view public\.mieter_portal[\s\S]*?select ([\s\S]*?)\n\s*from mieter m/.exec(sql)![1];
     const sicht = block.split(",").map((s) => s.trim().replace(/^m\./, ""));
     expect(MIETER_PORTAL_SPALTEN.split(",")).toEqual(sicht);
   });

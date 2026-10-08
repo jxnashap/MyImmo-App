@@ -6,6 +6,7 @@ import BriefVersand from "@/components/BriefVersand";
 import SubmitButton from "@/components/SubmitButton";
 
 import { useState, useTransition } from "react";
+import { normMietart } from "@/lib/mietart";
 import type { Tenant, Property, VermieterProfil, Iban } from "@/lib/types";
 import {
   ARTEN,
@@ -218,6 +219,14 @@ export default function DocGenerator({
             </div>
           )}
         </div>
+        {/* § 558 gilt nicht bei Staffel- oder Indexmiete (§ 557a Abs. 2, § 557b Abs. 2 BGB; Audit P7, B8). */}
+        {art === "mieterhoehung" && normMietart(tenant.mietart) !== "standard" && (
+          <div role="note" style={{ fontSize: 12.5, marginBottom: 12, padding: "10px 14px", borderRadius: 8, background: "rgba(240,160,48,0.08)", border: "1px solid rgba(240,160,48,0.3)" }}>
+            {normMietart(tenant.mietart) === "staffel"
+              ? "Dieser Mieter hat eine Staffelmiete: Eine Erhöhung auf die Vergleichsmiete (§ 558 BGB) ist ausgeschlossen (§ 557a Abs. 2 BGB) — die Miete steigt nur nach den vereinbarten Stufen."
+              : "Dieser Mieter hat eine Indexmiete: Eine Erhöhung auf die Vergleichsmiete (§ 558 BGB) ist ausgeschlossen (§ 557b Abs. 2 BGB) — angepasst wird nur nach dem Verbraucherpreisindex."}
+          </div>
+        )}
         {zeigtBetrag && (
           <div className="form-row single">
             <div className="form-group">

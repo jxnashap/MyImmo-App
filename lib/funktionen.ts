@@ -162,8 +162,7 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
       {
         h: "Kaution getrennt geführt",
         p: [
-          "Die Kaution beträgt höchstens drei Nettokaltmieten, der Mieter darf sie in drei Raten zahlen, und sie ist getrennt von deinem Vermögen anzulegen. MyImmo führt Betrag, Stand (ausstehend, teilweise, vollständig) und Anlageort je Mietverhältnis — samt Bankverbindung, die wie alle Bankdaten zusätzlich verschlüsselt gespeichert wird.",
-          "Beim Auszug steht damit fest, was einbehalten wurde und warum. Das ist die Unterlage, die im Streitfall zählt.",
+          "Die Kaution beträgt höchstens drei Nettokaltmieten, der Mieter darf sie in drei Raten zahlen, und sie ist getrennt von deinem Vermögen anzulegen. MyImmo führt Betrag und Stand (ausstehend, teilweise, vollständig) je Mietverhältnis und weist darauf hin, wenn die Kaution drei Nettokaltmieten übersteigt.",
         ],
       },
     ],

@@ -4,7 +4,7 @@ import { datum } from "@/lib/format";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { fristZiel } from "@/lib/heute";
 import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
-import { mieterFristen, nkErstellteJahre, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
+import { mieterFristen, nkErstellteJahre, kreditFristen, globaleFristen, objektFristen, zeitraumMonateJeMieter } from "@/lib/fristen";
 import {
   createTermin, createVorlageTermin, deleteTermin, toggleErledigt,
   blendeFristAus, zeigeFristWieder,
@@ -44,7 +44,7 @@ export default async function TerminePage(
 ) {
   const searchParams = await props0.searchParams;
   const supabase = await createClient();
-  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }, { data: nkNotizen }, { data: vertreterRows }] = await Promise.all([
+  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }, { data: nkNotizen }, { data: vertreterRows }, { data: zrRows }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
     supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum").order("bezeichnung"),
     supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen"),
@@ -53,6 +53,7 @@ export default async function TerminePage(
     supabase.from("notizen").select("mieter_id,titel").eq("kategorie", "Nebenkostenabrechnung"),
     // Paket D (06.10.2026): Vollmacht-Ablauf stand nur auf dem Dashboard — im Kalender fehlte er.
     supabase.from("vertreter").select("id,vorname,nachname,gueltig_bis,widerrufen_am").not("gueltig_bis", "is", null),
+    supabase.from("miet_zeitraeume").select("mieter_id,von"),
   ]);
 
   const properties = (props ?? []) as (Pick<Property, "id" | "bezeichnung" | "typ"> & { energieausweis_datum: string | null })[];
@@ -65,10 +66,11 @@ export default async function TerminePage(
   const nkJahre = nkErstellteJahre((nkNotizen ?? []) as { mieter_id: string | null; titel: string | null }[]);
   const eintraege: Eintrag[] = [];
 
+  const zrMonate = zeitraumMonateJeMieter(zrRows as { mieter_id: string; von: string }[] | null);
   for (const m of mieter) {
     const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
-    for (const f of mieterFristen(m, { nkErstellt: nkJahre.get(m.id) })) {
+    for (const f of mieterFristen(m, { nkErstellt: nkJahre.get(m.id), zeitraumMonate: zrMonate.get(m.id) ?? [] })) {
       if (!f.datum) continue;
       eintraege.push({ datum: f.datum, label: f.label, wer, wo, quelle: "mieter", typ: f.typ, kategorie: f.kategorie ?? "Miete", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("mieter", m.id, f.label) });
     }
