@@ -22,7 +22,7 @@ describe("Sanierung ist keine Nebenkosten", () => {
   // Kaufpreis 250.000, echte Nebenkosten 26.425, Sanierung 40.000 → Gesamt 316.425; Darlehen
   // 250.000 → Lücke 66.425, Eigenkapital 50.000 deckt sie nicht, die echten Nebenkosten aber schon.
   const basis: MachbarkeitInput = {
-    darlehen: 250_000, rate: 0, kaufpreis: 250_000, gesamtInvest: 316_425, kaltmieteNeu: 0,
+    darlehen: 250_000, darlehenAusWunsch: true, rate: 0, kaufpreis: 250_000, gesamtInvest: 316_425, kaltmieteNeu: 0,
     haushaltsNetto: 0, mieteinnahmenBestehend: 0, ausgabenFix: 0, anzahlPersonen: 1, eigenkapital: 50_000,
   };
   const ek = (i: MachbarkeitInput) => pruefeMachbarkeit(i).checks.find((c) => c.key === "ek")!.ampel;

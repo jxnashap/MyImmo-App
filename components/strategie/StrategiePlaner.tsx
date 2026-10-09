@@ -8,11 +8,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { euro } from "@/lib/format";
-import { BUNDESLAENDER } from "@/lib/kalk";
+import BundeslandWahl from "@/components/BundeslandWahl";
 import {
   HORIZONT_JAHRE,
   MAX_KAEUFE,
   OHNE_OBJEKT_ID,
+  SZENARIO_ANNAHMEN,
   SZENARIO_VORSICHTIG,
   TAKTIKEN,
   WURZEL_ID,
@@ -22,6 +23,7 @@ import {
   moeglicheQuellen,
   neuerKauf,
   rechneStrategie,
+  restMonateImStartjahr,
   strategieAus,
   taktik,
   type BestandObjekt,
@@ -51,11 +53,14 @@ export default function StrategiePlaner({
   bestand,
   erspartesStart,
   startJahr,
+  startMonat = 1,
 }: {
   bestand: BestandObjekt[];
   /** Eigenkapital aus der Selbstauskunft — Vorschlag fürs Ersparte, änderbar. */
   erspartesStart: number;
   startJahr: number;
+  /** Monat des Stichtags (1–12): Im Startjahr zählen nur die restlichen Monate (B29). */
+  startMonat?: number;
 }) {
   const [e, setE] = useState<StrategieEntwurf>(() => leereStrategie(erspartesStart));
   const [geladen, setGeladen] = useState(false);
@@ -83,8 +88,9 @@ export default function StrategiePlaner({
     }
   }, [e, geladen]);
 
-  const annahmen = useMemo(() => rechneStrategie(e, bestand, startJahr), [e, bestand, startJahr]);
-  const vorsichtig = useMemo(() => rechneStrategie(e, bestand, startJahr, SZENARIO_VORSICHTIG), [e, bestand, startJahr]);
+  const annahmen = useMemo(() => rechneStrategie(e, bestand, startJahr, SZENARIO_ANNAHMEN, startMonat), [e, bestand, startJahr, startMonat]);
+  const vorsichtig = useMemo(() => rechneStrategie(e, bestand, startJahr, SZENARIO_VORSICHTIG, startMonat), [e, bestand, startJahr, startMonat]);
+  const restMonate = restMonateImStartjahr(startMonat);
   const vorsichtigJe = useMemo(() => new Map(vorsichtig.kaeufe.map((k) => [k.id, k])), [vorsichtig]);
   const jahre = (szenario === "annahmen" ? annahmen : vorsichtig).jahre;
 
@@ -194,11 +200,7 @@ export default function StrategiePlaner({
             </label>
             <label className="form-group">
               <span>Bundesland (Grunderwerbsteuer)</span>
-              <select className="input" value={e.grest} onChange={(x) => setFeld("grest", x.target.value)}>
-                {BUNDESLAENDER.map((b) => (
-                  <option key={b.l} value={String(b.v)}>{b.l}</option>
-                ))}
-              </select>
+              <BundeslandWahl className="input" wert={e.grest} onWahl={(k) => setFeld("grest", k)} />
               <small>Wie im Objekt-Rechner, dazu Notar und Grundbuch</small>
             </label>
           </div>
@@ -369,7 +371,9 @@ export default function StrategiePlaner({
             <div className="section-header">
               <div>
                 <h3>Die nächsten {HORIZONT_JAHRE} Jahre</h3>
-                <div className="section-sub">Jeweils am Jahresende</div>
+                <div className="section-sub">
+                  Jeweils am Jahresende{restMonate < 12 && <> · {startJahr} nur mit den restlichen {restMonate === 1 ? "einem Monat" : `${restMonate} Monaten`}</>}
+                </div>
               </div>
               <div className="tabs" role="tablist" aria-label="Szenario">
                 <button type="button" role="tab" aria-selected={szenario === "annahmen"} className={`tab-btn${szenario === "annahmen" ? " active" : ""}`} onClick={() => setSzenario("annahmen")}>

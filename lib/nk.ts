@@ -602,7 +602,7 @@ export function berechneNk(
     const l = vorauszahlung.luecke;
     warnungen.push(
       `Nur für ${l.gebuchteMonate} von ${l.belegteMonate} Monaten ist ein Mieteingang MIT Nebenkosten-Anteil gebucht (zusammen ${l.gebuchterBetrag.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €). ` +
-        `Diese Teilsumme wäre als „geleistet" falsch — die Abrechnung rechnet deshalb mit der vereinbarten Soll-Vorauszahlung. ` +
+        `Diese Teilsumme wäre als „geleistet“ falsch — die Abrechnung rechnet deshalb mit der vereinbarten Soll-Vorauszahlung. ` +
         `Ergänze die fehlenden Buchungen, bevor du sie verschickst.`,
     );
   } else if (vorauszahlung.geschaetzt) {

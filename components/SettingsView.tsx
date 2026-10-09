@@ -702,7 +702,7 @@ function AutoLogoutKarte() {
         </label>
         <p className="span2" style={{ fontSize: 11.5, color: "var(--muted)", margin: 0, lineHeight: 1.5 }}>
           Der Timer wirkt auf diesem Gerät und ist die Garantie: Wer länger als die gewählte
-          Zeit weg war, wird beim Zurückkehren sofort abgemeldet. „Beim Schließen&quot; meldet dich
+          Zeit weg war, wird beim Zurückkehren sofort abgemeldet. „Beim Schließen“ meldet dich
           ab, sobald du den Browser nach dem Schließen wieder öffnest — neu laden und
           weiterklicken meldet dich nicht ab.
         </p>

@@ -217,7 +217,7 @@ export default function PropertyForm({
             <div className="form-group"><label>AfA-Startjahr (Jahr der Anschaffung)</label>
               <input type="number" name="afa_start_jahr" defaultValue={v("afa_start_jahr")} placeholder="leer = Jahr des Kaufdatums" />
             </div>
-            <div className="form-group"><label>Manueller AfA-Betrag (€/Jahr, nur „manuell&quot;)</label>
+            <div className="form-group"><label>Manueller AfA-Betrag (€/Jahr, nur „manuell“)</label>
               <input type="number" step="0.01" name="afa_betrag" defaultValue={v("afa_betrag")} placeholder="z. B. 7500" />
             </div>
           </div>

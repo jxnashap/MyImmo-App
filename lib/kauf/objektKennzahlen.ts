@@ -6,7 +6,7 @@
 // die Zwischenwerte, die der Rechner anzeigt.
 
 import { zahlDe0 } from "@/lib/zahl";
-import { kaufnebenkostenSatz } from "@/lib/kalk";
+import { grestSatzAus, kaufnebenkostenSatz } from "@/lib/kalk";
 import { marktwert as rechneMarktwert } from "@/lib/kauf/marktwert";
 
 const num = zahlDe0;
@@ -14,7 +14,10 @@ const num = zahlDe0;
 export type ObjektEingaben = {
   kaufpreis: string;
   flaeche: string;
-  /** Maschinenwert der Bundesland-Auswahl („0.05“ = 5 % Grunderwerbsteuer) — kein deutscher Zahlentext. */
+  /**
+   * Bundesland-Auswahl: Länderkürzel (seit 09.10.2026, B32) oder — ältere Kaufprüfungen — der Satz als
+   * Maschinenwert („0.05“). Kein deutscher Zahlentext; gelesen über `grestSatzAus()`.
+   */
   bundesland: string;
   makler: string;
   sanierung: string;
@@ -32,13 +35,24 @@ export type ObjektEingaben = {
   lz: string;
   anzahlWhg: string;
   swFaktor: string;
+  /**
+   * Jahr, mit dem die Kennzahlen gerechnet wurden (seit 09.10.2026, C28). Ältere Kaufprüfungen haben es
+   * nicht → laufendes Jahr.
+   */
+  bewertungsjahr?: string;
 };
+
+/** Bewertungsjahr aus dem gespeicherten Feld — nur ein vierstelliges Jahr zählt. */
+function bewertungsjahrAus(v: string | undefined): number | undefined {
+  const n = typeof v === "string" && /^\d{4}$/.test(v) ? Number(v) : NaN;
+  return n >= 2000 && n <= 2100 ? n : undefined;
+}
 
 export function objektKennzahlen(e: ObjektEingaben) {
   const kp = num(e.kaufpreis), fl = num(e.flaeche);
   // `bundesland` NICHT durch den deutschen Zahlenparser: der hielt den Punkt für ein
   // Tausendertrennzeichen und machte aus 0,035 die Zahl 35 (3500 % Grunderwerbsteuer).
-  const grestSatz = Number(e.bundesland) || 0;
+  const grestSatz = grestSatzAus(e.bundesland);
   const nkSatz = kaufnebenkostenSatz(grestSatz, num(e.makler)); // + Notar/Grundbuch (lib/kalk.ts)
   const nebenkosten = kp * nkSatz;
   // Sanierung gehört zur Investition (Nettorendite, Darlehensbedarf).
@@ -62,10 +76,14 @@ export function objektKennzahlen(e: ObjektEingaben) {
     baujahr: Math.round(num(e.baujahr)), gebTyp: e.gebTyp, ausstattung: Math.round(num(e.ausstattung)),
     bpiFaktor: num(e.bpiFaktor) || 1.9, regionalFaktor: num(e.regionalFaktor) || 1,
     liegenschaftszins: num(e.lz) || 3.5, sachwertfaktor: num(e.swFaktor) || 1,
+    stichtagJahr: bewertungsjahrAus(e.bewertungsjahr),
   });
   const marktwert = mw.ergebnis?.wert ?? 0;
+  // Die Schätzung ist vorläufig, wenn Angaben fehlen, die sie verzerren (Bodenwert, Baujahr …) — derselbe
+  // Maßstab wie beim Preisurteil im Rechner (`preisUrteil(…, unsicher)`).
+  const marktwertVorlaeufig = marktwert > 0 && mw.unsicher.length > 0;
 
-  return { kp, fl, nebenkosten, sanierung, gesamtInvest, preisM2, vermietung, kaltmiete, jahresmiete, brutto, faktor, nettomiet, mw, marktwert };
+  return { kp, fl, nebenkosten, sanierung, gesamtInvest, preisM2, vermietung, kaltmiete, jahresmiete, brutto, faktor, nettomiet, mw, marktwert, marktwertVorlaeufig };
 }
 
 export type ObjektKennzahlen = ReturnType<typeof objektKennzahlen>;
@@ -75,5 +93,7 @@ export function kennzahlenSummary(k: ObjektKennzahlen): Record<string, number> {
   return {
     kp: k.kp, gesamtInvest: k.gesamtInvest, sanierung: k.sanierung, preisM2: k.preisM2, brutto: k.brutto,
     nettomiet: k.nettomiet, faktor: k.faktor, kaltmiete: k.kaltmiete, nutzung: k.vermietung ? 1 : 0, marktwert: k.marktwert,
+    // 1 = Schätzung mit fehlenden Angaben (B30): im Vergleich gekennzeichnet und ohne Punkt für die Krone.
+    marktwertVorlaeufig: k.marktwertVorlaeufig ? 1 : 0,
   };
 }

@@ -11,7 +11,7 @@
 // Ertragswert-Formel braucht die Jahresnettokaltmiete — die Umrechnung
 // passiert hier an einer Stelle statt in der Oberfläche.
 
-import { ertragswert, sachwert, restnutzungsdauer, GND_WOHNGEBAEUDE, type Bewertungsergebnis } from "@/lib/bewertung/immowertv";
+import { ertragswert, sachwert, restnutzungsdauer, laufendesJahr, GND_WOHNGEBAEUDE, type Bewertungsergebnis } from "@/lib/bewertung/immowertv";
 
 export type MarktwertEingabe = {
   nutzung: "vermietung" | "eigennutzung";
@@ -28,6 +28,12 @@ export type MarktwertEingabe = {
   regionalFaktor: number;
   liegenschaftszins: number; // % p. a. (nur Ertragswert)
   sachwertfaktor: number; // (nur Sachwert)
+  /**
+   * Jahr der Bewertung (Gesamtprüfung 07.10.2026, C28): Restnutzungsdauer und Bewirtschaftungskosten hängen
+   * daran. Gespeicherte Kaufprüfungen tragen es mit, damit ihre Kennzahlen nachrechenbar bleiben;
+   * fehlt es, gilt das laufende Jahr (Berlin).
+   */
+  stichtagJahr?: number;
 };
 
 export type MarktwertErgebnis = {
@@ -40,6 +46,8 @@ export type MarktwertErgebnis = {
   unsicher: string[];
   ergebnis: Bewertungsergebnis | null;
   restnutzungsdauer: number;
+  /** Mit welchem Jahr gerechnet wurde. */
+  stichtagJahr: number;
 };
 
 /** Welche Angaben fehlen noch für das jeweilige Verfahren? */
@@ -87,7 +95,7 @@ export function unsichereAngaben(e: MarktwertEingabe): string[] {
 export const RND_MINDESTANTEIL = 0.3;
 
 export function marktwert(e: MarktwertEingabe): MarktwertErgebnis {
-  const jahr = new Date().getFullYear();
+  const jahr = e.stichtagJahr && Number.isInteger(e.stichtagJahr) ? e.stichtagJahr : laufendesJahr();
   const rndRoh = e.baujahr > 0 ? restnutzungsdauer(e.baujahr, jahr, GND_WOHNGEBAEUDE) : GND_WOHNGEBAEUDE;
   const rndMin = Math.round(GND_WOHNGEBAEUDE * RND_MINDESTANTEIL);
   const rnd = Math.max(rndRoh, rndMin);
@@ -103,7 +111,7 @@ export function marktwert(e: MarktwertEingabe): MarktwertErgebnis {
   }
 
   if (fehlt.length > 0) {
-    return { verfahren, verfahrenLabel, bereit: false, fehlend: fehlt, unsicher, ergebnis: null, restnutzungsdauer: rnd };
+    return { verfahren, verfahrenLabel, bereit: false, fehlend: fehlt, unsicher, ergebnis: null, restnutzungsdauer: rnd, stichtagJahr: jahr };
   }
 
   const ergebnis =
@@ -117,6 +125,7 @@ export function marktwert(e: MarktwertEingabe): MarktwertErgebnis {
           grundstuecksflaeche: e.grundFlaeche,
           liegenschaftszins: e.liegenschaftszins,
           restnutzungsdauer: rnd,
+          stichtagJahr: jahr,
         })
       : sachwert({
           typ: e.gebTyp,
@@ -130,7 +139,7 @@ export function marktwert(e: MarktwertEingabe): MarktwertErgebnis {
           sachwertfaktor: e.sachwertfaktor || 1,
         });
 
-  return { verfahren, verfahrenLabel, bereit: true, fehlend: [], unsicher, ergebnis, restnutzungsdauer: rnd };
+  return { verfahren, verfahrenLabel, bereit: true, fehlend: [], unsicher, ergebnis, restnutzungsdauer: rnd, stichtagJahr: jahr };
 }
 
 /**

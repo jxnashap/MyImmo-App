@@ -93,7 +93,7 @@ export default function KalkImport({
         role="button"
         tabIndex={0}
         aria-expanded={open}
-        aria-label={`„Aus Anzeige übernehmen" ${open ? "zuklappen" : "aufklappen"}`}
+        aria-label={`„Aus Anzeige übernehmen“ ${open ? "zuklappen" : "aufklappen"}`}
         onKeyDown={tastaturAktion(() => setOpen((o) => !o))}
       >
         <div>

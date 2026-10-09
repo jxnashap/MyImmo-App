@@ -227,8 +227,9 @@ describe("Quellen, Bestand und Lesen", () => {
     const e = strategieAus(JSON.parse(JSON.stringify(roh)))!;
     expect(e.kaeufe).toHaveLength(MAX_KAEUFE);
     expect(e.kaeufe[0].taktik).toBe("ansparen");
-    expect(e.grest).toBe("0.05");
-    expect(strategieAus({ ...plan([]), grest: "0.065" })!.grest).toBe("0.065");
+    expect(e.grest).toBe("BW"); // Voreinstellung: Länderkürzel (B32)
+    expect(strategieAus({ ...plan([]), grest: "0.065" })!.grest).toBe("0.065"); // älterer Plan: Satz bleibt lesbar
+    expect(strategieAus({ ...plan([]), grest: "NI" })!.grest).toBe("NI");
   });
 
   it("Zahlen lesen: deutscher Tausenderpunkt bei Geld, Komma bei Prozent, Unsinn = 0", () => {

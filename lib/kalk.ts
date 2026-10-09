@@ -66,24 +66,50 @@ export function berechneVolltilgungJahr(darlehen: number, zinsPa: number, rateMo
 }
 
 // Grunderwerbsteuer je Bundesland, Stand 2026 (offizielle Landesquellen / finanz-tools.de).
+// `k` = Länderkürzel nach ISO 3166-2:DE. Die Auswahl speichert das KÜRZEL, nie den Satz: Fünf Länder
+// haben 5,0 %, je drei 5,5 % und 6,0 % — mit dem Satz als Wert sprang die Auswahl nach dem Laden auf
+// das erste Land mit gleichem Satz (Gesamtprüfung 07.10.2026, B32: Niedersachsen → Baden-Württemberg).
 export const BUNDESLAENDER = [
-  { v: 0.05,  l: "Baden-Württemberg (5,0 %)" },
-  { v: 0.035, l: "Bayern (3,5 %)" },
-  { v: 0.06,  l: "Berlin (6,0 %)" },
-  { v: 0.065, l: "Brandenburg (6,5 %)" },
-  { v: 0.055, l: "Bremen (5,5 %)" },
-  { v: 0.055, l: "Hamburg (5,5 %)" },
-  { v: 0.06,  l: "Hessen (6,0 %)" },
-  { v: 0.06,  l: "Mecklenburg-Vorpommern (6,0 %)" },
-  { v: 0.05,  l: "Niedersachsen (5,0 %)" },
-  { v: 0.065, l: "Nordrhein-Westfalen (6,5 %)" },
-  { v: 0.05,  l: "Rheinland-Pfalz (5,0 %)" },
-  { v: 0.065, l: "Saarland (6,5 %)" },
-  { v: 0.055, l: "Sachsen (5,5 %)" },
-  { v: 0.05,  l: "Sachsen-Anhalt (5,0 %)" },
-  { v: 0.065, l: "Schleswig-Holstein (6,5 %)" },
-  { v: 0.05,  l: "Thüringen (5,0 %)" },
+  { k: "BW", v: 0.05,  l: "Baden-Württemberg (5,0 %)" },
+  { k: "BY", v: 0.035, l: "Bayern (3,5 %)" },
+  { k: "BE", v: 0.06,  l: "Berlin (6,0 %)" },
+  { k: "BB", v: 0.065, l: "Brandenburg (6,5 %)" },
+  { k: "HB", v: 0.055, l: "Bremen (5,5 %)" },
+  { k: "HH", v: 0.055, l: "Hamburg (5,5 %)" },
+  { k: "HE", v: 0.06,  l: "Hessen (6,0 %)" },
+  { k: "MV", v: 0.06,  l: "Mecklenburg-Vorpommern (6,0 %)" },
+  { k: "NI", v: 0.05,  l: "Niedersachsen (5,0 %)" },
+  { k: "NW", v: 0.065, l: "Nordrhein-Westfalen (6,5 %)" },
+  { k: "RP", v: 0.05,  l: "Rheinland-Pfalz (5,0 %)" },
+  { k: "SL", v: 0.065, l: "Saarland (6,5 %)" },
+  { k: "SN", v: 0.055, l: "Sachsen (5,5 %)" },
+  { k: "ST", v: 0.05,  l: "Sachsen-Anhalt (5,0 %)" },
+  { k: "SH", v: 0.065, l: "Schleswig-Holstein (6,5 %)" },
+  { k: "TH", v: 0.05,  l: "Thüringen (5,0 %)" },
 ];
+
+/** Voreinstellung der Länder-Auswahl (erste Zeile der Liste). */
+export const LAND_STANDARD = "BW";
+
+/** Bundesland zu einem Kürzel — null, wenn es keines ist. */
+export function landAus(k: string | null | undefined): (typeof BUNDESLAENDER)[number] | null {
+  return BUNDESLAENDER.find((b) => b.k === k) ?? null;
+}
+
+/**
+ * Ein gespeicherter Satz aus der Zeit vor dem Kürzel („0.05“) — null, wenn der Wert keiner ist. Nur
+ * Sätze zwischen 0 und 10 % gelten (der Zahlenparser darf den Punkt nicht als Tausender lesen).
+ */
+export function altSatzAus(v: string | null | undefined): number | null {
+  if (typeof v !== "string" || !/^0(\.\d{1,4})?$/.test(v)) return null;
+  const n = Number(v);
+  return n >= 0 && n <= 0.1 ? n : null;
+}
+
+/** Grunderwerbsteuersatz aus der Länder-Auswahl: Kürzel, sonst Altbestand-Satz, sonst 0. */
+export function grestSatzAus(v: string | null | undefined): number {
+  return landAus(v)?.v ?? altSatzAus(v) ?? 0;
+}
 
 export const num = (s: string) => parseFloat(s) || 0;
 

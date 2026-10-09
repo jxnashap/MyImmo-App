@@ -10,6 +10,12 @@ export type Ampel = "gruen" | "gelb" | "rot" | "grau";
 export type MachbarkeitInput = {
   // aus dem gewählten Objekt (Kauf-Auswahl / Cockpit)
   darlehen: number;        // Darlehensbedarf
+  /**
+   * Kommt `darlehen` aus einem Darlehenswunsch? Ohne Wunsch ist `darlehen` = Gesamtinvestition −
+   * Eigenkapital — gegen sich selbst geprüft wäre die Eigenkapital-Ampel immer grün (Gesamtprüfung
+   * 07.10.2026, B31). Fehlt das Feld, gilt: kein Wunsch.
+   */
+  darlehenAusWunsch?: boolean;
   rate: number;            // geplante Monatsrate gesamt
   kaufpreis: number;
   gesamtInvest: number;    // Kaufpreis + Nebenkosten + Sanierung
@@ -110,16 +116,29 @@ export function pruefeMachbarkeit(i: MachbarkeitInput): MachbarkeitErgebnis {
 
   // 4) Eigenkapital-Deckung
   if (i.gesamtInvest > 0) {
-    const benoetigt = Math.max(0, i.gesamtInvest - i.darlehen);
     const nebenkosten = Math.max(0, i.gesamtInvest - i.kaufpreis - Math.max(0, Number(i.sanierung) || 0));
-    const ampel: Ampel = i.eigenkapital >= benoetigt ? "gruen" : i.eigenkapital >= nebenkosten ? "gelb" : "rot";
-    checks.push({
-      key: "ek",
-      label: "Eigenkapital deckt die Finanzierungslücke",
-      ampel,
-      wert: `${eur(i.eigenkapital)} vorhanden · ${eur(benoetigt)} nötig`,
-      hinweis: "Mindestens die Kaufnebenkosten sollten aus Eigenkapital kommen; besser zusätzlich 10–20 % des Kaufpreises.",
-    });
+    const hinweis =
+      "Banken finanzieren die Kaufnebenkosten in der Regel nicht mit — sie kommen dann aus dem Eigenkapital. Wie viel Eigenkapital eine Bank darüber hinaus erwartet, legt sie selbst fest.";
+    if (i.darlehenAusWunsch) {
+      const benoetigt = Math.max(0, i.gesamtInvest - i.darlehen);
+      const ampel: Ampel = i.eigenkapital >= benoetigt ? "gruen" : i.eigenkapital >= nebenkosten ? "gelb" : "rot";
+      checks.push({
+        key: "ek",
+        label: "Eigenkapital deckt die Finanzierungslücke",
+        ampel,
+        wert: `${eur(i.eigenkapital)} vorhanden · ${eur(benoetigt)} nötig`,
+        hinweis,
+      });
+    } else {
+      // Ohne Darlehenswunsch gibt es keine Lücke, gegen die man prüfen könnte — nur die Nebenkosten.
+      checks.push({
+        key: "ek",
+        label: "Eigenkapital deckt die Kaufnebenkosten",
+        ampel: i.eigenkapital >= nebenkosten ? "gruen" : "rot",
+        wert: `${eur(i.eigenkapital)} vorhanden · ${eur(nebenkosten)} Nebenkosten`,
+        hinweis: `${hinweis} Mit einem Darlehenswunsch prüft die Ampel die ganze Lücke.`,
+      });
+    }
   }
 
   return {

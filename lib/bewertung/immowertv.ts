@@ -7,15 +7,60 @@
 // SPANNE ausgegeben (Marktanpassung LZ/Sachwertfaktor variiert), um keine
 // Scheingenauigkeit zu suggerieren.
 
-// ---- Anlage 3: Bewirtschaftungskosten-Modell (Kostenstand 01.01.2021) --------
-// Werte sind jährlich per VPI fortzuschreiben — hier der Basisstand.
-export const ANLAGE3 = {
-  verwaltungWohnung: 298, // €/Jahr je Wohnung (EFH/MFH)
-  verwaltungEtw: 357, // €/Jahr je Eigentumswohnung
-  verwaltungGarage: 39, // €/Jahr je Stellplatz/Garage
-  instandhaltungProM2: 11.7, // €/m² Wohnfläche/Jahr (Schönheitsrep. beim Mieter)
-  mietausfallwagnis: 0.02, // 2 % des Rohertrags (Wohnen)
+import { heuteBerlin } from "@/lib/zeitraum";
+
+// ---- Anlage 3: Bewirtschaftungskosten je Wertermittlungsjahr ----------------
+// Anlage 3 ImmoWertV nennt Verwaltung und Instandhaltung „für das Jahr 2021“; für spätere Stichtage sind
+// sie nach Nr. III jährlich fortzuschreiben (VPI Oktober des Vorjahres gegenüber Oktober 2001, auf die
+// Basiswerte 230 €/275 €/30 € und 9,00 €/m²/68 €; €-Werte auf volle Euro, €/m² auf eine Nachkommastelle).
+// Bis 09.10.2026 rechnete die App immer mit 2021 — der Ertragswert lag dadurch rund 5 % zu hoch
+// (Gesamtprüfung 07.10.2026, B33: Halle 87.621 € statt 83.442 €).
+//
+// Werte NICHT selbst aus dem VPI gerechnet, sondern wie veröffentlicht übernommen:
+//   2021 — Wortlaut Anlage 3 (gesetze-im-internet.de/immowertv_2022/anlage_3.html, abgerufen 09.10.2026)
+//   2022–2026 — Oberer Gutachterausschuss Brandenburg, „Bewirtschaftungskosten entsprechend Anlage 3
+//     ImmoWertV … für die Jahre 2022 bis 2026“ (gutachterausschuss.brandenburg.de/sixcms/media.php/9/
+//     BewKo_2026.pdf, abgerufen 09.10.2026); 2026 gegengeprüft: immobilien-wertermittlung.de, „Neue
+//     Bewirtschaftungskosten für 2026“ (15.11.2025: VPI Okt. 2001 = 77,1, Okt. 2025 = 123,0, Faktor 1,5953).
+// Prüfzyklus: jeden November (VPI Oktober) die Zeile fürs nächste Jahr — docs/app-entwicklung/07.
+export type Bewirtschaftungskosten = {
+  verwaltungWohnung: number; // €/Jahr je Wohnung bzw. je Wohngebäude bei EFH/ZFH
+  verwaltungEtw: number; // €/Jahr je Eigentumswohnung
+  verwaltungGarage: number; // €/Jahr je Garage/Einstellplatz
+  instandhaltungProM2: number; // €/m² Wohnfläche/Jahr (Schönheitsreparaturen beim Mieter)
+  instandhaltungGarage: number; // €/Jahr je Garage/Einstellplatz
 };
+
+export const BEWIRTSCHAFTUNG_JE_JAHR: Record<number, Bewirtschaftungskosten> = {
+  2021: { verwaltungWohnung: 298, verwaltungEtw: 357, verwaltungGarage: 39, instandhaltungProM2: 11.7, instandhaltungGarage: 88 },
+  2022: { verwaltungWohnung: 312, verwaltungEtw: 373, verwaltungGarage: 41, instandhaltungProM2: 12.2, instandhaltungGarage: 92 },
+  2023: { verwaltungWohnung: 339, verwaltungEtw: 405, verwaltungGarage: 44, instandhaltungProM2: 13.2, instandhaltungGarage: 100 },
+  2024: { verwaltungWohnung: 351, verwaltungEtw: 421, verwaltungGarage: 46, instandhaltungProM2: 13.8, instandhaltungGarage: 104 },
+  2025: { verwaltungWohnung: 359, verwaltungEtw: 429, verwaltungGarage: 47, instandhaltungProM2: 14.0, instandhaltungGarage: 106 },
+  2026: { verwaltungWohnung: 367, verwaltungEtw: 439, verwaltungGarage: 48, instandhaltungProM2: 14.4, instandhaltungGarage: 108 },
+};
+
+/** Mietausfallwagnis Wohnen: 2 % des Rohertrags (Anlage 3 Nr. I.3, nicht fortgeschrieben). */
+export const MIETAUSFALLWAGNIS_WOHNEN = 0.02;
+
+const BEWIRTSCHAFTUNG_JAHRE = Object.keys(BEWIRTSCHAFTUNG_JE_JAHR).map(Number).sort((a, b) => a - b);
+
+/**
+ * Bewirtschaftungskosten für einen Wertermittlungsstichtag im Jahr `jahr`. Vor 2021 gilt 2021 (älter rechnet
+ * die App nicht). Liegt das Jahr hinter der Tabelle, gilt die letzte Zeile — `veraltet` sagt es dann, und
+ * der Ertragswert nennt es in seinen Warnungen (lieber sichtbar zu niedrig als still erfunden).
+ */
+export function bewirtschaftungFuer(jahr: number): { werte: Bewirtschaftungskosten; jahr: number; veraltet: boolean } {
+  const erstes = BEWIRTSCHAFTUNG_JAHRE[0];
+  const letztes = BEWIRTSCHAFTUNG_JAHRE[BEWIRTSCHAFTUNG_JAHRE.length - 1];
+  const j = Number.isInteger(jahr) ? Math.max(erstes, Math.min(letztes, jahr)) : letztes;
+  return { werte: BEWIRTSCHAFTUNG_JE_JAHR[j], jahr: j, veraltet: Number.isInteger(jahr) && jahr > letztes };
+}
+
+/** Wertermittlungsjahr, wenn der Aufrufer keines nennt: das laufende Jahr in Berlin. */
+export function laufendesJahr(): number {
+  return Number(heuteBerlin().slice(0, 4));
+}
 
 // ---- Anlage 1: Gesamtnutzungsdauer ------------------------------------------
 export const GND_WOHNGEBAEUDE = 80; // Jahre (EFH/ZFH/RH/MFH/Mischnutzung)
@@ -79,6 +124,8 @@ export type ErtragswertInput = {
   liegenschaftszins: number; // % (Default aus Bandbreite)
   restnutzungsdauer: number; // Jahre
   garagen?: number;
+  /** Jahr des Wertermittlungsstichtags — bestimmt die Bewirtschaftungskosten (Standard: laufendes Jahr). */
+  stichtagJahr?: number;
 };
 
 export type Bewertungsergebnis = {
@@ -91,10 +138,12 @@ export type Bewertungsergebnis = {
 
 export function ertragswert(i: ErtragswertInput): Bewertungsergebnis {
   const roh = Math.max(0, i.jahresnettokaltmiete);
-  const verwaltungProWE = i.istEtw ? ANLAGE3.verwaltungEtw : ANLAGE3.verwaltungWohnung;
-  const verwaltung = verwaltungProWE * Math.max(1, i.anzahlWohnungen) + ANLAGE3.verwaltungGarage * (i.garagen ?? 0);
-  const instandhaltung = ANLAGE3.instandhaltungProM2 * Math.max(0, i.wohnflaeche);
-  const mietausfall = roh * ANLAGE3.mietausfallwagnis;
+  const bk = bewirtschaftungFuer(i.stichtagJahr ?? laufendesJahr());
+  const garagen = Math.max(0, i.garagen ?? 0);
+  const verwaltungProWE = i.istEtw ? bk.werte.verwaltungEtw : bk.werte.verwaltungWohnung;
+  const verwaltung = verwaltungProWE * Math.max(1, i.anzahlWohnungen) + bk.werte.verwaltungGarage * garagen;
+  const instandhaltung = bk.werte.instandhaltungProM2 * Math.max(0, i.wohnflaeche) + bk.werte.instandhaltungGarage * garagen;
+  const mietausfall = roh * MIETAUSFALLWAGNIS_WOHNEN;
   const bewk = verwaltung + instandhaltung + mietausfall;
   const reinertrag = roh - bewk;
   const bodenwert = Math.max(0, i.bodenrichtwert) * Math.max(0, i.grundstuecksflaeche);
@@ -112,6 +161,9 @@ export function ertragswert(i: ErtragswertInput): Bewertungsergebnis {
   const min = rechne(i.liegenschaftszins + 0.5);
 
   const warnungen: string[] = [];
+  if (bk.veraltet) {
+    warnungen.push(`Bewirtschaftungskosten für ${i.stichtagJahr ?? laufendesJahr()} sind noch nicht eingetragen — gerechnet mit dem Stand ${bk.jahr}; der Wert fällt dadurch etwas zu hoch aus.`);
+  }
   const bewkAnteil = roh > 0 ? bewk / roh : 0;
   if (i.liegenschaftszins < 2 || i.liegenschaftszins > 5.5) warnungen.push("Liegenschaftszins außerhalb der üblichen Spanne (2,0–5,5 %). Wert aus dem Grundstücksmarktbericht prüfen.");
   if (roh > 0 && (bewkAnteil < 0.15 || bewkAnteil > 0.32)) warnungen.push(`Bewirtschaftungskosten liegen bei ${(bewkAnteil * 100).toFixed(0)} % des Rohertrags (üblich 18–29 %).`);

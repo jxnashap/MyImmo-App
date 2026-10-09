@@ -13,14 +13,27 @@ const MIGRATION = readFileSync("supabase/migrations/20261006064806_demo_kaufprue
 type Zeile = { id: string; name: string; data: Record<string, string>; summary: Record<string, number> };
 const ZEILE = /\('([0-9a-f-]{36})'::uuid, '((?:[^']|'')*)',\s*'((?:[^']|'')*)'::jsonb,\s*'((?:[^']|'')*)'::jsonb,/g;
 const ent = (s: string) => s.replace(/''/g, "'");
-const zeilen: Zeile[] = [...MIGRATION.matchAll(ZEILE)].map((m) => ({
+const eingefuegt: Zeile[] = [...MIGRATION.matchAll(ZEILE)].map((m) => ({
   id: m[1],
   name: ent(m[2]),
   data: JSON.parse(ent(m[3])),
   summary: JSON.parse(ent(m[4])),
 }));
+// Paket P9 (09.10.2026): Kürzel, Bewertungsjahr und neue Kennzahlen — die Zeilen gelten in dieser Fassung.
+const P9 = readFileSync("supabase/migrations/20261009130000_demo_kaufpruefungen_p9.sql", "utf8");
+const UPDATE = /\('([0-9a-f-]{36})'::uuid,\s*'((?:[^']|'')*)'::jsonb,\s*'((?:[^']|'')*)'::jsonb\)/g;
+const neu = new Map([...P9.matchAll(UPDATE)].map((m) => [m[1], { data: JSON.parse(ent(m[2])), summary: JSON.parse(ent(m[3])) }]));
+const zeilen: Zeile[] = eingefuegt.map((z) => ({ ...z, ...(neu.get(z.id) ?? {}) }));
 
 describe("Demo-Kandidaten", () => {
+  it("P9 hat jede Zeile neu gesetzt — mit Länderkürzel und Bewertungsjahr (sonst rot ab 2027)", () => {
+    expect(neu.size).toBe(eingefuegt.length);
+    for (const z of zeilen) {
+      expect(z.data.bundesland, z.name).toMatch(/^[A-Z]{2}$/);
+      expect(z.data.bewertungsjahr, z.name).toBe("2026");
+    }
+  });
+
   it("drei bis fünf Zeilen — alle passen nebeneinander in den Vergleich", () => {
     expect(zeilen.length).toBeGreaterThanOrEqual(3);
     expect(zeilen.length).toBeLessThanOrEqual(VERGLEICH_MAX);

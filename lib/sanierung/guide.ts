@@ -16,6 +16,7 @@ import {
   WER_GEWERKE,
   massDe,
   mengeAus,
+  wohnflaecheAus,
   betragAus,
   neuerRaum,
   type Entwurf,
@@ -93,7 +94,7 @@ export function fehlendeAngaben(id: SeiteId, e: Entwurf): string[] {
     case "eckdaten": {
       if (p.etw === "") fehlt.push("Eigentumswohnung: ja oder nein");
       if (!p.baujahrUnbekannt && baujahrZahl(e) == null) fehlt.push("Baujahr (oder „weiß ich nicht“)");
-      if (!((mengeAus(p.wohnflaeche) ?? 0) > 0)) fehlt.push("Wohnfläche");
+      if (!((wohnflaecheAus(p.wohnflaeche) ?? 0) > 0)) fehlt.push("Wohnfläche");
       break;
     }
     case "ziel":

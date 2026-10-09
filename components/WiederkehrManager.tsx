@@ -228,7 +228,7 @@ export default function WiederkehrManager({
           {vorlagen.length === 0 ? (
             <div className="empty" style={{ padding: 28 }}>
               <Repeat className="empty-icon" size={36} color="var(--faint)" />
-              <p>Noch keine wiederkehrenden Buchungen. Lege z. B. „Grundsteuer · jährlich&quot; oder „Müllabfuhr · vierteljährlich&quot; an.</p>
+              <p>Noch keine wiederkehrenden Buchungen. Lege z. B. „Grundsteuer · jährlich“ oder „Müllabfuhr · vierteljährlich“ an.</p>
             </div>
           ) : (
             vorlagen.map((v) => {

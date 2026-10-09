@@ -85,7 +85,7 @@ export default function CashflowListe({
           );
         })}
         {rows.length === 0 && (
-          <tr><td colSpan={7}>{gefiltert ? <div className="empty"><Banknote className="empty-icon" size={36} color="var(--faint)" /><h4>Keine Buchungen im gewählten Zeitraum</h4><p>Es gibt Buchungen — nur nicht für dieses Jahr, Objekt oder diese Suche. Filter oben anpassen.</p></div> : <div className="empty"><Banknote className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Buchungen</h4><p>Erfasse Einnahmen und Ausgaben über „＋ Buchung&quot;.</p></div>}</td></tr>
+          <tr><td colSpan={7}>{gefiltert ? <div className="empty"><Banknote className="empty-icon" size={36} color="var(--faint)" /><h4>Keine Buchungen im gewählten Zeitraum</h4><p>Es gibt Buchungen — nur nicht für dieses Jahr, Objekt oder diese Suche. Filter oben anpassen.</p></div> : <div className="empty"><Banknote className="empty-icon" size={36} color="var(--faint)" /><h4>Noch keine Buchungen</h4><p>Erfasse Einnahmen und Ausgaben über „＋ Buchung“.</p></div>}</td></tr>
         )}
       </ExpandableRows>
 

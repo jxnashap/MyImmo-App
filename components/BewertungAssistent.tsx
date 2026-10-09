@@ -71,7 +71,7 @@ export default function BewertungAssistent({
       return ertragswert({
         jahresnettokaltmiete: num(miete), wohnflaeche: num(flaeche), anzahlWohnungen: Math.max(1, num(whg)),
         istEtw, bodenrichtwert: num(brw), grundstuecksflaeche: num(grund),
-        liegenschaftszins: num(lz), restnutzungsdauer: rnd,
+        liegenschaftszins: num(lz), restnutzungsdauer: rnd, stichtagJahr: jahr,
       });
     }
     if (!num(flaeche)) return null;
@@ -80,7 +80,7 @@ export default function BewertungAssistent({
       regionalfaktor: num(regio), restnutzungsdauer: rnd, bodenrichtwert: num(brw),
       grundstuecksflaeche: num(grund), sachwertfaktor: num(swf),
     });
-  }, [zweck, miete, flaeche, whg, istEtw, brw, grund, lz, rnd, typ, stufe, bpi, regio, swf]);
+  }, [zweck, miete, flaeche, whg, istEtw, brw, grund, lz, rnd, jahr, typ, stufe, bpi, regio, swf]);
 
   const vf = num(kaufpreis) && num(miete) ? vervielfaeltiger(num(kaufpreis), num(miete)) : null;
   const ampel = ergebnis && num(kaufpreis) ? kaufpreisAmpel(ergebnis.wert, num(kaufpreis)) : null;

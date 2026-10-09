@@ -4,7 +4,8 @@
 // gestellt werden.
 //
 // ALTERT: Die BEG (KfW 261/458, BAFA BEG EM) wurde zum 21.07.2026 umgestellt (Richtlinien
-// „vom 17. August 2026“). Prüfzyklus: docs/app-entwicklung/07 Volatile Kennzahlen …
+// „vom 17. August 2026“ im Bundesanzeiger; das BMWE hatte BEG EM vorab als Fassung „vom 17. Juli 2026“
+// veröffentlicht — gleicher Inhalt, siehe docs/kauf/KfW-Foerderung-2026.md). Prüfzyklus: docs/app-entwicklung/07 Volatile Kennzahlen …
 
 /** Stand der Konditionen von KfW 261/458, BAFA BEG EM und § 35c (gegen kfw.de/bafa.de geprüft). */
 export const FOERDER_STAND = "BEG-Reform 21.07.2026, geprüft 05.10.2026";
