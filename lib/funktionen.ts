@@ -101,9 +101,9 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
         h: "Was MyImmo übernimmt",
         liste: [
           "Jede Buchung wird beim Erfassen der richtigen Kategorie der Anlage V zugeordnet.",
-          "Abschreibung aus Kaufpreis, Nebenkosten, Gebäudeanteil und Baujahr — im Anschaffungsjahr automatisch zeitanteilig.",
+          "Abschreibung aus Kaufpreis, Gebäudeanteil und Baujahr — im Anschaffungsjahr automatisch zeitanteilig.",
           "Bei Krediten wird der Zinsanteil getrennt geführt; nur er ist Werbungskosten, die Tilgung nicht.",
-          "Erhaltungsaufwand wahlweise sofort oder über zwei bis fünf Jahre verteilt, mit Jahresrate in den Folgejahren.",
+          "Erhaltungsaufwand: Der AfA-Assistent rechnet Sofortabzug und Verteilung über zwei bis fünf Jahre (§ 82b EStDV) gegeneinander.",
           "Aufstellung je Objekt als PDF, Buchungen als CSV, dazu ein DATEV-Export für den Steuerberater.",
         ],
       },

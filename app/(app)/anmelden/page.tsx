@@ -22,7 +22,7 @@ const ROLLEN: Rolle[] = [
   { key: "vermieter", label: "Vermieter", desc: "Objekte, Finanzen & Steuer verwalten", icon: KeyRound },
   { key: "mieter", label: "Mieter", desc: "Anliegen melden, Dokumente & Abrechnungen", icon: Home },
   { key: "service", label: "Service / Hausmeister", desc: "Aufträge & Reparaturen koordinieren", icon: Wrench },
-  { key: "hausverwaltung", label: "Hausverwaltung", desc: "Teams, Rechte & große Bestände", icon: Building2 },
+  { key: "hausverwaltung", label: "Hausverwaltung", desc: "Fremde Bestände verwalten", icon: Building2 },
 ];
 
 export default function AnmeldenPage() {

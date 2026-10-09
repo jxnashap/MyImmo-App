@@ -2016,6 +2016,19 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   (Test sucht alle Verzeichnisse). (B26) **`DemoNurLesen` sperrt nur Felder in einem ABSENDENDEN Formular** —
   Suche, Befehlspalette, Rechner, Steuerjahr sind bedienbar. **Regel: Ein Lese-Werkzeug nie in ein `<form>` mit
   POST/Action legen** (sonst sperrt die Demo es wieder); ein PDF-Formular, das nur liest, trägt `data-demo-erlaubt`.
+- 📰 **Paket P10 der Gesamtprüfung (09.10.2026): Ratgeber und Werbung** (`tests/paketP10.test.ts`, 17 Mutationen rot).
+  Jede korrigierte Rechtsaussage gegen den Wortlaut (gesetze-im-internet.de, per `curl` abrufbar — WebFetch bekam 503)
+  bzw. zwei Sekundärquellen geprüft: Belegeinsicht nach **§ 556 Abs. 4 BGB** (seit 2025, elektronische Bereitstellung
+  erlaubt), Zwischenablesung trägt der Vermieter (BGH VIII ZR 19/07), HeizkostenV § 2/§ 9 Abs. 2/§ 11/§ 12 Abs. 3 im
+  Wortlaut, 15-%-Kürzung 180 €, Schornsteinfeger = Handwerkerleistung, BFH-Urteile vom 12.11.2025, Berlin 810 → 470 % zum
+  01.01.2025, § 559e ergänzt, Legionellen § 31 TrinkwV. **Audit-Befund C37 WIDERLEGT:** Die Anlage V ist seit **VZ 2023**
+  dreigeteilt (Stotax-Anleitung 2023, Haufe zu 2021, Formularliste 2021) — der Ratgeber war richtig. Werbung: kein
+  „Umlage-Assistent“ mehr (gibt es seit 07.10. nicht), keine AfA-Übernahme „mit Restlaufzeit“, keine § 82b-Jahresrate,
+  keine Kaufnebenkosten in der AfA-Basis, keine Mandantentrennung/Teams (jetzt „(geplant)“). Es sind **17** Ratgeber, nicht 19.
+  **Regeln:** (1) Eine korrigierte Rechtsaussage bekommt einen Eintrag in `NORMZITATE` (Quelle + Abrufdatum). (2) Ein
+  öffentlicher Text, der eine Funktion verspricht, bekommt einen Eintrag in `BELEGE` (Werbe-Wächter) — fällt der Code
+  weg, muss der Text mit. (3) `aktualisiert` nur bei inhaltlicher Überarbeitung; das Rechtsstand-Siegel „Juli 2026“ bleibt
+  global, bis alle Artikel geprüft sind.
 - 📊 **Paket P8 der Gesamtprüfung (09.10.2026): Portfolio-Kennzahlen** (`tests/paketP8.test.ts`, 26 Mutationen rot).
   (B24/B26) **`lib/portfolioKennzahlen.ts` ist die EINE Regel für Wert und Rendite:** `aktuellerWert()` = gepflegter Wert,
   sonst Kaufpreis (Dashboard-Kachel = Ende der Wertkurve = Liste); `bruttoRendite()` auf den KAUFPREIS (sonst Wert, Basis
