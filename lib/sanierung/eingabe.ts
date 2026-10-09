@@ -104,7 +104,14 @@ export type RaumMasse = Pick<RaumFeld, "id" | "name" | "laenge" | "breite" | "ho
 export type LohnFeld = { id: string; bezeichnung: string; stunden: string; satz: string; eigenleistung: boolean };
 export type PostenFeld = { id: string; bezeichnung: string; betrag: string; foerderung: FoerderArt };
 /** Angaben für die Zuschuss-Schätzung (lib/sanierung/foerderung.ts). */
-export type FoerderFelder = { wohneinheiten: string; isfp: boolean; nutzung: Nutzung; gebaeude: Gebaeude };
+export type FoerderFelder = {
+  wohneinheiten: string;
+  /** Wohneinheiten im ganzen Gebäude (B36: anteilige KfW-458-Grenze). Leer/fehlt = unbekannt. */
+  weGebaeude?: string;
+  isfp: boolean;
+  nutzung: Nutzung;
+  gebaeude: Gebaeude;
+};
 
 export type Entwurf = {
   raeume: RaumFeld[];
@@ -151,7 +158,7 @@ export const leereGewerke = (): Record<ZustandGewerkId, GewerkFeld> =>
   Object.fromEntries(ZUSTAND_GEWERKE.map((g) => [g.gewerk, { zustand: "", arbeiten: [] }])) as unknown as Record<ZustandGewerkId, GewerkFeld>;
 
 /** BuyImmo richtet sich an Leute, die vermieten — und an eine Eigentumswohnung (1 Einheit). */
-export const STANDARD_FOERDER: FoerderFelder = { wohneinheiten: "1", isfp: false, nutzung: "vermieten", gebaeude: "mfh" };
+export const STANDARD_FOERDER: FoerderFelder = { wohneinheiten: "1", weGebaeude: "", isfp: false, nutzung: "vermieten", gebaeude: "mfh" };
 export const neuerPosten = (id: string): PostenFeld => ({ id, bezeichnung: "", betrag: "", foerderung: "keine" });
 
 /** Übliche Raumhöhe im Bestand als Vorschlag — der Nutzer überschreibt sie mit dem Maßband. */
@@ -202,11 +209,27 @@ export function leererEntwurf(id: string): Entwurf {
  * Wie `massDe()` ohne Tausenderpunkt — Mengen hier sind Stück, Meter, m² oder Prozent.
  */
 export function mengeAus(eingabe: string | null | undefined): number | null {
-  const roh = (eingabe ?? "").trim().replace(/\s/g, "");
+  // Nur Rand-Leerzeichen weg: „4 125“ ist keine Zahl, sondern ein Tippfehler (C32).
+  const roh = (eingabe ?? "").trim();
   if (roh === "" || !/^\d*[.,]?\d*$/.test(roh) || !/\d/.test(roh)) return null;
   const n = Number(roh.replace(",", "."));
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
+
+/**
+ * Wohnfläche in m² — deutsche Lesart wie in der Kaufprüfung (`zahlDe`, lib/kauf/objektKennzahlen.ts):
+ * „1.050“ = 1.050 m², „72,5“ = 72,5 m². Gesamtprüfung 07.10.2026, B37: Der Guide las die Fläche mit
+ * `mengeAus()` (Punkt = Komma) und machte aus der übernommenen Kaufprüfung „1.050“ 1,05 m² — die Kosten je
+ * m² schrumpften auf ein Tausendstel, ohne Warnung. Wohnflächen haben nie drei Nachkommastellen.
+ */
+export function wohnflaecheAus(eingabe: string | null | undefined): number | null {
+  if (eingabe == null || eingabe.trim() === "") return null;
+  const n = zahlDe(eingabe.trim());
+  return n != null && Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+/** Darunter ist eine Wohnfläche fast sicher ein Eingabefehler — die Auswertung sagt es dann. */
+export const WOHNFLAECHE_PLAUSIBEL_AB = 10;
 
 /** Geldbetrag aus einem Textfeld (deutscher Tausenderpunkt erlaubt): leer oder unlesbar → `null`. */
 export function betragAus(eingabe: string | null | undefined): number | null {
@@ -222,7 +245,8 @@ export function betragAus(eingabe: string | null | undefined): number | null {
  * Dezimalstelle; alles andere (zwei Trennzeichen, Buchstaben) zählt als 0.
  */
 export function massDe(eingabe: string | null | undefined): number {
-  const roh = (eingabe ?? "").trim().replace(/\s/g, "");
+  // Nur Rand-Leerzeichen weg (Gesamtprüfung 07.10.2026, C32): „4 125“ wurde vorher zu 4.125 m.
+  const roh = (eingabe ?? "").trim();
   if (!/^\d*[.,]?\d*$/.test(roh)) return 0;
   const n = Number(roh.replace(",", "."));
   return Number.isFinite(n) && n > 0 ? n : 0;
@@ -239,9 +263,11 @@ export function zuFoerderEingabe(
   zusatz: { id: string; bezeichnung: string; betrag: number; art: FoerderArt }[] = [],
 ): FoerderEingabe {
   const we = Math.floor(zahlDe0(e.foerder.wohneinheiten));
+  const weGeb = Math.floor(zahlDe0(e.foerder.weGebaeude ?? ""));
   return {
     posten: [...e.eigene.map((p) => ({ id: p.id, bezeichnung: p.bezeichnung, betrag: zahlDe0(p.betrag), art: p.foerderung })), ...zusatz],
     wohneinheiten: we >= 1 ? we : 1,
+    wohneinheitenGebaeude: weGeb >= 1 ? weGeb : undefined,
     isfp: e.foerder.isfp,
     nutzung: e.projekt.nutzung || e.foerder.nutzung,
     gebaeude: e.foerder.gebaeude,
@@ -329,6 +355,7 @@ export function entwurfAus(roh: unknown): Entwurf | null {
   const f = obj(o.foerder);
   const foerder: FoerderFelder = {
     wohneinheiten: typeof f.wohneinheiten === "string" ? f.wohneinheiten.slice(0, 4) : STANDARD_FOERDER.wohneinheiten,
+    weGebaeude: typeof f.weGebaeude === "string" ? f.weGebaeude.slice(0, 4) : STANDARD_FOERDER.weGebaeude,
     isfp: f.isfp === true,
     nutzung: f.nutzung === "eigennutzen" ? "eigennutzen" : "vermieten",
     gebaeude: f.gebaeude === "haus" ? "haus" : "mfh",

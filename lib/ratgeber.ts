@@ -62,6 +62,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       "Von den Belegen bis zur fertigen Abrechnung: die vier Pflichtangaben, der richtige Umlageschlüssel, ein vollständiges Rechenbeispiel und die Fristen, an denen Abrechnungen scheitern.",
     kategorie: "Nebenkosten",
     datum: "2026-07-30",
+    aktualisiert: "2026-10-09",
     lesezeit: 9,
     kurzcheck: {
       fall:
@@ -142,7 +143,7 @@ export const RATGEBER: RatgeberArtikel[] = [
         p: [
           "Die Abrechnung muss dem Mieter spätestens zum Ablauf des zwölften Monats nach Ende des Abrechnungszeitraums zugehen (§ 556 Abs. 3 Satz 2 BGB). Für 2025 heißt das: bis zum 31.12.2026 zugegangen — nicht abgeschickt. Danach können Sie keine Nachzahlung mehr verlangen; ein Guthaben müssen Sie trotzdem auszahlen.",
           "Eine Nachzahlung wird mit Zugang der Abrechnung fällig. In der Praxis setzt man dem Mieter eine Zahlungsfrist von etwa 30 Tagen — das ist kulant, üblich und vermeidet Streit über den Verzugsbeginn.",
-          "Der Mieter kann bis zum Ablauf des zwölften Monats nach Zugang Einwendungen erheben (§ 556 Abs. 3 Satz 5 BGB); danach sind sie ausgeschlossen, sofern er die Verspätung zu vertreten hat. Auf Verlangen müssen Sie Belegeinsicht gewähren.",
+          "Der Mieter kann bis zum Ablauf des zwölften Monats nach Zugang Einwendungen erheben (§ 556 Abs. 3 Satz 5 BGB); danach sind sie ausgeschlossen, sofern er die Verspätung zu vertreten hat. Auf Verlangen müssen Sie Belegeinsicht gewähren — elektronisch genügt (§ 556 Abs. 4 BGB).",
         ],
       },
       {
@@ -165,7 +166,7 @@ export const RATGEBER: RatgeberArtikel[] = [
     feature: {
       titel: "Die Abrechnung in MyImmo erstellen",
       text:
-        "Der Umlage-Assistent führt genau durch diese sechs Schritte: Kosten erfassen, Schlüssel je Position wählen, Mieterwechsel taggenau abrechnen, Vorauszahlungen abziehen. Am Ende steht eine fertige PDF-Abrechnung mit ausgewiesenem Rechenweg, Verteilerschlüssel und § 35a-Ausweis für Ihre Mieter — die vier Pflichtangaben sind dabei fest eingebaut.",
+        "Die Nebenkostenabrechnung in MyImmo führt durch diese Schritte: Kosten erfassen, Schlüssel je Position wählen, Mieterwechsel taggenau abrechnen, Vorauszahlungen abziehen. Am Ende steht eine fertige PDF-Abrechnung mit ausgewiesenem Rechenweg, Verteilerschlüssel und § 35a-Ausweis für Ihre Mieter — die vier Pflichtangaben sind dabei fest eingebaut.",
       href: "/anmelden",
       cta: "Kostenlos ausprobieren",
     },
@@ -259,6 +260,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       "Wie Heiz- und Warmwasserkosten nach der Heizkostenverordnung verteilt werden, wann 70 % zwingend sind, und warum die Fernablesepflicht zum 31.12.2026 jeden Vermieter betrifft.",
     kategorie: "Nebenkosten",
     datum: "2026-07-30",
+    aktualisiert: "2026-10-09",
     lesezeit: 8,
     kurzcheck: {
       fall:
@@ -280,7 +282,7 @@ export const RATGEBER: RatgeberArtikel[] = [
         p: [
           "Die Heizkostenverordnung verlangt, dass mindestens 50 und höchstens 70 Prozent der Heizkosten nach erfasstem Verbrauch verteilt werden (§ 7 Abs. 1 HeizkostenV). Der Rest — die Grundkosten — wird nach Wohnfläche oder umbautem Raum umgelegt.",
           "Die Grundkosten sind kein Zugeständnis an die Bequemlichkeit, sondern sachlich begründet: Leitungsverluste, Bereitschaftswärme und die Lage der Wohnung im Gebäude hängen nicht vom Heizverhalten ab.",
-          "Für Warmwasser gilt dieselbe Spanne (§ 8 HeizkostenV). Sind Heizung und Warmwasser über eine verbundene Anlage versorgt, müssen die Kosten zuerst rechnerisch getrennt werden — seit 2014 ist bei Neuinstallationen dafür ein Wärmemengenzähler vorgeschrieben.",
+          "Für Warmwasser gilt dieselbe Spanne (§ 8 HeizkostenV). Sind Heizung und Warmwasser über eine verbundene Anlage versorgt, müssen die Kosten zuerst getrennt werden: Die Wärmemenge für das Warmwasser ist mit einem Wärmezähler zu messen; nur wenn das mit unzumutbar hohem Aufwand verbunden wäre, darf sie nach einer Formel bestimmt werden (§ 9 Abs. 2 HeizkostenV).",
         ],
       },
       {
@@ -305,7 +307,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Das 15-Prozent-Kürzungsrecht",
         p: [
-          "Rechnen Sie nicht verbrauchsabhängig ab, obwohl Sie es müssten, darf der Mieter seinen Anteil um 15 Prozent kürzen (§ 12 Abs. 1 HeizkostenV). Im Beispiel oben wären das rund 167 € — pro Wohnung und pro Jahr.",
+          "Rechnen Sie nicht verbrauchsabhängig ab, obwohl Sie es müssten, darf der Mieter seinen Anteil um 15 Prozent kürzen (§ 12 Abs. 1 HeizkostenV). Gekürzt wird der Anteil aus der nicht verbrauchsabhängigen Abrechnung: im Beispiel oben 15 % von 1.200 € = 180 € — pro Wohnung und pro Jahr.",
           "Das Kürzungsrecht greift unabhängig davon, ob Sie den Fehler bemerkt haben oder ob die Abrechnung sonst korrekt ist. Es ist der teuerste vermeidbare Fehler der ganzen Nebenkostenabrechnung.",
         ],
       },
@@ -321,8 +323,10 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Mieterwechsel und Ausnahmen",
         p: [
-          "Zieht ein Mieter unterjährig aus, ist eine Zwischenablesung der saubere Weg. Ist sie nicht möglich, werden die Kosten nach den Gradtagszahlen der Verordnung aufgeteilt — nicht einfach hälftig (§ 9b HeizkostenV). Die Kosten der Zwischenablesung trägt in der Regel der ausziehende Mieter.",
-          "Von der verbrauchsabhängigen Abrechnung ausgenommen sind unter anderem Zweifamilienhäuser, von denen der Vermieter eine Wohnung selbst bewohnt, sowie bestimmte Passivhäuser und Gebäude mit überwiegend erneuerbarer Wärmeversorgung (§ 11 HeizkostenV). Prüfen Sie, ob Ihr Objekt darunterfällt — die Ausnahme ist eng.",
+          "Zieht ein Mieter unterjährig aus, schreibt die Verordnung eine Zwischenablesung vor (§ 9b Abs. 1 HeizkostenV). Ist sie nicht möglich, werden die Kosten nach Gradtagszahlen oder zeitanteilig aufgeteilt — nicht einfach hälftig (§ 9b Abs. 3).",
+          "Die Kosten der Zwischenablesung tragen Sie als Vermieter, wenn im Mietvertrag nichts anderes wirksam vereinbart ist: Sie sind keine umlagefähigen Betriebskosten, sondern Verwaltungskosten (BGH, Urteil vom 14.11.2007, VIII ZR 19/07). Eine Formularklausel, die sie dem Mieter auferlegt, halten viele Gerichte für unwirksam.",
+          "Ausnahmen gibt es wenige, und sie sind eng. In einem Haus mit nicht mehr als zwei Wohnungen, von denen Sie eine selbst bewohnen, gilt die Verordnung zwar, aber eine abweichende Vereinbarung im Mietvertrag geht vor (§ 2 HeizkostenV). Ganz ausgenommen sind unter anderem Gebäude mit einem Heizwärmebedarf unter 15 kWh/(m²·a) und Gebäude, die überwiegend mit Wärme aus Wärmerückgewinnung oder Solaranlagen versorgt werden (§ 11 Abs. 1 HeizkostenV).",
+          "Wärmepumpen sind keine Ausnahme: Wurde ihr Verbrauch am 1. Oktober 2024 noch nicht erfasst, musste die Ausstattung zur Verbrauchserfassung bis zum 30. September 2025 eingebaut sein (§ 12 Abs. 3 HeizkostenV).",
         ],
       },
       {
@@ -335,7 +339,7 @@ export const RATGEBER: RatgeberArtikel[] = [
     feature: {
       titel: "Heizkosten in MyImmo",
       text:
-        "Verbrauchswerte je Einheit erfassen, die Spanne zwischen 50 und 70 Prozent einmal festlegen, den Rest nach Fläche verteilen — die Aufteilung übernimmt der Umlage-Assistent, inklusive taggenauer Abrechnung bei Mieterwechsel. Der Rechenweg steht in der fertigen PDF-Abrechnung.",
+        "Verbrauchswerte je Einheit erfassen, die Spanne zwischen 50 und 70 Prozent einmal festlegen, den Rest nach Fläche verteilen — die Aufteilung nach Heizkostenverordnung übernimmt die Nebenkostenabrechnung in MyImmo, inklusive taggenauer Abrechnung bei Mieterwechsel. Der Rechenweg steht in der fertigen PDF-Abrechnung.",
       href: "/anmelden",
       cta: "Kostenlos ausprobieren",
     },
@@ -347,6 +351,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       "Originalbelege statt Kopien, Einsicht am Ort der Verwaltung, Zurückbehaltungsrecht bei Verweigerung: die Regeln der Belegeinsicht und der einfachste Weg, Streit zu vermeiden.",
     kategorie: "Nebenkosten",
     datum: "2026-07-30",
+    aktualisiert: "2026-10-09",
     lesezeit: 6,
     kurzcheck: {
       fall:
@@ -365,16 +370,16 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Der Anspruch und seine Grenzen",
         p: [
-          "Das Einsichtsrecht folgt aus dem Anspruch auf Rechenschaftslegung (§ 259 BGB). Der Mieter darf die Belege einsehen, auf denen die Abrechnung beruht — Rechnungen, Verträge, Zahlungsnachweise, Ableseprotokolle, den Grundsteuerbescheid, die Versicherungspolice.",
-          "Geschuldet ist Einsicht in die Originalunterlagen, und zwar grundsätzlich dort, wo sie verwahrt werden: bei Ihnen oder bei der Hausverwaltung. Der Mieter darf sich Notizen machen, fotografieren und auf eigene Kosten Kopien anfertigen.",
-          "Einen allgemeinen Anspruch auf Zusendung von Kopien gibt es dagegen nicht. Wo die Einsicht vor Ort zumutbar ist, genügt das Angebot dazu.",
+          "Seit dem 1. Januar 2025 steht der Anspruch ausdrücklich im Gesetz: Der Vermieter hat dem Mieter auf Verlangen Einsicht in die der Abrechnung zugrundeliegenden Belege zu gewähren (§ 556 Abs. 4 Satz 1 BGB). Gemeint sind Rechnungen, Verträge, Zahlungsnachweise, Ableseprotokolle, der Grundsteuerbescheid, die Versicherungspolice.",
+          "Im selben Absatz steht die wichtigste Neuerung für Vermieter: Sie sind berechtigt, die Belege elektronisch bereitzustellen (§ 556 Abs. 4 Satz 2 BGB). Ein Ordner mit Scans oder die Freigabe in einem Mieterportal erfüllt den Anspruch — Sie müssen dafür keinen Termin vor Ort anbieten.",
+          "Bieten Sie stattdessen Einsicht in Papier an, dann dort, wo die Unterlagen liegen: bei Ihnen oder bei der Hausverwaltung. Der Mieter darf sich Notizen machen und fotografieren. Einen allgemeinen Anspruch auf Zusendung von Kopien hat er dabei nicht.",
         ],
       },
       {
-        h: "Die Ausnahme: zu weit weg",
+        h: "Papier statt digital: die Frage der Entfernung",
         p: [
-          "Zumutbar ist die Anreise nicht immer. Wohnt der Mieter oder die Verwaltung so weit entfernt, dass die Fahrt außer Verhältnis steht, kann der Mieter die Übersendung von Kopien verlangen — die Kosten dafür trägt in der Regel er.",
-          "Eine feste Kilometergrenze gibt es nicht; die Gerichte entscheiden nach den Umständen. Praktisch heißt das: Streiten Sie nicht über die Grenze, sondern bieten Sie eine Lösung an.",
+          "Wer nur Einsicht vor Ort anbietet, muss mit einer Ausnahme rechnen: Wohnt der Mieter oder die Verwaltung so weit entfernt, dass die Fahrt außer Verhältnis steht, kann der Mieter die Übersendung von Kopien verlangen — die Kosten dafür trägt in der Regel er.",
+          "Eine feste Kilometergrenze gibt es nicht; die Gerichte entscheiden nach den Umständen. Mit der elektronischen Bereitstellung stellt sich die Frage gar nicht erst.",
         ],
       },
       {
@@ -394,17 +399,17 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Der praktische Weg",
         liste: [
-          "Auf die erste Anfrage sofort einen Termin anbieten — mit Datum, Ort und dem Hinweis, dass fotografiert werden darf.",
-          "Belege nach Kostenart sortiert bereitlegen, in derselben Reihenfolge wie in der Abrechnung.",
+          "Auf die erste Anfrage sofort reagieren: die Belege elektronisch bereitstellen (§ 556 Abs. 4 Satz 2 BGB) oder einen Termin mit Datum und Ort anbieten.",
+          "Belege nach Kostenart sortiert bereitstellen, in derselben Reihenfolge wie in der Abrechnung.",
           "Personenbezogene Daten Dritter vorher schwärzen.",
-          "Digital anbieten, wo es geht: Ein Ordner mit gescannten Belegen erledigt die meisten Anfragen ohne Termin — freiwillig, aber deeskalierend.",
+          "Festhalten, wann und wie Sie die Belege bereitgestellt haben — im Streitfall zählt der Nachweis.",
           "Die Einwendungsfrist des Mieters läuft zwölf Monate ab Zugang der Abrechnung. Bis dahin sollten die Belege greifbar bleiben.",
         ],
       },
       {
         h: "Rechtsstand und Vorbehalt",
         p: [
-          "Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. Die Rechtsprechung zur Zumutbarkeit der Anreise ist einzelfallabhängig.",
+          "Anhaltspunkte ohne Gewähr, keine Rechts- oder Steuerberatung. § 556 Abs. 4 BGB in der Fassung seit 1. Januar 2025; die Rechtsprechung zur Zumutbarkeit der Anreise ist einzelfallabhängig.",
         ],
       },
     ],
@@ -719,7 +724,7 @@ export const RATGEBER: RatgeberArtikel[] = [
     feature: {
       titel: "Übernommene Objekte sauber weiterführen",
       text:
-        "MyImmo übernimmt die vorhandene Abschreibung mit Bemessungsgrundlage und Restlaufzeit, statt sie neu zu beginnen, führt das Mietkonto ab dem Erbfall weiter und behält die Zwölf-Monats-Frist für die erste Nebenkostenabrechnung im Blick.",
+        "Legen Sie das Objekt mit Kaufpreis und Kaufdatum des Erblassers an — dann rechnet MyImmo die Abschreibung auf dessen Grundlage weiter, statt sie neu zu beginnen. Das Mietkonto führt die bestehenden Mietverträge fort, und die Frist für die nächste Nebenkostenabrechnung steht in den Terminen.",
       href: "/anmelden",
       cta: "Kostenlos starten",
     },
@@ -922,7 +927,7 @@ export const RATGEBER: RatgeberArtikel[] = [
     feature: {
       titel: "Abschreibung ohne Tabelle",
       text:
-        "In MyImmo hinterlegen Sie Kaufpreis, Nebenkosten, Gebäudeanteil und Baujahr einmal — der Jahresbetrag steht danach in jeder Auswertung und in der Anlage-V-Zusammenstellung, im Anschaffungsjahr automatisch zeitanteilig.",
+        "In MyImmo hinterlegen Sie Kaufpreis, Gebäudeanteil und Baujahr einmal — der Jahresbetrag steht danach in jeder Auswertung und in der Anlage-V-Zusammenstellung, im Anschaffungsjahr automatisch zeitanteilig. Kaufnebenkosten rechnet MyImmo derzeit nicht in die Bemessungsgrundlage ein; den Gebäudeanteil ermittelt der AfA-Assistent.",
       href: "/anmelden",
       cta: "Kostenlos ausprobieren",
     },
@@ -1009,9 +1014,9 @@ export const RATGEBER: RatgeberArtikel[] = [
       },
     ],
     feature: {
-      titel: "Verteilte Kosten im Blick behalten",
+      titel: "Verteilung durchrechnen",
       text:
-        "MyImmo hält bei jeder Erhaltungsmaßnahme fest, über welchen Zeitraum sie verteilt wird, und weist die Jahresrate in den Folgejahren automatisch aus — samt Hinweis, wenn eine Maßnahme in die 15-Prozent-Grenze der ersten drei Jahre läuft.",
+        "Der AfA-Assistent in MyImmo rechnet für eine Erhaltungsmaßnahme den Betrag je Jahr bei zwei bis fünf Jahren Verteilung und die Steuerersparnis je Jahr im Vergleich zum Sofortabzug. Die Jahresraten tragen Sie in den Folgejahren selbst ein. Der Steuer-Wächter meldet, wenn Instandsetzungskosten in den ersten drei Jahren nach dem Kauf die 15-Prozent-Grenze erreichen.",
       href: "/anmelden",
       cta: "Kostenlos ausprobieren",
     },
@@ -1023,6 +1028,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       "Wann Sie erhöhen dürfen, wie hoch die Kappungsgrenze liegt, wie das Schreiben begründet sein muss — und die Formfehler, an denen die meisten Erhöhungen scheitern.",
     kategorie: "Recht",
     datum: "2026-07-31",
+    aktualisiert: "2026-10-09",
     lesezeit: 8,
     kurzcheck: {
       fall: "Die Miete steht seit vier Jahren bei 8,00 € je Quadratmeter, im Mietspiegel stehen inzwischen 9,50 € — und Sie fragen sich, wie viel davon Sie tatsächlich durchsetzen können.",
@@ -1091,6 +1097,7 @@ export const RATGEBER: RatgeberArtikel[] = [
           "Nach einer Modernisierung dürfen Sie die Jahresmiete um 8 Prozent der aufgewendeten Kosten erhöhen (§ 559 BGB). Anders als bei der Vergleichsmiete braucht es keine Zustimmung — die Erhöhung wirkt durch Erklärung.",
           "Abzuziehen sind der Erhaltungsanteil, also der Teil, der ohnehin als Reparatur angefallen wäre, sowie Zuschüsse und Förderungen. Nur der verbleibende Betrag ist umlagefähig.",
           "Gedeckelt ist die Modernisierungsumlage auf 3 € je Quadratmeter innerhalb von sechs Jahren; liegt die Ausgangsmiete unter 7 € je Quadratmeter, sind es 2 €. Die Kappungsgrenze des § 558 BGB gilt hier nicht — beide Wege werden getrennt gerechnet.",
+          "Für den Heizungstausch gilt eine eigene Regel (§ 559e BGB): Erfüllt die neue Heizung die Voraussetzungen für eine öffentliche Förderung und nehmen Sie die Förderung in Anspruch, dürfen Sie die Jahresmiete um 10 Prozent der Kosten abzüglich der Fördermittel erhöhen — höchstens um 0,50 € je Quadratmeter monatlich innerhalb von sechs Jahren. Ohne Förderung, obwohl sie möglich gewesen wäre, bleibt es bei den 8 Prozent nach § 559 BGB.",
           "Die Maßnahme müssen Sie mindestens drei Monate vor Beginn ankündigen (§ 555c BGB), mit Art, Umfang, voraussichtlicher Dauer und der zu erwartenden Mieterhöhung.",
         ],
       },
@@ -1243,6 +1250,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       "Die 12-Monats-Frist nach § 556 BGB, Belegeinsicht, korrekte Umlageschlüssel — und die Fehler, die Vermieter bares Geld kosten.",
     kategorie: "Nebenkosten",
     datum: "2026-07-15",
+    aktualisiert: "2026-10-09",
     lesezeit: 6,
     kurzcheck: {
       fall:
@@ -1284,14 +1292,14 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Belegeinsicht und Einwendungsfrist",
         p: [
-          "Auf Verlangen müssen Sie dem Mieter Einsicht in die Belege gewähren. Der Mieter hat nach Zugang der Abrechnung zwölf Monate Zeit, Einwendungen zu erheben. Eine ordentliche, nachvollziehbare Abrechnung mit Rechenweg beugt Streit vor.",
+          "Auf Verlangen müssen Sie dem Mieter Einsicht in die Belege gewähren (§ 556 Abs. 4 BGB); Sie dürfen sie elektronisch bereitstellen. Der Mieter hat nach Zugang der Abrechnung zwölf Monate Zeit, Einwendungen zu erheben. Eine ordentliche, nachvollziehbare Abrechnung mit Rechenweg beugt Streit vor.",
         ],
       },
     ],
     feature: {
       titel: "NK-Abrechnung mit MyImmo",
       text:
-        "Der Umlage-Assistent verteilt jede Position cent-genau nach Fläche oder Einheit, rechnet unterjährige Mieterwechsel taggenau ab und erzeugt eine fertige Abrechnung als PDF — inklusive § 35a-Ausweis für Ihre Mieter.",
+        "MyImmo verteilt jede Position nach dem gewählten Schlüssel — Fläche, Einheiten, Personen, Verbrauch oder Miteigentumsanteil —, rechnet unterjährige Mieterwechsel taggenau ab und erzeugt eine fertige Abrechnung als PDF, inklusive § 35a-Ausweis für Ihre Mieter.",
       href: "/anmelden",
       cta: "Kostenlos ausprobieren",
     },
@@ -1303,7 +1311,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       "Grundsteuer ist voll umlagefähig — aber welcher Bescheid gehört in welches Abrechnungsjahr? Und was bedeutet das BFH-Urteil von 2025 für Einsprüche und Vorauszahlungen?",
     kategorie: "Nebenkosten",
     datum: "2026-07-15",
-    aktualisiert: "2026-08-30",
+    aktualisiert: "2026-10-09",
     rechtsstand: "August 2026",
     lesezeit: 5,
     kurzcheck: {
@@ -1331,14 +1339,14 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Jedes Jahr den aktuellen Bescheid prüfen — nicht nur einmal nach der Reform",
         p: [
-          "Ein verbreiteter Irrtum: Der Grundsteuerwert wurde 2022 einmalig festgestellt, also sei der Betrag jetzt fest. Das stimmt nicht. Der Hebesatz wird von jeder der rund 11.000 Gemeinden selbst bestimmt und kann sich jedes Jahr ändern — 2026 hat etwa Berlin gesenkt, während mehrere Großstädte erhöht haben.",
+          "Ein verbreiteter Irrtum: Der Grundsteuerwert wurde 2022 einmalig festgestellt, also sei der Betrag jetzt fest. Das stimmt nicht. Der Hebesatz wird von jeder der rund 11.000 Gemeinden selbst bestimmt und kann sich jedes Jahr ändern — Berlin etwa hat ihn zum 1. Januar 2025 von 810 auf 470 Prozent gesenkt, andere Gemeinden haben seitdem erhöht.",
           "Für jede Abrechnung gilt deshalb: den Bescheid des jeweiligen Jahres zugrunde legen, nicht den der Reform. Wer einmal einen Betrag übernimmt und ihn fortschreibt, rechnet nach dem ersten Hebesatzwechsel still falsch.",
         ],
       },
       {
         h: "Einspruch eingelegt? Umgelegt wird trotzdem",
         p: [
-          "Der Bundesfinanzhof hat am 10.12.2025 in drei Verfahren entschieden (II R 25/24, II R 31/24, II R 3/25), dass das sogenannte Bundesmodell verfassungsgemäß ist: Der Gesetzgeber darf bei rund 36 Millionen Grundstücken typisieren und pauschalieren. Haus & Grund Deutschland und der Bund der Steuerzahler haben angekündigt, die Frage nach Karlsruhe zu tragen — entschieden ist dort nichts.",
+          "Der Bundesfinanzhof hat mit drei Urteilen vom 12.11.2025 entschieden (II R 25/24, II R 31/24, II R 3/25), dass das sogenannte Bundesmodell verfassungsgemäß ist: Der Gesetzgeber darf bei rund 36 Millionen Grundstücken typisieren und pauschalieren. Haus & Grund Deutschland und der Bund der Steuerzahler haben angekündigt, die Frage nach Karlsruhe zu tragen — entschieden ist dort nichts.",
           "Für die Nebenkostenabrechnung ändert das nichts an der Grundregel: Umgelegt wird, was Sie tatsächlich gezahlt haben. Ein laufender Einspruch setzt die Zahlungspflicht nicht aus, und die Bescheide bleiben gültig. Wird ein Bescheid später zu Ihren Gunsten geändert, korrigieren Sie die betroffene Abrechnung nach — deshalb lohnt es, den Vorgang im Objekt zu dokumentieren.",
         ],
       },
@@ -1365,7 +1373,7 @@ export const RATGEBER: RatgeberArtikel[] = [
     feature: {
       titel: "Grundsteuer automatisch verteilen",
       text:
-        "In MyImmo tragen Sie den Jahresbetrag einmal ein — der Umlage-Assistent verteilt ihn auf alle Einheiten und übernimmt ihn in die Nebenkostenabrechnung. Ändert sich der Hebesatz, tauschen Sie nur die Zahl.",
+        "Im Mehrfamilienhaus tragen Sie den Jahresbetrag einmal am Objekt ein — MyImmo verteilt ihn nach dem gewählten Schlüssel auf die Wohnungen und übernimmt ihn in jede Abrechnung. Ändert sich der Hebesatz, tauschen Sie nur die Zahl.",
       href: "/anmelden",
       cta: "Jetzt starten",
     },
@@ -1377,6 +1385,7 @@ export const RATGEBER: RatgeberArtikel[] = [
       "Mieter können Lohnkosten aus den Nebenkosten absetzen. Mit dem richtigen Ausweis in der Abrechnung geben Sie ihnen bares Geld und sparen sich Nachfragen.",
     kategorie: "Steuer",
     datum: "2026-07-15",
+    aktualisiert: "2026-10-09",
     lesezeit: 5,
     kurzcheck: {
       fall:
@@ -1401,8 +1410,8 @@ export const RATGEBER: RatgeberArtikel[] = [
       {
         h: "Was zählt als haushaltsnah, was als Handwerker?",
         liste: [
-          "Haushaltsnahe Dienstleistungen: Hausmeister, Gartenpflege, Treppenhausreinigung, Winterdienst, Schornsteinfeger-Kehrarbeiten.",
-          "Handwerkerleistungen: Wartung von Aufzug/Heizung, Reparaturen am Gemeinschaftseigentum, Prüfungen (z. B. der Elektroanlage).",
+          "Haushaltsnahe Dienstleistungen: Hausmeister, Gartenpflege, Treppenhausreinigung, Winterdienst.",
+          "Handwerkerleistungen: Wartung von Aufzug/Heizung, Reparaturen am Gemeinschaftseigentum, Prüfungen (z. B. der Elektroanlage) und alle Schornsteinfegerleistungen — Kehren ebenso wie Messen und Prüfen (BMF-Schreiben vom 9.11.2016, Anlage 1).",
         ],
       },
       {

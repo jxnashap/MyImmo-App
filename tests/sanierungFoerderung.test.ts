@@ -81,14 +81,15 @@ describe("Zuschuss", () => {
   });
 
   it("Hülle, Lüftung und Heizungsoptimierung teilen sich EINE Grenze; die Heizung hat ihre eigene", () => {
-    const e = ein([posten("huelle", 20_000), posten("anlage", 8_000), posten("optimierung", 5_000), posten("heizung", 35_000)]);
+    // Einfamilienhaus: die Heizung betrifft das ganze Gebäude (zur Eigentumswohnung siehe tests/paketP9.test.ts).
+    const e = ein([posten("huelle", 20_000), posten("anlage", 8_000), posten("optimierung", 5_000), posten("heizung", 35_000)], { gebaeude: "haus" });
     expect(topf(e, "BAFA")).toMatchObject({ kosten: 33_000, foerderfaehig: 30_000, zuschuss: 4_500 });
     expect(topf(e, "KfW 458")).toMatchObject({ foerderfaehig: 28_000, zuschuss: 8_400 });
     expect(berechneFoerderung(e).zuschuss).toBe(12_900);
   });
 
   it("Heizung ab Februar 2027: weniger förderfähig, ohne dass jemand eine Zahl ändert", () => {
-    expect(topf(ein([posten("heizung", 35_000)], { stichtag: "2027-02-15" }), "KfW 458")?.zuschuss).toBe(8_175); // 27.250 × 30 %
+    expect(topf(ein([posten("heizung", 35_000)], { stichtag: "2027-02-15", gebaeude: "haus" }), "KfW 458")?.zuschuss).toBe(8_175); // 27.250 × 30 %
   });
 
   it("Experte zu 50 %, gedeckelt", () => {
@@ -103,7 +104,7 @@ describe("Zuschuss", () => {
     expect(topf(ein([posten("huelle", 300)]), "BAFA")?.zuschuss).toBe(45);
     const gross = berechneFoerderung(ein([posten("optimierung", 5_000)], { wohneinheiten: 6 }));
     expect(gross.toepfe).toEqual([]);
-    expect(gross.ausgeschlossen[0].grund).toMatch(/bis 5 Wohneinheiten/);
+    expect(gross.ausgeschlossen[0].grund).toMatch(/höchstens 5 Wohneinheiten/);
   });
 
   it("Normalfall ohne energetische Posten: kein Zuschuss, keine Hinweise", () => {
@@ -142,8 +143,8 @@ describe("Entwurf", () => {
       foerder: { wohneinheiten: "3", isfp: "true", nutzung: "irgendwas" },
     })!;
     expect(e.eigene.map((p) => p.foerderung)).toEqual(["huelle", "keine", "keine"]);
-    expect(e.foerder).toEqual({ wohneinheiten: "3", isfp: false, nutzung: "vermieten", gebaeude: "mfh" }); // „true“ als Text ist kein Haken
-    expect(entwurfAus({ raeume: [] })!.foerder).toEqual({ wohneinheiten: "1", isfp: false, nutzung: "vermieten", gebaeude: "mfh" });
+    expect(e.foerder).toEqual({ wohneinheiten: "3", weGebaeude: "", isfp: false, nutzung: "vermieten", gebaeude: "mfh" }); // „true“ als Text ist kein Haken
+    expect(entwurfAus({ raeume: [] })!.foerder).toEqual({ wohneinheiten: "1", weGebaeude: "", isfp: false, nutzung: "vermieten", gebaeude: "mfh" });
     expect(entwurfAus({ raeume: [], foerder: { gebaeude: "haus" } })!.foerder.gebaeude).toBe("haus");
   });
 

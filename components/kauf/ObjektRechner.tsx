@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { Home, Building2, Save, Scale, Landmark, Plus } from "lucide-react";
 import { useToast } from "@/components/Toast";
-import { zahlDe0 } from "@/lib/zahl";
+import { mitKomma, zahlDe0 } from "@/lib/zahl";
 import KalkImport from "@/components/kalkulator/KalkImport";
 import { saveKalkulation, deleteKalkulation, updateKalkulation } from "@/lib/actions/kalkulation";
 import { auswahlAus, KAUF_AUSWAHL_KEY, type KaufAuswahl } from "@/lib/kauf/auswahl";
 import { sanierungBeimLaden } from "@/lib/sanierung/uebergabe";
-import { BUNDESLAENDER, MAKLER_STANDARD_PROZENT } from "@/lib/kalk";
+import { LAND_STANDARD, MAKLER_STANDARD_PROZENT } from "@/lib/kalk";
+import BundeslandWahl from "@/components/BundeslandWahl";
+import { heuteBerlin } from "@/lib/zeitraum";
 import { kennzahlenSummary, objektKennzahlen } from "@/lib/kauf/objektKennzahlen";
 import { HAUS_DISCLAIMER } from "@/lib/kauf/hausbewertung";
 import { anschaffungsnahVorKauf } from "@/lib/steuer/anschaffungsnah";
@@ -39,13 +41,6 @@ const pct = (n: number, d = 1) => (n || 0).toLocaleString("de-DE", { minimumFrac
 const fmt1 = (n: number) => (n || 0).toLocaleString("de-DE", { maximumFractionDigits: 1 });
 const num = zahlDe0;
 
-// Positive, nicht abschreckende Bewertung der Bruttorendite (kein Rot).
-function renditeUrteil(brutto: number): { text: string; farbe: string } {
-  if (brutto >= 5) return { text: "Starke Rendite", farbe: "var(--green)" };
-  if (brutto >= 4) return { text: "Solide Rendite", farbe: "var(--green)" };
-  if (brutto >= 3) return { text: "Ordentlich — genau rechnen", farbe: "var(--teal, #2c9c8f)" };
-  return { text: "Auf Lage & Wertsteigerung setzen", farbe: "var(--amber)" };
-}
 
 type Tile = { label: string; wert: string; gold?: boolean; farbe?: string; note?: string; braucht?: string };
 
@@ -105,9 +100,10 @@ export default function ObjektRechner({
   const [adresse, setAdresse] = useState(demo ? DEMO_START.adresse : "");
   const [kaufpreis, setKaufpreis] = useState(demo ? DEMO_START.kaufpreis : "");
   const [flaeche, setFlaeche] = useState(demo ? DEMO_START.flaeche : "");
-  const [bundesland, setBundesland] = useState("0.05");
+  // Länderkürzel (components/BundeslandWahl.tsx); ältere Kaufprüfungen tragen hier noch den Satz.
+  const [bundesland, setBundesland] = useState(LAND_STANDARD);
   // EIN Standardwert mit dem Fahrplan-Rechner (lib/kalk.ts), nicht hier fest.
-  const MAKLER_STANDARD = String(MAKLER_STANDARD_PROZENT);
+  const MAKLER_STANDARD = mitKomma(String(MAKLER_STANDARD_PROZENT));
   const [makler, setMakler] = useState(MAKLER_STANDARD);
   const [maklerBeruehrt, setMaklerBeruehrt] = useState(false); // für Belastbarkeits-Score
   // Sanierung / Renovierung (BuyImmo, 05.10.2026): von Hand oder aus dem Sanierungsrechner.
@@ -130,13 +126,13 @@ export default function ObjektRechner({
   const [baujahr, setBaujahr] = useState(demo ? DEMO_START.baujahr : "");
   const [gebTyp, setGebTyp] = useState("efh");
   const [ausstattung, setAusstattung] = useState("3");
-  const [bpiFaktor, setBpiFaktor] = useState("1.9");
-  const [regionalFaktor, setRegionalFaktor] = useState("1.0");
+  const [bpiFaktor, setBpiFaktor] = useState("1,9");
+  const [regionalFaktor, setRegionalFaktor] = useState("1,0");
   // Marktwert-Verfahren: Ertragswert braucht Liegenschaftszins + Anzahl WE,
   // Sachwert den Sachwertfaktor (zuvor nur im Reiter „Marktwert-Schätzer").
-  const [lz, setLz] = useState("3.5");
+  const [lz, setLz] = useState("3,5");
   const [anzahlWhg, setAnzahlWhg] = useState("1");
-  const [swFaktor, setSwFaktor] = useState("1.0");
+  const [swFaktor, setSwFaktor] = useState("1,0");
   // Wiedervorlage: gesetzt = ein gespeichertes Objekt wird bearbeitet.
   const [bearbeiteId, setBearbeiteId] = useState<string | null>(null);
 
@@ -156,7 +152,6 @@ export default function ObjektRechner({
   const investNotiz = `inkl. ${eur(nebenkosten)} Nebenkosten${sanierungBetrag > 0 ? ` + ${eur(sanierungBetrag)} Sanierung` : ""}`;
   const fuenfzehn = vermietung ? anschaffungsnahVorKauf(kp, sanierungBetrag) : null;
 
-  const urteil = vermietung && brutto > 0 ? renditeUrteil(brutto) : null;
   const mwWert = kz.marktwert;
   // Unvollstaendige Schaetzung → kein belastbares Preisurteil (siehe preisUrteil).
   const mwUrteil = preisUrteil(mwWert, kp, mw.unsicher.length > 0);
@@ -172,9 +167,9 @@ export default function ObjektRechner({
     ? [
         { label: "Gesamtinvestition", wert: kp > 0 ? eur(gesamtInvest) : "", gold: true, note: investNotiz, braucht: "Kaufpreis eintragen" },
         { label: "Preis / m²", wert: preisM2 > 0 ? eur(preisM2) : "", braucht: "Kaufpreis + Wohnfläche" },
-        { label: "Bruttorendite", wert: brutto > 0 ? pct(brutto) : "", farbe: urteil?.farbe, note: urteil?.text, braucht: "Kaltmiete eintragen" },
+        { label: "Bruttorendite", wert: brutto > 0 ? pct(brutto) : "", note: "Jahreskaltmiete ÷ Kaufpreis", braucht: "Kaltmiete eintragen" },
         { label: "Nettorendite", wert: nettomiet > 0 ? pct(nettomiet) : "", note: `nach ${num(bewirt)} % Bewirtschaftung`, braucht: "Kaltmiete eintragen" },
-        { label: "Kaufpreisfaktor", wert: faktor > 0 ? fmt1(faktor) + "×" : "", note: "Jahresmieten bis zur Amortisation", braucht: "Kaufpreis + Kaltmiete" },
+        { label: "Kaufpreisfaktor", wert: faktor > 0 ? fmt1(faktor) + "×" : "", note: "Kaufpreis in Jahreskaltmieten", braucht: "Kaufpreis + Kaltmiete" },
         { label: "Marktwert (geschätzt)", wert: mwWert > 0 ? eur(mwWert) : "", farbe: mwUrteil?.farbe, note: mwUrteil ? `Kaufpreis ${mwUrteil.text}` : mw.verfahrenLabel, braucht: mw.fehlend.length ? mw.fehlend.join(" + ") + " eintragen" : "Angaben ergänzen" },
       ]
     : [
@@ -187,10 +182,13 @@ export default function ObjektRechner({
   // Alle Eingaben sichern — auch die Bewertungsfelder. Vorher gingen sie beim
   // Speichern verloren, die Wiedervorlage hätte sie nicht zurückholen können.
   function eingabenSnapshot(): Record<string, string> {
+    // Bewertungsjahr (C28): Restnutzungsdauer und Bewirtschaftungskosten hängen am Jahr — gespeichert
+    // wird, mit welchem Jahr die Kennzahlen gerechnet sind, damit sie nachrechenbar bleiben.
+    const bewertungsjahr = heuteBerlin().slice(0, 4);
     return {
       adresse, kaufpreis, flaeche, bundesland, makler, sanierung, nutzung, kaltmiete, bewirt, hausgeld,
       objektTyp, grundFlaeche, bodenrichtwert, baujahr, gebTyp, ausstattung,
-      bpiFaktor, regionalFaktor, lz, anzahlWhg, swFaktor,
+      bpiFaktor, regionalFaktor, lz, anzahlWhg, swFaktor, bewertungsjahr,
     };
   }
   function summarySnapshot(): Record<string, number> {
@@ -202,7 +200,7 @@ export default function ObjektRechner({
     const d = k.data ?? {};
     const g = (key: string, fallback = "") => d[key] ?? fallback;
     setAdresse(g("adresse")); setKaufpreis(g("kaufpreis")); setFlaeche(g("flaeche"));
-    setBundesland(g("bundesland", "0.05")); setMakler(g("makler", MAKLER_STANDARD)); setMaklerBeruehrt(true);
+    setBundesland(g("bundesland", LAND_STANDARD)); setMakler(mitKomma(g("makler", MAKLER_STANDARD))); setMaklerBeruehrt(true);
     // Ältere Kaufprüfungen haben das Feld nicht → leer. Ein offener Betrag aus dem Rechner gewinnt.
     const s = sanierungBeimLaden(g("sanierung"), uebergabeOffen ? sanierungStart : null);
     setSanierung(s.wert);
@@ -215,10 +213,10 @@ export default function ObjektRechner({
     setObjektTyp(g("objektTyp") === "haus" ? "haus" : "wohnung");
     setGrundFlaeche(g("grundFlaeche")); setBodenrichtwert(g("bodenrichtwert")); setBaujahr(g("baujahr"));
     setGebTyp(g("gebTyp", "efh")); setAusstattung(g("ausstattung", "3"));
-    setBpiFaktor(g("bpiFaktor", "1.9")); setRegionalFaktor(g("regionalFaktor", "1.0"));
-    setLz(g("lz", "3.5")); setAnzahlWhg(g("anzahlWhg", "1")); setSwFaktor(g("swFaktor", "1.0"));
+    setBpiFaktor(mitKomma(g("bpiFaktor", "1,9"))); setRegionalFaktor(mitKomma(g("regionalFaktor", "1,0")));
+    setLz(mitKomma(g("lz", "3,5"))); setAnzahlWhg(g("anzahlWhg", "1")); setSwFaktor(mitKomma(g("swFaktor", "1,0")));
     setBearbeiteId(k.id);
-    toast(`„${k.name}" zum Bearbeiten geladen.`);
+    toast(`„${k.name}“ zum Bearbeiten geladen.`);
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -296,7 +294,7 @@ export default function ObjektRechner({
     <div style={{ display: "grid", gap: 18, gridTemplateColumns: "minmax(0, 1fr)" }}>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ fontSize: 12, color: bearbeiteId ? "var(--gold)" : "var(--faint)" }}>
-          {bearbeiteId ? `Du bearbeitest „${liste.find((k) => k.id === bearbeiteId)?.name ?? "Objekt"}"` : "Neues Objekt"}
+          {bearbeiteId ? `Du bearbeitest „${liste.find((k) => k.id === bearbeiteId)?.name ?? "Objekt"}“` : "Neues Objekt"}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {bearbeiteId && (
@@ -340,10 +338,8 @@ export default function ObjektRechner({
             </div>
             <label style={{ display: "grid", gap: 4, fontSize: 12 }}>
               <span style={{ color: "var(--muted)" }}>Bundesland (Grunderwerbst.)</span>
-              <select value={bundesland} onChange={(e) => setBundesland(e.target.value)}
-                style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13, width: "100%", minWidth: 0, boxSizing: "border-box" }}>
-                {BUNDESLAENDER.map((b, i) => <option key={i} value={b.v}>{b.l}</option>)}
-              </select>
+              <BundeslandWahl wert={bundesland} onWahl={setBundesland}
+                style={{ padding: "9px 11px", borderRadius: 9, border: "1px solid var(--feld-rand)", background: "var(--bg2)", fontSize: 13, width: "100%", minWidth: 0, boxSizing: "border-box" }} />
             </label>
             {/* Provisionsfrei-Schnellschalter: bei ImmoScout häufig. Setzt die Maklercourtage
                 auf 0 (bzw. zurück auf den Default 3,57 %), damit die Nebenkosten nicht still
@@ -558,7 +554,7 @@ export default function ObjektRechner({
           )}
           <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 12 }}>
             Speichere jedes Objekt und vergleiche bis zu fünf Kandidaten — die Krone zählt nur Bestwerte. Die Finanzierung
-            rechnest du im Schritt „Finanzierung&quot; aus.
+            rechnest du im Schritt „Finanzierung“ aus.
           </p>
         </div>
       </div>

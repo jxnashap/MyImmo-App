@@ -2,19 +2,22 @@
 
 import Link from "next/link";
 import { Crown, PaintRoller, Pencil, Trash2 } from "lucide-react";
-import { bestesObjekt, type VglMetrik } from "@/lib/kauf/auswahl";
+import { KP_ZU_SCHAETZUNG, bestesObjekt, bestwertDerZeile, istMarktwertVorlaeufig, vergleichsWert, zaehlenderWert, type VglMetrik } from "@/lib/kauf/auswahl";
 import type { Kalkulation } from "@/lib/types";
 
 // Objekte vergleichen (Kaufweg Schritt 1, Umbau 06.10.2026): Die Kandidaten stehen direkt auf der
 // Seite nebeneinander — vorher lag der Vergleich in einem Fenster hinter einem Knopf. Je Objekt:
 // Besichtigung starten (Sanierungs-Guide mit Adresse, Fläche, Baujahr) und für die Finanzierung
-// wählen. Die Krone zählt Bestwerte (wie bisher, `bestesObjekt`) — eine Zählung, kein Urteil.
+// wählen. Die Krone zählt Bestwerte (wie bisher, `bestesObjekt`) — eine Zählung, kein Urteil. Grüne Zelle
+// und Krone folgen EINER Regel (`bestwertDerZeile` in lib/kauf/auswahl.ts, Gesamtprüfung B30).
 
 export const VERGLEICH_MAX = 5;
 
 const eur = (n: number) => "€ " + Math.round(n || 0).toLocaleString("de-DE");
 const pct = (n: number) => (n || 0).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " %";
 const fmt1 = (n: number) => (n || 0).toLocaleString("de-DE", { maximumFractionDigits: 1 });
+/** „+22,6 %“ / „−10,0 %“ — mit echtem Minuszeichen. */
+const abweichung = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : "±"}${pct(Math.abs(n))}`;
 
 /** Zeilen des Vergleichs. `better: none` = nur Anzeige, zählt nicht für die Krone. */
 export const VERGLEICH_ZEILEN: { key: string; label: string; fmt: (v: number) => string; better: VglMetrik["better"] }[] = [
@@ -26,17 +29,18 @@ export const VERGLEICH_ZEILEN: { key: string; label: string; fmt: (v: number) =>
   { key: "brutto", label: "Bruttorendite", fmt: (v) => (v > 0 ? pct(v) : "–"), better: "high" },
   { key: "nettomiet", label: "Nettorendite", fmt: (v) => (v > 0 ? pct(v) : "–"), better: "high" },
   { key: "faktor", label: "Kaufpreisfaktor", fmt: (v) => (v > 0 ? fmt1(v) + "×" : "–"), better: "low" },
-  { key: "marktwert", label: "Marktwert (geschätzt)", fmt: (v) => (v > 0 ? eur(v) : "–"), better: "high" },
+  // Absolute Marktwerte verschieden großer Objekte sind nicht vergleichbar — nur Anzeige. Vergleichbar ist,
+  // wie weit der Kaufpreis von der eigenen Schätzung abweicht (niedriger = Kaufpreis näher an/unter ihr).
+  { key: "marktwert", label: "Marktwert (geschätzt)", fmt: eur, better: "none" },
+  { key: KP_ZU_SCHAETZUNG, label: "Kaufpreis ggü. Schätzung", fmt: abweichung, better: "low" },
 ];
+/** Zeilen, deren Wert an der Marktwert-Schätzung hängt — „vorläufig“ gekennzeichnet. */
+const AUS_SCHAETZUNG = new Set(["marktwert", KP_ZU_SCHAETZUNG]);
 const METRIKEN: VglMetrik[] = VERGLEICH_ZEILEN.map((m) => ({ key: m.key, better: m.better }));
 
 /** Bester Wert einer Zeile unter den gewählten — null, wenn es keinen eindeutigen gibt. */
 export function bestWert(objekte: Kalkulation[], key: string, better: VglMetrik["better"]): number | null {
-  if (better === "none" || objekte.length < 2) return null;
-  const vals = objekte.map((k) => k.summary?.[key]).filter((v): v is number => typeof v === "number" && v > 0);
-  if (vals.length < 2) return null;
-  const best = better === "high" ? Math.max(...vals) : Math.min(...vals);
-  return vals.every((v) => v === best) ? null : best;
+  return bestwertDerZeile(objekte, key, better);
 }
 
 /** „1 Bestwert“, sonst „n Bestwerte“ — als EIN Textknoten (kein `<!-- -->` dazwischen). */
@@ -140,11 +144,13 @@ export default function ObjektVergleich({
                       <tr key={m.key}>
                         <th scope="row">{m.label}</th>
                         {sel.map((k) => {
-                          const v = k.summary?.[m.key];
-                          const istBest = best != null && v === best;
+                          const v = vergleichsWert(k.summary, m.key);
+                          const istBest = best != null && zaehlenderWert(k.summary, m.key) === best;
+                          const vorlaeufig = v != null && AUS_SCHAETZUNG.has(m.key) && istMarktwertVorlaeufig(k.summary);
                           return (
                             <td key={k.id} className={istBest ? "vergleich-best" : undefined}>
-                              {typeof v === "number" ? m.fmt(v) : "–"}
+                              {v != null ? m.fmt(v) : "–"}
+                              {vorlaeufig && <span className="vergleich-vorlaeufig"> · vorläufig</span>}
                             </td>
                           );
                         })}
@@ -184,7 +190,8 @@ export default function ObjektVergleich({
             )}
             <p className="sanierung-klein">
               Grün = bester Wert unter den gewählten. Die Krone zählt nur Bestwerte; ob ein Objekt zu dir passt, entscheidest du
-              — nach der Besichtigung.
+              — nach der Besichtigung. „Vorläufig“: Der Schätzung fehlen Angaben (z. B. Bodenrichtwert) — sie zählt nicht für
+              Bestwerte und Krone.
             </p>
           </>
         )}

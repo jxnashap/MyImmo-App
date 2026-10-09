@@ -44,7 +44,7 @@ function ObjektBlock({ o, jahr }: { o: AnlageVObjekt; jahr: number }) {
       </div>
       <div className="section-body">
         <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 0 }}>
-          In „Mein ELSTER&quot; eine <strong>eigene Anlage V für dieses Objekt</strong> anlegen und die
+          In „Mein ELSTER“ eine <strong>eigene Anlage V für dieses Objekt</strong> anlegen und die
           Beträge in die genannten Zeilen eintragen.
         </p>
         <table style={{ fontSize: 12.5, width: "100%" }}>

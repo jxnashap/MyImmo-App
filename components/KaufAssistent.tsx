@@ -145,6 +145,7 @@ export default function KaufAssistent({
   const machbarkeit = auswahl && auswahl.kp > 0
     ? pruefeMachbarkeit({
         darlehen,
+        darlehenAusWunsch: !!(darlehenWunsch?.darlehen && darlehenWunsch.darlehen > 0),
         rate,
         kaufpreis: auswahl.kp,
         gesamtInvest: auswahl.gesamtInvest,
@@ -223,7 +224,7 @@ export default function KaufAssistent({
           <div className="form-section-label" style={{ marginTop: 20 }}>Zwei Finanzierungs-Szenarien im Vergleich</div>
           <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 0 }}>
             Grafische Aufteilung deiner Gesamtinvestition in Eigenkapital, (optional) Förderkredit und Bankdarlehen —
-            einmal „solide&quot; (mehr Eigenkapital), einmal „liquiditätsschonend&quot; (mehr Puffer). Beide sind Rechenbeispiele, keine Empfehlung.
+            einmal mit mehr Eigenkapital, einmal mit mehr Puffer. Beide sind Rechenbeispiele, keine Empfehlung.
           </p>
           {auswahl && auswahl.gesamtInvest > 0 ? (
             <FinanzierungsVorschlaege
@@ -296,7 +297,7 @@ export default function KaufAssistent({
           <p style={{ fontSize: 11.5, color: "var(--faint)", margin: "8px 0 0", display: "flex", gap: 7 }}>
             <Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />
             <span>Den <strong>Bank-Ordner</strong> (Beleihungsordner mit Kennblatt, Mietaufstellung, Freigabe-Link)
-              findest du objektbezogen auf der Seite des jeweiligen Objekts → Reiter „Beleihungsordner&quot;, sobald das
+              findest du objektbezogen auf der Seite des jeweiligen Objekts → Reiter „Beleihungsordner“, sobald das
               Objekt in deinem Bestand ist.</span>
           </p>
           <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line)" }}>

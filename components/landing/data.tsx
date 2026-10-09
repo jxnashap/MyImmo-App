@@ -30,7 +30,7 @@ export const ROLLEN: { ico: LucideIcon; t: string; p: string }[] = [
   { ico: Building2, t: "Vermieter", p: "Die volle App: Objekte, Mieter, Buchungen, Abrechnungen, Steuer, Kredite — dein Bestand, dein Cockpit." },
   { ico: Users, t: "Mieter", p: "Eigener Zugang: Schäden melden, Zählerstände durchgeben, Dokumente empfangen — statt Zettel im Hausflur." },
   { ico: Wrench, t: "Hausmeister & Service", p: "Anliegen sehen, Aufträge anlegen, Firmen kontaktieren — du gibst nur noch frei." },
-  { ico: Landmark, t: "Hausverwaltung", p: "Verwaltet fremde Bestände mit denselben Werkzeugen wie ein Vermieter — je Mandat sauber getrennt." },
+  { ico: Landmark, t: "Hausverwaltung", p: "Verwaltet fremde Bestände mit denselben Werkzeugen wie ein Vermieter." },
 ];
 
 export type Plan = {
@@ -70,7 +70,7 @@ export const PLAENE: Plan[] = [
     name: "MyImmo Business", preis: "auf Anfrage", jahr: null, einheiten: "ab 25 Einheiten · Hausverwaltungen",
     punkte: [
       "Alles aus Plus",
-      "Hausverwaltungs-Zugang (Mandate getrennt)",
+      "Getrennte Mandate (geplant)",
       "Team-Zugänge (geplant)",
       "Sammel-Funktionen (geplant)",
     ],

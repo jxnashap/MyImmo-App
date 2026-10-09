@@ -8,7 +8,10 @@
 //
 // ALTERT: Konditionen nach der BEG-Reform zum 21.07.2026 (Richtlinie BEG EM „vom 17. August 2026“,
 // BAnz AT 27.08.2026 B1), geprüft 05.10.2026 gegen bafa.de (Gebäudehülle) und kfw.de (458,
-// „Anpassungen 2026“). Feste Änderungstermine: 01.02.2027 (KfW 458: Höchstkosten der ersten
+// „Anpassungen 2026“). Zum Datum (Gesamtprüfung C33, geprüft 09.10.2026): Das BMWE veröffentlichte die
+// Richtlinie am 20.07.2026 vorab als Fassung „vom 17. Juli 2026“ (energiewechsel.de); im Bundesanzeiger
+// steht sie als Fassung „vom 17. August 2026“. Die hier benutzten Stellen (Nr. 5.4 a, 8.3.1 a/b) sind in
+// beiden wortgleich — zitiert wird die amtliche Fassung im Bundesanzeiger. Feste Änderungstermine: 01.02.2027 (KfW 458: Höchstkosten der ersten
 // Wohneinheit −750 € je Halbjahr) und Q1 2027 (Wärmepumpe 15 % + Wertschöpfungsbonus).
 // Prüfzyklus: docs/app-entwicklung/07 Volatile Kennzahlen und Pruefzyklus.md.
 //
@@ -68,8 +71,25 @@ export function heizungErsteWohneinheit(stichtag: string): number {
   const stufen = Math.min(1 + Math.floor(monate / 6), 8);
   return 28_000 - 750 * stufen;
 }
-/** KfW 458: erste WE (siehe oben) / je 15.000 € zweite bis sechste / je 8.000 € ab der siebten — je Gebäude insgesamt. */
-export const grenzeHeizung = (we: number, stichtag: string) => staffel(we, heizungErsteWohneinheit(stichtag), 15_000, 8_000);
+/**
+ * KfW 458: erste WE (siehe oben) / je 15.000 € zweite bis sechste / je 8.000 € ab der siebten — je Gebäude.
+ * Betrifft die Heizung nicht alle Wohneinheiten (z. B. Etagenheizung einer Eigentumswohnung), gilt BEG EM
+ * Nr. 8.3.1 a: „Dabei verteilt sich der Höchstbetrag des Gebäudes auf alle Wohneinheiten im Gebäude zu
+ * gleichen Teilen.“ Beispiel 5 WE, 1 betroffen: (28.000 + 4 × 15.000) / 5 = 17.600 € (Gesamtprüfung
+ * 07.10.2026, B36 — vorher 28.000 €, als gehöre der Wohnung das ganze Haus).
+ */
+export function grenzeHeizung(betroffen: number, stichtag: string, imGebaeude?: number): number {
+  const b = Number.isFinite(betroffen) ? Math.max(1, Math.floor(betroffen)) : 1;
+  const g = imGebaeude != null && Number.isFinite(imGebaeude) ? Math.floor(imGebaeude) : 0;
+  if (g <= b) return staffel(b, heizungErsteWohneinheit(stichtag), 15_000, 8_000);
+  return Math.round((staffel(g, heizungErsteWohneinheit(stichtag), 15_000, 8_000) * b) / g * 100) / 100;
+}
+/**
+ * Untergrenze, wenn die Zahl der Wohneinheiten im Mehrfamilienhaus fehlt: Der Anteil je Wohnung liegt bei
+ * jeder Gebäudegröße über 8.000 € (er nähert sich dem Satz ab der siebten Einheit von oben) — vorsichtig
+ * angenommen, nie still die Grenze des ganzen Hauses.
+ */
+export const HEIZUNG_UNTERGRENZE_JE_WE = 8_000;
 export type Gebaeude = "haus" | "mfh";
 /**
  * Experte: „5 000 Euro bei Ein- und Zweifamilienhäusern, und bei Mehrfamilienhäusern mit drei oder
@@ -87,6 +107,11 @@ export type FoerderEingabe = {
   posten: FoerderPosten[];
   /** Wohneinheiten, die die Maßnahmen betreffen (bei einer Eigentumswohnung meist 1). */
   wohneinheiten: number;
+  /**
+   * Wohneinheiten im ganzen Gebäude (B36) — für die anteilige Heizungsgrenze und die Fünf-Einheiten-Grenze
+   * der Heizungsoptimierung. Fehlt sie im Mehrfamilienhaus, wird vorsichtig gerechnet (Hinweis).
+   */
+  wohneinheitenGebaeude?: number;
   isfp: boolean;
   nutzung: Nutzung;
   /** Ein-/Zweifamilienhaus oder Mehrfamilienhaus — nur für die Experten-Grenze. */
@@ -120,6 +145,11 @@ const BAFA_ARTEN: FoerderArt[] = ["huelle", "anlage", "optimierung"];
 
 export function berechneFoerderung(e: FoerderEingabe): FoerderErgebnis {
   const we = Number.isFinite(e.wohneinheiten) && e.wohneinheiten >= 1 ? Math.floor(e.wohneinheiten) : 1;
+  // Wohneinheiten im Gebäude: beim Ein-/Zweifamilienhaus höchstens die betroffenen; im Mehrfamilienhaus
+  // nur, wenn eingetragen (sonst null = unbekannt, vorsichtig gerechnet).
+  const weGeb = e.wohneinheitenGebaeude != null && Number.isFinite(e.wohneinheitenGebaeude) && e.wohneinheitenGebaeude >= 1
+    ? Math.max(we, Math.floor(e.wohneinheitenGebaeude))
+    : e.gebaeude === "haus" ? we : null;
   const ausgeschlossen: FoerderErgebnis["ausgeschlossen"] = [];
   const zaehlt = (p: FoerderPosten): boolean => {
     if (p.art === "keine") return false;
@@ -128,8 +158,13 @@ export function berechneFoerderung(e: FoerderEingabe): FoerderErgebnis {
       ausgeschlossen.push({ id: p.id, bezeichnung: p.bezeichnung, grund: `unter ${MINDESTINVESTITION} € — zu klein für einen Antrag` });
       return false;
     }
-    if (p.art === "optimierung" && we > OPTIMIERUNG_MAX_WE) {
-      ausgeschlossen.push({ id: p.id, bezeichnung: p.bezeichnung, grund: `Heizungsoptimierung nur bis ${OPTIMIERUNG_MAX_WE} Wohneinheiten` });
+    // Nr. 5.4 a: „in Bestandsgebäuden mit höchstens fünf Wohneinheiten“ — es zählt das GEBÄUDE.
+    if (p.art === "optimierung" && (weGeb ?? we) > OPTIMIERUNG_MAX_WE) {
+      ausgeschlossen.push({ id: p.id, bezeichnung: p.bezeichnung, grund: `Heizungsoptimierung nur in Gebäuden mit höchstens ${OPTIMIERUNG_MAX_WE} Wohneinheiten` });
+      return false;
+    }
+    if (p.art === "optimierung" && weGeb == null) {
+      ausgeschlossen.push({ id: p.id, bezeichnung: p.bezeichnung, grund: `Wohneinheiten im Gebäude fehlen — gefördert nur bei höchstens ${OPTIMIERUNG_MAX_WE}` });
       return false;
     }
     return true;
@@ -152,10 +187,11 @@ export function berechneFoerderung(e: FoerderEingabe): FoerderErgebnis {
     toepfe.push({ programm: "BAFA", kosten: rund2(bafaKosten), foerderfaehig: rund2(foerderfaehig), grenze, zuschuss: rund2(zuschuss) });
   }
 
-  // KfW 458: eigene Grenze je Gebäude insgesamt; hier nur die Grundförderung.
+  // KfW 458: eigene Grenze je Gebäude, anteilig für die betroffenen Einheiten; hier nur die Grundförderung.
   const heizKosten = summe(["heizung"]);
+  const heizGrenzeVorsichtig = heizKosten > 0 && weGeb == null;
   if (heizKosten > 0) {
-    const grenze = grenzeHeizung(we, e.stichtag);
+    const grenze = weGeb == null ? HEIZUNG_UNTERGRENZE_JE_WE * we : grenzeHeizung(we, e.stichtag, weGeb);
     const foerderfaehig = Math.min(heizKosten, grenze);
     toepfe.push({ programm: "KfW 458", kosten: rund2(heizKosten), foerderfaehig: rund2(foerderfaehig), grenze, zuschuss: rund2(HEIZUNG_SATZ * foerderfaehig) });
   }
@@ -168,6 +204,11 @@ export function berechneFoerderung(e: FoerderEingabe): FoerderErgebnis {
   }
 
   const hinweise: string[] = [];
+  if (heizGrenzeVorsichtig) {
+    hinweise.push(
+      `KfW 458: Die Höchstgrenze des Gebäudes verteilt sich auf alle Wohneinheiten im Haus. Ohne ihre Zahl ist vorsichtig mit ${HEIZUNG_UNTERGRENZE_JE_WE.toLocaleString("de-DE")} € je betroffener Wohnung gerechnet — trag die Wohneinheiten im Gebäude ein.`,
+    );
+  }
   for (const t of toepfe) {
     if (t.kosten > t.grenze) {
       hinweise.push(`${t.programm}: Über der Höchstgrenze von ${t.grenze.toLocaleString("de-DE")} € — der Rest wird nicht gefördert.`);

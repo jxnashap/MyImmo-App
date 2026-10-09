@@ -28,9 +28,11 @@ import {
   type Spanne,
 } from "@/lib/sanierung/rechner";
 import {
+  WOHNFLAECHE_PLAUSIBEL_AB,
   betragAus,
   massDe,
   mengeAus,
+  wohnflaecheAus,
   zuEingabe,
   type Entwurf,
   type RaumTyp,
@@ -163,7 +165,7 @@ export const istEtw = (e: Entwurf) => e.projekt.etw === "ja";
  * die das Ergebnis nennt. Kleine Räume (Bad) werden so eher überschätzt: die vorsichtige Richtung.
  */
 export function raeumeMitMassen(e: Entwurf): { raeume: Omit<RaumAuswertung, "flaechen" | "massnahmen">[]; annahme: string | null } {
-  const wohnflaeche = mengeAus(e.projekt.wohnflaeche) ?? 0;
+  const wohnflaeche = wohnflaecheAus(e.projekt.wohnflaeche) ?? 0;
   const offen = e.raeume.filter((r) => !gemessen(r.laenge, r.breite));
   const gemesseneFlaeche = e.raeume
     .filter((r) => gemessen(r.laenge, r.breite))
@@ -201,7 +203,7 @@ export function mengeVorschlag(
     case "pauschal":
       return { menge: 1, annahme: null };
     case "wohnflaeche": {
-      const w = mengeAus(e.projekt.wohnflaeche) ?? 0;
+      const w = wohnflaecheAus(e.projekt.wohnflaeche) ?? 0;
       if (w > 0) return { menge: w, annahme: null };
       const summe = rund(raeume.reduce((s, r) => s + r.laenge * r.breite, 0));
       return summe > 0 ? { menge: summe, annahme: "Wohnfläche fehlt — Summe der Räume" } : null;
@@ -275,6 +277,14 @@ export function auswerten(e: Entwurf, katalog: Katalog): Auswertung {
     if (e.projekt.wer[g] === "") annahmen.push(`Noch offen, wer ${g === "maler" ? "streicht" : g === "boden" ? "den Boden verlegt" : "fliest"} — gerechnet mit Handwerker`);
   }
 
+  const flaecheProjekt = wohnflaecheAus(e.projekt.wohnflaeche);
+  if (flaecheProjekt != null && flaecheProjekt > 0 && flaecheProjekt < WOHNFLAECHE_PLAUSIBEL_AB) {
+    hinweis(
+      "wohnflaeche-klein",
+      `Wohnfläche ${flaecheProjekt.toLocaleString("de-DE")} m² ist ungewöhnlich klein — Tippfehler? Alles, was nach Wohnfläche gerechnet wird (z. B. Elektrik), fällt sonst viel zu niedrig aus.`,
+    );
+  }
+
   const { raeume: grund, annahme: masseAnnahme } = raeumeMitMassen(e);
   if (masseAnnahme) annahmen.push(masseAnnahme);
 
@@ -299,12 +309,16 @@ export function auswerten(e: Entwurf, katalog: Katalog): Auswertung {
   });
 
   // --- Material: nur, was nicht im Handwerkerpreis steckt -----------------------------------
-  // Malerpreise enthalten das Material; Verlegepreise (Boden, Fliesen) sind reiner Lohn.
+  // Malerpreise enthalten das Material; Verlegepreise (Boden, Fliesen) sind Lohn — beim Fliesenleger aber
+  // „inklusive Fliesenkleber und Verfugung“ (Daibau, Quelle in lib/sanierung/arbeiten.ts). Die Fliese
+  // selbst kauft der Nutzer, Kleber und Fugenmörtel nicht (C31).
   const malerHandwerker = werFuer(e, "maler") === "handwerker";
+  const fliesenHandwerker = werFuer(e, "fliesen") === "handwerker";
   const basis = zuEingabe({ ...e, raeume: [] });
   const materialErgebnis = berechneSanierung(
     {
       ...basis,
+      ohneMaterial: fliesenHandwerker ? ["fliesenkleber", "fugenmoertel"] : [],
       raeume: raeume.map((r, i) => ({
         id: r.id, name: r.name, laenge: r.laenge, breite: r.breite, hoehe: r.hoehe,
         oeffnungen: massDe(e.raeume[i].oeffnungen), fliesenhoehe: massDe(e.raeume[i].fliesenhoehe),

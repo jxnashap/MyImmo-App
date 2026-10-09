@@ -28,6 +28,7 @@
 | **Fernablesepflicht / § 5 HeizkostenV** | `lib/ratgeber.ts` (Artikel `heizkostenabrechnung-…`) | HeizkostenV | — | einmalig | **ab 01.01.2027 entschärfen** |
 | **§ 82b EStG, AfA-Sätze** | `lib/steuer/` | EStG | — | jährlich zum Steuerjahr | **01.02.2027** |
 | **Next.js-Hauptversion** | `package.json`, `next.config.*` | Release-Notes / EOL-Plan | ✅ 16.3.8 seit 30.09.2026 (Migration von 15, `package.json` geprüft 03.10.2026) | halbjährlich | **01.03.2027** |
+| **Bewirtschaftungskosten ImmoWertV Anlage 3** (Verwaltung je Wohnung/ETW/Garage, Instandhaltung je m²/Garage) — Ertragswert in `/vergleich`, `/kauf`, `/bewertung` | `lib/bewertung/immowertv.ts` (`BEWIRTSCHAFTUNG_JE_JAHR`, eine Zeile je Jahr) | Fortschreibung nach Anlage 3 Nr. III (VPI Oktober des Vorjahres ÷ VPI Oktober 2001 = 77,1, Basis 2020); veröffentlicht vom Oberen Gutachterausschuss Brandenburg (`BewKo_<Jahr>.pdf`) und immobilien-wertermittlung.de — **beide abrufbar per curl** | ✅ 09.10.2026 — Tabelle 2021–2026 (2026: 367/439/48 €, 14,4 €/m², 108 €; VPI Okt. 2025 = 123,0). Fehlt ein Jahr, rechnet die App mit der letzten Zeile und sagt es in den Warnungen | jährlich, sobald der VPI Oktober erscheint (Mitte November) | **15.11.2026** (Zeile 2027) |
 | **Notar-/Grundbuchpauschale (2 %)** | `lib/kalk.ts` | GNotKG, Marktüblichkeit | 26.08.2026 | jährlich | **01.09.2027** |
 | **Maklerprovision (3,57 % Käuferanteil)** | `lib/kalk.ts`; auch Standard für Kauf- und Verkaufskosten in `lib/strategie.ts` | Marktüblichkeit, Teilungsgebot | 26.08.2026 | jährlich | **01.09.2027** |
 

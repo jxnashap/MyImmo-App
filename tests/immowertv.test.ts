@@ -50,7 +50,8 @@ describe("ertragswert (§§ 27–34)", () => {
     restnutzungsdauer: 60,
   };
   it("liefert einen plausiblen Ertragswert mit Spanne", () => {
-    const r = ertragswert(basis);
+    // Stichtag 2021 = die Werte aus dem Wortlaut der Anlage 3 (spätere Jahre: tests/paketP9.test.ts).
+    const r = ertragswert({ ...basis, stichtagJahr: 2021 });
     expect(r.wert).toBeGreaterThan(0);
     // Bewirtschaftungskosten: 4×298 + 300×11,70 + 2 % von 24000 = 1192+3510+480 = 5182
     expect(r.details.bewirtschaftungskosten).toBe(5182);

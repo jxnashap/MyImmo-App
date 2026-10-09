@@ -18,7 +18,7 @@
 // Reine Funktionen — kein React, keine Datenbank. Der Plan liegt im Browser (localStorage).
 
 import { zahlDe } from "@/lib/zahl";
-import { berechneRestschuld, kaufnebenkostenSatz, MAKLER_STANDARD_PROZENT } from "@/lib/kalk";
+import { altSatzAus, berechneRestschuld, grestSatzAus, kaufnebenkostenSatz, LAND_STANDARD, landAus, MAKLER_STANDARD_PROZENT } from "@/lib/kalk";
 import { beispielZins } from "@/lib/kauf/darlehen";
 import { AUSLAUF_HOCH } from "@/lib/beleihungsauslauf";
 
@@ -92,6 +92,7 @@ export const TAKTIKEN: Taktik[] = [
     risiken: [
       "Verkauf innerhalb von zehn Jahren nach dem Kauf: Der Gewinn kann steuerpflichtig sein (§ 23 EStG) — mit dem Steuerberater klären.",
       "Die Miete des verkauften Objekts fällt weg.",
+      "Wird ein Darlehen vor Ende der Zinsbindung abgelöst, verlangt die Bank meist eine Vorfälligkeitsentschädigung — die Rechnung zieht sie nicht ab.",
     ],
     quelle: true,
     anteil: true,
@@ -124,7 +125,10 @@ export type StrategieEntwurf = {
   wertentwicklung: string;
   bewirtschaftung: string;
   beleihungsgrenze: string;
-  /** Grunderwerbsteuer als Maschinenwert der Auswahl (z. B. "0.05") — nicht durch den Zahlenparser. */
+  /**
+   * Bundesland für die Grunderwerbsteuer: Länderkürzel (seit 09.10.2026, B32) oder — in älteren Plänen —
+   * der Satz als Maschinenwert („0.05“). Nie durch den Zahlenparser; gelesen über `grestSatzAus()`.
+   */
   grest: string;
   makler: string;
   verkaufskosten: string;
@@ -160,7 +164,7 @@ export function leereStrategie(erspartes = 0): StrategieEntwurf {
     wertentwicklung: "0",
     bewirtschaftung: "20",
     beleihungsgrenze: String(AUSLAUF_HOCH),
-    grest: "0.05",
+    grest: LAND_STANDARD,
     makler: String(MAKLER_STANDARD_PROZENT).replace(".", ","),
     verkaufskosten: String(MAKLER_STANDARD_PROZENT).replace(".", ","),
     kaeufe: [],
@@ -218,8 +222,8 @@ export function strategieAus(roh: unknown): StrategieEntwurf | null {
     wertentwicklung: text(o.wertentwicklung, 6, basis.wertentwicklung),
     bewirtschaftung: text(o.bewirtschaftung, 6, basis.bewirtschaftung),
     beleihungsgrenze: text(o.beleihungsgrenze, 6, basis.beleihungsgrenze),
-    // Nur ein Satz zwischen 0 und 10 % ist eine Grunderwerbsteuer.
-    grest: /^0(\.\d{1,4})?$/.test(grest) && Number(grest) <= 0.1 ? grest : basis.grest,
+    // Ein Länderkürzel oder (ältere Pläne) ein Satz zwischen 0 und 10 %.
+    grest: landAus(grest) || altSatzAus(grest) != null ? grest : basis.grest,
     makler: text(o.makler, 6, basis.makler),
     verkaufskosten: text(o.verkaufskosten, 6, basis.verkaufskosten),
     kaeufe,
@@ -282,19 +286,39 @@ export function sortierteKaeufe(kaeufe: KaufSchritt[]): KaufSchritt[] {
 }
 
 /**
+ * Monate, die im Startjahr noch vor dir liegen — der laufende Monat zählt mit (Stichtag 07.10. →
+ * Oktober, November, Dezember = 3). Gesamtprüfung 07.10.2026, B29: Vorher rechnete das Startjahr mit
+ * zwölf vollen Monaten Sparrate, Überschuss und Tilgung — im Oktober rund 9.700 € Erspartes zu viel, und
+ * der Fehler trug sich in jeden späteren Kauf fort.
+ */
+export function restMonateImStartjahr(startMonat: number): number {
+  const m = Number.isInteger(startMonat) && startMonat >= 1 && startMonat <= 12 ? startMonat : 1;
+  return 13 - m;
+}
+
+/**
  * Den Plan Jahr für Jahr durchrechnen. Ein Kauf, dessen Eigenkapital nicht reicht, findet in der
  * Rechnung NICHT statt (Lücke) — Käufe, die auf ihn bauen, finden dann ihre Quelle nicht. So sieht man,
  * was am Plan hängt.
+ *
+ * `startMonat` (1–12): der Monat des Stichtags. Im Startjahr zählen Sparrate, Mietüberschuss, Tilgung und
+ * Wertentwicklung nur für die restlichen Monate (`restMonateImStartjahr`); ab dem Folgejahr volle Jahre.
  */
-export function rechneStrategie(e: StrategieEntwurf, bestand: BestandObjekt[], startJahr: number, szenario: Szenario = SZENARIO_ANNAHMEN): StrategieErgebnis {
+export function rechneStrategie(
+  e: StrategieEntwurf,
+  bestand: BestandObjekt[],
+  startJahr: number,
+  szenario: Szenario = SZENARIO_ANNAHMEN,
+  startMonat = 1,
+): StrategieErgebnis {
   const zinsPa = (prozentAus(e.zins) + szenario.zinsAufschlag) / 100;
   const tilgPa = prozentAus(e.tilgung) / 100;
   const wachstum = (szenario.wertentwicklung ?? prozentAus(e.wertentwicklung)) / 100;
   const bewirt = prozentAus(e.bewirtschaftung) / 100;
   const grenze = Math.max(0, prozentAus(e.beleihungsgrenze)) / 100;
-  const nkSatz = kaufnebenkostenSatz(Number(e.grest) || 0, Math.max(0, prozentAus(e.makler)));
+  const nkSatz = kaufnebenkostenSatz(grestSatzAus(e.grest), Math.max(0, prozentAus(e.makler)));
   const verkaufskosten = Math.max(0, prozentAus(e.verkaufskosten)) / 100;
-  const sparJahr = geldAus(e.sparrate) * 12;
+  const sparMo = geldAus(e.sparrate);
   const neuerKredit = (betrag: number): Kredit => ({ rest: betrag, zinsPa, rateMo: (betrag * (zinsPa + tilgPa)) / 12 });
 
   let erspartes = geldAus(e.erspartes);
@@ -349,6 +373,14 @@ export function rechneStrategie(e: StrategieEntwurf, bestand: BestandObjekt[], s
           r.hinweise.push("Verkauf vor Ablauf von zehn Jahren seit dem Kauf: Ein Gewinn kann steuerpflichtig sein (§ 23 EStG).");
         }
         if (erloes < 0) r.hinweise.push("Die Schulden sind höher als der Verkaufserlös — der Verkauf kostet Erspartes.");
+        // C30: Was die Rechnung beim Verkauf NICHT abbildet, steht am Kauf.
+        if (schuldenVon(quelle) > 0) {
+          r.hinweise.push("Eine Vorfälligkeitsentschädigung für die Ablösung der Darlehen ist nicht abgezogen.");
+        }
+        const ausBestand = quelle.id;
+        if (bestand.some((b) => b.id === ausBestand)) {
+          r.hinweise.push("Deine Sparrate bleibt in der Rechnung gleich — steckt darin der Überschuss dieses Objekts, sinkt sie nach dem Verkauf.");
+        }
       }
       let ausBeleihung = 0;
       if (k.taktik === "beleihung" && quelle) {
@@ -382,11 +414,13 @@ export function rechneStrategie(e: StrategieEntwurf, bestand: BestandObjekt[], s
 
     // Jahresende: sparen, Mieten minus Raten, tilgen, Werte fortschreiben. Raten der Kredite, die es
     // heute schon gibt, stecken in der Sparrate — gezählt werden nur die neuen (Kauf und Beleihung).
-    const ueberschuss = summe(objekte.map((o) => o.mieteMo * 12 * (1 - bewirt) - summe(o.kredite.slice(o.startKredite).map((k) => k.rateMo * 12))));
-    erspartes += sparJahr + ueberschuss;
+    // Im Startjahr nur die restlichen Monate (B29).
+    const monate = jahr === startJahr ? restMonateImStartjahr(startMonat) : 12;
+    const ueberschussMo = summe(objekte.map((o) => o.mieteMo * (1 - bewirt) - summe(o.kredite.slice(o.startKredite).map((k) => k.rateMo))));
+    erspartes += (sparMo + ueberschussMo) * monate;
     for (const o of objekte) {
-      for (const kr of o.kredite) kr.rest = berechneRestschuld(kr.rest, kr.zinsPa, kr.rateMo, 1);
-      o.wert = o.wert * (1 + wachstum);
+      for (const kr of o.kredite) kr.rest = berechneRestschuld(kr.rest, kr.zinsPa, kr.rateMo, monate / 12);
+      o.wert = o.wert * Math.pow(1 + wachstum, monate / 12);
     }
     const wert = summe(objekte.map((o) => o.wert));
     const schulden = summe(objekte.map(schuldenVon));

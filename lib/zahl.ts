@@ -44,3 +44,12 @@ export function zahlDe(eingabe: string | null | undefined): number | null {
 export function zahlDe0(eingabe: string | null | undefined): number {
   return zahlDe(eingabe) ?? 0;
 }
+
+/**
+ * Vorbelegung und geladene Altwerte eines Textfelds mit Komma (Gesamtprüfung 07.10.2026, C10): „3.57“ im
+ * Feld wird beim Weitertippen zu „3.570“ — und das liest `zahlDe()` als 3.570. Nur ein Punkt mit ein bis
+ * zwei Nachkommastellen ist eindeutig ein Dezimalpunkt; alles andere bleibt, wie es ist.
+ */
+export function mitKomma(v: string): string {
+  return /^\d+\.\d{1,2}$/.test(v) ? v.replace(".", ",") : v;
+}

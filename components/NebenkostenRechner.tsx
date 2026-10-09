@@ -5,7 +5,8 @@
 // (`kaufnebenkosten()` in lib/kalk.ts). Reine Rechnung, keine Aussage darüber, ob jemand kaufen kann.
 
 import { useState } from "react";
-import { BUNDESLAENDER, MAKLER_STANDARD_PROZENT, NOTAR_GRUNDBUCH_SATZ, kaufnebenkosten } from "@/lib/kalk";
+import { LAND_STANDARD, MAKLER_STANDARD_PROZENT, NOTAR_GRUNDBUCH_SATZ, grestSatzAus, kaufnebenkosten } from "@/lib/kalk";
+import BundeslandWahl from "@/components/BundeslandWahl";
 import { euro } from "@/lib/format";
 import { zahlDe0 } from "@/lib/zahl";
 
@@ -13,13 +14,12 @@ const prozent = (anteil: number) => `${(anteil * 100).toLocaleString("de-DE", { 
 
 export default function NebenkostenRechner() {
   const [kaufpreis, setKaufpreis] = useState("250.000");
-  // Index statt Steuersatz als Wert: Fünf Länder haben 5,0 % — mit dem Satz als Wert sprang die
-  // Auswahl von „Niedersachsen“ auf „Baden-Württemberg“ zurück (gleicher Wert, erste Option gewinnt).
-  const [land, setLand] = useState("0");
+  // Länderkürzel statt Steuersatz als Wert (components/BundeslandWahl.tsx — eine Auswahl für alle Rechner).
+  const [land, setLand] = useState(LAND_STANDARD);
   const [mitMakler, setMitMakler] = useState(true);
 
   const kp = zahlDe0(kaufpreis);
-  const grest = BUNDESLAENDER[Number(land)]?.v ?? 0;
+  const grest = grestSatzAus(land);
   const nk = kaufnebenkosten(kp, grest, mitMakler ? MAKLER_STANDARD_PROZENT : 0);
 
   // In der Demo bedienbar (`data-demo-erlaubt`): reine Rechnung, nichts wird gespeichert.
@@ -32,11 +32,7 @@ export default function NebenkostenRechner() {
         </div>
         <div className="form-group">
           <label htmlFor="nk-land">Bundesland</label>
-          <select id="nk-land" value={land} onChange={(e) => setLand(e.target.value)}>
-            {BUNDESLAENDER.map((b, i) => (
-              <option key={b.l} value={String(i)}>{b.l}</option>
-            ))}
-          </select>
+          <BundeslandWahl id="nk-land" wert={land} onWahl={setLand} />
         </div>
         <label className="massnahme-chip nk-makler">
           <input type="checkbox" checked={mitMakler} onChange={(e) => setMitMakler(e.target.checked)} />

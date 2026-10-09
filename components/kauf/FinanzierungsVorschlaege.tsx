@@ -32,15 +32,15 @@ type Szenario = {
 
 const SZENARIEN: Szenario[] = [
   {
-    id: "solide",
-    titel: "Szenario A · solide",
+    id: "mehr_ek",
+    titel: "Szenario A · mehr Eigenkapital",
     unter: "Mehr Eigenkapital, höhere Tilgung — schneller schuldenfrei, weniger Zinskosten, höhere Rate.",
     prioritaet: "schnell_schuldenfrei",
     ekEinsatz: (ek) => ek,
   },
   {
-    id: "liquide",
-    titel: "Szenario B · liquiditätsschonend",
+    id: "mehr_puffer",
+    titel: "Szenario B · mehr Puffer",
     unter: "Weniger Eigenkapital (Puffer bleibt), niedrigere Tilgung — kleinere Rate, dafür mehr Zinskosten und höhere Restschuld.",
     prioritaet: "niedrige_rate",
     ekEinsatz: (ek, neben) => Math.min(ek, Math.max(neben, 0)),
@@ -221,7 +221,7 @@ export default function FinanzierungsVorschlaege({
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "9px 12px", borderRadius: 9, border: "1px solid var(--amber)", background: "rgba(240,160,48,0.08)", fontSize: 11.5, color: "var(--text)" }}>
           <TriangleAlert size={14} color="var(--amber)" style={{ flexShrink: 0, marginTop: 1 }} />
           <span>Dein Eigenkapital deckt nicht einmal die Kaufnebenkosten ({fmtE(nebenkosten)}). Banken und KfW finanzieren die
-            Nebenkosten in der Regel nicht — Faustregel: mindestens die Nebenkosten aus eigenem Geld.</span>
+            Nebenkosten in der Regel nicht — sie müssen dann aus eigenem Geld kommen.</span>
         </div>
       )}
 

@@ -63,7 +63,7 @@ function hinweisText(p: Prioritaet, sonder: boolean): string {
     case "gleiche_rate":
       return "Annuitätendarlehen mit planbarer, konstanter Rate und einer langen Zinsbindung für Sicherheit." + s;
     case "zinssicherheit":
-      return "Möglichst lange Zinsbindung (15–20 J.) — nach 10 Jahren ist jederzeit mit 6 Monaten Frist kündbar (§ 489 BGB), lange Bindung ist also asymmetrisch günstig." + s;
+      return "Möglichst lange Zinsbindung (15–20 J.) — nach 10 Jahren ist jederzeit mit 6 Monaten Frist kündbar (§ 489 BGB), nach zehn Jahren kannst also du aussteigen, die Bank nicht." + s;
     case "schnell_schuldenfrei":
       return "Hohe Anfangstilgung verkürzt die Laufzeit deutlich und spart Zinsen — dafür höhere Monatsrate. Prüfe, ob der Haushaltsüberschuss das trägt." + s;
   }

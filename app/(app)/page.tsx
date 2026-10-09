@@ -470,7 +470,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
             </div>
           ))}
           <p style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 16 }}>
-            Tipp: Die Einführungs-Tour zeigt dir alle Stationen — jederzeit über Einstellungen → „Daten &amp; Recht&quot; startbar.
+            Tipp: Die Einführungs-Tour zeigt dir alle Stationen — jederzeit über Einstellungen → „Daten &amp; Recht“ startbar.
           </p>
         </div>
       </div>

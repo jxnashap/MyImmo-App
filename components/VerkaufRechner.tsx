@@ -190,7 +190,7 @@ export default function VerkaufRechner({
                 </div>
                 <div style={{ marginTop: 12, fontSize: 11, color: "var(--faint)", display: "flex", gap: 7 }}>
                   <Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />
-                  <span>Überschlägige Rechnung, keine Steuerberatung. § 23 EStG kennt Ausnahmen (z. B. Eigennutzung im Verkaufsjahr + 2 Vorjahren = steuerfrei). Bei Verkauf mehrerer Objekte in kurzer Zeit droht der gewerbliche Grundstückshandel („Drei-Objekt-Grenze&quot;).</span>
+                  <span>Überschlägige Rechnung, keine Steuerberatung. § 23 EStG kennt Ausnahmen (z. B. Eigennutzung im Verkaufsjahr + 2 Vorjahren = steuerfrei). Bei Verkauf mehrerer Objekte in kurzer Zeit droht der gewerbliche Grundstückshandel („Drei-Objekt-Grenze“).</span>
                 </div>
               </>
             )}

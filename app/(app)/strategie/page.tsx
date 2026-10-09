@@ -39,6 +39,7 @@ export default async function StrategiePage() {
         bestand={bestandAus(d.objekte, d.kredite)}
         erspartesStart={auskunft ? eigenkapitalGesamt(auskunft) : 0}
         startJahr={Number(heute.slice(0, 4))}
+        startMonat={Number(heute.slice(5, 7))}
       />
     </div>
   );

@@ -525,6 +525,12 @@ function FoerderSeite({ e, aendern }: SeitenProps) {
             <option value="haus">Ein-/Zweifamilienhaus</option>
           </select>
         </div>
+        {e.foerder.gebaeude === "mfh" && (
+          <div className="form-group">
+            <label htmlFor="foerder-we-gebaeude">Wohneinheiten im ganzen Haus</label>
+            <input id="foerder-we-gebaeude" inputMode="numeric" value={e.foerder.weGebaeude ?? ""} placeholder="z. B. 8" onChange={(x) => setF({ weGebaeude: x.target.value })} />
+          </div>
+        )}
         <label className="massnahme-chip sanierung-isfp">
           <input type="checkbox" checked={e.foerder.isfp} onChange={(x) => setF({ isfp: x.target.checked })} />
           Mit Sanierungsfahrplan (iSFP)

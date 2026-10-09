@@ -690,6 +690,7 @@ a.kpi-card:active { transform: scale(.985); }
 .vergleich-punkte { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
 .vergleich-aktiv { background: var(--gold-pale); }
 .vergleich-best { color: var(--green); font-weight: 700; }
+.vergleich-vorlaeufig { color: var(--muted); font-weight: 400; font-size: var(--text-xs); white-space: nowrap; }
 .vergleich-aktionen { white-space: normal !important; }
 /* Eigene Spalte: `.btn` steht später in der Datei und setzte `display` sonst zurück. */
 .vergleich-knoepfe { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }

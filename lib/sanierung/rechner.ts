@@ -217,6 +217,11 @@ export type EigenerPosten = { bezeichnung: string; betrag: number };
 
 export type SanierungEingabe = {
   raeume: Raum[];
+  /**
+   * Material, das NICHT gekauft werden muss, weil es im Handwerkerpreis steckt (Gesamtprüfung 07.10.2026,
+   * C31: Fliesen verlegen „inklusive Fliesenkleber und Verfugung“ — vorher zusätzlich auf dem Einkaufszettel).
+   */
+  ohneMaterial?: MaterialId[];
   /** Eigene Preise je Gebinde — schlagen den Katalog. */
   preise?: Partial<Record<MaterialId, number>>;
   lohn?: LohnPosten[];
@@ -265,6 +270,7 @@ export function berechneSanierung(eingabe: SanierungEingabe, katalog: Katalog): 
       const m = MASSNAHMEN.find((x) => x.id === id);
       if (!m) continue;
       for (const b of m.bedarf) {
+        if (eingabe.ohneMaterial?.includes(b.material)) continue;
         const mat = katalog[b.material];
         const flaeche = b.flaechen.reduce((s, art) => s + f[art], 0);
         const lagen = b.lagen ?? 1;

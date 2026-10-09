@@ -372,7 +372,7 @@ export const ARBEITEN: Record<ArbeitId, Arbeit> = {
   fliesen_verlegen: {
     id: "fliesen_verlegen", gewerk: "fliesen", label: "Fliesen verlegen (Arbeit, Standardformat)",
     einheit: "je m²", mengenbasis: "bodenflaeche", inklMaterial: false, nurFachbetrieb: false,
-    hinweis: "Großformat oder Mosaik teurer (Blauarbeit: 60–120 €/m²). Die Fliese selbst kommt aus dem Baumarkt-Katalog dazu.",
+    hinweis: "Großformat oder Mosaik teurer (Blauarbeit: 60–120 €/m²). Fliesenkleber und Fugenmörtel stecken im Preis (Daibau: „inklusive Fliesenkleber und Verfugung“) und stehen deshalb nicht auf dem Einkaufszettel — im Angebot nachsehen. Die Fliese selbst kommt aus dem Baumarkt-Katalog dazu.",
     quellen: [
       { name: "Blauarbeit, Fliesenlegen Kosten", url: BA + "fliesenlegen", stand: "Juli 2026", art: "portal", von: 40, bis: 80, mwst: "unklar", zitat: "Fliesen verlegen zu lassen kostet 40 bis 80 € pro m² Arbeitslohn für Standardformate" },
       { ...DAIBAU, von: 30, bis: 120, mwst: "unklar", zitat: "Verlegen keramischer Fliesen in Standardformaten auf einem vorbereiteten Untergrund im Innenbereich betragen in Deutschland zwischen 30 und 120 Euro pro m2 inklusive Fliesenkleber und Verfugung" },
