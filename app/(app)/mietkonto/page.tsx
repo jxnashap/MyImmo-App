@@ -1,3 +1,4 @@
+import { heuteBerlin } from "@/lib/zeitraum";
 import Link from "next/link";
 import RueckstandWaechter from "@/components/RueckstandWaechter";
 import { ladeMietkonto } from "@/lib/mietkontoDaten";
@@ -15,8 +16,8 @@ export default async function MietkontoPage(
   }
 ) {
   const searchParams = await props.searchParams;
-  const jetzt = new Date();
-  const aktuellerMonat = `${jetzt.getFullYear()}-${String(jetzt.getMonth() + 1).padStart(2, "0")}`;
+  // Berliner Datum (Audit P8, C15) — am Monatsersten bis 2 Uhr sonst noch der Vormonat.
+  const aktuellerMonat = heuteBerlin().slice(0, 7);
   const monat = /^\d{4}-\d{2}$/.test(searchParams.monat ?? "") ? searchParams.monat! : aktuellerMonat;
 
   const { zeilen, nacherfassung, ohneMietbeginn } = await ladeMietkonto(monat);

@@ -1,6 +1,7 @@
 // Ein- & Ausgaben: Einnahmen und Kosten in einem Reiter — KPIs, interaktiver
 // Donut (Einnahmen vs. Ausgaben + Kategorie-Drilldown) und die bestehenden
 // Buchungslisten (Zeilen-Edit/Beleg/Löschen unverändert).
+import { heuteBerlin } from "@/lib/zeitraum";
 import Link from "next/link";
 import { Plus, Repeat, Wallet, ClipboardList } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -55,9 +56,11 @@ export default async function CashflowPage(
   const wkMieterNamen: Record<string, string> = Object.fromEntries(wkMieter.map((m) => [m.id, m.name]));
 
   // ---- Filter (prop + jahr wirken auf alles; typ steuert nur die Listen) ----
-  const aktuellesJahr = new Date().getFullYear();
+  // Berliner Datum (Audit P8, C15) — wie Dashboard und /mietkonto.
+  const heuteIso = heuteBerlin();
+  const aktuellesJahr = Number(heuteIso.slice(0, 4));
   // Mietkonto des laufenden Monats — dieselbe Quelle wie /mietkonto.
-  const aktuellerMonat = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  const aktuellerMonat = heuteIso.slice(0, 7);
   const mietkonto = await ladeMietkonto(aktuellerMonat);
   const offeneMieten = mietkonto.zeilen.filter((z) => !z.schonGebucht);
 
@@ -70,7 +73,7 @@ export default async function CashflowPage(
     !q ||
     [r.kategorie, r.beschreibung, r.notiz ?? null].some((t) => (t ?? "").toLowerCase().includes(q));
 
-  const imJahr = (d: string | null) => jahr === "alle" || (d != null && new Date(d).getFullYear() === Number(jahr));
+  const imJahr = (d: string | null) => jahr === "alle" || (d != null && Number(d.slice(0, 4)) === Number(jahr));
 
   // Beschriftung der Kennzahlen: sagt, WORAUF sich die Summen beziehen.
   const zeitraumLabel = jahr === "alle" ? "alle Jahre" : jahr;
@@ -81,8 +84,8 @@ export default async function CashflowPage(
 
   const jahre = Array.from(
     new Set([
-      ...((einn ?? []) as Einnahme[]).map((e) => (e.buchungsdatum ? new Date(e.buchungsdatum).getFullYear() : null)),
-      ...((kost ?? []) as Kosten[]).map((k) => (k.buchungsdatum ? new Date(k.buchungsdatum).getFullYear() : null)),
+      ...((einn ?? []) as Einnahme[]).map((e) => (e.buchungsdatum ? Number(e.buchungsdatum.slice(0, 4)) : null)),
+      ...((kost ?? []) as Kosten[]).map((k) => (k.buchungsdatum ? Number(k.buchungsdatum.slice(0, 4)) : null)),
       aktuellesJahr,
     ].filter((y): y is number => y != null))
   ).sort((a, b) => b - a);

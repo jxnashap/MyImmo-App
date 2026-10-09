@@ -1,3 +1,4 @@
+import { heuteBerlin, zeitstempelBerlin } from "@/lib/zeitraum";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { istVermieterKonto } from "@/lib/rolle";
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
   const jahrParam = Number(url.searchParams.get("jahr"));
   const jahr = Number.isInteger(jahrParam) && jahrParam >= 2000 && jahrParam <= 2100
     ? jahrParam
-    : new Date().getFullYear() - 1;
+    : Number(heuteBerlin().slice(0, 4)) - 1;
 
   const [{ data: einnahmen }, { data: kosten }, { data: props }] = await Promise.all([
     supabase.from("einnahmen").select("buchungsdatum,betrag,kategorie,beschreibung,prop_id").eq("user_id", user.id),
@@ -43,11 +44,8 @@ export async function GET(request: Request) {
 
   const buchungen = baueDatevBuchungen(jahr, einnahmen ?? [], kosten ?? [], propName);
 
-  const now = new Date();
-  const p2 = (n: number) => String(n).padStart(2, "0");
-  const zeitstempel =
-    `${now.getFullYear()}${p2(now.getMonth() + 1)}${p2(now.getDate())}` +
-    `${p2(now.getHours())}${p2(now.getMinutes())}${p2(now.getSeconds())}000`;
+  // Erstellungszeit im Kopf der EXTF-Datei in Berliner Ortszeit (Audit P8, C15) — vorher UTC.
+  const zeitstempel = `${zeitstempelBerlin()}000`;
 
   const extf = baueDatevExtf(buchungen, { jahr, zeitstempel, bezeichnung: `MyImmo ${jahr}` });
 

@@ -141,7 +141,8 @@ describe("(2) Objekt-Check", async () => {
 
   it("was nicht gilt, zählt nicht: Leerstand ohne Mieter, ohne Kredit, Grundstück ohne Gebäudeanteil", () => {
     expect(objektCheck({ ...voll, obj_status: "Leer" }, [], [], H).gesamt).toBe(6);
-    expect(objektCheck({ ...voll, obj_status: "Leer", typ: "Grundstück" }, [], [], H).gesamt).toBe(5);
+    // Grundstück: ohne Gebäudeanteil, und seit P8 (C16) auch ohne Wohnfläche und Baujahr.
+    expect(objektCheck({ ...voll, obj_status: "Leer", typ: "Grundstück" }, [], [], H).gesamt).toBe(3);
     // Ausgezogener Mieter zählt nicht als laufend
     expect(objektCheck({ ...voll, obj_status: "Leer" }, [{ ...mieter[0], mietende: "2026-01-31" }], [], H).gesamt).toBe(6);
   });

@@ -305,6 +305,7 @@ export async function buildJahresberichtPdf(
   jahr: number,
   zeilen: JahresberichtZeile[],
   absender: BerichtAbsender,
+  opts: { zeitraum?: string | null } = {},
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const c = await neueSeite(doc, absender, `Jahresbericht ${jahr}`);
@@ -313,6 +314,11 @@ export async function buildJahresberichtPdf(
   c.text(ML, y, "Cashflow-Auswertung je Objekt", 11, c.bold, INK);
   c.right(RIGHT, y, "Beträge in EUR", 8.5, c.font, MUTED);
   y -= 20;
+  // Laufendes Jahr: der Zeitraum steht unter der Überschrift, wie auf der Seite (Audit P8, B28).
+  if (opts.zeitraum) {
+    c.text(ML, y + 4, opts.zeitraum, 8.5, c.font, MUTED);
+    y -= 14;
+  }
 
   // Spaltenraster: Objekt breit links, 5 Zahlenspalten rechtsbündig
   const cols = [ML + 168, ML + 240, ML + 306, ML + 372, RIGHT] as const;

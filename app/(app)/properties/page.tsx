@@ -8,6 +8,8 @@ import type { Property, Kredit } from "@/lib/types";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { sortiereObjekte, SORT_OPTIONEN } from "@/lib/objektSortierung";
 import { sollKaltmiete } from "@/lib/sollMiete";
+import { aktuellerWert, bruttoRendite } from "@/lib/portfolioKennzahlen";
+import { heuteBerlin } from "@/lib/zeitraum";
 import { Building2, Home, Building, Store, TreePalm, Sprout, Link2, Upload, Plus, ChevronRight, type LucideIcon } from "lucide-react";
 
 // Icon je Objekttyp — exakt wie in der HTML-Vorlage (propIcons).
@@ -42,7 +44,8 @@ export default async function PropertiesPage(
 
   // Miete je Objekt nach derselben Regel wie Dashboard und Objektseite
   // (lib/sollMiete.ts) — auch für Rendite und Sortierung „nach Miete".
-  const heute = new Date().toISOString().slice(0, 10);
+  // Stichtag in Europe/Berlin (Audit P8, C15) — wie Dashboard und Objektseite.
+  const heute = heuteBerlin();
   // Paket B: mit den Beträgen, die diesen Monat gelten (Miet-Zeiträume vor dem Mieterfeld).
   const mietJetzt = mitGeltendenBetraegen((miet ?? []) as { id: string; prop_id: string | null; kaltmiete: number | null; stellplatz_miete: number | null; mietbeginn: string | null; mietende: string | null }[], (mz ?? []) as never[], heute.slice(0, 7));
   const alle = ((data ?? []) as Property[]).map((p) => ({ ...p, miete: sollKaltmiete(p, mietJetzt, heute).betrag }));
@@ -125,8 +128,10 @@ export default async function PropertiesPage(
         <div className="section">
           <div className="section-body listen">
           {list.map((p) => {
-            const wert = p.wert ?? p.kaufpreis ?? 0;
-            const rendite = p.miete && wert ? ((p.miete * 12) / wert) * 100 : null;
+            // Wert und Rendite nach derselben Regel wie Objektseite und Dashboard
+            // (lib/portfolioKennzahlen.ts, Audit P8 B24): Rendite auf den Kaufpreis.
+            const wert = aktuellerWert(p) ?? 0;
+            const rendite = bruttoRendite(p, p.miete);
             const rest = restMap.get(p.id) ?? 0;
             const Icon = (p.typ && PROP_ICONS[p.typ]) || Home;
             // Objekt-Check (lib/objektCheck.ts): „8/10“ neben dem Status, nur wenn etwas fehlt.
@@ -140,8 +145,8 @@ export default async function PropertiesPage(
                 </span>
                 {c.fehlend.length > 0 && <span className="badge badge-neutral listen-zeile-extra" title={`Fehlt: ${c.fehlend.map((f) => f.label).join(", ")}`}>{c.erfuellt}/{c.gesamt} Angaben</span>}
                 {p.obj_status && <span className={`badge ${statusBadge(p.obj_status)} listen-zeile-extra`}>{p.obj_status}</span>}
-                <span className="listen-zeile-zahl listen-zeile-extra" title="Rendite (Kaltmiete × 12 ÷ Wert) und Restschuld">
-                  <b style={{ color: "var(--teal)" }}>{rendite != null ? prozent(rendite, 2) : "–"}</b>
+                <span className="listen-zeile-zahl listen-zeile-extra" title={`Bruttorendite (Kaltmiete × 12 ÷ ${rendite?.basis === "wert" ? "Wert — kein Kaufpreis erfasst" : "Kaufpreis"}) und Restschuld`}>
+                  <b style={{ color: "var(--teal)" }}>{rendite ? prozent(rendite.prozent, 2) : "–"}</b>
                   <small>{rest > 0 ? `${euro(rest)} Schuld` : "schuldenfrei"}</small>
                 </span>
                 <span className="listen-zeile-zahl">

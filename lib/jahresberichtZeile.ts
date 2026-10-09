@@ -76,3 +76,25 @@ export function jahresZeile(
   const kreditOhneStart = propKredite.some(({ zeit }) => zeit.ohneStart);
   return { e, k, zins, zinsGeschaetzt, tilgung: Math.max(0, rate - zins), cashflow: e - k - rate, kreditOhneStart };
 }
+
+// ZEITRAUM DES BERICHTS (Gesamtprüfung P8, 09.10.2026, B28 + C15).
+//
+// Die Seite schrieb beim laufenden Jahr „Stand Jan–Okt · unterjährig“, das PDF nicht — ein
+// Bericht mit zehn Monaten Einnahmen stand dort als „Jahresbericht 2026“ da. Beide nehmen jetzt
+// dieselbe Monatszahl und denselben Text; der Stichtag ist Berliner Datum (vorher UTC/Ortszeit
+// des Servers: in der Silvesternacht wäre das alte Jahr schon „vergangen“ gewesen).
+
+const MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+
+/** Monate, für die Raten anfallen: vergangene und künftige Jahre 12, das laufende die begonnenen. */
+export function berichtMonate(jahr: number, heuteIso: string): number {
+  const aktuell = Number(heuteIso.slice(0, 4));
+  return jahr === aktuell ? Number(heuteIso.slice(5, 7)) : 12;
+}
+
+/** „Januar–Oktober 2026 · unterjährig …“ — oder null, wenn das Jahr voll ist. */
+export function unterjaehrigText(jahr: number, monate: number): string | null {
+  if (monate >= 12) return null;
+  const bis = MONATE[Math.max(1, monate) - 1];
+  return `Zeitraum ${monate === 1 ? "" : "Januar–"}${bis} ${jahr} · unterjährig, Zins und Tilgung anteilig`;
+}

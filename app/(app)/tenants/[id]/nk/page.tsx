@@ -52,7 +52,7 @@ export default async function NkPage(
 
   if (!tenant) notFound();
 
-  const jahr = Number(searchParams.jahr) || new Date().getFullYear() - 1;
+  const jahr = Number(searchParams.jahr) || Number(heuteBerlin().slice(0, 4)) - 1;
 
   const [{ data: property }, nkPos, { data: profil }, { data: ibanRow }, { data: co2Row }, { data: kostenRows }, { count: mieterImObjekt }, { data: zaehlerRows }] =
     await Promise.all([
@@ -134,12 +134,12 @@ export default async function NkPage(
     : { sperre: lage.sperre, warnungen: lage.warnungen };
   const portalEmail = "error" in lage ? null : lage.empfaenger.map((e) => e.email ?? "Adresse unbekannt").join(", ") || null;
 
-  const aktuell = new Date().getFullYear();
+  const aktuell = Number(heuteBerlin().slice(0, 4));
   const jahre = [aktuell, aktuell - 1, aktuell - 2, aktuell - 3, aktuell - 4];
   const guthaben = a.saldo >= 0;
   const saldoKlasse = guthaben ? "brief-gruen" : "brief-rot";
 
-  const heute = deDatum(new Date().toISOString());
+  const heute = deDatum(heuteBerlin());
   const ortDatum = vermieter.ort ? `${vermieter.ort.replace(/^\d{4,5}\s*/, "")}, ${heute}` : heute;
   const absenderZeile =
     [vermieter.strasse, vermieter.ort, vermieter.email].filter(Boolean).join(" · ") || null;

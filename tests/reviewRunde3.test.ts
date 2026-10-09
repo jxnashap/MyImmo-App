@@ -74,8 +74,11 @@ describe("Schuldzinsen werden nicht doppelt abgezogen", () => {
   });
 
   it("Dashboard und Objektseite filtern vor dem Schnitt", () => {
+    // Seit P8 an EINER Stelle (objektMonat), die beide Seiten aufrufen.
+    expect(readFileSync("lib/cashflowKennzahl.ts", "utf8")).toMatch(/kostenSchnittMonat\(laufendeKosten\(e\.kosten\), \[\.\.\.e\.einnahmen, \.\.\.e\.kosten\]/);
     for (const p of ["app/(app)/page.tsx", "app/(app)/properties/[id]/page.tsx"]) {
-      expect(readFileSync(p, "utf8"), p).toMatch(/kostenSchnittMonat\(laufendeKosten\(kosten\), \[\.\.\.einnahmen, \.\.\.kosten\]/);
+      expect(readFileSync(p, "utf8"), p).toMatch(/objektMonat\(\{/);
+      expect(readFileSync(p, "utf8"), p).not.toMatch(/kostenSchnittMonat\(/);
     }
   });
 });
@@ -124,11 +127,13 @@ describe("Dashboard-Kacheln lassen sich nachrechnen", () => {
   });
   it("Kosten-Kachel = Kreditraten + Ø Kosten, Cashflow = Warmmiete − dieselben Teile", () => {
     expect(q).toMatch(/const totalKosten = kreditRates \+ monatKosten;/);
-    expect(q).toMatch(/monatsCashflow\(\{ warmmiete, kreditraten: kreditRates, kostenSchnitt: monatKosten \}\)/);
+    expect(q).toMatch(/const kreditRates = monat\.raten;/);
+    expect(q).toMatch(/const monatKosten = monat\.kosten;/);
+    expect(q).toMatch(/const cashflow = monat\.cashflow;/);
     // Demo nach dieser Runde: Warmmiete − Kosten-Kachel = Cashflow.
     expect(monatsCashflow({ warmmiete: 6960, kreditraten: 4490, kostenSchnitt: 922 })).toBe(6960 - (4490 + 922));
   });
   it("die Rendite bleibt kalt", () => {
-    expect(q).toMatch(/bruttoRendite = totalWert > 0 \? \(\(totalMiete \* 12\)/);
+    expect(q).toMatch(/kaltmieteMonat: sollJeObjekt\.get\(p\.id\)/);
   });
 });

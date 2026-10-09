@@ -1,3 +1,4 @@
+import { heuteBerlin } from "@/lib/zeitraum";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -23,7 +24,7 @@ export default async function NebenkostenObjektPage(props: {
 }) {
   const { id } = await props.params;
   const sp = await props.searchParams;
-  const aktuell = new Date().getFullYear();
+  const aktuell = Number(heuteBerlin().slice(0, 4));
   const jahrRoh = Number(sp.jahr);
   const jahr = Number.isInteger(jahrRoh) && jahrRoh >= 2000 && jahrRoh <= aktuell + 1 ? jahrRoh : aktuell - 1;
   const supabase = await createClient();

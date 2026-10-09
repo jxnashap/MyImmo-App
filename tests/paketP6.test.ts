@@ -27,7 +27,9 @@ describe("B17 — abbezahltes Darlehen: keine Rate, keine Tilgung", () => {
     expect(summeRaten([k, { restschuld: 1000, monatsrate: 250 }])).toBe(250);
   });
   it("Dashboard, Objektseite und /kredite summieren über summeRaten", () => {
-    expect(lies("app/(app)/page.tsx")).toMatch(/const kreditRates = summeRaten\(kredite\)/);
+    // Seit P8 je Objekt + „ohne Objekt“, summiert über portfolioMonat.
+    expect(lies("app/(app)/page.tsx")).toMatch(/raten: summeRaten\(kredite\.filter\(\(k\) => k\.prop_id === p\.id\)\)/);
+    expect(lies("app/(app)/page.tsx")).toMatch(/raten: summeRaten\(kredite\.filter\(\(k\) => !mitObjekt\(k\.prop_id\)\)\)/);
     expect(lies("app/(app)/properties/[id]/page.tsx")).toMatch(/const totalKreditRate = summeRaten\(kred\)/);
     expect(lies("app/(app)/kredite/page.tsx")).toMatch(/const summeRate = summeRaten\(list\)/);
   });

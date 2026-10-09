@@ -1,6 +1,7 @@
 // Sortierung der Immobilien-Liste — rein und testbar.
 // Der Wert steht in der URL-Query (?sort=…), damit die Serverseite die Liste
 // direkt sortiert rendert (kein Client-State, teilbare Links).
+import { aktuellerWert, bruttoRendite } from "@/lib/portfolioKennzahlen";
 
 export type SortObjekt = {
   bezeichnung: string;
@@ -32,14 +33,11 @@ export type SortWert = (typeof SORT_OPTIONEN)[number]["value"];
 const istSort = (v: string | undefined): v is SortWert =>
   !!v && SORT_OPTIONEN.some((o) => o.value === v);
 
-/** Wert eines Objekts: aktueller Wert, ersatzweise der Kaufpreis. */
-const wertVon = (p: SortObjekt) => p.wert ?? p.kaufpreis ?? 0;
+/** Wert eines Objekts: aktueller Wert, ersatzweise der Kaufpreis (lib/portfolioKennzahlen.ts). */
+const wertVon = (p: SortObjekt) => aktuellerWert(p) ?? 0;
 
-/** Bruttorendite in % — 0, wenn nicht bestimmbar (landet damit hinten). */
-const renditeVon = (p: SortObjekt) => {
-  const w = wertVon(p);
-  return w > 0 && p.miete ? ((p.miete * 12) / w) * 100 : 0;
-};
+/** Bruttorendite in % (auf den Kaufpreis, wie angezeigt) — 0, wenn nicht bestimmbar (landet hinten). */
+const renditeVon = (p: SortObjekt) => bruttoRendite(p, p.miete)?.prozent ?? 0;
 
 const nameCmp = (a: SortObjekt, b: SortObjekt) =>
   a.bezeichnung.localeCompare(b.bezeichnung, "de", { sensitivity: "base", numeric: true });

@@ -117,6 +117,14 @@ export function heuteBerlin(jetzt: Date = new Date()): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(jetzt);
 }
 
+/** Jetzt in Berliner Ortszeit als „JJJJMMTTHHMMSS“ (z. B. für Zeitstempel in Exportdateien). */
+export function zeitstempelBerlin(jetzt: Date = new Date()): string {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+  }).format(jetzt).replace(/\D/g, "");
+}
+
 export function aggregate(
   points: RawPoint[],
   zeitraum: Zeitraum,

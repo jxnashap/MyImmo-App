@@ -46,6 +46,8 @@ export type KostenSchnitt = {
   betrag: number;
   /** Wie viele Monate das Fenster umfasst (0 = keine Buchungen). */
   monate: number;
+  /** Nur Portfolio: kürzestes Fenster der Objekte, wenn sie verschieden lang sind. */
+  monateMin?: number;
 };
 
 // KOSTEN, DIE SCHON IN DER KREDITRATE STECKEN (30.09.2026).
@@ -139,6 +141,70 @@ export function monatsCashflow(teile: { warmmiete: number; kreditraten: number; 
 /** Die Formel als Text — steht an jeder Stelle, die die Zahl zeigt. */
 export function cashflowFormel(schnitt: KostenSchnitt): string {
   if (schnitt.monate === 0) return "Warmmiete − Kreditraten (noch keine Kosten gebucht)";
+  if (schnitt.monateMin != null && schnitt.monateMin !== schnitt.monate) {
+    return `Warmmiete − Kreditraten − Ø Kosten (je Objekt ${schnitt.monateMin}–${schnitt.monate} Monate)`;
+  }
   const fenster = schnitt.monate === 1 ? "1 Monat" : `${schnitt.monate} Monate`;
   return `Warmmiete − Kreditraten − Ø Kosten (${fenster})`;
+}
+
+// JE OBJEKT RECHNEN, DAS DASHBOARD SUMMIERT (Gesamtprüfung P8, 09.10.2026, B25 + C17).
+//
+// Bis dahin bildete das Dashboard EIN Kostenfenster über alle Buchungen, die Objektseite je Objekt
+// eines. Ein Zukauf mit drei Monaten Kosten wurde auf dem Dashboard durch zwölf geteilt — der
+// Cashflow war bis zu elf Monate lang zu gut (Beispiel: 100 € + 300 € je Monat → 175 € statt 400 €).
+// Und gerundet wurde an verschiedenen Stellen: Σ Objekt-Cashflows 1.547 €, Dashboard 1.548 €.
+//
+// Jetzt hat jedes Objekt sein Fenster (dieselbe Rechnung wie auf seiner Seite), und JEDER Teil wird
+// je Objekt auf ganze Euro gerundet, BEVOR summiert wird — so ergeben die angezeigten Zahlen der
+// Objektseiten zusammen genau das Dashboard, und auf dem Dashboard bleibt
+// Warmmiete − Kosten = Cashflow nachrechenbar. Was keinem Objekt gehört (Kosten oder Darlehen ohne
+// Objekt), steht als eigener Posten „ohne Objekt“ im Dashboard und mit dem Fenster ALLER Buchungen.
+
+export type KostenBuchung = Buchung & { kategorie?: string | null };
+
+export type MonatsTeile = {
+  kaltmiete: number;
+  nk: number;
+  warmmiete: number;
+  raten: number;
+  /** Ø laufende Kosten je Monat, ganze Euro. */
+  kosten: number;
+  schnitt: KostenSchnitt;
+  cashflow: number;
+};
+
+/** Monatsrechnung EINES Objekts (oder des Postens „ohne Objekt“), alle Teile ganze Euro. */
+export function objektMonat(e: {
+  kaltmiete: number;
+  nk: number;
+  raten: number;
+  kosten: KostenBuchung[];
+  einnahmen: Buchung[];
+  heuteIso: string;
+}): MonatsTeile {
+  const schnitt = kostenSchnittMonat(laufendeKosten(e.kosten), [...e.einnahmen, ...e.kosten], e.heuteIso);
+  const kaltmiete = Math.round(e.kaltmiete);
+  const nk = Math.round(e.nk);
+  const raten = Math.round(e.raten);
+  const kosten = Math.round(schnitt.betrag);
+  const warmmiete = kaltmiete + nk;
+  return { kaltmiete, nk, warmmiete, raten, kosten, schnitt, cashflow: monatsCashflow({ warmmiete, kreditraten: raten, kostenSchnitt: kosten }) };
+}
+
+/** Summe der Objekte (+ Posten ohne Objekt) — die Zahlen des Dashboards. */
+export function portfolioMonat(teile: MonatsTeile[]): MonatsTeile {
+  const sum = (f: (t: MonatsTeile) => number) => teile.reduce((s, t) => s + f(t), 0);
+  const fenster = teile.map((t) => t.schnitt.monate).filter((m) => m > 0);
+  const max = fenster.length ? Math.max(...fenster) : 0;
+  const min = fenster.length ? Math.min(...fenster) : 0;
+  return {
+    kaltmiete: sum((t) => t.kaltmiete),
+    nk: sum((t) => t.nk),
+    warmmiete: sum((t) => t.warmmiete),
+    raten: sum((t) => t.raten),
+    kosten: sum((t) => t.kosten),
+    schnitt: { betrag: sum((t) => t.kosten), monate: max, ...(min !== max ? { monateMin: min } : {}) },
+    cashflow: sum((t) => t.cashflow),
+  };
 }

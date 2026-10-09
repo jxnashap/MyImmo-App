@@ -1,3 +1,4 @@
+import { heuteBerlin } from "@/lib/zeitraum";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -29,16 +30,16 @@ export default async function VerbrauchPage(
   if (searchParams.art) list = list.filter((v) => (v.art ?? "") === searchParams.art);
   const arten = Array.from(new Set(((verb ?? []) as Verbrauch[]).map((v) => v.art).filter(Boolean))) as string[];
 
-  const aktuellesJahr = new Date().getFullYear();
+  const aktuellesJahr = Number(heuteBerlin().slice(0, 4));
   const jahr = searchParams.jahr ?? String(aktuellesJahr);
   const jahre = Array.from(
     new Set([
-      ...((verb ?? []) as Verbrauch[]).map((v) => (v.buchungsdatum ? new Date(v.buchungsdatum).getFullYear() : null)),
+      ...((verb ?? []) as Verbrauch[]).map((v) => (v.buchungsdatum ? Number(v.buchungsdatum.slice(0, 4)) : null)),
       aktuellesJahr,
     ].filter((y): y is number => y != null))
   ).sort((a, b) => b - a);
   const tabelle = jahr !== "alle"
-    ? list.filter((v) => v.buchungsdatum && new Date(v.buchungsdatum).getFullYear() === Number(jahr))
+    ? list.filter((v) => v.buchungsdatum && Number(v.buchungsdatum.slice(0, 4)) === Number(jahr))
     : list;
 
   const filters: FilterDef[] = [

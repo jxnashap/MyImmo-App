@@ -27,7 +27,9 @@ import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
 import { BarChart3, Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
 import Leer from "@/components/Leer";
-import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, laufendeKosten } from "@/lib/cashflowKennzahl";
+import { cashflowFormel, nkVorauszahlungenMonat, objektMonat } from "@/lib/cashflowKennzahl";
+import { aktuellerWert, bruttoRendite } from "@/lib/portfolioKennzahlen";
+import { heuteBerlin } from "@/lib/zeitraum";
 import { laufzeitText } from "@/lib/kreditLaufzeit";
 import { sollKaltmiete, GARAGEN_TYPEN } from "@/lib/sollMiete";
 import MieteAngleichen from "@/components/MieteAngleichen";
@@ -83,9 +85,12 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   const verbrauch = (verb ?? []) as Verbrauch[];
   const notizen = (notiz ?? []) as Notiz[];
 
-  // Kein gepflegter Wert? → auf Kaufpreis zurückfallen (wie in der Objektliste),
-  // sonst zeigen KPIs/Rendite „0 €" bei Objekten, die nur den Kaufpreis haben.
-  const wert = p.wert ?? p.kaufpreis ?? 0;
+  // Kein gepflegter Wert? → auf Kaufpreis zurückfallen — dieselbe Regel wie Objektliste und
+  // Dashboard (lib/portfolioKennzahlen.ts, Audit P8 B26).
+  const wert = aktuellerWert(p) ?? 0;
+  // Stichtag in Europe/Berlin, nicht UTC (Audit P8, C15): zwischen 0 und 2 Uhr am Monatsersten
+  // rechnete die Seite sonst mit dem Vormonat — anders als das Dashboard.
+  const heuteIso = heuteBerlin();
   // 15%-Wächter nur für abschreibbare Objekte (Grundstücke haben keine Gebäude-AfA).
   const istAbschreibbar = !["Grundstück"].includes(p.typ ?? "");
   const anschaffungsnah = istAbschreibbar
@@ -102,12 +107,6 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   const totalKreditRate = summeRaten(kred);
   const jahresEinnahmen = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
   const jahresKosten = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
-  // Monatliche Kosten: dieselbe Rechnung wie auf dem Dashboard
-  // (lib/cashflowKennzahl.ts) — Ø der letzten 12 Monate MIT BUCHUNGEN, geteilt
-  // durch die Monate, die das Fenster wirklich umfasst. Vorher / 12 fest.
-  // Ohne Schuldzinsen-Buchungen — die stecken schon in der Kreditrate.
-  const kostenSchnitt = kostenSchnittMonat(laufendeKosten(kosten), [...einnahmen, ...kosten], new Date().toISOString().slice(0, 10));
-  const monatsKosten = kostenSchnitt.betrag;
   // Garagen-Objekte: Mieten liegen auf den einzelnen Mietern (je Einheit),
   // nicht auf p.miete — sonst zeigten KPIs/Cashflow/Rendite 0.
   // Nebenkosten-Verteiler nur bei mehreren Mietparteien anbieten.
@@ -120,15 +119,14 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // Soll-Kaltmiete: laufende Mieter, sonst Objektfeld — dieselbe Regel wie
   // Dashboard und Objektliste (lib/sollMiete.ts). Weichen beide ab, zeigt die
   // Seite unten einen Hinweis statt still umzuschalten.
-  const heuteIso = new Date().toISOString().slice(0, 10);
   const tenantsJetzt = mitGeltendenBetraegen(tenants, (mzRows ?? []) as never[], heuteIso.slice(0, 7));
   const soll = sollKaltmiete(p, tenantsJetzt, heuteIso);
   const miete = soll.betrag;
   // Bruttomietrendite auf den KAUFPREIS (Marktkonvention, wie der Kaufpreis-
   // faktor daneben); nur ohne erfassten Kaufpreis auf den aktuellen Wert.
-  // Bis 01.10.2026 stand "/ Kaufpreis" dran, gerechnet wurde mit dem Wert.
-  const renditeBasis = p.kaufpreis || wert;
-  const rendite = miete && renditeBasis ? (miete * 12 / renditeBasis) * 100 : 0;
+  // EINE Regel mit Objektliste und Dashboard (lib/portfolioKennzahlen.ts, Audit P8 B24).
+  const renditeErg = bruttoRendite(p, miete);
+  const rendite = renditeErg?.prozent ?? 0;
   const faktor = miete && p.kaufpreis ? p.kaufpreis / (miete * 12) : 0;
   // Empfohlene Instandhaltungsrücklage (Peterssche Formel): 1,5× Herstellungs-
   // kosten über 80 Jahre. Faustformel ohne Gewähr; als Herstellungskosten dient
@@ -144,8 +142,20 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   // passte nicht zum Dashboard.
   // Seit 30.09.2026 mit Warmmiete (Kaltmiete + NK-Vorauszahlungen laufender
   // Verträge) — dieselbe Rechnung wie auf dem Dashboard, lib/cashflowKennzahl.ts.
-  const nkVorausMo = nkVorauszahlungenMonat(tenantsJetzt, heuteIso);
-  const cashflowMo = monatsCashflow({ warmmiete: miete + nkVorausMo, kreditraten: totalKreditRate, kostenSchnitt: monatsKosten });
+  // Seit P8 (09.10.2026) über objektMonat() — GENAU die Rechnung, die das Dashboard je Objekt macht
+  // und dann summiert; jeder Teil auf ganze Euro gerundet (B25, C17).
+  const monat = objektMonat({
+    kaltmiete: miete,
+    nk: nkVorauszahlungenMonat(tenantsJetzt, heuteIso),
+    raten: totalKreditRate,
+    kosten,
+    einnahmen,
+    heuteIso,
+  });
+  const nkVorausMo = monat.nk;
+  const kostenSchnitt = monat.schnitt;
+  const monatsKosten = monat.kosten;
+  const cashflowMo = monat.cashflow;
   const cfStr = (cashflowMo >= 0 ? "+\u00a0" : "–\u00a0") + euro(Math.abs(cashflowMo));
 
   const kpis = [
@@ -171,7 +181,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   ];
 
   const kennzahlen = [
-    { lbl: "Bruttomietrendite", val: rendite > 0 ? prozent(rendite, 2) : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-neutral", note: p.kaufpreis ? "Jahreskaltmiete / Kaufpreis" : "Jahreskaltmiete / aktueller Wert (kein Kaufpreis erfasst)" },
+    { lbl: "Bruttomietrendite", val: rendite > 0 ? prozent(rendite, 2) : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-neutral", note: renditeErg?.basis === "wert" ? "Jahreskaltmiete / aktueller Wert (kein Kaufpreis erfasst)" : "Jahreskaltmiete / Kaufpreis" },
     { lbl: "Kaufpreisfaktor", val: faktor > 0 ? `${zahl(faktor, 1)}×` : "–", badge: faktor > 0 ? (faktor < 25 ? "badge-green" : faktor < 30 ? "badge-gold" : "badge-red") : "badge-neutral", note: "Kaufpreis / Jahreskaltmiete" },
     { lbl: "Instandhaltungsrücklage (empf.)", val: petersJahr > 0 ? euro(petersJahr) + "/Jahr" : "–", badge: "badge-neutral", note: petersM2 > 0 ? `Peterssche Formel · ${euro(petersM2)}/m²·Jahr` : "Peterssche Formel (Faustformel)" },
     { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-neutral", note: "Summe aller Darlehensraten" },
@@ -183,15 +193,15 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
 
   // Cashflow-Übersicht
   const cfItems = [
-    { lbl: "Kaltmiete", val: miete, col: "var(--green)" },
+    { lbl: "Kaltmiete", val: monat.kaltmiete, col: "var(--green)" },
     { lbl: "NK-Vorauszahlungen", val: nkVorausMo, col: "var(--green)" },
-    { lbl: "Kreditraten", val: totalKreditRate, col: "var(--red)" },
+    { lbl: "Kreditraten", val: monat.raten, col: "var(--red)" },
     { lbl: `Laufende Kosten (Ø ${kostenSchnitt.monate} Mon.)`, val: monatsKosten, col: "var(--red)" },
   ].filter((i) => i.val > 0);
   const cfMax = Math.max(1, ...cfItems.map((i) => i.val));
 
   // ---- Immobilienbewertung (ImmoWertV) ----
-  const jetztJahr = new Date().getFullYear();
+  const jetztJahr = Number(heuteIso.slice(0, 4));
   const bewErg = bewerten(
     { typ: p.typ, obj_status: p.obj_status, flaeche: p.flaeche, grundstuecksflaeche: p.grundstuecksflaeche ?? null, baujahr: p.baujahr, miete: p.miete },
     {
@@ -217,11 +227,11 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   }));
 
   // Wertentwicklung: Kaufpreis (Anschaffung) → erfasste Wert-Stände → aktueller Wert.
-  const heuteISO = new Date().toISOString().slice(0, 10);
+  const heuteISO = heuteIso;
   const wertReihe = objektWertReihe({
     kaufpreis: p.kaufpreis,
     kaufdatum: p.kaufdatum ?? null,
-    aktuellerWert: p.wert,
+    aktuellerWert: aktuellerWert(p),
     standDatum: p.marktwert_stand ?? null,
     historie: bewHistorie,
     heute: heuteISO,

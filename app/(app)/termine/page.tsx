@@ -148,24 +148,24 @@ export default async function TerminePage(
   if (filterQ) sichtbar = sichtbar.filter((e) => (filterQ === "auto" ? e.quelle !== "eigen" : e.quelle === filterQ));
   if (filterK) sichtbar = sichtbar.filter((e) => e.kategorie === filterK);
 
-  const aktuellesJahr = new Date().getFullYear();
+  const aktuellesJahr = Number(heuteISO.slice(0, 4));
   const jahr = searchParams.jahr ?? "rollierend";
   const jahre = Array.from(
-    new Set([...eintraege.map((e) => new Date(e.datum).getFullYear()), aktuellesJahr])
+    new Set([...eintraege.map((e) => Number(e.datum.slice(0, 4))), aktuellesJahr])
   ).sort((a, b) => b - a);
   // Zeitraum-Filter. Standard ist NICHT mehr das Kalenderjahr: Im Dezember
   // waren die Januar-Fristen damit unsichtbar, obwohl die KPI-Kachel „In 30
   // Tagen" sie mitzählte. Rollierend „nächste 12 Monate" plus alles
   // Überfällige — das entspricht dem, wonach man auf dieser Seite sucht.
   if (jahr === "rollierend") {
-    const heuteMs = Date.parse(heuteBerlin());
+    const heuteMs = Date.parse(heuteISO);
     const in12M = heuteMs + 365 * 86400000;
     sichtbar = sichtbar.filter((e) => {
-      const t = new Date(e.datum).getTime();
+      const t = Date.parse(e.datum.slice(0, 10));
       return t <= in12M; // Vergangenes bleibt drin (überfällige Fristen)
     });
   } else if (jahr !== "alle") {
-    sichtbar = sichtbar.filter((e) => new Date(e.datum).getFullYear() === Number(jahr));
+    sichtbar = sichtbar.filter((e) => Number(e.datum.slice(0, 4)) === Number(jahr));
   }
 
   const filters: FilterDef[] = [
@@ -174,8 +174,11 @@ export default async function TerminePage(
     { name: "jahr", label: "Zeitraum", icon: "jahr", defaultValue: "rollierend", options: [{ value: "rollierend", label: "Nächste 12 Monate" }, ...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle" }] },
   ];
 
-  const heute = new Date();
-  const tageBis = (d: string) => Math.ceil((new Date(d).getTime() - heute.getTime()) / 86400000);
+  // Tage bis zur Frist, gezählt in Berliner Kalendertagen (Audit P8, C15) — vorher gegen die
+  // Uhrzeit des Servers (UTC), nach Mitternacht stand eine Frist noch einen Tag als „in 1 Tg.“ da.
+  const heuteMs = Date.parse(heuteISO);
+  const tageBis = (d: string) => Math.round((Date.parse(d.slice(0, 10)) - heuteMs) / 86400000);
+  const heuteMonat = heuteISO.slice(0, 7);
   // Ausgeblendetes zaehlt auch in den Kacheln nicht mehr mit: Eine Zahl unter
   // „Ueberfaellig", zu der in der Liste nichts steht, ist schlimmer als keine.
   const offen = eintraege.filter((e) => !e.erledigt && !e.ausgeblendet);
@@ -190,7 +193,7 @@ export default async function TerminePage(
 
   // ---- Monatsansicht ----
   const ansicht = searchParams.ansicht === "monat" ? "monat" : "liste";
-  const monatParam = /^\d{4}-\d{2}$/.test(searchParams.monat ?? "") ? (searchParams.monat as string) : `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}`;
+  const monatParam = /^\d{4}-\d{2}$/.test(searchParams.monat ?? "") ? (searchParams.monat as string) : heuteMonat;
   const [mJahr, mMonat] = monatParam.split("-").map(Number);
   const ersterTag = new Date(mJahr, mMonat - 1, 1);
   const tageImMonat = new Date(mJahr, mMonat, 0).getDate();
@@ -433,7 +436,7 @@ export default async function TerminePage(
             <h3>{monatsName}</h3>
             <div style={{ display: "flex", gap: 6 }}>
               <Link href={linkMit({ monat: vorMonat, tag: "" })} className="btn btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}>←</Link>
-              <Link href={linkMit({ monat: `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}`, tag: "" })} className="btn btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}>Heute</Link>
+              <Link href={linkMit({ monat: heuteMonat, tag: "" })} className="btn btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}>Heute</Link>
               <Link href={linkMit({ monat: nachMonat, tag: "" })} className="btn btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}>→</Link>
             </div>
           </div>
@@ -446,7 +449,7 @@ export default async function TerminePage(
               {Array.from({ length: tageImMonat }).map((_, i) => {
                 const tagIso = `${monatParam}-${String(i + 1).padStart(2, "0")}`;
                 const tagesEintraege = proTag.get(tagIso) ?? [];
-                const istHeute = tagIso === `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}-${String(heute.getDate()).padStart(2, "0")}`;
+                const istHeute = tagIso === heuteISO;
                 const aktiv = gewaehlterTag === tagIso;
                 return (
                   <Link

@@ -1,3 +1,4 @@
+import { heuteBerlin } from "@/lib/zeitraum";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import TenantForm from "@/components/TenantForm";
@@ -16,7 +17,7 @@ export default async function EditTenantPage(props0: { params: Promise<{ id: str
   // Stufe 0 (07.10.2026): Die NK-Seite verlinkt hierher mit ihrem Jahr (?jahr=…#positionen) — neue
   // Positionen und der Abrechnungs-Import landen dann in genau dem Jahr, das man gerade abrechnet.
   const jahrParam = Number((await props0.searchParams).jahr);
-  const nkJahr = Number.isInteger(jahrParam) && jahrParam >= 2000 && jahrParam <= 2100 ? jahrParam : new Date().getFullYear() - 1;
+  const nkJahr = Number.isInteger(jahrParam) && jahrParam >= 2000 && jahrParam <= 2100 ? jahrParam : Number(heuteBerlin().slice(0, 4)) - 1;
   const supabase = await createClient();
   const [{ data }, { data: props }, { data: positions }, { data: zugang }] = await Promise.all([
     supabase.from("mieter").select("*").eq("id", params.id).single(),

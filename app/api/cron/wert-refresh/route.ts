@@ -1,3 +1,4 @@
+import { heuteBerlin } from "@/lib/zeitraum";
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -73,7 +74,7 @@ async function handle(req: Request) {
   }
 
   const hpi = await holeIndexReihe();
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = heuteBerlin();
   let aktualisiert = 0;
   let unveraendert = 0;
   let uebersprungen = 0;
