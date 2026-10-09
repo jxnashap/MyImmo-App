@@ -58,13 +58,26 @@ export function zahlungsBriefUrl(o: {
   const faellig = dritterWerktag(o.jahrMonat);
   // Datum ausgeschrieben wie die übrigen Briefdaten („5. Oktober 2026“), Apposition mit Artikel.
   const faelligText = `${Number(faellig.slice(8, 10))}. ${monatLabel(faellig.slice(0, 7))}`;
-  const grund = `Es handelt sich um die Miete für ${monatLabel(o.jahrMonat)} (fällig am ${faelligText}, dem dritten Werktag des Monats, § 556b BGB). ${LANDESFEIERTAG_HINWEIS}`;
+  // Der Monat steht seit P4 (C43) als {{monat}} im Brief selbst — hier nur noch die Fälligkeit.
+  const grund = `Fällig war die Miete am ${faelligText}, dem dritten Werktag des Monats (§ 556b BGB). ${LANDESFEIERTAG_HINWEIS}`;
   const q = new URLSearchParams({
     art: o.art,
     betrag: String(o.betrag),
     datum: plusTage(o.heuteISO, ZAHLUNGSFRIST_TAGE),
+    monat: o.jahrMonat,
     grund,
   });
+  return `/tenants/${o.mieterId}/dokument?${q.toString()}`;
+}
+
+/**
+ * Mietquittung aus einer GEBUCHTEN Zahlung (Gesamtprüfung P4, B38): Betrag, Monat und Tag des
+ * Eingangs kommen aus den Buchungen — nie aus dem Vertrag. Eine Quittung bestätigt, was
+ * eingegangen ist (§ 368 BGB), nicht, was geschuldet war.
+ */
+export function quittungUrl(o: { mieterId: string; jahrMonat: string; betrag: number; datum?: string | null }): string {
+  const q = new URLSearchParams({ art: "mietquittung", betrag: String(o.betrag), monat: o.jahrMonat });
+  if (o.datum) q.set("datum", o.datum.slice(0, 10));
   return `/tenants/${o.mieterId}/dokument?${q.toString()}`;
 }
 

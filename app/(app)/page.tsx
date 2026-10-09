@@ -14,6 +14,7 @@ import { fristSchluessel } from "@/lib/termine";
 import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { fristZiel, baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
+import { nichtAbgerufen, zustellFensterAb, type ZustellungOffen } from "@/lib/zugang";
 import { erwarteteMonate, gezahltImMonat, ymPlus } from "@/lib/mietkonto";
 import { mieteBezahlt, mietFaelligkeit } from "@/lib/mietStatus";
 import { erinnerungArchiviert, ERINNERUNG_TITEL_PRAEFIX } from "@/lib/mahnung";
@@ -105,7 +106,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     );
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }, { data: vertreterRows }, { data: verstecktRows }, { data: nkNotizen }, { data: erinnRows }] = await Promise.all([
+  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }, { data: vertreterRows }, { data: verstecktRows }, { data: nkNotizen }, { data: erinnRows }, { data: offeneZustellRows }] = await Promise.all([
     supabase.from("properties").select("*"),
     supabase.from("einnahmen").select("*"),
     supabase.from("kosten").select(KOSTEN_SPALTEN),
@@ -128,6 +129,14 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     supabase.from("notizen").select("mieter_id,titel").eq("kategorie", "Nebenkostenabrechnung"),
     // Archivierte Zahlungserinnerungen — nur für den Hinweis in der Auswahl „Dokument“.
     supabase.from("notizen").select("mieter_id,created_at").ilike("titel", `${ERINNERUNG_TITEL_PRAEFIX}%`),
+    // P4 (B43): Zustellungen der letzten 120 Tage — „nicht abgerufen“ nach einer Woche (lib/zugang.ts).
+    // Auch gelesene Zeilen: Ging ein Dokument an zwei Konten, reicht ein Abruf.
+    supabase
+      .from("zustellungen")
+      .select("notiz_id,mieter_id,titel,zugestellt_am,gelesen_am,zurueckgezogen_am")
+      .eq("vermieter_id", user.id)
+      .eq("art", "dokument")
+      .gte("zugestellt_am", zustellFensterAb(heuteBerlin())),
   ]);
 
   const properties = (props ?? []) as Property[];
@@ -243,6 +252,12 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
         .map((v) => ({ v, status: vollmachtStatus(v, heuteISO0) }))
         .filter(({ status }) => status === "laeuft_ab" || status === "abgelaufen")
         .map(({ v, status }) => ({ id: v.id, name: vertreterName(v), gueltigBis: v.gueltig_bis, abgelaufen: status === "abgelaufen" })),
+      nichtAbgerufen: nichtAbgerufen((offeneZustellRows ?? []) as ZustellungOffen[], heuteISO0).map((z) => ({
+        mieterId: z.mieter_id!,
+        mieter: mieterNameOf.get(z.mieter_id!) ?? "Mieter",
+        titel: z.titel ?? "Dokument",
+        zugestellt: z.zugestellt_am,
+      })),
     },
     heuteISO0,
     Infinity, // alle zählen — gekürzt wird unten, die Überschrift nennt die echte Zahl

@@ -36,7 +36,7 @@ const sanitize = pdfText;
 
 // Baut die Anschriftzeilen nach DIN 5008 aus Name + Adressfeld eines Datensatzes:
 //   Name/Firma · (Zusatz) · Straße + Hausnummer · PLZ + Ort  (keine Leerzeile).
-// Fehlt die Anschrift, kommt ein sauberer Hinweis statt eines leeren Feldes.
+// Fehlt die Anschrift, bleibt das Feld unter dem Namen leer (kein Hinweistext im Brief).
 export function adressfeldZeilen(
   name: string | null | undefined,
   adresse: string | null | undefined,
@@ -44,16 +44,9 @@ export function adressfeldZeilen(
   const zeilen: string[] = [];
   const n = (name ?? "").trim();
   if (n) zeilen.push(n);
-  const adr = adressZeilen(adresse);
-  if (adr.length) {
-    zeilen.push(...adr);
-  } else {
-    zeilen.push(
-      n
-        ? "(Anschrift fehlt - bitte im Profil ergänzen)"
-        : "(Empfänger unvollständig - bitte Daten ergänzen)",
-    );
-  }
+  // Kein interner Hinweis mehr („Anschrift fehlt …“) — das Adressfeld steht im Brief AN den
+  // Empfänger (Gesamtprüfung P4, C44). Fehlt die Anschrift, warnt der Aufrufer den Vermieter.
+  zeilen.push(...adressZeilen(adresse));
   return zeilen;
 }
 

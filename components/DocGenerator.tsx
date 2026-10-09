@@ -23,6 +23,8 @@ import {
   satzanfangGross,
   fuelleVorlage,
   ART_BESCHEINIGUNG,
+  briefZusatzWerte,
+  monatText,
   type DocArt,
 } from "@/lib/dokumentVorlagen";
 import { saveDokumentVorlage, resetDokumentVorlage } from "@/lib/actions/dokumentVorlagen";
@@ -32,6 +34,7 @@ import type { MietkontoZeitraum } from "@/lib/mietkonto";
 import {
   BEGRUENDUNGSMITTEL,
   BEGRUENDUNG_PFLICHT,
+  REPARATUR_HINWEIS,
   SCHRIFTFORM,
   alleMieter,
   anrede,
@@ -46,7 +49,7 @@ import {
   pruefeBrief,
 } from "@/lib/briefPruefung";
 import { useToast } from "@/components/Toast";
-import { adressZeilen } from "@/lib/format";
+import { adressZeilen, mieterAnschrift } from "@/lib/format";
 
 const fmtIban = (s: string) => s.replace(/(.{4})/g, "$1 ").trim();
 const eur = (n: number) =>
@@ -74,7 +77,7 @@ export default function DocGenerator({
   ibans?: Iban[];
   vorlagen?: Record<string, string>;
   /** Vorbefüllung (z. B. aus dem Rückstands-Wächter): art/betrag/datum/grund */
-  initial?: { art?: string; betrag?: string; datum?: string; grund?: string };
+  initial?: { art?: string; betrag?: string; datum?: string; grund?: string; monat?: string };
   /** true, wenn in den Einstellungen eine E-Signatur hinterlegt ist. */
   hatUnterschrift?: boolean;
   /** Mieterfelder OHNE Zeitraum-Anpassung + Miet-Zeiträume — für Kappungsgrenze und Sperrfrist (P3). */
@@ -97,6 +100,15 @@ export default function DocGenerator({
   const [betrag, setBetrag] = useState(initial?.betrag ?? "");
   const [datum, setDatum] = useState(initial?.datum ?? "");
   const [grund, setGrund] = useState(initial?.grund ?? "");
+  // P4 (B38/C43/B41): Zusatzfelder, die nur einzelne Arten nutzen — gezeigt, wenn die Vorlage den
+  // Platzhalter enthält. „2026-10“ aus der URL wird als „Oktober 2026“ angezeigt.
+  const [monat, setMonat] = useState(monatText(initial?.monat));
+  const [personen, setPersonen] = useState(() =>
+    alleMieter(`${tenant.vorname ?? ""} ${tenant.nachname ?? ""}`.trim(), tenant.weitere_mieter).join("\n"),
+  );
+  const [einzug, setEinzug] = useState(tenant.mietbeginn?.slice(0, 10) ?? "");
+  const [eigentuemerAnderer, setEigentuemerAnderer] = useState(false);
+  const [eigentuemer, setEigentuemer] = useState("");
   const [ibanId, setIbanId] = useState("");
   const [vName, setVName] = useState(vermieter?.name ?? "");
   const [vAdr, setVAdr] = useState(initialAbsAdr);
@@ -169,6 +181,10 @@ export default function DocGenerator({
     nkvz: nkvz > 0 ? eur(nkvz) : "0,00 €",
     warmmiete: warm > 0 ? eur(warm) : "",
     vermieter: vName || "–",
+    ...briefZusatzWerte(
+      { monat, personen, einzug, eigentuemerAnderer: eigentuemerAnderer ? "1" : "", eigentuemer },
+      { namen, mietbeginn: tenant.mietbeginn, vermieterAdresse: vAdr },
+    ),
   };
   const istBescheinigung = ART_BESCHEINIGUNG.includes(art);
   const gefuellt = fuelleVorlage(vorlageText, werte);
@@ -215,15 +231,14 @@ export default function DocGenerator({
   // Anschrift-Fallback OHNE Objektnamen: Der interne Name („ETW Lindenstraße 12")
   // enthält oft selbst die Straße — mit `objekt` als Fallback stand sie im
   // Adressfeld doppelt. Postalisch zählt nur Einheit + Adresse.
-  const empfZeilen = adressZeilen(
-    tenant.mieter_adresse ||
-      [tenant.einheit, property?.adresse].filter(Boolean).join(", ") ||
-      property?.bezeichnung ||
-      "",
-  );
+  const empfZeilen = adressZeilen(mieterAnschrift(tenant, property));
   const titel = TITEL[art];
   // Dieselben Felder für PDF-Download, Archiv und Versand (BriefVersand).
-  const felder = { art, datum, betrag, grund, ibanId, vName, vAdr, text: vorlageText, signieren: signieren && !nurPapier ? "1" : "", zugang };
+  const felder = {
+    art, datum, betrag, grund, ibanId, vName, vAdr, text: vorlageText,
+    signieren: signieren && !nurPapier ? "1" : "", zugang,
+    monat, personen, einzug, eigentuemerAnderer: eigentuemerAnderer ? "1" : "", eigentuemer,
+  };
 
 
   return (
@@ -280,6 +295,91 @@ export default function DocGenerator({
             </div>
           )}
         </div>
+        {/* P4 (B39): Die Vorlage deckt Erhaltung ab, keine Modernisierungsankündigung nach § 555c BGB. */}
+        {art === "reparatur" && (
+          <div role="note" className="brief-warnung" style={{ marginBottom: 12 }}>{REPARATUR_HINWEIS}</div>
+        )}
+        {/* P4 (B38, C43): Welche Miete? Ohne Monat bleibt offen, worauf sich Erinnerung, Mahnung oder Quittung bezieht. */}
+        {vorlageText.includes("{{monat}}") && (
+          <div className="form-row single">
+            <div className="form-group">
+              <label htmlFor="brief-monat">Mietmonat *</label>
+              <input
+                id="brief-monat"
+                value={monat}
+                onChange={(e) => setMonat(e.target.value)}
+                placeholder="z. B. Oktober 2026"
+                aria-invalid={fehlend.includes("monat") || undefined}
+                style={fehlend.includes("monat") ? { borderColor: "var(--red)" } : undefined}
+              />
+              {art === "mietquittung" && (
+                <div className="brief-hinweis">
+                  Die Quittung bestätigt, was eingegangen ist (§ 368 BGB) — Betrag und Tag so eintragen, wie die Zahlung kam.
+                  Am einfachsten aus dem Mietkonto: dort steht bei jedem bestätigten Eingang „Quittung“.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {/* P4 (B41): Pflichtangaben der Wohnungsgeberbestätigung nach § 19 Abs. 3 BMG. */}
+        {vorlageText.includes("{{einzug}}") && (
+          <div className="form-row single">
+            <div className="form-group">
+              <label htmlFor="brief-einzug">Einzugsdatum *</label>
+              <input
+                id="brief-einzug"
+                type="date"
+                value={einzug}
+                onChange={(e) => setEinzug(e.target.value)}
+                aria-invalid={fehlend.includes("einzug") || undefined}
+                style={fehlend.includes("einzug") ? { borderColor: "var(--red)" } : undefined}
+              />
+              <div className="brief-hinweis">
+                Der Tag des tatsächlichen Einzugs — nicht zwingend der Mietbeginn. Die Anmeldung ist binnen zwei Wochen nach dem Einzug fällig (§ 17 Abs. 1 BMG).
+              </div>
+            </div>
+          </div>
+        )}
+        {vorlageText.includes("{{personen}}") && (
+          <div className="form-row single">
+            <div className="form-group">
+              <label htmlFor="brief-personen">Einziehende Personen * (je Zeile ein Name)</label>
+              <textarea
+                id="brief-personen"
+                rows={3}
+                value={personen}
+                onChange={(e) => setPersonen(e.target.value)}
+                aria-invalid={fehlend.includes("personen") || undefined}
+                style={{ resize: "vertical", ...(fehlend.includes("personen") ? { borderColor: "var(--red)" } : {}) }}
+              />
+              <div className="brief-hinweis">Alle, die einziehen und sich anmelden müssen — auch Kinder und Mitbewohner, die nicht im Vertrag stehen.</div>
+            </div>
+          </div>
+        )}
+        {vorlageText.includes("{{eigentuemer}}") && (
+          <div className="form-row single">
+            <fieldset className="form-group" style={{ border: 0, padding: 0, margin: 0 }}>
+              <legend style={{ fontSize: 12, marginBottom: 6 }}>Eigentümer der Wohnung *</legend>
+              <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
+                <input type="radio" name="brief-eigentuemer" checked={!eigentuemerAnderer} onChange={() => setEigentuemerAnderer(false)} />
+                Ich (der Wohnungsgeber) bin Eigentümer
+              </label>
+              <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13, marginTop: 4 }}>
+                <input type="radio" name="brief-eigentuemer" checked={eigentuemerAnderer} onChange={() => setEigentuemerAnderer(true)} />
+                Jemand anderes ist Eigentümer (z. B. bei Untervermietung)
+              </label>
+              {eigentuemerAnderer && (
+                <input
+                  aria-label="Name des Eigentümers"
+                  value={eigentuemer}
+                  onChange={(e) => setEigentuemer(e.target.value)}
+                  placeholder="Name des Eigentümers"
+                  style={{ marginTop: 6, ...(fehlend.includes("eigentuemer") ? { borderColor: "var(--red)" } : {}) }}
+                />
+              )}
+            </fieldset>
+          </div>
+        )}
         {/* Gesamtprüfung P3: Fristen hängen am Zugang (§ 573c Abs. 1, § 558b Abs. 1 BGB). */}
         {pflichtGrund && (
           <div className="form-row single">
@@ -565,6 +665,11 @@ export default function DocGenerator({
           <input type="hidden" name="text" value={vorlageText} />
           <input type="hidden" name="signieren" value={felder.signieren} />
           <input type="hidden" name="zugang" value={zugang} />
+          <input type="hidden" name="monat" value={monat} />
+          <input type="hidden" name="personen" value={personen} />
+          <input type="hidden" name="einzug" value={einzug} />
+          <input type="hidden" name="eigentuemerAnderer" value={felder.eigentuemerAnderer} />
+          <input type="hidden" name="eigentuemer" value={eigentuemer} />
           {nurPapier ? (
             <span style={{ fontSize: 11, color: "var(--faint)", marginRight: "auto" }}>
               Ohne eingebettete Unterschrift — bitte ausdrucken und eigenhändig unterschreiben.

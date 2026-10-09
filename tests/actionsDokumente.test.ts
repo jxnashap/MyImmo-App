@@ -114,7 +114,7 @@ describe("Die drei Dokumentarten", () => {
       antworten: { mieter: { prop_id: "obj-1" }, notizen: { id: "n-neu" }, mieter_zugaenge: [{ user_id: "konto-a", email: "anna@example.org" }], zustellungen: [{ id: "z1" }] },
       antwortFolge: { "zustellungen:select": [[]] },
     });
-    expect(await mod.speichereNk("m1", 2025, true)).toEqual({ ok: true, zugestelltAn: ["anna@example.org"] });
+    expect(await mod.speichereNk("m1", 2025, true)).toEqual({ ok: true, zugestelltAn: ["anna@example.org"], hinweis: expect.stringMatching(/Mailversand ist nicht eingerichtet/) });
     expect(archivEintrag(db)).toMatchObject({ kategorie: "Nebenkostenabrechnung", mieter_freigabe: true });
     const { db: db2, mod: mod2 } = await lade();
     await mod2.speichereNk("m1", 2025);
@@ -161,7 +161,7 @@ describe("Brief ins Mieterportal (Mahnung)", () => {
 
   it("mit verbundenem Konto: archiviert UND zugestellt, Lesebestätigung wie gewählt", async () => {
     const { db, mod } = await lade(MIT_KONTO);
-    expect(await mod.speichereBrief("m1", {} as never, { zustellen: true, bestaetigung: true })).toEqual({ ok: true, zugestelltAn: ["anna@example.org"] });
+    expect(await mod.speichereBrief("m1", {} as never, { zustellen: true, bestaetigung: true })).toEqual({ ok: true, zugestelltAn: ["anna@example.org"], hinweis: expect.stringMatching(/Mailversand ist nicht eingerichtet/) });
     expect(archivEintrag(db)).toMatchObject({ kategorie: "Schreiben / Brief", mieter_freigabe: true });
     expect(zustellZeilen(db)).toEqual([expect.objectContaining({ empfaenger_user_id: "konto-a", bestaetigung_noetig: true, art: "dokument" })]);
   });

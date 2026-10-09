@@ -144,7 +144,7 @@ describe("A8 — Kündigung: Grund Pflicht, Widerspruchshinweis, Schriftform", (
   it("andere Arten: Begründung bleibt freiwillig, Absender Pflicht", () => {
     const r = pruefeBrief({ art: "mahnung", text: DEFAULT_VORLAGEN.mahnung, grund: "", vName: "Max", datum: "2026-10-15", zugang: "" });
     expect(r).toEqual({ fehlend: [], fehler: [], warnungen: [] });
-    expect(fehlendePlatzhalter(DEFAULT_VORLAGEN.mahnung, { betrag: "1,00 €", datum: "1. Oktober 2026", grund: "" })).toEqual([]);
+    expect(fehlendePlatzhalter(DEFAULT_VORLAGEN.mahnung, { betrag: "1,00 €", monat: "Oktober 2026", datum: "1. Oktober 2026", grund: "" })).toEqual([]);
   });
 });
 

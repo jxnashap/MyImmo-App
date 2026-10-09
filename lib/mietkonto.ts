@@ -319,6 +319,18 @@ export function gezahltImMonat(einnahmen: DedupEinnahme[], jahrMonat: string): n
   return Math.round(summe * 100) / 100;
 }
 
+/** Tag des letzten Miet-Eingangs, der dem Monat zugeordnet ist (für die Quittung, P4 B38). */
+export function zuletztGezahltAm(einnahmen: DedupEinnahme[], jahrMonat: string): string | null {
+  let letzter: string | null = null;
+  for (const e of einnahmen) {
+    if ((e.kategorie ?? "").toLowerCase() !== "miete") continue;
+    if ((e.soll_monat ?? zuJahrMonat(e.buchungsdatum)) !== jahrMonat) continue;
+    const d = (e.buchungsdatum ?? "").slice(0, 10);
+    if (d && (!letzter || d > letzter)) letzter = d;
+  }
+  return letzter;
+}
+
 /**
  * Markiert erwartete Monate als "schonGebucht", wenn für den Kalendermonat
  * bereits eine Miet-Einnahme existiert (soll_monat, sonst Monat des

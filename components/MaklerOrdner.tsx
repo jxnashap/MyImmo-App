@@ -39,6 +39,8 @@ export default function MaklerOrdner({
   freigaben?: MaklerFreigabe[]; abrufe?: Abruf[]; jetzt: string;
 }) {
   const toast = useToast();
+  // P4 (C45): Personenstand in der Käufer-Selbstauskunft nur auf Wahl.
+  const [personenstand, setPersonenstand] = useState(false);
   const [docs, setDocs] = useState<Record<string, MaklerDok>>(() => {
     const m: Record<string, MaklerDok> = {};
     for (const it of MAKLER_CHECKLISTE) m[it.key] = LEER(it.key);
@@ -92,7 +94,7 @@ export default function MaklerOrdner({
 
   function onGenerate(item: MaklerItem) {
     start(async () => {
-      try { apply(await generiereMaklerDokument(item.key)); toast("Käufer-Selbstauskunft aus MyImmo erzeugt."); }
+      try { apply(await generiereMaklerDokument(item.key, { personenstand })); toast("Käufer-Selbstauskunft aus MyImmo erzeugt."); }
       catch (e) { toast(e instanceof Error ? e.message : "Erzeugen fehlgeschlagen.", "error"); }
     });
   }
@@ -183,10 +185,17 @@ export default function MaklerOrdner({
                           <Upload size={13} style={{ verticalAlign: "-2px" }} /> Datei hochladen
                         </button>
                         {item.auto && hatSelbstauskunft && (
-                          <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={pending}
-                            onClick={() => onGenerate(item)} title="Aus deiner Selbstauskunft ein PDF erzeugen">
-                            <Bot size={13} style={{ verticalAlign: "-2px" }} /> Aus MyImmo erzeugen
-                          </button>
+                          <>
+                            <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={pending}
+                              onClick={() => onGenerate(item)} title="Aus deiner Selbstauskunft ein PDF erzeugen">
+                              <Bot size={13} style={{ verticalAlign: "-2px" }} /> Aus MyImmo erzeugen
+                            </button>
+                            {/* P4 (C45): Personenstand nur auf Wahl — der Makler braucht die Finanzierbarkeit, nicht die Familie. */}
+                            <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, color: "var(--muted)" }}>
+                              <input type="checkbox" checked={personenstand} onChange={(e) => setPersonenstand(e.target.checked)} />
+                              mit Familienstand, Kindern, Staatsangehörigkeit
+                            </label>
+                          </>
                         )}
                       </>
                     )}

@@ -40,9 +40,15 @@ const BEFR_LABEL: Record<string, string> = {
 
 export type KaeuferAbsender = { name: string; adresse?: string | null; email?: string | null };
 
+/**
+ * `personenstand`: Familienstand, Kinder und Staatsangehörigkeit drucken? Standard NEIN
+ * (Gesamtprüfung P4, C45): Der Makler braucht für die Vorauswahl die Finanzierbarkeit, nicht den
+ * Personenstand (Art. 5 Abs. 1 lit. c DSGVO). Nur auf ausdrückliche Wahl des Käufers.
+ */
 export async function buildKaeuferSelbstauskunftPdf(
   d: SelbstauskunftDaten,
   absender: KaeuferAbsender,
+  opts: { personenstand?: boolean } = {},
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   doc.setTitle("Käufer-Selbstauskunft");
@@ -106,10 +112,12 @@ export async function buildKaeuferSelbstauskunftPdf(
   yL = kv(yL, "Beruf", d.beruf || "–", L);
   yL = kv(yL, "Arbeitgeber", d.arbeitgeber || "–", L);
   yL = kv(yL, "Beschäftigt seit", d.beschaeftigtSeit ? `${monatDe(d.beschaeftigtSeit)} (${BEFR_LABEL[d.befristung] || d.befristung})` : "–", L);
-  yR = kv(yR, "Familienstand", d.familienstand || "–", R);
-  yR = kv(yR, "Kinder", String(d.kinder ?? 0), R);
+  if (opts.personenstand) {
+    yR = kv(yR, "Familienstand", d.familienstand || "–", R);
+    yR = kv(yR, "Kinder", String(d.kinder ?? 0), R);
+  }
   yR = kv(yR, "Haushaltsgröße", `${d.anzahlPersonen} Person(en)`, R);
-  yR = kv(yR, "Staatsangehörigkeit", d.staatsangehoerigkeit || "–", R);
+  if (opts.personenstand) yR = kv(yR, "Staatsangehörigkeit", d.staatsangehoerigkeit || "–", R);
   y = Math.min(yL, yR) - 10;
 
   text(ML, y, "2. Finanzieller Rahmen", 11, bold, GOLD);

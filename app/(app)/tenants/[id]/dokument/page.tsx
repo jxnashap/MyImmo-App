@@ -12,7 +12,7 @@ import { heuteBerlin } from "@/lib/zeitraum";
 export default async function DokumentPage(
   props: {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ art?: string; betrag?: string; datum?: string; grund?: string }>;
+    searchParams: Promise<{ art?: string; betrag?: string; datum?: string; grund?: string; monat?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -53,7 +53,7 @@ export default async function DokumentPage(
           <div><div className="topbar-title">Dokument erstellen</div><div className="topbar-sub">{[tenant.vorname, tenant.nachname].filter(Boolean).join(" ")}</div></div>
         </div>
       </div>
-      <DocGenerator tenant={{ ...tenant, iban: decryptNullable(tenant.iban) }} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={((ibanRows as Iban[]) ?? []).map(decryptIbanRow)} vorlagen={vorlagen} initial={{ art: searchParams.art, betrag: searchParams.betrag, datum: searchParams.datum, grund: searchParams.grund }} hatUnterschrift={!!signatur} mietVerlauf={mietVerlauf} heute={heute} />
+      <DocGenerator tenant={{ ...tenant, iban: decryptNullable(tenant.iban) }} property={(prop as Property) ?? null} vermieter={(vp as VermieterProfil) ?? null} ibans={((ibanRows as Iban[]) ?? []).map(decryptIbanRow)} vorlagen={vorlagen} initial={{ art: searchParams.art, betrag: searchParams.betrag, datum: searchParams.datum, grund: searchParams.grund, monat: searchParams.monat }} hatUnterschrift={!!signatur} mietVerlauf={mietVerlauf} heute={heute} />
     </div>
   );
 }

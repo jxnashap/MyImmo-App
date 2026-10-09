@@ -13,6 +13,7 @@ import { useState, useTransition } from "react";
 import { useToast } from "@/components/Toast";
 import { speichereNk } from "@/lib/actions/dokumente";
 import type { ZustellPruefung } from "@/lib/mieterZugang";
+import { ZUGANG_HINWEIS } from "@/lib/zugang";
 
 type Empfaenger = { name: string; wohnung: string | null; email: string | null; mietzeit: string };
 
@@ -39,10 +40,13 @@ export default function NkSpeichernButton({
         return;
       }
       setOffen(false);
+      // P4 (B43): „bereitgestellt“ statt „zugestellt“ — für die Frist nach § 556 Abs. 3 BGB zählt der
+      // Zugang, und den belegt erst der Abruf (sichtbar auf der Mieterseite).
       toast(
         zustellen
-          ? `Zugestellt — sichtbar im Mieterportal von ${empfaenger.email ?? empfaenger.name}`
+          ? [`Im Mieterportal bereitgestellt für ${empfaenger.email ?? empfaenger.name}.`, res.hinweis].filter(Boolean).join(" ")
           : "Beim Mieter & im Archiv gespeichert — noch nicht zugestellt",
+        zustellen && res.hinweis ? "info" : "success",
       );
     });
 
@@ -87,6 +91,7 @@ export default function NkSpeichernButton({
             )
           )}
 
+          {!pruefung.sperre && <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 10px", lineHeight: 1.5 }}>{ZUGANG_HINWEIS}</p>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {!pruefung.sperre && (
               <button type="button" className="btn btn-gold" disabled={pending} onClick={() => speichern(true)}>

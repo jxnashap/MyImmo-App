@@ -23,6 +23,8 @@ import {
 import { bestaetigeMieteingang, bestaetigeMehrere, type BatchZeile } from "@/lib/actions/mietkonto";
 import { useToast } from "@/components/Toast";
 import { mieteBezahlt } from "@/lib/mietStatus";
+import { quittungUrl } from "@/lib/mahnung";
+import Link from "next/link";
 
 export type MietkontoZeile = {
   mieterId: string;
@@ -36,6 +38,8 @@ export type MietkontoZeile = {
   schonGebucht: boolean;
   /** Gebuchter Betrag des Monats (null = unbekannt). Liegt er unter dem Soll: Teilzahlung. */
   gezahlt?: number | null;
+  /** Tag des letzten Miet-Eingangs dieses Monats — für die Quittung (P4, B38). */
+  gezahltAm?: string | null;
   /** Gesetzt, wenn Ein-/Auszug mitten im Monat lag — Betrag ist anteilig. */
   anteilig?: { tage: number; tageImMonat: number };
   /** Mietminderung im Monat (§ 536 BGB) — `gesamt` ist bereits gekürzt. */
@@ -447,6 +451,16 @@ export default function MietkontoBestaetigung({
                       <span style={{ marginLeft: "auto", color: "var(--green)", fontSize: 12.5, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
                         <Check size={14} /> bestätigt
                       </span>
+                    )}
+                    {/* P4 (B38): Quittung nur aus einer GEBUCHTEN Zahlung — Betrag, Monat, Tag aus den Buchungen. */}
+                    {z.schonGebucht && (z.gezahlt ?? 0) > 0 && (
+                      <Link
+                        href={quittungUrl({ mieterId: z.mieterId, jahrMonat: monat, betrag: z.gezahlt!, datum: z.gezahltAm })}
+                        className="btn btn-ghost"
+                        style={{ fontSize: 12, padding: "4px 10px" }}
+                      >
+                        Quittung
+                      </Link>
                     )}
                   </div>
                 ))}
