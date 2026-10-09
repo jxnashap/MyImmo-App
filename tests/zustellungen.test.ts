@@ -45,7 +45,7 @@ const einfuegen = (db: { zugriffe: { tabelle: string; op: string; daten?: unknow
 describe("Dokument zustellen", () => {
   it("geht an das verknüpfte Konto — mit Konto-ID und Adresse als Schnappschuss", async () => {
     const { db, mod, spuren } = await lade(lage());
-    expect(await mod.stelleDokumentZu("n1")).toEqual({ ok: true, an: ["anna@example.org"] });
+    expect(await mod.stelleDokumentZu("n1")).toEqual({ ok: true, an: ["anna@example.org"], hinweis: expect.stringMatching(/Mailversand ist nicht eingerichtet/) });
     const z = einfuegen(db)!;
     expect(z.daten).toEqual([
       expect.objectContaining({
@@ -64,7 +64,7 @@ describe("Dokument zustellen", () => {
 
   it("zwei verbundene Konten: jedes bekommt eine eigene Zustellung", async () => {
     const { db, mod } = await lade(lage({ mieter_zugaenge: [ANNA, { user_id: "konto-b", email: "ben@example.org" }], zustellungen: [{ id: "1" }, { id: "2" }] }));
-    expect(await mod.stelleDokumentZu("n1")).toEqual({ ok: true, an: ["anna@example.org", "ben@example.org"] });
+    expect(await mod.stelleDokumentZu("n1")).toEqual({ ok: true, an: ["anna@example.org", "ben@example.org"], hinweis: expect.stringMatching(/Mailversand ist nicht eingerichtet/) });
     expect((einfuegen(db)!.daten as { empfaenger_user_id: string }[]).map((x) => x.empfaenger_user_id)).toEqual(["konto-a", "konto-b"]);
   });
 

@@ -17,6 +17,7 @@ import { briefMailLink, briefMailText } from "@/lib/mahnung";
 import { pruefeBriefZustellung, speichereBrief, type BriefZustellLage } from "@/lib/actions/dokumente";
 import type { BriefFields } from "@/lib/pdf/erzeugen";
 import { useToast } from "@/components/Toast";
+import { ZUGANG_HINWEIS } from "@/lib/zugang";
 
 type MailStand =
   | { stand: "laedt" }
@@ -139,7 +140,11 @@ export default function BriefVersand({
       try {
         const res = await speichereBrief(mieterId, felder, { zustellen: true, bestaetigung });
         if (res.ok) {
-          toast(`Im Mieterportal zugestellt an ${(res.zugestelltAn ?? []).join(", ") || "den Mieter"} ✓`, "success");
+          // P4 (B43): „bereitgestellt“, nicht „zugestellt ✓“ — zugegangen ist es erst mit dem Abruf.
+          toast(
+            [`Im Mieterportal bereitgestellt für ${(res.zugestelltAn ?? []).join(", ") || "den Mieter"}.`, res.hinweis].filter(Boolean).join(" "),
+            res.hinweis ? "info" : "success",
+          );
           setPortal(null);
         } else {
           toast(res.error ?? "Zustellen fehlgeschlagen.", "error");
@@ -201,6 +206,7 @@ export default function BriefVersand({
               {portal.lage.warnungen.map((w) => (
                 <div key={w} style={{ color: "var(--amber)", marginTop: 6 }}>{w}</div>
               ))}
+              <div className="versand-hinweis">{ZUGANG_HINWEIS}</div>
               <label style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 8, cursor: "pointer" }}>
                 <input type="checkbox" checked={bestaetigung} onChange={(e) => setBestaetigung(e.target.checked)} />
                 Mieter soll „gelesen und bestätigt“ klicken

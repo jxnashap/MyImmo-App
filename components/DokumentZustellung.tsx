@@ -11,6 +11,7 @@ import { actionFehler } from "@/lib/actionErgebnis";
 import { stelleDokumentZu, zieheZustellungZurueck } from "@/lib/actions/zustellung";
 import { datum } from "@/lib/format";
 import type { ZustellPruefung } from "@/lib/mieterZugang";
+import { ZUGANG_HINWEIS } from "@/lib/zugang";
 
 export type ZustellZeile = {
   id: string;
@@ -56,7 +57,9 @@ export default function DokumentZustellung({
       if (f) { toast(f, "error"); return; }
       setOffen(false);
       const an = "an" in r && r.an?.length ? r.an.join(", ") : mieterName;
-      toast(`Zugestellt — sichtbar im Mieterportal von ${an}`);
+      const hinweis = "hinweis" in r ? r.hinweis : null;
+      // P4 (B43): bereitgestellt ≠ zugegangen — der Abruf steht danach in dieser Zeile.
+      toast([`Im Mieterportal bereitgestellt für ${an}.`, hinweis].filter(Boolean).join(" "), hinweis ? "info" : "success");
     });
 
   const zurueckziehen = (id: string) =>
@@ -127,6 +130,7 @@ export default function DokumentZustellung({
                     <input type="checkbox" checked={bestaetigung} onChange={(e) => setBestaetigung(e.target.checked)} />
                     Mieter soll „gelesen und bestätigt“ klicken (keine Unterschrift)
                   </label>
+                  <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px", lineHeight: 1.5 }}>{ZUGANG_HINWEIS}</p>
                 </>
               )}
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

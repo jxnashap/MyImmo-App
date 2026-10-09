@@ -3,8 +3,8 @@
 // (PDF-Route, „Im Archiv ablegen“, „Ins Mieterportal“) an denselben Regeln scheitert.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { inflateSync } from "node:zlib";
 import { fakeSupabase, mockeNextUndSupabase, fangeRedirect, fd } from "./stubs/actionHarness";
+import { pdfZeilen, pdfTexte } from "./stubs/pdfText";
 import { DEFAULT_VORLAGEN } from "@/lib/dokumentVorlagen";
 import type { BriefFields } from "@/lib/pdf/erzeugen";
 
@@ -84,11 +84,11 @@ describe("erzeugeBriefPdf — dieselbe Prüfung wie die Vorschau", () => {
     expect(d.absaetze.join(" ")).toMatch(/Textform .* zwei Monate vor der Beendigung/);
   });
   it("Gegenprobe: bei der Mahnung wird die E-Signatur weiter eingebettet", async () => {
-    const { erfasst } = await erzeuge({ ...KUENDIGUNG, art: "mahnung", text: DEFAULT_VORLAGEN.mahnung, betrag: "950", datum: "2026-10-20" });
+    const { erfasst } = await erzeuge({ ...KUENDIGUNG, art: "mahnung", text: DEFAULT_VORLAGEN.mahnung, betrag: "950", datum: "2026-10-20", monat: "2026-10" });
     expect(erfasst[0].unterschriftPng).toBe("data:image/png;base64,AAAA");
   });
   it("{{mieter}} nennt alle — Quittung „Anna Weber und Ben Weber“", async () => {
-    const { erfasst } = await erzeuge({ ...KUENDIGUNG, art: "mietquittung", text: DEFAULT_VORLAGEN.mietquittung, datum: "2026-10-01", signieren: "" });
+    const { erfasst } = await erzeuge({ ...KUENDIGUNG, art: "mietquittung", text: DEFAULT_VORLAGEN.mietquittung, datum: "2026-10-01", signieren: "", betrag: "1070", monat: "2026-10" });
     expect(erfasst[0].absaetze[0]).toMatch(/dass Anna Weber und Ben Weber für das Mietobjekt/);
   });
   it("{{miete}} = die HEUTE geltende Kaltmiete laut Miet-Zeitraum (wie die Vorschau), nicht das Mieterfeld", async () => {
@@ -182,33 +182,6 @@ describe("/vorlagen wirbt nur mit dem, was gebaut ist (§ 5 UWG)", () => {
     expect(v).toMatch(/§ 573c BGB berechnet/);
   });
 });
-
-/** Textzeilen eines erzeugten PDFs (pdf-lib: Inhaltsströme sind Flate-gepackt, Text als Hex in `<…> Tj`). */
-function pdfZeilen(pdf: Uint8Array): string[] {
-  return pdfTexte(pdf).map((t) => t.text);
-}
-
-/** Wie pdfZeilen, mit Grundlinie (y) — für Abstände. */
-function pdfTexte(pdf: Uint8Array): { text: string; y: number }[] {
-  const b = Buffer.from(pdf);
-  const s = b.toString("latin1");
-  const zeilen: { text: string; y: number }[] = [];
-  const re = /stream\r?\n/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(s))) {
-    const start = m.index + m[0].length;
-    let inhalt = "";
-    try {
-      inhalt = inflateSync(b.subarray(start, s.indexOf("endstream", start))).toString("latin1");
-    } catch {
-      continue;
-    }
-    for (const t of inhalt.matchAll(/1 0 0 1 [\d.-]+ ([\d.-]+) Tm\s+<([0-9A-Fa-f]+)> Tj/g)) {
-      zeilen.push({ text: Buffer.from(t[2], "hex").toString("latin1"), y: Number(t[1]) });
-    }
-  }
-  return zeilen;
-}
 
 describe("B44 — das ECHTE PDF (lib/pdf/docPdf.ts)", () => {
   const basis = { titel: "Kündigung des Mietverhältnisses", absender: { name: "Max Muster" }, empfaengerAdresse: "Lindenstr. 1, 23611 Bad Schwartau", objekt: "MFH", absaetze: ["Text."] };

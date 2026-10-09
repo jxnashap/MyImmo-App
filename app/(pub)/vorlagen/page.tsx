@@ -23,12 +23,12 @@ const VORLAGEN = [
   { ico: BellRing, t: "Zahlungserinnerung", p: "Freundliche Erinnerung bei ausstehender Miete, mit Betrag und Kontodaten vorausgefüllt." },
   { ico: AlertTriangle, t: "Mahnung", p: "Förmliche Mahnung mit Zahlungsfrist — der nächste Schritt nach der Erinnerung." },
   { ico: DoorClosed, t: "Kündigung des Mietverhältnisses", p: "Ordentliche Kündigung durch den Vermieter — frühester Termin nach § 573c BGB berechnet, Gründe und Widerspruchshinweis im Brief. Zum Ausdrucken und Unterschreiben." },
-  { ico: Wrench, t: "Reparatur-Ankündigung", p: "Ankündigung von Instandhaltungs- oder Modernisierungsarbeiten mit Termin." },
-  { ico: Receipt, t: "NK-Abrechnung — Anschreiben", p: "Begleitschreiben zur Nebenkostenabrechnung mit Saldo (Nachzahlung oder Guthaben)." },
-  { ico: BadgeCheck, t: "Wohnungsgeberbestätigung (§ 19 BMG)", p: "Pflichtbescheinigung für die Anmeldung des Mieters beim Einwohnermeldeamt." },
+  { ico: Wrench, t: "Reparatur-Ankündigung", p: "Ankündigung von Instandhaltungs- oder Instandsetzungsarbeiten (§ 555a BGB) mit Termin. Für Modernisierungen gilt § 555c BGB — dafür ist sie nicht gedacht." },
+  { ico: Receipt, t: "NK-Abrechnung — Anschreiben", p: "Begleitschreiben zur Nebenkostenabrechnung — die Abrechnung selbst mit Saldo entsteht im NK-Bereich als eigenes PDF." },
+  { ico: BadgeCheck, t: "Wohnungsgeberbestätigung (§ 19 BMG)", p: "Bestätigung für die Anmeldung beim Einwohnermeldeamt — mit den Pflichtangaben nach § 19 Abs. 3 BMG: Wohnungsgeber, Eigentümer, Einzugsdatum, alle einziehenden Personen." },
   { ico: ClipboardCheck, t: "Mietbescheinigung", p: "Bestätigung des Mietverhältnisses, z. B. für Behörden oder Banken." },
-  { ico: HandCoins, t: "Mietquittung (§ 368 BGB)", p: "Quittung über gezahlte Miete — auf Verlangen des Mieters auszustellen." },
-  { ico: ScrollText, t: "Übergabeprotokoll", p: "Wohnungsübergabe bei Ein- oder Auszug: Zählerstände, Zustand, Schlüssel — beweissicher." },
+  { ico: HandCoins, t: "Mietquittung (§ 368 BGB)", p: "Quittung über eine eingegangene Mietzahlung mit Monat, Betrag und Tag — auf Verlangen des Mieters auszustellen." },
+  { ico: ScrollText, t: "Übergabeprotokoll", p: "Wohnungsübergabe bei Ein- oder Auszug: Zählerstände, Zustand je Raum, Schlüssel — zum Unterschreiben durch beide Seiten." },
 ];
 
 // Rückmeldungen der Double-Opt-in-Routen (/api/newsletter/*). Sie leiten mit

@@ -119,7 +119,9 @@ describe("NK-Abrechnung: geleistete Vorauszahlungen", () => {
     const pos: NkRawPosition[] = [
       { bezeichnung: "Müll", betrag: 1200, umlageschluessel: "Fläche", umlagefaehig: true, jahr: 2024 },
     ];
-    const a = berechneNk(2024, mieter2024, null, pos, null, { gebucht: 2100, gebuchteMonate: 12 });
+    // Mit Objektadresse — ohne jede Anschrift warnt die Abrechnung seit P4 (C44) zu Recht.
+    const objekt = { bezeichnung: "Haus", adresse: "Lindenstr. 1, 23611 Bad Schwartau" };
+    const a = berechneNk(2024, mieter2024, objekt, pos, null, { gebucht: 2100, gebuchteMonate: 12 });
     expect(a.vorauszahlungGeleistet).toBe(2100);
     expect(a.saldo).toBe(900); // 2100 − 1200 = Guthaben
     expect(a.warnungen).toHaveLength(0);

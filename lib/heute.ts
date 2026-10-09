@@ -70,6 +70,8 @@ export function fristZiel(quelle: string, id: string | null | undefined, label: 
   return "/termine";
 }
 export type ObjektOhneKaufdatum = { id: string; name: string };
+/** Dokument im Mieterportal ohne Abruf — der Zugang ist damit nicht belegt (§ 130 BGB). */
+export type NichtAbgerufenZeile = { mieterId: string; mieter: string; titel: string; zugestellt: string };
 /** Vollmacht eines Vertreters, die bald abläuft oder abgelaufen ist (lib/vertreter.ts). */
 export type VollmachtZeile = { id: string; name: string; gueltigBis: string; abgelaufen: boolean };
 
@@ -102,6 +104,8 @@ export function baueHeuteAufgaben(
     krediteOhneAuszahlung?: ObjektOhneKaufdatum[];
     /** Vollmachten mit Status „läuft bald ab“ oder „abgelaufen“ (Einstellungen → Vertreter). */
     vollmachten?: VollmachtZeile[];
+    /** Im Mieterportal bereitgestellt, aber seit ≥ 7 Tagen nicht abgerufen (lib/zugang.ts, P4 B43). */
+    nichtAbgerufen?: NichtAbgerufenZeile[];
   },
   heuteISO: string,
   grenze = 5,
@@ -193,6 +197,21 @@ export function baueHeuteAufgaben(
       aktion: "Vollmacht ansehen",
       dringend: v.abgelaufen,
       datum: v.gueltigBis.slice(0, 10),
+    });
+  }
+
+  // Nicht abgerufene Zustellungen (P4, B43): Bereitgestellt heißt nicht zugegangen. Nach einer
+  // Woche ohne Abruf erinnert eine Zeile daran — bei Fristsachen per Post oder Bote nachlegen.
+  for (const z of q.nichtAbgerufen ?? []) {
+    const am = z.zugestellt.slice(0, 10).split("-").reverse().join(".");
+    aufgaben.push({
+      art: "frist",
+      label: `Nicht abgerufen: „${z.titel}“`,
+      sub: `${z.mieter} · im Mieterportal seit ${am} — Zugang nicht belegt`,
+      href: `/tenants/${z.mieterId}`,
+      aktion: "Ansehen",
+      dringend: false,
+      datum: z.zugestellt.slice(0, 10),
     });
   }
 

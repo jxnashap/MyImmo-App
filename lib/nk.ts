@@ -3,6 +3,7 @@
 // Optional: CO₂-Kostenaufteilung nach CO2KostAufG (lib/co2.ts) — der
 // Vermieteranteil mindert als Gutschrift die vom Mieter zu tragende Summe.
 
+import { mieterAnschrift } from "@/lib/format";
 import { co2Aufteilung, CO2_STUFEN, co2PreisBekannt } from "@/lib/co2";
 import { sollFuerMonat, ymPlus, type MietkontoZeitraum } from "@/lib/mietkonto";
 
@@ -631,11 +632,18 @@ export function berechneNk(
 
   const mieterName =
     [tenant.vorname, tenant.nachname].filter(Boolean).join(" ") || "Mieter";
+  // P4, C44: dieselbe Anschrift wie im Brief (eigene Anschrift → Einheit + Objektadresse →
+  // Objekt). Vorher nur `mieter_adresse` — fehlte sie, druckte das PDF einen internen Hinweis
+  // „(Anschrift fehlt …)“ ins Anschriftfeld des Briefs an den Mieter.
+  const mieterAdresse = mieterAnschrift(tenant, property);
+  if (!mieterAdresse) {
+    warnungen.push("Keine Anschrift für den Mieter und keine Objektadresse hinterlegt — das Anschriftfeld der Abrechnung bleibt leer. Trage die Anschrift beim Mieter oder am Objekt nach.");
+  }
 
   return {
     jahr,
     mieterName,
-    mieterAdresse: tenant.mieter_adresse,
+    mieterAdresse,
     objekt: property?.bezeichnung || "—",
     objektAdresse: property?.adresse ?? null,
     einheit: tenant.einheit,

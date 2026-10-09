@@ -7,6 +7,11 @@ import { istAbgelehnt } from "@/lib/briefPruefung";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const feld = (form: FormData, k: string): string | undefined => {
+  const v = form.get(k);
+  return v == null ? undefined : String(v);
+};
+
 export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const supabase = await createClient();
@@ -36,6 +41,13 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     text: String(form.get("text") ?? ""),
     signieren: String(form.get("signieren") ?? ""),
     zugang: String(form.get("zugang") ?? ""),
+    // P4: Zusatzfelder. Fehlt ein Feld ganz (alter Browser-Stand), rechnet briefZusatzWerte
+    // mit dem Vertrag (Personen = Vertragspartner, Einzug = Mietbeginn).
+    monat: feld(form, "monat"),
+    personen: feld(form, "personen"),
+    einzug: feld(form, "einzug"),
+    eigentuemerAnderer: feld(form, "eigentuemerAnderer"),
+    eigentuemer: feld(form, "eigentuemer"),
   });
   if (!doc) return new NextResponse("Mieter nicht gefunden", { status: 404 });
   // Gesamtprüfung P3: Die Oberfläche sperrt den Knopf schon; das hier ist die Schranke.

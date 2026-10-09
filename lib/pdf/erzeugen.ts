@@ -17,7 +17,9 @@ import {
   ART_ZEIGT_KONTO,
   ART_BETRAG_RUECKFALL,
   briefDatum,
+  briefZusatzWerte,
   fehlendePlatzhalter,
+  type BriefZusatz,
   satzanfangGross,
   fuelleVorlage,
   vorlageFuer,
@@ -36,6 +38,7 @@ import {
 } from "@/lib/briefPruefung";
 import { vertragswerte, type MietkontoZeitraum } from "@/lib/mietkonto";
 import { heuteBerlin } from "@/lib/zeitraum";
+import { mieterAnschrift } from "@/lib/format";
 
 const eur = (n: number) =>
   new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) +
@@ -57,7 +60,7 @@ export type ErzeugtesPdf = {
 };
 
 // ---------------------------------------------------------------- Brief ----
-export type BriefFields = {
+export type BriefFields = BriefZusatz & {
   art: string;
   datum: string;
   betrag: string;
@@ -133,6 +136,12 @@ export async function erzeugeBriefPdf(
     nkvz: nkvz > 0 ? eur(nkvz) : "0,00 €",
     warmmiete: warm > 0 ? eur(warm) : "",
     vermieter: f.vName || profil?.name || "",
+    // P4: Monat, Personen, Einzug, Eigentümer — dieselbe Rechnung wie die Vorschau.
+    ...briefZusatzWerte(f, {
+      namen,
+      mietbeginn: tenant.mietbeginn,
+      vermieterAdresse: f.vAdr || [profil?.strasse, [profil?.plz, profil?.ort].filter(Boolean).join(" ")].filter(Boolean).join(", "),
+    }),
   };
 
   const quelle = f.text.trim() ? f.text : vorlageFuer(art);
@@ -189,11 +198,7 @@ export async function erzeugeBriefPdf(
     anrede: anrede(namen),
     // Fallback ohne Objektnamen — der enthält oft selbst die Straße, sie stand
     // im Adressfeld dann doppelt (gleiches Muster wie im DocGenerator).
-    empfaengerAdresse:
-      tenant.mieter_adresse ||
-      [tenant.einheit, property?.adresse].filter(Boolean).join(", ") ||
-      property?.bezeichnung ||
-      "–",
+    empfaengerAdresse: mieterAnschrift(tenant, property),
     objekt,
     absaetze,
     konto,

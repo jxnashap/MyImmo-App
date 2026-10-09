@@ -8,7 +8,7 @@
 
 import { bundesFeiertage } from "@/lib/mietStatus";
 import { vertragswerte, type MietkontoZeitraum } from "@/lib/mietkonto";
-import type { DocArt } from "@/lib/dokumentVorlagen";
+import { ART_MIT_MONAT, type DocArt } from "@/lib/dokumentVorlagen";
 
 // ------------------------------------------------------------ Datum ----
 const teile = (s: string) => s.slice(0, 10).split("-").map(Number) as [number, number, number];
@@ -300,6 +300,21 @@ export const SCHRIFTFORM: Partial<Record<DocArt, { stufe: "pflicht" | "ungeklaer
 /** Mail, Mieterportal und eingebettete Unterschrift gesperrt? */
 export const digitalGesperrt = (art: string): boolean => SCHRIFTFORM[art as DocArt]?.stufe === "pflicht";
 
+// --------------------------------------------- weitere Arten (P4) ----
+/** Pflichtangaben der Wohnungsgeberbestätigung (§ 19 Abs. 3 BMG) als Platzhalter der Vorlage. */
+export const WOHNUNGSGEBER_PFLICHT: { key: string; label: string }[] = [
+  { key: "vermieter", label: "Name des Wohnungsgebers" },
+  { key: "vermieteradresse", label: "Anschrift des Wohnungsgebers" },
+  { key: "eigentuemer", label: "Eigentümer" },
+  { key: "einzug", label: "Einzugsdatum" },
+  { key: "objekt", label: "Anschrift der Wohnung" },
+  { key: "personen", label: "meldepflichtige Personen" },
+];
+
+/** Die Reparatur-Vorlage deckt Erhaltung ab (§ 555a BGB), keine Modernisierung (B39). */
+export const REPARATUR_HINWEIS =
+  "Nur für Erhaltungsmaßnahmen (Instandhaltung und Instandsetzung, § 555a BGB). Eine Modernisierung (§ 555b BGB) ist spätestens drei Monate vorher in Textform anzukündigen — mit Art und Umfang, Beginn und Dauer und der erwarteten Mieterhöhung (§ 555c BGB). Dafür ist diese Vorlage nicht gedacht.";
+
 // ----------------------------------------------------------- Namen ----
 /** Weitere Mieter laut Vertrag (Freitext, je Zeile/Komma/Semikolon ein Name). */
 export function weitereMieterListe(text: string | null | undefined): string[] {
@@ -413,6 +428,18 @@ export function pruefeBrief(p: {
       fehler.push("Die Begründung enthält noch Lücken in [eckigen Klammern].");
     }
     if (!istIsoDatum(p.zugang)) fehlend.push("Zugang beim Mieter");
+  }
+
+  // P4 (B38/C43): Eine eigene Vorlage ohne Monat lässt offen, welche Miete gemeint ist.
+  if (ART_MIT_MONAT.includes(art) && !p.text.includes("{{monat}}")) {
+    warnungen.push("Deine gespeicherte Vorlage nennt den Mietmonat nicht ({{monat}}) — dann bleibt offen, welche Miete gemeint ist. „Zurücksetzen“ stellt den Standardtext wieder her.");
+  }
+  // P4 (B41): Ohne diese Angaben ist es keine Bestätigung nach § 19 Abs. 3 BMG.
+  if (art === "wohnungsgeber") {
+    const fehlt = WOHNUNGSGEBER_PFLICHT.filter((x) => !p.text.includes(`{{${x.key}}}`)).map((x) => x.label);
+    if (fehlt.length) {
+      fehler.push(`Deine gespeicherte Vorlage enthält nicht alle Pflichtangaben nach § 19 Abs. 3 BMG (es fehlt: ${fehlt.join(", ")}). „Zurücksetzen“ stellt den Standardtext wieder her.`);
+    }
   }
 
   if (AN_ALLE_MIETER.includes(art) && p.mieterAnzahl === 1) {

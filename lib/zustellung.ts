@@ -10,7 +10,7 @@
 import type { createClient } from "@/lib/supabase/server";
 import { pruefeZustellung, type ZustellPruefung } from "@/lib/mieterZugang";
 import { heuteBerlin } from "@/lib/zeitraum";
-import { benachrichtige } from "@/lib/benachrichtigung";
+import { benachrichtige, type Ergebnis } from "@/lib/benachrichtigung";
 
 type Db = Awaited<ReturnType<typeof createClient>>;
 
@@ -94,7 +94,7 @@ export async function zustelle(
     empfaenger: Empfaenger[];
     bestaetigung?: boolean;
   },
-): Promise<{ ok: true; an: string[] } | { ok: false; error: string }> {
+): Promise<{ ok: true; an: string[]; hinweisMail: Ergebnis[] } | { ok: false; error: string }> {
   if (opts.empfaenger.length === 0) return { ok: false, error: "Kein Empfänger — nichts zugestellt." };
   const zeilen = opts.empfaenger.map((e) => ({
     vermieter_id: opts.userId,
@@ -111,7 +111,10 @@ export async function zustelle(
   if (error || !data || (data as unknown[]).length !== zeilen.length) {
     return { ok: false, error: "Zustellung fehlgeschlagen — das Dokument ist im Mieterportal NICHT sichtbar." };
   }
-  // Hinweis-Mail „es liegt etwas bereit“ — beste Mühe, die Zustellung steht schon.
-  for (const e of opts.empfaenger) await benachrichtige(e.userId, "dokument", opts.notizId);
-  return { ok: true, an: opts.empfaenger.map((e) => e.email ?? "Portal-Konto") };
+  // Hinweis-Mail „es liegt etwas bereit“ — beste Mühe, die Zustellung steht schon. Das Ergebnis
+  // geht seit P4 (B43) an die Oberfläche: Ohne eingerichteten Versand geht nichts hinaus, und der
+  // Vermieter soll nicht annehmen, der Mieter wisse Bescheid.
+  const hinweisMail: Ergebnis[] = [];
+  for (const e of opts.empfaenger) hinweisMail.push(await benachrichtige(e.userId, "dokument", opts.notizId));
+  return { ok: true, an: opts.empfaenger.map((e) => e.email ?? "Portal-Konto"), hinweisMail };
 }

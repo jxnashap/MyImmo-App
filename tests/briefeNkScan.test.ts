@@ -36,8 +36,8 @@ describe("Brief-Vorlagen", () => {
   });
   it("leere Platzhalter werden gemeldet, {{grund}} ist optional", () => {
     const t = DEFAULT_VORLAGEN.mahnung;
-    expect(fehlendePlatzhalter(t, { betrag: "100,00 €", datum: "", grund: "" })).toEqual(["datum"]);
-    expect(fehlendePlatzhalter(t, { betrag: "100,00 €", datum: "6. Oktober 2026", grund: "" })).toEqual([]);
+    expect(fehlendePlatzhalter(t, { betrag: "100,00 €", monat: "Oktober 2026", datum: "", grund: "" })).toEqual(["datum"]);
+    expect(fehlendePlatzhalter(t, { betrag: "100,00 €", monat: "Oktober 2026", datum: "6. Oktober 2026", grund: "" })).toEqual([]);
     expect(fehlendePlatzhalter("seit dem {{mietbeginn}}", { mietbeginn: "–" })).toEqual(["mietbeginn"]);
   });
 });

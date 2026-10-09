@@ -16,9 +16,16 @@ import {
 } from "@/lib/pdf/erzeugen";
 import { ladeZustellLage, zustelle, type Empfaenger } from "@/lib/zustellung";
 import { SCHRIFTFORM, digitalGesperrt, istAbgelehnt } from "@/lib/briefPruefung";
+import { hinweisMailText } from "@/lib/zugang";
 import type { DocArt } from "@/lib/dokumentVorlagen";
 
-export type DokumentResult = { ok: boolean; error?: string; zugestelltAn?: string[] };
+export type DokumentResult = {
+  ok: boolean;
+  error?: string;
+  zugestelltAn?: string[];
+  /** Was aus der Hinweis-Mail wurde (lib/zugang.ts) — null/fehlend, wenn es nichts zu sagen gibt. */
+  hinweis?: string | null;
+};
 
 async function archiviere(opts: {
   userId: string;
@@ -78,7 +85,7 @@ async function archiviere(opts: {
   });
   revalidatePath("/portal");
   if (!z.ok) return { ok: false, error: `Im Archiv gespeichert, aber nicht zugestellt: ${z.error}` };
-  return { ok: true, zugestelltAn: z.an };
+  return { ok: true, zugestelltAn: z.an, hinweis: hinweisMailText(z.hinweisMail) };
 }
 
 export type BriefZustellLage = { sperre: string | null; warnungen: string[]; an: string[] } | { error: string };

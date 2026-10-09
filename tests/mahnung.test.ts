@@ -26,9 +26,10 @@ describe("Vorausgefüllter Brief", () => {
     expect(u.searchParams.get("art")).toBe("mahnung");
     expect(u.searchParams.get("betrag")).toBe("1234.5");
     expect(u.searchParams.get("datum")).toBe("2026-10-19");
-    expect(u.searchParams.get("grund")).toContain("Oktober 2026");
+    // Der Monat steht seit P4 (C43) als eigenes Feld im Brief ({{monat}}), nicht mehr im Grund.
+    expect(u.searchParams.get("monat")).toBe("2026-10");
     // Ausgeschrieben wie die übrigen Briefdaten, mit Artikel vor der Apposition (Design-Scan 06.10.2026).
-    expect(u.searchParams.get("grund")).toContain("fällig am 5. Oktober 2026, dem dritten Werktag");
+    expect(u.searchParams.get("grund")).toContain("am 5. Oktober 2026, dem dritten Werktag");
   });
 
   it("die Frist läuft über das Monatsende — ohne Ortszeit", () => {

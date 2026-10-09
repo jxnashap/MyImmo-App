@@ -24,7 +24,7 @@ export const ARTEN: { v: DocArt; label: string }[] = [
   { v: "zahlungserinnerung", label: "Zahlungserinnerung" },
   { v: "mahnung", label: "Mahnung" },
   { v: "kuendigung", label: "Kündigung" },
-  { v: "reparatur", label: "Reparatur-Ankündigung" },
+  { v: "reparatur", label: "Reparatur-Ankündigung (§ 555a BGB)" },
   { v: "nk-anschreiben", label: "NK-Abrechnung — Anschreiben" },
   { v: "wohnungsgeber", label: "Wohnungsgeberbestätigung (§ 19 BMG)" },
   { v: "mietbescheinigung", label: "Mietbescheinigung" },
@@ -76,7 +76,12 @@ export const DATUM_LABEL: Partial<Record<DocArt, string>> = {
 
 // Arten, bei denen ohne eingegebenen Betrag die Warmmiete laut Vertrag eingesetzt wird.
 // Geschuldet ist die Warmmiete (kalt + NK + Stellplatz), nicht die Kaltmiete.
-export const ART_BETRAG_RUECKFALL: DocArt[] = ["zahlungserinnerung", "mahnung", "mietquittung"];
+// NICHT die Quittung (Gesamtprüfung P4, B38): Sie bestätigt, was EINGEGANGEN ist (§ 368 BGB) —
+// ohne Eingabe bescheinigte sie die Warmmiete als erhalten, auch wenn nichts kam.
+export const ART_BETRAG_RUECKFALL: DocArt[] = ["zahlungserinnerung", "mahnung"];
+
+/** Arten, die einen Mietmonat nennen ({{monat}}, P4 B38/C43) — sonst bleibt offen, welche Miete gemeint ist. */
+export const ART_MIT_MONAT: DocArt[] = ["zahlungserinnerung", "mahnung", "mietquittung"];
 
 const MONATE_LANG = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
@@ -116,6 +121,7 @@ export const PLATZHALTER: { key: string; label: string }[] = [
   { key: "mieter", label: "Mietername" },
   { key: "objekt", label: "Mietobjekt" },
   { key: "betrag", label: "Betrag" },
+  { key: "monat", label: "Mietmonat" },
   { key: "miete", label: "akt. Kaltmiete" },
   { key: "datum", label: "Datum" },
   { key: "grund", label: "Begründung / Zusatztext" },
@@ -124,7 +130,59 @@ export const PLATZHALTER: { key: string; label: string }[] = [
   { key: "warmmiete", label: "Warmmiete (kalt + NK)" },
   { key: "nkvz", label: "NK-Vorauszahlung" },
   { key: "vermieter", label: "Vermietername" },
+  { key: "vermieteradresse", label: "Anschrift des Vermieters" },
+  { key: "einzug", label: "Einzugsdatum" },
+  { key: "personen", label: "Einziehende Personen" },
+  { key: "eigentuemer", label: "Eigentümer" },
 ];
+
+const MONAT_ISO = /^(\d{4})-(\d{2})$/;
+
+/** „2026-10“ → „Oktober 2026“; freier Text („September und Oktober 2026“) bleibt, wie er ist. */
+export function monatText(m: string | null | undefined): string {
+  const t = (m ?? "").trim();
+  const iso = MONAT_ISO.exec(t);
+  return iso ? `${MONATE_LANG[Number(iso[2]) - 1] ?? iso[2]} ${iso[1]}` : t;
+}
+
+/** Felder, die nur einzelne Arten brauchen — gemeinsam für Vorschau und PDF (P4, B38/B41/C43). */
+export type BriefZusatz = {
+  /** Mietmonat: „2026-10“ oder freier Text. */
+  monat?: string;
+  /** Einziehende Personen, je Zeile ein Name. `undefined` = alle Vertragspartner. */
+  personen?: string;
+  /** Einzugsdatum (ISO). `undefined` = Mietbeginn. */
+  einzug?: string;
+  /** "1" = der Wohnungsgeber ist NICHT Eigentümer — dann ist `eigentuemer` Pflicht. */
+  eigentuemerAnderer?: string;
+  /** Name des Eigentümers, wenn er nicht Wohnungsgeber ist (§ 19 Abs. 3 Nr. 1 BMG). */
+  eigentuemer?: string;
+};
+
+/**
+ * Werte der Zusatz-Platzhalter — EINE Rechnung für DocGenerator und lib/pdf/erzeugen.ts.
+ * Leere Werte bleiben leer: `fehlendePlatzhalter()` meldet sie dann, statt dass ein Satz
+ * ohne Monat, Person oder Eigentümer entsteht.
+ */
+export function briefZusatzWerte(
+  z: BriefZusatz,
+  basis: { namen: string[]; mietbeginn: string | null; vermieterAdresse: string },
+): Record<string, string> {
+  const personen = z.personen === undefined
+    ? basis.namen
+    : z.personen.split(/\n+/).map((x) => x.trim()).filter(Boolean);
+  const einzug = z.einzug === undefined ? basis.mietbeginn ?? "" : z.einzug;
+  const name = (z.eigentuemer ?? "").trim();
+  return {
+    monat: monatText(z.monat),
+    personen: personen.join(", "),
+    einzug: briefDatum(einzug),
+    eigentuemer: z.eigentuemerAnderer === "1"
+      ? (name ? `Eigentümer der Wohnung (nicht zugleich Wohnungsgeber): ${name}` : "")
+      : "Der Wohnungsgeber ist Eigentümer der Wohnung.",
+    vermieteradresse: basis.vermieterAdresse.trim(),
+  };
+}
 
 // Standardtexte (Briefkörper zwischen Anrede und Grußformel).
 // Absätze sind durch Leerzeilen getrennt.
@@ -139,7 +197,7 @@ Die aktuelle Kaltmiete für die o. g. Wohnung beträgt {{miete}}. Ich bitte Sie 
 
 Gemäß § 558b BGB haben Sie bis zum Ablauf des zweiten Kalendermonats nach Zugang dieses Schreibens Zeit, der Erhöhung zuzustimmen.`,
 
-  zahlungserinnerung: `bei der Durchsicht meiner Unterlagen habe ich festgestellt, dass die Mietzahlung in Höhe von {{betrag}} noch nicht eingegangen ist.
+  zahlungserinnerung: `bei der Durchsicht meiner Unterlagen habe ich festgestellt, dass die Miete für {{monat}} in Höhe von {{betrag}} noch nicht eingegangen ist.
 
 Sicherlich handelt es sich um ein Versehen. Ich bitte Sie, den offenen Betrag bis zum {{datum}} zu überweisen.
 
@@ -147,7 +205,7 @@ Sicherlich handelt es sich um ein Versehen. Ich bitte Sie, den offenen Betrag bi
 
 Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie es bitte als gegenstandslos.`,
 
-  mahnung: `die Mietzahlung in Höhe von {{betrag}} ist bei mir bislang nicht eingegangen. Hiermit mahne ich die offene Forderung an.
+  mahnung: `die Miete für {{monat}} in Höhe von {{betrag}} ist bei mir bislang nicht eingegangen. Hiermit mahne ich die offene Forderung an.
 
 Ich fordere Sie auf, den offenen Betrag bis spätestens {{datum}} zu begleichen.
 
@@ -180,15 +238,20 @@ Gemäß § 555a BGB sind Sie verpflichtet, Erhaltungsmaßnahmen zu dulden. Ich b
 
 Die Einzelheiten entnehmen Sie bitte der beigefügten Abrechnung. Bei Fragen stehe ich Ihnen gerne zur Verfügung.`,
 
+  // P4, B41: die vier Pflichtangaben nach § 19 Abs. 3 BMG — Name UND Anschrift des Wohnungsgebers,
+  // Eigentümer (wenn er es nicht selbst ist), Einzugsdatum, Anschrift der Wohnung, ALLE
+  // meldepflichtigen Personen (nicht nur der Mieter aus der Mieterzeile).
   wohnungsgeber: `Hiermit bestätige ich gemäß § 19 Bundesmeldegesetz (BMG) als Wohnungsgeber den Einzug in die unten genannte Wohnung.
 
-Einziehende Person(en): {{mieter}}
+Wohnungsgeber: {{vermieter}}, {{vermieteradresse}}
 
-Wohnung: {{objekt}}
+{{eigentuemer}}
 
-Einzugsdatum: {{mietbeginn}}
+Anschrift der Wohnung: {{objekt}}
 
-Wohnungsgeber: {{vermieter}}
+Einzugsdatum: {{einzug}}
+
+Einziehende Person(en): {{personen}}
 
 {{grund}}
 
@@ -204,7 +267,7 @@ Die monatliche Kaltmiete beträgt {{miete}}, die Nebenkosten-Vorauszahlung {{nkv
 
 Diese Bescheinigung wird auf Wunsch des Mieters zur Vorlage bei Behörden, Banken oder Vermietern ausgestellt.`,
 
-  mietquittung: `Hiermit wird bestätigt, dass {{mieter}} für das Mietobjekt {{objekt}} die Mietzahlung in Höhe von {{betrag}} geleistet hat (Zahlung erhalten am {{datum}}).
+  mietquittung: `Hiermit wird bestätigt, dass {{mieter}} für das Mietobjekt {{objekt}} die Miete für {{monat}} in Höhe von {{betrag}} gezahlt hat (Zahlung erhalten am {{datum}}).
 
 {{grund}}
 

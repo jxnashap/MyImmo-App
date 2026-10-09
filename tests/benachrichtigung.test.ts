@@ -153,7 +153,8 @@ describe("wer wann benachrichtigt wird", () => {
       antworten: { notizen: { id: "n1", mieter_id: "m1", titel: "NK", datei_name: "nk.pdf" }, mieter: { mietbeginn: "2021-01-01", mietende: null }, mieter_zugaenge: [{ user_id: "k-1", email: "a@b.de" }], zustellungen: [{ id: "z" }] },
       antwortFolge: { "zustellungen:select": [[]] },
     });
-    expect(await mod.stelleDokumentZu("n1")).toEqual({ ok: true, an: ["a@b.de"] });
+    // Mail ging hinaus → nichts zu melden (P4, B43: nur Abweichungen werden genannt).
+    expect(await mod.stelleDokumentZu("n1")).toEqual({ ok: true, an: ["a@b.de"], hinweis: null });
     expect(aufrufe).toEqual([["k-1", "dokument", "n1"]]);
   });
 });

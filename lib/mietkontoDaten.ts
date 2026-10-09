@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { gezahltImMonat, sollFuerMonat, zuJahrMonat } from "@/lib/mietkonto";
+import { gezahltImMonat, sollFuerMonat, zuJahrMonat, zuletztGezahltAm } from "@/lib/mietkonto";
 import { laeuftAm } from "@/lib/sollMiete";
 import type { MietkontoZeile, NacherfassungMieter } from "@/components/MietkontoBestaetigung";
 import type { Tenant, MietZeitraum, Property } from "@/lib/types";
@@ -91,6 +91,7 @@ export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
         minderung: soll.minderung,
         schonGebucht: gebuchtProMieter.get(m.id)?.has(monat) ?? false,
         gezahlt: gezahltImMonat(einnahmen.filter((e) => e.mieter_id === m.id), monat),
+        gezahltAm: zuletztGezahltAm(einnahmen.filter((e) => e.mieter_id === m.id), monat),
       });
     }
 

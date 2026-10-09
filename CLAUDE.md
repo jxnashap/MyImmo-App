@@ -2016,6 +2016,21 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   (Test sucht alle Verzeichnisse). (B26) **`DemoNurLesen` sperrt nur Felder in einem ABSENDENDEN Formular** —
   Suche, Befehlspalette, Rechner, Steuerjahr sind bedienbar. **Regel: Ein Lese-Werkzeug nie in ein `<form>` mit
   POST/Action legen** (sonst sperrt die Demo es wieder); ein PDF-Formular, das nur liest, trägt `data-demo-erlaubt`.
+- 📄 **Paket P4 der Gesamtprüfung (09.10.2026): weitere Dokumente** (`tests/paketP4.test.ts`, 31 Mutationen rot).
+  (B38) **Quittung ohne Warmmiete-Rückfall** (`ART_BETRAG_RUECKFALL` nur Erinnerung/Mahnung) und mit `{{monat}}`;
+  Mietkonto → bestätigter Eingang → „Quittung“ (`quittungUrl()` in `lib/mahnung.ts`, Tag über `zuletztGezahltAm()`).
+  (C43) Erinnerung/Mahnung nennen den Monat (`ART_MIT_MONAT`, `zahlungsBriefUrl` gibt `monat` mit). (B41)
+  **Wohnungsgeberbestätigung nach § 19 Abs. 3 BMG** über `briefZusatzWerte()` (`lib/dokumentVorlagen.ts`, EINE Rechnung
+  für Vorschau und PDF): `{{vermieteradresse}}`, `{{eigentuemer}}` (Voreinstellung „Wohnungsgeber ist Eigentümer“),
+  `{{einzug}}` (Standard Mietbeginn), `{{personen}}` (Standard alle Vertragspartner); `WOHNUNGSGEBER_PFLICHT` in
+  `pruefeBrief()`. (B39) Reparatur nur § 555a, `REPARATUR_HINWEIS`. (B43) **`lib/zugang.ts`**: `ZUGANG_HINWEIS` an allen
+  drei Zustellwegen, „bereitgestellt“ statt „zugestellt ✓“, `hinweisMailText()` aus dem Rückgabewert von `zustelle()`
+  (`hinweisMail`), Dashboard-Aufgabe `nichtAbgerufen()` (7 Tage, je Dokument, ein Abruf genügt). (C44) **`mieterAnschrift()`
+  in `lib/format.ts` ist die EINE Anschrift-Regel** (Brief, Vorschau, NK); `adressfeldZeilen()` druckt keinen internen
+  Hinweis mehr, die NK-Abrechnung warnt stattdessen. (C45) Käufer-Selbstauskunft: Personenstand nur per Haken.
+  (C46) /vorlagen-Texte. **Regeln:** (1) Ein neues Brieffeld kommt in `BriefZusatz` + `briefZusatzWerte()`, nie getrennt
+  in Vorschau und PDF. (2) Wer etwas ins Portal stellt, nennt es „bereitgestellt“ und zeigt `ZUGANG_HINWEIS`. (3) Eine
+  Anschrift im Adressfeld kommt aus `mieterAnschrift()`. Test-Helfer `tests/stubs/pdfText.ts` liest Text aus echten PDFs.
 - ✉️ **Paket P3 der Gesamtprüfung (08.10.2026): Kündigung und Mieterhöhung** (`tests/paketP3.test.ts` +
   `tests/paketP3Server.test.ts`, 32 Mutationen rot). **`pruefeBrief()` in `lib/briefPruefung.ts` ist die EINE Prüfung** für
   Brief-Generator (Vorschau, sperrt Knöpfe) UND `erzeugeBriefPdf` (Schranke: Route 400, Archiv lehnt ab — `{ abgelehnt }`).

@@ -7,8 +7,9 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ladeZustellLage, zustelle } from "@/lib/zustellung";
+import { hinweisMailText } from "@/lib/zugang";
 
-export type ZustellErgebnis = { ok: true; an?: string[] } | { error: string };
+export type ZustellErgebnis = { ok: true; an?: string[]; hinweis?: string | null } | { error: string };
 
 /** Ein vorhandenes Archiv-Dokument dem Mieter zustellen, dem es zugeordnet ist. */
 export async function stelleDokumentZu(notizId: string, bestaetigung = false): Promise<ZustellErgebnis> {
@@ -43,7 +44,7 @@ export async function stelleDokumentZu(notizId: string, bestaetigung = false): P
 
   revalidatePath(`/tenants/${doc.mieter_id}`);
   revalidatePath("/portal");
-  return { ok: true, an: z.an };
+  return { ok: true, an: z.an, hinweis: hinweisMailText(z.hinweisMail) };
 }
 
 /** Zustellung zurückziehen: sofort unsichtbar für den Mieter, die Zeile bleibt als Protokoll. */

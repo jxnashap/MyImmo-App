@@ -64,6 +64,24 @@ export function adressZeilen(addr: string | null | undefined): string[] {
   return zeilen;
 }
 
+/**
+ * Anschrift eines Mieters für das Adressfeld — EINE Regel für Brief, Vorschau und NK-Abrechnung
+ * (Gesamtprüfung P4, C44): eigene Anschrift, sonst Einheit + Objektadresse, sonst die
+ * Objektbezeichnung. Ohne Objektnamen im zweiten Schritt — der enthält oft selbst die Straße.
+ * `null`, wenn gar nichts bekannt ist (dann warnt der Aufrufer, statt einen Hinweis zu drucken).
+ */
+export function mieterAnschrift(
+  m: { mieter_adresse?: string | null; einheit?: string | null },
+  p: { adresse?: string | null; bezeichnung?: string | null } | null | undefined,
+): string | null {
+  return (
+    (m.mieter_adresse ?? "").trim() ||
+    ((p?.adresse ?? "").trim() ? [m.einheit, p?.adresse].map((x) => (x ?? "").trim()).filter(Boolean).join(", ") : "") ||
+    (p?.bezeichnung ?? "").trim() ||
+    null
+  );
+}
+
 // Umlagefähigkeit nach BetrKV §2 — wie in der alten App
 export function istUmlagefaehig(kat: string | null): "ja" | "nein" | "unklar" {
   // Voll umlagefähige BetrKV-§2-Kategorien. Hinweis: "Versicherung" meint Sach-/Haftpflicht.

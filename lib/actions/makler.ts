@@ -106,7 +106,7 @@ export async function uploadMaklerDatei(itemKey: string, fd: FormData): Promise<
 
 // „Aus MyImmo erzeugen": Käufer-Selbstauskunft-PDF aus der (verschlüsselten)
 // Selbstauskunft + Vermieter-/Nutzerprofil erzeugen und am Item ablegen.
-export async function generiereMaklerDokument(itemKey: string): Promise<MaklerDok> {
+export async function generiereMaklerDokument(itemKey: string, opts: { personenstand?: boolean } = {}): Promise<MaklerDok> {
   const item = MAKLER_CHECKLISTE.find((i) => i.key === itemKey);
   if (item?.auto !== "kaeufer_selbstauskunft") {
     throw new Error("Dieses Item kann nicht automatisch erzeugt werden.");
@@ -129,7 +129,8 @@ export async function generiereMaklerDokument(itemKey: string): Promise<MaklerDo
     email: profil?.email ?? null,
   };
 
-  const pdf = await buildKaeuferSelbstauskunftPdf(daten, absender);
+  // P4 (C45): Personenstand nur auf ausdrückliche Wahl (Standard: weglassen).
+  const pdf = await buildKaeuferSelbstauskunftPdf(daten, absender, { personenstand: opts.personenstand === true });
   const dataUri = `data:application/pdf;base64,${Buffer.from(pdf).toString("base64")}`;
 
   const { data, error } = await supabase
