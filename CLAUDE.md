@@ -2016,6 +2016,26 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   (Test sucht alle Verzeichnisse). (B26) **`DemoNurLesen` sperrt nur Felder in einem ABSENDENDEN Formular** —
   Suche, Befehlspalette, Rechner, Steuerjahr sind bedienbar. **Regel: Ein Lese-Werkzeug nie in ein `<form>` mit
   POST/Action legen** (sonst sperrt die Demo es wieder); ein PDF-Formular, das nur liest, trägt `data-demo-erlaubt`.
+- 📊 **Paket P8 der Gesamtprüfung (09.10.2026): Portfolio-Kennzahlen** (`tests/paketP8.test.ts`, 26 Mutationen rot).
+  (B24/B26) **`lib/portfolioKennzahlen.ts` ist die EINE Regel für Wert und Rendite:** `aktuellerWert()` = gepflegter Wert,
+  sonst Kaufpreis (Dashboard-Kachel = Ende der Wertkurve = Liste); `bruttoRendite()` auf den KAUFPREIS (sonst Wert, Basis
+  steht an der Zahl), `bruttoRenditePortfolio()` ohne „Selbst bewohnt“ (eigene Entscheidung: bringt keine Miete, würde
+  verdünnen; Leerstand zählt). Vorher drei Renditen für dasselbe Objekt (3,65 / 4,31 / 3,9 %). (B25/C17) **Monats-Cashflow je
+  Objekt über `objektMonat()`, das Dashboard summiert `portfolioMonat()`** (+ Posten „ohne Objekt“ mit dem Fenster aller
+  Buchungen); jeder Teil je Objekt auf ganze Euro → Σ Objektseiten = Dashboard, Warmmiete − Kosten = Cashflow. Vorher teilte
+  das Dashboard einen Zukauf mit 3 Monaten Kosten durch 12. Formel nennt verschiedene Fenster („je Objekt 3–12 Monate“).
+  (C15) **Seiten und Routen rechnen „heute“ nur über `heuteBerlin()`**, Jahre aus dem ISO-Text (`d.slice(0, 4)`), Export-
+  Zeitstempel über `zeitstempelBerlin()`; der Wächter in `tests/paketP8.test.ts` durchsucht alle `page.tsx`/`route.ts`/
+  `layout.tsx` unter `app/`. (C16) Objekt-Check: Grundstück ohne Wohnfläche/Baujahr; „läuft“ = `laeuftAm()`, ein künftiger
+  Mieter macht nicht „vermietet“, zählt aber als angelegt. (B28) Jahresbericht-PDF nennt beim laufenden Jahr den Zeitraum
+  (`berichtMonate()`/`unterjaehrigText()` in `lib/jahresberichtZeile.ts`, gleich mit der Seite). (B27) **Demo-Daten**
+  (`20261009100000`, per apply_migration, kein Löschbefehl, live geprüft + Reset am simulierten 15.08.2027 zurückgerollt):
+  Jahreskosten Jan.–Jun. 2026 im Schnappschuss (Versicherung, Grundsteuer, Müll, Straßenreinigung, Garten, Hausgeld Zentrum),
+  Kaufdatum ETW Leipzig Zentrum 01.12.2024 (vorher Kosten vor dem Kauf), **`demo_zinsen_fortschreiben()` läuft in `/api/demo`
+  nach dem Reset** und lässt fortgeschriebene Zinsen weiter fallen (vorher Vorjahreszins → Sprung nach oben). Der Demo-Cashflow
+  sinkt dadurch. **Regeln:** (1) Wert und Rendite nie selbst rechnen — `lib/portfolioKennzahlen.ts`. (2) Eine Monats-Kennzahl,
+  die das Dashboard summiert, entsteht je Objekt in `objektMonat()`. (3) In Seiten/Routen kein `new Date().getFullYear()` und
+  kein `toISOString().slice(0, 10)` für „heute“.
 - 📄 **Paket P4 der Gesamtprüfung (09.10.2026): weitere Dokumente** (`tests/paketP4.test.ts`, 31 Mutationen rot).
   (B38) **Quittung ohne Warmmiete-Rückfall** (`ART_BETRAG_RUECKFALL` nur Erinnerung/Mahnung) und mit `{{monat}}`;
   Mietkonto → bestätigter Eingang → „Quittung“ (`quittungUrl()` in `lib/mahnung.ts`, Tag über `zuletztGezahltAm()`).

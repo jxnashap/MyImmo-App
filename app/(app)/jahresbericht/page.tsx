@@ -4,7 +4,8 @@ import { euro } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
-import { jahresZeile } from "@/lib/jahresberichtZeile";
+import { jahresZeile, berichtMonate, unterjaehrigText } from "@/lib/jahresberichtZeile";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 export default async function JahresberichtPage(
   props0: {
@@ -13,7 +14,9 @@ export default async function JahresberichtPage(
 ) {
   const searchParams = await props0.searchParams;
   const supabase = await createClient();
-  const year = Number(searchParams.year) || new Date().getFullYear();
+  // Stichtag in Europe/Berlin (Audit P8, C15) — dieselbe Monatszahl wie das PDF.
+  const heuteIso = heuteBerlin();
+  const year = Number(searchParams.year) || Number(heuteIso.slice(0, 4));
 
   const [{ data: props }, { data: einn }, { data: kost }, { data: kred }] = await Promise.all([
     supabase.from("properties").select("*").order("bezeichnung"),
@@ -28,10 +31,10 @@ export default async function JahresberichtPage(
   const kredite = (kred ?? []) as Kredit[];
 
 
-  const heute = new Date();
-  const aktuellesJahr = heute.getFullYear();
-  // Raten: vergangene Jahre = 12 Monate, laufendes Jahr = verstrichene Monate, Zukunft = 12 (Projektion)
-  const monate = year < aktuellesJahr ? 12 : year > aktuellesJahr ? 12 : heute.getMonth() + 1;
+  const aktuellesJahr = Number(heuteIso.slice(0, 4));
+  // Raten: vergangene Jahre = 12 Monate, laufendes Jahr = begonnene Monate, Zukunft = 12 (Projektion)
+  const monate = berichtMonate(year, heuteIso);
+  const zeitraum = unterjaehrigText(year, monate);
 
   // Rechnung gemeinsam mit dem PDF (lib/jahresberichtZeile.ts) — vorher
   // rechnete das PDF anders und zog gebuchte Zinsen doppelt ab.
@@ -89,11 +92,7 @@ export default async function JahresberichtPage(
       <div className="section">
         <div className="section-header">
           <h3>Auswertung {year}</h3>
-          {year === aktuellesJahr && (
-            <div className="section-sub">
-              Stand Jan–{heute.toLocaleDateString("de-DE", { month: "short" })} {year} · unterjährig, Zins/Tilgung anteilig
-            </div>
-          )}
+          {zeitraum && <div className="section-sub">{zeitraum}</div>}
         </div>
         <div className="section-body">
           <div className="table-scroll"><table className="list-table report">

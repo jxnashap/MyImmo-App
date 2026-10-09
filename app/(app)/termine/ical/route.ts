@@ -1,5 +1,6 @@
 // iCal-Export: alle anstehenden Termine + automatische Fristen als .ics
 // (VEVENT, ganztägig). Vorlauf_tage wird als VALARM-Erinnerung abgebildet.
+import { heuteBerlin } from "@/lib/zeitraum";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { mieterFristen, nkErstellteJahre, kreditFristen, globaleFristen, objektFristen } from "@/lib/fristen";
@@ -28,12 +29,12 @@ export async function GET(req: NextRequest) {
 
   const nameOf = new Map((props ?? []).map((p) => [p.id, p.bezeichnung as string]));
   const nkJahre = nkErstellteJahre((nkNotizen ?? []) as { mieter_id: string | null; titel: string | null }[]);
-  const heute = new Date();
-  const grenze = new Date(heute.getFullYear() - 1, 0, 1); // ab letztem Jahr
+  // Ab dem 1. Januar des Vorjahres, nach Berliner Kalender (Audit P8, C15).
+  const grenze = `${Number(heuteBerlin().slice(0, 4)) - 1}-01-01`;
 
   const ereignisse: Ereignis[] = [];
   const add = (datum: string | null, titel: string, beschreibung: string, uid: string, vorlaufTage?: number | null) => {
-    if (!datum || new Date(datum) < grenze) return;
+    if (!datum || datum.slice(0, 10) < grenze) return;
     ereignisse.push({ datum, titel, beschreibung, uid, vorlaufTage });
   };
 
@@ -68,7 +69,8 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const stamp = `${ymd(new Date().toISOString().slice(0, 10))}T000000Z`;
+  // DTSTAMP ist laut RFC 5545 eine UTC-Zeit — hier also bewusst ohne Berliner Umrechnung.
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const zeilen: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",

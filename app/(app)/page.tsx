@@ -29,7 +29,8 @@ import { einnahmeDatum, type RawPoint } from "@/lib/zeitraum";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { ORGANISATION } from "@/lib/seo/jsonLd";
-import { kostenSchnittMonat, monatsCashflow, cashflowFormel, nkVorauszahlungenMonat, laufendeKosten } from "@/lib/cashflowKennzahl";
+import { cashflowFormel, nkVorauszahlungenMonat, objektMonat, portfolioMonat } from "@/lib/cashflowKennzahl";
+import { aktuellerWert, bruttoRenditePortfolio, renditeBasisText } from "@/lib/portfolioKennzahlen";
 import { sollKaltmiete, laeuftAm } from "@/lib/sollMiete";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
@@ -325,7 +326,10 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const vorname = ((profil as { name: string | null } | null)?.name ?? "").trim().split(/\s+/)[0] || null;
   const monatJahr = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric", timeZone: "Europe/Berlin" }).format(new Date());
 
-  const totalWert = properties.reduce((s, p) => s + (p.wert ?? 0), 0);
+  // Portfolio-Wert: gepflegter Wert, sonst Kaufpreis — dieselbe Regel wie Objektliste, Objektseite
+  // und die Wertkurve darunter (lib/portfolioKennzahlen.ts, Audit P8 B26). Vorher zählte ein Objekt
+  // ohne Wert hier mit 0 €, in der Kurve mit dem Kaufpreis — die Kachel passte nicht zur Kurve.
+  const totalWert = properties.reduce((s, p) => s + (aktuellerWert(p) ?? 0), 0);
 
   // Portfolio-Wertentwicklung: je Objekt Kaufpreis → erfasste Stände →
   // aktueller Wert, an jedem Änderungsdatum aufsummiert.
@@ -340,7 +344,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     properties.map((p) => ({
       kaufpreis: p.kaufpreis,
       kaufdatum: p.kaufdatum ?? null,
-      aktuellerWert: p.wert,
+      aktuellerWert: aktuellerWert(p),
       standDatum: p.marktwert_stand ?? null,
       historie: histNachObjekt.get(p.id) ?? [],
       heute: heuteISO,
@@ -349,6 +353,8 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // „seit Anschaffung" = heutiger Wert gegen Kaufpreise, NICHT erster gegen
   // letzten Punkt der Reihe (der zählte jeden Zukauf als Wertsteigerung —
   // Demo +754,9 % statt +11,9 %). Begründung in lib/wert/verlauf.ts.
+  // Hier bewusst nur der GEPFLEGTE Wert: Ein Objekt ohne Wert hat keinen Zuwachs, es soll den
+  // Prozentwert nicht mit „0 %“ verdünnen.
   const wertzuwachs = wertzuwachsGgKaufpreis(properties.map((p) => ({ kaufpreis: p.kaufpreis, aktuellerWert: p.wert })));
   const portfolioWertProzent = wertzuwachs?.prozent ?? null;
   // Soll-Kaltmiete/Mo.: aus den laufenden Mietern, sonst aus dem Objektfeld —
@@ -356,26 +362,45 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // Paket B (06.10.2026): mit den Beträgen, die DIESEN Monat gelten (Miet-Zeiträume vor dem
   // Mieterfeld) — dieselbe Zahl wie im Mietkonto. Vorher blieb eine Erhöhung hier unsichtbar.
   const mieterJetzt = mitGeltendenBetraegen(mieterRows, (mzRows ?? []) as never[], heuteISO.slice(0, 7));
-  const totalMiete = properties.reduce((s, p) => s + sollKaltmiete(p, mieterJetzt, heuteISO).betrag, 0);
-  // Getilgte Darlehen (Restschuld 0) zahlen keine Rate mehr (Audit 07.10.2026, B17).
-  const kreditRates = summeRaten(kredite);
-  // Laufende Kosten: Ø der letzten 12 Monate MIT BUCHUNGEN, geteilt durch die
-  // Monate, die das Fenster wirklich umfasst — Begründung in
-  // lib/cashflowKennzahl.ts (vorher / 12 fest: Neue Nutzer sahen einen Bruchteil
-  // ihrer Kosten). Dieselbe Rechnung steht auf der Objektseite.
-  // Schuldzinsen-Buchungen zählen hier NICHT — sie stecken schon in der
-  // Kreditrate (lib/cashflowKennzahl.ts, `laufendeKosten`).
-  const kostenSchnitt = kostenSchnittMonat(laufendeKosten(kosten), [...einnahmen, ...kosten], heuteISO);
-  const monatKosten = Math.round(kostenSchnitt.betrag);
-  const totalKosten = kreditRates + monatKosten;
-  // Warmmiete = Soll-Kaltmiete + NK-Vorauszahlungen laufender Verträge —
-  // Begründung in lib/cashflowKennzahl.ts. Die Rendite bleibt kalt.
-  // NK nur von Mietern, die zu einem Objekt gehören — deren Kaltmiete zählt
-  // in totalMiete; ein Mieter ohne Objekt stünde sonst nur halb im Cashflow.
+  // Monats-Cashflow JE OBJEKT, das Dashboard summiert (Audit P8, B25 + C17; lib/cashflowKennzahl.ts):
+  // jedes Objekt mit seinem eigenen Kostenfenster — genau die Rechnung seiner Objektseite —, jeder
+  // Teil auf ganze Euro gerundet. Getilgte Darlehen zahlen keine Rate (summeRaten, B17); Schuldzinsen-
+  // Buchungen stecken in der Rate und zählen nicht als Kosten (laufendeKosten). Warmmiete = Soll-
+  // Kaltmiete + NK-Vorauszahlungen laufender Verträge; die Rendite bleibt kalt.
   const objektIds = new Set(properties.map((p) => p.id));
-  const warmmiete = totalMiete + nkVorauszahlungenMonat(mieterJetzt.filter((m) => m.prop_id && objektIds.has(m.prop_id)), heuteISO);
-  const cashflow = monatsCashflow({ warmmiete, kreditraten: kreditRates, kostenSchnitt: monatKosten });
-  const bruttoRendite = totalWert > 0 ? ((totalMiete * 12) / totalWert) * 100 : 0;
+  const sollJeObjekt = new Map(properties.map((p) => [p.id, sollKaltmiete(p, mieterJetzt, heuteISO).betrag]));
+  const mitObjekt = (id: string | null | undefined) => !!id && objektIds.has(id);
+  const monat = portfolioMonat([
+    ...properties.map((p) => objektMonat({
+      kaltmiete: sollJeObjekt.get(p.id) ?? 0,
+      nk: nkVorauszahlungenMonat(mieterJetzt.filter((m) => m.prop_id === p.id), heuteISO),
+      raten: summeRaten(kredite.filter((k) => k.prop_id === p.id)),
+      kosten: kosten.filter((k) => k.prop_id === p.id),
+      einnahmen: einnahmen.filter((e) => e.prop_id === p.id),
+      heuteIso: heuteISO,
+    })),
+    // Ohne Objekt: Darlehen und Kosten, die keinem (vorhandenen) Objekt gehören — Fenster über ALLE
+    // Buchungen. Ein Mieter ohne Objekt zählt nicht (seine Kaltmiete steht in keiner Objekt-Miete).
+    objektMonat({
+      kaltmiete: 0,
+      nk: 0,
+      raten: summeRaten(kredite.filter((k) => !mitObjekt(k.prop_id))),
+      kosten: kosten.filter((k) => !mitObjekt(k.prop_id)),
+      einnahmen: [...einnahmen, ...kosten],
+      heuteIso: heuteISO,
+    }),
+  ]);
+  const totalMiete = monat.kaltmiete;
+  const kreditRates = monat.raten;
+  const monatKosten = monat.kosten;
+  const totalKosten = kreditRates + monatKosten;
+  const warmmiete = monat.warmmiete;
+  const cashflow = monat.cashflow;
+  const kostenSchnitt = monat.schnitt;
+  // Rendite auf den Kaufpreis wie Objektseite und Objektliste (B24), ohne selbst bewohnte Objekte.
+  const portfolioRendite = bruttoRenditePortfolio(
+    properties.map((p) => ({ kaufpreis: p.kaufpreis, wert: p.wert, obj_status: p.obj_status, kaltmieteMonat: sollJeObjekt.get(p.id) ?? 0 })),
+  );
   // Leerstandsquote: nur vermietbare Objekte (Status "Vermietet"/"Leer");
   // Benchmark: 2–5 % gesund, >10 % kritisch.
   const status = (p: { obj_status: string | null }) => (p.obj_status ?? "").trim().toLowerCase();
@@ -498,7 +523,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
         <Link href="/cashflow" className="kpi-feld">
           <span className="kpi-label">Warmmiete / Mo.</span>
           <span className="kpi-value">{euro(warmmiete)}</span>
-          <span className="kpi-sub">Kalt {euro(totalMiete)}{bruttoRendite > 0 ? ` · ${bruttoRendite.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % Rendite` : ""}</span>
+          <span className="kpi-sub">Kalt {euro(totalMiete)}{portfolioRendite ? ` · ${portfolioRendite.prozent.toLocaleString("de-DE", { maximumFractionDigits: 1 })} % ${renditeBasisText(portfolioRendite.basis)}` : ""}</span>
         </Link>
         <Link href="/cashflow" className="kpi-feld">
           <span className="kpi-label">Kosten / Mo.</span>

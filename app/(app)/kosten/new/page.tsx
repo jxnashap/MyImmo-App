@@ -1,3 +1,4 @@
+import { heuteBerlin } from "@/lib/zeitraum";
 import Link from "next/link";
 import SubmitButton from "@/components/SubmitButton";
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +17,7 @@ export default async function NeueKostenPage(props0: { searchParams: Promise<{ p
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const tenants = (miet ?? []) as Pick<Tenant, "id" | "vorname" | "nachname" | "prop_id">[];
   const back = searchParams.back || "/kosten";
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = heuteBerlin();
 
   return (
     <div className="fade-up">

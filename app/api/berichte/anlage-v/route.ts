@@ -1,5 +1,6 @@
 // Anlage-V-Aufstellung als PDF im MyImmo-Briefstil.
 // Query: ?jahr=2025&anteil=80&satz= (leer = automatisch je Baujahr)
+import { heuteBerlin } from "@/lib/zeitraum";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { istVermieterKonto } from "@/lib/rolle";
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
   if (sperre) return NextResponse.redirect(new URL("/einstellungen?tab=abo", req.url));
 
   const q = req.nextUrl.searchParams;
-  const jahr = Number(q.get("jahr")) || new Date().getFullYear() - 1;
+  const jahr = Number(q.get("jahr")) || Number(heuteBerlin().slice(0, 4)) - 1;
   const anteil = q.get("anteil") !== null && q.get("anteil") !== ""
     ? Number(q.get("anteil")) || 0
     : AFA_DEFAULT.gebaeudeAnteil;

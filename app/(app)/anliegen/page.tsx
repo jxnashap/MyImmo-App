@@ -3,6 +3,7 @@
 // der Bewerbungs-Eingang mit Selbstauskunft-Links, und die Service-Partner
 // (Handwerker/Hausmeister) samt Aufträgen.
 // NICHT "Mieterportal" nennen: So heißt die Mieter-Oberfläche unter /portal.
+import { heuteBerlin } from "@/lib/zeitraum";
 import { ladeEreignisse } from "@/lib/vorgang";
 import Link from "next/link";
 import { MessageSquareText, UserRoundSearch, Wrench, Eye, Megaphone } from "lucide-react";
@@ -227,7 +228,7 @@ export default async function AnliegenPage(
       name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter",
       objekt: objektName(m.prop_id),
       verknuepft: verbundeneIds.has(m.id),
-      beendet: !!m.mietende && m.mietende < new Date().toISOString().slice(0, 10),
+      beendet: !!m.mietende && m.mietende < heuteBerlin(),
     }))
     .sort((a, b) => Number(b.verknuepft) - Number(a.verknuepft) || Number(a.beendet) - Number(b.beendet) || a.name.localeCompare(b.name, "de"))
     .map(({ id, name, objekt, verknuepft }) => ({ id, name, objekt, verknuepft }));

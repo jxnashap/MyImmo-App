@@ -1,3 +1,4 @@
+import { heuteBerlin } from "@/lib/zeitraum";
 import { NextResponse } from "next/server";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
@@ -88,7 +89,7 @@ export async function GET() {
   // BOM, damit Excel die UTF-8-Umlaute korrekt erkennt.
   const csv = "\ufeff" + [kopf.map(esc).join(";"), ...rows].join("\r\n") + "\r\n";
 
-  const heute = new Date().toISOString().split("T")[0];
+  const heute = heuteBerlin();
   return new NextResponse(csv, {
     status: 200,
     headers: {

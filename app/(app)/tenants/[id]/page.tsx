@@ -142,7 +142,7 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
           stufen: m.staffel_stufen ?? 0,
         })
       : [];
-  const heuteIso = new Date().toISOString().split("T")[0];
+  const heuteIso = heuteBerlin();
   const naechsteStufe = plan.find((st) => st.datum >= heuteIso)?.datum;
   // Stufe schon als Miet-Zeitraum hinterlegt? (gleicher Monat, gleiche Kaltmiete — wie uebernehmeStaffel)
   const imMietkonto = new Set(zeitraeume.map((z) => `${z.von.slice(0, 7)}|${Number(z.kaltmiete)}`));

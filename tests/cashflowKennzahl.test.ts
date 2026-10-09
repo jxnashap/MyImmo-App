@@ -150,14 +150,15 @@ describe("Warmmiete im Cashflow, Kaltmiete in Rendite und Steuer", () => {
   it("das Dashboard lädt die Vorauszahlung und rechnet sie ein", () => {
     expect(dashboard).toMatch(/select\("[^"]*nk_vorauszahlung[^"]*"\)/);
     // NK nur von Mietern mit Objekt (tests/datenluecken.test.ts).
-    expect(dashboard).toMatch(/warmmiete = totalMiete \+ nkVorauszahlungenMonat\(mieterJetzt\.filter\(/);
-    expect(dashboard).toMatch(/monatsCashflow\(\{ warmmiete, kreditraten: kreditRates, kostenSchnitt: monatKosten \}\)/);
+    // Seit P8 (09.10.2026) je Objekt über objektMonat(), das Dashboard summiert (portfolioMonat).
+    expect(dashboard).toMatch(/nk: nkVorauszahlungenMonat\(mieterJetzt\.filter\(\(m\) => m\.prop_id === p\.id\), heuteISO\)/);
+    expect(dashboard).toMatch(/const warmmiete = monat\.warmmiete;/);
+    expect(dashboard).toMatch(/const cashflow = monat\.cashflow;/);
   });
   it("die Rendite bleibt kalt", () => {
-    expect(dashboard).toMatch(/bruttoRendite = totalWert > 0 \? \(\(totalMiete \* 12\)/);
-    // Kalt UND auf den Kaufpreis (Audit 01.10.2026, B20) — die Beschriftung sagte
-    // „/ Kaufpreis“, gerechnet wurde mit dem Wert.
-    expect(objekt).toMatch(/rendite = miete && renditeBasis \? \(miete \* 12 \/ renditeBasis\)/);
+    // Kalt UND auf den Kaufpreis (Audit 01.10.2026, B20; seit P8 eine Regel für alle Stellen).
+    expect(dashboard).toMatch(/bruttoRenditePortfolio\([\s\S]{0,200}kaltmieteMonat: sollJeObjekt\.get\(p\.id\)/);
+    expect(objekt).toMatch(/bruttoRendite\(p, miete\)/);
   });
   it("die Anlage V trennt weiter Kaltmiete (Zeile 9) und Umlagen (Zeile 13)", () => {
     const q = readFileSync("lib/anlageV.ts", "utf8");
@@ -172,14 +173,14 @@ describe("Dashboard und Objektseite rechnen dieselbe Zahl", () => {
 
   it("beide benutzen die gemeinsame Rechnung, keine eigene „/ 12“ mehr", () => {
     for (const [name, q] of [["Dashboard", dashboard], ["Objektseite", objekt]] as const) {
-      expect(q, name).toMatch(/kostenSchnittMonat\(/);
-      expect(q, name).toMatch(/monatsCashflow\(/);
+      expect(q, name).toMatch(/objektMonat\(\{/);
       expect(q, name).not.toMatch(/(koLetzte12M|kosten12M)\s*\/\s*12/);
     }
   });
 
   it("die Objektseite zieht die laufenden Kosten ab (vorher: nur Miete − Kreditrate)", () => {
-    expect(objekt).toMatch(/cashflowMo = monatsCashflow\(\{ warmmiete: miete \+ nkVorausMo, kreditraten: totalKreditRate, kostenSchnitt: monatsKosten \}\)/);
+    expect(objekt).toMatch(/const monat = objektMonat\(\{[\s\S]{0,200}raten: totalKreditRate,\s*kosten,/);
+    expect(objekt).toMatch(/const cashflowMo = monat\.cashflow;/);
     expect(objekt).not.toMatch(/cashflowMo = miete - totalKreditRate/);
   });
 

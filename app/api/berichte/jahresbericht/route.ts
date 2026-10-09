@@ -7,7 +7,8 @@ import { featureSperre } from "@/lib/planGate";
 import { buildJahresberichtPdf, type JahresberichtZeile } from "@/lib/pdf/berichtPdf";
 import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
-import { jahresZeile } from "@/lib/jahresberichtZeile";
+import { jahresZeile, berichtMonate, unterjaehrigText } from "@/lib/jahresberichtZeile";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,7 +30,9 @@ export async function GET(req: NextRequest) {
   const sperre = await featureSperre(supabase, "steuer");
   if (sperre) return NextResponse.redirect(new URL("/einstellungen?tab=abo", req.url));
 
-  const jahr = Number(req.nextUrl.searchParams.get("jahr")) || new Date().getFullYear();
+  // Stichtag in Europe/Berlin (Audit P8, C15) — wie die Seite.
+  const heuteIso = heuteBerlin();
+  const jahr = Number(req.nextUrl.searchParams.get("jahr")) || Number(heuteIso.slice(0, 4));
 
   const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: profil }] =
     await Promise.all([
@@ -45,8 +48,7 @@ export async function GET(req: NextRequest) {
   const kosten = (kost ?? []) as Kosten[];
   const kredite = (kred ?? []) as Kredit[];
 
-  const heute = new Date();
-  const monate = jahr < heute.getFullYear() ? 12 : jahr > heute.getFullYear() ? 12 : heute.getMonth() + 1;
+  const monate = berichtMonate(jahr, heuteIso);
 
   const zeilen: JahresberichtZeile[] = properties.map((p) => {
     const z = jahresZeile(p.id, jahr, monate, { einnahmen, kosten, kredite, kaufdatum: p.kaufdatum });
@@ -57,7 +59,7 @@ export async function GET(req: NextRequest) {
     name: profil?.name || "MyImmo",
     adresse: [profil?.strasse, [profil?.plz, profil?.ort].filter(Boolean).join(" ")].filter(Boolean).join(", ") || null,
     email: profil?.email ?? null,
-  });
+  }, { zeitraum: unterjaehrigText(jahr, monate) });
 
   return new NextResponse(Buffer.from(pdf), {
     status: 200,

@@ -1,3 +1,4 @@
+import { heuteBerlin } from "@/lib/zeitraum";
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
 import { createClient } from "@/lib/supabase/server";
@@ -188,7 +189,7 @@ export async function GET() {
 
   zip.file(
     "LIESMICH.txt",
-    `MyImmo — Datenexport vom ${new Date().toLocaleString("de-DE")}\n\n` +
+    `MyImmo — Datenexport vom ${new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}\n\n` +
       `daten/      alle Tabellen als CSV (Trennzeichen ;) + alles.json\n` +
       hinweisRolle,
   );
@@ -197,7 +198,7 @@ export async function GET() {
   return new NextResponse(Buffer.from(buf), {
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="myimmo-export-${new Date().toISOString().slice(0, 10)}.zip"`,
+      "Content-Disposition": `attachment; filename="myimmo-export-${heuteBerlin()}.zip"`,
       "Cache-Control": "no-store",
     },
   });

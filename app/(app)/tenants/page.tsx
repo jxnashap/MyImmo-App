@@ -1,3 +1,4 @@
+import { heuteBerlin } from "@/lib/zeitraum";
 import Link from "next/link";
 import { Plus, User, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -37,7 +38,7 @@ export default async function TenantsPage(props0: { searchParams: Promise<{ q?: 
   // abgerechnete Kaution stand dauerhaft unter „Kaution offen". Die Kennzahlen
   // beziehen sich jetzt auf LAUFENDE Mietverhaeltnisse; die Liste darunter
   // zeigt weiterhin alle.
-  const heuteISO = new Date().toISOString().slice(0, 10);
+  const heuteISO = heuteBerlin();
   const laeuft = (m: Tenant) =>
     (m.mietende ?? "") === "" || (m.mietende as string) >= heuteISO;
   const aktive = list.filter(laeuft);

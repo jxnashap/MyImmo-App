@@ -1,4 +1,5 @@
 // Neue Buchung (Einnahme ODER Ausgabe) — gemeinsames Formular mit Umschalter.
+import { heuteBerlin } from "@/lib/zeitraum";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import BuchungForm from "@/components/BuchungForm";
@@ -32,7 +33,7 @@ export default async function NeueBuchungPage(
         back="/cashflow"
         typInitial={searchParams.typ === "ausgabe" ? "ausgabe" : "einnahme"}
         propInitial={searchParams.prop ?? ""}
-        datumInitial={new Date().toISOString().slice(0, 10)}
+        datumInitial={heuteBerlin()}
         // Vorbelegung aus Links (z. B. „Nachzahlung buchen“ auf der NK-Seite). Nur bekannte
         // Kategorien, ein Betrag als Zahl und ein eigener Mieter — sonst leer wie bisher.
         kategorieInitial={([...EINNAHME_KATEGORIEN, ...KOSTEN_KATEGORIEN] as readonly string[]).includes(searchParams.kategorie ?? "") ? searchParams.kategorie : undefined}

@@ -108,9 +108,10 @@ describe("B19/B20/B21/B23/B32/C29: App-Oberflaeche", () => {
   });
   it("Objektseite: Rendite rechnet auf den Kaufpreis, Beschriftung folgt der Basis", () => {
     const src = lies("app/(app)/properties/[id]/page.tsx");
-    expect(src).toContain("const renditeBasis = p.kaufpreis || wert;");
+    // Seit P8 (09.10.2026) über die gemeinsame Regel bruttoRendite() — Basis Kaufpreis, sonst Wert.
+    expect(src).toContain("const renditeErg = bruttoRendite(p, miete);");
     expect(src).not.toMatch(/const rendite = miete && wert \?/);
-    expect(src).toContain('p.kaufpreis ? "Jahreskaltmiete / Kaufpreis"');
+    expect(src).toContain('renditeErg?.basis === "wert" ? "Jahreskaltmiete / aktueller Wert (kein Kaufpreis erfasst)" : "Jahreskaltmiete / Kaufpreis"');
   });
   it("Einstellungen lesen ?tab= und pruefen gegen die Tab-Liste", () => {
     const src = lies("components/SettingsView.tsx");

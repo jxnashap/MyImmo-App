@@ -1,3 +1,4 @@
+import { heuteBerlin } from "@/lib/zeitraum";
 import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
 import { createClient } from "@/lib/supabase/server";
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest, props: { params: Promise<{ id: strin
   const sperre = await featureSperre(supabase, "nk_pdf");
   if (sperre) return new NextResponse(sperre, { status: 402 });
 
-  const jahr = Number(req.nextUrl.searchParams.get("jahr")) || new Date().getFullYear() - 1;
+  const jahr = Number(req.nextUrl.searchParams.get("jahr")) || Number(heuteBerlin().slice(0, 4)) - 1;
   const { data: prop, error: e1 } = await supabase.from("properties").select("id,bezeichnung").eq("id", id).eq("user_id", user.id).maybeSingle();
   if (e1) return new NextResponse("Objekt konnte nicht geladen werden", { status: 500 });
   if (!prop) return new NextResponse("Objekt nicht gefunden", { status: 404 });

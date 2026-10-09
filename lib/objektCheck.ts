@@ -6,6 +6,7 @@
 // Was für ein Objekt nicht gilt (Mieter bei Leerstand, Kredit ohne Darlehen, Gebäudeanteil beim
 // Grundstück), zählt nicht mit — sonst kann ein gepflegtes Objekt nie vollständig sein.
 // Reine Funktion.
+import { laeuftAm } from "@/lib/sollMiete";
 
 export type CheckPunkt = { schluessel: string; label: string; grund: string; href: string; erfuellt: boolean };
 export type ObjektCheck = { erfuellt: number; gesamt: number; punkte: CheckPunkt[]; fehlend: CheckPunkt[] };
@@ -25,12 +26,16 @@ export type CheckObjekt = {
 export type CheckMieter = { id: string; prop_id: string | null; mietbeginn: string | null; mietende: string | null };
 export type CheckKredit = { id: string; prop_id: string | null; auszahlung_datum: string | null };
 
-const laeuft = (m: CheckMieter, heute: string) => !m.mietende || m.mietende >= heute;
+// „Läuft der Vertrag?“ — dieselbe Regel wie die Soll-Miete (lib/sollMiete.ts, Audit P8 C16). Vorher
+// zählte hier ein Mieter, der erst im nächsten Monat einzieht, als laufend.
+const kommt = (m: CheckMieter, heute: string) => !!m.mietbeginn && m.mietbeginn.slice(0, 10) > heute.slice(0, 10);
 
 export function objektCheck(p: CheckObjekt, mieter: CheckMieter[], kredite: CheckKredit[], heute: string): ObjektCheck {
   const bearbeiten = `/properties/${p.id}/edit`;
   const grundstueck = (p.typ ?? "") === "Grundstück";
-  const eigeneMieter = mieter.filter((m) => m.prop_id === p.id && laeuft(m, heute));
+  const eigeneMieter = mieter.filter((m) => m.prop_id === p.id && laeuftAm(m, heute));
+  // Schon angelegt, zieht aber erst ein: „Mieter angelegt“ ist erfüllt, vermietet ist das Objekt noch nicht.
+  const kuenftigeMieter = mieter.filter((m) => m.prop_id === p.id && kommt(m, heute));
   const eigeneKredite = kredite.filter((k) => k.prop_id === p.id);
   const vermietet = (p.obj_status ?? "") === "Vermietet" || eigeneMieter.length > 0;
 
@@ -38,16 +43,19 @@ export function objektCheck(p: CheckObjekt, mieter: CheckMieter[], kredite: Chec
     { schluessel: "adresse", label: "Adresse", grund: "für Briefe, Abrechnungen und die Wertschätzung", href: bearbeiten, erfuellt: !!p.adresse?.trim() },
     { schluessel: "kaufpreis", label: "Kaufpreis", grund: "Grundlage für AfA, Rendite und Wert", href: bearbeiten, erfuellt: (p.kaufpreis ?? 0) > 0 },
     { schluessel: "kaufdatum", label: "Kaufdatum", grund: "AfA im Kaufjahr, 15 %-Grenze und Spekulationsfrist", href: bearbeiten, erfuellt: !!p.kaufdatum },
-    { schluessel: "flaeche", label: "Wohnfläche", grund: "Umlageschlüssel und Mietspiegel-Vergleich", href: bearbeiten, erfuellt: (p.flaeche ?? 0) > 0 },
-    { schluessel: "baujahr", label: "Baujahr", grund: "AfA-Satz und Wertschätzung", href: bearbeiten, erfuellt: (p.baujahr ?? 0) > 0 },
   ];
   if (!grundstueck) {
+    // Ein Grundstück hat weder Wohnfläche noch Baujahr — vorher konnte es nie vollständig sein (C16).
+    punkte.push(
+      { schluessel: "flaeche", label: "Wohnfläche", grund: "Umlageschlüssel und Mietspiegel-Vergleich", href: bearbeiten, erfuellt: (p.flaeche ?? 0) > 0 },
+      { schluessel: "baujahr", label: "Baujahr", grund: "AfA-Satz und Wertschätzung", href: bearbeiten, erfuellt: (p.baujahr ?? 0) > 0 },
+    );
     // Zum AfA-Assistenten, der den Anteil aus Kaufpreis, Grundstück und Bodenrichtwert rechnet
     // und ihn am Objekt speichert — im Formular müsste man die Zahl raten (Paket D).
     punkte.push({ schluessel: "gebaeudeanteil", label: "Gebäudeanteil (AfA)", grund: "sonst rechnet die AfA mit pauschal 80 %", href: `/afa-assistent?objekt=${p.id}`, erfuellt: (p.afa_gebaeudeanteil ?? 0) > 0 });
   }
   if (vermietet) {
-    punkte.push({ schluessel: "mieter", label: "Mieter angelegt", grund: "Soll-Miete, Mietkonto und NK-Abrechnung", href: `/tenants/new?prop=${p.id}&back=/properties/${p.id}`, erfuellt: eigeneMieter.length > 0 });
+    punkte.push({ schluessel: "mieter", label: "Mieter angelegt", grund: "Soll-Miete, Mietkonto und NK-Abrechnung", href: `/tenants/new?prop=${p.id}&back=/properties/${p.id}`, erfuellt: eigeneMieter.length + kuenftigeMieter.length > 0 });
     if (eigeneMieter.length > 0) {
       const ohne = eigeneMieter.filter((m) => !m.mietbeginn);
       punkte.push({
