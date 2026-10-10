@@ -16,7 +16,7 @@ export default async function NewTenantPage(props0: { searchParams: Promise<{ pr
   let vorbelegung: { flaeche: number | null; kaltmiete: number | null } | undefined;
   if (searchParams.prop) {
     const { data: o } = await supabase.from("properties").select("flaeche,miete,typ,einheiten_anzahl").eq("id", searchParams.prop).maybeSingle();
-    if (o && !zeigeVerteiler({ typ: o.typ, einheiten_anzahl: o.einheiten_anzahl ?? null, mieterAnzahl: 0 })) {
+    if (o && !zeigeVerteiler({ typ: o.typ, einheiten_anzahl: o.einheiten_anzahl ?? null, mieter: [] })) {
       vorbelegung = { flaeche: o.flaeche ?? null, kaltmiete: o.miete ?? null };
     }
   }

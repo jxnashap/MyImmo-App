@@ -5,6 +5,20 @@ Die Ursache ist der Teil, der zählt — Symptome wiederholen sich nie gleich.
 
 ## Rechnen
 
+**Formularzeilen aus einem alten Vordruck**
+Die Anlage-V-Hilfe nannte feste Zeilen (Schuldzinsen „Zeile 37“, Summe „51“) — seit der
+Neufassung des Vordrucks lag dort eine andere Zeile (§ 7b). Bezeichnung und Betrag stimmten,
+die Nummer führte in die falsche Zeile.
+→ *Gegenprüfung:* Zeilennummern je Steuerjahr aus dem Vordruck selbst lesen, mit Quelle
+ablegen; ein Jahr ohne geprüften Vordruck bekommt **keine** Nummer. Test gegen den
+wörtlichen Auszug der Summenzeile, die die Endzeilen aller Blöcke nennt.
+
+**Jahresfrist ab dem 29. Februar**
+`Date.setFullYear(+10)` macht aus dem 29.02. den 01.03. — die Frist endete einen Tag zu
+spät (§ 188 Abs. 3 BGB: letzter Tag des Monats).
+→ *Gegenprüfung:* Fristen auf den Zahlen des Datums rechnen und auf das Monatsende klemmen;
+Testfall 29.02. in ein Nicht-Schaltjahr.
+
 **Grunderwerbsteuer um Faktor 1000 verrechnet**
 Ein Maschinenwert (`"0.035"` aus einer Auswahl) lief durch den deutschen
 Zahlenparser. Der hielt den Punkt für ein Tausendertrennzeichen → 35 → 3500 %.

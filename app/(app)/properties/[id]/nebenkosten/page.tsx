@@ -112,7 +112,7 @@ export default async function NebenkostenObjektPage(props: {
   const ausBuchungen = nkAusBuchungen(buchungen ?? [], id, jahr).vorschlaege.filter((v) => !vorhanden.has(v.bezeichnung.toLowerCase()));
 
   // Ergebnis je Mieter — dieselbe Rechnung wie die Abrechnung (berechneNk), inkl. CO₂ und Vorauszahlung.
-  const mfh = zeigeVerteiler({ typ: prop.typ as string | null, einheiten_anzahl: prop.einheiten_anzahl as number | null, mieterAnzahl: daten.mieter.length });
+  const mfh = zeigeVerteiler({ typ: prop.typ as string | null, einheiten_anzahl: prop.einheiten_anzahl as number | null, mieter: daten.mieter });
   const co2Je = new Map(((co2Rows ?? []) as (NkCo2Input & { mieter_id: string })[]).map((r) => [r.mieter_id, r]));
   const ergebnisse = daten.kosten.length === 0 ? [] : await Promise.all(
     e.mieter.map(async (m) => {

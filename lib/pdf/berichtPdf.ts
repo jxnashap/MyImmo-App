@@ -6,7 +6,7 @@
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { pdfText } from "@/lib/pdf/zeichen";
-import { ANLAGE_V_POSITIONEN, wertVon, summenWarnung, type AnlageVErgebnis, type AnlageVObjekt } from "@/lib/anlageV";
+import { ANLAGE_V_POSITIONEN, wertVon, summenWarnung, positionMitZeile, zeilenAngabe, type AnlageVErgebnis, type AnlageVObjekt } from "@/lib/anlageV";
 
 const GOLD = rgb(0.722, 0.565, 0.169);
 const INK = rgb(0.13, 0.13, 0.12);
@@ -148,7 +148,7 @@ function doppellinie(c: Ctx, y: number, x0: number, x1: number) {
  * Position links, Betrag rechts. Gruppen (Einnahmen/Werbungskosten) mit
  * Zwischensummen, Endergebnis mit Doppellinie.
  */
-function objektBlock(c: Ctx, yStart: number, o: AnlageVObjekt): number {
+function objektBlock(c: Ctx, yStart: number, o: AnlageVObjekt, jahr: number): number {
   const einnahmePos = ANLAGE_V_POSITIONEN.filter((p) => p.bereich === "einnahme");
   const wkPos = ANLAGE_V_POSITIONEN.filter((p) => p.bereich === "wk");
   const ROW = AV_ROW;
@@ -184,9 +184,14 @@ function objektBlock(c: Ctx, yStart: number, o: AnlageVObjekt): number {
   // Einnahmen
   c.text(ML, y, "Einnahmen", 9.5, c.bold, GREEN);
   y -= ROW;
-  einnahmePos.forEach((p, i) => zeile(p.label, wertVon(o, p.key), { indent: true, zebra: i % 2 === 0 }));
+  // Zeilenangaben nur aus dem geprüften Vordruck des Jahres (lib/steuer/anlageVZeilen.ts, B1).
+  einnahmePos.forEach((p, i) => zeile(positionMitZeile(p, jahr), wertVon(o, p.key), { indent: true, zebra: i % 2 === 0 }));
   c.hline(y + ROW - 6, ML, RIGHT, LINE, 0.6);
-  zeile("Summe Einnahmen (Zeile 21)", o.einnahmen.summe, { bold: true });
+  const zSum = (f: "summeEinnahmen" | "summeWerbungskosten" | "ueberschuss") => {
+    const z = zeilenAngabe(jahr, f);
+    return z ? ` (${z})` : "";
+  };
+  zeile(`Summe Einnahmen${zSum("summeEinnahmen")}`, o.einnahmen.summe, { bold: true });
   y -= 6;
 
   // Werbungskosten
@@ -195,20 +200,21 @@ function objektBlock(c: Ctx, yStart: number, o: AnlageVObjekt): number {
   // Geschätzte Schuldzinsen im Blatt kennzeichnen — der Hinweis auf Seite 1 verweist darauf.
   wkPos.forEach((p, i) =>
     zeile(
-      p.key === "schuldzinsen" && o.schuldzinsenGeschaetzt ? `${p.label} (geschätzt)`
-        : p.key === "erhaltung" && o.erhaltungAnschaffungsnah ? `${p.label} (15-%-Grenze, prüfen)`
-          : p.label,
+      p.key === "schuldzinsen" && o.schuldzinsenGeschaetzt ? `${positionMitZeile(p, jahr)} (geschätzt)`
+        : p.key === "erhaltung" && o.erhaltungAnschaffungsnah ? `${positionMitZeile(p, jahr)} (15-%-Grenze, prüfen)`
+          : p.key === "afa" && o.afaUnzulaessig ? `${positionMitZeile(p, jahr)} (degressiv unzulässig, prüfen)`
+            : positionMitZeile(p, jahr),
       wertVon(o, p.key), { indent: true, zebra: i % 2 === 0 }));
   c.hline(y + ROW - 6, ML, RIGHT, LINE, 0.6);
   // B4: Summe und Ergebnis tragen dieselbe Kennzeichnung wie in der ELSTER-Hilfe (summenWarnung).
   const vorlaeufig = summenWarnung(o) ? " (vorläufig, nicht übertragen)" : "";
-  zeile(`Summe Werbungskosten (Zeile 51)${vorlaeufig}`, o.werbungskosten.summe, { bold: true });
+  zeile(`Summe Werbungskosten${zSum("summeWerbungskosten")}${vorlaeufig}`, o.werbungskosten.summe, { bold: true });
   y -= 4;
 
   // Endergebnis mit Doppellinie
   c.hline(y + ROW - 6, ML, RIGHT, INK, 0.9);
   const positiv = o.ueberschuss >= 0;
-  c.text(ML, y, `${positiv ? "Überschuss (Einkünfte, Zeile 23/24)" : "Verlust (Zeile 23/24)"}${vorlaeufig}`, 9.8, c.bold, positiv ? INK : RED);
+  c.text(ML, y, `${positiv ? "Überschuss (Einkünfte)" : "Verlust"}${zSum("ueberschuss")}${vorlaeufig}`, 9.8, c.bold, positiv ? INK : RED);
   c.right(xBetrag, y, eur(o.ueberschuss), 9.8, c.bold, positiv ? GOLD : RED);
   doppellinie(c, y - 5.5, ML, RIGHT);
   y -= ROW + 8;
@@ -280,7 +286,7 @@ export async function buildAnlageVPdf(
       yCur = c.y;
       offen = true;
     }
-    yCur = objektBlock(c, yCur, o) - 10;
+    yCur = objektBlock(c, yCur, o, erg.jahr) - 10;
   }
 
   const hinweis = "Anlage-V-Aufstellung - erstellt mit MyImmo. Keine Steuerberatung.";

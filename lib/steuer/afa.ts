@@ -101,6 +101,37 @@ export function degressivVsLinear(
   };
 }
 
+/**
+ * Darf die degressive AfA nach § 7 Abs. 5a EStG überhaupt gewählt werden? (Gesamtprüfung 07.10.2026, C20.)
+ * Wortlaut: Wohngebäude, „hergestellt oder bis zum Ende des Jahres der Fertigstellung angeschafft“, und
+ * „mit der Herstellung nach dem 30. September 2023 und vor dem 1. Oktober 2029 begonnen“ bzw. Anschaffung
+ * auf Grund eines Vertrags in diesem Zeitraum. MyImmo kennt Baujahr und Anschaffungsdatum, nicht das Datum
+ * der Baubeginnsanzeige und nicht das Vertragsdatum — sicher widerlegen lässt es sich also nur:
+ *  - Fertigstellung vor 2023 → der Bau begann vor dem 01.10.2023;
+ *  - Anschaffung nach dem Jahr der Fertigstellung.
+ * Sonst bleibt es ein Prüfpunkt. Die App bucht nicht um; sie kennzeichnet die AfA als nicht übertragbar.
+ */
+export function degressivPruefung(p: { baujahr?: number | null; kaufdatum?: string | null }): { zulaessig: false | "pruefen"; text: string } {
+  const bj = p.baujahr ?? null;
+  const kaufJahr = p.kaufdatum && /^\d{4}-/.test(p.kaufdatum) ? Number(p.kaufdatum.slice(0, 4)) : null;
+  if (bj != null && bj < 2023) {
+    return {
+      zulaessig: false,
+      text: `Degressive AfA gewählt, aber das Gebäude ist ${bj} fertig geworden — begonnen wurde es also vor dem 01.10.2023. § 7 Abs. 5a EStG gilt nur für Baubeginn ab 01.10.2023 (bis 30.09.2029). Die AfA ist so nicht übertragbar; bitte im Objekt auf linear stellen oder mit dem Steuerberater klären.`,
+    };
+  }
+  if (bj != null && kaufJahr != null && kaufJahr > bj) {
+    return {
+      zulaessig: false,
+      text: `Degressive AfA gewählt, aber angeschafft ${kaufJahr}, fertiggestellt ${bj}. Beim Kauf gilt § 7 Abs. 5a EStG nur bis zum Ende des Fertigstellungsjahres. Die AfA ist so nicht übertragbar; bitte im Objekt auf linear stellen oder mit dem Steuerberater klären.`,
+    };
+  }
+  return {
+    zulaessig: "pruefen",
+    text: "Degressive AfA (§ 7 Abs. 5a EStG) nur für Wohngebäude mit Baubeginn zwischen 01.10.2023 und 30.09.2029 (Datum der Baubeginnsanzeige) — beim Kauf nur bis zum Ende des Fertigstellungsjahres und mit Kaufvertrag in diesem Zeitraum. Bitte prüfen.",
+  };
+}
+
 // --------------------------------------------- 3) § 7b Sonder-AfA-Check ----
 
 export type Paragraf7bInput = {
@@ -118,6 +149,12 @@ export type Paragraf7bInput = {
   bauantragMonat?: number | null;
   neueWohnung: boolean;           // bisher nicht vorhandene Wohnung
   qngNachweis: boolean;           // EH40/QNG-Nachweis (Effizienzhaus 40)
+  /**
+   * Wird die Wohnung im Jahr der Anschaffung/Herstellung und in den folgenden neun Jahren entgeltlich zu
+   * Wohnzwecken überlassen? § 7b Abs. 2 S. 1 Nr. 3 EStG; sonst wird die Sonder-AfA nach Abs. 4 rückgängig
+   * gemacht (Gesamtprüfung C21). Ferienwohnung/kurzfristige Vermietung zählt nicht als Wohnzweck.
+   */
+  vermietungZehnJahre: boolean;
   baukostenProM2: number | null;  // tatsächliche Anschaffungs-/Herstellungskosten je m²
   flaeche: number | null;         // Wohnfläche m²
 };
@@ -155,6 +192,10 @@ export function pruefe7b(input: Paragraf7bInput): Paragraf7bErgebnis {
     },
     { ok: input.neueWohnung, text: "Neue, bisher nicht vorhandene Wohnung" },
     { ok: input.qngNachweis, text: "Effizienzhaus 40 / QNG-Nachweis (Nachhaltigkeitssiegel)" },
+    {
+      ok: input.vermietungZehnJahre,
+      text: "Im Jahr der Anschaffung/Herstellung und in den folgenden neun Jahren entgeltlich zu Wohnzwecken vermietet (keine Ferienwohnung) — sonst wird die Sonder-AfA rückgängig gemacht (§ 7b Abs. 2 Nr. 3, Abs. 4)",
+    },
     { ok: kostenOk, text: `Baukosten höchstens ${P7B_KOSTEN_MAX.toLocaleString("de-DE")} €/m²` },
   ];
   const berechtigt = gruende.every((g) => g.ok);

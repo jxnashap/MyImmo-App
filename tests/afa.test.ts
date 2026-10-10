@@ -49,6 +49,7 @@ describe("pruefe7b (§ 7b Sonder-AfA)", () => {
     bauantragJahr: 2024,
     neueWohnung: true,
     qngNachweis: true,
+    vermietungZehnJahre: true,
     baukostenProM2: 4800,
     flaeche: 100,
   };

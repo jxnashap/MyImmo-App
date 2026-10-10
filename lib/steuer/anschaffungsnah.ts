@@ -14,6 +14,8 @@
 //   jährlich übliche Erhaltungsarbeiten sind gesetzlich ausgenommen, werden hier
 //   aber nicht herausgerechnet (Nutzer entscheidet).
 
+import { fristendeNachJahren } from "@/lib/steuer/frist";
+
 export const GEBAEUDEANTEIL_STANDARD = 80; // % — wie im Objektformular ("Standard 80")
 /** 15 % der Gebäude-Anschaffungskosten (§ 6 Abs. 1 Nr. 1a EStG) — EINE Stelle für Wächter und Kauf-Rechner. */
 export const ANSCHAFFUNGSNAH_GRENZE = 0.15;
@@ -53,9 +55,8 @@ const rund2 = (n: number) => Math.round(n * 100) / 100;
  *  § 188 Abs. 2 BGB: Der Anschaffungstag zählt nicht mit, die Frist endet mit
  *  Ablauf des Jahrestags — dieser gehört also noch ins Fenster. */
 function fensterEnde(kaufISO: string): string {
-  const d = new Date(`${kaufISO}T00:00:00Z`);
-  d.setUTCFullYear(d.getUTCFullYear() + 3);
-  return d.toISOString().slice(0, 10);
+  // Kauf am 29.02.: Ende am letzten Februartag (§ 188 Abs. 3 BGB, C19) — vorher der 01.03.
+  return fristendeNachJahren(kaufISO, 3);
 }
 
 function monateZwischen(vonISO: string, bisISO: string): number {

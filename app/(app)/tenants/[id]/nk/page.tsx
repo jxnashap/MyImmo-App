@@ -1,5 +1,5 @@
 import NkVorjahrHilfe from "@/components/NkVorjahrHilfe";
-import { vorjahrUebernahme, vorauszahlungsVorschlag, gleicheBetraegeWieVorjahr, type VorjahrPosition } from "@/lib/nkVorjahr";
+import { vorjahrUebernahme, vorschlagAusAbrechnung, gleicheBetraegeWieVorjahr, type VorjahrPosition } from "@/lib/nkVorjahr";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +20,7 @@ import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { ymPlus } from "@/lib/mietkonto";
 import { nkAusBuchungen } from "@/lib/nkAusBuchungen";
-import { zeigeVerteiler } from "@/lib/umlage";
+import { zeigeVerteiler, type Mietzeit } from "@/lib/umlage";
 import { zaehlerSpanne, type ZaehlerMeldung } from "@/lib/zaehlerSpanne";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +54,7 @@ export default async function NkPage(
 
   const jahr = Number(searchParams.jahr) || Number(heuteBerlin().slice(0, 4)) - 1;
 
-  const [{ data: property }, nkPos, { data: profil }, { data: ibanRow }, { data: co2Row }, { data: kostenRows }, { count: mieterImObjekt }, { data: zaehlerRows }] =
+  const [{ data: property }, nkPos, { data: profil }, { data: ibanRow }, { data: co2Row }, { data: kostenRows }, { data: mieterImObjekt }, { data: zaehlerRows }] =
     await Promise.all([
       tenant.prop_id
         ? supabase
@@ -86,8 +86,8 @@ export default async function NkPage(
             .gte("buchungsdatum", `${jahr}-01-01`).lt("buchungsdatum", `${jahr + 1}-01-01`)
         : Promise.resolve({ data: [] }),
       tenant.prop_id
-        ? supabase.from("mieter").select("id", { count: "exact", head: true }).eq("prop_id", tenant.prop_id)
-        : Promise.resolve({ count: 0 }),
+        ? supabase.from("mieter").select("mietbeginn,mietende").eq("prop_id", tenant.prop_id)
+        : Promise.resolve({ data: [] }),
       supabase.from("zaehlerstand_meldungen").select("art,zaehlernummer,stand,einheit,ablesedatum")
         .eq("mieter_id", params.id).gte("ablesedatum", `${jahr - 1}-12-01`).lt("ablesedatum", `${jahr + 1}-02-01`)
         .order("ablesedatum"),
@@ -100,7 +100,7 @@ export default async function NkPage(
   const mitVerteiler = zeigeVerteiler({
     typ: (property as { typ?: string | null } | null)?.typ,
     einheiten_anzahl: (property as { einheiten_anzahl?: number | null } | null)?.einheiten_anzahl ?? null,
-    mieterAnzahl: mieterImObjekt ?? 0,
+    mieter: (mieterImObjekt ?? []) as Mietzeit[],
   });
   // Stufe 1 (07.10.2026): Beim Mehrfamilienhaus stehen die Kosten am OBJEKT — dort einmal mit dem
   // Gesamtbetrag, verteilt auf alle Mieter. Die Werkzeuge, die Positionen beim Mieter anlegen
@@ -207,7 +207,7 @@ export default async function NkPage(
             pruefung={zustellung}
           />
           {/* Paket C (06.10.2026): Nachzahlung als Einnahme buchen, vorausgefüllt — vorher endete die
-              Abrechnung im Archiv, und der Saldo fehlte in Mietkonto und Anlage V (Zeile 13). */}
+              Abrechnung im Archiv, und der Saldo fehlte in Mietkonto und Anlage V (Umlagen). */}
           {a.saldo < -0.005 && a.positionen.length > 0 && (
             <Link
               href={`/cashflow/neu?${new URLSearchParams({
@@ -274,7 +274,7 @@ export default async function NkPage(
         mieterId={params.id}
         jahr={jahr}
         uebernahme={amObjekt ? { moeglich: false, anzahl: 0 } : vorjahrUebernahme((positions ?? []) as VorjahrPosition[], jahr)}
-        vorschlag={a.monate > 0 && a.positionen.length > 0 ? vorauszahlungsVorschlag(a.kostenNachCo2, a.monate, a.nkVorauszahlungMonat) : null}
+        vorschlag={vorschlagAusAbrechnung(a, tenant.mietende ?? null, heuteBerlin())}
         aktuellMonat={a.nkVorauszahlungMonat}
         nurVorjahrsBetraege={gleicheBetraegeWieVorjahr((positions ?? []) as VorjahrPosition[], jahr)}
         naechsterMonat={ymPlus(heuteBerlin().slice(0, 7), 1)}

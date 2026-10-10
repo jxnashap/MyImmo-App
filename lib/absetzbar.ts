@@ -10,7 +10,7 @@
 // das Wort nicht benutzt.
 //
 // „Automatisch gebucht" stimmt seit `lib/billing/aboBuchung.ts`: Jede bezahlte
-// Rechnung wird als Kosten „Verwaltung" (Anlage V Zeile 46) gebucht.
+// Rechnung wird als Kosten „Verwaltung" (Anlage V: nicht umgelegte Kosten) gebucht.
 
 /** Grenzsteuersätze für das Rechenbeispiel — ohne Solidaritätszuschlag und Kirchensteuer. */
 export const BEISPIEL_SAETZE = [0.3, 0.42] as const;

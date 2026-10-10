@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { vorjahrUebernahme, type VorjahrPosition } from "@/lib/nkVorjahr";
 import { nkAusBuchungen } from "@/lib/nkAusBuchungen";
 import { belegung, jahresTage } from "@/lib/nk";
-import { zeigeVerteiler } from "@/lib/umlage";
+import { zeigeVerteiler, type Mietzeit } from "@/lib/umlage";
 
 const AUFTEILUNGEN = ["voll", "flaeche", "zeit", "verbrauch", "gradtag", "hkvo"];
 const aufteilungOk = (v: unknown): string =>
@@ -275,14 +275,14 @@ export async function uebernehmeGebuchteKosten(
 
   const [pRes, nRes, kRes, posRes] = await Promise.all([
     supabase.from("properties").select("typ,einheiten_anzahl").eq("id", m.prop_id).eq("user_id", user.id).maybeSingle(),
-    supabase.from("mieter").select("id", { count: "exact", head: true }).eq("prop_id", m.prop_id).eq("user_id", user.id),
+    supabase.from("mieter").select("mietbeginn,mietende").eq("prop_id", m.prop_id).eq("user_id", user.id),
     supabase.from("kosten").select("prop_id,buchungsdatum,kategorie,betrag").eq("prop_id", m.prop_id).eq("user_id", user.id)
       .gte("buchungsdatum", `${jahr}-01-01`).lt("buchungsdatum", `${jahr + 1}-01-01`),
     supabase.from("mieter_positionen").select("bezeichnung").eq("mieter_id", mieterId).eq("user_id", user.id).eq("jahr", jahr),
   ]);
   // Jede Lücke hier hieße „nichts vorhanden“ → doppelte Positionen. Also abbrechen.
   if (pRes.error || nRes.error || kRes.error || posRes.error) return { error: "Daten konnten nicht gelesen werden — nichts übernommen." };
-  if (zeigeVerteiler({ typ: pRes.data?.typ, einheiten_anzahl: pRes.data?.einheiten_anzahl ?? null, mieterAnzahl: nRes.count ?? 0 })) {
+  if (zeigeVerteiler({ typ: pRes.data?.typ, einheiten_anzahl: pRes.data?.einheiten_anzahl ?? null, mieter: (nRes.data ?? []) as Mietzeit[] })) {
     return { error: "Mehrere Mietparteien: bitte über „Nebenkosten verteilen“ am Objekt — dort stehen dieselben Buchungen zur Übernahme." };
   }
 

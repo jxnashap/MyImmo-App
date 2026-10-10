@@ -13,7 +13,7 @@ import { fakeSupabase, mockeNextUndSupabase } from "./stubs/actionHarness";
 // Abo-Zahlung als Kostenbuchung (05.10.2026). Was halten muss:
 // (1) nur bezahlte Euro-Rechnungen, Betrag in Cent aus Paddles Zeichenkette;
 // (2) die Verteilung ergibt cent-genau den gezahlten Betrag, selbst bewohnte
-//     Objekte bekommen nichts; (3) die Kategorie landet in Anlage V Zeile 46;
+//     Objekte bekommen nichts; (3) die Kategorie landet in der Anlage V bei den Verwaltungskosten;
 // (4) der Webhook bucht über die atomare SQL-Funktion und meldet jeden Fehler
 //     mit 500, damit Paddle erneut zustellt.
 
@@ -97,10 +97,10 @@ describe("Verteilung nach Einheiten", () => {
     expect(verteileAufObjekte(799, [objekte[2]])).toEqual([{ prop_id: null, cent: 799 }]);
   });
 
-  it("die Zeilen landen in Anlage V Zeile 46 (Verwaltungskosten)", () => {
+  it("die Zeilen landen in der Anlage V bei den Verwaltungskosten (Vordruck: nicht umgelegte Kosten)", () => {
     const z = aboKostenZeilen(parseAboZahlung(ereignis())!, objekte);
     // Durch die echte Anlage-V-Rechnung, nicht über eine Konstante: Landet die
-    // Kategorie im falschen Topf, steht der Betrag nicht in Zeile 46.
+    // Kategorie im falschen Topf, steht der Betrag nicht bei den Verwaltungskosten.
     const props = objekte.map((o) => ({ id: o.id, bezeichnung: o.id, adresse: null, kaufpreis: 0 }) as unknown as Property);
     const r = berechneAnlageV(2026, props, [], z as unknown as Kosten[], [], AFA_DEFAULT);
     expect(r.gesamt.werbungskosten.verwaltung).toBe(7.99);

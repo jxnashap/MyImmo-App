@@ -92,3 +92,35 @@ export function monatVon(datum: string | null | undefined): number | null {
   const m = Number(datum.slice(5, 7));
   return Number.isFinite(m) && m >= 1 && m <= 12 ? m : null;
 }
+
+/**
+ * Lineare Gebäude-AfA eines Jahres — bis zur vollen Absetzung (§ 7 Abs. 4 EStG), Gesamtprüfung
+ * 07.10.2026, C18. Vorher endete die AfA nach `Math.round(100 / Satz)` Jahren: Bei 3 % waren das
+ * 33 Jahre und 99 % — das letzte Prozent fehlte. Jetzt läuft sie, bis der Restbuchwert 0 ist; im
+ * letzten Jahr nur noch der Rest (das deckt auch den im Anschaffungsjahr nicht genutzten Teil ab).
+ */
+export function linearImJahr(
+  basis: number,
+  satz: number,
+  jahr: number,
+  startJahr: number | null,
+  startMonat: number | null,
+): { betrag: number; hinweis?: string } {
+  const jahresbetrag = (basis * satz) / 100;
+  const z = afaZeitanteil(jahr, startJahr, startMonat, null);
+  let betrag = jahresbetrag * z.faktor;
+  let hinweis = z.hinweis;
+  if (startJahr != null && Number.isFinite(startJahr) && jahresbetrag > 0 && jahr > startJahr) {
+    const erstesJahr = afaZeitanteil(startJahr, startJahr, startMonat, null).faktor;
+    const bisher = jahresbetrag * (erstesJahr + (jahr - startJahr - 1));
+    const rest = basis - bisher;
+    if (rest < 0.005) {
+      betrag = 0;
+      hinweis = `Das Gebäude ist voll abgeschrieben — für ${jahr} gibt es keine AfA mehr.`;
+    } else if (betrag > rest) {
+      betrag = rest;
+      hinweis = "Letztes Abschreibungsjahr — nur noch der Restbuchwert.";
+    }
+  }
+  return { betrag: Math.round(betrag * 100) / 100, hinweis };
+}

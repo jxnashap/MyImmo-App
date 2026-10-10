@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Bezahlte Rechnung → Kosten „Verwaltung“ in den Büchern des Vermieters
-  // (Anlage V Zeile 46). Eigener Weg, eigener Ausgang — siehe bucheAboZahlung.
+  // (Anlage V: nicht umgelegte Kosten). Eigener Weg, eigener Ausgang — siehe bucheAboZahlung.
   const zahlung = parseAboZahlung(payload);
   if (zahlung) return bucheAboZahlung(zahlung);
 

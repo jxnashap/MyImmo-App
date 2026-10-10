@@ -86,11 +86,11 @@ describe("Anlage V: Schuldzinsen zwischen Schätzung und Buchung", () => {
 
     // Der Widerspruch war: Zeile 37 als „nicht übertragen" markiert, die Summe
     // daneben aber übertragbar — inklusive genau dieser Schätzung.
-    const zeilen = elsterZeilen(o);
-    const summe = zeilen.find((z) => z.zeile === "51")!;
+    const zeilen = elsterZeilen(o, 2024);
+    const summe = zeilen.find((z) => z.zeile === "83")!;
     expect(summe.uebertragbar).toBe(false);
     expect(summe.warnung).toBeTruthy();
-    expect(zeilen.find((z) => z.zeile === "23/24")!.uebertragbar).toBe(false);
+    expect(zeilen.find((z) => z.zeile === "85")!.uebertragbar).toBe(false);
   });
 
   it("eine auffällig niedrige gebuchte Zinssumme wird angesprochen", () => {
@@ -100,7 +100,7 @@ describe("Anlage V: Schuldzinsen zwischen Schätzung und Buchung", () => {
     expect(o.schuldzinsenGeschaetzt).toBe(false);
     expect(o.hinweise.join(" ")).toContain("alle Zinszahlungen des Jahres");
     // Gebucht → Summen sind wieder übertragbar.
-    expect(elsterZeilen(o).find((z) => z.zeile === "51")!.uebertragbar).toBe(true);
+    expect(elsterZeilen(o, 2024).find((z) => z.zeile === "83")!.uebertragbar).toBe(true);
   });
 
   it("plausibel vollständige Buchungen erzeugen keinen Hinweis", () => {

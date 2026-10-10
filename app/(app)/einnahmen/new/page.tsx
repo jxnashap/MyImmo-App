@@ -62,7 +62,7 @@ export default async function NeueEinnahmePage(props: { searchParams: Promise<{ 
           <div className="form-group">
             <label>davon Nebenkosten-Vorauszahlung (€)</label>
             <input type="number" step="0.01" min="0" name="nk_anteil" placeholder="z. B. 160" />
-            <small style={{ color: "var(--muted)" }}>In „Miete“ enthalten – erscheint in der Anlage V als Umlagen (Zeile 13).</small>
+            <small style={{ color: "var(--muted)" }}>In „Miete“ enthalten – erscheint in der Anlage V bei den Umlagen.</small>
           </div>
         </div>
         <div className="form-actions">

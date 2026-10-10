@@ -114,16 +114,21 @@ const zeilen = (db: Db, t: string) => ops(db, t, "insert").flatMap((z) => (Array
 
 describe("C1 — uebernehmeGebuchteKosten (eine Mietpartei)", () => {
   const MIETER = { prop_id: "p1", mietbeginn: "2020-01-01", mietende: null };
-  const init = (extra: Record<string, unknown> = {}) => ({
-    antworten: {
-      mieter: MIETER,
-      properties: { typ: "Eigentumswohnung", einheiten_anzahl: 1 },
-      kosten: [k("Grundsteuer", 240), k("Müll", 80), k("Reparatur", 500)],
-      mieter_positionen: [],
-      ...extra,
-    },
-    zaehler: { mieter: 1 },
-  });
+  type Mz = { mietbeginn: string | null; mietende: string | null };
+  // Erst der eine Mieter (maybeSingle), dann die Mietzeiten aller Mieter des Objekts (C24: es zählen nur
+  // GLEICHZEITIGE Mietverhältnisse).
+  const init = (extra: Record<string, unknown> = {}, alle?: Mz[]) => {
+    const m = (extra.mieter as Mz | undefined) ?? MIETER;
+    return {
+      antworten: {
+        properties: { typ: "Eigentumswohnung", einheiten_anzahl: 1 },
+        kosten: [k("Grundsteuer", 240), k("Müll", 80), k("Reparatur", 500)],
+        mieter_positionen: [],
+        ...extra,
+      },
+      antwortFolge: { mieter: [m, alle ?? [m]] },
+    };
+  };
   it("legt die umlagefähigen als Positionen an (ganzes Jahr = voll)", async () => {
     const { db, mod } = await lade("@/lib/actions/positions", init());
     expect(await mod.uebernehmeGebuchteKosten("m1", 2025)).toEqual({ ok: true, anzahl: 2 });
@@ -142,9 +147,16 @@ describe("C1 — uebernehmeGebuchteKosten (eine Mietpartei)", () => {
     expect(zeilen(db, "mieter_positionen").map((x) => x.bezeichnung)).toEqual(["Müllabfuhr"]);
   });
   it("mehrere Mietparteien → Verweis auf den Verteiler, nichts geschrieben", async () => {
-    const { db, mod } = await lade("@/lib/actions/positions", { ...init(), zaehler: { mieter: 3 } });
+    const drei = [MIETER, { mietbeginn: "2021-05-01", mietende: null }, { mietbeginn: "2023-01-01", mietende: null }];
+    const { db, mod } = await lade("@/lib/actions/positions", init({}, drei));
     expect("error" in (await mod.uebernehmeGebuchteKosten("m1", 2025))).toBe(true);
     expect(ops(db, "mieter_positionen", "insert")).toHaveLength(0);
+  });
+  it("Mieterwechsel im Reihenhaus ist KEINE Mehrparteien-Lage (C24) — die Übernahme läuft", async () => {
+    const nacheinander = [{ mietbeginn: "2019-01-01", mietende: "2025-03-31" }, { mietbeginn: "2025-04-01", mietende: null }];
+    const { db, mod } = await lade("@/lib/actions/positions", init({ mieter: { ...MIETER, mietbeginn: "2025-04-01" } }, nacheinander));
+    expect(await mod.uebernehmeGebuchteKosten("m1", 2025)).toEqual({ ok: true, anzahl: 2 });
+    expect(zeilen(db, "mieter_positionen")[0]).toMatchObject({ aufteilung: "zeit" });
   });
   it("Lesefehler der Positionen → nichts übernommen (sonst Duplikate)", async () => {
     const { db, mod } = await lade("@/lib/actions/positions", { ...init(), fehlerBei: { "mieter_positionen:select": { message: "x" } } });

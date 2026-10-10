@@ -30,15 +30,15 @@ describe("A1 — 15-%-Grenze: Erhaltung wird gekennzeichnet, nicht still abgezog
     expect(o.hinweise.join(" ")).toMatch(/15 % der Gebäude-Anschaffungskosten/);
   });
   it("Erhaltungszeile, Summe und Ergebnis gelten als nicht übertragbar — auch in der Gesamtsumme", () => {
-    const z = elsterZeilen(o);
-    expect(z.find((x) => x.zeile === "40")?.uebertragbar).toBe(false);
+    const z = elsterZeilen(o, 2025);
+    expect(z.find((x) => x.zeile === "55–56")?.uebertragbar).toBe(false);
     expect(z.find((x) => x.bezeichnung === "Summe der Werbungskosten")?.uebertragbar).toBe(false);
     expect(summenWarnung(e.gesamt)).toMatch(/15-%-Grenze/);
   });
   it("unter der Grenze: keine Kennzeichnung", () => {
     const o2 = av(2025, [objekt({})], [], [kost("2025-06-01", 11000)]).objekte[0];
     expect(o2.erhaltungAnschaffungsnah).toBeFalsy();
-    expect(elsterZeilen(o2).find((x) => x.zeile === "40")?.uebertragbar).not.toBe(false);
+    expect(elsterZeilen(o2, 2025).find((x) => x.zeile === "55–56")?.uebertragbar).not.toBe(false);
   });
   it("Kosten späterer Jahre im Fenster machen auch das frühere Jahr anschaffungsnah", () => {
     const o3 = av(2025, [objekt({})], [], [kost("2025-06-01", 8000), kost("2026-05-01", 8000)]).objekte[0];
@@ -116,8 +116,9 @@ describe("B4 — PDF kennzeichnet Summe und Ergebnis wie die ELSTER-Hilfe", () =
   it("dieselbe Regel summenWarnung()", () => {
     const pdf = readFileSync("lib/pdf/berichtPdf.ts", "utf8");
     expect(pdf).toMatch(/const vorlaeufig = summenWarnung\(o\)/);
-    expect(pdf).toMatch(/Summe Werbungskosten \(Zeile 51\)\$\{vorlaeufig\}/);
-    expect(pdf).toMatch(/Verlust \(Zeile 23\/24\)"\}\$\{vorlaeufig\}/);
+    // Zeilenangaben seit B1 aus der Jahrestabelle (zSum), die Kennzeichnung bleibt dahinter.
+    expect(pdf).toMatch(/Summe Werbungskosten\$\{zSum\("summeWerbungskosten"\)\}\$\{vorlaeufig\}/);
+    expect(pdf).toMatch(/"Verlust"\}\$\{zSum\("ueberschuss"\)\}\$\{vorlaeufig\}/);
   });
 });
 

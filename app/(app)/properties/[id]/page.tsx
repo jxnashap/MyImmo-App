@@ -113,7 +113,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   const verteilerSichtbar = zeigeVerteiler({
     typ: p.typ,
     einheiten_anzahl: p.einheiten_anzahl ?? null,
-    mieterAnzahl: (mieter ?? []).length,
+    mieter: tenants,
   });
   const istGaragen = GARAGEN_TYPEN.includes(p.typ ?? "");
   // Soll-Kaltmiete: laufende Mieter, sonst Objektfeld — dieselbe Regel wie
