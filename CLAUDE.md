@@ -510,6 +510,11 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   rendert immer die ERSTE Ansicht — der Rauchtest prüft deshalb `>Buchungssaldo<` (Reiter), nicht `<h3>`.
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
+- 📲 **Installierbare Web-App (PWA) — Plan 10.10.2026: `docs/zukunft/WEBAPP-INSTALLIERBAR.md`.** Stufe 1:
+  Manifest + Service Worker, der NUR gehashte Programmdateien und eine Offline-Seite vorhält, registriert nur im
+  App-Bereich (§ 25 Abs. 2 Nr. 2 TDDDG). **Regel: HTML, `/api/*`, Dateien und Supabase-Antworten nie cachen** —
+  sonst Mieterdaten auf Geräten, Kontolöschung erreicht sie nicht, Zustellnachweis unterlaufen. Push erst mit
+  Nutzern und Anwaltsfrage. Noch nicht gebaut.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
@@ -2099,9 +2104,18 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   29.02. → Monatsende), **C20** `degressivPruefung()` + `afaUnzulaessig`, **C21** § 7b mit zehnjähriger Vermietung,
   **C23** `vorschlagAusAbrechnung()` (Tagesanteil, nicht nach Auszug), **C24** `gleichzeitigeMieter()` in `zeigeVerteiler`.
   **Regeln:** (1) **Kein fester Text nennt eine Zeilennummer der Anlage V** — nur `zeilenAngabe()`/`positionMitZeile()` aus der
-  Jahrestabelle (Test scannt `app/`, `components/`, `lib/`); ein Jahr ohne geprüften Vordruck bekommt keine Nummer. Neues Jahr:
+  Jahrestabelle (Test scannt `app/`, `components/`, `lib/`). Jahre NACH dem neuesten Vordruck nehmen dessen Zeilen als „vorläufig“
+  (Betreiber 10.10.2026), Jahre vor 2024 keine. Weicht ein neuer Vordruck ab: nur eine Jahreszeile ergänzen. Neues Jahr:
   Vordruck lesen, Zeile in `ANLAGE_V_ZEILEN` mit Quelle, Prüftermin in `07` (01.02.2027). (2) Fristen in Jahren nur über
   `fristendeNachJahren()`. (3) `zeigeVerteiler` bekommt die Mietzeiten (`mieter: {mietbeginn, mietende}[]`), nie eine Anzahl.
+- 🏢 **WEG-Erhaltungsrücklage (10.10.2026, Betreiber)** (`tests/wegRuecklage.test.ts`, 12 Mutationen rot). BFH, Urteil vom
+  14.01.2025, IX R 19/24 (BStBl 2025 II S. 291): Die **Zuführung** zur Erhaltungsrücklage ist KEINE Werbungskosten, die
+  **Entnahme für Erhaltung** schon (im Jahr der Ausgabe). Vorher zog die Anlage V jedes gebuchte Hausgeld voll ab — gegen den
+  eigenen Ratgeber. Jetzt: `properties.weg_ruecklage` (jsonb je Jahr, Migration `20261010162259`, live) aus der
+  WEG-Jahresabrechnung, Eingabe auf der Objektseite (`components/WegRuecklage.tsx`, nur `hatWeg()`), Rechnung in
+  `lib/wegRuecklage.ts` + `berechneAnlageV`: Hausgeld − Zuführung (höchstens das gebuchte), Erhaltung + Entnahme; ohne
+  Eintrag Hinweis `RUECKLAGE_FEHLT_HINWEIS`. **Regel: Die Rücklage ändert nur die Anlage V, nie die Buchungen** — Cashflow
+  und Buchungssaldo bleiben beim tatsächlich gezahlten Hausgeld (Test sucht `weg_ruecklage` dort und wird sonst rot).
 - 📰 **Paket P10 der Gesamtprüfung (09.10.2026): Ratgeber und Werbung** (`tests/paketP10.test.ts`, 17 Mutationen rot).
   Jede korrigierte Rechtsaussage gegen den Wortlaut (gesetze-im-internet.de, per `curl` abrufbar — WebFetch bekam 503)
   bzw. zwei Sekundärquellen geprüft: Belegeinsicht nach **§ 556 Abs. 4 BGB** (seit 2025, elektronische Bereitstellung

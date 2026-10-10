@@ -9,6 +9,8 @@ import { pruefeEinheiten } from "@/lib/planGate";
 import { flashUrl } from "@/lib/flash";
 import { protokolliereWert } from "@/lib/wert/protokoll";
 import { sollKaltmiete } from "@/lib/sollMiete";
+import { ruecklageEintragAus, mitRuecklageJahr, ohneRuecklageJahr } from "@/lib/wegRuecklage";
+import { dbFehlerText } from "@/lib/demoFehler";
 
 // Wandelt FormData in ein typisiertes Objekt um (Zahlen -> number | null)
 function parse(formData: FormData) {
@@ -352,5 +354,48 @@ export async function gleicheObjektMieteAn(id: string): Promise<{ ok: boolean; e
   revalidatePath(`/properties/${id}`);
   revalidatePath("/properties");
   revalidatePath("/");
+  return { ok: true };
+}
+
+// ------------------------------------------------------ WEG-Erhaltungsrücklage je Steuerjahr ----
+// BFH IX R 19/24: Die Zuführung zur Erhaltungsrücklage ist keine Werbungskosten, die Entnahme für
+// Erhaltung schon. Beide Beträge aus der WEG-Jahresabrechnung, je Objekt und Jahr in
+// `properties.weg_ruecklage` (Migration 20261010162259). Rechnung: lib/wegRuecklage.ts + Anlage V.
+export async function setzeWegRuecklage(propId: string, fd: FormData): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  const e = ruecklageEintragAus(fd.get("jahr"), fd.get("zufuehrung"), fd.get("entnahme"));
+  if ("fehler" in e) return { ok: false, error: e.fehler };
+  const { data: p, error: leseFehler } = await supabase
+    .from("properties").select("weg_ruecklage").eq("id", propId).eq("user_id", user.id).maybeSingle();
+  if (leseFehler || !p) return { ok: false, error: "Objekt nicht gefunden." };
+  const { data, error } = await supabase
+    .from("properties").update({ weg_ruecklage: mitRuecklageJahr(p.weg_ruecklage, e.jahr, e.wert) })
+    .eq("id", propId).eq("user_id", user.id).select("id").maybeSingle();
+  if (error || !data) return { ok: false, error: dbFehlerText(error, "Die Rücklage konnte nicht gespeichert werden.") };
+  revalidatePath(`/properties/${propId}`);
+  revalidatePath("/steuer");
+  return { ok: true };
+}
+
+export async function entferneWegRuecklage(propId: string, jahr: number): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!Number.isInteger(jahr)) return { ok: false, error: "Eintrag nicht gefunden." };
+  const { data: p, error: leseFehler } = await supabase
+    .from("properties").select("weg_ruecklage").eq("id", propId).eq("user_id", user.id).maybeSingle();
+  if (leseFehler || !p) return { ok: false, error: "Objekt nicht gefunden." };
+  const { data, error } = await supabase
+    .from("properties").update({ weg_ruecklage: ohneRuecklageJahr(p.weg_ruecklage, jahr) })
+    .eq("id", propId).eq("user_id", user.id).select("id").maybeSingle();
+  if (error || !data) return { ok: false, error: dbFehlerText(error, "Der Eintrag konnte nicht entfernt werden.") };
+  revalidatePath(`/properties/${propId}`);
+  revalidatePath("/steuer");
   return { ok: true };
 }
