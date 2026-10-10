@@ -72,6 +72,7 @@
 - [[BUYIMMO]] — zweiter Bereich „Bestandsaufbau“ neben MyImmo: Entscheidung, Regeln, offene Fragen (05.10.2026)
 - [[BUYIMMO-WEG]] — Umbau: fünf Schritte zum Kauf, Vergleich, Besichtigung je Kandidat, Lern-App-Guide, Strategie mit Stammbaum (06.10.2026)
 - [[OPEN-BANKING]] — Konto-Anbindung, zurückgestellt 29.08.2026 (Code in der Git-Historie)
+- [[WEBAPP-INSTALLIERBAR]] — MyImmo als App aus dem Browser (PWA): Stufen, § 25 TDDDG, keine Inhalte auf dem Gerät (Plan 10.10.2026)
 
 ## 🛠️ Technik
 - [[README]] (in `supabase/migrations/`) — Migrations-Regeln + Historie

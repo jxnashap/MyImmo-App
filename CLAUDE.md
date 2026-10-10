@@ -510,6 +510,11 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   rendert immer die ERSTE Ansicht — der Rauchtest prüft deshalb `>Buchungssaldo<` (Reiter), nicht `<h3>`.
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
+- 📲 **Installierbare Web-App (PWA) — Plan 10.10.2026: `docs/zukunft/WEBAPP-INSTALLIERBAR.md`.** Stufe 1:
+  Manifest + Service Worker, der NUR gehashte Programmdateien und eine Offline-Seite vorhält, registriert nur im
+  App-Bereich (§ 25 Abs. 2 Nr. 2 TDDDG). **Regel: HTML, `/api/*`, Dateien und Supabase-Antworten nie cachen** —
+  sonst Mieterdaten auf Geräten, Kontolöschung erreicht sie nicht, Zustellnachweis unterlaufen. Push erst mit
+  Nutzern und Anwaltsfrage. Noch nicht gebaut.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
