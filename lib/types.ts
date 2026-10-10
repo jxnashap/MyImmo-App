@@ -23,6 +23,8 @@ export type Property = {
   afa_methode: string | null;        // 'auto' | 'degressiv' | 'manuell' | 'keine' (Grundstück)
   afa_start_jahr: number | null;     // degressiv: 1. AfA-Jahr
   afa_betrag: number | null;         // manuell: fester AfA-Betrag €/Jahr (§ 7b / § 7i/7h)
+  /** WEG-Erhaltungsrücklage je Steuerjahr (lib/wegRuecklage.ts) — {"2025": {zufuehrung, entnahme}}. */
+  weg_ruecklage?: unknown;
   afa_gebaeudeanteil: number | null; // optionaler Gebäudeanteil % je Objekt
   notiz_import: string | null;
   // Gecachte Koordinaten aus der Verortung (Nominatim, lib/geocode.ts) — für die Marktwert-Schätzung.

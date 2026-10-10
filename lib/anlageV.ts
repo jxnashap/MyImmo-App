@@ -12,6 +12,7 @@ import { berechneAnschaffungsnah, ANSCHAFFUNGSNAH_KATEGORIEN } from "@/lib/steue
 import { istSelbstBewohnt } from "@/lib/steuer/selbstBewohnt";
 import { kreditMonateImJahr } from "@/lib/kreditZeit";
 import { anlageVZeilen, type AnlageVFeld } from "@/lib/steuer/anlageVZeilen";
+import { ruecklageImJahr, HAUSGELD_KATEGORIE, RUECKLAGE_FEHLT_HINWEIS } from "@/lib/wegRuecklage";
 
 export type AfaParams = {
   gebaeudeAnteil: number; // % des Kaufpreises, der auf das Gebäude entfällt
@@ -77,6 +78,11 @@ export type AnlageVObjekt = {
    * Die App rechnet weiter degressiv (sie bucht nicht um), AfA und Summen gelten aber als nicht übertragbar.
    */
   afaUnzulaessig?: boolean;
+  /**
+   * WEG-Erhaltungsrücklage des Jahres (lib/wegRuecklage.ts): Zuführung laut Abrechnung, davon aus dem
+   * gebuchten Hausgeld herausgerechnet, Entnahme für Erhaltung (steckt in `erhaltung`). Fehlt bei Objekten ohne Eintrag.
+   */
+  ruecklage?: { zufuehrung: number; abgezogen: number; entnahme: number };
   /** Sachliche Hinweise zur Berechnung dieses Objekts (fehlende Angaben o. Ä.). */
   hinweise: string[];
 };
@@ -232,6 +238,7 @@ export function berechneAnlageV(
   }
 
   // Laufende Kosten
+  const hausgeldGebucht = new Map<string | null, number>();
   for (const k of kosten) {
     if (jahrVon(k.buchungsdatum) !== jahr) continue;
     if (k.prop_id && selbst.has(k.prop_id)) continue;
@@ -239,6 +246,30 @@ export function berechneAnlageV(
     const g = hole(k.prop_id);
     const bucket = (k.kategorie && KOSTEN_BUCKET[k.kategorie]) || "hausgeldSonstige";
     g.werbungskosten[bucket] += betrag;
+    if (k.kategorie === HAUSGELD_KATEGORIE) hausgeldGebucht.set(k.prop_id, (hausgeldGebucht.get(k.prop_id) ?? 0) + betrag);
+  }
+
+  // WEG-Erhaltungsrücklage (BFH IX R 19/24, lib/wegRuecklage.ts): Die Zuführung steckt im gebuchten
+  // Hausgeld und ist keine Werbungskosten → heraus; die Entnahme für Erhaltung ist es → zur Erhaltung.
+  // Die Buchungen bleiben, wie sie sind (das Geld ist abgeflossen) — nur die Anlage V rechnet so.
+  for (const p of properties) {
+    const g = hole(p.id);
+    const gebucht = hausgeldGebucht.get(p.id) ?? 0;
+    const r = ruecklageImJahr(p.weg_ruecklage, jahr);
+    if (!r) {
+      if (gebucht > 0 && !g.hinweise.includes(RUECKLAGE_FEHLT_HINWEIS)) g.hinweise.push(RUECKLAGE_FEHLT_HINWEIS);
+      continue;
+    }
+    const abgezogen = Math.min(r.zufuehrung, gebucht);
+    g.werbungskosten.hausgeldSonstige -= abgezogen;
+    g.werbungskosten.erhaltung += r.entnahme;
+    g.ruecklage = { zufuehrung: r.zufuehrung, abgezogen: r2(abgezogen), entnahme: r.entnahme };
+    if (r.zufuehrung > gebucht + 0.005) {
+      const fmt = (n: number) => n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      g.hinweise.push(
+        `Laut WEG-Abrechnung ${jahr} flossen ${fmt(r.zufuehrung)} € in die Erhaltungsrücklage, gebucht ist aber nur ${fmt(gebucht)} € Hausgeld. Herausgerechnet wird höchstens das gebuchte Hausgeld — fehlen Hausgeld-Buchungen?`,
+      );
+    }
   }
 
   // AfA + Schuldzinsen je Objekt
@@ -400,7 +431,8 @@ export function berechneAnlageV(
   });
 
   // Leere Objekte ohne jede Bewegung ausblenden (keine Einnahmen, keine WK).
-  const sichtbar = objekte.filter((g) => g.einnahmen.summe !== 0 || g.werbungskosten.summe !== 0);
+  // Ein Rücklagen-Eintrag zählt als Bewegung — sonst verschwände mit dem Objekt auch sein Hinweis.
+  const sichtbar = objekte.filter((g) => g.einnahmen.summe !== 0 || g.werbungskosten.summe !== 0 || g.ruecklage);
 
   // Gesamtsumme
   const gesamt: AnlageVObjekt = {
@@ -432,6 +464,15 @@ export function berechneAnlageV(
     schuldzinsenGeschaetzt: sichtbar.some((g) => g.schuldzinsenGeschaetzt),
     erhaltungAnschaffungsnah: sichtbar.some((g) => g.erhaltungAnschaffungsnah),
     afaUnzulaessig: sichtbar.some((g) => g.afaUnzulaessig),
+    ...(sichtbar.some((g) => g.ruecklage)
+      ? {
+          ruecklage: {
+            zufuehrung: r2(sum(sichtbar.map((g) => g.ruecklage?.zufuehrung ?? 0))),
+            abgezogen: r2(sum(sichtbar.map((g) => g.ruecklage?.abgezogen ?? 0))),
+            entnahme: r2(sum(sichtbar.map((g) => g.ruecklage?.entnahme ?? 0))),
+          },
+        }
+      : {}),
     hinweise: [
       ...new Set(sichtbar.flatMap((g) => g.hinweise)),
       ...(selbst.size > 0
@@ -514,6 +555,8 @@ export function summenWarnung(o: AnlageVObjekt): string | undefined {
   return undefined;
 }
 
+const euroText = (n: number) => `${n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+
 const AFA_WARNUNG =
   "Degressive AfA, obwohl Baujahr oder Kaufjahr § 7 Abs. 5a EStG widersprechen — nicht übertragen, erst klären.";
 
@@ -550,6 +593,9 @@ export function elsterZeilen(o: AnlageVObjekt, jahr: number): ElsterZeile[] {
       zeile: z("erhaltung"), bezeichnung: "Erhaltungsaufwendungen, voll abzuziehen", betrag: w.erhaltung, bereich: "wk",
       uebertragbar: !o.erhaltungAnschaffungsnah,
       warnung: o.erhaltungAnschaffungsnah ? ERHALTUNG_WARNUNG : undefined,
+      hinweis: o.ruecklage && o.ruecklage.entnahme > 0
+        ? `Enthält ${euroText(o.ruecklage.entnahme)} Entnahmen aus der Erhaltungsrücklage laut WEG-Abrechnung.`
+        : undefined,
     },
     { zeile: z(["umgelegt", "nichtUmgelegt"]), bezeichnung: "Grundsteuer / öffentliche Lasten", betrag: w.grundsteuer, bereich: "wk", hinweis: umlageHinweis },
     { zeile: z(["umgelegt", "nichtUmgelegt"]), bezeichnung: "Versicherungen", betrag: w.versicherung, bereich: "wk", hinweis: umlageHinweis },
@@ -559,7 +605,9 @@ export function elsterZeilen(o: AnlageVObjekt, jahr: number): ElsterZeile[] {
       zeile: z(["nichtUmgelegt", "sonstigeKosten"]), bezeichnung: "Hausgeld / WEG und sonstige Kosten", betrag: w.hausgeldSonstige, bereich: "wk",
       // Wortlaut des Vordrucks: „Nicht umgelegte Kosten (… – ohne Erhaltungsrücklage –)“ und Erhaltungsaufwendungen
       // „einschließlich Entnahmen aus der Erhaltungsrücklage“.
-      hinweis: "Hausgeld aufteilen: Umgelegtes zu „Umgelegte Kosten“, Verwaltergebühr zu „Nicht umgelegte Kosten“. Die Zuführung zur Erhaltungsrücklage nicht ansetzen — laut Vordruck zählt erst die Entnahme für eine Reparatur (bei den Erhaltungsaufwendungen).",
+      hinweis: o.ruecklage
+        ? `Hausgeld aufteilen: Umgelegtes zu „Umgelegte Kosten“, Verwaltergebühr zu „Nicht umgelegte Kosten“. Die Zuführung zur Erhaltungsrücklage (${euroText(o.ruecklage.abgezogen)}) ist schon herausgerechnet.`
+        : "Hausgeld aufteilen: Umgelegtes zu „Umgelegte Kosten“, Verwaltergebühr zu „Nicht umgelegte Kosten“. Die Zuführung zur Erhaltungsrücklage nicht ansetzen — laut Vordruck zählt erst die Entnahme für eine Reparatur (bei den Erhaltungsaufwendungen). Beträge aus der WEG-Abrechnung auf der Objektseite eintragen, dann rechnet MyImmo das heraus.",
     },
     {
       zeile: z("summeWerbungskosten"),

@@ -2103,6 +2103,14 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   (Betreiber 10.10.2026), Jahre vor 2024 keine. Weicht ein neuer Vordruck ab: nur eine Jahreszeile ergänzen. Neues Jahr:
   Vordruck lesen, Zeile in `ANLAGE_V_ZEILEN` mit Quelle, Prüftermin in `07` (01.02.2027). (2) Fristen in Jahren nur über
   `fristendeNachJahren()`. (3) `zeigeVerteiler` bekommt die Mietzeiten (`mieter: {mietbeginn, mietende}[]`), nie eine Anzahl.
+- 🏢 **WEG-Erhaltungsrücklage (10.10.2026, Betreiber)** (`tests/wegRuecklage.test.ts`, 12 Mutationen rot). BFH, Urteil vom
+  14.01.2025, IX R 19/24 (BStBl 2025 II S. 291): Die **Zuführung** zur Erhaltungsrücklage ist KEINE Werbungskosten, die
+  **Entnahme für Erhaltung** schon (im Jahr der Ausgabe). Vorher zog die Anlage V jedes gebuchte Hausgeld voll ab — gegen den
+  eigenen Ratgeber. Jetzt: `properties.weg_ruecklage` (jsonb je Jahr, Migration `20261010162259`, live) aus der
+  WEG-Jahresabrechnung, Eingabe auf der Objektseite (`components/WegRuecklage.tsx`, nur `hatWeg()`), Rechnung in
+  `lib/wegRuecklage.ts` + `berechneAnlageV`: Hausgeld − Zuführung (höchstens das gebuchte), Erhaltung + Entnahme; ohne
+  Eintrag Hinweis `RUECKLAGE_FEHLT_HINWEIS`. **Regel: Die Rücklage ändert nur die Anlage V, nie die Buchungen** — Cashflow
+  und Buchungssaldo bleiben beim tatsächlich gezahlten Hausgeld (Test sucht `weg_ruecklage` dort und wird sonst rot).
 - 📰 **Paket P10 der Gesamtprüfung (09.10.2026): Ratgeber und Werbung** (`tests/paketP10.test.ts`, 17 Mutationen rot).
   Jede korrigierte Rechtsaussage gegen den Wortlaut (gesetze-im-internet.de, per `curl` abrufbar — WebFetch bekam 503)
   bzw. zwei Sekundärquellen geprüft: Belegeinsicht nach **§ 556 Abs. 4 BGB** (seit 2025, elektronische Bereitstellung
