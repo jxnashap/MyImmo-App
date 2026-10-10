@@ -12,9 +12,10 @@ import {
 import {
   erstelleBewerberLink, setzeBewerberLinkAktiv, loescheBewerberLink,
   setzeBewerbungStatus, loescheBewerbung, ladeBewerbungDatei, loescheBewerbungDatei,
-  aktualisiereBewerberLink, loescheAlteAbgelehnteBewerbungen,
+  aktualisiereBewerberLink, loescheAlteBewerbungen,
 } from "@/lib/actions/bewerber";
-import { DOKUMENT_SLOTS, AUSSTATTUNG_OPTIONEN, slotLabel, type LinkAnzeige } from "@/lib/bewerbungsDokumente";
+import { BEWERBUNG_SLOTS, AUSSTATTUNG_OPTIONEN, slotLabel, faelligeBewerbungen, nachweiseMail, BEWERBUNG_LOESCHFRIST_MONATE, type LinkAnzeige } from "@/lib/bewerbungsDokumente";
+import { mailtoLink } from "@/lib/angebote";
 import DeleteButton from "@/components/DeleteButton";
 import { euro, datum } from "@/lib/format";
 import { teilbarerLink } from "@/lib/appUrl";
@@ -85,29 +86,29 @@ function BewerbungDatei({ d }: { d: { id: string; name: string; groesse: number 
   );
 }
 
-// DSGVO-Datensparsamkeit: abgelehnte Bewerbungen sollen nicht ewig liegen.
-// 6 Monate decken die AGG-Geltendmachungsfristen ab — danach erinnert die App
-// und löscht auf EINEN Klick (bewusst keine stille Automatik).
-function DsgvoAufraeumen({ bewerbungen }: { bewerbungen: BewerbungRow[] }) {
+// DSGVO-Datensparsamkeit (DSK, Abschnitt D): Bewerbungen ohne Mietvertrag sollen nicht ewig liegen — wegen
+// möglicher AGG-Ansprüche spätestens nach 6 Monaten löschen. Gilt für JEDEN Status (Gesamtprüfung B45: vorher
+// nur „abgelehnt“). Erinnern und auf EINEN Klick löschen, bewusst keine stille Automatik. Stichtag vom Server.
+function DsgvoAufraeumen({ bewerbungen, heute }: { bewerbungen: BewerbungRow[]; heute: string }) {
   const [pending, startTransition] = useTransition();
   const toast = useToast();
-  const grenze = new Date();
-  grenze.setMonth(grenze.getMonth() - 6);
-  const alte = bewerbungen.filter((b) => b.status === "abgelehnt" && new Date(b.created_at) < grenze);
+  const alte = faelligeBewerbungen(bewerbungen, heute);
   if (alte.length === 0) return null;
+  const favoriten = alte.filter((b) => b.status === "favorit").length;
   return (
     <div className="section" style={{ borderColor: "var(--gold-dim)" }}>
       <div className="section-body" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: 12.5 }}>
         <Trash2 size={15} color="var(--gold)" />
         <span>
-          <strong>{alte.length}</strong> abgelehnte {alte.length === 1 ? "Bewerbung ist" : "Bewerbungen sind"} älter
-          als 6 Monate — nach DSGVO sollten die Daten jetzt gelöscht werden (Dokumente werden mit entfernt).
+          <strong>{alte.length}</strong> {alte.length === 1 ? "Bewerbung ist" : "Bewerbungen sind"} älter als{" "}
+          {BEWERBUNG_LOESCHFRIST_MONATE} Monate — nach DSGVO sollten die Daten jetzt gelöscht werden (Dokumente werden
+          mit entfernt).{favoriten > 0 && <> Darunter {favoriten === 1 ? "ein Favorit" : `${favoriten} Favoriten`}: Wer Mieter geworden ist, steht mit den nötigen Angaben beim Mieter.</>}
         </span>
         <button data-demo-sperre
           type="button" className="btn btn-outline" style={{ marginLeft: "auto", fontSize: 12 }} disabled={pending}
           onClick={() => startTransition(async () => {
             // Antwort auswerten — die Action meldet „es wurde nichts gelöscht".
-            const f = actionFehler(await loescheAlteAbgelehnteBewerbungen());
+            const f = actionFehler(await loescheAlteBewerbungen());
             if (f) toast(f, "error");
           })}
         >
@@ -226,11 +227,12 @@ function LinkZeile({ l }: { l: BewerberLinkRow }) {
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>Gewünschte Unterlagen</div>
             <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>
-              Werden dem Bewerber als freiwillige Upload-Liste angeboten (DSGVO: Nachweise dürfen vor
-              Vertragsanbahnung nicht erzwungen werden).
+              Werden dem Bewerber als freiwillige Upload-Liste angeboten. Einkommensnachweise stehen hier bewusst
+              nicht: Die fordert man erst kurz vor dem Vertrag an — bei einem Favoriten über „Nachweise anfordern“
+              (DSK-Orientierungshilfe Selbstauskünfte, 01/2026).
             </div>
             <div style={{ display: "grid", gap: 5 }}>
-              {DOKUMENT_SLOTS.map((d) => (
+              {BEWERBUNG_SLOTS.map((d) => (
                 <label key={d.slug} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12 }}>
                   <input type="checkbox" name="dokumente" value={d.slug} defaultChecked={l.dokumenteGewuenscht.includes(d.slug)} />
                   {d.label}{d.hinweis ? <span style={{ color: "var(--faint)" }}> — {d.hinweis}</span> : null}
@@ -312,6 +314,16 @@ function BewerbungKarte({ b }: { b: BewerbungRow }) {
             </div>
           )}
           <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+            {b.status === "favorit" && (() => {
+              // Zweiter Schritt (DSK C. 2): Einkommensnachweise erst jetzt, per Mail — MyImmo verschickt nichts.
+              const m = nachweiseMail(b);
+              return (
+                <a href={mailtoLink(b.email, m.betreff, m.text)} className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px" }}
+                  title={b.email ? `Mail an ${b.email} vorbereiten` : "Keine E-Mail-Adresse angegeben — Empfänger selbst eintragen"}>
+                  <FileText size={12} style={{ verticalAlign: "-2px" }} /> Nachweise anfordern
+                </a>
+              );
+            })()}
             {b.status !== "favorit" && (
               <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "4px 10px", color: "var(--green)" }} disabled={pending} onClick={() => set("favorit")}>
                 <Star size={12} style={{ verticalAlign: "-2px" }} /> Favorit
@@ -336,11 +348,13 @@ function BewerbungKarte({ b }: { b: BewerbungRow }) {
 }
 
 export default function BewerbungenManager({
-  links, bewerbungen, properties,
+  links, bewerbungen, properties, heute,
 }: {
   links: BewerberLinkRow[];
   bewerbungen: BewerbungRow[];
   properties: { id: string; bezeichnung: string }[];
+  /** Berliner Stichtag vom Server (für die Löschfrist) — im Client-Render nie die Uhr des Browsers. */
+  heute: string;
 }) {
   const [fehler, setFehler] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -386,7 +400,7 @@ export default function BewerbungenManager({
         </div>
       </div>
 
-      <DsgvoAufraeumen bewerbungen={bewerbungen} />
+      <DsgvoAufraeumen bewerbungen={bewerbungen} heute={heute} />
 
       <div className="section">
         <div className="section-header">

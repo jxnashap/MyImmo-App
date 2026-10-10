@@ -435,7 +435,7 @@ export default async function AnliegenPage(
         )}
 
         {tab === "bewerbungen" && (
-          <BewerbungenManager links={links} bewerbungen={bewerbungen} properties={props ?? []} />
+          <BewerbungenManager links={links} bewerbungen={bewerbungen} properties={props ?? []} heute={heuteBerlin()} />
         )}
 
         {tab === "service" && (

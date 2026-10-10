@@ -2079,6 +2079,17 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   `/api/demo` bewusst (einmal je Rolle). (3) Adressen als ganze Vorlage schreiben (`` `/kosten/${id}/edit` ``), nicht aus
   Teilen zusammensetzen — sonst findet weder der Inventar- noch der Demo-Wege-Test den Einstieg. (4) Eine neue verwaiste Seite
   bekommt einen Einstieg oder wird gelöscht; Ausnahmen nur für Alt-Adressen mit `redirect()`.
+- 📨 **Paket P11 der Gesamtprüfung (10.10.2026): Bewerbungslink nach der DSK-Orientierungshilfe Selbstauskünfte V2.0**
+  (`tests/paketP11.test.ts`, 11 Mutationen rot). Mietschuldenfreiheitsbescheinigung gestrichen (BGH VIII ZR 238/08);
+  SCHUFA heißt „Bonitätsauskunft für Vermieter“ (ausdrücklich nicht die Art.-15-Datenkopie); **jeder Slot in
+  `lib/bewerbungsDokumente.ts` hat eine Phase** — `BEWERBUNG_SLOTS` am Link, `VERTRAG_SLOTS` (Einkommen, Bürgschaft) erst
+  beim Favoriten über „Nachweise anfordern“ (`nachweiseMail()` → `mailto:`, MyImmo verschickt nichts). **Löschen nach
+  sechs Monaten für JEDEN Status** über `loeschGrenze()`/`faelligeBewerbungen()` (Stichtag `heuteBerlin()` vom Server),
+  Action `loescheAlteBewerbungen` (vorher nur „abgelehnt“). Alte Dateien behalten über `slotLabel()` einen Namen.
+  **Offen bis Anwaltsfrage 10:** Rechtsgrundlage (lit. a → b/f) und Einwilligungstext — bewusst unverändert.
+  **Regeln:** (1) Steckbrief, öffentliche Seite UND öffentlicher Upload nehmen nur `BEWERBUNG_SLOTS` — eine neue Unterlage
+  bekommt ihre Phase, nie einen Sonderweg. (2) Nichts in die Bewerbungsphase, was die DSK erst vor dem Vertrag erlaubt
+  (Einkommen, Ausweis, Kontoauszüge). (3) Löschfrist und Erinnerung nie getrennt rechnen.
 - 📰 **Paket P10 der Gesamtprüfung (09.10.2026): Ratgeber und Werbung** (`tests/paketP10.test.ts`, 17 Mutationen rot).
   Jede korrigierte Rechtsaussage gegen den Wortlaut (gesetze-im-internet.de, per `curl` abrufbar — WebFetch bekam 503)
   bzw. zwei Sekundärquellen geprüft: Belegeinsicht nach **§ 556 Abs. 4 BGB** (seit 2025, elektronische Bereitstellung
