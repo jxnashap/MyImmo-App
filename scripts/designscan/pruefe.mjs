@@ -4,8 +4,15 @@
 // Konsolenfehler. Nur lesend — nie etwas absenden.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { oeffne, BASIS, endAdresse } from "./browser.mjs";
+import { gesperrt } from "../crawlSperrliste.mjs";
 const [rolle = "gast", b = "390", aus = ".scan/out", ...pfade] = process.argv.slice(2);
 const breite = Number(b);
+// Nie eine Adresse der Sperrliste öffnen (z. B. /api/demo setzt den Demo-Bestand zurück).
+const verboten = pfade.filter((x) => gesperrt(x));
+if (verboten.length) {
+  console.error(`gesperrt (scripts/crawlSperrliste.mjs): ${verboten.join(", ")}`);
+  process.exit(2);
+}
 mkdirSync(aus, { recursive: true });
 const { browser, ctx } = await oeffne({ breite, rolle });
 const ergebnisse = [];
@@ -66,7 +73,10 @@ for (const pfad of pfade) {
   const anzahl = Math.max(1, Math.min(MAX_BILDER, Math.ceil(hoehe / vh)));
   const bilder = [];
   for (let i = 0; i < anzahl; i++) {
-    await p.evaluate((y) => window.scrollTo(0, y), i * vh).catch(() => {});
+    // `behavior: "instant"`: Die App setzt `html { scroll-behavior: smooth }` — ein schlichtes
+    // `scrollTo(0, y)` glitt deshalb noch, als die Aufnahme lief, und lieferte halbe Bildschirme
+    // (Gesamtprüfung 07.10.2026, Paket P13; betrifft womöglich auch Bilder des Design-Scans vom 06.10.).
+    await p.evaluate((y) => window.scrollTo({ top: y, left: 0, behavior: "instant" }), i * vh).catch(() => {});
     await p.waitForTimeout(450);
     const d = `${basis}-s${String(i + 1).padStart(2, "0")}.png`;
     await p.screenshot({ path: d }).catch(() => {});

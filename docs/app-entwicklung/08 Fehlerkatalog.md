@@ -87,6 +87,28 @@ Vorkommen zählen.
 
 ## Eigene Prüfungen
 
+**Ein Linkprüfer setzte die Demo fünfmal zurück** (MyImmo, Audit 07.10.2026)
+Er folgte jedem `href` per GET — auch „Demo ansehen“ (`/api/demo`), das anmeldet und den geteilten
+Bestand zurücksetzt. „GET ist harmlos“ stimmt nicht: Adressen lösen Links ein, protokollieren
+Abrufe, schreiben.
+→ *Gegenprüfung:* Eine Sperrliste (`scripts/crawlSperrliste.mjs`), die jedes Werkzeug vor dem
+Aufruf fragt — Start, Link und Weiterleitung. Ein Test verlangt, dass jede GET-Route entweder
+gesperrt oder ausdrücklich „nur lesend“ ist.
+
+**Fremde ID galt als gute Seite — HTTP 200 trotz `notFound()`** (MyImmo, Audit 07.10.2026)
+Mit `loading.tsx` streamt Next: `notFound()`/`redirect()` kommen als 200, der Ausgang steht nur als
+`NEXT_HTTP_ERROR_FALLBACK;404` bzw. `NEXT_REDIRECT;replace;/ziel;307;` im HTML. Wer nur den
+Statuscode liest, zählt Fehler nicht.
+→ *Gegenprüfung:* Marker auswerten (`scripts/streamingMarker.mjs`) und einen Weg mit bewusst
+unbekannter ID prüfen, der „nicht gefunden“ ERWARTET — sonst merkt niemand, wenn die Erkennung
+selbst ausfällt. Muster aus echten Antworten übernehmen; ein `&amp;` im Ziel enthält ein `;`.
+
+**Bildschirmaufnahmen zeigten halbe Seiten** (MyImmo, Audit 07.10.2026)
+`html { scroll-behavior: smooth }` gilt auch für `window.scrollTo(0, y)` aus einem Skript — die
+Aufnahme lief, während die Seite noch glitt.
+→ *Gegenprüfung:* `scrollTo({ top, behavior: "instant" })`; bei Bildreihen eine Aufnahme mit
+bekanntem Inhalt am Abschnittsanfang ansehen.
+
 **Eine Prüfung meldete „sauber", obwohl sie nichts geprüft hatte**
 Das Suchmuster fand keine Skript-Dateien → null durchsucht → null Treffer → grün.
 → *Gegenprüfung:* Jede Prüfung meldet mit, **wie viel** sie geprüft hat. Null
