@@ -6,7 +6,7 @@ import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { eur2 } from "@/lib/format";
 import { berechneNk, type NkCo2Input } from "@/lib/nk";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
-import { ladeNkObjekt, basisMitStammdaten, nkCo2Argumente } from "@/lib/nkPositionen";
+import { ladeNkObjekt, basisMitStammdaten, nkCo2Argumente, nkAmObjekt } from "@/lib/nkPositionen";
 import { verteileObjektKosten, positionenFuerMieter, co2FuerMieter } from "@/lib/nkObjekt";
 import { zeigeVerteiler } from "@/lib/umlage";
 import { nkAusBuchungen } from "@/lib/nkAusBuchungen";
@@ -33,6 +33,29 @@ export default async function NebenkostenObjektPage(props: {
   const { data: prop } = await supabase
     .from("properties").select("id,bezeichnung,flaeche,einheiten_anzahl,typ").eq("id", id).eq("user_id", user?.id ?? "").maybeSingle();
   if (!prop) notFound();
+
+  // Nur im Mehrfamilienhaus (C51) — per Adresse war die Seite auch bei einer ETW erreichbar.
+  if (!(await nkAmObjekt(supabase, id))) {
+    return (
+      <div className="fade-up">
+        <div className="topbar">
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <Link href={`/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
+            <div style={{ minWidth: 0 }}>
+              <div className="topbar-title">Nebenkosten</div>
+              <div className="topbar-sub">{prop.bezeichnung}</div>
+            </div>
+          </div>
+        </div>
+        <div className="section"><div className="section-body">
+          <p style={{ margin: 0 }}>
+            Nebenkosten am Objekt gibt es nur bei mehreren Mietparteien. Bei diesem Objekt erfasst du die
+            Positionen beim Mieter — über „NK-Abrechnung“ auf der Seite des Mieters.
+          </p>
+        </div></div>
+      </div>
+    );
+  }
 
   const daten = await ladeNkObjekt(supabase, id, jahr);
   const kopf = (

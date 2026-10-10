@@ -179,7 +179,7 @@ export default function KrediteListe({
             </div>
 
             <div className="form-actions" style={{ justifyContent: "space-between" }}>
-              <DeleteButton action={deleteKredit.bind(null, offen.id)} className="btn btn-ghost" label="Löschen" confirmText={`„${offen.bezeichnung || "Darlehen"}" löschen?`} />
+              <DeleteButton action={deleteKredit.bind(null, offen.id)} className="btn btn-ghost" label="Löschen" confirmText={`„${offen.bezeichnung || "Darlehen"}“ löschen?`} />
               <SubmitButton>Speichern</SubmitButton>
             </div>
           </form>

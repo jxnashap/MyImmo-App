@@ -5,6 +5,7 @@
 // laufen — der Vermieter darf aus der Vorschau heraus nichts im Namen des
 // Mieters absenden.
 import Link from "next/link";
+import { HILFE_MAILTO } from "@/lib/preise";
 import type { ReactNode } from "react";
 import { Home, MessageSquareText, FileText, Gauge, Banknote, Receipt } from "lucide-react";
 import { euro, datum } from "@/lib/format";
@@ -363,6 +364,12 @@ export default function PortalAnsicht({
           aktuell={PORTAL_TABS.findIndex((t) => t.key === tab)}
           reiter={PORTAL_TABS.map((t) => ({ href: hrefFuer(t.key), label: t.label, inhalt: inhalte[t.key] }))}
         />
+        {/* Hilfeweg (C48): `/hilfe` ist für Mieter gesperrt — ohne diese Zeile gab es keinen Weg zu MyImmo. */}
+        {!vorschau && (
+          <p className="portal-hilfe">
+            Fragen zur App? <a href={HILFE_MAILTO}>Hilfe &amp; Kontakt</a>
+          </p>
+        )}
       </main>
     </div>
   );

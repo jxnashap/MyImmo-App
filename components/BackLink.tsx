@@ -17,7 +17,7 @@ export default function BackLink() {
           router.push("/");
         }
       }}
-      style={{ color: "var(--gold)", fontSize: 14, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+      className="zurueck-link"
     >
       ← Zurück
     </button>

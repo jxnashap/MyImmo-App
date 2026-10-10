@@ -133,7 +133,7 @@ export default function KontoauszugAbgleich({ nacherfassung }: { nacherfassung: 
             <div>
               <h3>{ergebnis.treffer.length} {ergebnis.treffer.length === 1 ? "Zuordnung" : "Zuordnungen"} aus „{ergebnis.datei}“</h3>
               <div className="section-sub">
-                {ergebnis.ohneZuordnung.length} Eingänge ohne Bezug zu einer offenen Miete · {ergebnis.ausgaenge} Ausgänge übersprungen
+                {ergebnis.ohneZuordnung.length} {ergebnis.ohneZuordnung.length === 1 ? "Eingang" : "Eingänge"} ohne Bezug zu einer offenen Miete · {ergebnis.ausgaenge} {ergebnis.ausgaenge === 1 ? "Ausgang" : "Ausgänge"} übersprungen
               </div>
             </div>
           </div>
@@ -145,31 +145,31 @@ export default function KontoauszugAbgleich({ nacherfassung }: { nacherfassung: 
               </p>
             ) : (
               <>
-                <div className="table-scroll"><table style={{ fontSize: 12, minWidth: 640 }}>
+                <div className="table-scroll"><table className="ka-tabelle" style={{ fontSize: 12 }}>
                   <thead><tr><th></th><th>Eingang</th><th>Zahler / Zweck</th><th>Mieter</th><th>Mietmonat</th><th>Grund</th></tr></thead>
                   <tbody>
                     {ergebnis.treffer.map((t) => {
                       const an = auswahl.has(t.zahlung.zeile);
                       return (
                         <tr key={t.zahlung.zeile} style={{ opacity: an ? 1 : 0.65 }}>
-                          <td>
+                          <td className="ka-wahl">
                             <input type="checkbox" checked={an} aria-label="übernehmen" data-demo-erlaubt
                               onChange={() => setAuswahl((s) => { const n = new Set(s); if (n.has(t.zahlung.zeile)) n.delete(t.zahlung.zeile); else n.add(t.zahlung.zeile); return n; })} />
                           </td>
-                          <td style={{ whiteSpace: "nowrap" }}><strong>{eur(t.zahlung.betrag)}</strong><div style={{ color: "var(--muted)" }}>{datumDe(t.zahlung.datum)}</div></td>
-                          <td style={{ maxWidth: 240 }}>
+                          <td data-label="Eingang" style={{ whiteSpace: "nowrap" }}><strong>{eur(t.zahlung.betrag)}</strong><div style={{ color: "var(--muted)" }}>{datumDe(t.zahlung.datum)}</div></td>
+                          <td data-label="Zahler / Zweck" className="ka-zweck">
                             <div>{t.zahlung.name || "–"}</div>
                             <div style={{ color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={t.zahlung.zweck}>{t.zahlung.zweck}</div>
                           </td>
-                          <td>{t.name}</td>
-                          <td>
+                          <td data-label="Mieter">{t.name}</td>
+                          <td data-label="Mietmonat">
                             <select className="input" style={{ width: "auto", fontSize: 12, padding: "4px 8px" }} data-demo-erlaubt
                               value={monatWahl[t.zahlung.zeile] ?? t.jahrMonat}
                               onChange={(e) => setMonatWahl((s) => ({ ...s, [t.zahlung.zeile]: e.target.value }))}>
                               {t.monate.map((m) => <option key={m.jahrMonat} value={m.jahrMonat}>{monatLabel(m.jahrMonat)} · Soll {eur(m.gesamt)}</option>)}
                             </select>
                           </td>
-                          <td>
+                          <td data-label="Grund">
                             <span className={`badge ${t.stufe === "sicher" ? "badge-green" : "badge-amber"}`}>{t.stufe}</span>
                             <div style={{ color: "var(--faint)", fontSize: 11 }}>{t.gruende.join(" + ")}</div>
                           </td>

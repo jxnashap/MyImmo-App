@@ -172,7 +172,7 @@ export default function CashflowDonut({
       : `stroke-dasharray .66s cubic-bezier(.22,.61,.36,1) ${i * 0.05}s, stroke-width .18s ease, filter .18s ease, opacity .18s ease`;
 
   return (
-    <div className="donut-wrap" style={{ position: "relative", touchAction: "pan-y" }} onMouseLeave={onLeave} onClick={() => setPin(null)}>
+    <div className="donut-wrap" style={{ position: "relative", touchAction: "pan-y pinch-zoom" }} onMouseLeave={onLeave} onClick={() => setPin(null)}>
       {/* Kopfzeile im Drilldown: Zurück + Umschalter */}
       {side && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>

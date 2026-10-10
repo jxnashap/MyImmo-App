@@ -28,8 +28,10 @@ export default function DemoLeiste() {
     // data-demo-erlaubt: sonst sperrt `DemoNurLesen` die Knöpfe.
     <div role="status" className="demo-leiste" data-demo-erlaubt>
       <span>
-        <strong>Demo mit Beispieldaten.</strong> Ansehen ja, speichern nein. Bereiche mit
-        Schloss zeigen, was mit eigenem Zugang dazukommt.
+        {/* Nicht „Bereiche mit Schloss“: In der Demo ist fast alles frei, ein Schloss gibt es kaum
+            (Gesamtprüfung C4). Gesperrtes erklärt `DemoSperre` beim Anklicken. */}
+        <strong>Demo mit Beispieldaten.</strong> Ansehen ja, speichern nein. Was nur mit eigenem
+        Zugang geht, erklärt ein Hinweis beim Anklicken.
       </span>
       <span className="demo-leiste-knoepfe">
         {/* Ohne offene Registrierung kein Weg zur Registrierung (Vorgabe 01.10.2026). */}

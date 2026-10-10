@@ -19,7 +19,7 @@ export default function BrandMark({
       {subtitle && (
         <div
           className="mt-2 font-medium uppercase"
-          style={{ fontSize: "0.62rem", letterSpacing: "0.2em", whiteSpace: "nowrap", color: "var(--muted)" }}
+          style={{ fontSize: 11, letterSpacing: "0.12em", whiteSpace: "nowrap", color: "var(--muted)" }} /* nicht unter 11 px (C57) */
         >
           Privates Immobilien-Management
         </div>

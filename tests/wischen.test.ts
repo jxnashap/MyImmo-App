@@ -98,7 +98,8 @@ describe("Einbindung", () => {
     expect(w).toContain("GLEIT_MS + 80");
   });
   it("der Browser scrollt senkrecht selbst; Eingabefelder, waagerecht scrollbare Bereiche, Rand und Ausnahmen bleiben in Ruhe", () => {
-    expect(w).toContain('touchAction: "pan-y"');
+    // `pinch-zoom` gehört dazu (Gesamtprüfung P12): `pan-y` allein schaltete das Zoomen mit zwei Fingern ab.
+    expect(w).toContain('touchAction: "pan-y pinch-zoom"');
     expect(w).toContain('el.matches("input, textarea, select');
     expect(w).toContain("[data-kein-wischen]");
     expect(w).toMatch(/ox === "auto" \|\| ox === "scroll"\) && el\.scrollWidth > el\.clientWidth/);

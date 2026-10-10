@@ -181,7 +181,9 @@ export default function AnliegenPortal({
               <Icon size={18} color="var(--gold)" />
             </span>
             <div style={{ flex: 1, minWidth: 180 }}>
-              <h2 style={{ fontSize: 17, fontWeight: 650, margin: 0, overflowWrap: "anywhere" }}>{a.titel}</h2>
+              {/* Silbentrennung statt Bruch mitten im Wort („Nebenkostenabrechnu|ng“, Gesamtprüfung C12);
+                  `break-word` bleibt als Rückfall für Zeichenketten ohne Trennstelle. */}
+              <h2 style={{ fontSize: 17, fontWeight: 650, margin: 0, overflowWrap: "break-word", hyphens: "auto" }}>{a.titel}</h2>
               <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 3 }}>Gemeldet am {datumKurz(a.created_at)}</div>
             </div>
             <span className={`badge ${s.cls}`} style={{ fontSize: 12.5 }}>{s.label}</span>

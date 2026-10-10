@@ -148,6 +148,10 @@ export async function ladeNkPositionen(
     stamm = data ?? {};
   }
   const mfh = zeigeVerteiler({ typ: stamm.typ ?? null, einheiten_anzahl: stamm.einheiten_anzahl ?? null, mieterAnzahl: daten.mieter.length });
+  // Kosten am Objekt gelten NUR im Mehrfamilienhaus — dieselbe Regel wie `nkAmObjekt()` und die Seite.
+  // Vorher zählten sie auch bei einer ETW, wenn jemand die Seite per Adresse aufrief und dort Kosten
+  // eintrug (Gesamtprüfung C51): die Abrechnung des Mieters wechselte still die Quelle.
+  if (!mfh) return altbestand(true);
   const e = verteileObjektKosten(jahr, basisMitStammdaten(daten.basis, stamm), daten.kosten, daten.mieter);
   // CO₂ im Mehrfamilienhaus nur vom Objekt — auch wenn die Positionen noch beim Mieter stehen.
   const co2 = mfh ? co2FuerMieter(e, mieter.id) : null;

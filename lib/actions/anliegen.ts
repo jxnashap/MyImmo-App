@@ -45,8 +45,8 @@ export async function erstelleAnliegen(formData: FormData) {
     .filter((f): f is File => f instanceof File && f.size > 0);
   if (dateien.length > MAX_DATEIEN) return { error: `Maximal ${MAX_DATEIEN} Dateien.` };
   for (const f of dateien) {
-    if (f.size > MAX_GROESSE) return { error: `„${f.name}" ist größer als 4 MB.` };
-    if (!ERLAUBTE_MIME.includes(f.type)) return { error: `„${f.name}": nur Fotos (JPG/PNG/WebP/HEIC) oder PDF.` };
+    if (f.size > MAX_GROESSE) return { error: `„${f.name}“ ist größer als 4 MB.` };
+    if (!ERLAUBTE_MIME.includes(f.type)) return { error: `„${f.name}“: nur Fotos (JPG/PNG/WebP/HEIC) oder PDF.` };
   }
 
   const { data: neu, error } = await supabase
@@ -75,7 +75,7 @@ export async function erstelleAnliegen(formData: FormData) {
       groesse: f.size,
       daten: b64,
     });
-    if (fehlerDatei) return { error: `Anliegen gespeichert, aber „${f.name}" konnte nicht hochgeladen werden.` };
+    if (fehlerDatei) return { error: `Anliegen gespeichert, aber „${f.name}“ konnte nicht hochgeladen werden.` };
   }
 
   await benachrichtige(zugang.vermieter_id, "anliegen_neu", neu.id);

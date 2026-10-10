@@ -86,7 +86,7 @@ export default async function VerbrauchPage(
           <h3>Alle Einträge</h3>
         </div>
         <div className="section-body">
-          <VerbrauchListe rows={tabelle} properties={properties} />
+          <VerbrauchListe rows={tabelle} properties={properties} gefiltert={(verb ?? []).length > 0} />
         </div>
       </div>
     </div>

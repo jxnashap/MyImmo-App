@@ -1,67 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 
-type Theme = "dark" | "light";
+// Hell/Dunkel umschalten. Symbol und Beschriftung folgen dem Theme per CSS (`.tt-hell`/`.tt-dunkel`
+// in globals.css, gesteuert über `data-theme` bzw. die Systemeinstellung) — nicht über einen
+// React-Zustand. Vorher stand bis zur Hydration immer der Mond da, auch im hellen Modus
+// (Gesamtprüfung C14), weil der Server das Theme nicht kennt. Das Umschalten liest den
+// Zustand deshalb direkt am <html>, nicht aus einem Zustand, der nach dem Laden erst nachzieht.
+function aktuellesTheme(): "dark" | "light" {
+  const gesetzt = document.documentElement.getAttribute("data-theme");
+  if (gesetzt === "dark" || gesetzt === "light") return gesetzt;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function umschalten() {
+  const naechstes = aktuellesTheme() === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", naechstes);
+  try {
+    localStorage.setItem("theme", naechstes);
+  } catch {
+    /* ignore */
+  }
+}
 
 export default function ThemeToggle({ variant = "full" }: { variant?: "full" | "icon" }) {
-  const [theme, setTheme] = useState<Theme>("dark");
-
-  useEffect(() => {
-    const saved =
-      (typeof localStorage !== "undefined" &&
-        (localStorage.getItem("theme") as Theme | null)) ||
-      (document.documentElement.getAttribute("data-theme") as Theme | null);
-    if (saved) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
-      setTheme(saved);
-      return;
-    }
-    // Weder localStorage noch data-theme gesetzt: Init-State aus dem OS
-    // ableiten, damit er sich mit dem deckt, was :root:not([data-theme])
-    // tatsächlich rendert (sonst zeigt der Button den falschen Modus und
-    // der erste Klick ist ein No-Op).
-    const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
-    setTheme(prefersLight ? "light" : "dark");
-  }, []);
-
-  const toggle = () => {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("theme", next);
-    } catch {
-      /* ignore */
-    }
-  };
-
   if (variant === "icon") {
     return (
-      <button
-        onClick={toggle}
-        title="Hell/Dunkel"
-        aria-label="Hell-/Dunkelmodus umschalten"
-        style={{
-          background: "none",
-          border: "1px solid var(--line2)",
-          borderRadius: 20,
-          cursor: "pointer",
-          padding: "4px 10px",
-          fontSize: 14,
-          lineHeight: 1,
-          color: "var(--muted)",
-        }}
-      >
-        {theme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
+      <button type="button" onClick={umschalten} title="Hell/Dunkel" aria-label="Hell-/Dunkelmodus umschalten" className="theme-knopf">
+        <span className="tt-dunkel"><Moon size={14} /></span>
+        <span className="tt-hell"><Sun size={14} /></span>
       </button>
     );
   }
 
   return (
-    <button onClick={toggle} className="btn btn-ghost" title="Hell/Dunkel">
-      {theme === "dark" ? <><Moon size={14} style={{ verticalAlign: "-2px" }} /> Heller Modus</> : <><Sun size={14} style={{ verticalAlign: "-2px" }} /> Dunkler Modus</>}
+    <button type="button" onClick={umschalten} className="btn btn-ghost" title="Hell/Dunkel">
+      <span className="tt-dunkel"><Moon size={14} style={{ verticalAlign: "-2px" }} /> Heller Modus</span>
+      <span className="tt-hell"><Sun size={14} style={{ verticalAlign: "-2px" }} /> Dunkler Modus</span>
     </button>
   );
 }

@@ -2,7 +2,7 @@
 import { BarChart3 } from "lucide-react";
 
 import { useZeitraum } from "./ZeitraumProvider";
-import { aggregate, niceScale, kurzTick, xTickLabel, bucketTitel, type RawPoint } from "@/lib/zeitraum";
+import { aggregate, niceScale, kurzTick, linkerRand, xTickLabel, bucketTitel, type RawPoint } from "@/lib/zeitraum";
 import { euro } from "@/lib/format";
 import Leer from "@/components/Leer";
 import { useBreite } from "@/lib/hooks/useBreite";
@@ -68,7 +68,7 @@ export default function BetragChart({
 
   // Koordinaten = Pixel (siehe lib/hooks/useBreite.ts). Vor dem Messen ein Platzhalter
   // in der richtigen Höhe, damit nichts springt.
-  const W = breite ?? 600, H = hoehe, padL = 56, padR = 16, padT = 18, padB = 46;
+  const W = breite ?? 600, H = hoehe, padL = linkerRand(scale.ticks), padR = 16, padT = 18, padB = 46;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
   const n = buckets.length;
@@ -149,7 +149,7 @@ export default function BetragChart({
 
         {/* Achsentitel */}
         <text x={padL + plotW / 2} y={H - 6} textAnchor="middle" fontSize="11.5" fill="var(--faint)">Zeitraum</text>
-        <text x={14} y={padT + plotH / 2} textAnchor="middle" fontSize="11.5" fill="var(--faint)" transform={`rotate(-90 14 ${padT + plotH / 2})`}>Betrag (€)</text>
+        <text x={12} y={padT + plotH / 2} textAnchor="middle" fontSize="11.5" fill="var(--faint)" transform={`rotate(-90 12 ${padT + plotH / 2})`}>Betrag (€)</text>
       </svg>
       )}
 

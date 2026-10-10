@@ -11,7 +11,7 @@ export default function NichtGefunden() {
           <span style={{ fontFamily: "'Fraunces', serif", fontSize: 30 }}>
             My<em style={{ color: "var(--gold)" }}>Immo</em>
           </span>
-          <div style={{ fontSize: 9, letterSpacing: "0.2em", color: "var(--muted)", marginTop: 2 }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.12em", color: "var(--muted)", marginTop: 2 }}>
             PRIVATES IMMOBILIEN-MANAGEMENT
           </div>
         </div>

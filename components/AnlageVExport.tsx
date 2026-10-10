@@ -216,7 +216,7 @@ export default function AnlageVExport({
             <KennzahlCard
               label={erg.gesamt.ueberschuss >= 0 ? "Überschuss (Einkünfte)" : "Verlust"}
               value={eur2(erg.gesamt.ueberschuss)}
-              color={erg.gesamt.ueberschuss >= 0 ? "var(--gold-fill)" : "var(--red)"}
+              color={erg.gesamt.ueberschuss >= 0 ? "var(--gold)" : "var(--red)"}
             />
           </div>
 
@@ -323,7 +323,7 @@ export default function AnlageVExport({
                   <tr style={{ borderTop: "2px solid var(--line2)" }}>
                     <td style={{ ...ERSTE_SPALTE, fontWeight: 700 }}>Überschuss / Verlust</td>
                     {spalten.map((o) => (
-                      <td key={o.propId ?? "g"} style={{ textAlign: "right", fontWeight: 700, color: o.ueberschuss >= 0 ? "var(--gold-fill)" : "var(--red)", background: o === erg.gesamt ? "var(--bg3)" : undefined }}>
+                      <td key={o.propId ?? "g"} style={{ textAlign: "right", fontWeight: 700, color: o.ueberschuss >= 0 ? "var(--gold)" : "var(--red)", background: o === erg.gesamt ? "var(--bg3)" : undefined }}>
                         {eur2(o.ueberschuss)}
                       </td>
                     ))}

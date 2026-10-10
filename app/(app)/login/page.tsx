@@ -9,6 +9,7 @@ import { bereiteRegistrierungVor, pruefeEinladungscode } from "@/lib/actions/fre
 import { PASSWORT_LECK_HINWEIS, PASSWORT_MIN, PASSWORT_REGEL, passwortAblehnung, pruefePasswort } from "@/lib/passwort";
 import { RESET_ZIEL } from "@/lib/passwortWechsel";
 import { HILFE_MAILTO } from "@/lib/preise";
+import { istEmail } from "@/lib/newsletter";
 import { sicheresZiel } from "@/lib/flash";
 import { herkunftDieserSeite } from "@/lib/herkunft";
 import MfaAbfrage from "@/components/MfaAbfrage";
@@ -35,6 +36,8 @@ function uebersetze(msg: string): string {
   // Nutzer die englische Rohmeldung.
   if (m.includes("weak") && m.includes("password"))
     return `Dein Passwort erfüllt die aktuellen Sicherheitsregeln nicht mehr (${PASSWORT_REGEL}). Bitte ändere es gleich hier.`;
+  if (m.includes("validate email") || m.includes("invalid format") || (m.includes("email") && m.includes("invalid")))
+    return "Bitte eine gültige E-Mail-Adresse eingeben.";
   if (m.includes("provider is not enabled")) return "Google-Login ist noch nicht aktiviert (in Supabase einrichten).";
   if (m.includes("rate limit") || m.includes("too many"))
     return "Zu viele Anfragen in kurzer Zeit — bitte in ein paar Minuten erneut versuchen (oder „Mit Google anmelden“).";
@@ -338,6 +341,12 @@ export default function LoginPage() {
       setError("Bitte zuerst deine E-Mail oben eingeben.");
       return;
     }
+    // Vorher prüfen: Supabase antwortete auf „abc“ englisch („Unable to validate email address:
+    // invalid format“, Gesamtprüfung C54). `uebersetze()` fängt den Text zusätzlich ab.
+    if (!istEmail(email)) {
+      setError("Bitte eine gültige E-Mail-Adresse eingeben.");
+      return;
+    }
     // Ziel ist die Einlöse-Route, NICHT /login: Dort wurde der Link früher
     // nirgends eingelöst, und ein Formular für ein neues Passwort gab es auch
     // nicht — der Weg endete im Nichts (siehe app/(app)/auth/passwort/route.ts).
@@ -377,7 +386,7 @@ export default function LoginPage() {
         <div className="mt-5 flex items-center justify-between gap-3">
           <Link
             href="/anmelden"
-            className="inline-flex items-center gap-1 text-[12px] transition hover:underline"
+            className="tipp-flaeche inline-flex items-center gap-1 text-[12px] transition hover:underline"
             style={{ color: "var(--muted)" }}
           >
             <ArrowLeft size={12} /> Rolle wechseln
@@ -424,8 +433,12 @@ export default function LoginPage() {
             type="email"
             required
             placeholder="E-Mail"
+            autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (error) setError(null);
+            }}
             className="input w-full text-[15px]"
             style={{ padding: "12px 14px" }}
           />
@@ -434,8 +447,14 @@ export default function LoginPage() {
             required
             minLength={mode === "signup" ? PASSWORT_MIN : undefined}
             placeholder={mode === "signup" ? `Passwort (${PASSWORT_REGEL})` : "Passwort"}
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              // Eine Meldung aus dem letzten Absenden („Passwörter stimmen nicht überein“) gilt nach
+              // einer Korrektur nicht mehr (Gesamtprüfung C55).
+              if (error) setError(null);
+            }}
             className="input w-full text-[15px]"
             style={{ padding: "12px 14px" }}
           />
@@ -453,8 +472,12 @@ export default function LoginPage() {
                 type="password"
                 required
                 placeholder="Passwort wiederholen"
+                autoComplete="new-password"
                 value={password2}
-                onChange={(e) => setPassword2(e.target.value)}
+                onChange={(e) => {
+                  setPassword2(e.target.value);
+                  if (error) setError(null);
+                }}
                 aria-invalid={password2.length > 0 && password2 !== password}
                 className="input w-full text-[15px]"
                 style={{
@@ -474,6 +497,7 @@ export default function LoginPage() {
             <input
               type="text"
               placeholder="Firma / Betrieb (optional, z. B. Sanitär Müller)"
+              autoComplete="organization"
               value={firma}
               onChange={(e) => setFirma(e.target.value)}
               className="input w-full text-[15px]"
@@ -492,6 +516,7 @@ export default function LoginPage() {
                     ? "Einladungscode (vom Vermieter, z. B. SV-XXXX-XXXX)"
                     : "Zugangscode (Beta)"
               }
+              autoComplete="off"
               value={code}
               onChange={(e) => {
                 setCode(e.target.value);
@@ -602,7 +627,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={resetPassword}
-              className="text-[13px] transition hover:underline"
+              className="tipp-flaeche text-[13px] transition hover:underline"
               style={{ color: "var(--muted)" }}
             >
               Passwort vergessen?

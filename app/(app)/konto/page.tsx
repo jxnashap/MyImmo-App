@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import KontoVerwaltung from "@/components/KontoVerwaltung";
 import { ohnePasswort } from "@/lib/passwort";
+import { HILFE_MAILTO, KONTAKT_EMAIL } from "@/lib/preise";
 
 // Konto-Einstellungen für MIETER und SERVICE.
 //
@@ -43,6 +44,22 @@ export default async function KontoSeite() {
       </div>
 
       <KontoVerwaltung email={user.email ?? "—"} rolle={rolle as "mieter" | "service"} ohnePasswort={ohnePasswort(passwortAntwort, user.app_metadata?.provider)} benachrichtigungenAus={user.user_metadata?.benachrichtigungen_aus === true} />
+
+      {/* Hilfeweg für Mieter- und Service-Konten (Gesamtprüfung C48): `/hilfe` ist für sie gesperrt
+          (leitet ins Portal), einen anderen Weg zu MyImmo gab es nicht. */}
+      <div className="section" style={{ marginTop: 18 }} id="hilfe">
+        <div className="section-header">
+          <h3>Hilfe &amp; Kontakt</h3>
+        </div>
+        <div className="section-body" style={{ fontSize: 13, lineHeight: 1.6 }}>
+          <p style={{ margin: 0 }}>
+            {rolle === "mieter"
+              ? "Fragen zu deiner Wohnung, zur Miete oder zu einer Abrechnung klärst du mit deinem Vermieter — am schnellsten über „Anliegen“ im Portal. "
+              : "Fragen zu einem Auftrag klärst du mit dem Vermieter, der ihn vergeben hat. "}
+            Bei Fragen zur App oder zum Zugang schreib uns: <a href={HILFE_MAILTO}>{KONTAKT_EMAIL}</a>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

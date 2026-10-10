@@ -28,10 +28,10 @@ export default function ZeitraumControl() {
             type="button"
             aria-pressed={active}
             onClick={() => setZeitraum(z)}
+            className="zeitraum-knopf"
             style={{
               fontSize: 12,
               fontWeight: 600,
-              padding: "4px 12px",
               borderRadius: 6,
               border: "none",
               cursor: "pointer",

@@ -82,6 +82,9 @@
    Block gilt der App hinter dem Login.
    ===================================================================== */
 :root {
+  /* Höhe der klebenden Mobile-Kopfleiste (.mobile-bar, gemessen 59 px minus Haarlinie) — alles,
+     was unter 860 px darunter klebt, nimmt diesen Wert (Sprungmarken, Einstellungs-Reiter). */
+  --mobile-bar-h: 58px;
   --bg: #f5f5f5;          /* Canvas */
   --bg2: #ffffff;         /* Paper — Karten, Popover */
   --bg3: #f5f5f5;         /* Input-Ruhefläche, genestete Fläche */
@@ -117,6 +120,11 @@
   --green-dim: rgba(26,127,78,0.10);
   --red: #e7000b;         /* Ember — ausschließlich destruktiv/negativ */
   --red-dim: rgba(231,0,11,0.07);
+  /* Badge-Schrift im hellen Modus dunkler als --green/--red (Gesamtprüfung C59): auf der getönten
+     Badge-Fläche erreichten sie nur 4,39:1 bzw. 4,21:1, jetzt 5,7:1 bzw. 5,5:1. Eigene Token, damit
+     positive/negative Zahlen im Text unverändert bleiben. Dunkel: siehe die beiden Dunkel-Blöcke. */
+  --badge-gruen: #146b41;
+  --badge-rot: #c4000a;
   --blue: #44618f;
   --blue-dim: rgba(68,97,143,0.10);
   --amber: #b45309;
@@ -247,6 +255,8 @@
   --green-dim: rgba(76,175,125,0.15);
   --red: #ff453a;
   --red-dim: rgba(255,69,58,0.12);
+  --badge-gruen: var(--green);
+  --badge-rot: var(--red);
   --blue: #5B9BD5;
   --blue-dim: rgba(91,155,213,0.15);
   --amber: #F0A030;
@@ -286,6 +296,7 @@
     --gold-dim: rgba(212,168,71,0.25); --gold-pale: rgba(212,168,71,0.10);
     --green: #4CAF7D; --green-dim: rgba(76,175,125,0.15);
     --red: #ff453a; --red-dim: rgba(255,69,58,0.12);
+    --badge-gruen: var(--green); --badge-rot: var(--red);
     --blue: #5B9BD5; --blue-dim: rgba(91,155,213,0.15);
     --amber: #F0A030; --teal: #3AADA8;
     --gold-contrast: #0F0F0E;
@@ -622,6 +633,7 @@ a.kpi-card:active { transform: scale(.985); }
 .sanierung-raum-name { flex: 1; min-width: 0; font-weight: 600; }
 .sanierung-masse { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .sanierung-klein { font-size: 12px; color: var(--muted); }
+.sanierung-klein a { color: var(--gold); text-decoration: underline; } /* als Link erkennbar (C8) */
 .sanierung-fliesenhoehe { max-width: 260px; }
 .massnahmen-wahl { display: flex; flex-wrap: wrap; gap: 6px; }
 .massnahme-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 12.5px; cursor: pointer; user-select: none; transition: background-color 150ms var(--ease-out), border-color 150ms var(--ease-out); }
@@ -702,7 +714,7 @@ a.kpi-card:active { transform: scale(.985); }
 
 /* Strategie (BuyImmo) */
 .strategie-felder { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 14px; }
-.strategie-felder .form-group { display: grid; gap: 4px; margin: 0; }
+.strategie-felder .form-group { display: grid; gap: 4px; margin: 0; align-content: start; } /* sonst streckt eine zweizeilige Beschriftung nebenan das Feld (C9) */
 .strategie-felder .form-group > span { font-size: 12px; color: var(--muted); }
 .strategie-felder small { font-size: 11.5px; color: var(--faint); }
 .strategie-taktiken { display: grid; gap: 0; }
@@ -828,6 +840,21 @@ a.kpi-card:active { transform: scale(.985); }
   .guide-tabelle tfoot tr { grid-template-columns: 1fr auto; border-bottom: 0; }
   .guide-tabelle tfoot td:first-child { grid-column: auto; }
 }
+/* Kontoauszug-Abgleich: am Desktop Tabelle, am Handy je Eingang eine Karte (Gesamtprüfung C3) —
+   vorher 640 px breit, der Mietmonat lag rechts außerhalb des Bildschirms. Haken links, Angaben daneben. */
+.ka-tabelle { min-width: 640px; }
+.ka-zweck { max-width: 240px; }
+@media (max-width: 640px) {
+  .ka-tabelle { min-width: 0; }
+  .ka-tabelle, .ka-tabelle tbody { display: block; width: 100%; }
+  .ka-tabelle thead { display: none; }
+  .ka-tabelle tr { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .ka-tabelle td { display: block; grid-column: 2; padding: 0 !important; border: 0 !important; }
+  .ka-tabelle td.ka-wahl { grid-column: 1; grid-row: 1 / span 5; padding-top: 16px !important; }
+  .ka-tabelle td.ka-wahl input { width: 22px; height: 22px; }
+  .ka-tabelle .ka-zweck { max-width: none; }
+  .ka-tabelle td[data-label]::before { content: attr(data-label); display: block; font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+}
 /* Einkaufszettel drucken: nur der Zettel (gesetzt vom Knopf, entfernt nach dem Druck). */
 @media print {
   html[data-druck="einkauf"] .sanierung > :not(.guide-einkauf),
@@ -908,8 +935,8 @@ a.kpi-card:active { transform: scale(.985); }
 /* BADGES */
 .badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: var(--r-full); font-size: var(--text-xs); font-weight: 500; gap: 4px; }
 .badge-gold { background: var(--gold-pale); color: var(--gold); border: 1px solid var(--gold-dim); }
-.badge-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(76,175,125,0.3); }
-.badge-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(224,92,75,0.3); }
+.badge-green { background: var(--green-dim); color: var(--badge-gruen, var(--green)); border: 1px solid rgba(76,175,125,0.3); }
+.badge-red { background: var(--red-dim); color: var(--badge-rot, var(--red)); border: 1px solid rgba(224,92,75,0.3); }
 .badge-amber { background: rgba(240,160,48,0.1); color: var(--amber); border: 1px solid rgba(240,160,48,0.3); }
 .badge-teal { background: rgba(58,173,168,0.12); color: var(--teal); border: 1px solid rgba(58,173,168,0.3); }
 
@@ -1079,6 +1106,20 @@ tr.no-hover:hover td { background: transparent; }
   }
 }
 .list-table.report { min-width: 680px; }
+
+/* Theme-Knopf: Symbol per CSS (Gesamtprüfung C14) — dunkel = Mond, sonst Sonne; ohne gewähltes Theme
+   entscheidet die Systemeinstellung, wie bei den Farben. Vorher zeigte er bis zur Hydration immer den Mond. */
+.tt-dunkel { display: none; }
+:root[data-theme="dark"] .tt-dunkel { display: inline; }
+:root[data-theme="dark"] .tt-hell { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .tt-dunkel { display: inline; }
+  :root:not([data-theme]) .tt-hell { display: none; }
+}
+.theme-knopf { position: relative; display: inline-grid; place-items: center; min-width: 36px; min-height: 28px; padding: 4px 10px; background: none; border: 1px solid var(--line2); border-radius: 20px; cursor: pointer; font-size: 14px; line-height: 1; color: var(--muted); }
+.theme-knopf::after { content: ""; position: absolute; inset: -8px -4px; } /* Tippfläche ≥ 44 × 44 */
+.zeitraum-knopf { padding: 4px 12px; }
+.zurueck-link { color: var(--gold); font-size: 14px; background: none; border: none; cursor: pointer; padding: 0; }
 
 /* DELETE BTN */
 /* Destruktive Aktionen sind AB RUHEZUSTAND als solche erkennbar — vorher
@@ -1318,6 +1359,12 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 
 /* MOBILE NAV (Hamburger + Drawer) — nur < 860px sichtbar */
 .mobile-bar { display: none; }
+/* Hilfeweg am Fuß von Mieter- und Service-Portal (C48). */
+.portal-hilfe { margin: 28px 0 0; text-align: center; font-size: 12.5px; color: var(--muted); }
+.portal-hilfe a { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; display: inline-block; padding: 10px 4px; }
+/* Schließen-Knopf des Handy-Drawers: nur im offenen Drawer (Regel unter 860 px), 44 px Tippfläche. */
+.sidebar-zu { display: none; position: absolute; top: 8px; right: 8px; z-index: 2; width: 44px; height: 44px; align-items: center; justify-content: center; border: none; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+.sidebar-zu:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .sidebar-overlay { position: fixed; inset: 0; background: rgba(10,10,10,0.32); z-index: 60; backdrop-filter: blur(1px); animation: fadeUp 0.15s ease; }
 .hamburger { display: inline-flex; flex-direction: column; justify-content: center; gap: 4px; width: 38px; height: 38px; padding: 9px; background: transparent; border: 1px solid var(--line2); border-radius: 9px; cursor: pointer; }
 .hamburger span { display: block; height: 2px; width: 100%; background: var(--text); border-radius: 2px; }
@@ -1363,6 +1410,7 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
   /* Sidebar wird zum Off-Canvas-Drawer */
   .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: 270px; max-width: 84vw; z-index: 70; transform: translateX(-100%); transition: transform 0.25s ease; box-shadow: none; }
   .sidebar.open { transform: translateX(0); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+  .sidebar.open .sidebar-zu { display: inline-flex; }
   .topbar { flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
   .grid-2, .grid-3, .grid-auto, .dash-haupt { grid-template-columns: 1fr; }
   /* Breite Inhalte in Karten/Sektionen horizontal scrollbar */
@@ -1429,6 +1477,11 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 .settings-tab:hover { color: var(--text); }
 .settings-tab.active { color: var(--gold); background: var(--gold-pale); }
 .settings-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+/* Unter 860 px klebt die Mobile-Kopfleiste oben (z-index 50) — die Reiterleiste muss darunter
+   kleben, sonst rutscht sie unter die Kopfleiste und ist nicht mehr klickbar (Gesamtprüfung B57). */
+@media (max-width: 860px) {
+  .settings-tabs { top: var(--mobile-bar-h); }
+}
 /* Am Handy alle Reiter sichtbar statt waagerecht verborgen (bei 360 px endete die Leiste mit „Sich…“). */
 @media (max-width: 480px) {
   .settings-tabs { flex-wrap: wrap; overflow-x: visible; }
@@ -1696,6 +1749,7 @@ select:focus-visible, textarea:focus-visible {
   --gold-dim: rgba(212,168,71,0.25); --gold-pale: rgba(212,168,71,0.10);
   --green: #4CAF7D; --green-dim: rgba(76,175,125,0.15);
   --red: #E05C4B; --red-dim: rgba(224,92,75,0.15);
+  --badge-gruen: var(--green); --badge-rot: var(--red);
   --blue: #5B9BD5; --blue-dim: rgba(91,155,213,0.15);
   --amber: #F0A030; --teal: #3AADA8;
   --r-xs: 8px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px;
@@ -1771,9 +1825,9 @@ select:focus-visible, textarea:focus-visible {
 /* „Ein Link statt Aktenordner“ (Startseite): für wen — Ordner — drei Zeilen. */
 .lp-ordner-wer { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--l-gold-dark, var(--gold)); margin-bottom: 4px; }
 .lp-ordner-liste { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 7px; }
-.lp-ordner-liste li { font-size: 12px; line-height: 1.5; color: var(--muted); padding-left: 14px; position: relative; }
+.lp-ordner-liste li { font-size: 12px; line-height: 1.5; color: var(--l-muted, var(--muted)); padding-left: 14px; position: relative; }
 .lp-ordner-liste li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 5px; height: 5px; border-radius: 50%; background: var(--gold-dim, currentColor); }
-.lp-ordner-fuss { text-align: center; font-size: 12px; color: var(--muted); margin-top: 22px; }
+.lp-ordner-fuss { text-align: center; font-size: 12px; color: var(--l-muted, var(--muted)); margin-top: 22px; }
 
 .lp-split { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; margin-top: 56px; }
 .lp-split h3 { font-size: 21px; margin-bottom: 10px; }
@@ -1849,7 +1903,8 @@ select:focus-visible, textarea:focus-visible {
      gedruckt/verschickt wird — es gibt keine dunkle Fassung davon. Deshalb
      lokale Token-Overrides statt Theme-Vererbung; vorher invertierte die
      NK-Briefvorschau im Dunkelmodus. */
-  --text: #171717; --muted: #636363; --faint: #979797;
+  /* --faint #707070 statt #979797: 4,9:1 statt 2,92:1 auf dem weißen Blatt (Gesamtprüfung C59). */
+  --text: #171717; --muted: #636363; --faint: #707070;
   --line: #e2e2e2; --line2: #d6d6d6;
   --gold: #9a7b24; --gold-pale: #f6efdd;
   --green: #1f6b4a; --red: #b4372e;
@@ -2490,10 +2545,12 @@ select:focus-visible, textarea:focus-visible {
   transition: font-size .45s var(--ease), color .45s var(--ease);
 }
 .qlx-brand-word em { font-style: italic; font-weight: 300; }
+/* 11 px statt 8 px (Regel „keine Schrift unter 11 px“, Gesamtprüfung C57) — dafür weniger gesperrt,
+   sonst wird die Zeile breiter als die Wortmarke. */
 .qlx-brand-sub {
-  font-size: .5rem; font-weight: 500; letter-spacing: .4em; text-indent: .4em;
+  font-size: 11px; font-weight: 500; letter-spacing: .14em; text-indent: .14em;
   text-transform: uppercase; color: var(--l-gold-hell); line-height: 1;
-  max-height: 12px; overflow: hidden;
+  max-height: 14px; overflow: hidden;
   transition: opacity .35s var(--ease), max-height .45s var(--ease);
 }
 .qlx[data-scrolled="1"]:not([data-menu="1"]) .qlx-mono { width: 30px; height: 30px; }
@@ -2860,7 +2917,7 @@ select:focus-visible, textarea:focus-visible {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     position: sticky;
-    top: 58px; /* gemessene Hoehe der .mobile-bar (59px) minus Haarlinie */
+    top: var(--mobile-bar-h); /* gemessene Hoehe der .mobile-bar (59px) minus Haarlinie */
     z-index: 6;
     margin: 0 -16px 18px;
     padding: 8px 16px;
@@ -3024,6 +3081,31 @@ select:focus-visible, textarea:focus-visible {
 }
 @media (prefers-reduced-transparency: reduce) {
   .briefwahl-gruppe, .briefwahl-option.briefwahl-abbrechen { background-color: var(--wahl-solide); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* Tippziele am Touch-Gerät (Gesamtprüfung B60). WCAG 2.2 AA 2.5.8 verlangt 24 × 24 px, die Prüfvorgabe
+   des Designscans 44 px. Nur Mindestgrößen unter `pointer: coarse` — mit Maus bleibt alles, wie es ist.
+   Kleine Symbole behalten ihr Aussehen und bekommen eine unsichtbare Tippfläche über `::after`
+   (Vorbild `.delete-btn`, `.btn-icon`, `.theme-knopf`). Achtung beim Nachmessen: Ein Scan über
+   `getBoundingClientRect()` sieht diese Fläche nicht — so galten 42 Lösch-× (28 × 20, Tippfläche 48 × 40)
+   im Audit als zu klein. Kein `::after` an `.btn`: dort sitzt der Lade-Kreisel (`.btn-loading::after`). */
+@media (pointer: coarse) {
+  .btn { min-height: 44px; }
+  .btn-sm { min-height: 36px; }
+  .input, .form-group input, .form-group select, .field input, .field select { min-height: 44px; }
+  .form-group input[type="checkbox"], .form-group input[type="radio"],
+  .field input[type="checkbox"], .field input[type="radio"] { min-height: 0; }
+  input[type="checkbox"], input[type="radio"] { width: 22px; height: 22px; }
+  summary { padding-block: 10px; }
+  .sprungmarken a { padding: 10px 13px; }
+  .zeitraum-knopf { padding: 8px 14px; }
+  .zurueck-link { min-height: 44px; padding: 10px 0; }
+  .lp-mehr { min-height: 44px; }
+  /* Kleine Text-Links/-Knöpfe außerhalb von Fließtext (Login „Rolle wechseln“, „Passwort vergessen?“,
+     Fußzeile von /anmelden). Fließtext-Links sind nach 2.5.8 ausgenommen und bleiben, wie sie sind. */
+  .tipp-flaeche { display: inline-flex; align-items: center; min-height: 44px; }
+  /* Dichte Zeilen (Datumsfeld je Dokument im Beleihungsordner): 36 px, 44 würden jede Zeile verdoppeln. */
+  .tipp-klein { min-height: 36px; }
 }
 
 /* ===== Hover-Bewegung nur fuer echte Zeigegeraete (02.09.2026) =====

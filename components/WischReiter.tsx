@@ -25,7 +25,10 @@
 //     Diagramme) — der braucht die Geste selbst,
 //   - in einem Bereich mit `data-kein-wischen` beginnt,
 //   - am Bildschirmrand beginnt (System-Zurück-Geste),
-//   - zuerst senkrecht läuft (dann scrollt der Browser; `touch-action: pan-y`).
+//   - zuerst senkrecht läuft (dann scrollt der Browser; `touch-action: pan-y`),
+//   - mit zwei Fingern läuft — das ist Zoomen. `touch-action` enthält deshalb `pinch-zoom`:
+//     `pan-y` allein sperrt nach der Spezifikation das Zoomen mit zwei Fingern (Gesamtprüfung P12,
+//     WCAG 1.4.4 — gerade Ältere vergrößern so).
 // Verschachtelt (Ansicht Mieter im Vermieter-Portal): Der innere Bereich
 // nimmt die Geste und hält sie an, der äußere sieht sie nicht.
 import { useRouter } from "next/navigation";
@@ -154,10 +157,14 @@ export default function WischReiter({ reiter, aktuell }: { reiter: Reiter[]; akt
   return (
     <div
       ref={wurzel}
-      style={{ position: "relative", overflowX: "clip", overflowY: "visible", touchAction: "pan-y" }}
+      style={{ position: "relative", overflowX: "clip", overflowY: "visible", touchAction: "pan-y pinch-zoom" }}
       onTouchStart={(e) => {
         if (e.touches.length !== 1 || phase === "gleitet" || !wurzel.current || blockiert(e.target, wurzel.current)) {
+          // Zweiter Finger = Zoomen (seit 10.10.2026 erlaubt, `pinch-zoom`): ein angefangener Zug
+          // schnappt zurück, statt mit halb verschobener Seite stehen zu bleiben.
+          const warZug = zug.current !== null;
           zug.current = null;
+          if (warZug && phase === "zieht") gleiten(null, 0);
           return;
         }
         const p = e.touches[0];

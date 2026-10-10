@@ -4,7 +4,7 @@ import {
   BarChart3, Home, User, Banknote, ReceiptText, Zap, Landmark, Archive,
   TrendingUp, MessageSquareText,
   Building2, Building, Store, TreePalm, Sprout, Percent, Compass, Handshake, Scale,
-  Gauge, FolderCheck, PaintRoller, Route, Network, Columns3, Stamp,
+  Gauge, FolderCheck, PaintRoller, Route, Network, Columns3, Stamp, CalendarDays,
   type LucideIcon,
 } from "lucide-react";
 import { KAUFWEG, type WegSchrittId } from "@/lib/kaufweg";
@@ -26,6 +26,9 @@ export const VERWALTEN: NavItem[] = [
   { href: "/properties", label: "Immobilien", icon: Home },
   { href: "/tenants", label: "Mieter", icon: User },
   { href: "/cashflow", label: "Ein- & Ausgaben", icon: Banknote },
+  // Termine & Fristen (Gesamtprüfung C47): vorher nur über das Dashboard erreichbar, nicht in der
+  // Seitenleiste und nicht in der Befehlspalette („kalender“ fand nichts).
+  { href: "/termine", label: "Termine", icon: CalendarDays },
   // Nicht "Mieterportal": So heisst die Mieter-Oberflaeche unter /portal.
   // Diese Seite ist die Vermieter-Sicht und enthaelt neben Mieter-Anliegen
   // auch Bewerbungen und die Handwerker-Verwaltung.

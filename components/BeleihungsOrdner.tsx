@@ -264,6 +264,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
             value={d.datum ?? ""}
             onChange={(e) => run(item.key, () => setBeleihungDatum(propId, item.key, e.target.value || null))}
             aria-label={`Dokumentdatum: ${item.label}`}
+            className="tipp-klein"
             style={{ fontSize: 11, padding: "4px 6px", background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, color: d.datum ? "var(--ink)" : "var(--muted)", width: 118 }}
           />
         </label>
@@ -301,10 +302,10 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
           <div style={{ display: "flex", gap: 8 }}>
-            <button type="button" style={toggleStyle(modusKauf)} onClick={() => { setModusKauf(!modusKauf); if (!modusKauf) setZweck("kauf"); }}>
+            <button type="button" className="tipp-klein" style={toggleStyle(modusKauf)} onClick={() => { setModusKauf(!modusKauf); if (!modusKauf) setZweck("kauf"); }}>
               {modusKauf ? "Modus: Kauf" : "Modus: Beleihung"}
             </button>
-            <button type="button" style={toggleStyle(selbst)} onClick={() => setSelbst(!selbst)}>
+            <button type="button" className="tipp-klein" style={toggleStyle(selbst)} onClick={() => setSelbst(!selbst)}>
               Selbstständig{selbst ? " ✓" : ""}
             </button>
           </div>
