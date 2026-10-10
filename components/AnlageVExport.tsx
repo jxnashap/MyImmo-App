@@ -14,6 +14,7 @@ import {
   type MieterNkVertrag,
 } from "@/lib/anlageV";
 import ElsterHilfe from "@/components/ElsterHilfe";
+import { anlageVZeilen, ohneZeilenHinweis, vorlaeufigHinweis } from "@/lib/steuer/anlageVZeilen";
 import { csvZelleGequotet } from "@/lib/csv";
 import { anlageVVergleich } from "@/lib/steuer/waechter";
 
@@ -73,6 +74,7 @@ export default function AnlageVExport({
     !kosten.some((k) => (k.buchungsdatum ?? "").startsWith(`${jahr - 1}-`));
 
   const spalten = [...erg.objekte, erg.gesamt];
+  const zeilenTabelle = anlageVZeilen(jahr);
   const einnahmePos = ANLAGE_V_POSITIONEN.filter((p) => p.bereich === "einnahme");
   const wkPos = ANLAGE_V_POSITIONEN.filter((p) => p.bereich === "wk");
 
@@ -332,6 +334,10 @@ export default function AnlageVExport({
                 </tbody>
               </table>
             </div>
+            {/* Woher die „Z. …“ in der ersten Spalte stammen (lib/steuer/anlageVZeilen.ts). */}
+            <p style={{ fontSize: 11.5, color: "var(--muted)", margin: "8px 0 0" }}>
+              {!zeilenTabelle ? ohneZeilenHinweis(jahr) : zeilenTabelle.vorlaeufig ? vorlaeufigHinweis(jahr) : `Zeilenangaben laut ${zeilenTabelle.vordruck}.`}
+            </p>
           </div>
           )}
 

@@ -2099,7 +2099,8 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   29.02. → Monatsende), **C20** `degressivPruefung()` + `afaUnzulaessig`, **C21** § 7b mit zehnjähriger Vermietung,
   **C23** `vorschlagAusAbrechnung()` (Tagesanteil, nicht nach Auszug), **C24** `gleichzeitigeMieter()` in `zeigeVerteiler`.
   **Regeln:** (1) **Kein fester Text nennt eine Zeilennummer der Anlage V** — nur `zeilenAngabe()`/`positionMitZeile()` aus der
-  Jahrestabelle (Test scannt `app/`, `components/`, `lib/`); ein Jahr ohne geprüften Vordruck bekommt keine Nummer. Neues Jahr:
+  Jahrestabelle (Test scannt `app/`, `components/`, `lib/`). Jahre NACH dem neuesten Vordruck nehmen dessen Zeilen als „vorläufig“
+  (Betreiber 10.10.2026), Jahre vor 2024 keine. Weicht ein neuer Vordruck ab: nur eine Jahreszeile ergänzen. Neues Jahr:
   Vordruck lesen, Zeile in `ANLAGE_V_ZEILEN` mit Quelle, Prüftermin in `07` (01.02.2027). (2) Fristen in Jahren nur über
   `fristendeNachJahren()`. (3) `zeigeVerteiler` bekommt die Mietzeiten (`mieter: {mietbeginn, mietende}[]`), nie eine Anzahl.
 - 📰 **Paket P10 der Gesamtprüfung (09.10.2026): Ratgeber und Werbung** (`tests/paketP10.test.ts`, 17 Mutationen rot).
