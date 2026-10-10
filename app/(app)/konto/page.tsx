@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import KontoVerwaltung from "@/components/KontoVerwaltung";
+import AppInstallieren from "@/components/AppInstallieren";
 import { ohnePasswort } from "@/lib/passwort";
 import { HILFE_MAILTO, KONTAKT_EMAIL } from "@/lib/preise";
 
@@ -44,6 +45,10 @@ export default async function KontoSeite() {
       </div>
 
       <KontoVerwaltung email={user.email ?? "—"} rolle={rolle as "mieter" | "service"} ohnePasswort={ohnePasswort(passwortAntwort, user.app_metadata?.provider)} benachrichtigungenAus={user.user_metadata?.benachrichtigungen_aus === true} />
+
+      <div style={{ marginTop: 18 }}>
+        <AppInstallieren />
+      </div>
 
       {/* Hilfeweg für Mieter- und Service-Konten (Gesamtprüfung C48): `/hilfe` ist für sie gesperrt
           (leitet ins Portal), einen anderen Weg zu MyImmo gab es nicht. */}

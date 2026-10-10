@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "../globals.css";
+import { APP_FARBE_DUNKEL, APP_FARBE_HELL } from "@/lib/pwa";
 
 // Eigenes Root-Layout fuer die oeffentliche Strecke (Marketing, Ratgeber,
 // Rechtstexte). Es liest bewusst KEINE headers() und keine Supabase-Session —
@@ -10,9 +11,22 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.myimmoapp.de"),
   title: "MyImmo — Immobilien-Management",
   description: "Portfolio, Mieter und Dokumente für Privatvermieter",
+  // Wie in app/(app)/layout.tsx — wer MyImmo von hier aus auf den Home-Bildschirm legt, bekommt
+  // dasselbe Symbol. Einen Service Worker gibt es auf dieser Strecke NICHT (lib/pwa.ts).
+  appleWebApp: { capable: true, title: "MyImmo", statusBarStyle: "default" },
+  // `icon` ausdrücklich: Sobald `icons` hier steht, lässt Next das Datei-Favicon (app/icon.svg)
+  // weg — im Build gesehen, die Seiten hatten danach kein Favicon mehr (tests/pwa.test.ts).
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], apple: "/pwa/apple-touch-icon.png" },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: APP_FARBE_HELL },
+    { media: "(prefers-color-scheme: dark)", color: APP_FARBE_DUNKEL },
+  ],
+};
 
 export default function OeffentlichesLayout({ children }: { children: React.ReactNode }) {
   return (

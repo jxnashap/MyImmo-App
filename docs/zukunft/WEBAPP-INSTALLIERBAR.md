@@ -1,5 +1,8 @@
 # Installierbare Web-App („Browser-Download“) — Plan und Datenrecht
 
+> ✅ **Stufe 1 GEBAUT 10.10.2026** (Auftrag Jonas: „Stufe 1“) — was davon abweicht und warum: Abschnitt 1a.
+> Stufe 2 und 3 sind weiter nur Plan.
+>
 > **Stand: 10.10.2026.** Idee von Jonas (Memory-Ideenliste, 10.10.2026: „Installierbare Webapp — MyImmo
 > aus dem Browser heraus als App auf Startbildschirm/Desktop installieren, ohne App Store“).
 > Belastbarkeit je Punkt: **[gesichert]** Primärquelle · **[belegt]** seriöse Sekundärquelle ·
@@ -47,6 +50,50 @@ fast unverändert (Abschnitt 3), und der Aufwand liegt bei 1–2 Tagen.
 und einer Anwaltsfrage.
 
 **Offline-Lesen von Inhalten (Stufe 3) ist nicht empfohlen** (Abschnitt 3.2).
+
+---
+
+## 1a. Umgesetzt (10.10.2026) — und wo es vom Plan abweicht
+
+**Bausteine:** `app/manifest.ts` · `public/sw.js` · `public/pwa/` (Symbole aus
+`scripts/gen-pwa-icons.mjs`, `offline.html`) · `lib/pwa.ts` (Konstanten, Notschalter `SW_AN`,
+`installWeg()`) · `components/PwaAnmeldung.tsx` (nur in den beiden angemeldeten Hüllen von
+`app/(app)/layout.tsx`) · `components/AppInstallieren.tsx` (Support = `/hilfe` und Einstellungen →
+Support, außerdem `/konto` für Mieter und Service) · Datenschutz Ziffer 6 · AVV-TOM „Endgeräte“
+(PDF neu, Stand 10.10.2026) · `tests/pwa.test.ts` (der Worker läuft in einer Sandbox, 15 Mutationen rot).
+
+**Abweichung 1 — der Worker hält NUR die Offline-Seite vor, keine Programmdateien.** Der Plan
+erlaubte gehashte Programmdateien. `/_next/static/…` liefert Vercel aber schon mit
+`max-age=31536000, immutable` aus; ein zweiter Cache im Worker spart nichts und bringt genau das
+Risiko 2 aus Abschnitt 4 (alte Version). Folgen:
+- **Kein Update-Hinweis nötig** — der Worker liefert nie App-Code aus; jede Seite kommt vom Server.
+- **Kein `Clear-Site-Data` beim Abmelden** — im Worker-Cache liegt nur eine für alle gleiche Seite,
+  nichts aus einem Konto. Dynamische Seiten kommen mit `Cache-Control: private, no-cache, no-store`
+  (live nachgesehen), auch der HTTP-Cache hält also keine Inhalte.
+- Navigation läuft mit **Vorab-Laden** (`navigationPreload`), sonst kostete jeder Seitenaufruf die
+  Startzeit des Workers.
+
+**Abweichung 2 — das Manifest gilt für ALLE Seiten.** Next hängt `app/manifest.ts` an jede Seite,
+auch an Startseite und Ratgeber. Installieren geht also auch von dort; einen Service Worker gibt es
+dort trotzdem nicht (Registrierung nur angemeldet). Das ist gewollt: Wer MyImmo zum ersten Mal
+installiert, kommt oft von der Startseite.
+
+**Ohne Proxy ausgeliefert:** `sw.js`, `manifest.webmanifest`, `pwa/` stehen im Matcher von
+`proxy.ts` als Ausnahme (wie `theme.js`), ihre Header setzt `next.config.mjs`. Der Browser holt das
+Manifest ohne Cookies — über die Login-Weiche käme eine Weiterleitung statt JSON.
+
+**Gefunden beim Bauen:** Mit `icons: { apple: … }` in den Metadaten ließ Next das Favicon
+(`app/icon.svg`) auf allen Seiten weg — Fehlerkatalog (`08`), jetzt ausdrücklich mitgenannt.
+
+**Geprüft (10.10.2026, lokaler Produktions-Build, Chromium 1194):** Manifest ohne Fehler, Chrome
+meldet keine Installierbarkeits-Fehler; nach Seitenaufrufen liegt im Cache nur
+`/pwa/offline.html`; ohne Netz erscheint „Keine Verbindung“. Alle vier Dateien antworten ohne
+Anmeldung mit 200. iPhone-EU-Lage nachgesehen: keine neuere Apple-Meldung als die Rücknahme vom
+01.03.2024 gefunden.
+
+**Nicht geprüft — nur am echten Gerät (Betreiber):** Installation auf iPhone (Safari) und Android
+(Chrome), Symbol und Name auf dem Startbildschirm, Anmelden in der App, Offline-Seite, und ob
+„Beim Schließen abmelden“ in der installierten App greift (3.6).
 
 ---
 
@@ -167,7 +214,8 @@ QR-Code als PWA“.
 - **„Beim Schließen abmelden“** (`components/AutoLogout.tsx`) erkennt das Schließen über
   `sessionStorage`. Eine installierte App wird oft nur pausiert, nicht geschlossen → auf echten
   Geräten prüfen, sonst bleibt eine Sitzung offen, die der Nutzer für beendet hält.
-- **Abmelden** leert den Programm-Cache (Stufe 1) und meldet ab Stufe 2 das Push-Abo dieses Geräts ab.
+- **Abmelden** meldet ab Stufe 2 das Push-Abo dieses Geräts ab. In Stufe 1 gibt es beim Abmelden
+  nichts zu leeren (1a, Abweichung 1).
 
 ### 3.7 Pflichten, die mitwandern
 
@@ -187,8 +235,10 @@ QR-Code als PWA“.
 Apple wollte Home-Bildschirm-Web-Apps in der EU mit iOS 17.4 abschalten (DMA) und hat das am
 01.03.2024 zurückgenommen. Sie laufen weiter auf WebKit **[belegt]**
 ([TechCrunch](https://techcrunch.com/?p=2673309), [Quartz](https://qz.com/apple-iphone-web-home-screen-progressive-apps-eu-1851302006)).
-Die Apple-Seite selbst war bei der Recherche nicht abrufbar. **Vor dem Bau nachsehen**, ob sich
-daran seither etwas geändert hat.
+Die Apple-Seite selbst war bei der Recherche nicht abrufbar. **Vor dem Bau nachgesehen (10.10.2026):**
+keine neuere Apple-Meldung gefunden. Ein auf 2026 datierter Ratgeber (MagicBell) nennt die Abschaltung
+weiterhin; Apples Erklärung zur Rücknahme widerspricht dem. **[UNSICHER]** — der Gerätetest des
+Betreibers in Deutschland klärt es.
 
 ---
 
@@ -212,7 +262,7 @@ daran seither etwas geändert hat.
 
 | Schritt | Wer | Abhängigkeit |
 |---|---|---|
-| Stufe 1 bauen (Abschnitt 2), Datenschutz Ziffer 6 + AVV-TOM im selben PR | Claude | — |
+| ✅ Stufe 1 bauen (Abschnitt 2), Datenschutz Ziffer 6 + AVV-TOM im selben PR — **10.10.2026** | Claude | — |
 | Installieren, Abmelden, Update auf iPhone und Android testen | Betreiber | Stufe 1 live |
 | Bild-Anleitung „Als App installieren“ in `/hilfe` | Claude, Bilder vom Betreiber | Gerätetest |
 | Anwaltsfragen: Rechtsgrundlage Push, Einordnung der Push-Dienste | Betreiber | vor Stufe 2 |

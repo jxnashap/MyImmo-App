@@ -27,7 +27,7 @@ export default function DatenschutzPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 3. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
+        Stand: 10. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
         Verarbeitung personenbezogener Daten bei Nutzung der Web-Anwendung MyImmo.
       </p>
 
@@ -255,8 +255,12 @@ export default function DatenschutzPage() {
       <H2>6. Cookies und lokale Speicherung (§ 25 TDDDG)</H2>
       <p style={ABSATZ}>
         MyImmo verwendet ausschließlich technisch notwendige Einträge: Sitzungs-Cookies der
-        Anmeldung (Supabase Auth) und lokale Speichereinträge für Ihre Hell/Dunkel-Einstellung
-        sowie Kalkulator-Zwischenstände. Diese sind für den von Ihnen gewünschten Dienst
+        Anmeldung (Supabase Auth), lokale Speichereinträge für Ihre Hell/Dunkel-Einstellung
+        sowie Kalkulator-Zwischenstände und einen Service Worker, den Ihr Browser beim ersten
+        angemeldeten Aufruf anlegt und der eine einzige Hinweisseite für den Fall ohne
+        Internetverbindung vorhält. Inhalte aus Ihrem Konto legt er nicht ab; er ermöglicht, MyImmo
+        als App auf dem Startbildschirm oder im Dock zu installieren, und lässt sich in den
+        Website-Einstellungen Ihres Browsers löschen. Diese sind für den von Ihnen gewünschten Dienst
         erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG) und bedürfen keiner Einwilligung. Es gibt
         keine Marketing- oder Statistik-Cookies.
       </p>

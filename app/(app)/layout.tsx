@@ -12,6 +12,8 @@ import DemoLeiste from "@/components/DemoLeiste";
 import { ToastProvider } from "@/components/Toast";
 import FlashToast from "@/components/FlashToast";
 import { ZeitraumProvider } from "@/components/ZeitraumProvider";
+import PwaAnmeldung from "@/components/PwaAnmeldung";
+import { APP_FARBE_DUNKEL, APP_FARBE_HELL } from "@/lib/pwa";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -25,12 +27,23 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.myimmoapp.de"),
   title: "MyImmo — Immobilien-Management",
   description: "Portfolio, Mieter und Dokumente für Privatvermieter",
+  // Installierbare Web-App (10.10.2026): Manifest kommt aus app/manifest.ts; iPhone/iPad lesen
+  // zusätzlich diese Angaben. Symbol unter /pwa/ — dort läuft kein Proxy (keine Login-Weiche).
+  appleWebApp: { capable: true, title: "MyImmo", statusBarStyle: "default" },
+  // `icon` ausdrücklich: Sobald `icons` hier steht, lässt Next das Datei-Favicon (app/icon.svg)
+  // weg — im Build gesehen, die Seiten hatten danach kein Favicon mehr (tests/pwa.test.ts).
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], apple: "/pwa/apple-touch-icon.png" },
 };
 
 // Mobile: Seite immer auf Gerätebreite, kein seitliches Rausragen/Rauszoomen.
+// themeColor färbt Titel- bzw. Statusleiste der installierten App passend zur Arbeitsfläche.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: APP_FARBE_HELL },
+    { media: "(prefers-color-scheme: dark)", color: APP_FARBE_DUNKEL },
+  ],
 };
 
 // Setzt das gespeicherte Theme + den Sidebar-Rail-Zustand vor dem ersten Paint
@@ -141,6 +154,9 @@ export default async function RootLayout({
         <body>
           <ToastProvider>
             {children}
+            {/* Service Worker nur für ANGEMELDETE Konten — nie auf Startseite, Ratgebern oder
+                öffentlichen Links (lib/pwa.ts, § 25 TDDDG). */}
+            <PwaAnmeldung />
             {/* Mieter-Demo (01.10.2026): dieselben Höflichkeits-Schranken wie
                 in der Vermieter-App; die Datenbank sperrt ohnehin. Seit P5/B55 auch
                 der Sperr-Dialog — Export, Löschen und Senden erklären sich jetzt. */}
@@ -208,6 +224,7 @@ export default async function RootLayout({
           <div className="app">
             <Sidebar properties={props ?? []} tenants={tenants} userEmail={user.email} profilName={profil?.name ?? null} badges={{ "/anliegen": neu.mieterportal, "/cashflow": neu.cashflow }} />
             <AutoLogout />
+            <PwaAnmeldung />
             {/* Verknüpft Beschriftungen mit ihren Feldern (label[for] ↔ id) —
                 auch in später nachgeladenen Formularen. */}
             <LabelVerknuepfung />

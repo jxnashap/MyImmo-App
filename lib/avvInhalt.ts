@@ -21,9 +21,9 @@ export type AvvBlock =
   | { note: string }
   | { sign: true };
 
-export const AVV_STAND = "6. Oktober 2026";
-export const AVV_STAND_KURZ = "06.10.2026";
-export const AVV_STAND_ISO = "2026-10-06";
+export const AVV_STAND = "10. Oktober 2026";
+export const AVV_STAND_KURZ = "10.10.2026";
+export const AVV_STAND_ISO = "2026-10-10";
 
 export const AVV_HINWEIS =
   "Hinweis für den Betreiber: Entwurf — vor produktiver Akzeptanz anwaltlich prüfen lassen. Keine Rechtsberatung.";
@@ -160,6 +160,7 @@ export const AVV_BLOECKE: AvvBlock[] = [
       "**Mandantentrennung:** Row Level Security auf jeder Tabelle — jedes Konto liest und schreibt ausschließlich eigene Datensätze. Mieter lesen Objekt- und Vertragsdaten nur über begrenzte Ansichten mit den Feldern, die ihr Portal zeigt; Service-Partner sehen nur die ihnen zugewiesenen Aufträge und Objekte; Zugänge ehemaliger Mieter enden automatisch.",
       "**Freigabe-Links:** nur explizit ausgewählte Dokumente, befristet und widerrufbar; Inhalte erst nach Eingabe eines Zugangscodes, der nur als HMAC gespeichert wird; Sperre nach 10 Fehlversuchen; Abrufprotokoll ohne IP-Adresse.",
       "**Dateien:** Belege in einem privaten Datei-Speicher, abrufbar nur über signierte Links mit 60 Sekunden Gültigkeit; übrige Dateien in der Datenbank hinter Row Level Security. Ausgeliefert werden nur PDF und Bilder zur Ansicht, alles andere ausschließlich als Download.",
+      "**Endgeräte:** Die als App installierbare Fassung legt auf dem Gerät über einen Service Worker nur eine Hinweisseite für den Fall ohne Internetverbindung ab; Seiten, Daten und Dateien aus dem Konto werden dabei nicht zwischengespeichert.",
       "**Übertragungskontrolle:** ausschließlich TLS-verschlüsselte Verbindungen; Content-Security-Policy und Sicherheits-Header. Hinweis-E-Mails enthalten keine Inhalte, nur den Hinweis auf Neues.",
       "**Verschlüsselung:** Speicherung bei Anbietern mit Verschlüsselung „at rest“; zusätzlich anwendungsseitige AES-256-GCM-Verschlüsselung von Bankverbindungsdaten mit Schlüssel außerhalb der Datenbank.",
       "**Datensparsamkeit beim Missbrauchsschutz:** Kennungen für Zugriffsbegrenzungen (IP-Adresse, E-Mail-Adresse) werden nur als HMAC gespeichert; Einträge, die älter als 24 Stunden sind, werden fortlaufend gelöscht.",

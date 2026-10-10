@@ -181,6 +181,10 @@ im Sanierungs-Guide + Verknüpfung „Kaufprüfung → übernommenes Objekt“) 
     Unterauftragsverarbeiter-Ankündigungen) — Details unter „AVV-Abschlussstand".
 11. ~~**Altes kurzes Passwort**~~ — Betreiber 02.10.2026: „Nein“ (Bedeutung — „nicht
     nötig“ oder „meldet sich nicht an“ — nachzufragen; ohne echte Nutzer ohnehin folgenlos).
+12. **Installierbare App am echten Gerät testen (seit 10.10.2026):** iPhone (Safari → Teilen → „Zum
+    Home-Bildschirm“) und Android (Chrome → „App installieren“): Symbol und Name, Anmelden in der App,
+    Flugmodus → Seite „Keine Verbindung“, und ob „Beim Schließen abmelden“ in der installierten App greift.
+    Klärt nebenbei, ob iPhone-Web-Apps in der EU weiter im eigenen Fenster laufen (eine Quelle von 2026 widerspricht).
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**
@@ -510,11 +514,19 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   rendert immer die ERSTE Ansicht — der Rauchtest prüft deshalb `>Buchungssaldo<` (Reiter), nicht `<h3>`.
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
-- 📲 **Installierbare Web-App (PWA) — Plan 10.10.2026: `docs/zukunft/WEBAPP-INSTALLIERBAR.md`.** Stufe 1:
-  Manifest + Service Worker, der NUR gehashte Programmdateien und eine Offline-Seite vorhält, registriert nur im
-  App-Bereich (§ 25 Abs. 2 Nr. 2 TDDDG). **Regel: HTML, `/api/*`, Dateien und Supabase-Antworten nie cachen** —
-  sonst Mieterdaten auf Geräten, Kontolöschung erreicht sie nicht, Zustellnachweis unterlaufen. Push erst mit
-  Nutzern und Anwaltsfrage. Noch nicht gebaut.
+- 📲 **Installierbare Web-App (PWA) — Stufe 1 GEBAUT 10.10.2026: `docs/zukunft/WEBAPP-INSTALLIERBAR.md`** (Abschnitt 1a).
+  `app/manifest.ts`, `public/sw.js`, `public/pwa/` (Symbole: `scripts/gen-pwa-icons.mjs`), `lib/pwa.ts`,
+  `PwaAnmeldung` (nur in den zwei ANGEMELDETEN Hüllen von `app/(app)/layout.tsx`), `AppInstallieren` (Support +
+  `/konto`). **Der Worker hält NUR die Offline-Seite vor** — auch keine Programmdateien (die hält Vercel ein Jahr
+  `immutable`); dadurch kein Update-Hinweis und kein Leeren beim Abmelden nötig. `sw.js`, `manifest.webmanifest`,
+  `pwa/` laufen OHNE Proxy (Matcher), Header in `next.config.mjs`. Chrome meldet „installierbar“ (lokal geprüft).
+  **Regeln:** (1) **HTML, `/api/*`, Dateien und Supabase-Antworten nie cachen** — sonst Mieterdaten auf Geräten,
+  Kontolöschung erreicht sie nicht, Zustellnachweis unterlaufen; `tests/pwa.test.ts` führt den Worker aus und wird
+  bei jedem `put`/`add` außer der Offline-Seite rot. (2) Offline-Seite geändert → `VERSION` in `sw.js` = erste 12
+  Zeichen ihres SHA-256 (Test). (3) **Notschalter: `SW_AN = false` in `lib/pwa.ts` + Deployment** meldet den Worker
+  überall ab. (4) Wer `metadata.icons` setzt, nennt das Favicon mit — sonst fehlt es auf jeder Seite (passiert,
+  Fehlerkatalog). (5) Mehr auf dem Gerät ablegen = Datenschutz Ziffer 6 + AVV-TOM im selben PR. Push (Stufe 2) erst
+  mit Nutzern und Anwaltsfrage.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
