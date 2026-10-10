@@ -23,6 +23,7 @@ const ALIAS: Record<string, string> = {
   "/kredite": "darlehen finanzierung hypothek zinsbindung restschuld",
   "/verbrauch": "strom gas wasser heizung zählerstand energie",
   "/jahresbericht": "auswertung übersicht cashflow jahr report",
+  "/termine": "kalender frist fristen aufgabe aufgaben erinnerung wiedervorlage",
 };
 
 const AKTIONEN: Omit<Item, "group">[] = [

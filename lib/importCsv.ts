@@ -186,14 +186,14 @@ export function baueDatensaetze(
       if (feld.art === "zahl") rec[feld.key] = parseZahl(roh);
       else if (feld.art === "datum") {
         const d = parseDatum(roh);
-        if (roh !== "" && d == null) fehler.push(`Zeile ${r + 2}: „${roh}" ist kein gültiges Datum (${feld.label}).`);
+        if (roh !== "" && d == null) fehler.push(`Zeile ${r + 2}: „${roh}“ ist kein gültiges Datum (${feld.label}).`);
         rec[feld.key] = d;
       } else rec[feld.key] = roh === "" ? null : roh;
     }
     if (leer) return; // komplett leere Zeile überspringen
     for (const feld of felder) {
       if (feld.pflicht && (rec[feld.key] == null || rec[feld.key] === "")) {
-        fehler.push(`Zeile ${r + 2}: Pflichtfeld „${feld.label}" ist leer.`);
+        fehler.push(`Zeile ${r + 2}: Pflichtfeld „${feld.label}“ ist leer.`);
         return;
       }
     }

@@ -12,7 +12,7 @@
 
 import Link from "next/link";
 import { REGISTRIERUNG_OFFEN, START_CTA, START_CTA_KURZ } from "@/lib/preise";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type QlxNavEintrag = { href: string; label: string };
 
@@ -35,6 +35,8 @@ export default function QlxHeader({
   aktiv?: string;
 }) {
   const [offen, setOffen] = useState(false);
+  const burger = useRef<HTMLButtonElement>(null);
+  const warOffen = useRef(false);
 
   useEffect(() => {
     const wrapper = document.querySelector(".qlx");
@@ -55,6 +57,27 @@ export default function QlxHeader({
     };
   }, [offen]);
 
+  // Offenes Menü = modaler Dialog (WAI-ARIA, Gesamtprüfung B59): Alles außer Kopfleiste und Menü
+  // wird `inert`, der Fokus springt ins Menü und beim Schließen zurück auf den Knopf. Vorher landete
+  // Tab 13/14 unsichtbar auf „Demo ansehen“ HINTER dem Overlay — Enter startete dann die Demo.
+  useEffect(() => {
+    const wrapper = document.querySelector(".qlx");
+    if (!wrapper) return;
+    const hinten = Array.from(wrapper.children).filter(
+      (el) => !el.classList.contains("qlx-header") && !el.classList.contains("qlx-overlay"),
+    );
+    for (const el of hinten) {
+      if (offen) el.setAttribute("inert", "");
+      else el.removeAttribute("inert");
+    }
+    if (offen) wrapper.querySelector<HTMLElement>(".qlx-overlay nav a")?.focus();
+    else if (warOffen.current) burger.current?.focus();
+    warOffen.current = offen;
+    return () => {
+      for (const el of hinten) el.removeAttribute("inert");
+    };
+  }, [offen]);
+
   useEffect(() => {
     if (!offen) return;
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setOffen(false);
@@ -69,6 +92,7 @@ export default function QlxHeader({
       <header className="qlx-header">
         <div className="qlx-header-bar">
           <button
+            ref={burger}
             type="button"
             className="qlx-burger"
             aria-label={offen ? "Menü schließen" : "Menü öffnen"}
@@ -104,7 +128,7 @@ export default function QlxHeader({
         </div>
       </header>
 
-      <div className="qlx-overlay" aria-hidden={!offen}>
+      <div className="qlx-overlay" role="dialog" aria-modal="true" aria-label="Menü" aria-hidden={!offen}>
         <div className="qlx-overlay-inner">
           <nav aria-label="Hauptnavigation">
             <ul>

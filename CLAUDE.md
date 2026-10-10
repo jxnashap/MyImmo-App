@@ -2037,10 +2037,32 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   nach Gebäude-WE. (B37) **Wohnfläche über `wohnflaecheAus()`** (deutsche Lesart wie die Kaufprüfung) + Hinweis unter 10 m².
   (C31) Fliesenleger: Kleber/Fuge nicht auf den Einkaufszettel (`ohneMaterial`). (C32) `massDe`/`mengeAus` entfernen nur
   Rand-Leerzeichen. (C33) **Widerlegt:** BEG EM „vom 17. Juli 2026“ (BMWE vorab) und „vom 17. August 2026“ (BAnz AT 27.08.2026 B1)
-  sind dieselbe Richtlinie. ⚠️ **Demo-Kandidaten: `20261009130000` erst NACH dem Merge anwenden** (Kürzel, Bewertungsjahr, neue
-  Marktwerte; vorher läse der alte Code „SN“ als 0 % Grunderwerbsteuer). **Regeln:** (1) Neue Länder-Auswahl nur über
+  sind dieselbe Richtlinie. ✅ **Demo-Kandidaten `20261009130000` nach dem Merge angewendet** (Version 20261009155312, live geprüft:
+  SN/ST, Bewertungsjahr 2026, Halle 83.442 €, alle „vorläufig“). **Regeln:** (1) Neue Länder-Auswahl nur über
   `BundeslandWahl`. (2) Ein Rechner mit Ertragswert gibt das Stichtagsjahr weiter. (3) Eine neue Vergleichszeile entscheidet über
   `bestwertDerZeile()` — nie eine zweite Bestwert-Regel. (4) Ein Text im Kaufweg wertet nicht (Wortliste).
+- 📱 **Paket P12 der Gesamtprüfung (10.10.2026): Darstellung und Bedienung** (`tests/paketP12.test.ts`, 24 Mutationen rot).
+  **Menüs sind modale Dialoge:** App-Menü (`Sidebar.tsx`) und Startseiten-Menü (`QlxHeader.tsx`) setzen den Hintergrund
+  `inert`, Escape schließt, der Fokus geht an den Öffner zurück (Startseite im Browser nachgemessen). Einstellungs-Reiter kleben
+  unter der Kopfleiste (`--mobile-bar-h`). Termine im Menü (VERWALTEN). Mieter-/Service-Konto mit Hilfe-Weg. Tote Wege entfernt:
+  `/verbrauch/[id]/edit` leitet um, `createNotiz`/`updateNotiz`/`deleteNotizDatei` gelöscht. ETW: `ladeNkPositionen()` nimmt Kosten
+  am Objekt nur im MFH (C51). **Zoomen:** `touch-action: pan-y` sperrte Pinch-Zoom auf allen Wisch-Seiten — jetzt
+  `pan-y pinch-zoom`, die Geste bricht bei zwei Fingern ab. **Listen:** `ExpandableList` zählt nur Einträge (Überschriften tragen
+  `data-kopf`), Verbrauch unterscheidet Filter von leer, Diagrammrand über `linkerRand()`, Indexwert über
+  `abweichungZurSchaetzung()`, Kontoauszug als Karten unter 640 px (`.ka-tabelle`). **Tippflächen nur bei `pointer: coarse`**
+  (`.btn`/Felder 44 px, `.btn-sm` 36, Checkboxen 22, `.tipp-flaeche` für Text-Links außerhalb von Fließtext, `.tipp-klein` für
+  dichte Zeilen); kleine Symbole bekommen eine Fläche über `::after` (`.delete-btn`, `.theme-knopf`). **Kontrast:** Badges im
+  hellen Modus über `--badge-gruen`/`--badge-rot` (nicht `--green`/`--red` ändern), Briefblatt `--faint #707070`, Startseiten-Ordner
+  `--l-muted`; der Test RECHNET die Kontraste aus den Tokens. Markenunterzeile 11 px. Theme-Symbol per CSS (`.tt-hell`/`.tt-dunkel`,
+  kein Zustand). Login: `istEmail()` vor „Passwort vergessen“, Meldung verschwindet beim Korrigieren, `autocomplete`. Deutsche
+  Fehlerseite `components/FehlerSeite.tsx` für `app/(pub)/error.tsx` und `app/global-error.tsx` („Neu laden“ zuerst — meist ein
+  neues Deployment). **Regeln:** (1) Jeder `touch-action`-Wert mit `pan-x`/`pan-y` enthält `pinch-zoom`; kein `maximumScale`/
+  `userScalable` im Viewport. (2) Ein Overlay-Menü setzt den Hintergrund `inert` und gibt den Fokus zurück. (3) Tippflächen-Regeln
+  nur unter `@media (pointer: coarse)`; kein `::after` an `.btn` (dort sitzt der Lade-Kreisel). (4) Eine Liste mit Zwischen-
+  Überschriften markiert sie mit `data-kopf`. (5) Ein Tippflächen-Befund aus `getBoundingClientRect()` ist erst einer, wenn
+  `::after` geprüft ist (42 Lösch-× waren keiner). **Rechtsstand Barrierefreiheit:** keine px-Mindestgröße in WCAG; MyImmo als
+  Kleinstunternehmen vom BFSG ausgenommen (`docs/APP-STORE-RECHT.md` 1.3). **Offen, Entscheidung des Betreibers nach P13:**
+  Schriftgrößen-Schalter/„Lupe“ (Memory-Repo) und P11; die ~440 Inline-Schriftgrößen 10–11 px bleiben.
 - 📰 **Paket P10 der Gesamtprüfung (09.10.2026): Ratgeber und Werbung** (`tests/paketP10.test.ts`, 17 Mutationen rot).
   Jede korrigierte Rechtsaussage gegen den Wortlaut (gesetze-im-internet.de, per `curl` abrufbar — WebFetch bekam 503)
   bzw. zwei Sekundärquellen geprüft: Belegeinsicht nach **§ 556 Abs. 4 BGB** (seit 2025, elektronische Bereitstellung

@@ -7,6 +7,7 @@
 // soll sehen, was es gibt, ohne dass die Schreibsperre ihn mit Fehlern
 // empfängt.
 import Link from "next/link";
+import { HILFE_MAILTO } from "@/lib/preise";
 import { Wrench } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import AuftraegePortal from "@/components/AuftraegePortal";
@@ -89,6 +90,12 @@ export default function ServicePortalAnsicht({
             <AuftraegePortal auftraege={auftraege} firmen={firmen} auftraggeber={auftraggeber} objekte={objekte} seitJe={seitJe} vorschau={vorschau} />
             {!vorschau && !ansichtImVermieterKonto && <GesehenMelden />}
           </>
+        )}
+        {/* Hilfeweg (C48): `/hilfe` ist für Service-Konten gesperrt. */}
+        {!vorschau && !ansichtImVermieterKonto && (
+          <p className="portal-hilfe">
+            Fragen zur App? <a href={HILFE_MAILTO}>Hilfe &amp; Kontakt</a>
+          </p>
         )}
       </main>
     </div>

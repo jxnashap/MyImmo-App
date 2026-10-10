@@ -39,6 +39,21 @@ function kurzZahl(x: number, stellen = 1): string {
   return gerundet.toLocaleString("de-DE", { maximumFractionDigits: stellen, useGrouping: false });
 }
 
+/** Geschätzte Breite eines Achsen-Labels bei 11,5 px Schrift (Durchschnitt je Zeichen, eher großzügig). */
+export const ZEICHEN_PX = 6.6;
+/** Breite des gedrehten Achsentitels „Betrag (€)“ links (Mitte bei x = 12, Glyphenhöhe ≈ 12 px). */
+export const ACHSENTITEL_BAND = 20;
+
+/**
+ * Linker Rand eines Diagramms: Platz für den gedrehten Achsentitel UND die längste Y-Beschriftung.
+ * Vorher fest 56 px — „40 Tsd.“ reichte bis x ≈ 8 und lag unter dem Titel bei x ≈ 8–20
+ * (Gesamtprüfung C1, „die 4 von 40 Tsd. ist verdeckt“).
+ */
+export function linkerRand(ticks: number[]): number {
+  const laengste = Math.max(0, ...ticks.map((t) => kurzTick(t).length));
+  return Math.max(56, Math.ceil(ACHSENTITEL_BAND + 6 + laengste * ZEICHEN_PX + 8));
+}
+
 export function kurzTick(v: number): string {
   const neg = v < 0;
   const a = Math.abs(v);

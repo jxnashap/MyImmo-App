@@ -34,8 +34,12 @@ describe("Einbindung", () => {
     expect(k).toContain("quelle: QUELLE_START");
   });
   it("dezent: zuerst nur eine Textzeile, das Formular erst nach Klick", () => {
-    expect(k).toContain("!offen ? (");
+    expect(k).toContain("{offen && (");
     expect(k).toContain("Beim Start per E-Mail benachrichtigen");
+    // Umschalter (Gesamtprüfung C61): aria-expanded folgt dem Zustand, Escape schließt.
+    expect(k).toContain("aria-expanded={offen}");
+    expect(k).toContain("setOffen((o) => !o)");
+    expect(k).toMatch(/e\.key === "Escape"[\s\S]{0,80}setOffen\(false\)/);
   });
   it("nur bei geschlossener Registrierung, auf der Startseite und im Schluss der Unterseiten", () => {
     expect(lies("components/LandingPage.tsx")).toContain("{!REGISTRIERUNG_OFFEN && brevoBereit() && <StartBenachrichtigung nl={nl} />}");

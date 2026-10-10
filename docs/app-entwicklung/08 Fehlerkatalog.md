@@ -42,6 +42,22 @@ erzeugt, löst der Browser gar kein Klick-Ereignis aus.
 → *Gegenprüfung:* Nie DOM neu bauen, die der Nutzer gerade anklickt. Einmal
 bauen, danach nur beschriften.
 
+**Zoomen mit zwei Fingern war auf Wisch-Seiten abgeschaltet** (MyImmo, 10.10.2026)
+`touch-action: pan-y` erlaubt dem Browser NUR senkrechtes Scrollen — Pinch-Zoom gehört
+nicht dazu und war damit auf allen Wisch-Reitern (Mieterportal, Anliegen) und am
+Diagramm aus. Aufgefallen erst bei der Frage nach einer „Lupe für Ältere“.
+→ *Gegenprüfung:* Jeder `touch-action`-Wert mit `pan-x`/`pan-y` enthält `pinch-zoom`
+(`pan-y pinch-zoom`); ein Test durchsucht JSX und CSS. Die Geste selbst bricht bei zwei
+Fingern ab, sonst schiebt der Zoom die Seite seitwärts.
+
+**Tippflächen-Scan meldete 42 „zu kleine“ Lösch-Knöpfe, die es nicht waren** (MyImmo, 10.10.2026)
+Gemessen wurde mit `getBoundingClientRect()` (28 × 20 px). Die Knöpfe haben eine
+unsichtbare Tippfläche über `::after` (`inset: -10px` → 48 × 40) — die sieht diese
+Messung nicht.
+→ *Gegenprüfung:* Bei einem Tippflächen-Befund erst die Pseudo-Elemente des Elements
+ansehen (`getComputedStyle(el, "::after")`), dann bauen. Umgekehrt: Wer eine Fläche
+per `::after` vergrößert, braucht `position: relative` am Element.
+
 ## Grafik
 
 **Zwölf ausgelieferte Icons hatten einen 87 px schwarzen Streifen**

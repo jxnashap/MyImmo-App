@@ -18,9 +18,12 @@ const ART_ICONS: Record<string, LucideIcon> = { Strom: Zap, Gas: Flame, Wasser: 
 export default function VerbrauchListe({
   rows,
   properties,
+  gefiltert = false,
 }: {
   rows: Verbrauch[];
   properties: Pick<Property, "id" | "bezeichnung">[];
+  /** Es GIBT Einträge, nur passt keiner zu Jahr/Objekt/Art (Gesamtprüfung B58, Regel B27). */
+  gefiltert?: boolean;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const nameOf = new Map(properties.map((p) => [p.id, p.bezeichnung] as const));
@@ -28,6 +31,16 @@ export default function VerbrauchListe({
 
   // Leer: OHNE Tabelle. In der 560 px breiten Scroll-Tabelle wurde der Leerzustand auf 560 px
   // zentriert und war am Handy rechts abgeschnitten (Design-Scan 06.10.2026).
+  if (rows.length === 0 && gefiltert) {
+    return (
+      <Leer
+        art="filter"
+        icon={Zap}
+        titel="Keine Einträge für diese Auswahl"
+        text="Es gibt Verbrauchseinträge — nur nicht für dieses Jahr, Objekt oder diese Art. Filter oben anpassen, z. B. „Alle Jahre“."
+      />
+    );
+  }
   if (rows.length === 0) {
     return (
       <Leer

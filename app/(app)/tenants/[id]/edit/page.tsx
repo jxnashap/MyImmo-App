@@ -48,7 +48,7 @@ export default async function EditTenantPage(props0: { params: Promise<{ id: str
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <Link href={`/tenants/${tenant.id}/nk`} className="btn btn-ghost" style={{ fontSize: 12 }}><ReceiptText size={14} style={{ verticalAlign: "-2px" }} /> NK-Abrechnung</Link>
-          <DeleteButton action={deleteTenant.bind(null, tenant.id)} className="btn btn-ghost" label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>} confirmText={`„${[tenant.vorname, tenant.nachname].filter(Boolean).join(" ")}" wirklich löschen?`} />
+          <DeleteButton action={deleteTenant.bind(null, tenant.id)} className="btn btn-ghost" label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>} confirmText={`„${[tenant.vorname, tenant.nachname].filter(Boolean).join(" ")}“ wirklich löschen?`} />
         </div>
       </div>
 

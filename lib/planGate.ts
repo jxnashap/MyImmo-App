@@ -53,7 +53,7 @@ export async function featureSperre(
   feature: Feature,
 ): Promise<string | null> {
   if (await darfFeatureJetzt(supabase, feature)) return null;
-  return `Diese Funktion ist ab Tarif „${benoetigterTarif(feature)}" verfügbar. Deinen Tarif findest du unter Einstellungen → Abo.`;
+  return `Diese Funktion ist ab Tarif „${benoetigterTarif(feature)}“ verfügbar. Deinen Tarif findest du unter Einstellungen → Abo.`;
 }
 
 export type EinheitenPruefung = {
@@ -87,6 +87,6 @@ export async function pruefeEinheiten(
     limit,
     meldung: erlaubt
       ? null
-      : `Dein Tarif „${PLAN_NAMEN[effektiverPlan(abo)]}" umfasst ${limit} Einheit${limit === 1 ? "" : "en"}; belegt sind ${belegt}. Unter Einstellungen → Abo kannst du wechseln.`,
+      : `Dein Tarif „${PLAN_NAMEN[effektiverPlan(abo)]}“ umfasst ${limit} Einheit${limit === 1 ? "" : "en"}; belegt sind ${belegt}. Unter Einstellungen → Abo kannst du wechseln.`,
   };
 }

@@ -8,6 +8,16 @@ const euro = (n: number) => "€ " + Math.round(n).toLocaleString("de-DE");
 // Indexierte Wertschätzung (Kaufpreis × amtlicher Häuserpreisindex) auf der
 // Objektseite. Übernahme als "aktueller Wert" nur per Klick — vorschlagen +
 // bestätigen, keine stille Automatik.
+/**
+ * Wie weit liegt der eingetragene Wert über (+) oder unter (−) der indexierten Schätzung, in Prozent
+ * DER SCHÄTZUNG — eine Nachkommastelle. Der Satz lautet „Dein Wert liegt x % darunter“, Bezug ist also
+ * die Schätzung (Gesamtprüfung C2: vorher durch den eingetragenen Wert geteilt, 5,9 % statt 5,6 %).
+ */
+export function abweichungZurSchaetzung(eingetragen: number | null | undefined, schaetzung: number): number | null {
+  if (!eingetragen || eingetragen <= 0 || !(schaetzung > 0)) return null;
+  return Math.round(((eingetragen - schaetzung) / schaetzung) * 1000) / 10;
+}
+
 export default function IndexwertKarte({
   propId, f, aktuellerWert, live,
 }: {
@@ -15,9 +25,7 @@ export default function IndexwertKarte({
 }) {
   const steigt = f.veraenderungProzent >= 0;
   const Icon = steigt ? TrendingUp : TrendingDown;
-  const abweichung = aktuellerWert && aktuellerWert > 0
-    ? Math.round(((f.wert - aktuellerWert) / aktuellerWert) * 1000) / 10
-    : null;
+  const abweichung = abweichungZurSchaetzung(aktuellerWert, f.wert);
   const uebernehmen = uebernehmeIndexwert.bind(null, propId, f.wert, f.standQuartal);
 
   return (
@@ -37,7 +45,7 @@ export default function IndexwertKarte({
           Kaufpreis × Entwicklung des amtlichen Häuserpreisindex seit {f.basisQuartal}
           {" "}(Index {f.basisIndex.toLocaleString("de-DE")} → {f.standIndex.toLocaleString("de-DE")}).
           {abweichung != null && (
-            <> Dein eingetragener Wert ({euro(aktuellerWert!)}) liegt {Math.abs(abweichung).toLocaleString("de-DE")} % {abweichung > 0 ? "darunter" : "darüber"}.</>
+            <> Dein eingetragener Wert ({euro(aktuellerWert!)}) liegt {Math.abs(abweichung).toLocaleString("de-DE")} % {abweichung < 0 ? "darunter" : "darüber"}.</>
           )}
         </div>
         <form action={uebernehmen} style={{ marginTop: 12 }}>

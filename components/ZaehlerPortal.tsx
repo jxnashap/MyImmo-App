@@ -44,7 +44,8 @@ export default function ZaehlerPortal({ meldungen, nurLesen = false }: { meldung
   return (
     <div className="section">
       <div className="section-header">
-        <h3>Zählerstände</h3>
+        {/* Nicht noch einmal „Zählerstände“ — so heißt schon die Seite darüber (Gesamtprüfung C13). */}
+        <h3>Deine Meldungen</h3>
         {nurLesen ? (
           <VorschauHinweis was="Zählerstand melden" />
         ) : (

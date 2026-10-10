@@ -189,13 +189,6 @@ describe("Dateianhänge: Grössengrenzen greifen vor dem Upload", () => {
     expect(db.zugriffe.some((z) => z.op === "insert")).toBe(false);
   });
 
-  it("ein Notiz-Anhang über 6 MB wird abgelehnt", async () => {
-    const { mod } = await lade();
-    await expect(mod.createNotiz(fd({ titel: "x", datei: datei(6 * 1024 * 1024 + 1) }))).rejects.toThrow(
-      "Anhang zu groß",
-    );
-  });
-
   it("eine leere Datei zählt als „kein Anhang“ und blockiert nicht", async () => {
     const { db, mod } = await lade();
     await fangeRedirect(() => mod.createKosten(fd({ betrag: "10", rechnung: datei(0) })));

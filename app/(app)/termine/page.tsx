@@ -300,7 +300,7 @@ export default async function TerminePage(
     liste.forEach((e, i) => {
       const m = e.datum.slice(0, 7);
       if (m !== letzter) {
-        out.push(<div key={`m-${m}-${i}`} className="tz-gruppe">{monatsTitel(e.datum)}</div>);
+        out.push(<div key={`m-${m}-${i}`} className="tz-gruppe" data-kopf>{monatsTitel(e.datum)}</div>);
         letzter = m;
       }
       out.push(zeile(e, i));
@@ -530,11 +530,11 @@ export default async function TerminePage(
                   const kommend = sichtbar.filter((e) => tageBis(e.datum) >= 0);
                   return [
                     ...(ueber.length > 0
-                      ? [<div key="h-ueber" className="tz-gruppe" style={{ color: "var(--red)" }}>Überfällig ({ueber.length})</div>, ...ueber.map(zeile)]
+                      ? [<div key="h-ueber" className="tz-gruppe" data-kopf style={{ color: "var(--red)" }}>Überfällig ({ueber.length})</div>, ...ueber.map(zeile)]
                       : []),
                     ...gruppiert(kommend),
                     ...(vergangen.length > 0
-                      ? [<div key="h-vergangen" className="tz-gruppe">Vergangen</div>, ...vergangen.map(zeile)]
+                      ? [<div key="h-vergangen" className="tz-gruppe" data-kopf>Vergangen</div>, ...vergangen.map(zeile)]
                       : []),
                   ];
                 })()}

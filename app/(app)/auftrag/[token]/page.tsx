@@ -124,7 +124,7 @@ export default async function AuftragPublicSeite(props: { params: Promise<{ toke
       <OeffentlicheFusszeile
         verantwortlicher={info.vermieter}
         kontakt={null}
-        zweck="Die hier gezeigten Objekt- und Kontaktdaten dienen ausschliesslich der Abwicklung dieses Auftrags."
+        zweck="Die hier gezeigten Objekt- und Kontaktdaten dienen ausschließlich der Abwicklung dieses Auftrags."
       />
     </div>
   );

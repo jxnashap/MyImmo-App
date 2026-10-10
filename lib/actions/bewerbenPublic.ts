@@ -106,7 +106,7 @@ export async function haengeBewerbungDateiAn(
   const slot = SLOTS.has(slotRoh) ? slotRoh : "sonstiges";
   if (!(datei instanceof File) || datei.size === 0) return { ok: false, fehler: "Keine Datei gewählt." };
   if (!DATEI_TYPEN.has(datei.type)) return { ok: false, fehler: "Nur PDF-, JPG-, PNG- oder WebP-Dateien." };
-  if (datei.size > DATEI_MAX_BYTES) return { ok: false, fehler: `„${datei.name}" ist größer als 6 MB.` };
+  if (datei.size > DATEI_MAX_BYTES) return { ok: false, fehler: `„${datei.name}“ ist größer als 6 MB.` };
 
   const puffer = Buffer.from(await datei.arrayBuffer());
   const dataUrl = `data:${datei.type};base64,${puffer.toString("base64")}`;

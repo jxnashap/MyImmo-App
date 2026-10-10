@@ -58,7 +58,7 @@ function SchrittKarte({
           role="button"
           tabIndex={0}
           aria-expanded={offen}
-          aria-label={`Schritt „${titel}" ${offen ? "zuklappen" : "aufklappen"}`}
+          aria-label={`Schritt „${titel}“ ${offen ? "zuklappen" : "aufklappen"}`}
           onKeyDown={tastaturAktion(onToggleOffen)}
         >
           <div style={{ minWidth: 0 }}>

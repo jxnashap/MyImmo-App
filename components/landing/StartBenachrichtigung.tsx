@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { herkunftDieserSeite } from "@/lib/herkunft";
 import { EINWILLIGUNGSTEXT_START, QUELLE_START } from "@/lib/newsletter";
@@ -27,6 +27,7 @@ const leise = { fontSize: 13, lineHeight: 1.6, color: "var(--l-night-muted)" } a
 export default function StartBenachrichtigung({ nl }: { nl?: string }) {
   const rueck = nl ? START_MELDUNG[nl] : undefined;
   const [offen, setOffen] = useState(Boolean(rueck && !rueck.gut));
+  const knopf = useRef<HTMLButtonElement>(null);
   const [email, setEmail] = useState("");
   const [zustimmung, setZustimmung] = useState(false);
   const [status, setStatus] = useState<"leer" | "laeuft" | "ok" | "fehler">("leer");
@@ -72,57 +73,74 @@ export default function StartBenachrichtigung({ nl }: { nl?: string }) {
       {/* Nach bestätigter Anmeldung gibt es nichts mehr anzubieten. */}
       {rueck?.gut && status !== "ok" ? null : status === "ok" ? (
         <p role="status" style={{ ...leise, color: "var(--l-night-text)", margin: 0 }}>{meldung}</p>
-      ) : !offen ? (
-        <button
-          type="button"
-          onClick={() => setOffen(true)}
-          aria-expanded={false}
-          aria-controls="start-info-form"
-          style={{ ...leise, background: "none", border: 0, padding: 4, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
-        >
-          Beim Start per E-Mail benachrichtigen
-        </button>
       ) : (
-        <form id="start-info-form" onSubmit={absenden} style={{ textAlign: "left" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-            <label htmlFor="start-info-email" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
-              E-Mail-Adresse
-            </label>
-            <input
-              id="start-info-email"
-              type="email"
-              required
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="deine@adresse.de"
-              autoComplete="email"
-              style={{
-                flex: "1 1 220px",
-                minWidth: 0,
-                padding: "9px 12px",
-                fontSize: 15,
-                borderRadius: 18,
-                border: "1px solid rgba(244,241,232,.25)",
-                background: "rgba(244,241,232,.06)",
-                color: "var(--l-night-text)",
+        <>
+          {/* Umschalter statt Einbahnstraße (Gesamtprüfung C61): Der Knopf bleibt stehen, `aria-expanded`
+              folgt dem Zustand, Escape im Formular schließt und gibt den Fokus an den Knopf zurück. */}
+          <button
+            ref={knopf}
+            type="button"
+            onClick={() => setOffen((o) => !o)}
+            aria-expanded={offen}
+            aria-controls="start-info-form"
+            className="tipp-flaeche"
+            style={{ ...leise, background: "none", border: 0, padding: 4, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+          >
+            Beim Start per E-Mail benachrichtigen
+          </button>
+          {offen && (
+            <form
+              id="start-info-form"
+              onSubmit={absenden}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setOffen(false);
+                  knopf.current?.focus();
+                }
               }}
-            />
-            <button type="submit" className="qlx-btn-linie" disabled={!zustimmung || status === "laeuft"} style={{ padding: "9px 18px", fontSize: 14 }}>
-              {status === "laeuft" ? "Sendet…" : "Eintragen"}
-            </button>
-          </div>
-          <label style={{ display: "flex", gap: 9, alignItems: "flex-start", cursor: "pointer" }}>
-            <input type="checkbox" checked={zustimmung} onChange={(e) => setZustimmung(e.target.checked)} style={{ marginTop: 3, flexShrink: 0 }} />
-            <span style={{ ...leise, fontSize: 12 }}>
-              {EINWILLIGUNGSTEXT_START}{" "}
-              <Link href="/datenschutz" style={{ color: "var(--l-gold-hell)" }}>Datenschutzerklärung</Link>.
-            </span>
-          </label>
-          {status === "fehler" && (
-            <p role="alert" style={{ ...leise, color: "var(--l-gold-hell)", margin: "10px 0 0" }}>{meldung}</p>
+              style={{ textAlign: "left", marginTop: 10 }}
+            >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+                <label htmlFor="start-info-email" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
+                  E-Mail-Adresse
+                </label>
+                <input
+                  id="start-info-email"
+                  type="email"
+                  required
+                  autoFocus
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="deine@adresse.de"
+                  autoComplete="email"
+                  style={{
+                    flex: "1 1 220px",
+                    minWidth: 0,
+                    padding: "9px 12px",
+                    fontSize: 15,
+                    borderRadius: 18,
+                    border: "1px solid rgba(244,241,232,.25)",
+                    background: "rgba(244,241,232,.06)",
+                    color: "var(--l-night-text)",
+                  }}
+                />
+                <button type="submit" className="qlx-btn-linie" disabled={!zustimmung || status === "laeuft"} style={{ padding: "9px 18px", fontSize: 14 }}>
+                  {status === "laeuft" ? "Sendet…" : "Eintragen"}
+                </button>
+              </div>
+              <label style={{ display: "flex", gap: 9, alignItems: "flex-start", cursor: "pointer" }}>
+                <input type="checkbox" checked={zustimmung} onChange={(e) => setZustimmung(e.target.checked)} style={{ marginTop: 3, flexShrink: 0 }} />
+                <span style={{ ...leise, fontSize: 12 }}>
+                  {EINWILLIGUNGSTEXT_START}{" "}
+                  <Link href="/datenschutz" style={{ color: "var(--l-gold-hell)" }}>Datenschutzerklärung</Link>.
+                </span>
+              </label>
+              {status === "fehler" && (
+                <p role="alert" style={{ ...leise, color: "var(--l-gold-hell)", margin: "10px 0 0" }}>{meldung}</p>
+              )}
+            </form>
           )}
-        </form>
+        </>
       )}
     </div>
   );

@@ -48,7 +48,7 @@ export async function createTermin(formData: FormData) {
   // Nutzer bekommt eine Bestätigung. Vorher blieben die Eingaben stehen, die
   // Liste war womöglich jahresgefiltert — und der Termin landete doppelt in
   // der Datenbank, weil man den Knopf erneut drückte.
-  redirect(flashUrl("/termine", `„${titel}" für den ${deDatumKurz(datum)} angelegt.`));
+  redirect(flashUrl("/termine", `„${titel}“ für den ${deDatumKurz(datum)} angelegt.`));
 }
 
 /** "2026-08-01" → "01.08.2026" (nur für Meldungen). */
@@ -168,7 +168,7 @@ export async function createVorlageTermin(
   // Frueher: stilles `return`. Der Nutzer klickte, nichts passierte, keine
   // Meldung — ununterscheidbar von „gespeichert".
   if (!(WIEDERKEHRUNGEN as readonly string[]).includes(wiederkehrung)) {
-    throw new Error(`Unbekanntes Intervall „${wiederkehrung}" — Termin nicht angelegt.`);
+    throw new Error(`Unbekanntes Intervall „${wiederkehrung}“ — Termin nicht angelegt.`);
   }
 
   // Objekt: fest gebunden (Objektseite) oder aus dem Formular (Termine-Seite).

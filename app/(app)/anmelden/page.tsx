@@ -115,10 +115,10 @@ export default function AnmeldenPage() {
           className="mt-6 flex flex-wrap justify-center gap-4 border-t pt-4 text-[12px]"
           style={{ borderColor: "var(--line)", color: "var(--muted)" }}
         >
-          <a href={HILFE_MAILTO} className="hover:underline">Hilfe &amp; Kontakt</a>
-          <Link href="/agb" className="hover:underline">AGB</Link>
-          <Link href="/datenschutz" className="hover:underline">Datenschutz</Link>
-          <Link href="/impressum" className="hover:underline">Impressum</Link>
+          <a href={HILFE_MAILTO} className="tipp-flaeche hover:underline">Hilfe &amp; Kontakt</a>
+          <Link href="/agb" className="tipp-flaeche hover:underline">AGB</Link>
+          <Link href="/datenschutz" className="tipp-flaeche hover:underline">Datenschutz</Link>
+          <Link href="/impressum" className="tipp-flaeche hover:underline">Impressum</Link>
         </div>
       </div>
     </div>

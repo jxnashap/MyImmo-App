@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -9,7 +9,7 @@ import { PROP_ICONS, type NavItem } from "@/lib/nav";
 import { BEREICHE, eigenerBereich, type Bereich } from "@/lib/bereich";
 import BereichWechsel from "@/components/BereichWechsel";
 import { istDemoKonto, demoDarfRoute } from "@/lib/demo";
-import { Home, Power, PanelLeftClose, PanelLeftOpen, Settings, Lock } from "lucide-react";
+import { Home, Power, PanelLeftClose, PanelLeftOpen, Settings, Lock, X } from "lucide-react";
 
 type SidebarProperty = { id: string; bezeichnung: string; typ: string | null };
 type SidebarTenant = { id: string; name: string };
@@ -80,6 +80,34 @@ export default function Sidebar({
       document.body.style.overflow = "";
     };
   }, [open]);
+  // Offener Drawer (nur Handy) = modaler Dialog (Audit 01.10.2026 B34, Gesamtprüfung 07.10.2026):
+  // Escape und ein eigener Schließen-Knopf schließen ihn, der Fokus springt hinein und beim Schließen
+  // zurück auf den Hamburger, Inhalt und Kopfleiste dahinter sind `inert`. Vorher blieb der Fokus
+  // draußen — mit der Tastatur bediente man die verdeckte Seite.
+  const hamburger = useRef<HTMLButtonElement>(null);
+  const schliessen = useRef<HTMLButtonElement>(null);
+  const warOffen = useRef(false);
+  useEffect(() => {
+    const hinten = [document.querySelector(".main-wrap"), document.querySelector(".mobile-bar")].filter(
+      (el): el is Element => el != null,
+    );
+    for (const el of hinten) {
+      if (open) el.setAttribute("inert", "");
+      else el.removeAttribute("inert");
+    }
+    if (open) schliessen.current?.focus();
+    else if (warOffen.current) hamburger.current?.focus();
+    warOffen.current = open;
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", esc);
+    return () => {
+      window.removeEventListener("keydown", esc);
+      for (const el of hinten) el.removeAttribute("inert");
+    };
+  }, [open]);
 
   const isActive = (href: string) =>
     href === "/" ? path === "/" : path.startsWith(href);
@@ -144,6 +172,7 @@ export default function Sidebar({
       {/* Mobile-Kopfleiste mit Hamburger (nur auf schmalen Screens sichtbar) */}
       <div className="mobile-bar">
         <button
+          ref={hamburger}
           type="button"
           className="hamburger"
           aria-label="Menü öffnen"
@@ -164,7 +193,16 @@ export default function Sidebar({
         <div className="sidebar-overlay" onClick={() => setOpen(false)} aria-hidden="true" />
       ) : null}
 
-      <aside className={"sidebar" + (open ? " open" : "")}>
+      <aside
+        className={"sidebar" + (open ? " open" : "")}
+        role={open ? "dialog" : undefined}
+        aria-modal={open ? true : undefined}
+        aria-label={open ? "Menü" : undefined}
+      >
+      {/* Nur im offenen Drawer am Handy sichtbar (.sidebar-zu) — der Hintergrund allein war der einzige Weg zurück. */}
+      <button ref={schliessen} type="button" className="sidebar-zu" aria-label="Menü schließen" onClick={() => setOpen(false)}>
+        <X size={20} aria-hidden />
+      </button>
       <div className="sidebar-logo">
         {/* Logo = Umschalter MyImmo ↔ BuyImmo (05.10.2026). */}
         <BereichWechsel bereich={bereich} />
