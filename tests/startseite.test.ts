@@ -117,7 +117,7 @@ describe("„Ein Link statt Aktenordner“ — jede Zeile belegt (05.10.2026)", 
     expect(lies("app/(app)/bewerben/[token]/page.tsx")).toContain("ÖFFENTLICHE Bewerbungs-Seite");
     const b = lies("lib/actions/bewerber.ts");
     expect(b).toContain('status: "neu" | "favorit" | "abgelehnt"');
-    expect(b).toContain("export async function loescheAlteAbgelehnteBewerbungen(");
+    expect(b).toContain("export async function loescheAlteBewerbungen(");
   });
 
   it("Handwerker: Angebots- und Auftrags-Link ohne Login, Mieterkontakt nur auf Freigabe", () => {

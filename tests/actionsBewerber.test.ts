@@ -162,20 +162,21 @@ describe("Alles bleibt beim eigenen Konto", () => {
 });
 
 describe("DSGVO-Aufräumen: die richtigen Zeilen, nicht mehr", () => {
-  it("nur ABGELEHNTE Bewerbungen, nur eigene, nur ältere als sechs Monate", async () => {
-    // Jede der drei Bedingungen fehlt woanders weh: ohne `status` verschwänden
-    // Favoriten, ohne `user_id` fremde Daten, ohne Datum auch die von gestern.
+  it("JEDER Status, nur eigene, nur ältere als sechs Monate (DSK, Gesamtprüfung B45)", async () => {
+    // Vorher nur „abgelehnt“ — offene und Favoriten blieben ewig liegen. Die DSK verlangt das Löschen aller
+    // Interessenten ohne Mietvertrag, spätestens nach sechs Monaten. Ohne `user_id` gingen fremde Daten mit,
+    // ohne Datum auch die von gestern.
     const { db, mod } = await lade();
-    await mod.loescheAlteAbgelehnteBewerbungen();
+    await mod.loescheAlteBewerbungen();
     const del = op(db, "bewerbungen", "delete")!;
     expect(del.filter).toContain("eq:user_id=nutzer-1");
-    expect(del.filter).toContain("eq:status=abgelehnt");
+    expect(del.filter.some((f) => f.startsWith("eq:status"))).toBe(false);
     expect(del.filter.some((f) => f.startsWith("lt:created_at"))).toBe(true);
   });
 
   it("die Grenze liegt rund sechs Monate zurück", async () => {
     const { db, mod } = await lade();
-    await mod.loescheAlteAbgelehnteBewerbungen();
+    await mod.loescheAlteBewerbungen();
     const grenze = op(db, "bewerbungen", "delete")!.filter.find((f) => f.startsWith("lt:created_at"))!.split("=")[1];
     const monate = (Date.now() - new Date(grenze).getTime()) / (1000 * 3600 * 24 * 30.44);
     expect(monate).toBeGreaterThan(5.5);

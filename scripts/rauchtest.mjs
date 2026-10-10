@@ -54,6 +54,8 @@ const arg = (name, standard) => {
   return t ? t.slice(name.length + 3) : standard;
 };
 
+import { streamingMarker } from "./streamingMarker.mjs";
+
 const BASIS = arg("basis", process.env.BASIS || "https://www.myimmoapp.de").replace(/\/$/, "");
 const NUR = arg("nur", "").split(",").filter(Boolean);
 
@@ -101,13 +103,29 @@ async function hole(pfad, tiefe = 0, kette = []) {
     const ziel = antwort.headers.get("location");
     if (ziel) return hole(new URL(ziel, url).toString(), tiefe + 1, kette);
   }
+  const typ = antwort.headers.get("content-type") ?? "";
+  const html = await antwort.text();
+  // Streaming (Gesamtprüfung C52): `notFound()`/`redirect()` einer Seite kommen als HTTP 200 mit einem
+  // Marker im HTML. Ohne diese Auswertung galt eine fremde ID als gute Seite, und eine Umleitung aus der
+  // Seite heraus fiel nicht als Umleitung auf.
+  if (typ.includes("html") && antwort.status === 200) {
+    const marker = streamingMarker(html);
+    if (marker.weiter) {
+      kette.push(`(Streaming ${marker.weiter})`);
+      return hole(new URL(marker.weiter, url).toString(), tiefe + 1, kette);
+    }
+    if (marker.status) {
+      kette.push(`(Streaming ${marker.status})`);
+      return { status: marker.status, streaming: true, url, endePfad: new URL(url).pathname, kette, typ, html };
+    }
+  }
   return {
     status: antwort.status,
     url,
     endePfad: new URL(url).pathname,
     kette,
-    typ: antwort.headers.get("content-type") ?? "",
-    html: await antwort.text(),
+    typ,
+    html,
   };
 }
 
@@ -156,6 +174,17 @@ const WEGE = [
     titel: "Angebotsanfrage — öffentliche Seite ohne Login",
     pfad: "/angebot/00000000-0000-4000-8000-000000000000",
     erwartet: ["Angebotsanfrage", "Link nicht mehr gültig"],
+    async pruefe() { return null; },
+  },
+  {
+    // Fremde bzw. unbekannte ID (Gesamtprüfung C52): Die Seite antwortet wegen Streaming mit HTTP 200,
+    // `notFound()` steht nur im HTML. Erwartet wird, dass `hole()` das als 404 erkennt — sonst sieht dieser
+    // Test (und jeder andere Weg) eine fehlende Seite als grün.
+    schluessel: "nicht-gefunden",
+    titel: "Unbekannte Objekt-ID — als „nicht gefunden“ erkannt (Streaming-Marker)",
+    pfad: "/properties/00000000-0000-4000-8000-000000000000",
+    erwartetStatus: 404,
+    erwartet: ["Seite nicht gefunden"],
     async pruefe() { return null; },
   },
   {
@@ -509,7 +538,9 @@ async function main() {
     let grund = null;
     try {
       const seite = await hole(weg.pfad);
-      if (seite.status >= 400) grund = `HTTP ${seite.status}`;
+      if (weg.erwartetStatus) {
+        if (seite.status !== weg.erwartetStatus) grund = `HTTP ${seite.status} statt ${weg.erwartetStatus} (${seite.kette.join(" → ")})`;
+      } else if (seite.status >= 400) grund = `HTTP ${seite.status}${seite.streaming ? " (Streaming)" : ""}`;
       // DIE wichtigste Prüfung: Sind wir dort gelandet, wo wir hinwollten?
       // Ohne sie war dieses Skript falsch grün (siehe Kommentar bei `hole`).
       // Sie steht VOR der Textprüfung, damit der Grund die Umleitung nennt und

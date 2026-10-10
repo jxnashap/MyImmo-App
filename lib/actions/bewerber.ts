@@ -56,8 +56,9 @@ export async function aktualisiereBewerberLink(id: string, fd: FormData) {
     return t ? t.slice(0, max) : null;
   };
 
-  const { DOKUMENT_SLOTS, AUSSTATTUNG_OPTIONEN } = await import("@/lib/bewerbungsDokumente");
-  const erlaubteSlots = new Set(DOKUMENT_SLOTS.map((s) => s.slug));
+  const { BEWERBUNG_SLOTS, AUSSTATTUNG_OPTIONEN } = await import("@/lib/bewerbungsDokumente");
+  // Nur Unterlagen der Phase „bewerbung“ — Einkommensnachweise gehören nicht an den Link (DSK, B45).
+  const erlaubteSlots = new Set(BEWERBUNG_SLOTS.map((s) => s.slug));
   const slots = fd.getAll("dokumente").map(String).filter((s) => erlaubteSlots.has(s));
   const erlaubteAusstattung = new Set<string>(AUSSTATTUNG_OPTIONEN);
   const ausstattung = fd.getAll("ausstattung").map(String).filter((a) => erlaubteAusstattung.has(a));
@@ -92,24 +93,25 @@ export async function aktualisiereBewerberLink(id: string, fd: FormData) {
 }
 
 /**
- * DSGVO-Aufräumen: abgelehnte Bewerbungen, die älter als 6 Monate sind,
- * samt Dokumenten löschen (Frist deckt AGG-Geltendmachungsansprüche ab).
+ * DSGVO-Aufräumen: Bewerbungen, die älter als 6 Monate sind, samt Dokumenten löschen — JEDER Status
+ * (Gesamtprüfung B45: vorher nur „abgelehnt“; offene und Favoriten blieben ewig). Wer Mieter geworden ist,
+ * steht mit den nötigen Angaben beim Mieter; die Bewerbung selbst wird nicht mehr gebraucht.
+ * Frist und Stichtag aus `lib/bewerbungsDokumente.ts` — dieselbe Regel wie die Erinnerung.
  * Bewusst KEINE stille Automatik — der Vermieter bestätigt per Klick.
  */
-export async function loescheAlteAbgelehnteBewerbungen() {
+export async function loescheAlteBewerbungen() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
-  const grenze = new Date();
-  grenze.setMonth(grenze.getMonth() - 6);
+  const { loeschGrenze } = await import("@/lib/bewerbungsDokumente");
+  const { heuteBerlin } = await import("@/lib/zeitraum");
   const { error } = await supabase
     .from("bewerbungen")
     .delete()
     .eq("user_id", user.id)
-    .eq("status", "abgelehnt")
-    .lt("created_at", grenze.toISOString());
+    .lt("created_at", loeschGrenze(heuteBerlin()));
   if (error) return { error: "Aufräumen fehlgeschlagen — es wurde nichts gelöscht." };
   revalidatePath("/anliegen");
   return { ok: true };

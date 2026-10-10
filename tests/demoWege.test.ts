@@ -87,9 +87,13 @@ describe("Demo: jeder angebotene Weg führt irgendwohin", () => {
       const varianten = zweige ? [m[1].replace(zweige[0], zweige[1]), m[1].replace(zweige[0], zweige[2])] : [m[1]];
       return varianten.map((v) => v.replace(/\$\{[^}]*\}/g, "x"));
     });
+    // Seit P13 (Inventar-Test) steht das Ziel als zwei ganze Vorlagen da: `a ? `/einnahmen/…` : `/kosten/…``.
+    for (const m of quelle.matchAll(/href=\{\w+ \? `(\/[^`]*)` : `(\/[^`]*)`\}/g))
+      vorlagen.push(m[1].replace(/\$\{[^}]*\}/g, "x"), m[2].replace(/\$\{[^}]*\}/g, "x"));
     expect(fest.length).toBeGreaterThan(5);
     expect(fest).toContain("/properties/new"); // „+ Immobilie" — war eine Sackgasse
     expect(vorlagen).toContain("/einnahmen/x/edit"); // der Erkenner muss sie sehen
+    expect(vorlagen).toContain("/kosten/x/edit");
     expect([...fest, ...vorlagen].filter(unerklaert)).toEqual([]);
   });
 

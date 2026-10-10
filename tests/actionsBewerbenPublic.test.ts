@@ -237,7 +237,7 @@ describe("Dokumente anhängen", () => {
     expect(gesehen).toEqual(["sonstiges", "sonstiges", "sonstiges", "sonstiges", "sonstiges"]);
   });
 
-  it("bekannte Slots bleiben erhalten", async () => {
+  it("Slots der Bewerbungsphase bleiben, Einkommensnachweise werden „sonstiges“ (B45, DSK C. 2)", async () => {
     // Wird über die aufgezeichneten RPC-Argumente geprüft — dafür fängt der
     // Test den Aufruf selbst ab.
     mockeHeaders(frischeIp());
@@ -249,14 +249,16 @@ describe("Dokumente anhängen", () => {
     };
     mockeNextUndSupabase(client);
     const mod = await import("@/lib/actions/bewerbenPublic");
-    for (const slot of ["gehalt", "schufa", "wbs", "buergschaft"]) {
+    for (const slot of ["gehalt", "schufa", "wbs", "buergschaft", "mietschuldenfrei", "sonstiges"]) {
       await mod.haengeBewerbungDateiAn(TOKEN, TOKEN, fd({ datei: datei(10), slot }));
     }
     expect(gesehen.map((a) => (a as { p: { slot: string } }).p.slot)).toEqual([
-      "gehalt",
+      "sonstiges",
       "schufa",
       "wbs",
-      "buergschaft",
+      "sonstiges",
+      "sonstiges",
+      "sonstiges",
     ]);
   });
 });

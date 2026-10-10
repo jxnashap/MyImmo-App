@@ -2063,6 +2063,33 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   `::after` geprüft ist (42 Lösch-× waren keiner). **Rechtsstand Barrierefreiheit:** keine px-Mindestgröße in WCAG; MyImmo als
   Kleinstunternehmen vom BFSG ausgenommen (`docs/APP-STORE-RECHT.md` 1.3). **Offen, Entscheidung des Betreibers nach P13:**
   Schriftgrößen-Schalter/„Lupe“ (Memory-Repo) und P11; die ~440 Inline-Schriftgrößen 10–11 px bleiben.
+- 🧰 **Paket P13 der Gesamtprüfung (10.10.2026): Werkzeug** (`tests/paketP13.test.ts`, 15 Mutationen rot).
+  **Sperrliste `scripts/crawlSperrliste.mjs` → `gesperrt(pfad)`:** Adressen, die beim bloßen GET etwas verändern oder Geld
+  kosten (`/api/demo` setzt die Demo zurück, Cron, Umschlüsseln, Newsletter, Billing, `/auth/*`, Archiv-Datei = Zustellnachweis,
+  Bank-/Makler-Datei = Abruf-Protokoll, KI). Im Audit folgte ein Linkprüfer fünfmal `/api/demo`. **Crawler `scripts/crawl.mjs`**
+  (`--rolle=gast|vermieter|mieter|service --max=…`, Sitzung aus `.scan/state-<rolle>.json` von `scripts/designscan/login.mjs`,
+  Ergebnis `.scan/crawl-<rolle>.json`, Exit 1 bei ≥ 500/Fehlerseite) fragt die Liste bei Start, Link und Weiterleitung; der
+  Design-Scan öffnet keine gesperrte Adresse und scrollt `behavior: "instant"` (sonst halbe Bildschirme wegen `scroll-behavior:
+  smooth`). **Streaming-Marker `scripts/streamingMarker.mjs`:** Wegen `loading.tsx` kommen `notFound()`/`redirect()` als HTTP 200
+  — Rauchtest und Crawler lesen `NEXT_HTTP_ERROR_FALLBACK;404` bzw. `NEXT_REDIRECT;…;307;` aus dem HTML; Rauchtest-Weg
+  `nicht-gefunden` erwartet 404 für eine unbekannte Objekt-ID (live 38/38). **Inventar:** jede `page.tsx` hat einen Einstieg im Code
+  (Routenlisten `lib/demo.ts`, `lib/oeffentlich.ts`, `proxy.ts`, Sitemap zählen nicht). **Regeln:** (1) Eine neue GET-Route
+  wird eingeordnet: Sperrliste oder `NUR_LESEND` im Test — eine Route mit eigenem Schreibvorgang ist nie „nur lesend“.
+  (2) Ein Werkzeug, das Links selbst folgt, fragt `gesperrt()` vorher; nur Rauchtest und `designscan/login.mjs` rufen
+  `/api/demo` bewusst (einmal je Rolle). (3) Adressen als ganze Vorlage schreiben (`` `/kosten/${id}/edit` ``), nicht aus
+  Teilen zusammensetzen — sonst findet weder der Inventar- noch der Demo-Wege-Test den Einstieg. (4) Eine neue verwaiste Seite
+  bekommt einen Einstieg oder wird gelöscht; Ausnahmen nur für Alt-Adressen mit `redirect()`.
+- 📨 **Paket P11 der Gesamtprüfung (10.10.2026): Bewerbungslink nach der DSK-Orientierungshilfe Selbstauskünfte V2.0**
+  (`tests/paketP11.test.ts`, 11 Mutationen rot). Mietschuldenfreiheitsbescheinigung gestrichen (BGH VIII ZR 238/08);
+  SCHUFA heißt „Bonitätsauskunft für Vermieter“ (ausdrücklich nicht die Art.-15-Datenkopie); **jeder Slot in
+  `lib/bewerbungsDokumente.ts` hat eine Phase** — `BEWERBUNG_SLOTS` am Link, `VERTRAG_SLOTS` (Einkommen, Bürgschaft) erst
+  beim Favoriten über „Nachweise anfordern“ (`nachweiseMail()` → `mailto:`, MyImmo verschickt nichts). **Löschen nach
+  sechs Monaten für JEDEN Status** über `loeschGrenze()`/`faelligeBewerbungen()` (Stichtag `heuteBerlin()` vom Server),
+  Action `loescheAlteBewerbungen` (vorher nur „abgelehnt“). Alte Dateien behalten über `slotLabel()` einen Namen.
+  **Offen bis Anwaltsfrage 10:** Rechtsgrundlage (lit. a → b/f) und Einwilligungstext — bewusst unverändert.
+  **Regeln:** (1) Steckbrief, öffentliche Seite UND öffentlicher Upload nehmen nur `BEWERBUNG_SLOTS` — eine neue Unterlage
+  bekommt ihre Phase, nie einen Sonderweg. (2) Nichts in die Bewerbungsphase, was die DSK erst vor dem Vertrag erlaubt
+  (Einkommen, Ausweis, Kontoauszüge). (3) Löschfrist und Erinnerung nie getrennt rechnen.
 - 📰 **Paket P10 der Gesamtprüfung (09.10.2026): Ratgeber und Werbung** (`tests/paketP10.test.ts`, 17 Mutationen rot).
   Jede korrigierte Rechtsaussage gegen den Wortlaut (gesetze-im-internet.de, per `curl` abrufbar — WebFetch bekam 503)
   bzw. zwei Sekundärquellen geprüft: Belegeinsicht nach **§ 556 Abs. 4 BGB** (seit 2025, elektronische Bereitstellung

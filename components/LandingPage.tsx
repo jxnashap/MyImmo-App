@@ -53,7 +53,7 @@ export const ORDNER = [
     punkte: [
       "Oben der Steckbrief der Wohnung, darunter Selbstauskunft und Unterlagen",
       "Bewerber brauchen kein Konto",
-      "Favorit markieren, ablehnen, alte Absagen auf einen Klick löschen",
+      "Favorit markieren, ablehnen, nach sechs Monaten auf einen Klick löschen",
     ],
   },
   {

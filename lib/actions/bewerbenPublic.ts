@@ -5,6 +5,7 @@
 // SECURITY-DEFINER-RPC; hier zusätzlich ein IP-Rate-Limit als Spam-Bremse.
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { BEWERBUNG_SLOTS } from "@/lib/bewerbungsDokumente";
 
 // Best-effort-Limiter je Serverless-Instanz: max. 3 Bewerbungen / 10 Min / IP.
 const hits = new Map<string, number[]>();
@@ -102,7 +103,9 @@ export async function haengeBewerbungDateiAn(
   // Dokument-Kategorie (Slot) — Whitelist wie in der RPC; unbekannte Werte
   // landen als "sonstiges".
   const slotRoh = String(fd.get("slot") ?? "").trim();
-  const SLOTS = new Set(["gehalt","schufa","mietschuldenfrei","arbeitsvertrag","einkommen_selbst","buergschaft","einkommen_sonstig","wbs","sonstiges"]);
+  // Nur Unterlagen der Phase „bewerbung“ (B45, DSK-Orientierungshilfe C. 2): Einkommensnachweise und die
+  // gestrichene Mietschuldenfreiheitsbescheinigung landen unter „sonstiges“ — das Formular bietet sie nicht an.
+  const SLOTS = new Set([...BEWERBUNG_SLOTS.map((s) => s.slug), "sonstiges"]);
   const slot = SLOTS.has(slotRoh) ? slotRoh : "sonstiges";
   if (!(datei instanceof File) || datei.size === 0) return { ok: false, fehler: "Keine Datei gewählt." };
   if (!DATEI_TYPEN.has(datei.type)) return { ok: false, fehler: "Nur PDF-, JPG-, PNG- oder WebP-Dateien." };

@@ -749,7 +749,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                   const isEin = t._typ === "einnahme";
                   const objName = t.prop_id ? nameOf.get(t.prop_id) : null;
                   return (
-                    <Link key={`${t._typ}-${t.id}`} href={`/${isEin ? "einnahmen" : "kosten"}/${t.id}/edit`} className="listen-zeile">
+                    <Link key={`${t._typ}-${t.id}`} href={isEin ? `/einnahmen/${t.id}/edit` : `/kosten/${t.id}/edit`} className="listen-zeile">
                       <span className="listen-zeile-text">
                         <span className="listen-zeile-titel" style={{ fontWeight: 500 }}>{t.beschreibung || t.kategorie || "Buchung"}</span>
                         <span className="listen-zeile-sub">{[datum(t.buchungsdatum), objName].filter(Boolean).join(" · ")}</span>

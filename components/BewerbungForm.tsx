@@ -8,7 +8,7 @@
 import { useRef, useState, useTransition } from "react";
 import { CheckCircle2, FileText, Paperclip, X } from "lucide-react";
 import { haengeBewerbungDateiAn, reicheBewerbungEin } from "@/lib/actions/bewerbenPublic";
-import { DOKUMENT_SLOTS, SLOT_SONSTIGES, type DokumentSlot } from "@/lib/bewerbungsDokumente";
+import { BEWERBUNG_SLOTS, SLOT_SONSTIGES, type DokumentSlot } from "@/lib/bewerbungsDokumente";
 import SignaturPad from "@/components/SignaturPad";
 
 const MAX_DATEIEN = 12;
@@ -41,7 +41,9 @@ export default function BewerbungForm({
   const aktiverSlot = useRef<string>(SLOT_SONSTIGES);
   const [pending, startTransition] = useTransition();
 
-  const slots: DokumentSlot[] = DOKUMENT_SLOTS.filter((s) => gewuenschteSlots.includes(s.slug));
+  // Nur Unterlagen der Phase „bewerbung“: Ein älterer Link, der noch Einkommensnachweise „wünscht“,
+  // zeigt sie nicht mehr — Einkommensnachweise erst kurz vor dem Vertrag (DSK, Gesamtprüfung B45).
+  const slots: DokumentSlot[] = BEWERBUNG_SLOTS.filter((s) => gewuenschteSlots.includes(s.slug));
 
   const waehlen = (slot: string) => {
     aktiverSlot.current = slot;
@@ -159,7 +161,11 @@ export default function BewerbungForm({
         </div>
         <div className="form-row">
           <div className="form-group"><label>Personen im Haushalt</label><input type="number" name="personen" min={1} max={20} /></div>
-          <div className="form-group"><label>Monatliches Netto-Einkommen (€)</label><input type="number" name="netto_einkommen" min={0} step="1" /></div>
+          <div className="form-group">
+            <label>Monatliches Netto-Einkommen (€)</label>
+            <input type="number" name="netto_einkommen" min={0} step="1" />
+            <span style={{ fontSize: 11.5, color: "var(--muted)" }}>Einen Nachweis brauchst du erst, wenn sich der Vermieter für dich entscheidet — kurz vor dem Mietvertrag.</span>
+          </div>
         </div>
         <div className="form-row">
           <div className="form-group"><label>Beruf / Tätigkeit</label><input name="beruf" maxLength={200} /></div>
@@ -231,7 +237,7 @@ export default function BewerbungForm({
 
         <div className="form-group">
           <label>
-            {slots.length > 0 ? "Weitere Unterlagen (optional)" : "Dokumente (optional) — z. B. die letzten 3 Gehaltsabrechnungen, SCHUFA-Auskunft, Mietschuldenfreiheitsbescheinigung"}
+            {slots.length > 0 ? "Weitere Unterlagen (optional)" : "Unterlagen (optional) — z. B. eine Bonitätsauskunft für Vermieter"}
           </label>
           <div>
             <button
