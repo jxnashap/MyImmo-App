@@ -49,8 +49,8 @@ describe("(1) Steuer-Wächter über alle Objekte", () => {
 describe("(1) Anlage V im Vergleich zum Vorjahr", () => {
   const o = (miete: number, erhaltung: number, umlagen = 0): AnlageVObjekt => ({
     propId: null, name: "Gesamt", adresse: null,
-    einnahmen: { miete, umlagen, sonstige: 0, summe: miete + umlagen },
-    werbungskosten: { afa: 0, schuldzinsen: 0, erhaltung, verwaltung: 0, grundsteuer: 0, versicherung: 0, hausgeldSonstige: 0, summe: erhaltung },
+    einnahmen: { miete, umlagen, umlagenAbrechnung: 0, sonstige: 0, summe: miete + umlagen },
+    werbungskosten: { afa: 0, schuldzinsen: 0, erhaltung, verwaltung: 0, grundsteuer: 0, versicherung: 0, betriebskosten: 0, hausgeldSonstige: 0, summe: erhaltung },
     ueberschuss: miete + umlagen - erhaltung, afaBasis: 0, afaSatz: 0, afaMethode: "auto", schuldzinsenGeschaetzt: false, hinweise: [],
   });
 

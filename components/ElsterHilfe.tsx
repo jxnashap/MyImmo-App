@@ -7,12 +7,15 @@ import { useState } from "react";
 import { Copy, Check, Printer, Landmark } from "lucide-react";
 import { eur2 } from "@/lib/format";
 import { elsterZeilen, type AnlageVObjekt } from "@/lib/anlageV";
+import { anlageVZeilen, ohneZeilenHinweis } from "@/lib/steuer/anlageVZeilen";
 
 const elsterBetrag = (n: number) => n.toFixed(2).replace(".", ",");
+/** „Zeile 46–48\t“ — ohne geprüften Vordruck („–“) nichts. */
+const zeilenText = (zeile: string) => (zeile === "–" ? "" : `Zeile ${zeile}\t`);
 
 function ObjektBlock({ o, jahr }: { o: AnlageVObjekt; jahr: number }) {
   const [kopiert, setKopiert] = useState(false);
-  const zeilen = elsterZeilen(o);
+  const zeilen = elsterZeilen(o, jahr);
 
   const kopieren = async () => {
     const kopf = `Anlage V — ${o.name}${o.adresse ? `, ${o.adresse}` : ""}\nSteuerjahr ${jahr}\n`;
@@ -22,8 +25,8 @@ function ObjektBlock({ o, jahr }: { o: AnlageVObjekt; jahr: number }) {
     const body = zeilen
       .map((z) =>
         z.uebertragbar === false
-          ? `Zeile ${z.zeile}\t${z.bezeichnung}: NICHT ÜBERTRAGEN (${elsterBetrag(z.betrag)} €) — ${z.warnung ?? ""}`
-          : `Zeile ${z.zeile}\t${z.bezeichnung}: ${elsterBetrag(z.betrag)} €`,
+          ? `${zeilenText(z.zeile)}${z.bezeichnung}: NICHT ÜBERTRAGEN (${elsterBetrag(z.betrag)} €) — ${z.warnung ?? ""}`
+          : `${zeilenText(z.zeile)}${z.bezeichnung}: ${elsterBetrag(z.betrag)} €${z.hinweis ? ` (${z.hinweis})` : ""}`,
       )
       .join("\n");
     await navigator.clipboard.writeText(kopf + body);
@@ -50,7 +53,7 @@ function ObjektBlock({ o, jahr }: { o: AnlageVObjekt; jahr: number }) {
         <table style={{ fontSize: 12.5, width: "100%" }}>
           <thead>
             <tr>
-              <th style={{ width: 64 }}>Zeile</th>
+              <th style={{ width: 88 }}>Zeile</th>
               <th>Bezeichnung (Anlage V)</th>
               <th style={{ textAlign: "right", whiteSpace: "nowrap" }}>Betrag</th>
             </tr>
@@ -61,6 +64,9 @@ function ObjektBlock({ o, jahr }: { o: AnlageVObjekt; jahr: number }) {
                 <td style={{ color: "var(--gold)", fontWeight: 600 }}>{z.zeile}</td>
                 <td style={{ color: z.bereich === "summe" ? "var(--text)" : "var(--muted)" }}>
                   {z.bezeichnung}
+                  {z.hinweis && z.uebertragbar !== false && (
+                    <span style={{ display: "block", fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{z.hinweis}</span>
+                  )}
                   {z.uebertragbar === false && (
                     <span style={{ display: "block", fontSize: 11, color: "var(--amber)", marginTop: 2 }}>
                       Nicht übertragen — {z.warnung}
@@ -88,6 +94,7 @@ function ObjektBlock({ o, jahr }: { o: AnlageVObjekt; jahr: number }) {
 
 export default function ElsterHilfe({ objekte, jahr }: { objekte: AnlageVObjekt[]; jahr: number }) {
   if (objekte.length === 0) return null;
+  const tabelle = anlageVZeilen(jahr);
   return (
     <div style={{ marginTop: 24 }}>
       <div className="section" style={{ borderColor: "var(--gold-dim)" }}>
@@ -101,9 +108,10 @@ export default function ElsterHilfe({ objekte, jahr }: { objekte: AnlageVObjekt[
           <p style={{ fontSize: 12.5, color: "var(--muted)", margin: 0, lineHeight: 1.6 }}>
             So überträgst du deine Zahlen kostenlos ans Finanzamt, ohne Steuerberater:
             Melde dich bei <strong>Mein ELSTER</strong> an (elster.de), lege je Objekt eine
-            Anlage V an und trage die Beträge in die unten genannten Zeilen ein.
-            Die Zeilennummern folgen dem Formular der letzten Jahre — bitte im aktuellen
-            Steuerjahr kurz gegenprüfen, da sie sich verschieben können.
+            Anlage V an und trage die Beträge in die unten genannten Zeilen ein.{" "}
+            {tabelle
+              ? <>Die Zeilennummern stammen aus dem {tabelle.vordruck}; ELSTER zeigt dieselben Bezeichnungen.</>
+              : ohneZeilenHinweis(jahr)}
           </p>
         </div>
       </div>

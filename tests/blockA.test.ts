@@ -252,7 +252,7 @@ describe("Anlage V", () => {
     const o = r.objekte[0];
     expect(o.werbungskosten.schuldzinsen).toBe(6000);
     expect(o.schuldzinsenGeschaetzt).toBe(true);
-    const z37 = elsterZeilen(o).find((z) => z.zeile === "37")!;
+    const z37 = elsterZeilen(o, 2024).find((z) => z.zeile === "46–48")!;
     expect(z37.uebertragbar).toBe(false);
     expect(z37.warnung).toBeTruthy();
   });
@@ -266,7 +266,7 @@ describe("Anlage V", () => {
     const o = r.objekte[0];
     expect(o.werbungskosten.schuldzinsen).toBe(5400);
     expect(o.schuldzinsenGeschaetzt).toBe(false);
-    expect(elsterZeilen(o).find((z) => z.zeile === "37")!.uebertragbar).toBe(true);
+    expect(elsterZeilen(o, 2024).find((z) => z.zeile === "46–48")!.uebertragbar).toBe(true);
   });
 });
 

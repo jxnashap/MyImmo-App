@@ -1971,7 +1971,7 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   (B2) Kaufmonat gilt nur im Kaufjahr; abweichendes AfA-Startjahr → volles Jahr + Hinweis. (B3) Zinsschätzung nur
   für Monate, in denen das Darlehen lief — **`kreditMonateImJahr()` (`lib/kreditZeit.ts`) ist die Regel**
   (Jahresbericht folgt mit P6). (B4) PDF kennzeichnet Summe/Ergebnis über `summenWarnung()` wie die ELSTER-Hilfe.
-  `afaSatzAusBaujahr` = `afaSatzNachFertigstellung` (eine Funktion). **Offen:** Zeilennummern (B1, Vordruck 2025). Details `docs/zukunft/NK-NEU.md`.
+  `afaSatzAusBaujahr` = `afaSatzNachFertigstellung` (eine Funktion). Zeilennummern (B1) seit P14 je Steuerjahr. Details `docs/zukunft/NK-NEU.md`.
 - 🗓️ **Paket P7 der Gesamtprüfung (08.10.2026): Mietkonto und Fristen** (`tests/paketP7.test.ts`, 17 Mutationen rot).
   **`lib/mietStatus.ts` ist die EINE Regel für fällig/überfällig/bezahlt:** `dritterWerktag()` ohne Sa/So UND
   bundesweite Feiertage (Osterformel; Landesfeiertage als Hinweis im Brief), `mietFaelligkeit()` (am 3. Werktag
@@ -2090,6 +2090,18 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   **Regeln:** (1) Steckbrief, öffentliche Seite UND öffentlicher Upload nehmen nur `BEWERBUNG_SLOTS` — eine neue Unterlage
   bekommt ihre Phase, nie einen Sonderweg. (2) Nichts in die Bewerbungsphase, was die DSK erst vor dem Vertrag erlaubt
   (Einkommen, Ausweis, Kontoauszüge). (3) Löschfrist und Erinnerung nie getrennt rechnen.
+- 🧾 **Paket P14 + B1 der Gesamtprüfung (10.10.2026)** (`tests/paketP14.test.ts`, 20 Mutationen rot). Sechs C-Befunde standen
+  in KEINEM Paket (beim Gegenlesen der Paketliste gefunden). **B1: Zeilen der Anlage V je Steuerjahr in
+  `lib/steuer/anlageVZeilen.ts`** — aus dem Vordruck 2025 (Buhl-Nachdruck) und der amtlichen Anleitung 2024 gelesen, beide
+  gleich (Schuldzinsen 46–48, Erhaltung 55–56, umgelegt 73–75, nicht umgelegt 76–78, Summe 83, Überschuss 85). Vorher stimmte
+  nur Zeile 33. Neue Posten: `einnahmen.umlagenAbrechnung` (davon, Z. 21) und `werbungskosten.betriebskosten` (Müll, Wasser …).
+  **C18** `linearImJahr()` (AfA bis Restbuchwert 0), **C19** `fristendeNachJahren()`/`tagDanach()` (`lib/steuer/frist.ts`,
+  29.02. → Monatsende), **C20** `degressivPruefung()` + `afaUnzulaessig`, **C21** § 7b mit zehnjähriger Vermietung,
+  **C23** `vorschlagAusAbrechnung()` (Tagesanteil, nicht nach Auszug), **C24** `gleichzeitigeMieter()` in `zeigeVerteiler`.
+  **Regeln:** (1) **Kein fester Text nennt eine Zeilennummer der Anlage V** — nur `zeilenAngabe()`/`positionMitZeile()` aus der
+  Jahrestabelle (Test scannt `app/`, `components/`, `lib/`); ein Jahr ohne geprüften Vordruck bekommt keine Nummer. Neues Jahr:
+  Vordruck lesen, Zeile in `ANLAGE_V_ZEILEN` mit Quelle, Prüftermin in `07` (01.02.2027). (2) Fristen in Jahren nur über
+  `fristendeNachJahren()`. (3) `zeigeVerteiler` bekommt die Mietzeiten (`mieter: {mietbeginn, mietende}[]`), nie eine Anzahl.
 - 📰 **Paket P10 der Gesamtprüfung (09.10.2026): Ratgeber und Werbung** (`tests/paketP10.test.ts`, 17 Mutationen rot).
   Jede korrigierte Rechtsaussage gegen den Wortlaut (gesetze-im-internet.de, per `curl` abrufbar — WebFetch bekam 503)
   bzw. zwei Sekundärquellen geprüft: Belegeinsicht nach **§ 556 Abs. 4 BGB** (seit 2025, elektronische Bereitstellung

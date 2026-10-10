@@ -1,7 +1,7 @@
 // Abo-Zahlung als Kostenbuchung (05.10.2026, Vorgabe des Betreibers).
 //
 // Jede bezahlte MyImmo-Rechnung landet von selbst als Kosten „Verwaltung"
-// in den Büchern des Vermieters — und damit in der Anlage V, Zeile 46
+// in den Büchern des Vermieters — und damit in der Anlage V bei den nicht umgelegten Kosten
 // (`lib/anlageV.ts`, KOSTEN_BUCKET „Verwaltung" → verwaltung). Vorher stimmte
 // der Satz „wir machen das automatisch in die Anlage V" schlicht nicht: Das Abo
 // tauchte dort nur auf, wenn der Nutzer die Rechnung selbst buchte.
@@ -26,7 +26,7 @@ export const ABO_BESCHREIBUNG = "MyImmo-Abo";
 
 /** Satz im Abo-Tab — wer zahlt, soll wissen, dass in seinen Büchern etwas entsteht. */
 export const ABO_BUCHUNG_HINWEIS =
-  "Jede bezahlte Rechnung bucht MyImmo automatisch als Kosten „Verwaltung“ (Anlage V, Zeile 46), " +
+  "Jede bezahlte Rechnung bucht MyImmo automatisch als Kosten „Verwaltung“ (in der Anlage V bei den nicht umgelegten Kosten), " +
   "anteilig nach Einheiten auf deine Objekte außer selbst bewohnten. Du findest sie unter „Ein- & Ausgaben“ " +
   "und kannst sie dort ändern oder löschen.";
 

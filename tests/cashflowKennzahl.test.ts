@@ -160,7 +160,7 @@ describe("Warmmiete im Cashflow, Kaltmiete in Rendite und Steuer", () => {
     expect(dashboard).toMatch(/bruttoRenditePortfolio\([\s\S]{0,200}kaltmieteMonat: sollJeObjekt\.get\(p\.id\)/);
     expect(objekt).toMatch(/bruttoRendite\(p, miete\)/);
   });
-  it("die Anlage V trennt weiter Kaltmiete (Zeile 9) und Umlagen (Zeile 13)", () => {
+  it("die Anlage V trennt weiter Kaltmiete und Umlagen", () => {
     const q = readFileSync("lib/anlageV.ts", "utf8");
     expect(q).toMatch(/g\.einnahmen\.miete \+= betrag - nk;/);
     expect(q).toMatch(/g\.einnahmen\.umlagen \+= nk;/);

@@ -108,8 +108,8 @@ export function kostenSchnittMonat(
 // Liquidität ist, was aufs Konto kommt, minus was abgeht — also Warmmiete.
 //
 // DIE STEUER BERÜHRT DAS NICHT: Die Anlage V rechnet aus den BUCHUNGEN
-// (lib/anlageV.ts: Kaltmiete = Betrag − nk_anteil → Zeile 9, nk_anteil →
-// Zeile 13 Umlagen), dieser Cashflow aus den VERTRÄGEN. Bruttorendite und
+// (lib/anlageV.ts: Kaltmiete = Betrag − nk_anteil → Mieteinnahmen, nk_anteil →
+// Umlagen), dieser Cashflow aus den VERTRÄGEN. Bruttorendite und
 // Kaufpreisfaktor bleiben ebenfalls kalt — das ist dort die Marktkonvention.
 //
 // Nicht enthalten: Stellplatzmieten außerhalb von Garagen-Objekten (ob sie im

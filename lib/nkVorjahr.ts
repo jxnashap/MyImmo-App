@@ -10,6 +10,8 @@
 // anpassen (§ 560 Abs. 4 BGB). Vorgeschlagen wird der Monatsanteil der abgerechneten Kosten,
 // auf volle Euro aufgerundet. Nur ein Vorschlag; erst ab 5 € Unterschied angezeigt.
 
+import { belegungsTage, jahresTage } from "@/lib/nk";
+
 export type VorjahrPosition = {
   bezeichnung: string;
   betrag: number | null;
@@ -51,6 +53,25 @@ export function vorjahrUebernahme(positionen: VorjahrPosition[], jahr: number) {
 }
 
 export const VORSCHLAG_SCHWELLE = 5;
+
+/**
+ * Vorschlag aus einer fertigen Abrechnung (Gesamtprüfung 07.10.2026, C23). Zwei Fehler steckten vorher in
+ * der Seite: (1) Sie teilte durch angebrochene Monate — 260 Tage Mietzeit zählten als 9 Monate, der
+ * Vorschlag lag bei 63 € statt 66 €; jetzt Tagesanteil (Tage / Jahrestage × 12), dieselbe Zeitanteiligkeit
+ * wie die Verteilung. (2) Sie schlug auch Ausgezogenen eine neue Monatsrate vor — eine Vorauszahlung gibt es
+ * nur für einen laufenden Vertrag (§ 560 Abs. 4 BGB).
+ */
+export function vorschlagAusAbrechnung(
+  a: { jahr: number; zeitraumVon: string; zeitraumBis: string; monate: number; positionen: unknown[]; kostenNachCo2: number; nkVorauszahlungMonat: number },
+  mietende: string | null,
+  heute: string,
+) {
+  if (mietende && mietende <= heute) return null;
+  if (!(a.monate > 0) || a.positionen.length === 0) return null;
+  const tage = belegungsTage(a.zeitraumVon, a.zeitraumBis);
+  if (!(tage > 0)) return null;
+  return vorauszahlungsVorschlag(a.kostenNachCo2, (tage / jahresTage(a.jahr)) * 12, a.nkVorauszahlungMonat);
+}
 
 export function vorauszahlungsVorschlag(kostenImJahr: number, monate: number, aktuellMonat: number) {
   if (!(monate > 0) || !(kostenImJahr > 0)) return null;

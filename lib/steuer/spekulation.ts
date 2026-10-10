@@ -2,6 +2,8 @@
 // Immobilie ist nach 10 Jahren ab Anschaffung steuerfrei. Reine Rechenfunktion.
 // Keine Steuerberatung.
 
+import { fristendeNachJahren, tagDanach } from "@/lib/steuer/frist";
+
 export type SpekulationErgebnis = {
   aktiv: boolean;             // Kaufdatum vorhanden?
   steuerfreiAb: string | null; // YYYY-MM-DD (Kaufdatum + 10 Jahre)
@@ -16,14 +18,12 @@ export function berechneSpekulation(kaufdatum: string | null, heute: Date = new 
   if (!kaufdatum || !/^\d{4}-\d{2}-\d{2}$/.test(kaufdatum)) {
     return { aktiv: false, steuerfreiAb: null, steuerfrei: false, tageVerbleibend: 0, jahreVerbleibend: 0 };
   }
-  const kauf = new Date(`${kaufdatum}T00:00:00Z`);
-  const frei = new Date(kauf);
-  frei.setUTCFullYear(frei.getUTCFullYear() + 10);
   // § 108 AO i.V.m. § 187 Abs. 1, § 188 Abs. 2 BGB: Der Anschaffungstag zählt
   // nicht mit; die 10-Jahres-Frist endet erst mit Ablauf des Jahrestags. Der
   // Verkauf AM Jahrestag ist noch steuerpflichtig — steuerfrei erst am Folgetag.
-  frei.setUTCDate(frei.getUTCDate() + 1);
-  const steuerfreiAb = frei.toISOString().slice(0, 10);
+  // Kauf am 29.02.: Fristende am letzten Februartag (§ 188 Abs. 3 BGB, C19).
+  const steuerfreiAb = tagDanach(fristendeNachJahren(kaufdatum, 10));
+  const frei = new Date(`${steuerfreiAb}T00:00:00Z`);
 
   const heuteMs = Date.UTC(heute.getUTCFullYear(), heute.getUTCMonth(), heute.getUTCDate());
   const diffTage = Math.ceil((frei.getTime() - heuteMs) / TAG_MS);

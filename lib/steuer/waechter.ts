@@ -71,6 +71,7 @@ export function anlageVVergleich(jahr: AnlageVObjekt, vorjahr: AnlageVObjekt): V
     ["Verwaltung", vorjahr.werbungskosten.verwaltung, jahr.werbungskosten.verwaltung],
     ["Grundsteuer", vorjahr.werbungskosten.grundsteuer, jahr.werbungskosten.grundsteuer],
     ["Versicherungen", vorjahr.werbungskosten.versicherung, jahr.werbungskosten.versicherung],
+    ["Umlagefähige Betriebskosten", vorjahr.werbungskosten.betriebskosten, jahr.werbungskosten.betriebskosten],
     ["Hausgeld / Sonstiges", vorjahr.werbungskosten.hausgeldSonstige, jahr.werbungskosten.hausgeldSonstige],
     ["Überschuss", vorjahr.ueberschuss, jahr.ueberschuss],
   ];

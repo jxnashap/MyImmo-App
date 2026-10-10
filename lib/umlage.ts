@@ -49,12 +49,34 @@ export function verteileBetrag(betrag: number, gewichte: number[]): number[] {
 /** Objekttypen, die von Haus aus mehrere Einheiten haben. */
 export const MEHRPARTEIEN_TYPEN = ["Mehrfamilienhaus", "Garagenkomplex"];
 
+export type Mietzeit = { mietbeginn: string | null; mietende: string | null };
+
+/**
+ * Höchstzahl der Mietverhältnisse, die gleichzeitig laufen (Gesamtprüfung 07.10.2026, C24). Vorher zählte
+ * `zeigeVerteiler` alle Mieter eines Objekts — ein Reihenhaus mit Mieterwechsel galt damit als
+ * Mehrfamilienhaus, und seit Stufe 1 der NK entscheidet genau diese Regel, ob die Kosten am Objekt stehen.
+ * Nacheinander ≠ gleichzeitig: Endet der alte Vertrag am 31.10. und beginnt der neue am 01.11. (oder am
+ * selben Tag, Übergabe), sind es nie zwei. Fehlt ein Datum, gilt der Vertrag als offen — im Zweifel
+ * mehrere Parteien, wie bisher.
+ */
+export function gleichzeitigeMieter(mieter: Mietzeit[]): number {
+  const von = (m: Mietzeit) => m.mietbeginn ?? "0000-01-01";
+  const bis = (m: Mietzeit) => m.mietende ?? "9999-12-31";
+  let max = 0;
+  for (const a of mieter) {
+    const n = mieter.filter((b) => von(b) <= von(a) && von(a) < bis(b)).length;
+    if (n > max) max = n;
+  }
+  return Math.max(max, mieter.length > 0 ? 1 : 0);
+}
+
 export function zeigeVerteiler(p: {
   typ?: string | null;
   einheiten_anzahl?: number | null;
-  mieterAnzahl?: number;
+  /** Mietverhältnisse des Objekts — es zählen nur gleichzeitig laufende (C24). */
+  mieter?: Mietzeit[];
 }): boolean {
   if (MEHRPARTEIEN_TYPEN.includes(p.typ ?? "")) return true;
   if ((p.einheiten_anzahl ?? 0) > 1) return true;
-  return (p.mieterAnzahl ?? 0) > 1;
+  return gleichzeitigeMieter(p.mieter ?? []) > 1;
 }

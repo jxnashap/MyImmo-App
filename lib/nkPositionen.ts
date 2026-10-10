@@ -9,7 +9,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NK_POSITION_SPALTEN, type NkRawPosition } from "@/lib/nk";
-import { zeigeVerteiler } from "@/lib/umlage";
+import { zeigeVerteiler, type Mietzeit } from "@/lib/umlage";
 import type { NkCo2, NkCo2Input } from "@/lib/nk";
 import {
   verteileObjektKosten,
@@ -147,7 +147,7 @@ export async function ladeNkPositionen(
     const { data } = await supabase.from("properties").select("flaeche,einheiten_anzahl,typ").eq("id", mieter.prop_id).maybeSingle();
     stamm = data ?? {};
   }
-  const mfh = zeigeVerteiler({ typ: stamm.typ ?? null, einheiten_anzahl: stamm.einheiten_anzahl ?? null, mieterAnzahl: daten.mieter.length });
+  const mfh = zeigeVerteiler({ typ: stamm.typ ?? null, einheiten_anzahl: stamm.einheiten_anzahl ?? null, mieter: daten.mieter });
   // Kosten am Objekt gelten NUR im Mehrfamilienhaus — dieselbe Regel wie `nkAmObjekt()` und die Seite.
   // Vorher zählten sie auch bei einer ETW, wenn jemand die Seite per Adresse aufrief und dort Kosten
   // eintrug (Gesamtprüfung C51): die Abrechnung des Mieters wechselte still die Quelle.
@@ -180,13 +180,13 @@ export type { NkObjektErgebnis };
  */
 export async function nkAmObjekt(supabase: SupabaseClient, propId: string | null | undefined): Promise<boolean> {
   if (!propId) return false;
-  const [{ data: prop }, { count }, { error }] = await Promise.all([
+  const [{ data: prop }, { data: mieter }, { error }] = await Promise.all([
     supabase.from("properties").select("typ,einheiten_anzahl").eq("id", propId).maybeSingle(),
-    supabase.from("mieter").select("id", { count: "exact", head: true }).eq("prop_id", propId),
+    supabase.from("mieter").select("mietbeginn,mietende").eq("prop_id", propId),
     supabase.from("nk_objekt_kosten").select("id", { count: "exact", head: true }).eq("prop_id", propId),
   ]);
   if (!prop || error) return false;
-  return zeigeVerteiler({ typ: prop.typ as string | null, einheiten_anzahl: prop.einheiten_anzahl as number | null, mieterAnzahl: count ?? 0 });
+  return zeigeVerteiler({ typ: prop.typ as string | null, einheiten_anzahl: prop.einheiten_anzahl as number | null, mieter: (mieter ?? []) as Mietzeit[] });
 }
 
 /**

@@ -7,6 +7,7 @@ import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
 import {
   AFA_DEFAULT,
   ANLAGE_V_POSITIONEN,
+  positionMitZeile,
   berechneAnlageV,
   wertVon,
   type AnlageVObjekt,
@@ -83,9 +84,9 @@ export default function AnlageVExport({
     const lines: string[] = [];
     lines.push(["Objekt", "Bereich", "Position", "Betrag (EUR)"].map(esc).join(sep));
     for (const o of erg.objekte) {
-      for (const p of einnahmePos) lines.push([o.name, "Einnahme", p.label, nr(wertVon(o, p.key))].map(esc).join(sep));
+      for (const p of einnahmePos) lines.push([o.name, "Einnahme", positionMitZeile(p, jahr), nr(wertVon(o, p.key))].map(esc).join(sep));
       lines.push([o.name, "Einnahme", "Summe Einnahmen", nr(o.einnahmen.summe)].map(esc).join(sep));
-      for (const p of wkPos) lines.push([o.name, "Werbungskosten", p.label, nr(wertVon(o, p.key))].map(esc).join(sep));
+      for (const p of wkPos) lines.push([o.name, "Werbungskosten", positionMitZeile(p, jahr), nr(wertVon(o, p.key))].map(esc).join(sep));
       lines.push([o.name, "Werbungskosten", "Summe Werbungskosten", nr(o.werbungskosten.summe)].map(esc).join(sep));
       lines.push([o.name, "Ergebnis", "Überschuss / Verlust", nr(o.ueberschuss)].map(esc).join(sep));
     }
@@ -295,7 +296,7 @@ export default function AnlageVExport({
                   <tr><td colSpan={spalten.length + 1} style={{ fontWeight: 700, color: "var(--green)", paddingTop: 8 }}><span style={{ position: "sticky", left: 12, display: "inline-block" }}>Einnahmen</span></td></tr>
                   {einnahmePos.map((p) => (
                     <tr key={p.key}>
-                      <td style={{ ...ERSTE_SPALTE, paddingLeft: 12, color: "var(--muted)" }}>{p.label}</td>
+                      <td style={{ ...ERSTE_SPALTE, paddingLeft: 12, color: "var(--muted)" }}>{positionMitZeile(p, jahr)}</td>
                       {spalten.map((o) => num(o, p.key, o === erg.gesamt))}
                     </tr>
                   ))}
@@ -309,7 +310,7 @@ export default function AnlageVExport({
                   <tr><td colSpan={spalten.length + 1} style={{ fontWeight: 700, paddingTop: 10 }}><span style={{ position: "sticky", left: 12, display: "inline-block" }}>Werbungskosten</span></td></tr>
                   {wkPos.map((p) => (
                     <tr key={p.key}>
-                      <td style={{ ...ERSTE_SPALTE, paddingLeft: 12, color: "var(--muted)" }}>{p.label}</td>
+                      <td style={{ ...ERSTE_SPALTE, paddingLeft: 12, color: "var(--muted)" }}>{positionMitZeile(p, jahr)}</td>
                       {spalten.map((o) => num(o, p.key, o === erg.gesamt))}
                     </tr>
                   ))}

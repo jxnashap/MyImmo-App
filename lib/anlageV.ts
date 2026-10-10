@@ -6,11 +6,12 @@
 
 import { restschuldVon } from "@/lib/kredit";
 import type { Einnahme, Kosten, Kredit, Property } from "@/lib/types";
-import { afaZeitanteil, monatVon } from "@/lib/steuer/afaZeitraum";
-import { afaSatzNachFertigstellung, degressivImJahr } from "@/lib/steuer/afa";
+import { afaZeitanteil, linearImJahr, monatVon } from "@/lib/steuer/afaZeitraum";
+import { afaSatzNachFertigstellung, degressivImJahr, degressivPruefung } from "@/lib/steuer/afa";
 import { berechneAnschaffungsnah, ANSCHAFFUNGSNAH_KATEGORIEN } from "@/lib/steuer/anschaffungsnah";
 import { istSelbstBewohnt } from "@/lib/steuer/selbstBewohnt";
 import { kreditMonateImJahr } from "@/lib/kreditZeit";
+import { anlageVZeilen, type AnlageVFeld } from "@/lib/steuer/anlageVZeilen";
 
 export type AfaParams = {
   gebaeudeAnteil: number; // % des Kaufpreises, der auf das Gebäude entfällt
@@ -25,21 +26,26 @@ export const AFA_DEFAULT: AfaParams = { gebaeudeAnteil: 80, satz: null };
  */
 export const afaSatzAusBaujahr = afaSatzNachFertigstellung;
 
+// Zeilennummern des Vordrucks stehen NICHT hier, sondern je Steuerjahr in lib/steuer/anlageVZeilen.ts (B1).
 export type AnlageVEinnahmen = {
-  miete: number; // Kaltmiete (Zeile 9)
-  umlagen: number; // vereinnahmte Nebenkosten (Zeile 13)
-  sonstige: number; // sonstige Einnahmen (Zeile 14)
+  miete: number; // Kaltmiete
+  umlagen: number; // vereinnahmte Nebenkosten (laufend + aus NK-Abrechnungen)
+  /** davon aus NK-Abrechnungen (Nachzahlung/Erstattung) — im Vordruck eine eigene Zeile. Teil von `umlagen`. */
+  umlagenAbrechnung: number;
+  sonstige: number; // sonstige Einnahmen
   summe: number;
 };
 
 export type AnlageVWerbungskosten = {
-  afa: number; // Gebäude-AfA (Zeile 33 ff.)
-  schuldzinsen: number; // Zeile 37
-  erhaltung: number; // Erhaltungsaufwand (Zeile 40 ff.)
-  verwaltung: number; // Verwaltungskosten (Zeile 46)
-  grundsteuer: number; // Grundsteuer/öff. Lasten (Zeile 47)
-  versicherung: number; // Versicherungen (Zeile 47)
-  hausgeldSonstige: number; // Hausgeld/WEG + Sonstiges (Zeile 47/50)
+  afa: number; // Gebäude-AfA
+  schuldzinsen: number;
+  erhaltung: number; // Erhaltungsaufwand, voll abzuziehen
+  verwaltung: number; // Verwaltungskosten (im Vordruck „nicht umgelegte Kosten“)
+  grundsteuer: number; // Grundsteuer/öff. Lasten
+  versicherung: number; // Versicherungen
+  /** Umlagefähige Betriebskosten (Müll, Wasser, Heizung …) — im Vordruck „umgelegte Kosten“, soweit umgelegt (B1). */
+  betriebskosten: number;
+  hausgeldSonstige: number; // Hausgeld/WEG, CO₂-Vermieteranteil, Sonstiges, unbekannte Kategorien
   summe: number;
 };
 
@@ -66,6 +72,11 @@ export type AnlageVObjekt = {
    * Arbeiten beurteilen —, die Zeile und die Summen gelten aber als nicht übertragbar.
    */
   erhaltungAnschaffungsnah?: boolean;
+  /**
+   * true = degressive AfA gewählt, obwohl Baujahr oder Kaufjahr § 7 Abs. 5a EStG widersprechen (C20).
+   * Die App rechnet weiter degressiv (sie bucht nicht um), AfA und Summen gelten aber als nicht übertragbar.
+   */
+  afaUnzulaessig?: boolean;
   /** Sachliche Hinweise zur Berechnung dieses Objekts (fehlende Angaben o. Ä.). */
   hinweise: string[];
 };
@@ -80,10 +91,10 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 const jahrVon = (d: string | null | undefined) => (d ? Number(d.slice(0, 4)) : NaN);
 const sum = (ns: number[]) => ns.reduce((a, b) => a + b, 0);
 
-// Kategorie → Anlage-V-Zeile. Deckt alle Kategorien des Kosten-Formulars plus
+// Kategorie → Anlage-V-Posten. Deckt alle Kategorien des Kosten-Formulars plus
 // automatisch erzeugte Kategorien ab. Unbekannte/eigene Kategorien fallen
-// bewusst in "Hausgeld / sonstige Kosten" (Zeile 47) — dort gehen sie steuerlich
-// nicht verloren, tauchen aber nicht in einer spezifischeren Zeile auf.
+// bewusst in "Hausgeld / sonstige Kosten" — dort gehen sie steuerlich
+// nicht verloren, tauchen aber nicht in einem spezifischeren Posten auf.
 const KOSTEN_BUCKET: Record<string, keyof Omit<AnlageVWerbungskosten, "afa" | "summe">> = {
   Schuldzinsen: "schuldzinsen",
   Reparatur: "erhaltung",
@@ -97,23 +108,23 @@ const KOSTEN_BUCKET: Record<string, keyof Omit<AnlageVWerbungskosten, "afa" | "s
   Sonstiges: "hausgeldSonstige",
   "CO₂-Kosten (Vermieteranteil)": "hausgeldSonstige",
   // Umlagefähige Betriebskosten (lib/kategorien.ts, BETRIEBSKOSTEN_KATEGORIEN): beim Vermieter
-  // Werbungskosten unter „sonstige“; die Umlage des Mieters steht als Einnahme in Zeile 13.
-  Müll: "hausgeldSonstige",
-  "Wasser / Abwasser": "hausgeldSonstige",
-  Allgemeinstrom: "hausgeldSonstige",
-  Heizung: "hausgeldSonstige",
-  Hausmeister: "hausgeldSonstige",
-  Gartenpflege: "hausgeldSonstige",
-  Straßenreinigung: "hausgeldSonstige",
-  Schornsteinfeger: "hausgeldSonstige",
-  Aufzug: "hausgeldSonstige",
+  // Werbungskosten — im Vordruck „umgelegte Kosten“; die Umlage des Mieters steht als Einnahme bei den Umlagen.
+  Müll: "betriebskosten",
+  "Wasser / Abwasser": "betriebskosten",
+  Allgemeinstrom: "betriebskosten",
+  Heizung: "betriebskosten",
+  Hausmeister: "betriebskosten",
+  Gartenpflege: "betriebskosten",
+  Straßenreinigung: "betriebskosten",
+  Schornsteinfeger: "betriebskosten",
+  Aufzug: "betriebskosten",
 };
 
 function leereWk(): AnlageVWerbungskosten {
-  return { afa: 0, schuldzinsen: 0, erhaltung: 0, verwaltung: 0, grundsteuer: 0, versicherung: 0, hausgeldSonstige: 0, summe: 0 };
+  return { afa: 0, schuldzinsen: 0, erhaltung: 0, verwaltung: 0, grundsteuer: 0, versicherung: 0, betriebskosten: 0, hausgeldSonstige: 0, summe: 0 };
 }
 function leereEin(): AnlageVEinnahmen {
-  return { miete: 0, umlagen: 0, sonstige: 0, summe: 0 };
+  return { miete: 0, umlagen: 0, umlagenAbrechnung: 0, sonstige: 0, summe: 0 };
 }
 
 /** Mietvertrag, soweit die Plausibilitätsprüfung der Umlagen ihn braucht. */
@@ -212,7 +223,10 @@ export function berechneAnlageV(
       const nk = Number(e.nk_anteil) || 0;
       g.einnahmen.miete += betrag - nk;
       g.einnahmen.umlagen += nk;
-    } else if (e.kategorie === "Nebenkostenabrechnung") g.einnahmen.umlagen += betrag;
+    } else if (e.kategorie === "Nebenkostenabrechnung") {
+      g.einnahmen.umlagen += betrag;
+      g.einnahmen.umlagenAbrechnung += betrag;
+    }
     else if (e.kategorie === "Kaution") continue; // durchlaufend, nicht steuerbar
     else g.einnahmen.sonstige += betrag;
   }
@@ -234,14 +248,14 @@ export function berechneAnlageV(
     // Umlagen plausibel? (30.09.2026, Prüfung der echten Konten: 332 Miet-
     // buchungen in 2 Konten waren reine Kaltmiete ohne NK-Anteil, obwohl die
     // Mieter laut Vertrag NK vorauszahlen — und umlagefähige Kosten standen als
-    // Werbungskosten drin. Dann fehlen die Umlagen als Einnahme (Zeile 13), und
+    // Werbungskosten drin. Dann fehlen die Umlagen als Einnahme, und
     // der Überschuss ist zu niedrig.) Nur ein Hinweis: Ob die NK tatsächlich
     // an den Vermieter gehen, weiß nur der Nutzer.
     const nkSoll = nkSollImJahr(mieter, p.id, jahr);
     if (nkSoll > 0 && g.einnahmen.umlagen < nkSoll * 0.5) {
       const fmt = (n: number) => n.toLocaleString("de-DE", { maximumFractionDigits: 0 });
       g.hinweise.push(
-        `Laut Mietverträgen waren ${jahr} rund ${fmt(nkSoll)} € Nebenkosten-Vorauszahlungen fällig, als Umlagen (Zeile 13) gebucht sind ${fmt(g.einnahmen.umlagen)} €. Sind die Mieten nur kalt gebucht? Dann fehlen die Umlagen als Einnahme, während umlagefähige Kosten als Werbungskosten abgezogen werden — der Überschuss wäre zu niedrig. Beim Buchen der Miete den NK-Anteil angeben (das Mietkonto tut das automatisch).`,
+        `Laut Mietverträgen waren ${jahr} rund ${fmt(nkSoll)} € Nebenkosten-Vorauszahlungen fällig, als Umlagen gebucht sind ${fmt(g.einnahmen.umlagen)} €. Sind die Mieten nur kalt gebucht? Dann fehlen die Umlagen als Einnahme, während umlagefähige Kosten als Werbungskosten abgezogen werden — der Überschuss wäre zu niedrig. Beim Buchen der Miete den NK-Anteil angeben (das Mietkonto tut das automatisch).`,
       );
     }
     const kaufpreis = Number(p.kaufpreis) || 0;
@@ -284,6 +298,10 @@ export function berechneAnlageV(
         g.werbungskosten.afa = degressivImJahr(g.afaBasis, start, jahr, erstes);
         g.afaSatz = 5;
       }
+      // Darf überhaupt degressiv abgeschrieben werden? (§ 7 Abs. 5a EStG, C20)
+      const pruef = degressivPruefung(p);
+      if (pruef.zulaessig === false) g.afaUnzulaessig = true;
+      if (!g.hinweise.includes(pruef.text)) g.hinweise.push(pruef.text);
     } else {
       const satz = afa.satz ?? afaSatzAusBaujahr(p.baujahr); // global-Override nur bei "auto"
       g.afaSatz = satz;
@@ -291,10 +309,10 @@ export function berechneAnlageV(
       // der Anschaffung, ohne Monatsanteil im Kaufjahr und ohne Ende nach der
       // Nutzungsdauer (bei 2 % also über 50 Jahre hinaus).
       const startLinear = p.afa_start_jahr ?? (Number.isFinite(jahrVon(p.kaufdatum)) ? jahrVon(p.kaufdatum) : null);
-      const dauer = satz > 0 ? Math.round(100 / satz) : null;
-      const z = afaZeitanteil(jahr, startLinear, startLinear == null ? null : startMonat(p, startLinear, g), dauer);
+      // Bis zur vollen Absetzung, nicht nach gerundeten 100/Satz Jahren (C18).
+      const z = linearImJahr(g.afaBasis, satz, jahr, startLinear, startLinear == null ? null : startMonat(p, startLinear, g));
       if (z.hinweis) g.hinweise.push(z.hinweis);
-      g.werbungskosten.afa = r2(((g.afaBasis * satz) / 100) * z.faktor);
+      g.werbungskosten.afa = z.betrag;
       if (startLinear == null && g.afaBasis > 0) {
         g.hinweise.push(
           "Kein Anschaffungsdatum hinterlegt — die AfA wird für jedes Jahr voll gerechnet. Bitte Kaufdatum im Objekt ergänzen, damit das Anschaffungsjahr zeitanteilig läuft (§ 7 Abs. 1 S. 4 EStG).",
@@ -371,12 +389,12 @@ export function berechneAnlageV(
   // Summen je Objekt + Rundung
   const objekte = [...gruppen.values()].map((g) => {
     const e = g.einnahmen;
-    e.miete = r2(e.miete); e.umlagen = r2(e.umlagen); e.sonstige = r2(e.sonstige);
+    e.miete = r2(e.miete); e.umlagen = r2(e.umlagen); e.umlagenAbrechnung = r2(e.umlagenAbrechnung); e.sonstige = r2(e.sonstige);
     e.summe = r2(e.miete + e.umlagen + e.sonstige);
     const w = g.werbungskosten;
     w.erhaltung = r2(w.erhaltung); w.verwaltung = r2(w.verwaltung); w.grundsteuer = r2(w.grundsteuer);
-    w.versicherung = r2(w.versicherung); w.hausgeldSonstige = r2(w.hausgeldSonstige);
-    w.summe = r2(w.afa + w.schuldzinsen + w.erhaltung + w.verwaltung + w.grundsteuer + w.versicherung + w.hausgeldSonstige);
+    w.versicherung = r2(w.versicherung); w.betriebskosten = r2(w.betriebskosten); w.hausgeldSonstige = r2(w.hausgeldSonstige);
+    w.summe = r2(w.afa + w.schuldzinsen + w.erhaltung + w.verwaltung + w.grundsteuer + w.versicherung + w.betriebskosten + w.hausgeldSonstige);
     g.ueberschuss = r2(e.summe - w.summe);
     return g;
   });
@@ -392,6 +410,7 @@ export function berechneAnlageV(
     einnahmen: {
       miete: r2(sum(sichtbar.map((g) => g.einnahmen.miete))),
       umlagen: r2(sum(sichtbar.map((g) => g.einnahmen.umlagen))),
+      umlagenAbrechnung: r2(sum(sichtbar.map((g) => g.einnahmen.umlagenAbrechnung))),
       sonstige: r2(sum(sichtbar.map((g) => g.einnahmen.sonstige))),
       summe: r2(sum(sichtbar.map((g) => g.einnahmen.summe))),
     },
@@ -402,6 +421,7 @@ export function berechneAnlageV(
       verwaltung: r2(sum(sichtbar.map((g) => g.werbungskosten.verwaltung))),
       grundsteuer: r2(sum(sichtbar.map((g) => g.werbungskosten.grundsteuer))),
       versicherung: r2(sum(sichtbar.map((g) => g.werbungskosten.versicherung))),
+      betriebskosten: r2(sum(sichtbar.map((g) => g.werbungskosten.betriebskosten))),
       hausgeldSonstige: r2(sum(sichtbar.map((g) => g.werbungskosten.hausgeldSonstige))),
       summe: r2(sum(sichtbar.map((g) => g.werbungskosten.summe))),
     },
@@ -411,6 +431,7 @@ export function berechneAnlageV(
     afaMethode: "auto",
     schuldzinsenGeschaetzt: sichtbar.some((g) => g.schuldzinsenGeschaetzt),
     erhaltungAnschaffungsnah: sichtbar.some((g) => g.erhaltungAnschaffungsnah),
+    afaUnzulaessig: sichtbar.some((g) => g.afaUnzulaessig),
     hinweise: [
       ...new Set(sichtbar.flatMap((g) => g.hinweise)),
       ...(selbst.size > 0
@@ -422,19 +443,34 @@ export function berechneAnlageV(
   return { jahr, objekte: sichtbar, gesamt };
 }
 
-// Anlage-V-Positionen als flache Liste (für Anzeige + CSV).
-export const ANLAGE_V_POSITIONEN: { key: string; label: string; bereich: "einnahme" | "wk" }[] = [
-  { key: "miete", label: "Mieteinnahmen (Kaltmiete) — Zeile 9", bereich: "einnahme" },
-  { key: "umlagen", label: "Umlagen / Nebenkosten — Zeile 13", bereich: "einnahme" },
-  { key: "sonstige", label: "Sonstige Einnahmen — Zeile 14", bereich: "einnahme" },
-  { key: "afa", label: "AfA Gebäude — Zeile 33", bereich: "wk" },
-  { key: "schuldzinsen", label: "Schuldzinsen — Zeile 37", bereich: "wk" },
-  { key: "erhaltung", label: "Erhaltungsaufwand — Zeile 40", bereich: "wk" },
-  { key: "verwaltung", label: "Verwaltungskosten — Zeile 46", bereich: "wk" },
-  { key: "grundsteuer", label: "Grundsteuer / öffentl. Lasten — Zeile 47", bereich: "wk" },
-  { key: "versicherung", label: "Versicherungen — Zeile 47", bereich: "wk" },
-  { key: "hausgeldSonstige", label: "Hausgeld / sonstige Kosten — Zeile 50", bereich: "wk" },
+// Anlage-V-Positionen als flache Liste (für Anzeige, CSV und PDF). Ohne Zeilennummern — die hängen am
+// Steuerjahr (lib/steuer/anlageVZeilen.ts, B1); `positionMitZeile()` setzt sie dazu, wo sie geprüft sind.
+export const ANLAGE_V_POSITIONEN: { key: string; label: string; bereich: "einnahme" | "wk"; feld: AnlageVFeld | AnlageVFeld[] }[] = [
+  { key: "miete", label: "Mieteinnahmen (Kaltmiete)", bereich: "einnahme", feld: "miete" },
+  { key: "umlagen", label: "Umlagen / Nebenkosten", bereich: "einnahme", feld: ["umlagenLaufend", "umlagenAbrechnung"] },
+  { key: "sonstige", label: "Sonstige Einnahmen", bereich: "einnahme", feld: "sonstigeEinnahmen" },
+  { key: "afa", label: "AfA Gebäude", bereich: "wk", feld: "afa" },
+  { key: "schuldzinsen", label: "Schuldzinsen", bereich: "wk", feld: "schuldzinsen" },
+  { key: "erhaltung", label: "Erhaltungsaufwand", bereich: "wk", feld: "erhaltung" },
+  { key: "verwaltung", label: "Verwaltungskosten", bereich: "wk", feld: "nichtUmgelegt" },
+  { key: "grundsteuer", label: "Grundsteuer / öffentl. Lasten", bereich: "wk", feld: ["umgelegt", "nichtUmgelegt"] },
+  { key: "versicherung", label: "Versicherungen", bereich: "wk", feld: ["umgelegt", "nichtUmgelegt"] },
+  { key: "betriebskosten", label: "Umlagefähige Betriebskosten", bereich: "wk", feld: ["umgelegt", "nichtUmgelegt"] },
+  { key: "hausgeldSonstige", label: "Hausgeld / sonstige Kosten", bereich: "wk", feld: ["nichtUmgelegt", "sonstigeKosten"] },
 ];
+
+/** Zeilenangabe eines Postens im Vordruck des Jahres („Z. 46–48“, „Z. 73–75 / 76–78“) — null ohne geprüften Vordruck. */
+export function zeilenAngabe(jahr: number, feld: AnlageVFeld | AnlageVFeld[]): string | null {
+  const t = anlageVZeilen(jahr);
+  if (!t) return null;
+  return `Z. ${(Array.isArray(feld) ? feld : [feld]).map((f) => t.felder[f].zeile).join(" / ")}`;
+}
+
+/** Bezeichnung eines Postens mit Zeilenangabe des Jahres, falls geprüft. */
+export function positionMitZeile(p: { label: string; feld: AnlageVFeld | AnlageVFeld[] }, jahr: number): string {
+  const z = zeilenAngabe(jahr, p.feld);
+  return z ? `${p.label} — ${z}` : p.label;
+}
 
 export function wertVon(o: AnlageVObjekt, key: string): number {
   if (key in o.einnahmen) return (o.einnahmen as unknown as Record<string, number>)[key];
@@ -443,9 +479,8 @@ export function wertVon(o: AnlageVObjekt, key: string): number {
 }
 
 // ---- ELSTER-Ausfüllhilfe (Übertragung nach "Mein ELSTER") ----
-// Ordnet die berechneten Werte den Zeilen der amtlichen Anlage V zu. Die
-// Zeilennummern folgen dem Formular der letzten Jahre und dienen als
-// Orientierung — im konkreten Steuerjahr die Zeile im Formular gegenprüfen.
+// Ordnet die berechneten Werte den Zeilen der amtlichen Anlage V des STEUERJAHRES zu
+// (lib/steuer/anlageVZeilen.ts). Ohne geprüften Vordruck steht keine Zeile da („–“).
 // Wichtig: In ELSTER ist JE Objekt eine eigene Anlage V auszufüllen.
 export type ElsterZeile = {
   zeile: string;
@@ -459,6 +494,8 @@ export type ElsterZeile = {
    */
   uebertragbar?: boolean;
   warnung?: string;
+  /** Sachlicher Hinweis, wohin der Betrag gehört, wenn der Vordruck mehrere Zeilen kennt. */
+  hinweis?: string;
 };
 
 const SUMMEN_WARNUNG =
@@ -473,21 +510,35 @@ const ERHALTUNG_WARNUNG =
 export function summenWarnung(o: AnlageVObjekt): string | undefined {
   if (o.schuldzinsenGeschaetzt) return SUMMEN_WARNUNG;
   if (o.erhaltungAnschaffungsnah) return "Enthält Erhaltungsaufwand, der wegen der 15-%-Grenze voraussichtlich nicht sofort abziehbar ist — nicht übertragen, erst klären.";
+  if (o.afaUnzulaessig) return "Enthält eine degressive AfA, die nach Baujahr oder Kaufjahr nicht zulässig ist (§ 7 Abs. 5a EStG) — nicht übertragen, erst klären.";
   return undefined;
 }
 
-export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
+const AFA_WARNUNG =
+  "Degressive AfA, obwohl Baujahr oder Kaufjahr § 7 Abs. 5a EStG widersprechen — nicht übertragen, erst klären.";
+
+export function elsterZeilen(o: AnlageVObjekt, jahr: number): ElsterZeile[] {
   const e = o.einnahmen;
   const w = o.werbungskosten;
-  return [
-    { zeile: "9", bezeichnung: "Mieteinnahmen für Wohnungen (ohne Umlagen)", betrag: e.miete, bereich: "einnahme" },
-    { zeile: "13", bezeichnung: "Umlagen, verrechnet mit Erstattungen (Nebenkosten)", betrag: e.umlagen, bereich: "einnahme" },
-    { zeile: "14", bezeichnung: "Sonstige Einnahmen", betrag: e.sonstige, bereich: "einnahme" },
-    { zeile: "21", bezeichnung: "Summe der Einnahmen", betrag: e.summe, bereich: "summe" },
-    { zeile: "33", bezeichnung: "AfA für Gebäude", betrag: w.afa, bereich: "wk" },
+  const z = (f: AnlageVFeld | AnlageVFeld[]) => zeilenAngabe(jahr, f)?.replace(/^Z\. /, "") ?? "–";
+  const umlageHinweis = "Auf die Mieter umgelegt → „Umgelegte Kosten“, sonst „Nicht umgelegte Kosten“.";
+  const zeilen: ElsterZeile[] = [
+    { zeile: z("miete"), bezeichnung: "Mieteinnahmen für Wohnungen (ohne Umlagen)", betrag: e.miete, bereich: "einnahme" },
+    { zeile: z("umlagenLaufend"), bezeichnung: "Umlagen, laufend vereinnahmt (Nebenkosten-Vorauszahlungen)", betrag: r2(e.umlagen - e.umlagenAbrechnung), bereich: "einnahme" },
+    { zeile: z("umlagenAbrechnung"), bezeichnung: "Umlagen: Nachzahlungen / Erstattungen aus der Nebenkostenabrechnung", betrag: e.umlagenAbrechnung, bereich: "einnahme" },
     {
-      zeile: "37",
-      bezeichnung: "Schuldzinsen",
+      zeile: z("sonstigeEinnahmen"), bezeichnung: "Sonstige Einnahmen", betrag: e.sonstige, bereich: "einnahme",
+      hinweis: "Zeile je nach Art: frühere Jahre/Kautionen, Garage/Werbefläche, Zuschüsse.",
+    },
+    { zeile: z("summeEinnahmen"), bezeichnung: "Summe der Einnahmen", betrag: e.summe, bereich: "summe" },
+    {
+      zeile: z("afa"), bezeichnung: "AfA für Gebäude", betrag: w.afa, bereich: "wk",
+      uebertragbar: !o.afaUnzulaessig,
+      warnung: o.afaUnzulaessig ? AFA_WARNUNG : undefined,
+    },
+    {
+      zeile: z("schuldzinsen"),
+      bezeichnung: "Schuldzinsen (ohne Tilgung)",
       betrag: w.schuldzinsen,
       bereich: "wk",
       uebertragbar: !o.schuldzinsenGeschaetzt,
@@ -496,27 +547,33 @@ export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
         : undefined,
     },
     {
-      zeile: "40", bezeichnung: "Erhaltungsaufwendungen (Reparatur/Instandhaltung)", betrag: w.erhaltung, bereich: "wk",
+      zeile: z("erhaltung"), bezeichnung: "Erhaltungsaufwendungen, voll abzuziehen", betrag: w.erhaltung, bereich: "wk",
       uebertragbar: !o.erhaltungAnschaffungsnah,
       warnung: o.erhaltungAnschaffungsnah ? ERHALTUNG_WARNUNG : undefined,
     },
-    { zeile: "46", bezeichnung: "Verwaltungskosten", betrag: w.verwaltung, bereich: "wk" },
-    { zeile: "47", bezeichnung: "Grundsteuer / öffentliche Lasten", betrag: w.grundsteuer, bereich: "wk" },
-    { zeile: "47", bezeichnung: "Versicherungen", betrag: w.versicherung, bereich: "wk" },
-    { zeile: "50", bezeichnung: "Sonstige Kosten (Hausgeld/WEG, übrige)", betrag: w.hausgeldSonstige, bereich: "wk" },
+    { zeile: z(["umgelegt", "nichtUmgelegt"]), bezeichnung: "Grundsteuer / öffentliche Lasten", betrag: w.grundsteuer, bereich: "wk", hinweis: umlageHinweis },
+    { zeile: z(["umgelegt", "nichtUmgelegt"]), bezeichnung: "Versicherungen", betrag: w.versicherung, bereich: "wk", hinweis: umlageHinweis },
+    { zeile: z(["umgelegt", "nichtUmgelegt"]), bezeichnung: "Umlagefähige Betriebskosten (Müll, Wasser, Heizung …)", betrag: w.betriebskosten, bereich: "wk", hinweis: umlageHinweis },
+    { zeile: z("nichtUmgelegt"), bezeichnung: "Verwaltungskosten", betrag: w.verwaltung, bereich: "wk" },
     {
-      zeile: "51",
+      zeile: z(["nichtUmgelegt", "sonstigeKosten"]), bezeichnung: "Hausgeld / WEG und sonstige Kosten", betrag: w.hausgeldSonstige, bereich: "wk",
+      // Wortlaut des Vordrucks: „Nicht umgelegte Kosten (… – ohne Erhaltungsrücklage –)“ und Erhaltungsaufwendungen
+      // „einschließlich Entnahmen aus der Erhaltungsrücklage“.
+      hinweis: "Hausgeld aufteilen: Umgelegtes zu „Umgelegte Kosten“, Verwaltergebühr zu „Nicht umgelegte Kosten“. Die Zuführung zur Erhaltungsrücklage nicht ansetzen — laut Vordruck zählt erst die Entnahme für eine Reparatur (bei den Erhaltungsaufwendungen).",
+    },
+    {
+      zeile: z("summeWerbungskosten"),
       bezeichnung: "Summe der Werbungskosten",
       betrag: w.summe,
       bereich: "summe",
       // Die Summe enthaelt die geschaetzten Schuldzinsen. Sie als uebertragbar
-      // auszuweisen, waehrend Zeile 37 durchgestrichen ist, ist widerspruechlich —
+      // auszuweisen, waehrend die Schuldzinsen durchgestrichen sind, ist widerspruechlich —
       // wer die Summe abtippt, uebertraegt die Schaetzung durch die Hintertuer.
       uebertragbar: !summenWarnung(o),
       warnung: summenWarnung(o),
     },
     {
-      zeile: "23/24",
+      zeile: z("ueberschuss"),
       bezeichnung: o.ueberschuss >= 0 ? "Überschuss (Einkünfte)" : "Verlust",
       betrag: o.ueberschuss,
       bereich: "summe",
@@ -524,4 +581,6 @@ export function elsterZeilen(o: AnlageVObjekt): ElsterZeile[] {
       warnung: summenWarnung(o),
     },
   ];
+  // Leere Posten ohne Bedeutung weglassen — Summen und Ergebnis bleiben immer stehen.
+  return zeilen.filter((x) => x.bereich === "summe" || x.betrag !== 0 || x.uebertragbar === false);
 }

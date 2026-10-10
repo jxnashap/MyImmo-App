@@ -106,7 +106,7 @@ export type Einnahme = {
   kategorie: string | null;
   betrag: number | null;
   beschreibung: string | null;
-  nk_anteil: number | null; // in „Miete" enthaltene NK-Vorauszahlung (Anlage V Zeile 13)
+  nk_anteil: number | null; // in „Miete" enthaltene NK-Vorauszahlung (Anlage V: Umlagen)
   wiederkehrend: boolean | null;
 };
 

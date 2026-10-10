@@ -80,6 +80,7 @@ export default function AfaAssistent({ objekte, startObjekt }: { objekte: AfaObj
   // 3) § 7b
   const [neueWohnung, setNeueWohnung] = useState(true);
   const [qng, setQng] = useState(false);
+  const [zehnJahre, setZehnJahre] = useState(false);
   const [baukosten, setBaukosten] = useState("4800");
   // § 7b stellt auf den BAUANTRAG ab, nicht auf die Fertigstellung. Vorher lief
   // hier das Fertigstellungsjahr hinein — ein 2024 fertiggestellter Bau mit
@@ -94,11 +95,11 @@ export default function AfaAssistent({ objekte, startObjekt }: { objekte: AfaObj
     () => pruefe7b({
       bauantragJahr: numOr(bauantrag) || null,
       bauantragMonat: numOr(bauantragMonat) || null,
-      neueWohnung, qngNachweis: qng,
+      neueWohnung, qngNachweis: qng, vermietungZehnJahre: zehnJahre,
       baukostenProM2: baukosten ? numOr(baukosten) : null,
       flaeche: wohnflaeche ? numOr(wohnflaeche) : null,
     }),
-    [bauantrag, bauantragMonat, neueWohnung, qng, baukosten, wohnflaeche],
+    [bauantrag, bauantragMonat, neueWohnung, qng, zehnJahre, baukosten, wohnflaeche],
   );
 
   // 4) § 82b
@@ -254,6 +255,9 @@ export default function AfaAssistent({ objekte, startObjekt }: { objekte: AfaObj
             </label>
             <label style={{ fontSize: 12.5, display: "flex", alignItems: "center", gap: 6 }}>
               <input type="checkbox" checked={qng} onChange={(e) => setQng(e.target.checked)} style={{ width: "auto" }} /> EH40 / QNG-Nachweis
+            </label>
+            <label style={{ fontSize: 12.5, display: "flex", alignItems: "center", gap: 6 }}>
+              <input type="checkbox" checked={zehnJahre} onChange={(e) => setZehnJahre(e.target.checked)} style={{ width: "auto" }} /> 10 Jahre zu Wohnzwecken vermietet
             </label>
             <label style={{ fontSize: 12.5 }}>
               <span style={{ color: "var(--muted)", marginRight: 6 }}>Baukosten €/m²</span>

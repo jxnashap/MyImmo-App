@@ -203,7 +203,7 @@ export default function WiederkehrManager({
           {art === "einnahme" && kategorie === "Miete" && (
             <p style={{ fontSize: 12, color: "var(--amber)", margin: "8px 0 0", lineHeight: 1.5 }}>
               Mieten am besten im <a href="/mietkonto" style={{ color: "var(--gold)" }}>Mietkonto</a> bestätigen: Dort
-              rechnet MyImmo mit Mieterhöhungen, trennt die Nebenkosten (Anlage V Zeile 13) und kennt den Mietmonat.
+              rechnet MyImmo mit Mieterhöhungen, trennt die Nebenkosten (Anlage V: Umlagen) und kennt den Mietmonat.
               Eine Vorlage bucht nur einen festen Betrag{mieterId ? "" : " — und ohne Mieter zählt das Mietkonto sie gar nicht"}.
             </p>
           )}
