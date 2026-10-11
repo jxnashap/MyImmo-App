@@ -225,4 +225,68 @@ describe("Dateianhänge: Grössengrenzen greifen vor dem Upload", () => {
     await mod.deleteKosten("k1");
     expect(storage.entfernt).toContain("nutzer-1/x.pdf");
   });
+  // ---- B06 (Prüfstand 11.10.2026): erst sichern, dann die alte Datei löschen ----
+  it("scheitert das Speichern beim Ersetzen, bleibt der ALTE Beleg — die neue Datei wird entfernt", async () => {
+    const { mod, storage } = await lade({
+      antworten: { kosten: { rechnung_path: "nutzer-1/alt.pdf" } },
+      fehlerBei: { "kosten:update": { message: "Zeitüberlauf" } },
+    });
+    await expect(mod.updateKosten("k1", fd({ betrag: "10", rechnung: datei(100) }))).rejects.toThrow("Zeitüberlauf");
+    expect(storage.entfernt).not.toContain("nutzer-1/alt.pdf");
+    expect(storage.hochgeladen).toHaveLength(1);
+    expect(storage.entfernt).toEqual(storage.hochgeladen);
+  });
+
+  it("hat eine andere Sitzung den Beleg inzwischen ersetzt, wird nichts überschrieben und nichts Fremdes gelöscht", async () => {
+    const { db, mod, storage } = await lade({
+      antworten: { kosten: { rechnung_path: "nutzer-1/alt.pdf" } },
+      antwortFolge: { "kosten:update": [null] }, // bedingtes Update trifft keine Zeile
+    });
+    await expect(mod.updateKosten("k1", fd({ betrag: "10", rechnung: datei(100) }))).rejects.toThrow(/inzwischen/);
+    expect(storage.entfernt).not.toContain("nutzer-1/alt.pdf");
+    expect(storage.entfernt).toEqual(storage.hochgeladen);
+    const upd = db.zugriffe.find((z) => z.tabelle === "kosten" && z.op === "update")!;
+    expect(upd.filter).toEqual(expect.arrayContaining(["eq:id=k1", "eq:user_id=nutzer-1", "eq:rechnung_path=nutzer-1/alt.pdf"]));
+  });
+
+  it("ohne neue Datei bleibt der Beleg unberührt (kein bedingtes Update, nichts gelöscht)", async () => {
+    const { mod, storage } = await lade({ antworten: { kosten: { rechnung_path: "nutzer-1/alt.pdf" } } });
+    await fangeRedirect(() => mod.updateKosten("k1", fd({ betrag: "10" })));
+    expect(storage.entfernt).toEqual([]);
+  });
+
+  it("lässt sich die alte Datei nach erfolgreichem Speichern nicht löschen, ist die Buchung trotzdem gesichert", async () => {
+    const { mod, storage, db } = await lade({
+      antworten: { kosten: { rechnung_path: "nutzer-1/alt.pdf" } },
+      fehlerBei: { "storage:belege:remove": { message: "weg" } },
+    });
+    await fangeRedirect(() => mod.updateKosten("k1", fd({ betrag: "10", rechnung: datei(100) })));
+    expect(storage.hochgeladen).toHaveLength(1);
+    expect(db.storageAufrufe).toContain("belege:remove");
+  });
+
+  it("neue Buchung: Insert-Fehler → hochgeladene Datei wird wieder entfernt", async () => {
+    const { mod, storage } = await lade({ fehlerBei: { "kosten:insert": { message: "kaputt" } } });
+    await expect(mod.createKosten(fd({ betrag: "10", rechnung: datei(100) }))).rejects.toThrow("kaputt");
+    expect(storage.entfernt).toEqual(storage.hochgeladen);
+    expect(storage.hochgeladen).toHaveLength(1);
+  });
+
+  it("Löschen: scheitert das Löschen der Buchung, bleibt die Datei", async () => {
+    const { mod, storage } = await lade({
+      antworten: { kosten: { rechnung_path: "nutzer-1/x.pdf" } },
+      fehlerBei: { "kosten:delete": { message: "gesperrt" } },
+    });
+    await expect(mod.deleteKosten("k1")).rejects.toThrow("gesperrt");
+    expect(storage.entfernt).toEqual([]);
+  });
+
+  it("Beleg entfernen: bedingt auf den gelesenen Pfad, Datei erst danach", async () => {
+    const konflikt = await lade({ antworten: { kosten: { rechnung_path: "nutzer-1/x.pdf" } }, antwortFolge: { "kosten:update": [null] } });
+    await expect(konflikt.mod.deleteRechnung("k1")).rejects.toThrow(/inzwischen/);
+    expect(konflikt.storage.entfernt).toEqual([]);
+    const ok = await lade({ antworten: { kosten: { rechnung_path: "nutzer-1/x.pdf" } } });
+    await ok.mod.deleteRechnung("k1");
+    expect(ok.storage.entfernt).toEqual(["nutzer-1/x.pdf"]);
+  });
 });

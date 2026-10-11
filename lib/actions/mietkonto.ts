@@ -6,43 +6,106 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { zuJahrMonat } from "@/lib/mietkonto";
+import { monatLabel, zuJahrMonat, type MietkontoMieter, type MietkontoZeitraum } from "@/lib/mietkonto";
+import { monatBezahlt, monatsStand, nkAnteilFuer, verteileZahlung, type GebuchteMiete } from "@/lib/mietZahlung";
+import { DatenUnvollstaendig, ladeAlle, stapel } from "@/lib/db/ladeAlle";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 export type MietkontoResult = {
   ok: boolean;
   error?: string;
-  /** true = es wurde NICHTS gebucht, weil dieser Miet-Monat schon erfasst war. */
+  /** true = es wurde NICHTS gebucht (Monat schon bezahlt bzw. derselbe Vorgang schon gebucht). */
   uebersprungen?: boolean;
+  /** Ausgewiesene Überzahlung dieses Vorgangs (B10). */
+  ueberzahlung?: number;
 };
 
-/**
- * Idempotenz-Schlüssel einer Miet-Buchung.
- *
- * Entscheidend ist der MIET-MONAT, nicht das Zahlungsdatum: Zahlt ein Mieter am
- * 05.07. sowohl die Juni- als auch die Julimiete nach, sind das zwei Buchungen
- * mit demselben Datum — mit dem alten Schlüssel (Mieter + Datum) wurde die
- * zweite stillschweigend verworfen und trotzdem Erfolg gemeldet. Das Geld fehlte
- * danach in Cashflow und Anlage V.
- *
- * Fehlt der Miet-Monat, bleibt das Buchungsdatum der Schlüssel — dann gibt es
- * nichts Besseres, und der Doppelklick-Schutz greift weiterhin.
- */
-function buchungsSchluessel(mieterId: string, buchungsdatum: string, sollMonat: string | null): string {
-  // Altbuchungen (manuell oder ueber die Bank erfasst) haben kein `soll_monat`.
-  // Frueher bekamen sie einen `d:<datum>`-Schluessel und kollidierten deshalb
-  // NIE mit einer neuen Buchung fuer denselben Monat — der Dublettenschutz lief
-  // fuer genau diese Zeilen ins Leere. Ueberall sonst in der App gilt
-  // `soll_monat ?? zuJahrMonat(buchungsdatum)`; hier jetzt auch.
-  return `${mieterId}|${sollMonat ?? zuJahrMonat(buchungsdatum) ?? `d:${buchungsdatum}`}`;
+// ---------------------------------------------------------------------------------------------
+// B07/B09/B10 (Prüfstand 11.10.2026)
+//
+// Jede Mietbuchung trägt eine ZAHLUNGSKENNUNG (`einnahmen.zahlung_ref`, eindeutig je Konto,
+// Migration 20261011110000). Sie beschreibt den Geschäftsvorgang, nicht den Monat:
+//   · „m:<vorgang>“   — Bestätigung im Mietkonto; `vorgang` erzeugt der Browser EINMAL je Bestätigung
+//                       (Doppelklick, Zeitüberlauf, erneutes Absenden → dieselbe Kennung)
+//   · „ka:<hash>[#YYYY-MM]“ — Zeile aus dem Kontoauszug (Prüfsumme über Datum, Betrag, Zweck, Name,
+//                       IBAN); eine Sammelzahlung wird je Monat mit „#YYYY-MM“ verteilt
+//   · „n:<mieter>|<YYYY-MM>“ — Nacherfassung eines ganzen Monats
+// Die Datenbank lässt jede Kennung nur EINMAL zu (`upsert … ignoreDuplicates`): Ein paralleler oder
+// wiederholter Aufruf bucht nichts doppelt — auch nicht, wenn zwei Anfragen gleichzeitig ankommen.
+// Verschiedene Zahlungen im selben Monat (Teilzahlungen) haben verschiedene Kennungen und sind erlaubt.
+//
+// Soll, NK-Anteil und Verteilung rechnet der SERVER aus Vertrag + bestehenden Buchungen
+// (lib/mietZahlung.ts) — Werte aus dem Browser (nk_anteil, prop_id) werden nicht übernommen.
+// ---------------------------------------------------------------------------------------------
+
+type MieterDaten = {
+  mieter: MietkontoMieter & { id: string; prop_id: string | null };
+  zeitraeume: MietkontoZeitraum[];
+  buchungen: (GebuchteMiete & { zahlung_ref: string | null })[];
+};
+
+const KEIN_BUCHEN = "Bestehende Buchungen konnten nicht geprüft werden — es wurde nichts angelegt. Bitte erneut versuchen.";
+
+/** Vertrag, Miet-Zeiträume und gebuchte Mieten der genannten (EIGENEN) Mieter — vollständig. */
+async function ladeMieterDaten(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  mieterIds: string[],
+): Promise<Map<string, MieterDaten>> {
+  const aus = new Map<string, MieterDaten>();
+  for (const teil of stapel(mieterIds)) {
+    const { data: mieter, error } = await supabase
+      .from("mieter")
+      .select("id,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,mietbeginn,mietende,minderungen")
+      .eq("user_id", userId)
+      .in("id", teil);
+    if (error) throw new DatenUnvollstaendig("mieter", error.message);
+    const zeitraeume = await ladeAlle<MietkontoZeitraum & { mieter_id: string }>("miet_zeitraeume", (von, bis) =>
+      supabase.from("miet_zeitraeume").select("id,mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete")
+        .eq("user_id", userId).in("mieter_id", teil).order("id").range(von, bis));
+    const buchungen = await ladeAlle<GebuchteMiete & { mieter_id: string; zahlung_ref: string | null }>("einnahmen", (von, bis) =>
+      supabase.from("einnahmen").select("id,mieter_id,soll_monat,buchungsdatum,betrag,nk_anteil,zahlung_ref")
+        .eq("user_id", userId).eq("kategorie", "Miete").in("mieter_id", teil).order("id").range(von, bis));
+    for (const m of (mieter ?? []) as MieterDaten["mieter"][]) {
+      aus.set(m.id, {
+        mieter: m,
+        zeitraeume: zeitraeume.filter((z) => z.mieter_id === m.id),
+        buchungen: buchungen.filter((b) => b.mieter_id === m.id),
+      });
+    }
+  }
+  return aus;
 }
+
+/** Fügt Mietbuchungen ein; eine schon vorhandene Zahlungskennung wird übersprungen (nicht doppelt). */
+async function buchen(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  rows: Record<string, unknown>[],
+): Promise<{ ok: true; neu: Set<string> } | { ok: false }> {
+  if (rows.length === 0) return { ok: true, neu: new Set() };
+  const { data, error } = await supabase
+    .from("einnahmen")
+    .upsert(rows, { onConflict: "user_id,zahlung_ref", ignoreDuplicates: true })
+    .select("zahlung_ref");
+  if (error) return { ok: false };
+  return { ok: true, neu: new Set(((data ?? []) as { zahlung_ref: string }[]).map((r) => r.zahlung_ref)) };
+}
+
+const IST_MONAT = /^\d{4}-\d{2}$/;
+const IST_DATUM = /^\d{4}-\d{2}-\d{2}$/;
+const IST_VORGANG = /^[A-Za-z0-9-]{8,80}$/;
 
 export async function bestaetigeMieteingang(input: {
   mieter_id: string;
-  prop_id: string | null;
-  buchungsdatum: string; // YYYY-MM-DD (Zufluss)
+  prop_id?: string | null;
+  buchungsdatum: string; // YYYY-MM-DD (Zufluss, § 11 EStG)
   betrag: number;
-  nk_anteil: number | null;
+  nk_anteil?: number | null; // wird nicht übernommen — der Server rechnet (B09)
   soll_monat?: string | null; // YYYY-MM — zugeordneter Miet-Monat
+  /** Kennung DIESER Bestätigung — vom Browser einmal erzeugt, bei Wiederholung gleich (B07). */
+  vorgang?: string | null;
+  /** Bewusst eine weitere Zahlung für einen schon bezahlten Monat (Überzahlung, B10). */
+  weitere?: boolean;
 }): Promise<MietkontoResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -51,79 +114,74 @@ export async function bestaetigeMieteingang(input: {
   const betrag = Number(input.betrag);
   if (!Number.isFinite(betrag) || betrag <= 0)
     return { ok: false, error: "Betrag muss größer als 0 sein." };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.buchungsdatum))
+  if (!IST_DATUM.test(input.buchungsdatum))
     return { ok: false, error: "Bitte ein gültiges Eingangsdatum wählen." };
+  const monat = IST_MONAT.test(input.soll_monat ?? "") ? input.soll_monat! : zuJahrMonat(input.buchungsdatum)!;
 
-  const nk = input.nk_anteil != null && Number.isFinite(Number(input.nk_anteil))
-    ? Number(input.nk_anteil)
-    : null;
-
-  const sollMonat = /^\d{4}-\d{2}$/.test(input.soll_monat ?? "") ? input.soll_monat! : null;
-
-  // Serverseitige Idempotenz über den Miet-Monat (siehe buchungsSchluessel).
-  // Der Abfragefehler MUSS ausgewertet werden. Eine fehlgeschlagene Abfrage
-  // kommt LEER zurück und sieht damit aus wie „noch nichts gebucht" — der
-  // Dublettenschutz fällt aus und der Mieteingang landet ein zweites Mal in
-  // Cashflow und Anlage V. (Derselbe Fehler steckte in `nacherfasseMieten`
-  // und wurde dort am 04.09.2026 behoben; diese Stelle blieb übrig.)
-  const { data: bestand, error: bestandFehler } = await supabase
-    .from("einnahmen")
-    .select("buchungsdatum,soll_monat")
-    .eq("mieter_id", input.mieter_id)
-    .eq("kategorie", "Miete");
-  if (bestandFehler) {
-    return {
-      ok: false,
-      error: "Bestehende Buchungen konnten nicht geprüft werden — es wurde nichts angelegt. Bitte erneut versuchen.",
-    };
+  let daten: MieterDaten | undefined;
+  try {
+    daten = (await ladeMieterDaten(supabase, user.id, [input.mieter_id])).get(input.mieter_id);
+  } catch {
+    return { ok: false, error: KEIN_BUCHEN };
   }
-  const schluessel = buchungsSchluessel(input.mieter_id, input.buchungsdatum, sollMonat);
-  const schonDa = (bestand ?? []).some(
-    (e) => buchungsSchluessel(input.mieter_id, e.buchungsdatum, e.soll_monat ?? null) === schluessel,
-  );
-  if (schonDa) {
+  if (!daten) return { ok: false, error: "Mieter nicht gefunden." };
+
+  const stand = monatsStand(daten.mieter, daten.zeitraeume, daten.buchungen, monat);
+  if (monatBezahlt(stand) && !input.weitere) {
     revalidatePath("/mietkonto");
-    return {
-      ok: false,
-      uebersprungen: true,
-      error: sollMonat
-        ? `Für ${sollMonat} ist bereits ein Mieteingang gebucht — es wurde nichts angelegt.`
-        : "Für dieses Datum ist bereits ein Mieteingang gebucht — es wurde nichts angelegt.",
-    };
+    return { ok: false, uebersprungen: true, error: `${monatLabel(monat)} ist bereits vollständig bezahlt — es wurde nichts angelegt.` };
   }
+  // Ohne Kennung (alter Client): Datum + Betrag + Monat beschreiben den Vorgang — ein erneutes
+  // Absenden derselben Angaben bucht dann ebenfalls nicht doppelt.
+  const ref = IST_VORGANG.test(input.vorgang ?? "")
+    ? `m:${input.vorgang}`
+    : `m:${input.mieter_id}|${monat}|${input.buchungsdatum}|${betrag.toFixed(2)}`;
+  const ueberzahlung = Math.max(0, Math.round((betrag - Math.max(0, stand.rest)) * 100) / 100);
 
-  const { error } = await supabase.from("einnahmen").insert({
+  const r = await buchen(supabase, [{
     user_id: user.id,
     mieter_id: input.mieter_id,
-    prop_id: input.prop_id,
+    prop_id: daten.mieter.prop_id,
     buchungsdatum: input.buchungsdatum,
     kategorie: "Miete",
     betrag,
     beschreibung: "Mieteingang",
-    nk_anteil: nk,
+    nk_anteil: nkAnteilFuer(stand, betrag),
     wiederkehrend: true,
-    soll_monat: sollMonat,
-  });
-  if (error) return { ok: false, error: "Buchen fehlgeschlagen." };
-
+    soll_monat: monat,
+    zahlung_ref: ref,
+  }]);
+  if (!r.ok) return { ok: false, error: "Buchen fehlgeschlagen." };
   revalidatePath("/mietkonto");
   revalidatePath("/cashflow");
-  return { ok: true };
+  if (!r.neu.has(ref)) return { ok: true, uebersprungen: true };
+  return ueberzahlung > 0 ? { ok: true, ueberzahlung } : { ok: true };
 }
 
 export type BatchZeile = {
   mieter_id: string;
-  prop_id: string | null;
+  prop_id?: string | null;
   buchungsdatum: string; // YYYY-MM-DD
   betrag: number;
-  nk_anteil: number | null;
+  nk_anteil?: number | null; // wird nicht übernommen — der Server rechnet (B09)
   soll_monat?: string | null; // YYYY-MM
+  /** Nur Kontoauszug: Prüfsumme der Bankzeile — derselbe Umsatz wird nie zweimal gebucht. */
+  vorgang?: string | null;
 };
 
-// Nacherfassung: mehrere Mieteingänge in einem Rutsch buchen (Insert-Array).
+export type BatchErgebnis = { ok: boolean; anzahl: number; uebersprungen?: number; ueberzahlung?: number; error?: string };
+
+/**
+ * Mehrere Mieteingänge in EINEM Schritt (eine Anweisung = atomar).
+ *   · quelle „nacherfassung“: ganze Monate; ein Monat, für den schon etwas gebucht ist, wird nicht
+ *     erneut vorgeschlagen und nicht gebucht (Kennung „n:<mieter>|<monat>“).
+ *   · quelle „kontoauszug“: je Bankzeile EIN Vorgang; Teilzahlungen sind erlaubt, eine Sammelzahlung
+ *     wird auf offene Folgemonate verteilt, der Rest als Überzahlung ausgewiesen.
+ */
 export async function bestaetigeMehrere(
   zeilen: BatchZeile[],
-): Promise<{ ok: boolean; anzahl: number; error?: string }> {
+  quelle: "nacherfassung" | "kontoauszug" = "nacherfassung",
+): Promise<BatchErgebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, anzahl: 0, error: "Nicht angemeldet." };
@@ -131,110 +189,75 @@ export async function bestaetigeMehrere(
   const gueltig = zeilen.filter(
     (z) =>
       z.mieter_id &&
-      /^\d{4}-\d{2}-\d{2}$/.test(z.buchungsdatum) &&
+      IST_DATUM.test(z.buchungsdatum) &&
       Number.isFinite(Number(z.betrag)) &&
-      Number(z.betrag) > 0,
+      Number(z.betrag) > 0 &&
+      (quelle === "nacherfassung" || IST_VORGANG.test(z.vorgang ?? "")),
   );
   if (gueltig.length === 0) return { ok: false, anzahl: 0, error: "Keine gültigen Zeilen ausgewählt." };
   if (gueltig.length > 600) return { ok: false, anzahl: 0, error: "Zu viele Zeilen auf einmal (max. 600)." };
 
-  // Serverseitige Idempotenz je Miet-Monat (siehe buchungsSchluessel) —
-  // zusätzlich Dubletten innerhalb der Auswahl.
-  const mieterIds = Array.from(new Set(gueltig.map((z) => z.mieter_id)));
-
-  // Nur die betroffenen Monate laden, nicht die komplette Miethistorie.
-  // Vorher lief die Abfrage ohne jede Eingrenzung; PostgREST liefert hoechstens
-  // `db-max-rows` Zeilen, bei langer Historie fehlten also aeltere Buchungen im
-  // Dublettenschutz — und die Nacherfassung legte sie ein zweites Mal an.
-  const monate = Array.from(
-    new Set(
-      gueltig.map((z) =>
-        /^\d{4}-\d{2}$/.test(z.soll_monat ?? "") ? z.soll_monat! : zuJahrMonat(z.buchungsdatum) ?? "",
-      ),
-    ),
-  ).filter(Boolean).sort();
-  const vonDatum = `${monate[0]}-01`;
-  // OBERGRENZE EXKLUSIV: erster Tag des Folgemonats.
-  //
-  // Vorher stand hier `${letzterMonat}-31`. Den 31. gibt es im Februar, April,
-  // Juni, September und November NICHT — PostgREST castet den Wert auf `date`,
-  // Postgres antwortet mit 22008 („date/time field value out of range"), und
-  // weil der Fehler unten nicht ausgewertet wurde, kam `ohneMonat` still als
-  // null zurueck. In fuenf von zwoelf Monaten fielen damit genau die Altzeilen
-  // ohne `soll_monat` aus dem Dublettenschutz — der Fehler, den der Kommentar
-  // darueber als behoben beschreibt, war fuer diese Monate wieder da: Die
-  // Nacherfassung legte Mieteingaenge ein zweites Mal an, und zwar unbemerkt
-  // in Cashflow UND Anlage V.
-  const [jahrLetzt, monatLetzt] = monate[monate.length - 1].split("-").map(Number);
-  const bisDatumExklusiv =
-    monatLetzt === 12
-      ? `${jahrLetzt + 1}-01-01`
-      : `${jahrLetzt}-${String(monatLetzt + 1).padStart(2, "0")}-01`;
-
-  const [
-    { data: mitMonat, error: fehlerMitMonat },
-    { data: ohneMonat, error: fehlerOhneMonat },
-  ] = await Promise.all([
-    supabase
-      .from("einnahmen")
-      .select("mieter_id,buchungsdatum,soll_monat")
-      .eq("kategorie", "Miete")
-      .in("mieter_id", mieterIds)
-      .in("soll_monat", monate),
-    // Altzeilen ohne soll_monat werden ueber ihr Buchungsdatum zugeordnet.
-    supabase
-      .from("einnahmen")
-      .select("mieter_id,buchungsdatum,soll_monat")
-      .eq("kategorie", "Miete")
-      .in("mieter_id", mieterIds)
-      .is("soll_monat", null)
-      .gte("buchungsdatum", vonDatum)
-      .lt("buchungsdatum", bisDatumExklusiv),
-  ]);
-  // Scheitert eine der beiden Abfragen, ist der Dublettenschutz UNVOLLSTAENDIG.
-  // Dann lieber nichts buchen: Eine Fehlermeldung kostet einen zweiten Anlauf,
-  // doppelt erfasste Mieteinnahmen wandern in die Steuererklaerung.
-  if (fehlerMitMonat || fehlerOhneMonat) {
-    return {
-      ok: false,
-      anzahl: 0,
-      error: "Bestehende Buchungen konnten nicht geprüft werden — es wurde nichts angelegt. Bitte erneut versuchen.",
-    };
+  let daten: Map<string, MieterDaten>;
+  try {
+    daten = await ladeMieterDaten(supabase, user.id, Array.from(new Set(gueltig.map((z) => z.mieter_id))));
+  } catch {
+    return { ok: false, anzahl: 0, error: KEIN_BUCHEN };
   }
-  const gebucht = new Set(
-    [...(mitMonat ?? []), ...(ohneMonat ?? [])].map((v) =>
-      buchungsSchluessel(v.mieter_id, v.buchungsdatum, v.soll_monat ?? null),
-    ),
-  );
 
+  const heuteMonat = heuteBerlin().slice(0, 7);
   const rows: Record<string, unknown>[] = [];
+  const vorgaenge = new Set<string>();
+  let ueberzahlung = 0;
+  let uebersprungen = 0;
+
   for (const z of gueltig) {
-    const sm = /^\d{4}-\d{2}$/.test(z.soll_monat ?? "") ? z.soll_monat! : null;
-    const key = buchungsSchluessel(z.mieter_id, z.buchungsdatum, sm);
-    if (gebucht.has(key)) continue;
-    gebucht.add(key);
-    rows.push({
-      user_id: user.id,
-      mieter_id: z.mieter_id,
-      prop_id: z.prop_id,
-      buchungsdatum: z.buchungsdatum,
-      kategorie: "Miete",
-      betrag: Number(z.betrag),
-      beschreibung: "Mieteingang (Nacherfassung)",
-      nk_anteil: z.nk_anteil != null && Number.isFinite(Number(z.nk_anteil)) ? Number(z.nk_anteil) : null,
-      wiederkehrend: true,
-      soll_monat: sm,
+    const d = daten.get(z.mieter_id);
+    if (!d) { uebersprungen++; continue; } // fremder oder gelöschter Mieter
+    const monat = IST_MONAT.test(z.soll_monat ?? "") ? z.soll_monat! : zuJahrMonat(z.buchungsdatum)!;
+    // Buchungen dieses Aufrufs zählen für die folgenden Zeilen mit (zwei Teilzahlungen im selben Auszug).
+    const standFuer = (ym: string) => monatsStand(d.mieter, d.zeitraeume, d.buchungen, ym);
+    const basis = {
+      user_id: user.id, mieter_id: z.mieter_id, prop_id: d.mieter.prop_id, buchungsdatum: z.buchungsdatum,
+      kategorie: "Miete", wiederkehrend: true,
+    };
+    if (quelle === "nacherfassung") {
+      const s = standFuer(monat);
+      if (s.gezahlt > 0) { uebersprungen++; continue; } // ganzer Monat — schon etwas gebucht → nicht vorschlagen
+      const ref = `n:${z.mieter_id}|${monat}`;
+      if (vorgaenge.has(ref)) { uebersprungen++; continue; }
+      vorgaenge.add(ref);
+      const betrag = Number(z.betrag);
+      rows.push({ ...basis, betrag, beschreibung: "Mieteingang (Nacherfassung)", nk_anteil: nkAnteilFuer(s, betrag), soll_monat: monat, zahlung_ref: ref });
+      d.buchungen.push({ soll_monat: monat, buchungsdatum: z.buchungsdatum, betrag, nk_anteil: nkAnteilFuer(s, betrag), zahlung_ref: ref });
+      continue;
+    }
+    const kopf = `ka:${z.vorgang}`;
+    if (vorgaenge.has(kopf) || d.buchungen.some((b) => b.zahlung_ref === kopf || b.zahlung_ref?.startsWith(`${kopf}#`))) {
+      uebersprungen++;
+      continue;
+    }
+    vorgaenge.add(kopf);
+    const v = verteileZahlung(Number(z.betrag), monat, heuteMonat < monat ? monat : heuteMonat, standFuer);
+    ueberzahlung += v.ueberzahlung;
+    v.teile.forEach((t, i) => {
+      const ref = v.teile.length === 1 ? kopf : `${kopf}#${t.jahrMonat}`;
+      rows.push({
+        ...basis, betrag: t.betrag, nk_anteil: t.nk, soll_monat: t.jahrMonat, zahlung_ref: ref,
+        beschreibung: v.teile.length > 1 ? `Mieteingang (Kontoauszug, Teil ${i + 1}/${v.teile.length})` : "Mieteingang (Kontoauszug)",
+      });
+      d.buchungen.push({ soll_monat: t.jahrMonat, buchungsdatum: z.buchungsdatum, betrag: t.betrag, nk_anteil: t.nk, zahlung_ref: ref });
     });
   }
-  if (rows.length === 0) {
-    revalidatePath("/mietkonto");
-    return { ok: true, anzahl: 0 };
-  }
 
-  const { error } = await supabase.from("einnahmen").insert(rows);
-  if (error) return { ok: false, anzahl: 0, error: "Buchen fehlgeschlagen." };
-
+  const r = await buchen(supabase, rows);
+  if (!r.ok) return { ok: false, anzahl: 0, error: "Buchen fehlgeschlagen." };
   revalidatePath("/mietkonto");
   revalidatePath("/cashflow");
-  return { ok: true, anzahl: rows.length };
+  const neu = r.neu.size;
+  return {
+    ok: true,
+    anzahl: neu,
+    ...(uebersprungen + (rows.length - neu) > 0 ? { uebersprungen: uebersprungen + (rows.length - neu) } : {}),
+    ...(ueberzahlung > 0 ? { ueberzahlung: Math.round(ueberzahlung * 100) / 100 } : {}),
+  };
 }

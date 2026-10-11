@@ -1,8 +1,10 @@
 "use client";
 
 // Mietkonto → „Kontoauszug abgleichen“ (02.10.2026). Die CSV-Datei wird NUR im Browser gelesen
-// (FileReader); zum Server gehen allein die bestätigten Buchungen über `bestaetigeMehrere`
-// (Dublettenschutz je Mietmonat). Logik: lib/kontoauszug.ts.
+// (FileReader); zum Server gehen allein die bestätigten Buchungen über `bestaetigeMehrere`.
+// Logik: lib/kontoauszug.ts. Seit B07/B09/B10 (11.10.2026): Jede Bankzeile geht mit einer Prüfsumme
+// als Vorgang zum Server — derselbe Umsatz wird nie zweimal gebucht, verschiedene Teilzahlungen im
+// selben Monat schon; NK-Anteil und Verteilung (Sammelzahlung, Überzahlung) rechnet der Server.
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { FileUp, ShieldCheck } from "lucide-react";
@@ -55,9 +57,10 @@ export default function KontoauszugAbgleich({ nacherfassung }: { nacherfassung: 
       name: n.name,
       nachname: n.nachname ?? null,
       ibanHash: n.ibanHash ?? null,
+      // Angeboten werden Monate, die noch nicht VOLL bezahlt sind (B10: auch teilbezahlte).
       offen: dedup(
         erwarteteMonate(n.mieter, n.zeitraeume, von, bis),
-        n.gebuchteMonate.map((ym) => ({ buchungsdatum: `${ym}-15`, kategorie: "Miete" })),
+        (n.bezahlteMonate ?? n.gebuchteMonate).map((ym) => ({ buchungsdatum: `${ym}-15`, kategorie: "Miete" })),
       )
         .filter((m) => !m.schonGebucht && m.gesamt > 0)
         .map((m) => ({ jahrMonat: m.jahrMonat, gesamt: m.gesamt, nk: m.nk })),
@@ -74,31 +77,32 @@ export default function KontoauszugAbgleich({ nacherfassung }: { nacherfassung: 
 
   const gewaehlt = useMemo(() => (ergebnis?.treffer ?? []).filter((t) => auswahl.has(t.zahlung.zeile)), [ergebnis, auswahl]);
 
-  // Zwei Zeilen auf denselben Mietmonat desselben Mieters? Dann nicht buchen (der Server würde die zweite ohnehin verwerfen).
-  const doppelt = useMemo(() => {
-    const seen = new Set<string>();
-    return gewaehlt.some((t) => {
-      const k = `${t.mieterId}:${monatWahl[t.zahlung.zeile] ?? t.jahrMonat}`;
-      if (seen.has(k)) return true;
-      seen.add(k);
-      return false;
-    });
-  }, [gewaehlt, monatWahl]);
-
   const buchen = () =>
     startTransition(async () => {
-      const zeilen: BatchZeile[] = gewaehlt.map((t) => ({
-        mieter_id: t.mieterId,
-        prop_id: t.propId,
-        buchungsdatum: t.zahlung.datum,
-        betrag: t.zahlung.betrag,
-        nk_anteil: t.nkAnteil,
-        soll_monat: monatWahl[t.zahlung.zeile] ?? t.jahrMonat,
-      }));
+      // Prüfsumme je Bankzeile (Datum, Betrag, Name, Zweck, IBAN + laufende Nummer GLEICHER Zeilen in
+      // dieser Datei): Ein erneutes Hochladen desselben Auszugs ergibt dieselben Kennungen.
+      const vorkommen = new Map<string, number>();
+      const zeilen: BatchZeile[] = [];
+      for (const t of gewaehlt) {
+        const roh = [t.zahlung.datum, t.zahlung.betrag.toFixed(2), t.zahlung.name, t.zahlung.zweck, normIban(t.zahlung.iban)].join("|");
+        const n = (vorkommen.get(roh) ?? 0) + 1;
+        vorkommen.set(roh, n);
+        zeilen.push({
+          mieter_id: t.mieterId,
+          buchungsdatum: t.zahlung.datum,
+          betrag: t.zahlung.betrag,
+          soll_monat: monatWahl[t.zahlung.zeile] ?? t.jahrMonat,
+          vorgang: (await sha256Hex(`${roh}|${n}`)).slice(0, 40),
+        });
+      }
       try {
-        const r = await bestaetigeMehrere(zeilen);
+        const r = await bestaetigeMehrere(zeilen, "kontoauszug");
         if (!r.ok) return toast(r.error ?? "Buchen fehlgeschlagen.", "error");
-        toast(`${r.anzahl} Mieteingänge aus dem Kontoauszug gebucht ✓`);
+        const zusatz = [
+          r.uebersprungen ? `${r.uebersprungen} schon gebucht` : "",
+          r.ueberzahlung ? `Überzahlung ${eur(r.ueberzahlung)}` : "",
+        ].filter(Boolean).join(" · ");
+        toast(`${r.anzahl} Mieteingänge aus dem Kontoauszug gebucht ✓${zusatz ? ` (${zusatz})` : ""}`);
         setErgebnis(null);
         router.refresh();
       } catch {
@@ -178,13 +182,12 @@ export default function KontoauszugAbgleich({ nacherfassung }: { nacherfassung: 
                     })}
                   </tbody>
                 </table></div>
-                {doppelt && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: "8px 0 0" }}>Zwei ausgewählte Eingänge zeigen auf denselben Mietmonat desselben Mieters — bitte einen Monat umstellen oder abwählen.</p>}
-                <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
-                  <button type="button" className="btn btn-gold" disabled={pending || gewaehlt.length === 0 || doppelt} onClick={buchen}>
+                                <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
+                  <button type="button" className="btn btn-gold" disabled={pending || gewaehlt.length === 0} onClick={buchen}>
                     {pending ? "Bucht…" : `${gewaehlt.length} ${gewaehlt.length === 1 ? "Eingang" : "Eingänge"} buchen · ${eur(gewaehlt.reduce((s, t) => s + t.zahlung.betrag, 0))}`}
                   </button>
                   <span style={{ fontSize: 11.5, color: "var(--muted)" }}>
-                    Gebucht wird der tatsächlich eingegangene Betrag mit dem Datum aus dem Auszug. Schon bestätigte Monate werden nicht doppelt gebucht.
+                    Gebucht wird der tatsächlich eingegangene Betrag mit dem Datum aus dem Auszug. Derselbe Umsatz wird nie doppelt gebucht; Teilzahlungen bleiben getrennt, ein Überschuss geht auf offene Folgemonate, der Rest wird als Überzahlung ausgewiesen.
                   </span>
                 </div>
               </>

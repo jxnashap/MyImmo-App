@@ -110,14 +110,22 @@ function fmtSize(bytes: number) {
 // userId/UUID.ext, RLS je user_id-Ordner). Ersetzt die frühere
 // Base64-in-DB-Ablage; rechnung_data wird beim Neuspeichern genullt
 // (alte Base64-Belege bleiben über den Routen-Fallback lesbar).
+//
+// B06 (Prüfstand 11.10.2026): Vorher löschte das Hochladen den ALTEN Beleg sofort — noch bevor der
+// Datensatz gespeichert war. Scheiterte das Speichern danach (Prüfung, Netz, gleichzeitige
+// Änderung), zeigte die Buchung auf eine gelöschte Datei. Jetzt gilt überall:
+//   1. neue Datei hochladen  2. Datensatz sichern  3. ERST DANN die alte Datei löschen.
+// Scheitert 2, wird die neue Datei wieder entfernt (der alte Beleg bleibt erreichbar). Scheitert 3,
+// bleibt die alte Datei als Rest im eigenen Ordner liegen — sie wird gemeldet und spätestens mit der
+// Kontolöschung (Ordner `<uid>/`) entfernt.
+type BelegFelder = Record<string, unknown>;
 async function rechnungHochladen(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   fd: FormData,
-  altPath?: string | null,
-) {
+): Promise<{ felder: BelegFelder; pfad: string | null }> {
   const f = fd.get("rechnung");
-  if (!f || typeof f === "string" || (f as File).size === 0) return {};
+  if (!f || typeof f === "string" || (f as File).size === 0) return { felder: {}, pfad: null };
   const file = f as File;
   if (file.size > 15 * 1024 * 1024) throw new Error("Beleg zu groß (max. 15 MB).");
   const mime = file.type || "application/octet-stream";
@@ -125,18 +133,29 @@ async function rechnungHochladen(
   const path = `${userId}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from("belege").upload(path, file, { contentType: mime, upsert: false });
   if (error) throw new Error("Upload fehlgeschlagen: " + error.message);
-  if (altPath) await supabase.storage.from("belege").remove([altPath]); // alten Beleg ersetzen
   return {
-    rechnung_name: file.name || "Beleg",
-    rechnung_type: mime,
-    rechnung_size: fmtSize(file.size),
-    rechnung_path: path,
-    rechnung_data: null,
+    pfad: path,
+    felder: {
+      rechnung_name: file.name || "Beleg",
+      rechnung_type: mime,
+      rechnung_size: fmtSize(file.size),
+      rechnung_path: path,
+      rechnung_data: null,
+    },
   };
+}
+
+/** Datei im Beleg-Bucket entfernen; `false`, wenn sie liegen blieb (Rest, wird gemeldet). */
+async function belegEntfernen(supabase: Awaited<ReturnType<typeof createClient>>, pfad: string | null | undefined): Promise<boolean> {
+  if (!pfad) return true;
+  const { error } = await supabase.storage.from("belege").remove([pfad]);
+  if (error) console.warn("[belege] Datei blieb liegen (wird mit der Kontolöschung entfernt)");
+  return !error;
 }
 
 export async function createKosten(fd: FormData) {
   const { supabase, userId } = await uid();
+  const beleg = await rechnungHochladen(supabase, userId, fd);
   const { error } = await supabase.from("kosten").insert({
     user_id: userId,
     prop_id: str(fd, "prop_id"),
@@ -145,44 +164,66 @@ export async function createKosten(fd: FormData) {
     kategorie: str(fd, "kategorie"),
     betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
-    ...(await rechnungHochladen(supabase, userId, fd)),
+    ...beleg.felder,
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // Die Buchung gibt es nicht — die eben hochgeladene Datei darf nicht verwaist liegen bleiben.
+    await belegEntfernen(supabase, beleg.pfad);
+    throw new Error(error.message);
+  }
   done(fd, "/kosten");
 }
 export async function updateKosten(id: string, fd: FormData) {
   const { supabase, userId } = await uid();
-  const { data: alt } = await supabase.from("kosten").select("rechnung_path").eq("id", id).single();
-  const { error } = await supabase.from("kosten").update({
+  const { data: alt, error: altFehler } = await supabase
+    .from("kosten").select("rechnung_path").eq("id", id).eq("user_id", userId).maybeSingle();
+  if (altFehler || !alt) throw new Error("Buchung nicht gefunden.");
+  const daten = {
     prop_id: str(fd, "prop_id"),
     mieter_id: str(fd, "mieter_id"),
     buchungsdatum: str(fd, "buchungsdatum"),
     kategorie: str(fd, "kategorie"),
     betrag: posNum(fd, "betrag", "Betrag"),
     beschreibung: str(fd, "beschreibung"),
-    ...(await rechnungHochladen(supabase, userId, fd, alt?.rechnung_path)),
-  }).eq("id", id);
-  if (error) throw new Error(error.message);
+  };
+  const beleg = await rechnungHochladen(supabase, userId, fd);
+  let q = supabase.from("kosten").update({ ...daten, ...beleg.felder }).eq("id", id).eq("user_id", userId);
+  // Beim Ersetzen nur, wenn der Beleg noch DERSELBE ist wie beim Lesen — sonst hat eine andere Sitzung
+  // ihn inzwischen ersetzt, und wir löschten deren Datei.
+  if (beleg.pfad) q = alt.rechnung_path ? q.eq("rechnung_path", alt.rechnung_path) : q.is("rechnung_path", null);
+  const { data: gesichert, error } = await q.select("id").maybeSingle();
+  if (error || !gesichert) {
+    await belegEntfernen(supabase, beleg.pfad);
+    if (error) throw new Error(error.message);
+    throw new Error("Der Beleg wurde inzwischen an anderer Stelle geändert — bitte die Seite neu laden und erneut versuchen.");
+  }
+  if (beleg.pfad && alt.rechnung_path) await belegEntfernen(supabase, alt.rechnung_path);
   done(fd, "/kosten");
 }
 export async function deleteKosten(id: string) {
-  const { supabase } = await uid();
-  // Beleg aus dem Storage mitlöschen (Aufräumen)
-  const { data: k } = await supabase.from("kosten").select("rechnung_path").eq("id", id).single();
-  if (k?.rechnung_path) await supabase.storage.from("belege").remove([k.rechnung_path]);
-  const { error } = await supabase.from("kosten").delete().eq("id", id);
+  const { supabase, userId } = await uid();
+  // Erst die Buchung, dann die Datei: Scheitert das Löschen der Buchung, bleibt der Beleg erreichbar.
+  const { data: weg, error } = await supabase
+    .from("kosten").delete().eq("id", id).eq("user_id", userId).select("rechnung_path").maybeSingle();
   if (error) throw new Error(error.message);
+  await belegEntfernen(supabase, (weg as { rechnung_path: string | null } | null)?.rechnung_path);
   revalidatePath("/", "layout");
 }
 export async function deleteRechnung(id: string) {
-  const { supabase } = await uid();
-  const { data: k } = await supabase.from("kosten").select("rechnung_path").eq("id", id).single();
-  if (k?.rechnung_path) await supabase.storage.from("belege").remove([k.rechnung_path]);
-  const { error } = await supabase
+  const { supabase, userId } = await uid();
+  const { data: k, error: leseFehler } = await supabase
+    .from("kosten").select("rechnung_path").eq("id", id).eq("user_id", userId).maybeSingle();
+  if (leseFehler || !k) throw new Error("Buchung nicht gefunden.");
+  let q = supabase
     .from("kosten")
     .update({ rechnung_name: null, rechnung_type: null, rechnung_size: null, rechnung_path: null, rechnung_data: null })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", userId);
+  q = k.rechnung_path ? q.eq("rechnung_path", k.rechnung_path) : q.is("rechnung_path", null);
+  const { data: gesichert, error } = await q.select("id").maybeSingle();
   if (error) throw new Error(error.message);
+  if (!gesichert) throw new Error("Der Beleg wurde inzwischen geändert — bitte die Seite neu laden.");
+  await belegEntfernen(supabase, k.rechnung_path);
   revalidatePath("/kosten");
 }
 
