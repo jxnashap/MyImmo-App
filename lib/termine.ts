@@ -125,6 +125,10 @@ export const WARTUNGS_VORLAGEN = PRUEF_KATALOG;
  * die Nebenkostenabrechnung) soll im FOLGEJAHR wieder auftauchen und nicht
  * dauerhaft stumm bleiben, nur weil sie einmal ausgeblendet wurde.
  */
-export function fristSchluessel(quelle: string, datum: string, label: string): string {
-  return `${quelle}|${datum}|${label}`;
+export function fristSchluessel(quelle: string, datum: string, label: string, bezug?: string | null): string {
+  // Ablauf D (Prüfstand 11.10.2026): mit dem Bezug (Mieter, Darlehen, Objekt, Vertreter). Vorher
+  // galt EIN Schlüssel für alle Mieter mit demselben Datum und Text — „NK-Abrechnung 2025 zustellen“
+  // (31.12.) bei einem Mieter ausgeblendet, war sie bei ALLEN weg; als „erledigt“ vermerkt, hätte
+  // der Vermerk für alle gegolten. Alte Zeilen (ohne Bezug) blenden weiter aus — `fristVermerk()`.
+  return bezug ? `${quelle}|${bezug}|${datum}|${label}` : `${quelle}|${datum}|${label}`;
 }

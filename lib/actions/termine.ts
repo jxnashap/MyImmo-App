@@ -3,8 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { flashUrl } from "@/lib/flash";
+import { flashUrl, sicheresZiel } from "@/lib/flash";
 import { TERMIN_KATEGORIEN, WIEDERKEHRUNGEN, naechsteFaelligkeit } from "@/lib/termine";
+import { istZustellweg } from "@/lib/fristDokument";
+import { heuteBerlin } from "@/lib/zeitraum";
+import { dbFehlerText } from "@/lib/demoFehler";
 
 function feldWerte(formData: FormData) {
   const kategorie = String(formData.get("kategorie") ?? "");
@@ -258,4 +261,46 @@ export async function zeigeFristWieder(schluessel: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/termine");
   revalidatePath("/");
+}
+
+// ---------------------------------------------------------------------------
+// Frist als ERLEDIGT vermerken (Ablauf D, Prüfstand 11.10.2026)
+// ---------------------------------------------------------------------------
+// Ausblenden sagt nur „will ich nicht sehen“. Erledigt ist eine Frist erst, wenn der Vermieter es
+// bestätigt — mit dem Tag und dem Weg, auf dem das Schreiben den Mieter erreicht hat (ein PDF im
+// Archiv oder ein Abruf im Portal belegt keinen Zugang, lib/zugang.ts). Optional mit dem Schreiben
+// aus dem Archiv; dass es dem eigenen Konto gehört, prüft die Datenbank (`frist_notiz_pruefen`).
+// Gleicher Klick zweimal (Zeitüberlauf, Doppelklick) ändert nichts: upsert auf (user_id, schluessel).
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function erledigeFrist(schluessel: string, formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const zurueck = sicheresZiel(formData.get("zurueck"), "/termine");
+  const am = String(formData.get("erledigt_am") ?? "").trim();
+  const weg = String(formData.get("zustellweg") ?? "");
+  const notizRoh = String(formData.get("notiz_id") ?? "").trim();
+  const fehler = (msg: string) => redirect(flashUrl(zurueck, `${msg} — es wurde nichts vermerkt.`, "error"));
+
+  if (!schluessel || schluessel.length > 300 || !schluessel.includes("|")) fehler("Unbekannte Frist");
+  const gueltig = /^\d{4}-\d{2}-\d{2}$/.test(am) && !Number.isNaN(Date.parse(`${am}T00:00:00Z`))
+    && new Date(`${am}T00:00:00Z`).toISOString().slice(0, 10) === am;
+  if (!gueltig) fehler("Bitte das Datum angeben, an dem das Schreiben den Mieter erreicht hat");
+  if (am > heuteBerlin()) fehler("Das Datum liegt in der Zukunft");
+  if (am < "2000-01-01") fehler("Das Datum ist zu alt");
+  if (!istZustellweg(weg)) fehler("Bitte den Zustellweg wählen");
+  if (notizRoh && !UUID.test(notizRoh)) fehler("Unbekanntes Schreiben");
+
+  const { error } = await supabase.from("frist_ausgeblendet").upsert(
+    { user_id: user.id, schluessel, grund: "erledigt", erledigt_am: am, zustellweg: weg, notiz_id: notizRoh || null },
+    { onConflict: "user_id,schluessel" },
+  );
+  if (error) {
+    fehler(dbFehlerText(error, error.hint === "frist_bezug" ? "Das Schreiben gehört nicht zu deinem Konto" : "Der Vermerk konnte nicht gespeichert werden"));
+  }
+  revalidatePath("/termine");
+  revalidatePath("/");
+  redirect(flashUrl(zurueck, "Als erledigt vermerkt — mit Datum und Zustellweg."));
 }

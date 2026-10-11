@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fakeSupabase, mockeNextUndSupabase, fd } from "./stubs/actionHarness";
 import { nkAusBuchungen } from "@/lib/nkAusBuchungen";
 import { zaehlerSpanne } from "@/lib/zaehlerSpanne";
-import { mieterFristen, nkErstellteJahre } from "@/lib/fristen";
+import { mieterFristen, type Frist } from "@/lib/fristen";
 import { KOSTEN_KATEGORIEN, UEBERNAHME_KATEGORIEN } from "@/lib/kategorien";
 import { istUmlagefaehig } from "@/lib/format";
 
@@ -62,30 +62,18 @@ describe("C2 — Zählerstände je Zähler", () => {
 describe("C3 — Frist „NK zustellen“", () => {
   const j = new Date().getFullYear();
   const basis = { mietbeginn: "2020-01-01", kuendigung: 3, letzte_erhoehung: null };
-  const nkFrist = (f: { label: string }[]) => f.find((x) => x.label === `NK-Abrechnung ${j - 1} zustellen`);
+  const nkFrist = (f: Frist[]) => f.find((x) => x.label === `NK-Abrechnung ${j - 1} zustellen`);
   it("gilt auch für einen Mieter, der im Vorjahr ausgezogen ist", () => {
     expect(nkFrist(mieterFristen({ ...basis, mietende: `${j - 1}-06-30` }))).toBeTruthy();
   });
   it("nicht für einen, der schon VOR dem Vorjahr ausgezogen ist", () => {
     expect(nkFrist(mieterFristen({ ...basis, mietende: `${j - 2}-12-31` }))).toBeUndefined();
   });
-  it("entfällt, sobald die Abrechnung des Vorjahres im Archiv liegt", () => {
+  // Ablauf D (Prüfstand 11.10.2026) hat das umgekehrt: Ein PDF im Archiv erledigt die Frist NICHT
+  // mehr — sie bleibt bis zum Erledigt-Vermerk mit Zugangsdatum (tests/ablaufD.test.ts).
+  it("bleibt stehen, auch wenn die Abrechnung schon im Archiv liegt (ein PDF ist kein Zugang)", () => {
     expect(nkFrist(mieterFristen({ ...basis, mietende: null }))).toBeTruthy();
-    expect(nkFrist(mieterFristen({ ...basis, mietende: null }, { nkErstellt: [j - 1] }))).toBeUndefined();
-    expect(nkFrist(mieterFristen({ ...basis, mietende: null }, { nkErstellt: [j - 2] }))).toBeTruthy();
-  });
-  it("nkErstellteJahre liest das Jahr aus dem Archiv-Titel", () => {
-    const m = nkErstellteJahre([
-      { mieter_id: "a", titel: "Nebenkostenabrechnung 2025" },
-      { mieter_id: "a", titel: "Mahnung" },
-      { mieter_id: null, titel: "Nebenkostenabrechnung 2024" },
-    ]);
-    expect(m.get("a")).toEqual([2025]);
-  });
-  it("Dashboard, /termine, iCal und Mieterseite reichen die Jahre durch", () => {
-    for (const p of ["app/(app)/page.tsx", "app/(app)/termine/page.tsx", "app/(app)/termine/ical/route.ts", "app/(app)/tenants/[id]/page.tsx"]) {
-      expect(readFileSync(p, "utf8"), p).toMatch(/mieterFristen\(m, \{\s*nkErstellt: /);
-    }
+    expect(nkFrist(mieterFristen({ ...basis, mietende: null }))?.dokument).toEqual({ art: "nk", jahr: j - 1 });
   });
   it("Nachzahlung buchen: Link vorausgefüllt, Ziel prüft Kategorie, Betrag und Mieter", () => {
     expect(readFileSync("app/(app)/tenants/[id]/nk/page.tsx", "utf8")).toMatch(/kategorie: "Nebenkostenabrechnung"/);

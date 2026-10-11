@@ -4,18 +4,23 @@ import { datum } from "@/lib/format";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { fristZiel } from "@/lib/heute";
 import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
-import { mieterFristen, nkErstellteJahre, kreditFristen, globaleFristen, objektFristen, zeitraumMonateJeMieter } from "@/lib/fristen";
+import { mieterFristen, kreditFristen, globaleFristen, objektFristen, zeitraumMonateJeMieter } from "@/lib/fristen";
 import {
   createTermin, createVorlageTermin, deleteTermin, toggleErledigt,
-  blendeFristAus, zeigeFristWieder,
+  blendeFristAus, zeigeFristWieder, erledigeFrist,
 } from "@/lib/actions/termine";
+import {
+  FRIST_VERMERK_SPALTEN, ZUSTELLWEGE, erledigtAus, fristVermerk, fristVorgang, vermerkeAus, vorgangText,
+  type ArchivDok, type FristDokument, type FristVermerk, type FristVorgang, type PortalZustellung,
+} from "@/lib/fristDokument";
+import { quelleZu } from "@/lib/fristQuellen";
 import DeleteButton from "@/components/DeleteButton";
 import AufklappForm from "@/components/AufklappForm";
 import ExpandableList from "@/components/ExpandableList";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
 import { KATEGORIE_STIL, TERMIN_KATEGORIEN, WARTUNGS_VORLAGEN, WIEDERKEHRUNG_LABEL, fristSchluessel } from "@/lib/termine";
 import type { Termin, Property, Tenant, Kredit } from "@/lib/types";
-import { RotateCw, Pencil, X, CalendarDays, Plus, Eye, EyeOff } from "lucide-react";
+import { RotateCw, RotateCcw, Pencil, X, CalendarDays, Plus, Eye, EyeOff } from "lucide-react";
 import Leer from "@/components/Leer";
 
 type Eintrag = {
@@ -35,6 +40,13 @@ type Eintrag = {
   /** Nur abgeleitete Fristen: Schluessel zum Aus-/Einblenden. */
   schluessel?: string;
   ausgeblendet?: boolean;
+  /** Ablauf D: Mieter/Darlehen/Objekt/Vertreter, zu dem die Frist gehört (Teil des Schlüssels). */
+  bezug?: string | null;
+  /** Ablauf D: Schreiben zur Frist und wie weit der Vorgang ist. */
+  dokument?: FristDokument;
+  vorgang?: FristVorgang;
+  /** Schlüssel, unter dem „erledigt“ vermerkt wird — immer mit Bezug. */
+  erledigtSchluessel?: string;
 };
 
 export default async function TerminePage(
@@ -44,17 +56,21 @@ export default async function TerminePage(
 ) {
   const searchParams = await props0.searchParams;
   const supabase = await createClient();
-  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }, { data: nkNotizen }, { data: vertreterRows }, { data: zrRows }] = await Promise.all([
+  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }, { data: archivRows }, { data: vertreterRows }, { data: zrRows }, { data: portalRows }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
     supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum").order("bezeichnung"),
     supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen"),
     supabase.from("kredite").select("id,prop_id,bezeichnung,zinsbindung,auszahlung_datum"),
-    supabase.from("frist_ausgeblendet").select("schluessel"),
-    supabase.from("notizen").select("mieter_id,titel").eq("kategorie", "Nebenkostenabrechnung"),
+    supabase.from("frist_ausgeblendet").select(FRIST_VERMERK_SPALTEN),
+    // Ablauf D: Schreiben an Mieter (ohne Dateiinhalt) — für den Stand „PDF erstellt / im Portal“.
+    supabase.from("notizen").select("id,mieter_id,titel,created_at").not("mieter_id", "is", null).order("created_at", { ascending: false }).limit(2000),
     // Paket D (06.10.2026): Vollmacht-Ablauf stand nur auf dem Dashboard — im Kalender fehlte er.
     supabase.from("vertreter").select("id,vorname,nachname,gueltig_bis,widerrufen_am").not("gueltig_bis", "is", null),
     supabase.from("miet_zeitraeume").select("mieter_id,von"),
+    supabase.from("zustellungen").select("notiz_id,zugestellt_am,gelesen_am,zurueckgezogen_am").eq("art", "dokument").limit(2000),
   ]);
+  const archiv = (archivRows ?? []) as ArchivDok[];
+  const portal = (portalRows ?? []) as PortalZustellung[];
 
   const properties = (props ?? []) as (Pick<Property, "id" | "bezeichnung" | "typ"> & { energieausweis_datum: string | null })[];
   const nameOf = new Map(properties.map((p): [string, string] => [p.id, p.bezeichnung]));
@@ -63,29 +79,28 @@ export default async function TerminePage(
   const kredite = (kred ?? []) as (Kredit & { auszahlung_datum: string | null })[];
   const mieterName = new Map(mieter.map((m) => [m.id, [m.vorname, m.nachname].filter(Boolean).join(" ")]));
 
-  const nkJahre = nkErstellteJahre((nkNotizen ?? []) as { mieter_id: string | null; titel: string | null }[]);
   const eintraege: Eintrag[] = [];
 
   const zrMonate = zeitraumMonateJeMieter(zrRows as { mieter_id: string; von: string }[] | null);
   for (const m of mieter) {
     const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
-    for (const f of mieterFristen(m, { nkErstellt: nkJahre.get(m.id), zeitraumMonate: zrMonate.get(m.id) ?? [] })) {
+    for (const f of mieterFristen(m, { zeitraumMonate: zrMonate.get(m.id) ?? [] })) {
       if (!f.datum) continue;
-      eintraege.push({ datum: f.datum, label: f.label, wer, wo, quelle: "mieter", typ: f.typ, kategorie: f.kategorie ?? "Miete", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("mieter", m.id, f.label) });
+      eintraege.push({ datum: f.datum, label: f.label, wer, wo, quelle: "mieter", typ: f.typ, kategorie: f.kategorie ?? "Miete", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("mieter", m.id, f.label, f.dokument), bezug: m.id, dokument: f.dokument });
     }
   }
   for (const k of kredite) {
     const wo = (k.prop_id && nameOf.get(k.prop_id)) || "–";
     for (const f of kreditFristen(k)) {
       if (!f.datum) continue;
-      eintraege.push({ datum: f.datum, label: f.label, wer: k.bezeichnung ?? "Darlehen", wo, quelle: "kredit", typ: f.typ, kategorie: f.kategorie ?? "Finanzierung", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("kredit", k.id, f.label) });
+      eintraege.push({ datum: f.datum, label: f.label, wer: k.bezeichnung ?? "Darlehen", wo, quelle: "kredit", typ: f.typ, kategorie: f.kategorie ?? "Finanzierung", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("kredit", k.id, f.label), bezug: k.id });
     }
   }
   for (const p of properties) {
     for (const f of objektFristen(p)) {
       if (!f.datum) continue;
-      eintraege.push({ datum: f.datum, label: f.label, wer: "", wo: p.bezeichnung, quelle: "objekt", typ: f.typ, kategorie: f.kategorie ?? "Sonstiges", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("objekt", p.id, f.label) });
+      eintraege.push({ datum: f.datum, label: f.label, wer: "", wo: p.bezeichnung, quelle: "objekt", typ: f.typ, kategorie: f.kategorie ?? "Sonstiges", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("objekt", p.id, f.label), bezug: p.id });
     }
   }
   // Globale Steuer-Fristen (Grundsteuer-Raten, ESt-Erklärung)
@@ -106,6 +121,7 @@ export default async function TerminePage(
       typ: status === "gueltig" ? "info" : "warn",
       kategorie: "Sonstiges",
       ziel: fristZiel("vertreter", v.id, "Vollmacht endet"),
+      bezug: v.id,
     });
   }
   for (const t of termine) {
@@ -121,17 +137,26 @@ export default async function TerminePage(
       erledigt: t.erledigt ?? false,
       wiederkehrung: t.wiederkehrung,
       id: t.id,
+      // Ablauf D: Ein Termin mit Mieter führt zu dessen Akte (Unterlagen, Schreiben), sonst zum Objekt.
+      ziel: t.mieter_id ? `/tenants/${t.mieter_id}` : t.prop_id ? `/properties/${t.prop_id}` : undefined,
     });
   }
 
   // Abgeleitete Fristen bekommen einen Schluessel, ueber den sie aus- und wieder
   // eingeblendet werden koennen. Eigene Termine brauchen ihn nicht — die lassen
   // sich abhaken oder loeschen.
-  const verstecktSet = new Set(((versteckt ?? []) as { schluessel: string }[]).map((v) => v.schluessel));
+  // Ablauf D: Der Vermerk ist entweder „ausgeblendet“ (nur Ansicht) oder „erledigt“ (vom Vermieter mit
+  // Zugangsdatum und Zustellweg bestätigt). Erledigt zählt wie ein abgehakter Termin.
+  const vermerke = vermerkeAus(versteckt as FristVermerk[] | null);
   for (const e of eintraege) {
     if (e.quelle === "eigen") continue;
-    e.schluessel = fristSchluessel(e.quelle, e.datum, e.label);
-    e.ausgeblendet = verstecktSet.has(e.schluessel);
+    const v = fristVermerk(vermerke, e.quelle, e.bezug ?? null, e.datum, e.label);
+    e.erledigtSchluessel = fristSchluessel(e.quelle, e.datum, e.label, e.bezug);
+    e.schluessel = v?.schluessel ?? e.erledigtSchluessel;
+    const erl = erledigtAus(v);
+    e.ausgeblendet = !!v && !erl;
+    e.erledigt = !!erl;
+    if (e.dokument && e.bezug) e.vorgang = fristVorgang(e.dokument, e.bezug, e.datum, archiv, portal, erl);
   }
 
   eintraege.sort((a, b) => a.datum.localeCompare(b.datum));
@@ -218,6 +243,44 @@ export default async function TerminePage(
     return `/termine?${q.toString()}`;
   };
 
+  // Ablauf D: Stand des Schreibens unter der Frist. „Fällig“ und „erledigt“ sind zwei Dinge — erledigt
+  // ist die Frist erst, wenn der Vermieter den Zugang mit Datum und Weg bestätigt; das Formular dafür
+  // klappt hier auf. Ein PDF oder ein Abruf im Portal erledigt nichts von selbst.
+  const hier = linkMit({ flash: "", flashTyp: "" });
+  const vorgangZeile = (e: Eintrag, v: FristVorgang, quelleUrl: string | null) => {
+    const notizId = v.stand === "offen" ? null : v.notizId;
+    return (
+      <span className="tz-vorgang">
+        <span style={{ color: v.stand === "erledigt" ? "var(--green)" : "var(--muted)" }}>{vorgangText(v)}</span>
+        {v.stand === "offen" && e.ziel && <Link href={e.ziel}>Schreiben vorbereiten</Link>}
+        {notizId && <a href={`/archiv/${notizId}/datei`} target="_blank" rel="noopener noreferrer">Schreiben öffnen</a>}
+        {quelleUrl && <a href={quelleUrl} target="_blank" rel="noopener noreferrer">Gesetzestext</a>}
+        {v.stand !== "erledigt" && e.erledigtSchluessel && (
+          <details className="tz-erledigen">
+            <summary>Zugang bestätigen</summary>
+            <form action={erledigeFrist.bind(null, e.erledigtSchluessel)} className="tz-erledigen-form">
+              <input type="hidden" name="zurueck" value={hier} />
+              {notizId && <input type="hidden" name="notiz_id" value={notizId} />}
+              <label>
+                <span>Zugegangen am</span>
+                <input type="date" name="erledigt_am" required max={heuteISO} defaultValue={heuteISO} className="input" />
+              </label>
+              <label>
+                <span>Weg</span>
+                <select name="zustellweg" required defaultValue="" className="input">
+                  <option value="" disabled>bitte wählen</option>
+                  {Object.entries(ZUSTELLWEGE).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                </select>
+              </label>
+              <button type="submit" className="btn btn-gold btn-sm">Als erledigt vermerken</button>
+              <span className="tz-erledigen-hinweis">Nur vermerken, was du belegen kannst — MyImmo prüft den Zugang nicht.</span>
+            </form>
+          </details>
+        )}
+      </span>
+    );
+  };
+
   // Kompakte Terminzeile (03.10.2026, wie die Listen im Mieterportal und auf dem Dashboard):
   // links Abhaken bzw. Farbpunkt der Kategorie, dann Titel und darunter Kategorie · Mieter ·
   // Objekt, rechts Datum und Restzeit, ganz rechts die Aktionen. Die Rechtsgrundlage steht im
@@ -229,8 +292,11 @@ export default async function TerminePage(
     const farbe = e.erledigt ? "var(--green)" : e.typ === "warn" || (tage < 0 && aufgabe) ? "var(--red)" : e.typ === "ok" ? "var(--green)" : "var(--muted)";
     // Nutzer tippen Kategorien auch klein („wartung") — angezeigt wird sie mit Großbuchstaben.
     const kategorie = e.kategorie.charAt(0).toUpperCase() + e.kategorie.slice(1);
+    // Ablauf D: Rechtsgrundlage mit amtlicher Fundstelle und Prüfdatum (lib/fristQuellen.ts).
+    const q = quelleZu(e.rechtsgrundlage);
+    const tooltip = e.rechtsgrundlage ? (q ? `${e.rechtsgrundlage} — Wortlaut geprüft am ${datum(q.geprueft)}` : e.rechtsgrundlage) : undefined;
     return (
-      <div key={`${e.quelle}-${e.id ?? i}-${e.datum}`} className="termin-zeile" style={{ opacity: e.erledigt ? 0.6 : 1 }} title={e.rechtsgrundlage || undefined}>
+      <div key={`${e.quelle}-${e.bezug ?? e.id ?? i}-${e.datum}-${e.label}`} className="termin-zeile" style={{ opacity: e.erledigt ? 0.6 : 1 }} title={tooltip}>
         <span className="tz-markierung">
           {e.quelle === "eigen" && e.id ? (
             <form action={toggleErledigt.bind(null, e.id, !e.erledigt)} style={{ display: "inline-flex" }}>
@@ -254,6 +320,7 @@ export default async function TerminePage(
             {e.wiederkehrung && <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 400, marginLeft: 6 }}><RotateCw size={11} style={{ verticalAlign: "-1px" }} /> {WIEDERKEHRUNG_LABEL[e.wiederkehrung] ?? e.wiederkehrung}</span>}
           </span>
           <span className="listen-zeile-sub">{[`${stil.icon} ${kategorie}`, e.wer, e.wo].filter(Boolean).join(" · ")}</span>
+          {e.vorgang && vorgangZeile(e, e.vorgang, q?.url ?? null)}
         </span>
         <span className="tz-wann">
           <span className="tz-wann-datum">{datum(e.datum)}</span>
@@ -267,6 +334,19 @@ export default async function TerminePage(
               <Link href={`/termine/${e.id}/edit`} className="delete-btn" title="Termin bearbeiten" aria-label="Termin bearbeiten" style={{ color: "var(--muted)" }}><Pencil size={14} /></Link>
               <DeleteButton action={deleteTermin.bind(null, e.id)} className="delete-btn" label={<X size={14} />} confirmText="Termin löschen?" />
             </>
+          ) : e.schluessel && e.erledigt ? (
+            // Erledigt-Vermerk aufheben (z. B. versehentlich bestätigt): löscht nur den Vermerk.
+            <form action={zeigeFristWieder.bind(null, e.schluessel)} style={{ display: "inline-flex" }}>
+              <button
+                type="submit"
+                className="delete-btn"
+                aria-label="Erledigt-Vermerk aufheben"
+                title="Erledigt-Vermerk aufheben — die Frist erscheint wieder als offen"
+                style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", padding: 0, display: "grid", placeItems: "center", width: 22 }}
+              >
+                <RotateCcw size={14} />
+              </button>
+            </form>
           ) : e.schluessel ? (
             // Abgeleitete Fristen liessen sich weder abhaken noch loeschen — eine
             // einmal verpasste Frist blieb fuer immer stehen. Ausblenden loescht

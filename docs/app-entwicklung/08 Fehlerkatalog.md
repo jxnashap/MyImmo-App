@@ -107,6 +107,29 @@ mit Konto. Aufträge aus angenommenen Angeboten blieben offen, „Als Kosten üb
 → *Gegenprüfung:* Jeder Weg, der einen Vorgang beginnt, braucht einen Weg, ihn zu beenden — für JEDE
 Art von Beteiligtem (`schliesseAuftragAb` für Aufträge ohne verknüpften Partner).
 
+**Ein Vermerk für eine Frist galt für alle Mieter (Ablauf D, 11.10.2026)**
+Der Schlüssel einer abgeleiteten Frist war „Quelle | Datum | Bezeichnung“ — ohne Mieter. „NK-Abrechnung
+2025 zustellen“ (31.12.) heißt bei jedem Mieter gleich: Bei EINEM ausgeblendet, war sie bei ALLEN weg. Mit
+„erledigt“ wäre daraus „allen zugestellt“ geworden. Derselbe Fehler im Kalender-Export: UIDs nach Position
+in der Liste — eine neue Frist verschob die Kennungen, der Kalender überschrieb einen Termin mit einem
+fremden.
+→ *Gegenprüfung:* Eine Kennung für einen Vorgang enthält, WORAN er hängt (Mieter, Darlehen, Objekt), und
+nie eine Position. Test mit zwei gleichartigen Vorgängen bei zwei Mietern; Altbestand ohne Bezug darf nur
+ausblenden, nie „erledigt“ bedeuten.
+
+**Ein PDF galt als erledigte Zustellung (Ablauf D, 11.10.2026)**
+Die NK-Frist entfiel, sobald eine Abrechnung im Archiv lag (Paket C). Erzeugt ist aber nicht zugegangen
+(§ 556 Abs. 3 BGB: „mitzuteilen“). Jetzt zeigt die Frist den Stand (PDF erstellt / im Portal / abgerufen)
+und endet erst mit dem Vermerk des Vermieters (Datum + Zustellweg).
+→ *Gegenprüfung:* Ein Zustand, den die App nicht beobachten kann (Zugang per Post), wird nie aus einem
+Zustand abgeleitet, den sie beobachten kann (Datei erstellt). Texte vor der Bestätigung sagen nie
+„zugestellt“ (Test).
+
+**`key in OBJEKT` als Weißliste (Ablauf D, 11.10.2026)**
+`istZustellweg("constructor")` war wahr — `in` sieht die Prototyp-Kette. Die Datenbank-Regel hätte den
+Wert abgelehnt, die Oberfläche hätte „constructor“ als Weg angezeigt.
+→ *Gegenprüfung:* Weißlisten über `Object.hasOwn()` oder ein `Set`; Test mit „constructor“/„toString“.
+
 **Zinsen gezahlt, als liefe die Rate nach der Tilgung weiter (B13, 11.10.2026)**
 „Zinsen in der Bindung = Rate × 12 × Jahre − getilgt“ zählte bei 100.000 € · 4 % · 4 % · 20 Jahre die
 Raten nach der Volltilgung (Monat 209) als Zinsen: 60.000 € statt 38.860,59 €.

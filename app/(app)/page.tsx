@@ -10,8 +10,8 @@ import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { alleZeilen, nurKonto, vielleichtAlle } from "@/lib/db/auswertung";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, begruessung } from "@/lib/format";
-import { getRefinanzWarning, nkErstellteJahre, mieterFristen, kreditFristen, objektFristen, globaleFristen, zeitraumMonateJeMieter } from "@/lib/fristen";
-import { fristSchluessel } from "@/lib/termine";
+import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen, zeitraumMonateJeMieter } from "@/lib/fristen";
+import { FRIST_VERMERK_SPALTEN, fristArchivAb, fristVermerk, fristVorgang, vermerkeAus, vorgangText, type ArchivDok, type FristVermerk } from "@/lib/fristDokument";
 import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { fristZiel, baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
@@ -114,7 +114,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // Die Aufgabenquellen daneben dürfen einzeln fehlen; dann sagt ein Hinweis, welche.
   const eigen = nurKonto(user.id);
   const alsVermieter = nurKonto(user.id, "vermieter_id");
-  const [[props, einn, kost, kred, miet, bewHist, mzRows], [term, anlRows, zaehlerRows, vertreterRows, verstecktRows, nkNotizen, erinnRows, offeneZustellRows], { data: profil }] = await Promise.all([
+  const [[props, einn, kost, kred, miet, bewHist, mzRows], [term, anlRows, zaehlerRows, vertreterRows, verstecktRows, archivRows, erinnRows, zustellRowsAlle], { data: profil }] = await Promise.all([
     Promise.all([
       alleZeilen(supabase, "properties", "*", eigen),
       alleZeilen(supabase, "einnahmen", "*", eigen),
@@ -134,23 +134,26 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
       vielleichtAlle(supabase, "vertreter", "id,vorname,nachname,gueltig_bis,widerrufen_am", (q) => eigen(q).not("gueltig_bis", "is", null)),
       // In /termine ausgeblendete Fristen — sonst stand eine ausgeblendete Frist hier weiter,
       // und ihr Link führte auf eine Seite, auf der sie fehlte (Audit 06.10.2026, A3).
-      vielleichtAlle(supabase, "frist_ausgeblendet", "schluessel", eigen, [], "schluessel"),
-      // Paket C: erstellte NK-Abrechnungen — die Frist „NK zustellen“ entfällt dann.
-      vielleichtAlle(supabase, "notizen", "mieter_id,titel", (q) => eigen(q).eq("kategorie", "Nebenkostenabrechnung")),
+      // Ablauf D: mit Grund (ausgeblendet | erledigt) — beides fällt aus der Liste.
+      vielleichtAlle(supabase, "frist_ausgeblendet", FRIST_VERMERK_SPALTEN, eigen, [], "schluessel"),
+      // Ablauf D: Schreiben an Mieter (ohne Dateiinhalt) — Stand „PDF erstellt / im Portal“ an der Frist.
+      // (Paket C ließ die NK-Frist entfallen, sobald ein PDF im Archiv lag — ein PDF ist kein Zugang.)
+      vielleichtAlle(supabase, "notizen", "id,mieter_id,titel,created_at", (q) => eigen(q).not("mieter_id", "is", null).gte("created_at", fristArchivAb(heuteBerlin()))),
       // Archivierte Zahlungserinnerungen — nur für den Hinweis in der Auswahl „Dokument“.
       vielleichtAlle(supabase, "notizen", "mieter_id,created_at", (q) => eigen(q).ilike("titel", `${ERINNERUNG_TITEL_PRAEFIX}%`)),
       // P4 (B43): Zustellungen der letzten 120 Tage — „nicht abgerufen“ nach einer Woche (lib/zugang.ts).
       // Auch gelesene Zeilen: Ging ein Dokument an zwei Konten, reicht ein Abruf.
+      // Ablauf D: weiter zurück (Stand an der Frist); die Aufgabe „nicht abgerufen“ filtert unten selbst.
       vielleichtAlle(supabase, "zustellungen", "notiz_id,mieter_id,titel,zugestellt_am,gelesen_am,zurueckgezogen_am",
-        (q) => alsVermieter(q).eq("art", "dokument").gte("zugestellt_am", zustellFensterAb(heuteBerlin()))),
+        (q) => alsVermieter(q).eq("art", "dokument").gte("zugestellt_am", fristArchivAb(heuteBerlin()))),
     ]),
     supabase.from("vermieter_profil").select("name").eq("user_id", user.id).limit(1).maybeSingle(),
   ]);
   // Welche Aufgabenquellen fehlen — die Liste „Termine & Aufgaben“ sagt es, statt still kürzer zu sein.
   const fehlendeQuellen = ([
     [term, "Termine"], [anlRows, "Mieter-Anliegen"], [zaehlerRows, "Zählerstände"], [vertreterRows, "Vollmachten"],
-    [verstecktRows, "ausgeblendete Fristen"], [nkNotizen, "Nebenkostenabrechnungen"], [erinnRows, "Zahlungserinnerungen"],
-    [offeneZustellRows, "Zustellungen"],
+    [verstecktRows, "ausgeblendete Fristen"], [archivRows, "Schreiben an Mieter"], [erinnRows, "Zahlungserinnerungen"],
+    [zustellRowsAlle, "Zustellungen"],
   ] as const).filter(([rows]) => rows === null).map(([, name]) => name);
 
   const properties = (props ?? []) as Property[];
@@ -184,24 +187,30 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const imFenster = (d: string) => d >= abISO0;
   type DashFrist = { datum: string; label: string; sub: string; warn: boolean; href?: string };
   const ueberfaellig = (d: string) => d < heuteISO0;
-  const nkJahre = nkErstellteJahre((nkNotizen ?? []) as { mieter_id: string | null; titel: string | null }[]);
   const fristListe: DashFrist[] = [];
-  const versteckt = new Set(((verstecktRows ?? []) as { schluessel: string }[]).map((v) => v.schluessel));
-  // Gleicher Schlüssel wie in /termine (Quelle | Datum | Bezeichnung).
-  const sichtbar = (quelle: string, f: { datum: string | null; label: string }) =>
-    !!f.datum && imFenster(f.datum) && !versteckt.has(fristSchluessel(quelle, f.datum, f.label));
+  // Gleicher Schlüssel wie in /termine (Quelle | Bezug | Datum | Bezeichnung) — ausgeblendet ODER
+  // erledigt vermerkt fällt heraus (Ablauf D).
+  const vermerke = vermerkeAus(verstecktRows as FristVermerk[] | null);
+  const sichtbar = (quelle: string, bezug: string | null, f: { datum: string | null; label: string }) =>
+    !!f.datum && imFenster(f.datum) && !fristVermerk(vermerke, quelle, bezug, f.datum, f.label);
+  const archiv = (archivRows ?? []) as ArchivDok[];
+  const zustellungenAlle = (zustellRowsAlle ?? []) as ZustellungOffen[];
+  const offeneZustellRows = zustellungenAlle.filter((z) => z.zugestellt_am.slice(0, 10) >= zustellFensterAb(heuteISO0));
   const zrMonate = zeitraumMonateJeMieter(mzRows as { mieter_id: string; von: string }[] | null);
   for (const m of mieterRows) {
     const wo = `${(m.prop_id && nameOf.get(m.prop_id)) || "–"}${m.einheit ? " · " + m.einheit : ""}`;
     const wer = [m.vorname, m.nachname].filter(Boolean).join(" ");
-    for (const f of mieterFristen(m, { nkErstellt: nkJahre.get(m.id), zeitraumMonate: zrMonate.get(m.id) ?? [] })) if (sichtbar("mieter", f) && f.datum)
-      fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo].filter(Boolean).join(" · "), warn: f.typ === "warn", href: fristZiel("mieter", m.id, f.label) });
+    for (const f of mieterFristen(m, { zeitraumMonate: zrMonate.get(m.id) ?? [] })) if (sichtbar("mieter", m.id, f) && f.datum) {
+      // Ablauf D: Wie weit ist das Schreiben? Nie „zugestellt“ — erledigt ist erst der Vermerk in /termine.
+      const v = f.dokument ? fristVorgang(f.dokument, m.id, f.datum, archiv, zustellungenAlle) : null;
+      fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo, v && v.stand !== "offen" ? vorgangText(v) : null].filter(Boolean).join(" · "), warn: f.typ === "warn", href: fristZiel("mieter", m.id, f.label, f.dokument) });
+    }
   }
-  for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (sichtbar("kredit", f) && f.datum)
+  for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (sichtbar("kredit", k.id, f) && f.datum)
     fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Darlehen", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn", href: fristZiel("kredit", k.id, f.label) });
-  for (const p of properties) for (const f of objektFristen(p)) if (sichtbar("objekt", f) && f.datum)
+  for (const p of properties) for (const f of objektFristen(p)) if (sichtbar("objekt", p.id, f) && f.datum)
     fristListe.push({ datum: f.datum, label: f.label, sub: p.bezeichnung, warn: f.typ === "warn", href: fristZiel("objekt", p.id, f.label) });
-  for (const f of globaleFristen()) if (sichtbar("steuer", f) && f.datum)
+  for (const f of globaleFristen()) if (sichtbar("steuer", null, f) && f.datum)
     fristListe.push({ datum: f.datum, label: f.label, sub: "Alle Objekte", warn: f.typ === "warn", href: fristZiel("steuer", null, f.label) });
   for (const t of (term ?? []) as { id: string; titel: string | null; datum: string | null; kategorie: string | null; erledigt: boolean | null }[])
     if (t.datum && imFenster(t.datum) && !t.erledigt)
@@ -266,7 +275,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
         .map((v) => ({ v, status: vollmachtStatus(v, heuteISO0) }))
         .filter(({ status }) => status === "laeuft_ab" || status === "abgelaufen")
         .map(({ v, status }) => ({ id: v.id, name: vertreterName(v), gueltigBis: v.gueltig_bis, abgelaufen: status === "abgelaufen" })),
-      nichtAbgerufen: nichtAbgerufen((offeneZustellRows ?? []) as ZustellungOffen[], heuteISO0).map((z) => ({
+      nichtAbgerufen: nichtAbgerufen(offeneZustellRows, heuteISO0).map((z) => ({
         mieterId: z.mieter_id!,
         mieter: mieterNameOf.get(z.mieter_id!) ?? "Mieter",
         titel: z.titel ?? "Dokument",

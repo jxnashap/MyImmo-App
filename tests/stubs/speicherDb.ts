@@ -90,11 +90,12 @@ export function speicherDb(init: SpeicherDbInit = {}) {
       tabellen[tabelle] ??= [];
 
       if (op === "insert" || op === "upsert") {
-        const neu = (Array.isArray(nutzlast) ? nutzlast : [nutzlast!]).map((r) => ({ id: `id-${++laufendeId}`, ...init.vorgaben?.[tabelle]?.(), ...r }));
+        const roh = (Array.isArray(nutzlast) ? nutzlast : [nutzlast!]) as Row[];
+        const neu: Row[] = roh.map((r) => ({ id: `id-${++laufendeId}`, ...init.vorgaben?.[tabelle]?.(), ...r }));
         const ziel = upsertOpt.onConflict?.split(",").map((s) => s.trim());
         const eingefuegt: Row[] = [];
         const puffer: Row[] = [];
-        for (const r of neu) {
+        for (const [i, r] of neu.entries()) {
           const gegen = [...tabellen[tabelle], ...puffer];
           const alt = tabellen[tabelle];
           tabellen[tabelle] = gegen;
@@ -102,6 +103,16 @@ export function speicherDb(init: SpeicherDbInit = {}) {
           tabellen[tabelle] = alt;
           if (k) {
             if (op === "upsert" && upsertOpt.ignoreDuplicates && ziel && k.join(",") === ziel.join(",")) continue;
+            // Ohne ignoreDuplicates führt PostgREST zusammen (ON CONFLICT DO UPDATE): die vorhandene
+            // Zeile bekommt die mitgeschickten Spalten, die übrigen bleiben (Ablauf D).
+            if (op === "upsert" && ziel && k.join(",") === ziel.join(",")) {
+              const vorhanden = [...tabellen[tabelle], ...puffer].find((x) => ziel.every((c) => x[c] === r[c]));
+              if (vorhanden) {
+                Object.assign(vorhanden, roh[i]);
+                eingefuegt.push(vorhanden);
+                continue;
+              }
+            }
             return { data: null, error: { message: `duplicate key value violates unique constraint (${k.join(",")})`, code: "23505" } };
           }
           puffer.push(r);
@@ -168,6 +179,10 @@ export function speicherDb(init: SpeicherDbInit = {}) {
       ilike: (s: string, muster: string) => {
         const re = new RegExp(`^${muster.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".")}$`, "i");
         filter.push((r) => typeof r[s] === "string" && re.test(r[s] as string)); text.push(`ilike:${s}=${muster}`); return k;
+      },
+      like: (s: string, muster: string) => {
+        const re = new RegExp(`^${muster.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".")}$`);
+        filter.push((r) => typeof r[s] === "string" && re.test(r[s] as string)); text.push(`like:${s}=${muster}`); return k;
       },
       // PostgREST-Oder in der einfachen Form „spalte.eq.wert,spalte.is.null“.
       or: (ausdruck: string) => {

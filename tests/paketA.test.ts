@@ -76,9 +76,10 @@ describe("A2 — Jahresbericht wie Anlage V ohne Kaution", () => {
 describe("A3 — das Dashboard blendet aus, was /termine ausblendet", () => {
   const seite = lies("app/(app)/page.tsx");
   it("lädt die ausgeblendeten Fristen und prüft jede Quelle mit demselben Schlüssel", () => {
-    expect(seite).toMatch(/"frist_ausgeblendet", "schluessel"/); // seit B08 über vielleichtAlle
-    for (const q of ["mieter", "kredit", "objekt", "steuer"]) expect(seite, q).toContain(`sichtbar("${q}", f)`);
-    expect(seite).toMatch(/versteckt\.has\(fristSchluessel\(quelle, f\.datum, f\.label\)\)/);
+    expect(seite).toMatch(/"frist_ausgeblendet", FRIST_VERMERK_SPALTEN/); // seit B08 über vielleichtAlle
+    // Ablauf D (11.10.2026): mit Bezug (Mieter/Darlehen/Objekt) — Verhalten in tests/ablaufD.test.ts.
+    for (const [q, bezug] of [["mieter", "m.id"], ["kredit", "k.id"], ["objekt", "p.id"], ["steuer", "null"]]) expect(seite, q).toContain(`sichtbar("${q}", ${bezug}, f)`);
+    expect(seite).toMatch(/!fristVermerk\(vermerke, quelle, bezug, f\.datum, f\.label\)/);
   });
   it("die Quellen heißen wie in /termine (sonst greift der Schlüssel nie)", () => {
     const termine = lies("app/(app)/termine/page.tsx");
