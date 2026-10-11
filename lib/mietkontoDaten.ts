@@ -62,13 +62,23 @@ export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
     ((propRows ?? []) as Pick<Property, "id" | "bezeichnung">[]).map((p) => [p.id, p.bezeichnung]),
   );
 
-  // Gebuchte Monate je Mieter (YYYY-MM) — eine Quelle für beide Modi.
-  const gebuchtProMieter = new Map<string, Set<string>>();
+  // Gebuchte Monate je Mieter (YYYY-MM) — eine Quelle für beide Modi. Gezählt wird, was nach
+  // Rückbuchungen (Rücklastschrift, Ablauf A) übrig bleibt: Ein Monat mit +800 und −800 ist wieder
+  // offen und erscheint erneut zum Bestätigen.
+  const summeProMieter = new Map<string, Map<string, number>>();
+  const zahlungenProMieter = new Map<string, NacherfassungMieter["zahlungen"]>();
   for (const e of einnahmen) {
     const ym = e.soll_monat ?? zuJahrMonat(e.buchungsdatum);
     if (!ym || !e.mieter_id) continue;
-    if (!gebuchtProMieter.has(e.mieter_id)) gebuchtProMieter.set(e.mieter_id, new Set());
-    gebuchtProMieter.get(e.mieter_id)!.add(ym);
+    if (!summeProMieter.has(e.mieter_id)) summeProMieter.set(e.mieter_id, new Map());
+    const s = summeProMieter.get(e.mieter_id)!;
+    s.set(ym, (s.get(ym) ?? 0) + (Number(e.betrag) || 0));
+    if (!zahlungenProMieter.has(e.mieter_id)) zahlungenProMieter.set(e.mieter_id, []);
+    zahlungenProMieter.get(e.mieter_id)!.push({ jahrMonat: ym, betrag: Number(e.betrag) || 0, datum: String(e.buchungsdatum).slice(0, 10) });
+  }
+  const gebuchtProMieter = new Map<string, Set<string>>();
+  for (const [id, s] of summeProMieter) {
+    gebuchtProMieter.set(id, new Set(Array.from(s).filter(([, summe]) => summe > TEILZAHLUNG_TOLERANZ).map(([ym]) => ym)));
   }
 
   const zeilen: MietkontoZeile[] = [];
@@ -123,12 +133,8 @@ export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
           stellplatz_miete: z.stellplatz_miete,
         })),
         gebuchteMonate: Array.from(gebuchtProMieter.get(m.id) ?? []),
-        // B10: VOLL bezahlte Monate — der Kontoauszug bietet teilbezahlte weiter an (Teilzahlung).
-        bezahlteMonate: Array.from(gebuchtProMieter.get(m.id) ?? []).filter((ym) => {
-          const s = sollFuerMonat(m, zr, ym);
-          const g = gezahltImMonat(einnahmen.filter((e) => e.mieter_id === m.id), ym);
-          return !!s && g != null && g >= s.gesamt - TEILZAHLUNG_TOLERANZ;
-        }),
+        // Der Kontoauszug rechnet daraus Rest, Überzahlung und Rückbuchungen (lib/kontoauszug.ts).
+        zahlungen: zahlungenProMieter.get(m.id) ?? [],
       });
     }
   }

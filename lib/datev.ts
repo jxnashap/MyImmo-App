@@ -8,7 +8,7 @@
 
 export type DatevBuchung = {
   buchungsdatum: string; // YYYY-MM-DD
-  betrag: number;        // > 0
+  betrag: number;        // > 0 (DATEV-Umsatz ist immer positiv; die Richtung trägt sollHaben)
   konto: number;         // Sachkonto (Erlös/Aufwand)
   gegenkonto: number;    // i. d. R. Bank
   sollHaben: "S" | "H";  // Buchung auf Soll oder Haben des Kontos
@@ -56,28 +56,34 @@ export function baueDatevBuchungen(
   const imJahr = (d: string | null) => !!d && d.slice(0, 4) === String(jahr);
   const buchungen: DatevBuchung[] = [];
 
+  // Negative Beträge (Ablauf A/E, 11.10.2026): Rücklastschrift oder Erstattung an einen Mieter ist
+  // eine negative Einnahme. Vorher fiel sie aus dem Export (`betrag > 0`) — die Summe in DATEV lag
+  // dann über der in MyImmo. DATEV kennt nur positive Umsätze: Die Richtung dreht das Soll/Haben-
+  // Kennzeichen um (Erlösminderung auf demselben Konto), ebenso bei einer Kosten-Gutschrift.
   for (const e of einnahmen) {
-    const betrag = Number(e.betrag) || 0;
-    if (!imJahr(e.buchungsdatum) || !(betrag > 0)) continue;
+    const roh = Number(e.betrag) || 0;
+    if (!imJahr(e.buchungsdatum) || roh === 0) continue;
+    const betrag = Math.abs(roh);
     buchungen.push({
       buchungsdatum: e.buchungsdatum!,
       betrag,
       konto: kontoEinnahme(e.kategorie),  // Erlöskonto
       gegenkonto: DATEV_GEGENKONTO,       // Bank
-      sollHaben: "H",                     // Ertrag → Haben
+      sollHaben: roh > 0 ? "H" : "S",     // Ertrag → Haben; Rückbuchung → Soll
       belegfeld: propName(e.prop_id).slice(0, 36),
       buchungstext: `${e.kategorie ?? "Einnahme"}${e.beschreibung ? " " + e.beschreibung : ""}`.slice(0, 60),
     });
   }
   for (const k of kosten) {
-    const betrag = Number(k.betrag) || 0;
-    if (!imJahr(k.buchungsdatum) || !(betrag > 0)) continue;
+    const roh = Number(k.betrag) || 0;
+    if (!imJahr(k.buchungsdatum) || roh === 0) continue;
+    const betrag = Math.abs(roh);
     buchungen.push({
       buchungsdatum: k.buchungsdatum!,
       betrag,
       konto: kontoKosten(k.kategorie),    // Aufwandskonto
       gegenkonto: DATEV_GEGENKONTO,       // Bank
-      sollHaben: "S",                     // Aufwand → Soll
+      sollHaben: roh > 0 ? "S" : "H",     // Aufwand → Soll; Gutschrift → Haben
       belegfeld: propName(k.prop_id).slice(0, 36),
       buchungstext: `${k.kategorie ?? "Kosten"}${k.beschreibung ? " " + k.beschreibung : ""}`.slice(0, 60),
     });

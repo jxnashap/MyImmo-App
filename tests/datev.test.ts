@@ -7,14 +7,14 @@ describe("baueDatevBuchungen", () => {
   const einnahmen = [
     { buchungsdatum: "2024-06-01", betrag: 750, kategorie: "Miete", prop_id: "p1" },
     { buchungsdatum: "2023-06-01", betrag: 700, kategorie: "Miete", prop_id: "p1" }, // anderes Jahr
-    { buchungsdatum: "2024-07-01", betrag: -10, kategorie: "Miete", prop_id: "p1" }, // ungültig
+    { buchungsdatum: "2024-07-01", betrag: 0, kategorie: "Miete", prop_id: "p1" }, // leer
   ];
   const kosten = [
     { buchungsdatum: "2024-03-15", betrag: 200, kategorie: "Reparatur", prop_id: "p1" },
     { buchungsdatum: "2024-02-01", betrag: 120, kategorie: "Grundsteuer", prop_id: null },
   ];
 
-  it("filtert nach Jahr und positiven Beträgen und sortiert nach Datum", () => {
+  it("filtert nach Jahr, lässt Nullbeträge weg und sortiert nach Datum", () => {
     const b = baueDatevBuchungen(2024, einnahmen, kosten, propName);
     expect(b).toHaveLength(3);
     expect(b.map((x) => x.buchungsdatum)).toEqual(["2024-02-01", "2024-03-15", "2024-06-01"]);

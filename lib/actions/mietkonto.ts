@@ -11,6 +11,9 @@ import { monatBezahlt, monatsStand, nkAnteilFuer, verteileZahlung, type Gebuchte
 import { DatenUnvollstaendig, ladeAlle, stapel } from "@/lib/db/ladeAlle";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { TEILZAHLUNG_TOLERANZ } from "@/lib/mietStatus";
+import { offeneMieten } from "@/lib/mietkonto";
+import { erinnerungArchiviert, zahlungsBriefWahl, ERINNERUNG_TITEL_PRAEFIX, type ZahlungsBriefWahl } from "@/lib/mahnung";
+import { eur2 } from "@/lib/format";
 
 export type MietkontoResult = {
   ok: boolean;
@@ -34,6 +37,9 @@ export type MietkontoResult = {
 //                       Nacherfassung). Zwei Tabs, die denselben Monat gleichzeitig als bezahlt melden,
 //                       erzeugen dieselbe Kennung — es bleibt bei EINER Buchung.
 //   · „n:<mieter>|<YYYY-MM>“ — Nacherfassung mit einem Betrag unter dem Soll
+//   Wurde im Monat schon etwas zurückgebucht (Rücklastschrift/Erstattung, Ablauf A), hängt an „a:“ und
+//   „n:“ ein „|r<Anzahl>“ — sonst wäre der Monat nach einer Rücklastschrift nie wieder buchbar (die
+//   alte Kennung existiert ja schon).
 // Die Datenbank lässt jede Kennung nur EINMAL zu (`upsert … ignoreDuplicates`): Ein paralleler oder
 // wiederholter Aufruf bucht nichts doppelt — auch nicht, wenn zwei Anfragen gleichzeitig ankommen.
 // Verschiedene Zahlungen im selben Monat (Teilzahlungen) haben verschiedene Kennungen und sind erlaubt.
@@ -43,7 +49,7 @@ export type MietkontoResult = {
 // ---------------------------------------------------------------------------------------------
 
 type MieterDaten = {
-  mieter: MietkontoMieter & { id: string; prop_id: string | null };
+  mieter: MietkontoMieter & { id: string; prop_id: string | null; vorname?: string | null; nachname?: string | null };
   zeitraeume: MietkontoZeitraum[];
   buchungen: (GebuchteMiete & { zahlung_ref: string | null })[];
 };
@@ -60,7 +66,7 @@ async function ladeMieterDaten(
   for (const teil of stapel(mieterIds)) {
     const { data: mieter, error } = await supabase
       .from("mieter")
-      .select("id,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,mietbeginn,mietende,minderungen")
+      .select("id,vorname,nachname,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,mietbeginn,mietende,minderungen")
       .eq("user_id", userId)
       .in("id", teil);
     if (error) throw new DatenUnvollstaendig("mieter", error.message);
@@ -99,6 +105,16 @@ async function buchen(
 function gleichtAus(stand: ReturnType<typeof monatsStand>, betrag: number): boolean {
   const offen = Math.max(0, stand.rest);
   return stand.soll != null && offen > TEILZAHLUNG_TOLERANZ && betrag >= offen - TEILZAHLUNG_TOLERANZ;
+}
+
+/**
+ * Kennung „Monat ausgeglichen“: ohne Rückbuchung im Monat wie bisher, danach mit Zähler — eine
+ * Rücklastschrift macht den Monat wieder offen, und der nächste Ausgleich ist ein neuer Vorgang.
+ * Zwei gleichzeitige Bestätigungen sehen denselben Zähler → weiter nur EINE Buchung.
+ */
+function monatsKennung(praefix: "a" | "n", schluessel: string, buchungen: GebuchteMiete[], monat: string): string {
+  const rueck = buchungen.filter((b) => (b.soll_monat ?? zuJahrMonat(b.buchungsdatum)) === monat && Number(b.betrag) < 0).length;
+  return rueck > 0 ? `${praefix}:${schluessel}|r${rueck}` : `${praefix}:${schluessel}`;
 }
 
 const IST_MONAT = /^\d{4}-\d{2}$/;
@@ -145,7 +161,7 @@ export async function bestaetigeMieteingang(input: {
   // Bestätigungen (zwei Tabs) buchen ihn nur einmal. Eine Teilzahlung trägt die Kennung DIESER
   // Bestätigung; ohne Kennung (alter Client) beschreiben Datum + Betrag + Monat den Vorgang.
   const ref = gleichtAus(stand, betrag)
-    ? `a:${input.mieter_id}|${monat}`
+    ? monatsKennung("a", `${input.mieter_id}|${monat}`, daten.buchungen, monat)
     : IST_VORGANG.test(input.vorgang ?? "")
       ? `m:${input.vorgang}`
       : `m:${input.mieter_id}|${monat}|${input.buchungsdatum}|${betrag.toFixed(2)}`;
@@ -180,9 +196,37 @@ export type BatchZeile = {
   soll_monat?: string | null; // YYYY-MM
   /** Nur Kontoauszug: Prüfsumme der Bankzeile — derselbe Umsatz wird nie zweimal gebucht. */
   vorgang?: string | null;
+  /**
+   * Nur Kontoauszug, Betrag NEGATIV: ein Ausgang an den Mieter (Ablauf A) — Rücklastschrift (der Monat
+   * wird wieder offen) oder Erstattung einer Überzahlung. Ohne `art` sind nur positive Beträge gültig.
+   */
+  art?: "ruecklastschrift" | "erstattung" | null;
 };
 
-export type BatchErgebnis = { ok: boolean; anzahl: number; uebersprungen?: number; ueberzahlung?: number; error?: string };
+/** Ein Monat, der nach dem Abgleich noch offen ist — mit vorbereitetem Brief (nicht versendet). */
+export type OffenNachAbgleich = {
+  mieterId: string;
+  name: string;
+  jahrMonat: string;
+  gesamt: number;
+  gezahlt: number;
+  rest: number;
+  tageOffen: number;
+  /** Nur bei überfälligen Monaten: Auswahl Zahlungserinnerung/Mahnung — öffnet einen ENTWURF. */
+  wahl: ZahlungsBriefWahl | null;
+};
+
+export type BatchErgebnis = {
+  ok: boolean;
+  anzahl: number;
+  uebersprungen?: number;
+  ueberzahlung?: number;
+  error?: string;
+  /** Zeilen, die der Server nicht gebucht hat, mit Grund (z. B. Rückbuchung ohne passenden Eingang). */
+  abgelehnt?: string[];
+  /** Kontoauszug: für die betroffenen Mieter noch offene Monate (letzte 12) nach dem Buchen. */
+  offen?: OffenNachAbgleich[];
+};
 
 /**
  * Mehrere Mieteingänge in EINEM Schritt (eine Anweisung = atomar).
@@ -199,12 +243,14 @@ export async function bestaetigeMehrere(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, anzahl: 0, error: "Nicht angemeldet." };
 
+  const istRueck = (z: BatchZeile) => quelle === "kontoauszug" && (z.art === "ruecklastschrift" || z.art === "erstattung");
   const gueltig = zeilen.filter(
     (z) =>
       z.mieter_id &&
       IST_DATUM.test(z.buchungsdatum) &&
       Number.isFinite(Number(z.betrag)) &&
-      Number(z.betrag) > 0 &&
+      // Positiv = Eingang; negativ NUR als ausdrücklich gewählte Rückbuchung mit Mietmonat.
+      (istRueck(z) ? Number(z.betrag) < 0 && IST_MONAT.test(z.soll_monat ?? "") : Number(z.betrag) > 0 && !z.art) &&
       (quelle === "nacherfassung" || IST_VORGANG.test(z.vorgang ?? "")),
   );
   if (gueltig.length === 0) return { ok: false, anzahl: 0, error: "Keine gültigen Zeilen ausgewählt." };
@@ -222,6 +268,8 @@ export async function bestaetigeMehrere(
   const vorgaenge = new Set<string>();
   let ueberzahlung = 0;
   let uebersprungen = 0;
+  const abgelehnt: string[] = [];
+  const name = (d: MieterDaten) => [d.mieter.vorname, d.mieter.nachname].filter(Boolean).join(" ") || "Mieter";
 
   for (const z of gueltig) {
     const d = daten.get(z.mieter_id);
@@ -240,7 +288,7 @@ export async function bestaetigeMehrere(
       if (vorgaenge.has(schluessel)) { uebersprungen++; continue; }
       vorgaenge.add(schluessel);
       const betrag = Number(z.betrag);
-      const ref = gleichtAus(s, betrag) ? `a:${schluessel}` : `n:${schluessel}`;
+      const ref = monatsKennung(gleichtAus(s, betrag) ? "a" : "n", schluessel, d.buchungen, monat);
       rows.push({ ...basis, betrag, beschreibung: "Mieteingang (Nacherfassung)", nk_anteil: nkAnteilFuer(s, betrag), soll_monat: monat, zahlung_ref: ref });
       d.buchungen.push({ soll_monat: monat, buchungsdatum: z.buchungsdatum, betrag, nk_anteil: nkAnteilFuer(s, betrag), zahlung_ref: ref });
       continue;
@@ -251,6 +299,34 @@ export async function bestaetigeMehrere(
       continue;
     }
     vorgaenge.add(kopf);
+    if (istRueck(z)) {
+      // Rückbuchung (Ablauf A): nie mehr zurück, als im Monat eingegangen bzw. überzahlt ist.
+      const s = standFuer(monat);
+      const betrag = Math.round(-Number(z.betrag) * 100) / 100;
+      let nk: number;
+      if (z.art === "ruecklastschrift") {
+        if (betrag > s.gezahlt + TEILZAHLUNG_TOLERANZ) {
+          abgelehnt.push(`${name(d)}, ${monatLabel(monat)}: Rücklastschrift ${eur2(betrag)} ist mehr als eingegangen (${eur2(s.gezahlt)}) — nicht gebucht.`);
+          continue;
+        }
+        // Zurück geht derselbe Anteil an Nebenkosten, mit dem der Monat gebucht ist.
+        nk = s.gezahlt > 0 ? Math.min(s.nkGezahlt, Math.round(((s.nkGezahlt * betrag) / s.gezahlt) * 100) / 100) : 0;
+      } else {
+        const ueber = Math.max(0, -s.rest);
+        if (betrag > ueber + TEILZAHLUNG_TOLERANZ) {
+          abgelehnt.push(`${name(d)}, ${monatLabel(monat)}: Erstattung ${eur2(betrag)}, überzahlt sind ${eur2(ueber)} — nicht gebucht. Kaution oder NK-Guthaben bitte unter Ein-/Ausgaben buchen.`);
+          continue;
+        }
+        nk = s.soll ? Math.min(betrag, Math.max(0, Math.round((s.nkGezahlt - s.soll.nk) * 100) / 100)) : 0;
+      }
+      const row = {
+        ...basis, betrag: -betrag, nk_anteil: nk > 0 ? -nk : null, soll_monat: monat, zahlung_ref: kopf,
+        beschreibung: z.art === "ruecklastschrift" ? "Rücklastschrift (Kontoauszug)" : "Erstattung an Mieter (Kontoauszug)",
+      };
+      rows.push(row);
+      d.buchungen.push({ soll_monat: monat, buchungsdatum: z.buchungsdatum, betrag: -betrag, nk_anteil: row.nk_anteil, zahlung_ref: kopf });
+      continue;
+    }
     const v = verteileZahlung(Number(z.betrag), monat, heuteMonat < monat ? monat : heuteMonat, standFuer);
     ueberzahlung += v.ueberzahlung;
     v.teile.forEach((t, i) => {
@@ -273,5 +349,43 @@ export async function bestaetigeMehrere(
     anzahl: neu,
     ...(uebersprungen + (rows.length - neu) > 0 ? { uebersprungen: uebersprungen + (rows.length - neu) } : {}),
     ...(ueberzahlung > 0 ? { ueberzahlung: Math.round(ueberzahlung * 100) / 100 } : {}),
+    ...(abgelehnt.length > 0 ? { abgelehnt } : {}),
+    ...(quelle === "kontoauszug" ? { offen: await offenNachAbgleich(supabase, user.id, daten, name) } : {}),
   };
+}
+
+/**
+ * Was nach dem Abgleich bei den betroffenen Mietern noch offen ist — aus Vertrag und den Buchungen
+ * EINSCHLIESSLICH dieses Aufrufs (dieselbe Rechnung wie der Rückstands-Wächter: `offeneMieten`).
+ * Für überfällige Monate liegt die Auswahl Zahlungserinnerung/Mahnung bei: Sie öffnet einen Entwurf
+ * im Brief-Generator; versendet wird erst, was der Vermieter dort ausdrücklich freigibt.
+ */
+async function offenNachAbgleich(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  daten: Map<string, MieterDaten>,
+  name: (d: MieterDaten) => string,
+): Promise<OffenNachAbgleich[]> {
+  const heute = heuteBerlin();
+  const ids = Array.from(daten.keys());
+  // Nur ein Hinweis unter „Mahnung“ — scheitert die Abfrage, fehlt der Hinweis, nicht der Vorschlag.
+  const { data: erinnerungen } = ids.length
+    ? await supabase.from("notizen").select("mieter_id,created_at").eq("user_id", userId).in("mieter_id", ids).ilike("titel", `${ERINNERUNG_TITEL_PRAEFIX}%`)
+    : { data: [] };
+  const aus: OffenNachAbgleich[] = [];
+  for (const [id, d] of daten) {
+    const buchungen = d.buchungen.map((b) => ({ ...b, kategorie: "Miete" }));
+    for (const o of offeneMieten(d.mieter, d.zeitraeume, buchungen, heute)) {
+      aus.push({
+        mieterId: id, name: name(d), jahrMonat: o.jahrMonat, gesamt: o.gesamt, gezahlt: o.gezahlt, rest: o.rest, tageOffen: o.tageOffen,
+        wahl: o.tageOffen > 0
+          ? zahlungsBriefWahl({
+              mieterId: id, mieterName: name(d), jahrMonat: o.jahrMonat, betrag: o.rest, heuteISO: heute,
+              erinnerungArchiviert: erinnerungArchiviert((erinnerungen ?? []) as { mieter_id: string | null; created_at: string }[], id, o.faelligSeit),
+            })
+          : null,
+      });
+    }
+  }
+  return aus.sort((a, b) => b.tageOffen - a.tageOffen || a.name.localeCompare(b.name));
 }

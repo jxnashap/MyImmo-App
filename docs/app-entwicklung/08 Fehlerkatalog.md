@@ -58,6 +58,21 @@ kam der NK-Anteil aus dem Browser, berechnet für den zuerst erkannten Monat.
 → *Gegenprüfung:* Soll, NK-Anteil und Verteilung rechnet der Server aus Vertrag + bestehenden
 Buchungen (`lib/mietZahlung.ts`); Testfälle Teilzahlung, Überzahlung, Sammelzahlung, Monatswechsel.
 
+**Kennung „Monat ausgeglichen“ sperrte den Monat nach einer Rücklastschrift (Ablauf A, 11.10.2026)**
+Die Kennung `a:<mieter>|<monat>` (B07) machte zwei gleichzeitige Bestätigungen zu EINER Buchung. Sobald
+eine Rücklastschrift den Monat wieder öffnete, existierte die Kennung aber schon — die erneute
+Bestätigung meldete „übersprungen“, der Monat ließ sich nie wieder als bezahlt buchen. Beim Bau von
+Ablauf A gefunden, bevor Rückbuchungen überhaupt möglich waren.
+→ *Gegenprüfung:* Eine Kennung, die einen ZUSTAND beschreibt („Monat ausgeglichen“), braucht eine
+Generation, sobald der Zustand zurückgesetzt werden kann (`|r<Anzahl Rückbuchungen>`). Test: Zustand
+herstellen → zurücksetzen → erneut herstellen, auch gleichzeitig.
+
+**Negative Buchungen fielen aus dem DATEV-Export (Ablauf A/E, 11.10.2026)**
+`baueDatevBuchungen` übersprang `betrag <= 0` — eine Rücklastschrift stand in MyImmo, nicht in DATEV;
+die Summen beider liefen auseinander.
+→ *Gegenprüfung:* DATEV-Umsatz ist immer positiv, die Richtung trägt das Soll/Haben-Kennzeichen.
+Abstimmungstest: Σ Haben − Σ Soll je Konto = Σ Beträge in MyImmo.
+
 **Zinsen gezahlt, als liefe die Rate nach der Tilgung weiter (B13, 11.10.2026)**
 „Zinsen in der Bindung = Rate × 12 × Jahre − getilgt“ zählte bei 100.000 € · 4 % · 4 % · 20 Jahre die
 Raten nach der Volltilgung (Monat 209) als Zinsen: 60.000 € statt 38.860,59 €.

@@ -56,9 +56,10 @@ export type NacherfassungMieter = {
   objekt: string;
   mieter: MietkontoMieter;
   zeitraeume: MietkontoZeitraum[];
-  gebuchteMonate: string[]; // YYYY-MM
-  /** Voll bezahlte Monate (B10) — teilbezahlte bietet der Kontoauszug-Abgleich weiter an. */
-  bezahlteMonate?: string[];
+  /** Monate mit einer Zahlung, die nach Rückbuchungen etwas übrig lässt (YYYY-MM). */
+  gebuchteMonate: string[];
+  /** Gebuchte Mietzahlungen (auch Rückbuchungen, Betrag negativ) — für den Kontoauszug-Abgleich (Ablauf A). */
+  zahlungen: { jahrMonat: string; betrag: number; datum: string }[];
 };
 
 const monatLabel = (ym: string) =>
@@ -306,7 +307,7 @@ export default function MietkontoBestaetigung({
       </div>
 
       {modus === "kontoauszug" ? (
-        <KontoauszugAbgleich nacherfassung={nacherfassung} />
+        <KontoauszugAbgleich nacherfassung={nacherfassung} aktuellerMonat={aktuellerMonat} />
       ) : modus === "monat" ? (
         <>
           {/* Fortschritt */}

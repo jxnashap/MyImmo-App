@@ -51,6 +51,8 @@ async function lade(init: Partial<SpeicherDbInit> & { tabellen?: SpeicherDbInit[
 const bestaetigung = (over: Record<string, unknown> = {}) => ({
   mieter_id: "m1", buchungsdatum: "2025-07-05", betrag: 850, soll_monat: "2025-07", vorgang: "vorgang-0001", ...over,
 });
+/** Ergebnis ohne die Liste „offen nach dem Abgleich“ (eigene Tests in tests/ablaufA.test.ts). */
+const ohneOffen = async (p: Promise<Record<string, unknown>>) => { const { offen: _offen, ...rest } = await p; return rest; };
 const imMonat = (rows: Record<string, unknown>[], ym: string) => rows.filter((r) => r.soll_monat === ym);
 const summe = (rows: Record<string, unknown>[], feld = "betrag") => Math.round(rows.reduce((s, r) => s + Number(r[feld] ?? 0), 0) * 100) / 100;
 
@@ -302,15 +304,15 @@ describe("Kontoauszug (B07/B09/B10)", () => {
 
   it("derselbe Auszug zweimal eingelesen → keine zweite Buchung", async () => {
     const { mod, einnahmen } = await lade();
-    expect(await mod.bestaetigeMehrere([bank()], "kontoauszug")).toEqual({ ok: true, anzahl: 1 });
-    expect(await mod.bestaetigeMehrere([bank()], "kontoauszug")).toEqual({ ok: true, anzahl: 0, uebersprungen: 1 });
+    expect(await ohneOffen(mod.bestaetigeMehrere([bank()], "kontoauszug"))).toEqual({ ok: true, anzahl: 1 });
+    expect(await ohneOffen(mod.bestaetigeMehrere([bank()], "kontoauszug"))).toEqual({ ok: true, anzahl: 0, uebersprungen: 1 });
     expect(einnahmen()).toEqual([expect.objectContaining({ zahlung_ref: "ka:bankzeile0001", nk_anteil: 150 })]);
   });
 
   it("eine verteilte Sammelzahlung zweimal eingelesen → keine zweite Buchung (auch nicht als Überzahlung)", async () => {
     const { mod, einnahmen } = await lade();
     await mod.bestaetigeMehrere([bank({ betrag: 1700 })], "kontoauszug");
-    expect(await mod.bestaetigeMehrere([bank({ betrag: 1700 })], "kontoauszug")).toEqual({ ok: true, anzahl: 0, uebersprungen: 1 });
+    expect(await ohneOffen(mod.bestaetigeMehrere([bank({ betrag: 1700 })], "kontoauszug"))).toEqual({ ok: true, anzahl: 0, uebersprungen: 1 });
     expect(einnahmen()).toHaveLength(2);
   });
 
@@ -331,7 +333,7 @@ describe("Kontoauszug (B07/B09/B10)", () => {
 
   it("B10: Sammelzahlung für zwei Monate wird auf beide offenen Monate verteilt", async () => {
     const { mod, einnahmen } = await lade();
-    expect(await mod.bestaetigeMehrere([bank({ betrag: 1700 })], "kontoauszug")).toEqual({ ok: true, anzahl: 2 });
+    expect(await ohneOffen(mod.bestaetigeMehrere([bank({ betrag: 1700 })], "kontoauszug"))).toEqual({ ok: true, anzahl: 2 });
     expect(einnahmen().map((r) => [r.soll_monat, r.betrag, r.nk_anteil, r.zahlung_ref])).toEqual([
       ["2025-07", 850, 150, "ka:bankzeile0001#2025-07"],
       ["2025-08", 850, 150, "ka:bankzeile0001#2025-08"],
@@ -348,7 +350,7 @@ describe("Kontoauszug (B07/B09/B10)", () => {
 
   it("B10: nach dem Auszug gibt es kein Soll mehr → der Überschuss ist Überzahlung", async () => {
     const { mod, einnahmen } = await lade({ tabellen: { mieter: [mieter({ mietende: "2025-07-31" })] } });
-    expect(await mod.bestaetigeMehrere([bank({ betrag: 1000 })], "kontoauszug")).toEqual({ ok: true, anzahl: 1, ueberzahlung: 150 });
+    expect(await ohneOffen(mod.bestaetigeMehrere([bank({ betrag: 1000 })], "kontoauszug"))).toEqual({ ok: true, anzahl: 1, ueberzahlung: 150 });
     expect(einnahmen()[0]).toMatchObject({ soll_monat: "2025-07", betrag: 1000, nk_anteil: 150 });
   });
 
