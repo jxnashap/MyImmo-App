@@ -40,6 +40,24 @@ Nach Erhöhung des Eigenkapitalanteils von 10 auf 15 % stimmte der Satz
 → *Gegenprüfung:* Nach jeder Parameteränderung die **Rangfolge** neu prüfen und
 alle Texte durchsuchen, die eine Rangaussage treffen.
 
+**„Erst lesen, dann schreiben“ bucht doppelt (B07, 11.10.2026)**
+Mietbuchung, wiederkehrende Buchungen, Zählerübernahme, Auftrag → Kosten und Angebot → Auftrag
+prüften per Abfrage „schon gebucht?“ und schrieben danach. Zwei gleichzeitige Aufrufe (Doppelklick,
+zwei Tabs, Wiederholung nach Zeitüberlauf) sahen beide „nein“. Dazu die Zählregel der Vorlagen: Bei
+n Buchungen galten die ERSTEN n Termine als gebucht — eine gelöschte Buchung in der Mitte ließ den
+LETZTEN Termin doppelt entstehen.
+→ *Gegenprüfung:* Die fachliche Einheit steht als UNIQUE-Regel in der Datenbank (Zahlungskennung,
+Vorlage + Termin, Auftrag, Meldung); die Action fügt mit `upsert … ignoreDuplicates` ein bzw. wertet
+23505 aus oder BEANSPRUCHT zuerst bedingt (`update … where status = 'offen' returning`). Test mit
+`Promise.all` gegen eine Attrappe, die die Regel durchsetzt (`tests/stubs/speicherDb.ts`), und ein
+echter Zwei-Sitzungen-Test (`scripts/db/nebenlaeufig.sh`).
+
+**Teilzahlung verworfen, NK-Anteil vom falschen Monat (B09/B10, 11.10.2026)**
+Jede weitere Zahlung in einem Monat mit IRGENDEINER Buchung galt als Dublette; beim Kontoauszug
+kam der NK-Anteil aus dem Browser, berechnet für den zuerst erkannten Monat.
+→ *Gegenprüfung:* Soll, NK-Anteil und Verteilung rechnet der Server aus Vertrag + bestehenden
+Buchungen (`lib/mietZahlung.ts`); Testfälle Teilzahlung, Überzahlung, Sammelzahlung, Monatswechsel.
+
 ## Oberfläche
 
 **Fokus springt beim Feldwechsel zurück**
@@ -169,6 +187,17 @@ schon gelaufen war. Für `CREATE OR REPLACE`/`ALTER POLICY` genügt das; ein ent
 die Rechte aber nicht wieder her — alle drei Mutationen blieben grün, auch der Ursprungszustand.
 → *Gegenprüfung:* Zielmigration beim Aufbau auslassen (`OHNE_MIGRATION`), dann mutiert einspielen;
 und immer eine Mutation „Ursprungszustand“ mitlaufen lassen — sie MUSS rot werden.
+
+**Auswertung aus einem Teilbestand (B08, 11.10.2026)**
+Dashboard, Ein- & Ausgaben, Jahresbericht, DATEV-/CSV-Export, Rückstandswächter und Nebenkosten
+luden ohne `.range()` (PostgREST liefert still höchstens 1.000 Zeilen) und werteten `error` nicht
+aus — eine gescheiterte Abfrage sah aus wie „nichts gebucht“. Ein Sammel-PDF übersprang einen
+Mieter, dessen Abrechnung nicht entstand.
+→ *Gegenprüfung:* Grundlagen über `alleZeilen()` (`lib/db/auswertung.ts`): Fehler → Fehlerkarte bzw.
+503, nie Zahlen aus einem Teil. Testdaten über 1.000 Zeilen gegen eine Attrappe, die wie PostgREST
+abschneidet, und die SEITE selbst ausführen (`tests/auswertungVollstaendig.test.ts`) — ein zweiter
+Ladeweg kann einen Fehler sonst verdecken (eine Mutation überlebte genau so, bis die angezeigte
+Summe geprüft wurde).
 
 ## Projektführung
 

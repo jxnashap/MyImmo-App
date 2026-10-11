@@ -17,6 +17,9 @@ import MietkontoBestaetigung from "@/components/MietkontoBestaetigung";
 import { ladeMietkonto } from "@/lib/mietkontoDaten";
 import type { Einnahme, Kosten, Property, Tenant, WiederkehrVorlage } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
+import { redirect } from "next/navigation";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
+import { alleZeilen, nurKonto } from "@/lib/db/auswertung";
 
 export default async function CashflowPage(
   props0: {
@@ -25,12 +28,19 @@ export default async function CashflowPage(
 ) {
   const searchParams = await props0.searchParams;
   const supabase = await createClient();
-  const [{ data: einn }, { data: kost }, { data: props }, { data: miet }, { data: vRows }] = await Promise.all([
-    supabase.from("einnahmen").select("*").order("buchungsdatum", { ascending: false }),
-    supabase.from("kosten").select(KOSTEN_SPALTEN).order("buchungsdatum", { ascending: false }),
-    supabase.from("properties").select("id,bezeichnung").order("bezeichnung"),
-    supabase.from("mieter").select("id,vorname,nachname,prop_id").order("nachname"),
-    supabase.from("wiederkehrende_buchungen").select("*").order("created_at", { ascending: false }),
+  const user = await aktuellerNutzer();
+  if (!user) redirect("/login");
+  // B08 (11.10.2026): vollständig oder gar nicht. Vorher kamen höchstens 1.000 Buchungen (die
+  // NEUESTEN — sortiert absteigend), die älteren fehlten still in Summen, Donut und Listen; eine
+  // gescheiterte Abfrage sah aus wie „keine Buchungen“.
+  const eigen = nurKonto(user.id);
+  const neuesteZuerst = [{ spalte: "buchungsdatum", auf: false }];
+  const [einn, kost, props, miet, vRows] = await Promise.all([
+    alleZeilen<Einnahme>(supabase, "einnahmen", "*", eigen, neuesteZuerst),
+    alleZeilen<Kosten>(supabase, "kosten", KOSTEN_SPALTEN, eigen, neuesteZuerst),
+    alleZeilen<Pick<Property, "id" | "bezeichnung">>(supabase, "properties", "id,bezeichnung", eigen, [{ spalte: "bezeichnung" }]),
+    alleZeilen<Pick<Tenant, "id" | "vorname" | "nachname"> & { prop_id: string | null }>(supabase, "mieter", "id,vorname,nachname,prop_id", eigen, [{ spalte: "nachname" }]),
+    alleZeilen<WiederkehrVorlage>(supabase, "wiederkehrende_buchungen", "*", eigen, [{ spalte: "created_at", auf: false }]),
   ]);
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];

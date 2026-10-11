@@ -6,6 +6,9 @@ import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { jahresZeile, berichtMonate, unterjaehrigText } from "@/lib/jahresberichtZeile";
 import { heuteBerlin } from "@/lib/zeitraum";
+import { redirect } from "next/navigation";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
+import { alleZeilen, nurKonto } from "@/lib/db/auswertung";
 
 export default async function JahresberichtPage(
   props0: {
@@ -18,17 +21,18 @@ export default async function JahresberichtPage(
   const heuteIso = heuteBerlin();
   const year = Number(searchParams.year) || Number(heuteIso.slice(0, 4));
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }] = await Promise.all([
-    supabase.from("properties").select("*").order("bezeichnung"),
-    supabase.from("einnahmen").select("*"),
-    supabase.from("kosten").select(KOSTEN_SPALTEN),
-    supabase.from("kredite").select("*"),
+  const user = await aktuellerNutzer();
+  if (!user) redirect("/login");
+  // B08 (11.10.2026): vollständig oder gar nicht — ab 1.001 Buchungen fehlten sonst still Zeilen,
+  // und eine gescheiterte Abfrage sah aus wie „keine Buchungen“. Scheitert eine Seite, zeigt die
+  // Fehlerkarte das an, statt einen unvollständigen Bericht.
+  const eigen = nurKonto(user.id);
+  const [properties, einnahmen, kosten, kredite] = await Promise.all([
+    alleZeilen<Property>(supabase, "properties", "*", eigen, [{ spalte: "bezeichnung" }]),
+    alleZeilen<Einnahme>(supabase, "einnahmen", "*", eigen),
+    alleZeilen<Kosten>(supabase, "kosten", KOSTEN_SPALTEN, eigen),
+    alleZeilen<Kredit>(supabase, "kredite", "*", eigen),
   ]);
-
-  const properties = (props ?? []) as Property[];
-  const einnahmen = (einn ?? []) as Einnahme[];
-  const kosten = (kost ?? []) as Kosten[];
-  const kredite = (kred ?? []) as Kredit[];
 
 
   const aktuellesJahr = Number(heuteIso.slice(0, 4));

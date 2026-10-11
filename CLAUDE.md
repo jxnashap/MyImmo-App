@@ -75,12 +75,19 @@
 > allein über `status`.
 
 > 🛡️ **Prüfstand 11.10.2026 (Arbeitsauftrag B01–B18, Abläufe A–F) — in Arbeit auf
-> `claude/magical-feynman-l8w9s5`.** Phase 1 (Sicherheit) gebaut, lokal an der Datenbankgrenze
-> bewiesen (`scripts/db/testdb.sh` + `scripts/db/rlstest.sh`, Abschnitt „Lokale Test-Datenbank“ in
-> `supabase/migrations/README.md`). **B04 war ein Weg am Zugangscode vorbei** (Selbst-Einladung →
-> freigeschaltete Hausverwaltung). **Ausrollen nur in dieser Reihenfolge:** Code mergen + deployen →
-> `20261011100000` (B04) und `20261011101000` (B03) per apply_migration → `20261011102000` (B01) →
-> `20261011103000` (B02, SQL-Editor) → `20261011104000` (B18, SQL-Editor, No-op). **Regeln:**
+> `claude/magical-feynman-l8w9s5`.** Phase 1 (Sicherheit) und Phase 2 (B05–B08 + B09–B11) gebaut, lokal an
+> der Datenbankgrenze bewiesen (`scripts/db/testdb.sh` + `scripts/db/rlstest.sh` + `scripts/db/nebenlaeufig.sh`,
+> Abschnitt „Lokale Test-Datenbank“ in `supabase/migrations/README.md`). **B04 war ein Weg am Zugangscode
+> vorbei** (Selbst-Einladung → freigeschaltete Hausverwaltung). **Ausrollen nur in dieser Reihenfolge:**
+> `20261011110000` (B07, apply_migration, VOR dem Code) → Code mergen + deployen → `20261011100000` (B04) und
+> `20261011101000` (B03) per apply_migration → `20261011102000` (B01) → `20261011103000` (B02, SQL-Editor;
+> bis dahin scheitert „Konto löschen“ mit Fehlermeldung, gelöscht wird nichts) → `20261011104000` (B18,
+> SQL-Editor, No-op). **Phase-2-Regeln:** (5) Eine Buchung, die ein Geschäftsvorgang erzeugt, hat eine
+> fachliche Kennung mit UNIQUE-Regel (`zahlung_ref`, Vorlage + Termin, `auftrag_id`, `meldung_id`) — nie
+> „erst lesen, dann schreiben“. (6) Eine Auswertung lädt ihre Grundlagen über `alleZeilen()`
+> (`lib/db/auswertung.ts`); Fehler → Fehlerkarte/503, nie Zahlen aus einem Teil. (7) Ein Beleg wird erst
+> gelöscht, wenn der Ersatz gesichert ist. (8) Teilzahlung/NK-Anteil/Überzahlung rechnet nur
+> `lib/mietZahlung.ts` (NK-Anteil ANTEILIG — Betreiber-Entscheidung offen). **Regeln:**
 > (1) `mfa_wiederherstellung` und `konto_loeschen()` nur über die Service-Role im Server —
 > `delete_own_account()` ist kein Nutzer-Einstieg mehr. (2) Einladen darf nur ein freigeschalteter
 > Vermieter; eine Einladung schaltet ein Konto nur für die eingeladene Rolle frei. (3) Jede Partner-Regel

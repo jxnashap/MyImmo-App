@@ -200,7 +200,7 @@ describe("Dashboard-Aufgabe für Vollmachten", async () => {
   it("das Dashboard reicht nur „läuft ab“ und „abgelaufen“ weiter", () => {
     const seite = readFileSync("app/(app)/page.tsx", "utf8");
     expect(seite).toContain('status === "laeuft_ab" || status === "abgelaufen"');
-    expect(seite).toContain('from("vertreter").select("id,vorname,nachname,gueltig_bis,widerrufen_am")');
+    expect(seite).toContain('"vertreter", "id,vorname,nachname,gueltig_bis,widerrufen_am"'); // seit B08 über vielleichtAlle
   });
 });
 

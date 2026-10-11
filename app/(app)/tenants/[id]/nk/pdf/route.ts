@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { featureSperre } from "@/lib/planGate";
 import { erzeugeNkPdf } from "@/lib/pdf/erzeugen";
+import { unvollstaendigAntwort } from "@/lib/db/auswertung";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,12 @@ export async function GET(req: NextRequest, props: { params: Promise<{ id: strin
 
   const jahr = Number(req.nextUrl.searchParams.get("jahr")) || Number(heuteBerlin().slice(0, 4)) - 1;
 
-  const doc = await erzeugeNkPdf(supabase, params.id, jahr);
+  let doc: Awaited<ReturnType<typeof erzeugeNkPdf>>;
+  try {
+    doc = await erzeugeNkPdf(supabase, params.id, jahr);
+  } catch (e) {
+    return unvollstaendigAntwort(e); // B08: kein PDF aus einem Teilbestand
+  }
   if (!doc) return new NextResponse("Mieter nicht gefunden", { status: 404 });
 
   return new NextResponse(Buffer.from(doc.pdf), {

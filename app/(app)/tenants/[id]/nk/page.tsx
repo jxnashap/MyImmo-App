@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { berechneNk, deDatum, co2Gutschrift, co2GutschriftSatz, vorauszahlungZusatz, type NkCo2Input } from "@/lib/nk";
 import { ladeNkPositionen, nkCo2Argumente } from "@/lib/nkPositionen";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
+import { DatenUnvollstaendig } from "@/lib/db/ladeAlle";
 import { eur2, adressZeilen } from "@/lib/format";
 import { vermieterAus } from "@/lib/pdf/nkPdf";
 import { decryptIbanRow } from "@/lib/ibanData";
@@ -54,7 +55,7 @@ export default async function NkPage(
 
   const jahr = Number(searchParams.jahr) || Number(heuteBerlin().slice(0, 4)) - 1;
 
-  const [{ data: property }, nkPos, { data: profil }, { data: ibanRow }, { data: co2Row }, { data: kostenRows }, { data: mieterImObjekt }, { data: zaehlerRows }] =
+  const [{ data: property }, nkPos, { data: profil }, { data: ibanRow }, { data: co2Row, error: co2Fehler }, { data: kostenRows, error: kostenFehler }, { data: mieterImObjekt, error: mieterFehler }, { data: zaehlerRows }] =
     await Promise.all([
       tenant.prop_id
         ? supabase
@@ -84,14 +85,18 @@ export default async function NkPage(
       tenant.prop_id
         ? supabase.from("kosten").select("prop_id,buchungsdatum,kategorie,betrag").eq("prop_id", tenant.prop_id)
             .gte("buchungsdatum", `${jahr}-01-01`).lt("buchungsdatum", `${jahr + 1}-01-01`)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
       tenant.prop_id
         ? supabase.from("mieter").select("mietbeginn,mietende").eq("prop_id", tenant.prop_id)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
       supabase.from("zaehlerstand_meldungen").select("art,zaehlernummer,stand,einheit,ablesedatum")
         .eq("mieter_id", params.id).gte("ablesedatum", `${jahr - 1}-12-01`).lt("ablesedatum", `${jahr + 1}-02-01`)
         .order("ablesedatum"),
     ]);
+  // B08 (11.10.2026): CO₂, gebuchte Kosten und Mietparteien fließen in Abrechnung und Vorschläge —
+  // ein Lesefehler zeigt die Fehlerkarte statt einer Abrechnung ohne sie.
+  const lesefehler = co2Fehler ?? kostenFehler ?? mieterFehler;
+  if (lesefehler) throw new DatenUnvollstaendig("Nebenkosten", lesefehler.message);
   const ausBuchungen = tenant.prop_id ? nkAusBuchungen(kostenRows ?? [], tenant.prop_id, jahr) : { vorschlaege: [], unklar: [] };
   const positions = nkPos.mieterPositionen;
   const schonDa = new Set(((positions ?? []) as { bezeichnung: string; jahr: number | null }[])

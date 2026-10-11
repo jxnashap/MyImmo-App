@@ -6,6 +6,7 @@ import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { eur2 } from "@/lib/format";
 import { berechneNk, type NkCo2Input } from "@/lib/nk";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
+import { DatenUnvollstaendig } from "@/lib/db/ladeAlle";
 import { ladeNkObjekt, basisMitStammdaten, nkCo2Argumente, nkAmObjekt } from "@/lib/nkPositionen";
 import { verteileObjektKosten, positionenFuerMieter, co2FuerMieter } from "@/lib/nkObjekt";
 import { zeigeVerteiler } from "@/lib/umlage";
@@ -91,7 +92,7 @@ export default async function NebenkostenObjektPage(props: {
   }
 
   const ids = daten.mieter.map((m) => m.id);
-  const [{ count: vorjahrAnzahl }, { data: buchungen }, { count: altAnzahl }, { data: co2Rows }, { data: vzRows }] = await Promise.all([
+  const [{ count: vorjahrAnzahl }, { data: buchungen, error: e1 }, { count: altAnzahl }, { data: co2Rows, error: e2 }, { data: vzRows, error: e3 }] = await Promise.all([
     supabase.from("nk_objekt_kosten").select("id", { count: "exact", head: true }).eq("prop_id", id).eq("jahr", jahr - 1),
     supabase.from("kosten").select("prop_id,buchungsdatum,kategorie,betrag").eq("prop_id", id)
       .gte("buchungsdatum", `${jahr}-01-01`).lt("buchungsdatum", `${jahr + 1}-01-01`),
@@ -100,12 +101,16 @@ export default async function NebenkostenObjektPage(props: {
       : Promise.resolve({ count: 0 }),
     ids.length
       ? supabase.from("nk_co2").select("mieter_id,co2_kg,co2_kosten,flaeche,gewerbe").in("mieter_id", ids).eq("jahr", jahr)
-      : Promise.resolve({ data: [] }),
+      : Promise.resolve({ data: [], error: null }),
     ids.length
       ? supabase.from("mieter").select("id,nk_vorauszahlung").in("id", ids)
-      : Promise.resolve({ data: [] }),
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
+  // B08 (11.10.2026): Buchungen, CO₂ und Vorauszahlungen gehen in das Ergebnis je Mieter — ein
+  // Lesefehler zeigt die Fehlerkarte statt Zahlen ohne sie.
+  const lesefehler = e1 ?? e2 ?? e3;
+  if (lesefehler) throw new DatenUnvollstaendig("Nebenkosten", lesefehler.message);
   const basis = basisMitStammdaten(daten.basis, prop);
   const e = verteileObjektKosten(jahr, basis, daten.kosten, daten.mieter);
   const vorhanden = new Set(daten.kosten.map((k) => k.bezeichnung.trim().toLowerCase()));

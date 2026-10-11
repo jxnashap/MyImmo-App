@@ -29,7 +29,7 @@ describe("PDF und Bildschirm rechnen mit denselben Spalten", () => {
   });
   it("NK-Seite, PDF und Beleihungs-Mappe laden über EINEN Lader, der genau diese Liste nimmt", () => {
     // Stufe 1: lib/nkPositionen.ts entscheidet zwischen Kosten am Objekt und Altbestand.
-    expect(lies("lib/nkPositionen.ts")).toMatch(/from\("mieter_positionen"\)\s*\.select\(NK_POSITION_SPALTEN\)/);
+    expect(lies("lib/nkPositionen.ts")).toMatch(/"mieter_positionen",\s*NK_POSITION_SPALTEN/); // seit B08 über alleZeilen
     for (const f of ["lib/pdf/erzeugen.ts", "app/(app)/tenants/[id]/nk/page.tsx", "lib/actions/beleihung.ts"]) {
       expect(lies(f), f).toMatch(/ladeNkPositionen\(supabase,/);
       expect(lies(f), f).not.toMatch(/from\("mieter_positionen"\)/);

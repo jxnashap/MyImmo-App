@@ -23,6 +23,8 @@ export type SpeicherDbInit = {
   dateien?: Record<string, Record<string, string | Uint8Array>>;
   fehlerBei?: Record<string, string>;
   fehlerAbSeite?: Record<string, number>;
+  /** Fehler nur für bestimmte Abfragen, z. B. (t, op, f) => t === "mieter" && f.includes("eq:id=m2") ? "reset" : null. */
+  fehlerWenn?: (tabelle: string, op: Op, filter: string[]) => string | null;
   maxZeilen?: number;
   /**
    * UNIQUE-Regeln je Tabelle, z. B. { einnahmen: [["user_id", "zahlung_ref"]] }. Ein Teil-Index
@@ -68,7 +70,7 @@ export function speicherDb(init: SpeicherDbInit = {}) {
     let zurueck = false; // `.select()` nach einem Schreibvorgang
 
     const fehlerFuer = (): Fehler => {
-      const m = init.fehlerBei?.[`${tabelle}:${op}`] ?? init.fehlerBei?.[tabelle];
+      const m = init.fehlerBei?.[`${tabelle}:${op}`] ?? init.fehlerBei?.[tabelle] ?? init.fehlerWenn?.(tabelle, op, text);
       return m ? { message: m } : null;
     };
     const passend = () => (tabellen[tabelle] ?? []).filter((r) => filter.every((f) => f(r)));
@@ -155,6 +157,19 @@ export function speicherDb(init: SpeicherDbInit = {}) {
       lt: (s: string, w: string | number) => { filter.push((r) => r[s] != null && (r[s] as string | number) < w); text.push(`lt:${s}=${w}`); return k; },
       gt: (s: string, w: string | number) => { filter.push((r) => r[s] != null && (r[s] as string | number) > w); text.push(`gt:${s}=${w}`); return k; },
       is: (s: string, w: null) => { filter.push((r) => r[s] === w || (w === null && r[s] === undefined)); text.push(`is:${s}=null`); return k; },
+      ilike: (s: string, muster: string) => {
+        const re = new RegExp(`^${muster.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".")}$`, "i");
+        filter.push((r) => typeof r[s] === "string" && re.test(r[s] as string)); text.push(`ilike:${s}=${muster}`); return k;
+      },
+      // PostgREST-Oder in der einfachen Form „spalte.eq.wert,spalte.is.null“.
+      or: (ausdruck: string) => {
+        const teile = ausdruck.split(",").map((t) => {
+          const [spalte, op, ...rest] = t.split(".");
+          const wert = rest.join(".");
+          return (r: Row) => (op === "is" && wert === "null" ? r[spalte] == null : op === "eq" ? String(r[spalte]) === wert : false);
+        });
+        filter.push((r) => teile.some((f) => f(r))); text.push(`or:${ausdruck}`); return k;
+      },
       not: (s: string, _op: string, _w: null) => { filter.push((r) => r[s] != null); text.push(`not:${s}`); return k; },
       order: (s: string, o: { ascending?: boolean } = {}) => { ordnung.push({ spalte: s, auf: o.ascending !== false }); text.push(`order:${s}`); return k; },
       limit: (n: number) => { limit = n; return k; },

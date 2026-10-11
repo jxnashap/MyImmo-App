@@ -148,7 +148,8 @@ describe("Warmmiete im Cashflow, Kaltmiete in Rendite und Steuer", () => {
   const dashboard = readFileSync("app/(app)/page.tsx", "utf8");
   const objekt = readFileSync("app/(app)/properties/[id]/page.tsx", "utf8");
   it("das Dashboard lädt die Vorauszahlung und rechnet sie ein", () => {
-    expect(dashboard).toMatch(/select\("[^"]*nk_vorauszahlung[^"]*"\)/);
+    // Seit B08 über alleZeilen(supabase, "mieter", "<spalten>", …) geladen.
+    expect(dashboard).toMatch(/"mieter", "[^"]*nk_vorauszahlung[^"]*"/);
     // NK nur von Mietern mit Objekt (tests/datenluecken.test.ts).
     // Seit P8 (09.10.2026) je Objekt über objektMonat(), das Dashboard summiert (portfolioMonat).
     expect(dashboard).toMatch(/nk: nkVorauszahlungenMonat\(mieterJetzt\.filter\(\(m\) => m\.prop_id === p\.id\), heuteISO\)/);

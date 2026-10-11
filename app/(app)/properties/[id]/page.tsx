@@ -3,6 +3,8 @@ import { summeRestschuld, summeRaten, restschuldVon, rateVon, istGetilgt, getilg
 import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { alleZeilen } from "@/lib/db/auswertung";
+import { DatenUnvollstaendig } from "@/lib/db/ladeAlle";
 import { zeigeVerteiler } from "@/lib/umlage";
 import { euro, datum, prozent, zahl } from "@/lib/format";
 import { deleteProperty } from "@/lib/actions/properties";
@@ -59,24 +61,29 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
   const supabase = await createClient();
   const id = params.id;
 
-  const [{ data: prop }, { data: mieter }, { data: einn }, { data: kost }, { data: kredite }, { data: verb }, { data: notiz }] =
+  // B08 (11.10.2026): Mieter, Buchungen und Darlehen sind die Grundlage von Soll-Miete und Cashflow
+  // dieses Objekts — vollständig oder Fehlerkarte (vorher ergab ein Lesefehler still „keine Kosten“).
+  const neuesteZuerst = [{ spalte: "buchungsdatum", auf: false }];
+  const [{ data: prop }, mieter, einn, kost, kredite, { data: verb }, { data: notiz }] =
     await Promise.all([
       supabase.from("properties").select("*").eq("id", id).single(),
-      supabase.from("mieter").select("*").eq("prop_id", id).order("mietbeginn"),
-      supabase.from("einnahmen").select("id,betrag,buchungsdatum,kategorie").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
-      supabase.from("kosten").select("id,betrag,buchungsdatum,kategorie").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
-      supabase.from("kredite").select("id,bezeichnung,bank,betrag,restschuld,monatsrate,zinssatz,tilgungssatz,laufzeit,zinsbindung,auszahlung_datum").eq("prop_id", id),
+      alleZeilen(supabase, "mieter", "*", (q) => q.eq("prop_id", id), [{ spalte: "mietbeginn" }]),
+      alleZeilen(supabase, "einnahmen", "id,betrag,buchungsdatum,kategorie", (q) => q.eq("prop_id", id), neuesteZuerst),
+      alleZeilen(supabase, "kosten", "id,betrag,buchungsdatum,kategorie", (q) => q.eq("prop_id", id), neuesteZuerst),
+      alleZeilen(supabase, "kredite", "id,bezeichnung,bank,betrag,restschuld,monatsrate,zinssatz,tilgungssatz,laufzeit,zinsbindung,auszahlung_datum", (q) => q.eq("prop_id", id)),
       supabase.from("verbrauch").select("id,buchungsdatum,art,menge,einheit,verbrauchkosten").eq("prop_id", id).order("buchungsdatum", { ascending: false }),
       supabase.from("notizen").select("id,titel,kategorie,inhalt").eq("prop_id", id),
     ]);
 
   // Bewertung: Historie + Comparables laden (separat, hängen an prop.id)
-  const [{ data: bewHist }, { data: vglAngebote }, { data: mzRows }] = await Promise.all([
+  const [{ data: bewHist }, { data: vglAngebote }, { data: mzRows, error: mzFehler }] = await Promise.all([
     supabase.from("bewertung_historie").select("datum,marktwert").eq("immobilie_id", id).order("datum", { ascending: true }),
     supabase.from("vergleichsangebote").select("quelle,art,flaeche,zimmer,preis,preis_pro_qm,distanz_km").eq("immobilie_id", id).order("distanz_km", { ascending: true }),
     // Paket B: Miet-Zeiträume der Mieter dieses Objekts — die aktuelle Miete ist die des Monats.
     supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete").in("mieter_id", ((mieter ?? []) as { id: string }[]).map((m) => m.id)),
   ]);
+  // Ohne die Miet-Zeiträume gälte still die alte Miete aus dem Mieterfeld (B08).
+  if (mzFehler) throw new DatenUnvollstaendig("miet_zeitraeume", mzFehler.message);
 
   if (!prop) notFound();
   const p = prop as Property;

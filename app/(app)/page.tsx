@@ -7,6 +7,7 @@ import { schuldenStand } from "@/lib/schuldenStand";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
+import { alleZeilen, nurKonto, vielleichtAlle } from "@/lib/db/auswertung";
 import LandingPage from "@/components/LandingPage";
 import { euro, datum, begruessung } from "@/lib/format";
 import { getRefinanzWarning, nkErstellteJahre, mieterFristen, kreditFristen, objektFristen, globaleFristen, zeitraumMonateJeMieter } from "@/lib/fristen";
@@ -107,38 +108,50 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     );
   }
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: miet }, { data: bewHist }, { data: profil }, { data: term }, { data: anlRows }, { data: zaehlerRows }, { data: mzRows }, { data: vertreterRows }, { data: verstecktRows }, { data: nkNotizen }, { data: erinnRows }, { data: offeneZustellRows }] = await Promise.all([
-    supabase.from("properties").select("*"),
-    supabase.from("einnahmen").select("*"),
-    supabase.from("kosten").select(KOSTEN_SPALTEN),
-    supabase.from("kredite").select("*"),
-    supabase.from("mieter").select("id,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen,minderungen"),
-    supabase.from("bewertung_historie").select("immobilie_id,datum,marktwert"),
-    supabase.from("vermieter_profil").select("name").limit(1).maybeSingle(),
-    supabase.from("termine").select("id,titel,datum,kategorie,erledigt").order("datum"),
-    // „Heute wichtig": offene Mieter-Anliegen und noch nicht übernommene
-    // Zählerstände. Beides sind Handlungen, die auf den Vermieter warten.
-    supabase.from("anliegen").select("id,titel,status,created_at,mieter_name").eq("status", "offen").order("created_at"),
-    supabase.from("zaehlerstand_meldungen").select("id,art,ablesedatum,mieter_id").is("uebernommen_am", null).order("ablesedatum"),
-    supabase.from("miet_zeitraeume").select("*"),
-    // Vollmachten der Vertreter (Einstellungen → Vertreter) — nur was zum Ablauf nötig ist.
-    supabase.from("vertreter").select("id,vorname,nachname,gueltig_bis,widerrufen_am").not("gueltig_bis", "is", null),
-    // In /termine ausgeblendete Fristen — sonst stand eine ausgeblendete Frist hier weiter,
-    // und ihr Link führte auf eine Seite, auf der sie fehlte (Audit 06.10.2026, A3).
-    supabase.from("frist_ausgeblendet").select("schluessel"),
-    // Paket C: erstellte NK-Abrechnungen — die Frist „NK zustellen“ entfällt dann.
-    supabase.from("notizen").select("mieter_id,titel").eq("kategorie", "Nebenkostenabrechnung"),
-    // Archivierte Zahlungserinnerungen — nur für den Hinweis in der Auswahl „Dokument“.
-    supabase.from("notizen").select("mieter_id,created_at").ilike("titel", `${ERINNERUNG_TITEL_PRAEFIX}%`),
-    // P4 (B43): Zustellungen der letzten 120 Tage — „nicht abgerufen“ nach einer Woche (lib/zugang.ts).
-    // Auch gelesene Zeilen: Ging ein Dokument an zwei Konten, reicht ein Abruf.
-    supabase
-      .from("zustellungen")
-      .select("notiz_id,mieter_id,titel,zugestellt_am,gelesen_am,zurueckgezogen_am")
-      .eq("vermieter_id", user.id)
-      .eq("art", "dokument")
-      .gte("zugestellt_am", zustellFensterAb(heuteBerlin())),
+  // B08 (11.10.2026): Die GRUNDLAGEN der Kennzahlen (Objekte, Buchungen, Darlehen, Verträge, Werte)
+  // werden vollständig geladen — sonst zeigt die Fehlerkarte das an, statt Zahlen aus einem
+  // Teilbestand (vorher: höchstens 1.000 Buchungen, Abfragefehler sahen aus wie „nichts gebucht“).
+  // Die Aufgabenquellen daneben dürfen einzeln fehlen; dann sagt ein Hinweis, welche.
+  const eigen = nurKonto(user.id);
+  const alsVermieter = nurKonto(user.id, "vermieter_id");
+  const [[props, einn, kost, kred, miet, bewHist, mzRows], [term, anlRows, zaehlerRows, vertreterRows, verstecktRows, nkNotizen, erinnRows, offeneZustellRows], { data: profil }] = await Promise.all([
+    Promise.all([
+      alleZeilen(supabase, "properties", "*", eigen),
+      alleZeilen(supabase, "einnahmen", "*", eigen),
+      alleZeilen(supabase, "kosten", KOSTEN_SPALTEN, eigen),
+      alleZeilen(supabase, "kredite", "*", eigen),
+      alleZeilen(supabase, "mieter", "id,prop_id,kaltmiete,nk_vorauszahlung,stellplatz_miete,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen,minderungen", eigen),
+      alleZeilen(supabase, "bewertung_historie", "immobilie_id,datum,marktwert", eigen),
+      alleZeilen(supabase, "miet_zeitraeume", "*", eigen),
+    ]),
+    Promise.all([
+      vielleichtAlle(supabase, "termine", "id,titel,datum,kategorie,erledigt", eigen, [{ spalte: "datum" }]),
+      // „Heute wichtig": offene Mieter-Anliegen und noch nicht übernommene
+      // Zählerstände. Beides sind Handlungen, die auf den Vermieter warten.
+      vielleichtAlle(supabase, "anliegen", "id,titel,status,created_at,mieter_name", (q) => alsVermieter(q).eq("status", "offen"), [{ spalte: "created_at" }]),
+      vielleichtAlle(supabase, "zaehlerstand_meldungen", "id,art,ablesedatum,mieter_id", (q) => alsVermieter(q).is("uebernommen_am", null), [{ spalte: "ablesedatum" }]),
+      // Vollmachten der Vertreter (Einstellungen → Vertreter) — nur was zum Ablauf nötig ist.
+      vielleichtAlle(supabase, "vertreter", "id,vorname,nachname,gueltig_bis,widerrufen_am", (q) => eigen(q).not("gueltig_bis", "is", null)),
+      // In /termine ausgeblendete Fristen — sonst stand eine ausgeblendete Frist hier weiter,
+      // und ihr Link führte auf eine Seite, auf der sie fehlte (Audit 06.10.2026, A3).
+      vielleichtAlle(supabase, "frist_ausgeblendet", "schluessel", eigen, [], "schluessel"),
+      // Paket C: erstellte NK-Abrechnungen — die Frist „NK zustellen“ entfällt dann.
+      vielleichtAlle(supabase, "notizen", "mieter_id,titel", (q) => eigen(q).eq("kategorie", "Nebenkostenabrechnung")),
+      // Archivierte Zahlungserinnerungen — nur für den Hinweis in der Auswahl „Dokument“.
+      vielleichtAlle(supabase, "notizen", "mieter_id,created_at", (q) => eigen(q).ilike("titel", `${ERINNERUNG_TITEL_PRAEFIX}%`)),
+      // P4 (B43): Zustellungen der letzten 120 Tage — „nicht abgerufen“ nach einer Woche (lib/zugang.ts).
+      // Auch gelesene Zeilen: Ging ein Dokument an zwei Konten, reicht ein Abruf.
+      vielleichtAlle(supabase, "zustellungen", "notiz_id,mieter_id,titel,zugestellt_am,gelesen_am,zurueckgezogen_am",
+        (q) => alsVermieter(q).eq("art", "dokument").gte("zugestellt_am", zustellFensterAb(heuteBerlin()))),
+    ]),
+    supabase.from("vermieter_profil").select("name").eq("user_id", user.id).limit(1).maybeSingle(),
   ]);
+  // Welche Aufgabenquellen fehlen — die Liste „Termine & Aufgaben“ sagt es, statt still kürzer zu sein.
+  const fehlendeQuellen = ([
+    [term, "Termine"], [anlRows, "Mieter-Anliegen"], [zaehlerRows, "Zählerstände"], [vertreterRows, "Vollmachten"],
+    [verstecktRows, "ausgeblendete Fristen"], [nkNotizen, "Nebenkostenabrechnungen"], [erinnRows, "Zahlungserinnerungen"],
+    [offeneZustellRows, "Zustellungen"],
+  ] as const).filter(([rows]) => rows === null).map(([, name]) => name);
 
   const properties = (props ?? []) as Property[];
   const einnahmen = (einn ?? []) as Einnahme[];
@@ -628,7 +641,9 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
               <div>
                 <h3>Termine &amp; Aufgaben</h3>
                 <div className="section-sub">
-                  {alleHeuteAufgaben.length === 0
+                  {fehlendeQuellen.length > 0
+                    ? `Unvollständig: ${fehlendeQuellen.join(", ")} konnten nicht geladen werden — bitte Seite neu laden.`
+                    : alleHeuteAufgaben.length === 0
                     ? "Nichts Offenes"
                     : `${alleHeuteAufgaben.length} ${alleHeuteAufgaben.length === 1 ? "Sache wartet" : "Sachen warten"} auf dich${alleHeuteAufgaben.length > heuteAufgaben.length ? ` · die ${heuteAufgaben.length} wichtigsten hier` : ""}`}
                 </div>
@@ -636,7 +651,12 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
               <Link href="/termine" className="btn btn-ghost btn-sm">Alle →</Link>
             </div>
             <div className="section-body">
-              {heuteAufgaben.length === 0 ? (
+              {heuteAufgaben.length === 0 && fehlendeQuellen.length > 0 ? (
+                <div className="empty">
+                  <TriangleAlert className="empty-icon" size={36} color="var(--amber)" />
+                  <p>Die Aufgaben konnten nicht vollständig geladen werden. „Alles erledigt“ lässt sich deshalb nicht sagen — bitte die Seite neu laden.</p>
+                </div>
+              ) : heuteAufgaben.length === 0 ? (
                 <div className="empty">
                   <CheckCircle2 className="empty-icon" size={36} color="var(--green)" />
                   <p>Alles erledigt. Keine offenen Mieten, Anliegen oder Fristen.</p>

@@ -28,7 +28,7 @@ describe("B5 — Teilzahlung", () => {
   });
   it("Wächter, Dashboard und Mietkonto laden den Betrag und rechnen mit dem Rest", () => {
     const w = readFileSync("components/RueckstandWaechter.tsx", "utf8");
-    expect(w).toMatch(/select\("mieter_id,buchungsdatum,kategorie,soll_monat,betrag"\)/);
+    expect(w).toMatch(/"einnahmen", "id,mieter_id,buchungsdatum,kategorie,soll_monat,betrag"/); // seit B08 über alleZeilen
     expect(w).toMatch(/betrag: o\.rest/);
     const d = readFileSync("app/(app)/page.tsx", "utf8");
     // Seit P7: eine Regel für bezahlt/offen (lib/mietStatus.ts).
