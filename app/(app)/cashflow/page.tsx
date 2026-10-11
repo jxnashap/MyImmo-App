@@ -3,7 +3,7 @@
 // Buchungslisten (Zeilen-Edit/Beleg/Löschen unverändert).
 import { heuteBerlin } from "@/lib/zeitraum";
 import Link from "next/link";
-import { Plus, Repeat, Wallet, ClipboardList } from "lucide-react";
+import { Plus, Repeat, Wallet, ClipboardList, Inbox } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { euro } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
@@ -42,6 +42,11 @@ export default async function CashflowPage(
     alleZeilen<Pick<Tenant, "id" | "vorname" | "nachname"> & { prop_id: string | null }>(supabase, "mieter", "id,vorname,nachname,prop_id", eigen, [{ spalte: "nachname" }]),
     alleZeilen<WiederkehrVorlage>(supabase, "wiederkehrende_buchungen", "*", eigen, [{ spalte: "created_at", auf: false }]),
   ]);
+
+  // Belegeingang (Ablauf B): offene Belege zählen. Scheitert die Zählung, steht der Knopf ohne Zahl da.
+  const { count: offeneBelege, error: belegFehler } = await supabase
+    .from("beleg_eingang").select("id", { count: "exact", head: true }).eq("user_id", user.id).neq("status", "gebucht");
+  const belegZahl = belegFehler ? null : offeneBelege ?? 0;
 
   const properties = (props ?? []) as Pick<Property, "id" | "bezeichnung">[];
   const tenants = (miet ?? []) as (Pick<Tenant, "id" | "vorname" | "nachname"> & { prop_id: string | null })[];
@@ -131,6 +136,9 @@ export default async function CashflowPage(
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <a href="/api/export/buchungen" className="btn btn-ghost" style={{ fontSize: 12 }}>CSV-Export</a>
+          <Link href="/cashflow/belege" className="btn btn-ghost" style={{ fontSize: 12 }}>
+            <Inbox size={14} style={{ verticalAlign: "-2px" }} /> Belegeingang{belegZahl ? ` (${belegZahl})` : ""}
+          </Link>
           <Link href="/cashflow/neu" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Buchung</Link>
         </div>
       </div>

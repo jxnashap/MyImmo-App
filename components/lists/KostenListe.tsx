@@ -36,7 +36,8 @@ export default function KostenListe({
       <thead><tr><th>Datum</th><th>Immobilie</th><th>Mieter</th><th>Kategorie</th><th>Umlage</th><th>Beleg</th><th>Betrag</th></tr></thead>
       <ExpandableRows cols={7} limit={10} label="weitere Buchungen">
         {rows.map((k) => {
-          const u = istUmlagefaehig(k.kategorie);
+          // Je Buchung bestätigt (Ablauf B) schlägt die Kategorie; sonst wie bisher aus der Kategorie.
+          const u = k.umlagefaehig ?? istUmlagefaehig(k.kategorie);
           return (
             <tr
               key={k.id}

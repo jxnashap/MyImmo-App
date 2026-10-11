@@ -79,8 +79,8 @@
 > der Datenbankgrenze bewiesen (`scripts/db/testdb.sh` + `scripts/db/rlstest.sh` + `scripts/db/nebenlaeufig.sh`,
 > Abschnitt „Lokale Test-Datenbank“ in `supabase/migrations/README.md`). **B04 war ein Weg am Zugangscode
 > vorbei** (Selbst-Einladung → freigeschaltete Hausverwaltung). **Ausrollen nur in dieser Reihenfolge:**
-> `20261011110000` (B07), `20261011120000` (B12) und `20261011121000` (B14, Schalter bleibt aus) per apply_migration,
-> VOR dem Code → Code mergen + deployen → `20261011100000` (B04) und
+> `20261011110000` (B07), `20261011120000` (B12) und `20261011121000` (B14, Schalter bleibt aus) per apply_migration
+> und `20261011130000` (Ablauf B, SQL-Editor), alle VOR dem Code → Code mergen + deployen → `20261011100000` (B04) und
 > `20261011101000` (B03) per apply_migration → `20261011102000` (B01) → `20261011103000` (B02, SQL-Editor;
 > bis dahin scheitert „Konto löschen“ mit Fehlermeldung, gelöscht wird nichts) → `20261011104000` (B18,
 > SQL-Editor, No-op). **Phase-2-Regeln:** (5) Eine Buchung, die ein Geschäftsvorgang erzeugt, hat eine
@@ -101,6 +101,14 @@
 > `kiBereit()` (Bedrock ODER Anthropic) und bremsen mit `darfWeiter(…, { sperrtBeiAusfall: true })`. (16) Ein
 > KI-Ergebnis wird erst nach einem Prüfschritt gespeichert. (17) CI: Lint, tsc, Vitest, Build, E2E
 > (`scripts/e2e/zugang.mjs` + Crawler als Gast), Datenbank-Job (`testdb.sh` → `rlstest.sh` → `nebenlaeufig.sh`).
+> **Phase 5 (Abläufe):** (18) **A** — Kontoauszug zeigt Alternativen bei Mehrdeutigkeit, listet Eingänge ohne
+> Zuordnung zur Handzuordnung, bucht Rücklastschrift/Erstattung als NEGATIVE Mietbuchung (`art`, nie
+> vorausgewählt) und liefert danach die offenen Monate mit Brief-ENTWURF (`offen`). Eine Kennung, die einen
+> zurücksetzbaren Zustand beschreibt, trägt eine Generation (`a:…|r<n>`). DATEV: negativ = umgekehrtes S/H.
+> (19) **B** — Belege gehen über den Belegeingang (`/cashflow/belege`, `lib/belegEingang.ts`): KI-Vorschlag ist
+> ein dauerhafter Auftrag (`beleg_eingang_beanspruchen`, ≤ 3 Versuche), gebucht wird GENAU EINMAL
+> (`kosten.beleg_eingang_id` eindeutig) — neu oder an Kosten ohne Beleg gehängt. Kostenart und
+> Umlagefähigkeit sind zwei Felder; `nkAusBuchungen` nimmt `kosten.umlagefaehig` vor der Kategorie.
 > **Regeln:**
 > (1) `mfa_wiederherstellung` und `konto_loeschen()` nur über die Service-Role im Server —
 > `delete_own_account()` ist kein Nutzer-Einstieg mehr. (2) Einladen darf nur ein freigeschalteter

@@ -13,6 +13,12 @@ export type KostenBuchung = {
   buchungsdatum: string | null;
   kategorie: string | null;
   betrag: number | string | null;
+  /**
+   * Umlagefähigkeit, je Buchung bestätigt (Ablauf B, 11.10.2026). Gesetzt, gilt SIE — nicht die
+   * Kategorie: Eine „Hausmeister“-Rechnung mit Reparaturanteil ist dann „nein“ oder „unklar“.
+   * Fehlt sie (Altbestand), entscheidet die Kategorie wie bisher.
+   */
+  umlagefaehig?: string | null;
 };
 
 export type NkVorschlag = { bezeichnung: string; kategorie: string; betrag: number; anzahl: number };
@@ -49,14 +55,14 @@ export function nkAusBuchungen(
     const kat = (k.kategorie ?? "").trim();
     const betrag = Number(k.betrag) || 0;
     if (!kat || betrag <= 0) continue;
-    const art = istUmlagefaehig(kat);
+    const art = k.umlagefaehig === "ja" || k.umlagefaehig === "nein" || k.umlagefaehig === "unklar" ? k.umlagefaehig : istUmlagefaehig(kat);
     if (art === "ja") {
       const bez = nkBezeichnung(kat);
       const v = summen.get(bez) ?? { bezeichnung: bez, kategorie: kat, betrag: 0, anzahl: 0 };
       v.betrag = r2(v.betrag + betrag);
       v.anzahl += 1;
       summen.set(bez, v);
-    } else if (art === "unklar" && kat.startsWith("Hausgeld")) {
+    } else if (art === "unklar" && (kat.startsWith("Hausgeld") || k.umlagefaehig === "unklar")) {
       unklar.set(kat, r2((unklar.get(kat) ?? 0) + betrag));
     }
   }

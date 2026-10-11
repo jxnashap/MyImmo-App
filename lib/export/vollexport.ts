@@ -41,8 +41,11 @@ export type ExportTabelle = {
   /** Eindeutiger Schlüssel für die stabile Sortierung beim Blättern. */
   schluessel: string[];
   dateien?: DateiSpalte[];
-  /** Pfad-Spalte im Storage-Bucket (nur Kosten-Belege). */
-  storage?: { spalte: string; bucket: string };
+  /**
+   * Pfad-Spalte im Storage-Bucket (Kosten-Belege, Belegeingang). `wenn`: nur für Zeilen, auf die das
+   * zutrifft — ein GEBUCHTER Eingang teilt seine Datei mit der Buchung und liegt dort schon.
+   */
+  storage?: { spalte: string; bucket: string; wenn?: (r: Record<string, unknown>) => boolean };
   /** Mit DATA_ENCRYPTION_KEY verschlüsselte Textspalten — im Export entschlüsselt (es sind DEINE Daten). */
   verschluesselt?: string[];
   /** Spalten, die nicht in den Export gehören (Sicherheitsmerkmale, technische Indizes). */
@@ -60,6 +63,8 @@ export const EXPORT_TABELLEN: Record<ExportRolle, ExportTabelle[]> = {
     V("miet_zeitraeume", "user_id"), V("mieter_positionen", "user_id"),
     V("einnahmen", "user_id"),
     V("kosten", "user_id", { dateien: [{ spalte: "rechnung_data", name: "rechnung_name" }], storage: { spalte: "rechnung_path", bucket: "belege" } }),
+    // Belegeingang (Ablauf B): noch nicht gebuchte Belege samt Datei; gebuchte liegen zusätzlich bei den Kosten.
+    V("beleg_eingang", "user_id", { storage: { spalte: "datei_pfad", bucket: "belege", wenn: (r) => r.status !== "gebucht" } }),
     V("kredite", "user_id", { verschluesselt: ["darlnr"] }),
     V("verbrauch", "user_id"), V("termine", "user_id"),
     V("notizen", "user_id", { dateien: [{ spalte: "datei_data", name: "datei_name" }] }),
@@ -279,7 +284,7 @@ export async function baueVollexport(db: ExportDb, userId: string, rolle: Export
           fehlt(quelle, id, e instanceof Error ? e.message : "nicht lesbar");
         }
       }
-      if (t.storage && r[t.storage.spalte]) {
+      if (t.storage && r[t.storage.spalte] && (!t.storage.wenn || t.storage.wenn(r))) {
         const quelle = `${t.storage.bucket}:${t.name}.${t.storage.spalte}`;
         const pfad = String(r[t.storage.spalte]);
         try {

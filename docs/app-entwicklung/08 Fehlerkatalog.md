@@ -73,6 +73,22 @@ die Summen beider liefen auseinander.
 → *Gegenprüfung:* DATEV-Umsatz ist immer positiv, die Richtung trägt das Soll/Haben-Kennzeichen.
 Abstimmungstest: Σ Haben − Σ Soll je Konto = Σ Beträge in MyImmo.
 
+**Steuerliche Kostenart und Umlagefähigkeit waren dasselbe Feld (Ablauf B, 11.10.2026)**
+Ob eine Buchung in die NK-Abrechnung durfte, entschied allein `istUmlagefaehig(kategorie)`. Eine
+„Hausmeister“-Rechnung mit Reparaturanteil ging damit ganz in die Abrechnung; „Versicherung“ zählte
+pauschal als umlagefähig, auch für eine Rechtsschutzversicherung.
+→ *Gegenprüfung:* Zwei Felder, zwei Fragen — `kosten.kategorie` (Kostenart) und `kosten.umlagefaehig`
+(§ 2 BetrKV, je Buchung bestätigt). `nkAusBuchungen` nimmt die Bestätigung vor der Kategorie. Test:
+gleiche Kategorie, verschiedene Bestätigung → verschiedenes NK-Ergebnis.
+
+**Ein Wächter fand die neue Tabelle, die Hand hätte sie vergessen (Ablauf B, 11.10.2026)**
+Beim Bau des Belegeingangs wurden fünf Wächter rot: Kontolöschung, Vollexport, Lade-Zustand,
+GET-Routen-Sperrliste, Schreibfehler im KI-Abbruchweg. Jeder davon wäre sonst eine Lücke geworden
+(Belege nach Kontolöschung behalten, im Export fehlend …).
+→ *Gegenprüfung:* Nach jeder neuen Tabelle/Route den VOLLEN Testlauf, nicht nur die neue Datei.
+Gebuchte Belege teilen ihre Datei mit der Buchung — der Export lädt sie dort, nicht doppelt
+(`storage.wenn`); sonst meldete er nach einer gelöschten Buchung „unvollständig“.
+
 **Zinsen gezahlt, als liefe die Rate nach der Tilgung weiter (B13, 11.10.2026)**
 „Zinsen in der Bindung = Rate × 12 × Jahre − getilgt“ zählte bei 100.000 € · 4 % · 4 % · 20 Jahre die
 Raten nach der Volltilgung (Monat 209) als Zinsen: 60.000 € statt 38.860,59 €.

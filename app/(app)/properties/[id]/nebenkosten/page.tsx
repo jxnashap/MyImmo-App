@@ -94,7 +94,7 @@ export default async function NebenkostenObjektPage(props: {
   const ids = daten.mieter.map((m) => m.id);
   const [{ count: vorjahrAnzahl }, { data: buchungen, error: e1 }, { count: altAnzahl }, { data: co2Rows, error: e2 }, { data: vzRows, error: e3 }] = await Promise.all([
     supabase.from("nk_objekt_kosten").select("id", { count: "exact", head: true }).eq("prop_id", id).eq("jahr", jahr - 1),
-    supabase.from("kosten").select("prop_id,buchungsdatum,kategorie,betrag").eq("prop_id", id)
+    supabase.from("kosten").select("prop_id,buchungsdatum,kategorie,betrag,umlagefaehig").eq("prop_id", id)
       .gte("buchungsdatum", `${jahr}-01-01`).lt("buchungsdatum", `${jahr + 1}-01-01`),
     ids.length
       ? supabase.from("mieter_positionen").select("id", { count: "exact", head: true }).in("mieter_id", ids).or(`jahr.eq.${jahr},jahr.is.null`)

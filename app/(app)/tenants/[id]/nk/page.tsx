@@ -83,7 +83,7 @@ export default async function NkPage(
       // Paket C: gebuchte Kosten des Objekts im Jahr (Vorschlag „aus Buchungen übernehmen“),
       // Zahl der Mietparteien (Verteiler oder direkt) und gemeldete Zählerstände des Mieters.
       tenant.prop_id
-        ? supabase.from("kosten").select("prop_id,buchungsdatum,kategorie,betrag").eq("prop_id", tenant.prop_id)
+        ? supabase.from("kosten").select("prop_id,buchungsdatum,kategorie,betrag,umlagefaehig").eq("prop_id", tenant.prop_id)
             .gte("buchungsdatum", `${jahr}-01-01`).lt("buchungsdatum", `${jahr + 1}-01-01`)
         : Promise.resolve({ data: [], error: null }),
       tenant.prop_id

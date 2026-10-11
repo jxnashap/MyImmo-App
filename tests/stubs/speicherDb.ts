@@ -37,6 +37,11 @@ export type SpeicherDbInit = {
   vorgaben?: Record<string, () => Row>;
   /** Angemeldetes Konto für `auth.getUser()`. */
   nutzer?: { id: string; email?: string } | null;
+  /**
+   * Datenbankfunktionen für `client.rpc(name, args)` — laufen auf denselben Tabellen und zwischen zwei
+   * `await` am Stück (wie eine Anweisung in Postgres). Fehlt eine, antwortet rpc mit „function not found“.
+   */
+  rpc?: Record<string, (args: Record<string, unknown>, tabellen: Record<string, Row[]>, nutzerId: string | null) => { data: unknown; error: Fehler }>;
 };
 
 let laufendeId = 0;
@@ -187,6 +192,13 @@ export function speicherDb(init: SpeicherDbInit = {}) {
   const nutzer = init.nutzer === undefined ? { id: "nutzer-1", email: "test@example.org" } : init.nutzer;
   const client = {
     from: (tabelle: string) => abfrage(tabelle),
+    rpc: async (name: string, args: Record<string, unknown> = {}) => {
+      await Promise.resolve(); // wie ein Netzaufruf: andere Anfragen dürfen sich davor schieben
+      if (init.fehlerBei?.[`rpc:${name}`]) return { data: null, error: { message: init.fehlerBei[`rpc:${name}`] } };
+      const f = init.rpc?.[name];
+      if (!f) return { data: null, error: { message: `function ${name} not found`, code: "PGRST202" } };
+      return f(args, tabellen, nutzer?.id ?? null);
+    },
     auth: {
       getUser: async () => ({ data: { user: nutzer ? { ...nutzer, factors: [] } : null }, error: null }),
     },

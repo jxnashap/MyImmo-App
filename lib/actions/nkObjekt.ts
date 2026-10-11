@@ -153,7 +153,7 @@ export async function uebernehmeNkVorschlaege(propId: string, jahr: number, art:
     neue = vorschlaegeAusVorjahr(nkKostenAus((data ?? []) as Record<string, unknown>[]), vorhanden);
   } else {
     const { data, error } = await z.supabase
-      .from("kosten").select("prop_id,buchungsdatum,kategorie,betrag").eq("prop_id", propId).eq("user_id", z.user.id)
+      .from("kosten").select("prop_id,buchungsdatum,kategorie,betrag,umlagefaehig").eq("prop_id", propId).eq("user_id", z.user.id)
       .gte("buchungsdatum", `${jahr}-01-01`).lt("buchungsdatum", `${jahr + 1}-01-01`);
     if (error) return { error: "Buchungen konnten nicht geladen werden." };
     neue = vorschlaegeAusBuchungen(nkAusBuchungen(data ?? [], propId, jahr).vorschlaege, vorhanden);
