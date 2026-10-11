@@ -50,6 +50,9 @@ const KASKADE = new Set([
   // Kaskade auf auth.users per Migration 20261011130000 (Ablauf B, SQL-Editor; lokal gegen PostgreSQL 16
   // geprüft). Die Dateien liegen flach unter `<uid>/` im Bucket „belege“ — die Kontolöschung leert ihn.
   "beleg_eingang",
+  // Kaskade auf auth.users per Migration 20261011160000 (Ablauf F, SQL-Editor; lokal geprüft:
+  // supabase/test/rls/ablauf_f_aussen_auftraege.sql „Kontolöschung entfernt die Schritte“).
+  "aussen_auftraege",
 ]);
 
 const AUSNAHMEN: Record<string, string> = {

@@ -2,6 +2,7 @@
 
 // Vermieter: Service-Partner einladen (SV-Code), Aufträge vergeben und
 // den Bearbeitungsstand sehen — Tab "Service" im Mieterportal.
+import { useVorgang } from "@/lib/hooks/useVorgang";
 import { UEBERNAHME_KATEGORIEN } from "@/lib/kategorien";
 import { useState, useTransition } from "react";
 import {
@@ -522,13 +523,16 @@ export default function ServiceManager({
   const [ok, setOk] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  // Ablauf F: ein Schlüssel je Auftrag — ein zweites Absenden nach Zeitüberlauf legt keinen zweiten an.
+  const vorgang = useVorgang();
   const senden = (fd: FormData) =>
     startTransition(async () => {
       setFehler(null); setOk(false);
       if (demo) return; // Demo: nie an den Server
+      fd.set("vorgang", vorgang.aktuell());
       const r = await erstelleAuftrag(fd);
       if (r?.error) setFehler(r.error);
-      else setOk(true);
+      else { vorgang.abgeschlossen(); setOk(true); }
     });
 
   return (

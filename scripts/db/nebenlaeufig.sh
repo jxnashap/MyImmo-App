@@ -47,7 +47,20 @@ anzahl=$("${PSQL[@]}" -c "select count(*) from public.angebote where anfrage_id 
 if [[ "$anzahl" == "3" ]]; then echo "ok  Angebotsgrenze hält bei gleichzeitiger Abgabe (3 Angebote)"; else echo "FEHLGESCHLAGEN: $anzahl Angebote statt 3 (B: $B)"; fehler=1; fi
 if [[ "$B" == *"error"* ]]; then echo "ok  zweite Sitzung wartet und wird abgelehnt"; else echo "FEHLGESCHLAGEN: zweite Sitzung wurde angenommen ($B)"; fehler=1; fi
 
+# Ablauf F: Zwei Server-Läufe beanspruchen denselben Schritt gleichzeitig — genau einer bekommt ihn.
+JOB="dddddddd-$(printf '%04d' $(( $$ % 10000 )))-0000-0000-000000000001"
+"${PSQL[@]}" -c "insert into public.aussen_auftraege (id, user_id, schluessel, art) select '$JOB', id, 'nebenlaeufig', 'hinweis_mail' from auth.users where email = '$KENNUNG'" >/dev/null \
+  || { echo "FEHLGESCHLAGEN: Schritt nicht angelegt"; fehler=1; }
+FA=$(mktemp)
+( "${PSQL[@]}" -c "begin; set local role service_role; select count(*) from public.aussen_auftrag_beanspruchen('$JOB'); select pg_sleep(2); commit;" > "$FA" 2>&1 ) &
+sleep 0.5
+JB=$("${PSQL[@]}" -c "begin; set local role service_role; select count(*) from public.aussen_auftrag_beanspruchen('$JOB'); commit;" 2>&1 | grep -E '^[0-9]+$')
+wait
+JA=$(grep -E '^[0-9]+$' "$FA"); rm -f "$FA"
+versuche=$("${PSQL[@]}" -c "select versuche from public.aussen_auftraege where id = '$JOB'")
+if [[ "$JA" == "1" && "$JB" == "0" && "$versuche" == "1" ]]; then echo "ok  Schritt nach außen: genau ein Bearbeiter bei gleichzeitigem Anspruch"; else echo "FEHLGESCHLAGEN: Anspruch A=$JA B=$JB Versuche=$versuche"; fehler=1; fi
+
 aufraeumen; trap - EXIT
-rest=$("${PSQL[@]}" -c "select (select count(*) from auth.users where email = '$KENNUNG') + (select count(*) from public.angebotsanfragen where public_token = '$TOKEN')")
+rest=$("${PSQL[@]}" -c "select (select count(*) from auth.users where email = '$KENNUNG') + (select count(*) from public.angebotsanfragen where public_token = '$TOKEN') + (select count(*) from public.aussen_auftraege where schluessel = 'nebenlaeufig')")
 if [[ "$rest" == "0" ]]; then echo "ok  Testdaten entfernt"; else echo "FEHLGESCHLAGEN: $rest Testzeilen liegen noch"; fehler=1; fi
 exit $fehler

@@ -21,11 +21,15 @@ import type { DocArt } from "@/lib/dokumentVorlagen";
 
 export type DokumentResult = {
   ok: boolean;
+  /** Ablauf F: Dasselbe Formular kam ein zweites Mal — das vorhandene Schreiben gilt, nichts doppelt. */
+  wiederholt?: boolean;
   error?: string;
   zugestelltAn?: string[];
   /** Was aus der Hinweis-Mail wurde (lib/zugang.ts) — null/fehlend, wenn es nichts zu sagen gibt. */
   hinweis?: string | null;
 };
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function archiviere(opts: {
   userId: string;
@@ -38,6 +42,8 @@ async function archiviere(opts: {
   zustellenAn?: Empfaenger[];
   /** Mieter soll „gelesen und bestätigt“ klicken. */
   bestaetigung?: boolean;
+  /** Vorgangskennung des Formulars (Ablauf F): zweites Absenden → dasselbe Schreiben, nichts doppelt. */
+  vorgang?: string | null;
 }): Promise<DokumentResult> {
   const supabase = await createClient();
 
@@ -54,7 +60,10 @@ async function archiviere(opts: {
   const dateiData =
     "data:application/pdf;base64," + Buffer.from(opts.pdf).toString("base64");
 
-  const { data: neu, error } = await supabase.from("notizen").insert({
+  const vorgang = opts.vorgang && UUID_RE.test(opts.vorgang) ? opts.vorgang : null;
+  const { data: eingefuegt, error } = await supabase.from("notizen").insert({
+    // Nur mitschicken, wenn gesetzt — ohne Kennung bleibt der Weg wie vorher.
+    ...(vorgang ? { vorgang } : {}),
     user_id: opts.userId,
     mieter_id: opts.mieterId,
     prop_id: mieter.prop_id ?? null,
@@ -68,12 +77,24 @@ async function archiviere(opts: {
     // Zeile in `zustellungen` (Migration 20261002140000).
     mieter_freigabe: !!opts.zustellenAn,
   }).select("id").single();
-  // Demo-Sperre sagt, warum (Audit P5, B54) — nicht „fehlgeschlagen“.
-  if (error || !neu) return { ok: false, error: dbFehlerText(error, "Speichern im Archiv fehlgeschlagen.") };
+  let neu = eingefuegt as { id: string } | null;
+  let wiederholt = false;
+  // Ablauf F: Dasselbe Formular zum zweiten Mal (Zeitüberlauf, Doppelklick, Neustart) — das Schreiben
+  // liegt schon im Archiv. Kein zweites anlegen; die Zustellung unten ist ebenfalls je Empfänger einmalig.
+  if (error?.code === "23505" && vorgang) {
+    const { data: vorhanden, error: e2 } = await supabase
+      .from("notizen").select("id").eq("user_id", opts.userId).eq("vorgang", vorgang).maybeSingle();
+    if (e2 || !vorhanden) return { ok: false, error: "Speichern im Archiv fehlgeschlagen." };
+    neu = vorhanden as { id: string };
+    wiederholt = true;
+  } else if (error || !neu) {
+    // Demo-Sperre sagt, warum (Audit P5, B54) — nicht „fehlgeschlagen“.
+    return { ok: false, error: dbFehlerText(error, "Speichern im Archiv fehlgeschlagen.") };
+  }
 
   revalidatePath("/archiv");
   revalidatePath(`/tenants/${opts.mieterId}`);
-  if (!opts.zustellenAn) return { ok: true };
+  if (!opts.zustellenAn) return { ok: true, ...(wiederholt ? { wiederholt } : {}) };
 
   const z = await zustelle(supabase, {
     userId: opts.userId,
@@ -85,7 +106,7 @@ async function archiviere(opts: {
   });
   revalidatePath("/portal");
   if (!z.ok) return { ok: false, error: `Im Archiv gespeichert, aber nicht zugestellt: ${z.error}` };
-  return { ok: true, zugestelltAn: z.an, hinweis: hinweisMailText(z.hinweisMail) };
+  return { ok: true, zugestelltAn: z.an, hinweis: hinweisMailText(z.hinweisMail), ...(wiederholt ? { wiederholt } : {}) };
 }
 
 export type BriefZustellLage = { sperre: string | null; warnungen: string[]; an: string[] } | { error: string };
@@ -108,6 +129,7 @@ export async function speichereBrief(
   mieterId: string,
   fields: BriefFields,
   versand: { zustellen?: boolean; bestaetigung?: boolean } = {},
+  vorgang?: string,
 ): Promise<DokumentResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -139,6 +161,7 @@ export async function speichereBrief(
       pdf: doc.pdf,
       zustellenAn,
       bestaetigung: versand.bestaetigung,
+      vorgang,
     });
   } catch (e) {
     console.error("speichereBrief:", e);
@@ -150,6 +173,7 @@ export async function speichereNk(
   mieterId: string,
   jahr: number,
   zustellen = false,
+  vorgang?: string,
 ): Promise<DokumentResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -181,6 +205,7 @@ export async function speichereNk(
       dateiname: doc.dateiname,
       pdf: doc.pdf,
       zustellenAn,
+      vorgang,
     });
   } catch (e) {
     console.error("speichereNk:", e);

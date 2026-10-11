@@ -96,7 +96,18 @@ export async function zustelle(
   },
 ): Promise<{ ok: true; an: string[]; hinweisMail: Ergebnis[] } | { ok: false; error: string }> {
   if (opts.empfaenger.length === 0) return { ok: false, error: "Kein Empfänger — nichts zugestellt." };
-  const zeilen = opts.empfaenger.map((e) => ({
+  // Ablauf F: Je Dokument und Empfänger höchstens EINE aktive Zustellung (Index zustellungen_einmal_aktiv).
+  // Ein zweites Absenden (Zeitüberlauf, Doppelklick) stellt nicht noch einmal zu — wer sie schon hat,
+  // fällt heraus; ein gleichzeitiger Lauf, der schneller war, ergibt 23505 und wird nachgelesen.
+  const schonDa = async (): Promise<Set<string> | null> => {
+    const { data, error } = await supabase.from("zustellungen").select("empfaenger_user_id")
+      .eq("notiz_id", opts.notizId).is("zurueckgezogen_am", null);
+    return error ? null : new Set(((data ?? []) as { empfaenger_user_id: string }[]).map((z) => z.empfaenger_user_id));
+  };
+  const vorher = await schonDa();
+  if (!vorher) return { ok: false, error: "Zustellung fehlgeschlagen — das Dokument ist im Mieterportal NICHT sichtbar." };
+  const offen = opts.empfaenger.filter((e) => !vorher.has(e.userId));
+  const zeilen = offen.map((e) => ({
     vermieter_id: opts.userId,
     zugestellt_von: opts.userId,
     art: "dokument",
@@ -107,14 +118,21 @@ export async function zustelle(
     empfaenger_email: e.email,
     bestaetigung_noetig: !!opts.bestaetigung,
   }));
-  const { data, error } = await supabase.from("zustellungen").insert(zeilen).select("id");
-  if (error || !data || (data as unknown[]).length !== zeilen.length) {
-    return { ok: false, error: "Zustellung fehlgeschlagen — das Dokument ist im Mieterportal NICHT sichtbar." };
+  if (zeilen.length > 0) {
+    const { data, error } = await supabase.from("zustellungen").insert(zeilen).select("id");
+    const fehlschlag = !!error || !data || (data as unknown[]).length !== zeilen.length;
+    if (fehlschlag) {
+      // Schneller gleichzeitiger Lauf? Dann stehen jetzt alle Empfänger da — das ist kein Fehler.
+      const nachher = error?.code === "23505" ? await schonDa() : null;
+      if (!nachher || !opts.empfaenger.every((e) => nachher.has(e.userId))) {
+        return { ok: false, error: "Zustellung fehlgeschlagen — das Dokument ist im Mieterportal NICHT sichtbar." };
+      }
+    }
   }
   // Hinweis-Mail „es liegt etwas bereit“ — beste Mühe, die Zustellung steht schon. Das Ergebnis
   // geht seit P4 (B43) an die Oberfläche: Ohne eingerichteten Versand geht nichts hinaus, und der
   // Vermieter soll nicht annehmen, der Mieter wisse Bescheid.
   const hinweisMail: Ergebnis[] = [];
-  for (const e of opts.empfaenger) hinweisMail.push(await benachrichtige(e.userId, "dokument", opts.notizId));
+  for (const e of opts.empfaenger) hinweisMail.push(await benachrichtige(e.userId, "dokument", opts.notizId, opts.userId));
   return { ok: true, an: opts.empfaenger.map((e) => e.email ?? "Portal-Konto"), hinweisMail };
 }

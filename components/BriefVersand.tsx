@@ -11,6 +11,7 @@
 //
 // PORTAL: über den bestehenden Zustellweg (lib/zustellung.ts) — erst die Karte mit den
 // Empfängern, dann zustellen; der Server prüft dasselbe noch einmal.
+import { useVorgang } from "@/lib/hooks/useVorgang";
 import { useState, useTransition } from "react";
 import { Mail, Send, Share2 } from "lucide-react";
 import { briefMailLink, briefMailText } from "@/lib/mahnung";
@@ -83,6 +84,10 @@ export default function BriefVersand({
     setMail({ stand: "geoeffnet", ohneAdresse: !email });
   }
 
+  // Ablauf F: je Absicht EIN Schlüssel — ein zweiter Klick nach Zeitüberlauf legt nichts doppelt an.
+  const kopieVorgang = useVorgang();
+  const portalVorgang = useVorgang();
+
   async function mailVorbereiten() {
     setPortal(null);
     setMail({ stand: "laedt" });
@@ -91,8 +96,9 @@ export default function BriefVersand({
       const link = briefMailLink({ an: email, betreff, mieterName, absender });
       if (archiviertFuer !== schluessel) {
         try {
-          const r = await speichereBrief(mieterId, felder);
+          const r = await speichereBrief(mieterId, felder, {}, kopieVorgang.aktuell());
           if (r.ok) {
+            kopieVorgang.abgeschlossen();
             setArchiviertFuer(schluessel);
             toast("Kopie im Archiv abgelegt.", "success");
           } else {
@@ -138,8 +144,9 @@ export default function BriefVersand({
   function portalZustellen() {
     startStellen(async () => {
       try {
-        const res = await speichereBrief(mieterId, felder, { zustellen: true, bestaetigung });
+        const res = await speichereBrief(mieterId, felder, { zustellen: true, bestaetigung }, portalVorgang.aktuell());
         if (res.ok) {
+          portalVorgang.abgeschlossen();
           // P4 (B43): „bereitgestellt“, nicht „zugestellt ✓“ — zugegangen ist es erst mit dem Abruf.
           toast(
             [`Im Mieterportal bereitgestellt für ${(res.zugestelltAn ?? []).join(", ") || "den Mieter"}.`, res.hinweis].filter(Boolean).join(" "),

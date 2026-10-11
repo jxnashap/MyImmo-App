@@ -88,6 +88,8 @@ export const EXPORT_TABELLEN: Record<ExportRolle, ExportTabelle[]> = {
     V("freigabe_eingang", "user_id", { dateien: [{ spalte: "datei_data", name: "datei_name" }] }),
     V("freigabe_termine", "user_id"),
     { name: "frist_ausgeblendet", besitz: "user_id", schluessel: ["user_id", "schluessel"] },
+    // Ablauf F: Versandstand der Hinweis-Mails an dich (Art, Zeitpunkt, Ergebnis — keine Inhalte).
+    V("aussen_auftraege", "user_id"),
     { name: "unterschriften", besitz: "user_id", schluessel: ["user_id"], dateien: [{ spalte: "data" }] },
     V("vertreter", "user_id", { dateien: [{ spalte: "datei_data", name: "datei_name" }] }),
     V("ibans", "user_id", { verschluesselt: ["iban", "inhaber"], ohne: ["iban_bidx"] }),
@@ -118,6 +120,7 @@ export const EXPORT_TABELLEN: Record<ExportRolle, ExportTabelle[]> = {
     V("anliegen_ereignisse", "autor_id"),
     V("zaehlerstand_meldungen", "mieter_user_id", { dateien: [{ spalte: "foto_data", name: "foto_name" }] }),
     { name: "mieter_zugaenge", besitz: "user_id", schluessel: ["user_id", "mieter_id"] },
+    V("aussen_auftraege", "user_id"),
     { name: "konto_freischaltung", besitz: "user_id", schluessel: ["user_id"] },
     { name: "nutzer_rollen", besitz: "user_id", schluessel: ["user_id"] },
   ],
@@ -127,6 +130,7 @@ export const EXPORT_TABELLEN: Record<ExportRolle, ExportTabelle[]> = {
     { name: "service_zugaenge", besitz: "user_id", schluessel: ["user_id", "vermieter_id"] },
     { name: "konto_freischaltung", besitz: "user_id", schluessel: ["user_id"] },
     { name: "nutzer_rollen", besitz: "user_id", schluessel: ["user_id"] },
+    V("aussen_auftraege", "user_id"),
   ],
 };
 

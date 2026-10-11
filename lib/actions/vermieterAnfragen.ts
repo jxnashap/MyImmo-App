@@ -57,7 +57,7 @@ export async function erstelleVermieterAnfrage(formData: FormData) {
     .select("user_id")
     .eq("mieter_id", mieterId)
     .eq("vermieter_id", user.id);
-  for (const k of (konten ?? []) as { user_id: string }[]) await benachrichtige(k.user_id, "anfrage", mieterId);
+  for (const k of (konten ?? []) as { user_id: string }[]) await benachrichtige(k.user_id, "anfrage", mieterId, user.id);
 
   revalidatePath("/anliegen");
   revalidatePath("/portal");

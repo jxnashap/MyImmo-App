@@ -20,6 +20,13 @@ function neuerCode(): string {
 }
 
 /** Vermieter: Einladungscode für einen Service-Partner erzeugen (14 Tage). */
+const VORGANG_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Vorgangskennung aus dem Formular (Ablauf F) — nur eine gültige UUID zählt. */
+function vorgangAus(fd: FormData): string | null {
+  const v = String(fd.get("vorgang") ?? "").trim();
+  return VORGANG_RE.test(v) ? v : null;
+}
+
 export async function erzeugeServiceCode() {
   const supabase = await createClient();
   const {
@@ -273,7 +280,10 @@ export async function erstelleAuftrag(formData: FormData) {
   const { data: profil } = await supabase
     .from("vermieter_profil").select("name").eq("user_id", user.id).maybeSingle();
 
+  // Ablauf F: Vorgangskennung des Formulars — ein zweites Absenden legt keinen zweiten Auftrag an.
+  const vorgang = vorgangAus(formData);
   const { error } = await supabase.from("auftraege").insert({
+    ...(vorgang ? { vorgang } : {}),
     vermieter_id: user.id,
     service_user_id: serviceUserId,
     prop_id: propId || null,
@@ -286,7 +296,7 @@ export async function erstelleAuftrag(formData: FormData) {
     mieter_id: mieterOk,
     taetigkeit,
   });
-  if (error) return { error: "Auftrag konnte nicht gespeichert werden." };
+  if (error && !(error.code === "23505" && vorgang)) return { error: "Auftrag konnte nicht gespeichert werden." };
   revalidatePath("/anliegen");
   revalidatePath("/service");
   return { ok: true };
@@ -345,7 +355,9 @@ export async function beantrageAuftrag(formData: FormData) {
     firmaOk = f.id;
   }
 
+  const vorgang = vorgangAus(formData);
   const { error } = await supabase.from("auftraege").insert({
+    ...(vorgang ? { vorgang } : {}),
     vermieter_id: vermieterId,
     service_user_id: user.id,
     firma_id: firmaOk,
@@ -360,7 +372,8 @@ export async function beantrageAuftrag(formData: FormData) {
     auto_freigegeben: unterGrenze,
     erstellt_von: "service",
   });
-  if (error) return { error: "Antrag konnte nicht gespeichert werden." };
+  // Derselbe Antrag schon da (zweites Absenden): kein zweiter — die erste Fassung gilt.
+  if (error && !(error.code === "23505" && vorgang)) return { error: "Antrag konnte nicht gespeichert werden." };
   revalidatePath("/service");
   revalidatePath("/anliegen");
   return { ok: true, freigegeben: unterGrenze };

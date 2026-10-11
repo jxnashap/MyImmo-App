@@ -130,6 +130,21 @@ Zustand abgeleitet, den sie beobachten kann (Datei erstellt). Texte vor der Best
 Wert abgelehnt, die Oberfläche hätte „constructor“ als Weg angezeigt.
 → *Gegenprüfung:* Weißlisten über `Object.hasOwn()` oder ein `Set`; Test mit „constructor“/„toString“.
 
+**Eine Bremse, die auch den Fehlschlag zählt, ist ein Wiederholungsverbot (Ablauf F, 11.10.2026)**
+Die Hinweis-Mail lief über `darfWeiter(…, 1 je 10 min)`. Scheiterte der Versand, war der eine Versuch des
+Fensters verbraucht: Ein erneutes Auslösen meldete „gebremst“, und einen späteren Versuch gab es nie — die
+Mail war still verloren. Gleichzeitig verhinderte die Bremse Doppel-Mails nur 10 Minuten lang.
+→ *Gegenprüfung:* Für Schritte nach außen einen dauerhaften Auftrag mit Schlüssel, Zustand und Versuchen
+(`lib/aussenAuftrag.ts`); „erledigt“ erst nach dem Speichern. Tests für: zweiter Aufruf, gleichzeitige Aufrufe,
+Fehlschlag mit späterem Erfolg, letzter Versuch, Abbruch zwischen Versand und Speichern.
+
+**Ein zweites Absenden war eine zweite Handlung (Ablauf F, 11.10.2026)**
+„Speichern & zustellen“ nach Zeitüberlauf noch einmal → zweites Schreiben im Archiv, zweite Zustellung, zweite
+Mail; „Auftrag senden“ zweimal → zwei Aufträge. Eine Sperre im Browser (Knopf aus) hilft nicht gegen Neustart
+oder Netzabbruch nach dem Speichern.
+→ *Gegenprüfung:* Formular trägt eine Kennung je Absicht (`useVorgang()`, erst nach Erfolg neu), die
+Datenbank macht sie eindeutig, der Server liest bei 23505 nach. Test mit gleicher UND neuer Kennung.
+
 **Zinsen gezahlt, als liefe die Rate nach der Tilgung weiter (B13, 11.10.2026)**
 „Zinsen in der Bindung = Rate × 12 × Jahre − getilgt“ zählte bei 100.000 € · 4 % · 4 % · 20 Jahre die
 Raten nach der Volltilgung (Monat 209) als Zinsen: 60.000 € statt 38.860,59 €.

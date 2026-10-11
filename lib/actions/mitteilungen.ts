@@ -64,7 +64,7 @@ export async function sendeMitteilung(fd: FormData) {
   if (iFehler || !neu || (neu as unknown[]).length !== zeilen.length) {
     return { error: "Mitteilung konnte nicht gesendet werden — niemand sieht sie." };
   }
-  for (const z of empfaenger) await benachrichtige(z.user_id, "mitteilung", gruppe);
+  for (const z of empfaenger) await benachrichtige(z.user_id, "mitteilung", gruppe, user.id);
 
   revalidatePath("/anliegen");
   revalidatePath("/portal");

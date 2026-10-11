@@ -81,7 +81,7 @@
 > vorbei** (Selbst-Einladung → freigeschaltete Hausverwaltung). **Ausrollen nur in dieser Reihenfolge:**
 > `20261011110000` (B07), `20261011120000` (B12) und `20261011121000` (B14, Schalter bleibt aus) per apply_migration
 > und `20261011130000` (Ablauf B, SQL-Editor), `20261011140000` (Ablauf C, apply_migration; vorher die Altbestand-Abfrage
-> am Dateiende), `20261011150000` (Ablauf D, apply_migration), alle VOR dem Code → Code mergen + deployen → `20261011100000` (B04) und
+> am Dateiende), `20261011150000` (Ablauf D, apply_migration), `20261011160000` (Ablauf F, SQL-Editor), alle VOR dem Code → Code mergen + deployen → `20261011100000` (B04) und
 > `20261011101000` (B03) per apply_migration → `20261011102000` (B01) → `20261011103000` (B02, SQL-Editor;
 > bis dahin scheitert „Konto löschen“ mit Fehlermeldung, gelöscht wird nichts) → `20261011104000` (B18,
 > SQL-Editor, No-op). **Phase-2-Regeln:** (5) Eine Buchung, die ein Geschäftsvorgang erzeugt, hat eine
@@ -128,6 +128,14 @@
 > wenn die Daten ihn nicht mehr ergeben. Abgleich mit DENSELBEN Funktionen wie die Seiten (`jahresZeile`,
 > `buchungssaldo`, `baueDatevBuchungen`, `nkAusBuchungen`); eine neue Auswertung, die Summen eines Objekts
 > zeigt, kommt in diesen Abgleich. Ohne Anlage V.
+> (23) **F** — Ein Schritt nach außen (heute die Hinweis-Mail) läuft nur über `fuehreAus()` (`lib/aussenAuftrag.ts`,
+> Tabelle `aussen_auftraege`): vormerken unter stabilem Schlüssel → genau einmal beanspruchen → ausführen →
+> „erledigt“ erst nach dem Speichern; sonst Fehlergrund und nächster Versuch (10/60 min, höchstens 3, einen Tag),
+> Wiederholung per Cron `/api/cron/aussen-auftraege` (stündlich, vercel.json), Aufbewahrung 90 Tage.
+> **Zustellrisiko benannt, kein „genau einmal“:** Abbruch zwischen Versand und Speichern → nach 5 min ein zweiter
+> Versand möglich (Test hält es fest). Formulare, die etwas anlegen (Archiv-Schreiben, Auftrag), schicken eine
+> Vorgangskennung (`useVorgang()`, neu erst nach Erfolg); der Server findet bei 23505 die erste Zeile. Eine
+> Zustellung je Dokument und Empfänger höchstens einmal (`zustelle()` filtert, liest bei 23505 nach).
 > **Regeln:**
 > (1) `mfa_wiederherstellung` und `konto_loeschen()` nur über die Service-Role im Server —
 > `delete_own_account()` ist kein Nutzer-Einstieg mehr. (2) Einladen darf nur ein freigeschalteter

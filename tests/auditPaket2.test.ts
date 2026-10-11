@@ -92,8 +92,8 @@ describe("A6/B8/B10: Rechtstexte", () => {
   });
   it("Stand-Daten entsprechen der letzten inhaltlichen Aenderung", () => {
     expect(agb).toContain("Stand: 1. Oktober 2026");
-    // 10.10.2026: Service Worker der installierbaren Web-App (Ziffer 6).
-    expect(lies("app/(pub)/datenschutz/page.tsx")).toContain("Stand: 10. Oktober 2026");
+    // 11.10.2026: Versandeintrag je Hinweis-E-Mail, 90 Tage (Ziffer 4, Ablauf F). Davor 10.10.: Service Worker.
+    expect(lies("app/(pub)/datenschutz/page.tsx")).toContain("Stand: 11. Oktober 2026");
     // 10.10.2026: TOM „Endgeräte“ (installierbare Web-App) — vorher 06.10.2026 (eine Quelle, Brevo).
     expect(lies("lib/avvInhalt.ts")).toContain('AVV_STAND = "10. Oktober 2026"');
   });

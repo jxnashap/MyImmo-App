@@ -12,13 +12,20 @@ import "server-only";
 // Fehlt Brevo, ist die Mail abbestellt oder gebremst, passiert still nichts (mit Grund
 // als Rückgabe, für Tests und Logs). Die Zustellung selbst steht in der Datenbank.
 //
-// BREMSE: höchstens eine Mail je Empfänger, Art und Bezug in 10 Minuten — fünf
-// Nachrichten hintereinander im selben Vorgang ergeben eine Mail, nicht fünf.
+// EIN AUFTRAG JE ANLASS (Ablauf F, 11.10.2026): Jede Mail ist ein dauerhafter Schritt in
+// `aussen_auftraege` (lib/aussenAuftrag.ts) — Schlüssel, Zustand, Versuche, Fehlergrund. Derselbe Anlass
+// zweimal (Doppelklick, Zeitüberlauf, Neustart) ergibt keine zweite Mail; ein fehlgeschlagener Versand wird
+// bis zu dreimal wiederholt (Cron `/api/cron/aussen-auftraege`), statt verloren zu gehen. Vorher zählte die
+// 10-Minuten-Bremse auch den Fehlschlag, und es gab nie einen zweiten Versuch.
+// Einmalige Anlässe (ein Dokument, ein neues Anliegen, eine Mitteilung) haben den Bezug als Schlüssel;
+// wiederkehrende (Nachrichten, Terminvorschläge, Anfragen) bekommen zusätzlich ein 10-Minuten-Fenster —
+// fünf Nachrichten hintereinander im selben Vorgang ergeben eine Mail, nicht fünf (wie die alte Bremse).
 import { brevoBereit, sendeMail } from "@/lib/mail/brevo";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { darfWeiter } from "@/lib/net/bremse";
 import { basisUrl } from "@/lib/net/basisUrl";
 import { istDemoKonto } from "@/lib/demo";
+import { fuehreAus, type AussenErgebnis, type Lauf } from "@/lib/aussenAuftrag";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type BenachrichtigungsArt =
   | "dokument" // Vermieter → Mieter: Dokument zugestellt
@@ -72,26 +79,63 @@ export function benachrichtigungsMail(art: BenachrichtigungsArt, basis: string):
   return { betreff, text, html };
 }
 
-export type Ergebnis = "gesendet" | "kein_versand" | "kein_konto" | "abbestellt" | "demo" | "gebremst" | "fehler";
+export type Ergebnis = "gesendet" | "kein_versand" | "kein_konto" | "abbestellt" | "demo" | "gebremst" | "vorgemerkt" | "fehler";
+
+/** Anlässe, die es je Bezug nur einmal gibt — alle anderen bekommen ein Zeitfenster im Schlüssel. */
+const EINMALIG = new Set<BenachrichtigungsArt>(["dokument", "anliegen_neu", "mitteilung"]);
+
+/** Stabiler Schlüssel des Auftrags (je Empfänger eindeutig, die Spalte `user_id` trennt Empfänger). Rein. */
+export function hinweisSchluessel(art: BenachrichtigungsArt, bezug: string, jetztMs: number): string {
+  if (EINMALIG.has(art)) return `hinweis:${art}:${bezug}`;
+  return `hinweis:${art}:${bezug}:${Math.floor(jetztMs / (BREMSE_SEKUNDEN * 1000))}`;
+}
+
+/** Der eigentliche Versand — Adresse aus dem Auth-Konto. Ergebnis „erledigt“ auch, wenn bewusst nichts ging. */
+export async function sendeHinweis(admin: SupabaseClient, userId: string, art: BenachrichtigungsArt): Promise<Lauf> {
+  const { data, error } = await admin.auth.admin.getUserById(userId);
+  if (error) return { ok: false, grund: "Konto nicht lesbar" };
+  const user = data?.user;
+  if (!user?.email) return { ok: true, ergebnis: "kein_konto" };
+  if (istDemoKonto(user.email)) return { ok: true, ergebnis: "demo" };
+  if (user.user_metadata?.benachrichtigungen_aus === true) return { ok: true, ergebnis: "abbestellt" };
+  const mail = benachrichtigungsMail(art, await basisUrl());
+  return (await sendeMail({ an: user.email, ...mail })) ? { ok: true, ergebnis: "gesendet" } : { ok: false, grund: "Versand beim Mailanbieter fehlgeschlagen" };
+}
+
+/** Stand des Auftrags → Ergebnis für die Oberfläche (lib/zugang.ts → hinweisMailText). Rein. */
+export function ergebnisAus(r: AussenErgebnis): Ergebnis {
+  switch (r.stand) {
+    case "erledigt": return (r.ergebnis as Ergebnis) ?? "gesendet";
+    case "schon_erledigt": return r.ergebnis === "gesendet" || !r.ergebnis ? "gebremst" : (r.ergebnis as Ergebnis);
+    case "laeuft":
+    case "wartet": return "vorgemerkt";
+    case "nicht_gespeichert": return r.ergebnis === "gesendet" ? "gesendet" : "fehler";
+    case "aufgegeben": return "fehler";
+  }
+}
 
 /**
  * Benachrichtigt ein Konto. Die Adresse kommt aus dem Auth-Konto (Service-Role), nie vom
  * Aufrufer — so kann keine Action eine fremde Adresse einschleusen.
  */
-export async function benachrichtige(userId: string | null | undefined, art: BenachrichtigungsArt, bezug: string): Promise<Ergebnis> {
+export async function benachrichtige(
+  userId: string | null | undefined,
+  art: BenachrichtigungsArt,
+  bezug: string,
+  ausgeloestVon?: string | null,
+): Promise<Ergebnis> {
   try {
     if (!userId) return "kein_konto";
+    // Ohne eingerichteten Versand wird nichts vorgemerkt — sonst gingen Wochen später alte Hinweise hinaus.
     if (!brevoBereit()) return "kein_versand";
     const admin = createAdminClient();
     if (!admin) return "kein_versand";
-    const { data, error } = await admin.auth.admin.getUserById(userId);
-    const user = data?.user;
-    if (error || !user?.email) return "kein_konto";
-    if (istDemoKonto(user.email)) return "demo";
-    if (user.user_metadata?.benachrichtigungen_aus === true) return "abbestellt";
-    if (!(await darfWeiter("benachrichtigung", 1, BREMSE_SEKUNDEN, `${userId}:${art}:${bezug}`))) return "gebremst";
-    const mail = benachrichtigungsMail(art, await basisUrl());
-    return (await sendeMail({ an: user.email, ...mail })) ? "gesendet" : "fehler";
+    const r = await fuehreAus(
+      admin,
+      { userId, ausgeloestVon: ausgeloestVon ?? null, schluessel: hinweisSchluessel(art, bezug, Date.now()), art: "hinweis_mail", nutzlast: { art, bezug } },
+      () => sendeHinweis(admin, userId, art),
+    );
+    return ergebnisAus(r);
   } catch (e) {
     console.error("benachrichtige:", e instanceof Error ? e.message : "unbekannt");
     return "fehler";

@@ -27,7 +27,7 @@ export default function DatenschutzPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 10. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
+        Stand: 11. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
         Verarbeitung personenbezogener Daten bei Nutzung der Web-Anwendung MyImmo.
       </p>
 
@@ -225,7 +225,7 @@ export default function DatenschutzPage() {
         <li><strong>Vercel Inc.</strong>, USA (Hosting/Auslieferung der App) — DPA inkl. EU-Standardvertragsklauseln; technische Logs können in den USA verarbeitet werden.</li>
         <li><strong>Anthropic PBC</strong>, USA (KI-Auswertung, nur bei aktiver Nutzung) — DPA inkl. EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
         <li><strong>Google Ireland Ltd.</strong> — ausschließlich bei „Login mit Google“ (Ziffer 3 b). Schriftarten werden nicht von Google geladen (Ziffer 7).</li>
-        <li><strong>Brevo</strong> (Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g) der Einladungen ins Mieterportal, die ein Vermieter an die von ihm eingetragene Adresse seines Mieters schicken lässt, sowie der Hinweis-E-Mails aus dem Mieterportal („es liegt etwas Neues bereit“ — ohne Inhalt, Empfänger ist die Adresse des eigenen Kontos, im Konto abschaltbar); Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO (Anlage 2 zu den Nutzungsbedingungen, inkl. EU-Standardvertragsklauseln). Einzelne Unterauftragsverarbeiter von Brevo verarbeiten in Drittländern (Ziffer 5).</li>
+        <li><strong>Brevo</strong> (Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g) der Einladungen ins Mieterportal, die ein Vermieter an die von ihm eingetragene Adresse seines Mieters schicken lässt, sowie der Hinweis-E-Mails aus dem Mieterportal („es liegt etwas Neues bereit“ — ohne Inhalt, Empfänger ist die Adresse des eigenen Kontos, im Konto abschaltbar). Damit ein solcher Hinweis weder doppelt noch verloren geht, speichert MyImmo je Hinweis einen Versandeintrag (Art des Hinweises, Bezug, Zeitpunkte, Versuche, Ergebnis — keine E-Mail-Adresse, kein Inhalt); er wird nach 90 Tagen gelöscht, mit dem Konto sofort. Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO (Anlage 2 zu den Nutzungsbedingungen, inkl. EU-Standardvertragsklauseln). Einzelne Unterauftragsverarbeiter von Brevo verarbeiten in Drittländern (Ziffer 5).</li>
       </ul>
       <p style={ABSATZ}>
         Daneben erhalten die in Ziffer 3 h genannten Dienste (OpenStreetMap Foundation,

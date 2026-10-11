@@ -2,6 +2,7 @@
 
 // Service-Portal: erhaltene Aufträge annehmen, erledigen oder ablehnen
 // (mit optionaler Rückmeldung an den Vermieter).
+import { useVorgang } from "@/lib/hooks/useVorgang";
 import { useEffect, useState, useTransition } from "react";
 import { Wrench, CalendarDays, Building2, Phone, Mail, Globe, SendHorizonal, Check, Link2 } from "lucide-react";
 import { beantworteAuftrag, beantrageAuftrag, meldeFachbetriebNoetig } from "@/lib/actions/service";
@@ -334,13 +335,16 @@ function AntragForm({
   // Nur Objekte des gewählten Auftraggebers — und nur die, die er zugewiesen hat.
   const seineObjekte = objekte.filter((o) => o.vermieter_id === vermieterId);
 
+  // Ablauf F: ein Schlüssel je Antrag — ein zweites Absenden nach Zeitüberlauf legt keinen zweiten an.
+  const vorgang = useVorgang();
   const senden = (fd: FormData) =>
     startTransition(async () => {
       setFehler(null); setOk(null);
       if (vorschau) return; // Vorschau: nie an den Server
+      fd.set("vorgang", vorgang.aktuell());
       const r = await beantrageAuftrag(fd);
       if (r?.error) setFehler(r.error);
-      else { setOk(r?.freigegeben ? "freigegeben" : "wartet"); setOffen(false); }
+      else { vorgang.abgeschlossen(); setOk(r?.freigegeben ? "freigegeben" : "wartet"); setOffen(false); }
     });
 
   return (
