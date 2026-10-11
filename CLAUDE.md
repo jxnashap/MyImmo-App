@@ -122,6 +122,12 @@
 > für ALLE Mieter mit demselben Datum) — gelesen wird nur über `fristVermerk()`. Kalender-UIDs über
 > `fristUid()`, nie nach Listenposition. Jede Rechtsgrundlage einer Frist hat einen Eintrag in
 > `lib/fristQuellen.ts` (amtliche Fundstelle, Wortlaut, Prüfdatum; Test prüft beide Richtungen).
+> (22) **E** — Jahresprüfung je Objekt: `/properties/<id>/jahrespruefung` → `jahresPruefung()`
+> (`lib/jahresPruefung.ts`, rein): Belege, Zuordnung, Dubletten, Rückstände (Regeln des Mietkontos),
+> Vertragszeiträume, Umlagefähigkeit (über `nkAusBuchungen`), Zählerstände. Kein Abhaken — ein Punkt schließt,
+> wenn die Daten ihn nicht mehr ergeben. Abgleich mit DENSELBEN Funktionen wie die Seiten (`jahresZeile`,
+> `buchungssaldo`, `baueDatevBuchungen`, `nkAusBuchungen`); eine neue Auswertung, die Summen eines Objekts
+> zeigt, kommt in diesen Abgleich. Ohne Anlage V.
 > **Regeln:**
 > (1) `mfa_wiederherstellung` und `konto_loeschen()` nur über die Service-Role im Server —
 > `delete_own_account()` ist kein Nutzer-Einstieg mehr. (2) Einladen darf nur ein freigeschalteter

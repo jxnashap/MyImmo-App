@@ -2,6 +2,7 @@
 // Donut (Einnahmen vs. Ausgaben + Kategorie-Drilldown) und die bestehenden
 // Buchungslisten (Zeilen-Edit/Beleg/Löschen unverändert).
 import { heuteBerlin } from "@/lib/zeitraum";
+import { buchungssaldo } from "@/lib/cashflowKennzahl";
 import Link from "next/link";
 import { Plus, Repeat, Wallet, ClipboardList, Inbox } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -106,9 +107,8 @@ export default async function CashflowPage(
   ).sort((a, b) => b - a);
 
   // ---- Summen ----
-  const einnahmenTotal = einnahmen.reduce((s, e) => s + (e.betrag ?? 0), 0);
-  const ausgabenTotal = kosten.reduce((s, k) => s + (k.betrag ?? 0), 0);
-  const netto = einnahmenTotal - ausgabenTotal;
+  // Dieselbe Rechnung prüft die Jahresprüfung je Objekt gegen den Jahresbericht (Ablauf E).
+  const { einnahmen: einnahmenTotal, ausgaben: ausgabenTotal, saldo: netto } = buchungssaldo(einnahmen, kosten);
 
   // ---- Kategorie-Split (Daten für den Donut-Drilldown) ----
   const katSumme = (rows: { kategorie: string | null; betrag: number | null }[]) => {

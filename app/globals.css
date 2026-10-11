@@ -1317,6 +1317,14 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 }
 .tz-gruppe, .listen-gruppe { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; padding: 16px 0 6px; }
 .tz-gruppe:first-child, .listen-gruppe:first-child { padding-top: 2px; }
+/* Ablauf E: Jahresprüfung je Objekt — Prüfpunkte als Zeilen, Abgleich als Tabelle. */
+.jp-zeile { align-items: flex-start; }
+.jp-zeile .badge { flex-shrink: 0; margin-top: 1px; }
+.jp-text { flex: 1; min-width: 0; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.jp-pfeil { color: var(--muted); flex-shrink: 0; }
+.jp-abgleich { font-size: 12.5px; min-width: 640px; }
+.jp-abgleich th, .jp-abgleich td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.jp-abgleich th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
 /* Ablauf D: Stand des Schreibens zur Frist + „Zugang bestätigen“ (nativ aufklappbar, ohne JS). */
 .tz-vorgang { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 12px; margin-top: 3px; }
 .tz-vorgang a, .tz-erledigen summary { color: var(--gold); text-decoration: none; cursor: pointer; }

@@ -27,7 +27,7 @@ import { berechneSpekulation } from "@/lib/steuer/spekulation";
 import { refreshBewertung } from "@/lib/actions/bewertung";
 import { bewerten } from "@/lib/valuation/bewerten";
 import type { Property, Tenant } from "@/lib/types";
-import { BarChart3, Landmark, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
+import { BarChart3, Landmark, ClipboardCheck, Pencil, Trash2, User, Wallet, ClipboardList, Zap, Archive, Plus, X, Flame, Droplet, Fuel, Heater, Package, Handshake, type LucideIcon } from "lucide-react";
 import Leer from "@/components/Leer";
 import { cashflowFormel, nkVorauszahlungenMonat, objektMonat } from "@/lib/cashflowKennzahl";
 import { aktuellerWert, bruttoRendite } from "@/lib/portfolioKennzahlen";
@@ -262,6 +262,8 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
         <div style={{ display: "flex", gap: 8 }}>
           <Link href="/verkauf" className="btn btn-ghost" style={{ fontSize: 12 }} title="Verkauf durchrechnen: Marktwert, § 23-Steuer, Netto-Erlös"><Handshake size={14} style={{ verticalAlign: "-2px" }} /> Verkauf prüfen</Link>
           <Link href={`/properties/${id}/beleihung`} className="btn btn-ghost" style={{ fontSize: 12 }}><Landmark size={14} style={{ verticalAlign: "-2px" }} /> Beleihungsordner</Link>
+          {/* Ablauf E: Was vor dem Jahresabschluss fehlt — Belege, Zuordnungen, Rückstände, Abgleich. */}
+          <Link href={`/properties/${id}/jahrespruefung`} className="btn btn-ghost" style={{ fontSize: 12 }}><ClipboardCheck size={14} style={{ verticalAlign: "-2px" }} /> Jahresprüfung</Link>
           <Link href={`/properties/${id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}><Pencil size={14} style={{ verticalAlign: "-2px" }} /> Bearbeiten</Link>
           {/* Der Loeschumfang gehoert in die Rueckfrage: An einem Objekt haengen
               per Cascade alle Buchungen, Darlehen und Archiv-Dokumente. */}
