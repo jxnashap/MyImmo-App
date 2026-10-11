@@ -148,7 +148,7 @@ describe("Trennen räumt die Zuordnung mit ab", () => {
       antwortFolge: { "auftraege:select": [[{ id: "a1" }, { id: "a2" }]], "auftraege:update": [{ id: "a1" }, { id: "a2" }] },
     });
     const r = await mod.entferneServicePartner("hm-1");
-    expect(r).toEqual({ ok: true, linksErneuert: 2 });
+    expect(r).toEqual({ ok: true, linksErneuert: 2, offeneOhnePartner: 2 });
     const suche = zugriffe(db, "auftraege", "select")[0];
     expect(suche.filter).toEqual(expect.arrayContaining(["eq:vermieter_id=nutzer-1", "eq:service_user_id=hm-1"]));
     expect(suche.filter.join(" ")).toMatch(/freigabe.*offen.*angenommen/);

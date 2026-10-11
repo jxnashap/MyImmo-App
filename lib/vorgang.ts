@@ -14,9 +14,11 @@ export type Ereignis = {
   text: string | null;
   status_neu: string | null;
   created_at: string;
+  /** Nur bei Aufträgen (Ablauf C, Migration 20261011140000): wer bearbeitet — Rolle, nie Name. */
+  zustaendig?: "vermieter" | "hausmeister" | "handwerker" | null;
 };
 
-export const EREIGNIS_SPALTEN = "id,anliegen_id,autor_rolle,art,text,status_neu,created_at";
+export const EREIGNIS_SPALTEN = "id,anliegen_id,autor_rolle,art,text,status_neu,created_at,zustaendig";
 export const NACHRICHT_MAX = 4000;
 
 const STATUS_TEXT: Record<string, string> = {
@@ -36,6 +38,45 @@ export function autorLabel(rolle: Ereignis["autor_rolle"], sicht: "mieter" | "ve
 export function ereignisText(e: Ereignis): string {
   if (e.art === "status") return `Status: ${STATUS_TEXT[e.status_neu ?? ""] ?? e.status_neu ?? "geändert"}`;
   return e.text ?? "";
+}
+
+// ------------------------------------------------- Ablauf C: wer ist zuständig, wie weit ist es --
+
+export type Zustaendig = "vermieter" | "hausmeister" | "handwerker";
+export const ZUSTAENDIG_TEXT: Record<Zustaendig, string> = {
+  vermieter: "Vermieter",
+  hausmeister: "Hausmeister",
+  handwerker: "Handwerker",
+};
+const AUFTRAG_STAND: Record<string, string> = {
+  freigabe: "wartet auf Freigabe des Vermieters",
+  offen: "beauftragt",
+  angenommen: "angenommen",
+  erledigt: "erledigt",
+  abgelehnt: "abgelehnt",
+  nicht_freigegeben: "nicht freigegeben",
+};
+
+/**
+ * Stand eines Vorgangs für Mieter UND Vermieter (EINE Regel): Zuständig ist, wer den letzten Auftrag
+ * hat — ohne Auftrag, oder wenn er abgelehnt bzw. nicht freigegeben wurde, der Vermieter. Grundlage ist
+ * allein der Verlauf (der Mieter liest keine Aufträge, nur die Einträge, die die Datenbank schreibt).
+ */
+export function vorgangStand(verlauf: Ereignis[], anliegenStatus: string): {
+  zustaendig: Zustaendig;
+  auftrag: string | null;
+  /** Auftrag erledigt, Anliegen noch offen — der Vermieter sollte abschließen oder nachfragen. */
+  auftragErledigtAnliegenOffen: boolean;
+} {
+  const letzter = [...verlauf].filter((e) => e.art === "auftrag").sort((a, b) => a.created_at.localeCompare(b.created_at)).pop();
+  if (!letzter) return { zustaendig: "vermieter", auftrag: null, auftragErledigtAnliegenOffen: false };
+  const status = letzter.status_neu ?? "";
+  const zurueck = status === "abgelehnt" || status === "nicht_freigegeben";
+  return {
+    zustaendig: zurueck ? "vermieter" : letzter.zustaendig === "hausmeister" ? "hausmeister" : "handwerker",
+    auftrag: AUFTRAG_STAND[status] ?? null,
+    auftragErledigtAnliegenOffen: status === "erledigt" && anliegenStatus !== "erledigt",
+  };
 }
 
 /** Nach Anliegen gruppiert, je Gruppe chronologisch (älteste oben). */

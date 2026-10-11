@@ -108,7 +108,9 @@ export async function entferneServicePartner(serviceUserId: string) {
   if (nichtErneuert > 0) {
     return { error: `Verknüpfung gelöst, aber ${nichtErneuert} Auftrags-Link(s) konnten nicht erneuert werden — bitte erneut versuchen.` };
   }
-  return { ok: true, linksErneuert: (offene ?? []).length };
+  // Ablauf C: Offene Aufträge bleiben beim Vermieter sichtbar und tragen „Partner entfernt“ — übergeben
+  // (uebergebeServicePartner) oder selbst abschließen (schliesseAuftragAb). Hier nur die Zahl dafür.
+  return { ok: true, linksErneuert: (offene ?? []).length, offeneOhnePartner: (offene ?? []).length };
 }
 
 const ROLLEN = ["hausmeister", "dienstleister"] as const;
@@ -521,6 +523,49 @@ export async function beantworteAuftrag(formData: FormData) {
 }
 
 
+/**
+ * Vermieter schließt einen Auftrag ab, den kein verknüpfter Partner (mehr) beantworten kann (Ablauf C,
+ * 11.10.2026): Firma über den Auftrags-Link (kein Konto) oder Partner inzwischen entfernt. Vorher blieb
+ * so ein Auftrag für immer „offen“ — die Firma kann über ihren Link nur zu- oder absagen, nie „erledigt“
+ * mit Rechnungsbetrag melden, also war auch „Als Kosten übernehmen“ unerreichbar.
+ * Danach gilt derselbe Weg wie beim Partner: „Als Kosten übernehmen“ (eine Buchung je Auftrag, B07).
+ */
+export async function schliesseAuftragAb(formData: FormData): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  const id = String(formData.get("id") ?? "");
+  const betrag = parseBetrag(String(formData.get("betrag") ?? ""));
+  const lohnanteil = parseBetrag(String(formData.get("lohnanteil") ?? ""));
+  if (!id) return { error: "Ungültige Eingabe." };
+  if (!(betrag != null && betrag > 0)) return { error: "Bitte den Rechnungsbetrag angeben." };
+  if (lohnanteil != null && lohnanteil > betrag) return { error: "Der Lohnanteil kann nicht über dem Gesamtbetrag liegen." };
+
+  const { data: a, error: leseFehler } = await supabase
+    .from("auftraege").select("id,status,service_user_id").eq("id", id).eq("vermieter_id", user.id).maybeSingle();
+  if (leseFehler || !a) return { error: "Auftrag nicht gefunden." };
+  if (!["offen", "angenommen"].includes(a.status)) return { error: "Nur offene Aufträge lassen sich abschließen." };
+  if (a.service_user_id) {
+    // Ein Partner MIT Zugang schließt selbst ab (er meldet Betrag und Rechnung). Nur ohne Zugang darf der
+    // Vermieter übernehmen — und ohne lesbare Verknüpfung entscheiden wir nichts (fail-closed).
+    const { data: z, error: zFehler } = await supabase
+      .from("service_zugaenge").select("user_id").eq("vermieter_id", user.id).eq("user_id", a.service_user_id).maybeSingle();
+    if (zFehler) return { error: "Partner-Zugang konnte nicht geprüft werden — nichts geändert." };
+    if (z) return { error: "Diesen Auftrag schließt der Partner ab — er hat Zugang und meldet Betrag und Rechnung." };
+  }
+  const { data, error } = await supabase
+    .from("auftraege")
+    .update({
+      status: "erledigt", betrag, lohnanteil, antwort: "Vom Vermieter abgeschlossen (Rechnung liegt vor).",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id).eq("vermieter_id", user.id).in("status", ["offen", "angenommen"])
+    .select("id").maybeSingle();
+  if (error || !data) return { error: "Konnte nicht gespeichert werden — der Auftrag wurde inzwischen geändert." };
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
 /** Vermieter: erledigten Auftrag als Kosten-Buchung übernehmen (Betrag,
  *  Rechnung als Anhang, Lohnanteil dokumentiert in der Notiz — für die
  *  § 35a-Bescheinigung der Mieter in der NK-Abrechnung). */
@@ -544,7 +589,7 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
 
   const { data: a, error: leseFehler } = await supabase
     .from("auftraege")
-    .select("titel,objekt_name,prop_id,betrag,lohnanteil,rechnung_name,rechnung_type,rechnung_data,kosten_id,status,service_user_id")
+    .select("titel,objekt_name,prop_id,betrag,lohnanteil,rechnung_name,rechnung_type,rechnung_data,kosten_id,status,service_user_id,firma_id")
     .eq("id", id)
     .eq("vermieter_id", user.id)
     .maybeSingle();
@@ -554,13 +599,14 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
   if (a.kosten_id) return { error: "Dieser Auftrag wurde bereits als Kosten erfasst." };
   if (!(Number(a.betrag) > 0)) return { error: "Der Partner hat keinen Betrag angegeben — bitte manuell unter Kosten erfassen." };
 
-  const { data: partner } = await supabase
-    .from("service_zugaenge")
-    .select("firma,email")
-    .eq("vermieter_id", user.id)
-    .eq("user_id", a.service_user_id)
-    .maybeSingle();
-  const partnerName = partner?.firma || partner?.email || "Service-Partner";
+  // Nur für die Notiz: wer gearbeitet hat (Partner mit Konto oder Firma über den Auftrags-Link, Ablauf C).
+  const { data: partner } = a.service_user_id
+    ? await supabase.from("service_zugaenge").select("firma,email").eq("vermieter_id", user.id).eq("user_id", a.service_user_id).maybeSingle()
+    : { data: null };
+  const { data: firma } = !partner && a.firma_id
+    ? await supabase.from("firmen").select("name").eq("id", a.firma_id).eq("user_id", user.id).maybeSingle()
+    : { data: null };
+  const partnerName = partner?.firma || partner?.email || firma?.name || "Service-Partner";
 
   const notizTeile = [`Übernommen aus Service-Auftrag (${partnerName}).`];
   if (Number(a.lohnanteil) > 0) {

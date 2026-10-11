@@ -89,6 +89,24 @@ GET-Routen-Sperrliste, Schreibfehler im KI-Abbruchweg. Jeder davon wäre sonst e
 Gebuchte Belege teilen ihre Datei mit der Buchung — der Export lädt sie dort, nicht doppelt
 (`storage.wenn`); sonst meldete er nach einer gelöschten Buchung „unvollständig“.
 
+**Fremdschlüssel prüfen kein Eigentum (Ablauf C, 11.10.2026)**
+Die Schreibregel auf `auftraege` prüfte nur `vermieter_id = auth.uid()`. `mieter_id`, `anliegen_id`,
+`prop_id`, `firma_id` sind Fremdschlüssel — die Datenbank prüft dabei nur, OB die Zeile existiert, nicht
+WEM sie gehört (der FK-Check läuft ohne RLS). Über den eigenen Auftrags-Link kam so der Kontakt eines
+fremden Mieters heraus. Dazu eine eigene Testfalle: Die erste Probe holte das Link-Token als `anon` —
+leer — und meldete „kein fremder Kontakt“ aus dem falschen Grund; die zweite simulierte den Altbestand
+mit abgeschaltetem Trigger, aber der Spaltenschutz-Trigger setzte `mieter_id` zurück.
+→ *Gegenprüfung:* Jede Spalte, die auf eine Zeile eines Kontos zeigt, braucht eine Eigentumsprüfung
+(Trigger oder Policy mit `exists … user_id = …`). In SECURITY-DEFINER-Funktionen jeden Join auf den
+Besitzer einschränken. Proben erst glauben, wenn eine „sieht hin“-Prüfung belegt, dass die Testdaten
+tatsächlich so stehen.
+
+**Ein Auftrag ohne Partner kam nie auf „erledigt“ (Ablauf C, 11.10.2026)**
+Eine Firma über den Auftrags-Link kann nur zu- oder absagen; „erledigt mit Betrag“ meldet nur ein Partner
+mit Konto. Aufträge aus angenommenen Angeboten blieben offen, „Als Kosten übernehmen“ war unerreichbar.
+→ *Gegenprüfung:* Jeder Weg, der einen Vorgang beginnt, braucht einen Weg, ihn zu beenden — für JEDE
+Art von Beteiligtem (`schliesseAuftragAb` für Aufträge ohne verknüpften Partner).
+
 **Zinsen gezahlt, als liefe die Rate nach der Tilgung weiter (B13, 11.10.2026)**
 „Zinsen in der Bindung = Rate × 12 × Jahre − getilgt“ zählte bei 100.000 € · 4 % · 4 % · 20 Jahre die
 Raten nach der Volltilgung (Monat 209) als Zinsen: 60.000 € statt 38.860,59 €.

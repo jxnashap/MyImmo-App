@@ -6,7 +6,7 @@
 import { useState, useTransition } from "react";
 import { MessageSquare, CircleDot, CalendarClock, Wrench, Send } from "lucide-react";
 import { schreibeNachricht } from "@/lib/actions/anliegen";
-import { autorLabel, ereignisText, NACHRICHT_MAX, type Ereignis } from "@/lib/vorgang";
+import { autorLabel, ereignisText, vorgangStand, ZUSTAENDIG_TEXT, NACHRICHT_MAX, type Ereignis } from "@/lib/vorgang";
 import VorschauHinweis from "@/components/VorschauHinweis";
 
 const ICON = { nachricht: MessageSquare, status: CircleDot, termin: CalendarClock, auftrag: Wrench } as const;
@@ -20,6 +20,7 @@ export default function VorgangVerlauf({
   sicht,
   nurLesen = false,
   antworten = true,
+  anliegenStatus,
 }: {
   anliegenId: string;
   ereignisse: Ereignis[];
@@ -28,6 +29,8 @@ export default function VorgangVerlauf({
   nurLesen?: boolean;
   /** Antwortfeld zeigen (der Vermieter schreibt im Bearbeiten-Formular). */
   antworten?: boolean;
+  /** Status des Anliegens — dann steht oben, wer zuständig ist und wie weit der Auftrag ist (Ablauf C). */
+  anliegenStatus?: string;
 }) {
   const [text, setText] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
@@ -41,8 +44,17 @@ export default function VorgangVerlauf({
       else setText("");
     });
 
+  const stand = anliegenStatus ? vorgangStand(ereignisse, anliegenStatus) : null;
+
   return (
     <div style={{ marginTop: 8 }}>
+      {stand && (
+        <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }} data-vorgang-stand>
+          Zuständig: <strong style={{ color: "var(--text)" }}>{ZUSTAENDIG_TEXT[stand.zustaendig]}</strong>
+          {stand.auftrag && <> · Auftrag: {stand.auftrag}</>}
+          {stand.auftragErledigtAnliegenOffen && sicht === "vermieter" && <> · bitte das Anliegen abschließen oder nachfragen</>}
+        </p>
+      )}
       {ereignisse.length > 0 && (
         <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6, borderLeft: "2px solid var(--line)", paddingLeft: 10 }}>
           {ereignisse.map((e) => {

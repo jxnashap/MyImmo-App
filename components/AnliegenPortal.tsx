@@ -201,7 +201,7 @@ export default function AnliegenPortal({
             </div>
             <AnhangLinks dateien={dateienVon(a.id)} />
             <div style={{ marginTop: 10 }}>
-              <VorgangVerlauf anliegenId={a.id} ereignisse={verlauf[a.id] ?? []} sicht="mieter" nurLesen={nurLesen} />
+              <VorgangVerlauf anliegenId={a.id} ereignisse={verlauf[a.id] ?? []} sicht="mieter" nurLesen={nurLesen} anliegenStatus={a.status} />
             </div>
           </div>
         </div>

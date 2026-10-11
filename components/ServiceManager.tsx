@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import {
   erzeugeServiceCode, widerrufeServiceCode, entferneServicePartner, setzeServicePartner, uebergebeServicePartner,
-  erstelleAuftrag, loescheAuftrag, entscheideAuftrag, uebernimmAuftragAlsKosten, stelleRueckfrage,
+  erstelleAuftrag, loescheAuftrag, entscheideAuftrag, uebernimmAuftragAlsKosten, stelleRueckfrage, schliesseAuftragAb,
   setzeKostengrenze,
 } from "@/lib/actions/service";
 import { erstelleFirma, loescheFirma } from "@/lib/actions/firmen";
@@ -56,6 +56,8 @@ export type AuftragRow = {
   notizen?: AuftragNotiz[];
   /** Art der Arbeit (lib/taetigkeiten.ts); bei Aufträgen vor dem 05.10.2026 leer. */
   taetigkeit?: string | null;
+  /** Kein verknüpfter Partner (Firma über den Link, Partner entfernt) — der Vermieter schließt selbst ab. */
+  ohnePartner?: boolean;
 };
 export type FirmenRueckmeldung = {
   id: string; art: "zusage" | "absage" | "rueckfrage";
@@ -116,6 +118,36 @@ function KostenUebernahme({ a }: { a: AuftragRow }) {
       </label>
       <button type="submit" className="btn btn-gold" disabled={pending} style={{ fontSize: 12 }}>
         {pending ? "…" : "Als Kosten übernehmen"}
+      </button>
+      {fehler && <span role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</span>}
+    </form>
+  );
+}
+
+// Ablauf C: Auftrag ohne verknüpften Partner (Firma über den Link, Partner entfernt) — der Vermieter
+// trägt die Rechnung ein; danach erscheint „Als Kosten übernehmen“ wie bei jedem erledigten Auftrag.
+function AuftragAbschliessen({ a }: { a: AuftragRow }) {
+  const [pending, startTransition] = useTransition();
+  const [fehler, setFehler] = useState<string | null>(null);
+  if (!a.ohnePartner || !["offen", "angenommen"].includes(a.status)) return null;
+  return (
+    <form
+      action={(fd) =>
+        startTransition(async () => {
+          setFehler(null);
+          const r = await schliesseAuftragAb(fd);
+          if ("error" in r) setFehler(r.error);
+        })
+      }
+      style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 8, padding: "8px 10px", background: "var(--bg3)", borderRadius: 8, border: "1px solid var(--line)" }}
+      data-auftrag-abschliessen={a.id}
+    >
+      <input type="hidden" name="id" value={a.id} />
+      <span style={{ fontSize: 12 }}>Rechnung liegt vor?</span>
+      <input name="betrag" className="input" inputMode="decimal" placeholder="Betrag brutto" aria-label="Rechnungsbetrag" style={{ fontSize: 12, padding: "4px 8px", width: 130 }} />
+      <input name="lohnanteil" className="input" inputMode="decimal" placeholder="davon Lohn (optional)" aria-label="Lohnanteil" style={{ fontSize: 12, padding: "4px 8px", width: 160 }} />
+      <button type="submit" className="btn btn-gold" disabled={pending} style={{ fontSize: 12 }} data-demo-sperre>
+        {pending ? "…" : "Als erledigt abschließen"}
       </button>
       {fehler && <span role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</span>}
     </form>
@@ -682,6 +714,7 @@ export default function ServiceManager({
                       </div>
                     );
                   })}
+                  <AuftragAbschliessen a={a} />
                   <KostenUebernahme a={a} />
                   <AuftragVerlauf
                     auftragId={a.id}
