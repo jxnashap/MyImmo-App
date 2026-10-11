@@ -220,3 +220,10 @@ die Claims selbst.
 mit positiver UND negativer Probe je Rolle.** Mutationsprobe: die Zielmigration beim Aufbau auslassen
 (`OHNE_MIGRATION=<datei>`), die mutierte Fassung einspielen — sonst bleibt z. B. ein REVOKE der echten
 Fassung bestehen, und die Probe ist blind (am 11.10.2026 so passiert).
+
+**In der CI (seit 11.10.2026):** Job `datenbank` in `.github/workflows/ci.yml` — PostgreSQL 16 als Dienst,
+dann `testdb.sh` → `rlstest.sh` → `nebenlaeufig.sh`. Jeder Pull Request baut die Datenbank damit aus dem Repo
+neu; eine Migration, die nur in der Produktion „funktioniert“, oder eine Rolle, die mehr darf als ihre
+Rollentests erlauben, macht die CI rot. **Bekannte Grenze:** vier Demo-Migrationen setzen das Live-Demo-Konto
+voraus und stehen in `supabase/test/ausnahmen.txt` (sie scheitern „erwartet“); die Supabase-Nachbildung ist
+kein echtes GoTrue/PostgREST (kein Login, keine JWT-Signatur, keine Storage-Regeln).

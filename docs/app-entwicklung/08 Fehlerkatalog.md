@@ -224,6 +224,20 @@ REST-Weg; ein Lesefehler beim Zählen ergab 0 belegte Einheiten.
 Zählfehler sperren; die Datenbank als letzte Linie (Trigger mit Sperre je Konto). Testkonten bekommen
 per Bestandsschutz-Trigger automatisch „plus“ — im Test den Tarif ausdrücklich setzen.
 
+**Erst prüfen, dann mit dem Namen verbinden — DNS-Rebinding (B17, 11.10.2026)**
+Der Link-Import löste den Namen auf, prüfte die Adresse und rief danach `fetch` mit dem NAMEN auf, das
+erneut auflöste. Ein Angreifer-DNS mit TTL 0 antwortet einmal öffentlich, einmal mit 169.254.169.254.
+→ *Gegenprüfung:* Mit der GEPRÜFTEN Adresse verbinden (eigener Dispatcher mit festem `lookup`), Name nur für
+Host-Kopf und TLS; Test mit einem Namen, den es nicht gibt (`*.invalid`), gegen einen lokalen Server, und
+mit einem Auflöser, der beim zweiten Mal eine interne Adresse liefert — er darf nur einmal gefragt werden.
+
+**Zeitgeber endet mit den Kopfzeilen (B16, 11.10.2026)**
+`setTimeout(abort)` … `finally clearTimeout` um `await fetch()` — der Body wurde danach ohne Zeitgrenze und
+ohne Größengrenze gelesen (`arrayBuffer()`, `text()`, `req.json()`).
+→ *Gegenprüfung:* Body innerhalb desselben `try` begrenzt lesen; Tests mit einem Server, der die Kopfzeilen
+sofort schickt und den Body nie beendet, und mit einem Body ohne `Content-Length`, bei dem gezählt wird,
+wie viel tatsächlich abgeholt wurde (die Statusprüfung allein übersah eine Mutation).
+
 ## Projektführung
 
 **Punkte standen monatelang fälschlich als offen**

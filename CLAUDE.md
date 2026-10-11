@@ -94,7 +94,14 @@
 > `tilgungsVerlauf()` (`lib/kalk.ts`) — nie „Rate × Monate − Tilgung“. (11) Jeder Weg, der Objekte anlegt oder
 > Einheiten erhöht, ruft `pruefeEinheiten()` (Bearbeiten mit `statt`); die Datenbank prüft zusätzlich, sobald
 > `einheiten_durchsetzen` an ist. (12) Import ordnet Objekte nur über `objektZuordnung()` zu — mehrdeutig =
-> Abbruch; Vorhandenes wird übersprungen. **Regeln:**
+> Abbruch; Vorhandenes wird übersprungen. **Phase-4-Regeln:** (13) Was von außen kommt (Anfrage-Body,
+> fremde Seite, KI-Antwort), wird über `liesBegrenzt()`/`jsonBegrenzt()` (`lib/net/grenzen.ts`) gelesen — mit
+> Grenze und INNERHALB des Zeitgebers. (14) Ein Server-Abruf fremder URLs nur über `sicheresFetch()`: je Sprung
+> einmal auflösen, prüfen, mit GENAU dieser Adresse verbinden (`festeAufloesung`). (15) KI-Routen fragen
+> `kiBereit()` (Bedrock ODER Anthropic) und bremsen mit `darfWeiter(…, { sperrtBeiAusfall: true })`. (16) Ein
+> KI-Ergebnis wird erst nach einem Prüfschritt gespeichert. (17) CI: Lint, tsc, Vitest, Build, E2E
+> (`scripts/e2e/zugang.mjs` + Crawler als Gast), Datenbank-Job (`testdb.sh` → `rlstest.sh` → `nebenlaeufig.sh`).
+> **Regeln:**
 > (1) `mfa_wiederherstellung` und `konto_loeschen()` nur über die Service-Role im Server —
 > `delete_own_account()` ist kein Nutzer-Einstieg mehr. (2) Einladen darf nur ein freigeschalteter
 > Vermieter; eine Einladung schaltet ein Konto nur für die eingeladene Rolle frei. (3) Jede Partner-Regel

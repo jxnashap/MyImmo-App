@@ -19,6 +19,7 @@
 //                            z. B. "eu.anthropic.claude-sonnet-4-...-v1:0"
 //   BEDROCK_SESSION_TOKEN    optional (nur bei temporären STS-Credentials)
 
+import { liesBegrenzt } from "@/lib/net/grenzen";
 import { createHash, createHmac } from "crypto";
 
 const SERVICE = "bedrock";
@@ -163,7 +164,10 @@ export async function callBedrock(payload: unknown, timeoutMs = 45_000): Promise
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { method: "POST", headers: fetchHeaders, body, signal: controller.signal });
+    const res = await fetch(url, { method: "POST", headers: fetchHeaders, body, signal: controller.signal });
+    // B16: Body innerhalb des Zeitgebers und begrenzt lesen (wie lib/aiRoute.ts).
+    const bytes = await liesBegrenzt(res, 2 * 1024 * 1024);
+    return new Response(bytes, { status: res.status, headers: res.headers });
   } finally {
     clearTimeout(timer);
   }

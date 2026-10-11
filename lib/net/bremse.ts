@@ -70,12 +70,18 @@ export async function darfWeiter(
   max: number,
   sekunden: number,
   kennung?: string,
+  /**
+   * B16 (11.10.2026): Für Wege, die je Aufruf GELD kosten (KI), ist eine ausgefallene Bremse kein
+   * Grund durchzulassen — dann `{ sperrtBeiAusfall: true }`: ohne Bremse kein Aufruf.
+   */
+  opts: { sperrtBeiAusfall?: boolean } = {},
 ): Promise<boolean> {
+  const beiAusfall = !opts.sperrtBeiAusfall;
   try {
     const supabase = createAdminClient();
     // Ohne Service-Role-Key gibt es keine Bremse — dann lieber durchlassen als
-    // die Registrierung lahmlegen (siehe oben).
-    if (!supabase) return true;
+    // die Registrierung lahmlegen (siehe oben); kostenpflichtige Wege sperren stattdessen.
+    if (!supabase) return beiAusfall;
     const { error } = await supabase.rpc("rate_limit_pruefen", {
       p_aktion: aktion,
       p_max: max,
@@ -88,7 +94,7 @@ export async function darfWeiter(
     // Die Funktion wirft beim Ueberschreiten — PostgREST macht daraus einen Fehler.
     return !error;
   } catch {
-    return true;
+    return beiAusfall;
   }
 }
 

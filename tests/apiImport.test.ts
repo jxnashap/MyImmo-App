@@ -47,7 +47,8 @@ async function lade(pfad: string, init: Parameters<typeof fakeSupabase>[0] = {})
   }));
   vi.doMock("@/lib/net/ssrf", () => ({
     pruefeZielUrl: async () => undefined,
-    sicheresFetch: async () => ({ response: new Response("<html>" + "Exposé ".repeat(200) + "</html>", { headers: { "content-type": "text/html" } }) }),
+    // Form seit B16/B17: Body schon begrenzt gelesen (bytes), keine Response mehr.
+    sicheresFetch: async () => ({ status: 200, ok: true, headers: new Headers({ "content-type": "text/html" }), bytes: new TextEncoder().encode("<html>" + "Exposé ".repeat(200) + "</html>"), endUrl: new URL("https://immo.example/expose") }),
     ZielNichtErlaubtFehler: class extends Error {},
   }));
   const mod = await import(pfad);

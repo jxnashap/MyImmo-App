@@ -6,6 +6,10 @@ on:
   push:
     branches: [main]
 
+# Stufen (Prüfstand 11.10.2026): Lint · Typen · Unit/Integration (Vitest) · Build · E2E gegen den
+# gebauten Server · Datenbank (Migrationen aus dem Repo + Rollentests + Nebenläufigkeit).
+# Keine Stufe spricht mit der Produktion: kein /api/demo, keine echte Datenbank, keine KI, keine Mail.
+
 jobs:
   test-build:
     runs-on: ubuntu-latest
@@ -26,8 +30,62 @@ jobs:
       - name: Abhängigkeiten installieren
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Typen (tsc)
+        run: npx tsc --noEmit -p .
+
       - name: Tests (Vitest)
         run: npm test
 
       - name: Produktions-Build
         run: npm run build
+
+      # E2E am gebauten Server: öffentliche Seiten (Crawler mit Sperrliste) und Zugangsgrenzen
+      # ohne Anmeldung. Ohne erreichbare Datenbank — angemeldete Wege prüft der Rauchtest nach dem
+      # Deploy (bewusst nicht hier: er setzt den gemeinsamen Demo-Bestand zurück).
+      - name: E2E — Server starten
+        run: |
+          npx next start -p 3100 > next.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://127.0.0.1:3100/funktionen && exit 0; sleep 1; done
+          cat next.log; exit 1
+
+      - name: E2E — öffentliche Seiten
+        run: node scripts/crawl.mjs --basis=http://127.0.0.1:3100 --rolle=gast --max=80 / /funktionen /ratgeber /login
+
+      - name: E2E — Zugangsgrenzen
+        run: node scripts/e2e/zugang.mjs --basis=http://127.0.0.1:3100
+
+  datenbank:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      # Aufbau aus dem Repo: Supabase-Nachbildung, Baseline, jede spätere Migration (B18).
+      - name: Datenbank aus den Migrationen aufbauen
+        run: scripts/db/testdb.sh myimmo_test
+
+      # Rollentests (positiv + negativ je Regel, jede Datei rollt zurück; am Ende: keine Testkonten).
+      - name: RLS- und Rechte-Tests
+        run: scripts/db/rlstest.sh myimmo_test
+
+      # Zwei echte gleichzeitige Sitzungen (Sperren, Grenzen), räumt seine Daten selbst auf.
+      - name: Nebenläufigkeit
+        run: scripts/db/nebenlaeufig.sh myimmo_test
