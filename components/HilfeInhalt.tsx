@@ -1,4 +1,5 @@
 import { Mail, Clock, ListChecks, ArrowRight } from "lucide-react";
+import AppInstallieren from "@/components/AppInstallieren";
 
 // Support-Inhalt an EINER Stelle. Genutzt vom Einstellungen-Tab „Support" und
 // von der Route /hilfe (Direktlink, z. B. aus einer E-Mail).
@@ -88,6 +89,10 @@ export default function HilfeInhalt() {
           </p>
         </div>
       </div>
+
+      {/* Installierbare Web-App (10.10.2026): steht hier, damit /hilfe UND Einstellungen → Support
+          denselben Abschnitt zeigen. */}
+      <AppInstallieren />
     </div>
   );
 }

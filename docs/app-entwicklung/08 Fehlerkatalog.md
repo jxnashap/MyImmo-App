@@ -72,6 +72,13 @@ Messung nicht.
 ansehen (`getComputedStyle(el, "::after")`), dann bauen. Umgekehrt: Wer eine Fläche
 per `::after` vergrößert, braucht `position: relative` am Element.
 
+**Favicon verschwand, sobald ein Apple-Symbol in die Metadaten kam** (MyImmo, 10.10.2026)
+Next.js nimmt das Datei-Favicon (`app/icon.svg`) nur, solange `metadata.icons` leer ist. Mit
+`icons: { apple: … }` fehlte `<link rel="icon">` auf JEDER Seite — Tests und Typprüfung waren
+grün, gesehen erst im gebauten HTML.
+→ *Gegenprüfung:* Nach einer Änderung an `metadata` im gebauten HTML (`.next/server/app/*.html`)
+die `<link>`-Zeilen zählen. Wer `icons` setzt, nennt das Favicon mit (`icon: [{ url: "/icon.svg" }]`).
+
 ## Grafik
 
 **Zwölf ausgelieferte Icons hatten einen 87 px schwarzen Streifen**

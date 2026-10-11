@@ -181,6 +181,10 @@ im Sanierungs-Guide + Verknüpfung „Kaufprüfung → übernommenes Objekt“) 
     Unterauftragsverarbeiter-Ankündigungen) — Details unter „AVV-Abschlussstand".
 11. ~~**Altes kurzes Passwort**~~ — Betreiber 02.10.2026: „Nein“ (Bedeutung — „nicht
     nötig“ oder „meldet sich nicht an“ — nachzufragen; ohne echte Nutzer ohnehin folgenlos).
+12. **Installierbare App am echten Gerät testen (seit 10.10.2026):** iPhone (Safari → Teilen → „Zum
+    Home-Bildschirm“) und Android (Chrome → „App installieren“): Symbol und Name, Anmelden in der App,
+    Flugmodus → Seite „Keine Verbindung“, und ob „Beim Schließen abmelden“ in der installierten App greift.
+    Klärt nebenbei, ob iPhone-Web-Apps in der EU weiter im eigenen Fenster laufen (eine Quelle von 2026 widerspricht).
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**
@@ -510,6 +514,19 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   rendert immer die ERSTE Ansicht — der Rauchtest prüft deshalb `>Buchungssaldo<` (Reiter), nicht `<h3>`.
   **Lehre aus dem Umweg:** „Ja“ auf eine Liste mit mehreren Möglichkeiten ist keine Freigabe für
   die erste davon — vor einem größeren Umbau nachfragen, was gemeint ist.
+- 📲 **Installierbare Web-App (PWA) — Stufe 1 GEBAUT 10.10.2026: `docs/zukunft/WEBAPP-INSTALLIERBAR.md`** (Abschnitt 1a).
+  `app/manifest.ts`, `public/sw.js`, `public/pwa/` (Symbole: `scripts/gen-pwa-icons.mjs`), `lib/pwa.ts`,
+  `PwaAnmeldung` (nur in den zwei ANGEMELDETEN Hüllen von `app/(app)/layout.tsx`), `AppInstallieren` (Support +
+  `/konto`). **Der Worker hält NUR die Offline-Seite vor** — auch keine Programmdateien (die hält Vercel ein Jahr
+  `immutable`); dadurch kein Update-Hinweis und kein Leeren beim Abmelden nötig. `sw.js`, `manifest.webmanifest`,
+  `pwa/` laufen OHNE Proxy (Matcher), Header in `next.config.mjs`. Chrome meldet „installierbar“ (lokal geprüft).
+  **Regeln:** (1) **HTML, `/api/*`, Dateien und Supabase-Antworten nie cachen** — sonst Mieterdaten auf Geräten,
+  Kontolöschung erreicht sie nicht, Zustellnachweis unterlaufen; `tests/pwa.test.ts` führt den Worker aus und wird
+  bei jedem `put`/`add` außer der Offline-Seite rot. (2) Offline-Seite geändert → `VERSION` in `sw.js` = erste 12
+  Zeichen ihres SHA-256 (Test). (3) **Notschalter: `SW_AN = false` in `lib/pwa.ts` + Deployment** meldet den Worker
+  überall ab. (4) Wer `metadata.icons` setzt, nennt das Favicon mit — sonst fehlt es auf jeder Seite (passiert,
+  Fehlerkatalog). (5) Mehr auf dem Gerät ablegen = Datenschutz Ziffer 6 + AVV-TOM im selben PR. Push (Stufe 2) erst
+  mit Nutzern und Anwaltsfrage.
 - **Englische Fassung / Auslandsmarkt — BEWUSST ZURÜCKGESTELLT (01.09.2026).**
   Frage des Nutzers: zwei Websites, eine deutsch, eine englisch (auf `myimmoapp.com`).
   **Entscheidung: nein, `.de` bleibt vorerst allein; `.com` bleibt Weiterleitung.**
@@ -2099,9 +2116,18 @@ Anthropic-Call (`ANTHROPIC_API_KEY`). Umschaltung in `lib/aiRoute.ts` → `lib/b
   29.02. → Monatsende), **C20** `degressivPruefung()` + `afaUnzulaessig`, **C21** § 7b mit zehnjähriger Vermietung,
   **C23** `vorschlagAusAbrechnung()` (Tagesanteil, nicht nach Auszug), **C24** `gleichzeitigeMieter()` in `zeigeVerteiler`.
   **Regeln:** (1) **Kein fester Text nennt eine Zeilennummer der Anlage V** — nur `zeilenAngabe()`/`positionMitZeile()` aus der
-  Jahrestabelle (Test scannt `app/`, `components/`, `lib/`); ein Jahr ohne geprüften Vordruck bekommt keine Nummer. Neues Jahr:
+  Jahrestabelle (Test scannt `app/`, `components/`, `lib/`). Jahre NACH dem neuesten Vordruck nehmen dessen Zeilen als „vorläufig“
+  (Betreiber 10.10.2026), Jahre vor 2024 keine. Weicht ein neuer Vordruck ab: nur eine Jahreszeile ergänzen. Neues Jahr:
   Vordruck lesen, Zeile in `ANLAGE_V_ZEILEN` mit Quelle, Prüftermin in `07` (01.02.2027). (2) Fristen in Jahren nur über
   `fristendeNachJahren()`. (3) `zeigeVerteiler` bekommt die Mietzeiten (`mieter: {mietbeginn, mietende}[]`), nie eine Anzahl.
+- 🏢 **WEG-Erhaltungsrücklage (10.10.2026, Betreiber)** (`tests/wegRuecklage.test.ts`, 12 Mutationen rot). BFH, Urteil vom
+  14.01.2025, IX R 19/24 (BStBl 2025 II S. 291): Die **Zuführung** zur Erhaltungsrücklage ist KEINE Werbungskosten, die
+  **Entnahme für Erhaltung** schon (im Jahr der Ausgabe). Vorher zog die Anlage V jedes gebuchte Hausgeld voll ab — gegen den
+  eigenen Ratgeber. Jetzt: `properties.weg_ruecklage` (jsonb je Jahr, Migration `20261010162259`, live) aus der
+  WEG-Jahresabrechnung, Eingabe auf der Objektseite (`components/WegRuecklage.tsx`, nur `hatWeg()`), Rechnung in
+  `lib/wegRuecklage.ts` + `berechneAnlageV`: Hausgeld − Zuführung (höchstens das gebuchte), Erhaltung + Entnahme; ohne
+  Eintrag Hinweis `RUECKLAGE_FEHLT_HINWEIS`. **Regel: Die Rücklage ändert nur die Anlage V, nie die Buchungen** — Cashflow
+  und Buchungssaldo bleiben beim tatsächlich gezahlten Hausgeld (Test sucht `weg_ruecklage` dort und wird sonst rot).
 - 📰 **Paket P10 der Gesamtprüfung (09.10.2026): Ratgeber und Werbung** (`tests/paketP10.test.ts`, 17 Mutationen rot).
   Jede korrigierte Rechtsaussage gegen den Wortlaut (gesetze-im-internet.de, per `curl` abrufbar — WebFetch bekam 503)
   bzw. zwei Sekundärquellen geprüft: Belegeinsicht nach **§ 556 Abs. 4 BGB** (seit 2025, elektronische Bereitstellung

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Copy, Check, Printer, Landmark } from "lucide-react";
 import { eur2 } from "@/lib/format";
 import { elsterZeilen, type AnlageVObjekt } from "@/lib/anlageV";
-import { anlageVZeilen, ohneZeilenHinweis } from "@/lib/steuer/anlageVZeilen";
+import { anlageVZeilen, ohneZeilenHinweis, vorlaeufigHinweis } from "@/lib/steuer/anlageVZeilen";
 
 const elsterBetrag = (n: number) => n.toFixed(2).replace(".", ",");
 /** „Zeile 46–48\t“ — ohne geprüften Vordruck („–“) nichts. */
@@ -109,9 +109,11 @@ export default function ElsterHilfe({ objekte, jahr }: { objekte: AnlageVObjekt[
             So überträgst du deine Zahlen kostenlos ans Finanzamt, ohne Steuerberater:
             Melde dich bei <strong>Mein ELSTER</strong> an (elster.de), lege je Objekt eine
             Anlage V an und trage die Beträge in die unten genannten Zeilen ein.{" "}
-            {tabelle
-              ? <>Die Zeilennummern stammen aus dem {tabelle.vordruck}; ELSTER zeigt dieselben Bezeichnungen.</>
-              : ohneZeilenHinweis(jahr)}
+            {!tabelle
+              ? ohneZeilenHinweis(jahr)
+              : tabelle.vorlaeufig
+                ? vorlaeufigHinweis(jahr)
+                : <>Die Zeilennummern stammen aus dem {tabelle.vordruck}; ELSTER zeigt dieselben Bezeichnungen.</>}
           </p>
         </div>
       </div>

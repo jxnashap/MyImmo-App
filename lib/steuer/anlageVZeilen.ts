@@ -14,10 +14,12 @@
 //    Sonstige Kosten“, „Zeile 20 bis 24“ Umlagen — http://www.steuerhexe.de/wp-content/uploads/2025/05/Anlage-V-2024-Anleitung.pdf
 //  Beide Jahrgänge haben dieselbe Zeilenbelegung.
 //
-// REGEL: Ein Jahr, das hier nicht steht, bekommt KEINE Zeilennummern — die Oberfläche überträgt dann
-// nach Bezeichnung. Neues Jahr erst eintragen, wenn der Vordruck veröffentlicht ist (meist Jan./Feb.
-// des Folgejahres), aus dem Vordruck selbst lesen und hier mit Quelle festhalten. Prüftermin:
-// `docs/app-entwicklung/07 Volatile Kennzahlen und Pruefzyklus.md`.
+// REGEL (Betreiber 10.10.2026): Jahre NACH dem neuesten geprüften Vordruck nehmen dessen Zeilen — als
+// „vorläufig“ gekennzeichnet, bis ihr eigener Vordruck erscheint (meist Jan./Feb. des Folgejahres).
+// Verschiebt der neue Vordruck Zeilen, wird NUR hier eine Zeile für das Jahr ergänzt: Die Beträge hängen
+// an Feldern (`AnlageVFeld`), nicht an Nummern — sie landen dann von selbst in der richtigen Zeile.
+// Jahre VOR 2024 bekommen keine Nummern (älterer Vordruck, nicht geprüft) — die Oberfläche überträgt
+// dann nach Bezeichnung. Prüftermin: `docs/app-entwicklung/07 Volatile Kennzahlen und Pruefzyklus.md`.
 
 export type AnlageVFeld =
   | "miete"
@@ -40,6 +42,8 @@ export type AnlageVZeilentabelle = {
   /** Kurzbeleg für die Oberfläche („Vordruck Anlage V 2025“). */
   vordruck: string;
   felder: Record<AnlageVFeld, AnlageVZeile>;
+  /** true = Zeilen eines früheren Vordrucks, weil der Vordruck dieses Jahres noch nicht geprüft ist. */
+  vorlaeufig?: boolean;
 };
 
 /** Zeilenbelegung seit der Neufassung (VZ 2024 und 2025 gleich, siehe Quellen oben). */
@@ -64,9 +68,23 @@ export const ANLAGE_V_ZEILEN: Record<number, AnlageVZeilentabelle> = {
   2025: { vordruck: "Vordruck Anlage V 2025", felder: BELEGUNG_2024_2025 },
 };
 
-/** Zeilentabelle des Steuerjahres — null, wenn der Vordruck (noch) nicht geprüft ist. */
+/** Neuestes Jahr mit geprüftem Vordruck. */
+export const NEUESTER_VORDRUCK = Math.max(...Object.keys(ANLAGE_V_ZEILEN).map(Number));
+
+/**
+ * Zeilentabelle des Steuerjahres. Nach dem neuesten geprüften Vordruck: dessen Zeilen, `vorlaeufig`.
+ * Vor 2024: null (keine Nummern).
+ */
 export function anlageVZeilen(jahr: number): AnlageVZeilentabelle | null {
-  return ANLAGE_V_ZEILEN[jahr] ?? null;
+  const t = ANLAGE_V_ZEILEN[jahr];
+  if (t) return t;
+  if (jahr > NEUESTER_VORDRUCK) return { ...ANLAGE_V_ZEILEN[NEUESTER_VORDRUCK], vorlaeufig: true };
+  return null;
+}
+
+/** Ein Satz für die Oberfläche, wenn die Zeilen aus einem früheren Vordruck stammen. */
+export function vorlaeufigHinweis(jahr: number): string {
+  return `Die Zeilen stammen aus dem Vordruck ${NEUESTER_VORDRUCK} — der Vordruck ${jahr} ist noch nicht geprüft. Zeigt ELSTER andere Nummern, gilt die Bezeichnung.`;
 }
 
 /** „Z. 46–48“ für ein Feld, oder null ohne geprüften Vordruck. */

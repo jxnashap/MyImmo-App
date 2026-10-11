@@ -35,6 +35,8 @@ import { sollKaltmiete, GARAGEN_TYPEN } from "@/lib/sollMiete";
 import MieteAngleichen from "@/components/MieteAngleichen";
 import ObjektCheckKarte from "@/components/ObjektCheckKarte";
 import { objektCheck } from "@/lib/objektCheck";
+import WegRuecklage from "@/components/WegRuecklage";
+import { hatWeg, ruecklageListe } from "@/lib/wegRuecklage";
 
 type Kredit = {
   id: string; bezeichnung: string | null; bank: string | null; betrag: number | null;
@@ -116,6 +118,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
     mieter: tenants,
   });
   const istGaragen = GARAGEN_TYPEN.includes(p.typ ?? "");
+  const wegSichtbar = hatWeg(p);
   // Soll-Kaltmiete: laufende Mieter, sonst Objektfeld — dieselbe Regel wie
   // Dashboard und Objektliste (lib/sollMiete.ts). Weichen beide ab, zeigt die
   // Seite unten einen Hinweis statt still umzuschalten.
@@ -277,6 +280,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
           ...(wertReihe.length >= 2 ? [{ id: "wertentwicklung", label: "Wertentwicklung" }] : []),
           { id: "mieter", label: istGaragen ? "Einheiten" : "Mieter" },
           ...(verteilerSichtbar ? [{ id: "nebenkosten", label: "Nebenkosten" }] : []),
+          ...(wegSichtbar ? [{ id: "ruecklage", label: "Rücklage" }] : []),
           { id: "kredite", label: "Kredite" },
           { id: "verbrauch", label: "Verbrauch" },
           { id: "archiv", label: "Archiv" },
@@ -464,6 +468,11 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
           </div>
         </div>
       </div>
+      )}
+
+      {/* WEG-Erhaltungsrücklage je Steuerjahr (BFH IX R 19/24) — nur bei Eigentumswohnung oder Hausgeld. */}
+      {wegSichtbar && (
+        <WegRuecklage propId={p.id} eintraege={ruecklageListe(p.weg_ruecklage)} vorschlagJahr={Number(heuteIso.slice(0, 4)) - 1} />
       )}
 
       {/* Kredite & Finanzierung */}

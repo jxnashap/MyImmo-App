@@ -23,6 +23,10 @@ function buildCsp(nonce: string): string {
     "font-src 'self' data:",
     // Supabase REST + Realtime.
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    // Installierbare Web-App (10.10.2026): Service Worker und Manifest nur vom eigenen Origin.
+    // Fielen sonst auf script-src bzw. default-src zurück — ausdrücklich ist klarer.
+    "worker-src 'self'",
+    "manifest-src 'self'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "object-src 'none'",
@@ -287,7 +291,11 @@ export const config = {
   // diese Seiten statisch und am Edge cachebar. Ihre Security-Header setzt
   // stattdessen next.config.mjs — beide Listen muessen zusammen gepflegt
   // werden (Kommentar dort).
+  //
+  // Ebenso ohne Proxy (10.10.2026): `sw.js`, `manifest.webmanifest` und `pwa/` (Symbole, Offline-
+  // Seite). Der Browser holt sie ohne Anmelde-Cookies; liefe die Login-Weiche darauf, bekäme er eine
+  // Weiterleitung statt der Datei und die Installation scheiterte still. Ihre Header: next.config.mjs.
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico|theme\\.js|(?:funktionen|ratgeber|vision|preise|vorlagen|agb|avv|datenschutz|impressum)(?:/|$)).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|theme\\.js|(?:sw\\.js|manifest\\.webmanifest)$|pwa/|(?:funktionen|ratgeber|vision|preise|vorlagen|agb|avv|datenschutz|impressum)(?:/|$)).*)",
   ],
 };

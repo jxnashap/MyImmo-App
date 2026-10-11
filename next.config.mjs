@@ -29,6 +29,7 @@ const CSP_STATISCH = [
   "img-src 'self' data:",
   "font-src 'self' data:",
   "connect-src 'self'",
+  "manifest-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "object-src 'none'",
@@ -53,6 +54,17 @@ const SICHERHEITS_HEADER = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+];
+
+// Service Worker der installierbaren Web-App (10.10.2026, public/sw.js, lib/pwa.ts). Laeuft ohne
+// Proxy (Matcher in proxy.ts). Die CSP dieser Antwort ist die CSP des Workers selbst: Er laedt
+// nichts nach und spricht nur den eigenen Origin an. `no-cache`: Der Browser fragt bei jeder
+// Pruefung den Server, sonst haengt eine neue Fassung (oder der Notschalter) am HTTP-Cache.
+const SW_HEADER = [
+  { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+  { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+  { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
 ];
 
 const nextConfig = {
@@ -117,6 +129,10 @@ const nextConfig = {
       // Ebenfalls ohne Middleware (sonst liefe die Login-Weiche darauf und
       // ausgeloggte Besucher bekaemen statt des Skripts eine Weiterleitung).
       { source: "/theme.js", headers: SICHERHEITS_HEADER },
+      // Installierbare Web-App: ebenfalls ohne Proxy (proxy.ts, Matcher).
+      { source: "/sw.js", headers: SW_HEADER },
+      { source: "/manifest.webmanifest", headers: SICHERHEITS_HEADER },
+      { source: "/pwa/:pfad*", headers: SICHERHEITS_HEADER },
     ];
   },
 };

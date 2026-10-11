@@ -6,6 +6,7 @@
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { pdfText } from "@/lib/pdf/zeichen";
+import { anlageVZeilen, ohneZeilenHinweis, vorlaeufigHinweis } from "@/lib/steuer/anlageVZeilen";
 import { ANLAGE_V_POSITIONEN, wertVon, summenWarnung, positionMitZeile, zeilenAngabe, type AnlageVErgebnis, type AnlageVObjekt } from "@/lib/anlageV";
 
 const GOLD = rgb(0.722, 0.565, 0.169);
@@ -261,7 +262,10 @@ export async function buildAnlageVPdf(
   doppellinie(c, y - 5.5, ML, RIGHT);
   y -= 34;
 
-  y = absatz(c, y, "Auf den Folgeseiten steht je Objekt die vollständige Aufstellung mit den Zeilen der Anlage V — in ELSTER ist je Objekt eine eigene Anlage V auszufüllen.");
+  // Woher die Zeilenangaben stammen — sonst hält jemand die Nummern eines späteren Jahres für geprüft.
+  const zt = anlageVZeilen(erg.jahr);
+  const zeilenSatz = !zt ? ` ${ohneZeilenHinweis(erg.jahr)}` : zt.vorlaeufig ? ` ${vorlaeufigHinweis(erg.jahr)}` : ` Zeilenangaben laut ${zt.vordruck}.`;
+  y = absatz(c, y, "Auf den Folgeseiten steht je Objekt die vollständige Aufstellung mit den Zeilen der Anlage V — in ELSTER ist je Objekt eine eigene Anlage V auszufüllen." + zeilenSatz);
   y -= 8;
   // Der Text behauptete pauschal, die Schuldzinsen seien geschaetzt. Sind sie
   // gebucht, stimmt das nicht — und der Vermieter haelt einen korrekten Wert

@@ -13,7 +13,7 @@ import { berechneAnschaffungsnah } from "@/lib/steuer/anschaffungsnah";
 import { degressivPruefung, pruefe7b } from "@/lib/steuer/afa";
 import { vorschlagAusAbrechnung } from "@/lib/nkVorjahr";
 import { gleichzeitigeMieter, zeigeVerteiler } from "@/lib/umlage";
-import { ANLAGE_V_ZEILEN, anlageVZeilen } from "@/lib/steuer/anlageVZeilen";
+import { ANLAGE_V_ZEILEN, anlageVZeilen, vorlaeufigHinweis } from "@/lib/steuer/anlageVZeilen";
 import type { Einnahme, Kosten, Property } from "@/lib/types";
 
 const objekt = (x: Partial<Property>): Property => ({
@@ -162,10 +162,19 @@ describe("B1 — Zeilen der Anlage V je Steuerjahr", () => {
     expect(t.ueberschuss.zeile).toBe("85");
     expect(Z32).toContain(String(ende(t.miete.zeile)));
   });
-  it("2024 gleich, andere Jahre ohne Zeilennummern", () => {
+  it("2024 gleich; spätere Jahre nehmen den neuesten Vordruck (vorläufig), frühere bekommen keine Nummern", () => {
     expect(anlageVZeilen(2024)?.felder).toEqual(t);
+    expect(anlageVZeilen(2025)?.vorlaeufig).toBeFalsy();
+    // Betreiber 10.10.2026: bis der Vordruck 2026 erscheint, gelten die Zeilen von 2025.
+    expect(anlageVZeilen(2026)).toMatchObject({ felder: t, vorlaeufig: true });
+    expect(anlageVZeilen(2030)?.vorlaeufig).toBe(true);
     expect(anlageVZeilen(2023)).toBeNull();
-    expect(anlageVZeilen(2026)).toBeNull();
+    expect(vorlaeufigHinweis(2026)).toMatch(/Vordruck 2025 — der Vordruck 2026 ist noch nicht geprüft/);
+  });
+  it("Steuerseite, ELSTER-Hilfe und PDF sagen, woher die Zeilen stammen", () => {
+    for (const f of ["components/AnlageVExport.tsx", "components/ElsterHilfe.tsx", "lib/pdf/berichtPdf.ts"]) {
+      expect(readFileSync(f, "utf8"), f).toMatch(/\.vorlaeufig\s*\?[\s`$\{ ]*vorlaeufigHinweis\(/);
+    }
   });
   it("ELSTER-Hilfe: Schuldzinsen 46–48, Summe 83, Ergebnis 85 — ohne geprüften Vordruck keine Nummer", () => {
     const kosten = [kost("2025-03-01", 5400, "Schuldzinsen"), kost("2025-04-01", 300, "Müll"), kost("2025-05-01", 200, "Verwaltung")];
@@ -181,7 +190,8 @@ describe("B1 — Zeilen der Anlage V je Steuerjahr", () => {
     expect(nach("Umlagen, laufend")).toMatchObject({ zeile: "20", betrag: 200 });
     expect(nach("Umlagen: Nachzahlungen")).toMatchObject({ zeile: "21", betrag: 120 });
     expect(z.every((x) => !["9", "13", "14", "21 ", "37", "40", "46", "47", "50", "51", "23/24"].includes(x.zeile))).toBe(true);
-    for (const x of elsterZeilen(o, 2026)) expect(x.zeile).toBe("–");
+    for (const x of elsterZeilen(o, 2023)) expect(x.zeile).toBe("–");
+    expect(elsterZeilen(o, 2026).map((x) => x.zeile)).toEqual(z.map((x) => x.zeile));
   });
   it("Müll & Co. stehen als Betriebskosten, nicht unter „Hausgeld / Sonstiges“ — und zählen zur Summe", () => {
     const o = berechneAnlageV(2025, [objekt({ afa_methode: "keine" })], [], [kost("2025-04-01", 300, "Müll"), kost("2025-04-01", 50, "Sonstiges")], [], AFA_DEFAULT).objekte[0];
@@ -192,7 +202,8 @@ describe("B1 — Zeilen der Anlage V je Steuerjahr", () => {
   it("Positionen tragen die Zeile nur, wo sie geprüft ist", () => {
     const sz = ANLAGE_V_POSITIONEN.find((p) => p.key === "schuldzinsen")!;
     expect(positionMitZeile(sz, 2025)).toBe("Schuldzinsen — Z. 46–48");
-    expect(positionMitZeile(sz, 2026)).toBe("Schuldzinsen");
+    expect(positionMitZeile(sz, 2026)).toBe("Schuldzinsen — Z. 46–48");
+    expect(positionMitZeile(sz, 2023)).toBe("Schuldzinsen");
   });
   it("kein fester Text nennt mehr eine Zeilennummer der Anlage V", () => {
     const dateien: string[] = [];

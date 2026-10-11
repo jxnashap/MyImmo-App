@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Keine Verbindung — MyImmo</title>
+<style>
+  :root { --bg: #f5f5f5; --karte: #ffffff; --linie: #e5e5e5; --text: #0a0a0a; --leise: #636363; --gold: #D4A847; --knopf-text: #0a0a0a; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f0f0f; --karte: #171717; --linie: #292929; --text: #f5f5f5; --leise: #9a9a9a; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+  }
+  main { max-width: 420px; width: 100%; background: var(--karte); border: 1px solid var(--linie); border-radius: 24px; padding: 28px 24px; text-align: center; }
+  svg { width: 56px; height: 56px; }
+  h1 { font-size: 20px; margin: 14px 0 8px; }
+  p { margin: 0 0 18px; color: var(--leise); }
+  a { display: inline-block; min-height: 44px; line-height: 44px; padding: 0 22px; border-radius: 18px; background: var(--gold); color: var(--knopf-text); font-weight: 600; text-decoration: none; }
+</style>
+</head>
+<body>
+<main>
+  <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0F0F0E"/><path d="M17 52 V29 L32 15 L47 29 V52" fill="none" stroke="#D4A847" stroke-width="4"/></svg>
+  <h1>Keine Verbindung</h1>
+  <p>MyImmo lädt deine Daten immer frisch vom Server. Sobald dein Gerät wieder online ist, geht es hier weiter.</p>
+  <a href="">Erneut versuchen</a>
+</main>
+</body>
+</html>
