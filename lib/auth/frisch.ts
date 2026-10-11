@@ -16,14 +16,17 @@ export async function pruefeFrischeAnmeldung(
   maxSekunden: number = FRISCH_SEKUNDEN,
 ): Promise<FrischErgebnis> {
   // Faktorstatus vom SERVER (`getUser`), nicht aus dem Cookie — siehe `aalStandAus`.
-  // Fail-closed: Antwortet der Auth-Server nicht, gilt die Anmeldung als nicht frisch.
-  const [{ data: { user }, error }, { data: { session } }] = await Promise.all([
-    supabase.auth.getUser(),
-    supabase.auth.getSession(),
-  ]);
+  // B01 (11.10.2026): Der Auth-Server prüft GENAU das Token, dessen `aal`/`amr` danach gelesen
+  // werden (`getUser(token)`). Vorher liefen `getUser()` und `getSession()` parallel — erneuerte
+  // eine der beiden die Sitzung, konnte das ausgewertete Token ein anderes sein als das geprüfte.
+  // Fail-closed: Ohne Token oder ohne Antwort des Auth-Servers gilt die Anmeldung als nicht frisch.
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) return { ok: false, grund: "reauth" };
+  const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) return { ok: false, grund: "reauth" };
-  if (mussMfaNachholen(aalStandAus(user.factors, session?.access_token))) return { ok: false, grund: "mfa" };
-  if (!sitzungFrisch(session?.access_token, maxSekunden)) return { ok: false, grund: "reauth" };
+  if (mussMfaNachholen(aalStandAus(user.factors, token))) return { ok: false, grund: "mfa" };
+  if (!sitzungFrisch(token, maxSekunden)) return { ok: false, grund: "reauth" };
   return { ok: true };
 }
 

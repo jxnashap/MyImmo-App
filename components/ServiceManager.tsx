@@ -463,7 +463,7 @@ function PartnerZeile({
         )}
 
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <DeleteButton action={() => entferneServicePartner(p.user_id)} className="btn btn-ghost" label={<><Trash2 size={13} style={{ verticalAlign: "-2px" }} /> Verknüpfung lösen</>} confirmText="Verknüpfung zu diesem Partner lösen? Er sieht danach keine Objekte und Aufträge von dir mehr." />
+          <DeleteButton action={() => entferneServicePartner(p.user_id)} className="btn btn-ghost" label={<><Trash2 size={13} style={{ verticalAlign: "-2px" }} /> Verknüpfung lösen</>} confirmText="Verknüpfung zu diesem Partner lösen? Er sieht danach keine Objekte und Aufträge von dir mehr. Offene Auftrags-Links werden erneuert — eine Firma braucht dann den neuen Link." />
         </div>
       </div>
     </details>

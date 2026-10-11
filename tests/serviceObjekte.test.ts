@@ -137,8 +137,48 @@ describe("Partner wechseln", () => {
 describe("Trennen räumt die Zuordnung mit ab", () => {
   it("entferneServicePartner löscht auch die Objekte dieses Partners", async () => {
     const { db, mod } = await lade();
-    expect(await mod.entferneServicePartner("hm-1")).toEqual({ ok: true });
+    expect(await mod.entferneServicePartner("hm-1")).toMatchObject({ ok: true });
     expect(zugriffe(db, "service_objekte", "delete")[0].filter).toEqual(expect.arrayContaining(["eq:vermieter_id=nutzer-1", "eq:service_user_id=hm-1"]));
+  });
+
+  // B03 (11.10.2026): Der Partner kannte den öffentlichen Auftrags-Link. Nach dem Trennen muss er
+  // für jeden noch offenen Auftrag ein NEUER sein — je Auftrag ein eigener Wert.
+  it("erneuert den öffentlichen Link jedes offenen Auftrags dieses Partners", async () => {
+    const { db, mod } = await lade({
+      antwortFolge: { "auftraege:select": [[{ id: "a1" }, { id: "a2" }]], "auftraege:update": [{ id: "a1" }, { id: "a2" }] },
+    });
+    const r = await mod.entferneServicePartner("hm-1");
+    expect(r).toEqual({ ok: true, linksErneuert: 2 });
+    const suche = zugriffe(db, "auftraege", "select")[0];
+    expect(suche.filter).toEqual(expect.arrayContaining(["eq:vermieter_id=nutzer-1", "eq:service_user_id=hm-1"]));
+    expect(suche.filter.join(" ")).toMatch(/freigabe.*offen.*angenommen/);
+    const upd = zugriffe(db, "auftraege", "update");
+    expect(upd).toHaveLength(2);
+    expect(upd.map((u) => u.filter)).toEqual([
+      expect.arrayContaining(["eq:id=a1", "eq:vermieter_id=nutzer-1"]),
+      expect.arrayContaining(["eq:id=a2", "eq:vermieter_id=nutzer-1"]),
+    ]);
+    const token = (i: number) => (upd[i].daten as { public_token?: string } | undefined)?.public_token;
+    const t1 = token(0), t2 = token(1);
+    expect(t1).toMatch(/^[0-9a-f-]{36}$/);
+    expect(t1).not.toBe(t2);
+    // Die Verknüpfung fällt ZUERST — der sicherheitskritische Schritt hängt nicht am Link-Erneuern.
+    const reihenfolge = db.zugriffe.map((z) => `${z.tabelle}:${z.op}`);
+    expect(reihenfolge.indexOf("service_zugaenge:delete")).toBeLessThan(reihenfolge.indexOf("auftraege:update"));
+  });
+
+  it("ein nicht erneuerter Link wird gemeldet, nicht als „gelöst“ verschwiegen", async () => {
+    const { mod } = await lade({
+      antwortFolge: { "auftraege:select": [[{ id: "a1" }]], "auftraege:update": [null] },
+    });
+    const r = await mod.entferneServicePartner("hm-1");
+    expect(r.error).toMatch(/1 Auftrags-Link\(s\) konnten nicht erneuert werden/);
+  });
+
+  it("scheitert die Suche nach offenen Aufträgen, kommt eine Meldung", async () => {
+    const { mod } = await lade({ fehlerBei: { "auftraege:select": { message: "kaputt" } } });
+    const r = await mod.entferneServicePartner("hm-1");
+    expect(r.error).toMatch(/Auftrags-Links konnten nicht geprüft werden/);
   });
 
   it("scheitert das Aufräumen, meldet die Oberfläche es — nicht stillschweigend „gelöst“", async () => {

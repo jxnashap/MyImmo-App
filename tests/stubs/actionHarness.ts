@@ -72,6 +72,11 @@ export type FakeDb = {
   dateien: Record<string, string[]>;
   /** Mitschrift der Storage-Aufrufe, z. B. `"belege:list"`, `"belege:remove"`. */
   storageAufrufe: string[];
+  /**
+   * Konten, die `auth.admin.getUserById` noch findet (B02, 11.10.2026: Nachprüfung nach der
+   * Kontolöschung). Standard: keines — eine Löschung gilt im Prüfstand als durchgelaufen.
+   */
+  kontenDa: string[];
 };
 
 /** Ein unsignierter JWT mit `amr`-Zeitstempel — die Prüfung liest nur die Payload. */
@@ -101,6 +106,7 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
     aal: { currentLevel: "aal1", nextLevel: "aal1" },
     dateien: {},
     storageAufrufe: [],
+    kontenDa: [],
     ...init,
   };
 
@@ -184,6 +190,12 @@ export function fakeSupabase(init: Partial<FakeDb> = {}) {
         },
         error: null,
       }),
+      admin: {
+        getUserById: async (id: string) => ({
+          data: { user: db.kontenDa.includes(id) ? { id } : null },
+          error: db.kontenDa.includes(id) ? null : { message: "User not found", status: 404 },
+        }),
+      },
       mfa: {
         // Ohne JWT-Argument liest die echte Bibliothek den Faktorstatus aus dem
         // COOKIE — Server-Code darf das nicht mehr benutzen. Wer es tut, kracht hier.

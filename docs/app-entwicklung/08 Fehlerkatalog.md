@@ -144,6 +144,32 @@ Ein dunkler Bildentwurf wurde als „abgeschnitten" gemeldet, weil die
 Helligkeitsschwelle nicht zwischen Gestaltung und Beschnitt unterschied.
 → *Gegenprüfung:* Bei einem Alarm erst prüfen, ob die **Prüfung** falsch liegt.
 
+**Eine Einladung ersetzte den Zugangscode (B04, 11.10.2026)**
+Die Regel auf `einladungscodes` prüfte nur „du stellst für dich selbst aus“, nicht „du darfst
+überhaupt einladen“. Ein Konto ohne Freischaltung (Google oder direkt über die Auth-API, Metadaten
+`rolle: hausverwaltung`) stellte sich einen Service-Code aus, löste ihn selbst ein — und war über
+`konto_freischaltung` (quelle 'einladung') freigeschaltet, mit der nutzergewählten Rolle. Jede
+einzelne Regel sah für sich richtig aus; die Lücke entstand erst aus ihrem Zusammenspiel
+(Aussteller ≠ berechtigt, Rolle aus Metadaten, Freischaltung als Nebenwirkung).
+→ *Gegenprüfung:* Für jeden Weg, der `konto_freischaltung` schreibt, ein Rollentest mit einem NICHT
+freigeschalteten Konto als Aussteller UND als Einlöser (`supabase/test/rls/b04_einladung.sql`).
+Eine Freischaltung als Nebenwirkung gilt nur für die eingeladene Rolle.
+
+**Widerruf entfernte die Verknüpfung, nicht den Zugriff (B03, 11.10.2026)**
+Die Regeln auf Aufträgen, Notizen und Rückmeldungen prüften `service_user_id = auth.uid()` — eine
+Spalte am Auftrag, die der Widerruf nicht anfasst. Dazu ein Nebenweg außerhalb der Datenbank: der
+öffentliche Auftrags-Link, den der Partner kannte. Und eine Testfalle: Ein `UPDATE … WHERE id = …`
+prüft zusätzlich die LESE-Regel; nur ein `UPDATE` ohne WHERE zeigt, ob die Update-Regel allein hält.
+→ *Gegenprüfung:* Widerruf als Zustandswechsel testen — vorher (positiv) und nachher (negativ) für
+jede Tabelle, Sicht, RPC und jeden Inhaber-Link, den die Rolle kannte.
+
+**Mutationsprobe blind bei REVOKE (11.10.2026)**
+Die erste DB-Mutationsprobe spielte die mutierte Migration über eine Datenbank, in der die echte
+schon gelaufen war. Für `CREATE OR REPLACE`/`ALTER POLICY` genügt das; ein entferntes `REVOKE` stellt
+die Rechte aber nicht wieder her — alle drei Mutationen blieben grün, auch der Ursprungszustand.
+→ *Gegenprüfung:* Zielmigration beim Aufbau auslassen (`OHNE_MIGRATION`), dann mutiert einspielen;
+und immer eine Mutation „Ursprungszustand“ mitlaufen lassen — sie MUSS rot werden.
+
 ## Projektführung
 
 **Punkte standen monatelang fälschlich als offen**

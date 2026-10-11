@@ -74,6 +74,19 @@
 > **Merke außerdem:** `effektiverPlan()` wertet `gueltig_bis` NICHT aus — ein Abo endet
 > allein über `status`.
 
+> 🛡️ **Prüfstand 11.10.2026 (Arbeitsauftrag B01–B18, Abläufe A–F) — in Arbeit auf
+> `claude/magical-feynman-l8w9s5`.** Phase 1 (Sicherheit) gebaut, lokal an der Datenbankgrenze
+> bewiesen (`scripts/db/testdb.sh` + `scripts/db/rlstest.sh`, Abschnitt „Lokale Test-Datenbank“ in
+> `supabase/migrations/README.md`). **B04 war ein Weg am Zugangscode vorbei** (Selbst-Einladung →
+> freigeschaltete Hausverwaltung). **Ausrollen nur in dieser Reihenfolge:** Code mergen + deployen →
+> `20261011100000` (B04) und `20261011101000` (B03) per apply_migration → `20261011102000` (B01) →
+> `20261011103000` (B02, SQL-Editor) → `20261011104000` (B18, SQL-Editor, No-op). **Regeln:**
+> (1) `mfa_wiederherstellung` und `konto_loeschen()` nur über die Service-Role im Server —
+> `delete_own_account()` ist kein Nutzer-Einstieg mehr. (2) Einladen darf nur ein freigeschalteter
+> Vermieter; eine Einladung schaltet ein Konto nur für die eingeladene Rolle frei. (3) Jede Partner-Regel
+> verlangt eine bestehende `service_zugaenge`-Zeile, nie nur `service_user_id`. (4) Neue RLS-Regel →
+> Datei in `supabase/test/rls/` mit positiver und negativer Probe.
+
 ### 👤 NUR DER BETREIBER — offene Punkte (Stand 10.09.2026)
 Alles hier ist **kein Code**, sondern ein Dashboard, ein Anwalt oder ein Blick in einen
 Browser. Ich kann es nicht erledigen und nicht prüfen. **In jeder Session kurz nachfragen,

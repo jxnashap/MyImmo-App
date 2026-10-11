@@ -4,7 +4,7 @@ import { UEBERNAHME_KATEGORIEN } from "@/lib/kategorien";
 // Service-Rolle (Businessplan Kap. 14): Vermieter lädt Service-Partner
 // (Handwerker/Hausmeister) per Code ein und vergibt Aufträge; der Partner
 // arbeitet sie im schlanken Service-Portal ab.
-import { randomBytes } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { zahlDe } from "@/lib/zahl";
@@ -81,8 +81,34 @@ export async function entferneServicePartner(serviceUserId: string) {
     .eq("vermieter_id", user.id)
     .eq("service_user_id", serviceUserId);
   if (oFehler) return { error: "Verknüpfung gelöst, aber die Objekt-Zuordnung blieb gespeichert — bitte erneut versuchen." };
+  // B03 (11.10.2026): Der öffentliche Auftrags-Link (/auftrag/<token>) ist ein Inhaber-Link — der
+  // Partner kannte ihn (Portal → „Link an Firma“) und hätte damit Auftrag und Mieterkontakt weiter
+  // öffnen können. Für Aufträge, die der Link noch zeigt, wird er erneuert; eine Firma, die den alten
+  // Link hatte, braucht den neuen (Knopf am Auftrag). Erledigte/abgelehnte Links zeigen ohnehin nichts.
+  // Wiederholbar: Ein zweiter Aufruf erneuert erneut, die Verknüpfung ist dann schon weg.
+  const { data: offene, error: aFehler } = await supabase
+    .from("auftraege")
+    .select("id")
+    .eq("vermieter_id", user.id)
+    .eq("service_user_id", serviceUserId)
+    .in("status", OFFENE_STATUS);
+  if (aFehler) return { error: "Verknüpfung gelöst, aber die Auftrags-Links konnten nicht geprüft werden — bitte erneut versuchen." };
+  let nichtErneuert = 0;
+  for (const a of (offene ?? []) as { id: string }[]) {
+    const { data, error } = await supabase
+      .from("auftraege")
+      .update({ public_token: randomUUID() })
+      .eq("id", a.id)
+      .eq("vermieter_id", user.id)
+      .select("id")
+      .maybeSingle();
+    if (error || !data) nichtErneuert++;
+  }
   revalidatePath("/anliegen");
-  return { ok: true };
+  if (nichtErneuert > 0) {
+    return { error: `Verknüpfung gelöst, aber ${nichtErneuert} Auftrags-Link(s) konnten nicht erneuert werden — bitte erneut versuchen.` };
+  }
+  return { ok: true, linksErneuert: (offene ?? []).length };
 }
 
 const ROLLEN = ["hausmeister", "dienstleister"] as const;
