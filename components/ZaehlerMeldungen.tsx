@@ -34,8 +34,10 @@ export default function ZaehlerMeldungen({ rows }: { rows: ZaehlerMeldungVermiet
       setFehler(null);
       setHinweis(null);
       const r = await uebernehmeZaehlerstand(id);
-      if (r?.error) setFehler(r.error);
-      else if (!r.verbrauchGebucht)
+      if ("error" in r && r.error) setFehler(r.error);
+      // B11: Passt die Meldung nicht eindeutig zum selben Zähler, sagt der Server warum (kein erfundener Verbrauch).
+      else if ("hinweis" in r && r.hinweis) setHinweis(r.hinweis);
+      else if ("verbrauchGebucht" in r && !r.verbrauchGebucht)
         setHinweis("Zählerstand gespeichert — der Verbrauch wird ab der zweiten Meldung desselben Zählers automatisch als Differenz gebucht.");
     });
 

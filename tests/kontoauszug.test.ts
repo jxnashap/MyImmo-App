@@ -143,7 +143,7 @@ describe("Anbindung", () => {
   it("die Datei wird im Browser gelesen; gebucht wird über bestaetigeMehrere", () => {
     const k = readFileSync("components/KontoauszugAbgleich.tsx", "utf8");
     expect(k).toContain("new TextDecoder(\"windows-1252\")");
-    expect(k).toContain("await bestaetigeMehrere(zeilen)");
+    expect(k).toContain("await bestaetigeMehrere(zeilen, \"kontoauszug\")");
     expect(k).not.toMatch(/fetch\(|FormData/);
   });
   it("der Server reicht nur eine Prüfsumme der Mieter-IBAN in den Browser", () => {
@@ -151,5 +151,32 @@ describe("Anbindung", () => {
     expect(d).toContain('createHash("sha256").update(iban).digest("hex")');
     expect(d).toContain("ibanHash: ibanHash(m.iban)");
     expect(d).not.toMatch(/iban: decryptNullable/);
+  });
+});
+
+describe("B07: Kennung je Bankzeile", () => {
+  const zahl = (zeile: number, over: Partial<Zahlung> = {}): Zahlung => ({ zeile, datum: "2026-03-03", betrag: 850, name: "Max Muster", zweck: "Miete März", iban: "DE02 1203 0000 0000 2020 51", ...over });
+
+  it("gleiche Datei → gleiche Kennungen; zwei gleiche Zeilen bekommen verschiedene", async () => {
+    const { bankzeilenSchluessel } = await import("@/lib/kontoauszug");
+    const datei = [zahl(1), zahl(2), zahl(3, { betrag: 900 })];
+    const a = bankzeilenSchluessel(datei);
+    expect(bankzeilenSchluessel(datei)).toEqual(a);
+    expect(a.get(1)).not.toBe(a.get(2));
+    expect(new Set(a.values()).size).toBe(3);
+  });
+
+  it("gezählt wird über die GANZE Datei — die Auswahl ändert die Kennung nicht", async () => {
+    // Wer erst die zweite von zwei gleichen Zahlungen bucht und später die erste, darf nicht dieselbe
+    // Kennung bekommen (die alte Fassung zählte nur die ausgewählten Zeilen).
+    const { bankzeilenSchluessel } = await import("@/lib/kontoauszug");
+    const datei = [zahl(1), zahl(2)];
+    expect(bankzeilenSchluessel(datei).get(2)).toMatch(/\|2$/);
+    expect(bankzeilenSchluessel([...datei].reverse()).get(1)).toMatch(/\|1$/);
+  });
+
+  it("die IBAN zählt ohne Leerzeichen, Name und Zweck ohne Rand", async () => {
+    const { bankzeilenSchluessel } = await import("@/lib/kontoauszug");
+    expect(bankzeilenSchluessel([zahl(1)]).get(1)).toBe(bankzeilenSchluessel([zahl(1, { iban: "de02120300000000202051", name: " Max Muster " })]).get(1));
   });
 });

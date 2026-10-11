@@ -1,15 +1,21 @@
-// In-Memory-Datenbank mit der Supabase-Abfragekette (B05/B08, 11.10.2026).
+// In-Memory-Datenbank mit der Supabase-Abfragekette (B05–B11, 11.10.2026).
 //
 // Anders als `actionHarness.fakeSupabase` (zeichnet Zugriffe auf, liefert feste Antworten) FILTERT,
-// SORTIERT und BLÄTTERT diese Attrappe wirklich — und hält die PostgREST-Grenze ein: Ohne `.range()`
-// kommen höchstens `maxZeilen` (Standard 1.000) Zeilen zurück, OHNE Fehler. Genau daran sind
-// Export und Auswertungen still gescheitert; ein Test gegen feste Antworten sieht das nie.
+// SORTIERT, BLÄTTERT und SCHREIBT diese Attrappe wirklich:
+//   · PostgREST-Grenze: Ohne `.range()` kommen höchstens `maxZeilen` (Standard 1.000) Zeilen zurück,
+//     OHNE Fehler. Genau daran sind Export und Auswertungen still gescheitert.
+//   · UNIQUE-Regeln (`eindeutig`): Ein doppelter Schlüssel ergibt 23505 wie in Postgres (NULL ist
+//     verschieden); `upsert(…, { onConflict, ignoreDuplicates: true })` überspringt still.
+//   · Jeder Aufruf ist EINE Anweisung — ein Fehler schreibt nichts (atomar je Anweisung).
+//   · Zwischen zwei `await` kann eine zweite Action laufen — gleichzeitige Aufrufe (`Promise.all`)
+//     verzahnen sich so wie zwei Anfragen am Server.
 //
-// Fehler gezielt: `fehlerBei: { tabelle: "meldung" }` lässt jede Abfrage dieser Tabelle scheitern,
-// `fehlerAbSeite: { tabelle: n }` erst ab der n-ten Seite (0-basiert) — für „Seite 2 bricht ab“.
+// Fehler gezielt: `fehlerBei: { "tabelle" | "tabelle:op": "meldung" }` (op = select/insert/update/
+// upsert/delete), `fehlerAbSeite: { tabelle: n }` erst ab der n-ten Seite (0-basiert).
 
 type Row = Record<string, unknown>;
-type Fehler = { message: string } | null;
+type Fehler = { message: string; code?: string } | null;
+type Op = "select" | "insert" | "update" | "upsert" | "delete";
 
 export type SpeicherDbInit = {
   tabellen?: Record<string, Row[]>;
@@ -18,13 +24,36 @@ export type SpeicherDbInit = {
   fehlerBei?: Record<string, string>;
   fehlerAbSeite?: Record<string, number>;
   maxZeilen?: number;
+  /**
+   * UNIQUE-Regeln je Tabelle, z. B. { einnahmen: [["user_id", "zahlung_ref"]] }. Ein Teil-Index
+   * (`… where status = 'angefragt'`) als { spalten, wo }.
+   */
+  eindeutig?: Record<string, (string[] | { spalten: string[]; wo: (r: Row) => boolean })[]>;
+  /** Spalten-Vorgaben beim Einfügen (wie `default` in Postgres), z. B. { auftraege: () => ({ public_token: "t" }) }. */
+  vorgaben?: Record<string, () => Row>;
+  /** Angemeldetes Konto für `auth.getUser()`. */
+  nutzer?: { id: string; email?: string } | null;
 };
+
+let laufendeId = 0;
 
 export function speicherDb(init: SpeicherDbInit = {}) {
   const tabellen: Record<string, Row[]> = init.tabellen ?? {};
   const max = init.maxZeilen ?? 1000;
-  const protokoll: { tabelle: string; filter: string[]; von?: number; bis?: number }[] = [];
+  const protokoll: { tabelle: string; op: Op; filter: string[]; von?: number; bis?: number }[] = [];
   const seiten: Record<string, number> = {};
+
+  const konflikt = (tabelle: string, neu: Row, ausser?: Row): string[] | null => {
+    for (const eintrag of init.eindeutig?.[tabelle] ?? []) {
+      const regel = Array.isArray(eintrag) ? eintrag : eintrag.spalten;
+      const wo = Array.isArray(eintrag) ? () => true : eintrag.wo;
+      if (!wo(neu)) continue;
+      if (regel.some((s) => neu[s] == null)) continue; // NULL ist in UNIQUE verschieden
+      const da = (tabellen[tabelle] ?? []).some((r) => r !== ausser && wo(r) && regel.every((s) => r[s] === neu[s]));
+      if (da) return regel;
+    }
+    return null;
+  };
 
   function abfrage(tabelle: string) {
     const filter: ((r: Row) => boolean)[] = [];
@@ -33,16 +62,66 @@ export function speicherDb(init: SpeicherDbInit = {}) {
     let von: number | undefined;
     let bis: number | undefined;
     let limit: number | undefined;
+    let op: Op = "select";
+    let nutzlast: Row[] | Row | null = null;
+    let upsertOpt: { onConflict?: string; ignoreDuplicates?: boolean } = {};
+    let zurueck = false; // `.select()` nach einem Schreibvorgang
+
+    const fehlerFuer = (): Fehler => {
+      const m = init.fehlerBei?.[`${tabelle}:${op}`] ?? init.fehlerBei?.[tabelle];
+      return m ? { message: m } : null;
+    };
+    const passend = () => (tabellen[tabelle] ?? []).filter((r) => filter.every((f) => f(r)));
 
     const ausfuehren = (): { data: Row[] | null; error: Fehler; count?: number } => {
-      protokoll.push({ tabelle, filter: text, von, bis });
-      if (init.fehlerBei?.[tabelle]) return { data: null, error: { message: init.fehlerBei[tabelle] } };
+      protokoll.push({ tabelle, op, filter: text, von, bis });
+      const f = fehlerFuer();
+      if (f) return { data: null, error: f };
+      tabellen[tabelle] ??= [];
+
+      if (op === "insert" || op === "upsert") {
+        const neu = (Array.isArray(nutzlast) ? nutzlast : [nutzlast!]).map((r) => ({ id: `id-${++laufendeId}`, ...init.vorgaben?.[tabelle]?.(), ...r }));
+        const ziel = upsertOpt.onConflict?.split(",").map((s) => s.trim());
+        const eingefuegt: Row[] = [];
+        const puffer: Row[] = [];
+        for (const r of neu) {
+          const gegen = [...tabellen[tabelle], ...puffer];
+          const alt = tabellen[tabelle];
+          tabellen[tabelle] = gegen;
+          const k = konflikt(tabelle, r);
+          tabellen[tabelle] = alt;
+          if (k) {
+            if (op === "upsert" && upsertOpt.ignoreDuplicates && ziel && k.join(",") === ziel.join(",")) continue;
+            return { data: null, error: { message: `duplicate key value violates unique constraint (${k.join(",")})`, code: "23505" } };
+          }
+          puffer.push(r);
+          eingefuegt.push(r);
+        }
+        tabellen[tabelle].push(...puffer);
+        return { data: zurueck ? eingefuegt.map((r) => ({ ...r })) : null, error: null };
+      }
+      if (op === "update") {
+        const treffer = passend();
+        const patch = nutzlast as Row;
+        for (const r of treffer) {
+          const k = konflikt(tabelle, { ...r, ...patch }, r);
+          if (k) return { data: null, error: { message: "duplicate key", code: "23505" } };
+        }
+        for (const r of treffer) Object.assign(r, patch);
+        return { data: zurueck ? treffer.map((r) => ({ ...r })) : null, error: null };
+      }
+      if (op === "delete") {
+        const treffer = new Set(passend());
+        tabellen[tabelle] = tabellen[tabelle].filter((r) => !treffer.has(r));
+        return { data: zurueck ? [...treffer].map((r) => ({ ...r })) : null, error: null };
+      }
+
       if (von !== undefined && init.fehlerAbSeite?.[tabelle] !== undefined) {
         const n = seiten[tabelle] ?? 0;
         seiten[tabelle] = n + 1;
         if (n >= init.fehlerAbSeite[tabelle]) return { data: null, error: { message: `Seite ${n} abgebrochen` } };
       }
-      let rows = (tabellen[tabelle] ?? []).filter((r) => filter.every((f) => f(r)));
+      let rows = passend();
       if (ordnung.length) {
         rows = [...rows].sort((a, b) => {
           for (const o of ordnung) {
@@ -63,7 +142,11 @@ export function speicherDb(init: SpeicherDbInit = {}) {
     };
 
     const k = {
-      select: (_s?: string) => k,
+      select: (_s?: string) => { if (op !== "select") zurueck = true; return k; },
+      insert: (r: Row[] | Row) => { op = "insert"; nutzlast = r; return k; },
+      upsert: (r: Row[] | Row, o: { onConflict?: string; ignoreDuplicates?: boolean } = {}) => { op = "upsert"; nutzlast = r; upsertOpt = o; return k; },
+      update: (r: Row) => { op = "update"; nutzlast = r; return k; },
+      delete: () => { op = "delete"; return k; },
       eq: (s: string, w: unknown) => { filter.push((r) => r[s] === w); text.push(`eq:${s}=${String(w)}`); return k; },
       neq: (s: string, w: unknown) => { filter.push((r) => r[s] !== w); text.push(`neq:${s}=${String(w)}`); return k; },
       in: (s: string, w: unknown[]) => { filter.push((r) => w.includes(r[s])); text.push(`in:${s}=${w.length}`); return k; },
@@ -77,16 +160,32 @@ export function speicherDb(init: SpeicherDbInit = {}) {
       limit: (n: number) => { limit = n; return k; },
       range: (a: number, b: number) => { von = a; bis = b; return Promise.resolve(ausfuehren()); },
       maybeSingle: () => { const r = ausfuehren(); return Promise.resolve({ data: r.data?.[0] ?? null, error: r.error }); },
-      single: () => { const r = ausfuehren(); return Promise.resolve({ data: r.data?.[0] ?? null, error: r.error }); },
-      then: (f: (w: ReturnType<typeof ausfuehren>) => unknown, g?: (e: unknown) => unknown) => Promise.resolve(ausfuehren()).then(f, g),
+      single: () => { const r = ausfuehren(); return Promise.resolve({ data: r.data?.[0] ?? null, error: r.error ?? (r.data?.length ? null : { message: "no rows" }) }); },
+      then: (f: (w: ReturnType<typeof ausfuehren>) => unknown, g?: (e: unknown) => unknown) => Promise.resolve().then(ausfuehren).then(f, g),
     };
     return k;
   }
 
+  const nutzer = init.nutzer === undefined ? { id: "nutzer-1", email: "test@example.org" } : init.nutzer;
   const client = {
     from: (tabelle: string) => abfrage(tabelle),
+    auth: {
+      getUser: async () => ({ data: { user: nutzer ? { ...nutzer, factors: [] } : null }, error: null }),
+    },
     storage: {
       from: (bucket: string) => ({
+        upload: async (pfad: string, inhalt: Uint8Array | string) => {
+          if (init.fehlerBei?.[`storage:${bucket}:upload`]) return { data: null, error: { message: init.fehlerBei[`storage:${bucket}:upload`] } };
+          const ablage = ((init.dateien ??= {})[bucket] ??= {});
+          if (pfad in ablage) return { data: null, error: { message: "The resource already exists" } };
+          ablage[pfad] = typeof inhalt === "string" ? inhalt : new Uint8Array(inhalt);
+          return { data: { path: pfad }, error: null };
+        },
+        remove: async (pfade: string[]) => {
+          if (init.fehlerBei?.[`storage:${bucket}:remove`]) return { data: null, error: { message: init.fehlerBei[`storage:${bucket}:remove`] } };
+          for (const pf of pfade) delete init.dateien?.[bucket]?.[pf];
+          return { data: pfade.map((name) => ({ name })), error: null };
+        },
         download: async (pfad: string) => {
           const inhalt = init.dateien?.[bucket]?.[pfad];
           if (inhalt === undefined) return { data: null, error: { message: "Object not found" } };
@@ -96,5 +195,5 @@ export function speicherDb(init: SpeicherDbInit = {}) {
       }),
     },
   };
-  return { client, tabellen, protokoll };
+  return { client, tabellen, protokoll, dateien: () => init.dateien ?? {} };
 }

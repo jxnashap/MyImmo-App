@@ -285,6 +285,8 @@ describe("Dateianhänge: Grössengrenzen greifen vor dem Upload", () => {
     const konflikt = await lade({ antworten: { kosten: { rechnung_path: "nutzer-1/x.pdf" } }, antwortFolge: { "kosten:update": [null] } });
     await expect(konflikt.mod.deleteRechnung("k1")).rejects.toThrow(/inzwischen/);
     expect(konflikt.storage.entfernt).toEqual([]);
+    const upd = konflikt.db.zugriffe.find((z) => z.tabelle === "kosten" && z.op === "update")!;
+    expect(upd.filter).toEqual(expect.arrayContaining(["eq:id=k1", "eq:user_id=nutzer-1", "eq:rechnung_path=nutzer-1/x.pdf"]));
     const ok = await lade({ antworten: { kosten: { rechnung_path: "nutzer-1/x.pdf" } } });
     await ok.mod.deleteRechnung("k1");
     expect(ok.storage.entfernt).toEqual(["nutzer-1/x.pdf"]);

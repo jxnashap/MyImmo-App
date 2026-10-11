@@ -542,12 +542,13 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
     : new Date().toISOString().slice(0, 10);
   if (!id) return { error: "Ungültige Eingabe." };
 
-  const { data: a } = await supabase
+  const { data: a, error: leseFehler } = await supabase
     .from("auftraege")
     .select("titel,objekt_name,prop_id,betrag,lohnanteil,rechnung_name,rechnung_type,rechnung_data,kosten_id,status,service_user_id")
     .eq("id", id)
     .eq("vermieter_id", user.id)
     .maybeSingle();
+  if (leseFehler) return { error: "Der Auftrag konnte nicht gelesen werden." };
   if (!a) return { error: "Auftrag nicht gefunden." };
   if (a.status !== "erledigt") return { error: "Nur erledigte Aufträge lassen sich übernehmen." };
   if (a.kosten_id) return { error: "Dieser Auftrag wurde bereits als Kosten erfasst." };
@@ -569,6 +570,7 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
   // Rechnung in den Belege-Bucket kopieren (wie beim normalen Kosten-Upload);
   // schlägt der Upload fehl, bleibt die Base64-Ablage als Fallback lesbar.
   let rechnung: Record<string, unknown> = {};
+  let hochgeladen: string | null = null;
   if (a.rechnung_data) {
     const buf = Buffer.from(a.rechnung_data, "base64");
     const kb = buf.length / 1024;
@@ -578,6 +580,7 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
     const { error: upErr } = await supabase.storage
       .from("belege")
       .upload(path, buf, { contentType: a.rechnung_type ?? "application/octet-stream", upsert: false });
+    if (!upErr) hochgeladen = path;
     rechnung = {
       rechnung_name: a.rechnung_name,
       rechnung_type: a.rechnung_type,
@@ -585,7 +588,17 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
       ...(upErr ? { rechnung_data: a.rechnung_data } : { rechnung_path: path, rechnung_data: null }),
     };
   }
+  // B06: Eine hochgeladene Kopie, zu der keine Buchung entsteht, wird wieder entfernt.
+  const kopieWeg = async () => {
+    if (!hochgeladen) return;
+    const { error: weg } = await supabase.storage.from("belege").remove([hochgeladen]);
+    if (weg) console.warn("[belege] Kopie blieb liegen (wird mit der Kontolöschung entfernt)");
+  };
 
+  // B07 (11.10.2026): `kosten.auftrag_id` ist eindeutig (Migration 20261011110000). Ein zweiter Klick,
+  // ein Wiederholen nach Zeitüberlauf oder ein Abbruch zwischen Buchen und Verknüpfen erzeugt keine
+  // zweite Kosten-Buchung — der zweite Versuch findet die erste und verknüpft nur noch.
+  let kostenId: string | null = null;
   const { data: neu, error } = await supabase
     .from("kosten")
     .insert({
@@ -596,25 +609,37 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
       betrag: Number(a.betrag),
       beschreibung: a.titel.slice(0, 200),
       notiz: notizTeile.join(" "),
+      auftrag_id: id,
       ...rechnung,
     })
     .select("id")
     .single();
-  if (error || !neu) return { error: "Kosten-Buchung konnte nicht angelegt werden." };
+  if (error?.code === "23505") {
+    await kopieWeg();
+    const { data: da, error: daFehler } = await supabase
+      .from("kosten").select("id").eq("user_id", user.id).eq("auftrag_id", id).maybeSingle();
+    if (daFehler || !da) return { error: "Die Kosten-Buchung zu diesem Auftrag konnte nicht gefunden werden — bitte in den Kosten prüfen." };
+    kostenId = da.id as string;
+  } else if (error || !neu) {
+    await kopieWeg();
+    return { error: "Kosten-Buchung konnte nicht angelegt werden." };
+  } else {
+    kostenId = neu.id as string;
+  }
 
-  // Die Verknüpfung ist der Doppel-Buchungs-Schutz: Ohne `kosten_id` hält der
-  // Auftrag sich für unverbucht und legt beim nächsten Klick eine ZWEITE
-  // Kosten-Buchung an. Der Fehler darf deshalb nicht verschluckt werden.
+  // Die Verknüpfung zeigt den Auftrag als verbucht. Bedingt auf „noch leer“ — eine gleichzeitige
+  // Übernahme hat sie dann schon gesetzt (auf dieselbe Buchung, siehe oben).
   const { error: linkFehler } = await supabase
     .from("auftraege")
-    .update({ kosten_id: neu.id })
+    .update({ kosten_id: kostenId })
     .eq("id", id)
-    .eq("vermieter_id", user.id);
+    .eq("vermieter_id", user.id)
+    .is("kosten_id", null);
   if (linkFehler) {
     return {
       error:
         "Die Kosten-Buchung wurde angelegt, konnte dem Auftrag aber nicht zugeordnet werden. " +
-        "Bitte in den Kosten prüfen, bevor erneut gebucht wird.",
+        "Ein erneuter Klick verknüpft sie, ohne doppelt zu buchen.",
     };
   }
   revalidatePath("/anliegen");

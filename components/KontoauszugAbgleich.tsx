@@ -11,7 +11,7 @@ import { FileUp, ShieldCheck } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { bestaetigeMehrere, type BatchZeile } from "@/lib/actions/mietkonto";
 import { erwarteteMonate, dedup, monatLabel, ymPlus, zuJahrMonat } from "@/lib/mietkonto";
-import { leseKontoauszug, gleicheAb, normIban, type AbgleichMieter, type Treffer, type Zahlung } from "@/lib/kontoauszug";
+import { leseKontoauszug, gleicheAb, normIban, bankzeilenSchluessel, type AbgleichMieter, type Treffer, type Zahlung } from "@/lib/kontoauszug";
 import type { NacherfassungMieter } from "@/components/MietkontoBestaetigung";
 
 const eur = (n: number) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
@@ -31,7 +31,7 @@ async function sha256Hex(s: string): Promise<string> {
 
 export default function KontoauszugAbgleich({ nacherfassung }: { nacherfassung: NacherfassungMieter[] }) {
   const [fehler, setFehler] = useState<string | null>(null);
-  const [ergebnis, setErgebnis] = useState<{ treffer: Treffer[]; ohneZuordnung: Zahlung[]; ausgaenge: number; datei: string } | null>(null);
+  const [ergebnis, setErgebnis] = useState<{ treffer: Treffer[]; ohneZuordnung: Zahlung[]; alle: Zahlung[]; ausgaenge: number; datei: string } | null>(null);
   const [auswahl, setAuswahl] = useState<Set<number>>(new Set());
   const [monatWahl, setMonatWahl] = useState<Record<number, string>>({});
   const [pending, startTransition] = useTransition();
@@ -70,7 +70,7 @@ export default function KontoauszugAbgleich({ nacherfassung }: { nacherfassung: 
     for (const z of a.zahlungen) if (normIban(z.iban)) hashe.set(z.zeile, await sha256Hex(normIban(z.iban)));
 
     const erg = gleicheAb(a.zahlungen, mieter, hashe);
-    setErgebnis({ ...erg, ausgaenge: a.ausgaenge, datei: f.name });
+    setErgebnis({ ...erg, alle: a.zahlungen, ausgaenge: a.ausgaenge, datei: f.name });
     setAuswahl(new Set(erg.treffer.filter((t) => t.stufe === "sicher").map((t) => t.zahlung.zeile)));
     setMonatWahl({});
   };
@@ -79,20 +79,17 @@ export default function KontoauszugAbgleich({ nacherfassung }: { nacherfassung: 
 
   const buchen = () =>
     startTransition(async () => {
-      // Prüfsumme je Bankzeile (Datum, Betrag, Name, Zweck, IBAN + laufende Nummer GLEICHER Zeilen in
-      // dieser Datei): Ein erneutes Hochladen desselben Auszugs ergibt dieselben Kennungen.
-      const vorkommen = new Map<string, number>();
+      // Prüfsumme je Bankzeile (lib/kontoauszug.ts → bankzeilenSchluessel): Ein erneutes Hochladen
+      // desselben Auszugs ergibt dieselben Kennungen, der Server bucht nichts doppelt.
+      const schluessel = bankzeilenSchluessel(ergebnis?.alle ?? []);
       const zeilen: BatchZeile[] = [];
       for (const t of gewaehlt) {
-        const roh = [t.zahlung.datum, t.zahlung.betrag.toFixed(2), t.zahlung.name, t.zahlung.zweck, normIban(t.zahlung.iban)].join("|");
-        const n = (vorkommen.get(roh) ?? 0) + 1;
-        vorkommen.set(roh, n);
         zeilen.push({
           mieter_id: t.mieterId,
           buchungsdatum: t.zahlung.datum,
           betrag: t.zahlung.betrag,
           soll_monat: monatWahl[t.zahlung.zeile] ?? t.jahrMonat,
-          vorgang: (await sha256Hex(`${roh}|${n}`)).slice(0, 40),
+          vorgang: (await sha256Hex(schluessel.get(t.zahlung.zeile)!)).slice(0, 40),
         });
       }
       try {

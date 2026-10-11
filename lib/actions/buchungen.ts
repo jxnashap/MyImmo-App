@@ -145,6 +145,15 @@ async function rechnungHochladen(
   };
 }
 
+/**
+ * Bedingung „der gespeicherte Beleg ist noch der gelesene“ (gleichzeitige Änderung, B06).
+ * `undefined` = keine Bedingung (es wird kein Beleg ersetzt).
+ */
+function mitGleichemBeleg<Q extends { eq(s: string, w: string): Q; is(s: string, w: null): Q }>(q: Q, pfad: string | null | undefined): Q {
+  if (pfad === undefined) return q;
+  return pfad === null ? q.is("rechnung_path", null) : q.eq("rechnung_path", pfad);
+}
+
 /** Datei im Beleg-Bucket entfernen; `false`, wenn sie liegen blieb (Rest, wird gemeldet). */
 async function belegEntfernen(supabase: Awaited<ReturnType<typeof createClient>>, pfad: string | null | undefined): Promise<boolean> {
   if (!pfad) return true;
@@ -187,15 +196,18 @@ export async function updateKosten(id: string, fd: FormData) {
     beschreibung: str(fd, "beschreibung"),
   };
   const beleg = await rechnungHochladen(supabase, userId, fd);
-  let q = supabase.from("kosten").update({ ...daten, ...beleg.felder }).eq("id", id).eq("user_id", userId);
   // Beim Ersetzen nur, wenn der Beleg noch DERSELBE ist wie beim Lesen — sonst hat eine andere Sitzung
   // ihn inzwischen ersetzt, und wir löschten deren Datei.
-  if (beleg.pfad) q = alt.rechnung_path ? q.eq("rechnung_path", alt.rechnung_path) : q.is("rechnung_path", null);
-  const { data: gesichert, error } = await q.select("id").maybeSingle();
+  const { data: gesichert, error } = await mitGleichemBeleg(
+    supabase.from("kosten").update({ ...daten, ...beleg.felder }).eq("id", id).eq("user_id", userId),
+    beleg.pfad ? (alt.rechnung_path ?? null) : undefined,
+  ).select("id").maybeSingle();
   if (error || !gesichert) {
     await belegEntfernen(supabase, beleg.pfad);
     if (error) throw new Error(error.message);
-    throw new Error("Der Beleg wurde inzwischen an anderer Stelle geändert — bitte die Seite neu laden und erneut versuchen.");
+    throw new Error(beleg.pfad
+      ? "Der Beleg wurde inzwischen an anderer Stelle geändert — bitte die Seite neu laden und erneut versuchen."
+      : "Buchung nicht gefunden.");
   }
   if (beleg.pfad && alt.rechnung_path) await belegEntfernen(supabase, alt.rechnung_path);
   done(fd, "/kosten");
@@ -214,13 +226,14 @@ export async function deleteRechnung(id: string) {
   const { data: k, error: leseFehler } = await supabase
     .from("kosten").select("rechnung_path").eq("id", id).eq("user_id", userId).maybeSingle();
   if (leseFehler || !k) throw new Error("Buchung nicht gefunden.");
-  let q = supabase
-    .from("kosten")
-    .update({ rechnung_name: null, rechnung_type: null, rechnung_size: null, rechnung_path: null, rechnung_data: null })
-    .eq("id", id)
-    .eq("user_id", userId);
-  q = k.rechnung_path ? q.eq("rechnung_path", k.rechnung_path) : q.is("rechnung_path", null);
-  const { data: gesichert, error } = await q.select("id").maybeSingle();
+  const { data: gesichert, error } = await mitGleichemBeleg(
+    supabase
+      .from("kosten")
+      .update({ rechnung_name: null, rechnung_type: null, rechnung_size: null, rechnung_path: null, rechnung_data: null })
+      .eq("id", id)
+      .eq("user_id", userId),
+    k.rechnung_path ?? null,
+  ).select("id").maybeSingle();
   if (error) throw new Error(error.message);
   if (!gesichert) throw new Error("Der Beleg wurde inzwischen geändert — bitte die Seite neu laden.");
   await belegEntfernen(supabase, k.rechnung_path);

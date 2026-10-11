@@ -206,3 +206,22 @@ export function gleicheAb(zahlungen: Zahlung[], mieter: AbgleichMieter[], ibanHa
 
 /** IBAN für den Vergleich vereinheitlichen (Leerzeichen raus, Großbuchstaben). */
 export const normIban = (s: string | null | undefined) => (s ?? "").replace(/\s/g, "").toUpperCase();
+
+/**
+ * Inhalt, aus dem der Browser die Kennung einer Bankzeile bildet (B07, 11.10.2026): Datum, Betrag,
+ * Name, Zweck, IBAN und — bei mehreren GLEICHEN Zeilen in derselben Datei — deren laufende Nummer.
+ * Gezählt wird über ALLE Zeilen der Datei, nicht nur über die ausgewählten: Wer erst die zweite von
+ * zwei gleichen Zahlungen bucht und später die erste, bekommt zwei verschiedene Kennungen. Ein
+ * erneutes Hochladen derselben Datei ergibt dieselben Kennungen — der Server bucht nichts doppelt.
+ */
+export function bankzeilenSchluessel(zahlungen: Zahlung[]): Map<number, string> {
+  const vorkommen = new Map<string, number>();
+  const aus = new Map<number, string>();
+  for (const z of [...zahlungen].sort((a, b) => a.zeile - b.zeile)) {
+    const roh = [z.datum, z.betrag.toFixed(2), z.name.trim(), z.zweck.trim(), normIban(z.iban)].join("|");
+    const n = (vorkommen.get(roh) ?? 0) + 1;
+    vorkommen.set(roh, n);
+    aus.set(z.zeile, `${roh}|${n}`);
+  }
+  return aus;
+}

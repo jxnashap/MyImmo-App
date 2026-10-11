@@ -10,6 +10,7 @@ import { monatLabel, zuJahrMonat, type MietkontoMieter, type MietkontoZeitraum }
 import { monatBezahlt, monatsStand, nkAnteilFuer, verteileZahlung, type GebuchteMiete } from "@/lib/mietZahlung";
 import { DatenUnvollstaendig, ladeAlle, stapel } from "@/lib/db/ladeAlle";
 import { heuteBerlin } from "@/lib/zeitraum";
+import { TEILZAHLUNG_TOLERANZ } from "@/lib/mietStatus";
 
 export type MietkontoResult = {
   ok: boolean;
@@ -29,7 +30,10 @@ export type MietkontoResult = {
 //                       (Doppelklick, Zeitüberlauf, erneutes Absenden → dieselbe Kennung)
 //   · „ka:<hash>[#YYYY-MM]“ — Zeile aus dem Kontoauszug (Prüfsumme über Datum, Betrag, Zweck, Name,
 //                       IBAN); eine Sammelzahlung wird je Monat mit „#YYYY-MM“ verteilt
-//   · „n:<mieter>|<YYYY-MM>“ — Nacherfassung eines ganzen Monats
+//   · „a:<mieter>|<YYYY-MM>“ — eine Zahlung, die einen OFFENEN Monat ausgleicht (Bestätigung oder
+//                       Nacherfassung). Zwei Tabs, die denselben Monat gleichzeitig als bezahlt melden,
+//                       erzeugen dieselbe Kennung — es bleibt bei EINER Buchung.
+//   · „n:<mieter>|<YYYY-MM>“ — Nacherfassung mit einem Betrag unter dem Soll
 // Die Datenbank lässt jede Kennung nur EINMAL zu (`upsert … ignoreDuplicates`): Ein paralleler oder
 // wiederholter Aufruf bucht nichts doppelt — auch nicht, wenn zwei Anfragen gleichzeitig ankommen.
 // Verschiedene Zahlungen im selben Monat (Teilzahlungen) haben verschiedene Kennungen und sind erlaubt.
@@ -91,6 +95,12 @@ async function buchen(
   return { ok: true, neu: new Set(((data ?? []) as { zahlung_ref: string }[]).map((r) => r.zahlung_ref)) };
 }
 
+/** Gleicht `betrag` den noch offenen Rest des Monats aus? (Nur, wenn überhaupt etwas offen ist.) */
+function gleichtAus(stand: ReturnType<typeof monatsStand>, betrag: number): boolean {
+  const offen = Math.max(0, stand.rest);
+  return stand.soll != null && offen > TEILZAHLUNG_TOLERANZ && betrag >= offen - TEILZAHLUNG_TOLERANZ;
+}
+
 const IST_MONAT = /^\d{4}-\d{2}$/;
 const IST_DATUM = /^\d{4}-\d{2}-\d{2}$/;
 const IST_VORGANG = /^[A-Za-z0-9-]{8,80}$/;
@@ -131,11 +141,14 @@ export async function bestaetigeMieteingang(input: {
     revalidatePath("/mietkonto");
     return { ok: false, uebersprungen: true, error: `${monatLabel(monat)} ist bereits vollständig bezahlt — es wurde nichts angelegt.` };
   }
-  // Ohne Kennung (alter Client): Datum + Betrag + Monat beschreiben den Vorgang — ein erneutes
-  // Absenden derselben Angaben bucht dann ebenfalls nicht doppelt.
-  const ref = IST_VORGANG.test(input.vorgang ?? "")
-    ? `m:${input.vorgang}`
-    : `m:${input.mieter_id}|${monat}|${input.buchungsdatum}|${betrag.toFixed(2)}`;
+  // Gleicht die Zahlung den offenen Monat aus, ist der MONAT die Kennung — zwei gleichzeitige
+  // Bestätigungen (zwei Tabs) buchen ihn nur einmal. Eine Teilzahlung trägt die Kennung DIESER
+  // Bestätigung; ohne Kennung (alter Client) beschreiben Datum + Betrag + Monat den Vorgang.
+  const ref = gleichtAus(stand, betrag)
+    ? `a:${input.mieter_id}|${monat}`
+    : IST_VORGANG.test(input.vorgang ?? "")
+      ? `m:${input.vorgang}`
+      : `m:${input.mieter_id}|${monat}|${input.buchungsdatum}|${betrag.toFixed(2)}`;
   const ueberzahlung = Math.max(0, Math.round((betrag - Math.max(0, stand.rest)) * 100) / 100);
 
   const r = await buchen(supabase, [{
@@ -223,10 +236,11 @@ export async function bestaetigeMehrere(
     if (quelle === "nacherfassung") {
       const s = standFuer(monat);
       if (s.gezahlt > 0) { uebersprungen++; continue; } // ganzer Monat — schon etwas gebucht → nicht vorschlagen
-      const ref = `n:${z.mieter_id}|${monat}`;
-      if (vorgaenge.has(ref)) { uebersprungen++; continue; }
-      vorgaenge.add(ref);
+      const schluessel = `${z.mieter_id}|${monat}`;
+      if (vorgaenge.has(schluessel)) { uebersprungen++; continue; }
+      vorgaenge.add(schluessel);
       const betrag = Number(z.betrag);
+      const ref = gleichtAus(s, betrag) ? `a:${schluessel}` : `n:${schluessel}`;
       rows.push({ ...basis, betrag, beschreibung: "Mieteingang (Nacherfassung)", nk_anteil: nkAnteilFuer(s, betrag), soll_monat: monat, zahlung_ref: ref });
       d.buchungen.push({ soll_monat: monat, buchungsdatum: z.buchungsdatum, betrag, nk_anteil: nkAnteilFuer(s, betrag), zahlung_ref: ref });
       continue;
