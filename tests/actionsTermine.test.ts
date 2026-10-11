@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { fakeSupabase, mockeNextUndSupabase, fangeRedirect, fd } from "./stubs/actionHarness";
 import { naechsteFaelligkeit } from "@/lib/termine";
+import { speicherDb } from "./stubs/speicherDb";
 
 // lib/actions/termine.ts + die Terminrechnung in lib/termine.ts.
 //
@@ -117,58 +118,105 @@ describe("Termin bearbeiten", () => {
   });
 });
 
-describe("Erledigt-Haken und Folgetermin", () => {
+// B12 (11.10.2026) gegen `speicherDb`: echter Zustand, UNIQUE (vorgaenger_id) wie in der Migration,
+// gleichzeitige Klicks verzahnen sich an jedem `await`.
+describe("Erledigt-Haken und Folgetermin (B12)", () => {
   const termin = {
-    id: "t1", titel: "Heizungswartung", datum: "2026-03-31", prop_id: "obj-1", mieter_id: null,
-    notiz: null, kategorie: "Wartung", wiederkehrung: "monatlich", vorlauf_tage: 14, erledigt: false,
+    id: "t1", user_id: "nutzer-1", titel: "Heizungswartung", datum: "2026-03-31", prop_id: "obj-1", mieter_id: null,
+    notiz: null, kategorie: "Wartung", wiederkehrung: "monatlich", vorlauf_tage: 14, erledigt: false, serien_tag: null, vorgaenger_id: null,
   };
+  async function ladeSpeicher(zeilen: Record<string, unknown>[] = [termin], fehlerBei?: Record<string, string>) {
+    vi.resetModules();
+    const db = speicherDb({ tabellen: { termine: zeilen.map((z) => ({ ...z })) }, eindeutig: { termine: [["vorgaenger_id"]] }, fehlerBei });
+    mockeNextUndSupabase(db.client);
+    const mod = await import("@/lib/actions/termine");
+    const zeile = (id: string) => db.tabellen.termine.find((r) => r.id === id)!;
+    const folge = (id: string) => db.tabellen.termine.filter((r) => r.vorgaenger_id === id);
+    return { db, mod, zeile, folge };
+  }
 
   it("beim Abhaken entsteht der nächste Termin — mit korrekt gekapptem Monatsende", async () => {
-    // 31.03. + 1 Monat: Den 31. April gibt es nicht. Genau diese Sorte Datum
-    // hat in `mietkonto.ts` schon einmal zu doppelten Buchungen geführt.
-    const { db, mod } = await lade({
-      antwortFolge: { "termine:select": [termin, null] },
-    });
-    await mod.toggleErledigt("t1");
-    const neu = schrieb(db, "insert")!;
-    expect(neu.datum).toBe("2026-04-30");
-    expect(neu).toMatchObject({ titel: "Heizungswartung", wiederkehrung: "monatlich", vorlauf_tage: 14 });
+    const { mod, zeile, folge } = await ladeSpeicher();
+    await mod.toggleErledigt("t1", true);
+    expect(zeile("t1").erledigt).toBe(true);
+    expect(folge("t1")).toEqual([expect.objectContaining({ datum: "2026-04-30", titel: "Heizungswartung", wiederkehrung: "monatlich", vorlauf_tage: 14, serien_tag: 31 })]);
   });
 
-  it("gibt es den Folgetermin schon, wird kein zweiter angelegt", async () => {
-    const { db, mod } = await lade({
-      antwortFolge: { "termine:select": [termin, { id: "t2" }] },
-    });
-    await mod.toggleErledigt("t1");
-    expect(db.zugriffe.some((x) => x.op === "insert")).toBe(false);
+  it("der Tag der Serie bleibt: 31.01. → 28.02. → 31.03. (nicht 28.03.)", async () => {
+    const { db, mod, folge } = await ladeSpeicher([{ ...termin, datum: "2027-01-31" }]);
+    await mod.toggleErledigt("t1", true);
+    const feb = folge("t1")[0];
+    expect(feb.datum).toBe("2027-02-28");
+    feb.erledigt = false;
+    await mod.toggleErledigt(String(feb.id), true);
+    expect(folge(String(feb.id))[0].datum).toBe("2027-03-31");
+    expect(db.tabellen.termine).toHaveLength(3);
   });
 
-  it("scheitert die Dublettenprüfung, wird KEIN Folgetermin angelegt", async () => {
-    // Leer heißt „gibt es noch nicht" — eine fehlgeschlagene Abfrage sieht
-    // genauso aus und legte den Folgetermin ein zweites Mal an.
-    const { db, mod } = await lade({
-      antwortFolge: { "termine:select": [termin, null] },
-      fehlerBei: { "termine:select": { message: "connection reset" } },
-    });
-    await expect(mod.toggleErledigt("t1")).rejects.toThrow();
-    expect(db.zugriffe.some((x) => x.op === "insert")).toBe(false);
+  it("Doppelklick GLEICHZEITIG: genau EIN Folgetermin", async () => {
+    const { db, mod, folge } = await ladeSpeicher();
+    await Promise.all([mod.toggleErledigt("t1", true), mod.toggleErledigt("t1", true)]);
+    expect(folge("t1")).toHaveLength(1);
+    expect(db.tabellen.termine).toHaveLength(2);
   });
 
-  it("ohne Wiederkehrung entsteht kein Folgetermin", async () => {
-    const { db, mod } = await lade({
-      antwortFolge: { "termine:select": [{ ...termin, wiederkehrung: null }] },
-    });
-    await mod.toggleErledigt("t1");
-    expect(db.zugriffe.some((x) => x.op === "insert")).toBe(false);
+  it("Wiederholung nach Zeitüberlauf (gleiches Ziel) schaltet NICHT zurück", async () => {
+    const { mod, zeile, folge } = await ladeSpeicher();
+    await mod.toggleErledigt("t1", true);
+    await mod.toggleErledigt("t1", true);
+    expect(zeile("t1").erledigt).toBe(true);
+    expect(folge("t1")).toHaveLength(1);
   });
 
-  it("beim Wieder-Öffnen entsteht ebenfalls keiner", async () => {
-    const { db, mod } = await lade({
-      antwortFolge: { "termine:select": [{ ...termin, erledigt: true }] },
-    });
-    await mod.toggleErledigt("t1");
-    expect(schrieb(db, "update")).toEqual({ erledigt: false });
-    expect(db.zugriffe.some((x) => x.op === "insert")).toBe(false);
+  it("scheitert der Folgetermin, bleibt der Termin OFFEN — und ein zweiter Versuch klappt", async () => {
+    const { mod, zeile, folge } = await ladeSpeicher(undefined, { "termine:upsert": "abgelehnt" });
+    await expect(mod.toggleErledigt("t1", true)).rejects.toThrow(/bleibt offen/);
+    expect(zeile("t1").erledigt).toBe(false);
+    expect(folge("t1")).toHaveLength(0);
+  });
+
+  it("scheitert die Dublettenprüfung (Altbestand), wird nichts angelegt und nichts abgehakt", async () => {
+    const { mod, zeile, db } = await ladeSpeicher(undefined, { "termine:select": "connection reset" });
+    await expect(mod.toggleErledigt("t1", true)).rejects.toThrow();
+    expect(zeile("t1").erledigt).toBe(false);
+    expect(db.tabellen.termine).toHaveLength(1);
+  });
+
+  it("Altbestand: ein Folgetermin ohne Kennung (gleicher Titel + Datum) wird erkannt", async () => {
+    const { db, mod } = await ladeSpeicher([termin, { ...termin, id: "t2", datum: "2026-04-30" }]);
+    await mod.toggleErledigt("t1", true);
+    expect(db.tabellen.termine).toHaveLength(2);
+  });
+
+  it("wieder öffnen und erneut abhaken: kein zweiter Folgetermin", async () => {
+    const { mod, zeile, folge } = await ladeSpeicher();
+    await mod.toggleErledigt("t1", true);
+    await mod.toggleErledigt("t1", false);
+    expect(zeile("t1").erledigt).toBe(false);
+    await mod.toggleErledigt("t1", true);
+    expect(folge("t1")).toHaveLength(1);
+  });
+
+  it("ohne Wiederkehrung entsteht kein Folgetermin; ein alter Aufruf ohne Ziel schaltet um", async () => {
+    const { db, mod, zeile } = await ladeSpeicher([{ ...termin, wiederkehrung: null }]);
+    await mod.toggleErledigt("t1", fd({}));
+    expect(zeile("t1").erledigt).toBe(true);
+    expect(db.tabellen.termine).toHaveLength(1);
+  });
+
+  it("ein fremder Termin wird nicht gefunden", async () => {
+    const { mod, zeile } = await ladeSpeicher([{ ...termin, user_id: "anderer" }]);
+    await expect(mod.toggleErledigt("t1", true)).rejects.toThrow(/nicht gefunden/);
+    expect(zeile("t1").erledigt).toBe(false);
+  });
+
+  it("wer das Datum von Hand ändert, setzt den Serientag neu", async () => {
+    const { mod, zeile } = await ladeSpeicher([{ ...termin, serien_tag: 31, datum: "2026-04-30" }]);
+    await fangeRedirect(() => mod.updateTermin("t1", fd({ titel: "Heizungswartung", datum: "2026-05-15" })));
+    expect(zeile("t1").serien_tag).toBeNull();
+    const gleich = await ladeSpeicher([{ ...termin, serien_tag: 31, datum: "2026-04-30" }]);
+    await fangeRedirect(() => gleich.mod.updateTermin("t1", fd({ titel: "Neu", datum: "2026-04-30" })));
+    expect(gleich.zeile("t1").serien_tag).toBe(31);
   });
 });
 

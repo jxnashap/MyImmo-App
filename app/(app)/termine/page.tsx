@@ -233,7 +233,7 @@ export default async function TerminePage(
       <div key={`${e.quelle}-${e.id ?? i}-${e.datum}`} className="termin-zeile" style={{ opacity: e.erledigt ? 0.6 : 1 }} title={e.rechtsgrundlage || undefined}>
         <span className="tz-markierung">
           {e.quelle === "eigen" && e.id ? (
-            <form action={toggleErledigt.bind(null, e.id)} style={{ display: "inline-flex" }}>
+            <form action={toggleErledigt.bind(null, e.id, !e.erledigt)} style={{ display: "inline-flex" }}>
               <button
                 type="submit"
                 className="tap44"

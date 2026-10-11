@@ -71,10 +71,16 @@ export async function updateTermin(id: string, formData: FormData) {
     redirect(flashUrl("/termine", "Bitte Titel und Datum angeben — es wurde nichts gespeichert.", "error"));
   }
 
+  // B12: Wer das Datum von Hand ändert, legt den Tag der Serie neu fest — sonst liefe der nächste
+  // Folgetermin auf den alten Tag zurück. Gleiches Datum → Serientag bleibt (z. B. 31 trotz 28.02.).
+  const { data: alt, error: altFehler } = await supabase
+    .from("termine").select("datum").eq("id", id).eq("user_id", user.id).maybeSingle();
+  if (altFehler) throw new Error(altFehler.message);
   const { error } = await supabase.from("termine").update({
     titel,
     datum,
     ...feldWerte(formData),
+    ...(alt && alt.datum !== datum ? { serien_tag: null } : {}),
   }).eq("id", id).eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
@@ -93,33 +99,46 @@ export async function deleteTermin(id: string) {
 
 // Erledigt-Haken: beim Erledigen eines wiederkehrenden Termins wird die
 // nächste Instanz angelegt (der abgehakte Eintrag bleibt als Historie).
-export async function toggleErledigt(id: string) {
+//
+// B12 (Prüfstand 11.10.2026) — vorher in dieser Reihenfolge: erst „erledigt“ speichern, dann per
+// Abfrage prüfen, dann den Folgetermin anlegen. Scheiterte der dritte Schritt, stand der Termin als
+// erledigt da, der Folgetermin fehlte, und ein zweiter Klick schaltete den Haken wieder AUS. Zwei
+// gleichzeitige Klicks legten zwei Folgetermine an (die Prüfung war nur eine Abfrage).
+// JETZT:
+//   1. `ziel` = gewünschter Zustand (vom Formular). Ist er schon erreicht, passiert nichts — eine
+//      Wiederholung nach Zeitüberlauf schaltet nicht zurück.
+//   2. ERST der Folgetermin, mit `vorgaenger_id` = dieser Termin (eindeutig, Migration
+//      20261011120000): ein Termin hat höchstens EINEN Folgetermin, auch bei gleichzeitigen Klicks.
+//   3. DANN „erledigt“. Scheitert Schritt 2, bleibt der Termin offen und der Fehler wird gezeigt.
+//   4. Der Folgetermin rechnet vom TAG DER SERIE (`serien_tag`), nicht vom gekappten Vorgänger.
+export async function toggleErledigt(id: string, ziel?: unknown) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: t } = await supabase
+  const { data: t, error: leseFehler } = await supabase
     .from("termine")
-    .select("id,titel,datum,prop_id,mieter_id,notiz,kategorie,wiederkehrung,vorlauf_tage,erledigt")
+    .select("id,titel,datum,prop_id,mieter_id,notiz,kategorie,wiederkehrung,vorlauf_tage,erledigt,serien_tag")
     .eq("id", id)
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
+  if (leseFehler) throw new Error(`Termin konnte nicht gelesen werden: ${leseFehler.message}`);
   if (!t) throw new Error("Termin nicht gefunden.");
 
-  const neuErledigt = !t.erledigt;
-  const { error } = await supabase
-    .from("termine")
-    .update({ erledigt: neuErledigt })
-    .eq("id", id)
-    .eq("user_id", user.id);
-  if (error) throw new Error(error.message);
+  // Als Formular-Aktion kommt nach den gebundenen Werten ein FormData-Argument — nur ein echter
+  // Wahrheitswert ist ein Ziel; sonst (alter Aufruf) wird umgeschaltet.
+  const neuErledigt = typeof ziel === "boolean" ? ziel : !t.erledigt;
+  if (neuErledigt === !!t.erledigt) {
+    revalidatePath("/termine");
+    return;
+  }
 
   if (neuErledigt && t.wiederkehrung && t.datum) {
-    const next = naechsteFaelligkeit(t.datum, t.wiederkehrung);
+    const serienTag = t.serien_tag ?? Number(String(t.datum).slice(8, 10));
+    const next = naechsteFaelligkeit(t.datum, t.wiederkehrung, serienTag);
     if (next) {
-      // Doppelklick-Schutz: nächste Instanz nur, wenn nicht schon vorhanden.
-      // Leer = „gibt es noch nicht". Eine fehlgeschlagene Abfrage sieht genauso
-      // aus und legte den Folgetermin ein zweites Mal an.
+      // Altbestand ohne `vorgaenger_id` (vor der Migration angelegte Folgetermine): weiter über
+      // Titel + Datum erkennen. Leer heißt „gibt es noch nicht“ — ein Fehler bricht deshalb ab.
       const { data: vorhanden, error: pruefFehler } = await supabase
         .from("termine")
         .select("id")
@@ -130,10 +149,7 @@ export async function toggleErledigt(id: string) {
         .maybeSingle();
       if (pruefFehler) throw new Error(`Folgetermin konnte nicht geprüft werden: ${pruefFehler.message}`);
       if (!vorhanden) {
-        // Fehler auswerten wie beim Abhaken darüber: Sonst gilt der Termin als
-        // erledigt, der Folgetermin fehlt aber stillschweigend — und genau der
-        // ist der Zweck einer Wiederkehrung.
-        const { error: folgeFehler } = await supabase.from("termine").insert({
+        const { error: folgeFehler } = await supabase.from("termine").upsert({
           user_id: user.id,
           titel: t.titel,
           datum: next,
@@ -143,11 +159,24 @@ export async function toggleErledigt(id: string) {
           kategorie: t.kategorie,
           wiederkehrung: t.wiederkehrung,
           vorlauf_tage: t.vorlauf_tage,
-        });
-        if (folgeFehler) throw new Error(`Folgetermin konnte nicht angelegt werden: ${folgeFehler.message}`);
+          vorgaenger_id: t.id,
+          serien_tag: serienTag,
+        }, { onConflict: "vorgaenger_id", ignoreDuplicates: true });
+        // Der Termin bleibt OFFEN — sonst stünde er erledigt da, und der Folgetermin (der Zweck
+        // einer Wiederkehrung) fehlte still.
+        if (folgeFehler) throw new Error(`Folgetermin konnte nicht angelegt werden — der Termin bleibt offen: ${folgeFehler.message}`);
       }
     }
   }
+
+  // Bedingt auf den gelesenen Zustand: Hat ein gleichzeitiger Klick ihn schon gesetzt, ändert sich nichts.
+  const { error } = await supabase
+    .from("termine")
+    .update({ erledigt: neuErledigt })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .eq("erledigt", !neuErledigt);
+  if (error) throw new Error(error.message);
 
   revalidatePath("/termine");
 }

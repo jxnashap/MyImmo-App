@@ -171,10 +171,13 @@ describe("Wert-Übernahmen prüfen ihre Eingaben", () => {
 });
 
 describe("Buchungsvorlagen beim Objekt-Speichern", () => {
+  // Das bearbeitete Objekt muss existieren (seit B14 wird es mit Einheiten gelesen).
+  const ALT = { adresse: null, einheiten_anzahl: 1 };
   it("scheitert die Bestandsabfrage, wird KEINE zweite Vorlage angelegt", async () => {
     // Leer heißt „noch keine Vorlage". Eine fehlgeschlagene Abfrage sieht
     // genauso aus — die Miete stünde danach doppelt im Cashflow.
     const { db, spuren, mod } = await lade({
+      antworten: { properties: ALT },
       fehlerBei: { "wiederkehrende_buchungen:select": { message: "connection reset" } },
     });
     await mod
@@ -186,7 +189,7 @@ describe("Buchungsvorlagen beim Objekt-Speichern", () => {
   });
 
   it("legt KEINE neue Miet-Vorlage an — Mieten laufen über das Mietkonto (A5)", async () => {
-    const { db, spuren, mod } = await lade({ antworten: { wiederkehrende_buchungen: [] } });
+    const { db, spuren, mod } = await lade({ antworten: { properties: ALT, wiederkehrende_buchungen: [] } });
     await fangeRedirect(() => mod.updateProperty("obj-1", fd({ bezeichnung: "Haus A", obj_status: "Vermietet", miete: "800", hausgeld: "250" })));
     // Kein Fehlschlag gemeldet — „keine neue Vorlage“ ist gewollt, kein Fehler.
     expect(decodeURIComponent(spuren.redirects.at(-1)!)).not.toMatch(/Buchungsvorlagen konnten nicht/);
@@ -196,6 +199,7 @@ describe("Buchungsvorlagen beim Objekt-Speichern", () => {
 
   it("eine BESTEHENDE Miet-Vorlage wird weiter gepflegt (neuer Betrag)", async () => {
     const { db, mod } = await lade({
+      antworten: { properties: ALT },
       antwortFolge: { "wiederkehrende_buchungen:select": [[{ id: "v1", betrag: 700, aktiv: true }], []] },
     });
     await fangeRedirect(() => mod.updateProperty("obj-1", fd({ bezeichnung: "Haus A", obj_status: "Vermietet", miete: "800" })));

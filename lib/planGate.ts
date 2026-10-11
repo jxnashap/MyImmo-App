@@ -69,18 +69,33 @@ export type EinheitenPruefung = {
  * Gezählt wird die Summe über ALLE Objekte (mindestens 1 je Objekt) — so ist
  * das Limit in `lib/plan.ts` definiert und so steht es auf der Preisseite
  * („bis 5 Einheiten"), nicht „bis 5 Objekte".
+ *
+ * B14 (11.10.2026): `statt` = Einheiten, die das Speichern ERSETZT (Objekt bearbeiten: die bisherige
+ * Zahl). Weniger oder gleich viele Einheiten sind immer erlaubt — auch über dem Limit nach einem
+ * Tarifwechsel. Kann der Bestand nicht gezählt werden, ist es NICHT erlaubt (vorher: 0 belegt → durch).
+ * Die Datenbank prüft dasselbe noch einmal (Trigger `properties_einheiten_grenze`) — auch für den
+ * direkten REST-Weg und gleichzeitige Anlagen.
  */
 export async function pruefeEinheiten(
   supabase: SupabaseClient,
   zusatz: number = 1,
+  opts: { statt?: number } = {},
 ): Promise<EinheitenPruefung> {
   if (!billingAktiv()) {
     return { erlaubt: true, belegt: 0, limit: Number.POSITIVE_INFINITY, meldung: null };
   }
+  const neu = Math.max(1, zusatz);
+  const statt = opts.statt == null ? 0 : Math.max(1, opts.statt);
+  if (statt > 0 && neu <= statt) return { erlaubt: true, belegt: 0, limit: Number.POSITIVE_INFINITY, meldung: null };
   const abo = await getAbo(supabase);
   const limit = einheitenLimit(abo);
-  const belegt = await zaehleEinheiten(supabase);
-  const erlaubt = belegt + Math.max(1, zusatz) <= limit;
+  let belegt: number;
+  try {
+    belegt = await zaehleEinheiten(supabase);
+  } catch {
+    return { erlaubt: false, belegt: 0, limit, meldung: "Der Tarif konnte gerade nicht geprüft werden — es wurde nichts gespeichert. Bitte erneut versuchen." };
+  }
+  const erlaubt = belegt - statt + neu <= limit;
   return {
     erlaubt,
     belegt,

@@ -87,7 +87,7 @@ export default function SettingsView({
   ohnePasswort?: boolean;
   unterschrift?: string | null;
   abo?: AboAnzeige;
-  einheiten?: number;
+  einheiten?: number | null;
   billingEnforced?: boolean;
   lastSignIn?: string | null;
   benachrichtigungenAus?: boolean;
@@ -774,7 +774,7 @@ function RechtPanel({ email, ohnePasswort = false }: { email?: string | null; oh
 // Bezahlsystem ist GEBAUT, aber inaktiv (Early Access): ohne BILLING_ENFORCED
 // zeigt das Panel nur den Early-Access-Hinweis. Nach Aktivierung erscheinen
 // Upgrade-Buttons (Paddle-Checkout) bzw. das Kundenportal (Zahlung/Kündigung).
-function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: number; enforced: boolean }) {
+function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: number | null; enforced: boolean }) {
   const ref = useReveal(null);
   const toast = useToast();
   const [zyklus, setZyklus] = useState<"monat" | "jahr">("jahr");
@@ -810,7 +810,7 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
             kostenpflichtig, du wählst selbst, ob und welchen Tarif du buchst.
           </p>
           <p className="sub" style={{ marginBottom: 12 }}>
-            Aktuell erfasst: <strong style={{ color: "var(--text)" }}>{einheiten}</strong>{" "}
+            Aktuell erfasst: <strong style={{ color: "var(--text)" }}>{einheiten ?? "–"}</strong>{" "}
             {einheiten === 1 ? "Einheit" : "Einheiten"}.
           </p>
           {PREISE_SICHTBAR && (
@@ -825,7 +825,7 @@ function AboPanel({ abo, einheiten, enforced }: { abo: AboAnzeige; einheiten: nu
             <h2><CreditCard size={16} /> Dein Tarif</h2>
             <p className="sub">
               <strong style={{ color: "var(--text)" }}>{abo?.planName ?? "Kostenlos"}</strong>
-              {abo?.zyklus ? ` · ${abo.zyklus === "jahr" ? "Jahreszahlung" : "Monatszahlung"}` : ""}              {" — "}{einheiten} {einheiten === 1 ? "Einheit" : "Einheiten"} erfasst.
+              {abo?.zyklus ? ` · ${abo.zyklus === "jahr" ? "Jahreszahlung" : "Monatszahlung"}` : ""}              {" — "}{einheiten ?? "–"} {einheiten === 1 ? "Einheit" : "Einheiten"} erfasst.
             </p>
             {abo?.storniertZum && (
               <p className="sub" style={{ color: "var(--red)" }}>

@@ -98,6 +98,7 @@ export function einheitenLimit(abo: Abo | null, enforced: boolean = billingAktiv
 
 /** Abo des angemeldeten Nutzers laden (RLS liefert nur den eigenen Datensatz). */
 export async function getAbo(supabase: SupabaseClient): Promise<Abo | null> {
+  // Ein Lesefehler ergibt null = „kostenlos“ — die strengste Stufe, nie eine offenere.
   const { data } = await supabase
     .from("abos")
     .select("plan,status,zyklus,provider_customer_id,provider_subscription_id,gueltig_bis,storniert_zum")
@@ -106,9 +107,13 @@ export async function getAbo(supabase: SupabaseClient): Promise<Abo | null> {
   return (data as Abo | null) ?? null;
 }
 
-/** Summe der Einheiten über alle Objekte (mind. 1 je Objekt). */
+/**
+ * Summe der Einheiten über alle Objekte (mind. 1 je Objekt). B14 (11.10.2026): Ein Lesefehler WIRFT —
+ * vorher ergab er 0 belegte Einheiten, und die Tarifgrenze ließ alles durch.
+ */
 export async function zaehleEinheiten(supabase: SupabaseClient): Promise<number> {
-  const { data } = await supabase.from("properties").select("einheiten_anzahl");
+  const { data, error } = await supabase.from("properties").select("einheiten_anzahl");
+  if (error) throw new Error(`Einheiten konnten nicht gezählt werden: ${error.message}`);
   return ((data ?? []) as { einheiten_anzahl: number | null }[])
     .reduce((sum, p) => sum + Math.max(1, p.einheiten_anzahl ?? 1), 0);
 }

@@ -40,7 +40,11 @@ const WIEDERKEHRUNG_MONATE: Record<string, number> = {
 // Rechnung hing aber an einer Umgebungseinstellung, die niemand hier verwaltet.
 // Jetzt reine Kalenderarithmetik auf den Zahlen: kein `Date`-Objekt für die
 // Verschiebung, nur eines für „wie viele Tage hat dieser Monat" (in UTC).
-export function naechsteFaelligkeit(datum: string, wiederkehrung: string): string | null {
+//
+// B12 (11.10.2026): `tagWunsch` = Tag der SERIE (z. B. 31). Ohne ihn wanderte eine Monatsserie vom
+// 31.01. über 28.02. dauerhaft auf den 28. (28.03., 28.04. …), weil jeder Folgetermin vom
+// gekappten Vorgänger aus rechnete.
+export function naechsteFaelligkeit(datum: string, wiederkehrung: string, tagWunsch?: number | null): string | null {
   const monate = WIEDERKEHRUNG_MONATE[wiederkehrung] ?? 0;
   if (!monate) return null;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datum);
@@ -56,7 +60,8 @@ export function naechsteFaelligkeit(datum: string, wiederkehrung: string): strin
   // Tag 0 des Folgemonats = letzter Tag des Zielmonats. Über `Date.UTC`
   // gebildet, damit die Ortszeit keine Rolle spielt.
   const letzterTag = new Date(Date.UTC(zielJahr, zielMonat, 0)).getUTCDate();
-  const zielTag = Math.min(tag, letzterTag);
+  const wunsch = tagWunsch && tagWunsch >= 1 && tagWunsch <= 31 ? tagWunsch : tag;
+  const zielTag = Math.min(wunsch, letzterTag);
   const zwei = (n: number) => String(n).padStart(2, "0");
   return `${zielJahr}-${zwei(zielMonat)}-${zwei(zielTag)}`;
 }

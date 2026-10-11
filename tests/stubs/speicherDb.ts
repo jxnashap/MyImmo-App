@@ -14,7 +14,7 @@
 // upsert/delete), `fehlerAbSeite: { tabelle: n }` erst ab der n-ten Seite (0-basiert).
 
 type Row = Record<string, unknown>;
-type Fehler = { message: string; code?: string } | null;
+type Fehler = { message: string; code?: string; hint?: string } | null;
 type Op = "select" | "insert" | "update" | "upsert" | "delete";
 
 export type SpeicherDbInit = {
@@ -23,6 +23,8 @@ export type SpeicherDbInit = {
   dateien?: Record<string, Record<string, string | Uint8Array>>;
   fehlerBei?: Record<string, string>;
   fehlerAbSeite?: Record<string, number>;
+  /** Zusatz zu `fehlerBei`: `hint` des Fehlers (wie `raise … using hint` in Postgres). */
+  fehlerHint?: Record<string, string>;
   /** Fehler nur für bestimmte Abfragen, z. B. (t, op, f) => t === "mieter" && f.includes("eq:id=m2") ? "reset" : null. */
   fehlerWenn?: (tabelle: string, op: Op, filter: string[]) => string | null;
   maxZeilen?: number;
@@ -71,7 +73,8 @@ export function speicherDb(init: SpeicherDbInit = {}) {
 
     const fehlerFuer = (): Fehler => {
       const m = init.fehlerBei?.[`${tabelle}:${op}`] ?? init.fehlerBei?.[tabelle] ?? init.fehlerWenn?.(tabelle, op, text);
-      return m ? { message: m } : null;
+      const hint = init.fehlerHint?.[`${tabelle}:${op}`] ?? init.fehlerHint?.[tabelle];
+      return m ? { message: m, ...(hint ? { hint } : {}) } : null;
     };
     const passend = () => (tabellen[tabelle] ?? []).filter((r) => filter.every((f) => f(r)));
 

@@ -79,7 +79,8 @@
 > der Datenbankgrenze bewiesen (`scripts/db/testdb.sh` + `scripts/db/rlstest.sh` + `scripts/db/nebenlaeufig.sh`,
 > Abschnitt „Lokale Test-Datenbank“ in `supabase/migrations/README.md`). **B04 war ein Weg am Zugangscode
 > vorbei** (Selbst-Einladung → freigeschaltete Hausverwaltung). **Ausrollen nur in dieser Reihenfolge:**
-> `20261011110000` (B07, apply_migration, VOR dem Code) → Code mergen + deployen → `20261011100000` (B04) und
+> `20261011110000` (B07), `20261011120000` (B12) und `20261011121000` (B14, Schalter bleibt aus) per apply_migration,
+> VOR dem Code → Code mergen + deployen → `20261011100000` (B04) und
 > `20261011101000` (B03) per apply_migration → `20261011102000` (B01) → `20261011103000` (B02, SQL-Editor;
 > bis dahin scheitert „Konto löschen“ mit Fehlermeldung, gelöscht wird nichts) → `20261011104000` (B18,
 > SQL-Editor, No-op). **Phase-2-Regeln:** (5) Eine Buchung, die ein Geschäftsvorgang erzeugt, hat eine
@@ -87,7 +88,13 @@
 > „erst lesen, dann schreiben“. (6) Eine Auswertung lädt ihre Grundlagen über `alleZeilen()`
 > (`lib/db/auswertung.ts`); Fehler → Fehlerkarte/503, nie Zahlen aus einem Teil. (7) Ein Beleg wird erst
 > gelöscht, wenn der Ersatz gesichert ist. (8) Teilzahlung/NK-Anteil/Überzahlung rechnet nur
-> `lib/mietZahlung.ts` (NK-Anteil ANTEILIG — Betreiber-Entscheidung offen). **Regeln:**
+> `lib/mietZahlung.ts` (NK-Anteil ANTEILIG — Betreiber-Entscheidung offen). **Phase-3-Regeln:** (9) Ein
+> Folgetermin hängt über `vorgaenger_id` am Vorgänger und rechnet vom `serien_tag`; „erledigt“ erst NACH dem
+> Folgetermin, Ziel-Zustand vom Formular (`toggleErledigt(id, ziel)`). (10) Darlehenszinsen nur über
+> `tilgungsVerlauf()` (`lib/kalk.ts`) — nie „Rate × Monate − Tilgung“. (11) Jeder Weg, der Objekte anlegt oder
+> Einheiten erhöht, ruft `pruefeEinheiten()` (Bearbeiten mit `statt`); die Datenbank prüft zusätzlich, sobald
+> `einheiten_durchsetzen` an ist. (12) Import ordnet Objekte nur über `objektZuordnung()` zu — mehrdeutig =
+> Abbruch; Vorhandenes wird übersprungen. **Regeln:**
 > (1) `mfa_wiederherstellung` und `konto_loeschen()` nur über die Service-Role im Server —
 > `delete_own_account()` ist kein Nutzer-Einstieg mehr. (2) Einladen darf nur ein freigeschalteter
 > Vermieter; eine Einladung schaltet ein Konto nur für die eingeladene Rolle frei. (3) Jede Partner-Regel

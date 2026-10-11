@@ -33,18 +33,54 @@ export function calcGrenzsteuer(zvE: number, splitting: boolean): number {
 const MONATE_MAX = 60 * 12; // Sicherheitsgrenze gegen Endlosschleifen
 
 export function berechneRestschuld(darlehen: number, zinsPa: number, rateMo: number, jahre: number): number {
-  if (darlehen <= 0) return 0;
+  return tilgungsVerlauf(darlehen, zinsPa, rateMo, Math.round(jahre * 12)).restschuld;
+}
+
+export type TilgungsVerlauf = {
+  /** Summe der gezahlten Zinsen in den betrachteten Monaten. */
+  zinsen: number;
+  /** Summe der Tilgung. */
+  tilgung: number;
+  restschuld: number;
+  /** Monate mit einer Zahlung (bei Volltilgung der Monat der letzten Rate). */
+  monateGezahlt: number;
+  /** Monat der Volltilgung innerhalb des Zeitraums, sonst null. */
+  volltilgungMonat: number | null;
+  /** Letzte (gekappte) Rate, wenn das Darlehen im Zeitraum getilgt ist. */
+  letzteRate: number | null;
+  /** true = die Rate deckt nicht einmal die Zinsen (das Darlehen tilgt sich nie). */
+  deckungFehlt: boolean;
+};
+
+/**
+ * Annuitätendarlehen Monat für Monat über `monate` (B13, Prüfstand 11.10.2026).
+ *
+ * VORHER rechnete der Darlehens-Wizard „Zinsen = Rate × 12 × Bindung − getilgter Betrag“ — als liefe
+ * die volle Rate weiter, wenn das Darlehen längst getilgt ist. 100.000 € · 4 % Zins · 4 % Tilgung ·
+ * 20 Jahre Bindung: 60.000 € statt der tatsächlichen 38.860,59 € (Volltilgung in Monat 209, letzte
+ * Rate 193,92 €). Jetzt: Zinsen nur auf die tatsächliche Restschuld, die letzte Rate ist Restschuld +
+ * Zinsen, danach endet die Zahlung.
+ */
+export function tilgungsVerlauf(darlehen: number, zinsPa: number, rateMo: number, monate: number): TilgungsVerlauf {
+  const leer = { zinsen: 0, tilgung: 0, restschuld: Math.max(0, darlehen), monateGezahlt: 0, volltilgungMonat: null, letzteRate: null, deckungFehlt: false };
+  if (!(darlehen > 0)) return { ...leer, restschuld: 0 };
+  if (!(monate > 0)) return leer; // kein Zeitraum: die volle Schuld steht noch
   const zinsMo = zinsPa / 12;
   let rs = darlehen;
-  for (let m = 0; m < jahre * 12; m++) {
-    const zinsen = rs * zinsMo;
-    const tilgung = rateMo - zinsen;
-    // Rate deckt nicht einmal die Zinsen → das Darlehen tilgt sich nie.
-    if (tilgung <= 0) return rs;
-    rs -= tilgung;
-    if (rs <= 0) return 0;
+  let zinsen = 0;
+  for (let m = 1; m <= monate; m++) {
+    const z = rs * zinsMo;
+    const t = rateMo - z;
+    // Rate deckt nicht einmal die Zinsen → das Darlehen tilgt sich nie (Zinsen laufen weiter auf).
+    if (t <= 0) return { zinsen: zinsen + z * (monate - m + 1), tilgung: darlehen - rs, restschuld: rs, monateGezahlt: monate, volltilgungMonat: null, letzteRate: null, deckungFehlt: true };
+    if (t >= rs) {
+      zinsen += z;
+      return { zinsen, tilgung: darlehen, restschuld: 0, monateGezahlt: m, volltilgungMonat: m, letzteRate: rs + z, deckungFehlt: false };
+    }
+    zinsen += z;
+    rs -= t;
   }
-  return rs;
+  return { zinsen, tilgung: darlehen - rs, restschuld: rs, monateGezahlt: monate, volltilgungMonat: null, letzteRate: null, deckungFehlt: false };
 }
 
 // Jahr der Volltilgung — 0, wenn das Darlehen in 60 Jahren nicht getilgt ist

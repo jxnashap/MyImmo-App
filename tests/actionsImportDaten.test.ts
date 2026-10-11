@@ -101,7 +101,8 @@ describe("Objekte importieren", () => {
   });
 
   it("ein Datenbankfehler wird gemeldet — ohne Interna", async () => {
-    const { mod } = await lade({ fehler: { message: 'duplicate key value violates unique constraint "properties_pkey"' } });
+    // Gezielt beim Einfügen — die Bestandsprüfung davor (B15) meldet ihren eigenen Fehler.
+    const { mod } = await lade({ fehlerBei: { "properties:insert": { message: 'duplicate key value violates unique constraint "properties_pkey"' } } });
     const r = await mod.importiereDaten("objekte", [{ bezeichnung: "A" }]);
     expect(r).toEqual({ ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Import fehlgeschlagen." });
   });

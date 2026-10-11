@@ -285,6 +285,7 @@ describe("Objekt speichern: gescheiterte Buchungsvorlagen werden gemeldet", () =
     // Ohne Miet-Vorlage fehlt die Einnahme im Cashflow. Das Objekt IST
     // gespeichert — deshalb kein Abbruch, aber auch kein wortloses „gespeichert".
     const { spuren, mod } = await lade("@/lib/actions/properties", {
+      antworten: { properties: { adresse: null, einheiten_anzahl: 1 } }, // das Objekt existiert (seit B14 gelesen)
       fehlerBei: { wiederkehrende_buchungen: FEHLER },
     });
     await mod
@@ -295,7 +296,7 @@ describe("Objekt speichern: gescheiterte Buchungsvorlagen werden gemeldet", () =
   });
 
   it("ohne Fehler steht nur die normale Meldung da", async () => {
-    const { spuren, mod } = await lade("@/lib/actions/properties");
+    const { spuren, mod } = await lade("@/lib/actions/properties", { antworten: { properties: { adresse: null, einheiten_anzahl: 1 } } });
     await mod
       .updateProperty("obj-1", fd({ bezeichnung: "Haus A", obj_status: "Vermietet", miete: "800" }))
       .catch(() => {});

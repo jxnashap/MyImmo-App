@@ -6,7 +6,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { ImportTyp, ImportZeile } from "@/lib/importCsv";
+import { pruefeEinheiten } from "@/lib/planGate";
+import { mieterSchluessel, nameNorm, objektZuordnung, type ImportTyp, type ImportZeile } from "@/lib/importCsv";
 
 const MAX_ZEILEN = 500;
 
@@ -34,6 +35,8 @@ export type ImportAktionErgebnis = {
   ok: boolean;
   angelegt: number;
   ohneObjekt: number; // Mieter, die keinem Objekt zugeordnet werden konnten
+  /** Zeilen, die es schon gibt (früherer Import oder doppelt in der Datei) — nicht erneut angelegt (B15). */
+  uebersprungen?: number;
   fehler?: string;
 };
 
@@ -61,8 +64,21 @@ export async function importiereDaten(
   };
 
   if (typ === "objekte") {
+    if (!zeilen.some((z) => txt(z.bezeichnung))) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Keine gültigen Zeilen (Bezeichnung fehlt)." };
+    // B15: Ein Objekt, das es (dem Namen nach) schon gibt, wird nicht ein zweites Mal angelegt — sonst
+    // erzeugte ein wiederholter Import Dubletten, und der Mieter-Import fände den Namen danach doppelt.
+    const { data: vorhanden, error: vorhandenFehler } = await supabase.from("properties").select("bezeichnung").eq("user_id", user.id);
+    if (vorhandenFehler) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Objekte konnten nicht geprüft werden — es wurde nichts importiert." };
+    const schon = new Set((vorhanden ?? []).map((p) => nameNorm(p.bezeichnung)));
+    let uebersprungen = 0;
     const rows = zeilen
       .filter((z) => txt(z.bezeichnung))
+      .filter((z) => {
+        const n = nameNorm(z.bezeichnung);
+        if (schon.has(n)) { uebersprungen++; return false; }
+        schon.add(n);
+        return true;
+      })
       .map((z) => ({
         user_id: user.id,
         bezeichnung: txt(z.bezeichnung)!,
@@ -79,11 +95,20 @@ export async function importiereDaten(
         obj_status: "Vermietet",
         afa_methode: "auto",
       }));
-    if (rows.length === 0) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Keine gültigen Zeilen (Bezeichnung fehlt)." };
+    if (rows.length === 0) {
+      return uebersprungen > 0
+        ? { ok: true, angelegt: 0, ohneObjekt: 0, uebersprungen }
+        : { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Keine gültigen Zeilen (Bezeichnung fehlt)." };
+    }
+    // B14 (11.10.2026): Der Import legt Objekte an wie das Formular — dieselbe Tarifgrenze (je Objekt
+    // eine Einheit, die Spalte importiert er nicht). Vorher lief er daran vorbei.
+    const grenze = await pruefeEinheiten(supabase, rows.length);
+    if (!grenze.erlaubt) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: grenze.meldung ?? "Tarif-Limit erreicht." };
     const { error } = await supabase.from("properties").insert(rows);
+    if (error?.hint === "einheiten_grenze") return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: `${error.message} Es wurde nichts importiert.` };
     if (error) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Import fehlgeschlagen." };
     revalidatePath("/properties");
-    return { ok: true, angelegt: rows.length, ohneObjekt: 0 };
+    return { ok: true, angelegt: rows.length, ohneObjekt: 0, ...(uebersprungen ? { uebersprungen } : {}) };
   }
 
   // Mieter: Objekt-Zuordnung über den Namen (case-insensitiv, getrimmt).
@@ -95,17 +120,33 @@ export async function importiereDaten(
     .select("id,bezeichnung")
     .eq("user_id", user.id);
   if (propsFehler) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Objekte konnten nicht geladen werden — es wurde nichts importiert." };
-  const propByName = new Map(
-    (props ?? []).map((p) => [String(p.bezeichnung ?? "").trim().toLowerCase(), p.id]),
-  );
+  const objekte = (props ?? []) as { id: string; bezeichnung: string | null }[];
+
+  // B15: Ein Name, der auf mehrere Objekte passt, wird NIE zugeordnet — dann lieber gar nicht importieren
+  // als Mieter am falschen Haus (vorher gewann still das zuletzt geladene Objekt).
+  const mehrdeutig = [...new Set(zeilen
+    .filter((z) => txt(z.nachname) && objektZuordnung(objekte, z.objekt).art === "mehrdeutig")
+    .map((z) => String(z.objekt ?? "").trim()))];
+  if (mehrdeutig.length > 0) {
+    return {
+      ok: false, angelegt: 0, ohneObjekt: 0,
+      fehler: `Der Objektname ${mehrdeutig.map((n) => `„${n}“`).join(", ")} passt auf mehrere Objekte. Bitte die Objekte eindeutig benennen (Objekt bearbeiten) und dann erneut importieren — es wurde nichts importiert.`,
+    };
+  }
+
+  // Schon vorhandene Mieter (Objekt + Name + Mietbeginn) nicht ein zweites Mal anlegen.
+  const { data: bestand, error: bestandFehler } = await supabase
+    .from("mieter").select("prop_id,vorname,nachname,mietbeginn").eq("user_id", user.id);
+  if (bestandFehler) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Mieter konnten nicht geprüft werden — es wurde nichts importiert." };
+  const schon = new Set((bestand ?? []).map((m) => mieterSchluessel(m)));
 
   let ohneObjekt = 0;
+  let uebersprungen = 0;
   const rows = zeilen
     .filter((z) => txt(z.nachname))
     .map((z) => {
-      const objektName = String(z.objekt ?? "").trim().toLowerCase();
-      const propId = objektName ? propByName.get(objektName) ?? null : null;
-      if (!propId) ohneObjekt++;
+      const treffer = objektZuordnung(objekte, z.objekt);
+      const propId = treffer.art === "eindeutig" ? treffer.id : null;
       return {
         user_id: user.id,
         prop_id: propId,
@@ -121,11 +162,19 @@ export async function importiereDaten(
         mietende: datum(z.mietende),
         flaeche: num(z.flaeche),
       };
+    })
+    .filter((r) => {
+      const k = mieterSchluessel(r);
+      if (schon.has(k)) { uebersprungen++; return false; }
+      schon.add(k);
+      if (!r.prop_id) ohneObjekt++;
+      return true;
     });
+  if (rows.length === 0 && uebersprungen > 0) return { ok: true, angelegt: 0, ohneObjekt: 0, uebersprungen };
   if (rows.length === 0) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Keine gültigen Zeilen (Nachname fehlt)." };
   const { error } = await supabase.from("mieter").insert(rows);
   if (error) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Import fehlgeschlagen." };
   revalidatePath("/tenants");
   revalidatePath("/properties");
-  return { ok: true, angelegt: rows.length, ohneObjekt };
+  return { ok: true, angelegt: rows.length, ohneObjekt, ...(uebersprungen ? { uebersprungen } : {}) };
 }

@@ -105,6 +105,10 @@ eingebaut werden (Muster: `if (!darfFeature(abo, "nk_pdf")) return fehler`).
     ausschließend. Kontrollabfragen: `scripts/sql/bestandsschutz-vor-billing.sql`, A und C.
 12. **Scharf schalten:** `BILLING_ENFORCED=true` setzen + auf der `/preise`-Seite den
    Early-Access-Hinweis entfernen und die CTAs auf den Abo-Tab zeigen lassen.
+   **Zweiter Schalter (B14, 11.10.2026):** im SQL-Editor
+   `update public.billing_einstellungen set einheiten_durchsetzen = true where id = 1;` —
+   erst dann prüft die DATENBANK die Einheitengrenze auch für den direkten REST-Weg und
+   gleichzeitige Anlagen (Trigger `properties_einheiten_grenze`). Ohne ihn prüft nur die App.
 13. ~~Feature-Gates in den wichtigsten Server-Actions aktivieren~~ ✅ **erledigt
     04.09.2026** — `lib/planGate.ts` (`featureSperre()`, `pruefeEinheiten()`), eingebaut
     an 9 Stellen: Anlage V, Jahresbericht, DATEV, `/api/import`, `/api/import-url`,

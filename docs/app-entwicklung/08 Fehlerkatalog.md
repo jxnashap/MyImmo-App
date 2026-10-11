@@ -58,6 +58,24 @@ kam der NK-Anteil aus dem Browser, berechnet für den zuerst erkannten Monat.
 → *Gegenprüfung:* Soll, NK-Anteil und Verteilung rechnet der Server aus Vertrag + bestehenden
 Buchungen (`lib/mietZahlung.ts`); Testfälle Teilzahlung, Überzahlung, Sammelzahlung, Monatswechsel.
 
+**Zinsen gezahlt, als liefe die Rate nach der Tilgung weiter (B13, 11.10.2026)**
+„Zinsen in der Bindung = Rate × 12 × Jahre − getilgt“ zählte bei 100.000 € · 4 % · 4 % · 20 Jahre die
+Raten nach der Volltilgung (Monat 209) als Zinsen: 60.000 € statt 38.860,59 €.
+→ *Gegenprüfung:* Monat für Monat rechnen, letzte Rate auf Restschuld + Zinsen kappen
+(`tilgungsVerlauf()`); Testfall, in dem das Darlehen INNERHALB des Zeitraums getilgt ist, und die
+Probe „Σ Raten = Darlehen + Zinsen“.
+
+**Folgetermin wandert und verdoppelt sich (B12, 11.10.2026)**
+Jede Instanz rechnete vom gekappten Vorgänger (31.01. → 28.02. → 28.03. …); „erledigt“ wurde vor dem
+Folgetermin gespeichert, und eine Wiederholung schaltete den Haken zurück.
+→ *Gegenprüfung:* Tag der Serie speichern; Reihenfolge „erst das Abhängige, dann der Status“; ein
+Formular sendet den ZIELzustand, nicht „umschalten“; Folgetermin eindeutig je Vorgänger.
+
+**Name als Schlüssel beim Import (B15, 11.10.2026)**
+Objektnamen in einer Map — bei zwei gleichnamigen Objekten gewann still das letzte.
+→ *Gegenprüfung:* Nur zuordnen, wenn GENAU ein Treffer existiert; sonst abbrechen und sagen, welcher
+Name mehrdeutig ist. Vorschau und Server mit derselben Funktion.
+
 ## Oberfläche
 
 **Fokus springt beim Feldwechsel zurück**
@@ -198,6 +216,13 @@ Mieter, dessen Abrechnung nicht entstand.
 abschneidet, und die SEITE selbst ausführen (`tests/auswertungVollstaendig.test.ts`) — ein zweiter
 Ladeweg kann einen Fehler sonst verdecken (eine Mutation überlebte genau so, bis die angezeigte
 Summe geprüft wurde).
+
+**Grenze nur am Haupteingang (B14, 11.10.2026)**
+Die Tarifgrenze prüfte „Objekt anlegen“ — nicht „Bearbeiten“, nicht den CSV-Import, nicht den direkten
+REST-Weg; ein Lesefehler beim Zählen ergab 0 belegte Einheiten.
+→ *Gegenprüfung:* Alle Schreibwege auf die Tabelle aufzählen (Actions, Import, REST) und je einen Test;
+Zählfehler sperren; die Datenbank als letzte Linie (Trigger mit Sperre je Konto). Testkonten bekommen
+per Bestandsschutz-Trigger automatisch „plus“ — im Test den Tarif ausdrücklich setzen.
 
 ## Projektführung
 
