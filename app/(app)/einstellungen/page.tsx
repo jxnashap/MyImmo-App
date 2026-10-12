@@ -18,7 +18,7 @@ export default async function EinstellungenPage() {
     aktuellerNutzer(),
     supabase.from("unterschriften").select("data").maybeSingle(),
     getAbo(supabase),
-    zaehleEinheiten(supabase),
+    zaehleEinheiten(supabase).catch(() => null),
     supabase.rpc("konto_hat_passwort"),
     // Ohne datei_data (Base64) — der Scan kommt einzeln über /einstellungen/vertreter/[id].
     supabase.from("vertreter").select(VERTRETER_SPALTEN).order("created_at", { ascending: true }),

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { featureSperre } from "@/lib/planGate";
 import { darfWeiter } from "@/lib/net/bremse";
-import { getAuthedUser, MB } from "@/lib/aiRoute";
+import { getAuthedUser, MB, kiBereit, KI_NICHT_BEREIT } from "@/lib/aiRoute";
 import { extrahiereImmodaten, AiImportFehler } from "@/lib/aiImport";
-import { sicheresFetch, pruefeZielUrl, ZielNichtErlaubtFehler } from "@/lib/net/ssrf";
+import { sicheresFetch, pruefeZielUrl, ZielNichtErlaubtFehler, type Antwort } from "@/lib/net/ssrf";
+import { jsonBegrenzt, ZuGrossFehler } from "@/lib/net/grenzen";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -70,16 +71,18 @@ const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
 
 /**
- * Lädt eine URL mit SSRF-Prüfung vor JEDEM Sprung (siehe lib/net/ssrf.ts).
- * Weiterleitungen werden einzeln geprüft statt blind verfolgt.
+ * Lädt eine URL mit SSRF-Prüfung vor JEDEM Sprung (siehe lib/net/ssrf.ts): Weiterleitungen einzeln
+ * geprüft, Verbindung nur zur geprüften Adresse (B17), Body mit Grenze innerhalb des Zeitgebers (B16).
+ * HTML wird nach `MAX_HTML_BYTES` abgeschnitten (der Anfang genügt), ein zu großes PDF abgelehnt.
  */
-async function holeMitTimeout(url: string, accept: string): Promise<Response> {
-  const { response } = await sicheresFetch(new URL(url), {
+async function holeMitTimeout(url: string, accept: string, art: "pdf-oder-html" | "text"): Promise<Antwort> {
+  return sicheresFetch(new URL(url), {
     accept,
     timeoutMs: FETCH_TIMEOUT,
     userAgent: UA,
+    maxBytes: art === "text" ? MAX_HTML_BYTES : MAX_PDF_BYTES,
+    abschneiden: art === "text",
   });
-  return response;
 }
 
 // Mengenbremse je Nutzer: Der Link-Import lädt fremde Server und ruft danach
@@ -114,24 +117,19 @@ export async function POST(req: Request) {
   if (sperre) return NextResponse.json({ error: sperre }, { status: 402 });
   // Mengenbremse je Konto wie in nk-ocr — jeder Aufruf kostet Geld beim
   // KI-Anbieter. Datenbankgestützt, überlebt Serverless-Instanzen.
-  if (!(await darfWeiter("ki_import", 20, 3600, user.id))) {
+  if (!(await darfWeiter("ki_import", 20, 3600, user.id, { sperrtBeiAusfall: true }))) {
     return NextResponse.json(
       { error: "Zu viele Importe in kurzer Zeit. Bitte in einer Stunde erneut versuchen." },
       { status: 429 },
     );
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "Kein ANTHROPIC_API_KEY hinterlegt. Bitte in Vercel unter Settings → Environment Variables setzen." },
-      { status: 503 }
-    );
-  }
+  if (!kiBereit()) return NextResponse.json({ error: KI_NICHT_BEREIT }, { status: 503 });
+  const apiKey = process.env.ANTHROPIC_API_KEY ?? ""; // bei Bedrock nicht benutzt
 
   let urlRoh = "";
   try {
-    const body = await req.json();
+    const body = (await jsonBegrenzt(req, 16 * 1024)) as Record<string, unknown> | null; // ein Link, mehr nicht
     urlRoh = String(body?.url ?? "").trim();
   } catch {
     return NextResponse.json({ error: "Ungültige Anfrage." }, { status: 400 });
@@ -163,10 +161,11 @@ export async function POST(req: Request) {
 
   try {
     // ---- Seite/PDF laden --------------------------------------------------
-    let seite: Response;
+    let seite: Antwort;
     try {
-      seite = await holeMitTimeout(url.href, "text/html,application/pdf,*/*");
-    } catch {
+      seite = await holeMitTimeout(url.href, "text/html,application/pdf,*/*", "pdf-oder-html");
+    } catch (e) {
+      if (e instanceof ZuGrossFehler) return NextResponse.json({ error: "PDF zu groß (max. 20 MB)." }, { status: 422 });
       return NextResponse.json({ error: FEHLER_MELDUNG }, { status: 422 });
     }
 
@@ -176,14 +175,9 @@ export async function POST(req: Request) {
 
     // ---- PDF: direkt als Dokument an die KI --------------------------------
     if (istPdf && seite.ok) {
-      const buf = await seite.arrayBuffer();
-      if (buf.byteLength === 0 || buf.byteLength > MAX_PDF_BYTES)
-        return NextResponse.json(
-          { error: buf.byteLength ? "PDF zu groß (max. 20 MB)." : FEHLER_MELDUNG },
-          { status: 422 }
-        );
+      if (seite.bytes.byteLength === 0) return NextResponse.json({ error: FEHLER_MELDUNG }, { status: 422 });
       const parsed = await extrahiereImmodaten(apiKey, {
-        pdfBase64: Buffer.from(buf).toString("base64"),
+        pdfBase64: Buffer.from(seite.bytes).toString("base64"),
       });
       return NextResponse.json({ data: parsed });
     }
@@ -191,16 +185,17 @@ export async function POST(req: Request) {
     // ---- HTML: strippen, ggf. Reader-Fallback ------------------------------
     let text = "";
     if (seite.ok) {
-      const html = (await seite.text()).slice(0, MAX_HTML_BYTES);
+      // Ein PDF-Link, der als HTML-Seite gemeint war, kam bis 20 MB herein — für Text nur der Anfang.
+      const html = new TextDecoder().decode(seite.bytes.subarray(0, MAX_HTML_BYTES));
       text = htmlZuText(html);
     }
 
     if (text.length < MIN_TEXT || sieht_nach_botwall_aus(text)) {
       // Reader-Dienst rendert JS-lastige Seiten zu Klartext (kein API-Key).
       try {
-        const reader = await holeMitTimeout(`https://r.jina.ai/${url.href}`, "text/plain");
+        const reader = await holeMitTimeout(`https://r.jina.ai/${url.href}`, "text/plain", "text");
         if (reader.ok) {
-          const readerText = (await reader.text()).slice(0, MAX_HTML_BYTES).trim();
+          const readerText = new TextDecoder().decode(reader.bytes).trim();
           if (readerText.length >= MIN_TEXT && !sieht_nach_botwall_aus(readerText))
             text = readerText;
         }

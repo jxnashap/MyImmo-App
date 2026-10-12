@@ -43,18 +43,29 @@ function mockePaddle(p: Paddle) {
   }));
 }
 
-async function lade(modul: string, init: Parameters<typeof fakeSupabase>[0] = {}, paddle: Paddle = {}) {
+async function lade(
+  modul: string,
+  init: Parameters<typeof fakeSupabase>[0] = {},
+  paddle: Paddle = {},
+  // B02: eigener Service-Role-Client (eigene Mitschrift). `undefined` = derselbe wie der Nutzer-Client,
+  // `null` = keine Service-Role auf dem Server.
+  adminInit?: Parameters<typeof fakeSupabase>[0] | null,
+) {
   vi.resetModules();
   mockePaddle(paddle);
   const { db, client } = fakeSupabase(init);
   const signOut = vi.fn(async () => ({ error: null }));
   (client.auth as unknown as { signOut: unknown }).signOut = signOut;
-  const spuren = mockeNextUndSupabase(client);
+  const admin = adminInit === undefined ? null : adminInit === null ? null : fakeSupabase(adminInit);
+  const spuren = mockeNextUndSupabase(client, adminInit === undefined ? client : admin ? admin.client : null);
   const mod = await import(modul);
-  return { db, spuren, mod, signOut };
+  return { db, adb: admin?.db ?? db, spuren, mod, signOut };
 }
 
-const geloescht = (db: { zugriffe: { tabelle: string }[] }) => db.zugriffe.some((z) => z.tabelle === "rpc:delete_own_account");
+// B02 (11.10.2026): gelöscht wird über `konto_loeschen` (Service-Role), nie mehr über die direkt
+// aufrufbare `delete_own_account`.
+const geloescht = (db: { zugriffe: { tabelle: string; daten?: unknown }[] }) =>
+  db.zugriffe.some((z) => z.tabelle === "rpc:konto_loeschen" && (z.daten as { p_user?: string })?.p_user === "nutzer-1");
 
 describe("Konto löschen", () => {
   it("ohne Abo: Konto wird gelöscht, Sitzung beendet, Umleitung zum Login", async () => {
@@ -187,11 +198,74 @@ describe("Konto löschen", () => {
     expect(geloescht(db)).toBe(false);
   });
 
-  it("scheitert die Lösch-RPC, wird das gemeldet und die Sitzung bleibt bestehen", async () => {
-    const { signOut, mod } = await lade("@/lib/actions/account", { antworten: { abos: null }, fehlerBei: { "rpc:delete_own_account": { message: "boom" } } });
+  it("scheitert die Lösch-RPC, wird das gemeldet — mit Schritt-Stand — und die Sitzung bleibt bestehen", async () => {
+    const { signOut, mod } = await lade("@/lib/actions/account", { antworten: { abos: null }, fehlerBei: { "rpc:konto_loeschen": { message: "boom" } } });
     const r = await mod.deleteAccount();
-    expect(r).toMatchObject({ ok: false });
+    expect(r).toMatchObject({ ok: false, schritte: { abo: "entfaellt", dateien: "erledigt", daten: "fehler", pruefung: "offen" } });
     expect(signOut).not.toHaveBeenCalled();
+  });
+
+  // ---- B02 (11.10.2026) ---------------------------------------------------------------
+  it("die Nutzer-Sitzung ruft keine Lösch-RPC auf — nur der Service-Role-Client, mit der ID der Sitzung", async () => {
+    const { db, adb, mod } = await lade("@/lib/actions/account", { antworten: { abos: null } }, {}, {});
+    await fangeRedirect(() => mod.deleteAccount());
+    expect(db.zugriffe.filter((z) => z.op === "rpc")).toEqual([]);
+    expect(geloescht(adb)).toBe(true);
+  });
+
+  it("ohne Service-Role keine Löschung — und auch keine Datei-Löschung vorab", async () => {
+    const { db, mod, signOut } = await lade("@/lib/actions/account", { antworten: { abos: null }, dateien: { belege: ["nutzer-1/a.pdf"] } }, {}, null);
+    const r = await mod.deleteAccount();
+    expect(r).toMatchObject({ ok: false, fehler: expect.stringMatching(/NICHT gelöscht/) });
+    expect(db.dateien.belege).toEqual(["nutzer-1/a.pdf"]);
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it("Nachprüfung: Besteht das Konto nach der RPC noch, wird KEIN Erfolg gemeldet", async () => {
+    const { mod, signOut } = await lade("@/lib/actions/account", { antworten: { abos: null }, kontenDa: ["nutzer-1"] });
+    const r = await mod.deleteAccount();
+    expect(r).toMatchObject({ ok: false, schritte: { daten: "erledigt", pruefung: "fehler" } });
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it("zweiter Datei-Durchgang über die Service-Role; scheitert er, sagt der Login das (geloescht=rest)", async () => {
+    const ok = await lade("@/lib/actions/account", { antworten: { abos: null } }, {}, {});
+    expect(await fangeRedirect(() => ok.mod.deleteAccount())).toBe("/login?geloescht=1");
+    expect(ok.adb.storageAufrufe).toContain("belege:list");
+    const rest = await lade("@/lib/actions/account", { antworten: { abos: null } }, {}, { fehlerBei: { "storage:belege:list": { message: "weg" } } });
+    expect(await fangeRedirect(() => rest.mod.deleteAccount())).toBe("/login?geloescht=rest");
+    expect(geloescht(rest.adb)).toBe(true);
+  });
+
+  it("nach der Kündigung wird das Abo vermerkt — ein zweiter Versuch fragt Paddle nicht neu", async () => {
+    const { adb, mod } = await lade(
+      "@/lib/actions/account",
+      { antworten: { abos: { provider_subscription_id: "sub_1", status: "aktiv" } }, fehlerBei: {} },
+      { konfiguriert: true, kuendigen: true },
+      { fehlerBei: { "rpc:konto_loeschen": { message: "Zeitüberlauf" } } },
+    );
+    const r = await mod.deleteAccount();
+    expect(r).toMatchObject({ ok: false, schritte: { abo: "erledigt", daten: "fehler" } });
+    const vermerk = adb.zugriffe.find((z) => z.tabelle === "abos" && z.op === "update");
+    expect(vermerk?.daten).toEqual({ status: "gekuendigt" });
+    expect(vermerk?.filter).toContain("eq:user_id=nutzer-1");
+    // Wiederholung: Das Abo steht jetzt auf „gekuendigt“ → keine zweite Kündigung, Löschung läuft.
+    paddleAufrufe = [];
+    const zweiter = await lade("@/lib/actions/account", { antworten: { abos: { provider_subscription_id: "sub_1", status: "gekuendigt" } } }, { konfiguriert: true, kuendigen: false }, {});
+    await fangeRedirect(() => zweiter.mod.deleteAccount());
+    expect(paddleAufrufe).toEqual([]);
+    expect(geloescht(zweiter.adb)).toBe(true);
+  });
+
+  it("das Demo-Konto wird nicht gelöscht", async () => {
+    const { db, client } = fakeSupabase({ antworten: { abos: null } });
+    vi.resetModules();
+    mockePaddle({});
+    (client.auth as { getUser: unknown }).getUser = async () => ({ data: { user: { id: "demo", email: "demo.vermieter@myimmo.test", factors: [] } }, error: null });
+    mockeNextUndSupabase(client);
+    const mod = await import("@/lib/actions/account");
+    expect(await mod.deleteAccount()).toMatchObject({ ok: false });
+    expect(db.zugriffe.some((z) => z.op === "rpc")).toBe(false);
   });
 });
 

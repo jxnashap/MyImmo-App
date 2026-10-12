@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { featureSperre } from "@/lib/planGate";
-import { getAuthedUser, callAnthropic, base64Bytes, MB } from "@/lib/aiRoute";
+import { getAuthedUser, callAnthropic, base64Bytes, MB, kiBereit, KI_NICHT_BEREIT } from "@/lib/aiRoute";
 import { darfWeiter } from "@/lib/net/bremse";
+import { jsonBegrenzt, jsonGrenzeFuerBase64, ZuGrossFehler } from "@/lib/net/grenzen";
 
 export const runtime = "nodejs";
+// B16: Ohne Obergrenze lief die Funktion bis zum Plattform-Abbruch; der KI-Aufruf selbst hat 45 s.
+export const maxDuration = 60;
 
 const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
 
@@ -108,25 +111,25 @@ export async function POST(req: Request) {
   // ein einzelnes Konto die Route als Kostenschleuder benutzt. Datenbank-
   // gestützt (überlebt Serverless-Instanzen), fällt bei Störung auf
   // Durchlassen zurück wie überall.
-  if (!(await darfWeiter("nk_ocr", 20, 3600, user.id))) {
+  if (!(await darfWeiter("nk_ocr", 20, 3600, user.id, { sperrtBeiAusfall: true }))) {
     return NextResponse.json(
       { error: "Zu viele Auswertungen in kurzer Zeit. Bitte in einer Stunde erneut versuchen." },
       { status: 429 },
     );
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "Kein ANTHROPIC_API_KEY hinterlegt. Bitte in Vercel setzen." }, { status: 503 });
-  }
+  if (!kiBereit()) return NextResponse.json({ error: KI_NICHT_BEREIT }, { status: 503 });
+  const apiKey = process.env.ANTHROPIC_API_KEY ?? ""; // bei Bedrock nicht benutzt
 
   let data = "", mediaType = "", isPdf = false;
   try {
-    const body = await req.json();
+    // B16: Body mit Grenze lesen (vorher `req.json()` ohne jede Grenze, Prüfung erst danach).
+    const body = (await jsonBegrenzt(req, jsonGrenzeFuerBase64(MAX_PDF_BYTES))) as Record<string, unknown> | null;
     data = String(body?.data ?? "");
     mediaType = String(body?.mediaType ?? "");
     isPdf = !!body?.isPdf;
-  } catch {
+  } catch (e) {
+    if (e instanceof ZuGrossFehler) return NextResponse.json({ error: `Datei zu groß. Maximal ${(MAX_PDF_BYTES / MB).toFixed(0)} MB.` }, { status: 413 });
     return NextResponse.json({ error: "Ungültige Anfrage." }, { status: 400 });
   }
   if (!data) return NextResponse.json({ error: "Keine Datei übergeben." }, { status: 400 });
@@ -169,6 +172,7 @@ export async function POST(req: Request) {
     if (ergebnis.positionen.length === 0) return NextResponse.json({ error: "Keine Kostenpositionen erkannt." }, { status: 422 });
     return NextResponse.json(ergebnis);
   } catch (err) {
+    if (err instanceof ZuGrossFehler) return NextResponse.json({ error: "Antwort des KI-Dienstes war zu groß." }, { status: 502 });
     if ((err as Error).name === "AbortError") {
       return NextResponse.json({ error: "Zeitüberschreitung beim KI-Dienst. Bitte erneut versuchen." }, { status: 504 });
     }

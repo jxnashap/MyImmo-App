@@ -24,8 +24,9 @@ export default function Error({
         <div style={{ marginBottom: 8 }}><TriangleAlert size={40} color="var(--amber)" /></div>
         <h3 style={{ marginBottom: 8 }}>Etwas ist schiefgelaufen</h3>
         <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
-          Die Aktion konnte nicht abgeschlossen werden. Bitte prüfe deine Eingaben
-          (z. B. Beträge &gt; 0, gültige IBAN) und versuche es erneut.
+          Die Seite konnte nicht vollständig geladen oder die Aktion nicht abgeschlossen werden.
+          Unvollständige Zahlen zeigen wir bewusst nicht an. Bitte versuche es erneut — bei einer
+          Eingabe prüfe z. B. Beträge &gt; 0 oder die IBAN.
         </p>
         <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
           <button type="button" className="btn btn-gold" onClick={() => reset()}>

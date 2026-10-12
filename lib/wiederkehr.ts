@@ -87,13 +87,34 @@ export function faelligeDaten(v: WiederkehrVorlage, heute: Date = new Date()): s
 }
 
 /**
- * Aus den fälligen Terminen die noch OFFENEN ermitteln. Zählbasiert statt
- * datumsgenau: existieren zur Vorlage bereits n Buchungen, gelten die ersten
- * n fälligen Termine als gebucht — so erzeugt ein nachträglich umdatiertes
- * Buchungsdatum (§ 11 EStG, tatsächlicher Zufluss) keine Dublette, und eine
- * gelöschte Buchung wird beim nächsten Erzeugen wieder aufgefüllt.
+ * Aus den fälligen Terminen die noch OFFENEN ermitteln.
+ *
+ * Zuerst gilt jeder Termin, zu dem es eine Buchung mit GENAU diesem Datum gibt, als gebucht. Jede
+ * übrige Buchung der Vorlage (nachträglich auf den tatsächlichen Zufluss umdatiert, § 11 EStG) deckt
+ * den ZEITLICH NÄCHSTEN noch offenen Termin ab — n Buchungen decken also weiter n Termine.
+ *
+ * VORHER (bis 11.10.2026) rein zählend: Bei n Buchungen galten die ERSTEN n Termine als gebucht. Fehlte
+ * eine Buchung in der Mitte (gelöscht), wurde der LETZTE Termin ein zweites Mal angelegt und die Lücke
+ * nie gefüllt. Seit B07 lässt die Datenbank je Vorlage und Datum nur eine Buchung zu — die Zählregel
+ * hätte die Lücke dann gar nicht mehr gefüllt.
  */
 export function offeneDaten(faellig: string[], vorhandeneDaten: (string | null)[]): string[] {
-  const anzahlGebucht = vorhandeneDaten.filter(Boolean).length;
-  return faellig.slice(Math.min(anzahlGebucht, faellig.length));
+  const offen = new Set(faellig);
+  const umdatiert: string[] = [];
+  for (const d of vorhandeneDaten) {
+    if (!d || !istIsoDatum(d)) continue;
+    if (offen.has(d)) offen.delete(d);
+    else umdatiert.push(d);
+  }
+  const tag = (iso: string) => Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
+  for (const d of umdatiert.sort()) {
+    let naechster: string | null = null;
+    let abstand = Infinity;
+    for (const f of offen) {
+      const a = Math.abs(tag(f) - tag(d));
+      if (a < abstand) { abstand = a; naechster = f; }
+    }
+    if (naechster) offen.delete(naechster);
+  }
+  return faellig.filter((f) => offen.has(f));
 }

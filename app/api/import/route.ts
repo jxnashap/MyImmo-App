@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { featureSperre } from "@/lib/planGate";
 import { darfWeiter } from "@/lib/net/bremse";
-import { getAuthedUser, MB } from "@/lib/aiRoute";
+import { getAuthedUser, MB, kiBereit, KI_NICHT_BEREIT } from "@/lib/aiRoute";
+import { jsonBegrenzt, jsonGrenzeFuerBase64, ZuGrossFehler } from "@/lib/net/grenzen";
 import { extrahiereImmodaten, AiImportFehler } from "@/lib/aiImport";
 
 export const runtime = "nodejs";
@@ -20,28 +21,25 @@ export async function POST(req: Request) {
   if (sperre) return NextResponse.json({ error: sperre }, { status: 402 });
   // Mengenbremse je Konto wie in nk-ocr — jeder Aufruf kostet Geld beim
   // KI-Anbieter. Datenbankgestützt, überlebt Serverless-Instanzen.
-  if (!(await darfWeiter("ki_import", 20, 3600, user.id))) {
+  if (!(await darfWeiter("ki_import", 20, 3600, user.id, { sperrtBeiAusfall: true }))) {
     return NextResponse.json(
       { error: "Zu viele Importe in kurzer Zeit. Bitte in einer Stunde erneut versuchen." },
       { status: 429 },
     );
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "Kein ANTHROPIC_API_KEY hinterlegt. Bitte in Vercel unter Settings → Environment Variables setzen." },
-      { status: 503 }
-    );
-  }
+  if (!kiBereit()) return NextResponse.json({ error: KI_NICHT_BEREIT }, { status: 503 });
+  const apiKey = process.env.ANTHROPIC_API_KEY ?? ""; // bei Bedrock nicht benutzt
 
   let text = "";
   let pdfBase64 = "";
   try {
-    const body = await req.json();
+    // B16: Body mit Grenze lesen, bevor irgendetwas davon im Speicher liegt.
+    const body = (await jsonBegrenzt(req, jsonGrenzeFuerBase64(MAX_PDF_BYTES))) as Record<string, unknown> | null;
     text = String(body?.text ?? "").trim();
     pdfBase64 = String(body?.pdfBase64 ?? "").trim();
-  } catch {
+  } catch (e) {
+    if (e instanceof ZuGrossFehler) return NextResponse.json({ error: "PDF zu groß (max. 20 MB)." }, { status: 413 });
     return NextResponse.json({ error: "Ungültige Anfrage." }, { status: 400 });
   }
 

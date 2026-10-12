@@ -186,7 +186,8 @@ describe("B58/C1–C5 — Inhalte und Listen", () => {
   it("Kontoauszug: Einzahl/Mehrzahl und Karten statt 640-px-Tabelle am Handy (C3)", () => {
     const k = lies("components/KontoauszugAbgleich.tsx");
     expect(k).toContain('ergebnis.ohneZuordnung.length === 1 ? "Eingang" : "Eingänge"');
-    expect(k).toContain('ergebnis.ausgaenge === 1 ? "Ausgang" : "Ausgänge"');
+    expect(k).toContain('ergebnis.rueck.length === 1 ? "Ausgang" : "Ausgänge"');
+    expect(k).toContain('ergebnis.ausgaenge - ergebnis.rueck.length === 1 ? "1 weiterer Ausgang"');
     expect(k).toContain('className="ka-tabelle"');
     expect(k).not.toContain("minWidth: 640");
     for (const l of ["Eingang", "Zahler / Zweck", "Mieter", "Mietmonat", "Grund"]) expect(k, l).toContain(`data-label="${l}"`);

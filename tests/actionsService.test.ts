@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { fakeSupabase, mockeNextUndSupabase, fd } from "./stubs/actionHarness";
+import { speicherDb } from "./stubs/speicherDb";
 
 // lib/actions/service.ts — Service-Partner (Handwerker/Hausmeister).
 //
@@ -435,5 +436,76 @@ describe("Übernahme als Kosten: der Punkt, an dem Geld entsteht", () => {
     const { db, mod } = await lade();
     await mod.loescheAuftrag("a1");
     expect(db.zugriffe.find((z) => z.op === "delete")?.filter).toContain("eq:vermieter_id=nutzer-1");
+  });
+});
+
+// B07 (11.10.2026) gegen `speicherDb`: `kosten.auftrag_id` ist eindeutig wie in der Migration; gleichzeitige
+// Aufrufe verzahnen sich an jedem `await`.
+describe("Auftrag als Kosten: genau EINE Buchung (B07)", () => {
+  async function ladeSpeicher(over: Record<string, unknown> = {}, fehlerBei?: Record<string, string>) {
+    vi.resetModules();
+    const db = speicherDb({
+      tabellen: {
+        auftraege: [{ id: "a1", vermieter_id: "nutzer-1", titel: "Heizung entlüftet", objekt_name: "Haus", prop_id: "p1", betrag: 500, lohnanteil: 200,
+          rechnung_name: "Rechnung.pdf", rechnung_type: "application/pdf", rechnung_data: Buffer.from("PDF").toString("base64"),
+          kosten_id: null, status: "erledigt", service_user_id: "sv-1", ...over }],
+        service_zugaenge: [{ vermieter_id: "nutzer-1", user_id: "sv-1", firma: "Meier GmbH", email: null }],
+        kosten: [],
+      },
+      eindeutig: { kosten: [["auftrag_id"]] },
+      fehlerBei,
+    });
+    mockeNextUndSupabase(db.client);
+    const mod = await import("@/lib/actions/service");
+    return { db, mod, auftrag: () => db.tabellen.auftraege[0], belege: () => Object.keys(db.dateien().belege ?? {}) };
+  }
+
+  it("bucht, verknüpft und legt die Rechnung als Beleg ab", async () => {
+    const { db, mod, auftrag, belege } = await ladeSpeicher();
+    expect(await mod.uebernimmAuftragAlsKosten(fd({ id: "a1", buchungsdatum: "2025-12-18" }))).toEqual({ ok: true });
+    expect(db.tabellen.kosten).toEqual([expect.objectContaining({ auftrag_id: "a1", betrag: 500, buchungsdatum: "2025-12-18", rechnung_data: null })]);
+    expect(auftrag().kosten_id).toBe(db.tabellen.kosten[0].id);
+    expect(belege()).toEqual([db.tabellen.kosten[0].rechnung_path]);
+  });
+
+  it("Doppelklick GLEICHZEITIG: eine Kostenbuchung, eine Belegkopie", async () => {
+    const { db, mod, auftrag, belege } = await ladeSpeicher();
+    const [a, b] = await Promise.all([mod.uebernimmAuftragAlsKosten(fd({ id: "a1" })), mod.uebernimmAuftragAlsKosten(fd({ id: "a1" }))]);
+    expect(db.tabellen.kosten).toHaveLength(1);
+    expect(a.ok && b.ok).toBe(true); // der zweite findet die erste Buchung und meldet keinen Fehler
+    expect(auftrag().kosten_id).toBe(db.tabellen.kosten[0].id);
+    expect(belege()).toHaveLength(1); // die zweite Kopie wurde wieder entfernt
+  });
+
+  it("scheitert das Verknüpfen, bucht der nächste Klick NICHT doppelt, sondern verknüpft", async () => {
+    const erst = await ladeSpeicher({}, { "auftraege:update": "timeout" });
+    const r = await erst.mod.uebernimmAuftragAlsKosten(fd({ id: "a1" }));
+    expect(r.error).toMatch(/erneuter Klick verknüpft sie/);
+    expect(erst.db.tabellen.kosten).toHaveLength(1);
+    expect(erst.auftrag().kosten_id).toBeNull();
+
+    // Zweiter Klick mit DERSELBEN Datenlage, jetzt ohne Fehler.
+    vi.resetModules();
+    const db2 = speicherDb({ tabellen: erst.db.tabellen, eindeutig: { kosten: [["auftrag_id"]] }, dateien: erst.db.dateien() });
+    mockeNextUndSupabase(db2.client);
+    const mod2 = await import("@/lib/actions/service");
+    expect(await mod2.uebernimmAuftragAlsKosten(fd({ id: "a1" }))).toEqual({ ok: true });
+    expect(db2.tabellen.kosten).toHaveLength(1);
+    expect(db2.tabellen.auftraege[0].kosten_id).toBe(db2.tabellen.kosten[0].id);
+    expect(Object.keys(db2.dateien().belege ?? {})).toHaveLength(1);
+  });
+
+  it("scheitert die Buchung, bleibt keine Belegkopie liegen und der Auftrag unverbucht", async () => {
+    const { mod, auftrag, belege, db } = await ladeSpeicher({}, { "kosten:insert": "abgelehnt" });
+    expect((await mod.uebernimmAuftragAlsKosten(fd({ id: "a1" }))).error).toContain("nicht angelegt");
+    expect(db.tabellen.kosten).toHaveLength(0);
+    expect(belege()).toHaveLength(0);
+    expect(auftrag().kosten_id).toBeNull();
+  });
+
+  it("scheitert der Upload, bleibt die Rechnung als Altablage in der Buchung lesbar", async () => {
+    const { db, mod } = await ladeSpeicher({}, { "storage:belege:upload": "voll" });
+    await mod.uebernimmAuftragAlsKosten(fd({ id: "a1" }));
+    expect(db.tabellen.kosten[0]).toMatchObject({ rechnung_data: Buffer.from("PDF").toString("base64") });
   });
 });

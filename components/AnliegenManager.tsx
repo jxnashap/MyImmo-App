@@ -162,7 +162,7 @@ export function AnliegenDetail({ a, angebote }: { a: AnliegenVermieterRow; angeb
               </div>
             )}
             <div style={{ marginTop: 10 }}>
-              <VorgangVerlauf anliegenId={a.id} ereignisse={a.verlauf} sicht="vermieter" antworten={false} />
+              <VorgangVerlauf anliegenId={a.id} ereignisse={a.verlauf} sicht="vermieter" antworten={false} anliegenStatus={a.status} />
             </div>
 
             <form action={speichern} style={{ display: "grid", gap: 8, marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line)" }}>

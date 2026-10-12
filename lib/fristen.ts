@@ -3,6 +3,7 @@
 import { iso, addMonate } from "@/lib/datum";
 import { normMietart } from "@/lib/mietart";
 import { naechsterWerktag } from "@/lib/mietStatus";
+import type { FristDokument } from "@/lib/fristDokument";
 
 export type FristKategorie =
   | "Miete" | "Betriebskosten" | "Finanzierung" | "Steuer" | "Wartung" | "WEG" | "Versicherung" | "Sonstiges";
@@ -14,6 +15,8 @@ export type Frist = {
   kategorie?: FristKategorie;
   // Rechtsgrundlage/Quelle als kleiner Untertext ("Angaben ohne Gewähr")
   rechtsgrundlage?: string;
+  /** Schreiben, das zu dieser Frist gehört (Ablauf D) — führt in den Generator bzw. zur NK-Abrechnung. */
+  dokument?: FristDokument;
 };
 
 type MieterFristInput = {
@@ -36,7 +39,6 @@ type MieterFristInput = {
 export function mieterFristen(
   m: MieterFristInput,
   opts: {
-    nkErstellt?: number[];
     /** Erste Monate („YYYY-MM“) der Miet-Zeiträume dieses Mieters — für verpasste Staffelstufen (B9). */
     zeitraumMonate?: string[];
   } = {},
@@ -62,6 +64,7 @@ export function mieterFristen(
         typ: wgTage <= 7 ? "warn" : "info",
         kategorie: "Miete",
         rechtsgrundlage: "§ 19 BMG (2 Wochen nach Einzug)",
+        dokument: { art: "wohnungsgeber" },
       });
     }
   }
@@ -87,21 +90,23 @@ export function mieterFristen(
   } else if (m.letzte_erhoehung) {
     const next = addMonate(new Date(m.letzte_erhoehung), 12);
     const nTage = Math.ceil((next.getTime() - heute.getTime()) / 86400000);
-    fristen.push({ label: "Nächste Mieterhöhung möglich", datum: iso(next), typ: nTage <= 0 ? "ok" : "info", kategorie: "Miete", rechtsgrundlage: "§ 558 Abs. 1 BGB (Jahressperrfrist)" });
+    fristen.push({ label: "Nächste Mieterhöhung möglich", datum: iso(next), typ: nTage <= 0 ? "ok" : "info", kategorie: "Miete", rechtsgrundlage: "§ 558 Abs. 1 BGB (Jahressperrfrist)", dokument: { art: "mieterhoehung" } });
   } else if (m.mietbeginn) {
     const next = addMonate(new Date(m.mietbeginn), 12);
-    if (next < heute) fristen.push({ label: "Mieterhöhung möglich (keine bisher)", datum: null, typ: "ok", kategorie: "Miete", rechtsgrundlage: "§ 558 BGB" });
+    if (next < heute) fristen.push({ label: "Mieterhöhung möglich (keine bisher)", datum: null, typ: "ok", kategorie: "Miete", rechtsgrundlage: "§ 558 BGB", dokument: { art: "mieterhoehung" } });
   }
 
   // NK-Abrechnung des Vorjahres: Zustellung bis 12 Monate nach Ende des
   // Abrechnungszeitraums (Kalenderjahr) → 31.12. des aktuellen Jahres.
   // Paket C (06.10.2026): Auch wer im Vorjahr oder in diesem Jahr AUSGEZOGEN ist, bekommt
   // seine Abrechnung für das Vorjahr — vorher galt die Frist nur für laufende Verträge, und
-  // gerade diese Abrechnung wird leicht vergessen. Ist sie schon erstellt (im Archiv), entfällt
-  // die Frist; ob sie auch ZUGESTELLT wurde, kann MyImmo bei Post/Mail nicht wissen.
+  // gerade diese Abrechnung wird leicht vergessen.
+  // Ablauf D (Prüfstand 11.10.2026): Ein PDF im Archiv erledigt die Frist NICHT mehr (vorher entfiel sie
+  // damit) — die Abrechnung muss dem Mieter ZUGEHEN (§ 556 Abs. 3 S. 2 BGB: „mitzuteilen“), und ob das
+  // geschah, weiß nur der Vermieter. Stand und Erledigt-Vermerk zeigt `fristVorgang()` (lib/fristDokument.ts).
   const jahrJetzt = heute.getFullYear();
   const lebteImVorjahr = !m.mietende || m.mietende >= `${jahrJetzt - 1}-01-01`;
-  if (lebteImVorjahr && m.mietbeginn && !(opts.nkErstellt ?? []).includes(jahrJetzt - 1)) {
+  if (lebteImVorjahr && m.mietbeginn) {
     const jahr = jahrJetzt;
     const vorjahr = jahr - 1;
     // Nur wenn der Mieter im Vorjahr schon Mieter war.
@@ -114,6 +119,7 @@ export function mieterFristen(
         typ: tage < 90 ? "warn" : "info",
         kategorie: "Betriebskosten",
         rechtsgrundlage: "§ 556 Abs. 3 BGB (12-Monats-Frist)",
+        dokument: { art: "nk", jahr: vorjahr },
       });
     }
   }
@@ -350,16 +356,3 @@ export function getRefinanzWarning(zinsbindung: string | null): RefinanzWarnung 
   return null;
 }
 
-/**
- * Jahre, für die je Mieter eine NK-Abrechnung im Archiv liegt (Titel „Nebenkostenabrechnung 2025“,
- * so schreibt ihn `erzeugeNkPdf`). Für `mieterFristen(m, { nkErstellt })`.
- */
-export function nkErstellteJahre(notizen: { mieter_id: string | null; titel: string | null }[]): Map<string, number[]> {
-  const out = new Map<string, number[]>();
-  for (const n of notizen) {
-    const j = /Nebenkostenabrechnung (\d{4})/.exec(n.titel ?? "")?.[1];
-    if (!n.mieter_id || !j) continue;
-    out.set(n.mieter_id, [...(out.get(n.mieter_id) ?? []), Number(j)]);
-  }
-  return out;
-}

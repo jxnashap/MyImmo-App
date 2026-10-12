@@ -1,4 +1,5 @@
 "use client";
+import { useVorgang } from "@/lib/hooks/useVorgang";
 import { Save, FileText } from "lucide-react";
 
 import BriefBlatt from "@/components/BriefBlatt";
@@ -120,6 +121,8 @@ export default function DocGenerator({
   const [zugang, setZugang] = useState("");
   const [ablegen, startAblegen] = useTransition();
   const toast = useToast();
+  // Ablauf F: „Im Archiv ablegen“ zweimal (Zeitüberlauf) → ein Schreiben, nicht zwei.
+  const ablageVorgang = useVorgang();
 
   const zeigtBetrag = ART_ZEIGT_BETRAG.includes(art);
   const zeigtKonto = ART_ZEIGT_KONTO.includes(art);
@@ -704,7 +707,8 @@ export default function DocGenerator({
             disabled={ablegen || blockiert}
             onClick={() =>
               startAblegen(async () => {
-                const res = await speichereBrief(tenant.id, felder);
+                const res = await speichereBrief(tenant.id, felder, {}, ablageVorgang.aktuell());
+                if (res.ok) ablageVorgang.abgeschlossen();
                 toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.", res.ok ? "success" : "error");
               })
             }

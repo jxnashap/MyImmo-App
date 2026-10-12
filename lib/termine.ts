@@ -40,7 +40,11 @@ const WIEDERKEHRUNG_MONATE: Record<string, number> = {
 // Rechnung hing aber an einer Umgebungseinstellung, die niemand hier verwaltet.
 // Jetzt reine Kalenderarithmetik auf den Zahlen: kein `Date`-Objekt für die
 // Verschiebung, nur eines für „wie viele Tage hat dieser Monat" (in UTC).
-export function naechsteFaelligkeit(datum: string, wiederkehrung: string): string | null {
+//
+// B12 (11.10.2026): `tagWunsch` = Tag der SERIE (z. B. 31). Ohne ihn wanderte eine Monatsserie vom
+// 31.01. über 28.02. dauerhaft auf den 28. (28.03., 28.04. …), weil jeder Folgetermin vom
+// gekappten Vorgänger aus rechnete.
+export function naechsteFaelligkeit(datum: string, wiederkehrung: string, tagWunsch?: number | null): string | null {
   const monate = WIEDERKEHRUNG_MONATE[wiederkehrung] ?? 0;
   if (!monate) return null;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datum);
@@ -56,7 +60,8 @@ export function naechsteFaelligkeit(datum: string, wiederkehrung: string): strin
   // Tag 0 des Folgemonats = letzter Tag des Zielmonats. Über `Date.UTC`
   // gebildet, damit die Ortszeit keine Rolle spielt.
   const letzterTag = new Date(Date.UTC(zielJahr, zielMonat, 0)).getUTCDate();
-  const zielTag = Math.min(tag, letzterTag);
+  const wunsch = tagWunsch && tagWunsch >= 1 && tagWunsch <= 31 ? tagWunsch : tag;
+  const zielTag = Math.min(wunsch, letzterTag);
   const zwei = (n: number) => String(n).padStart(2, "0");
   return `${zielJahr}-${zwei(zielMonat)}-${zwei(zielTag)}`;
 }
@@ -120,6 +125,10 @@ export const WARTUNGS_VORLAGEN = PRUEF_KATALOG;
  * die Nebenkostenabrechnung) soll im FOLGEJAHR wieder auftauchen und nicht
  * dauerhaft stumm bleiben, nur weil sie einmal ausgeblendet wurde.
  */
-export function fristSchluessel(quelle: string, datum: string, label: string): string {
-  return `${quelle}|${datum}|${label}`;
+export function fristSchluessel(quelle: string, datum: string, label: string, bezug?: string | null): string {
+  // Ablauf D (Prüfstand 11.10.2026): mit dem Bezug (Mieter, Darlehen, Objekt, Vertreter). Vorher
+  // galt EIN Schlüssel für alle Mieter mit demselben Datum und Text — „NK-Abrechnung 2025 zustellen“
+  // (31.12.) bei einem Mieter ausgeblendet, war sie bei ALLEN weg; als „erledigt“ vermerkt, hätte
+  // der Vermerk für alle gegolten. Alte Zeilen (ohne Bezug) blenden weiter aus — `fristVermerk()`.
+  return bezug ? `${quelle}|${bezug}|${datum}|${label}` : `${quelle}|${datum}|${label}`;
 }

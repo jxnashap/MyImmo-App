@@ -1,0 +1,4 @@
+20260829231500_demo_seed_ibans.sql — setzt demo_seed-Tabellen voraus, die 20260829213000 nur MIT Live-Demo-Konto anlegt
+20260930154606_demo_daten_bis_heute.sql — deklariert Variablen vom Typ demo_seed.* (s. o.)
+20260930162539_demo_warmmiete_kaufdaten.sql — bricht ohne Demo-Konto bewusst ab („Demo-Konto nicht gefunden“)
+20260930174605_demo_schuldzinsen.sql — bricht ohne Demo-Konto bewusst ab („Demo-Konto nicht gefunden“)

@@ -105,7 +105,7 @@ describe("Mahnung per Mail hinterlässt eine Archiv-Kopie", () => {
   const mail = s.slice(s.indexOf("briefMailLink("));
   it("speichert den Brief vor dem Öffnen der Mail — einmal je Briefstand", () => {
     expect(mail).toMatch(/if \(archiviertFuer !== schluessel\)/);
-    expect(mail).toMatch(/speichereBrief\(mieterId, felder\)/);
+    expect(mail).toMatch(/speichereBrief\(mieterId, felder, \{\}, kopieVorgang\.aktuell\(\)\)/);
     expect(mail).toMatch(/setArchiviertFuer\(schluessel\)/);
   });
   it("ein Archivfehler hält die Mail nicht auf (nur ein Hinweis)", () => {

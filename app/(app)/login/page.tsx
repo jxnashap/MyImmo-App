@@ -79,8 +79,12 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.has("geloescht")) {
+      // B02 (11.10.2026): „rest“ = Konto und Daten gelöscht, aber einzelne Beleg-Dateien nicht —
+      // das wird gesagt, nicht als vollständige Löschung gemeldet.
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Browserwert erst nach dem Mount lesen — beim Server-Rendern gibt es ihn nicht (Hydration)
-      setInfo("Dein Konto und alle Daten wurden gelöscht.");
+      setInfo(params.get("geloescht") === "rest"
+        ? "Dein Konto und deine Daten wurden gelöscht. Einzelne Beleg-Dateien ließen sich nicht sofort entfernen — bitte schreib an info@myimmoapp.de, wir löschen sie von Hand."
+        : "Dein Konto und alle Daten wurden gelöscht.");
     }
     // Google-Anmeldung mit falscher Rolle abgebrochen (siehe /auth/callback).
     if (params.get("info") === "passwort-neu") {

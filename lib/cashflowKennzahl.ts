@@ -60,6 +60,20 @@ export type KostenSchnitt = {
 // Nutzer passiert, der dem Rat der Anlage V folgt.
 export const IN_KREDITRATE_ENTHALTEN = ["Schuldzinsen"] as const;
 
+/**
+ * Buchungssaldo einer Auswahl (Cashflow-Seite): Summe aller Einnahmen minus Summe aller Kosten — so,
+ * wie gebucht, inklusive Kaution und Schuldzinsen. EINE Rechnung für die Cashflow-Seite und den
+ * Abgleich der Jahresprüfung (Ablauf E, lib/jahresPruefung.ts).
+ */
+export function buchungssaldo(
+  einnahmen: { betrag: number | null }[],
+  kosten: { betrag: number | null }[],
+): { einnahmen: number; ausgaben: number; saldo: number } {
+  const e = einnahmen.reduce((s, x) => s + (x.betrag ?? 0), 0);
+  const a = kosten.reduce((s, x) => s + (x.betrag ?? 0), 0);
+  return { einnahmen: e, ausgaben: a, saldo: e - a };
+}
+
 /** Kostenbuchungen ohne die, die bereits über die Kreditrate abgezogen werden. */
 export function laufendeKosten<T extends { kategorie?: string | null }>(kosten: T[]): T[] {
   return kosten.filter((k) => !(IN_KREDITRATE_ENTHALTEN as readonly string[]).includes(k.kategorie ?? ""));

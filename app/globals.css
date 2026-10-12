@@ -1317,6 +1317,26 @@ p > svg, li > svg, td > svg, summary > svg { display: inline; vertical-align: -2
 }
 .tz-gruppe, .listen-gruppe { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; padding: 16px 0 6px; }
 .tz-gruppe:first-child, .listen-gruppe:first-child { padding-top: 2px; }
+/* Ablauf E: Jahresprüfung je Objekt — Prüfpunkte als Zeilen, Abgleich als Tabelle. */
+.jp-zeile { align-items: flex-start; }
+.jp-zeile .badge { flex-shrink: 0; margin-top: 1px; }
+.jp-text { flex: 1; min-width: 0; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.jp-pfeil { color: var(--muted); flex-shrink: 0; }
+.jp-abgleich { font-size: 12.5px; min-width: 640px; }
+.jp-abgleich th, .jp-abgleich td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.jp-abgleich th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+/* Ablauf D: Stand des Schreibens zur Frist + „Zugang bestätigen“ (nativ aufklappbar, ohne JS). */
+.tz-vorgang { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 12px; margin-top: 3px; }
+.tz-vorgang a, .tz-erledigen summary { color: var(--gold); text-decoration: none; cursor: pointer; }
+.tz-erledigen { flex-basis: 100%; min-width: 0; }
+.tz-erledigen summary { list-style: none; display: inline; }
+.tz-erledigen summary::-webkit-details-marker { display: none; }
+.tz-erledigen-form { box-sizing: border-box; max-width: 100%; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; margin-top: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg3); }
+/* Felder schrumpfen mit: Die längste Zustellweg-Option gab dem Auswahlfeld sonst ~450 px Mindestbreite,
+   am Handy lief das Formular rechts aus der Karte (im Browser bei 390 px gesehen). */
+.tz-erledigen-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); flex: 1 1 150px; min-width: 0; }
+.tz-erledigen-form .input { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; text-overflow: ellipsis; }
+.tz-erledigen-hinweis { flex-basis: 100%; font-size: 12px; color: var(--muted); }
 
 /* Kleines Bedienelement (z. B. die 18px-Abhaken-Box in Termine) auf ein
    ~44px-Touchziel vergroessern, ohne die sichtbare Box zu veraendern. */

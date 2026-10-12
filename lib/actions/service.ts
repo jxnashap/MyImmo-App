@@ -4,7 +4,7 @@ import { UEBERNAHME_KATEGORIEN } from "@/lib/kategorien";
 // Service-Rolle (Businessplan Kap. 14): Vermieter lädt Service-Partner
 // (Handwerker/Hausmeister) per Code ein und vergibt Aufträge; der Partner
 // arbeitet sie im schlanken Service-Portal ab.
-import { randomBytes } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { zahlDe } from "@/lib/zahl";
@@ -20,6 +20,13 @@ function neuerCode(): string {
 }
 
 /** Vermieter: Einladungscode für einen Service-Partner erzeugen (14 Tage). */
+const VORGANG_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Vorgangskennung aus dem Formular (Ablauf F) — nur eine gültige UUID zählt. */
+function vorgangAus(fd: FormData): string | null {
+  const v = String(fd.get("vorgang") ?? "").trim();
+  return VORGANG_RE.test(v) ? v : null;
+}
+
 export async function erzeugeServiceCode() {
   const supabase = await createClient();
   const {
@@ -81,8 +88,36 @@ export async function entferneServicePartner(serviceUserId: string) {
     .eq("vermieter_id", user.id)
     .eq("service_user_id", serviceUserId);
   if (oFehler) return { error: "Verknüpfung gelöst, aber die Objekt-Zuordnung blieb gespeichert — bitte erneut versuchen." };
+  // B03 (11.10.2026): Der öffentliche Auftrags-Link (/auftrag/<token>) ist ein Inhaber-Link — der
+  // Partner kannte ihn (Portal → „Link an Firma“) und hätte damit Auftrag und Mieterkontakt weiter
+  // öffnen können. Für Aufträge, die der Link noch zeigt, wird er erneuert; eine Firma, die den alten
+  // Link hatte, braucht den neuen (Knopf am Auftrag). Erledigte/abgelehnte Links zeigen ohnehin nichts.
+  // Wiederholbar: Ein zweiter Aufruf erneuert erneut, die Verknüpfung ist dann schon weg.
+  const { data: offene, error: aFehler } = await supabase
+    .from("auftraege")
+    .select("id")
+    .eq("vermieter_id", user.id)
+    .eq("service_user_id", serviceUserId)
+    .in("status", OFFENE_STATUS);
+  if (aFehler) return { error: "Verknüpfung gelöst, aber die Auftrags-Links konnten nicht geprüft werden — bitte erneut versuchen." };
+  let nichtErneuert = 0;
+  for (const a of (offene ?? []) as { id: string }[]) {
+    const { data, error } = await supabase
+      .from("auftraege")
+      .update({ public_token: randomUUID() })
+      .eq("id", a.id)
+      .eq("vermieter_id", user.id)
+      .select("id")
+      .maybeSingle();
+    if (error || !data) nichtErneuert++;
+  }
   revalidatePath("/anliegen");
-  return { ok: true };
+  if (nichtErneuert > 0) {
+    return { error: `Verknüpfung gelöst, aber ${nichtErneuert} Auftrags-Link(s) konnten nicht erneuert werden — bitte erneut versuchen.` };
+  }
+  // Ablauf C: Offene Aufträge bleiben beim Vermieter sichtbar und tragen „Partner entfernt“ — übergeben
+  // (uebergebeServicePartner) oder selbst abschließen (schliesseAuftragAb). Hier nur die Zahl dafür.
+  return { ok: true, linksErneuert: (offene ?? []).length, offeneOhnePartner: (offene ?? []).length };
 }
 
 const ROLLEN = ["hausmeister", "dienstleister"] as const;
@@ -245,7 +280,10 @@ export async function erstelleAuftrag(formData: FormData) {
   const { data: profil } = await supabase
     .from("vermieter_profil").select("name").eq("user_id", user.id).maybeSingle();
 
+  // Ablauf F: Vorgangskennung des Formulars — ein zweites Absenden legt keinen zweiten Auftrag an.
+  const vorgang = vorgangAus(formData);
   const { error } = await supabase.from("auftraege").insert({
+    ...(vorgang ? { vorgang } : {}),
     vermieter_id: user.id,
     service_user_id: serviceUserId,
     prop_id: propId || null,
@@ -258,7 +296,7 @@ export async function erstelleAuftrag(formData: FormData) {
     mieter_id: mieterOk,
     taetigkeit,
   });
-  if (error) return { error: "Auftrag konnte nicht gespeichert werden." };
+  if (error && !(error.code === "23505" && vorgang)) return { error: "Auftrag konnte nicht gespeichert werden." };
   revalidatePath("/anliegen");
   revalidatePath("/service");
   return { ok: true };
@@ -317,7 +355,9 @@ export async function beantrageAuftrag(formData: FormData) {
     firmaOk = f.id;
   }
 
+  const vorgang = vorgangAus(formData);
   const { error } = await supabase.from("auftraege").insert({
+    ...(vorgang ? { vorgang } : {}),
     vermieter_id: vermieterId,
     service_user_id: user.id,
     firma_id: firmaOk,
@@ -332,7 +372,8 @@ export async function beantrageAuftrag(formData: FormData) {
     auto_freigegeben: unterGrenze,
     erstellt_von: "service",
   });
-  if (error) return { error: "Antrag konnte nicht gespeichert werden." };
+  // Derselbe Antrag schon da (zweites Absenden): kein zweiter — die erste Fassung gilt.
+  if (error && !(error.code === "23505" && vorgang)) return { error: "Antrag konnte nicht gespeichert werden." };
   revalidatePath("/service");
   revalidatePath("/anliegen");
   return { ok: true, freigegeben: unterGrenze };
@@ -495,6 +536,49 @@ export async function beantworteAuftrag(formData: FormData) {
 }
 
 
+/**
+ * Vermieter schließt einen Auftrag ab, den kein verknüpfter Partner (mehr) beantworten kann (Ablauf C,
+ * 11.10.2026): Firma über den Auftrags-Link (kein Konto) oder Partner inzwischen entfernt. Vorher blieb
+ * so ein Auftrag für immer „offen“ — die Firma kann über ihren Link nur zu- oder absagen, nie „erledigt“
+ * mit Rechnungsbetrag melden, also war auch „Als Kosten übernehmen“ unerreichbar.
+ * Danach gilt derselbe Weg wie beim Partner: „Als Kosten übernehmen“ (eine Buchung je Auftrag, B07).
+ */
+export async function schliesseAuftragAb(formData: FormData): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+  const id = String(formData.get("id") ?? "");
+  const betrag = parseBetrag(String(formData.get("betrag") ?? ""));
+  const lohnanteil = parseBetrag(String(formData.get("lohnanteil") ?? ""));
+  if (!id) return { error: "Ungültige Eingabe." };
+  if (!(betrag != null && betrag > 0)) return { error: "Bitte den Rechnungsbetrag angeben." };
+  if (lohnanteil != null && lohnanteil > betrag) return { error: "Der Lohnanteil kann nicht über dem Gesamtbetrag liegen." };
+
+  const { data: a, error: leseFehler } = await supabase
+    .from("auftraege").select("id,status,service_user_id").eq("id", id).eq("vermieter_id", user.id).maybeSingle();
+  if (leseFehler || !a) return { error: "Auftrag nicht gefunden." };
+  if (!["offen", "angenommen"].includes(a.status)) return { error: "Nur offene Aufträge lassen sich abschließen." };
+  if (a.service_user_id) {
+    // Ein Partner MIT Zugang schließt selbst ab (er meldet Betrag und Rechnung). Nur ohne Zugang darf der
+    // Vermieter übernehmen — und ohne lesbare Verknüpfung entscheiden wir nichts (fail-closed).
+    const { data: z, error: zFehler } = await supabase
+      .from("service_zugaenge").select("user_id").eq("vermieter_id", user.id).eq("user_id", a.service_user_id).maybeSingle();
+    if (zFehler) return { error: "Partner-Zugang konnte nicht geprüft werden — nichts geändert." };
+    if (z) return { error: "Diesen Auftrag schließt der Partner ab — er hat Zugang und meldet Betrag und Rechnung." };
+  }
+  const { data, error } = await supabase
+    .from("auftraege")
+    .update({
+      status: "erledigt", betrag, lohnanteil, antwort: "Vom Vermieter abgeschlossen (Rechnung liegt vor).",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id).eq("vermieter_id", user.id).in("status", ["offen", "angenommen"])
+    .select("id").maybeSingle();
+  if (error || !data) return { error: "Konnte nicht gespeichert werden — der Auftrag wurde inzwischen geändert." };
+  revalidatePath("/anliegen");
+  return { ok: true };
+}
+
 /** Vermieter: erledigten Auftrag als Kosten-Buchung übernehmen (Betrag,
  *  Rechnung als Anhang, Lohnanteil dokumentiert in der Notiz — für die
  *  § 35a-Bescheinigung der Mieter in der NK-Abrechnung). */
@@ -516,24 +600,26 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
     : new Date().toISOString().slice(0, 10);
   if (!id) return { error: "Ungültige Eingabe." };
 
-  const { data: a } = await supabase
+  const { data: a, error: leseFehler } = await supabase
     .from("auftraege")
-    .select("titel,objekt_name,prop_id,betrag,lohnanteil,rechnung_name,rechnung_type,rechnung_data,kosten_id,status,service_user_id")
+    .select("titel,objekt_name,prop_id,betrag,lohnanteil,rechnung_name,rechnung_type,rechnung_data,kosten_id,status,service_user_id,firma_id")
     .eq("id", id)
     .eq("vermieter_id", user.id)
     .maybeSingle();
+  if (leseFehler) return { error: "Der Auftrag konnte nicht gelesen werden." };
   if (!a) return { error: "Auftrag nicht gefunden." };
   if (a.status !== "erledigt") return { error: "Nur erledigte Aufträge lassen sich übernehmen." };
   if (a.kosten_id) return { error: "Dieser Auftrag wurde bereits als Kosten erfasst." };
   if (!(Number(a.betrag) > 0)) return { error: "Der Partner hat keinen Betrag angegeben — bitte manuell unter Kosten erfassen." };
 
-  const { data: partner } = await supabase
-    .from("service_zugaenge")
-    .select("firma,email")
-    .eq("vermieter_id", user.id)
-    .eq("user_id", a.service_user_id)
-    .maybeSingle();
-  const partnerName = partner?.firma || partner?.email || "Service-Partner";
+  // Nur für die Notiz: wer gearbeitet hat (Partner mit Konto oder Firma über den Auftrags-Link, Ablauf C).
+  const { data: partner } = a.service_user_id
+    ? await supabase.from("service_zugaenge").select("firma,email").eq("vermieter_id", user.id).eq("user_id", a.service_user_id).maybeSingle()
+    : { data: null };
+  const { data: firma } = !partner && a.firma_id
+    ? await supabase.from("firmen").select("name").eq("id", a.firma_id).eq("user_id", user.id).maybeSingle()
+    : { data: null };
+  const partnerName = partner?.firma || partner?.email || firma?.name || "Service-Partner";
 
   const notizTeile = [`Übernommen aus Service-Auftrag (${partnerName}).`];
   if (Number(a.lohnanteil) > 0) {
@@ -543,6 +629,7 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
   // Rechnung in den Belege-Bucket kopieren (wie beim normalen Kosten-Upload);
   // schlägt der Upload fehl, bleibt die Base64-Ablage als Fallback lesbar.
   let rechnung: Record<string, unknown> = {};
+  let hochgeladen: string | null = null;
   if (a.rechnung_data) {
     const buf = Buffer.from(a.rechnung_data, "base64");
     const kb = buf.length / 1024;
@@ -552,6 +639,7 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
     const { error: upErr } = await supabase.storage
       .from("belege")
       .upload(path, buf, { contentType: a.rechnung_type ?? "application/octet-stream", upsert: false });
+    if (!upErr) hochgeladen = path;
     rechnung = {
       rechnung_name: a.rechnung_name,
       rechnung_type: a.rechnung_type,
@@ -559,7 +647,17 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
       ...(upErr ? { rechnung_data: a.rechnung_data } : { rechnung_path: path, rechnung_data: null }),
     };
   }
+  // B06: Eine hochgeladene Kopie, zu der keine Buchung entsteht, wird wieder entfernt.
+  const kopieWeg = async () => {
+    if (!hochgeladen) return;
+    const { error: weg } = await supabase.storage.from("belege").remove([hochgeladen]);
+    if (weg) console.warn("[belege] Kopie blieb liegen (wird mit der Kontolöschung entfernt)");
+  };
 
+  // B07 (11.10.2026): `kosten.auftrag_id` ist eindeutig (Migration 20261011110000). Ein zweiter Klick,
+  // ein Wiederholen nach Zeitüberlauf oder ein Abbruch zwischen Buchen und Verknüpfen erzeugt keine
+  // zweite Kosten-Buchung — der zweite Versuch findet die erste und verknüpft nur noch.
+  let kostenId: string | null = null;
   const { data: neu, error } = await supabase
     .from("kosten")
     .insert({
@@ -570,25 +668,37 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
       betrag: Number(a.betrag),
       beschreibung: a.titel.slice(0, 200),
       notiz: notizTeile.join(" "),
+      auftrag_id: id,
       ...rechnung,
     })
     .select("id")
     .single();
-  if (error || !neu) return { error: "Kosten-Buchung konnte nicht angelegt werden." };
+  if (error?.code === "23505") {
+    await kopieWeg();
+    const { data: da, error: daFehler } = await supabase
+      .from("kosten").select("id").eq("user_id", user.id).eq("auftrag_id", id).maybeSingle();
+    if (daFehler || !da) return { error: "Die Kosten-Buchung zu diesem Auftrag konnte nicht gefunden werden — bitte in den Kosten prüfen." };
+    kostenId = da.id as string;
+  } else if (error || !neu) {
+    await kopieWeg();
+    return { error: "Kosten-Buchung konnte nicht angelegt werden." };
+  } else {
+    kostenId = neu.id as string;
+  }
 
-  // Die Verknüpfung ist der Doppel-Buchungs-Schutz: Ohne `kosten_id` hält der
-  // Auftrag sich für unverbucht und legt beim nächsten Klick eine ZWEITE
-  // Kosten-Buchung an. Der Fehler darf deshalb nicht verschluckt werden.
+  // Die Verknüpfung zeigt den Auftrag als verbucht. Bedingt auf „noch leer“ — eine gleichzeitige
+  // Übernahme hat sie dann schon gesetzt (auf dieselbe Buchung, siehe oben).
   const { error: linkFehler } = await supabase
     .from("auftraege")
-    .update({ kosten_id: neu.id })
+    .update({ kosten_id: kostenId })
     .eq("id", id)
-    .eq("vermieter_id", user.id);
+    .eq("vermieter_id", user.id)
+    .is("kosten_id", null);
   if (linkFehler) {
     return {
       error:
         "Die Kosten-Buchung wurde angelegt, konnte dem Auftrag aber nicht zugeordnet werden. " +
-        "Bitte in den Kosten prüfen, bevor erneut gebucht wird.",
+        "Ein erneuter Klick verknüpft sie, ohne doppelt zu buchen.",
     };
   }
   revalidatePath("/anliegen");

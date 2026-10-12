@@ -9,7 +9,7 @@ import { Rewind, Info, Check, FileSpreadsheet } from "lucide-react";
 //    Batch-Bestätigung in einem Rutsch — mit 10-Tage-Regel-Hinweis an der
 //    Jahresgrenze (§ 11 EStG).
 
-import { useMemo, useState, useTransition, type ReactNode } from "react";
+import { useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { eur2 } from "@/lib/format";
 import {
@@ -56,7 +56,10 @@ export type NacherfassungMieter = {
   objekt: string;
   mieter: MietkontoMieter;
   zeitraeume: MietkontoZeitraum[];
-  gebuchteMonate: string[]; // YYYY-MM
+  /** Monate mit einer Zahlung, die nach Rückbuchungen etwas übrig lässt (YYYY-MM). */
+  gebuchteMonate: string[];
+  /** Gebuchte Mietzahlungen (auch Rückbuchungen, Betrag negativ) — für den Kontoauszug-Abgleich (Ablauf A). */
+  zahlungen: { jahrMonat: string; betrag: number; datum: string }[];
 };
 
 const monatLabel = (ym: string) =>
@@ -117,6 +120,9 @@ export default function MietkontoBestaetigung({
   // Karte verschwand, ohne zu wissen, ob gebucht wurde oder etwas abstuerzte.
   const [ebenGebucht, setEbenGebucht] = useState<Set<string>>(new Set());
   const [laufend, setLaufend] = useState<string | null>(null);
+  // B07: EINE Kennung je Bestätigung — ein Doppelklick oder ein Wiederholen nach Zeitüberlauf schickt
+  // dieselbe, und der Server bucht nichts doppelt. Erst nach Erfolg gibt es für die Zeile eine neue.
+  const vorgaenge = useRef<Record<string, string>>({});
 
   const bestaetigt = useMemo(
     () => zeilen.filter((z) => z.schonGebucht || frisch.has(z.mieterId)).length,
@@ -137,15 +143,17 @@ export default function MietkontoBestaetigung({
     }
     setLaufend(z.mieterId);
     startBuchen(async () => {
+      vorgaenge.current[z.mieterId] ??= crypto.randomUUID();
       const res = await bestaetigeMieteingang({
         mieter_id: z.mieterId,
-        prop_id: z.propId,
         buchungsdatum: d,
         betrag: b,
-        nk_anteil: z.nk > 0 ? z.nk : null,
         soll_monat: monat,
+        vorgang: vorgaenge.current[z.mieterId],
       });
       setLaufend(null);
+      if (res.ok) delete vorgaenge.current[z.mieterId];
+      if (res.ok && res.ueberzahlung) toast(`Überzahlung ${eur2(res.ueberzahlung)} — im Mietkonto vermerkt.`, "info");
       if (res.ok) {
         setEbenGebucht((s) => new Set(s).add(z.mieterId));
         toast(`Eingang gebucht: ${z.name} · ${eur2(b)}`, "success");
@@ -299,7 +307,7 @@ export default function MietkontoBestaetigung({
       </div>
 
       {modus === "kontoauszug" ? (
-        <KontoauszugAbgleich nacherfassung={nacherfassung} />
+        <KontoauszugAbgleich nacherfassung={nacherfassung} aktuellerMonat={aktuellerMonat} />
       ) : modus === "monat" ? (
         <>
           {/* Fortschritt */}

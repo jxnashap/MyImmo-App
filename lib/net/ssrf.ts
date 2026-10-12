@@ -3,6 +3,8 @@
 // tests/ssrf.test.ts direkt getestet werden können.
 import { lookup } from "node:dns/promises";
 import net from "node:net";
+import { Agent, fetch as undiciFetch } from "undici";
+import { liesBegrenzt } from "@/lib/net/grenzen";
 
 // Schutz gegen SSRF beim serverseitigen Laden fremder URLs (Exposé-Link-Import).
 //
@@ -118,26 +120,32 @@ export class ZielNichtErlaubtFehler extends Error {
   }
 }
 
+export type Adresse = { address: string; family: number };
+/** Namensauflösung — austauschbar für Tests (DNS-Rebinding lässt sich nicht mit echtem DNS stellen). */
+export type Aufloeser = (host: string) => Promise<Adresse[]>;
+const dnsAufloesen: Aufloeser = (host) => lookup(host, { all: true });
+
 /**
  * Prüft eine einzelne URL: nur http/https, und JEDE aufgelöste Adresse muss
  * öffentlich routbar sein. Schlägt die Auflösung fehl, gilt das Ziel als
- * nicht erlaubt.
+ * nicht erlaubt. Gibt die GEPRÜFTEN Adressen zurück — genau mit ihnen wird danach verbunden.
  */
-export async function pruefeZielUrl(url: URL): Promise<void> {
+export async function pruefeZielUrl(url: URL, aufloesen: Aufloeser = dnsAufloesen): Promise<Adresse[]> {
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new ZielNichtErlaubtFehler("Nur http/https-Links werden unterstützt.");
   }
   const host = url.hostname.replace(/^\[|\]$/g, "");
 
   // Ist der Host bereits eine IP-Literal-Angabe, gar nicht erst auflösen.
-  if (net.isIP(host)) {
+  const art = net.isIP(host);
+  if (art) {
     if (istPrivateIp(host)) throw new ZielNichtErlaubtFehler("Dieser Link wird nicht unterstützt.");
-    return;
+    return [{ address: host, family: art }];
   }
 
-  let adressen: { address: string }[];
+  let adressen: Adresse[];
   try {
-    adressen = await lookup(host, { all: true });
+    adressen = await aufloesen(host);
   } catch {
     throw new ZielNichtErlaubtFehler("Der Host konnte nicht aufgelöst werden.");
   }
@@ -147,7 +155,31 @@ export async function pruefeZielUrl(url: URL): Promise<void> {
   if (adressen.some((a) => istPrivateIp(a.address))) {
     throw new ZielNichtErlaubtFehler("Dieser Link wird nicht unterstützt.");
   }
+  return adressen;
 }
+
+/**
+ * B17 (Prüfstand 11.10.2026) — DNS-Rebinding: Vorher wurde der Name geprüft und danach `fetch` mit dem
+ * NAMEN aufgerufen, das erneut auflöste. Ein Angreifer-DNS mit TTL 0 antwortet beim ersten Mal
+ * öffentlich, beim zweiten Mal mit 169.254.169.254 — die Prüfung sah eine andere Adresse als die
+ * Verbindung. JETZT verbindet ein eigener Dispatcher NUR mit den geprüften Adressen; der Name bleibt
+ * für TLS (SNI, Zertifikatsprüfung) und den Host-Kopf erhalten.
+ */
+export function festeAufloesung(adressen: Adresse[]): Agent {
+  if (adressen.length === 0) throw new ZielNichtErlaubtFehler("Keine geprüfte Adresse.");
+  return new Agent({
+    connect: {
+      lookup: ((_host: string, opts: unknown, cb: (...args: unknown[]) => void) => {
+        const o = (typeof opts === "object" && opts) || {};
+        if ((o as { all?: boolean }).all) cb(null, adressen.map((a) => ({ address: a.address, family: a.family })));
+        else cb(null, adressen[0].address, adressen[0].family);
+      }) as never,
+    },
+  });
+}
+
+export type Antwort = { status: number; ok: boolean; headers: Headers; bytes: Uint8Array<ArrayBuffer>; endUrl: URL };
+type Holen = (url: string, init: Record<string, unknown>) => Promise<{ status: number; ok: boolean; headers: Headers; body: ReadableStream<Uint8Array> | null }>;
 
 const MAX_WEITERLEITUNGEN = 5;
 
@@ -157,22 +189,28 @@ const MAX_WEITERLEITUNGEN = 5;
  * Weiterleitungen werden NICHT automatisch verfolgt (`redirect: "manual"`),
  * sondern einzeln eingesammelt und jeweils neu geprüft — sonst wäre die
  * Eingangsprüfung wertlos, sobald das Ziel mit einem 302 auf eine interne
- * Adresse antwortet.
+ * Adresse antwortet. Je Sprung: einmal auflösen, prüfen, mit GENAU dieser Adresse verbinden (B17);
+ * den Body begrenzt und innerhalb des Zeitgebers lesen (B16).
  */
 export async function sicheresFetch(
   start: URL,
-  init: { accept: string; timeoutMs: number; userAgent: string },
-): Promise<{ response: Response; endUrl: URL }> {
+  init: {
+    accept: string; timeoutMs: number; userAgent: string; maxBytes: number; abschneiden?: boolean;
+    /** Nur für Tests: Namensauflösung, Verbindungsaufbau bzw. HTTP-Aufruf ersetzen. */
+    aufloesen?: Aufloeser; holen?: Holen; verbinden?: (adressen: Adresse[]) => Agent;
+  },
+): Promise<Antwort> {
   let aktuell = start;
+  const holen: Holen = init.holen ?? (undiciFetch as unknown as Holen);
 
   for (let sprung = 0; sprung <= MAX_WEITERLEITUNGEN; sprung++) {
-    await pruefeZielUrl(aktuell);
+    const adressen = await pruefeZielUrl(aktuell, init.aufloesen);
+    const dispatcher = (init.verbinden ?? festeAufloesung)(adressen);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), init.timeoutMs);
-    let antwort: Response;
     try {
-      antwort = await fetch(aktuell.href, {
+      const antwort = await holen(aktuell.href, {
         redirect: "manual",
         headers: {
           "User-Agent": init.userAgent,
@@ -180,19 +218,24 @@ export async function sicheresFetch(
           "Accept-Language": "de-DE,de;q=0.9",
         },
         signal: controller.signal,
+        dispatcher,
       });
+
+      const istWeiterleitung = antwort.status >= 300 && antwort.status < 400;
+      const ziel = antwort.headers.get("location");
+      if (!istWeiterleitung || !ziel) {
+        const bytes = await liesBegrenzt(antwort, init.maxBytes, { abschneiden: init.abschneiden });
+        return { status: antwort.status, ok: antwort.ok, headers: antwort.headers, bytes, endUrl: aktuell };
+      }
+      await antwort.body?.cancel().catch(() => {});
+      try {
+        aktuell = new URL(ziel, aktuell); // relative Location auflösen
+      } catch {
+        throw new ZielNichtErlaubtFehler("Ungültige Weiterleitung.");
+      }
     } finally {
       clearTimeout(timer);
-    }
-
-    const istWeiterleitung = antwort.status >= 300 && antwort.status < 400;
-    const ziel = antwort.headers.get("location");
-    if (!istWeiterleitung || !ziel) return { response: antwort, endUrl: aktuell };
-
-    try {
-      aktuell = new URL(ziel, aktuell); // relative Location auflösen
-    } catch {
-      throw new ZielNichtErlaubtFehler("Ungültige Weiterleitung.");
+      void dispatcher.close().catch(() => {});
     }
   }
 

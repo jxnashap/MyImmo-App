@@ -3,7 +3,7 @@
 // Darlehenskonfiguration + Kennzahlen. Reine Berechnung, KEINE Empfehlung
 // eines konkreten Bankprodukts (§ 34i GewO) — nur allgemeine Rechenhilfe.
 
-import { berechneRestschuld, berechneVolltilgungJahr } from "@/lib/kalk";
+import { berechneVolltilgungJahr, tilgungsVerlauf } from "@/lib/kalk";
 
 export const KAUF_DARLEHEN_KEY = "myimmo_kauf_darlehen";
 
@@ -34,7 +34,9 @@ export type DarlehenKonfig = {
   restschuldNachBindung: number;
   volltilgungJahr: number;       // absolutes Jahr (oder 0, wenn > 60 J.)
   laufzeitJahre: number;
-  zinskostenBindung: number;     // Summe Zinsen während der Zinsbindung
+  zinskostenBindung: number;     // Summe Zinsen während der Zinsbindung (nur bis zur Volltilgung)
+  /** Letzte, gekappte Rate, wenn das Darlehen INNERHALB der Bindung getilgt ist; sonst null. */
+  letzteRateInBindung: number | null;
   hinweis: string; // redaktionelle Einordnung der GEWÄHLTEN Priorität — bewusst keine „Empfehlung" (§ 34i GewO)
 };
 
@@ -76,12 +78,12 @@ export function konfiguriereDarlehen(w: DarlehenWunsch, startJahr: number): Darl
   const tilg = anfangstilgung / 100;
   const monatsrate = (darlehen * (zins + tilg)) / 12;
 
-  const restschuldNachBindung = berechneRestschuld(darlehen, zins, monatsrate, w.zinsbindung);
+  // B13: Monat für Monat — Zinsen nur auf die tatsächliche Restschuld, letzte Rate gekappt.
+  const bindung = tilgungsVerlauf(darlehen, zins, monatsrate, w.zinsbindung * 12);
+  const restschuldNachBindung = bindung.restschuld;
   const volltilgungJahr = darlehen > 0 ? berechneVolltilgungJahr(darlehen, zins, monatsrate, startJahr) : 0;
   const laufzeitJahre = volltilgungJahr > 0 ? volltilgungJahr - startJahr : 0;
-  // Zinsen während der Bindung = gezahlte Raten − getilgter Anteil.
-  const getilgt = darlehen - restschuldNachBindung;
-  const zinskostenBindung = Math.max(0, monatsrate * 12 * w.zinsbindung - getilgt);
+  const zinskostenBindung = bindung.zinsen;
 
   return {
     anfangstilgung,
@@ -94,6 +96,7 @@ export function konfiguriereDarlehen(w: DarlehenWunsch, startJahr: number): Darl
     volltilgungJahr,
     laufzeitJahre,
     zinskostenBindung,
+    letzteRateInBindung: bindung.letzteRate,
     hinweis: hinweisText(w.prioritaet, w.sondertilgung),
   };
 }

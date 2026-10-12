@@ -9,6 +9,7 @@ import { buildProtokollPdf, type ProtokollDaten } from "@/lib/pdf/protokollPdf";
 import { berechneNk, type NkCo2Input } from "@/lib/nk";
 import { ladeNkPositionen, nkCo2Argumente } from "@/lib/nkPositionen";
 import { ladeVorauszahlung } from "@/lib/nkDaten";
+import { DatenUnvollstaendig } from "@/lib/db/ladeAlle";
 import { decryptIbanRow } from "@/lib/ibanData";
 import { decryptNullable } from "@/lib/crypto/secure";
 import {
@@ -235,7 +236,7 @@ export async function erzeugeNkPdf(
     .single();
   if (!tenant) return null;
 
-  const [{ data: property }, nkPos, { data: profil }, { data: iban }, { data: co2Row }] =
+  const [{ data: property }, nkPos, { data: profil }, { data: iban }, { data: co2Row, error: co2Fehler }] =
     await Promise.all([
       tenant.prop_id
         ? supabase
@@ -268,6 +269,8 @@ export async function erzeugeNkPdf(
         .maybeSingle(),
     ]);
 
+  // B08 (11.10.2026): Ohne CO₂-Zeile fehlte die Gutschrift im PDF still.
+  if (co2Fehler) throw new DatenUnvollstaendig("nk_co2", co2Fehler.message);
   const co2Arg = nkCo2Argumente(nkPos, (co2Row ?? null) as NkCo2Input | null);
   const abrechnung = berechneNk(
     jahr,

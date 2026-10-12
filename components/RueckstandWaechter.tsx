@@ -5,6 +5,9 @@ import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
 import AufklappSection from "@/components/AufklappSection";
 import { createClient } from "@/lib/supabase/server";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
+import { alleZeilen, nurKonto, vielleichtAlle } from "@/lib/db/auswertung";
+import { DatenUnvollstaendig } from "@/lib/db/ladeAlle";
 import { eur2 } from "@/lib/format";
 import { zahlungsBriefWahl, erinnerungArchiviert, ERINNERUNG_TITEL_PRAEFIX } from "@/lib/mahnung";
 import BriefWahl from "@/components/BriefWahl";
@@ -15,22 +18,39 @@ type MieterRow = MietkontoMieter & { id: string; vorname: string | null; nachnam
 
 export default async function RueckstandWaechter() {
   const supabase = await createClient();
-  const [{ data: mieterRows }, { data: zrRows }, { data: einnRows }, { data: erinnRows }] = await Promise.all([
-    supabase
-      .from("mieter")
-      .select("id,vorname,nachname,prop_id,mietbeginn,mietende,kaltmiete,nk_vorauszahlung,stellplatz_miete,minderungen"),
-    supabase.from("miet_zeitraeume").select("mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete"),
-    supabase.from("einnahmen").select("mieter_id,buchungsdatum,kategorie,soll_monat,betrag").eq("kategorie", "Miete"),
-    // Archivierte Zahlungserinnerungen — nur für den Hinweis unter „Mahnung“ in der Auswahl.
-    supabase.from("notizen").select("mieter_id,created_at").ilike("titel", `${ERINNERUNG_TITEL_PRAEFIX}%`),
-  ]);
-  const erinnerungen = (erinnRows ?? []) as { mieter_id: string | null; created_at: string }[];
-
-  const offene = ((mieterRows ?? []) as MieterRow[]).flatMap((m) => {
-    const zeitraeume = ((zrRows ?? []) as (MietkontoZeitraum & { mieter_id: string })[]).filter(
-      (z) => z.mieter_id === m.id,
+  const user = await aktuellerNutzer();
+  if (!user) return null;
+  // B08 (11.10.2026): vollständig oder ein Hinweis. Vorher kamen höchstens 1.000 Mietbuchungen (ohne
+  // Sortierung — welche, war Zufall): bezahlte Monate erschienen als „überfällig“, und ein Abfragefehler
+  // machte JEDEN Monat zum Rückstand.
+  const eigen = nurKonto(user.id);
+  let mieterRows: MieterRow[], zrRows: (MietkontoZeitraum & { mieter_id: string })[];
+  type Miete = { mieter_id: string | null; buchungsdatum: string; kategorie: string; soll_monat: string | null; betrag: number | null };
+  let einnRows: Miete[];
+  let erinnRows: { mieter_id: string | null; created_at: string }[] | null;
+  try {
+    [mieterRows, zrRows, einnRows, erinnRows] = await Promise.all([
+      alleZeilen<MieterRow>(supabase, "mieter", "id,vorname,nachname,prop_id,mietbeginn,mietende,kaltmiete,nk_vorauszahlung,stellplatz_miete,minderungen", eigen),
+      alleZeilen<MietkontoZeitraum & { mieter_id: string }>(supabase, "miet_zeitraeume", "id,mieter_id,von,bis,kaltmiete,nk_vorauszahlung,stellplatz_miete", eigen),
+      alleZeilen<Miete>(supabase, "einnahmen", "id,mieter_id,buchungsdatum,kategorie,soll_monat,betrag", (q) => eigen(q).eq("kategorie", "Miete")),
+      // Archivierte Zahlungserinnerungen — nur für den Hinweis unter „Mahnung“ in der Auswahl.
+      vielleichtAlle<{ mieter_id: string | null; created_at: string }>(supabase, "notizen", "id,mieter_id,created_at", (q) => eigen(q).ilike("titel", `${ERINNERUNG_TITEL_PRAEFIX}%`)),
+    ]);
+  } catch (e) {
+    if (!(e instanceof DatenUnvollstaendig)) throw e;
+    return (
+      <div className="glass-card" style={{ padding: "12px 16px", marginBottom: 14, fontSize: 13 }}>
+        <TriangleAlert size={15} style={{ verticalAlign: "-2px", color: "var(--amber)" }} /> Offene Mieten konnten gerade
+        nicht vollständig geprüft werden — bitte die Seite neu laden. Ohne vollständige Buchungen zeigen wir keinen
+        Rückstand an.
+      </div>
     );
-    const einnahmen = (einnRows ?? []).filter((e) => e.mieter_id === m.id);
+  }
+  const erinnerungen = erinnRows ?? [];
+
+  const offene = mieterRows.flatMap((m) => {
+    const zeitraeume = zrRows.filter((z) => z.mieter_id === m.id);
+    const einnahmen = einnRows.filter((e) => e.mieter_id === m.id);
     return offeneMieten(m, zeitraeume, einnahmen, heuteBerlin()).map((o) => ({
       ...o,
       mieterId: m.id,

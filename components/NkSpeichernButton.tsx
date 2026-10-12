@@ -1,4 +1,5 @@
 "use client";
+import { useVorgang } from "@/lib/hooks/useVorgang";
 import { Save, Send } from "lucide-react";
 
 // „Speichern" neben dem NK-Download: erzeugt dasselbe PDF serverseitig und
@@ -31,10 +32,13 @@ export default function NkSpeichernButton({
   const [pending, startTransition] = useTransition();
   const [offen, setOffen] = useState(false);
   const toast = useToast();
+  // Ablauf F: zweites Absenden nach Zeitüberlauf → dieselbe Abrechnung, keine zweite Zustellung.
+  const vorgang = useVorgang();
 
   const speichern = (zustellen: boolean) =>
     startTransition(async () => {
-      const res = await speichereNk(mieterId, jahr, zustellen);
+      const res = await speichereNk(mieterId, jahr, zustellen, vorgang.aktuell());
+      if (res.ok) vorgang.abgeschlossen();
       if (!res.ok) {
         toast(res.error ?? "Speichern fehlgeschlagen.", "error");
         return;

@@ -161,6 +161,8 @@ export async function createProperty(formData: FormData) {
     .insert({ ...parsed, user_id: user.id })
     .select("id")
     .single();
+  // B14: Die Datenbank prüft die Grenze ein zweites Mal (gleichzeitige Anlagen, REST-Weg).
+  if (error?.hint === "einheiten_grenze") redirect(flashUrl("/properties", `${error.message} Unter Einstellungen → Abo kannst du wechseln.`, "error"));
   if (error) throw new Error(error.message);
 
   const vorlagenOk = neu?.id ? await autoBuchungen(supabase, user.id, neu.id, parsed) : true;
@@ -213,9 +215,17 @@ export async function updateProperty(id: string, formData: FormData) {
   // Adresse geändert → gecachte Koordinaten UND das gemerkte Suchergebnis
   // verwerfen (auch „nicht gefunden" gilt nur für die alte Adresse); die
   // Marktwert-Schätzung verortet beim nächsten „Aktualisieren“ neu (lib/geocode.ts).
-  const { data: alt } = await supabase.from("properties").select("adresse").eq("id", id).single();
-  const koordReset = alt && (alt.adresse ?? null) !== parsed.adresse ? GEO_ZURUECKSETZEN : {};
-  const { error } = await supabase.from("properties").update({ ...felder, ...koordReset }).eq("id", id);
+  const { data: alt, error: altFehler } = await supabase
+    .from("properties").select("adresse,einheiten_anzahl").eq("id", id).eq("user_id", user.id).maybeSingle();
+  if (altFehler) throw new Error(altFehler.message);
+  if (!alt) redirect(flashUrl("/properties", "Objekt nicht gefunden.", "error"));
+  // B14 (11.10.2026): Mehr Einheiten beim Bearbeiten zählen gegen den Tarif — vorher ließ „Bearbeiten“
+  // (1 → 30 Einheiten) die Grenze aus, die nur beim Anlegen geprüft wurde.
+  const einheiten = await pruefeEinheiten(supabase, Math.max(1, parsed.einheiten_anzahl ?? 1), { statt: Math.max(1, alt.einheiten_anzahl ?? 1) });
+  if (!einheiten.erlaubt) redirect(flashUrl(`/properties/${id}`, einheiten.meldung ?? "Tarif-Limit erreicht.", "error"));
+  const koordReset = (alt.adresse ?? null) !== parsed.adresse ? GEO_ZURUECKSETZEN : {};
+  const { error } = await supabase.from("properties").update({ ...felder, ...koordReset }).eq("id", id).eq("user_id", user.id);
+  if (error?.hint === "einheiten_grenze") redirect(flashUrl(`/properties/${id}`, `${error.message} Unter Einstellungen → Abo kannst du wechseln.`, "error"));
   if (error) throw new Error(error.message);
 
   // Manuell gepflegter Wert → als Stand für die Wertentwicklung protokollieren

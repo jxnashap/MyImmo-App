@@ -202,3 +202,34 @@ export function baueDatensaetze(
 
   return { zeilen, fehler };
 }
+
+// ---------------------------------------------------------------------------------------------
+// B15 (Prüfstand 11.10.2026): Objekt-Zuordnung beim Mieter-Import — EINE Regel für Vorschau und Server.
+//
+// VORHER: Die Namen der Objekte landeten in einer Map; bei zwei Objekten mit gleichem Namen gewann
+// still das letzte — Mieter hingen danach am falschen Haus (Mietkonto, NK, Anlage V). Die Vorschau
+// kannte nur „nicht gefunden“, und ein zweiter Import derselben Datei legte alles doppelt an.
+// JETZT: Ein Name, der auf mehrere Objekte passt, ordnet NIE zu; der Server lehnt dann den ganzen
+// Import ab (nichts halb importiert). Schon vorhandene Zeilen werden übersprungen.
+
+/** Vergleichsform eines Namens: ohne Rand, Kleinbuchstaben, Leerraum zusammengefasst. */
+export const nameNorm = (s: unknown) => String(s ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+
+export type ObjektTreffer =
+  | { art: "eindeutig"; id: string }
+  | { art: "fehlt" }
+  | { art: "mehrdeutig"; anzahl: number };
+
+/** Ordnet einen Objektnamen zu — nur, wenn genau EIN Objekt so heißt. */
+export function objektZuordnung(objekte: { id: string; bezeichnung: string | null }[], name: unknown): ObjektTreffer {
+  const n = nameNorm(name);
+  if (!n) return { art: "fehlt" };
+  const passend = objekte.filter((o) => nameNorm(o.bezeichnung) === n);
+  if (passend.length === 1) return { art: "eindeutig", id: passend[0].id };
+  if (passend.length === 0) return { art: "fehlt" };
+  return { art: "mehrdeutig", anzahl: passend.length };
+}
+
+/** Schlüssel, an dem ein schon importierter Mieter wiedererkannt wird. */
+export const mieterSchluessel = (m: { prop_id: string | null; vorname: unknown; nachname: unknown; mietbeginn: unknown }) =>
+  [m.prop_id ?? "", nameNorm(m.vorname), nameNorm(m.nachname), String(m.mietbeginn ?? "")].join("|");

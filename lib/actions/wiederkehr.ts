@@ -6,6 +6,7 @@
 // viele Buchungen entstehen (kein stilles Auto-Insert).
 
 import { revalidatePath } from "next/cache";
+import { ladeAlle } from "@/lib/db/ladeAlle";
 import { createClient } from "@/lib/supabase/server";
 import { faelligeDaten, offeneDaten, ZYKLEN, type Zyklus } from "@/lib/wiederkehr";
 
@@ -94,32 +95,35 @@ export async function deleteVorlage(id: string): Promise<WkResult> {
 
 // Erzeugt alle noch offenen Buchungen einer Vorlage (rückwirkend bis 10 Jahre).
 // Idempotent: Termine, für die bereits eine von DIESER Vorlage erzeugte Buchung
-// existiert, werden übersprungen.
+// existiert, werden übersprungen. B07 (11.10.2026): Die Datenbank hält das fest —
+// (wiederkehr_id, buchungsdatum) ist eindeutig, eingefügt wird mit „ignoreDuplicates“.
+// Zwei gleichzeitige Aufrufe (Doppelklick, zwei Tabs) erzeugen damit jeden Termin genau einmal.
 export async function erzeugeBuchungen(
   vorlageId: string,
 ): Promise<{ ok: boolean; anzahl: number; error?: string }> {
   const { supabase, user } = await uid();
   if (!user) return { ok: false, anzahl: 0, error: "Nicht angemeldet." };
 
-  const { data: v } = await supabase
+  const { data: v, error: vorlageFehler } = await supabase
     .from("wiederkehrende_buchungen")
     .select("*")
     .eq("id", vorlageId)
     .eq("user_id", user.id)
     .maybeSingle();
+  if (vorlageFehler) return { ok: false, anzahl: 0, error: "Vorlage konnte nicht gelesen werden — es wurde nichts angelegt." };
   if (!v) return { ok: false, anzahl: 0, error: "Vorlage nicht gefunden." };
 
   const tabelle = v.art === "einnahme" ? "einnahmen" : "kosten";
 
-  // Bereits erzeugte Buchungen dieser Vorlage (für Dedup).
+  // Bereits erzeugte Buchungen dieser Vorlage (für Dedup) — VOLLSTÄNDIG (B08).
   // Leer = „noch nichts erzeugt". Käme die Abfrage wegen eines Fehlers leer
-  // zurück, gälte JEDER fällige Termin als offen — die Vorlage würde ihre
-  // gesamten Buchungen ein zweites Mal anlegen.
-  const { data: vorhanden, error: bestandFehler } = await supabase
-    .from(tabelle)
-    .select("buchungsdatum")
-    .eq("wiederkehr_id", vorlageId);
-  if (bestandFehler) {
+  // zurück, gälte JEDER fällige Termin als offen.
+  let vorhanden: { buchungsdatum: string }[];
+  try {
+    vorhanden = await ladeAlle<{ id: string; buchungsdatum: string }>(tabelle, (von, bis) =>
+      supabase.from(tabelle).select("id,buchungsdatum").eq("user_id", user.id).eq("wiederkehr_id", vorlageId)
+        .order("id").range(von, bis));
+  } catch {
     return { ok: false, anzahl: 0, error: "Bestehende Buchungen konnten nicht geprüft werden — es wurde nichts angelegt." };
   }
 
@@ -128,7 +132,7 @@ export async function erzeugeBuchungen(
     start_datum: v.start_datum,
     ende_datum: v.ende_datum,
   });
-  const offen = offeneDaten(faellig, (vorhanden ?? []).map((r) => r.buchungsdatum));
+  const offen = offeneDaten(faellig, vorhanden.map((r) => r.buchungsdatum));
   if (offen.length === 0) return { ok: true, anzahl: 0 };
 
   const rows = offen.map((datum) => ({
@@ -143,10 +147,13 @@ export async function erzeugeBuchungen(
     wiederkehr_id: vorlageId,
   }));
 
-  const { error } = await supabase.from(tabelle).insert(rows);
+  const { data: neu, error } = await supabase
+    .from(tabelle)
+    .upsert(rows, { onConflict: "wiederkehr_id,buchungsdatum", ignoreDuplicates: true })
+    .select("id");
   if (error) return { ok: false, anzahl: 0, error: "Erzeugen fehlgeschlagen." };
 
   revalidatePath("/cashflow");
   revalidatePath(v.art === "einnahme" ? "/einnahmen" : "/kosten");
-  return { ok: true, anzahl: rows.length };
+  return { ok: true, anzahl: (neu ?? []).length };
 }

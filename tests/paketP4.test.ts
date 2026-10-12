@@ -189,7 +189,9 @@ describe("B43 — Zugang im Mieterportal", () => {
       "2026-10-09",
     );
     expect(a).toEqual([expect.objectContaining({ label: "Nicht abgerufen: „Nebenkostenabrechnung 2025“", href: "/tenants/m1", sub: expect.stringMatching(/seit 01\.10\.2026 — Zugang nicht belegt/) })]);
-    expect(lies("app/(app)/page.tsx")).toMatch(/nichtAbgerufen: nichtAbgerufen\(\(offeneZustellRows/);
+    // Ablauf D: Die Abfrage reicht weiter zurück (Stand an der Frist) — die Aufgabe bleibt beim 120-Tage-Fenster.
+    expect(lies("app/(app)/page.tsx")).toMatch(/nichtAbgerufen: nichtAbgerufen\(offeneZustellRows, heuteISO0\)/);
+    expect(lies("app/(app)/page.tsx")).toMatch(/const offeneZustellRows = zustellungenAlle\.filter\(\(z\) => z\.zugestellt_am\.slice\(0, 10\) >= zustellFensterAb\(heuteISO0\)\)/);
   });
   it("jeder Zustellweg zeigt den Zugangshinweis und meldet „bereitgestellt“ statt „zugestellt ✓“", () => {
     for (const f of ["components/BriefVersand.tsx", "components/NkSpeichernButton.tsx", "components/DokumentZustellung.tsx"]) {

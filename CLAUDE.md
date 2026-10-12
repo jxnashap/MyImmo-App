@@ -74,6 +74,75 @@
 > **Merke außerdem:** `effektiverPlan()` wertet `gueltig_bis` NICHT aus — ein Abo endet
 > allein über `status`.
 
+> 🛡️ **Prüfstand 11.10.2026 (Arbeitsauftrag B01–B18, Abläufe A–F) — in Arbeit auf
+> `claude/magical-feynman-l8w9s5`.** Phase 1 (Sicherheit) und Phase 2 (B05–B08 + B09–B11) gebaut, lokal an
+> der Datenbankgrenze bewiesen (`scripts/db/testdb.sh` + `scripts/db/rlstest.sh` + `scripts/db/nebenlaeufig.sh`,
+> Abschnitt „Lokale Test-Datenbank“ in `supabase/migrations/README.md`). **B04 war ein Weg am Zugangscode
+> vorbei** (Selbst-Einladung → freigeschaltete Hausverwaltung). **Ausrollen nur in dieser Reihenfolge:**
+> `20261011110000` (B07), `20261011120000` (B12) und `20261011121000` (B14, Schalter bleibt aus) per apply_migration
+> und `20261011130000` (Ablauf B, SQL-Editor), `20261011140000` (Ablauf C, apply_migration; vorher die Altbestand-Abfrage
+> am Dateiende), `20261011150000` (Ablauf D, apply_migration), `20261011160000` (Ablauf F, SQL-Editor), alle VOR dem Code → Code mergen + deployen → `20261011100000` (B04) und
+> `20261011101000` (B03) per apply_migration → `20261011102000` (B01) → `20261011103000` (B02, SQL-Editor;
+> bis dahin scheitert „Konto löschen“ mit Fehlermeldung, gelöscht wird nichts) → `20261011104000` (B18,
+> SQL-Editor, No-op). **Phase-2-Regeln:** (5) Eine Buchung, die ein Geschäftsvorgang erzeugt, hat eine
+> fachliche Kennung mit UNIQUE-Regel (`zahlung_ref`, Vorlage + Termin, `auftrag_id`, `meldung_id`) — nie
+> „erst lesen, dann schreiben“. (6) Eine Auswertung lädt ihre Grundlagen über `alleZeilen()`
+> (`lib/db/auswertung.ts`); Fehler → Fehlerkarte/503, nie Zahlen aus einem Teil. (7) Ein Beleg wird erst
+> gelöscht, wenn der Ersatz gesichert ist. (8) Teilzahlung/NK-Anteil/Überzahlung rechnet nur
+> `lib/mietZahlung.ts` (NK-Anteil ANTEILIG — Betreiber-Entscheidung offen). **Phase-3-Regeln:** (9) Ein
+> Folgetermin hängt über `vorgaenger_id` am Vorgänger und rechnet vom `serien_tag`; „erledigt“ erst NACH dem
+> Folgetermin, Ziel-Zustand vom Formular (`toggleErledigt(id, ziel)`). (10) Darlehenszinsen nur über
+> `tilgungsVerlauf()` (`lib/kalk.ts`) — nie „Rate × Monate − Tilgung“. (11) Jeder Weg, der Objekte anlegt oder
+> Einheiten erhöht, ruft `pruefeEinheiten()` (Bearbeiten mit `statt`); die Datenbank prüft zusätzlich, sobald
+> `einheiten_durchsetzen` an ist. (12) Import ordnet Objekte nur über `objektZuordnung()` zu — mehrdeutig =
+> Abbruch; Vorhandenes wird übersprungen. **Phase-4-Regeln:** (13) Was von außen kommt (Anfrage-Body,
+> fremde Seite, KI-Antwort), wird über `liesBegrenzt()`/`jsonBegrenzt()` (`lib/net/grenzen.ts`) gelesen — mit
+> Grenze und INNERHALB des Zeitgebers. (14) Ein Server-Abruf fremder URLs nur über `sicheresFetch()`: je Sprung
+> einmal auflösen, prüfen, mit GENAU dieser Adresse verbinden (`festeAufloesung`). (15) KI-Routen fragen
+> `kiBereit()` (Bedrock ODER Anthropic) und bremsen mit `darfWeiter(…, { sperrtBeiAusfall: true })`. (16) Ein
+> KI-Ergebnis wird erst nach einem Prüfschritt gespeichert. (17) CI: Lint, tsc, Vitest, Build, E2E
+> (`scripts/e2e/zugang.mjs` + Crawler als Gast), Datenbank-Job (`testdb.sh` → `rlstest.sh` → `nebenlaeufig.sh`).
+> **Phase 5 (Abläufe):** (18) **A** — Kontoauszug zeigt Alternativen bei Mehrdeutigkeit, listet Eingänge ohne
+> Zuordnung zur Handzuordnung, bucht Rücklastschrift/Erstattung als NEGATIVE Mietbuchung (`art`, nie
+> vorausgewählt) und liefert danach die offenen Monate mit Brief-ENTWURF (`offen`). Eine Kennung, die einen
+> zurücksetzbaren Zustand beschreibt, trägt eine Generation (`a:…|r<n>`). DATEV: negativ = umgekehrtes S/H.
+> (19) **B** — Belege gehen über den Belegeingang (`/cashflow/belege`, `lib/belegEingang.ts`): KI-Vorschlag ist
+> ein dauerhafter Auftrag (`beleg_eingang_beanspruchen`, ≤ 3 Versuche), gebucht wird GENAU EINMAL
+> (`kosten.beleg_eingang_id` eindeutig) — neu oder an Kosten ohne Beleg gehängt. Kostenart und
+> Umlagefähigkeit sind zwei Felder; `nkAusBuchungen` nimmt `kosten.umlagefaehig` vor der Kategorie.
+> (20) **C** — Jeder Bezug eines Auftrags (Anliegen, Mieter, Objekt, Firma) gehört demselben Vermieter
+> (Trigger `auftraege_bezug_pruefen`); eine neue Spalte, die auf eine Konto-Zeile zeigt, bekommt dieselbe
+> Prüfung. Zuständigkeit und Auftragsstand kommen für Mieter UND Vermieter aus `vorgangStand()` (nur Rolle,
+> nie Name). Ein Auftrag ohne verknüpften Partner schließt der Vermieter über `schliesseAuftragAb()` ab.
+> (21) **D** — Fällig ≠ erledigt: Eine Frist mit Schreiben (`Frist.dokument`) führt in den Generator mit
+> vorgewähltem Mieter und zeigt den Stand über `fristVorgang()` (`lib/fristDokument.ts`: PDF erstellt → im
+> Portal → abgerufen); ERLEDIGT ist sie nur über `erledigeFrist()` mit Zugangsdatum und Zustellweg
+> (`frist_ausgeblendet.grund = 'erledigt'`). Ein PDF im Archiv erledigt nichts mehr (vorher entfiel die
+> NK-Frist damit). Der Fristschlüssel trägt den Bezug (`fristSchluessel(…, bezug)`; vorher galt ein Vermerk
+> für ALLE Mieter mit demselben Datum) — gelesen wird nur über `fristVermerk()`. Kalender-UIDs über
+> `fristUid()`, nie nach Listenposition. Jede Rechtsgrundlage einer Frist hat einen Eintrag in
+> `lib/fristQuellen.ts` (amtliche Fundstelle, Wortlaut, Prüfdatum; Test prüft beide Richtungen).
+> (22) **E** — Jahresprüfung je Objekt: `/properties/<id>/jahrespruefung` → `jahresPruefung()`
+> (`lib/jahresPruefung.ts`, rein): Belege, Zuordnung, Dubletten, Rückstände (Regeln des Mietkontos),
+> Vertragszeiträume, Umlagefähigkeit (über `nkAusBuchungen`), Zählerstände. Kein Abhaken — ein Punkt schließt,
+> wenn die Daten ihn nicht mehr ergeben. Abgleich mit DENSELBEN Funktionen wie die Seiten (`jahresZeile`,
+> `buchungssaldo`, `baueDatevBuchungen`, `nkAusBuchungen`); eine neue Auswertung, die Summen eines Objekts
+> zeigt, kommt in diesen Abgleich. Ohne Anlage V.
+> (23) **F** — Ein Schritt nach außen (heute die Hinweis-Mail) läuft nur über `fuehreAus()` (`lib/aussenAuftrag.ts`,
+> Tabelle `aussen_auftraege`): vormerken unter stabilem Schlüssel → genau einmal beanspruchen → ausführen →
+> „erledigt“ erst nach dem Speichern; sonst Fehlergrund und nächster Versuch (10/60 min, höchstens 3, einen Tag),
+> Wiederholung per Cron `/api/cron/aussen-auftraege` (stündlich, vercel.json), Aufbewahrung 90 Tage.
+> **Zustellrisiko benannt, kein „genau einmal“:** Abbruch zwischen Versand und Speichern → nach 5 min ein zweiter
+> Versand möglich (Test hält es fest). Formulare, die etwas anlegen (Archiv-Schreiben, Auftrag), schicken eine
+> Vorgangskennung (`useVorgang()`, neu erst nach Erfolg); der Server findet bei 23505 die erste Zeile. Eine
+> Zustellung je Dokument und Empfänger höchstens einmal (`zustelle()` filtert, liest bei 23505 nach).
+> **Regeln:**
+> (1) `mfa_wiederherstellung` und `konto_loeschen()` nur über die Service-Role im Server —
+> `delete_own_account()` ist kein Nutzer-Einstieg mehr. (2) Einladen darf nur ein freigeschalteter
+> Vermieter; eine Einladung schaltet ein Konto nur für die eingeladene Rolle frei. (3) Jede Partner-Regel
+> verlangt eine bestehende `service_zugaenge`-Zeile, nie nur `service_user_id`. (4) Neue RLS-Regel →
+> Datei in `supabase/test/rls/` mit positiver und negativer Probe.
+
 ### 👤 NUR DER BETREIBER — offene Punkte (Stand 10.09.2026)
 Alles hier ist **kein Code**, sondern ein Dashboard, ein Anwalt oder ein Blick in einen
 Browser. Ich kann es nicht erledigen und nicht prüfen. **In jeder Session kurz nachfragen,

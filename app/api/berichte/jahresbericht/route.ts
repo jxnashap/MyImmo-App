@@ -9,6 +9,7 @@ import type { Property, Einnahme, Kosten, Kredit } from "@/lib/types";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { jahresZeile, berichtMonate, unterjaehrigText } from "@/lib/jahresberichtZeile";
 import { heuteBerlin } from "@/lib/zeitraum";
+import { alleZeilen, nurKonto, unvollstaendigAntwort } from "@/lib/db/auswertung";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,19 +35,21 @@ export async function GET(req: NextRequest) {
   const heuteIso = heuteBerlin();
   const jahr = Number(req.nextUrl.searchParams.get("jahr")) || Number(heuteIso.slice(0, 4));
 
-  const [{ data: props }, { data: einn }, { data: kost }, { data: kred }, { data: profil }] =
-    await Promise.all([
-      supabase.from("properties").select("*").eq("user_id", user.id).order("bezeichnung"),
-      supabase.from("einnahmen").select("*").eq("user_id", user.id),
-      supabase.from("kosten").select(KOSTEN_SPALTEN).eq("user_id", user.id),
-      supabase.from("kredite").select("*").eq("user_id", user.id),
-      supabase.from("vermieter_profil").select("name,strasse,plz,ort,email").eq("user_id", user.id).limit(1).maybeSingle(),
+  // B08 (11.10.2026): vollständig oder gar nicht — kein PDF aus einem Teilbestand.
+  const eigen = nurKonto(user.id);
+  let properties: Property[], einnahmen: Einnahme[], kosten: Kosten[], kredite: Kredit[];
+  try {
+    [properties, einnahmen, kosten, kredite] = await Promise.all([
+      alleZeilen<Property>(supabase, "properties", "*", eigen, [{ spalte: "bezeichnung" }]),
+      alleZeilen<Einnahme>(supabase, "einnahmen", "*", eigen),
+      alleZeilen<Kosten>(supabase, "kosten", KOSTEN_SPALTEN, eigen),
+      alleZeilen<Kredit>(supabase, "kredite", "*", eigen),
     ]);
-
-  const properties = (props ?? []) as Property[];
-  const einnahmen = (einn ?? []) as Einnahme[];
-  const kosten = (kost ?? []) as Kosten[];
-  const kredite = (kred ?? []) as Kredit[];
+  } catch (e) {
+    return unvollstaendigAntwort(e);
+  }
+  const { data: profil } = await supabase
+    .from("vermieter_profil").select("name,strasse,plz,ort,email").eq("user_id", user.id).limit(1).maybeSingle();
 
   const monate = berichtMonate(jahr, heuteIso);
 

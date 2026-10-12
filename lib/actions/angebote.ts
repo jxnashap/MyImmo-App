@@ -63,6 +63,9 @@ export async function fordereAngeboteAn(fd: FormData): Promise<{ ok: true; neu: 
       titel, beschreibung: beschreibung || null, objekt, absender: (profil?.name || null),
     })))
     .select("id");
+  // B07: Je Vorgang und Firma höchstens EINE laufende Anfrage (Index `angebotsanfragen_laufend_eindeutig`).
+  // Hat ein gleichzeitiger Aufruf sie gerade angelegt, kommt 23505 — dann ist nichts doppelt entstanden.
+  if (error?.code === "23505") return { error: "An eine dieser Firmen läuft gerade schon eine Anfrage — bitte Seite neu laden." };
   if (error || !rows || rows.length !== neu.length) return { error: "Die Anfrage konnte nicht gespeichert werden." };
 
   revalidatePath("/anliegen");
@@ -109,6 +112,15 @@ export async function beauftrageAngebot(fd: FormData): Promise<{ ok: true; token
     .from("anliegen").select("id,prop_id,mieter_id").eq("id", q.anliegen_id).eq("vermieter_id", user.id).maybeSingle();
   if (e3 || !anl) return { error: "Vorgang nicht gefunden." };
 
+  // B07 (11.10.2026): Erst die Anfrage BEANSPRUCHEN (bedingt auf „angefragt“) — ein zweiter Klick oder ein
+  // gleichzeitiger Aufruf scheitert hier, statt einen zweiten Auftrag an die Firma anzulegen.
+  const { data: beansprucht, error: e5 } = await supabase
+    .from("angebotsanfragen").update({ status: "beauftragt" })
+    .eq("id", q.id).eq("vermieter_id", user.id).eq("status", "angefragt")
+    .select("id").maybeSingle();
+  if (e5) return { error: "Die Anfrage konnte nicht abgeschlossen werden — bitte erneut versuchen." };
+  if (!beansprucht) return { error: "Für diese Anfrage wurde schon entschieden." };
+
   const { data: auftrag, error: e4 } = await supabase
     .from("auftraege")
     .insert({
@@ -121,13 +133,21 @@ export async function beauftrageAngebot(fd: FormData): Promise<{ ok: true; token
       mieter_id: kontakt ? (anl.mieter_id ?? null) : null,
     })
     .select("id,public_token").maybeSingle();
-  if (e4 || !auftrag) return { error: "Der Auftrag konnte nicht angelegt werden." };
+  if (e4 || !auftrag) {
+    // Zurücknehmen: Ohne Auftrag ist die Anfrage wieder offen (sonst stünde sie „beauftragt“ ohne Auftrag).
+    const { error: rueck } = await supabase.from("angebotsanfragen").update({ status: "angefragt" })
+      .eq("id", q.id).eq("vermieter_id", user.id).eq("status", "beauftragt").is("auftrag_id", null);
+    return {
+      error: rueck
+        ? "Der Auftrag konnte nicht angelegt werden, und die Anfrage steht noch auf „beauftragt“ — bitte Seite neu laden."
+        : "Der Auftrag konnte nicht angelegt werden.",
+    };
+  }
 
-  const { data: gesetzt, error: e5 } = await supabase
-    .from("angebotsanfragen").update({ status: "beauftragt", auftrag_id: auftrag.id })
-    .eq("id", q.id).eq("vermieter_id", user.id).eq("status", "angefragt")
-    .select("id").maybeSingle();
-  if (e5 || !gesetzt) return { error: "Auftrag angelegt, aber die Anfrage ließ sich nicht abschließen — bitte Seite neu laden." };
+  const { error: eLink } = await supabase
+    .from("angebotsanfragen").update({ auftrag_id: auftrag.id })
+    .eq("id", q.id).eq("vermieter_id", user.id);
+  if (eLink) return { error: "Auftrag angelegt, aber nicht mit der Anfrage verknüpft — bitte Seite neu laden." };
 
   const { error: e6 } = await supabase
     .from("angebotsanfragen").update({ status: "abgelehnt" })

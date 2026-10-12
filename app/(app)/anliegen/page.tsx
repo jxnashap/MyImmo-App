@@ -156,9 +156,12 @@ export default async function AnliegenPage(
     rolle: p.rolle === "dienstleister" ? "dienstleister" : "hausmeister",
     objekte: zuordnung.filter((z) => z.service_user_id === p.user_id).map((z) => z.prop_id),
   }));
-  const partnerName = (id: string) => {
+  // Ablauf C: Ein Auftrag ohne Partner-Konto (Firma über den Link) oder mit entferntem Partner kann nur
+  // der Vermieter abschließen — die Zeile sagt das, statt „Partner“ zu zeigen.
+  const partnerName = (id: string | null, firmaId?: string | null) => {
+    if (!id) return firmaId ? "Firma (über Auftrags-Link)" : "ohne Partner";
     const p = partner.find((x) => x.user_id === id);
-    return p?.firma || p?.email || "Partner";
+    return p ? p.firma || p.email || "Partner" : "Partner entfernt";
   };
   const codes: ServiceCodeRow[] = (codeRows ?? []).map((c) => ({ code: c.code, gueltig_bis: c.gueltig_bis }));
   const firmen: FirmaRow[] = (firmenRows ?? []).map((f) => ({
@@ -194,7 +197,8 @@ export default async function AnliegenPage(
   const auftraege: AuftragRow[] = (auftragRows ?? []).map((a) => ({
     id: a.id, titel: a.titel, beschreibung: a.beschreibung, termin: a.termin,
     status: a.status, antwort: a.antwort, created_at: a.created_at,
-    objekt_name: a.objekt_name, partnerName: partnerName(a.service_user_id),
+    objekt_name: a.objekt_name, partnerName: partnerName(a.service_user_id, a.firma_id),
+    ohnePartner: !a.service_user_id || !partner.some((x) => x.user_id === a.service_user_id),
     erstellt_von: a.erstellt_von ?? "vermieter",
     firmaName: firmen.find((f) => f.id === a.firma_id)?.name ?? null,
     mieterName: a.mieter_id ? mieterName(a.mieter_id) : null,

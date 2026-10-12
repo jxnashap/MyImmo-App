@@ -28,11 +28,25 @@ describe("die Mail selbst", () => {
 });
 
 describe("benachrichtige()", () => {
-  type Lage = { bereit?: boolean; user?: Record<string, unknown> | null; fehler?: boolean; bremse?: boolean; senden?: boolean | Error };
+  // Seit Ablauf F (11.10.2026) ein dauerhafter Auftrag (tests/ablaufF.test.ts prüft Wiederholung und
+  // Gleichzeitigkeit). Hier: Adresse aus dem Konto, Gründe für „keine Mail“.
+  type Lage = { bereit?: boolean; user?: Record<string, unknown> | null; fehler?: boolean; senden?: boolean | Error };
   async function lade(l: Lage = {}) {
     vi.resetModules();
     const gesendet: { an: string; betreff: string; text: string }[] = [];
     const gefragt: string[] = [];
+    const { speicherDb } = await import("./stubs/speicherDb");
+    const db = speicherDb({
+      tabellen: { aussen_auftraege: [] },
+      eindeutig: { aussen_auftraege: [["user_id", "schluessel"]] },
+      vorgaben: { aussen_auftraege: () => ({ status: "offen", versuche: 0, max_versuche: 3, naechster_versuch: new Date(0).toISOString(), letzter_versuch: null }) },
+      rpc: { aussen_auftrag_beanspruchen: (a, t) => {
+        const z = t.aussen_auftraege.find((r) => r.id === a.p_id && ["offen", "fehler"].includes(String(r.status)) && Number(r.versuche) < 3);
+        if (!z) return { data: [], error: null };
+        Object.assign(z, { status: "in_arbeit", versuche: Number(z.versuche) + 1, letzter_versuch: new Date().toISOString() });
+        return { data: [{ ...z }], error: null };
+      } },
+    });
     vi.doMock("@/lib/mail/brevo", () => ({
       brevoBereit: () => l.bereit ?? true,
       sendeMail: async (m: { an: string; betreff: string; text: string }) => {
@@ -40,35 +54,34 @@ describe("benachrichtige()", () => {
         gesendet.push(m); return l.senden ?? true;
       },
     }));
-    vi.doMock("@/lib/supabase/admin", () => ({
-      createAdminClient: () => ({ auth: { admin: { getUserById: async (id: string) => {
-        gefragt.push(id);
-        // Auch wenn bei einem Fehler Daten mitkommen: Fehler heißt keine Mail.
-        return l.fehler ? { data: { user: { email: "anna@example.org", user_metadata: {} } }, error: { message: "x" } } : { data: { user: l.user === undefined ? { email: "anna@example.org", user_metadata: {} } : l.user }, error: null };
-      } } } }),
-    }));
-    const bremse: string[] = [];
-    vi.doMock("@/lib/net/bremse", () => ({ darfWeiter: async (_a: string, _m: number, _s: number, k: string) => { bremse.push(k); return l.bremse ?? true; } }));
+    const admin = Object.assign(db.client, { auth: { admin: { getUserById: async (id: string) => {
+      gefragt.push(id);
+      // Auch wenn bei einem Fehler Daten mitkommen: Fehler heißt keine Mail.
+      return l.fehler ? { data: { user: { email: "anna@example.org", user_metadata: {} } }, error: { message: "x" } } : { data: { user: l.user === undefined ? { email: "anna@example.org", user_metadata: {} } : l.user }, error: null };
+    } } } });
+    vi.doMock("@/lib/supabase/admin", () => ({ createAdminClient: () => admin }));
     vi.doMock("@/lib/net/basisUrl", () => ({ basisUrl: async () => "https://www.myimmoapp.de" }));
     const mod = await import("@/lib/benachrichtigung");
-    return { mod, gesendet, gefragt, bremse };
+    return { mod, gesendet, gefragt, db };
   }
 
-  it("sendet an die Adresse des KONTOS", async () => {
-    const { mod, gesendet, gefragt, bremse } = await lade();
+  it("sendet an die Adresse des KONTOS — und nur einmal je Anlass", async () => {
+    const { mod, gesendet, gefragt, db } = await lade();
     expect(await mod.benachrichtige("konto-a", "dokument", "n1")).toBe("gesendet");
     expect(gefragt).toEqual(["konto-a"]);
     expect(gesendet.map((g) => g.an)).toEqual(["anna@example.org"]);
-    expect(bremse).toEqual(["konto-a:dokument:n1"]);
+    expect(db.tabellen.aussen_auftraege).toEqual([expect.objectContaining({ user_id: "konto-a", schluessel: "hinweis:dokument:n1", status: "erledigt" })]);
+    expect(await mod.benachrichtige("konto-a", "dokument", "n1")).toBe("gebremst");
+    expect(gesendet).toHaveLength(1);
   });
-  it("ohne Brevo, ohne Konto, abbestellt, Demo, gebremst: keine Mail", async () => {
+  it("ohne Brevo, ohne Adresse, abbestellt, Demo: keine Mail", async () => {
     const faelle: [Lage, string][] = [
       [{ bereit: false }, "kein_versand"],
-      [{ fehler: true }, "kein_konto"],
       [{ user: { email: null } }, "kein_konto"],
       [{ user: { email: "anna@example.org", user_metadata: { benachrichtigungen_aus: true } } }, "abbestellt"],
       [{ user: { email: "demo.mieter@myimmo.test", user_metadata: {} } }, "demo"],
-      [{ bremse: false }, "gebremst"],
+      // Konto gerade nicht lesbar: keine Mail JETZT, aber vorgemerkt (vorher still verloren).
+      [{ fehler: true }, "vorgemerkt"],
     ];
     for (const [lage, erwartet] of faelle) {
       const { mod, gesendet } = await lade(lage);
@@ -81,13 +94,12 @@ describe("benachrichtige()", () => {
     expect(await mod.benachrichtige(null, "termine", "a1")).toBe("kein_konto");
     expect(gefragt).toEqual([]);
   });
-  it("ein Versandfehler wirft nicht — die Handlung davor bleibt gültig", async () => {
-    const still = vi.spyOn(console, "error").mockImplementation(() => {});
-    const { mod } = await lade({ senden: new Error("Brevo down") });
-    expect(await mod.benachrichtige("konto-a", "dokument", "n1")).toBe("fehler");
+  it("ein Versandfehler wirft nicht — die Handlung davor bleibt gültig, der Versand wird wiederholt", async () => {
+    const { mod, db } = await lade({ senden: new Error("Brevo down") });
+    expect(await mod.benachrichtige("konto-a", "dokument", "n1")).toBe("vorgemerkt");
+    expect(db.tabellen.aussen_auftraege[0]).toMatchObject({ status: "fehler" });
     const { mod: m2 } = await lade({ senden: false });
-    expect(await m2.benachrichtige("konto-a", "dokument", "n1")).toBe("fehler");
-    still.mockRestore();
+    expect(await m2.benachrichtige("konto-a", "dokument", "n1")).toBe("vorgemerkt");
   });
 });
 

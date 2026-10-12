@@ -78,7 +78,7 @@ export async function erstelleAnliegen(formData: FormData) {
     if (fehlerDatei) return { error: `Anliegen gespeichert, aber „${f.name}“ konnte nicht hochgeladen werden.` };
   }
 
-  await benachrichtige(zugang.vermieter_id, "anliegen_neu", neu.id);
+  await benachrichtige(zugang.vermieter_id, "anliegen_neu", neu.id, user.id);
 
   revalidatePath("/portal");
   revalidatePath("/anliegen");
@@ -119,7 +119,7 @@ export async function schlageTermineVor(formData: FormData) {
     .select("mieter_user_id")
     .maybeSingle();
   if (error) return { error: "Termine konnten nicht gespeichert werden." };
-  await benachrichtige((data as { mieter_user_id?: string } | null)?.mieter_user_id, "termine", id);
+  await benachrichtige((data as { mieter_user_id?: string } | null)?.mieter_user_id, "termine", id, user.id);
   revalidatePath("/anliegen");
   revalidatePath("/portal");
   return { ok: true };
@@ -143,7 +143,7 @@ export async function bestaetigeAnliegenTermin(id: string, slot: string) {
     .select("vermieter_id")
     .maybeSingle();
   if (error) return { error: "Termin konnte nicht bestätigt werden." };
-  await benachrichtige((data as { vermieter_id?: string } | null)?.vermieter_id, "termin_bestaetigt", id);
+  await benachrichtige((data as { vermieter_id?: string } | null)?.vermieter_id, "termin_bestaetigt", id, user.id);
   revalidatePath("/portal");
   revalidatePath("/anliegen");
   return { ok: true };
@@ -221,7 +221,7 @@ export async function bearbeiteAnliegen(formData: FormData) {
     .select("id,mieter_user_id")
     .maybeSingle();
   if (error || !data) return { error: nachricht ? "Nachricht gesendet, Status aber nicht gespeichert." : "Konnte nicht gespeichert werden." };
-  if (nachricht) await benachrichtige((data as { mieter_user_id?: string }).mieter_user_id, "nachricht_an_mieter", id);
+  if (nachricht) await benachrichtige((data as { mieter_user_id?: string }).mieter_user_id, "nachricht_an_mieter", id, user.id);
   revalidatePath("/anliegen");
   revalidatePath("/portal");
   return { ok: true };
@@ -267,6 +267,7 @@ export async function schreibeNachricht(anliegenId: string, text: string) {
     rolle === "mieter" ? a.vermieter_id : a.mieter_user_id,
     rolle === "mieter" ? "nachricht_an_vermieter" : "nachricht_an_mieter",
     anliegenId,
+    user.id,
   );
   revalidatePath("/anliegen");
   revalidatePath("/portal");

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { istVermieterKonto } from "@/lib/rolle";
 import { featureSperre } from "@/lib/planGate";
 import { baueDatevBuchungen, baueDatevExtf } from "@/lib/datev";
+import { alleZeilen, nurKonto, unvollstaendigAntwort } from "@/lib/db/auswertung";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,16 +34,25 @@ export async function GET(request: Request) {
     ? jahrParam
     : Number(heuteBerlin().slice(0, 4)) - 1;
 
-  const [{ data: einnahmen }, { data: kosten }, { data: props }] = await Promise.all([
-    supabase.from("einnahmen").select("buchungsdatum,betrag,kategorie,beschreibung,prop_id").eq("user_id", user.id),
-    supabase.from("kosten").select("buchungsdatum,betrag,kategorie,beschreibung,prop_id").eq("user_id", user.id),
-    supabase.from("properties").select("id,bezeichnung").eq("user_id", user.id),
-  ]);
+  // B08 (11.10.2026): vollständig oder gar nicht — ein Buchungsstapel für die Kanzlei, dem still
+  // Buchungen fehlen (ab 1.001 Zeilen oder bei einem Abfragefehler), ist schlimmer als keiner.
+  type Zeile = { buchungsdatum: string; betrag: number; kategorie: string; beschreibung: string | null; prop_id: string | null };
+  const eigen = nurKonto(user.id);
+  let einnahmen: Zeile[], kosten: Zeile[], props: { id: string; bezeichnung: string }[];
+  try {
+    [einnahmen, kosten, props] = await Promise.all([
+      alleZeilen<Zeile>(supabase, "einnahmen", "buchungsdatum,betrag,kategorie,beschreibung,prop_id", eigen),
+      alleZeilen<Zeile>(supabase, "kosten", "buchungsdatum,betrag,kategorie,beschreibung,prop_id", eigen),
+      alleZeilen<{ id: string; bezeichnung: string }>(supabase, "properties", "id,bezeichnung", eigen),
+    ]);
+  } catch (e) {
+    return unvollstaendigAntwort(e);
+  }
 
-  const nameOf = new Map(((props ?? []) as { id: string; bezeichnung: string }[]).map((p) => [p.id, p.bezeichnung]));
+  const nameOf = new Map(props.map((p) => [p.id, p.bezeichnung]));
   const propName = (id: string | null) => (id ? nameOf.get(id) ?? "" : "");
 
-  const buchungen = baueDatevBuchungen(jahr, einnahmen ?? [], kosten ?? [], propName);
+  const buchungen = baueDatevBuchungen(jahr, einnahmen, kosten, propName);
 
   // Erstellungszeit im Kopf der EXTF-Datei in Berliner Ortszeit (Audit P8, C15) — vorher UTC.
   const zeitstempel = `${zeitstempelBerlin()}000`;

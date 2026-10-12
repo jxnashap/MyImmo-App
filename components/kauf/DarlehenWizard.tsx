@@ -135,6 +135,12 @@ export default function DarlehenWizard({
             <Kennzahl label="Schuldenfrei ca." wert={konfig.laufzeitJahre > 0 ? `${konfig.volltilgungJahr} (${konfig.laufzeitJahre} J.)` : "–"} />
             <Kennzahl label={`Zinskosten (${konfig.zinsbindung} J.)`} wert={konfig.monatsrate > 0 ? eur(konfig.zinskostenBindung) : "–"} />
           </div>
+          {konfig.letzteRateInBindung != null && (
+            <p style={{ marginTop: 12, fontSize: 12, color: "var(--muted)" }}>
+              Das Darlehen ist innerhalb der Zinsbindung getilgt — die letzte Rate beträgt rund {eur(konfig.letzteRateInBindung)},
+              danach fallen keine Zinsen mehr an.
+            </p>
+          )}
           <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 14, fontSize: 12, color: "var(--muted)" }}>
             <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
             <span>{konfig.hinweis}</span>

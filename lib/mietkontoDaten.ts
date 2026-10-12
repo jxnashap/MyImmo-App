@@ -2,6 +2,9 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { gezahltImMonat, sollFuerMonat, zuJahrMonat, zuletztGezahltAm } from "@/lib/mietkonto";
 import { laeuftAm } from "@/lib/sollMiete";
+import { ladeAlle } from "@/lib/db/ladeAlle";
+import { TEILZAHLUNG_TOLERANZ } from "@/lib/mietStatus";
+import { heuteBerlin } from "@/lib/zeitraum";
 import type { MietkontoZeile, NacherfassungMieter } from "@/components/MietkontoBestaetigung";
 import type { Tenant, MietZeitraum, Property } from "@/lib/types";
 import { createHash } from "node:crypto";
@@ -40,16 +43,17 @@ export type MietkontoDaten = {
 
 export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
   const supabase = await createClient();
-  const [{ data: mieterRows }, { data: zrRows }, { data: einnRows }, { data: propRows }] =
-    await Promise.all([
-      supabase.from("mieter").select("*").order("nachname"),
-      supabase.from("miet_zeitraeume").select("*"),
-      supabase
-        .from("einnahmen")
-        .select("mieter_id,buchungsdatum,kategorie,soll_monat,betrag")
-        .eq("kategorie", "Miete"),
-      supabase.from("properties").select("id,bezeichnung"),
-    ]);
+  // B08 (11.10.2026): vollständig und mit Fehlerprüfung — vorher kamen höchstens 1.000 Zeilen je
+  // Tabelle, und eine gescheiterte Abfrage sah aus wie „keine Mieteingänge“ (alle Monate offen).
+  // Scheitert eine Abfrage, wirft `ladeAlle` — die Seite zeigt einen Fehler statt falscher Zahlen.
+  const [mieterRows, zrRows, einnRows, propRows] = await Promise.all([
+    ladeAlle("mieter", (v, b) => supabase.from("mieter").select("*").order("nachname").order("id").range(v, b)),
+    ladeAlle("miet_zeitraeume", (v, b) => supabase.from("miet_zeitraeume").select("*").order("id").range(v, b)),
+    ladeAlle("einnahmen", (v, b) =>
+      supabase.from("einnahmen").select("id,mieter_id,buchungsdatum,kategorie,soll_monat,betrag")
+        .eq("kategorie", "Miete").order("id").range(v, b)),
+    ladeAlle("properties", (v, b) => supabase.from("properties").select("id,bezeichnung").order("id").range(v, b)),
+  ]);
 
   const mieter = (mieterRows ?? []) as Tenant[];
   const zeitraeume = (zrRows ?? []) as MietZeitraum[];
@@ -58,13 +62,23 @@ export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
     ((propRows ?? []) as Pick<Property, "id" | "bezeichnung">[]).map((p) => [p.id, p.bezeichnung]),
   );
 
-  // Gebuchte Monate je Mieter (YYYY-MM) — eine Quelle für beide Modi.
-  const gebuchtProMieter = new Map<string, Set<string>>();
+  // Gebuchte Monate je Mieter (YYYY-MM) — eine Quelle für beide Modi. Gezählt wird, was nach
+  // Rückbuchungen (Rücklastschrift, Ablauf A) übrig bleibt: Ein Monat mit +800 und −800 ist wieder
+  // offen und erscheint erneut zum Bestätigen.
+  const summeProMieter = new Map<string, Map<string, number>>();
+  const zahlungenProMieter = new Map<string, NacherfassungMieter["zahlungen"]>();
   for (const e of einnahmen) {
     const ym = e.soll_monat ?? zuJahrMonat(e.buchungsdatum);
     if (!ym || !e.mieter_id) continue;
-    if (!gebuchtProMieter.has(e.mieter_id)) gebuchtProMieter.set(e.mieter_id, new Set());
-    gebuchtProMieter.get(e.mieter_id)!.add(ym);
+    if (!summeProMieter.has(e.mieter_id)) summeProMieter.set(e.mieter_id, new Map());
+    const s = summeProMieter.get(e.mieter_id)!;
+    s.set(ym, (s.get(ym) ?? 0) + (Number(e.betrag) || 0));
+    if (!zahlungenProMieter.has(e.mieter_id)) zahlungenProMieter.set(e.mieter_id, []);
+    zahlungenProMieter.get(e.mieter_id)!.push({ jahrMonat: ym, betrag: Number(e.betrag) || 0, datum: String(e.buchungsdatum).slice(0, 10) });
+  }
+  const gebuchtProMieter = new Map<string, Set<string>>();
+  for (const [id, s] of summeProMieter) {
+    gebuchtProMieter.set(id, new Set(Array.from(s).filter(([, summe]) => summe > TEILZAHLUNG_TOLERANZ).map(([ym]) => ym)));
   }
 
   const zeilen: MietkontoZeile[] = [];
@@ -119,11 +133,13 @@ export async function ladeMietkonto(monat: string): Promise<MietkontoDaten> {
           stellplatz_miete: z.stellplatz_miete,
         })),
         gebuchteMonate: Array.from(gebuchtProMieter.get(m.id) ?? []),
+        // Der Kontoauszug rechnet daraus Rest, Überzahlung und Rückbuchungen (lib/kontoauszug.ts).
+        zahlungen: zahlungenProMieter.get(m.id) ?? [],
       });
     }
   }
 
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = heuteBerlin();
   const ohneMietbeginn = mieter
     .filter((m) => !m.mietbeginn && laeuftAm(m, heute))
     .map((m) => ({ id: m.id, name: [m.vorname, m.nachname].filter(Boolean).join(" ") || "Mieter" }));

@@ -28,6 +28,7 @@ const GET_ROUTEN = ROUTEN.filter((f) => /export\s+(?:async\s+)?function\s+GET\b|
 const NUR_LESEND: Record<string, string> = {
   "/einstellungen/vertreter/[id]": "liefert den Vollmacht-Scan des eigenen Kontos",
   "/kosten/[id]/rechnung": "signierter Link auf den eigenen Beleg",
+  "/cashflow/belege/[id]/datei": "signierter Link auf einen eigenen Beleg im Belegeingang",
   "/makler/datei/[key]": "eigene Makler-Unterlage",
   "/properties/[id]/beleihung/datei/[key]": "eigene Beleihungs-Unterlage",
   "/properties/[id]/beleihung/deckblatt": "erzeugt ein PDF, speichert nichts",

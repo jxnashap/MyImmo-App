@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { fakeSupabase, mockeNextUndSupabase, fd } from "./stubs/actionHarness";
+import { speicherDb } from "./stubs/speicherDb";
 
 // lib/actions/zaehler.ts — Zählerstände aus dem Mieterportal.
 //
@@ -134,127 +135,174 @@ describe("Meldung anlegen", () => {
   });
 });
 
+// Übernahme gegen `speicherDb` (B07/B11, 11.10.2026): Die Attrappe filtert wirklich — welche
+// Vormeldung zum SELBEN Zähler gehört, entscheidet die Action über `zaehlerVerbrauch()`, nicht eine
+// feste Antwort. `verbrauch.meldung_id` ist eindeutig wie in der Migration.
+const VM = "nutzer-1";
+const meldung = (over: Record<string, unknown> = {}) => ({
+  id: "z-2", vermieter_id: VM, mieter_id: "m-1", prop_id: "p-1", art: "Strom", einheit: "kWh",
+  zaehlernummer: null, stand: 14500, ablesedatum: "2026-09-01", uebernommen_am: null, ...over,
+});
+const frueher = (over: Record<string, unknown> = {}) =>
+  meldung({ id: "z-1", stand: 14000, ablesedatum: "2026-06-01", uebernommen_am: "2026-06-02T08:00:00Z", ...over });
+
+async function ladeUebernahme(meldungen: Record<string, unknown>[], extra: { verbrauch?: Record<string, unknown>[]; fehlerBei?: Record<string, string>; fehlerAbSeite?: Record<string, number> } = {}) {
+  vi.resetModules();
+  const db = speicherDb({
+    tabellen: { zaehlerstand_meldungen: meldungen, verbrauch: extra.verbrauch ?? [] },
+    eindeutig: { verbrauch: [["meldung_id"]] },
+    fehlerBei: extra.fehlerBei,
+    fehlerAbSeite: extra.fehlerAbSeite,
+  });
+  mockeNextUndSupabase(db.client);
+  const mod = await import("@/lib/actions/zaehler");
+  const status = (id = "z-2") => db.tabellen.zaehlerstand_meldungen.find((r) => r.id === id)?.uebernommen_am ?? null;
+  return { db, mod, verbrauch: () => db.tabellen.verbrauch, status };
+}
+
 describe("Übernahme durch den Vermieter", () => {
-  const MELDUNG = {
-    id: "z-2",
-    mieter_id: "m-1",
-    prop_id: "p-1",
-    art: "Strom",
-    stand: 14500,
-    einheit: "kWh",
-    ablesedatum: "2026-09-01",
-    uebernommen_am: null,
-  };
-
-  function laden(meldung: Record<string, unknown> = {}, vorher: unknown = null) {
-    return {
-      antwortFolge: {
-        "zaehlerstand_meldungen:select": [{ ...MELDUNG, ...meldung }, vorher],
-      },
-    };
-  }
-
-  it("die Differenz zur Vormeldung wird als Verbrauch gebucht", async () => {
-    const { db, mod } = await lade(laden({}, { stand: 14000, ablesedatum: "2026-06-01" }));
-    const r = await mod.uebernehmeZaehlerstand("z-2");
-    expect(r).toMatchObject({ ok: true, verbrauchGebucht: true });
-    expect(insert(db, "verbrauch")).toMatchObject({
-      menge: 500,
-      art: "Strom",
-      einheit: "kWh",
-      user_id: "nutzer-1",
-      buchungsdatum: "2026-09-01",
-    });
+  it("die Differenz zur Vormeldung desselben Zählers wird als Verbrauch gebucht", async () => {
+    const { mod, verbrauch, status } = await ladeUebernahme([frueher(), meldung()]);
+    expect(await mod.uebernehmeZaehlerstand("z-2")).toEqual({ ok: true, verbrauchGebucht: true });
+    expect(verbrauch()).toEqual([expect.objectContaining({
+      menge: 500, art: "Strom", einheit: "kWh", user_id: VM, prop_id: "p-1", buchungsdatum: "2026-09-01", meldung_id: "z-2",
+    })]);
+    expect(status()).not.toBeNull();
   });
 
   it("ohne Vormeldung wird nur übernommen, nichts gebucht", async () => {
-    const { db, mod } = await lade(laden());
-    expect(await mod.uebernehmeZaehlerstand("z-2")).toMatchObject({ verbrauchGebucht: false });
-    expect(insert(db, "verbrauch")).toBeUndefined();
+    const { mod, verbrauch, status } = await ladeUebernahme([meldung()]);
+    expect(await mod.uebernehmeZaehlerstand("z-2")).toEqual({ ok: true, verbrauchGebucht: false });
+    expect(verbrauch()).toHaveLength(0);
+    expect(status()).not.toBeNull();
   });
 
-  it("ein RÜCKWÄRTS laufender Zähler bucht nichts", async () => {
-    // Sonst entstünde eine negative Menge in der NK-Abrechnung.
-    //
-    // ANMERKUNG ZUR ABDECKUNG (07.09.2026): Die Aktion hat hier ZWEI Wächter,
-    // `m.stand >= vorher.stand` und `menge > 0`. Der erste ist vom zweiten
-    // vollständig impliziert — bei einem Rückwärtsstand ist die Differenz
-    // negativ und scheitert ohnehin an `menge > 0`. Entfernt man nur den
-    // ersten, bleibt dieser Test grün; das ist kein Testfehler, sondern
-    // redundanter Code. Wirksam ist `menge > 0`, und dessen Wegfall fängt der
-    // Test „ein unveränderter Stand bucht nichts". Beides absichtlich stehen
-    // gelassen: doppelt geprüft schadet hier nicht.
-    const { db, mod } = await lade(laden({ stand: 13000 }, { stand: 14000, ablesedatum: "2026-06-01" }));
-    expect(await mod.uebernehmeZaehlerstand("z-2")).toMatchObject({ verbrauchGebucht: false });
-    expect(insert(db, "verbrauch")).toBeUndefined();
+  it("ein RÜCKWÄRTS laufender Zähler bucht nichts — und sagt warum", async () => {
+    const { mod, verbrauch } = await ladeUebernahme([frueher(), meldung({ stand: 13000 })]);
+    const r = await mod.uebernehmeZaehlerstand("z-2");
+    expect(r).toMatchObject({ ok: true, verbrauchGebucht: false, hinweis: expect.stringMatching(/kleiner als bei der letzten Meldung/) });
+    expect(verbrauch()).toHaveLength(0);
   });
 
-  it("ein unveränderter Stand bucht nichts", async () => {
-    const { db, mod } = await lade(laden({ stand: 14000 }, { stand: 14000, ablesedatum: "2026-06-01" }));
-    expect(await mod.uebernehmeZaehlerstand("z-2")).toMatchObject({ verbrauchGebucht: false });
-    expect(insert(db, "verbrauch")).toBeUndefined();
+  it("ein unveränderter Stand bucht nichts (und ist keine Rückfrage)", async () => {
+    const { mod, verbrauch } = await ladeUebernahme([frueher(), meldung({ stand: 14000 })]);
+    expect(await mod.uebernehmeZaehlerstand("z-2")).toEqual({ ok: true, verbrauchGebucht: false });
+    expect(verbrauch()).toHaveLength(0);
   });
 
   it("eine bereits übernommene Meldung wird nicht ein zweites Mal gebucht", async () => {
-    // Sonst entstünde bei jedem Klick eine weitere Verbrauchsbuchung.
-    const { db, mod } = await lade(laden({ uebernommen_am: "2026-09-02T10:00:00Z" }));
+    const { mod, verbrauch } = await ladeUebernahme([frueher(), meldung({ uebernommen_am: "2026-09-02T10:00:00Z" })]);
     expect((await mod.uebernehmeZaehlerstand("z-2")).error).toContain("Bereits übernommen");
-    expect(insert(db, "verbrauch")).toBeUndefined();
+    expect(verbrauch()).toHaveLength(0);
   });
 
-  it("eine fremde Meldung wird nicht gefunden", async () => {
-    const { db, mod } = await lade({ antworten: { zaehlerstand_meldungen: null } });
-    expect((await mod.uebernehmeZaehlerstand("fremd")).error).toContain("nicht gefunden");
-    expect(db.zugriffe[0].filter).toContain("eq:vermieter_id=nutzer-1");
+  it("eine fremde Meldung wird nicht gefunden und nicht angefasst", async () => {
+    const { mod, verbrauch, status } = await ladeUebernahme([frueher({ vermieter_id: "anderer" }), meldung({ vermieter_id: "anderer" })]);
+    expect((await mod.uebernehmeZaehlerstand("z-2")).error).toContain("nicht gefunden");
+    expect(status()).toBeNull();
+    expect(verbrauch()).toHaveLength(0);
   });
 
-  it("die Vormeldung wird nach Zähler, Mieter und Datum gesucht", async () => {
-    // Ohne die Einschränkung auf `art` käme die Wasser-Vormeldung in die
-    // Strom-Differenz; ohne `lt:ablesedatum` eine spätere Meldung.
-    const { db, mod } = await lade(laden({}, { stand: 14000, ablesedatum: "2026-06-01" }));
+  it("Doppelklick: zwei GLEICHZEITIGE Übernahmen buchen EINEN Verbrauch", async () => {
+    const { mod, verbrauch } = await ladeUebernahme([frueher(), meldung()]);
+    const [a, b] = await Promise.all([mod.uebernehmeZaehlerstand("z-2"), mod.uebernehmeZaehlerstand("z-2")]);
+    expect(verbrauch()).toHaveLength(1);
+    expect([a, b].filter((r) => "ok" in r && r.ok)).toHaveLength(1);
+    expect([a, b].map((r) => ("error" in r ? r.error : null)).filter(Boolean)).toEqual(["Bereits übernommen."]);
+  });
+
+  it("scheitert die Verbrauchsbuchung, steht die Meldung wieder als NICHT übernommen", async () => {
+    // Sonst gälte sie als erledigt, ohne dass ein Verbrauch existiert — die nächste Differenz zählte
+    // von einem Stand aus, der nie gebucht wurde.
+    const { mod, verbrauch, status } = await ladeUebernahme([frueher(), meldung()], { fehlerBei: { "verbrauch:insert": "abgelehnt" } });
+    expect((await mod.uebernehmeZaehlerstand("z-2")).error).toContain("Verbrauch konnte nicht gebucht werden");
+    expect(status()).toBeNull();
+    expect(verbrauch()).toHaveLength(0);
+  });
+
+  it("gibt es zur Meldung schon einen Verbrauch (früherer Versuch), entsteht kein zweiter", async () => {
+    const { mod, verbrauch, status } = await ladeUebernahme([frueher(), meldung()], { verbrauch: [{ id: "v-alt", meldung_id: "z-2", menge: 500 }] });
+    expect(await mod.uebernehmeZaehlerstand("z-2")).toEqual({ ok: true, verbrauchGebucht: false });
+    expect(verbrauch()).toHaveLength(1);
+    expect(status()).not.toBeNull();
+  });
+});
+
+describe("B11: derselbe Zähler — oder eine Rückfrage", () => {
+  it("zwei Stromzähler eines Mieters (Haushalt + Wärmepumpe) werden nicht gegeneinander gerechnet", async () => {
+    const { mod, verbrauch } = await ladeUebernahme([
+      frueher({ id: "z-a", zaehlernummer: "1ESY-4711", stand: 14000 }),
+      frueher({ id: "z-w", zaehlernummer: "WP 0815", stand: 3000, ablesedatum: "2026-07-01" }),
+      meldung({ id: "z-a2", zaehlernummer: "1esy4711", stand: 14500 }),
+      meldung({ id: "z-w2", zaehlernummer: "WP0815", stand: 3200 }),
+    ]);
+    await mod.uebernehmeZaehlerstand("z-a2");
+    await mod.uebernehmeZaehlerstand("z-w2");
+    expect(verbrauch().map((v) => [v.meldung_id, v.menge])).toEqual([["z-a2", 500], ["z-w2", 200]]);
+  });
+
+  it("Zählertausch (andere Nummer am selben Mietverhältnis) → Rückfrage, kein Verbrauch", async () => {
+    const { mod, verbrauch } = await ladeUebernahme([frueher({ zaehlernummer: "A1" }), meldung({ zaehlernummer: "B7", stand: 120 })]);
+    expect(await mod.uebernehmeZaehlerstand("z-2")).toMatchObject({ ok: true, verbrauchGebucht: false, hinweis: expect.stringMatching(/Zählertausch/) });
+    expect(verbrauch()).toHaveLength(0);
+  });
+
+  it("andere Einheit (Gas in m³, dann in kWh) → Rückfrage, kein Verbrauch", async () => {
+    const { mod, verbrauch } = await ladeUebernahme([
+      frueher({ art: "Gas", einheit: "m³", stand: 5123.456 }), meldung({ art: "Gas", einheit: "kWh", stand: 5200 }),
+    ]);
+    expect(await mod.uebernehmeZaehlerstand("z-2")).toMatchObject({ verbrauchGebucht: false, hinweis: expect.stringMatching(/Andere Einheit/) });
+    expect(verbrauch()).toHaveLength(0);
+  });
+
+  it("„m3“ und „m³“ sind dieselbe Einheit; drei Nachkommastellen bleiben exakt", async () => {
+    const { mod, verbrauch } = await ladeUebernahme([
+      frueher({ art: "Wasser", einheit: "m³", stand: 512.345 }), meldung({ art: "Wasser", einheit: "m3", stand: 530.1 }),
+    ]);
     await mod.uebernehmeZaehlerstand("z-2");
-    const suche = db.zugriffe.filter((z) => z.tabelle === "zaehlerstand_meldungen" && z.op === "select")[1];
-    expect(suche.filter).toContain("eq:art=Strom");
-    expect(suche.filter).toContain("eq:mieter_id=m-1");
-    expect(suche.filter).toContain("lt:ablesedatum=2026-09-01");
-    expect(suche.filter).toContain("eq:vermieter_id=nutzer-1");
+    expect(verbrauch()[0]).toMatchObject({ menge: 17.755 });
   });
 
-  it("scheitert die Verbrauchsbuchung, wird die Meldung NICHT als übernommen markiert", async () => {
-    // Sonst gälte sie als erledigt, ohne dass ein Verbrauch existiert — und
-    // die nächste Differenz würde von einem Stand aus gerechnet, der nie
-    // gebucht wurde.
-    const { db, mod } = await lade({
-      ...laden({}, { stand: 14000, ablesedatum: "2026-06-01" }),
-      // Gezielt NUR die Verbrauchsbuchung scheitern lassen. Mit dem globalen
-      // `fehler` schlüge seit dem 08.09.2026 schon die Abfrage der Vormeldung
-      // fehl — der Test prüfte dann etwas anderes als seinen Namen.
-      fehlerBei: { "verbrauch:insert": { message: "abgelehnt" } },
-    });
-    const r = await mod.uebernehmeZaehlerstand("z-2");
-    expect(r.error).toContain("Verbrauch konnte nicht gebucht werden");
-    expect(db.zugriffe.some((z) => z.op === "update")).toBe(false);
+  it("Meldungen ohne Nummer zählen nur im SELBEN Mietverhältnis und Objekt", async () => {
+    const { mod, verbrauch } = await ladeUebernahme([frueher({ mieter_id: "m-vormieter" }), meldung()]);
+    expect(await mod.uebernehmeZaehlerstand("z-2")).toEqual({ ok: true, verbrauchGebucht: false });
+    expect(verbrauch()).toHaveLength(0);
+  });
+
+  it("eine SPÄTERE oder noch nicht übernommene Meldung ist keine Vormeldung", async () => {
+    const { mod, verbrauch } = await ladeUebernahme([
+      frueher({ id: "z-spaeter", stand: 14100, ablesedatum: "2026-10-01" }),
+      frueher({ id: "z-offen", stand: 14200, ablesedatum: "2026-08-01", uebernommen_am: null }),
+      frueher({ id: "z-1", stand: 14000, ablesedatum: "2026-06-01" }),
+      meldung(),
+    ]);
+    await mod.uebernehmeZaehlerstand("z-2");
+    expect(verbrauch()[0]).toMatchObject({ menge: 500 });
+  });
+
+  it("die Vormeldungen werden nur im eigenen Konto und nach Zählerart gesucht", async () => {
+    const { db, mod } = await ladeUebernahme([frueher(), meldung()]);
+    await mod.uebernehmeZaehlerstand("z-2");
+    const suche = db.protokoll.filter((z) => z.tabelle === "zaehlerstand_meldungen" && z.op === "select")[0];
+    expect(suche.filter).toEqual(expect.arrayContaining([`eq:vermieter_id=${VM}`, "eq:art=Strom", "neq:id=z-2"]));
+  });
+
+  it("über 1.000 frühere Meldungen: die richtige Vormeldung wird trotzdem gefunden", async () => {
+    const alt = Array.from({ length: 1100 }, (_, i) => frueher({ id: `a${String(i).padStart(5, "0")}`, zaehlernummer: `X${i}`, mieter_id: `m-x${i}`, ablesedatum: "2020-01-01" }));
+    const { mod, verbrauch } = await ladeUebernahme([...alt, frueher({ id: "zz-1" }), meldung()]);
+    await mod.uebernehmeZaehlerstand("z-2");
+    expect(verbrauch()[0]).toMatchObject({ menge: 500 });
   });
 });
 
 describe("Vormeldung lesen", () => {
-  it("scheitert die Abfrage, wird NICHTS übernommen", async () => {
-    // Fund vom 08.09.2026: Leer hieß „keine Vormeldung, kein Verbrauch". Die
-    // Meldung wurde trotzdem als übernommen markiert — der Verbrauch dieses
-    // Zeitraums fehlte damit dauerhaft in der NK-Abrechnung, denn die nächste
-    // Differenz zählt ab diesem Stand weiter.
-    const { db, mod } = await lade({
-      antworten: {
-        zaehlerstand_meldungen: {
-          id: "z1", mieter_id: "m1", prop_id: "obj-1", art: "strom",
-          stand: 15000, einheit: "kWh", ablesedatum: "2026-06-30", uebernommen_am: null,
-        },
-      },
-      fehlerBei: { "zaehlerstand_meldungen:select": { message: "connection reset" } },
-    });
-    const r = await mod.uebernehmeZaehlerstand("z1");
-    expect(String(r.error)).toMatch(/vorherige|nichts übernommen/i);
-    expect(db.zugriffe.some((x) => x.tabelle === "verbrauch" && x.op === "insert")).toBe(false);
-    expect(db.zugriffe.some((x) => x.tabelle === "zaehlerstand_meldungen" && x.op === "update")).toBe(false);
+  it("scheitert die Abfrage — auch erst auf einer späteren Seite —, wird NICHTS übernommen", async () => {
+    // Fund vom 08.09.2026: Leer hieß „keine Vormeldung, kein Verbrauch". Die Meldung wurde trotzdem als
+    // übernommen markiert — der Verbrauch dieses Zeitraums fehlte damit dauerhaft.
+    const { mod, verbrauch, status } = await ladeUebernahme([frueher(), meldung()], { fehlerAbSeite: { zaehlerstand_meldungen: 0 } });
+    const r = await mod.uebernehmeZaehlerstand("z-2");
+    expect(String(r.error)).toMatch(/vorherige.*nichts übernommen/i);
+    expect(verbrauch()).toHaveLength(0);
+    expect(status()).toBeNull();
   });
 });

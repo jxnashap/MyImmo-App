@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { featureSperre } from "@/lib/planGate";
 import { erzeugeNkPdf } from "@/lib/pdf/erzeugen";
 import { belegung } from "@/lib/nk";
+import { unvollstaendigAntwort } from "@/lib/db/auswertung";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,8 +30,15 @@ export async function GET(req: NextRequest, props: { params: Promise<{ id: strin
 
   const gesamt = await PDFDocument.create();
   for (const m of (mieter ?? []).filter((m) => belegung(jahr, m.mietbeginn, m.mietende).tage > 0)) {
-    const doc = await erzeugeNkPdf(supabase, m.id, jahr);
-    if (!doc) continue;
+    let doc: Awaited<ReturnType<typeof erzeugeNkPdf>>;
+    try {
+      doc = await erzeugeNkPdf(supabase, m.id, jahr);
+    } catch (e) {
+      return unvollstaendigAntwort(e);
+    }
+    // B08 (11.10.2026): Vorher wurde ein Mieter, dessen Abrechnung nicht entstand, still übersprungen —
+    // das Sammel-PDF sah vollständig aus. Jetzt entsteht es nur mit ALLEN belegten Mietern.
+    if (!doc) return new NextResponse("Eine der Abrechnungen konnte nicht erzeugt werden — es wurde kein unvollständiges Sammel-PDF erstellt.", { status: 503 });
     const quelle = await PDFDocument.load(doc.pdf);
     for (const seite of await gesamt.copyPages(quelle, quelle.getPageIndices())) gesamt.addPage(seite);
   }

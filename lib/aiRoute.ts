@@ -2,6 +2,24 @@
 // Auth-Schutz, Anthropic-Call mit Timeout und Größenprüfung für Uploads.
 import { createClient } from "@/lib/supabase/server";
 import { bedrockKonfiguriert, callBedrock } from "@/lib/bedrock";
+import { liesBegrenzt } from "@/lib/net/grenzen";
+
+/** Höchstgröße einer KI-Antwort (JSON) — eine Extraktion ist wenige KB groß. */
+export const KI_ANTWORT_MAX = 2 * 1024 * 1024;
+
+/**
+ * Ist ein KI-Anbieter eingerichtet? Bedrock (AWS Frankfurt) ODER der direkte Anthropic-Schlüssel.
+ * B16 (11.10.2026): Vorher verlangten alle drei Routen `ANTHROPIC_API_KEY` — auch wenn Bedrock
+ * eingerichtet war und der Schlüssel gar nicht benutzt wurde. Wer bewusst nur die EU-Variante
+ * einrichtete, bekam 503.
+ */
+export function kiBereit(): boolean {
+  return bedrockKonfiguriert() || !!process.env.ANTHROPIC_API_KEY;
+}
+
+/** Meldung, wenn kein Anbieter eingerichtet ist. */
+export const KI_NICHT_BEREIT =
+  "Kein KI-Anbieter eingerichtet (Bedrock-Zugang oder ANTHROPIC_API_KEY in Vercel unter Settings → Environment Variables).";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 
@@ -38,7 +56,7 @@ export async function callAnthropic(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(ANTHROPIC_URL, {
+    const res = await fetch(ANTHROPIC_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -48,6 +66,10 @@ export async function callAnthropic(
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
+    // B16: Den Body INNERHALB des Zeitgebers und mit Größengrenze lesen — vorher endete der
+    // Zeitgeber mit den Kopfzeilen, und ein tröpfelnder Body hielt die Funktion fest.
+    const bytes = await liesBegrenzt(res, KI_ANTWORT_MAX);
+    return new Response(bytes, { status: res.status, headers: res.headers });
   } finally {
     clearTimeout(timer);
   }

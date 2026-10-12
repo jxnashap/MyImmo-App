@@ -8,7 +8,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import { eur2 } from "@/lib/format";
-import { NK_SCHLUESSEL, SCHLUESSEL_LABEL, standardSchluessel, type NkSchluessel } from "@/lib/nkObjekt";
+import { NK_SCHLUESSEL, SCHLUESSEL_LABEL, standardSchluessel, kiVorschlaege, type KiVorschlag, type NkSchluessel } from "@/lib/nkObjekt";
 import {
   speichereNkGrundlagen,
   speichereNkKosten,
@@ -77,6 +77,8 @@ export default function NkObjektEditor(props: {
   );
   const [form, setForm] = useState<Form | null>(null);
   const [kiLaeuft, setKiLaeuft] = useState(false);
+  // B16: Ergebnis der KI erst ANZEIGEN, gespeichert wird nur, was der Vermieter auswählt.
+  const [kiVorschau, setKiVorschau] = useState<KiVorschlag[] | null>(null);
 
   const brauchtPersonen = kosten.some((k) => k.schluessel === "personen");
   const brauchtMea = kosten.some((k) => k.schluessel === "mea") || !!mea;
@@ -147,19 +149,30 @@ export default function NkObjektEditor(props: {
       });
       const json = await resp.json();
       if (!resp.ok) { toast(json.error || json.fehler || "Auslesen fehlgeschlagen.", "error"); return; }
-      // Am Objekt zählen GESAMTkosten des Hauses; Positionen ohne Gesamtbetrag übernimmt die
-      // Action nicht (den Anteil EINER Wohnung als Hauskosten zu verteilen wäre falsch).
+      // Am Objekt zählen GESAMTkosten des Hauses; Positionen ohne Gesamtbetrag sind nicht wählbar
+      // (den Anteil EINER Wohnung als Hauskosten zu verteilen wäre falsch). Gespeichert wird erst
+      // nach der Auswahl in der Vorschau (B16).
       const liste = (json.positionen ?? []) as { name?: string; gesamt?: number | null }[];
-      const ohne = liste.filter((p) => !(typeof p.gesamt === "number" && Number.isFinite(p.gesamt))).length;
-      const r = await uebernehmeNkKi(propId, jahr, JSON.stringify(liste));
-      if ("error" in r) { toast(r.error, "error"); return; }
-      toast(`${r.anzahl ?? 0} Kostenart${r.anzahl === 1 ? "" : "en"} übernommen${ohne ? ` · ${ohne} ohne Gesamtbetrag ausgelassen` : ""} — bitte prüfen.`, "success");
-      router.refresh();
+      setKiVorschau(kiVorschlaege(liste, kosten.map((k) => k.bezeichnung)));
     } catch {
       toast("Auslesen fehlgeschlagen.", "error");
     } finally {
       setKiLaeuft(false);
     }
+  }
+
+  function kiUebernehmen() {
+    const auswahl = (kiVorschau ?? []).filter((v) => v.gewaehlt && v.grund == null);
+    if (auswahl.length === 0) { setKiVorschau(null); return; }
+    starte(async () => {
+      try {
+        const r = await uebernehmeNkKi(propId, jahr, JSON.stringify(auswahl.map((v) => ({ name: v.name, gesamt: v.gesamt }))));
+        if ("error" in r) { toast(r.error, "error"); return; }
+        toast(`${r.anzahl ?? 0} Kostenart${r.anzahl === 1 ? "" : "en"} übernommen.`, "success");
+        setKiVorschau(null);
+        router.refresh();
+      } catch { toast("Übernehmen fehlgeschlagen.", "error"); }
+    });
   }
 
   const bearbeiten = (k: EditorKosten) =>
@@ -315,6 +328,28 @@ export default function NkObjektEditor(props: {
           </div>
         </div>
         <div className="section-body">
+          {kiVorschau && (
+            <div className="glass-card" style={{ padding: "12px 14px", marginBottom: 14 }} data-kein-wischen>
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>Aus der Abrechnung gelesen — bitte prüfen</div>
+              <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }}>
+                Die KI kann sich verlesen. Übernommen wird nur, was du anhakst; Beträge änderst du danach in der Liste.
+              </p>
+              {kiVorschau.map((v, i) => (
+                <label key={i} style={{ display: "flex", gap: 8, alignItems: "baseline", fontSize: 13, padding: "3px 0", opacity: v.grund ? 0.55 : 1 }}>
+                  <input type="checkbox" checked={v.gewaehlt} disabled={!!v.grund}
+                    onChange={(e) => setKiVorschau(kiVorschau.map((x, j) => (j === i ? { ...x, gewaehlt: e.target.checked } : x)))} />
+                  <span style={{ flex: 1, minWidth: 0 }}>{v.name}{v.grund ? ` · ${v.grund}` : ""}</span>
+                  <span>{v.gesamt != null ? eur2(v.gesamt) : "–"}</span>
+                </label>
+              ))}
+              <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+                <button type="button" className="btn btn-gold btn-sm" disabled={laeuft || !kiVorschau.some((v) => v.gewaehlt && !v.grund)} onClick={kiUebernehmen}>
+                  Ausgewählte übernehmen ({kiVorschau.filter((v) => v.gewaehlt && !v.grund).length})
+                </button>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setKiVorschau(null)}>Verwerfen</button>
+              </div>
+            </div>
+          )}
           {kosten.length === 0 && !form && (
             <p style={{ fontSize: 13, color: "var(--muted)", margin: "0 0 12px" }}>
               Noch keine Kosten für {jahr}. Trag die Kostenarten aus Grundsteuerbescheid, Versicherung, Müll- und

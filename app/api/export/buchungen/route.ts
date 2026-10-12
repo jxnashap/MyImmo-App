@@ -4,6 +4,7 @@ import { KOSTEN_SPALTEN } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { istVermieterKonto } from "@/lib/rolle";
 import { csvZelleGequotet } from "@/lib/csv";
+import { alleZeilen, nurKonto, unvollstaendigAntwort } from "@/lib/db/auswertung";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,15 +33,21 @@ export async function GET() {
     return new NextResponse("Nur für Vermieter-Konten", { status: 403 });
   }
 
-  const [{ data: einnahmen }, { data: kosten }, { data: props }] = await Promise.all([
-    supabase.from("einnahmen").select("*").eq("user_id", user.id),
-    supabase.from("kosten").select(KOSTEN_SPALTEN).eq("user_id", user.id),
-    supabase.from("properties").select("id,bezeichnung").eq("user_id", user.id),
-  ]);
+  // B08 (11.10.2026): vollständig oder gar nicht — eine „Datensicherung“, der still Buchungen
+  // fehlen, wäre gefährlicher als eine Fehlermeldung.
+  const eigen = nurKonto(user.id);
+  let einnahmen: Record<string, unknown>[], kosten: Record<string, unknown>[], props: { id: string; bezeichnung: string }[];
+  try {
+    [einnahmen, kosten, props] = await Promise.all([
+      alleZeilen(supabase, "einnahmen", "*", eigen),
+      alleZeilen(supabase, "kosten", KOSTEN_SPALTEN, eigen),
+      alleZeilen<{ id: string; bezeichnung: string }>(supabase, "properties", "id,bezeichnung", eigen),
+    ]);
+  } catch (e) {
+    return unvollstaendigAntwort(e);
+  }
 
-  const nameOf = new Map(
-    ((props ?? []) as { id: string; bezeichnung: string }[]).map((p) => [p.id, p.bezeichnung]),
-  );
+  const nameOf = new Map(props.map((p) => [p.id, p.bezeichnung]));
   const propName = (id: string | null) => (id ? nameOf.get(id) ?? "" : "");
 
   type Zeile = {
@@ -54,7 +61,7 @@ export async function GET() {
   };
 
   const zeilen: Zeile[] = [
-    ...((einnahmen ?? []) as Record<string, unknown>[]).map((e) => ({
+    ...einnahmen.map((e) => ({
       datum: String(e.buchungsdatum ?? ""),
       typ: "Einnahme" as const,
       kategorie: String(e.kategorie ?? ""),
@@ -63,7 +70,7 @@ export async function GET() {
       betrag: (e.betrag as number | null) ?? null,
       nkAnteil: (e.nk_anteil as number | null) ?? null,
     })),
-    ...((kosten ?? []) as Record<string, unknown>[]).map((k) => ({
+    ...kosten.map((k) => ({
       datum: String(k.buchungsdatum ?? ""),
       typ: "Kosten" as const,
       kategorie: String(k.kategorie ?? ""),

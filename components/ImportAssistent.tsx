@@ -7,7 +7,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { Upload, ArrowRight, CheckCircle2, TriangleAlert, FileSpreadsheet, RotateCcw } from "lucide-react";
 import {
-  parseCsv, autoMap, baueDatensaetze, IMPORT_FELDER,
+  parseCsv, autoMap, baueDatensaetze, IMPORT_FELDER, objektZuordnung,
   type CsvTabelle, type ImportTyp,
 } from "@/lib/importCsv";
 import { importiereDaten, type ImportAktionErgebnis } from "@/lib/actions/importDaten";
@@ -61,10 +61,11 @@ export default function ImportAssistent({ objektNamen }: { objektNamen: string[]
   const pflichtFehlt = felder.filter((f) => f.pflicht && !mapping[f.key]);
 
   // Mieter-Import: wie viele Zeilen finden ihr Objekt über den Namen?
-  const objekteLower = useMemo(() => new Set(objektNamen.map((n) => n.trim().toLowerCase())), [objektNamen]);
-  const ohneObjekt = typ === "mieter" && daten
-    ? daten.zeilen.filter((z) => !objekteLower.has(String(z.objekt ?? "").trim().toLowerCase())).length
-    : 0;
+  // B15: dieselbe Zuordnung wie der Server (lib/importCsv.ts) — mehrdeutige Namen ordnen nie zu.
+  const objekte = useMemo(() => objektNamen.map((bezeichnung, i) => ({ id: String(i), bezeichnung })), [objektNamen]);
+  const treffer = typ === "mieter" && daten ? daten.zeilen.map((z) => ({ name: String(z.objekt ?? "").trim(), t: objektZuordnung(objekte, z.objekt) })) : [];
+  const ohneObjekt = treffer.filter((x) => x.t.art === "fehlt").length;
+  const mehrdeutig = [...new Set(treffer.filter((x) => x.t.art === "mehrdeutig").map((x) => x.name))];
 
   function importieren() {
     if (!daten || daten.zeilen.length === 0) return;
@@ -81,6 +82,12 @@ export default function ImportAssistent({ objektNamen }: { objektNamen: string[]
         <div className="section-body" style={{ textAlign: "center", padding: "40px 20px" }}>
           <CheckCircle2 size={40} color="var(--green)" style={{ marginBottom: 12 }} />
           <h3 style={{ marginBottom: 8 }}>{ergebnis.angelegt} {TYP_LABEL[typ]} importiert ✓</h3>
+          {(ergebnis.uebersprungen ?? 0) > 0 && (
+            <p style={{ fontSize: 13, color: "var(--muted)", maxWidth: 480, margin: "0 auto 8px" }}>
+              {ergebnis.uebersprungen} Zeilen gab es schon (früherer Import oder doppelt in der Datei) — sie wurden nicht
+              ein zweites Mal angelegt.
+            </p>
+          )}
           {ergebnis.ohneObjekt > 0 && (
             <p style={{ fontSize: 13, color: "var(--muted)", maxWidth: 480, margin: "0 auto 8px" }}>
               {ergebnis.ohneObjekt} Mieter konnten keinem Objekt zugeordnet werden (Objektname nicht gefunden) —
@@ -210,6 +217,12 @@ export default function ImportAssistent({ objektNamen }: { objektNamen: string[]
                     {daten.fehler.length > 5 && <div>… {daten.fehler.length - 5} weitere Hinweise.</div>}
                   </div>
                 )}
+                {mehrdeutig.length > 0 && (
+                  <p role="alert" style={{ marginTop: 10, fontSize: 12, color: "var(--red)" }}>
+                    <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> Der Objektname {mehrdeutig.map((n) => `„${n}“`).join(", ")} passt
+                    auf mehrere deiner Objekte. Bitte die Objekte zuerst eindeutig benennen — sonst wird nichts importiert.
+                  </p>
+                )}
                 {ohneObjekt > 0 && (
                   <p style={{ marginTop: 10, fontSize: 12, color: "var(--gold)" }}>
                     <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> {ohneObjekt} von {daten.zeilen.length} Mietern
@@ -218,7 +231,7 @@ export default function ImportAssistent({ objektNamen }: { objektNamen: string[]
                 )}
                 <button
                   type="button" className="btn btn-gold" style={{ marginTop: 16 }}
-                  disabled={pending || daten.zeilen.length === 0}
+                  disabled={pending || daten.zeilen.length === 0 || mehrdeutig.length > 0}
                   onClick={importieren}
                 >
                   {pending ? "Importiere…" : <>{daten.zeilen.length} {TYP_LABEL[typ]} importieren <ArrowRight size={14} style={{ verticalAlign: "-2px" }} /></>}

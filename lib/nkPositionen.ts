@@ -8,6 +8,8 @@
 // Fehlt die Tabelle (Migration noch nicht im SQL-Editor ausgeführt), gilt der Altbestand.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { DatenUnvollstaendig } from "@/lib/db/ladeAlle";
+import { alleZeilen } from "@/lib/db/auswertung";
 import { NK_POSITION_SPALTEN, type NkRawPosition } from "@/lib/nk";
 import { zeigeVerteiler, type Mietzeit } from "@/lib/umlage";
 import type { NkCo2, NkCo2Input } from "@/lib/nk";
@@ -52,14 +54,16 @@ export const nkKostenAus = (rows: Record<string, unknown>[]): NkObjektDaten["kos
 
 /** Kosten, Grundlagen und Mieter eines Objekts für ein Jahr. */
 export async function ladeNkObjekt(supabase: SupabaseClient, propId: string, jahr: number): Promise<NkObjektDaten> {
-  const [{ data: kosten, error: e1 }, { data: basis, error: e2 }, { data: mieter }] = await Promise.all([
+  const [{ data: kosten, error: e1 }, { data: basis, error: e2 }, { data: mieter, error: e3 }] = await Promise.all([
     supabase.from("nk_objekt_kosten").select(NK_OBJEKT_KOSTEN_SPALTEN).eq("prop_id", propId).eq("jahr", jahr)
       .order("sort").order("created_at"),
     supabase.from("nk_objekt_jahr").select("flaeche_gesamt,einheiten,mea_gesamt,mieter,co2_kg,co2_kosten,co2_gewerbe").eq("prop_id", propId).eq("jahr", jahr).maybeSingle(),
     supabase.from("mieter").select("id,vorname,nachname,einheit,flaeche,mietbeginn,mietende").eq("prop_id", propId).order("mietbeginn"),
   ]);
   if (fehltNkTabelle(e1) || fehltNkTabelle(e2)) return { bereit: false, basis: leereBasis(), kosten: [], mieter: [] };
-  if (e1 || e2) throw new Error("Nebenkosten des Objekts konnten nicht geladen werden.");
+  if (e1 || e2) throw new DatenUnvollstaendig("nk_objekt", (e1 ?? e2)!.message);
+  // B08: Ohne die Mieter verteilte die Rechnung alles auf den Leerstand — still.
+  if (e3) throw new DatenUnvollstaendig("mieter", e3.message);
   return {
     bereit: true,
     basis: basis
@@ -129,12 +133,10 @@ export async function ladeNkPositionen(
   jahr: number,
   prop?: { flaeche?: number | null; einheiten_anzahl?: number | null; typ?: string | null } | null,
 ): Promise<NkPositionenFuerMieter> {
-  const { data: alt } = await supabase
-    .from("mieter_positionen")
-    .select(NK_POSITION_SPALTEN)
-    .eq("mieter_id", mieter.id)
-    .order("created_at");
-  const mieterPositionen = (alt ?? []) as unknown as (NkRawPosition & { id: string })[];
+  // B08 (11.10.2026): Eine gescheiterte Abfrage ergab vorher eine Abrechnung OHNE Kosten.
+  const mieterPositionen = await alleZeilen<NkRawPosition & { id: string }>(
+    supabase, "mieter_positionen", NK_POSITION_SPALTEN, (q) => q.eq("mieter_id", mieter.id), [{ spalte: "created_at" }],
+  );
   const altbestand = (objektBereit: boolean) =>
     ({ positionen: mieterPositionen as NkRawPosition[], quelle: "mieter" as const, mieterPositionen, uebergangen: 0, objektBereit, co2AmObjekt: false, co2: null, hinweise: [] });
   if (!mieter.prop_id) return altbestand(false);
@@ -144,7 +146,9 @@ export async function ladeNkPositionen(
 
   let stamm = prop;
   if (!stamm || stamm.typ === undefined) {
-    const { data } = await supabase.from("properties").select("flaeche,einheiten_anzahl,typ").eq("id", mieter.prop_id).maybeSingle();
+    const { data, error } = await supabase.from("properties").select("flaeche,einheiten_anzahl,typ").eq("id", mieter.prop_id).maybeSingle();
+    // Ohne Objekttyp wäre aus einem Mehrfamilienhaus still ein Einzelobjekt geworden (andere Quelle).
+    if (error) throw new DatenUnvollstaendig("properties", error.message);
     stamm = data ?? {};
   }
   const mfh = zeigeVerteiler({ typ: stamm.typ ?? null, einheiten_anzahl: stamm.einheiten_anzahl ?? null, mieter: daten.mieter });
@@ -180,11 +184,15 @@ export type { NkObjektErgebnis };
  */
 export async function nkAmObjekt(supabase: SupabaseClient, propId: string | null | undefined): Promise<boolean> {
   if (!propId) return false;
-  const [{ data: prop }, { data: mieter }, { error }] = await Promise.all([
+  const [{ data: prop, error: eProp }, { data: mieter, error: eMieter }, { error }] = await Promise.all([
     supabase.from("properties").select("typ,einheiten_anzahl").eq("id", propId).maybeSingle(),
     supabase.from("mieter").select("mietbeginn,mietende").eq("prop_id", propId),
     supabase.from("nk_objekt_kosten").select("id", { count: "exact", head: true }).eq("prop_id", propId),
   ]);
+  // B08: Ein Lesefehler ist kein „nein“ — sonst wechselte die Abrechnung still die Quelle.
+  if (eProp || eMieter) throw new DatenUnvollstaendig(eProp ? "properties" : "mieter", (eProp ?? eMieter)!.message);
+  if (error && !fehltNkTabelle(error)) throw new DatenUnvollstaendig("nk_objekt_kosten", error.message);
+  // Tabelle fehlt (Migration offen) → wie bisher „nicht am Objekt“.
   if (!prop || error) return false;
   return zeigeVerteiler({ typ: prop.typ as string | null, einheiten_anzahl: prop.einheiten_anzahl as number | null, mieter: (mieter ?? []) as Mietzeit[] });
 }

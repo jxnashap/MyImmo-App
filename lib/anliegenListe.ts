@@ -2,7 +2,7 @@
 // Hier nur, was jede Zeile als Merkmal trägt und wohin sie führt — reine Funktionen, damit sie
 // prüfbar sind (tests/anliegenListe.test.ts). Benutzt von components/AnliegenManager.tsx
 // (Vermieter) und components/AnliegenPortal.tsx (Mieter).
-import type { Ereignis } from "@/lib/vorgang";
+import { vorgangStand, type Ereignis } from "@/lib/vorgang";
 
 export type Merkmal = { text: string; cls: string };
 
@@ -24,6 +24,8 @@ export function vorgangMerkmal(
   slotKurz: (s: string) => string,
 ): Merkmal | null {
   if (a.status !== "erledigt" && letzteNachricht(a.verlauf, "mieter")) return { text: "Neue Nachricht", cls: "badge-amber" };
+  // Ablauf C: Der Auftrag ist erledigt, das Anliegen steht noch offen — abschließen oder nachfragen.
+  if (vorgangStand(a.verlauf, a.status).auftragErledigtAnliegenOffen) return { text: "Auftrag erledigt", cls: "badge-green" };
   if (a.terminBestaetigt) return { text: `Termin ${slotKurz(a.terminBestaetigt)}`, cls: "badge-green" };
   if (a.terminVorschlaege.length > 0) return { text: "Terminwahl beim Mieter", cls: "badge-neutral" };
   return null;

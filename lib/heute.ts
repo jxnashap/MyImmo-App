@@ -11,6 +11,7 @@
 // Reine Funktion ohne Datenbank und ohne React: Was hier gerechnet wird, lässt
 // sich prüfen. Die Seite reicht nur die Zeilen herein.
 
+import { fristDokumentZiel, type FristDokument } from "@/lib/fristDokument";
 import { vorgangUrl } from "@/lib/anliegenListe";
 import { mieteUeberfaellig, zahlungsBriefWahl, type ZahlungsBriefWahl } from "@/lib/mahnung";
 
@@ -58,7 +59,9 @@ export type FristZeile = { datum: string; label: string; sub: string; warn: bool
  * Abrechnung zustellen“ endete zwei Klicks später ohne Weg zur Abrechnung. EINE Regel für
  * Dashboard und /termine.
  */
-export function fristZiel(quelle: string, id: string | null | undefined, label: string): string {
+export function fristZiel(quelle: string, id: string | null | undefined, label: string, dokument?: FristDokument): string {
+  // Ablauf D: Gehört ein Schreiben zur Frist, führt sie in den Generator mit vorgewähltem Mieter.
+  if (quelle === "mieter" && id && dokument) return fristDokumentZiel(id, dokument);
   if (quelle === "mieter" && id) {
     const nk = /NK-Abrechnung (\d{4})/.exec(label)?.[1];
     return nk ? `/tenants/${id}/nk?jahr=${nk}` : `/tenants/${id}`;

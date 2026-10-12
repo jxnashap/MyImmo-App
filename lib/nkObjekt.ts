@@ -456,3 +456,22 @@ export function vorschlaegeAusBuchungen(v: { bezeichnung: string; betrag: number
       quelle: "buchungen" as const,
     }));
 }
+
+// B16 (Prüfstand 11.10.2026): Was die KI aus einer Abrechnung liest, wird erst nach einem PRÜFSCHRITT
+// gespeichert. Vorher schrieb der Upload am Objekt jede erkannte Position sofort in die Kosten des
+// Hauses — eine falsch gelesene Zahl stand ungeprüft in jeder Abrechnung des Jahres.
+export type KiVorschlag = { name: string; gesamt: number | null; grund: string | null; gewaehlt: boolean };
+
+/** Vorschläge zur Auswahl: nur mit Gesamtbetrag des Hauses wählbar, schon Vorhandenes nicht doppelt. */
+export function kiVorschlaege(liste: { name?: unknown; gesamt?: unknown }[], vorhanden: string[]): KiVorschlag[] {
+  const da = new Set(vorhanden.map((v) => v.trim().toLowerCase()));
+  return liste.slice(0, 60).map((p) => {
+    const name = typeof p.name === "string" ? p.name.trim().slice(0, 120) : "";
+    const zahl = typeof p.gesamt === "number" && Number.isFinite(p.gesamt) && p.gesamt >= 0 && p.gesamt < 10_000_000 ? p.gesamt : null;
+    const grund = !name ? "ohne Bezeichnung"
+      : zahl == null ? "ohne Gesamtbetrag des Hauses"
+      : da.has(name.toLowerCase()) ? "schon erfasst"
+      : null;
+    return { name: name || "—", gesamt: zahl, grund, gewaehlt: grund == null };
+  });
+}

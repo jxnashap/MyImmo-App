@@ -4,6 +4,8 @@
 // der Vermieter übernimmt sie — ab der zweiten Meldung desselben Zählers
 // wird die Differenz automatisch als Verbrauch gebucht.
 import { revalidatePath } from "next/cache";
+import { ladeAlle } from "@/lib/db/ladeAlle";
+import { zaehlerVerbrauch, type ZaehlerMeldung } from "@/lib/zaehlerVerbrauch";
 import { createClient } from "@/lib/supabase/server";
 
 const ARTEN = ["Strom", "Gas", "Wasser", "Warmwasser", "Fernwärme", "Öl", "Sonstiges"] as const;
@@ -103,58 +105,68 @@ export async function uebernehmeZaehlerstand(meldungId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet." };
 
-  const { data: m } = await supabase
+  // B07 (11.10.2026): Erst BEANSPRUCHEN — bedingt auf „noch nicht übernommen“. Ein Doppelklick oder ein
+  // paralleler Aufruf findet die Meldung danach schon übernommen und bucht keinen zweiten Verbrauch.
+  // Vorher: lesen → Verbrauch buchen → markieren; zwei Aufrufe dazwischen buchten zweimal.
+  const jetzt = new Date().toISOString();
+  const { data: m, error: claimFehler } = await supabase
     .from("zaehlerstand_meldungen")
-    .select("*")
+    .update({ uebernommen_am: jetzt })
     .eq("id", meldungId)
     .eq("vermieter_id", user.id)
+    .is("uebernommen_am", null)
+    .select("id,art,einheit,zaehlernummer,mieter_id,prop_id,stand,ablesedatum")
     .maybeSingle();
-  if (!m) return { error: "Meldung nicht gefunden." };
-  if (m.uebernommen_am) return { error: "Bereits übernommen." };
+  if (claimFehler) return { error: "Konnte nicht gespeichert werden." };
+  if (!m) {
+    const { data: da } = await supabase
+      .from("zaehlerstand_meldungen").select("uebernommen_am").eq("id", meldungId).eq("vermieter_id", user.id).maybeSingle();
+    return { error: da ? "Bereits übernommen." : "Meldung nicht gefunden." };
+  }
+  const zuruecknehmen = async (fehler: string) => {
+    const { error: rueck } = await supabase.from("zaehlerstand_meldungen").update({ uebernommen_am: null })
+      .eq("id", meldungId).eq("vermieter_id", user.id).eq("uebernommen_am", jetzt);
+    return { error: rueck ? `${fehler} Die Meldung steht trotzdem als übernommen — bitte Seite neu laden.` : fehler };
+  };
 
-  // Vorherige übernommene Meldung desselben Zählers → Differenz = Verbrauch.
-  // Der Abfragefehler MUSS ausgewertet werden: Leer heißt „keine Vormeldung,
-  // also kein Verbrauch" — die Meldung würde trotzdem als übernommen markiert,
-  // und der Verbrauch dieses Zeitraums fehlte dauerhaft in der NK-Abrechnung
-  // des Mieters (die nächste Differenz zählt ab DIESEM Stand weiter).
-  const { data: vorher, error: vorherFehler } = await supabase
-    .from("zaehlerstand_meldungen")
-    .select("stand,ablesedatum")
-    .eq("vermieter_id", user.id)
-    .eq("mieter_id", m.mieter_id)
-    .eq("art", m.art)
-    .not("uebernommen_am", "is", null)
-    .lt("ablesedatum", m.ablesedatum)
-    .order("ablesedatum", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (vorherFehler) return { error: "Der vorherige Zählerstand konnte nicht gelesen werden — es wurde nichts übernommen." };
-
-  let verbrauchGebucht = false;
-  if (vorher && m.stand >= vorher.stand) {
-    const menge = Math.round((m.stand - vorher.stand) * 100) / 100;
-    if (menge > 0) {
-      const { error: vErr } = await supabase.from("verbrauch").insert({
-        user_id: user.id,
-        prop_id: m.prop_id,
-        buchungsdatum: m.ablesedatum,
-        art: m.art,
-        menge,
-        einheit: m.einheit,
-      });
-      if (vErr) return { error: "Verbrauch konnte nicht gebucht werden." };
-      verbrauchGebucht = true;
-    }
+  // Frühere übernommene Meldungen derselben Zählerart — WELCHE zum selben Zähler gehört, entscheidet
+  // `zaehlerVerbrauch()` (B11: Nummer, Einheit, Mietverhältnis, zeitliche Folge). Der Abfragefehler
+  // MUSS ausgewertet werden: Leer hieße „erste Meldung“, und der Verbrauch dieses Zeitraums fehlte
+  // dauerhaft (die nächste Differenz zählte ab DIESEM Stand weiter).
+  let vorher: ZaehlerMeldung[];
+  try {
+    vorher = await ladeAlle<ZaehlerMeldung & { id: string }>("zaehlerstand_meldungen", (von, bis) =>
+      supabase.from("zaehlerstand_meldungen")
+        .select("id,art,einheit,zaehlernummer,mieter_id,prop_id,stand,ablesedatum")
+        .eq("vermieter_id", user.id).eq("art", m.art).neq("id", meldungId)
+        .not("uebernommen_am", "is", null)
+        .order("id").range(von, bis));
+  } catch {
+    return zuruecknehmen("Der vorherige Zählerstand konnte nicht gelesen werden — es wurde nichts übernommen.");
   }
 
-  const { error } = await supabase
-    .from("zaehlerstand_meldungen")
-    .update({ uebernommen_am: new Date().toISOString() })
-    .eq("id", meldungId)
-    .eq("vermieter_id", user.id);
-  if (error) return { error: "Konnte nicht gespeichert werden." };
+  const erg = zaehlerVerbrauch(m as ZaehlerMeldung, vorher);
+  let verbrauchGebucht = false;
+  if (erg.art === "verbrauch" && erg.menge > 0) {
+    // `meldung_id` ist eindeutig (Migration 20261011110000): Je Meldung höchstens EIN Verbrauch.
+    const { error: vErr } = await supabase.from("verbrauch").insert({
+      user_id: user.id,
+      prop_id: m.prop_id,
+      buchungsdatum: m.ablesedatum,
+      art: m.art,
+      menge: erg.menge,
+      einheit: m.einheit,
+      meldung_id: meldungId,
+    });
+    if (vErr && vErr.code !== "23505") return zuruecknehmen("Verbrauch konnte nicht gebucht werden.");
+    verbrauchGebucht = !vErr;
+  }
 
   revalidatePath("/verbrauch");
   revalidatePath("/portal");
-  return { ok: true, verbrauchGebucht };
+  return {
+    ok: true,
+    verbrauchGebucht,
+    ...(erg.art === "rueckfrage" ? { hinweis: erg.grund } : {}),
+  };
 }

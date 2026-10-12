@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { mieterFolgenText } from "@/lib/loeschUmfang";
 import { euro, eur2, datum } from "@/lib/format";
-import { mieterFristen, nkErstellteJahre } from "@/lib/fristen";
+import { mieterFristen } from "@/lib/fristen";
+import { FRIST_VERMERK_SPALTEN, erledigtAus, fristVermerk, fristVorgang, vermerkeAus, vorgangText, type FristVermerk, type PortalZustellung } from "@/lib/fristDokument";
 import { staffelPlan } from "@/lib/staffel";
 import { normMietart, MIETART_LABEL } from "@/lib/mietart";
 import StaffelUebernehmen from "@/components/StaffelUebernehmen";
@@ -123,9 +124,21 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
   const vergleich = vergleichsmieteFuer(m.mietspiegel, objektVergleich);
 
   const fristen = mieterFristen(m, {
-    nkErstellt: nkErstellteJahre(Array.from(dokumente, (d) => ({ mieter_id: params.id, titel: d.titel as string | null }))).get(params.id),
     zeitraumMonate: zeitraeume.map((z) => z.von.slice(0, 7)),
   });
+  // Ablauf D: Stand des Schreibens je Frist (PDF erstellt, im Portal, abgerufen) und der Erledigt-Vermerk
+  // aus /termine — nur Vermerke mit DIESEM Mieter im Schlüssel.
+  const { data: vermerkRows } = await supabase
+    .from("frist_ausgeblendet")
+    .select(FRIST_VERMERK_SPALTEN)
+    .like("schluessel", `mieter|${params.id}|%`);
+  const vermerke = vermerkeAus(vermerkRows as FristVermerk[] | null);
+  const archivDoks = Array.from(dokumente, (d) => ({ id: d.id as string, mieter_id: params.id, titel: d.titel as string | null, created_at: d.created_at as string }));
+  const portalZeilen = (zustRows ?? []) as PortalZustellung[];
+  const fristStand = (f: (typeof fristen)[number]) => {
+    if (!f.dokument || !f.datum) return null;
+    return fristVorgang(f.dokument, params.id, f.datum, archivDoks, portalZeilen, erledigtAus(fristVermerk(vermerke, "mieter", params.id, f.datum, f.label)));
+  };
   // Staffelplan: nur bei Staffelmiete mit Startdatum + Betrag ODER Prozent
   const staffelTyp = m.staffel_typ === "prozent" ? ("prozent" as const) : ("betrag" as const);
   const plan =
@@ -325,10 +338,16 @@ export default async function MieterDetailPage(props: { params: Promise<{ id: st
             <div style={{ color: "var(--faint)", fontSize: 12 }}>Keine Fristen.</div>
           ) : (
             fristen.map((f, i) => {
-              const farbe = f.typ === "warn" ? "var(--red)" : f.typ === "ok" ? "var(--green)" : "var(--muted)";
+              const stand = fristStand(f);
+              const erledigt = stand?.stand === "erledigt";
+              const farbe = erledigt ? "var(--green)" : f.typ === "warn" ? "var(--red)" : f.typ === "ok" ? "var(--green)" : "var(--muted)";
               return (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 12, padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
-                  <span style={{ color: farbe, display: "inline-flex", alignItems: "center", gap: 4, minWidth: 0 }}>{f.typ === "warn" ? <TriangleAlert size={12} style={{ flexShrink: 0 }} /> : f.typ === "ok" ? "✓" : null}<span>{f.label}</span></span>
+                  <span style={{ color: farbe, display: "inline-flex", alignItems: "center", gap: 4, minWidth: 0, flexWrap: "wrap" }}>
+                    {!erledigt && f.typ === "warn" ? <TriangleAlert size={12} style={{ flexShrink: 0 }} /> : erledigt || f.typ === "ok" ? "✓" : null}
+                    <span style={{ textDecoration: erledigt ? "line-through" : undefined }}>{f.label}</span>
+                    {stand && <span style={{ flexBasis: "100%", color: "var(--muted)" }}>{vorgangText(stand)}{!erledigt && <> · <Link href="/termine?quelle=auto" style={{ color: "var(--gold)" }}>Zugang bestätigen</Link></>}</span>}
+                  </span>
                   <span style={{ color: "var(--text)", fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 }}>{f.datum ? datum(f.datum) : "jetzt"}</span>
                 </div>
               );

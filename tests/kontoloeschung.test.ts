@@ -23,11 +23,14 @@ for (const f of dateien) {
   for (const m of sql.matchAll(/create table (?:if not exists )?(?:public\.)?([a-z_0-9]+)\s*(?:\(|as)/gi)) tabellen.add(m[1].toLowerCase());
 }
 
-// Die JÜNGSTE Fassung der Funktion zählt.
+// Die JÜNGSTE Fassung der Löschfunktion zählt. Seit B02 (11.10.2026) steckt die Bereinigung in
+// `konto_loeschen(p_user)` (nur Service-Role); `delete_own_account()` ruft sie nur noch auf.
 const funktion = (() => {
-  const mit = dateien.filter((f) => /function public\.delete_own_account\(/.test(readFileSync(`${ORDNER}/${f}`, "utf8")));
+  const mit = dateien.filter((f) => /function public\.konto_loeschen\(/.test(readFileSync(`${ORDNER}/${f}`, "utf8")));
   const sql = readFileSync(`${ORDNER}/${mit[mit.length - 1]}`, "utf8");
-  return sql.slice(sql.indexOf("function public.delete_own_account("));
+  const ab = sql.slice(sql.indexOf("function public.konto_loeschen("));
+  const ende = ab.indexOf("function public.delete_own_account(");
+  return ende > 0 ? ab.slice(0, ende) : ab;
 })();
 const geloescht = new Set([...funktion.matchAll(/delete from public\.([a-z_0-9]+)/g)].map((m) => m[1]));
 
@@ -44,6 +47,12 @@ const KASKADE = new Set([
   // Kaskade auf auth.users UND properties per Migration 20261007090000 (im SQL-Editor; lokal gegen
   // PostgreSQL 16 geprüft: Objekt gelöscht → Zeilen weg).
   "nk_objekt_jahr", "nk_objekt_kosten",
+  // Kaskade auf auth.users per Migration 20261011130000 (Ablauf B, SQL-Editor; lokal gegen PostgreSQL 16
+  // geprüft). Die Dateien liegen flach unter `<uid>/` im Bucket „belege“ — die Kontolöschung leert ihn.
+  "beleg_eingang",
+  // Kaskade auf auth.users per Migration 20261011160000 (Ablauf F, SQL-Editor; lokal geprüft:
+  // supabase/test/rls/ablauf_f_aussen_auftraege.sql „Kontolöschung entfernt die Schritte“).
+  "aussen_auftraege",
 ]);
 
 const AUSNAHMEN: Record<string, string> = {

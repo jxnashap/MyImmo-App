@@ -34,7 +34,10 @@ export function hinweisMailText(ergebnisse: Ergebnis[]): string | null {
   if (ergebnisse.includes("abbestellt")) {
     return "Der Mieter hat Hinweis-Mails abbestellt — er sieht das Dokument bei seinem nächsten Besuch im Portal.";
   }
-  if (ergebnisse.includes("gebremst")) return "Eine Hinweis-Mail ging in den letzten Minuten schon hinaus — keine zweite.";
+  if (ergebnisse.includes("vorgemerkt")) {
+    return "Die Hinweis-Mail ging noch nicht hinaus — MyImmo versucht es erneut (höchstens dreimal, einen Tag lang). Bis dahin sieht der Mieter das Dokument bei seinem nächsten Besuch im Portal.";
+  }
+  if (ergebnisse.includes("gebremst")) return "Eine Hinweis-Mail zu diesem Vorgang ging schon hinaus — keine zweite.";
   return null;
 }
 
