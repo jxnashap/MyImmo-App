@@ -23,7 +23,7 @@ export const CACHE_PRAEFIX = "myimmo-";
 
 /** Farbe von Splash, Titelleiste und Statusleiste — die helle Arbeitsfläche (`--bg`). */
 export const APP_FARBE_HELL = "#f5f5f5";
-export const APP_FARBE_DUNKEL = "#0f0f0f";
+export const APP_FARBE_DUNKEL = "#000000";
 
 /** Ereignis an `window`, sobald der Browser eine Installation anbietet oder sie erledigt ist. */
 export const INSTALL_EREIGNIS = "myimmo:install";
