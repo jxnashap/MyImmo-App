@@ -231,10 +231,12 @@
 * { box-sizing: border-box; }
 
 /* ===== DUNKELMODUS ===== achromatische Umkehrung des Frosted-Paper-Systems:
-   neutrales Nah-Schwarz statt Warm-Schwarz, Gold als Akzent voll gesättigt
-   (auf dunklem Grund lesbar), gleiche Radius-/Typo-Hierarchie. */
+   neutrales Schwarz statt Warm-Schwarz, Gold als Akzent voll gesättigt
+   (auf dunklem Grund lesbar), gleiche Radius-/Typo-Hierarchie.
+   Hintergrund reines Schwarz (13.10.2026, Vorgabe des Betreibers: „wie Trade Republic“);
+   Karten, Felder und Seitenleiste bleiben bei ihren Grautönen. */
 [data-theme="dark"] {
-  --bg: #0f0f0f;
+  --bg: #000000;
   --bg2: #171717;
   --bg3: #1f1f1f;
   --bg4: #292929;
@@ -288,7 +290,7 @@
    bleiben — sonst rendern OS-Dark-Nutzer ohne gesetztes Theme eine Mischform. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #0f0f0f; --bg2: #171717; --bg3: #1f1f1f; --bg4: #292929; --bg5: #333333;
+    --bg: #000000; --bg2: #171717; --bg3: #1f1f1f; --bg4: #292929; --bg5: #333333;
     --line: rgba(255,255,255,0.08); --line2: rgba(255,255,255,0.16);
     --feld-rand: rgba(255,255,255,0.36);
     --text: #f5f5f5; --muted: #9a9a9a; --faint: #8e8e8e; /* AA, wie im data-theme-Block */

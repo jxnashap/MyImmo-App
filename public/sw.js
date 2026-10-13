@@ -8,7 +8,7 @@
 //
 // VERSION = die ersten 12 Zeichen des SHA-256 von public/pwa/offline.html. Ändert sich die Seite,
 // muss VERSION mit (tests/pwa.test.ts prüft es) — nur eine geänderte sw.js wird neu installiert.
-const VERSION = "17cf97f2d049";
+const VERSION = "80417bd9d807";
 const CACHE = "myimmo-offline-" + VERSION;
 const OFFLINE = "/pwa/offline.html";
 
