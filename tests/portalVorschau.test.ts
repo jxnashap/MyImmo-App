@@ -26,6 +26,13 @@ function fakeDb(antworten: Record<string, unknown>) {
       k[m] = (x: unknown, y?: unknown) => { a.filter.push(`${m}:${String(x)}=${JSON.stringify(y)}`); return k; };
     }
     const antwort = () => ({ data: antworten[tabelle] ?? null, error: null });
+    // Geblätterte Abfragen (`ladeAlle`, z. B. der Verlauf seit 13.10.2026) enden mit `.range()` und
+    // erwarten eine Liste — eine fehlende Antwort ist dort die LEERE Liste, nicht „keine Antwort“.
+    k.range = (von: number, bis: number) => {
+      a.filter.push(`range:${von}=${bis}`);
+      const d = antworten[tabelle];
+      return Promise.resolve({ data: Array.isArray(d) ? d : d == null ? [] : [d], error: null });
+    };
     k.maybeSingle = async () => antwort();
     k.then = (f: (w: unknown) => unknown) => Promise.resolve(antwort()).then(f);
     return k;

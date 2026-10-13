@@ -302,3 +302,27 @@ describe("naechsteFaelligkeit(): Kalenderrechnung ohne Zeitzone", () => {
     expect(naechsteFaelligkeit("2026-13-01", "monatlich")).toBeNull();
   });
 });
+
+// Restlücke (13.10.2026): Objekt oder Mieter eines fremden Kontos am Termin. Die Sperre sitzt in der
+// Datenbank (Trigger `termine_bezug_pruefen`, bewiesen in supabase/test/rls/restluecken_termin_angebot.sql);
+// hier, dass die Action die Ablehnung SAGT statt auf die Fehlerseite zu werfen — und andere Fehler nicht
+// verschluckt.
+describe("Termin mit fremdem Objekt/Mieter", () => {
+  const BEZUG = { message: "Der Mieter gehört nicht zu diesem Konto.", code: "42501", hint: "termin_bezug" };
+  it("Anlegen: Ablehnung der Datenbank wird als Hinweis gezeigt", async () => {
+    const { mod } = await lade({ fehlerBei: { "termine:insert": BEZUG } });
+    const ziel = decodeURIComponent(await fangeRedirect(() => mod.createTermin(fd({ titel: "X", datum: "2026-10-01", mieter_id: "fremd" }))));
+    expect(ziel).toContain("gehört nicht zu deinem Konto");
+    expect(ziel).not.toContain("angelegt.");
+  });
+  it("Bearbeiten: ebenso", async () => {
+    const { mod } = await lade({ antworten: { termine: { datum: "2026-10-01" } }, fehlerBei: { "termine:update": BEZUG } });
+    const ziel = decodeURIComponent(await fangeRedirect(() => mod.updateTermin("t1", fd({ titel: "X", datum: "2026-10-01", prop_id: "fremd" }))));
+    expect(ziel).toContain("gehört nicht zu deinem Konto");
+    expect(ziel).not.toContain("Termin gespeichert");
+  });
+  it("ein ANDERER Datenbankfehler wird weiter geworfen, nicht als Bezugsfehler ausgegeben", async () => {
+    const { mod } = await lade({ fehlerBei: { "termine:insert": { message: "timeout" } } });
+    await expect(mod.createTermin(fd({ titel: "X", datum: "2026-10-01" }))).rejects.toThrow("timeout");
+  });
+});

@@ -74,17 +74,17 @@
 > **Merke außerdem:** `effektiverPlan()` wertet `gueltig_bis` NICHT aus — ein Abo endet
 > allein über `status`.
 
-> 🛡️ **Prüfstand 11.10.2026 (Arbeitsauftrag B01–B18, Abläufe A–F) — in Arbeit auf
-> `claude/magical-feynman-l8w9s5`.** Phase 1 (Sicherheit) und Phase 2 (B05–B08 + B09–B11) gebaut, lokal an
-> der Datenbankgrenze bewiesen (`scripts/db/testdb.sh` + `scripts/db/rlstest.sh` + `scripts/db/nebenlaeufig.sh`,
+> 🛡️ **Prüfstand 11.10.2026 (Arbeitsauftrag B01–B18, Abläufe A–F) — ✅ LIVE seit 12./13.10.2026 (#457).**
+> Alle Phasen gebaut, lokal an der Datenbankgrenze bewiesen (`scripts/db/testdb.sh` + `scripts/db/rlstest.sh` + `scripts/db/nebenlaeufig.sh`,
 > Abschnitt „Lokale Test-Datenbank“ in `supabase/migrations/README.md`). **B04 war ein Weg am Zugangscode
-> vorbei** (Selbst-Einladung → freigeschaltete Hausverwaltung). **Ausrollen nur in dieser Reihenfolge:**
-> `20261011110000` (B07), `20261011120000` (B12) und `20261011121000` (B14, Schalter bleibt aus) per apply_migration
-> und `20261011130000` (Ablauf B, SQL-Editor), `20261011140000` (Ablauf C, apply_migration; vorher die Altbestand-Abfrage
-> am Dateiende), `20261011150000` (Ablauf D, apply_migration), `20261011160000` (Ablauf F, SQL-Editor), alle VOR dem Code → Code mergen + deployen → `20261011100000` (B04) und
-> `20261011101000` (B03) per apply_migration → `20261011102000` (B01) → `20261011103000` (B02, SQL-Editor;
-> bis dahin scheitert „Konto löschen“ mit Fehlermeldung, gelöscht wird nichts) → `20261011104000` (B18,
-> SQL-Editor, No-op). **Phase-2-Regeln:** (5) Eine Buchung, die ein Geschäftsvorgang erzeugt, hat eine
+> vorbei** (Selbst-Einladung → freigeschaltete Hausverwaltung). **Ausgerollt in dieser Reihenfolge**
+> (Versionen und Vorprüfungen je Datei in `supabase/migrations/README.md`): B07, B12, B14, C, D per apply_migration +
+> B und F im SQL-Editor VOR dem Code → Merge `2ec34da` + Deploy → B04, B03, B01 per apply_migration → B02 im SQL-Editor;
+> B18 nicht ausgeführt (in Produktion No-op, live geprüft). **Offen (Betreiber):** `CRON_SECRET` ist in Vercel
+> Production NICHT gesetzt — beide Cron-Routen (`/api/cron/aussen-auftraege`, `/api/cron/bewertung`) antworten 503
+> „CRON_SECRET nicht gesetzt“; die Wiederholung von Hinweis-Mails läuft erst danach (und braucht Brevo).
+> **Lehre beim Ausrollen:** Im SQL-Editor lief zuerst fremder Text aus der Zwischenablage („RETURNS void“) — Postgres
+> parst das ganze Skript vorher, nichts wurde angewendet; SQL für den Betreiber deshalb als Block im Chat geben. **Phase-2-Regeln:** (5) Eine Buchung, die ein Geschäftsvorgang erzeugt, hat eine
 > fachliche Kennung mit UNIQUE-Regel (`zahlung_ref`, Vorlage + Termin, `auftrag_id`, `meldung_id`) — nie
 > „erst lesen, dann schreiben“. (6) Eine Auswertung lädt ihre Grundlagen über `alleZeilen()`
 > (`lib/db/auswertung.ts`); Fehler → Fehlerkarte/503, nie Zahlen aus einem Teil. (7) Ein Beleg wird erst
@@ -136,6 +136,7 @@
 > Versand möglich (Test hält es fest). Formulare, die etwas anlegen (Archiv-Schreiben, Auftrag), schicken eine
 > Vorgangskennung (`useVorgang()`, neu erst nach Erfolg); der Server findet bei 23505 die erste Zeile. Eine
 > Zustellung je Dokument und Empfänger höchstens einmal (`zustelle()` filtert, liest bei 23505 nach).
+> (24) **Restlücken (13.10.2026, Migration `20261013090000`):** Ein Termin hängt nur an eigenem Objekt/Mieter (Trigger `termine_bezug_pruefen`; die Action zeigt die Ablehnung als Hinweis). „Angebot beauftragen“ läuft nur über die RPC `angebot_beauftragen` — EINE Transaktion, je Vorgang nacheinander; **Regel: Ein Geschäftsvorgang, der mehrere Zeilen in Abhängigkeit voneinander schreibt, gehört in EINE Datenbank-Funktion (security invoker), nicht in mehrere Aufrufe aus der Action.** Der Verlauf (`ladeEreignisse`) lädt vollständig (geblättert, IDs in Stapeln) oder wirft — nie `.limit()` bei aufsteigender Sortierung (schneidet die NEUESTEN ab).
 > **Regeln:**
 > (1) `mfa_wiederherstellung` und `konto_loeschen()` nur über die Service-Role im Server —
 > `delete_own_account()` ist kein Nutzer-Einstieg mehr. (2) Einladen darf nur ein freigeschalteter
@@ -254,6 +255,10 @@ im Sanierungs-Guide + Verknüpfung „Kaufprüfung → übernommenes Objekt“) 
     Home-Bildschirm“) und Android (Chrome → „App installieren“): Symbol und Name, Anmelden in der App,
     Flugmodus → Seite „Keine Verbindung“, und ob „Beim Schließen abmelden“ in der installierten App greift.
     Klärt nebenbei, ob iPhone-Web-Apps in der EU weiter im eigenen Fenster laufen (eine Quelle von 2026 widerspricht).
+13. **`CRON_SECRET` in Vercel (Production) setzen + neu deployen (gefunden 12.10.2026):** Live antworten
+    `/api/cron/aussen-auftraege` UND `/api/cron/bewertung` mit 503 „CRON_SECRET nicht gesetzt“ — die Crons laufen also
+    nicht. Beliebiges langes Geheimnis; Vercel schickt es selbst als `Authorization: Bearer …` an die Cron-Routen.
+    Merkmal danach: `curl https://www.myimmoapp.de/api/cron/bewertung` antwortet 401 statt 503.
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**

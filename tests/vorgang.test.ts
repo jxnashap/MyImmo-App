@@ -84,3 +84,74 @@ describe("Migration", () => {
     expect(ohneKommentar.match(/md5\(a\.id::text \|\| ':antwort'\)::uuid/g)?.length).toBe(2);
   });
 });
+
+// ---- ladeEreignisse: vollständig oder gar nicht (13.10.2026) -------------------------------------
+// Vorher: Fehler → leerer Verlauf („keine Nachricht“), und `.limit(2000)` bei aufsteigender Sortierung
+// schnitt die NEUESTEN Einträge ab.
+type Aufruf = { ids: string[]; von: number; bis: number; sortierung: string[] };
+function fakeVerlaufDb(ereignisse: Ereignis[], fehlerAbAufruf = Infinity) {
+  const aufrufe: Aufruf[] = [];
+  const db = {
+    from: (tabelle: string) => {
+      expect(tabelle).toBe("anliegen_ereignisse");
+      const st: { ids: string[]; sortierung: string[] } = { ids: [], sortierung: [] };
+      const kette = {
+        select: () => kette,
+        in: (_spalte: string, ids: string[]) => { st.ids = ids; return kette; },
+        order: (spalte: string) => { st.sortierung.push(spalte); return kette; },
+        range: async (von: number, bis: number) => {
+          aufrufe.push({ ids: st.ids, von, bis, sortierung: st.sortierung });
+          if (aufrufe.length >= fehlerAbAufruf) return { data: null, error: { message: "timeout" } };
+          const passend = ereignisse
+            .filter((e) => st.ids.includes(e.anliegen_id))
+            .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+          return { data: passend.slice(von, bis + 1), error: null };
+        },
+      };
+      return kette;
+    },
+  };
+  return { db, aufrufe };
+}
+const ev = (i: number, anliegen = "a1"): Ereignis => ({
+  id: `e${String(i).padStart(5, "0")}`, anliegen_id: anliegen, autor_rolle: "mieter", art: "nachricht",
+  text: `Nachricht ${i}`, status_neu: null, created_at: new Date(Date.UTC(2026, 0, 1) + i * 60_000).toISOString(),
+});
+
+describe("ladeEreignisse", () => {
+  it("lädt ALLE Einträge über mehrere Seiten — auch die neuesten (vorher bei 2.000 abgeschnitten)", async () => {
+    const { ladeEreignisse } = await import("@/lib/vorgang");
+    const { db, aufrufe } = fakeVerlaufDb(Array.from({ length: 2500 }, (_, i) => ev(i)));
+    const m = await ladeEreignisse(db, ["a1"]);
+    expect(m.get("a1")).toHaveLength(2500);
+    expect(m.get("a1")!.at(-1)!.text).toBe("Nachricht 2499");
+    expect(aufrufe.map((a) => [a.von, a.bis])).toEqual([[0, 999], [1000, 1999], [2000, 2999]]);
+    // Stabile Sortierung, die mit dem eindeutigen Schlüssel endet — sonst Dubletten/Lücken beim Blättern.
+    expect(aufrufe[0].sortierung).toEqual(["created_at", "id"]);
+  });
+
+  it("ein Fehler wirft (Fehlerkarte) statt einen leeren oder halben Verlauf zu zeigen", async () => {
+    const { ladeEreignisse } = await import("@/lib/vorgang");
+    const { DatenUnvollstaendig } = await import("@/lib/db/ladeAlle");
+    const { db } = fakeVerlaufDb([ev(1)], 1);
+    await expect(ladeEreignisse(db, ["a1"])).rejects.toBeInstanceOf(DatenUnvollstaendig);
+    const zwei = fakeVerlaufDb(Array.from({ length: 1500 }, (_, i) => ev(i)), 2); // erste Seite gut, zweite scheitert
+    await expect(ladeEreignisse(zwei.db, ["a1"])).rejects.toBeInstanceOf(DatenUnvollstaendig);
+  });
+
+  it("viele Anliegen: IDs in Stapeln (lange Adressen scheitern sonst), doppelte IDs nur einmal, nichts geht verloren", async () => {
+    const { ladeEreignisse } = await import("@/lib/vorgang");
+    const ids = Array.from({ length: 250 }, (_, i) => `a${i}`);
+    const { db, aufrufe } = fakeVerlaufDb(ids.map((id, i) => ev(i, id)));
+    const m = await ladeEreignisse(db, [...ids, "a0", "a1"]);
+    expect(aufrufe.map((a) => a.ids.length)).toEqual([100, 100, 50]);
+    expect([...m.keys()]).toHaveLength(250);
+  });
+
+  it("ohne Anliegen keine Abfrage", async () => {
+    const { ladeEreignisse } = await import("@/lib/vorgang");
+    const { db, aufrufe } = fakeVerlaufDb([]);
+    expect((await ladeEreignisse(db, [])).size).toBe(0);
+    expect(aufrufe).toHaveLength(0);
+  });
+});
