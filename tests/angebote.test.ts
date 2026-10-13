@@ -4,6 +4,7 @@ import { fakeSupabase, mockeNextUndSupabase, fd } from "./stubs/actionHarness";
 import { speicherDb } from "./stubs/speicherDb";
 import { aktuelleAngebote, anfrageMail, mailtoLink, type Angebotsanfrage, type Angebot } from "@/lib/angebote";
 import { istOeffentlicheSeite } from "@/lib/oeffentlich";
+import { DEMO_NICHT_GESPEICHERT } from "@/lib/demoFehler";
 
 // „Angebote einholen“ (02.10.2026, Handwerker-Anfragen Stufe 1). Grenzen, die hier halten
 // müssen: nur eigene Vorgänge und Firmen, keine Mieterdaten in der Anfrage, Mieter-Kontakt
@@ -143,76 +144,52 @@ async function ladeSpeicher(extra: { fehlerBei?: Record<string, string> } = {}) 
   return { db, mod, anfrage };
 }
 
-describe("beauftrageAngebot", () => {
-  it("legt einen offenen Auftrag an die Firma an — OHNE Mieter-Kontakt, wenn nicht angehakt", async () => {
-    const { db, mod, anfrage } = await ladeSpeicher();
-    const r = await mod.beauftrageAngebot(fd({ angebotId: "g1" }));
-    expect(r).toEqual({ ok: true, token: db.tabellen.auftraege[0].public_token });
-    expect(db.tabellen.auftraege).toEqual([expect.objectContaining({
-      vermieter_id: "nutzer-1", service_user_id: null, firma_id: "f1", anliegen_id: "a1", prop_id: "p1",
-      status: "offen", erstellt_von: "vermieter", kosten_schaetzung: 480.5, termin: "2026-10-10", mieter_id: null,
-    })]);
-    expect(anfrage("q1")).toMatchObject({ status: "beauftragt", auftrag_id: db.tabellen.auftraege[0].id });
-    expect(anfrage("q2")).toMatchObject({ status: "abgelehnt" }); // die übrigen des Vorgangs
-    expect(anfrage("q-fremd")).toMatchObject({ status: "angefragt" });
+describe("beauftrageAngebot (RPC angebot_beauftragen, 13.10.2026)", () => {
+  // Die Logik selbst (eine Transaktion, Reihenfolge je Vorgang, nur eigene Daten) prüft die Datenbank-Probe
+  // supabase/test/rls/restluecken_termin_angebot.sql und scripts/db/nebenlaeufig.sh. Hier: was die Action
+  // an die Datenbank gibt und wie sie deren Antwort weiterreicht.
+  const G = "11111111-2222-3333-4444-555555555555";
+  const rpcAufrufe = (db: Db) => db.zugriffe.filter((z) => z.tabelle === "rpc:angebot_beauftragen");
+
+  it("EIN Aufruf der RPC — mit Angebot, ohne Mieter-Kontakt, Konto-Adresse als Absender-Rückfall", async () => {
+    const { db, mod } = await lade({ rpc: { angebot_beauftragen: { ok: true, token: "tok-1", auftrag_id: "x" } } });
+    expect(await mod.beauftrageAngebot(fd({ angebotId: G }))).toEqual({ ok: true, token: "tok-1" });
+    expect(rpcAufrufe(db).map((z) => z.daten)).toEqual([{ p_angebot_id: G, p_mieter_kontakt: false, p_vermieter_name: "test@example.org" }]);
+    // Kein Schreibvorgang mehr an der RPC vorbei (vorher vier einzelne).
+    expect(db.zugriffe.filter((z) => z.op !== "rpc")).toEqual([]);
   });
 
-  it("mit Haken geht die Mieter-Zeile des Vorgangs mit", async () => {
-    const { db, mod } = await ladeSpeicher();
-    await mod.beauftrageAngebot(fd({ angebotId: "g1", mieterKontakt: "on" }));
-    expect(db.tabellen.auftraege[0]).toMatchObject({ mieter_id: "m1" });
+  it("Mieter-Kontakt nur mit Haken", async () => {
+    const { db, mod } = await lade({ rpc: { angebot_beauftragen: { ok: true, token: "t" } } });
+    await mod.beauftrageAngebot(fd({ angebotId: G, mieterKontakt: "on" }));
+    await mod.beauftrageAngebot(fd({ angebotId: G, mieterKontakt: "off" }));
+    expect(rpcAufrufe(db).map((z) => (z.daten as Record<string, unknown>).p_mieter_kontakt)).toEqual([true, false]);
   });
 
-  it("ein zweiter Klick (Anfrage schon entschieden) legt keinen zweiten Auftrag an", async () => {
-    const { db, mod } = await ladeSpeicher();
-    await mod.beauftrageAngebot(fd({ angebotId: "g1" }));
-    const r = await mod.beauftrageAngebot(fd({ angebotId: "g1" }));
-    expect("error" in r && r.error).toContain("schon entschieden");
-    expect(db.tabellen.auftraege).toHaveLength(1);
+  it("Antwort der Datenbank („schon entschieden“, fremdes Angebot) wird angezeigt", async () => {
+    const { mod } = await lade({ rpc: { angebot_beauftragen: { error: "Für diese Anfrage wurde schon entschieden." } } });
+    expect(await mod.beauftrageAngebot(fd({ angebotId: G }))).toEqual({ error: "Für diese Anfrage wurde schon entschieden." });
   });
 
-  it("Doppelklick GLEICHZEITIG: genau EIN Auftrag", async () => {
-    const { db, mod } = await ladeSpeicher();
-    const [a, b] = await Promise.all([mod.beauftrageAngebot(fd({ angebotId: "g1" })), mod.beauftrageAngebot(fd({ angebotId: "g1" }))]);
-    expect(db.tabellen.auftraege).toHaveLength(1);
-    expect([a, b].filter((x) => "ok" in x)).toHaveLength(1);
+  it("Fehler der Datenbank: zurückgerollt — die Meldung sagt, dass nichts geändert ist; Demo bekommt den Demo-Satz", async () => {
+    const { mod } = await lade({ fehlerBei: { "rpc:angebot_beauftragen": { message: "deadlock detected", code: "40P01" } } });
+    const r = await mod.beauftrageAngebot(fd({ angebotId: G }));
+    expect("error" in r && r.error).toContain("es wurde nichts geändert");
+    const { mod: m2 } = await lade({ fehlerBei: { "rpc:angebot_beauftragen": { message: "x", code: "42501", hint: "demo_nur_lesen" } } });
+    expect(await m2.beauftrageAngebot(fd({ angebotId: G }))).toEqual({ error: DEMO_NICHT_GESPEICHERT });
   });
 
-  it("zwei VERSCHIEDENE Angebote desselben Vorgangs gleichzeitig: es bleibt bei einem Auftrag", async () => {
-    // Das zweite wird abgelehnt, sobald das erste beauftragt ist — oder scheitert an seiner Beanspruchung.
-    const { db, mod } = await ladeSpeicher();
-    await Promise.all([mod.beauftrageAngebot(fd({ angebotId: "g1" })), mod.beauftrageAngebot(fd({ angebotId: "g2" }))]);
-    expect(db.tabellen.angebotsanfragen.filter((r) => r.status === "beauftragt").length).toBeGreaterThanOrEqual(1);
-    // Beide könnten beansprucht sein, bevor das Ablehnen läuft — dann gibt es zwei Aufträge, aber nie
-    // zwei an DIESELBE Firma. Festgehalten wird hier, was garantiert ist:
-    const firmen = db.tabellen.auftraege.map((x) => x.firma_id);
-    expect(new Set(firmen).size).toBe(firmen.length);
+  it("„ok“ ohne Link-Token gilt nicht als Erfolg", async () => {
+    const { mod } = await lade({ rpc: { angebot_beauftragen: { ok: true } } });
+    expect("error" in (await mod.beauftrageAngebot(fd({ angebotId: G })))).toBe(true);
   });
 
-  it("schon entschiedene oder fremde Anfrage → kein Auftrag", async () => {
-    const { db, mod, anfrage } = await ladeSpeicher();
-    anfrage("q1").status = "abgelehnt";
-    db.tabellen.angebote.push({ id: "g-fremd", anfrage_id: "q-fremd", betrag: 1, termin: null });
-    for (const id of ["g1", "g-fremd", "gibt-es-nicht"]) {
-      expect("error" in (await mod.beauftrageAngebot(fd({ angebotId: id })))).toBe(true);
+  it("fehlendes oder unlesbares Angebot → die Datenbank wird gar nicht gefragt", async () => {
+    for (const angebotId of ["", "g1", "1; drop"]) {
+      const { db, mod } = await lade({ rpc: { angebot_beauftragen: { ok: true, token: "t" } } });
+      expect("error" in (await mod.beauftrageAngebot(fd({ angebotId })))).toBe(true);
+      expect(rpcAufrufe(db)).toHaveLength(0);
     }
-    expect(db.tabellen.auftraege).toHaveLength(0);
-    expect(anfrage("q-fremd").status).toBe("angefragt");
-  });
-
-  it("scheitert der Auftrag, ist die Anfrage wieder offen", async () => {
-    const { db, mod, anfrage } = await ladeSpeicher({ fehlerBei: { "auftraege:insert": "abgelehnt" } });
-    const r = await mod.beauftrageAngebot(fd({ angebotId: "g1" }));
-    expect(r).toEqual({ error: "Der Auftrag konnte nicht angelegt werden." });
-    expect(anfrage("q1")).toMatchObject({ status: "angefragt", auftrag_id: null });
-    expect(anfrage("q2").status).toBe("angefragt");
-    expect(db.tabellen.auftraege).toHaveLength(0);
-  });
-
-  it("scheitert das Beanspruchen, entsteht kein Auftrag", async () => {
-    const { db, mod } = await ladeSpeicher({ fehlerBei: { "angebotsanfragen:update": "timeout" } });
-    expect("error" in (await mod.beauftrageAngebot(fd({ angebotId: "g1" })))).toBe(true);
-    expect(db.tabellen.auftraege).toHaveLength(0);
   });
 });
 

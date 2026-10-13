@@ -5,6 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { zahlDe } from "@/lib/zahl";
 import { darfWeiter, ZU_VIELE } from "@/lib/net/bremse";
 import { MAX_FIRMEN } from "@/lib/angebote";
+import { dbFehlerText } from "@/lib/demoFehler";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // „Angebote einholen“ (02.10.2026). Der Vermieter fragt Firmen aus seinem Verzeichnis an;
 // die Firma antwortet über einen Link ohne Konto; der Vermieter beauftragt eines der Angebote.
@@ -87,9 +90,12 @@ export async function zieheAnfrageZurueck(anfrageId: string): Promise<{ ok: true
 }
 
 /**
- * Vermieter: ein Angebot annehmen → normaler Auftrag an die Firma (Status „offen“, Link
- * /auftrag/<token> wie bisher). Die übrigen offenen Anfragen dieses Vorgangs werden abgelehnt.
- * Mieter-Kontakt nur bei ausdrücklichem Haken.
+ * Vermieter: ein Angebot beauftragen → Auftrag an die Firma (ohne Service-Konto), übrige Anfragen des Vorgangs
+ * abgelehnt. Seit 13.10.2026 über die RPC `angebot_beauftragen` in EINER Transaktion: Vorher waren es vier
+ * Schreibvorgänge, und ein Abbruch nach dem ersten ließ die Anfrage „beauftragt“ ohne Auftrag stehen (kein
+ * Knopf mehr, die Firma wusste von nichts). Die RPC läuft mit den Rechten des Vermieters (RLS, Trigger) und
+ * entscheidet je Vorgang nacheinander — zwei gleichzeitige Klicks ergeben genau EINEN Auftrag.
+ * Mieter-Kontakt geht nur mit Haken mit.
  */
 export async function beauftrageAngebot(fd: FormData): Promise<{ ok: true; token: string } | Fehler> {
   const supabase = await createClient();
@@ -99,63 +105,20 @@ export async function beauftrageAngebot(fd: FormData): Promise<{ ok: true; token
   const angebotId = String(fd.get("angebotId") ?? "").trim();
   const kontakt = fd.get("mieterKontakt") === "on";
   if (!angebotId) return { error: "Angebot fehlt." };
+  if (!UUID_RE.test(angebotId)) return { error: "Angebot nicht gefunden." };
 
-  const { data: ang, error: e1 } = await supabase
-    .from("angebote").select("id,anfrage_id,betrag,termin").eq("id", angebotId).maybeSingle();
-  if (e1 || !ang) return { error: "Angebot nicht gefunden." };
-  const { data: q, error: e2 } = await supabase
-    .from("angebotsanfragen").select("id,anliegen_id,firma_id,titel,beschreibung,objekt,absender,status")
-    .eq("id", ang.anfrage_id).eq("vermieter_id", user.id).maybeSingle();
-  if (e2 || !q) return { error: "Anfrage nicht gefunden." };
-  if (q.status !== "angefragt") return { error: "Für diese Anfrage wurde schon entschieden." };
-  const { data: anl, error: e3 } = await supabase
-    .from("anliegen").select("id,prop_id,mieter_id").eq("id", q.anliegen_id).eq("vermieter_id", user.id).maybeSingle();
-  if (e3 || !anl) return { error: "Vorgang nicht gefunden." };
-
-  // B07 (11.10.2026): Erst die Anfrage BEANSPRUCHEN (bedingt auf „angefragt“) — ein zweiter Klick oder ein
-  // gleichzeitiger Aufruf scheitert hier, statt einen zweiten Auftrag an die Firma anzulegen.
-  const { data: beansprucht, error: e5 } = await supabase
-    .from("angebotsanfragen").update({ status: "beauftragt" })
-    .eq("id", q.id).eq("vermieter_id", user.id).eq("status", "angefragt")
-    .select("id").maybeSingle();
-  if (e5) return { error: "Die Anfrage konnte nicht abgeschlossen werden — bitte erneut versuchen." };
-  if (!beansprucht) return { error: "Für diese Anfrage wurde schon entschieden." };
-
-  const { data: auftrag, error: e4 } = await supabase
-    .from("auftraege")
-    .insert({
-      vermieter_id: user.id, service_user_id: null, firma_id: q.firma_id,
-      anliegen_id: q.anliegen_id, prop_id: anl.prop_id ?? null,
-      objekt_name: q.objekt, vermieter_name: q.absender || user.email || null,
-      titel: q.titel, beschreibung: q.beschreibung, termin: ang.termin ?? null,
-      status: "offen", erstellt_von: "vermieter",
-      kosten_schaetzung: Number(ang.betrag),
-      mieter_id: kontakt ? (anl.mieter_id ?? null) : null,
-    })
-    .select("id,public_token").maybeSingle();
-  if (e4 || !auftrag) {
-    // Zurücknehmen: Ohne Auftrag ist die Anfrage wieder offen (sonst stünde sie „beauftragt“ ohne Auftrag).
-    const { error: rueck } = await supabase.from("angebotsanfragen").update({ status: "angefragt" })
-      .eq("id", q.id).eq("vermieter_id", user.id).eq("status", "beauftragt").is("auftrag_id", null);
-    return {
-      error: rueck
-        ? "Der Auftrag konnte nicht angelegt werden, und die Anfrage steht noch auf „beauftragt“ — bitte Seite neu laden."
-        : "Der Auftrag konnte nicht angelegt werden.",
-    };
-  }
-
-  const { error: eLink } = await supabase
-    .from("angebotsanfragen").update({ auftrag_id: auftrag.id })
-    .eq("id", q.id).eq("vermieter_id", user.id);
-  if (eLink) return { error: "Auftrag angelegt, aber nicht mit der Anfrage verknüpft — bitte Seite neu laden." };
-
-  const { error: e6 } = await supabase
-    .from("angebotsanfragen").update({ status: "abgelehnt" })
-    .eq("anliegen_id", q.anliegen_id).eq("vermieter_id", user.id).eq("status", "angefragt");
-  if (e6) return { error: "Auftrag angelegt; die übrigen Anfragen sind noch offen — bitte einzeln zurückziehen." };
+  const { data, error } = await supabase.rpc("angebot_beauftragen", {
+    p_angebot_id: angebotId,
+    p_mieter_kontakt: kontakt,
+    p_vermieter_name: user.email ?? null,
+  });
+  // Ein Fehler der Datenbank heißt: Die Transaktion wurde zurückgerollt — es ist NICHTS geändert.
+  if (error) return { error: dbFehlerText(error, "Der Auftrag konnte nicht angelegt werden — es wurde nichts geändert, bitte erneut versuchen.") };
+  const r = data as { ok?: boolean; token?: string; error?: string } | null;
+  if (!r?.ok || !r.token) return { error: r?.error ?? "Der Auftrag konnte nicht angelegt werden." };
 
   revalidatePath("/anliegen");
-  return { ok: true, token: String(auftrag.public_token) };
+  return { ok: true, token: String(r.token) };
 }
 
 /** Firma (ohne Konto): Angebot über den Link abgeben. Prüfung des Links in der Datenbank. */

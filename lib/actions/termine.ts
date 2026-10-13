@@ -23,6 +23,14 @@ function feldWerte(formData: FormData) {
   };
 }
 
+/**
+ * Objekt oder Mieter eines FREMDEN Kontos am Termin: Die Datenbank lehnt ab (Trigger `termine_bezug_pruefen`,
+ * 13.10.2026). Das passiert nur bei manipulierten Formularen — die Auswahl zeigt eigene Einträge. Sagen statt
+ * werfen, damit der Nutzer nicht auf der Fehlerseite landet.
+ */
+const BEZUG_ABGELEHNT = "Objekt oder Mieter gehört nicht zu deinem Konto — es wurde nichts gespeichert.";
+const istBezugFehler = (e: { hint?: string | null } | null) => e?.hint === "termin_bezug";
+
 export async function createTermin(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -44,6 +52,7 @@ export async function createTermin(formData: FormData) {
     datum,
     ...feldWerte(formData),
   });
+  if (istBezugFehler(error)) redirect(flashUrl("/termine", BEZUG_ABGELEHNT, "error"));
   if (error) throw new Error(error.message);
 
   revalidatePath("/termine");
@@ -85,6 +94,7 @@ export async function updateTermin(id: string, formData: FormData) {
     ...feldWerte(formData),
     ...(alt && alt.datum !== datum ? { serien_tag: null } : {}),
   }).eq("id", id).eq("user_id", user.id);
+  if (istBezugFehler(error)) redirect(flashUrl("/termine", BEZUG_ABGELEHNT, "error"));
   if (error) throw new Error(error.message);
 
   revalidatePath("/termine");

@@ -304,6 +304,14 @@ abschneidet, und die SEITE selbst ausführen (`tests/auswertungVollstaendig.test
 Ladeweg kann einen Fehler sonst verdecken (eine Mutation überlebte genau so, bis die angezeigte
 Summe geprüft wurde).
 
+**Ein Vorgang in vier Aufrufen (Angebot beauftragen, 13.10.2026)**
+Die Action beanspruchte die Anfrage, legte danach den Auftrag an, verknüpfte und lehnte die übrigen ab — vier Aufrufe. Ein Abbruch nach dem ersten ließ die Anfrage „beauftragt“ ohne Auftrag zurück; die Oberfläche bot keinen Knopf mehr an. Ein „Zurücknehmen“ im Fehlerzweig hilft nicht, wenn die Funktion gar nicht mehr läuft.
+→ *Gegenprüfung:* Abhängige Schreibvorgänge in EINE Datenbank-Funktion (security invoker, gleiche RLS); im Test einen späten Schritt scheitern lassen (Prüfregel nur in der Testtransaktion) und zeigen, dass der frühe zurückgerollt ist. Gleichzeitigkeit mit zwei echten Sitzungen prüfen und das Zeitfenster gezielt weiten (eine dritte Sitzung hält eine Zeile, an der die erste mitten in der Funktion wartet) — ohne das blieb die Mutation „Sperre weg“ grün.
+
+**Verlauf mit `.limit()` aufsteigend (13.10.2026)**
+`ladeEreignisse` las `order(created_at asc).limit(2000)` und wertete `error` nicht aus: Bei vielen Einträgen fehlten die NEUESTEN, bei einem Fehler war der Verlauf leer — „keine Nachricht des Mieters“.
+→ *Gegenprüfung:* Was angezeigt wird, lädt vollständig (`ladeAlle`, Stapel für `.in()`) oder wirft; Test mit 2.500 Einträgen prüft den LETZTEN.
+
 **Grenze nur am Haupteingang (B14, 11.10.2026)**
 Die Tarifgrenze prüfte „Objekt anlegen“ — nicht „Bearbeiten“, nicht den CSV-Import, nicht den direkten
 REST-Weg; ein Lesefehler beim Zählen ergab 0 belegte Einheiten.

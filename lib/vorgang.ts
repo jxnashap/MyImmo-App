@@ -6,6 +6,8 @@
 // sehen DENSELBEN Verlauf — deshalb hier EIN Lader und EINE Beschriftung.
 // Reine Funktionen bis auf den Lader; ohne React.
 
+import { ladeAlle, stapel } from "@/lib/db/ladeAlle";
+
 export type Ereignis = {
   id: string;
   anliegen_id: string;
@@ -101,14 +103,24 @@ type Db = { from: (t: string) => any }; // eslint-disable-line @typescript-eslin
 /**
  * Verlauf zu einer Reihe von Anliegen. Beim Mieter filtert die Datenbank (Leseregel über
  * `anliegen`), beim Vermieter sind es ohnehin nur eigene Anliegen-IDs.
+ *
+ * Vollständig oder gar nicht (13.10.2026): Vorher wurde ein Fehler zu „kein Verlauf“ — der Vermieter
+ * sah keine Nachricht des Mieters und hielt den Vorgang für unbeantwortet. Und `.limit(2000)` bei
+ * aufsteigender Sortierung schnitt ausgerechnet die NEUESTEN Einträge ab. Jetzt geblättert (`ladeAlle`,
+ * IDs in Stapeln) und bei einem Fehler `DatenUnvollstaendig` — die Seite zeigt die Fehlerkarte.
  */
 export async function ladeEreignisse(db: Db, anliegenIds: string[]): Promise<Map<string, Ereignis[]>> {
   if (anliegenIds.length === 0) return new Map();
-  const { data } = await db
-    .from("anliegen_ereignisse")
-    .select(EREIGNIS_SPALTEN)
-    .in("anliegen_id", anliegenIds)
-    .order("created_at", { ascending: true })
-    .limit(2000);
-  return gruppiereEreignisse((data ?? []) as Ereignis[]);
+  const alle: Ereignis[] = [];
+  for (const teil of stapel([...new Set(anliegenIds)])) {
+    alle.push(...(await ladeAlle<Ereignis>("anliegen_ereignisse", (von, bis) =>
+      db
+        .from("anliegen_ereignisse")
+        .select(EREIGNIS_SPALTEN)
+        .in("anliegen_id", teil)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .range(von, bis))));
+  }
+  return gruppiereEreignisse(alle);
 }

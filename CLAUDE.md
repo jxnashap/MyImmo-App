@@ -136,6 +136,7 @@
 > Versand möglich (Test hält es fest). Formulare, die etwas anlegen (Archiv-Schreiben, Auftrag), schicken eine
 > Vorgangskennung (`useVorgang()`, neu erst nach Erfolg); der Server findet bei 23505 die erste Zeile. Eine
 > Zustellung je Dokument und Empfänger höchstens einmal (`zustelle()` filtert, liest bei 23505 nach).
+> (24) **Restlücken (13.10.2026, Migration `20261013090000`):** Ein Termin hängt nur an eigenem Objekt/Mieter (Trigger `termine_bezug_pruefen`; die Action zeigt die Ablehnung als Hinweis). „Angebot beauftragen“ läuft nur über die RPC `angebot_beauftragen` — EINE Transaktion, je Vorgang nacheinander; **Regel: Ein Geschäftsvorgang, der mehrere Zeilen in Abhängigkeit voneinander schreibt, gehört in EINE Datenbank-Funktion (security invoker), nicht in mehrere Aufrufe aus der Action.** Der Verlauf (`ladeEreignisse`) lädt vollständig (geblättert, IDs in Stapeln) oder wirft — nie `.limit()` bei aufsteigender Sortierung (schneidet die NEUESTEN ab).
 > **Regeln:**
 > (1) `mfa_wiederherstellung` und `konto_loeschen()` nur über die Service-Role im Server —
 > `delete_own_account()` ist kein Nutzer-Einstieg mehr. (2) Einladen darf nur ein freigeschalteter
