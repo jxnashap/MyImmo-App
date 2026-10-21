@@ -155,11 +155,21 @@
 > (3) **Uploads: höchstens `ANFRAGE_MAX_BYTES` (4 MB) je ANFRAGE** (`lib/anhaenge.ts`) — Vercel antwortet darüber mit 413
 > (gemessen: 5 MB → `FUNCTION_PAYLOAD_TOO_LARGE`). Summe prüfen (`pruefeAnhaenge`, Browser UND Server), Base64 in JSON 3 MB
 > (`BASE64_ROH_MAX_BYTES`), Fotos vorher verkleinern (`verkleinereBild`, 2000 px, entfernt auch GPS), Senden in `try`. Keine
-> Grenze darüber versprechen (`tests/anhaenge.test.ts`). Bewerbungs-Upload (6 MB) ist noch offen.
+> Grenze darüber versprechen (`tests/anhaenge.test.ts`, auch Bewerbungen).
 > (4) **Gefangene Fehler über `fehlerText(e, ersatz)`** (`lib/fehlerText.ts`), nie `e.message` — Next schwärzt geworfene
 > Server-Fehler in Produktion zu einem englischen Satz (`tests/fehlerText.test.ts`).
 > (5) Bestehendes Mieterkonto löst eine neue Einladung im Portal ein (`loeseEinladungEin`, Kasten „Noch keine Wohnung“) oder
 > direkt nach der Anmeldung aus dem Einladungslink. (6) Die installierte App startet auf `/?app=1` — abgemeldet zur Anmeldung.
+> **Paket 2 (Rechtssicherheit, gleicher Tag, `tests/rechtssicherheit.test.ts`):** NK „Voller Betrag“ druckt Gesamtkosten =
+> Betrag + Schlüssel „direkt zugeordnet (100 %)“ (`VOLL_SCHLUESSEL`; bei Eigentumswohnungen Anwaltsfrage 14), Warnung bei
+> Heizkosten ohne CO₂-Angaben (`CO2_FEHLT_HINWEIS`, 3 %-Kürzung) und Messdienst-Hinweis; Belegeingang ruft die KI nur auf Klick;
+> Einwilligungen: Start NUR einmalig, Vorlagen mit Absender/Inhalt/Häufigkeit (`EINWILLIGUNG_VERSION` 2026-10-21); **Einladung
+> und Bewerbungslink nur mit Namen im Profil** (Art. 13 DSGVO, `PROFILNAME_FEHLT`), Mail nennt den Verantwortlichen; DSA-
+> Kontaktstelle im Impressum; AWS/Bedrock in Datenschutz + AVV (PDF 2026-10-21); § 147 AO → § 14b UStG; Brief-Generator
+> „Formulierungshilfe, keine Rechtsberatung“; Förder-Hinweis „Antrag vor Beauftragung“ aus EINER Quelle (`ANTRAG_VOR_BEGINN`).
+> **Regel: Eine Werbe- oder Rechtsaussage verspricht nur, was der Code tut** (keine Erinnerung, die es nicht gibt).
+> **Betreiber beim Start:** Startanmeldungen (`quelle = 'start'`) nach dem Versand löschen — die Datenschutzerklärung sagt es so.
+> Anwaltsfragen 12–14 neu (§ 327r, DSA-Hosting, ETW-Nebenkosten).
 > Offen (Pakete 3/4 und Betreiber-Entscheidungen: Tour, Install-Hinweis, Begriffe): Chat 21.10.2026.
 
 ### 👤 NUR DER BETREIBER — offene Punkte (Stand 10.09.2026)
