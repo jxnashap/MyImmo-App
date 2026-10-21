@@ -20,7 +20,7 @@ export const FEATURES: Feature[] = [
   { ico: Users, t: "Rollen & Team", p: "Vermieter, Mieter, Hausmeister und Hausverwaltung — jeder sieht genau das, was er braucht. Zugang per Einladungscode." },
   { ico: Landmark, t: "Kredite & Zinsbindung", p: "Restschuld, Raten und Zinsbindungen im Blick — mit Warnung, bevor die Anschlussfinanzierung ansteht." },
   { ico: CalendarDays, t: "Termine & Fristen", p: "Automatische Fristen aus Mietern, Krediten und Steuer plus Wartungen — als Kalender und iCal-Export." },
-  { ico: FileText, t: "Dokument-Generator", p: "Mahnung, Mietbescheinigung, Übergabeprotokoll & Co. als fertige Brief-PDFs im eigenen Briefkopf — auf Wunsch e-signiert." },
+  { ico: FileText, t: "Dokument-Generator", p: "Mahnung, Mietbescheinigung, Übergabeprotokoll & Co. als fertige Brief-PDFs im eigenen Briefkopf — auf Wunsch mit eingefügter Unterschrift (keine qualifizierte elektronische Signatur)." },
   { ico: Folders, t: "Archiv & Bankpaket", p: "Verträge, Bescheide und Belege zentral abgelegt — plus Beleihungsordner mit Deckblatt fürs Bankgespräch." },
   { ico: Bot, t: "KI-Import & Kalkulatoren", p: "Exposé einfügen, Eckdaten werden ausgelesen. Kauf-Check mit Cashflow-, Rendite- und Vermögensrechnung." },
   { ico: ShieldCheck, t: "Sicherheit & Datenschutz", p: "Datenbank in Frankfurt, Bankdaten zusätzlich anwendungsseitig verschlüsselt (AES-256-GCM), voller Datenexport jederzeit." },
@@ -104,7 +104,7 @@ export const FAQ = [
   },
   {
     q: "Wo liegen meine Daten?",
-    a: "In der EU (Frankfurt, eu-central-1) bei Supabase; gehostet wird die App bei Vercel. Bankdaten wie IBANs werden zusätzlich anwendungsseitig verschlüsselt (AES-256-GCM). Details stehen in der Datenschutzerklärung und im AVV.",
+    a: "Die Datenbank liegt bei Supabase in Frankfurt (eu-central-1). Gehostet wird die App bei Vercel; der Hoster kann technische Protokolle in den USA verarbeiten. Die KI-Funktionen (freiwillig) laufen je nach Einrichtung über Anthropic in den USA oder über Amazon Bedrock bei AWS in der EU. Bankdaten wie IBANs werden zusätzlich anwendungsseitig verschlüsselt (AES-256-GCM). Details stehen in der Datenschutzerklärung und im AVV.",
   },
   {
     q: "Ersetzt MyImmo meinen Steuerberater?",

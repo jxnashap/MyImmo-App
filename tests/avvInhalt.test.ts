@@ -35,6 +35,8 @@ describe("AVV: Subauftragsverarbeiter passen zum Code", () => {
   it("wer Daten im Auftrag verarbeitet, steht in Ziffer 7", () => {
     expect(subListe.split(" | ").every(Boolean), "jeder Punkt beginnt mit **Name**").toBe(true);
     for (const name of ["Supabase", "Vercel", "Anthropic"]) expect(subListe, name).toContain(name);
+    // Bedrock-Anschluss im Code → AWS in der Genehmigungsliste (21.10.2026).
+    if (existsSync("lib/bedrock.ts")) expect(subListe).toContain("Amazon Web Services EMEA SARL");
     // Brevo verschickt Einladungen an Mieter und Hinweis-Mails — solange es den Anschluss gibt.
     if (existsSync("lib/mail/brevo.ts")) expect(subListe).toContain("Brevo");
   });
@@ -47,7 +49,8 @@ describe("AVV: Subauftragsverarbeiter passen zum Code", () => {
 
   it("jeder Subauftragsverarbeiter steht auch in der Datenschutzerklärung", () => {
     const ds = lies("app/(pub)/datenschutz/page.tsx");
-    for (const name of ["Supabase", "Vercel", "Anthropic", "Brevo"]) expect(ds, name).toContain(name);
+    // AWS seit 21.10.2026: KI über Amazon Bedrock, je nach Einrichtung (lib/aiRoute.ts).
+    for (const name of ["Supabase", "Vercel", "Anthropic", "Brevo", "Amazon Web Services EMEA SARL"]) expect(ds, name).toContain(name);
   });
 
   it("Dienste, die nur Adresse bzw. Link bekommen, sind offen benannt", () => {

@@ -1,6 +1,6 @@
 # AVV-/DPA-Status & Abschluss-Checkliste
 
-Stand: 06.10.2026 · Ergänzt das AVV-Dossier und `docs/MASTERPLAN.md`.
+Stand: 21.10.2026 · Ergänzt das AVV-Dossier und `docs/MASTERPLAN.md`.
 Trägt den tatsächlichen Abschluss-/Erledigungsstand nach (Datum + „von wem").
 
 ## Status je Anbieter
@@ -12,9 +12,10 @@ Trägt den tatsächlichen Abschluss-/Erledigungsstand nach (Datum + „von wem")
 | **Vercel** | Auftragsverarbeiter (Hosting) | DPF ✓ + SCCs | automatisch in ToS ab Pro-Plan | ✅ **29.07.2026** — Konto ist auf Pro, AVV greift über die ToS |
 | **Google** | eigenständig Verantwortlicher (OAuth-Login) | DPF ✓ (Google LLC) | **kein AVV** — nur Datenschutzerklärungs-Passus | ✅ Passus vorhanden |
 | **Brevo** (Sendinblue SAS, Paris) | Auftragsverarbeiter (Vorlagen-Verteiler) | Vertragspartner in der EU; Drittland erst über Brevos **Unterauftragsverarbeiter** (Datadog USA, Zendesk/Convrrt USA, Support Indien) → **SCCs Module Two**, teils ergänzend DPF | **Anlage 2 („Annex 2 — DPA") zu den Nutzungsbedingungen**, gilt automatisch mit Vertragsschluss — **keine gesonderte Unterschrift** (im Volltext belegt) | 🟨 **teilweise erledigt 30.08.2026**: DPA archiviert (`brevo-dpa-archiv.md` + `brevo-dpa-2024-05-15.pdf`), Subprozessoren ausgewertet, Datenschutzerklärung korrigiert. **Offen (nur im Konto):** Rechtsdokumente prüfen, Firmendaten auf die Gewerbeanmeldung bringen · **Anbieter bleibt (Entscheidung 06.10.2026, [[MAILANBIETER-VERGLEICH]])** |
+| **AWS** (Amazon Web Services EMEA SARL, 38 Avenue John F. Kennedy, L-1855 Luxemburg) | Auftragsverarbeiter (KI über Amazon Bedrock — nur wenn die `BEDROCK_*`-Env gesetzt sind, sonst Anthropic direkt, `lib/aiRoute.ts`) | Vertragspartner in der EU; Verarbeitung je nach Inferenzprofil in EU-Regionen (`eu.`-Profil, AWS-Doku „cross-Region inference“); SCCs im AWS-DPA | **AWS Data Processing Addendum ist in die AWS Service Terms einbezogen** (Ziff. 1.14.1; Vertragspartner laut AWS Customer Agreement, „AWS Contracting Party“, EMEA) — geprüft 21.10.2026 auf aws.amazon.com/service-terms und /agreement | 🟨 in Datenschutzerklärung (Ziffer 3 e, 4, 5) und Nutzer-AVV (Ziffer 7) „je nach Einrichtung“ eingetragen 21.10.2026. **Offen (Betreiber):** ob Bedrock in Production eingerichtet ist (Vercel-Env); DPA-Kopie archivieren, sobald genutzt |
 | ~~Enable Banking~~ | — | — | **Feature zurückgestellt (29.08.2026), aus der App entfernt** — kein AVV nötig, bis Open Banking wieder aufgebaut wird (`docs/zukunft/OPEN-BANKING.md`) | ⏸️ entfällt |
 | **Paddle** (Bezahlsystem, inaktiv) | **Merchant of Record = eigenständig Verantwortlicher**, kein AVV | — | vor dem ersten Checkout: Datenschutz-Passus statt AVV | ⬜ offen (erst bei Aktivierung, `docs/BEZAHLSYSTEM.md`) |
-| **MyImmo → Nutzer** | MyImmo = Auftragsverarbeiter der Vermieter | — | eigener AVV unter `/avv`, AGB-Einbeziehung; Text in `lib/avvInhalt.ts` = EINE Quelle für Seite und PDF (`avv-nutzer-vertrag-2026-10-10.pdf`) | 🟨 **überarbeitet 06.10.2026** (Brevo ergänzt, Enable Banking aus dem PDF, Google aus der Genehmigungsliste, Funktionen seit 09.09. und TOM nachgezogen); 10.10.2026 TOM „Endgeräte“ (installierbare Web-App); ⬜ anwaltlich prüfen |
+| **MyImmo → Nutzer** | MyImmo = Auftragsverarbeiter der Vermieter | — | eigener AVV unter `/avv`, AGB-Einbeziehung; Text in `lib/avvInhalt.ts` = EINE Quelle für Seite und PDF (`avv-nutzer-vertrag-2026-10-21.pdf`) | 🟨 **überarbeitet 06.10.2026** (Brevo ergänzt, Enable Banking aus dem PDF, Google aus der Genehmigungsliste, Funktionen seit 09.09. und TOM nachgezogen); 10.10.2026 TOM „Endgeräte“ (installierbare Web-App); 21.10.2026 AWS (Bedrock) als Subauftragsverarbeiter „je nach Einrichtung“ ergänzt; ⬜ anwaltlich prüfen |
 
 ## Anthropic — erledigt (15.07.2026)
 - DPA-Kopie archiviert: `docs/compliance/anthropic-dpa-archiv.md`.

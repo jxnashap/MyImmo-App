@@ -21,9 +21,9 @@ export type AvvBlock =
   | { note: string }
   | { sign: true };
 
-export const AVV_STAND = "10. Oktober 2026";
-export const AVV_STAND_KURZ = "10.10.2026";
-export const AVV_STAND_ISO = "2026-10-10";
+export const AVV_STAND = "21. Oktober 2026";
+export const AVV_STAND_KURZ = "21.10.2026";
+export const AVV_STAND_ISO = "2026-10-21";
 
 export const AVV_HINWEIS =
   "Hinweis für den Betreiber: Entwurf — vor produktiver Akzeptanz anwaltlich prüfen lassen. Keine Rechtsberatung.";
@@ -55,7 +55,7 @@ export const AVV_BLOECKE: AvvBlock[] = [
       "**Service-Partner**: Abwicklung von Aufträgen mit vom Verantwortlichen beauftragten Hausmeistern und Dienstleistern (mit eigenem Zugang) einschließlich Fotos und Notizen zum Auftrag, Freigabe-Anträgen und der für Termin und Leistung erforderlichen Weitergabe von Objekt- und Mieterkontaktdaten; Angebotsanfragen an Fachbetriebe über einen befristeten Link, Mieterkontaktdaten dort erst bei Beauftragung und nur auf ausdrückliche Auswahl;",
       "**Freigabe-Links** an vom Verantwortlichen benannte Empfänger (Bank, Makler): nur ausgewählte Dokumente, befristet, widerrufbar, nur mit Zugangscode; jeder Abruf wird mit Zeitpunkt und Dokument protokolliert (ohne IP-Adresse); Dateien, die der Empfänger zurückschickt, landen in einem Eingang des Verantwortlichen; der Empfänger kann außerdem bis zu drei Terminvorschläge machen oder um Rückruf bitten, die nur der Verantwortliche sieht;",
       "**Vertrauensperson**: Stammdaten einer vom Verantwortlichen benannten Person und ihrer Vollmacht (einschließlich Scan) für Bank-, Notar- und Darlehensangelegenheiten; die Person erhält keinen Zugang zur App;",
-      "**KI-gestützte Dokumentauswertung** (z. B. Auslesen einer Nebenkostenabrechnung), nur wenn der Verantwortliche sie auslöst.",
+      "**KI-gestützte Dokumentauswertung** (z. B. Auslesen einer Nebenkostenabrechnung, Vorschlag zu einem Beleg im Belegeingang), nur wenn der Verantwortliche sie auslöst; je nach Einrichtung über Anthropic oder Amazon Bedrock (Ziffer 7).",
     ],
   },
   { p: "Eine Verarbeitung zu eigenen Zwecken des Betreibers findet nicht statt." },
@@ -114,7 +114,8 @@ export const AVV_BLOECKE: AvvBlock[] = [
     ul: [
       "**Supabase Inc.** — Datenbank, Authentifizierung, Datei-Speicher; Datenhaltung in Frankfurt (AWS eu-central-1); DPA mit EU-Standardvertragsklauseln.",
       "**Vercel Inc.** (USA) — Hosting und Auslieferung der App; Laufzeit-Protokolle werden nach einem Tag gelöscht; DPA mit EU-Standardvertragsklauseln.",
-      "**Anthropic PBC** (USA) — KI-Auswertung, nur bei aktiver Nutzung durch den Verantwortlichen; DPA mit EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.",
+      "**Anthropic PBC** (USA) — KI-Auswertung, nur bei aktiver Nutzung durch den Verantwortlichen; je nach Einrichtung (statt Amazon Bedrock); DPA mit EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.",
+      "**Amazon Web Services EMEA SARL** (Luxemburg) — KI-Auswertung über Amazon Bedrock, nur bei aktiver Nutzung durch den Verantwortlichen; je nach Einrichtung (statt Anthropic); Aufruf in Frankfurt (eu-central-1), Verarbeitung in AWS-Rechenzentren in der EU; der Modellanbieter erhält keinen Zugriff auf die Eingaben; AWS Data Processing Addendum mit EU-Standardvertragsklauseln.",
       "**Brevo** (Sendinblue SAS, Paris) — Versand der Einladungen ins Mieterportal und der Hinweis-E-Mails (Ziffer 2); Versanddaten in der EU; einzelne Unterauftragsverarbeiter von Brevo verarbeiten in den USA und in Indien, abgesichert über EU-Standardvertragsklauseln im Vertrag mit Brevo.",
     ],
   },
