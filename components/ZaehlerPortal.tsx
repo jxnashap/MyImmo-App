@@ -5,6 +5,9 @@ import { useRef, useState, useTransition } from "react";
 import { Gauge, Plus, Paperclip, CheckCircle2, Clock } from "lucide-react";
 import { meldeZaehlerstand } from "@/lib/actions/zaehler";
 import VorschauHinweis from "@/components/VorschauHinweis";
+import { useAnhaenge } from "@/components/useAnhaenge";
+import { NUR_FOTO } from "@/lib/anhaenge";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 export type ZaehlerMeldungRow = {
   id: string;
@@ -29,15 +32,24 @@ export default function ZaehlerPortal({ meldungen, nurLesen = false }: { meldung
   const [fehler, setFehler] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  const foto = useAnhaenge({ maxAnzahl: 1, erlaubt: NUR_FOTO });
 
   const senden = (fd: FormData) =>
     startTransition(async () => {
       setFehler(null);
-      const r = await meldeZaehlerstand(fd);
-      if (r?.error) setFehler(r.error);
-      else {
-        formRef.current?.reset();
-        setOffenForm(false);
+      // Das verkleinerte Foto statt des Originals (lib/anhaenge.ts).
+      fd.delete("foto");
+      if (foto.dateien[0]) fd.set("foto", foto.dateien[0]);
+      try {
+        const r = await meldeZaehlerstand(fd);
+        if (r?.error) setFehler(r.error);
+        else {
+          formRef.current?.reset();
+          foto.leeren();
+          setOffenForm(false);
+        }
+      } catch {
+        setFehler("Senden hat nicht geklappt — deine Angaben bleiben stehen. Bitte noch einmal versuchen.");
       }
     });
 
@@ -82,17 +94,20 @@ export default function ZaehlerPortal({ meldungen, nurLesen = false }: { meldung
               </div>
               <div className="form-group">
                 <label style={{ fontSize: 11, color: "var(--muted)" }}>Ablesedatum</label>
-                <input name="ablesedatum" type="date" className="input" defaultValue={new Date().toISOString().slice(0, 10)} />
+                <input name="ablesedatum" type="date" className="input" defaultValue={heuteBerlin()} />
               </div>
               <div className="form-group" style={{ gridColumn: "1 / -1", minWidth: 0 }}>
                 <label style={{ fontSize: 11, color: "var(--muted)" }}>Foto vom Zähler (empfohlen)</label>
-                <input name="foto" type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="input" style={{ minWidth: 0, width: "100%" }} />
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="input" style={{ minWidth: 0, width: "100%" }}
+                  onChange={(e) => void foto.waehle(e.target.files, e.target)} />
+                {foto.bereitet && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>Foto wird vorbereitet …</p>}
+                {foto.fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", marginTop: 4 }}>{foto.fehler}</p>}
               </div>
             </div>
             <textarea name="notiz" rows={2} maxLength={500} className="input" placeholder="Anmerkung (optional)" />
             {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
             <div style={{ display: "flex", gap: 8 }}>
-              <button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "Wird gesendet …" : "Melden"}</button>
+              <button type="submit" className="btn btn-gold" disabled={pending || foto.bereitet}>{pending ? "Wird gesendet …" : "Melden"}</button>
               <button type="button" className="btn btn-ghost" onClick={() => setOffenForm(false)}>Abbrechen</button>
             </div>
           </form>

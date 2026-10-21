@@ -6,6 +6,8 @@
 // Seit 03.10.2026: Liste mit EINER Zeile je Anliegen; ein Klick öffnet die Detailansicht
 // (`…&vorgang=<id>`) mit Meldung, Terminwahl und Verlauf samt Antwortfeld.
 import Link from "next/link";
+import { useAnhaenge } from "@/components/useAnhaenge";
+import { FOTO_ODER_PDF } from "@/lib/anhaenge";
 import { useRef, useState, useTransition } from "react";
 import { Wrench, FileText, MessageCircleQuestion, Plus, Paperclip, CalendarClock, ChevronRight, ArrowLeft, type LucideIcon } from "lucide-react";
 import { erstelleAnliegen, bestaetigeAnliegenTermin } from "@/lib/actions/anliegen";
@@ -145,19 +147,26 @@ export default function AnliegenPortal({
   const [assistent, setAssistent] = useState(false);
   const [gemeldet, setGemeldet] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
-  const [dateiNamen, setDateiNamen] = useState<string[]>([]);
+  const anhaenge = useAnhaenge({ maxAnzahl: 3, erlaubt: FOTO_ODER_PDF });
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
   const senden = (fd: FormData) =>
     startTransition(async () => {
       setFehler(null);
-      const r = await erstelleAnliegen(fd);
-      if (r?.error) setFehler(r.error);
-      else {
-        formRef.current?.reset();
-        setDateiNamen([]);
-        setOffenForm(false);
+      // Die verkleinerten Fotos statt der Originale (lib/anhaenge.ts).
+      fd.delete("dateien");
+      for (const f of anhaenge.dateien) fd.append("dateien", f);
+      try {
+        const r = await erstelleAnliegen(fd);
+        if (r?.error) setFehler(r.error);
+        else {
+          formRef.current?.reset();
+          anhaenge.leeren();
+          setOffenForm(false);
+        }
+      } catch {
+        setFehler("Senden hat nicht geklappt — deine Angaben bleiben stehen. Bitte noch einmal versuchen.");
       }
     });
 
@@ -258,25 +267,26 @@ export default function AnliegenPortal({
             </div>
             <div className="form-group">
               <label style={{ fontSize: 11, color: "var(--muted)" }}>
-                Anhänge (Fotos/PDF, max. 3 Dateien à 4 MB)
+                Anhänge (Fotos oder PDF, bis zu 3 — Fotos werden automatisch verkleinert)
               </label>
               <input
                 type="file"
-                name="dateien"
                 multiple
                 accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
                 className="input"
-                onChange={(e) => setDateiNamen(Array.from(e.target.files ?? []).map((f) => f.name))}
+                onChange={(e) => void anhaenge.waehle(e.target.files, e.target)}
               />
-              {dateiNamen.length > 0 && (
+              {anhaenge.bereitet && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>Fotos werden vorbereitet …</p>}
+              {anhaenge.dateien.length > 0 && (
                 <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
-                  <Paperclip size={11} style={{ verticalAlign: "-1px" }} /> {dateiNamen.join(" · ")}
+                  <Paperclip size={11} style={{ verticalAlign: "-1px" }} /> {anhaenge.dateien.map((f) => f.name).join(" · ")}
                 </p>
               )}
+              {anhaenge.fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", marginTop: 4 }}>{anhaenge.fehler}</p>}
             </div>
             {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
             <div style={{ display: "flex", gap: 8 }}>
-              <button type="submit" className="btn btn-gold" disabled={pending}>{pending ? "Wird gesendet …" : "Absenden"}</button>
+              <button type="submit" className="btn btn-gold" disabled={pending || anhaenge.bereitet}>{pending ? "Wird gesendet …" : "Absenden"}</button>
               <button type="button" className="btn btn-ghost" onClick={() => setOffenForm(false)}>Abbrechen</button>
             </div>
           </form>
