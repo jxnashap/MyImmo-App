@@ -73,7 +73,6 @@ export default function ArchivManager({
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Verwaltung · Belege</div>
           <div className="topbar-title">Archiv</div>
           <div className="topbar-sub">Alle Dokumente & Verträge — gefiltert nach Objekt, Mieter und Art</div>
         </div>

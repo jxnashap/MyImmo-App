@@ -48,8 +48,10 @@ export default function MieterKontoTabelle({ titel, monate, anliegenHref }: { ti
                 <thead>
                   <tr style={{ color: "var(--muted)", textAlign: "left" }}>
                     <th style={{ padding: "6px 4px 6px 0", fontWeight: 500 }}>Monat</th>
-                    <th style={{ padding: 4, fontWeight: 500, textAlign: "right" }}>Soll</th>
-                    <th style={{ padding: 4, fontWeight: 500, textAlign: "right" }}>bestätigt</th>
+                    {/* „Miete“/„verbucht“ statt „Soll“/„bestätigt“ (21.10.2026) — Buchhalterdeutsch
+                        las sich für Mieter wie eine Forderung. */}
+                    <th style={{ padding: 4, fontWeight: 500, textAlign: "right" }}>Miete</th>
+                    <th style={{ padding: 4, fontWeight: 500, textAlign: "right" }}>verbucht</th>
                     <th style={{ padding: "6px 0 6px 4px", fontWeight: 500 }}>Stand</th>
                   </tr>
                 </thead>

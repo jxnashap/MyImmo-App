@@ -117,6 +117,8 @@ export function einladungsMail(opts: {
   link: string;
   code: string;
   gueltigBis: string;
+  /** Die Adresse, an die die Einladung gebunden ist (21.10.2026) — sie stand nicht in der Mail. */
+  email?: string;
 }): { betreff: string; text: string; html: string } {
   const von = opts.vermieter?.trim();
   if (!von) throw new Error("Einladungsmail ohne Namen des Vermieters");
@@ -129,7 +131,7 @@ export function einladungsMail(opts: {
     "melden Anliegen und Zählerstände und erhalten Dokumente wie die Nebenkostenabrechnung.",
     "",
     `1. Diesen Link öffnen: ${opts.link}`,
-    `2. Mit GENAU DIESER E-Mail-Adresse registrieren — die Einladung gilt nur für sie.`,
+    `2. Mit GENAU DIESER E-Mail-Adresse registrieren${opts.email ? ` (${opts.email})` : ""} — die Einladung gilt nur für sie.`,
     `3. Der Code ist schon eingetragen; falls nicht: ${opts.code}`,
     "",
     `Die Einladung gilt bis zum ${bis} und nur einmal.`,
@@ -155,7 +157,7 @@ export function einladungsMail(opts: {
       <a href="${esc(opts.link)}" style="display:inline-block;background:#b8902b;color:#1a1a17;text-decoration:none;font-weight:bold;font-size:15px;padding:12px 22px;border-radius:8px">Zum Mieterportal</a>
     </p>
     <p style="font-size:14px;line-height:1.6;color:#23211c;margin:0 0 8px">
-      <strong>Wichtig:</strong> Registrieren Sie sich mit <strong>genau dieser E-Mail-Adresse</strong> — die Einladung gilt nur für sie.
+      <strong>Wichtig:</strong> Registrieren Sie sich mit <strong>genau dieser E-Mail-Adresse</strong>${opts.email ? ` (${esc(opts.email)})` : ""} — die Einladung gilt nur für sie.
     </p>
     <p style="font-size:13px;line-height:1.6;color:#9b968a;margin:0 0 8px">
       Ihr Code (falls er nicht schon eingetragen ist): <strong style="color:#23211c;letter-spacing:.06em">${esc(opts.code)}</strong><br>

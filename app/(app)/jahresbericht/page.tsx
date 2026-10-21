@@ -78,7 +78,6 @@ export default async function JahresberichtPage(
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Auswertung · Jahresbericht</div>
           <div className="topbar-title">Jahresbericht &amp; Steuer-Export</div>
           <div className="topbar-sub">Cashflow-Auswertung · Druckansicht</div>
         </div>
@@ -113,7 +112,12 @@ export default async function JahresberichtPage(
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i}>
-                  <td style={{ fontWeight: 500 }}><Link href={`/properties/${r.id}`} style={{ color: "inherit", textDecoration: "none" }}>{r.name}</Link></td>
+                  <td style={{ fontWeight: 500 }}>
+                    <Link href={`/properties/${r.id}`} style={{ color: "inherit", textDecoration: "none" }}>{r.name}</Link>
+                    {/* Jahresabschluss in der richtigen Reihenfolge (21.10.2026): erst prüfen, dann Bericht
+                        und Steuer — die Jahresprüfung lag sonst hinter einem von fünf Knöpfen der Objektseite. */}
+                    {r.id && <Link href={`/properties/${r.id}/jahrespruefung?jahr=${year}`} style={{ marginLeft: 8, fontSize: 11.5, fontWeight: 400 }}>Prüfen</Link>}
+                  </td>
                   <td style={{ textAlign: "right", color: "var(--green)" }}>{euro(r.e)}</td>
                   <td style={{ textAlign: "right", color: "var(--red)" }}>{euro(r.k)}</td>
                   <td style={{ textAlign: "right", color: "var(--red)" }} title={r.zinsGeschaetzt ? "Geschätzt aus der heutigen Restschuld — für die Steuer die Zinsbescheinigung verwenden." : "Summe der gebuchten Schuldzinsen."}>{r.zinsGeschaetzt ? "~ " : ""}{euro(r.zins)}</td>

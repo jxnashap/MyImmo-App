@@ -296,7 +296,7 @@ const WEGE = [
     schluessel: "portal-vorschau",
     titel: "Mieterportal — Ansicht Mieter (nur Demo)",
     pfad: "/anliegen?tab=vorschau",
-    erwartet: ["Ansicht Mieter", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete", "Ansicht des Mieters"],
+    erwartet: ["Ansicht Mieter", "Meine Wohnung", "Nebenkosten (Vorauszahlung)", "Warmmiete", "Ansicht des Mieters"],
     async pruefe({ html }) {
       // Nur-Lesen: In der Vorschau darf kein Abmelde-Formular des Portals stehen.
       return html.includes("Mieter sieht hier") || html.includes("Mieterportal von") ? null : "Vorschau-Rahmen fehlt";
@@ -376,7 +376,7 @@ const WEGE = [
     schluessel: "mietkonto",
     titel: "Mietkonto — Soll und Ist je Mieter",
     pfad: "/mietkonto",
-    erwartet: ["Verwaltung · Mietkonto"],
+    erwartet: ["Mieteingänge bestätigen"],
     async pruefe() {
       return null;
     },
@@ -572,7 +572,7 @@ async function main() {
   } else {
     console.log("\n✓ Mieter-Demo — Anmeldung");
     const MIETER_WEGE = [
-      { titel: "Mieterportal — Wohnung, Zu erledigen, Notfall", pfad: "/portal", erwartet: ["Mieterportal", "Meine Wohnung", "NK-Vorauszahlung", "Warmmiete", ">Zu erledigen<", "zuerst hier"] },
+      { titel: "Mieterportal — Wohnung, Melden, Zu erledigen, Notfall", pfad: "/portal", erwartet: ["Mieterportal", "Meine Wohnung", "Nebenkosten (Vorauszahlung)", "Warmmiete", ">Zu erledigen<", "neu=schaden", "Notfall-Hinweise"] },
       { titel: "Mieterportal — Anliegen (Liste) und Schadensmeldung", pfad: "/portal?tab=anliegen", erwartet: ["Mieterportal", ">Anliegen<", "Schaden melden", "listen-zeile"], detail: [">Dein Vermieter<", "Alle Anliegen", ">Verlauf<"] },
       { titel: "Mieterportal — Zahlungen mit Mietkonto", pfad: "/portal?tab=zahlungen", erwartet: ["Mieterportal", ">Zahlungen<", "letzte 12 Monate", "bestätigt"] },
       { titel: "Mieterportal — Dokumente", pfad: "/portal?tab=dokumente", erwartet: ["Mieterportal", ">Dokumente<"] },

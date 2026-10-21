@@ -109,6 +109,8 @@ export function baueHeuteAufgaben(
     vollmachten?: VollmachtZeile[];
     /** Im Mieterportal bereitgestellt, aber seit ≥ 7 Tagen nicht abgerufen (lib/zugang.ts, P4 B43). */
     nichtAbgerufen?: NichtAbgerufenZeile[];
+    /** Fällige, noch nicht erzeugte wiederkehrende Buchungen (lib/wiederkehr.ts → faelligeAnzahl). */
+    wiederkehrFaellig?: number;
   },
   heuteISO: string,
   grenze = 5,
@@ -215,6 +217,21 @@ export function baueHeuteAufgaben(
       aktion: "Ansehen",
       dringend: false,
       datum: z.zugestellt.slice(0, 10),
+    });
+  }
+
+  // Wiederkehrende Buchungen (21.10.2026): Ein Hausgeld, das niemand erzeugt, fehlt in Cashflow und
+  // Anlage V — der Knopf dafür stand zugeklappt auf /cashflow, das Dashboard schwieg. EINE Zeile.
+  const wk = q.wiederkehrFaellig ?? 0;
+  if (wk > 0) {
+    aufgaben.push({
+      art: "frist",
+      label: wk === 1 ? "1 wiederkehrende Buchung fällig" : `${wk} wiederkehrende Buchungen fällig`,
+      sub: "z. B. Hausgeld oder Grundsteuer — unter Ein- & Ausgaben mit einem Klick erzeugen",
+      href: "/cashflow",
+      aktion: "Erzeugen",
+      dringend: false,
+      datum: heuteISO,
     });
   }
 

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createKredit } from "@/lib/actions/buchungen";
 import type { Property } from "@/lib/types";
 import { darlehenVorbelegung } from "@/lib/kauf/darlehenUebergabe";
+import { vorgewaehltesObjekt } from "@/lib/objektWahl";
 
 const SONDER = ["", "5% p.a.", "10% p.a.", "Nein", "Ja, unbegrenzt"];
 
@@ -42,7 +43,7 @@ export default async function NeuerKreditPage(props: { searchParams: Promise<{ p
         <div className="form-row">
           <div className="form-group"><label>Bezeichnung *</label><input type="text" name="bezeichnung" placeholder="z. B. Hypothek Volksbank" required /></div>
           <div className="form-group"><label>Immobilie</label>
-            <select name="prop_id" defaultValue={searchParams.prop ?? ""}>
+            <select name="prop_id" defaultValue={vorgewaehltesObjekt(properties, searchParams.prop)}>
               <option value="">– wählen –</option>
               {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
             </select>

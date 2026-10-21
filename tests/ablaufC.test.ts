@@ -32,7 +32,7 @@ afterEach(() => {
 // ------------------------------------------------------------------------------------------------
 describe("Stand eines Vorgangs: wer ist zuständig, wie weit ist der Auftrag", () => {
   it("ohne Auftrag: der Vermieter", () => {
-    expect(vorgangStand([ev({ art: "nachricht", text: "Hallo" })], "offen")).toEqual({ zustaendig: "vermieter", auftrag: null, auftragErledigtAnliegenOffen: false });
+    expect(vorgangStand([ev({ art: "nachricht", text: "Hallo" })], "offen")).toEqual({ zustaendig: "vermieter", auftrag: null, auftragErledigtAnliegenOffen: false, auftragFuerMieter: null });
   });
   it("Hausmeister beauftragt → Hausmeister; Fachbetrieb freigegeben → Handwerker; jeweils der LETZTE Eintrag", () => {
     const v = [

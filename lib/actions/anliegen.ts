@@ -146,36 +146,6 @@ export async function bestaetigeAnliegenTermin(id: string, slot: string) {
   return { ok: true };
 }
 
-/** Vermieter: den vom Mieter bestätigten Termin in den Kalender übernehmen. */
-export async function terminInKalender(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
-
-  const { data: a } = await supabase
-    .from("anliegen")
-    .select("titel,termin_bestaetigt,prop_id")
-    .eq("id", id)
-    .eq("vermieter_id", user.id)
-    .maybeSingle();
-  if (!a?.termin_bestaetigt) return { error: "Kein bestätigter Termin vorhanden." };
-
-  const uhrzeit = a.termin_bestaetigt.slice(11, 16);
-  const { error } = await supabase.from("termine").insert({
-    user_id: user.id,
-    titel: `Termin: ${a.titel}`.slice(0, 200),
-    datum: a.termin_bestaetigt.slice(0, 10),
-    prop_id: a.prop_id ?? null,
-    kategorie: "Sonstiges",
-    notiz: `Mit dem Mieter vereinbarter Termin (${uhrzeit} Uhr) — aus Anliegen übernommen.`,
-  });
-  if (error) return { error: "Kalendereintrag konnte nicht angelegt werden." };
-  revalidatePath("/termine");
-  return { ok: true };
-}
-
 /**
  * Vermieter: Status setzen und optional eine Nachricht in den Verlauf schreiben.
  * Seit 02.10.2026 überschreibt die Nachricht nichts mehr (vorher: Feld `antwort`) —

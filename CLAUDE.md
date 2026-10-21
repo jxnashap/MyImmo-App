@@ -170,7 +170,33 @@
 > **Regel: Eine Werbe- oder Rechtsaussage verspricht nur, was der Code tut** (keine Erinnerung, die es nicht gibt).
 > **Betreiber beim Start:** Startanmeldungen (`quelle = 'start'`) nach dem Versand löschen — die Datenschutzerklärung sagt es so.
 > Anwaltsfragen 12–14 neu (§ 327r, DSA-Hosting, ETW-Nebenkosten).
-> Offen (Pakete 3/4 und Betreiber-Entscheidungen: Tour, Install-Hinweis, Begriffe): Chat 21.10.2026.
+> **Paket 3 (Mieter verständlich, gleicher Tag, `tests/paket3.test.ts`):** Startseite mit „Schaden melden“/„Frage stellen“
+> (`mitNeu(…, "schaden"|"frage")` → `?neu=` öffnet das Formular), roter Notfall-Kasten nur noch im Reiter Anliegen, auf der
+> Startseite `NotfallZeile` (nur 112). Nach dem Absenden EIN Satz `gesendetText(mailHinweis)` — die Mail nur, wenn
+> `brevoBereit()` und nicht abbestellt. Portal-Kacheln über `mitGeltendenBetraegen` (nach Staffel/§ 560 dieselbe Miete wie im
+> Mietkonto; erst NACH dem Mietkonto ersetzt). Keine Paragrafen in der Mieter-Oberfläche (Test), „Miete“/„verbucht“, Einzelzahlungen
+> eingeklappt, `GELESEN_HINWEIS` sichtbar. Verlauf: `terminLesbar()` (Zahlen, keine Zeitzone), Freigabe-Abstimmungen beim Mieter
+> = `KUEMMERT_SICH`. Hinweis-Mail → Reiter aus der Art (`ZIEL`), weiter ohne Bezug. „Etwas anderes“ verlangt Text (`textPflicht`).
+> **Bewusst NICHT:** Mietername oder Wohnung in der Einladungsmail (Entscheidung „ohne Mietdaten“ in `einladungsMail`) — nur die
+> gebundene Adresse ist neu.
+> **Paket 4 (Vermieter schneller, `tests/paket4.test.ts`):** Schadensfall in der Detailansicht — „Weiterleiten“ mit Anliegen und
+> Objekt (`weiterleitenHref`, Mieter-Kontakt nie vorgewählt, ohne Partner kein Knopf), Abschluss und Kostenbuchung über DIESELBEN
+> Bausteine wie der Reiter Service (`AuftragAbschliessen`, `KostenUebernahme`), Antworten setzt „In Arbeit“ (`statusBeimAntworten`).
+> **Vom Mieter bestätigte Termine werden nicht mehr in `termine` geschrieben** (`terminInKalender` entfernt — legte je Klick einen
+> Eintrag an): `anliegenTermine()` (`lib/anliegenTermin.ts`) speist `/termine` (quelle `anliegen`, ohne Vermerk) und Dashboard;
+> Einträge des alten Knopfs werden nicht doppelt gezeigt. Mieterformular zweistufig (Mietbeginn Pflicht beim Anlegen), danach auf die
+> Mieterseite; Kaufdatum bei den Grundangaben; `vorgewaehltesObjekt()` in Mieter-, Darlehen- und Buchungsformular. **Ein
+> Buchungsformular:** `/kosten/new` und `/einnahmen/new` leiten auf `/cashflow/neu?typ=…` (nimmt `back`, ohne `typ` = Ausgabe).
+> Fällige wiederkehrende Buchungen: `faelligeAnzahl()` → `/cashflow` offen + Dashboard-Zeile. NK am Objekt: Stand je Mieter
+> (`nkStand()`, dieselbe Regel wie die Frist) und „Nächste Abrechnung →“ über `reihe`. Objekt-Check „Ortsübliche Miete“ →
+> `#marktwert`; Jahresbericht „Prüfen“; Objektseite „Bearbeiten“ + „Mehr …“, CO₂ nicht bei Garage/Grundstück; Kopfzeile über
+> dem Titel nur noch in BuyImmo und am Dashboard (Anlage-V-Datei unberührt).
+> 🐞 **Live gefunden (21.10.2026): Das Dashboard fragte `anliegen.mieter_name` ab — die Spalte gibt es nicht.** „Mieter-Anliegen
+> konnten nicht geladen werden“ bei jedem Aufruf; neue Anliegen erschienen nie als Aufgabe, Neuigkeiten ohne Titel/Name. Alle Tests
+> waren grün, weil die Test-Datenbank Spalten nicht prüft. **Regel: Eine Abfrage auf `anliegen` nennt nur Spalten aus den
+> Migrationen** — `tests/paket4.test.ts` vergleicht es; Namen kommen über `mieter_id` aus den Mieter-Zeilen.
+> Offen (Betreiber-Entscheidungen): Tour automatisch, Install-Hinweis für Mieter, einheitliche Begriffe (Objekt/Immobilie,
+> Kredit/Darlehen, Anliegen/Meldung) — nicht angefasst.
 
 ### 👤 NUR DER BETREIBER — offene Punkte (Stand 10.09.2026)
 Alles hier ist **kein Code**, sondern ein Dashboard, ein Anwalt oder ein Blick in einen

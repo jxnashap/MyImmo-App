@@ -32,7 +32,7 @@ import { wartetAufVermieter } from "@/lib/zaehler";
 
 export default async function AnliegenPage(
   props0: {
-    searchParams: Promise<{ tab?: string; titel?: string; text?: string; mieter?: string; portal?: string; partner?: string; vorgang?: string }>;
+    searchParams: Promise<{ tab?: string; titel?: string; text?: string; anliegen?: string; prop?: string; mieter?: string; portal?: string; partner?: string; vorgang?: string }>;
   }
 ) {
   const searchParams = await props0.searchParams;
@@ -61,7 +61,7 @@ export default async function AnliegenPage(
     supabase.from("service_zugaenge").select("user_id,firma,email,created_at,rolle").order("created_at", { ascending: false }),
     supabase.from("einladungscodes").select("code,gueltig_bis").eq("rolle", "service").is("eingeloest_am", null).gt("gueltig_bis", new Date().toISOString()).order("created_at", { ascending: false }),
     // rechnung_data (Base64) bewusst NICHT laden — nur Metadaten für die Liste.
-    supabase.from("auftraege").select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,service_user_id,erstellt_von,firma_id,mieter_id,public_token,betrag,lohnanteil,rechnung_name,kosten_id,kosten_schaetzung,auto_freigegeben,vorgeschlagene_firma_id,taetigkeit").order("created_at", { ascending: false }).limit(100),
+    supabase.from("auftraege").select("id,titel,beschreibung,termin,status,antwort,created_at,objekt_name,service_user_id,erstellt_von,firma_id,mieter_id,public_token,betrag,lohnanteil,rechnung_name,kosten_id,kosten_schaetzung,auto_freigegeben,vorgeschlagene_firma_id,taetigkeit,anliegen_id").order("created_at", { ascending: false }).limit(100),
     supabase.from("firmen").select("id,name,gewerk,telefon,email,website,notiz").order("name"),
     // Welcher Partner betreut welche Objekte (Migration 20261005100000).
     supabase.from("service_objekte").select("service_user_id,prop_id"),
@@ -107,6 +107,7 @@ export default async function AnliegenPage(
     terminVorschlaege: Array.isArray(a.termin_vorschlaege) ? (a.termin_vorschlaege as string[]) : [],
     terminBestaetigt: a.termin_bestaetigt ?? null,
     mieterId: a.mieter_id ?? null,
+    propId: a.prop_id ?? null,
   }));
   // `?vorgang=<id>` öffnet die Detailansicht — nur ein eigenes Anliegen aus der geladenen Liste.
   const vorgang = searchParams.vorgang ? liste.find((a) => a.id === searchParams.vorgang) ?? null : null;
@@ -213,6 +214,7 @@ export default async function AnliegenPage(
     vorgeschlageneFirma: firmen.find((f) => f.id === a.vorgeschlagene_firma_id)?.name ?? null,
     notizen: notizenJe.get(a.id) ?? [],
     taetigkeit: a.taetigkeit ?? null,
+    anliegen_id: a.anliegen_id ?? null,
   }));
   // Badge: nur was auf DICH wartet — dieselbe Definition wie in der
   // Seitenleiste (lib/neuigkeiten.ts). Aufträge im Status „offen" liegen beim
@@ -337,7 +339,7 @@ export default async function AnliegenPage(
     <>
         {tab === "anliegen" && (vorgang ? (
           // Detailansicht eines Anliegens (03.10.2026): eigene Seite statt Aufklappen in der Liste.
-          <AnliegenDetail a={vorgang} angebote={angebotKontext} />
+          <AnliegenDetail a={vorgang} angebote={angebotKontext} auftraege={auftraege.filter((x) => x.anliegen_id === vorgang.id)} hatPartner={partner.length > 0} />
         ) : (
           <>
             <div className="section">
@@ -454,6 +456,8 @@ export default async function AnliegenPage(
             kostengrenze={kostengrenze}
             initialTitel={searchParams.titel}
             initialText={searchParams.text}
+            initialAnliegen={searchParams.anliegen && liste.some((x) => x.id === searchParams.anliegen) ? searchParams.anliegen : undefined}
+            initialProp={searchParams.prop}
           />
         )}
     </>
@@ -466,7 +470,6 @@ export default async function AnliegenPage(
           {/* Vom Nutzer gewünschter Name. Hinweis: Die Mieter-Oberfläche unter
               /portal trägt denselben Namen — hier ist die Vermieter-Sicht
               (Mieter-Anliegen, Bewerbungen, Service-Partner). */}
-          <div className="topbar-kicker">Verwaltung</div>
           <div className="topbar-title">Mieterportal</div>
           <div className="topbar-sub">
             {tab === "bewerbungen"

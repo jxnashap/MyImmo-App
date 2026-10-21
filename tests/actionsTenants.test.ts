@@ -73,6 +73,11 @@ describe("Mieter anlegen und bearbeiten", () => {
     expect(fremd).toMatch(/^\/tenants\?/);
   });
 
+  it("ohne Rückweg geht es auf die Seite des neuen Mieters — dort sitzt die Einladung (21.10.2026)", async () => {
+    const { mod } = await lade("@/lib/actions/tenants", { antworten: { mieter: { id: "neu-1" } } });
+    expect(await fangeRedirect(() => mod.createTenant(fd({ nachname: "M" })))).toMatch(/^\/tenants\/neu-1\?/);
+  });
+
   it("Bearbeiten und Löschen sind auf das eigene Konto eingeschränkt", async () => {
     const { db, mod } = await lade("@/lib/actions/tenants");
     await fangeRedirect(() => mod.updateTenant("m1", fd({ nachname: "Neu" })));

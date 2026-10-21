@@ -61,7 +61,6 @@ export default async function KreditePage() {
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Finanzierung · Darlehen</div>
           <div className="topbar-title">Kredite &amp; Finanzierung</div>
           <div className="topbar-sub">Darlehen, Zinsbindung, Restschuld laut deinem letzten Kontoauszug</div>
         </div>

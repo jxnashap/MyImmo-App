@@ -262,7 +262,6 @@ export default function MietkontoBestaetigung({
         <>
           <div className="topbar">
             <div>
-              <div className="topbar-kicker">Verwaltung · Mietkonto</div>
               <div className="topbar-title">Mietkonto</div>
               <div className="topbar-sub">Mieteingänge bestätigen &amp; nacherfassen</div>
             </div>

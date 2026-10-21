@@ -363,7 +363,7 @@ export function jahresPruefung(e: {
       else if (Math.abs(r2(n.betrag - g.betrag)) >= TEILZAHLUNG_TOLERANZ) add({ art: "abgleich", schwere: "mittel", schluessel: `nk-betrag:${key}`, betrag: r2(n.betrag - g.betrag), text: `${g.bezeichnung}: gebucht ${euro(g.betrag)}, in der NK-Abrechnung ${euro(n.betrag)}`, href: nkHref });
     }
     for (const [key, n] of inNk) {
-      if (!gebuchtNk.has(key)) add({ art: "abgleich", schwere: "hinweis", schluessel: `nk-ungebucht:${key}`, betrag: n.betrag, text: `${n.bezeichnung}: ${euro(n.betrag)} in der NK-Abrechnung, aber nicht gebucht — Beleg und Buchung vorhanden?`, href: `/kosten/new?prop=${pid}` });
+      if (!gebuchtNk.has(key)) add({ art: "abgleich", schwere: "hinweis", schluessel: `nk-ungebucht:${key}`, betrag: n.betrag, text: `${n.bezeichnung}: ${euro(n.betrag)} in der NK-Abrechnung, aber nicht gebucht — Beleg und Buchung vorhanden?`, href: `/cashflow/neu?typ=ausgabe&prop=${pid}&back=/properties/${pid}/jahrespruefung` });
     }
   }
   for (const a of abgleich) {

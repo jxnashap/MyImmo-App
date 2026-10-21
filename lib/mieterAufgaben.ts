@@ -7,6 +7,9 @@
 // (lib/heute.ts).
 import type { PortalDaten } from "@/lib/portalDaten";
 
+
+/** Was „gelesen und bestätigt“ bedeutet (21.10.2026) — EIN Satz für Knopf und Aufgabenliste. */
+export const GELESEN_HINWEIS = "Bestätigt nur, dass du es gelesen hast — du stimmst dem Inhalt damit nicht zu.";
 export type MieterAufgabe = {
   id: string;
   titel: string;
@@ -47,7 +50,7 @@ export function baueMieterAufgaben(d: Eingabe, heute: string): MieterAufgabe[] {
     if (z.bestaetigung_noetig && !z.bestaetigt_am) {
       liste.push({
         id: `bestaetigen:${z.id}`, titel: `Bitte bestätigen: ${titel}`,
-        text: "Dein Vermieter bittet um „gelesen und bestätigt“ — keine Unterschrift.",
+        text: `Dein Vermieter bittet um „gelesen und bestätigt“. ${GELESEN_HINWEIS}`,
         tab: "dokumente", dringend: true, wann: z.zugestellt_am,
       });
     } else if (!z.gelesen_am) {
@@ -63,7 +66,7 @@ export function baueMieterAufgaben(d: Eingabe, heute: string): MieterAufgabe[] {
     if (mt.bestaetigung_noetig && !mt.bestaetigt_am) {
       liste.push({
         id: `mitteilung-bestaetigen:${mt.id}`, titel: `Bitte bestätigen: ${mt.titel ?? "Mitteilung"}`,
-        text: "Mitteilung deines Vermieters — „gelesen und bestätigt“, keine Unterschrift.",
+        text: `Mitteilung deines Vermieters — „gelesen und bestätigt“. ${GELESEN_HINWEIS}`,
         tab: "wohnung", dringend: true, wann: mt.zugestellt_am,
       });
     } else if (tageZwischen(mt.zugestellt_am.slice(0, 10), heute) <= MITTEILUNG_TAGE) {

@@ -103,7 +103,6 @@ export default async function JahrespruefungPage(props: {
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
           <Link href={`/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
           <div style={{ minWidth: 0 }}>
-            <div className="topbar-kicker">Objekt · Jahresabschluss</div>
             <div className="topbar-title">Jahresprüfung {jahr}</div>
             <div className="topbar-sub">{prop.bezeichnung} · ohne Anlage V (die steht unter Steuer)</div>
           </div>

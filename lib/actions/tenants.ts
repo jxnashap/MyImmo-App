@@ -69,7 +69,11 @@ export async function createTenant(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { error } = await supabase.from("mieter").insert({ ...parse(formData), iban: ibanEnc(formData), user_id: user.id });
+  const { data: neu, error } = await supabase
+    .from("mieter")
+    .insert({ ...parse(formData), iban: ibanEnc(formData), user_id: user.id })
+    .select("id")
+    .single();
   if (error) throw new Error(error.message);
 
   revalidatePath("/tenants");
@@ -77,7 +81,10 @@ export async function createTenant(formData: FormData) {
   // `?back=` entgegen und zeigt es im Zurueck-Knopf an — ausgewertet wurde es
   // bisher nicht, weshalb man nach "+ Mieter" auf der Objektseite in der
   // Mieterliste landete und sein Objekt neu suchen musste.
-  const ziel = sicheresZiel(formData.get("back"), "/tenants");
+  // Ohne Rückweg auf die Seite des NEUEN Mieters (21.10.2026): Dort sitzt die Einladung ins
+  // Mieterportal — vorher landete man in der Liste und suchte ihn erst.
+  const neueId = (neu as { id?: string } | null)?.id;
+  const ziel = formData.get("back") || !neueId ? sicheresZiel(formData.get("back"), "/tenants") : `/tenants/${neueId}`;
   revalidatePath(ziel);
   redirect(flashUrl(ziel, "Mieter angelegt."));
 }

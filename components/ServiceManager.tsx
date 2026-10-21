@@ -59,6 +59,8 @@ export type AuftragRow = {
   taetigkeit?: string | null;
   /** Kein verknüpfter Partner (Firma über den Link, Partner entfernt) — der Vermieter schließt selbst ab. */
   ohnePartner?: boolean;
+  /** Anliegen, an dem der Auftrag hängt — die Detailansicht des Anliegens zeigt ihn mit Abschluss. */
+  anliegen_id?: string | null;
 };
 export type FirmenRueckmeldung = {
   id: string; art: "zusage" | "absage" | "rueckfrage";
@@ -67,7 +69,7 @@ export type FirmenRueckmeldung = {
 };
 export type MieterOption = { id: string; name: string };
 
-const STATUS_META: Record<string, { label: string; cls: string }> = {
+export const AUFTRAG_STATUS: Record<string, { label: string; cls: string }> = {
   freigabe: { label: "Freigabe angefragt", cls: "badge-amber" },
   offen: { label: "Offen", cls: "badge-amber" },
   angenommen: { label: "Angenommen", cls: "badge-blue" },
@@ -75,13 +77,14 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   abgelehnt: { label: "Abgelehnt", cls: "badge-red" },
   nicht_freigegeben: { label: "Nicht freigegeben", cls: "badge-red" },
 };
+const STATUS_META = AUFTRAG_STATUS;
 
 const eur = (n: number) =>
   new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + " €";
 
 // Erledigter Auftrag mit Betrag → per Klick als Kosten-Buchung übernehmen
 // (Rechnung wandert als Beleg mit; Lohnanteil landet in der Notiz für § 35a).
-function KostenUebernahme({ a }: { a: AuftragRow }) {
+export function KostenUebernahme({ a }: { a: AuftragRow }) {
   const [pending, startTransition] = useTransition();
   const [fehler, setFehler] = useState<string | null>(null);
 
@@ -127,7 +130,7 @@ function KostenUebernahme({ a }: { a: AuftragRow }) {
 
 // Ablauf C: Auftrag ohne verknüpften Partner (Firma über den Link, Partner entfernt) — der Vermieter
 // trägt die Rechnung ein; danach erscheint „Als Kosten übernehmen“ wie bei jedem erledigten Auftrag.
-function AuftragAbschliessen({ a }: { a: AuftragRow }) {
+export function AuftragAbschliessen({ a }: { a: AuftragRow }) {
   const [pending, startTransition] = useTransition();
   const [fehler, setFehler] = useState<string | null>(null);
   if (!a.ohnePartner || !["offen", "angenommen"].includes(a.status)) return null;
@@ -504,7 +507,7 @@ function PartnerZeile({
 }
 
 export default function ServiceManager({
-  partner, codes, auftraege, properties, firmen, mieterListe, initialTitel, initialText, demo = false, kostengrenze = null,
+  partner, codes, auftraege, properties, firmen, mieterListe, initialTitel, initialText, initialAnliegen, initialProp, demo = false, kostengrenze = null,
 }: {
   partner: ServicePartnerRow[];
   codes: ServiceCodeRow[];
@@ -514,6 +517,9 @@ export default function ServiceManager({
   mieterListe: MieterOption[];
   initialTitel?: string;
   initialText?: string;
+  /** „Weiterleiten“ aus einem Anliegen: der Auftrag hängt daran (Verlauf, Stand für den Mieter). */
+  initialAnliegen?: string;
+  initialProp?: string;
   /** Demo (01.10.2026): „Auftrag vergeben" ausfüllbar, Senden aus. */
   demo?: boolean;
   /** vermieter_profil.kostengrenze (null = keine). */
@@ -577,13 +583,19 @@ export default function ServiceManager({
       )}
 
       {partner.length > 0 && (
-        <div className="section">
+        <div className="section" id="auftrag-vergeben">
           <div className="section-header"><h3>Auftrag vergeben</h3></div>
           <div className="section-body">
+            {initialAnliegen && (
+              <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "0 0 10px" }}>
+                Aus einem Mieter-Anliegen — der Auftrag hängt daran, der Mieter sieht den Stand im Verlauf.
+              </p>
+            )}
             {/* `data-demo-erlaubt`: In der Demo soll der Besucher sehen, was
                 sich auswählen lässt (Partner, Objekt, Mieter-Kontakt) — die
                 Felder bleiben bedienbar, nur das Senden ist aus. */}
             <form action={senden} style={{ display: "grid", gap: 10 }} {...(demo ? { "data-demo-erlaubt": "" } : {})}>
+              {initialAnliegen && <input type="hidden" name="anliegenId" value={initialAnliegen} />}
               <div className="form-row">
                 <div className="form-group">
                   <label>Service-Partner *</label>
@@ -594,7 +606,7 @@ export default function ServiceManager({
                 </div>
                 <div className="form-group">
                   <label>Objekt</label>
-                  <select name="propId" defaultValue="">
+                  <select name="propId" defaultValue={initialProp && properties.some((p) => p.id === initialProp) ? initialProp : ""}>
                     <option value="">– optional –</option>
                     {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
                   </select>

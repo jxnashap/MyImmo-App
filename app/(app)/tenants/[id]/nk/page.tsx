@@ -1,4 +1,5 @@
 import NkVorjahrHilfe from "@/components/NkVorjahrHilfe";
+import { naechsteReihe } from "@/lib/nkObjektStand";
 import { vorjahrUebernahme, vorschlagAusAbrechnung, gleicheBetraegeWieVorjahr, type VorjahrPosition } from "@/lib/nkVorjahr";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -36,7 +37,7 @@ const formatIban = (s: string) =>
 export default async function NkPage(
   props: {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ jahr?: string }>;
+    searchParams: Promise<{ jahr?: string; reihe?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -112,6 +113,11 @@ export default async function NkPage(
   // (Vorjahr übernehmen, KI-Import, Buchungen), führen hier nicht mehr hin.
   const amObjekt = mitVerteiler && !!tenant.prop_id && nkPos.objektBereit;
   const objektNkHref = tenant.prop_id ? `/properties/${tenant.prop_id}/nebenkosten?jahr=${jahr}` : null;
+  // Reihenfolge der Abrechnungen am Objekt — nur als Ziel für „Nächste Abrechnung“; die Seite des
+  // nächsten Mieters prüft selbst, ob er dem Vermieter gehört.
+  const reihe = naechsteReihe(searchParams.reihe);
+  const naechster = reihe[reihe.indexOf(params.id) + 1] ?? null;
+  const naechsterHref = reihe.includes(params.id) && naechster ? `/tenants/${naechster}/nk?jahr=${jahr}&reihe=${reihe.join(",")}` : null;
   const zaehlerImJahr = zaehlerSpanne((zaehlerRows ?? []) as ZaehlerMeldung[], jahr);
 
   // CO₂: Einzelobjekt aus dem Mieter-Block, Mehrfamilienhaus nur vom Objekt (Audit 07.10.2026, A4).
@@ -165,7 +171,9 @@ export default async function NkPage(
     <div className="fade-up">
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link href={`/tenants/${params.id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>
+          {/* Aus den Nebenkosten am Objekt gekommen (`reihe`, 21.10.2026): zurück dorthin statt zum Mieter —
+              bei sechs Parteien hieß das sonst sechsmal zurücksuchen. */}
+          <Link href={reihe.length > 0 && objektNkHref ? objektNkHref : `/tenants/${params.id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>
             ← Zurück
           </Link>
           <div style={{ minWidth: 0 }}>
@@ -197,6 +205,9 @@ export default async function NkPage(
               Positionen bearbeiten
             </Link>
           )}
+          {naechsterHref && (
+            <Link href={naechsterHref} className="btn btn-ghost" style={{ fontSize: 12 }}>Nächste Abrechnung →</Link>
+          )}
           <a href={`/tenants/${params.id}/nk/pdf?jahr=${jahr}`} className="btn btn-ghost">
             Als PDF herunterladen
           </a>
@@ -222,6 +233,7 @@ export default async function NkPage(
                 mieter: params.id,
                 ...(tenant.prop_id ? { prop: tenant.prop_id } : {}),
                 text: `Nachzahlung NK-Abrechnung ${jahr}`,
+                back: `/tenants/${params.id}/nk?jahr=${jahr}`,
               }).toString()}`}
               className="btn btn-ghost"
               title="Erst buchen, wenn das Geld eingegangen ist"

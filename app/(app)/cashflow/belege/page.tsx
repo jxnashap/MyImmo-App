@@ -39,7 +39,6 @@ export default async function BelegeingangSeite() {
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Verwaltung · Ein- &amp; Ausgaben</div>
           <div className="topbar-title">Belegeingang</div>
           <div className="topbar-sub">Belege hochladen, Vorschlag prüfen, einmal buchen</div>
         </div>

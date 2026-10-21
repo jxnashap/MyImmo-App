@@ -21,7 +21,6 @@ export default function HilfePage() {
           Inline-Styles — dieselbe Seite sah dadurch anders aus als der Rest. */}
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Konto · Support</div>
           <div className="topbar-title">Support</div>
           <div className="topbar-sub">
             Wenn etwas nicht funktioniert, unklar ist oder fehlt — hier steht, wie du uns

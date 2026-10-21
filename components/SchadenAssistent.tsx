@@ -10,7 +10,7 @@ import { useState, useTransition } from "react";
 import { ArrowLeft, Paperclip } from "lucide-react";
 import { erstelleAnliegen } from "@/lib/actions/anliegen";
 import {
-  KATEGORIEN, SEIT_OPTIONEN, BESCHREIBUNG_MAX, baueMeldung, kategorie, notfallFuer,
+  KATEGORIEN, SEIT_OPTIONEN, BESCHREIBUNG_MAX, baueMeldung, kategorie, notfallFuer, textPflicht,
 } from "@/lib/schadensmeldung";
 import { NotfallSofort } from "@/components/NotfallHinweis";
 import { useAnhaenge } from "@/components/useAnhaenge";
@@ -32,10 +32,13 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
   const notfall = k ? notfallFuer(k, antworten) : null;
   const alleBeantwortet = !!k && k.fragen.every((f) => antworten[f.key]);
   const meldung = k ? baueMeldung(k, antworten, { raum, seit, text, erreichbar }) : null;
+  // „Etwas anderes“ hat keine Rückfragen — ohne eigenen Text käme beim Vermieter nichts an.
+  const textNoetig = !!k && textPflicht(k);
+  const textFehlt = textNoetig && !text.trim();
 
   const senden = () =>
     startTransition(async () => {
-      if (!k || !meldung) return;
+      if (!k || !meldung || textFehlt) return;
       setFehler(null);
       const fd = new FormData();
       fd.set("typ", "schaden");
@@ -118,8 +121,9 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
             </label>
           </div>
           <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-            Was sollte dein Vermieter noch wissen? (optional)
-            <textarea className="input" rows={3} value={text} onChange={(e) => setText(e.target.value)} maxLength={BESCHREIBUNG_MAX - 400} />
+            {textNoetig ? "Was ist passiert? *" : "Was sollte dein Vermieter noch wissen? (optional)"}
+            <textarea className="input" rows={3} value={text} onChange={(e) => setText(e.target.value)} maxLength={BESCHREIBUNG_MAX - 400}
+              required={textNoetig} placeholder={textNoetig ? "z. B. Briefkasten lässt sich nicht mehr öffnen" : undefined} />
           </label>
           <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
             Wann bist du erreichbar, wie kommt ein Handwerker in die Wohnung? (optional)
@@ -145,7 +149,7 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
 
           {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button data-demo-sperre type="button" className="btn btn-gold" disabled={pending || anhaenge.bereitet} onClick={senden}>
+            <button data-demo-sperre type="button" className="btn btn-gold" disabled={pending || anhaenge.bereitet || textFehlt} onClick={senden}>
               {pending ? "Wird gesendet …" : notfall ? "Zusätzlich an den Vermieter melden" : "Schaden melden"}
             </button>
             <button type="button" className="btn btn-ghost" onClick={onAbbruch}>Abbrechen</button>

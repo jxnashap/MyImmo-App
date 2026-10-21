@@ -39,7 +39,6 @@ export default async function KontoSeite() {
           <ArrowLeft size={13} style={{ verticalAlign: "-2px" }} /> Zurück
         </Link>
         <div>
-          <div className="topbar-kicker">Konto</div>
           <div className="topbar-title" style={{ fontSize: 22 }}>Meine Einstellungen</div>
         </div>
       </div>

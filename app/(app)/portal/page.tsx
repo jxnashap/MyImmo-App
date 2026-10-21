@@ -9,10 +9,12 @@ import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { ladePortalDaten } from "@/lib/portalDaten";
 import PortalAnsicht, { portalTab } from "@/components/PortalAnsicht";
+import { neuesAnliegen } from "@/lib/anliegenListe";
+import { brevoBereit } from "@/lib/mail/brevo";
 
 export default async function PortalPage(
   props: {
-    searchParams: Promise<{ tab?: string; vorgang?: string }>;
+    searchParams: Promise<{ tab?: string; vorgang?: string; neu?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -29,6 +31,10 @@ export default async function PortalPage(
       hrefFuer={(t) => `/portal?tab=${t}`}
       kopfzeile={user?.email}
       vorgang={searchParams.vorgang ?? null}
+      neu={neuesAnliegen(searchParams.neu)}
+      // Eine Mail wird nur angekündigt, wenn sie auch kommt: Versand eingerichtet und nicht
+      // abbestellt (dieselbe Abfrage wie in lib/benachrichtigung.ts → sendeHinweis).
+      mailHinweis={brevoBereit() && user?.user_metadata?.benachrichtigungen_aus !== true}
     />
   );
 }

@@ -17,6 +17,7 @@ import CashflowDonut from "@/components/CashflowDonut";
 import MietkontoBestaetigung from "@/components/MietkontoBestaetigung";
 import { ladeMietkonto } from "@/lib/mietkontoDaten";
 import type { Einnahme, Kosten, Property, Tenant, WiederkehrVorlage } from "@/lib/types";
+import { faelligeAnzahl, gebuchtJeVorlage } from "@/lib/wiederkehr";
 import { KOSTEN_SPALTEN } from "@/lib/types";
 import { redirect } from "next/navigation";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
@@ -54,13 +55,10 @@ export default async function CashflowPage(
 
   // ---- Wiederkehrende Buchungen (ausklappbarer Bereich) ----
   const wkVorlagen = (vRows ?? []) as WiederkehrVorlage[];
-  const wkGebucht = new Map<string, string[]>();
-  for (const r of [...((einn ?? []) as Einnahme[]), ...((kost ?? []) as Kosten[])]) {
-    const id = (r as { wiederkehr_id?: string | null }).wiederkehr_id;
-    if (!id || !r.buchungsdatum) continue;
-    if (!wkGebucht.has(id)) wkGebucht.set(id, []);
-    wkGebucht.get(id)!.push(r.buchungsdatum);
-  }
+  const wkGebucht = gebuchtJeVorlage([...((einn ?? []) as Einnahme[]), ...((kost ?? []) as Kosten[])] as { wiederkehr_id?: string | null; buchungsdatum: string | null }[]);
+  // Fällig, aber noch nicht erzeugt (21.10.2026): Dann steht der Bereich offen und sagt es — vorher
+  // war er immer zu, und die Unterzeile nannte nur die Zahl der Vorlagen.
+  const wkFaellig = faelligeAnzahl(wkVorlagen, wkGebucht);
   const wkMitStatus = wkVorlagen.map((v) => ({ ...v, gebuchteDaten: wkGebucht.get(v.id) ?? [] }));
   const wkProps = properties.map((p) => ({ id: p.id, bezeichnung: p.bezeichnung ?? "Objekt" }));
   const wkPropNamen: Record<string, string> = Object.fromEntries(wkProps.map((p) => [p.id, p.bezeichnung]));
@@ -130,7 +128,6 @@ export default async function CashflowPage(
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Verwaltung · Ein- &amp; Ausgaben</div>
           <div className="topbar-title">Ein- &amp; Ausgaben</div>
           <div className="topbar-sub">Einnahmen und Kosten im Vergleich</div>
         </div>
@@ -241,10 +238,13 @@ export default async function CashflowPage(
       <AufklappSection
         titel={<><Repeat size={16} style={{ verticalAlign: "-3px" }} /> Wiederkehrende Buchungen</>}
         untertitel={
-          wkVorlagen.length > 0
+          wkFaellig > 0
+            ? `${wkFaellig} ${wkFaellig === 1 ? "Buchung ist" : "Buchungen sind"} fällig — unten „Alle erzeugen“`
+            : wkVorlagen.length > 0
             ? `${wkVorlagen.length} Vorlage${wkVorlagen.length === 1 ? "" : "n"} · Miete, Grundsteuer, Müll … automatisch im Zyklus erzeugen`
             : "Miete, Grundsteuer, Müll … einmal anlegen, im Zyklus erzeugen (rückwirkend bis 10 Jahre)"
         }
+        standardOffen={wkFaellig > 0}
       >
         <WiederkehrManager
           vorlagen={wkMitStatus}

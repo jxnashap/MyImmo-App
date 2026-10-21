@@ -302,7 +302,6 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
       <div className="settings-head" style={{ flexWrap: "wrap", rowGap: 12 }}>
         <div className="settings-avatar"><Landmark size={22} /></div>
         <div className="who">
-          <div className="topbar-kicker" style={{ marginBottom: 4 }}>Immobilie · Bankunterlagen</div>
           <h1>Beleihungsordner</h1>
           <p>{objektName} — alle Unterlagen fürs Bankgespräch</p>
         </div>

@@ -121,6 +121,25 @@ export function notfallFuer(k: Kategorie, antworten: Record<string, string>): No
 }
 
 export const TITEL_MAX = 120;
+export const KURZTITEL_MAX = 60;
+
+/**
+ * Kategorie ohne Rückfragen und ohne Notfall („Etwas anderes“): Dann ist der eigene Text
+ * die einzige Angabe und Pflicht. Beim Gasgeruch bleibt er freiwillig — dort zählt zuerst
+ * der Notfall-Hinweis, nicht das Tippen.
+ */
+export function textPflicht(k: Kategorie): boolean {
+  return k.fragen.length === 0 && !k.notfall;
+}
+
+/** Erste Zeile des Textes, höchstens 60 Zeichen, am Wortende gekürzt. Rein. */
+export function kurzTitel(text: string): string {
+  const zeile = text.trim().split(/\r?\n/)[0].replace(/\s+/g, " ").trim();
+  if (zeile.length <= KURZTITEL_MAX) return zeile;
+  const schnitt = zeile.slice(0, KURZTITEL_MAX - 1);
+  const wort = schnitt.lastIndexOf(" ");
+  return `${(wort > 30 ? schnitt.slice(0, wort) : schnitt).trimEnd()}…`;
+}
 export const BESCHREIBUNG_MAX = 2000;
 
 /**
@@ -137,7 +156,11 @@ export function baueMeldung(
     .filter(({ f, a }) => !!a && f.optionen.includes(a));
   const haupt = gueltig[0]?.a;
   const raum = extra.raum?.trim();
-  const titel = [k.label, haupt && haupt !== "Etwas anderes" ? haupt : null, raum ? `(${raum})` : null]
+  const text = extra.text?.trim();
+  // Ohne Rückfragen („Etwas anderes“) trägt der eigene Text den Titel — vorher kam beim
+  // Vermieter nur „Etwas anderes“ an, ohne ein Wort dazu (21.10.2026).
+  const kopf = textPflicht(k) && text ? kurzTitel(text) : k.label;
+  const titel = [kopf, haupt && haupt !== "Etwas anderes" ? haupt : null, raum ? `(${raum})` : null]
     .filter(Boolean).join(" · ").slice(0, TITEL_MAX);
 
   const zeilen: string[] = [];
@@ -145,7 +168,6 @@ export function baueMeldung(
   if (raum) zeilen.push(`Raum / Ort: ${raum}`);
   if (extra.seit && (SEIT_OPTIONEN as readonly string[]).includes(extra.seit)) zeilen.push(`Seit wann: ${extra.seit}`);
   if (extra.erreichbar?.trim()) zeilen.push(`Erreichbar / Zugang: ${extra.erreichbar.trim()}`);
-  const text = extra.text?.trim();
   if (text) zeilen.push("", text);
   return { titel, beschreibung: zeilen.join("\n").slice(0, BESCHREIBUNG_MAX) };
 }
