@@ -481,7 +481,7 @@ export default function LoginPage() {
             style={{ padding: "12px 14px" }}
           />
           {mode === "signup" && (
-            <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.45, margin: "-4px 2px 0" }}>
+            <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.45, margin: "0 2px" }}>
               {PASSWORT_LECK_HINWEIS}.
             </p>
           )}
