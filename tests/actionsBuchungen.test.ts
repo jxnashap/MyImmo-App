@@ -180,9 +180,9 @@ describe("Dateianhänge: Grössengrenzen greifen vor dem Upload", () => {
     return new File([new Uint8Array(bytes)], name, { type: "application/pdf" });
   }
 
-  it("ein Beleg über 15 MB wird abgelehnt — und nichts hochgeladen", async () => {
+  it("ein Beleg über 4 MB wird abgelehnt — und nichts hochgeladen", async () => {
     const { mod, storage, db } = await lade();
-    await expect(mod.createKosten(fd({ betrag: "10", rechnung: datei(15 * 1024 * 1024 + 1) }))).rejects.toThrow(
+    await expect(mod.createKosten(fd({ betrag: "10", rechnung: datei(4 * 1024 * 1024 + 1) }))).rejects.toThrow(
       "Beleg zu groß",
     );
     expect(storage.hochgeladen).toEqual([]);

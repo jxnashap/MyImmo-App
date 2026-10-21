@@ -12,6 +12,9 @@
 /** Höchstens so viel an Dateien je Anfrage — mit Luft unter Vercels 4,5 MB für die übrigen Felder. */
 export const ANFRAGE_MAX_BYTES = 4 * 1024 * 1024;
 
+/** Wird die Datei als Base64 in JSON geschickt (KI-Auslesen), wächst sie um ein Drittel. */
+export const BASE64_ROH_MAX_BYTES = Math.floor((ANFRAGE_MAX_BYTES * 3) / 4);
+
 /** Was Mieter anhängen dürfen (Anliegen). Zählerfotos: nur Bilder. */
 export const FOTO_ODER_PDF = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"] as const;
 export const NUR_FOTO = ["image/jpeg", "image/png", "image/webp", "image/heic"] as const;

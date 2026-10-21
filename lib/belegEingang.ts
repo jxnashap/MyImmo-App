@@ -13,8 +13,10 @@
 import { KOSTEN_KATEGORIEN } from "@/lib/kategorien";
 import { istUmlagefaehig } from "@/lib/format";
 import { nameNorm } from "@/lib/importCsv";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
-export const BELEG_MAX_BYTES = 15 * 1024 * 1024;
+// Höchstens 4 MB: mehr nimmt Vercel je Anfrage nicht an (lib/anhaenge.ts, gemessen 21.10.2026).
+export const BELEG_MAX_BYTES = ANFRAGE_MAX_BYTES;
 /** Höchstens so viele KI-Läufe je Beleg (die Datenbank setzt dieselbe Grenze durch). */
 export const BELEG_MAX_VERSUCHE = 3;
 /** Ein Lauf, der so lange „in Arbeit“ steht, gilt als abgebrochen (Datenbank: 5 Minuten). */

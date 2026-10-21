@@ -71,11 +71,11 @@ export async function speichereVertreter(fd: FormData): Promise<Ergebnis> {
     updated_at: new Date().toISOString(),
   };
 
-  // Scan der Vollmacht: nur PDF/JPG/PNG, höchstens 8 MB. Ausgeliefert wird über dateiKopf().
+  // Scan der Vollmacht: nur PDF/JPG/PNG, höchstens 4 MB. Ausgeliefert wird über dateiKopf().
   const f = fd.get("datei");
   if (f && typeof f !== "string" && (f as File).size > 0) {
     const file = f as File;
-    if (file.size > VOLLMACHT_MAX_BYTES) return { error: "Die Datei ist zu groß (höchstens 8 MB)." };
+    if (file.size > VOLLMACHT_MAX_BYTES) return { error: "Die Datei ist zu groß (höchstens 4 MB)." };
     if (!(VOLLMACHT_DATEITYPEN as readonly string[]).includes(file.type)) {
       return { error: "Bitte die Vollmacht als PDF, JPG oder PNG hochladen." };
     }

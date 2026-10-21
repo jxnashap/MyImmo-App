@@ -16,6 +16,8 @@ import {
 import type { MaklerFreigabe } from "@/lib/actions/makler";
 import MaklerLink from "@/components/MaklerLink";
 import type { Abruf } from "@/lib/freigabeAbrufe";
+import { verkleinereBild } from "@/lib/bildVerkleinern";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
 const LEER = (key: string): MaklerDok => ({
   item_key: key, status: "offen", notiz: null, datum: null,
@@ -75,14 +77,16 @@ export default function MaklerOrdner({
     });
   }
 
-  function onFile(item: MaklerItem, file: File | undefined) {
-    if (!file) return;
-    if (file.size > 8 * 1024 * 1024) { toast("Datei zu groß (max. 8 MB)."); return; }
-    const fd = new FormData();
-    fd.set("datei", file);
+  function onFile(item: MaklerItem, roh: File | undefined) {
+    if (!roh) return;
     start(async () => {
+      // Fotos verkleinern; mehr als 4 MB nimmt der Server je Anfrage nicht an (lib/anhaenge.ts).
+      const file = await verkleinereBild(roh);
+      if (file.size > ANFRAGE_MAX_BYTES) { toast("Datei zu groß (höchstens 4 MB) — ein PDF bitte kleiner speichern.", "error"); return; }
+      const fd = new FormData();
+      fd.set("datei", file);
       try { apply(await uploadMaklerDatei(item.key, fd)); toast("Datei hinterlegt."); }
-      catch (e) { toast(fehlerText(e, "Hochladen hat nicht geklappt. Erlaubt sind PDF und Bilder bis 8 MB — bitte erneut versuchen."), "error"); }
+      catch (e) { toast(fehlerText(e, "Hochladen hat nicht geklappt. Erlaubt sind PDF und Bilder bis 4 MB — bitte erneut versuchen."), "error"); }
     });
   }
 

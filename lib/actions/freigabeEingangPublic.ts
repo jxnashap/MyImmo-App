@@ -25,7 +25,7 @@ export async function schickeDateiZurueck(
   const f = fd.get("datei");
   if (!f || typeof f === "string" || (f as File).size === 0) return { error: "Bitte eine Datei wählen." };
   const file = f as File;
-  if (file.size > EINGANG_MAX_BYTES) return { error: "Datei zu groß (höchstens 8 MB)." };
+  if (file.size > EINGANG_MAX_BYTES) return { error: "Datei zu groß (höchstens 4 MB)." };
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   const typ = erkenneEingangTyp(bytes);

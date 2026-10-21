@@ -105,7 +105,7 @@ describe("schickeDateiZurueck (öffentlich)", () => {
 
   it("zu große Datei: abgelehnt ohne Datenbank", async () => {
     const { mod, db } = await lade("bank", "ok", { name: "mi_bank", wert: "a".repeat(64) });
-    const gross = new Uint8Array(8 * 1024 * 1024 + 1); gross.set(PDF);
+    const gross = new Uint8Array(4 * 1024 * 1024 + 1); gross.set(PDF);
     expect("error" in (await mod.schickeDateiZurueck("bank", T, formular(gross, "a.pdf", "application/pdf")))).toBe(true);
     expect(db.zugriffe).toEqual([]);
   });

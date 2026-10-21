@@ -6,6 +6,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { uebernehmeNkOcr } from "@/lib/actions/positions";
 import { ordneZu, type Abgleich, type BestehendePosition, type ErkanntePosition } from "@/lib/nkOcrAbgleich";
+import { BASE64_ROH_MAX_BYTES } from "@/lib/anhaenge";
+import { verkleinereBild } from "@/lib/bildVerkleinern";
 
 // Abrechnung der Hausverwaltung hochladen → Claude liest die Positionen aus →
 // ABGLEICH mit den beim Mieter angelegten Positionen → Vorschau → Übernahme.
@@ -42,10 +44,16 @@ export default function NkOcrUpload({
   const [dokJahr, setDokJahr] = useState<number | null>(null);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const roh = e.target.files?.[0];
+    if (!roh) return;
     setError(null); setAbgleich(null); setDokJahr(null); setLoading(true);
     try {
+      // Fotos verkleinern; als Base64 in JSON gehen höchstens 3 MB (lib/anhaenge.ts).
+      const file = await verkleinereBild(roh);
+      if (file.size > BASE64_ROH_MAX_BYTES) {
+        setError("Datei zu groß (höchstens 3 MB). Bei einem großen PDF hilft ein Foto der Seiten.");
+        return;
+      }
       const base64 = await new Promise<string>((res, rej) => {
         const r = new FileReader();
         r.onload = () => res(String(r.result).split(",")[1]);

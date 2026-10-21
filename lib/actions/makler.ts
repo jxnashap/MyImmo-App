@@ -9,6 +9,7 @@ import { EMAIL } from "@/lib/mahnung";
 import { MAKLER_CHECKLISTE, istMaklerKey, type MaklerDok } from "@/lib/makler";
 import { buildKaeuferSelbstauskunftPdf } from "@/lib/pdf/kaeuferPdf";
 import { ladeSelbstauskunft } from "@/lib/actions/selbstauskunft";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
 // Sensible Dateiinhalte verschlüsseln, WENN ein Schlüssel konfiguriert ist —
 // sonst (wie bisher) als base64-Klartext ablegen. decrypt() beim Ausliefern ist
@@ -78,7 +79,7 @@ export async function uploadMaklerDatei(itemKey: string, fd: FormData): Promise<
   const f = fd.get("datei");
   if (!f || typeof f === "string" || (f as File).size === 0) throw new Error("Keine Datei gewählt.");
   const file = f as File;
-  if (file.size > 8 * 1024 * 1024) throw new Error("Datei zu groß (max. 8 MB).");
+  if (file.size > ANFRAGE_MAX_BYTES) throw new Error("Datei zu groß (höchstens 4 MB).");
   const mime = file.type || "application/octet-stream";
   const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
 

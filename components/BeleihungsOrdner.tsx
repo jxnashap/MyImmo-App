@@ -34,6 +34,8 @@ import { teilbarerLink } from "@/lib/appUrl";
 import { useModalFokus } from "@/lib/modalFokus";
 import { abrufeJeLink, abrufZusammenfassung, type Abruf } from "@/lib/freigabeAbrufe";
 import { zugangsMailLink } from "@/lib/zugangsMail";
+import { verkleinereBild } from "@/lib/bildVerkleinern";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
 export type Rueckmeldung = {
   id: string;
@@ -145,11 +147,13 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
     }
   }
 
-  function uploadFile(key: string, file: File) {
-    if (file.size > 8 * 1024 * 1024) { toast("Datei zu groß (max. 8 MB)."); return; }
+  async function uploadFile(key: string, roh: File) {
+    // Fotos verkleinern; mehr als 4 MB nimmt der Server je Anfrage nicht an (lib/anhaenge.ts).
+    const file = await verkleinereBild(roh);
+    if (file.size > ANFRAGE_MAX_BYTES) { toast("Datei zu groß (höchstens 4 MB) — ein PDF bitte kleiner speichern.", "error"); return; }
     const fd = new FormData();
     fd.set("datei", file);
-    run(key, () => uploadBeleihungDatei(propId, key, fd), "Datei gespeichert.", "Hochladen hat nicht geklappt. Erlaubt sind PDF und Bilder bis 8 MB — bitte erneut versuchen.");
+    await run(key, () => uploadBeleihungDatei(propId, key, fd), "Datei gespeichert.", "Hochladen hat nicht geklappt. Erlaubt sind PDF und Bilder bis 4 MB — bitte erneut versuchen.");
   }
 
   const deckblattUrl = `/properties/${propId}/beleihung/deckblatt?` + new URLSearchParams({
@@ -193,7 +197,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
         onDrop={(e) => {
           e.preventDefault(); setDragKey(null);
           const f = e.dataTransfer.files?.[0];
-          if (f) uploadFile(item.key, f);
+          if (f) void uploadFile(item.key, f);
         }}
         style={{
           display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10,
@@ -237,7 +241,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
               accept="application/pdf,image/*"
               style={{ display: "none" }}
               disabled={busy === item.key}
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(item.key, f); e.target.value = ""; }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadFile(item.key, f); e.target.value = ""; }}
             />
           </label>
         )}

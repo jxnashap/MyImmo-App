@@ -36,7 +36,7 @@ export async function ladeBelegHoch(fd: FormData): Promise<HochladenErgebnis> {
   if (!f || typeof f === "string") return { ok: false, error: "Keine Datei gewählt." };
   const datei = f as File;
   if (datei.size === 0) return { ok: false, error: "Die Datei ist leer." };
-  if (datei.size > BELEG_MAX_BYTES) return { ok: false, error: "Beleg zu groß (max. 15 MB)." };
+  if (datei.size > BELEG_MAX_BYTES) return { ok: false, error: "Beleg zu groß (höchstens 4 MB)." };
   const bytes = new Uint8Array(await datei.arrayBuffer());
   const mime = erkenneEingangTyp(bytes);
   if (!mime) return { ok: false, error: "Nur PDF, JPEG, PNG oder WebP." };

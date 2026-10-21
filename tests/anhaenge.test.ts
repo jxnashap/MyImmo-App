@@ -49,3 +49,29 @@ describe("Mieter-Formulare senden die verkleinerten Dateien und behalten Eingabe
     expect(s).not.toContain("toISOString().slice(0, 10)");
   });
 });
+
+describe("Keine Upload-Grenze über dem, was Vercel annimmt", () => {
+  // Gemessen 21.10.2026: 5 MB → 413. Vorher versprach die App 6, 8, 15 und 20 MB.
+  const dateien = [
+    "lib/actions/makler.ts", "lib/actions/beleihung.ts", "lib/actions/archiv.ts", "lib/actions/buchungen.ts",
+    "lib/belegEingang.ts", "lib/actions/belegEingang.ts", "lib/vertreter.ts", "lib/actions/vertreter.ts",
+    "lib/freigabeEingang.ts", "lib/actions/freigabeEingangPublic.ts",
+    "components/MaklerOrdner.tsx", "components/BeleihungsOrdner.tsx", "components/ArchivManager.tsx",
+    "components/BuchungForm.tsx", "components/lists/KostenListe.tsx", "components/VertreterPanel.tsx",
+    "components/DateiZurueckSchicken.tsx", "components/ImportWizard.tsx", "components/NkOcrUpload.tsx",
+    "app/(app)/kosten/new/page.tsx", "app/(app)/kosten/[id]/edit/page.tsx",
+  ];
+  for (const p of dateien) {
+    it(p, () => {
+      const s = readFileSync(p, "utf8");
+      expect(s).not.toMatch(/(?:6|8|15|20) \* 1024 \* 1024/);
+      expect(s).not.toMatch(/(?:max\.|höchstens|bis) (?:6|8|15|20) MB/);
+    });
+  }
+
+  it("Fotos werden auch bei Belegen und Bank-/Makler-Unterlagen verkleinert", () => {
+    for (const p of ["components/BuchungForm.tsx", "components/MaklerOrdner.tsx", "components/BeleihungsOrdner.tsx", "components/NkOcrUpload.tsx"]) {
+      expect(readFileSync(p, "utf8")).toContain("verkleinereBild(");
+    }
+  });
+});

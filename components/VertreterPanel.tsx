@@ -106,7 +106,7 @@ function VertreterForm({ v, demo, fertig }: { v: Vertreter | null; demo: boolean
       </label>
       {v && <Feld label="Widerrufen am" name="widerrufen_am" wert={v.widerrufen_am} typ="date" />}
       <label className="set-field span2">
-        <span>Scan der Vollmacht (PDF, JPG, PNG · max. 8 MB){v?.datei_name ? ` — ersetzt „${v.datei_name}“` : ""}</span>
+        <span>Scan der Vollmacht (PDF, JPG, PNG · max. 4 MB){v?.datei_name ? ` — ersetzt „${v.datei_name}“` : ""}</span>
         <input type="file" name="datei" accept="application/pdf,image/jpeg,image/png" className="set-input" />
       </label>
       {v?.datei_name && (

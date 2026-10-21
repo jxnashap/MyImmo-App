@@ -4,8 +4,11 @@
 // (`freigabe_public_hochladen`, Migration 20261006090000).
 
 import type { FreigabeArt } from "@/lib/freigabeCode";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
-export const EINGANG_MAX_BYTES = 8 * 1024 * 1024;
+// Höchstens 4 MB: mehr nimmt Vercel je Anfrage nicht an (lib/anhaenge.ts, gemessen 21.10.2026;
+// die Datenbank erlaubt 8 MB — die strengere Grenze gilt).
+export const EINGANG_MAX_BYTES = ANFRAGE_MAX_BYTES;
 export const EINGANG_TYPEN = ["application/pdf", "image/jpeg", "image/png", "image/webp"] as const;
 export type EingangTyp = (typeof EINGANG_TYPEN)[number];
 
@@ -45,7 +48,7 @@ export function hochladeMeldung(antwort: string | null | undefined): string | nu
   switch (antwort) {
     case "ok": return null;
     case "limit": return "Über diesen Link wurden schon viele Dateien geschickt. Bitte später erneut versuchen oder den Eigentümer direkt kontaktieren.";
-    case "format": return "Nur PDF, JPG, PNG oder WebP bis 8 MB.";
+    case "format": return "Nur PDF, JPG, PNG oder WebP bis 4 MB.";
     default: return "Dieser Link ist abgelaufen oder wurde widerrufen. Bitte die Seite neu laden.";
   }
 }
