@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
 // Archiv = zentrale Dokumentenablage. Dateien werden (wie bei Notizen/Rechnungen)
 // inline als base64 in der Tabelle `notizen` gespeichert; `kategorie` = Art,
@@ -26,7 +27,7 @@ async function dateiFelder(fd: FormData) {
   const f = fd.get("datei");
   if (!f || typeof f === "string" || (f as File).size === 0) return {};
   const file = f as File;
-  if (file.size > 8 * 1024 * 1024) throw new Error("Datei zu groß (max. 8 MB).");
+  if (file.size > ANFRAGE_MAX_BYTES) throw new Error("Datei zu groß (höchstens 4 MB).");
   const mime = file.type || "application/octet-stream";
   const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
   return {

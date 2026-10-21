@@ -213,7 +213,8 @@ describe("Bewerber-Link anlegen", () => {
   });
 
   it("die user_id kommt aus der Sitzung", async () => {
-    const { db, mod } = await lade();
+    // Seit 21.10.2026 braucht ein neuer Link Name und E-Mail im Profil (Art. 13 DSGVO).
+    const { db, mod } = await lade({ antworten: { vermieter_profil: { name: "Max Muster", email: "max@example.org" } } });
     await mod.erstelleBewerberLink(fd({ propId: "p-1", titel: "3-Zimmer", user_id: "fremd" }));
     expect(op(db, "bewerber_links", "insert")?.daten).toMatchObject({ user_id: "nutzer-1", prop_id: "p-1" });
   });

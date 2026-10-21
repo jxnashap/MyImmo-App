@@ -13,8 +13,10 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Portfolio, Mieter und Dokumente für Privatvermieter",
     lang: "de",
     dir: "ltr",
-    // Angemeldet: Dashboard bzw. Mieter-/Service-Portal (Weiche im Layout); sonst die Startseite.
-    start_url: "/",
+    // Angemeldet: Dashboard bzw. Mieter-/Service-Portal (Weiche im Layout). Abgemeldet schickt der
+    // Proxy `?app=1` zur Anmeldung statt auf die Werbe-Startseite (21.10.2026). `id` bleibt „/“ —
+    // so bleibt eine schon installierte App dieselbe.
+    start_url: "/?app=1",
     scope: "/",
     display: "standalone",
     background_color: APP_FARBE_HELL,

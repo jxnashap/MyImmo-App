@@ -50,6 +50,13 @@ describe("Negativliste — nachweislich falsche Aussagen kommen nicht zurück", 
     [/2026 hat etwa Berlin gesenkt/, "C36: Berlin senkte zum 01.01.2025 (810 → 470 %)"],
     [/freiwillig, aber deeskalierend/, "B46: elektronische Bereitstellung ist seit 2025 gesetzlich vorgesehen (§ 556 Abs. 4 S. 2 BGB)"],
     [/Geschuldet ist Einsicht in die Originalunterlagen/, "B46: der Vermieter darf elektronisch bereitstellen"],
+    // Rechtssicherheit 21.10.2026:
+    [/die formell hält",|ohne die alles unwirksam ist/, "Pflichtangaben stehen in der Abrechnung — richtig sind sie nur mit richtigen Eingaben"],
+    [/Pflichtangaben sind (dabei )?fest eingebaut|Pflichtangaben von sich aus enthält/, "dito: kein Formgarant"],
+    [/meldet sich rechtzeitig|Die Frist meldet sich|erinnert die App|Rückstands-Wächter meldet sich|den Rest meldet die App/, "es gibt keine Fristen-Mail; iCal ist ein Download"],
+    [/e-signiert/, "eingefügtes Unterschriftsbild, keine qualifizierte elektronische Signatur"],
+    [/Sperrfrist und Kappungsgrenze werden geprüft/, "berechnet und angezeigt — ob die Erhöhung trägt, prüft MyImmo nicht"],
+    [/In der EU \(Frankfurt, eu-central-1\)/, "FAQ: Hoster-Protokolle und KI können in den USA verarbeitet werden"],
   ];
 
   it("keine öffentliche Datei enthält eine der korrigierten Aussagen", () => {
@@ -66,6 +73,9 @@ describe("Negativliste — nachweislich falsche Aussagen kommen nicht zurück", 
       "Die Kosten der Zwischenablesung trägt in der Regel der ausziehende Mieter.",
       "Haushaltsnahe Dienstleistungen: Hausmeister, Gartenpflege, Treppenhausreinigung, Winterdienst, Schornsteinfeger-Kehrarbeiten.",
       "Im Beispiel oben wären das rund 167 € — pro Wohnung und pro Jahr.",
+      "MyImmo trägt diese Frist je Objekt selbst nach und meldet sich rechtzeitig, statt zu warten, bis du daran denkst.",
+      "als fertige Brief-PDFs im eigenen Briefkopf — auf Wunsch e-signiert.",
+      "vier Mindestangaben, ohne die alles unwirksam ist.",
     ];
     for (const z of alt) expect(NEGATIV.some(([m]) => m.test(z)), z).toBe(true);
   });
@@ -130,6 +140,10 @@ describe("Werbe-Wächter — jede versprochene Funktion hat einen Beleg im Code"
     { text: /§ 35a-Ausweis/, datei: "lib/pdf/nkPdf.ts", beleg: /35a/, was: "§ 35a im NK-PDF" },
     { text: /Abschreibung aus Kaufpreis, Gebäudeanteil und Baujahr/, datei: "lib/anlageV.ts", beleg: /g\.afaBasis = r2\(\(kaufpreis \* gebAnteil\) \/ 100\)/, was: "AfA-Basis (Funktionsseite)" },
     { text: /Kaufnebenkosten rechnet MyImmo derzeit nicht in die Bemessungsgrundlage ein/, datei: "lib/anlageV.ts", beleg: /g\.afaBasis = r2\(\(kaufpreis \* gebAnteil\) \/ 100\)/, was: "AfA-Basis ohne Kaufnebenkosten" },
+    // Rechtssicherheit 21.10.2026:
+    { text: /Die vier Pflichtangaben stehen in jeder Abrechnung/, datei: "lib/nk.ts", beleg: /umlageschluessel: VOLL_SCHLUESSEL, betrag: basis, basis \}/, was: "Gesamtkosten und Schlüssel auch bei „voll“" },
+    { text: /zeigt sie rechtzeitig auf dem Dashboard und unter Termine — per iCal-Datei auch in deinem Kalender/, datei: "app/(app)/termine/ical/route.ts", beleg: /BEGIN:VCALENDAR/, was: "Fristen als iCal-Datei" },
+    { text: /mit eingefügter Unterschrift \(keine qualifizierte elektronische Signatur\)/, datei: "components/DocGenerator.tsx", beleg: /signieren: signieren && !nurPapier/, was: "eingefügte Unterschrift im Brief" },
   ];
 
   const alle = () => oeffentlicheTexte().map((t) => t.text).join("\n");

@@ -12,6 +12,7 @@
 // PORTAL: über den bestehenden Zustellweg (lib/zustellung.ts) — erst die Karte mit den
 // Empfängern, dann zustellen; der Server prüft dasselbe noch einmal.
 import { useVorgang } from "@/lib/hooks/useVorgang";
+import { fehlerText } from "@/lib/fehlerText";
 import { useState, useTransition } from "react";
 import { Mail, Send, Share2 } from "lucide-react";
 import { briefMailLink, briefMailText } from "@/lib/mahnung";
@@ -116,7 +117,7 @@ export default function BriefVersand({
         mailOeffnen(datei, link);
       }
     } catch (e) {
-      setMail({ stand: "fehler", text: e instanceof Error ? e.message : "Das PDF konnte nicht erzeugt werden." });
+      setMail({ stand: "fehler", text: fehlerText(e, "Das PDF konnte nicht erzeugt werden — bitte erneut versuchen.") });
     }
   }
 

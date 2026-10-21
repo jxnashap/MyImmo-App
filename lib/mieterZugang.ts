@@ -93,17 +93,33 @@ export function pruefeZustellung(l: ZustellLage): ZustellPruefung {
   return { sperre: null, warnungen };
 }
 
+/** Ohne Profilnamen keine Einladung — Meldung der Action und Hinweis der Oberfläche (eine Stelle). */
+export const PROFILNAME_FEHLT =
+  "Trage zuerst deinen Namen unter Einstellungen → Profil ein — der Mieter muss erfahren, wer seine Daten verarbeitet.";
+export const PROFIL_LINK = "/einstellungen?tab=profil";
+export const DATENSCHUTZ_URL = "https://www.myimmoapp.de/datenschutz";
+
+/**
+ * Art. 13 DSGVO (Rechtssicherheit 21.10.2026): Der Mieter erfährt beim Erheben seiner Daten, wer
+ * verantwortlich ist. Vorher hieß der Absender ohne Profilnamen „Ihr Vermieter“ — wer das ist,
+ * stand nirgends. Bewusst OHNE Wohnanschrift des Vermieters (Mail kann an eine falsche Adresse gehen).
+ */
+export const verantwortlichSatz = (name: string) =>
+  `Verantwortlich für Ihre Daten im Mieterportal ist ${name}. MyImmo stellt das Portal in dessen Auftrag bereit. Datenschutzhinweise: ${DATENSCHUTZ_URL}`;
+
 /**
  * Einladungsmail. Bewusst OHNE Anschrift, Wohnung oder Mietdaten: Ging sie trotz
  * Doppeleingabe an eine falsche Adresse, erfährt der Empfänger nichts über den Mieter.
+ * Der Name des Vermieters ist Pflicht (Art. 13 DSGVO) — die Action prüft ihn vorher.
  */
 export function einladungsMail(opts: {
-  vermieter: string | null;
+  vermieter: string;
   link: string;
   code: string;
   gueltigBis: string;
 }): { betreff: string; text: string; html: string } {
-  const von = opts.vermieter?.trim() || "Ihr Vermieter";
+  const von = opts.vermieter?.trim();
+  if (!von) throw new Error("Einladungsmail ohne Namen des Vermieters");
   const bis = new Date(opts.gueltigBis).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" });
   const betreff = `${von} lädt Sie zum Mieterportal ein`;
   const text = [
@@ -119,6 +135,8 @@ export function einladungsMail(opts: {
     `Die Einladung gilt bis zum ${bis} und nur einmal.`,
     "",
     "Kennen Sie den Absender nicht, ignorieren Sie diese E-Mail einfach.",
+    "",
+    verantwortlichSatz(von),
     "",
     "MyImmo — Privates Immobilien-Management",
     "https://www.myimmoapp.de",
@@ -143,8 +161,12 @@ export function einladungsMail(opts: {
       Ihr Code (falls er nicht schon eingetragen ist): <strong style="color:#23211c;letter-spacing:.06em">${esc(opts.code)}</strong><br>
       Gültig bis ${esc(bis)}, nur einmal verwendbar.
     </p>
-    <p style="font-size:13px;line-height:1.6;color:#9b968a;margin:0;border-top:1px solid #e7e1d4;padding-top:14px">
+    <p style="font-size:13px;line-height:1.6;color:#9b968a;margin:0 0 8px;border-top:1px solid #e7e1d4;padding-top:14px">
       Kennen Sie den Absender nicht, ignorieren Sie diese E-Mail einfach.
+    </p>
+    <p style="font-size:12px;line-height:1.6;color:#9b968a;margin:0">
+      Verantwortlich für Ihre Daten im Mieterportal ist ${esc(von)}. MyImmo stellt das Portal in dessen Auftrag bereit.
+      <a href="${DATENSCHUTZ_URL}" style="color:#856619">Datenschutzhinweise</a>
     </p>
   </div>
 </body></html>`;

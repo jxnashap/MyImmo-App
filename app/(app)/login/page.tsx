@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, KeyRound, Home, Wrench, Building2, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
-import { bereiteRegistrierungVor, pruefeEinladungscode } from "@/lib/actions/freischaltung";
+import { bereiteRegistrierungVor, loeseEinladungEin, pruefeEinladungscode } from "@/lib/actions/freischaltung";
 import { PASSWORT_LECK_HINWEIS, PASSWORT_MIN, PASSWORT_REGEL, passwortAblehnung, pruefePasswort } from "@/lib/passwort";
 import { RESET_ZIEL } from "@/lib/passwortWechsel";
 import { HILFE_MAILTO } from "@/lib/preise";
@@ -14,6 +14,7 @@ import { sicheresZiel } from "@/lib/flash";
 import { herkunftDieserSeite } from "@/lib/herkunft";
 import MfaAbfrage from "@/components/MfaAbfrage";
 import { mussMfaNachholen } from "@/lib/auth/sitzung";
+import { bestaetigungsZiel, zielNachAnmeldung } from "@/lib/auth/anmeldeZiel";
 
 // Zugangs-Rollen (Businessplan Kap. 14): Vermieter & Hausverwaltung nutzen
 // die volle App, Mieter und Service haben eigene Portale.
@@ -67,8 +68,9 @@ export default function LoginPage() {
   const [consent, setConsent] = useState(false);
   const [code, setCode] = useState(""); // Zugangs-/Einladungscode (nur Registrierung)
   const [firma, setFirma] = useState(""); // Firmenname (nur Service-Registrierung)
-  const [rolle, setRolle] = useState<string>("vermieter"); // Standard: Vermieter
-  const [falscheRolle, setFalscheRolle] = useState<string | null>(null); // Konto-Rolle bei Fehlanmeldung
+  const [rolle, setRolle] = useState<string>("vermieter"); // Standard: Vermieter (zählt nur beim Registrieren)
+  // Aus der Einladungsmail gekommen: Satz über dem Formular, Code-Feld als „erkannt“.
+  const [eingeladen, setEingeladen] = useState(false);
   // Rücksprung nach dem Login (Deep-Link aus einer E-Mail o. Ä.) — nur relative Pfade.
   const [nextUrl, setNextUrl] = useState<string | null>(null);
   // Zweiter Schritt (2FA): Passwort stimmt, Konto verlangt einen Code.
@@ -86,7 +88,6 @@ export default function LoginPage() {
         ? "Dein Konto und deine Daten wurden gelöscht. Einzelne Beleg-Dateien ließen sich nicht sofort entfernen — bitte schreib an info@myimmoapp.de, wir löschen sie von Hand."
         : "Dein Konto und alle Daten wurden gelöscht.");
     }
-    // Google-Anmeldung mit falscher Rolle abgebrochen (siehe /auth/callback).
     if (params.get("info") === "passwort-neu") {
       setInfo("Dein Passwort wurde geändert. Melde dich jetzt damit an.");
     }
@@ -101,17 +102,13 @@ export default function LoginPage() {
     } else if (grund === "abgelaufen") {
       setInfo("Deine Sitzung ist abgelaufen. Melde dich bitte neu an — du landest danach wieder dort, wo du warst.");
     }
+    // Bestätigungslink aus der Registrierungsmail, in einem anderen Browser geöffnet
+    // (siehe /auth/callback): Die Adresse ist bestätigt, angemeldet ist hier noch niemand.
+    if (params.get("bestaetigt") === "1") {
+      setInfo("Deine E-Mail-Adresse ist bestätigt. Melde dich jetzt mit E-Mail und Passwort an.");
+    }
     const fehlerArt = params.get("fehler");
-    if (fehlerArt === "rolle") {
-      const konto = params.get("konto") ?? "";
-      const label = ROLLEN[konto]?.label;
-      setFalscheRolle(ROLLEN[konto] ? konto : null);
-      setError(
-        label
-          ? `Dieses Google-Konto gehört zu einem ${label}-Konto. Wähle oben die passende Rolle und versuche es erneut.`
-          : "Dieses Google-Konto passt nicht zur gewählten Rolle.",
-      );
-    } else if (fehlerArt === "reset") {
+    if (fehlerArt === "reset") {
       // Der Grund kommt aus app/(app)/auth/passwort/route.ts. Ohne ihn hiess
       // jeder Fehlschlag „abgelaufen oder schon benutzt" — auch dann, wenn der
       // Link tadellos war und nur im falschen Browser geoeffnet wurde.
@@ -141,6 +138,7 @@ export default function LoginPage() {
     if (einladung && /^MI-[A-Z0-9]{4}-[A-Z0-9]{4}$/i.test(einladung)) {
       setCode(einladung.toUpperCase());
       setMode("signup");
+      setEingeladen(true);
     }
     // Open-Redirect verhindern: nur app-interne Pfade — dieselbe Pruefung wie
     // bei den back-Redirects der Server-Actions (lib/flash.ts).
@@ -171,7 +169,6 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setInfo(null);
-    setFalscheRolle(null);
 
     // Registrierung: Passwörter müssen übereinstimmen — sonst wäre das Konto
     // mit einem vertippten Passwort angelegt und der nächste Login scheitert.
@@ -209,23 +206,16 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      // Rollen-Check: Zugangsdaten müssen zur gewählten Rolle passen.
-      // (Konten ohne Rollen-Eintrag sind Vermieter.)
+      // Die Rolle des KONTOS entscheidet, wohin es geht — nicht die oben gewählte
+      // (lib/auth/anmeldeZiel.ts). Bis 21.10.2026 wurde ein Mieter, der nach dem
+      // Abmelden auf der Vermieter-Voreinstellung landete, mit richtigem Passwort
+      // wieder abgemeldet. (Konten ohne Rollen-Eintrag sind Vermieter.)
       const { data: rolleRow } = await supabase
         .from("nutzer_rollen")
         .select("rolle")
         .eq("user_id", data.user!.id)
         .maybeSingle();
       const kontoRolle = rolleRow?.rolle ?? "vermieter";
-      if (kontoRolle !== rolle) {
-        await supabase.auth.signOut({ scope: "local" });
-        setFalscheRolle(kontoRolle);
-        setError(
-          `Diese Zugangsdaten gehören zu einem ${ROLLEN[kontoRolle].label}-Konto — die Anmeldung hier ist für ${ROLLEN[rolle].label} gedacht.`
-        );
-        setLoading(false);
-        return;
-      }
       // Zwei-Faktor: Verlangt das Konto einen Code, ist die Sitzung erst aal1 —
       // das Layout ließe sie nicht in die App. Hier den zweiten Schritt zeigen.
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -234,11 +224,27 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
+      // Aus einer Einladungsmail gekommen, aber schon ein Konto: die neue Wohnung gleich
+      // verknüpfen (vorher musste man sich dafür ein zweites Mal registrieren — ging nicht).
+      // Scheitert es, zeigt das Portal das Code-Feld; die Anmeldung selbst hängt nicht daran.
+      if (eingeladen && code && kontoRolle === "mieter") {
+        try {
+          const verknuepft = await loeseEinladungEin(code);
+          // Nicht verknüpft (z. B. andere Adresse): Das Portal zeigt dann das Code-Feld samt Grund.
+          if (!verknuepft.ok) console.warn("Einladung nicht eingelöst:", verknuepft.fehler);
+        } catch {
+          // Ohne Folgen — siehe oben.
+        }
+      }
       // Harte Navigation: stellt sicher, dass der Server die neue Session-
       // Cookie sofort sieht — kein manuelles Neuladen mehr nötig.
       // Bei schwachem Bestandspasswort zuerst in die Einstellungen (Sicherheit),
       // damit der Wechsel nicht untergeht; der Deep-Link tritt dahinter zurueck.
-      window.location.assign(schwachesPasswort ? "/einstellungen?pw=schwach" : (nextUrl ?? "/"));
+      window.location.assign(
+        schwachesPasswort && kontoRolle !== "mieter" && kontoRolle !== "service"
+          ? "/einstellungen?pw=schwach"
+          : zielNachAnmeldung(kontoRolle, nextUrl),
+      );
     } else if (rolle === "mieter" || rolle === "service") {
       // Mieter/Service-Registrierung: Einladungscode des Vermieters.
       const eingabe = code.trim().toUpperCase();
@@ -261,6 +267,7 @@ export default function LoginPage() {
         email,
         password,
         options: {
+          emailRedirectTo: bestaetigungsZiel(window.location.origin, rolle),
           data:
             rolle === "mieter"
               ? { rolle: "mieter", einladungscode: eingabe }
@@ -270,9 +277,10 @@ export default function LoginPage() {
       if (error) setError(passwortAblehnung(error) ?? uebersetze(error.message));
       else
         setInfo(
-          rolle === "mieter"
-            ? "Fast geschafft — bitte bestätige die E-Mail in deinem Postfach. Danach findest du deine Wohnung im Mieterportal."
-            : "Fast geschafft — bitte bestätige die E-Mail in deinem Postfach. Danach findest du deine Aufträge im Service-Portal."
+          "Fast geschafft — wir haben dir eine E-Mail geschickt. Tippe auf den Link darin: " +
+            "Auf diesem Gerät bist du danach gleich angemeldet, auf einem anderen meldest du dich " +
+            "hier mit E-Mail und Passwort an. " +
+            (rolle === "mieter" ? "Deine Wohnung findest du dann im Mieterportal." : "Deine Aufträge findest du dann im Service-Portal."),
         );
       setLoading(false);
     } else {
@@ -305,14 +313,17 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: Object.keys(daten).length ? { data: daten } : undefined,
+        options: {
+          emailRedirectTo: bestaetigungsZiel(window.location.origin, rolle),
+          ...(Object.keys(daten).length ? { data: daten } : {}),
+        },
       });
       if (error) setError(passwortAblehnung(error) ?? uebersetze(error.message));
       else
         setInfo(
-          "Fast geschafft — bestätige jetzt die E-Mail in deinem Postfach. " +
-            "Danach meldest du dich hier einmal mit E-Mail und Passwort an; " +
-            "der Zugangscode wird nicht noch einmal gebraucht.",
+          "Fast geschafft — wir haben dir eine E-Mail geschickt. Tippe auf den Link darin: " +
+            "Auf diesem Gerät bist du danach gleich angemeldet, auf einem anderen meldest du dich " +
+            "hier mit E-Mail und Passwort an. Der Zugangscode wird nicht noch einmal gebraucht.",
         );
       setLoading(false);
     }
@@ -367,7 +378,6 @@ export default function LoginPage() {
     setPassword2("");
     setError(null);
     setInfo(null);
-    setFalscheRolle(null);
   };
 
   return (
@@ -432,6 +442,14 @@ export default function LoginPage() {
           ))}
         </div>
 
+        {/* Aus der Einladungsmail: ein Satz Kontext statt eines nackten Formulars. */}
+        {eingeladen && mode === "signup" && (
+          <p className="mb-4 text-[13px]" style={{ color: "var(--muted)", lineHeight: 1.5 }}>
+            Dein Vermieter hat dich eingeladen. Wähle ein Passwort — mit der E-Mail-Adresse, an die die
+            Einladung ging. Schon registriert? Dann oben auf „Anmelden“.
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <input
             type="email"
@@ -463,7 +481,7 @@ export default function LoginPage() {
             style={{ padding: "12px 14px" }}
           />
           {mode === "signup" && (
-            <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.45, margin: "-4px 2px 0" }}>
+            <p style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.45, margin: "0 2px" }}>
               {PASSWORT_LECK_HINWEIS}.
             </p>
           )}
@@ -509,8 +527,14 @@ export default function LoginPage() {
             />
           )}
 
+          {mode === "signup" && eingeladen && code && (
+            <label htmlFor="einladungscode" className="block text-[12px]" style={{ color: "var(--muted)", margin: "0 2px -8px" }}>
+              Einladungscode aus deiner E-Mail
+            </label>
+          )}
           {mode === "signup" && (
             <input
+              id="einladungscode"
               type="text"
               required
               placeholder={
@@ -544,15 +568,15 @@ export default function LoginPage() {
                 style={{ marginTop: 3 }}
               />
               <span>
-                Ich habe die{" "}
+                Ich akzeptiere die{" "}
                 <Link href="/agb" target="_blank" style={{ color: "var(--gold)" }}>
                   AGB
-                </Link>{" "}
-                und die{" "}
+                </Link>
+                . Die{" "}
                 <Link href="/datenschutz" target="_blank" style={{ color: "var(--gold)" }}>
                   Datenschutzerklärung
                 </Link>{" "}
-                gelesen und akzeptiere sie.
+                habe ich zur Kenntnis genommen.
                 {rolle !== "mieter" && rolle !== "service" && (
                   <>
                     {" "}Zudem akzeptiere ich den{" "}
@@ -572,23 +596,6 @@ export default function LoginPage() {
               style={{ background: "var(--red-dim)", color: "var(--red)" }}
             >
               {error}
-              {falscheRolle && (
-                <button
-                  type="button"
-                  className="mt-2 block w-full rounded-sm border py-2 text-[13px] font-medium transition hover:brightness-110"
-                  style={{ background: "var(--bg3)", borderColor: "var(--line2)", color: "var(--text)" }}
-                  onClick={() => {
-                    setRolle(falscheRolle);
-                    setFalscheRolle(null);
-                    setError(null);
-                    const url = new URL(window.location.href);
-                    url.searchParams.set("rolle", falscheRolle);
-                    window.history.replaceState(null, "", url.toString());
-                  }}
-                >
-                  Als {ROLLEN[falscheRolle].label} anmelden
-                </button>
-              )}
             </div>
           )}
           {info && (

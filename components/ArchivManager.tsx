@@ -138,7 +138,7 @@ export default function ArchivManager({
           </div>
           <div className="form-row single">
             <div className="form-group">
-              <label>Datei (PDF/Bild · max. 8 MB)</label>
+              <label>Datei (PDF/Bild · max. 4 MB)</label>
               <input type="file" name="datei" accept="application/pdf,image/*" />
             </div>
           </div>
@@ -281,7 +281,7 @@ export default function ArchivManager({
             </div>
             <div className="form-row single">
               <div className="form-group">
-                <label>Datei ersetzen (optional · PDF/Bild · max. 8 MB)</label>
+                <label>Datei ersetzen (optional · PDF/Bild · max. 4 MB)</label>
                 {offenDoc.datei_name && <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>Aktuell: {offenDoc.datei_name} — neue Datei wählen zum Ersetzen.</div>}
                 <input type="file" name="datei" accept="application/pdf,image/*" />
               </div>

@@ -18,8 +18,8 @@ const H3 = ({ children }: { children: React.ReactNode }) => (
 );
 
 // Datenschutzerklärung nach Art. 12–14 DSGVO + § 25 TDDDG, zugeschnitten auf die
-// tatsächlichen Datenflüsse der App (Supabase eu-central-1, Vercel, Anthropic,
-// Google-Login, Google Fonts). Vor Produktivbetrieb anwaltlich bzw. durch
+// tatsächlichen Datenflüsse der App (Supabase eu-central-1, Vercel, Anthropic bzw. Amazon
+// Bedrock je nach Einrichtung (lib/aiRoute.ts), Google-Login, Brevo). Vor Produktivbetrieb anwaltlich bzw. durch
 // eine*n Datenschutzbeauftragte*n prüfen lassen.
 export default function DatenschutzPage() {
   return (
@@ -27,7 +27,7 @@ export default function DatenschutzPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Datenschutzerklärung</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 11. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
+        Stand: 21. Oktober 2026 · Diese Erklärung informiert nach Art. 12–14 DSGVO über die
         Verarbeitung personenbezogener Daten bei Nutzung der Web-Anwendung MyImmo.
       </p>
 
@@ -110,14 +110,28 @@ export default function DatenschutzPage() {
         <strong>einem Tag</strong> automatisch gelöscht. Wir legen <strong>keine eigenen
         Kopien</strong> dieser Logs an und werten sie nicht aus.
       </p>
+      {/* Rechtssicherheit 21.10.2026: Supabase Auth schreibt ein Sicherheitsprotokoll mit IP-Adresse
+          (supabase.com/docs/guides/auth/audit-logs, Beispiel-Eintrag mit „ip_address“). Eine
+          Aufbewahrungsdauer für dieses Protokoll nennt die Doku nicht — deshalb hier keine Zahl. */}
+      <p style={ABSATZ}>
+        Zusätzlich protokolliert unser Datenbank-Anbieter <strong>Supabase</strong> Anmeldungen,
+        Anmeldeversuche und weitere Konto-Ereignisse (z. B. Passwortänderung) mit{" "}
+        <strong>IP-Adresse und Zeitpunkt</strong> (Sicherheitsprotokoll der Authentifizierung).{" "}
+        <em>Zweck und Rechtsgrundlage</em> wie oben (Sicherheit des Kontos, Missbrauchsabwehr).
+        Wir sehen dieses Protokoll nur im Verwaltungsbereich des Anbieters ein, wenn eine Störung
+        oder ein Missbrauchsverdacht es erfordert.
+      </p>
 
       <H3>e) KI-Funktionen (Beleg-/Dokumenterkennung)</H3>
       <p style={ABSATZ}>
         Wenn Sie die optionalen KI-Funktionen nutzen (z. B. Nebenkostenabrechnung auslesen,
-        Objekt aus Exposé-Text übernehmen), wird der von Ihnen hochgeladene Inhalt an die
-        API von Anthropic (USA) übermittelt und dort zur Beantwortung Ihrer Anfrage
-        verarbeitet. API-Eingaben werden von Anthropic standardmäßig{" "}
-        <strong>nicht zum Training von KI-Modellen verwendet</strong>. <em>Zweck:</em> die von Ihnen
+        Vorschlag zu einem Beleg im Belegeingang, Objekt aus Exposé-Text übernehmen), wird der
+        von Ihnen ausgewählte Inhalt — erst, wenn Sie die Auswertung auslösen — je nach Einrichtung
+        an die API von <strong>Anthropic</strong> (USA) oder an <strong>Amazon Bedrock</strong> (Amazon
+        Web Services EMEA SARL, Luxemburg; aufgerufen in Frankfurt, verarbeitet in AWS-Rechenzentren
+        in der EU) übermittelt und dort zur Beantwortung Ihrer Anfrage verarbeitet. API-Eingaben werden von
+        Anthropic standardmäßig <strong>nicht zum Training von KI-Modellen verwendet</strong>; über
+        Amazon Bedrock erhält der Modellanbieter keinen Zugriff auf Ihre Eingaben. <em>Zweck:</em> die von Ihnen
         angestoßene Auswertung. <em>Rechtsgrundlage:</em> Art. 6 Abs. 1 lit. b DSGVO; die
         Nutzung ist freiwillig. Bitte laden Sie nur Dokumente hoch, die für die Auswertung
         erforderlich sind.
@@ -150,7 +164,8 @@ export default function DatenschutzPage() {
 
       <H3>g) Vorlagen-Verteiler / E-Mail-Hinweise (freiwillig)</H3>
       <p style={ABSATZ}>
-        Melden Sie sich für die MyImmo-Vorlagen und gelegentliche Hinweise für Vermieter an,
+        Melden Sie sich für die MyImmo-Vorlagen an — per E-Mail die Vorlagen sowie höchstens
+        monatlich Hinweise von MyImmo zu neuen Vorlagen, Funktionen und dem Start der App —,
         verarbeiten wir Ihre <strong>E-Mail-Adresse</strong>. Die Anmeldung läuft im{" "}
         <strong>Double-Opt-in</strong>: Sie erhalten zunächst eine Bestätigungsmail; erst nach
         Ihrem Klick wird die Adresse in den Verteiler aufgenommen. Als Nachweis der Einwilligung
@@ -160,8 +175,8 @@ export default function DatenschutzPage() {
       </p>
       <p style={ABSATZ}>
         Dasselbe Verfahren gilt für die <strong>Benachrichtigung zum Start</strong> auf der
-        Startseite: Dort willigen Sie ein, per E-Mail zu erfahren, wenn MyImmo für alle startet,
-        und danach gelegentliche Hinweise für Vermieter zu erhalten. Gespeichert wird zusätzlich,
+        Startseite: Dort willigen Sie nur ein, <strong>einmalig</strong> per E-Mail zu erfahren, wann
+        MyImmo startet — weitere Werbung ist damit nicht verbunden. Gespeichert wird zusätzlich,
         über welches der beiden Formulare Sie sich angemeldet haben.
       </p>
       <p style={ABSATZ}>
@@ -186,7 +201,8 @@ export default function DatenschutzPage() {
         bzw. den Angemessenheitsbeschluss zum EU-US Data Privacy Framework (Ziffer 5).
       </p>
       <p style={ABSATZ}>
-        <em>Speicherdauer:</em> bis zum Widerruf. Danach löschen wir die Adresse aus dem
+        <em>Speicherdauer:</em> bis zum Widerruf, bei der Benachrichtigung zum Start bis zum Versand
+        der Startankündigung. Danach löschen wir die Adresse aus dem
         Verteiler; der Einwilligungs- und Widerrufsnachweis wird noch bis zu drei Jahre
         aufbewahrt, um die Rechtmäßigkeit belegen zu können, und danach gelöscht.{" "}
         <em>Widerruf:</em> jederzeit über den <strong>Abmeldelink in jeder E-Mail</strong> oder
@@ -223,10 +239,16 @@ export default function DatenschutzPage() {
       <ul style={{ paddingLeft: 20, listStyle: "disc" }}>
         <li><strong>Supabase Inc.</strong> (Datenbank, Authentifizierung, Datei-Speicher) — Datenhaltung in Frankfurt (AWS eu-central-1); DPA inkl. EU-Standardvertragsklauseln.</li>
         <li><strong>Vercel Inc.</strong>, USA (Hosting/Auslieferung der App) — DPA inkl. EU-Standardvertragsklauseln; technische Logs können in den USA verarbeitet werden.</li>
-        <li><strong>Anthropic PBC</strong>, USA (KI-Auswertung, nur bei aktiver Nutzung) — DPA inkl. EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
-        <li><strong>Google Ireland Ltd.</strong> — ausschließlich bei „Login mit Google“ (Ziffer 3 b). Schriftarten werden nicht von Google geladen (Ziffer 7).</li>
+        <li><strong>Anthropic PBC</strong>, USA (KI-Auswertung, nur bei aktiver Nutzung; je nach Einrichtung, siehe Ziffer 3 e) — DPA inkl. EU-Standardvertragsklauseln; kein Modell-Training mit API-Daten.</li>
+        <li><strong>Amazon Web Services EMEA SARL</strong>, Luxemburg (KI-Auswertung über Amazon Bedrock, nur bei aktiver Nutzung; je nach Einrichtung statt Anthropic, siehe Ziffer 3 e) — Aufruf in Frankfurt (eu-central-1), Verarbeitung in AWS-Rechenzentren in der EU; AWS-Auftragsverarbeitungsvertrag (Data Processing Addendum) inkl. EU-Standardvertragsklauseln.</li>
         <li><strong>Brevo</strong> (Sendinblue SAS, Frankreich) — Versand des Vorlagen-Verteilers (Ziffer 3 g) der Einladungen ins Mieterportal, die ein Vermieter an die von ihm eingetragene Adresse seines Mieters schicken lässt, sowie der Hinweis-E-Mails aus dem Mieterportal („es liegt etwas Neues bereit“ — ohne Inhalt, Empfänger ist die Adresse des eigenen Kontos, im Konto abschaltbar). Damit ein solcher Hinweis weder doppelt noch verloren geht, speichert MyImmo je Hinweis einen Versandeintrag (Art des Hinweises, Bezug, Zeitpunkte, Versuche, Ergebnis — keine E-Mail-Adresse, kein Inhalt); er wird nach 90 Tagen gelöscht, mit dem Konto sofort. Verarbeitung in der EU, Auftragsverarbeitung nach Art. 28 DSGVO (Anlage 2 zu den Nutzungsbedingungen, inkl. EU-Standardvertragsklauseln). Einzelne Unterauftragsverarbeiter von Brevo verarbeiten in Drittländern (Ziffer 5).</li>
       </ul>
+      <p style={ABSATZ}>
+        <strong>Google Ireland Ltd.</strong> ist kein Auftragsverarbeiter: Nutzen Sie „Login mit
+        Google“ (Ziffer 3 a), ist Google für die Anmeldung bei Google eigenständig Verantwortlicher;
+        es gilt die Datenschutzerklärung von Google. Schriftarten werden nicht von Google geladen
+        (Ziffer 7).
+      </p>
       <p style={ABSATZ}>
         Daneben erhalten die in Ziffer 3 h genannten Dienste (OpenStreetMap Foundation,
         Jina AI) die dort beschriebenen Angaben, wenn Sie die jeweilige Funktion nutzen. Eine
@@ -241,7 +263,10 @@ export default function DatenschutzPage() {
         bzw. — soweit der Anbieter zertifiziert ist — des Angemessenheitsbeschlusses zum
         EU-US Data Privacy Framework (Art. 45 DSGVO). Die Verortung über die{" "}
         <strong>OpenStreetMap Foundation</strong> (Vereinigtes Königreich) stützt sich auf den
-        Angemessenheitsbeschluss für das Vereinigte Königreich (Ziffer 3 h).
+        Angemessenheitsbeschluss für das Vereinigte Königreich (Ziffer 3 h). Läuft die KI-Auswertung
+        über <strong>Amazon Bedrock</strong>, sitzt der Vertragspartner in Luxemburg und die Anfrage wird
+        in AWS-Rechenzentren in der EU verarbeitet; für etwaige Zugriffe aus Drittländern gelten die
+        EU-Standardvertragsklauseln im Vertrag mit AWS.
       </p>
       <p style={ABSATZ}>
         Bei <strong>Brevo</strong> (Vorlagen-Verteiler) liegt der Vertragspartner in der EU;
@@ -292,7 +317,7 @@ export default function DatenschutzPage() {
           <strong>nach 24 Stunden gelöscht</strong>. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO
           (berechtigtes Interesse am Schutz vor Missbrauch).
         </li>
-        <li>Gesetzliche Aufbewahrungspflichten (z. B. § 147 AO für Ihre Vermieterunterlagen) liegen in Ihrer Verantwortung — exportieren Sie benötigte Daten vor einer Löschung.</li>
+        <li>Gesetzliche Aufbewahrungspflichten (z. B. § 14b UStG für Handwerkerrechnungen, ggf. § 147a AO) liegen in Ihrer Verantwortung — exportieren Sie benötigte Daten vor einer Löschung.</li>
       </ul>
 
       <H2>9. Ihre Rechte</H2>

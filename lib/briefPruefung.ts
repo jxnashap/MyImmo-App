@@ -311,6 +311,15 @@ export const WOHNUNGSGEBER_PFLICHT: { key: string; label: string }[] = [
   { key: "personen", label: "meldepflichtige Personen" },
 ];
 
+/**
+ * Kündigung und Mieterhöhung (Rechtssicherheit 21.10.2026): Die Prüfung oben deckt Fristen und
+ * Pflichtfelder ab — nicht, ob der Kündigungsgrund oder die Begründung der Erhöhung im Einzelfall
+ * trägt. Das steht sichtbar am Brief, nicht nur in den AGB.
+ */
+export const ART_FORMULIERUNGSHILFE: readonly DocArt[] = ["kuendigung", "mieterhoehung"];
+export const FORMULIERUNGSHILFE_HINWEIS =
+  "Formulierungshilfe: MyImmo rechnet Fristen und prüft Pflichtfelder — ob Grund oder Erhöhung im Einzelfall tragen, prüft es nicht. Keine Rechtsberatung.";
+
 /** Die Reparatur-Vorlage deckt Erhaltung ab (§ 555a BGB), keine Modernisierung (B39). */
 export const REPARATUR_HINWEIS =
   "Nur für Erhaltungsmaßnahmen (Instandhaltung und Instandsetzung, § 555a BGB). Eine Modernisierung (§ 555b BGB) ist spätestens drei Monate vorher in Textform anzukündigen — mit Art und Umfang, Beginn und Dauer und der erwarteten Mieterhöhung (§ 555c BGB). Dafür ist diese Vorlage nicht gedacht.";

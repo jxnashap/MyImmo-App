@@ -115,7 +115,7 @@ describe("speichereVertreter", () => {
       expect(schreib(db)).toBeUndefined();
     }
   });
-  it("Scan: PDF wird gespeichert, HTML/SVG abgelehnt, über 8 MB abgelehnt", async () => {
+  it("Scan: PDF wird gespeichert, HTML/SVG abgelehnt, über 4 MB abgelehnt", async () => {
     const pdf = new File([new Uint8Array([37, 80, 68, 70])], "v.pdf", { type: "application/pdf" });
     const { db, mod } = await lade(OK);
     await mod.speichereVertreter(fd({ ...GUT, datei: pdf }));
@@ -127,9 +127,9 @@ describe("speichereVertreter", () => {
       expect("error" in r && r.error).toContain("PDF, JPG oder PNG");
       expect(schreib(d2)).toBeUndefined();
     }
-    const gross = new File([new Uint8Array(8 * 1024 * 1024 + 1)], "g.pdf", { type: "application/pdf" });
+    const gross = new File([new Uint8Array(4 * 1024 * 1024 + 1)], "g.pdf", { type: "application/pdf" });
     const { db: d3, mod: m3 } = await lade(OK);
-    expect(await m3.speichereVertreter(fd({ ...GUT, datei: gross }))).toEqual({ error: "Die Datei ist zu groß (höchstens 8 MB)." });
+    expect(await m3.speichereVertreter(fd({ ...GUT, datei: gross }))).toEqual({ error: "Die Datei ist zu groß (höchstens 4 MB)." });
     expect(schreib(d3)).toBeUndefined();
   });
   it("Scan entfernen nur beim Ändern; ohne Haken bleibt der Scan unberührt", async () => {

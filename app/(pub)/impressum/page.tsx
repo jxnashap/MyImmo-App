@@ -1,4 +1,5 @@
 import BackLink from "@/components/BackLink";
+import { KONTAKT_EMAIL } from "@/lib/preise";
 
 export const metadata = { title: "Impressum — MyImmo" };
 
@@ -30,6 +31,17 @@ export default function ImpressumPage() {
       <p>
         Telefon: +49 174 9443943<br />
         E-Mail: info@myimmoapp.de
+      </p>
+
+      {/* Rechtssicherheit 21.10.2026: Kontaktstelle nach Art. 11, 12 DSA und Meldeweg nach Art. 16
+          DSA — dieselbe Adresse wie der Kontakt oben (KONTAKT_EMAIL, lib/preise.ts). Ob MyImmo
+          Hosting-Dienst im Sinne des DSA ist, steht auf der Anwaltsliste. */}
+      <h2 style={{ fontSize: 18, marginTop: 24 }}>Kontaktstelle nach dem Digital Services Act</h2>
+      <p>
+        Zentrale Kontaktstelle nach Art. 11 und 12 DSA für Behörden und Nutzer:{" "}
+        <a href={`mailto:${KONTAKT_EMAIL}`} style={{ color: "var(--gold)" }}>{KONTAKT_EMAIL}</a>{" "}
+        (Deutsch, Englisch). Meldungen rechtswidriger Inhalte (Art. 16 DSA) bitte an dieselbe
+        Adresse mit Fundstelle bzw. Link, Begründung, Name und E-Mail.
       </p>
 
       <h2 style={{ fontSize: 18, marginTop: 24 }}>Umsatzsteuer</h2>

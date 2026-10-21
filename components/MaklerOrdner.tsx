@@ -6,6 +6,7 @@
 // Bank bzw. werden nur gezeigt — nicht an den Makler herausgegeben.
 
 import { useMemo, useRef, useState, useTransition } from "react";
+import { fehlerText } from "@/lib/fehlerText";
 import { FolderClosed, Upload, Eye, Download, X, Check, TriangleAlert, Info, Bot } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { MAKLER_CHECKLISTE, maklerErledigt, type MaklerDok, type MaklerItem } from "@/lib/makler";
@@ -15,6 +16,8 @@ import {
 import type { MaklerFreigabe } from "@/lib/actions/makler";
 import MaklerLink from "@/components/MaklerLink";
 import type { Abruf } from "@/lib/freigabeAbrufe";
+import { verkleinereBild } from "@/lib/bildVerkleinern";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
 const LEER = (key: string): MaklerDok => ({
   item_key: key, status: "offen", notiz: null, datum: null,
@@ -63,39 +66,41 @@ export default function MaklerOrdner({
     const next = cur.status === "erledigt" ? (cur.datei_name ? "hochgeladen" : "offen") : "erledigt";
     start(async () => {
       try { apply(await setMaklerStatus(item.key, next)); }
-      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Speichern.", "error"); }
+      catch (e) { toast(fehlerText(e, "Nicht gespeichert — bitte Seite neu laden und erneut versuchen."), "error"); }
     });
   }
 
   function onDatum(item: MaklerItem, datum: string) {
     start(async () => {
       try { apply(await setMaklerDatum(item.key, datum || null)); }
-      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Speichern.", "error"); }
+      catch (e) { toast(fehlerText(e, "Datum nicht gespeichert — bitte erneut versuchen."), "error"); }
     });
   }
 
-  function onFile(item: MaklerItem, file: File | undefined) {
-    if (!file) return;
-    if (file.size > 8 * 1024 * 1024) { toast("Datei zu groß (max. 8 MB)."); return; }
-    const fd = new FormData();
-    fd.set("datei", file);
+  function onFile(item: MaklerItem, roh: File | undefined) {
+    if (!roh) return;
     start(async () => {
+      // Fotos verkleinern; mehr als 4 MB nimmt der Server je Anfrage nicht an (lib/anhaenge.ts).
+      const file = await verkleinereBild(roh);
+      if (file.size > ANFRAGE_MAX_BYTES) { toast("Datei zu groß (höchstens 4 MB) — ein PDF bitte kleiner speichern.", "error"); return; }
+      const fd = new FormData();
+      fd.set("datei", file);
       try { apply(await uploadMaklerDatei(item.key, fd)); toast("Datei hinterlegt."); }
-      catch (e) { toast(e instanceof Error ? e.message : "Upload fehlgeschlagen.", "error"); }
+      catch (e) { toast(fehlerText(e, "Hochladen hat nicht geklappt. Erlaubt sind PDF und Bilder bis 4 MB — bitte erneut versuchen."), "error"); }
     });
   }
 
   function onRemove(item: MaklerItem) {
     start(async () => {
       try { apply(await removeMaklerDatei(item.key)); }
-      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Entfernen.", "error"); }
+      catch (e) { toast(fehlerText(e, "Datei nicht entfernt — bitte erneut versuchen."), "error"); }
     });
   }
 
   function onGenerate(item: MaklerItem) {
     start(async () => {
       try { apply(await generiereMaklerDokument(item.key, { personenstand })); toast("Käufer-Selbstauskunft aus MyImmo erzeugt."); }
-      catch (e) { toast(e instanceof Error ? e.message : "Erzeugen fehlgeschlagen.", "error"); }
+      catch (e) { toast(fehlerText(e, "Die Selbstauskunft ließ sich nicht erzeugen — ist sie im Kauf-Assistenten ausgefüllt?"), "error"); }
     });
   }
 

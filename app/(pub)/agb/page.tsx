@@ -26,7 +26,7 @@ export default function AgbPage() {
       <BackLink />
       <h1 style={{ fontSize: 28, margin: "16px 0 8px" }}>Allgemeine Geschäftsbedingungen (AGB)</h1>
       <p style={{ color: "var(--muted)", fontSize: 13, marginBottom: 24 }}>
-        Stand: 1. Oktober 2026 · für die Nutzung der Web-Anwendung MyImmo.
+        Stand: 21. Oktober 2026 · für die Nutzung der Web-Anwendung MyImmo.
       </p>
 
       <div style={{ background: "var(--bg3)", border: "1px solid var(--line)", borderRadius: 8, padding: "12px 16px", fontSize: 13, color: "var(--muted)", marginBottom: 24 }}>
@@ -83,7 +83,9 @@ export default function AgbPage() {
         <li style={{ marginBottom: 6 }}>Der Nutzer erfasst Daten Dritter (insbesondere Mieterdaten) in eigener Verantwortung als datenschutzrechtlich Verantwortlicher; Grundlage der Verarbeitung durch den Anbieter ist der <Link href="/avv" style={{ color: "var(--gold)" }}>AVV</Link>. Der Nutzer stellt sicher, dass er zur Verarbeitung dieser Daten berechtigt ist.</li>
         <li style={{ marginBottom: 6 }}>Keine rechtswidrigen, beleidigenden oder schadhaften Inhalte (insbesondere Malware) hochladen; keine Umgehung von Zugriffskontrollen; keine missbräuchliche oder exzessive automatisierte Nutzung.</li>
         <li style={{ marginBottom: 6 }}>Bank-Freigabelinks nur an berechtigte Empfänger weitergeben; für die Auswahl der freigegebenen Dokumente ist der Nutzer verantwortlich.</li>
-        <li style={{ marginBottom: 6 }}>Regelmäßige eigene Datensicherung über die Export-Funktion wird empfohlen, insbesondere vor Kontolöschung (gesetzliche Aufbewahrungspflichten, z. B. § 147 AO, liegen beim Nutzer).</li>
+        {/* Rechtssicherheit 21.10.2026 (DSA): nur ergänzt — Kontaktstelle und Meldeweg stehen im Impressum. */}
+        <li style={{ marginBottom: 6 }}>Meldungen rechtswidriger Inhalte (Kontakt siehe <Link href="/impressum" style={{ color: "var(--gold)" }}>Impressum</Link>) prüft der Anbieter von Hand. Sperrt er deshalb Inhalte oder ein Konto oder kündigt er aus diesem Grund, nennt er dem Nutzer den Grund und den Weg, sich dagegen zu beschweren (Art. 14, 17 DSA).</li>
+        <li style={{ marginBottom: 6 }}>Regelmäßige eigene Datensicherung über die Export-Funktion wird empfohlen, insbesondere vor Kontolöschung (gesetzliche Aufbewahrungspflichten, z. B. § 14b UStG für Handwerkerrechnungen, ggf. § 147a AO, liegen beim Nutzer).</li>
       </ul>
 
       <H2>6. Verfügbarkeit</H2>

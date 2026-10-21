@@ -144,6 +144,34 @@
 > verlangt eine bestehende `service_zugaenge`-Zeile, nie nur `service_user_id`. (4) Neue RLS-Regel →
 > Datei in `supabase/test/rls/` mit positiver und negativer Probe.
 
+> 🧭 **Durchsicht 21.10.2026 („nur effizienter, rechtssicherer, verständlicher“, Idee im Memory-Repo) — Paket 1 gebaut.**
+> Vier Agenten (Mieter-Weg, Vermieter-Abläufe, Recht, Sprache), Funde im Code gegengeprüft. **Regeln daraus:**
+> (1) **Nach der Anmeldung entscheidet die Rolle des KONTOS** (`lib/auth/anmeldeZiel.ts`: `zielNachAnmeldung`, `heimVon`);
+> die Rollenwahl auf der Seite zählt nur beim Registrieren und für neue Google-Konten — nie abweisen/abmelden (vorher wurde ein
+> Mieter nach dem Abmelden mit richtigem Passwort wieder abgemeldet). Abmelden aus den Portalen → `/login?rolle=…`.
+> (2) **Bestätigungslink der Registrierung → `/auth/callback?bestaetigt=1`** (`bestaetigungsZiel`); scheitert nur der Tausch
+> (anderer Browser), sagt die Anmeldeseite „bestätigt, jetzt anmelden“. Vorher landete er auf der Site URL und der Proxy fing
+> den `code` als Passwort-Reset ab. **Betreiber: einmal echt registrieren und prüfen** (Punkt 14 unten).
+> (3) **Uploads: höchstens `ANFRAGE_MAX_BYTES` (4 MB) je ANFRAGE** (`lib/anhaenge.ts`) — Vercel antwortet darüber mit 413
+> (gemessen: 5 MB → `FUNCTION_PAYLOAD_TOO_LARGE`). Summe prüfen (`pruefeAnhaenge`, Browser UND Server), Base64 in JSON 3 MB
+> (`BASE64_ROH_MAX_BYTES`), Fotos vorher verkleinern (`verkleinereBild`, 2000 px, entfernt auch GPS), Senden in `try`. Keine
+> Grenze darüber versprechen (`tests/anhaenge.test.ts`, auch Bewerbungen).
+> (4) **Gefangene Fehler über `fehlerText(e, ersatz)`** (`lib/fehlerText.ts`), nie `e.message` — Next schwärzt geworfene
+> Server-Fehler in Produktion zu einem englischen Satz (`tests/fehlerText.test.ts`).
+> (5) Bestehendes Mieterkonto löst eine neue Einladung im Portal ein (`loeseEinladungEin`, Kasten „Noch keine Wohnung“) oder
+> direkt nach der Anmeldung aus dem Einladungslink. (6) Die installierte App startet auf `/?app=1` — abgemeldet zur Anmeldung.
+> **Paket 2 (Rechtssicherheit, gleicher Tag, `tests/rechtssicherheit.test.ts`):** NK „Voller Betrag“ druckt Gesamtkosten =
+> Betrag + Schlüssel „direkt zugeordnet (100 %)“ (`VOLL_SCHLUESSEL`; bei Eigentumswohnungen Anwaltsfrage 14), Warnung bei
+> Heizkosten ohne CO₂-Angaben (`CO2_FEHLT_HINWEIS`, 3 %-Kürzung) und Messdienst-Hinweis; Belegeingang ruft die KI nur auf Klick;
+> Einwilligungen: Start NUR einmalig, Vorlagen mit Absender/Inhalt/Häufigkeit (`EINWILLIGUNG_VERSION` 2026-10-21); **Einladung
+> und Bewerbungslink nur mit Namen im Profil** (Art. 13 DSGVO, `PROFILNAME_FEHLT`), Mail nennt den Verantwortlichen; DSA-
+> Kontaktstelle im Impressum; AWS/Bedrock in Datenschutz + AVV (PDF 2026-10-21); § 147 AO → § 14b UStG; Brief-Generator
+> „Formulierungshilfe, keine Rechtsberatung“; Förder-Hinweis „Antrag vor Beauftragung“ aus EINER Quelle (`ANTRAG_VOR_BEGINN`).
+> **Regel: Eine Werbe- oder Rechtsaussage verspricht nur, was der Code tut** (keine Erinnerung, die es nicht gibt).
+> **Betreiber beim Start:** Startanmeldungen (`quelle = 'start'`) nach dem Versand löschen — die Datenschutzerklärung sagt es so.
+> Anwaltsfragen 12–14 neu (§ 327r, DSA-Hosting, ETW-Nebenkosten).
+> Offen (Pakete 3/4 und Betreiber-Entscheidungen: Tour, Install-Hinweis, Begriffe): Chat 21.10.2026.
+
 ### 👤 NUR DER BETREIBER — offene Punkte (Stand 10.09.2026)
 Alles hier ist **kein Code**, sondern ein Dashboard, ein Anwalt oder ein Blick in einen
 Browser. Ich kann es nicht erledigen und nicht prüfen. **In jeder Session kurz nachfragen,
@@ -259,6 +287,10 @@ im Sanierungs-Guide + Verknüpfung „Kaufprüfung → übernommenes Objekt“) 
     `/api/cron/aussen-auftraege` UND `/api/cron/bewertung` mit 503 „CRON_SECRET nicht gesetzt“ — die Crons laufen also
     nicht. Beliebiges langes Geheimnis; Vercel schickt es selbst als `Authorization: Bearer …` an die Cron-Routen.
     Merkmal danach: `curl https://www.myimmoapp.de/api/cron/bewertung` antwortet 401 statt 503.
+14. **Einmal echt registrieren (seit 21.10.2026):** Mit einer eigenen Zweit-Adresse als Mieter (Einladung an sie) oder
+    Vermieter registrieren, den Bestätigungslink (a) im selben Browser öffnen → direkt angemeldet, (b) auf einem anderen
+    Gerät → Anmeldeseite „Deine E-Mail-Adresse ist bestätigt“. Endet er auf „Neues Passwort setzen“, die Supabase-Vorlage
+    „Confirm signup“ ansehen (Paket 1, Regel 2).
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**

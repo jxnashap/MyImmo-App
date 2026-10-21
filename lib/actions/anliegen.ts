@@ -8,14 +8,14 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { pruefeNachricht } from "@/lib/vorgang";
 import { benachrichtige } from "@/lib/benachrichtigung";
+import { FOTO_ODER_PDF, pruefeAnhaenge } from "@/lib/anhaenge";
 
 const TYPEN = ["schaden", "dokument", "frage"] as const;
 const STATI = ["offen", "in_arbeit", "erledigt"] as const;
 
-// Anhänge: Fotos + PDF, max. 3 Dateien à 4 MB (Base64 in der DB).
+// Anhänge: Fotos + PDF, bis zu 3 Dateien, ZUSAMMEN höchstens 4 MB (lib/anhaenge.ts) — mehr
+// nimmt Vercel je Anfrage ohnehin nicht an (gemessen 21.10.2026). Base64 in der DB.
 const MAX_DATEIEN = 3;
-const MAX_GROESSE = 4 * 1024 * 1024;
-const ERLAUBTE_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
 
 export async function erstelleAnliegen(formData: FormData) {
   const supabase = await createClient();
@@ -43,11 +43,8 @@ export async function erstelleAnliegen(formData: FormData) {
   const dateien = formData
     .getAll("dateien")
     .filter((f): f is File => f instanceof File && f.size > 0);
-  if (dateien.length > MAX_DATEIEN) return { error: `Maximal ${MAX_DATEIEN} Dateien.` };
-  for (const f of dateien) {
-    if (f.size > MAX_GROESSE) return { error: `„${f.name}“ ist größer als 4 MB.` };
-    if (!ERLAUBTE_MIME.includes(f.type)) return { error: `„${f.name}“: nur Fotos (JPG/PNG/WebP/HEIC) oder PDF.` };
-  }
+  const problem = pruefeAnhaenge(dateien, { maxAnzahl: MAX_DATEIEN, erlaubt: FOTO_ODER_PDF });
+  if (problem) return { error: problem };
 
   const { data: neu, error } = await supabase
     .from("anliegen")

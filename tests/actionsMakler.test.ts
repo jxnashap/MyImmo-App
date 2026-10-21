@@ -80,9 +80,9 @@ describe("Nur bekannte Checklisten-Punkte", () => {
 });
 
 describe("Dateien: Grenze und Verschlüsselung", () => {
-  it("über 8 MB wird abgelehnt — nichts wird geschrieben", async () => {
+  it("über 4 MB wird abgelehnt — nichts wird geschrieben", async () => {
     const { db, mod } = await lade();
-    await expect(mod.uploadMaklerDatei("ausweis", fd({ datei: datei(8 * 1024 * 1024 + 1) }))).rejects.toThrow(
+    await expect(mod.uploadMaklerDatei("ausweis", fd({ datei: datei(4 * 1024 * 1024 + 1) }))).rejects.toThrow(
       "Datei zu groß",
     );
     expect(db.zugriffe).toEqual([]);

@@ -19,6 +19,7 @@ import {
 import type { Auswertung, GuideZeile } from "@/lib/sanierung/auswertung";
 import type { FoerderErgebnis } from "@/lib/sanierung/foerderung";
 import { FOERDER_STAND_SANIERUNG } from "@/lib/sanierung/foerderung";
+import { ANTRAG_VOR_BEGINN } from "@/lib/kauf/foerderung";
 import type { Entwurf } from "@/lib/sanierung/eingabe";
 import type { Aendern } from "@/components/sanierung/GuideSeiten";
 
@@ -275,6 +276,11 @@ export default function GuideErgebnis({
           <div className="section-header"><div><h3>Möglicher Zuschuss</h3><div className="section-sub">Geschätzt, Stand {FOERDER_STAND_SANIERUNG} — nicht von der Summe abgezogen, sicher erst mit der Zusage</div></div></div>
           <div className="section-body">
             <div className="sanierung-summe-zahl">{spanne(zuschuss, euro)}</div>
+            {/* Rechtssicherheit 21.10.2026: Ohne Antrag vor der Beauftragung ist der Zuschuss weg —
+                derselbe Hinweis wie im Förder-Check (EINE Quelle, lib/kauf/foerderung.ts). */}
+            <p role="note" className="sanierung-klein" style={{ margin: "6px 0 0" }}>
+              <strong>{ANTRAG_VOR_BEGINN.titel}</strong> — {ANTRAG_VOR_BEGINN.text}
+            </p>
             {hinweiseFoerderung.length > 0 && (
               <ul className="sanierung-hinweise">
                 {hinweiseFoerderung.map((h) => <li key={h}>{h}</li>)}

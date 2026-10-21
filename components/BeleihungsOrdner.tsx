@@ -1,5 +1,6 @@
 "use client";
 import { TriangleAlert } from "lucide-react";
+import { fehlerText } from "@/lib/fehlerText";
 
 // Beleihungsordner: konditionale Bank-Checkliste mit Upload (Drag&Drop,
 // base64 ≤ 8 MB), Abhaken, Fortschritts-Ring, „Aus MyImmo erzeugen" und
@@ -33,6 +34,8 @@ import { teilbarerLink } from "@/lib/appUrl";
 import { useModalFokus } from "@/lib/modalFokus";
 import { abrufeJeLink, abrufZusammenfassung, type Abruf } from "@/lib/freigabeAbrufe";
 import { zugangsMailLink } from "@/lib/zugangsMail";
+import { verkleinereBild } from "@/lib/bildVerkleinern";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
 export type Rueckmeldung = {
   id: string;
@@ -131,24 +134,26 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
   const erledigt = (key: string) => dok(key).status === "erledigt";
   const doneCount = sichtbar.filter((i) => erledigt(i.key)).length;
 
-  async function run(key: string, fn: () => Promise<BelDok>, okMsg?: string) {
+  async function run(key: string, fn: () => Promise<BelDok>, okMsg?: string, ersatz = "Das hat nicht geklappt — bitte erneut versuchen.") {
     setBusy(key);
     try {
       const neu = await fn();
       setDocs((prev) => ({ ...prev, [key]: neu }));
       if (okMsg) toast(okMsg);
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Fehler — bitte erneut versuchen.", "error");
+      toast(fehlerText(e, ersatz), "error");
     } finally {
       setBusy(null);
     }
   }
 
-  function uploadFile(key: string, file: File) {
-    if (file.size > 8 * 1024 * 1024) { toast("Datei zu groß (max. 8 MB)."); return; }
+  async function uploadFile(key: string, roh: File) {
+    // Fotos verkleinern; mehr als 4 MB nimmt der Server je Anfrage nicht an (lib/anhaenge.ts).
+    const file = await verkleinereBild(roh);
+    if (file.size > ANFRAGE_MAX_BYTES) { toast("Datei zu groß (höchstens 4 MB) — ein PDF bitte kleiner speichern.", "error"); return; }
     const fd = new FormData();
     fd.set("datei", file);
-    run(key, () => uploadBeleihungDatei(propId, key, fd), "Datei gespeichert.");
+    await run(key, () => uploadBeleihungDatei(propId, key, fd), "Datei gespeichert.", "Hochladen hat nicht geklappt. Erlaubt sind PDF und Bilder bis 4 MB — bitte erneut versuchen.");
   }
 
   const deckblattUrl = `/properties/${propId}/beleihung/deckblatt?` + new URLSearchParams({
@@ -192,7 +197,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
         onDrop={(e) => {
           e.preventDefault(); setDragKey(null);
           const f = e.dataTransfer.files?.[0];
-          if (f) uploadFile(item.key, f);
+          if (f) void uploadFile(item.key, f);
         }}
         style={{
           display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10,
@@ -236,7 +241,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
               accept="application/pdf,image/*"
               style={{ display: "none" }}
               disabled={busy === item.key}
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(item.key, f); e.target.value = ""; }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadFile(item.key, f); e.target.value = ""; }}
             />
           </label>
         )}
@@ -246,7 +251,8 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
             className="btn btn-outline"
             style={{ fontSize: 11 }}
             disabled={busy === item.key}
-            onClick={() => run(item.key, () => generiereBeleihungDokument(propId, item.key), "Dokument aus MyImmo erzeugt.")}
+            onClick={() => run(item.key, () => generiereBeleihungDokument(propId, item.key), "Dokument aus MyImmo erzeugt.",
+              "Das Dokument ließ sich nicht erzeugen — meist fehlen Angaben dafür (aktive Mieter am Objekt oder Nebenkosten-Positionen des Jahres).")}
           >
             {busy === item.key ? <Loader2 size={13} style={{ animation: "spin .8s linear infinite" }} /> : <Bot size={13} />} Aus MyImmo erzeugen
           </button>
@@ -569,7 +575,7 @@ export default function BeleihungsOrdner({ propId, objektName, istEtw, hatMieter
                         setFreigaben((prev) => [f, ...prev]);
                         setNeuerLink({ link: teilbarerLink(`/beleihung/${f.token}`), code, an: f.empfaenger_email ?? bankEmail, ablauf: f.ablauf });
                       } catch (e) {
-                        toast(e instanceof Error ? e.message : "Freigabe fehlgeschlagen.", "error");
+                        toast(fehlerText(e, "Link nicht erstellt. Liegt zu jedem gewählten Punkt eine Datei vor? Dann bitte erneut versuchen."), "error");
                       } finally { setShareBusy(false); }
                     })}
                   >

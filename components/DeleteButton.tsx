@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { fehlerText } from "@/lib/fehlerText";
 import { useToast } from "@/components/Toast";
 import { actionFehler } from "@/lib/actionErgebnis";
 
@@ -45,7 +46,7 @@ export default function DeleteButton({
         // Framework-Navigation (redirect/notFound) durchreichen, nicht als Fehler zeigen.
         const digest = (e as { digest?: string })?.digest ?? "";
         if (typeof digest === "string" && digest.startsWith("NEXT_")) throw e;
-        toast(`Löschen fehlgeschlagen: ${(e as Error)?.message ?? "Fehler"}`, "error");
+        toast(fehlerText(e, "Nicht gelöscht — bitte Seite neu laden und noch einmal versuchen."), "error");
         setConfirming(false);
       }
     });

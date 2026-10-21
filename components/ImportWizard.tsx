@@ -1,8 +1,10 @@
 "use client";
 import { Bot, ClipboardList, Hourglass, TriangleAlert, CheckCircle2, StickyNote, Upload, Link2 } from "lucide-react";
+import { fehlerText } from "@/lib/fehlerText";
 import SubmitButton from "@/components/SubmitButton";
 
 import { useState } from "react";
+import { BASE64_ROH_MAX_BYTES } from "@/lib/anhaenge";
 
 // Muss zur Auswahl im PropertyForm passen — "Garage / Stellplatz" und
 // "Garagenkomplex" fehlten hier, waren ueber den Import also nicht waehlbar.
@@ -56,7 +58,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
       setNotiz(str(p.notiz));
       setKonfidenz(typeof p.konfidenz === "number" ? p.konfidenz : null);
     } catch (e) {
-      setError(`Netzwerkfehler: ${(e as Error).message}`);
+      setError(fehlerText(e, "Keine Verbindung zum Server — bitte Internet prüfen und erneut versuchen."));
     } finally {
       setLoading(null);
     }
@@ -65,7 +67,8 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
   /** Exposé-PDF einlesen und als base64 an die Auswertung geben. */
   async function pdfAuslesen() {
     if (!datei) return;
-    if (datei.size > 20 * 1024 * 1024) { setError("PDF zu groß (max. 20 MB)."); return; }
+    // Als Base64 in JSON: höchstens 3 MB, sonst weist Vercel die Anfrage ab (lib/anhaenge.ts).
+    if (datei.size > BASE64_ROH_MAX_BYTES) { setError("PDF zu groß (höchstens 3 MB). Kopier den Text des Exposés stattdessen ins Textfeld."); return; }
     setError(null); setLoading("pdf");
     try {
       const buf = await datei.arrayBuffer();
@@ -74,7 +77,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
       for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
       await rufeAb("/api/import", { pdfBase64: btoa(bin) }, "pdf");
     } catch (e) {
-      setError(`Datei konnte nicht gelesen werden: ${(e as Error).message}`);
+      setError(fehlerText(e, "Die Datei ließ sich nicht lesen — bitte erneut auswählen."));
       setLoading(null);
     }
   }

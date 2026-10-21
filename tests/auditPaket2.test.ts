@@ -91,11 +91,13 @@ describe("A6/B8/B10: Rechtstexte", () => {
     expect(agb).not.toContain("consumers/odr");
   });
   it("Stand-Daten entsprechen der letzten inhaltlichen Aenderung", () => {
-    expect(agb).toContain("Stand: 1. Oktober 2026");
-    // 11.10.2026: Versandeintrag je Hinweis-E-Mail, 90 Tage (Ziffer 4, Ablauf F). Davor 10.10.: Service Worker.
-    expect(lies("app/(pub)/datenschutz/page.tsx")).toContain("Stand: 11. Oktober 2026");
-    // 10.10.2026: TOM „Endgeräte“ (installierbare Web-App) — vorher 06.10.2026 (eine Quelle, Brevo).
-    expect(lies("lib/avvInhalt.ts")).toContain('AVV_STAND = "10. Oktober 2026"');
+    // 21.10.2026: Meldeweg und Begründung nach DSA (Ziffer 5), § 14b UStG statt § 147 AO.
+    expect(agb).toContain("Stand: 21. Oktober 2026");
+    // 21.10.2026: Supabase-Sicherheitsprotokoll (3 d), Amazon Bedrock (3 e, 4, 5), Google eigenständig
+    // verantwortlich, Einwilligungen (3 g). Davor 11.10.: Versandeintrag je Hinweis-E-Mail.
+    expect(lies("app/(pub)/datenschutz/page.tsx")).toContain("Stand: 21. Oktober 2026");
+    // 21.10.2026: AWS (Bedrock) als Subauftragsverarbeiter „je nach Einrichtung“ — vorher 10.10. (TOM „Endgeräte“).
+    expect(lies("lib/avvInhalt.ts")).toContain('AVV_STAND = "21. Oktober 2026"');
   });
 });
 

@@ -5,6 +5,7 @@
 // Zugang zur App. MyImmo hält die Angaben fest und erinnert — es formuliert keine Vollmacht und
 // beurteilt nicht, ob sie im Einzelfall reicht. Die Hinweise sagen deshalb „meist“ und „vorher
 // nachfragen“; die eine feste Regel (§ 29 GBO) ist Gesetz, keine Einschätzung.
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
 export const VOLLMACHT_ARTEN = {
   general: "Generalvollmacht",
@@ -26,7 +27,8 @@ export type VollmachtForm = keyof typeof VOLLMACHT_FORMEN;
 
 /** Erlaubte Dateien für den Scan der Vollmacht. */
 export const VOLLMACHT_DATEITYPEN = ["application/pdf", "image/jpeg", "image/png"] as const;
-export const VOLLMACHT_MAX_BYTES = 8 * 1024 * 1024;
+// Höchstens 4 MB: mehr nimmt Vercel je Anfrage nicht an (lib/anhaenge.ts, gemessen 21.10.2026).
+export const VOLLMACHT_MAX_BYTES = ANFRAGE_MAX_BYTES;
 
 export type Vertreter = {
   id: string;

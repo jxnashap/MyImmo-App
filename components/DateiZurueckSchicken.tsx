@@ -37,7 +37,7 @@ export default function DateiZurueckSchicken({
     setOk(null);
     const fd = new FormData(e.currentTarget);
     const f = fd.get("datei");
-    if (f instanceof File && f.size > EINGANG_MAX_BYTES) return setFehler("Datei zu groß (höchstens 8 MB).");
+    if (f instanceof File && f.size > EINGANG_MAX_BYTES) return setFehler("Datei zu groß (höchstens 4 MB).");
     setBusy(true);
     try {
       const r = await schickeDateiZurueck(art, token, fd);
@@ -57,7 +57,7 @@ export default function DateiZurueckSchicken({
       <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)", lineHeight: 1.55 }}>
         Schicken Sie {art === "bank" ? "z. B. einen Vertragsentwurf oder eine Unterlagenanforderung" : "z. B. ein Exposé oder eine Reservierungsvereinbarung"} zurück.
         Die Datei geht nur an den Eigentümer; er entscheidet, ob er sie in seine Unterlagen übernimmt.
-        PDF, JPG, PNG oder WebP, höchstens 8 MB.
+        PDF, JPG, PNG oder WebP, höchstens 4 MB.
       </p>
       <form ref={form} onSubmit={senden} style={{ display: "grid", gap: 10 }}>
         <div className="field" style={{ margin: 0 }}>

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { flashUrl, sicheresZiel } from "@/lib/flash";
 import { encryptDarlnr } from "@/lib/kreditData";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
 // Hilfsfunktionen zum Auslesen von FormData
 function num(fd: FormData, k: string): number | null {
@@ -127,7 +128,7 @@ async function rechnungHochladen(
   const f = fd.get("rechnung");
   if (!f || typeof f === "string" || (f as File).size === 0) return { felder: {}, pfad: null };
   const file = f as File;
-  if (file.size > 15 * 1024 * 1024) throw new Error("Beleg zu groß (max. 15 MB).");
+  if (file.size > ANFRAGE_MAX_BYTES) throw new Error("Beleg zu groß (höchstens 4 MB).");
   const mime = file.type || "application/octet-stream";
   const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
   const path = `${userId}/${crypto.randomUUID()}.${ext}`;

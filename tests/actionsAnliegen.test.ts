@@ -103,7 +103,19 @@ describe("Anhänge werden VOR dem Anlegen geprüft", () => {
     const r = await mod.erstelleAnliegen(
       fd({ typ: "schaden", titel: "X", dateien: bild(4 * 1024 * 1024 + 1) }),
     );
-    expect(r.error).toContain("größer als 4 MB");
+    expect(r.error).toContain("höchstens 4 MB gehen");
+    expect(insert(db, "anliegen")).toBeUndefined();
+  });
+
+  it("zählt die SUMME: zwei Fotos à 3 MB gehen nicht durch (Vercel nimmt je Anfrage ≤ 4,5 MB an)", async () => {
+    // Vorher galt „à 4 MB“ je Datei — zwei normale Handyfotos ergaben eine Anfrage, die Vercel
+    // mit 413 abwies, bevor die Action lief (gemessen 21.10.2026).
+    const { db, mod } = await lade(mitZugang());
+    const f = new FormData();
+    f.append("typ", "schaden");
+    f.append("titel", "X");
+    for (let i = 0; i < 2; i++) f.append("dateien", bild(3 * 1024 * 1024, "image/jpeg", `f${i}.jpg`));
+    expect((await mod.erstelleAnliegen(f)).error).toContain("zusammen");
     expect(insert(db, "anliegen")).toBeUndefined();
   });
 
@@ -122,7 +134,7 @@ describe("Anhänge werden VOR dem Anlegen geprüft", () => {
     f.append("typ", "schaden");
     f.append("titel", "X");
     for (let i = 0; i < 4; i++) f.append("dateien", bild(100, "image/jpeg", `f${i}.jpg`));
-    expect((await mod.erstelleAnliegen(f)).error).toContain("Maximal 3");
+    expect((await mod.erstelleAnliegen(f)).error).toContain("Höchstens 3 Dateien");
     expect(insert(db, "anliegen")).toBeUndefined();
   });
 

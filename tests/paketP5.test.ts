@@ -33,7 +33,8 @@ describe("B52 — Abmelden beendet nur DIESE Sitzung", () => {
   );
 
   it("der Wächter hat überhaupt etwas gefunden", () => {
-    expect(aufrufe.length).toBeGreaterThanOrEqual(8);
+    // 7 seit 21.10.2026: Die Anmeldeseite meldet bei anderer Kontorolle nicht mehr ab (lib/auth/anmeldeZiel.ts).
+    expect(aufrufe.length).toBeGreaterThanOrEqual(7);
   });
 
   it("kein signOut() ohne Scope — die Bibliothek nimmt dann „global“", () => {

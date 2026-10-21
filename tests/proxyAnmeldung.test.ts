@@ -290,3 +290,23 @@ describe("Zwei-Faktor-Schranke im Proxy (Audit 01.10.2026, A2/A3)", () => {
     expect(nutzerAufrufe()).toBe(0);
   });
 });
+
+describe("Installierte App startet abgemeldet auf der Anmeldung (21.10.2026)", () => {
+  it("/?app=1 ohne Sitzung → /login, ohne Rücksprungziel", async () => {
+    const r = await anfrage("/?app=1");
+    expect(landetAufLogin(r)).toBe(true);
+    const ziel = new URL(r.headers.get("location") ?? "", "https://www.myimmoapp.de");
+    expect(ziel.pathname).toBe("/login");
+    expect(ziel.searchParams.get("next")).toBeNull();
+  });
+
+  it("/ ohne Sitzung bleibt die öffentliche Startseite", async () => {
+    const r = await anfrage("/");
+    expect(landetAufLogin(r)).toBe(false);
+  });
+
+  it("/?app=1 mit Sitzung → durch (das Layout schickt in den eigenen Bereich)", async () => {
+    const r = await anfrage("/?app=1", cookieFuer(await token({ aal: "aal2" })));
+    expect(landetAufLogin(r)).toBe(false);
+  });
+});

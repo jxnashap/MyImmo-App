@@ -52,9 +52,9 @@ describe("Dokument anlegen", () => {
     });
   });
 
-  it("über 8 MB wird abgelehnt — nichts wird geschrieben", async () => {
+  it("über 4 MB wird abgelehnt — nichts wird geschrieben", async () => {
     const { db, mod } = await lade();
-    await expect(mod.createDokument(fd({ titel: "X", datei: datei(8 * 1024 * 1024 + 1) }))).rejects.toThrow("Datei zu groß");
+    await expect(mod.createDokument(fd({ titel: "X", datei: datei(4 * 1024 * 1024 + 1) }))).rejects.toThrow("Datei zu groß");
     expect(zugriff(db, "insert")).toBeUndefined();
   });
 

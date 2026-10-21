@@ -6,13 +6,15 @@
 // der beim Vermieter ankommt, stehen in lib/schadensmeldung.ts; gesendet wird über
 // dieselbe Action wie jedes Anliegen (erstelleAnliegen) — der Server leitet Vermieter und
 // Wohnung aus dem Zugang ab, nicht aus dem Formular.
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { ArrowLeft, Paperclip } from "lucide-react";
 import { erstelleAnliegen } from "@/lib/actions/anliegen";
 import {
   KATEGORIEN, SEIT_OPTIONEN, BESCHREIBUNG_MAX, baueMeldung, kategorie, notfallFuer,
 } from "@/lib/schadensmeldung";
 import { NotfallSofort } from "@/components/NotfallHinweis";
+import { useAnhaenge } from "@/components/useAnhaenge";
+import { FOTO_ODER_PDF } from "@/lib/anhaenge";
 
 export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: () => void; onAbbruch: () => void }) {
   const [katKey, setKatKey] = useState<string | null>(null);
@@ -21,10 +23,10 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
   const [seit, setSeit] = useState("");
   const [text, setText] = useState("");
   const [erreichbar, setErreichbar] = useState("");
-  const [dateiNamen, setDateiNamen] = useState<string[]>([]);
   const [fehler, setFehler] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const dateiRef = useRef<HTMLInputElement>(null);
+  // Fotos werden bei der Auswahl verkleinert und die Summe geprüft (lib/anhaenge.ts).
+  const anhaenge = useAnhaenge({ maxAnzahl: 3, erlaubt: FOTO_ODER_PDF });
 
   const k = katKey ? kategorie(katKey) : undefined;
   const notfall = k ? notfallFuer(k, antworten) : null;
@@ -39,10 +41,16 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
       fd.set("typ", "schaden");
       fd.set("titel", meldung.titel);
       fd.set("beschreibung", meldung.beschreibung);
-      for (const f of Array.from(dateiRef.current?.files ?? [])) fd.append("dateien", f);
-      const r = await erstelleAnliegen(fd);
-      if (r?.error) setFehler(r.error);
-      else onFertig();
+      for (const f of anhaenge.dateien) fd.append("dateien", f);
+      // Ohne try: Bricht die Verbindung ab, reicht React den Fehler an die Fehlerseite weiter —
+      // und alle Eingaben wären weg. So bleiben sie stehen.
+      try {
+        const r = await erstelleAnliegen(fd);
+        if (r?.error) setFehler(r.error);
+        else onFertig();
+      } catch {
+        setFehler("Senden hat nicht geklappt — deine Angaben bleiben stehen. Bitte noch einmal tippen.");
+      }
     });
 
   const kasten = { display: "grid", gap: 12, marginBottom: 18, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" } as const;
@@ -118,10 +126,12 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
             <input className="input" value={erreichbar} onChange={(e) => setErreichbar(e.target.value)} maxLength={200} placeholder="z. B. werktags ab 16 Uhr, Schlüssel bei Nachbarn" />
           </label>
           <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-            Fotos oder PDF (max. 3 Dateien à 4 MB) — ein Foto spart oft eine Besichtigung
-            <input ref={dateiRef} type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" className="input"
-              onChange={(e) => setDateiNamen(Array.from(e.target.files ?? []).map((f) => f.name))} />
-            {dateiNamen.length > 0 && <span><Paperclip size={11} style={{ verticalAlign: "-1px" }} /> {dateiNamen.join(" · ")}</span>}
+            Fotos oder PDF (bis zu 3) — ein Foto spart oft eine Besichtigung. Fotos werden automatisch verkleinert.
+            <input type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" className="input"
+              onChange={(e) => void anhaenge.waehle(e.target.files, e.target)} />
+            {anhaenge.bereitet && <span>Fotos werden vorbereitet …</span>}
+            {anhaenge.dateien.length > 0 && <span><Paperclip size={11} style={{ verticalAlign: "-1px" }} /> {anhaenge.dateien.map((f) => f.name).join(" · ")}</span>}
+            {anhaenge.fehler && <span role="alert" style={{ color: "var(--red)" }}>{anhaenge.fehler}</span>}
           </label>
 
           {meldung && (
@@ -135,7 +145,7 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
 
           {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button data-demo-sperre type="button" className="btn btn-gold" disabled={pending} onClick={senden}>
+            <button data-demo-sperre type="button" className="btn btn-gold" disabled={pending || anhaenge.bereitet} onClick={senden}>
               {pending ? "Wird gesendet …" : notfall ? "Zusätzlich an den Vermieter melden" : "Schaden melden"}
             </button>
             <button type="button" className="btn btn-ghost" onClick={onAbbruch}>Abbrechen</button>

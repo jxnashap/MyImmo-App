@@ -8,7 +8,7 @@
 // Reine Rechnung ohne Datenbank: dieselbe Funktion speist die Übersicht am Objekt, die
 // Abrechnung des einzelnen Mieters (lib/nk.ts, Aufteilung „objekt“) und das PDF.
 
-import { belegung, jahresTage, nkCo2Aus, type NkCo2 } from "@/lib/nk";
+import { belegung, jahresTage, nkCo2Aus, istHeizkosten, CO2_FEHLT_HINWEIS, type NkCo2 } from "@/lib/nk";
 import { verteileBetrag } from "@/lib/umlage";
 import { zahlDe } from "@/lib/zahl";
 
@@ -102,8 +102,8 @@ export type NkObjektErgebnis = {
   warnungen: string[];
 };
 
-/** Heiz- und Warmwasserkosten erkennen (dieselbe Regel wie der Standardschlüssel „je Wohnung“). */
-export const istHeizkosten = (bezeichnung: string) => /heiz|warmwasser|wärme|waerme|fernwärme|fernwaerme/i.test(bezeichnung);
+/** Heiz- und Warmwasserkosten erkennen — die Regel steht in lib/nk.ts (auch für die Positionen beim Mieter). */
+export { istHeizkosten };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const zahl = (n: number) => new Intl.NumberFormat("de-DE", { maximumFractionDigits: 3 }).format(n);
@@ -278,7 +278,13 @@ function co2AmObjekt(
   umlage: NkVerteilteKosten[],
   warnungen: string[],
 ): NkObjektCo2 | null {
-  if (!(pos(basis.co2_kg) > 0)) return null;
+  const heiz = umlage.filter((p) => istHeizkosten(p.kosten.bezeichnung) && pos(p.kosten.betrag) > 0);
+  if (!(pos(basis.co2_kg) > 0)) {
+    // Heizkosten ohne CO₂-Angaben: vorher still (21.10.2026). Derselbe Text wie in der Abrechnung
+    // des Mieters (lib/nk.ts), damit er dort nur einmal steht.
+    if (heiz.length > 0) warnungen.push(CO2_FEHLT_HINWEIS);
+    return null;
+  }
   const gebaeude = nkCo2Aus(
     { co2_kg: pos(basis.co2_kg), co2_kosten: basis.co2_kosten ?? null, flaeche: pos(basis.flaeche_gesamt) || null, gewerbe: !!basis.co2_gewerbe },
     jahr,
@@ -291,7 +297,6 @@ function co2AmObjekt(
     );
     return null;
   }
-  const heiz = umlage.filter((p) => istHeizkosten(p.kosten.bezeichnung) && pos(p.kosten.betrag) > 0);
   let gewichte: number[];
   let leer: number;
   let grundlage: NkObjektCo2["grundlage"];

@@ -6,10 +6,17 @@
 // Weg, dass sie auseinanderlaufen. Die Token-Funktionen liegen deshalb in
 // `lib/newsletterToken.ts`.
 
-/** Wortlaut der Einwilligung. Wird je Anmeldung mitgespeichert (Art. 7 DSGVO). */
-export const EINWILLIGUNG_VERSION = "2026-07-31";
+/**
+ * Wortlaut der Einwilligung. Wird je Anmeldung mitgespeichert (Art. 7 DSGVO) — gespeichert wird
+ * genau der angezeigte Text, die Version geht an Brevo (Attribut EINWILLIGUNG).
+ *
+ * 21.10.2026 (Rechtssicherheit): Absender, Inhalt und Häufigkeit stehen jetzt im Text — vorher
+ * „gelegentliche Hinweise für Vermieter“, ohne Absender und ohne Grenze. Eine Einwilligung muss
+ * bestimmt sein (Art. 4 Nr. 11, Art. 7 DSGVO; § 7 Abs. 2 Nr. 2 UWG).
+ */
+export const EINWILLIGUNG_VERSION = "2026-10-21";
 export const EINWILLIGUNGSTEXT =
-  "Ich möchte die MyImmo-Vorlagen und gelegentliche Hinweise für Vermieter per E-Mail erhalten. " +
+  "Ich möchte die MyImmo-Vorlagen per E-Mail sowie höchstens monatlich Hinweise von MyImmo zu neuen Vorlagen, Funktionen und dem Start der App erhalten. " +
   "Die Einwilligung kann ich jederzeit über den Abmeldelink in jeder E-Mail widerrufen.";
 
 /**
@@ -17,10 +24,13 @@ export const EINWILLIGUNGSTEXT =
  * Registrierung geschlossen ist. Eigener Wortlaut, weil der Zweck ein anderer
  * ist — wer sich für Vorlagen einträgt, hat nicht in eine Startankündigung
  * eingewilligt und umgekehrt. Gespeichert wird genau der angezeigte Text.
+ *
+ * 21.10.2026: NUR die einmalige Startankündigung — vorher war „danach gelegentliche Hinweise für
+ * Vermieter“ an die Startmeldung gekoppelt. Wer mehr will, trägt sich für die Vorlagen ein.
  */
 export const EINWILLIGUNGSTEXT_START =
-  "Ich möchte per E-Mail erfahren, wenn MyImmo für alle startet, und danach gelegentliche Hinweise für Vermieter erhalten. " +
-  "Die Einwilligung kann ich jederzeit über den Abmeldelink in jeder E-Mail widerrufen.";
+  "Ich möchte einmalig per E-Mail erfahren, wann MyImmo startet. " +
+  "Abmelden geht jederzeit über den Link in der Mail.";
 
 /** Kennung der Startanmeldung im Feld `quelle` — danach richten sich Wortlaut, Mail und Rückweg. */
 export const QUELLE_START = "start";
@@ -58,8 +68,8 @@ export function bestaetigungsMail(bestaetigenUrl: string, zweck: Zweck = "vorlag
   const start = zweck === "start";
   const betreff = start ? "Bitte bestätigen: Benachrichtigung zum Start von MyImmo" : "Bitte bestätigen: MyImmo-Vorlagen";
   const worum = start
-    ? "dass wir Ihnen Bescheid geben dürfen, wenn MyImmo für alle startet, und Ihnen danach gelegentliche Hinweise für Vermieter schicken dürfen"
-    : "dass Sie die MyImmo-Vorlagen und gelegentliche Hinweise für Vermieter per E-Mail erhalten möchten";
+    ? "dass wir Ihnen einmalig per E-Mail Bescheid geben dürfen, wann MyImmo startet"
+    : "dass Sie die MyImmo-Vorlagen per E-Mail sowie höchstens monatlich Hinweise von MyImmo zu neuen Vorlagen, Funktionen und dem Start der App erhalten möchten";
   const text = [
     "Fast geschafft.",
     "",

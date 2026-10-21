@@ -166,7 +166,7 @@ export const RATGEBER: RatgeberArtikel[] = [
     feature: {
       titel: "Die Abrechnung in MyImmo erstellen",
       text:
-        "Die Nebenkostenabrechnung in MyImmo führt durch diese Schritte: Kosten erfassen, Schlüssel je Position wählen, Mieterwechsel taggenau abrechnen, Vorauszahlungen abziehen. Am Ende steht eine fertige PDF-Abrechnung mit ausgewiesenem Rechenweg, Verteilerschlüssel und § 35a-Ausweis für Ihre Mieter — die vier Pflichtangaben sind dabei fest eingebaut.",
+        "Die Nebenkostenabrechnung in MyImmo führt durch diese Schritte: Kosten erfassen, Schlüssel je Position wählen, Mieterwechsel taggenau abrechnen, Vorauszahlungen abziehen. Am Ende steht eine fertige PDF-Abrechnung mit ausgewiesenem Rechenweg, Verteilerschlüssel und § 35a-Ausweis für Ihre Mieter. Die vier Pflichtangaben stehen darin — richtig sind sie, wenn Ihre Eingaben stimmen.",
       href: "/anmelden",
       cta: "Kostenlos ausprobieren",
     },
@@ -526,7 +526,7 @@ export const RATGEBER: RatgeberArtikel[] = [
     feature: {
       titel: "Das erste Mietverhältnis in MyImmo",
       text:
-        "Objekt anlegen, Mieter erfassen, Kaution und Betriebskosten hinterlegen — die Fristen für Abrechnung, Mieterhöhung und Wartung trägt MyImmo danach selbst nach und meldet sich rechtzeitig. Am Jahresende steht die Anlage V fast von allein.",
+        "Objekt anlegen, Mieter erfassen, Kaution und Betriebskosten hinterlegen — die Fristen für Abrechnung, Mieterhöhung und Wartung trägt MyImmo danach selbst nach und zeigt sie rechtzeitig auf dem Dashboard und unter Termine — per iCal-Datei auch in Ihrem Kalender. Am Jahresende steht die Anlage V fast von allein.",
       href: "/anmelden",
       cta: "Kostenlos starten",
     },
@@ -1132,9 +1132,9 @@ export const RATGEBER: RatgeberArtikel[] = [
       },
     ],
     feature: {
-      titel: "Die Frist meldet sich von selbst",
+      titel: "Die Frist im Blick",
       text:
-        "MyImmo kennt das Datum der letzten Mieterhöhung je Mietverhältnis und meldet sich, sobald eine Anpassung frühestens möglich wird — statt dass die Frist unbemerkt verstreicht. Das Erhöhungsschreiben erzeugt der Dokument-Generator im eigenen Briefkopf.",
+        "MyImmo kennt das Datum der letzten Mieterhöhung je Mietverhältnis und zeigt auf dem Dashboard und unter Termine, ab wann eine Anpassung frühestens möglich ist — per iCal-Datei auch in Ihrem Kalender. Das Erhöhungsschreiben erzeugt der Dokument-Generator im eigenen Briefkopf.",
       href: "/anmelden",
       cta: "Kostenlos ausprobieren",
     },

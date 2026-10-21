@@ -199,7 +199,9 @@ export async function pruefeEinladungscode(
   if (error || !data) {
     return {
       ok: false,
-      fehler: "Dieser Einladungscode ist ungültig oder abgelaufen. Bitte frage den Vermieter nach einem neuen Code.",
+      fehler:
+        "Dieser Einladungscode ist ungültig, abgelaufen oder schon benutzt. Hast du dich damit schon " +
+        "registriert? Dann oben auf „Anmelden“. Sonst frag deinen Vermieter nach einem neuen Code.",
     };
   }
   // Mieter-Einladungen gelten seit 02.10.2026 nur für EINE Adresse (Migration
@@ -218,4 +220,38 @@ export async function pruefeEinladungscode(
     }
   }
   return { ok: true };
+}
+
+/**
+ * Einladung mit einem SCHON BESTEHENDEN Konto einlösen (21.10.2026).
+ *
+ * Vorher war das eine Sackgasse: Das Portal sagte „frag deinen Vermieter nach einem Code —
+ * die Verknüpfung passiert bei der Registrierung“, aber registrieren kann man sich mit
+ * derselben Adresse nicht zweimal, und `/willkommen` schickt freigeschaltete Konten weg.
+ * Betroffen: Zugang getrennt und neu eingeladen, Umzug im Bestand, zweiter Vermieter.
+ * Die Datenbank kann es längst (`einladungscode_einloesen`, Fall „bereits freigeschaltet“:
+ * Rolle und Freischaltung bleiben, die Wohnung kommt dazu) — es fehlte nur der Einstieg.
+ * Dieselbe Bremse wie beim Registrieren: Das ist ein Weg, Codes zu raten.
+ */
+export async function loeseEinladungEin(code: string): Promise<{ ok: boolean; fehler?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, fehler: "Bitte zuerst anmelden." };
+  const codeGross = String(code ?? "").trim().toUpperCase();
+  if (!/^MI-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(codeGross)) {
+    return { ok: false, fehler: "Der Code sieht so aus: MI-XXXX-XXXX (steht in der Einladungsmail)." };
+  }
+  if (!(await darfWeiter("einladung_einloesen", 10, 900))) return { ok: false, fehler: ZU_VIELE };
+  const { data, error } = await supabase.rpc("einladungscode_einloesen", { p_code: codeGross });
+  const erg = data as { ok: boolean; fehler?: string } | null;
+  if (!error && erg?.ok) return { ok: true };
+  const roh = erg?.fehler ?? "";
+  // Die Datenbank meldet bewusst neutral (keine Auskunft über fremde Codes); hier nur lesbarer.
+  if (/andere E-Mail-Adresse|keiner E-Mail-Adresse/.test(roh)) return { ok: false, fehler: roh };
+  return {
+    ok: false,
+    fehler: "Dieser Code ist ungültig, abgelaufen oder schon benutzt. Bitte frag deinen Vermieter nach einem neuen.",
+  };
 }

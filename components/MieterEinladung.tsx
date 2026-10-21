@@ -9,9 +9,11 @@
 // trennt der Vermieter den Zugang und lädt die neue Adresse ein.
 // Hintergrund: docs/zukunft/MIETERPORTAL-AUSBAU.md (F2, F3).
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Copy, CheckCircle2, RotateCw, X, Send, Unlink, Mail } from "lucide-react";
 import { erzeugeEinladungscode, widerrufeEinladung, trenneMieterZugang } from "@/lib/actions/einladung";
 import { teilbarerLink } from "@/lib/appUrl";
+import { DATENSCHUTZ_URL, PROFIL_LINK } from "@/lib/mieterZugang";
 
 type Props = {
   mieterId: string;
@@ -34,6 +36,8 @@ const datumDe = (iso: string) => new Date(iso).toLocaleDateString("de-DE", { tim
 export default function MieterEinladung({ mieterId, zugang, aktiverCode, mieterEmail, mieterName, mailVersand, zugangBis, zugangAbgelaufen }: Props) {
   const [pending, startTransition] = useTransition();
   const [fehler, setFehler] = useState<string | null>(null);
+  // Art. 13 DSGVO: ohne Profilnamen keine Einladung — dann führt ein Link direkt ins Profil.
+  const [profilFehlt, setProfilFehlt] = useState(false);
   const [meldung, setMeldung] = useState<string | null>(null);
   const [email, setEmail] = useState(mieterEmail ?? "");
   const [wdh, setWdh] = useState("");
@@ -55,6 +59,9 @@ export default function MieterEinladung({ mieterId, zugang, aktiverCode, mieterE
         "",
         `Die Einladung gilt bis zum ${datumDe(aktiverCode.gueltig_bis)} und nur einmal.`,
         "",
+        // Art. 13 DSGVO: Wer verantwortlich ist, steht auch im selbst verschickten Text.
+        `Verantwortlich für deine Daten im Mieterportal bin ich; MyImmo stellt das Portal in meinem Auftrag bereit. Datenschutzhinweise: ${DATENSCHUTZ_URL}`,
+        "",
         "Viele Grüße",
       ].join("\n")
     : "";
@@ -62,10 +69,12 @@ export default function MieterEinladung({ mieterId, zugang, aktiverCode, mieterE
   const einladen = (adresse: string, wiederholung: string) =>
     startTransition(async () => {
       setFehler(null);
+      setProfilFehlt(false);
       setMeldung(null);
       const r = await erzeugeEinladungscode(mieterId, adresse, wiederholung);
       if ("error" in r) {
         setFehler(r.error);
+        setProfilFehlt(!!r.profilFehlt);
         return;
       }
       setFormOffen(false);
@@ -117,7 +126,16 @@ export default function MieterEinladung({ mieterId, zugang, aktiverCode, mieterE
   const meldungen = (
     <>
       {meldung && <p role="status" style={{ marginTop: 8, fontSize: 12, color: "var(--green)" }}>{meldung}</p>}
-      {fehler && <p role="alert" style={{ marginTop: 8, fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+      {fehler && (
+        <p role="alert" style={{ marginTop: 8, fontSize: 12, color: "var(--red)" }}>
+          {fehler}
+          {profilFehlt && (
+            <>
+              {" "}<Link href={PROFIL_LINK} style={{ color: "var(--gold)" }}>Zum Profil</Link>
+            </>
+          )}
+        </p>
+      )}
     </>
   );
 

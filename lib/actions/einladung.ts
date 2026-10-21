@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 import { featureSperre } from "@/lib/planGate";
 import { brevoBereit, sendeMail } from "@/lib/mail/brevo";
 import { basisUrl } from "@/lib/net/basisUrl";
-import { einladungsMail, pruefeEinladungsAdresse } from "@/lib/mieterZugang";
+import { einladungsMail, pruefeEinladungsAdresse, PROFILNAME_FEHLT } from "@/lib/mieterZugang";
 
 // Ohne verwechselbare Zeichen (0/O, 1/I/L).
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -28,7 +28,7 @@ function neuerCode(): string {
 }
 
 export type EinladungErgebnis =
-  | { error: string }
+  | { error: string; profilFehlt?: true }
   | { code: string; gueltigBis: string; email: string; gesendet: boolean };
 
 export async function erzeugeEinladungscode(
@@ -62,6 +62,20 @@ export async function erzeugeEinladungscode(
     .maybeSingle();
   if (!mieter) return { error: "Mieter nicht gefunden." };
 
+  // Art. 13 DSGVO (Rechtssicherheit 21.10.2026): Der Mieter muss erfahren, WER seine Daten im
+  // Portal verarbeitet. Ohne Profilnamen hieß der Absender „Ihr Vermieter“ — jetzt keine Einladung
+  // ohne Namen, und der Name steht in Mail und Verantwortlichen-Hinweis. Geprüft VOR dem Ersetzen
+  // des alten Codes: Eine abgelehnte Einladung lässt die bisherige unverändert.
+  const { data: profil, error: profilFehler } = await supabase
+    .from("vermieter_profil")
+    .select("name")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+  if (profilFehler) return { error: "Dein Profil konnte nicht gelesen werden. Bitte erneut versuchen." };
+  const vermieterName = ((profil as { name?: string | null } | null)?.name ?? "").trim();
+  if (!vermieterName) return { error: PROFILNAME_FEHLT, profilFehlt: true };
+
   // Alte, noch nicht eingelöste Codes dieses Mieters ersetzen. Schlägt das
   // fehl, darf NICHT weitergemacht werden: Sonst gäbe es zwei gültige Codes
   // für denselben Mieter, und der alte ist womöglich schon weitergegeben.
@@ -94,15 +108,9 @@ export async function erzeugeEinladungscode(
   // gesendet wurde.
   let gesendet = false;
   if (brevoBereit()) {
-    const { data: profil } = await supabase
-      .from("vermieter_profil")
-      .select("name")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
     const link = `${await basisUrl()}/login?rolle=mieter&einladung=${encodeURIComponent(data.code as string)}`;
     const mail = einladungsMail({
-      vermieter: (profil as { name?: string | null } | null)?.name ?? null,
+      vermieter: vermieterName,
       link,
       code: data.code as string,
       gueltigBis: data.gueltig_bis as string,

@@ -18,6 +18,7 @@ import {
 } from "@/lib/actions/buchungen";
 import type { Property, Tenant } from "@/lib/types";
 import { EINNAHME_KATEGORIEN, KOSTEN_KATEGORIEN, kategorieOptionen } from "@/lib/kategorien";
+import { verkleinereBild } from "@/lib/bildVerkleinern";
 
 // Vereinigte Zeile (Einnahme ∪ Kosten) fürs Bearbeiten.
 export type BuchungRow = {
@@ -80,10 +81,18 @@ export default function BuchungForm({
       ? createEinnahme
       : createKosten;
 
+  // Fotos von Belegen vorher verkleinern: Mehr als 4 MB nimmt der Server je Anfrage nicht an
+  // (lib/anhaenge.ts) — ein Handyfoto einer Rechnung hat oft 3–5 MB.
+  const senden = async (fd: FormData) => {
+    const beleg = fd.get("rechnung");
+    if (beleg instanceof File && beleg.size > 0) fd.set("rechnung", await verkleinereBild(beleg));
+    await action(fd);
+  };
+
   const KAT = kategorieOptionen(typ === "einnahme" ? EINNAHME_KATEGORIEN : KOSTEN_KATEGORIEN, row?.kategorie);
 
   return (
-    <form action={action} className="form-box" style={imDialog ? { padding: 0, border: "none", background: "none", maxWidth: "none" } : undefined}>
+    <form action={senden} className="form-box" style={imDialog ? { padding: 0, border: "none", background: "none", maxWidth: "none" } : undefined}>
       {!imDialog && (
         <>
           {/* „Neue Buchung“ trägt schon der Seitentitel von /cashflow/neu — nicht doppelt. */}
@@ -181,7 +190,7 @@ export default function BuchungForm({
       {typ === "ausgabe" && (
         <div className="form-row">
           <div className="form-group">
-            <label>Rechnung / Beleg (PDF/Bild · max. 15 MB)</label>
+            <label>Rechnung / Beleg (PDF/Bild · max. 4 MB — Fotos werden verkleinert)</label>
             {isEdit && row?.rechnung_name && (
               <a
                 href={`/kosten/${row.id}/rechnung`}

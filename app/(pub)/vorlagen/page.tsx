@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 const VORLAGEN = [
-  { ico: FileText, t: "Mieterhöhung (§ 558 BGB)", p: "Mieterhöhungsverlangen bis zur ortsüblichen Vergleichsmiete — mit Bausteinen für die Begründung; Wirksamkeitstermin, Sperrfrist und Kappungsgrenze werden geprüft." },
+  { ico: FileText, t: "Mieterhöhung (§ 558 BGB)", p: "Mieterhöhungsverlangen bis zur ortsüblichen Vergleichsmiete — mit Bausteinen für die Begründung; Wirksamkeitstermin, Sperrfrist und Kappungsgrenze werden berechnet und angezeigt." },
   { ico: BellRing, t: "Zahlungserinnerung", p: "Freundliche Erinnerung bei ausstehender Miete, mit Betrag und Kontodaten vorausgefüllt." },
   { ico: AlertTriangle, t: "Mahnung", p: "Förmliche Mahnung mit Zahlungsfrist — der nächste Schritt nach der Erinnerung." },
   { ico: DoorClosed, t: "Kündigung des Mietverhältnisses", p: "Ordentliche Kündigung durch den Vermieter — frühester Termin nach § 573c BGB berechnet, Gründe und Widerspruchshinweis im Brief. Zum Ausdrucken und Unterschreiben." },

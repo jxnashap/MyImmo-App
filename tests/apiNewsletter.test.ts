@@ -130,7 +130,7 @@ describe("Startbenachrichtigung — eigener Wortlaut, eigene Mail, eigener Rück
     expect(u.quelle).toBe("start");
     const m = mails[0] as { betreff: string; text: string };
     expect(m.betreff).toBe("Bitte bestätigen: Benachrichtigung zum Start von MyImmo");
-    expect(m.text).toContain("wenn MyImmo für alle startet");
+    expect(m.text).toContain("einmalig per E-Mail Bescheid geben dürfen, wann MyImmo startet");
   });
   it("jede andere Quelle behält den Vorlagen-Wortlaut und die Vorlagen-Mail", async () => {
     const { EINWILLIGUNGSTEXT } = await import("@/lib/newsletter");

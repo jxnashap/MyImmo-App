@@ -31,15 +31,15 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
   {
     slug: "nebenkostenabrechnung",
     metaTitel: "Nebenkostenabrechnung erstellen — Software für Vermieter",
-    titel: "Nebenkostenabrechnung, die formell hält",
+    titel: "Nebenkostenabrechnung mit allen Pflichtangaben",
     beschreibung:
       "Nebenkostenabrechnung für private Vermieter: Umlageschlüssel je Position, taggenaue Abrechnung bei Mieterwechsel, fertiges PDF mit ausgewiesenem Rechenweg.",
     kicker: "Nebenkosten",
-    sub: "Umlageschlüssel je Kostenart, Heizkosten nach Verordnung, Mieterwechsel taggenau — am Ende ein PDF, das die vier Pflichtangaben von sich aus enthält.",
+    sub: "Umlageschlüssel je Kostenart, Heizkosten nach Verordnung, Mieterwechsel taggenau — am Ende ein PDF, in dem die vier Pflichtangaben stehen. Richtig sind sie, wenn deine Eingaben stimmen.",
     problem: {
       h: "Warum so viele Abrechnungen fehlerhaft sind",
       p: [
-        "Eine Nebenkostenabrechnung ist keine schwierige Rechnung. Sie ist eine Rechnung mit vielen Nebenbedingungen: Jede Kostenart braucht den passenden Verteilerschlüssel, Heizung und Warmwasser folgen einer eigenen Verordnung, ein Mieterwechsel muss taggenau aufgeteilt werden, und formell verlangt der Bundesgerichtshof vier Mindestangaben, ohne die alles unwirksam ist.",
+        "Eine Nebenkostenabrechnung ist keine schwierige Rechnung. Sie ist eine Rechnung mit vielen Nebenbedingungen: Jede Kostenart braucht den passenden Verteilerschlüssel, Heizung und Warmwasser folgen einer eigenen Verordnung, ein Mieterwechsel muss taggenau aufgeteilt werden, und formell verlangt der Bundesgerichtshof vier Mindestangaben, ohne die die Abrechnung formell unwirksam sein kann.",
         "In einer Tabellenkalkulation passt jeder dieser Punkte einzeln — bis einer vergessen wird. Genau daran scheitern Abrechnungen — und eine Korrektur kostet schnell einen dreistelligen Betrag je Mieter.",
       ],
     },
@@ -50,7 +50,7 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
           "Verteilerschlüssel je Kostenart statt einmal für die ganze Abrechnung — Grundsteuer nach Fläche, Müll nach Personen, Wasser nach Zähler.",
           "Heizung und Warmwasser mit der Spanne zwischen 50 und 70 Prozent nach Verbrauch, der Rest nach Fläche.",
           "Mieterwechsel taggenau, nicht pauschal halbiert.",
-          "Die vier Pflichtangaben sind fest eingebaut: Gesamtkosten, Schlüssel mit Erläuterung, Anteilsberechnung, Abzug der Vorauszahlungen.",
+          "Die vier Pflichtangaben stehen in jeder Abrechnung: Gesamtkosten, Schlüssel mit Erläuterung, Anteilsberechnung, Abzug der Vorauszahlungen — richtig sind sie, wenn deine Eingaben stimmen.",
           "Getrennter Ausweis der haushaltsnahen Leistungen nach § 35a EStG für deine Mieter.",
           "Fertiges PDF im eigenen Briefkopf, mit nachvollziehbarem Rechenweg.",
         ],
@@ -63,10 +63,10 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
         ],
       },
       {
-        h: "Die Frist meldet sich selbst",
+        h: "Die Frist im Blick",
         p: [
           "Die Abrechnung muss dem Mieter binnen zwölf Monaten nach Ende des Abrechnungszeitraums zugehen. Danach ist eine Nachforderung ausgeschlossen — ein Guthaben musst du trotzdem auszahlen.",
-          "MyImmo trägt diese Frist je Objekt selbst nach und meldet sich rechtzeitig, statt zu warten, bis du daran denkst.",
+          "MyImmo trägt diese Frist je Mietverhältnis selbst nach und zeigt sie rechtzeitig auf dem Dashboard und unter Termine — per iCal-Datei auch in deinem Kalender, wo du dir eine Erinnerung einstellen kannst.",
         ],
       },
     ],
@@ -154,7 +154,7 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
         liste: [
           "Sollstellung je Mietverhältnis aus Kaltmiete und Vorauszahlung, mit Wirkung ab dem richtigen Monat bei jeder Anpassung.",
           "Zahlungseingänge werden gegen das Soll gestellt; offene Posten stehen mit Betrag und Monat da.",
-          "Der Rückstands-Wächter meldet sich, sobald eine Miete ausbleibt — nicht erst am Jahresende.",
+          "Bleibt eine Miete aus, steht sie im Rückstands-Wächter des Mietkontos und auf dem Dashboard unter „Termine & Aufgaben“ — nicht erst am Jahresende.",
           "Nachzahlungen und Guthaben aus der Nebenkostenabrechnung buchst du als eigene Einnahme oder Ausgabe — sie stehen damit in derselben Übersicht wie die Mieten.",
           "Mahnung und Zahlungserinnerung als fertige Brief-PDFs im eigenen Briefkopf.",
         ],
@@ -173,7 +173,7 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
     ],
     cta: {
       titel: "Offene Posten auf einen Blick",
-      text: "Mietverhältnis anlegen, Zahlungen erfassen — den Rest meldet die App.",
+      text: "Mietverhältnis anlegen, Zahlungen erfassen — offene Posten zeigt die App von selbst.",
     },
   },
   {
@@ -181,7 +181,7 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
     metaTitel: "Fristen für Vermieter im Blick — Termine automatisch",
     titel: "Die Fristen, die Geld kosten, wenn man sie verpasst",
     beschreibung:
-      "Abrechnungsfrist, Mieterhöhung, Zinsbindung, Wartungen: MyImmo leitet Termine aus deinen Daten ab und meldet sich rechtzeitig — als Kalender und iCal-Export.",
+      "Abrechnungsfrist, Mieterhöhung, Zinsbindung, Wartungen: MyImmo leitet Termine aus deinen Daten ab und zeigt sie rechtzeitig auf dem Dashboard und unter Termine — per iCal-Datei auch in deinem Kalender.",
     kicker: "Termine",
     sub: "Nicht noch eine Liste, die gepflegt werden will: Die Fristen entstehen aus den Daten, die ohnehin in der App stehen.",
     problem: {
@@ -223,7 +223,7 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
       "heizkostenabrechnung-50-70-regel-fernablesung",
     ],
     cta: {
-      titel: "Einmal eintragen, dann erinnert die App",
+      titel: "Einmal eintragen, die Fristen ergeben sich",
       text: "Die Fristen entstehen aus deinen Objekten und Mietverhältnissen — ohne zweite Liste.",
     },
   },

@@ -15,13 +15,15 @@ describe("Zweck und Wortlaut", () => {
     expect(einwilligungFuer("start")).toBe(EINWILLIGUNGSTEXT_START);
     expect(einwilligungFuer("vorlagen")).toBe(EINWILLIGUNGSTEXT);
   });
-  it("der Start-Wortlaut nennt den Zweck und den Widerruf", () => {
-    expect(EINWILLIGUNGSTEXT_START).toContain("wenn MyImmo für alle startet");
-    expect(EINWILLIGUNGSTEXT_START).toContain("jederzeit über den Abmeldelink");
+  it("der Start-Wortlaut nennt den Zweck und den Widerruf — und nur die einmalige Ankündigung (21.10.2026)", () => {
+    expect(EINWILLIGUNGSTEXT_START).toBe("Ich möchte einmalig per E-Mail erfahren, wann MyImmo startet. Abmelden geht jederzeit über den Link in der Mail.");
+    // Keine Kopplung mit späterer Werbung (vorher: „und danach gelegentliche Hinweise für Vermieter“).
+    expect(EINWILLIGUNGSTEXT_START).not.toMatch(/Hinweise|danach|Werbung/);
   });
   it("beide Mails enthalten den Link, die Start-Mail spricht vom Start", () => {
     const s = bestaetigungsMail("https://x/b?token=1", "start");
-    expect(s.html).toContain("wenn MyImmo für alle startet");
+    expect(s.html).toContain("einmalig per E-Mail Bescheid geben dürfen, wann MyImmo startet");
+    expect(s.text).not.toMatch(/Hinweise/);
     expect(s.html).toContain("https://x/b?token=1");
     expect(bestaetigungsMail("https://x/b?token=1").html).toContain("MyImmo-Vorlagen");
   });

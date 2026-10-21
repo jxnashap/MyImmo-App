@@ -9,6 +9,7 @@
 // fertige Mail im eigenen Mailprogramm (Empfänger, Betreff, Link, Code) — MyImmo schickt nichts.
 
 import { useState } from "react";
+import { fehlerText } from "@/lib/fehlerText";
 import { Share2, Copy, Mail, X, TriangleAlert, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { useReAuth } from "@/components/ReAuthDialog";
@@ -51,7 +52,7 @@ export default function MaklerLink({
         setFreigaben((p) => [f, ...p]);
         setNeuerLink({ link: teilbarerLink(maklerLinkPfad(f.token)), code, an: f.empfaenger_email ?? email, ablauf: f.ablauf });
       } catch (e) {
-        toast(e instanceof Error ? e.message : "Link konnte nicht erstellt werden.", "error");
+        toast(fehlerText(e, "Link nicht erstellt. Liegt zu jedem gewählten Punkt eine Datei vor? Dann bitte erneut versuchen."), "error");
       } finally {
         setBusy(false);
       }
@@ -64,7 +65,7 @@ export default function MaklerLink({
       setFreigaben((p) => p.map((x) => (x.token === token ? { ...x, aktiv: false } : x)));
       toast("Link widerrufen — er ist sofort ungültig.");
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Widerrufen fehlgeschlagen.", "error");
+      toast(fehlerText(e, "Widerrufen hat nicht geklappt — bitte erneut versuchen."), "error");
     }
   }
 
