@@ -56,11 +56,45 @@ export type NkProperty = {
   adresse: string | null;
 };
 
+/**
+ * Schlüssel einer Position mit Aufteilung „voll“ — EINE Bezeichnung für Vorschau und PDF
+ * (Rechtssicherheit 21.10.2026). Vorher stand bei „voll“ weder Gesamtbetrag noch Schlüssel in der
+ * Abrechnung („—“): Gesamtkosten und Verteilerschlüssel sind aber Mindestangaben (BGH VIII ZR 93/15),
+ * ohne sie ist die Abrechnung formell fehlerhaft. Bei „voll“ trägt der Mieter die Kosten allein,
+ * also sind Gesamtkosten = sein Anteil.
+ */
+export const VOLL_SCHLUESSEL = "direkt zugeordnet (100 %)";
+
+/** Hinweis am Auswahlfeld „Voller Betrag“ (Positionen beim Mieter). */
+export const VOLL_HINWEIS =
+  "Voller Betrag: Diese Kosten trägt der Mieter allein (z. B. eigener Zähler, Haus allein gemietet). Teilt er sie mit anderen, wähle einen Schlüssel und trage die Gesamtkosten ein — sonst fehlen Pflichtangaben.";
+
+/** Schlüssel, die zu „voll“ passen — bei allen anderen warnt die Abrechnung. */
+const VOLL_PASSENDE_SCHLUESSEL = new Set(["", "direkt", "alleinnutzung"]);
+
+/**
+ * Heiz- und Warmwasserkosten erkennen — dieselbe Regel für die Kosten am Objekt (lib/nkObjekt.ts,
+ * Standardschlüssel „je Wohnung“) und die Positionen beim Mieter.
+ */
+export const istHeizkosten = (bezeichnung: string) => /heiz|warmwasser|wärme|waerme|fernwärme|fernwaerme/i.test(bezeichnung);
+
+/**
+ * Heizkosten ohne CO₂-Angaben (§ 7 Abs. 3 und 4 CO2KostAufG, Wortlaut gesetze-im-internet.de,
+ * abgerufen 21.10.2026). EIN Text für die Abrechnung des Mieters UND die Kosten am Objekt — gleicher
+ * Wortlaut, damit die Abrechnung ihn nur einmal zeigt (Warnungen sind ein Set).
+ */
+export const CO2_FEHLT_HINWEIS =
+  "CO₂-Angaben fehlen: Wird mit Gas, Öl, Flüssiggas, Kohle oder fossiler Fernwärme geheizt, muss die Abrechnung die CO₂-Kostenaufteilung ausweisen (§ 7 Abs. 3 CO2KostAufG) — sonst darf der Mieter seinen Heizkostenanteil um 3 % kürzen (§ 7 Abs. 4). Bei Wärmepumpe, Strom- oder Holzheizung entfällt das.";
+
+/** Am HKVO-Hinweis bzw. bei Heizkosten je Wohnung (§ 12 Abs. 1 S. 3, § 6a Abs. 3 HeizkostenV, Wortlaut abgerufen 21.10.2026). */
+export const MESSDIENST_HINWEIS =
+  "Die Abrechnung des Messdienstes mit den Angaben nach § 6a Abs. 3 HeizkostenV beilegen — sonst darf der Mieter um 3 % kürzen (§ 12 Abs. 1 S. 3 HeizkostenV).";
+
 export type NkLine = {
   bezeichnung: string;
   umlageschluessel: string | null;
   betrag: number; // bei 'zeit' bereits der anteilige Betrag
-  basis?: number; // Jahresgesamtkosten des Gebäudes (bei allen Aufteilungen außer 'voll')
+  basis?: number; // Jahresgesamtkosten des Gebäudes (bei „voll“ = Betrag, der Mieter trägt sie allein)
   faktorText?: string; // Rechenweg, z. B. "80/400 m²" oder "181/365 Tage"
   lohnanteil?: number; // § 35a-Arbeitskostenanteil dieser Position (skaliert)
   art35a?: "haushaltsnah" | "handwerker"; // Einordnung
@@ -540,7 +574,9 @@ export function berechneNk(
         };
       }
 
-      return { ...kopf, betrag: basis };
+      // „voll“ (auch ohne Angabe): Der Mieter trägt die Kosten allein — Gesamtkosten = Betrag,
+      // Schlüssel ausgewiesen. Vorher stand in beiden Spalten „—“ (formell fehlerhaft).
+      return { ...kopf, umlageschluessel: VOLL_SCHLUESSEL, betrag: basis, basis };
     });
 
   const ausgenommen: NkLine[] = relevant
@@ -622,6 +658,22 @@ export function berechneNk(
       "CO₂-Menge ist erfasst, die Aufteilung lässt sich aber nicht berechnen — es fehlen die Wohnfläche oder die CO₂-Kosten. Die Vermieter-Gutschrift nach CO2KostAufG ist deshalb NICHT in dieser Abrechnung enthalten.",
     );
   }
+  // Heizkosten ohne jede CO₂-Angabe: vorher blieb die App still (21.10.2026). Steht schon ein
+  // CO₂-Hinweis da (z. B. vom Objekt: Fläche fehlt), nicht noch einen zweiten.
+  const heizkosten = umlageRaw.some(
+    (p) => (istHeizkosten(p.bezeichnung) || p.aufteilung === "hkvo" || p.aufteilung === "gradtag") && (p.betrag ?? 0) > 0,
+  );
+  const co2Erfasst = !!co2 || (co2Input != null && (co2Input.co2_kg ?? 0) > 0);
+  if (heizkosten && !co2Erfasst && !warnungen.some((w) => w.includes("CO₂"))) warnungen.push(CO2_FEHLT_HINWEIS);
+  // „Voller Betrag“ mit einem Schlüssel wie „Fläche“: Die Abrechnung weist die Kosten als direkt
+  // zugeordnet aus — teilt der Mieter sie mit anderen, fehlen Gesamtkosten und Schlüssel.
+  umlagefaehig.forEach((line, idx) => {
+    const s = (umlageRaw[idx].umlageschluessel ?? "").trim();
+    if (line.umlageschluessel !== VOLL_SCHLUESSEL || VOLL_PASSENDE_SCHLUESSEL.has(s.toLowerCase())) return;
+    warnungen.push(
+      `${line.bezeichnung}: Aufteilung „Voller Betrag“, aber Schlüssel „${s}“ — die Abrechnung weist die Kosten als ${VOLL_SCHLUESSEL} aus. Teilt der Mieter sie mit anderen, wähle die passende Aufteilung und trage die Gesamtkosten ein.`,
+    );
+  });
   if (umlagefaehig.length === 0) {
     // Ohne Positionen ist der Saldo die volle Vorauszahlung — der Brief endet
     // dann mit „Ihr Guthaben wird innerhalb von 14 Tagen erstattet".

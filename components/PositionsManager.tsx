@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { eur2 } from "@/lib/format";
 import { addPosition, deletePosition, updatePosition } from "@/lib/actions/positions";
 import { useToast } from "@/components/Toast";
+import { VOLL_HINWEIS, MESSDIENST_HINWEIS } from "@/lib/nk";
 
 export type Position = {
   id: string;
@@ -34,15 +35,18 @@ const AUFTEILUNG_OPTIONEN = [
   { value: "hkvo", label: "HKVO (Grund + Verbrauch)" },
 ];
 
+// Jede Aufteilung erklärt sich am Auswahlfeld — auch „voll“: Dort fehlen sonst leicht Gesamtkosten
+// und Schlüssel, obwohl der Mieter die Kosten mit anderen teilt (Rechtssicherheit 21.10.2026).
 const AUFTEILUNG_HINWEIS: Record<string, string> = {
+  voll: VOLL_HINWEIS,
   flaeche:
     "Betrag = Gesamtkosten des Gebäudes; der Mieteranteil wird nach Wohnfläche berechnet (§ 556a I BGB) — z. B. 6.400 € × 80/400 m² = 1.280 €.",
   zeit: "Betrag = Jahresgesamtkosten; wird nach Belegungstagen geteilt.",
   verbrauch: "Betrag = Jahresgesamtkosten; wird exakt nach dem abgelesenen Verbrauchsanteil geteilt.",
   gradtag:
-    "Betrag = Jahresgesamtkosten; Belegungsmonate werden nach Gradtagszahlen gewichtet. Ohne Zwischenablesung darf der Mieter den verbrauchsabhängigen Anteil um 15 % kürzen (§ 12 HeizkostenV).",
+    `Betrag = Jahresgesamtkosten; Belegungsmonate werden nach Gradtagszahlen gewichtet. Ohne Zwischenablesung darf der Mieter den verbrauchsabhängigen Anteil um 15 % kürzen (§ 12 HeizkostenV). ${MESSDIENST_HINWEIS}`,
   hkvo:
-    "Betrag = Jahresgesamtkosten Heizung/Warmwasser; Grundkosten (30–50 %) nach Fläche, Rest nach abgelesenem Verbrauch (§ 7 HeizkostenV).",
+    `Betrag = Jahresgesamtkosten Heizung/Warmwasser; Grundkosten (30–50 %) nach Fläche, Rest nach abgelesenem Verbrauch (§ 7 HeizkostenV). ${MESSDIENST_HINWEIS}`,
 };
 
 const SCHLUESSEL = ["Fläche", "Anzahl", "Personen", "Einheit", "Verbrauch", "direkt"];
@@ -313,7 +317,7 @@ export default function PositionsManager({
                         setRow(r.id, { aufteilung: e.target.value });
                         speichere({ ...r, aufteilung: e.target.value });
                       }}
-                      title={AUFTEILUNG_HINWEIS[r.aufteilung] ?? "Betrag wird unverändert übernommen."}
+                      title={AUFTEILUNG_HINWEIS[r.aufteilung]}
                     >
                       {AUFTEILUNG_OPTIONEN.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -516,6 +520,11 @@ export default function PositionsManager({
         <button className="btn-gold mb-0.5" disabled={adding}>
           {adding ? "Speichert…" : "+ Hinzufügen"}
         </button>
+        {AUFTEILUNG_HINWEIS[nAuf] && (
+          <p className="w-full text-[var(--muted)]" style={{ fontSize: 12, margin: 0 }}>
+            {AUFTEILUNG_HINWEIS[nAuf]}
+          </p>
+        )}
       </form>
     </div>
   );

@@ -225,8 +225,8 @@ export async function buildNkPdf(
   // Gesamtkosten je Kostenart, Umlageschlüssel, Mieteranteil. Der Rechenweg steht
   // als Fußnote „(n)“ UNTER der Tabelle — gleiche Rechenwege nur einmal. Vorher bekam
   // jede Position eine eigene Unterzeile (27 statt 15 pt), und bei 9–12 Positionen
-  // rutschte das Ergebnis auf Seite 2. Ohne Gebäude-Gesamtkosten (direkt erfasster
-  // Anteil) steht in der Gesamt-Spalte ein Strich.
+  // rutschte das Ergebnis auf Seite 2. Gesamtkosten und Schlüssel kommen aus berechneNk —
+  // auch bei „Voller Betrag“ (Gesamt = Anteil, „direkt zugeordnet (100 %)“, wie in der Vorschau).
   const colGesamt = 300;   // rechte Kante der Gesamtkosten-Spalte
   const colSchluessel = 318;
   const tabellenKopf = () => {

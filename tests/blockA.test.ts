@@ -117,7 +117,9 @@ describe("NK-Abrechnung: geleistete Vorauszahlungen", () => {
 
   it("Abrechnung nutzt die gebuchte Summe und warnt nicht", () => {
     const pos: NkRawPosition[] = [
-      { bezeichnung: "Müll", betrag: 1200, umlageschluessel: "Fläche", umlagefaehig: true, jahr: 2024 },
+      // Ohne Schlüssel: „Voller Betrag“ mit Schlüssel „Fläche“ warnt seit 21.10.2026 zu Recht
+      // (Gesamtkosten = Anteil, aber geteilte Kosten) — hier geht es nur um die Vorauszahlungen.
+      { bezeichnung: "Müll", betrag: 1200, umlageschluessel: null, umlagefaehig: true, jahr: 2024 },
     ];
     // Mit Objektadresse — ohne jede Anschrift warnt die Abrechnung seit P4 (C44) zu Recht.
     const objekt = { bezeichnung: "Haus", adresse: "Lindenstr. 1, 23611 Bad Schwartau" };

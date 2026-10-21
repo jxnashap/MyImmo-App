@@ -8,7 +8,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
 import { eur2 } from "@/lib/format";
-import { NK_SCHLUESSEL, SCHLUESSEL_LABEL, standardSchluessel, kiVorschlaege, type KiVorschlag, type NkSchluessel } from "@/lib/nkObjekt";
+import { NK_SCHLUESSEL, SCHLUESSEL_LABEL, standardSchluessel, kiVorschlaege, istHeizkosten, type KiVorschlag, type NkSchluessel } from "@/lib/nkObjekt";
+import { MESSDIENST_HINWEIS } from "@/lib/nk";
 import {
   speichereNkGrundlagen,
   speichereNkKosten,
@@ -211,6 +212,9 @@ export default function NkObjektEditor(props: {
       {(form.schluessel === "verbrauch" || form.schluessel === "direkt") && (
         <div className="nk-werte">
           <div className="nk-werte-titel">{form.schluessel === "verbrauch" ? "Verbrauch je Wohnung" : "Betrag je Wohnung (€, z. B. aus der Heizkostenabrechnung des Messdienstes)"}</div>
+          {istHeizkosten(form.bezeichnung) && (
+            <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 6px" }}>{MESSDIENST_HINWEIS}</p>
+          )}
           {mieter.map((m) => (
             <label key={m.id}>{m.name}
               <input className="input" inputMode="decimal" value={form.werte[m.id] ?? ""}

@@ -346,8 +346,9 @@ export default async function NkPage(
         {/* Die vier Spalten bilden die BGH-Pflichtangaben ab: Gesamtkosten je
             Kostenart, Verteilerschlüssel mit Erläuterung (Rechenweg als
             Unterzeile), Anteilsberechnung — der Vorauszahlungsabzug folgt im
-            Summenblock. Bei direkt erfassten Mieteranteilen (ohne Aufteilung)
-            gibt es keine Gebäude-Gesamtkosten; dort steht ein Strich.
+            Summenblock. Bei „Voller Betrag“ trägt der Mieter die Kosten allein:
+            Gesamtkosten = Anteil, Schlüssel „direkt zugeordnet (100 %)“ (VOLL_SCHLUESSEL
+            in lib/nk.ts — dieselbe Zeile wie im PDF).
             Am Handy scrollt die Tabelle waagerecht (.brief-scroll); „Ihr Anteil“
             klebt dabei rechts (sticky), damit der Betrag je Position immer zu
             sehen ist. Ohne Scrollen (Desktop, Druck) wirkt sticky nicht. */}
