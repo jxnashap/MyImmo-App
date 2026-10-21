@@ -46,7 +46,7 @@ const eur = (n: number) => n.toLocaleString("de-DE", { style: "currency", curren
 const datumDe = (s: string | null) => (s ? s.slice(0, 10).split("-").reverse().join(".") : "–");
 
 export default function BelegEingang({
-  offen, gebucht, objekte, kosten, alleEingaenge, kiAn, jetzt,
+  offen, gebucht, objekte, kosten, alleEingaenge, kiAn, kiAnbieter, jetzt,
 }: {
   offen: EingangAnzeige[];
   gebucht: EingangAnzeige[];
@@ -54,6 +54,8 @@ export default function BelegEingang({
   kosten: KostenZeile[];
   alleEingaenge: EingangZeile[];
   kiAn: boolean;
+  /** Wer die Auswertung ausführt (`kiAnbieterText()` in lib/aiRoute.ts, vom Server). */
+  kiAnbieter: string;
   jetzt: number;
 }) {
   const [laden, startLaden] = useTransition();
@@ -76,14 +78,13 @@ export default function BelegEingang({
       for (const d of Array.from(dateien).slice(0, 10)) {
         const fd = new FormData();
         fd.set("datei", d);
+        // Nur hochladen — die KI liest erst, wenn der Nutzer „KI-Vorschlag holen“ drückt
+        // (Rechtssicherheit 21.10.2026). Vorher ging jeder Beleg nach dem Hochladen automatisch an
+        // den KI-Anbieter; Datenschutzerklärung (3 e „freiwillig“) und AVV (Ziffer 2 „nur wenn der
+        // Verantwortliche sie auslöst“) sagen etwas anderes.
         try {
           const r = await ladeBelegHoch(fd);
-          if (!r.ok) { fehler.push(`${d.name}: ${r.error}`); continue; }
-          if (kiAn) {
-            setMeldung(`KI liest „${d.name}“ …`);
-            const f = await vorschlagHolen(r.id);
-            if (f) fehler.push(`${d.name}: ${f}`);
-          }
+          if (!r.ok) fehler.push(`${d.name}: ${r.error}`);
         } catch {
           fehler.push(`${d.name}: Hochladen fehlgeschlagen.`);
         }
@@ -104,10 +105,16 @@ export default function BelegEingang({
               onChange={(e) => { hochladen(e.target.files); e.target.value = ""; }} />
           </label>
           <span style={{ fontSize: 12, color: "var(--muted)", flex: 1, minWidth: 220 }}>
-            PDF oder Foto einer Rechnung. {kiAn ? "Die KI schlägt Betrag, Datum, Kostenart und Umlagefähigkeit vor — " : "Ohne eingerichteten KI-Anbieter füllst du die Felder selbst aus — "}
+            PDF oder Foto einer Rechnung. {kiAn ? "Auf Wunsch schlägt die KI Betrag, Datum, Kostenart und Umlagefähigkeit vor — " : "Ohne eingerichteten KI-Anbieter füllst du die Felder selbst aus — "}
             gebucht wird erst, was du prüfst und freigibst.
           </span>
         </div>
+        {kiAn && (
+          <p style={{ fontSize: 11, color: "var(--faint)", margin: "8px 0 0" }}>
+            KI-Auswertung nur auf Klick: Erst „KI-Vorschlag holen“ übermittelt den Beleg zur Auswertung an{" "}
+            {kiAnbieter}. Die KI kann sich irren — bitte jeden Vorschlag vor dem Buchen prüfen.
+          </p>
+        )}
         {meldung && <p role="status" style={{ fontSize: 12.5, color: "var(--amber)", margin: "10px 0 0" }}>{meldung}</p>}
       </div>
 

@@ -7,7 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { aktuellerNutzer } from "@/lib/supabase/nutzer";
 import { alleZeilen, nurKonto } from "@/lib/db/auswertung";
-import { kiBereit } from "@/lib/aiRoute";
+import { kiAnbieterText, kiBereit } from "@/lib/aiRoute";
 import { heuteBerlin } from "@/lib/zeitraum";
 import BelegEingang, { type EingangAnzeige } from "@/components/BelegEingang";
 import { jetztMs, type EingangZeile, type KostenZeile } from "@/lib/belegEingang";
@@ -53,6 +53,7 @@ export default async function BelegeingangSeite() {
         kosten={kosten}
         alleEingaenge={eingaenge.map((e): EingangZeile => ({ id: e.id, datei_hash: e.datei_hash, status: e.status }))}
         kiAn={kiBereit()}
+        kiAnbieter={kiAnbieterText()}
         jetzt={jetztMs()}
       />
     </div>

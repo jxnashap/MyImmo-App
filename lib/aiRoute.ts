@@ -17,6 +17,16 @@ export function kiBereit(): boolean {
   return bedrockKonfiguriert() || !!process.env.ANTHROPIC_API_KEY;
 }
 
+/**
+ * Wer die KI-Auswertung gerade ausführt — für den Hinweis an der Oberfläche (Datenschutzerklärung
+ * Ziffer 3 e, AVV Ziffer 7: „je nach Einrichtung“). Dieselbe Umschaltung wie `callAnthropic`.
+ */
+export function kiAnbieterText(): string {
+  return bedrockKonfiguriert()
+    ? "Amazon Bedrock (AWS, Verarbeitung in der EU; der Modellanbieter erhält keinen Zugriff)"
+    : "Anthropic (USA; kein Modell-Training mit API-Daten)";
+}
+
 /** Meldung, wenn kein Anbieter eingerichtet ist. */
 export const KI_NICHT_BEREIT =
   "Kein KI-Anbieter eingerichtet (Bedrock-Zugang oder ANTHROPIC_API_KEY in Vercel unter Settings → Environment Variables).";
