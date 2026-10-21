@@ -33,7 +33,7 @@ export default function WegRuecklage({
         setOffen(false);
         router.refresh();
       } catch {
-        toast("Speichern fehlgeschlagen.", "error");
+        toast("Nicht gespeichert — bitte noch einmal versuchen.", "error");
       }
     });
 

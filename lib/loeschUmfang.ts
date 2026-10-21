@@ -38,7 +38,7 @@ export function objektFolgenText(u: ObjektUmfang | undefined): string {
   const teile: string[] = [];
   if (u.einnahmen) teile.push(`${u.einnahmen} Einnahme${u.einnahmen === 1 ? "" : "n"}`);
   if (u.kosten) teile.push(`${u.kosten} Ausgabe${u.kosten === 1 ? "" : "n"}`);
-  if (u.kredite) teile.push(`${u.kredite} Darlehen`);
+  if (u.kredite) teile.push(`${u.kredite} ${u.kredite === 1 ? "Kredit" : "Kredite"}`);
   if (u.dokumente) teile.push(`${u.dokumente} Dokument${u.dokumente === 1 ? "" : "e"}`);
   if (u.verbrauch) teile.push(`${u.verbrauch} Zählerstand${u.verbrauch === 1 ? "" : "-Einträge"}`);
   if (teile.length === 0) return "";

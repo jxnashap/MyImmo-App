@@ -59,7 +59,7 @@ const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   { key: "recht", label: "Daten & Recht", icon: FileText },
   // Support gehoert hierher und NICHT in die Hauptnavigation (Vorgabe
   // Betreiber 29.08.2026) — man sucht ihn beim Konto, nicht neben den Objekten.
-  { key: "hilfe", label: "Support", icon: LifeBuoy },
+  { key: "hilfe", label: "Hilfe", icon: LifeBuoy },
 ];
 
 const fmtIban = (iban: string) => iban.replace(/(.{4})/g, "$1 ").trim();
@@ -258,7 +258,7 @@ function ProfilPanel({ profil, unterschrift }: { profil: VermieterProfil | null;
       try {
         await saveVermieter(fd);
       } catch {
-        toast("Speichern fehlgeschlagen.", "error");
+        toast("Nicht gespeichert — bitte noch einmal versuchen.", "error");
         return;
       }
       toast("Gespeichert ✓");
@@ -393,7 +393,7 @@ function BankPanel({ ibans }: { ibans: Iban[] }) {
     setSaving(true);
     try {
       const res = await addIban(fd);
-      if (!res?.ok) return setError(res?.error ?? "Speichern fehlgeschlagen.");
+      if (!res?.ok) return setError(res?.error ?? "Nicht gespeichert — bitte noch einmal versuchen.");
       form.reset();
       toast("Konto hinzugefügt ✓");
       router.refresh();
@@ -726,9 +726,9 @@ function RechtPanel({ email, ohnePasswort = false }: { email?: string | null; oh
     <div ref={ref}>
       <div className="glass-card reveal">
         <h2><Sparkles size={16} /> Einführungs-Tour</h2>
-        <p className="sub">Die kurze Tour durch die App (Objekt anlegen → Mieter → Darlehen → Buchungen → Mietkonto → Archiv → Steuer) jederzeit noch einmal ansehen.</p>
+        <p className="sub">Die kurze Tour durch die App (Objekt → Mieter → Kredit → Mietkonto → Ein- &amp; Ausgaben → Archiv → Steuer). Sie öffnet sich nicht von selbst — hier startest du sie.</p>
         <button type="button" className="btn btn-gold" style={{ display: "inline-flex", alignItems: "center", gap: 6 }} onClick={tourStarten}>
-          <Sparkles size={15} /> Tour erneut starten
+          <Sparkles size={15} /> Tour starten
         </button>
       </div>
 
@@ -903,7 +903,7 @@ function DangerZone({ email, ohnePasswort = false }: { email?: string | null; oh
               <button type="button" className="icon-btn" onClick={() => setOpen(false)} title="Schließen"><X size={16} /></button>
             </div>
             <p style={{ fontSize: 13.5, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
-              Löscht dein Konto und <strong style={{ color: "var(--text)" }}>unwiderruflich</strong> alle Daten — Immobilien, Mieter, Buchungen, Kredite, Dokumente und Einstellungen. Exportiere vorher bei Bedarf deine Daten.
+              Löscht dein Konto und <strong style={{ color: "var(--text)" }}>unwiderruflich</strong> alle Daten — Objekte, Mieter, Buchungen, Kredite, Dokumente und Einstellungen. Exportiere vorher bei Bedarf deine Daten.
             </p>
             <form
               action={() =>

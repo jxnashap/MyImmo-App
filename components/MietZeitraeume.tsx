@@ -78,7 +78,7 @@ export default function MietZeitraeume({
       // Typ ausdrücklich: toast() ist ohne zweites Argument „success" — ein
       // Fehlschlag erschien sonst mit grünem Haken.
       if (res.ok) toast("Gespeichert ✓", "success");
-      else toast(res.error ?? "Speichern fehlgeschlagen.", "error");
+      else toast(res.error ?? "Nicht gespeichert — bitte noch einmal versuchen.", "error");
       if (res.ok) router.refresh();
     });
   };
@@ -101,7 +101,7 @@ export default function MietZeitraeume({
     startAdd(async () => {
       const res = await createMietZeitraum(mieterId, fd(neu));
       if (res.ok) toast("Zeitraum hinzugefügt ✓", "success");
-      else toast(res.error ?? "Speichern fehlgeschlagen.", "error");
+      else toast(res.error ?? "Nicht gespeichert — bitte noch einmal versuchen.", "error");
       if (res.ok) {
         setNeu(leer);
         router.refresh();

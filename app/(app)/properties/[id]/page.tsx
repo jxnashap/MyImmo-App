@@ -195,8 +195,8 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
     { lbl: "Bruttomietrendite", val: rendite > 0 ? prozent(rendite, 2) : "–", badge: rendite > 0 ? mkBadge(rendite, 5, 4) : "badge-neutral", note: renditeErg?.basis === "wert" ? "Jahreskaltmiete / aktueller Wert (kein Kaufpreis erfasst)" : "Jahreskaltmiete / Kaufpreis" },
     { lbl: "Kaufpreisfaktor", val: faktor > 0 ? `${zahl(faktor, 1)}×` : "–", badge: faktor > 0 ? (faktor < 25 ? "badge-green" : faktor < 30 ? "badge-gold" : "badge-red") : "badge-neutral", note: "Kaufpreis / Jahreskaltmiete" },
     { lbl: "Instandhaltungsrücklage (empf.)", val: petersJahr > 0 ? euro(petersJahr) + "/Jahr" : "–", badge: "badge-neutral", note: petersM2 > 0 ? `Peterssche Formel · ${euro(petersM2)}/m²·Jahr` : "Peterssche Formel (Faustformel)" },
-    { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-neutral", note: "Summe aller Darlehensraten" },
-    { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–", badge: "badge-neutral", note: "Summe aller Darlehen" },
+    { lbl: "Kreditrate / Mo.", val: totalKreditRate > 0 ? euro(totalKreditRate) : "–", badge: "badge-neutral", note: "Summe aller Kreditraten" },
+    { lbl: "Restschuld gesamt", val: totalRestschuld > 0 ? euro(totalRestschuld) : "–", badge: "badge-neutral", note: "Summe aller Kredite" },
     { lbl: "Cashflow / Mo.", val: cfStr, badge: cashflowMo >= 0 ? "badge-green" : "badge-red", note: cashflowFormel(kostenSchnitt) },
     { lbl: "Einnahmen gesamt", val: jahresEinnahmen > 0 ? euro(jahresEinnahmen) : "–", badge: "badge-green", note: "Alle erfassten Einnahmen" },
     { lbl: "Kosten gesamt", val: jahresKosten > 0 ? euro(jahresKosten) : "–", badge: "badge-red", note: "Alle erfassten Ausgaben" },
@@ -251,7 +251,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
 
   return (
     <div className="fade-up">
-      <Breadcrumbs items={[{ label: "Immobilien", href: "/properties" }, { label: p.bezeichnung }]} />
+      <Breadcrumbs items={[{ label: "Objekte", href: "/properties" }, { label: p.bezeichnung }]} />
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link href="/properties" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
@@ -428,7 +428,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
       {/* Mieter dieser Immobilie */}
       <div id="mieter" data-anker className="section mb-20">
         <div className="section-header">
-          <h3>{istGaragen ? "Einheiten & Mieter" : "Mieter dieser Immobilie"}</h3>
+          <h3>{istGaragen ? "Einheiten & Mieter" : "Mieter dieses Objekts"}</h3>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {istGaragen && (
               <span style={{ fontSize: 11, color: "var(--muted)" }}>
@@ -496,14 +496,14 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
       <div id="kredite" data-anker className="section mb-20">
         <div className="section-header">
           <h3>Kredite &amp; Finanzierung</h3>
-          <Link href={`/kredite/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Darlehen</Link>
+          <Link href={`/kredite/new?prop=${id}&back=/properties/${id}`} className="btn btn-ghost" style={{ fontSize: 11 }}><Plus size={14} style={{ verticalAlign: "-2px" }} /> Kredit</Link>
         </div>
         <div className="section-body">
           {kred.length === 0 ? (
             <Leer
               icon={Landmark}
-              titel="Noch keine Darlehen"
-              text="Ist das Objekt finanziert, gehören Darlehen hierher: Restschuld, Zinsbindung und Tilgung fließen dann in Beleihung und Cashflow ein."
+              titel="Noch keine Kredite"
+              text="Ist das Objekt finanziert, gehört der Kredit hierher: Restschuld, Zinsbindung und Tilgung fließen dann in Beleihung und Cashflow ein."
             />
           ) : (
             kred.map((k) => {
@@ -513,10 +513,10 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
                 <div key={k.id} style={{ padding: "14px 0", borderBottom: "1px solid var(--line)" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Darlehen"}</div>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{k.bezeichnung || "Kredit"}</div>
                       <div style={{ fontSize: 11, color: "var(--muted)" }}>{k.bank || "–"} · {zahl(k.zinssatz ?? 0, 1)} % Zins · {zahl(k.tilgungssatz ?? 0, 1)} % Tilgung</div>
                     </div>
-                    <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Darlehen"}“ löschen?`} />
+                    <DeleteButton action={deleteKredit.bind(null, k.id)} className="delete-btn" label={<X size={14} />} confirmText={`„${k.bezeichnung || "Kredit"}“ löschen?`} />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 8 }}>
                     <div><div style={{ fontSize: 12, color: "var(--muted)" }}>Restschuld</div><div style={{ fontWeight: 600, fontSize: 13, color: "var(--red)" }}>{euro(restschuldVon(k))}</div></div>

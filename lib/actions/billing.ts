@@ -16,7 +16,7 @@ export async function starteCheckout(
 ): Promise<ActionErgebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { fehler: "Nicht angemeldet." };
+  if (!user) return { fehler: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (plan !== "privat" && plan !== "plus") return { fehler: "Unbekannter Tarif." };
   if (zyklus !== "monat" && zyklus !== "jahr") return { fehler: "Unbekannter Abrechnungszeitraum." };
   if (!paddleKonfiguriert())
@@ -36,7 +36,7 @@ export async function starteCheckout(
 export async function oeffneAboPortal(): Promise<ActionErgebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { fehler: "Nicht angemeldet." };
+  if (!user) return { fehler: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (!paddleKonfiguriert()) return { fehler: "Das Bezahlsystem ist noch nicht freigeschaltet." };
 
   const { data } = await supabase.from("abos").select("provider_customer_id").maybeSingle();

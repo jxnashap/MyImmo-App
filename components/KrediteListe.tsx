@@ -81,7 +81,7 @@ export default function KrediteListe({
     <>
       <div className="section">
         <div className="section-header">
-          <div><h3>Darlehen</h3><div className="section-sub">{rows.length} Darlehen · Klick öffnet alle Angaben</div></div>
+          <div><h3>Kredite</h3><div className="section-sub">{rows.length} {rows.length === 1 ? "Kredit" : "Kredite"} · Klick öffnet alle Angaben</div></div>
         </div>
         <div className="section-body listen">
           {rows.map((k) => {
@@ -94,11 +94,11 @@ export default function KrediteListe({
             ].filter(Boolean).join(" · ");
             return (
               <button key={k.id} type="button" className="listen-zeile" onClick={() => setOpenId(k.id)}
-                aria-label={`${k.bezeichnung || "Darlehen"} öffnen`}>
+                aria-label={`${k.bezeichnung || "Kredit"} öffnen`}>
                 <span className="listen-icon"><Landmark size={16} /></span>
                 <span className="listen-zeile-text">
                   <span className="listen-zeile-titel">
-                    {k.bezeichnung || k.bank || "Darlehen"}
+                    {k.bezeichnung || k.bank || "Kredit"}
                     {k.zinssatz != null && <span style={{ fontWeight: 400, color: "var(--muted)" }}> · {zahl(k.zinssatz, 1)} %</span>}
                   </span>
                   <span className="listen-zeile-sub" style={warn ? { color: warn.color } : undefined}>{sub}</span>
@@ -121,7 +121,7 @@ export default function KrediteListe({
       </div>
 
       {offen && (
-        <RowDialog title={offen.bezeichnung || "Darlehen"} onClose={() => setOpenId(null)}>
+        <RowDialog title={offen.bezeichnung || "Kredit"} onClose={() => setOpenId(null)}>
           <Details k={offen} />
           <form action={updateKredit.bind(null, offen.id)} className="form-box" style={{ padding: 0, border: "none", background: "none", boxShadow: "none", maxWidth: "none" }}>
             <input type="hidden" name="back" value="/kredite" />
@@ -129,7 +129,7 @@ export default function KrediteListe({
             <div className="form-section-label">Grunddaten</div>
             <div className="form-row">
               <div className="form-group"><label>Bezeichnung *</label><input type="text" name="bezeichnung" defaultValue={offen.bezeichnung ?? ""} required /></div>
-              <div className="form-group"><label>Immobilie</label>
+              <div className="form-group"><label>Objekt</label>
                 <select name="prop_id" defaultValue={offen.prop_id ?? ""}>
                   <option value="">– wählen –</option>
                   {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
@@ -179,7 +179,7 @@ export default function KrediteListe({
             </div>
 
             <div className="form-actions" style={{ justifyContent: "space-between" }}>
-              <DeleteButton action={deleteKredit.bind(null, offen.id)} className="btn btn-ghost" label="Löschen" confirmText={`„${offen.bezeichnung || "Darlehen"}“ löschen?`} />
+              <DeleteButton action={deleteKredit.bind(null, offen.id)} className="btn btn-ghost" label="Löschen" confirmText={`„${offen.bezeichnung || "Kredit"}“ löschen?`} />
               <SubmitButton>Speichern</SubmitButton>
             </div>
           </form>

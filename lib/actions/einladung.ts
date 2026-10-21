@@ -40,7 +40,7 @@ export async function erzeugeEinladungscode(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const adresse = pruefeEinladungsAdresse(email, wiederholung);
   if (!adresse.ok) return { error: adresse.fehler };
@@ -128,7 +128,7 @@ export async function widerrufeEinladung(mieterId: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   // Fehler auswerten: „widerrufen" gemeldet, Code weiterhin gültig — genau der
   // Fall, den ein Widerruf verhindern soll.
@@ -153,7 +153,7 @@ export async function trenneMieterZugang(mieterId: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   // Offene Einladungen zuerst: Sonst könnte ein alter Code den eben getrennten
   // Zugang sofort wiederherstellen.

@@ -109,11 +109,11 @@ export default function DokumentZustellung({
       {aktiv.length === 0 && hatDatei && (
         <div>
           <button type="button" className="btn btn-ghost" style={{ fontSize: 11, padding: "6px 10px", minHeight: 32 }} disabled={pending} onClick={() => setOffen((o) => !o)}>
-            <Send size={11} style={{ verticalAlign: "-1px" }} /> Ins Mieterportal zustellen…
+            <Send size={11} style={{ verticalAlign: "-1px" }} /> Im Mieterportal bereitstellen…
           </button>
           {offen && (
-            <div role="dialog" aria-label="Zustellung prüfen" style={{ marginTop: 6, padding: "12px 14px", border: "1px solid var(--line)", borderRadius: 16, background: "var(--bg2)", maxWidth: 520, color: "var(--text)" }}>
-              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>„{titel}“ zustellen an</div>
+            <div role="dialog" aria-label="Bereitstellung prüfen" style={{ marginTop: 6, padding: "12px 14px", border: "1px solid var(--line)", borderRadius: 16, background: "var(--bg2)", maxWidth: 520, color: "var(--text)" }}>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>„{titel}“ bereitstellen für</div>
               <div style={{ fontSize: 12.5, marginBottom: 8 }}>
                 {mieterName} · Portal-Konto: <strong>{pruefung.sperre ? "— keins verbunden —" : (pruefung.email ?? "Adresse unbekannt")}</strong>
               </div>
@@ -136,7 +136,7 @@ export default function DokumentZustellung({
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {!pruefung.sperre && (
                   <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} disabled={pending} onClick={zustellen}>
-                    {pending ? "…" : `Ja, an ${pruefung.email ?? mieterName} zustellen`}
+                    {pending ? "…" : `Ja, für ${pruefung.email ?? mieterName} bereitstellen`}
                   </button>
                 )}
                 <button type="button" className="btn btn-ghost" style={{ fontSize: 12 }} disabled={pending} onClick={() => setOffen(false)}>Abbrechen</button>

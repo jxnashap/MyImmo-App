@@ -165,7 +165,7 @@ export default function PositionsManager({
         toast("Gespeichert ✓");
         router.refresh();
       } else {
-        toast("Speichern fehlgeschlagen.", "error");
+        toast("Nicht gespeichert — bitte noch einmal versuchen.", "error");
       }
     });
   };
@@ -205,7 +205,7 @@ export default function PositionsManager({
       try {
         await addPosition(mieterId, fd);
       } catch {
-        toast("Speichern fehlgeschlagen.", "error");
+        toast("Nicht gespeichert — bitte noch einmal versuchen.", "error");
         return;
       }
       setNBez("");

@@ -212,7 +212,7 @@ export function baueHeuteAufgaben(
     aufgaben.push({
       art: "frist",
       label: `Nicht abgerufen: „${z.titel}“`,
-      sub: `${z.mieter} · im Mieterportal seit ${am} — Zugang nicht belegt`,
+      sub: `${z.mieter} · im Mieterportal seit ${am} — noch nicht geöffnet`,
       href: `/tenants/${z.mieterId}`,
       aktion: "Ansehen",
       dringend: false,

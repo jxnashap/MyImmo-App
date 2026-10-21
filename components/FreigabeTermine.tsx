@@ -37,7 +37,7 @@ export default function FreigabeTermine({
       if ("error" in r) toast(r.error, "error");
       else toast(ok);
     } catch {
-      toast("Speichern fehlgeschlagen.", "error");
+      toast("Nicht gespeichert — bitte noch einmal versuchen.", "error");
     } finally {
       setBusy(null);
     }

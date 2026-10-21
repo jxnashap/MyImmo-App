@@ -284,7 +284,7 @@ function pruefeKreditRate(fd: FormData) {
   const rate = num(fd, "monatsrate");
   const rest = num(fd, "restschuld");
   if (rate == null) throw new Error("Bitte die monatliche Rate laut Darlehensvertrag eintragen.");
-  if (rate < 0 || (rate === 0 && rest !== 0)) throw new Error("Eine Rate von 0 € gibt es nur bei einem abbezahlten Darlehen (Restschuld 0).");
+  if (rate < 0 || (rate === 0 && rest !== 0)) throw new Error("Eine Rate von 0 € gibt es nur bei einem abbezahlten Kredit (Restschuld 0).");
 }
 
 export async function createKredit(fd: FormData) {

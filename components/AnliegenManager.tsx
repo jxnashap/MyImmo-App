@@ -140,7 +140,7 @@ export function AnliegenDetail({
   return (
     <div>
       <Link href="/anliegen" className="btn btn-ghost btn-sm" style={{ marginBottom: 14, display: "inline-flex", alignItems: "center", gap: 6 }}>
-        <ArrowLeft size={14} /> Alle Meldungen
+        <ArrowLeft size={14} /> Alle Anliegen
       </Link>
 
       <div className="section" style={{ marginBottom: 18 }}>

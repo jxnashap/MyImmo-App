@@ -11,7 +11,7 @@ export async function erstelleBewerberLink(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const propId = String(formData.get("propId") ?? "");
   const titel = String(formData.get("titel") ?? "").trim();
@@ -56,7 +56,7 @@ export async function aktualisiereBewerberLink(id: string, fd: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   // Zahlen über `zahlDe()` lesen, NICHT selbst parsen (Regel in CLAUDE.md).
   //
@@ -123,7 +123,7 @@ export async function loescheAlteBewerbungen() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { loeschGrenze } = await import("@/lib/bewerbungsDokumente");
   const { heuteBerlin } = await import("@/lib/zeitraum");
   const { error } = await supabase
@@ -141,7 +141,7 @@ export async function setzeBewerberLinkAktiv(id: string, aktiv: boolean) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase.from("bewerber_links").update({ aktiv }).eq("id", id).eq("user_id", user.id);
   if (error) return { error: "Konnte nicht umgestellt werden — der Link ist unverändert." };
   revalidatePath("/bewerbungen");
@@ -153,7 +153,7 @@ export async function loescheBewerberLink(id: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase.from("bewerber_links").delete().eq("id", id).eq("user_id", user.id);
   if (error) return { error: "Link konnte nicht gelöscht werden — er ist weiterhin erreichbar." };
   revalidatePath("/bewerbungen");
@@ -165,7 +165,7 @@ export async function setzeBewerbungStatus(id: string, status: "neu" | "favorit"
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase.from("bewerbungen").update({ status }).eq("id", id).eq("user_id", user.id);
   if (error) return { error: "Status konnte nicht gespeichert werden." };
   revalidatePath("/bewerbungen");
@@ -177,7 +177,7 @@ export async function loescheBewerbung(id: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase.from("bewerbungen").delete().eq("id", id).eq("user_id", user.id);
   if (error) return { error: "Bewerbung konnte nicht gelöscht werden." };
   revalidatePath("/bewerbungen");
@@ -196,7 +196,7 @@ export async function ladeBewerbungDatei(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, fehler: "Nicht angemeldet." };
+  if (!user) return { ok: false, fehler: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { data, error } = await supabase
     .from("bewerbung_dateien")
     .select("name,typ,data")
@@ -215,7 +215,7 @@ export async function loescheBewerbungDatei(id: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase.from("bewerbung_dateien").delete().eq("id", id).eq("user_id", user.id);
   if (error) return { error: "Dokument konnte nicht gelöscht werden — es liegt weiterhin gespeichert vor." };
   revalidatePath("/anliegen");
@@ -228,7 +228,7 @@ export async function speichereUnterschrift(dataUrl: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (!dataUrl.startsWith("data:image/png;base64,") || dataUrl.length > 200000) {
     return { error: "Ungültige Unterschrift." };
   }
@@ -245,7 +245,7 @@ export async function loescheUnterschrift() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase.from("unterschriften").delete().eq("user_id", user.id);
   if (error) return { error: "Unterschrift konnte nicht gelöscht werden." };
   revalidatePath("/einstellungen");

@@ -135,7 +135,7 @@ export async function bestaetigeMieteingang(input: {
 }): Promise<MietkontoResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const betrag = Number(input.betrag);
   if (!Number.isFinite(betrag) || betrag <= 0)
@@ -241,7 +241,7 @@ export async function bestaetigeMehrere(
 ): Promise<BatchErgebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, anzahl: 0, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, anzahl: 0, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const istRueck = (z: BatchZeile) => quelle === "kontoauszug" && (z.art === "ruecklastschrift" || z.art === "erstattung");
   const gueltig = zeilen.filter(

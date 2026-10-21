@@ -15,11 +15,15 @@ type Item = { key: string; label: string; href: string; group: string; icon?: Lu
 
 // Such-Aliase: damit man Bereiche auch unter geläufigen Begriffen findet, die
 // nicht im Label stehen (z. B. „Handwerker" → Anliegen, „ELSTER" → Steuer).
+// 21.10.2026: Mieten bestätigt man im Mietkonto, nicht von Hand unter Ein- & Ausgaben — „miete“
+// führt deshalb nur noch dorthin. Alte Namen (Dashboard, Immobilien) finden die neuen Bereiche.
 const ALIAS: Record<string, string> = {
-  "/anliegen": "handwerker auftrag bewerbung bewerber service mieterportal reparatur meldung anfrage",
+  "/": "dashboard start startseite",
+  "/properties": "immobilie immobilien haus wohnung garage grundstück",
+  "/anliegen": "handwerker auftrag bewerbung bewerber service mieterportal reparatur meldung anfrage schaden",
   "/steuer": "anlage v afa elster datev einkommensteuer werbungskosten",
-  "/cashflow": "buchung buchen einnahme ausgabe miete kosten transaktion",
-  "/mietkonto": "zahlung offene posten mahnung soll ist",
+  "/cashflow": "buchung buchen einnahme ausgabe kosten rechnung transaktion",
+  "/mietkonto": "miete mieten mieteingang mieteingänge zahlung offene posten mahnung soll ist rückstand",
   "/kredite": "darlehen finanzierung hypothek zinsbindung restschuld",
   "/verbrauch": "strom gas wasser heizung zählerstand energie",
   "/jahresbericht": "auswertung übersicht cashflow jahr report",
@@ -31,6 +35,8 @@ const AKTIONEN: Omit<Item, "group">[] = [
   { key: "neu-mieter", label: "Neuen Mieter anlegen", href: "/tenants/new" },
   { key: "neu-einnahme", label: "Neue Einnahme buchen", href: "/cashflow/neu?typ=einnahme" },
   { key: "neu-kosten", label: "Neue Ausgabe buchen", href: "/cashflow/neu?typ=ausgabe" },
+  { key: "miete-bestaetigen", label: "Mieteingänge bestätigen", href: "/mietkonto", alias: "miete mieteingang eingang bezahlt gezahlt" },
+  { key: "beleg", label: "Beleg hochladen", href: "/cashflow/belege", alias: "rechnung quittung foto scan belegeingang" },
   { key: "einstellungen", label: "Einstellungen öffnen", href: "/einstellungen" },
 ];
 

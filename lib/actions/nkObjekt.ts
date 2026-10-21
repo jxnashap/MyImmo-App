@@ -31,7 +31,7 @@ type Zugang =
 async function zugang(propId: string): Promise<Zugang> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { data: prop, error } = await supabase
     .from("properties").select("id").eq("id", propId).eq("user_id", user.id).maybeSingle();
   if (error) return { error: "Objekt konnte nicht geladen werden." };

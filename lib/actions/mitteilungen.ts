@@ -18,7 +18,7 @@ type Zugang = { user_id: string; mieter_id: string; prop_id: string | null; emai
 export async function sendeMitteilung(fd: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const titel = String(fd.get("titel") ?? "").trim();
   const nachricht = String(fd.get("nachricht") ?? "").trim();
@@ -74,7 +74,7 @@ export async function sendeMitteilung(fd: FormData) {
 export async function zieheMitteilungZurueck(gruppe: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { data, error } = await supabase.rpc("mitteilung_zurueckziehen", { p_gruppe: gruppe });
   if (error || typeof data !== "number" || data < 1) return { error: "Zurückziehen fehlgeschlagen — die Mitteilung ist unverändert." };
   revalidatePath("/anliegen");
@@ -87,7 +87,7 @@ const INFO_FELDER = { hausmeister: 500, notdienst: 500, muell: 1000, hausordnung
 export async function speichereGebaeudeInfos(fd: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const propId = String(fd.get("prop_id") ?? "");
   if (!propId) return { error: "Bitte ein Objekt wählen." };
 

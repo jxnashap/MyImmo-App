@@ -10,7 +10,7 @@ export type IbanResult = { ok: boolean; error?: string };
 export async function addIban(formData: FormData): Promise<IbanResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const kontoname = String(formData.get("kontoname") ?? "").trim();
   const inhaber = String(formData.get("inhaber") ?? "").trim();
@@ -73,7 +73,7 @@ export async function addIban(formData: FormData): Promise<IbanResult> {
 export async function setStandardIban(id: string): Promise<IbanResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   // Erst alle zurücksetzen (verhindert Verletzung des Unique-Index), dann setzen.
   const { error: e1 } = await supabase
@@ -97,7 +97,7 @@ export async function setStandardIban(id: string): Promise<IbanResult> {
 export async function deleteIban(id: string): Promise<IbanResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   // `user_id` gehört mit in den Filter — nicht weil RLS es nicht abfinge,
   // sondern weil eine fremde ID sonst zu einem stillen Treffer-Null wird, das

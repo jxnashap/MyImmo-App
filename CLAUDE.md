@@ -195,8 +195,22 @@
 > konnten nicht geladen werden“ bei jedem Aufruf; neue Anliegen erschienen nie als Aufgabe, Neuigkeiten ohne Titel/Name. Alle Tests
 > waren grün, weil die Test-Datenbank Spalten nicht prüft. **Regel: Eine Abfrage auf `anliegen` nennt nur Spalten aus den
 > Migrationen** — `tests/paket4.test.ts` vergleicht es; Namen kommen über `mieter_id` aus den Mieter-Zeilen.
-> Offen (Betreiber-Entscheidungen): Tour automatisch, Install-Hinweis für Mieter, einheitliche Begriffe (Objekt/Immobilie,
-> Kredit/Darlehen, Anliegen/Meldung) — nicht angefasst.
+> **Betreiber-Entscheidungen + Paket 5 (gleicher Tag, `tests/startCheckliste.test.ts` + `tests/paket5.test.ts`, 18 Mutationen rot):**
+> (1) **Die Tour öffnet sich nicht mehr von selbst** (vorher über der Start-Checkliste — zwei Führungen); neue Vermieter führt
+> `startSchritte()` (`lib/startCheckliste.ts`, `components/StartCheckliste.tsx`): Pflicht Objekt + Mieter, freiwillig Kredit
+> („nicht jedes Objekt ist finanziert“), Mieten im Mietkonto bestätigen, Absender (`?tab=profil`). Leeres Konto = ganze Seite,
+> Objekt ohne Mieter = Karte „Für den Start noch offen“. Die Tour führt ins Mietkonto statt „per Hand buchen“.
+> (2) Install-Hinweis für Mieter **ruhig am Ende von „Meine Wohnung“** (`<AppInstallieren ruhig />`, nur wenn installierbar, nicht
+> in der Vorschau); unter `/konto` vor „Konto löschen“. (3) **Begriffe: Objekt · Kredit · Anliegen** in der Oberfläche (Navigation
+> „Objekte“, „Übersicht“ statt Dashboard, „Hilfe“ statt Support). **„Immobilie“ nur auf der Startseite**, in Zusammensetzungen
+> (Immobilienanzeige) und in BuyImmo; **„Darlehen“ nur in Briefen/PDFs und als Vertragsbegriff** (Darlehensvertrag,
+> Darlehenssumme, Darlehensnummer — so steht es im Vertrag); Zählerstände heißen „gemeldete Zählerstände“. Die Wächter sind
+> Textmuster (Labels, Filter, Fallback-Namen), kein Vollscan. (4) Fehlertexte: nie mehr nacktes „Nicht angemeldet.“ /
+> „Speichern fehlgeschlagen.“ / „Ungültige Eingabe.“ (Test scannt `lib`, `app`, `components`); App-Fehlerseite mit „Neu laden“.
+> (5) Portal-Knöpfe sagen **„bereitstellen“**, die Aufgabe „noch nicht geöffnet“. (6) Befehlspalette: „miete“ → Mietkonto (nicht
+> Ein- & Ausgaben), Aktionen „Mieteingänge bestätigen“ und „Beleg hochladen“, alte Namen als Suchwörter. (7) `/afa-assistent` ist
+> gemeinsamer Pfad (Objekt-Check/Steuer sprangen nach BuyImmo). **Bewusst NICHT:** Mietkonto unter „Verwalten“ (die Gruppe hätte
+> sieben Punkte — gegen die Sechser-Regel aus Feedback Befund 8), „Cockpit“ bleibt (Begriff des Betreibers).
 
 ### 👤 NUR DER BETREIBER — offene Punkte (Stand 10.09.2026)
 Alles hier ist **kein Code**, sondern ein Dashboard, ein Anwalt oder ein Blick in einen
@@ -1012,12 +1026,12 @@ kaufen“ nur mit Vertreter-Zusatz bewerben (Notar).**
   er die Verschachtelung; eine Mutation hält das fest. **Dieselbe Falle wie bei
   `schreibFehler.test.ts` — Textmuster über JSX brauchen eine echte Klammerzählung.**
 - ~~**Onboarding-Guide für neue Nutzer**~~ ✅ **ERLEDIGT** (Stand geprüft 31.07.2026):
-  `components/OnboardingTour.tsx` — sieben Stationen (Objekt → Mieter → Darlehen → Ein-/Ausgaben →
-  Mietkonto → Archiv → Steuer/Assistenten) mit Direktlinks. Öffnet sich automatisch,
-  solange kein Objekt existiert und die Tour nie beendet wurde (`neuerNutzer` aus der
-  Objektzahl im Root-Layout), ist überspringbar, merkt den Fortschritt und lässt sich über
-  Einstellungen → „Einführungs-Tour" per Event neu starten. Der Eintrag stand hier zu lange
-  als Vorhaben und hat zu einer Fehleinschätzung geführt.
+  `components/OnboardingTour.tsx` — sieben Stationen (Objekt → Mieter → Kredit → Mietkonto →
+  Ein-/Ausgaben → Archiv → Steuer/Assistenten) mit Direktlinks. **Seit 21.10.2026 öffnet sie sich
+  NICHT mehr von selbst** (Entscheidung des Betreibers; neue Vermieter führt die Start-Checkliste,
+  `lib/startCheckliste.ts`) — sie startet nur über Einstellungen → „Einführungs-Tour“ per Event,
+  ist überspringbar und merkt den Fortschritt. Der Eintrag stand hier zu lange als Vorhaben und
+  hat zu einer Fehleinschätzung geführt.
 - **Abo-Zugangscode (mit Bezahlsystem umsetzen):** Nach Abschluss/Bezahlung eines Abos erhält
   der Kunde einen individuellen Zugangscode (per E-Mail oder direkt in der App). Der Code ist
   abo-/rollenspezifisch (z. B. gilt ein Hausverwaltungs-Code nur für die Hausverwaltungs-

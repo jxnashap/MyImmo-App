@@ -115,15 +115,15 @@ describe("Mahnung per Mail hinterlässt eine Archiv-Kopie", () => {
 });
 
 describe("Tour und Anlegen", () => {
-  it("die Tour hat eine Darlehen-Station, fortlaufend nummeriert", () => {
+  it("die Tour hat eine Kredit-Station, fortlaufend nummeriert", () => {
     const t = lies("components/OnboardingTour.tsx");
     expect(t).toMatch(/href: "\/kredite\/new"/);
     const nummern = [...t.matchAll(/titel: "(\d) · /g)].map((m) => Number(m[1]));
     expect(nummern).toEqual(nummern.map((_, i) => nummern[0] + i));
   });
-  it("die Start-Checkliste des leeren Kontos hat einen Darlehen-Schritt", () => {
-    const d = lies("app/(app)/page.tsx");
-    expect(d).toMatch(/href: "\/kredite\/new", cta: "Darlehen eintragen", erledigt: kredite\.length > 0/);
+  it("die Start-Checkliste hat einen Kredit-Schritt (seit 21.10.2026 freiwillig, lib/startCheckliste.ts)", () => {
+    const d = lies("lib/startCheckliste.ts");
+    expect(d).toMatch(/href: "\/kredite\/new",\s*cta: "Kredit eintragen",\s*erledigt: s\.kredite > 0,\s*freiwillig: true/);
   });
   it("„Neues Objekt“ verlinkt den Exposé-Import", () => {
     expect(lies("app/(app)/properties/new/page.tsx")).toMatch(/href="\/properties\/import"/);

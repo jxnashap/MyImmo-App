@@ -63,7 +63,7 @@ async function setzeStatus(id: string, status: "abgelehnt" | "erledigt", antwort
     .eq("status", "offen")
     .select("id")
     .maybeSingle();
-  if (error || !data) return { error: "Speichern fehlgeschlagen." } as const;
+  if (error || !data) return { error: "Nicht gespeichert — bitte noch einmal versuchen." } as const;
   neuLaden();
   return { ok: true } as const;
 }

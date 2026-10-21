@@ -60,8 +60,12 @@ export const BEREICHE: Record<Bereich, BereichInfo> = {
 /** Reihenfolge im Umschalter. */
 export const BEREICH_REIHENFOLGE: Bereich[] = ["verwaltung", "aufbau"];
 
-/** Seiten, die zu beiden Bereichen gehören — sie behalten den Bereich, aus dem man kam. */
-export const GEMEINSAME_PFADE = ["/einstellungen", "/hilfe", "/properties"];
+/**
+ * Seiten, die zu beiden Bereichen gehören — sie behalten den Bereich, aus dem man kam.
+ * `/afa-assistent` seit 21.10.2026: Der Objekt-Check und die Steuerseite (MyImmo) führen dorthin;
+ * vorher sprang die Seitenleiste dabei nach BuyImmo. Im Menü steht er weiter unter BuyImmo.
+ */
+export const GEMEINSAME_PFADE = ["/einstellungen", "/hilfe", "/properties", "/afa-assistent"];
 
 /**
  * Gehört `pfad` zu `href`? Nur der Pfad selbst oder ein Unterpfad — `/kaufen` gehört

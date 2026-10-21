@@ -226,7 +226,7 @@ export async function deletePosition(id: string, mieterId: string) {
 export async function uebernehmeVorjahresPositionen(mieterId: string, jahr: number): Promise<{ ok: true; anzahl: number } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (!Number.isInteger(jahr) || jahr < 2001 || jahr > 2100) return { error: "Ungültiges Jahr." };
 
   const { data, error } = await supabase
@@ -265,7 +265,7 @@ export async function uebernehmeGebuchteKosten(
 ): Promise<{ ok: true; anzahl: number } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (!Number.isInteger(jahr) || jahr < 2001 || jahr > 2100) return { error: "Ungültiges Jahr." };
 
   const { data: m, error: mErr } = await supabase

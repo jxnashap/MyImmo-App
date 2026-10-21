@@ -21,7 +21,7 @@ type Fehler = { error: string };
 export async function fordereAngeboteAn(fd: FormData): Promise<{ ok: true; neu: number } | Fehler> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const anliegenId = String(fd.get("anliegenId") ?? "").trim();
   const firmaIds = [...new Set(fd.getAll("firmaId").map(String).filter(Boolean))];
@@ -79,7 +79,7 @@ export async function fordereAngeboteAn(fd: FormData): Promise<{ ok: true; neu: 
 export async function zieheAnfrageZurueck(anfrageId: string): Promise<{ ok: true } | Fehler> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { data, error } = await supabase
     .from("angebotsanfragen").update({ status: "zurueckgezogen" })
     .eq("id", anfrageId).eq("vermieter_id", user.id).eq("status", "angefragt")
@@ -100,7 +100,7 @@ export async function zieheAnfrageZurueck(anfrageId: string): Promise<{ ok: true
 export async function beauftrageAngebot(fd: FormData): Promise<{ ok: true; token: string } | Fehler> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const angebotId = String(fd.get("angebotId") ?? "").trim();
   const kontakt = fd.get("mieterKontakt") === "on";

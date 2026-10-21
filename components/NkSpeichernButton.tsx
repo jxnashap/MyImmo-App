@@ -40,7 +40,7 @@ export default function NkSpeichernButton({
       const res = await speichereNk(mieterId, jahr, zustellen, vorgang.aktuell());
       if (res.ok) vorgang.abgeschlossen();
       if (!res.ok) {
-        toast(res.error ?? "Speichern fehlgeschlagen.", "error");
+        toast(res.error ?? "Nicht gespeichert — bitte noch einmal versuchen.", "error");
         return;
       }
       setOffen(false);
@@ -66,17 +66,17 @@ export default function NkSpeichernButton({
         title="Zeigt zuerst, wer die Abrechnung im Mieterportal sehen wird"
         onClick={() => setOffen((o) => !o)}
       >
-        <Send size={14} style={{ verticalAlign: "-2px" }} /> Ins Mieterportal zustellen…
+        <Send size={14} style={{ verticalAlign: "-2px" }} /> Im Mieterportal bereitstellen…
       </button>
 
       {offen && (
         <div
           role="dialog"
-          aria-label="Zustellung prüfen"
+          aria-label="Bereitstellung prüfen"
           className="no-print"
           style={{ flexBasis: "100%", marginTop: 8, padding: "14px 16px", border: "1px solid var(--line)", borderRadius: 16, background: "var(--bg2)", maxWidth: 520 }}
         >
-          <div style={{ fontWeight: 600, fontSize: 13.5, marginBottom: 8 }}>Nebenkostenabrechnung {jahr} zustellen an</div>
+          <div style={{ fontWeight: 600, fontSize: 13.5, marginBottom: 8 }}>Nebenkostenabrechnung {jahr} bereitstellen für</div>
           <dl style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 12px", fontSize: 13, margin: "0 0 10px" }}>
             <dt style={{ color: "var(--muted)" }}>Mieter</dt><dd style={{ margin: 0, fontWeight: 600 }}>{empfaenger.name}</dd>
             {empfaenger.wohnung && (<><dt style={{ color: "var(--muted)" }}>Wohnung</dt><dd style={{ margin: 0 }}>{empfaenger.wohnung}</dd></>)}
@@ -99,7 +99,7 @@ export default function NkSpeichernButton({
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {!pruefung.sperre && (
               <button type="button" className="btn btn-gold" disabled={pending} onClick={() => speichern(true)}>
-                {pending ? "…" : `Ja, an ${empfaenger.email ?? empfaenger.name} zustellen`}
+                {pending ? "…" : `Ja, für ${empfaenger.email ?? empfaenger.name} bereitstellen`}
               </button>
             )}
             <button type="button" className="btn btn-ghost" disabled={pending} onClick={() => setOffen(false)}>

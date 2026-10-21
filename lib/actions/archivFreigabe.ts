@@ -14,7 +14,7 @@ export async function setzeBelegFreigabe(kostenId: string, freigabe: boolean) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const { data, error } = await supabase
     .from("kosten")

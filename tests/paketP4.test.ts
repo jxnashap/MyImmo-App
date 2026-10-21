@@ -188,7 +188,7 @@ describe("B43 — Zugang im Mieterportal", () => {
       { offeneMieten: [], anliegen: [], meldungen: [], fristen: [], nichtAbgerufen: [{ mieterId: "m1", mieter: "Anna Weber", titel: "Nebenkostenabrechnung 2025", zugestellt: "2026-10-01T10:00:00Z" }] },
       "2026-10-09",
     );
-    expect(a).toEqual([expect.objectContaining({ label: "Nicht abgerufen: „Nebenkostenabrechnung 2025“", href: "/tenants/m1", sub: expect.stringMatching(/seit 01\.10\.2026 — Zugang nicht belegt/) })]);
+    expect(a).toEqual([expect.objectContaining({ label: "Nicht abgerufen: „Nebenkostenabrechnung 2025“", href: "/tenants/m1", sub: expect.stringMatching(/seit 01\.10\.2026 — noch nicht geöffnet/) })]);
     // Ablauf D: Die Abfrage reicht weiter zurück (Stand an der Frist) — die Aufgabe bleibt beim 120-Tage-Fenster.
     expect(lies("app/(app)/page.tsx")).toMatch(/nichtAbgerufen: nichtAbgerufen\(offeneZustellRows, heuteISO0\)/);
     expect(lies("app/(app)/page.tsx")).toMatch(/const offeneZustellRows = zustellungenAlle\.filter\(\(z\) => z\.zugestellt_am\.slice\(0, 10\) >= zustellFensterAb\(heuteISO0\)\)/);

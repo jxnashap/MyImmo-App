@@ -9,7 +9,7 @@ import HilfeInhalt from "@/components/HilfeInhalt";
 // in verschickten E-Mails und ist verlinkt. `/support` leitet dauerhaft hierher
 // (next.config.mjs), damit auch der neue Name funktioniert.
 export const metadata: Metadata = {
-  title: "Support — MyImmo",
+  title: "Hilfe — MyImmo",
   description: "So erreichst du uns, wenn etwas nicht funktioniert.",
 };
 
@@ -21,7 +21,7 @@ export default function HilfePage() {
           Inline-Styles — dieselbe Seite sah dadurch anders aus als der Rest. */}
       <div className="topbar">
         <div>
-          <div className="topbar-title">Support</div>
+          <div className="topbar-title">Hilfe</div>
           <div className="topbar-sub">
             Wenn etwas nicht funktioniert, unklar ist oder fehlt — hier steht, wie du uns
             erreichst und was uns hilft, schnell zu antworten.

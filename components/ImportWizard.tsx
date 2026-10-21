@@ -43,7 +43,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
       const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const basis = json.error || "Fehler beim Analysieren.";
+        const basis = json.error || "Das Auslesen hat nicht geklappt — bitte noch einmal versuchen.";
         setError(modus === "url" ? `${basis} …oder Exposé-PDF hochladen bzw. Text einfügen.` : basis);
         return;
       }

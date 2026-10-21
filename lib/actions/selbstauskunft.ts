@@ -36,7 +36,7 @@ export async function ladeSelbstauskunft(): Promise<SelbstauskunftDaten | null> 
 export async function speichereSelbstauskunft(daten: SelbstauskunftDaten): Promise<SelbstauskunftResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   let enc: string;
   try {

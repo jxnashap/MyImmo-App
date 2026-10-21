@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (leseFehler) {
     console.error("Newsletter: Prüfung fehlgeschlagen", leseFehler.message);
-    return NextResponse.json({ fehler: "Speichern fehlgeschlagen." }, { status: 500 });
+    return NextResponse.json({ fehler: "Nicht gespeichert — bitte noch einmal versuchen." }, { status: 500 });
   }
 
   // Bestätigt UND nicht abgemeldet → nichts zu tun. Wer sich abgemeldet hat,
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
   );
   if (error) {
     console.error("Newsletter: Speichern fehlgeschlagen", error.message);
-    return NextResponse.json({ fehler: "Speichern fehlgeschlagen." }, { status: 500 });
+    return NextResponse.json({ fehler: "Nicht gespeichert — bitte noch einmal versuchen." }, { status: 500 });
   }
 
   const url = `${await basisUrl()}/api/newsletter/bestaetigen?token=${encodeURIComponent(token)}`;

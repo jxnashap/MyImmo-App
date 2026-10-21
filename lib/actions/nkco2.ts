@@ -25,7 +25,7 @@ export async function speichereNkCo2(
 ): Promise<NkCo2Result> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (!Number.isInteger(jahr) || jahr < 2000 || jahr > 2100)
     return { ok: false, error: "Ungültiges Abrechnungsjahr." };
 
@@ -41,7 +41,7 @@ export async function speichereNkCo2(
     },
     { onConflict: "mieter_id,jahr" },
   );
-  if (error) return { ok: false, error: "Speichern fehlgeschlagen." };
+  if (error) return { ok: false, error: "Nicht gespeichert — bitte noch einmal versuchen." };
 
   revalidatePath(`/tenants/${mieterId}/nk`);
   return { ok: true };
@@ -50,7 +50,7 @@ export async function speichereNkCo2(
 export async function loescheNkCo2(mieterId: string, jahr: number): Promise<NkCo2Result> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const { error } = await supabase
     .from("nk_co2")
@@ -73,7 +73,7 @@ export async function bucheCo2Vermieteranteil(
 ): Promise<NkCo2Result & { betrag?: number }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const [{ data: row }, { data: tenant }] = await Promise.all([
     supabase

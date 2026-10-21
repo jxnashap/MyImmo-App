@@ -1,4 +1,6 @@
 "use client";
+
+import Link from "next/link";
 import { useVorgang } from "@/lib/hooks/useVorgang";
 import { Save, FileText } from "lucide-react";
 
@@ -271,8 +273,9 @@ export default function DocGenerator({
               color: "var(--amber)",
             }}
           >
-            Tipp: Hinterlege deinen Absender unter <strong>Einstellungen</strong>, dann ist der
-            Briefkopf automatisch gefüllt.
+            Tipp: Hinterlege deinen Absender unter{" "}
+            <Link href="/einstellungen?tab=profil" style={{ color: "inherit", textDecoration: "underline" }}>Einstellungen → Profil</Link>,
+            dann ist der Briefkopf automatisch gefüllt.
           </div>
         )}
 
@@ -715,7 +718,7 @@ export default function DocGenerator({
               startAblegen(async () => {
                 const res = await speichereBrief(tenant.id, felder, {}, ablageVorgang.aktuell());
                 if (res.ok) ablageVorgang.abgeschlossen();
-                toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.", res.ok ? "success" : "error");
+                toast(res.ok ? "Beim Mieter & im Archiv gespeichert ✓" : res.error ?? "Nicht gespeichert — bitte noch einmal versuchen.", res.ok ? "success" : "error");
               })
             }
           >

@@ -31,7 +31,7 @@ export default async function NeuerVerbrauchPage(props: { searchParams: Promise<
         <input type="hidden" name="back" value={back} />
         <div className="form-row">
           <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" required defaultValue={heute} /></div>
-          <div className="form-group"><label>Immobilie *</label>
+          <div className="form-group"><label>Objekt *</label>
             <select name="prop_id" defaultValue={searchParams.prop ?? ""} required>
               <option value="">– wählen –</option>
               {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}

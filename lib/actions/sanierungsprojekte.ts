@@ -58,7 +58,7 @@ export async function speichereSanierungsprojekt(eingabe: {
   erzwingen?: boolean;
 }): Promise<{ ok: true; id: string; stand: string } | Fehler> {
   const { supabase, user } = await anmeldung();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (istDemoKonto(user.email)) return { error: DEMO };
   if (!istArt(eingabe.art)) return { error: "Unbekannte Art." };
   const name = projektName(eingabe.name);
@@ -99,7 +99,7 @@ export async function speichereSanierungsprojekt(eingabe: {
 /** Eigene Projekte und Vorlagen, neueste zuerst. `eingerichtet: false` = Tabelle fehlt noch. */
 export async function ladeSanierungsprojekte(): Promise<{ ok: true; liste: ProjektZeile[]; eingerichtet: boolean } | Fehler> {
   const { supabase, user } = await anmeldung();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (istDemoKonto(user.email)) return { ok: true, liste: [], eingerichtet: true };
   const { data, error } = await supabase
     .from("sanierungsprojekte")
@@ -120,7 +120,7 @@ export async function ladeSanierungsprojekt(
   id: string,
 ): Promise<{ ok: true; id: string; name: string; stand: string } & ({ art: "projekt"; entwurf: Entwurf } | { art: "vorlage"; vorlage: Vorlage }) | Fehler> {
   const { supabase, user } = await anmeldung();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (!UUID.test(id)) return { error: "Unbekanntes Projekt." };
   const { data, error } = await supabase
     .from("sanierungsprojekte")
@@ -147,7 +147,7 @@ export async function ladeSanierungsprojekt(
 /** Projekt oder Vorlage löschen. */
 export async function loescheSanierungsprojekt(id: string): Promise<{ ok: true } | Fehler> {
   const { supabase, user } = await anmeldung();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (istDemoKonto(user.email)) return { error: DEMO };
   if (!UUID.test(id)) return { error: "Unbekanntes Projekt." };
   const { data, error } = await supabase.from("sanierungsprojekte").delete().eq("id", id).eq("user_id", user.id).select("id").maybeSingle();

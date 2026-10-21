@@ -62,9 +62,9 @@ export default async function KreditePage() {
       <div className="topbar">
         <div>
           <div className="topbar-title">Kredite &amp; Finanzierung</div>
-          <div className="topbar-sub">Darlehen, Zinsbindung, Restschuld laut deinem letzten Kontoauszug</div>
+          <div className="topbar-sub">Kredite, Zinsbindung, Restschuld laut deinem letzten Kontoauszug</div>
         </div>
-        <Link href="/kredite/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Darlehen</Link>
+        <Link href="/kredite/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Kredit</Link>
       </div>
       <hr className="topbar-rule" />
 
@@ -91,7 +91,7 @@ export default async function KreditePage() {
                 <div key={k.id} className="listen-zeile">
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: w.color, flexShrink: 0 }} />
                   <span className="listen-zeile-text">
-                    <span className="listen-zeile-titel">{k.bezeichnung || "Darlehen"}</span>
+                    <span className="listen-zeile-titel">{k.bezeichnung || "Kredit"}</span>
                     <span className="listen-zeile-sub">{(k.prop_id && nameOf.get(k.prop_id)) || "–"}{k.bank ? ` · ${k.bank}` : ""} · {zahl(k.zinssatz ?? 0, 1)} %</span>
                   </span>
                   <span className="listen-zeile-zahl"><b style={{ color: w.color }}>{datum(k.zinsbindung)}</b><small>{w.label}</small></span>
@@ -106,9 +106,9 @@ export default async function KreditePage() {
       {list.length === 0 ? (
         <Leer
           icon={Landmark}
-          titel="Noch keine Darlehen"
-          text="Trage deine Finanzierungen ein — mit der Restschuld laut letztem Kontoauszug. MyImmo zeigt daraus Raten, Zins- und Tilgungsanteil und erinnert rechtzeitig an das Ende der Zinsbindung. Die Restschuld schreibt MyImmo nicht selbst fort: Trag den neuen Stand ein, wenn der nächste Auszug kommt."
-          aktion={{ href: "/kredite/new", label: "Darlehen anlegen" }}
+          titel="Noch keine Kredite"
+          text="Trag deine Kredite mit der Restschuld laut letztem Kontoauszug ein. Die Restschuld schreibt MyImmo nicht selbst fort — trag den neuen Stand ein, wenn der nächste Auszug kommt."
+          aktion={{ href: "/kredite/new", label: "Kredit anlegen" }}
         />
       ) : (
         <KrediteListe rows={list} properties={properties} />
@@ -127,7 +127,7 @@ export default async function KreditePage() {
               <tbody>
                 {auslauf.map((z) => (
                   <tr key={z.propId}>
-                    <td><Link href={`/properties/${z.propId}`}>{z.name}</Link>{z.kredite > 1 && <span style={{ color: "var(--faint)" }}> · {z.kredite} Darlehen</span>}</td>
+                    <td><Link href={`/properties/${z.propId}`}>{z.name}</Link>{z.kredite > 1 && <span style={{ color: "var(--faint)" }}> · {z.kredite} Kredite</span>}</td>
                     <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                       {z.auslaufProzent != null && <span style={{ marginRight: 6 }}>{z.auslaufProzent.toLocaleString("de-DE")}&nbsp;%</span>}
                       <span className={`badge ${STUFE[z.stufe].cls}`}>{STUFE[z.stufe].label}</span>

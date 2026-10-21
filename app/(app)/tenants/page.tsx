@@ -4,6 +4,7 @@ import { Plus, User, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { euro, datum } from "@/lib/format";
 import FilterBar, { type FilterDef } from "@/components/filters/FilterBar";
+import Leer from "@/components/Leer";
 import type { Tenant, Property } from "@/lib/types";
 
 export default async function TenantsPage(props0: { searchParams: Promise<{ q?: string; prop?: string }> }) {
@@ -30,7 +31,7 @@ export default async function TenantsPage(props0: { searchParams: Promise<{ q?: 
 
   const filters: FilterDef[] = [
     { name: "q", label: "Suche", variant: "search", placeholder: "Name, Einheit, E-Mail…", options: [] },
-    { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...propList.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
+    { name: "prop", label: "Objekt", icon: "home", options: [{ value: "", label: "Alle Objekte" }, ...propList.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
   ];
 
   // Ausgezogene Mieter zaehlten in den KPIs voll mit: Wer seit Jahren
@@ -59,6 +60,8 @@ export default async function TenantsPage(props0: { searchParams: Promise<{ q?: 
       </div>
       <hr className="topbar-rule" />
 
+      {/* Kacheln erst mit Mietern (21.10.2026) — vier Nullen sagen einem neuen Konto nichts. */}
+      {alle.length > 0 && (
       <div className="staffel grid-4 mb-20">
         <div className="kpi-card" title={ehemalige > 0 ? `${ehemalige} bereits ausgezogen` : undefined}>
           <div className="kpi-label">Aktive Mietverhältnisse</div>
@@ -66,28 +69,23 @@ export default async function TenantsPage(props0: { searchParams: Promise<{ q?: 
         </div>
         <div className="kpi-card" title="Nur laufende Mietverhältnisse"><div className="kpi-label">Kaltmiete / Mo.</div><div className="kpi-value" style={{ color: "var(--green)" }}>{euro(gesamtMiete)}</div></div>
         <div className="kpi-card" title="Nur laufende Mietverhältnisse"><div className="kpi-label">Kautionen</div><div className="kpi-value">{euro(gesamtKaution)}</div></div>
-        <div className="kpi-card" title="Nur laufende Mietverhältnisse"><div className="kpi-label">Kaution offen</div><div className="kpi-value" style={{ color: offeneKaution > 0 ? "var(--amber)" : "var(--green)" }}>{offeneKaution}</div></div>
+        <div className="kpi-card" title="Laufende Mietverhältnisse, bei denen die Kaution nicht als erhalten markiert ist"><div className="kpi-label">Kaution noch nicht erhalten</div><div className="kpi-value" style={{ color: offeneKaution > 0 ? "var(--amber)" : "var(--green)" }}>{offeneKaution}</div></div>
       </div>
+      )}
 
       <FilterBar filters={filters} />
 
       {list.length === 0 ? (
-        <div className="staffel prop-grid">
-          <div className="empty" style={{ gridColumn: "1/-1" }}>
-            <User className="empty-icon" size={36} color="var(--faint)" />
-            {alle.length > 0 ? (
-              <>
-                <h4>Keine Treffer</h4>
-                <p>Kein Mieter passt zur aktuellen Suche/Filterung.</p>
-              </>
-            ) : (
-              <>
-                <h4>Noch keine Mieter</h4>
-                <p>Füge deinen ersten Mieter hinzu.</p>
-              </>
-            )}
-          </div>
-        </div>
+        alle.length > 0 ? (
+          <Leer icon={User} art="filter" titel="Keine Treffer" text="Kein Mieter passt zur aktuellen Suche oder zum gewählten Objekt." />
+        ) : (
+          <Leer
+            icon={User}
+            titel="Noch keine Mieter"
+            text="Mit Kaltmiete und Mietbeginn angelegt, entstehen daraus Mietkonto, Fristen und Nebenkostenabrechnung."
+            aktion={{ href: "/tenants/new", label: "Mieter anlegen" }}
+          />
+        )
       ) : (
         <div className="section">
           <div className="section-body listen">

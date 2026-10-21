@@ -119,7 +119,7 @@ export type BriefZustellLage = { sperre: string | null; warnungen: string[]; an:
 export async function pruefeBriefZustellung(mieterId: string): Promise<BriefZustellLage> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const lage = await ladeZustellLage(supabase, user.id, mieterId, { jahr: null });
   if ("error" in lage) return { error: lage.error };
   return { sperre: lage.sperre, warnungen: lage.warnungen, an: lage.empfaenger.map((e) => e.email ?? "Portal-Konto") };
@@ -133,7 +133,7 @@ export async function speichereBrief(
 ): Promise<DokumentResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   // Zustellen nur nach derselben Prüfung wie bei der NK-Abrechnung — die Karte im Browser
   // zeigt sie an, hier ist sie die Schranke (kein verbundenes Konto → nichts zustellen).
@@ -177,7 +177,7 @@ export async function speichereNk(
 ): Promise<DokumentResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const abrJahr = Number(jahr) || new Date().getFullYear() - 1;
 
@@ -219,7 +219,7 @@ export async function speichereProtokoll(
 ): Promise<DokumentResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   try {
     const doc = await erzeugeProtokollPdf(supabase, user.id, mieterId, fields);

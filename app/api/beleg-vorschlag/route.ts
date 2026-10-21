@@ -25,7 +25,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(req: Request) {
   const { user, supabase } = await getAuthedUser();
-  if (!user) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Du bist nicht mehr angemeldet — bitte neu anmelden." }, { status: 401 });
   const sperre = await featureSperre(supabase, "ki_import");
   if (sperre) return NextResponse.json({ error: sperre }, { status: 402 });
   if (!kiBereit()) return NextResponse.json({ error: KI_NICHT_BEREIT }, { status: 503 });

@@ -135,7 +135,7 @@ async function autoBuchungen(
 
 /** Zusatz für die Erfolgsmeldung, wenn die Vorlagen-Pflege scheiterte. */
 const VORLAGEN_HINWEIS =
-  " Die automatischen Buchungsvorlagen konnten nicht aktualisiert werden — bitte auf /cashflow prüfen.";
+  " Die automatischen Buchungsvorlagen konnten nicht aktualisiert werden — bitte unter „Ein- & Ausgaben“ → „Wiederkehrende Buchungen“ prüfen.";
 const KAUFPRUEFUNG_HINWEIS =
   " Die Kaufprüfung ließ sich nicht mit dem Objekt verknüpfen (vielleicht schon übernommen) — sie steht in BuyImmo weiter als offen.";
 
@@ -193,7 +193,7 @@ export async function createProperty(formData: FormData) {
   redirect(
     flashUrl(
       neu?.id ? `/properties/${neu.id}` : "/properties",
-      "Immobilie angelegt." + (vorlagenOk ? "" : VORLAGEN_HINWEIS) + (verknuepft ? "" : KAUFPRUEFUNG_HINWEIS),
+      "Objekt angelegt." + (vorlagenOk ? "" : VORLAGEN_HINWEIS) + (verknuepft ? "" : KAUFPRUEFUNG_HINWEIS),
     ),
   );
 }
@@ -242,7 +242,7 @@ export async function updateProperty(id: string, formData: FormData) {
   // /properties/<id>/edit, und der Zurueck-Knopf dort zeigt ebenfalls auf die
   // Detailseite. Wer in die Liste geworfen wird, muss sein Objekt nach jedem
   // Speichern neu suchen. (createProperty macht es bereits so.)
-  redirect(flashUrl(`/properties/${id}`, "Immobilie gespeichert." + (vorlagenOk ? "" : VORLAGEN_HINWEIS)));
+  redirect(flashUrl(`/properties/${id}`, "Objekt gespeichert." + (vorlagenOk ? "" : VORLAGEN_HINWEIS)));
 }
 
 export async function deleteProperty(id: string) {
@@ -376,7 +376,7 @@ export async function setzeWegRuecklage(propId: string, fd: FormData): Promise<{
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const e = ruecklageEintragAus(fd.get("jahr"), fd.get("zufuehrung"), fd.get("entnahme"));
   if ("fehler" in e) return { ok: false, error: e.fehler };
   const { data: p, error: leseFehler } = await supabase
@@ -396,7 +396,7 @@ export async function entferneWegRuecklage(propId: string, jahr: number): Promis
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (!Number.isInteger(jahr)) return { ok: false, error: "Eintrag nicht gefunden." };
   const { data: p, error: leseFehler } = await supabase
     .from("properties").select("weg_ruecklage").eq("id", propId).eq("user_id", user.id).maybeSingle();

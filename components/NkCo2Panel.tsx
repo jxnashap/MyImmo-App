@@ -70,7 +70,7 @@ export default function NkCo2Panel({
     if (patch?.gewerbe ?? gewerbe) fd.set("gewerbe", "on");
     startSave(async () => {
       const res = await speichereNkCo2(mieterId, jahr, fd);
-      toast(res.ok ? "CO₂-Daten gespeichert ✓" : res.error ?? "Speichern fehlgeschlagen.", res.ok ? "success" : "error");
+      toast(res.ok ? "CO₂-Daten gespeichert ✓" : res.error ?? "Nicht gespeichert — bitte noch einmal versuchen.", res.ok ? "success" : "error");
       if (res.ok) router.refresh();
     });
   };

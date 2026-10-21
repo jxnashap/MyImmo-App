@@ -22,8 +22,8 @@ export type NavItem = { href: string; label: string; icon?: LucideIcon; paragrap
 // (Vorschlag des Feedbacks) wäre die schlechtere Lösung — wer die App kennt,
 // sucht dann.
 export const VERWALTEN: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: BarChart3 },
-  { href: "/properties", label: "Immobilien", icon: Home },
+  { href: "/", label: "Übersicht", icon: BarChart3 },
+  { href: "/properties", label: "Objekte", icon: Home },
   { href: "/tenants", label: "Mieter", icon: User },
   { href: "/cashflow", label: "Ein- & Ausgaben", icon: Banknote },
   // Termine & Fristen (Gesamtprüfung C47): vorher nur über das Dashboard erreichbar, nicht in der

@@ -38,7 +38,7 @@ export default async function KostenEditPage(
         <input type="hidden" name="back" value={back} />
         <div className="form-row">
           <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" defaultValue={k.buchungsdatum ?? ""} required /></div>
-          <div className="form-group"><label>Immobilie *</label>
+          <div className="form-group"><label>Objekt *</label>
             <select name="prop_id" defaultValue={k.prop_id ?? ""} required>
               <option value="">– wählen –</option>
               {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}

@@ -49,7 +49,7 @@ export async function meldeZaehlerstand(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const art = String(formData.get("art") ?? "Strom");
   const stand = parseStand(String(formData.get("stand") ?? ""));
@@ -105,7 +105,7 @@ export async function uebernehmeZaehlerstand(meldungId: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   // B07 (11.10.2026): Erst BEANSPRUCHEN — bedingt auf „noch nicht übernommen“. Ein Doppelklick oder ein
   // paralleler Aufruf findet die Meldung danach schon übernommen und bucht keinen zweiten Verbrauch.

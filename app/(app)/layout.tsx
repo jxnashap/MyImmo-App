@@ -240,7 +240,8 @@ export default async function RootLayout({
                 <DemoSperre />
               </Suspense>
             )}
-            <OnboardingTour neuerNutzer={(props ?? []).length === 0} />
+            {/* Startet nur aus den Einstellungen (21.10.2026) — neue Vermieter führt die Start-Checkliste. */}
+            <OnboardingTour />
             <div className="main-wrap">
               {/* Demo-Hinweis mit Ausgang (Early Access / Demo beenden).
                   Begründung in components/DemoLeiste.tsx. */}

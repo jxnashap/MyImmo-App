@@ -12,7 +12,7 @@ import {
 } from "@/lib/importCsv";
 import { importiereDaten, type ImportAktionErgebnis } from "@/lib/actions/importDaten";
 
-const TYP_LABEL: Record<ImportTyp, string> = { objekte: "Immobilien / Objekte", mieter: "Mieter" };
+const TYP_LABEL: Record<ImportTyp, string> = { objekte: "Objekte", mieter: "Mieter" };
 
 export default function ImportAssistent({ objektNamen }: { objektNamen: string[] }) {
   const [typ, setTyp] = useState<ImportTyp>("objekte");

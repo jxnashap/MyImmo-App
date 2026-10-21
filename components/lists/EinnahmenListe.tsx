@@ -30,7 +30,7 @@ export default function EinnahmenListe({
 
   return (
     <div className="table-scroll"><table className="list-table">
-      <thead><tr><th>Datum</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th></tr></thead>
+      <thead><tr><th>Datum</th><th>Objekt</th><th>Kategorie</th><th>Beschreibung</th><th>Betrag</th></tr></thead>
       <ExpandableRows cols={5} limit={10} label="weitere Buchungen">
         {rows.map((e) => (
           <tr
@@ -60,7 +60,7 @@ export default function EinnahmenListe({
                 <input type="hidden" name="back" value="/einnahmen" />
                 <div className="form-row">
                   <div className="form-group"><label>Datum *</label><input type="date" name="buchungsdatum" defaultValue={offen.buchungsdatum ?? ""} required /></div>
-                  <div className="form-group"><label>Immobilie *</label>
+                  <div className="form-group"><label>Objekt *</label>
                     <select name="prop_id" defaultValue={offen.prop_id ?? ""} required>
                       <option value="">– wählen –</option>
                       {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}

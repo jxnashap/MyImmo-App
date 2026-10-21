@@ -100,7 +100,7 @@ export default function PropertyForm({
   return (
     <form action={action} className="form-box" style={{ maxWidth: 640 }}>
       {!property && ausKalkulation && <input type="hidden" name="aus_kalkulation" value={ausKalkulation} />}
-      <h3>{property ? "Immobilie bearbeiten" : "Immobilie erfassen"}</h3>
+      <h3>{property ? "Objekt bearbeiten" : "Objekt erfassen"}</h3>
       <p>{property ? "Objektdaten aktualisieren." : "Neues Objekt zum Portfolio hinzufügen."}</p>
 
       <div className="form-row">

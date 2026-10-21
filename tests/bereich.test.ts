@@ -65,8 +65,11 @@ describe("Bereich folgt der Adresse", () => {
     const aufbau = [...UEBERBLICK, ...WEG, ...WERKZEUGE].map((n) => n.href);
     for (const p of ["/kauf", "/verkauf", "/bewertung", "/afa-assistent", "/makler", "/fahrplan", "/sanierung"]) {
       expect(aufbau, p).toContain(p);
-      expect(eigenerBereich(p), p).toBe("aufbau");
+      // Der AfA-Assistent ist seit 21.10.2026 gemeinsam (Objekt-Check und Steuer führen aus MyImmo dorthin).
+      expect(eigenerBereich(p), p).toBe(p === "/afa-assistent" ? null : "aufbau");
     }
+    expect(bereichFuer("/afa-assistent", "verwaltung")).toBe("verwaltung");
+    expect(bereichFuer("/afa-assistent", "aufbau")).toBe("aufbau");
   });
 
   it("die Kommandozentrale ist in der Demo frei", () => {

@@ -131,7 +131,7 @@ export default function BuchungForm({
           <input type="date" name="buchungsdatum" required defaultValue={row?.buchungsdatum ?? datumInitial} />
         </div>
         <div className="form-group">
-          <label>Immobilie *</label>
+          <label>Objekt *</label>
           <select name="prop_id" required value={propId} onChange={(e) => setPropId(e.target.value)}>
             <option value="">– wählen –</option>
             {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}

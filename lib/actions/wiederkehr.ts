@@ -30,7 +30,7 @@ async function uid() {
 
 export async function createVorlage(fd: FormData): Promise<WkResult> {
   const { supabase, user } = await uid();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const art = fd.get("art") === "einnahme" ? "einnahme" : "kosten";
   const kategorie = text(fd.get("kategorie"));
@@ -59,7 +59,7 @@ export async function createVorlage(fd: FormData): Promise<WkResult> {
     ende_datum: ende,
     aktiv: true,
   });
-  if (error) return { ok: false, error: "Speichern fehlgeschlagen." };
+  if (error) return { ok: false, error: "Nicht gespeichert — bitte noch einmal versuchen." };
 
   revalidatePath("/cashflow");
   return { ok: true };
@@ -67,7 +67,7 @@ export async function createVorlage(fd: FormData): Promise<WkResult> {
 
 export async function setVorlageAktiv(id: string, aktiv: boolean): Promise<WkResult> {
   const { supabase, user } = await uid();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase
     .from("wiederkehrende_buchungen")
     .update({ aktiv })
@@ -82,7 +82,7 @@ export async function setVorlageAktiv(id: string, aktiv: boolean): Promise<WkRes
 // wiederkehr_id wird durch ON DELETE SET NULL zu einer normalen Buchung).
 export async function deleteVorlage(id: string): Promise<WkResult> {
   const { supabase, user } = await uid();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase
     .from("wiederkehrende_buchungen")
     .delete()
@@ -102,7 +102,7 @@ export async function erzeugeBuchungen(
   vorlageId: string,
 ): Promise<{ ok: boolean; anzahl: number; error?: string }> {
   const { supabase, user } = await uid();
-  if (!user) return { ok: false, anzahl: 0, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, anzahl: 0, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const { data: v, error: vorlageFehler } = await supabase
     .from("wiederkehrende_buchungen")

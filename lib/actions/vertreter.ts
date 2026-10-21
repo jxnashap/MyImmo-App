@@ -24,7 +24,7 @@ const datum = (fd: FormData, k: string): string | null | false => {
 export async function speichereVertreter(fd: FormData): Promise<Ergebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const id = String(fd.get("id") ?? "").trim();
   const nachname = text(fd, "nachname", 100);
@@ -107,7 +107,7 @@ export async function speichereVertreter(fd: FormData): Promise<Ergebnis> {
 export async function entferneVertreter(id: string): Promise<Ergebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase.from("vertreter").delete().eq("id", id).eq("user_id", user.id);
   if (error) return { error: "Der Vertreter konnte nicht entfernt werden." };
   revalidatePath("/einstellungen");
