@@ -151,3 +151,70 @@ describe("/auth/signout", () => {
     expect(`${ort(leer).pathname}${ort(leer).search}`).toBe("/login");
   });
 });
+
+describe("Einladung mit bestehendem Konto einlösen (21.10.2026)", () => {
+  const login = readFileSync("app/(app)/login/page.tsx", "utf8");
+  const portal = readFileSync("components/PortalAnsicht.tsx", "utf8");
+
+  it("nach der Anmeldung aus einem Einladungslink wird der Code eingelöst", () => {
+    expect(login).toMatch(/if \(eingeladen && code && kontoRolle === "mieter"\) \{\s*try \{\s*await loeseEinladungEin\(code\)/);
+  });
+
+  it("das Portal ohne Wohnung bietet das Code-Feld an — nicht in der Vorschau des Vermieters", () => {
+    expect(portal).toContain("{!vorschau && <EinladungEinloesen />}");
+    expect(portal).not.toContain("die Verknüpfung\n                passiert automatisch bei der Registrierung");
+  });
+});
+
+describe("loeseEinladungEin()", () => {
+  type Rpc = { data: unknown; error: unknown };
+  let rpcAntwort: Rpc = { data: { ok: true }, error: null };
+  let angemeldet = true;
+  const rpc = vi.fn(async () => rpcAntwort);
+
+  async function lade() {
+    vi.resetModules();
+    vi.doMock("@/lib/supabase/server", () => ({
+      createClient: async () => ({
+        auth: { getUser: async () => ({ data: { user: angemeldet ? { id: "u1" } : null } }) },
+        rpc,
+      }),
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({ createAdminClient: () => null }));
+    vi.doMock("@/lib/net/bremse", () => ({ darfWeiter: async () => true, ZU_VIELE: "zu viele" }));
+    return import("@/lib/actions/freischaltung");
+  }
+
+  beforeEach(() => {
+    rpcAntwort = { data: { ok: true }, error: null };
+    angemeldet = true;
+    rpc.mockClear();
+  });
+
+  it("löst über die Datenbank-Funktion ein, Code großgeschrieben", async () => {
+    const { loeseEinladungEin } = await lade();
+    expect(await loeseEinladungEin(" mi-ab12-cd34 ")).toEqual({ ok: true });
+    expect(rpc).toHaveBeenCalledWith("einladungscode_einloesen", { p_code: "MI-AB12-CD34" });
+  });
+
+  it("falsches Format: kein Datenbank-Aufruf", async () => {
+    const { loeseEinladungEin } = await lade();
+    expect((await loeseEinladungEin("hallo")).ok).toBe(false);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("neutrale Datenbank-Meldung wird lesbar; Adress-Hinweis bleibt wörtlich", async () => {
+    const { loeseEinladungEin } = await lade();
+    rpcAntwort = { data: { ok: false, fehler: "Code ungueltig, bereits benutzt oder abgelaufen." }, error: null };
+    expect((await loeseEinladungEin("MI-AB12-CD34")).fehler).toContain("ungültig, abgelaufen oder schon benutzt");
+    rpcAntwort = { data: { ok: false, fehler: "Diese Einladung gilt für eine andere E-Mail-Adresse. Bitte mit der Adresse anmelden, an die die Einladung ging." }, error: null };
+    expect((await loeseEinladungEin("MI-AB12-CD34")).fehler).toContain("andere E-Mail-Adresse");
+  });
+
+  it("ohne Anmeldung nichts", async () => {
+    angemeldet = false;
+    const { loeseEinladungEin } = await lade();
+    expect((await loeseEinladungEin("MI-AB12-CD34")).ok).toBe(false);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});

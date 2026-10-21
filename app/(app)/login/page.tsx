@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, KeyRound, Home, Wrench, Building2, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import BrandMark from "@/components/BrandMark";
-import { bereiteRegistrierungVor, pruefeEinladungscode } from "@/lib/actions/freischaltung";
+import { bereiteRegistrierungVor, loeseEinladungEin, pruefeEinladungscode } from "@/lib/actions/freischaltung";
 import { PASSWORT_LECK_HINWEIS, PASSWORT_MIN, PASSWORT_REGEL, passwortAblehnung, pruefePasswort } from "@/lib/passwort";
 import { RESET_ZIEL } from "@/lib/passwortWechsel";
 import { HILFE_MAILTO } from "@/lib/preise";
@@ -223,6 +223,16 @@ export default function LoginPage() {
         setMfaOffen(true);
         setLoading(false);
         return;
+      }
+      // Aus einer Einladungsmail gekommen, aber schon ein Konto: die neue Wohnung gleich
+      // verknüpfen (vorher musste man sich dafür ein zweites Mal registrieren — ging nicht).
+      // Scheitert es, zeigt das Portal das Code-Feld; die Anmeldung selbst hängt nicht daran.
+      if (eingeladen && code && kontoRolle === "mieter") {
+        try {
+          await loeseEinladungEin(code);
+        } catch {
+          // Ohne Folgen — siehe oben.
+        }
       }
       // Harte Navigation: stellt sicher, dass der Server die neue Session-
       // Cookie sofort sieht — kein manuelles Neuladen mehr nötig.

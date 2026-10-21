@@ -25,6 +25,7 @@ import { NotfallKasten } from "@/components/NotfallHinweis";
 import { baueMieterAufgaben } from "@/lib/mieterAufgaben";
 import { heuteBerlin } from "@/lib/zeitraum";
 import GlassLeiste from "@/components/GlassLeiste";
+import EinladungEinloesen from "@/components/EinladungEinloesen";
 
 export const PORTAL_TABS = [
   { key: "wohnung", label: "Wohnung", icon: Home },
@@ -87,9 +88,10 @@ export default function PortalAnsicht({
               <Home size={36} color="var(--faint)" />
               <p style={{ marginTop: 12, fontSize: 14, fontWeight: 600 }}>Noch keine Wohnung verknüpft</p>
               <p style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
-                Bitte frage deinen Vermieter nach einem Einladungscode — die Verknüpfung
-                passiert automatisch bei der Registrierung mit dem Code.
+                Hast du von deinem Vermieter einen Einladungscode bekommen? Dann gib ihn hier ein —
+                deine Wohnung erscheint sofort. Sonst frag ihn nach einer Einladung.
               </p>
+              {!vorschau && <EinladungEinloesen />}
             </div>
           </div>
         ) : (
