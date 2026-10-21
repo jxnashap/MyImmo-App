@@ -6,6 +6,7 @@
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { BEWERBUNG_SLOTS } from "@/lib/bewerbungsDokumente";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
 
 // Best-effort-Limiter je Serverless-Instanz: max. 3 Bewerbungen / 10 Min / IP.
 const hits = new Map<string, number[]>();
@@ -78,7 +79,8 @@ export async function reicheBewerbungEin(
 
 // Erlaubte Dokument-Typen (Whitelist — muss zur RPC passen).
 const DATEI_TYPEN = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
-const DATEI_MAX_BYTES = 6 * 1024 * 1024; // 6 MB je Datei (RPC-Grenze: 8 MB Base64)
+// Je Datei eine Anfrage: höchstens 4 MB — mehr nimmt Vercel nicht an (lib/anhaenge.ts, gemessen 21.10.2026).
+const DATEI_MAX_BYTES = ANFRAGE_MAX_BYTES;
 
 /**
  * Ein Dokument (Gehaltsabrechnung, SCHUFA, …) an eine soeben eingereichte
@@ -109,7 +111,7 @@ export async function haengeBewerbungDateiAn(
   const slot = SLOTS.has(slotRoh) ? slotRoh : "sonstiges";
   if (!(datei instanceof File) || datei.size === 0) return { ok: false, fehler: "Keine Datei gewählt." };
   if (!DATEI_TYPEN.has(datei.type)) return { ok: false, fehler: "Nur PDF-, JPG-, PNG- oder WebP-Dateien." };
-  if (datei.size > DATEI_MAX_BYTES) return { ok: false, fehler: `„${datei.name}“ ist größer als 6 MB.` };
+  if (datei.size > DATEI_MAX_BYTES) return { ok: false, fehler: `„${datei.name}“ ist größer als 4 MB.` };
 
   const puffer = Buffer.from(await datei.arrayBuffer());
   const dataUrl = `data:${datei.type};base64,${puffer.toString("base64")}`;

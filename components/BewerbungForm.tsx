@@ -10,9 +10,12 @@ import { CheckCircle2, FileText, Paperclip, X } from "lucide-react";
 import { haengeBewerbungDateiAn, reicheBewerbungEin } from "@/lib/actions/bewerbenPublic";
 import { BEWERBUNG_SLOTS, SLOT_SONSTIGES, type DokumentSlot } from "@/lib/bewerbungsDokumente";
 import SignaturPad from "@/components/SignaturPad";
+import { ANFRAGE_MAX_BYTES } from "@/lib/anhaenge";
+import { verkleinereAlle } from "@/lib/bildVerkleinern";
 
 const MAX_DATEIEN = 12;
-const MAX_BYTES = 6 * 1024 * 1024; // 6 MB — gleiche Grenze wie Server/RPC
+// Je Datei eine Anfrage: höchstens 4 MB, mehr nimmt Vercel nicht an (lib/anhaenge.ts). Fotos werden vorher verkleinert.
+const MAX_BYTES = ANFRAGE_MAX_BYTES;
 const TYPEN = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 
 type Auswahl = { file: File; slot: string };
@@ -50,22 +53,23 @@ export default function BewerbungForm({
     dateiInput.current?.click();
   };
 
-  const dateienGewaehlt = (liste: FileList | null) => {
+  const dateienGewaehlt = async (liste: FileList | null) => {
     if (!liste) return;
     setDateiFehler(null);
     const slot = aktiverSlot.current;
     const neu: Auswahl[] = [...dateien];
     const probleme: string[] = [];
-    for (const f of Array.from(liste)) {
+    const roh = Array.from(liste);
+    if (dateiInput.current) dateiInput.current.value = "";
+    for (const f of await verkleinereAlle(roh)) {
       if (neu.length >= MAX_DATEIEN) { probleme.push(`Maximal ${MAX_DATEIEN} Dokumente.`); break; }
       if (!TYPEN.has(f.type)) { probleme.push(`„${f.name}“: nur PDF, JPG, PNG oder WebP.`); continue; }
-      if (f.size > MAX_BYTES) { probleme.push(`„${f.name}“ ist größer als 6 MB.`); continue; }
+      if (f.size > MAX_BYTES) { probleme.push(`„${f.name}“ ist größer als 4 MB — ein Foto oder ein kleiner gespeichertes PDF geht.`); continue; }
       if (neu.some((d) => d.file.name === f.name && d.file.size === f.size)) continue;
       neu.push({ file: f, slot });
     }
     setDateien(neu);
     if (probleme.length) setDateiFehler(probleme.join(" "));
-    if (dateiInput.current) dateiInput.current.value = "";
   };
 
   if (gesendet) {
@@ -196,7 +200,7 @@ export default function BewerbungForm({
           accept="application/pdf,image/jpeg,image/png,image/webp"
           multiple
           style={{ display: "none" }}
-          onChange={(e) => dateienGewaehlt(e.target.files)}
+          onChange={(e) => void dateienGewaehlt(e.target.files)}
         />
 
         {slots.length > 0 && (
@@ -249,7 +253,7 @@ export default function BewerbungForm({
               <Paperclip size={14} /> Dokumente auswählen
             </button>
             <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: 10 }}>
-              PDF, JPG, PNG oder WebP · insgesamt max. {MAX_DATEIEN} Dateien · je max. 6 MB
+              PDF, JPG, PNG oder WebP · insgesamt max. {MAX_DATEIEN} Dateien · je max. 4 MB (Fotos werden verkleinert)
             </span>
           </div>
           {dateiListe(SLOT_SONSTIGES).length > 0 && (

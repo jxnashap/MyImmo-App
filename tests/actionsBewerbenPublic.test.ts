@@ -204,10 +204,10 @@ describe("Dokumente anhängen", () => {
     expect((await mod.haengeBewerbungDateiAn(TOKEN, TOKEN, fd({ datei: datei(10, "image/svg+xml") }))).ok).toBe(false);
   });
 
-  it("über 6 MB wird abgelehnt", async () => {
+  it("über 4 MB wird abgelehnt", async () => {
     const { db, mod } = await lade();
-    const r = await mod.haengeBewerbungDateiAn(TOKEN, TOKEN, fd({ datei: datei(6 * 1024 * 1024 + 1) }));
-    expect(r.fehler).toContain("größer als 6 MB");
+    const r = await mod.haengeBewerbungDateiAn(TOKEN, TOKEN, fd({ datei: datei(4 * 1024 * 1024 + 1) }));
+    expect(r.fehler).toContain("größer als 4 MB");
     expect(db.zugriffe).toEqual([]);
   });
 

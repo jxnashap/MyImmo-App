@@ -60,6 +60,7 @@ describe("Keine Upload-Grenze über dem, was Vercel annimmt", () => {
     "components/BuchungForm.tsx", "components/lists/KostenListe.tsx", "components/VertreterPanel.tsx",
     "components/DateiZurueckSchicken.tsx", "components/ImportWizard.tsx", "components/NkOcrUpload.tsx",
     "app/(app)/kosten/new/page.tsx", "app/(app)/kosten/[id]/edit/page.tsx",
+    "components/BewerbungForm.tsx", "lib/actions/bewerbenPublic.ts",
   ];
   for (const p of dateien) {
     it(p, () => {
