@@ -273,14 +273,14 @@ im Sanierungs-Guide + Verknüpfung „Kaufprüfung → übernommenes Objekt“) 
     Home-Bildschirm“) und Android (Chrome → „App installieren“): Symbol und Name, Anmelden in der App,
     Flugmodus → Seite „Keine Verbindung“, und ob „Beim Schließen abmelden“ in der installierten App greift.
     Klärt nebenbei, ob iPhone-Web-Apps in der EU weiter im eigenen Fenster laufen (eine Quelle von 2026 widerspricht).
-14. **Einmal echt registrieren (seit 21.10.2026):** Mit einer eigenen Zweit-Adresse als Mieter (Einladung an sie) oder
-    Vermieter registrieren, den Bestätigungslink (a) im selben Browser öffnen → direkt angemeldet, (b) auf einem anderen
-    Gerät → Anmeldeseite „Deine E-Mail-Adresse ist bestätigt“. Endet er auf „Neues Passwort setzen“, die Supabase-Vorlage
-    „Confirm signup“ ansehen (Paket 1, Regel 2).
 13. **`CRON_SECRET` in Vercel (Production) setzen + neu deployen (gefunden 12.10.2026):** Live antworten
     `/api/cron/aussen-auftraege` UND `/api/cron/bewertung` mit 503 „CRON_SECRET nicht gesetzt“ — die Crons laufen also
     nicht. Beliebiges langes Geheimnis; Vercel schickt es selbst als `Authorization: Bearer …` an die Cron-Routen.
     Merkmal danach: `curl https://www.myimmoapp.de/api/cron/bewertung` antwortet 401 statt 503.
+14. **Einmal echt registrieren (seit 21.10.2026):** Mit einer eigenen Zweit-Adresse als Mieter (Einladung an sie) oder
+    Vermieter registrieren, den Bestätigungslink (a) im selben Browser öffnen → direkt angemeldet, (b) auf einem anderen
+    Gerät → Anmeldeseite „Deine E-Mail-Adresse ist bestätigt“. Endet er auf „Neues Passwort setzen“, die Supabase-Vorlage
+    „Confirm signup“ ansehen (Paket 1, Regel 2).
 
 ### ⏰ TERMINIERT — bei jeder Session prüfen, ob fällig
 - ~~**Ab 03.08.2026: KfW-308-Konditionen aktualisieren**~~ ✅ **erledigt 28.08.2026**
