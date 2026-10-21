@@ -308,6 +308,18 @@ Summe geprüft wurde).
 Die Action beanspruchte die Anfrage, legte danach den Auftrag an, verknüpfte und lehnte die übrigen ab — vier Aufrufe. Ein Abbruch nach dem ersten ließ die Anfrage „beauftragt“ ohne Auftrag zurück; die Oberfläche bot keinen Knopf mehr an. Ein „Zurücknehmen“ im Fehlerzweig hilft nicht, wenn die Funktion gar nicht mehr läuft.
 → *Gegenprüfung:* Abhängige Schreibvorgänge in EINE Datenbank-Funktion (security invoker, gleiche RLS); im Test einen späten Schritt scheitern lassen (Prüfregel nur in der Testtransaktion) und zeigen, dass der frühe zurückgerollt ist. Gleichzeitigkeit mit zwei echten Sitzungen prüfen und das Zeitfenster gezielt weiten (eine dritte Sitzung hält eine Zeile, an der die erste mitten in der Funktion wartet) — ohne das blieb die Mutation „Sperre weg“ grün.
 
+**Upload-Grenzen über dem, was der Hoster annimmt (21.10.2026)**
+Die App erlaubte „3 Dateien à 4 MB“ in EINER Anfrage (Schadensmeldung) und versprach anderswo 6, 8, 15 und 20 MB. Vercel nimmt je Funktionsaufruf höchstens 4,5 MB an — darüber kommt 413 `FUNCTION_PAYLOAD_TOO_LARGE`, bevor eine Zeile Code läuft. Zwei Handyfotos genügten; die Action antwortete nie, der Mieter landete auf der Fehlerseite und verlor seine Eingaben. Kein Test konnte es finden, weil Tests die Action direkt aufrufen.
+→ *Gegenprüfung:* Die Plattformgrenze MESSEN (POST mit 1 MB und 5 MB an die Live-Seite, nur Nullbytes, an eine Seite ohne Schreibwirkung). EINE Konstante (`ANFRAGE_MAX_BYTES`) für Browser und Server, die SUMME je Anfrage prüfen, Base64 rechnet ein Drittel drauf; Fotos im Browser verkleinern; Senden in `try`, damit Eingaben stehen bleiben.
+
+**Fehlertexte geworfener Server-Actions kommen nie an (21.10.2026)**
+Next ersetzt in Produktion den Text eines Fehlers, den eine Server-Action WIRFT, durch „An error occurred in the Server Components render …“ (mit `digest`). Komponenten mit `toast(e.message)` zeigten Nutzern diesen englischen Absatz — im Test und in der Entwicklung stand der deutsche Text, deshalb fiel es nicht auf.
+→ *Gegenprüfung:* Erwartbare Fehler als Rückgabe (`{ error }`) oder vorher im Browser prüfen; gefangene Fehler über `fehlerText(e, ersatz)` (`lib/fehlerText.ts`) — der zeigt nur im Browser selbst geworfene Texte. `tests/fehlerText.test.ts` sucht jedes `e.message` in Komponenten.
+
+**Rollenwahl als Schranke beim Anmelden (21.10.2026)**
+Die Anmeldeseite stand nach jedem Abmelden auf „Vermieter“ und meldete einen Mieter mit RICHTIGEM Passwort wieder ab („… für Vermieter gedacht“). Die Rolle steht in der Datenbank, und das Layout leitet ohnehin jedes Konto in seinen Bereich — die Prüfung schützte nichts und sperrte nur aus. Dazu landete der Bestätigungslink der Registrierung ohne eigenes Ziel auf der Site URL, wo der Proxy jeden `code` als „Passwort vergessen“ abfing.
+→ *Gegenprüfung:* Eine Auswahl auf der Seite nie gegen die Datenbank prüfen, wenn die Datenbank die Antwort schon kennt — weiterleiten statt abweisen (`lib/auth/anmeldeZiel.ts`). Jede Mail mit Link braucht ein eigenes Ziel, das nicht vom Abfang eines anderen Wegs erfasst wird; den Weg mit EINER echten Registrierung prüfen.
+
 **Verlauf mit `.limit()` aufsteigend (13.10.2026)**
 `ladeEreignisse` las `order(created_at asc).limit(2000)` und wertete `error` nicht aus: Bei vielen Einträgen fehlten die NEUESTEN, bei einem Fehler war der Verlauf leer — „keine Nachricht des Mieters“.
 → *Gegenprüfung:* Was angezeigt wird, lädt vollständig (`ladeAlle`, Stapel für `.in()`) oder wirft; Test mit 2.500 Einträgen prüft den LETZTEN.

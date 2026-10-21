@@ -144,6 +144,24 @@
 > verlangt eine bestehende `service_zugaenge`-Zeile, nie nur `service_user_id`. (4) Neue RLS-Regel →
 > Datei in `supabase/test/rls/` mit positiver und negativer Probe.
 
+> 🧭 **Durchsicht 21.10.2026 („nur effizienter, rechtssicherer, verständlicher“, Idee im Memory-Repo) — Paket 1 gebaut.**
+> Vier Agenten (Mieter-Weg, Vermieter-Abläufe, Recht, Sprache), Funde im Code gegengeprüft. **Regeln daraus:**
+> (1) **Nach der Anmeldung entscheidet die Rolle des KONTOS** (`lib/auth/anmeldeZiel.ts`: `zielNachAnmeldung`, `heimVon`);
+> die Rollenwahl auf der Seite zählt nur beim Registrieren und für neue Google-Konten — nie abweisen/abmelden (vorher wurde ein
+> Mieter nach dem Abmelden mit richtigem Passwort wieder abgemeldet). Abmelden aus den Portalen → `/login?rolle=…`.
+> (2) **Bestätigungslink der Registrierung → `/auth/callback?bestaetigt=1`** (`bestaetigungsZiel`); scheitert nur der Tausch
+> (anderer Browser), sagt die Anmeldeseite „bestätigt, jetzt anmelden“. Vorher landete er auf der Site URL und der Proxy fing
+> den `code` als Passwort-Reset ab. **Betreiber: einmal echt registrieren und prüfen** (Punkt 14 unten).
+> (3) **Uploads: höchstens `ANFRAGE_MAX_BYTES` (4 MB) je ANFRAGE** (`lib/anhaenge.ts`) — Vercel antwortet darüber mit 413
+> (gemessen: 5 MB → `FUNCTION_PAYLOAD_TOO_LARGE`). Summe prüfen (`pruefeAnhaenge`, Browser UND Server), Base64 in JSON 3 MB
+> (`BASE64_ROH_MAX_BYTES`), Fotos vorher verkleinern (`verkleinereBild`, 2000 px, entfernt auch GPS), Senden in `try`. Keine
+> Grenze darüber versprechen (`tests/anhaenge.test.ts`). Bewerbungs-Upload (6 MB) ist noch offen.
+> (4) **Gefangene Fehler über `fehlerText(e, ersatz)`** (`lib/fehlerText.ts`), nie `e.message` — Next schwärzt geworfene
+> Server-Fehler in Produktion zu einem englischen Satz (`tests/fehlerText.test.ts`).
+> (5) Bestehendes Mieterkonto löst eine neue Einladung im Portal ein (`loeseEinladungEin`, Kasten „Noch keine Wohnung“) oder
+> direkt nach der Anmeldung aus dem Einladungslink. (6) Die installierte App startet auf `/?app=1` — abgemeldet zur Anmeldung.
+> Offen (Pakete 3/4 und Betreiber-Entscheidungen: Tour, Install-Hinweis, Begriffe): Chat 21.10.2026.
+
 ### 👤 NUR DER BETREIBER — offene Punkte (Stand 10.09.2026)
 Alles hier ist **kein Code**, sondern ein Dashboard, ein Anwalt oder ein Blick in einen
 Browser. Ich kann es nicht erledigen und nicht prüfen. **In jeder Session kurz nachfragen,
@@ -255,6 +273,10 @@ im Sanierungs-Guide + Verknüpfung „Kaufprüfung → übernommenes Objekt“) 
     Home-Bildschirm“) und Android (Chrome → „App installieren“): Symbol und Name, Anmelden in der App,
     Flugmodus → Seite „Keine Verbindung“, und ob „Beim Schließen abmelden“ in der installierten App greift.
     Klärt nebenbei, ob iPhone-Web-Apps in der EU weiter im eigenen Fenster laufen (eine Quelle von 2026 widerspricht).
+14. **Einmal echt registrieren (seit 21.10.2026):** Mit einer eigenen Zweit-Adresse als Mieter (Einladung an sie) oder
+    Vermieter registrieren, den Bestätigungslink (a) im selben Browser öffnen → direkt angemeldet, (b) auf einem anderen
+    Gerät → Anmeldeseite „Deine E-Mail-Adresse ist bestätigt“. Endet er auf „Neues Passwort setzen“, die Supabase-Vorlage
+    „Confirm signup“ ansehen (Paket 1, Regel 2).
 13. **`CRON_SECRET` in Vercel (Production) setzen + neu deployen (gefunden 12.10.2026):** Live antworten
     `/api/cron/aussen-auftraege` UND `/api/cron/bewertung` mit 503 „CRON_SECRET nicht gesetzt“ — die Crons laufen also
     nicht. Beliebiges langes Geheimnis; Vercel schickt es selbst als `Authorization: Bearer …` an die Cron-Routen.
