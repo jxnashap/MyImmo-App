@@ -10,6 +10,17 @@
 /** Stand der Konditionen von KfW 261/458, BAFA BEG EM und § 35c (gegen kfw.de/bafa.de geprüft). */
 export const FOERDER_STAND = "BEG-Reform 21.07.2026, geprüft 05.10.2026";
 
+/**
+ * Wichtigster Förder-Killer: Antrag VOR Vorhabensbeginn. EIN Text für den Förder-Check im Kauf UND
+ * den geschätzten Zuschuss im Sanierungs-Guide (Rechtssicherheit 21.10.2026 — dort fehlte er).
+ * Bedingung im Vertrag laut kfw.de/458 (abgerufen 21.10.2026): „… muss ein Lieferungs- oder
+ * Leistungsvertrag vorliegen, in dem eine aufschiebende oder auflösende Bedingung enthalten ist.“
+ */
+export const ANTRAG_VOR_BEGINN = {
+  titel: "Antrag immer VOR Vorhabensbeginn stellen",
+  text: "beim Kauf also vor dem Notarvertrag, bei Sanierung/Heizung vor Auftragsvergabe — einen Vertrag vorher nur mit aufschiebender oder auflösender Bedingung der Förderzusage. Zu spät = Förderung weg. KfW-Kredite laufen über deine Hausbank.",
+} as const;
+
 export type Nutzung = "vermieten" | "eigennutzen";
 export type Vorhaben = "kauf_bestand" | "neubau" | "sanierung" | "heizung";
 

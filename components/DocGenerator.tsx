@@ -33,8 +33,10 @@ import { speichereBrief } from "@/lib/actions/dokumente";
 import { tastaturAktion } from "@/lib/a11y";
 import type { MietkontoZeitraum } from "@/lib/mietkonto";
 import {
+  ART_FORMULIERUNGSHILFE,
   BEGRUENDUNGSMITTEL,
   BEGRUENDUNG_PFLICHT,
+  FORMULIERUNGSHILFE_HINWEIS,
   REPARATUR_HINWEIS,
   SCHRIFTFORM,
   alleMieter,
@@ -298,6 +300,10 @@ export default function DocGenerator({
             </div>
           )}
         </div>
+        {/* Rechtssicherheit (21.10.2026): Fristen und Pflichtfelder ja, Tragfähigkeit von Grund/Erhöhung nein. */}
+        {ART_FORMULIERUNGSHILFE.includes(art) && (
+          <div role="note" className="brief-warnung" style={{ marginBottom: 12 }}>{FORMULIERUNGSHILFE_HINWEIS}</div>
+        )}
         {/* P4 (B39): Die Vorlage deckt Erhaltung ab, keine Modernisierungsankündigung nach § 555c BGB. */}
         {art === "reparatur" && (
           <div role="note" className="brief-warnung" style={{ marginBottom: 12 }}>{REPARATUR_HINWEIS}</div>

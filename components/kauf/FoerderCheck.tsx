@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Building2, Home, ExternalLink, Landmark, Info, TriangleAlert } from "lucide-react";
 import {
-  filterProgramme, FOERDER_STAND, LANDESBANKEN, type Nutzung, type Vorhaben,
+  ANTRAG_VOR_BEGINN, filterProgramme, FOERDER_STAND, LANDESBANKEN, type Nutzung, type Vorhaben,
 } from "@/lib/kauf/foerderung";
 
 const VORHABEN: { id: Vorhaben; label: string }[] = [
@@ -79,8 +79,7 @@ export default function FoerderCheck() {
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "9px 12px", borderRadius: 9, border: "1px solid var(--amber)", background: "rgba(240,160,48,0.08)" }}>
           <TriangleAlert size={14} color="var(--amber)" style={{ flexShrink: 0, marginTop: 1 }} />
           <span style={{ fontSize: 11.5, color: "var(--text)" }}>
-            <strong>Antrag immer VOR Vorhabensbeginn stellen</strong> — beim Kauf also vor dem Notarvertrag,
-            bei Sanierung/Heizung vor Auftragsvergabe. Zu spät = Förderung weg. KfW-Kredite laufen über deine Hausbank.
+            <strong>{ANTRAG_VOR_BEGINN.titel}</strong> — {ANTRAG_VOR_BEGINN.text}
           </span>
         </div>
       )}
