@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
     const wo = (k.prop_id && nameOf.get(k.prop_id)) || "";
     for (const f of kreditFristen(k)) {
       if (!offen("kredit", k.id, f)) continue;
-      add(f.datum, f.label, [k.bezeichnung ?? "Darlehen", wo, f.rechtsgrundlage].filter(Boolean).join(" · "), fristUid("kredit", k.id, f.datum!, f.label));
+      add(f.datum, f.label, [k.bezeichnung ?? "Kredit", wo, f.rechtsgrundlage].filter(Boolean).join(" · "), fristUid("kredit", k.id, f.datum!, f.label));
     }
   }
   for (const p of props ?? []) {

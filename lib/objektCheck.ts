@@ -70,7 +70,7 @@ export function objektCheck(p: CheckObjekt, mieter: CheckMieter[], kredite: Chec
   if (eigeneKredite.length > 0) {
     const ohne = eigeneKredite.filter((k) => !k.auszahlung_datum);
     punkte.push({
-      schluessel: "auszahlung", label: "Auszahlungsdatum der Darlehen", grund: "Frist für das Sonderkündigungsrecht nach 10 Jahren (§ 489 BGB)",
+      schluessel: "auszahlung", label: "Auszahlungsdatum der Kredite", grund: "Frist für das Sonderkündigungsrecht nach 10 Jahren (§ 489 BGB)",
       href: ohne.length === 1 ? `/kredite/${ohne[0].id}/edit` : "/kredite", erfuellt: ohne.length === 0,
     });
   }

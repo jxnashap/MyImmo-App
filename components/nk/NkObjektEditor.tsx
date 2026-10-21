@@ -95,7 +95,7 @@ export default function NkObjektEditor(props: {
     starte(async () => {
       try {
         ergebnis(await speichereNkGrundlagen(propId, jahr, { flaecheGesamt: fl, einheiten: ein, meaGesamt: mea, mieter: jeMieter, co2Kg, co2Kosten, co2Gewerbe }), "Grundlagen gespeichert.");
-      } catch { toast("Speichern fehlgeschlagen.", "error"); }
+      } catch { toast("Nicht gespeichert — bitte noch einmal versuchen.", "error"); }
     });
   }
 
@@ -109,7 +109,7 @@ export default function NkObjektEditor(props: {
           lohnanteil: f.lohnanteil, art35a: f.art35a, nenner: f.nenner, werte: f.werte,
         });
         if (ergebnis(r, f.id ? "Gespeichert." : "Kostenart angelegt.")) setForm(null);
-      } catch { toast("Speichern fehlgeschlagen.", "error"); }
+      } catch { toast("Nicht gespeichert — bitte noch einmal versuchen.", "error"); }
     });
   }
 
@@ -264,7 +264,7 @@ export default function NkObjektEditor(props: {
               <input className="input" inputMode="numeric" value={ein} onChange={(e) => setEin(e.target.value)} />
             </label>
             <label>Miteigentumsanteile gesamt
-              <input className="input" inputMode="decimal" value={mea} placeholder="nur bei Schlüssel MEA" onChange={(e) => setMea(e.target.value)} />
+              <input className="input" inputMode="decimal" value={mea} placeholder="nur beim Schlüssel Miteigentumsanteile" onChange={(e) => setMea(e.target.value)} />
             </label>
           </div>
           {/* CO2KostAufG: einmal für das ganze Gebäude, Werte aus der Brennstoff-/Wärmerechnung. */}
@@ -295,7 +295,7 @@ export default function NkObjektEditor(props: {
                       onChange={(e) => setJeMieter({ ...jeMieter, [m.id]: { ...(jeMieter[m.id] ?? { mea: "" }), personen: e.target.value } })} />
                   </label>
                   {brauchtMea && (
-                    <label className="nk-klein-feld">MEA
+                    <label className="nk-klein-feld" title="Miteigentumsanteil laut Teilungserklärung">Anteil
                       <input className="input" inputMode="decimal" value={jeMieter[m.id]?.mea ?? ""}
                         onChange={(e) => setJeMieter({ ...jeMieter, [m.id]: { ...(jeMieter[m.id] ?? { personen: "" }), mea: e.target.value } })} />
                     </label>

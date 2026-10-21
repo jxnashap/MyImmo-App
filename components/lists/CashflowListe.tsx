@@ -40,7 +40,7 @@ export default function CashflowListe({
   return (
     <div className="table-scroll"><table className="list-table">
       <thead>
-        <tr><th>Datum</th><th>Typ</th><th>Immobilie</th><th>Kategorie</th><th>Beschreibung</th><th>Beleg</th><th>Betrag</th></tr>
+        <tr><th>Datum</th><th>Typ</th><th>Objekt</th><th>Kategorie</th><th>Beschreibung</th><th>Beleg</th><th>Betrag</th></tr>
       </thead>
       <ExpandableRows cols={7} limit={12} label="weitere Buchungen">
         {rows.map((r) => {

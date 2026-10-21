@@ -110,7 +110,7 @@ function limitUeberschritten(userId: string): boolean {
 
 export async function POST(req: Request) {
   const { user, supabase } = await getAuthedUser();
-  if (!user) return NextResponse.json({ error: "Nicht angemeldet." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Du bist nicht mehr angemeldet — bitte neu anmelden." }, { status: 401 });
   // Tarif-Schranke. Im Early Access (ohne BILLING_ENFORCED) kehrt
   // featureSperre() sofort mit null zurueck — ohne Datenbankabfrage.
   const sperre = await featureSperre(supabase, "ki_import");

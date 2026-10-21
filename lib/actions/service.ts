@@ -32,7 +32,7 @@ export async function erzeugeServiceCode() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const code = neuerCode();
   const { data, error } = await supabase
@@ -50,7 +50,7 @@ export async function widerrufeServiceCode(code: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   // Der Fehler MUSS ausgewertet werden: Ein stillschweigend fehlgeschlagenes
   // Löschen meldet „widerrufen", während der Code weiter gültig ist.
   const { error } = await supabase
@@ -71,7 +71,7 @@ export async function entferneServicePartner(serviceUserId: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   // Wie beim Widerruf: Bleibt der Fehler unbemerkt, behält der Partner Zugriff,
   // obwohl die Oberfläche „gelöst" anzeigt.
   const { error } = await supabase
@@ -131,7 +131,7 @@ const OFFENE_STATUS = ["freigabe", "offen", "angenommen"];
 export async function setzeServicePartner(formData: FormData): Promise<{ ok: true } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const serviceUserId = String(formData.get("serviceUserId") ?? "");
   const rolle = String(formData.get("rolle") ?? "");
@@ -187,7 +187,7 @@ export async function setzeServicePartner(formData: FormData): Promise<{ ok: tru
 export async function uebergebeServicePartner(formData: FormData): Promise<{ ok: true; auftraege: number; objekte: number } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const alt = String(formData.get("alt") ?? "");
   const neu = String(formData.get("neu") ?? "");
@@ -238,7 +238,7 @@ export async function erstelleAuftrag(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const serviceUserId = String(formData.get("serviceUserId") ?? "");
   const propId = String(formData.get("propId") ?? "");
@@ -309,7 +309,7 @@ export async function beantrageAuftrag(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const vermieterId = String(formData.get("vermieterId") ?? "");
   const titel = String(formData.get("titel") ?? "").trim();
@@ -387,7 +387,7 @@ export async function entscheideAuftrag(id: string, freigeben: boolean, mieterId
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   let mieterOk: string | null = null;
   if (freigeben && mieterId) {
@@ -468,13 +468,13 @@ export async function beantworteAuftrag(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
   const antwort = String(formData.get("antwort") ?? "").trim();
   if (!id || !["angenommen", "erledigt", "abgelehnt"].includes(status)) {
-    return { error: "Ungültige Eingabe." };
+    return { error: "Ungültige Eingabe — bitte die Seite neu laden und noch einmal versuchen." };
   }
 
   const update: Record<string, unknown> = {
@@ -546,11 +546,11 @@ export async function beantworteAuftrag(formData: FormData) {
 export async function schliesseAuftragAb(formData: FormData): Promise<{ ok: true } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const id = String(formData.get("id") ?? "");
   const betrag = parseBetrag(String(formData.get("betrag") ?? ""));
   const lohnanteil = parseBetrag(String(formData.get("lohnanteil") ?? ""));
-  if (!id) return { error: "Ungültige Eingabe." };
+  if (!id) return { error: "Ungültige Eingabe — bitte die Seite neu laden und noch einmal versuchen." };
   if (!(betrag != null && betrag > 0)) return { error: "Bitte den Rechnungsbetrag angeben." };
   if (lohnanteil != null && lohnanteil > betrag) return { error: "Der Lohnanteil kann nicht über dem Gesamtbetrag liegen." };
 
@@ -587,7 +587,7 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const id = String(formData.get("id") ?? "");
   const kat = String(formData.get("kategorie") ?? "Reparatur");
@@ -598,7 +598,7 @@ export async function uebernimmAuftragAlsKosten(formData: FormData) {
   const buchungsdatum = /^\d{4}-\d{2}-\d{2}$/.test(datumRoh) && !Number.isNaN(Date.parse(datumRoh))
     ? datumRoh
     : new Date().toISOString().slice(0, 10);
-  if (!id) return { error: "Ungültige Eingabe." };
+  if (!id) return { error: "Ungültige Eingabe — bitte die Seite neu laden und noch einmal versuchen." };
 
   const { data: a, error: leseFehler } = await supabase
     .from("auftraege")
@@ -712,7 +712,7 @@ export async function loescheAuftrag(id: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase.from("auftraege").delete().eq("id", id).eq("vermieter_id", user.id);
   if (error) return { error: "Auftrag konnte nicht gelöscht werden." };
   revalidatePath("/anliegen");
@@ -726,7 +726,7 @@ export async function setzeKostengrenze(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const roh = String(formData.get("kostengrenze") ?? "").trim();
   const grenze = roh ? parseBetrag(roh) : null;
   if (roh && (grenze == null || grenze > 100000)) return { error: "Bitte einen Betrag bis 100.000 € angeben." };
@@ -752,7 +752,7 @@ const FOTO_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "image
 export async function fuegeAuftragNotizHinzu(formData: FormData): Promise<{ ok: true } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const auftragId = String(formData.get("auftragId") ?? "");
   const text = String(formData.get("text") ?? "").trim().slice(0, 2000);
@@ -799,7 +799,7 @@ export async function fuegeAuftragNotizHinzu(formData: FormData): Promise<{ ok: 
 export async function meldeFachbetriebNoetig(formData: FormData): Promise<{ ok: true } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const auftragId = String(formData.get("auftragId") ?? "");
   const firmaId = String(formData.get("firmaId") ?? "").trim() || null;
@@ -830,7 +830,7 @@ export async function meldeFachbetriebNoetig(formData: FormData): Promise<{ ok: 
 export async function stelleRueckfrage(formData: FormData): Promise<{ ok: true } | { error: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const auftragId = String(formData.get("auftragId") ?? "");
   const text = String(formData.get("text") ?? "").trim();
   if (!auftragId) return { error: "Auftrag fehlt." };

@@ -420,7 +420,7 @@ function PartnerZeile({
         if ("error" in r) toast(r.error, "error");
         else toast(`${name}: gespeichert ✓`, "success");
       } catch {
-        toast("Speichern fehlgeschlagen.", "error");
+        toast("Nicht gespeichert — bitte noch einmal versuchen.", "error");
       }
     });
   const uebergeben = (fd: FormData) =>

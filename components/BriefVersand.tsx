@@ -155,10 +155,10 @@ export default function BriefVersand({
           );
           setPortal(null);
         } else {
-          toast(res.error ?? "Zustellen fehlgeschlagen.", "error");
+          toast(res.error ?? "Nicht bereitgestellt — bitte noch einmal versuchen.", "error");
         }
       } catch {
-        toast("Zustellen fehlgeschlagen.", "error");
+        toast("Nicht bereitgestellt — bitte noch einmal versuchen.", "error");
       }
     });
   }
@@ -209,7 +209,7 @@ export default function BriefVersand({
           ) : (
             <>
               <div>
-                Wird im Archiv abgelegt und im Mieterportal zugestellt an: <strong>{portal.lage.an.join(", ")}</strong>
+                Wird im Archiv abgelegt und im Mieterportal bereitgestellt für: <strong>{portal.lage.an.join(", ")}</strong>
               </div>
               {portal.lage.warnungen.map((w) => (
                 <div key={w} style={{ color: "var(--amber)", marginTop: 6 }}>{w}</div>
@@ -221,7 +221,7 @@ export default function BriefVersand({
               </label>
               <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                 <button type="button" className="btn btn-gold" onClick={portalZustellen} disabled={stellt}>
-                  {stellt ? "Stellt zu…" : "Jetzt zustellen"}
+                  {stellt ? "Stellt bereit…" : "Jetzt bereitstellen"}
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={() => setPortal(null)}>Abbrechen</button>
               </div>

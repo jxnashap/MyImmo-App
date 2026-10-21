@@ -46,7 +46,7 @@ export async function importiereDaten(
 ): Promise<ImportAktionErgebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Nicht angemeldet." };
+  if (!user) return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   if (!Array.isArray(zeilen) || zeilen.length === 0)
     return { ok: false, angelegt: 0, ohneObjekt: 0, fehler: "Keine Zeilen zum Importieren." };

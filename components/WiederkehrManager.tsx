@@ -76,7 +76,7 @@ export default function WiederkehrManager({
         setPropId(""); setMieterId(""); setBeschreibung("");
         router.refresh();
       } else {
-        toast(res.error ?? "Speichern fehlgeschlagen.", "error");
+        toast(res.error ?? "Nicht gespeichert — bitte noch einmal versuchen.", "error");
       }
     });
   };

@@ -286,7 +286,7 @@ const WEGE = [
     // Seit 03.10.2026 öffnet jede Zeile eine Detailansicht (`?vorgang=<id>`) — die Liste zeigt
     // keinen Verlauf mehr. Geprüft wird also auch die Detailseite des ersten Anliegens.
     async pruefe(seite) {
-      return pruefeVorgang(seite, ["Alle Meldungen", ">Verlauf<", "Antwort an den Mieter"]);
+      return pruefeVorgang(seite, ["Alle Anliegen", ">Verlauf<", "Antwort an den Mieter"]);
     },
   },
   {

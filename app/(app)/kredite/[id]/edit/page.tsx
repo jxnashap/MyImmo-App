@@ -28,18 +28,18 @@ export default async function KreditEditPage(
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link href={back} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
-          <div><div className="topbar-title">Darlehen bearbeiten</div></div>
+          <div><div className="topbar-title">Kredit bearbeiten</div></div>
         </div>
       </div>
 
       <form action={updateKredit.bind(null, k.id)} className="form-box" style={{ maxWidth: 640 }}>
-        <h3>Darlehen bearbeiten</h3>
+        <h3>Kredit bearbeiten</h3>
         <input type="hidden" name="back" value={back} />
 
         <div className="form-section-label">Grunddaten</div>
         <div className="form-row">
           <div className="form-group"><label>Bezeichnung *</label><input type="text" name="bezeichnung" defaultValue={k.bezeichnung ?? ""} required /></div>
-          <div className="form-group"><label>Immobilie</label>
+          <div className="form-group"><label>Objekt</label>
             <select name="prop_id" defaultValue={k.prop_id ?? ""}>
               <option value="">– wählen –</option>
               {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}

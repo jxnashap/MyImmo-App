@@ -23,12 +23,12 @@ export default function MietMinderung({ mieterId, minderungen }: { mieterId: str
       try {
         if (art === "prozent") fd.delete("betrag"); else fd.delete("prozent");
         const r = await fuegeMinderungHinzu(mieterId, fd);
-        if (!r.ok) return toast(r.error ?? "Speichern fehlgeschlagen.", "error");
+        if (!r.ok) return toast(r.error ?? "Nicht gespeichert — bitte noch einmal versuchen.", "error");
         toast("Minderung erfasst.");
         setOffen(false);
         router.refresh();
       } catch {
-        toast("Speichern fehlgeschlagen.", "error");
+        toast("Nicht gespeichert — bitte noch einmal versuchen.", "error");
       }
     });
 

@@ -24,13 +24,13 @@ export default async function NeuerKreditPage(props: { searchParams: Promise<{ p
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link href={back} className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
-          <div><div className="topbar-title">Darlehen erfassen</div></div>
+          <div><div className="topbar-title">Kredit erfassen</div></div>
         </div>
       </div>
 
       <form action={createKredit} className="form-box" style={{ maxWidth: 640 }}>
-        <h3>Darlehen erfassen</h3>
-        <p>Immobiliendarlehen mit allen Finanzierungsdetails.</p>
+        <h3>Kredit erfassen</h3>
+        <p>Kredit mit den Angaben aus dem Darlehensvertrag.</p>
         <input type="hidden" name="back" value={back} />
         {ausWunsch && (
           <div className="vorbelegt-hinweis">
@@ -42,7 +42,7 @@ export default async function NeuerKreditPage(props: { searchParams: Promise<{ p
         <div className="form-section-label">Grunddaten</div>
         <div className="form-row">
           <div className="form-group"><label>Bezeichnung *</label><input type="text" name="bezeichnung" placeholder="z. B. Hypothek Volksbank" required /></div>
-          <div className="form-group"><label>Immobilie</label>
+          <div className="form-group"><label>Objekt</label>
             <select name="prop_id" defaultValue={vorgewaehltesObjekt(properties, searchParams.prop)}>
               <option value="">– wählen –</option>
               {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}

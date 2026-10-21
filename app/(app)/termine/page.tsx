@@ -101,7 +101,7 @@ export default async function TerminePage(
     const wo = (k.prop_id && nameOf.get(k.prop_id)) || "–";
     for (const f of kreditFristen(k)) {
       if (!f.datum) continue;
-      eintraege.push({ datum: f.datum, label: f.label, wer: k.bezeichnung ?? "Darlehen", wo, quelle: "kredit", typ: f.typ, kategorie: f.kategorie ?? "Finanzierung", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("kredit", k.id, f.label), bezug: k.id });
+      eintraege.push({ datum: f.datum, label: f.label, wer: k.bezeichnung ?? "Kredit", wo, quelle: "kredit", typ: f.typ, kategorie: f.kategorie ?? "Finanzierung", rechtsgrundlage: f.rechtsgrundlage, ziel: fristZiel("kredit", k.id, f.label), bezug: k.id });
     }
   }
   for (const p of properties) {
@@ -461,7 +461,7 @@ export default async function TerminePage(
               </select>
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 12 }}>
-              <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}>Immobilie</span>
+              <span style={{ color: "var(--muted)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "var(--track-caption)" }}>Objekt</span>
               <select name="prop_id" className="input">
                 <option value="">—</option>
                 {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}

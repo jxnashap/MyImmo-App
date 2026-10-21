@@ -68,7 +68,7 @@ describe("CO₂-Eingaben speichern", () => {
   it("ein Speicherfehler wird gemeldet, nicht verschluckt", async () => {
     const { mod } = await lade({ fehlerBei: { nk_co2: { message: "boom" } } });
     const r = await mod.speichereNkCo2("m1", 2026, fd({ co2_kg: "1000" }));
-    expect(r).toEqual({ ok: false, error: "Speichern fehlgeschlagen." });
+    expect(r).toEqual({ ok: false, error: "Nicht gespeichert — bitte noch einmal versuchen." });
   });
 });
 

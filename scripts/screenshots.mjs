@@ -63,7 +63,7 @@ const SEITEN = [
 
   // Angemeldet — die Produktbilder, die in Artikeln und Portalprofilen zählen.
   { key: "dashboard", pfad: "/", titel: "Übersicht", auth: true },
-  { key: "objekte", pfad: "/properties", titel: "Immobilien", auth: true },
+  { key: "objekte", pfad: "/properties", titel: "Objekte", auth: true },
   { key: "mieter", pfad: "/tenants", titel: "Mieter", auth: true },
   { key: "mietkonto", pfad: "/mietkonto", titel: "Mietkonto", auth: true },
   { key: "einnahmen", pfad: "/einnahmen", titel: "Einnahmen", auth: true },

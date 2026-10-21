@@ -120,7 +120,7 @@ export default async function CashflowPage(
   const filters: FilterDef[] = [
     { name: "q", label: "Suche", variant: "search", placeholder: "Kategorie, Beschreibung…", options: [] },
     { name: "typ", label: "Typ", icon: "quelle", variant: "segmented", options: [{ value: "", label: "Alle" }, { value: "einnahme", label: "Einnahmen" }, { value: "ausgabe", label: "Ausgaben" }] },
-    { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
+    { name: "prop", label: "Objekt", icon: "home", options: [{ value: "", label: "Alle Objekte" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
   ];
 
@@ -213,7 +213,7 @@ export default async function CashflowPage(
                   </>
                 ) : (
                   <>
-                    Für {aktuellerMonat} ergibt sich keine Soll-Miete. Das ist bei{" "}
+                    Für {new Date(`${aktuellerMonat}-01T00:00:00`).toLocaleDateString("de-DE", { month: "long", year: "numeric" })} ist keine Miete fällig. Das ist bei{" "}
                     <strong>Leerstand</strong> normal. Läuft dagegen ein Mietverhältnis, fehlt beim
                     Mieter <strong>Mietbeginn</strong> oder <strong>Kaltmiete</strong> — beides
                     ergänzt du beim jeweiligen{" "}

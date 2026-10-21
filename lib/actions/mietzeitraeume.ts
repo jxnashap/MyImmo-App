@@ -46,7 +46,7 @@ function felder(fd: FormData) {
 
 export async function createMietZeitraum(mieterId: string, fd: FormData): Promise<MietZeitraumResult> {
   const { supabase, userId } = await uid();
-  if (!userId) return { ok: false, error: "Nicht angemeldet." };
+  if (!userId) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const f = felder(fd);
   if (!f.von) return { ok: false, error: "Bitte den ersten Monat (von) angeben." };
@@ -69,7 +69,7 @@ export async function createMietZeitraum(mieterId: string, fd: FormData): Promis
     prop_id: mieter.prop_id ?? null,
     ...f,
   });
-  if (error) return { ok: false, error: "Speichern fehlgeschlagen." };
+  if (error) return { ok: false, error: "Nicht gespeichert — bitte noch einmal versuchen." };
 
   revalidatePath(`/tenants/${mieterId}`);
   return { ok: true };
@@ -77,14 +77,14 @@ export async function createMietZeitraum(mieterId: string, fd: FormData): Promis
 
 export async function updateMietZeitraum(id: string, mieterId: string, fd: FormData): Promise<MietZeitraumResult> {
   const { supabase, userId } = await uid();
-  if (!userId) return { ok: false, error: "Nicht angemeldet." };
+  if (!userId) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const f = felder(fd);
   if (!f.von) return { ok: false, error: "Bitte den ersten Monat (von) angeben." };
   if (f.bis && f.bis < f.von) return { ok: false, error: "\u201eBis\u201c liegt vor \u201eVon\u201c." };
 
   const { error } = await supabase.from("miet_zeitraeume").update(f).eq("id", id).eq("user_id", userId);
-  if (error) return { ok: false, error: "Speichern fehlgeschlagen." };
+  if (error) return { ok: false, error: "Nicht gespeichert — bitte noch einmal versuchen." };
 
   revalidatePath(`/tenants/${mieterId}`);
   return { ok: true };
@@ -92,7 +92,7 @@ export async function updateMietZeitraum(id: string, mieterId: string, fd: FormD
 
 export async function deleteMietZeitraum(id: string, mieterId: string): Promise<MietZeitraumResult> {
   const { supabase, userId } = await uid();
-  if (!userId) return { ok: false, error: "Nicht angemeldet." };
+  if (!userId) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const { error } = await supabase.from("miet_zeitraeume").delete().eq("id", id).eq("user_id", userId);
   if (error) return { ok: false, error: "Löschen fehlgeschlagen." };
@@ -115,7 +115,7 @@ export async function setzeMieteAb(
   aenderung: Partial<Betraege>,
 ): Promise<MietZeitraumResult> {
   const { supabase, userId } = await uid();
-  if (!userId) return { ok: false, error: "Nicht angemeldet." };
+  if (!userId) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const r = await mieteAbAnwenden(supabase, userId, mieterId, [{ abYm, aenderung }]);
   if (!r.ok) return r;
   revalidatePath(`/tenants/${mieterId}`);
@@ -132,7 +132,7 @@ export async function setzeMieteAb(
  */
 export async function uebernehmeStaffel(mieterId: string): Promise<MietZeitraumResult & { stufen?: number }> {
   const { supabase, userId } = await uid();
-  if (!userId) return { ok: false, error: "Nicht angemeldet." };
+  if (!userId) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const [mRes, zRes] = await Promise.all([
     supabase.from("mieter").select("mietart,kaltmiete,staffel_datum,staffel_intervall,staffel_typ,staffel_betrag,staffel_prozent,staffel_stufen").eq("id", mieterId).eq("user_id", userId).maybeSingle(),
     supabase.from("miet_zeitraeume").select("von,kaltmiete").eq("mieter_id", mieterId).eq("user_id", userId),
@@ -217,7 +217,7 @@ async function ladeMinderungen(supabase: Awaited<ReturnType<typeof createClient>
 
 export async function fuegeMinderungHinzu(mieterId: string, fd: FormData): Promise<MietZeitraumResult> {
   const { supabase, userId } = await uid();
-  if (!userId) return { ok: false, error: "Nicht angemeldet." };
+  if (!userId) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const m = minderungAus({
     von: fd.get("von"), bis: fd.get("bis"), prozent: fd.get("prozent"), betrag: fd.get("betrag"),
     grund: fd.get("grund"), anliegen_id: fd.get("anliegen_id"),
@@ -237,7 +237,7 @@ export async function fuegeMinderungHinzu(mieterId: string, fd: FormData): Promi
 
 export async function entferneMinderung(mieterId: string, index: number): Promise<MietZeitraumResult> {
   const { supabase, userId } = await uid();
-  if (!userId) return { ok: false, error: "Nicht angemeldet." };
+  if (!userId) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const liste = await ladeMinderungen(supabase, userId, mieterId);
   if (!liste) return { ok: false, error: "Mieter nicht gefunden." };
   if (!Number.isInteger(index) || index < 0 || index >= liste.length) return { ok: false, error: "Eintrag nicht gefunden." };

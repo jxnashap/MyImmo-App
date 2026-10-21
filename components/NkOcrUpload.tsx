@@ -66,7 +66,7 @@ export default function NkOcrUpload({
         body: JSON.stringify({ data: base64, mediaType: file.type, isPdf }),
       });
       const json = await resp.json();
-      if (!resp.ok) { setError(json.error || "Fehler beim Auslesen."); return; }
+      if (!resp.ok) { setError(json.error || "Das Auslesen hat nicht geklappt — bitte noch einmal versuchen."); return; }
       const list = (json.positionen ?? []).filter((p: Pos) => p && p.name) as Pos[];
       if (list.length === 0) { setError("Keine umlagefähigen Positionen erkannt."); return; }
       const erg = ordneZu(bestehend, list);
@@ -135,7 +135,7 @@ export default function NkOcrUpload({
     setSaving(true);
     try {
       const erg = await uebernehmeNkOcr(mieterId, jahr, JSON.stringify({ updates, neue }));
-      if (!erg.ok) { setError(erg.fehler || "Speichern fehlgeschlagen."); return; }
+      if (!erg.ok) { setError(erg.fehler || "Nicht gespeichert — bitte noch einmal versuchen."); return; }
       setAbgleich(null);
       router.refresh();
     } catch (err) {

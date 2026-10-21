@@ -92,7 +92,7 @@ export default function VerkaufRechner({
           <div className="form-group"><label>Verkaufskosten (Makler/Notar) (€)</label><input value={vk} onChange={(e) => setVk(e.target.value)} inputMode="decimal" /></div>
         </div>
         <div className="form-row">
-          <div className="form-group"><label>Restschuld Darlehen (€)</label><input value={rest} onChange={(e) => setRest(e.target.value)} inputMode="decimal" /></div>
+          <div className="form-group"><label>Restschuld Kredit (€)</label><input value={rest} onChange={(e) => setRest(e.target.value)} inputMode="decimal" /></div>
           <div className="form-group">
             <label>Vorfälligkeitsentschädigung (€)</label>
             <input value={vfe} onChange={(e) => setVfe(e.target.value)} inputMode="decimal" />

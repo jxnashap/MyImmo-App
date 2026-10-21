@@ -173,7 +173,7 @@ export default function AfaAssistent({ objekte, startObjekt }: { objekte: AfaObj
                       setSpeicherFehler(null);
                       const res = await uebernehmeAfaGebaeudeanteil(objektId, aufteilung.gebaeudeanteilProzent);
                       if (res.ok) setGespeichertFuer(objektId);
-                      else setSpeicherFehler(res.error ?? "Speichern fehlgeschlagen.");
+                      else setSpeicherFehler(res.error ?? "Nicht gespeichert — bitte noch einmal versuchen.");
                     })}>
                     <Save size={13} style={{ verticalAlign: "-2px" }} /> Gebäudeanteil ({aufteilung.gebaeudeanteilProzent.toLocaleString("de-DE")} %) am Objekt speichern
                   </button>

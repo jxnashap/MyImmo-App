@@ -18,7 +18,7 @@ export async function erstelleVermieterAnfrage(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const mieterId = String(formData.get("mieterId") ?? "");
   const typ = String(formData.get("typ") ?? "sonstiges");
@@ -70,12 +70,12 @@ export async function beantworteVermieterAnfrage(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
   const antwort = String(formData.get("antwort") ?? "").trim();
-  if (!id || !["erledigt", "abgelehnt"].includes(status)) return { error: "Ungültige Eingabe." };
+  if (!id || !["erledigt", "abgelehnt"].includes(status)) return { error: "Ungültige Eingabe — bitte die Seite neu laden und noch einmal versuchen." };
 
   const { error } = await supabase
     .from("vermieter_anfragen")
@@ -93,7 +93,7 @@ export async function loescheVermieterAnfrage(id: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase
     .from("vermieter_anfragen")
     .delete()

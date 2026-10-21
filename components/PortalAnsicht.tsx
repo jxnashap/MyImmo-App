@@ -22,6 +22,7 @@ import MieterKontoTabelle from "@/components/MieterKontoTabelle";
 import MitteilungenListe from "@/components/MitteilungenListe";
 import HausInfosKarte from "@/components/HausInfosKarte";
 import { NotfallKasten, NotfallZeile } from "@/components/NotfallHinweis";
+import AppInstallieren from "@/components/AppInstallieren";
 import { mitNeu, type NeuesAnliegen } from "@/lib/anliegenListe";
 import { baueMieterAufgaben } from "@/lib/mieterAufgaben";
 import { heuteBerlin } from "@/lib/zeitraum";
@@ -160,6 +161,9 @@ export default function PortalAnsicht({
           {wohnungen.map(({ m, p }) => p?.id ? (
             <HausInfosKarte key={`haus-${m.id}`} info={daten.hausInfos[p.id]} titel={wohnungen.length > 1 ? p.bezeichnung ?? "" : ""} />
           ) : null)}
+          {/* Ruhig am Ende (21.10.2026, Betreiber): nur, wenn sich die App hier installieren lässt;
+              vorher stand die Anleitung allein unter „Konto“, unter „Konto löschen“. */}
+          {!vorschau && <AppInstallieren ruhig />}
           </>
         )}
       </>

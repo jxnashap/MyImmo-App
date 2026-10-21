@@ -244,7 +244,7 @@ export default function ObjektRechner({
         toast("Objekt im Ordner gespeichert — du kannst es jederzeit wieder öffnen.");
       }
     } catch {
-      toast("Speichern fehlgeschlagen.", "error");
+      toast("Nicht gespeichert — bitte noch einmal versuchen.", "error");
     } finally {
       setSaving(false);
     }

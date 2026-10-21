@@ -80,7 +80,7 @@ export default async function PropertiesPage(
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-title">Immobilien</div>
+          <div className="topbar-title">Objekte</div>
           <div className="topbar-sub">Alle erfassten Objekte</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -106,7 +106,7 @@ export default async function PropertiesPage(
         <div className="staffel prop-grid">
           <div className="empty" style={{ gridColumn: "1/-1" }}>
             <Home className="empty-icon" size={36} color="var(--faint)" />
-            <h4>{alle.length === 0 ? "Noch keine Immobilien" : "Keine Treffer"}</h4>
+            <h4>{alle.length === 0 ? "Noch keine Objekte" : "Keine Treffer"}</h4>
             {alle.length > 0 ? (
               <p style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 6 }}>
                 Kein Objekt passt zu Suche oder Status-Filter — Filter oben anpassen.
@@ -161,7 +161,7 @@ export default async function PropertiesPage(
       )}
 
       {/* Mobile-Schnellaktion: schwebender „+"-Button (nur < 860px sichtbar) */}
-      <Link href="/properties/new" className="btn-fab show-mobile" aria-label="Neue Immobilie anlegen" title="Neue Immobilie">
+      <Link href="/properties/new" className="btn-fab show-mobile" aria-label="Neues Objekt anlegen" title="Neues Objekt">
         <Plus size={24} />
       </Link>
     </div>

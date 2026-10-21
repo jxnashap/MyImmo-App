@@ -10,7 +10,7 @@ export async function erstelleFirma(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Bitte den Firmennamen angeben." };
@@ -41,7 +41,7 @@ export async function loescheFirma(id: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { error } = await supabase.from("firmen").delete().eq("id", id).eq("user_id", user.id);
   if (error) return { error: "Firma konnte nicht gelöscht werden." };
   revalidatePath("/anliegen");

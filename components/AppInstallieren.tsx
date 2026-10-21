@@ -44,8 +44,14 @@ const ANLEITUNG: Record<Exclude<InstallWeg, "knopf">, string> = {
   nicht: "Dieser Browser kann Web-Apps nicht installieren. Mit Chrome, Edge oder Safari geht es.",
 };
 
-export default function AppInstallieren() {
+/**
+ * `ruhig` (21.10.2026, Mieter-Startseite): nur wenn sich die App hier installieren lässt — nicht
+ * installiert, Browser kann es — und ohne Erklärabsatz. Auf dem Server nichts (kein Sprung, weil
+ * die Karte am Ende der Seite steht). Entscheidung des Betreibers: dezent, kein Banner.
+ */
+export default function AppInstallieren({ ruhig = false }: { ruhig?: boolean } = {}) {
   const weg = useSyncExternalStore(abonnieren, lesen, aufDemServer);
+  if (ruhig && (weg === null || weg === "installiert" || weg === "nicht")) return null;
 
   async function installieren() {
     const w = window as MitAngebot;
@@ -63,7 +69,7 @@ export default function AppInstallieren() {
   }
 
   return (
-    <div className="section" id="app">
+    <div className="section" id={ruhig ? undefined : "app"}>
       <div className="section-header">
         <h3>
           <Smartphone size={14} /> Als App installieren
@@ -71,9 +77,9 @@ export default function AppInstallieren() {
       </div>
       <div className="section-body">
         <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7, color: "var(--muted)" }}>
-          MyImmo lässt sich wie eine App auf den Startbildschirm oder ins Dock legen — mit eigenem
-          Symbol und Fenster, ohne App Store. Dafür speichert MyImmo auf dem Gerät nur eine
-          Hinweisseite für den Fall ohne Internet, keine Daten aus deinem Konto.
+          {ruhig
+            ? "Leg MyImmo als App auf den Startbildschirm — mit eigenem Symbol, ohne App Store."
+            : "MyImmo lässt sich wie eine App auf den Startbildschirm oder ins Dock legen — mit eigenem Symbol und Fenster, ohne App Store. Dafür speichert MyImmo auf dem Gerät nur eine Hinweisseite für den Fall ohne Internet, keine Daten aus deinem Konto."}
         </p>
         {weg === "knopf" ? (
           <button type="button" className="btn btn-gold" style={{ marginTop: 14 }} onClick={installieren}>

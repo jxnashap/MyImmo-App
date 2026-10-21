@@ -15,7 +15,7 @@ export type ZustellErgebnis = { ok: true; an?: string[]; hinweis?: string | null
 export async function stelleDokumentZu(notizId: string, bestaetigung = false): Promise<ZustellErgebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const { data: n, error } = await supabase
     .from("notizen")
@@ -51,7 +51,7 @@ export async function stelleDokumentZu(notizId: string, bestaetigung = false): P
 export async function zieheZustellungZurueck(zustellungId: string, mieterId?: string): Promise<ZustellErgebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const { data, error } = await supabase.rpc("zustellung_zurueckziehen", { p_id: zustellungId });
   if (error || data !== true) return { error: "Zurückziehen fehlgeschlagen — die Zustellung ist unverändert." };
@@ -65,7 +65,7 @@ export async function zieheZustellungZurueck(zustellungId: string, mieterId?: st
 export async function bestaetigeZustellung(zustellungId: string): Promise<ZustellErgebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const { data, error } = await supabase.rpc("zustellung_bestaetigen", { p_id: zustellungId });
   if (error || data !== true) return { error: "Bestätigung konnte nicht gespeichert werden." };

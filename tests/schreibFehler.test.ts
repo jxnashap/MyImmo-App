@@ -301,7 +301,7 @@ describe("Objekt speichern: gescheiterte Buchungsvorlagen werden gemeldet", () =
       .updateProperty("obj-1", fd({ bezeichnung: "Haus A", obj_status: "Vermietet", miete: "800" }))
       .catch(() => {});
     const ziel = decodeURIComponent(spuren.redirects.at(-1)!);
-    expect(ziel).toMatch(/Immobilie gespeichert/);
+    expect(ziel).toMatch(/Objekt gespeichert/);
     expect(ziel).not.toMatch(/Buchungsvorlagen/);
   });
 });

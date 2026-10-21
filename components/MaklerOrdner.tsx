@@ -225,7 +225,7 @@ export default function MaklerOrdner({
 
       <p style={{ fontSize: 11, color: "var(--faint)", margin: 0, display: "flex", gap: 7 }}>
         <Info size={12} style={{ flexShrink: 0, marginTop: 1 }} />
-        <span>Deine Dokumente sind über die Zugriffskontrolle (RLS) nur deinem Konto zugänglich. Du gibst sie
+        <span>Deine Dokumente sieht nur dein Konto. Du gibst sie
           selbst weiter — als Datei oder über einen Link, den du erstellst und widerrufen kannst.
           MyImmo verschickt nichts automatisch.</span>
       </p>

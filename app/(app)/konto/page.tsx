@@ -43,11 +43,12 @@ export default async function KontoSeite() {
         </div>
       </div>
 
-      <KontoVerwaltung email={user.email ?? "—"} rolle={rolle as "mieter" | "service"} ohnePasswort={ohnePasswort(passwortAntwort, user.app_metadata?.provider)} benachrichtigungenAus={user.user_metadata?.benachrichtigungen_aus === true} />
-
-      <div style={{ marginTop: 18 }}>
+      {/* Zuerst (21.10.2026): vorher stand die Anleitung unter „Konto löschen“. */}
+      <div style={{ marginBottom: 18 }}>
         <AppInstallieren />
       </div>
+
+      <KontoVerwaltung email={user.email ?? "—"} rolle={rolle as "mieter" | "service"} ohnePasswort={ohnePasswort(passwortAntwort, user.app_metadata?.provider)} benachrichtigungenAus={user.user_metadata?.benachrichtigungen_aus === true} />
 
       {/* Hilfeweg für Mieter- und Service-Konten (Gesamtprüfung C48): `/hilfe` ist für sie gesperrt
           (leitet ins Portal), einen anderen Weg zu MyImmo gab es nicht. */}

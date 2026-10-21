@@ -345,7 +345,7 @@ export default async function AnliegenPage(
             <div className="section">
               <div className="section-header">
                 <div>
-                  <h3>Meldungen deiner Mieter</h3>
+                  <h3>Anliegen deiner Mieter</h3>
                   <div className="section-sub">Antippen öffnet Verlauf, Antwort und Termin</div>
                 </div>
               </div>
@@ -482,7 +482,7 @@ export default async function AnliegenPage(
                 ? "Mitteilungen an deine Mieter und Infos zum Haus — sichtbar im Mieterportal"
               : tab === "service"
                 ? `Handwerker & Hausmeister verknüpfen, Aufträge vergeben${freigabeAnfragen > 0 ? ` · ${freigabeAnfragen} Freigabe-Anfrage${freigabeAnfragen > 1 ? "n warten" : " wartet"}` : auftraege.length > 0 ? ` · ${offeneAuftraege}\u00a0von ${auftraege.length}\u00a0offen` : ""}`
-                : `Meldungen deiner Mieter & deine Anfragen an sie${liste.length > 0 ? ` · ${offen}\u00a0von ${liste.length}\u00a0offen` : ""}`}
+                : `Anliegen deiner Mieter & deine Anfragen an sie${liste.length > 0 ? ` · ${offen}\u00a0von ${liste.length}\u00a0offen` : ""}`}
           </div>
         </div>
       </div>

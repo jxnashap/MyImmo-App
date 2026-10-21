@@ -22,7 +22,7 @@ export async function erstelleAnliegen(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const typ = String(formData.get("typ") ?? "frage");
   const titel = String(formData.get("titel") ?? "").trim();
@@ -93,14 +93,14 @@ export async function schlageTermineVor(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const id = String(formData.get("id") ?? "");
   const slots = ["slot1", "slot2", "slot3"]
     .map((k) => String(formData.get(k) ?? "").trim())
     .filter((s) => SLOT_RE.test(s))
     .map((s) => s.slice(0, 16));
-  if (!id) return { error: "Ungültige Eingabe." };
+  if (!id) return { error: "Ungültige Eingabe — bitte die Seite neu laden und noch einmal versuchen." };
   if (slots.length === 0) return { error: "Bitte mindestens einen Termin angeben." };
 
   const { data, error } = await supabase
@@ -129,8 +129,8 @@ export async function bestaetigeAnliegenTermin(id: string, slot: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
-  if (!id || !SLOT_RE.test(slot)) return { error: "Ungültige Eingabe." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
+  if (!id || !SLOT_RE.test(slot)) return { error: "Ungültige Eingabe — bitte die Seite neu laden und noch einmal versuchen." };
 
   const { data, error } = await supabase
     .from("anliegen")
@@ -156,12 +156,12 @@ export async function bearbeiteAnliegen(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "");
   const nachricht = String(formData.get("nachricht") ?? "").trim();
-  if (!id || !STATI.includes(status as (typeof STATI)[number])) return { error: "Ungültige Eingabe." };
+  if (!id || !STATI.includes(status as (typeof STATI)[number])) return { error: "Ungültige Eingabe — bitte die Seite neu laden und noch einmal versuchen." };
   if (nachricht) {
     const p = pruefeNachricht(nachricht);
     if (!p.ok) return { error: p.fehler };
@@ -203,7 +203,7 @@ export async function schreibeNachricht(anliegenId: string, text: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const p = pruefeNachricht(text);
   if (!p.ok) return { error: p.fehler };
 

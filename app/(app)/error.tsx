@@ -24,13 +24,17 @@ export default function Error({
         <div style={{ marginBottom: 8 }}><TriangleAlert size={40} color="var(--amber)" /></div>
         <h3 style={{ marginBottom: 8 }}>Etwas ist schiefgelaufen</h3>
         <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
-          Die Seite konnte nicht vollständig geladen oder die Aktion nicht abgeschlossen werden.
-          Unvollständige Zahlen zeigen wir bewusst nicht an. Bitte versuche es erneut — bei einer
-          Eingabe prüfe z. B. Beträge &gt; 0 oder die IBAN.
+          Die Seite konnte nicht vollständig geladen oder die Aktion nicht abgeschlossen werden —
+          unvollständige Zahlen zeigen wir bewusst nicht an. Meist hilft „Erneut versuchen“. Wurde
+          MyImmo gerade aktualisiert, hilft nur „Neu laden“.
         </p>
-        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
           <button type="button" className="btn btn-gold" onClick={() => reset()}>
             Erneut versuchen
+          </button>
+          {/* Nach einem neuen Deployment fehlen die alten Skriptteile — dagegen hilft nur ein echtes Neuladen. */}
+          <button type="button" className="btn btn-ghost" onClick={() => window.location.reload()}>
+            Neu laden
           </button>
           <Link href="/" className="btn btn-ghost">Zur Startseite</Link>
         </div>

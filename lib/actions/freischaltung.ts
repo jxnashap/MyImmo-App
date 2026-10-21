@@ -56,7 +56,7 @@ export async function schalteKontoFrei(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, fehler: "Nicht angemeldet." };
+  if (!user) return { ok: false, fehler: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   // ZWEI Schreibweisen, und das ist kein Zufall:
   //

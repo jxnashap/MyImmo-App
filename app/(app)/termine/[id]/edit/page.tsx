@@ -48,7 +48,7 @@ export default async function TerminEditPage(props: { params: Promise<{ id: stri
           </div>
         </div>
         <div className="form-row">
-          <div className="form-group"><label>Immobilie</label>
+          <div className="form-group"><label>Objekt</label>
             <select name="prop_id" defaultValue={t.prop_id ?? ""}>
               <option value="">—</option>
               {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}

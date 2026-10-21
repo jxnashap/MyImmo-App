@@ -8,7 +8,7 @@ export default function ImportPage() {
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Link href="/properties" className="btn btn-ghost" style={{ fontSize: 12, padding: "6px 12px", whiteSpace: "nowrap", flexShrink: 0 }}>← Zurück</Link>
-          <div><div className="topbar-title">Immobilie importieren</div><div className="topbar-sub">KI-Anzeigenimport oder Schnellformular</div></div>
+          <div><div className="topbar-title">Objekt importieren</div><div className="topbar-sub">KI-Anzeigenimport oder Schnellformular</div></div>
         </div>
       </div>
       <ImportWizard action={createProperty} />

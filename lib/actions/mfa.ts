@@ -72,7 +72,7 @@ export async function erzeugeWiederherstellungscodes(): Promise<CodesErgebnis> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (istDemoKonto(user.email)) return { ok: false, error: "Im Demo-Konto nicht verfügbar." };
 
   // Ohne bestätigten Faktor gibt es nichts wiederherzustellen — und ohne diese Prüfung reichte für
@@ -131,7 +131,7 @@ export async function loescheWiederherstellungscodes(): Promise<{ ok: boolean; e
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   if (hatBestaetigtenFaktor(user.factors as Faktor[] | undefined)) {
     const frisch = await pruefeFrischeAnmeldung(supabase);
     if (!frisch.ok) return { ok: false, error: "Bitte bestätige zuerst deine Anmeldung." };
@@ -158,7 +158,7 @@ export async function loeseWiederherstellungscodeEin(code: string): Promise<Einl
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const eingabe = normalisiere(String(code ?? ""));
   if (eingabe.length !== 8) return { ok: false, error: "Der Code hat acht Zeichen." };

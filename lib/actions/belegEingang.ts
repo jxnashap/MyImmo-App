@@ -31,7 +31,7 @@ export type HochladenErgebnis = { ok: true; id: string } | { ok: false; error: s
 export async function ladeBelegHoch(fd: FormData): Promise<HochladenErgebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const f = fd.get("datei");
   if (!f || typeof f === "string") return { ok: false, error: "Keine Datei gewählt." };
   const datei = f as File;
@@ -108,7 +108,7 @@ async function kontext(supabase: Db, userId: string): Promise<{ kosten: KostenZe
 export async function bucheBeleg(id: string, eingabe: BuchenEingabe): Promise<BuchenErgebnis> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
 
   const { data: eintrag, error: leseFehler } = await supabase
     .from("beleg_eingang")
@@ -215,7 +215,7 @@ async function abschliessen(supabase: Db, userId: string, id: string, kostenId: 
 export async function verwirfBeleg(id: string): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Nicht angemeldet." };
+  if (!user) return { ok: false, error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const { data: weg, error } = await supabase
     .from("beleg_eingang").delete().eq("id", id).eq("user_id", user.id).neq("status", "gebucht")
     .select("datei_pfad").maybeSingle();

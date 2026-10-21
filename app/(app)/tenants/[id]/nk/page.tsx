@@ -139,7 +139,7 @@ export default async function NkPage(
   const nutzer = await aktuellerNutzer();
   const lage = nutzer
     ? await ladeZustellLage(supabase, nutzer.id, params.id, { jahr })
-    : { error: "Nicht angemeldet." };
+    : { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   const zustellung: ZustellPruefung = "error" in lage
     ? { sperre: lage.error, warnungen: [] }
     : { sperre: lage.sperre, warnungen: lage.warnungen };
@@ -248,7 +248,7 @@ export default async function NkPage(
         <div className="no-print" style={{ maxWidth: "210mm", margin: "0 auto 14px", background: "var(--gold-pale)", border: "1px solid var(--gold-dim)", borderRadius: 8, padding: "10px 14px", fontSize: 13 }}>
           Noch kein Absender hinterlegt — im Briefkopf erscheint vorerst nur der Name aus den
           IBAN-Daten.{" "}
-          <Link href="/einstellungen" style={{ color: "var(--gold)" }}>Vermieter-Profil ausfüllen</Link>
+          <Link href="/einstellungen?tab=profil" style={{ color: "var(--gold)" }}>Vermieter-Profil ausfüllen</Link>
         </div>
       )}
 

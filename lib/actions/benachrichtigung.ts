@@ -9,7 +9,7 @@ import { istDemoKonto } from "@/lib/demo";
 export async function setzeBenachrichtigungen(aus: boolean) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Nicht angemeldet." };
+  if (!user) return { error: "Du bist nicht mehr angemeldet — bitte neu anmelden." };
   // Das Demo-Konto teilen sich alle Besucher — eine Einstellung dort träfe alle.
   if (istDemoKonto(user.email)) return { error: "In der Demo wird nichts gespeichert." };
   const { error } = await supabase.auth.updateUser({ data: { benachrichtigungen_aus: aus === true } });

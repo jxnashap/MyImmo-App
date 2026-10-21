@@ -8,11 +8,12 @@ import {
   ArrowRight, ArrowLeft, X, type LucideIcon,
 } from "lucide-react";
 
-// Onboarding-Tour für neue Nutzer: kurze, durchklickbare Vorstellung der
-// wichtigsten Stationen (Objekt → Mieter → Darlehen → Buchungen → Mietkonto → Archiv →
-// Steuer/Assistenten). Öffnet sich automatisch, solange noch kein Objekt
-// existiert und die Tour nie beendet wurde; jederzeit überspringbar und über
-// die Einstellungen erneut startbar.
+// Onboarding-Tour: kurze, durchklickbare Vorstellung der wichtigsten Stationen
+// (Objekt → Mieter → Kredit → Mietkonto → Ein- & Ausgaben → Archiv → Steuer/Assistenten).
+// Seit 21.10.2026 (Entscheidung des Betreibers) öffnet sie sich NICHT mehr von selbst —
+// vorher lag sie beim leeren Konto über der Start-Checkliste, zwei Führungen gleichzeitig.
+// Neue Vermieter führt die Checkliste (lib/startCheckliste.ts); die Tour startet nur aus den
+// Einstellungen (Event/Force-Key) und setzt eine angefangene Runde fort.
 
 const DONE_KEY = "myimmo_onboarding_done";
 const STATE_KEY = "myimmo_onboarding_state";
@@ -34,12 +35,12 @@ const SCHRITTE: TourSchritt[] = [
   {
     icon: Sparkles,
     titel: "Willkommen bei MyImmo",
-    text: "Deine Immobilien, Mieter, Finanzen und Dokumente an einem Ort. Diese kurze Tour zeigt dir die wichtigsten Stationen — in der Reihenfolge, in der du sie brauchst. Du kannst sie jederzeit überspringen und später in den Einstellungen neu starten.",
+    text: "Deine Objekte, Mieter, Finanzen und Dokumente an einem Ort. Diese kurze Tour zeigt dir die wichtigsten Stationen — in der Reihenfolge, in der du sie brauchst. Du kannst sie jederzeit überspringen und später in den Einstellungen neu starten.",
   },
   {
     icon: Home,
     titel: "1 · Dein erstes Objekt anlegen",
-    text: "Alles beginnt mit einer Immobilie: Adresse, Typ, Kaufpreis, Fläche. Tipp: Mit dem KI-Import kannst du ein Exposé einfügen und die Felder werden automatisch vorbefüllt.",
+    text: "Alles beginnt mit einem Objekt — Haus, Wohnung, Garage oder Grundstück: Adresse, Typ, Kaufpreis, Fläche. Tipp: Mit dem KI-Import kannst du ein Exposé einfügen und die Felder werden automatisch vorbefüllt.",
     href: "/properties/new",
     linkLabel: "Objekt anlegen",
   },
@@ -51,30 +52,34 @@ const SCHRITTE: TourSchritt[] = [
     linkLabel: "Mieter anlegen",
   },
   {
-    // Paket D (06.10.2026): Ohne Darlehen fehlt die Rate im Cashflow, die Zinsbindung in den
-    // Fristen und der Zinsanteil in der Anlage V — die Tour ließ diese Station aus.
+    // Paket D (06.10.2026): Ohne Kredit fehlt die Rate im Cashflow, die Zinsbindung in den
+    // Fristen und der Zinsanteil in der Anlage V. Freiwillig (21.10.2026): Nicht jedes Objekt
+    // ist finanziert.
     icon: Landmark,
-    titel: "3 · Darlehen eintragen",
-    text: "Hast du finanziert? Trag das Darlehen mit Rate, Zins und Zinsbindung ein. Daraus rechnet MyImmo den Cashflow nach Rate, erinnert rechtzeitig an das Ende der Zinsbindung und schätzt die Schuldzinsen für die Anlage V.",
+    titel: "3 · Kredit eintragen — falls finanziert",
+    text: "Hast du finanziert? Trag den Kredit mit Rate, Zins und Zinsbindung ein. Daraus rechnet MyImmo den Cashflow nach Rate, erinnert rechtzeitig an das Ende der Zinsbindung und schätzt die Schuldzinsen für die Anlage V. Ohne Finanzierung überspringst du diesen Schritt.",
     href: "/kredite/new",
-    linkLabel: "Darlehen eintragen",
+    linkLabel: "Kredit eintragen",
+  },
+  {
+    // Vor dem 21.10.2026 kam hier zuerst „Ein- & Ausgaben buchen — per Hand“. Mieten von Hand zu
+    // buchen ist der falsche Weg: Das Mietkonto kennt die Miete aus dem Vertrag (Soll, Mietmonat,
+    // NK-Anteil) und schützt vor Doppelbuchungen.
+    icon: ReceiptText,
+    titel: "4 · Mieten im Mietkonto bestätigen",
+    text: "Das Mietkonto kennt aus dem Mietvertrag, welche Miete fällig ist. Du bestätigst nur, was eingegangen ist — einzeln, für mehrere Monate auf einmal oder per Kontoauszug. Was offen ist, siehst du sofort.",
+    href: "/mietkonto",
+    linkLabel: "Zum Mietkonto",
   },
   {
     icon: Banknote,
-    titel: "4 · Ein- & Ausgaben buchen",
+    titel: "5 · Kosten festhalten",
     // Die Kontoanbindung (Open Banking) wurde am 29.08.2026 komplett aus der App
     // entfernt — sie stand hier noch als Versprechen. Nicht wieder aufnehmen,
     // solange docs/zukunft/OPEN-BANKING.md ein Zukunftsprojekt beschreibt.
-    text: "Miete rein, Handwerker raus: Unter „Ein- & Ausgaben“ hältst du alle Zahlungen fest — per Hand oder per CSV-Import. Rechnungen kannst du direkt an die Buchung hängen.",
+    text: "Handwerker, Versicherung, Grundsteuer: Unter „Ein- & Ausgaben“ hältst du Kosten fest — einzeln, als wiederkehrende Buchung oder per CSV-Import. Rechnungen hängst du direkt an die Buchung.",
     href: "/cashflow",
     linkLabel: "Zu Ein- & Ausgaben",
-  },
-  {
-    icon: ReceiptText,
-    titel: "5 · Mietkonto im Blick",
-    text: "Das Mietkonto gleicht Soll und Ist je Mieter ab: Wer hat gezahlt, wer ist im Rückstand? Rückstände siehst du sofort — inklusive Verlauf.",
-    href: "/mietkonto",
-    linkLabel: "Zum Mietkonto",
   },
   {
     icon: Archive,
@@ -93,11 +98,11 @@ const SCHRITTE: TourSchritt[] = [
   {
     icon: Settings,
     titel: "Fertig — leg los!",
-    text: "Das war die Tour. Alles Weitere findest du in der Seitenleiste; dein Profil, Vorlagen und diese Tour zum Neustarten liegen in den Einstellungen. Viel Erfolg mit deinen Immobilien!",
+    text: "Das war die Tour. Alles Weitere findest du in der Seitenleiste; dein Profil, Vorlagen und diese Tour zum Neustarten liegen in den Einstellungen. Viel Erfolg!",
   },
 ];
 
-export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: boolean }) {
+export default function OnboardingTour() {
   const [offen, setOffen] = useState(false);
   const [minimiert, setMinimiert] = useState(false);
   const [i, setI] = useState(0);
@@ -125,9 +130,8 @@ export default function OnboardingTour({ neuerNutzer = false }: { neuerNutzer?: 
         setOffen(true);
         return;
       }
-      if (neuerNutzer && !localStorage.getItem(DONE_KEY)) setOffen(true);
     } catch { /* ignore */ }
-  }, [neuerNutzer]);
+  }, []);
 
   // „Tour erneut starten" aus den Einstellungen: Event öffnet die Tour sofort.
   useEffect(() => {

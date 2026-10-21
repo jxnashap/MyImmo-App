@@ -43,7 +43,7 @@ export default async function VerbrauchPage(
     : list;
 
   const filters: FilterDef[] = [
-    { name: "prop", label: "Immobilie", icon: "home", options: [{ value: "", label: "Alle Immobilien" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
+    { name: "prop", label: "Objekt", icon: "home", options: [{ value: "", label: "Alle Objekte" }, ...properties.map((p) => ({ value: p.id, label: p.bezeichnung }))] },
     { name: "art", label: "Art", icon: "art", options: [{ value: "", label: "Alle Arten" }, ...arten.map((a) => ({ value: a, label: a }))] },
     { name: "jahr", label: "Jahr", icon: "jahr", defaultValue: String(aktuellesJahr), options: [...jahre.map((y) => ({ value: String(y), label: String(y) })), { value: "alle", label: "Alle Jahre" }] },
   ];

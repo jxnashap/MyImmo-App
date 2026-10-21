@@ -36,6 +36,8 @@ import { ORGANISATION } from "@/lib/seo/jsonLd";
 import { cashflowFormel, nkVorauszahlungenMonat, objektMonat, portfolioMonat } from "@/lib/cashflowKennzahl";
 import { aktuellerWert, bruttoRenditePortfolio, renditeBasisText } from "@/lib/portfolioKennzahlen";
 import { sollKaltmiete, laeuftAm } from "@/lib/sollMiete";
+import { startSchritte, startOffen } from "@/lib/startCheckliste";
+import StartCheckliste from "@/components/StartCheckliste";
 
 // SEO für die öffentliche Startseite (Landingpage für Ausgeloggte).
 // metadataBase liegt im Root-Layout (https://www.myimmoapp.de).
@@ -157,7 +159,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
       vielleichtAlle(supabase, "zustellungen", "notiz_id,mieter_id,titel,zugestellt_am,gelesen_am,zurueckgezogen_am",
         (q) => alsVermieter(q).eq("art", "dokument").gte("zugestellt_am", fristArchivAb(heuteBerlin()))),
     ]),
-    supabase.from("vermieter_profil").select("name").eq("user_id", user.id).limit(1).maybeSingle(),
+    supabase.from("vermieter_profil").select("name,strasse,ort").eq("user_id", user.id).limit(1).maybeSingle(),
   ]);
   // Welche Aufgabenquellen fehlen — die Liste „Termine & Aufgaben“ sagt es, statt still kürzer zu sein.
   const fehlendeQuellen = ([
@@ -217,7 +219,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     }
   }
   for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (sichtbar("kredit", k.id, f) && f.datum)
-    fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Darlehen", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn", href: fristZiel("kredit", k.id, f.label) });
+    fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Kredit", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn", href: fristZiel("kredit", k.id, f.label) });
   for (const p of properties) for (const f of objektFristen(p)) if (sichtbar("objekt", p.id, f) && f.datum)
     fristListe.push({ datum: f.datum, label: f.label, sub: p.bezeichnung, warn: f.typ === "warn", href: fristZiel("objekt", p.id, f.label) });
   for (const f of globaleFristen()) if (sichtbar("steuer", null, f) && f.datum)
@@ -473,50 +475,25 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     .sort((a, b) => new Date(b.buchungsdatum ?? 0).getTime() - new Date(a.buchungsdatum ?? 0).getTime())
     .slice(0, 6);
 
-  // Leeres Konto: statt Null-KPIs eine Start-Checkliste, die sagt, was zu tun ist.
+  // Start-Checkliste (lib/startCheckliste.ts, 21.10.2026): leeres Konto → ganze Seite statt Null-KPIs;
+  // Objekt da, Mieter fehlt → kompakte Karte über dem Dashboard. Die Tour öffnet sich nicht mehr von selbst.
+  const startListe = startSchritte({
+    objekte: properties.length,
+    mieter: mieterRows.length,
+    kredite: kredite.length,
+    mietBuchungen: einnahmen.filter((e) => e.mieter_id).length,
+    profil: profil as { name: string | null; strasse: string | null; ort: string | null } | null,
+  });
   if (properties.length === 0) {
-    const schritte = [
-      { nr: 1, titel: "Erstes Objekt anlegen", text: "Name, Adresse, Kaufpreis, Miete — mehr braucht es für den Start nicht.", href: "/properties/new", cta: "Objekt anlegen", erledigt: false },
-      { nr: 2, titel: "Mieter erfassen", text: "Mit Kaltmiete und Mietbeginn — daraus entstehen Mietkonto und Abrechnungen.", href: "/tenants/new", cta: "Mieter anlegen", erledigt: mieterRows.length > 0 },
-      // Paket D (06.10.2026): Ohne Darlehen fehlen Rate (Cashflow), Zinsbindung (Fristen) und Zinsanteil (Anlage V).
-      { nr: 3, titel: "Darlehen eintragen", text: "Falls finanziert: Rate, Zins und Zinsbindung — daraus folgen Cashflow nach Rate und die Erinnerung an das Ende der Zinsbindung.", href: "/kredite/new", cta: "Darlehen eintragen", erledigt: kredite.length > 0 },
-      { nr: 4, titel: "Ein- & Ausgaben buchen", text: "Mieteingänge und Kosten festhalten — per Hand, per CSV-Import oder als wiederkehrende Buchung.", href: "/cashflow", cta: "Zu den Buchungen", erledigt: einnahmen.length + kosten.length > 0 },
-    ];
     return (
       <div className="fade-up">
         <div className="topbar">
           <div>
             <div className="topbar-title">Willkommen bei MyImmo</div>
-            <div className="topbar-sub">Vier Schritte, dann rechnet die App für dich</div>
+            <div className="topbar-sub">Zwei Schritte sind nötig, dann rechnet die App für dich</div>
           </div>
         </div>
-        <div style={{ maxWidth: 560 }}>
-          {schritte.map((s, i) => (
-            <div key={s.nr} style={{ display: "flex", gap: 14, alignItems: "stretch" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-                {/* --gold ist die TEXT-Stufe (hell oliv) — als Fläche mit dunkler
-                    Schrift darauf war der Kreis kontrastschwach. --gold-fill ist
-                    die Flächenstufe. */}
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: s.erledigt ? "var(--green)" : "var(--gold-fill)", color: s.erledigt ? "#fff" : "var(--btn-gold-text)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 14 }}>
-                  {s.erledigt ? "✓" : s.nr}
-                </div>
-                {i < schritte.length - 1 && <div style={{ flex: 1, width: 2, background: "var(--line2)", marginTop: 4 }} />}
-              </div>
-              <div className="section" style={{ flex: 1, marginBottom: i < schritte.length - 1 ? 14 : 0 }}>
-                <div className="section-body" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <div style={{ flex: "1 1 220px" }}>
-                    <div style={{ fontWeight: 600, fontSize: 13.5 }}>{s.titel}</div>
-                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{s.text}</div>
-                  </div>
-                  <Link href={s.href} className={`btn ${s.nr === 1 ? "btn-gold" : "btn-ghost"}`} style={{ fontSize: 12.5, flexShrink: 0 }}>{s.cta}</Link>
-                </div>
-              </div>
-            </div>
-          ))}
-          <p style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 16 }}>
-            Tipp: Die Einführungs-Tour zeigt dir alle Stationen — jederzeit über Einstellungen → „Daten &amp; Recht“ startbar.
-          </p>
-        </div>
+        <StartCheckliste schritte={startListe} />
       </div>
     );
   }
@@ -534,17 +511,19 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Link href="/termine" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><CalendarDays size={15} /> Terminkalender</Link>
           <Link href="/cashflow/neu" className="btn btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Banknote size={15} /> Buchen</Link>
-          <Link href="/properties/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Immobilie</Link>
+          <Link href="/properties/new" className="btn btn-gold"><Plus size={14} style={{ verticalAlign: "-2px" }} /> Objekt</Link>
         </div>
       </div>
       <hr className="topbar-rule" />
+
+      {startOffen(startListe) && <StartCheckliste schritte={startListe} kompakt />}
 
       {refinanz.length > 0 && (
         <div style={{ marginBottom: 16, background: "var(--red-dim)", border: "1px solid rgba(224,92,75,0.4)", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
           <TriangleAlert size={20} color="var(--red)" style={{ flexShrink: 0 }} />
           <div>
             <div style={{ fontWeight: 600, color: "var(--red)", fontSize: 13 }}>{refinanz.length} Zinsbindung{refinanz.length > 1 ? "en" : ""} läuft bald ab</div>
-            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{refinanz.map(({ k }) => `${k.bezeichnung || "Darlehen"} (${datum(k.zinsbindung)})`).join(" · ")}</div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{refinanz.map(({ k }) => `${k.bezeichnung || "Kredit"} (${datum(k.zinsbindung)})`).join(" · ")}</div>
           </div>
           <Link href="/kredite" className="btn btn-ghost" style={{ marginLeft: "auto", fontSize: 11 }}>Ansehen</Link>
         </div>
@@ -762,7 +741,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
                   <span className="listen-icon"><Landmark size={16} /></span>
                   <span className="listen-zeile-text">
                     <span className="listen-zeile-titel">
-                      {k.bezeichnung || k.bank || "Darlehen"}
+                      {k.bezeichnung || k.bank || "Kredit"}
                     </span>
                     {/* Zinssatz vorn in der Unterzeile: im Titel fiel er am Handy hinter die Auslassung,
                         obwohl er das Merkmal ist, an dem man gleich benannte Darlehen unterscheidet. */}

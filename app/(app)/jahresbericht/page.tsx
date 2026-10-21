@@ -101,7 +101,7 @@ export default async function JahresberichtPage(
           <div className="table-scroll"><table className="list-table report">
             <thead>
               <tr>
-                <th>Immobilie</th>
+                <th>Objekt</th>
                 <th style={{ textAlign: "right" }}>Einnahmen</th>
                 <th style={{ textAlign: "right" }} title="Laufende Kosten aus deinen Kosten-Buchungen (Bewirtschaftung)">Laufende Kosten</th>
                 <th style={{ textAlign: "right" }} title="Gebuchte Schuldzinsen des Jahres; ohne Buchung geschätzt aus Restschuld × Zinssatz (mit ~ markiert)">Zins</th>
@@ -142,7 +142,7 @@ export default async function JahresberichtPage(
 
       {rows.some((r) => r.kreditOhneStart) && (
         <p style={{ fontSize: 12, color: "var(--muted)" }}>
-          Mindestens ein Darlehen hat weder Auszahlungs- noch Kaufdatum — seine Raten sind für das ganze Jahr angenommen.
+          Mindestens ein Kredit hat weder Auszahlungs- noch Kaufdatum — seine Raten sind für das ganze Jahr angenommen.
           Trag das Auszahlungsdatum unter <Link href="/kredite">Kredite</Link> nach, dann zählen nur die Monate, in denen es lief.
         </p>
       )}
