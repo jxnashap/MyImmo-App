@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { HILFE_MAILTO } from "@/lib/preise";
 import type { ReactNode } from "react";
-import { Home, MessageSquareText, FileText, Gauge, Banknote, Receipt } from "lucide-react";
+import { Home, MessageSquareText, FileText, Gauge, Banknote, Receipt, Wrench, MessageCircleQuestion } from "lucide-react";
 import { euro, datum } from "@/lib/format";
 import ThemeToggle from "@/components/ThemeToggle";
 import AnliegenPortal from "@/components/AnliegenPortal";
@@ -21,7 +21,8 @@ import MieterAufgabenListe from "@/components/MieterAufgabenListe";
 import MieterKontoTabelle from "@/components/MieterKontoTabelle";
 import MitteilungenListe from "@/components/MitteilungenListe";
 import HausInfosKarte from "@/components/HausInfosKarte";
-import { NotfallKasten } from "@/components/NotfallHinweis";
+import { NotfallKasten, NotfallZeile } from "@/components/NotfallHinweis";
+import { mitNeu, type NeuesAnliegen } from "@/lib/anliegenListe";
 import { baueMieterAufgaben } from "@/lib/mieterAufgaben";
 import { heuteBerlin } from "@/lib/zeitraum";
 import GlassLeiste from "@/components/GlassLeiste";
@@ -47,6 +48,8 @@ export default function PortalAnsicht({
   kopfzeile,
   vorschau = false,
   vorgang = null,
+  neu = null,
+  mailHinweis = false,
 }: {
   daten: PortalDaten;
   tab: PortalTab;
@@ -57,6 +60,10 @@ export default function PortalAnsicht({
   vorschau?: boolean;
   /** Geöffnetes Anliegen (`…&vorgang=<id>`, 03.10.2026) — dann zeigt der Reiter dessen Detailansicht. */
   vorgang?: string | null;
+  /** `…&neu=schaden|frage` (21.10.2026): Der Anliegen-Reiter öffnet gleich das passende Formular. */
+  neu?: NeuesAnliegen | null;
+  /** Bekommt der Mieter Hinweis-Mails? Nur dann kündigt die Bestätigung nach dem Absenden eine Mail an. */
+  mailHinweis?: boolean;
 }) {
   const { wohnungen, anliegen, dokumentAnfragen, verlauf, dateien, freigegebeneDocs, vermieterAnfragen, zaehlerMeldungen, zahlungen, jahr, summeJahr, belege } = daten;
   const keineWohnung = (
@@ -96,8 +103,22 @@ export default function PortalAnsicht({
           </div>
         ) : (
           <>
+          {/* Melden zuerst (21.10.2026): Vorher gab es „Schaden melden“ und „Frage stellen“ nur im
+              Reiter Anliegen — beim ersten Öffnen war der rote Notfall-Kasten das Auffälligste. */}
+          <div className="section">
+            <div className="section-body">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <Link href={mitNeu(hrefFuer("anliegen"), "schaden")} className="btn btn-gold">
+                  <Wrench size={14} style={{ verticalAlign: "-2px" }} /> Schaden melden
+                </Link>
+                <Link href={mitNeu(hrefFuer("anliegen"), "frage")} className="btn btn-outline">
+                  <MessageCircleQuestion size={14} style={{ verticalAlign: "-2px" }} /> Frage stellen
+                </Link>
+              </div>
+              <NotfallZeile href={hrefFuer("anliegen")} />
+            </div>
+          </div>
           <MieterAufgabenListe aufgaben={aufgaben} hrefFuer={hrefFuer} />
-          <NotfallKasten notdienste={notdienste} />
           <MitteilungenListe mitteilungen={daten.mitteilungen} nurLesen={vorschau} />
           {wohnungen.map(({ m, p }) => (
             <div key={m.id} className="section">
@@ -112,11 +133,12 @@ export default function PortalAnsicht({
                     <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4 }}>{euro(m.kaltmiete)}</div>
                   </div>
                   <div className="stat-box">
-                    <div className="stat-lbl">NK-Vorauszahlung</div>
+                    <div className="stat-lbl">Nebenkosten (Vorauszahlung)</div>
                     <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4 }}>{euro(m.nk_vorauszahlung)}</div>
                   </div>
                   <div className="stat-box">
-                    <div className="stat-lbl">Warmmiete</div>
+                    {/* Mit Stellplatz ergab „kalt + Nebenkosten“ nicht die Warmmiete — der Betrag stand nirgends. */}
+                    <div className="stat-lbl">{(m.stellplatz_miete ?? 0) > 0 ? "Warmmiete inkl. Stellplatz" : "Warmmiete"}</div>
                     <div style={{ fontSize: 15, fontWeight: 600, marginTop: 4, color: "var(--gold)" }}>
                       {euro((m.kaltmiete ?? 0) + (m.nk_vorauszahlung ?? 0) + (m.stellplatz_miete ?? 0))}
                     </div>
@@ -126,7 +148,11 @@ export default function PortalAnsicht({
                   {m.mietbeginn && <span>Mietbeginn: <strong style={{ color: "var(--text)" }}>{datum(m.mietbeginn)}</strong></span>}
                   {m.flaeche != null && <span>Fläche: <strong style={{ color: "var(--text)" }}>{m.flaeche} m²</strong></span>}
                   {(m.kaution ?? 0) > 0 && <span>Kaution: <strong style={{ color: "var(--text)" }}>{euro(m.kaution)}</strong></span>}
-                  {m.stellplatz && <span>Stellplatz: <strong style={{ color: "var(--text)" }}>{m.stellplatz}</strong></span>}
+                  {(m.stellplatz || (m.stellplatz_miete ?? 0) > 0) && (
+                    <span>Stellplatz: <strong style={{ color: "var(--text)" }}>
+                      {[m.stellplatz, (m.stellplatz_miete ?? 0) > 0 ? `${euro(m.stellplatz_miete)} im Monat` : null].filter(Boolean).join(" · ")}
+                    </strong></span>
+                  )}
                 </div>
               </div>
             </div>
@@ -152,7 +178,7 @@ export default function PortalAnsicht({
         ) : (
           <>
             <NotfallKasten notdienste={notdienste} />
-            <AnliegenPortal anliegen={anliegen} dateien={dateien} verlauf={verlauf} nurLesen={vorschau} listeHref={hrefFuer("anliegen")} />
+            <AnliegenPortal anliegen={anliegen} dateien={dateien} verlauf={verlauf} nurLesen={vorschau} listeHref={hrefFuer("anliegen")} neu={neu} mailHinweis={mailHinweis} />
             <AnfragenVomVermieter anfragen={vermieterAnfragen} nurLesen={vorschau} />
           </>
         )}
@@ -164,7 +190,7 @@ export default function PortalAnsicht({
         <div className="topbar" style={{ marginBottom: 20 }}>
           <div>
             <div className="topbar-title">Zahlungen</div>
-            <div className="topbar-sub">Vom Vermieter bestätigte Miet- &amp; Nebenkostenzahlungen (§ 368 BGB)</div>
+            <div className="topbar-sub">Was dein Vermieter als bezahlt verbucht hat</div>
           </div>
         </div>
         {wohnungen.length === 0 ? keineWohnung : (
@@ -177,40 +203,36 @@ export default function PortalAnsicht({
               anliegenHref={hrefFuer("anliegen")}
             />
           ))}
-          <div className="section">
-            <div className="section-header">
-              <h3><Banknote size={15} style={{ verticalAlign: "-2px" }} /> Zahlungsübersicht</h3>
-              {zahlungen.length > 0 && (
+          {/* Eingeklappt (21.10.2026): Dieselben Zahlungen stehen schon im Mietkonto darüber —
+              offen sah es aus wie eine zweite, andere Abrechnung. */}
+          {zahlungen.length === 0 ? (
+            <p style={{ fontSize: 12, color: "var(--faint)" }}>
+              Noch keine verbuchten Zahlungen — sobald dein Vermieter deine Miete verbucht, erscheint sie hier.
+            </p>
+          ) : (
+            <details className="section">
+              <summary className="section-header" style={{ cursor: "pointer" }}>
+                <h3><Banknote size={15} style={{ verticalAlign: "-2px" }} /> Einzelne Zahlungen ({zahlungen.length})</h3>
                 <span style={{ fontSize: 12, color: "var(--muted)" }}>
                   {jahr}: <strong style={{ color: "var(--gold)" }}>{euro(summeJahr)}</strong>
                 </span>
-              )}
-            </div>
-            <div className="section-body">
-              {zahlungen.length === 0 ? (
-                <p style={{ fontSize: 12, color: "var(--faint)" }}>
-                  Noch keine bestätigten Zahlungen — sobald dein Vermieter deine Miete im
-                  Mietkonto verbucht, erscheint sie hier als Nachweis.
+              </summary>
+              <div className="section-body">
+                {zahlungen.map((z) => (
+                  <div key={z.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
+                    <span style={{ color: "var(--muted)", minWidth: 74, flexShrink: 0 }}>{z.buchungsdatum ? datum(z.buchungsdatum) : "–"}</span>
+                    <span className={`badge ${z.kategorie === "Miete" ? "badge-green" : "badge-teal"}`} style={{ flexShrink: 0 }}>{z.kategorie ?? "Zahlung"}</span>
+                    {/* Beschreibung nimmt den Rest und kürzt sich — der Betrag bricht nie um („€" / „1.070"). */}
+                    <span style={{ flex: 1, minWidth: 0, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{z.beschreibung ?? ""}</span>
+                    <span style={{ fontWeight: 600, color: "var(--green)", whiteSpace: "nowrap", flexShrink: 0 }}>{euro(z.betrag)}</span>
+                  </div>
+                ))}
+                <p style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 10 }}>
+                  Eine Quittung über gezahlte Miete kannst du unter „Dokumente“ anfordern.
                 </p>
-              ) : (
-                <>
-                  {zahlungen.map((z) => (
-                    <div key={z.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
-                      <span style={{ color: "var(--muted)", minWidth: 74, flexShrink: 0 }}>{z.buchungsdatum ? datum(z.buchungsdatum) : "–"}</span>
-                      <span className={`badge ${z.kategorie === "Miete" ? "badge-green" : "badge-teal"}`} style={{ flexShrink: 0 }}>{z.kategorie ?? "Zahlung"}</span>
-                      {/* Beschreibung nimmt den Rest und kürzt sich — der Betrag bricht nie um („€" / „1.070"). */}
-                      <span style={{ flex: 1, minWidth: 0, color: "var(--muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{z.beschreibung ?? ""}</span>
-                      <span style={{ fontWeight: 600, color: "var(--green)", whiteSpace: "nowrap", flexShrink: 0 }}>{euro(z.betrag)}</span>
-                    </div>
-                  ))}
-                  <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 10 }}>
-                    Diese Übersicht zeigt alle Zahlungen, die dein Vermieter verbucht hat.
-                    Eine förmliche Mietquittung (§ 368 BGB) kannst du unter „Dokumente“ anfordern.
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
+              </div>
+            </details>
+          )}
           </>
         )}
       </>
@@ -231,11 +253,16 @@ export default function PortalAnsicht({
               <div className="section-body">
                 {freigegebeneDocs.length === 0 ? (
                   <p style={{ fontSize: 12, color: "var(--faint)" }}>
-                    Noch keine Dokumente zugestellt — dein Vermieter kann dir hier z. B.
-                    Mietvertrag, NK-Abrechnung oder den Energieausweis bereitstellen.
+                    Noch keine Dokumente bereitgestellt — dein Vermieter kann dir hier z. B.
+                    Mietvertrag, Nebenkostenabrechnung oder den Energieausweis bereitstellen.
                   </p>
                 ) : (
-                  freigegebeneDocs.map((d) => (
+                  <>
+                  {/* Offen gesagt (21.10.2026): Der Vermieter sieht das erste Öffnen — das stand nirgends. */}
+                  <p style={{ fontSize: 11.5, color: "var(--muted)", margin: "0 0 4px" }}>
+                    Dein Vermieter sieht, wann du ein Dokument zum ersten Mal geöffnet hast.
+                  </p>
+                  {freigegebeneDocs.map((d) => (
                     <div key={d.zustellung.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, fontSize: 12, padding: "8px 0", borderBottom: "1px solid var(--line)" }}>
                       <FileText size={14} color="var(--gold)" />
                       <span style={{ fontWeight: 600, color: "var(--text)" }}>{d.titel || d.datei_name || "Dokument"}</span>
@@ -257,14 +284,14 @@ export default function PortalAnsicht({
                         <span style={{ fontSize: 11, color: "var(--faint)" }}>ohne Datei</span>
                       )}
                     </div>
-                  ))
+                  ))}
+                  </>
                 )}
               </div>
             </div>
             <div className="section">
               <div className="section-header">
-                <h3><Receipt size={15} style={{ verticalAlign: "-2px" }} /> Belege (Belegeinsicht)</h3>
-                <span style={{ fontSize: 11, color: "var(--muted)" }}>§ 556 Abs. 4 BGB</span>
+                <h3><Receipt size={15} style={{ verticalAlign: "-2px" }} /> Rechnungen zur Nebenkostenabrechnung</h3>
               </div>
               <div className="section-body">
                 {belege.length === 0 ? (
@@ -288,7 +315,7 @@ export default function PortalAnsicht({
                 )}
               </div>
             </div>
-            <DokumenteAnfrage anfragen={dokumentAnfragen} verlauf={verlauf} nurLesen={vorschau} />
+            <DokumenteAnfrage anfragen={dokumentAnfragen} nurLesen={vorschau} anliegenHref={hrefFuer("anliegen")} mailHinweis={mailHinweis} />
           </>
         )}
       </>

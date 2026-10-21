@@ -15,7 +15,7 @@ import VorschauHinweis from "@/components/VorschauHinweis";
 import VorgangVerlauf from "@/components/VorgangVerlauf";
 import SchadenAssistent from "@/components/SchadenAssistent";
 import type { Ereignis } from "@/lib/vorgang";
-import { mieterMerkmal, mitVorgang } from "@/lib/anliegenListe";
+import { mieterMerkmal, mitVorgang, gesendetText, type NeuesAnliegen } from "@/lib/anliegenListe";
 
 export type AnliegenRow = {
   id: string;
@@ -125,15 +125,19 @@ export default function AnliegenPortal({
   anliegen,
   dateien,
   verlauf = {},
-  standardTyp,
   nurLesen = false,
   listeHref,
   vorgangId = null,
+  neu = null,
+  mailHinweis = false,
 }: {
   anliegen: AnliegenRow[];
   dateien: DateiRef[];
   verlauf?: Record<string, Ereignis[]>;
-  standardTyp?: string;
+  /** Von der Startseite (`…&neu=schaden|frage`, 21.10.2026): gleich das passende Formular öffnen. */
+  neu?: NeuesAnliegen | null;
+  /** Bekommt der Mieter Hinweis-Mails (Versand an, nicht abgeschaltet)? Nur dann verspricht der Text eine Mail. */
+  mailHinweis?: boolean;
   /** Vorschau des Vermieters (01.10.2026): kein Formular, keine Termin-Knöpfe. */
   nurLesen?: boolean;
   /** Adresse der Liste (`/portal?tab=anliegen` oder die Vorschau-URL) — Detail = `…&vorgang=<id>`. */
@@ -141,10 +145,10 @@ export default function AnliegenPortal({
   /** Geöffnetes Anliegen (Detailansicht), sonst die Liste. */
   vorgangId?: string | null;
 }) {
-  const [offenForm, setOffenForm] = useState(false);
+  const [offenForm, setOffenForm] = useState(neu === "frage" && !nurLesen);
   // Schäden laufen seit 02.10.2026 über den geführten Assistenten (Rückfragen + Notfall),
-  // Fragen und Dokument-Wünsche weiter über das kurze Formular.
-  const [assistent, setAssistent] = useState(false);
+  // Fragen über das kurze Formular, Dokument-Wünsche über den Reiter „Dokumente“.
+  const [assistent, setAssistent] = useState(neu === "schaden" && !nurLesen);
   const [gemeldet, setGemeldet] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const anhaenge = useAnhaenge({ maxAnzahl: 3, erlaubt: FOTO_ODER_PDF });
@@ -164,6 +168,8 @@ export default function AnliegenPortal({
           formRef.current?.reset();
           anhaenge.leeren();
           setOffenForm(false);
+          // Vorher schloss sich das Formular wortlos — der Mieter wusste nicht, ob es angekommen ist.
+          setGemeldet(true);
         }
       } catch {
         setFehler("Senden hat nicht geklappt — deine Angaben bleiben stehen. Bitte noch einmal versuchen.");
@@ -229,7 +235,7 @@ export default function AnliegenPortal({
             <button type="button" className="btn btn-gold" style={{ fontSize: 12 }} onClick={() => { setAssistent((o) => !o); setOffenForm(false); setGemeldet(false); }}>
               <Wrench size={13} style={{ verticalAlign: "-2px" }} /> Schaden melden
             </button>
-            <button type="button" className="btn btn-outline" style={{ fontSize: 12 }} onClick={() => { setOffenForm((o) => !o); setAssistent(false); }}>
+            <button type="button" className="btn btn-outline" style={{ fontSize: 12 }} onClick={() => { setOffenForm((o) => !o); setAssistent(false); setGemeldet(false); }}>
               <Plus size={13} style={{ verticalAlign: "-2px" }} /> Frage stellen
             </button>
           </div>
@@ -241,7 +247,7 @@ export default function AnliegenPortal({
         )}
         {gemeldet && (
           <p role="status" style={{ fontSize: 12.5, color: "var(--green)", margin: "0 0 12px" }}>
-            Gemeldet — dein Vermieter sieht es jetzt. Antworten findest du, wenn du das Anliegen öffnest.
+            {gesendetText(mailHinweis)}
           </p>
         )}
         {offenForm && !nurLesen && (
@@ -250,17 +256,17 @@ export default function AnliegenPortal({
             action={senden}
             style={{ display: "grid", gap: 10, marginBottom: 18, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}
           >
+            {/* Keine Auswahl „Art“ mehr (21.10.2026): Dokumente haben ihren eigenen Reiter mit
+                Vorlagen, und das alte Beispiel („Heizung wird nicht warm“) lenkte Schäden am
+                Assistenten vorbei — dort fragt MyImmo nach, was der Vermieter wissen muss. */}
+            <input type="hidden" name="typ" value="frage" />
             <div className="form-group">
-              <label style={{ fontSize: 11, color: "var(--muted)" }}>Art des Anliegens</label>
-              <select name="typ" className="input" defaultValue={standardTyp ?? "frage"}>
-                <option value="dokument">Dokument anfordern</option>
-                <option value="frage">Frage stellen</option>
-              </select>
+              <label style={{ fontSize: 11, color: "var(--muted)" }}>Deine Frage *</label>
+              <input name="titel" required maxLength={120} className="input" placeholder="z. B. Wann wird der Hof gereinigt?" />
             </div>
-            <div className="form-group">
-              <label style={{ fontSize: 11, color: "var(--muted)" }}>Betreff *</label>
-              <input name="titel" required maxLength={120} className="input" placeholder="z. B. Heizung im Bad wird nicht warm" />
-            </div>
+            <p style={{ fontSize: 11.5, color: "var(--muted)", margin: 0 }}>
+              Etwas ist kaputt? Dann besser über „Schaden melden“ — dort fragt MyImmo gleich nach, was dein Vermieter wissen muss.
+            </p>
             <div className="form-group">
               <label style={{ fontSize: 11, color: "var(--muted)" }}>Beschreibung</label>
               <textarea name="beschreibung" rows={3} maxLength={2000} className="input" placeholder="Details, seit wann, wo genau …" />
@@ -294,7 +300,7 @@ export default function AnliegenPortal({
 
         {anliegen.length === 0 ? (
           <p style={{ fontSize: 12, color: "var(--faint)" }}>
-            Noch keine Anliegen — melde Schäden, fordere Dokumente an oder stelle Fragen direkt an deinen Vermieter.
+            Noch keine Anliegen. Melde hier einen Schaden oder stell deinem Vermieter eine Frage — Dokumente forderst du unter „Dokumente“ an.
           </p>
         ) : (
           <div className="listen">

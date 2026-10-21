@@ -52,10 +52,26 @@ const WAS: Record<BenachrichtigungsArt, string> = {
 
 export const BREMSE_SEKUNDEN = 600;
 
+/**
+ * Wohin der Link führt — allein aus der Art (21.10.2026). Vorher landete jede Mieter-Mail auf der
+ * Startseite des Portals, und wer „ein Dokument wartet“ las, musste den Reiter selbst suchen.
+ * Bewusst ohne Bezug-ID: Die Mail verrät nach wie vor nicht, WORUM es geht.
+ */
+const ZIEL: Record<BenachrichtigungsArt, string> = {
+  dokument: "/portal?tab=dokumente",
+  nachricht_an_mieter: "/portal?tab=anliegen",
+  termine: "/portal?tab=anliegen",
+  anfrage: "/portal?tab=anliegen",
+  mitteilung: "/portal",
+  anliegen_neu: "/anliegen",
+  nachricht_an_vermieter: "/anliegen",
+  termin_bestaetigt: "/anliegen",
+};
+
 /** Die Mail selbst — rein, ohne Netz, damit prüfbar, dass nichts Inhaltliches hineingerät. */
 export function benachrichtigungsMail(art: BenachrichtigungsArt, basis: string): { betreff: string; text: string; html: string } {
   const mieter = AN_MIETER.has(art);
-  const link = `${basis}${mieter ? "/portal" : "/anliegen"}`;
+  const link = `${basis}${ZIEL[art]}`;
   const betreff = mieter ? "Neues in deinem Mieterportal" : "Neues im Mieterportal deiner Immobilien";
   const was = WAS[art];
   const einstellung = mieter ? "Konto → Benachrichtigungen" : "Einstellungen → Sicherheit → Benachrichtigungen";

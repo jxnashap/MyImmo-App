@@ -85,7 +85,8 @@ describe("Anbindung", () => {
     expect(ansicht).toContain("baueMieterAufgaben(daten, heuteBerlin())");
     expect(ansicht).toMatch(/<MieterAufgabenListe aufgaben=\{aufgaben\}/);
   });
-  it("der Notfall-Kasten steht auf der Startseite UND im Anliegen-Reiter", () => {
-    expect(ansicht.match(/<NotfallKasten notdienste=\{notdienste\} \/>/g)?.length).toBe(2);
+  it("Notfall: auf der Startseite eine ruhige Zeile mit der 112, der Kasten im Anliegen-Reiter (21.10.2026)", () => {
+    expect(ansicht.match(/<NotfallKasten notdienste=\{notdienste\} \/>/g)?.length).toBe(1);
+    expect(ansicht).toContain('<NotfallZeile href={hrefFuer("anliegen")} />');
   });
 });

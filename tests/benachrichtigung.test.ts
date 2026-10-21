@@ -14,12 +14,23 @@ describe("die Mail selbst", () => {
     const { benachrichtigungsMail } = await import("@/lib/benachrichtigung");
     const m = benachrichtigungsMail("dokument", "https://www.myimmoapp.de");
     expect(m.text).toContain("https://www.myimmoapp.de/portal");
-    expect(m.html).toContain('href="https://www.myimmoapp.de/portal"');
+    expect(m.html).toContain('href="https://www.myimmoapp.de/portal?tab=dokumente"');
     expect(m.text).toContain("nur im Portal, nicht in dieser E-Mail");
     expect(m.text).toContain("Konto → Benachrichtigungen");
     const v = benachrichtigungsMail("anliegen_neu", "https://www.myimmoapp.de");
     expect(v.text).toContain("https://www.myimmoapp.de/anliegen");
     expect(v.text).toContain("Einstellungen → Sicherheit → Benachrichtigungen");
+  });
+  it("führt in den passenden Reiter — allein aus der Art, ohne Bezug (21.10.2026)", async () => {
+    const { benachrichtigungsMail } = await import("@/lib/benachrichtigung");
+    const ziel = (art: Parameters<typeof benachrichtigungsMail>[0]) =>
+      benachrichtigungsMail(art, "https://x").html.match(/href="https:\/\/x([^"]*)"/)?.[1];
+    expect(ziel("dokument")).toBe("/portal?tab=dokumente");
+    expect(ziel("nachricht_an_mieter")).toBe("/portal?tab=anliegen");
+    expect(ziel("termine")).toBe("/portal?tab=anliegen");
+    expect(ziel("anfrage")).toBe("/portal?tab=anliegen");
+    expect(ziel("mitteilung")).toBe("/portal");
+    expect(ziel("termin_bestaetigt")).toBe("/anliegen");
   });
   it("die Signatur nimmt keinen Titel, keinen Text, keinen Namen entgegen", async () => {
     const { benachrichtigungsMail } = await import("@/lib/benachrichtigung");

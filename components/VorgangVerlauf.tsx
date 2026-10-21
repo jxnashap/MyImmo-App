@@ -51,7 +51,7 @@ export default function VorgangVerlauf({
       {stand && (
         <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px" }} data-vorgang-stand>
           Zuständig: <strong style={{ color: "var(--text)" }}>{ZUSTAENDIG_TEXT[stand.zustaendig]}</strong>
-          {stand.auftrag && <> · Auftrag: {stand.auftrag}</>}
+          {(sicht === "mieter" ? stand.auftragFuerMieter : stand.auftrag) && <> · Auftrag: {sicht === "mieter" ? stand.auftragFuerMieter : stand.auftrag}</>}
           {stand.auftragErledigtAnliegenOffen && sicht === "vermieter" && <> · bitte das Anliegen abschließen oder nachfragen</>}
         </p>
       )}
@@ -73,7 +73,7 @@ export default function VorgangVerlauf({
                     ? { marginTop: 2, padding: "6px 10px", background: eigen ? "var(--bg3)" : "var(--gold-pale)", borderRadius: 8, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }
                     : { marginTop: 1, color: "var(--muted)" }}
                 >
-                  {ereignisText(e)}
+                  {ereignisText(e, sicht)}
                 </div>
               </li>
             );

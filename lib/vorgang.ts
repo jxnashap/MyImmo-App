@@ -36,9 +36,34 @@ export function autorLabel(rolle: Ereignis["autor_rolle"], sicht: "mieter" | "ve
   return rolle === "vermieter" ? "Dein Vermieter" : "Mieter";
 }
 
+const WOCHENTAG = ["So.", "Mo.", "Di.", "Mi.", "Do.", "Fr.", "Sa."];
+
+/**
+ * Zeitpunkte, die die Datenbank als „2026-10-22 14:30“ in den Verlauf schreibt (Trigger
+ * `anliegen_verlauf_mitschreiben`), lesbar machen: „Do., 22.10.2026, 14:30 Uhr“ — dieselbe Form
+ * wie die Termin-Knöpfe. Rechnet nur auf den Zahlen (die Zeit ist schon Berliner Ortszeit),
+ * nie über die Zeitzone des Servers. Rein.
+ */
+export function terminLesbar(text: string): string {
+  return text.replace(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?/g, (_, j, m, t, h, min) => {
+    const tag = WOCHENTAG[new Date(Date.UTC(Number(j), Number(m) - 1, Number(t))).getUTCDay()];
+    return `${tag}, ${t}.${m}.${j}, ${h}:${min} Uhr`;
+  });
+}
+
+/**
+ * Auftragsstände, die beim Mieter wie eine Absage wirkten („Der Auftrag wurde nicht
+ * freigegeben.“) — es sind Abstimmungen zwischen Vermieter und Hausmeister. Der Mieter liest
+ * stattdessen, dass sich sein Vermieter kümmert (21.10.2026).
+ */
+const INTERN_FUER_MIETER = new Set(["freigabe", "nicht_freigegeben"]);
+export const KUEMMERT_SICH = "Dein Vermieter kümmert sich darum.";
+
 /** Die Zeile, die im Verlauf steht. */
-export function ereignisText(e: Ereignis): string {
+export function ereignisText(e: Ereignis, sicht: "mieter" | "vermieter" = "vermieter"): string {
   if (e.art === "status") return `Status: ${STATUS_TEXT[e.status_neu ?? ""] ?? e.status_neu ?? "geändert"}`;
+  if (e.art === "auftrag" && sicht === "mieter" && INTERN_FUER_MIETER.has(e.status_neu ?? "")) return KUEMMERT_SICH;
+  if (e.art === "termin") return terminLesbar(e.text ?? "");
   return e.text ?? "";
 }
 
@@ -69,15 +94,18 @@ export function vorgangStand(verlauf: Ereignis[], anliegenStatus: string): {
   auftrag: string | null;
   /** Auftrag erledigt, Anliegen noch offen — der Vermieter sollte abschließen oder nachfragen. */
   auftragErledigtAnliegenOffen: boolean;
+  /** Stand des Auftrags für den Mieter — ohne die internen Abstimmungen (freigabe, nicht freigegeben, abgelehnt). */
+  auftragFuerMieter: string | null;
 } {
   const letzter = [...verlauf].filter((e) => e.art === "auftrag").sort((a, b) => a.created_at.localeCompare(b.created_at)).pop();
-  if (!letzter) return { zustaendig: "vermieter", auftrag: null, auftragErledigtAnliegenOffen: false };
+  if (!letzter) return { zustaendig: "vermieter", auftrag: null, auftragErledigtAnliegenOffen: false, auftragFuerMieter: null };
   const status = letzter.status_neu ?? "";
   const zurueck = status === "abgelehnt" || status === "nicht_freigegeben";
   return {
     zustaendig: zurueck ? "vermieter" : letzter.zustaendig === "hausmeister" ? "hausmeister" : "handwerker",
     auftrag: AUFTRAG_STAND[status] ?? null,
     auftragErledigtAnliegenOffen: status === "erledigt" && anliegenStatus !== "erledigt",
+    auftragFuerMieter: zurueck || INTERN_FUER_MIETER.has(status) ? null : AUFTRAG_STAND[status] ?? null,
   };
 }
 

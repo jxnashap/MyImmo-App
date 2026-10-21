@@ -2,21 +2,23 @@
 
 // Mieterportal-Bereich "Dokumente": häufige Dokumente per Klick anfordern
 // (läuft über das Anliegen-System, typ = dokument) + Status der Anfragen.
+// Seit 21.10.2026 öffnet eine Anfrage die Detailansicht im Reiter Anliegen (dort steht der
+// Verlauf) — vorher stand derselbe Verlauf hier ein zweites Mal.
+import Link from "next/link";
 import { useState, useTransition } from "react";
-import { FileText, FileCheck2, ReceiptText, FileQuestion, ClipboardCheck, Zap, BadgeEuro, type LucideIcon } from "lucide-react";
+import { FileText, FileCheck2, ReceiptText, FileQuestion, ClipboardCheck, Zap, BadgeEuro, ChevronRight, type LucideIcon } from "lucide-react";
 import { erstelleAnliegen } from "@/lib/actions/anliegen";
 import type { AnliegenRow } from "@/components/AnliegenPortal";
 import VorschauHinweis from "@/components/VorschauHinweis";
-import VorgangVerlauf from "@/components/VorgangVerlauf";
-import type { Ereignis } from "@/lib/vorgang";
+import { gesendetText, mitVorgang } from "@/lib/anliegenListe";
 
 const VORLAGEN: { titel: string; hinweis: string; icon: LucideIcon }[] = [
   { titel: "Mietbescheinigung", hinweis: "z. B. für Amt, Bank oder neuen Vermieter", icon: FileCheck2 },
-  { titel: "Wohnungsgeberbestätigung", hinweis: "für die Anmeldung beim Einwohnermeldeamt (§ 19 BMG)", icon: ClipboardCheck },
-  { titel: "Mietquittung", hinweis: "Quittung über gezahlte Miete (§ 368 BGB)", icon: BadgeEuro },
+  { titel: "Wohnungsgeberbestätigung", hinweis: "für die Anmeldung beim Einwohnermeldeamt", icon: ClipboardCheck },
+  { titel: "Mietquittung", hinweis: "Quittung über gezahlte Miete", icon: BadgeEuro },
   { titel: "Energieausweis", hinweis: "Energieausweis der Wohnung / des Gebäudes", icon: Zap },
   { titel: "Kopie des Mietvertrags", hinweis: "aktueller Vertrag inkl. Nachträge", icon: FileText },
-  { titel: "Aktuelle Nebenkostenabrechnung", hinweis: "letzte NK-Abrechnung als PDF", icon: ReceiptText },
+  { titel: "Aktuelle Nebenkostenabrechnung", hinweis: "letzte Nebenkostenabrechnung als PDF", icon: ReceiptText },
   { titel: "Sonstiges Dokument", hinweis: "im nächsten Schritt kurz beschreiben", icon: FileQuestion },
 ];
 
@@ -28,16 +30,20 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 
 export default function DokumenteAnfrage({
   anfragen,
-  verlauf = {},
   nurLesen = false,
+  anliegenHref,
+  mailHinweis = false,
 }: {
   anfragen: AnliegenRow[];
-  verlauf?: Record<string, Ereignis[]>;
   nurLesen?: boolean;
+  /** Liste im Reiter Anliegen — eine Anfrage öffnet dort ihre Detailansicht. */
+  anliegenHref: string;
+  mailHinweis?: boolean;
 }) {
   const [gewaehlt, setGewaehlt] = useState<string | null>(null);
   const [notiz, setNotiz] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
+  const [gesendet, setGesendet] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const anfordern = () =>
@@ -48,11 +54,17 @@ export default function DokumenteAnfrage({
       fd.set("typ", "dokument");
       fd.set("titel", gewaehlt);
       fd.set("beschreibung", notiz);
-      const r = await erstelleAnliegen(fd);
-      if (r?.error) setFehler(r.error);
-      else {
-        setGewaehlt(null);
-        setNotiz("");
+      // In `try`: Bricht die Verbindung ab, bliebe sonst nur die Fehlerseite (lib/fehlerText.ts).
+      try {
+        const r = await erstelleAnliegen(fd);
+        if (r?.error) setFehler(r.error);
+        else {
+          setGewaehlt(null);
+          setNotiz("");
+          setGesendet(true);
+        }
+      } catch {
+        setFehler("Senden hat nicht geklappt — bitte noch einmal versuchen.");
       }
     });
 
@@ -73,7 +85,7 @@ export default function DokumenteAnfrage({
                   key={v.titel}
                   type="button"
                   disabled={nurLesen}
-                  onClick={() => setGewaehlt(aktiv ? null : v.titel)}
+                  onClick={() => { setGewaehlt(aktiv ? null : v.titel); setGesendet(false); }}
                   className="role-tile"
                   style={{
                     display: "flex", alignItems: "center", gap: 12, textAlign: "left",
@@ -92,6 +104,9 @@ export default function DokumenteAnfrage({
               );
             })}
           </div>
+          {gesendet && (
+            <p role="status" style={{ fontSize: 12.5, color: "var(--green)", margin: "12px 0 0" }}>{gesendetText(mailHinweis)}</p>
+          )}
           {gewaehlt && !nurLesen && (
             <div style={{ marginTop: 14, display: "grid", gap: 10, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}>
               <div style={{ fontSize: 13 }}>
@@ -128,24 +143,24 @@ export default function DokumenteAnfrage({
           {anfragen.length === 0 ? (
             <p style={{ fontSize: 12, color: "var(--faint)" }}>Noch keine Anfragen.</p>
           ) : (
-            anfragen.map((a) => {
-              const s = STATUS_META[a.status] ?? STATUS_META.offen;
-              return (
-                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "10px 0", borderBottom: "1px solid var(--line)" }}>
-                  <FileText size={14} color="var(--gold)" />
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{a.titel}</span>
-                  <span className={`badge ${s.cls}`}>{s.label}</span>
-                  <span style={{ fontSize: 11, color: "var(--faint)", marginLeft: "auto" }}>
-                    {new Date(a.created_at).toLocaleDateString("de-DE")}
-                  </span>
-                  {(verlauf[a.id] ?? []).length > 0 && (
-                    <div style={{ flexBasis: "100%" }}>
-                      <VorgangVerlauf anliegenId={a.id} ereignisse={verlauf[a.id]} sicht="mieter" nurLesen={nurLesen} antworten={a.status !== "erledigt"} />
-                    </div>
-                  )}
-                </div>
-              );
-            })
+            <div className="listen">
+              {anfragen.map((a) => {
+                const s = STATUS_META[a.status] ?? STATUS_META.offen;
+                return (
+                  <Link key={a.id} href={mitVorgang(anliegenHref, a.id)} className="listen-zeile">
+                    <FileText size={16} color="var(--gold)" style={{ flexShrink: 0 }} />
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span className="listen-zeile-titel">{a.titel}</span>
+                      <span className="listen-zeile-sub">
+                        Angefragt am {new Date(a.created_at).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}
+                      </span>
+                    </span>
+                    <span className={`badge ${s.cls}`} style={{ flexShrink: 0 }}>{s.label}</span>
+                    <ChevronRight size={16} color="var(--faint)" style={{ flexShrink: 0 }} />
+                  </Link>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

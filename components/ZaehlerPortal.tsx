@@ -73,6 +73,9 @@ export default function ZaehlerPortal({ meldungen, nurLesen = false }: { meldung
             action={senden}
             style={{ display: "grid", gap: 10, marginBottom: 18, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}
           >
+            {/* Reihenfolge wie beim Ablesen (21.10.2026): Zähler → Stand → Foto. Nummer, Datum und
+                Anmerkung sind selten nötig und stehen eingeklappt darunter; die Einheit folgt aus
+                dem Zähler (nur bei „Sonstiges“ ein eigenes Feld). */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))", gap: 10 }}>
               <div className="form-group">
                 <label style={{ fontSize: 11, color: "var(--muted)" }}>Zähler</label>
@@ -81,21 +84,17 @@ export default function ZaehlerPortal({ meldungen, nurLesen = false }: { meldung
                 </select>
               </div>
               <div className="form-group">
-                <label style={{ fontSize: 11, color: "var(--muted)" }}>Zählernummer (optional)</label>
-                <input name="zaehlernummer" maxLength={40} className="input" placeholder="steht auf dem Zähler" />
-              </div>
-              <div className="form-group">
-                <label style={{ fontSize: 11, color: "var(--muted)" }}>Zählerstand *</label>
+                <label style={{ fontSize: 11, color: "var(--muted)" }}>Zählerstand{EINHEIT_JE_ART[art] ? ` in ${EINHEIT_JE_ART[art]}` : ""} *</label>
                 <input name="stand" required inputMode="decimal" className="input" placeholder="z. B. 14382,5" />
               </div>
-              <div className="form-group">
-                <label style={{ fontSize: 11, color: "var(--muted)" }}>Einheit</label>
-                <input name="einheit" className="input" key={art} defaultValue={EINHEIT_JE_ART[art] ?? ""} />
-              </div>
-              <div className="form-group">
-                <label style={{ fontSize: 11, color: "var(--muted)" }}>Ablesedatum</label>
-                <input name="ablesedatum" type="date" className="input" defaultValue={heuteBerlin()} />
-              </div>
+              {EINHEIT_JE_ART[art] ? (
+                <input type="hidden" name="einheit" value={EINHEIT_JE_ART[art]} />
+              ) : (
+                <div className="form-group">
+                  <label style={{ fontSize: 11, color: "var(--muted)" }}>Einheit</label>
+                  <input name="einheit" className="input" key={art} placeholder="z. B. Einheiten" />
+                </div>
+              )}
               <div className="form-group" style={{ gridColumn: "1 / -1", minWidth: 0 }}>
                 <label style={{ fontSize: 11, color: "var(--muted)" }}>Foto vom Zähler (empfohlen)</label>
                 <input type="file" accept="image/jpeg,image/png,image/webp,image/heic" className="input" style={{ minWidth: 0, width: "100%" }}
@@ -104,7 +103,20 @@ export default function ZaehlerPortal({ meldungen, nurLesen = false }: { meldung
                 {foto.fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", marginTop: 4 }}>{foto.fehler}</p>}
               </div>
             </div>
-            <textarea name="notiz" rows={2} maxLength={500} className="input" placeholder="Anmerkung (optional)" />
+            <details>
+              <summary style={{ cursor: "pointer", fontSize: 12, color: "var(--muted)" }}>Zählernummer, Ablesedatum, Anmerkung (optional)</summary>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(170px, 100%), 1fr))", gap: 10, marginTop: 10 }}>
+                <div className="form-group">
+                  <label style={{ fontSize: 11, color: "var(--muted)" }}>Zählernummer</label>
+                  <input name="zaehlernummer" maxLength={40} className="input" placeholder="steht auf dem Zähler" />
+                </div>
+                <div className="form-group">
+                  <label style={{ fontSize: 11, color: "var(--muted)" }}>Ablesedatum (sonst heute)</label>
+                  <input name="ablesedatum" type="date" className="input" defaultValue={heuteBerlin()} />
+                </div>
+              </div>
+              <textarea name="notiz" rows={2} maxLength={500} className="input" placeholder="Anmerkung" style={{ marginTop: 10 }} />
+            </details>
             {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
             <div style={{ display: "flex", gap: 8 }}>
               <button type="submit" className="btn btn-gold" disabled={pending || foto.bereitet}>{pending ? "Wird gesendet …" : "Melden"}</button>

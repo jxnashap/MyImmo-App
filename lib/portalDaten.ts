@@ -23,6 +23,7 @@ import type { PortalAnfrageRow } from "@/components/AnfragenVomVermieter";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { ladeEreignisse, type Ereignis } from "@/lib/vorgang";
 import { mieterKonto, type KontoMonat } from "@/lib/mieterKonto";
+import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import type { MietkontoZeitraum } from "@/lib/mietkonto";
 import { zugangEndet } from "@/lib/mieterZugang";
 
@@ -361,6 +362,13 @@ export async function ladePortalDaten(supabase: Db, quelle: PortalQuelle): Promi
         heute,
       );
     }
+    // Die Kacheln „Kaltmiete / Nebenkosten / Warmmiete“ zeigen die Beträge, die HEUTE gelten
+    // (21.10.2026). Vorher nahmen sie die Mieterfelder, das Mietkonto darunter die
+    // Zeiträume — nach einer Staffelstufe oder einer § 560-Anpassung standen auf zwei Reitern
+    // zwei verschiedene Mieten. ERST nach dem Mietkonto ersetzt: Das rechnet frühere Monate
+    // mit den Grundwerten des Vertrags.
+    const geltend = mitGeltendenBetraegen(wohnungen.map((w) => w.m), zeitraeume, heute.slice(0, 7));
+    wohnungen.forEach((w, i) => { w.m = geltend[i]; });
   }
 
   // Vom Vermieter freigegebene Kosten-Belege (§ 556 Abs. 4 BGB Belegeinsicht)

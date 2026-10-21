@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { ladeAlle } from "@/lib/db/ladeAlle";
 import { zaehlerVerbrauch, type ZaehlerMeldung } from "@/lib/zaehlerVerbrauch";
 import { createClient } from "@/lib/supabase/server";
+import { heuteBerlin } from "@/lib/zeitraum";
 
 const ARTEN = ["Strom", "Gas", "Wasser", "Warmwasser", "Fernwärme", "Öl", "Sonstiges"] as const;
 const MAX_FOTO = 4 * 1024 * 1024;
@@ -54,7 +55,8 @@ export async function meldeZaehlerstand(formData: FormData) {
   const stand = parseStand(String(formData.get("stand") ?? ""));
   const einheit = String(formData.get("einheit") ?? "kWh").trim() || "kWh";
   const zaehlernummer = String(formData.get("zaehlernummer") ?? "").trim();
-  const ablesedatum = String(formData.get("ablesedatum") ?? "").trim() || new Date().toISOString().slice(0, 10);
+  // Berliner Datum: zwischen 0 und 2 Uhr stand sonst der Vortag da (UTC).
+  const ablesedatum = String(formData.get("ablesedatum") ?? "").trim() || heuteBerlin();
   const notiz = String(formData.get("notiz") ?? "").trim();
   if (!ARTEN.includes(art as (typeof ARTEN)[number])) return { error: "Ungültige Zählerart." };
   if (!Number.isFinite(stand) || stand < 0) return { error: "Bitte gib einen gültigen Zählerstand an." };

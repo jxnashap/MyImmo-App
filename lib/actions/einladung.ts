@@ -114,6 +114,7 @@ export async function erzeugeEinladungscode(
       link,
       code: data.code as string,
       gueltigBis: data.gueltig_bis as string,
+      email: adresse.email,
     });
     gesendet = await sendeMail({ an: adresse.email, betreff: mail.betreff, html: mail.html, text: mail.text });
   }

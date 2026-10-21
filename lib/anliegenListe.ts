@@ -13,6 +13,26 @@ export const vorgangUrl = (id: string) => `/anliegen?vorgang=${encodeURIComponen
 export const mitVorgang = (listeHref: string, id: string) =>
   `${listeHref}${listeHref.includes("?") ? "&" : "?"}vorgang=${encodeURIComponent(id)}`;
 
+/** Was der Mieter-Reiter „Anliegen“ beim Öffnen gleich aufklappt (21.10.2026, Startseite). */
+export type NeuesAnliegen = "schaden" | "frage";
+export const neuesAnliegen = (wert: string | undefined | null): NeuesAnliegen | null =>
+  wert === "schaden" || wert === "frage" ? wert : null;
+export const mitNeu = (listeHref: string, art: NeuesAnliegen) =>
+  `${listeHref}${listeHref.includes("?") ? "&" : "?"}neu=${art}`;
+
+/**
+ * Was der Mieter nach dem Absenden liest (21.10.2026) — EIN Satz für Schaden, Frage und
+ * Dokument-Wunsch. Vorher schloss sich das Frage-Formular wortlos, und niemand sagte, dass
+ * eine Antwort angekündigt wird. Der Mail-Halbsatz steht nur da, wenn der Versand an ist
+ * und der Mieter die Hinweise nicht abgeschaltet hat — eine Werbe- oder Rechtsaussage
+ * verspricht nur, was der Code tut.
+ */
+export function gesendetText(mailHinweis: boolean): string {
+  return mailHinweis
+    ? "Gesendet — dein Vermieter bekommt Bescheid. Antwortet er, bekommst du eine E-Mail; die Antwort steht dann hier im Anliegen."
+    : "Gesendet — dein Vermieter bekommt Bescheid. Seine Antwort steht dann hier im Anliegen.";
+}
+
 const letzteNachricht = (verlauf: Ereignis[], von: "mieter" | "vermieter") => {
   const letzte = verlauf[verlauf.length - 1];
   return !!letzte && letzte.art === "nachricht" && letzte.autor_rolle === von;

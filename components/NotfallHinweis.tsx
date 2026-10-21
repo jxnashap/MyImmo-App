@@ -2,6 +2,7 @@
 // steht ZUERST 112 und die Sofortmaßnahme da, erst danach die Meldung an den Vermieter.
 // Ohne Zustand und ohne JavaScript (details/summary) — er muss auch dann aufgehen, wenn
 // die Seite noch lädt. Texte: lib/schadensmeldung.ts (NOTFALL_TEXT).
+import Link from "next/link";
 import { Siren } from "lucide-react";
 import { NOTFALL_TEXT, type NotfallArt } from "@/lib/schadensmeldung";
 
@@ -42,6 +43,22 @@ export function NotfallKasten({ notdienste = [] }: { notdienste?: string[] }) {
         </div>
       )}
     </details>
+  );
+}
+
+/**
+ * Ruhige Zeile für die Mieter-Startseite (21.10.2026). Vorher stand dort der rot umrandete
+ * Kasten — beim ersten Öffnen das Auffälligste im Portal, als sei etwas passiert. Die 112
+ * bleibt mit einem Tipp erreichbar; die Schritte bei Gas, Wasser und Strom und die Notdienste
+ * des Vermieters stehen im Kasten unter „Anliegen“.
+ */
+export function NotfallZeile({ href }: { href: string }) {
+  return (
+    <p style={{ fontSize: 12, color: "var(--muted)", margin: "12px 0 0", lineHeight: 1.55 }}>
+      <Siren size={13} style={{ verticalAlign: "-2px" }} /> Notfall? Bei Feuer, Rauch oder Verletzten sofort{" "}
+      <a href="tel:112" style={{ display: "inline-block", padding: "6px 4px", margin: "-6px -4px", fontWeight: 600 }}>112</a>.
+      {" "}Was bei Gas, Wasser oder Strom zu tun ist: <Link href={href}>Notfall-Hinweise</Link>.
+    </p>
   );
 }
 

@@ -9,12 +9,16 @@ import { useToast } from "@/components/Toast";
 import { actionFehler } from "@/lib/actionErgebnis";
 import { bestaetigeZustellung } from "@/lib/actions/zustellung";
 import VorschauHinweis from "@/components/VorschauHinweis";
+import { GELESEN_HINWEIS } from "@/lib/mieterAufgaben";
 
 export default function ZustellungBestaetigen({ zustellungId, nurLesen = false }: { zustellungId: string; nurLesen?: boolean }) {
   const [pending, startTransition] = useTransition();
   const toast = useToast();
   if (nurLesen) return <VorschauHinweis was="„Gelesen und bestätigt“" />;
+  // Sichtbar statt nur im Tooltip (21.10.2026) — am Handy gibt es keinen Tooltip, und
+  // wer glaubt, er stimme einer Nebenkostenabrechnung zu, tippt lieber nicht.
   return (
+    <span style={{ display: "inline-flex", flexDirection: "column", gap: 3 }}>
     <button data-demo-sperre
       type="button"
       className="btn btn-gold"
@@ -29,5 +33,7 @@ export default function ZustellungBestaetigen({ zustellungId, nurLesen = false }
     >
       <CheckCircle2 size={12} style={{ verticalAlign: "-2px" }} /> {pending ? "…" : "Gelesen und bestätigt"}
     </button>
+    <span style={{ fontSize: 11, color: "var(--muted)" }}>{GELESEN_HINWEIS}</span>
+    </span>
   );
 }
