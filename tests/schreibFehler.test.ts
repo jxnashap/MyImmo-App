@@ -222,7 +222,7 @@ describe("Neuer Mieter-Einladungscode", () => {
     // Sonst gäbe es zwei gültige Codes für denselben Mieter — und der alte ist
     // womöglich längst weitergegeben.
     const { db, mod } = await lade("@/lib/actions/einladung", {
-      antworten: { mieter: { id: "mieter-1", prop_id: "obj-1", user_id: "nutzer-1" } },
+      antworten: { mieter: { id: "mieter-1", prop_id: "obj-1", user_id: "nutzer-1" }, vermieter_profil: { name: "Max Muster" } },
       fehlerBei: { "einladungscodes:delete": FEHLER },
     });
     const r = await mod.erzeugeEinladungscode("mieter-1", "anna@example.org", "anna@example.org");
@@ -232,7 +232,7 @@ describe("Neuer Mieter-Einladungscode", () => {
 
   it("im Normalfall wird der alte ersetzt und ein neuer angelegt", async () => {
     const { db, mod } = await lade("@/lib/actions/einladung", {
-      antworten: { mieter: { id: "mieter-1", prop_id: "obj-1", user_id: "nutzer-1" } },
+      antworten: { mieter: { id: "mieter-1", prop_id: "obj-1", user_id: "nutzer-1" }, vermieter_profil: { name: "Max Muster" } },
       antwortFolge: { "einladungscodes:insert": [{ code: "MI-1234-5678", gueltig_bis: "2026-12-31" }] },
     });
     const r = await mod.erzeugeEinladungscode("mieter-1", "anna@example.org", "anna@example.org");

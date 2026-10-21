@@ -268,7 +268,9 @@ export default function BewerbungForm({
           Alle Angaben und Dokumente sind freiwillig und gehen ausschließlich an den Vermieter dieser
           Wohnung. Mit dem Absenden willigst du ein, dass deine Angaben zur Mieterauswahl gespeichert
           und verarbeitet werden (Art. 6 Abs. 1 lit. a/b DSGVO). Kommt kein Mietvertrag zustande,
-          werden deine Daten wieder gelöscht; du kannst die Löschung jederzeit verlangen.
+          löscht dein Vermieter die Angaben spätestens sechs Monate nach Abschluss der Vermietung;
+          du kannst die Löschung auch vorher verlangen. Eine Einwilligung kannst du jederzeit
+          gegenüber dem Vermieter widerrufen.
         </p>
         {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
         <div>

@@ -81,6 +81,7 @@ async function lade(modul: string, init: Parameters<typeof fakeSupabase>[0] = {}
 
 const MIETER = {
   mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1", mietbeginn: "2021-03-01", mietende: null },
+  vermieter_profil: { name: "Max Muster" },
   notizen: { id: "n-neu" },
   zustellungen: [{ id: "z1" }],
 };

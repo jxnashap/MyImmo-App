@@ -163,7 +163,7 @@ describe("IBAN löschen: das Standard-Konto darf nicht verwaisen", () => {
 describe("Einladungscodes für das Mieterportal", () => {
   it("das Format ist MI-XXXX-XXXX ohne verwechselbare Zeichen", async () => {
     const { db, mod } = await lade("@/lib/actions/einladung", {
-      antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
+      antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, vermieter_profil: { name: "Max Muster" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
     });
     // 40 Codes ziehen, damit ein verbotenes Zeichen auffällt.
     const codes: string[] = [];
@@ -189,7 +189,7 @@ describe("Einladungscodes für das Mieterportal", () => {
 
   it("die Mieter-Abfrage schränkt auf den angemeldeten Vermieter ein", async () => {
     const { db, mod } = await lade("@/lib/actions/einladung", {
-      antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
+      antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, vermieter_profil: { name: "Max Muster" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
     });
     await mod.erzeugeEinladungscode("m1", "anna@example.org", "anna@example.org");
     const abfrage = db.zugriffe.find((z) => z.tabelle === "mieter");
@@ -200,7 +200,7 @@ describe("Einladungscodes für das Mieterportal", () => {
     // Ein eingelöster Code hängt an einem bestehenden Mieter-Zugang. Würde er
     // mitgelöscht, verlöre der Mieter seinen Zugang bei jedem neuen Code.
     const { db, mod } = await lade("@/lib/actions/einladung", {
-      antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
+      antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, vermieter_profil: { name: "Max Muster" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
     });
     await mod.erzeugeEinladungscode("m1", "anna@example.org", "anna@example.org");
     const loeschung = db.zugriffe.find((z) => z.tabelle === "einladungscodes" && z.op === "delete");
@@ -220,7 +220,7 @@ describe("Einladungscodes für das Mieterportal", () => {
     delete process.env.BILLING_ENFORCED;
     vi.resetModules();
     const { db, mod } = await lade("@/lib/actions/einladung", {
-      antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
+      antworten: { mieter: { id: "m1", prop_id: "p1", user_id: "nutzer-1" }, vermieter_profil: { name: "Max Muster" }, einladungscodes: { code: "MI-TEST-CODE", gueltig_bis: "2026-12-31" } },
     });
     await mod.erzeugeEinladungscode("m1", "anna@example.org", "anna@example.org");
     expect(db.zugriffe.some((z) => z.tabelle === "abos")).toBe(false);

@@ -3,7 +3,9 @@
 // Vermieter: Bewerbungs-Links verwalten + eingegangene Selbstauskünfte
 // sichten und bewerten (Favorit / Ablehnen).
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useToast } from "@/components/Toast";
+import { PROFIL_LINK } from "@/lib/mieterZugang";
 import { actionFehler } from "@/lib/actionErgebnis";
 import {
   Link2, Copy, Check, Star, XCircle, RotateCcw, ChevronDown, ChevronUp, UserRound,
@@ -357,13 +359,19 @@ export default function BewerbungenManager({
   heute: string;
 }) {
   const [fehler, setFehler] = useState<string | null>(null);
+  // Art. 13 DSGVO: Ohne Name und E-Mail im Profil kein neuer Link — der Fehler führt ins Profil.
+  const [profilFehlt, setProfilFehlt] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const erstellen = (fd: FormData) =>
     startTransition(async () => {
       setFehler(null);
+      setProfilFehlt(false);
       const r = await erstelleBewerberLink(fd);
-      if (r?.error) setFehler(r.error);
+      if (r?.error) {
+        setFehler(r.error);
+        setProfilFehlt("profilFehlt" in r && !!r.profilFehlt);
+      }
     });
 
   return (
@@ -388,7 +396,12 @@ export default function BewerbungenManager({
             </div>
             <button type="submit" className="btn btn-gold" disabled={pending}>Link erstellen</button>
           </form>
-          {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{fehler}</p>}
+          {fehler && (
+            <p role="alert" style={{ fontSize: 12, color: "var(--red)" }}>
+              {fehler}
+              {profilFehlt && <>{" "}<Link href={PROFIL_LINK} style={{ color: "var(--gold)" }}>Zum Profil</Link></>}
+            </p>
+          )}
           {links.length === 0 ? (
             <p style={{ fontSize: 12, color: "var(--faint)", marginTop: 8 }}>
               Noch keine Links — erstelle einen Link je Objekt und teile ihn im Inserat

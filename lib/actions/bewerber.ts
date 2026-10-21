@@ -17,6 +17,25 @@ export async function erstelleBewerberLink(formData: FormData) {
   const titel = String(formData.get("titel") ?? "").trim();
   if (!propId) return { error: "Bitte ein Objekt wählen." };
 
+  // Art. 13 DSGVO (Rechtssicherheit 21.10.2026): Die öffentliche Seite nennt den Vermieter als
+  // Verantwortlichen — aus dem Profil (RPC bewerber_link_info: vermieter_profil.name/email). Ohne
+  // Name und E-Mail stand dort nur „der Vermieter, der Ihnen diesen Link geschickt hat“. Nur NEUE
+  // Links sind gesperrt; bestehende bleiben, wie sie sind.
+  const { data: profil, error: profilFehler } = await supabase
+    .from("vermieter_profil")
+    .select("name,email")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+  if (profilFehler) return { error: "Dein Profil konnte nicht gelesen werden. Bitte erneut versuchen." };
+  const p = (profil ?? {}) as { name?: string | null; email?: string | null };
+  if (!(p.name ?? "").trim() || !(p.email ?? "").trim()) {
+    return {
+      error: "Trage zuerst deinen Namen und deine E-Mail-Adresse unter Einstellungen → Profil ein — Bewerber müssen erfahren, wer ihre Daten verarbeitet.",
+      profilFehlt: true,
+    };
+  }
+
   const { error } = await supabase.from("bewerber_links").insert({
     user_id: user.id,
     prop_id: propId,
