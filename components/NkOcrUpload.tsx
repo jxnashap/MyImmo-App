@@ -1,5 +1,6 @@
 "use client";
 import { FileText, Hourglass, Paperclip, TriangleAlert, CheckCircle2, ArrowRight } from "lucide-react";
+import { fehlerText } from "@/lib/fehlerText";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -67,7 +68,7 @@ export default function NkOcrUpload({
       setFlaecheGesamt(json.flaecheGesamt != null ? String(json.flaecheGesamt) : "");
       setDokJahr(typeof json.jahr === "number" ? json.jahr : null);
     } catch (err) {
-      setError(`Fehler: ${(err as Error).message}`);
+      setError(fehlerText(err, "Die Datei ließ sich nicht auslesen. Versuch es mit einem PDF oder einem schärferen Foto."));
     } finally {
       setLoading(false);
       e.target.value = "";
@@ -130,7 +131,7 @@ export default function NkOcrUpload({
       setAbgleich(null);
       router.refresh();
     } catch (err) {
-      setError(`Speichern fehlgeschlagen: ${(err as Error).message}`);
+      setError(fehlerText(err, "Nicht gespeichert — bitte erneut versuchen."));
     } finally {
       setSaving(false);
     }

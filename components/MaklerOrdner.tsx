@@ -6,6 +6,7 @@
 // Bank bzw. werden nur gezeigt — nicht an den Makler herausgegeben.
 
 import { useMemo, useRef, useState, useTransition } from "react";
+import { fehlerText } from "@/lib/fehlerText";
 import { FolderClosed, Upload, Eye, Download, X, Check, TriangleAlert, Info, Bot } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { MAKLER_CHECKLISTE, maklerErledigt, type MaklerDok, type MaklerItem } from "@/lib/makler";
@@ -63,14 +64,14 @@ export default function MaklerOrdner({
     const next = cur.status === "erledigt" ? (cur.datei_name ? "hochgeladen" : "offen") : "erledigt";
     start(async () => {
       try { apply(await setMaklerStatus(item.key, next)); }
-      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Speichern.", "error"); }
+      catch (e) { toast(fehlerText(e, "Nicht gespeichert — bitte Seite neu laden und erneut versuchen."), "error"); }
     });
   }
 
   function onDatum(item: MaklerItem, datum: string) {
     start(async () => {
       try { apply(await setMaklerDatum(item.key, datum || null)); }
-      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Speichern.", "error"); }
+      catch (e) { toast(fehlerText(e, "Datum nicht gespeichert — bitte erneut versuchen."), "error"); }
     });
   }
 
@@ -81,21 +82,21 @@ export default function MaklerOrdner({
     fd.set("datei", file);
     start(async () => {
       try { apply(await uploadMaklerDatei(item.key, fd)); toast("Datei hinterlegt."); }
-      catch (e) { toast(e instanceof Error ? e.message : "Upload fehlgeschlagen.", "error"); }
+      catch (e) { toast(fehlerText(e, "Hochladen hat nicht geklappt. Erlaubt sind PDF und Bilder bis 8 MB — bitte erneut versuchen."), "error"); }
     });
   }
 
   function onRemove(item: MaklerItem) {
     start(async () => {
       try { apply(await removeMaklerDatei(item.key)); }
-      catch (e) { toast(e instanceof Error ? e.message : "Fehler beim Entfernen.", "error"); }
+      catch (e) { toast(fehlerText(e, "Datei nicht entfernt — bitte erneut versuchen."), "error"); }
     });
   }
 
   function onGenerate(item: MaklerItem) {
     start(async () => {
       try { apply(await generiereMaklerDokument(item.key, { personenstand })); toast("Käufer-Selbstauskunft aus MyImmo erzeugt."); }
-      catch (e) { toast(e instanceof Error ? e.message : "Erzeugen fehlgeschlagen.", "error"); }
+      catch (e) { toast(fehlerText(e, "Die Selbstauskunft ließ sich nicht erzeugen — ist sie im Kauf-Assistenten ausgefüllt?"), "error"); }
     });
   }
 

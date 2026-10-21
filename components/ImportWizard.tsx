@@ -1,5 +1,6 @@
 "use client";
 import { Bot, ClipboardList, Hourglass, TriangleAlert, CheckCircle2, StickyNote, Upload, Link2 } from "lucide-react";
+import { fehlerText } from "@/lib/fehlerText";
 import SubmitButton from "@/components/SubmitButton";
 
 import { useState } from "react";
@@ -56,7 +57,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
       setNotiz(str(p.notiz));
       setKonfidenz(typeof p.konfidenz === "number" ? p.konfidenz : null);
     } catch (e) {
-      setError(`Netzwerkfehler: ${(e as Error).message}`);
+      setError(fehlerText(e, "Keine Verbindung zum Server — bitte Internet prüfen und erneut versuchen."));
     } finally {
       setLoading(null);
     }
@@ -74,7 +75,7 @@ export default function ImportWizard({ action }: { action: (fd: FormData) => voi
       for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
       await rufeAb("/api/import", { pdfBase64: btoa(bin) }, "pdf");
     } catch (e) {
-      setError(`Datei konnte nicht gelesen werden: ${(e as Error).message}`);
+      setError(fehlerText(e, "Die Datei ließ sich nicht lesen — bitte erneut auswählen."));
       setLoading(null);
     }
   }

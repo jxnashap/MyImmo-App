@@ -1,5 +1,6 @@
 "use client";
 import { Bot, Hourglass, TriangleAlert, X } from "lucide-react";
+import { fehlerText } from "@/lib/fehlerText";
 
 // „Aus Anzeige übernehmen": Exposé-LINK laden (Server holt + KI liest) ODER
 // Text einfügen (Fallback). Beide Wege liefern dieselbe Response-Shape
@@ -75,7 +76,7 @@ export default function KalkImport({
       onResult(d);
       setHinweis({ konfidenz: d.konfidenz ?? null });
     } catch (err) {
-      setError(`Fehler: ${(err as Error).message}`);
+      setError(fehlerText(err, "Die Datei ließ sich nicht auslesen. Versuch es mit einem PDF oder einem schärferen Foto."));
     } finally {
       setLoading(null);
     }
