@@ -125,6 +125,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
     mieter: tenants,
   });
   const istGaragen = GARAGEN_TYPEN.includes(p.typ ?? "");
+  const ohneHeizung = istGaragen || p.typ === "Grundstück";
   const wegSichtbar = hatWeg(p);
   // Soll-Kaltmiete: laufende Mieter, sonst Objektfeld — dieselbe Regel wie
   // Dashboard und Objektliste (lib/sollMiete.ts). Weichen beide ab, zeigt die
@@ -259,23 +260,30 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
             <div className="topbar-sub">{(p.adresse || p.typ || "")}{p.obj_status ? ` · ${p.obj_status}` : ""}</div>
           </div>
         </div>
+        {/* Ein Knopf statt fünf (21.10.2026): Bearbeiten bleibt sichtbar, der Rest — selten gebraucht —
+            steht unter „Mehr“. Vorher war die erste Objektseite nach dem Anlegen eine Knopfleiste. */}
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/verkauf" className="btn btn-ghost" style={{ fontSize: 12 }} title="Verkauf durchrechnen: Marktwert, § 23-Steuer, Netto-Erlös"><Handshake size={14} style={{ verticalAlign: "-2px" }} /> Verkauf prüfen</Link>
-          <Link href={`/properties/${id}/beleihung`} className="btn btn-ghost" style={{ fontSize: 12 }}><Landmark size={14} style={{ verticalAlign: "-2px" }} /> Beleihungsordner</Link>
-          {/* Ablauf E: Was vor dem Jahresabschluss fehlt — Belege, Zuordnungen, Rückstände, Abgleich. */}
-          <Link href={`/properties/${id}/jahrespruefung`} className="btn btn-ghost" style={{ fontSize: 12 }}><ClipboardCheck size={14} style={{ verticalAlign: "-2px" }} /> Jahresprüfung</Link>
           <Link href={`/properties/${id}/edit`} className="btn btn-ghost" style={{ fontSize: 12 }}><Pencil size={14} style={{ verticalAlign: "-2px" }} /> Bearbeiten</Link>
-          {/* Der Loeschumfang gehoert in die Rueckfrage: An einem Objekt haengen
-              per Cascade alle Buchungen, Darlehen und Archiv-Dokumente. */}
-          <DeleteButton
-            action={deleteProperty.bind(null, id)}
-            confirmText={`„${p.bezeichnung}“ wirklich löschen? ${objektFolgenText({
-              einnahmen: einnahmen.length, kosten: kosten.length, kredite: kred.length,
-              dokumente: notizen.length, verbrauch: verbrauch.length, mieter: tenants.length,
-            })}`.trim()}
-            label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>}
-            className="btn btn-ghost"
-          />
+          <details className="mehr-menue">
+            <summary className="btn btn-ghost" style={{ fontSize: 12 }}>Mehr …</summary>
+            <div className="mehr-menue-liste">
+              <Link href="/verkauf" className="btn btn-ghost" style={{ fontSize: 12 }} title="Verkauf durchrechnen: Marktwert, § 23-Steuer, Netto-Erlös"><Handshake size={14} style={{ verticalAlign: "-2px" }} /> Verkauf prüfen</Link>
+              <Link href={`/properties/${id}/beleihung`} className="btn btn-ghost" style={{ fontSize: 12 }}><Landmark size={14} style={{ verticalAlign: "-2px" }} /> Beleihungsordner</Link>
+              {/* Ablauf E: Was vor dem Jahresabschluss fehlt — Belege, Zuordnungen, Rückstände, Abgleich. */}
+              <Link href={`/properties/${id}/jahrespruefung`} className="btn btn-ghost" style={{ fontSize: 12 }}><ClipboardCheck size={14} style={{ verticalAlign: "-2px" }} /> Jahresprüfung</Link>
+              {/* Der Loeschumfang gehoert in die Rueckfrage: An einem Objekt haengen
+                  per Cascade alle Buchungen, Darlehen und Archiv-Dokumente. */}
+              <DeleteButton
+                action={deleteProperty.bind(null, id)}
+                confirmText={`„${p.bezeichnung}“ wirklich löschen? ${objektFolgenText({
+                  einnahmen: einnahmen.length, kosten: kosten.length, kredite: kred.length,
+                  dokumente: notizen.length, verbrauch: verbrauch.length, mieter: tenants.length,
+                })}`.trim()}
+                label={<><Trash2 size={14} style={{ verticalAlign: "-2px" }} /> Löschen</>}
+                className="btn btn-ghost"
+              />
+            </div>
+          </details>
         </div>
       </div>
 
@@ -293,7 +301,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
           { id: "kredite", label: "Kredite" },
           { id: "verbrauch", label: "Verbrauch" },
           { id: "archiv", label: "Archiv" },
-          { id: "co2", label: "CO₂" },
+          ...(ohneHeizung ? [] : [{ id: "co2", label: "CO₂" }]),
         ]}
       />
 
@@ -526,8 +534,8 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
 
       {/* Einnahmen + Kosten */}
       <div className="grid-2 mb-20">
-        <BuchungSection title={<><Wallet size={16} style={{ verticalAlign: "-3px" }} /> Einnahmen</>} rows={einnahmen} gesamtColor="var(--green)" badge="badge-green" addHref={`/einnahmen/new?prop=${id}&back=/properties/${id}`} kind="einnahme" />
-        <BuchungSection title={<><ClipboardList size={16} style={{ verticalAlign: "-3px" }} /> Kosten &amp; Ausgaben</>} rows={kosten} gesamtColor="var(--red)" badge="badge-red" addHref={`/kosten/new?prop=${id}&back=/properties/${id}`} kind="kosten" />
+        <BuchungSection title={<><Wallet size={16} style={{ verticalAlign: "-3px" }} /> Einnahmen</>} rows={einnahmen} gesamtColor="var(--green)" badge="badge-green" addHref={`/cashflow/neu?typ=einnahme&prop=${id}&back=/properties/${id}`} kind="einnahme" />
+        <BuchungSection title={<><ClipboardList size={16} style={{ verticalAlign: "-3px" }} /> Kosten &amp; Ausgaben</>} rows={kosten} gesamtColor="var(--red)" badge="badge-red" addHref={`/cashflow/neu?typ=ausgabe&prop=${id}&back=/properties/${id}`} kind="kosten" />
       </div>
 
       {((anschaffungsnah && (p.kaufpreis || p.kaufdatum)) || spekulation.aktiv) && (
@@ -637,7 +645,9 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
       {/* Prüfpflichten & Wartung (Katalog vs. aktive wiederkehrende Termine) */}
       <PruefpflichtenKarte propId={id} objektName={p.bezeichnung ?? "Objekt"} />
 
-      {/* CO₂-Kostenaufteilung (CO2KostAufG) */}
+      {/* CO₂-Kostenaufteilung (CO2KostAufG) — nicht bei Garage und Grundstück (21.10.2026): dort wird nicht
+          geheizt, der Block stand trotzdem auf jeder Objektseite. */}
+      {!ohneHeizung && (
       <div id="co2" data-anker className="section mb-20">
         <div className="section-header">
           <h3>CO₂-Kostenaufteilung</h3>
@@ -649,6 +659,7 @@ export default async function PropertyDetailPage(props: { params: Promise<{ id: 
           <Co2Rechner defaultFlaeche={p.flaeche} />
         </div>
       </div>
+      )}
 
       {/* Cashflow-Übersicht */}
       <div className="section mb-20">

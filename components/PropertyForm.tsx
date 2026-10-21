@@ -111,7 +111,8 @@ export default function PropertyForm({
       </div>
 
       <div className="form-row single">
-        <div className="form-group"><label>Adresse</label><input type="text" name="adresse" defaultValue={v("adresse")} placeholder="Straße, PLZ, Ort" /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Empfohlen — für die Portfolio-Karte und die automatische Marktwert-Ermittlung.</span></div>
+        {/* Die Portfolio-Karte gibt es seit 01.10.2026 nicht mehr — der Hinweis versprach sie weiter. */}
+        <div className="form-group"><label>Adresse</label><input type="text" name="adresse" defaultValue={v("adresse")} placeholder="Straße, PLZ, Ort" /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Für die Marktwert-Schätzung.</span></div>
       </div>
 
       <div className="form-row">
@@ -121,14 +122,26 @@ export default function PropertyForm({
         ) : <div className="form-group" />}
       </div>
 
+      {/* Kaufdatum bei den Grundangaben (21.10.2026): Unter „Weitere Details“ fehlte es bei 20 von
+          23 Objekten — ohne Datum rechnet die AfA im Kaufjahr voll, die Spekulationsfrist ist
+          unbekannt. Bewusst KEIN Pflichtfeld (ein Import kennt es oft nicht). */}
+      {cfg.afa && (
+        <div className="form-row">
+          <div className="form-group"><label>Kaufdatum (Anschaffung)</label>
+            <input type="date" name="kaufdatum" defaultValue={v("kaufdatum")} />
+            <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>
+              Wichtig für Steuer und Abschreibung.
+            </span>
+          </div>
+          <div className="form-group" />
+        </div>
+      )}
+
       {!detailsOffen && (
         <div style={{ margin: "4px 0 14px" }}>
           <button type="button" className="btn btn-ghost" style={{ fontSize: 12.5 }} onClick={() => setDetailsOffen(true)}>
-            + Weitere Details (Wert, Fläche, Baujahr, Energie, AfA …) — auch später ergänzbar
+            + Weitere Details (Wert, Fläche, Baujahr, Energie, Abschreibung …) — auch später ergänzbar
           </button>
-          <p style={{ fontSize: 11, color: "var(--faint)", marginTop: 6, marginBottom: 0 }}>
-            Für den Start reichen Name, Typ, Adresse, Kaufpreis und Miete — alles Weitere kannst du jederzeit nachtragen.
-          </p>
         </div>
       )}
 
@@ -138,17 +151,6 @@ export default function PropertyForm({
         <div className="form-group" />
       </div>
 
-      {cfg.afa && (
-        <div className="form-row">
-          <div className="form-group"><label>Kaufdatum (Anschaffung)</label>
-            <input type="date" name="kaufdatum" defaultValue={v("kaufdatum")} />
-            <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>
-              Aktiviert den 15 %-Wächter für anschaffungsnahe Herstellungskosten (§ 6 Abs. 1 Nr. 1a EStG) in den ersten 3 Jahren.
-            </span>
-          </div>
-          <div className="form-group" />
-        </div>
-      )}
 
       <div className="form-row">
         <div className="form-group">

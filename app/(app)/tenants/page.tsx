@@ -52,7 +52,6 @@ export default async function TenantsPage(props0: { searchParams: Promise<{ q?: 
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Verwaltung · Vermietung</div>
           <div className="topbar-title">Mieter</div>
           <div className="topbar-sub">Mietverträge, Fristen, Einheiten &amp; Dokumente</div>
         </div>

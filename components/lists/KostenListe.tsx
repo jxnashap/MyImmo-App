@@ -33,7 +33,7 @@ export default function KostenListe({
 
   return (
     <div className="table-scroll"><table className="list-table">
-      <thead><tr><th>Datum</th><th>Immobilie</th><th>Mieter</th><th>Kategorie</th><th>Umlage</th><th>Beleg</th><th>Betrag</th></tr></thead>
+      <thead><tr><th>Datum</th><th>Immobilie</th><th>Mieter</th><th>Kategorie</th><th title="Darf die Ausgabe in der Nebenkostenabrechnung auf Mieter umgelegt werden?">Auf Mieter umlegbar</th><th>Beleg</th><th>Betrag</th></tr></thead>
       <ExpandableRows cols={7} limit={10} label="weitere Buchungen">
         {rows.map((k) => {
           // Je Buchung bestätigt (Ablauf B) schlägt die Kategorie; sonst wie bisher aus der Kategorie.
@@ -52,7 +52,9 @@ export default function KostenListe({
               <td style={{ color: "var(--muted)" }}>{k.prop_id ? propName.get(k.prop_id) ?? "–" : "–"}</td>
               <td style={{ color: "var(--muted)" }}>{k.mieter_id ? mietName.get(k.mieter_id) ?? "–" : "–"}</td>
               <td>{k.kategorie ? <span className="badge badge-red">{k.kategorie}</span> : "–"}</td>
-              <td><span className={`badge ${u === "ja" ? "badge-green" : u === "nein" ? "badge-red" : "badge-teal"}`}>{u === "ja" ? "umlagefähig" : u === "nein" ? "nicht" : "prüfen"}</span></td>
+              {/* „nein“ grau statt rot (21.10.2026): Eine Reparatur ist nicht umlegbar — das ist kein Fehler,
+                  und Rot steht in der App für Destruktives. */}
+              <td><span className={`badge ${u === "ja" ? "badge-green" : u === "nein" ? "badge-neutral" : "badge-teal"}`}>{u === "ja" ? "ja" : u === "nein" ? "nein" : "offen"}</span></td>
               <td onClick={stop}>
                 {k.rechnung_name ? (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>

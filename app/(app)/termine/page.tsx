@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { datum } from "@/lib/format";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { fristZiel } from "@/lib/heute";
+import { aktuellerNutzer } from "@/lib/supabase/nutzer";
+import { anliegenTermine, ANLIEGEN_TERMIN_SPALTEN, type AnliegenMitTermin } from "@/lib/anliegenTermin";
+import { vorgangUrl } from "@/lib/anliegenListe";
 import { vollmachtStatus, vertreterName } from "@/lib/vertreter";
 import { mieterFristen, kreditFristen, globaleFristen, objektFristen, zeitraumMonateJeMieter } from "@/lib/fristen";
 import {
@@ -28,7 +31,8 @@ type Eintrag = {
   label: string;
   wer: string;
   wo: string;
-  quelle: "mieter" | "kredit" | "eigen" | "steuer" | "objekt" | "vertreter";
+  /** „anliegen“: vom Mieter bestätigter Termin eines Anliegens (lib/anliegenTermin.ts) — nur Anzeige. */
+  quelle: "mieter" | "kredit" | "eigen" | "steuer" | "objekt" | "vertreter" | "anliegen";
   typ: "info" | "warn" | "ok";
   kategorie: string;
   rechtsgrundlage?: string;
@@ -56,7 +60,8 @@ export default async function TerminePage(
 ) {
   const searchParams = await props0.searchParams;
   const supabase = await createClient();
-  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }, { data: archivRows }, { data: vertreterRows }, { data: zrRows }, { data: portalRows }] = await Promise.all([
+  const user = await aktuellerNutzer();
+  const [{ data: term }, { data: props }, { data: miet }, { data: kred }, { data: versteckt }, { data: archivRows }, { data: vertreterRows }, { data: zrRows }, { data: portalRows }, { data: anlTerminRows }] = await Promise.all([
     supabase.from("termine").select("*").order("datum"),
     supabase.from("properties").select("id,bezeichnung,typ,energieausweis_datum").order("bezeichnung"),
     supabase.from("mieter").select("id,prop_id,vorname,nachname,einheit,mietbeginn,mietende,kuendigung,letzte_erhoehung,mietart,staffel_datum,staffel_intervall,staffel_betrag,staffel_prozent,staffel_stufen"),
@@ -68,6 +73,8 @@ export default async function TerminePage(
     supabase.from("vertreter").select("id,vorname,nachname,gueltig_bis,widerrufen_am").not("gueltig_bis", "is", null),
     supabase.from("miet_zeitraeume").select("mieter_id,von"),
     supabase.from("zustellungen").select("notiz_id,zugestellt_am,gelesen_am,zurueckgezogen_am").eq("art", "dokument").limit(2000),
+    // Vom Mieter bestätigte Termine (21.10.2026) — erscheinen ohne eigenen Kalendereintrag.
+    supabase.from("anliegen").select(ANLIEGEN_TERMIN_SPALTEN).eq("vermieter_id", user?.id ?? "").not("termin_bestaetigt", "is", null).neq("status", "erledigt"),
   ]);
   const archiv = (archivRows ?? []) as ArchivDok[];
   const portal = (portalRows ?? []) as PortalZustellung[];
@@ -124,6 +131,19 @@ export default async function TerminePage(
       bezug: v.id,
     });
   }
+  for (const at of anliegenTermine((anlTerminRows ?? []) as AnliegenMitTermin[], termine)) {
+    eintraege.push({
+      datum: at.datum,
+      label: at.label,
+      wer: (at.mieterId && mieterName.get(at.mieterId)) || "",
+      wo: (at.propId && nameOf.get(at.propId)) || "",
+      quelle: "anliegen",
+      typ: "info",
+      kategorie: "Sonstiges",
+      ziel: vorgangUrl(at.anliegenId),
+      bezug: at.anliegenId,
+    });
+  }
   for (const t of termine) {
     if (!t.datum) continue;
     eintraege.push({
@@ -149,7 +169,8 @@ export default async function TerminePage(
   // Zugangsdatum und Zustellweg bestätigt). Erledigt zählt wie ein abgehakter Termin.
   const vermerke = vermerkeAus(versteckt as FristVermerk[] | null);
   for (const e of eintraege) {
-    if (e.quelle === "eigen") continue;
+    // Eigene Termine hakt man ab, Anliegen-Termine schließt man mit dem Anliegen — kein Vermerk.
+    if (e.quelle === "eigen" || e.quelle === "anliegen") continue;
     const v = fristVermerk(vermerke, e.quelle, e.bezug ?? null, e.datum, e.label);
     e.erledigtSchluessel = fristSchluessel(e.quelle, e.datum, e.label, e.bezug);
     e.schluessel = v?.schluessel ?? e.erledigtSchluessel;
@@ -392,7 +413,6 @@ export default async function TerminePage(
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Verwaltung · Fristen &amp; Termine</div>
           <div className="topbar-title">Termine</div>
           <div className="topbar-sub">Automatische Fristen aus Mietern, Krediten &amp; Steuer plus eigene Termine · Angaben ohne Gewähr</div>
         </div>

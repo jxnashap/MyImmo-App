@@ -152,6 +152,8 @@ describe("Inventar: jede Seite hat einen Einstieg", () => {
   const AUSNAHMEN: Record<string, string> = {
     "/properties/[id]/umlage": "alte Adresse des Verteilers, leitet auf /nebenkosten um",
     "/verbrauch/[id]/edit": "alte Bearbeiten-Seite, leitet auf /verbrauch um (Bearbeiten im Dialog)",
+    "/einnahmen/new": "altes Formular, leitet auf /cashflow/neu?typ=einnahme um (ein Buchungsformular, 21.10.2026)",
+    "/kosten/new": "altes Formular, leitet auf /cashflow/neu?typ=ausgabe um (ein Buchungsformular, 21.10.2026)",
   };
   // Listen, die Adressen nur VERWALTEN (Demo-Freigabe, öffentliche Seiten, Proxy, Sitemap), sind kein Einstieg.
   const KEIN_EINSTIEG = new Set(["lib/demo.ts", "lib/oeffentlich.ts", "proxy.ts", "app/sitemap.ts"]);

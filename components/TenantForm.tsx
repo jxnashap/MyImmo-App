@@ -15,9 +15,9 @@ const KAUTION_STATUS = [
   { v: "ja", label: "✓ Vollständig" },
 ];
 const MIETART = [
-  { v: "standard", label: "Standard" },
-  { v: "staffel", label: "Staffelmiete" },
-  { v: "index", label: "Indexmiete" },
+  { v: "standard", label: "Feste Miete" },
+  { v: "staffel", label: "Staffelmiete (Erhöhungen stehen im Vertrag)" },
+  { v: "index", label: "Indexmiete (folgt den Verbraucherpreisen)" },
 ];
 
 export default function TenantForm({
@@ -43,6 +43,8 @@ export default function TenantForm({
   vorbelegung?: { flaeche: number | null; kaltmiete: number | null };
 }) {
   const [mietart, setMietart] = useState<string>(normMietart(tenant?.mietart as string | null));
+  // Beim Bearbeiten alles sichtbar — dort sucht man gerade ein Feld weiter unten.
+  const [mehrOffen, setMehrOffen] = useState(!!tenant);
   const v = (k: keyof Tenant) => (tenant?.[k] as string | number | null) ?? "";
 
   // S4: Name oder Mietbeginn eines Mieters mit Portal-Konto geändert? Erst fragen —
@@ -100,13 +102,51 @@ export default function TenantForm({
           er angefangen hat (z. B. auf der Objektseite) — nicht in der Liste. */}
       {back && <input type="hidden" name="back" value={back} />}
       <h3>{tenant ? "Mieter bearbeiten" : "Mieter erfassen"}</h3>
-      <p>Mietvertrag, Fristen, Kaution und Einheit.</p>
+      {/* Zweistufig (21.10.2026): Oben, was Mietkonto und Abrechnung brauchen; der Rest steht
+          eingeklappt darunter — vorher 22 Felder auf einmal, der Mietbeginn mittendrin. Felder im
+          zugeklappten Teil werden trotzdem mitgeschickt. */}
+      <p>Das Nötige zuerst — alles Weitere geht auch später.</p>
 
-      <div className="form-section-label">Person</div>
       <div className="form-row">
         <div className="form-group"><label>Vorname *</label><input name="vorname" required defaultValue={v("vorname")} /></div>
         <div className="form-group"><label>Nachname *</label><input name="nachname" required defaultValue={v("nachname")} /></div>
       </div>
+      <div className="form-row">
+        <div className="form-group"><label>Objekt</label>
+          <select name="prop_id" defaultValue={tenant?.prop_id ?? propInitial}>
+            <option value="">— kein Objekt —</option>
+            {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
+          </select>
+        </div>
+        <div className="form-group"><label>Einheit (z. B. EG links)</label><input name="einheit" defaultValue={v("einheit")} /></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label>Mietbeginn{tenant ? "" : " *"}</label>
+          {/* Pflicht beim Anlegen: Ohne Mietbeginn rechnet das Mietkonto für diesen Mieter nichts — er
+              stand dann als Aufgabe „Mietbeginn fehlt“ auf dem Dashboard. Beim Bearbeiten nicht
+              erzwungen, sonst ließe sich ein Altbestand ohne Datum gar nicht mehr speichern. */}
+          <input type="date" name="mietbeginn" required={!tenant} defaultValue={v("mietbeginn")} />
+          <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Ab hier rechnet das Mietkonto.</span>
+        </div>
+        <div className="form-group"><label>E-Mail</label><input type="email" name="email" defaultValue={v("email")} /></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Kaltmiete (€ / Mo.)</label><input type="number" step="0.01" name="kaltmiete" defaultValue={tenant ? v("kaltmiete") : (vorbelegung?.kaltmiete ?? "")} /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Ändert sich der Betrag, fragt MyImmo beim Speichern, ab welchem Monat er gilt — frühere Monate bleiben, wie sie waren.</span></div>
+        <div className="form-group"><label>Nebenkosten-Vorauszahlung (€ / Mo.)</label><input type="number" step="0.01" name="nk_vorauszahlung" defaultValue={v("nk_vorauszahlung")} /></div>
+      </div>
+
+      {!mehrOffen && (
+        <div style={{ margin: "4px 0 14px" }}>
+          <button type="button" className="btn btn-ghost" style={{ fontSize: 12.5 }} onClick={() => setMehrOffen(true)}>
+            + Weitere Angaben (Kontakt, Kaution, Stellplatz, Mieterhöhung, Bank) — auch später ergänzbar
+          </button>
+        </div>
+      )}
+      {/* Ausgeblendet, nicht entfernt: Die Felder gehen beim Speichern mit (wie im Objektformular). */}
+      <div style={mehrOffen ? undefined : { display: "none" }}>
+
+      <div className="form-section-label">Person &amp; Kontakt</div>
       {/* Gesamtprüfung P3, B44: Mieterhöhung und Kündigung gehen an ALLE Vertragspartner. */}
       <div className="form-row single">
         <div className="form-group">
@@ -118,46 +158,35 @@ export default function TenantForm({
         </div>
       </div>
       <div className="form-row">
-        <div className="form-group"><label>E-Mail</label><input type="email" name="email" defaultValue={v("email")} /></div>
         <div className="form-group"><label>Telefon</label><input name="telefon" defaultValue={v("telefon")} /></div>
-      </div>
-      <div className="form-row single">
-        <div className="form-group"><label>Adresse des Mieters</label><input name="mieter_adresse" defaultValue={v("mieter_adresse")} /></div>
+        <div className="form-group">
+          <label>Adresse des Mieters</label>
+          <input name="mieter_adresse" defaultValue={v("mieter_adresse")} />
+          {/* lib/format.ts → mieterAnschrift(): leer = Anschrift des Objekts. Stand nirgends. */}
+          <span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Leer lassen, wenn er im Objekt wohnt — dann gilt dessen Adresse.</span>
+        </div>
       </div>
       <div className="form-row single">
         <div className="form-group">
           <label>Bankverbindung des Mieters (IBAN)</label>
           <input name="iban" defaultValue={tenant?.iban ?? ""} placeholder="DE.." style={{ textTransform: "uppercase" }} />
           <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
-            Verschlüsselt gespeichert; erscheint im Erstattungs-Hinweis der NK-Abrechnung.
+            Verschlüsselt gespeichert; erscheint im Erstattungs-Hinweis der Nebenkostenabrechnung.
           </div>
         </div>
       </div>
 
       <div className="form-section-label">Mietverhältnis</div>
       <div className="form-row">
-        <div className="form-group"><label>Objekt</label>
-          <select name="prop_id" defaultValue={tenant?.prop_id ?? propInitial}>
-            <option value="">— kein Objekt —</option>
-            {properties.map((p) => <option key={p.id} value={p.id}>{p.bezeichnung}</option>)}
-          </select>
-        </div>
-        <div className="form-group"><label>Einheit (z. B. EG links)</label><input name="einheit" defaultValue={v("einheit")} /></div>
-      </div>
-      <div className="form-row">
-        <div className="form-group"><label>Mietbeginn</label><input type="date" name="mietbeginn" defaultValue={v("mietbeginn")} /></div>
         <div className="form-group"><label>Mietende</label><input type="date" name="mietende" defaultValue={v("mietende")} /></div>
+        <div className="form-group"><label>Kündigungsfrist (Monate)</label><input type="number" name="kuendigung" defaultValue={tenant ? v("kuendigung") : "3"} placeholder="3" /></div>
       </div>
       <div className="form-row">
-        <div className="form-group"><label>Kündigungsfrist (Monate)</label><input type="number" name="kuendigung" defaultValue={tenant ? v("kuendigung") : "3"} placeholder="3" /></div>
         <div className="form-group"><label>Wohnfläche (m²)</label><input type="number" step="0.01" name="flaeche" defaultValue={tenant ? v("flaeche") : (vorbelegung?.flaeche ?? "")} /></div>
+        <div className="form-group" />
       </div>
 
-      <div className="form-section-label">Miete &amp; Kaution</div>
-      <div className="form-row">
-        <div className="form-group"><label>Kaltmiete (€)</label><input type="number" step="0.01" name="kaltmiete" defaultValue={tenant ? v("kaltmiete") : (vorbelegung?.kaltmiete ?? "")} /><span style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, display: "block" }}>Ändert sich der Betrag, fragt MyImmo beim Speichern, ab welchem Monat er gilt — frühere Monate bleiben, wie sie waren.</span></div>
-        <div className="form-group"><label>NK-Vorauszahlung (€)</label><input type="number" step="0.01" name="nk_vorauszahlung" defaultValue={v("nk_vorauszahlung")} /></div>
-      </div>
+      <div className="form-section-label">Stellplatz &amp; Kaution</div>
       <div className="form-row">
         <div className="form-group"><label>Stellplatz / Garage (Bezeichnung)</label>
           <input name="stellplatz" defaultValue={v("stellplatz")} placeholder="z. B. TG-Platz 12" /></div>
@@ -166,7 +195,7 @@ export default function TenantForm({
       </div>
       <div className="form-row">
         <div className="form-group"><label>Kaution (€)</label><input type="number" step="0.01" name="kaution" defaultValue={v("kaution")} /></div>
-        <div className="form-group"><label>Kaution-Status</label>
+        <div className="form-group"><label>Kaution bezahlt?</label>
           <select name="kaution_status" defaultValue={(tenant?.kaution_status as string) || "nein"}>{KAUTION_STATUS.map((k) => <option key={k.v} value={k.v}>{k.label}</option>)}</select>
         </div>
       </div>
@@ -209,10 +238,13 @@ export default function TenantForm({
       <div className="form-row single">
         <div className="form-group"><label>Notiz</label><textarea name="notiz" rows={3} defaultValue={v("notiz")} style={{ resize: "vertical" }} />
           <small style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, display: "block" }}>
-            <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> Bitte keine besonderen Kategorien personenbezogener Daten erfassen
-            (z.&nbsp;B. Gesundheit, Religion, Herkunft, Gewerkschaft) — Art.&nbsp;9 DSGVO.
+            {/* Art. 9 DSGVO in Alltagssprache (21.10.2026) — die Regel bleibt dieselbe. */}
+            <TriangleAlert size={12} style={{ verticalAlign: "-2px" }} /> Bitte keine Angaben zu Gesundheit, Religion, Herkunft
+            oder Gewerkschaft notieren.
           </small>
         </div>
+      </div>
+
       </div>
 
       {frage && (
@@ -235,7 +267,7 @@ export default function TenantForm({
         <div role="alertdialog" aria-label="Ab wann gilt die neue Miete?" className="glass-card" style={{ padding: "14px 16px", margin: "8px 0 4px", borderLeft: "3px solid var(--gold)" }}>
           <strong style={{ fontSize: 13.5 }}>Ab wann gilt der neue Betrag?</strong>
           <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "6px 0 10px", lineHeight: 1.55 }}>
-            Du hast Kaltmiete, NK-Vorauszahlung oder Stellplatzmiete geändert. Die Monate davor rechnet das
+            Du hast Kaltmiete, Nebenkosten-Vorauszahlung oder Stellplatzmiete geändert. Die Monate davor rechnet das
             Mietkonto weiter mit dem bisherigen Betrag.
           </p>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>

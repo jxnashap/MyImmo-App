@@ -60,3 +60,24 @@ export function mieterMerkmal(
   if (letzteNachricht(verlauf, "vermieter")) return { text: "Antwort", cls: "badge-gold" };
   return null;
 }
+
+/**
+ * Status, den das Formular vorschlägt, sobald der Vermieter eine Antwort tippt (21.10.2026): aus
+ * „offen“ wird „in Arbeit“ — ein beantwortetes Anliegen zählte sonst weiter als neu und wurde auf
+ * dem Dashboard nach sieben Tagen rot. Andere Stände bleiben, wie sie sind. Rein.
+ */
+export function statusBeimAntworten(aktuell: string, text: string): string {
+  return aktuell === "offen" && text.trim() ? "in_arbeit" : aktuell;
+}
+
+/**
+ * „An Hausmeister/Service weiterleiten“ MIT Bezug (21.10.2026): Anliegen und Objekt gehen mit,
+ * der Auftrag hängt danach am Anliegen (Verlauf, Stand für den Mieter). Die IDs sind nur
+ * Vorbelegung — die Action und der Trigger `auftraege_bezug_pruefen` prüfen, dass beides dem
+ * Vermieter gehört. Der Mieter-Kontakt wird bewusst NICHT vorgewählt (nur mit Haken).
+ */
+export function weiterleitenHref(a: { id: string; titel: string; text: string; propId: string | null }): string {
+  const p = new URLSearchParams({ tab: "service", anliegen: a.id, titel: a.titel, text: a.text.slice(0, 1500) });
+  if (a.propId) p.set("prop", a.propId);
+  return `/anliegen?${p.toString()}#auftrag-vergeben`;
+}

@@ -64,7 +64,8 @@ export default function MarktwertCard({
   const geokodiert = koordinaten.lat != null && koordinaten.lng != null;
 
   return (
-    <div className="section mb-20">
+    // Sprungmarke für den Objekt-Check („Ortsübliche Miete“, lib/objektCheck.ts).
+    <div className="section mb-20" id="marktwert" style={{ scrollMarginTop: 80 }}>
       <div className="section-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h3><span style={{ color: "var(--gold)", marginRight: 6 }}>⌂</span>Marktwert (ImmoWertV)</h3>
         <span className={`badge ${hatWert ? "badge-neutral" : "badge-muted"}`} style={{ fontSize: 11 }}>
@@ -112,7 +113,7 @@ export default function MarktwertCard({
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
             <Feld name="bodenrichtwert" label="Bodenrichtwert (€/m²)" def={defaults.bodenrichtwert} step="1" placeholder="z. B. 450" />
             <Feld name="vergleichspreis_m2" label="Vergleichspreis (€/m²)" def={defaults.vergleichspreis_m2} step="1" placeholder="z. B. 3800" />
-            <Feld name="vergleichsmiete_m2" label="ortsübl. Miete (€/m²·Mo.)" def={defaults.vergleichsmiete_m2} step="0.1" placeholder="z. B. 11,5" />
+            <Feld name="vergleichsmiete_m2" label="Ortsübliche Miete (€/m² · Mo.)" def={defaults.vergleichsmiete_m2} step="0.1" placeholder="z. B. 11,5" />
             <Feld name="liegenschaftszins" label="Liegenschaftszins (%)" def={defaults.liegenschaftszins} step="0.1" placeholder="z. B. 3,5" />
             <Feld name="restnutzungsdauer" label="Restnutzungsdauer (J.)" def={defaults.restnutzungsdauer} step="1" placeholder="auto aus Baujahr" />
             <div className="form-group" style={{ margin: 0 }}>

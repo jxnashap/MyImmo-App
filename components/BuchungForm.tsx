@@ -5,6 +5,7 @@ import { Wallet, ClipboardList } from "lucide-react";
 // Neu: Segmented-Umschalter Einnahme/Ausgabe; Bearbeiten: Typ fix (row gesetzt).
 // Nutzt die bestehenden Server-Actions unverändert.
 
+import Link from "next/link";
 import { useState } from "react";
 import SubmitButton from "@/components/SubmitButton";
 import DeleteButton from "@/components/DeleteButton";
@@ -167,6 +168,12 @@ export default function BuchungForm({
           <input type="text" name="beschreibung" defaultValue={row?.beschreibung ?? beschreibungInitial ?? ""} placeholder={typ === "einnahme" ? "z. B. Miete August" : "z. B. Handwerkerrechnung"} />
         </div>
       </div>
+
+      {typ === "einnahme" && !isEdit && (
+        <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 12px" }}>
+          Mieteingänge bestätigst du schneller im <Link href="/mietkonto">Mietkonto</Link> — dort sind Betrag, Mieter und Monat schon ausgefüllt.
+        </p>
+      )}
 
       {typ === "einnahme" && (
         <div className="form-row">

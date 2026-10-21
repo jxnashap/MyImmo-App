@@ -9,8 +9,12 @@
 // Termin und Angeboten nebeneinander. Vorher klappte alles in der Liste auf.
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Wrench, FileText, MessageCircleQuestion, Save, Paperclip, CalendarClock, CalendarPlus, ChevronRight, ArrowLeft, type LucideIcon } from "lucide-react";
-import { bearbeiteAnliegen, schlageTermineVor, terminInKalender } from "@/lib/actions/anliegen";
+import { Wrench, FileText, MessageCircleQuestion, Save, Paperclip, CalendarClock, ChevronRight, ArrowLeft, type LucideIcon } from "lucide-react";
+import { bearbeiteAnliegen, schlageTermineVor } from "@/lib/actions/anliegen";
+import IcsKnopf from "@/components/IcsKnopf";
+import { berlinZuIso } from "@/lib/freigabeTermin";
+import { AuftragAbschliessen, KostenUebernahme, AUFTRAG_STATUS, type AuftragRow } from "@/components/ServiceManager";
+import { weiterleitenHref, statusBeimAntworten } from "@/lib/anliegenListe";
 import { useToast } from "@/components/Toast";
 import VorgangVerlauf from "@/components/VorgangVerlauf";
 import { NACHRICHT_MAX, type Ereignis } from "@/lib/vorgang";
@@ -42,6 +46,8 @@ export type AnliegenVermieterRow = {
   terminBestaetigt: string | null;
   /** Mieter-Zeile des Vorgangs (für „Kontakt teilen“ beim Beauftragen). */
   mieterId?: string | null;
+  /** Objekt des Vorgangs — wird beim Weiterleiten an den Hausmeister vorbelegt. */
+  propId?: string | null;
 };
 
 // "2026-07-22T14:30" → "Mi., 22.07.2026, 14:30 Uhr"
@@ -90,8 +96,21 @@ function Zeile({ a }: { a: AnliegenVermieterRow }) {
 }
 
 /** Detailansicht eines Anliegens: links Meldung + Verlauf + Antworten, rechts Termin, Angebote, Weiterleiten. */
-export function AnliegenDetail({ a, angebote }: { a: AnliegenVermieterRow; angebote?: AngebotKontext }) {
+export function AnliegenDetail({
+  a, angebote, auftraege = [], hatPartner = false,
+}: {
+  a: AnliegenVermieterRow;
+  angebote?: AngebotKontext;
+  /** Aufträge, die an DIESEM Anliegen hängen — Abschluss und Kostenbuchung direkt hier (21.10.2026). */
+  auftraege?: AuftragRow[];
+  /** Gibt es einen verknüpften Service-Partner? Sonst führt „Weiterleiten“ ins Leere. */
+  hatPartner?: boolean;
+}) {
   const [fehler, setFehler] = useState<string | null>(null);
+  // „In Arbeit“ vorwählen, sobald der Vermieter antwortet (21.10.2026): Ein beantwortetes Anliegen
+  // blieb sonst „offen“ und wurde auf dem Dashboard nach 7 Tagen rot. Eine eigene Wahl gewinnt.
+  const [status, setStatus] = useState(a.status);
+  const [statusGewaehlt, setStatusGewaehlt] = useState(false);
   const [pending, startTransition] = useTransition();
   const toast = useToast();
   const t = TYP_META[a.typ] ?? TYP_META.frage;
@@ -114,11 +133,9 @@ export function AnliegenDetail({ a, angebote }: { a: AnliegenVermieterRow; angeb
       else toast("Terminvorschläge an den Mieter gesendet ✓");
     });
 
-  const inKalender = () =>
-    startTransition(async () => {
-      const r = await terminInKalender(a.id);
-      toast(r?.error ?? "Termin im Kalender angelegt ✓", r?.error ? "error" : "success");
-    });
+  const terminIso = a.terminBestaetigt ? berlinZuIso(a.terminBestaetigt.slice(0, 16)) : null;
+  const offeneAuftraege = auftraege.filter((x) => !["erledigt", "abgelehnt", "nicht_freigegeben"].includes(x.status));
+  const alleErledigt = auftraege.length > 0 && auftraege.every((x) => x.status === "erledigt") && auftraege.every((x) => !(Number(x.betrag) > 0) || !!x.kosten_id);
 
   return (
     <div>
@@ -167,12 +184,13 @@ export function AnliegenDetail({ a, angebote }: { a: AnliegenVermieterRow; angeb
 
             <form action={speichern} style={{ display: "grid", gap: 8, marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
               <input type="hidden" name="id" value={a.id} />
-              <textarea name="nachricht" rows={3} maxLength={NACHRICHT_MAX} className="input" placeholder="Antwort an den Mieter (optional) — erscheint im Verlauf" />
+              <textarea name="nachricht" rows={3} maxLength={NACHRICHT_MAX} className="input" placeholder="Antwort an den Mieter (optional) — erscheint im Verlauf"
+                onChange={(e) => { if (!statusGewaehlt) setStatus(statusBeimAntworten(a.status, e.target.value)); }} />
               {fehler && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{fehler}</p>}
               <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 <label style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 8 }}>
                   Status
-                  <select name="status" defaultValue={a.status} className="input" style={{ width: "auto" }}>
+                  <select name="status" value={status} onChange={(e) => { setStatus(e.target.value); setStatusGewaehlt(true); }} className="input" style={{ width: "auto" }}>
                     <option value="offen">Offen</option>
                     <option value="in_arbeit">In Arbeit</option>
                     <option value="erledigt">Erledigt</option>
@@ -193,9 +211,13 @@ export function AnliegenDetail({ a, angebote }: { a: AnliegenVermieterRow; angeb
               {a.terminBestaetigt ? (
                 <div style={{ display: "grid", gap: 10, fontSize: 12.5 }}>
                   <span className="badge badge-green" style={{ justifySelf: "start" }}>Mieter hat bestätigt: {slotLabel(a.terminBestaetigt)}</span>
-                  <button type="button" className="btn btn-ghost" style={{ justifySelf: "start" }} disabled={pending} onClick={inKalender}>
-                    <CalendarPlus size={13} style={{ verticalAlign: "-2px" }} /> In den Kalender
-                  </button>
+                  {/* Kein eigener Kalendereintrag mehr (21.10.2026): Der Termin steht von selbst in
+                      „Termine“ und auf dem Dashboard — vorher legte jeder Klick einen weiteren an. */}
+                  <span style={{ color: "var(--muted)" }}>Steht in deinen <Link href="/termine">Terminen</Link>.</span>
+                  {terminIso && (
+                    <IcsKnopf start={terminIso} titel={`Termin: ${a.titel}`} ort={a.objektName !== "–" ? a.objektName : null}
+                      uid={`anliegen-${a.id}@myimmoapp.de`} dateiname="termin-anliegen.ics" />
+                  )}
                 </div>
               ) : (
                 <>
@@ -235,13 +257,53 @@ export function AnliegenDetail({ a, angebote }: { a: AnliegenVermieterRow; angeb
             />
           )}
 
-          <Link
-            href={`/anliegen?tab=service&titel=${encodeURIComponent(a.titel)}&text=${encodeURIComponent(`${a.mieterName}, ${a.objektName}: ${a.beschreibung ?? ""}`.slice(0, 1500))}`}
-            className="btn btn-ghost"
-            style={{ justifySelf: "start", alignSelf: "flex-start" }}
-          >
-            <Wrench size={13} style={{ verticalAlign: "-2px" }} /> An Hausmeister/Service weiterleiten
-          </Link>
+          {auftraege.length > 0 && (
+            <div className="section" style={{ marginBottom: 0 }} data-anliegen-auftraege>
+              <div className="section-header"><h3><Wrench size={14} style={{ verticalAlign: "-2px" }} /> Auftrag</h3></div>
+              <div className="section-body" style={{ display: "grid", gap: 12 }}>
+                {/* Abschluss und Kostenbuchung hier statt im Reiter Service (21.10.2026): Vorher führte
+                    der Weg über die Auftragsliste unter fünf anderen Abschnitten und zurück. Dieselben
+                    Bausteine und Actions wie dort — keine zweite Regel. */}
+                {auftraege.map((x) => {
+                  const st = AUFTRAG_STATUS[x.status] ?? AUFTRAG_STATUS.offen;
+                  return (
+                    <div key={x.id} style={{ fontSize: 12.5 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <strong style={{ overflowWrap: "anywhere" }}>{x.titel}</strong>
+                        <span className={`badge ${st.cls}`}>{st.label}</span>
+                      </div>
+                      <div style={{ color: "var(--muted)", marginTop: 2 }}>{x.partnerName}</div>
+                      <AuftragAbschliessen a={x} />
+                      <KostenUebernahme a={x} />
+                    </div>
+                  );
+                })}
+                {alleErledigt && a.status !== "erledigt" && (
+                  <form action={speichern} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <input type="hidden" name="id" value={a.id} />
+                    <input type="hidden" name="status" value="erledigt" />
+                    <span style={{ fontSize: 12.5, color: "var(--muted)" }}>Auftrag erledigt{auftraege.some((x) => x.kosten_id) ? " und gebucht" : ""}.</span>
+                    <button type="submit" className="btn btn-gold btn-sm" disabled={pending}>Anliegen abschließen</button>
+                  </form>
+                )}
+                {offeneAuftraege.length > 0 && (
+                  <Link href="/anliegen?tab=service" style={{ fontSize: 12 }}>Alle Aufträge im Reiter Service</Link>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Mit Bezug (21.10.2026): Vorher gingen nur Titel und Text mit — der Auftrag hing an keinem
+              Anliegen, der Verlauf blieb leer, Objekt tippte man neu. Ohne Partner kein Knopf. */}
+          {hatPartner && (
+            <Link
+              href={weiterleitenHref({ id: a.id, titel: a.titel, text: `${a.mieterName}, ${a.objektName}: ${a.beschreibung ?? ""}`, propId: a.propId ?? null })}
+              className="btn btn-ghost"
+              style={{ justifySelf: "start", alignSelf: "flex-start" }}
+            >
+              <Wrench size={13} style={{ verticalAlign: "-2px" }} /> An Hausmeister/Service weiterleiten
+            </Link>
+          )}
         </div>
       </div>
     </div>

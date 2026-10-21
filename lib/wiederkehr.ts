@@ -118,3 +118,32 @@ export function offeneDaten(faellig: string[], vorhandeneDaten: (string | null)[
   }
   return faellig.filter((f) => offen.has(f));
 }
+
+/** Gebuchte Daten je Vorlage aus Einnahmen und Kosten (`wiederkehr_id`). Rein. */
+export function gebuchtJeVorlage(buchungen: { wiederkehr_id?: string | null; buchungsdatum: string | null }[]): Map<string, string[]> {
+  const m = new Map<string, string[]>();
+  for (const r of buchungen) {
+    if (!r.wiederkehr_id || !r.buchungsdatum) continue;
+    if (!m.has(r.wiederkehr_id)) m.set(r.wiederkehr_id, []);
+    m.get(r.wiederkehr_id)!.push(r.buchungsdatum);
+  }
+  return m;
+}
+
+/**
+ * Wie viele Buchungen aktiver Vorlagen fällig, aber noch nicht erzeugt sind (21.10.2026).
+ * Vorher stand das nur zugeklappt auf /cashflow, und das Dashboard sagte nichts — ein vergessenes
+ * Hausgeld macht Cashflow und Anlage V zu hoch. Dieselbe Regel wie im WiederkehrManager. Rein.
+ */
+export function faelligeAnzahl(
+  vorlagen: (WiederkehrVorlage & { id: string; aktiv: boolean | null })[],
+  gebucht: Map<string, string[]>,
+  heute: Date = new Date(),
+): number {
+  let n = 0;
+  for (const v of vorlagen) {
+    if (!v.aktiv) continue; // wie im WiederkehrManager: nur ausdrücklich aktive Vorlagen
+    n += offeneDaten(faelligeDaten(v, heute), gebucht.get(v.id) ?? []).length;
+  }
+  return n;
+}

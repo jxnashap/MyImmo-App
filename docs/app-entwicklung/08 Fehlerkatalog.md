@@ -231,6 +231,15 @@ Vorkommen zählen.
 
 ## Eigene Prüfungen
 
+**Eine Abfrage nannte eine Spalte, die es nicht gibt — alle Tests grün** (MyImmo, 21.10.2026)
+Das Dashboard las `anliegen.mieter_name`; die Spalte stand in keiner Migration. Die Abfrage scheiterte
+bei JEDEM Aufruf, das Dashboard zeigte „Mieter-Anliegen konnten nicht geladen werden“, und ein neues
+Anliegen erschien nie als Aufgabe. Die Test-Datenbank (`fakeSupabase`) prüft keine Spaltennamen —
+gefunden wurde es erst durch einen Blick auf die LIVE-Seite mit dem Demo-Konto.
+→ *Gegenprüfung:* `tests/paket4.test.ts` liest die Spalten einer Tabelle aus den Migrationen und
+vergleicht jede `select("…")`-Liste darauf. Bei einer neuen Abfrage auf eine Tabelle mit Prüfung: die
+Liste im Test ergänzen. Und nach einem Deploy die Seite selbst ansehen — „Unvollständig: …“ ist ein Befund.
+
 **Ein Linkprüfer setzte die Demo fünfmal zurück** (MyImmo, Audit 07.10.2026)
 Er folgte jedem `href` per GET — auch „Demo ansehen“ (`/api/demo`), das anmeldet und den geteilten
 Bestand zurücksetzt. „GET ist harmlos“ stimmt nicht: Adressen lösen Links ein, protokollieren

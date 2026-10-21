@@ -376,7 +376,7 @@ const WEGE = [
     schluessel: "mietkonto",
     titel: "Mietkonto — Soll und Ist je Mieter",
     pfad: "/mietkonto",
-    erwartet: ["Verwaltung · Mietkonto"],
+    erwartet: ["Mieteingänge bestätigen"],
     async pruefe() {
       return null;
     },

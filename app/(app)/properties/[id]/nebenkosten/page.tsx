@@ -12,6 +12,8 @@ import { verteileObjektKosten, positionenFuerMieter, co2FuerMieter } from "@/lib
 import { zeigeVerteiler } from "@/lib/umlage";
 import { nkAusBuchungen } from "@/lib/nkAusBuchungen";
 import NkObjektEditor from "@/components/nk/NkObjektEditor";
+import { nkStand } from "@/lib/nkObjektStand";
+import { FRIST_VERMERK_SPALTEN, vermerkeAus, vorgangText, type ArchivDok, type FristVermerk, type PortalZustellung } from "@/lib/fristDokument";
 
 export const dynamic = "force-dynamic";
 
@@ -133,6 +135,22 @@ export default async function NebenkostenObjektPage(props: {
   const umlage = e.positionen.filter((p) => p.kosten.umlagefaehig);
   const fehltGrund = !basis.flaeche_gesamt && daten.kosten.some((k) => k.schluessel === "flaeche");
 
+
+  // Stand je Mieter (21.10.2026): erstellt, im Portal, abgerufen, erledigt — dieselbe Regel wie die
+  // Frist in /termine (lib/nkObjektStand.ts). Fehlt eine Quelle, steht dort nichts statt etwas Falschem.
+  const mieterIds = ergebnisse.map(({ m }) => m.id);
+  const [{ data: archivRows, error: archivFehler }, { data: portalRows, error: portalFehler }, { data: vermerkRows, error: vermerkFehler }] = mieterIds.length
+    ? await Promise.all([
+        supabase.from("notizen").select("id,mieter_id,titel,created_at").eq("user_id", user?.id ?? "").in("mieter_id", mieterIds),
+        supabase.from("zustellungen").select("notiz_id,zugestellt_am,gelesen_am,zurueckgezogen_am").eq("vermieter_id", user?.id ?? "").eq("art", "dokument").in("mieter_id", mieterIds),
+        supabase.from("frist_ausgeblendet").select(FRIST_VERMERK_SPALTEN).eq("user_id", user?.id ?? ""),
+      ])
+    : [{ data: [], error: null }, { data: [], error: null }, { data: [], error: null }];
+  const standBekannt = !archivFehler && !portalFehler && !vermerkFehler;
+  const vermerke = vermerkeAus(vermerkRows as FristVermerk[] | null);
+  const standVon = (mieterId: string) =>
+    standBekannt ? nkStand(mieterId, jahr, (archivRows ?? []) as ArchivDok[], (portalRows ?? []) as PortalZustellung[], vermerke) : null;
+  const reihe = mieterIds.join(",");
   return (
     <div className="fade-up">
       {kopf}
@@ -235,13 +253,19 @@ export default async function NebenkostenObjektPage(props: {
           </div>
           <div className="section-body">
             {ergebnisse.map(({ m, a }) => (
-              <Link key={m.id} href={`/tenants/${m.id}/nk?jahr=${jahr}`} className="listen-zeile">
+              <Link key={m.id} href={`/tenants/${m.id}/nk?jahr=${jahr}&reihe=${reihe}`} className="listen-zeile">
                 <span className="listen-zeile-text">
                   <span className="listen-zeile-titel">{m.name}</span>
                   <span className="listen-zeile-sub" style={{ whiteSpace: "normal" }}>
                     Kosten {eur2(a.kostenNachCo2)} · Vorauszahlung {eur2(a.vorauszahlungGeleistet)}{a.vorauszahlung.geschaetzt ? " (Soll)" : ""}
                     {a.warnungen.length > 0 ? ` · ${a.warnungen.length} Hinweis${a.warnungen.length === 1 ? "" : "e"}` : ""}
                   </span>
+                  {(() => {
+                    const st = standVon(m.id);
+                    return st ? (
+                      <span className="listen-zeile-sub" style={{ whiteSpace: "normal", color: st.stand === "erledigt" ? "var(--green)" : undefined }}>{vorgangText(st)}</span>
+                    ) : null;
+                  })()}
                 </span>
                 <span className="listen-zeile-zahl">
                   <b style={{ color: a.saldo >= 0 ? "var(--green)" : "var(--red)" }}>{eur2(Math.abs(a.saldo))}</b>

@@ -216,28 +216,12 @@ describe("Terminvorschläge", () => {
   });
 });
 
-describe("Termin in den Kalender übernehmen", () => {
-  it("ohne bestätigten Termin passiert nichts", async () => {
-    const { db, mod } = await lade({ antworten: { anliegen: { titel: "X", termin_bestaetigt: null } } });
-    expect((await mod.terminInKalender("a-1")).error).toContain("Kein bestätigter Termin");
-    expect(insert(db, "termine")).toBeUndefined();
-  });
-
-  it("Datum und Uhrzeit werden korrekt aufgeteilt", async () => {
-    const { db, mod } = await lade({
-      antworten: { anliegen: { titel: "Heizung", termin_bestaetigt: "2026-09-10T14:30", prop_id: "p-1" } },
-    });
-    await mod.terminInKalender("a-1");
-    const t = insert(db, "termine")!;
-    expect(t).toMatchObject({ datum: "2026-09-10", user_id: "nutzer-1", prop_id: "p-1" });
-    expect(String(t.titel)).toContain("Heizung");
-    expect(String(t.notiz)).toContain("14:30");
-  });
-
-  it("gelesen wird nur das eigene Anliegen", async () => {
-    const { db, mod } = await lade({ antworten: { anliegen: null } });
-    await mod.terminInKalender("fremd");
-    expect(db.zugriffe[0].filter).toContain("eq:vermieter_id=nutzer-1");
+describe("Termin in den Kalender übernehmen — entfällt (21.10.2026)", () => {
+  // Der bestätigte Termin steht ohne eigenen Eintrag in /termine und auf dem Dashboard
+  // (lib/anliegenTermin.ts). Die Action legte bei jedem Klick einen weiteren Eintrag an.
+  it("es gibt keine Action mehr, die einen Kalendereintrag aus einem Anliegen schreibt", async () => {
+    const { mod } = await lade();
+    expect((mod as Record<string, unknown>).terminInKalender).toBeUndefined();
   });
 });
 

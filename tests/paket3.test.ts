@@ -142,7 +142,16 @@ describe("Verlauf: Termine lesbar, interne Abstimmungen neutral", () => {
 
   it("der Wochentag hängt nicht an der Zeitzone des Rechners", () => {
     // 01.03.2026 ist ein Sonntag; westlich von UTC rutschte ein `new Date("2026-03-01")` in den Samstag.
-    expect(terminLesbar("2026-03-01 00:30")).toBe("So., 01.03.2026, 00:30 Uhr");
+    const vorher = process.env.TZ;
+    try {
+      for (const tz of ["UTC", "America/New_York", "Pacific/Auckland"]) {
+        process.env.TZ = tz;
+        expect(terminLesbar("2026-03-01 00:30"), tz).toBe("So., 01.03.2026, 00:30 Uhr");
+      }
+    } finally {
+      if (vorher === undefined) delete process.env.TZ;
+      else process.env.TZ = vorher;
+    }
   });
 
   it("ereignisText formatiert Termine; beim Mieter wird „nicht freigegeben“ zu „kümmert sich“", () => {

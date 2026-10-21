@@ -158,7 +158,6 @@ export default function SettingsView({
       <div className="settings-head">
         <div className="settings-avatar" aria-hidden>{initialen}</div>
         <div className="who">
-          <div className="topbar-kicker" style={{ marginBottom: 6 }}>Konto · Einstellungen</div>
           <h1>Einstellungen</h1>
           {email && <p title={email}>{email}</p>}
         </div>

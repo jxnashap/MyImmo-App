@@ -80,7 +80,6 @@ export default async function PropertiesPage(
     <div className="fade-up">
       <div className="topbar">
         <div>
-          <div className="topbar-kicker">Immobilien · Portfolio</div>
           <div className="topbar-title">Immobilien</div>
           <div className="topbar-sub">Alle erfassten Objekte</div>
         </div>

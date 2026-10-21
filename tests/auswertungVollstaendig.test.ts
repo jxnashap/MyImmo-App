@@ -194,7 +194,8 @@ describe("Seiten: Fehlerkarte statt Teilbestand", () => {
   it("Dashboard: fehlt eine AUFGABENquelle, rendert es — und die Liste nennt die Lücke", async () => {
     const { Seite } = await ladeSeite("@/app/(app)/page", { tabellen: {}, fehlerBei: { "anliegen:select": "reset" } });
     const html = texte(await Seite({ searchParams: Promise.resolve({}) }));
-    expect(html).toContain("Unvollständig: Mieter-Anliegen konnten nicht geladen werden");
+    // Seit 21.10.2026 zwei Abfragen an `anliegen` (offene + bestätigte Termine) — beide fallen aus.
+    expect(html).toMatch(/Unvollständig: Mieter-Anliegen(, [^—]+)? konnten nicht geladen werden/);
     expect(html).not.toContain("Alles erledigt");
   });
 

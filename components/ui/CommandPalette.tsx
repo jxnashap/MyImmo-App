@@ -29,8 +29,8 @@ const ALIAS: Record<string, string> = {
 const AKTIONEN: Omit<Item, "group">[] = [
   { key: "neu-objekt", label: "Neues Objekt anlegen", href: "/properties/new" },
   { key: "neu-mieter", label: "Neuen Mieter anlegen", href: "/tenants/new" },
-  { key: "neu-einnahme", label: "Neue Einnahme buchen", href: "/einnahmen/new" },
-  { key: "neu-kosten", label: "Neue Ausgabe buchen", href: "/kosten/new" },
+  { key: "neu-einnahme", label: "Neue Einnahme buchen", href: "/cashflow/neu?typ=einnahme" },
+  { key: "neu-kosten", label: "Neue Ausgabe buchen", href: "/cashflow/neu?typ=ausgabe" },
   { key: "einstellungen", label: "Einstellungen öffnen", href: "/einstellungen" },
 ];
 

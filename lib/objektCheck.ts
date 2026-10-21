@@ -63,7 +63,9 @@ export function objektCheck(p: CheckObjekt, mieter: CheckMieter[], kredite: Chec
         href: ohne.length === 1 ? `/tenants/${ohne[0].id}/edit` : "/tenants", erfuellt: ohne.length === 0,
       });
     }
-    punkte.push({ schluessel: "vergleichsmiete", label: "Vergleichsmiete (€/m²)", grund: "Prüfung auf verbilligte Vermietung (§ 21 Abs. 2 EStG)", href: bearbeiten, erfuellt: (p.vergleichsmiete_m2 ?? 0) > 0 });
+    // Ziel ist die Marktwert-Karte der Objektseite (21.10.2026) — das Bearbeiten-Formular hat dieses
+    // Feld gar nicht; der Punkt führte in eine Sackgasse.
+    punkte.push({ schluessel: "vergleichsmiete", label: "Ortsübliche Miete (€/m²)", grund: "Prüfung auf verbilligte Vermietung (§ 21 Abs. 2 EStG)", href: `/properties/${p.id}#marktwert`, erfuellt: (p.vergleichsmiete_m2 ?? 0) > 0 });
   }
   if (eigeneKredite.length > 0) {
     const ohne = eigeneKredite.filter((k) => !k.auszahlung_datum);

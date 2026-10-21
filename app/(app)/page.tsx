@@ -13,6 +13,9 @@ import { euro, datum, begruessung } from "@/lib/format";
 import { getRefinanzWarning, mieterFristen, kreditFristen, objektFristen, globaleFristen, zeitraumMonateJeMieter } from "@/lib/fristen";
 import { FRIST_VERMERK_SPALTEN, fristArchivAb, fristVermerk, fristVorgang, vermerkeAus, vorgangText, type ArchivDok, type FristVermerk } from "@/lib/fristDokument";
 import { mitGeltendenBetraegen } from "@/lib/sollAb";
+import { anliegenTermine, ANLIEGEN_TERMIN_SPALTEN, type AnliegenMitTermin } from "@/lib/anliegenTermin";
+import { vorgangUrl } from "@/lib/anliegenListe";
+import { faelligeAnzahl, gebuchtJeVorlage } from "@/lib/wiederkehr";
 import { fristZiel, baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { nichtAbgerufen, zustellFensterAb, type ZustellungOffen } from "@/lib/zugang";
@@ -114,7 +117,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // Die Aufgabenquellen daneben dürfen einzeln fehlen; dann sagt ein Hinweis, welche.
   const eigen = nurKonto(user.id);
   const alsVermieter = nurKonto(user.id, "vermieter_id");
-  const [[props, einn, kost, kred, miet, bewHist, mzRows], [term, anlRows, zaehlerRows, vertreterRows, verstecktRows, archivRows, erinnRows, zustellRowsAlle], { data: profil }] = await Promise.all([
+  const [[props, einn, kost, kred, miet, bewHist, mzRows], [term, anlRows, anlTerminRows, wkRows, zaehlerRows, vertreterRows, verstecktRows, archivRows, erinnRows, zustellRowsAlle], { data: profil }] = await Promise.all([
     Promise.all([
       alleZeilen(supabase, "properties", "*", eigen),
       alleZeilen(supabase, "einnahmen", "*", eigen),
@@ -128,7 +131,14 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
       vielleichtAlle(supabase, "termine", "id,titel,datum,kategorie,erledigt", eigen, [{ spalte: "datum" }]),
       // „Heute wichtig": offene Mieter-Anliegen und noch nicht übernommene
       // Zählerstände. Beides sind Handlungen, die auf den Vermieter warten.
-      vielleichtAlle(supabase, "anliegen", "id,titel,status,created_at,mieter_name", (q) => alsVermieter(q).eq("status", "offen"), [{ spalte: "created_at" }]),
+      // `mieter_id`, nicht `mieter_name` (21.10.2026): Die Spalte gibt es an `anliegen` nicht — die Abfrage
+      // scheiterte bei JEDEM Aufruf, das Dashboard zeigte „Mieter-Anliegen konnten nicht geladen werden“,
+      // und ein neues Anliegen erschien nie als Aufgabe. Den Namen liefern die Mieter-Zeilen.
+      vielleichtAlle(supabase, "anliegen", "id,titel,status,created_at,mieter_id", (q) => alsVermieter(q).eq("status", "offen"), [{ spalte: "created_at" }]),
+      // Vom Mieter bestätigte Termine (lib/anliegenTermin.ts) — stehen ohne eigenen Kalendereintrag in der Liste.
+      vielleichtAlle(supabase, "anliegen", ANLIEGEN_TERMIN_SPALTEN, (q) => alsVermieter(q).not("termin_bestaetigt", "is", null).neq("status", "erledigt")),
+      // Wiederkehrende Buchungen — fällig, aber noch nicht erzeugt (lib/wiederkehr.ts, 21.10.2026).
+      vielleichtAlle(supabase, "wiederkehrende_buchungen", "id,zyklus,start_datum,ende_datum,aktiv", eigen),
       vielleichtAlle(supabase, "zaehlerstand_meldungen", "id,art,ablesedatum,mieter_id", (q) => alsVermieter(q).is("uebernommen_am", null), [{ spalte: "ablesedatum" }]),
       // Vollmachten der Vertreter (Einstellungen → Vertreter) — nur was zum Ablauf nötig ist.
       vielleichtAlle(supabase, "vertreter", "id,vorname,nachname,gueltig_bis,widerrufen_am", (q) => eigen(q).not("gueltig_bis", "is", null)),
@@ -151,7 +161,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   ]);
   // Welche Aufgabenquellen fehlen — die Liste „Termine & Aufgaben“ sagt es, statt still kürzer zu sein.
   const fehlendeQuellen = ([
-    [term, "Termine"], [anlRows, "Mieter-Anliegen"], [zaehlerRows, "Zählerstände"], [vertreterRows, "Vollmachten"],
+    [term, "Termine"], [anlRows, "Mieter-Anliegen"], [anlTerminRows, "Termine mit Mietern"], [wkRows, "Wiederkehrende Buchungen"], [zaehlerRows, "Zählerstände"], [vertreterRows, "Vollmachten"],
     [verstecktRows, "ausgeblendete Fristen"], [archivRows, "Schreiben an Mieter"], [erinnRows, "Zahlungserinnerungen"],
     [zustellRowsAlle, "Zustellungen"],
   ] as const).filter(([rows]) => rows === null).map(([, name]) => name);
@@ -215,6 +225,13 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   for (const t of (term ?? []) as { id: string; titel: string | null; datum: string | null; kategorie: string | null; erledigt: boolean | null }[])
     if (t.datum && imFenster(t.datum) && !t.erledigt)
       fristListe.push({ datum: t.datum, label: t.titel ?? "Termin", sub: t.kategorie ?? "Eigener Termin", warn: false });
+  const mieterVon = (id: string | null) => {
+    const m = id ? mieterRows.find((x) => x.id === id) : undefined;
+    return m ? [m.vorname, m.nachname].filter(Boolean).join(" ") || null : null;
+  };
+  for (const at of anliegenTermine((anlTerminRows ?? []) as AnliegenMitTermin[], (term ?? []) as { titel: string | null; datum: string | null }[]))
+    if (imFenster(at.datum) && at.datum >= heuteISO0)
+      fristListe.push({ datum: at.datum, label: at.label, sub: [mieterVon(at.mieterId), at.propId ? nameOf.get(at.propId) : null].filter(Boolean).join(" · ") || "Termin mit Mieter", warn: false, href: vorgangUrl(at.anliegenId) });
   fristListe.sort((a, b) => a.datum.localeCompare(b.datum));
 
   // ----- „Heute wichtig" -----------------------------------------------------
@@ -252,8 +269,8 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
       }));
   });
 
-  const offeneAnliegen: OffenesAnliegen[] = ((anlRows ?? []) as { id: string; titel: string | null; created_at: string; mieter_name: string | null }[])
-    .map((a) => ({ id: a.id, titel: a.titel, mieter: a.mieter_name ?? "Mieter", erstellt: a.created_at }));
+  const offeneAnliegen: OffenesAnliegen[] = ((anlRows ?? []) as { id: string; titel: string | null; created_at: string; mieter_id: string | null }[])
+    .map((a) => ({ id: a.id, titel: a.titel, mieter: (a.mieter_id && mieterNameOf.get(a.mieter_id)) || "Mieter", erstellt: a.created_at }));
 
   const offeneMeldungen: OffeneMeldung[] = ((zaehlerRows ?? []) as { id: string; art: string | null; ablesedatum: string; mieter_id: string | null }[])
     .map((z) => ({ id: z.id, art: z.art, mieter: (z.mieter_id && mieterNameOf.get(z.mieter_id)) || "Mieter", datum: z.ablesedatum }));
@@ -281,6 +298,11 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
         titel: z.titel ?? "Dokument",
         zugestellt: z.zugestellt_am,
       })),
+      // Dieselbe Regel wie auf /cashflow (faelligeAnzahl) — fehlen die Vorlagen, sagt es die Quellenzeile.
+      wiederkehrFaellig: faelligeAnzahl(
+        (wkRows ?? []) as { id: string; zyklus: string; start_datum: string; ende_datum: string | null; aktiv: boolean | null }[],
+        gebuchtJeVorlage([...einnahmen, ...kosten] as { wiederkehr_id?: string | null; buchungsdatum: string | null }[]),
+      ),
     },
     heuteISO0,
     Infinity, // alle zählen — gekürzt wird unten, die Überschrift nennt die echte Zahl
@@ -319,13 +341,13 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   const ereignisListe = (ereignisRows ?? []) as { anliegen_id: string; autor_rolle: string; art: string; text: string | null; created_at: string }[];
   const anliegenIds = [...new Set(ereignisListe.map((e) => e.anliegen_id))];
   const { data: anliegenTitel } = anliegenIds.length
-    ? await supabase.from("anliegen").select("id,titel,mieter_name").in("id", anliegenIds)
+    ? await supabase.from("anliegen").select("id,titel,mieter_id").in("id", anliegenIds)
     : { data: [] };
   const auftragListe = (auftragRows ?? []) as { id: string; titel: string; status: string; created_at: string; vorgeschlagene_firma_id: string | null }[];
   const portalNeu = bauePortalNeuigkeiten({
     ereignisse: ereignisListe,
-    anliegen: new Map(((anliegenTitel ?? []) as { id: string; titel: string | null; mieter_name: string | null }[])
-      .map((a) => [a.id, { titel: a.titel ?? "Anliegen", mieter: a.mieter_name ?? "Mieter" }])),
+    anliegen: new Map(((anliegenTitel ?? []) as { id: string; titel: string | null; mieter_id: string | null }[])
+      .map((a) => [a.id, { titel: a.titel ?? "Anliegen", mieter: (a.mieter_id && mieterNameOf.get(a.mieter_id)) || "Mieter" }])),
     zustellungen: ((zustellRows ?? []) as { titel: string | null; art: string; mieter_id: string | null; bestaetigt_am: string | null }[])
       .map((z) => ({ titel: z.titel, art: z.art, mieter: (z.mieter_id && mieterNameOf.get(z.mieter_id)) || "Mieter", bestaetigt_am: z.bestaetigt_am })),
     angebote: ((angebotRows ?? []) as { firma: string; betrag: number; created_at: string }[]).map((g) => ({ ...g, betrag: Number(g.betrag) })),
