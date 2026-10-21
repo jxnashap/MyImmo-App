@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { heimVon } from "@/lib/auth/anmeldeZiel";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // OAuth-/PKCE-Callback: tauscht den von Supabase zurückgegebenen Code
 // gegen eine Session (setzt die Auth-Cookies) und leitet weiter.
+//
+// Zwei Wege kommen hier an:
+// · Google-Anmeldung (`?rolle=…&next=…`).
+// · Bestätigungslink der Registrierung (`?bestaetigt=1&next=…`, seit 21.10.2026 —
+//   lib/auth/anmeldeZiel.ts → bestaetigungsZiel). Supabase hat die Adresse beim
+//   Klick bereits bestätigt, BEVOR es hierher weiterleitet. Scheitert nur der
+//   Tausch (Link in einem anderen Browser geöffnet als dem, der registriert hat),
+//   ist das kein Fehler: Die Anmeldeseite sagt „bestätigt, jetzt anmelden“.
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -14,16 +23,18 @@ export async function GET(request: Request) {
   const next = roh.startsWith("/") && !roh.startsWith("//") ? roh : "/";
   // Rolle, die der Nutzer auf der Anmeldeseite gewählt hat (siehe googleLogin).
   const gewaehlt = searchParams.get("rolle");
+  const ausBestaetigung = searchParams.get("bestaetigt") === "1";
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Rollen-Abgleich wie beim Passwort-Login: Passt das Konto nicht zur
-      // gewählten Rolle, wird die Session beendet und der Grund benannt —
-      // statt den Nutzer kommentarlos im falschen Portal abzusetzen.
+      // Die Rolle des KONTOS entscheidet, wohin es geht (wie beim Passwort-Login,
+      // lib/auth/anmeldeZiel.ts). Bis 21.10.2026 wurde ein bestehendes Konto mit
+      // anderer Rolle hier abgemeldet und mit „gehört zu einem …-Konto“ zurück-
+      // geschickt — das Layout leitet aber ohnehin jedes Konto in seinen Bereich.
       //
-      // ABER: Eine fehlende Zeile in `nutzer_rollen` heißt NICHT „Vermieter".
+      // Eine fehlende Zeile in `nutzer_rollen` heißt NICHT „Vermieter".
       // Bei OAuth gibt es keine `raw_user_meta_data`, der Trigger
       // `handle_new_user_rolle` legt also gar keine Rolle an. Ein Mieter, der
       // „Mieter" wählt und sich per Google NEU registriert, bekäme sonst die
@@ -48,16 +59,22 @@ export async function GET(request: Request) {
           const istNeu = kontoRolle === null && !freigeschaltet;
           const effektiv = kontoRolle ?? "vermieter";
 
-          if (!istNeu && effektiv !== gewaehlt) {
-            await supabase.auth.signOut({ scope: "local" });
-            return NextResponse.redirect(
-              `${origin}/login?fehler=rolle&konto=${encodeURIComponent(effektiv)}`,
-            );
+          // Bestehendes Konto mit anderer Rolle: ohne eigenes Ziel in den eigenen
+          // Bereich (ein Deep-Link bleibt; das Layout leitet dort weiter).
+          if (!istNeu && effektiv !== gewaehlt && next === "/") {
+            return NextResponse.redirect(`${origin}${heimVon(effektiv)}`);
           }
         }
       }
       return NextResponse.redirect(`${origin}${next}`);
     }
+  }
+
+  // Bestätigungslink ohne gelungenen Tausch: Die Adresse ist bestätigt (oder der
+  // Link war alt — dann sagt es die Anmeldung). Kein Google-Fehler anzeigen.
+  if (ausBestaetigung) {
+    const rolle = gewaehlt === "mieter" || gewaehlt === "service" ? `&rolle=${gewaehlt}` : "";
+    return NextResponse.redirect(`${origin}/login?bestaetigt=1${rolle}`);
   }
 
   // Kein Code oder Fehler -> zurück zum Login mit Hinweis

@@ -55,6 +55,7 @@ export default function ServicePortalAnsicht({
               Konto
             </Link>
             <form action="/auth/signout" method="post">
+              <input type="hidden" name="rolle" value="service" />
               <button type="submit" className="btn btn-ghost" style={{ fontSize: 12 }} data-demo-erlaubt="">Abmelden</button>
             </form>
           </div>

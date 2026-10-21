@@ -291,7 +291,7 @@ describe("Manifest, Symbole, Hinweis, Rechtstexte", () => {
 
   it("Manifest: eigenständige App für die ganze Seite, Symbole liegen bereit", () => {
     const m = manifest();
-    expect(m).toMatchObject({ id: "/", start_url: "/", scope: "/", display: "standalone", short_name: "MyImmo", lang: "de" });
+    expect(m).toMatchObject({ id: "/", start_url: "/?app=1", scope: "/", display: "standalone", short_name: "MyImmo", lang: "de" });
     const icons = m.icons ?? [];
     expect(icons.some((i) => i.purpose === "maskable")).toBe(true);
     for (const i of icons) {

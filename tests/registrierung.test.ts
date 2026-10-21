@@ -79,7 +79,9 @@ describe("Der Code wird nur noch EINMAL abgefragt", () => {
   it("die Registrierungsmeldung kündigt den nächsten Schritt an", () => {
     // Vorher stand dort nur "bitte bestätige die E-Mail" — dass danach noch
     // etwas kommt, erfuhr niemand.
-    expect(login).toMatch(/bestätige jetzt die E-Mail/);
+    // Seit 21.10.2026 mit dem Bestätigungsziel /auth/callback: im selben Browser direkt angemeldet.
+    expect(login).toMatch(/Tippe auf den Link darin/);
+    expect(login).toMatch(/auf einem anderen meldest du dich/);
     expect(login).toMatch(/nicht noch einmal gebraucht/);
   });
 });

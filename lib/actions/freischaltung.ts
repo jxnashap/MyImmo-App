@@ -199,7 +199,9 @@ export async function pruefeEinladungscode(
   if (error || !data) {
     return {
       ok: false,
-      fehler: "Dieser Einladungscode ist ungültig oder abgelaufen. Bitte frage den Vermieter nach einem neuen Code.",
+      fehler:
+        "Dieser Einladungscode ist ungültig, abgelaufen oder schon benutzt. Hast du dich damit schon " +
+        "registriert? Dann oben auf „Anmelden“. Sonst frag deinen Vermieter nach einem neuen Code.",
     };
   }
   // Mieter-Einladungen gelten seit 02.10.2026 nur für EINE Adresse (Migration

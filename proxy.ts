@@ -127,7 +127,10 @@ export async function proxy(request: NextRequest) {
   // Liste in lib/oeffentlich.ts — dieselbe, die der Demo-Klick-Abfang nutzt.
   // `/api/` zählt hier mit, weil die Routen ihre Anmeldung selbst prüfen.
   const istOeffentlich = istOeffentlicheSeite(pathname) || pathname.startsWith("/api/");
-  if (!user && !istOeffentlich && request.method === "GET") {
+  // Die installierte App startet auf `/?app=1` (app/manifest.ts). Abgemeldet zeigte `/` die
+  // Werbe-Startseite für Vermieter — ein Mieter, der „seine“ App öffnet, gehört zur Anmeldung.
+  const appStart = pathname === "/" && request.nextUrl.searchParams.get("app") === "1";
+  if (!user && (!istOeffentlich || appStart) && request.method === "GET") {
     // Ziel mitgeben, damit der Nutzer nach dem Login DORT landet, wo er hin
     // wollte. Die Login-Seite wertet `?next=` laengst aus — nur geschickt hat
     // es ihr nie jemand: Wer einen Deep-Link aus einer E-Mail oeffnete und
