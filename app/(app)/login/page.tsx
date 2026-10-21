@@ -229,7 +229,9 @@ export default function LoginPage() {
       // Scheitert es, zeigt das Portal das Code-Feld; die Anmeldung selbst hängt nicht daran.
       if (eingeladen && code && kontoRolle === "mieter") {
         try {
-          await loeseEinladungEin(code);
+          const verknuepft = await loeseEinladungEin(code);
+          // Nicht verknüpft (z. B. andere Adresse): Das Portal zeigt dann das Code-Feld samt Grund.
+          if (!verknuepft.ok) console.warn("Einladung nicht eingelöst:", verknuepft.fehler);
         } catch {
           // Ohne Folgen — siehe oben.
         }

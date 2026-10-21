@@ -157,7 +157,7 @@ describe("Einladung mit bestehendem Konto einlösen (21.10.2026)", () => {
   const portal = readFileSync("components/PortalAnsicht.tsx", "utf8");
 
   it("nach der Anmeldung aus einem Einladungslink wird der Code eingelöst", () => {
-    expect(login).toMatch(/if \(eingeladen && code && kontoRolle === "mieter"\) \{\s*try \{\s*await loeseEinladungEin\(code\)/);
+    expect(login).toMatch(/if \(eingeladen && code && kontoRolle === "mieter"\) \{\s*try \{\s*const verknuepft = await loeseEinladungEin\(code\)/);
   });
 
   it("das Portal ohne Wohnung bietet das Code-Feld an — nicht in der Vorschau des Vermieters", () => {
