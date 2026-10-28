@@ -21,6 +21,12 @@ describe("Mieterportal", () => {
   it("P02: der Schadens-Assistent sprengt am Handy nicht die Breite", () => {
     expect(lies("components/SchadenAssistent.tsx")).toMatch(/gridTemplateColumns: "minmax\(0, 1fr\)", minWidth: 0/);
   });
+  it("P02b: das Dateifeld schiebt Feld und Beschriftung nicht aus der Karte", () => {
+    const sa = ohneKommentare(lies("components/SchadenAssistent.tsx"));
+    expect(sa).toMatch(/const feld = \{ display: "grid", gridTemplateColumns: "minmax\(0, 1fr\)",/);
+    expect(sa).not.toMatch(/<label style=\{\{ display: "grid", gap: 4/);
+    expect(lies("app/globals.css")).toMatch(/\ninput\[type="file"\] \{ max-width: 100%; min-width: 0; \}/);
+  });
   it("P03: am Handy alle fünf Portal-Reiter sichtbar statt einer rollenden Leiste", () => {
     expect(lies("components/GlassLeiste.tsx")).toMatch(/alleSichtbar \? "glass-bar glass-bar-alle" : "glass-bar"/);
     const css = lies("app/globals.css");

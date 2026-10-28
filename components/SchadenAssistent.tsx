@@ -62,6 +62,10 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
     border: `1px solid ${aktiv ? "var(--gold)" : "var(--line)"}`, background: aktiv ? "var(--gold-pale)" : "var(--bg2)",
   });
 
+  // Ein Feld je Zeile. Die Spalte darf schmaler werden als ihr Inhalt — sonst schob das Dateifeld
+  // (feste Mindestbreite im Browser) am Handy Feld und Beschriftung rechts aus der Karte (27.10.2026).
+  const feld = { display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 4, fontSize: 11, color: "var(--muted)" } as const;
+
   // Schritt 1: Art des Schadens.
   if (!k) {
     return (
@@ -108,11 +112,11 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
       {(alleBeantwortet || k.fragen.length === 0) && (
         <>
           <div className="form-row" style={{ gap: 10 }}>
-            <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+            <label style={feld}>
               Raum / Ort
               <input className="input" value={raum} onChange={(e) => setRaum(e.target.value)} maxLength={60} placeholder="z. B. Bad, Küche, Treppenhaus" />
             </label>
-            <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+            <label style={feld}>
               Seit wann?
               <select className="input" value={seit} onChange={(e) => setSeit(e.target.value)}>
                 <option value="">– bitte wählen –</option>
@@ -120,16 +124,16 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
               </select>
             </label>
           </div>
-          <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+          <label style={feld}>
             {textNoetig ? "Was ist passiert? *" : "Was sollte dein Vermieter noch wissen? (optional)"}
             <textarea className="input" rows={3} value={text} onChange={(e) => setText(e.target.value)} maxLength={BESCHREIBUNG_MAX - 400}
               required={textNoetig} placeholder={textNoetig ? "z. B. Briefkasten lässt sich nicht mehr öffnen" : undefined} />
           </label>
-          <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+          <label style={feld}>
             Wann bist du erreichbar, wie kommt ein Handwerker in die Wohnung? (optional)
             <input className="input" value={erreichbar} onChange={(e) => setErreichbar(e.target.value)} maxLength={200} placeholder="z. B. werktags ab 16 Uhr, Schlüssel bei Nachbarn" />
           </label>
-          <label style={{ display: "grid", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+          <label style={feld}>
             Fotos oder PDF (bis zu 3) — ein Foto spart oft eine Besichtigung. Fotos werden automatisch verkleinert.
             <input type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,application/pdf" className="input"
               onChange={(e) => void anhaenge.waehle(e.target.files, e.target)} />
