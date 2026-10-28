@@ -5,7 +5,7 @@
 // Seit 21.10.2026 öffnet eine Anfrage die Detailansicht im Reiter Anliegen (dort steht der
 // Verlauf) — vorher stand derselbe Verlauf hier ein zweites Mal.
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { FileText, FileCheck2, ReceiptText, FileQuestion, ClipboardCheck, Zap, BadgeEuro, ChevronRight, type LucideIcon } from "lucide-react";
 import { erstelleAnliegen } from "@/lib/actions/anliegen";
 import type { AnliegenRow } from "@/components/AnliegenPortal";
@@ -45,6 +45,14 @@ export default function DokumenteAnfrage({
   const [fehler, setFehler] = useState<string | null>(null);
   const [gesendet, setGesendet] = useState(false);
   const [pending, startTransition] = useTransition();
+  // Schritt 2 erscheint unter den sieben Kacheln — am Handy rund 375 px unter dem Bildschirm, ohne
+  // dass man es merkte (Durchsicht 27.10.2026). Nach der Wahl dorthin rollen.
+  const schritt2 = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!gewaehlt) return;
+    const ruhig = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    schritt2.current?.scrollIntoView({ block: "nearest", behavior: ruhig ? "auto" : "smooth" });
+  }, [gewaehlt]);
 
   const anfordern = () =>
     startTransition(async () => {
@@ -108,7 +116,7 @@ export default function DokumenteAnfrage({
             <p role="status" style={{ fontSize: 12.5, color: "var(--green)", margin: "12px 0 0" }}>{gesendetText(mailHinweis)}</p>
           )}
           {gewaehlt && !nurLesen && (
-            <div style={{ marginTop: 14, display: "grid", gap: 10, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" }}>
+            <div ref={schritt2} style={{ marginTop: 14, display: "grid", gap: 10, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)", scrollMarginBottom: 24 }}>
               <div style={{ fontSize: 13 }}>
                 Anfrage: <strong>{gewaehlt}</strong>
               </div>

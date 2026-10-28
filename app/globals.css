@@ -2112,6 +2112,19 @@ select:focus-visible, textarea:focus-visible {
   .glass-item { flex: 0 0 auto; scroll-snap-align: center; }
 }
 
+/* Mieterportal (27.10.2026): Unter 600 px stehen ALLE Reiter nebeneinander — Symbol über dem
+   Text, gleich breit, ohne waagerechtes Rollen. Vorher zeigte die rollende Leiste 3 von 5 Reitern
+   („Dokumente“ und „Zähler“ fehlten ohne jeden Hinweis), und die Reiter waren 35 px hoch. */
+@media (max-width: 600px) {
+  .glass-bar-alle { overflow-x: visible; width: 100%; border-radius: 22px; gap: 2px; }
+  .glass-bar-alle .glass-item {
+    flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 3px;
+    padding: 6px 2px; min-height: 52px; border-radius: 16px;
+    font-size: 11px; letter-spacing: -0.01em; text-align: center; white-space: nowrap;
+  }
+}
+@media (pointer: coarse) { .glass-item { min-height: 44px; } }
+
 /* ================= Landing v2: Mehrseiten-Navigation, Reveal, Tilt, 3D-Hero ================= */
 .lp-nav-links .lp-nav-aktiv { color: var(--gold); font-weight: 600; }
 

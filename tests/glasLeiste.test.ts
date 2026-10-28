@@ -26,7 +26,7 @@ describe("Einbindung", () => {
     expect(g).toContain('behavior: ruhig ? "auto" : "smooth"');
     expect(g).toContain("zentriere(bar, el, erstesMal.current);");
     expect(g).toContain("useLayoutEffect(");
-    expect(readFileSync("components/PortalAnsicht.tsx", "utf8")).toContain('<GlassLeiste aktiv={tab} label="Portal-Bereiche">');
+    expect(readFileSync("components/PortalAnsicht.tsx", "utf8")).toContain('<GlassLeiste aktiv={tab} label="Portal-Bereiche" alleSichtbar>');
     expect(readFileSync("app/(app)/anliegen/page.tsx", "utf8")).toContain('<GlassLeiste aktiv={tab} label="Bereiche" style={{ marginBottom: 20 }}>');
     for (const d of ["components/PortalAnsicht.tsx", "app/(app)/anliegen/page.tsx"]) {
       expect(readFileSync(d, "utf8"), d).not.toContain('<nav className="glass-bar"');

@@ -51,7 +51,11 @@ export type OffeneMiete = {
 };
 export type OffenesAnliegen = { id: string; titel: string | null; mieter: string; erstellt: string };
 export type OffeneMeldung = { id: string; art: string | null; mieter: string; datum: string };
-export type FristZeile = { datum: string; label: string; sub: string; warn: boolean; href?: string };
+export type FristZeile = {
+  datum: string; label: string; sub: string; warn: boolean; href?: string;
+  /** Eine Möglichkeit, keine Pflicht (typ "ok" in lib/fristen.ts) — wird nie „überfällig“/dringend. */
+  moeglich?: boolean;
+};
 
 /**
  * Wohin eine abgeleitete Frist führt (Verknüpfungs-Audit 06.10.2026, Paket D). Vorher verlinkte
@@ -68,6 +72,9 @@ export function fristZiel(quelle: string, id: string | null | undefined, label: 
   }
   if (quelle === "objekt" && id) return `/properties/${id}`;
   if (quelle === "kredit") return "/kredite";
+  // Grundsteuer-Rate (27.10.2026): führte auf die Anlage V — dort steht nichts zur Zahlung. Jetzt
+  // direkt ins Buchungsformular mit vorgewählter Kategorie (die Rate ist eine Ausgabe).
+  if (quelle === "steuer" && /Grundsteuer/.test(label)) return "/cashflow/neu?typ=ausgabe&kategorie=Grundsteuer&back=/";
   if (quelle === "steuer") return "/steuer";
   if (quelle === "vertreter") return "/einstellungen?tab=vertreter";
   return "/termine";
@@ -185,7 +192,7 @@ export function baueHeuteAufgaben(
       sub: f.sub,
       href: f.href ?? "/termine",
       aktion: f.href && f.href !== "/termine" ? "Öffnen" : "Termin öffnen",
-      dringend: ueberfaellig || f.warn,
+      dringend: (ueberfaellig && !f.moeglich) || f.warn,
       datum: f.datum,
     });
   }

@@ -22,9 +22,14 @@ function zentriere(bar: HTMLElement, el: HTMLElement, sofort: boolean) {
   bar.scrollTo({ left, behavior: ruhig ? "auto" : "smooth" });
 }
 
-export default function GlassLeiste({ aktiv, label, style, children }: {
+export default function GlassLeiste({ aktiv, label, style, alleSichtbar = false, children }: {
   /** Schlüssel des offenen Reiters — ändert er sich, wird nachgeführt. */
   aktiv: string;
+  /**
+   * Mieterportal (27.10.2026): am Handy alle Reiter nebeneinander (Symbol über Text) statt einer
+   * waagerecht rollenden Leiste — dort waren nur 3 von 5 Reitern sichtbar, ohne Hinweis auf weitere.
+   */
+  alleSichtbar?: boolean;
   label: string;
   style?: CSSProperties;
   children: ReactNode;
@@ -56,7 +61,7 @@ export default function GlassLeiste({ aktiv, label, style, children }: {
   }, []);
 
   return (
-    <nav ref={leiste} className="glass-bar" aria-label={label} style={style}>
+    <nav ref={leiste} className={alleSichtbar ? "glass-bar glass-bar-alle" : "glass-bar"} aria-label={label} style={style}>
       {children}
     </nav>
   );

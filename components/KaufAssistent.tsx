@@ -27,8 +27,8 @@ import type { Kalkulation } from "@/lib/types";
 // informativ/rechnend, keine Darlehensvermittlung (§ 34i GewO).
 
 const DARLEHEN: { name: string; text: string; warn?: boolean }[] = [
-  { name: "Annuitätendarlehen", text: "Konstante Rate aus Zins + Tilgung. Der Standard für fast alle Fälle — planbar, flexibel (Sondertilgung, Tilgungswechsel)." },
-  { name: "Endfälliges Darlehen", text: "Nur Zinsen laufend, Tilgung am Ende über einen Tilgungsersatz. Für Vermieter interessant: Zinsen bleiben konstant hoch und voll als Werbungskosten abziehbar." },
+  { name: "Annuitätendarlehen", text: "Konstante Rate aus Zins + Tilgung. Die häufigste Darlehensart — planbare Rate, meist mit Sondertilgung oder Tilgungswechsel." },
+  { name: "Endfälliges Darlehen", text: "Nur Zinsen laufend, Tilgung am Ende über einen Tilgungsersatz. Die Zinsen bleiben über die Laufzeit gleich hoch; bei Vermietung zählen sie zu den Werbungskosten." },
   { name: "Volltilger", text: "Tilgt bis Ende der Zinsbindung auf 0 — oft Zinsrabatt, dafür wenig flexibel." },
   { name: "Forward-Darlehen", text: "Anschlusszins schon heute für später sichern. Aufschlag je Vorlaufmonat; Abnahmepflicht auch bei fallenden Zinsen (Zinswette)." },
   { name: "Bausparkombi / „Sofortfinanzierung“ zur Ablösung", text: "Tilgungsfreies Vorausdarlehen + Bausparvertrag, der später ablöst. Klingt nach Zinssicherung, ist aber oft intransparent und teuer — Verbraucherzentrale rät meist ab (Abschlussgebühr, unsicherer Zuteilungstermin, effektiv höhere Kosten).", warn: true },
@@ -52,28 +52,39 @@ export default function KaufAssistent({
   // Beide leben sonst im localStorage und werden ueber die (gesperrten)
   // Formulare gefuellt — ohne Vorbelegung blieben die Machbarkeits-Ampel und
   // der Finanzierungsschritt dauerhaft leer.
+  // Durchsicht 27.10.2026 (K01): Die Demo finanzierte vorher eine Wohnung aus dem eigenen Bestand
+  // (Altbau-ETW Leipzig Süd), und die Zahlen passten nicht zueinander (Darlehen 189.500 € gegen 81 %
+  // Auslauf, Rate 992 € gegen 916 €). Jetzt ein Kandidat aus Schritt 1 (Demo-Kaufprüfung
+  // „Leipzig-Schönefeld“, Werte aus ihrer Zusammenfassung), und alles rechnet sich nach:
+  // Darlehen = Gesamt − Eigenkapital der Selbstauskunft (79.000 €), Rate = Darlehen × (Zins + Tilgung) / 12.
+  const DEMO_GESAMT = 176601;
+  const DEMO_EK = 79000;
+  const DEMO_ZINS = 3.6;
+  const DEMO_TILGUNG = 2.4;
+  const DEMO_KREDIT = DEMO_GESAMT - DEMO_EK;
+  const DEMO_RATE = Math.round((DEMO_KREDIT * (DEMO_ZINS + DEMO_TILGUNG)) / 100 / 12);
   const DEMO_AUSWAHL: KaufAuswahl = {
     kalkId: null,
-    name: "Altbau-ETW Leipzig Süd",
-    adresse: "Karl-Liebknecht-Str. 42, 04275 Leipzig",
-    kp: 245000,
-    gesamtInvest: 268500,
-    eigenkapital: 70000,
-    darlehen: 198500,
-    rate: 992,
-    kaltmiete: 720,
-    cfNetto: -128,
+    name: "ETW mit Balkon, Leipzig-Schönefeld (Beispiel)",
+    adresse: "ETW mit Balkon, Leipzig-Schönefeld (Beispiel)",
+    kp: 159000,
+    gesamtInvest: DEMO_GESAMT,
+    eigenkapital: DEMO_EK,
+    darlehen: DEMO_KREDIT,
+    rate: DEMO_RATE,
+    kaltmiete: 545,
+    cfNetto: 0,
     nutzung: "vermieten",
     gewaehltAm: "2026-08-29",
   };
   const DEMO_DARLEHEN: DarlehenAuswahl = {
-    darlehen: 198500,
+    darlehen: DEMO_KREDIT,
     prioritaet: "gleiche_rate",
     zinsbindung: 15,
-    sollzins: 3.6,
+    sollzins: DEMO_ZINS,
     sondertilgung: true,
-    anfangstilgung: 2.4,
-    monatsrate: 992,
+    anfangstilgung: DEMO_TILGUNG,
+    monatsrate: DEMO_RATE,
     gewaehltAm: "2026-08-29",
   };
 

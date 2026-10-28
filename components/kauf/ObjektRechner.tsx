@@ -76,12 +76,14 @@ function BelastbarkeitsRing({ prozent, stufe, offen }: { prozent: number; stufe:
 // gesperrter Rechner — sichtbar, aber ohne Aussage. Die Zahlen sind bewusst
 // unspektakulaer und plausibel: eine vermietete 3-Zimmer-Altbauwohnung, wie sie
 // die Zielgruppe tatsaechlich kauft.
+// Ein Kandidat, keine Wohnung aus dem Demo-Bestand (Durchsicht 27.10.2026, K01): vorher stand hier die
+// Adresse der „Altbau-ETW Leipzig Süd“, die schon unter „Meine Objekte“ steht.
 const DEMO_START = {
-  adresse: "Karl-Liebknecht-Str. 42, 04275 Leipzig",
-  kaufpreis: "245000",
-  flaeche: "72",
-  kaltmiete: "720",
-  baujahr: "1911",
+  adresse: "Musterstraße 12, 04129 Leipzig",
+  kaufpreis: "195000",
+  flaeche: "68",
+  kaltmiete: "640",
+  baujahr: "1928",
 };
 
 export default function ObjektRechner({

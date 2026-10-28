@@ -109,10 +109,13 @@ describe("Meldung anlegen", () => {
     }
   });
 
-  it("ohne Ablesedatum wird heute gesetzt", async () => {
+  it("ohne Ablesedatum wird heute (Berliner Datum) gesetzt", async () => {
     const { db, mod } = await lade();
     await mod.meldeZaehlerstand(fd({ art: "Strom", stand: "100" }));
-    expect(insert(db, "zaehlerstand_meldungen")?.ablesedatum).toBe(new Date().toISOString().slice(0, 10));
+    // heuteBerlin(), nicht UTC: Zwischen 0 und 1/2 Uhr Berliner Zeit liegt UTC noch beim Vortag
+    // (der Test war am 28.10.2026 um 0:30 Uhr rot).
+    const { heuteBerlin } = await import("@/lib/zeitraum");
+    expect(insert(db, "zaehlerstand_meldungen")?.ablesedatum).toBe(heuteBerlin());
   });
 
   it("Foto: nur Bilder bis 4 MB", async () => {

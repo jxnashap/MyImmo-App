@@ -19,7 +19,9 @@ describe("fristZiel() — eine Frist führt zu ihrem Gegenstand", () => {
     expect(fristZiel("mieter", "m1", "Mietende")).toBe("/tenants/m1");
     expect(fristZiel("objekt", "p1", "Energieausweis erneuern")).toBe("/properties/p1");
     expect(fristZiel("kredit", "k1", "Zinsbindung endet")).toBe("/kredite");
-    expect(fristZiel("steuer", null, "Grundsteuer fällig")).toBe("/steuer");
+    // 28.10.2026: Grundsteuer ist eine Zahlung, keine Steuererklärung → gleich die Buchung vorbelegen.
+    expect(fristZiel("steuer", null, "Grundsteuer fällig")).toBe("/cashflow/neu?typ=ausgabe&kategorie=Grundsteuer&back=/");
+    expect(fristZiel("steuer", null, "Steuererklärung abgeben")).toBe("/steuer");
     expect(fristZiel("vertreter", "v1", "Vollmacht endet")).toBe("/einstellungen?tab=vertreter");
   });
   it("ohne ID oder unbekannte Quelle → /termine (nie ein kaputter Link)", () => {

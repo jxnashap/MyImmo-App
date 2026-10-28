@@ -212,6 +212,21 @@
 > gemeinsamer Pfad (Objekt-Check/Steuer sprangen nach BuyImmo). **Bewusst NICHT:** Mietkonto unter „Verwalten“ (die Gruppe hätte
 > sieben Punkte — gegen die Sechser-Regel aus Feedback Befund 8), „Cockpit“ bleibt (Begriff des Betreibers).
 
+> 🔎 **Gesamtdurchsicht 27.10.2026 (Design, UX, Abläufe, Website — Auftrag „kompletter Check“, `tests/gesamtcheck2710.test.ts`,
+> 14 Mutationen rot).** Recherche vorab (ruhiges Design, Wechselhürde = Aufwand/Import, Erklärvideo 60–90 s mit echter
+> Oberfläche); Durchgang im Browser an der Live-Demo, Funde in vier Listen (MyImmo M, BuyImmo K, Portal P, Website W).
+> Behoben: „Schaden melden“ öffnete im Portal nichts (P01), Portal-Reiter am Handy alle fünf sichtbar (`alleSichtbar`, P03),
+> „Bereitgestellt“ grau bis zum Abruf (M02), Möglichkeiten nie „überfällig“ (M03), Zinsbuchungen in der Jahresprüfung
+> gebündelt (M13), Grundsteuer-Frist → Buchung (M14), BuyImmo-Demo rechnet sich nach (K01), wertende Texte (K03 u. a.),
+> Website-Aussagen W09–W12. **Regeln:** (1) **Eine Frist vom Typ „ok“ (Möglichkeit) ist nie dringend** — wer Fristen in
+> `baueHeuteAufgaben` gibt, setzt `moeglich` (Typ `FristZeile`, nie ein eigener Typ daneben). (2) **Ein Reiter, der über
+> `WischReiter` eingehängt bleibt, liest Adresszustand (`?neu=`) über einen `key`** — `useState` sieht ihn sonst nur beim
+> ersten Rendern. (3) **Demo-Zahlen leiten sich voneinander ab** (Darlehen = Gesamt − Eigenkapital, Rate aus Zins +
+> Tilgung) und sind nie ein Objekt aus dem eigenen Demo-Bestand. (4) **Ein Werbebild zeigt nur MyImmo** (das Vision-Bild
+> zeigte eine fremde englische App — § 5 UWG). (5) Grün = belegt: Ein Status-Merkmal wird erst grün, wenn das Ereignis
+> eingetreten ist (Abruf), nicht beim Bereitstellen. **Offen (Entscheidungsliste beim Betreiber):** Hero-Botschaft, Knopf-
+> Gewichtung, Mietkonto je Mieter, Bundesland-Voreinstellung, Schriftgrößen im Portal, Demo-Daten „zugestellt ohne Datei“ (M01).
+
 ### 👤 NUR DER BETREIBER — offene Punkte (Stand 10.09.2026)
 Alles hier ist **kein Code**, sondern ein Dashboard, ein Anwalt oder ein Blick in einen
 Browser. Ich kann es nicht erledigen und nicht prüfen. **In jeder Session kurz nachfragen,

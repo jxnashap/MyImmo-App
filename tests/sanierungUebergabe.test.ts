@@ -69,20 +69,20 @@ vi.mock("@/lib/actions/kalkulation", () => ({
 
 async function rechner(sanierungStart: number | null): Promise<string> {
   const { default: ObjektRechner } = await import("@/components/kauf/ObjektRechner");
-  // demo = true: feste Startwerte (Kaufpreis 245.000 €, Bundesland 5 %, Makler 3,57 %).
+  // demo = true: feste Startwerte (Kaufpreis 195.000 €, Bundesland 5 %, Makler 3,57 %).
   return renderToStaticMarkup(createElement(ObjektRechner, { demo: true, sanierungStart }));
 }
 
 describe("Kauf-Rechner mit übergebener Sanierung", () => {
   it("Sanierung steckt in der Gesamtinvestition und wird in der Notiz genannt", async () => {
-    // 245.000 + 245.000 × 10,57 % (25.896,50) + 20.000 = 290.896,50 → € 290.897
+    // 195.000 + 195.000 × 10,57 % (20.611,50) + 20.000 = 235.611,50 → € 235.612
     const html = await rechner(20_000);
-    expect(html).toContain("€ 290.897");
-    expect(html).toContain("inkl. € 25.897 Nebenkosten + € 20.000 Sanierung");
+    expect(html).toContain("€ 235.612");
+    expect(html).toContain("inkl. € 20.612 Nebenkosten + € 20.000 Sanierung");
     expect(html).toMatch(/value="20000"/);
-    // Unter der Grenze: 245.000 × 80 % × 15 % = 29.400
+    // Unter der Grenze: 195.000 × 80 % × 15 % = 23.400
     expect(html).toContain("Unter der 15-%-Grenze");
-    expect(html).toContain("€ 29.400");
+    expect(html).toContain("€ 23.400");
   });
 
   it("über der Grenze: Hinweis auf AfA statt Sofortabzug", async () => {
@@ -92,7 +92,7 @@ describe("Kauf-Rechner mit übergebener Sanierung", () => {
 
   it("ohne Sanierung: alte Gesamtinvestition, kein 15-%-Hinweis", async () => {
     const html = await rechner(null);
-    expect(html).toContain("€ 270.897"); // 245.000 + 25.896,50
+    expect(html).toContain("€ 215.612"); // 195.000 + 20.611,50
     expect(html).not.toContain("Sanierung</");
     expect(html).not.toContain("15-%-Grenze");
   });

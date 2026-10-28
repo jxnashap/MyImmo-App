@@ -16,8 +16,11 @@ export const metadata: Metadata = {
 export default function VisionPage() {
   return (
     <LandingShell aktiv="/vision" mitHero>
+      {/* Bis 27.10.2026 lief hier `vision`: ein KI-Stockbild, auf dessen Handy eine fremde englische
+          App („PALM & PINE“, „Occupancy 84 %“) zu sehen ist — keine MyImmo-Oberfläche. Ein Werbebild
+          darf das Produkt nicht falsch zeigen (§ 5 UWG). Ruhiges Meer statt fremder App. */}
       <QlxHero
-        slug="vision"
+        slug="preise"
         kicker="Die Vision"
         titel={<>Leben, wo du willst. <em>Verwalten, als wärst du da.</em></>}
         sub={

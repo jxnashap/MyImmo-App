@@ -16,7 +16,7 @@ import { mitGeltendenBetraegen } from "@/lib/sollAb";
 import { anliegenTermine, ANLIEGEN_TERMIN_SPALTEN, type AnliegenMitTermin } from "@/lib/anliegenTermin";
 import { vorgangUrl } from "@/lib/anliegenListe";
 import { faelligeAnzahl, gebuchtJeVorlage } from "@/lib/wiederkehr";
-import { fristZiel, baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
+import { fristZiel, baueHeuteAufgaben, buendleGleicheAufgaben, tageVor, type FristZeile, type OffeneMiete, type OffenesAnliegen, type OffeneMeldung } from "@/lib/heute";
 import { heuteBerlin } from "@/lib/zeitraum";
 import { nichtAbgerufen, zustellFensterAb, type ZustellungOffen } from "@/lib/zugang";
 import { erwarteteMonate, gezahltImMonat, ymPlus } from "@/lib/mietkonto";
@@ -197,9 +197,8 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
   // letzten 90 Tage dabei (aelteres ist keine Frist mehr, sondern Altlast).
   const abISO0 = tageVor(heuteISO0, 90);
   const imFenster = (d: string) => d >= abISO0;
-  type DashFrist = { datum: string; label: string; sub: string; warn: boolean; href?: string };
   const ueberfaellig = (d: string) => d < heuteISO0;
-  const fristListe: DashFrist[] = [];
+  const fristListe: FristZeile[] = [];
   // Gleicher Schlüssel wie in /termine (Quelle | Bezug | Datum | Bezeichnung) — ausgeblendet ODER
   // erledigt vermerkt fällt heraus (Ablauf D).
   const vermerke = vermerkeAus(verstecktRows as FristVermerk[] | null);
@@ -215,15 +214,15 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     for (const f of mieterFristen(m, { zeitraumMonate: zrMonate.get(m.id) ?? [] })) if (sichtbar("mieter", m.id, f) && f.datum) {
       // Ablauf D: Wie weit ist das Schreiben? Nie „zugestellt“ — erledigt ist erst der Vermerk in /termine.
       const v = f.dokument ? fristVorgang(f.dokument, m.id, f.datum, archiv, zustellungenAlle) : null;
-      fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo, v && v.stand !== "offen" ? vorgangText(v) : null].filter(Boolean).join(" · "), warn: f.typ === "warn", href: fristZiel("mieter", m.id, f.label, f.dokument) });
+      fristListe.push({ datum: f.datum, label: f.label, sub: [wer, wo, v && v.stand !== "offen" ? vorgangText(v) : null].filter(Boolean).join(" · "), warn: f.typ === "warn", moeglich: f.typ === "ok", href: fristZiel("mieter", m.id, f.label, f.dokument) });
     }
   }
   for (const k of kredite) for (const f of kreditFristen(k as Parameters<typeof kreditFristen>[0])) if (sichtbar("kredit", k.id, f) && f.datum)
-    fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Kredit", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn", href: fristZiel("kredit", k.id, f.label) });
+    fristListe.push({ datum: f.datum, label: f.label, sub: [k.bezeichnung ?? "Kredit", k.prop_id ? nameOf.get(k.prop_id) : null].filter(Boolean).join(" · "), warn: f.typ === "warn", moeglich: f.typ === "ok", href: fristZiel("kredit", k.id, f.label) });
   for (const p of properties) for (const f of objektFristen(p)) if (sichtbar("objekt", p.id, f) && f.datum)
-    fristListe.push({ datum: f.datum, label: f.label, sub: p.bezeichnung, warn: f.typ === "warn", href: fristZiel("objekt", p.id, f.label) });
+    fristListe.push({ datum: f.datum, label: f.label, sub: p.bezeichnung, warn: f.typ === "warn", moeglich: f.typ === "ok", href: fristZiel("objekt", p.id, f.label) });
   for (const f of globaleFristen()) if (sichtbar("steuer", null, f) && f.datum)
-    fristListe.push({ datum: f.datum, label: f.label, sub: "Alle Objekte", warn: f.typ === "warn", href: fristZiel("steuer", null, f.label) });
+    fristListe.push({ datum: f.datum, label: f.label, sub: "Alle Objekte", warn: f.typ === "warn", moeglich: f.typ === "ok", href: fristZiel("steuer", null, f.label) });
   for (const t of (term ?? []) as { id: string; titel: string | null; datum: string | null; kategorie: string | null; erledigt: boolean | null }[])
     if (t.datum && imFenster(t.datum) && !t.erledigt)
       fristListe.push({ datum: t.datum, label: t.titel ?? "Termin", sub: t.kategorie ?? "Eigener Termin", warn: false });
@@ -475,6 +474,8 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
     .sort((a, b) => new Date(b.buchungsdatum ?? 0).getTime() - new Date(a.buchungsdatum ?? 0).getTime())
     .slice(0, 6);
 
+  // Kopfzeile zählt nur laufende Verträge (27.10.2026) — „7 Mietverhältnisse“ zählte Ausgezogene mit.
+  const laufendeMietverhaeltnisse = mieterRows.filter((m) => laeuftAm(m, heuteISO0)).length;
   // Start-Checkliste (lib/startCheckliste.ts, 21.10.2026): leeres Konto → ganze Seite statt Null-KPIs;
   // Objekt da, Mieter fehlt → kompakte Karte über dem Dashboard. Die Tour öffnet sich nicht mehr von selbst.
   const startListe = startSchritte({
@@ -505,7 +506,7 @@ export default async function DashboardPage(seite: { searchParams: Promise<{ nl?
           <div className="topbar-kicker">Portfolio · {monatJahr}</div>
           <div className="topbar-title">{gruss}{vorname ? `, ${vorname}` : ""}</div>
           <div className="topbar-sub">
-            {properties.length} Objekt{properties.length === 1 ? "" : "e"}, {mieterRows.length} Mietverhältnis{mieterRows.length === 1 ? "" : "se"} — Stand heute
+            {properties.length} Objekt{properties.length === 1 ? "" : "e"}, {laufendeMietverhaeltnisse} laufende{laufendeMietverhaeltnisse === 1 ? "s" : ""} Mietverhältnis{laufendeMietverhaeltnisse === 1 ? "" : "se"} — Stand heute
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

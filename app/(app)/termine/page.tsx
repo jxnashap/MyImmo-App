@@ -234,7 +234,9 @@ export default async function TerminePage(
   // Nur echte Aufgaben koennen ueberfaellig werden. Reine Ereignis-Marker
   // (typ "info": Mietbeginn, Kaufdatum ...) sind mit ihrem Datum erledigt —
   // ein vergangener Mietbeginn ist keine offene Frist.
-  const istAufgabe = (e: Eintrag) => e.typ !== "info" || e.quelle === "eigen";
+  // Ebenso keine „Möglichkeit“ (typ "ok": Mieterhöhung/Indexanpassung möglich, Sonderkündigungsrecht):
+  // Sie stand rot unter „Überfällig — vor 757 Tg.“ (Durchsicht 27.10.2026, M03).
+  const istAufgabe = (e: Eintrag) => e.typ === "warn" || e.quelle === "eigen";
   const ueberfaellig = offen.filter((e) => tageBis(e.datum) < 0 && istAufgabe(e)).length;
 
   // ---- Monatsansicht ----
@@ -276,7 +278,8 @@ export default async function TerminePage(
         {v.stand === "offen" && e.ziel && <Link href={e.ziel}>Schreiben vorbereiten</Link>}
         {notizId && <a href={`/archiv/${notizId}/datei`} target="_blank" rel="noopener noreferrer">Schreiben öffnen</a>}
         {quelleUrl && <a href={quelleUrl} target="_blank" rel="noopener noreferrer">Gesetzestext</a>}
-        {v.stand !== "erledigt" && e.erledigtSchluessel && (
+        {/* Eine Möglichkeit (typ "ok") hat keinen Zugang zu bestätigen — nur Pflichten. */}
+        {v.stand !== "erledigt" && e.typ !== "ok" && e.erledigtSchluessel && (
           <details className="tz-erledigen">
             <summary>Zugang bestätigen</summary>
             <form action={erledigeFrist.bind(null, e.erledigtSchluessel)} className="tz-erledigen-form">
@@ -625,7 +628,7 @@ export default async function TerminePage(
             ) : (
               <ExpandableList limit={12} label="weitere Termine">
                 {(() => {
-                  const ueber = sichtbar.filter((e) => tageBis(e.datum) < 0 && (e.typ !== "info" || e.quelle === "eigen"));
+                  const ueber = sichtbar.filter((e) => tageBis(e.datum) < 0 && istAufgabe(e));
                   const vergangen = sichtbar.filter((e) => tageBis(e.datum) < 0 && !(e.typ !== "info" || e.quelle === "eigen"));
                   const kommend = sichtbar.filter((e) => tageBis(e.datum) >= 0);
                   return [

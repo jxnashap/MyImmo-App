@@ -156,8 +156,8 @@ export default function KontoVerwaltung({
         </div>
         <div className="section-body">
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0, marginBottom: 12, lineHeight: 1.6 }}>
-            Alle Daten, die zu deinem Konto gehören, als ZIP mit CSV-Dateien — Auskunft und
-            Datenübertragbarkeit nach Art. 15 und 20 DSGVO.
+            Alle Daten, die zu deinem Konto gehören, als ZIP mit CSV-Dateien — zum Nachsehen
+            oder zum Mitnehmen.
           </p>
           {/* data-demo-sperre (Audit P5, B55): In der Demo erklärt ein Dialog, statt in die
               erneute Anmeldung mit gesperrtem Feld zu laufen. */}

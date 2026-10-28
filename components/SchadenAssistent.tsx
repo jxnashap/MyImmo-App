@@ -56,7 +56,7 @@ export default function SchadenAssistent({ onFertig, onAbbruch }: { onFertig: ()
       }
     });
 
-  const kasten = { display: "grid", gap: 12, marginBottom: 18, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" } as const;
+  const kasten = { display: "grid", gridTemplateColumns: "minmax(0, 1fr)", minWidth: 0, gap: 12, marginBottom: 18, padding: 14, background: "var(--bg3)", borderRadius: 10, border: "1px solid var(--line)" } as const;
   const knopf = (aktiv: boolean) => ({
     fontSize: 12.5, padding: "8px 12px", textAlign: "left" as const,
     border: `1px solid ${aktiv ? "var(--gold)" : "var(--line)"}`, background: aktiv ? "var(--gold-pale)" : "var(--bg2)",

@@ -1,14 +1,15 @@
 // Animierter Rollen-Flow: „So schnell läuft eine Reparatur" — ein Dokument
-// wandert in Sekunden Mieter → Hausmeister → Vermieter/Hausverwaltung → Firma.
+// wandert in Sekunden Mieter → Hausmeister → Vermieter → Firma. Seit 27.10.2026 so, wie der Code es tut:
+// Der Hausmeister schlägt die Firma nur vor, der Mieterkontakt geht nur mit Freigabe mit.
 // Reines CSS (CSP-konform), Endlos-Schleife in 4 Phasen; bei
 // prefers-reduced-motion stehen alle Schritte statisch da.
 import { User, Wrench, Building2, Hammer, Camera, ClipboardList, CheckCircle2, CalendarClock, FileText } from "lucide-react";
 
 const SCHRITTE = [
   { ico: User, rolle: "Mieter", tat: "meldet den Schaden", detail: "mit Foto — 20 Sekunden", step: Camera },
-  { ico: Wrench, rolle: "Hausmeister", tat: "erstellt den Auftrag", detail: "wählt die Firma aus dem Verzeichnis", step: ClipboardList },
-  { ico: Building2, rolle: "Vermieter / Verwaltung", tat: "gibt frei", detail: "ein Klick — auch vom Strand", step: CheckCircle2 },
-  { ico: Hammer, rolle: "Handwerksfirma", tat: "bekommt den Termin‑Link", detail: "mit Kontakt des Mieters", step: CalendarClock },
+  { ico: Wrench, rolle: "Hausmeister", tat: "erstellt den Auftrag", detail: "schlägt eine Firma vor", step: ClipboardList },
+  { ico: Building2, rolle: "Vermieter", tat: "gibt frei", detail: "ein Klick — auch von unterwegs", step: CheckCircle2 },
+  { ico: Hammer, rolle: "Handwerksfirma", tat: "bekommt den Auftrags‑Link", detail: "Mieterkontakt nur mit deiner Freigabe", step: CalendarClock },
 ] as const;
 
 export default function RollenFlow() {

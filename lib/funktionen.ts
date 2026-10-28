@@ -108,7 +108,7 @@ export const FUNKTIONSSEITEN: Funktionsseite[] = [
         ],
       },
       {
-        h: "Der Wächter, den sonst niemand hat",
+        h: "Der Wächter für die 15-%-Grenze",
         p: [
           "Wer in den ersten drei Jahren nach dem Kauf saniert, kann eine unangenehme Grenze reißen: Übersteigen die Instandsetzungskosten 15 Prozent der Gebäude-Anschaffungskosten, werden sie insgesamt zu anschaffungsnahen Herstellungskosten. Aus dem sofortigen Abzug wird eine Abschreibung über Jahrzehnte.",
           "MyImmo rechnet diesen Stand laufend mit und warnt, bevor die Grenze erreicht ist — nicht erst im Steuerbescheid. Das ist der Unterschied zwischen einer Warnung und einer Nachricht.",

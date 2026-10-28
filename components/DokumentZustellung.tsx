@@ -74,8 +74,9 @@ export default function DokumentZustellung({
     <div style={{ flexBasis: "100%", fontSize: 11.5, color: "var(--muted)", display: "grid", gap: 4 }}>
       {aktiv.map((z) => (
         <div key={z.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-          <span className="badge badge-green">Zugestellt</span>
-          <span>an <strong style={{ color: "var(--text)" }}>{z.empfaenger_email ?? "Portal-Konto"}</strong> am {datum(z.zugestellt_am)}</span>
+          {/* 27.10.2026: grün erst mit Abruf — „bereitgestellt“ heißt nicht „zugegangen“ (P4, Regel 2). */}
+          <span className={`badge ${z.gelesen_am ? "badge-green" : "badge-neutral"}`}>{z.gelesen_am ? "Abgerufen" : "Bereitgestellt"}</span>
+          <span>für <strong style={{ color: "var(--text)" }}>{z.empfaenger_email ?? "Portal-Konto"}</strong> am {datum(z.zugestellt_am)}</span>
           {/* Kein führendes „·“: Bricht die Zeile um, begann die neue sonst mit dem Punkt.
               Der Abstand (gap) trennt die Angaben. */}
           <span>{z.gelesen_am ? `abgerufen ${datum(z.gelesen_am)}` : "noch nicht abgerufen"}</span>
@@ -101,7 +102,7 @@ export default function DokumentZustellung({
       ))}
       {zurueck.map((z) => (
         <div key={z.id} style={{ color: "var(--faint)" }}>
-          Zurückgezogen am {datum(z.zurueckgezogen_am!)} (zugestellt an {z.empfaenger_email ?? "Portal-Konto"} am {datum(z.zugestellt_am)}
+          Zurückgezogen am {datum(z.zurueckgezogen_am!)} (bereitgestellt für {z.empfaenger_email ?? "Portal-Konto"} am {datum(z.zugestellt_am)}
           {z.gelesen_am ? `, abgerufen ${datum(z.gelesen_am)}` : ", nie abgerufen"})
         </div>
       ))}

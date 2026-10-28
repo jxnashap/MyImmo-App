@@ -182,7 +182,10 @@ export default function PortalAnsicht({
         ) : (
           <>
             <NotfallKasten notdienste={notdienste} />
-            <AnliegenPortal anliegen={anliegen} dateien={dateien} verlauf={verlauf} nurLesen={vorschau} listeHref={hrefFuer("anliegen")} neu={neu} mailHinweis={mailHinweis} />
+            {/* key (27.10.2026): `neu` steuert den Anfangszustand (Formular offen). Die Wisch-Reiter halten
+                diesen Reiter schon bereit — ohne neuen Schlüssel blieb beim Tipp auf „Schaden melden“
+                die Liste stehen (live gefunden, 4 von 4 Versuchen). */}
+            <AnliegenPortal key={neu ?? "liste"} anliegen={anliegen} dateien={dateien} verlauf={verlauf} nurLesen={vorschau} listeHref={hrefFuer("anliegen")} neu={neu} mailHinweis={mailHinweis} />
             <AnfragenVomVermieter anfragen={vermieterAnfragen} nurLesen={vorschau} />
           </>
         )}
@@ -380,7 +383,7 @@ export default function PortalAnsicht({
       {/* Glass-Toolbar oben in der Mitte: Bereiche umschalten. In der Vorschau
           nicht sticky — sie säße sonst über der Vermieter-Topbar. */}
       <div className="portal-toolbar" style={vorschau ? { position: "static" } : undefined}>
-        <GlassLeiste aktiv={tab} label="Portal-Bereiche">
+        <GlassLeiste aktiv={tab} label="Portal-Bereiche" alleSichtbar>
           {PORTAL_TABS.map((t) => {
             const Icon = t.icon;
             return (

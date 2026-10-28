@@ -151,7 +151,7 @@ export default function LandingPage({ nl }: { nl?: string } = {}) {
                 Software, keine Entlastung. Die Zielgruppe in einer Zahl sagt
                 dem Besucher sofort, ob er gemeint ist. */}
             <div className="lp-stat"><div className="z">1–24</div><div className="t">Einheiten — für private Vermieter ohne Hausverwaltung</div></div>
-            <div className="lp-stat"><div className="z">4</div><div className="t">Rollen: Vermieter, Mieter, Hausmeister, Verwaltung</div></div>
+            <div className="lp-stat"><div className="z">4</div><div className="t">Rollen: Vermieter, Mieter, Hausmeister, Dienstleister</div></div>
             {/* Nicht „100 % Daten in der EU" (bis 30.09.2026): Die eigene
                 Datenschutzerklärung nennt Übermittlungen in die USA (Vercel-Logs,
                 Anthropic bei der KI-Auslese). Eine Werbeaussage, die ihr
@@ -320,7 +320,7 @@ export default function LandingPage({ nl }: { nl?: string } = {}) {
             <div className="proz" style={{ marginTop: 26 }}>
               <div className="p"><h3>Objekt anlegen</h3><p>Adresse, Kaufpreis, Wohnfläche — oder Exposé einfügen und die KI liest die Eckdaten aus.</p></div>
               <div className="p"><h3>Mieter erfassen</h3><p>Mietverhältnis, Kaltmiete, Kaution. Auf Wunsch bekommt der Mieter direkt seinen Portal-Zugang.</p></div>
-              <div className="p"><h3>Buchungen laufen lassen</h3><p>Wiederkehrende Mieten und Kosten einmal anlegen — MyImmo bucht im Zyklus, rückwirkend bis 10 Jahre.</p></div>
+              <div className="p"><h3>Mieten bestätigen</h3><p>Das Mietkonto kennt die Miete aus dem Vertrag — du bestätigst nur den Eingang, auf Wunsch per Kontoauszug-Datei. Wiederkehrende Kosten legst du einmal an.</p></div>
               <div className="p"><h3>Abrechnen & exportieren</h3><p>NK-Abrechnung, Anlage V und Jahresbericht als fertige PDFs — für Mieter, ELSTER und Steuerberater.</p></div>
             </div>
           </Reveal>
@@ -488,7 +488,7 @@ export default function LandingPage({ nl }: { nl?: string } = {}) {
               <p className="lp-section-sub">
                 {REGISTRIERUNG_OFFEN
                   ? "In wenigen Minuten eingerichtet — Objekt anlegen, Mieter erfassen, loslegen. Kostenlos im Early Access, ohne Kreditkarte."
-                  : "MyImmo öffnet bald für alle Vermieter. Bis dahin zeigt die Demo jede Funktion mit Beispieldaten — ohne Anmeldung."}
+                  : "MyImmo öffnet bald für alle Vermieter. Bis dahin zeigt die Demo die wichtigsten Abläufe mit Beispieldaten — ohne Anmeldung."}
               </p>
               <div className="lp-cta-row" style={{ marginTop: 26 }}>
                 <StartCta className="qlx-btn-hell lp-btn-big" />

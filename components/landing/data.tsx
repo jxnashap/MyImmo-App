@@ -87,7 +87,7 @@ export const PLAENE: Plan[] = [
 export const VISION: { t: string; p: string; status: "fertig" | "bald" | "geplant" }[] = [
   { t: "Geführtes Onboarding", p: "Eine geführte Tour vom ersten Objekt bis zur Anlage V — mit Direktlinks, überspringbar und jederzeit neu startbar.", status: "fertig" },
   { t: "Zwei-Faktor-Anmeldung", p: "Anmeldung mit Code aus der Authenticator-App, Wiederherstellungscodes für den Notfall und erneute Bestätigung vor sensiblen Aktionen.", status: "fertig" },
-  { t: "Steuerberater-Freigabe", p: "Fertige Unterlagen auf Knopfdruck prüfen lassen — Ergebnis in 1–3 Tagen, ohne Termin.", status: "geplant" },
+  { t: "Steuerberater-Freigabe", p: "Idee: fertige Unterlagen an deinen Steuerberater übergeben — erst nach rechtlicher Prüfung.", status: "geplant" },
   { t: "News für Vermieter", p: "Mietrecht, Steuer, Förderungen: kuratierte Meldungen aus seriösen Quellen, direkt in der App.", status: "geplant" },
 ];
 

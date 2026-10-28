@@ -56,7 +56,7 @@ export function baueMieterAufgaben(d: Eingabe, heute: string): MieterAufgabe[] {
     } else if (!z.gelesen_am) {
       liste.push({
         id: `neu:${z.id}`, titel: `Neues Dokument: ${titel}`,
-        text: `Zugestellt am ${de(z.zugestellt_am)} — noch nicht geöffnet.`,
+        text: `Bereitgestellt am ${de(z.zugestellt_am)} — noch nicht geöffnet.`,
         tab: "dokumente", dringend: false, wann: z.zugestellt_am,
       });
     }

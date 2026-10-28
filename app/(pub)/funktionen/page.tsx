@@ -145,8 +145,8 @@ export default function FunktionenPage() {
           </div>
           <p className="lp-section-sub" style={{ marginTop: 22, marginBottom: 0 }}>
             So läuft eine Reparatur: Mieter meldet den Schaden mit Foto → Hausmeister erstellt den Auftrag
-            und wählt die Firma aus dem Verzeichnis → du gibst von unterwegs frei → die Firma bekommt einen
-            Termin-Link mit dem Kontakt des Mieters. Du warst nie am Telefon.
+            und schlägt eine Firma vor → du gibst von unterwegs frei → die Firma bekommt einen
+            Auftrags-Link, den Kontakt des Mieters nur, wenn du ihn freigibst. Kein Telefon-Pingpong.
           </p>
         </div>
       </section>

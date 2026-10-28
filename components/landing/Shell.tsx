@@ -61,7 +61,7 @@ export default function LandingShell({
             ) : (
               <>
                 <h2 className="lp-h2">Bald <em>für alle</em></h2>
-                <p className="lp-section-sub">MyImmo öffnet bald für alle Vermieter. Bis dahin zeigt die Demo jede Funktion mit Beispieldaten.</p>
+                <p className="lp-section-sub">MyImmo öffnet bald für alle Vermieter. Bis dahin zeigt die Demo die wichtigsten Abläufe mit Beispieldaten.</p>
               </>
             )}
             <div className="lp-cta-row">

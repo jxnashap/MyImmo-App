@@ -126,13 +126,33 @@ export function jahresPruefung(e: {
   const kostenObjekt = e.kosten.filter((x) => x.prop_id === pid && imJahr(x.buchungsdatum, jahr));
 
   // ---- Fehlende Belege -------------------------------------------------------------------------
+  // Schuldzinsen gebündelt (Durchsicht 27.10.2026): Die Bank schickt EINE Zinsbescheinigung im Jahr,
+  // keinen Monatsbeleg — zwölf Einzelpunkte überdeckten die echten Lücken (z. B. eine Reparatur).
+  // Der Schlüssel trägt das Datum: Die Liste steht nach Datum statt nach Zufallskennung.
+  const zinsenOhne: typeof kostenObjekt = [];
   for (const k of kostenObjekt) {
     if ((Number(k.betrag) || 0) <= 0) continue;
     if (k.rechnung_path || k.rechnung_name || k.beleg_eingang_id) continue;
+    if (k.kategorie === "Schuldzinsen") { zinsenOhne.push(k); continue; }
     add({
-      art: "beleg", schwere: "mittel", schluessel: `beleg:${k.id}`, betrag: Number(k.betrag),
+      art: "beleg", schwere: "mittel", schluessel: `beleg:${k.buchungsdatum ?? ""}:${k.id}`, betrag: Number(k.betrag),
       text: `${k.kategorie ?? "Kosten"} vom ${de(k.buchungsdatum!)} (${euro(Number(k.betrag))}) ohne Beleg${k.beschreibung ? ` — ${k.beschreibung}` : ""}`,
       href: `/kosten/${k.id}/edit`,
+    });
+  }
+  if (zinsenOhne.length === 1) {
+    const k = zinsenOhne[0];
+    add({
+      art: "beleg", schwere: "mittel", schluessel: `beleg:${k.buchungsdatum ?? ""}:${k.id}`, betrag: Number(k.betrag),
+      text: `Schuldzinsen vom ${de(k.buchungsdatum!)} (${euro(Number(k.betrag))}) ohne Beleg${k.beschreibung ? ` — ${k.beschreibung}` : ""}`,
+      href: `/kosten/${k.id}/edit`,
+    });
+  } else if (zinsenOhne.length > 1) {
+    const summe = r2(zinsenOhne.reduce((a, k) => a + Number(k.betrag), 0));
+    add({
+      art: "beleg", schwere: "hinweis", schluessel: "beleg:zinsen", betrag: summe,
+      text: `${zinsenOhne.length} Zinsbuchungen (${euro(summe)}) ohne Beleg — die Zinsbescheinigung der Bank für ${jahr} genügt als ein Beleg`,
+      href: `/cashflow?jahr=${jahr}&prop=${pid}`,
     });
   }
   const eingangOffen = e.belegEingang.filter((b) => b.prop_id === pid && b.status !== "gebucht");

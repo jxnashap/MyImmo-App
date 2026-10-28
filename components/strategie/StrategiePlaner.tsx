@@ -140,10 +140,13 @@ export default function StrategiePlaner({
               {r.erloes !== 0 && <div className="baum-zeile zahl">Verkaufserlös nach Kosten und Schulden: {euro(r.erloes)}</div>}
               {r.gedeckt ? (
                 <div className="baum-zeile zahl">
-                  <span className="baum-status gedeckt">Rechnerisch gedeckt</span>
+                  {/* K12 (27.10.2026): „gedeckt“ meint das Eigenkapital — der Monatsüberschuss kann trotzdem
+                      negativ sein und steht dann rot daneben, statt neben einem grünen Haken unterzugehen. */}
+                  <span className="baum-status gedeckt">Eigenkapital rechnerisch gedeckt</span>
                   {r.ausBeleihung > 0 && <> · {euro(r.ausBeleihung)} aus Beleihung</>}
                   {r.ausErspartem > 0 && <> · {euro(r.ausErspartem)} aus Erspartem</>}
-                  {" "}· Rate {euro(r.rateMo)}/Mo. · Miete nach Kosten minus Rate {euro(r.ueberschussMo)}/Mo.
+                  {" "}· Rate {euro(r.rateMo)}/Mo. · Miete nach Kosten minus Rate{" "}
+                  <span style={r.ueberschussMo < 0 ? { color: "var(--red)", fontWeight: 600 } : undefined}>{euro(r.ueberschussMo)}/Mo.</span>
                 </div>
               ) : (
                 <div className="baum-zeile zahl">
@@ -207,7 +210,7 @@ export default function StrategiePlaner({
           {bestand.length > 0 && (
             <p className="sanierung-klein" style={{ marginTop: 10 }}>
               Dein Bestand aus MyImmo: {objektZahl} {objektZahl === 1 ? "Objekt" : "Objekte"}, Wert {euro(bestandWert)},
-              Schulden {euro(bestandSchulden)}. Er kann Kapital geben (Beleihung, Verkauf).
+              Schulden {euro(bestandSchulden)}. Daraus kann rechnerisch Kapital kommen (Beleihung, Verkauf).
             </p>
           )}
           <details className="klapp">
